@@ -45,7 +45,21 @@ docs/<TICKET_KEY>-tasks.md
 ## Subagent Pipeline
 
 This skill uses five subagents, executed in sequence. Each subagent's output
-feeds into the next. All subagent definitions live in this skill folder.
+feeds into the next. All subagent definitions are colocated in this skill folder.
+
+Before running the pipeline, read each subagent file to understand its contract
+(expected input, output format, and rules). Paths are relative to this skill's
+directory.
+
+| Stage | Subagent          | File                     | Purpose                          |
+| ----- | ----------------- | ------------------------ | -------------------------------- |
+| 1     | task-decomposer   | `./task-decomposer.md`   | Raw task list (the WHAT)         |
+| 2     | task-planner      | `./task-planner.md`      | Detailed tasks (the HOW)         |
+| 3     | dependency-mapper | `./dependency-mapper.md` | Dependency graph + critical path |
+| 4     | task-prioritizer  | `./task-prioritizer.md`  | Final execution order            |
+| 5     | task-validator    | `./task-validator.md`    | QA gate — 19 validation checks   |
+
+### Pipeline flow
 
 ```
 docs/<KEY>.md (ticket snapshot)
