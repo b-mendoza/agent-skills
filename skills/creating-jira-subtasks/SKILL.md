@@ -98,10 +98,6 @@ h3. Definition of Done
 h3. Likely Files / Artifacts Affected
 
 <List>
-
----
-
-_Auto-generated from task plan: docs/<TICKET_KEY>-tasks.md — Task <N>_
 ```
 
 **Parent:** `TICKET_KEY`
