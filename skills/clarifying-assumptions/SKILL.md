@@ -42,13 +42,118 @@ The task plan file must already exist at `docs/<TICKET_KEY>-tasks.md`.
 - An updated task plan file with all resolved answers inlined.
 - A decisions log appended to the plan file under `## Decisions Log`.
 
-## How This Works
+---
 
-This skill is **conversational and iterative**. You will ask the user ONE
-question at a time, wait for their answer, record it, and then move to the next.
+## CRITICAL: Three Execution Rules
 
-**Do not dump all questions at once.** The user should feel like they are having
-a guided conversation, not reading a wall of text.
+These three rules are non-negotiable and override any conflicting behavior.
+
+### Rule 1 — Use interactive tools for EVERY choice
+
+Whenever the user must select from discrete options, you MUST use an interactive
+prompt tool (e.g., `ask_user_input`, selection widgets, or any available
+interactive input tool). NEVER present options as plain text and ask the user to
+type their choice.
+
+**Why:** Reduces friction, eliminates typos, and makes the conversation feel
+guided rather than interrogative.
+
+**How to decide which input type:**
+
+| Situation                                     | Input type        |
+| --------------------------------------------- | ----------------- |
+| Exactly one answer needed from 2–4 options    | Single select     |
+| Multiple answers valid from 2–4 options       | Multi select      |
+| User must rank/order options by preference    | Rank / prioritize |
+| Free-form answer needed (names, descriptions) | Plain text prompt |
+
+When a question has discrete options (even if there's also a free-text
+"Other" path), always present the options as an interactive prompt FIRST.
+If the user selects "Other" or needs to elaborate, follow up with a plain
+text prompt.
+
+### Rule 2 — Illustrate EVERY question with visual context
+
+Before or alongside every question, include at least ONE visual element that
+helps the user understand the context. Never present a question as a wall of
+text without visual grounding.
+
+**Required visual elements (use at least one per question):**
+
+| Visual type         | When to use                                                   | Format                        |
+| ------------------- | ------------------------------------------------------------- | ----------------------------- |
+| **Mermaid diagram** | Architecture decisions, data flow choices, dependency impacts | Mermaid code block            |
+| **Markdown table**  | Comparing options side by side with trade-offs                | Markdown table                |
+| **Code snippet**    | When the question affects specific code, configs, or APIs     | Fenced code block with lang   |
+| **Impact map**      | When the answer cascades to multiple tasks                    | Mermaid or table showing flow |
+| **Before / after**  | When the answer changes the plan structure                    | Two code blocks or diagrams   |
+
+**How to choose:** Pick the visual that makes the DIFFERENCE between options
+most obvious. If comparing API approaches, show code. If comparing architecture
+patterns, show a diagram. If comparing trade-offs, show a table.
+
+**Example — architecture decision:**
+
+````markdown
+This question affects how data flows between the API and the database:
+
+```mermaid
+graph LR
+    A[API Request] --> B{Which pattern?}
+    B -->|Option A: Repository| C[Repository Layer] --> D[Database]
+    B -->|Option B: Direct| D
+    B -->|Option C: CQRS| E[Command Handler] --> D
+    B -->|Option C: CQRS| F[Query Handler] --> D
+```
+
+| Criteria       | Repository pattern   | Direct access      | CQRS               |
+| -------------- | -------------------- | ------------------ | ------------------- |
+| Complexity     | Medium               | Low                | High               |
+| Testability    | High (mockable)      | Low                | High               |
+| Fits codebase? | Yes — existing repos | Breaks conventions | Overkill for scope |
+````
+
+**Example — code-level decision:**
+
+````markdown
+This question affects the error response format in Task 4:
+
+```typescript
+// Option A: Flat error response
+{ "error": "validation_failed", "message": "Email is required" }
+
+// Option B: Structured error response (matches existing patterns in src/errors/)
+{ "error": { "code": "VALIDATION_FAILED", "field": "email", "message": "Email is required" } }
+```
+````
+
+### Rule 3 — Generate the COMPLETE question manifest UPFRONT
+
+Before asking the first question, you MUST:
+
+1. Read the entire task plan.
+2. Extract every item that needs user input.
+3. Build the **complete, numbered question manifest** (see Phase 1 below).
+4. Present the manifest to the user for review.
+5. Get their confirmation before proceeding.
+
+**NEVER generate questions on the fly.** Every question the user will see must
+be listed in the manifest BEFORE the first question is asked. This is
+non-negotiable.
+
+**Why:** Ad hoc question generation leads to drift, irrelevant questions, and
+an unpredictable experience. The manifest creates a contract between the agent
+and the user — both sides know exactly what to expect.
+
+**If a user's answer reveals a NEW question:**
+
+- Do NOT ask it immediately.
+- Note it explicitly: "Your answer raised a new consideration. I'll add it as
+  Question N+1 at the end of our manifest."
+- Update the manifest and present the updated version before asking the new
+  question.
+
+---
 
 ## Execution Steps
 
