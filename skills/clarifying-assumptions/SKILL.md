@@ -155,9 +155,14 @@ and the user — both sides know exactly what to expect.
 
 ---
 
-## Execution Steps
+## Execution Phases
 
-### 1. Read and inventory all items to clarify
+This skill runs in three distinct phases. Each phase must complete before the
+next begins.
+
+### Phase 1 — Build and present the question manifest
+
+#### 1a. Read and inventory all items
 
 Read `docs/<TICKET_KEY>-tasks.md` and build an internal list of every item that
 needs user input. Categorize them:
@@ -171,7 +176,7 @@ needs user input. Categorize them:
 | **Dependency risks**        | `Dependencies / prerequisites` that seem uncertain   |
 | **Validation warnings**     | `## Validation Report` — any WARN or unresolved FAIL |
 
-### 2. Prioritize the list
+#### 1b. Prioritize the list
 
 Order items so that:
 
@@ -181,80 +186,132 @@ Order items so that:
 4. Per-task questions follow, ordered by task number.
 5. Validation warnings and low-impact confirmations come last.
 
-### 3. Present a brief overview
+#### 1c. Present the question manifest
 
-Before starting questions, give the user a short summary:
+Present the COMPLETE manifest to the user using this format:
 
-```
-I've reviewed the task plan for <TICKET_KEY> and found:
+````markdown
+## Question Manifest for <TICKET_KEY>
 
-- <N> cross-cutting open questions
-- <N> assumptions to confirm
-- <N> per-task questions
-- <N> validation warnings to review
+I've analyzed the task plan and identified **<N> items** that need your input
+before we can proceed with implementation. Here's the full list, organized by
+impact:
 
-I'll walk through these one at a time, starting with the ones that have the
-biggest impact on the overall plan. For each item, I'll explain why it matters
-and what the trade-offs are.
-
-Ready? Let's start.
-```
-
-### 4. Ask one question at a time
-
-For each item, present it in this format:
-
-```
----
-
-**[<category>]** Question <current>/<total>
-
-**Context:** <1–2 sentences explaining WHERE this came from — which part of the
-ticket or plan raised this question.>
-
-**Question:** <The actual question, clearly stated.>
-
-**Why this matters:** <1–2 sentences on the downstream impact. What breaks or
-changes depending on the answer?>
-
-**Considerations:**
-- **Option A:** <description> — <trade-off>
-- **Option B:** <description> — <trade-off>
-- **Option C (if applicable):** <description> — <trade-off>
-
-**Current assumption (if any):** <What the plan currently assumes if this
-question is left unanswered.>
-
----
-
-What's your take?
+```mermaid
+pie title Questions by Category
+    "Blocking issues" : <N>
+    "Cross-cutting questions" : <N>
+    "Assumptions to confirm" : <N>
+    "Per-task questions" : <N>
+    "Validation warnings" : <N>
 ```
 
-### 5. Record each answer
+| #   | Category           | Short description                 | Affects tasks | Input type     |
+| --- | ------------------ | --------------------------------- | ------------- | -------------- |
+| 1   | 🔴 Blocking        | Missing API version specification | 3, 5, 7       | Single select  |
+| 2   | 🟡 Cross-cutting   | Authentication strategy           | 2, 4, 6       | Single select  |
+| 3   | 🟡 Cross-cutting   | Error response format             | All           | Single select  |
+| 4   | 🔵 Assumption      | Database migration strategy       | 1             | Confirm/revise |
+| 5   | 🔵 Assumption      | Test coverage target              | All           | Single select  |
+| 6   | ⚪ Task 3 question | Caching layer needed?             | 3             | Yes/No         |
+| 7   | ⚪ Task 5 question | Retry policy for external API     | 5             | Single select  |
+| 8   | ⚪ Validation warn | Task 6 DoD is vague               | 6             | Free text      |
+
+**Estimated time:** ~<N> minutes (most questions have pre-defined options).
+
+This is the complete list. I won't add surprise questions mid-conversation.
+If your answers reveal something new, I'll show you the updated manifest
+before asking any new questions.
+````
+
+Then ask the user to confirm they're ready to proceed, or if they want to
+reorder, skip, or add anything before starting.
+
+Use an interactive prompt:
+
+```
+- "Let's start from the top"
+- "I want to skip some — let me review"
+- "I have questions about the manifest first"
+```
+
+### Phase 2 — Walk through questions one at a time
+
+For each question in the manifest, follow this exact sequence:
+
+#### 2a. Show progress
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Question <current>/<total> — [<category emoji> <category>]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+#### 2b. Provide visual context (MANDATORY — Rule 2)
+
+Before asking the question, show at least one visual element that illustrates
+the context. Choose the most appropriate visual type based on what the question
+is about.
+
+Include:
+
+- **What this relates to:** 1–2 sentences on WHERE in the plan this came from.
+- **Visual:** Diagram, table, code snippet, or impact map.
+- **Why this matters:** 1–2 sentences on what changes downstream.
+
+#### 2c. Ask using interactive tools (MANDATORY — Rule 1)
+
+Present the options using the appropriate interactive tool. NEVER fall back to
+"type A, B, or C" when a selection widget is available.
+
+For questions with discrete options:
+
+- Use single-select or multi-select interactive prompts.
+- Always include a brief label for each option (no long descriptions in the
+  selection widget — those go in the visual context above).
+- If "Other / custom answer" is a valid choice, include it as the last option
+  in the interactive prompt. If selected, follow up with a free-text prompt.
+
+For confirmation questions (assumptions):
+
+- Use a single-select with: "✅ Confirm as-is", "❌ Revise", "⏭️ Skip"
+
+For free-text questions:
+
+- Ask in plain text, but still provide the visual context first.
+
+#### 2d. Record the answer
 
 After the user responds:
 
-1. **Acknowledge** their answer briefly (1 sentence).
-2. **Note any follow-up implications** — e.g., "Got it — that means Task 3 will
-   need to use the REST API instead of GraphQL. I'll update the plan."
-3. **Move to the next question.**
+1. **Acknowledge** their answer in one sentence.
+2. **State downstream implications** if the answer changes anything — e.g.,
+   "This means Task 3's implementation notes will shift from REST to GraphQL."
+3. **Move to the next question.** Do NOT elaborate or re-ask.
 
-If the user says "skip" or "I don't know":
+**On "skip":**
 
-- Record it as unresolved.
-- Note the fallback assumption that will be used.
-- Move on.
+- Record as unresolved with the fallback assumption.
+- Move on without pressure.
 
-If the user's answer raises a NEW question:
+**On "revise" (for assumptions):**
 
-- Add it to the list and note it will be covered.
-- Stay on the current flow — don't get sidetracked.
+- Follow up with a plain text prompt: "What should the revised assumption be?"
+- Record the new assumption.
 
-### 6. Update the plan file
+**On an answer that reveals a NEW question:**
 
-After all questions are addressed, update `docs/<TICKET_KEY>-tasks.md`:
+- Do NOT ask it now.
+- Say: "Your answer raised a new consideration. I'm adding it as Question
+  <N+1> to the manifest. You'll see it after we finish the current list."
+- When the original manifest is exhausted, present the updated manifest section
+  showing only the new questions, and get confirmation before proceeding.
 
-#### a. Append a Decisions Log
+### Phase 3 — Update the plan file and summarize
+
+#### 3a. Update `docs/<TICKET_KEY>-tasks.md`
+
+**Append a Decisions Log:**
 
 ```markdown
 ## Decisions Log
@@ -268,33 +325,54 @@ After all questions are addressed, update `docs/<TICKET_KEY>-tasks.md`:
 | 3   | Task 4 question | Error handling strategy? | Return 422 with details | Task 4 updated     |
 ```
 
-#### b. Inline updates
+**Inline updates:**
 
-- In the `Assumptions and Constraints` section, mark each assumption as
+- In `Assumptions and Constraints`, mark each as
   `✅ Confirmed` or `❌ Revised: <new assumption>`.
 - In each task's `Questions to answer before starting`, replace the question
   with the answer: `~~<question>~~ → <answer>`.
 - Update `Implementation notes` if the answer changes the approach.
 
-### 7. Final summary
+#### 3b. Final summary
 
-After all questions are done, present:
+Present a visual summary:
 
+````markdown
+## Clarification Complete — <TICKET_KEY>
+
+```mermaid
+pie title Resolution Status
+    "Resolved" : <N>
+    "Confirmed" : <N>
+    "Revised" : <N>
+    "Skipped (using fallback)" : <N>
 ```
-All done! Here's what we covered:
 
-- <N> questions resolved
-- <N> assumptions confirmed
-- <N> assumptions revised
-- <N> items left unresolved (using fallback assumptions)
+| Metric                | Count |
+| --------------------- | ----- |
+| Questions resolved    | <N>   |
+| Assumptions confirmed | <N>   |
+| Assumptions revised   | <N>   |
+| Items skipped         | <N>   |
+| New questions added   | <N>   |
 
-The task plan at docs/<TICKET_KEY>-tasks.md has been updated with all decisions.
+**Key changes to the plan:**
 
-Key changes to the plan:
 - <bullet list of material changes, if any>
 
-You're ready to start execution whenever you like.
+The task plan at `docs/<TICKET_KEY>-tasks.md` has been updated with all
+decisions.
+````
+
+Then use an interactive prompt:
+
 ```
+- "Start executing tasks"
+- "Review the updated plan first"
+- "I have more questions"
+```
+
+---
 
 ## Behavioral Rules
 
