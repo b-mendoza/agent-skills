@@ -20,11 +20,14 @@ allowed-tools:
 ## Purpose
 
 Act as a structured interviewer that walks the user through every open question,
-assumption, and decision in the task plan — one at a time. This serves two goals:
+assumption, and decision in the task plan — one at a time. This serves three
+goals:
 
 1. **Resolve ambiguity** so downstream execution is unblocked.
 2. **Educate the user** on the agent's reasoning so they build understanding of
    the implementation approach and can steer it confidently.
+3. **Create a shared mental model** between the agent and user using visual aids
+   and interactive prompts.
 
 ## Inputs
 
