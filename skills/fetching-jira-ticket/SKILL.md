@@ -1,4 +1,5 @@
 ---
+name: fetching-jira-ticket
 description: >
   Retrieve ALL information from a Jira ticket (description, comments, subtasks,
   attachments metadata, labels, sprint, status, assignee, reporter, etc.) and

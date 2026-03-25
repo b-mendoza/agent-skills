@@ -1,4 +1,5 @@
 ---
+name: creating-jira-subtasks
 description: >
   Create subtasks in Jira based on a previously generated task plan document.
   Reads the plan from docs/<TICKET_KEY>-tasks.md and creates one Jira subtask

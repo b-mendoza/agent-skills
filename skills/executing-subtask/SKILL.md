@@ -1,4 +1,5 @@
 ---
+name: executing-subtask
 description: >
   Execute a single subtask from a Jira task plan. The user must specify which
   task number to execute. Use when the user says "execute task 3", "work on task

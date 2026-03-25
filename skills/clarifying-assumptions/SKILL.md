@@ -1,4 +1,5 @@
 ---
+name: clarifying-assumptions
 description: >
   Walk through a Jira task plan and interactively ask the user to confirm
   assumptions, resolve open questions, and validate decisions. Use when the user

@@ -1,4 +1,5 @@
 ---
+name: planning-jira-tasks
 description: >
   Create an implementation task plan from a previously retrieved Jira ticket
   document. Breaks the ticket into the smallest practical set of focused,
