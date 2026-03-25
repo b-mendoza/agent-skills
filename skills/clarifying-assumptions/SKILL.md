@@ -107,7 +107,7 @@ graph LR
 ```
 
 | Criteria       | Repository pattern   | Direct access      | CQRS               |
-| -------------- | -------------------- | ------------------ | ------------------- |
+| -------------- | -------------------- | ------------------ | ------------------ |
 | Complexity     | Medium               | Low                | High               |
 | Testability    | High (mockable)      | Low                | High               |
 | Fits codebase? | Yes — existing repos | Breaks conventions | Overkill for scope |
@@ -377,12 +377,19 @@ Then use an interactive prompt:
 ## Behavioral Rules
 
 - **ONE question at a time.** Never ask two questions in a single message.
-- **Be a teacher, not an interrogator.** Explain context and trade-offs so the
-  user learns the problem space.
-- **Respect "skip".** Don't pressure the user to answer everything.
+- **NEVER generate questions ad hoc.** Every question comes from the manifest.
+  If new questions surface, update the manifest first.
+- **ALWAYS use interactive tools** for discrete choices. Plain text is only for
+  free-form answers where options can't be predefined.
+- **ALWAYS include a visual** (diagram, table, code snippet, or impact map) with
+  every question. No exceptions.
+- **Be a teacher, not an interrogator.** Visuals and context should help the user
+  understand the problem space, not just answer your question.
+- **Respect "skip".** Don't pressure. Note the fallback and move on.
 - **Stay neutral.** Present options fairly. If you have a recommendation, state
   it as "I'd lean toward X because..." not "You should do X."
 - **Keep it concise.** Each question block should be readable in under 30
-  seconds.
+  seconds. The visuals do the heavy lifting — don't duplicate them in prose.
 - **Track progress.** Always show `Question <current>/<total>` so the user knows
   how far along they are.
+- **No surprises.** The manifest is the contract. Follow it.
