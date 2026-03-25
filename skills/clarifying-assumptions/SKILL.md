@@ -52,22 +52,24 @@ a guided conversation, not reading a wall of text.
 Read `docs/<TICKET_KEY>-tasks.md` and build an internal list of every item that
 needs user input. Categorize them:
 
-| Category                    | Where to find them                                 |
-| --------------------------- | -------------------------------------------------- |
-| **Cross-cutting questions** | `## Cross-Cutting Open Questions` section          |
-| **Assumptions**             | `## Assumptions and Constraints` section           |
-| **Per-task questions**      | `Questions to answer before starting` in each task |
-| **Per-task assumptions**    | Implicit assumptions in `Implementation notes`     |
-| **Dependency risks**        | `Dependencies / prerequisites` that seem uncertain |
+| Category                    | Where to find them                                   |
+| --------------------------- | ---------------------------------------------------- |
+| **Cross-cutting questions** | `## Cross-Cutting Open Questions` section            |
+| **Assumptions**             | `## Assumptions and Constraints` section             |
+| **Per-task questions**      | `Questions to answer before starting` in each task   |
+| **Per-task assumptions**    | Implicit assumptions in `Implementation notes`       |
+| **Dependency risks**        | `Dependencies / prerequisites` that seem uncertain   |
+| **Validation warnings**     | `## Validation Report` — any WARN or unresolved FAIL |
 
 ### 2. Prioritize the list
 
 Order items so that:
 
-1. Cross-cutting questions come first (they unblock the most tasks).
-2. Assumptions that affect architectural decisions come next.
-3. Per-task questions follow, ordered by task number.
-4. Low-impact confirmations come last.
+1. Unresolved FAILs from the validation report come first (they block execution).
+2. Cross-cutting questions come next (they unblock the most tasks).
+3. Assumptions that affect architectural decisions come next.
+4. Per-task questions follow, ordered by task number.
+5. Validation warnings and low-impact confirmations come last.
 
 ### 3. Present a brief overview
 
@@ -79,6 +81,7 @@ I've reviewed the task plan for <TICKET_KEY> and found:
 - <N> cross-cutting open questions
 - <N> assumptions to confirm
 - <N> per-task questions
+- <N> validation warnings to review
 
 I'll walk through these one at a time, starting with the ones that have the
 biggest impact on the overall plan. For each item, I'll explain why it matters
