@@ -21,9 +21,10 @@ allowed-tools:
 ## Purpose
 
 Execute exactly ONE task from the task plan. Delegate the actual implementation
-to the `task-executor` subagent to keep the main agent's context clean for
-coordination and review. After execution, validate the work and update tracking
-artifacts.
+to the `task-executor` subagent (colocated at
+`./executing-subtask/task-executor.md`) to keep the main agent's
+context clean for coordination and review. After execution, validate the work
+and update tracking artifacts.
 
 ## Inputs
 
@@ -35,6 +36,14 @@ artifacts.
 Both the ticket snapshot (`docs/<TICKET_KEY>.md`) and the task plan
 (`docs/<TICKET_KEY>-tasks.md`) must exist. If either is missing, tell the user
 which prerequisite skill to run.
+
+## Subagent
+
+This skill uses one subagent colocated in this folder:
+
+| Subagent      | File                                   | Purpose                            |
+| ------------- | -------------------------------------- | ---------------------------------- |
+| task-executor | `./executing-subtask/task-executor.md` | Performs the actual implementation |
 
 ## Output
 
@@ -98,9 +107,9 @@ needs:
 - If the definition of done includes new tests, write them.
 ```
 
-### 3. Delegate to the task-executor subagent
+Write this brief to `docs/<TICKET_KEY>-task-<N>-brief.md`.
 
-Write the execution brief to a temporary file and invoke the subagent:
+### 3. Delegate to the task-executor subagent
 
 ```
 agent task-executor "Execute the task described in docs/<TICKET_KEY>-task-<N>-brief.md"
