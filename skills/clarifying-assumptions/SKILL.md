@@ -12,6 +12,7 @@ allowed-tools:
   - Read
   - Write
   - Grep
+  - mcp__mermaid__*
 ---
 
 # Clarifying Assumptions
