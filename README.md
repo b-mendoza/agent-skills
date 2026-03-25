@@ -17,8 +17,9 @@ implemented code:
    full Jira ticket data (metadata, description, comments, subtasks, links,
    custom fields) into a local `docs/<TICKET_KEY>.md` snapshot.
 
-2. **[planning-jira-tasks](skills/planning-jira-tasks/SKILL.md)** — Delegates
-   to a `task-planner` subagent to produce a task plan at
+2. **[planning-jira-tasks](skills/planning-jira-tasks/SKILL.md)** — Orchestrates
+   a five-stage subagent pipeline (decompose → detail → map dependencies →
+   prioritize → validate) to produce a task plan at
    `docs/<TICKET_KEY>-tasks.md` from the ticket snapshot.
 
 3. **[clarifying-assumptions](skills/clarifying-assumptions/SKILL.md)** — Walks
