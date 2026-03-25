@@ -21,10 +21,9 @@ allowed-tools:
 ## Purpose
 
 Execute exactly ONE task from the task plan. Delegate the actual implementation
-to the `task-executor` subagent (colocated at
-`./executing-subtask/task-executor.md`) to keep the main agent's
-context clean for coordination and review. After execution, validate the work
-and update tracking artifacts.
+to the `task-executor` subagent (see `./task-executor.md` in this skill folder)
+to keep the main agent's context clean for coordination and review. After
+execution, validate the work and update tracking artifacts.
 
 ## Inputs
 
@@ -37,13 +36,17 @@ Both the ticket snapshot (`docs/<TICKET_KEY>.md`) and the task plan
 (`docs/<TICKET_KEY>-tasks.md`) must exist. If either is missing, tell the user
 which prerequisite skill to run.
 
-## Subagent
+## Subagents
 
-This skill uses one subagent colocated in this folder:
+This skill uses one subagent, colocated in this folder:
 
-| Subagent      | File                                   | Purpose                            |
-| ------------- | -------------------------------------- | ---------------------------------- |
-| task-executor | `./executing-subtask/task-executor.md` | Performs the actual implementation |
+| Subagent      | File                 | Purpose                            |
+| ------------- | -------------------- | ---------------------------------- |
+| task-executor | `./task-executor.md` | Performs the actual implementation |
+
+Before delegating, read the subagent file to understand its contract (expected
+input format, output format, and rules). The path is relative to this skill's
+directory.
 
 ## Output
 
