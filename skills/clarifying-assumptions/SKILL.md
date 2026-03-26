@@ -1,6 +1,6 @@
 ---
 name: "clarifying-assumptions"
-description: 'Walk through a Jira task plan and interactively ask the user to confirm assumptions, resolve open questions, and validate decisions. Use when the user says "review the plan", "ask me questions", "clarify assumptions", "let''s go through the questions", "grill me on the plan", or "validate plan for PROJECT-1234". Also triggered by the orchestrating-jira-workflow skill as Phase 3 of the end-to-end pipeline. Requires that a task plan exists at docs/<TICKET_KEY>-tasks.md. This skill is conversational — it asks ONE question at a time and waits for a response before continuing.'
+description: 'Walk through a Jira task plan and interactively confirm assumptions, resolve open questions, and validate decisions — one question at a time. Use when the user says "review the plan", "ask me questions", "clarify assumptions", "let''s go through the questions", "grill me on the plan", "validate plan for PROJECT-1234", or anything about reviewing, questioning, or validating a task plan. Also triggered by the orchestrating-jira-workflow skill as Phase 3 of the pipeline. Requires a task plan at docs/<TICKET_KEY>-tasks.md.'
 ---
 
 # Clarifying Assumptions
@@ -8,13 +8,11 @@ description: 'Walk through a Jira task plan and interactively ask the user to co
 ## Purpose
 
 Act as a structured interviewer that walks the user through every open question,
-assumption, and decision in the task plan — one at a time. This serves three
-goals:
+assumption, and decision in the task plan — one at a time. Three goals:
 
 1. **Resolve ambiguity** so downstream execution is unblocked.
-2. **Educate the user** on the agent's reasoning so they build understanding of
-   the implementation approach and can steer it confidently.
-3. **Create a shared mental model** between the agent and user using visual aids
+2. **Educate** the user on the agent's reasoning so they can steer confidently.
+3. **Build a shared mental model** between agent and user through visual context
    and interactive prompts.
 
 ## Platform Adaptation
@@ -45,43 +43,43 @@ ASCII diagrams are an acceptable fallback in terminal environments.
 The task plan file must already exist at `docs/<TICKET_KEY>-tasks.md`.
 If it does not, tell the user to run the **planning-jira-tasks** skill first.
 
-### Input contract (produced by upstream skill)
+### Input contract (from upstream skill)
 
-The input file `docs/<TICKET_KEY>-tasks.md` must contain these sections
-(produced by the `planning-jira-tasks` skill). If any are missing, the plan
-was not generated correctly — stop and ask the user to re-run planning.
+The input file must contain these sections (produced by `planning-jira-tasks`).
+If any are missing, the plan was not generated correctly — stop and ask the user
+to re-run planning.
 
-| Required section                     | Used in phase            | Why                                          |
-| ------------------------------------ | ------------------------ | -------------------------------------------- |
-| `## Assumptions and Constraints`     | Phase 1 (manifest)       | Items to present for user confirmation       |
-| `## Cross-Cutting Open Questions`    | Phase 1 (manifest)       | High-impact questions that affect many tasks |
-| `## Tasks` with per-task subsections | Phase 1 (manifest)       | Per-task questions and implicit assumptions  |
-| `## Validation Report`               | Phase 1 (manifest)       | WARN/FAIL items become clarification Qs      |
-| `## Dependency Graph`                | Phase 2 (visual context) | Impact maps for dependency questions         |
+| Required section                     | Used for                                         |
+| ------------------------------------ | ------------------------------------------------ |
+| `## Assumptions and Constraints`     | Items to present for user confirmation           |
+| `## Cross-Cutting Open Questions`    | High-impact questions that affect multiple tasks |
+| `## Tasks` with per-task subsections | Per-task questions and implicit assumptions      |
+| `## Validation Report`               | WARN/FAIL items become clarification questions   |
+| `## Dependency Graph`                | Impact maps for dependency-related questions     |
 
 ## Output
 
-- The same task plan file at `docs/<TICKET_KEY>-tasks.md`, updated in-place.
-- A `## Decisions Log` section appended to the plan file.
+The same task plan file at `docs/<TICKET_KEY>-tasks.md`, updated in-place, with:
+
+- A `## Decisions Log` table appended
+- Assumptions annotated (`✅ Confirmed` / `❌ Revised: <new text>`)
+- Per-task questions resolved (`~~<question>~~ → <answer>`)
+- Updated `Implementation notes` where answers changed the approach
 
 ### Output contract (consumed by downstream skills)
 
-After this skill completes, the plan file must contain these additions for
-downstream skills to function correctly:
-
-| Addition                                                        | Required by            | Why                                               |
-| --------------------------------------------------------------- | ---------------------- | ------------------------------------------------- |
-| `## Decisions Log` table                                        | creating-jira-subtasks | Subtask descriptions reflect resolved decisions   |
-| Assumptions annotated (`✅ Confirmed` / `❌ Revised`)           | executing-subtask      | Executor needs confirmed assumptions, not open Qs |
-| Per-task questions resolved (strikethrough + answer)            | executing-subtask      | Pre-flight check verifies no unresolved questions |
-| Updated `Implementation notes` (where answers changed approach) | executing-subtask      | Executor follows the updated approach             |
+| Addition                                                | Required by            | Why                                               |
+| ------------------------------------------------------- | ---------------------- | ------------------------------------------------- |
+| `## Decisions Log` table                                | creating-jira-subtasks | Subtask descriptions reflect resolved decisions   |
+| Annotated assumptions                                   | executing-subtask      | Executor needs confirmed assumptions, not open Qs |
+| Resolved per-task questions                             | executing-subtask      | Pre-flight check verifies no unresolved questions |
+| Updated `Implementation notes` (where approach changed) | executing-subtask      | Executor follows the updated approach             |
 
 ## Subagent Registry
 
-This skill has no subagents. It runs entirely inline because it is
-conversational — it requires the user's full conversation history to function
-(multi-turn Q&A with interactive prompts). Delegating to a subagent would lose
-the conversation context.
+No subagents. This skill runs inline because it is conversational — it needs the
+user's full conversation history for multi-turn Q&A. Delegating to a subagent
+would lose that context.
 
 ---
 
@@ -160,15 +158,12 @@ cascading effects. The goal is understanding, not decoration.
 
 ## Execution Phases
 
-This skill runs in three distinct phases. Each phase must complete before the
-next begins.
-
 ### Phase 1 — Build and present the question manifest
 
-#### 1a. Read and inventory all items
+#### 1a. Read and categorize all items
 
-Read `docs/<TICKET_KEY>-tasks.md` and build an internal list of every item that
-needs user input. Categorize them:
+Read `docs/<TICKET_KEY>-tasks.md` and build the complete list of items needing
+user input:
 
 | Category                    | Where to find them                                   |
 | --------------------------- | ---------------------------------------------------- |
@@ -179,142 +174,98 @@ needs user input. Categorize them:
 | **Dependency risks**        | `Dependencies / prerequisites` that seem uncertain   |
 | **Validation warnings**     | `## Validation Report` — any WARN or unresolved FAIL |
 
-#### 1b. Prioritize the list
+#### 1b. Prioritize
 
-Order items so that:
+Order items so blocking issues surface first:
 
-1. Unresolved FAILs from the validation report come first (they block execution).
-2. Cross-cutting questions come next (they unblock the most tasks).
-3. Assumptions that affect architectural decisions come next.
-4. Per-task questions follow, ordered by task number.
-5. Validation warnings and low-impact confirmations come last.
+1. Unresolved FAILs from the validation report (they block execution)
+2. Cross-cutting questions (they unblock the most tasks)
+3. Assumptions affecting architectural decisions
+4. Per-task questions, ordered by task number
+5. Validation warnings and low-impact confirmations
 
-#### 1c. Present the question manifest
+#### 1c. Present the manifest
 
-Present the COMPLETE manifest to the user using this format:
+Show the complete, numbered list to the user:
 
-````markdown
+```markdown
 ## Question Manifest for <TICKET_KEY>
 
-I've analyzed the task plan and identified **<N> items** that need your input
-before we can proceed with implementation. Here's the full list, organized by
-impact:
-
-```mermaid
-pie title Questions by Category
-    "Blocking issues" : <N>
-    "Cross-cutting questions" : <N>
-    "Assumptions to confirm" : <N>
-    "Per-task questions" : <N>
-    "Validation warnings" : <N>
-```
+I've analyzed the task plan and found **<N> items** that need your input.
+Here's the full list, organized by impact:
 
 | #   | Category           | Short description                 | Affects tasks | Input type     |
 | --- | ------------------ | --------------------------------- | ------------- | -------------- |
 | 1   | 🔴 Blocking        | Missing API version specification | 3, 5, 7       | Single select  |
 | 2   | 🟡 Cross-cutting   | Authentication strategy           | 2, 4, 6       | Single select  |
-| 3   | 🟡 Cross-cutting   | Error response format             | All           | Single select  |
-| 4   | 🔵 Assumption      | Database migration strategy       | 1             | Confirm/revise |
-| 5   | 🔵 Assumption      | Test coverage target              | All           | Single select  |
-| 6   | ⚪ Task 3 question | Caching layer needed?             | 3             | Yes/No         |
-| 7   | ⚪ Task 5 question | Retry policy for external API     | 5             | Single select  |
-| 8   | ⚪ Validation warn | Task 6 DoD is vague               | 6             | Free text      |
+| 3   | 🔵 Assumption      | Database migration strategy       | 1             | Confirm/revise |
+| 4   | ⚪ Task 3 question | Caching layer needed?             | 3             | Yes/No         |
+
+| ...
 
 **Estimated time:** ~<N> minutes (most questions have pre-defined options).
 
-This is the complete list. I won't add surprise questions mid-conversation.
-If your answers reveal something new, I'll show you the updated manifest
-before asking any new questions.
-````
+This is the complete list. No surprise questions mid-conversation.
+If your answers reveal something new, I'll show you the updated manifest first.
+```
 
-Then ask the user to confirm they're ready to proceed, or if they want to
-reorder, skip, or add anything before starting.
-
-Use an interactive prompt:
+Then ask whether the user is ready to start, or wants to reorder, skip, or
+add anything. Use interactive selection if available:
 
 ```
-- "Let's start from the top"
-- "I want to skip some — let me review"
-- "I have questions about the manifest first"
+1. Let's start from the top
+2. I want to skip some — let me review
+3. I have questions about the manifest first
 ```
 
 ### Phase 2 — Walk through questions one at a time
 
-For each question in the manifest, follow this exact sequence:
+For each question in the manifest:
 
 #### 2a. Show progress
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Question <current>/<total> — [<category emoji> <category>]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-#### 2b. Provide visual context (MANDATORY — Rule 2)
-
-Before asking the question, show at least one visual element that illustrates
-the context. Choose the most appropriate visual type based on what the question
-is about.
+#### 2b. Provide context (proportional to complexity — see Principle 3)
 
 Include:
 
-- **What this relates to:** 1–2 sentences on WHERE in the plan this came from.
-- **Visual:** Diagram, table, code snippet, or impact map.
-- **Why this matters:** 1–2 sentences on what changes downstream.
+- **What this relates to:** 1-2 sentences on where in the plan this came from.
+- **Visual context:** Table, code snippet, diagram, or impact note — whatever
+  makes the difference between options most obvious.
+- **Why this matters:** 1-2 sentences on what changes downstream (skip if the
+  impact is obvious or self-contained).
 
-#### 2c. Ask using interactive tools (MANDATORY — Rule 1)
+#### 2c. Ask using the best available input method (see Principle 2)
 
-Present the options using the appropriate interactive tool. NEVER fall back to
-"type A, B, or C" when a selection widget is available.
-
-For questions with discrete options:
-
-- Use single-select or multi-select interactive prompts.
-- Always include a brief label for each option (no long descriptions in the
-  selection widget — those go in the visual context above).
-- If "Other / custom answer" is a valid choice, include it as the last option
-  in the interactive prompt. If selected, follow up with a free-text prompt.
-
-For confirmation questions (assumptions):
-
-- Use a single-select with: "✅ Confirm as-is", "❌ Revise", "⏭️ Skip"
-
-For free-text questions:
-
-- Ask in plain text, but still provide the visual context first.
+For discrete options, use interactive selection or numbered options. For
+free-text questions, ask in plain text but still provide context first.
 
 #### 2d. Record the answer
 
 After the user responds:
 
-1. **Acknowledge** their answer in one sentence.
-2. **State downstream implications** if the answer changes anything — e.g.,
-   "This means Task 3's implementation notes will shift from REST to GraphQL."
-3. **Move to the next question.** Do NOT elaborate or re-ask.
+1. **Acknowledge** in one sentence.
+2. **State downstream impact** if the answer changes something — e.g., "This
+   means Task 3's implementation notes will shift from REST to GraphQL."
+3. **Move on.** Don't elaborate or re-ask.
 
-**On "skip":**
+**On "skip":** Record as unresolved with the fallback assumption. Move on.
 
-- Record as unresolved with the fallback assumption.
-- Move on without pressure.
+**On "revise":** Follow up with: "What should the revised assumption be?"
+Record the new text.
 
-**On "revise" (for assumptions):**
-
-- Follow up with a plain text prompt: "What should the revised assumption be?"
-- Record the new assumption.
-
-**On an answer that reveals a NEW question:**
-
-- Do NOT ask it now.
-- Say: "Your answer raised a new consideration. I'm adding it as Question
-  <N+1> to the manifest. You'll see it after we finish the current list."
-- When the original manifest is exhausted, present the updated manifest section
-  showing only the new questions, and get confirmation before proceeding.
+**On an answer that reveals a new question:** Don't ask it now. Say: _"Your
+answer raised a new consideration. I'm adding it as Question <N+1>."_ When the
+original manifest is done, present the new questions for confirmation first.
 
 ### Phase 3 — Update the plan file and summarize
 
 #### 3a. Update `docs/<TICKET_KEY>-tasks.md`
 
-**Append a Decisions Log:**
+Append a Decisions Log:
 
 ```markdown
 ## Decisions Log
@@ -328,45 +279,28 @@ After the user responds:
 | 3   | Task 4 question | Error handling strategy? | Return 422 with details | Task 4 updated     |
 ```
 
-**Inline updates:**
+Apply inline updates:
 
-- In `Assumptions and Constraints`, mark each as
-  `✅ Confirmed` or `❌ Revised: <new assumption>`.
-- In each task's `Questions to answer before starting`, replace the question
-  with the answer: `~~<question>~~ → <answer>`.
-- Update `Implementation notes` if the answer changes the approach.
+- In `Assumptions and Constraints`: mark each `✅ Confirmed` or `❌ Revised: <new text>`
+- In per-task `Questions to answer before starting`: `~~<question>~~ → <answer>`
+- Update `Implementation notes` where answers changed the approach
 
 #### 3b. Validate updates
 
-After modifying the plan file, re-read it and verify:
+Re-read the file and verify:
 
-- [ ] Every question from the manifest has a corresponding entry in the
-      Decisions Log (either resolved, confirmed, revised, or skipped).
-- [ ] Every assumption in `Assumptions and Constraints` is annotated
-      (confirmed, revised, or left untouched if not in scope).
-- [ ] Every per-task `Questions to answer before starting` section reflects
-      the answers given (strikethrough + answer, or marked as skipped).
-- [ ] `Implementation notes` sections are updated where answers changed the
-      approach.
-- [ ] The `## Decisions Log` section exists and is well-formed (downstream
-      skills check for its presence as a phase-completion signal).
+- Every manifest question has a Decisions Log entry (resolved, confirmed, revised, or skipped)
+- Every assumption in `Assumptions and Constraints` is annotated
+- Every per-task question reflects the answer given
+- `Implementation notes` are updated where answers changed the approach
+- The `## Decisions Log` section exists and is well-formed (downstream skills check for it)
 
-If any updates are missing, apply them before presenting the summary.
+Fix any gaps before presenting the summary.
 
 #### 3c. Final summary
 
-Present a visual summary:
-
-````markdown
+```markdown
 ## Clarification Complete — <TICKET_KEY>
-
-```mermaid
-pie title Resolution Status
-    "Resolved" : <N>
-    "Confirmed" : <N>
-    "Revised" : <N>
-    "Skipped (using fallback)" : <N>
-```
 
 | Metric                | Count |
 | --------------------- | ----- |
@@ -378,38 +312,30 @@ pie title Resolution Status
 
 **Key changes to the plan:**
 
-- <bullet list of material changes, if any>
+- <list material changes, if any>
 
-The task plan at `docs/<TICKET_KEY>-tasks.md` has been updated with all
-decisions.
-````
+The task plan at `docs/<TICKET_KEY>-tasks.md` has been updated with all decisions.
+```
 
-Then use an interactive prompt:
+Then ask what's next:
 
 ```
-- "Create subtasks in Jira"
-- "Review the updated plan first"
-- "I have more questions"
+1. Create subtasks in Jira
+2. Review the updated plan first
+3. I have more questions
 ```
 
 ---
 
-## Behavioral Rules
+## Behavioral Guardrails
 
-- **ONE question at a time.** Never ask two questions in a single message.
-- **NEVER generate questions ad hoc.** Every question comes from the manifest.
-  If new questions surface, update the manifest first.
-- **ALWAYS use interactive tools** for discrete choices. Plain text is only for
-  free-form answers where options can't be predefined.
-- **ALWAYS include a visual** (diagram, table, code snippet, or impact map) with
-  every question. No exceptions.
-- **Be a teacher, not an interrogator.** Visuals and context should help the user
-  understand the problem space, not just answer your question.
-- **Respect "skip".** Don't pressure. Note the fallback and move on.
-- **Stay neutral.** Present options fairly. If you have a recommendation, state
-  it as "I'd lean toward X because..." not "You should do X."
-- **Keep it concise.** Each question block should be readable in under 30
-  seconds. The visuals do the heavy lifting — don't duplicate them in prose.
-- **Track progress.** Always show `Question <current>/<total>` so the user knows
-  how far along they are.
-- **No surprises.** The manifest is the contract. Follow it.
+- **One question per message.** Never batch multiple questions in a single turn.
+- **The manifest is the source of truth.** Every question comes from it. New
+  questions get added to it before being asked.
+- **Be a teacher, not an interrogator.** Context should help the user understand
+  the problem space, not just answer your question.
+- **Respect "skip."** Note the fallback, move on, no pressure.
+- **Stay neutral on options.** If you have a recommendation, frame it as "I'd
+  lean toward X because..." not "You should do X."
+- **Keep each question block scannable** — readable in under 30 seconds. Let the
+  visuals carry the weight; don't duplicate them in prose.
