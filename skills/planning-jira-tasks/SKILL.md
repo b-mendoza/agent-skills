@@ -1,13 +1,6 @@
 ---
 name: planning-jira-tasks
-description: >
-  Create an implementation task plan from a previously retrieved Jira ticket
-  document. Breaks the ticket into the smallest practical set of focused,
-  independent, and executable tasks. Use when the user says "plan the ticket",
-  "create tasks", "break down the ticket", "create an implementation plan", or
-  "plan JNS-1234". Requires that the ticket information has already been
-  retrieved into docs/<TICKET_KEY>.md. This skill produces a plan ONLY — it
-  does NOT implement anything.
+description: 'Create an implementation task plan from a previously retrieved Jira ticket document. Breaks the ticket into the smallest practical set of focused, independent, and executable tasks. Use when the user says "plan the ticket", "create tasks", "break down the ticket", "create an implementation plan", or "plan JNS-1234". Also triggered by the orchestrating-jira-workflow skill as Phase 2 of the end-to-end pipeline. Requires that the ticket information has already been retrieved into docs/<TICKET_KEY>.md. This skill produces a plan ONLY — it does NOT implement anything.'
 ---
 
 # Planning Jira Tasks
@@ -32,28 +25,68 @@ intermediate artifacts, and performs a final quality check.
 The ticket snapshot file must already exist at `docs/<TICKET_KEY>.md`.
 If it does not, tell the user to run the **fetching-jira-ticket** skill first.
 
+### Input contract (produced by upstream skill)
+
+The input file `docs/<TICKET_KEY>.md` must contain these sections (produced by
+the `fetching-jira-ticket` skill). If any are missing, the ticket was not
+fetched correctly — stop and ask the user to re-fetch.
+
+| Required section         | Used by subagent(s)           | Why                                         |
+| ------------------------ | ----------------------------- | ------------------------------------------- |
+| `## Description`         | task-decomposer, task-planner | Primary source for identifying work items   |
+| `## Acceptance Criteria` | task-planner, task-validator  | Maps to Definition of Done per task         |
+| `## Comments`            | task-decomposer, task-planner | Contains decisions and scope clarifications |
+| `## Subtasks`            | task-decomposer               | Existing work to account for, not duplicate |
+| `## Linked Issues`       | dependency-mapper             | Cross-ticket dependency awareness           |
+
 ## Output
 
 ```
 docs/<TICKET_KEY>-tasks.md
 ```
 
-## Subagent Pipeline
+### Output contract (consumed by downstream skills)
 
-This skill uses five subagents, executed in sequence. Each subagent's output
-feeds into the next. All subagent definitions are colocated in this skill folder.
+The output file **must** contain all of these sections for downstream skills to
+function correctly.
+
+| Section                              | Required by                                                       | Why                                            |
+| ------------------------------------ | ----------------------------------------------------------------- | ---------------------------------------------- |
+| `## Ticket Summary`                  | clarifying-assumptions                                            | Context for question presentation              |
+| `## Assumptions and Constraints`     | clarifying-assumptions                                            | Items to confirm with user                     |
+| `## Cross-Cutting Open Questions`    | clarifying-assumptions                                            | Questions that affect multiple tasks           |
+| `## Tasks` (each with 6 subsections) | clarifying-assumptions, creating-jira-subtasks, executing-subtask | The core plan content                          |
+| `## Execution Order Summary`         | creating-jira-subtasks                                            | Determines subtask creation sequence           |
+| `## Dependency Graph`                | executing-subtask                                                 | Pre-flight dependency checks before execution  |
+| `## Validation Report`               | clarifying-assumptions                                            | WARN/FAIL items become clarification questions |
+
+**Required subsections per task** (enforced by task-validator):
+
+1. `**Objective:**`
+2. `**Relevant requirements and context:**`
+3. `**Questions to answer before starting:**`
+4. `**Implementation notes:**`
+5. `**Definition of done:**`
+6. `**Likely files / artifacts affected:**`
+
+Plus these annotations added by later pipeline stages:
+
+7. `**Dependencies / prerequisites:**` (added by dependency-mapper)
+8. `**Priority:**` annotation (added by task-prioritizer)
+
+## Subagent Registry
+
+| Subagent            | Path                               | Purpose                          |
+| ------------------- | ---------------------------------- | -------------------------------- |
+| `task-decomposer`   | `./subagents/task-decomposer.md`   | Raw task list (the WHAT)         |
+| `task-planner`      | `./subagents/task-planner.md`      | Detailed tasks (the HOW)         |
+| `dependency-mapper` | `./subagents/dependency-mapper.md` | Dependency graph + critical path |
+| `task-prioritizer`  | `./subagents/task-prioritizer.md`  | Final execution order            |
+| `task-validator`    | `./subagents/task-validator.md`    | QA gate — 19 validation checks   |
 
 Before running the pipeline, read each subagent file to understand its contract
 (expected input, output format, and rules). Paths are relative to this skill's
 directory.
-
-| Stage | Subagent          | File                     | Purpose                          |
-| ----- | ----------------- | ------------------------ | -------------------------------- |
-| 1     | task-decomposer   | `./task-decomposer.md`   | Raw task list (the WHAT)         |
-| 2     | task-planner      | `./task-planner.md`      | Detailed tasks (the HOW)         |
-| 3     | dependency-mapper | `./dependency-mapper.md` | Dependency graph + critical path |
-| 4     | task-prioritizer  | `./task-prioritizer.md`  | Final execution order            |
-| 5     | task-validator    | `./task-validator.md`    | QA gate — 19 validation checks   |
 
 ### Pipeline flow
 
@@ -104,7 +137,8 @@ cleaned up after the final plan is written.
 
 - Verify `docs/<TICKET_KEY>.md` exists. If not, stop and tell the user.
 - Read the file to confirm it follows the expected template (has `## Description`,
-  `## Subtasks`, etc.).
+  `## Subtasks`, etc.). If required sections from the input contract table above
+  are missing, stop and ask the user to re-fetch the ticket.
 
 ### 2. Run the pipeline
 
@@ -153,7 +187,23 @@ agent task-validator "Read docs/<KEY>.md (ticket) and docs/<KEY>-stage-4-priorit
 
 **Sanity check:** File exists. Validation report section is present.
 
-### 3. Clean up intermediate files
+### 3. Post-pipeline output validation
+
+After Stage 5 completes, verify the final `docs/<KEY>-tasks.md` satisfies the
+output contract. Specifically check:
+
+- [ ] `## Ticket Summary` section exists.
+- [ ] `## Assumptions and Constraints` section exists.
+- [ ] `## Cross-Cutting Open Questions` section exists (even if empty).
+- [ ] `## Execution Order Summary` table exists.
+- [ ] `## Dependency Graph` section exists.
+- [ ] `## Validation Report` section exists.
+- [ ] Every `## Task N:` section has all 8 required subsections.
+
+If any are missing, the task-validator should have caught them. Re-run Stage 5
+with specific feedback about what's missing. If it fails again, stop and report.
+
+### 4. Clean up intermediate files
 
 After the final `docs/<KEY>-tasks.md` is written and passes validation:
 
@@ -164,7 +214,7 @@ rm -f docs/<KEY>-stage-3-dependencies.md
 rm -f docs/<KEY>-stage-4-prioritized.md
 ```
 
-### 4. Report to user
+### 5. Report to user
 
 Tell the user:
 
