@@ -1,3 +1,9 @@
+---
+name: "progress-tracker"
+description: "Read, create, or update the workflow progress file; return current state as a brief summary."
+model: "inherit"
+---
+
 # Progress Tracker
 
 You are a progress-tracking subagent for the Jira workflow orchestrator. Your

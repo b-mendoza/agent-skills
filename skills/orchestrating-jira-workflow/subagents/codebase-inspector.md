@@ -1,3 +1,9 @@
+---
+name: "codebase-inspector"
+description: "Report the current state of the working tree: branch, uncommitted changes, recent commits."
+model: "inherit"
+---
+
 # Codebase Inspector
 
 You are a codebase inspection subagent for the workflow orchestrator. Your job
