@@ -1,7 +1,7 @@
 # Agent skills
 
-Skills for AI-assisted development workflows. Each skill is a markdown file
-that tells a Cursor agent how to do a specific task.
+A collection of skills for Cursor agents. Each skill is a markdown file that
+tells the agent how to handle a specific task.
 
 ## Project skills
 
@@ -9,65 +9,61 @@ These live under [`skills/`](skills/).
 
 ### Jira workflow pipeline
 
-Six skills that take you from a Jira ticket to implemented code. The
-orchestrator is the entry point — it coordinates the five phase skills
-in sequence, tracks progress, and handles resume after interruptions.
+Six skills that take you from a Jira ticket to working code. The orchestrator
+is the entry point. It calls the other five in order, tracks progress, and
+can resume if something interrupts it.
 
 - [orchestrating-jira-workflow](skills/orchestrating-jira-workflow/SKILL.md) -
-  Top-level coordinator for the full ticket lifecycle. Dispatches to the
-  five phase skills below, validates artifacts between phases, maintains
-  `docs/<TICKET_KEY>-progress.md`, and gates destructive Jira mutations
-  on user confirmation. Supports resuming from any phase.
+  Runs the whole pipeline. Calls each phase, checks results between steps,
+  and saves progress to `docs/<TICKET_KEY>-progress.md`. Asks before making
+  any changes in Jira. You can resume from any phase.
 
-The five phase skills it dispatches to, in order:
+The five phases, in order:
 
 1. [fetching-jira-ticket](skills/fetching-jira-ticket/SKILL.md) - Pulls
-   Jira ticket data (metadata, description, comments, subtasks, links,
-   custom fields) into a local `docs/<TICKET_KEY>.md` file. Hands off to a
-   `ticket-retriever` subagent when there are too many related issues.
+   ticket data from Jira (description, comments, subtasks, linked issues,
+   custom fields) and writes it to `docs/<TICKET_KEY>.md`. When there are
+   many related issues, a `ticket-retriever` subagent handles the fetching.
 
-2. [planning-jira-tasks](skills/planning-jira-tasks/SKILL.md) - Runs a
-   five-stage subagent pipeline (decompose, detail, map dependencies,
-   prioritize, validate) and writes the result to
+2. [planning-jira-tasks](skills/planning-jira-tasks/SKILL.md) - Breaks the
+   ticket into tasks through a five-step subagent pipeline: decompose,
+   detail, map dependencies, prioritize, validate. Output goes to
    `docs/<TICKET_KEY>-tasks.md`.
 
 3. [clarifying-assumptions](skills/clarifying-assumptions/SKILL.md) - Goes
-   through the plan one question at a time, resolving ambiguities and
-   recording answers in a Decisions Log.
+   through the plan one question at a time, sorting out anything unclear.
+   Answers go into a Decisions Log.
 
 4. [creating-jira-subtasks](skills/creating-jira-subtasks/SKILL.md) - Reads
-   the task plan, builds a creation manifest, and creates Jira subtasks via
-   MCP. For plans with more than three tasks, a `subtask-creator` subagent
-   handles the work. Updates the local plan with subtask keys afterwards.
+   the plan and creates subtasks in Jira. If the plan has more than three
+   tasks, a `subtask-creator` subagent does the work. Updates the local plan
+   with the new subtask keys afterwards.
 
-5. [executing-subtask](skills/executing-subtask/SKILL.md) - Picks up one
-   task from the plan, runs it through a `task-executor` subagent with
-   review and retry logic, then updates the plan status and Jira.
+5. [executing-subtask](skills/executing-subtask/SKILL.md) - Takes one task
+   from the plan, runs it through a `task-executor` subagent with review and
+   retry, then marks it done in both the plan file and Jira.
 
 ### Standalone
 
 - [validate-implementation-plan](skills/validate-implementation-plan/SKILL.md) -
-  Checks AI-generated implementation plans for requirements coverage, YAGNI
-  compliance, and assumption risks. Uses expert personas to annotate plans
-  with severity-leveled findings.
+  Reviews AI-generated plans for missing requirements, unnecessary work, and
+  risky assumptions. Expert personas annotate issues by severity.
 
-- [recency-guard](skills/recency-guard/SKILL.md) - Validates factual
-  responses through four steps: recency, self-verification, completeness,
-  and clarity. Catches stale information, overconfident claims, and missing
-  requirements before they reach the user.
+- [recency-guard](skills/recency-guard/SKILL.md) - Checks whether factual
+  responses are recent, accurate, complete, and clear. Good for catching
+  outdated info or overconfident claims.
 
 - [workflow-skill-architect](skills/workflow-skill-architect/SKILL.md) -
-  Turns multi-step workflows into Claude Code skills with co-located
-  subagents. Walks you through decomposition, subagent defaults, and
-  general skill hygiene.
+  Helps you turn a multi-step workflow into a skill with subagents. Walks
+  you through splitting the work and setting subagent defaults.
 
 ## Installed skills
 
-Third-party skills managed via [`skills-lock.json`](skills-lock.json),
+Third-party skills listed in [`skills-lock.json`](skills-lock.json), stored
 under `.agents/skills/`.
 
-| Skill                                              | Source                   | Description                                           |
-| -------------------------------------------------- | ------------------------ | ----------------------------------------------------- |
-| [commit-work](.agents/skills/commit-work/SKILL.md) | softaworks/agent-toolkit | Staging and review workflow with Conventional Commits |
-| [gh-cli](.agents/skills/gh-cli/SKILL.md)           | github/awesome-copilot   | Full `gh` CLI reference for GitHub operations         |
-| [humanizer](.agents/skills/humanizer/SKILL.md)     | blader/humanizer         | Remove signs of AI-generated writing from text        |
+| Skill                                              | Source                   | Description                                       |
+| -------------------------------------------------- | ------------------------ | ------------------------------------------------- |
+| [commit-work](.agents/skills/commit-work/SKILL.md) | softaworks/agent-toolkit | Staging and review workflow, Conventional Commits |
+| [gh-cli](.agents/skills/gh-cli/SKILL.md)           | github/awesome-copilot   | Reference for the `gh` command line tool          |
+| [humanizer](.agents/skills/humanizer/SKILL.md)     | blader/humanizer         | Remove signs of AI-generated writing from text    |
