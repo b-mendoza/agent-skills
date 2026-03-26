@@ -1,12 +1,6 @@
 ---
 name: executing-subtask
-description: >
-  Execute a single subtask from a Jira task plan. The user must specify which
-  task number to execute. Use when the user says "execute task 3", "work on task
-  2", "implement task 1", "start task 5 for PROJECT-1234", or "run subtask N".
-  Requires that the task plan exists at docs/<TICKET_KEY>-tasks.md. Executes
-  ONLY the specified task — never continues to the next one without explicit
-  user approval.
+description: 'Execute a single subtask from a Jira task plan. The user must specify which task number to execute. Use when the user says "execute task 3", "work on task 2", "implement task 1", "start task 5 for PROJECT-1234", or "run subtask N". Also triggered by the orchestrating-jira-workflow skill as Phase 5 of the end-to-end pipeline (called once per task). Requires that the task plan exists at docs/<TICKET_KEY>-tasks.md. Executes ONLY the specified task — never continues to the next one without explicit user approval.'
 ---
 
 # Executing Subtask
@@ -14,9 +8,9 @@ description: >
 ## Purpose
 
 Execute exactly ONE task from the task plan. Delegate the actual implementation
-to the `task-executor` subagent (see `./task-executor.md` in this skill folder)
-to keep the main agent's context clean for coordination and review. After
-execution, validate the work and update tracking artifacts.
+to the `task-executor` subagent to keep the main agent's context clean for
+coordination and review. After execution, validate the work and update tracking
+artifacts.
 
 ## Inputs
 
@@ -29,13 +23,31 @@ Both the ticket snapshot (`docs/<TICKET_KEY>.md`) and the task plan
 (`docs/<TICKET_KEY>-tasks.md`) must exist. If either is missing, tell the user
 which prerequisite skill to run.
 
-## Subagents
+### Input contract (produced by upstream skills)
 
-This skill uses one subagent, colocated in this folder:
+The task plan file `docs/<TICKET_KEY>-tasks.md` must contain these sections,
+built up across the preceding four phases:
 
-| Subagent      | File                 | Purpose                            |
-| ------------- | -------------------- | ---------------------------------- |
-| task-executor | `./task-executor.md` | Performs the actual implementation |
+| Required section / element                  | Produced by              | Used in step        | Why                                              |
+| ------------------------------------------- | ------------------------ | ------------------- | ------------------------------------------------ |
+| `## Task <N>:` with all 8 subsections       | planning-jira-tasks      | Step 1 (load)       | Source content for the execution brief           |
+| `## Dependency Graph`                       | planning-jira-tasks      | Step 1 (pre-flight) | Validates dependencies are satisfied             |
+| `## Decisions Log`                          | clarifying-assumptions   | Step 2 (brief)      | Resolved decisions folded into execution context |
+| Per-task `Questions to answer` resolved     | clarifying-assumptions   | Step 1 (pre-flight) | Pre-flight checks all questions are answered     |
+| `## Jira Subtasks` table with keys          | creating-jira-subtasks   | Step 5b (Jira)      | Maps task number to Jira subtask key for status  |
+| `Jira Subtask: <KEY>` in each task section  | creating-jira-subtasks   | Step 5b (Jira)      | Identifies which Jira issue to transition        |
+| `**Status:**` on previously completed tasks | executing-subtask (self) | Step 1 (pre-flight) | Checks whether dependencies are marked complete  |
+
+**Pre-flight gate:** If the `## Jira Subtasks` table is missing, subtasks were
+not created in Jira. Warn the user and ask whether to proceed without Jira
+integration or run the creating-jira-subtasks skill first. This is a warning,
+not a hard block — execution can proceed without Jira tracking.
+
+## Subagent Registry
+
+| Subagent        | Path                           | Purpose                            |
+| --------------- | ------------------------------ | ---------------------------------- |
+| `task-executor` | `./subagents/task-executor.md` | Performs the actual implementation |
 
 Before delegating, read the subagent file to understand its contract (expected
 input format, output format, and rules). The path is relative to this skill's
@@ -45,7 +57,19 @@ directory.
 
 - Implemented code / configuration changes for the specified task.
 - Updated task plan with execution status.
-- Jira subtask transitioned (if Jira MCP available).
+- Jira subtask transitioned (if Jira MCP available and subtask keys present).
+
+### Output contract (consumed by orchestrator and self)
+
+After this skill completes for a given task, the plan file must contain these
+updates:
+
+| Addition                                        | Consumed by        | Why                                            |
+| ----------------------------------------------- | ------------------ | ---------------------------------------------- |
+| `**Status:** ✅ Complete (<date>)` on task      | orchestrator, self | Orchestrator tracks progress; self checks deps |
+| `**Implementation summary:**` on task           | orchestrator       | Progress file gets a concise summary           |
+| `**Files changed:**` list on task               | orchestrator       | Progress reporting                             |
+| `## Jira Subtasks` table status updated to Done | orchestrator       | Reflects current state                         |
 
 ## Execution Steps
 
@@ -56,9 +80,11 @@ Read `docs/<TICKET_KEY>-tasks.md` and extract `## Task <TASK_NUMBER>`.
 **Pre-flight checks — stop if any fail:**
 
 - [ ] The task exists in the plan.
-- [ ] Dependencies listed in `Dependencies / prerequisites` are marked complete.
+- [ ] Dependencies listed in `Dependencies / prerequisites` are marked complete
+      (look for `**Status:** ✅ Complete` on each dependency's task section).
 - [ ] `Questions to answer before starting` are all resolved (no unresolved items
-      without a recorded fallback).
+      without a recorded fallback — look for strikethrough + answer format or
+      `None`).
 
 If pre-flight fails, tell the user what needs to be resolved first and stop.
 
@@ -80,7 +106,7 @@ needs:
 
 ## Implementation Notes
 
-<from task plan>
+<from task plan — must reflect any updates applied during clarification>
 
 ## Definition of Done
 
@@ -144,11 +170,22 @@ In `docs/<TICKET_KEY>-tasks.md`, update the task section:
 
 #### b. Update Jira (if MCP available)
 
-- Transition the subtask to "In Progress" at the start of execution.
+Look up the Jira subtask key from the `Jira Subtask: <KEY>` line in the task
+section, or from the `## Jira Subtasks` table.
+
+- Transition the subtask to "In Progress" at the start of execution (Step 3).
 - Transition the subtask to "Done" after successful review.
 - Add a comment to the subtask summarizing what was implemented.
 
-#### c. Clean up
+If the Jira subtask key is not present (subtasks were never created), skip Jira
+updates silently — do not error.
+
+#### c. Update the Jira Subtasks table
+
+If the `## Jira Subtasks` table exists, update the Status column for this task
+from `To Do` to `Done`.
+
+#### d. Clean up
 
 Delete the temporary execution brief file:
 `docs/<TICKET_KEY>-task-<N>-brief.md`
