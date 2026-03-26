@@ -223,9 +223,12 @@ Print a summary:
 
 ## Error Handling
 
-- If the Jira MCP is not available, stop and tell the user.
-- If a subtask fails to create (e.g., permission error, invalid field), log the
-  error with the task number and continue with the rest.
-- If the parent ticket does not exist, stop and inform the user immediately.
-- If ALL subtasks fail, do NOT write the `## Jira Subtasks` table — this
-  prevents downstream skills from thinking Phase 4 completed successfully.
+- **Jira MCP unavailable:** Stop and tell the user.
+- **Parent ticket not found:** Stop immediately.
+- **Individual subtask failure** (permission error, invalid field, rate limit):
+  Log the error with the task number, continue with remaining tasks.
+- **Rate limiting:** If the Jira API returns a 429 or rate-limit error, wait
+  briefly and retry the failed request once before logging it as a failure.
+- **ALL subtasks fail:** Do NOT write the `## Jira Subtasks` table — this
+  prevents downstream skills from thinking Phase 4 completed.
+- **Subagent delegation fails:** Fall back to inline creation silently.
