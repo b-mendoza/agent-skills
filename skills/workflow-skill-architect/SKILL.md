@@ -157,15 +157,16 @@ For each workflow step the user provides, respond with:
 - **Failure modes**: What can go wrong and how to handle it
 - **Subagent opportunities**: Which parts should be delegated to subagents
 
-### File
+### File(s)
 
-The complete, copy-paste-ready `SKILL.md` or agent `.md` file, including:
+The complete, copy-paste-ready files:
 
-- YAML frontmatter with `name` and `description`
-- Clear instructions in the body
-- Input/output contracts
-- Validation loops where quality matters
-- Error handling guidance
+- **SKILL.md** with YAML frontmatter, Subagent Registry table, and
+  orchestration logic
+- **subagents/\*.md** — one file per subagent, with clear instructions,
+  input/output contracts, validation loops, and error handling
+- Only omit the subagent file if the step genuinely qualifies for inline
+  execution (see criteria in Subagent-Default Execution above)
 
 ### Integration Notes
 
@@ -278,17 +279,26 @@ in SKILL.md and the individual subagent `.md` files in `subagents/`.
 
 ## Orchestration Guidance
 
-After building individual skills/subagents for each step, help the user think
-about the **orchestrating agent** — the top-level agent that ties the workflow
-together. Key considerations:
+After building individual subagents for each step, help the user think about
+the **orchestrating agent** — the SKILL.md that ties the workflow together.
+The orchestrator's context window is the most valuable resource in the system.
+Protect it aggressively.
 
-- The orchestrator should coordinate and make decisions, not execute deeply.
-- It should pass explicit data contracts between steps (not rely on shared
-  state or ambient context).
-- It should handle step failures gracefully — retry, skip, or escalate based
-  on the failure mode.
-- It should maintain a lightweight summary of progress rather than accumulating
-  raw output from every step.
+Key rules for the orchestrator:
+
+- **Dispatch, don't execute.** The orchestrator reads the Subagent Registry,
+  picks the right subagent, passes it explicit inputs, and collects a concise
+  result. It never does the work itself.
+- **Explicit data contracts between steps.** Pass structured data (JSON, file
+  paths, short summaries) — never rely on shared state or ambient context.
+- **Collect summaries, not raw output.** Each subagent should return a
+  compact result. The orchestrator maintains a lightweight progress log, not
+  a pile of raw logs and file contents.
+- **Handle failures at the orchestrator level.** Retry, skip, or escalate
+  based on the failure mode — but let the subagent report the failure details.
+- **Never preload subagent definitions.** Read a subagent's `.md` file only
+  when you're about to dispatch to it. The registry table gives you enough
+  information to choose.
 
 ---
 
