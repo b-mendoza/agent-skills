@@ -104,24 +104,19 @@ extract:
 - Full content of all subsections (Objective, Implementation notes, Definition
   of done, Dependencies, Questions, etc.)
 
-### 2. Determine the parent ticket's project and issue type
+### 2. Look up the parent ticket
 
-Use the Jira MCP to look up `TICKET_KEY` and extract:
+Use the Jira MCP to fetch `TICKET_KEY` and extract:
 
 - `project.key` — needed when creating subtasks.
-- The correct issue type name for subtasks in this project (commonly `Sub-task`
-  or `Subtask` — verify via the API, do not hardcode).
+- The correct subtask issue type name for this project (commonly `Sub-task` or
+  `Subtask` — verify via the Jira MCP, do not hardcode).
 
-### 3. Prepare the creation manifest
+If the parent ticket does not exist, stop immediately and inform the user.
 
-Write a structured manifest file at `docs/<TICKET_KEY>-subtask-manifest.md`
-containing:
+### 3. Build subtask payloads
 
-- The parent ticket key.
-- The project key.
-- The subtask issue type name.
-- For each task: the summary line and formatted description (using Jira wiki
-  markup or Markdown depending on what the MCP accepts).
+For each task, prepare a summary and description.
 
 **Summary format:**
 
@@ -129,56 +124,55 @@ containing:
 Task <N>: <Short title from plan>
 ```
 
-**Description format:**
+**Description format (Jira wiki markup):**
 
 ```
 h3. Objective
-
 <Objective text>
 
 h3. Relevant Requirements and Context
-
 <Bullet list>
 
 h3. Dependencies / Prerequisites
-
 <Content or "None">
 
 h3. Questions to Answer Before Starting
-
 <Content or "None — all resolved">
 
 h3. Implementation Notes
-
 <Content — must reflect any updates from the Decisions Log>
 
 h3. Definition of Done
-
 <Checklist>
 
 h3. Likely Files / Artifacts Affected
-
 <List>
 ```
 
-**Important:** When building descriptions, check the `## Decisions Log` for any
-decisions that affect a task. If a decision updated a task's implementation
-notes or resolved a question, use the UPDATED content — not the original
-pre-clarification version.
+When building descriptions, cross-reference the `## Decisions Log`. If a
+decision updated a task's implementation notes or resolved a question, use the
+updated content, not the pre-clarification version.
 
-### 4. Delegate creation to the subtask-creator subagent
+### 4. Create subtasks
 
-**If the plan has ≤ 3 tasks:** Create them inline — the context cost is
-manageable.
+**Inline path (≤ 3 tasks, or subagent delegation unavailable):**
 
-**If the plan has > 3 tasks:** Delegate to the subagent:
+Create each subtask sequentially via the Jira MCP. After each successful
+creation, record the returned subtask key. If a subtask fails, log the error
+with the task number and continue with the rest.
 
-```
-agent subtask-creator "Read the manifest at docs/<TICKET_KEY>-subtask-manifest.md and create all subtasks in Jira. Write the results to docs/<TICKET_KEY>-subtask-results.md."
-```
+**Subagent path (> 3 tasks):**
 
-The subagent creates subtasks sequentially, handles errors per-task, and writes
-a results file with the created subtask keys and any failures.
+Write a manifest to `docs/<TICKET_KEY>-subtask-manifest.md` containing the
+parent ticket key, project key, subtask issue type, and all subtask payloads.
+Then delegate to the `subtask-creator` subagent using natural language (see
+Platform Compatibility above for syntax).
+
+After the subagent finishes, read the results file at
+`docs/<TICKET_KEY>-subtask-results.md`.
+
+If delegation fails (subagent not found, platform limitation), fall back to the
+inline path.
 
 ### 5. Update the local plan file
 
