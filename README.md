@@ -1,66 +1,80 @@
-# Agent skills
+# Agent Skills
 
 A collection of skills for Cursor agents. Each skill is a markdown file that
-tells the agent how to handle a specific task.
+tells the agent how to handle a specific task. Skills can delegate heavy
+execution to co-located subagents, keeping orchestrator context windows lean.
 
-## Project skills
+## Project Skills
 
-These live under [`skills/`](skills/).
+These live under [`skills/`](skills/). Nine skills total: six form the Jira
+workflow pipeline and three are standalone.
 
-### Jira workflow pipeline
+### Jira Workflow Pipeline
 
 Six skills that take you from a Jira ticket to working code. The orchestrator
-is the entry point. It calls the other five in order, tracks progress, and
-can resume if something interrupts it.
+is the entry point. It calls the other five in order, validates artifacts
+between steps, and can resume from any phase if something interrupts it.
 
-- [orchestrating-jira-workflow](skills/orchestrating-jira-workflow/SKILL.md) -
-  Runs the whole pipeline. Calls each phase, checks results between steps,
-  and saves progress to `docs/<TICKET_KEY>-progress.md`. Asks before making
-  any changes in Jira. You can resume from any phase.
+- [orchestrating-jira-workflow](skills/orchestrating-jira-workflow/SKILL.md) --
+  Pure coordinator that never runs tool calls directly. Dispatches to seven
+  utility subagents (`artifact-validator`, `progress-tracker`,
+  `ticket-status-checker`, `codebase-inspector`, `code-reference-finder`,
+  `documentation-finder`, `git-operator`) and five downstream phase skills.
+  Saves progress to `docs/<TICKET_KEY>-progress.md` so workflows are
+  resumable. Asks before making any changes in Jira.
 
 The five phases, in order:
 
-1. [fetching-jira-ticket](skills/fetching-jira-ticket/SKILL.md) - Pulls
+1. [fetching-jira-ticket](skills/fetching-jira-ticket/SKILL.md) -- Pulls
    ticket data from Jira (description, comments, subtasks, linked issues,
-   custom fields) and writes it to `docs/<TICKET_KEY>.md`. When there are
-   many related issues, a `ticket-retriever` subagent handles the fetching.
+   custom fields) and writes it to `docs/<TICKET_KEY>.md`. A
+   `ticket-retriever` subagent handles bulk fetching when there are many
+   related issues.
 
-2. [planning-jira-tasks](skills/planning-jira-tasks/SKILL.md) - Breaks the
-   ticket into tasks through a five-step subagent pipeline: decompose,
-   detail, map dependencies, prioritize, validate. Output goes to
+2. [planning-jira-tasks](skills/planning-jira-tasks/SKILL.md) -- Breaks the
+   ticket into tasks through a five-step subagent pipeline:
+   `task-decomposer`, `task-planner`, `dependency-mapper`,
+   `task-prioritizer`, `task-validator`. Output goes to
    `docs/<TICKET_KEY>-tasks.md`.
 
-3. [clarifying-assumptions](skills/clarifying-assumptions/SKILL.md) - Goes
+3. [clarifying-assumptions](skills/clarifying-assumptions/SKILL.md) -- Goes
    through the plan one question at a time, sorting out anything unclear.
-   Answers go into a Decisions Log.
+   Answers go into a Decisions Log appended to the tasks file.
 
-4. [creating-jira-subtasks](skills/creating-jira-subtasks/SKILL.md) - Reads
+4. [creating-jira-subtasks](skills/creating-jira-subtasks/SKILL.md) -- Reads
    the plan and creates subtasks in Jira. If the plan has more than three
    tasks, a `subtask-creator` subagent does the work. Updates the local plan
    with the new subtask keys afterwards.
 
-5. [executing-subtask](skills/executing-subtask/SKILL.md) - Takes one task
+5. [executing-subtask](skills/executing-subtask/SKILL.md) -- Takes one task
    from the plan, runs it through a `task-executor` subagent with review and
    retry, then marks it done in both the plan file and Jira.
 
 ### Standalone
 
-- [validate-implementation-plan](skills/validate-implementation-plan/SKILL.md) -
-  Reviews AI-generated plans for missing requirements, unnecessary work, and
-  risky assumptions. Expert personas annotate issues by severity.
+- [validate-implementation-plan](skills/validate-implementation-plan/SKILL.md) --
+  Audits AI-generated plans for requirements traceability, YAGNI compliance,
+  and assumption risks. Six subagents handle the work: `technical-researcher`,
+  `requirements-extractor`, `requirements-auditor`, `yagni-auditor`,
+  `assumptions-auditor`, and `plan-annotator`. Unresolved assumptions get
+  escalated to the user before the final annotated report is produced.
 
-- [recency-guard](skills/recency-guard/SKILL.md) - Checks whether factual
-  responses are recent, accurate, complete, and clear. Good for catching
-  outdated info or overconfident claims.
+- [recency-guard](skills/recency-guard/SKILL.md) -- Four-step validation
+  pipeline (Recency, Self-Verification, Completeness, Clarity) that catches
+  stale information, overconfident claims, and missing requirements. A
+  `recency-checker` subagent web-searches every factual claim, then a
+  `claim-verifier` pressure-tests the three most important ones.
 
-- [workflow-skill-architect](skills/workflow-skill-architect/SKILL.md) -
-  Helps you turn a multi-step workflow into a skill with subagents. Walks
-  you through splitting the work and setting subagent defaults.
+- [workflow-skill-architect](skills/workflow-skill-architect/SKILL.md) --
+  Helps you turn a multi-step workflow into a skill with co-located
+  subagents. Walks you through each step, decides whether it should be a
+  subagent, skill, or command, and produces copy-paste-ready files.
 
-## Installed skills
+## Installed Skills
 
 Third-party skills listed in [`skills-lock.json`](skills-lock.json), stored
-under `.agents/skills/`.
+under `.agents/skills/`. Symlinked into `.claude/skills/` for Claude Code
+compatibility.
 
 | Skill                                              | Source                   | Description                                       |
 | -------------------------------------------------- | ------------------------ | ------------------------------------------------- |
