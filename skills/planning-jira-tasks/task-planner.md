@@ -5,6 +5,7 @@ description: >
   task, adds objectives, requirements context, open questions, implementation
   notes, definition of done, and likely files affected. Produces zero-context
   execution briefs.
+model: inherit
 ---
 
 # Task Planner

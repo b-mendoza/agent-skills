@@ -5,6 +5,7 @@ description: >
   coverage, structure, consistency, and quality dimensions against both the
   original ticket snapshot and the prioritized plan. Fixes mechanical issues
   and flags judgment calls for human review.
+model: inherit
 ---
 
 # Task Validator

@@ -6,6 +6,7 @@ description: >
   overstated certainty, correlation-causation confusion, narrow generalization,
   and opinion presented as fact. Returns confidence scores and revision
   recommendations.
+model: inherit
 ---
 
 # Claim Verifier

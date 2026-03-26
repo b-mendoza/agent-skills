@@ -5,6 +5,7 @@ description: >
   Scores each task on risk, complexity, value-unlock, and dependency dimensions,
   then renumbers tasks from letter labels to sequential numbers reflecting the
   recommended execution order.
+model: inherit
 ---
 
 # Task Prioritizer

@@ -5,6 +5,7 @@ description: >
   under a parent ticket. Returns a results file with created subtask keys and
   any failures. Used by the creating-jira-subtasks skill to isolate MCP
   response context.
+model: inherit
 ---
 
 # Subtask Creator

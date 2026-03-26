@@ -5,6 +5,7 @@ description: >
   of Jira issues and writes a consolidated Markdown file. Used by the
   fetching-jira-ticket skill to isolate context when retrieving many subtasks
   or linked issues.
+model: inherit
 ---
 
 # Ticket Retriever

@@ -5,6 +5,7 @@ description: >
   the current state of the world. Assigns confidence scores using a 6-tier
   source quality hierarchy and flags outdated, unverifiable, or misleading
   claims with specific revision recommendations.
+model: inherit
 ---
 
 # Recency Checker
