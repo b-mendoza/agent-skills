@@ -85,114 +85,76 @@ the conversation context.
 
 ---
 
-## CRITICAL: Three Execution Rules
+## Core Principles
 
-These three rules are non-negotiable and override any conflicting behavior.
+These three principles shape every interaction in this skill. They're ordered by
+impact — if you remember nothing else, remember these.
 
-### Rule 1 — Use interactive tools for EVERY choice
+### 1. Build the complete question manifest before asking anything
 
-Whenever the user must select from discrete options, you MUST use an interactive
-prompt tool (e.g., `ask_user_input`, selection widgets, or any available
-interactive input tool). NEVER present options as plain text and ask the user to
-type their choice.
+Before the first question, read the entire task plan, extract every item that
+needs user input, and present the full numbered list. The user should see
+everything upfront so there are no surprises.
 
-**Why:** Reduces friction, eliminates typos, and makes the conversation feel
-guided rather than interrogative.
+If an answer reveals a new question, don't ask it on the spot. Say: _"Your
+answer raised a new consideration. I'll add it as Question N+1 at the end."_
+Update the manifest and show the addition before asking the new question.
 
-**How to decide which input type:**
+The manifest is a contract. The user knows exactly how many questions remain and
+what's coming. This predictability matters — ad hoc questions lead to drift and
+frustration.
 
-| Situation                                     | Input type        |
-| --------------------------------------------- | ----------------- |
-| Exactly one answer needed from 2–4 options    | Single select     |
-| Multiple answers valid from 2–4 options       | Multi select      |
-| User must rank/order options by preference    | Rank / prioritize |
-| Free-form answer needed (names, descriptions) | Plain text prompt |
+### 2. Use interactive selection for every discrete choice
 
-When a question has discrete options (even if there's also a free-text
-"Other" path), always present the options as an interactive prompt FIRST.
-If the user selects "Other" or needs to elaborate, follow up with a plain
-text prompt.
+When the user must pick from a set of options, use the most frictionless input
+method available:
 
-### Rule 2 — Illustrate EVERY question with visual context
+- **If an interactive input tool is available** (e.g., `ask_user_input`,
+  `AskUserQuestion`, or equivalent): Use it. Single-select for one answer from
+  2-4 options, multi-select for multiple valid answers, rank/prioritize for
+  ordering.
+- **If no interactive tool is available:** Present numbered options and ask the
+  user to reply with a number. Example:
 
-Before or alongside every question, include at least ONE visual element that
-helps the user understand the context. Never present a question as a wall of
-text without visual grounding.
+  ```
+  1. Repository pattern
+  2. Direct database access
+  3. CQRS
+  4. Other (I'll describe)
 
-**Required visual elements (use at least one per question):**
+  Reply with a number (or type your own answer):
+  ```
 
-| Visual type         | When to use                                                   | Format                        |
-| ------------------- | ------------------------------------------------------------- | ----------------------------- |
-| **Mermaid diagram** | Architecture decisions, data flow choices, dependency impacts | Mermaid code block            |
-| **Markdown table**  | Comparing options side by side with trade-offs                | Markdown table                |
-| **Code snippet**    | When the question affects specific code, configs, or APIs     | Fenced code block with lang   |
-| **Impact map**      | When the answer cascades to multiple tasks                    | Mermaid or table showing flow |
-| **Before / after**  | When the answer changes the plan structure                    | Two code blocks or diagrams   |
+When a question has discrete options plus a possible free-text path, present the
+options first. If the user picks "Other," follow up for details.
 
-**How to choose:** Pick the visual that makes the DIFFERENCE between options
-most obvious. If comparing API approaches, show code. If comparing architecture
-patterns, show a diagram. If comparing trade-offs, show a table.
+For confirmation questions (assumptions), use: `1. ✅ Confirm as-is`,
+`2. ❌ Revise`, `3. ⏭️ Skip`.
 
-**Example — architecture decision:**
+### 3. Give visual context proportional to the question's complexity
 
-````markdown
-This question affects how data flows between the API and the database:
+Every question should have enough context for the user to answer confidently.
+The right amount depends on what's being asked:
 
-```mermaid
-graph LR
-    A[API Request] --> B{Which pattern?}
-    B -->|Option A: Repository| C[Repository Layer] --> D[Database]
-    B -->|Option B: Direct| D
-    B -->|Option C: CQRS| E[Command Handler] --> D
-    B -->|Option C: CQRS| F[Query Handler] --> D
-```
+| Question type                     | Appropriate context                                                           |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| Simple confirmation               | 1-2 sentences on what the assumption is and where it came from                |
+| Choice between technical options  | Comparison table showing trade-offs, or a code snippet showing the difference |
+| Architecture / data flow decision | Diagram (mermaid or ASCII) showing how options differ                         |
+| Question with downstream impact   | Brief impact note: "This affects Tasks 3, 5, and 7"                           |
 
-| Criteria       | Repository pattern   | Direct access      | CQRS               |
-| -------------- | -------------------- | ------------------ | ------------------ |
-| Complexity     | Medium               | Low                | High               |
-| Testability    | High (mockable)      | Low                | High               |
-| Fits codebase? | Yes — existing repos | Breaks conventions | Overkill for scope |
-````
+Don't pad simple confirmations with diagrams they don't need. Do invest in
+visuals when the question involves trade-offs, structural differences, or
+cascading effects. The goal is understanding, not decoration.
 
-**Example — code-level decision:**
+**Choosing the right visual:**
 
-````markdown
-This question affects the error response format in Task 4:
-
-```typescript
-// Option A: Flat error response
-{ "error": "validation_failed", "message": "Email is required" }
-
-// Option B: Structured error response (matches existing patterns in src/errors/)
-{ "error": { "code": "VALIDATION_FAILED", "field": "email", "message": "Email is required" } }
-```
-````
-
-### Rule 3 — Generate the COMPLETE question manifest UPFRONT
-
-Before asking the first question, you MUST:
-
-1. Read the entire task plan.
-2. Extract every item that needs user input.
-3. Build the **complete, numbered question manifest** (see Phase 1 below).
-4. Present the manifest to the user for review.
-5. Get their confirmation before proceeding.
-
-**NEVER generate questions on the fly.** Every question the user will see must
-be listed in the manifest BEFORE the first question is asked. This is
-non-negotiable.
-
-**Why:** Ad hoc question generation leads to drift, irrelevant questions, and
-an unpredictable experience. The manifest creates a contract between the agent
-and the user — both sides know exactly what to expect.
-
-**If a user's answer reveals a NEW question:**
-
-- Do NOT ask it immediately.
-- Note it explicitly: "Your answer raised a new consideration. I'll add it as
-  Question N+1 at the end of our manifest."
-- Update the manifest and present the updated version before asking the new
-  question.
+| Visual type     | Best for                                                | Format                      |
+| --------------- | ------------------------------------------------------- | --------------------------- |
+| Markdown table  | Comparing options side by side (works everywhere)       | Markdown table              |
+| Code snippet    | When the question affects specific code, configs, APIs  | Fenced code block with lang |
+| Mermaid diagram | Architecture, data flow, dependencies (if env supports) | Mermaid code block          |
+| Before / after  | When the answer changes the plan structure              | Two code blocks or tables   |
 
 ---
 
