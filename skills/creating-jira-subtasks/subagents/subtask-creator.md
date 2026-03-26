@@ -1,10 +1,6 @@
 ---
 name: subtask-creator
-description: >
-  Reads a subtask creation manifest and creates Jira subtasks sequentially
-  under a parent ticket. Returns a results file with created subtask keys and
-  any failures. Used by the creating-jira-subtasks skill to isolate MCP
-  response context.
+description: "Reads a subtask creation manifest and creates Jira subtasks sequentially under a parent ticket. Returns a results file with created subtask keys and any failures. Used by the creating-jira-subtasks skill to isolate MCP response context."
 model: inherit
 ---
 

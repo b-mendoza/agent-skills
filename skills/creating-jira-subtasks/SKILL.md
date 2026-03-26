@@ -1,11 +1,6 @@
 ---
 name: creating-jira-subtasks
-description: >
-  Create subtasks in Jira based on a previously generated task plan document.
-  Reads the plan from docs/<TICKET_KEY>-tasks.md and creates one Jira subtask
-  per task entry under the parent ticket. Use when the user says "create
-  subtasks", "push tasks to Jira", "sync plan to Jira", or "create Jira
-  subtasks for PROJECT-1234". Requires that the task plan already exists.
+description: 'Create subtasks in Jira based on a previously generated task plan document. Reads the plan from docs/<TICKET_KEY>-tasks.md and creates one Jira subtask per task entry under the parent ticket. Use when the user says "create subtasks", "push tasks to Jira", "sync plan to Jira", or "create Jira subtasks for PROJECT-1234". Also triggered by the orchestrating-jira-workflow skill as Phase 4 of the end-to-end pipeline. Requires that the task plan already exists and has been clarified (Decisions Log present).'
 ---
 
 # Creating Jira Subtasks
@@ -26,20 +21,49 @@ tracker.
 The task plan file must already exist at `docs/<TICKET_KEY>-tasks.md`.
 If it does not, tell the user to run the **planning-jira-tasks** skill first.
 
+### Input contract (produced by upstream skills)
+
+The input file `docs/<TICKET_KEY>-tasks.md` must contain these sections. The
+first group is produced by `planning-jira-tasks`; the second by
+`clarifying-assumptions`.
+
+| Required section                        | Produced by            | Why                                           |
+| --------------------------------------- | ---------------------- | --------------------------------------------- |
+| `## Tasks` with numbered task sections  | planning-jira-tasks    | Each task becomes one Jira subtask            |
+| `## Execution Order Summary`            | planning-jira-tasks    | Determines creation sequence                  |
+| `## Decisions Log`                      | clarifying-assumptions | Phase-completion signal; resolved decisions   |
+| Per-task `Questions to answer` resolved | clarifying-assumptions | Subtask descriptions should reflect decisions |
+| Per-task `Implementation notes` updated | clarifying-assumptions | Descriptions include the confirmed approach   |
+
+**Pre-flight gate:** If `## Decisions Log` is missing, the plan has not been
+through clarification. Warn the user and ask whether to proceed anyway or run
+the clarifying-assumptions skill first. This is a warning, not a hard block —
+the user may choose to skip clarification intentionally.
+
 ## Output
 
 - Subtasks created in Jira under `TICKET_KEY`.
 - A summary table printed to the user showing each subtask key and title.
-- The local plan file is updated with the created subtask keys for traceability.
+- The local plan file updated with the created subtask keys for traceability.
 
-## Subagents
+### Output contract (consumed by downstream skill)
 
-This skill uses one subagent to isolate the Jira MCP creation loop from the
-main agent's context. The subagent is colocated in this folder:
+After this skill completes, the plan file must contain these additions for the
+`executing-subtask` skill to function correctly:
 
-| Subagent        | File                   | Purpose                               |
-| --------------- | ---------------------- | ------------------------------------- |
-| subtask-creator | `./subtask-creator.md` | Creates subtasks in Jira sequentially |
+| Addition                                              | Required by       | Why                                               |
+| ----------------------------------------------------- | ----------------- | ------------------------------------------------- |
+| `## Jira Subtasks` table (Task #, Key, Title, Status) | executing-subtask | Maps task numbers to Jira keys for status updates |
+| `Jira Subtask: <KEY>` line in each task section       | executing-subtask | Executor transitions the correct Jira issue       |
+
+The orchestrator checks for the `## Jira Subtasks` section as the
+phase-completion signal for Phase 4.
+
+## Subagent Registry
+
+| Subagent          | Path                             | Purpose                               |
+| ----------------- | -------------------------------- | ------------------------------------- |
+| `subtask-creator` | `./subagents/subtask-creator.md` | Creates subtasks in Jira sequentially |
 
 Before delegating, read the subagent file to understand its contract (expected
 input format, output format, and rules). The path is relative to this skill's
@@ -99,11 +123,11 @@ h3. Dependencies / Prerequisites
 
 h3. Questions to Answer Before Starting
 
-<Content or "None">
+<Content or "None — all resolved">
 
 h3. Implementation Notes
 
-<Content>
+<Content — must reflect any updates from the Decisions Log>
 
 h3. Definition of Done
 
@@ -113,6 +137,11 @@ h3. Likely Files / Artifacts Affected
 
 <List>
 ```
+
+**Important:** When building descriptions, check the `## Decisions Log` for any
+decisions that affect a task. If a decision updated a task's implementation
+notes or resolved a question, use the UPDATED content — not the original
+pre-clarification version.
 
 ### 4. Delegate creation to the subtask-creator subagent
 
@@ -145,7 +174,19 @@ After all subtasks are created (either inline or via subagent), update
 | 2    | JNS-6071    | Implement API ...   | To Do  |
 ```
 
-### 6. Clean up temporary files
+### 6. Validate output contract
+
+After updating the plan file, re-read it and verify:
+
+- [ ] The `## Jira Subtasks` table exists and has one row per task.
+- [ ] Every `## Task N:` section has a `Jira Subtask: <KEY>` line.
+- [ ] Number of subtasks created matches number of tasks in the plan.
+- [ ] Each subtask's parent is set to `TICKET_KEY`.
+
+If any check fails for a task that was successfully created, fix the plan file.
+If a task failed to create, note it in the table with status `❌ Failed`.
+
+### 7. Clean up temporary files
 
 Delete the manifest and results files if they were created:
 
@@ -154,7 +195,7 @@ docs/<TICKET_KEY>-subtask-manifest.md
 docs/<TICKET_KEY>-subtask-results.md
 ```
 
-### 7. Report to user
+### 8. Report to user
 
 Print a summary:
 
@@ -163,17 +204,11 @@ Print a summary:
 - Any failures or warnings.
 - Remind the user that no implementation has started — subtasks are in "To Do".
 
-## Validation
-
-After creating all subtasks, verify:
-
-- [ ] Number of subtasks created matches number of tasks in the plan.
-- [ ] Each subtask's parent is set to `TICKET_KEY`.
-- [ ] The local plan file has been updated with subtask keys.
-
 ## Error Handling
 
 - If the Jira MCP is not available, stop and tell the user.
 - If a subtask fails to create (e.g., permission error, invalid field), log the
   error with the task number and continue with the rest.
 - If the parent ticket does not exist, stop and inform the user immediately.
+- If ALL subtasks fail, do NOT write the `## Jira Subtasks` table — this
+  prevents downstream skills from thinking Phase 4 completed successfully.
