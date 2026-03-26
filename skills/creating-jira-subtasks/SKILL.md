@@ -10,7 +10,10 @@ allowed-tools:
   - mcp__jira__*
   - Read
   - Write
+  - Edit
   - Grep
+  - Bash
+  - agent
 ---
 
 # Creating Jira Subtasks
@@ -37,6 +40,19 @@ If it does not, tell the user to run the **planning-jira-tasks** skill first.
 - A summary table printed to the user showing each subtask key and title.
 - The local plan file is updated with the created subtask keys for traceability.
 
+## Subagents
+
+This skill uses one subagent to isolate the Jira MCP creation loop from the
+main agent's context. The subagent is colocated in this folder:
+
+| Subagent        | File                   | Purpose                               |
+| --------------- | ---------------------- | ------------------------------------- |
+| subtask-creator | `./subtask-creator.md` | Creates subtasks in Jira sequentially |
+
+Before delegating, read the subagent file to understand its contract (expected
+input format, output format, and rules). The path is relative to this skill's
+directory.
+
 ## Execution Steps
 
 ### 1. Read and parse the task plan
@@ -57,18 +73,24 @@ Use the Jira MCP to look up `TICKET_KEY` and extract:
 - The correct issue type name for subtasks in this project (commonly `Sub-task`
   or `Subtask` — verify via the API, do not hardcode).
 
-### 3. Create subtasks — one per task
+### 3. Prepare the creation manifest
 
-For each task, create a Jira subtask with:
+Write a structured manifest file at `docs/<TICKET_KEY>-subtask-manifest.md`
+containing:
 
-**Summary:**
+- The parent ticket key.
+- The project key.
+- The subtask issue type name.
+- For each task: the summary line and formatted description (using Jira wiki
+  markup or Markdown depending on what the MCP accepts).
+
+**Summary format:**
 
 ```
 Task <N>: <Short title from plan>
 ```
 
-**Description** (use Jira wiki markup or Markdown depending on what the MCP
-accepts):
+**Description format:**
 
 ```
 h3. Objective
@@ -100,20 +122,24 @@ h3. Likely Files / Artifacts Affected
 <List>
 ```
 
-**Parent:** `TICKET_KEY`
+### 4. Delegate creation to the subtask-creator subagent
 
-### 4. Create subtasks sequentially, not in parallel
+**If the plan has ≤ 3 tasks:** Create them inline — the context cost is
+manageable.
 
-Create them one at a time. After each creation, note the returned subtask key.
-If any creation fails:
+**If the plan has > 3 tasks:** Delegate to the subagent:
 
-- Log the error.
-- Continue with the remaining tasks.
-- Report all failures at the end.
+```
+agent subtask-creator "Read the manifest at docs/<TICKET_KEY>-subtask-manifest.md and create all subtasks in Jira. Write the results to docs/<TICKET_KEY>-subtask-results.md."
+```
+
+The subagent creates subtasks sequentially, handles errors per-task, and writes
+a results file with the created subtask keys and any failures.
 
 ### 5. Update the local plan file
 
-After all subtasks are created, update `docs/<TICKET_KEY>-tasks.md`:
+After all subtasks are created (either inline or via subagent), update
+`docs/<TICKET_KEY>-tasks.md`:
 
 - Add a `Jira Subtask: <SUBTASK_KEY>` line to each task section.
 - Add a summary table at the top of the file under the ticket summary:
@@ -127,7 +153,16 @@ After all subtasks are created, update `docs/<TICKET_KEY>-tasks.md`:
 | 2    | JNS-6071    | Implement API ...   | To Do  |
 ```
 
-### 6. Report to user
+### 6. Clean up temporary files
+
+Delete the manifest and results files if they were created:
+
+```
+docs/<TICKET_KEY>-subtask-manifest.md
+docs/<TICKET_KEY>-subtask-results.md
+```
+
+### 7. Report to user
 
 Print a summary:
 
