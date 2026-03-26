@@ -15,7 +15,8 @@ implemented code:
 
 1. **[fetching-jira-ticket](skills/fetching-jira-ticket/SKILL.md)** — Pulls
    full Jira ticket data (metadata, description, comments, subtasks, links,
-   custom fields) into a local `docs/<TICKET_KEY>.md` snapshot.
+   custom fields) into a local `docs/<TICKET_KEY>.md` snapshot. Delegates to
+   a `ticket-retriever` subagent when many related issues would bloat context.
 
 2. **[planning-jira-tasks](skills/planning-jira-tasks/SKILL.md)** — Orchestrates
    a five-stage subagent pipeline (decompose → detail → map dependencies →
@@ -27,8 +28,9 @@ implemented code:
    in a Decisions Log.
 
 4. **[creating-jira-subtasks](skills/creating-jira-subtasks/SKILL.md)** — Parses
-   the task plan and creates one Jira subtask per task via MCP, updating the
-   local plan with subtask keys.
+   the task plan, builds a creation manifest, and creates Jira subtasks via
+   MCP — delegating to a `subtask-creator` subagent for plans with more than
+   three tasks. Updates the local plan with subtask keys.
 
 5. **[executing-subtask](skills/executing-subtask/SKILL.md)** — Runs exactly one
    plan task through a `task-executor` subagent with review and retry logic,
