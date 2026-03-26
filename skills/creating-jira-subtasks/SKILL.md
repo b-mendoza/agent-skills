@@ -1,5 +1,5 @@
 ---
-name: creating-jira-subtasks
+name: "creating-jira-subtasks"
 description: 'Create subtasks in Jira based on a previously generated task plan document. Reads the plan from docs/<TICKET_KEY>-tasks.md and creates one Jira subtask per task entry under the parent ticket. Use when the user says "create subtasks", "push tasks to Jira", "sync plan to Jira", or "create Jira subtasks for PROJECT-1234". Also triggered by the orchestrating-jira-workflow skill as Phase 4 of the end-to-end pipeline. Requires that the task plan already exists and has been clarified (Decisions Log present).'
 ---
 
