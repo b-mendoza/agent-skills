@@ -70,6 +70,23 @@ tool calls directly.
 | `documentation-finder`  | `./subagents/documentation-finder.md`  | Locate relevant docs, READMEs, or wiki pages for a given topic; return summaries and paths  |
 | `git-operator`          | `./subagents/git-operator.md`          | Execute git operations: create branches, commit, push, stash, checkout, merge               |
 
+### Dispatch Mechanism
+
+The subagent `.md` files above are co-located reference documents, not
+auto-discovered Claude Code agents. To dispatch a subagent:
+
+1. Read the subagent's `.md` file from the path in the registry.
+2. Use the **Task tool** (or **Agent tool**) to spawn a subagent, passing the
+   `.md` content as the system prompt and the step's inputs (ticket key,
+   action, parameters, etc.) as the user message.
+3. Collect the Task tool's return value — the subagent's structured summary.
+4. Use the summary to make decisions. Never ask the subagent to return raw
+   data — the summary is the only thing the orchestrator should see.
+
+Subagents run sequentially by default. Parallel dispatch is acceptable for
+independent utility calls (e.g., `codebase-inspector` + `documentation-finder`
+before a task execution) but never for dependent operations.
+
 ## Skill Registry (Downstream Phases)
 
 Each phase is handled by a dedicated skill. The orchestrator dispatches to
