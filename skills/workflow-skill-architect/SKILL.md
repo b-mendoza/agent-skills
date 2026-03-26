@@ -1,15 +1,6 @@
 ---
-name: workflow-skill-architect
-description: >
-  Convert multi-step workflows into production-ready Claude Code skills and subagents.
-  Use this skill whenever a user describes a workflow, process, or multi-step procedure
-  and wants to turn it (or any part of it) into reusable Claude Code skills, subagents,
-  or slash commands. Also trigger when the user says things like "make this a skill",
-  "turn this process into an agent", "I want to automate this workflow",
-  "break this into skills", "create skills from these steps", or asks how to
-  structure a set of related tasks as Claude Code artifacts. Works for any domain —
-  DevOps pipelines, content creation, data processing, customer support, research,
-  onboarding, code review, or any repeatable process.
+name: "workflow-skill-architect"
+description: 'Convert multi-step workflows into production-ready Claude Code skills and subagents. Use this skill whenever a user describes a workflow, process, or multi-step procedure and wants to turn it (or any part of it) into reusable Claude Code skills, subagents, or slash commands. Also trigger when the user says things like "make this a skill", "turn this process into an agent", "I want to automate this workflow", "break this into skills", "create skills from these steps", or asks how to structure a set of related tasks as Claude Code artifacts. Works for any domain — DevOps pipelines, content creation, data processing, customer support, research, onboarding, code review, or any repeatable process.'
 ---
 
 # Workflow → Skills Architect
