@@ -233,18 +233,25 @@ If the MCP tool returns an error:
 
 Count the subtasks and linked issues on the parent ticket.
 
+**If the combined total is 0:** Skip this step.
+
 **If the combined total is ≤ 3:** Retrieve them inline — the context cost is
 manageable.
 
 **If the combined total is > 3:** Delegate to the `ticket-retriever` subagent
-to avoid context pollution from many MCP responses:
+to keep the orchestrator's context clean:
 
 ```
-agent ticket-retriever "Retrieve full details for these Jira issues and write results to docs/<TICKET_KEY>-related.md: <comma-separated list of subtask and linked issue keys>. For each issue, retrieve: key, summary, status, assignee, type, full description, and all comments (with author + timestamp). For linked issues, also note the link type."
+Retrieve full details for these Jira issues and write results to docs/<TICKET_KEY>-related.md:
+
+Issues: <comma-separated list of keys>
+
+For each issue, retrieve: key, summary, status, assignee, type, full description, and all comments (with author + timestamp). For linked issues, also note the link type (e.g., "is blocked by", "relates to").
 ```
 
 After the subagent completes, read `docs/<TICKET_KEY>-related.md` and merge its
-content into the appropriate sections of the main document.
+content into the appropriate sections (Subtasks, Linked Issues) of the main
+document.
 
 ### 4. Assemble and write the document
 
