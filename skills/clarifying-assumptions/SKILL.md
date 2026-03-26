@@ -1,5 +1,5 @@
 ---
-name: clarifying-assumptions
+name: "clarifying-assumptions"
 description: 'Walk through a Jira task plan and interactively ask the user to confirm assumptions, resolve open questions, and validate decisions. Use when the user says "review the plan", "ask me questions", "clarify assumptions", "let''s go through the questions", "grill me on the plan", or "validate plan for PROJECT-1234". Also triggered by the orchestrating-jira-workflow skill as Phase 3 of the end-to-end pipeline. Requires that a task plan exists at docs/<TICKET_KEY>-tasks.md. This skill is conversational — it asks ONE question at a time and waits for a response before continuing.'
 ---
 
