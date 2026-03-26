@@ -1,5 +1,5 @@
 ---
-name: executing-subtask
+name: "executing-subtask"
 description: 'Execute a single subtask from a Jira task plan. The user must specify which task number to execute. Use when the user says "execute task 3", "work on task 2", "implement task 1", "start task 5 for PROJECT-1234", or "run subtask N". Also triggered by the orchestrating-jira-workflow skill as Phase 5 of the end-to-end pipeline (called once per task). Requires that the task plan exists at docs/<TICKET_KEY>-tasks.md. Executes ONLY the specified task — never continues to the next one without explicit user approval.'
 ---
 

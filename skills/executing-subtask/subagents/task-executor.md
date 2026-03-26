@@ -1,7 +1,7 @@
 ---
-name: task-executor
+name: "task-executor"
 description: "Implementation specialist that receives a self-contained execution brief for exactly one task and implements it. Reads existing code first, follows codebase patterns, runs tests, and produces a structured execution report. Stops on ambiguity rather than guessing."
-model: inherit
+model: "inherit"
 ---
 
 # Task Executor
