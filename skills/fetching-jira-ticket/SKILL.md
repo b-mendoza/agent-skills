@@ -1,5 +1,5 @@
 ---
-name: fetching-jira-ticket
+name: "fetching-jira-ticket"
 description: 'Retrieve ALL information from a Jira ticket (description, comments, subtasks, attachments metadata, labels, sprint, status, assignee, reporter, etc.) and persist it as a single Markdown file. Use when the user says "fetch ticket", "retrieve Jira", "pull ticket info", "get ticket details", or provides a Jira ticket URL or key like PROJECT-1234. Also triggered by the orchestrating-jira-workflow skill as Phase 1 of the end-to-end pipeline. This skill ONLY retrieves — it never modifies the ticket or starts implementation.'
 ---
 
