@@ -1,6 +1,6 @@
 ---
 name: "planning-jira-tasks"
-description: 'Create an implementation task plan from a previously retrieved Jira ticket document. Breaks the ticket into the smallest practical set of focused, independent, and executable tasks. Use when the user says "plan the ticket", "create tasks", "break down the ticket", "create an implementation plan", or "plan JNS-1234". Also triggered by the orchestrating-jira-workflow skill as Phase 2 of the end-to-end pipeline. Requires that the ticket information has already been retrieved into docs/<TICKET_KEY>.md. This skill produces a plan ONLY — it does NOT implement anything.'
+description: 'Create an implementation task plan from a previously retrieved Jira ticket document. Breaks the ticket into the smallest practical set of focused, independent, and executable tasks. Use when the user says "plan the ticket", "create tasks", "break down the ticket", "create an implementation plan", "plan JNS-1234", "decompose this ticket", "what needs to be done for this ticket", or "make a task plan". Also triggered by the orchestrating-jira-workflow skill as Phase 2 of the end-to-end pipeline. Requires that the ticket information has already been retrieved into docs/<TICKET_KEY>.md. This skill produces a plan ONLY — it does NOT implement anything. Works with Claude Code CLI, Cursor IDE, and OpenCode CLI.'
 ---
 
 # Planning Jira Tasks
@@ -84,9 +84,27 @@ Plus these annotations added by later pipeline stages:
 | `task-prioritizer`  | `./subagents/task-prioritizer.md`  | Final execution order            |
 | `task-validator`    | `./subagents/task-validator.md`    | QA gate — 19 validation checks   |
 
-Before running the pipeline, read each subagent file to understand its contract
-(expected input, output format, and rules). Paths are relative to this skill's
-directory.
+Read each subagent file only when you are about to dispatch to it — do not
+preload all definitions.
+
+## Platform-Specific Dispatch
+
+This skill works across multiple AI coding tools. Read
+`./references/platform-dispatch.md` to determine the correct subagent dispatch
+syntax for your current environment.
+
+**Quick reference:**
+
+| Platform     | Dispatch mechanism                                             |
+| ------------ | -------------------------------------------------------------- |
+| Claude Code  | `agent` tool — co-located `.md` files in `subagents/`          |
+| Cursor IDE   | Native subagents (2.4+) — `.cursor/agents/` or inline dispatch |
+| OpenCode CLI | Task tool — `.opencode/agents/` or `@mention` invocation       |
+
+All three platforms have native subagent support. The co-located subagent
+`.md` files in this skill's `subagents/` directory are compatible with all
+platforms. See the reference file for platform-specific dispatch details and
+tips.
 
 ### Pipeline flow
 
