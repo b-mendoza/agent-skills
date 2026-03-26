@@ -55,6 +55,28 @@ Before delegating, read the subagent file to understand its contract (expected
 input format, output format, and rules). The path is relative to this skill's
 directory.
 
+## Multi-Platform MCP Compatibility
+
+Jira data is accessed through MCP tools, but the specific tool names and
+interfaces vary across platforms (Cursor, Claude Code, OpenCode). Rather than
+hardcoding tool names, follow this adaptive approach:
+
+1. **Discover available tools.** Before your first Jira call, check which
+   Jira-related MCP tools are available in your current environment. Look for
+   tools with names containing `jira`, `atlassian`, or `issue`.
+2. **Map capabilities.** You need these operations — find the matching tool for
+   each:
+   - **Get issue:** Fetch a single issue by key (fields, description, status,
+     assignee, etc.)
+   - **Get comments:** Fetch all comments on an issue (may be part of "get
+     issue" or a separate call)
+   - **Search/query:** Run JQL or fetch subtasks and linked issues
+3. **Handle pagination.** Some MCP tools paginate comments or search results.
+   Always check for pagination indicators (`nextPage`, `startAt`, `total`,
+   `isLast`) and fetch every page.
+4. **Handle auth failures.** If an MCP tool returns an authentication or
+   permission error, stop and tell the user — do not retry or guess credentials.
+
 ## Retrieval Checklist
 
 You MUST retrieve **all** of the following. If a field is empty or unavailable,

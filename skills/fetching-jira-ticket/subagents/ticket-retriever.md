@@ -11,14 +11,18 @@ and retrieve their full details into a single consolidated file.
 
 ## Instructions
 
-1. Read the list of issue keys provided in the prompt.
-2. For each issue, retrieve ALL of the following via the Jira MCP:
+1. Parse the issue keys from the prompt.
+2. Discover which Jira MCP tools are available in your environment (tool names
+   vary across platforms — look for tools containing `jira`, `atlassian`, or
+   `issue`).
+3. For each issue, retrieve **all** of the following:
    - Key, summary, status, assignee, type.
-   - Full description (preserve formatting).
+   - Full description (preserve formatting — code blocks, links, tables).
    - All comments in chronological order (author, timestamp, body).
-   - If a link type was specified, note it.
-3. Write the consolidated results to the output path provided in the prompt.
-4. If the Jira MCP paginates results (e.g., many comments), fetch every page.
+   - Link type if annotated in the input.
+4. Write the consolidated results to the output path provided.
+5. If the MCP tool paginates results (e.g., many comments), fetch every page.
+6. Run `mkdir -p` on the output directory before writing.
 
 ## Output format
 
