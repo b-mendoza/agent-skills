@@ -1,14 +1,6 @@
 ---
-name: recency-guard
-description: >
-  A validation framework that ensures Claude's responses are current, accurate, complete, and clear.
-  Use this skill whenever the user asks a factual or research question, requests analysis or recommendations
-  (e.g., "What's the best framework for X?", "Compare options for Y"), or any prompt where recency and
-  accuracy matter. Also trigger when the user explicitly asks for validated, verified, or fact-checked
-  answers. This skill should activate broadly — if the answer depends on facts that could have changed
-  in the last few months, use it. Even questions that seem straightforward ("Is X still the recommended
-  approach?") benefit from this skill's validation pipeline. Do NOT trigger for purely creative writing,
-  casual chat, or tasks that are entirely opinion-based with no factual claims.
+name: "recency-guard"
+description: 'A validation framework that ensures Claude''s responses are current, accurate, complete, and clear. Use this skill whenever the user asks a factual or research question, requests analysis or recommendations (e.g., "What''s the best framework for X?", "Compare options for Y"), or any prompt where recency and accuracy matter. Also trigger when the user explicitly asks for validated, verified, or fact-checked answers. This skill should activate broadly — if the answer depends on facts that could have changed in the last few months, use it. Even questions that seem straightforward ("Is X still the recommended approach?") benefit from this skill''s validation pipeline. Do NOT trigger for purely creative writing, casual chat, or tasks that are entirely opinion-based with no factual claims.'
 ---
 
 # Recency Guard

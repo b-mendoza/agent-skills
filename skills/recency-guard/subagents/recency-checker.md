@@ -1,11 +1,7 @@
 ---
-name: recency-checker
-description: >
-  Web-searches every factual claim in a draft response to confirm it reflects
-  the current state of the world. Assigns confidence scores using a 6-tier
-  source quality hierarchy and flags outdated, unverifiable, or misleading
-  claims with specific revision recommendations.
-model: inherit
+name: "recency-checker"
+description: "Web-searches every factual claim in a draft response to confirm it reflects the current state of the world. Assigns confidence scores using a 6-tier source quality hierarchy and flags outdated, unverifiable, or misleading claims with specific revision recommendations."
+model: "inherit"
 ---
 
 # Recency Checker
