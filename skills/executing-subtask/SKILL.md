@@ -161,6 +161,10 @@ In `docs/<TICKET_KEY>-tasks.md`, update the task section:
 Delete the temporary execution brief file:
 `docs/<TICKET_KEY>-task-<N>-brief.md`
 
+After deletion, verify the file no longer exists. If deletion fails (e.g.,
+permission error), log a warning but do not block — cleanup failure is
+non-critical.
+
 ### 6. Report to user
 
 ```
