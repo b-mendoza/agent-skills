@@ -38,8 +38,10 @@ The five phases, in order:
    `docs/<TICKET_KEY>-tasks.md`.
 
 3. [clarifying-assumptions](skills/clarifying-assumptions/SKILL.md) -- Walks
-   through the plan one question at a time, sorting out anything unclear.
-   Answers go into a Decisions Log appended to the tasks file.
+   through the plan one question at a time, confirming assumptions and
+   resolving open questions. Adapts to whatever platform it runs on
+   (Cursor, Claude Code, Claude.ai, etc.). Answers go into a Decisions
+   Log appended to the tasks file.
 
 4. [creating-jira-subtasks](skills/creating-jira-subtasks/SKILL.md) -- Reads
    the plan and creates subtasks in Jira. If there are more than three
