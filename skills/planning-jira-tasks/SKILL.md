@@ -12,6 +12,7 @@ allowed-tools:
   - Read
   - Write
   - Grep
+  - Bash
   - agent
 ---
 
