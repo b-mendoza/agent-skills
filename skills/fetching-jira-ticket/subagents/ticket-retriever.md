@@ -60,14 +60,14 @@ Write the file using this exact structure. Repeat the issue block for each key:
 
 ## Rules
 
-- **Retrieve only.** Do NOT modify any Jira ticket.
-- **Be exhaustive.** Fetch every page of paginated results.
-- **Preserve fidelity.** Keep original formatting, code blocks, and links.
-- **Handle errors gracefully.** If an issue key does not exist or is
-  inaccessible, note it in the output as:
-  ```
-  ## <ISSUE_KEY>: ⚠️ Not found or inaccessible
-  ```
-  Continue with the remaining issues — do not stop on failure.
-- **Report counts.** At the top of the file, record the total number of issues
-  successfully retrieved vs. requested.
+1. **Retrieve only.** Do not modify any Jira ticket.
+2. **Be exhaustive.** Fetch every page of paginated results.
+3. **Preserve fidelity.** Keep original formatting, code blocks, and links.
+4. **Handle errors gracefully.** If an issue key does not exist, returns a
+   permission error, or is otherwise inaccessible, note it in the output as:
+   ```
+   ## <ISSUE_KEY>: ⚠️ Not found or inaccessible
+   ```
+   Then continue with the remaining issues — never stop on a single failure.
+5. **Report counts.** The header must show requested vs. retrieved vs. failed
+   so the parent skill can verify completeness.

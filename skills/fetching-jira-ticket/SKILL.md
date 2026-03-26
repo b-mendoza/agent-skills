@@ -210,13 +210,26 @@ Write the file using this structure:
 
 ## Execution Steps
 
-### 1. Retrieve core fields and parent ticket content
+### 1. Validate input
 
-Use the Jira MCP to fetch the parent ticket's core fields, description,
-comments, and attachment metadata. This stays in the main agent's context
-because it is the minimum needed to write the document skeleton.
+Confirm the ticket key matches expected format (letters, hyphen, digits — e.g.,
+`PROJECT-1234`). If the user provided a URL, extract the key. If the input
+doesn't look like a Jira key or URL, ask the user to clarify before proceeding.
 
-### 2. Delegate subtask and linked issue retrieval (if needed)
+### 2. Retrieve core fields and parent ticket content
+
+Use the available Jira MCP tools to fetch the parent ticket's core fields,
+description, comments, and attachment metadata.
+
+If the MCP tool returns an error:
+
+- **404 / not found:** Tell the user the ticket key doesn't exist and stop.
+- **401 / 403 / auth error:** Tell the user to check their Jira MCP
+  authentication and stop.
+- **Rate limit / timeout:** Wait briefly, retry once. If it fails again, tell
+  the user.
+
+### 3. Delegate subtask and linked-issue retrieval
 
 Count the subtasks and linked issues on the parent ticket.
 
@@ -233,12 +246,12 @@ agent ticket-retriever "Retrieve full details for these Jira issues and write re
 After the subagent completes, read `docs/<TICKET_KEY>-related.md` and merge its
 content into the appropriate sections of the main document.
 
-### 3. Assemble and write the document
+### 4. Assemble and write the document
 
 Create `docs/` if missing (`mkdir -p docs`). Write the full document using the
 template above.
 
-### 4. Validate
+### 5. Validate
 
 After writing the file, re-read it and verify:
 
@@ -250,13 +263,13 @@ After writing the file, re-read it and verify:
 If anything is missing, fetch the missing data and update the file before
 reporting completion.
 
-### 5. Clean up
+### 6. Clean up
 
 If the subagent wrote a temporary consolidated file
 (`docs/<TICKET_KEY>-related.md`), delete it after the main document is
 validated.
 
-### 6. Confirm completion
+### 7. Confirm completion
 
 Tell the user:
 
@@ -273,4 +286,7 @@ Tell the user:
    fetch every page.
 3. **Preserve fidelity.** Keep original formatting, code blocks, and links from
    the description and comments.
-4. **Create `docs/` if missing.** Run `mkdir -p docs` before writing.
+4. **Fail gracefully.** If a specific field or subtask cannot be retrieved,
+   note the failure in the output (e.g., `_Error: could not retrieve_`) and
+   continue with the remaining data — do not abort the entire retrieval.
+5. **Create `docs/` if missing.** Run `mkdir -p docs` before writing.
