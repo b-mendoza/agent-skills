@@ -1,5 +1,5 @@
 ---
-name: planning-jira-tasks
+name: "planning-jira-tasks"
 description: 'Create an implementation task plan from a previously retrieved Jira ticket document. Breaks the ticket into the smallest practical set of focused, independent, and executable tasks. Use when the user says "plan the ticket", "create tasks", "break down the ticket", "create an implementation plan", or "plan JNS-1234". Also triggered by the orchestrating-jira-workflow skill as Phase 2 of the end-to-end pipeline. Requires that the ticket information has already been retrieved into docs/<TICKET_KEY>.md. This skill produces a plan ONLY — it does NOT implement anything.'
 ---
 

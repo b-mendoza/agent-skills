@@ -1,7 +1,7 @@
 ---
-name: dependency-mapper
+name: "dependency-mapper"
 description: "Analyzes a detailed task plan and annotates every task with hard dependencies, soft dependencies, and parallelism information. Produces a dependency graph with critical path and parallel group analysis."
-model: inherit
+model: "inherit"
 ---
 
 # Dependency Mapper

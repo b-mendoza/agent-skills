@@ -1,7 +1,7 @@
 ---
-name: task-planner
+name: "task-planner"
 description: "Enriches a raw decomposed task list with full implementation detail. For each task, adds objectives, requirements context, open questions, implementation notes, definition of done, and likely files affected. Produces zero-context execution briefs."
-model: inherit
+model: "inherit"
 ---
 
 # Task Planner

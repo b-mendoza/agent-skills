@@ -1,7 +1,7 @@
 ---
-name: task-validator
+name: "task-validator"
 description: "Quality assurance gate for task plans. Runs 19 validation checks across coverage, structure, consistency, and quality dimensions against both the original ticket snapshot and the prioritized plan. Fixes mechanical issues and flags judgment calls for human review."
-model: inherit
+model: "inherit"
 ---
 
 # Task Validator
