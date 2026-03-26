@@ -12,6 +12,29 @@ subtasks in Jira under the parent ticket. Each subtask gets a structured
 description derived from the plan so that Jira becomes the canonical task
 tracker.
 
+## Platform Compatibility
+
+This skill follows the Agent Skills open standard and works across Claude Code,
+Cursor, OpenCode, and other compatible tools. The only platform-specific
+behavior is **subagent delegation**, which applies when the plan contains more
+than 3 tasks.
+
+| Platform        | Subagent delegation                                                                                       | Agent directory     |
+| --------------- | --------------------------------------------------------------------------------------------------------- | ------------------- |
+| **Claude Code** | Natural language or @-mention the subagent. Uses the Agent tool (renamed from Task in v2.1.63).           | `.claude/agents/`   |
+| **Cursor**      | Auto-delegates based on subagent description, or explicit mention. Supported since Cursor 2.4 (Jan 2026). | `.cursor/agents/`   |
+| **OpenCode**    | @-mention or Task tool. Also reads `.claude/agents/` as a fallback.                                       | `.opencode/agents/` |
+
+All three platforms support co-located subagents inside skill directories. The
+subagent at `./subagents/subtask-creator.md` is read by the orchestrating agent
+at dispatch time and passed as the subagent's system prompt.
+
+**Dispatching the subagent (platform-adaptive):**
+
+- **Claude Code:** `"Use the subtask-creator subagent to read the manifest at docs/<TICKET_KEY>-subtask-manifest.md and create all subtasks in Jira. Write results to docs/<TICKET_KEY>-subtask-results.md."`
+- **Cursor / OpenCode:** Same natural language delegation. If the platform
+  cannot resolve the co-located subagent, fall back to inline execution.
+
 ## Inputs
 
 | Input        | Source              | Required | Example    |
