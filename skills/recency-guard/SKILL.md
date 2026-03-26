@@ -30,6 +30,25 @@ do not surface the audit trail unless the user explicitly asks for it.
 | `recency-checker` | `./subagents/recency-checker.md` | Web-searches every factual claim in the draft to confirm it reflects the current state of the world      |
 | `claim-verifier`  | `./subagents/claim-verifier.md`  | Pressure-tests the 3 most important claims for credibility, counterexamples, and reasoning failure modes |
 
+### Dispatch Mechanism
+
+The subagent `.md` files above are co-located reference documents, not
+auto-discovered Claude Code agents. To dispatch a subagent:
+
+1. Read the subagent's `.md` file from the path in the registry.
+2. Use the **Task tool** to spawn a subagent, passing the `.md` content as
+   the system prompt and the step's inputs (draft, date, etc.) as the user
+   message.
+3. Collect the Task tool's return value — the subagent's structured report.
+4. Apply its findings to the draft before proceeding to the next step.
+
+Subagents run sequentially (Step 1 before Step 2) because the claim-verifier
+needs the recency-checker's revised draft as input. Do not parallelize.
+
+Note: subagents cannot spawn other subagents. Each subagent handles its own
+web searches and tool calls internally — the orchestrator does not need to
+provide search results.
+
 ---
 
 ## Source Quality Hierarchy
@@ -83,7 +102,8 @@ After reading this file, run the pipeline in order:
 
 ### Step 1: Recency Check (subagent)
 
-Dispatch to `recency-checker`. Pass it:
+Dispatch to `recency-checker` using the mechanism described in the Subagent
+Registry section above. Pass it:
 
 - The full draft response.
 - Today's date (from system context).
@@ -96,7 +116,7 @@ the draft before proceeding.
 
 ### Step 2: Self-Verification (subagent)
 
-Dispatch to `claim-verifier`. Pass it:
+Dispatch to `claim-verifier` using the same mechanism. Pass it:
 
 - The revised draft (post-Step 1).
 - The user's original request (for context on what matters most).
