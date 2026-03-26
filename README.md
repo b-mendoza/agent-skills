@@ -9,7 +9,17 @@ These live under [`skills/`](skills/).
 
 ### Jira workflow pipeline
 
-Five skills that take you from a Jira ticket to implemented code, in order:
+Six skills that take you from a Jira ticket to implemented code. The
+orchestrator is the entry point — it coordinates the five phase skills
+in sequence, tracks progress, and handles resume after interruptions.
+
+- [orchestrating-jira-workflow](skills/orchestrating-jira-workflow/SKILL.md) -
+  Top-level coordinator for the full ticket lifecycle. Dispatches to the
+  five phase skills below, validates artifacts between phases, maintains
+  `docs/<TICKET_KEY>-progress.md`, and gates destructive Jira mutations
+  on user confirmation. Supports resuming from any phase.
+
+The five phase skills it dispatches to, in order:
 
 1. [fetching-jira-ticket](skills/fetching-jira-ticket/SKILL.md) - Pulls
    Jira ticket data (metadata, description, comments, subtasks, links,
