@@ -12,6 +12,8 @@ allowed-tools:
   - Read
   - Write
   - Grep
+  - Bash
+  - agent
 ---
 
 # Fetching Jira Ticket
@@ -38,6 +40,20 @@ A Markdown file at:
 ```
 docs/<TICKET_KEY>.md
 ```
+
+## Subagents
+
+This skill uses one subagent to keep the main agent's context clean when
+retrieving tickets with many subtasks or linked issues. The subagent is
+colocated in this folder:
+
+| Subagent         | File                    | Purpose                                    |
+| ---------------- | ----------------------- | ------------------------------------------ |
+| ticket-retriever | `./ticket-retriever.md` | Retrieves subtask and linked issue details |
+
+Before delegating, read the subagent file to understand its contract (expected
+input format, output format, and rules). The path is relative to this skill's
+directory.
 
 ## Retrieval Checklist
 
@@ -170,22 +186,37 @@ Write the file using this structure:
 | ...        | ...   |
 ```
 
-## Execution Rules
+## Execution Steps
 
-1. **Retrieve only.** Do NOT modify the Jira ticket. Do NOT start implementation.
-   Do NOT create branches, write code, or propose solutions.
-2. **Be exhaustive.** If the Jira MCP tool paginates results (e.g., comments),
-   fetch every page.
-3. **Preserve fidelity.** Keep original formatting, code blocks, and links from
-   the description and comments.
-4. **Create `docs/` if missing.** Run `mkdir -p docs` before writing.
-5. **Confirm completion.** After writing the file, tell the user:
-   - The file path written.
-   - A short summary: ticket title, status, number of comments, number of
-     subtasks retrieved.
-   - Remind the user that this is retrieval only — no action has been taken.
+### 1. Retrieve core fields and parent ticket content
 
-## Validation
+Use the Jira MCP to fetch the parent ticket's core fields, description,
+comments, and attachment metadata. This stays in the main agent's context
+because it is the minimum needed to write the document skeleton.
+
+### 2. Delegate subtask and linked issue retrieval (if needed)
+
+Count the subtasks and linked issues on the parent ticket.
+
+**If the combined total is ≤ 3:** Retrieve them inline — the context cost is
+manageable.
+
+**If the combined total is > 3:** Delegate to the `ticket-retriever` subagent
+to avoid context pollution from many MCP responses:
+
+```
+agent ticket-retriever "Retrieve full details for these Jira issues and write results to docs/<TICKET_KEY>-related.md: <comma-separated list of subtask and linked issue keys>. For each issue, retrieve: key, summary, status, assignee, type, full description, and all comments (with author + timestamp). For linked issues, also note the link type."
+```
+
+After the subagent completes, read `docs/<TICKET_KEY>-related.md` and merge its
+content into the appropriate sections of the main document.
+
+### 3. Assemble and write the document
+
+Create `docs/` if missing (`mkdir -p docs`). Write the full document using the
+template above.
+
+### 4. Validate
 
 After writing the file, re-read it and verify:
 
@@ -195,3 +226,28 @@ After writing the file, re-read it and verify:
 
 If anything is missing, fetch the missing data and update the file before
 reporting completion.
+
+### 5. Clean up
+
+If the subagent wrote a temporary consolidated file
+(`docs/<TICKET_KEY>-related.md`), delete it after the main document is
+validated.
+
+### 6. Confirm completion
+
+Tell the user:
+
+- The file path written.
+- A short summary: ticket title, status, number of comments, number of
+  subtasks retrieved.
+- Remind the user that this is retrieval only — no action has been taken.
+
+## Execution Rules
+
+1. **Retrieve only.** Do NOT modify the Jira ticket. Do NOT start implementation.
+   Do NOT create branches, write code, or propose solutions.
+2. **Be exhaustive.** If the Jira MCP tool paginates results (e.g., comments),
+   fetch every page.
+3. **Preserve fidelity.** Keep original formatting, code blocks, and links from
+   the description and comments.
+4. **Create `docs/` if missing.** Run `mkdir -p docs` before writing.
