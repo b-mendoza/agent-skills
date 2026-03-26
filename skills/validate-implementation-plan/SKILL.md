@@ -43,6 +43,25 @@ results, and synthesize.
 Execute these steps in order. Pass structured data between steps — never
 rely on ambient context.
 
+### How to Dispatch Subagents
+
+These subagents are co-located in this skill's `subagents/` directory —
+they are not auto-discovered from `.claude/agents/`. To dispatch one:
+
+1. `Read` the subagent's `.md` file from the path in the registry above.
+2. Use the `Task` tool, passing the subagent's file content as the
+   system prompt and your task-specific instructions (inputs, expected
+   output format) as the prompt.
+3. Collect only the subagent's final output. All intermediate tool calls
+   stay inside the subagent's context.
+
+**AskUserQuestion is not available inside subagents.** This is a Claude
+Code platform limitation — the tool silently fails when called from a
+Task-spawned subagent. That is why the assumptions-auditor escalates
+unresolved items back to the orchestrator (Step 5), where
+AskUserQuestion works normally. Do not attempt to move user interaction
+into any subagent.
+
 ### 1. Read the Plan
 
 ```
@@ -56,7 +75,8 @@ verbatim — never paraphrase or summarize the plan.
 
 **Skip this step entirely when `$2` is `false`.**
 
-Dispatch `technical-researcher` with:
+Dispatch `technical-researcher` (read `./subagents/technical-researcher.md`,
+pass via Task tool) with:
 
 - `plan_text` — the full plan content
 
