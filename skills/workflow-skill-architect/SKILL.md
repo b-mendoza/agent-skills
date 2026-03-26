@@ -248,6 +248,32 @@ skill-name/
 
 The model reads only the relevant reference file, keeping context lean.
 
+### Subagent Registry
+
+Every SKILL.md that uses subagents must include a **Subagent Registry** table.
+This gives the orchestrator a quick lookup to find the right subagent for each
+task without reading every file. Place it near the top of the skill body, right
+after the overview.
+
+Use this format:
+
+```markdown
+## Subagent Registry
+
+| Subagent        | Path                           | Purpose                                                                            |
+| --------------- | ------------------------------ | ---------------------------------------------------------------------------------- |
+| `log-analyzer`  | `./subagents/log-analyzer.md`  | Reads build/test logs and extracts errors, warnings, and actionable findings       |
+| `code-reviewer` | `./subagents/code-reviewer.md` | Reviews changed files for bugs, style issues, and adherence to project conventions |
+| `test-runner`   | `./subagents/test-runner.md`   | Runs the test suite and reports pass/fail with failure details                     |
+```
+
+Paths are relative to the skill folder. The orchestrator reads the subagent's
+`.md` file only when it needs to dispatch that specific task — it does not
+preload all subagent definitions.
+
+When generating a skill with subagents, always produce both the registry table
+in SKILL.md and the individual subagent `.md` files in `subagents/`.
+
 ---
 
 ## Orchestration Guidance
