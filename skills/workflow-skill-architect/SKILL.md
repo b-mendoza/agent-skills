@@ -68,6 +68,26 @@ If even one of these doesn't apply, make it a subagent. When in doubt, make it
 a subagent. The cost of an unnecessary subagent is negligible; the cost of a
 polluted orchestrator context window compounds with every step.
 
+#### Co-located Subagents
+
+All subagent files live **inside the skill folder**, not in `.claude/agents/`.
+This keeps the skill self-contained and portable:
+
+```
+skill-name/
+├── SKILL.md
+├── subagents/
+│   ├── subagent-name-1.md
+│   ├── subagent-name-2.md
+│   └── subagent-name-3.md
+├── references/
+└── scripts/
+```
+
+The SKILL.md must include a **Subagent Registry** table so the orchestrator can
+quickly find and dispatch to the right subagent. See the Subagent Registry
+section below for the required format.
+
 The main orchestrating agent should stay focused on coordination,
 decision-making, and synthesis — not deep execution.
 
@@ -164,9 +184,13 @@ guidance):
 
 ```
 skill-name/
-├── SKILL.md (required)
+├── SKILL.md (required — orchestration logic + subagent registry)
 │   ├── YAML frontmatter (name, description required)
 │   └── Markdown instructions
+├── subagents/ (co-located subagent definitions)
+│   ├── subagent-name-1.md
+│   ├── subagent-name-2.md
+│   └── subagent-name-3.md
 └── Bundled Resources (optional)
     ├── scripts/    - Executable code for deterministic/repetitive tasks
     ├── references/ - Docs loaded into context as needed
@@ -213,6 +237,9 @@ organize by variant:
 ```
 skill-name/
 ├── SKILL.md (workflow + selection logic)
+├── subagents/
+│   ├── deployer.md
+│   └── validator.md
 └── references/
     ├── variant-a.md
     ├── variant-b.md
