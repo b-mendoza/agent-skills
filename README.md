@@ -43,6 +43,16 @@ implemented code:
   compliance, and assumption risks. Uses expert personas to annotate plans
   inline with severity-leveled findings.
 
+- **[recency-guard](skills/recency-guard/SKILL.md)** — Enforces a 4-step
+  validation pipeline (Recency → Self-Verification → Completeness → Clarity) on
+  factual responses. Catches stale information, overconfident claims, and
+  missing requirements before they reach the user.
+
+- **[workflow-skill-architect](skills/workflow-skill-architect/SKILL.md)** —
+  Converts multi-step workflows into production-ready Claude Code skills with
+  co-located subagents. Guides step-by-step decomposition, subagent-default
+  execution, and skill hygiene best practices.
+
 ## Installed Skills
 
 Third-party and external skills managed via [`skills-lock.json`](skills-lock.json),
