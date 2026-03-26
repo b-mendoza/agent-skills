@@ -5,11 +5,10 @@ description: 'Retrieve ALL information from a Jira ticket (description, comments
 
 # Fetching Jira Ticket
 
-## Purpose
-
 Extract every available field from a Jira ticket and its subtasks, then write a
 comprehensive Markdown snapshot to `docs/`. This file becomes the single source
-of truth for all downstream skills (planning, subtask creation, execution).
+of truth for all downstream skills (planning, subtask creation, execution,
+validation).
 
 ## Inputs
 
@@ -30,9 +29,10 @@ docs/<TICKET_KEY>.md
 
 ### Output contract (consumed by downstream skills)
 
-The output file **must** contain all of these sections for downstream skills to
-function correctly. If a section has no data, include the heading with `_None_`
-beneath it — never omit the heading.
+Every section below **must** appear in the output file. If a section has no
+data, keep the heading and write `_None_` beneath it — never omit a heading.
+Downstream skills parse these headings programmatically, so missing headings
+break the pipeline.
 
 | Section                  | Required by                                 | Why                                     |
 | ------------------------ | ------------------------------------------- | --------------------------------------- |
@@ -47,13 +47,12 @@ beneath it — never omit the heading.
 
 ## Subagent Registry
 
-| Subagent           | Path                              | Purpose                                    |
-| ------------------ | --------------------------------- | ------------------------------------------ |
-| `ticket-retriever` | `./subagents/ticket-retriever.md` | Retrieves subtask and linked issue details |
+| Subagent           | Path                              | Purpose                                                        |
+| ------------------ | --------------------------------- | -------------------------------------------------------------- |
+| `ticket-retriever` | `./subagents/ticket-retriever.md` | Retrieves subtask and linked-issue details in isolated context |
 
-Before delegating, read the subagent file to understand its contract (expected
-input format, output format, and rules). The path is relative to this skill's
-directory.
+Before dispatching, read the subagent file to understand its input/output
+contract. The path is relative to this skill's directory.
 
 ## Multi-Platform MCP Compatibility
 
@@ -79,15 +78,15 @@ hardcoding tool names, follow this adaptive approach:
 
 ## Retrieval Checklist
 
-You MUST retrieve **all** of the following. If a field is empty or unavailable,
-write `_None_` — never silently omit it.
+Retrieve **all** of the following. If a field is empty or unavailable, write
+`_None_` — never silently omit it.
 
 ### Core fields
 
 - Ticket key & URL
 - Summary / title
 - Status, Resolution
-- Type (Story, Bug, Task, Epic, ...)
+- Type (Story, Bug, Task, Epic, …)
 - Priority
 - Labels, Components
 - Fix Version(s), Affects Version(s)
@@ -98,28 +97,31 @@ write `_None_` — never silently omit it.
 
 ### Rich content
 
-- **Description** — full body, preserve formatting
-- **Acceptance criteria** — if present as a custom field or within description
-- **Comments** — every comment, with author and timestamp, in chronological order
-- **Attachments** — list filenames, types, and sizes (do not download binary files)
+- **Description** — full body, preserve all formatting (code blocks, links,
+  tables, images)
+- **Acceptance criteria** — check both dedicated custom fields and the
+  description body for sections labeled "Acceptance Criteria", "AC",
+  "Definition of Done", or similar
+- **Comments** — every comment with author and timestamp, in chronological order
+- **Attachments** — list filenames, types, and sizes (do not download binaries)
 
 ### Subtasks & linked issues
 
-For **each subtask** and **each linked issue**:
+For each subtask and each linked issue:
 
-1. Retrieve its key, summary, status, assignee, and type.
-2. Retrieve its full description.
-3. Retrieve all its comments (author + timestamp + body).
-4. Note the link type (e.g., "is blocked by", "relates to").
+1. Key, summary, status, assignee, and type.
+2. Full description.
+3. All comments (author + timestamp + body).
+4. Link type (e.g., "is blocked by", "relates to").
 
 ### Custom fields
 
-Retrieve any non-empty custom fields visible on the ticket and list them under a
-`## Custom Fields` section.
+Retrieve any non-empty custom fields visible on the ticket and list them under
+`## Custom Fields`.
 
 ## Document Template
 
-Write the file using this structure:
+Write the file using this structure exactly:
 
 ```markdown
 # <TICKET_KEY>: <Summary>
@@ -130,24 +132,25 @@ Write the file using this structure:
 
 | Field           | Value |
 | --------------- | ----- |
-| Status          | ...   |
-| Type            | ...   |
-| Priority        | ...   |
-| Assignee        | ...   |
-| Reporter        | ...   |
-| Labels          | ...   |
-| Components      | ...   |
-| Sprint          | ...   |
-| Epic            | ...   |
-| Fix Version     | ...   |
-| Affects Version | ...   |
-| Created         | ...   |
-| Updated         | ...   |
-| Due Date        | ...   |
+| Status          | …     |
+| Resolution      | …     |
+| Type            | …     |
+| Priority        | …     |
+| Assignee        | …     |
+| Reporter        | …     |
+| Labels          | …     |
+| Components      | …     |
+| Sprint          | …     |
+| Epic            | …     |
+| Fix Version     | …     |
+| Affects Version | …     |
+| Created         | …     |
+| Updated         | …     |
+| Due Date        | …     |
 
 ## Description
 
-<full description body>
+<full description body — preserve original formatting>
 
 ## Acceptance Criteria
 
@@ -159,15 +162,15 @@ Write the file using this structure:
 
 <body>
 
-### Comment 2 — ...
+### Comment 2 — …
 
 ## Subtasks
 
 ### <SUBTASK_KEY>: <Summary>
 
-- **Status:** ...
-- **Assignee:** ...
-- **Type:** ...
+- **Status:** …
+- **Assignee:** …
+- **Type:** …
 
 #### Description
 
@@ -179,14 +182,14 @@ Write the file using this structure:
 
 <body>
 
-### <next subtask...>
+### <next subtask…>
 
 ## Linked Issues
 
 ### <LINK_TYPE>: <ISSUE_KEY> — <Summary>
 
-- **Status:** ...
-- **Type:** ...
+- **Status:** …
+- **Type:** …
 
 #### Description
 
@@ -194,7 +197,7 @@ Write the file using this structure:
 
 #### Comments
 
-...
+…
 
 ## Attachments
 
@@ -205,7 +208,7 @@ Write the file using this structure:
 
 | Field Name | Value |
 | ---------- | ----- |
-| ...        | ...   |
+| …          | …     |
 ```
 
 ## Execution Steps
@@ -255,44 +258,45 @@ document.
 
 ### 4. Assemble and write the document
 
-Create `docs/` if missing (`mkdir -p docs`). Write the full document using the
-template above.
+Run `mkdir -p docs` to ensure the directory exists. Write the full document
+using the template above.
 
 ### 5. Validate
 
-After writing the file, re-read it and verify:
+Re-read the written file and verify:
 
-- [ ] Every section from the template is present (even if marked `_None_`).
-- [ ] Subtask count matches what Jira reported.
+- [ ] Every section heading from the template is present (even if `_None_`).
+- [ ] Subtask count in the file matches what Jira reported.
 - [ ] Comment count per item matches what Jira reported.
-- [ ] The `## Description` section is non-empty (downstream skills depend on it).
+- [ ] `## Description` is non-empty (downstream skills depend on it).
+- [ ] No section headings were accidentally omitted.
 
 If anything is missing, fetch the missing data and update the file before
 reporting completion.
 
 ### 6. Clean up
 
-If the subagent wrote a temporary consolidated file
-(`docs/<TICKET_KEY>-related.md`), delete it after the main document is
-validated.
+Delete the temporary subagent output file (`docs/<TICKET_KEY>-related.md`) if
+it exists, after the main document passes validation.
 
 ### 7. Confirm completion
 
 Tell the user:
 
-- The file path written.
-- A short summary: ticket title, status, number of comments, number of
-  subtasks retrieved.
-- Remind the user that this is retrieval only — no action has been taken.
+- The file path written (e.g., `docs/JNS-6065.md`).
+- A short summary: ticket title, status, number of comments, number of subtasks
+  and linked issues retrieved.
+- Remind the user this is retrieval only — no ticket modifications, no branches,
+  no code, no implementation.
 
 ## Execution Rules
 
-1. **Retrieve only.** Do NOT modify the Jira ticket. Do NOT start implementation.
-   Do NOT create branches, write code, or propose solutions.
-2. **Be exhaustive.** If the Jira MCP tool paginates results (e.g., comments),
-   fetch every page.
-3. **Preserve fidelity.** Keep original formatting, code blocks, and links from
-   the description and comments.
+1. **Retrieve only.** Do not modify the Jira ticket. Do not start
+   implementation, create branches, write code, or propose solutions.
+2. **Be exhaustive.** If the MCP tool paginates (e.g., comments, search
+   results), fetch every page.
+3. **Preserve fidelity.** Keep original formatting, code blocks, links, and
+   inline images from the description and comments.
 4. **Fail gracefully.** If a specific field or subtask cannot be retrieved,
    note the failure in the output (e.g., `_Error: could not retrieve_`) and
    continue with the remaining data — do not abort the entire retrieval.
