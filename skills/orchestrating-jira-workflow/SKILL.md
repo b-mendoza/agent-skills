@@ -1,5 +1,5 @@
 ---
-name: orchestrating-jira-workflow
+name: "orchestrating-jira-workflow"
 description: 'Top-level orchestrator for the end-to-end Jira ticket workflow: fetch, plan, clarify, create subtasks, execute. Use this skill whenever the user wants to work on a Jira ticket from start to finish, says "work on ticket PROJECT-1234", "start the Jira workflow", "handle this ticket end to end", "orchestrate PROJECT-1234", or provides a Jira ticket key or URL without specifying a particular phase. Also use when the user says "resume ticket PROJECT-1234" or "where did we leave off on PROJECT-1234". This skill coordinates all five downstream skills and never performs heavy execution itself.'
 ---
 
