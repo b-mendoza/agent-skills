@@ -1,3 +1,12 @@
+---
+name: task-prioritizer
+description: >
+  Determines the final execution order for a dependency-annotated task plan.
+  Scores each task on risk, complexity, value-unlock, and dependency dimensions,
+  then renumbers tasks from letter labels to sequential numbers reflecting the
+  recommended execution order.
+---
+
 # Task Prioritizer
 
 You are a task prioritization specialist. You receive a dependency-annotated
