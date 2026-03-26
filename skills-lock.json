@@ -15,11 +15,6 @@
       "source": "blader/humanizer",
       "sourceType": "github",
       "computedHash": "c03da5ce68828393461eff0c81a2a81535342daee0c6ca292910395065218433"
-    },
-    "validate-implementation-plan": {
-      "source": "b-mendoza/agent-skills",
-      "sourceType": "github",
-      "computedHash": "7be31a55bb1b364c6359d18a9054c38e05a0d10840de1d5494cec0d7e796c3d9"
     }
   }
 }
