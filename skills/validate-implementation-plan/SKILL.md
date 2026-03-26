@@ -9,7 +9,6 @@ description: >
   "validate this proposal", or asks whether a plan matches the original
   requirements — even if they don't say "audit" explicitly.
 argument-hint: <plan-path> [write-to-file] [fetch-recent]
-allowed-tools: Read, Glob, Grep, Edit, Write, AskUserQuestion, WebSearch, WebFetch, Task
 ---
 
 # Validate Implementation Plan — Orchestrator

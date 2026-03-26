@@ -4,7 +4,6 @@ description: >
   Extracts numbered source requirements and constraints from a user's
   original request, tickets, or conversation context. Produces the
   baseline reference list that all auditors cite.
-tools: Read, Glob, Grep
 model: inherit
 ---
 

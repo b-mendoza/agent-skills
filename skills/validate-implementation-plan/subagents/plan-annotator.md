@@ -4,7 +4,6 @@ description: >
   Merges annotations from all auditors into the original plan text and
   compiles the audit summary table. Pure compositor — does not create
   or modify annotations.
-tools: Read, Write
 model: inherit
 ---
 

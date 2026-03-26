@@ -4,7 +4,6 @@ description: >
   Identifies and attempts to verify every assumption in an
   implementation plan. Returns unresolved assumptions to the orchestrator
   for user clarification — does not interact with users directly.
-tools: Read, Glob, Grep, WebSearch, WebFetch
 model: inherit
 ---
 

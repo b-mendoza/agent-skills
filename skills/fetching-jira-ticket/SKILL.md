@@ -7,13 +7,6 @@ description: >
   "retrieve Jira", "pull ticket info", "get ticket details", or provides a Jira
   ticket URL or key like PROJECT-1234. This skill ONLY retrieves — it never
   modifies the ticket or starts implementation.
-allowed-tools:
-  - mcp__jira__*
-  - Read
-  - Write
-  - Grep
-  - Bash
-  - agent
 ---
 
 # Fetching Jira Ticket

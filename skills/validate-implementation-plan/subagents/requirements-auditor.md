@@ -4,7 +4,6 @@ description: >
   Audits every section of an implementation plan for traceability back
   to source requirements. Flags additions that lack explicit
   justification from the original request.
-tools: Read
 model: inherit
 ---
 

@@ -8,11 +8,6 @@ description: >
   PROJECT-1234". Requires that a task plan exists at docs/<TICKET_KEY>-tasks.md.
   This skill is conversational — it asks ONE question at a time and waits for a
   response before continuing.
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
 ---
 
 # Clarifying Assumptions

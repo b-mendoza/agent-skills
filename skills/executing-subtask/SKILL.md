@@ -7,14 +7,6 @@ description: >
   Requires that the task plan exists at docs/<TICKET_KEY>-tasks.md. Executes
   ONLY the specified task — never continues to the next one without explicit
   user approval.
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Bash
-  - agent
-  - mcp__jira__*
 ---
 
 # Executing Subtask

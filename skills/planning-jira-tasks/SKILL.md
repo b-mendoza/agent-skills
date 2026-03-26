@@ -8,12 +8,6 @@ description: >
   "plan JNS-1234". Requires that the ticket information has already been
   retrieved into docs/<TICKET_KEY>.md. This skill produces a plan ONLY — it
   does NOT implement anything.
-allowed-tools:
-  - Read
-  - Write
-  - Grep
-  - Bash
-  - agent
 ---
 
 # Planning Jira Tasks

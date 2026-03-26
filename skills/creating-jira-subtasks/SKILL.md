@@ -6,14 +6,6 @@ description: >
   per task entry under the parent ticket. Use when the user says "create
   subtasks", "push tasks to Jira", "sync plan to Jira", or "create Jira
   subtasks for PROJECT-1234". Requires that the task plan already exists.
-allowed-tools:
-  - mcp__jira__*
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Bash
-  - agent
 ---
 
 # Creating Jira Subtasks
