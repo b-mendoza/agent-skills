@@ -17,6 +17,25 @@ goals:
 3. **Create a shared mental model** between the agent and user using visual aids
    and interactive prompts.
 
+## Platform Adaptation
+
+This skill runs across multiple environments (Claude.ai, Claude Code CLI,
+Cursor IDE, OpenCode CLI, and others). The SKILL.md format is a cross-platform
+open standard, but tool availability differs by environment.
+
+**Interactive input:** Most platforms provide an interactive selection tool
+(Claude.ai has `ask_user_input`, Claude Code has `AskUserQuestion`, Cursor has
+its own ask-question tool). At the start of execution, check whether any
+interactive input tool is available. If one exists, use it for every discrete
+choice. If none is available, fall back to numbered text options and ask the
+user to reply with a number. Both paths work — the goal is minimal friction.
+
+**Visual context:** Prefer markdown tables as the default visual (universally
+supported across all platforms). Use mermaid diagrams only when the environment
+renders them inline (Claude.ai and Cursor do; OpenCode's TUI does not) and the
+question genuinely involves architecture, data flow, or dependency structure.
+ASCII diagrams are an acceptable fallback in terminal environments.
+
 ## Inputs
 
 | Input        | Source              | Required | Example    |
