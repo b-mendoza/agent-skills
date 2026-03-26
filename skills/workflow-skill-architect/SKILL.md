@@ -306,11 +306,11 @@ Key rules for the orchestrator:
 
 Point the user to these resources when relevant:
 
-| Resource                                       | URL                                                                          |
-| ---------------------------------------------- | ---------------------------------------------------------------------------- |
-| Claude's Agent Skills overview                 | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview   |
-| Claude's Skill authoring best practices        | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |
-| Claude's Best practices for coding with agents | https://code.claude.com/docs/en/best-practices                               |
-| Claude's Subagents                             | https://code.claude.com/docs/en/sub-agents                                   |
-| Cursor's Best practices for coding with agents | https://cursor.com/blog/agent-best-practices                                 |
-| Cursor's Agent Skills documentation            | https://cursor.com/docs/skills                                               |
+| Resource                                            | URL                                                                          |
+| --------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Claude's agent skills overview                      | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview   |
+| Claude's skill authoring best practices             | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |
+| Claude's best practices for coding with Claude Code | https://code.claude.com/docs/en/best-practices                               |
+| Claude's subagents documentation                    | https://code.claude.com/docs/en/sub-agents                                   |
+| Cursor's best practices for coding with agents      | https://cursor.com/blog/agent-best-practices                                 |
+| Cursor's agent skills documentation                 | https://cursor.com/docs/skills                                               |
