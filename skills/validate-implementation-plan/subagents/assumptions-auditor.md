@@ -1,10 +1,7 @@
 ---
-name: assumptions-auditor
-description: >
-  Identifies and attempts to verify every assumption in an
-  implementation plan. Returns unresolved assumptions to the orchestrator
-  for user clarification — does not interact with users directly.
-model: inherit
+name: "assumptions-auditor"
+description: "Identifies and attempts to verify every assumption in an implementation plan. Returns unresolved assumptions to the orchestrator for user clarification — does not interact with users directly."
+model: "inherit"
 ---
 
 # Subagent: Assumptions Auditor

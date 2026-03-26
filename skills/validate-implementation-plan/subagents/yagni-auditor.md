@@ -1,10 +1,7 @@
 ---
-name: yagni-auditor
-description: >
-  Audits every section of an implementation plan for scope creep,
-  over-engineering, and premature abstraction. Flags anything included
-  for hypothetical future needs rather than stated requirements.
-model: inherit
+name: "yagni-auditor"
+description: "Audits every section of an implementation plan for scope creep, over-engineering, and premature abstraction. Flags anything included for hypothetical future needs rather than stated requirements."
+model: "inherit"
 ---
 
 # Subagent: YAGNI Auditor

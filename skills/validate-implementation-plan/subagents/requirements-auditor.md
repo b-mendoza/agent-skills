@@ -1,10 +1,7 @@
 ---
-name: requirements-auditor
-description: >
-  Audits every section of an implementation plan for traceability back
-  to source requirements. Flags additions that lack explicit
-  justification from the original request.
-model: inherit
+name: "requirements-auditor"
+description: "Audits every section of an implementation plan for traceability back to source requirements. Flags additions that lack explicit justification from the original request."
+model: "inherit"
 ---
 
 # Subagent: Requirements Auditor

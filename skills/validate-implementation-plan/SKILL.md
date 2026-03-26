@@ -1,14 +1,7 @@
 ---
-name: validate-implementation-plan
-description: >
-  Audit and annotate an AI-generated implementation plan for requirements
-  traceability, YAGNI compliance, and assumption risks. Use when reviewing,
-  validating, or auditing an implementation plan or design proposal produced
-  by an AI agent. Also trigger when the user says "audit this plan",
-  "review this implementation", "check this design for scope creep",
-  "validate this proposal", or asks whether a plan matches the original
-  requirements — even if they don't say "audit" explicitly.
-argument-hint: <plan-path> [write-to-file] [fetch-recent]
+name: "validate-implementation-plan"
+description: 'Audit and annotate an AI-generated implementation plan for requirements traceability, YAGNI compliance, and assumption risks. Use when reviewing, validating, or auditing an implementation plan or design proposal produced by an AI agent. Also trigger when the user says "audit this plan", "review this implementation", "check this design for scope creep", "validate this proposal", or asks whether a plan matches the original requirements — even if they don''t say "audit" explicitly.'
+argument-hint: "<plan-path> [write-to-file] [fetch-recent]"
 ---
 
 # Validate Implementation Plan — Orchestrator

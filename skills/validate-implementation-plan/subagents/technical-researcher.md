@@ -1,10 +1,7 @@
 ---
-name: technical-researcher
-description: >
-  Validates technical claims in an implementation plan against current
-  web sources. Use when auditing a plan's library references, API
-  patterns, or architectural recommendations for accuracy.
-model: inherit
+name: "technical-researcher"
+description: "Validates technical claims in an implementation plan against current web sources. Use when auditing a plan's library references, API patterns, or architectural recommendations for accuracy."
+model: "inherit"
 ---
 
 # Subagent: Technical Researcher
