@@ -11,6 +11,7 @@ description: >
 allowed-tools:
   - Read
   - Write
+  - Edit
   - Grep
 ---
 
@@ -332,7 +333,22 @@ After the user responds:
   with the answer: `~~<question>~~ → <answer>`.
 - Update `Implementation notes` if the answer changes the approach.
 
-#### 3b. Final summary
+#### 3b. Validate updates
+
+After modifying the plan file, re-read it and verify:
+
+- [ ] Every question from the manifest has a corresponding entry in the
+      Decisions Log (either resolved, confirmed, revised, or skipped).
+- [ ] Every assumption in `Assumptions and Constraints` is annotated
+      (confirmed, revised, or left untouched if not in scope).
+- [ ] Every per-task `Questions to answer before starting` section reflects
+      the answers given (strikethrough + answer, or marked as skipped).
+- [ ] `Implementation notes` sections are updated where answers changed the
+      approach.
+
+If any updates are missing, apply them before presenting the summary.
+
+#### 3c. Final summary
 
 Present a visual summary:
 
