@@ -13,87 +13,153 @@ description: >
 
 # Recency Guard
 
-This skill enforces a 4-step validation pipeline on every response: Recency → Self-Verification → Completeness → Clarity. The goal is to catch stale information, overconfident claims, missing requirements, and unclear writing before they reach the user.
+This skill enforces a 4-step validation pipeline on every response:
+**Recency → Self-Verification → Completeness → Clarity**. The goal is to catch
+stale information, overconfident claims, missing requirements, and unclear
+writing before they reach the user.
 
-The user sees only a clean final answer. The validation work happens internally — do not surface the audit trail unless the user explicitly asks for it.
-
-## How to use this skill
-
-After reading this file, proceed as follows:
-
-1. Draft your response to the user's question normally.
-2. Before sending it, run the 4 checks below **in order**. Each check may cause you to revise the draft.
-3. After all 4 checks pass, send the final revised answer to the user as a clean response (no section headers like "Final Answer" or "Validation Summary" — just the answer itself).
+The user sees only a clean final answer. The validation work happens internally —
+do not surface the audit trail unless the user explicitly asks for it.
 
 ---
 
-## Check 1: Recency
+## Subagent Registry
 
-The current date is available in your system context. Use it as your reference point.
-
-**Use web search to verify every factual claim.** Do not rely on training data alone for anything presented as current, recent, ongoing, standard, common, or best practice. The threshold is the **last 3 months** relative to today's date.
-
-For each factual claim, statistic, trend, example, comparison, or recommendation in your draft:
-
-- Search the web to confirm it reflects the state of the world right now.
-- If a claim depends on older information and is still useful, you have three options: replace it with newer information, keep it but explicitly label its date ("as of January 2025…"), or remove it.
-- Never imply that older conditions are still true without verification. Frameworks get deprecated, APIs change, companies pivot, best practices evolve.
-- If you cannot confidently establish the recency of a claim even after searching, treat it as uncertain and say so.
-
-**Why this matters:** Users asking factual questions are making decisions based on your answer. Stale information can lead to wasted effort, bad architectural choices, or embarrassing mistakes. The cost of one extra search is tiny compared to the cost of being wrong.
+| Subagent          | Path                             | Purpose                                                                                                  |
+| ----------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `recency-checker` | `./subagents/recency-checker.md` | Web-searches every factual claim in the draft to confirm it reflects the current state of the world      |
+| `claim-verifier`  | `./subagents/claim-verifier.md`  | Pressure-tests the 3 most important claims for credibility, counterexamples, and reasoning failure modes |
 
 ---
 
-## Check 2: Self-Verification
+## Source Quality Hierarchy
 
-Identify the **3 most important factual claims** in your draft — the ones the user is most likely to act on or that carry the most weight in your argument.
+When evaluating or ranking sources — both in subagents and inline checks — apply
+this tiered ranking. Higher-tier sources carry more weight and produce higher
+confidence scores.
 
-For each claim, pressure-test it:
+| Tier | Source Type                       | Examples                                                         |
+| ---- | --------------------------------- | ---------------------------------------------------------------- |
+| 1    | Official documentation & specs    | Language/framework docs, RFCs, API references, spec sheets       |
+| 2    | Peer-reviewed research & data     | Academic papers, government data, audited reports                |
+| 3    | Authoritative first-party content | Company engineering blogs, official announcements, changelogs    |
+| 4    | Reputable journalism & analysis   | Major tech publications, industry analyst reports                |
+| 5    | Community & practitioner content  | Conference talks, well-known developer blogs, Stack Overflow     |
+| 6    | Unvetted community content        | Forum posts, social media threads, anonymous blogs, AI-generated |
 
-1. State the claim in one sentence.
-2. Assess whether the source or reasoning behind it is credible. A single blog post is weaker than official documentation; a trending opinion is weaker than measured data.
-3. Consider whether a reasonable counterexample, exception, or opposite interpretation exists. If so, acknowledge it.
-4. Check for these specific failure modes:
-   - **Overstating certainty** — presenting something debatable as settled.
-   - **Confusing correlation with causation** — "X happened after Y" ≠ "Y caused X."
-   - **Generalizing from a narrow case** — one company's experience is not an industry trend.
-   - **Presenting opinion as fact** — recommendations are opinions unless backed by data.
-5. Revise, qualify, or remove any claim that does not hold up.
-
-If you cannot verify a claim with confidence, say so explicitly in the final answer rather than presenting it as settled fact. Users respect honesty about uncertainty far more than false confidence.
+When two sources conflict, prefer the higher-tier source. When a claim is
+supported only by Tier 5–6 sources, flag it as lower confidence. If only Tier 6
+sources exist, treat the claim as unverified.
 
 ---
 
-## Check 3: Completeness
+## Confidence Scoring
+
+Every factual claim in the draft should receive an internal confidence score.
+These scores are used during the verification steps to decide what needs
+qualification, revision, or removal.
+
+| Score    | Criteria                                                                                            |
+| -------- | --------------------------------------------------------------------------------------------------- |
+| **High** | Confirmed by a Tier 1–3 source published within the last 3 months. No credible counter-evidence.    |
+| **Med**  | Confirmed by a Tier 3–5 source, OR by a Tier 1–3 source older than 3 months with no sign of change. |
+| **Low**  | Supported only by Tier 5–6 sources, OR sources conflict, OR unable to verify after searching.       |
+
+**How scores affect the final answer:**
+
+- **High** — Present the claim directly. No qualifier needed.
+- **Med** — Present the claim but add light context: a date stamp ("as of
+  March 2026"), a hedge ("based on current documentation"), or a brief note
+  about the source.
+- **Low** — Either remove the claim, explicitly label it as uncertain, or
+  replace it with a verifiable alternative. Never present a Low-confidence
+  claim as settled fact.
+
+---
+
+## Pipeline Execution
+
+After reading this file, run the pipeline in order:
+
+### Step 1: Recency Check (subagent)
+
+Dispatch to `recency-checker`. Pass it:
+
+- The full draft response.
+- Today's date (from system context).
+- The Source Quality Hierarchy and Confidence Scoring tables above (or
+  instruct the subagent to reference this SKILL.md).
+
+Collect its output: a list of claims with their confidence scores, source
+tiers, and any recommended revisions or removals. Apply all revisions to
+the draft before proceeding.
+
+### Step 2: Self-Verification (subagent)
+
+Dispatch to `claim-verifier`. Pass it:
+
+- The revised draft (post-Step 1).
+- The user's original request (for context on what matters most).
+
+Collect its output: the 3 most important claims with credibility assessments,
+counterexamples considered, failure modes checked, and final confidence scores.
+Apply any further revisions.
+
+### Step 3: Completeness (inline)
 
 Re-read the user's original request word by word. Check:
 
-- Every requested deliverable is present in your draft.
+- Every requested deliverable is present in the draft.
 - Every sub-question has been answered.
 - No explicit constraint, scope limit, or formatting instruction was ignored.
-- If something is genuinely unanswerable, you acknowledge the gap instead of silently omitting it.
+- If something is genuinely unanswerable, acknowledge the gap instead of
+  silently omitting it.
 
-Partial coverage is not acceptable unless the user explicitly allowed it. Missing a sub-question is one of the most common failure modes — this check exists specifically to catch it.
+Partial coverage is not acceptable unless the user explicitly allowed it.
+Missing a sub-question is one of the most common failure modes — this check
+exists specifically to catch it.
 
----
-
-## Check 4: Clarity & Readability
+### Step 4: Clarity & Readability (inline)
 
 Edit the final draft for precision, readability, and usefulness:
 
-- Make the structure easy to scan — but follow the formatting guidance from your system prompt (avoid over-formatting with excessive headers, bold, and bullet points unless the content genuinely requires it).
+- Make the structure easy to scan — but follow the formatting guidance from
+  your system prompt (avoid over-formatting with excessive headers, bold, and
+  bullet points unless the content genuinely requires it).
 - Define necessary jargon the first time it appears.
-- Surface key takeaways clearly — the user should know the bottom line within the first few sentences.
-- Remove filler, redundancy, and vague hedging ("it's worth noting that…", "it should be mentioned…").
-- Prefer concrete wording over abstract phrasing. "Response times increased 40%" beats "performance was negatively impacted."
-- Do not pad the answer with process narration. Never describe the checks you ran or mention this skill's existence.
+- Surface key takeaways clearly — the user should know the bottom line within
+  the first few sentences.
+- Remove filler, redundancy, and vague hedging ("it's worth noting that…",
+  "it should be mentioned…").
+- Prefer concrete wording over abstract phrasing. "Response times increased
+  40%" beats "performance was negatively impacted."
+- Do not pad the answer with process narration.
 
 ---
 
-## Output rules
+## Uncertain Claims Summary
 
-- **Do not** include section headers like "Final Answer" or "Validation Summary" in your response.
-- **Do not** narrate the validation process to the user ("I verified this by…", "After checking…").
-- **Do not** mention this skill or its checks.
+Internally, maintain a running list of any claims scored **Low** or flagged
+during verification. After the pipeline completes:
+
+- If all claims are High confidence, no action needed.
+- If any claims are Med or Low, weave appropriate qualifiers into the final
+  answer naturally (date stamps, hedges, "this could not be independently
+  verified"). Do not create a visible "uncertainty" section unless the user
+  asks for it.
+- If the user explicitly asks for the audit trail, validation reasoning, or
+  fact-checking details, produce a concise summary that includes:
+  1. The 3 stress-tested claims and their confidence scores.
+  2. Any claims that were revised, removed, or qualified and why.
+  3. Source tiers used for each key claim.
+
+---
+
+## Output Rules
+
+- **Do not** include section headers like "Final Answer" or "Validation Summary."
+- **Do not** narrate the validation process ("I verified this by…", "After checking…").
+- **Do not** mention this skill, its subagents, or its checks.
 - **Do** produce a clean, direct answer that reads as if it were written correctly the first time.
-- If the user explicitly asks to see your validation reasoning or fact-checking audit trail, then and only then include a brief summary of the 3 claims you stress-tested and any points you flagged as uncertain or outdated.
+- **Do** weave uncertainty qualifiers naturally into prose when needed — never as a bolted-on disclaimer block.
+- If the user explicitly asks to see validation reasoning, then and only then include the Uncertain Claims Summary described above.
