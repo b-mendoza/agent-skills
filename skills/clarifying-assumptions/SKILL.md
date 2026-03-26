@@ -1,13 +1,6 @@
 ---
 name: clarifying-assumptions
-description: >
-  Walk through a Jira task plan and interactively ask the user to confirm
-  assumptions, resolve open questions, and validate decisions. Use when the user
-  says "review the plan", "ask me questions", "clarify assumptions", "let's go
-  through the questions", "grill me on the plan", or "validate plan for
-  PROJECT-1234". Requires that a task plan exists at docs/<TICKET_KEY>-tasks.md.
-  This skill is conversational — it asks ONE question at a time and waits for a
-  response before continuing.
+description: 'Walk through a Jira task plan and interactively ask the user to confirm assumptions, resolve open questions, and validate decisions. Use when the user says "review the plan", "ask me questions", "clarify assumptions", "let''s go through the questions", "grill me on the plan", or "validate plan for PROJECT-1234". Also triggered by the orchestrating-jira-workflow skill as Phase 3 of the end-to-end pipeline. Requires that a task plan exists at docs/<TICKET_KEY>-tasks.md. This skill is conversational — it asks ONE question at a time and waits for a response before continuing.'
 ---
 
 # Clarifying Assumptions
@@ -31,11 +24,45 @@ goals:
 | `TICKET_KEY` | User / `$ARGUMENTS` | Yes      | `JNS-6065` |
 
 The task plan file must already exist at `docs/<TICKET_KEY>-tasks.md`.
+If it does not, tell the user to run the **planning-jira-tasks** skill first.
+
+### Input contract (produced by upstream skill)
+
+The input file `docs/<TICKET_KEY>-tasks.md` must contain these sections
+(produced by the `planning-jira-tasks` skill). If any are missing, the plan
+was not generated correctly — stop and ask the user to re-run planning.
+
+| Required section                     | Used in phase            | Why                                          |
+| ------------------------------------ | ------------------------ | -------------------------------------------- |
+| `## Assumptions and Constraints`     | Phase 1 (manifest)       | Items to present for user confirmation       |
+| `## Cross-Cutting Open Questions`    | Phase 1 (manifest)       | High-impact questions that affect many tasks |
+| `## Tasks` with per-task subsections | Phase 1 (manifest)       | Per-task questions and implicit assumptions  |
+| `## Validation Report`               | Phase 1 (manifest)       | WARN/FAIL items become clarification Qs      |
+| `## Dependency Graph`                | Phase 2 (visual context) | Impact maps for dependency questions         |
 
 ## Output
 
-- An updated task plan file with all resolved answers inlined.
-- A decisions log appended to the plan file under `## Decisions Log`.
+- The same task plan file at `docs/<TICKET_KEY>-tasks.md`, updated in-place.
+- A `## Decisions Log` section appended to the plan file.
+
+### Output contract (consumed by downstream skills)
+
+After this skill completes, the plan file must contain these additions for
+downstream skills to function correctly:
+
+| Addition                                                        | Required by            | Why                                               |
+| --------------------------------------------------------------- | ---------------------- | ------------------------------------------------- |
+| `## Decisions Log` table                                        | creating-jira-subtasks | Subtask descriptions reflect resolved decisions   |
+| Assumptions annotated (`✅ Confirmed` / `❌ Revised`)           | executing-subtask      | Executor needs confirmed assumptions, not open Qs |
+| Per-task questions resolved (strikethrough + answer)            | executing-subtask      | Pre-flight check verifies no unresolved questions |
+| Updated `Implementation notes` (where answers changed approach) | executing-subtask      | Executor follows the updated approach             |
+
+## Subagent Registry
+
+This skill has no subagents. It runs entirely inline because it is
+conversational — it requires the user's full conversation history to function
+(multi-turn Q&A with interactive prompts). Delegating to a subagent would lose
+the conversation context.
 
 ---
 
@@ -340,6 +367,8 @@ After modifying the plan file, re-read it and verify:
       the answers given (strikethrough + answer, or marked as skipped).
 - [ ] `Implementation notes` sections are updated where answers changed the
       approach.
+- [ ] The `## Decisions Log` section exists and is well-formed (downstream
+      skills check for its presence as a phase-completion signal).
 
 If any updates are missing, apply them before presenting the summary.
 
@@ -377,7 +406,7 @@ decisions.
 Then use an interactive prompt:
 
 ```
-- "Start executing tasks"
+- "Create subtasks in Jira"
 - "Review the updated plan first"
 - "I have more questions"
 ```
