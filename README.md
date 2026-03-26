@@ -58,13 +58,8 @@ implemented code:
 Third-party and external skills managed via [`skills-lock.json`](skills-lock.json),
 located under `.agents/skills/`.
 
-| Skill                                                                                | Source                   | Description                                                            |
-| ------------------------------------------------------------------------------------ | ------------------------ | ---------------------------------------------------------------------- |
-| [commit-work](.agents/skills/commit-work/SKILL.md)                                   | softaworks/agent-toolkit | Staging/review workflow with Conventional Commits and commit splitting |
-| [executing-plans](.agents/skills/executing-plans/SKILL.md)                           | obra/superpowers         | Load a plan and execute tasks sequentially with review checkpoints     |
-| [gh-cli](.agents/skills/gh-cli/SKILL.md)                                             | github/awesome-copilot   | Comprehensive `gh` CLI reference for GitHub operations                 |
-| [humanizer](.agents/skills/humanizer/SKILL.md)                                       | blader/humanizer         | Remove signs of AI-generated writing from text                         |
-| [subagent-driven-development](.agents/skills/subagent-driven-development/SKILL.md)   | obra/superpowers         | Per-task subagent execution with spec and code quality review          |
-| [test-driven-development](.agents/skills/test-driven-development/SKILL.md)           | obra/superpowers         | Strict red-green-refactor TDD workflow                                 |
-| [validate-implementation-plan](.agents/skills/validate-implementation-plan/SKILL.md) | b-mendoza/agent-skills   | Plan auditing (locked copy of the project skill)                       |
-| [writing-plans](.agents/skills/writing-plans/SKILL.md)                               | obra/superpowers         | Spec-to-plan generation with checkbox tasks and TDD steps              |
+| Skill                                              | Source                   | Description                                                            |
+| -------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------- |
+| [commit-work](.agents/skills/commit-work/SKILL.md) | softaworks/agent-toolkit | Staging/review workflow with Conventional Commits and commit splitting |
+| [gh-cli](.agents/skills/gh-cli/SKILL.md)           | github/awesome-copilot   | Comprehensive `gh` CLI reference for GitHub operations                 |
+| [humanizer](.agents/skills/humanizer/SKILL.md)     | blader/humanizer         | Remove signs of AI-generated writing from text                         |
