@@ -1,12 +1,6 @@
 ---
 name: fetching-jira-ticket
-description: >
-  Retrieve ALL information from a Jira ticket (description, comments, subtasks,
-  attachments metadata, labels, sprint, status, assignee, reporter, etc.) and
-  persist it as a single Markdown file. Use when the user says "fetch ticket",
-  "retrieve Jira", "pull ticket info", "get ticket details", or provides a Jira
-  ticket URL or key like PROJECT-1234. This skill ONLY retrieves — it never
-  modifies the ticket or starts implementation.
+description: 'Retrieve ALL information from a Jira ticket (description, comments, subtasks, attachments metadata, labels, sprint, status, assignee, reporter, etc.) and persist it as a single Markdown file. Use when the user says "fetch ticket", "retrieve Jira", "pull ticket info", "get ticket details", or provides a Jira ticket URL or key like PROJECT-1234. Also triggered by the orchestrating-jira-workflow skill as Phase 1 of the end-to-end pipeline. This skill ONLY retrieves — it never modifies the ticket or starts implementation.'
 ---
 
 # Fetching Jira Ticket
@@ -34,15 +28,28 @@ A Markdown file at:
 docs/<TICKET_KEY>.md
 ```
 
-## Subagents
+### Output contract (consumed by downstream skills)
 
-This skill uses one subagent to keep the main agent's context clean when
-retrieving tickets with many subtasks or linked issues. The subagent is
-colocated in this folder:
+The output file **must** contain all of these sections for downstream skills to
+function correctly. If a section has no data, include the heading with `_None_`
+beneath it — never omit the heading.
 
-| Subagent         | File                    | Purpose                                    |
-| ---------------- | ----------------------- | ------------------------------------------ |
-| ticket-retriever | `./ticket-retriever.md` | Retrieves subtask and linked issue details |
+| Section                  | Required by                                 | Why                                     |
+| ------------------------ | ------------------------------------------- | --------------------------------------- |
+| `## Metadata` table      | planning-jira-tasks                         | Task decomposition needs ticket context |
+| `## Description`         | planning-jira-tasks                         | Primary source for requirements         |
+| `## Acceptance Criteria` | planning-jira-tasks, task-validator         | Maps to Definition of Done              |
+| `## Comments`            | planning-jira-tasks                         | Contains decisions and clarifications   |
+| `## Subtasks`            | planning-jira-tasks, creating-jira-subtasks | Avoids duplicating existing work        |
+| `## Linked Issues`       | planning-jira-tasks                         | Dependency and context awareness        |
+| `## Attachments`         | executing-subtask                           | Implementation reference                |
+| `## Custom Fields`       | planning-jira-tasks                         | May contain acceptance criteria         |
+
+## Subagent Registry
+
+| Subagent           | Path                              | Purpose                                    |
+| ------------------ | --------------------------------- | ------------------------------------------ |
+| `ticket-retriever` | `./subagents/ticket-retriever.md` | Retrieves subtask and linked issue details |
 
 Before delegating, read the subagent file to understand its contract (expected
 input format, output format, and rules). The path is relative to this skill's
@@ -122,7 +129,7 @@ Write the file using this structure:
 
 ## Acceptance Criteria
 
-<if present>
+<if present, otherwise _None_>
 
 ## Comments
 
@@ -216,6 +223,7 @@ After writing the file, re-read it and verify:
 - [ ] Every section from the template is present (even if marked `_None_`).
 - [ ] Subtask count matches what Jira reported.
 - [ ] Comment count per item matches what Jira reported.
+- [ ] The `## Description` section is non-empty (downstream skills depend on it).
 
 If anything is missing, fetch the missing data and update the file before
 reporting completion.

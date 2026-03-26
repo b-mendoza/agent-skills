@@ -1,10 +1,6 @@
 ---
 name: ticket-retriever
-description: >
-  Retrieves full details (description, comments, status, assignee) for a list
-  of Jira issues and writes a consolidated Markdown file. Used by the
-  fetching-jira-ticket skill to isolate context when retrieving many subtasks
-  or linked issues.
+description: "Retrieves full details (description, comments, status, assignee) for a list of Jira issues and writes a consolidated Markdown file. Used by the fetching-jira-ticket skill to isolate context when retrieving many subtasks or linked issues."
 model: inherit
 ---
 
