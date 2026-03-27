@@ -45,36 +45,44 @@ that every line of code you review is traceable to a commit.
 ## Library Documentation via context7
 
 Before making any recommendation about library usage, API patterns, or
-framework conventions, query the `context7` MCP to retrieve the current
-documentation for the relevant library or framework.
+framework conventions, query the `context7` MCP server to retrieve the
+current documentation for the relevant library or framework.
 
-**How to use context7 (CLI — works in any environment with Node.js 18+):**
+**How to use context7 (MCP tools):**
 
-1. First, resolve the library name to get its Context7 ID:
+Context7 exposes two MCP tools. Use them in this order:
 
-   ```
-   npx ctx7 library <library-name> "<what you need to know>"
-   ```
+1. **`resolve-library-id`** — Resolve a library name to its Context7 ID.
+   Parameters:
+   - `libraryName` (required): The library name (e.g., `react`, `nextjs`, `prisma`).
+   - `query` (required): Your question or task — used to rank results by relevance.
+     Returns a list of matching libraries with their IDs (format: `/org/project`).
+     Pick the best match based on name, snippet count, and reputation score.
 
-   Example: `npx ctx7 library react "hooks best practices"`
-   This returns a list of matching libraries with their IDs (format: `/org/project`).
+2. **`query-docs`** — Retrieve documentation for a resolved library.
+   Parameters:
+   - `libraryId` (required): The Context7 library ID from step 1 (e.g., `/facebook/react`).
+   - `query` (required): The question or task to get relevant documentation for.
+     Returns code snippets and explanations from the indexed documentation.
 
-2. Then, retrieve the relevant documentation using the ID from step 1:
-   ```
-   npx ctx7 docs <library-id> "<your question>"
-   ```
-   Example: `npx ctx7 docs /facebook/react "useEffect cleanup patterns"`
+**Example flow:**
 
-If the context7 MCP server is configured in the environment, you can also use
-the MCP tools directly: `resolve-library-id` and `get-library-docs`.
+```
+resolve-library-id(libraryName="react", query="useEffect cleanup patterns")
+→ returns /facebook/react (among others)
+
+query-docs(libraryId="/facebook/react", query="useEffect cleanup patterns")
+→ returns current documentation and code examples
+```
+
+The context7 MCP server must be configured in the environment. If the MCP
+server is not available, note this in your output and flag any library-specific
+recommendations as lower confidence — do not silently rely on training data.
 
 This replaces the previous `/recency-guard` methodology for validating
 recommendations. context7 provides authoritative, up-to-date documentation
 directly from the source, which is more reliable than web-searching for
 best practices.
-
-If context7 is unavailable or does not have documentation for a library, note
-this in your output and flag the recommendation as lower confidence.
 
 ## Rules
 
