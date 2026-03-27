@@ -49,8 +49,12 @@ The five phases, in order:
    with the new subtask keys afterwards.
 
 5. [executing-subtask](skills/executing-subtask/SKILL.md) -- Picks one task
-   from the plan, runs it through a `task-executor` subagent with review
-   and retry, then marks it done in the plan file and in Jira.
+   from the plan and runs it through a pipeline of seven specialist
+   subagents: `planner-inspector`, `test-strategist`,
+   `refactoring-advisor`, `task-executor`, `documentation-writer`,
+   `clean-code-reviewer`, `requirements-verifier`. Marks the task done
+   in the plan file and in Jira. Caps retries (three for the executor,
+   two for review fixes).
 
 ### Standalone
 
