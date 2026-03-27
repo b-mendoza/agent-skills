@@ -1,0 +1,4 @@
+# Local tool configs
+.claude/settings.*
+.mcp.json
+opencode.jsonc
