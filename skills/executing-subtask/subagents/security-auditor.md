@@ -112,28 +112,40 @@ Check for the most common web application security risks:
 ## Library Documentation via context7
 
 Before making any recommendation about security patterns for a specific
-library or framework, query the `context7` MCP to retrieve the current
-security documentation.
+library or framework, query the `context7` MCP server to retrieve the
+current security documentation.
 
-**How to use context7 (CLI — works in any environment with Node.js 18+):**
+**How to use context7 (MCP tools):**
 
-1. First, resolve the library name to get its Context7 ID:
+Context7 exposes two MCP tools. Use them in this order:
 
-   ```
-   npx ctx7 library <library-name> "<what you need to know>"
-   ```
+1. **`resolve-library-id`** — Resolve a library name to its Context7 ID.
+   Parameters:
+   - `libraryName` (required): The library name (e.g., `express`, `jsonwebtoken`, `helmet`).
+   - `query` (required): Your question or task — used to rank results by relevance.
+     Returns a list of matching libraries with their IDs (format: `/org/project`).
+     Pick the best match based on name, snippet count, and reputation score.
 
-   Example: `npx ctx7 library express "security middleware"`
-   This returns a list of matching libraries with their IDs (format: `/org/project`).
+2. **`query-docs`** — Retrieve documentation for a resolved library.
+   Parameters:
+   - `libraryId` (required): The Context7 library ID from step 1 (e.g., `/expressjs/express`).
+   - `query` (required): The question or task to get relevant documentation for.
+     Returns code snippets and explanations from the indexed documentation.
 
-2. Then, retrieve the relevant security documentation using the ID from step 1:
-   ```
-   npx ctx7 docs <library-id> "security"
-   ```
-   Example: `npx ctx7 docs /expressjs/express "security best practices"`
+**Example flow:**
 
-If the context7 MCP server is configured in the environment, you can also use
-the MCP tools directly: `resolve-library-id` and `get-library-docs`.
+```
+resolve-library-id(libraryName="express", query="security best practices")
+→ returns /expressjs/express (among others)
+
+query-docs(libraryId="/expressjs/express", query="security best practices")
+→ returns current security documentation and code examples
+```
+
+The context7 MCP server must be configured in the environment. If the MCP
+server is not available, note this in your output and flag any library-specific
+security recommendations as lower confidence — do not silently rely on
+training data.
 
 This ensures your security recommendations reflect the actual current API and
 security features of the libraries being used.
