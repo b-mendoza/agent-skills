@@ -105,6 +105,99 @@ via `artifact-validator` before advancing.
 | 3 → 4      | `docs/<KEY>-tasks.md` (updated)   | File has `## Decisions Log` section           |
 | 4 → 5      | `docs/<KEY>-tasks.md` (with keys) | File has `## Jira Subtasks` table with keys   |
 
+---
+
+## Orchestration Rules
+
+These are the non-negotiable behavioral constraints for the orchestrator. They
+exist because violating any one of them degrades the system in ways that
+compound across every subsequent step.
+
+### Rule 1 — Delegate EVERYTHING
+
+The orchestrator MUST NOT perform any tool call, bash command, file read/write,
+web search, MCP call, or direct task execution under any circumstance. Every
+action — no matter how small — MUST be delegated to a subagent.
+
+The mental model: you are a project manager who can only communicate through
+written memos to specialists. You can think, decide, prioritize, and
+synthesize — but the moment work needs to happen, you dispatch.
+
+If you catch yourself thinking "I'll just quickly check this file" or "let me
+run this one command" — stop. That impulse is exactly what subagents are for.
+
+Common traps to avoid:
+
+- "Let me quickly read the file to see if it exists" → dispatch `artifact-validator`
+- "I'll just run a git status" → dispatch `codebase-inspector`
+- "Let me check the Jira ticket" → dispatch `ticket-status-checker`
+- "I'll update the progress file" → dispatch `progress-tracker`
+
+### Rule 2 — Follow every step in every skill file
+
+When the orchestrator invokes a downstream skill, it MUST follow every step
+defined in that skill's SKILL.md — in order, without skipping any. Skill files
+are carefully designed pipelines where each step depends on the outputs of the
+previous step.
+
+Skipping steps — even ones that seem unnecessary for a particular task —
+creates subtle failures:
+
+- Skipping validation means bad artifacts propagate downstream.
+- Skipping pre-flight checks means dependencies are not verified.
+- Skipping documentation means reviewers cannot assess completeness.
+
+If a step feels unnecessary, execute it anyway. The subagent will report "nothing
+to do" quickly, and the cost is negligible compared to debugging a pipeline
+failure caused by a skipped step.
+
+### Rule 3 — Protect the context window aggressively
+
+The orchestrator's context window should contain ONLY:
+
+- Decision-relevant summaries from subagents.
+- The current workflow state (phase, task, status).
+- User instructions and confirmations.
+- Error reports that require orchestrator judgment.
+
+The orchestrator MUST NEVER index or store:
+
+- Raw file contents of any file a subagent has read or changed.
+- Full git diffs, command outputs, or API responses.
+- Complete execution reports — only their summary verdicts.
+- Full code review reports — only their verdict and issue count.
+- Any artifact content that is already stored on disk.
+
+When a subagent returns a result, extract the verdict, summary, and any data
+needed for the next dispatch decision. Discard everything else. If you need
+details later, dispatch a subagent to retrieve them.
+
+### Rule 4 — Verify via subagent
+
+Always use `artifact-validator` to check artifacts. Reading files "to quickly
+check" is how context pollution starts.
+
+### Rule 5 — One phase at a time
+
+Phase dependencies are strict. Partial artifacts cause cascading failures.
+
+### Rule 6 — Explicit handoffs
+
+Pass file paths, ticket keys, and context summaries explicitly to every
+dispatch. Subagents cannot see conversation history.
+
+### Rule 7 — Gate destructive actions
+
+Any phase modifying external systems (Jira writes, git push) requires explicit
+user confirmation.
+
+### Rule 8 — Maintain resumability
+
+Update `progress-tracker` after every phase and task. The workflow can be
+interrupted and resumed without loss.
+
+---
+
 ## Execution
 
 ### 1. Determine Starting Phase
@@ -180,13 +273,36 @@ Phase 5 runs once per task, not once for the whole plan. Each iteration:
    | Need docs or config context      | `documentation-finder`  |
    | Need a feature branch            | `git-operator`          |
 
-5. Invoke `executing-subtask`, passing context summaries from step 4 as
-   explicit inputs.
-6. After the task completes, dispatch `git-operator` with operation
-   `commit-work` (and `GUIDANCE` summarizing what changed and why). The
-   git-operator delegates to the `/commit-work` skill for atomic commits.
-7. Dispatch `progress-tracker` to mark the task complete.
-8. Return to step 1.
+5. **Progressive clarification** — before invoking `executing-subtask`, check
+   the task plan for any unresolved questions specific to THIS task. If
+   questions exist that were deferred during Phase 3 (clarifying-assumptions),
+   resolve them now with the user. Questions about future tasks remain deferred.
+   This follows the progressive disclosure principle: ask only what is relevant
+   to the task about to execute.
+
+6. Invoke `executing-subtask`, passing context summaries from step 4 as
+   explicit inputs. Follow every step defined in the executing-subtask SKILL.md.
+
+7. **Evaluate the quality gate verdicts.** The executing-subtask skill runs
+   three quality gates: `clean-code-reviewer`, `architecture-reviewer`, and
+   `security-auditor`. If ANY of the three gates returns a verdict that is not
+   PASS, the orchestrator MUST re-run the entire executing-subtask pipeline
+   from the beginning for that task. The re-run includes all steps: planning,
+   testing, refactoring, implementation, documentation, and all three quality
+   gates. This is not a "fix and re-check" — it is a full pipeline re-run
+   because the prior execution context may have been flawed.
+
+   **Re-run limit:** Maximum 3 full pipeline re-runs per task. If the quality
+   gates still do not pass after 3 re-runs, escalate to the user with the
+   accumulated gate feedback and ask how to proceed.
+
+8. After the task completes successfully (all gates pass), dispatch
+   `git-operator` with operation `commit-work` if there are any uncommitted
+   changes remaining. The documentation-writer subagent within executing-subtask
+   should have already committed most changes, but verify.
+
+9. Dispatch `progress-tracker` to mark the task complete.
+10. Return to step 1.
 
 Continue until all tasks are complete or the user stops.
 
@@ -218,27 +334,4 @@ All artifacts are in docs/<TICKET_KEY>\*.
 | **Jira MCP unavailable** | Tell user to connect it. Offer to resume when ready.                                                           |
 | **Subagent failure**     | Non-critical (e.g., `documentation-finder`): proceed without. Critical (e.g., `artifact-validator`): halt.     |
 | **User interruption**    | Progress file ensures resumability. Tell user: "Say 'resume ticket <KEY>' to pick up where we left off."       |
-
-## Orchestration Rules
-
-These protect the context window and keep coordination reliable:
-
-1. **Delegate everything.** Never run tool calls, bash commands, file
-   reads/writes, web searches, or MCP calls directly. If you're about to run a
-   command, stop — find the right subagent. Raw output in the orchestrator is
-   context pollution.
-
-2. **Verify via subagent.** Always use `artifact-validator` to check artifacts.
-   Reading files "to quickly check" is how context pollution starts.
-
-3. **One phase at a time.** Phase dependencies are strict. Partial artifacts
-   cause cascading failures.
-
-4. **Explicit handoffs.** Pass file paths, ticket keys, and context summaries
-   explicitly to every dispatch. Subagents cannot see conversation history.
-
-5. **Gate destructive actions.** Any phase modifying external systems (Jira
-   writes, git push) requires explicit user confirmation.
-
-6. **Maintain resumability.** Update `progress-tracker` after every phase and
-   task. The workflow can be interrupted and resumed without loss.
+| **Quality gate failure** | Re-run the full executing-subtask pipeline (max 3 re-runs). After 3 failures, escalate to user.                |
