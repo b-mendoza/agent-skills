@@ -1,19 +1,66 @@
 ---
 name: "clarifying-assumptions"
-description: 'Walk through a Jira task plan and interactively confirm assumptions, resolve open questions, and validate decisions — one question at a time. Use when the user says "review the plan", "ask me questions", "clarify assumptions", "let''s go through the questions", "grill me on the plan", "validate plan for PROJECT-1234", or anything about reviewing, questioning, or validating a task plan. Also triggered by the orchestrating-jira-workflow skill as Phase 3 of the pipeline. Requires a task plan at docs/<TICKET_KEY>-tasks.md.'
+description: 'Walk through a Jira task plan and interactively confirm assumptions, resolve open questions, and validate decisions — using progressive disclosure. Only asks questions relevant to the CURRENT phase or task being executed. Use when the user says "review the plan", "ask me questions", "clarify assumptions", "let''s go through the questions", "grill me on the plan", "validate plan for PROJECT-1234", or anything about reviewing, questioning, or validating a task plan. Also triggered by the orchestrating-jira-workflow skill as Phase 3 of the pipeline, and re-invoked during Phase 5 before each task execution. Requires a task plan at docs/<TICKET_KEY>-tasks.md.'
 ---
 
 # Clarifying Assumptions
 
 ## Purpose
 
-Act as a structured interviewer that walks the user through every open question,
-assumption, and decision in the task plan — one at a time. Three goals:
+Act as a structured interviewer that walks the user through open questions,
+assumptions, and decisions in the task plan — using **progressive disclosure**.
+Three goals:
 
 1. **Resolve ambiguity** so downstream execution is unblocked.
 2. **Educate** the user on the agent's reasoning so they can steer confidently.
-3. **Build a shared mental model** between agent and user through visual context
-   and interactive prompts.
+3. **Avoid premature questions** — never ask about tasks that have not been
+   reached yet, because by the time we get there, the answers may have changed.
+
+## Progressive Disclosure — The Core Principle
+
+Traditional clarification asks ALL questions upfront. This is wasteful because:
+
+- Answers to later questions often depend on what happens during earlier tasks.
+- Context gained during execution changes the relevance of questions.
+- Users waste time answering questions about tasks that may not even happen.
+- Some questions become irrelevant as the codebase evolves through execution.
+
+Instead, this skill uses a **two-tier disclosure model**:
+
+### Tier 1 — Phase 3 (Upfront Clarification)
+
+During the initial clarification phase, ask ONLY:
+
+1. **Cross-cutting questions** that affect the entire plan (e.g., "Which API
+   version should we use?" or "What authentication strategy?"). These are
+   blocking for planning and must be resolved before any execution begins.
+
+2. **Assumptions that affect architecture** — confirmed or revised now because
+   changing them later would require reworking completed tasks.
+
+3. **Validation report FAILs** — these block execution entirely.
+
+4. **Questions for Task 1 only** — since Task 1 will be executed first, its
+   per-task questions are relevant now. All other per-task questions are
+   deferred.
+
+Do NOT ask per-task questions for Tasks 2, 3, 4, etc. during Phase 3. Tag
+them as `[DEFERRED — will ask before Task N execution]` in the manifest.
+
+### Tier 2 — Phase 5 (Just-In-Time Clarification)
+
+Before each task execution in Phase 5, the orchestrator checks whether the
+task about to execute has unresolved questions or assumptions. If it does,
+the orchestrator invokes this skill in **just-in-time mode** with the specific
+task number.
+
+In just-in-time mode:
+
+- Only ask questions tagged for the specific task about to execute.
+- Review whether any deferred questions have become irrelevant due to decisions
+  made or code changes during earlier task executions.
+- Present questions that are still relevant.
+- Mark irrelevant questions as `[RESOLVED — no longer applicable: <reason>]`.
 
 ## Platform Adaptation
 
@@ -36,12 +83,16 @@ ASCII diagrams are an acceptable fallback in terminal environments.
 
 ## Inputs
 
-| Input        | Source              | Required | Example    |
-| ------------ | ------------------- | -------- | ---------- |
-| `TICKET_KEY` | User / `$ARGUMENTS` | Yes      | `JNS-6065` |
+| Input         | Source              | Required | Example                                  |
+| ------------- | ------------------- | -------- | ---------------------------------------- |
+| `TICKET_KEY`  | User / `$ARGUMENTS` | Yes      | `JNS-6065`                               |
+| `MODE`        | Orchestrator        | No       | `upfront` or `just-in-time`              |
+| `TASK_NUMBER` | Orchestrator        | No       | `3` (required if MODE is `just-in-time`) |
 
 The task plan file must already exist at `docs/<TICKET_KEY>-tasks.md`.
 If it does not, tell the user to run the **planning-jira-tasks** skill first.
+
+Default `MODE` is `upfront` when called during Phase 3.
 
 ### Input contract (from upstream skill)
 
@@ -61,19 +112,21 @@ to re-run planning.
 
 The same task plan file at `docs/<TICKET_KEY>-tasks.md`, updated in-place, with:
 
-- A `## Decisions Log` table appended
+- A `## Decisions Log` table appended (or updated if it already exists)
 - Assumptions annotated (`✅ Confirmed` / `❌ Revised: <new text>`)
 - Per-task questions resolved (`~~<question>~~ → <answer>`)
 - Updated `Implementation notes` where answers changed the approach
+- Deferred questions tagged with `[DEFERRED — will ask before Task N execution]`
 
 ### Output contract (consumed by downstream skills)
 
-| Addition                                                | Required by            | Why                                               |
-| ------------------------------------------------------- | ---------------------- | ------------------------------------------------- |
-| `## Decisions Log` table                                | creating-jira-subtasks | Subtask descriptions reflect resolved decisions   |
-| Annotated assumptions                                   | executing-subtask      | Executor needs confirmed assumptions, not open Qs |
-| Resolved per-task questions                             | executing-subtask      | Pre-flight check verifies no unresolved questions |
-| Updated `Implementation notes` (where approach changed) | executing-subtask      | Executor follows the updated approach             |
+| Addition                                                | Required by            | Why                                                        |
+| ------------------------------------------------------- | ---------------------- | ---------------------------------------------------------- |
+| `## Decisions Log` table                                | creating-jira-subtasks | Subtask descriptions reflect resolved decisions            |
+| Annotated assumptions                                   | executing-subtask      | Executor needs confirmed assumptions, not open Qs          |
+| Resolved per-task questions                             | executing-subtask      | Pre-flight check verifies no unresolved questions          |
+| Updated `Implementation notes` (where approach changed) | executing-subtask      | Executor follows the updated approach                      |
+| Deferred question tags                                  | orchestrator (Phase 5) | Orchestrator knows which questions to ask before each task |
 
 ## Subagent Registry
 
@@ -88,19 +141,17 @@ would lose that context.
 These three principles shape every interaction in this skill. They're ordered by
 impact — if you remember nothing else, remember these.
 
-### 1. Build the complete question manifest before asking anything
+### 1. Ask only what is relevant NOW
 
-Before the first question, read the entire task plan, extract every item that
-needs user input, and present the full numbered list. The user should see
-everything upfront so there are no surprises.
+In `upfront` mode: ask cross-cutting questions, architectural assumptions,
+validation failures, and Task 1 questions only. Tag everything else as deferred.
 
-If an answer reveals a new question, don't ask it on the spot. Say: _"Your
-answer raised a new consideration. I'll add it as Question N+1 at the end."_
-Update the manifest and show the addition before asking the new question.
+In `just-in-time` mode: ask only questions for the specific task about to
+execute. Discard questions that are no longer relevant.
 
-The manifest is a contract. The user knows exactly how many questions remain and
-what's coming. This predictability matters — ad hoc questions lead to drift and
-frustration.
+If an answer reveals a new question about a FUTURE task, do not ask it now.
+Tag it as deferred for that task. If the new question is about the CURRENT
+task or is cross-cutting, ask it immediately.
 
 ### 2. Use interactive selection for every discrete choice
 
@@ -156,7 +207,7 @@ cascading effects. The goal is understanding, not decoration.
 
 ---
 
-## Execution Phases
+## Execution — Upfront Mode (Phase 3)
 
 ### Phase 1 — Build and present the question manifest
 
@@ -165,67 +216,72 @@ cascading effects. The goal is understanding, not decoration.
 Read `docs/<TICKET_KEY>-tasks.md` and build the complete list of items needing
 user input:
 
-| Category                    | Where to find them                                   |
-| --------------------------- | ---------------------------------------------------- |
-| **Cross-cutting questions** | `## Cross-Cutting Open Questions` section            |
-| **Assumptions**             | `## Assumptions and Constraints` section             |
-| **Per-task questions**      | `Questions to answer before starting` in each task   |
-| **Per-task assumptions**    | Implicit assumptions in `Implementation notes`       |
-| **Dependency risks**        | `Dependencies / prerequisites` that seem uncertain   |
-| **Validation warnings**     | `## Validation Report` — any WARN or unresolved FAIL |
+| Category                      | Where to find them                                      | Tier                                    |
+| ----------------------------- | ------------------------------------------------------- | --------------------------------------- |
+| **Validation FAILs**          | `## Validation Report` — unresolved FAIL items          | Tier 1                                  |
+| **Cross-cutting questions**   | `## Cross-Cutting Open Questions` section               | Tier 1                                  |
+| **Architectural assumptions** | `## Assumptions and Constraints` section                | Tier 1                                  |
+| **Task 1 questions**          | `Questions to answer before starting` in Task 1         | Tier 1                                  |
+| **Task 2+ questions**         | `Questions to answer before starting` in Tasks 2+       | DEFERRED                                |
+| **Task 2+ assumptions**       | Implicit assumptions in Tasks 2+ `Implementation notes` | DEFERRED                                |
+| **Dependency risks**          | `Dependencies / prerequisites` that seem uncertain      | Tier 1 if affects Task 1, else DEFERRED |
+| **Validation warnings**       | `## Validation Report` — WARN items                     | Tier 1 if cross-cutting, else DEFERRED  |
 
-#### 1b. Prioritize
+#### 1b. Prioritize Tier 1 items
 
-Order items so blocking issues surface first:
+Order Tier 1 items so blocking issues surface first:
 
 1. Unresolved FAILs from the validation report (they block execution)
 2. Cross-cutting questions (they unblock the most tasks)
 3. Assumptions affecting architectural decisions
-4. Per-task questions, ordered by task number
-5. Validation warnings and low-impact confirmations
+4. Task 1 questions, ordered by priority
+5. Cross-cutting validation warnings
 
 #### 1c. Present the manifest
 
-Show the complete, numbered list to the user:
+Show the complete numbered list to the user, clearly marking deferred items:
 
 ```markdown
 ## Question Manifest for <TICKET_KEY>
 
-I've analyzed the task plan and found **<N> items** that need your input.
-Here's the full list, organized by impact:
+I've analyzed the task plan and found **<N> items** total.
+**<M> questions** are relevant now (Tier 1). The remaining **<N-M>** will be
+asked just before their respective tasks are executed.
+
+### Questions for now (Tier 1)
 
 | #   | Category           | Short description                 | Affects tasks | Input type     |
 | --- | ------------------ | --------------------------------- | ------------- | -------------- |
 | 1   | 🔴 Blocking        | Missing API version specification | 3, 5, 7       | Single select  |
 | 2   | 🟡 Cross-cutting   | Authentication strategy           | 2, 4, 6       | Single select  |
 | 3   | 🔵 Assumption      | Database migration strategy       | 1             | Confirm/revise |
-| 4   | ⚪ Task 3 question | Caching layer needed?             | 3             | Yes/No         |
+| 4   | ⚪ Task 1 question | Caching layer needed?             | 1             | Yes/No         |
 
-| ...
+### Deferred questions (will ask before each task)
 
-**Estimated time:** ~<N> minutes (most questions have pre-defined options).
+| Task | # deferred questions | Will ask before executing task |
+| ---- | -------------------- | ------------------------------ |
+| 2    | 2                    | Before Task 2 execution        |
+| 3    | 1                    | Before Task 3 execution        |
+| 5    | 3                    | Before Task 5 execution        |
 
-This is the complete list. No surprise questions mid-conversation.
-If your answers reveal something new, I'll show you the updated manifest first.
+**Estimated time for Tier 1:** ~<N> minutes (most questions have pre-defined options).
+
+No surprise questions during this session. Deferred questions will be asked
+one task at a time during execution, when context is fresh.
 ```
 
 Then ask whether the user is ready to start, or wants to reorder, skip, or
-add anything. Use interactive selection if available:
+add anything.
 
-```
-1. Let's start from the top
-2. I want to skip some — let me review
-3. I have questions about the manifest first
-```
+### Phase 2 — Walk through Tier 1 questions one at a time
 
-### Phase 2 — Walk through questions one at a time
-
-For each question in the manifest:
+For each question in the Tier 1 manifest:
 
 #### 2a. Show progress
 
 ```
-Question <current>/<total> — [<category emoji> <category>]
+Question <current>/<total Tier 1> — [<category emoji> <category>]
 ```
 
 #### 2b. Provide context (proportional to complexity — see Principle 3)
@@ -257,41 +313,49 @@ After the user responds:
 **On "revise":** Follow up with: "What should the revised assumption be?"
 Record the new text.
 
-**On an answer that reveals a new question:** Don't ask it now. Say: _"Your
-answer raised a new consideration. I'm adding it as Question <N+1>."_ When the
-original manifest is done, present the new questions for confirmation first.
+**On an answer that reveals a new question about the CURRENT task or
+cross-cutting:** Don't ask it now. Say: _"Your answer raised a new
+consideration. I'm adding it as Question <N+1>."_ When the original manifest
+is done, present the new questions for confirmation first.
+
+**On an answer that reveals a new question about a FUTURE task:** Tag it as
+deferred. Say: _"This raises a question for Task <N>. I'll ask it when we
+get there."_
 
 ### Phase 3 — Update the plan file and summarize
 
 #### 3a. Update `docs/<TICKET_KEY>-tasks.md`
 
-Append a Decisions Log:
+Append a Decisions Log (or update if one already exists):
 
 ```markdown
 ## Decisions Log
 
 > Recorded on: <YYYY-MM-DD HH:MM UTC>
 
-| #   | Category        | Question (short)         | Decision / Answer       | Impact on plan     |
-| --- | --------------- | ------------------------ | ----------------------- | ------------------ |
-| 1   | Cross-cutting   | Which API version?       | Use v3 REST API         | Tasks 3, 5 updated |
-| 2   | Assumption      | Auth method?             | Confirmed: OAuth2       | No change          |
-| 3   | Task 4 question | Error handling strategy? | Return 422 with details | Task 4 updated     |
+| #   | Category        | Question (short)         | Decision / Answer   | Impact on plan     | Phase resolved |
+| --- | --------------- | ------------------------ | ------------------- | ------------------ | -------------- |
+| 1   | Cross-cutting   | Which API version?       | Use v3 REST API     | Tasks 3, 5 updated | Phase 3        |
+| 2   | Assumption      | Auth method?             | Confirmed: OAuth2   | No change          | Phase 3        |
+| 3   | Task 4 question | Error handling strategy? | [DEFERRED — Task 4] | —                  | —              |
 ```
 
 Apply inline updates:
 
 - In `Assumptions and Constraints`: mark each `✅ Confirmed` or `❌ Revised: <new text>`
-- In per-task `Questions to answer before starting`: `~~<question>~~ → <answer>`
+- In Task 1 `Questions to answer before starting`: `~~<question>~~ → <answer>`
 - Update `Implementation notes` where answers changed the approach
+- In Tasks 2+ `Questions to answer before starting`: tag as
+  `[DEFERRED — will ask before Task N execution]`
 
 #### 3b. Validate updates
 
 Re-read the file and verify:
 
-- Every manifest question has a Decisions Log entry (resolved, confirmed, revised, or skipped)
+- Every Tier 1 manifest question has a Decisions Log entry (resolved, confirmed, revised, or skipped)
 - Every assumption in `Assumptions and Constraints` is annotated
-- Every per-task question reflects the answer given
+- Task 1 questions reflect the answers given
+- Deferred questions are tagged appropriately
 - `Implementation notes` are updated where answers changed the approach
 - The `## Decisions Log` section exists and is well-formed (downstream skills check for it)
 
@@ -300,19 +364,23 @@ Fix any gaps before presenting the summary.
 #### 3c. Final summary
 
 ```markdown
-## Clarification Complete — <TICKET_KEY>
+## Clarification Complete (Tier 1) — <TICKET_KEY>
 
-| Metric                | Count |
-| --------------------- | ----- |
-| Questions resolved    | <N>   |
-| Assumptions confirmed | <N>   |
-| Assumptions revised   | <N>   |
-| Items skipped         | <N>   |
-| New questions added   | <N>   |
+| Metric                    | Count |
+| ------------------------- | ----- |
+| Tier 1 questions resolved | <N>   |
+| Assumptions confirmed     | <N>   |
+| Assumptions revised       | <N>   |
+| Items skipped             | <N>   |
+| Questions deferred        | <N>   |
+| New questions added       | <N>   |
 
 **Key changes to the plan:**
 
 - <list material changes, if any>
+
+**Deferred questions:** <N> questions will be asked just-in-time before their
+respective tasks are executed.
 
 The task plan at `docs/<TICKET_KEY>-tasks.md` has been updated with all decisions.
 ```
@@ -327,11 +395,71 @@ Then ask what's next:
 
 ---
 
+## Execution — Just-In-Time Mode (Phase 5, before each task)
+
+This mode is invoked by the orchestrator before executing a specific task.
+
+### 1. Load deferred questions for this task
+
+Read `docs/<TICKET_KEY>-tasks.md` and extract:
+
+- Questions tagged `[DEFERRED — will ask before Task <TASK_NUMBER> execution]`
+- Any unresolved assumptions specific to this task
+- Any new questions added by previous task executions
+
+### 2. Filter for relevance
+
+Review each deferred question against the CURRENT state of the codebase and
+plan. Some questions may no longer be relevant because:
+
+- A decision made during a previous task execution resolved the question.
+- The codebase has changed in a way that makes one option clearly correct.
+- The task's scope has narrowed or shifted during earlier execution.
+
+Mark irrelevant questions as:
+`[RESOLVED — no longer applicable: <reason>]`
+
+### 3. Present remaining questions
+
+If questions remain:
+
+```markdown
+## Just-In-Time Clarification — Task <N>: <Title>
+
+Before executing this task, <M> question(s) need your input:
+
+| #   | Short description | Input type     |
+| --- | ----------------- | -------------- |
+| 1   | <description>     | Single select  |
+| 2   | <description>     | Confirm/revise |
+```
+
+Walk through each question using the same one-at-a-time protocol from
+upfront mode (progress indicator, context, interactive selection, acknowledge).
+
+If no questions remain (all were resolved or became irrelevant):
+
+```
+All deferred questions for Task <N> have been resolved by prior decisions
+or are no longer applicable. Ready to execute.
+```
+
+### 4. Update the plan file
+
+- Update the Decisions Log with new entries (mark `Phase resolved` as
+  `Phase 5 — Task <N>`).
+- Update the task's `Questions to answer before starting` section.
+- Update `Implementation notes` if any answers changed the approach.
+
+---
+
 ## Behavioral Guardrails
 
 - **One question per message.** Never batch multiple questions in a single turn.
 - **The manifest is the source of truth.** Every question comes from it. New
   questions get added to it before being asked.
+- **Defer, don't discard.** Questions for future tasks are tagged as deferred,
+  not deleted. They will be reviewed for relevance when their task comes up.
 - **Be a teacher, not an interrogator.** Context should help the user understand
   the problem space, not just answer your question.
 - **Respect "skip."** Note the fallback, move on, no pressure.
@@ -339,3 +467,5 @@ Then ask what's next:
   lean toward X because..." not "You should do X."
 - **Keep each question block scannable** — readable in under 30 seconds. Let the
   visuals carry the weight; don't duplicate them in prose.
+- **Never ask about what hasn't happened yet.** If a question's relevance
+  depends on the outcome of a future task, it must be deferred.
