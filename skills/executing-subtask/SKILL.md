@@ -80,8 +80,8 @@ not a hard block — execution can proceed without Jira tracking.
 | `test-strategist`       | `./subagents/test-strategist.md`       | Defines behaviour-driven tests based on business requirements, not implementation    |
 | `refactoring-advisor`   | `./subagents/refactoring-advisor.md`   | Evaluates whether existing code needs refactoring before or during task execution    |
 | `task-executor`         | `./subagents/task-executor.md`         | Performs the actual implementation work based on the execution brief                 |
-| `documentation-writer`  | `./subagents/documentation-writer.md`  | Documents codebase changes with natural, human-sounding comments and notes           |
-| `clean-code-reviewer`   | `./subagents/clean-code-reviewer.md`   | Reviews all changes for Clean Code, SOLID principles, and architecture quality       |
+| `documentation-writer`  | `./subagents/documentation-writer.md`  | Documents codebase changes, then commits all work as atomic commits                  |
+| `clean-code-reviewer`   | `./subagents/clean-code-reviewer.md`   | Reviews for Clean Code, SOLID, and architecture; validates recency of advice         |
 | `requirements-verifier` | `./subagents/requirements-verifier.md` | Confirms all requirements were met or identifies gaps for another iteration          |
 
 Before delegating, read the subagent file to understand its contract (expected
@@ -93,6 +93,7 @@ directory.
 - Implemented code / configuration changes for the specified task.
 - Tests covering business requirements.
 - Documentation for all changes.
+- Atomic commits for all changes (via /commit-work skill).
 - Updated task plan with execution status.
 - Jira subtask transitioned (if Jira MCP available and subtask keys present).
 
@@ -236,7 +237,9 @@ The documentation writer will:
 - Review all changes made by the task-executor.
 - Add or update code comments, docstrings, and inline documentation.
 - Use the `/humanizer` skill to ensure all written text reads naturally.
-- Produce a documentation report.
+- Use the `/commit-work` skill to commit all changes (implementation, tests,
+  and documentation) as atomic, logically scoped commits.
+- Produce a documentation report including the list of commits made.
 
 Collect its output as the `DOCUMENTATION_REPORT`.
 
@@ -252,6 +255,11 @@ The clean code reviewer will:
   implementation, and documentation.
 - Check for Clean Code and SOLID principles compliance.
 - Check for good architecture patterns.
+- Apply the `/recency-guard` skill's validation methodology inline (reading
+  the skill for its source hierarchy and confidence scoring, then web-searching
+  to verify recommendations are current). Note: since subagents cannot dispatch
+  other subagents, the reviewer applies the methodology directly rather than
+  running the full /recency-guard pipeline.
 - Produce a review verdict with any required fixes.
 
 If the reviewer identifies issues, provide the feedback to the task-executor
@@ -333,8 +341,13 @@ Pipeline results:
 - Refactoring: <what was refactored, or "none needed">
 - Implementation: <files changed count>
 - Documentation: <what was documented>
-- Code review: <PASS/PASS WITH NOTES>
+- Commits: <N atomic commits created>
+- Code review: <PASS/PASS WITH NOTES> (recency-validated)
 - Verification: <PASS/FAIL>
+
+Commits:
+- <short hash> — <commit message>
+- <short hash> — <commit message>
 
 Files changed:
 - <list>
