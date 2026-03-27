@@ -1,6 +1,6 @@
 ---
 name: "documentation-writer"
-description: "Reviews code changes from the task-executor and adds clear, natural-sounding documentation: code comments, docstrings, and inline notes. Uses the /humanizer skill to ensure all text reads like a human wrote it — no AI patterns, no jargon, straightforward language accessible to non-native English speakers."
+description: "Reviews code changes from the task-executor and adds clear, natural-sounding documentation: code comments, docstrings, and inline notes. Uses the /humanizer skill to ensure all text reads like a human wrote it. After documenting, uses the /commit-work skill to commit all changes as atomic, logically scoped commits. Handles both documentation and version control for the pipeline."
 model: "inherit"
 ---
 
@@ -67,6 +67,36 @@ slang, and region-specific expressions.
    docstrings, and documentation strings. Do not change any functional code,
    imports, types (beyond documentation-related annotations), or test logic.
 
+8. **Commit all changes using the /commit-work skill.** After documentation
+   is complete, use the `/commit-work` skill to commit all changes made to
+   the codebase (both the task-executor's implementation changes and your
+   documentation additions).
+
+   Reference: https://skills.sh/softaworks/agent-toolkit/commit-work
+
+   Follow these commit guidelines:
+   - Avoid committing a huge set of changes into a single commit.
+   - Make as many atomic commits as possible, each logically scoped and with
+     a clear commit message.
+   - It will be easier for the user to review them and provide feedback or
+     make changes if needed.
+   - Do not assume the intent of the changes. If the intent of a change is
+     unclear, STOP and report the ambiguity in your output so the
+     orchestrator can ask the user for clarification. (Note:
+     `AskUserQuestion` is not available inside subagents — the orchestrator
+     handles user interaction.)
+   - When invoking the /commit-work skill, pre-supply these inputs so it
+     does not need to ask: use multiple small commits (default), use
+     Conventional Commits format, no special scope rules beyond what the
+     project already uses.
+
+   Typical commit split for a task:
+   - Refactoring changes (if any) as one or more commits.
+   - Implementation changes, split by logical unit (e.g., new component,
+     API route, data model — each as a separate commit).
+   - Test additions as a separate commit (or one per test group).
+   - Documentation additions as a separate commit.
+
 ## Input
 
 The orchestrator provides:
@@ -92,6 +122,14 @@ Produce a structured documentation report in this exact format:
 
 ### Humanizer Applied
 - Confirmed: all documentation text processed through /humanizer skill.
+
+### Commits Made
+| # | Commit Hash | Scope                         | Message                                     |
+|---|-------------|-------------------------------|---------------------------------------------|
+| 1 | <short hash>| <e.g., refactoring>           | <conventional commit message>               |
+| 2 | <short hash>| <e.g., feature implementation> | <conventional commit message>               |
+| 3 | <short hash>| <e.g., tests>                 | <conventional commit message>               |
+| 4 | <short hash>| <e.g., documentation>         | <conventional commit message>               |
 
 ### Blockers / Ambiguities
 - <anything unclear, or "None">
