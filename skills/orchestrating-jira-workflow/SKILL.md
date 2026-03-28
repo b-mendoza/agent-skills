@@ -283,18 +283,19 @@ Phase 5 runs once per task, not once for the whole plan. Each iteration:
 6. Invoke `executing-subtask`, passing context summaries from step 4 as
    explicit inputs. Follow every step defined in the executing-subtask SKILL.md.
 
-7. **Evaluate the quality gate verdicts.** The executing-subtask skill runs
-   three quality gates: `clean-code-reviewer`, `architecture-reviewer`, and
-   `security-auditor`. If ANY of the three gates returns a verdict that is not
-   PASS, the orchestrator MUST re-run the entire executing-subtask pipeline
-   from the beginning for that task. The re-run includes all steps: planning,
-   testing, refactoring, implementation, documentation, and all three quality
-   gates. This is not a "fix and re-check" — it is a full pipeline re-run
-   because the prior execution context may have been flawed.
+7. **Quality gate handling is delegated to executing-subtask.** The
+   executing-subtask skill manages its own targeted fix cycle internally:
+   when a quality gate fails, it re-dispatches only the task-executor and
+   documentation-writer to address the specific issues, then re-runs only the
+   failing gates. This avoids full pipeline re-runs for code quality issues.
 
-   **Re-run limit:** Maximum 3 full pipeline re-runs per task. If the quality
-   gates still do not pass after 3 re-runs, escalate to the user with the
-   accumulated gate feedback and ask how to proceed.
+   The orchestrator only needs to act if the executing-subtask skill reports
+   that the fix cycle limit (3 attempts) was exhausted. In that case, present
+   the accumulated gate feedback to the user and ask how to proceed:
+   - Accept the current state and move on.
+   - Provide guidance for a different approach.
+   - Request a full pipeline re-run from step 1 (for fundamental approach
+     failures only).
 
 8. After the task completes successfully (all gates pass), dispatch
    `git-operator` with operation `commit-work` if there are any uncommitted
@@ -327,11 +328,11 @@ All artifacts are in docs/<TICKET_KEY>\*.
 
 ## Error Handling
 
-| Error type               | Response                                                                                                       |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| **Skill failure**        | Record via `progress-tracker`. Report to user: retry, skip, or abort.                                          |
-| **Missing artifact**     | `artifact-validator` reports failure → do NOT proceed. Tell user which phase needs to run/re-run and offer it. |
-| **Jira MCP unavailable** | Tell user to connect it. Offer to resume when ready.                                                           |
-| **Subagent failure**     | Non-critical (e.g., `documentation-finder`): proceed without. Critical (e.g., `artifact-validator`): halt.     |
-| **User interruption**    | Progress file ensures resumability. Tell user: "Say 'resume ticket <KEY>' to pick up where we left off."       |
-| **Quality gate failure** | Re-run the full executing-subtask pipeline (max 3 re-runs). After 3 failures, escalate to user.                |
+| Error type               | Response                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Skill failure**        | Record via `progress-tracker`. Report to user: retry, skip, or abort.                                                                       |
+| **Missing artifact**     | `artifact-validator` reports failure → do NOT proceed. Tell user which phase needs to run/re-run and offer it.                              |
+| **Jira MCP unavailable** | Tell user to connect it. Offer to resume when ready.                                                                                        |
+| **Subagent failure**     | Non-critical (e.g., `documentation-finder`): proceed without. Critical (e.g., `artifact-validator`): halt.                                  |
+| **User interruption**    | Progress file ensures resumability. Tell user: "Say 'resume ticket <KEY>' to pick up where we left off."                                    |
+| **Quality gate failure** | Handled internally by executing-subtask via targeted fix cycles. Orchestrator acts only if fix cycle limit is exhausted — escalate to user. |
