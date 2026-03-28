@@ -85,7 +85,7 @@ not a hard block — execution can proceed without Jira tracking.
 | `clean-code-reviewer`   | `./subagents/clean-code-reviewer.md`   | Reviews for Clean Code, SOLID principles; validates recency via context7                  |
 | `architecture-reviewer` | `./subagents/architecture-reviewer.md` | Reviews for DDD and functional programming principles; validates recency via context7     |
 | `security-auditor`      | `./subagents/security-auditor.md`      | Audits for security vulnerabilities, credential leaks, and insecure patterns              |
-| `requirements-verifier` | `./subagents/requirements-verifier.md` | Confirms all requirements were met or identifies gaps for another iteration               |
+| `requirements-verifier` | `./subagents/requirements-verifier.md` | Pre-gate coverage check — confirms all requirements are met before quality gates run      |
 
 Before delegating, read the subagent file to understand its contract (expected
 input format, output format, and rules). The path is relative to this skill's
@@ -133,11 +133,14 @@ updates:
 ## Quality Gate Architecture
 
 Three subagents serve as mandatory quality gates. ALL THREE must return a PASS
-verdict for the task execution to be considered complete:
+verdict for the task execution to be considered complete. The
+`requirements-verifier` runs before the gates (step 9) to confirm coverage
+is complete — the gates then review code that is known to address all
+requirements.
 
 | Gate                    | Concern                                              | Runs after              |
 | ----------------------- | ---------------------------------------------------- | ----------------------- |
-| `clean-code-reviewer`   | Clean Code, SOLID, test quality, documentation       | `documentation-writer`  |
+| `clean-code-reviewer`   | Clean Code, SOLID, test quality, documentation       | `requirements-verifier` |
 | `architecture-reviewer` | DDD, functional programming, bounded contexts        | `clean-code-reviewer`   |
 | `security-auditor`      | Vulnerabilities, credential leaks, insecure patterns | `architecture-reviewer` |
 
@@ -357,11 +360,39 @@ The documentation writer will:
 
 Collect its output as the `DOCUMENTATION_REPORT`.
 
-### 9. Dispatch: Clean Code Reviewer (Quality Gate 1/3)
+### 9. Dispatch: Requirements Verifier (pre-gate coverage check)
+
+Read `./subagents/requirements-verifier.md` and dispatch the
+requirements-verifier subagent with the execution brief, `TEST_SPEC`,
+`EXECUTION_REPORT`, and `DOCUMENTATION_REPORT`.
+
+The requirements verifier runs BEFORE the quality gates to catch coverage
+gaps early. This prevents the gates from reviewing code that is missing
+functionality — wasting a full gate cycle on incomplete work.
+
+The requirements verifier will:
+
+- Cross-check every item in the Definition of Done against the actual changes.
+- Verify test coverage matches business requirements.
+- Confirm documentation is complete.
+- Produce a verification verdict: PASS or FAIL with specific gaps.
+
+**If the verdict is FAIL:** Report the gaps to the user and ask whether to
+address the missing requirements before running the quality gates, or proceed
+with the gates on the current implementation. Do NOT automatically re-run
+the pipeline — let the user decide.
+
+**If the verdict is PASS:** Proceed to the quality gates.
+
+Collect its output as the `VERIFICATION_RESULT`. Pass it to the quality
+gates as additional context so they know whether requirements coverage is
+complete.
+
+### 10. Dispatch: Clean Code Reviewer (Quality Gate 1/3)
 
 Read `./subagents/clean-code-reviewer.md` and dispatch the clean-code-reviewer
 subagent with the execution brief, `TEST_SPEC`, `REFACTORING_PLAN`,
-`EXECUTION_REPORT`, and `DOCUMENTATION_REPORT`.
+`EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, and `VERIFICATION_RESULT`.
 
 **Pre-gate check:** The clean-code-reviewer will first check for uncommitted
 changes. If uncommitted changes exist, it stops and reports this — the
@@ -386,11 +417,11 @@ a targeted fix cycle (see Quality Gate Architecture above).
 
 Collect the output as the `CODE_REVIEW`.
 
-### 10. Dispatch: Architecture Reviewer (Quality Gate 2/3)
+### 11. Dispatch: Architecture Reviewer (Quality Gate 2/3)
 
 Read `./subagents/architecture-reviewer.md` and dispatch the
 architecture-reviewer subagent with the execution brief, `EXECUTION_PLAN`,
-`EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, and `CODE_REVIEW`.
+`EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT`, and `CODE_REVIEW`.
 
 **Pre-gate check:** The architecture-reviewer will first check for uncommitted
 changes. If uncommitted changes exist, it stops and reports this.
@@ -414,11 +445,11 @@ security-auditor so all issues are identified in one pass.
 
 Collect the output as the `ARCHITECTURE_REVIEW`.
 
-### 11. Dispatch: Security Auditor (Quality Gate 3/3)
+### 12. Dispatch: Security Auditor (Quality Gate 3/3)
 
 Read `./subagents/security-auditor.md` and dispatch the security-auditor
 subagent with the execution brief, `EXECUTION_REPORT`,
-`DOCUMENTATION_REPORT`, `CODE_REVIEW`, and `ARCHITECTURE_REVIEW`.
+`DOCUMENTATION_REPORT`, `VERIFICATION_RESULT`, `CODE_REVIEW`, and `ARCHITECTURE_REVIEW`.
 
 **Pre-gate check:** The security-auditor will first check for uncommitted
 changes. If uncommitted changes exist, it stops and reports this.
@@ -439,10 +470,10 @@ The security auditor will:
 
 **If verdict is NEEDS FIXES:** Collect the audit feedback.
 
-### 11a. Targeted fix cycle (if any gate returned NEEDS FIXES)
+### 12a. Targeted fix cycle (if any gate returned NEEDS FIXES)
 
 After all three gates have run, check whether any returned NEEDS FIXES. If
-all three passed, skip to step 12.
+all three passed, skip to step 13.
 
 If one or more gates returned NEEDS FIXES:
 
@@ -463,7 +494,7 @@ If one or more gates returned NEEDS FIXES:
    architecture-reviewer both failed, re-run both (in their original order).
    Gates that already passed do not need to re-run.
 
-5. **Check results.** If all re-run gates now pass, continue to step 12. If
+5. **Check results.** If all re-run gates now pass, continue to step 13. If
    any still fail, repeat this fix cycle.
 
 **Fix cycle limit:** Maximum 3 targeted fix cycles per task. If the quality
@@ -476,27 +507,6 @@ accumulated gate feedback and ask how to proceed. The user may choose to:
   approach failures, not code quality issues).
 
 Collect the output as the `SECURITY_AUDIT`.
-
-### 12. Dispatch: Requirements Verifier
-
-Read `./subagents/requirements-verifier.md` and dispatch the
-requirements-verifier subagent with the execution brief, `TEST_SPEC`,
-`EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, `CODE_REVIEW`,
-`ARCHITECTURE_REVIEW`, and `SECURITY_AUDIT`.
-
-The requirements verifier will:
-
-- Cross-check every item in the Definition of Done against the actual changes.
-- Verify test coverage matches business requirements.
-- Confirm documentation is complete.
-- Confirm all three quality gates passed.
-- Produce a verification verdict: PASS or FAIL with specific gaps.
-
-If the verdict is FAIL, report the gaps to the user and ask whether to run
-another iteration targeting the missing requirements. Do NOT automatically
-re-run the pipeline — let the user decide.
-
-Collect its output as the `VERIFICATION_RESULT`.
 
 ### 13. Update tracking
 
@@ -553,10 +563,10 @@ Pipeline results:
 - Implementation: <files changed count>
 - Documentation: <what was documented>
 - Commits: <N atomic commits created>
+- Requirements verification: <PASS/FAIL> (pre-gate coverage check)
 - Code review: <PASS/PASS WITH NOTES> (recency-validated via context7)
 - Architecture review: <PASS/PASS WITH NOTES> (DDD + FP validated)
 - Security audit: <PASS/PASS WITH ADVISORIES>
-- Verification: <PASS/FAIL>
 
 Commits:
 - <short hash> — <commit message>
