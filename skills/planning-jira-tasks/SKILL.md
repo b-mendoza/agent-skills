@@ -75,11 +75,12 @@ The output file **must** contain all of these sections for downstream skills:
 
 ## Subagent Registry
 
-| Subagent                 | Path                                    | Purpose                                            |
-| ------------------------ | --------------------------------------- | -------------------------------------------------- |
-| `task-planner`           | `./subagents/task-planner.md`           | Decompose ticket and detail tasks (the WHAT + HOW) |
-| `dependency-prioritizer` | `./subagents/dependency-prioritizer.md` | Dependency graph + scoring + final execution order |
-| `task-validator`         | `./subagents/task-validator.md`         | QA gate — 19 validation checks                     |
+| Subagent                 | Path                                    | Purpose                                               |
+| ------------------------ | --------------------------------------- | ----------------------------------------------------- |
+| `task-planner`           | `./subagents/task-planner.md`           | Decompose ticket and detail tasks (the WHAT + HOW)    |
+| `dependency-prioritizer` | `./subagents/dependency-prioritizer.md` | Dependency graph + scoring + final execution order    |
+| `task-validator`         | `./subagents/task-validator.md`         | QA gate — 19 validation checks                        |
+| `stage-validator`        | `./subagents/stage-validator.md`        | Pre-flight, inter-stage, and post-pipeline validation |
 
 Read each subagent file only when you are about to dispatch to it — do not
 preload all definitions.
@@ -140,50 +141,45 @@ is written successfully.
 
 ### 1. Pre-flight
 
-1. Verify `docs/<TICKET_KEY>.md` exists. If not, stop and tell the user to run
-   the fetching skill.
-2. Read the file and confirm the five required sections from the input contract
-   are present. If any are missing, stop and ask the user to re-fetch.
+Dispatch `stage-validator` with `STAGE=preflight`, `TICKET_KEY`, and
+`FILE_PATH=docs/<TICKET_KEY>.md`.
+
+- **If verdict is FAIL:** Stop and tell the user which checks failed. If the
+  file does not exist, tell the user to run the fetching skill. If sections
+  are missing, tell the user to re-fetch.
+- **If verdict is PASS:** Proceed.
 
 ### 2. Run the pipeline
 
-Execute each subagent in order. After each stage, run the sanity check
-described below before proceeding. If a check fails, retry that stage ONCE with
-specific feedback about what was missing. If it fails again, stop and report.
+Execute each subagent in order. After each stage, dispatch `stage-validator`
+to check the output. If validation fails, retry that stage ONCE with specific
+feedback from the validator's issues list. If it fails again, stop and report.
 
 **Stage 1 — Plan:**
 Dispatch `task-planner` with input: `docs/<KEY>.md`.
 Output: `docs/<KEY>-stage-1-detailed.md`.
-Sanity check: file exists, contains at least 2 tasks, every task has all 6
-required subsections (Objective, Relevant requirements, Questions, Implementation
-notes, Definition of done, Likely files), and every task has a `Traces to` line.
+Dispatch `stage-validator` with `STAGE=1` and `FILE_PATH=docs/<KEY>-stage-1-detailed.md`.
 
 **Stage 2 — Prioritize:**
 Dispatch `dependency-prioritizer` with input: stage 1 output.
 Output: `docs/<KEY>-stage-2-prioritized.md`.
-Sanity check: every task has a `Dependencies / prerequisites` field, tasks are
-renumbered from letters to sequential numbers, `## Execution Order Summary`
-and `## Dependency Graph` sections exist.
+Dispatch `stage-validator` with `STAGE=2` and `FILE_PATH=docs/<KEY>-stage-2-prioritized.md`.
 
 **Stage 3 — Validate:**
 Dispatch `task-validator` with inputs: `docs/<KEY>.md` + stage 2 output.
 Output: `docs/<KEY>-tasks.md`.
-Sanity check: file exists, validation report section is present.
+Dispatch `stage-validator` with `STAGE=3` and `FILE_PATH=docs/<KEY>-tasks.md`.
 
 ### 3. Post-pipeline validation
 
-Verify the final `docs/<KEY>-tasks.md` satisfies the output contract:
+Dispatch `stage-validator` with `STAGE=postpipeline` and
+`FILE_PATH=docs/<KEY>-tasks.md`.
 
-- `## Ticket Summary` exists
-- `## Assumptions and Constraints` exists
-- `## Cross-Cutting Open Questions` exists (even if empty)
-- `## Execution Order Summary` table exists
-- `## Dependency Graph` exists
-- `## Validation Report` exists
-- Every `## Task N:` has all 8 required subsections
+This runs the full output contract check — all 7 required sections, all 8
+per-task subsections.
 
-If anything is missing, re-run stage 3 with specific feedback. If it fails
-again, stop and report.
+If anything is missing, re-run stage 3 with specific feedback from the
+validator. If it fails again, stop and report.
 
 ### 4. Clean up
 
@@ -209,8 +205,8 @@ Tell the user:
 
 - If any subagent fails, do NOT proceed to the next stage. Report the failure
   with the stage number and error.
-- If a sanity check fails, retry the subagent ONCE with specific feedback. If
-  it fails again, stop and report.
+- If a `stage-validator` check fails, retry the subagent ONCE with specific
+  feedback from the validator's issues list. If it fails again, stop and report.
 - Intermediate files are NOT cleaned up on failure — they help with debugging.
 
 ## Task-Planning Rules (reference — enforced by subagents)
