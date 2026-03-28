@@ -91,7 +91,7 @@ invoking it.
 | 2     | planning-jira-tasks    | `../planning-jira-tasks/SKILL.md`    | Decompose ticket into a prioritized task plan     |
 | 3     | clarifying-assumptions | `../clarifying-assumptions/SKILL.md` | Walk user through open questions and assumptions  |
 | 4     | creating-jira-subtasks | `../creating-jira-subtasks/SKILL.md` | Push planned tasks to Jira as subtasks            |
-| 5     | executing-subtask      | `../executing-subtask/SKILL.md`      | Execute one task at a time from the plan          |
+| 5     | executing-jira-task      | `../executing-jira-task/SKILL.md`      | Execute one task at a time from the plan          |
 
 ## Data Contracts
 
@@ -273,23 +273,23 @@ Phase 5 runs once per task, not once for the whole plan. Each iteration:
    | Need docs or config context      | `documentation-finder`  |
    | Need a feature branch            | `git-operator`          |
 
-5. **Progressive clarification** — before invoking `executing-subtask`, check
+5. **Progressive clarification** — before invoking `executing-jira-task`, check
    the task plan for any unresolved questions specific to THIS task. If
    questions exist that were deferred during Phase 3 (clarifying-assumptions),
    resolve them now with the user. Questions about future tasks remain deferred.
    This follows the progressive disclosure principle: ask only what is relevant
    to the task about to execute.
 
-6. Invoke `executing-subtask`, passing context summaries from step 4 as
-   explicit inputs. Follow every step defined in the executing-subtask SKILL.md.
+6. Invoke `executing-jira-task`, passing context summaries from step 4 as
+   explicit inputs. Follow every step defined in the executing-jira-task SKILL.md.
 
-7. **Quality gate handling is delegated to executing-subtask.** The
-   executing-subtask skill manages its own targeted fix cycle internally:
+7. **Quality gate handling is delegated to executing-jira-task.** The
+   executing-jira-task skill manages its own targeted fix cycle internally:
    when a quality gate fails, it re-dispatches only the task-executor and
    documentation-writer to address the specific issues, then re-runs only the
    failing gates. This avoids full pipeline re-runs for code quality issues.
 
-   The orchestrator only needs to act if the executing-subtask skill reports
+   The orchestrator only needs to act if the executing-jira-task skill reports
    that the fix cycle limit (3 attempts) was exhausted. In that case, present
    the accumulated gate feedback to the user and ask how to proceed:
    - Accept the current state and move on.
@@ -299,7 +299,7 @@ Phase 5 runs once per task, not once for the whole plan. Each iteration:
 
 8. After the task completes successfully (all gates pass), dispatch
    `git-operator` with operation `commit-work` if there are any uncommitted
-   changes remaining. The documentation-writer subagent within executing-subtask
+   changes remaining. The documentation-writer subagent within executing-jira-task
    should have already committed most changes, but verify.
 
 9. Dispatch `progress-tracker` to mark the task complete.
@@ -335,4 +335,4 @@ All artifacts are in docs/<TICKET_KEY>\*.
 | **Jira MCP unavailable** | Tell user to connect it. Offer to resume when ready.                                                                                        |
 | **Subagent failure**     | Non-critical (e.g., `documentation-finder`): proceed without. Critical (e.g., `artifact-validator`): halt.                                  |
 | **User interruption**    | Progress file ensures resumability. Tell user: "Say 'resume ticket <KEY>' to pick up where we left off."                                    |
-| **Quality gate failure** | Handled internally by executing-subtask via targeted fix cycles. Orchestrator acts only if fix cycle limit is exhausted — escalate to user. |
+| **Quality gate failure** | Handled internally by executing-jira-task via targeted fix cycles. Orchestrator acts only if fix cycle limit is exhausted — escalate to user. |

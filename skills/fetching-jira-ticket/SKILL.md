@@ -42,7 +42,7 @@ break the pipeline.
 | `## Comments`            | planning-jira-tasks                         | Contains decisions and clarifications   |
 | `## Subtasks`            | planning-jira-tasks, creating-jira-subtasks | Avoids duplicating existing work        |
 | `## Linked Issues`       | planning-jira-tasks                         | Dependency and context awareness        |
-| `## Attachments`         | executing-subtask                           | Implementation reference                |
+| `## Attachments`         | executing-jira-task                         | Implementation reference                |
 | `## Custom Fields`       | planning-jira-tasks                         | May contain acceptance criteria         |
 
 ## Subagent Registry

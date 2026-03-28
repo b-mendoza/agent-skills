@@ -123,9 +123,9 @@ The same task plan file at `docs/<TICKET_KEY>-tasks.md`, updated in-place, with:
 | Addition                                                | Required by            | Why                                                        |
 | ------------------------------------------------------- | ---------------------- | ---------------------------------------------------------- |
 | `## Decisions Log` table                                | creating-jira-subtasks | Subtask descriptions reflect resolved decisions            |
-| Annotated assumptions                                   | executing-subtask      | Executor needs confirmed assumptions, not open Qs          |
-| Resolved per-task questions                             | executing-subtask      | Pre-flight check verifies no unresolved questions          |
-| Updated `Implementation notes` (where approach changed) | executing-subtask      | Executor follows the updated approach                      |
+| Annotated assumptions                                   | executing-jira-task    | Executor needs confirmed assumptions, not open Qs          |
+| Resolved per-task questions                             | executing-jira-task    | Pre-flight check verifies no unresolved questions          |
+| Updated `Implementation notes` (where approach changed) | executing-jira-task    | Executor follows the updated approach                      |
 | Deferred question tags                                  | orchestrator (Phase 5) | Orchestrator knows which questions to ask before each task |
 
 ## Subagent Registry

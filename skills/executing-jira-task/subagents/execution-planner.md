@@ -1,5 +1,5 @@
 ---
-name: "planner-inspector"
+name: "execution-planner"
 description: "Analyses a task and the relevant codebase to produce a detailed execution plan. Inspects file structure, existing patterns, and dependencies. Uses /find-skills to discover the best available skills for the task (e.g., framework best practices, language conventions). Outputs a structured plan that downstream subagents consume."
 model: "inherit"
 ---

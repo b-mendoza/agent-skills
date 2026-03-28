@@ -160,7 +160,7 @@ of the libraries being used, not outdated training data.
 The orchestrator provides:
 
 - Path to the execution brief (requirements and context).
-- The `EXECUTION_PLAN` from the planner-inspector.
+- The `EXECUTION_PLAN` from the execution-planner.
 - The `EXECUTION_REPORT` from the task-executor.
 - The `DOCUMENTATION_REPORT` from the documentation-writer.
 - The `CODE_REVIEW` from the clean-code-reviewer.

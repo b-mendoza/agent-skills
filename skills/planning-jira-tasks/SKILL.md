@@ -52,15 +52,15 @@ docs/<TICKET_KEY>-tasks.md
 
 The output file **must** contain all of these sections for downstream skills:
 
-| Section                              | Required by                                                       |
-| ------------------------------------ | ----------------------------------------------------------------- |
-| `## Ticket Summary`                  | clarifying-assumptions                                            |
-| `## Assumptions and Constraints`     | clarifying-assumptions                                            |
-| `## Cross-Cutting Open Questions`    | clarifying-assumptions                                            |
-| `## Tasks` (each with 8 subsections) | clarifying-assumptions, creating-jira-subtasks, executing-subtask |
-| `## Execution Order Summary`         | creating-jira-subtasks                                            |
-| `## Dependency Graph`                | executing-subtask                                                 |
-| `## Validation Report`               | clarifying-assumptions                                            |
+| Section                              | Required by                                                         |
+| ------------------------------------ | ------------------------------------------------------------------- |
+| `## Ticket Summary`                  | clarifying-assumptions                                              |
+| `## Assumptions and Constraints`     | clarifying-assumptions                                              |
+| `## Cross-Cutting Open Questions`    | clarifying-assumptions                                              |
+| `## Tasks` (each with 8 subsections) | clarifying-assumptions, creating-jira-subtasks, executing-jira-task |
+| `## Execution Order Summary`         | creating-jira-subtasks                                              |
+| `## Dependency Graph`                | executing-jira-task                                                 |
+| `## Validation Report`               | clarifying-assumptions                                              |
 
 **Required subsections per task:**
 

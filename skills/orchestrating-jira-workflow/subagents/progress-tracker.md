@@ -35,7 +35,7 @@ Template (used by `initialize`):
 | 2     | planning-jira-tasks    | ⬜ Pending | —            | —     |
 | 3     | clarifying-assumptions | ⬜ Pending | —            | —     |
 | 4     | creating-jira-subtasks | ⬜ Pending | —            | —     |
-| 5     | executing-subtask      | ⬜ Pending | —            | —     |
+| 5     | executing-jira-task    | ⬜ Pending | —            | —     |
 
 ## Execution Log
 ```

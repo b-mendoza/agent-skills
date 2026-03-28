@@ -1,9 +1,9 @@
 ---
-name: "executing-subtask"
-description: 'Execute a single subtask from a task plan using a structured pipeline of specialist subagents: planning, testing, refactoring, implementation, documentation, code-quality review, architecture review, security audit, and requirements verification. The user must specify which task number to execute. Use when the user says "execute task 3", "work on task 2", "implement task 1", "start task 5 for PROJECT-1234", or "run subtask N". Also triggered by the orchestrating-jira-workflow skill as Phase 5 of the end-to-end pipeline (called once per task). Requires that the task plan exists at docs/<TICKET_KEY>-tasks.md. Executes ONLY the specified task — never continues to the next one without explicit user approval.'
+name: "executing-jira-task"
+description: 'Execute a single task from a Jira task plan using a structured pipeline of specialist subagents: planning, testing, refactoring, implementation, documentation, code-quality review, architecture review, security audit, and requirements verification. The user must specify which task number to execute. Use when the user says "execute task 3", "work on task 2", "implement task 1", "start task 5 for PROJECT-1234", or "run task N". Also triggered by the orchestrating-jira-workflow skill as Phase 5 of the end-to-end pipeline (called once per task). Requires that the task plan exists at docs/<TICKET_KEY>-tasks.md. Executes ONLY the specified task — never continues to the next one without explicit user approval.'
 ---
 
-# Executing Subtask
+# Executing Jira Task
 
 ## Purpose
 
@@ -66,7 +66,7 @@ built up across the preceding phases:
 | Per-task `Questions to answer` resolved     | clarifying-assumptions   | Step 1 (pre-flight) | Pre-flight checks all questions are answered     |
 | `## Jira Subtasks` table with keys          | creating-jira-subtasks   | Step 11b (Jira)     | Maps task number to Jira subtask key for status  |
 | `Jira Subtask: <KEY>` in each task section  | creating-jira-subtasks   | Step 11b (Jira)     | Identifies which Jira issue to transition        |
-| `**Status:**` on previously completed tasks | executing-subtask (self) | Step 1 (pre-flight) | Checks whether dependencies are marked complete  |
+| `**Status:**` on previously completed tasks | executing-jira-task (self) | Step 1 (pre-flight) | Checks whether dependencies are marked complete  |
 
 **Pre-flight gate:** If the `## Jira Subtasks` table is missing, subtasks were
 not created in Jira. Warn the user and ask whether to proceed without Jira
@@ -77,7 +77,7 @@ not a hard block — execution can proceed without Jira tracking.
 
 | Subagent                | Path                                   | Purpose                                                                                   |
 | ----------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `planner-inspector`     | `./subagents/planner-inspector.md`     | Analyzes the task, inspects the codebase, and produces an execution plan with skills      |
+| `execution-planner`     | `./subagents/execution-planner.md`     | Analyzes the task, inspects the codebase, and produces an execution plan with skills      |
 | `test-strategist`       | `./subagents/test-strategist.md`       | Defines behaviour-driven tests based on business requirements, not implementation         |
 | `refactoring-advisor`   | `./subagents/refactoring-advisor.md`   | Evaluates whether existing code needs refactoring before or during task execution         |
 | `task-executor`         | `./subagents/task-executor.md`         | Performs the actual implementation work based on the execution brief — cautious by design |
@@ -222,12 +222,12 @@ need:
 
 Write this brief to `docs/<TICKET_KEY>-task-<N>-brief.md`.
 
-### 3. Dispatch: Planner-Inspector
+### 3. Dispatch: Execution Planner
 
-Read `./subagents/planner-inspector.md` and dispatch the planner-inspector
+Read `./subagents/execution-planner.md` and dispatch the execution-planner
 subagent with the execution brief path.
 
-The planner-inspector will:
+The execution-planner will:
 
 - Analyse the task and the relevant parts of the codebase.
 - Use the `/find-skills` skill to identify the best available skills for the task.

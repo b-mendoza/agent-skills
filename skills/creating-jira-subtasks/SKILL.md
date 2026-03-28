@@ -65,12 +65,12 @@ clarifying-assumptions first. This is a warning, not a hard block.
 - A summary table printed to the user showing each subtask key and title.
 - The local plan file updated with created subtask keys for traceability.
 
-### Output contract (consumed by executing-subtask)
+### Output contract (consumed by executing-jira-task)
 
-| Addition                                              | Required by       | Purpose                                           |
-| ----------------------------------------------------- | ----------------- | ------------------------------------------------- |
-| `## Jira Subtasks` table (Task #, Key, Title, Status) | executing-subtask | Maps task numbers to Jira keys for status updates |
-| `Jira Subtask: <KEY>` line in each task section       | executing-subtask | Executor transitions the correct Jira issue       |
+| Addition                                              | Required by         | Purpose                                           |
+| ----------------------------------------------------- | ------------------- | ------------------------------------------------- |
+| `## Jira Subtasks` table (Task #, Key, Title, Status) | executing-jira-task | Maps task numbers to Jira keys for status updates |
+| `Jira Subtask: <KEY>` line in each task section       | executing-jira-task | Executor transitions the correct Jira issue       |
 
 The orchestrator checks for `## Jira Subtasks` as the Phase 4 completion
 signal.

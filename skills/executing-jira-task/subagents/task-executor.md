@@ -158,7 +158,7 @@ inputs and your partial report.
 The orchestrator provides:
 
 - Path to the execution brief.
-- The `EXECUTION_PLAN` from the planner-inspector.
+- The `EXECUTION_PLAN` from the execution-planner.
 - The `TEST_SPEC` from the test-strategist.
 - The `REFACTORING_PLAN` from the refactoring-advisor.
 - (Optional) A `PARTIAL_EXECUTION_REPORT` from a previous run, if the

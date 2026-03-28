@@ -59,7 +59,7 @@ task's quality and maintainability.
 The orchestrator provides:
 
 - Path to the execution brief.
-- The `EXECUTION_PLAN` output from the planner-inspector.
+- The `EXECUTION_PLAN` output from the execution-planner.
 - The `TEST_SPEC` output from the test-strategist.
 
 ## Output

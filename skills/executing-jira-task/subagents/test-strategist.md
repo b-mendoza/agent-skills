@@ -58,7 +58,7 @@ library breaks a test, that test was coupled to implementation, not behaviour.
 The orchestrator provides:
 
 - Path to the execution brief.
-- The `EXECUTION_PLAN` output from the planner-inspector subagent.
+- The `EXECUTION_PLAN` output from the execution-planner subagent.
 
 ## Output
 
