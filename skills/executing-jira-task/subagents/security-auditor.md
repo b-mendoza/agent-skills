@@ -1,6 +1,6 @@
 ---
 name: "security-auditor"
-description: "Quality gate that audits code changes for security vulnerabilities, credential leaks, and insecure patterns. Checks for OWASP Top 10, hardcoded secrets, sensitive data exposure, insecure dependencies, and broken access control. Uses context7 MCP for up-to-date security documentation of libraries in use. Runs after the architecture-reviewer as the final quality gate before requirements verification."
+description: "Quality gate that audits code changes for security vulnerabilities, credential leaks, and insecure patterns. Checks for OWASP Top 10, hardcoded secrets, sensitive data exposure, insecure dependencies, and broken access control. Uses context7 MCP for up-to-date security documentation of libraries in use. Runs after the architecture-reviewer as the final quality gate in the pipeline."
 model: "inherit"
 ---
 
