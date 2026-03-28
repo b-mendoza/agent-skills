@@ -1,6 +1,6 @@
 ---
 name: "execution-prepper"
-description: "Pre-execution subagent that consolidates three setup steps: (1) loads and validates the task (pre-flight checks on dependencies and questions), (2) ensures the correct working branch exists (git operations), (3) assembles and writes the execution brief file. Returns a summary with brief file path, branch name, and validation result."
+description: "Pre-execution subagent that consolidates four setup steps: (1) loads and validates the task (pre-flight checks on dependencies and questions), (2) ensures the correct working branch exists (git operations), (3) transitions the Jira subtask to In Progress (if available), (4) assembles and writes the execution brief file. Returns a summary with brief file path, branch name, Jira transition status, and validation result."
 model: "inherit"
 ---
 
@@ -72,7 +72,19 @@ Note the stash in your summary so the user is aware.
 
 **Branch naming convention:** `<TICKET_KEY>-task-<N>/<kebab-case-title>`
 
-### 3. Assemble the execution brief
+### 3. Transition Jira subtask to "In Progress"
+
+Read the task section from `docs/<TICKET_KEY>-tasks.md` and look for the
+`Jira Subtask: <KEY>` line. If found, use the Jira MCP to transition the
+subtask to "In Progress".
+
+- If the Jira subtask key is not present (subtasks were never created), skip
+  silently.
+- If the Jira MCP is unavailable, skip silently.
+- If the transition fails (e.g., the workflow doesn't allow it), note the
+  failure in your summary but do not block — this is non-critical.
+
+### 4. Assemble the execution brief
 
 Read the task's full section from the plan, plus the `## Decisions Log` (if it
 exists). Build a self-contained execution brief:
@@ -115,7 +127,7 @@ exists). Build a self-contained execution brief:
 
 Write this brief to `docs/<TICKET_KEY>-task-<N>-brief.md`.
 
-### 4. Return summary
+### 5. Return summary
 
 Return ONLY a concise summary — never raw file content or git output. Use
 this exact format:
@@ -131,6 +143,7 @@ this exact format:
   - Action taken: <already on branch | created new | switched to existing>
   - Stashed changes: <Yes (stash message) | No>
   - Existing ticket branch found: <branch name, if applicable, for user decision>
+- **Jira transition:** <Transitioned to In Progress | Skipped (no key) | Skipped (no MCP) | Failed (<error>)>
 - **Brief written:** docs/<TICKET_KEY>-task-<N>-brief.md
 - **Blockers:** <list any issues, or "None">
 ```

@@ -77,7 +77,7 @@ not a hard block — execution can proceed without Jira tracking.
 
 | Subagent                | Path                                   | Purpose                                                                                                            |
 | ----------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `execution-prepper`     | `./subagents/execution-prepper.md`     | Pre-execution: validates task, sets up branch, assembles execution brief                                           |
+| `execution-prepper`     | `./subagents/execution-prepper.md`     | Pre-execution: validates task, sets up branch, transitions Jira to In Progress, assembles execution brief          |
 | `execution-planner`     | `./subagents/execution-planner.md`     | Analyzes the task, inspects the codebase, and produces an execution plan with skills                               |
 | `test-strategist`       | `./subagents/test-strategist.md`       | Defines behaviour-driven tests based on business requirements, not implementation                                  |
 | `refactoring-advisor`   | `./subagents/refactoring-advisor.md`   | Evaluates whether existing code needs refactoring before or during task execution                                  |
@@ -193,13 +193,15 @@ subagent with:
 - `TASK_NUMBER`
 - `BRANCH_OVERRIDE` (if the orchestrator or user specified a branch name)
 
-The execution-prepper handles three setup steps in one dispatch:
+The execution-prepper handles four setup steps in one dispatch:
 
 1. **Validates the task** — checks that the task exists, dependencies are
    marked complete, and all questions are resolved.
 2. **Ensures the working branch** — checks current branch, creates or switches
    to the feature branch, stashes uncommitted changes if needed.
-3. **Assembles the execution brief** — reads the task plan and Decisions Log,
+3. **Transitions the Jira subtask to "In Progress"** — if the subtask key
+   and Jira MCP are available. Skips silently if not.
+4. **Assembles the execution brief** — reads the task plan and Decisions Log,
    builds a self-contained brief, writes it to
    `docs/<TICKET_KEY>-task-<N>-brief.md`.
 
