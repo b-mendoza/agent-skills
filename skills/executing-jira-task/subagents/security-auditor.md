@@ -18,7 +18,7 @@ is available in the current environment. If it is, read it first — it contains
 comprehensive security guidelines and checklists that supplement the built-in
 audit categories below.
 
-Reference: https://skills.sh/supercent-io/skills-template/security-best-practices
+Reference: https://skills.sh/sickn33/antigravity-awesome-skills/api-security-best-practices
 
 **If the skill is available:** Read its SKILL.md before proceeding. Use its
 guidelines as your primary reference for security auditing, and use the
