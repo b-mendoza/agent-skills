@@ -130,9 +130,18 @@ The same task plan file at `docs/<TICKET_KEY>-tasks.md`, updated in-place, with:
 
 ## Subagent Registry
 
-No subagents. This skill runs inline because it is conversational — it needs the
-user's full conversation history for multi-turn Q&A. Delegating to a subagent
-would lose that context.
+| Subagent            | Path                               | Purpose                                                               |
+| ------------------- | ---------------------------------- | --------------------------------------------------------------------- |
+| `decision-recorder` | `./subagents/decision-recorder.md` | Applies all file edits (Decisions Log, annotations, tags) + validates |
+
+Before dispatching, read the subagent file to understand its input/output
+contract. The path is relative to this skill's directory.
+
+**Why only file writes are delegated:** This skill is conversational — it
+needs the user's full conversation history for multi-turn Q&A. The Q&A loop
+and plan parsing run inline because the skill needs manifest content in context
+to ask questions. File writes are delegated because they are separable from the
+conversation and would pollute the context with raw file I/O.
 
 ---
 
@@ -322,44 +331,42 @@ is done, present the new questions for confirmation first.
 deferred. Say: _"This raises a question for Task <N>. I'll ask it when we
 get there."_
 
-### Phase 3 — Update the plan file and summarize
+### Phase 3 — Delegate file updates and summarize
 
-#### 3a. Update `docs/<TICKET_KEY>-tasks.md`
+#### 3a. Dispatch `decision-recorder`
 
-Append a Decisions Log (or update if one already exists):
+After all Tier 1 questions have been walked through, collect the accumulated
+decisions, deferred questions, and implementation note updates into structured
+lists (see the `decision-recorder` subagent's input contract for the exact
+format).
 
-```markdown
-## Decisions Log
+Read `./subagents/decision-recorder.md` and dispatch the subagent with:
 
-> Recorded on: <YYYY-MM-DD HH:MM UTC>
+- `TICKET_KEY`
+- `MODE=upfront`
+- `DECISIONS` — the full list of resolved decisions from Phase 2
+- `DEFERRED_QUESTIONS` — questions tagged for future tasks
+- `IMPLEMENTATION_UPDATES` — any implementation notes that changed due to
+  answers
 
-| #   | Category        | Question (short)         | Decision / Answer   | Impact on plan     | Phase resolved |
-| --- | --------------- | ------------------------ | ------------------- | ------------------ | -------------- |
-| 1   | Cross-cutting   | Which API version?       | Use v3 REST API     | Tasks 3, 5 updated | Phase 3        |
-| 2   | Assumption      | Auth method?             | Confirmed: OAuth2   | No change          | Phase 3        |
-| 3   | Task 4 question | Error handling strategy? | [DEFERRED — Task 4] | —                  | —              |
-```
+The subagent handles all file edits:
 
-Apply inline updates:
+- Appends or updates the `## Decisions Log` table.
+- Annotates assumptions (✅ Confirmed / ❌ Revised / ⏭️ Skipped).
+- Strikes through resolved questions with answers.
+- Tags deferred questions with `[DEFERRED — will ask before Task N execution]`.
+- Updates `Implementation notes` where answers changed the approach.
+- Validates all updates were applied correctly.
+- Returns a validation summary.
 
-- In `Assumptions and Constraints`: mark each `✅ Confirmed` or `❌ Revised: <new text>`
-- In Task 1 `Questions to answer before starting`: `~~<question>~~ → <answer>`
-- Update `Implementation notes` where answers changed the approach
-- In Tasks 2+ `Questions to answer before starting`: tag as
-  `[DEFERRED — will ask before Task N execution]`
+#### 3b. Handle the result
 
-#### 3b. Validate updates
+Check the subagent's summary:
 
-Re-read the file and verify:
-
-- Every Tier 1 manifest question has a Decisions Log entry (resolved, confirmed, revised, or skipped)
-- Every assumption in `Assumptions and Constraints` is annotated
-- Task 1 questions reflect the answers given
-- Deferred questions are tagged appropriately
-- `Implementation notes` are updated where answers changed the approach
-- The `## Decisions Log` section exists and is well-formed (downstream skills check for it)
-
-Fix any gaps before presenting the summary.
+- **If validation is PASS:** Proceed to the final summary.
+- **If validation is WARN:** Review the warnings. If updates could not be
+  applied (e.g., question text not found), note this in the user summary. The
+  warnings do not block — they are informational.
 
 #### 3c. Final summary
 
@@ -444,12 +451,28 @@ All deferred questions for Task <N> have been resolved by prior decisions
 or are no longer applicable. Ready to execute.
 ```
 
-### 4. Update the plan file
+### 4. Delegate file updates
 
-- Update the Decisions Log with new entries (mark `Phase resolved` as
+Dispatch `decision-recorder` with:
+
+- `TICKET_KEY`
+- `MODE=jit`
+- `TASK_NUMBER=<N>`
+- `DECISIONS` — any decisions resolved during step 3
+- `IMPLEMENTATION_UPDATES` — any implementation notes that changed
+- `RESOLVED_IRRELEVANT` — questions marked irrelevant in step 2 (with reasons)
+
+The subagent handles all file edits:
+
+- Updates the Decisions Log with new entries (marking `Phase resolved` as
   `Phase 5 — Task <N>`).
-- Update the task's `Questions to answer before starting` section.
-- Update `Implementation notes` if any answers changed the approach.
+- Resolves the task's `Questions to answer before starting` section.
+- Tags irrelevant questions with `[RESOLVED — no longer applicable: <reason>]`.
+- Updates `Implementation notes` if any answers changed the approach.
+- Validates all updates were applied correctly.
+
+If the subagent reports warnings (updates that could not be applied), note
+them but do not block — they are informational.
 
 ---
 
