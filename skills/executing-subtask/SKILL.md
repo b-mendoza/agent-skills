@@ -125,12 +125,34 @@ verdict for the task execution to be considered complete:
 | `architecture-reviewer` | DDD, functional programming, bounded contexts        | `clean-code-reviewer`   |
 | `security-auditor`      | Vulnerabilities, credential leaks, insecure patterns | `architecture-reviewer` |
 
-If ANY gate returns a verdict other than PASS:
+### On quality gate failure — targeted fix cycle
 
-- The gate subagent reports its findings.
-- This skill returns the gate feedback to the orchestrator.
-- The **orchestrator** decides to re-run the entire pipeline from step 1.
-- This is NOT a "fix and re-check" within the pipeline — it is a full re-run.
+If ANY gate returns a verdict other than PASS, the pipeline does NOT re-run
+from the beginning. Instead, a **targeted fix cycle** is triggered:
+
+1. The failing gate's feedback (specific issues, file paths, and recommended
+   fixes) is collected.
+2. The `task-executor` subagent is re-dispatched with the original execution
+   brief PLUS the gate feedback as additional context. The executor addresses
+   only the issues raised by the failing gate — it does not redo the entire
+   implementation.
+3. The `documentation-writer` subagent is re-dispatched to commit the fixes
+   as atomic commits.
+4. The failing gate is re-run to verify the fixes.
+
+If multiple gates fail in the same run, all gate feedback is collected and
+passed to the task-executor together, so all issues are addressed in one fix
+cycle. After the fixes are committed, ALL previously failing gates are re-run
+in their original order.
+
+**Fix cycle limit:** Maximum 3 targeted fix cycles per task. If the quality
+gates still do not pass after 3 fix cycles, escalate to the user with the
+accumulated gate feedback and ask how to proceed.
+
+A full pipeline re-run (from step 1) is reserved for cases where the gate
+feedback indicates a fundamental approach failure — not code quality issues.
+The orchestrator makes this judgment call when the fix cycle limit is
+exhausted.
 
 The quality gates also enforce a **commit discipline rule**: if any gate
 detects uncommitted changes in the working tree, it MUST stop immediately and
@@ -312,9 +334,10 @@ The clean code reviewer will:
   used in the project, ensuring recommendations reflect current best practices.
 - Produce a review verdict: PASS, PASS WITH SUGGESTIONS, or NEEDS FIXES.
 
-**If verdict is NEEDS FIXES:** Return the review feedback to the orchestrator.
-The orchestrator will re-run the entire executing-subtask pipeline from step 1.
-Do NOT attempt to fix issues within this pipeline run.
+**If verdict is NEEDS FIXES:** Collect the review feedback. Do NOT stop the
+gate cycle — continue to the architecture-reviewer and security-auditor so
+all issues are identified in one pass. After all three gates have run, trigger
+a targeted fix cycle (see Quality Gate Architecture above).
 
 Collect the output as the `CODE_REVIEW`.
 
@@ -339,8 +362,8 @@ The architecture reviewer will:
   used in the project.
 - Produce a review verdict: PASS, PASS WITH SUGGESTIONS, or NEEDS FIXES.
 
-**If verdict is NEEDS FIXES:** Return the review feedback to the orchestrator.
-The orchestrator will re-run the entire executing-subtask pipeline from step 1.
+**If verdict is NEEDS FIXES:** Collect the review feedback. Continue to the
+security-auditor so all issues are identified in one pass.
 
 Collect the output as the `ARCHITECTURE_REVIEW`.
 
@@ -365,8 +388,43 @@ The security auditor will:
   libraries used in the project.
 - Produce an audit verdict: PASS, PASS WITH ADVISORIES, or NEEDS FIXES.
 
-**If verdict is NEEDS FIXES:** Return the audit feedback to the orchestrator.
-The orchestrator will re-run the entire executing-subtask pipeline from step 1.
+**If verdict is NEEDS FIXES:** Collect the audit feedback.
+
+### 10a. Targeted fix cycle (if any gate returned NEEDS FIXES)
+
+After all three gates have run, check whether any returned NEEDS FIXES. If
+all three passed, skip to step 11.
+
+If one or more gates returned NEEDS FIXES:
+
+1. **Collect all feedback.** Merge the NEEDS FIXES feedback from every failing
+   gate into a single consolidated fix brief. Include specific file paths,
+   line numbers, and recommended fixes from each gate.
+
+2. **Re-dispatch the task-executor.** Pass the original execution brief PLUS
+   the consolidated fix brief as additional context. The executor addresses
+   only the issues raised by the failing gates — it does not redo the entire
+   implementation.
+
+3. **Re-dispatch the documentation-writer.** Pass the fix execution report so
+   the documentation-writer can commit the fixes as atomic commits.
+
+4. **Re-run only the previously failing gates.** If only the security-auditor
+   failed, only re-run the security-auditor. If clean-code-reviewer and
+   architecture-reviewer both failed, re-run both (in their original order).
+   Gates that already passed do not need to re-run.
+
+5. **Check results.** If all re-run gates now pass, continue to step 11. If
+   any still fail, repeat this fix cycle.
+
+**Fix cycle limit:** Maximum 3 targeted fix cycles per task. If the quality
+gates still do not pass after 3 fix cycles, escalate to the user with the
+accumulated gate feedback and ask how to proceed. The user may choose to:
+
+- Accept the current state and move on.
+- Provide guidance for a different approach.
+- Request a full pipeline re-run from step 1 (reserved for fundamental
+  approach failures, not code quality issues).
 
 Collect the output as the `SECURITY_AUDIT`.
 
@@ -479,8 +537,9 @@ Ready for the next task? Let me know which one to tackle.
 - **Respect the pipeline order.** Do not skip subagent steps or reorder them.
   Each step depends on the output of the previous one.
 - **Limit retries.** The task-executor gets at most 3 retry cycles for
-  ambiguity escalations within a single pipeline run. The full pipeline re-run
-  (triggered by quality gate failures) is managed by the orchestrator, not
-  this skill.
+  ambiguity escalations within a single pipeline run. The targeted fix cycle
+  (triggered by quality gate failures) is limited to 3 iterations within this
+  skill. Full pipeline re-runs are reserved for fundamental approach failures
+  and require user approval.
 - **Quality gates are non-negotiable.** All three quality gates (clean-code,
   architecture, security) must pass. There is no override, no "good enough."
