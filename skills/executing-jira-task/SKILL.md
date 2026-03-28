@@ -75,17 +75,18 @@ not a hard block — execution can proceed without Jira tracking.
 
 ## Subagent Registry
 
-| Subagent                | Path                                   | Purpose                                                                                   |
-| ----------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `execution-planner`     | `./subagents/execution-planner.md`     | Analyzes the task, inspects the codebase, and produces an execution plan with skills      |
-| `test-strategist`       | `./subagents/test-strategist.md`       | Defines behaviour-driven tests based on business requirements, not implementation         |
-| `refactoring-advisor`   | `./subagents/refactoring-advisor.md`   | Evaluates whether existing code needs refactoring before or during task execution         |
-| `task-executor`         | `./subagents/task-executor.md`         | Performs the actual implementation work based on the execution brief — cautious by design |
-| `documentation-writer`  | `./subagents/documentation-writer.md`  | Documents codebase changes and commits all work as atomic commits                         |
-| `clean-code-reviewer`   | `./subagents/clean-code-reviewer.md`   | Reviews for Clean Code, SOLID principles; validates recency via context7                  |
-| `architecture-reviewer` | `./subagents/architecture-reviewer.md` | Reviews for DDD and functional programming principles; validates recency via context7     |
-| `security-auditor`      | `./subagents/security-auditor.md`      | Audits for security vulnerabilities, credential leaks, and insecure patterns              |
-| `requirements-verifier` | `./subagents/requirements-verifier.md` | Pre-gate coverage check — confirms all requirements are met before quality gates run      |
+| Subagent                | Path                                   | Purpose                                                                                                            |
+| ----------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `execution-prepper`     | `./subagents/execution-prepper.md`     | Pre-execution: validates task, sets up branch, assembles execution brief                                           |
+| `execution-planner`     | `./subagents/execution-planner.md`     | Analyzes the task, inspects the codebase, and produces an execution plan with skills                               |
+| `test-strategist`       | `./subagents/test-strategist.md`       | Defines behaviour-driven tests based on business requirements, not implementation                                  |
+| `refactoring-advisor`   | `./subagents/refactoring-advisor.md`   | Evaluates whether existing code needs refactoring before or during task execution                                  |
+| `task-executor`         | `./subagents/task-executor.md`         | Performs the actual implementation work based on the execution brief — cautious by design                          |
+| `documentation-writer`  | `./subagents/documentation-writer.md`  | Documents codebase changes, commits all work, and handles post-execution tracking (plan updates, Jira transitions) |
+| `clean-code-reviewer`   | `./subagents/clean-code-reviewer.md`   | Reviews for Clean Code, SOLID principles; validates recency via context7                                           |
+| `architecture-reviewer` | `./subagents/architecture-reviewer.md` | Reviews for DDD and functional programming principles; validates recency via context7                              |
+| `security-auditor`      | `./subagents/security-auditor.md`      | Audits for security vulnerabilities, credential leaks, and insecure patterns                                       |
+| `requirements-verifier` | `./subagents/requirements-verifier.md` | Pre-gate coverage check — confirms all requirements are met before quality gates run                               |
 
 Before delegating, read the subagent file to understand its contract (expected
 input format, output format, and rules). The path is relative to this skill's
@@ -134,7 +135,7 @@ updates:
 
 Three subagents serve as mandatory quality gates. ALL THREE must return a PASS
 verdict for the task execution to be considered complete. The
-`requirements-verifier` runs before the gates (step 9) to confirm coverage
+`requirements-verifier` runs before the gates (step 7) to confirm coverage
 is complete — the gates then review code that is known to address all
 requirements.
 
@@ -183,92 +184,43 @@ can re-run. This ensures that reviewers always review committed, traceable code.
 
 ## Execution Steps
 
-### 1. Load and validate the task
+### 1. Dispatch: Execution Prepper
 
-Read `docs/<TICKET_KEY>-tasks.md` and extract `## Task <TASK_NUMBER>`.
+Read `./subagents/execution-prepper.md` and dispatch the execution-prepper
+subagent with:
 
-**Pre-flight checks — stop if any fail:**
+- `TICKET_KEY`
+- `TASK_NUMBER`
+- `BRANCH_OVERRIDE` (if the orchestrator or user specified a branch name)
 
-- [ ] The task exists in the plan.
-- [ ] Dependencies listed in `Dependencies / prerequisites` are marked complete
-      (look for `**Status:** ✅ Complete` on each dependency's task section).
-- [ ] `Questions to answer before starting` are all resolved (no unresolved items
-      without a recorded fallback — look for strikethrough + answer format or
-      `None`).
+The execution-prepper handles three setup steps in one dispatch:
 
-If pre-flight fails, tell the user what needs to be resolved first and stop.
+1. **Validates the task** — checks that the task exists, dependencies are
+   marked complete, and all questions are resolved.
+2. **Ensures the working branch** — checks current branch, creates or switches
+   to the feature branch, stashes uncommitted changes if needed.
+3. **Assembles the execution brief** — reads the task plan and Decisions Log,
+   builds a self-contained brief, writes it to
+   `docs/<TICKET_KEY>-task-<N>-brief.md`.
 
-### 2. Ensure the working branch
+Collect its output as the `PREP_SUMMARY`.
 
-Before any implementation starts, verify the codebase is on the correct
-working branch. This prevents changes from landing on `main` or `develop`
-directly.
+**If pre-flight FAIL:** The subagent reports what needs resolution (unsatisfied
+dependencies or unresolved questions). Relay this to the user and stop — do
+not proceed to the execution pipeline.
 
-1. Check the current branch (`git branch --show-current`).
-2. Check for uncommitted changes (`git status --short`).
+**If an existing ticket branch was found:** The subagent notes this. Ask the
+user whether to reuse the existing branch or create a new task-level branch.
+If the user chooses to reuse, re-dispatch with the branch name as
+`BRANCH_OVERRIDE`.
 
-**If the correct feature branch already exists and is checked out:** proceed.
+**If changes were stashed:** Inform the user that uncommitted changes were
+stashed and will need to be popped later.
 
-**If on `main`, `develop`, or another base branch:**
+After the prep summary confirms PASS, proceed to step 2 using the brief file
+path from the summary.
 
-- Create and check out a feature branch:
-  `git checkout -b <TICKET_KEY>-task-<N>/<short-title>`
-  (e.g., `JNS-6065-task-3/setup-database-schema`).
-- If a branch for this ticket already exists from a previous task
-  (e.g., `JNS-6065-task-1/...`), ask the user whether to reuse the
-  ticket-level branch or create a new task-level branch.
-
-**If there are uncommitted changes:** stash them before switching branches
-and report this to the user. Do NOT silently discard changes.
-
-**Branch naming convention:** `<TICKET_KEY>-task-<N>/<kebab-case-title>`.
-The orchestrator or user may override this — if a branch name was provided
-in the dispatch, use that instead.
-
-### 3. Prepare the execution brief
-
-Build a self-contained execution brief that includes ONLY what the subagents
-need:
-
-```markdown
-# Execution Brief — <TICKET_KEY> Task <N>: <Title>
-
-## Objective
-
-<from task plan>
-
-## Relevant Requirements and Context
-
-<from task plan, plus any resolved decisions from the Decisions Log>
-
-## Implementation Notes
-
-<from task plan — must reflect any updates applied during clarification>
-
-## Definition of Done
-
-<from task plan>
-
-## Likely Files / Artefacts Affected
-
-<from task plan>
-
-## Resolved Questions and Decisions
-
-<any answers from the Decisions Log that affect this task>
-
-## Constraints
-
-- Only implement what is described above.
-- Do not modify files unrelated to this task.
-- If you encounter ambiguity not covered here, STOP and report it — do not guess.
-- Run existing tests to verify you have not broken anything.
-- If the definition of done includes new tests, write them.
-```
-
-Write this brief to `docs/<TICKET_KEY>-task-<N>-brief.md`.
-
-### 4. Dispatch: Execution Planner
+### 2. Dispatch: Execution Planner
 
 Read `./subagents/execution-planner.md` and dispatch the execution-planner
 subagent with the execution brief path.
@@ -283,7 +235,7 @@ The execution-planner will:
 Collect its output as the `EXECUTION_PLAN`. This plan feeds into all
 subsequent subagents.
 
-### 5. Dispatch: Test Strategist
+### 3. Dispatch: Test Strategist
 
 Read `./subagents/test-strategist.md` and dispatch the test-strategist
 subagent with the execution brief and the `EXECUTION_PLAN`.
@@ -296,7 +248,7 @@ The test strategist will:
 
 Collect its output as the `TEST_SPEC`.
 
-### 6. Dispatch: Refactoring Advisor
+### 4. Dispatch: Refactoring Advisor
 
 Read `./subagents/refactoring-advisor.md` and dispatch the refactoring-advisor
 subagent with the execution brief, `EXECUTION_PLAN`, and `TEST_SPEC`.
@@ -309,7 +261,7 @@ The refactoring advisor will:
 
 Collect its output as the `REFACTORING_PLAN`.
 
-### 7. Dispatch: Task Executor
+### 5. Dispatch: Task Executor
 
 Read `./subagents/task-executor.md` and dispatch the task-executor subagent
 with the execution brief, `EXECUTION_PLAN`, `TEST_SPEC`, and `REFACTORING_PLAN`.
@@ -342,10 +294,10 @@ Collect its output as the `EXECUTION_REPORT`.
 **Note:** The task-executor does NOT write documentation — that is handled
 separately by the documentation-writer subagent.
 
-### 8. Dispatch: Documentation Writer
+### 6. Dispatch: Documentation Writer
 
 Read `./subagents/documentation-writer.md` and dispatch the documentation-writer
-subagent with the `EXECUTION_REPORT` (which includes files changed).
+subagent with the `EXECUTION_REPORT`, `TICKET_KEY`, and `TASK_NUMBER`.
 
 The documentation writer will:
 
@@ -356,11 +308,17 @@ The documentation writer will:
 - Use the `/commit-work` skill to commit all changes (implementation, tests,
   and documentation) as atomic, logically scoped commits. It does NOT ask for
   user confirmation — it commits directly.
-- Produce a documentation report including the list of commits made.
+- **Update the task plan** with completion status, implementation summary, and
+  files changed.
+- **Transition the Jira subtask** to "Done" (if MCP available and subtask key
+  present).
+- **Update the `## Jira Subtasks` table** status to "Done".
+- Produce a documentation report including commits, tracking updates, and any
+  issues.
 
 Collect its output as the `DOCUMENTATION_REPORT`.
 
-### 9. Dispatch: Requirements Verifier (pre-gate coverage check)
+### 7. Dispatch: Requirements Verifier (pre-gate coverage check)
 
 Read `./subagents/requirements-verifier.md` and dispatch the
 requirements-verifier subagent with the execution brief, `TEST_SPEC`,
@@ -388,7 +346,7 @@ Collect its output as the `VERIFICATION_RESULT`. Pass it to the quality
 gates as additional context so they know whether requirements coverage is
 complete.
 
-### 10. Dispatch: Clean Code Reviewer (Quality Gate 1/3)
+### 8. Dispatch: Clean Code Reviewer (Quality Gate 1/3)
 
 Read `./subagents/clean-code-reviewer.md` and dispatch the clean-code-reviewer
 subagent with the execution brief, `TEST_SPEC`, `REFACTORING_PLAN`,
@@ -417,7 +375,7 @@ a targeted fix cycle (see Quality Gate Architecture above).
 
 Collect the output as the `CODE_REVIEW`.
 
-### 11. Dispatch: Architecture Reviewer (Quality Gate 2/3)
+### 9. Dispatch: Architecture Reviewer (Quality Gate 2/3)
 
 Read `./subagents/architecture-reviewer.md` and dispatch the
 architecture-reviewer subagent with the execution brief, `EXECUTION_PLAN`,
@@ -445,7 +403,7 @@ security-auditor so all issues are identified in one pass.
 
 Collect the output as the `ARCHITECTURE_REVIEW`.
 
-### 12. Dispatch: Security Auditor (Quality Gate 3/3)
+### 10. Dispatch: Security Auditor (Quality Gate 3/3)
 
 Read `./subagents/security-auditor.md` and dispatch the security-auditor
 subagent with the execution brief, `EXECUTION_REPORT`,
@@ -470,10 +428,10 @@ The security auditor will:
 
 **If verdict is NEEDS FIXES:** Collect the audit feedback.
 
-### 12a. Targeted fix cycle (if any gate returned NEEDS FIXES)
+### 10a. Targeted fix cycle (if any gate returned NEEDS FIXES)
 
 After all three gates have run, check whether any returned NEEDS FIXES. If
-all three passed, skip to step 13.
+all three passed, skip to step 11.
 
 If one or more gates returned NEEDS FIXES:
 
@@ -494,7 +452,7 @@ If one or more gates returned NEEDS FIXES:
    architecture-reviewer both failed, re-run both (in their original order).
    Gates that already passed do not need to re-run.
 
-5. **Check results.** If all re-run gates now pass, continue to step 13. If
+5. **Check results.** If all re-run gates now pass, continue to step 11. If
    any still fail, repeat this fix cycle.
 
 **Fix cycle limit:** Maximum 3 targeted fix cycles per task. If the quality
@@ -508,48 +466,22 @@ accumulated gate feedback and ask how to proceed. The user may choose to:
 
 Collect the output as the `SECURITY_AUDIT`.
 
-### 13. Update tracking
-
-#### a. Update the task plan
-
-In `docs/<TICKET_KEY>-tasks.md`, update the task section:
-
-```markdown
-**Status:** ✅ Complete (<YYYY-MM-DD>)
-**Implementation summary:** <2-3 sentence summary of what was done>
-**Files changed:**
-
-- `path/to/file1.ts` — <what changed>
-- `path/to/file2.ts` — <what changed>
-```
-
-#### b. Update Jira (if MCP available)
-
-Look up the Jira subtask key from the `Jira Subtask: <KEY>` line in the task
-section, or from the `## Jira Subtasks` table.
-
-- Transition the subtask to "In Progress" at the start of execution (Step 7).
-- Transition the subtask to "Done" after successful verification.
-- Add a comment to the subtask summarising what was implemented.
-
-If the Jira subtask key is not present (subtasks were never created), skip Jira
-updates silently — do not error.
-
-#### c. Update the Jira Subtasks table
-
-If the `## Jira Subtasks` table exists, update the Status column for this task
-from `To Do` to `Done`.
-
-#### d. Clean up
+### 11. Clean up
 
 Delete the temporary execution brief file:
-`docs/<TICKET_KEY>-task-<N>-brief.md`
 
-After deletion, verify the file no longer exists. If deletion fails (e.g.,
-permission error), log a warning but do not block — cleanup failure is
-non-critical.
+```bash
+rm -f docs/<TICKET_KEY>-task-<N>-brief.md
+```
 
-### 14. Report to user
+Cleanup failure is non-critical — log a warning but do not block.
+
+**Note:** Post-execution tracking (plan file updates, Jira subtask transitions,
+Jira Subtasks table updates) is handled by the `documentation-writer` subagent
+in step 6. Check the `DOCUMENTATION_REPORT` for the tracking status. If any
+tracking update failed, relay it to the user in the report below.
+
+### 12. Report to user
 
 ```
 Task <N> complete: <Title>
@@ -557,12 +489,14 @@ Task <N> complete: <Title>
 Summary: <what was done in 2-3 sentences>
 
 Pipeline results:
+- Prep: <branch name, pre-flight PASS>
 - Planning: <skills recommended, approach taken>
 - Tests: <N tests defined, N passing>
 - Refactoring: <what was refactored, or "none needed">
 - Implementation: <files changed count>
 - Documentation: <what was documented>
 - Commits: <N atomic commits created>
+- Tracking: <plan updated, Jira transitioned — from DOCUMENTATION_REPORT>
 - Requirements verification: <PASS/FAIL> (pre-gate coverage check)
 - Code review: <PASS/PASS WITH NOTES> (recency-validated via context7)
 - Architecture review: <PASS/PASS WITH NOTES> (DDD + FP validated)

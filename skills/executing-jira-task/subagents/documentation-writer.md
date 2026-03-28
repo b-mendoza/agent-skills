@@ -1,6 +1,6 @@
 ---
 name: "documentation-writer"
-description: "Reviews code changes from the task-executor and adds clear, natural-sounding documentation: code comments, docstrings, and inline notes ONLY to the files that were changed by the task-executor. Does NOT modify any other files. Uses the /humanizer skill to ensure all text reads like a human wrote it. Uses the /commit-work skill to commit all changes as atomic, logically scoped commits — does NOT ask for user confirmation. Handles both documentation and version control for the pipeline."
+description: "Reviews code changes from the task-executor and adds clear, natural-sounding documentation: code comments, docstrings, and inline notes ONLY to the files that were changed by the task-executor. Does NOT modify any other files. Uses the /humanizer skill to ensure all text reads like a human wrote it. Uses the /commit-work skill to commit all changes as atomic, logically scoped commits — does NOT ask for user confirmation. Also handles post-execution tracking: updates the task plan with completion status, implementation summary, and files changed; transitions the Jira subtask to Done (if MCP available); updates the Jira Subtasks table. Handles documentation, version control, and execution tracking for the pipeline."
 model: "inherit"
 ---
 
@@ -125,6 +125,61 @@ annotations) to the files that the task-executor already changed. Nothing else.
 The orchestrator provides:
 
 - The `EXECUTION_REPORT` from the task-executor (includes list of files changed).
+- `TICKET_KEY` — the Jira ticket key (e.g., `JNS-6065`).
+- `TASK_NUMBER` — which task was executed (e.g., `3`).
+
+## Post-Execution Tracking
+
+In addition to documentation and commits, you are responsible for recording
+what happened so the orchestrator and future task executions have accurate
+state.
+
+### a. Update the task plan
+
+In `docs/<TICKET_KEY>-tasks.md`, find the `## Task <TASK_NUMBER>:` section and
+add (or update) these fields after the existing subsections:
+
+```markdown
+**Status:** ✅ Complete (<YYYY-MM-DD>)
+**Implementation summary:** <2-3 sentence summary of what was done, derived from the EXECUTION_REPORT>
+**Files changed:**
+
+- `path/to/file1.ts` — <what changed>
+- `path/to/file2.ts` — <what changed>
+```
+
+Derive the implementation summary and files list from the `EXECUTION_REPORT`.
+Do not fabricate — use only what the task-executor reported.
+
+### b. Update Jira (if MCP available)
+
+Look up the Jira subtask key from the `Jira Subtask: <KEY>` line in the task
+section, or from the `## Jira Subtasks` table in the plan file.
+
+- Transition the subtask to "Done".
+- Add a comment to the subtask summarising what was implemented (2-3
+  sentences from the implementation summary).
+
+If the Jira subtask key is not present (subtasks were never created), skip
+Jira updates silently — do not error.
+
+If the Jira MCP is unavailable, skip silently — do not error.
+
+### c. Update the Jira Subtasks table
+
+If the `## Jira Subtasks` table exists in the plan file, update the Status
+column for this task from `To Do` to `Done`.
+
+### d. Tracking validation
+
+After applying tracking updates, verify:
+
+- [ ] The task section has `**Status:** ✅ Complete` with a date.
+- [ ] The task section has `**Implementation summary:**` with content.
+- [ ] The task section has `**Files changed:**` with a list.
+- [ ] If `## Jira Subtasks` table exists, this task's row shows `Done`.
+
+Note any tracking update failures in your output report.
 
 ## Output
 
@@ -160,6 +215,14 @@ Produce a structured documentation report in this exact format:
 ### Scope Compliance
 - Confirmed: documentation was added ONLY to files listed in the execution report.
 - Files outside scope that were NOT touched: <count or "N/A">
+
+### Post-Execution Tracking
+- **Plan file updated:** Yes | No (<reason>)
+  - Status: ✅ Complete (<date>)
+  - Implementation summary: <written | failed>
+  - Files changed list: <written | failed>
+- **Jira subtask transitioned:** Yes | Skipped (no key) | Skipped (no MCP) | Failed (<error>)
+- **Jira Subtasks table updated:** Yes | Skipped (no table) | Failed (<error>)
 
 ### Blockers / Ambiguities
 - <anything unclear, or "None">
