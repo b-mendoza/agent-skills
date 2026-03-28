@@ -5,10 +5,16 @@ description: 'Retrieve ALL information from a Jira ticket (description, comments
 
 # Fetching Jira Ticket
 
-Extract every available field from a Jira ticket and its subtasks, then write a
-comprehensive Markdown snapshot to `docs/`. This file becomes the single source
-of truth for all downstream skills (planning, subtask creation, execution,
-validation).
+## Purpose
+
+Dispatch the `ticket-retriever` subagent to extract every available field from
+a Jira ticket and its subtasks, then write a comprehensive Markdown snapshot
+to `docs/`. This file becomes the single source of truth for all downstream
+skills (planning, subtask creation, execution, validation).
+
+This skill is a **pure coordinator** — it dispatches one subagent and reports
+the result. It never makes Jira API calls, reads files, writes files, or
+runs commands directly.
 
 ## Inputs
 
@@ -17,7 +23,8 @@ validation).
 | `TICKET_KEY` | User / `$ARGUMENTS` | Yes      | `JNS-6065`                                                  |
 | `JIRA_URL`   | User (optional)     | No       | `https://vukaheavyindustries.atlassian.net/browse/JNS-6065` |
 
-If the user provides a full URL, extract the ticket key from it.
+If the user provides a full URL, pass it along to the subagent which will
+extract the ticket key from it.
 
 ## Output
 
@@ -30,9 +37,9 @@ docs/<TICKET_KEY>.md
 ### Output contract (consumed by downstream skills)
 
 Every section below **must** appear in the output file. If a section has no
-data, keep the heading and write `_None_` beneath it — never omit a heading.
-Downstream skills parse these headings programmatically, so missing headings
-break the pipeline.
+data, the subagent keeps the heading and writes `_None_` beneath it — never
+omits a heading. Downstream skills parse these headings programmatically, so
+missing headings break the pipeline.
 
 | Section                  | Required by                                 | Why                                     |
 | ------------------------ | ------------------------------------------- | --------------------------------------- |
@@ -47,9 +54,9 @@ break the pipeline.
 
 ## Subagent Registry
 
-| Subagent           | Path                              | Purpose                                                        |
-| ------------------ | --------------------------------- | -------------------------------------------------------------- |
-| `ticket-retriever` | `./subagents/ticket-retriever.md` | Retrieves subtask and linked-issue details in isolated context |
+| Subagent           | Path                              | Purpose                                                               |
+| ------------------ | --------------------------------- | --------------------------------------------------------------------- |
+| `ticket-retriever` | `./subagents/ticket-retriever.md` | End-to-end: retrieves all data, assembles document, writes, validates |
 
 Before dispatching, read the subagent file to understand its input/output
 contract. The path is relative to this skill's directory.
@@ -57,247 +64,64 @@ contract. The path is relative to this skill's directory.
 ## Multi-Platform MCP Compatibility
 
 Jira data is accessed through MCP tools, but the specific tool names and
-interfaces vary across platforms (Cursor, Claude Code, OpenCode). Rather than
-hardcoding tool names, follow this adaptive approach:
-
-1. **Discover available tools.** Before your first Jira call, check which
-   Jira-related MCP tools are available in your current environment. Look for
-   tools with names containing `jira`, `atlassian`, or `issue`.
-2. **Map capabilities.** You need these operations — find the matching tool for
-   each:
-   - **Get issue:** Fetch a single issue by key (fields, description, status,
-     assignee, etc.)
-   - **Get comments:** Fetch all comments on an issue (may be part of "get
-     issue" or a separate call)
-   - **Search/query:** Run JQL or fetch subtasks and linked issues
-3. **Handle pagination.** Some MCP tools paginate comments or search results.
-   Always check for pagination indicators (`nextPage`, `startAt`, `total`,
-   `isLast`) and fetch every page.
-4. **Handle auth failures.** If an MCP tool returns an authentication or
-   permission error, stop and tell the user — do not retry or guess credentials.
-
-## Retrieval Checklist
-
-Retrieve **all** of the following. If a field is empty or unavailable, write
-`_None_` — never silently omit it.
-
-### Core fields
-
-- Ticket key & URL
-- Summary / title
-- Status, Resolution
-- Type (Story, Bug, Task, Epic, …)
-- Priority
-- Labels, Components
-- Fix Version(s), Affects Version(s)
-- Sprint / Board
-- Epic link (if any)
-- Assignee, Reporter
-- Created date, Updated date, Due date
-
-### Rich content
-
-- **Description** — full body, preserve all formatting (code blocks, links,
-  tables, images)
-- **Acceptance criteria** — check both dedicated custom fields and the
-  description body for sections labeled "Acceptance Criteria", "AC",
-  "Definition of Done", or similar
-- **Comments** — every comment with author and timestamp, in chronological order
-- **Attachments** — list filenames, types, and sizes (do not download binaries)
-
-### Subtasks & linked issues
-
-For each subtask and each linked issue:
-
-1. Key, summary, status, assignee, and type.
-2. Full description.
-3. All comments (author + timestamp + body).
-4. Link type (e.g., "is blocked by", "relates to").
-
-### Custom fields
-
-Retrieve any non-empty custom fields visible on the ticket and list them under
-`## Custom Fields`.
-
-## Document Template
-
-Write the file using this structure exactly:
-
-```markdown
-# <TICKET_KEY>: <Summary>
-
-> Retrieved on: <YYYY-MM-DD HH:MM UTC>
-
-## Metadata
-
-| Field           | Value |
-| --------------- | ----- |
-| Status          | …     |
-| Resolution      | …     |
-| Type            | …     |
-| Priority        | …     |
-| Assignee        | …     |
-| Reporter        | …     |
-| Labels          | …     |
-| Components      | …     |
-| Sprint          | …     |
-| Epic            | …     |
-| Fix Version     | …     |
-| Affects Version | …     |
-| Created         | …     |
-| Updated         | …     |
-| Due Date        | …     |
-
-## Description
-
-<full description body — preserve original formatting>
-
-## Acceptance Criteria
-
-<if present, otherwise _None_>
-
-## Comments
-
-### Comment 1 — <Author> (<YYYY-MM-DD HH:MM>)
-
-<body>
-
-### Comment 2 — …
-
-## Subtasks
-
-### <SUBTASK_KEY>: <Summary>
-
-- **Status:** …
-- **Assignee:** …
-- **Type:** …
-
-#### Description
-
-<body>
-
-#### Comments
-
-##### Comment 1 — <Author> (<date>)
-
-<body>
-
-### <next subtask…>
-
-## Linked Issues
-
-### <LINK_TYPE>: <ISSUE_KEY> — <Summary>
-
-- **Status:** …
-- **Type:** …
-
-#### Description
-
-<body>
-
-#### Comments
-
-…
-
-## Attachments
-
-| Filename | Type | Size |
-| -------- | ---- | ---- |
-
-## Custom Fields
-
-| Field Name | Value |
-| ---------- | ----- |
-| …          | …     |
-```
+interfaces vary across platforms (Cursor, Claude Code, OpenCode). The
+`ticket-retriever` subagent handles MCP tool discovery internally — this
+skill does not need to know which tools are available.
 
 ## Execution Steps
 
-### 1. Validate input
+### 1. Dispatch `ticket-retriever`
 
-Confirm the ticket key matches expected format (letters, hyphen, digits — e.g.,
-`PROJECT-1234`). If the user provided a URL, extract the key. If the input
-doesn't look like a Jira key or URL, ask the user to clarify before proceeding.
+Read `./subagents/ticket-retriever.md` and dispatch the subagent with:
 
-### 2. Retrieve core fields and parent ticket content
+- `TICKET_KEY` — the ticket key extracted from the user's input.
+- `JIRA_URL` — if the user provided a full URL, include it.
 
-Use the available Jira MCP tools to fetch the parent ticket's core fields,
-description, comments, and attachment metadata.
+The subagent handles everything end-to-end:
 
-If the MCP tool returns an error:
+- Validates the input format.
+- Discovers available Jira MCP tools.
+- Retrieves all parent ticket fields, comments, attachments metadata.
+- Retrieves all subtasks and linked issues (full details, regardless of count).
+- Handles pagination, auth errors, and rate limits.
+- Runs `mkdir -p docs`.
+- Assembles the document using the standardised template.
+- Writes to `docs/<TICKET_KEY>.md`.
+- Validates the output (all sections present, counts match).
+- Cleans up any temporary files.
+- Returns a concise summary.
 
-- **404 / not found:** Tell the user the ticket key doesn't exist and stop.
-- **401 / 403 / auth error:** Tell the user to check their Jira MCP
-  authentication and stop.
-- **Rate limit / timeout:** Wait briefly, retry once. If it fails again, tell
-  the user.
+### 2. Handle the result
 
-### 3. Delegate subtask and linked-issue retrieval
+Collect the subagent's summary. Check the summary for errors:
 
-Count the subtasks and linked issues on the parent ticket.
+- **If the subagent reports a fatal error** (ticket not found, auth failure):
+  relay the error to the user and stop.
+- **If the subagent reports validation FAIL**: relay the validation details to
+  the user. Offer to retry.
+- **If validation PASS**: proceed to step 3.
 
-**If the combined total is 0:** Skip this step.
+### 3. Report to the user
 
-**If the combined total is ≤ 3:** Retrieve them inline — the context cost is
-manageable.
-
-**If the combined total is > 3:** Delegate to the `ticket-retriever` subagent
-to keep the orchestrator's context clean:
-
-```
-Retrieve full details for these Jira issues and write results to docs/<TICKET_KEY>-related.md:
-
-Issues: <comma-separated list of keys>
-
-For each issue, retrieve: key, summary, status, assignee, type, full description, and all comments (with author + timestamp). For linked issues, also note the link type (e.g., "is blocked by", "relates to").
-```
-
-After the subagent completes, read `docs/<TICKET_KEY>-related.md` and merge its
-content into the appropriate sections (Subtasks, Linked Issues) of the main
-document.
-
-### 4. Assemble and write the document
-
-Run `mkdir -p docs` to ensure the directory exists. Write the full document
-using the template above.
-
-### 5. Validate
-
-Re-read the written file and verify:
-
-- [ ] Every section heading from the template is present (even if `_None_`).
-- [ ] Subtask count in the file matches what Jira reported.
-- [ ] Comment count per item matches what Jira reported.
-- [ ] `## Description` is non-empty (downstream skills depend on it).
-- [ ] No section headings were accidentally omitted.
-
-If anything is missing, fetch the missing data and update the file before
-reporting completion.
-
-### 6. Clean up
-
-Delete the temporary subagent output file (`docs/<TICKET_KEY>-related.md`) if
-it exists, after the main document passes validation.
-
-### 7. Confirm completion
-
-Tell the user:
+Using ONLY the information from the subagent's summary, tell the user:
 
 - The file path written (e.g., `docs/JNS-6065.md`).
 - A short summary: ticket title, status, number of comments, number of subtasks
   and linked issues retrieved.
+- Any retrieval errors or warnings.
 - Remind the user this is retrieval only — no ticket modifications, no branches,
   no code, no implementation.
 
 ## Execution Rules
 
-1. **Retrieve only.** Do not modify the Jira ticket. Do not start
+1. **Delegate everything.** This skill dispatches the `ticket-retriever`
+   subagent and reports its summary. It never makes Jira API calls, reads
+   files, writes files, or runs commands directly.
+2. **Do not load raw data.** The subagent's summary is the only data this skill
+   processes. Never ask the subagent to return file contents or raw API
+   responses.
+3. **Retrieve only.** Do not modify the Jira ticket. Do not start
    implementation, create branches, write code, or propose solutions.
-2. **Be exhaustive.** If the MCP tool paginates (e.g., comments, search
-   results), fetch every page.
-3. **Preserve fidelity.** Keep original formatting, code blocks, links, and
-   inline images from the description and comments.
-4. **Fail gracefully.** If a specific field or subtask cannot be retrieved,
-   note the failure in the output (e.g., `_Error: could not retrieve_`) and
-   continue with the remaining data — do not abort the entire retrieval.
-5. **Create `docs/` if missing.** Run `mkdir -p docs` before writing.
+4. **Fail gracefully.** If the subagent reports partial failures (some subtasks
+   could not be retrieved), relay the specifics to the user but do not treat
+   partial success as a fatal error.
