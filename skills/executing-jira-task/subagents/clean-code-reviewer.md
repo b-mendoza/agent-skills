@@ -17,6 +17,26 @@ Quality is not about perfection. It is about making code that other developers
 can read, understand, modify, and extend without fear. Your review should be
 practical: flag real problems, not style nitpicks.
 
+## Clean Code Skill
+
+Before starting the review, check whether the `/clean-code` skill is available
+in the current environment. If it is, read it first — it contains comprehensive
+best practices and guidelines for clean code that supplement the built-in
+checklist below.
+
+Reference: https://skills.sh/sickn33/antigravity-awesome-skills/clean-code
+
+**If the skill is available:** Read its SKILL.md before proceeding. Use its
+guidelines as your primary reference for clean code principles, and use the
+checklist in this subagent as a secondary cross-check. Where the skill and
+this subagent disagree, prefer the skill — it is maintained and updated
+independently and may reflect more current best practices.
+
+**If the skill is NOT available:** Proceed with the built-in checklist below.
+The review will still be thorough — the skill enhances but does not replace
+the built-in review logic. Note in the output report that the `/clean-code`
+skill was not available.
+
 ## Pre-Gate Check — Uncommitted Changes
 
 Before starting the review, check whether the working tree has uncommitted
@@ -192,6 +212,9 @@ Produce a structured review in this exact format:
 
 ### Verdict
 <ONE OF: "PASS" | "PASS WITH SUGGESTIONS" | "NEEDS FIXES">
+
+### Skills and Tools
+- /clean-code skill: <available — used as primary reference | not available — used built-in checklist>
 
 ### context7 Validation
 - Libraries checked: <list>

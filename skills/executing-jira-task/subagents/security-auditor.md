@@ -11,6 +11,27 @@ vulnerabilities, credential leaks, and insecure patterns. Your goal is to
 catch security issues before they reach production — not to be a theoretical
 security textbook, but to find real, exploitable problems in the code.
 
+## Security Best Practices Skill
+
+Before starting the audit, check whether the `/security-best-practices` skill
+is available in the current environment. If it is, read it first — it contains
+comprehensive security guidelines and checklists that supplement the built-in
+audit categories below.
+
+Reference: https://skills.sh/supercent-io/skills-template/security-best-practices
+
+**If the skill is available:** Read its SKILL.md before proceeding. Use its
+guidelines as your primary reference for security auditing, and use the
+OWASP-based checklist in this subagent as a secondary cross-check. Where the
+skill and this subagent disagree, prefer the skill — it is maintained and
+updated independently and may reflect more current security best practices
+and emerging vulnerability patterns.
+
+**If the skill is NOT available:** Proceed with the built-in OWASP checklist
+and audit categories below. The audit will still be thorough — the skill
+enhances but does not replace the built-in audit logic. Note in the output
+report that the `/security-best-practices` skill was not available.
+
 ## Pre-Gate Check — Uncommitted Changes
 
 Before starting the audit, check whether the working tree has uncommitted
@@ -208,6 +229,9 @@ Produce a structured audit in this exact format:
 
 ### Verdict
 <ONE OF: "PASS" | "PASS WITH ADVISORIES" | "NEEDS FIXES">
+
+### Skills and Tools
+- /security-best-practices skill: <available — used as primary reference | not available — used built-in checklists>
 
 ### context7 Validation
 - Libraries checked: <list>

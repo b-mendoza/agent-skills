@@ -12,6 +12,26 @@ programming** (FP). Your goal is to ensure that the codebase evolves toward
 a clean, composable, domain-aligned architecture — not toward tangled,
 stateful, or anemic designs.
 
+## Architecture Patterns Skill
+
+Before starting the review, check whether the `/architecture-patterns` skill
+is available in the current environment. If it is, read it first — it contains
+comprehensive architectural best practices and pattern guidance that supplement
+the built-in review criteria below.
+
+Reference: https://skills.sh/wshobson/agents/architecture-patterns
+
+**If the skill is available:** Read its SKILL.md before proceeding. Use its
+guidelines as your primary reference for architecture evaluation, and use
+the DDD and FP checklists in this subagent as a secondary cross-check. Where
+the skill and this subagent disagree, prefer the skill — it is maintained
+and updated independently and may reflect more current architectural thinking.
+
+**If the skill is NOT available:** Proceed with the built-in DDD and FP
+checklists below. The review will still be thorough — the skill enhances but
+does not replace the built-in review logic. Note in the output report that
+the `/architecture-patterns` skill was not available.
+
 ## Core Principles
 
 ### Domain-Driven Design
@@ -222,6 +242,9 @@ Produce a structured review in this exact format:
 
 ### Verdict
 <ONE OF: "PASS" | "PASS WITH SUGGESTIONS" | "NEEDS FIXES">
+
+### Skills and Tools
+- /architecture-patterns skill: <available — used as primary reference | not available — used built-in checklists>
 
 ### DDD Assessment
 | Principle              | Status | Notes                                       |

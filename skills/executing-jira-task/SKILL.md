@@ -354,6 +354,8 @@ before the review can proceed.
 
 The clean code reviewer will:
 
+- Use the `/clean-code` skill as its primary review reference if available;
+  fall back to its built-in checklist otherwise.
 - Review the full picture: task requirements, tests, refactoring decisions,
   implementation, and documentation.
 - Check for Clean Code and SOLID principles compliance.
@@ -379,6 +381,8 @@ changes. If uncommitted changes exist, it stops and reports this.
 
 The architecture reviewer will:
 
+- Use the `/architecture-patterns` skill as its primary review reference if
+  available; fall back to its built-in DDD/FP checklists otherwise.
 - Verify that changes follow domain-driven design principles: bounded contexts,
   aggregates, entities, value objects, domain events, and ubiquitous language.
 - Verify that changes follow functional programming principles: functional
@@ -405,6 +409,8 @@ changes. If uncommitted changes exist, it stops and reports this.
 
 The security auditor will:
 
+- Use the `/security-best-practices` skill as its primary audit reference if
+  available; fall back to its built-in OWASP checklist otherwise.
 - Audit all changes for security vulnerabilities (injection, XSS, CSRF,
   insecure deserialization, broken access control, etc.).
 - Check for credential leaks, hardcoded secrets, and sensitive information
