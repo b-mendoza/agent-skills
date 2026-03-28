@@ -45,6 +45,7 @@ Dispatch to these instead of doing anything directly.
 
 | Subagent                | Path                                   | Purpose                                                                               |
 | ----------------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
+| `preflight-checker`     | `./subagents/preflight-checker.md`     | Validate environment dependencies (MCPs, skills, tools) before workflow starts        |
 | `artifact-validator`    | `./subagents/artifact-validator.md`    | Check whether phase artifacts exist and are well-formed; return pass/fail summary     |
 | `progress-tracker`      | `./subagents/progress-tracker.md`      | Read, create, or update the progress file; return current workflow state              |
 | `ticket-status-checker` | `./subagents/ticket-status-checker.md` | Query Jira for current status, assignee, and recent activity on a ticket              |
@@ -199,7 +200,30 @@ interrupted and resumed without loss.
 
 ## Execution
 
-### 1. Determine Starting Phase
+### 1. Preflight Environment Check
+
+Dispatch `preflight-checker` with the `TICKET_KEY` and the phases that will
+run (all phases for a fresh start, or only the remaining phases if resuming).
+
+**If verdict is FAIL:** Stop immediately. Present the missing required
+dependencies and their install/configure instructions to the user. Do not
+proceed until the user confirms the dependencies are installed and asks to
+resume.
+
+**If verdict is WARN:** Present the missing recommended dependencies to the
+user with their impact descriptions. Ask whether to proceed or wait:
+
+- "Continue without these — I understand the trade-offs"
+- "Let me install them first — I'll resume when ready"
+
+**If verdict is PASS:** Proceed silently — do not narrate the preflight
+results unless the user asks.
+
+**On resume:** When a workflow resumes from a checkpoint, run the preflight
+check again but only for the phases that remain. Dependencies for completed
+phases do not need to be re-checked.
+
+### 2. Determine Starting Phase
 
 Dispatch `progress-tracker` with action `read` and the `TICKET_KEY`.
 
@@ -214,7 +238,7 @@ Dispatch `progress-tracker` with action `read` and the `TICKET_KEY`.
 Tell the user what was found and which phase will start. If resuming past
 Phase 1, ask for confirmation before proceeding.
 
-### 2. Execute Phases Sequentially
+### 3. Execute Phases Sequentially
 
 For each phase, follow this cycle:
 
@@ -255,7 +279,7 @@ For the Phase 3 → 4 gate, offer:
 - "Review the plan first"
 - "Stop here — I'll create subtasks manually"
 
-### 3. Phase 5 — Execution Loop
+### 4. Phase 5 — Execution Loop
 
 Phase 5 runs once per task, not once for the whole plan. Each iteration:
 
@@ -300,7 +324,7 @@ Phase 5 runs once per task, not once for the whole plan. Each iteration:
 
 Continue until all tasks are complete or the user stops.
 
-### 4. Final Summary
+### 5. Final Summary
 
 When all tasks are complete (or the user stops), dispatch `progress-tracker`
 for the final state, then present:
