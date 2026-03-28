@@ -51,7 +51,6 @@ Dispatch to these instead of doing anything directly.
 | `codebase-inspector`    | `./subagents/codebase-inspector.md`    | Report working tree state: branch, uncommitted changes, recent commits                |
 | `code-reference-finder` | `./subagents/code-reference-finder.md` | Search the codebase for symbols, patterns, or file references; return concise matches |
 | `documentation-finder`  | `./subagents/documentation-finder.md`  | Locate relevant docs, READMEs, or wiki pages for a topic; return summaries            |
-| `git-operator`          | `./subagents/git-operator.md`          | Execute git operations: branch, push, stash, checkout, merge, rebase, and commit work |
 
 ### How to Dispatch
 
@@ -91,7 +90,7 @@ invoking it.
 | 2     | planning-jira-tasks    | `../planning-jira-tasks/SKILL.md`    | Decompose ticket into a prioritized task plan     |
 | 3     | clarifying-assumptions | `../clarifying-assumptions/SKILL.md` | Walk user through open questions and assumptions  |
 | 4     | creating-jira-subtasks | `../creating-jira-subtasks/SKILL.md` | Push planned tasks to Jira as subtasks            |
-| 5     | executing-jira-task      | `../executing-jira-task/SKILL.md`      | Execute one task at a time from the plan          |
+| 5     | executing-jira-task    | `../executing-jira-task/SKILL.md`    | Execute one task at a time from the plan          |
 
 ## Data Contracts
 
@@ -271,7 +270,6 @@ Phase 5 runs once per task, not once for the whole plan. Each iteration:
    | Need working tree / branch state | `codebase-inspector`    |
    | Need to find relevant code       | `code-reference-finder` |
    | Need docs or config context      | `documentation-finder`  |
-   | Need a feature branch            | `git-operator`          |
 
 5. **Progressive clarification** — before invoking `executing-jira-task`, check
    the task plan for any unresolved questions specific to THIS task. If
@@ -297,13 +295,8 @@ Phase 5 runs once per task, not once for the whole plan. Each iteration:
    - Request a full pipeline re-run from step 1 (for fundamental approach
      failures only).
 
-8. After the task completes successfully (all gates pass), dispatch
-   `git-operator` with operation `commit-work` if there are any uncommitted
-   changes remaining. The documentation-writer subagent within executing-jira-task
-   should have already committed most changes, but verify.
-
-9. Dispatch `progress-tracker` to mark the task complete.
-10. Return to step 1.
+8. Dispatch `progress-tracker` to mark the task complete.
+9. Return to step 1.
 
 Continue until all tasks are complete or the user stops.
 
@@ -328,11 +321,11 @@ All artifacts are in docs/<TICKET_KEY>\*.
 
 ## Error Handling
 
-| Error type               | Response                                                                                                                                    |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Skill failure**        | Record via `progress-tracker`. Report to user: retry, skip, or abort.                                                                       |
-| **Missing artifact**     | `artifact-validator` reports failure → do NOT proceed. Tell user which phase needs to run/re-run and offer it.                              |
-| **Jira MCP unavailable** | Tell user to connect it. Offer to resume when ready.                                                                                        |
-| **Subagent failure**     | Non-critical (e.g., `documentation-finder`): proceed without. Critical (e.g., `artifact-validator`): halt.                                  |
-| **User interruption**    | Progress file ensures resumability. Tell user: "Say 'resume ticket <KEY>' to pick up where we left off."                                    |
+| Error type               | Response                                                                                                                                      |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Skill failure**        | Record via `progress-tracker`. Report to user: retry, skip, or abort.                                                                         |
+| **Missing artifact**     | `artifact-validator` reports failure → do NOT proceed. Tell user which phase needs to run/re-run and offer it.                                |
+| **Jira MCP unavailable** | Tell user to connect it. Offer to resume when ready.                                                                                          |
+| **Subagent failure**     | Non-critical (e.g., `documentation-finder`): proceed without. Critical (e.g., `artifact-validator`): halt.                                    |
+| **User interruption**    | Progress file ensures resumability. Tell user: "Say 'resume ticket <KEY>' to pick up where we left off."                                      |
 | **Quality gate failure** | Handled internally by executing-jira-task via targeted fix cycles. Orchestrator acts only if fix cycle limit is exhausted — escalate to user. |
