@@ -17,9 +17,9 @@ and can pick up where it left off if something breaks.
 
 - [orchestrating-jira-workflow](skills/orchestrating-jira-workflow/SKILL.md) --
   Coordinates the whole workflow but never runs tools itself. It sends work to
-  seven subagents (`artifact-validator`, `progress-tracker`,
-  `ticket-status-checker`, `codebase-inspector`, `code-reference-finder`,
-  `documentation-finder`, `git-operator`) and five phase skills.
+  seven subagents (`preflight-checker`, `artifact-validator`,
+  `progress-tracker`, `ticket-status-checker`, `codebase-inspector`,
+  `code-reference-finder`, `documentation-finder`) and five phase skills.
   Saves progress to `docs/<TICKET_KEY>-progress.md` so you can resume later.
   Asks before changing anything in Jira.
 
@@ -28,33 +28,34 @@ The five phases, in order:
 1. [fetching-jira-ticket](skills/fetching-jira-ticket/SKILL.md) -- Gets
    ticket data from Jira (description, comments, subtasks, linked issues,
    custom fields) and writes it to `docs/<TICKET_KEY>.md`. A
-   `ticket-retriever` subagent handles bulk fetching when there are many
-   related issues.
+   `ticket-retriever` subagent handles the fetching via MCP.
 
 2. [planning-jira-tasks](skills/planning-jira-tasks/SKILL.md) -- Splits the
-   ticket into tasks using five subagents in sequence:
-   `task-decomposer`, `task-planner`, `dependency-mapper`,
-   `task-prioritizer`, `task-validator`. Output goes to
+   ticket into tasks using a pipeline of subagents: `task-planner`,
+   `dependency-prioritizer`, `task-validator`, with `stage-validator`
+   running structural checks between stages. Output goes to
    `docs/<TICKET_KEY>-tasks.md`.
 
 3. [clarifying-assumptions](skills/clarifying-assumptions/SKILL.md) -- Walks
-   through the plan one question at a time, confirming assumptions and
-   resolving open questions. Adapts to whatever platform it runs on
-   (Cursor, Claude Code, Claude.ai, etc.). Answers go into a Decisions
-   Log appended to the tasks file.
+   through the plan using progressive disclosure, confirming assumptions
+   and resolving open questions. Only asks about cross-cutting concerns
+   upfront; task-specific questions wait until execution (Phase 5).
+   A `decision-recorder` subagent writes resolved answers into a
+   Decisions Log appended to the tasks file.
 
-4. [creating-jira-subtasks](skills/creating-jira-subtasks/SKILL.md) -- Reads
-   the plan and creates subtasks in Jira. If there are more than three
-   tasks, a `subtask-creator` subagent handles it. Updates the local plan
-   with the new subtask keys afterwards.
+4. [creating-jira-subtasks](skills/creating-jira-subtasks/SKILL.md) -- Pure
+   coordinator that dispatches a `subtask-creator` subagent to read the
+   plan, create subtasks in Jira, and update the local plan with the new
+   subtask keys.
 
-5. [executing-subtask](skills/executing-subtask/SKILL.md) -- Picks one task
-   from the plan and runs it through a pipeline of seven specialist
-   subagents: `planner-inspector`, `test-strategist`,
-   `refactoring-advisor`, `task-executor`, `documentation-writer`,
-   `clean-code-reviewer`, `requirements-verifier`. Marks the task done
-   in the plan file and in Jira. Caps retries (three for the executor,
-   two for review fixes).
+5. [executing-jira-task](skills/executing-jira-task/SKILL.md) -- Picks one
+   task from the plan and runs it through a pipeline of ten specialist
+   subagents: `execution-prepper`, `execution-planner`,
+   `test-strategist`, `refactoring-advisor`, `task-executor`,
+   `documentation-writer`, `requirements-verifier`, then three quality
+   gates (`clean-code-reviewer`, `architecture-reviewer`,
+   `security-auditor`). Marks the task done in the plan file and in Jira.
+   Caps targeted fix cycles at three per task.
 
 ### Standalone
 
