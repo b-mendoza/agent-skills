@@ -146,14 +146,6 @@ updated content, not the pre-clarification version.
 
 ### 4. Create subtasks
 
-**Inline path (≤ 3 tasks, or subagent delegation unavailable):**
-
-Create each subtask sequentially via the Jira MCP. After each successful
-creation, record the returned subtask key. If a subtask fails, log the error
-with the task number and continue with the rest.
-
-**Subagent path (> 3 tasks):**
-
 Write a manifest to `docs/<TICKET_KEY>-subtask-manifest.md` containing the
 parent ticket key, project key, subtask issue type, and all subtask payloads.
 Then delegate to the `subtask-creator` subagent using natural language (see
@@ -162,8 +154,15 @@ Platform Compatibility above for syntax).
 After the subagent finishes, read the results file at
 `docs/<TICKET_KEY>-subtask-results.md`.
 
-If delegation fails (subagent not found, platform limitation), fall back to the
-inline path.
+**Always delegate**, regardless of task count. Even 2–3 Jira API calls produce
+response payloads that would pollute the orchestrating skill's context window.
+The subagent absorbs these payloads in its own context and returns only the
+structured results summary.
+
+**Inline fallback:** If delegation fails (subagent not found, platform
+limitation), create each subtask sequentially via the Jira MCP directly.
+After each successful creation, record the returned subtask key. If a subtask
+fails, log the error with the task number and continue with the rest.
 
 ### 5. Update the plan file
 
