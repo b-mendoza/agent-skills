@@ -15,7 +15,7 @@ execution.
 | Item    | Path                                | Description                   |
 | ------- | ----------------------------------- | ----------------------------- |
 | Input 1 | `docs/<KEY>.md`                     | Original ticket snapshot      |
-| Input 2 | `docs/<KEY>-stage-4-prioritized.md` | Prioritized plan from stage 4 |
+| Input 2 | `docs/<KEY>-stage-2-prioritized.md` | Prioritized plan from stage 2 |
 | Output  | `docs/<KEY>-tasks.md`               | Final validated plan          |
 
 ## Instructions

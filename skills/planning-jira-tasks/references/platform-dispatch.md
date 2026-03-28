@@ -22,15 +22,11 @@ files are read from `.claude/agents/` or co-located within skill directories.
 **Dispatch pattern for each stage:**
 
 ```
-agent task-decomposer "Read docs/<KEY>.md and write the decomposed task list to docs/<KEY>-stage-1-decomposed.md"
+agent task-planner "Read docs/<KEY>.md and write the detailed task plan to docs/<KEY>-stage-1-detailed.md"
 
-agent task-planner "Read docs/<KEY>.md (ticket) and docs/<KEY>-stage-1-decomposed.md (task list), then write detailed tasks to docs/<KEY>-stage-2-detailed.md"
+agent dependency-prioritizer "Read docs/<KEY>-stage-1-detailed.md and write the dependency-annotated, prioritized plan to docs/<KEY>-stage-2-prioritized.md"
 
-agent dependency-mapper "Read docs/<KEY>-stage-2-detailed.md and write dependency-annotated tasks to docs/<KEY>-stage-3-dependencies.md"
-
-agent task-prioritizer "Read docs/<KEY>-stage-3-dependencies.md and write the prioritized plan to docs/<KEY>-stage-4-prioritized.md"
-
-agent task-validator "Read docs/<KEY>.md (ticket) and docs/<KEY>-stage-4-prioritized.md (plan), then write the validated final plan to docs/<KEY>-tasks.md"
+agent task-validator "Read docs/<KEY>.md (ticket) and docs/<KEY>-stage-2-prioritized.md (plan), then write the validated final plan to docs/<KEY>-tasks.md"
 ```
 
 Each subagent runs in its own context window and returns only its final result,

@@ -70,18 +70,16 @@ The output file **must** contain all of these sections for downstream skills:
 4. `**Implementation notes:**`
 5. `**Definition of done:**`
 6. `**Likely files / artifacts affected:**`
-7. `**Dependencies / prerequisites:**` (added by dependency-mapper)
-8. `**Priority:**` (added by task-prioritizer)
+7. `**Dependencies / prerequisites:**` (added by dependency-prioritizer)
+8. `**Priority:**` (added by dependency-prioritizer)
 
 ## Subagent Registry
 
-| Subagent            | Path                               | Purpose                          |
-| ------------------- | ---------------------------------- | -------------------------------- |
-| `task-decomposer`   | `./subagents/task-decomposer.md`   | Raw task list (the WHAT)         |
-| `task-planner`      | `./subagents/task-planner.md`      | Detailed tasks (the HOW)         |
-| `dependency-mapper` | `./subagents/dependency-mapper.md` | Dependency graph + critical path |
-| `task-prioritizer`  | `./subagents/task-prioritizer.md`  | Final execution order            |
-| `task-validator`    | `./subagents/task-validator.md`    | QA gate — 19 validation checks   |
+| Subagent                 | Path                                    | Purpose                                            |
+| ------------------------ | --------------------------------------- | -------------------------------------------------- |
+| `task-planner`           | `./subagents/task-planner.md`           | Decompose ticket and detail tasks (the WHAT + HOW) |
+| `dependency-prioritizer` | `./subagents/dependency-prioritizer.md` | Dependency graph + scoring + final execution order |
+| `task-validator`         | `./subagents/task-validator.md`         | QA gate — 19 validation checks                     |
 
 Read each subagent file only when you are about to dispatch to it — do not
 preload all definitions.
@@ -111,25 +109,17 @@ tips.
 docs/<KEY>.md (ticket snapshot)
        │
        ▼
-┌──────────────────┐
-│  task-decomposer │  → Raw task list (what needs doing)
-└────────┬─────────┘
+┌──────────────────────────┐
+│  task-planner            │  → Detailed tasks (what + how)
+└────────┬─────────────────┘
          ▼
-┌──────────────────┐
-│  task-planner    │  → Detailed tasks (how to do each one)
-└────────┬─────────┘
+┌──────────────────────────┐
+│  dependency-prioritizer  │  → Dependencies + ordered task list
+└────────┬─────────────────┘
          ▼
-┌──────────────────────┐
-│  dependency-mapper   │  → Tasks with dependency graph + ordering
-└────────┬─────────────┘
-         ▼
-┌──────────────────┐
-│  task-prioritizer│  → Final ordered task list
-└────────┬─────────┘
-         ▼
-┌──────────────────┐
-│  task-validator  │  → Validated plan with issues flagged
-└──────────────────┘
+┌──────────────────────────┐
+│  task-validator          │  → Validated plan with issues flagged
+└──────────────────────────┘
          │
          ▼
 docs/<KEY>-tasks.md (final plan)
@@ -140,13 +130,11 @@ docs/<KEY>-tasks.md (final plan)
 Each stage writes to a working file. These are cleaned up after the final plan
 is written successfully.
 
-| Stage | File                                 | Subagent          |
-| ----- | ------------------------------------ | ----------------- |
-| 1     | `docs/<KEY>-stage-1-decomposed.md`   | task-decomposer   |
-| 2     | `docs/<KEY>-stage-2-detailed.md`     | task-planner      |
-| 3     | `docs/<KEY>-stage-3-dependencies.md` | dependency-mapper |
-| 4     | `docs/<KEY>-stage-4-prioritized.md`  | task-prioritizer  |
-| 5     | `docs/<KEY>-tasks.md` (final)        | task-validator    |
+| Stage | File                                | Subagent               |
+| ----- | ----------------------------------- | ---------------------- |
+| 1     | `docs/<KEY>-stage-1-detailed.md`    | task-planner           |
+| 2     | `docs/<KEY>-stage-2-prioritized.md` | dependency-prioritizer |
+| 3     | `docs/<KEY>-tasks.md` (final)       | task-validator         |
 
 ## Execution Steps
 
@@ -163,29 +151,22 @@ Execute each subagent in order. After each stage, run the sanity check
 described below before proceeding. If a check fails, retry that stage ONCE with
 specific feedback about what was missing. If it fails again, stop and report.
 
-**Stage 1 — Decompose:**
-Dispatch `task-decomposer` with inputs: `docs/<KEY>.md`.
-Output: `docs/<KEY>-stage-1-decomposed.md`.
-Sanity check: file exists, contains at least 2 tasks.
+**Stage 1 — Plan:**
+Dispatch `task-planner` with input: `docs/<KEY>.md`.
+Output: `docs/<KEY>-stage-1-detailed.md`.
+Sanity check: file exists, contains at least 2 tasks, every task has all 6
+required subsections (Objective, Relevant requirements, Questions, Implementation
+notes, Definition of done, Likely files), and every task has a `Traces to` line.
 
-**Stage 2 — Detail:**
-Dispatch `task-planner` with inputs: `docs/<KEY>.md` + stage 1 output.
-Output: `docs/<KEY>-stage-2-detailed.md`.
-Sanity check: every task from stage 1 is present with all 6 required
-subsections.
+**Stage 2 — Prioritize:**
+Dispatch `dependency-prioritizer` with input: stage 1 output.
+Output: `docs/<KEY>-stage-2-prioritized.md`.
+Sanity check: every task has a `Dependencies / prerequisites` field, tasks are
+renumbered from letters to sequential numbers, `## Execution Order Summary`
+and `## Dependency Graph` sections exist.
 
-**Stage 3 — Map dependencies:**
-Dispatch `dependency-mapper` with input: stage 2 output.
-Output: `docs/<KEY>-stage-3-dependencies.md`.
-Sanity check: every task has a `Dependencies / prerequisites` field.
-
-**Stage 4 — Prioritize:**
-Dispatch `task-prioritizer` with input: stage 3 output.
-Output: `docs/<KEY>-stage-4-prioritized.md`.
-Sanity check: tasks are renumbered in execution order with priority rationale.
-
-**Stage 5 — Validate:**
-Dispatch `task-validator` with inputs: `docs/<KEY>.md` + stage 4 output.
+**Stage 3 — Validate:**
+Dispatch `task-validator` with inputs: `docs/<KEY>.md` + stage 2 output.
 Output: `docs/<KEY>-tasks.md`.
 Sanity check: file exists, validation report section is present.
 
@@ -201,7 +182,7 @@ Verify the final `docs/<KEY>-tasks.md` satisfies the output contract:
 - `## Validation Report` exists
 - Every `## Task N:` has all 8 required subsections
 
-If anything is missing, re-run stage 5 with specific feedback. If it fails
+If anything is missing, re-run stage 3 with specific feedback. If it fails
 again, stop and report.
 
 ### 4. Clean up
@@ -209,10 +190,8 @@ again, stop and report.
 After the final plan passes validation:
 
 ```bash
-rm -f docs/<KEY>-stage-1-decomposed.md
-rm -f docs/<KEY>-stage-2-detailed.md
-rm -f docs/<KEY>-stage-3-dependencies.md
-rm -f docs/<KEY>-stage-4-prioritized.md
+rm -f docs/<KEY>-stage-1-detailed.md
+rm -f docs/<KEY>-stage-2-prioritized.md
 ```
 
 ### 5. Report to user
@@ -223,7 +202,7 @@ Tell the user:
 - Total number of tasks created
 - Number of open questions flagged
 - Number of dependency chains identified
-- Any validation warnings from stage 5
+- Any validation warnings from stage 3
 - Remind them that no implementation has started
 
 ## Error Handling
