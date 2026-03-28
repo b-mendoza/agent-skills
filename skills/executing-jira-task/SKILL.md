@@ -58,14 +58,14 @@ which prerequisite skill to run.
 The task plan file `docs/<TICKET_KEY>-tasks.md` must contain these sections,
 built up across the preceding phases:
 
-| Required section / element                  | Produced by              | Used in step        | Why                                              |
-| ------------------------------------------- | ------------------------ | ------------------- | ------------------------------------------------ |
-| `## Task <N>:` with all 8 subsections       | planning-jira-tasks      | Step 1 (load)       | Source content for the execution brief           |
-| `## Dependency Graph`                       | planning-jira-tasks      | Step 1 (pre-flight) | Validates dependencies are satisfied             |
-| `## Decisions Log`                          | clarifying-assumptions   | Step 2 (brief)      | Resolved decisions folded into execution context |
-| Per-task `Questions to answer` resolved     | clarifying-assumptions   | Step 1 (pre-flight) | Pre-flight checks all questions are answered     |
-| `## Jira Subtasks` table with keys          | creating-jira-subtasks   | Step 11b (Jira)     | Maps task number to Jira subtask key for status  |
-| `Jira Subtask: <KEY>` in each task section  | creating-jira-subtasks   | Step 11b (Jira)     | Identifies which Jira issue to transition        |
+| Required section / element                  | Produced by                | Used in step        | Why                                              |
+| ------------------------------------------- | -------------------------- | ------------------- | ------------------------------------------------ |
+| `## Task <N>:` with all 8 subsections       | planning-jira-tasks        | Step 1 (load)       | Source content for the execution brief           |
+| `## Dependency Graph`                       | planning-jira-tasks        | Step 1 (pre-flight) | Validates dependencies are satisfied             |
+| `## Decisions Log`                          | clarifying-assumptions     | Step 3 (brief)      | Resolved decisions folded into execution context |
+| Per-task `Questions to answer` resolved     | clarifying-assumptions     | Step 1 (pre-flight) | Pre-flight checks all questions are answered     |
+| `## Jira Subtasks` table with keys          | creating-jira-subtasks     | Step 13b (Jira)     | Maps task number to Jira subtask key for status  |
+| `Jira Subtask: <KEY>` in each task section  | creating-jira-subtasks     | Step 13b (Jira)     | Identifies which Jira issue to transition        |
 | `**Status:**` on previously completed tasks | executing-jira-task (self) | Step 1 (pre-flight) | Checks whether dependencies are marked complete  |
 
 **Pre-flight gate:** If the `## Jira Subtasks` table is missing, subtasks were
@@ -179,7 +179,34 @@ Read `docs/<TICKET_KEY>-tasks.md` and extract `## Task <TASK_NUMBER>`.
 
 If pre-flight fails, tell the user what needs to be resolved first and stop.
 
-### 2. Prepare the execution brief
+### 2. Ensure the working branch
+
+Before any implementation starts, verify the codebase is on the correct
+working branch. This prevents changes from landing on `main` or `develop`
+directly.
+
+1. Check the current branch (`git branch --show-current`).
+2. Check for uncommitted changes (`git status --short`).
+
+**If the correct feature branch already exists and is checked out:** proceed.
+
+**If on `main`, `develop`, or another base branch:**
+
+- Create and check out a feature branch:
+  `git checkout -b <TICKET_KEY>-task-<N>/<short-title>`
+  (e.g., `JNS-6065-task-3/setup-database-schema`).
+- If a branch for this ticket already exists from a previous task
+  (e.g., `JNS-6065-task-1/...`), ask the user whether to reuse the
+  ticket-level branch or create a new task-level branch.
+
+**If there are uncommitted changes:** stash them before switching branches
+and report this to the user. Do NOT silently discard changes.
+
+**Branch naming convention:** `<TICKET_KEY>-task-<N>/<kebab-case-title>`.
+The orchestrator or user may override this — if a branch name was provided
+in the dispatch, use that instead.
+
+### 3. Prepare the execution brief
 
 Build a self-contained execution brief that includes ONLY what the subagents
 need:
@@ -222,7 +249,7 @@ need:
 
 Write this brief to `docs/<TICKET_KEY>-task-<N>-brief.md`.
 
-### 3. Dispatch: Execution Planner
+### 4. Dispatch: Execution Planner
 
 Read `./subagents/execution-planner.md` and dispatch the execution-planner
 subagent with the execution brief path.
@@ -237,7 +264,7 @@ The execution-planner will:
 Collect its output as the `EXECUTION_PLAN`. This plan feeds into all
 subsequent subagents.
 
-### 4. Dispatch: Test Strategist
+### 5. Dispatch: Test Strategist
 
 Read `./subagents/test-strategist.md` and dispatch the test-strategist
 subagent with the execution brief and the `EXECUTION_PLAN`.
@@ -250,7 +277,7 @@ The test strategist will:
 
 Collect its output as the `TEST_SPEC`.
 
-### 5. Dispatch: Refactoring Advisor
+### 6. Dispatch: Refactoring Advisor
 
 Read `./subagents/refactoring-advisor.md` and dispatch the refactoring-advisor
 subagent with the execution brief, `EXECUTION_PLAN`, and `TEST_SPEC`.
@@ -263,7 +290,7 @@ The refactoring advisor will:
 
 Collect its output as the `REFACTORING_PLAN`.
 
-### 6. Dispatch: Task Executor
+### 7. Dispatch: Task Executor
 
 Read `./subagents/task-executor.md` and dispatch the task-executor subagent
 with the execution brief, `EXECUTION_PLAN`, `TEST_SPEC`, and `REFACTORING_PLAN`.
@@ -296,7 +323,7 @@ Collect its output as the `EXECUTION_REPORT`.
 **Note:** The task-executor does NOT write documentation — that is handled
 separately by the documentation-writer subagent.
 
-### 7. Dispatch: Documentation Writer
+### 8. Dispatch: Documentation Writer
 
 Read `./subagents/documentation-writer.md` and dispatch the documentation-writer
 subagent with the `EXECUTION_REPORT` (which includes files changed).
@@ -314,7 +341,7 @@ The documentation writer will:
 
 Collect its output as the `DOCUMENTATION_REPORT`.
 
-### 8. Dispatch: Clean Code Reviewer (Quality Gate 1/3)
+### 9. Dispatch: Clean Code Reviewer (Quality Gate 1/3)
 
 Read `./subagents/clean-code-reviewer.md` and dispatch the clean-code-reviewer
 subagent with the execution brief, `TEST_SPEC`, `REFACTORING_PLAN`,
@@ -341,7 +368,7 @@ a targeted fix cycle (see Quality Gate Architecture above).
 
 Collect the output as the `CODE_REVIEW`.
 
-### 9. Dispatch: Architecture Reviewer (Quality Gate 2/3)
+### 10. Dispatch: Architecture Reviewer (Quality Gate 2/3)
 
 Read `./subagents/architecture-reviewer.md` and dispatch the
 architecture-reviewer subagent with the execution brief, `EXECUTION_PLAN`,
@@ -367,7 +394,7 @@ security-auditor so all issues are identified in one pass.
 
 Collect the output as the `ARCHITECTURE_REVIEW`.
 
-### 10. Dispatch: Security Auditor (Quality Gate 3/3)
+### 11. Dispatch: Security Auditor (Quality Gate 3/3)
 
 Read `./subagents/security-auditor.md` and dispatch the security-auditor
 subagent with the execution brief, `EXECUTION_REPORT`,
@@ -390,10 +417,10 @@ The security auditor will:
 
 **If verdict is NEEDS FIXES:** Collect the audit feedback.
 
-### 10a. Targeted fix cycle (if any gate returned NEEDS FIXES)
+### 11a. Targeted fix cycle (if any gate returned NEEDS FIXES)
 
 After all three gates have run, check whether any returned NEEDS FIXES. If
-all three passed, skip to step 11.
+all three passed, skip to step 12.
 
 If one or more gates returned NEEDS FIXES:
 
@@ -414,7 +441,7 @@ If one or more gates returned NEEDS FIXES:
    architecture-reviewer both failed, re-run both (in their original order).
    Gates that already passed do not need to re-run.
 
-5. **Check results.** If all re-run gates now pass, continue to step 11. If
+5. **Check results.** If all re-run gates now pass, continue to step 12. If
    any still fail, repeat this fix cycle.
 
 **Fix cycle limit:** Maximum 3 targeted fix cycles per task. If the quality
@@ -428,7 +455,7 @@ accumulated gate feedback and ask how to proceed. The user may choose to:
 
 Collect the output as the `SECURITY_AUDIT`.
 
-### 11. Dispatch: Requirements Verifier
+### 12. Dispatch: Requirements Verifier
 
 Read `./subagents/requirements-verifier.md` and dispatch the
 requirements-verifier subagent with the execution brief, `TEST_SPEC`,
@@ -449,7 +476,7 @@ re-run the pipeline — let the user decide.
 
 Collect its output as the `VERIFICATION_RESULT`.
 
-### 12. Update tracking
+### 13. Update tracking
 
 #### a. Update the task plan
 
@@ -469,7 +496,7 @@ In `docs/<TICKET_KEY>-tasks.md`, update the task section:
 Look up the Jira subtask key from the `Jira Subtask: <KEY>` line in the task
 section, or from the `## Jira Subtasks` table.
 
-- Transition the subtask to "In Progress" at the start of execution (Step 6).
+- Transition the subtask to "In Progress" at the start of execution (Step 7).
 - Transition the subtask to "Done" after successful verification.
 - Add a comment to the subtask summarising what was implemented.
 
@@ -490,7 +517,7 @@ After deletion, verify the file no longer exists. If deletion fails (e.g.,
 permission error), log a warning but do not block — cleanup failure is
 non-critical.
 
-### 13. Report to user
+### 14. Report to user
 
 ```
 Task <N> complete: <Title>
