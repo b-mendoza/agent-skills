@@ -91,6 +91,22 @@ Before delegating, read the subagent file to understand its contract (expected
 input format, output format, and rules). The path is relative to this skill's
 directory.
 
+### Skill Dependencies
+
+Several subagents depend on external skills for best results. These are
+validated by the orchestrator's `preflight-checker` before execution begins.
+If a skill is unavailable, the subagent falls back to its built-in logic.
+
+| Subagent                | Depends on                 | Level       | Fallback behavior                          |
+| ----------------------- | -------------------------- | ----------- | ------------------------------------------ |
+| `execution-planner`     | `/find-skills`             | Recommended | Cannot discover optimal skills for task    |
+| `documentation-writer`  | `/commit-work`             | Recommended | Commits must be done manually              |
+| `documentation-writer`  | `/humanizer`               | Recommended | Documentation may have AI writing patterns |
+| `clean-code-reviewer`   | `/clean-code`              | Recommended | Uses built-in checklist only               |
+| `architecture-reviewer` | `/architecture-patterns`   | Recommended | Uses built-in DDD/FP checklists only       |
+| `security-auditor`      | `/security-best-practices` | Recommended | Uses built-in OWASP checklist only         |
+| Quality gates (all 3)   | `context7` MCP             | Recommended | Library docs not validated for recency     |
+
 ## Output
 
 - Implemented code / configuration changes for the specified task.
