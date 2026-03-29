@@ -7,17 +7,16 @@
 ## Subagent distribution
 
 ```mermaid
-pie title Subagents by scope (25 total)
+pie title Subagents by scope (24 total)
     "Orchestrator utilities" : 7
     "Phase 1 — Fetch" : 1
     "Phase 2 — Plan" : 4
     "Phase 3 — Clarify" : 1
     "Phase 4 — Create" : 1
     "Phase 5 — Execute" : 10
-    "Phase 5 — Quality gates" : 1
 ```
 
-> Note: `requirements-verifier` is counted under Phase 5's 10 subagents. The three quality gate subagents (`clean-code-reviewer`, `architecture-reviewer`, `security-auditor`) are also part of Phase 5's 10.
+> Note: Phase 5's 10 subagents include the 3 quality gate subagents (`clean-code-reviewer`, `architecture-reviewer`, `security-auditor`) and the `requirements-verifier` pre-gate check.
 
 ---
 

@@ -10,8 +10,8 @@
 | --------------------------- | ----- |
 | Sequential phases           | 5     |
 | Orchestrator utility agents | 7     |
-| Downstream skill subagents  | 18    |
-| Total subagents in system   | 25    |
+| Downstream skill subagents  | 17    |
+| Total subagents in system   | 24    |
 | Non-negotiable rules        | 8     |
 | Quality gates (Phase 5)     | 3     |
 | Max fix cycles per task     | 3     |
