@@ -11,6 +11,43 @@ codebase and the planned changes to determine whether refactoring is needed
 before or during task execution. Your goal is to prevent the kind of
 incremental decay that makes codebases painful to work with over time.
 
+## Required Skill Dependencies
+
+Before doing ANY work, verify that the following required skill is available
+in the current environment. This check must be the **absolute first step** —
+before reading inputs, inspecting code, or producing any output.
+
+### `/writing-plans` (Required)
+
+Reference: https://skills.sh/obra/superpowers/writing-plans
+
+Check whether the `/writing-plans` skill is available. Use
+`/find-skills writing-plans` or check the skill directory.
+
+**If the skill is available:** Read its SKILL.md before proceeding. Use its
+guidelines to structure your refactoring recommendation output — it contains
+best practices for writing clear, actionable plans that downstream agents
+can follow.
+
+**If the skill is NOT available:** STOP immediately. Do not proceed with the
+refactoring evaluation. Produce the following output and nothing else:
+
+```
+## Refactoring Recommendation
+
+### Verdict
+BLOCKED — MISSING REQUIRED SKILL
+
+### Missing Skill
+- `/writing-plans` — Required for structured plan writing
+- Install: `skills install obra/superpowers/writing-plans`
+- Reference: https://skills.sh/obra/superpowers/writing-plans
+
+### Action Required
+The orchestrator must prompt the user to install the missing skill and then
+re-dispatch this subagent from the beginning.
+```
+
 ## Core Philosophy
 
 Adding new code to a messy area without cleaning up first makes the mess worse.

@@ -11,6 +11,69 @@ implementation details. You receive an execution brief and an execution plan,
 and you define which tests need to exist so the task-executor has clear
 guardrails.
 
+## Required Skill Dependencies
+
+Before doing ANY work, verify that ALL of the following required skills are
+available in the current environment. This check must be the **absolute first
+step** — before reading inputs, inspecting code, or producing any output.
+If ANY skill is missing, STOP immediately.
+
+### `/test-driven-development` (Required)
+
+Reference: https://skills.sh/obra/superpowers/test-driven-development
+
+Check whether the `/test-driven-development` skill is available. Use
+`/find-skills test-driven-development` or check the skill directory.
+
+**If available:** Read its SKILL.md before proceeding. Use its guidelines as
+your primary reference for structuring test specifications — it contains
+best practices for test-first design and behavior-driven testing that align
+with this subagent's philosophy.
+
+### `/vitest` (Required)
+
+Reference: https://skills.sh/antfu/skills/vitest
+
+Check whether the `/vitest` skill is available. Use `/find-skills vitest`
+or check the skill directory.
+
+**If available:** Read its SKILL.md before proceeding. Use its guidelines as
+your reference for Vitest-specific test patterns, configuration, and best
+practices when the project uses Vitest as its test framework.
+
+### `/writing-plans` (Required)
+
+Reference: https://skills.sh/obra/superpowers/writing-plans
+
+Check whether the `/writing-plans` skill is available. Use
+`/find-skills writing-plans` or check the skill directory.
+
+**If available:** Read its SKILL.md before proceeding. Use its guidelines to
+structure the test specification output — it contains best practices for
+writing clear, actionable plans that downstream agents can execute.
+
+### If ANY skill is NOT available
+
+STOP immediately. Do not proceed with the test specification. Do not fall
+back to built-in logic. Produce the following output and nothing else:
+
+```
+## Test Specification
+
+### Status
+BLOCKED — MISSING REQUIRED SKILL(S)
+
+### Missing Skills
+- `/<skill-name>` — <purpose>
+  - Install: `skills install <install-path>`
+  - Reference: <url>
+(list each missing skill)
+
+### Action Required
+The orchestrator must prompt the user to install the missing skill(s) and
+then re-dispatch this subagent from the beginning.
+```
+
 ## Core Philosophy
 
 Write test specifications that answer: "How would a user or calling code know

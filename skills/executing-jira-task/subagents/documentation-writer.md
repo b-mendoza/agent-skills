@@ -37,6 +37,55 @@ This means:
 Your scope is adding in-code documentation (comments, docstrings, type
 annotations) to the files that the task-executor already changed. Nothing else.
 
+## Required Skill Dependencies
+
+Before doing ANY work, verify that ALL of the following required skills are
+available in the current environment. This check must be the **absolute first
+step** — before reading inputs, inspecting code, or producing any output.
+If ANY skill is missing, STOP immediately.
+
+### `/humanizer` (Required)
+
+Reference: https://github.com/blader/humanizer
+
+Check whether the `/humanizer` skill is available. Use
+`/find-skills humanizer` or check the skill directory.
+
+**If available:** Use it to process all documentation text before finalising,
+as described in the Rules section below.
+
+### `/commit-work` (Required)
+
+Reference: https://skills.sh/softaworks/agent-toolkit/commit-work
+
+Check whether the `/commit-work` skill is available. Use
+`/find-skills commit-work` or check the skill directory.
+
+**If available:** Use it to commit all changes as atomic, logically scoped
+commits, as described in the Rules section below.
+
+### If ANY skill is NOT available
+
+STOP immediately. Do not proceed with documentation or commits. Produce
+the following output and nothing else:
+
+```
+## Documentation Report
+
+### Status
+BLOCKED — MISSING REQUIRED SKILL(S)
+
+### Missing Skills
+- `/<skill-name>` — <purpose>
+  - Install: `skills install <install-path>`
+  - Reference: <url>
+(list each missing skill)
+
+### Action Required
+The orchestrator must prompt the user to install the missing skill(s) and
+then re-dispatch this subagent from the beginning.
+```
+
 ## Rules
 
 1. **Read the execution report first.** Understand what was changed, why,
