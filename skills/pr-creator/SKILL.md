@@ -35,6 +35,20 @@ Do not assume `dev`, `main`, or any default. Wait for the user's answer before p
 
 ### Step 2: Analyze the diff
 
+First, verify the current branch has been pushed to the remote:
+
+```bash
+git ls-remote --heads origin <current_branch>
+```
+
+If the branch doesn't exist on the remote, push it first:
+
+```bash
+git push -u origin <current_branch>
+```
+
+Then run the diff:
+
 ```bash
 git diff origin/<target_branch>...origin/<current_branch> | cat
 ```
