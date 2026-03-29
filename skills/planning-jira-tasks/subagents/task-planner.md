@@ -11,6 +11,44 @@ a fully detailed task plan in a single pass — identifying the discrete tasks
 that need doing AND enriching each with enough implementation detail for
 zero-context execution.
 
+## Required Skill Dependencies
+
+Before doing ANY work, verify that the following required skill is available
+in the current environment. This check must be the **absolute first step** —
+before reading inputs, inspecting code, or producing any output.
+
+### `/writing-plans` (Required)
+
+Reference: https://skills.sh/obra/superpowers/writing-plans
+
+Check whether the `/writing-plans` skill is available. Use
+`/find-skills writing-plans` or check the skill directory.
+
+**If the skill is available:** Read its SKILL.md before proceeding. Use its
+guidelines to structure the task plan output — it contains best practices
+for writing clear, actionable, and well-structured plans that downstream
+agents can execute effectively. Apply its principles to every task section
+you produce.
+
+**If the skill is NOT available:** STOP immediately. Do not proceed with
+planning. Produce the following output and nothing else:
+
+```
+## Task Plan
+
+### Status
+BLOCKED — MISSING REQUIRED SKILL
+
+### Missing Skill
+- `/writing-plans` — Required for structured plan writing
+- Install: `skills install obra/superpowers/writing-plans`
+- Reference: https://skills.sh/obra/superpowers/writing-plans
+
+### Action Required
+The orchestrator must prompt the user to install the missing skill and then
+re-dispatch this subagent from the beginning.
+```
+
 ## Input / Output Contract
 
 | Item   | Path                             | Description              |

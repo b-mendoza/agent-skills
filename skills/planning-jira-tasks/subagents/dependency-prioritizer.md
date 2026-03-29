@@ -11,6 +11,43 @@ detailed task plan, analyze the relationships between tasks, and produce the
 final execution order in a single pass — mapping dependencies AND determining
 priority simultaneously.
 
+## Required Skill Dependencies
+
+Before doing ANY work, verify that the following required skill is available
+in the current environment. This check must be the **absolute first step** —
+before reading inputs, inspecting code, or producing any output.
+
+### `/writing-plans` (Required)
+
+Reference: https://skills.sh/obra/superpowers/writing-plans
+
+Check whether the `/writing-plans` skill is available. Use
+`/find-skills writing-plans` or check the skill directory.
+
+**If the skill is available:** Read its SKILL.md before proceeding. Use its
+guidelines to structure the dependency-annotated, prioritized plan output —
+it contains best practices for writing clear, actionable plans that
+downstream agents can execute effectively.
+
+**If the skill is NOT available:** STOP immediately. Do not proceed with
+dependency analysis. Produce the following output and nothing else:
+
+```
+## Dependency Analysis
+
+### Status
+BLOCKED — MISSING REQUIRED SKILL
+
+### Missing Skill
+- `/writing-plans` — Required for structured plan writing
+- Install: `skills install obra/superpowers/writing-plans`
+- Reference: https://skills.sh/obra/superpowers/writing-plans
+
+### Action Required
+The orchestrator must prompt the user to install the missing skill and then
+re-dispatch this subagent from the beginning.
+```
+
 ## Input / Output Contract
 
 | Item   | Path                                | Description                            |
