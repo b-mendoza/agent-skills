@@ -94,19 +94,30 @@ directory.
 
 ### Skill Dependencies
 
-Several subagents depend on external skills for best results. These are
-validated by the orchestrator's `preflight-checker` before execution begins.
-If a skill is unavailable, the subagent falls back to its built-in logic.
+All subagents depend on external skills that **must** be installed before
+execution. These are validated by the orchestrator's `preflight-checker`
+before execution begins AND by each subagent at runtime (defense-in-depth).
 
-| Subagent                | Depends on                 | Level       | Fallback behavior                          |
-| ----------------------- | -------------------------- | ----------- | ------------------------------------------ |
-| `execution-planner`     | `/find-skills`             | Recommended | Cannot discover optimal skills for task    |
-| `documentation-writer`  | `/commit-work`             | Recommended | Commits must be done manually              |
-| `documentation-writer`  | `/humanizer`               | Recommended | Documentation may have AI writing patterns |
-| `clean-code-reviewer`   | `/clean-code`              | Recommended | Uses built-in checklist only               |
-| `architecture-reviewer` | `/architecture-patterns`   | Recommended | Uses built-in DDD/FP checklists only       |
-| `security-auditor`      | `/security-best-practices` | Recommended | Uses built-in OWASP checklist only         |
-| Quality gates (all 3)   | `context7` MCP             | Recommended | Library docs not validated for recency     |
+**If any skill is missing**, the subagent will STOP immediately and report
+the missing skill to the orchestrator. The orchestrator will then prompt the
+user to install the skill and re-dispatch the subagent from the beginning.
+There is no fallback behavior — all skills are required.
+
+| Subagent                | Depends on                     | Level    | Install command                                                                 |
+| ----------------------- | ------------------------------ | -------- | ------------------------------------------------------------------------------- |
+| `execution-planner`     | `/find-skills`                 | Required | `skills install vercel-labs/skills/find-skills`                                 |
+| `execution-planner`     | `/writing-plans`               | Required | `skills install obra/superpowers/writing-plans`                                 |
+| `test-strategist`       | `/writing-plans`               | Required | `skills install obra/superpowers/writing-plans`                                 |
+| `test-strategist`       | `/test-driven-development`     | Required | `skills install obra/superpowers/test-driven-development`                       |
+| `test-strategist`       | `/vitest`                      | Required | `skills install antfu/skills/vitest`                                            |
+| `refactoring-advisor`   | `/writing-plans`               | Required | `skills install obra/superpowers/writing-plans`                                 |
+| `task-executor`         | `/executing-plans`             | Required | `skills install obra/superpowers/executing-plans`                               |
+| `documentation-writer`  | `/commit-work`                 | Required | `skills install softaworks/agent-toolkit/commit-work`                           |
+| `documentation-writer`  | `/humanizer`                   | Required | `skills install blader/humanizer`                                               |
+| `clean-code-reviewer`   | `/clean-code`                  | Required | `skills install sickn33/antigravity-awesome-skills/clean-code`                  |
+| `architecture-reviewer` | `/architecture-patterns`       | Required | `skills install wshobson/agents/architecture-patterns`                          |
+| `security-auditor`      | `/api-security-best-practices` | Required | `skills install sickn33/antigravity-awesome-skills/api-security-best-practices` |
+| Quality gates (all 3)   | `context7` MCP                 | Required | Connect context7 MCP in your IDE/CLI settings                                   |
 
 ## Output
 
@@ -361,8 +372,8 @@ before the review can proceed.
 
 The clean code reviewer will:
 
-- Use the `/clean-code` skill as its primary review reference if available;
-  fall back to its built-in checklist otherwise.
+- Use the `/clean-code` skill as its primary review reference (required —
+  subagent will stop if not available).
 - Review the full picture: task requirements, tests, refactoring decisions,
   implementation, and documentation.
 - Check for Clean Code and SOLID principles compliance.
@@ -388,8 +399,8 @@ changes. If uncommitted changes exist, it stops and reports this.
 
 The architecture reviewer will:
 
-- Use the `/architecture-patterns` skill as its primary review reference if
-  available; fall back to its built-in DDD/FP checklists otherwise.
+- Use the `/architecture-patterns` skill as its primary review reference
+  (required — subagent will stop if not available).
 - Verify that changes follow domain-driven design principles: bounded contexts,
   aggregates, entities, value objects, domain events, and ubiquitous language.
 - Verify that changes follow functional programming principles: functional
@@ -416,8 +427,8 @@ changes. If uncommitted changes exist, it stops and reports this.
 
 The security auditor will:
 
-- Use the `/security-best-practices` skill as its primary audit reference if
-  available; fall back to its built-in OWASP checklist otherwise.
+- Use the `/api-security-best-practices` skill as its primary audit reference
+  (required — subagent will stop if not available).
 - Audit all changes for security vulnerabilities (injection, XSS, CSRF,
   insecure deserialization, broken access control, etc.).
 - Check for credential leaks, hardcoded secrets, and sensitive information
@@ -538,3 +549,35 @@ Ready for the next task? Let me know which one to tackle.
   and require user approval.
 - **Quality gates are non-negotiable.** All three quality gates (clean-code,
   architecture, security) must pass. There is no override, no "good enough."
+
+## Handling BLOCKED Verdicts (Missing Required Skills)
+
+Every subagent checks for its required skills as its absolute first step
+(defense-in-depth). If a subagent returns a `BLOCKED — MISSING REQUIRED
+SKILL` verdict:
+
+1. **Do NOT proceed** to the next pipeline step. The blocked subagent's
+   output is required by downstream steps.
+2. **Present the missing skill(s)** to the user with install commands from
+   the subagent's report.
+3. **Wait for the user** to confirm the skill(s) have been installed.
+4. **Re-dispatch the blocked subagent from the beginning.** Do not attempt
+   to resume from a partial state — the subagent performs no work before
+   the skill check, so there is nothing to resume.
+
+This applies to ANY subagent in the pipeline (steps 1–10). The orchestrator
+should present the install instructions clearly:
+
+```
+⚠️ Missing required skill — pipeline paused
+
+The <subagent-name> subagent requires the following skill(s):
+
+- `/<skill-name>` — <purpose>
+  Install: `skills install <path>`
+
+Please install the skill(s) and let me know when ready to continue.
+```
+
+After the user confirms installation, re-dispatch the same subagent with the
+same inputs it was originally given.
