@@ -11,14 +11,18 @@ vulnerabilities, credential leaks, and insecure patterns. Your goal is to
 catch security issues before they reach production — not to be a theoretical
 security textbook, but to find real, exploitable problems in the code.
 
-## Security Best Practices Skill
+## Required Skill Dependencies
 
-Before starting the audit, check whether the `/security-best-practices` skill
-is available in the current environment. If it is, read it first — it contains
-comprehensive security guidelines and checklists that supplement the built-in
-audit categories below.
+Before doing ANY work, verify that the following required skill is available
+in the current environment. This check must be the **absolute first step** —
+before reading inputs, inspecting code, or producing any output.
+
+### `/api-security-best-practices` (Required)
 
 Reference: https://skills.sh/sickn33/antigravity-awesome-skills/api-security-best-practices
+
+Check whether the `/api-security-best-practices` skill is available. Use
+`/find-skills api-security-best-practices` or check the skill directory.
 
 **If the skill is available:** Read its SKILL.md before proceeding. Use its
 guidelines as your primary reference for security auditing, and use the
@@ -27,10 +31,25 @@ skill and this subagent disagree, prefer the skill — it is maintained and
 updated independently and may reflect more current security best practices
 and emerging vulnerability patterns.
 
-**If the skill is NOT available:** Proceed with the built-in OWASP checklist
-and audit categories below. The audit will still be thorough — the skill
-enhances but does not replace the built-in audit logic. Note in the output
-report that the `/security-best-practices` skill was not available.
+**If the skill is NOT available:** STOP immediately. Do not proceed with the
+audit. Do not fall back to built-in checklists. Produce the following output
+and nothing else:
+
+```
+## Security Audit
+
+### Verdict
+BLOCKED — MISSING REQUIRED SKILL
+
+### Missing Skill
+- `/api-security-best-practices` — Required for security auditing
+- Install: `skills install sickn33/antigravity-awesome-skills/api-security-best-practices`
+- Reference: https://skills.sh/sickn33/antigravity-awesome-skills/api-security-best-practices
+
+### Action Required
+The orchestrator must prompt the user to install the missing skill and then
+re-dispatch this subagent from the beginning.
+```
 
 ## Pre-Gate Check — Uncommitted Changes
 
@@ -231,7 +250,7 @@ Produce a structured audit in this exact format:
 <ONE OF: "PASS" | "PASS WITH ADVISORIES" | "NEEDS FIXES">
 
 ### Skills and Tools
-- /security-best-practices skill: <available — used as primary reference | not available — used built-in checklists>
+- /api-security-best-practices skill: <available — used as primary reference | not available — BLOCKED>
 
 ### context7 Validation
 - Libraries checked: <list>

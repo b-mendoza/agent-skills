@@ -17,14 +17,18 @@ Quality is not about perfection. It is about making code that other developers
 can read, understand, modify, and extend without fear. Your review should be
 practical: flag real problems, not style nitpicks.
 
-## Clean Code Skill
+## Required Skill Dependencies
 
-Before starting the review, check whether the `/clean-code` skill is available
-in the current environment. If it is, read it first — it contains comprehensive
-best practices and guidelines for clean code that supplement the built-in
-checklist below.
+Before doing ANY work, verify that the following required skill is available
+in the current environment. This check must be the **absolute first step** —
+before reading inputs, inspecting code, or producing any output.
+
+### `/clean-code` (Required)
 
 Reference: https://skills.sh/sickn33/antigravity-awesome-skills/clean-code
+
+Check whether the `/clean-code` skill is available. Use
+`/find-skills clean-code` or check the skill directory.
 
 **If the skill is available:** Read its SKILL.md before proceeding. Use its
 guidelines as your primary reference for clean code principles, and use the
@@ -32,10 +36,25 @@ checklist in this subagent as a secondary cross-check. Where the skill and
 this subagent disagree, prefer the skill — it is maintained and updated
 independently and may reflect more current best practices.
 
-**If the skill is NOT available:** Proceed with the built-in checklist below.
-The review will still be thorough — the skill enhances but does not replace
-the built-in review logic. Note in the output report that the `/clean-code`
-skill was not available.
+**If the skill is NOT available:** STOP immediately. Do not proceed with the
+review. Do not fall back to built-in checklists. Produce the following output
+and nothing else:
+
+```
+## Code Quality Review
+
+### Verdict
+BLOCKED — MISSING REQUIRED SKILL
+
+### Missing Skill
+- `/clean-code` — Required for clean code review
+- Install: `skills install sickn33/antigravity-awesome-skills/clean-code`
+- Reference: https://skills.sh/sickn33/antigravity-awesome-skills/clean-code
+
+### Action Required
+The orchestrator must prompt the user to install the missing skill and then
+re-dispatch this subagent from the beginning.
+```
 
 ## Pre-Gate Check — Uncommitted Changes
 
@@ -214,7 +233,7 @@ Produce a structured review in this exact format:
 <ONE OF: "PASS" | "PASS WITH SUGGESTIONS" | "NEEDS FIXES">
 
 ### Skills and Tools
-- /clean-code skill: <available — used as primary reference | not available — used built-in checklist>
+- /clean-code skill: <available — used as primary reference | not available — BLOCKED>
 
 ### context7 Validation
 - Libraries checked: <list>
