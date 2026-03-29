@@ -45,8 +45,9 @@ Run `preflight-checker` before starting any workflow. On resume, check only rema
 | Verdict | Action                                         |
 | ------- | ---------------------------------------------- |
 | FAIL    | Stop immediately, present install instructions |
-| WARN    | Present to user, offer to continue or wait     |
 | PASS    | Proceed silently                               |
+
+All dependencies are required — there is no WARN verdict. Missing any skill or MCP results in FAIL.
 
 ### 8. Fail loudly, recover gracefully
 
@@ -236,28 +237,48 @@ All artifacts are in docs/<TICKET_KEY>\*.
 
 ## Skill dependency map
 
-Several Phase 5 subagents depend on external skills. All are **recommended, not required** — subagents fall back to built-in logic when skills are unavailable.
+Subagents across Phase 2 and Phase 5 depend on external skills. All are **required** — subagents will STOP and return a BLOCKED verdict if any skill is missing. There is no fallback to built-in logic. This is enforced at two layers: the `preflight-checker` validates all skills before the workflow starts, and each subagent independently checks for its own skills at runtime (defense-in-depth).
 
 ```mermaid
 flowchart LR
-    subgraph SKILLS["External skills"]
+    subgraph SKILLS["External skills (all required)"]
+        WP["/writing-plans"]
         FS["/find-skills"]
+        TDD["/test-driven-development"]
+        VT["/vitest"]
+        EP_S["/executing-plans"]
         CW["/commit-work"]
         HU["/humanizer"]
         CC["/clean-code"]
         AP["/architecture-patterns"]
-        SB["/security-best-practices"]
+        SB["/api-security-best-practices"]
     end
 
-    subgraph AGENTS["Phase 5 subagents"]
+    subgraph P2["Phase 2 subagents"]
+        TP2["task-planner"]
+        DP2["dependency-prioritizer"]
+    end
+
+    subgraph P5["Phase 5 subagents"]
         EP2["execution-planner"]
+        TS2["test-strategist"]
+        RA2["refactoring-advisor"]
+        TE2["task-executor"]
         DW2["documentation-writer"]
         CCR["clean-code-reviewer"]
         AR["architecture-reviewer"]
         SA["security-auditor"]
     end
 
+    WP --> TP2
+    WP --> DP2
+    WP --> EP2
+    WP --> TS2
+    WP --> RA2
     FS --> EP2
+    TDD --> TS2
+    VT --> TS2
+    EP_S --> TE2
     CW --> DW2
     HU --> DW2
     CC --> CCR
@@ -265,12 +286,20 @@ flowchart LR
     SB --> SA
 ```
 
-| Subagent                | Skill dependency           | Impact if missing                          |
-| ----------------------- | -------------------------- | ------------------------------------------ |
-| `execution-planner`     | `/find-skills`             | Cannot discover optimal skills for task    |
-| `documentation-writer`  | `/commit-work`             | Commits must be done manually              |
-| `documentation-writer`  | `/humanizer`               | Documentation may have AI writing patterns |
-| `clean-code-reviewer`   | `/clean-code`              | Uses built-in checklist only               |
-| `architecture-reviewer` | `/architecture-patterns`   | Uses built-in DDD/FP checklists only       |
-| `security-auditor`      | `/security-best-practices` | Uses built-in OWASP checklist only         |
-| All quality gates       | context7 MCP               | Library docs not validated for recency     |
+| Subagent                 | Skill dependency (required)    | Install command                                                                 |
+| ------------------------ | ------------------------------ | ------------------------------------------------------------------------------- |
+| `task-planner`           | `/writing-plans`               | `skills install obra/superpowers/writing-plans`                                 |
+| `dependency-prioritizer` | `/writing-plans`               | `skills install obra/superpowers/writing-plans`                                 |
+| `execution-planner`      | `/find-skills`                 | `skills install vercel-labs/skills/find-skills`                                 |
+| `execution-planner`      | `/writing-plans`               | `skills install obra/superpowers/writing-plans`                                 |
+| `test-strategist`        | `/test-driven-development`     | `skills install obra/superpowers/test-driven-development`                       |
+| `test-strategist`        | `/vitest`                      | `skills install antfu/skills/vitest`                                            |
+| `test-strategist`        | `/writing-plans`               | `skills install obra/superpowers/writing-plans`                                 |
+| `refactoring-advisor`    | `/writing-plans`               | `skills install obra/superpowers/writing-plans`                                 |
+| `task-executor`          | `/executing-plans`             | `skills install obra/superpowers/executing-plans`                               |
+| `documentation-writer`   | `/commit-work`                 | `skills install softaworks/agent-toolkit/commit-work`                           |
+| `documentation-writer`   | `/humanizer`                   | `skills install blader/humanizer`                                               |
+| `clean-code-reviewer`    | `/clean-code`                  | `skills install sickn33/antigravity-awesome-skills/clean-code`                  |
+| `architecture-reviewer`  | `/architecture-patterns`       | `skills install wshobson/agents/architecture-patterns`                          |
+| `security-auditor`       | `/api-security-best-practices` | `skills install sickn33/antigravity-awesome-skills/api-security-best-practices` |
+| All quality gates        | context7 MCP                   | Connect context7 MCP in your IDE/CLI settings                                   |

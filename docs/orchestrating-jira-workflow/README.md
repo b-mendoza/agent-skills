@@ -12,6 +12,7 @@
 | Orchestrator utility agents | 7     |
 | Downstream skill subagents  | 17    |
 | Total subagents in system   | 24    |
+| Required external skills    | 11    |
 | Non-negotiable rules        | 8     |
 | Quality gates (Phase 5)     | 3     |
 | Max fix cycles per task     | 3     |

@@ -156,21 +156,22 @@ flowchart TD
 
 ### Quality gate detail
 
-| Gate                    | Concern                                              | Skill dependency           | Fallback                   |
-| ----------------------- | ---------------------------------------------------- | -------------------------- | -------------------------- |
-| `clean-code-reviewer`   | Clean Code, SOLID, test quality, docs                | `/clean-code`              | Built-in checklist         |
-| `architecture-reviewer` | DDD, functional programming, bounded contexts        | `/architecture-patterns`   | Built-in DDD/FP checklists |
-| `security-auditor`      | Vulnerabilities, credential leaks, insecure patterns | `/security-best-practices` | Built-in OWASP checklist   |
+| Gate                    | Concern                                              | Skill dependency (required)    |
+| ----------------------- | ---------------------------------------------------- | ------------------------------ |
+| `clean-code-reviewer`   | Clean Code, SOLID, test quality, docs                | `/clean-code`                  |
+| `architecture-reviewer` | DDD, functional programming, bounded contexts        | `/architecture-patterns`       |
+| `security-auditor`      | Vulnerabilities, credential leaks, insecure patterns | `/api-security-best-practices` |
 
-All three gates also use `context7` MCP (recommended) to validate library docs for recency.
+All three gates also use `context7` MCP (required) to validate library docs for recency. All skill dependencies are required — subagents will STOP and return a BLOCKED verdict if any skill is missing. There is no fallback to built-in checklists.
 
 ### Verdicts
 
-| Verdict                          | Meaning                             |
-| -------------------------------- | ----------------------------------- |
-| PASS                             | No issues found                     |
-| PASS WITH SUGGESTIONS/ADVISORIES | Minor suggestions, non-blocking     |
-| NEEDS FIXES                      | Issues found that must be addressed |
+| Verdict                          | Meaning                                                   |
+| -------------------------------- | --------------------------------------------------------- |
+| BLOCKED                          | Missing required skill — subagent stopped before any work |
+| PASS                             | No issues found                                           |
+| PASS WITH SUGGESTIONS/ADVISORIES | Minor suggestions, non-blocking                           |
+| NEEDS FIXES                      | Issues found that must be addressed                       |
 
 ### Targeted fix cycle
 
@@ -193,6 +194,7 @@ All three quality gates enforce this: if **any gate detects uncommitted changes*
 
 | Error type                          | Response                                                                                                                    |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Missing required skill**          | Subagent returns BLOCKED verdict. Present install command to user. Wait for confirmation. Re-dispatch subagent from scratch |
 | **Skill failure**                   | Record via `progress-tracker`. Report to user: retry, skip, or abort                                                        |
 | **Missing artifact**                | `artifact-validator` reports failure → do NOT proceed. Tell user which phase needs to run/re-run                            |
 | **Jira MCP unavailable**            | Tell user to connect it. Offer to resume when ready                                                                         |

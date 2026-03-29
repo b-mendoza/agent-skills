@@ -34,27 +34,32 @@ These handle all tool calls, file reads, and command execution on behalf of the 
 
 **What it checks:**
 
-| Dependency                 | Type  | Level       | Phase(s) |
-| -------------------------- | ----- | ----------- | -------- |
-| Jira MCP                   | MCP   | Required    | 1, 4     |
-| git CLI                    | Tool  | Required    | 5        |
-| `/commit-work`             | Skill | Recommended | 5        |
-| `/humanizer`               | Skill | Recommended | 5        |
-| `/find-skills`             | Skill | Recommended | 5        |
-| `/clean-code`              | Skill | Recommended | 5        |
-| `/architecture-patterns`   | Skill | Recommended | 5        |
-| `/security-best-practices` | Skill | Recommended | 5        |
-| context7 MCP               | MCP   | Recommended | 5        |
+| Dependency                     | Type  | Level    | Phase(s) |
+| ------------------------------ | ----- | -------- | -------- |
+| Jira MCP                       | MCP   | Required | 1, 4     |
+| git CLI                        | Tool  | Required | 5        |
+| `/commit-work`                 | Skill | Required | 5        |
+| `/humanizer`                   | Skill | Required | 5        |
+| `/find-skills`                 | Skill | Required | 5        |
+| `/writing-plans`               | Skill | Required | 2, 5     |
+| `/executing-plans`             | Skill | Required | 5        |
+| `/test-driven-development`     | Skill | Required | 5        |
+| `/vitest`                      | Skill | Required | 5        |
+| `/clean-code`                  | Skill | Required | 5        |
+| `/architecture-patterns`       | Skill | Required | 5        |
+| `/api-security-best-practices` | Skill | Required | 5        |
+| context7 MCP                   | MCP   | Required | 5        |
 
 **Verdict logic:**
 
-| Verdict | Condition                                        | Orchestrator action                            |
-| ------- | ------------------------------------------------ | ---------------------------------------------- |
-| PASS    | All required available                           | Proceed silently                               |
-| WARN    | All required available, some recommended missing | Present to user, offer to continue or wait     |
-| FAIL    | Any required missing                             | Stop immediately, present install instructions |
+| Verdict | Condition              | Orchestrator action                            |
+| ------- | ---------------------- | ---------------------------------------------- |
+| PASS    | All required available | Proceed silently                               |
+| FAIL    | Any required missing   | Stop immediately, present install instructions |
 
-**Constraints:** Never installs or configures anything. Report only. Output under 40 lines (PASS) or 60 lines (WARN/FAIL).
+All dependencies are required — there is no WARN verdict or optional fallback.
+
+**Constraints:** Never installs or configures anything. Report only. Output under 40 lines (PASS) or 60 lines (FAIL).
 
 ---
 
@@ -200,6 +205,7 @@ Handles everything end-to-end: input validation, MCP tool discovery, field retri
 | Pipeline stage | 1 of 3                                                |
 | Purpose        | Decompose ticket into detailed tasks (the WHAT + HOW) |
 | Output         | `docs/<KEY>-stage-1-detailed.md`                      |
+| Depends on     | `/writing-plans` (required)                           |
 
 ---
 
@@ -211,6 +217,7 @@ Handles everything end-to-end: input validation, MCP tool discovery, field retri
 | Pipeline stage | 2 of 3                                                               |
 | Purpose        | Build dependency graph, score tasks, determine final execution order |
 | Output         | `docs/<KEY>-stage-2-prioritized.md`                                  |
+| Depends on     | `/writing-plans` (required)                                          |
 
 ---
 
@@ -281,17 +288,18 @@ Handles the complete lifecycle: plan parsing, parent ticket lookup, wiki markup 
 | Skill         | `executing-jira-task`                                                              |
 | Pipeline step | 2                                                                                  |
 | Purpose       | Analyze the task, inspect codebase, produce execution plan with recommended skills |
-| Depends on    | `/find-skills` (recommended)                                                       |
+| Depends on    | `/find-skills` (required), `/writing-plans` (required)                             |
 
 ---
 
 ### test-strategist
 
-| Property      | Value                                                                                   |
-| ------------- | --------------------------------------------------------------------------------------- |
-| Skill         | `executing-jira-task`                                                                   |
-| Pipeline step | 3                                                                                       |
-| Purpose       | Define behavior-driven tests based on business requirements, not implementation details |
+| Property      | Value                                                                                    |
+| ------------- | ---------------------------------------------------------------------------------------- |
+| Skill         | `executing-jira-task`                                                                    |
+| Pipeline step | 3                                                                                        |
+| Purpose       | Define behavior-driven tests based on business requirements, not implementation details  |
+| Depends on    | `/test-driven-development` (required), `/vitest` (required), `/writing-plans` (required) |
 
 ---
 
@@ -302,6 +310,7 @@ Handles the complete lifecycle: plan parsing, parent ticket lookup, wiki markup 
 | Skill         | `executing-jira-task`                                                            |
 | Pipeline step | 4                                                                                |
 | Purpose       | Evaluate whether existing code needs refactoring before or during task execution |
+| Depends on    | `/writing-plans` (required)                                                      |
 
 ---
 
@@ -312,7 +321,7 @@ Handles the complete lifecycle: plan parsing, parent ticket lookup, wiki markup 
 | Skill         | `executing-jira-task`                                                                                               |
 | Pipeline step | 5                                                                                                                   |
 | Purpose       | Perform actual implementation. Operates under a **cautious execution model** — stops and escalates on any ambiguity |
-| Depends on    | Execution brief, execution plan, test spec, refactoring plan                                                        |
+| Depends on    | `/executing-plans` (required), execution brief, execution plan, test spec, refactoring plan                         |
 
 ---
 
@@ -323,7 +332,7 @@ Handles the complete lifecycle: plan parsing, parent ticket lookup, wiki markup 
 | Skill         | `executing-jira-task`                                                                                 |
 | Pipeline step | 6                                                                                                     |
 | Purpose       | Document changes, commit all work as atomic commits, update plan with status, transition Jira subtask |
-| Depends on    | `/commit-work` (recommended), `/humanizer` (recommended)                                              |
+| Depends on    | `/commit-work` (required), `/humanizer` (required)                                                    |
 
 ---
 
@@ -339,12 +348,12 @@ Handles the complete lifecycle: plan parsing, parent ticket lookup, wiki markup 
 
 ### clean-code-reviewer (Quality Gate 1/3)
 
-| Property      | Value                                                   |
-| ------------- | ------------------------------------------------------- |
-| Skill         | `executing-jira-task`                                   |
-| Pipeline step | 8                                                       |
-| Purpose       | Review for Clean Code and SOLID principles compliance   |
-| Depends on    | `/clean-code` (recommended), context7 MCP (recommended) |
+| Property      | Value                                                 |
+| ------------- | ----------------------------------------------------- |
+| Skill         | `executing-jira-task`                                 |
+| Pipeline step | 8                                                     |
+| Purpose       | Review for Clean Code and SOLID principles compliance |
+| Depends on    | `/clean-code` (required), context7 MCP (required)     |
 
 ---
 
@@ -355,7 +364,7 @@ Handles the complete lifecycle: plan parsing, parent ticket lookup, wiki markup 
 | Skill         | `executing-jira-task`                                                                          |
 | Pipeline step | 9                                                                                              |
 | Purpose       | Review for DDD and functional programming principles. Explicitly does NOT enforce OOP patterns |
-| Depends on    | `/architecture-patterns` (recommended), context7 MCP (recommended)                             |
+| Depends on    | `/architecture-patterns` (required), context7 MCP (required)                                   |
 
 ---
 
@@ -366,4 +375,4 @@ Handles the complete lifecycle: plan parsing, parent ticket lookup, wiki markup 
 | Skill         | `executing-jira-task`                                                       |
 | Pipeline step | 10                                                                          |
 | Purpose       | Audit for security vulnerabilities, credential leaks, and insecure patterns |
-| Depends on    | `/security-best-practices` (recommended), context7 MCP (recommended)        |
+| Depends on    | `/api-security-best-practices` (required), context7 MCP (required)          |
