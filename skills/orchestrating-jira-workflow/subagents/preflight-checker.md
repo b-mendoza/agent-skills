@@ -1,6 +1,6 @@
 ---
 name: "preflight-checker"
-description: "Validates that the execution environment has all required dependencies before the workflow starts. Checks for MCP servers (Jira, context7), skills (/commit-work, /humanizer, /find-skills, /clean-code, /architecture-patterns, /security-best-practices), and CLI tools (git). Returns a structured report classifying each dependency as available, missing-required, or missing-recommended so the orchestrator can decide whether to proceed, warn, or stop."
+description: "Validates that the execution environment has all required dependencies before the workflow starts. Checks for MCP servers (Jira, context7), skills (/commit-work, /humanizer, /find-skills, /clean-code, /architecture-patterns, /api-security-best-practices, /writing-plans, /executing-plans, /test-driven-development, /vitest), and CLI tools (git). All dependencies are required — there is no WARN verdict. Returns a structured report classifying each dependency as available or missing-required so the orchestrator can decide whether to proceed or stop."
 model: "inherit"
 ---
 
@@ -32,10 +32,14 @@ by phase and classified by criticality.
 
 ### Classification
 
-| Level           | Meaning                                                       | Action on missing                     |
-| --------------- | ------------------------------------------------------------- | ------------------------------------- |
-| **Required**    | Workflow cannot proceed without this dependency               | STOP — inform user, do not continue   |
-| **Recommended** | Workflow can proceed but quality or functionality is degraded | WARN — inform user, offer to continue |
+| Level        | Meaning                                         | Action on missing                   |
+| ------------ | ----------------------------------------------- | ----------------------------------- |
+| **Required** | Workflow cannot proceed without this dependency | STOP — inform user, do not continue |
+
+All dependencies in this manifest are Required. There is no Recommended
+(optional) classification — every skill and MCP must be installed for the
+workflow to proceed. This is enforced both here (preflight) and by each
+subagent at runtime (defense-in-depth).
 
 ### Phase 1 — Fetch (fetching-jira-ticket)
 
@@ -45,7 +49,9 @@ by phase and classified by criticality.
 
 ### Phase 2 — Plan (planning-jira-tasks)
 
-No external dependencies. All subagents use only file I/O.
+| Dependency     | Type  | Level    | Used by                              | How to check                                        | Install / configure                             |
+| -------------- | ----- | -------- | ------------------------------------ | --------------------------------------------------- | ----------------------------------------------- |
+| /writing-plans | Skill | Required | task-planner, dependency-prioritizer | Run `/find-skills writing-plans` or check skill dir | `skills install obra/superpowers/writing-plans` |
 
 ### Phase 3 — Clarify (clarifying-assumptions)
 
@@ -59,16 +65,20 @@ No external dependencies. Conversational skill, inline execution.
 
 ### Phase 5 — Execute (executing-jira-task)
 
-| Dependency               | Type  | Level       | Used by                | How to check                                                  | Install / configure                                                   |
-| ------------------------ | ----- | ----------- | ---------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------- |
-| git CLI                  | Tool  | Required    | Step 2 (branch mgmt)   | Run `git --version`                                           | Install git                                                           |
-| /commit-work             | Skill | Recommended | documentation-writer   | Run `/find-skills commit-work` or check skill dir             | `skills install softaworks/agent-toolkit/commit-work`                 |
-| /humanizer               | Skill | Recommended | documentation-writer   | Run `/find-skills humanizer` or check skill dir               | `skills install blader/humanizer`                                     |
-| /find-skills             | Skill | Recommended | execution-planner      | Try invoking `/find-skills` with a test query                 | `skills install vercel-labs/skills/find-skills`                       |
-| /clean-code              | Skill | Recommended | clean-code-reviewer    | Run `/find-skills clean-code` or check skill dir              | `skills install sickn33/antigravity-awesome-skills/clean-code`        |
-| /architecture-patterns   | Skill | Recommended | architecture-reviewer  | Run `/find-skills architecture-patterns` or check skill dir   | `skills install wshobson/agents/architecture-patterns`                |
-| /security-best-practices | Skill | Recommended | security-auditor       | Run `/find-skills security-best-practices` or check skill dir | `skills install supercent-io/skills-template/security-best-practices` |
-| context7 MCP             | MCP   | Recommended | Quality gate reviewers | Attempt to list context7 MCP tools                            | Connect context7 MCP in your IDE/CLI settings                         |
+| Dependency                   | Type  | Level    | Used by                                                 | How to check                                                      | Install / configure                                                             |
+| ---------------------------- | ----- | -------- | ------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| git CLI                      | Tool  | Required | Step 2 (branch mgmt)                                    | Run `git --version`                                               | Install git                                                                     |
+| /commit-work                 | Skill | Required | documentation-writer                                    | Run `/find-skills commit-work` or check skill dir                 | `skills install softaworks/agent-toolkit/commit-work`                           |
+| /humanizer                   | Skill | Required | documentation-writer                                    | Run `/find-skills humanizer` or check skill dir                   | `skills install blader/humanizer`                                               |
+| /find-skills                 | Skill | Required | execution-planner                                       | Try invoking `/find-skills` with a test query                     | `skills install vercel-labs/skills/find-skills`                                 |
+| /writing-plans               | Skill | Required | execution-planner, test-strategist, refactoring-advisor | Run `/find-skills writing-plans` or check skill dir               | `skills install obra/superpowers/writing-plans`                                 |
+| /executing-plans             | Skill | Required | task-executor                                           | Run `/find-skills executing-plans` or check skill dir             | `skills install obra/superpowers/executing-plans`                               |
+| /test-driven-development     | Skill | Required | test-strategist                                         | Run `/find-skills test-driven-development` or check skill dir     | `skills install obra/superpowers/test-driven-development`                       |
+| /vitest                      | Skill | Required | test-strategist                                         | Run `/find-skills vitest` or check skill dir                      | `skills install antfu/skills/vitest`                                            |
+| /clean-code                  | Skill | Required | clean-code-reviewer                                     | Run `/find-skills clean-code` or check skill dir                  | `skills install sickn33/antigravity-awesome-skills/clean-code`                  |
+| /architecture-patterns       | Skill | Required | architecture-reviewer                                   | Run `/find-skills architecture-patterns` or check skill dir       | `skills install wshobson/agents/architecture-patterns`                          |
+| /api-security-best-practices | Skill | Required | security-auditor                                        | Run `/find-skills api-security-best-practices` or check skill dir | `skills install sickn33/antigravity-awesome-skills/api-security-best-practices` |
+| context7 MCP                 | MCP   | Required | Quality gate reviewers                                  | Attempt to list context7 MCP tools                                | Connect context7 MCP in your IDE/CLI settings                                   |
 
 ## Check Procedure
 
@@ -119,59 +129,52 @@ modifies the environment. That is the user's responsibility.
 | Result              | Count |
 | ------------------- | ----- |
 | ✅ Available        | <N>   |
-| ⚠️ Missing (rec.)   | <N>   |
 | ❌ Missing (req.)   | <N>   |
 
-### Verdict: <PASS | WARN | FAIL>
+### Verdict: <PASS | FAIL>
 
 <One-line explanation>
 
 ### Required Dependencies
 
-| Dependency | Phase | Status       | Notes                                    |
-| ---------- | ----- | ------------ | ---------------------------------------- |
-| Jira MCP   | 1, 4  | ✅ Available | Found tools: jira_get_issue, jira_search |
-| git CLI    | 5     | ✅ Available | git version 2.43.0                       |
-
-### Recommended Dependencies
-
-| Dependency               | Phase | Status       | Used by              | Impact if missing                      | Install command                                                         |
-| ------------------------ | ----- | ------------ | -------------------- | -------------------------------------- | ----------------------------------------------------------------------- |
-| /commit-work             | 5     | ✅ Available | documentation-writer | Commits must be done manually          | skills install softaworks/agent-toolkit/commit-work                     |
-| /humanizer               | 5     | ⚠️ Missing   | documentation-writer | Documentation may have AI patterns     | skills install blader/humanizer                                         |
-| /clean-code              | 5     | ⚠️ Missing   | clean-code-reviewer  | Review uses built-in knowledge only    | skills install sickn33/antigravity-awesome-skills/clean-code            |
-| /architecture-patterns   | 5     | ✅ Available | architecture-reviewer| Review uses built-in knowledge only    | skills install wshobson/agents/architecture-patterns                    |
-| /security-best-practices | 5     | ⚠️ Missing   | security-auditor     | Audit uses built-in knowledge only     | skills install supercent-io/skills-template/security-best-practices     |
-| /find-skills             | 5     | ✅ Available | execution-planner    | Planner cannot discover optimal skills | skills install vercel-labs/skills/find-skills                           |
-| context7 MCP             | 5     | ✅ Available | Quality gates        | Library docs not validated for recency | Connect context7 MCP in IDE/CLI settings                                |
+| Dependency                    | Phase | Status       | Used by                                           | Notes                                    |
+| ----------------------------- | ----- | ------------ | ------------------------------------------------- | ---------------------------------------- |
+| Jira MCP                      | 1, 4  | ✅ Available | ticket-retriever, subtask-creator                 | Found tools: jira_get_issue, jira_search |
+| git CLI                       | 5     | ✅ Available | execution-prepper                                 | git version 2.43.0                       |
+| /writing-plans                | 2, 5  | ✅ Available | task-planner, dependency-prioritizer, execution-planner, test-strategist, refactoring-advisor | —       |
+| /commit-work                  | 5     | ✅ Available | documentation-writer                              | —                                        |
+| /humanizer                    | 5     | ❌ Missing   | documentation-writer                              | Install: skills install blader/humanizer |
+| /find-skills                  | 5     | ✅ Available | execution-planner                                 | —                                        |
+| /executing-plans              | 5     | ✅ Available | task-executor                                     | —                                        |
+| /test-driven-development      | 5     | ✅ Available | test-strategist                                   | —                                        |
+| /vitest                       | 5     | ✅ Available | test-strategist                                   | —                                        |
+| /clean-code                   | 5     | ❌ Missing   | clean-code-reviewer                               | Install: skills install sickn33/antigravity-awesome-skills/clean-code |
+| /architecture-patterns        | 5     | ✅ Available | architecture-reviewer                             | —                                        |
+| /api-security-best-practices  | 5     | ✅ Available | security-auditor                                  | —                                        |
+| context7 MCP                  | 5     | ✅ Available | Quality gates                                     | —                                        |
 
 ### Action Required
 
 <Only if verdict is FAIL. List each missing required dependency with its
-install/configure instruction.>
-
-### Recommendations
-
-<Only if verdict is WARN. List each missing recommended dependency with its
-impact and install command. Group by priority — dependencies that affect
-every task execution (like /commit-work) before those that affect specific
-subagents.>
+install/configure instruction. Group by phase — Phase 2 dependencies before
+Phase 5.>
 ```
 
 ### Verdict logic
 
-- **PASS** — all required dependencies available. Zero or more recommended
-  dependencies may be missing.
-- **WARN** — all required dependencies available, but one or more recommended
-  dependencies are missing. The workflow can proceed with degraded quality.
+- **PASS** — all required dependencies available.
 - **FAIL** — one or more required dependencies are missing. The workflow
-  cannot proceed.
+  cannot proceed. All skills and MCPs are required — there is no WARN verdict.
+
+Note: The previous WARN verdict for recommended (optional) dependencies has
+been removed. All skill dependencies are now required. If any skill is
+missing, the verdict is FAIL.
 
 ## Constraints
 
 - Never return raw tool output or full MCP tool listings — only the summary.
 - Never attempt to install or configure dependencies.
-- Keep output under 40 lines for PASS, under 60 lines for WARN/FAIL.
+- Keep output under 40 lines for PASS, under 60 lines for FAIL.
 - If a check itself fails (e.g., cannot list MCP tools because the platform
   does not support tool listing), mark the dependency as `⚠️ Unknown` and
   note the reason.
