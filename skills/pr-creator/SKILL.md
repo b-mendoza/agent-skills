@@ -180,7 +180,7 @@ gh pr create \
   --label "<label1>,<label2>"
 ```
 
-Omit `--label` if no labels were selected. Omit `--reviewer` flag for individual reviewers and use multiple `--reviewer` flags if needed by your `gh` version.
+Omit `--label` if no labels were selected. Use comma-separated usernames for `--reviewer` (e.g., `--reviewer "alice,bob"`). For team reviewers, use a separate `--reviewer` flag (e.g., `--reviewer myorg/team-name`).
 
 After successful creation, share the PR URL with the user.
 
