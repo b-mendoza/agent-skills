@@ -1,6 +1,6 @@
 ---
-name: pr-creator
-description: Create GitHub pull requests from the current branch with auto-generated titles, descriptions, reviewers, and labels. Use this skill whenever the user wants to create a PR, open a pull request, submit code for review, push changes for merge, or mentions "PR", "pull request", "code review", or "merge request". Also trigger when the user says things like "I'm done with this feature", "ready to submit", "open a draft PR", or "send this for review". Works with GitHub CLI by default, with guidance for GitLab and Bitbucket.
+name: "pr-creator"
+description: 'Create GitHub pull requests from the current branch with auto-generated titles, descriptions, reviewers, and labels. Use this skill whenever the user wants to create a PR, open a pull request, submit code for review, push changes for merge, or mentions "PR", "pull request", "code review", or "merge request". Also trigger when the user says things like "I''m done with this feature", "ready to submit", "open a draft PR", or "send this for review". Works with GitHub CLI by default, with guidance for GitLab and Bitbucket.'
 ---
 
 # PR Creator
