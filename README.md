@@ -6,8 +6,8 @@ doesn't run out of context.
 
 ## Project skills
 
-These live under [`skills/`](skills/). Nine in total: six form the Jira
-workflow and three are standalone.
+These live under [`skills/`](skills/). Ten in total: six form the Jira
+workflow and four are standalone.
 
 ### Jira workflow
 
@@ -71,6 +71,12 @@ The five phases, in order:
   information, overconfident claims, and gaps. A `recency-checker` subagent
   web-searches every factual claim, then a `claim-verifier` pressure-tests
   the most important ones.
+
+- [pr-creator](skills/pr-creator/SKILL.md) -- Creates GitHub pull requests
+  from the current branch. Analyzes the diff, generates a conventional-commit
+  title and structured description, suggests reviewers from CODEOWNERS, and
+  runs `gh pr create` after a confirmation step. Also notes GitLab and
+  Bitbucket equivalents.
 
 - [workflow-skill-architect](skills/workflow-skill-architect/SKILL.md) --
   Helps you turn a multi-step workflow into a skill with subagents. Walks
