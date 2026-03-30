@@ -55,6 +55,7 @@ The output file **must** contain all of these sections for downstream skills:
 | Section                              | Required by                                                         |
 | ------------------------------------ | ------------------------------------------------------------------- |
 | `## Ticket Summary`                  | clarifying-assumptions                                              |
+| `## Problem Framing`                 | clarifying-assumptions (Tier 3 hard gates), critique-analyzer       |
 | `## Assumptions and Constraints`     | clarifying-assumptions                                              |
 | `## Cross-Cutting Open Questions`    | clarifying-assumptions                                              |
 | `## Tasks` (each with 8 subsections) | clarifying-assumptions, creating-jira-subtasks, executing-jira-task |
@@ -176,7 +177,7 @@ Dispatch `stage-validator` with `STAGE=3` and `FILE_PATH=docs/<KEY>-tasks.md`.
 Dispatch `stage-validator` with `STAGE=postpipeline` and
 `FILE_PATH=docs/<KEY>-tasks.md`.
 
-This runs the full output contract check — all 7 required sections, all 8
+This runs the full output contract check — all 8 required sections, all 8
 per-task subsections.
 
 If anything is missing, re-run stage 3 with specific feedback from the
