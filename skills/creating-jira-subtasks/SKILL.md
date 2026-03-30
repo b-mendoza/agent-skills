@@ -118,16 +118,7 @@ Collect the subagent's summary. Check for issues:
   warning to the user.
 - **If validation FAIL:** Relay the details to the user. Offer to retry.
 
-### 3. Clean up
-
-Delete any temporary files that may remain:
-
-```bash
-rm -f docs/<TICKET_KEY>-subtask-manifest.md
-rm -f docs/<TICKET_KEY>-subtask-results.md
-```
-
-### 4. Report to the user
+### 3. Report to the user
 
 Using ONLY the information from the subagent's summary, tell the user:
 
