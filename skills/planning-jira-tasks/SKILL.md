@@ -99,11 +99,6 @@ syntax for your current environment.
 | Cursor IDE   | Native subagents (2.4+) — `.cursor/agents/` or inline dispatch |
 | OpenCode CLI | Task tool — `.opencode/agents/` or `@mention` invocation       |
 
-All three platforms have native subagent support. The co-located subagent
-`.md` files in this skill's `subagents/` directory are compatible with all
-platforms. See the reference file for platform-specific dispatch details and
-tips.
-
 ### Pipeline flow
 
 ```
@@ -128,14 +123,20 @@ docs/<KEY>-tasks.md (final plan)
 
 ### Intermediate files
 
-Each stage writes to a working file. These are cleaned up after the final plan
-is written successfully.
+Each stage writes to a working file. These files are **preserved** after the
+final plan is written — they are never deleted. They serve as reference for
+the `critique-analyzer` subagent in Phase 3 and for debugging if a re-plan
+cycle is triggered.
 
-| Stage | File                                | Subagent               |
-| ----- | ----------------------------------- | ---------------------- |
-| 1     | `docs/<KEY>-stage-1-detailed.md`    | task-planner           |
-| 2     | `docs/<KEY>-stage-2-prioritized.md` | dependency-prioritizer |
-| 3     | `docs/<KEY>-tasks.md` (final)       | task-validator         |
+| Stage | File                                | Subagent               | Persisted |
+| ----- | ----------------------------------- | ---------------------- | --------- |
+| 1     | `docs/<KEY>-stage-1-detailed.md`    | task-planner           | Yes       |
+| 2     | `docs/<KEY>-stage-2-prioritized.md` | dependency-prioritizer | Yes       |
+| 3     | `docs/<KEY>-tasks.md` (final)       | task-validator         | Yes       |
+
+**Artifact preservation rule:** These files are NEVER deleted and NEVER
+committed to git. They are orchestration artifacts that persist for the
+lifetime of the workflow.
 
 ## Execution Steps
 
@@ -181,16 +182,7 @@ per-task subsections.
 If anything is missing, re-run stage 3 with specific feedback from the
 validator. If it fails again, stop and report.
 
-### 4. Clean up
-
-After the final plan passes validation:
-
-```bash
-rm -f docs/<KEY>-stage-1-detailed.md
-rm -f docs/<KEY>-stage-2-prioritized.md
-```
-
-### 5. Report to user
+### 4. Report to user
 
 Tell the user:
 
@@ -200,6 +192,26 @@ Tell the user:
 - Number of dependency chains identified
 - Any validation warnings from stage 3
 - Remind them that no implementation has started
+- Note that intermediate files are preserved for critique and debugging
+
+## Re-Plan Cycle
+
+If Phase 3 critique triggers a re-plan, the orchestrator re-dispatches this
+skill with the same `TICKET_KEY`, plus:
+
+- `RE_PLAN=true` — signals this is a re-dispatch
+- `DECISIONS` — the decisions from Phase 3 that require plan changes
+
+On re-plan:
+
+1. **All three pipeline subagents are re-dispatched.** Each receives the
+   prior intermediate artifact (already on disk) plus the new decisions.
+2. **Intermediate files are overwritten** with updated versions.
+3. **Post-pipeline validation runs again** to confirm the updated plan is
+   well-formed.
+
+**Maximum re-plan cycles:** 3 iterations. If Phase 3 critique still has
+unresolved concerns after 3 cycles, escalate to the user.
 
 ## Error Handling
 
@@ -207,7 +219,8 @@ Tell the user:
   with the stage number and error.
 - If a `stage-validator` check fails, retry the subagent ONCE with specific
   feedback from the validator's issues list. If it fails again, stop and report.
-- Intermediate files are NOT cleaned up on failure — they help with debugging.
+- Intermediate files are ALWAYS preserved — they are never deleted, regardless
+  of success or failure.
 
 ## Task-Planning Rules (reference — enforced by subagents)
 
