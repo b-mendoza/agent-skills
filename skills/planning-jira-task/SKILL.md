@@ -186,12 +186,19 @@ subagent with the execution brief path.
 
 The execution-planner will:
 
+- Read the `## Problem Framing` section and Phase 3 decisions from
+  `docs/<TICKET_KEY>-tasks.md` to understand the end user and their need.
 - Analyse the task and the relevant parts of the codebase.
 - Use the `/find-skills` skill to identify the best available skills for the
   task.
-- Produce a structured execution plan with recommended skills, approach, and
-  file-level strategy.
+- Produce a structured execution plan with recommended skills, approach,
+  file-level strategy, and a **User Impact Assessment** connecting every major
+  implementation decision to its consequence for the end user.
 - **Write the plan to `docs/<TICKET_KEY>-task-<N>-execution-plan.md`.**
+
+The User Impact Assessment feeds into Phase 6 critique, where the developer
+evaluates whether each user-facing trade-off is acceptable given the Problem
+Framing context established in Phase 3.
 
 Collect its output as the `EXECUTION_PLAN_SUMMARY`.
 
