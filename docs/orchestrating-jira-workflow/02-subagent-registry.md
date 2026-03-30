@@ -75,19 +75,19 @@ All dependencies are required — there is no WARN verdict or optional fallback.
 
 **Validation rules:**
 
-| Phase | Direction     | File                           | Checks                                                        |
-| ----- | ------------- | ------------------------------ | ------------------------------------------------------------- |
-| 1     | postcondition | `docs/<KEY>.md`                | File exists, contains `## Description`                        |
-| 2     | precondition  | `docs/<KEY>.md`                | Same as Phase 1 postcondition                                 |
-| 2     | postcondition | `docs/<KEY>-tasks.md`          | File exists, contains `## Tasks`, has ≥2 task entries         |
-| 3     | precondition  | `docs/<KEY>-tasks.md`          | Same as Phase 2 postcondition                                 |
-| 3     | postcondition | `docs/<KEY>-tasks.md`          | Contains `## Decisions Log`                                   |
-| 4     | precondition  | `docs/<KEY>-tasks.md`          | Same as Phase 3 postcondition                                 |
-| 4     | postcondition | `docs/<KEY>-tasks.md`          | Contains `## Jira Subtasks` with ≥1 key matching `[A-Z]+-\d+` |
-| 5     | precondition  | `docs/<KEY>-tasks.md`          | Same as Phase 4 postcondition                                 |
-| 5     | postcondition | `docs/<KEY>-task-<N>-brief.md` | File exists                                                   |
-| 6     | precondition  | `docs/<KEY>-task-<N>-*.md`     | All 4 planning artifacts exist                                |
-| 7     | precondition  | `docs/<KEY>-task-<N>-*.md`     | Same as Phase 6 precondition                                  |
+| Phase | Direction     | File                           | Checks                                                                      |
+| ----- | ------------- | ------------------------------ | --------------------------------------------------------------------------- |
+| 1     | postcondition | `docs/<KEY>.md`                | File exists, contains `## Description`                                      |
+| 2     | precondition  | `docs/<KEY>.md`                | Same as Phase 1 postcondition                                               |
+| 2     | postcondition | `docs/<KEY>-tasks.md`          | File exists, contains `## Tasks`, `## Problem Framing`, has ≥2 task entries |
+| 3     | precondition  | `docs/<KEY>-tasks.md`          | Same as Phase 2 postcondition                                               |
+| 3     | postcondition | `docs/<KEY>-tasks.md`          | Contains `## Decisions Log`                                                 |
+| 4     | precondition  | `docs/<KEY>-tasks.md`          | Same as Phase 3 postcondition                                               |
+| 4     | postcondition | `docs/<KEY>-tasks.md`          | Contains `## Jira Subtasks` with ≥1 key matching `[A-Z]+-\d+`               |
+| 5     | precondition  | `docs/<KEY>-tasks.md`          | Same as Phase 4 postcondition                                               |
+| 5     | postcondition | `docs/<KEY>-task-<N>-brief.md` | File exists                                                                 |
+| 6     | precondition  | `docs/<KEY>-task-<N>-*.md`     | All 4 planning artifacts exist                                              |
+| 7     | precondition  | `docs/<KEY>-task-<N>-*.md`     | Same as Phase 6 precondition                                                |
 
 **Constraints:** Never returns raw file contents. Never modifies files. Output under 10 lines.
 
@@ -184,13 +184,15 @@ Handles everything end-to-end: input validation, MCP tool discovery, field retri
 
 ### task-planner
 
-| Property       | Value                                                 |
-| -------------- | ----------------------------------------------------- |
-| Skill          | `planning-jira-tasks`                                 |
-| Pipeline stage | 1 of 3                                                |
-| Purpose        | Decompose ticket into detailed tasks (the WHAT + HOW) |
-| Output         | `docs/<KEY>-stage-1-detailed.md`                      |
-| Depends on     | `/writing-plans` (required)                           |
+| Property       | Value                                                                         |
+| -------------- | ----------------------------------------------------------------------------- |
+| Skill          | `planning-jira-tasks`                                                         |
+| Pipeline stage | 1 of 3                                                                        |
+| Purpose        | Problem framing (the WHY) + decompose ticket into detailed tasks (WHAT + HOW) |
+| Output         | `docs/<KEY>-stage-1-detailed.md`                                              |
+| Depends on     | `/writing-plans` (required)                                                   |
+
+The task-planner now produces a `## Problem Framing` section before task decomposition, analysing: end user, underlying need, proposed solution, solution-problem fit, alternative approaches, and evidence basis. This section feeds into Phase 3 Tier 3 hard-gate questions.
 
 ---
 
@@ -231,17 +233,23 @@ Handles everything end-to-end: input validation, MCP tool discovery, field retri
 
 ### critique-analyzer (NEW)
 
-| Property        | Value                                                                                                    |
-| --------------- | -------------------------------------------------------------------------------------------------------- |
-| Skill           | `clarifying-assumptions`                                                                                 |
-| Mode            | `upfront`                                                                                                |
-| Purpose         | Reads task plan artifacts, searches web for alternatives, cross-checks codebase, produces critique items |
-| Input artifacts | `docs/<KEY>-tasks.md`, `docs/<KEY>-stage-1-detailed.md`, `docs/<KEY>-stage-2-prioritized.md`             |
-| Output          | Structured critique report with severity-rated items                                                     |
+| Property        | Value                                                                                           |
+| --------------- | ----------------------------------------------------------------------------------------------- |
+| Skill           | `clarifying-assumptions`                                                                        |
+| Mode            | `upfront`                                                                                       |
+| Purpose         | Two-category critique: (1) problem-framing (end user, need, evidence, fit), (2) technology bias |
+| Input artifacts | `docs/<KEY>-tasks.md`, `docs/<KEY>-stage-1-detailed.md`, `docs/<KEY>-stage-2-prioritized.md`    |
+| Output          | Structured critique report with problem-framing items (Tier 3/2) and technology items (Tier 2)  |
 
-The `critique-analyzer` is an unbiased, critical analyst designed to counter the Matthew Effect — the documented bias where AI tools favor mainstream frameworks and libraries over potentially better-fit alternatives. It MUST perform web searches to discover current alternatives (not rely on training data alone) and MUST cross-check the codebase directly (not trust other subagents' descriptions).
+The `critique-analyzer` counters two systemic biases: the **Matthew Effect** (AI tools favoring mainstream frameworks) and **solution-first thinking** (jumping to implementation without validating the problem). In `upfront` mode, it reads the `## Problem Framing` section and challenges whether the end user is identified, the need is articulated, evidence supports the approach, and alternatives were explored. It also performs web searches and codebase cross-checks for technology decisions.
 
-**Behavioral contract:**
+**Problem-framing critique severity → tier mapping:**
+
+- **HIGH** → Tier 3 (hard gate): missing end user, missing need, missing evidence. Developer cannot skip these.
+- **MEDIUM** → Tier 2: solution-problem fit gaps, unexplored alternatives. Developer can skip but it's flagged.
+- **LOW** → Tier 2: minor framing observations.
+
+**Technology critique behavioral contract:**
 
 - For every technology decision, identify at least 2 alternatives with concrete trade-offs
 - Flag when a decision follows the "popular default" without project-specific justification
@@ -249,12 +257,6 @@ The `critique-analyzer` is an unbiased, critical analyst designed to counter the
 - Never recommend changes purely for novelty
 - Never critique decisions constrained by the existing stack
 - Present critique as structured questions with evidence, not opinions
-
-**Severity levels:**
-
-- **HIGH** — signs of default bias, or a clearly better-fit alternative exists, or trade-offs not acknowledged
-- **MEDIUM** — reasonable alternatives exist that were not discussed
-- **LOW** — minor preference difference, both options reasonable
 
 ---
 
@@ -295,13 +297,15 @@ Handles: appending/updating the `## Decisions Log` table, annotating assumptions
 
 ### execution-planner
 
-| Property      | Value                                                                              |
-| ------------- | ---------------------------------------------------------------------------------- |
-| Skill         | `planning-jira-task`                                                               |
-| Pipeline step | 2                                                                                  |
-| Purpose       | Analyze the task, inspect codebase, produce execution plan with recommended skills |
-| Output        | `docs/<KEY>-task-<N>-execution-plan.md`                                            |
-| Depends on    | `/find-skills` (required), `/writing-plans` (required)                             |
+| Property      | Value                                                                                         |
+| ------------- | --------------------------------------------------------------------------------------------- |
+| Skill         | `planning-jira-task`                                                                          |
+| Pipeline step | 2                                                                                             |
+| Purpose       | Analyze task, inspect codebase, produce execution plan with skills and user-impact assessment |
+| Output        | `docs/<KEY>-task-<N>-execution-plan.md`                                                       |
+| Depends on    | `/find-skills` (required), `/writing-plans` (required)                                        |
+
+The execution-planner reads the `## Problem Framing` section and Phase 3 decisions before planning. For every major implementation decision, it produces a **User Impact Assessment** connecting the code-level choice to its consequence for the end user (latency, data freshness, accessibility, error handling UX). This assessment feeds into Phase 6 critique.
 
 ---
 
@@ -335,15 +339,15 @@ Phase 6 uses the same `clarifying-assumptions` skill and subagents as Phase 3, i
 
 ### critique-analyzer
 
-| Property        | Value                                                                                      |
-| --------------- | ------------------------------------------------------------------------------------------ |
-| Skill           | `clarifying-assumptions`                                                                   |
-| Mode            | `critique`                                                                                 |
-| Purpose         | Reads per-task planning artifacts, searches web for alternatives, cross-checks codebase    |
-| Input artifacts | `docs/<KEY>-task-<N>-brief.md`, `execution-plan.md`, `test-spec.md`, `refactoring-plan.md` |
-| Output          | Structured critique report (respects prior decisions on re-critique)                       |
+| Property        | Value                                                                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Skill           | `clarifying-assumptions`                                                                                            |
+| Mode            | `critique`                                                                                                          |
+| Purpose         | Critiques per-task planning artifacts for technology bias and evaluates user-impact assessment                      |
+| Input artifacts | `docs/<KEY>-task-<N>-brief.md`, `execution-plan.md`, `test-spec.md`, `refactoring-plan.md`                          |
+| Output          | Structured critique report with technology items and user-impact concerns (respects prior decisions on re-critique) |
 
-In `critique` mode, the analyzer also reads the per-task decisions file (if this is iteration 2 or 3) to avoid re-raising concerns that were already consciously resolved by the user.
+In `critique` mode, the analyzer reads the execution-planner's **User Impact Assessment** and evaluates whether implementation decisions have acceptable user-facing consequences. It also reads the per-task decisions file (if this is iteration 2 or 3) to avoid re-raising concerns that were already consciously resolved by the user.
 
 ### decision-recorder
 
