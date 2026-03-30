@@ -143,14 +143,19 @@ These apply to the Phase 3 → Phase 2 and Phase 6 → Phase 5 re-plan loops.
 
 These govern how the orchestrator/skill interacts with users during clarification and critique phases:
 
-| Guardrail                                | Description                                                                                           |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| One question per message                 | Never batch multiple questions in a single turn                                                       |
-| Manifest is source of truth              | Every question comes from it. New questions get added before being asked                              |
-| Defer, don't discard                     | Questions for future tasks are tagged as deferred, not deleted                                        |
-| Teacher, not interrogator                | Context should help the user understand the problem space                                             |
-| Respect "skip"                           | Note the fallback, move on, no pressure                                                               |
-| Stay neutral on options                  | Frame recommendations as "I'd lean toward X because..." not "You should do X"                         |
-| Keep blocks scannable                    | Each question readable in under 30 seconds                                                            |
-| Never ask about what hasn't happened yet | If relevance depends on a future task outcome, defer the question                                     |
-| Present ALL critique items               | Every critique item (HIGH, MEDIUM, LOW) is presented to the user. No filtering, no auto-acknowledging |
+| Guardrail                                         | Description                                                                                                                    |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| One question per message                          | Never batch multiple questions in a single turn                                                                                |
+| Manifest is source of truth                       | Every question comes from it. New questions get added before being asked                                                       |
+| Defer, don't discard                              | Questions for future tasks are tagged as deferred, not deleted                                                                 |
+| Mentor, not interrogator                          | Frame challenges as growth opportunities. Be direct about gaps in thinking, not punitive                                       |
+| Pedagogical stance for problem framing            | Be direct when the developer's reasoning is shallow on Tier 3 items. Name what's missing and why it matters                    |
+| Neutral on technology, direct on thinking quality | Stay neutral on Redis vs Memcached. Push back when "our customers" lacks specificity                                           |
+| Tier 3 items cannot be skipped                    | Problem-framing fundamentals (end user, need, evidence) are hard gates. Developer must answer                                  |
+| Tier 2 skip = visible flag                        | Skipped Tier 2 items are recorded with ⚠️ warning in the decisions file. No pressure, but the gap is documented                |
+| Model A for Tier 3, Model B for Tier 2            | Socratic (generate-then-compare) for hard gates; evaluate-the-reasoning for everything else                                    |
+| No silent pass-through                            | Every subagent decision the developer will encounter must be actively evaluated by the developer. No decisions pass unexamined |
+| Keep blocks scannable                             | Each question readable in under 30 seconds                                                                                     |
+| Never ask about what hasn't happened yet          | If relevance depends on a future task outcome, defer the question                                                              |
+| Present ALL critique items                        | Every item (problem-framing and technology, all severities) is presented. No filtering, no auto-acknowledging                  |
+| Developer growth over speed                       | Socratic exchanges on Tier 3 items may take several turns. That is working as intended                                         |
