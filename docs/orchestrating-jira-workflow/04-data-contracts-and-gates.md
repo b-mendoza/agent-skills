@@ -6,15 +6,47 @@
 
 ## Artifact flow
 
-Each phase produces an artifact that the next phase consumes. The `artifact-validator` subagent checks every artifact before the orchestrator advances.
+Each phase produces artifacts that the next phase consumes. The `artifact-validator` subagent checks every artifact before the orchestrator advances. No artifact is ever deleted.
 
 ```mermaid
 flowchart LR
-    P1["Phase 1<br/>Fetch"] -->|"docs/&lt;KEY&gt;.md"| P2["Phase 2<br/>Plan"]
-    P2 -->|"docs/&lt;KEY&gt;-tasks.md"| P3["Phase 3<br/>Clarify"]
-    P3 -->|"docs/&lt;KEY&gt;-tasks.md<br/>(+ Decisions Log)"| P4["Phase 4<br/>Create"]
-    P4 -->|"docs/&lt;KEY&gt;-tasks.md<br/>(+ Jira keys)"| P5["Phase 5<br/>Execute"]
+    P1["Phase 1\nFetch"] -->|"docs/<KEY>.md"| P2["Phase 2\nPlan tasks"]
+    P2 -->|"docs/<KEY>-tasks.md\n+ intermediates"| P3["Phase 3\nClarify+Critique"]
+    P3 -->|"docs/<KEY>-tasks.md\n(+ Decisions Log)"| P4["Phase 4\nCreate"]
+    P4 -->|"docs/<KEY>-tasks.md\n(+ Jira keys)"| P5["Phase 5\nPlan task"]
+    P5 -->|"4 planning artifacts\nper task"| P6["Phase 6\nClarify+Critique"]
+    P6 -->|"Per-task decisions"| P7["Phase 7\nExecute"]
+
+    P3 -.->|"Re-plan"| P2
+    P6 -.->|"Re-plan"| P5
 ```
+
+### Artifact categories
+
+| Category | Scope                   | Committed to git | Deleted   |
+| -------- | ----------------------- | ---------------- | --------- |
+| A        | Orchestration artifacts | **NEVER**        | **NEVER** |
+| B        | Implementation output   | Yes              | N/A       |
+
+**Category A files** (all matching `docs/<KEY>*.md`):
+
+- `docs/<KEY>.md` — ticket snapshot
+- `docs/<KEY>-tasks.md` — task plan with decisions
+- `docs/<KEY>-progress.md` — progress tracking
+- `docs/<KEY>-stage-1-detailed.md` — task-planner output
+- `docs/<KEY>-stage-2-prioritized.md` — dependency-prioritizer output
+- `docs/<KEY>-task-<N>-brief.md` — execution brief
+- `docs/<KEY>-task-<N>-execution-plan.md` — execution plan
+- `docs/<KEY>-task-<N>-test-spec.md` — test specification
+- `docs/<KEY>-task-<N>-refactoring-plan.md` — refactoring plan
+- `docs/<KEY>-task-<N>-decisions.md` — per-task decisions
+
+**Category B files** (committed by `documentation-writer`):
+
+- Source code files
+- Test files
+- Updated inline docs, docstrings, comments in source files
+- Config changes
 
 ---
 
@@ -43,11 +75,11 @@ flowchart LR
 
 ### Phase 2 → Phase 3
 
-| Artifact   | `docs/<KEY>-tasks.md`                                         |
-| ---------- | ------------------------------------------------------------- |
-| Validation | File exists, contains `## Tasks` section, has ≥2 task entries |
+| Artifact   | `docs/<KEY>-tasks.md` + intermediates                    |
+| ---------- | -------------------------------------------------------- |
+| Validation | File exists, contains `## Tasks` section, has ≥2 entries |
 
-**Required sections in artifact:**
+**Required sections in final plan:**
 
 | Section                              | Consumed by                                                         |
 | ------------------------------------ | ------------------------------------------------------------------- |
@@ -56,8 +88,15 @@ flowchart LR
 | `## Cross-Cutting Open Questions`    | clarifying-assumptions                                              |
 | `## Tasks` (each with 8 subsections) | clarifying-assumptions, creating-jira-subtasks, executing-jira-task |
 | `## Execution Order Summary`         | creating-jira-subtasks                                              |
-| `## Dependency Graph`                | executing-jira-task                                                 |
+| `## Dependency Graph`                | planning-jira-task                                                  |
 | `## Validation Report`               | clarifying-assumptions                                              |
+
+**Preserved intermediates** (consumed by `critique-analyzer` in Phase 3):
+
+| File                                | Consumed by       |
+| ----------------------------------- | ----------------- |
+| `docs/<KEY>-stage-1-detailed.md`    | critique-analyzer |
+| `docs/<KEY>-stage-2-prioritized.md` | critique-analyzer |
 
 ---
 
@@ -75,7 +114,8 @@ flowchart LR
 | Annotated assumptions (`✅`/`❌`/`⏭️`) | Executor needs confirmed assumptions            |
 | Resolved per-task questions            | Pre-flight verifies no unresolved questions     |
 | Updated `Implementation notes`         | Executor follows updated approach               |
-| Deferred question tags                 | Orchestrator knows what to ask before each task |
+| Deferred question tags                 | Phase 6 knows which questions to ask            |
+| Critique resolutions                   | Documents technology decisions and rationale    |
 
 ---
 
@@ -94,7 +134,41 @@ flowchart LR
 
 ---
 
-### Phase 5 output (per task)
+### Phase 5 → Phase 6
+
+| Artifact   | 4 planning artifact files per task              |
+| ---------- | ----------------------------------------------- |
+| Validation | All 4 files exist for the specified task number |
+
+**Artifacts produced by Phase 5:**
+
+| File                                      | Produced by         | Consumed by                      |
+| ----------------------------------------- | ------------------- | -------------------------------- |
+| `docs/<KEY>-task-<N>-brief.md`            | execution-prepper   | critique-analyzer, task-executor |
+| `docs/<KEY>-task-<N>-execution-plan.md`   | execution-planner   | critique-analyzer, task-executor |
+| `docs/<KEY>-task-<N>-test-spec.md`        | test-strategist     | critique-analyzer, task-executor |
+| `docs/<KEY>-task-<N>-refactoring-plan.md` | refactoring-advisor | critique-analyzer, task-executor |
+
+---
+
+### Phase 6 → Phase 7
+
+| Artifact   | Per-task decisions file (if critique resolved any items) |
+| ---------- | -------------------------------------------------------- |
+| Validation | Planning artifacts still exist (Phase 5 outputs)         |
+
+**Additions made by Phase 6:**
+
+| Addition                                             | Purpose                                           |
+| ---------------------------------------------------- | ------------------------------------------------- |
+| `docs/<KEY>-task-<N>-decisions.md`                   | Records critique resolutions and question answers |
+| Reference row in main `## Decisions Log`             | Lightweight index to per-task decisions           |
+| Resolved deferred questions                          | Task-level questions answered just-in-time        |
+| Updated `Implementation notes` (if approach changed) | Executor follows the confirmed approach           |
+
+---
+
+### Phase 7 output (per task)
 
 | Addition                                        | Consumed by        | Purpose                                |
 | ----------------------------------------------- | ------------------ | -------------------------------------- |
@@ -102,6 +176,8 @@ flowchart LR
 | `**Implementation summary:**` on task           | Orchestrator       | Concise summary for progress file      |
 | `**Files changed:**` list on task               | Orchestrator       | Progress reporting                     |
 | `## Jira Subtasks` table status updated to Done | Orchestrator       | Reflects current state                 |
+
+All Phase 7 outputs to Category A files are written to disk but NOT committed to git.
 
 ---
 
@@ -111,47 +187,52 @@ Every phase follows this execution cycle:
 
 ```mermaid
 flowchart TD
-    A["Announce phase"] --> B["Validate preconditions<br/>(artifact-validator)"]
-    B --> C["Invoke downstream skill<br/>(follow every step)"]
-    C --> D["Validate output<br/>(artifact-validator)"]
-    D --> E["Update progress<br/>(progress-tracker)"]
+    A["Announce phase"] --> B["Validate preconditions\n(artifact-validator)"]
+    B --> C["Invoke downstream skill\n(follow every step)"]
+    C --> D["Validate output\n(artifact-validator)"]
+    D --> E["Update progress\n(progress-tracker)"]
     E --> F{"Gate check"}
     F -->|"Auto"| NEXT["Next phase"]
     F -->|"User confirmation"| WAIT["Wait for user"]
+    F -->|"Re-plan"| REPLAN["Re-dispatch prior phase"]
     WAIT --> NEXT
 ```
 
 | Transition | Gate type         | Details                                                                    |
 | ---------- | ----------------- | -------------------------------------------------------------------------- |
 | 1 → 2      | Automatic         | —                                                                          |
-| 2 → 3      | Automatic         | —                                                                          |
+| 2 → 3      | Automatic         | Critique is part of planning flow                                          |
 | 3 → 4      | User confirmation | Present options: "Create subtasks now" / "Review plan first" / "Stop here" |
+| 3 → 2      | Re-plan cycle     | Critique triggered changes (max 3 iterations)                              |
 | 4 → 5      | User selection    | User chooses which task to execute first — never auto-start                |
-| Within 5   | User selection    | After each task, user chooses next — never auto-continue                   |
+| 5 → 6      | Automatic         | Critique is part of per-task planning flow                                 |
+| 6 → 7      | User confirmation | User confirms plan is ready for implementation                             |
+| 6 → 5      | Re-plan cycle     | Critique triggered changes (max 3 iterations)                              |
+| Within 5-7 | User selection    | After each task, user chooses next — never auto-continue                   |
 
 ---
 
-## Quality gate architecture (Phase 5)
+## Quality gate architecture (Phase 7)
 
 Three mandatory quality gates run after the requirements verifier confirms coverage is complete. **All three must return PASS** for a task to be considered complete.
 
 ```mermaid
 flowchart TD
-    RV["requirements-verifier<br/>(pre-gate coverage)"]
-    RV -->|"PASS"| QG1["clean-code-reviewer<br/>Gate 1/3"]
+    RV["requirements-verifier\n(pre-gate coverage)"]
+    RV -->|"PASS"| QG1["clean-code-reviewer\nGate 1/3"]
     RV -->|"FAIL"| USR1["Report gaps to user"]
 
-    QG1 --> QG2["architecture-reviewer<br/>Gate 2/3"]
-    QG2 --> QG3["security-auditor<br/>Gate 3/3"]
+    QG1 --> QG2["architecture-reviewer\nGate 2/3"]
+    QG2 --> QG3["security-auditor\nGate 3/3"]
 
     QG3 -->|"All PASS"| DONE["✅ Task complete"]
     QG3 -->|"Any NEEDS FIXES"| FIX["Targeted fix cycle"]
 
-    FIX --> TE["Re-dispatch task-executor<br/>(fix issues only)"]
-    TE --> DW["Re-dispatch documentation-writer<br/>(commit fixes)"]
+    FIX --> TE["Re-dispatch task-executor\n(fix issues only)"]
+    TE --> DW["Re-dispatch documentation-writer\n(commit Category B fixes only)"]
     DW --> RERUN["Re-run failing gates only"]
     RERUN -->|"All PASS"| DONE
-    RERUN -->|"Still failing<br/>(max 3 cycles)"| ESC["Escalate to user"]
+    RERUN -->|"Still failing\n(max 3 cycles)"| ESC["Escalate to user"]
 ```
 
 ### Quality gate detail
@@ -162,7 +243,7 @@ flowchart TD
 | `architecture-reviewer` | DDD, functional programming, bounded contexts        | `/architecture-patterns`       |
 | `security-auditor`      | Vulnerabilities, credential leaks, insecure patterns | `/api-security-best-practices` |
 
-All three gates also use `context7` MCP (required) to validate library docs for recency. All skill dependencies are required — subagents will STOP and return a BLOCKED verdict if any skill is missing. There is no fallback to built-in checklists.
+All three gates also use `context7` MCP (required). All skill dependencies are required — subagents will STOP and return a BLOCKED verdict if any skill is missing.
 
 ### Verdicts
 
@@ -178,15 +259,35 @@ All three gates also use `context7` MCP (required) to validate library docs for 
 When any gate returns NEEDS FIXES:
 
 1. Collect all feedback from all failing gates (run all three before fixing)
-2. Re-dispatch `task-executor` with original brief + consolidated fix brief (address only flagged issues)
-3. Re-dispatch `documentation-writer` to commit fixes as atomic commits
-4. Re-run **only previously failing gates** (passed gates are not re-run)
+2. Re-dispatch `task-executor` with original planning artifacts + consolidated fix brief
+3. Re-dispatch `documentation-writer` to commit fixes (Category B only)
+4. Re-run **only previously failing gates**
 5. If still failing, repeat (max 3 cycles total)
-6. After 3 failed cycles, escalate to user with options: accept current state / provide guidance / request full pipeline re-run
+6. After 3 failed cycles, escalate to user
 
 ### Commit discipline rule
 
-All three quality gates enforce this: if **any gate detects uncommitted changes** in the working tree, it stops immediately and reports to the orchestrator. The orchestrator then requires the `documentation-writer` to commit all pending changes before gates can re-run. This ensures reviewers always review committed, traceable code.
+All three quality gates enforce this: if **any gate detects uncommitted changes** in the working tree, it stops immediately and reports to the orchestrator. The orchestrator then requires the `documentation-writer` to commit all pending Category B changes before gates can re-run.
+
+---
+
+## Re-plan cycle architecture
+
+Two re-plan loops exist in the pipeline:
+
+| Loop        | Triggered by     | Affects           | Max iterations | User engagement           |
+| ----------- | ---------------- | ----------------- | -------------- | ------------------------- |
+| Phase 3 → 2 | Phase 3 critique | Phase 2 subagents | 3              | Looped in every iteration |
+| Phase 6 → 5 | Phase 6 critique | Phase 5 subagents | 3              | Looped in every iteration |
+
+### Re-plan mechanics
+
+1. Phase 3/6 sets `RE_PLAN_NEEDED=true` when the user agrees with a critique and switches to an alternative approach.
+2. The orchestrator re-dispatches all subagents in Phase 2/5 with the same inputs plus the new decisions.
+3. Subagents receive their prior artifacts (on disk) plus the decisions file. They update their output, preserving unaffected work.
+4. Phase 3/6 runs again. The `critique-analyzer` reads the updated artifacts and the prior decisions file, only raising new or still-unresolved concerns.
+5. If `RE_PLAN_NEEDED` is false after Phase 3/6, the pipeline advances.
+6. After 3 iterations, escalate to user.
 
 ---
 
@@ -203,6 +304,7 @@ All three quality gates enforce this: if **any gate detects uncommitted changes*
 | **User interruption**               | Progress file ensures resumability. Tell user: "Say 'resume ticket `<KEY>`' to pick up"                                     |
 | **Quality gate failure**            | Handled internally by `executing-jira-task` via targeted fix cycles. Orchestrator acts only if fix cycle limit is exhausted |
 | **Task-executor ambiguity**         | Executor stops and reports. Orchestrator resolves with user, re-dispatches with updated brief                               |
+| **Re-plan cycle exhausted**         | After 3 iterations, present accumulated critique to user and ask how to proceed                                             |
 
 ### Resumability
 

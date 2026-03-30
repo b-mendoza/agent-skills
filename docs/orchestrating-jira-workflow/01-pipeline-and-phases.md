@@ -1,6 +1,6 @@
 # 01 — Pipeline and Phases
 
-> Five sequential phases take a Jira ticket from raw data to shipped code.
+> Seven sequential phases take a Jira ticket from raw data to shipped code, with critique checkpoints before every implementation step.
 
 ---
 
@@ -8,10 +8,13 @@
 
 ```
 Phase 1: Fetch           →  docs/<KEY>.md
-Phase 2: Plan            →  docs/<KEY>-tasks.md
-Phase 3: Clarify         →  docs/<KEY>-tasks.md (updated with decisions)
+Phase 2: Plan tasks      →  docs/<KEY>-tasks.md + intermediates
+Phase 3: Clarify+Critique→  docs/<KEY>-tasks.md (updated with decisions)
 Phase 4: Create subtasks →  Jira subtasks created + plan updated with keys
-Phase 5: Execute         →  Code changes, one task at a time
+Phase 5: Plan task exec  →  docs/<KEY>-task-<N>-*.md (4 planning artifacts)
+Phase 6: Clarify+Critique→  docs/<KEY>-task-<N>-decisions.md
+Phase 7: Execute         →  Code changes, tests, commits
+         ↑_______________↓  (Phases 5-6-7 loop per task)
 ```
 
 Each phase is handled by a dedicated downstream skill. The orchestrator reads the skill's `SKILL.md` only when invoking it and follows every step defined within — no skipping.
@@ -30,7 +33,7 @@ Each phase is handled by a dedicated downstream skill. The orchestrator reads th
 | Output       | `docs/<KEY>.md`                   |
 | Gate to next | Automatic                         |
 
-**What happens:** The `ticket-retriever` subagent extracts every field from the Jira ticket (description, comments, subtasks, attachments metadata, labels, sprint, status, assignee, reporter, linked issues, custom fields, acceptance criteria) and writes a comprehensive Markdown snapshot. This file becomes the single source of truth for all downstream skills.
+**What happens:** The `ticket-retriever` subagent extracts every field from the Jira ticket and writes a comprehensive Markdown snapshot. This file becomes the single source of truth for all downstream skills.
 
 **Output contract — required sections:**
 
@@ -38,11 +41,11 @@ Each phase is handled by a dedicated downstream skill. The orchestrator reads th
 | ------------------------ | ------------------------------------------- | --------------------------------------- |
 | `## Metadata` table      | planning-jira-tasks                         | Task decomposition needs ticket context |
 | `## Description`         | planning-jira-tasks                         | Primary source for requirements         |
-| `## Acceptance Criteria` | planning-jira-tasks, task-validator         | Maps to Definition of Done              |
+| `## Acceptance Criteria` | planning-jira-tasks                         | Maps to Definition of Done              |
 | `## Comments`            | planning-jira-tasks                         | Contains decisions and clarifications   |
 | `## Subtasks`            | planning-jira-tasks, creating-jira-subtasks | Avoids duplicating existing work        |
 | `## Linked Issues`       | planning-jira-tasks                         | Dependency and context awareness        |
-| `## Attachments`         | executing-jira-task                         | Implementation reference                |
+| `## Attachments`         | planning-jira-task                          | Implementation reference                |
 | `## Custom Fields`       | planning-jira-tasks                         | May contain acceptance criteria         |
 
 If a section has no data, the heading is kept with `_None_` beneath it — headings are never omitted because downstream skills parse them programmatically.
@@ -56,30 +59,32 @@ If a section has no data, the heading is kept with `_None_` beneath it — headi
 | Skill        | `planning-jira-tasks`                                                             |
 | Subagents    | `task-planner`, `dependency-prioritizer`, `task-validator`, `stage-validator` (4) |
 | Input        | `docs/<KEY>.md`                                                                   |
-| Output       | `docs/<KEY>-tasks.md`                                                             |
+| Output       | `docs/<KEY>-tasks.md` + preserved intermediates                                   |
 | Gate to next | Automatic                                                                         |
 
 **What happens:** A three-stage pipeline decomposes the ticket into the smallest practical set of focused, independent, executable tasks.
 
 ```mermaid
 flowchart LR
-    IN["docs/&lt;KEY&gt;.md"] --> TP["task-planner"]
+    IN["docs/<KEY>.md"] --> TP["task-planner"]
     TP -->|"stage-1-detailed.md"| DP["dependency-prioritizer"]
     DP -->|"stage-2-prioritized.md"| TV["task-validator"]
-    TV --> OUT["docs/&lt;KEY&gt;-tasks.md"]
+    TV --> OUT["docs/<KEY>-tasks.md"]
 
     SV["stage-validator"] -.->|"validates after each stage"| TP
     SV -.-> DP
     SV -.-> TV
 ```
 
-**Intermediate files** (cleaned up after final validation):
+**Intermediate files** (preserved, never deleted, never committed):
 
 | Stage | File                                | Subagent               |
 | ----- | ----------------------------------- | ---------------------- |
 | 1     | `docs/<KEY>-stage-1-detailed.md`    | task-planner           |
 | 2     | `docs/<KEY>-stage-2-prioritized.md` | dependency-prioritizer |
 | 3     | `docs/<KEY>-tasks.md` (final)       | task-validator         |
+
+Intermediates are preserved for: Phase 3 critique (the `critique-analyzer` reads them), re-plan cycles (subagents receive their prior output on re-dispatch), and debugging.
 
 **Output contract — required sections:**
 
@@ -90,67 +95,44 @@ flowchart LR
 | `## Cross-Cutting Open Questions`    | clarifying-assumptions                                              |
 | `## Tasks` (each with 8 subsections) | clarifying-assumptions, creating-jira-subtasks, executing-jira-task |
 | `## Execution Order Summary`         | creating-jira-subtasks                                              |
-| `## Dependency Graph`                | executing-jira-task                                                 |
+| `## Dependency Graph`                | planning-jira-task                                                  |
 | `## Validation Report`               | clarifying-assumptions                                              |
-
-**Required subsections per task:**
-
-1. `**Objective:**`
-2. `**Relevant requirements and context:**`
-3. `**Questions to answer before starting:**`
-4. `**Implementation notes:**`
-5. `**Definition of done:**`
-6. `**Likely files / artifacts affected:**`
-7. `**Dependencies / prerequisites:**`
-8. `**Priority:**`
 
 ---
 
-### Phase 3 — Clarify assumptions
+### Phase 3 — Clarify assumptions + critique plan
 
 | Property     | Value                                                  |
 | ------------ | ------------------------------------------------------ |
 | Skill        | `clarifying-assumptions`                               |
-| Subagents    | `decision-recorder` (1)                                |
-| Input        | `docs/<KEY>-tasks.md`                                  |
-| Output       | `docs/<KEY>-tasks.md` (updated in-place)               |
+| Subagents    | `critique-analyzer`, `decision-recorder` (2)           |
+| Mode         | `upfront`                                              |
+| Input        | `docs/<KEY>-tasks.md` + stage intermediates            |
+| Output       | `docs/<KEY>-tasks.md` (updated with decisions)         |
 | Gate to next | **User confirmation required** (creates Jira subtasks) |
 
-**What happens:** A structured interviewer walks the user through open questions and assumptions using a **progressive disclosure** model with two tiers.
+**What happens:** Two things in sequence:
+
+1. The `critique-analyzer` subagent reads the task plan and intermediates, searches the web for alternatives, cross-checks the codebase, and produces critique items challenging unjustified defaults, unexplored alternatives, and unacknowledged trade-offs.
+
+2. A structured interviewer walks the user through critique items AND open questions/assumptions using progressive disclosure. Critique items are interleaved with traditional clarification questions, ordered by severity and impact.
 
 ```mermaid
 flowchart TD
-    subgraph TIER1["Tier 1 — Phase 3 (upfront)"]
-        VF["Validation FAILs"]
-        CQ["Cross-cutting questions"]
-        AA["Architectural assumptions"]
-        T1Q["Task 1 questions only"]
-    end
+    CA["critique-analyzer"] -->|"Critique items"| MANIFEST["Question manifest"]
+    PLAN["Task plan questions"] -->|"Open questions"| MANIFEST
+    ASSUMPTIONS["Assumptions"] -->|"To confirm"| MANIFEST
+    VALIDATION["Validation report"] -->|"FAILs/WARNs"| MANIFEST
 
-    subgraph TIER2["Tier 2 — Phase 5 (just-in-time)"]
-        TN["Task N questions<br/>(asked right before execution)"]
-        IR["Irrelevant questions filtered out"]
-    end
+    MANIFEST --> QA["Walk through one at a time"]
+    QA --> DR["decision-recorder"]
+    DR --> UPDATED["Updated plan file"]
 
-    TIER1 -->|"Deferred questions tagged"| TIER2
+    QA -->|"User switches approach"| REPLAN["RE_PLAN_NEEDED=true"]
+    REPLAN -.->|"Re-dispatch Phase 2 (max 3)"| PHASE2["Phase 2"]
 ```
 
-**Two-tier disclosure model:**
-
-| Tier                  | When                             | What gets asked                                                                             |
-| --------------------- | -------------------------------- | ------------------------------------------------------------------------------------------- |
-| Tier 1 (upfront)      | During Phase 3                   | Cross-cutting questions, architectural assumptions, validation FAILs, Task 1 questions only |
-| Tier 2 (just-in-time) | During Phase 5, before each task | Only questions for the specific task about to execute; irrelevant questions filtered        |
-
-**Output additions:**
-
-| Addition                               | Required by            | Purpose                                                    |
-| -------------------------------------- | ---------------------- | ---------------------------------------------------------- |
-| `## Decisions Log` table               | creating-jira-subtasks | Subtask descriptions reflect resolved decisions            |
-| Annotated assumptions (`✅`/`❌`/`⏭️`) | executing-jira-task    | Executor needs confirmed assumptions                       |
-| Resolved per-task questions            | executing-jira-task    | Pre-flight check verifies no unresolved questions          |
-| Updated `Implementation notes`         | executing-jira-task    | Executor follows the updated approach                      |
-| Deferred question tags                 | orchestrator (Phase 5) | Orchestrator knows which questions to ask before each task |
+**Re-plan cycle:** If the user agrees with a critique and decides to change the approach, `RE_PLAN_NEEDED` is set. The orchestrator re-dispatches Phase 2 with all pipeline subagents, passing the new decisions. Subagents receive their prior artifacts plus the decisions and produce updated versions. Maximum 3 re-plan cycles.
 
 **Gate options presented to user:**
 
@@ -172,49 +154,98 @@ flowchart TD
 
 **What happens:** The `subtask-creator` subagent reads the plan, creates corresponding subtasks in Jira under the parent ticket, and updates the plan file with subtask keys for traceability.
 
-**End-to-end subagent flow:**
-
-1. Parse task plan (all task sections + Decisions Log)
-2. Look up parent ticket via Jira MCP (extract project key, subtask issue type)
-3. Build subtask payloads in Jira wiki markup, cross-referencing resolved decisions
-4. Create subtasks sequentially via Jira MCP (with retry on rate limits)
-5. Handle individual failures gracefully (log + continue)
-6. Update `docs/<KEY>-tasks.md`: add `## Jira Subtasks` table and `Jira Subtask: <KEY>` per task
-7. Validate output contract (table exists, keys present, counts match)
-
 **Output additions:**
 
-| Addition                                              | Required by         | Purpose                                           |
-| ----------------------------------------------------- | ------------------- | ------------------------------------------------- |
-| `## Jira Subtasks` table (Task #, Key, Title, Status) | executing-jira-task | Maps task numbers to Jira keys for status updates |
-| `Jira Subtask: <KEY>` line in each task section       | executing-jira-task | Executor transitions the correct Jira issue       |
+| Addition                                              | Required by        | Purpose                                           |
+| ----------------------------------------------------- | ------------------ | ------------------------------------------------- |
+| `## Jira Subtasks` table (Task #, Key, Title, Status) | planning-jira-task | Maps task numbers to Jira keys for status updates |
+| `Jira Subtask: <KEY>` line in each task section       | planning-jira-task | Identifies which Jira issue to transition         |
 
 ---
 
-### Phase 5 — Execute tasks (loop)
+### Phase 5 — Plan task execution (NEW)
 
-| Property  | Value                                       |
-| --------- | ------------------------------------------- |
-| Skill     | `executing-jira-task`                       |
-| Subagents | 10 (see below)                              |
-| Input     | `docs/<KEY>-tasks.md` + `docs/<KEY>.md`     |
-| Output    | Code changes, tests, documentation, commits |
-| Gate      | **User selects next task after each**       |
+| Property     | Value                                                                                  |
+| ------------ | -------------------------------------------------------------------------------------- |
+| Skill        | `planning-jira-task` (singular — one task at a time)                                   |
+| Subagents    | `execution-prepper`, `execution-planner`, `test-strategist`, `refactoring-advisor` (4) |
+| Input        | `docs/<KEY>-tasks.md` + `docs/<KEY>.md`                                                |
+| Output       | 4 planning artifacts per task (see below)                                              |
+| Gate to next | Automatic into Phase 6                                                                 |
 
-Phase 5 runs **once per task**, not once for the whole plan. Each iteration follows a 10-subagent pipeline:
+**What happens:** A four-subagent pipeline analyses the specific task, inspects the codebase, and produces detailed planning artifacts that will be critiqued before implementation.
 
 ```mermaid
 flowchart TD
-    EP["1. execution-prepper<br/>Branch, Jira, brief"] --> PL["2. execution-planner<br/>Analyze + plan"]
-    PL --> TS["3. test-strategist<br/>Behavior-driven tests"]
-    TS --> RA["4. refactoring-advisor<br/>Pre-implementation refactoring"]
-    RA --> TE["5. task-executor<br/>Implementation"]
-    TE --> DW["6. documentation-writer<br/>Docs + commits + tracking"]
-    DW --> RV["7. requirements-verifier<br/>Coverage check"]
+    EP["1. execution-prepper\nValidate, branch, Jira, brief"] --> PL["2. execution-planner\nAnalyse + plan"]
+    PL --> TS["3. test-strategist\nBehaviour-driven tests"]
+    TS --> RA["4. refactoring-advisor\nPre-implementation evaluation"]
+```
 
-    RV --> QG1["8. clean-code-reviewer<br/>Quality Gate 1/3"]
-    QG1 --> QG2["9. architecture-reviewer<br/>Quality Gate 2/3"]
-    QG2 --> QG3["10. security-auditor<br/>Quality Gate 3/3"]
+**Planning artifacts produced** (persisted, never deleted, never committed):
+
+| Artifact                                  | Subagent            | Purpose                                    |
+| ----------------------------------------- | ------------------- | ------------------------------------------ |
+| `docs/<KEY>-task-<N>-brief.md`            | execution-prepper   | Self-contained execution context           |
+| `docs/<KEY>-task-<N>-execution-plan.md`   | execution-planner   | Framework, skills, approach, file strategy |
+| `docs/<KEY>-task-<N>-test-spec.md`        | test-strategist     | Behaviour-driven test specification        |
+| `docs/<KEY>-task-<N>-refactoring-plan.md` | refactoring-advisor | Pre-implementation refactoring evaluation  |
+
+---
+
+### Phase 6 — Clarify assumptions + critique execution plan (NEW)
+
+| Property     | Value                                             |
+| ------------ | ------------------------------------------------- |
+| Skill        | `clarifying-assumptions`                          |
+| Subagents    | `critique-analyzer`, `decision-recorder` (2)      |
+| Mode         | `critique`                                        |
+| Input        | All Phase 5 planning artifacts                    |
+| Output       | `docs/<KEY>-task-<N>-decisions.md` + plan updates |
+| Gate to next | **User confirmation to proceed with execution**   |
+
+**What happens:** The `critique-analyzer` reads the four planning artifacts, searches the web for alternatives to every framework/library/tool decision, cross-checks the codebase directly, and produces critique items. The interviewer walks the user through ALL items (HIGH, MEDIUM, LOW) plus any deferred questions for this task.
+
+```mermaid
+flowchart TD
+    ARTIFACTS["Phase 5 planning artifacts"] --> CA["critique-analyzer\n(web search + codebase check)"]
+    DEFERRED["Deferred questions for Task N"] --> MANIFEST["Critique manifest"]
+    CA -->|"Critique items"| MANIFEST
+
+    MANIFEST --> QA["Walk through one at a time"]
+    QA --> DR["decision-recorder"]
+    DR --> DECISIONS["Per-task decisions file"]
+
+    QA -->|"User switches approach"| REPLAN["RE_PLAN_NEEDED=true"]
+    REPLAN -.->|"Re-dispatch Phase 5 (max 3)"| PHASE5["Phase 5"]
+```
+
+**Re-plan cycle:** If the user agrees with a critique and decides to change the approach, Phase 5 is re-dispatched. All four subagents re-run with the prior artifacts preserved plus the new decisions. Maximum 3 re-plan cycles. User is looped in on every iteration.
+
+**Decisions output:** Critique resolutions and deferred question resolutions are written to `docs/<KEY>-task-<N>-decisions.md`. A reference is added to the main `## Decisions Log` in the task plan.
+
+---
+
+### Phase 7 — Execute task (simplified)
+
+| Property  | Value                                                         |
+| --------- | ------------------------------------------------------------- |
+| Skill     | `executing-jira-task`                                         |
+| Subagents | 6 (see below)                                                 |
+| Input     | All Phase 5 planning artifacts + Phase 6 decisions            |
+| Output    | Code changes, tests, documentation, commits                   |
+| Gate      | **User selects next task after completion → loop to Phase 5** |
+
+Phase 7 runs the implementation pipeline using planning artifacts that have already been critiqued and confirmed by the user.
+
+```mermaid
+flowchart TD
+    TE["1. task-executor\nImplementation"] --> DW["2. documentation-writer\nDocs + commits + tracking"]
+    DW --> RV["3. requirements-verifier\nCoverage check"]
+
+    RV --> QG1["4. clean-code-reviewer\nQuality Gate 1/3"]
+    QG1 --> QG2["5. architecture-reviewer\nQuality Gate 2/3"]
+    QG2 --> QG3["6. security-auditor\nQuality Gate 3/3"]
 
     QG3 -->|"All PASS"| DONE["Task complete"]
     QG3 -->|"Any NEEDS FIXES"| FIX["Targeted fix cycle"]
@@ -222,26 +253,15 @@ flowchart TD
     FIX -->|"Max 3 cycles"| ESC["Escalate to user"]
 ```
 
-**Per-iteration orchestration loop:**
+**Commit discipline:** The `documentation-writer` commits only Category B files (source code, tests, config changes). Category A files (all `docs/<KEY>*.md` orchestration artifacts) are updated on disk but NEVER staged or committed to git.
 
-1. Dispatch `progress-tracker` → get remaining tasks
-2. Present remaining tasks to the user
-3. User selects the next task
-4. Pre-task context gathering (dispatch utility subagents as needed)
-5. Progressive clarification (resolve deferred questions for this task only)
-6. Invoke `executing-jira-task` (follow every step)
-7. Quality gate handling (delegated to executing-jira-task internally)
-8. Dispatch `progress-tracker` to mark the task complete
-9. Return to step 1
+**Per-task orchestration loop (Phases 5-6-7):**
 
-**Pre-task context dispatch table:**
-
-| Situation                        | Dispatch to             |
-| -------------------------------- | ----------------------- |
-| Need current ticket status       | `ticket-status-checker` |
-| Need working tree / branch state | `codebase-inspector`    |
-| Need to find relevant code       | `code-reference-finder` |
-| Need docs or config context      | `documentation-finder`  |
+1. User selects task
+2. Phase 5: Plan how to execute the task (4 subagents)
+3. Phase 6: Critique the plan + resolve deferred questions (user engagement)
+4. Phase 7: Execute the task (6 subagents + quality gates)
+5. Return to step 1 for next task
 
 ---
 
@@ -249,17 +269,26 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    P1["Phase 1<br/>Fetch"] -->|"Auto"| P2["Phase 2<br/>Plan"]
-    P2 -->|"Auto"| P3["Phase 3<br/>Clarify"]
-    P3 -->|"🔒 User confirm"| P4["Phase 4<br/>Subtasks"]
-    P4 -->|"🔒 User selects"| P5["Phase 5<br/>Execute"]
-    P5 -->|"🔒 User selects next"| P5
+    P1["Phase 1\nFetch"] -->|"Auto"| P2["Phase 2\nPlan tasks"]
+    P2 -->|"Auto"| P3["Phase 3\nClarify+Critique"]
+    P3 -->|"🔒 User confirm"| P4["Phase 4\nSubtasks"]
+    P4 -->|"🔒 User selects"| P5["Phase 5\nPlan task"]
+    P5 -->|"Auto"| P6["Phase 6\nClarify+Critique"]
+    P6 -->|"🔒 User confirm"| P7["Phase 7\nExecute"]
+    P7 -->|"🔒 User selects next"| P5
+
+    P3 -.->|"Re-plan"| P2
+    P6 -.->|"Re-plan"| P5
 ```
 
-| Transition | Gate type         | Reason                                                   |
-| ---------- | ----------------- | -------------------------------------------------------- |
-| 1 → 2      | Automatic         | No external system writes                                |
-| 2 → 3      | Automatic         | No external system writes                                |
-| 3 → 4      | User confirmation | Creates Jira subtasks (external system writes)           |
-| 4 → 5      | User selection    | User chooses which task to execute first                 |
-| Within 5   | User selection    | After each task, user chooses next — never auto-continue |
+| Transition | Gate type         | Reason                                                    |
+| ---------- | ----------------- | --------------------------------------------------------- |
+| 1 → 2      | Automatic         | No external system writes                                 |
+| 2 → 3      | Automatic         | Critique is part of the planning flow                     |
+| 3 → 4      | User confirmation | Creates Jira subtasks (external system writes)            |
+| 4 → 5      | User selection    | User chooses which task to execute first                  |
+| 5 → 6      | Automatic         | Critique is part of the per-task planning flow            |
+| 6 → 7      | User confirmation | User confirms the plan is ready for implementation        |
+| Within 5-7 | User selection    | After each task, user chooses next — never auto-continue  |
+| 3 → 2      | Re-plan cycle     | Critique triggered changes to the task plan (max 3)       |
+| 6 → 5      | Re-plan cycle     | Critique triggered changes to task execution plan (max 3) |

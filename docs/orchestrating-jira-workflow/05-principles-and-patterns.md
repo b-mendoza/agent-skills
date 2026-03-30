@@ -20,11 +20,25 @@ When a subagent returns a result, the orchestrator extracts the verdict, summary
 
 Subagents run sequentially. Parallel dispatch is acceptable **only** for independent utility calls (e.g., `codebase-inspector` + `documentation-finder` before a task), never for dependent operations.
 
-### 4. Progressive clarification
+### 4. Progressive clarification and critique
 
-Questions are asked only when they are relevant to the work about to happen. Cross-cutting questions are asked upfront (Phase 3). Per-task questions are deferred and asked just before each task executes (Phase 5). Questions that become irrelevant through prior decisions are filtered out.
+Questions and critique are applied only when they are relevant to the work about to happen:
 
-### 5. Validate-before-advance
+- **Phase 3** (upfront): Cross-cutting questions, architectural assumptions, validation failures, Task 1 questions, AND critique of the task plan's implicit technology decisions.
+- **Phase 6** (per-task): Critique of per-task planning artifacts (framework choices, library selections, testing approach) AND deferred per-task questions.
+
+Questions that become irrelevant through prior decisions are filtered out. Critique items that were already consciously resolved by the user are not re-raised.
+
+### 5. Challenge bias before implementation
+
+AI-assisted coding tools carry a documented bias toward mainstream frameworks and libraries (the Matthew Effect). The `critique-analyzer` subagent counters this by searching the web for current alternatives, cross-checking the codebase directly, and presenting trade-offs. This happens at two strategic checkpoints:
+
+- After task planning (Phase 3) — catches bias in task decomposition and implicit technology assumptions
+- After per-task planning (Phase 6) — catches bias in framework choices, library selections, and architectural approaches
+
+The user sees every critique item (HIGH, MEDIUM, LOW) and makes every decision. Nothing is auto-acknowledged.
+
+### 6. Validate-before-advance
 
 Every phase follows a strict cycle:
 
@@ -34,11 +48,11 @@ Announce → Validate preconditions → Invoke skill → Validate output → Upd
 
 No step is skipped. Validation failures halt the pipeline.
 
-### 6. Quality gate delegation
+### 7. Quality gate delegation
 
 The `executing-jira-task` skill manages its own fix cycles internally (up to 3 attempts). The orchestrator only intervenes when the fix cycle limit is exhausted — then it escalates to the user.
 
-### 7. Preflight validation on every start/resume
+### 8. Preflight validation on every start/resume
 
 Run `preflight-checker` before starting any workflow. On resume, check only remaining phases.
 
@@ -47,9 +61,11 @@ Run `preflight-checker` before starting any workflow. On resume, check only rema
 | FAIL    | Stop immediately, present install instructions |
 | PASS    | Proceed silently                               |
 
-All dependencies are required — there is no WARN verdict. Missing any skill or MCP results in FAIL.
+### 9. Preserve everything, commit selectively
 
-### 8. Fail loudly, recover gracefully
+No orchestration artifact (Category A) is ever deleted. All `docs/<KEY>*.md` files persist for the lifetime of the workflow. Only implementation output (Category B — source code, tests, configs) is committed to git.
+
+### 10. Fail loudly, recover gracefully
 
 Subagent failures, missing artifacts, and ambiguities are surfaced immediately. The progress file ensures any interruption — user-initiated or error-caused — can be recovered from without repeating completed work.
 
@@ -63,12 +79,12 @@ Every phase, without exception, follows this pattern:
 
 ```mermaid
 flowchart TD
-    A["a. Announce phase<br/>(formatted banner)"]
-    B["b. Validate preconditions<br/>(dispatch artifact-validator)"]
-    C["c. Invoke downstream skill<br/>(read SKILL.md, follow every step)"]
-    D["d. Validate output<br/>(dispatch artifact-validator)"]
-    E["e. Update progress<br/>(dispatch progress-tracker)"]
-    F["f. Gate check<br/>(auto or user confirmation)"]
+    A["a. Announce phase\n(formatted banner)"]
+    B["b. Validate preconditions\n(dispatch artifact-validator)"]
+    C["c. Invoke downstream skill\n(read SKILL.md, follow every step)"]
+    D["d. Validate output\n(dispatch artifact-validator)"]
+    E["e. Update progress\n(dispatch progress-tracker)"]
+    F["f. Gate check\n(auto, user confirm, or re-plan)"]
 
     A --> B --> C --> D --> E --> F
 ```
@@ -77,57 +93,73 @@ flowchart TD
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Phase <N>/5 — <Phase name>
+Phase <N>/7 — <Phase name>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ---
 
-### Phase 5 task execution pipeline
+### Phase 5 task planning pipeline
 
-Each task in Phase 5 runs through a 10-step subagent pipeline, plus a targeted fix cycle if quality gates fail.
+Each task's planning phase runs through a 4-subagent pipeline:
 
-| Step | Subagent                | Category         | Output artifact                |
-| ---- | ----------------------- | ---------------- | ------------------------------ |
-| 1    | `execution-prepper`     | Setup            | `docs/<KEY>-task-<N>-brief.md` |
-| 2    | `execution-planner`     | Planning         | Execution plan                 |
-| 3    | `test-strategist`       | Testing          | Test specification             |
-| 4    | `refactoring-advisor`   | Preparation      | Refactoring recommendation     |
-| 5    | `task-executor`         | Implementation   | Execution report               |
-| 6    | `documentation-writer`  | Documentation    | Documentation report + commits |
-| 7    | `requirements-verifier` | Pre-gate         | Verification verdict           |
-| 8    | `clean-code-reviewer`   | Quality gate 1/3 | Code review                    |
-| 9    | `architecture-reviewer` | Quality gate 2/3 | Architecture review            |
-| 10   | `security-auditor`      | Quality gate 3/3 | Security audit                 |
+| Step | Subagent              | Category    | Output artifact                           |
+| ---- | --------------------- | ----------- | ----------------------------------------- |
+| 1    | `execution-prepper`   | Setup       | `docs/<KEY>-task-<N>-brief.md`            |
+| 2    | `execution-planner`   | Planning    | `docs/<KEY>-task-<N>-execution-plan.md`   |
+| 3    | `test-strategist`     | Testing     | `docs/<KEY>-task-<N>-test-spec.md`        |
+| 4    | `refactoring-advisor` | Preparation | `docs/<KEY>-task-<N>-refactoring-plan.md` |
 
-**Data flow between steps:**
+All outputs are written to disk as persistent artifacts.
+
+---
+
+### Phase 7 task execution pipeline
+
+Each task's execution phase runs through a 6-subagent pipeline, plus a targeted fix cycle if quality gates fail:
+
+| Step | Subagent                | Category         | Output                    |
+| ---- | ----------------------- | ---------------- | ------------------------- |
+| 1    | `task-executor`         | Implementation   | Execution report          |
+| 2    | `documentation-writer`  | Documentation    | Docs + Category B commits |
+| 3    | `requirements-verifier` | Pre-gate         | Verification verdict      |
+| 4    | `clean-code-reviewer`   | Quality gate 1/3 | Code review               |
+| 5    | `architecture-reviewer` | Quality gate 2/3 | Architecture review       |
+| 6    | `security-auditor`      | Quality gate 3/3 | Security audit            |
+
+---
+
+### Critique-plan-execute loop (Phases 5-6-7)
+
+The per-task loop runs for every task selected by the user:
 
 ```mermaid
 flowchart TD
-    BRIEF["Execution brief"] --> PLAN["Execution plan"]
-    BRIEF --> TEST["Test spec"]
-    PLAN --> TEST
-    BRIEF --> REFACTOR["Refactoring plan"]
-    PLAN --> REFACTOR
-    TEST --> REFACTOR
+    SELECT["User selects task"] --> P5["Phase 5: Plan task execution\n(4 subagents)"]
+    P5 --> P6["Phase 6: Critique + clarify\n(critique-analyzer + Q&A)"]
+    P6 -->|"RE_PLAN_NEEDED"| P5
+    P6 -->|"User confirms"| P7["Phase 7: Execute task\n(6 subagents + quality gates)"]
+    P7 --> DONE["Task complete"]
+    DONE --> SELECT
+```
 
-    BRIEF --> EXEC["Execution report"]
-    PLAN --> EXEC
-    TEST --> EXEC
-    REFACTOR --> EXEC
+---
 
-    EXEC --> DOCS["Documentation report"]
+### Re-plan cycle pattern
 
-    BRIEF --> VERIFY["Verification result"]
-    TEST --> VERIFY
-    EXEC --> VERIFY
-    DOCS --> VERIFY
+When critique triggers a re-plan (Phase 3 → Phase 2 or Phase 6 → Phase 5):
 
-    VERIFY --> QG1["Code review"]
-    VERIFY --> QG2["Architecture review"]
-    VERIFY --> QG3["Security audit"]
-    QG1 --> QG2
-    QG2 --> QG3
+```
+1. Critique identifies concerns, user agrees to change approach
+2. RE_PLAN_NEEDED=true
+3. Re-dispatch ALL subagents in the prior phase
+   - Each receives prior artifacts (on disk) + new decisions
+   - Each updates its output, preserving unaffected work
+4. Artifacts are overwritten with updated versions
+5. Critique runs again (critique-analyzer checks updated artifacts)
+   - Prior decisions are respected — already-resolved concerns not re-raised
+6. If RE_PLAN_NEEDED is false → advance
+7. If still true after 3 iterations → escalate to user
 ```
 
 ---
@@ -152,17 +184,11 @@ When quality gates fail, the system does **not** re-run the full pipeline. Inste
 ```
 1. Collect feedback from ALL failing gates
 2. Re-dispatch task-executor (fix flagged issues only)
-3. Re-dispatch documentation-writer (commit fixes)
+3. Re-dispatch documentation-writer (commit Category B fixes only)
 4. Re-run ONLY previously failing gates
 5. If still failing → repeat (max 3 cycles)
 6. If limit exhausted → escalate to user
 ```
-
-**User escalation options:**
-
-- Accept current state and move on
-- Provide guidance for a different approach
-- Request full pipeline re-run (reserved for fundamental approach failures)
 
 ---
 
@@ -184,8 +210,6 @@ Subagent `.md` files are co-located reference documents. To dispatch:
 | Cursor IDE      | `Task(subagent_type="general-purpose", prompt=<.md content + inputs>)`         |
 | OpenCode CLI    | `Task(prompt=<.md content>, description=<step summary>)` — same as Claude Code |
 
-**Cursor note:** Use `subagent_type="general-purpose"` and embed the `.md` content directly in the prompt. This is more reliable than defining custom named agents, which have known dispatch issues with the Task tool.
-
 ---
 
 ## File system layout
@@ -194,24 +218,28 @@ Subagent `.md` files are co-located reference documents. To dispatch:
 
 ```
 docs/
-├── <KEY>.md                        # Phase 1 output: ticket snapshot
-├── <KEY>-tasks.md                  # Phase 2–5: evolving task plan
-├── <KEY>-progress.md               # Progress tracking file
-├── <KEY>-stage-1-detailed.md       # Phase 2 intermediate (cleaned up)
-├── <KEY>-stage-2-prioritized.md    # Phase 2 intermediate (cleaned up)
-├── <KEY>-task-<N>-brief.md         # Phase 5 per-task (cleaned up after each)
-└── <KEY>-subtask-manifest.md       # Phase 4 temporary (cleaned up)
+├── <KEY>.md                             # Phase 1 output: ticket snapshot
+├── <KEY>-tasks.md                       # Phase 2–7: evolving task plan
+├── <KEY>-progress.md                    # Progress tracking file
+├── <KEY>-stage-1-detailed.md            # Phase 2 intermediate (preserved)
+├── <KEY>-stage-2-prioritized.md         # Phase 2 intermediate (preserved)
+├── <KEY>-task-<N>-brief.md              # Phase 5: execution brief (preserved)
+├── <KEY>-task-<N>-execution-plan.md     # Phase 5: execution plan (preserved)
+├── <KEY>-task-<N>-test-spec.md          # Phase 5: test specification (preserved)
+├── <KEY>-task-<N>-refactoring-plan.md   # Phase 5: refactoring plan (preserved)
+└── <KEY>-task-<N>-decisions.md          # Phase 6: per-task decisions (preserved)
 ```
 
-### Cleanup rules
+### Artifact lifecycle rules
 
-| File                             | Cleaned up when                              |
-| -------------------------------- | -------------------------------------------- |
-| Stage 1 and 2 intermediate files | After final plan passes validation (Phase 2) |
-| Task execution brief             | After task completion (Phase 5)              |
-| Subtask manifest/results         | After subtask creation (Phase 4)             |
-
-Intermediate files are **not** cleaned up on failure — they help with debugging.
+| File                        | Created in | Overwritten during | Deleted | Committed to git |
+| --------------------------- | ---------- | ------------------ | ------- | ---------------- |
+| Ticket snapshot             | Phase 1    | Never              | Never   | Never            |
+| Task plan                   | Phase 2    | Phases 3–7         | Never   | Never            |
+| Progress file               | Phase 1    | Every phase/task   | Never   | Never            |
+| Stage intermediates         | Phase 2    | Re-plan cycles     | Never   | Never            |
+| Per-task planning artifacts | Phase 5    | Re-plan cycles     | Never   | Never            |
+| Per-task decisions          | Phase 6    | Re-plan cycles     | Never   | Never            |
 
 ---
 
@@ -222,13 +250,13 @@ When all tasks are complete (or the user stops), the orchestrator presents:
 ```markdown
 ## Workflow Summary — <TICKET_KEY>
 
-| Phase | Status      | Key outcome                 |
-| ----- | ----------- | --------------------------- |
-| 1     | ✅ Complete | Ticket fetched (N comments) |
-| 2     | ✅ Complete | N tasks planned             |
-| 3     | ✅ Complete | N/N questions resolved      |
-| 4     | ✅ Complete | N subtasks created in Jira  |
-| 5     | ✅ Complete | N/N tasks executed          |
+| Phase | Status      | Key outcome                         |
+| ----- | ----------- | ----------------------------------- |
+| 1     | ✅ Complete | Ticket fetched (N comments)         |
+| 2     | ✅ Complete | N tasks planned                     |
+| 3     | ✅ Complete | N/N questions resolved, N critiqued |
+| 4     | ✅ Complete | N subtasks created in Jira          |
+| 5-7   | ✅ Complete | N/N tasks executed                  |
 
 All artifacts are in docs/<TICKET_KEY>\*.
 ```
@@ -237,7 +265,7 @@ All artifacts are in docs/<TICKET_KEY>\*.
 
 ## Skill dependency map
 
-Subagents across Phase 2 and Phase 5 depend on external skills. All are **required** — subagents will STOP and return a BLOCKED verdict if any skill is missing. There is no fallback to built-in logic. This is enforced at two layers: the `preflight-checker` validates all skills before the workflow starts, and each subagent independently checks for its own skills at runtime (defense-in-depth).
+Subagents across Phases 2, 5, and 7 depend on external skills. All are **required** — subagents will STOP and return a BLOCKED verdict if any skill is missing.
 
 ```mermaid
 flowchart LR
@@ -263,6 +291,9 @@ flowchart LR
         EP2["execution-planner"]
         TS2["test-strategist"]
         RA2["refactoring-advisor"]
+    end
+
+    subgraph P7["Phase 7 subagents"]
         TE2["task-executor"]
         DW2["documentation-writer"]
         CCR["clean-code-reviewer"]
@@ -286,20 +317,20 @@ flowchart LR
     SB --> SA
 ```
 
-| Subagent                 | Skill dependency (required)    | Install command                                                                 |
-| ------------------------ | ------------------------------ | ------------------------------------------------------------------------------- |
-| `task-planner`           | `/writing-plans`               | `skills install obra/superpowers/writing-plans`                                 |
-| `dependency-prioritizer` | `/writing-plans`               | `skills install obra/superpowers/writing-plans`                                 |
-| `execution-planner`      | `/find-skills`                 | `skills install vercel-labs/skills/find-skills`                                 |
-| `execution-planner`      | `/writing-plans`               | `skills install obra/superpowers/writing-plans`                                 |
-| `test-strategist`        | `/test-driven-development`     | `skills install obra/superpowers/test-driven-development`                       |
-| `test-strategist`        | `/vitest`                      | `skills install antfu/skills/vitest`                                            |
-| `test-strategist`        | `/writing-plans`               | `skills install obra/superpowers/writing-plans`                                 |
-| `refactoring-advisor`    | `/writing-plans`               | `skills install obra/superpowers/writing-plans`                                 |
-| `task-executor`          | `/executing-plans`             | `skills install obra/superpowers/executing-plans`                               |
-| `documentation-writer`   | `/commit-work`                 | `skills install softaworks/agent-toolkit/commit-work`                           |
-| `documentation-writer`   | `/humanizer`                   | `skills install blader/humanizer`                                               |
-| `clean-code-reviewer`    | `/clean-code`                  | `skills install sickn33/antigravity-awesome-skills/clean-code`                  |
-| `architecture-reviewer`  | `/architecture-patterns`       | `skills install wshobson/agents/architecture-patterns`                          |
-| `security-auditor`       | `/api-security-best-practices` | `skills install sickn33/antigravity-awesome-skills/api-security-best-practices` |
-| All quality gates        | context7 MCP                   | Connect context7 MCP in your IDE/CLI settings                                   |
+| Subagent                 | Skill dependency (required)    | Phase | Install command                                                                 |
+| ------------------------ | ------------------------------ | ----- | ------------------------------------------------------------------------------- |
+| `task-planner`           | `/writing-plans`               | 2     | `skills install obra/superpowers/writing-plans`                                 |
+| `dependency-prioritizer` | `/writing-plans`               | 2     | `skills install obra/superpowers/writing-plans`                                 |
+| `execution-planner`      | `/find-skills`                 | 5     | `skills install vercel-labs/skills/find-skills`                                 |
+| `execution-planner`      | `/writing-plans`               | 5     | `skills install obra/superpowers/writing-plans`                                 |
+| `test-strategist`        | `/test-driven-development`     | 5     | `skills install obra/superpowers/test-driven-development`                       |
+| `test-strategist`        | `/vitest`                      | 5     | `skills install antfu/skills/vitest`                                            |
+| `test-strategist`        | `/writing-plans`               | 5     | `skills install obra/superpowers/writing-plans`                                 |
+| `refactoring-advisor`    | `/writing-plans`               | 5     | `skills install obra/superpowers/writing-plans`                                 |
+| `task-executor`          | `/executing-plans`             | 7     | `skills install obra/superpowers/executing-plans`                               |
+| `documentation-writer`   | `/commit-work`                 | 7     | `skills install softaworks/agent-toolkit/commit-work`                           |
+| `documentation-writer`   | `/humanizer`                   | 7     | `skills install blader/humanizer`                                               |
+| `clean-code-reviewer`    | `/clean-code`                  | 7     | `skills install sickn33/antigravity-awesome-skills/clean-code`                  |
+| `architecture-reviewer`  | `/architecture-patterns`       | 7     | `skills install wshobson/agents/architecture-patterns`                          |
+| `security-auditor`       | `/api-security-best-practices` | 7     | `skills install sickn33/antigravity-awesome-skills/api-security-best-practices` |
+| All quality gates        | context7 MCP                   | 7     | Connect context7 MCP in your IDE/CLI settings                                   |

@@ -1,10 +1,10 @@
 # 03 — Rules and Constraints
 
-> Non-negotiable behavioral constraints for the orchestrator and safety rules for Phase 5 execution.
+> Non-negotiable behavioral constraints for the orchestrator and safety rules for Phase 7 execution.
 
 ---
 
-## Orchestrator rules (8 non-negotiable)
+## Orchestrator rules (10 non-negotiable)
 
 These exist because violating any one of them degrades the system in ways that compound across every subsequent step.
 
@@ -39,8 +39,6 @@ When invoking a downstream skill, the orchestrator must follow **every step** de
 | Pre-flight checks | Dependencies are not verified        |
 | Documentation     | Reviewers cannot assess completeness |
 
-If a step feels unnecessary, execute it anyway. The subagent will report "nothing to do" quickly, and the cost is negligible compared to debugging a pipeline failure.
-
 ---
 
 ### Rule 3 — Protect the context window aggressively
@@ -52,15 +50,7 @@ The orchestrator's context window should contain **only**:
 - User instructions and confirmations
 - Error reports that require orchestrator judgment
 
-The orchestrator **must never** index or store:
-
-- Raw file contents of any file a subagent has read or changed
-- Full git diffs, command outputs, or API responses
-- Complete execution reports — only their summary verdicts
-- Full code review reports — only their verdict and issue count
-- Any artifact content that is already stored on disk
-
-**Rule of thumb:** When a subagent returns a result, extract the verdict, summary, and any data needed for the next dispatch decision. Discard everything else. If you need details later, dispatch a subagent to retrieve them.
+The orchestrator **must never** index or store raw file contents, full git diffs, command outputs, API responses, complete execution reports, or full code review reports.
 
 ---
 
@@ -94,7 +84,32 @@ Update `progress-tracker` after every phase and task. The workflow can be interr
 
 ---
 
-## Phase 5 safety rules
+### Rule 9 — Never delete artifacts (NEW)
+
+No orchestration artifact is deleted at any point in the pipeline. This includes:
+
+- Phase 2 intermediate files (`stage-1-detailed.md`, `stage-2-prioritized.md`)
+- Phase 5 planning artifacts (`brief.md`, `execution-plan.md`, `test-spec.md`, `refactoring-plan.md`)
+- Phase 6 per-task decisions files (`decisions.md`)
+- All other `docs/<KEY>*.md` files
+
+Artifacts are overwritten during re-plan cycles (updated versions replace prior versions) but never deleted.
+
+**Why:** Artifacts are consumed by the `critique-analyzer` for critique analysis, by subagents during re-plan cycles (they receive their prior output as context), and serve as debugging aids when issues arise.
+
+---
+
+### Rule 10 — Never commit orchestration artifacts (NEW)
+
+All files matching `docs/<KEY>*.md` are **Category A — orchestration artifacts**. They are updated on disk but MUST NOT be staged (`git add`) or committed to git. Only Category B files (source code, tests, config changes, documentation within source files) are committed.
+
+**Why:** Orchestration artifacts contain planning state, decisions, and intermediate work products that are not part of the project's source code. Committing them would pollute the repository with transient workflow artifacts.
+
+**Who enforces this:** The `documentation-writer` subagent is responsible for committing changes. Its contract explicitly requires excluding Category A files from commits.
+
+---
+
+## Phase 7 safety rules
 
 These apply specifically to the `executing-jira-task` skill.
 
@@ -110,44 +125,32 @@ These apply specifically to the `executing-jira-task` skill.
 
 ---
 
-## Rules visualized
+## Re-plan cycle rules
 
-```mermaid
-flowchart TD
-    subgraph NEVER["The orchestrator NEVER does"]
-        N1["Runs tool calls"]
-        N2["Reads/writes files"]
-        N3["Executes bash commands"]
-        N4["Makes MCP/API calls"]
-        N5["Stores raw content"]
-        N6["Skips pipeline steps"]
-        N7["Auto-advances past gates"]
-    end
+These apply to the Phase 3 → Phase 2 and Phase 6 → Phase 5 re-plan loops.
 
-    subgraph ALWAYS["The orchestrator ALWAYS does"]
-        A1["Delegates to subagents"]
-        A2["Operates on summaries only"]
-        A3["Validates artifacts between phases"]
-        A4["Updates progress after every step"]
-        A5["Gets user confirmation before Jira writes"]
-        A6["Passes explicit context to dispatches"]
-        A7["Follows every skill step in order"]
-    end
-```
+| Rule                           | Description                                                                                                       |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Maximum 3 iterations           | After 3 re-plan cycles, escalate to the user with accumulated critique                                            |
+| User looped in every iteration | Every re-plan iteration presents the updated plan and critique to the user — nothing is auto-resolved             |
+| Preserve artifacts             | Prior artifacts are preserved on disk. Re-dispatched subagents receive their prior output plus new decisions      |
+| Re-run all subagents           | On re-plan, all subagents in the phase are re-dispatched (not just the ones whose outputs were directly affected) |
+| Respect prior decisions        | The `critique-analyzer` does not re-raise concerns that were already consciously resolved by the user             |
 
 ---
 
-## Behavioral guardrails (Phase 3 — clarification)
+## Behavioral guardrails (Phase 3 and Phase 6 — clarification and critique)
 
-These govern how the orchestrator/skill interacts with users during the clarification phase:
+These govern how the orchestrator/skill interacts with users during clarification and critique phases:
 
-| Guardrail                                | Description                                                                   |
-| ---------------------------------------- | ----------------------------------------------------------------------------- |
-| One question per message                 | Never batch multiple questions in a single turn                               |
-| Manifest is source of truth              | Every question comes from it. New questions get added before being asked      |
-| Defer, don't discard                     | Questions for future tasks are tagged as deferred, not deleted                |
-| Teacher, not interrogator                | Context should help the user understand the problem space                     |
-| Respect "skip"                           | Note the fallback, move on, no pressure                                       |
-| Stay neutral on options                  | Frame recommendations as "I'd lean toward X because..." not "You should do X" |
-| Keep blocks scannable                    | Each question readable in under 30 seconds                                    |
-| Never ask about what hasn't happened yet | If relevance depends on a future task outcome, defer the question             |
+| Guardrail                                | Description                                                                                           |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| One question per message                 | Never batch multiple questions in a single turn                                                       |
+| Manifest is source of truth              | Every question comes from it. New questions get added before being asked                              |
+| Defer, don't discard                     | Questions for future tasks are tagged as deferred, not deleted                                        |
+| Teacher, not interrogator                | Context should help the user understand the problem space                                             |
+| Respect "skip"                           | Note the fallback, move on, no pressure                                                               |
+| Stay neutral on options                  | Frame recommendations as "I'd lean toward X because..." not "You should do X"                         |
+| Keep blocks scannable                    | Each question readable in under 30 seconds                                                            |
+| Never ask about what hasn't happened yet | If relevance depends on a future task outcome, defer the question                                     |
+| Present ALL critique items               | Every critique item (HIGH, MEDIUM, LOW) is presented to the user. No filtering, no auto-acknowledging |
