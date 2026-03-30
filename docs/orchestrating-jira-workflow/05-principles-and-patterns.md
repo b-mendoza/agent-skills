@@ -20,25 +20,39 @@ When a subagent returns a result, the orchestrator extracts the verdict, summary
 
 Subagents run sequentially. Parallel dispatch is acceptable **only** for independent utility calls (e.g., `codebase-inspector` + `documentation-finder` before a task), never for dependent operations.
 
-### 4. Progressive clarification and critique
+### 4. Design Thinking — problem before solution
+
+Before decomposing work or choosing technology, validate that the ticket solves the right problem for the right user. Jira tickets describe solutions; the pipeline's job is to surface whether those solutions connect to validated user needs. The `task-planner` produces a Problem Framing section (end user, underlying need, solution-problem fit, evidence basis), and the `critique-analyzer` challenges it. During Phase 3, the developer is Socratically questioned on problem framing fundamentals using two models:
+
+- **Model A (Socratic)** for Tier 3 hard-gate questions: the developer articulates their own answer before seeing the analysis. Used for: who is the end user, what is the underlying need, what evidence supports the solution. These cannot be skipped.
+- **Model B (evaluate-the-reasoning)** for Tier 2 items: the developer evaluates the subagent's reasoning against the critique. Used for technology choices, assumptions, and non-foundational critique items. These can be skipped but are visibly flagged.
+
+The goal is not just to validate the plan — it is to develop the developer's critical thinking. The pipeline operates as a mentorship engine, not a task-completion machine.
+
+### 5. Progressive clarification and critique
 
 Questions and critique are applied only when they are relevant to the work about to happen:
 
-- **Phase 3** (upfront): Cross-cutting questions, architectural assumptions, validation failures, Task 1 questions, AND critique of the task plan's implicit technology decisions.
-- **Phase 6** (per-task): Critique of per-task planning artifacts (framework choices, library selections, testing approach) AND deferred per-task questions.
+- **Phase 3** (upfront): Problem-framing critique (Tier 3 hard gates first), technology critique, cross-cutting questions, architectural assumptions, validation failures, Task 1 questions.
+- **Phase 6** (per-task): Technology and approach critique of per-task planning artifacts, user-impact assessment of implementation decisions, AND deferred per-task questions.
 
 Questions that become irrelevant through prior decisions are filtered out. Critique items that were already consciously resolved by the user are not re-raised.
 
-### 5. Challenge bias before implementation
+### 6. Challenge bias before implementation
 
-AI-assisted coding tools carry a documented bias toward mainstream frameworks and libraries (the Matthew Effect). The `critique-analyzer` subagent counters this by searching the web for current alternatives, cross-checking the codebase directly, and presenting trade-offs. This happens at two strategic checkpoints:
+Two systemic biases are actively countered:
 
-- After task planning (Phase 3) — catches bias in task decomposition and implicit technology assumptions
-- After per-task planning (Phase 6) — catches bias in framework choices, library selections, and architectural approaches
+- **The Matthew Effect (technology bias).** AI tools disproportionately recommend mainstream frameworks. The `critique-analyzer` counters this by searching the web for current alternatives, cross-checking the codebase directly, and presenting trade-offs.
+- **Solution-first thinking (problem-framing bias).** Tickets describe solutions without articulating user needs or evidence. The `critique-analyzer` challenges the Problem Framing section, and the `clarifying-assumptions` skill uses Socratic questioning to force the developer to think about who the user is and why this solution is right.
 
-The user sees every critique item (HIGH, MEDIUM, LOW) and makes every decision. Nothing is auto-acknowledged.
+This happens at two strategic checkpoints:
 
-### 6. Validate-before-advance
+- After task planning (Phase 3) — catches both problem-framing gaps and technology bias in task decomposition
+- After per-task planning (Phase 6) — catches technology bias in framework choices, plus evaluates user-impact of implementation decisions
+
+The user sees every critique item (problem-framing and technology, all severities) and makes every decision. Nothing is auto-acknowledged.
+
+### 7. Validate-before-advance
 
 Every phase follows a strict cycle:
 
@@ -48,11 +62,11 @@ Announce → Validate preconditions → Invoke skill → Validate output → Upd
 
 No step is skipped. Validation failures halt the pipeline.
 
-### 7. Quality gate delegation
+### 8. Quality gate delegation
 
 The `executing-jira-task` skill manages its own fix cycles internally (up to 3 attempts). The orchestrator only intervenes when the fix cycle limit is exhausted — then it escalates to the user.
 
-### 8. Preflight validation on every start/resume
+### 9. Preflight validation on every start/resume
 
 Run `preflight-checker` before starting any workflow. On resume, check only remaining phases.
 
@@ -61,11 +75,11 @@ Run `preflight-checker` before starting any workflow. On resume, check only rema
 | FAIL    | Stop immediately, present install instructions |
 | PASS    | Proceed silently                               |
 
-### 9. Preserve everything, commit selectively
+### 10. Preserve everything, commit selectively
 
 No orchestration artifact (Category A) is ever deleted. All `docs/<KEY>*.md` files persist for the lifetime of the workflow. Only implementation output (Category B — source code, tests, configs) is committed to git.
 
-### 10. Fail loudly, recover gracefully
+### 11. Fail loudly, recover gracefully
 
 Subagent failures, missing artifacts, and ambiguities are surfaced immediately. The progress file ensures any interruption — user-initiated or error-caused — can be recovered from without repeating completed work.
 
