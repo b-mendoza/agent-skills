@@ -32,18 +32,24 @@ The seven phases, in order:
    `ticket-retriever` subagent does the fetching through MCP.
 
 2. [planning-jira-tasks](skills/planning-jira-tasks/SKILL.md) breaks the
-   ticket into tasks. It uses a pipeline of subagents: `task-planner`,
-   `dependency-prioritizer`, `task-validator`, with a `stage-validator`
-   running structural checks between stages. The result goes into
+   ticket into tasks. The `task-planner` subagent starts by working out who
+   the change is for and why, then splits the work into pieces.
+   `dependency-prioritizer` orders the tasks, `task-validator` checks
+   completeness, and `stage-validator` runs structural checks between
+   stages. The result goes into
    `docs/<TICKET_KEY>-tasks.md`.
 
 3. [clarifying-assumptions](skills/clarifying-assumptions/SKILL.md)
-   _(upfront mode)_ goes through the plan step by step, confirming
-   assumptions, resolving open questions, and questioning defaults that lack
-   justification. Only cross-cutting concerns are raised here; task-specific
-   questions wait until Phase 6. A `critique-analyzer` subagent challenges
-   decisions by researching alternatives, and a `decision-recorder` writes
-   the resolved answers into a Decisions Log appended to the tasks file.
+   _(upfront mode)_ goes through the plan and questions it, starting with
+   the fundamentals: who is this for, what problem does it actually solve,
+   and is there evidence the approach works. Then it moves to assumptions,
+   open questions, and defaults that nobody justified. It asks in two ways:
+   one generates alternatives and compares them (for the foundational
+   questions), the other pokes at existing reasoning. Only cross-cutting
+   concerns come up here; task-specific questions wait until Phase 6. A
+   `critique-analyzer` subagent challenges decisions by researching
+   alternatives, and a `decision-recorder` writes resolved answers into a
+   decisions log appended to the tasks file.
 
 4. [creating-jira-subtasks](skills/creating-jira-subtasks/SKILL.md) is a
    small coordinator. It sends a `subtask-creator` subagent to read the plan,
@@ -52,16 +58,18 @@ The seven phases, in order:
 
 5. [planning-jira-task](skills/planning-jira-task/SKILL.md) plans how to
    execute a single task without writing any code. Four subagents produce the
-   output: `execution-prepper` (branch setup, execution brief),
-   `execution-planner` (codebase analysis, approach), `test-strategist`
-   (test spec), and `refactoring-advisor` (refactoring evaluation). This
-   output feeds Phase 6 before any implementation starts.
+   output: `execution-prepper` (branch setup and execution brief, including
+   who the change affects), `execution-planner` (codebase analysis and
+   approach), `test-strategist` (test spec), and `refactoring-advisor`
+   (refactoring evaluation). This output feeds Phase 6 before any
+   implementation starts.
 
 6. [clarifying-assumptions](skills/clarifying-assumptions/SKILL.md)
    _(critique mode)_ reviews the planning from Phase 5 (framework choices,
-   library selections, testing approach, refactoring scope) and picks up any
-   task-specific questions that were deferred earlier. Same skill as Phase 3,
-   just scoped to the task about to be executed.
+   library selections, testing approach, refactoring scope, and how users
+   are affected) and picks up any task-specific questions that were deferred
+   earlier. Same skill and questioning styles as Phase 3, just scoped to
+   the task about to be executed.
 
 7. [executing-jira-task](skills/executing-jira-task/SKILL.md) takes one task
    and implements it using the output from Phase 5. Six subagents:
