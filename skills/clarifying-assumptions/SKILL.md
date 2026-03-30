@@ -1,6 +1,6 @@
 ---
 name: "clarifying-assumptions"
-description: 'Walk through a Jira task plan and interactively confirm assumptions, resolve open questions, and validate decisions — using progressive disclosure. Only asks questions relevant to the CURRENT phase or task being executed. Use when the user says "review the plan", "ask me questions", "clarify assumptions", "let''s go through the questions", "grill me on the plan", "validate plan for PROJECT-1234", or anything about reviewing, questioning, or validating a task plan. Also triggered by the orchestrating-jira-workflow skill as Phase 3 of the pipeline, and re-invoked during Phase 5 before each task execution. Requires a task plan at docs/<TICKET_KEY>-tasks.md.'
+description: 'Walk through a Jira task plan and interactively confirm assumptions, resolve open questions, validate decisions, and critique planning outputs for bias — using progressive disclosure. In upfront mode (Phase 3), resolves cross-cutting questions and critiques the task plan for unjustified defaults and unexplored alternatives. In critique mode (Phase 6), critiques per-task planning artifacts (framework choices, library selections, testing approach, refactoring scope) and resolves deferred questions for the task about to execute. Use when the user says "review the plan", "ask me questions", "clarify assumptions", "critique the plan", "challenge the approach", "let''s go through the questions", "grill me on the plan", "validate plan for PROJECT-1234", or anything about reviewing, questioning, critiquing, or validating a task plan. Also triggered by the orchestrating-jira-workflow skill as Phase 3 and Phase 6 of the pipeline. Requires a task plan at docs/<TICKET_KEY>-tasks.md.'
 ---
 
 # Clarifying Assumptions
@@ -8,12 +8,15 @@ description: 'Walk through a Jira task plan and interactively confirm assumption
 ## Purpose
 
 Act as a structured interviewer that walks the user through open questions,
-assumptions, and decisions in the task plan — using **progressive disclosure**.
-Three goals:
+assumptions, decisions, AND critique of planning outputs — using
+**progressive disclosure**. Four goals:
 
 1. **Resolve ambiguity** so downstream execution is unblocked.
-2. **Educate** the user on the agent's reasoning so they can steer confidently.
-3. **Avoid premature questions** — never ask about tasks that have not been
+2. **Challenge bias** by critiquing decisions made by planning subagents —
+   surfacing unjustified defaults, unexplored alternatives, and
+   unacknowledged trade-offs.
+3. **Educate** the user on the agent's reasoning so they can steer confidently.
+4. **Avoid premature questions** — never ask about tasks that have not been
    reached yet, because by the time we get there, the answers may have changed.
 
 ## Progressive Disclosure — The Core Principle
@@ -25,42 +28,53 @@ Traditional clarification asks ALL questions upfront. This is wasteful because:
 - Users waste time answering questions about tasks that may not even happen.
 - Some questions become irrelevant as the codebase evolves through execution.
 
-Instead, this skill uses a **two-tier disclosure model**:
+Instead, this skill uses a **two-mode disclosure model**:
 
-### Tier 1 — Phase 3 (Upfront Clarification)
+### Upfront Mode — Phase 3 (After task planning)
 
 During the initial clarification phase, ask ONLY:
 
-1. **Cross-cutting questions** that affect the entire plan (e.g., "Which API
+1. **Critique items** from the `critique-analyzer` subagent — decisions in the
+   task plan that show signs of bias, unjustified defaults, or unexplored
+   alternatives. ALL severity levels (HIGH, MEDIUM, LOW) are presented to the
+   user.
+
+2. **Cross-cutting questions** that affect the entire plan (e.g., "Which API
    version should we use?" or "What authentication strategy?"). These are
    blocking for planning and must be resolved before any execution begins.
 
-2. **Assumptions that affect architecture** — confirmed or revised now because
+3. **Assumptions that affect architecture** — confirmed or revised now because
    changing them later would require reworking completed tasks.
 
-3. **Validation report FAILs** — these block execution entirely.
+4. **Validation report FAILs** — these block execution entirely.
 
-4. **Questions for Task 1 only** — since Task 1 will be executed first, its
+5. **Questions for Task 1 only** — since Task 1 will be executed first, its
    per-task questions are relevant now. All other per-task questions are
    deferred.
 
 Do NOT ask per-task questions for Tasks 2, 3, 4, etc. during Phase 3. Tag
 them as `[DEFERRED — will ask before Task N execution]` in the manifest.
 
-### Tier 2 — Phase 5 (Just-In-Time Clarification)
+### Critique Mode — Phase 6 (After per-task planning)
 
-Before each task execution in Phase 5, the orchestrator checks whether the
-task about to execute has unresolved questions or assumptions. If it does,
-the orchestrator invokes this skill in **just-in-time mode** with the specific
-task number.
+Before each task execution, this skill:
 
-In just-in-time mode:
+1. **Dispatches the `critique-analyzer`** to review the per-task planning
+   artifacts (execution plan, test spec, refactoring plan) for framework bias,
+   unjustified defaults, and unexplored alternatives. ALL critique items are
+   presented to the user.
 
-- Only ask questions tagged for the specific task about to execute.
-- Review whether any deferred questions have become irrelevant due to decisions
-  made or code changes during earlier task executions.
-- Present questions that are still relevant.
-- Mark irrelevant questions as `[RESOLVED — no longer applicable: <reason>]`.
+2. **Resolves deferred questions** for the specific task about to execute.
+   Reviews whether any deferred questions have become irrelevant due to
+   decisions made or code changes during earlier task executions.
+
+3. **Records all decisions** in a per-task decisions file
+   (`docs/<KEY>-task-<N>-decisions.md`) with a reference added to the main
+   `## Decisions Log` in the task plan.
+
+If critique reveals decisions that should change, the user's resolutions are
+recorded and the orchestrator triggers a re-plan cycle in Phase 5 (maximum 3
+iterations, user looped in every time).
 
 ## Platform Adaptation
 
@@ -83,22 +97,29 @@ ASCII diagrams are an acceptable fallback in terminal environments.
 
 ## Inputs
 
-| Input         | Source              | Required | Example                                  |
-| ------------- | ------------------- | -------- | ---------------------------------------- |
-| `TICKET_KEY`  | User / `$ARGUMENTS` | Yes      | `JNS-6065`                               |
-| `MODE`        | Orchestrator        | No       | `upfront` or `just-in-time`              |
-| `TASK_NUMBER` | Orchestrator        | No       | `3` (required if MODE is `just-in-time`) |
+| Input         | Source              | Required | Example                                 |
+| ------------- | ------------------- | -------- | --------------------------------------- |
+| `TICKET_KEY`  | User / `$ARGUMENTS` | Yes      | `JNS-6065`                              |
+| `MODE`        | Orchestrator        | Yes      | `upfront` or `critique`                 |
+| `TASK_NUMBER` | Orchestrator        | No       | `3` (required for `critique` mode)      |
+| `ITERATION`   | Orchestrator        | No       | `1`, `2`, or `3` (for re-plan tracking) |
 
 The task plan file must already exist at `docs/<TICKET_KEY>-tasks.md`.
 If it does not, tell the user to run the **planning-jira-tasks** skill first.
 
-Default `MODE` is `upfront` when called during Phase 3.
+For `critique` mode, the per-task planning artifacts must exist:
 
-### Input contract (from upstream skill)
+- `docs/<KEY>-task-<N>-brief.md`
+- `docs/<KEY>-task-<N>-execution-plan.md`
+- `docs/<KEY>-task-<N>-test-spec.md`
+- `docs/<KEY>-task-<N>-refactoring-plan.md`
 
-The input file must contain these sections (produced by `planning-jira-tasks`).
-If any are missing, the plan was not generated correctly — stop and ask the user
-to re-run planning.
+If any are missing, tell the user to run the **planning-jira-task** skill first.
+
+### Input contract (from upstream skills)
+
+**For upfront mode**, the input file must contain these sections (produced by
+`planning-jira-tasks`):
 
 | Required section                     | Used for                                         |
 | ------------------------------------ | ------------------------------------------------ |
@@ -108,7 +129,18 @@ to re-run planning.
 | `## Validation Report`               | WARN/FAIL items become clarification questions   |
 | `## Dependency Graph`                | Impact maps for dependency-related questions     |
 
+**Additionally for upfront mode**, the `critique-analyzer` reads the planning
+intermediates:
+
+- `docs/<KEY>-stage-1-detailed.md`
+- `docs/<KEY>-stage-2-prioritized.md`
+
+**For critique mode**, the `critique-analyzer` reads the per-task planning
+artifacts listed in the Inputs section above.
+
 ## Output
+
+### Upfront mode output
 
 The same task plan file at `docs/<TICKET_KEY>-tasks.md`, updated in-place, with:
 
@@ -118,45 +150,59 @@ The same task plan file at `docs/<TICKET_KEY>-tasks.md`, updated in-place, with:
 - Updated `Implementation notes` where answers changed the approach
 - Deferred questions tagged with `[DEFERRED — will ask before Task N execution]`
 
+### Critique mode output
+
+A per-task decisions file at `docs/<TICKET_KEY>-task-<N>-decisions.md`,
+containing all decisions resolved during this phase (both critique resolutions
+and deferred question resolutions). A reference is added to the main
+`## Decisions Log` in `docs/<TICKET_KEY>-tasks.md`.
+
 ### Output contract (consumed by downstream skills)
 
-| Addition                                                | Required by            | Why                                                        |
-| ------------------------------------------------------- | ---------------------- | ---------------------------------------------------------- |
-| `## Decisions Log` table                                | creating-jira-subtasks | Subtask descriptions reflect resolved decisions            |
-| Annotated assumptions                                   | executing-jira-task    | Executor needs confirmed assumptions, not open Qs          |
-| Resolved per-task questions                             | executing-jira-task    | Pre-flight check verifies no unresolved questions          |
-| Updated `Implementation notes` (where approach changed) | executing-jira-task    | Executor follows the updated approach                      |
-| Deferred question tags                                  | orchestrator (Phase 5) | Orchestrator knows which questions to ask before each task |
+| Addition                                                 | Required by            | Why                                                        |
+| -------------------------------------------------------- | ---------------------- | ---------------------------------------------------------- |
+| `## Decisions Log` table (with per-task file references) | creating-jira-subtasks | Subtask descriptions reflect resolved decisions            |
+| Annotated assumptions                                    | executing-jira-task    | Executor needs confirmed assumptions, not open Qs          |
+| Resolved per-task questions                              | executing-jira-task    | Pre-flight check verifies no unresolved questions          |
+| Updated `Implementation notes` (where approach changed)  | executing-jira-task    | Executor follows the updated approach                      |
+| Deferred question tags                                   | orchestrator (Phase 6) | Orchestrator knows which questions to ask before each task |
+| Per-task decisions file                                  | planning-jira-task     | Re-plan cycle uses decisions to update artifacts           |
+| `RE_PLAN_NEEDED` flag in output                          | orchestrator           | Signals the orchestrator to trigger a re-plan cycle        |
 
 ## Subagent Registry
 
-| Subagent            | Path                               | Purpose                                                               |
-| ------------------- | ---------------------------------- | --------------------------------------------------------------------- |
-| `decision-recorder` | `./subagents/decision-recorder.md` | Applies all file edits (Decisions Log, annotations, tags) + validates |
+| Subagent            | Path                               | Purpose                                                                                |
+| ------------------- | ---------------------------------- | -------------------------------------------------------------------------------------- |
+| `critique-analyzer` | `./subagents/critique-analyzer.md` | Reads planning artifacts, searches web, cross-checks codebase, produces critique items |
+| `decision-recorder` | `./subagents/decision-recorder.md` | Applies all file edits (Decisions Log, annotations, tags) + validates                  |
 
 Before dispatching, read the subagent file to understand its input/output
 contract. The path is relative to this skill's directory.
 
-**Why only file writes are delegated:** This skill is conversational — it
-needs the user's full conversation history for multi-turn Q&A. The Q&A loop
-and plan parsing run inline because the skill needs manifest content in context
-to ask questions. File writes are delegated because they are separable from the
-conversation and would pollute the context with raw file I/O.
+**Why `critique-analyzer` is dispatched but Q&A runs inline:** The critique
+analysis requires web search, codebase inspection, and artifact analysis —
+these are separable concerns. The Q&A loop runs inline because the skill needs
+the user's full conversation history for multi-turn interaction. The
+`critique-analyzer` produces structured critique items; this skill presents
+them to the user alongside other questions using the same progressive
+disclosure protocol.
 
 ---
 
 ## Core Principles
 
-These three principles shape every interaction in this skill. They're ordered by
-impact — if you remember nothing else, remember these.
+These three principles shape every interaction in this skill. They are ordered
+by impact — if you remember nothing else, remember these.
 
 ### 1. Ask only what is relevant NOW
 
-In `upfront` mode: ask cross-cutting questions, architectural assumptions,
-validation failures, and Task 1 questions only. Tag everything else as deferred.
+In `upfront` mode: ask critique items, cross-cutting questions, architectural
+assumptions, validation failures, and Task 1 questions only. Tag everything
+else as deferred.
 
-In `just-in-time` mode: ask only questions for the specific task about to
-execute. Discard questions that are no longer relevant.
+In `critique` mode: ask critique items for the specific task's planning
+artifacts, plus deferred questions for that task. Discard questions that are
+no longer relevant.
 
 If an answer reveals a new question about a FUTURE task, do not ask it now.
 Tag it as deferred for that task. If the new question is about the CURRENT
@@ -172,27 +218,17 @@ method available:
   2-4 options, multi-select for multiple valid answers, rank/prioritize for
   ordering.
 - **If no interactive tool is available:** Present numbered options and ask the
-  user to reply with a number. Example:
+  user to reply with a number.
 
-  ```
-  1. Repository pattern
-  2. Direct database access
-  3. CQRS
-  4. Other (I'll describe)
+For critique items specifically, the options should include:
 
-  Reply with a number (or type your own answer):
-  ```
-
-When a question has discrete options plus a possible free-text path, present the
-options first. If the user picks "Other," follow up for details.
-
-For confirmation questions (assumptions), use: `1. ✅ Confirm as-is`,
-`2. ❌ Revise`, `3. ⏭️ Skip`.
+1. `✅ Keep current approach` — the user agrees with the planner's decision
+2. `🔄 Switch to <alternative>` — one option per alternative the critic named
+3. `🔍 I need more information` — the user wants to investigate further
+4. `⏭️ Acknowledge but proceed` — the user sees the concern but consciously
+   chooses to proceed as-is (logged as an override)
 
 ### 3. Give visual context proportional to the question's complexity
-
-Every question should have enough context for the user to answer confidently.
-The right amount depends on what's being asked:
 
 | Question type                     | Appropriate context                                                           |
 | --------------------------------- | ----------------------------------------------------------------------------- |
@@ -200,71 +236,84 @@ The right amount depends on what's being asked:
 | Choice between technical options  | Comparison table showing trade-offs, or a code snippet showing the difference |
 | Architecture / data flow decision | Diagram (mermaid or ASCII) showing how options differ                         |
 | Question with downstream impact   | Brief impact note: "This affects Tasks 3, 5, and 7"                           |
-
-Don't pad simple confirmations with diagrams they don't need. Do invest in
-visuals when the question involves trade-offs, structural differences, or
-cascading effects. The goal is understanding, not decoration.
-
-**Choosing the right visual:**
-
-| Visual type     | Best for                                                | Format                      |
-| --------------- | ------------------------------------------------------- | --------------------------- |
-| Markdown table  | Comparing options side by side (works everywhere)       | Markdown table              |
-| Code snippet    | When the question affects specific code, configs, APIs  | Fenced code block with lang |
-| Mermaid diagram | Architecture, data flow, dependencies (if env supports) | Mermaid code block          |
-| Before / after  | When the answer changes the plan structure              | Two code blocks or tables   |
+| Critique item                     | The critique-analyzer's trade-off table + web search findings                 |
 
 ---
 
 ## Execution — Upfront Mode (Phase 3)
 
-### Phase 1 — Build and present the question manifest
+### Phase 1 — Dispatch critique-analyzer and build manifest
 
-#### 1a. Read and categorize all items
+#### 1a. Dispatch critique-analyzer
+
+Read `./subagents/critique-analyzer.md` and dispatch the critique-analyzer
+subagent with:
+
+- `MODE=upfront`
+- `TICKET_KEY`
+- `ARTIFACTS` — list of file paths:
+  - `docs/<KEY>-tasks.md`
+  - `docs/<KEY>-stage-1-detailed.md`
+  - `docs/<KEY>-stage-2-prioritized.md`
+
+Collect its output as the `CRITIQUE_REPORT`.
+
+#### 1b. Read and categorize all items
 
 Read `docs/<TICKET_KEY>-tasks.md` and build the complete list of items needing
-user input:
+user input, combining both traditional clarification items AND critique items:
 
 | Category                      | Where to find them                                      | Tier                                    |
 | ----------------------------- | ------------------------------------------------------- | --------------------------------------- |
+| **Critique items (HIGH)**     | `CRITIQUE_REPORT` — HIGH severity items                 | Tier 1                                  |
 | **Validation FAILs**          | `## Validation Report` — unresolved FAIL items          | Tier 1                                  |
+| **Critique items (MEDIUM)**   | `CRITIQUE_REPORT` — MEDIUM severity items               | Tier 1                                  |
 | **Cross-cutting questions**   | `## Cross-Cutting Open Questions` section               | Tier 1                                  |
 | **Architectural assumptions** | `## Assumptions and Constraints` section                | Tier 1                                  |
+| **Critique items (LOW)**      | `CRITIQUE_REPORT` — LOW severity items                  | Tier 1                                  |
 | **Task 1 questions**          | `Questions to answer before starting` in Task 1         | Tier 1                                  |
 | **Task 2+ questions**         | `Questions to answer before starting` in Tasks 2+       | DEFERRED                                |
 | **Task 2+ assumptions**       | Implicit assumptions in Tasks 2+ `Implementation notes` | DEFERRED                                |
 | **Dependency risks**          | `Dependencies / prerequisites` that seem uncertain      | Tier 1 if affects Task 1, else DEFERRED |
 | **Validation warnings**       | `## Validation Report` — WARN items                     | Tier 1 if cross-cutting, else DEFERRED  |
 
-#### 1b. Prioritize Tier 1 items
+#### 1c. Prioritize Tier 1 items
 
-Order Tier 1 items so blocking issues surface first:
+Order Tier 1 items so blocking issues and critique surface first:
 
-1. Unresolved FAILs from the validation report (they block execution)
-2. Cross-cutting questions (they unblock the most tasks)
-3. Assumptions affecting architectural decisions
-4. Task 1 questions, ordered by priority
-5. Cross-cutting validation warnings
+1. Critique items with HIGH severity (potential bias or significant trade-offs)
+2. Unresolved FAILs from the validation report (they block execution)
+3. Critique items with MEDIUM severity
+4. Cross-cutting questions (they unblock the most tasks)
+5. Assumptions affecting architectural decisions
+6. Critique items with LOW severity
+7. Task 1 questions, ordered by priority
+8. Cross-cutting validation warnings
 
-#### 1c. Present the manifest
+#### 1d. Present the manifest
 
-Show the complete numbered list to the user, clearly marking deferred items:
+Show the complete numbered list to the user, clearly marking critique items
+and deferred items:
 
 ```markdown
 ## Question Manifest for <TICKET_KEY>
 
 I've analyzed the task plan and found **<N> items** total.
-**<M> questions** are relevant now (Tier 1). The remaining **<N-M>** will be
-asked just before their respective tasks are executed.
+**<M> questions** are relevant now (Tier 1), including **<C> critique items**
+challenging decisions made by the planning agents. The remaining **<N-M>**
+will be asked just before their respective tasks are executed.
 
 ### Questions for now (Tier 1)
 
-| #   | Category           | Short description                 | Affects tasks | Input type     |
-| --- | ------------------ | --------------------------------- | ------------- | -------------- |
-| 1   | 🔴 Blocking        | Missing API version specification | 3, 5, 7       | Single select  |
-| 2   | 🟡 Cross-cutting   | Authentication strategy           | 2, 4, 6       | Single select  |
-| 3   | 🔵 Assumption      | Database migration strategy       | 1             | Confirm/revise |
-| 4   | ⚪ Task 1 question | Caching layer needed?             | 1             | Yes/No         |
+| #   | Category             | Short description                 | Affects tasks | Input type     |
+| --- | -------------------- | --------------------------------- | ------------- | -------------- |
+| 1   | 🔴 Critique (HIGH)   | Express chosen without rationale  | 3, 5          | Alternatives   |
+| 2   | 🔴 Blocking          | Missing API version specification | 3, 5, 7       | Single select  |
+| 3   | 🟡 Critique (MEDIUM) | Jest when project uses Vitest     | 2, 4          | Alternatives   |
+| 4   | 🟡 Cross-cutting     | Authentication strategy           | 2, 4, 6       | Single select  |
+| 5   | 🔵 Assumption        | Database migration strategy       | 1             | Confirm/revise |
+| 6   | ⚪ Critique (LOW)    | CSS-in-JS vs utility classes      | 1             | Alternatives   |
+| 7   | ⚪ Task 1 question   | Caching layer needed?             | 1             | Yes/No         |
 
 ### Deferred questions (will ask before each task)
 
@@ -274,7 +323,8 @@ asked just before their respective tasks are executed.
 | 3    | 1                    | Before Task 3 execution        |
 | 5    | 3                    | Before Task 5 execution        |
 
-**Estimated time for Tier 1:** ~<N> minutes (most questions have pre-defined options).
+**Estimated time for Tier 1:** ~<N> minutes (most questions have pre-defined
+options).
 
 No surprise questions during this session. Deferred questions will be asked
 one task at a time during execution, when context is fresh.
@@ -295,7 +345,18 @@ Question <current>/<total Tier 1> — [<category emoji> <category>]
 
 #### 2b. Provide context (proportional to complexity — see Principle 3)
 
-Include:
+**For critique items**, present:
+
+- **What was decided:** The planning subagent's decision, from which artifact.
+- **Why the critic flagged it:** The critique-analyzer's reasoning (bias
+  evidence, missing rationale, unexplored alternatives).
+- **Trade-off table:** The critique-analyzer's comparison table showing
+  pros/cons for each option in the context of this project.
+- **Web search findings:** What the critic found about current ecosystem status.
+- **What would need to be true:** Conditions for the chosen option to be right
+  vs. conditions for an alternative to be better.
+
+**For non-critique items**, include:
 
 - **What this relates to:** 1-2 sentences on where in the plan this came from.
 - **Visual context:** Table, code snippet, diagram, or impact note — whatever
@@ -305,8 +366,14 @@ Include:
 
 #### 2c. Ask using the best available input method (see Principle 2)
 
-For discrete options, use interactive selection or numbered options. For
-free-text questions, ask in plain text but still provide context first.
+For critique items, always include these options:
+
+1. `✅ Keep current approach` — proceed with the planner's decision
+2. `🔄 Switch to <alternative>` — one per named alternative
+3. `🔍 I need more information` — will pause for discussion
+4. `⏭️ Acknowledge but proceed` — logged as a conscious override
+
+For non-critique items, use the standard options (confirm/revise/skip).
 
 #### 2d. Record the answer
 
@@ -315,12 +382,22 @@ After the user responds:
 1. **Acknowledge** in one sentence.
 2. **State downstream impact** if the answer changes something — e.g., "This
    means Task 3's implementation notes will shift from REST to GraphQL."
-3. **Move on.** Don't elaborate or re-ask.
+3. **Track whether a re-plan is needed.** If the user chose to switch to an
+   alternative on a critique item, flag this decision as requiring a re-plan.
+4. **Move on.** Don't elaborate or re-ask.
+
+**On "keep current approach":** Record as confirmed. No re-plan needed.
+
+**On "switch to alternative":** Record the switch. Flag `RE_PLAN_NEEDED=true`.
+
+**On "acknowledge but proceed":** Record as an override — the user consciously
+chose to proceed despite the concern. No re-plan needed. This is documented
+in the Decisions Log for future reference.
+
+**On "I need more information":** Pause and let the user ask questions or
+discuss. Resume when they are ready to decide.
 
 **On "skip":** Record as unresolved with the fallback assumption. Move on.
-
-**On "revise":** Follow up with: "What should the revised assumption be?"
-Record the new text.
 
 **On an answer that reveals a new question about the CURRENT task or
 cross-cutting:** Don't ask it now. Say: _"Your answer raised a new
@@ -344,7 +421,8 @@ Read `./subagents/decision-recorder.md` and dispatch the subagent with:
 
 - `TICKET_KEY`
 - `MODE=upfront`
-- `DECISIONS` — the full list of resolved decisions from Phase 2
+- `DECISIONS` — the full list of resolved decisions from Phase 2 (including
+  critique resolutions)
 - `DEFERRED_QUESTIONS` — questions tagged for future tasks
 - `IMPLEMENTATION_UPDATES` — any implementation notes that changed due to
   answers
@@ -371,16 +449,21 @@ Check the subagent's summary:
 #### 3c. Final summary
 
 ```markdown
-## Clarification Complete (Tier 1) — <TICKET_KEY>
+## Clarification Complete (Phase 3) — <TICKET_KEY>
 
-| Metric                    | Count |
-| ------------------------- | ----- |
-| Tier 1 questions resolved | <N>   |
-| Assumptions confirmed     | <N>   |
-| Assumptions revised       | <N>   |
-| Items skipped             | <N>   |
-| Questions deferred        | <N>   |
-| New questions added       | <N>   |
+| Metric                    | Count    |
+| ------------------------- | -------- |
+| Tier 1 questions resolved | <N>      |
+| Critique items resolved   | <N>      |
+| — Kept current approach   | <N>      |
+| — Switched to alternative | <N>      |
+| — Acknowledged (override) | <N>      |
+| Assumptions confirmed     | <N>      |
+| Assumptions revised       | <N>      |
+| Items skipped             | <N>      |
+| Questions deferred        | <N>      |
+| New questions added       | <N>      |
+| **Re-plan needed**        | <Yes/No> |
 
 **Key changes to the plan:**
 
@@ -392,6 +475,9 @@ respective tasks are executed.
 The task plan at `docs/<TICKET_KEY>-tasks.md` has been updated with all decisions.
 ```
 
+If `RE_PLAN_NEEDED` is true, the orchestrator will trigger a re-plan cycle in
+Phase 2 before proceeding.
+
 Then ask what's next:
 
 ```
@@ -402,11 +488,30 @@ Then ask what's next:
 
 ---
 
-## Execution — Just-In-Time Mode (Phase 5, before each task)
+## Execution — Critique Mode (Phase 6)
 
-This mode is invoked by the orchestrator before executing a specific task.
+This mode is invoked by the orchestrator after Phase 5 (per-task planning)
+produces execution artifacts for a specific task.
 
-### 1. Load deferred questions for this task
+### 1. Dispatch critique-analyzer
+
+Read `./subagents/critique-analyzer.md` and dispatch the critique-analyzer
+subagent with:
+
+- `MODE=critique`
+- `TICKET_KEY`
+- `TASK_NUMBER`
+- `ARTIFACTS` — list of file paths:
+  - `docs/<KEY>-task-<N>-brief.md`
+  - `docs/<KEY>-task-<N>-execution-plan.md`
+  - `docs/<KEY>-task-<N>-test-spec.md`
+  - `docs/<KEY>-task-<N>-refactoring-plan.md`
+- `PRIOR_DECISIONS` — path to `docs/<KEY>-task-<N>-decisions.md` if this is
+  iteration 2 or 3 (so the critic does not re-raise resolved concerns)
+
+Collect its output as the `CRITIQUE_REPORT`.
+
+### 2. Load deferred questions for this task
 
 Read `docs/<TICKET_KEY>-tasks.md` and extract:
 
@@ -414,7 +519,7 @@ Read `docs/<TICKET_KEY>-tasks.md` and extract:
 - Any unresolved assumptions specific to this task
 - Any new questions added by previous task executions
 
-### 2. Filter for relevance
+### 3. Filter deferred questions for relevance
 
 Review each deferred question against the CURRENT state of the codebase and
 plan. Some questions may no longer be relevant because:
@@ -426,53 +531,120 @@ plan. Some questions may no longer be relevant because:
 Mark irrelevant questions as:
 `[RESOLVED — no longer applicable: <reason>]`
 
-### 3. Present remaining questions
+### 4. Build the manifest
 
-If questions remain:
+Combine critique items and remaining deferred questions into a single manifest:
 
 ```markdown
-## Just-In-Time Clarification — Task <N>: <Title>
+## Critique & Clarification Manifest — Task <N>: <Title>
 
-Before executing this task, <M> question(s) need your input:
+Before executing this task, **<M> items** need your input:
+**<C> critique items** challenging the planners' approach,
+**<Q> deferred questions** from earlier phases.
 
-| #   | Short description | Input type     |
-| --- | ----------------- | -------------- |
-| 1   | <description>     | Single select  |
-| 2   | <description>     | Confirm/revise |
+| #   | Category             | Short description                 | Input type    |
+| --- | -------------------- | --------------------------------- | ------------- |
+| 1   | 🔴 Critique (HIGH)   | Express chosen, project uses Hono | Alternatives  |
+| 2   | 🟡 Critique (MEDIUM) | Jest when Vitest already in use   | Alternatives  |
+| 3   | ⚪ Deferred question | Caching strategy for this task    | Single select |
 ```
 
-Walk through each question using the same one-at-a-time protocol from
-upfront mode (progress indicator, context, interactive selection, acknowledge).
-
-If no questions remain (all were resolved or became irrelevant):
+If no questions remain (all critique items are clean, all deferred questions
+were resolved or became irrelevant):
 
 ```
-All deferred questions for Task <N> have been resolved by prior decisions
-or are no longer applicable. Ready to execute.
+All items for Task <N> have been resolved. No critique concerns. Ready to execute.
 ```
 
-### 4. Delegate file updates
+### 5. Walk through items one at a time
 
-Dispatch `decision-recorder` with:
+Same protocol as upfront mode Phase 2 (progress indicator, context, interactive
+selection, acknowledge, track re-plan need).
+
+### 6. Create per-task decisions file
+
+After all items have been walked through, create the per-task decisions file at
+`docs/<TICKET_KEY>-task-<N>-decisions.md`:
+
+```markdown
+## Per-Task Decisions — Task <N>: <Title>
+
+> TICKET_KEY: <KEY>
+> Phase: 6 — Critique
+> Iteration: <1|2|3>
+> Date: <YYYY-MM-DD HH:MM UTC>
+
+### Critique Resolutions
+
+| #   | Severity | Decision challenged | Resolution        | Rationale                              |
+| --- | -------- | ------------------- | ----------------- | -------------------------------------- |
+| 1   | HIGH     | Express.js for API  | Switch to Fastify | Project already uses Fastify elsewhere |
+| 2   | MEDIUM   | Jest for testing    | Keep Jest         | Override: team familiarity, acceptable |
+
+### Deferred Question Resolutions
+
+| #   | Question         | Answer                  | Impact on plan |
+| --- | ---------------- | ----------------------- | -------------- |
+| 1   | Caching strategy | Use Redis with 5min TTL | Updates impl   |
+
+### Implementation Updates Required
+
+- <list any changes to implementation notes, approach, or plan>
+
+### Re-Plan Needed
+
+<Yes — decisions #1 require re-planning | No — all decisions compatible with current plan>
+```
+
+### 7. Dispatch decision-recorder
+
+Read `./subagents/decision-recorder.md` and dispatch with:
 
 - `TICKET_KEY`
-- `MODE=jit`
+- `MODE=critique`
 - `TASK_NUMBER=<N>`
-- `DECISIONS` — any decisions resolved during step 3
+- `DECISIONS` — all decisions from step 5
 - `IMPLEMENTATION_UPDATES` — any implementation notes that changed
-- `RESOLVED_IRRELEVANT` — questions marked irrelevant in step 2 (with reasons)
+- `RESOLVED_IRRELEVANT` — questions marked irrelevant in step 3
+- `PER_TASK_DECISIONS_FILE` — path to the file created in step 6
 
-The subagent handles all file edits:
+The subagent handles:
 
-- Updates the Decisions Log with new entries (marking `Phase resolved` as
-  `Phase 5 — Task <N>`).
-- Resolves the task's `Questions to answer before starting` section.
-- Tags irrelevant questions with `[RESOLVED — no longer applicable: <reason>]`.
-- Updates `Implementation notes` if any answers changed the approach.
-- Validates all updates were applied correctly.
+- Adding a reference row to the main `## Decisions Log` pointing to the
+  per-task decisions file:
+  `| <N> | Critique — Task <N> | See docs/<KEY>-task-<N>-decisions.md | <summary> | Phase 6 — Task <N> |`
+- Resolving the task's `Questions to answer before starting` section.
+- Tagging irrelevant questions with `[RESOLVED — no longer applicable: <reason>]`.
+- Updating `Implementation notes` if any answers changed the approach.
+- Validating all updates were applied correctly.
 
-If the subagent reports warnings (updates that could not be applied), note
-them but do not block — they are informational.
+### 8. Final summary
+
+```markdown
+## Critique & Clarification Complete (Phase 6) — Task <N>
+
+| Metric                      | Count    |
+| --------------------------- | -------- | --- | --- |
+| Critique items resolved     | <N>      |
+| — Kept current approach     | <N>      |
+| — Switched to alternative   | <N>      |
+| — Acknowledged (override)   | <N>      |
+| Deferred questions resolved | <N>      |
+| Questions now irrelevant    | <N>      |
+| **Re-plan needed**          | <Yes/No> |
+| **Iteration**               | <1       | 2   | 3>  |
+
+**Key changes:**
+
+- <list material changes, if any>
+
+**Decisions file:** `docs/<KEY>-task-<N>-decisions.md`
+```
+
+If `RE_PLAN_NEEDED` is true, the orchestrator will trigger a re-plan cycle
+in Phase 5 (re-dispatch all planning subagents with the decisions file).
+
+If `RE_PLAN_NEEDED` is false, the orchestrator proceeds to Phase 7 (execution).
 
 ---
 
@@ -487,8 +659,13 @@ them but do not block — they are informational.
   the problem space, not just answer your question.
 - **Respect "skip."** Note the fallback, move on, no pressure.
 - **Stay neutral on options.** If you have a recommendation, frame it as "I'd
-  lean toward X because..." not "You should do X."
+  lean toward X because..." not "You should do X." Exception: the
+  critique-analyzer's output is deliberately opinionated — present its views
+  faithfully but let the user decide.
 - **Keep each question block scannable** — readable in under 30 seconds. Let the
   visuals carry the weight; don't duplicate them in prose.
 - **Never ask about what hasn't happened yet.** If a question's relevance
   depends on the outcome of a future task, it must be deferred.
+- **Present ALL critique items.** Every critique item (HIGH, MEDIUM, and LOW)
+  is presented to the user. No filtering, no auto-acknowledging. The user sees
+  everything and makes every decision.
