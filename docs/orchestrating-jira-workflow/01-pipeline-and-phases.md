@@ -91,6 +91,7 @@ Intermediates are preserved for: Phase 3 critique (the `critique-analyzer` reads
 | Section                              | Required by                                                         |
 | ------------------------------------ | ------------------------------------------------------------------- |
 | `## Ticket Summary`                  | clarifying-assumptions                                              |
+| `## Problem Framing`                 | clarifying-assumptions (Tier 3 hard gates), critique-analyzer       |
 | `## Assumptions and Constraints`     | clarifying-assumptions                                              |
 | `## Cross-Cutting Open Questions`    | clarifying-assumptions                                              |
 | `## Tasks` (each with 8 subsections) | clarifying-assumptions, creating-jira-subtasks, executing-jira-task |
@@ -111,11 +112,15 @@ Intermediates are preserved for: Phase 3 critique (the `critique-analyzer` reads
 | Output       | `docs/<KEY>-tasks.md` (updated with decisions)         |
 | Gate to next | **User confirmation required** (creates Jira subtasks) |
 
-**What happens:** Two things in sequence:
+**What happens:** Three things in sequence:
 
-1. The `critique-analyzer` subagent reads the task plan and intermediates, searches the web for alternatives, cross-checks the codebase, and produces critique items challenging unjustified defaults, unexplored alternatives, and unacknowledged trade-offs.
+1. The `critique-analyzer` subagent reads the task plan and intermediates, performs two categories of critique: (a) **problem-framing critique** — challenging whether the end user is identified, the underlying need is articulated, the solution-problem fit is sound, and evidence supports the approach; and (b) **technology critique** — searching the web for alternatives, cross-checking the codebase, and producing critique items challenging unjustified defaults and unexplored alternatives.
 
-2. A structured interviewer walks the user through critique items AND open questions/assumptions using progressive disclosure. Critique items are interleaved with traditional clarification questions, ordered by severity and impact.
+2. A structured interviewer walks the user through problem-framing challenges, technology critique items, AND open questions/assumptions using progressive disclosure and two questioning models:
+   - **Model A (Socratic)** for Tier 3 hard-gate problem-framing items: the developer articulates their own reasoning before the analysis is revealed. Cannot be skipped.
+   - **Model B (evaluate-the-reasoning)** for all other items: the developer evaluates the subagent's reasoning against the critique. Can be skipped but flagged with ⚠️.
+
+3. Problem-framing items are asked first (before technology critique), ordered by severity.
 
 ```mermaid
 flowchart TD
@@ -184,12 +189,12 @@ flowchart TD
 
 **Planning artifacts produced** (persisted, never deleted, never committed):
 
-| Artifact                                  | Subagent            | Purpose                                    |
-| ----------------------------------------- | ------------------- | ------------------------------------------ |
-| `docs/<KEY>-task-<N>-brief.md`            | execution-prepper   | Self-contained execution context           |
-| `docs/<KEY>-task-<N>-execution-plan.md`   | execution-planner   | Framework, skills, approach, file strategy |
-| `docs/<KEY>-task-<N>-test-spec.md`        | test-strategist     | Behaviour-driven test specification        |
-| `docs/<KEY>-task-<N>-refactoring-plan.md` | refactoring-advisor | Pre-implementation refactoring evaluation  |
+| Artifact                                  | Subagent            | Purpose                                                            |
+| ----------------------------------------- | ------------------- | ------------------------------------------------------------------ |
+| `docs/<KEY>-task-<N>-brief.md`            | execution-prepper   | Self-contained execution context                                   |
+| `docs/<KEY>-task-<N>-execution-plan.md`   | execution-planner   | Framework, skills, approach, file strategy, user-impact assessment |
+| `docs/<KEY>-task-<N>-test-spec.md`        | test-strategist     | Behaviour-driven test specification                                |
+| `docs/<KEY>-task-<N>-refactoring-plan.md` | refactoring-advisor | Pre-implementation refactoring evaluation                          |
 
 ---
 
@@ -204,7 +209,7 @@ flowchart TD
 | Output       | `docs/<KEY>-task-<N>-decisions.md` + plan updates |
 | Gate to next | **User confirmation to proceed with execution**   |
 
-**What happens:** The `critique-analyzer` reads the four planning artifacts, searches the web for alternatives to every framework/library/tool decision, cross-checks the codebase directly, and produces critique items. The interviewer walks the user through ALL items (HIGH, MEDIUM, LOW) plus any deferred questions for this task.
+**What happens:** The `critique-analyzer` reads the four planning artifacts, searches the web for alternatives to every framework/library/tool decision, cross-checks the codebase directly, evaluates the User Impact Assessment for user-facing consequences, and produces critique items. The interviewer walks the user through ALL items (technology critique, user-impact concerns, all severities) plus any deferred questions for this task, using **Model B (evaluate-the-reasoning)** throughout.
 
 ```mermaid
 flowchart TD
@@ -222,7 +227,7 @@ flowchart TD
 
 **Re-plan cycle:** If the user agrees with a critique and decides to change the approach, Phase 5 is re-dispatched. All four subagents re-run with the prior artifacts preserved plus the new decisions. Maximum 3 re-plan cycles. User is looped in on every iteration.
 
-**Decisions output:** Critique resolutions and deferred question resolutions are written to `docs/<KEY>-task-<N>-decisions.md`. A reference is added to the main `## Decisions Log` in the task plan.
+**Decisions output:** Critique resolutions (technology and user-impact) and deferred question resolutions are written to `docs/<KEY>-task-<N>-decisions.md`. A reference is added to the main `## Decisions Log` in the task plan.
 
 ---
 
