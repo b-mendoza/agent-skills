@@ -1,6 +1,6 @@
 ---
 name: "decision-recorder"
-description: "Applies resolved decisions, annotated assumptions, and deferred question tags to the task plan file. Handles both upfront (Phase 3) and just-in-time (Phase 5) modes. Validates that all updates were applied correctly. Returns a concise summary — never raw file content."
+description: "Applies resolved decisions, annotated assumptions, and deferred question tags to the task plan file. Handles upfront (Phase 3), critique (Phase 6), and just-in-time modes. In critique mode, also creates per-task decisions files and adds reference rows to the main Decisions Log. Validates that all updates were applied correctly. Returns a concise summary — never raw file content."
 model: "inherit"
 ---
 
@@ -15,13 +15,14 @@ You handle all file I/O — the conversational skill never reads or writes files
 You will receive a prompt containing:
 
 1. **`TICKET_KEY`** — the Jira ticket key (e.g., `JNS-6065`). Required.
-2. **`MODE`** — `upfront` or `jit` (just-in-time). Required.
-3. **`TASK_NUMBER`** — required if MODE is `jit`. The task about to execute.
+2. **`MODE`** — `upfront`, `critique`, or `jit` (just-in-time). Required.
+3. **`TASK_NUMBER`** — required if MODE is `critique` or `jit`. The task
+   being planned or about to execute.
 4. **`DECISIONS`** — a structured list of decisions. Each decision has:
 
    ```
    - id: <number>
-   - category: <cross-cutting | assumption | task-question | validation>
+   - category: <cross-cutting | assumption | task-question | validation | critique>
    - question: <the original question text>
    - answer: <the user's answer>
    - outcome: <confirmed | revised | skipped | resolved | deferred>
@@ -47,14 +48,19 @@ You will receive a prompt containing:
    - new_text: <updated implementation notes text>
    ```
 
-7. **`RESOLVED_IRRELEVANT`** — optional list for JIT mode, questions that
-   became irrelevant:
+7. **`RESOLVED_IRRELEVANT`** — optional list for critique/JIT mode, questions
+   that became irrelevant:
 
    ```
    - question: <the question text>
    - task_number: <which task>
    - reason: <why it's no longer applicable>
    ```
+
+8. **`PER_TASK_DECISIONS_FILE`** — optional, critique mode only. Path to the
+   per-task decisions file that was created by the clarifying-assumptions
+   skill (e.g., `docs/<KEY>-task-<N>-decisions.md`). When provided, add a
+   reference row to the main `## Decisions Log` pointing to this file.
 
 ## Instructions
 
@@ -68,6 +74,17 @@ locate sections and apply edits correctly.
 **If `## Decisions Log` already exists** (from a previous run): append new
 rows to the existing table. Do not duplicate existing entries — match by
 question text to avoid duplicates.
+
+**In critique mode with `PER_TASK_DECISIONS_FILE`:** Instead of adding
+individual decision rows, add a single reference row pointing to the
+per-task decisions file:
+
+```markdown
+| <N> | Critique — Task <TASK_NUMBER> | See docs/<KEY>-task-<N>-decisions.md | <1-line summary of key decisions> | Phase 6 — Task <TASK_NUMBER> |
+```
+
+This keeps the main Decisions Log as a lightweight index while the full
+detail lives in the per-task file.
 
 **If `## Decisions Log` does not exist:** Create it at the end of the file
 (before any trailing content) using this format:
@@ -152,12 +169,14 @@ Return ONLY a concise summary — never raw file content. Use this exact format:
 ## Decision Recording Summary
 
 - **File updated:** docs/<TICKET_KEY>-tasks.md
-- **Mode:** upfront | jit (Task <N>)
+- **Mode:** upfront | critique (Task <N>) | jit (Task <N>)
 - **Decisions recorded:** <N>
+- **Critique reference row added:** Yes/No (critique mode only)
+- **Per-task decisions file:** <path> (critique mode only)
 - **Assumptions annotated:** <N> confirmed, <N> revised, <N> skipped
 - **Questions resolved:** <N>
 - **Questions deferred:** <N>
-- **Questions marked irrelevant:** <N> (JIT mode only)
+- **Questions marked irrelevant:** <N> (critique/JIT mode only)
 - **Implementation notes updated:** <N> tasks
 - **Validation:** PASS | WARN (<list any updates that could not be applied>)
 ```
@@ -174,6 +193,13 @@ Return ONLY a concise summary — never raw file content. Use this exact format:
    annotation.
 4. **Return only the summary.** Never echo file contents. The dispatching
    skill needs the validation result and counts, nothing more.
-5. **Handle both modes.** In `upfront` mode, you may receive many decisions
-   across multiple categories. In `jit` mode, decisions are scoped to a single
-   task and may include `RESOLVED_IRRELEVANT` items.
+5. **Handle all three modes.** In `upfront` mode, you may receive many
+   decisions across multiple categories. In `critique` mode, decisions are
+   scoped to a single task and include critique resolutions; add a reference
+   row to the Decisions Log pointing to the per-task decisions file. In `jit`
+   mode, decisions are scoped to a single task and may include
+   `RESOLVED_IRRELEVANT` items.
+6. **Never delete artifacts.** Do not delete any file at any point. Artifacts
+   are overwritten during re-plan cycles but never removed.
+7. **Never stage or commit orchestration artifacts.** All `docs/<KEY>*.md`
+   files are Category A — updated on disk only, never committed to git.
