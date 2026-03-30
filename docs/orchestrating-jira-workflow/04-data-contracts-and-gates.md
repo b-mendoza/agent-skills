@@ -84,12 +84,15 @@ flowchart LR
 | Section                              | Consumed by                                                         |
 | ------------------------------------ | ------------------------------------------------------------------- |
 | `## Ticket Summary`                  | clarifying-assumptions                                              |
+| `## Problem Framing`                 | clarifying-assumptions (Tier 3 hard gates), critique-analyzer       |
 | `## Assumptions and Constraints`     | clarifying-assumptions                                              |
 | `## Cross-Cutting Open Questions`    | clarifying-assumptions                                              |
 | `## Tasks` (each with 8 subsections) | clarifying-assumptions, creating-jira-subtasks, executing-jira-task |
 | `## Execution Order Summary`         | creating-jira-subtasks                                              |
 | `## Dependency Graph`                | planning-jira-task                                                  |
 | `## Validation Report`               | clarifying-assumptions                                              |
+
+The `## Problem Framing` section contains six subsections: End User, Underlying Need, Proposed Solution, Solution-Problem Fit, Alternative Approaches Not Explored, and Evidence Basis. Entries marked "Not stated in ticket" become Tier 3 hard-gate questions in Phase 3.
 
 **Preserved intermediates** (consumed by `critique-analyzer` in Phase 3):
 
@@ -108,14 +111,16 @@ flowchart LR
 
 **Additions made by Phase 3:**
 
-| Addition                               | Purpose                                         |
-| -------------------------------------- | ----------------------------------------------- |
-| `## Decisions Log` table               | Subtask descriptions reflect resolved decisions |
-| Annotated assumptions (`✅`/`❌`/`⏭️`) | Executor needs confirmed assumptions            |
-| Resolved per-task questions            | Pre-flight verifies no unresolved questions     |
-| Updated `Implementation notes`         | Executor follows updated approach               |
-| Deferred question tags                 | Phase 6 knows which questions to ask            |
-| Critique resolutions                   | Documents technology decisions and rationale    |
+| Addition                                       | Purpose                                            |
+| ---------------------------------------------- | -------------------------------------------------- |
+| `## Decisions Log` table                       | Subtask descriptions reflect resolved decisions    |
+| Annotated assumptions (`✅`/`❌`/`⏭️`)         | Executor needs confirmed assumptions               |
+| Resolved per-task questions                    | Pre-flight verifies no unresolved questions        |
+| Updated `Implementation notes`                 | Executor follows updated approach                  |
+| Deferred question tags                         | Phase 6 knows which questions to ask               |
+| Problem-framing decisions (Tier 3 resolutions) | Documents end user, need, and evidence basis       |
+| Technology critique resolutions                | Documents technology decisions and rationale       |
+| ⚠️ Skip flags on Tier 2 items                  | Visible record of items skipped without evaluation |
 
 ---
 
@@ -149,6 +154,8 @@ flowchart LR
 | `docs/<KEY>-task-<N>-test-spec.md`        | test-strategist     | critique-analyzer, task-executor |
 | `docs/<KEY>-task-<N>-refactoring-plan.md` | refactoring-advisor | critique-analyzer, task-executor |
 
+The execution plan includes a **User Impact Assessment** table connecting implementation decisions to end-user consequences. The `critique-analyzer` evaluates this in Phase 6.
+
 ---
 
 ### Phase 6 → Phase 7
@@ -159,12 +166,14 @@ flowchart LR
 
 **Additions made by Phase 6:**
 
-| Addition                                             | Purpose                                           |
-| ---------------------------------------------------- | ------------------------------------------------- |
-| `docs/<KEY>-task-<N>-decisions.md`                   | Records critique resolutions and question answers |
-| Reference row in main `## Decisions Log`             | Lightweight index to per-task decisions           |
-| Resolved deferred questions                          | Task-level questions answered just-in-time        |
-| Updated `Implementation notes` (if approach changed) | Executor follows the confirmed approach           |
+| Addition                                             | Purpose                                            |
+| ---------------------------------------------------- | -------------------------------------------------- |
+| `docs/<KEY>-task-<N>-decisions.md`                   | Records critique resolutions and question answers  |
+| Reference row in main `## Decisions Log`             | Lightweight index to per-task decisions            |
+| Resolved deferred questions                          | Task-level questions answered just-in-time         |
+| User-impact resolutions                              | Documents accepted/rejected user-facing trade-offs |
+| Updated `Implementation notes` (if approach changed) | Executor follows the confirmed approach            |
+| ⚠️ Skip flags on skipped Tier 2 items                | Visible record of items skipped without evaluation |
 
 ---
 
