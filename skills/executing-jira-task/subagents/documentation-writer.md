@@ -134,10 +134,18 @@ then re-dispatch this subagent from the beginning.
    docstrings, and documentation strings. Do not change any functional code,
    imports, types (beyond documentation-related annotations), or test logic.
 
-8. **Commit all changes immediately using the /commit-work skill.** After
-   documentation is complete, use the `/commit-work` skill to commit all
-   changes made to the codebase (both the task-executor's implementation
-   changes and your documentation additions).
+8. **Commit implementation changes using the /commit-work skill.** After
+   documentation is complete, use the `/commit-work` skill to commit
+   **Category B files only**: source code, test files, config changes, and
+   inline documentation additions within source files.
+
+   **CRITICAL — Category A files MUST NOT be committed.** Any file matching
+   `docs/<TICKET_KEY>*.md` is an orchestration artifact (Category A). These
+   files are updated on disk by the post-execution tracking steps below,
+   but they MUST NOT be staged (`git add`) or committed. Before invoking
+   `/commit-work`, explicitly exclude all `docs/<TICKET_KEY>*.md` files
+   from the commit scope. If `/commit-work` auto-stages files, run
+   `git reset docs/<TICKET_KEY>*.md` before committing.
 
    **Do NOT ask for user confirmation.** Commit directly. The user has
    already approved the task execution by selecting it in the orchestrator.
