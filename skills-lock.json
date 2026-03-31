@@ -1,20 +1,85 @@
 {
   "version": 1,
   "skills": {
+    "api-security-best-practices": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "ce16d10df486a28a3ba894d646de3243fc2bf9990f563fc7a9b074fd720e24d5"
+    },
+    "architecture-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "cf81f4523a2fd3017590cf2792fe305e4375d2f75d22037b92f05852e22feae2"
+    },
+    "clean-code": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "14ba8e7d8477723eca6d48a79a1924337f4a1f5f1c7ab9b0a7acc073268ecd5a"
+    },
+    "code-review-excellence": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "0f585a4ad2f6d8353069ca9051c6f0e8865abb9d3a6a268d423784c3c3852962"
+    },
     "commit-work": {
       "source": "softaworks/agent-toolkit",
       "sourceType": "github",
       "computedHash": "88cec816d028de357ae7ede3ace36a2bc235a225e3e7d2bb18cdb5190ab6c482"
+    },
+    "executing-plans": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "computedHash": "2f709d1a2c7564f8ce6a9bb707e7f5451117ba80f8e8e2302662c29bc61246a6"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "computedHash": "d31e234f0c90694a670222cdd1dafa853e051d7066beda389f1097c22dadd461"
     },
     "gh-cli": {
       "source": "github/awesome-copilot",
       "sourceType": "github",
       "computedHash": "cbe644b0c6760ae2a1eaafa39133920d889331327065d92a131675a665273e56"
     },
+    "grill-me": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "computedHash": "784f0dbb7403b0f00324bce9a112f715342777a0daee7bbb7385f9c6f0a170ea"
+    },
     "humanizer": {
       "source": "blader/humanizer",
       "sourceType": "github",
       "computedHash": "c03da5ce68828393461eff0c81a2a81535342daee0c6ca292910395065218433"
+    },
+    "progressive-disclosure": {
+      "source": "flpbalada/my-opencode-config",
+      "sourceType": "github",
+      "computedHash": "b42d025b0d2e4bc44cb4c76abc359ff1cd04ff637d32dd88d699d2389d6ea6a2"
+    },
+    "receiving-code-review": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "computedHash": "2760c85d4f4117b0006e7ba755f4bbd61f8f4c185f347999763c97f507274e30"
+    },
+    "subagent-driven-development": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "computedHash": "a197f8e5fba5ea59013e1adbaa90dd42db35de8f074feca200c8038de584a83b"
+    },
+    "test-driven-development": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "computedHash": "126f1ebf6ccd414f42544f6e83d8cc5adb089e1108eaffb7c400701e37eecd9f"
+    },
+    "vitest": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "computedHash": "669c7275f7e1379b06b2bcfa593603aead4c983b951c7e8edbc09640aa38d0a1"
+    },
+    "writing-plans": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "computedHash": "bfaed11054ad8021c66860244e2d2e0d1eca483ae9f5fbfcb956e99c61f5c3d7"
     }
   }
 }
