@@ -137,8 +137,9 @@ the validator's feedback. If it fails again, stop and report.
   stage 2 output. Output: `docs/<KEY>-tasks.md`. Validate with `STAGE=3`.
 
 **3. Post-pipeline validation** — Dispatch `stage-validator` with
-`STAGE=postpipeline` and `FILE_PATH=docs/<KEY>-tasks.md`. This checks all 8
-required sections and all 8 per-task subsections. If anything is missing,
+`STAGE=postpipeline` and `FILE_PATH=docs/<KEY>-tasks.md`. This runs 9
+structural checks covering all required output sections and all 8 per-task
+subsections. If anything is missing,
 re-run stage 3 with the validator's feedback. If it fails again, stop.
 
 **4. Report** — Tell the orchestrator: file path, total tasks, open questions,
@@ -157,14 +158,14 @@ TICKET_KEY = JNS-6065
    → PASS (6/6 checks)
 2. Stage 1: Dispatch task-planner, input docs/JNS-6065.md
    → Wrote docs/JNS-6065-stage-1-detailed.md
-   Validate STAGE=1 → PASS (9/9 checks)
+   Validate STAGE=1 → PASS (13/13 checks)
 3. Stage 2: Dispatch dependency-prioritizer, input stage-1-detailed.md
    → Wrote docs/JNS-6065-stage-2-prioritized.md
    Validate STAGE=2 → PASS (6/6 checks)
 4. Stage 3: Dispatch task-validator, inputs JNS-6065.md + stage-2-prioritized.md
    → Wrote docs/JNS-6065-tasks.md
    Validate STAGE=3 → PASS (2/2 checks)
-5. Post-pipeline: Validate STAGE=postpipeline → PASS (8/8 checks)
+5. Post-pipeline: Validate STAGE=postpipeline → PASS (9/9 checks)
 6. Report to orchestrator:
    File: docs/JNS-6065-tasks.md
    Tasks: 7 | Open questions: 3 | Dependency chains: 2
