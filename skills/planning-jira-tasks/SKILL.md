@@ -65,8 +65,7 @@ dependency-prioritizer)_.
 | `task-validator`         | `./subagents/task-validator.md`         | QA gate — 19 validation checks                        |
 | `stage-validator`        | `./subagents/stage-validator.md`        | Pre-flight, inter-stage, and post-pipeline validation |
 
-Read each subagent file only when you are about to dispatch to it — do not
-preload all definitions.
+Read each subagent file only when you are about to dispatch to it.
 
 ## How This Skill Works
 
@@ -121,22 +120,23 @@ committed to git.
 
 ## Execution Steps
 
-**1. Pre-flight** — Dispatch `stage-validator` with `STAGE=preflight`,
+**1. Pre-flight** — Read and dispatch `stage-validator` with `STAGE=preflight`,
 `TICKET_KEY`, and `FILE_PATH=docs/<TICKET_KEY>.md`. On FAIL: stop and report
 (the orchestrator should re-run Phase 1). On PASS: proceed.
 
 **2. Run the pipeline** — Execute each subagent in order. After each stage,
-dispatch `stage-validator`. If validation fails, retry that stage ONCE with
-the validator's feedback. If it fails again, stop and report.
+dispatch `stage-validator`. If validation fails, re-dispatch the subagent
+with its original inputs plus the validator's issues list appended to the
+prompt. If it fails validation again, stop and report.
 
-- **Stage 1 — Plan:** Dispatch `task-planner` with input `docs/<KEY>.md`.
+- **Stage 1 — Plan:** Read and dispatch `task-planner` with input `docs/<KEY>.md`.
   Output: `docs/<KEY>-stage-1-detailed.md`. Validate with `STAGE=1`.
-- **Stage 2 — Prioritize:** Dispatch `dependency-prioritizer` with stage 1
+- **Stage 2 — Prioritize:** Read and dispatch `dependency-prioritizer` with stage 1
   output. Output: `docs/<KEY>-stage-2-prioritized.md`. Validate `STAGE=2`.
-- **Stage 3 — Validate:** Dispatch `task-validator` with `docs/<KEY>.md` +
+- **Stage 3 — Validate:** Read and dispatch `task-validator` with `docs/<KEY>.md` +
   stage 2 output. Output: `docs/<KEY>-tasks.md`. Validate with `STAGE=3`.
 
-**3. Post-pipeline validation** — Dispatch `stage-validator` with
+**3. Post-pipeline validation** — Read and dispatch `stage-validator` with
 `STAGE=postpipeline` and `FILE_PATH=docs/<KEY>-tasks.md`. This runs 9
 structural checks covering all required output sections and all 8 per-task
 subsections. If anything is missing,
