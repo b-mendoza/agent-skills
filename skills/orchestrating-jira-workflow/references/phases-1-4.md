@@ -172,10 +172,10 @@ Only proceed to Phase 4 if the user chooses option 1.
 **Skill:** `creating-jira-subtasks` (at `../creating-jira-subtasks/SKILL.md`)
 
 1. Read the skill's SKILL.md.
-2. Invoke it with `TICKET_KEY` and `docs/<KEY>-tasks.md`.
-3. The skill dispatches its `subtask-creator` subagent, which creates Jira
+2. Invoke it with the `JIRA_URL`. The skill extracts `TICKET_KEY` from the
+   URL and dispatches its `subtask-creator` subagent, which creates Jira
    subtasks and updates the plan file with subtask keys.
-4. Validate output — dispatch `artifact-validator`:
+3. Validate output — dispatch `artifact-validator`:
 
    ```
    TICKET_KEY: <KEY>
@@ -186,7 +186,7 @@ Only proceed to Phase 4 if the user chooses option 1.
    Expected: file contains `## Jira Subtasks` with ≥1 key matching
    `[A-Z]+-\d+`.
 
-5. Update progress — dispatch `progress-tracker`:
+4. Update progress — dispatch `progress-tracker`:
 
    ```
    TICKET_KEY: <KEY>
