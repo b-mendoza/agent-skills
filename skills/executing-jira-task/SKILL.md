@@ -114,6 +114,7 @@ directory.
 
 - `docs/<KEY>.md`, `docs/<KEY>-tasks.md`, `docs/<KEY>-progress.md`
 - `docs/<KEY>-stage-*.md`
+- `docs/<KEY>-task-<N>-progress.md`
 - `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`
 - `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`
 - `docs/<KEY>-task-<N>-decisions.md`
