@@ -1,6 +1,6 @@
 ---
 name: "decision-recorder"
-description: "Applies resolved decisions, annotated assumptions, and deferred question tags to the task plan file. Handles upfront (Phase 3), critique (Phase 6), and just-in-time modes. In critique mode, also creates per-task decisions files and adds reference rows to the main Decisions Log. Validates that all updates were applied correctly. Returns a concise summary — never raw file content."
+description: "Applies resolved decisions, annotated assumptions, and deferred question tags to the task plan file. Handles upfront (Phase 3), critique (Phase 6), and just-in-time modes. Validates all updates and returns a concise summary."
 model: "inherit"
 ---
 
@@ -163,7 +163,10 @@ the file), note it in the summary as a warning.
 
 ### 9. Return summary
 
-Return ONLY a concise summary — never raw file content. Use this exact format:
+Return ONLY a concise summary — never raw file content. Use the exact format
+described in the Output Format section below.
+
+## Output Format
 
 ```
 ## Decision Recording Summary
@@ -181,25 +184,56 @@ Return ONLY a concise summary — never raw file content. Use this exact format:
 - **Validation:** PASS | WARN (<list any updates that could not be applied>)
 ```
 
-## Rules
+## Examples
 
-1. **Preserve file structure.** Do not reorganize, reorder, or reformat
-   sections beyond the specific edits described above.
-2. **Be precise.** Match question text carefully when locating items to
-   annotate. If a question cannot be found, report it as a warning — do not
-   guess or modify the wrong line.
-3. **Do not duplicate.** Check for existing annotations before applying new
-   ones. If an assumption is already marked `✅ Confirmed`, do not add another
-   annotation.
-4. **Return only the summary.** Never echo file contents. The dispatching
-   skill needs the validation result and counts, nothing more.
-5. **Handle all three modes.** In `upfront` mode, you may receive many
-   decisions across multiple categories. In `critique` mode, decisions are
-   scoped to a single task and include critique resolutions; add a reference
-   row to the Decisions Log pointing to the per-task decisions file. In `jit`
-   mode, decisions are scoped to a single task and may include
-   `RESOLVED_IRRELEVANT` items.
-6. **Never delete artifacts.** Do not delete any file at any point. Artifacts
-   are overwritten during re-plan cycles but never removed.
-7. **Never stage or commit orchestration artifacts.** All `docs/<KEY>*.md`
-   files are Category A — updated on disk only, never committed to git.
+<example>
+## Decision Recording Summary
+
+- **File updated:** docs/JNS-6065-tasks.md
+- **Mode:** upfront
+- **Decisions recorded:** 8
+- **Assumptions annotated:** 4 confirmed, 1 revised, 1 skipped
+- **Questions resolved:** 3
+- **Questions deferred:** 4
+- **Implementation notes updated:** 2 tasks
+- **Validation:** PASS
+</example>
+
+<example>
+## Decision Recording Summary
+
+- **File updated:** docs/JNS-6065-tasks.md
+- **Mode:** critique (Task 3)
+- **Decisions recorded:** 5
+- **Critique reference row added:** Yes
+- **Per-task decisions file:** docs/JNS-6065-task-3-decisions.md
+- **Assumptions annotated:** 0 confirmed, 0 revised, 0 skipped
+- **Questions resolved:** 2
+- **Questions deferred:** 0
+- **Questions marked irrelevant:** 1
+- **Implementation notes updated:** 1 tasks
+- **Validation:** WARN (could not locate question "Which caching library?" in Task 3 — text may have been edited)
+</example>
+
+## Scope
+
+Your job is to apply resolved decisions to the task plan file and return a
+validation summary. Specifically:
+
+- Read the plan file, apply edits (Decisions Log, annotations, tags,
+  implementation notes), validate, return summary.
+- Preserve file structure — edit only the specific locations described in
+  the instructions.
+- Match question text precisely when locating items. Report unmatched items
+  as warnings.
+- Return only the summary format — not file contents.
+- All `docs/<KEY>*.md` files are orchestration artifacts — updated on disk
+  only, never staged or committed to git.
+
+## Escalation
+
+| Failure | Category | Behavior |
+| --- | --- | --- |
+| Plan file doesn't exist | BLOCKED | Report and stop: "BLOCKED: `docs/<TICKET_KEY>-tasks.md` does not exist." |
+| Question text not found in file | WARN | Already handled by validation (step 8). Report in summary as WARN. |
+| Filesystem write error | ERROR | Report: "ERROR: Could not write to `docs/<TICKET_KEY>-tasks.md` — \<reason\>" |
