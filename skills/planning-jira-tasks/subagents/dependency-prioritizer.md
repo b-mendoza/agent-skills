@@ -13,40 +13,14 @@ priority simultaneously.
 
 ## Required Skill Dependencies
 
-Before doing ANY work, verify that the following required skill is available
-in the current environment. This check must be the **absolute first step** —
-before reading inputs, inspecting code, or producing any output.
+Before doing ANY work, verify that `/writing-plans` is available. This check
+must be the **absolute first step**.
 
-### `/writing-plans` (Required)
-
-Reference: https://skills.sh/obra/superpowers/writing-plans
-
-Check whether the `/writing-plans` skill is available. Use
-`/find-skills writing-plans` or check the skill directory.
-
-**If the skill is available:** Read its SKILL.md before proceeding. Use its
-guidelines to structure the dependency-annotated, prioritized plan output —
-it contains best practices for writing clear, actionable plans that
-downstream agents can execute effectively.
-
-**If the skill is NOT available:** STOP immediately. Do not proceed with
-dependency analysis. Produce the following output and nothing else:
-
-```
-## Dependency Analysis
-
-### Status
-BLOCKED — MISSING REQUIRED SKILL
-
-### Missing Skill
-- `/writing-plans` — Required for structured plan writing
-- Install: `skills install obra/superpowers/writing-plans`
-- Reference: https://skills.sh/obra/superpowers/writing-plans
-
-### Action Required
-The orchestrator must prompt the user to install the missing skill and then
-re-dispatch this subagent from the beginning.
-```
+- **If available:** Read its SKILL.md and apply its guidelines to structure the
+  dependency-annotated, prioritized plan output.
+- **If NOT available:** Report **BLOCKED** using the Escalation format at the
+  bottom of this file. Include: skill name `/writing-plans`, install command
+  `skills install obra/superpowers/writing-plans`. Stop — do no further work.
 
 ## Input / Output Contract
 
@@ -147,110 +121,6 @@ one with higher risk (fail fast).
 
 ---
 
-## Output format
-
-The output file must contain the ENTIRE plan from the input, with these
-additions and changes:
-
-### Replace letter labels with numbers
-
-```markdown
-## Task 1: <Title> ← was "Task C"
-```
-
-### Add priority annotation to each task
-
-Immediately after the task heading:
-
-```markdown
-> **Priority:** Risk=4 Complexity=3 Value-unlock=5 Dependency=4 | Total=16/20
-> **Was:** Task C | **Rationale:** On the critical path; unblocks Tasks 2, 3, 5.
-```
-
-### Add dependency annotations to each task
-
-(See Part 1 — Annotations to add per task.)
-
-After renumbering, all `Dependencies / prerequisites` must use NEW task numbers
-with the old label in parentheses for traceability:
-
-```markdown
-**Dependencies / prerequisites:**
-
-- **Hard:** Task 1 (was Task C — creates the schema)
-- **Soft:** Task 3 (was Task B — establishes the pattern)
-```
-
-### Add execution summary (insert after `## Ticket Summary`)
-
-```markdown
-## Execution Order Summary
-
-| Order | Task | Title                  | Risk | Complexity | Value | Dep | Total | Rationale (one line)            |
-| ----- | ---- | ---------------------- | ---- | ---------- | ----- | --- | ----- | ------------------------------- |
-| 1     | C→1  | Set up database schema | 4    | 3          | 5     | 4   | 16    | Critical path, unblocks 3 tasks |
-| 2     | A→2  | Configure auth         | 3    | 2          | 4     | 3   | 12    | High risk, early signal         |
-| …     | …    | …                      | …    | …          | …     | …   | …     | …                               |
-
-### Recommended execution phases
-
-**Phase 1 (sequential — critical path):**
-Tasks 1, 2 — must be done in order.
-
-**Phase 2 (parallelizable):**
-Tasks 3, 4, 5 — can be done simultaneously after Phase 1.
-
-**Phase 3 (sequential — finalization):**
-Tasks 6, 7 — depend on Phase 2 completion.
-```
-
-### Add dependency graph (append at end of document)
-
-```markdown
-## Dependency Graph
-
-### Critical path
-
-<The longest chain of hard dependencies. This determines the minimum
-sequential execution time.>
-
-Task 1 → Task 3 → Task 6 → Task 8
-
-### Parallel groups
-
-<Groups of tasks that can execute simultaneously.>
-
-- **Group 1 (after Task 1):** Tasks 2, 4, 5
-- **Group 2 (after Task 3):** Tasks 6, 7
-- **Independent:** Task 9 (no dependencies, can start anytime)
-
-### Dependency matrix
-
-| Task | Hard depends on | Soft depends on | Parallel with |
-| ---- | --------------- | --------------- | ------------- |
-| 1    | —               | —               | 9             |
-| 2    | 1               | —               | 4, 5          |
-| …    | …               | …               | …             |
-```
-
----
-
-## Rules
-
-- NEVER violate hard dependencies in the ordering.
-- Every task from the input MUST appear in the output. Do not merge, split,
-  add, or remove tasks.
-- Do not modify task content (objectives, implementation notes, DoD, etc.).
-  Only add dependency annotations, priority annotations, renumber, and
-  reorder.
-- Every task MUST have a `Dependencies / prerequisites` annotation.
-- The critical path must be a valid topological sort — no cycles allowed.
-- If you detect a circular dependency, flag it in a `### Circular Dependency
-Warnings` section and suggest how to break the cycle.
-- The total score is informational — override it when ordering rules produce a
-  different result (e.g., a lower-scored task must come first because of hard
-  dependencies).
-
 ## Common mistakes to avoid
 
 - **Ordering purely by score** and violating a hard dependency. The score
@@ -272,3 +142,86 @@ Warnings` section and suggest how to break the cycle.
 - **Forgetting to update dependency references.** After renumbering, every
   "Task A" reference in the document must become "Task N (was Task A)." Stale
   letter references break downstream stages.
+
+## Output Format
+
+Read `./dependency-prioritizer-template.md` for the complete output structure
+(renumbering, priority annotations, execution summary, dependency graph).
+
+The output file must contain the ENTIRE plan from the input, with these
+additions: renumbered tasks, priority annotations, dependency annotations,
+execution order summary, and dependency graph. Write to
+`docs/<KEY>-stage-2-prioritized.md`.
+
+## Example
+
+<example>
+Before (from stage 1 output):
+
+### Task C: Set up database schema
+
+**Objective:**
+Create the PostgreSQL schema for user sessions including tables, indexes,
+and migration script.
+
+**Likely files / artifacts affected:**
+- `migrations/003_session_tables.sql` (new)
+- `src/db/schema.ts` (update)
+
+After (in stage 2 output):
+
+## Task 1: Set up database schema
+
+> **Priority:** Risk=4 Complexity=3 Value-unlock=5 Dependency=4 | Total=16/20
+> **Was:** Task C | **Rationale:** On the critical path; unblocks Tasks 2, 3, 5.
+
+**Objective:**
+Create the PostgreSQL schema for user sessions including tables, indexes,
+and migration script.
+
+**Likely files / artifacts affected:**
+- `migrations/003_session_tables.sql` (new)
+- `src/db/schema.ts` (update)
+
+**Dependencies / prerequisites:**
+
+- **Hard:** None — this is a foundational task.
+- **Soft:** None
+- **Parallel with:** Task 4 (was Task F — UI scaffolding, no shared files)
+
+**Dependency rationale:**
+No upstream dependencies. Three tasks (2, 3, 5) consume the schema this task
+creates, making it the critical path entry point.
+</example>
+
+## Scope
+
+Your job is to analyze dependencies and determine execution order for a task
+plan. Specifically:
+
+- Read the detailed task plan from the input path as your single source of
+  truth.
+- Annotate every task with hard, soft, and parallel dependency classifications.
+- Score each task on four dimensions (risk, complexity, value-unlock, dependency).
+- Determine execution order respecting hard dependencies — a task is placed
+  only after all its hard dependencies.
+- Renumber tasks from letters to sequential numbers, preserving traceability
+  with "(was Task X)" notation.
+- Preserve all existing task content unchanged (objectives, implementation
+  notes, DoD). Add only dependency and priority annotations.
+- Write only to the specified output path
+  (`docs/<KEY>-stage-2-prioritized.md`).
+- Return only a brief confirmation with the file path and task count.
+
+## Escalation
+
+If you cannot complete the analysis, report the failure using one of these
+categories. The dispatching skill decides how to handle each case.
+
+- **BLOCKED** (cannot start): Required skill `/writing-plans` is missing, or
+  input file does not exist. Report the specific blocker and stop.
+- **FAIL** (completed with issues): Circular dependency detected that cannot
+  be resolved, or the input plan contains fewer than 2 tasks. Write what you
+  can, flag the issue prominently, and report.
+- **ERROR** (unexpected): Filesystem inaccessible or unexpected failure. Report
+  the error and stop.
