@@ -234,9 +234,10 @@ Subagent `.md` files are co-located reference documents. To dispatch:
 docs/
 ├── <KEY>.md                             # Phase 1 output: ticket snapshot
 ├── <KEY>-tasks.md                       # Phase 2–7: evolving task plan
-├── <KEY>-progress.md                    # Progress tracking file
+├── <KEY>-progress.md                    # Workflow-level progress (phases 1–4 + task summary)
 ├── <KEY>-stage-1-detailed.md            # Phase 2 intermediate (preserved)
 ├── <KEY>-stage-2-prioritized.md         # Phase 2 intermediate (preserved)
+├── <KEY>-task-<N>-progress.md           # Per-task progress (phases 5–7, preserved)
 ├── <KEY>-task-<N>-brief.md              # Phase 5: execution brief (preserved)
 ├── <KEY>-task-<N>-execution-plan.md     # Phase 5: execution plan (preserved)
 ├── <KEY>-task-<N>-test-spec.md          # Phase 5: test specification (preserved)
@@ -250,8 +251,9 @@ docs/
 | --------------------------- | ---------- | ------------------ | ------- | ---------------- |
 | Ticket snapshot             | Phase 1    | Never              | Never   | Never            |
 | Task plan                   | Phase 2    | Phases 3–7         | Never   | Never            |
-| Progress file               | Phase 1    | Every phase/task   | Never   | Never            |
+| Main progress file          | Phase 1    | Every phase/task   | Never   | Never            |
 | Stage intermediates         | Phase 2    | Re-plan cycles     | Never   | Never            |
+| Per-task progress file      | Phase 5    | Every task phase   | Never   | Never            |
 | Per-task planning artifacts | Phase 5    | Re-plan cycles     | Never   | Never            |
 | Per-task decisions          | Phase 6    | Re-plan cycles     | Never   | Never            |
 
@@ -264,14 +266,15 @@ When all tasks are complete (or the user stops), the orchestrator presents:
 ```markdown
 ## Workflow Summary — <TICKET_KEY>
 
-| Phase | Status      | Key outcome                         |
-| ----- | ----------- | ----------------------------------- |
-| 1     | ✅ Complete | Ticket fetched (N comments)         |
-| 2     | ✅ Complete | N tasks planned                     |
-| 3     | ✅ Complete | N/N questions resolved, N critiqued |
-| 4     | ✅ Complete | N subtasks created in Jira          |
-| 5-7   | ✅ Complete | N/N tasks executed                  |
+| Phase | Status      | Key outcome                            |
+| ----- | ----------- | -------------------------------------- |
+| 1     | ✅ Complete | Ticket fetched (N comments)            |
+| 2     | ✅ Complete | N tasks planned                        |
+| 3     | ✅ Complete | N/N questions resolved, N critiqued    |
+| 4     | ✅ Complete | N subtasks created in Jira             |
+| 5–7   | ✅ Complete | N/N tasks planned, critiqued, executed |
 
+Per-task detail in docs/<TICKET_KEY>-task-<N>-progress.md.
 All artifacts are in docs/<TICKET_KEY>\*.
 ```
 

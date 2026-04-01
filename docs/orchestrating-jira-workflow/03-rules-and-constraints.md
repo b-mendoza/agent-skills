@@ -23,7 +23,7 @@ The orchestrator **must not** perform any tool call, bash command, file read/wri
 | "Let me quickly read the file to see if it exists" | → `artifact-validator`    |
 | "I'll just run a git status"                       | → `codebase-inspector`    |
 | "Let me check the Jira ticket"                     | → `ticket-status-checker` |
-| "I'll update the progress file"                    | → `progress-tracker`      |
+| "I'll update the progress files"                   | → `progress-tracker`      |
 
 ---
 

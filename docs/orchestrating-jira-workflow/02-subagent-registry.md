@@ -95,13 +95,30 @@ All dependencies are required — there is no WARN verdict or optional fallback.
 
 ### progress-tracker
 
-| Property        | Value                                                                    |
-| --------------- | ------------------------------------------------------------------------ |
-| Path            | `./subagents/progress-tracker.md`                                        |
-| Purpose         | Read, create, or update the progress file; return current workflow state |
-| When dispatched | After every phase and task; on resume to determine starting phase        |
+| Property        | Value                                                                                |
+| --------------- | ------------------------------------------------------------------------------------ |
+| Path            | `./subagents/progress-tracker.md`                                                    |
+| Purpose         | Read, create, or update main and per-task progress files; return workflow state      |
+| When dispatched | After every phase and task; on resume to determine starting phase; on task selection |
 
-**Actions:** `read`, `update`, `initialize`
+**Progress files:**
+
+| File                              | Scope          | Tracks                          |
+| --------------------------------- | -------------- | ------------------------------- |
+| `docs/<KEY>-progress.md`          | Workflow-level | Phases 1–4 + task summary table |
+| `docs/<KEY>-task-<N>-progress.md` | Per-task       | Phases 5–7 for one task         |
+
+**Actions:**
+
+| Action            | Scope    | Parameters                                                               |
+| ----------------- | -------- | ------------------------------------------------------------------------ |
+| `read`            | Workflow | `TICKET_KEY`                                                             |
+| `initialize`      | Workflow | `TICKET_KEY`                                                             |
+| `update`          | Workflow | `TICKET_KEY`, `PHASE` (1–4), `STATUS`, `SUMMARY`, `TASKS` (Phase 4 only) |
+| `initialize_task` | Per-task | `TICKET_KEY`, `TASK_NUMBER`, `TASK_TITLE`                                |
+| `update_task`     | Per-task | `TICKET_KEY`, `TASK_NUMBER`, `PHASE` (5–7), `STATUS`, `SUMMARY`          |
+
+The `update` action for Phase 4 completion receives `TASKS` (task numbers and titles) and pre-populates the Task Execution summary table in the main progress file. The `initialize_task` action creates a per-task progress file when a task enters Phase 5.
 
 **State inference (when no progress file exists):**
 
@@ -113,6 +130,15 @@ All dependencies are required — there is no WARN verdict or optional fallback.
 | `docs/<KEY>.md` exists                        | Phase 1 done    |
 | Nothing                                       | Fresh start     |
 
+**Per-task state inference (when per-task progress file does not exist):**
+
+| Artifact found                            | Inferred task state |
+| ----------------------------------------- | ------------------- |
+| `docs/<KEY>-task-<N>-decisions.md` exists | Phases 5–6 done     |
+| All 4 planning artifacts exist for task N | Phase 5 done        |
+| `docs/<KEY>-task-<N>-brief.md` only       | Phase 5 active      |
+| Nothing for task N                        | Not started         |
+
 **Status values:** `✅ Complete`, `🔄 Active`, `❌ Failed`, `⏭️ Skipped`, `⬜ Pending`
 
 **Constraints:** Never returns the full progress file. Uses UTC timestamps. Output under 5 lines.
@@ -121,11 +147,11 @@ All dependencies are required — there is no WARN verdict or optional fallback.
 
 ### ticket-status-checker
 
-| Property        | Value                                                                |
-| --------------- | -------------------------------------------------------------------- |
-| Path            | `./subagents/ticket-status-checker.md`                               |
-| Purpose         | Query Jira for current status, assignee, and recent activity         |
-| When dispatched | Before task execution in Phase 5 when current ticket state is needed |
+| Property        | Value                                                               |
+| --------------- | ------------------------------------------------------------------- |
+| Path            | `./subagents/ticket-status-checker.md`                              |
+| Purpose         | Query Jira for current status, assignee, and recent activity        |
+| When dispatched | Before task planning in Phase 5 when current ticket state is needed |
 
 **Constraints:** Never returns raw JSON. Truncates comments to 80 chars. Limits subtask listings to 20. Output under 30 lines (`full`) or 10 lines (others).
 

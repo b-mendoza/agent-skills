@@ -32,9 +32,10 @@ flowchart LR
 
 - `docs/<KEY>.md` — ticket snapshot
 - `docs/<KEY>-tasks.md` — task plan with decisions
-- `docs/<KEY>-progress.md` — progress tracking
+- `docs/<KEY>-progress.md` — workflow-level progress tracking
 - `docs/<KEY>-stage-1-detailed.md` — task-planner output
 - `docs/<KEY>-stage-2-prioritized.md` — dependency-prioritizer output
+- `docs/<KEY>-task-<N>-progress.md` — per-task progress tracking (phases 5–7)
 - `docs/<KEY>-task-<N>-brief.md` — execution brief
 - `docs/<KEY>-task-<N>-execution-plan.md` — execution plan
 - `docs/<KEY>-task-<N>-test-spec.md` — test specification
@@ -310,24 +311,32 @@ Two re-plan loops exist in the pipeline:
 | **Jira MCP unavailable**            | Tell user to connect it. Offer to resume when ready                                                                         |
 | **Subagent failure (non-critical)** | Proceed without (e.g., `documentation-finder`)                                                                              |
 | **Subagent failure (critical)**     | Halt (e.g., `artifact-validator`)                                                                                           |
-| **User interruption**               | Progress file ensures resumability. Tell user: "Say 'resume ticket `<KEY>`' to pick up"                                     |
+| **User interruption**               | Progress files ensure resumability. Tell user: "Say 'resume ticket `<KEY>`' to pick up"                                     |
 | **Quality gate failure**            | Handled internally by `executing-jira-task` via targeted fix cycles. Orchestrator acts only if fix cycle limit is exhausted |
 | **Task-executor ambiguity**         | Executor stops and reports. Orchestrator resolves with user, re-dispatches with updated brief                               |
 | **Re-plan cycle exhausted**         | After 3 iterations, present accumulated critique to user and ask how to proceed                                             |
 
 ### Resumability
 
-The workflow can be interrupted and resumed at any point. The `progress-tracker` subagent maintains a file at `docs/<KEY>-progress.md` that records the status of every phase and task. On resume:
+The workflow can be interrupted and resumed at any point. The `progress-tracker` subagent maintains two levels of progress files:
+
+- `docs/<KEY>-progress.md` — workflow-level: phases 1–4 status + task execution summary table
+- `docs/<KEY>-task-<N>-progress.md` — per-task: phases 5–7 status for each task
+
+On resume:
 
 1. Run `preflight-checker` (only for remaining phases)
 2. Dispatch `progress-tracker` with `read` action
-3. Determine starting phase from progress state
+3. Determine starting phase from progress state (workflow-level and per-task)
 4. Ask user for confirmation before proceeding (if past Phase 1)
 
-| Progress indicates                    | Resume from |
-| ------------------------------------- | ----------- |
-| No artifacts found                    | Phase 1     |
-| Phase 1 complete, Phase 2 not started | Phase 2     |
-| Phases 1–2 complete, Phase 3 not done | Phase 3     |
-| Phases 1–3 complete, Phase 4 not done | Phase 4     |
-| Phases 1–4 complete, tasks remaining  | Phase 5     |
+| Progress indicates                           | Resume from         |
+| -------------------------------------------- | ------------------- |
+| No artifacts found                           | Phase 1             |
+| Phase 1 complete, Phase 2 not started        | Phase 2             |
+| Phases 1–2 complete, Phase 3 not done        | Phase 3             |
+| Phases 1–3 complete, Phase 4 not done        | Phase 4             |
+| Phases 1–4 complete, no tasks started        | Phase 5 (pick task) |
+| Task N at Phase 5 complete, Phase 6 not done | Phase 6, Task N     |
+| Task N at Phase 6 complete, Phase 7 not done | Phase 7, Task N     |
+| Task N complete, other tasks remaining       | Phase 5 (pick task) |
