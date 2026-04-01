@@ -161,6 +161,20 @@ Problem-framing critique items use a separate severity scale:
 - **LOW** — Minor observations about framing that are worth noting for
   awareness.
 
+### Step 3b. User-impact critique (critique mode only)
+
+For each implementation decision in the per-task artifacts, evaluate its
+effect on the end user identified in Phase 3's Problem Framing. Connect
+every finding back to the established user need — not abstract UX
+principles. Use the "User Impact Critique Items" section of the template.
+
+Severity scale for user-impact items:
+
+- **HIGH** — directly contradicts the established user need or creates
+  unacceptable UX degradation for the identified end user.
+- **MEDIUM** — trade-off exists but is defensible given the project context.
+- **LOW** — minor UX consideration worth noting for awareness.
+
 ### Step 4. Search the web for alternatives
 
 For every technology or framework decision you identify:

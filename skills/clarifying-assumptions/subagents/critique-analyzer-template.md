@@ -91,17 +91,47 @@ existing API endpoints.">
 
 (repeat for each critique item)
 
+### User Impact Critique Items (critique mode only)
+
+Implementation decisions that affect end-user experience. Connect each item
+back to the Problem Framing established in Phase 3.
+
+| #   | Severity | Implementation decision | User-facing consequence      | Problem Framing link                | Why this matters           |
+| --- | -------- | ----------------------- | ---------------------------- | ----------------------------------- | -------------------------- |
+| UI1 | HIGH     | <what was decided>      | <how the end user is affected> | <which PF dimension this connects to> | <why the user should care> |
+| UI2 | MEDIUM   | <what was decided>      | <how the end user is affected> | <which PF dimension this connects to> | <why the user should care> |
+
+#### UI1: <short title>
+
+**Implementation decision:** <what the planning subagent decided>
+
+**User-facing consequence:** <concrete impact on the end user's experience —
+latency, data freshness, accessibility, workflow disruption, etc.>
+
+**Problem Framing link:** <how this connects to the end user and underlying
+need identified in Phase 3 — e.g., "Enterprise admins expect real-time
+account status; 5-minute cache staleness conflicts with this expectation.">
+
+**Severity:** <HIGH — directly contradicts established user need or creates
+unacceptable UX degradation. MEDIUM — trade-off exists but is defensible.
+LOW — minor UX consideration worth noting.>
+
+(repeat for each user-impact critique item)
+
 ### Items NOT Raised (if re-critique)
 
 - <list any concerns from prior iterations that were already resolved by user decisions — do not re-raise these>
 
 ### Summary
 
-- **Total critique items:** <N> (problem-framing: <N>, technology: <N>)
+- **Total critique items:** <N> (problem-framing: <N>, technology: <N>, user-impact: <N>)
 - **Problem-framing — HIGH (Tier 3):** <N>
 - **Problem-framing — MEDIUM (Tier 2):** <N>
 - **Problem-framing — LOW (Tier 2):** <N>
 - **Technology — HIGH severity:** <N>
 - **Technology — MEDIUM severity:** <N>
 - **Technology — LOW severity:** <N>
+- **User-impact — HIGH severity:** <N>
+- **User-impact — MEDIUM severity:** <N>
+- **User-impact — LOW severity:** <N>
 - **Items skipped (prior decisions):** <N>
