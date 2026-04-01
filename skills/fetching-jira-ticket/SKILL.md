@@ -1,6 +1,6 @@
 ---
 name: "fetching-jira-ticket"
-description: 'Retrieve ALL information from a Jira ticket (description, comments, subtasks, attachments metadata, labels, sprint, status, assignee, reporter, linked issues, custom fields, acceptance criteria) and persist it as a single Markdown file. Use whenever the user says "fetch ticket", "retrieve Jira", "pull ticket info", "get ticket details", "look up ticket", "grab the Jira", "what does ticket X say", "check the ticket", "read the ticket", "show me the ticket", or provides a Jira ticket URL like https://workspace.atlassian.net/browse/PROJECT-1234. Also triggered by the orchestrating-jira-workflow skill as Phase 1 of the end-to-end pipeline. Trigger even if the user only pastes a Jira URL with no other context — that alone means "fetch this ticket." This skill ONLY retrieves — it never modifies the ticket or starts implementation.'
+description: 'Phase 1 of the orchestrating-jira-workflow pipeline. Retrieve ALL information from a Jira ticket (description, comments, subtasks, attachments metadata, labels, sprint, status, assignee, reporter, linked issues, custom fields, acceptance criteria) and persist it as a single Markdown file. Invoked by the orchestrating-jira-workflow skill — not intended for standalone use. This skill ONLY retrieves — it never modifies the ticket or starts implementation.'
 ---
 
 # Fetching Jira Ticket
@@ -26,9 +26,6 @@ Extract these values from the URL:
 - **Workspace:** subdomain before `.atlassian.net` → `vukaheavyindustries`
 - **Project:** prefix before the dash in the path segment → `JNS`
 - **Ticket key:** full path segment → `JNS-6065`
-
-If the user provides only a ticket key (e.g., `JNS-6065`), ask for the full
-URL — it carries workspace and project context that downstream skills need.
 
 ## Output
 
