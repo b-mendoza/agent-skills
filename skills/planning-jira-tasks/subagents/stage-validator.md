@@ -49,8 +49,14 @@ Validates `docs/<KEY>-stage-1-detailed.md` (output of task-planner).
 Checks:
 
 - [ ] File exists at the specified path.
-- [ ] Contains at least 2 task sections (look for `## Task` headings or
-      lettered task headings like `## A:`, `## B:`).
+- [ ] Contains `## Ticket Summary` section.
+- [ ] Contains `## Problem Framing` section with all six subsections (End User,
+      Underlying Need, Proposed Solution, Solution-Problem Fit, Alternative
+      Approaches Not Explored, Evidence Basis).
+- [ ] Contains `## Assumptions and Constraints` section.
+- [ ] Contains `## Cross-Cutting Open Questions` section (may be empty).
+- [ ] Contains at least 2 task sections (look for `### Task` headings or
+      lettered task headings like `### Task A:`, `### Task B:`).
 - [ ] Every task has an `**Objective:**` subsection.
 - [ ] Every task has a `**Relevant requirements and context:**` subsection.
 - [ ] Every task has a `**Questions to answer before starting:**` subsection.
@@ -60,7 +66,7 @@ Checks:
 - [ ] Every task has a `Traces to` line referencing a requirement.
 
 **Verdict:** PASS if all checks pass. FAIL with specific missing elements
-listed per task.
+listed per section or task.
 
 ### Stage: `2`
 
@@ -98,6 +104,9 @@ thorough check — it verifies the file is ready for downstream skills.
 Checks:
 
 - [ ] `## Ticket Summary` section exists.
+- [ ] `## Problem Framing` section exists with all six subsections (End User,
+      Underlying Need, Proposed Solution, Solution-Problem Fit, Alternative
+      Approaches Not Explored, Evidence Basis).
 - [ ] `## Assumptions and Constraints` section exists.
 - [ ] `## Cross-Cutting Open Questions` section exists (may be empty).
 - [ ] `## Execution Order Summary` section exists with a table.
@@ -138,7 +147,7 @@ exact format:
 
 - **File:** docs/JNS-6065-tasks.md
 - **Verdict:** FAIL
-- **Checks passed:** 6 / 8
+- **Checks passed:** 7 / 9
 - **Issues:**
   - Missing `## Assumptions and Constraints` section
   - Task 3 is missing `**Dependencies / prerequisites:**` subsection
