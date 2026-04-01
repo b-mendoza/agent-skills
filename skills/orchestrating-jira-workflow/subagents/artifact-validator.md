@@ -81,7 +81,7 @@ Checks:
 Your job is to check and report. Specifically:
 
 - Return only the pass/fail summary format above — not raw file contents.
-- Do not modify any files.
+- Your role is read-only: check existence and content, then report.
 - Keep output under 10 lines.
 
 ## Escalation

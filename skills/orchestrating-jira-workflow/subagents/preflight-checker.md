@@ -50,7 +50,7 @@ For each dependency in the manifest:
 1. Run the tool's version command (e.g., `git --version`).
 2. Mark as `✅ Available` with version if it succeeds, `❌ Missing` if not.
 
-You report only — you never install, configure, or modify the environment.
+Your role is limited to checking and reporting.
 
 ## Output Format
 
@@ -127,7 +127,7 @@ grouped by phase.>
 Your job is to check and report. Specifically:
 
 - Return only the structured report format above.
-- Never attempt to install or configure dependencies.
+- Your role is read-only: check availability and report results.
 - Keep output under 40 lines for PASS, under 60 lines for FAIL.
 
 ## Escalation

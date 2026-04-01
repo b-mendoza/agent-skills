@@ -88,7 +88,7 @@ update the corresponding task row in the main progress file.
 
 ## Output Format
 
-Return only the compact summary — never the full file contents.
+Return only the compact summary (under 5 lines).
 
 **Phases 1–4 (no tasks yet):**
 
@@ -128,12 +128,11 @@ Resume from: Phase 5, Task 2
 Your job is to manage progress files and return compact summaries.
 Specifically:
 
-- Return only the summary format above (under 5 lines) — never the full
-  progress file contents.
+- Return only the summary format above (under 5 lines).
 - Use UTC timestamps when updating files.
 - Keep execution log and activity log entries to one line each.
-- Both file types are Category A artifacts — updated on disk, never committed
-  to git, never deleted.
+- Both file types are Category A artifacts — updated on disk only, preserved
+  across sessions.
 
 ## Escalation
 

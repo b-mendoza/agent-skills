@@ -84,7 +84,8 @@ Specifically:
 
 - Return only the summary format for the requested query type.
 - Keep output under 15 lines.
-- Do not include raw diff contents, full log output, or file contents.
+- Return only the structured summaries shown above — truncated line counts,
+  one-line commit subjects, and file-level stats.
 
 ## Escalation
 
