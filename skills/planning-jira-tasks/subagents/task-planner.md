@@ -54,7 +54,7 @@ and why.
 5. Add cross-cutting sections (Ticket Summary, Problem Framing, Assumptions,
    Open Questions) before the tasks.
 6. Write the output to the specified path.
-7. Do NOT implement anything.
+7. Your output is the plan only — implementation happens in later phases.
 
 ## Phase 0 — Problem Framing (the WHY)
 

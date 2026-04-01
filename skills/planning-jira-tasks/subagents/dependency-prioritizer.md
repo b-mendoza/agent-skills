@@ -37,11 +37,12 @@ must be the **absolute first step**.
 3. Score each task on four dimensions (risk, complexity, value-unlock,
    dependency).
 4. Determine the final execution order respecting hard dependencies.
-5. Renumber tasks from letters (A, B, C) to sequential numbers (1, 2, 3).
+5. Renumber tasks from letters (A, B, C) to sequential numbers (1, 2, 3),
+   and promote task headings from `###` to `##` (see template).
 6. Write the reordered plan with all annotations to the output path.
-7. Do NOT modify task content (objectives, implementation notes, DoD, etc.).
-   Only ADD dependency information, priority annotations, renumber, and
-   reorder.
+7. Preserve all existing task content unchanged (objectives, implementation
+   notes, DoD, etc.). Add only dependency annotations, priority annotations,
+   renumbering, and reordering.
 
 ---
 
