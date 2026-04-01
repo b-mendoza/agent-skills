@@ -15,25 +15,25 @@ Each row shows what to dispatch to `artifact-validator` and what to expect.
 
 ### Phases 1–4
 
-| Transition | Direction     | File to check         | Expected checks                                               |
-| ---------- | ------------- | --------------------- | ------------------------------------------------------------- |
-| → Phase 2  | postcondition | `docs/<KEY>.md`       | File exists, contains `## Description`                        |
-| → Phase 3  | precondition  | `docs/<KEY>.md`       | Same as Phase 1 postcondition                                 |
-| → Phase 3  | postcondition | `docs/<KEY>-tasks.md` | File exists, contains `## Tasks`, has ≥2 task entries         |
-| → Phase 4  | precondition  | `docs/<KEY>-tasks.md` | Same as Phase 2 postcondition                                 |
-| → Phase 4  | postcondition | `docs/<KEY>-tasks.md` | Contains `## Decisions Log`                                   |
-| → Phase 5  | precondition  | `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition                                 |
-| → Phase 5  | postcondition | `docs/<KEY>-tasks.md` | Contains `## Jira Subtasks` with ≥1 key matching `[A-Z]+-\d+` |
+| Phase | Direction     | File to check           | Expected checks                                                |
+| ----- | ------------- | ----------------------- | -------------------------------------------------------------- |
+| 1     | postcondition | `docs/<KEY>.md`         | File exists, contains `## Description`                         |
+| 2     | precondition  | `docs/<KEY>.md`         | Same as Phase 1 postcondition                                  |
+| 2     | postcondition | `docs/<KEY>-tasks.md`   | File exists, contains `## Tasks`, has ≥2 task entries          |
+| 3     | precondition  | `docs/<KEY>-tasks.md`   | Same as Phase 2 postcondition                                  |
+| 3     | postcondition | `docs/<KEY>-tasks.md`   | Contains `## Decisions Log`                                    |
+| 4     | precondition  | `docs/<KEY>-tasks.md`   | Same as Phase 3 postcondition                                  |
+| 4     | postcondition | `docs/<KEY>-tasks.md`   | Contains `## Jira Subtasks` with ≥1 key matching `[A-Z]+-\d+` |
+| 5     | precondition  | `docs/<KEY>-tasks.md`   | Same as Phase 4 postcondition                                  |
 
 ### Phases 5–7 (per task)
 
-| Transition | Direction     | File to check                  | Expected checks                       |
-| ---------- | ------------- | ------------------------------ | ------------------------------------- |
-| → Phase 6  | precondition  | `docs/<KEY>-tasks.md`          | Contains `## Jira Subtasks` with keys |
-| → Phase 6  | postcondition | `docs/<KEY>-task-<N>-brief.md` | File exists                           |
-|            |               | + 3 more planning artifacts    | All 4 planning artifacts exist        |
-| → Phase 7  | precondition  | `docs/<KEY>-task-<N>-*.md`     | All 4 planning artifacts exist        |
-| → Phase 7  | postcondition | `docs/<KEY>-task-<N>-*.md`     | Same as Phase 6 precondition          |
+| Phase | Direction     | File to check                      | Expected checks                  |
+| ----- | ------------- | ---------------------------------- | -------------------------------- |
+| 5     | postcondition | `docs/<KEY>-task-<N>-brief.md`     | File exists                      |
+| 6     | precondition  | `docs/<KEY>-task-<N>-*.md`         | All 4 planning artifacts exist   |
+| 6     | postcondition | `docs/<KEY>-task-<N>-decisions.md` | File exists                      |
+| 7     | precondition  | `docs/<KEY>-task-<N>-*.md`         | Same as Phase 6 precondition     |
 
 ---
 
@@ -98,7 +98,7 @@ Phase 2, or proceed with a single task?"
 The orchestrator does not manage artifact categories directly — that is the
 `documentation-writer` subagent's responsibility. For reference:
 
-- **Category A** (orchestration artifacts, `docs/<KEY>*.md`): updated on disk,
-  never committed to git, never deleted.
+- **Category A** (orchestration artifacts, `docs/<KEY>*.md`): updated on disk
+  only, preserved across sessions.
 - **Category B** (implementation output): source code, tests, config changes —
   committed normally.

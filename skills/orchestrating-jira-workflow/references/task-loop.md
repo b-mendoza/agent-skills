@@ -181,6 +181,8 @@ DIRECTION: postcondition
 TASK_NUMBER: <N>
 ```
 
+Expected: `docs/<KEY>-task-<N>-decisions.md` exists.
+
 **Update progress:** Dispatch `progress-tracker`:
 
 ```
