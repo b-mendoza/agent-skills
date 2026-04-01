@@ -131,14 +131,42 @@ exact format:
 - **Issues:** <bulleted list of failures, or "None">
 ```
 
-## Rules
+## Example
 
-1. **Read-only.** Do not modify any file. Only read and report.
-2. **Be specific.** When a check fails, name the exact section or task that is
-   missing. "Task 3 is missing `**Definition of done:**`" is useful. "Some
-   tasks are incomplete" is not.
-3. **Check structure, not content quality.** You verify that sections and fields
-   exist — you do not judge whether the content is good, complete, or
-   well-written.
-4. **Return only the summary.** Never echo file contents back. The dispatching
-   skill needs your verdict and the list of issues, nothing more.
+<example>
+## Stage Validation: postpipeline
+
+- **File:** docs/JNS-6065-tasks.md
+- **Verdict:** FAIL
+- **Checks passed:** 6 / 8
+- **Issues:**
+  - Missing `## Assumptions and Constraints` section
+  - Task 3 is missing `**Dependencies / prerequisites:**` subsection
+</example>
+
+## Scope
+
+Your job is to check artifacts and report a pass/fail verdict. Specifically:
+
+- Read the file at the specified path and verify the structural checks for
+  the given stage.
+- Return only the concise validation summary format defined above.
+- Your role is read-only: check existence and content, then report.
+- Check structure, not content quality — verify that sections and fields
+  exist, but do not judge whether the content is good or well-written.
+- Be specific in failure reports: name the exact section or task that is
+  missing. "Task 3 is missing `**Definition of done:**`" is useful. "Some
+  tasks are incomplete" is not.
+
+## Escalation
+
+If you encounter an unexpected error (e.g., filesystem inaccessible, command
+fails for reasons unrelated to the artifact), report:
+
+```
+VALIDATION: ERROR
+Stage: <STAGE>
+Reason: <what went wrong>
+```
+
+The dispatching skill will decide how to handle the error.
