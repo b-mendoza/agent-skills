@@ -70,7 +70,7 @@ The `critique-analyzer`'s report and the `decision-recorder`'s validation summar
 | ------------- | ------------ | -------- | --------------------------------------- |
 | `TICKET_KEY`  | Orchestrator | Yes      | `JNS-6065`                              |
 | `MODE`        | Orchestrator | Yes      | `upfront` or `critique`                 |
-| `TASK_NUMBER` | Orchestrator | No       | `3` (required for `critique` mode)      |
+| `TASK_NUMBER` | Orchestrator | Conditional | `3` (required for `critique` mode)      |
 | `ITERATION`   | Orchestrator | No       | `1`, `2`, or `3` (for re-plan tracking) |
 
 The task plan file must already exist at `docs/<TICKET_KEY>-tasks.md` (if not, run **planning-jira-tasks** first). For `critique` mode, per-task artifacts must also exist: `docs/<KEY>-task-<N>-brief.md`, `-execution-plan.md`, `-test-spec.md`, `-refactoring-plan.md` (if not, run **planning-jira-task** first).
