@@ -67,6 +67,13 @@ signal.
 Before dispatching, read the subagent file to understand its input/output
 contract. The path is relative to this skill's directory.
 
+## Multi-Platform MCP Compatibility
+
+Jira subtasks are created through MCP tools, but the specific tool names
+and interfaces vary across platforms (Cursor, Claude Code, OpenCode). The
+`subtask-creator` subagent handles MCP tool discovery internally — this
+skill does not need to know which tools are available.
+
 ## How This Skill Works
 
 This skill does exactly two things: **dispatch** the `subtask-creator`
