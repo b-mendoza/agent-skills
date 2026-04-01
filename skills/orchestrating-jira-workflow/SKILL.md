@@ -66,10 +66,10 @@ Subagent `.md` files are co-located reference documents. To dispatch:
    | Platform        | Dispatch method                                                                          |
    | --------------- | ---------------------------------------------------------------------------------------- |
    | Claude Code CLI | `Task(prompt=<.md content>, description=<step summary>)`                                 |
-   | Cursor IDE      | `Task(subagent_type="general-purpose", prompt=<.md content + inputs>)`                   |
+   | Cursor IDE      | `Task(subagent_type="generalPurpose", prompt=<.md content + inputs>)`                    |
    | OpenCode CLI    | `Task(prompt=<.md content>, description=<step summary>)` — same semantics as Claude Code |
 
-   On Cursor: use `subagent_type="general-purpose"` and embed the `.md` content
+   On Cursor: use `subagent_type="generalPurpose"` and embed the `.md` content
    directly in the prompt. This is more reliable than defining custom named
    agents, which have known dispatch issues with the Task tool.
 

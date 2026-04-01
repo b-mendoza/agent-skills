@@ -221,7 +221,7 @@ Subagent `.md` files are co-located reference documents. To dispatch:
 | Platform        | Dispatch method                                                                |
 | --------------- | ------------------------------------------------------------------------------ |
 | Claude Code CLI | `Task(prompt=<.md content>, description=<step summary>)`                       |
-| Cursor IDE      | `Task(subagent_type="general-purpose", prompt=<.md content + inputs>)`         |
+| Cursor IDE      | `Task(subagent_type="generalPurpose", prompt=<.md content + inputs>)`          |
 | OpenCode CLI    | `Task(prompt=<.md content>, description=<step summary>)` — same as Claude Code |
 
 ---
