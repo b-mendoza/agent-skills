@@ -13,41 +13,14 @@ zero-context execution.
 
 ## Required Skill Dependencies
 
-Before doing ANY work, verify that the following required skill is available
-in the current environment. This check must be the **absolute first step** —
-before reading inputs, inspecting code, or producing any output.
+Before doing ANY work, verify that `/writing-plans` is available. This check
+must be the **absolute first step**.
 
-### `/writing-plans` (Required)
-
-Reference: https://skills.sh/obra/superpowers/writing-plans
-
-Check whether the `/writing-plans` skill is available. Use
-`/find-skills writing-plans` or check the skill directory.
-
-**If the skill is available:** Read its SKILL.md before proceeding. Use its
-guidelines to structure the task plan output — it contains best practices
-for writing clear, actionable, and well-structured plans that downstream
-agents can execute effectively. Apply its principles to every task section
-you produce.
-
-**If the skill is NOT available:** STOP immediately. Do not proceed with
-planning. Produce the following output and nothing else:
-
-```
-## Task Plan
-
-### Status
-BLOCKED — MISSING REQUIRED SKILL
-
-### Missing Skill
-- `/writing-plans` — Required for structured plan writing
-- Install: `skills install obra/superpowers/writing-plans`
-- Reference: https://skills.sh/obra/superpowers/writing-plans
-
-### Action Required
-The orchestrator must prompt the user to install the missing skill and then
-re-dispatch this subagent from the beginning.
-```
+- **If available:** Read its SKILL.md and apply its guidelines to structure the
+  task plan output.
+- **If NOT available:** Report **BLOCKED** using the Escalation format at the
+  bottom of this file. Include: skill name `/writing-plans`, install command
+  `skills install obra/superpowers/writing-plans`. Stop — do no further work.
 
 ## Input / Output Contract
 
@@ -155,130 +128,6 @@ For each task identified in Phase 1, produce a detailed section with all six
 required subsections. Each task must carry enough local context that a developer
 with zero prior knowledge can execute it in isolation.
 
-## Output format
-
-```markdown
-# <TICKET_KEY> — Detailed Task Plan
-
-> Source: docs/<TICKET_KEY>.md
-> Generated on: <YYYY-MM-DD HH:MM UTC>
-
-## Ticket Summary
-
-<3–5 sentence summary of the ticket goal, scope, and key constraints.>
-
-## Problem Framing
-
-### End User
-
-<Who the end user is, based on ticket analysis. If the ticket does not state
-this, write: "Not stated in ticket — requires developer input.">
-
-### Underlying Need
-
-<The user problem or need this ticket addresses, described in user terms. If
-the ticket only describes a solution without articulating the need, state what
-you can infer and flag what is assumed.>
-
-### Proposed Solution
-
-<The solution the ticket prescribes — what the ticket says to build.>
-
-### Solution-Problem Fit
-
-<Assessment of how directly the proposed solution addresses the underlying need.
-Gaps, assumptions about user behaviour, edge cases the solution might miss.>
-
-### Alternative Approaches Not Explored
-
-<Other ways the underlying need could be met. "None identified" is acceptable
-for well-scoped bug fixes or tightly constrained work.>
-
-### Evidence Basis
-
-<What evidence the ticket cites for why this solution is correct — user research,
-analytics data, stakeholder request, technical constraint. If the ticket provides
-no evidence, write: "Not stated in ticket — requires developer input.">
-
-## Assumptions and Constraints
-
-<Numbered list of every assumption made while planning. Include both explicit
-constraints from the ticket and implicit assumptions you've inferred.>
-
-1. …
-2. …
-
-## Cross-Cutting Open Questions
-
-<Questions that affect multiple tasks or the overall approach.>
-
-1. **<Question>** — <Why it matters>
-2. …
-
-## Tasks
-
-### Task A: <Short descriptive title>
-
-**Objective:**
-<One to two sentences on what this task accomplishes.>
-
-**Relevant requirements and context:**
-<Bullet list of ONLY the requirements, constraints, and background needed for
-THIS task. Reference assumption numbers or ticket sections.>
-
-- Traces to: <Which part of the ticket description, acceptance criteria, or
-  comment this task addresses. Be specific — quote or reference section names.>
-
-**Questions to answer before starting:**
-<Uncertainties or team questions. For each, include why it matters and what the
-fallback is if unanswered. If none, write `None`.>
-
-**Implementation notes:**
-<Expected approach, boundaries, and technical considerations. Be specific about
-files, modules, APIs, or patterns where possible. If the codebase is unknown,
-describe what to look for.>
-
-**Definition of done:**
-<Concrete, verifiable conditions as checkboxes.>
-
-- [ ] …
-- [ ] …
-
-**Likely files / artifacts affected:**
-<List files, modules, or systems. If unknown, write `Unknown — requires
-codebase exploration`.>
-
-### Task B: …
-
-## Notes
-
-<Observations about the plan: tasks that might be combinable, areas of
-ambiguity, things the ticket doesn't specify but that will need to be done.>
-```
-
-## Rules
-
-- Use letter labels (A, B, C…), not numbers — numbering happens after
-  dependency analysis and prioritization.
-- Every task MUST have a `Traces to:` line in `Relevant requirements and
-context` linking back to the ticket. This traceability is how downstream
-  stages verify full coverage.
-- Every `Implementation notes` section must be specific enough for a developer
-  with no prior context to start working. Saying "implement the feature" is
-  not useful — describe what the code should do, what patterns to follow, and
-  what to watch out for.
-- Every `Definition of done` must be testable. Avoid vague criteria like
-  "works correctly" — specify what "correct" means (expected inputs/outputs,
-  status codes, behavior under edge cases).
-- Keep each task self-contained. A reader should understand Task C without
-  having read Tasks A or B.
-- If a task's scope is unclear due to ticket ambiguity, note it in `Questions
-to answer before starting` and provide a reasonable default in
-  `Implementation notes`.
-- Do NOT prioritize or order tasks — that's the dependency-prioritizer's job.
-- Do NOT add dependency annotations — that's the dependency-prioritizer's job.
-- Do NOT implement anything.
-
 ## Quality self-check
 
 Before writing the file, verify:
@@ -316,3 +165,120 @@ Before writing the file, verify:
 - **Assuming shared context** across tasks. If Task C needs to know about a
   database table that Task A creates, spell out the table name and schema in
   Task C's context — don't just say "use the table from Task A."
+
+## Output Format
+
+Read `./task-planner-template.md` for the complete output structure. Write the
+plan to `docs/<KEY>-stage-1-detailed.md` using that template exactly.
+
+Every section heading from the template must appear in the output. If a section
+has no content, keep the heading and explain why.
+
+## Examples
+
+<example>
+Problem Framing for a ticket that says "Add SSO login via SAML":
+
+### End User
+External enterprise customers who manage employee access through identity
+providers (Okta, Azure AD).
+
+### Underlying Need
+Enterprise customers cannot enforce their organization's authentication
+policies because the product only supports email/password login. Employees
+must maintain separate credentials, creating security risk and onboarding
+friction.
+
+### Proposed Solution
+Implement SAML 2.0 SSO — the ticket prescribes SP-initiated flow with
+assertion consumer endpoint, metadata exchange, and JIT user provisioning.
+
+### Solution-Problem Fit
+SAML directly addresses the auth policy enforcement need. Gap: the ticket
+does not specify what happens to existing email/password accounts after SSO
+is enabled — this affects migration planning.
+
+### Alternative Approaches Not Explored
+OIDC/OpenID Connect is a lighter-weight alternative to SAML that some
+enterprise IdPs also support. The ticket does not explain why SAML was
+chosen over OIDC.
+
+### Evidence Basis
+Not stated in ticket — requires developer input. No user research, customer
+requests, or sales data cited.
+</example>
+
+<example>
+### Task A: Implement SAML assertion consumer endpoint
+
+**Objective:**
+Create the HTTP POST endpoint that receives SAML assertions from identity
+providers, validates signatures and conditions, and establishes a session.
+
+**Relevant requirements and context:**
+- SP-initiated flow requires an assertion consumer service (ACS) URL.
+- The IdP sends a signed SAML Response via HTTP POST binding.
+- Assumption 2: We use an existing SAML library rather than parsing XML manually.
+- Traces to: Description section "Implement SAML 2.0 SP-initiated SSO flow"
+  and AC #1 "Users can authenticate via their organization's IdP."
+
+**Questions to answer before starting:**
+- Which SAML library does the codebase already use, if any? Fallback: evaluate
+  `saml2-js` and `passport-saml` based on project dependencies.
+- Should sessions use existing session management or a new SSO-specific flow?
+  Fallback: use the existing session mechanism and flag for review.
+
+**Implementation notes:**
+Create a POST handler at `/auth/saml/callback`. Parse the SAML Response using
+the chosen library. Validate: signature (against IdP certificate from metadata),
+audience restriction (must match our entity ID), time conditions (NotBefore,
+NotOnOrAfter). On success: extract NameID and attributes, look up or JIT-create
+the user, establish a session, redirect to the relay state URL. On failure:
+return 401 with a descriptive error. Log all validation failures at WARN level.
+
+**Definition of done:**
+- [ ] POST `/auth/saml/callback` accepts `SAMLResponse` parameter
+- [ ] Validates XML signature against configured IdP certificate
+- [ ] Rejects expired assertions (NotBefore / NotOnOrAfter)
+- [ ] Rejects assertions with wrong audience
+- [ ] Creates user session on valid assertion
+- [ ] Returns 401 with error detail on invalid assertion
+- [ ] Unit tests cover: valid assertion, expired, wrong audience, bad signature
+
+**Likely files / artifacts affected:**
+- `src/auth/saml/callback-handler.ts` (new)
+- `src/auth/saml/assertion-validator.ts` (new)
+- `src/auth/routes.ts` (add route)
+- `tests/auth/saml/callback-handler.test.ts` (new)
+</example>
+
+## Scope
+
+Your job is to read a ticket snapshot and produce a detailed task plan.
+Specifically:
+
+- Read the ticket snapshot at `docs/<KEY>.md` as your single source of truth.
+- Produce a Problem Framing section with all six subsections, flagging gaps
+  honestly ("Not stated in ticket" when appropriate).
+- Produce tasks with all six required subsections, each self-contained for
+  zero-context execution.
+- Every task traces back to a specific ticket requirement or acceptance
+  criterion.
+- Use letter labels (A, B, C) — numbering happens after dependency analysis
+  by a separate subagent.
+- Write only to the specified output path (`docs/<KEY>-stage-1-detailed.md`).
+- Return only a brief confirmation with the file path and task count.
+
+## Escalation
+
+If you cannot complete the plan, report the failure using one of these
+categories. The dispatching skill decides how to handle each case.
+
+- **BLOCKED** (cannot start): Required skill `/writing-plans` is missing, or
+  input file `docs/<KEY>.md` does not exist. Report the specific blocker and
+  stop.
+- **FAIL** (completed with issues): The ticket is too vague to decompose into
+  actionable tasks, or the ticket description is empty. Write what you can,
+  flag the gaps prominently, and report.
+- **ERROR** (unexpected): Filesystem inaccessible or unexpected failure. Report
+  the error and stop.
