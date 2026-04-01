@@ -13,22 +13,26 @@ orchestrator uses this to decide whether to advance.
 ## Inputs
 
 - `TICKET_KEY` — the Jira ticket key (e.g., `JNS-6065`)
-- `PHASE` — phase number (1–5)
+- `PHASE` — phase number (1–7)
 - `DIRECTION` — `precondition` (check input before a phase) or `postcondition`
   (check output after a phase)
+- `TASK_NUMBER` — (phases 5–7 only) the task number
 
 ## Validation Rules
 
-| Phase | Direction     | File                  | Checks                                                        |
-| ----- | ------------- | --------------------- | ------------------------------------------------------------- |
-| 1     | postcondition | `docs/<KEY>.md`       | File exists, contains `## Description`                        |
-| 2     | precondition  | `docs/<KEY>.md`       | Same as Phase 1 postcondition                                 |
-| 2     | postcondition | `docs/<KEY>-tasks.md` | File exists, contains `## Tasks`, has ≥2 task entries         |
-| 3     | precondition  | `docs/<KEY>-tasks.md` | Same as Phase 2 postcondition                                 |
-| 3     | postcondition | `docs/<KEY>-tasks.md` | Contains `## Decisions Log`                                   |
-| 4     | precondition  | `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition                                 |
-| 4     | postcondition | `docs/<KEY>-tasks.md` | Contains `## Jira Subtasks` with ≥1 key matching `[A-Z]+-\d+` |
-| 5     | precondition  | `docs/<KEY>-tasks.md` | Same as Phase 4 postcondition                                 |
+| Phase | Direction     | File                           | Checks                                                        |
+| ----- | ------------- | ------------------------------ | ------------------------------------------------------------- |
+| 1     | postcondition | `docs/<KEY>.md`                | File exists, contains `## Description`                        |
+| 2     | precondition  | `docs/<KEY>.md`                | Same as Phase 1 postcondition                                 |
+| 2     | postcondition | `docs/<KEY>-tasks.md`          | File exists, contains `## Tasks`, has ≥2 task entries         |
+| 3     | precondition  | `docs/<KEY>-tasks.md`          | Same as Phase 2 postcondition                                 |
+| 3     | postcondition | `docs/<KEY>-tasks.md`          | Contains `## Decisions Log`                                   |
+| 4     | precondition  | `docs/<KEY>-tasks.md`          | Same as Phase 3 postcondition                                 |
+| 4     | postcondition | `docs/<KEY>-tasks.md`          | Contains `## Jira Subtasks` with ≥1 key matching `[A-Z]+-\d+` |
+| 5     | precondition  | `docs/<KEY>-tasks.md`          | Same as Phase 4 postcondition                                 |
+| 5     | postcondition | `docs/<KEY>-task-<N>-brief.md` | File exists                                                   |
+| 6     | precondition  | `docs/<KEY>-task-<N>-*.md`     | All 4 planning artifacts exist for task N                     |
+| 7     | precondition  | `docs/<KEY>-task-<N>-*.md`     | Same as Phase 6 precondition                                  |
 
 ## Execution
 
