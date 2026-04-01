@@ -66,6 +66,10 @@ Dispatch the critique-analyzer with:
   - `docs/<TICKET_KEY>-tasks.md` (the task plan)
   - `docs/<TICKET_KEY>-stage-1-detailed.md` (detailed planning intermediate)
   - `docs/<TICKET_KEY>-stage-2-prioritized.md` (prioritized planning intermediate)
+- `PRIOR_DECISIONS=docs/<TICKET_KEY>-tasks.md` — **only when `ITERATION > 1`**
+  (re-plan cycle). The Decisions Log in this file contains decisions from the
+  prior iteration. The critique-analyzer's step 5 uses this to avoid
+  re-raising concerns the user already consciously resolved.
 
 Collect the output as `CRITIQUE_REPORT`. This report contains categorized critique items, each with a severity (HIGH/MEDIUM/LOW), a category, affected tasks, and the critique-analyzer's analysis including counter-arguments, trade-off tables, and web search findings where applicable.
 

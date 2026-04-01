@@ -198,14 +198,19 @@ as the subagents you are critiquing.
 
 ### Step 5. Check for prior decisions (re-critique only)
 
-If `PRIOR_DECISIONS` is provided, read the per-task decisions file. For
-each concern you are about to raise:
+If `PRIOR_DECISIONS` is provided, read the file. For each concern you are
+about to raise:
 
 - If the concern was already raised in a prior iteration AND the user
   consciously resolved it (confirmed, revised, or overridden), do NOT
   re-raise it. The user has already made their decision.
 - If the concern is NEW (not raised before), or if the re-plan produced
   a NEW version of the same problematic decision, raise it.
+
+In **critique mode**, `PRIOR_DECISIONS` points to a per-task decisions file
+(`docs/<KEY>-task-<N>-decisions.md`). In **upfront mode** (re-plan only),
+it points to the main tasks file (`docs/<KEY>-tasks.md`) — look for the
+`## Decisions Log` table to find previously resolved decisions.
 
 This prevents the critique loop from becoming circular.
 
