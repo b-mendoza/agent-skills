@@ -1,6 +1,6 @@
 ---
 name: "creating-jira-subtasks"
-description: 'Create subtasks in Jira from a previously generated task plan. Reads the plan from docs/<TICKET_KEY>-tasks.md and creates one Jira subtask per task under the parent ticket. Use when the user says "create subtasks", "push tasks to Jira", "sync plan to Jira", "create Jira tickets", "make subtasks for PROJECT-1234", or anything about turning a plan into Jira issues. Also triggered by the orchestrating-jira-workflow skill as Phase 4. Requires the task plan to already exist (run planning-jira-tasks first if it does not). Use this skill even if the user just says "push to Jira" or "create the tickets" after a planning phase — those are subtask creation requests.'
+description: 'Phase 4 of the orchestrating-jira-workflow pipeline. Reads the task plan from docs/<TICKET_KEY>-tasks.md and creates one Jira subtask per task under the parent ticket, updating the plan file with subtask keys for traceability. Invoked by the orchestrating-jira-workflow skill — not intended for standalone use. This skill creates subtasks but never starts implementation — all subtasks are created in "To Do" status.'
 ---
 
 # Creating Jira Subtasks
@@ -15,32 +15,22 @@ This skill is a **pure coordinator** — it dispatches one subagent and reports
 the result. It never makes Jira API calls, reads files, writes files, or
 runs commands directly.
 
-## Platform Compatibility
-
-This skill follows the Agent Skills open standard and works across Claude Code,
-Cursor, OpenCode, and other compatible tools. Subagent delegation is the only
-platform-specific behavior:
-
-| Platform        | Dispatch method                                                                                           |
-| --------------- | --------------------------------------------------------------------------------------------------------- |
-| **Claude Code** | Natural language or @-mention the subagent. Uses the Agent tool (renamed from Task in v2.1.63).           |
-| **Cursor**      | Auto-delegates based on subagent description, or explicit mention. Supported since Cursor 2.4 (Jan 2026). |
-| **OpenCode**    | @-mention or Task tool. Also reads `.claude/agents/` as a fallback.                                       |
-
-All platforms support co-located subagents inside skill directories. The
-subagent at `./subagents/subtask-creator.md` is read by the orchestrating agent
-at dispatch time and passed as the subagent's system prompt.
-
 ## Inputs
 
-| Input        | Source              | Required | Example    |
-| ------------ | ------------------- | -------- | ---------- |
-| `TICKET_KEY` | User / `$ARGUMENTS` | Yes      | `JNS-6065` |
+| Input      | Required | Example                                                     |
+| ---------- | -------- | ----------------------------------------------------------- |
+| `JIRA_URL` | Yes      | `https://vukaheavyindustries.atlassian.net/browse/JNS-6065` |
 
-The task plan file must already exist at `docs/<TICKET_KEY>-tasks.md`.
-If it does not, tell the user to run **planning-jira-tasks** first.
+Extract these values from the URL:
+
+- **Workspace:** subdomain before `.atlassian.net` → `vukaheavyindustries`
+- **Project:** prefix before the dash in the path segment → `JNS`
+- **Ticket key:** full path segment → `JNS-6065`
 
 ### Input contract
+
+The task plan file must already exist at `docs/<TICKET_KEY>-tasks.md`.
+If it does not, the orchestrator should re-run Phase 2.
 
 The plan file must contain these sections, produced by upstream skills:
 
@@ -51,10 +41,6 @@ The plan file must contain these sections, produced by upstream skills:
 | `## Decisions Log`                      | clarifying-assumptions | Phase-completion signal; resolved decisions   |
 | Per-task `Questions to answer` resolved | clarifying-assumptions | Subtask descriptions reflect resolved answers |
 | Per-task `Implementation notes` updated | clarifying-assumptions | Descriptions include confirmed approach       |
-
-**Pre-flight gate:** If `## Decisions Log` is missing, the plan has not been
-clarified. The subagent will note this as a warning but proceed. Warn the user
-and ask whether to continue or run clarifying-assumptions first.
 
 ## Output
 
@@ -81,42 +67,51 @@ signal.
 Before dispatching, read the subagent file to understand its input/output
 contract. The path is relative to this skill's directory.
 
+## How This Skill Works
+
+This skill does exactly two things: **dispatch** the `subtask-creator`
+subagent with the `TICKET_KEY` derived from `JIRA_URL`, and **report** its
+summary to the user.
+
+The subagent's summary is the only data this skill processes. If the summary
+indicates errors (parent not found, all subtasks failed, validation failure),
+relay them to the user. If it indicates success, report the subtask count
+and the tracking table.
+
 ## Execution Steps
 
 ### 1. Dispatch `subtask-creator`
 
 Read `./subagents/subtask-creator.md` and dispatch the subagent with:
 
-- `TICKET_KEY` — the ticket key from the user's input.
+- `TICKET_KEY` — the ticket key derived from the user's `JIRA_URL`.
 
-The subagent handles everything end-to-end:
-
-- Reads and parses the task plan (all task sections + Decisions Log).
-- Looks up the parent ticket via Jira MCP (extracts project key, subtask
-  issue type).
-- Builds subtask payloads in Jira wiki markup, cross-referencing resolved
-  decisions.
-- Creates subtasks sequentially via Jira MCP (with retry on rate limits).
-- Handles individual failures gracefully (logs + continues).
-- Updates `docs/<TICKET_KEY>-tasks.md`: adds `## Jira Subtasks` table and
-  `Jira Subtask: <KEY>` per task.
-- Validates the output contract (table exists, keys present, counts match).
-- Cleans up any temporary files.
-- Returns a concise summary.
+The subagent handles everything end-to-end: reads and parses the task plan,
+looks up the parent ticket via Jira MCP, builds subtask payloads in Jira wiki
+markup (cross-referencing resolved decisions), creates subtasks sequentially,
+handles individual failures gracefully, updates the plan file with subtask
+keys and the tracking table, validates the output contract, and returns a
+concise summary.
 
 ### 2. Handle the result
 
-Collect the subagent's summary. Check for issues:
+Collect the subagent's summary. Check the summary for errors:
 
-- **If the subagent reports the parent ticket was not found:** Relay the error
-  to the user and stop.
-- **If the subagent reports all subtasks failed:** Tell the user no subtasks
-  were created. Offer to retry or investigate.
-- **If the subagent reports partial failures:** Relay which tasks failed and
-  which succeeded.
-- **If the subagent warns that `## Decisions Log` was missing:** Relay this
-  warning to the user.
-- **If validation FAIL:** Relay the details to the user. Offer to retry.
+- **FAIL (fatal — parent not found, auth failure, no MCP tools):** Relay the
+  error to the user and stop. Phase 4 is incomplete.
+- **BLOCKED (plan file missing):** Relay the error — the orchestrator should
+  re-run Phase 2. Phase 4 is incomplete.
+- **WARN (partial failures):** Relay which tasks failed and which succeeded.
+  If ALL subtasks failed, the subagent will NOT have written the
+  `## Jira Subtasks` table — tell the user Phase 4 is incomplete. Offer to
+  retry.
+- **WARN (Decisions Log missing):** Relay this warning — subtask descriptions
+  may not reflect resolved decisions.
+- **WARN (validation failure):** Relay the validation details. Offer to retry.
+- **PASS (all subtasks created, validation passed):** Proceed to step 3.
+
+If the platform cannot dispatch the subagent, fall back to reading the
+subagent's `.md` file and executing its instructions directly.
 
 ### 3. Report to the user
 
@@ -127,15 +122,36 @@ Using ONLY the information from the subagent's summary, tell the user:
 - Any failures or warnings.
 - Remind the user that no implementation has started — subtasks are in "To Do".
 
-## Error Handling
+<example>
+User provides: https://vukaheavyindustries.atlassian.net/browse/JNS-6065
 
-- **Jira MCP unavailable:** The subagent will report this. Relay to the user
-  and stop.
-- **Parent ticket not found:** The subagent will report this. Relay and stop.
-- **Individual subtask failure:** The subagent handles this internally (logs
-  - continues). Relay the failures from the summary.
-- **ALL subtasks fail:** The subagent will NOT write the `## Jira Subtasks`
-  table. Tell the user Phase 4 is incomplete.
-- **Subagent delegation fails:** If the platform cannot dispatch the subagent,
-  fall back to reading the subagent's `.md` file and executing its instructions
-  directly.
+1. Extract TICKET_KEY → JNS-6065
+2. Read ./subagents/subtask-creator.md
+3. Dispatch subtask-creator with TICKET_KEY=JNS-6065
+4. Subagent returns:
+
+   ## Subtask Creation Summary
+   - Parent ticket: JNS-6065
+   - Tasks in plan: 5
+   - Successfully created: 5
+   - Failed: 0
+   - Decisions Log present: Yes
+   - Validation: PASS
+
+   ### Created Subtasks
+   | Task | Subtask Key | Title                          |
+   | ---- | ----------- | ------------------------------ |
+   | 1    | JNS-6070    | Task 1: Set up database schema |
+   | 2    | JNS-6071    | Task 2: Implement API layer    |
+   | 3    | JNS-6072    | Task 3: Build UI components    |
+   | 4    | JNS-6073    | Task 4: Add integration tests  |
+   | 5    | JNS-6074    | Task 5: Update documentation   |
+
+   ### Failures
+   None
+
+5. Report to user:
+   "5 subtasks created under JNS-6065 (5/5 succeeded).
+    JNS-6070 through JNS-6074. Plan file updated with subtask keys.
+    No implementation started — all subtasks are in To Do."
+</example>
