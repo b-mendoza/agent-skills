@@ -7,7 +7,7 @@ description: 'Top-level orchestrator for end-to-end Jira ticket workflows. Use t
 
 ## Purpose
 
-Coordinate the complete lifecycle of a Jira ticket through five sequential
+Coordinate the complete lifecycle of a Jira ticket through seven sequential
 phases. This skill is a **pure coordinator** — it dispatches to subagents and
 downstream skills, operates only on concise summaries, and never does heavy
 lifting directly.
@@ -32,10 +32,13 @@ Extract the ticket key from a full URL if the user provides one.
 
 ```
 Phase 1: Fetch           →  docs/<KEY>.md
-Phase 2: Plan            →  docs/<KEY>-tasks.md
-Phase 3: Clarify         →  docs/<KEY>-tasks.md (updated with decisions)
+Phase 2: Plan tasks      →  docs/<KEY>-tasks.md + intermediates
+Phase 3: Clarify+Critique→  docs/<KEY>-tasks.md (updated with decisions)
 Phase 4: Create subtasks →  Jira subtasks created + plan updated with keys
-Phase 5: Execute         →  Code changes, one task at a time
+Phase 5: Plan task exec  →  docs/<KEY>-task-<N>-*.md (4 planning artifacts)
+Phase 6: Clarify+Critique→  docs/<KEY>-task-<N>-decisions.md
+Phase 7: Execute         →  Code changes, tests, commits
+         ↑_______________↓  (Phases 5-6-7 loop per task)
 ```
 
 ## Subagent Registry
@@ -47,7 +50,7 @@ Dispatch to these instead of doing anything directly.
 | ----------------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
 | `preflight-checker`     | `./subagents/preflight-checker.md`     | Validate environment dependencies (MCPs, skills, tools) before workflow starts        |
 | `artifact-validator`    | `./subagents/artifact-validator.md`    | Check whether phase artifacts exist and are well-formed; return pass/fail summary     |
-| `progress-tracker`      | `./subagents/progress-tracker.md`      | Read, create, or update the progress file; return current workflow state              |
+| `progress-tracker`      | `./subagents/progress-tracker.md`      | Read, create, or update progress files (workflow + per-task); return current state    |
 | `ticket-status-checker` | `./subagents/ticket-status-checker.md` | Query Jira for current status, assignee, and recent activity on a ticket              |
 | `codebase-inspector`    | `./subagents/codebase-inspector.md`    | Report working tree state: branch, uncommitted changes, recent commits                |
 | `code-reference-finder` | `./subagents/code-reference-finder.md` | Search the codebase for symbols, patterns, or file references; return concise matches |
@@ -85,25 +88,29 @@ before a task), never for dependent operations.
 Each phase is handled by a dedicated skill. Read its SKILL.md only when
 invoking it.
 
-| Phase | Skill                  | Skill Path (relative to skills root) | Purpose                                           |
-| ----- | ---------------------- | ------------------------------------ | ------------------------------------------------- |
-| 1     | fetching-jira-ticket   | `../fetching-jira-ticket/SKILL.md`   | Retrieve all ticket data into a Markdown snapshot |
-| 2     | planning-jira-tasks    | `../planning-jira-tasks/SKILL.md`    | Decompose ticket into a prioritized task plan     |
-| 3     | clarifying-assumptions | `../clarifying-assumptions/SKILL.md` | Walk user through open questions and assumptions  |
-| 4     | creating-jira-subtasks | `../creating-jira-subtasks/SKILL.md` | Push planned tasks to Jira as subtasks            |
-| 5     | executing-jira-task    | `../executing-jira-task/SKILL.md`    | Execute one task at a time from the plan          |
+| Phase | Skill                  | Skill Path (relative to skills root) | Purpose                                               |
+| ----- | ---------------------- | ------------------------------------ | ----------------------------------------------------- |
+| 1     | fetching-jira-ticket   | `../fetching-jira-ticket/SKILL.md`   | Retrieve all ticket data into a Markdown snapshot     |
+| 2     | planning-jira-tasks    | `../planning-jira-tasks/SKILL.md`    | Decompose ticket into a prioritized task plan         |
+| 3     | clarifying-assumptions | `../clarifying-assumptions/SKILL.md` | Critique plan + walk user through questions (upfront) |
+| 4     | creating-jira-subtasks | `../creating-jira-subtasks/SKILL.md` | Push planned tasks to Jira as subtasks                |
+| 5     | planning-jira-task     | `../planning-jira-task/SKILL.md`     | Plan HOW to execute one task (4 planning artifacts)   |
+| 6     | clarifying-assumptions | `../clarifying-assumptions/SKILL.md` | Critique per-task plan + resolve deferred questions   |
+| 7     | executing-jira-task    | `../executing-jira-task/SKILL.md`    | Execute one task: implement, test, review, commit     |
 
 ## Data Contracts
 
 Each phase produces an artifact that the next phase consumes. Always validate
 via `artifact-validator` before advancing.
 
-| Transition | Artifact                          | Validation                                    |
-| ---------- | --------------------------------- | --------------------------------------------- |
-| 1 → 2      | `docs/<KEY>.md`                   | File exists, has `## Description` section     |
-| 2 → 3      | `docs/<KEY>-tasks.md`             | File exists, has `## Tasks` section, ≥2 tasks |
-| 3 → 4      | `docs/<KEY>-tasks.md` (updated)   | File has `## Decisions Log` section           |
-| 4 → 5      | `docs/<KEY>-tasks.md` (with keys) | File has `## Jira Subtasks` table with keys   |
+| Transition | Artifact                           | Validation                                       |
+| ---------- | ---------------------------------- | ------------------------------------------------ |
+| 1 → 2      | `docs/<KEY>.md`                    | File exists, has `## Description` section        |
+| 2 → 3      | `docs/<KEY>-tasks.md`              | File exists, has `## Tasks` section, ≥2 tasks    |
+| 3 → 4      | `docs/<KEY>-tasks.md` (updated)    | File has `## Decisions Log` section              |
+| 4 → 5      | `docs/<KEY>-tasks.md` (with keys)  | File has `## Jira Subtasks` table with keys      |
+| 5 → 6      | `docs/<KEY>-task-<N>-brief.md` + 3 | All 4 planning artifacts exist for the task      |
+| 6 → 7      | `docs/<KEY>-task-<N>-decisions.md` | Planning artifacts still exist (Phase 5 outputs) |
 
 ---
 
@@ -131,7 +138,7 @@ Common traps to avoid:
 - "Let me quickly read the file to see if it exists" → dispatch `artifact-validator`
 - "I'll just run a git status" → dispatch `codebase-inspector`
 - "Let me check the Jira ticket" → dispatch `ticket-status-checker`
-- "I'll update the progress file" → dispatch `progress-tracker`
+- "I'll update the progress files" → dispatch `progress-tracker`
 
 ### Rule 2 — Follow every step in every skill file
 
@@ -227,13 +234,16 @@ phases do not need to be re-checked.
 
 Dispatch `progress-tracker` with action `read` and the `TICKET_KEY`.
 
-| Progress indicates…                   | Resume from |
-| ------------------------------------- | ----------- |
-| No artifacts found                    | Phase 1     |
-| Phase 1 complete, Phase 2 not started | Phase 2     |
-| Phases 1–2 complete, Phase 3 not done | Phase 3     |
-| Phases 1–3 complete, Phase 4 not done | Phase 4     |
-| Phases 1–4 complete, tasks remaining  | Phase 5     |
+| Progress indicates…                          | Resume from         |
+| -------------------------------------------- | ------------------- |
+| No artifacts found                           | Phase 1             |
+| Phase 1 complete, Phase 2 not started        | Phase 2             |
+| Phases 1–2 complete, Phase 3 not done        | Phase 3             |
+| Phases 1–3 complete, Phase 4 not done        | Phase 4             |
+| Phases 1–4 complete, no tasks started        | Phase 5 (pick task) |
+| Task N at Phase 5 complete, Phase 6 not done | Phase 6, Task N     |
+| Task N at Phase 6 complete, Phase 7 not done | Phase 7, Task N     |
+| Task N complete, other tasks remaining       | Phase 5 (pick task) |
 
 Tell the user what was found and which phase will start. If resuming past
 Phase 1, ask for confirmation before proceeding.
@@ -246,7 +256,7 @@ For each phase, follow this cycle:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Phase <N>/5 — <Phase name>
+Phase <N>/7 — <Phase name>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -270,8 +280,12 @@ status, and a one-line outcome summary.
 | 1 → 2      | Automatic                                                                        |
 | 2 → 3      | Automatic                                                                        |
 | 3 → 4      | User confirmation required — this creates Jira subtasks (external system writes) |
-| 4 → 5      | User chooses which task to execute first — never auto-start execution            |
-| Within 5   | After each task, user chooses next — never auto-continue                         |
+| 3 → 2      | Re-plan cycle — critique triggered changes (max 3 iterations)                    |
+| 4 → 5      | User chooses which task to execute first — never auto-start                      |
+| 5 → 6      | Automatic — critique is part of the per-task planning flow                       |
+| 6 → 7      | User confirmation required — confirms plan is ready for implementation           |
+| 6 → 5      | Re-plan cycle — critique triggered changes (max 3 iterations)                    |
+| Within 5-7 | After each task, user chooses next — never auto-continue                         |
 
 For the Phase 3 → 4 gate, offer:
 
@@ -279,11 +293,15 @@ For the Phase 3 → 4 gate, offer:
 - "Review the plan first"
 - "Stop here — I'll create subtasks manually"
 
-### 4. Phase 5 — Execution Loop
+### 4. Task Execution Loop (Phases 5-6-7)
 
-Phase 5 runs once per task, not once for the whole plan. Each iteration:
+Phases 5, 6, and 7 run as a loop for each task. The user selects which task
+to work on, and it passes through all three phases before the next task
+begins.
 
-1. Dispatch `progress-tracker` → get remaining tasks.
+**a. Task selection**
+
+1. Dispatch `progress-tracker` with action `read` → get remaining tasks.
 2. Present remaining tasks to the user.
 3. User selects the next task.
 4. **Pre-task context** — dispatch relevant utility subagents:
@@ -295,34 +313,57 @@ Phase 5 runs once per task, not once for the whole plan. Each iteration:
    | Need to find relevant code       | `code-reference-finder` |
    | Need docs or config context      | `documentation-finder`  |
 
-5. **Progressive clarification** — before invoking `executing-jira-task`, check
-   the task plan for any unresolved questions specific to THIS task. If
-   questions exist that were deferred during Phase 3 (clarifying-assumptions),
-   resolve them now with the user. Questions about future tasks remain deferred.
-   This follows the progressive disclosure principle: ask only what is relevant
-   to the task about to execute.
+5. Dispatch `progress-tracker` with action `initialize_task` for the selected
+   task number → creates `docs/<KEY>-task-<N>-progress.md`.
 
-6. Invoke `executing-jira-task`, passing context summaries from step 4 as
-   explicit inputs. Follow every step defined in the executing-jira-task SKILL.md.
+**b. Phase 5 — Plan task execution**
 
-7. **Quality gate handling is delegated to executing-jira-task.** The
-   executing-jira-task skill manages its own targeted fix cycle internally:
-   when a quality gate fails, it re-dispatches only the task-executor and
-   documentation-writer to address the specific issues, then re-runs only the
-   failing gates. This avoids full pipeline re-runs for code quality issues.
+1. Announce Phase 5/7.
+2. Validate preconditions via `artifact-validator`.
+3. Invoke `planning-jira-task` skill, passing `TICKET_KEY` and `TASK_NUMBER`.
+   Follow every step defined in the SKILL.md.
+4. Validate output via `artifact-validator` (4 planning artifacts exist).
+5. Dispatch `progress-tracker` with action `update_task` to mark Phase 5
+   complete for this task.
 
-   The orchestrator only needs to act if the executing-jira-task skill reports
-   that the fix cycle limit (3 attempts) was exhausted. In that case, present
-   the accumulated gate feedback to the user and ask how to proceed:
+**c. Phase 6 — Clarify + Critique execution plan**
+
+1. Announce Phase 6/7.
+2. Validate preconditions via `artifact-validator` (all 4 planning artifacts).
+3. Invoke `clarifying-assumptions` skill with `MODE=critique`,
+   `TICKET_KEY`, and `TASK_NUMBER`. Follow every step.
+4. **Re-plan handling:** If the skill reports `RE_PLAN_NEEDED=true`, re-dispatch
+   Phase 5 (all 4 planning subagents re-run with prior artifacts + decisions).
+   Maximum 3 re-plan cycles, user looped in every iteration.
+5. Validate output via `artifact-validator`.
+6. Dispatch `progress-tracker` with action `update_task` to mark Phase 6
+   complete for this task.
+7. **Gate:** Ask the user to confirm the plan is ready for implementation.
+
+**d. Phase 7 — Execute task**
+
+1. Announce Phase 7/7.
+2. Validate preconditions via `artifact-validator`.
+3. Invoke `executing-jira-task` skill, passing `TICKET_KEY`, `TASK_NUMBER`,
+   and context summaries from pre-task utility dispatches. Follow every step.
+4. **Quality gate handling is delegated to executing-jira-task.** The skill
+   manages its own targeted fix cycle internally: when a quality gate fails,
+   it re-dispatches only the task-executor and documentation-writer, then
+   re-runs only the failing gates. The orchestrator only acts if the fix cycle
+   limit (3 attempts) is exhausted — present feedback to the user and ask:
    - Accept the current state and move on.
    - Provide guidance for a different approach.
-   - Request a full pipeline re-run from step 1 (for fundamental approach
+   - Request a full pipeline re-run from Phase 5 (for fundamental approach
      failures only).
+5. Dispatch `progress-tracker` with action `update_task` to mark Phase 7
+   complete for this task.
+6. Dispatch `progress-tracker` with action `update` to refresh the main
+   progress file's Task Execution table.
 
-8. Dispatch `progress-tracker` to mark the task complete.
-9. Return to step 1.
+**e. Loop**
 
-Continue until all tasks are complete or the user stops.
+Return to step (a) for the next task. Continue until all tasks are complete
+or the user stops.
 
 ### 5. Final Summary
 
@@ -332,14 +373,15 @@ for the final state, then present:
 ```markdown
 ## Workflow Summary — <TICKET_KEY>
 
-| Phase | Status      | Key outcome                 |
-| ----- | ----------- | --------------------------- |
-| 1     | ✅ Complete | Ticket fetched (N comments) |
-| 2     | ✅ Complete | N tasks planned             |
-| 3     | ✅ Complete | N/N questions resolved      |
-| 4     | ✅ Complete | N subtasks created in Jira  |
-| 5     | ✅ Complete | N/N tasks executed          |
+| Phase | Status      | Key outcome                            |
+| ----- | ----------- | -------------------------------------- |
+| 1     | ✅ Complete | Ticket fetched (N comments)            |
+| 2     | ✅ Complete | N tasks planned                        |
+| 3     | ✅ Complete | N/N questions resolved, N critiqued    |
+| 4     | ✅ Complete | N subtasks created in Jira             |
+| 5–7   | ✅ Complete | N/N tasks planned, critiqued, executed |
 
+Per-task detail in docs/<TICKET_KEY>-task-<N>-progress.md.
 All artifacts are in docs/<TICKET_KEY>\*.
 ```
 
@@ -351,5 +393,5 @@ All artifacts are in docs/<TICKET_KEY>\*.
 | **Missing artifact**     | `artifact-validator` reports failure → do NOT proceed. Tell user which phase needs to run/re-run and offer it.                                |
 | **Jira MCP unavailable** | Tell user to connect it. Offer to resume when ready.                                                                                          |
 | **Subagent failure**     | Non-critical (e.g., `documentation-finder`): proceed without. Critical (e.g., `artifact-validator`): halt.                                    |
-| **User interruption**    | Progress file ensures resumability. Tell user: "Say 'resume ticket <KEY>' to pick up where we left off."                                      |
+| **User interruption**    | Progress files ensure resumability. Tell user: "Say 'resume ticket <KEY>' to pick up where we left off."                                      |
 | **Quality gate failure** | Handled internally by executing-jira-task via targeted fix cycles. Orchestrator acts only if fix cycle limit is exhausted — escalate to user. |
