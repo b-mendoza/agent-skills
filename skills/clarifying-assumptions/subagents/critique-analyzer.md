@@ -271,7 +271,7 @@ Fastify (verified: package.json lists fastify@4.26.2, src/api/ imports from
 | Fastify  | Already in use, faster, typed | None for this project        |
 | Express  | Popular, many tutorials       | Second framework to maintain |
 | Hono     | Fastest, edge-ready           | Not in project yet           |
-**Web search:** Fastify 4.x stable, Express 5 still in beta (2026).
+**Web search:** Fastify 5.x stable with strong TypeScript support, Express 5.1 stable but project already uses Fastify.
 **Severity:** HIGH — project already uses Fastify; adding Express creates
 maintenance burden with no stated benefit.
 </example>
