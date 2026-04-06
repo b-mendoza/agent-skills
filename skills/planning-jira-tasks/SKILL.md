@@ -1,174 +1,257 @@
 ---
 name: "planning-jira-tasks"
-description: 'Phase 2 of the orchestrating-jira-workflow pipeline. Reads a ticket snapshot at docs/<TICKET_KEY>.md and produces a detailed, self-contained task plan at docs/<TICKET_KEY>-tasks.md through a three-stage subagent pipeline (plan → prioritize → validate). Invoked by the orchestrating-jira-workflow skill — not intended for standalone use. This skill orchestrates the pipeline but never does planning work itself.'
+description: 'Phase 2 of the orchestrating-jira-workflow pipeline. Reads a ticket snapshot at docs/<TICKET_KEY>.md and produces a detailed, self-contained task plan at docs/<TICKET_KEY>-tasks.md through a three-stage subagent pipeline (plan -> prioritize -> validate). Invoked by the orchestrating-jira-workflow skill, not intended for standalone use. This skill orchestrates the pipeline, preserves planning artifacts for resume and critique, and never does planning work itself.'
 ---
 
 # Planning Jira Tasks
 
-## Purpose
-
-Read the ticket snapshot at `docs/<TICKET_KEY>.md` and produce a detailed,
-self-contained task plan at `docs/<TICKET_KEY>-tasks.md`. This skill
-orchestrates a **pipeline of specialized subagents** — it coordinates
-handoffs, validates stage outputs, and reports the result to the orchestrator.
-It never does the planning work itself.
+Plan a Jira ticket into a structured execution artifact at
+`docs/<TICKET_KEY>-tasks.md`. This skill coordinates a three-stage subagent
+pipeline, validates each artifact boundary, and returns only concise handoff
+summaries to the parent workflow. It does not decompose work, prioritize
+dependencies, or validate plan quality inline.
 
 ## Inputs
 
-| Input        | Required | Example    |
-| ------------ | -------- | ---------- |
-| `TICKET_KEY` | Yes      | `JNS-6065` |
+| Input        | Required | Example               |
+| ------------ | -------- | --------------------- |
+| `TICKET_KEY` | Yes      | `JNS-6065`            |
+| `RE_PLAN`    | No       | `true`                |
+| `DECISIONS`  | No       | `Task 3 depends on SSO choice` |
+
+Phase 2 is file-driven, so `TICKET_KEY` is sufficient. `JIRA_URL` is not
+required once the ticket snapshot already exists on disk.
 
 The ticket snapshot must already exist at `docs/<TICKET_KEY>.md` with these
-sections (produced by the `fetching-jira-ticket` skill):
+sections, produced by `fetching-jira-ticket`:
 
-| Required section         | Why                                         |
+| Required section         | Why it matters                              |
 | ------------------------ | ------------------------------------------- |
 | `## Description`         | Primary source for identifying work items   |
 | `## Acceptance Criteria` | Maps to Definition of Done per task         |
-| `## Comments`            | Contains decisions and scope clarifications |
-| `## Subtasks`            | Existing work to account for, not duplicate |
-| `## Linked Issues`       | Cross-ticket dependency awareness           |
+| `## Comments`            | Captures scope changes and clarifications   |
+| `## Subtasks`            | Prevents duplicate planning                 |
+| `## Linked Issues`       | Preserves dependency awareness              |
 
-If any are missing, the ticket was not fetched correctly — the orchestrator
-should re-run Phase 1.
+If any are missing, treat Phase 1 as incomplete and stop with a preflight
+failure.
 
-## Output
+If `RE_PLAN=true`, reuse the same `TICKET_KEY`, load
+`./references/re-plan-cycle.md`, and pass the supplied `DECISIONS` only to the
+stages that need plan revisions.
 
-**Path:** `docs/<TICKET_KEY>-tasks.md`
-
-The output file **must** contain all of these sections for downstream skills:
-
-| Section                              | Required by                                                         |
-| ------------------------------------ | ------------------------------------------------------------------- |
-| `## Ticket Summary`                  | clarifying-assumptions                                              |
-| `## Problem Framing`                 | clarifying-assumptions (Tier 3 hard gates), critique-analyzer       |
-| `## Assumptions and Constraints`     | clarifying-assumptions                                              |
-| `## Cross-Cutting Open Questions`    | clarifying-assumptions                                              |
-| `## Tasks` (each with 8 subsections) | clarifying-assumptions, creating-jira-subtasks, executing-jira-task |
-| `## Execution Order Summary`         | creating-jira-subtasks                                              |
-| `## Dependency Graph`                | executing-jira-task                                                 |
-| `## Validation Report`               | clarifying-assumptions                                              |
-
-**Required subsections per task:** Objective · Relevant requirements and
-context · Questions to answer before starting · Implementation notes ·
-Definition of done · Likely files / artifacts affected · Dependencies /
-prerequisites _(added by dependency-prioritizer)_ · Priority _(added by
-dependency-prioritizer)_.
-
-## Subagent Registry
-
-| Subagent                 | Path                                    | Purpose                                               |
-| ------------------------ | --------------------------------------- | ----------------------------------------------------- |
-| `task-planner`           | `./subagents/task-planner.md`           | Decompose ticket and detail tasks (the WHAT + HOW)    |
-| `dependency-prioritizer` | `./subagents/dependency-prioritizer.md` | Dependency graph + scoring + final execution order    |
-| `task-validator`         | `./subagents/task-validator.md`         | QA gate — 19 validation checks                        |
-| `stage-validator`        | `./subagents/stage-validator.md`        | Pre-flight, inter-stage, and post-pipeline validation |
-
-Read each subagent file only when you are about to dispatch to it.
-
-## How This Skill Works
-
-This skill coordinates a three-stage planning pipeline. It does exactly three
-things: **dispatch** each pipeline subagent in sequence, **validate** each
-stage's output via `stage-validator`, and **report** the final result to the
-orchestrator.
-
-The `stage-validator`'s verdict (PASS/FAIL + issues list) is the only data
-this skill uses between stages. If a stage fails validation, this skill
-retries the stage once with the validator's feedback. If it fails again, it
-stops and reports the failure.
-
-The orchestrator's context window is the most expensive resource. This skill
-returns only a concise summary — never raw plan content.
-
-## Pipeline Flow
+## Workflow Overview
 
 ```
 docs/<KEY>.md (ticket snapshot)
        │
        ▼
 ┌──────────────────────────┐
-│  task-planner            │  → Detailed tasks (what + how)
+│  task-planner            │  -> Detailed tasks (what + how)
 └────────┬─────────────────┘
          ▼
 ┌──────────────────────────┐
-│  dependency-prioritizer  │  → Dependencies + ordered task list
+│  dependency-prioritizer  │  -> Dependencies + execution order
 └────────┬─────────────────┘
          ▼
 ┌──────────────────────────┐
-│  task-validator          │  → Validated plan with issues flagged
+│  task-validator          │  -> Final validated plan + report
 └──────────────────────────┘
          │
          ▼
-docs/<KEY>-tasks.md (final plan)
+docs/<KEY>-tasks.md
 ```
 
-## Intermediate Files
+Each stage writes a Category A orchestration artifact that stays on disk for
+Phase 3 critique, targeted retries, and workflow resume:
 
-Each stage writes to a working file, preserved for the `critique-analyzer`
-subagent in Phase 3 and for debugging if a re-plan cycle is triggered.
-
-| Stage | File                                | Subagent               |
+| Stage | File                                | Produced by            |
 | ----- | ----------------------------------- | ---------------------- |
-| 1     | `docs/<KEY>-stage-1-detailed.md`    | task-planner           |
-| 2     | `docs/<KEY>-stage-2-prioritized.md` | dependency-prioritizer |
-| 3     | `docs/<KEY>-tasks.md` (final)       | task-validator         |
+| 1     | `docs/<KEY>-stage-1-detailed.md`    | `task-planner`         |
+| 2     | `docs/<KEY>-stage-2-prioritized.md` | `dependency-prioritizer` |
+| 3     | `docs/<KEY>-tasks.md`               | `task-validator`       |
 
-**Artifact preservation rule:** These files are NEVER deleted and NEVER
-committed to git.
+Preserve these planning artifacts on disk. They support resume and critique
+workflows, and they stay out of git history as orchestration artifacts.
+
+## Subagent Registry
+
+| Subagent                 | Path                                    | Purpose                                               |
+| ------------------------ | --------------------------------------- | ----------------------------------------------------- |
+| `task-planner`           | `./subagents/task-planner.md`           | Decompose the ticket and draft the stage 1 plan       |
+| `dependency-prioritizer` | `./subagents/dependency-prioritizer.md` | Annotate dependencies and determine execution order   |
+| `task-validator`         | `./subagents/task-validator.md`         | Validate the prioritized plan and append QA findings  |
+| `stage-validator`        | `./subagents/stage-validator.md`        | Check preflight, inter-stage, and final output gates  |
+
+Read a subagent definition only when you are about to dispatch that subagent.
+
+## Output Contract
+
+Final artifact path: `docs/<TICKET_KEY>-tasks.md`
+
+The final plan must contain all of these sections for downstream phases:
+
+| Section                              | Consumed by                                                         |
+| ------------------------------------ | ------------------------------------------------------------------- |
+| `## Ticket Summary`                  | `clarifying-assumptions`                                            |
+| `## Problem Framing`                 | `clarifying-assumptions`, critique paths                            |
+| `## Assumptions and Constraints`     | `clarifying-assumptions`                                            |
+| `## Cross-Cutting Open Questions`    | `clarifying-assumptions`                                            |
+| `## Tasks` with numbered task entries | `clarifying-assumptions`, `creating-jira-subtasks`, task execution |
+| `## Execution Order Summary`         | `creating-jira-subtasks`                                            |
+| `## Dependency Graph`                | task execution and critique                                         |
+| `## Validation Report`               | `clarifying-assumptions`                                            |
+
+Each final task entry must include these eight subsections:
+
+- `**Objective:**`
+- `**Relevant requirements and context:**`
+- `**Questions to answer before starting:**`
+- `**Implementation notes:**`
+- `**Definition of done:**`
+- `**Likely files / artifacts affected:**`
+- `**Dependencies / prerequisites:**`
+- `**Priority:**`
+
+Phase 2 does not add `## Decisions Log`; that artifact is appended later by
+Phase 3.
+
+Return only a concise phase handoff to the parent orchestrator:
+
+```text
+PLANNING: PASS | FAIL
+Ticket: <TICKET_KEY>
+File: <final file path or "not written">
+Tasks: <N>
+Cross-cutting questions: <N>
+Validation warnings: <N>
+Failure category: PREFLIGHT | STAGE_1 | STAGE_2 | STAGE_3 | POSTPIPELINE | NONE
+Reason: <one line>
+Artifacts preserved: <comma-separated paths>
+```
+
+## How This Skill Works
+
+This skill does exactly three things:
+
+- **Dispatch** the planning subagents in sequence.
+- **Validate** each artifact boundary with `stage-validator`.
+- **Report** only stage verdicts and summary counts to the parent workflow.
+
+Between stages, keep only structured handoff data:
+
+- The validator verdict
+- The output file path for the passing stage
+- The specific issues that failed the current gate
+- Retry count for the current gate
+
+Do not carry raw plan content forward in the orchestrator context.
 
 ## Execution Steps
 
-**1. Pre-flight** — Read and dispatch `stage-validator` with `STAGE=preflight`,
-`TICKET_KEY`, and `FILE_PATH=docs/<TICKET_KEY>.md`. On FAIL: stop and report
-(the orchestrator should re-run Phase 1). On PASS: proceed.
+> Use targeted fix loops only: when a gate fails, re-dispatch the stage that
+> produced that artifact and re-run only that failing gate. For re-plan or
+> recovery paths, read `./references/re-plan-cycle.md`.
 
-**2. Run the pipeline** — Execute each subagent in order. After each stage,
-dispatch `stage-validator`. If validation fails, re-dispatch the subagent
-with its original inputs plus the validator's issues list appended to the
-prompt. If it fails validation again, stop and report.
+1. **Preflight**
+   Read and dispatch `stage-validator` with:
+   - `TICKET_KEY=<TICKET_KEY>`
+   - `STAGE=preflight`
+   - `FILE_PATH=docs/<TICKET_KEY>.md`
 
-- **Stage 1 — Plan:** Read and dispatch `task-planner` with input `docs/<KEY>.md`.
-  Output: `docs/<KEY>-stage-1-detailed.md`. Validate with `STAGE=1`.
-- **Stage 2 — Prioritize:** Read and dispatch `dependency-prioritizer` with stage 1
-  output. Output: `docs/<KEY>-stage-2-prioritized.md`. Validate `STAGE=2`.
-- **Stage 3 — Validate:** Read and dispatch `task-validator` with `docs/<KEY>.md` +
-  stage 2 output. Output: `docs/<KEY>-tasks.md`. Validate with `STAGE=3`.
+   If the verdict is FAIL, stop and return `PLANNING: FAIL` with
+   `Failure category: PREFLIGHT`.
 
-**3. Post-pipeline validation** — Read and dispatch `stage-validator` with
-`STAGE=postpipeline` and `FILE_PATH=docs/<KEY>-tasks.md`. This runs 9
-structural checks covering all required output sections and all 8 per-task
-subsections. If anything is missing,
-re-run stage 3 with the validator's feedback. If it fails again, stop.
+2. **Stage 1 - Plan**
+   Read and dispatch `task-planner` with:
+   - `TICKET_KEY=<TICKET_KEY>`
+   - `INPUT_PATH=docs/<TICKET_KEY>.md`
+   - `OUTPUT_PATH=docs/<TICKET_KEY>-stage-1-detailed.md`
+   - `DECISIONS=<DECISIONS>` only when `RE_PLAN=true`
 
-**4. Report** — Tell the orchestrator: file path, total tasks, open questions,
-dependency chains, validation warnings. Note that no implementation has
-started and intermediate files are preserved.
+   Then validate stage 1 by dispatching `stage-validator` with `STAGE=1` and
+   `FILE_PATH=docs/<TICKET_KEY>-stage-1-detailed.md`.
 
-## Non-Happy-Path Reference
+3. **Stage 2 - Prioritize**
+   Read and dispatch `dependency-prioritizer` with:
+   - `TICKET_KEY=<TICKET_KEY>`
+   - `INPUT_PATH=docs/<TICKET_KEY>-stage-1-detailed.md`
+   - `OUTPUT_PATH=docs/<TICKET_KEY>-stage-2-prioritized.md`
+   - `DECISIONS=<DECISIONS>` only when `RE_PLAN=true`
 
-If Phase 3 critique triggers a re-plan cycle, or if an error occurs during
-the pipeline, read `./references/re-plan-cycle.md` for recovery procedures.
+   Then validate stage 2 by dispatching `stage-validator` with `STAGE=2` and
+   `FILE_PATH=docs/<TICKET_KEY>-stage-2-prioritized.md`.
+
+4. **Stage 3 - Validate**
+   Read and dispatch `task-validator` with:
+   - `TICKET_KEY=<TICKET_KEY>`
+   - `TICKET_PATH=docs/<TICKET_KEY>.md`
+   - `PLAN_PATH=docs/<TICKET_KEY>-stage-2-prioritized.md`
+   - `OUTPUT_PATH=docs/<TICKET_KEY>-tasks.md`
+
+   Then validate stage 3 by dispatching `stage-validator` with `STAGE=3` and
+   `FILE_PATH=docs/<TICKET_KEY>-tasks.md`.
+
+5. **Post-pipeline gate**
+   Dispatch `stage-validator` with:
+   - `TICKET_KEY=<TICKET_KEY>`
+   - `STAGE=postpipeline`
+   - `FILE_PATH=docs/<TICKET_KEY>-tasks.md`
+
+   This confirms the full output contract for downstream phases.
+
+6. **Targeted retry loop**
+   For any failing gate:
+   - Collect only the validator's issues list.
+   - Re-dispatch only the stage that produced that artifact.
+   - Pass the original inputs plus `VALIDATION_ISSUES=<issues list>`.
+   - Re-run only the previously failing validator gate.
+   - Stop after 3 failed cycles for the same gate and return `PLANNING: FAIL`
+     with the relevant failure category.
+
+7. **Report**
+   On success, return the completion handoff from `## Output Contract`. Include
+   the final file path, task count, cross-cutting question count, warning count,
+   and the preserved artifact paths. State explicitly that planning is complete
+   and implementation has not started.
+
+## Example
 
 <example>
 TICKET_KEY = JNS-6065
 
-1. Pre-flight: Dispatch stage-validator STAGE=preflight, FILE=docs/JNS-6065.md
-   → PASS (6/6 checks)
-2. Stage 1: Dispatch task-planner, input docs/JNS-6065.md
-   → Wrote docs/JNS-6065-stage-1-detailed.md
-   Validate STAGE=1 → PASS (13/13 checks)
-3. Stage 2: Dispatch dependency-prioritizer, input stage-1-detailed.md
-   → Wrote docs/JNS-6065-stage-2-prioritized.md
-   Validate STAGE=2 → PASS (6/6 checks)
-4. Stage 3: Dispatch task-validator, inputs JNS-6065.md + stage-2-prioritized.md
-   → Wrote docs/JNS-6065-tasks.md
-   Validate STAGE=3 → PASS (2/2 checks)
-5. Post-pipeline: Validate STAGE=postpipeline → PASS (9/9 checks)
-6. Report to orchestrator:
+1. Dispatch `stage-validator` with `STAGE=preflight`,
+   `FILE_PATH=docs/JNS-6065.md`
+   -> PASS
+2. Dispatch `task-planner` with
+   `INPUT_PATH=docs/JNS-6065.md`,
+   `OUTPUT_PATH=docs/JNS-6065-stage-1-detailed.md`
+   -> wrote stage 1 artifact
+3. Validate stage 1
+   -> PASS
+4. Dispatch `dependency-prioritizer` with
+   `INPUT_PATH=docs/JNS-6065-stage-1-detailed.md`,
+   `OUTPUT_PATH=docs/JNS-6065-stage-2-prioritized.md`
+   -> wrote stage 2 artifact
+5. Validate stage 2
+   -> PASS
+6. Dispatch `task-validator` with
+   `TICKET_PATH=docs/JNS-6065.md`,
+   `PLAN_PATH=docs/JNS-6065-stage-2-prioritized.md`,
+   `OUTPUT_PATH=docs/JNS-6065-tasks.md`
+   -> wrote final plan
+7. Validate `STAGE=3` and `STAGE=postpipeline`
+   -> PASS
+8. Return:
+
+   PLANNING: PASS
+   Ticket: JNS-6065
    File: docs/JNS-6065-tasks.md
-   Tasks: 7 | Open questions: 3 | Dependency chains: 2
-   Validation warnings: 1 (Task 4 DoD says "works correctly")
-   No implementation started. Intermediate files preserved.
+   Tasks: 7
+   Cross-cutting questions: 3
+   Validation warnings: 1
+   Failure category: NONE
+   Reason: Final plan validated and ready for Phase 3.
+   Artifacts preserved: docs/JNS-6065-stage-1-detailed.md,
+   docs/JNS-6065-stage-2-prioritized.md, docs/JNS-6065-tasks.md
 </example>
