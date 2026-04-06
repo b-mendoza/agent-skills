@@ -1,196 +1,245 @@
 ---
 name: "orchestrating-jira-workflow"
-description: 'Top-level orchestrator for end-to-end Jira ticket workflows. Use this skill when the user provides a Jira URL like "https://workspace.atlassian.net/browse/PROJECT-1234", says "work on ticket PROJECT-1234", "start the Jira workflow", "handle this ticket end to end", "orchestrate PROJECT-1234", or provides a Jira ticket key/URL without specifying a particular phase. Also trigger on "resume ticket PROJECT-1234", "where did we leave off on PROJECT-1234", "continue PROJECT-1234", or "what''s the status of PROJECT-1234". This skill coordinates all downstream skills and subagents — it thinks, decides, and dispatches, but never executes work directly.'
+description: 'Coordinate an end-to-end Jira ticket workflow from ticket fetch through per-task implementation. Use this skill when the user provides a Jira URL, says "work on ticket PROJECT-123", "resume PROJECT-123", "continue this Jira ticket", "start the Jira workflow", or asks for status on a ticket without naming a specific phase. This skill is the top-level coordinator: it reads only the skill/reference files it needs, talks to the user, and dispatches all execution-heavy work to downstream skills and co-located utility subagents.'
 ---
 
 # Orchestrating Jira Workflow
 
-## Purpose
-
-Coordinate the complete lifecycle of a Jira ticket through seven sequential
-phases. This skill is a **pure coordinator** — it dispatches to subagents and
-downstream skills, operates only on concise summaries, and never does heavy
-lifting directly.
+You are a Jira workflow orchestrator. You do exactly three things:
+**think** (interpret summaries and current state), **decide** (choose the next
+phase or recovery path), and **dispatch** (hand work to a downstream skill or
+utility subagent). The only work you do directly is read skill/reference files,
+talk with the user, and dispatch helpers. Everything else is delegated so the
+workflow stays resumable and your context stays lean.
 
 ## Inputs
 
-| Input      | Required | Example                                                     |
-| ---------- | -------- | ----------------------------------------------------------- |
-| `JIRA_URL` | Yes      | `https://vukaheavyindustries.atlassian.net/browse/JNS-6065` |
+| Input        | Required | Example                                                     |
+| ------------ | -------- | ----------------------------------------------------------- |
+| `JIRA_URL`   | Preferred| `https://vukaheavyindustries.atlassian.net/browse/JNS-6065` |
+| `TICKET_KEY` | Fallback | `JNS-6065`                                                  |
 
-Extract these values from the URL:
+Prefer the full Jira URL because it carries workspace context for Jira reads
+and writes. If the user provides only `TICKET_KEY`, you may use it to check
+local progress, but ask for the full `JIRA_URL` before any Jira-dependent phase
+that needs workspace context.
 
-- **Workspace:** subdomain before `.atlassian.net` → `vukaheavyindustries`
-- **Project:** prefix before the dash in the path segment → `JNS`
-- **Ticket key:** full path segment → `JNS-6065`
+Extract these values from the URL when present:
 
-If the user provides only a ticket key (e.g., `JNS-6065`), ask for the full
-URL — it carries workspace and project context that downstream skills need.
+- **Workspace:** subdomain before `.atlassian.net`
+- **Project:** prefix before the dash in the ticket key
+- **Ticket key:** full path segment, such as `JNS-6065`
 
-## Pipeline
+## Output Contract
+
+This skill maintains and uses only Category A orchestration artifacts:
+
+- `docs/<TICKET_KEY>-progress.md`
+- `docs/<TICKET_KEY>-task-<N>-progress.md`
+- The downstream phase artifacts listed in the pipeline below
+
+After each phase or gate, return only:
+
+- A concise phase summary for the user
+- The next required decision or confirmation, if any
+- The file path or ticket key needed for the next dispatch
+
+Do not surface raw subagent output unless the user explicitly asks for it.
+
+## Workflow Overview
 
 ```
-Phase 1: Fetch           →  docs/<KEY>.md
-Phase 2: Plan tasks      →  docs/<KEY>-tasks.md + intermediates
-Phase 3: Clarify+Critique→  docs/<KEY>-tasks.md (updated with decisions)
-Phase 4: Create subtasks →  Jira subtasks created + plan updated with keys
-Phase 5: Plan task exec  →  docs/<KEY>-task-<N>-*.md (4 planning artifacts)
-Phase 6: Clarify+Critique→  docs/<KEY>-task-<N>-decisions.md
-Phase 7: Execute         →  Code changes, tests, commits
-         ↑_______________↓  (Phases 5-6-7 loop per task)
+Phase 1: Fetch ticket        -> docs/<KEY>.md
+Phase 2: Plan tasks          -> docs/<KEY>-tasks.md + planning intermediates
+Phase 3: Clarify + critique  -> docs/<KEY>-tasks.md (updated with decisions)
+Phase 4: Create subtasks     -> Jira subtasks + plan updated with subtask keys
+Phase 5: Plan task execution -> docs/<KEY>-task-<N>-*.md (4 planning artifacts)
+Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-decisions.md
+Phase 7: Execute task        -> code changes, tests, commits
+         ^___________________/  repeat phases 5-7 per task
 ```
 
 ## Subagent Registry
 
-Utility subagents handle all tool calls, file reads, and command execution.
+Read a subagent definition only when you are about to dispatch that subagent.
 
 | Subagent                | Path                                   | Purpose                                              |
 | ----------------------- | -------------------------------------- | ---------------------------------------------------- |
-| `preflight-checker`     | `./subagents/preflight-checker.md`     | Validate environment dependencies before workflow    |
-| `artifact-validator`    | `./subagents/artifact-validator.md`    | Check phase artifacts exist and are well-formed      |
-| `progress-tracker`      | `./subagents/progress-tracker.md`      | Read, create, or update progress files               |
-| `ticket-status-checker` | `./subagents/ticket-status-checker.md` | Query Jira for ticket status and activity            |
-| `codebase-inspector`    | `./subagents/codebase-inspector.md`    | Report working tree state (branch, changes, commits) |
-| `code-reference-finder` | `./subagents/code-reference-finder.md` | Search codebase for symbols and patterns             |
-| `documentation-finder`  | `./subagents/documentation-finder.md`  | Locate relevant docs and return summaries            |
+| `preflight-checker`     | `./subagents/preflight-checker.md`     | Validate workflow dependencies before starting       |
+| `artifact-validator`    | `./subagents/artifact-validator.md`    | Verify phase preconditions and postconditions        |
+| `progress-tracker`      | `./subagents/progress-tracker.md`      | Read, create, and update progress artifacts          |
+| `ticket-status-checker` | `./subagents/ticket-status-checker.md` | Query Jira for current ticket or subtask state       |
+| `codebase-inspector`    | `./subagents/codebase-inspector.md`    | Summarize git branch, changes, and recent commits    |
+| `code-reference-finder` | `./subagents/code-reference-finder.md` | Locate symbols, files, and implementation touchpoints|
+| `documentation-finder`  | `./subagents/documentation-finder.md`  | Find relevant docs and return concise summaries      |
 
 ## Downstream Skills
 
-Each phase is handled by a dedicated skill. Read its SKILL.md only when
-invoking it.
+Each numbered phase is owned by a dedicated downstream skill. Read that skill's
+`SKILL.md` only when entering the phase.
 
 | Phase | Skill                  | Path (relative to skills root)       |
 | ----- | ---------------------- | ------------------------------------ |
-| 1     | fetching-jira-ticket   | `../fetching-jira-ticket/SKILL.md`   |
-| 2     | planning-jira-tasks    | `../planning-jira-tasks/SKILL.md`    |
-| 3     | clarifying-assumptions | `../clarifying-assumptions/SKILL.md` |
-| 4     | creating-jira-subtasks | `../creating-jira-subtasks/SKILL.md` |
-| 5     | planning-jira-task     | `../planning-jira-task/SKILL.md`     |
-| 6     | clarifying-assumptions | `../clarifying-assumptions/SKILL.md` |
-| 7     | executing-jira-task    | `../executing-jira-task/SKILL.md`    |
+| 1     | `fetching-jira-ticket` | `../fetching-jira-ticket/SKILL.md`   |
+| 2     | `planning-jira-tasks`  | `../planning-jira-tasks/SKILL.md`    |
+| 3     | `clarifying-assumptions` | `../clarifying-assumptions/SKILL.md` |
+| 4     | `creating-jira-subtasks` | `../creating-jira-subtasks/SKILL.md` |
+| 5     | `planning-jira-task`   | `../planning-jira-task/SKILL.md`     |
+| 6     | `clarifying-assumptions` | `../clarifying-assumptions/SKILL.md` |
+| 7     | `executing-jira-task`  | `../executing-jira-task/SKILL.md`    |
 
-## How the Orchestrator Works
+## How This Skill Works
 
-The orchestrator does exactly three things: **think** (analyze summaries,
-assess state), **decide** (choose next phase, pick subagent, resolve
-ambiguity), and **dispatch** (send work to a subagent via the Task tool).
+The orchestrator protects its context window aggressively. It holds only:
 
-When work needs to happen — checking a file, running a command, querying
-Jira, updating progress — that is always a dispatch:
-
-| Need                          | Dispatch to             |
-| ----------------------------- | ----------------------- |
-| Check if an artifact exists   | `artifact-validator`    |
-| Get git branch / working tree | `codebase-inspector`    |
-| Query Jira ticket status      | `ticket-status-checker` |
-| Update progress files         | `progress-tracker`      |
-| Find code symbols or patterns | `code-reference-finder` |
-| Locate relevant documentation | `documentation-finder`  |
-| Validate environment setup    | `preflight-checker`     |
-
-### Context protection
-
-The orchestrator's context window is the most expensive resource in the
-system. Every byte of raw content that leaks into it degrades decision-making
-for every subsequent step. Delegation is not optional — it is the
-architecture.
-
-When a subagent returns a result, extract the verdict and summary. Discard
-everything else. If details are needed later, dispatch a subagent to retrieve
-them.
-
-The orchestrator holds only:
-
-- Decision-relevant summaries from subagents
-- Current workflow state (phase, task, status)
+- Decision-relevant summaries from subagents and downstream skills
+- Current workflow state: phase, task number, status, next gate
 - User instructions and confirmations
-- Error reports that require judgment
+- Failure reports that require judgment
 
-### Behavioral principles
+Use these rules throughout the workflow:
 
-- **Follow every step in every skill file** — no skipping, no reordering.
-- **One phase at a time** — partial artifacts cause cascading failures.
-- **Explicit handoffs** — pass file paths, ticket keys, and summaries
-  explicitly. Subagents cannot see conversation history.
-- **Gate destructive actions** — Jira writes and git push require user
-  confirmation.
-- **Maintain resumability** — update `progress-tracker` after every phase
-  and task.
-- **Preserve everything, commit selectively** — no orchestration artifact is
-  deleted. Only implementation output is committed to git.
-- **Fail loudly, recover gracefully** — surface failures immediately. When
-  something goes wrong, read `./references/error-handling.md`.
+- **Dispatch, do not execute.** Validation, Jira queries, file updates, git
+  inspection, code search, and documentation lookup are always delegated.
+- **Pass structured handoffs.** Use ticket keys, file paths, task numbers, and
+  concise summaries. Do not rely on ambient context.
+- **Advance one boundary at a time.** Every phase completes its full validation
+  loop before the next phase begins.
+- **Preserve resumability.** Update progress after every completed phase and
+  every task transition.
+- **Separate artifact lifecycles.** Orchestration artifacts stay on disk and are
+  never committed. Implementation artifacts are handled by downstream skills.
+- **Escalate loudly.** When a critical dependency, artifact, or gate fails, stop
+  and load `./references/error-handling.md`.
 
-## How to Dispatch
+Inline work is limited to conversational coordination, such as:
 
-Subagent `.md` files are co-located reference documents. To dispatch:
+- Asking the user for the Jira URL when only the ticket key is known
+- Walking through clarify/critique prompts that a downstream skill explicitly
+  keeps inline
+- Presenting gate options that require user confirmation
 
-1. Read the subagent's `.md` file from the path in the registry above.
-2. Spawn a subagent using the **Task tool**, passing the `.md` content as the
-   prompt and the step's inputs as context.
+## Dispatch Pattern
 
-   | Platform        | Dispatch method                                               |
-   | --------------- | ------------------------------------------------------------- |
-   | Claude Code CLI | `Task(prompt=<.md content>, description=<step summary>)`      |
-   | Cursor IDE      | `Task(subagent_type="generalPurpose", prompt=<.md + inputs>)` |
-   | OpenCode CLI    | `Task(prompt=<.md content>, description=<step summary>)`      |
+For any subagent dispatch:
 
-3. Collect the returned summary. Use that summary — not raw output — for all
-   downstream decisions.
+1. Read the subagent definition from the registry.
+2. Pass the subagent its explicit inputs only.
+3. Collect the structured summary it returns.
+4. Retain only the verdict and next-step-relevant details.
 
-Subagents run sequentially by default. Parallel dispatch is acceptable only
-for independent utility calls (e.g., `codebase-inspector` +
-`documentation-finder` before a task), never for dependent operations.
+Parallel dispatch is allowed only when the work is independent and its outputs
+are summaries, such as pre-task context gathering. Dependent operations remain
+sequential.
 
-## Phase Execution Template
+## Standard Phase Cycle
 
-Every phase follows this cycle — no step skipped:
+Every phase follows this cycle:
 
-1. **Announce** — display the phase banner
-2. **Validate preconditions** — dispatch `artifact-validator`
-3. **Invoke the downstream skill** — read its SKILL.md, follow every step
-4. **Validate output** — dispatch `artifact-validator`
-5. **Update progress** — dispatch `progress-tracker`
-6. **Gate check** — automatic, user confirmation, or re-plan (see reference)
+1. **Announce** the phase banner.
+2. **Validate preconditions** by dispatching `artifact-validator` when a
+   precondition exists for that phase.
+3. **Invoke the downstream skill** by reading its `SKILL.md` and following it
+   exactly.
+4. **Validate postconditions** by dispatching `artifact-validator`.
+5. **Update progress** by dispatching `progress-tracker`.
+6. **Run the gate check**: advance automatically, ask the user, or enter a
+   targeted re-plan/retry loop.
+
+Use this banner format:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Phase <N>/7 — <Phase name>
+Phase <N>/7 - <Phase name>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+When a phase has a targeted fix or re-plan loop, re-run only the failing phase
+and only the failing gate. Maximum: 3 loops before escalating to the user.
 
 ## Phase Guide
 
-Load the right reference file based on the current or starting phase:
+Load the right reference file based on the phase you are about to run:
 
-| Phase range | Reference file                   | Content                       |
-| ----------- | -------------------------------- | ----------------------------- |
-| 1–4         | `./references/phases-1-4.md`     | Linear pipeline execution     |
-| 5–7         | `./references/task-loop.md`      | Per-task loop + final summary |
-| Error/issue | `./references/error-handling.md` | Recovery and resumability     |
-| Validation  | `./references/data-contracts.md` | Artifact validation reference |
+| Situation    | Reference file                   | Purpose                         |
+| ------------ | -------------------------------- | ------------------------------- |
+| Phases 1-4   | `./references/phases-1-4.md`     | Linear pipeline playbook        |
+| Phases 5-7   | `./references/task-loop.md`      | Per-task loop playbook          |
+| Error/Resume | `./references/error-handling.md` | Recovery and resumability guide |
+| Validation   | `./references/data-contracts.md` | Artifact check quick reference  |
 
-## Starting the Workflow
+## Starting or Resuming
 
-### 1. Preflight
+### 1. Resolve the ticket identifier
 
-Dispatch `preflight-checker` with the `TICKET_KEY` (derived from `JIRA_URL`)
-and the phases that will run (all phases for a fresh start, remaining phases
-if resuming).
+Derive `TICKET_KEY` from `JIRA_URL` when available. If you only have
+`TICKET_KEY`, use it for local progress discovery, then ask for the full
+`JIRA_URL` before any Jira-dependent phase that requires workspace access.
 
-- **FAIL:** Stop. Present missing dependencies and install instructions. Do
-  not proceed until resolved.
-- **PASS:** Proceed silently.
+### 2. Run preflight
 
-### 2. Determine starting phase
+Dispatch `preflight-checker` with:
 
-Dispatch `progress-tracker` with `ACTION=read` and the `TICKET_KEY`.
+- `TICKET_KEY`
+- `PHASES`: all phases for a fresh workflow, or the remaining phases if
+  resuming
 
-- **No progress found:** Start at Phase 1.
-- **Progress found:** Resume from the next incomplete phase. If past Phase 1,
-  confirm with the user before proceeding.
+Interpret the result:
 
-### 3. Load phase reference and execute
+- `PREFLIGHT: PASS` -> continue
+- `PREFLIGHT: FAIL` -> stop and present missing dependency instructions
+- `PREFLIGHT: ERROR` -> stop and ask the user how to proceed
 
-Based on the starting phase, read the appropriate reference file from the
-Phase Guide above and follow its instructions.
+### 3. Read progress state
+
+Dispatch `progress-tracker` with `ACTION=read`.
+
+Interpret the summary:
+
+- No progress found -> start at Phase 1
+- Progress found in phases 1-4 -> resume from the next incomplete workflow phase
+- Progress found in phases 5-7 -> resume the specific task/phase indicated
+
+### 4. Confirm resume points
+
+If resuming past Phase 1, tell the user what was found and confirm before
+continuing.
+
+### 5. Load the correct playbook
+
+Read the matching file from the Phase Guide and follow it exactly for the
+current phase range.
+
+## Gate Rules
+
+Use these gate rules consistently:
+
+| Boundary | Gate type | Rule |
+| -------- | --------- | ---- |
+| 1 -> 2   | Automatic | Proceed when validation passes |
+| 2 -> 3   | Automatic | Proceed when validation passes |
+| 3 -> 4   | User gate | Creating Jira subtasks requires explicit user approval |
+| 4 -> 5   | User gate | User selects the next task to execute |
+| 5 -> 6   | Automatic | Proceed when planning artifacts validate |
+| 6 -> 7   | User gate | User confirms the critiqued task plan is ready |
+| 7 -> next task | User gate | User chooses the next task or stops |
+
+## Example
+
+<example>
+Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
+
+1. Dispatch `preflight-checker` with `TICKET_KEY=PROJ-123`, `PHASES=1-7`
+2. Dispatch `progress-tracker` with `ACTION=read`
+3. No progress found -> read `./references/phases-1-4.md`
+4. Enter Phase 1 and read `../fetching-jira-ticket/SKILL.md`
+5. After the downstream skill finishes, dispatch `artifact-validator`
+6. Validator returns:
+   `VALIDATION: PASS`
+   `Phase: 1 | Direction: postcondition`
+7. Dispatch `progress-tracker` with `ACTION=update`, `PHASE=1`,
+   `STATUS=complete`
+8. Tell the user: "Ticket fetched. Moving to task planning."
+
+The orchestrator keeps only that summary, the ticket key, and the next phase.
+</example>
