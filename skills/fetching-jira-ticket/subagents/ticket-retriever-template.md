@@ -1,18 +1,25 @@
 # Document Template
 
-Write the file using this structure exactly. Downstream skills parse these
-headings programmatically — missing headings break the pipeline. If a section
-has no data, keep the heading and write `_None_` beneath it.
+Write the snapshot using this structure exactly. Downstream skills rely on
+these headings being stable. If a section has no data, keep the heading and
+write `_None_` beneath it instead of omitting the section.
+
+Use tables only when there is at least one row to show. If there is no data
+for `## Attachments` or `## Custom Fields`, write `_None_` under the heading
+instead of an empty table.
 
 ```markdown
 # <TICKET_KEY>: <Summary>
 
 > Retrieved on: <YYYY-MM-DD HH:MM UTC>
+> Source: <JIRA_URL>
 
 ## Metadata
 
 | Field           | Value |
 | --------------- | ----- |
+| Ticket Key      | …     |
+| Workspace       | …     |
 | Status          | …     |
 | Resolution      | …     |
 | Type            | …     |
@@ -31,11 +38,11 @@ has no data, keep the heading and write `_None_` beneath it.
 
 ## Description
 
-<full description body — preserve original formatting>
+<full description body — preserve original formatting, or _None_ if Jira has no description>
 
 ## Acceptance Criteria
 
-<if present, otherwise _None_>
+<acceptance criteria body, or _None_>
 
 ## Comments
 
@@ -44,6 +51,8 @@ has no data, keep the heading and write `_None_` beneath it.
 <body>
 
 ### Comment 2 — …
+
+<!-- If there are no parent comments, replace the whole section body with _None_ -->
 
 ## Subtasks
 
@@ -59,17 +68,19 @@ has no data, keep the heading and write `_None_` beneath it.
 
 #### Comments
 
-##### Comment 1 — <Author> (<date>)
+##### Comment 1 — <Author> (<YYYY-MM-DD HH:MM>)
 
 <body>
 
-### <next subtask…>
+<!-- If a subtask has no comments, write _None_ under #### Comments -->
+<!-- If there are no subtasks at all, replace the whole section body with _None_ -->
 
 ## Linked Issues
 
 ### <LINK_TYPE>: <ISSUE_KEY> — <Summary>
 
 - **Status:** …
+- **Assignee:** …
 - **Type:** …
 
 #### Description
@@ -78,12 +89,18 @@ has no data, keep the heading and write `_None_` beneath it.
 
 #### Comments
 
-…
+##### Comment 1 — <Author> (<YYYY-MM-DD HH:MM>)
+
+<body>
+
+<!-- If a linked issue has no comments, write _None_ under #### Comments -->
+<!-- If there are no linked issues at all, replace the whole section body with _None_ -->
 
 ## Attachments
 
 | Filename | Type | Size |
 | -------- | ---- | ---- |
+| …        | …    | …    |
 
 ## Custom Fields
 
