@@ -2,6 +2,9 @@
 
 > This file contains the full dependency manifest for the preflight checker.
 > Read this when performing a preflight check to know exactly what to verify.
+>
+> Reminder: preflight reports availability only. It does not install, connect,
+> or repair dependencies.
 
 ---
 

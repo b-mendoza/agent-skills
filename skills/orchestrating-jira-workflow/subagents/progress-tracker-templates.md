@@ -3,6 +3,10 @@
 > This file contains the progress file templates and detailed action
 > procedures. Read this when executing any action that creates or modifies
 > progress files.
+>
+> Reminder: these are Category A orchestration artifacts. Update them on disk,
+> preserve them across sessions, and summarize their state back to the
+> orchestrator instead of returning raw file contents.
 
 ---
 
