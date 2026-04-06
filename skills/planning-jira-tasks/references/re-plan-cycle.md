@@ -14,11 +14,16 @@ skill with the same `TICKET_KEY`, plus:
 
 On re-plan:
 
-1. **All three pipeline subagents are re-dispatched.** Each receives the
-   prior intermediate artifact (already on disk) plus the new decisions.
-2. **Intermediate files are overwritten** with updated versions.
-3. **Post-pipeline validation runs again** to confirm the updated plan is
-   well-formed.
+1. **Re-dispatch only the affected stages first.** Use the new decisions and
+   the existing on-disk artifacts to update only the parts of the plan that are
+   no longer valid. If the critique affects the whole plan, re-run all three
+   stages.
+2. **Pass targeted fix inputs.** The affected subagent receives its original
+   inputs plus `DECISIONS` and, when applicable, `VALIDATION_ISSUES`.
+3. **Overwrite the affected stage artifacts** with updated versions so the
+   latest plan stays resumable.
+4. **Re-run only the failing validation gates first,** then run post-pipeline
+   validation again once the updated plan is complete.
 
 **Maximum re-plan cycles:** 3 iterations. If Phase 3 critique still has
 unresolved concerns after 3 cycles, escalate to the user.
@@ -26,9 +31,11 @@ unresolved concerns after 3 cycles, escalate to the user.
 ## Error Handling
 
 - If any subagent fails, stop the pipeline. Report the failure with the stage
-  number and the subagent's error output.
-- If a `stage-validator` check fails, retry the subagent ONCE with specific
-  feedback from the validator's issues list. If it fails again, stop and
-  report.
+  number and the subagent's structured summary.
+- If a `stage-validator` check fails, re-dispatch only the stage that produced
+  that artifact. Pass the validator's issues list as `VALIDATION_ISSUES`, then
+  re-run only that failing gate.
+- **Maximum targeted fix cycles per gate:** 3. If the same gate still fails
+  after the third cycle, stop and report.
 - Intermediate files are always preserved — they are never deleted, regardless
   of success or failure.
