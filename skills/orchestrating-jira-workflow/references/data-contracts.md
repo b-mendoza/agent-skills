@@ -1,11 +1,11 @@
-# Data Contracts — Artifact Validation Quick Reference
+# Data Contracts - Artifact Validation Quick Reference
 
 > Consult this file when you need to know exactly what to pass to
 > `artifact-validator` at a phase boundary, or what a PASS/FAIL verdict means
 > for your next decision.
 >
-> The phase execution playbooks (`phases-1-4.md` and `task-loop.md`) include
-> these dispatches inline. This file serves as a consolidated reference.
+> The phase execution playbooks include these dispatches inline. This file is
+> the compact reference, not a substitute for the phase playbooks.
 
 ---
 

@@ -1,8 +1,13 @@
-# Task Loop — Phases 5–6–7
+# Task Loop - Phases 5-7
 
-> Read this file when entering the per-task execution loop. Each task passes
-> through Phase 5 (plan), Phase 6 (critique), and Phase 7 (execute) before
-> the next task begins.
+> Read this file when entering the per-task execution loop.
+>
+> Reminder: the orchestrator reads skill/reference/subagent files, talks to the
+> user, and dispatches helpers. Codebase inspection, searches, Jira queries,
+> and file updates stay delegated.
+
+Each task passes through Phase 5 (plan), Phase 6 (critique), and Phase 7
+(execute) before the next task begins.
 
 ---
 
@@ -44,7 +49,11 @@ Before entering the loop for a task:
    TASK_TITLE: "<title>"
    ```
 
-   This creates `docs/<KEY>-task-<N>-progress.md`.
+   Do this only when the selected task has not started yet.
+
+   If resuming a task that already has a progress file, do not re-initialize
+   it. Keep the existing task progress artifact and continue from the reported
+   phase.
 
 ---
 
@@ -257,6 +266,10 @@ Options:
 
 Option 3 is for fundamental approach failures — not for minor code quality
 issues that can be accepted.
+
+There is no orchestrator-level Phase 7 postcondition artifact check. The
+downstream execution skill owns its internal quality gates and returns the
+completion summary that drives the workflow update.
 
 **Update progress:** Dispatch `progress-tracker`:
 

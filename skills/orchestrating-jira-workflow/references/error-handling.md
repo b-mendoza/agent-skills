@@ -2,6 +2,10 @@
 
 > Read this file when something goes wrong, or when resuming a previously
 > interrupted workflow.
+>
+> Reminder: keep the orchestrator at summary level. Record the failure state,
+> present the decision, and re-dispatch the relevant skill or subagent instead
+> of pulling raw execution details into context.
 
 ---
 

@@ -1,25 +1,27 @@
-# Phases 1–4 — Linear Pipeline
+# Phases 1-4 - Linear Pipeline
 
-> Read this file when entering Phase 1, 2, 3, or 4. It covers the linear
-> pipeline from ticket fetch through subtask creation.
+> Read this file when entering Phase 1, 2, 3, or 4.
 >
-> After Phase 4 completes, read `./task-loop.md` to begin the per-task loop.
+> Reminder: the orchestrator reads skill/reference/subagent files, talks to the
+> user, and dispatches helpers. Artifact checks, Jira calls, file updates, and
+> other execution work stay delegated.
 
-For each phase, follow the standard execution cycle from the SKILL.md:
-**announce → validate preconditions → invoke skill → validate output → update
-progress → gate check.**
+After Phase 4 completes, read `./task-loop.md` to enter the per-task loop.
+
+For every phase below, follow the standard cycle from `SKILL.md`:
+**announce -> validate preconditions -> invoke skill -> validate
+postconditions -> update progress -> gate check**
 
 ---
 
-## Phase 1 — Fetch Ticket
+## Phase 1 - Fetch Ticket
 
-**Skill:** `fetching-jira-ticket` (at `../fetching-jira-ticket/SKILL.md`)
+**Skill:** `fetching-jira-ticket` at `../fetching-jira-ticket/SKILL.md`
 
-1. Read the skill's SKILL.md.
-2. Invoke it with the `JIRA_URL`. The skill extracts `TICKET_KEY` from the
-   URL and dispatches its `ticket-retriever` subagent, which writes the
-   comprehensive ticket snapshot to `docs/<KEY>.md`.
-3. Validate output — dispatch `artifact-validator`:
+1. Announce Phase 1.
+2. There is no artifact precondition for a fresh start.
+3. Read the phase skill and invoke it with `JIRA_URL`.
+4. Dispatch `artifact-validator` with:
 
    ```
    TICKET_KEY: <KEY>
@@ -27,32 +29,41 @@ progress → gate check.**
    DIRECTION: postcondition
    ```
 
-   Expected: file exists, contains `## Description`.
-
-4. Update progress — dispatch `progress-tracker`:
+5. Expect: `docs/<KEY>.md` exists and contains `## Description`.
+6. Dispatch `progress-tracker` with:
 
    ```
    TICKET_KEY: <KEY>
    ACTION: update
    PHASE: 1
    STATUS: complete
-   SUMMARY: "Ticket fetched — N comments, N subtasks found"
+   SUMMARY: "Ticket fetched - N comments, N subtasks found"
    ```
 
-**Gate:** Automatic → proceed to Phase 2.
+**Gate:** Automatic. Proceed to Phase 2 when validation passes.
 
 ---
 
-## Phase 2 — Plan Tasks
+## Phase 2 - Plan Tasks
 
-**Skill:** `planning-jira-tasks` (at `../planning-jira-tasks/SKILL.md`)
+**Skill:** `planning-jira-tasks` at `../planning-jira-tasks/SKILL.md`
 
-1. Read the skill's SKILL.md.
-2. Invoke it with `TICKET_KEY` and the path to `docs/<KEY>.md`.
-3. The skill runs a three-stage pipeline (task-planner →
-   dependency-prioritizer → task-validator) and produces `docs/<KEY>-tasks.md`
-   plus preserved intermediates.
-4. Validate output — dispatch `artifact-validator`:
+1. Announce Phase 2.
+2. Dispatch `artifact-validator` with:
+
+   ```
+   TICKET_KEY: <KEY>
+   PHASE: 2
+   DIRECTION: precondition
+   ```
+
+3. Expect: `docs/<KEY>.md` exists and still satisfies Phase 1 output checks.
+4. Read the phase skill and invoke it with:
+   - `TICKET_KEY`
+   - `TICKET_FILE=docs/<KEY>.md`
+5. The downstream skill produces `docs/<KEY>-tasks.md` plus planning
+   intermediates.
+6. Dispatch `artifact-validator` with:
 
    ```
    TICKET_KEY: <KEY>
@@ -60,9 +71,9 @@ progress → gate check.**
    DIRECTION: postcondition
    ```
 
-   Expected: file exists, contains `## Tasks`, has ≥2 task entries.
-
-5. Update progress — dispatch `progress-tracker`:
+7. Expect: `docs/<KEY>-tasks.md` exists, contains `## Tasks`, and has at least
+   2 task entries.
+8. Dispatch `progress-tracker` with:
 
    ```
    TICKET_KEY: <KEY>
@@ -72,67 +83,61 @@ progress → gate check.**
    SUMMARY: "N tasks planned, execution order determined"
    ```
 
-**Gate:** Automatic → proceed to Phase 3.
+**Gate:** Automatic. Proceed to Phase 3 when validation passes.
 
 ---
 
-## Phase 3 — Clarify Assumptions + Critique Plan
+## Phase 3 - Clarify Assumptions + Critique Plan
 
-**Skill:** `clarifying-assumptions` (at `../clarifying-assumptions/SKILL.md`)
+**Skill:** `clarifying-assumptions` at `../clarifying-assumptions/SKILL.md`
 **Mode:** `upfront`
 
-This is where the orchestrator facilitates the critique and clarification
-process. The skill handles the Q&A with the user — the orchestrator's job is
-to invoke it correctly and handle the gate and re-plan cycle.
+1. Announce Phase 3.
+2. Dispatch `artifact-validator` with:
 
-1. Read the skill's SKILL.md.
-2. Invoke it with:
+   ```
+   TICKET_KEY: <KEY>
+   PHASE: 3
+   DIRECTION: precondition
+   ```
+
+3. Expect: `docs/<KEY>-tasks.md` still satisfies the Phase 2 postcondition.
+4. Read the phase skill and invoke it with:
    - `MODE=upfront`
    - `TICKET_KEY`
-   - Path to `docs/<KEY>-tasks.md`
-   - Paths to stage intermediates (`docs/<KEY>-stage-1-detailed.md`,
-     `docs/<KEY>-stage-2-prioritized.md`)
-3. The skill dispatches its `critique-analyzer`, then walks the user through
-   all items (problem-framing critique, technology critique, open questions,
-   assumptions) one at a time.
+   - `TASK_PLAN_FILE=docs/<KEY>-tasks.md`
+   - `DETAILED_PLAN_FILE=docs/<KEY>-stage-1-detailed.md`
+   - `PRIORITIZED_PLAN_FILE=docs/<KEY>-stage-2-prioritized.md`
+5. The downstream skill handles user-facing critique and clarification inline,
+   while delegating its analysis helpers.
 
 ### Re-plan cycle
 
-If the skill reports `RE_PLAN_NEEDED=true` (the user agreed with a critique
-and decided to change approach):
+If the skill reports `RE_PLAN_NEEDED=true`:
 
-1. Re-dispatch Phase 2 (`planning-jira-tasks`) with the same inputs plus the
-   new decisions from the critique.
-2. All Phase 2 subagents re-run. They receive their prior artifacts (on disk)
-   plus the decisions and produce updated versions.
-3. After Phase 2 completes, re-dispatch Phase 3 to critique the updated plan.
-4. The `critique-analyzer` respects prior decisions — it does not re-raise
-   concerns the user already consciously resolved.
-
-**Limit:** Maximum 3 re-plan iterations. After 3, present accumulated critique
-to the user and ask how to proceed.
+1. Re-run Phase 2 with the same inputs plus the accepted decisions from the
+   critique.
+2. Re-run only the failing boundary: Phase 2 postcondition, then Phase 3 again.
+3. Do not re-raise critique items that the user already resolved consciously.
+4. Maximum: 3 re-plan loops. After the third, present the accumulated critique
+   and ask the user how to proceed.
 
 <example>
-Re-plan cycle in practice:
+Iteration 1:
+Critique finds that the plan defaults to Redis without project-specific
+justification.
+User decides: "Use in-memory LRU for now."
+-> `RE_PLAN_NEEDED=true`
 
-Phase 3 (iteration 1):
-critique-analyzer: "The plan defaults to Redis for caching without
-project-specific justification. Alternatives: in-memory LRU (lower ops
-cost), Cloudflare KV (edge performance)."
-User: "Good point — let's use in-memory LRU for now."
-→ RE_PLAN_NEEDED=true
+Re-run Phase 2 with that decision.
 
-Phase 2 (re-dispatch):
-All subagents re-run with the decision: "Use in-memory LRU instead of Redis."
-Updated plan reflects the change.
-
-Phase 3 (iteration 2):
-critique-analyzer: No new concerns (Redis decision already resolved).
-User confirms plan.
-→ RE_PLAN_NEEDED=false → advance to gate
+Iteration 2:
+Updated plan reflects in-memory LRU.
+Critique finds no unresolved concern on caching.
+-> `RE_PLAN_NEEDED=false`
 </example>
 
-4. Validate output — dispatch `artifact-validator`:
+6. Dispatch `artifact-validator` with:
 
    ```
    TICKET_KEY: <KEY>
@@ -140,9 +145,8 @@ User confirms plan.
    DIRECTION: postcondition
    ```
 
-   Expected: file contains `## Decisions Log`.
-
-5. Update progress — dispatch `progress-tracker`:
+7. Expect: `docs/<KEY>-tasks.md` contains `## Decisions Log`.
+8. Dispatch `progress-tracker` with:
 
    ```
    TICKET_KEY: <KEY>
@@ -152,30 +156,38 @@ User confirms plan.
    SUMMARY: "N/N questions resolved, N critique items addressed"
    ```
 
-**Gate:** User confirmation required — this transition creates Jira subtasks
-(external system writes). Present these options:
+**Gate:** User confirmation required before Jira writes. Present:
 
 ```
 Plan is ready. How would you like to proceed?
 
 1. Create subtasks in Jira now
-2. Review the plan first (I'll show you the summary)
-3. Stop here — I'll create subtasks manually
+2. Review the plan first
+3. Stop here and create subtasks manually
 ```
 
-Only proceed to Phase 4 if the user chooses option 1.
+Only proceed to Phase 4 when the user explicitly chooses option 1.
 
 ---
 
-## Phase 4 — Create Jira Subtasks
+## Phase 4 - Create Jira Subtasks
 
-**Skill:** `creating-jira-subtasks` (at `../creating-jira-subtasks/SKILL.md`)
+**Skill:** `creating-jira-subtasks` at `../creating-jira-subtasks/SKILL.md`
 
-1. Read the skill's SKILL.md.
-2. Invoke it with the `JIRA_URL`. The skill extracts `TICKET_KEY` from the
-   URL and dispatches its `subtask-creator` subagent, which creates Jira
-   subtasks and updates the plan file with subtask keys.
-3. Validate output — dispatch `artifact-validator`:
+1. Announce Phase 4.
+2. Dispatch `artifact-validator` with:
+
+   ```
+   TICKET_KEY: <KEY>
+   PHASE: 4
+   DIRECTION: precondition
+   ```
+
+3. Expect: `docs/<KEY>-tasks.md` contains the validated decisions log.
+4. Read the phase skill and invoke it with `JIRA_URL`.
+5. The downstream skill creates Jira subtasks and updates the plan file with
+   subtask keys.
+6. Dispatch `artifact-validator` with:
 
    ```
    TICKET_KEY: <KEY>
@@ -183,10 +195,9 @@ Only proceed to Phase 4 if the user chooses option 1.
    DIRECTION: postcondition
    ```
 
-   Expected: file contains `## Jira Subtasks` with ≥1 key matching
-   `[A-Z]+-\d+`.
-
-4. Update progress — dispatch `progress-tracker`:
+7. Expect: `docs/<KEY>-tasks.md` contains `## Jira Subtasks` with at least one
+   key matching `[A-Z]+-\d+`.
+8. Dispatch `progress-tracker` with:
 
    ```
    TICKET_KEY: <KEY>
@@ -197,20 +208,18 @@ Only proceed to Phase 4 if the user chooses option 1.
    TASKS: [list of task numbers and titles]
    ```
 
-   The `TASKS` input pre-populates the Task Execution table in the main
-   progress file.
+9. The `TASKS` input populates the workflow-level Task Execution table.
 
-**Gate:** User selects which task to execute first. Present the task list and
-let the user choose — never auto-start.
+**Gate:** User chooses which task to execute next. Never auto-start a task.
 
 <example>
 Subtasks created in Jira. Which task would you like to work on first?
 
-| #   | Title                    | Dependencies | Priority |
-| --- | ------------------------ | ------------ | -------- |
-| 1   | Add input validation     | None         | High     |
-| 2   | Implement caching layer  | Task 1       | High     |
-| 3   | Update API documentation | None         | Medium   |
+| # | Title | Dependencies | Priority |
+| - | ----- | ------------ | -------- |
+| 1 | Add input validation | None | High |
+| 2 | Implement caching layer | Task 1 | High |
+| 3 | Update API documentation | None | Medium |
 
 Pick a task number, or say "show me the full plan" for more detail.
 </example>
@@ -219,5 +228,5 @@ Pick a task number, or say "show me the full plan" for more detail.
 
 ## Next Step
 
-After the user selects a task, read `./task-loop.md` to begin the per-task
-execution loop (Phases 5–6–7).
+After the user selects a task, read `./task-loop.md` and begin the per-task
+execution loop for Phases 5-7.
