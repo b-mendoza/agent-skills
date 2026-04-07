@@ -25,15 +25,16 @@ the verification details.
 
 ## Pipeline Overview
 
-| Step | Mode | Goal | Output |
-| ---- | ---- | ---- | ------ |
-| `1. Recency audit` | Subagent | Check time-sensitive claims against current sources | Revised draft inputs + claim-level changes |
-| `2. Claim stress-test` | Subagent | Pressure-test the most decision-shaping claims | Recommended reframes, counterpoints, or removals |
-| `3. Completeness` | Inline | Ensure the answer covers the whole request | Missing items fixed or acknowledged |
-| `4. Clarity` | Inline | Make the answer precise, readable, and useful | Final user-visible response |
+| Phase | Mode | Goal | Output |
+| ----- | ---- | ---- | ------ |
+| `Draft prep` | Inline | Create or inspect the draft before validation begins | Draft ready for verification |
+| `Verify` | Subagents | Run the recency audit, then the claim stress-test | Claim-level revisions applied |
+| `Completeness` | Inline | Ensure the answer covers the whole request | Missing items fixed or acknowledged |
+| `Clarity` | Inline | Make the answer precise, readable, and useful | Final user-visible response |
 
-Run the subagents sequentially. Step 2 depends on the Step 1 revisions, so do
-not parallelize them.
+Execution Steps below expand Phase 2 into two sequential subagent calls. Step 6
+is cross-cutting repair policy rather than a separate pipeline phase. Do not
+parallelize the subagents.
 
 ## Subagent Registry
 
@@ -48,12 +49,13 @@ values as the job payload, and keep only the structured report it returns.
 
 ## How This Skill Works
 
-The orchestrator does exactly three things: **decide** which claims need fresh
-evidence, **dispatch** one subagent at a time, and **integrate** only the
-verdicts that matter. Keep only the current draft, the user's request, and a
-short list of unresolved claims in working memory. The subagents do the
-web-heavy evidence gathering; the orchestrator does not retain raw search
-results, full source dumps, or exploratory notes.
+Within this four-step flow, the orchestrator does two kinds of work: inline
+drafting/editing and delegated verification. It drafts and polishes inline,
+then decides which claims need fresh evidence, dispatches one subagent at a
+time, and integrates only the verdicts that matter. Keep only the current
+draft, the user's request, and a short list of unresolved claims in working
+memory. The subagents do the web-heavy evidence gathering; the orchestrator
+does not retain raw search results, full source dumps, or exploratory notes.
 
 Use inline validation only when it directly improves the final answer. Web-heavy
 fact checking and credibility pressure-tests are delegated because the
@@ -85,7 +87,10 @@ Pass:
 - `RECENCY_RISK_HINT` if you have one
 
 Apply only the changes it recommends. If it returns `FAIL`, revise the flagged
-claims before moving to Step 3. If it returns `PASS`, continue immediately.
+claims and rerun `recency-checker` on the updated draft until it returns `PASS`
+or you hit the repair cap in Step 6. If it returns `PASS`, continue to Step 3.
+Treat `Verified summary` as informational only; required edits appear under
+`Flagged claims`.
 
 ### 3. Dispatch `claim-verifier`
 
@@ -96,8 +101,10 @@ Pass:
 - The revised `DRAFT_RESPONSE` from Step 2
 - `TODAYS_DATE`
 
-Apply its recommended qualifications, reframes, counterpoints, or removals
-before continuing.
+Apply only the claim-level changes it recommends. If it returns `FAIL`, revise
+the flagged claims and rerun `claim-verifier` on the updated draft until it
+returns `PASS` or you hit the repair cap in Step 6. If it returns `PASS`,
+continue to Step 4.
 
 ### 4. Completeness check inline
 
@@ -111,6 +118,11 @@ Re-read the user's request word by word and confirm:
 If the answer is still missing material the user asked for, fix that now. Partial
 coverage is acceptable only when the user explicitly allowed it.
 
+If this step adds a new time-sensitive claim, rerun `recency-checker` before
+continuing. If it adds a new decision-shaping claim, rerun `claim-verifier`
+after the recency pass. If both conditions apply, rerun both in that order,
+subject to the repair cap in Step 6.
+
 ### 5. Clarity pass inline
 
 Edit the answer so the user can act on it quickly:
@@ -121,19 +133,31 @@ Edit the answer so the user can act on it quickly:
 - Keep qualifiers proportional to evidence strength
 - Prefer concrete wording over abstract phrasing
 
+If this pass introduces a new factual claim that the user could act on, rerun
+`recency-checker` for freshness and then `claim-verifier` for decision-shaping
+claims when applicable before sending the answer, subject to the repair cap in
+Step 6.
+
 ### 6. Fix loop and escalation
 
 Use targeted repair cycles instead of rerunning the whole pipeline:
 
-- If a subagent returns `FAIL`, fix only the flagged claims and continue
+Any rerun of `recency-checker` or `claim-verifier` on the same draft counts
+toward that subagent's repair budget, whether the rerun was triggered by `FAIL`
+or by new claims introduced during completeness or clarity edits.
+
+- If a subagent returns `FAIL`, fix only the flagged claims, then rerun that
+  same subagent on the updated draft
 - If a subagent returns `TOOLS_MISSING`, do not present the answer as freshly
   verified; qualify time-sensitive claims and explain the limitation if it
   materially affects the user's decision
 - If a subagent returns `ERROR`, retry once with the same inputs; if the second
   attempt also errors, keep only clearly supported claims and surface the
   remaining uncertainty
-- Do not run more than 2 repair cycles per subagent for the same draft; if
-  uncertainty remains material after that, tell the user directly
+- Do not run more than 2 repair cycles per subagent for the same draft. Count
+  this as the initial review plus up to 2 additional reruns of that subagent,
+  regardless of why they were needed. If uncertainty remains material after
+  that, tell the user directly
 
 ## Integration Policy
 
@@ -144,6 +168,12 @@ When folding subagent findings back into the draft:
   `as of <date>`, `based on current documentation`, or a brief caveat
 - `Low` confidence claims should be removed, replaced, or explicitly marked
   uncertain
+- Do not merge subagent confidence labels into one blended score.
+  `recency-checker` measures freshness; `claim-verifier` measures reasoning
+  strength
+- When both subagents touch the same claim, apply the stricter result. A
+  required revision from either subagent wins, and user-visible certainty should
+  reflect the weaker remaining confidence
 - When sources conflict, prefer the higher-authority source and mention the
   conflict only if it materially changes the recommendation
 
