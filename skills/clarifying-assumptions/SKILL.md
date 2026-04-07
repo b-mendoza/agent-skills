@@ -26,7 +26,7 @@ rows, and artifact paths instead of raw planning content.
 
 The main task plan must already exist at `docs/<TICKET_KEY>-tasks.md`. The
 required plan sections and artifact contracts are part of this skill's
-preconditions and are defined in `## Input And Output Contracts`.
+preconditions and are defined in `## Input and Output Contracts`.
 
 When `MODE=critique`, these per-task artifacts must also exist:
 
@@ -41,6 +41,47 @@ When `MODE=critique`, these per-task artifacts must also exist:
 | --- | --- | --- | --- |
 | `upfront` | Challenge the whole plan before execution starts | critique generation, manifest assembly, file updates | Socratic questioning and decision capture |
 | `critique` | Challenge one task just before execution | critique generation, deferred-question filtering, file updates | Evaluate reasoning and make final task-level decisions |
+
+## Input and Output Contracts
+
+### Input contract
+
+The main plan file at `docs/<TICKET_KEY>-tasks.md` must contain these sections:
+
+| Section | Used for |
+| --- | --- |
+| `## Problem Framing` | Tier 3 hard-gate questions and user-impact context |
+| `## Assumptions and Constraints` | Assumptions to confirm, revise, or defer |
+| `## Cross-Cutting Open Questions` | Plan-wide blocking questions |
+| `## Tasks` | Task-specific questions and assumptions |
+| `## Validation Report` | Validation `FAIL` and `WARN` items |
+| `## Dependency Graph` | Impact mapping and downstream task references |
+
+Additional upstream artifacts:
+
+- `MODE=upfront`: `docs/<KEY>-stage-1-detailed.md`,
+  `docs/<KEY>-stage-2-prioritized.md`
+- `MODE=critique`: task brief, execution plan, test spec, and refactoring plan
+
+These sections and upstream artifacts are required input preconditions for the
+skill.
+
+### Output contract
+
+This skill updates orchestration artifacts only. It does not produce
+implementation code.
+
+| Artifact | Required result |
+| --- | --- |
+| `docs/<KEY>-upfront-critique.md` or `docs/<KEY>-task-<N>-critique.md` | Full critique report written before manifest assembly so later steps consume the artifact path instead of the full report body |
+| `docs/<KEY>-tasks.md` updates | Main plan updated so downstream execution consumes resolved decisions instead of open ambiguity |
+| `## Decisions Log` rows | Durable audit trail for plan-wide and task-level clarification decisions |
+| Deferred question tags | Phase 6 can identify which questions must be revisited later |
+| `docs/<KEY>-task-<N>-decisions.md` | Critique-mode record of task-level decisions for re-planning and execution |
+| `RE_PLAN_NEEDED` in the final summary | Signals whether planning should be re-run before execution |
+| `BLOCKERS_PRESENT` in the final summary | Signals that clarification ended with unresolved items and execution must not proceed |
+
+These are orchestration artifacts. Keep them out of version control.
 
 ## Subagent Registry
 
@@ -95,47 +136,6 @@ Then load only the mode-specific playbook for the active run:
 | --- | --- | --- |
 | `upfront` | `./references/upfront-mode.md` | Before Phase 3 clarification starts |
 | `critique` | `./references/critique-mode.md` | Before Phase 6 task-level clarification starts |
-
-## Input And Output Contracts
-
-### Input contract
-
-The main plan file at `docs/<TICKET_KEY>-tasks.md` must contain these sections:
-
-| Section | Used for |
-| --- | --- |
-| `## Problem Framing` | Tier 3 hard-gate questions and user-impact context |
-| `## Assumptions and Constraints` | Assumptions to confirm, revise, or defer |
-| `## Cross-Cutting Open Questions` | Plan-wide blocking questions |
-| `## Tasks` | Task-specific questions and assumptions |
-| `## Validation Report` | Validation `FAIL` and `WARN` items |
-| `## Dependency Graph` | Impact mapping and downstream task references |
-
-Additional upstream artifacts:
-
-- `MODE=upfront`: `docs/<KEY>-stage-1-detailed.md`,
-  `docs/<KEY>-stage-2-prioritized.md`
-- `MODE=critique`: task brief, execution plan, test spec, and refactoring plan
-
-These sections and upstream artifacts are required input preconditions for the
-skill.
-
-### Output contract
-
-This skill updates orchestration artifacts only. It does not produce
-implementation code.
-
-| Artifact | Required result |
-| --- | --- |
-| `docs/<KEY>-upfront-critique.md` or `docs/<KEY>-task-<N>-critique.md` | Full critique report written before manifest assembly so later steps consume the artifact path instead of the full report body |
-| `docs/<KEY>-tasks.md` updates | Main plan updated so downstream execution consumes resolved decisions instead of open ambiguity |
-| `## Decisions Log` rows | Durable audit trail for plan-wide and task-level clarification decisions |
-| Deferred question tags | Phase 6 can identify which questions must be revisited later |
-| `docs/<KEY>-task-<N>-decisions.md` | Critique-mode record of task-level decisions for re-planning and execution |
-| `RE_PLAN_NEEDED` in the final summary | Signals whether planning should be re-run before execution |
-| `BLOCKERS_PRESENT` in the final summary | Signals that clarification ended with unresolved items and execution must not proceed |
-
-These are orchestration artifacts. Keep them out of version control.
 
 ## Behavioral Guardrails
 

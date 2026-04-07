@@ -4,6 +4,9 @@
 >
 > Reminder: critique mode stays conversational for the developer, but subagents
 > still own artifact reading, deferred-question filtering, and file writes.
+>
+> Use the parent skill's `## Escalation` table as the authoritative verdict
+> routing policy. This playbook focuses on phase flow and inline questioning.
 
 ## 1. Dispatch `critique-analyzer`
 

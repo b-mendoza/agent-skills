@@ -5,6 +5,9 @@
 > Reminder: the conversational layer does not read or edit the plan directly in
 > this phase. Subagents read artifacts, assemble the manifest, and write file
 > updates.
+>
+> Use the parent skill's `## Escalation` table as the authoritative verdict
+> routing policy. This playbook focuses on phase flow and inline questioning.
 
 ## 1. Dispatch `critique-analyzer`
 
