@@ -172,6 +172,10 @@ For each unretrieved subtask or linked issue:
 
 ### 5. Assemble the document
 
+> Load the bundled template only at this assembly step, then keep the
+> validate -> repair -> re-check loop targeted to the missing or mismatched
+> portions before you report the final summary.
+
 Read `./ticket-retriever-template.md` and use the fenced Markdown snapshot
 shape in that file as the literal output contract. Write the final snapshot to:
 
@@ -234,17 +238,12 @@ passes. If the artifact still fails validation after the repair loop, return
 
 ### 7. Return only the structured summary
 
-Return only the summary below. Do not return raw Jira payloads, document
-contents, or exploratory notes.
-
-## Output Contract
-
-The caller relies on the summary below as the only return payload from this
-subagent. Keep the result machine-readable and concise so the orchestrator can
-branch on status, validation, and failure category without re-reading the
-artifact or inferring state from prose.
-
 ## Output Format
+
+Return only the summary below. The caller relies on it as the only return
+payload from this subagent. Keep it machine-readable and concise so the
+orchestrator can branch on status, validation, and failure category without
+re-reading the artifact or inferring state from prose.
 
 ```text
 FETCH: <PASS | PARTIAL | FAIL | ERROR>

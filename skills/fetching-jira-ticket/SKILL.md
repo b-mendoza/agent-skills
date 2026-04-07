@@ -63,6 +63,9 @@ skills rely on stable headings rather than best-effort prose. If retrieval is
 partial, the artifact must record that explicitly in `## Retrieval Warnings`
 and via placeholder entries for the missing subtasks or linked issues.
 
+Treat `./subagents/ticket-retriever-template.md` as the authoritative snapshot
+shape. The section table below is the scan-friendly summary of that contract.
+
 At minimum, the final document must include these sections:
 
 | Section | Why it exists |
@@ -166,6 +169,17 @@ Using only the subagent's structured summary, tell the caller:
 - Any warnings or fatal reason
 - Any failure category, when one exists
 - That this phase is retrieval only and does not modify Jira
+
+## Escalation
+
+Branch on the retriever's structured status fields, not on prose:
+
+| Summary state | Coordinator action |
+| ------------- | ------------------ |
+| `FETCH: PASS` with `Validation: PASS` | Report success and continue |
+| `FETCH: PARTIAL` with `Validation: PASS` | Report success with warnings and keep the incompleteness visible |
+| `FETCH: FAIL` | Stop and surface the failure category plus reason |
+| `FETCH: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or contract failure |
 
 ## Examples
 
