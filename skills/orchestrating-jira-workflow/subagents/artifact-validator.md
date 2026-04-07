@@ -31,7 +31,7 @@ advance, retry, or stop.
 | 4     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 3 postcondition                                  |
 | 4     | postcondition | `docs/<KEY>-tasks.md`                | Contains `## Jira Subtasks` with at least one Jira-style key   |
 | 5     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 4 postcondition                                  |
-| 5     | postcondition | `docs/<KEY>-task-<N>-brief.md`       | File exists                                                    |
+| 5     | postcondition | `docs/<KEY>-task-<N>-*.md`           | All 4 planning artifacts exist for task `N`                    |
 | 6     | precondition  | `docs/<KEY>-task-<N>-*.md`           | All 4 planning artifacts exist for task `N`                    |
 | 6     | postcondition | `docs/<KEY>-task-<N>-decisions.md`   | File exists                                                    |
 | 7     | precondition  | `docs/<KEY>-task-<N>-*.md`           | Same as Phase 6 precondition                                   |
@@ -45,7 +45,9 @@ for the same matrix in reference form.
 2. Check existence first.
 3. When content validation is required, use targeted section/pattern checks
    rather than reading full files into context.
-4. Return only the structured verdict.
+4. When the boundary expects a file set, list the expected artifacts explicitly
+   in the `Checks` section.
+5. Return only the structured verdict.
 
 Be precise about what failed. The orchestrator needs a specific missing file,
 missing section, or failed count check so it can decide whether to re-run a

@@ -4,8 +4,9 @@
 > `artifact-validator` at a phase boundary, or what a PASS/FAIL verdict means
 > for your next decision.
 >
-> The phase execution playbooks include these dispatches inline. This file is
-> the compact reference, not a substitute for the phase playbooks.
+> Reminder: the orchestrator reads skill/reference/subagent files, talks to the
+> user, and dispatches helpers. Validation stays delegated; this file is the
+> compact contract reference, not a substitute for the phase playbooks.
 
 ---
 
@@ -30,7 +31,7 @@ Each row shows what to dispatch to `artifact-validator` and what to expect.
 
 | Phase | Direction     | File to check                      | Expected checks                  |
 | ----- | ------------- | ---------------------------------- | -------------------------------- |
-| 5     | postcondition | `docs/<KEY>-task-<N>-brief.md`     | File exists                      |
+| 5     | postcondition | `docs/<KEY>-task-<N>-*.md`         | All 4 planning artifacts exist   |
 | 6     | precondition  | `docs/<KEY>-task-<N>-*.md`         | All 4 planning artifacts exist   |
 | 6     | postcondition | `docs/<KEY>-task-<N>-decisions.md` | File exists                      |
 | 7     | precondition  | `docs/<KEY>-task-<N>-*.md`         | Same as Phase 6 precondition; these inputs feed the execution kickoff |
@@ -95,8 +96,8 @@ Phase 2, or proceed with a single task?"
 
 ## Artifact Categories
 
-The orchestrator does not manage artifact categories directly — that is the
-`documentation-writer` subagent's responsibility. For reference:
+The orchestrator does not need to decide artifact categories dynamically.
+Keep this distinction in mind when coordinating the workflow:
 
 - **Category A** (orchestration artifacts, `docs/<KEY>*.md`): updated on disk
   only, preserved across sessions.
