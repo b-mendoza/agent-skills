@@ -4,6 +4,11 @@ This file is loaded when Phase 3 critique triggers a re-plan dispatch back
 to Phase 2, or when an error occurs during the pipeline. On the happy path,
 this file is never read.
 
+> Read this file only for re-plan or recovery paths.
+>
+> Preserve existing stage artifacts, restart from the earliest affected stage,
+> and rerun only the gates that are now invalid.
+
 ## Re-Plan Cycle
 
 If Phase 3 critique triggers a re-plan, the orchestrator re-dispatches this
