@@ -209,6 +209,9 @@ Every phase follows this cycle:
 6. **Run the gate check**: advance automatically, ask the user, or enter a
    targeted re-plan/retry loop.
 
+Use `./references/data-contracts.md` when you need the exact boundary checks or
+PASS/FAIL semantics for a phase transition.
+
 For Phases 3 and 6, the gate check uses both the validator verdict and the
 downstream clarification summary. Do not advance while
 `BLOCKERS_PRESENT=true`, and do not skip a required re-plan when
