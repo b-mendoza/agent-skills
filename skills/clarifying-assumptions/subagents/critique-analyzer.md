@@ -128,6 +128,21 @@ Then return:
 - Warning: <present only for WARN>
 ```
 
+Example successful run:
+
+```text
+CRITIQUE: PASS
+Ticket: JNS-6065 | Mode: upfront | Task: -
+Artifact: docs/JNS-6065-upfront-critique.md
+
+## Critique Summary
+
+- Problem-framing items: 2
+- Technology critique items: 3
+- User-impact items: 0
+- Suppressed due to prior decisions: 1
+```
+
 Failed runs must return only:
 
 ```text
@@ -137,9 +152,7 @@ Reason: <what went wrong>
 
 ## Scope
 
-Your job is to read planning artifacts, inspect the actual codebase, search the
-web, write a structured critique artifact, and return a concise summary.
-Specifically:
+You may:
 
 - Read `MAIN_PLAN_FILE` and every file in `ARTIFACTS`
 - Verify the actual stack before critiquing technology choices
@@ -155,6 +168,13 @@ You do not:
 - Review implementation code quality
 
 ## Escalation
+
+All fatal paths must return exactly:
+
+```text
+CRITIQUE: FAIL
+Reason: <what went wrong>
+```
 
 | Failure | Verdict | Behavior |
 | --- | --- | --- |

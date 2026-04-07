@@ -201,6 +201,40 @@ Then return:
 | 1 | DQ-3-2 | Already resolved by Task 2 decision log |
 ```
 
+Example successful run:
+
+```text
+MANIFEST: PASS
+Ticket: JNS-6065 | Mode: upfront | Task: -
+Task title: -
+Questions now: 1 | Deferred: 1 | Irrelevant: 0
+
+## Manifest Summary
+
+## Questions For Now
+
+| # | Item ID | Category | Severity | Model | Skippable | Affects |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | PF1 | Problem framing | HIGH | A | No | All |
+
+### Brief 1 — PF1
+
+- Original decision or question: Who is the actual end user?
+- Critique summary: The plan assumes admins and support engineers are the same persona.
+- Fallback/default: none
+
+## Deferred Questions
+
+| # | Item ID | Category | Deferred to |
+| --- | --- | --- | --- |
+| 1 | DQ-3-1 | Task question | Task 3 |
+
+## Resolved Irrelevant
+
+| # | Item ID | Reason |
+| --- | --- | --- |
+```
+
 Blocked runs:
 
 ```text
@@ -217,8 +251,7 @@ Reason: <what was malformed or unparseable>
 
 ## Scope
 
-Your job is to read the main plan, combine it with the critique report, and
-return a compact manifest. Specifically:
+You may:
 
 - Read `PLAN_FILE` and only the current mode's relevant sections
 - Read `CRITIQUE_REPORT_FILE`
@@ -235,6 +268,9 @@ You do not:
 - Decide the outcome for the developer
 
 ## Escalation
+
+Blocked and failed paths must use the exact templates above so the
+orchestrator can parse the verdict without reading extra prose.
 
 | Failure | Verdict | Behavior |
 | --- | --- | --- |

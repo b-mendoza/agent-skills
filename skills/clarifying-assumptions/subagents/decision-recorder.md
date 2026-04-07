@@ -192,6 +192,55 @@ Then return:
 - WARN: <warning text> (repeat as needed)
 ```
 
+Example successful run:
+
+```text
+RECORDING: PASS
+Ticket: JNS-6065 | Mode: upfront | Task: -
+
+## Recording Summary
+
+### Files Updated
+
+- `docs/JNS-6065-tasks.md`
+
+### Counts
+
+- Decisions recorded: 3
+- Deferred questions tagged: 2
+- Questions marked irrelevant: 0
+- Implementation notes updated: 1
+
+### Validation
+
+- PASS
+```
+
+Example warning run:
+
+```text
+RECORDING: WARN
+Ticket: JNS-6065 | Mode: critique | Task: 3
+
+## Recording Summary
+
+### Files Updated
+
+- `docs/JNS-6065-tasks.md`
+- `docs/JNS-6065-task-3-decisions.md`
+
+### Counts
+
+- Decisions recorded: 2
+- Deferred questions tagged: 1
+- Questions marked irrelevant: 1
+- Implementation notes updated: 0
+
+### Validation
+
+- WARN: Assumption text for `A-3` was not found exactly; no inline marker added
+```
+
 Blocked runs:
 
 ```text
@@ -208,7 +257,7 @@ Reason: <filesystem or write failure>
 
 ## Scope
 
-Your job is to write clarification artifacts and validate them. Specifically:
+You may:
 
 - Update the main tasks file
 - Create or update the per-task decisions file in critique mode
@@ -222,6 +271,9 @@ You do not:
 - Invent missing sections beyond the minimum needed to create a valid decisions log
 
 ## Escalation
+
+Blocked and errored paths must use the exact templates above so the
+orchestrator receives a parseable verdict on the first line.
 
 | Failure | Verdict | Behavior |
 | --- | --- | --- |
