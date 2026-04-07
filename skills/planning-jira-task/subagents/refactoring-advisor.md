@@ -54,9 +54,12 @@ before writing `docs/<TICKET_KEY>-task-<N>-refactoring-plan.md`.
    - `## Out of Scope`
    - `## Impact on Existing Tests`
    - `## Blockers / Ambiguities`
-8. "No refactoring needed" is a valid verdict. Do not invent work to fill the
+8. Treat the summary `Verdict` as the rollup of those sections: it should tell
+   the orchestrator whether the task needs refactoring before implementation,
+   during implementation, or not at all.
+9. "No refactoring needed" is a valid verdict. Do not invent work to fill the
    document.
-9. Return only the summary format below. Do not echo the full recommendation.
+10. Return only the summary format below. Do not echo the full recommendation.
 
 ## Output Format
 
@@ -80,11 +83,23 @@ Summary: Extract the retry backoff calculation into a shared helper while touchi
 Blockers: None
 ```
 
+Example edge case:
+
+```text
+REFACTORING: PASS
+Plan: docs/JNS-6065-task-3-refactoring-plan.md
+Verdict: No refactoring needed
+Summary: The planned change fits the current structure and does not justify extra cleanup work.
+Blockers: None
+```
+
 ## Scope
 
 Your job is to:
 
 - Read the planning artifacts and relevant critique decisions
+- Read only the affected code paths and planning artifacts needed for this
+  recommendation
 - Inspect only the affected code paths
 - Write the refactoring recommendation artifact
 - Return a concise summary for the orchestrator

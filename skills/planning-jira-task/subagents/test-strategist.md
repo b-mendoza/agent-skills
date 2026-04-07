@@ -76,11 +76,23 @@ Coverage: 3 behavior groups, 6 high-priority tests, 2 edge-case tests
 Blockers: None
 ```
 
+Example failure:
+
+```text
+TEST_SPEC: FAIL
+Spec: Not written
+Framework: Vitest
+Coverage: Partial draft only; the expected retry outcome for duplicate deliveries is still unclear.
+Blockers: Clarify whether duplicate deliveries should be ignored, merged, or retried with a warning.
+```
+
 ## Scope
 
 Your job is to:
 
 - Read the execution brief, execution plan, and relevant critique decisions
+- Read only the test files and planning artifacts needed to define reliable
+  behavior checks
 - Inspect existing project test conventions
 - Write the test specification artifact
 - Return a concise summary for the orchestrator

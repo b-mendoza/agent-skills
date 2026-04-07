@@ -83,11 +83,24 @@ Questions: Resolved
 Notes: Included the Phase 3 decision to prefer idempotent retries.
 ```
 
+Example failure:
+
+```text
+PREP: FAIL
+Task: 3 - Add retry handling for webhook delivery
+Brief: Not written
+Dependencies: Unsatisfied: Task 2 is not complete
+Questions: Resolved
+Notes: Planning cannot begin until the dependency is complete.
+```
+
 ## Scope
 
 Your job is to:
 
 - Read the task plan and any critique decisions relevant to this task
+- Read only the task-plan content and prior planning artifacts needed for this
+  task
 - Validate readiness for planning
 - Write or update the execution brief
 - Return a concise summary for the orchestrator

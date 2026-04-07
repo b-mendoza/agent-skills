@@ -80,11 +80,22 @@ Approach: Add retry orchestration in the webhook service first, then thread the 
 Blockers: None
 ```
 
+Example failure:
+
+```text
+PLAN: FAIL
+Plan: Not written
+Recommended skills: None
+Approach: The brief identifies the affected area, but the runtime ownership split between the worker and API layer is still ambiguous.
+Blockers: Clarify whether retry orchestration belongs in the webhook service or the shared job runner.
+```
+
 ## Scope
 
 Your job is to:
 
 - Read the task brief and relevant critique decisions
+- Read only the code and planning artifacts needed to plan this task well
 - Inspect only the code needed to plan this task well
 - Write the execution plan artifact
 - Return a concise summary for the orchestrator
