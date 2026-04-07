@@ -26,6 +26,23 @@ Prefer passing the full `JIRA_URL` downstream rather than only the derived key.
 The URL carries more context and lets the subagent derive identifiers for
 itself.
 
+## Workflow Overview
+
+```text
+1. Read the retriever subagent definition
+2. Dispatch the subagent with JIRA_URL
+3. Interpret the structured summary it returns
+4. Report the file path, counts, and warnings to the caller
+```
+
+## Subagent Registry
+
+Read a subagent definition only when you are about to dispatch it.
+
+| Subagent | Path | Purpose |
+| -------- | ---- | ------- |
+| `ticket-retriever` | `./subagents/ticket-retriever.md` | Reads Jira data, writes `docs/<KEY>.md`, validates the artifact, and returns a concise fetch summary |
+
 ## Output Contract
 
 Primary artifact:
@@ -59,23 +76,6 @@ At minimum, the final document must include these sections:
 | `## Linked Issues` | Dependency and surrounding context |
 | `## Attachments` | File-level reference metadata |
 | `## Custom Fields` | Non-standard fields that may carry requirements |
-
-## Workflow Overview
-
-```text
-1. Read the retriever subagent definition
-2. Dispatch the subagent with JIRA_URL
-3. Keep only the structured summary it returns
-4. Report the file path, counts, and warnings to the caller
-```
-
-## Subagent Registry
-
-Read a subagent definition only when you are about to dispatch it.
-
-| Subagent | Path | Purpose |
-| -------- | ---- | ------- |
-| `ticket-retriever` | `./subagents/ticket-retriever.md` | Reads Jira data, writes `docs/<KEY>.md`, validates the artifact, and returns a concise fetch summary |
 
 ## How This Skill Works
 
