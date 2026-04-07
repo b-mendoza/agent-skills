@@ -33,6 +33,11 @@ For the clarification boundaries, validate the artifact outputs that the
 downstream skill writes to disk. The orchestrator still handles
 `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT` separately from this validator.
 
+For Phase 4 postcondition and the Phase 5 precondition, validate the stronger
+handoff owned by `../creating-jira-subtasks/SKILL.md`: the workflow-level
+`## Jira Subtasks` table plus the inline `Jira Subtask: <KEY>` lines for
+linked tasks.
+
 | Phase | Direction     | File                                 | Checks                                                         |
 | ----- | ------------- | ------------------------------------ | -------------------------------------------------------------- |
 | 1     | postcondition | `docs/<KEY>.md`                      | File exists and contains the required Phase 1 snapshot headings: `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Subtasks`, `## Linked Issues`, `## Attachments`, `## Custom Fields` |
@@ -41,7 +46,7 @@ downstream skill writes to disk. The orchestrator still handles
 | 3     | precondition  | `docs/<KEY>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
 | 3     | postcondition | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | `docs/<KEY>-upfront-critique.md` exists; `docs/<KEY>-tasks.md` contains `## Decisions Log` |
 | 4     | precondition  | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition                                  |
-| 4     | postcondition | `docs/<KEY>-tasks.md`                | Contains `## Jira Subtasks` with at least one Jira-style key   |
+| 4     | postcondition | `docs/<KEY>-tasks.md`                | Contains exactly one `## Jira Subtasks` table; table has one row per numbered task; rows may use `Not Created`, but every Jira-style key in the table has a matching inline `Jira Subtask: <KEY>` line in the corresponding task section |
 | 5     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 4 postcondition                                  |
 | 5     | postcondition | `docs/<KEY>-task-<N>-*.md`           | All 4 planning artifacts exist for task `N`                    |
 | 6     | precondition  | `docs/<KEY>-task-<N>-*.md`           | All 4 planning artifacts exist for task `N`                    |
@@ -64,9 +69,13 @@ for the same matrix in reference form.
    next phase depends on all of them.
 6. For the Phase 3 and Phase 6 postconditions, validate the critique artifact
    plus the companion planning or decisions artifact expected at that boundary.
-7. For the Phase 7 precondition, confirm the planning artifacts still exist and
+7. For the Phase 4 postcondition and Phase 5 precondition, confirm the plan
+   contains exactly one `## Jira Subtasks` table, that the table covers the
+   numbered tasks, and that every Jira-style key in the table has a matching
+   inline `Jira Subtask: <KEY>` line in the corresponding task section.
+8. For the Phase 7 precondition, confirm the planning artifacts still exist and
    that the standard Phase 6 handoff artifacts are present.
-8. Return only the structured verdict.
+9. Return only the structured verdict.
 
 Be precise about what failed. The orchestrator needs a specific missing file,
 missing section, or failed count check so it can decide whether to re-run a
