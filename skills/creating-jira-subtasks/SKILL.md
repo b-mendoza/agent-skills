@@ -69,7 +69,8 @@ The subagent returns a structured summary with:
 - `Validation: PASS | FAIL | NOT_RUN`
 - Counts for tasks in plan, already-linked tasks, newly created tasks, and
   failed creates
-- A `Created/Linked Subtasks` table with task numbers, keys, and titles
+- A `Created/Linked Subtasks` table with task number, key, title,
+  dependencies, priority, and outcome
 - Explicit `Warnings` and `Failures` sections
 
 That table is the handoff the parent workflow uses to populate progress
@@ -103,7 +104,7 @@ Inside Phase 4, keep only:
 
 - The structured `SUBTASKS` verdict
 - The validation verdict
-- The task/key/title rows needed for progress reporting
+- The task/key/title/dependency/priority rows needed for progress reporting
 - Any warning or fatal reason that requires user attention
 
 Do not surface raw Jira API responses, raw file contents, or intermediate parse
@@ -146,7 +147,8 @@ Using only the subagent's structured summary, tell the caller:
 - The ticket key and updated plan-file path
 - Total tasks in plan, already linked tasks, newly created subtasks, and failed
   creates
-- The `Created/Linked Subtasks` table
+- The `Created/Linked Subtasks` table, including dependency and priority
+  metadata for each task
 - Any warnings or failures
 - That no implementation has started and linked subtasks remain in `To Do`
   unless Jira already shows another status
@@ -175,12 +177,12 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
    Reason: All tasks are now linked to Jira subtasks.
 
    Created/Linked Subtasks:
-   | Task | Subtask Key | Title                         | Outcome        |
-   | ---- | ----------- | ----------------------------- | -------------- |
-   | 1    | PROJ-200    | Task 1: Set up schema         | Already linked |
-   | 2    | PROJ-201    | Task 2: Implement API layer   | Created now    |
-   | 3    | PROJ-202    | Task 3: Add integration tests | Created now    |
-   | 4    | PROJ-203    | Task 4: Update docs           | Created now    |
+   | Task | Subtask Key | Title                         | Dependencies | Priority | Outcome        |
+   | ---- | ----------- | ----------------------------- | ------------ | -------- | -------------- |
+   | 1    | PROJ-200    | Task 1: Set up schema         | None         | High     | Already linked |
+   | 2    | PROJ-201    | Task 2: Implement API layer   | 1            | High     | Created now    |
+   | 3    | PROJ-202    | Task 3: Add integration tests | 2            | Medium   | Created now    |
+   | 4    | PROJ-203    | Task 4: Update docs           | None         | Medium   | Created now    |
 
    Warnings:
    - None

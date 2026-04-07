@@ -44,7 +44,8 @@ task shape, return `SUBTASKS: BLOCKED`.
    - Parse each task's title and these subsections from the current plan:
      `Objective`, `Relevant requirements and context`, `Questions to answer
      before starting`, `Implementation notes`, `Definition of done`, `Likely
-     files / artifacts affected`, and `Dependencies / prerequisites`.
+     files / artifacts affected`, `Dependencies / prerequisites`, and
+     `Priority`.
    - Record whether `## Decisions Log` is present. It is expected for normal
      Phase 4 execution, but if it is missing, continue with a warning instead
      of silently failing.
@@ -176,10 +177,10 @@ Decisions Log: <PRESENT | MISSING>
 Reason: <one line>
 
 Created/Linked Subtasks:
-| Task | Subtask Key | Title | Outcome |
-| ---- | ----------- | ----- | ------- |
-| 1    | JNS-6070    | Task 1: Set up schema | Already linked |
-| 2    | JNS-6071    | Task 2: Implement API | Created now |
+| Task | Subtask Key | Title | Dependencies | Priority | Outcome |
+| ---- | ----------- | ----- | ------------ | -------- | ------- |
+| 1    | JNS-6070    | Task 1: Set up schema | None | High | Already linked |
+| 2    | JNS-6071    | Task 2: Implement API | 1 | High | Created now |
 
 Warnings:
 - <warning or "None">
@@ -187,6 +188,10 @@ Warnings:
 Failures:
 - <failure or "None">
 ```
+
+Populate `Dependencies` and `Priority` from the current task plan. Use `None`
+for tasks without prerequisites and `Unknown` when the plan does not provide a
+priority value.
 
 Use these status rules:
 
@@ -219,12 +224,12 @@ Decisions Log: PRESENT
 Reason: All tasks are now linked to valid Jira subtasks.
 
 Created/Linked Subtasks:
-| Task | Subtask Key | Title | Outcome |
-| ---- | ----------- | ----- | ------- |
-| 1    | JNS-6070    | Task 1: Set up schema | Already linked |
-| 2    | JNS-6071    | Task 2: Implement API | Created now |
-| 3    | JNS-6072    | Task 3: Add tests | Created now |
-| 4    | JNS-6073    | Task 4: Update docs | Created now |
+| Task | Subtask Key | Title | Dependencies | Priority | Outcome |
+| ---- | ----------- | ----- | ------------ | -------- | ------- |
+| 1    | JNS-6070    | Task 1: Set up schema | None | High | Already linked |
+| 2    | JNS-6071    | Task 2: Implement API | 1 | High | Created now |
+| 3    | JNS-6072    | Task 3: Add tests | 2 | Medium | Created now |
+| 4    | JNS-6073    | Task 4: Update docs | None | Medium | Created now |
 
 Warnings:
 - None
@@ -248,11 +253,11 @@ Decisions Log: PRESENT
 Reason: The plan was updated, but not every task could be linked.
 
 Created/Linked Subtasks:
-| Task | Subtask Key | Title | Outcome |
-| ---- | ----------- | ----- | ------- |
-| 1    | PROJ-420    | Task 1: Configure auth middleware | Created now |
-| 2    | PROJ-421    | Task 2: Implement token refresh | Created now |
-| 4    | PROJ-422    | Task 4: Add rate limiting | Created now |
+| Task | Subtask Key | Title | Dependencies | Priority | Outcome |
+| ---- | ----------- | ----- | ------------ | -------- | ------- |
+| 1    | PROJ-420    | Task 1: Configure auth middleware | None | High | Created now |
+| 2    | PROJ-421    | Task 2: Implement token refresh | 1 | High | Created now |
+| 4    | PROJ-422    | Task 4: Add rate limiting | 2 | Medium | Created now |
 
 Warnings:
 - Task 3 is still unlinked in Jira.
@@ -276,8 +281,8 @@ Decisions Log: PRESENT
 Reason: Existing Jira linkage in the plan is unsafe to reuse.
 
 Created/Linked Subtasks:
-| Task | Subtask Key | Title | Outcome |
-| ---- | ----------- | ----- | ------- |
+| Task | Subtask Key | Title | Dependencies | Priority | Outcome |
+| ---- | ----------- | ----- | ------------ | -------- | ------- |
 
 Warnings:
 - None
