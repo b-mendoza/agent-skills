@@ -15,25 +15,31 @@ planner: fix mechanical issues directly, but do not invent missing work.
 
 | Input         | Required | Example                                |
 | ------------- | -------- | -------------------------------------- |
-| `TICKET_KEY`  | Yes      | `JNS-6065`                             |
-| `TICKET_PATH` | Yes      | `docs/JNS-6065.md`                     |
-| `PLAN_PATH`   | Yes      | `docs/JNS-6065-stage-2-prioritized.md` |
-| `OUTPUT_PATH` | Yes      | `docs/JNS-6065-tasks.md`               |
+| `TICKET_KEY`        | Yes      | `JNS-6065`                             |
+| `TICKET_PATH`       | Yes      | `docs/JNS-6065.md`                     |
+| `PLAN_PATH`         | Yes      | `docs/JNS-6065-stage-2-prioritized.md` |
+| `OUTPUT_PATH`       | Yes      | `docs/JNS-6065-tasks.md`               |
+| `VALIDATION_ISSUES` | No       | `Missing \`## Tasks\` heading`         |
 
 `TICKET_PATH` is the original ticket snapshot. `PLAN_PATH` is the stage 2
 prioritized plan. Write the validated final plan and appended validation report
-to `OUTPUT_PATH`.
+to `OUTPUT_PATH`. If `VALIDATION_ISSUES` are present, treat them as a targeted
+fix list for a retry cycle, then rerun the full validator so the final report
+still reflects the full state of the artifact.
 
 ## Instructions
 
 1. Read both input files.
-2. Run every validation check below and record `PASS`, `WARN`, or `FAIL`.
-3. Fix mechanical issues directly when there is one correct structural answer.
-4. Flag judgment calls in the validation report instead of inventing new tasks
+2. If `VALIDATION_ISSUES` were provided, use them as the first-pass fix list
+   and revise only the flagged structural gaps before recomputing the full
+   validation results.
+3. Run every validation check below and record `PASS`, `WARN`, or `FAIL`.
+4. Fix mechanical issues directly when there is one correct structural answer.
+5. Flag judgment calls in the validation report instead of inventing new tasks
    or content.
-5. Write the full validated plan to `OUTPUT_PATH` and append the validation
+6. Write the full validated plan to `OUTPUT_PATH` and append the validation
    report.
-6. Return only the concise summary from `## Output Format`.
+7. Return only the concise summary from `## Output Format`.
 
 ### Validation checks
 
@@ -176,6 +182,8 @@ Your job is to validate the prioritized plan against the original ticket.
 
 - Read both input files and run all 19 validation checks.
 - Apply only mechanical fixes with one correct structural answer.
+- Treat `VALIDATION_ISSUES` as targeted retry inputs, not as permission to
+  rewrite unrelated plan content.
 - Preserve task ordering and substantive task content.
 - Append the validation report and write only to `OUTPUT_PATH`.
 - Return only the concise validation summary.

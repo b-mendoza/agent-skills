@@ -1,6 +1,6 @@
 ---
 name: "stage-validator"
-description: "Validates artifacts at each boundary of the planning-jira-tasks pipeline: preflight input checks, inter-stage structural checks, and final output-contract checks. Returns only a concise pass/fail summary so the orchestrating skill can decide whether to proceed or retry."
+description: "Validates artifacts at each boundary of the planning-jira-tasks pipeline: preflight input checks, inter-stage structural checks, and final output-contract checks. Returns only a concise structural verdict so the orchestrating skill can decide whether to proceed or retry."
 model: "inherit"
 ---
 
@@ -102,6 +102,7 @@ Checks:
 - [ ] `## Problem Framing` exists with all six subsections.
 - [ ] `## Assumptions and Constraints` exists.
 - [ ] `## Cross-Cutting Open Questions` exists.
+- [ ] `## Tasks` exists.
 - [ ] `## Execution Order Summary` exists.
 - [ ] `## Dependency Graph` exists.
 - [ ] `## Validation Report` exists.
@@ -123,8 +124,8 @@ Return only this summary:
 ## Stage Validation: <STAGE>
 
 - **File:** <FILE_PATH>
-- **Verdict:** PASS | FAIL
-- **Checks passed:** <N> / <total>
+- **Verdict:** PASS | FAIL | ERROR
+- **Checks passed:** <N> / <total> | n/a
 - **Issues:** <bulleted list of failures, or "None">
 ```
 
@@ -133,7 +134,7 @@ Return only this summary:
 
 - **File:** docs/JNS-6065-tasks.md
 - **Verdict:** FAIL
-- **Checks passed:** 14 / 16
+- **Checks passed:** 15 / 17
 - **Issues:**
   - Missing `## Assumptions and Constraints`
   - Task 3 is missing `**Dependencies / prerequisites:**`
@@ -151,10 +152,15 @@ Your job is to perform structural checks and report the verdict.
 ## Escalation
 
 Use `ERROR` only for unexpected failures unrelated to the artifact contents,
-such as filesystem or tool access problems.
+such as filesystem or tool access problems. Keep the same output format so the
+orchestrator can parse one schema for all validator outcomes.
 
 ```text
-VALIDATION: ERROR
-Stage: <STAGE>
-Reason: <what went wrong>
+## Stage Validation: <STAGE>
+
+- **File:** <FILE_PATH>
+- **Verdict:** ERROR
+- **Checks passed:** n/a
+- **Issues:**
+  - <what went wrong>
 ```
