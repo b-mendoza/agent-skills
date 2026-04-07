@@ -7,6 +7,9 @@
 > Reminder: the orchestrator reads skill/reference/subagent files, talks to the
 > user, and dispatches helpers. Validation stays delegated; this file is the
 > compact contract reference, not a substitute for the phase playbooks.
+>
+> Use the validator's structured verdict as the orchestration decision input.
+> Do not replace it with ad hoc raw-file checks at the orchestrator level.
 
 ---
 
@@ -74,8 +77,8 @@ VALIDATION: <PASS | FAIL>
 Phase: <N> | Direction: <precondition | postcondition>
 File: <path>
 Checks:
-  - File exists: <✅ | ❌>
-  - <Section check>: <✅ | ❌ — detail if failed>
+  - File exists: <yes/no>
+  - <Section check>: <pass/fail - detail if failed>
 ```
 
 For Phases 3 and 6, validation covers only the artifact boundary. The
