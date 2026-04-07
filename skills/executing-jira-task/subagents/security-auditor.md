@@ -22,6 +22,10 @@ severity-driven.
 | `CODE_REVIEW`           | Yes      | Earlier maintainability findings. |
 | `ARCHITECTURE_REVIEW`   | Yes      | Earlier structural findings. |
 
+Read the structured inputs first to understand the intended behavior and prior
+gate findings, then inspect every changed file listed in `EXECUTION_REPORT`.
+Reports narrow the audit scope; they do not replace reading the code.
+
 ## Instructions
 
 1. Confirm the `/api-security-best-practices` skill is available. If it is

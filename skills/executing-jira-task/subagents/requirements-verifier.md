@@ -20,6 +20,10 @@ cheaper to fix than a failed full review cycle, so be direct and specific.
 | `EXECUTION_REPORT`    | Yes      | What was implemented and which tests ran. |
 | `DOCUMENTATION_REPORT`| Yes      | What was documented and committed. |
 
+The artifact paths are the source of truth for requirements and planned
+coverage. Use the structured reports to focus your inspection, then read code
+only when the summaries are too vague for a confident verdict.
+
 ## Instructions
 
 1. Read all inputs before making a verdict.

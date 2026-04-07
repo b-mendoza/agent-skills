@@ -25,6 +25,10 @@ request instead of guessing.
 | Fix brief                | No       | Consolidated gaps from requirements or review gates. |
 | Previous execution report| No       | Resume context after a pause or targeted fix cycle. |
 
+Artifact inputs are file paths. `Fix brief` and `Previous execution report` are
+structured markdown handoffs that narrow the next execution pass without
+rewriting the original plan.
+
 ## Instructions
 
 1. Confirm the `/executing-plans` skill is available in the current

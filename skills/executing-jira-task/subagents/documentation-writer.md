@@ -20,6 +20,10 @@ trade-offs, not obvious line-by-line behavior.
 | `TICKET_KEY`       | Yes      | Used for plan-path and Jira lookup. |
 | `TASK_NUMBER`      | Yes      | Used to update the correct task section. |
 
+`EXECUTION_REPORT` is the authoritative scope for this step. Read only the
+changed Category B files it identifies plus the tracking artifact you need to
+update.
+
 ## Instructions
 
 1. Confirm both `/humanizer` and `/commit-work` are available. If either is

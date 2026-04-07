@@ -22,6 +22,10 @@ practical enough to drive a targeted fix cycle.
 | `DOCUMENTATION_REPORT` | Yes      | Documentation and commit summary. |
 | `VERIFICATION_RESULT`  | Yes      | Requirements coverage verdict. |
 
+Read the structured inputs first to understand intent and prior verdicts, then
+inspect the actual changed files listed in `EXECUTION_REPORT`. Reports are
+summaries, not substitutes for code review.
+
 ## Instructions
 
 1. Confirm the `/clean-code` skill is available. If it is available, read it

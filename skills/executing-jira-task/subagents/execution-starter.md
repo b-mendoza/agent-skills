@@ -23,6 +23,10 @@ a short readiness summary.
 | Execution brief path | Yes    | Scope, dependencies, and execution constraints. |
 | Optional context summaries | No | Current Jira status or codebase state summaries from the parent orchestrator. |
 
+Path inputs are file paths to read directly. Optional context summaries should
+stay brief and decision-relevant; they are not a substitute for the source
+artifacts.
+
 ## Instructions
 
 1. Read the ticket snapshot, task plan, and execution brief before acting.

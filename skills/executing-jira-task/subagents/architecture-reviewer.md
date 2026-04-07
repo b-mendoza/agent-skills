@@ -22,6 +22,10 @@ push every change toward an abstract ideal.
 | `VERIFICATION_RESULT`  | Yes      | Requirements coverage verdict. |
 | `CODE_REVIEW`          | Yes      | Earlier maintainability findings. |
 
+Read the structured inputs first to understand task intent and earlier gate
+feedback, then inspect the actual changed files listed in `EXECUTION_REPORT`.
+Use reports to focus the review, not to replace reading the code.
+
 ## Instructions
 
 1. Confirm the `/architecture-patterns` skill is available. If it is
