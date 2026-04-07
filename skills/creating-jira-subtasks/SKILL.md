@@ -12,8 +12,8 @@ outcome the parent workflow needs for progress tracking.
 
 The coordinator does four things directly: read its bundled files, derive
 identifiers from `JIRA_URL`, dispatch `subtask-creator`, and relay the
-subagent's summary. It does not parse the task plan inline, call Jira
-directly, or edit the plan file itself.
+subagent's summary. Plan parsing, Jira operations, and plan-file edits all stay
+inside `subtask-creator` after dispatch.
 
 ## Inputs
 
@@ -30,55 +30,6 @@ Derive these values from the URL when you need to describe the ticket:
 Prefer passing the full `JIRA_URL` downstream rather than only `TICKET_KEY`.
 The URL carries the workspace context needed for Jira reads and writes.
 
-## Input and Output Contracts
-
-Primary input artifact:
-
-```text
-docs/<TICKET_KEY>-tasks.md
-```
-
-For normal Phase 4 execution, the plan is expected to contain:
-
-| Expected section / element               | Produced by            | Why it matters                                |
-| ---------------------------------------- | ---------------------- | --------------------------------------------- |
-| `## Tasks` with numbered `## Task <N>:` headings | planning-jira-tasks    | Each task maps to one Jira subtask            |
-| `## Execution Order Summary`             | planning-jira-tasks    | Preserves task ordering context               |
-| `## Decisions Log`                       | clarifying-assumptions | Indicates critique is complete before Jira writes |
-
-The parent orchestrator already validates the Phase 4 precondition before this
-skill runs. If this skill is used standalone and the plan is missing or
-malformed, the subagent returns `SUBTASKS: BLOCKED`. If `## Decisions Log` is
-missing, the subagent continues with `SUBTASKS: WARN`: the plan is still
-parseable, but the normal workflow precondition was skipped.
-
-Primary output artifact:
-
-```text
-docs/<TICKET_KEY>-tasks.md
-```
-
-After successful or partial Phase 4 completion, the plan file must include:
-
-| Addition                                              | Consumed by          | Purpose                                           |
-| ----------------------------------------------------- | -------------------- | ------------------------------------------------- |
-| `## Jira Subtasks` table (Task, Subtask Key, Title, Status) | artifact-validator, executing-jira-task | Supports Phase 4 validation and later Jira status updates |
-| `Jira Subtask: <KEY>` line in each linked task section | executing-jira-task | Identifies the Jira issue to transition later     |
-
-The subagent returns a structured summary with:
-
-- `SUBTASKS: PASS | WARN | FAIL | BLOCKED | ERROR`
-- `Validation: PASS | FAIL | NOT_RUN`
-- Counts for tasks in plan, already-linked tasks, newly created tasks, and
-  failed creates
-- A `Created/Linked Subtasks` table with task number, key, title,
-  dependencies, priority, and outcome
-- Explicit `Warnings` and `Failures` sections
-
-That table is the handoff the parent workflow uses to populate progress
-tracking. The overall Phase 4 completion signal remains the validated presence
-of `## Jira Subtasks` in `docs/<TICKET_KEY>-tasks.md`.
-
 ## Workflow Overview
 
 ```text
@@ -92,15 +43,15 @@ of `## Jira Subtasks` in `docs/<TICKET_KEY>-tasks.md`.
 
 Read a subagent definition only when you are about to dispatch it.
 
-| Subagent          | Path                             | Purpose                                                                                 |
-| ----------------- | -------------------------------- | --------------------------------------------------------------------------------------- |
-| `subtask-creator` | `./subagents/subtask-creator.md` | Reads or reconciles the plan, creates missing Jira subtasks sequentially, updates the plan idempotently, validates the output, and returns a structured Phase 4 summary |
+| Subagent          | Path                             | Purpose                                               |
+| ----------------- | -------------------------------- | ----------------------------------------------------- |
+| `subtask-creator` | `./subagents/subtask-creator.md` | Reconcile the clarified plan with Jira and return a structured Phase 4 summary |
 
 ## How This Skill Works
 
-This skill is intentionally narrow. Phase 3 user approval has already happened
-before Phase 4 starts, and the parent orchestrator wraps this skill with its
-own precondition/postcondition checks and progress tracking.
+This skill is intentionally narrow. The parent workflow is responsible for
+Phase 4 gating and progress tracking; this skill assumes the Phase 3 approval
+step has already happened before Jira writes begin.
 
 Inside Phase 4, keep only:
 
@@ -109,8 +60,30 @@ Inside Phase 4, keep only:
 - The task/key/title/dependency/priority rows needed for progress reporting
 - Any warning or fatal reason that requires user attention
 
-Do not surface raw Jira API responses, raw file contents, or intermediate parse
-results unless the user explicitly asks for them.
+Relay only the structured fields the subagent returns. Raw Jira payloads, raw
+file contents, and intermediate parse details stay inside `subtask-creator`
+unless the user explicitly asks for them.
+
+## Phase 4 Contracts
+
+Primary artifact:
+
+```text
+docs/<TICKET_KEY>-tasks.md
+```
+
+For the complete standalone input contract, output contract, and summary-field
+definitions, read `./references/phase-4-io-contracts.md`.
+
+The short version:
+
+- The plan is expected to contain numbered `## Task <N>:` sections under
+  `## Tasks`.
+- Standalone malformed or missing plans resolve to `SUBTASKS: BLOCKED`.
+- A missing `## Decisions Log` downgrades the run to `SUBTASKS: WARN` rather
+  than blocking it.
+- Successful Phase 4 output is still the validated presence of `## Jira
+  Subtasks` plus `Jira Subtask: <KEY>` lines in linked task sections.
 
 ## Execution Steps
 
@@ -155,8 +128,8 @@ Using only the subagent's structured summary, tell the caller:
 - That no implementation has started and linked subtasks remain in `To Do`
   unless Jira already shows another status
 
-If dispatch is unavailable, stop and report the skill as blocked rather than
-reproducing the subagent inline.
+Use dispatch to run `subtask-creator`. If dispatch is unavailable, report the
+skill as blocked rather than reproducing the subagent inline.
 
 ## Example
 
