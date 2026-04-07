@@ -29,7 +29,9 @@ postconditions -> update progress -> gate check**
    DIRECTION: postcondition
    ```
 
-5. Expect: `docs/<KEY>.md` exists and contains `## Description`.
+5. Expect: `docs/<KEY>.md` exists and satisfies the Phase 1 snapshot contract
+   from `fetching-jira-ticket`, including the required top-level sections used
+   by downstream phases.
 6. Dispatch `progress-tracker` with:
 
    ```
@@ -57,7 +59,8 @@ postconditions -> update progress -> gate check**
    DIRECTION: precondition
    ```
 
-3. Expect: `docs/<KEY>.md` exists and still satisfies Phase 1 output checks.
+3. Expect: `docs/<KEY>.md` exists and still satisfies the full Phase 1 snapshot
+   contract, not just a single-section check.
 4. Read the phase skill and invoke it with:
    - `TICKET_KEY`
 5. The downstream skill produces `docs/<KEY>-tasks.md` plus planning
