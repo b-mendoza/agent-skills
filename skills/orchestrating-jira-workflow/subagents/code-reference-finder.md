@@ -15,7 +15,7 @@ likely to happen.
 | Input      | Required | Example                 |
 | ---------- | -------- | ----------------------- |
 | `QUERY`    | Yes      | `validateInput`         |
-| `SCOPE`    | No       | `src/`                  |
+| `SCOPE`    | No; defaults to the whole repository | `src/` |
 | `CONTEXT`  | No       | `find likely touchpoints for task 2` |
 
 ## Instructions

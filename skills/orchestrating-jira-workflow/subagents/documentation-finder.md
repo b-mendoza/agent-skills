@@ -15,8 +15,8 @@ dumping large amounts of prose into the orchestrator's context.
 | Input     | Required | Example                 |
 | --------- | -------- | ----------------------- |
 | `TOPIC`   | Yes      | `authentication flow`   |
-| `SCOPE`   | No       | `src/`                  |
-| `FORMAT`  | No       | `summaries`             |
+| `SCOPE`   | No; defaults to the whole repository | `src/` |
+| `FORMAT`  | No; defaults to `summaries` | `summaries` |
 
 Supported `FORMAT` values:
 

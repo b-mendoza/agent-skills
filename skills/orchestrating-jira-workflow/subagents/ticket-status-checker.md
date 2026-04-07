@@ -15,7 +15,7 @@ status checks, or task selection.
 | Input        | Required | Example    |
 | ------------ | -------- | ---------- |
 | `TICKET_KEY` | Yes      | `JNS-6065` |
-| `QUERY_TYPE` | No       | `status`   |
+| `QUERY_TYPE` | No; defaults to `status` | `status` |
 
 Supported `QUERY_TYPE` values:
 

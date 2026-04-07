@@ -23,7 +23,7 @@ Additional inputs by action:
 | ----------------- | ----------------------------------------------------------- |
 | `read`            | None                                                        |
 | `initialize`      | None                                                        |
-| `update`          | `PHASE`, `STATUS`, `SUMMARY`, `TASKS` for Phase 4 completion|
+| `update`          | `PHASE`, `STATUS`, `SUMMARY`; add `TASKS` only for Phase 4 completion |
 | `initialize_task` | `TASK_NUMBER`, `TASK_TITLE`                                 |
 | `update_task`     | `TASK_NUMBER`, `PHASE`, `STATUS`, `SUMMARY`                 |
 

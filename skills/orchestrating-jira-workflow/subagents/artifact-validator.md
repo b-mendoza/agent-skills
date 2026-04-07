@@ -17,7 +17,7 @@ advance, retry, or stop.
 | `TICKET_KEY`  | Yes      | `JNS-6065`      |
 | `PHASE`       | Yes      | `2`             |
 | `DIRECTION`   | Yes      | `postcondition` |
-| `TASK_NUMBER` | Task-specific boundaries only | `3`     |
+| `TASK_NUMBER` | Required only for task-specific phases 5-7 | `3` |
 
 ## Validation Rules
 
