@@ -126,11 +126,16 @@ Input:
 
 1. Validate that `docs/JNS-6065-task-3-*.md` artifacts exist and Task 3 is not complete.
 2. Dispatch `execution-starter` to confirm readiness and perform the first side effects.
+   - `KICKOFF_REPORT` -> `READY`
 3. Dispatch `task-executor` with the artifact paths.
+   - `EXECUTION_REPORT` -> `COMPLETE`
 4. Dispatch `documentation-writer` with `EXECUTION_REPORT`, `TICKET_KEY`, and `TASK_NUMBER`.
 5. Dispatch `requirements-verifier`.
+   - `VERIFICATION_RESULT` -> `PASS`
 6. Run `clean-code-reviewer`, then `architecture-reviewer`, then `security-auditor`.
+   - Example gate path: `clean-code-reviewer` -> `NEEDS FIXES`
 7. If one or more review gates return `NEEDS FIXES`, consolidate only the blocking issues from the failing gates, re-dispatch `task-executor`, then `documentation-writer`, then re-run only those failing gates in order.
+   - Re-run example: `clean-code-reviewer` -> `PASS WITH SUGGESTIONS`
 8. Report the kickoff outcome, final verdicts, commits, files changed, and any skipped Jira updates.
 ```
 
