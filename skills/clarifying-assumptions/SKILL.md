@@ -5,12 +5,13 @@ description: "Run the conversational clarification phases of the Jira workflow. 
 
 # Clarifying Assumptions
 
-This skill is the conversation layer for the Jira-ticket workflow. It keeps the
-developer-facing dialogue inline, but delegates artifact reading, critique,
-manifest assembly, and file edits so the orchestrator can focus on the current
-question, the developer's reasoning, and the next decision. `critique-analyzer`
-writes its full report to a workflow artifact before manifest assembly so the
-orchestrator does not carry the full report in working memory.
+This skill is the conversation layer for the Jira-ticket workflow. The
+orchestrator does exactly three things: think about the current question and the
+developer's reasoning, decide what to ask or defer next, and dispatch
+subagents for artifact reading, critique generation, manifest assembly, and
+file updates. `critique-analyzer` writes its full report to a workflow artifact
+before manifest assembly so the orchestrator carries only summaries, manifest
+rows, and artifact paths instead of raw planning content.
 
 ## Inputs
 
@@ -21,7 +22,11 @@ orchestrator does not carry the full report in working memory.
 | `TASK_NUMBER` | Required for `MODE=critique` | `3` |
 | `ITERATION` | No | `1`, `2`, or `3` |
 
-The main task plan must already exist at `docs/<TICKET_KEY>-tasks.md`.
+`<KEY>` in path examples below is the same value as `TICKET_KEY`.
+
+The main task plan must already exist at `docs/<TICKET_KEY>-tasks.md`. The
+required plan sections and artifact contracts are part of this skill's
+preconditions and are defined in `## Input And Output Contracts`.
 
 When `MODE=critique`, these per-task artifacts must also exist:
 
@@ -47,18 +52,7 @@ When `MODE=critique`, these per-task artifacts must also exist:
 
 ## How This Skill Works
 
-The orchestrator does exactly three things:
-
-1. **Think** about the current manifest item, the developer's answer, and the
-   workflow state.
-2. **Decide** what to ask next, what to defer, and whether re-planning is now required.
-3. **Dispatch** subagents that read artifacts, inspect the repo, or write files.
-
-The question-by-question mentoring loop is how this skill performs its thinking
-and coordination. It is still inline, but it works from the manifest instead of
-from raw artifacts.
-
-Keep only this inline:
+Keep only these items inline while the skill is running:
 
 - The current manifest item
 - The developer's response
@@ -67,14 +61,23 @@ Keep only this inline:
 - The `BLOCKERS_PRESENT` flag
 - The active critique artifact path
 
-Do not read plan files inline once execution starts. The manifest is the source
-of truth for what gets asked.
+Everything else comes from delegated subagents through concise verdicts,
+manifest rows, and artifact paths. The manifest is the source of truth for what
+gets asked once execution starts.
 
-Have `critique-analyzer` write its report to a critique artifact file before
-dispatching `question-manifest-builder`. Pass the critique file path, not the
-full critique body.
+Run the workflow in this order:
 
-The inline questioning loop uses two models:
+1. Load the design-thinking reference and the current mode's playbook.
+2. Dispatch `critique-analyzer` to read artifacts, inspect the codebase, search
+   the web, and write the critique artifact.
+3. Dispatch `question-manifest-builder` with the critique artifact path and the
+   plan path to build the ordered manifest.
+4. Walk the manifest one question at a time inline, deciding what to confirm,
+   revise, defer, or block.
+5. Dispatch `decision-recorder` with the resolved decisions and let it update
+   the workflow artifacts plus validate the result.
+
+The inline questioning loop uses two reasoning patterns:
 
 - **Model A — Socratic.** Used only for Tier 3 problem-framing hard gates. The
   developer answers first, then sees the critique.
