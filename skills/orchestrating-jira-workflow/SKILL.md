@@ -30,17 +30,31 @@ Extract these values from the URL when present:
 - **Project:** prefix before the dash in the ticket key
 - **Ticket key:** full path segment, such as `JNS-6065`
 
+## Workflow Overview
+
+```
+Phase 1: Fetch ticket        -> docs/<KEY>.md
+Phase 2: Plan tasks          -> docs/<KEY>-tasks.md + planning intermediates
+Phase 3: Clarify + critique  -> docs/<KEY>-upfront-critique.md + docs/<KEY>-tasks.md updates
+Phase 4: Create subtasks     -> docs/<KEY>-tasks.md updated with `## Jira Subtasks` + per-task subtask links
+Phase 5: Plan task execution -> docs/<KEY>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md
+Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-critique.md + docs/<KEY>-task-<N>-decisions.md
+Phase 7: Kick off + execute  -> first side effects, code changes, tests, commits
+         ^___________________/  repeat phases 5-7 per task
+```
+
 ## Output Contract
+
+Phase-to-artifact routing lives in `## Workflow Overview`. Use
+`./references/data-contracts.md` for exact orchestrator-facing phase-boundary
+checks, and treat each downstream phase skill as authoritative for the internal
+structure of the artifacts it owns.
 
 This skill maintains and uses only Category A orchestration artifacts:
 
 - `docs/<TICKET_KEY>-progress.md`
 - `docs/<TICKET_KEY>-task-<N>-progress.md`
-- The downstream phase artifacts listed in the pipeline below
-
-Use `./references/data-contracts.md` for the orchestrator-facing phase-boundary
-checks. When a downstream phase defines a richer section-level contract, treat
-that downstream skill as authoritative for the artifact's internal structure.
+- The downstream phase artifacts listed in the workflow overview above
 
 For Phase 1, `docs/<TICKET_KEY>.md` is the stable Jira snapshot defined by
 `fetching-jira-ticket`, not merely a Markdown file with a single required
@@ -97,19 +111,6 @@ After each phase or gate, return only:
 - The file path or ticket key needed for the next dispatch
 
 Do not surface raw subagent output unless the user explicitly asks for it.
-
-## Workflow Overview
-
-```
-Phase 1: Fetch ticket        -> docs/<KEY>.md
-Phase 2: Plan tasks          -> docs/<KEY>-tasks.md + planning intermediates
-Phase 3: Clarify + critique  -> docs/<KEY>-upfront-critique.md + docs/<KEY>-tasks.md updates
-Phase 4: Create subtasks     -> docs/<KEY>-tasks.md updated with `## Jira Subtasks` + per-task subtask links
-Phase 5: Plan task execution -> docs/<KEY>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md
-Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-critique.md + docs/<KEY>-task-<N>-decisions.md
-Phase 7: Kick off + execute  -> first side effects, code changes, tests, commits
-         ^___________________/  repeat phases 5-7 per task
-```
 
 ## Subagent Registry
 
