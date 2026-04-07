@@ -30,7 +30,9 @@ Additional inputs by action:
 Allowed status values: `complete`, `active`, `failed`, `skipped`
 
 When `TASKS` is provided for Phase 4 completion, each task entry should carry
-task number, title, dependencies, and priority when known.
+task number, title, dependencies, and priority when known. The entry may also
+carry Phase 4 linkage metadata such as subtask key or outcome; preserve the
+fields you need for workflow progress and ignore any extras.
 
 ## Managed Artifacts
 
