@@ -20,6 +20,10 @@ For Phase 1, the compact gate below mirrors the stable snapshot contract owned
 by `fetching-jira-ticket`. Treat that downstream skill as the authoritative
 definition of `docs/<KEY>.md`.
 
+For Phase 4 and the Phase 5 precondition, use the stronger handoff contract
+owned by `creating-jira-subtasks`, not the older shorthand of "`## Jira
+Subtasks` exists and has one key."
+
 | Phase | Direction     | File to check           | Expected checks                                                |
 | ----- | ------------- | ----------------------- | -------------------------------------------------------------- |
 | 1     | postcondition | `docs/<KEY>.md`         | File exists and contains the required Phase 1 snapshot headings: `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Subtasks`, `## Linked Issues`, `## Attachments`, `## Custom Fields` |
@@ -28,7 +32,7 @@ definition of `docs/<KEY>.md`.
 | 3     | precondition  | `docs/<KEY>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
 | 3     | postcondition | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | `docs/<KEY>-upfront-critique.md` exists; `docs/<KEY>-tasks.md` contains `## Decisions Log` |
 | 4     | precondition  | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition                                  |
-| 4     | postcondition | `docs/<KEY>-tasks.md`   | Contains `## Jira Subtasks` with ≥1 key matching `[A-Z]+-\d+` |
+| 4     | postcondition | `docs/<KEY>-tasks.md`   | Contains exactly one `## Jira Subtasks` table; table has one row per numbered task; rows may use `Not Created`, but every row with a Jira-style key has a matching inline `Jira Subtask: <KEY>` line in the corresponding task section |
 | 5     | precondition  | `docs/<KEY>-tasks.md`   | Same as Phase 4 postcondition                                  |
 
 ### Phases 5–7 (per task)
