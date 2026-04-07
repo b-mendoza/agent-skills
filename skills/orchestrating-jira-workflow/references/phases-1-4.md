@@ -73,8 +73,17 @@ postconditions -> update progress -> gate check**
    DIRECTION: postcondition
    ```
 
-7. Expect: `docs/<KEY>-tasks.md` exists, contains `## Tasks`, and has at least
-   2 task entries.
+7. Expect the full Phase 2 contract, not the older shorthand only:
+   - `docs/<KEY>-stage-1-detailed.md` exists
+   - `docs/<KEY>-stage-2-prioritized.md` exists
+   - `docs/<KEY>-tasks.md` exists
+   - The final plan contains `## Ticket Summary`, `## Problem Framing`,
+     `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`,
+     `## Tasks`, `## Execution Order Summary`, `## Dependency Graph`, and
+     `## Validation Report`
+   - The final plan has at least 2 numbered task entries
+   - Each numbered task includes the eight required subsections from
+     `planning-jira-tasks`
 8. Dispatch `progress-tracker` with:
 
    ```
@@ -103,7 +112,10 @@ postconditions -> update progress -> gate check**
    DIRECTION: precondition
    ```
 
-3. Expect: `docs/<KEY>-tasks.md` still satisfies the Phase 2 postcondition.
+3. Expect the full Phase 2 contract to remain intact before clarification:
+   - `docs/<KEY>-stage-1-detailed.md` still exists
+   - `docs/<KEY>-stage-2-prioritized.md` still exists
+   - `docs/<KEY>-tasks.md` still satisfies the full Phase 2 postcondition
 4. Read the phase skill and invoke it with:
    - `MODE=upfront`
    - `TICKET_KEY`
