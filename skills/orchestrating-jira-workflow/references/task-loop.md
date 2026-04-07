@@ -83,7 +83,7 @@ Follow every step defined in the skill.
 
 The skill runs a 4-subagent pipeline:
 
-1. `execution-prepper` — validates task, sets up branch, assembles brief
+1. `execution-prepper` — validates task and assembles the execution brief
 2. `execution-planner` — analyzes task and codebase, produces execution plan
 3. `test-strategist` — defines behavior-driven tests
 4. `refactoring-advisor` — evaluates pre-implementation refactoring needs
