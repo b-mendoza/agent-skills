@@ -139,7 +139,10 @@ Input:
 8. Report the kickoff outcome, final verdicts, commits, files changed, and any skipped Jira updates.
 ```
 
-## Safety Rules
+## Operating Constraints
+
+This skill stays reliable by keeping scope tight, preserving artifact
+boundaries, and fixing only the phase that actually failed.
 
 - Execute one task per invocation and stop after reporting the result.
 - Keep the task plan as the source of truth. If execution reveals a plan change
