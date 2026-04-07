@@ -1,208 +1,341 @@
 ---
 name: "pr-creator"
-description: 'Create GitHub pull requests from the current branch with auto-generated titles, descriptions, reviewers, and labels. Use this skill whenever the user wants to create a PR, open a pull request, submit code for review, push changes for merge, or mentions "PR", "pull request", "code review", or "merge request". Also trigger when the user says things like "I''m done with this feature", "ready to submit", "open a draft PR", or "send this for review". Works with GitHub CLI by default, with guidance for GitLab and Bitbucket.'
+description: 'Create review-ready pull requests from the current branch by validating repo state, comparing against a user-specified base branch, drafting a title and body from the real branch diff, suggesting reviewers and labels, previewing the result, and creating the PR only after explicit confirmation. Use when the user asks to create or open a PR, draft pull request, merge request, code review request, or says their work is ready for review.'
 ---
 
 # PR Creator
 
-Create well-structured draft pull requests by analyzing the diff, generating a conventional-commit title and structured description, suggesting reviewers from CODEOWNERS, and executing `gh pr create` — all with a confirmation step before anything is submitted.
+Create a review-ready pull request from the current branch. This skill keeps the
+user in the loop at every decision point: gather missing inputs, validate branch
+state, draft the PR from the actual compare diff, preview the result, apply user
+edits, and submit only after explicit confirmation.
 
-## Prerequisites
+## Inputs
 
-- Git repository with a remote origin
-- GitHub CLI (`gh`) installed and authenticated
-- For GitLab: `glab` CLI; for Bitbucket: `bb` CLI (see Platform Adaptation section at the end)
+| Input | Required | Example |
+| ----- | -------- | ------- |
+| `TARGET_BRANCH` | No | `main` |
+| `PR_STATE` | No | `draft` |
+| `REVIEWERS` | No | `alice,bob` |
+| `TITLE_OVERRIDE` | No | `docs(skills): refine pr-creator workflow` |
+| `BODY_OVERRIDE` | No | `## Summary ...` |
+| `LABELS_OVERRIDE` | No | `documentation,enhancement` |
 
-## Workflow
+Ask for any missing inputs during the workflow. `PR_STATE` defaults to `draft`.
 
-Follow these steps in order. Do not skip the preview step.
+## Output Contract
 
-### Step 1: Gather context
+For GitHub remotes, finish with all of these:
 
-Run these commands to understand the current state:
+- A created PR URL.
+- Final values for base branch, head branch, title, description, reviewers,
+  labels, and PR state.
+- A preview shown to the user and explicitly approved before `gh pr create`.
 
-```bash
-# Confirm repo and ownership
-git config --get remote.origin.url
+For non-GitHub remotes:
 
-# Detect current branch
-git rev-parse --abbrev-ref HEAD
+- Detect the platform from `remote.origin.url`.
+- Read `./references/platform-adaptation.md`.
+- Follow the matching create flow before submitting anything.
+
+## Workflow Overview
+
+```text
+repo + remote state
+        |
+        v
+preflight validation
+        |
+        v
+branch comparison and diff analysis
+        |
+        v
+title/body draft
+        |
+        v
+reviewer and label suggestions
+        |
+        v
+preview -> revise if needed -> confirm
+        |
+        v
+create PR -> verify URL
 ```
 
-Then ask the user: **"What branch should this PR target?"**
+## How This Skill Works
 
-Do not assume `dev`, `main`, or any default. Wait for the user's answer before proceeding.
+This skill does exactly five things:
 
-### Step 2: Analyze the diff
+- Inspect the repository, hosting platform, and branch state.
+- Validate that the chosen base and head branches can produce a meaningful PR.
+- Draft the PR title and description from the real compare diff.
+- Suggest reviewers and labels from repo metadata.
+- Create the PR only after the user approves the preview.
 
-First, verify the current branch has been pushed to the remote:
+Keep only short structured state between steps: platform, base/head branches,
+changed files, diff size signal, drafted title/body, suggested reviewers/labels,
+and the current preview. Use direct `git` and `gh` commands inline because each
+result is used immediately in the user confirmation loop.
 
-```bash
-git ls-remote --heads origin <current_branch>
+## Execution Steps
+
+1. **Identify repo, platform, and head branch**
+
+   Run:
+
+   ```bash
+   git config --get remote.origin.url
+   git rev-parse --abbrev-ref HEAD
+   git status --short --branch
+   ```
+
+   Then:
+
+   - Detect the hosting platform from `remote.origin.url`.
+   - If the working tree has uncommitted changes, tell the user those changes
+     are not part of the PR until they are committed.
+   - Ask for `TARGET_BRANCH` if it was not already supplied.
+   - If the remote is not GitHub, read `./references/platform-adaptation.md`
+     before continuing.
+
+2. **Run preflight validation**
+
+   For GitHub remotes, run:
+
+   ```bash
+   git fetch origin --prune
+   gh auth status
+   git ls-remote --heads origin <current_branch>
+   git rev-parse --verify origin/<target_branch>
+   ```
+
+   Then:
+
+   - If `gh auth status` fails, stop with `AUTH`.
+   - If the head branch is not on the remote, tell the user a push is required
+     before the PR can be created. Ask for confirmation, then run:
+
+     ```bash
+     git push -u origin <current_branch>
+     ```
+
+   - If the target branch does not exist on the remote, stop with
+     `BASE_BRANCH_MISSING` and ask the user for a valid base branch.
+
+3. **Analyze the full branch diff**
+
+   Run:
+
+   ```bash
+   git log --oneline origin/<target_branch>..origin/<current_branch>
+   git diff --shortstat origin/<target_branch>...origin/<current_branch>
+   git diff --stat origin/<target_branch>...origin/<current_branch>
+   git diff --name-only origin/<target_branch>...origin/<current_branch>
+   git diff origin/<target_branch>...origin/<current_branch>
+   ```
+
+   Use this data to understand the whole PR, not just the latest commit.
+
+   Validation rules:
+
+   - If there are no commits or no diff, stop with `EMPTY_DIFF`.
+   - If the diff is roughly over 1000 lines, or clearly spans unrelated areas,
+     ask the user whether to proceed or split the work into smaller PRs.
+   - Only continue after the user explicitly confirms a large PR should proceed.
+
+4. **Draft the PR title**
+
+   Pick the most accurate conventional commit type from the branch diff:
+
+   - `feat` for new functionality
+   - `fix` for bug fixes
+   - `chore` for maintenance or housekeeping
+   - `docs` for documentation-only changes
+   - `style` for formatting-only changes
+   - `refactor` for structural improvements without behavior change
+   - `test` for test-only changes
+   - `perf` for performance improvements
+   - `ci` for CI/CD changes
+   - `build` for build tooling or dependency system changes
+
+   Add an optional scope only when one module, domain, or subsystem clearly
+   dominates the diff.
+
+   Title rules:
+
+   - Format as `type(scope): description` or `type: description`
+   - Keep the description concise and lowercase
+   - Wrap code identifiers, file names, and technical keywords in backticks
+   - If `TITLE_OVERRIDE` is supplied, use it exactly
+
+   Examples:
+
+   - `feat(pricing): include volume discounts in quote calculation`
+   - `fix(auth): handle missing refresh token in sessionStore`
+   - `docs(skills): tighten pr-creator validation flow`
+   - `refactor(api): extract review metadata mapping`
+
+5. **Draft the PR description**
+
+   Use this structure unless `BODY_OVERRIDE` is supplied:
+
+   ```markdown
+   ## Summary
+
+   A 2-3 sentence overview of what changed and why it matters.
+
+   ## Key Changes
+
+   - Specific change 1 with relevant detail
+   - Specific change 2 with relevant detail
+   - Add more bullets only when they carry distinct value
+
+   ## Impact
+
+   - Who or what is affected
+   - Migration, rollout, or deployment considerations
+   - Testing notes, if the diff shows them
+   ```
+
+   Description rules:
+
+   - Write from the actual diff, not from assumptions.
+   - Be specific about file paths, behaviors, and user-visible outcomes.
+   - Mention tests only when they were added, changed, or are relevant to risk.
+
+6. **Suggest reviewers and labels**
+
+   For reviewers:
+
+   - Check `.github/CODEOWNERS`, then `CODEOWNERS`, if either file exists.
+   - Match changed files against the most relevant owners.
+   - Present the suggested reviewers to the user and let them edit the list.
+   - If no CODEOWNERS file exists, ask the user for at least one reviewer.
+   - Require at least one reviewer before creation.
+
+   For labels:
+
+   ```bash
+   gh label list --limit 100
+   ```
+
+   Then:
+
+   - Suggest only labels that actually exist in the repository.
+   - Use the PR type and diff content to guide suggestions.
+   - Skip labels silently if none fit.
+   - If `LABELS_OVERRIDE` is supplied, use it instead of auto-suggestions.
+
+7. **Preview, validate, and revise**
+
+   Show the complete preview before creating anything:
+
+   ```text
+   PR Preview
+   ----------
+   Title:      <generated title>
+   Target:     <target_branch>
+   Source:     <current_branch>
+   Reviewers:  <reviewer list>
+   Labels:     <label list or "none">
+   Status:     <draft or ready>
+
+   Description:
+   <generated description>
+   ```
+
+   Ask the user to confirm or request edits.
+
+   Validation loop:
+
+   - Apply requested title, body, reviewer, label, or status changes.
+   - Show the updated preview again.
+   - If three preview cycles still do not converge, ask the user for explicit
+     final values instead of continuing to redraft.
+
+8. **Create the PR**
+
+   After explicit confirmation, create the PR. Prefer a heredoc or body file for
+   long descriptions.
+
+   Draft PR:
+
+   ```bash
+   gh pr create \
+     --base "<target_branch>" \
+     --head "<current_branch>" \
+     --title "<title>" \
+     --body "<description>" \
+     --draft \
+     --reviewer "<reviewer1>,<reviewer2>"
+   ```
+
+   Ready PR:
+
+   ```bash
+   gh pr create \
+     --base "<target_branch>" \
+     --head "<current_branch>" \
+     --title "<title>" \
+     --body "<description>" \
+     --reviewer "<reviewer1>,<reviewer2>"
+   ```
+
+   Add labels only when they exist and the user approved them. Use repeated
+   label flags or the form supported by the installed `gh` version.
+
+9. **Verify the result**
+
+   After creation:
+
+   - Capture and return the PR URL.
+   - Confirm the created PR uses the intended base and head branches.
+   - If creation fails, stop with a structured failure category and explain the
+     next action clearly.
+
+## Failure Handling
+
+When the workflow cannot continue, report the issue in this format:
+
+```text
+PR_CREATE: <CATEGORY>
+Reason: <one line>
+Next step: <one clear action>
 ```
 
-If the branch doesn't exist on the remote, push it first:
+Use these categories:
 
-```bash
-git push -u origin <current_branch>
-```
+- `AUTH` - GitHub CLI is missing, unauthenticated, or lacks permission
+- `BASE_BRANCH_MISSING` - the requested target branch does not exist remotely
+- `HEAD_BRANCH_UNPUSHED` - the source branch must be pushed before PR creation
+- `EMPTY_DIFF` - the source branch has nothing to compare against the target
+- `CREATE_ERROR` - `gh pr create` failed after confirmation
 
-Then run the diff:
+## Reference Files
 
-```bash
-git diff origin/<target_branch>...origin/<current_branch> | cat
-```
+- `./references/platform-adaptation.md` - load only when the remote is not
+  GitHub
 
-If the diff exceeds roughly 1000 lines, warn the user:
+## Example
 
-> "This PR touches over 1000 lines of changes. Large PRs are harder to review effectively. Would you like to proceed anyway, or would you prefer to split this into smaller PRs?"
+<example>
+Input:
+- Current branch: `docs/pr-creator-skill`
+- Target branch: `main`
+- PR state: `draft`
 
-Wait for confirmation before continuing. If the user wants to split, help them plan the split — but that's outside this skill's scope.
+Flow:
+1. Inspect the remote URL, current branch, and working tree state.
+2. Fetch remote refs and confirm `gh auth status` passes.
+3. Compare `origin/main...origin/docs/pr-creator-skill`.
+4. Draft:
+   - Title: `docs(skills): strengthen the pr-creator workflow`
+   - Reviewers: `@docs-team`
+   - Labels: `documentation`
+5. Show preview and let the user edit it.
+6. After confirmation, run `gh pr create`.
 
-### Step 3: Generate the PR title
-
-Analyze the diff to determine:
-
-1. **Type** — Pick the most appropriate conventional commit type based on what the diff actually does:
-   - `feat` — new functionality
-   - `fix` — bug fix
-   - `chore` — maintenance, dependency updates
-   - `docs` — documentation only
-   - `style` — formatting, whitespace, no logic change
-   - `refactor` — restructuring without behavior change
-   - `test` — adding or updating tests
-   - `perf` — performance improvement
-   - `ci` — CI/CD config changes
-   - `build` — build system or external dependency changes
-
-2. **Scope** (optional) — If the changes clearly belong to a single module, component, or domain (e.g., `pricing`, `auth`, `api`), include it in parentheses. If the changes span multiple areas or no clear scope emerges, omit it.
-
-3. **Description** — A concise lowercase summary of what changed. Wrap code identifiers, function names, file names, and technical keywords in backticks.
-
-**Format:** `type(scope): description` or `type: description`
-
-**Examples:**
-
-- `feat(pricing): adjust formula to include volume discounts`
-- `fix: resolve null pointer in `getUserProfile` response`
-- `chore: upgrade `axios` to v1.7.2`
-- `refactor(auth): extract token validation into middleware`
-
-### Step 4: Generate the PR description
-
-Structure the description with these three sections:
-
-```markdown
-## Summary
-
-A 2-3 sentence high-level overview of what this PR does and why.
-
-## Key Changes
-
-- Specific change 1 with relevant detail
-- Specific change 2 with relevant detail
-- (list as many as needed to cover the meaningful changes)
-
-## Impact
-
-- Who or what is affected by these changes
-- Any migration steps, breaking changes, or deployment considerations
-- Testing notes if relevant
-```
-
-Write the description based on what the diff actually shows. Be specific — reference file names, functions, and behaviors rather than being vague.
-
-### Step 5: Suggest reviewers
-
-Check if a CODEOWNERS file exists:
-
-```bash
-cat .github/CODEOWNERS 2>/dev/null || cat CODEOWNERS 2>/dev/null || echo "No CODEOWNERS file found"
-```
-
-- **If CODEOWNERS exists**: Match changed file paths against CODEOWNERS patterns to identify suggested reviewers. Present them to the user and ask: "Based on CODEOWNERS, I'd suggest these reviewers: `@user1`, `@user2`. Would you like to add or change any?"
-- **If no CODEOWNERS**: Ask the user directly: "Please provide at least one reviewer for this PR (GitHub usernames)."
-
-At least one reviewer is required. Do not proceed without one.
-
-### Step 6: Detect labels
-
-Check if the repo uses labels:
-
-```bash
-gh label list --limit 50
-```
-
-If labels exist, suggest relevant ones based on the PR type and diff content. For example:
-
-- `feat` type → look for `enhancement` or `feature` label
-- `fix` type → look for `bug` or `bugfix` label
-- Breaking changes in the diff → look for `breaking-change` label
-
-Only suggest labels that actually exist in the repo. If no labels exist or none are relevant, skip this step silently.
-
-### Step 7: Preview and confirm
-
-Present the complete PR to the user for review before executing anything:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 PR Preview
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Title:       <generated title>
-Target:      <target_branch>
-Source:      <current_branch>
-Reviewers:   <reviewer list>
-Labels:      <label list or "none">
-Status:      Draft
-
-Description:
-<generated description>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-Ask: **"Does this look good? I'll create the draft PR once you confirm. Let me know if you'd like to change anything."**
-
-If the user requests changes, apply them and show the preview again. Do not proceed until the user confirms.
-
-### Step 8: Create the PR
-
-Once confirmed, execute:
-
-```bash
-gh pr create \
-  --base "<target_branch>" \
-  --head "<current_branch>" \
-  --title "<title>" \
-  --body "<description>" \
-  --draft \
-  --reviewer "<reviewer1>,<reviewer2>" \
-  --label "<label1>,<label2>"
-```
-
-Omit `--label` if no labels were selected. Use comma-separated usernames for `--reviewer` (e.g., `--reviewer "alice,bob"`). For team reviewers, use a separate `--reviewer` flag (e.g., `--reviewer myorg/team-name`).
-
-After successful creation, share the PR URL with the user.
-
-If the command fails, show the error and help the user troubleshoot (common issues: `gh` not authenticated, branch not pushed to remote, reviewer username doesn't exist).
-
----
-
-## Platform Adaptation
-
-This skill defaults to GitHub CLI (`gh`). If the remote URL indicates a different platform, mention the equivalent commands:
-
-**GitLab (`glab`)**:
-
-```bash
-glab mr create \
-  --target-branch "<target>" \
-  --title "<title>" \
-  --description "<description>" \
-  --draft \
-  --reviewer "<reviewers>"
-```
-
-**Bitbucket**: The `bb` CLI or Bitbucket API can be used, but workflows vary. Suggest the user consult their team's tooling.
-
-The title format, description structure, and review workflow remain the same regardless of platform.
+Output:
+- PR URL returned to the user
+- Final preview values recorded in the reply
+</example>
