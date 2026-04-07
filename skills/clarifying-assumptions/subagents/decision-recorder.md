@@ -37,6 +37,20 @@ Each entry in `DECISIONS` should include:
 - affected_tasks: <list or "All">
 ```
 
+Map playbook responses to canonical `outcome` values with this table:
+
+| Playbook response | Canonical outcome |
+| --- | --- |
+| `Keep current approach` | `confirmed` |
+| `Confirm` | `confirmed` |
+| `Switch to <alternative>` | `revised` |
+| `Revise` | `revised` |
+| `Resolved` | `resolved` |
+| `Acknowledge but proceed` | `override` |
+| `Skip` | `skipped` |
+| `I need more information` | `blocked` |
+| `Action needed` | `blocked` |
+
 ## Instructions
 
 ### 1. Read the main plan
@@ -46,6 +60,17 @@ Read `docs/<TICKET_KEY>-tasks.md`.
 If it does not exist, return `RECORDING: BLOCKED`.
 
 ### 2. Update the main decisions log
+
+Create or update `## Decisions Log` using this exact table schema:
+
+```markdown
+## Decisions Log
+
+| Iteration | Scope | Item ID | Category | Outcome | Summary | Re-plan | Artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Plan-wide | PF1 | problem-framing | revised | End user narrowed to admins managing sync failures | Yes | - |
+| 1 | Task 3 | TASK-3-ITER-1 | critique | revised | See per-task decisions file | Yes | docs/JNS-6065-task-3-decisions.md |
+```
 
 If `MODE=upfront`:
 
@@ -64,9 +89,16 @@ When the relevant text exists in the main plan:
 
 - annotate assumptions
 - resolve task questions
-- tag deferred questions
-- mark irrelevant deferred questions as resolved
+- tag deferred questions with the exact suffix
+  ` [DEFERRED — will ask before Task <N> execution]`
+- mark irrelevant deferred questions with the exact suffix
+  ` [RESOLVED AS IRRELEVANT — <short reason>]`
 - update implementation notes
+
+For resolved assumptions and task questions, append a short decision marker using
+this exact format:
+
+` [DECISION <Item ID> — <outcome>: <short answer>]`
 
 Preserve surrounding structure. If an exact match cannot be found, record a
 warning instead of inventing a replacement target.
@@ -87,7 +119,7 @@ using this structure:
 
 | # | Category | Outcome | Answer | Rationale |
 | --- | --- | --- | --- | --- |
-| 1 | Critique | Switch | Use Fastify | Matches existing stack |
+| 1 | Critique | revised | Use Fastify | Matches existing stack |
 
 ### Questions Marked Irrelevant
 
@@ -115,10 +147,15 @@ Return only the summary format below.
 
 ## Output Format
 
-Successful or warning runs must start with:
+Successful or warning runs must start with exactly one of these headers:
 
 ```text
-RECORDING: PASS | WARN
+RECORDING: PASS
+Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
+```
+
+```text
+RECORDING: WARN
 Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
 ```
 
