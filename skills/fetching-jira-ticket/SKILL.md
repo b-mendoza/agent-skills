@@ -87,6 +87,10 @@ mutation, planning, or execution. Keep only:
 - Counts and warnings from the retriever summary
 - Any fatal reason that requires user action
 
+This phase succeeds only when the retriever returns a structured result that
+matches the output contract and, when a file is written, reports validation
+status consistently.
+
 This coordinator may do four things directly: read its bundled skill files,
 derive identifiers from the Jira URL, dispatch the retriever, and relay the
 retriever's structured summary. Everything else stays inside the subagent.
