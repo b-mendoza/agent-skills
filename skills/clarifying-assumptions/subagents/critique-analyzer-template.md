@@ -1,137 +1,87 @@
 # Critique Analyzer — Output Template
 
-This is the output template loaded by the critique-analyzer subagent at write time.
+Use this template after the verdict and metadata lines.
 
-> Downstream skills parse this report structure programmatically. Missing sections break the pipeline.
-
----
+> Downstream skills parse this structure. Keep section names stable.
 
 ## Critique Report
 
-### Mode
-
-<upfront | critique>
-
 ### Artifacts Reviewed
 
-- <list each file path reviewed>
+- `MAIN_PLAN_FILE`: <path>
+- `ARTIFACTS`:
+  - <path>
 
 ### Codebase Verification
 
-| Check             | Finding                                   |
-| ----------------- | ----------------------------------------- |
-| Package manager   | <npm/yarn/pnpm/bun — from lockfile>       |
-| Runtime           | <Node version from .nvmrc or engines>     |
-| Framework         | <what the project actually uses>          |
-| Test framework    | <what the project actually uses>          |
-| Key dependencies  | <top 5-10 relevant deps from manifest>    |
-| Existing patterns | <architectural patterns observed in code> |
-| Deployment target | <from config files, CI/CD, Dockerfiles>   |
+| Check | Finding |
+| --- | --- |
+| Package manager | <npm/yarn/pnpm/bun> |
+| Runtime | <node/python/etc.> |
+| Framework | <actual framework in use> |
+| Test framework | <actual test framework in use> |
+| Key dependencies | <top relevant dependencies> |
+| Existing patterns | <patterns observed in the repo> |
 
-### Problem Framing Critique (upfront mode only)
+### Problem Framing Critique
 
-| #   | Severity | Dimension              | Finding                         | Why this matters        | Tier   |
-| --- | -------- | ---------------------- | ------------------------------- | ----------------------- | ------ |
-| PF1 | HIGH     | <End User / Need / …>  | <what's missing or problematic> | <impact on the project> | Tier 3 |
-| PF2 | MEDIUM   | <Solution-Problem Fit> | <gap or assumption identified>  | <risk if not addressed> | Tier 2 |
+Include this section only in `MODE=upfront`.
+
+| # | Severity | Dimension | Finding | Why this matters | Tier |
+| --- | --- | --- | --- | --- | --- |
+| PF1 | HIGH | End user | <finding> | <impact> | Tier 3 |
 
 #### PF1: <short title>
 
-**Dimension:** <End User / Underlying Need / Solution-Problem Fit / Alternative
-Approaches / Evidence Basis>
-
-**Finding:** <what the task-planner stated and why it is problematic or
-insufficient>
-
-**Why this matters:** <concrete impact — what could go wrong if the developer
-proceeds without addressing this>
-
-**What the developer should think about:** <specific questions or angles the
-developer should consider — this feeds the Socratic questioning in Phase 3>
-
-**Tier:** <Tier 3 (hard gate — cannot skip) | Tier 2 (can skip but flagged)>
-
-(repeat for each problem-framing critique item)
+- Dimension: <End User / Need / Solution-Problem Fit / Evidence Basis / Alternatives>
+- Finding: <what is missing or weak>
+- Why this matters: <concrete downstream risk>
+- What the developer should think about: <specific prompt angle>
 
 ### Technology Critique Items
 
-| #   | Severity | Decision made      | Source artifact  | Alternative(s)       | Trade-offs                     | Why this matters           |
-| --- | -------- | ------------------ | ---------------- | -------------------- | ------------------------------ | -------------------------- |
-| 1   | HIGH     | <what was decided> | <which artifact> | <named alternatives> | <concrete trade-offs for each> | <why the user should care> |
-| 2   | MEDIUM   | <what was decided> | <which artifact> | <named alternatives> | <concrete trade-offs for each> | <why the user should care> |
-
-### Detail per Item
+| # | Severity | Decision made | Source artifact | Alternatives | Why this matters |
+| --- | --- | --- | --- | --- | --- |
+| 1 | HIGH | <decision> | <artifact> | <named options> | <project-specific consequence> |
 
 #### Item 1: <short title>
 
-**Decision:** <what the planning subagent decided>
+- Decision: <planner's choice>
+- Why this looks questionable: <project-specific reasoning>
 
-**Why this looks like a default choice:** <evidence — e.g., "Express was
-chosen without justification. The project already uses Fastify for its
-existing API endpoints.">
+| Option | Pros for this project | Cons for this project |
+| --- | --- | --- |
+| <chosen> | <pros> | <cons> |
+| <alternative> | <pros> | <cons> |
 
-**Alternatives:**
+- What would need to be true for the chosen option to be right: <conditions>
+- What would need to be true for the alternative to be better: <conditions>
+- Web findings:
+  - <source or search result summary>
+  - <source or search result summary>
 
-| Option          | Pros (for this project) | Cons (for this project) |
-| --------------- | ----------------------- | ----------------------- |
-| <chosen>        | <concrete pros>         | <concrete cons>         |
-| <alternative 1> | <concrete pros>         | <concrete cons>         |
-| <alternative 2> | <concrete pros>         | <concrete cons>         |
+### User Impact Critique Items
 
-**What would need to be true for <chosen> to be the right call:**
-<specific conditions>
+Include this section only in `MODE=critique`.
 
-**What would need to be true for <alternative> to be better:**
-<specific conditions>
-
-**Web search findings:**
-
-- <source>: <key finding, paraphrased>
-- <source>: <key finding, paraphrased>
-
-(repeat for each critique item)
-
-### User Impact Critique Items (critique mode only)
-
-Implementation decisions that affect end-user experience. Connect each item
-back to the Problem Framing established in Phase 3.
-
-| #   | Severity | Implementation decision | User-facing consequence      | Problem Framing link                | Why this matters           |
-| --- | -------- | ----------------------- | ---------------------------- | ----------------------------------- | -------------------------- |
-| UI1 | HIGH     | <what was decided>      | <how the end user is affected> | <which PF dimension this connects to> | <why the user should care> |
-| UI2 | MEDIUM   | <what was decided>      | <how the end user is affected> | <which PF dimension this connects to> | <why the user should care> |
+| # | Severity | Implementation decision | User-facing consequence | Problem-framing link |
+| --- | --- | --- | --- | --- |
+| UI1 | HIGH | <decision> | <consequence> | <how it affects the identified user and need> |
 
 #### UI1: <short title>
 
-**Implementation decision:** <what the planning subagent decided>
+- Implementation decision: <planner's choice>
+- User-facing consequence: <concrete impact>
+- Problem-framing link: <connection back to Phase 3>
+- Severity: <HIGH / MEDIUM / LOW>
 
-**User-facing consequence:** <concrete impact on the end user's experience —
-latency, data freshness, accessibility, workflow disruption, etc.>
+### Items Not Raised
 
-**Problem Framing link:** <how this connects to the end user and underlying
-need identified in Phase 3 — e.g., "Enterprise admins expect real-time
-account status; 5-minute cache staleness conflicts with this expectation.">
-
-**Severity:** <HIGH — directly contradicts established user need or creates
-unacceptable UX degradation. MEDIUM — trade-off exists but is defensible.
-LOW — minor UX consideration worth noting.>
-
-(repeat for each user-impact critique item)
-
-### Items NOT Raised (if re-critique)
-
-- <list any concerns from prior iterations that were already resolved by user decisions — do not re-raise these>
+- <resolved or suppressed concern>
 
 ### Summary
 
-- **Total critique items:** <N> (problem-framing: <N>, technology: <N>, user-impact: <N>)
-- **Problem-framing — HIGH (Tier 3):** <N>
-- **Problem-framing — MEDIUM (Tier 2):** <N>
-- **Problem-framing — LOW (Tier 2):** <N>
-- **Technology — HIGH severity:** <N>
-- **Technology — MEDIUM severity:** <N>
-- **Technology — LOW severity:** <N>
-- **User-impact — HIGH severity:** <N>
-- **User-impact — MEDIUM severity:** <N>
-- **User-impact — LOW severity:** <N>
-- **Items skipped (prior decisions):** <N>
+- Problem-framing items: <N>
+- Technology critique items: <N>
+- User-impact items: <N>
+- Suppressed due to prior decisions: <N>
