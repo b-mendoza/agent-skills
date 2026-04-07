@@ -64,7 +64,7 @@ Relay only the structured fields the subagent returns. Raw Jira payloads, raw
 file contents, and intermediate parse details stay inside `subtask-creator`
 unless the user explicitly asks for them.
 
-## Phase 4 Contracts
+## Input and Output Contracts
 
 Primary artifact:
 
@@ -130,6 +130,18 @@ Using only the subagent's structured summary, tell the caller:
 
 Use dispatch to run `subtask-creator`. If dispatch is unavailable, report the
 skill as blocked rather than reproducing the subagent inline.
+
+## Escalation
+
+Use the subagent's structured verdict as the only routing input:
+
+| Summary state | Coordinator action |
+| ------------- | ------------------ |
+| `SUBTASKS: PASS` with `Validation: PASS` | Report success and proceed |
+| `SUBTASKS: WARN` with `Validation: PASS` | Report usable output with warnings and make failed or skipped linkage visible |
+| `SUBTASKS: BLOCKED` | Stop and surface the plan-shape or unsafe-linkage issue |
+| `SUBTASKS: FAIL` | Stop and surface the fatal Jira or validation failure |
+| `SUBTASKS: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or local contract failure |
 
 ## Example
 

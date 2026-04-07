@@ -59,5 +59,9 @@ The subagent returns a structured summary with:
   dependencies, priority, and outcome
 - Explicit `Warnings` and `Failures` sections
 
+Treat `SUBTASKS: ERROR` as an unexpected tool or environment failure. The
+coordinator stops and surfaces the reason instead of trying to interpret the
+run as a degraded success.
+
 That table is the handoff the parent workflow uses to populate progress
 tracking.

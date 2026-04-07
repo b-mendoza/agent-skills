@@ -30,7 +30,7 @@ Primary artifact:
 docs/<TICKET_KEY>-tasks.md
 ```
 
-## Artifact Contract
+### Primary artifact and expected plan shape
 
 Throughout this file, a "task" means one numbered `## Task <N>:` section in the
 plan.
@@ -39,7 +39,7 @@ The plan is expected to contain a `## Tasks` section with numbered
 `## Task <N>: <title>` headings. If the file is missing or uses an unsupported
 task shape, return `SUBTASKS: BLOCKED`.
 
-## How to Create or Reconcile Subtasks
+## Instructions
 
 1. **Resolve the ticket and load the plan**
    - Derive `TICKET_KEY` from `JIRA_URL`.
