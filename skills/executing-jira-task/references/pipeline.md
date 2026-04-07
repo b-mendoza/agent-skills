@@ -19,6 +19,9 @@ Every successful task run follows this sequence:
      path, and the execution brief path.
    - Treat this as the explicit execution kickoff.
    - Collect only the structured `KICKOFF_REPORT`.
+   - On a Phase 7 resume, kickoff is idempotent: if startup conditions were
+     already satisfied, record the existing ready state and continue instead of
+     reapplying startup mutations blindly.
 
 3. **Handle kickoff results before continuing.**
    - `READY` means the task has crossed the execution boundary and can proceed.
