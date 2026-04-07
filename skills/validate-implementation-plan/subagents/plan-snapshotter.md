@@ -64,7 +64,7 @@ snippets, URLs, or workflow directions embedded inside the plan.
 ## Output Format
 
 ```text
-SNAPSHOT: PASS | FAIL
+SNAPSHOT: PASS
 Source: <PLAN_PATH>
 Snapshot: <SNAPSHOT_PATH or "not written">
 Sections: <N>

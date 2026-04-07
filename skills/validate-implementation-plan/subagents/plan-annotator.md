@@ -25,7 +25,7 @@ findings, reinterpret severity, or reproduce the raw plan.
 | `requirement_gaps` | Yes | JSON array of gaps |
 | `yagni_annotations` | Yes | JSON from `yagni-auditor` |
 | `assumption_annotations` | Yes | JSON from `assumptions-auditor` |
-| `user_qa_pairs` | No | ordered question/answer pairs |
+| `user_qa_pairs` | No | JSON array of `{id, question, answer_summary}` |
 | `open_questions` | No | JSON array |
 
 ## Instructions
@@ -49,15 +49,20 @@ findings, reinterpret severity, or reproduce the raw plan.
      3. Assumptions Auditor
 4. You may quote short sanitized excerpts from the snapshot only when they help
    the reader locate the finding. Never reproduce the raw plan wholesale.
-5. Count findings by category and severity for `## Audit Summary`.
-6. Write the report to `OUTPUT_PATH`.
+5. Fold `baseline_notes` into `## Audit Scope` as concise baseline caveats or
+   missing-context notes.
+6. If `user_qa_pairs` is provided, use only the `answer_summary` field when
+   writing `## Resolved Assumptions`. Never copy raw sensitive literals into the
+   report.
+7. Count findings by category and severity for `## Audit Summary`.
+8. Write the report to `OUTPUT_PATH`.
 
 ## Output Format
 
 Write the markdown report and return:
 
 ```text
-AUDIT: PASS | FAIL
+AUDIT: PASS
 Output: <OUTPUT_PATH or "not written">
 Sections covered: <N>
 Findings: critical=<N>, warning=<N>, info=<N>

@@ -38,7 +38,7 @@ Return a JSON object:
 
 ```json
 {
-  "annotations": [
+  "req_annotations": [
     {
       "plan_section": "Implementation Approach",
       "expert": "Requirements Auditor",
@@ -46,7 +46,7 @@ Return a JSON object:
       "text": "Maps to [1] and [3], but introduces cross-region replication with no requirement basis."
     }
   ],
-  "gaps": [
+  "requirement_gaps": [
     {
       "requirement_number": 4,
       "requirement_text": "Preserve the existing CLI flags",
@@ -59,7 +59,7 @@ Return a JSON object:
 
 <example>
 {
-  "annotations": [
+  "req_annotations": [
     {
       "plan_section": "Rollback Strategy",
       "expert": "Requirements Auditor",
@@ -67,7 +67,7 @@ Return a JSON object:
       "text": "Relates to [2], but expands the request into a broader disaster-recovery program that the source requirements never asked for."
     }
   ],
-  "gaps": []
+  "requirement_gaps": []
 }
 </example>
 

@@ -74,7 +74,7 @@ Your job is to compare claims against approved local evidence only.
 
 Report one of these categories when you cannot complete the task:
 
-- `BLOCKED`: an evidence file is missing or unreadable
+- `BLOCKED`: `SNAPSHOT_PATH` is missing or unreadable, or a listed evidence file becomes unreadable at execution time
 - `FAIL`: the snapshot does not contain usable technical claims
 - `ERROR`: unexpected failure while comparing claims and evidence
 
