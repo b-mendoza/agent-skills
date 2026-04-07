@@ -26,8 +26,8 @@ definition of `docs/<KEY>.md`.
 | 2     | precondition  | `docs/<KEY>.md`         | Same as Phase 1 postcondition                                  |
 | 2     | postcondition | `docs/<KEY>-tasks.md` + planning intermediates | `docs/<KEY>-stage-1-detailed.md` and `docs/<KEY>-stage-2-prioritized.md` exist; `docs/<KEY>-tasks.md` exists; final plan contains `## Ticket Summary`, `## Problem Framing`, `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`, `## Tasks`, `## Execution Order Summary`, `## Dependency Graph`, and `## Validation Report`; plan has ≥2 numbered task entries with the required task subsections |
 | 3     | precondition  | `docs/<KEY>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
-| 3     | postcondition | `docs/<KEY>-tasks.md`   | Contains `## Decisions Log`                                    |
-| 4     | precondition  | `docs/<KEY>-tasks.md`   | Same as Phase 3 postcondition                                  |
+| 3     | postcondition | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | `docs/<KEY>-upfront-critique.md` exists; `docs/<KEY>-tasks.md` contains `## Decisions Log` |
+| 4     | precondition  | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition                                  |
 | 4     | postcondition | `docs/<KEY>-tasks.md`   | Contains `## Jira Subtasks` with ≥1 key matching `[A-Z]+-\d+` |
 | 5     | precondition  | `docs/<KEY>-tasks.md`   | Same as Phase 4 postcondition                                  |
 
@@ -63,6 +63,11 @@ Checks:
   - File exists: <✅ | ❌>
   - <Section check>: <✅ | ❌ — detail if failed>
 ```
+
+For Phases 3 and 6, validation covers only the artifact boundary. The
+clarification skill's final summary still carries `RE_PLAN_NEEDED` and
+`BLOCKERS_PRESENT`, and the orchestrator must honor those flags separately at
+the gate step.
 
 ---
 

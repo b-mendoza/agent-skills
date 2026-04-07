@@ -29,14 +29,18 @@ of "contains `## Tasks` and has task entries." Those boundaries must stay
 aligned with the richer contract owned by `../planning-jira-tasks/SKILL.md` and
 consumed by `../clarifying-assumptions/SKILL.md`.
 
+For the clarification boundaries, validate the artifact outputs that the
+downstream skill writes to disk. The orchestrator still handles
+`RE_PLAN_NEEDED` and `BLOCKERS_PRESENT` separately from this validator.
+
 | Phase | Direction     | File                                 | Checks                                                         |
 | ----- | ------------- | ------------------------------------ | -------------------------------------------------------------- |
 | 1     | postcondition | `docs/<KEY>.md`                      | File exists and contains the required Phase 1 snapshot headings: `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Subtasks`, `## Linked Issues`, `## Attachments`, `## Custom Fields` |
 | 2     | precondition  | `docs/<KEY>.md`                      | Same as Phase 1 postcondition                                  |
 | 2     | postcondition | `docs/<KEY>-tasks.md` + planning intermediates | `docs/<KEY>-stage-1-detailed.md` exists; `docs/<KEY>-stage-2-prioritized.md` exists; `docs/<KEY>-tasks.md` exists; final plan contains `## Ticket Summary`, `## Problem Framing`, `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`, `## Tasks`, `## Execution Order Summary`, `## Dependency Graph`, and `## Validation Report`; plan has at least 2 numbered task entries; each numbered task includes `**Objective:**`, `**Relevant requirements and context:**`, `**Questions to answer before starting:**`, `**Implementation notes:**`, `**Definition of done:**`, `**Likely files / artifacts affected:**`, `**Dependencies / prerequisites:**`, and `**Priority:**` |
 | 3     | precondition  | `docs/<KEY>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
-| 3     | postcondition | `docs/<KEY>-tasks.md`                | Contains `## Decisions Log`                                    |
-| 4     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 3 postcondition                                  |
+| 3     | postcondition | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | `docs/<KEY>-upfront-critique.md` exists; `docs/<KEY>-tasks.md` contains `## Decisions Log` |
+| 4     | precondition  | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition                                  |
 | 4     | postcondition | `docs/<KEY>-tasks.md`                | Contains `## Jira Subtasks` with at least one Jira-style key   |
 | 5     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 4 postcondition                                  |
 | 5     | postcondition | `docs/<KEY>-task-<N>-*.md`           | All 4 planning artifacts exist for task `N`                    |

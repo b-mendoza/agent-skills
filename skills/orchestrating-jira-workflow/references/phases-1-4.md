@@ -119,9 +119,9 @@ postconditions -> update progress -> gate check**
 4. Read the phase skill and invoke it with:
    - `MODE=upfront`
    - `TICKET_KEY`
-   - `TASK_PLAN_FILE=docs/<KEY>-tasks.md`
-   - `DETAILED_PLAN_FILE=docs/<KEY>-stage-1-detailed.md`
-   - `PRIORITIZED_PLAN_FILE=docs/<KEY>-stage-2-prioritized.md`
+   - `ITERATION=<current iteration or 1>`
+   - Let the skill derive the standard artifact paths from `TICKET_KEY`; the
+     validated Phase 2 artifacts stay on disk for the downstream reads
 5. The downstream skill handles user-facing critique and clarification inline,
    while delegating its analysis helpers.
 
@@ -160,7 +160,9 @@ Critique finds no unresolved concern on caching.
    DIRECTION: postcondition
    ```
 
-7. Expect: `docs/<KEY>-tasks.md` contains `## Decisions Log`.
+7. Expect:
+   - `docs/<KEY>-upfront-critique.md` exists
+   - `docs/<KEY>-tasks.md` contains `## Decisions Log`
 8. Dispatch `progress-tracker` with:
 
    ```
@@ -171,7 +173,13 @@ Critique finds no unresolved concern on caching.
    SUMMARY: "N/N questions resolved, N critique items addressed"
    ```
 
-**Gate:** User confirmation required before Jira writes. Present:
+**Gate:** First honor the clarification summary.
+
+If `BLOCKERS_PRESENT=true`, stop before Jira writes and surface the unresolved
+items. Do not offer Phase 4 as the next step until the blockers are resolved.
+
+If `BLOCKERS_PRESENT=false`, user confirmation is still required before Jira
+writes. Present:
 
 ```
 Plan is ready. How would you like to proceed?
@@ -198,7 +206,9 @@ Only proceed to Phase 4 when the user explicitly chooses option 1.
    DIRECTION: precondition
    ```
 
-3. Expect: `docs/<KEY>-tasks.md` contains the validated decisions log.
+3. Expect the validated Phase 3 outputs needed for safe Jira writes:
+   - `docs/<KEY>-upfront-critique.md` exists
+   - `docs/<KEY>-tasks.md` contains the validated decisions log
 4. Read the phase skill and invoke it with `JIRA_URL`.
 5. The downstream skill creates Jira subtasks and updates the plan file with
    subtask keys.
