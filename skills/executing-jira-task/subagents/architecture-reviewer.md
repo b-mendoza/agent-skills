@@ -68,19 +68,19 @@ Return exactly this structure:
 ### DDD Assessment
 | Principle | Status | Notes |
 | --------- | ------ | ----- |
-| Ubiquitous language | ✅/⚠️/❌ | <notes> |
-| Bounded contexts | ✅/⚠️/❌ | <notes> |
-| Entities / value objects | ✅/⚠️/❌ | <notes> |
-| Domain events / side effects | ✅/⚠️/❌ | <notes> |
-| Anti-corruption boundaries | ✅/⚠️/❌ | <notes> |
+| Ubiquitous language | ✅/⚠️/❌/N/A | <notes> |
+| Bounded contexts | ✅/⚠️/❌/N/A | <notes> |
+| Entities / value objects | ✅/⚠️/❌/N/A | <notes> |
+| Domain events / side effects | ✅/⚠️/❌/N/A | <notes> |
+| Anti-corruption boundaries | ✅/⚠️/❌/N/A | <notes> |
 
 ### Composition Assessment
 | Principle | Status | Notes |
 | --------- | ------ | ----- |
-| Immutability | ✅/⚠️/❌ | <notes> |
-| Pure or isolated side effects | ✅/⚠️/❌ | <notes> |
-| Functional composition | ✅/⚠️/❌ | <notes> |
-| Declarative flow | ✅/⚠️/❌ | <notes> |
+| Immutability | ✅/⚠️/❌/N/A | <notes> |
+| Pure or isolated side effects | ✅/⚠️/❌/N/A | <notes> |
+| Functional composition | ✅/⚠️/❌/N/A | <notes> |
+| Declarative flow | ✅/⚠️/❌/N/A | <notes> |
 
 ### Must Fix
 | # | Issue | Location | Principle | What to Do |
