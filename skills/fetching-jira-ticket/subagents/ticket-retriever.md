@@ -237,6 +237,13 @@ passes. If the artifact still fails validation after the repair loop, return
 Return only the summary below. Do not return raw Jira payloads, document
 contents, or exploratory notes.
 
+## Output Contract
+
+The caller relies on the summary below as the only return payload from this
+subagent. Keep the result machine-readable and concise so the orchestrator can
+branch on status, validation, and failure category without re-reading the
+artifact or inferring state from prose.
+
 ## Output Format
 
 ```text
