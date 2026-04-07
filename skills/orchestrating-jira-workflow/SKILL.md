@@ -229,6 +229,20 @@ Phase <N>/7 - <Phase name>
 When a phase has a targeted fix or re-plan loop, re-run only the failing phase
 and only the failing gate. Maximum: 3 loops before escalating to the user.
 
+## Gate Rules
+
+Use these gate rules consistently:
+
+| Boundary | Gate type | Rule |
+| -------- | --------- | ---- |
+| 1 -> 2   | Automatic | Proceed when validation passes |
+| 2 -> 3   | Automatic | Proceed when validation passes |
+| 3 -> 4   | User gate | Proceed only when validation passes, `BLOCKERS_PRESENT=false`, and the user explicitly approves Jira writes |
+| 4 -> 5   | User gate | User selects the next task to execute |
+| 5 -> 6   | Automatic | Proceed when planning artifacts validate |
+| 6 -> 7   | User gate | Proceed only when validation passes, `BLOCKERS_PRESENT=false`, and the user confirms the critiqued task plan is ready for real execution |
+| 7 -> next task | User gate | User chooses the next task or stops |
+
 ## Phase Guide
 
 Load the right reference file based on the phase you are about to run:
@@ -283,20 +297,6 @@ continuing.
 Read the matching file from the Phase Guide and follow it exactly for the
 current phase range. For full resume examples and failure routing, read
 `./references/error-handling.md`.
-
-## Gate Rules
-
-Use these gate rules consistently:
-
-| Boundary | Gate type | Rule |
-| -------- | --------- | ---- |
-| 1 -> 2   | Automatic | Proceed when validation passes |
-| 2 -> 3   | Automatic | Proceed when validation passes |
-| 3 -> 4   | User gate | Proceed only when validation passes, `BLOCKERS_PRESENT=false`, and the user explicitly approves Jira writes |
-| 4 -> 5   | User gate | User selects the next task to execute |
-| 5 -> 6   | Automatic | Proceed when planning artifacts validate |
-| 6 -> 7   | User gate | Proceed only when validation passes, `BLOCKERS_PRESENT=false`, and the user confirms the critiqued task plan is ready for real execution |
-| 7 -> next task | User gate | User chooses the next task or stops |
 
 ## Example
 
