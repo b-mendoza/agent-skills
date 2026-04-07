@@ -179,13 +179,35 @@ Input: TICKET_KEY=JNS-6065, MODE=upfront, ITERATION=1
    `docs/JNS-6065-upfront-critique.md` and `docs/JNS-6065-tasks.md`
 6. Receive:
    MANIFEST: PASS
-   Questions now: 8 | Deferred: 4
+   Ticket: JNS-6065 | Mode: upfront | Task: -
+   Task title: -
+   Questions now: 8 | Deferred: 4 | Irrelevant: 1
 7. Walk the 8 questions one at a time
 8. Dispatch `decision-recorder` with resolved decisions and deferred items
 9. Receive:
    RECORDING: PASS
-   Files updated:
-   - docs/JNS-6065-tasks.md
+   Ticket: JNS-6065 | Mode: upfront | Task: -
+   Files updated: docs/JNS-6065-tasks.md
 10. Present final summary with `RE_PLAN_NEEDED=true`
+</example>
+```
+
+```text
+<example>
+Input: TICKET_KEY=JNS-6065, MODE=critique, TASK_NUMBER=3, ITERATION=2
+
+1. Read `./references/design-thinking-mindset.md`
+2. Read `./references/critique-mode.md`
+3. Dispatch `critique-analyzer` with the task artifacts and
+   `docs/JNS-6065-task-3-critique.md`
+4. Receive:
+   CRITIQUE: PASS
+   Ticket: JNS-6065 | Mode: critique | Task: 3
+   Artifact: docs/JNS-6065-task-3-critique.md
+5. Dispatch `question-manifest-builder`
+6. Receive:
+   MANIFEST: BLOCKED
+   Reason: docs/JNS-6065-task-3-test-spec.md is missing
+7. Stop clarification, surface the blocker, and set `BLOCKERS_PRESENT=true`
 </example>
 ```
