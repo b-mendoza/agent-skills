@@ -38,6 +38,12 @@ This skill maintains and uses only Category A orchestration artifacts:
 - `docs/<TICKET_KEY>-task-<N>-progress.md`
 - The downstream phase artifacts listed in the pipeline below
 
+When a downstream phase defines a richer artifact contract than the shorthand
+gate summary in this skill, treat the downstream phase contract as
+authoritative. For Phase 1, `docs/<TICKET_KEY>.md` is the stable Jira snapshot
+defined by `fetching-jira-ticket`, not merely a Markdown file with a single
+required section.
+
 After each phase or gate, return only:
 
 - A concise phase summary for the user
@@ -105,6 +111,9 @@ Use these rules throughout the workflow:
   concise summaries. Do not rely on ambient context.
 - **Advance one boundary at a time.** Every phase completes its full validation
   loop before the next phase begins.
+- **Honor downstream contracts exactly.** Use the downstream skill's output
+  contract as the source of truth, and keep the orchestrator's gate summaries
+  aligned with that contract rather than with older shorthand checks.
 - **Preserve resumability.** Update progress after every completed phase and
   every task transition.
 - **Separate artifact lifecycles.** Orchestration artifacts stay on disk and are
