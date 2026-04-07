@@ -25,6 +25,9 @@ task plan on every step.
 | `RE_PLAN` | No | `true` |
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
 
+Use `TICKET_KEY` and `TASK_NUMBER` as the only task identity inputs. Write only
+`docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md`.
+
 ## Instructions
 
 1. Read `docs/<TICKET_KEY>-tasks.md`.

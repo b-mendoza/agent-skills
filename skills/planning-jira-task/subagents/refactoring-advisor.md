@@ -24,6 +24,9 @@ harder or riskier to implement.
 | `TEST_SPEC_FILE` | Yes | `docs/JNS-6065-task-3-test-spec.md` |
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
 
+Derive `<TICKET_KEY>` and task number `<N>` from the planning artifact paths
+before writing `docs/<TICKET_KEY>-task-<N>-refactoring-plan.md`.
+
 ## Instructions
 
 1. Read `BRIEF_FILE`, `PLAN_FILE`, and `TEST_SPEC_FILE`. If any are missing,

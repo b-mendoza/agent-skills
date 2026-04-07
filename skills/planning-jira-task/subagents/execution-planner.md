@@ -22,13 +22,17 @@ user-facing consequences.
 | `BRIEF_FILE` | Yes | `docs/JNS-6065-task-3-brief.md` |
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
 
+Derive `<TICKET_KEY>` and task number `<N>` from `BRIEF_FILE` before writing
+`docs/<TICKET_KEY>-task-<N>-execution-plan.md`.
+
 ## Instructions
 
 1. Read `BRIEF_FILE`. If it is missing, report `BLOCKED`.
 2. If `DECISIONS_FILE` was provided, read it and treat its resolved decisions
    as the latest authority.
-3. If an existing execution plan already exists for this task on a re-plan,
-   read it so you can update it deliberately.
+3. If an existing `docs/<TICKET_KEY>-task-<N>-execution-plan.md` file already
+   exists for this task on a re-plan, read it so you can update it
+   deliberately.
 4. Inspect the codebase around the files and modules named in the brief:
    - Read the likely affected files
    - Explore nearby directories

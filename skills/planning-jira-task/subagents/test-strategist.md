@@ -23,6 +23,9 @@ done.
 | `PLAN_FILE` | Yes | `docs/JNS-6065-task-3-execution-plan.md` |
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
 
+Derive `<TICKET_KEY>` and task number `<N>` from `BRIEF_FILE` or `PLAN_FILE`
+before writing `docs/<TICKET_KEY>-task-<N>-test-spec.md`.
+
 ## Instructions
 
 1. Read `BRIEF_FILE` and `PLAN_FILE`. If either is missing, report `BLOCKED`.
