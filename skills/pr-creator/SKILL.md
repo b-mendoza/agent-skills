@@ -74,8 +74,8 @@ This skill does exactly five things:
 
 Keep only short structured state between steps: platform, base/head branches,
 changed files, diff size signal, drafted title/body, suggested reviewers/labels,
-and the current preview. Use direct `git` and `gh` commands inline because each
-result is used immediately in the user confirmation loop.
+and the current preview. Use direct `git` and the platform-appropriate CLI
+inline because each result is used immediately in the user confirmation loop.
 
 ## Execution Steps
 
@@ -91,12 +91,14 @@ result is used immediately in the user confirmation loop.
 
    Then:
 
-   - Detect the hosting platform from `remote.origin.url`.
+   - Detect the hosting platform from `remote.origin.url`, including GitHub
+     Enterprise hosts that should follow the GitHub branch.
    - If the working tree has uncommitted changes, tell the user those changes
      are not part of the PR until they are committed.
    - Ask for `TARGET_BRANCH` if it was not already supplied.
    - If the remote is not GitHub, read `./references/platform-adaptation.md`
-     before continuing.
+     and follow the matching platform branch for the GitHub-only command blocks
+     in steps 2, 6, 8, and 9.
 
 2. **Run preflight validation**
 
@@ -107,20 +109,27 @@ result is used immediately in the user confirmation loop.
    gh auth status
    git ls-remote --heads origin <current_branch>
    git rev-parse --verify origin/<target_branch>
+   git rev-list --left-right --count origin/<current_branch>...<current_branch>
    ```
 
    Then:
 
    - If `gh auth status` fails, stop with `AUTH`.
-   - If the head branch is not on the remote, tell the user a push is required
-     before the PR can be created. Ask for confirmation, then run:
+   - If the head branch is not on the remote, or local commits are ahead of
+     `origin/<current_branch>`, tell the user a push is required before the PR
+     can be created and before the compare diff is trustworthy.
+   - Ask for confirmation, then run:
 
      ```bash
      git push -u origin <current_branch>
      ```
 
+   - If the user declines the push, stop with `HEAD_BRANCH_UNPUSHED`.
+
    - If the target branch does not exist on the remote, stop with
      `BASE_BRANCH_MISSING` and ask the user for a valid base branch.
+   - For non-GitHub remotes, follow the matching preflight and auth flow in
+     `./references/platform-adaptation.md` before moving to the diff step.
 
 3. **Analyze the full branch diff**
 
@@ -213,7 +222,7 @@ result is used immediately in the user confirmation loop.
    - If no CODEOWNERS file exists, ask the user for at least one reviewer.
    - Require at least one reviewer before creation.
 
-   For labels:
+   For GitHub labels:
 
    ```bash
    gh label list --limit 100
@@ -225,6 +234,8 @@ result is used immediately in the user confirmation loop.
    - Use the PR type and diff content to guide suggestions.
    - Skip labels silently if none fit.
    - If `LABELS_OVERRIDE` is supplied, use it instead of auto-suggestions.
+   - For non-GitHub remotes, follow the platform-specific label guidance in
+     `./references/platform-adaptation.md` instead of calling `gh`.
 
 7. **Preview, validate, and revise**
 
@@ -255,10 +266,11 @@ result is used immediately in the user confirmation loop.
 
 8. **Create the PR**
 
-   After explicit confirmation, create the PR. Prefer a heredoc or body file for
-   long descriptions.
+   After explicit confirmation, create the PR with the CLI that matches the
+   detected hosting platform. Prefer a heredoc or body file for long
+   descriptions.
 
-   Draft PR:
+   GitHub draft PR:
 
    ```bash
    gh pr create \
@@ -270,7 +282,7 @@ result is used immediately in the user confirmation loop.
      --reviewer "<reviewer1>,<reviewer2>"
    ```
 
-   Ready PR:
+   GitHub ready PR:
 
    ```bash
    gh pr create \
@@ -281,8 +293,10 @@ result is used immediately in the user confirmation loop.
      --reviewer "<reviewer1>,<reviewer2>"
    ```
 
-   Add labels only when they exist and the user approved them. Use repeated
-   label flags or the form supported by the installed `gh` version.
+   For GitHub, add labels only when they exist and the user approved them. Use
+   `-l` or `--label` in the form supported by the installed `gh` version.
+   For non-GitHub remotes, follow the matching create flow in
+   `./references/platform-adaptation.md`.
 
 9. **Verify the result**
 
@@ -290,6 +304,8 @@ result is used immediately in the user confirmation loop.
 
    - Capture and return the PR URL.
    - Confirm the created PR uses the intended base and head branches.
+   - For non-GitHub remotes, use the platform-specific verification flow from
+     `./references/platform-adaptation.md` instead of GitHub-only checks.
    - If creation fails, stop with a structured failure category and explain the
      next action clearly.
 
@@ -305,11 +321,11 @@ Next step: <one clear action>
 
 Use these categories:
 
-- `AUTH` - GitHub CLI is missing, unauthenticated, or lacks permission
+- `AUTH` - the platform CLI is missing, unauthenticated, or lacks permission
 - `BASE_BRANCH_MISSING` - the requested target branch does not exist remotely
 - `HEAD_BRANCH_UNPUSHED` - the source branch must be pushed before PR creation
 - `EMPTY_DIFF` - the source branch has nothing to compare against the target
-- `CREATE_ERROR` - `gh pr create` failed after confirmation
+- `CREATE_ERROR` - the platform create command failed after confirmation
 
 ## Reference Files
 
@@ -333,7 +349,7 @@ Flow:
    - Reviewers: `@docs-team`
    - Labels: `documentation`
 5. Show preview and let the user edit it.
-6. After confirmation, run `gh pr create`.
+6. After confirmation, run the platform-appropriate create command.
 
 Output:
 - PR URL returned to the user
