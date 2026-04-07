@@ -60,6 +60,13 @@ Treat `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT` from the clarification summaries
 as gate inputs. They are not validator artifacts, but they are part of the
 phase boundary contract the orchestrator must honor.
 
+For Phase 4, the authoritative downstream contract is owned by
+`creating-jira-subtasks`. Treat `docs/<KEY>-tasks.md` as valid for downstream
+use only when it carries the workflow-level `## Jira Subtasks` table plus the
+inline `Jira Subtask: <KEY>` links for linked tasks. The downstream
+`Created/Linked Subtasks` table is the structured handoff for workflow progress
+tracking.
+
 After each phase or gate, return only:
 
 - A concise phase summary for the user
@@ -74,7 +81,7 @@ Do not surface raw subagent output unless the user explicitly asks for it.
 Phase 1: Fetch ticket        -> docs/<KEY>.md
 Phase 2: Plan tasks          -> docs/<KEY>-tasks.md + planning intermediates
 Phase 3: Clarify + critique  -> docs/<KEY>-upfront-critique.md + docs/<KEY>-tasks.md updates
-Phase 4: Create subtasks     -> Jira subtasks + plan updated with subtask keys
+Phase 4: Create subtasks     -> docs/<KEY>-tasks.md updated with `## Jira Subtasks` + per-task subtask links
 Phase 5: Plan task execution -> docs/<KEY>-task-<N>-*.md (4 planning artifacts)
 Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-critique.md + docs/<KEY>-task-<N>-decisions.md
 Phase 7: Kick off + execute  -> first side effects, code changes, tests, commits
@@ -129,7 +136,10 @@ Use these rules throughout the workflow:
   loop before the next phase begins.
 - **Honor downstream contracts exactly.** Use the downstream skill's output
   contract as the source of truth, and keep the orchestrator's gate summaries
-  aligned with that contract rather than with older shorthand checks.
+  aligned with that contract rather than with older shorthand checks. For
+  Phase 4, that means validating both the workflow-level Jira table and the
+  inline task links, then using the downstream summary table for progress
+  metadata.
 - **Honor clarification summary flags.** `RE_PLAN_NEEDED=true` reopens the
   relevant planning phase. `BLOCKERS_PRESENT=true` is a hard stop before Jira
   writes or task execution, even if the generic user gate would otherwise allow
