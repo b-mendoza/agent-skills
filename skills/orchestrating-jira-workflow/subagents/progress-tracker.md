@@ -34,14 +34,15 @@ task number, title, dependencies, and priority when known. The entry may also
 carry Phase 4 linkage metadata such as subtask key or outcome; preserve the
 fields you need for workflow progress and ignore any extras.
 
-## Managed Artifacts
+## Artifacts and Templates
 
 | File                              | Scope          | Purpose                         |
 | --------------------------------- | -------------- | ------------------------------- |
 | `docs/<KEY>-progress.md`          | Workflow-level | Tracks phases 1-4 and task list |
 | `docs/<KEY>-task-<N>-progress.md` | Per-task       | Tracks phases 5-7 for one task  |
 
-Read `./progress-tracker-templates.md` when creating or modifying either file.
+Read `./progress-tracker-templates.md` when an action creates or modifies one
+of these files.
 
 ## Instructions
 

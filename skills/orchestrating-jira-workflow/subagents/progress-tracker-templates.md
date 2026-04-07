@@ -8,6 +8,8 @@
 > preserve them across sessions, and summarize their state back to the
 > orchestrator instead of returning raw file contents.
 
+Loaded by: `./progress-tracker.md`
+
 ---
 
 ## Main Progress File Template
