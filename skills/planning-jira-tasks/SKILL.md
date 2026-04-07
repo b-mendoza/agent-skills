@@ -150,15 +150,34 @@ The orchestrator keeps only decision-relevant handoff data between stages:
 
 Do not carry raw plan content forward in the orchestrator context.
 
+## Phase Guide
+
+| Phase / gate    | Dispatch                              | Required output                         | On failure |
+| --------------- | ------------------------------------- | --------------------------------------- | ---------- |
+| `preflight`     | `stage-validator`                     | Ticket snapshot is present and complete | Stop with `Failure category: PREFLIGHT` |
+| Stage 1         | `task-planner` -> `stage-validator`   | `docs/<KEY>-stage-1-detailed.md` passes Stage 1 checks | Retry Stage 1 only, then re-run Stage 1 gate |
+| Stage 2         | `dependency-prioritizer` -> `stage-validator` | `docs/<KEY>-stage-2-prioritized.md` passes Stage 2 checks | Retry Stage 2 only, then re-run Stage 2 gate |
+| Stage 3         | `task-validator` -> `stage-validator` | `docs/<KEY>-tasks.md` passes Stage 3 checks | Retry Stage 3 only, then re-run Stage 3 gate |
+| `postpipeline`  | `stage-validator`                     | Final downstream contract is intact     | Re-dispatch Stage 3, then re-run Stage 3 and post-pipeline gates |
+
+## Execution Paths
+
+Use one of these paths:
+
+- **Normal path:** `preflight -> stage 1 -> stage 2 -> stage 3 -> postpipeline`
+- **Re-plan path:** read `./references/re-plan-cycle.md`, identify the earliest
+  affected stage, resume from that stage using the preserved on-disk artifacts,
+  then rerun every downstream stage and finish with `postpipeline`
+
+Use targeted fix loops only. When a gate fails, re-dispatch the stage that
+produced the failing artifact, pass only the validator's issues list, and
+re-run only the failing gate. Do not restart already-passing stages unless the
+re-plan rules require it.
+
 ## Execution Steps
 
-> Use targeted fix loops only: when a gate fails, re-dispatch the stage that
-> produced that artifact and re-run only that failing gate. For re-plan or
-> recovery paths, read `./references/re-plan-cycle.md`.
-
 1. **Choose execution path**
-   - If `RE_PLAN` is absent or `false`, run the normal path:
-     `preflight -> stage 1 -> stage 2 -> stage 3 -> postpipeline`.
+   - If `RE_PLAN` is absent or `false`, run the normal path.
    - If `RE_PLAN=true`, read `./references/re-plan-cycle.md`, determine the
      earliest affected stage, and resume from that point using the on-disk
      artifacts from the prior run.
