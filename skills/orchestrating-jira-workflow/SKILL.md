@@ -200,6 +200,11 @@ sequential.
 
 Every phase follows this cycle:
 
+> Reminder: run the full loop in order: validator (when needed) -> downstream
+> skill -> validator -> progress update -> gate decision. Use
+> `./references/data-contracts.md` for exact PASS/FAIL semantics at the
+> boundary.
+
 1. **Announce** the phase banner.
 2. **Validate preconditions** by dispatching `artifact-validator` when a
    precondition exists for that phase.
@@ -297,6 +302,18 @@ continuing.
 Read the matching file from the Phase Guide and follow it exactly for the
 current phase range. For full resume examples and failure routing, read
 `./references/error-handling.md`.
+
+## Escalation
+
+Use `./references/error-handling.md` whenever a critical dependency, artifact,
+gate, or retry budget blocks forward progress. At this level, keep only the
+summary needed to decide the next move:
+
+- `PREFLIGHT: FAIL` or `PREFLIGHT: ERROR` -> stop before entering the phase
+- Critical validator or progress failures -> stop progression and present the
+  blocking summary
+- Retry or re-plan loop exhausted -> present the accumulated feedback and ask
+  the user how to proceed
 
 ## Example
 
