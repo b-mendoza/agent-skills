@@ -1,6 +1,6 @@
 ---
 name: "fetching-jira-ticket"
-description: 'Retrieve a Jira ticket into a stable Markdown snapshot for downstream workflow phases. Use as Phase 1 of the orchestrating-jira-workflow pipeline whenever a Jira URL needs to become `docs/<KEY>.md` with predictable headings for metadata, description, acceptance criteria, comments, subtasks, linked issues, attachments, and custom fields. This skill coordinates retrieval only: it does not modify Jira, create branches, or start implementation.'
+description: 'Phase 1 of `orchestrating-jira-workflow`: retrieve a Jira ticket into a stable Markdown snapshot for downstream workflow phases. Use this as a workflow phase, not as a standalone implementation skill, whenever a Jira URL needs to become `docs/<KEY>.md` with predictable headings for metadata, description, acceptance criteria, comments, subtasks, linked issues, attachments, and custom fields. This skill coordinates retrieval only: it does not modify Jira, create branches, or start implementation.'
 ---
 
 # Fetching Jira Ticket
@@ -34,10 +34,17 @@ Primary artifact:
 docs/<TICKET_KEY>.md
 ```
 
-The document must contain every heading defined in
-`./subagents/ticket-retriever-template.md`. If a section has no data, the
-heading still appears and the section body is `_None_`. Downstream skills rely
-on stable headings rather than best-effort prose.
+Treat `docs/<TICKET_KEY>.md` as a preserved workflow artifact for resumability.
+Do not commit it as part of implementation history.
+
+The document must contain every top-level heading from the fenced Markdown
+snapshot shape in `./subagents/ticket-retriever-template.md`. Repeated nested
+headings, such as comment entries or per-issue subsections, appear only when
+their parent section has material to render. If a top-level section has no
+data, the heading still appears and the section body is `_None_`. Downstream
+skills rely on stable headings rather than best-effort prose. If retrieval is
+partial, the artifact must record that explicitly in `## Retrieval Warnings`
+and via placeholder entries for the missing subtasks or linked issues.
 
 At minimum, the final document must include these sections:
 
@@ -47,6 +54,7 @@ At minimum, the final document must include these sections:
 | `## Description` | Primary source of requirements |
 | `## Acceptance Criteria` | Definition-of-done source, including extracted AC when present |
 | `## Comments` | Decisions, clarifications, and implementation hints |
+| `## Retrieval Warnings` | Stable disclosure point for partial related-item retrieval |
 | `## Subtasks` | Existing Jira execution breakdown |
 | `## Linked Issues` | Dependency and surrounding context |
 | `## Attachments` | File-level reference metadata |
@@ -97,11 +105,13 @@ and relationship retrieval, document assembly, output validation, and cleanup.
 The retriever returns a summary with these top-level fields:
 
 - `FETCH: PASS` -> retrieval and validation succeeded
-- `FETCH: PARTIAL` -> artifact was written and validated, but some related data
-  could not be retrieved
+- `FETCH: PARTIAL` -> artifact was written and validated, but some parent
+  comments or related data could not be retrieved
 - `FETCH: FAIL` -> deterministic failure such as bad input, ticket not found,
   missing auth, rate limits after retry, or no usable Jira tools
 - `FETCH: ERROR` -> unexpected tool or environment failure
+- `Failure category` -> machine-readable cause for `FETCH: FAIL` or
+  `FETCH: ERROR`
 
 Validation is reported separately:
 
@@ -109,16 +119,32 @@ Validation is reported separately:
 - `Validation: FAIL` -> the file was written but still violates the contract
 - `Validation: NOT_RUN` -> retrieval failed before validation could happen
 
+Failure categories are:
+
+- `NONE` -> no fatal failure occurred
+- `BAD_INPUT` -> malformed or unsupported Jira URL
+- `NOT_FOUND` -> the parent Jira ticket could not be found before a valid
+  artifact was produced
+- `AUTH` -> Jira access was denied or not authenticated
+- `TOOLS_MISSING` -> no suitable Jira-capable tools were available
+- `RATE_LIMIT` -> Jira access was rate-limited and retry budget was exhausted
+- `UNEXPECTED` -> tool or environment failure outside the expected categories
+
 Handle them this way:
 
 - `FETCH: PASS` with `Validation: PASS`: report success and continue
 - `FETCH: PARTIAL` with `Validation: PASS`: report success with warnings and
   make the incompleteness visible
-- `FETCH: FAIL`: stop and relay the reason
-- `FETCH: ERROR`: stop and relay the reason as an unexpected failure
-- `Validation: FAIL`: stop and relay that the snapshot contract was not met
+- `FETCH: FAIL`: stop and relay the failure category plus the reason
+- `FETCH: ERROR`: stop and relay the failure category plus the reason as an
+  unexpected failure
+- `Validation: FAIL` with `FETCH: ERROR`: stop and relay that the snapshot
+  contract was not met
 - Any inconsistent pairing, such as `FETCH: PASS` with `Validation: NOT_RUN`:
   treat it as `FETCH: ERROR` and stop
+
+Do not infer fatal cause from prose when `Failure category` is present. Branch
+on the category, then use `Reason` only for user-facing detail.
 
 ### 3. Report only the summary
 
@@ -126,10 +152,11 @@ Using only the subagent's structured summary, tell the caller:
 
 - The file path written, when one exists
 - The ticket title, status, and type
-- Parent comment count
+- Retrieved versus discovered parent-comment counts
 - Retrieved versus discovered counts for subtasks and linked issues
 - Attachment count
 - Any warnings or fatal reason
+- Any failure category, when one exists
 - That this phase is retrieval only and does not modify Jira
 
 ## Example
@@ -143,10 +170,11 @@ Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-6065`
 
    FETCH: PASS
    Validation: PASS
+   Failure category: NONE
    File written: docs/JNS-6065.md
    Ticket: JNS-6065: Implement dark mode toggle
    Status: In Progress | Type: Story
-   Parent comments: 4
+   Parent comments: 4/4
    Subtasks: 3/3
    Linked issues: 1/1
    Attachments: 2
@@ -156,6 +184,6 @@ Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-6065`
 4. Report:
    "Ticket fetched to `docs/JNS-6065.md`.
    `JNS-6065: Implement dark mode toggle` is `In Progress` (`Story`).
-   Retrieved 4 parent comments, 3/3 subtasks, 1/1 linked issues, and 2
+   Retrieved 4/4 parent comments, 3/3 subtasks, 1/1 linked issues, and 2
    attachments. Retrieval only; Jira was not modified."
 </example>
