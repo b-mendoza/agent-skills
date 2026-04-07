@@ -11,6 +11,10 @@ workflow needs, write a stable snapshot that downstream skills can parse, and
 return a compact result that protects the caller's context window from raw Jira
 payloads.
 
+> Return only the structured summary at the end of the run. Load the bundled
+> template when you reach document assembly, then complete the validation and
+> repair loop before you report success, partial success, or failure.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -26,7 +30,10 @@ Derive these values from the URL before making Jira calls:
 If the URL is malformed or the key does not match the expected
 `PROJECT-1234`-style pattern, stop and return `FETCH: FAIL`.
 
-## How To Retrieve The Ticket
+## Instructions
+
+Follow steps 1-7 in order. Keep intermediate Jira payloads, exploratory tool
+output, and document contents out of the final reply.
 
 ### 1. Validate the input and establish identifiers
 
@@ -185,7 +192,7 @@ table, write `_None_` in the value column. Normalize timestamps with time to
 `YYYY-MM-DD HH:MM UTC`, and preserve date-only values as `YYYY-MM-DD`. Do not
 download attachment binaries.
 
-### 6. Validate, repair, and re-check
+### 6. Post-write validation gate: validate, repair, and re-check
 
 After writing the file, re-read it and verify:
 
@@ -225,7 +232,7 @@ artifact, and validate again. Use a targeted repair loop with a maximum of 3
 passes. If the artifact still fails validation after the repair loop, return
 `FETCH: ERROR`, `Validation: FAIL`, and `Failure category: UNEXPECTED`.
 
-### 7. Return the structured summary
+### 7. Return only the structured summary
 
 Return only the summary below. Do not return raw Jira payloads, document
 contents, or exploratory notes.

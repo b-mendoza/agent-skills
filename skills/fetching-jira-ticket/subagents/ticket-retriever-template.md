@@ -1,4 +1,8 @@
-# Document Template
+> Read this file only during document assembly. Copy only the fenced Markdown
+> shape into the artifact; the explanatory notes outside the fence are
+> instructions for the retriever, not output content.
+
+# Ticket Snapshot Template
 
 Write the snapshot using the structure below. The Markdown block is the literal
 artifact shape. The notes after it explain how to fill conditional sections;

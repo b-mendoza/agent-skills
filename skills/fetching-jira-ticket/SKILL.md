@@ -102,6 +102,10 @@ and relationship retrieval, document assembly, output validation, and cleanup.
 
 ### 2. Interpret the structured result
 
+> Reminder: branch on the structured result fields, not on prose. This
+> coordinator dispatches, interprets, and relays summaries; it does not inspect
+> raw Jira payloads or rewrite the artifact.
+
 The retriever returns a summary with these top-level fields:
 
 - `FETCH: PASS` -> retrieval and validation succeeded
