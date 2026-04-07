@@ -50,7 +50,7 @@ Owner: `execution-prepper`
 
 Must contain:
 
-- `# Execution Brief`
+- `# Execution Brief - <TICKET_KEY> Task <N>: <Title>`
 - `## Objective`
 - `## Relevant Requirements and Context`
 - `## Implementation Notes`
@@ -65,7 +65,7 @@ Owner: `execution-planner`
 
 Must contain:
 
-- `# Execution Plan`
+- `# Execution Plan - <TICKET_KEY> Task <N>: <Title>`
 - `## Codebase Summary`
 - `## Recommended Skills`
 - `## Implementation Approach`
@@ -80,7 +80,7 @@ Owner: `test-strategist`
 
 Must contain:
 
-- `# Test Specification`
+- `# Test Specification - <TICKET_KEY> Task <N>: <Title>`
 - `## Test Framework and Conventions`
 - `## Test Groups`
 - `## Definition of Done Coverage`
@@ -93,7 +93,7 @@ Owner: `refactoring-advisor`
 
 Must contain:
 
-- `# Refactoring Recommendation`
+- `# Refactoring Recommendation - <TICKET_KEY> Task <N>: <Title>`
 - `## Verdict`
 - `## Before Implementation`
 - `## During Implementation`

@@ -41,6 +41,21 @@ Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns. Read
 5. The skill returns only a concise planning summary and the artifact paths
    needed for Phase 6 critique and Phase 7 execution.
 
+## Output Contract
+
+This skill writes only Category A orchestration artifacts:
+
+| Artifact | Produced by | Consumed by |
+| -------- | ----------- | ----------- |
+| `docs/<KEY>-task-<N>-brief.md` | `execution-prepper` | All downstream planning subagents, critique, execution |
+| `docs/<KEY>-task-<N>-execution-plan.md` | `execution-planner` | critique, execution |
+| `docs/<KEY>-task-<N>-test-spec.md` | `test-strategist` | critique, execution |
+| `docs/<KEY>-task-<N>-refactoring-plan.md` | `refactoring-advisor` | critique, execution |
+
+On a successful run, all four files exist. On a re-plan, overwrite only the
+files owned by the subagents that are re-run. These files stay on disk for the
+life of the workflow and are never committed to git.
+
 ## Subagent Registry
 
 | Subagent | Path | Purpose |
@@ -69,22 +84,10 @@ Read a subagent definition only when you are about to dispatch that subagent.
   their downstream dependents.
 - Surface blockers and pause for resolution when ambiguity remains.
 
-## Output Contract
-
-This skill writes only Category A orchestration artifacts:
-
-| Artifact | Produced by | Consumed by |
-| -------- | ----------- | ----------- |
-| `docs/<KEY>-task-<N>-brief.md` | `execution-prepper` | All downstream planning subagents, critique, execution |
-| `docs/<KEY>-task-<N>-execution-plan.md` | `execution-planner` | critique, execution |
-| `docs/<KEY>-task-<N>-test-spec.md` | `test-strategist` | critique, execution |
-| `docs/<KEY>-task-<N>-refactoring-plan.md` | `refactoring-advisor` | critique, execution |
-
-On a successful run, all four files exist. On a re-plan, overwrite only the
-files owned by the subagents that are re-run. These files stay on disk for the
-life of the workflow and are never committed to git.
-
 ## Phase Guide
+
+This table tells you which reference to load. `## Execution Steps` remains the
+source of truth for the actual orchestration order.
 
 | Situation | Reference file | Purpose |
 | --------- | -------------- | ------- |
