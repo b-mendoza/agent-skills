@@ -67,6 +67,18 @@ inline `Jira Subtask: <KEY>` links for linked tasks. The downstream
 `Created/Linked Subtasks` table is the structured handoff for workflow progress
 tracking.
 
+For Phase 5, the authoritative downstream contract is owned by
+`planning-jira-task`. The stable planning handoff is the concrete four-file set:
+
+- `docs/<KEY>-task-<N>-brief.md`
+- `docs/<KEY>-task-<N>-execution-plan.md`
+- `docs/<KEY>-task-<N>-test-spec.md`
+- `docs/<KEY>-task-<N>-refactoring-plan.md`
+
+Treat those files as the planning boundary consumed by Phases 6 and 7. The
+detailed section-level requirements for each file stay owned by the downstream
+Phase 5 skill.
+
 After each phase or gate, return only:
 
 - A concise phase summary for the user
@@ -82,7 +94,7 @@ Phase 1: Fetch ticket        -> docs/<KEY>.md
 Phase 2: Plan tasks          -> docs/<KEY>-tasks.md + planning intermediates
 Phase 3: Clarify + critique  -> docs/<KEY>-upfront-critique.md + docs/<KEY>-tasks.md updates
 Phase 4: Create subtasks     -> docs/<KEY>-tasks.md updated with `## Jira Subtasks` + per-task subtask links
-Phase 5: Plan task execution -> docs/<KEY>-task-<N>-*.md (4 planning artifacts)
+Phase 5: Plan task execution -> docs/<KEY>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md
 Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-critique.md + docs/<KEY>-task-<N>-decisions.md
 Phase 7: Kick off + execute  -> first side effects, code changes, tests, commits
          ^___________________/  repeat phases 5-7 per task
