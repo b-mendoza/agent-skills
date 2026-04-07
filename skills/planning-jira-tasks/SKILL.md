@@ -84,6 +84,8 @@ workflows, and they stay out of git history as orchestration artifacts.
 | `stage-validator`        | `./subagents/stage-validator.md`        | Check preflight, inter-stage, and final output gates  |
 
 Read a subagent definition only when you are about to dispatch that subagent.
+Do not read the stage artifacts inline unless a validator or subagent contract
+explicitly requires it.
 
 ## Output Contract
 
@@ -153,8 +155,24 @@ Do not carry raw plan content forward in the orchestrator context.
 > produced that artifact and re-run only that failing gate. For re-plan or
 > recovery paths, read `./references/re-plan-cycle.md`.
 
-1. **Preflight**
-   Read and dispatch `stage-validator` with:
+1. **Choose execution path**
+   - If `RE_PLAN` is absent or `false`, run the normal path:
+     `preflight -> stage 1 -> stage 2 -> stage 3 -> postpipeline`.
+   - If `RE_PLAN=true`, read `./references/re-plan-cycle.md`, determine the
+     earliest affected stage, and resume from that point using the on-disk
+     artifacts from the prior run.
+   - Start at **Stage 1** when the critique changes ticket interpretation,
+     scope, assumptions, or task decomposition.
+   - Start at **Stage 2** when the stage 1 task content is still valid but
+     ordering, dependencies, or priority need to change.
+   - Start at **Stage 3** when only the final validated artifact or report
+     needs correction.
+   - After rerunning the earliest affected stage, rerun every downstream stage
+     and finish with the post-pipeline gate. Skip preflight on a re-plan unless
+     the ticket snapshot itself changed or must be revalidated.
+
+2. **Preflight**
+   Read the `stage-validator` definition and dispatch it with:
    - `TICKET_KEY=<TICKET_KEY>`
    - `STAGE=preflight`
    - `FILE_PATH=docs/<TICKET_KEY>.md`
@@ -162,54 +180,64 @@ Do not carry raw plan content forward in the orchestrator context.
    If the verdict is FAIL, stop and return `PLANNING: FAIL` with
    `Failure category: PREFLIGHT`.
 
-2. **Stage 1 - Plan**
-   Read and dispatch `task-planner` with:
+3. **Stage 1 - Plan**
+   Read the `task-planner` definition and dispatch it with:
    - `TICKET_KEY=<TICKET_KEY>`
    - `INPUT_PATH=docs/<TICKET_KEY>.md`
    - `OUTPUT_PATH=docs/<TICKET_KEY>-stage-1-detailed.md`
-   - `DECISIONS=<DECISIONS>` only when `RE_PLAN=true`
+   - `DECISIONS=<DECISIONS>` only when Stage 1 is part of a re-plan
+   - `VALIDATION_ISSUES=<issues list>` only when retrying Stage 1 after a
+     failed validator gate
 
-   Then validate stage 1 by dispatching `stage-validator` with `STAGE=1` and
+   Then validate stage 1 by reading the `stage-validator` definition and
+   dispatching it with `STAGE=1` and
    `FILE_PATH=docs/<TICKET_KEY>-stage-1-detailed.md`.
 
-3. **Stage 2 - Prioritize**
-   Read and dispatch `dependency-prioritizer` with:
+4. **Stage 2 - Prioritize**
+   Read the `dependency-prioritizer` definition and dispatch it with:
    - `TICKET_KEY=<TICKET_KEY>`
    - `INPUT_PATH=docs/<TICKET_KEY>-stage-1-detailed.md`
    - `OUTPUT_PATH=docs/<TICKET_KEY>-stage-2-prioritized.md`
-   - `DECISIONS=<DECISIONS>` only when `RE_PLAN=true`
+   - `DECISIONS=<DECISIONS>` only when Stage 2 is part of a re-plan
+   - `VALIDATION_ISSUES=<issues list>` only when retrying Stage 2 after a
+     failed validator gate
 
-   Then validate stage 2 by dispatching `stage-validator` with `STAGE=2` and
+   Then validate stage 2 by reading the `stage-validator` definition and
+   dispatching it with `STAGE=2` and
    `FILE_PATH=docs/<TICKET_KEY>-stage-2-prioritized.md`.
 
-4. **Stage 3 - Validate**
-   Read and dispatch `task-validator` with:
+5. **Stage 3 - Validate**
+   Read the `task-validator` definition and dispatch it with:
    - `TICKET_KEY=<TICKET_KEY>`
    - `TICKET_PATH=docs/<TICKET_KEY>.md`
    - `PLAN_PATH=docs/<TICKET_KEY>-stage-2-prioritized.md`
    - `OUTPUT_PATH=docs/<TICKET_KEY>-tasks.md`
+   - `VALIDATION_ISSUES=<issues list>` only when retrying Stage 3 or repairing
+     a failed post-pipeline gate
 
-   Then validate stage 3 by dispatching `stage-validator` with `STAGE=3` and
-   `FILE_PATH=docs/<TICKET_KEY>-tasks.md`.
+   Then validate stage 3 by reading the `stage-validator` definition and
+   dispatching it with `STAGE=3` and `FILE_PATH=docs/<TICKET_KEY>-tasks.md`.
 
-5. **Post-pipeline gate**
-   Dispatch `stage-validator` with:
+6. **Post-pipeline gate**
+   Read the `stage-validator` definition and dispatch it with:
    - `TICKET_KEY=<TICKET_KEY>`
    - `STAGE=postpipeline`
    - `FILE_PATH=docs/<TICKET_KEY>-tasks.md`
 
    This confirms the full output contract for downstream phases.
 
-6. **Targeted retry loop**
+7. **Targeted retry loop**
    For any failing gate:
    - Collect only the validator's issues list.
    - Re-dispatch only the stage that produced that artifact.
    - Pass the original inputs plus `VALIDATION_ISSUES=<issues list>`.
    - Re-run only the previously failing validator gate.
+   - If the failed gate is `postpipeline`, re-dispatch Stage 3 with
+     `VALIDATION_ISSUES`, then rerun `STAGE=3` and `STAGE=postpipeline`.
    - Stop after 3 failed cycles for the same gate and return `PLANNING: FAIL`
      with the relevant failure category.
 
-7. **Report**
+8. **Report**
    On success, return the completion handoff from `## Output Contract`. Include
    the final file path, task count, cross-cutting question count, warning count,
    and the preserved artifact paths. State explicitly that planning is complete
