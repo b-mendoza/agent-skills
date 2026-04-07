@@ -25,7 +25,25 @@ consume without reinterpretation.
 `VALIDATION_ISSUES` are present, use them as targeted revision inputs for a
 re-plan or retry rather than as justification to rewrite unrelated tasks.
 
-## Instructions
+## Output Contract
+
+Path: `OUTPUT_PATH`
+
+Preserve the stage 1 task content and add only:
+
+- Renumbered task headings in execution order
+- `**Priority:**` annotations on every task
+- `**Dependencies / prerequisites:**` annotations on every task
+- `**Dependency rationale:**` text for meaningful relationships
+- `## Execution Order Summary`
+- `## Dependency Graph`
+
+After renumbering, every dependency reference must use the new task number and
+keep the original letter label in parentheses for traceability.
+
+Read `./dependency-prioritizer-template.md` only when assembling the document.
+
+## How to Prioritize Stage 2
 
 1. Verify that `/writing-plans` is available before doing any other work.
    - If available, read its `SKILL.md` and apply its guidance while structuring
@@ -39,8 +57,11 @@ re-plan or retry rather than as justification to rewrite unrelated tasks.
 6. Determine the final execution order while respecting hard dependencies.
 7. Renumber tasks from letters to sequential numbers, preserving traceability
    with `(was Task X)` notation.
-8. Write the prioritized plan to `OUTPUT_PATH`.
-9. Return only the concise summary from `## Output Format`.
+8. Load `./dependency-prioritizer-template.md` only when you are ready to
+   assemble the final document.
+9. Run the self-check in `### Quality self-check`.
+10. Write the prioritized plan to `OUTPUT_PATH`.
+11. Return only the concise summary from `## Output Format`.
 
 ### Dependency analysis
 
@@ -90,6 +111,18 @@ Apply these ordering rules in priority order:
 
 Always verify the final order is a valid topological sort.
 
+### Quality self-check
+
+Before writing the file, verify:
+
+- Every task has a `**Priority:**` annotation.
+- Every task has a `**Dependencies / prerequisites:**` section.
+- Every dependency reference points to a valid renumbered task.
+- No hard dependency is violated by the final order.
+- `## Execution Order Summary` and `## Dependency Graph` are present.
+- Original stage 1 task content is preserved except for the required stage 2
+  annotations and renumbering.
+
 ### Common mistakes to avoid
 
 - Ordering purely by score and violating a hard dependency
@@ -100,7 +133,6 @@ Always verify the final order is a valid topological sort.
 
 ## Output Format
 
-Read `./dependency-prioritizer-template.md` only when assembling the document.
 Write the full prioritized plan to `OUTPUT_PATH`, preserving the stage 1 task
 content and adding only dependency annotations, priority annotations,
 renumbering, execution summary, and dependency graph.

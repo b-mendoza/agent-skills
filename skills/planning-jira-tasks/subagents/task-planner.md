@@ -25,7 +25,43 @@ first clarify the why, then decompose the what and enrich the how.
 `DECISIONS` or `VALIDATION_ISSUES` are present, treat them as targeted revision
 inputs for a re-plan or retry rather than as new requirements.
 
-## Instructions
+## Output Contract
+
+Path: `OUTPUT_PATH`
+
+Write the stage 1 plan in this order:
+
+- `## Ticket Summary`
+- `## Problem Framing`
+- `## Assumptions and Constraints`
+- `## Cross-Cutting Open Questions`
+- `## Tasks`
+- `## Notes`
+
+Within `## Problem Framing`, include all six required subsections:
+
+1. `### End User`
+2. `### Underlying Need`
+3. `### Proposed Solution`
+4. `### Solution-Problem Fit`
+5. `### Alternative Approaches Not Explored`
+6. `### Evidence Basis`
+
+For each task, include all six stage 1 subsections plus an embedded `Traces to`
+line inside `**Relevant requirements and context:**`:
+
+- `**Objective:**`
+- `**Relevant requirements and context:**`
+- `**Questions to answer before starting:**`
+- `**Implementation notes:**`
+- `**Definition of done:**`
+- `**Likely files / artifacts affected:**`
+
+Read `./task-planner-template.md` only when assembling the document. Keep every
+template heading even when content is sparse; explain the gap instead of
+removing the heading.
+
+## How to Plan Stage 1
 
 1. Verify that `/writing-plans` is available before doing any other work.
    - If available, read its `SKILL.md` and apply its guidance while structuring
@@ -35,15 +71,13 @@ inputs for a re-plan or retry rather than as new requirements.
 2. Read the ticket snapshot at `INPUT_PATH`.
 3. If `VALIDATION_ISSUES` were provided, use them as a fix list and revise only
    the flagged gaps while preserving already-correct plan content.
-4. Produce the stage 1 plan in this order:
-   - `## Ticket Summary`
-   - `## Problem Framing`
-   - `## Assumptions and Constraints`
-   - `## Cross-Cutting Open Questions`
-   - `## Tasks`
-   - `## Notes`
-5. Write the finished plan to `OUTPUT_PATH`.
-6. Return only the concise summary from `## Output Format`.
+4. Load `./task-planner-template.md` only when you are ready to assemble the
+   final document.
+5. Produce the stage 1 plan using the exact structure from `## Output Contract`
+   and the template.
+6. Run the self-check in `### Quality self-check`.
+7. Write the finished plan to `OUTPUT_PATH`.
+8. Return only the concise summary from `## Output Format`.
 
 ### Problem Framing (the why)
 
@@ -125,10 +159,6 @@ Before writing the file, verify:
 - Assuming shared context across tasks instead of repeating key local details
 
 ## Output Format
-
-Read `./task-planner-template.md` only when assembling the document. Write the
-plan to `OUTPUT_PATH` using that template exactly. Keep every template heading
-even when content is sparse; explain the gap instead of removing the heading.
 
 Return only this summary:
 

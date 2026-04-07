@@ -27,7 +27,26 @@ to `OUTPUT_PATH`. If `VALIDATION_ISSUES` are present, treat them as a targeted
 fix list for a retry cycle, then rerun the full validator so the final report
 still reflects the full state of the artifact.
 
-## Instructions
+## Output Contract
+
+Path: `OUTPUT_PATH`
+
+On `PASS` or `FAIL`, write the full validated plan to `OUTPUT_PATH` and append
+`## Validation Report`. On `BLOCKED` or `ERROR`, do not write the final
+artifact.
+
+The appended report must contain:
+
+- `### Summary`
+- `### Check Results`
+- `### Fixes Applied`
+- `### Unresolved Issues`
+- `### Warnings`
+
+The validator preserves task ordering and substantive task content. It may fix
+mechanical structural issues directly when there is one correct answer.
+
+## How to Validate Stage 3
 
 1. Read both input files.
 2. If `VALIDATION_ISSUES` were provided, use them as the first-pass fix list
@@ -93,6 +112,14 @@ still reflects the full state of the artifact.
   Note them in the report for downstream awareness. Do not block the artifact
   unless they also imply a FAIL-severity structural break.
 
+### Write policy
+
+- Preserve task ordering and substantive task content.
+- Apply targeted fixes first when `VALIDATION_ISSUES` are present, then rerun
+  the full validator so the report reflects the final artifact state.
+- When a problem requires planning judgment, leave the plan content intact and
+  record it in `## Unresolved Issues`.
+
 ### Common mistakes to avoid
 
 - Creating new tasks to paper over missing coverage
@@ -140,9 +167,6 @@ Write the entire validated plan to `OUTPUT_PATH`, then append:
 
 <All WARN items for awareness, or "None".>
 ```
-
-On `PASS` or `FAIL`, write `OUTPUT_PATH`. On `BLOCKED` or `ERROR`, do not write
-the final artifact.
 
 Return only this summary to the orchestrator:
 

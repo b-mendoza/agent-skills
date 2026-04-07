@@ -27,14 +27,27 @@ only structured verdicts, never file contents.
 - `3`
 - `postpipeline`
 
-## Instructions
+## Output Contract
+
+Return one structured verdict using the format in `## Output Format`.
+
+- Use `PASS` when the artifact exists and satisfies every required structural
+  check for the requested stage.
+- Use `FAIL` when the artifact is missing or any required section or field is
+  missing for the requested stage.
+- Use `ERROR` only for unexpected failures unrelated to the artifact contents,
+  such as filesystem or tool access problems.
+
+Missing files, missing sections, and missing required fields are normal
+validation failures and should return `Verdict: FAIL`, not `ERROR`.
+
+## How to Validate a Stage
 
 1. Read the file at `FILE_PATH`.
 2. Run the checks for the requested `STAGE`.
 3. Return only the concise summary from `## Output Format`.
 
-Missing files, missing sections, and missing required fields are normal
-validation failures and should return `Verdict: FAIL`, not `ERROR`.
+## Stage Guide
 
 ### Stage `preflight`
 
