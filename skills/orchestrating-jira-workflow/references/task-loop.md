@@ -204,7 +204,8 @@ DIRECTION: postcondition
 TASK_NUMBER: <N>
 ```
 
-Expected: `docs/<KEY>-task-<N>-decisions.md` exists.
+Expected: `docs/<KEY>-task-<N>-decisions.md` exists, even if it only records
+that no additional decisions were needed beyond critique approval.
 
 **Update progress:** Dispatch `progress-tracker`:
 
@@ -218,8 +219,11 @@ SUMMARY: "N critique items addressed, plan confirmed"
 ```
 
 **Gate:** User confirmation required. The user must confirm the plan is ready
-for implementation before Phase 7 begins. This keeps Phase 6 critique-only and
-makes Phase 7 kickoff the first mutation boundary.
+for implementation before Phase 7 begins. This keeps Phase 6 critique-only in
+the execution sense: no implementation, no kickoff, no Jira `In Progress`
+transition, and no commits happen here. Recording critique outcomes in
+`docs/<KEY>-task-<N>-decisions.md` is still in scope. Phase 7 kickoff remains
+the first execution mutation boundary.
 
 ```
 The execution plan for Task <N> has been critiqued and updated.
