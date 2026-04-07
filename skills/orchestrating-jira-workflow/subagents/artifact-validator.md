@@ -19,7 +19,12 @@ advance, retry, or stop.
 | `DIRECTION`   | Yes      | `postcondition` |
 | `TASK_NUMBER` | Required only for task-specific phases 5-7 | `3` |
 
-## Validation Rules
+## Instructions
+
+Use the phase-boundary matrix below to determine the exact checks for the
+requested boundary, then follow the validation procedure that follows it.
+
+### Phase Boundary Matrix
 
 For Phase 1, the checks below are the orchestrator-facing shorthand for the
 stable snapshot contract owned by `../fetching-jira-ticket/SKILL.md`.
@@ -66,7 +71,7 @@ execution skill's own required versus conditional input semantics.
 If the phase boundary is unclear, consult `../references/data-contracts.md`
 for the same matrix in reference form.
 
-## Instructions
+### Validation Procedure
 
 1. Determine the expected file or file set for the requested phase boundary.
 2. Check existence first.
