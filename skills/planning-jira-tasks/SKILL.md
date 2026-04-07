@@ -40,6 +40,51 @@ If `RE_PLAN=true`, reuse the same `TICKET_KEY`, load
 `./references/re-plan-cycle.md`, and pass the supplied `DECISIONS` only to the
 stages that need plan revisions.
 
+## Output Contract
+
+Final artifact path: `docs/<TICKET_KEY>-tasks.md`
+
+The final plan must contain all of these sections for downstream phases:
+
+| Section                               | Consumed by                                                         |
+| ------------------------------------- | ------------------------------------------------------------------- |
+| `## Ticket Summary`                   | `clarifying-assumptions`                                            |
+| `## Problem Framing`                  | `clarifying-assumptions`, critique paths                            |
+| `## Assumptions and Constraints`      | `clarifying-assumptions`                                            |
+| `## Cross-Cutting Open Questions`     | `clarifying-assumptions`                                            |
+| `## Tasks` with numbered task entries | `clarifying-assumptions`, `creating-jira-subtasks`, task execution |
+| `## Execution Order Summary`          | `creating-jira-subtasks`                                            |
+| `## Dependency Graph`                 | task execution and critique                                         |
+| `## Validation Report`               | `clarifying-assumptions`                                            |
+
+Each final task entry must include these eight subsections:
+
+- `**Objective:**`
+- `**Relevant requirements and context:**`
+- `**Questions to answer before starting:**`
+- `**Implementation notes:**`
+- `**Definition of done:**`
+- `**Likely files / artifacts affected:**`
+- `**Dependencies / prerequisites:**`
+- `**Priority:**`
+
+Phase 2 does not add `## Decisions Log`; that artifact is appended later by
+Phase 3.
+
+Return only a concise phase handoff to the parent orchestrator:
+
+```text
+PLANNING: PASS | FAIL
+Ticket: <TICKET_KEY>
+File: <final file path or "not written">
+Tasks: <N>
+Cross-cutting questions: <N>
+Validation warnings: <N>
+Failure category: PREFLIGHT | STAGE_1 | STAGE_2 | STAGE_3 | POSTPIPELINE | NONE
+Reason: <one line>
+Artifacts preserved: <comma-separated paths>
+```
+
 ## Workflow Overview
 
 ```
@@ -86,51 +131,6 @@ workflows, and they stay out of git history as orchestration artifacts.
 Read a subagent definition only when you are about to dispatch that subagent.
 Do not read the stage artifacts inline unless a validator or subagent contract
 explicitly requires it.
-
-## Output Contract
-
-Final artifact path: `docs/<TICKET_KEY>-tasks.md`
-
-The final plan must contain all of these sections for downstream phases:
-
-| Section                              | Consumed by                                                         |
-| ------------------------------------ | ------------------------------------------------------------------- |
-| `## Ticket Summary`                  | `clarifying-assumptions`                                            |
-| `## Problem Framing`                 | `clarifying-assumptions`, critique paths                            |
-| `## Assumptions and Constraints`     | `clarifying-assumptions`                                            |
-| `## Cross-Cutting Open Questions`    | `clarifying-assumptions`                                            |
-| `## Tasks` with numbered task entries | `clarifying-assumptions`, `creating-jira-subtasks`, task execution |
-| `## Execution Order Summary`         | `creating-jira-subtasks`                                            |
-| `## Dependency Graph`                | task execution and critique                                         |
-| `## Validation Report`               | `clarifying-assumptions`                                            |
-
-Each final task entry must include these eight subsections:
-
-- `**Objective:**`
-- `**Relevant requirements and context:**`
-- `**Questions to answer before starting:**`
-- `**Implementation notes:**`
-- `**Definition of done:**`
-- `**Likely files / artifacts affected:**`
-- `**Dependencies / prerequisites:**`
-- `**Priority:**`
-
-Phase 2 does not add `## Decisions Log`; that artifact is appended later by
-Phase 3.
-
-Return only a concise phase handoff to the parent orchestrator:
-
-```text
-PLANNING: PASS | FAIL
-Ticket: <TICKET_KEY>
-File: <final file path or "not written">
-Tasks: <N>
-Cross-cutting questions: <N>
-Validation warnings: <N>
-Failure category: PREFLIGHT | STAGE_1 | STAGE_2 | STAGE_3 | POSTPIPELINE | NONE
-Reason: <one line>
-Artifacts preserved: <comma-separated paths>
-```
 
 ## How This Skill Works
 
