@@ -85,11 +85,22 @@ The inline questioning loop uses two reasoning patterns:
   original decision, the critique, and ask the developer whether the reasoning
   holds up.
 
+## Phase Guide
+
+Read `./references/design-thinking-mindset.md` first for both modes.
+
+Then load only the mode-specific playbook for the active run:
+
+| Mode | Reference file | When to load |
+| --- | --- | --- |
+| `upfront` | `./references/upfront-mode.md` | Before Phase 3 clarification starts |
+| `critique` | `./references/critique-mode.md` | Before Phase 6 task-level clarification starts |
+
 ## Input And Output Contracts
 
-### Required input structure
+### Input contract
 
-The main plan file at `docs/<TICKET_KEY>-tasks.md` must contain:
+The main plan file at `docs/<TICKET_KEY>-tasks.md` must contain these sections:
 
 | Section | Used for |
 | --- | --- |
@@ -106,33 +117,25 @@ Additional upstream artifacts:
   `docs/<KEY>-stage-2-prioritized.md`
 - `MODE=critique`: task brief, execution plan, test spec, and refactoring plan
 
+These sections and upstream artifacts are required input preconditions for the
+skill.
+
 ### Output contract
 
 This skill updates orchestration artifacts only. It does not produce
 implementation code.
 
-| Artifact | Why it exists |
+| Artifact | Required result |
 | --- | --- |
-| `docs/<KEY>-upfront-critique.md` or `docs/<KEY>-task-<N>-critique.md` | Keeps structured critique available for manifest building and later review without retaining the full report inline |
-| `docs/<KEY>-tasks.md` updates | Makes downstream execution consume resolved decisions instead of open ambiguity |
-| `## Decisions Log` rows | Gives later phases a durable audit trail |
-| Deferred question tags | Tell Phase 6 what still needs to be asked later |
-| `docs/<KEY>-task-<N>-decisions.md` | Captures per-task critique decisions for re-planning and execution |
-| `RE_PLAN_NEEDED` in the final summary | Signals whether the orchestrator should re-run planning before execution |
-| `BLOCKERS_PRESENT` in the final summary | Signals that clarification stopped with unresolved items and execution must not proceed |
+| `docs/<KEY>-upfront-critique.md` or `docs/<KEY>-task-<N>-critique.md` | Full critique report written before manifest assembly so later steps consume the artifact path instead of the full report body |
+| `docs/<KEY>-tasks.md` updates | Main plan updated so downstream execution consumes resolved decisions instead of open ambiguity |
+| `## Decisions Log` rows | Durable audit trail for plan-wide and task-level clarification decisions |
+| Deferred question tags | Phase 6 can identify which questions must be revisited later |
+| `docs/<KEY>-task-<N>-decisions.md` | Critique-mode record of task-level decisions for re-planning and execution |
+| `RE_PLAN_NEEDED` in the final summary | Signals whether planning should be re-run before execution |
+| `BLOCKERS_PRESENT` in the final summary | Signals that clarification ended with unresolved items and execution must not proceed |
 
 These are orchestration artifacts. Keep them out of version control.
-
-## Phase Guide
-
-Read `./references/design-thinking-mindset.md` first for both modes.
-
-Then load the mode-specific playbook:
-
-| Mode | Reference file | When to load |
-| --- | --- | --- |
-| `upfront` | `./references/upfront-mode.md` | Before Phase 3 clarification starts |
-| `critique` | `./references/critique-mode.md` | Before Phase 6 task-level clarification starts |
 
 ## Escalation
 
