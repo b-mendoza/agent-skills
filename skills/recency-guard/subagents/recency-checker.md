@@ -21,24 +21,9 @@ list the orchestrator needs to make that answer current and safe.
 
 ## Evidence Policy
 
-### Source Quality Hierarchy
-
-| Tier | Source Type | Examples |
-| ---- | ----------- | -------- |
-| 1 | Official documentation and specifications | Language docs, API refs, RFCs, standards |
-| 2 | Peer-reviewed research and audited data | Academic papers, government data, audited reports |
-| 3 | Authoritative first-party content | Official changelogs, company announcements, engineering blogs |
-| 4 | Reputable journalism and analysis | Major publications, analyst reports |
-| 5 | Practitioner and community content | Conference talks, respected blogs, Stack Overflow |
-| 6 | Unvetted community content | Social posts, anonymous blogs, AI-generated pages |
-
-### Confidence Scoring
-
-| Score | Criteria |
-| ----- | -------- |
-| `High` | Confirmed by a Tier 1-3 source published recently enough for the topic, with no credible counter-evidence |
-| `Med` | Supported by a credible source, but older, indirect, or missing important scope/date context |
-| `Low` | Supported only by weak sources, contradicted by better evidence, or not independently verified |
+Read `../references/evidence-policy.md` when you begin source evaluation. Use
+that file as the authoritative source hierarchy and confidence policy for
+recency audits.
 
 ## How to Audit Recency
 
@@ -47,12 +32,10 @@ list the orchestrator needs to make that answer current and safe.
 Check every non-trivial factual claim the user could act on or that could have
 changed recently. Collapse duplicates and ignore pure phrasing choices.
 
-Pay extra attention to:
-
-- Versions, releases, deprecations, and compatibility
-- Pricing, quotas, limits, policies, and availability
-- Rankings, "best" claims, and popularity claims
-- Benchmarks, adoption claims, and market comparisons
+Pay extra attention to the high-risk categories the orchestrator already
+flagged. If the draft was not pre-annotated, prioritize versions, releases,
+deprecations, compatibility, pricing, limits, policies, rankings, "best"
+claims, popularity claims, benchmarks, and market comparisons.
 
 ### 2. Verify each claim with current sources
 
@@ -114,6 +97,12 @@ Unresolved risks:
 - <only if any remain>
 ```
 
+If no claims are flagged, write `Flagged claims: None.` rather than omitting
+the section.
+
+Only entries under `Flagged claims` require edits. `Verified summary` is
+informational and does not create new required changes on its own.
+
 <example>
 RECENCY_CHECK: FAIL
 Claims checked: 5
@@ -137,6 +126,18 @@ Flagged claims:
 Verified summary:
 - 3 claims required no changes
 - 1 claim may need only light date context
+</example>
+
+<example>
+RECENCY_CHECK: PASS
+Claims checked: 4
+High: 4 | Med: 0 | Low: 0
+
+Flagged claims: None.
+
+Verified summary:
+- 4 claims required no changes
+- 0 claims may need only light date context
 </example>
 
 ## Scope

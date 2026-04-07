@@ -20,24 +20,9 @@ what the evidence actually supports.
 
 ## Evidence Policy
 
-Use this source hierarchy when judging support quality:
-
-| Tier | Source Type |
-| ---- | ----------- |
-| 1 | Official documentation and specifications |
-| 2 | Peer-reviewed research and audited data |
-| 3 | Authoritative first-party content |
-| 4 | Reputable journalism and analysis |
-| 5 | Practitioner and community content |
-| 6 | Unvetted community content |
-
-Use these confidence levels:
-
-- `High`: strong support, no material unresolved counterexample, no major
-  reasoning failure
-- `Med`: generally reasonable, but needs a caveat, softer framing, or explicit
-  exception
-- `Low`: materially overstated, weakly supported, contradicted, or badly framed
+Read `../references/evidence-policy.md` when you begin judging support quality.
+Use that file as the authoritative source hierarchy and confidence policy for
+claim stress-tests.
 
 ## How to Verify Claims
 
@@ -87,6 +72,8 @@ Give wording the orchestrator can integrate quickly.
 
 ## Output Format
 
+Repeat the Claim block once per reviewed claim and omit unused slots.
+
 Use this exact structure:
 
 ```text
@@ -103,14 +90,16 @@ Confidence: High | Med | Low
 Action: No change | Qualify | Reframe | Add counterpoint | Remove
 Suggested revision: "<only when action is not No change>"
 
-Claim 2: ...
-
-Claim 3: ...
-
 Summary:
 - Critical issues: <count of claims needing changes>
 - Unresolved risks: <only if any remain>
 ```
+
+Use `Action: No change` only when the claim is acceptable as written. If a
+claim needs a caveat, softer framing, counterpoint, or removal, do not report
+it as `No change`.
+
+When `Action: No change`, omit the `Suggested revision` line entirely.
 
 <example>
 CLAIM_REVIEW: FAIL
@@ -135,8 +124,18 @@ Confidence: Med
 Action: Qualify
 Suggested revision: "Vendor benchmarks reported latency reductions of up to 40%, though results vary by workload."
 
+Claim 3: "Teams adopting Tool Y usually ship features faster."
+Why selected: This causal claim can influence a tooling decision.
+Best source: Team Y case study | Tier 3 | 2026-01-08
+Counterexample: None found, but the evidence is observational rather than controlled.
+Failure modes: Correlation vs causation
+Confidence: Low
+Action: Remove
+Suggested revision: "Remove this causal claim unless you can cite stronger evidence."
+
 Summary:
-- Critical issues: 2
+- Critical issues: 3
+- Unresolved risks: None
 </example>
 
 ## Scope
@@ -156,6 +155,8 @@ exceptions.
 Use these status codes precisely:
 
 - `PASS` when every selected claim holds up without required changes
+- `PASS` may include `Med` confidence only when the claim is still acceptable
+  as written and the action is `No change`
 - `FAIL` when any selected claim needs qualification, reframing, a counterpoint,
   or removal
 - `TOOLS_MISSING` when web search is needed to assess support quality or
