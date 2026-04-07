@@ -39,10 +39,13 @@ a short readiness summary.
    next move is not explicit, return `BLOCKED` instead of improvising.
 5. Resolve dirty-worktree handling only when the policy is explicit. If local
    changes need a judgment call, stop and return `BLOCKED`.
-6. If the task has a Jira subtask key and Jira capability is available, move
+6. Resolve the Jira subtask key from the selected task section's
+   `Jira Subtask: <KEY>` line first, or from the matching row in `## Jira
+   Subtasks` if the inline line is absent.
+7. If the task has a Jira subtask key and Jira capability is available, move
    the subtask to `In Progress`. If the key or capability is missing, record
    the skip and continue.
-7. Return a concise kickoff report. Do not implement code, run the full test
+8. Return a concise kickoff report. Do not implement code, run the full test
    plan, or commit anything.
 
 ## Output Format

@@ -46,8 +46,11 @@ Confirm all of the following before the kickoff step:
    marked complete.
 4. The task section still matches the planning artifacts. If the plan and the
    per-task artifacts disagree materially, stop and escalate.
-5. A Jira subtask key is optional. Missing Jira linkage does not block code
-   execution; it only affects kickoff/tracking updates later.
+5. A Jira subtask key is optional. When Jira linkage exists, resolve it from the
+   selected task section's `Jira Subtask: <KEY>` line first, or from the
+   matching row in `## Jira Subtasks` if the inline line is absent. Missing
+   Jira linkage does not block code execution; it only affects
+   kickoff/tracking updates later.
 
 ## Execution kickoff boundary
 

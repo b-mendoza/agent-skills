@@ -41,10 +41,13 @@ trade-offs, not obvious line-by-line behavior.
    - add an implementation summary derived from `EXECUTION_REPORT`
    - add a file list derived from `EXECUTION_REPORT`
    - update the Jira Subtasks table row to `Done` if the table exists
-8. If Jira capability and a subtask key are available, transition the subtask
+8. Resolve the Jira subtask key from the selected task section's
+   `Jira Subtask: <KEY>` line first, or from the matching row in `## Jira
+   Subtasks` if the inline line is absent.
+9. If Jira capability and a subtask key are available, transition the subtask
    and add a short completion comment. If not, record the skip instead of
    failing the whole step.
-9. Return a concise documentation report.
+10. Return a concise documentation report.
 
 ## Output Format
 
