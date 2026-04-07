@@ -27,7 +27,7 @@ only structured verdicts, never file contents.
 - `3`
 - `postpipeline`
 
-## Output Contract
+## Instructions
 
 Return one structured verdict using the format in `## Output Format`.
 
@@ -41,13 +41,16 @@ Return one structured verdict using the format in `## Output Format`.
 Missing files, missing sections, and missing required fields are normal
 validation failures and should return `Verdict: FAIL`, not `ERROR`.
 
-## How to Validate a Stage
+### Validation Procedure
 
 1. Read the file at `FILE_PATH`.
 2. Run the checks for the requested `STAGE`.
 3. Return only the concise summary from `## Output Format`.
 
-## Stage Guide
+### Stage Guide
+
+Stage 1 validates the detailed draft shape with `### Task ...` headings. Later
+stages validate the numbered `## Task <N>` shape used by the finalized plan.
 
 ### Stage `preflight`
 

@@ -33,6 +33,10 @@ On re-plan:
 **Maximum re-plan cycles:** 3 iterations. If Phase 3 critique still has
 unresolved concerns after 3 cycles, escalate to the user.
 
+This re-plan budget is separate from the per-gate targeted fix budget below:
+re-plan tracks critique-driven planning revisions, while targeted fix cycles
+track repeated failures at the same validator boundary.
+
 ## Error Handling
 
 - If any subagent fails, stop the pipeline. Report the failure with the stage

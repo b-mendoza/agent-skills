@@ -43,6 +43,8 @@ stages that need plan revisions.
 
 ## Output Contract
 
+### Artifact contract
+
 Final artifact path: `docs/<TICKET_KEY>-tasks.md`
 
 The final plan must contain all of these sections for downstream phases:
@@ -71,6 +73,8 @@ Each final task entry must include these eight subsections:
 
 Phase 2 does not add `## Decisions Log`; that artifact is appended later by
 Phase 3.
+
+### Return handoff
 
 Return only a concise phase handoff to the parent orchestrator:
 
@@ -151,6 +155,9 @@ The orchestrator keeps only decision-relevant handoff data between stages:
 Do not carry raw plan content forward in the orchestrator context.
 
 ## Phase Guide
+
+Execution order lives in `## Execution Steps`. Use this table as the gate and
+recovery map when deciding which stage to dispatch or retry next.
 
 | Phase / gate    | Dispatch                              | Required output                         | On failure |
 | --------------- | ------------------------------------- | --------------------------------------- | ---------- |

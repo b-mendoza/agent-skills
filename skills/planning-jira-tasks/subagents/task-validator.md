@@ -107,7 +107,7 @@ mechanical structural issues directly when there is one correct answer.
   Fix them directly only when they are mechanical, such as numbering gaps,
   missing headings, or broken references. If fixing the issue would require
   planning judgment, leave the plan content intact and record the failure in
-  `## Unresolved Issues`.
+  `### Unresolved Issues`.
 - **WARN items**
   Note them in the report for downstream awareness. Do not block the artifact
   unless they also imply a FAIL-severity structural break.
@@ -118,7 +118,7 @@ mechanical structural issues directly when there is one correct answer.
 - Apply targeted fixes first when `VALIDATION_ISSUES` are present, then rerun
   the full validator so the report reflects the final artifact state.
 - When a problem requires planning judgment, leave the plan content intact and
-  record it in `## Unresolved Issues`.
+  record it in `### Unresolved Issues`.
 
 ### Common mistakes to avoid
 
@@ -221,6 +221,9 @@ dispatching skill decides whether to retry, re-plan, or escalate.
 - **FAIL** - validation completed, but one or more FAIL-severity issues remain
   after all mechanical fixes were applied
 - **ERROR** - unexpected failure such as filesystem or tool access problems
+
+Use the same summary schema as `## Output Format` so the dispatching skill can
+parse one structure for success and escalation cases.
 
 Use this format:
 
