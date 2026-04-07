@@ -73,10 +73,10 @@ Do not surface raw subagent output unless the user explicitly asks for it.
 ```
 Phase 1: Fetch ticket        -> docs/<KEY>.md
 Phase 2: Plan tasks          -> docs/<KEY>-tasks.md + planning intermediates
-Phase 3: Clarify + critique  -> docs/<KEY>-tasks.md (updated with decisions)
+Phase 3: Clarify + critique  -> docs/<KEY>-upfront-critique.md + docs/<KEY>-tasks.md updates
 Phase 4: Create subtasks     -> Jira subtasks + plan updated with subtask keys
 Phase 5: Plan task execution -> docs/<KEY>-task-<N>-*.md (4 planning artifacts)
-Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-decisions.md
+Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-critique.md + docs/<KEY>-task-<N>-decisions.md
 Phase 7: Kick off + execute  -> first side effects, code changes, tests, commits
          ^___________________/  repeat phases 5-7 per task
 ```
