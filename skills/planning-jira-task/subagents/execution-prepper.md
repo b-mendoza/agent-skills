@@ -41,7 +41,7 @@ branches, transition Jira issues, or modify product code.
    - `## Relevant Requirements and Context`
    - `## Implementation Notes`
    - `## Definition of Done`
-   - `## Likely Files / Artefacts Affected`
+   - `## Likely Files / Artifacts Affected`
    - `## Resolved Questions and Decisions`
    - `## Constraints`
 8. In `## Constraints`, preserve the planning boundary:

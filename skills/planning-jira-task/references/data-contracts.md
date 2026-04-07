@@ -15,10 +15,11 @@ Required content inside that file for `TASK_NUMBER=<N>`:
 
 - `## Task <N>:` section exists
 - Task title exists
-- `Objective / outcome` content exists
+- `Objective` content exists
+- `Relevant requirements and context` content exists
 - `Implementation notes` content exists
 - `Definition of done` content exists
-- `Likely files / artefacts affected` content exists
+- `Likely files / artifacts affected` content exists
 - `Dependencies / prerequisites` content exists, even if the value is `None`
 - `Questions to answer before starting` content exists, even if the value is
   `None`
@@ -30,14 +31,16 @@ Expected upstream workflow state:
   conscious follow-up decisions
 - If a `## Decisions Log` section exists, treat it as the latest authority over
   earlier task-plan wording
+- In the full Jira workflow, Phase 4 has already added a `## Jira Subtasks`
+  table, but planning does not depend on Jira linkage to assemble the brief
 
 Optional upstream context:
 
 - `docs/<TICKET_KEY>.md` may provide extra ticket context if a subagent needs it
 - `docs/<TICKET_KEY>-task-<N>-decisions.md` is available on critique-driven
   re-plan cycles
-- `Jira Subtask: <KEY>` can appear in the task section; if present, copy it into
-  the brief, but do not block planning when it is absent
+- `Jira Subtask: <KEY>` lines may already be present from Phase 4; planning
+  should tolerate them when present, but it does not require them
 
 ## Downstream Artifacts
 
@@ -52,7 +55,7 @@ Must contain:
 - `## Relevant Requirements and Context`
 - `## Implementation Notes`
 - `## Definition of Done`
-- `## Likely Files / Artefacts Affected`
+- `## Likely Files / Artifacts Affected`
 - `## Resolved Questions and Decisions`
 - `## Constraints`
 
