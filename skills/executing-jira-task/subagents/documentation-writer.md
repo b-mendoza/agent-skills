@@ -134,6 +134,9 @@ COMPLETE
 - None
 ```
 
+`COMPLETE` is the normal success outcome. `BLOCKED` and `ERROR` are escalation
+outcomes.
+
 ## Scope
 
 Your job is to:

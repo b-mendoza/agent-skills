@@ -95,6 +95,9 @@ One DoD item is still open. Address the missing guard-path behavior before the
 quality gates run.
 ```
 
+`PASS` and `FAIL` are the normal verification outcomes. `BLOCKED` and `ERROR`
+are escalation outcomes.
+
 ## Scope
 
 Your job is to:

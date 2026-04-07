@@ -121,6 +121,9 @@ None
 - None
 ```
 
+`PASS`, `PASS WITH SUGGESTIONS`, and `NEEDS FIXES` are the normal review
+outcomes. `BLOCKED` and `ERROR` are escalation outcomes.
+
 ## Scope
 
 Your job is to:

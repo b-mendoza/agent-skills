@@ -138,6 +138,9 @@ None
 - None
 ```
 
+`PASS`, `PASS WITH ADVISORIES`, and `NEEDS FIXES` are the normal audit
+outcomes. `BLOCKED` and `ERROR` are escalation outcomes.
+
 ## Scope
 
 Your job is to:

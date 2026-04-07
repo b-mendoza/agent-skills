@@ -116,6 +116,9 @@ READY
 - None
 ```
 
+`READY` is the normal kickoff success outcome. `BLOCKED` and `ERROR` are the
+escalation outcomes.
+
 ## Scope
 
 Your job is to:
@@ -136,7 +139,6 @@ You do not:
 
 Use these categories consistently:
 
-- `READY`: execution can safely begin.
 - `BLOCKED`: the task or workspace is not ready and the next safe move requires
   orchestration or user judgment.
 - `ERROR`: an unexpected tool, environment, or Jira failure prevented a

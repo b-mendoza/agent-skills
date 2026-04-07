@@ -125,6 +125,9 @@ COMPLETE
 - None
 ```
 
+`COMPLETE` is the normal execution success outcome. `NEEDS_CONTEXT`,
+`BLOCKED`, and `ERROR` are escalation outcomes.
+
 ## Scope
 
 Your job is to:
