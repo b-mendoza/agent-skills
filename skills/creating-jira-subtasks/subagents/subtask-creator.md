@@ -30,11 +30,16 @@ Primary artifact:
 docs/<TICKET_KEY>-tasks.md
 ```
 
+## Artifact Contract
+
+Throughout this file, a "task" means one numbered `## Task <N>:` section in the
+plan.
+
 The plan is expected to contain a `## Tasks` section with numbered
 `## Task <N>: <title>` headings. If the file is missing or uses an unsupported
 task shape, return `SUBTASKS: BLOCKED`.
 
-## Instructions
+## How to Create or Reconcile Subtasks
 
 1. **Resolve the ticket and load the plan**
    - Derive `TICKET_KEY` from `JIRA_URL`.
@@ -60,7 +65,8 @@ task shape, return `SUBTASKS: BLOCKED`.
    - Use the available Jira-capable MCP tools to fetch the parent ticket from
      `JIRA_URL` or `TICKET_KEY`.
    - Extract the parent issue key, the project key, and the actual subtask
-     issue type name for this project. Do not hardcode `Sub-task`.
+     issue type name for this project. Use the project's returned subtask issue
+     type name for every create request.
    - For every existing Jira key found in the plan, verify that:
      - the issue exists
      - the issue's parent is `TICKET_KEY`
@@ -75,30 +81,8 @@ task shape, return `SUBTASKS: BLOCKED`.
      Task <N>: <Short title from plan>
      ```
 
-   - Build the Jira wiki-markup description with this exact section order:
-
-     ```text
-     h3. Objective
-     <Objective text>
-
-     h3. Relevant Requirements and Context
-     <Bullet list or paragraph>
-
-     h3. Dependencies / Prerequisites
-     <Content or "None">
-
-     h3. Questions to Answer Before Starting
-     <Content or "None — all resolved">
-
-     h3. Implementation Notes
-     <Current plan content>
-
-     h3. Definition of Done
-     <Checklist or bullets>
-
-     h3. Likely Files / Artifacts Affected
-     <List>
-     ```
+   - Read `./subtask-creator-templates.md` and use the `Jira Wiki-Markup
+     Description` template with that exact section order.
 
    - Use the current clarified plan content as written. If the Decisions Log is
      present, let it reinforce interpretation, but do not resurrect older task
@@ -127,16 +111,9 @@ task shape, return `SUBTASKS: BLOCKED`.
      file:
      - place it after `## Ticket Summary` when that section exists
      - otherwise place it after the first top-level heading
-   - The table must contain one row per parsed task:
-
-     ```markdown
-     ## Jira Subtasks
-
-     | Task | Subtask Key | Title | Status |
-     | ---- | ----------- | ----- | ------ |
-     | 1    | JNS-6070    | Set up database schema | To Do |
-     | 2    | Not Created | Implement API layer    | Not Created |
-     ```
+   - Read `./subtask-creator-templates.md` and use the `Plan File Fragments`
+     table shape for `## Jira Subtasks`.
+   - The table must contain one row per parsed task.
 
    - Use Jira's current status when you have it for verified existing subtasks.
      For newly created subtasks, use `To Do` unless Jira immediately reports a
@@ -156,9 +133,9 @@ task shape, return `SUBTASKS: BLOCKED`.
      file representation.
 
 8. **Return the structured summary**
-   - Never return raw Jira API responses, raw file contents, or conversational
-     narration.
-   - Use the exact output format below.
+   - Return only the structured summary below.
+   - Keep Jira payloads, raw file contents, and conversational narration
+     internal to this run.
 
 ## Output Format
 
@@ -194,6 +171,11 @@ for tasks without prerequisites and `Unknown` when the plan does not provide a
 priority value. When the plan file was updated, include one row per parsed task
 in `Created/Linked Subtasks`. For tasks that were not linked successfully, use
 `Not Created` in `Subtask Key` and an outcome such as `Create failed`.
+
+When the run stops before plan updates or create attempts complete,
+`Created/Linked Subtasks` may be an empty table with only the header row, as
+shown in the blocked example. If the run stops before create attempts begin,
+report `Failed creates: 0`.
 
 Use these status rules:
 
@@ -300,13 +282,13 @@ Your job is to reconcile the plan with Jira and return a decision-ready
 summary.
 
 - Read only the files needed for this run.
-- Use Jira-capable MCP tools only for parent lookup, existing-key verification,
-  and subtask creation.
+- Use Jira-capable MCP tools for parent lookup, existing-key verification, and
+  subtask creation.
 - Reuse valid existing links instead of duplicating Jira issues.
 - Update only `docs/<TICKET_KEY>-tasks.md`.
-- Keep retries targeted: repair the plan file in place, never by re-creating
+- Keep retries targeted: repair the plan file in place rather than re-creating
   already linked subtasks.
-- Return only the structured summary.
+- Return only the structured summary defined in `## Output Format`.
 
 ## Escalation
 
@@ -317,7 +299,12 @@ correct top-level status. The dispatching skill decides what to do next.
 - **Existing Jira key invalid or wrong parent:** `SUBTASKS: BLOCKED`
 - **Parent ticket not found (404):** `SUBTASKS: FAIL`
 - **Auth failure (401/403):** `SUBTASKS: FAIL`
-- **No usable Jira-capable tools discovered:** `SUBTASKS: FAIL`
+- **No usable Jira-capable tools discovered (`TOOLS_MISSING`):** `SUBTASKS: FAIL`
+- **Individual create failure after the single retry:** record it in `Failed creates`
+  and `Failures`; when validation passes and other tasks succeeded, the overall
+  result is usually `SUBTASKS: WARN`
 - **All tasks remain unlinked after create attempts:** `SUBTASKS: FAIL`
 - **Post-write validation still failing after one repair pass:** `SUBTASKS: FAIL`
+- **Repair pass requires only local file edits:** never create new Jira issues
+  during repair; if the file still cannot be repaired, return `SUBTASKS: FAIL`
 - **Unexpected filesystem or tool failure:** `SUBTASKS: ERROR`
