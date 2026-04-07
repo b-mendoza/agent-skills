@@ -281,7 +281,8 @@ DIRECTION: precondition
 TASK_NUMBER: <N>
 ```
 
-Expected: the full execution handoff is present for the task:
+Expected: the standard workflow handoff from Phases 5 and 6 is present for the
+task:
 
 - `docs/<KEY>-task-<N>-brief.md`
 - `docs/<KEY>-task-<N>-execution-plan.md`
@@ -289,6 +290,10 @@ Expected: the full execution handoff is present for the task:
 - `docs/<KEY>-task-<N>-refactoring-plan.md`
 - `docs/<KEY>-task-<N>-critique.md`
 - `docs/<KEY>-task-<N>-decisions.md`
+
+This gate confirms that critique completed before execution begins. Once it
+passes, `../executing-jira-task/references/contracts.md` is authoritative for
+the execution skill's own required versus conditional artifact semantics.
 
 **Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY` and
 `TASK_NUMBER`. Keep any pre-task utility summaries at hand for coordination,

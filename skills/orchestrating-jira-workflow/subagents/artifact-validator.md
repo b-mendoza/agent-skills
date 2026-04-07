@@ -43,6 +43,11 @@ planning handoff owned by `../planning-jira-task/SKILL.md`: brief, execution
 plan, test spec, and refactoring plan. The detailed section-level requirements
 inside those files remain owned by that downstream skill.
 
+For the Phase 7 precondition, validate the normal workflow handoff from Phases
+5 and 6. This confirms critique completed before execution begins.
+`../executing-jira-task/references/contracts.md` remains authoritative for the
+execution skill's own required versus conditional input semantics.
+
 | Phase | Direction     | File                                 | Checks                                                         |
 | ----- | ------------- | ------------------------------------ | -------------------------------------------------------------- |
 | 1     | postcondition | `docs/<KEY>.md`                      | File exists and contains the required Phase 1 snapshot headings: `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Subtasks`, `## Linked Issues`, `## Attachments`, `## Custom Fields` |
@@ -56,7 +61,7 @@ inside those files remain owned by that downstream skill.
 | 5     | postcondition | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | All 4 concrete planning artifacts exist for task `N`           |
 | 6     | precondition  | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | Same as Phase 5 postcondition                                  |
 | 6     | postcondition | `docs/<KEY>-task-<N>-critique.md` + `docs/<KEY>-task-<N>-decisions.md` | Both critique and decisions artifacts exist for task `N`       |
-| 7     | precondition  | Phase 5 planning artifacts + critique artifacts | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`, `docs/<KEY>-task-<N>-critique.md`, and `docs/<KEY>-task-<N>-decisions.md` all exist |
+| 7     | precondition  | Standard Phase 5 + 6 workflow handoff | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`, `docs/<KEY>-task-<N>-critique.md`, and `docs/<KEY>-task-<N>-decisions.md` all exist |
 
 If the phase boundary is unclear, consult `../references/data-contracts.md`
 for the same matrix in reference form.
@@ -79,7 +84,8 @@ for the same matrix in reference form.
    tasks, and that every Jira-style key in the table has a matching inline
    `Jira Subtask: <KEY>` line in the corresponding task section.
 8. For the Phase 7 precondition, confirm the planning artifacts still exist and
-   that the standard Phase 6 handoff artifacts are present.
+   that the standard Phase 6 handoff artifacts are present for the normal
+   workflow path into execution.
 9. Return only the structured verdict.
 
 Be precise about what failed. The orchestrator needs a specific missing file,

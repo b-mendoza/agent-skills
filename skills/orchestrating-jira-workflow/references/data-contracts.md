@@ -47,7 +47,12 @@ inside those files are owned by `../planning-jira-task/SKILL.md` and its
 | 5     | postcondition | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | All 4 concrete Phase 5 planning artifacts exist |
 | 6     | precondition  | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | Same as Phase 5 postcondition |
 | 6     | postcondition | `docs/<KEY>-task-<N>-critique.md` + `docs/<KEY>-task-<N>-decisions.md` | Both critique and decisions artifacts exist |
-| 7     | precondition  | Phase 5 planning artifacts + critique artifacts | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`, `docs/<KEY>-task-<N>-critique.md`, and `docs/<KEY>-task-<N>-decisions.md` all exist; these inputs feed the execution kickoff |
+| 7     | precondition  | Standard Phase 5 + 6 workflow handoff | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`, `docs/<KEY>-task-<N>-critique.md`, and `docs/<KEY>-task-<N>-decisions.md` all exist; this confirms the normal workflow reached execution after critique completion |
+
+For Phase 7 specifically, this table defines the orchestrator's normal
+workflow-gate check. `../executing-jira-task/references/contracts.md` remains
+authoritative for the execution skill's own required versus conditional input
+semantics.
 
 ---
 
