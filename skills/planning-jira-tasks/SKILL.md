@@ -6,10 +6,11 @@ description: 'Phase 2 of the orchestrating-jira-workflow pipeline. Reads a ticke
 # Planning Jira Tasks
 
 Plan a Jira ticket into a structured execution artifact at
-`docs/<TICKET_KEY>-tasks.md`. This skill coordinates a three-stage subagent
-pipeline, validates each artifact boundary, and returns only concise handoff
-summaries to the parent workflow. It does not decompose work, prioritize
-dependencies, or validate plan quality inline.
+`docs/<TICKET_KEY>-tasks.md`. This skill is the Phase 2 orchestrator in the
+Jira workflow: it dispatches specialist subagents, validates each artifact
+boundary, preserves planning artifacts for resume and critique, and returns
+only concise handoff summaries to the parent workflow. It does not decompose
+work, prioritize dependencies, or validate plan quality inline.
 
 ## Inputs
 
@@ -140,7 +141,7 @@ This skill does exactly three things:
 - **Validate** each artifact boundary with `stage-validator`.
 - **Report** only stage verdicts and summary counts to the parent workflow.
 
-Between stages, keep only structured handoff data:
+The orchestrator keeps only decision-relevant handoff data between stages:
 
 - The validator verdict
 - The output file path for the passing stage
