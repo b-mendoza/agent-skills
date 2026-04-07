@@ -1,6 +1,6 @@
 ---
 name: "executing-jira-task"
-description: 'Execute exactly one planned Jira task using pre-produced planning artifacts and a specialist pipeline. Use when the user says "execute task 2", "implement task 4", "work on task 1 for PROJ-123", or when `orchestrating-jira-workflow` reaches the per-task execution phase. Requires `docs/<TICKET_KEY>-tasks.md` plus per-task artifacts from `planning-jira-task`. Implements one task only, commits only implementation artifacts, updates orchestration artifacts on disk, and stops after reporting the result.'
+description: 'Execute exactly one planned Jira task using pre-produced planning artifacts and a specialist pipeline. Use when the user says "execute task 2", "implement task 4", "work on task 1 for PROJ-123", or when `orchestrating-jira-workflow` reaches the per-task execution phase. Requires `docs/<TICKET_KEY>-tasks.md` plus per-task artifacts from `planning-jira-task`. Phase 7 begins with an explicit execution kickoff that performs readiness checks and first side effects, then continues through implementation, review gates, and reporting for one task only.'
 ---
 
 # Executing Jira Task
@@ -8,8 +8,11 @@ description: 'Execute exactly one planned Jira task using pre-produced planning 
 This skill is the per-task execution orchestrator for a Jira workflow. It does
 exactly three things: **validate** that the selected task is ready, **dispatch**
 the right specialist for each phase, and **decide** whether to advance, run a
-targeted fix cycle, or escalate. The orchestrator keeps only concise summaries
-in memory; the subagents do the heavy work in isolation.
+targeted fix cycle, or escalate. Phase 7 starts with an explicit
+**execution kickoff**: the first mutation boundary where the workflow confirms
+readiness, applies safe startup state changes, and only then hands off to the
+implementer. The orchestrator keeps only concise summaries in memory; the
+subagents do the heavy work in isolation.
 
 ## Inputs
 
@@ -41,6 +44,8 @@ After a successful run, this skill leaves behind:
   config changes, and in-code documentation.
 - Category A orchestration artifacts updated on disk but left uncommitted:
   task status, implementation summary, file list, and optional Jira tracking.
+- An execution kickoff record in the returned summary: readiness outcome,
+  workspace state, and whether the Jira subtask was moved to `In Progress`.
 - A concise user-facing report summarising execution, commits, and gate
   verdicts for the selected task only.
 
@@ -49,17 +54,19 @@ After a successful run, this skill leaves behind:
 | Phase | Goal                                          | Primary result                            |
 | ----- | --------------------------------------------- | ----------------------------------------- |
 | 0     | Validate prerequisites and task readiness     | Ready-to-run task or explicit blocker     |
-| 1     | Implement the planned change                  | `EXECUTION_REPORT`                        |
-| 2     | Document, commit, and update tracking         | `DOCUMENTATION_REPORT`                    |
-| 3     | Verify requirements coverage                  | `VERIFICATION_RESULT`                     |
-| 4     | Run clean-code, architecture, security gates  | Review verdicts and actionable feedback   |
-| 5     | Run targeted fix cycles only where needed     | Re-validated task or escalation           |
-| 6     | Report final outcome to the user              | One concise task completion summary       |
+| 1     | Kick off execution and apply first side effects | `KICKOFF_REPORT`                        |
+| 2     | Implement the planned change                  | `EXECUTION_REPORT`                        |
+| 3     | Document, commit, and update tracking         | `DOCUMENTATION_REPORT`                    |
+| 4     | Verify requirements coverage                  | `VERIFICATION_RESULT`                     |
+| 5     | Run clean-code, architecture, security gates  | Review verdicts and actionable feedback   |
+| 6     | Run targeted fix cycles only where needed     | Re-validated task or escalation           |
+| 7     | Report final outcome to the user              | One concise task completion summary       |
 
 ## Subagent Registry
 
 | Subagent                | Path                                   | Purpose                                                                        |
 | ----------------------- | -------------------------------------- | ------------------------------------------------------------------------------ |
+| `execution-starter`     | `./subagents/execution-starter.md`     | Performs execution kickoff: readiness checks, safe startup state changes, and Jira `In Progress` transition when possible. |
 | `task-executor`         | `./subagents/task-executor.md`         | Implements the scoped change and tests from the approved planning artifacts.   |
 | `documentation-writer`  | `./subagents/documentation-writer.md`  | Adds in-code documentation, commits Category B files, and updates tracking.    |
 | `requirements-verifier` | `./subagents/requirements-verifier.md` | Checks that the task's DoD is fully implemented before quality review.         |
@@ -94,7 +101,7 @@ forcing the pipeline forward.
 | When you need...                                 | Read...                                   |
 | ------------------------------------------------ | ----------------------------------------- |
 | Artifact contracts and task readiness checks     | `./references/contracts.md`               |
-| The normal execution flow and fix-loop order     | `./references/pipeline.md`                |
+| The normal execution flow, kickoff, and fix-loop order | `./references/pipeline.md`          |
 | Status handling, retries, and user escalations   | `./references/retry-and-escalation.md`    |
 | Shared reviewer expectations for quality gates   | `./references/review-gate-policy.md`      |
 
@@ -106,12 +113,13 @@ Input:
 - `TASK_NUMBER=3`
 
 1. Validate that `docs/JNS-6065-task-3-*.md` artifacts exist and Task 3 is not complete.
-2. Dispatch `task-executor` with the artifact paths.
-3. Dispatch `documentation-writer` with `EXECUTION_REPORT`, `TICKET_KEY`, and `TASK_NUMBER`.
-4. Dispatch `requirements-verifier`.
-5. Run `clean-code-reviewer`, then `architecture-reviewer`, then `security-auditor`.
-6. If `clean-code-reviewer` and `security-auditor` return `NEEDS FIXES`, consolidate only those issues, re-dispatch `task-executor`, then `documentation-writer`, then re-run just those failing gates.
-7. Report the final verdicts, commits, files changed, and any skipped Jira updates.
+2. Dispatch `execution-starter` to confirm readiness and perform the first side effects.
+3. Dispatch `task-executor` with the artifact paths.
+4. Dispatch `documentation-writer` with `EXECUTION_REPORT`, `TICKET_KEY`, and `TASK_NUMBER`.
+5. Dispatch `requirements-verifier`.
+6. Run `clean-code-reviewer`, then `architecture-reviewer`, then `security-auditor`.
+7. If `clean-code-reviewer` and `security-auditor` return `NEEDS FIXES`, consolidate only those issues, re-dispatch `task-executor`, then `documentation-writer`, then re-run just those failing gates.
+8. Report the kickoff outcome, final verdicts, commits, files changed, and any skipped Jira updates.
 ```
 
 ## Safety Rules

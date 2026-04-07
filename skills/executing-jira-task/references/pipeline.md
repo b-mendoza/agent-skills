@@ -14,27 +14,38 @@ Every successful task run follows this sequence:
    - Stop immediately if required artifacts are missing, contradictory, or the
      selected task is not ready.
 
-2. **Dispatch `task-executor`.**
+2. **Dispatch `execution-starter`.**
+   - Pass `TICKET_KEY`, `TASK_NUMBER`, the ticket snapshot path, the task plan
+     path, and the execution brief path.
+   - Treat this as the explicit execution kickoff.
+   - Collect only the structured `KICKOFF_REPORT`.
+
+3. **Handle kickoff results before continuing.**
+   - `READY` means the task has crossed the execution boundary and can proceed.
+   - `BLOCKED` or `ERROR` means stop normal execution and use
+     `./retry-and-escalation.md`.
+
+4. **Dispatch `task-executor`.**
    - Pass artifact paths, optional decisions path, and any targeted fix brief.
    - Collect only the structured `EXECUTION_REPORT`.
 
-3. **Handle executor escalations before continuing.**
+5. **Handle executor escalations before continuing.**
    - `COMPLETE` means continue.
    - `NEEDS_CONTEXT`, `BLOCKED`, or `ERROR` means stop normal execution and use
      `./retry-and-escalation.md`.
 
-4. **Dispatch `documentation-writer`.**
+6. **Dispatch `documentation-writer`.**
    - Pass `EXECUTION_REPORT`, `TICKET_KEY`, and `TASK_NUMBER`.
    - This step adds in-code documentation, commits Category B files, updates
      Category A tracking artifacts on disk, and attempts Jira updates when
      capability exists.
 
-5. **Dispatch `requirements-verifier`.**
+7. **Dispatch `requirements-verifier`.**
    - Pass brief path, test spec path, `EXECUTION_REPORT`, and
      `DOCUMENTATION_REPORT`.
    - Treat this as the postcondition check for implementation completeness.
 
-6. **Resolve requirements gaps before review gates.**
+8. **Resolve requirements gaps before review gates.**
    - If the verifier returns `PASS`, continue.
    - If it returns `FAIL` and the gaps are plainly in scope, create a concise
      fix brief from the reported gaps, re-dispatch `task-executor`, then
@@ -42,21 +53,21 @@ Every successful task run follows this sequence:
    - If the reported gaps expose an ambiguous brief, conflicting artifacts, or
      a probable planning mistake, stop and ask the user instead of guessing.
 
-7. **Run the quality gates in order.**
+9. **Run the quality gates in order.**
    - `clean-code-reviewer`
    - `architecture-reviewer`
    - `security-auditor`
 
-8. **Interpret gate verdicts.**
+10. **Interpret gate verdicts.**
    - `PASS`, `PASS WITH SUGGESTIONS`, and `PASS WITH ADVISORIES` let the
      pipeline continue.
    - `NEEDS FIXES` triggers the targeted fix cycle described below.
    - `BLOCKED` or `ERROR` stops the run and escalates.
 
-9. **Report the outcome.**
+11. **Report the outcome.**
    - Summarise what changed.
-   - Include commit hashes/messages, gate verdicts, files changed, and any Jira
-     tracking that was skipped or failed.
+   - Include kickoff status, commit hashes/messages, gate verdicts, files
+     changed, and any Jira tracking that was skipped or failed.
    - Stop after the selected task. Do not continue to the next task
      automatically.
 
@@ -84,6 +95,7 @@ Task <N> complete: <title>
 Summary: <2-3 sentences>
 
 Pipeline:
+- Kickoff: <status>
 - Execution: <status>
 - Documentation/commits: <status>
 - Requirements verification: <verdict>

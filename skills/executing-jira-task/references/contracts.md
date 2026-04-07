@@ -36,7 +36,7 @@ user which upstream skill must run first.
 
 ## Task readiness checklist
 
-Confirm all of the following before phase 1:
+Confirm all of the following before the kickoff step:
 
 1. `docs/<KEY>-tasks.md` contains a `## Task <N>:` section for the selected
    task.
@@ -47,7 +47,20 @@ Confirm all of the following before phase 1:
 4. The task section still matches the planning artifacts. If the plan and the
    per-task artifacts disagree materially, stop and escalate.
 5. A Jira subtask key is optional. Missing Jira linkage does not block code
-   execution; it only affects tracking updates later.
+   execution; it only affects kickoff/tracking updates later.
+
+## Execution kickoff boundary
+
+Phase 7 begins with an explicit kickoff inside `executing-jira-task`. This is
+the first point where the workflow is allowed to perform execution-side
+mutations, such as:
+
+- confirming or adjusting branch/worktree readiness
+- resolving explicit dirty-worktree handling rules
+- moving the Jira subtask to `In Progress` when capability exists
+
+Everything before kickoff remains planning or critique. Everything after kickoff
+assumes the task is actively in execution.
 
 ## Dispatch contracts
 
@@ -57,6 +70,7 @@ needs a prior verdict or summary.
 
 | Subagent                | Required inputs                                                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `execution-starter`     | `TICKET_KEY`, `TASK_NUMBER`, ticket snapshot path, task plan path, execution brief path, optional readiness summaries |
 | `task-executor`         | Brief path, execution plan path, test spec path, refactoring plan path, optional decisions path, optional fix brief, optional previous report |
 | `documentation-writer`  | `EXECUTION_REPORT`, `TICKET_KEY`, `TASK_NUMBER`                                                                  |
 | `requirements-verifier` | Brief path, test spec path, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`                                           |
@@ -78,11 +92,13 @@ workflow can resume later, but those files stay out of git history.
 
 After a successful run, all of the following should be true:
 
-1. Category B changes are committed.
-2. The task section in `docs/<KEY>-tasks.md` includes:
+1. Execution kickoff either moved the Jira subtask to `In Progress` or reported
+   clearly why that step was skipped.
+2. Category B changes are committed.
+3. The task section in `docs/<KEY>-tasks.md` includes:
    - `**Status:** ✅ Complete (<date>)`
    - `**Implementation summary:**`
    - `**Files changed:**`
-3. If a `## Jira Subtasks` table exists, the selected row is updated to `Done`.
-4. Optional Jira transition/comment work is either completed or reported as
+4. If a `## Jira Subtasks` table exists, the selected row is updated to `Done`.
+5. Optional Jira transition/comment work is either completed or reported as
    skipped with a reason.

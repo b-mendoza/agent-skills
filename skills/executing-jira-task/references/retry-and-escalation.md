@@ -9,6 +9,7 @@
 
 | Step / subagent          | Expected statuses                                                  | Orchestrator action |
 | ------------------------ | ------------------------------------------------------------------ | ------------------- |
+| `execution-starter`      | `READY`, `BLOCKED`, `ERROR`                                        | Continue on `READY`; otherwise pause and resolve before implementation starts |
 | `task-executor`          | `COMPLETE`, `NEEDS_CONTEXT`, `BLOCKED`, `ERROR`                    | Continue on `COMPLETE`; otherwise pause and resolve before continuing |
 | `documentation-writer`   | `COMPLETE`, `BLOCKED`, `ERROR`                                     | Continue on `COMPLETE`; otherwise stop and surface the blocker |
 | `requirements-verifier`  | `PASS`, `FAIL`, `BLOCKED`, `ERROR`                                 | Re-run coverage fix loop on clear in-scope gaps; escalate ambiguous or blocked cases |
@@ -20,11 +21,13 @@ Ask for user input instead of improvising when any of these occur:
 
 1. A subagent reports `NEEDS_CONTEXT` for a real business, scope, or
    architectural decision.
-2. Required planning artifacts conflict with each other.
-3. A required supporting skill or MCP capability is missing and the run cannot
+2. `execution-starter` reports that branch/worktree or dirty-state handling
+   needs a user or orchestrator decision.
+3. Required planning artifacts conflict with each other.
+4. A required supporting skill or MCP capability is missing and the run cannot
    proceed safely.
-4. The same ambiguity or gate failure persists after the retry limit.
-5. A Jira update requires credentials or permissions that are not available in
+5. The same ambiguity or gate failure persists after the retry limit.
+6. A Jira update requires credentials or permissions that are not available in
    the current environment.
 
 ## Retry limits
