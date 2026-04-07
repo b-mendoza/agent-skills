@@ -210,8 +210,9 @@ Only proceed to Phase 4 when the user explicitly chooses option 1.
    - `docs/<KEY>-upfront-critique.md` exists
    - `docs/<KEY>-tasks.md` contains the validated decisions log
 4. Read the phase skill and invoke it with `JIRA_URL`.
-5. The downstream skill creates Jira subtasks and updates the plan file with
-   subtask keys.
+5. The downstream skill creates or reconciles Jira subtasks, updates
+   `docs/<KEY>-tasks.md` with the Phase 4 handoff artifacts, and returns the
+   `Created/Linked Subtasks` table plus any warnings or failures.
 6. Dispatch `artifact-validator` with:
 
    ```
@@ -220,8 +221,11 @@ Only proceed to Phase 4 when the user explicitly chooses option 1.
    DIRECTION: postcondition
    ```
 
-7. Expect: `docs/<KEY>-tasks.md` contains `## Jira Subtasks` with at least one
-   key matching `[A-Z]+-\d+`.
+7. Expect the validated Phase 4 handoff contract:
+   - `docs/<KEY>-tasks.md` contains exactly one `## Jira Subtasks` table
+   - The table has one row per numbered task
+   - Rows may use `Not Created`, but every row with a Jira-style key has a
+     matching `Jira Subtask: <KEY>` line in the corresponding task section
 8. Dispatch `progress-tracker` with:
 
    ```
@@ -229,13 +233,16 @@ Only proceed to Phase 4 when the user explicitly chooses option 1.
    ACTION: update
    PHASE: 4
    STATUS: complete
-   SUMMARY: "N subtasks created in Jira"
-   TASKS: [list of task number, title, dependencies, and priority]
+   SUMMARY: "N tasks linked to Jira subtasks (M created now, K already linked)"
+   TASKS: [rows from Created/Linked Subtasks with task number, title, dependencies, priority, and any optional linkage metadata]
    ```
 
-9. The `TASKS` input populates the workflow-level Task Execution table,
-   including the dependency and priority metadata needed for later task
+9. Use the downstream `Created/Linked Subtasks` table as the source for
+   `TASKS`, preserving dependency and priority metadata for later task
    selection.
+10. If the downstream summary includes warnings or failed creates, surface them
+    before task selection so the user can see which tasks still lack Jira
+    linkage.
 
 **Gate:** User chooses which task to execute next. Never auto-start a task.
 
