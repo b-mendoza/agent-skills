@@ -38,16 +38,17 @@ shape.
 
 ## Output Contract
 
-After a successful run, this skill leaves behind:
+After a successful run, this skill leaves behind these deliverables:
 
-- Category B implementation artifacts committed to git: source code, tests,
-  config changes, and in-code documentation.
-- Category A orchestration artifacts updated on disk but left uncommitted:
-  task status, implementation summary, file list, and optional Jira tracking.
-- An execution kickoff record in the returned summary: readiness outcome,
+- **Category B implementation artifacts:** committed source code, tests, config
+  changes, and in-code documentation.
+- **Category A orchestration artifacts:** updated on disk but left
+  uncommitted, including task status, implementation summary, file list, and
+  optional Jira tracking.
+- **Kickoff summary:** a returned execution-kickoff record covering readiness,
   workspace state, and whether the Jira subtask was moved to `In Progress`.
-- A concise user-facing report summarising execution, commits, and gate
-  verdicts for the selected task only.
+- **Task-only completion report:** a concise user-facing report summarising the
+  selected task's execution, commits, and gate verdicts.
 
 ## Workflow Overview
 
