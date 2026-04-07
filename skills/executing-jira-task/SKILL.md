@@ -53,6 +53,8 @@ After a successful run, this skill leaves behind these deliverables:
 ## Workflow Overview
 
 These are internal execution steps inside the parent workflow's Phase 7.
+Read `./references/pipeline.md` for the full run -> check -> fix -> re-check
+order and `./references/contracts.md` for readiness gates.
 
 | Internal step | Goal                                          | Primary result                            |
 | ------------- | --------------------------------------------- | ----------------------------------------- |
