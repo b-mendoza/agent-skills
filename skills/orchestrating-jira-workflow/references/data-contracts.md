@@ -37,12 +37,17 @@ Subtasks` exists and has one key."
 
 ### Phases 5–7 (per task)
 
+For Phase 5 postcondition and Phase 6 precondition, this quick reference names
+the concrete four-file planning handoff. The detailed section requirements
+inside those files are owned by `../planning-jira-task/SKILL.md` and its
+`references/data-contracts.md`.
+
 | Phase | Direction     | File to check                      | Expected checks                  |
 | ----- | ------------- | ---------------------------------- | -------------------------------- |
-| 5     | postcondition | `docs/<KEY>-task-<N>-*.md`         | All 4 planning artifacts exist   |
-| 6     | precondition  | `docs/<KEY>-task-<N>-*.md`         | All 4 planning artifacts exist   |
+| 5     | postcondition | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | All 4 concrete Phase 5 planning artifacts exist |
+| 6     | precondition  | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | Same as Phase 5 postcondition |
 | 6     | postcondition | `docs/<KEY>-task-<N>-critique.md` + `docs/<KEY>-task-<N>-decisions.md` | Both critique and decisions artifacts exist |
-| 7     | precondition  | `docs/<KEY>-task-<N>-*.md` + critique artifacts | Same as Phase 6 precondition, plus `docs/<KEY>-task-<N>-critique.md` and `docs/<KEY>-task-<N>-decisions.md` exist; these inputs feed the execution kickoff |
+| 7     | precondition  | Phase 5 planning artifacts + critique artifacts | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`, `docs/<KEY>-task-<N>-critique.md`, and `docs/<KEY>-task-<N>-decisions.md` all exist; these inputs feed the execution kickoff |
 
 ---
 

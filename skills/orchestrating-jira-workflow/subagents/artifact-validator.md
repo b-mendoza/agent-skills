@@ -38,6 +38,11 @@ handoff owned by `../creating-jira-subtasks/SKILL.md`: the workflow-level
 `## Jira Subtasks` table plus the inline `Jira Subtask: <KEY>` lines for
 linked tasks.
 
+For the Phase 5 postcondition and Phase 6 precondition, validate the concrete
+planning handoff owned by `../planning-jira-task/SKILL.md`: brief, execution
+plan, test spec, and refactoring plan. The detailed section-level requirements
+inside those files remain owned by that downstream skill.
+
 | Phase | Direction     | File                                 | Checks                                                         |
 | ----- | ------------- | ------------------------------------ | -------------------------------------------------------------- |
 | 1     | postcondition | `docs/<KEY>.md`                      | File exists and contains the required Phase 1 snapshot headings: `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Subtasks`, `## Linked Issues`, `## Attachments`, `## Custom Fields` |
@@ -48,10 +53,10 @@ linked tasks.
 | 4     | precondition  | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition                                  |
 | 4     | postcondition | `docs/<KEY>-tasks.md`                | Contains exactly one `## Jira Subtasks` table; table has one row per numbered task; rows may use `Not Created`, but every Jira-style key in the table has a matching inline `Jira Subtask: <KEY>` line in the corresponding task section |
 | 5     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 4 postcondition                                  |
-| 5     | postcondition | `docs/<KEY>-task-<N>-*.md`           | All 4 planning artifacts exist for task `N`                    |
-| 6     | precondition  | `docs/<KEY>-task-<N>-*.md`           | All 4 planning artifacts exist for task `N`                    |
+| 5     | postcondition | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | All 4 concrete planning artifacts exist for task `N`           |
+| 6     | precondition  | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | Same as Phase 5 postcondition                                  |
 | 6     | postcondition | `docs/<KEY>-task-<N>-critique.md` + `docs/<KEY>-task-<N>-decisions.md` | Both critique and decisions artifacts exist for task `N`       |
-| 7     | precondition  | `docs/<KEY>-task-<N>-*.md` + critique artifacts | Same as Phase 6 precondition, plus `docs/<KEY>-task-<N>-critique.md` and `docs/<KEY>-task-<N>-decisions.md` exist |
+| 7     | precondition  | Phase 5 planning artifacts + critique artifacts | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`, `docs/<KEY>-task-<N>-critique.md`, and `docs/<KEY>-task-<N>-decisions.md` all exist |
 
 If the phase boundary is unclear, consult `../references/data-contracts.md`
 for the same matrix in reference form.
