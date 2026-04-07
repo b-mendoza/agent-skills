@@ -92,6 +92,10 @@ for the current phase, and the specific subagent it is about to dispatch.
 Everything else is delegated. Pass file paths and short summaries between
 subagents instead of raw file contents or command output.
 
+Every task run follows the same validation loop: confirm readiness, cross the
+execution boundary deliberately, verify Definition of Done coverage before the
+review gates, and re-run only the failing phase when a targeted fix is needed.
+
 Treat artifacts in two categories:
 
 - **Category A: orchestration artifacts.** `docs/<KEY>*.md`, progress files,
