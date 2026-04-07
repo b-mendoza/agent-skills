@@ -38,23 +38,34 @@ This skill maintains and uses only Category A orchestration artifacts:
 - `docs/<TICKET_KEY>-task-<N>-progress.md`
 - The downstream phase artifacts listed in the pipeline below
 
-When a downstream phase defines a richer artifact contract than the shorthand
-gate summary in this skill, treat the downstream phase contract as
-authoritative. For Phase 1, `docs/<TICKET_KEY>.md` is the stable Jira snapshot
-defined by `fetching-jira-ticket`, not merely a Markdown file with a single
-required section.
+Use `./references/data-contracts.md` for the orchestrator-facing phase-boundary
+checks. When a downstream phase defines a richer section-level contract, treat
+that downstream skill as authoritative for the artifact's internal structure.
+
+For Phase 1, `docs/<TICKET_KEY>.md` is the stable Jira snapshot defined by
+`fetching-jira-ticket`, not merely a Markdown file with a single required
+section.
 
 For Phase 2, the authoritative downstream contract includes the preserved
 planning intermediates `docs/<KEY>-stage-1-detailed.md` and
 `docs/<KEY>-stage-2-prioritized.md`, plus a final `docs/<KEY>-tasks.md` with
 the full plan structure consumed by Phases 3 and 4.
 
-For Phases 3 and 6, the authoritative downstream contract also includes the
-critique artifacts written by `clarifying-assumptions`:
+For Phase 3, the authoritative downstream contract also includes the upfront
+critique artifact written by `clarifying-assumptions`:
 
 - `docs/<KEY>-upfront-critique.md`
+
+For Phase 6, the authoritative downstream contract also includes the task-level
+critique artifacts written by `clarifying-assumptions` in `MODE=critique`:
+
 - `docs/<KEY>-task-<N>-critique.md`
-- `docs/<KEY>-task-<N>-decisions.md` in critique mode
+- `docs/<KEY>-task-<N>-decisions.md`
+
+Those Phase 6 artifacts are the normal workflow gate into Phase 7. Once that
+gate passes, `executing-jira-task` owns the execution-side readiness contract,
+including which Phase 6 artifacts are required versus conditional for execution
+itself.
 
 Treat `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT` from the clarification summaries
 as gate inputs. They are not validator artifacts, but they are part of the
