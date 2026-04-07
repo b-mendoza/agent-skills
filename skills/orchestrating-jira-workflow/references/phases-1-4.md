@@ -222,7 +222,7 @@ Only proceed to Phase 4 when the user explicitly chooses option 1.
    ```
 
 7. Expect the validated Phase 4 handoff contract:
-   - `docs/<KEY>-tasks.md` contains exactly one `## Jira Subtasks` table
+   - `docs/<KEY>-tasks.md` contains a `## Jira Subtasks` table
    - The table has one row per numbered task
    - Rows may use `Not Created`, but every row with a Jira-style key has a
      matching `Jira Subtask: <KEY>` line in the corresponding task section

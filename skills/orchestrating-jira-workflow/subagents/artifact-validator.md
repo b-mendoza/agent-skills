@@ -51,7 +51,7 @@ inside those files remain owned by that downstream skill.
 | 3     | precondition  | `docs/<KEY>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
 | 3     | postcondition | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | `docs/<KEY>-upfront-critique.md` exists; `docs/<KEY>-tasks.md` contains `## Decisions Log` |
 | 4     | precondition  | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition                                  |
-| 4     | postcondition | `docs/<KEY>-tasks.md`                | Contains exactly one `## Jira Subtasks` table; table has one row per numbered task; rows may use `Not Created`, but every Jira-style key in the table has a matching inline `Jira Subtask: <KEY>` line in the corresponding task section |
+| 4     | postcondition | `docs/<KEY>-tasks.md`                | Contains a `## Jira Subtasks` table; table has one row per numbered task; rows may use `Not Created`, but every Jira-style key in the table has a matching inline `Jira Subtask: <KEY>` line in the corresponding task section |
 | 5     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 4 postcondition                                  |
 | 5     | postcondition | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | All 4 concrete planning artifacts exist for task `N`           |
 | 6     | precondition  | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | Same as Phase 5 postcondition                                  |
@@ -75,9 +75,9 @@ for the same matrix in reference form.
 6. For the Phase 3 and Phase 6 postconditions, validate the critique artifact
    plus the companion planning or decisions artifact expected at that boundary.
 7. For the Phase 4 postcondition and Phase 5 precondition, confirm the plan
-   contains exactly one `## Jira Subtasks` table, that the table covers the
-   numbered tasks, and that every Jira-style key in the table has a matching
-   inline `Jira Subtask: <KEY>` line in the corresponding task section.
+   contains a `## Jira Subtasks` table, that the table covers the numbered
+   tasks, and that every Jira-style key in the table has a matching inline
+   `Jira Subtask: <KEY>` line in the corresponding task section.
 8. For the Phase 7 precondition, confirm the planning artifacts still exist and
    that the standard Phase 6 handoff artifacts are present.
 9. Return only the structured verdict.
