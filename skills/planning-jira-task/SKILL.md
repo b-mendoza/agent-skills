@@ -120,8 +120,15 @@ Input:
 4. Subagent returns:
    `PLAN: PASS`
    `Plan: docs/PROJ-123-task-2-execution-plan.md`
-5. Dispatch `test-strategist`, then `refactoring-advisor`
-6. Tell the user:
+5. Dispatch `test-strategist`
+6. Subagent returns:
+   `TEST_SPEC: PASS`
+   `Spec: docs/PROJ-123-task-2-test-spec.md`
+7. Dispatch `refactoring-advisor`
+8. Subagent returns:
+   `REFACTORING: PASS`
+   `Plan: docs/PROJ-123-task-2-refactoring-plan.md`
+9. Tell the user:
    "Task 2 planning complete. Four planning artifacts are ready for critique."
 
 The orchestrator keeps only those summaries and the artifact paths.
