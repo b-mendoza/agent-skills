@@ -185,8 +185,9 @@ User: "You're right, let's go async."
 
 Phase 5 (re-dispatch):
 `planning-jira-task` reruns only the invalidated subagents for the decision:
-"Use async event for notifications." `execution-planner` updates the plan and
-`test-strategist` adjusts test cases.
+"Use async event for notifications." `execution-planner` updates the plan,
+`test-strategist` adjusts test cases, and `refactoring-advisor` refreshes the
+refactoring recommendation to match the new approach.
 
 Phase 6 (iteration 2):
 critique-analyzer: Notification decision resolved. No new concerns.
