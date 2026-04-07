@@ -16,9 +16,13 @@ Each row shows what to dispatch to `artifact-validator` and what to expect.
 
 ### Phases 1–4
 
+For Phase 1, the compact gate below mirrors the stable snapshot contract owned
+by `fetching-jira-ticket`. Treat that downstream skill as the authoritative
+definition of `docs/<KEY>.md`.
+
 | Phase | Direction     | File to check           | Expected checks                                                |
 | ----- | ------------- | ----------------------- | -------------------------------------------------------------- |
-| 1     | postcondition | `docs/<KEY>.md`         | File exists, contains `## Description`                         |
+| 1     | postcondition | `docs/<KEY>.md`         | File exists and contains the required Phase 1 snapshot headings: `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Subtasks`, `## Linked Issues`, `## Attachments`, `## Custom Fields` |
 | 2     | precondition  | `docs/<KEY>.md`         | Same as Phase 1 postcondition                                  |
 | 2     | postcondition | `docs/<KEY>-tasks.md`   | File exists, contains `## Tasks`, has ≥2 task entries          |
 | 3     | precondition  | `docs/<KEY>-tasks.md`   | Same as Phase 2 postcondition                                  |

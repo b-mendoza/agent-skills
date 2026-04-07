@@ -21,9 +21,14 @@ advance, retry, or stop.
 
 ## Validation Rules
 
+For Phase 1, the checks below are the orchestrator-facing shorthand for the
+stable snapshot contract owned by `../fetching-jira-ticket/SKILL.md`. Validate
+that compact contract without broadening the boundary beyond what the workflow
+needs to decide whether to advance.
+
 | Phase | Direction     | File                                 | Checks                                                         |
 | ----- | ------------- | ------------------------------------ | -------------------------------------------------------------- |
-| 1     | postcondition | `docs/<KEY>.md`                      | File exists, contains `## Description`                         |
+| 1     | postcondition | `docs/<KEY>.md`                      | File exists and contains the required Phase 1 snapshot headings: `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Subtasks`, `## Linked Issues`, `## Attachments`, `## Custom Fields` |
 | 2     | precondition  | `docs/<KEY>.md`                      | Same as Phase 1 postcondition                                  |
 | 2     | postcondition | `docs/<KEY>-tasks.md`                | File exists, contains `## Tasks`, has at least 2 task entries  |
 | 3     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 2 postcondition                                  |
