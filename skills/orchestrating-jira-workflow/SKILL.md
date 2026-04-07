@@ -110,7 +110,7 @@ After each phase or gate, return only:
 - The next required decision or confirmation, if any
 - The file path or ticket key needed for the next dispatch
 
-Do not surface raw subagent output unless the user explicitly asks for it.
+Return raw subagent output only when the user explicitly asks for it.
 
 ## Subagent Registry
 
@@ -214,9 +214,9 @@ Use `./references/data-contracts.md` when you need the exact boundary checks or
 PASS/FAIL semantics for a phase transition.
 
 For Phases 3 and 6, the gate check uses both the validator verdict and the
-downstream clarification summary. Do not advance while
-`BLOCKERS_PRESENT=true`, and do not skip a required re-plan when
-`RE_PLAN_NEEDED=true`.
+downstream clarification summary. Advance only when
+`BLOCKERS_PRESENT=false`, and when `RE_PLAN_NEEDED=true`, only after the
+required re-plan cycle completes.
 
 Use this banner format:
 
