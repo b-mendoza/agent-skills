@@ -176,21 +176,7 @@ Derive `TICKET_KEY` from `JIRA_URL` when available. If you only have
 `TICKET_KEY`, use it for local progress discovery, then ask for the full
 `JIRA_URL` before any Jira-dependent phase that requires workspace access.
 
-### 2. Run preflight
-
-Dispatch `preflight-checker` with:
-
-- `TICKET_KEY`
-- `PHASES`: all phases for a fresh workflow, or the remaining phases if
-  resuming
-
-Interpret the result:
-
-- `PREFLIGHT: PASS` -> continue
-- `PREFLIGHT: FAIL` -> stop and present missing dependency instructions
-- `PREFLIGHT: ERROR` -> stop and ask the user how to proceed
-
-### 3. Read progress state
+### 2. Read progress state
 
 Dispatch `progress-tracker` with `ACTION=read`.
 
@@ -199,6 +185,21 @@ Interpret the summary:
 - No progress found -> start at Phase 1
 - Progress found in phases 1-4 -> resume from the next incomplete workflow phase
 - Progress found in phases 5-7 -> resume the specific task/phase indicated
+
+### 3. Run preflight for the actual remaining phases
+
+Dispatch `preflight-checker` only after the progress read tells you where the
+workflow will start:
+
+- Fresh start -> `PHASES=1-7`
+- Resume in phases 1-4 -> `PHASES=<current incomplete phase through 7>`
+- Resume in phases 5-7 -> `PHASES=<current task phase through 7>`
+
+Interpret the result:
+
+- `PREFLIGHT: PASS` -> continue
+- `PREFLIGHT: FAIL` -> stop and present missing dependency instructions
+- `PREFLIGHT: ERROR` -> stop and ask the user how to proceed
 
 ### 4. Confirm resume points
 
@@ -229,9 +230,10 @@ Use these gate rules consistently:
 <example>
 Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 
-1. Dispatch `preflight-checker` with `TICKET_KEY=PROJ-123`, `PHASES=1-7`
-2. Dispatch `progress-tracker` with `ACTION=read`
-3. No progress found -> read `./references/phases-1-4.md`
+1. Dispatch `progress-tracker` with `ACTION=read`
+2. No progress found -> dispatch `preflight-checker` with
+   `TICKET_KEY=PROJ-123`, `PHASES=1-7`
+3. Read `./references/phases-1-4.md`
 4. Enter Phase 1 and read `../fetching-jira-ticket/SKILL.md`
 5. After the downstream skill finishes, dispatch `artifact-validator`
 6. Validator returns:

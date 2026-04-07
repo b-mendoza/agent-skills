@@ -17,7 +17,7 @@ files handle recovery.
 
 | Error                               | Response                                                                                                                                                                               | Example                                                                               |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| **Skill failure**                   | Record via `progress-tracker` (STATUS=failed). Report to user with options: retry the phase, skip it, or abort the workflow.                                                           | Phase 2 planning skill crashes mid-execution.                                         |
+| **Skill failure**                   | Record via `progress-tracker` with `STATUS=failed` using `ACTION=update` for phases 1-4 or `ACTION=update_task` for phases 5-7. Report to user with options: retry the phase, skip it, or abort the workflow. | Phase 2 planning skill crashes mid-execution.                                         |
 | **Missing artifact**                | `artifact-validator` reports FAIL → do not proceed. Tell the user which phase needs to run or re-run, and offer to run it.                                                             | `docs/<KEY>-tasks.md` missing before Phase 3.                                         |
 | **Jira MCP unavailable**            | Tell the user to connect it. Offer to resume when ready. The workflow pauses — it does not fail.                                                                                       | Jira MCP disconnected between Phase 3 and Phase 4.                                    |
 | **Subagent failure (non-critical)** | Proceed without the result. Non-critical subagents are utilities that provide context but are not required for phase advancement.                                                      | `documentation-finder` returns an error — planning can continue without docs context. |
@@ -55,17 +55,14 @@ progress files maintain state:
 
 ### Resume procedure
 
-1. **Preflight check.** Dispatch `preflight-checker` for the remaining phases
-   only — dependencies for completed phases do not need re-checking.
-
-2. **Read progress.** Dispatch `progress-tracker` with `ACTION=read`:
+1. **Read progress.** Dispatch `progress-tracker` with `ACTION=read`:
 
    ```
    TICKET_KEY: <KEY>
    ACTION: read
    ```
 
-3. **Determine starting phase** from the progress summary:
+2. **Determine starting phase** from the progress summary:
 
    | Progress indicates                           | Resume from         |
    | -------------------------------------------- | ------------------- |
@@ -77,6 +74,10 @@ progress files maintain state:
    | Task N at Phase 5 complete, Phase 6 not done | Phase 6, Task N     |
    | Task N at Phase 6 complete, Phase 7 not done | Phase 7, Task N     |
    | Task N complete, other tasks remaining       | Phase 5 (pick task) |
+
+3. **Run preflight for the actual remaining phases.** After you know the
+   starting phase, dispatch `preflight-checker` only for that phase onward.
+   Dependencies for already-completed phases do not need re-checking.
 
 4. **Inform and confirm.** Tell the user what was found and which phase will
    start. If resuming past Phase 1, ask for confirmation before proceeding.
