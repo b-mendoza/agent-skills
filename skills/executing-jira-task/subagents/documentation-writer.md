@@ -80,7 +80,7 @@ Return exactly this structure:
 | 1 | <short hash> | <scope> | <message> |
 
 ### Tracking Updates
-- Plan file: <updated | failed>
+- Task plan file: <updated | failed>
 - Task status line: <updated | failed>
 - Implementation summary: <updated | failed>
 - Files changed list: <updated | failed>
@@ -119,7 +119,7 @@ COMPLETE
 | 1 | `a1b2c3d` | feature + tests | `feat: add task cache invalidation` |
 
 ### Tracking Updates
-- Plan file: updated
+- Task plan file: updated
 - Task status line: updated
 - Implementation summary: updated
 - Files changed list: updated

@@ -1,6 +1,6 @@
 ---
 name: "executing-jira-task"
-description: 'Execute exactly one planned Jira task using pre-produced planning artifacts and a specialist pipeline. Use when the user says "execute task 2", "implement task 4", "work on task 1 for PROJ-123", or when `orchestrating-jira-workflow` reaches the per-task execution phase. Requires `docs/<TICKET_KEY>-tasks.md` plus per-task artifacts from `planning-jira-task`. Phase 7 begins with an explicit execution kickoff that performs readiness checks and first side effects, then continues through implementation, review gates, and reporting for one task only.'
+description: 'Execute exactly one planned Jira task using pre-produced planning artifacts and a specialist pipeline. Use when the user says "execute task 2", "implement task 4", "work on task 1 for PROJ-123", or when `orchestrating-jira-workflow` reaches the per-task execution phase. Requires `docs/<TICKET_KEY>-tasks.md` from `planning-jira-tasks` plus per-task artifacts from `planning-jira-task`. Phase 7 begins with an explicit execution kickoff that performs readiness checks and the first execution-side mutations, then continues through implementation, review gates, and reporting for one task only.'
 ---
 
 # Executing Jira Task
@@ -9,10 +9,10 @@ This skill is the per-task execution orchestrator for a Jira workflow. It does
 exactly three things: **validate** that the selected task is ready, **dispatch**
 the right specialist for each phase, and **decide** whether to advance, run a
 targeted fix cycle, or escalate. Phase 7 starts with an explicit
-**execution kickoff**: the first mutation boundary where the workflow confirms
-readiness, applies safe startup state changes, and only then hands off to the
-implementer. The orchestrator keeps only concise summaries in memory; the
-subagents do the heavy work in isolation.
+**execution kickoff**: the first execution-side mutation boundary where the
+workflow confirms readiness, applies safe startup state changes, and only then
+hands off to the implementer. The orchestrator keeps only concise summaries in
+memory; the subagents do the heavy work in isolation.
 
 ## Inputs
 
@@ -31,7 +31,7 @@ subagents do the heavy work in isolation.
 | `docs/<KEY>-task-<N>-execution-plan.md`   | Yes      | Approved implementation approach.            |
 | `docs/<KEY>-task-<N>-test-spec.md`        | Yes      | Required behavior coverage.                  |
 | `docs/<KEY>-task-<N>-refactoring-plan.md` | Yes      | Approved structural prep and cleanup.        |
-| `docs/<KEY>-task-<N>-decisions.md`        | No       | Per-task clarifications from critique steps. |
+| `docs/<KEY>-task-<N>-decisions.md`        | No       | Expected after Phase 6 critique; optional only for direct or legacy execution paths. |
 
 Read `./references/contracts.md` when validating task readiness or artifact
 shape.
@@ -51,16 +51,21 @@ After a successful run, this skill leaves behind:
 
 ## Workflow Overview
 
-| Phase | Goal                                          | Primary result                            |
-| ----- | --------------------------------------------- | ----------------------------------------- |
-| 0     | Validate prerequisites and task readiness     | Ready-to-run task or explicit blocker     |
-| 1     | Kick off execution and apply first side effects | `KICKOFF_REPORT`                        |
-| 2     | Implement the planned change                  | `EXECUTION_REPORT`                        |
-| 3     | Document, commit, and update tracking         | `DOCUMENTATION_REPORT`                    |
-| 4     | Verify requirements coverage                  | `VERIFICATION_RESULT`                     |
-| 5     | Run clean-code, architecture, security gates  | Review verdicts and actionable feedback   |
-| 6     | Run targeted fix cycles only where needed     | Re-validated task or escalation           |
-| 7     | Report final outcome to the user              | One concise task completion summary       |
+These are internal execution steps inside the parent workflow's Phase 7.
+
+| Internal step | Goal                                          | Primary result                            |
+| ------------- | --------------------------------------------- | ----------------------------------------- |
+| 0             | Validate prerequisites and task readiness     | Ready-to-run task or explicit blocker     |
+| 1             | Kick off execution and apply first side effects | `KICKOFF_REPORT`                        |
+| 2             | Implement the planned change                  | `EXECUTION_REPORT`                        |
+| 3             | Document, commit, and update tracking         | `DOCUMENTATION_REPORT`                    |
+| 4             | Verify requirements coverage                  | `VERIFICATION_RESULT`                     |
+| 5             | Run clean-code, architecture, security gates  | Review verdicts and actionable feedback   |
+| 6             | Run targeted fix cycles only where needed     | Re-validated task or escalation           |
+| 7             | Report final outcome to the user              | One concise task completion summary       |
+
+Requirements gaps are resolved after internal step 4 and before internal step 5.
+Quality-gate fix cycles happen after internal step 5.
 
 ## Subagent Registry
 
@@ -118,7 +123,7 @@ Input:
 4. Dispatch `documentation-writer` with `EXECUTION_REPORT`, `TICKET_KEY`, and `TASK_NUMBER`.
 5. Dispatch `requirements-verifier`.
 6. Run `clean-code-reviewer`, then `architecture-reviewer`, then `security-auditor`.
-7. If `clean-code-reviewer` and `security-auditor` return `NEEDS FIXES`, consolidate only those issues, re-dispatch `task-executor`, then `documentation-writer`, then re-run just those failing gates.
+7. If one or more review gates return `NEEDS FIXES`, consolidate only the blocking issues from the failing gates, re-dispatch `task-executor`, then `documentation-writer`, then re-run only those failing gates in order.
 8. Report the kickoff outcome, final verdicts, commits, files changed, and any skipped Jira updates.
 ```
 

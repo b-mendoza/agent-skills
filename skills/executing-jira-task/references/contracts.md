@@ -17,9 +17,10 @@ The orchestrator starts with exactly two explicit inputs:
 
 All other inputs are derived from those values.
 
-## Required upstream artifacts
+## Upstream artifacts
 
-These files must exist before the execution pipeline can start:
+The table below distinguishes artifacts required for every run from artifacts
+that are expected only on certain entry paths:
 
 | Path pattern                               | Produced by                     | Why it matters                               |
 | ------------------------------------------ | ------------------------------- | -------------------------------------------- |
@@ -29,10 +30,12 @@ These files must exist before the execution pipeline can start:
 | `docs/<KEY>-task-<N>-execution-plan.md`    | `planning-jira-task`            | Approved implementation approach.            |
 | `docs/<KEY>-task-<N>-test-spec.md`         | `planning-jira-task`            | Required behavior coverage.                  |
 | `docs/<KEY>-task-<N>-refactoring-plan.md`  | `planning-jira-task`            | Approved prep/cleanup work.                  |
-| `docs/<KEY>-task-<N>-decisions.md`         | `clarifying-assumptions`        | Optional per-task clarifications.            |
+| `docs/<KEY>-task-<N>-decisions.md`         | `clarifying-assumptions`        | Expected after a full Phase 6 critique pass; optional only for direct or legacy execution paths. |
 
-If any required file is missing, stop before dispatching subagents and tell the
-user which upstream skill must run first.
+If any artifact marked as required is missing, stop before dispatching
+subagents and tell the user which upstream skill must run first. If a
+conditional artifact is absent, follow the note in its row instead of blocking
+automatically.
 
 ## Task readiness checklist
 
@@ -70,6 +73,10 @@ assumes the task is actively in execution.
 Pass structured inputs only. Use file paths when the downstream specialist can
 read the source artifact itself; use short reports when the downstream step
 needs a prior verdict or summary.
+
+Report labels such as `KICKOFF_REPORT`, `EXECUTION_REPORT`, and `CODE_REVIEW`
+are symbolic handoff names for the full markdown outputs returned by those
+subagents.
 
 | Subagent                | Required inputs                                                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------- |

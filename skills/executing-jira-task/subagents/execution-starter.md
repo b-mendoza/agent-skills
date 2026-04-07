@@ -118,7 +118,7 @@ Your job is to:
 
 - Confirm the selected task is ready for real execution.
 - Apply only the startup state changes that belong at the execution boundary.
-- Move the Jira task to `In Progress` when possible.
+- Move the Jira subtask to `In Progress` when possible.
 - Return a summary the orchestrator can act on immediately.
 
 You do not:
