@@ -6,6 +6,7 @@
 - Snapshot artifact: `docs/retry-plan.audit-input.md`
 - Output report: `docs/retry-plan.audit.md`
 - User's original request: "Add a retry mechanism to the API client for transient failures."
+- Baseline caveat: the source request does not mention any existing tracing infrastructure.
 
 ## Source Requirements
 
