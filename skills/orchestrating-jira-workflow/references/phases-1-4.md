@@ -60,7 +60,6 @@ postconditions -> update progress -> gate check**
 3. Expect: `docs/<KEY>.md` exists and still satisfies Phase 1 output checks.
 4. Read the phase skill and invoke it with:
    - `TICKET_KEY`
-   - `TICKET_FILE=docs/<KEY>.md`
 5. The downstream skill produces `docs/<KEY>-tasks.md` plus planning
    intermediates.
 6. Dispatch `artifact-validator` with:
@@ -115,8 +114,9 @@ postconditions -> update progress -> gate check**
 
 If the skill reports `RE_PLAN_NEEDED=true`:
 
-1. Re-run Phase 2 with the same inputs plus the accepted decisions from the
-   critique.
+1. Re-run Phase 2 with the same `TICKET_KEY` plus:
+   - `RE_PLAN=true`
+   - `DECISIONS=<accepted decisions from critique>`
 2. Re-run only the failing boundary: Phase 2 postcondition, then Phase 3 again.
 3. Do not re-raise critique items that the user already resolved consciously.
 4. Maximum: 3 re-plan loops. After the third, present the accumulated critique
@@ -129,7 +129,7 @@ justification.
 User decides: "Use in-memory LRU for now."
 -> `RE_PLAN_NEEDED=true`
 
-Re-run Phase 2 with that decision.
+Re-run Phase 2 with `RE_PLAN=true` and `DECISIONS="Use in-memory LRU for now."`
 
 Iteration 2:
 Updated plan reflects in-memory LRU.
@@ -205,10 +205,12 @@ Only proceed to Phase 4 when the user explicitly chooses option 1.
    PHASE: 4
    STATUS: complete
    SUMMARY: "N subtasks created in Jira"
-   TASKS: [list of task numbers and titles]
+   TASKS: [list of task number, title, dependencies, and priority]
    ```
 
-9. The `TASKS` input populates the workflow-level Task Execution table.
+9. The `TASKS` input populates the workflow-level Task Execution table,
+   including the dependency and priority metadata needed for later task
+   selection.
 
 **Gate:** User chooses which task to execute next. Never auto-start a task.
 

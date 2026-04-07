@@ -29,6 +29,9 @@ Additional inputs by action:
 
 Allowed status values: `complete`, `active`, `failed`, `skipped`
 
+When `TASKS` is provided for Phase 4 completion, each task entry should carry
+task number, title, dependencies, and priority when known.
+
 ## Managed Artifacts
 
 | File                              | Scope          | Purpose                         |
@@ -45,8 +48,11 @@ Read `./progress-tracker-templates.md` when creating or modifying either file.
 1. Check whether the workflow progress file exists.
 2. If it exists, summarize it.
 3. If it does not exist, infer workflow state from the phase artifacts on disk.
+   When `docs/<KEY>-tasks.md` exists, reconstruct task title, dependencies, and
+   priority metadata from that plan before summarizing remaining work.
 4. If the workflow has task entries, read the per-task progress files that
-   exist and summarize the highest-priority incomplete task.
+   exist and summarize the remaining tasks using the workflow table metadata
+   plus any active per-task state already recorded.
 5. Return the current resume point in compact form.
 
 ### `initialize`
@@ -62,15 +68,17 @@ Read `./progress-tracker-templates.md` when creating or modifying either file.
 2. Update the requested phase row for phases 1-4.
 3. Append a one-line execution log entry with a UTC timestamp.
 4. If `PHASE=4` and `STATUS=complete`, populate or refresh the Task Execution
-   table using `TASKS`.
+   table using `TASKS`, preserving dependencies and priority metadata.
 5. Return the resulting workflow summary.
 
 ### `initialize_task`
 
 1. Read the template file.
 2. Create `docs/<KEY>-task-<N>-progress.md` only if it does not already exist.
-3. Mark the corresponding task as active in the workflow-level progress file.
-4. Return the resulting resume summary.
+3. Use this action only after task selection is confirmed and the Phase 5
+   precondition has passed.
+4. Mark the corresponding task as active in the workflow-level progress file.
+5. Return the resulting resume summary.
 
 ### `update_task`
 
@@ -88,11 +96,13 @@ For success, return only this structure:
 PROGRESS: OK
 Phases: 1 <state> | 2 <state> | 3 <state> | 4 <state>
 Tasks: <summary when tasks exist>
+Remaining:
+  - Task <N> | <title> | Depends on: <dependencies> | Priority: <priority> | Status: <status>
 Last activity: <timestamp or "none"> - <one-line summary>
 Resume from: <phase and optional task number>
 ```
 
-Use `Tasks:` only when the workflow has entered phases 5-7.
+Use `Tasks:` and `Remaining:` only when the workflow has entered phases 5-7.
 
 For a fresh start with no artifacts, return:
 
@@ -106,6 +116,9 @@ Resume from: Phase 1
 PROGRESS: OK
 Phases: 1 complete | 2 complete | 3 complete | 4 complete
 Tasks: 1/3 complete | Task 2: Phase 5 active
+Remaining:
+  - Task 2 | Implement caching layer | Depends on: 1 | Priority: High | Status: active
+  - Task 3 | Update API documentation | Depends on: None | Priority: Medium | Status: pending
 Last activity: 2026-04-06 20:14 UTC - Task 2 planning started
 Resume from: Phase 5, Task 2
 </example>
@@ -117,6 +130,7 @@ Your job is to maintain progress artifacts and report state. Specifically:
 - Keep all timestamps in UTC.
 - Keep log entries to one line.
 - Preserve Category A artifacts on disk; never delete them.
+- Preserve dependency and priority metadata in the workflow task table.
 - Return only the compact summary or explicit error format.
 
 ## Escalation

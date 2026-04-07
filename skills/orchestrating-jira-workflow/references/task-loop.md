@@ -9,6 +9,10 @@
 Each task passes through Phase 5 (plan), Phase 6 (critique), and Phase 7
 (execution kickoff + execute) before the next task begins.
 
+If `progress-tracker` already reported a mid-task resume point such as
+`Resume from: Phase 6, Task 2` or `Resume from: Phase 7, Task 2`, skip Task
+Selection and re-enter the loop directly at that phase for that task.
+
 ---
 
 ## Task Selection
@@ -22,10 +26,12 @@ Before entering the loop for a task:
    ACTION: read
    ```
 
-   The summary shows which tasks are complete and which remain.
+   The summary shows which tasks are complete and which remain, including the
+   dependency, priority, and status metadata needed for task selection.
 
 2. **Present remaining tasks to the user.** Show the task list with
-   dependencies and status. Let the user choose — never auto-select.
+   dependencies, priority, and status from the `progress-tracker` summary.
+   Let the user choose — never auto-select.
 
 3. **Gather pre-task context.** Dispatch relevant utility subagents to gather
    context the downstream skill's kickoff and execution steps may need. These
@@ -40,20 +46,10 @@ Before entering the loop for a task:
 
    Not all dispatches are needed every time — use judgment based on the task.
 
-4. **Initialize task progress.** Dispatch `progress-tracker`:
+4. **Prepare task tracking.** Do not initialize task progress yet.
 
-   ```
-   TICKET_KEY: <KEY>
-   ACTION: initialize_task
-   TASK_NUMBER: <N>
-   TASK_TITLE: "<title>"
-   ```
-
-   Do this only when the selected task has not started yet.
-
-   If resuming a task that already has a progress file, do not re-initialize
-   it. Keep the existing task progress artifact and continue from the reported
-   phase.
+   Initialize it only after the Phase 5 precondition passes and only when the
+   selected task does not already have a progress file.
 
 ---
 
@@ -77,9 +73,23 @@ PHASE: 5
 DIRECTION: precondition
 ```
 
-**Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY`,
-`TASK_NUMBER`, and any context summaries from the pre-task utility dispatches.
-Follow every step defined in the skill.
+**Start task tracking:** If the Phase 5 precondition passes and this task does
+not already have a progress file, dispatch `progress-tracker`:
+
+```text
+TICKET_KEY: <KEY>
+ACTION: initialize_task
+TASK_NUMBER: <N>
+TASK_TITLE: "<title>"
+```
+
+If resuming a task that already has a progress file, do not re-initialize it.
+Keep the existing task progress artifact and continue from the reported phase.
+
+**Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY` and
+`TASK_NUMBER`. Retain the pre-task utility summaries for coordination and only
+pass them forward when the downstream skill explicitly asks for them. Follow
+every step defined in the skill.
 
 The skill runs a 4-subagent pipeline:
 
@@ -156,8 +166,10 @@ If the skill reports `RE_PLAN_NEEDED=true`:
 1. Re-dispatch Phase 5 (`planning-jira-task`) with:
    - `RE_PLAN=true`
    - `DECISIONS_FILE=docs/<KEY>-task-<N>-decisions.md`
-2. All 4 Phase 5 subagents re-run with prior artifacts plus new decisions.
-3. After Phase 5 completes, re-dispatch Phase 6 to critique the updated plan.
+2. Let `planning-jira-task` decide the targeted reruns: rerun only the
+   invalidated Phase 5 subagents plus their downstream dependents.
+3. After the targeted Phase 5 rerun completes, re-dispatch Phase 6 to critique
+   the updated plan.
 4. Maximum 3 iterations. After 3, present accumulated critique to the user and
    ask how to proceed.
 
@@ -172,8 +184,9 @@ User: "You're right, let's go async."
 → RE_PLAN_NEEDED=true
 
 Phase 5 (re-dispatch):
-All 4 subagents re-run with the decision: "Use async event for notifications."
-execution-planner updates the plan. test-strategist adjusts test cases.
+`planning-jira-task` reruns only the invalidated subagents for the decision:
+"Use async event for notifications." `execution-planner` updates the plan and
+`test-strategist` adjusts test cases.
 
 Phase 6 (iteration 2):
 critique-analyzer: Notification decision resolved. No new concerns.
@@ -235,9 +248,10 @@ DIRECTION: precondition
 TASK_NUMBER: <N>
 ```
 
-**Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY`,
-`TASK_NUMBER`, and context summaries from the pre-task utility dispatches.
-Follow every step defined in the skill.
+**Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY` and
+`TASK_NUMBER`. Keep any pre-task utility summaries at hand for coordination,
+but do not treat them as required top-level inputs unless the downstream skill
+explicitly accepts them. Follow every step defined in the skill.
 
 The downstream skill starts with an explicit **execution kickoff**. That kickoff
 is the first mutation boundary after critique approval. It is where the
@@ -293,15 +307,9 @@ STATUS: complete
 SUMMARY: "Implemented — N files changed, N commits"
 ```
 
-Then refresh the main progress file's task table:
-
-```
-TICKET_KEY: <KEY>
-ACTION: update
-PHASE: 4
-STATUS: complete
-SUMMARY: "Task N complete — <title>"
-```
+`update_task` already mirrors the per-task completion state into the
+workflow-level Task Execution table. Do not dispatch a second workflow-level
+`update` call here.
 
 ---
 

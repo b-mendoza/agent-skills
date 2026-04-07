@@ -39,16 +39,25 @@ _No tasks yet — populated after Phase 4 completes._
 
 When Phase 4 completes (the `update` action receives `PHASE=4` with
 `STATUS=complete`), replace the placeholder in the `## Task Execution`
-section with this table, populated from the `TASKS` input:
+section with this table, populated from the `TASKS` input.
+
+Each `TASKS` entry should include:
+
+- task number
+- title
+- dependencies, using `None` when there are no prerequisites
+- priority, using `Unknown` when the plan does not provide one
+
+Use that metadata to build this table:
 
 ```markdown
 ## Task Execution (Phases 5–7)
 
-| Task | Title              | Current Phase | Status     | Detail                                 |
-| ---- | ------------------ | ------------- | ---------- | -------------------------------------- |
-| 1    | <title from TASKS> | —             | ⬜ Pending | `docs/<TICKET_KEY>-task-1-progress.md` |
-| 2    | <title from TASKS> | —             | ⬜ Pending | `docs/<TICKET_KEY>-task-2-progress.md` |
-| ...  | ...                | ...           | ...        | ...                                    |
+| Task | Title              | Dependencies | Priority | Current Phase | Status     | Detail                                 |
+| ---- | ------------------ | ------------ | -------- | ------------- | ---------- | -------------------------------------- |
+| 1    | <title from TASKS> | <deps>       | <prio>   | —             | ⬜ Pending | `docs/<TICKET_KEY>-task-1-progress.md` |
+| 2    | <title from TASKS> | <deps>       | <prio>   | —             | ⬜ Pending | `docs/<TICKET_KEY>-task-2-progress.md` |
+| ...  | ...                | ...          | ...      | ...           | ...        | ...                                    |
 ```
 
 ---
@@ -97,7 +106,8 @@ _None_
 2. Update the row for the given phase (1–4) with the new status and a UTC
    timestamp.
 3. If `PHASE=4` and `STATUS=complete`, populate the Task Execution table
-   using the `TASKS` input (see template above).
+   using the `TASKS` input, preserving each task's dependency and priority
+   metadata (see template above).
 4. Append a one-line entry to `## Execution Log`:
    ```
    <UTC timestamp> — Phase <N>: <STATUS> — <SUMMARY>
@@ -105,6 +115,9 @@ _None_
 5. Write the updated file.
 
 ### `initialize_task` procedure
+
+Call this only after the orchestrator has selected a task and the Phase 5
+precondition has passed.
 
 1. Create the per-task progress file from the template at
    `docs/<TICKET_KEY>-task-<N>-progress.md`.
