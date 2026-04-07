@@ -12,6 +12,11 @@ orchestrator does three things: **think** (interpret summaries and plan state),
 artifacts live on disk; the orchestrator keeps only concise summaries in
 context.
 
+Success means the four planning artifacts exist and are ready for Phase 6
+critique and Phase 7 execution. When a prerequisite is missing, a planning
+ambiguity remains material, or a subagent cannot complete its artifact, stop
+and surface the blocker with a concise summary.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -90,8 +95,8 @@ life of the workflow and are never committed to git.
    only.
 4. Retain only its verdict, artifact path, and the notes needed for the next
    decision.
-5. Continue until all required planning artifacts are written or a blocker is
-   surfaced.
+5. Continue until all required planning artifacts are written and confirmed, or
+   a blocker is surfaced.
 6. Report the artifact paths and key planning decisions to the user.
 
 ## Example
