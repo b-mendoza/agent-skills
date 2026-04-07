@@ -49,6 +49,17 @@ planning intermediates `docs/<KEY>-stage-1-detailed.md` and
 `docs/<KEY>-stage-2-prioritized.md`, plus a final `docs/<KEY>-tasks.md` with
 the full plan structure consumed by Phases 3 and 4.
 
+For Phases 3 and 6, the authoritative downstream contract also includes the
+critique artifacts written by `clarifying-assumptions`:
+
+- `docs/<KEY>-upfront-critique.md`
+- `docs/<KEY>-task-<N>-critique.md`
+- `docs/<KEY>-task-<N>-decisions.md` in critique mode
+
+Treat `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT` from the clarification summaries
+as gate inputs. They are not validator artifacts, but they are part of the
+phase boundary contract the orchestrator must honor.
+
 After each phase or gate, return only:
 
 - A concise phase summary for the user
@@ -119,6 +130,10 @@ Use these rules throughout the workflow:
 - **Honor downstream contracts exactly.** Use the downstream skill's output
   contract as the source of truth, and keep the orchestrator's gate summaries
   aligned with that contract rather than with older shorthand checks.
+- **Honor clarification summary flags.** `RE_PLAN_NEEDED=true` reopens the
+  relevant planning phase. `BLOCKERS_PRESENT=true` is a hard stop before Jira
+  writes or task execution, even if the generic user gate would otherwise allow
+  advancing.
 - **Preserve resumability.** Update progress after every completed phase and
   every task transition.
 - **Separate artifact lifecycles.** Orchestration artifacts stay on disk and are
@@ -159,6 +174,11 @@ Every phase follows this cycle:
 5. **Update progress** by dispatching `progress-tracker`.
 6. **Run the gate check**: advance automatically, ask the user, or enter a
    targeted re-plan/retry loop.
+
+For Phases 3 and 6, the gate check uses both the validator verdict and the
+downstream clarification summary. Do not advance while
+`BLOCKERS_PRESENT=true`, and do not skip a required re-plan when
+`RE_PLAN_NEEDED=true`.
 
 Use this banner format:
 
@@ -233,10 +253,10 @@ Use these gate rules consistently:
 | -------- | --------- | ---- |
 | 1 -> 2   | Automatic | Proceed when validation passes |
 | 2 -> 3   | Automatic | Proceed when validation passes |
-| 3 -> 4   | User gate | Creating Jira subtasks requires explicit user approval |
+| 3 -> 4   | User gate | Proceed only when validation passes, `BLOCKERS_PRESENT=false`, and the user explicitly approves Jira writes |
 | 4 -> 5   | User gate | User selects the next task to execute |
 | 5 -> 6   | Automatic | Proceed when planning artifacts validate |
-| 6 -> 7   | User gate | User confirms the critiqued task plan is ready and Phase 7 may begin real execution |
+| 6 -> 7   | User gate | Proceed only when validation passes, `BLOCKERS_PRESENT=false`, and the user confirms the critiqued task plan is ready for real execution |
 | 7 -> next task | User gate | User chooses the next task or stops |
 
 ## Example
