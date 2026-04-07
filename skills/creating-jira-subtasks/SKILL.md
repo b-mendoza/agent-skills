@@ -40,7 +40,7 @@ docs/<TICKET_KEY>-tasks.md
 
 For normal Phase 4 execution, the plan is expected to contain:
 
-| Required section / element               | Produced by            | Why it matters                                |
+| Expected section / element               | Produced by            | Why it matters                                |
 | ---------------------------------------- | ---------------------- | --------------------------------------------- |
 | `## Tasks` with numbered `## Task <N>:` headings | planning-jira-tasks    | Each task maps to one Jira subtask            |
 | `## Execution Order Summary`             | planning-jira-tasks    | Preserves task ordering context               |
@@ -48,7 +48,9 @@ For normal Phase 4 execution, the plan is expected to contain:
 
 The parent orchestrator already validates the Phase 4 precondition before this
 skill runs. If this skill is used standalone and the plan is missing or
-malformed, the subagent returns `SUBTASKS: BLOCKED`.
+malformed, the subagent returns `SUBTASKS: BLOCKED`. If `## Decisions Log` is
+missing, the subagent continues with `SUBTASKS: WARN`: the plan is still
+parseable, but the normal workflow precondition was skipped.
 
 Primary output artifact:
 
@@ -60,8 +62,8 @@ After successful or partial Phase 4 completion, the plan file must include:
 
 | Addition                                              | Consumed by          | Purpose                                           |
 | ----------------------------------------------------- | -------------------- | ------------------------------------------------- |
-| `## Jira Subtasks` table (Task, Subtask Key, Title, Status) | planning-jira-task, executing-jira-task | Maps task numbers to Jira keys and Jira state     |
-| `Jira Subtask: <KEY>` line in each linked task section | planning-jira-task, executing-jira-task | Identifies the Jira issue to transition later     |
+| `## Jira Subtasks` table (Task, Subtask Key, Title, Status) | artifact-validator, executing-jira-task | Supports Phase 4 validation and later Jira status updates |
+| `Jira Subtask: <KEY>` line in each linked task section | executing-jira-task | Identifies the Jira issue to transition later     |
 
 The subagent returns a structured summary with:
 

@@ -135,7 +135,7 @@ task shape, return `SUBTASKS: BLOCKED`.
      | Task | Subtask Key | Title | Status |
      | ---- | ----------- | ----- | ------ |
      | 1    | JNS-6070    | Set up database schema | To Do |
-     | 2    | ❌ Failed   | Implement API layer    | Not Created |
+     | 2    | Not Created | Implement API layer    | Not Created |
      ```
 
    - Use Jira's current status when you have it for verified existing subtasks.
@@ -191,7 +191,9 @@ Failures:
 
 Populate `Dependencies` and `Priority` from the current task plan. Use `None`
 for tasks without prerequisites and `Unknown` when the plan does not provide a
-priority value.
+priority value. When the plan file was updated, include one row per parsed task
+in `Created/Linked Subtasks`. For tasks that were not linked successfully, use
+`Not Created` in `Subtask Key` and an outcome such as `Create failed`.
 
 Use these status rules:
 
@@ -257,6 +259,7 @@ Created/Linked Subtasks:
 | ---- | ----------- | ----- | ------------ | -------- | ------- |
 | 1    | PROJ-420    | Task 1: Configure auth middleware | None | High | Created now |
 | 2    | PROJ-421    | Task 2: Implement token refresh | 1 | High | Created now |
+| 3    | Not Created | Task 3: Add session management | 2 | Medium | Create failed |
 | 4    | PROJ-422    | Task 4: Add rate limiting | 2 | Medium | Created now |
 
 Warnings:
