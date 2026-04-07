@@ -17,15 +17,17 @@ skill can walk without reading raw planning artifacts inline.
 | `MODE` | Yes | `upfront` or `critique` |
 | `TICKET_KEY` | Yes | `JNS-6065` |
 | `PLAN_FILE` | Yes | `docs/JNS-6065-tasks.md` |
-| `CRITIQUE_REPORT` | Yes | Full structured output from `critique-analyzer` |
+| `CRITIQUE_REPORT_FILE` | Yes | `docs/JNS-6065-upfront-critique.md` |
 | `TASK_NUMBER` | Required for `MODE=critique` | `3` |
-| `CURRENT_TASK_ARTIFACTS` | Optional | `docs/JNS-6065-task-3-brief.md`, `docs/JNS-6065-task-3-execution-plan.md`, `docs/JNS-6065-task-3-test-spec.md`, `docs/JNS-6065-task-3-refactoring-plan.md` |
+| `CURRENT_TASK_ARTIFACTS` | Required for `MODE=critique` | `docs/JNS-6065-task-3-brief.md`, `docs/JNS-6065-task-3-execution-plan.md`, `docs/JNS-6065-task-3-test-spec.md`, `docs/JNS-6065-task-3-refactoring-plan.md` |
 
 ## Instructions
 
-### 1. Read the task plan
+### 1. Read the task plan and critique inputs
 
 Read `PLAN_FILE` and extract only the sections relevant to the current mode.
+
+Read `CRITIQUE_REPORT_FILE` before building the manifest.
 
 For `MODE=upfront`, use:
 
@@ -42,13 +44,16 @@ For `MODE=critique`, use:
 - Any questions tagged `[DEFERRED — will ask before Task <TASK_NUMBER> execution]`
 - Any current-task assumptions that are still unresolved
 - The `## Problem Framing` section for user-impact context
+- Every file in `CURRENT_TASK_ARTIFACTS`
 
 ### 2. Validate the critique report
 
-Confirm the report begins with one of:
+Confirm `CRITIQUE_REPORT_FILE` exists and begins with exactly one of:
 
 - `CRITIQUE: PASS`
 - `CRITIQUE: WARN`
+
+If `CRITIQUE_REPORT_FILE` is missing, return `MANIFEST: BLOCKED`.
 
 If the report is missing a verdict line or the required report sections, return
 `MANIFEST: FAIL`.
@@ -130,10 +135,17 @@ Return only the structured manifest format below.
 
 ## Output Format
 
-Successful runs must start with:
+Successful runs must start with exactly one of these headers:
 
 ```text
-MANIFEST: PASS | WARN
+MANIFEST: PASS
+Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
+Task title: <title or ->
+Questions now: <N> | Deferred: <N> | Irrelevant: <N>
+```
+
+```text
+MANIFEST: WARN
 Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
 Task title: <title or ->
 Questions now: <N> | Deferred: <N> | Irrelevant: <N>
@@ -191,6 +203,8 @@ Your job is to read the main plan, combine it with the critique report, and
 return a compact manifest. Specifically:
 
 - Read `PLAN_FILE` and only the current mode's relevant sections
+- Read `CRITIQUE_REPORT_FILE`
+- Read `CURRENT_TASK_ARTIFACTS` in `MODE=critique`
 - Translate rich critique into short question briefs
 - Decide what to ask now, what to defer, and what is irrelevant
 - Return only the manifest format
@@ -208,6 +222,8 @@ You do not:
 | --- | --- | --- |
 | `PLAN_FILE` missing | `BLOCKED` | Report the missing file and stop |
 | `TASK_NUMBER` section missing in critique mode | `BLOCKED` | Report the missing task section and stop |
-| `CRITIQUE_REPORT` malformed | `FAIL` | Report that the critique output is unusable |
+| `CURRENT_TASK_ARTIFACTS` missing in critique mode | `BLOCKED` | Report the missing artifact list and stop |
+| `CRITIQUE_REPORT_FILE` missing | `BLOCKED` | Report the missing critique artifact and stop |
+| `CRITIQUE_REPORT_FILE` malformed | `FAIL` | Report that the critique output is unusable |
 | Required plan section missing | `WARN` | Build the best manifest possible and note the omission |
 | No items remain after filtering | `PASS` | Return a zero-item manifest |

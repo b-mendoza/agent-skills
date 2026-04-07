@@ -18,6 +18,7 @@ Read `../subagents/critique-analyzer.md`, then dispatch with:
   - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md`
   - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md`
   - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md`
+- `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-task-<TASK_NUMBER>-critique.md`
 - `PRIOR_DECISIONS_FILE=docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md`
   only when `ITERATION > 1`
 - `PRIOR_DECISIONS_KIND=per-task` when `PRIOR_DECISIONS_FILE` is provided
@@ -41,7 +42,7 @@ Read `../subagents/question-manifest-builder.md`, then dispatch with:
   - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md`
   - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md`
   - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md`
-- `CRITIQUE_REPORT=<full critique-analyzer output>`
+- `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-task-<TASK_NUMBER>-critique.md`
 
 The manifest builder returns:
 
@@ -91,6 +92,9 @@ choice is needed:
 3. `I need more information`
 4. `Acknowledge but proceed`
 
+Record `I need more information` and `Action needed` style responses as the
+canonical `blocked` outcome for the recorder.
+
 For deferred questions, use the simplest fitting response form:
 
 - direct answer
@@ -100,6 +104,7 @@ For deferred questions, use the simplest fitting response form:
 ### Recording rules
 
 - `Switch to <alternative>` → set `RE_PLAN_NEEDED=true`
+- `blocked` → set `RE_PLAN_NEEDED=true`, set `BLOCKERS_PRESENT=true`, and stop after recording the blocker
 - `Acknowledge but proceed` → record as override, no re-plan
 - `Skip` → record the fallback and warning
 - If a deferred question is clearly obsolete, do not ask it; rely on the
@@ -133,9 +138,14 @@ Use the recorder summary plus session counts to present:
 - User-impact items resolved: <N>
 - Deferred questions resolved: <N>
 - Questions marked irrelevant: <N>
+- Blocking items: <N>
 - Overrides: <N>
 - Re-plan needed: <Yes/No>
+- Blockers present: <Yes/No>
 ```
 
 If `RE_PLAN_NEEDED=true`, tell the orchestrator to re-run the per-task planning
 phase before execution begins.
+
+If `BLOCKERS_PRESENT=true`, tell the orchestrator to stop before execution and
+escalate the unresolved items.

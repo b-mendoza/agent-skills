@@ -8,7 +8,9 @@ description: "Run the conversational clarification phases of the Jira workflow. 
 This skill is the conversation layer for the Jira-ticket workflow. It keeps the
 developer-facing dialogue inline, but delegates artifact reading, critique,
 manifest assembly, and file edits so the orchestrator can focus on the current
-question, the developer's reasoning, and the next decision.
+question, the developer's reasoning, and the next decision. `critique-analyzer`
+writes its full report to a workflow artifact before manifest assembly so the
+orchestrator does not carry the full report in working memory.
 
 ## Inputs
 
@@ -62,9 +64,15 @@ Keep only this inline:
 - The developer's response
 - The accumulated decision list
 - The `RE_PLAN_NEEDED` flag
+- The `BLOCKERS_PRESENT` flag
+- The active critique artifact path
 
 Do not read plan files inline once execution starts. The manifest is the source
 of truth for what gets asked.
+
+Have `critique-analyzer` write its report to a critique artifact file before
+dispatching `question-manifest-builder`. Pass the critique file path, not the
+full critique body.
 
 The inline questioning loop uses two models:
 
@@ -102,11 +110,15 @@ implementation code.
 
 | Artifact | Why it exists |
 | --- | --- |
+| `docs/<KEY>-upfront-critique.md` or `docs/<KEY>-task-<N>-critique.md` | Keeps structured critique available for manifest building and later review without retaining the full report inline |
 | `docs/<KEY>-tasks.md` updates | Makes downstream execution consume resolved decisions instead of open ambiguity |
 | `## Decisions Log` rows | Gives later phases a durable audit trail |
 | Deferred question tags | Tell Phase 6 what still needs to be asked later |
 | `docs/<KEY>-task-<N>-decisions.md` | Captures per-task critique decisions for re-planning and execution |
 | `RE_PLAN_NEEDED` in the final summary | Signals whether the orchestrator should re-run planning before execution |
+| `BLOCKERS_PRESENT` in the final summary | Signals that clarification stopped with unresolved items and execution must not proceed |
+
+These are orchestration artifacts. Keep them out of version control.
 
 ## Phase Guide
 
@@ -149,12 +161,14 @@ Input: TICKET_KEY=JNS-6065, MODE=upfront, ITERATION=1
 
 1. Read `./references/design-thinking-mindset.md`
 2. Read `./references/upfront-mode.md`
-3. Dispatch `critique-analyzer` with the plan file plus stage artifacts
+3. Dispatch `critique-analyzer` with the plan file, stage artifacts, and
+   `docs/JNS-6065-upfront-critique.md`
 4. Receive:
    CRITIQUE: PASS
    Ticket: JNS-6065 | Mode: upfront | Task: -
-5. Dispatch `question-manifest-builder` with the critique report and
-   `docs/JNS-6065-tasks.md`
+   Artifact: docs/JNS-6065-upfront-critique.md
+5. Dispatch `question-manifest-builder` with
+   `docs/JNS-6065-upfront-critique.md` and `docs/JNS-6065-tasks.md`
 6. Receive:
    MANIFEST: PASS
    Questions now: 8 | Deferred: 4

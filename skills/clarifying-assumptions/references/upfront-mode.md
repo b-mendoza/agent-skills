@@ -16,6 +16,7 @@ Read `../subagents/critique-analyzer.md`, then dispatch with:
 - `ARTIFACTS`
   - `docs/<TICKET_KEY>-stage-1-detailed.md`
   - `docs/<TICKET_KEY>-stage-2-prioritized.md`
+- `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-upfront-critique.md`
 - `PRIOR_DECISIONS_FILE=docs/<TICKET_KEY>-tasks.md` only when `ITERATION > 1`
 - `PRIOR_DECISIONS_KIND=main-log` when `PRIOR_DECISIONS_FILE` is provided
 
@@ -33,7 +34,7 @@ Read `../subagents/question-manifest-builder.md`, then dispatch with:
 - `MODE=upfront`
 - `TICKET_KEY=<TICKET_KEY>`
 - `PLAN_FILE=docs/<TICKET_KEY>-tasks.md`
-- `CRITIQUE_REPORT=<full critique-analyzer output>`
+- `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-upfront-critique.md`
 
 The manifest builder reads the task plan and produces:
 
@@ -104,6 +105,9 @@ For critique items, present these options when a discrete choice is needed:
 3. `I need more information`
 4. `Acknowledge but proceed`
 
+Record `I need more information` and `Action needed` style responses as the
+canonical `blocked` outcome for the recorder.
+
 For assumptions and direct questions, use the simplest fitting options:
 
 - assumptions: `Confirm`, `Revise`, `Skip`
@@ -113,6 +117,7 @@ For assumptions and direct questions, use the simplest fitting options:
 ### Recording rules
 
 - `Switch to <alternative>` → set `RE_PLAN_NEEDED=true`
+- `blocked` → set `RE_PLAN_NEEDED=true`, set `BLOCKERS_PRESENT=true`, and stop after recording the blocker
 - `Acknowledge but proceed` → record as an override, no re-plan
 - `Skip` on Tier 2 → record the fallback and add a warning
 - New question for the current task or cross-cutting scope → append it to the
@@ -142,10 +147,15 @@ Use the recorder summary plus session counts to present:
 - Questions resolved: <N>
 - Questions skipped: <N>
 - Questions deferred: <N>
+- Blocking items: <N>
 - Overrides: <N>
 - Plan-changing decisions: <N>
 - Re-plan needed: <Yes/No>
+- Blockers present: <Yes/No>
 ```
 
 If `RE_PLAN_NEEDED=true`, tell the orchestrator to re-run planning before
 execution starts.
+
+If `BLOCKERS_PRESENT=true`, tell the orchestrator to stop before execution and
+escalate the unresolved items.

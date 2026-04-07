@@ -19,6 +19,7 @@ deliberate decision instead of inheriting a planner's assumptions.
 | `TICKET_KEY` | Yes | `JNS-6065` |
 | `MAIN_PLAN_FILE` | Yes | `docs/JNS-6065-tasks.md` |
 | `ARTIFACTS` | Yes | `docs/JNS-6065-stage-1-detailed.md` |
+| `CRITIQUE_REPORT_FILE` | Yes | `docs/JNS-6065-upfront-critique.md` |
 | `TASK_NUMBER` | Required for `MODE=critique` | `3` |
 | `PRIOR_DECISIONS_FILE` | Optional | `docs/JNS-6065-task-3-decisions.md` |
 | `PRIOR_DECISIONS_KIND` | Required when `PRIOR_DECISIONS_FILE` is provided | `main-log` or `per-task` |
@@ -70,7 +71,7 @@ For each substantive framework, library, or tooling decision:
 If web search is unavailable, fail loudly. This subagent exists to correct
 training-data bias; without live search, that purpose is compromised.
 
-### 5. Produce critique
+### 5. Produce critique and write the artifact
 
 Use the rubric to decide what to challenge:
 
@@ -78,20 +79,38 @@ Use the rubric to decide what to challenge:
 - In `MODE=critique`, focus on task-level critique plus user-impact trade-offs
 
 Read `./critique-analyzer-template.md` at write time and follow it exactly.
+Write the full critique report to `CRITIQUE_REPORT_FILE`.
 
-Return concise critique only. Do not include raw web-search dumps, raw file
-contents, or conversational filler.
+Return only a concise summary plus the artifact path. Do not include raw
+web-search dumps, raw file contents, or the full critique body inline.
 
 ## Output Format
 
-Successful runs must start with:
+Successful runs must start with exactly one of these headers:
 
 ```text
-CRITIQUE: PASS | WARN
+CRITIQUE: PASS
 Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
+Artifact: <CRITIQUE_REPORT_FILE>
 ```
 
-Then return the report body from `./critique-analyzer-template.md`.
+```text
+CRITIQUE: WARN
+Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
+Artifact: <CRITIQUE_REPORT_FILE>
+```
+
+Then return:
+
+```markdown
+## Critique Summary
+
+- Problem-framing items: <N>
+- Technology critique items: <N>
+- User-impact items: <N>
+- Suppressed due to prior decisions: <N>
+- Warning: <present only for WARN>
+```
 
 Failed runs must return only:
 
@@ -103,17 +122,18 @@ Reason: <what went wrong>
 ## Scope
 
 Your job is to read planning artifacts, inspect the actual codebase, search the
-web, and return structured critique. Specifically:
+web, write a structured critique artifact, and return a concise summary.
+Specifically:
 
 - Read `MAIN_PLAN_FILE` and every file in `ARTIFACTS`
 - Verify the actual stack before critiquing technology choices
 - Use live web search to name concrete alternatives and trade-offs
 - Suppress already-resolved concerns when prior decisions were provided
-- Return only the structured critique report
+- Write the full critique report to `CRITIQUE_REPORT_FILE`
+- Return only the summary header plus artifact path
 
 You do not:
 
-- Edit any files
 - Build the question manifest
 - Decide what the developer should choose
 - Review implementation code quality
@@ -126,5 +146,6 @@ You do not:
 | Codebase cannot be verified | `FAIL` | Report and stop |
 | `MAIN_PLAN_FILE` missing | `FAIL` | Report and stop |
 | All mode-specific artifacts missing | `FAIL` | Report and stop |
+| `CRITIQUE_REPORT_FILE` write fails | `FAIL` | Report and stop |
 | Some artifacts missing | `WARN` | Critique what is available and name the missing files |
 | Prior decisions file missing | `WARN` | Treat as first-pass critique and say suppression was skipped |
