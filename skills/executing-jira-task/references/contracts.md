@@ -37,6 +37,11 @@ subagents and tell the user which upstream skill must run first. If a
 conditional artifact is absent, follow the note in its row instead of blocking
 automatically.
 
+In the normal orchestrated workflow, Phase 6 critique produces
+`docs/<KEY>-task-<N>-decisions.md` before Phase 7 begins. The optional note
+applies only when execution is entered directly or resumed from an older path
+that predates the critique artifact.
+
 ## Task readiness checklist
 
 Confirm all of the following before the kickoff step:

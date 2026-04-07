@@ -117,6 +117,33 @@ forcing the pipeline forward.
 | Status handling, retries, and user escalations   | `./references/retry-and-escalation.md`    |
 | Shared reviewer expectations for quality gates   | `./references/review-gate-policy.md`      |
 
+## Execution Steps
+
+1. Read `./references/contracts.md` and confirm the task is ready to cross the
+   execution boundary.
+2. Read `./references/pipeline.md` and follow its normal run order exactly.
+3. Dispatch only the next required subagent, passing explicit inputs and
+   keeping only structured summaries in orchestration context.
+4. When a blocker, missing prerequisite, or failing gate appears, read the
+   relevant recovery reference from `## Phase Guide` and run only the targeted
+   retry or escalation path.
+5. Report the selected task's outcome once the pipeline finishes or stops. Do
+   not auto-continue to the next task.
+
+## Operating Constraints
+
+This skill stays reliable by keeping scope tight, preserving artifact
+boundaries, and fixing only the phase that actually failed.
+
+- Execute one task per invocation and stop after reporting the result.
+- Keep the task plan as the source of truth. If execution reveals a plan change
+  is needed, escalate instead of silently rewriting the plan.
+- Preserve Category A artifacts on disk and out of git history.
+- Keep fix cycles targeted. Re-run only the failing verification or review
+  steps, not the entire pipeline.
+- Treat missing required skills, missing MCP capability, or unresolved
+  ambiguity as orchestration decisions. Surface them clearly and stop.
+
 ## Example
 
 ```markdown
@@ -138,17 +165,3 @@ Input:
    - Re-run example: `clean-code-reviewer` -> `PASS WITH SUGGESTIONS`
 8. Report the kickoff outcome, final verdicts, commits, files changed, and any skipped Jira updates.
 ```
-
-## Operating Constraints
-
-This skill stays reliable by keeping scope tight, preserving artifact
-boundaries, and fixing only the phase that actually failed.
-
-- Execute one task per invocation and stop after reporting the result.
-- Keep the task plan as the source of truth. If execution reveals a plan change
-  is needed, escalate instead of silently rewriting the plan.
-- Preserve Category A artifacts on disk and out of git history.
-- Keep fix cycles targeted. Re-run only the failing verification or review
-  steps, not the entire pipeline.
-- Treat missing required skills, missing MCP capability, or unresolved
-  ambiguity as orchestration decisions. Surface them clearly and stop.

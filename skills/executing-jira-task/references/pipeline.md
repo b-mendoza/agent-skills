@@ -4,6 +4,9 @@
 >
 > Reminder: dispatch specialists and pass compact inputs. Do not carry raw file
 > contents or logs through the orchestrator.
+>
+> `./contracts.md` remains the authoritative source for readiness checks and
+> dispatch input contracts. This file is the ordered runbook.
 
 ## Standard phase cycle
 
