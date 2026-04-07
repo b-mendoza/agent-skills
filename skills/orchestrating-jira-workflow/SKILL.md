@@ -55,7 +55,7 @@ Phase 3: Clarify + critique  -> docs/<KEY>-tasks.md (updated with decisions)
 Phase 4: Create subtasks     -> Jira subtasks + plan updated with subtask keys
 Phase 5: Plan task execution -> docs/<KEY>-task-<N>-*.md (4 planning artifacts)
 Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-decisions.md
-Phase 7: Execute task        -> code changes, tests, commits
+Phase 7: Kick off + execute  -> first side effects, code changes, tests, commits
          ^___________________/  repeat phases 5-7 per task
 ```
 
@@ -221,7 +221,7 @@ Use these gate rules consistently:
 | 3 -> 4   | User gate | Creating Jira subtasks requires explicit user approval |
 | 4 -> 5   | User gate | User selects the next task to execute |
 | 5 -> 6   | Automatic | Proceed when planning artifacts validate |
-| 6 -> 7   | User gate | User confirms the critiqued task plan is ready |
+| 6 -> 7   | User gate | User confirms the critiqued task plan is ready and Phase 7 may begin real execution |
 | 7 -> next task | User gate | User chooses the next task or stops |
 
 ## Example

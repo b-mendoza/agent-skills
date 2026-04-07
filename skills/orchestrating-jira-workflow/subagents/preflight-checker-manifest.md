@@ -66,7 +66,7 @@ dispatch.
 
 ---
 
-## Phase 7 — Execute (executing-jira-task)
+## Phase 7 — Kick Off + Execute (executing-jira-task)
 
 | Dependency                   | Type  | Used by                | How to check                                                      | Install / configure                                                             |
 | ---------------------------- | ----- | ---------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |

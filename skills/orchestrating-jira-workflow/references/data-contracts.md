@@ -33,7 +33,7 @@ Each row shows what to dispatch to `artifact-validator` and what to expect.
 | 5     | postcondition | `docs/<KEY>-task-<N>-brief.md`     | File exists                      |
 | 6     | precondition  | `docs/<KEY>-task-<N>-*.md`         | All 4 planning artifacts exist   |
 | 6     | postcondition | `docs/<KEY>-task-<N>-decisions.md` | File exists                      |
-| 7     | precondition  | `docs/<KEY>-task-<N>-*.md`         | Same as Phase 6 precondition     |
+| 7     | precondition  | `docs/<KEY>-task-<N>-*.md`         | Same as Phase 6 precondition; these inputs feed the execution kickoff |
 
 ---
 

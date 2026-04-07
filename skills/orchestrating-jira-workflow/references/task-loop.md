@@ -7,7 +7,7 @@
 > and file updates stay delegated.
 
 Each task passes through Phase 5 (plan), Phase 6 (critique), and Phase 7
-(execute) before the next task begins.
+(execution kickoff + execute) before the next task begins.
 
 ---
 
@@ -28,8 +28,8 @@ Before entering the loop for a task:
    dependencies and status. Let the user choose — never auto-select.
 
 3. **Gather pre-task context.** Dispatch relevant utility subagents to gather
-   context the downstream skill will need. These are independent and can run
-   in parallel:
+   context the downstream skill's kickoff and execution steps may need. These
+   are independent and can run in parallel:
 
    | Need                        | Dispatch to             |
    | --------------------------- | ----------------------- |
@@ -204,16 +204,17 @@ SUMMARY: "N critique items addressed, plan confirmed"
 ```
 
 **Gate:** User confirmation required. The user must confirm the plan is ready
-for implementation before Phase 7 begins.
+for implementation before Phase 7 begins. This keeps Phase 6 critique-only and
+makes Phase 7 kickoff the first mutation boundary.
 
 ```
 The execution plan for Task <N> has been critiqued and updated.
-Ready to start implementation? (y/n)
+Ready to start execution kickoff and implementation? (y/n)
 ```
 
 ---
 
-## Phase 7 — Execute Task
+## Phase 7 — Kick Off and Execute Task
 
 **Skill:** `executing-jira-task` (at `../executing-jira-task/SKILL.md`)
 
@@ -221,7 +222,7 @@ Ready to start implementation? (y/n)
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Phase 7/7 — Execute (Task <N>)
+Phase 7/7 — Kick Off + Execute (Task <N>)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
@@ -238,9 +239,19 @@ TASK_NUMBER: <N>
 `TASK_NUMBER`, and context summaries from the pre-task utility dispatches.
 Follow every step defined in the skill.
 
-The skill manages its own 6-subagent pipeline and quality gates internally.
-The orchestrator does not intervene in quality gate fix cycles — the skill
-handles up to 3 fix iterations on its own.
+The downstream skill starts with an explicit **execution kickoff**. That kickoff
+is the first mutation boundary after critique approval. It is where the
+workflow:
+
+- confirms task/workspace readiness
+- applies any safe startup state changes
+- transitions the Jira subtask to `In Progress` when possible
+- returns `READY` or a clear blocker before implementation begins
+
+The skill manages its own kickoff step, implementation pipeline, and quality
+gates internally. The orchestrator does not intervene in kickoff handling or
+quality gate fix cycles unless the downstream skill returns a blocker or
+exhausts its internal retry budget.
 
 ### Quality gate escalation
 
@@ -268,8 +279,8 @@ Option 3 is for fundamental approach failures — not for minor code quality
 issues that can be accepted.
 
 There is no orchestrator-level Phase 7 postcondition artifact check. The
-downstream execution skill owns its internal quality gates and returns the
-completion summary that drives the workflow update.
+downstream execution skill owns its internal kickoff and quality gates and
+returns the completion summary that drives the workflow update.
 
 **Update progress:** Dispatch `progress-tracker`:
 
@@ -319,7 +330,7 @@ When all tasks are complete (or the user decides to stop), dispatch
 | 2     | ✅ Complete | N tasks planned                        |
 | 3     | ✅ Complete | N/N questions resolved, N critiqued    |
 | 4     | ✅ Complete | N subtasks created in Jira             |
-| 5–7   | ✅ Complete | N/N tasks planned, critiqued, executed |
+| 5–7   | ✅ Complete | N/N tasks planned, critiqued, kicked off, executed |
 
 Per-task detail in docs/<TICKET_KEY>-task-<N>-progress.md.
 All artifacts are in docs/<TICKET_KEY>*.
