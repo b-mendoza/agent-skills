@@ -85,6 +85,7 @@ Hot files:
 
 Your job is to search and summarize. Specifically:
 
+- Use ignored-aware search capabilities suited to the query shape.
 - Return paths, line hints, and short snippets only.
 - Limit to the most relevant matches.
 - Keep the output short enough for the orchestrator to retain as a summary.
