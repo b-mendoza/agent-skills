@@ -1,19 +1,19 @@
 ---
 name: "creating-jira-subtasks"
-description: 'Phase 4 of the orchestrating-jira-workflow pipeline. Reads the task plan from docs/<TICKET_KEY>-tasks.md and creates one Jira subtask per task under the parent ticket, updating the plan file with subtask keys for traceability. Invoked by the orchestrating-jira-workflow skill — not intended for standalone use. This skill creates subtasks but never starts implementation — all subtasks are created in "To Do" status.'
+description: 'Phase 4 of the orchestrating-jira-workflow pipeline. Use after the task plan has been clarified and the user has explicitly approved Jira writes. This skill reads only its bundled files, dispatches the `subtask-creator` subagent with `JIRA_URL`, and returns a concise phase summary after Jira subtasks are created or reconciled and `docs/<TICKET_KEY>-tasks.md` is updated with subtask keys.'
 ---
 
 # Creating Jira Subtasks
 
-## Purpose
+Create or reconcile Jira subtasks for a clarified task plan at
+`docs/<TICKET_KEY>-tasks.md`. This skill coordinates Phase 4 by dispatching one
+specialist subagent, keeping only its structured summary, and reporting the
+outcome the parent workflow needs for progress tracking.
 
-Dispatch the `subtask-creator` subagent to read the task plan, create
-corresponding subtasks in Jira under the parent ticket, and update the plan
-file with subtask keys for traceability.
-
-This skill is a **pure coordinator** — it dispatches one subagent and reports
-the result. It never makes Jira API calls, reads files, writes files, or
-runs commands directly.
+The coordinator does four things directly: read its bundled files, derive
+identifiers from `JIRA_URL`, dispatch `subtask-creator`, and relay the
+subagent's summary. It does not parse the task plan inline, call Jira
+directly, or edit the plan file itself.
 
 ## Inputs
 
@@ -21,144 +21,176 @@ runs commands directly.
 | ---------- | -------- | ----------------------------------------------------------- |
 | `JIRA_URL` | Yes      | `https://vukaheavyindustries.atlassian.net/browse/JNS-6065` |
 
-Extract these values from the URL:
+Derive these values from the URL when you need to describe the ticket:
 
-- **Workspace:** subdomain before `.atlassian.net` → `vukaheavyindustries`
-- **Project:** prefix before the dash in the path segment → `JNS`
-- **Ticket key:** full path segment → `JNS-6065`
+- **Workspace:** subdomain before `.atlassian.net`
+- **Project:** prefix before the dash in the ticket key
+- **Ticket key:** full path segment, such as `JNS-6065`
 
-### Input contract
+Prefer passing the full `JIRA_URL` downstream rather than only `TICKET_KEY`.
+The URL carries the workspace context needed for Jira reads and writes.
 
-The task plan file must already exist at `docs/<TICKET_KEY>-tasks.md`.
-If it does not, the orchestrator should re-run Phase 2.
+## Input and Output Contracts
 
-The plan file must contain these sections, produced by upstream skills:
+Primary input artifact:
 
-| Required section                        | Produced by            | Purpose                                       |
-| --------------------------------------- | ---------------------- | --------------------------------------------- |
-| `## Tasks` with numbered task sections  | planning-jira-tasks    | Each task becomes one Jira subtask            |
-| `## Execution Order Summary`            | planning-jira-tasks    | Determines creation sequence                  |
-| `## Decisions Log`                      | clarifying-assumptions | Phase-completion signal; resolved decisions   |
-| Per-task `Questions to answer` resolved | clarifying-assumptions | Subtask descriptions reflect resolved answers |
-| Per-task `Implementation notes` updated | clarifying-assumptions | Descriptions include confirmed approach       |
+```text
+docs/<TICKET_KEY>-tasks.md
+```
 
-## Output
+For normal Phase 4 execution, the plan is expected to contain:
 
-- Subtasks created in Jira under `TICKET_KEY`.
-- A summary table printed to the user showing each subtask key and title.
-- The local plan file updated with created subtask keys for traceability.
+| Required section / element               | Produced by            | Why it matters                                |
+| ---------------------------------------- | ---------------------- | --------------------------------------------- |
+| `## Tasks` with numbered `## Task <N>:` headings | planning-jira-tasks    | Each task maps to one Jira subtask            |
+| `## Execution Order Summary`             | planning-jira-tasks    | Preserves task ordering context               |
+| `## Decisions Log`                       | clarifying-assumptions | Indicates critique is complete before Jira writes |
 
-### Output contract (consumed by executing-jira-task)
+The parent orchestrator already validates the Phase 4 precondition before this
+skill runs. If this skill is used standalone and the plan is missing or
+malformed, the subagent returns `SUBTASKS: BLOCKED`.
 
-| Addition                                              | Required by         | Purpose                                           |
-| ----------------------------------------------------- | ------------------- | ------------------------------------------------- |
-| `## Jira Subtasks` table (Task #, Key, Title, Status) | executing-jira-task | Maps task numbers to Jira keys for status updates |
-| `Jira Subtask: <KEY>` line in each task section       | executing-jira-task | Executor transitions the correct Jira issue       |
+Primary output artifact:
 
-The orchestrator checks for `## Jira Subtasks` as the Phase 4 completion
-signal.
+```text
+docs/<TICKET_KEY>-tasks.md
+```
+
+After successful or partial Phase 4 completion, the plan file must include:
+
+| Addition                                              | Consumed by          | Purpose                                           |
+| ----------------------------------------------------- | -------------------- | ------------------------------------------------- |
+| `## Jira Subtasks` table (Task, Subtask Key, Title, Status) | planning-jira-task, executing-jira-task | Maps task numbers to Jira keys and Jira state     |
+| `Jira Subtask: <KEY>` line in each linked task section | planning-jira-task, executing-jira-task | Identifies the Jira issue to transition later     |
+
+The subagent returns a structured summary with:
+
+- `SUBTASKS: PASS | WARN | FAIL | BLOCKED | ERROR`
+- `Validation: PASS | FAIL | NOT_RUN`
+- Counts for tasks in plan, already-linked tasks, newly created tasks, and
+  failed creates
+- A `Created/Linked Subtasks` table with task numbers, keys, and titles
+- Explicit `Warnings` and `Failures` sections
+
+That table is the handoff the parent workflow uses to populate progress
+tracking. The overall Phase 4 completion signal remains the validated presence
+of `## Jira Subtasks` in `docs/<TICKET_KEY>-tasks.md`.
+
+## Workflow Overview
+
+```text
+1. Read the subtask-creator definition
+2. Dispatch it with JIRA_URL
+3. Interpret its structured result
+4. Report only the concise phase summary to the caller
+```
 
 ## Subagent Registry
 
-| Subagent          | Path                             | Purpose                                                                              |
-| ----------------- | -------------------------------- | ------------------------------------------------------------------------------------ |
-| `subtask-creator` | `./subagents/subtask-creator.md` | End-to-end: parse plan → lookup parent → build payloads → create → update → validate |
+Read a subagent definition only when you are about to dispatch it.
 
-Before dispatching, read the subagent file to understand its input/output
-contract. The path is relative to this skill's directory.
-
-## Multi-Platform MCP Compatibility
-
-Jira subtasks are created through MCP tools, but the specific tool names
-and interfaces vary across platforms (Cursor, Claude Code, OpenCode). The
-`subtask-creator` subagent handles MCP tool discovery internally — this
-skill does not need to know which tools are available.
+| Subagent          | Path                             | Purpose                                                                                 |
+| ----------------- | -------------------------------- | --------------------------------------------------------------------------------------- |
+| `subtask-creator` | `./subagents/subtask-creator.md` | Reads or reconciles the plan, creates missing Jira subtasks sequentially, updates the plan idempotently, validates the output, and returns a structured Phase 4 summary |
 
 ## How This Skill Works
 
-This skill does exactly two things: **dispatch** the `subtask-creator`
-subagent with the `TICKET_KEY` derived from `JIRA_URL`, and **report** its
-summary to the user.
+This skill is intentionally narrow. Phase 3 user approval has already happened
+before Phase 4 starts, and the parent orchestrator wraps this skill with its
+own precondition/postcondition checks and progress tracking.
 
-The subagent's summary is the only data this skill processes. If the summary
-indicates errors (parent not found, all subtasks failed, validation failure),
-relay them to the user. If it indicates success, report the subtask count
-and the tracking table.
+Inside Phase 4, keep only:
+
+- The structured `SUBTASKS` verdict
+- The validation verdict
+- The task/key/title rows needed for progress reporting
+- Any warning or fatal reason that requires user attention
+
+Do not surface raw Jira API responses, raw file contents, or intermediate parse
+results unless the user explicitly asks for them.
 
 ## Execution Steps
 
 ### 1. Dispatch `subtask-creator`
 
-Read `./subagents/subtask-creator.md` and dispatch the subagent with:
+Read `./subagents/subtask-creator.md`, then dispatch it with:
 
-- `TICKET_KEY` — the ticket key derived from the user's `JIRA_URL`.
+- `JIRA_URL`
 
-The subagent handles everything end-to-end: reads and parses the task plan,
-looks up the parent ticket via Jira MCP, builds subtask payloads in Jira wiki
-markup (cross-referencing resolved decisions), creates subtasks sequentially,
-handles individual failures gracefully, updates the plan file with subtask
-keys and the tracking table, validates the output contract, and returns a
-concise summary.
+The subagent owns plan parsing, Jira-capable MCP tool discovery, parent lookup,
+idempotent reuse of existing subtask links, sequential creation of missing
+subtasks, plan-file updates, and post-write validation.
 
-### 2. Handle the result
+### 2. Interpret the structured result
 
-Collect the subagent's summary. Check the summary for errors:
+Handle the returned summary this way:
 
-- **FAIL (fatal — parent not found, auth failure, no MCP tools):** Relay the
-  error to the user and stop. Phase 4 is incomplete.
-- **BLOCKED (plan file missing):** Relay the error — the orchestrator should
-  re-run Phase 2. Phase 4 is incomplete.
-- **WARN (partial failures):** Relay which tasks failed and which succeeded.
-  If ALL subtasks failed, the subagent will NOT have written the
-  `## Jira Subtasks` table — tell the user Phase 4 is incomplete. Offer to
-  retry.
-- **WARN (Decisions Log missing):** Relay this warning — subtask descriptions
-  may not reflect resolved decisions.
-- **WARN (validation failure):** Relay the validation details. Offer to retry.
-- **PASS (all subtasks created, validation passed):** Proceed to step 3.
+- `SUBTASKS: PASS` with `Validation: PASS`: report success and proceed.
+- `SUBTASKS: WARN` with `Validation: PASS`: report partial success or degraded
+  input clearly. Phase 4 may still be usable if the plan file now contains
+  valid Jira keys, but make failed tasks visible so the user can retry before
+  executing them.
+- `SUBTASKS: BLOCKED`: stop and relay the artifact or data-shape problem. This
+  usually means the plan is missing, malformed, or contains unsafe existing
+  Jira links that need manual correction.
+- `SUBTASKS: FAIL`: stop and relay the fatal Jira or validation failure.
+- `SUBTASKS: ERROR`: stop and relay the unexpected failure.
+- Any result paired with `Validation: FAIL`: treat the phase as incomplete even
+  if some Jira writes succeeded, because the local plan contract is not
+  trustworthy yet.
 
-If the platform cannot dispatch the subagent, fall back to reading the
-subagent's `.md` file and executing its instructions directly.
+### 3. Report only the summary
 
-### 3. Report to the user
+Using only the subagent's structured summary, tell the caller:
 
-Using ONLY the information from the subagent's summary, tell the user:
+- The ticket key and updated plan-file path
+- Total tasks in plan, already linked tasks, newly created subtasks, and failed
+  creates
+- The `Created/Linked Subtasks` table
+- Any warnings or failures
+- That no implementation has started and linked subtasks remain in `To Do`
+  unless Jira already shows another status
 
-- Total subtasks created vs. total tasks in plan.
-- Table of subtask keys, titles, and links.
-- Any failures or warnings.
-- Remind the user that no implementation has started — subtasks are in "To Do".
+If dispatch is unavailable, stop and report the skill as blocked rather than
+reproducing the subagent inline.
+
+## Example
 
 <example>
-User provides: https://vukaheavyindustries.atlassian.net/browse/JNS-6065
+Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 
-1. Extract TICKET_KEY → JNS-6065
-2. Read ./subagents/subtask-creator.md
-3. Dispatch subtask-creator with TICKET_KEY=JNS-6065
-4. Subagent returns:
+1. Read `./subagents/subtask-creator.md`
+2. Dispatch `subtask-creator` with `JIRA_URL`
+3. Subagent returns:
 
-   ## Subtask Creation Summary
-   - Parent ticket: JNS-6065
-   - Tasks in plan: 5
-   - Successfully created: 5
-   - Failed: 0
-   - Decisions Log present: Yes
-   - Validation: PASS
+   SUBTASKS: PASS
+   Validation: PASS
+   Ticket: PROJ-123
+   Plan file: docs/PROJ-123-tasks.md
+   Tasks in plan: 4
+   Already linked: 1
+   Created now: 3
+   Failed creates: 0
+   Decisions Log: PRESENT
+   Reason: All tasks are now linked to Jira subtasks.
 
-   ### Created Subtasks
-   | Task | Subtask Key | Title                          |
-   | ---- | ----------- | ------------------------------ |
-   | 1    | JNS-6070    | Task 1: Set up database schema |
-   | 2    | JNS-6071    | Task 2: Implement API layer    |
-   | 3    | JNS-6072    | Task 3: Build UI components    |
-   | 4    | JNS-6073    | Task 4: Add integration tests  |
-   | 5    | JNS-6074    | Task 5: Update documentation   |
+   Created/Linked Subtasks:
+   | Task | Subtask Key | Title                         | Outcome        |
+   | ---- | ----------- | ----------------------------- | -------------- |
+   | 1    | PROJ-200    | Task 1: Set up schema         | Already linked |
+   | 2    | PROJ-201    | Task 2: Implement API layer   | Created now    |
+   | 3    | PROJ-202    | Task 3: Add integration tests | Created now    |
+   | 4    | PROJ-203    | Task 4: Update docs           | Created now    |
 
-   ### Failures
-   None
+   Warnings:
+   - None
 
-5. Report to user:
-   "5 subtasks created under JNS-6065 (5/5 succeeded).
-    JNS-6070 through JNS-6074. Plan file updated with subtask keys.
-    No implementation started — all subtasks are in To Do."
+   Failures:
+   - None
+
+4. Report:
+   "Phase 4 complete for `PROJ-123`.
+   `docs/PROJ-123-tasks.md` now maps all 4 tasks to Jira subtasks.
+   1 task was already linked and 3 subtasks were created now.
+   No implementation has started."
 </example>
