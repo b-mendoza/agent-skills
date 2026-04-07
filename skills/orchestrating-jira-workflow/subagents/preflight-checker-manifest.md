@@ -10,10 +10,11 @@
 
 ## Classification
 
-All dependencies are **Required**. The workflow cannot proceed if any are
-missing — the verdict is FAIL. There is no optional/recommended tier. This is
-enforced both here (preflight) and by each subagent at runtime
-(defense-in-depth).
+All dependencies are **Required**. A passing preflight verifies that every
+requested dependency is available, with `UNKNOWN` reserved only for inherently
+ambiguous checks. Any requested dependency confirmed as `MISSING` produces a
+`FAIL` verdict. There is no optional/recommended tier. This is enforced both
+here (preflight) and by each subagent at runtime (defense-in-depth).
 
 ---
 

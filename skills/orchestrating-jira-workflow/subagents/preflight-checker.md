@@ -19,7 +19,8 @@ return a compact verdict the orchestrator can act on immediately.
 | `PHASES`     | No       | `1,2,3,4` or `5-7`   |
 
 If `PHASES` is omitted, validate the full workflow. If it is provided, check
-only the dependencies needed by those remaining phases.
+only the dependencies needed by those remaining phases. Accept both comma lists
+and inclusive ranges such as `1,2,4` or `5-7`.
 
 ## Instructions
 
@@ -40,6 +41,9 @@ only the dependencies needed by those remaining phases.
 Use `UNKNOWN` for a single ambiguous dependency check. Use `ERROR` only when
 you cannot complete the preflight itself, such as being unable to read the
 manifest or interpret the requested phase set.
+
+Because the manifest classifies every listed dependency as required, use
+`FAIL` when one or more requested dependencies are confirmed `MISSING`.
 
 ## Output Format
 
