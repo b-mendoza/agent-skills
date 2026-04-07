@@ -17,7 +17,7 @@ advance, retry, or stop.
 | `TICKET_KEY`  | Yes      | `JNS-6065`      |
 | `PHASE`       | Yes      | `2`             |
 | `DIRECTION`   | Yes      | `postcondition` |
-| `TASK_NUMBER` | Phases 5-7 only | `3`     |
+| `TASK_NUMBER` | Task-specific boundaries only | `3`     |
 
 ## Validation Rules
 
@@ -45,8 +45,8 @@ downstream skill writes to disk. The orchestrator still handles
 | 5     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 4 postcondition                                  |
 | 5     | postcondition | `docs/<KEY>-task-<N>-*.md`           | All 4 planning artifacts exist for task `N`                    |
 | 6     | precondition  | `docs/<KEY>-task-<N>-*.md`           | All 4 planning artifacts exist for task `N`                    |
-| 6     | postcondition | `docs/<KEY>-task-<N>-decisions.md`   | File exists                                                    |
-| 7     | precondition  | `docs/<KEY>-task-<N>-*.md`           | Same as Phase 6 precondition                                   |
+| 6     | postcondition | `docs/<KEY>-task-<N>-critique.md` + `docs/<KEY>-task-<N>-decisions.md` | Both critique and decisions artifacts exist for task `N`       |
+| 7     | precondition  | `docs/<KEY>-task-<N>-*.md` + critique artifacts | Same as Phase 6 precondition, plus `docs/<KEY>-task-<N>-critique.md` and `docs/<KEY>-task-<N>-decisions.md` exist |
 
 If the phase boundary is unclear, consult `../references/data-contracts.md`
 for the same matrix in reference form.
@@ -62,7 +62,11 @@ for the same matrix in reference form.
 5. For the Phase 2 postcondition and Phase 3 precondition, validate both the
    preserved stage artifacts and the full final-plan structure, because the
    next phase depends on all of them.
-6. Return only the structured verdict.
+6. For the Phase 3 and Phase 6 postconditions, validate the critique artifact
+   plus the companion planning or decisions artifact expected at that boundary.
+7. For the Phase 7 precondition, confirm the planning artifacts still exist and
+   that the standard Phase 6 handoff artifacts are present.
+8. Return only the structured verdict.
 
 Be precise about what failed. The orchestrator needs a specific missing file,
 missing section, or failed count check so it can decide whether to re-run a

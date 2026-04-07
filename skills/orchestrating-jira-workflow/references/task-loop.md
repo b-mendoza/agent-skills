@@ -71,6 +71,7 @@ Phase 5/7 — Plan Task Execution (Task <N>)
 TICKET_KEY: <KEY>
 PHASE: 5
 DIRECTION: precondition
+TASK_NUMBER: <N>
 ```
 
 **Start task tracking:** If the Phase 5 precondition passes and this task does
@@ -153,7 +154,11 @@ Expected: all 4 planning artifacts exist.
 - `MODE=critique`
 - `TICKET_KEY`
 - `TASK_NUMBER`
-- Paths to all 4 planning artifacts
+- `ITERATION=<current iteration or 1>`
+
+The skill derives the standard artifact paths from `TICKET_KEY` and
+`TASK_NUMBER`. The Phase 5 planning artifacts remain on disk for its delegated
+reads.
 
 The skill dispatches its `critique-analyzer` to review the planning artifacts,
 then walks the user through all critique items and any deferred questions for
@@ -205,7 +210,8 @@ TASK_NUMBER: <N>
 ```
 
 Expected: `docs/<KEY>-task-<N>-decisions.md` exists, even if it only records
-that no additional decisions were needed beyond critique approval.
+that no additional decisions were needed beyond critique approval, and
+`docs/<KEY>-task-<N>-critique.md` exists for the task-level critique report.
 
 **Update progress:** Dispatch `progress-tracker`:
 
@@ -218,12 +224,17 @@ STATUS: complete
 SUMMARY: "N critique items addressed, plan confirmed"
 ```
 
-**Gate:** User confirmation required. The user must confirm the plan is ready
-for implementation before Phase 7 begins. This keeps Phase 6 critique-only in
-the execution sense: no implementation, no kickoff, no Jira `In Progress`
-transition, and no commits happen here. Recording critique outcomes in
-`docs/<KEY>-task-<N>-decisions.md` is still in scope. Phase 7 kickoff remains
-the first execution mutation boundary.
+**Gate:** First honor the clarification summary.
+
+If `BLOCKERS_PRESENT=true`, stop before execution and surface the unresolved
+items. Do not offer Phase 7 as the next step until the blockers are resolved.
+
+If `BLOCKERS_PRESENT=false`, user confirmation is still required. The user must
+confirm the plan is ready for implementation before Phase 7 begins. This keeps
+Phase 6 critique-only in the execution sense: no implementation, no kickoff,
+no Jira `In Progress` transition, and no commits happen here. Recording
+critique outcomes in `docs/<KEY>-task-<N>-decisions.md` is still in scope.
+Phase 7 kickoff remains the first execution mutation boundary.
 
 ```
 The execution plan for Task <N> has been critiqued and updated.
@@ -252,6 +263,9 @@ PHASE: 7
 DIRECTION: precondition
 TASK_NUMBER: <N>
 ```
+
+Expected: the Phase 5 planning artifacts still exist, and the standard workflow
+handoff from Phase 6 is present for the task.
 
 **Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY` and
 `TASK_NUMBER`. Keep any pre-task utility summaries at hand for coordination,

@@ -37,8 +37,8 @@ definition of `docs/<KEY>.md`.
 | ----- | ------------- | ---------------------------------- | -------------------------------- |
 | 5     | postcondition | `docs/<KEY>-task-<N>-*.md`         | All 4 planning artifacts exist   |
 | 6     | precondition  | `docs/<KEY>-task-<N>-*.md`         | All 4 planning artifacts exist   |
-| 6     | postcondition | `docs/<KEY>-task-<N>-decisions.md` | File exists                      |
-| 7     | precondition  | `docs/<KEY>-task-<N>-*.md`         | Same as Phase 6 precondition; these inputs feed the execution kickoff |
+| 6     | postcondition | `docs/<KEY>-task-<N>-critique.md` + `docs/<KEY>-task-<N>-decisions.md` | Both critique and decisions artifacts exist |
+| 7     | precondition  | `docs/<KEY>-task-<N>-*.md` + critique artifacts | Same as Phase 6 precondition, plus `docs/<KEY>-task-<N>-critique.md` and `docs/<KEY>-task-<N>-decisions.md` exist; these inputs feed the execution kickoff |
 
 ---
 
@@ -50,7 +50,7 @@ Every dispatch to `artifact-validator` uses these inputs:
 TICKET_KEY: <KEY>
 PHASE: <1-7>
 DIRECTION: <precondition | postcondition>
-TASK_NUMBER: <N>    (phases 5–7 only)
+TASK_NUMBER: <N>    (task-specific boundaries only)
 ```
 
 The subagent returns a structured verdict:
