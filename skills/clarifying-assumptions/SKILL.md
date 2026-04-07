@@ -137,17 +137,6 @@ implementation code.
 
 These are orchestration artifacts. Keep them out of version control.
 
-## Escalation
-
-| Source | Verdict | Orchestrator action |
-| --- | --- | --- |
-| `critique-analyzer` | `FAIL` | Stop and surface the reason to the user |
-| `critique-analyzer` | `WARN` | Continue only if the missing context does not invalidate the critique |
-| `question-manifest-builder` | `BLOCKED` or `FAIL` | Stop and surface the manifest issue |
-| `question-manifest-builder` | `WARN` | Continue, but mention what was omitted or guessed |
-| `decision-recorder` | `BLOCKED` or `ERROR` | Stop and ask the user how to proceed |
-| `decision-recorder` | `WARN` | Present the warnings in the final summary and continue |
-
 ## Behavioral Guardrails
 
 1. Ask one question per message.
@@ -158,6 +147,19 @@ These are orchestration artifacts. Keep them out of version control.
 6. Respect skip only for Tier 2 items. Tier 3 hard gates cannot be skipped.
 7. Use selection widgets for discrete choices when available; otherwise use numbered options.
 8. Keep question blocks scannable. Use tables or diagrams only when they clarify a real trade-off.
+
+## Escalation
+
+Expect parseable verdicts from subagents and route them like this:
+
+| Source | Verdicts to expect | Orchestrator action |
+| --- | --- | --- |
+| `critique-analyzer` | `CRITIQUE: FAIL` | Stop and surface the reason to the user |
+| `critique-analyzer` | `CRITIQUE: WARN` | Continue only if the missing context does not invalidate the critique |
+| `question-manifest-builder` | `MANIFEST: BLOCKED` or `MANIFEST: FAIL` | Stop and surface the manifest issue |
+| `question-manifest-builder` | `MANIFEST: WARN` | Continue, but mention what was omitted or guessed |
+| `decision-recorder` | `RECORDING: BLOCKED` or `RECORDING: ERROR` | Stop and ask the user how to proceed |
+| `decision-recorder` | `RECORDING: WARN` | Present the warnings in the final summary and continue |
 
 ## Example
 
