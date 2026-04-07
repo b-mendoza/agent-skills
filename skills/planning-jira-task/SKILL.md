@@ -29,6 +29,9 @@ and surface the blocker with a concise summary.
 Read `./references/data-contracts.md` when you need the upstream prerequisites
 or downstream artifact expectations.
 
+Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns. Read
+`./references/pipeline.md` when deciding which stages to rerun.
+
 ## Workflow Overview
 
 1. `execution-prepper` validates the task and writes the execution brief.
@@ -49,6 +52,23 @@ or downstream artifact expectations.
 
 Read a subagent definition only when you are about to dispatch that subagent.
 
+## How This Skill Works
+
+- Read `./references/data-contracts.md` when checking prerequisites or artifact
+  expectations.
+- Read `./references/pipeline.md` when running the standard planning pipeline
+  or a critique-driven re-plan.
+- At each boundary, validate that the current input artifact exists before
+  dispatch, then confirm that the expected output artifact was written before
+  advancing.
+- Pass only explicit handoffs between steps: ticket key, task number, decision
+  file path, and artifact file paths.
+- Keep only verdicts, file paths, and next-step-relevant notes from each
+  subagent.
+- Advance sequentially. Rerun only the subagents invalidated by critique, plus
+  their downstream dependents.
+- Surface blockers and pause for resolution when ambiguity remains.
+
 ## Output Contract
 
 This skill writes only Category A orchestration artifacts:
@@ -63,20 +83,6 @@ This skill writes only Category A orchestration artifacts:
 On a successful run, all four files exist. On a re-plan, overwrite only the
 files owned by the subagents that are re-run. These files stay on disk for the
 life of the workflow and are never committed to git.
-
-## How This Skill Works
-
-- Read `./references/data-contracts.md` when checking prerequisites or artifact
-  expectations.
-- Read `./references/pipeline.md` when running the standard planning pipeline
-  or a critique-driven re-plan.
-- Pass only explicit handoffs between steps: ticket key, task number, decision
-  file path, and artifact file paths.
-- Keep only verdicts, file paths, and next-step-relevant notes from each
-  subagent.
-- Advance sequentially. Rerun only the subagents invalidated by critique, plus
-  their downstream dependents.
-- Stop and surface blockers instead of guessing.
 
 ## Phase Guide
 
