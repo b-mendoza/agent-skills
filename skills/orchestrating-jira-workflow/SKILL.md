@@ -44,6 +44,11 @@ authoritative. For Phase 1, `docs/<TICKET_KEY>.md` is the stable Jira snapshot
 defined by `fetching-jira-ticket`, not merely a Markdown file with a single
 required section.
 
+For Phase 2, the authoritative downstream contract includes the preserved
+planning intermediates `docs/<KEY>-stage-1-detailed.md` and
+`docs/<KEY>-stage-2-prioritized.md`, plus a final `docs/<KEY>-tasks.md` with
+the full plan structure consumed by Phases 3 and 4.
+
 After each phase or gate, return only:
 
 - A concise phase summary for the user
