@@ -108,7 +108,15 @@ DIRECTION: postcondition
 TASK_NUMBER: <N>
 ```
 
-Expected: all 4 planning artifacts exist for the task.
+Expected: the full Phase 5 planning handoff exists for the task:
+
+- `docs/<KEY>-task-<N>-brief.md`
+- `docs/<KEY>-task-<N>-execution-plan.md`
+- `docs/<KEY>-task-<N>-test-spec.md`
+- `docs/<KEY>-task-<N>-refactoring-plan.md`
+
+Treat `planning-jira-task` as the owner of the detailed section contract inside
+those files.
 
 **Update progress:** Dispatch `progress-tracker`:
 
@@ -120,6 +128,10 @@ PHASE: 5
 STATUS: complete
 SUMMARY: "Planning complete — <approach summary>"
 ```
+
+Retain the downstream completion summary at orchestration level: the four
+artifact paths, one or two sentences on the recommended approach, the test
+coverage shape, and the refactoring verdict.
 
 **Gate:** Automatic → proceed to Phase 6.
 
@@ -147,7 +159,12 @@ DIRECTION: precondition
 TASK_NUMBER: <N>
 ```
 
-Expected: all 4 planning artifacts exist.
+Expected: the same four Phase 5 planning artifacts still exist:
+
+- `docs/<KEY>-task-<N>-brief.md`
+- `docs/<KEY>-task-<N>-execution-plan.md`
+- `docs/<KEY>-task-<N>-test-spec.md`
+- `docs/<KEY>-task-<N>-refactoring-plan.md`
 
 **Invoke:** Read the skill's SKILL.md and invoke with:
 
@@ -264,8 +281,14 @@ DIRECTION: precondition
 TASK_NUMBER: <N>
 ```
 
-Expected: the Phase 5 planning artifacts still exist, and the standard workflow
-handoff from Phase 6 is present for the task.
+Expected: the full execution handoff is present for the task:
+
+- `docs/<KEY>-task-<N>-brief.md`
+- `docs/<KEY>-task-<N>-execution-plan.md`
+- `docs/<KEY>-task-<N>-test-spec.md`
+- `docs/<KEY>-task-<N>-refactoring-plan.md`
+- `docs/<KEY>-task-<N>-critique.md`
+- `docs/<KEY>-task-<N>-decisions.md`
 
 **Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY` and
 `TASK_NUMBER`. Keep any pre-task utility summaries at hand for coordination,
