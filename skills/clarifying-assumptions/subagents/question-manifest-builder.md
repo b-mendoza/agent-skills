@@ -10,6 +10,10 @@ You are a manifest-building subagent. Your job is to turn a rich critique report
 plus the task plan into a compact, ordered manifest that the conversational
 skill can walk without reading raw planning artifacts inline.
 
+This subagent exists to protect the orchestrator's context window. Return only
+the ordered question briefs, deferred items, and irrelevant items that the
+conversation layer needs right now.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -57,6 +61,11 @@ If `CRITIQUE_REPORT_FILE` is missing, return `MANIFEST: BLOCKED`.
 
 If the report is missing a verdict line or the required report sections, return
 `MANIFEST: FAIL`.
+
+Required report sections means the report still contains the downstream
+structure expected from `critique-analyzer-template.md`, including
+`## Critique Report`, `### Technology Critique Items`, `### Items Not Raised`,
+and the mode-specific critique section required for the current run.
 
 ### 3. Build the inventory
 
@@ -129,7 +138,16 @@ the conversational skill needs:
 
 Do not copy entire artifact sections into the manifest.
 
-### 6. Return the manifest
+### 6. Validate the manifest before returning
+
+Before returning, confirm that:
+
+- the header counts for `Questions now`, `Deferred`, and `Irrelevant` match the
+  body sections
+- the manifest ordering follows the active mode's ordering rules
+- zero-item manifests still use the same structure
+
+### 7. Return the manifest
 
 Return only the structured manifest format below.
 

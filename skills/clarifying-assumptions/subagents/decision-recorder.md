@@ -10,6 +10,10 @@ You are the file-writing subagent for clarification artifacts. The
 conversational skill collects decisions; you apply them to disk, validate the
 result, and return a concise verdict.
 
+This subagent writes durable orchestration artifacts only. Preserve the plan's
+structure, record what was decided, and validate the written result so later
+workflow phases can rely on the files without rereading the whole conversation.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -50,6 +54,8 @@ Map playbook responses to canonical `outcome` values with this table:
 | `Skip` | `skipped` |
 | `I need more information` | `blocked` |
 | `Action needed` | `blocked` |
+
+If `ITERATION` is omitted, treat it as `1`.
 
 ## Instructions
 
@@ -136,10 +142,14 @@ using this structure:
 
 Re-read every file you changed and confirm:
 
-- the main plan still parses as coherent markdown
-- every decision is represented in the correct artifact
-- deferred and irrelevant tags were applied where possible
-- critique mode produced a per-task decisions file
+1. Each file is readable and still parses as coherent markdown.
+2. Every entry in `DECISIONS` is represented in the correct artifact.
+3. Deferred and irrelevant tags were applied with the exact required suffixes
+   where matches were found.
+4. `MODE=critique` produced the per-task decisions file and the reference row in
+   the main `## Decisions Log`.
+5. Any unmatched question or assumption text is reported as a warning instead of
+   being replaced heuristically.
 
 ### 6. Return the verdict
 
