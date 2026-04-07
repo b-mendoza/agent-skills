@@ -356,7 +356,7 @@ When all tasks are complete (or the user decides to stop), dispatch
 | 1     | ✅ Complete | Ticket fetched (N comments)            |
 | 2     | ✅ Complete | N tasks planned                        |
 | 3     | ✅ Complete | N/N questions resolved, N critiqued    |
-| 4     | ✅ Complete | N subtasks created in Jira             |
+| 4     | ✅ Complete | N tasks linked to Jira subtasks        |
 | 5–7   | ✅ Complete | N/N tasks planned, critiqued, kicked off, executed |
 
 Per-task detail in docs/<TICKET_KEY>-task-<N>-progress.md.
