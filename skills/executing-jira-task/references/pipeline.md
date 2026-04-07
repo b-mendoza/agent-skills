@@ -1,0 +1,102 @@
+# Execution Pipeline
+
+> Read this file when running the normal task-execution phases.
+>
+> Reminder: dispatch specialists and pass compact inputs. Do not carry raw file
+> contents or logs through the orchestrator.
+
+## Standard phase cycle
+
+Every successful task run follows this sequence:
+
+1. **Validate prerequisites.**
+   - Read `./contracts.md`.
+   - Stop immediately if required artifacts are missing, contradictory, or the
+     selected task is not ready.
+
+2. **Dispatch `task-executor`.**
+   - Pass artifact paths, optional decisions path, and any targeted fix brief.
+   - Collect only the structured `EXECUTION_REPORT`.
+
+3. **Handle executor escalations before continuing.**
+   - `COMPLETE` means continue.
+   - `NEEDS_CONTEXT`, `BLOCKED`, or `ERROR` means stop normal execution and use
+     `./retry-and-escalation.md`.
+
+4. **Dispatch `documentation-writer`.**
+   - Pass `EXECUTION_REPORT`, `TICKET_KEY`, and `TASK_NUMBER`.
+   - This step adds in-code documentation, commits Category B files, updates
+     Category A tracking artifacts on disk, and attempts Jira updates when
+     capability exists.
+
+5. **Dispatch `requirements-verifier`.**
+   - Pass brief path, test spec path, `EXECUTION_REPORT`, and
+     `DOCUMENTATION_REPORT`.
+   - Treat this as the postcondition check for implementation completeness.
+
+6. **Resolve requirements gaps before review gates.**
+   - If the verifier returns `PASS`, continue.
+   - If it returns `FAIL` and the gaps are plainly in scope, create a concise
+     fix brief from the reported gaps, re-dispatch `task-executor`, then
+     `documentation-writer`, then re-run `requirements-verifier`.
+   - If the reported gaps expose an ambiguous brief, conflicting artifacts, or
+     a probable planning mistake, stop and ask the user instead of guessing.
+
+7. **Run the quality gates in order.**
+   - `clean-code-reviewer`
+   - `architecture-reviewer`
+   - `security-auditor`
+
+8. **Interpret gate verdicts.**
+   - `PASS`, `PASS WITH SUGGESTIONS`, and `PASS WITH ADVISORIES` let the
+     pipeline continue.
+   - `NEEDS FIXES` triggers the targeted fix cycle described below.
+   - `BLOCKED` or `ERROR` stops the run and escalates.
+
+9. **Report the outcome.**
+   - Summarise what changed.
+   - Include commit hashes/messages, gate verdicts, files changed, and any Jira
+     tracking that was skipped or failed.
+   - Stop after the selected task. Do not continue to the next task
+     automatically.
+
+## Targeted fix cycle
+
+When one or more reviewers return `NEEDS FIXES`:
+
+1. Consolidate only the blocking issues from the failing gates into a single
+   fix brief.
+2. Re-dispatch `task-executor` with the original planning artifacts plus that
+   fix brief.
+3. Re-dispatch `documentation-writer` so the new Category B changes are
+   committed and tracking artifacts are updated.
+4. Re-run only the gate(s) that previously failed, in their original order.
+5. If every previously failing gate now passes, finish the task. Otherwise use
+   `./retry-and-escalation.md`.
+
+## Report template
+
+Use a short final summary shaped like this:
+
+```markdown
+Task <N> complete: <title>
+
+Summary: <2-3 sentences>
+
+Pipeline:
+- Execution: <status>
+- Documentation/commits: <status>
+- Requirements verification: <verdict>
+- Clean code review: <verdict>
+- Architecture review: <verdict>
+- Security audit: <verdict>
+
+Commits:
+- <short hash> - <message>
+
+Files changed:
+- <path>
+
+Remaining items:
+- <issue or "None">
+```
