@@ -167,7 +167,7 @@ Using only the subagent's structured summary, tell the caller:
 - Any failure category, when one exists
 - That this phase is retrieval only and does not modify Jira
 
-## Example
+## Examples
 
 <example>
 Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-6065`
@@ -194,4 +194,32 @@ Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-6065`
    `JNS-6065: Implement dark mode toggle` is `In Progress` (`Story`).
    Retrieved 4/4 parent comments, 3/3 subtasks, 1/1 linked issues, and 2
    attachments. Retrieval only; Jira was not modified."
+</example>
+
+<example>
+Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-7001`
+
+1. Read `./subagents/ticket-retriever.md`
+2. Dispatch `ticket-retriever` with `JIRA_URL`
+3. Subagent returns:
+
+   FETCH: PARTIAL
+   Validation: PASS
+   Failure category: NONE
+   File written: docs/JNS-7001.md
+   Ticket: JNS-7001: Audit webhook retries
+   Status: To Do | Type: Task
+   Parent comments: 2/2
+   Subtasks: 1/2
+   Linked issues: 0/0
+   Attachments: 0
+   Warnings: Could not retrieve JNS-7002 (404 Not Found)
+   Reason: None
+
+4. Report:
+   "Ticket fetched to `docs/JNS-7001.md` with retrieval warnings.
+   `JNS-7001: Audit webhook retries` is `To Do` (`Task`).
+   Retrieved 2/2 parent comments, 1/2 subtasks, 0/0 linked issues, and 0
+   attachments. Warning: Could not retrieve JNS-7002 (404 Not Found).
+   Retrieval only; Jira was not modified."
 </example>
