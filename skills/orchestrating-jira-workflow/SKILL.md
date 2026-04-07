@@ -280,7 +280,8 @@ continuing.
 ### 5. Load the correct playbook
 
 Read the matching file from the Phase Guide and follow it exactly for the
-current phase range.
+current phase range. For full resume examples and failure routing, read
+`./references/error-handling.md`.
 
 ## Gate Rules
 
