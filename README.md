@@ -1,118 +1,94 @@
 # Agent skills
 
-Skills for Cursor agents. Each skill is a markdown file that tells the agent
-how to handle a specific type of task. Skills can delegate parts of the work to
-subagents, which keeps the main agent from running out of context.
+This repo is a small skill library for Cursor-style coding agents. Each skill
+is a Markdown file with instructions, references, and co-located subagents.
+The main pattern in this repo is to keep orchestration thin and push detailed
+work into subagents so the top-level agent does not drown in context.
 
-## Project skills
+## Current layout
 
-Stored in [`skills/`](skills/). Eleven in total: seven form the Jira workflow,
-four are standalone.
+- [`skills/`](skills/) contains 12 first-party skills.
+- [`docs/`](docs/) contains design notes, improvement plans, and supporting
+  workflow documentation.
+- [`.agents/skills/`](.agents/skills/) contains 16 vendored third-party skills.
+- [`.claude/skills/`](.claude/skills/) mirrors those installed skills for
+  Claude-style discovery.
+- [`skills-lock.json`](skills-lock.json) tracks the installed third-party skill
+  set.
+
+## First-party skills
+
+Seven of the 12 first-party skills form the Jira workflow. The other five are
+standalone utilities.
 
 ### Jira workflow
 
-Seven skills that take you from a Jira ticket to working code. The orchestrator
-is the starting point. It calls the other six across seven phases, checks
-results between steps, and can resume if something breaks along the way.
+The Jira workflow starts with
+[`orchestrating-jira-workflow`](skills/orchestrating-jira-workflow/SKILL.md).
+It coordinates the full ticket-to-code flow, saves progress to
+`docs/<TICKET_KEY>-progress.md`, and resumes from disk when needed. It relies
+on utility subagents for preflight checks, validation, progress tracking,
+ticket status checks, codebase inspection, code reference lookup, and
+documentation lookup.
 
-- [orchestrating-jira-workflow](skills/orchestrating-jira-workflow/SKILL.md)
-  coordinates the whole workflow but never runs tools directly. It sends work to
-  seven utility subagents (`preflight-checker`, `artifact-validator`,
-  `progress-tracker`, `ticket-status-checker`, `codebase-inspector`,
-  `code-reference-finder`, `documentation-finder`) and six phase skills.
-  Progress is saved to `docs/<TICKET_KEY>-progress.md` so you can resume later.
-  It always asks before changing anything in Jira. Architecture docs are in
-  [`docs/orchestrating-jira-workflow/`](docs/orchestrating-jira-workflow/).
+The seven workflow phases are:
 
-The seven phases, in order:
+1. [`fetching-jira-ticket`](skills/fetching-jira-ticket/SKILL.md) fetches a
+   Jira ticket and writes a local snapshot to `docs/<TICKET_KEY>.md`.
+2. [`planning-jira-tasks`](skills/planning-jira-tasks/SKILL.md) breaks the
+   ticket into ordered tasks and writes `docs/<TICKET_KEY>-tasks.md`.
+3. [`clarifying-assumptions`](skills/clarifying-assumptions/SKILL.md) in
+   upfront mode pressure-tests the overall plan before task execution starts.
+4. [`creating-jira-subtasks`](skills/creating-jira-subtasks/SKILL.md) creates
+   Jira subtasks from the approved task plan and records the new keys.
+5. [`planning-jira-task`](skills/planning-jira-task/SKILL.md) creates an
+   execution plan for one task, including codebase analysis, testing, and
+   refactoring guidance.
+6. [`clarifying-assumptions`](skills/clarifying-assumptions/SKILL.md) in
+   critique mode reviews the single-task plan and surfaces task-specific gaps.
+7. [`executing-jira-task`](skills/executing-jira-task/SKILL.md) implements the
+   task, runs review passes, and updates both the local plan and Jira.
 
-1. [fetching-jira-ticket](skills/fetching-jira-ticket/SKILL.md) pulls the
-   ticket data from Jira (description, comments, subtasks, linked issues,
-   custom fields) and writes it to `docs/<TICKET_KEY>.md`. A
-   `ticket-retriever` subagent does the fetching through MCP.
+### Standalone skills
 
-2. [planning-jira-tasks](skills/planning-jira-tasks/SKILL.md) breaks the
-   ticket into tasks. The `task-planner` subagent starts by working out who
-   the change is for and why, then splits the work into pieces.
-   `dependency-prioritizer` orders the tasks, `task-validator` checks
-   completeness, and `stage-validator` runs structural checks between
-   stages. The result goes into
-   `docs/<TICKET_KEY>-tasks.md`.
+- [`generate-handoff-document`](skills/generate-handoff-document/SKILL.md)
+  creates a resumable handoff package for an in-progress session, including
+  structured context, insights, optional claim validation, and a final
+  cold-start handoff document.
+- [`validate-implementation-plan`](skills/validate-implementation-plan/SKILL.md)
+  audits AI-generated implementation plans for missing requirements, YAGNI
+  violations, and shaky assumptions before execution starts.
+- [`recency-guard`](skills/recency-guard/SKILL.md) checks factual claims for
+  freshness, completeness, and confidence by combining web research with
+  verification passes.
+- [`pr-creator`](skills/pr-creator/SKILL.md) prepares a pull request from the
+  current branch, drafts the title and body, and creates it after confirmation.
+- [`workflow-skill-architect`](skills/workflow-skill-architect/SKILL.md) helps
+  design new multi-step skills by deciding what should stay inline, become a
+  subagent, or move into references.
 
-3. [clarifying-assumptions](skills/clarifying-assumptions/SKILL.md)
-   _(upfront mode)_ goes through the plan and questions it, starting with
-   the fundamentals: who is this for, what problem does it actually solve,
-   and is there evidence the approach works. Then it moves to assumptions,
-   open questions, and defaults that nobody justified. It asks in two ways:
-   one generates alternatives and compares them (for the foundational
-   questions), the other pokes at existing reasoning. Only cross-cutting
-   concerns come up here; task-specific questions wait until Phase 6. A
-   `critique-analyzer` subagent challenges decisions by researching
-   alternatives, and a `decision-recorder` writes resolved answers into a
-   decisions log appended to the tasks file.
+## Installed third-party skills
 
-4. [creating-jira-subtasks](skills/creating-jira-subtasks/SKILL.md) is a
-   small coordinator. It sends a `subtask-creator` subagent to read the plan,
-   create subtasks in Jira, and update the local plan with the new subtask
-   keys.
+The repo currently vendors 16 third-party skills. They are stored under
+[`.agents/skills/`](.agents/skills/) and exposed through
+[`.claude/skills/`](.claude/skills/). The source of truth is
+[`skills-lock.json`](skills-lock.json).
 
-5. [planning-jira-task](skills/planning-jira-task/SKILL.md) plans how to
-   execute a single task without writing any code. Four subagents produce the
-   output: `execution-prepper` (branch setup and execution brief, including
-   who the change affects), `execution-planner` (codebase analysis and
-   approach), `test-strategist` (test spec), and `refactoring-advisor`
-   (refactoring evaluation). This output feeds Phase 6 before any
-   implementation starts.
-
-6. [clarifying-assumptions](skills/clarifying-assumptions/SKILL.md)
-   _(critique mode)_ reviews the planning from Phase 5 (framework choices,
-   library selections, testing approach, refactoring scope, and how users
-   are affected) and picks up any task-specific questions that were deferred
-   earlier. Same skill and questioning styles as Phase 3, just scoped to
-   the task about to be executed.
-
-7. [executing-jira-task](skills/executing-jira-task/SKILL.md) takes one task
-   and implements it using the output from Phase 5. Six subagents:
-   `task-executor`, `documentation-writer`, `requirements-verifier`, followed
-   by three review passes (`clean-code-reviewer`, `architecture-reviewer`,
-   `security-auditor`). It marks the task done in both the plan file and
-   Jira. If issues come up during review, it retries up to three times per
-   task.
-
-### Standalone
-
-- [validate-implementation-plan](skills/validate-implementation-plan/SKILL.md)
-  checks AI-generated plans for missing requirements, unnecessary work
-  (YAGNI), and risky assumptions. Six subagents do the checking:
-  `technical-researcher`, `requirements-extractor`, `requirements-auditor`,
-  `yagni-auditor`, `assumptions-auditor`, `plan-annotator`. Anything
-  unresolved gets flagged for the user before the final report.
-
-- [recency-guard](skills/recency-guard/SKILL.md) runs four checks (Recency,
-  Self-Verification, Completeness, Clarity) to catch outdated information,
-  overconfident claims, and gaps. A `recency-checker` subagent searches the
-  web for every factual claim, then a `claim-verifier` tests the most
-  important ones more thoroughly.
-
-- [pr-creator](skills/pr-creator/SKILL.md) creates GitHub pull requests from
-  the current branch. It looks at the diff, generates a conventional-commit
-  title and a structured description, suggests reviewers from CODEOWNERS, and
-  runs `gh pr create` after you confirm. Also notes the GitLab and Bitbucket
-  equivalents.
-
-- [workflow-skill-architect](skills/workflow-skill-architect/SKILL.md) helps
-  you turn a multi-step workflow into a skill with subagents. It walks you
-  through each step, figures out what should be a subagent, a skill, or a
-  command, and produces files you can use straight away.
-
-## Installed skills
-
-Third-party skills listed in [`skills-lock.json`](skills-lock.json), stored
-under `.agents/skills/`. Symlinked into `.claude/skills/` for Claude Code
-compatibility.
-
-| Skill                                              | Source                   | Description                                       |
-| -------------------------------------------------- | ------------------------ | ------------------------------------------------- |
-| [commit-work](.agents/skills/commit-work/SKILL.md) | softaworks/agent-toolkit | Staging and review workflow, Conventional Commits |
-| [gh-cli](.agents/skills/gh-cli/SKILL.md)           | github/awesome-copilot   | Reference for the `gh` command line tool          |
-| [humanizer](.agents/skills/humanizer/SKILL.md)     | blader/humanizer         | Remove signs of AI-generated writing from text    |
+| Skill                                                                                | Source                               |
+| ------------------------------------------------------------------------------------ | ------------------------------------ |
+| [`api-security-best-practices`](.agents/skills/api-security-best-practices/SKILL.md) | `sickn33/antigravity-awesome-skills` |
+| [`architecture-patterns`](.agents/skills/architecture-patterns/SKILL.md)             | `wshobson/agents`                    |
+| [`clean-code`](.agents/skills/clean-code/SKILL.md)                                   | `sickn33/antigravity-awesome-skills` |
+| [`code-review-excellence`](.agents/skills/code-review-excellence/SKILL.md)           | `wshobson/agents`                    |
+| [`commit-work`](.agents/skills/commit-work/SKILL.md)                                 | `softaworks/agent-toolkit`           |
+| [`executing-plans`](.agents/skills/executing-plans/SKILL.md)                         | `obra/superpowers`                   |
+| [`find-skills`](.agents/skills/find-skills/SKILL.md)                                 | `vercel-labs/skills`                 |
+| [`gh-cli`](.agents/skills/gh-cli/SKILL.md)                                           | `github/awesome-copilot`             |
+| [`grill-me`](.agents/skills/grill-me/SKILL.md)                                       | `mattpocock/skills`                  |
+| [`humanizer`](.agents/skills/humanizer/SKILL.md)                                     | `blader/humanizer`                   |
+| [`progressive-disclosure`](.agents/skills/progressive-disclosure/SKILL.md)           | `flpbalada/my-opencode-config`       |
+| [`receiving-code-review`](.agents/skills/receiving-code-review/SKILL.md)             | `obra/superpowers`                   |
+| [`subagent-driven-development`](.agents/skills/subagent-driven-development/SKILL.md) | `obra/superpowers`                   |
+| [`test-driven-development`](.agents/skills/test-driven-development/SKILL.md)         | `obra/superpowers`                   |
+| [`vitest`](.agents/skills/vitest/SKILL.md)                                           | `antfu/skills`                       |
+| [`writing-plans`](.agents/skills/writing-plans/SKILL.md)                             | `obra/superpowers`                   |
