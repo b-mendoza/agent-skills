@@ -151,8 +151,9 @@ The orchestrator protects its context window aggressively. It holds only:
 
 Use these rules throughout the workflow:
 
-- **Dispatch, do not execute.** Validation, Jira queries, file updates, git
-  inspection, code search, and documentation lookup are always delegated.
+- **Delegate execution-heavy work.** Validation, Jira queries, file updates,
+  git inspection, code search, and documentation lookup all happen through
+  downstream skills or utility subagents.
 - **Pass structured handoffs.** Use ticket keys, file paths, task numbers, and
   concise summaries. Do not rely on ambient context.
 - **Advance one boundary at a time.** Every phase completes its full validation
