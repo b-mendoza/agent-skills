@@ -24,8 +24,8 @@ definition of `docs/<KEY>.md`.
 | ----- | ------------- | ----------------------- | -------------------------------------------------------------- |
 | 1     | postcondition | `docs/<KEY>.md`         | File exists and contains the required Phase 1 snapshot headings: `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Subtasks`, `## Linked Issues`, `## Attachments`, `## Custom Fields` |
 | 2     | precondition  | `docs/<KEY>.md`         | Same as Phase 1 postcondition                                  |
-| 2     | postcondition | `docs/<KEY>-tasks.md`   | File exists, contains `## Tasks`, has ≥2 task entries          |
-| 3     | precondition  | `docs/<KEY>-tasks.md`   | Same as Phase 2 postcondition                                  |
+| 2     | postcondition | `docs/<KEY>-tasks.md` + planning intermediates | `docs/<KEY>-stage-1-detailed.md` and `docs/<KEY>-stage-2-prioritized.md` exist; `docs/<KEY>-tasks.md` exists; final plan contains `## Ticket Summary`, `## Problem Framing`, `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`, `## Tasks`, `## Execution Order Summary`, `## Dependency Graph`, and `## Validation Report`; plan has ≥2 numbered task entries with the required task subsections |
+| 3     | precondition  | `docs/<KEY>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
 | 3     | postcondition | `docs/<KEY>-tasks.md`   | Contains `## Decisions Log`                                    |
 | 4     | precondition  | `docs/<KEY>-tasks.md`   | Same as Phase 3 postcondition                                  |
 | 4     | postcondition | `docs/<KEY>-tasks.md`   | Contains `## Jira Subtasks` with ≥1 key matching `[A-Z]+-\d+` |
@@ -84,16 +84,19 @@ Postcondition failure after Phase 2:
 artifact-validator returns:
 VALIDATION: FAIL
 Phase: 2 | Direction: postcondition
-File: docs/JNS-6065-tasks.md
+File: docs/JNS-6065-tasks.md + planning intermediates
 Checks:
-  - File exists: ✅
-  - Contains ## Tasks: ✅
-  - Has ≥2 task entries: ❌ — found 1 task
+  - docs/JNS-6065-stage-1-detailed.md exists: pass
+  - docs/JNS-6065-stage-2-prioritized.md exists: pass
+  - docs/JNS-6065-tasks.md exists: pass
+  - Contains ## Validation Report: fail - missing section
+  - Numbered task entries with required subsections: pass
 
 Orchestrator to user:
-"Phase 2 (Plan Tasks) produced a plan with only 1 task. The pipeline expects
-at least 2 tasks for meaningful decomposition. Would you like me to re-run
-Phase 2, or proceed with a single task?"
+"Phase 2 (Plan Tasks) did not produce a plan that satisfies the downstream
+contract for clarification. The final task plan is missing `## Validation
+Report`, so Phase 3 would be working from an incomplete artifact. Would you
+like me to re-run Phase 2?"
 </example>
 
 ---

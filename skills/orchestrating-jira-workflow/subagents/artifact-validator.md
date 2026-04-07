@@ -22,16 +22,19 @@ advance, retry, or stop.
 ## Validation Rules
 
 For Phase 1, the checks below are the orchestrator-facing shorthand for the
-stable snapshot contract owned by `../fetching-jira-ticket/SKILL.md`. Validate
-that compact contract without broadening the boundary beyond what the workflow
-needs to decide whether to advance.
+stable snapshot contract owned by `../fetching-jira-ticket/SKILL.md`.
+
+For Phase 2 and Phase 3 preconditions, do not fall back to the older shorthand
+of "contains `## Tasks` and has task entries." Those boundaries must stay
+aligned with the richer contract owned by `../planning-jira-tasks/SKILL.md` and
+consumed by `../clarifying-assumptions/SKILL.md`.
 
 | Phase | Direction     | File                                 | Checks                                                         |
 | ----- | ------------- | ------------------------------------ | -------------------------------------------------------------- |
 | 1     | postcondition | `docs/<KEY>.md`                      | File exists and contains the required Phase 1 snapshot headings: `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Subtasks`, `## Linked Issues`, `## Attachments`, `## Custom Fields` |
 | 2     | precondition  | `docs/<KEY>.md`                      | Same as Phase 1 postcondition                                  |
-| 2     | postcondition | `docs/<KEY>-tasks.md`                | File exists, contains `## Tasks`, has at least 2 task entries  |
-| 3     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 2 postcondition                                  |
+| 2     | postcondition | `docs/<KEY>-tasks.md` + planning intermediates | `docs/<KEY>-stage-1-detailed.md` exists; `docs/<KEY>-stage-2-prioritized.md` exists; `docs/<KEY>-tasks.md` exists; final plan contains `## Ticket Summary`, `## Problem Framing`, `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`, `## Tasks`, `## Execution Order Summary`, `## Dependency Graph`, and `## Validation Report`; plan has at least 2 numbered task entries; each numbered task includes `**Objective:**`, `**Relevant requirements and context:**`, `**Questions to answer before starting:**`, `**Implementation notes:**`, `**Definition of done:**`, `**Likely files / artifacts affected:**`, `**Dependencies / prerequisites:**`, and `**Priority:**` |
+| 3     | precondition  | `docs/<KEY>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
 | 3     | postcondition | `docs/<KEY>-tasks.md`                | Contains `## Decisions Log`                                    |
 | 4     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 3 postcondition                                  |
 | 4     | postcondition | `docs/<KEY>-tasks.md`                | Contains `## Jira Subtasks` with at least one Jira-style key   |
@@ -52,7 +55,10 @@ for the same matrix in reference form.
    rather than reading full files into context.
 4. When the boundary expects a file set, list the expected artifacts explicitly
    in the `Checks` section.
-5. Return only the structured verdict.
+5. For the Phase 2 postcondition and Phase 3 precondition, validate both the
+   preserved stage artifacts and the full final-plan structure, because the
+   next phase depends on all of them.
+6. Return only the structured verdict.
 
 Be precise about what failed. The orchestrator needs a specific missing file,
 missing section, or failed count check so it can decide whether to re-run a
@@ -74,11 +80,12 @@ Checks:
 <example>
 VALIDATION: FAIL
 Phase: 2 | Direction: postcondition
-File: docs/JNS-6065-tasks.md
+File: docs/JNS-6065-tasks.md + planning intermediates
 Checks:
-  - File exists: yes
-  - Contains ## Tasks: pass
-  - Has at least 2 task entries: fail - found 1
+  - docs/JNS-6065-stage-1-detailed.md exists: yes
+  - docs/JNS-6065-stage-2-prioritized.md exists: yes
+  - docs/JNS-6065-tasks.md exists: yes
+  - Contains ## Validation Report: fail - missing section
 </example>
 
 ## Scope
