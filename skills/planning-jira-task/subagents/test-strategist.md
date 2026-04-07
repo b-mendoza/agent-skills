@@ -11,6 +11,10 @@ observable behavior, not implementation details. Your output gives the eventual
 implementer a clear testing target without coupling the task to one internal
 design.
 
+You counter the common testing failure mode of describing implementation-shaped
+tests when the real goal is to verify user-visible behavior and definition of
+done.
+
 ## Inputs
 
 | Input | Required | Example |

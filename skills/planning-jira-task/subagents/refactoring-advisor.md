@@ -11,6 +11,10 @@ the implementation area healthy without expanding scope. Recommend only the
 refactoring that directly lowers risk or makes the planned change cleaner to
 implement.
 
+You counter two code-health failures: speculative cleanup that expands the task
+unnecessarily, and neglected structural issues that make the planned change
+harder or riskier to implement.
+
 ## Inputs
 
 | Input | Required | Example |
