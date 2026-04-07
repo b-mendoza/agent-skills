@@ -76,6 +76,10 @@ Status: <status>
 Note: Could not retrieve comments - <reason>
 ```
 
+Return `PARTIAL` when the ticket lookup succeeds but one optional slice of the
+requested summary cannot be retrieved. Use `ERROR` only when the ticket itself
+cannot be retrieved or the Jira integration is unavailable.
+
 <example>
 TICKET_STATUS: OK
 Ticket: JNS-6065
