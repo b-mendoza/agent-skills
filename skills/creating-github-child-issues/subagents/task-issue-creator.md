@@ -136,16 +136,21 @@ to answer before starting`, `Implementation notes`, `Definition of done`,
    - After `gh issue create`, capture the new issue number from command output or
      follow-up `gh issue list --limit 1 --json number` as appropriate; require a
      definite `OWNER/REPO#number` before counting **Created now**.
-   - If using REST `sub_issues` POST, create the child first, then:
+   - If using REST `sub_issues` POST, create the child first, then link it
+     using the child's **REST `id`** (the numeric `id` field from
+     `gh issue view CHILD --json id`, not the issue `number`):
 
      ```bash
-     gh api repos/OWNER/REPO/issues/PARENT_NUMBER/sub_issues -f sub_issue_id=<CHILD_NODE_ID_OR_REST_ID>
+     gh api repos/OWNER/REPO/issues/PARENT_NUMBER/sub_issues \
+       -f sub_issue_id=<CHILD_REST_ID> \
+       --header 'X-GitHub-Api-Version:2022-11-28'
      ```
 
-     Use the identifier required by the API version you are calling; if unsure,
-     consult `gh api` help or a one-off probe. If linking fails after successful
-     create, keep the issue but record WARN, set **Write model** to `linked-issue`
-     for that row, and ensure the body still has parent traceability.
+     `gh api` injects a default API version header automatically, but setting it
+     explicitly avoids drift when the sub-issues endpoint is version-gated. If
+     linking fails after successful create, keep the issue but record WARN, set
+     **Write model** to `linked-issue` for that row, and ensure the body still
+     has parent traceability.
 
    - On **rate limit** (HTTP 403 with rate limit messaging), wait **5 seconds**
      and retry **once** for that create. If it still fails, record **Failed
