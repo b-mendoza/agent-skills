@@ -143,7 +143,7 @@ to answer before starting`, `Implementation notes`, `Definition of done`,
      ```bash
      gh api repos/OWNER/REPO/issues/PARENT_NUMBER/sub_issues \
        -f sub_issue_id=<CHILD_REST_ID> \
-       --header 'X-GitHub-Api-Version:2022-11-28'
+       --header 'X-GitHub-Api-Version:2026-03-10'
      ```
 
      `gh api` injects a default API version header automatically, but setting it
