@@ -1,21 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "api-security-best-practices": {
-      "source": "sickn33/antigravity-awesome-skills",
-      "sourceType": "github",
-      "computedHash": "ce16d10df486a28a3ba894d646de3243fc2bf9990f563fc7a9b074fd720e24d5"
-    },
-    "architecture-patterns": {
-      "source": "wshobson/agents",
-      "sourceType": "github",
-      "computedHash": "cf81f4523a2fd3017590cf2792fe305e4375d2f75d22037b92f05852e22feae2"
-    },
-    "clean-code": {
-      "source": "sickn33/antigravity-awesome-skills",
-      "sourceType": "github",
-      "computedHash": "14ba8e7d8477723eca6d48a79a1924337f4a1f5f1c7ab9b0a7acc073268ecd5a"
-    },
     "code-review-excellence": {
       "source": "wshobson/agents",
       "sourceType": "github",
@@ -25,16 +10,6 @@
       "source": "softaworks/agent-toolkit",
       "sourceType": "github",
       "computedHash": "88cec816d028de357ae7ede3ace36a2bc235a225e3e7d2bb18cdb5190ab6c482"
-    },
-    "executing-plans": {
-      "source": "obra/superpowers",
-      "sourceType": "github",
-      "computedHash": "2f709d1a2c7564f8ce6a9bb707e7f5451117ba80f8e8e2302662c29bc61246a6"
-    },
-    "find-skills": {
-      "source": "vercel-labs/skills",
-      "sourceType": "github",
-      "computedHash": "9e1c8b3103f92fa8092568a44fe64858de7c5c9dc65ce4bea8f168080e889cfd"
     },
     "gh-cli": {
       "source": "github/awesome-copilot",
@@ -51,11 +26,6 @@
       "sourceType": "github",
       "computedHash": "b813857f183da05d08d5a80adac671df94c139f855809bd47ab8b7bb245546a2"
     },
-    "progressive-disclosure": {
-      "source": "flpbalada/my-opencode-config",
-      "sourceType": "github",
-      "computedHash": "b42d025b0d2e4bc44cb4c76abc359ff1cd04ff637d32dd88d699d2389d6ea6a2"
-    },
     "receiving-code-review": {
       "source": "obra/superpowers",
       "sourceType": "github",
@@ -70,11 +40,6 @@
       "source": "obra/superpowers",
       "sourceType": "github",
       "computedHash": "126f1ebf6ccd414f42544f6e83d8cc5adb089e1108eaffb7c400701e37eecd9f"
-    },
-    "vitest": {
-      "source": "antfu/skills",
-      "sourceType": "github",
-      "computedHash": "669c7275f7e1379b06b2bcfa593603aead4c983b951c7e8edbc09640aa38d0a1"
     },
     "writing-plans": {
       "source": "obra/superpowers",
