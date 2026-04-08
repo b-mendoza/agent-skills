@@ -1,15 +1,16 @@
 ---
 name: "clarifying-assumptions"
-description: "Run the conversational clarification phases of the Jira workflow. Use in Phase 3 (`MODE=upfront`) to challenge problem framing, resolve cross-cutting ambiguity, and defer future-task questions. Use in Phase 6 (`MODE=critique`) to review one task's planning artifacts, revisit deferred questions just before execution, and record developer decisions. Keeps the mentoring dialogue inline while delegating artifact reading, critique generation, manifest assembly, and file updates to subagents."
+description: "Run the conversational clarification phases of a workflow orchestrator. Use in Phase 3 (`MODE=upfront`) to challenge problem framing, resolve cross-cutting ambiguity, and defer future-task questions. Use in Phase 6 (`MODE=critique`) to review one task's planning artifacts, revisit deferred questions just before execution, and record developer decisions. Keeps the mentoring dialogue inline while delegating artifact reading, critique generation, manifest assembly, and file updates to subagents."
 ---
 
 # Clarifying Assumptions
 
-This skill is the conversation layer for the Jira-ticket workflow. The
-orchestrator does exactly three things: think about the current question and the
-developer's reasoning, decide what to ask or defer next, and dispatch
-subagents for artifact reading, critique generation, manifest assembly, and
-file updates. `critique-analyzer` writes its full report to a workflow artifact
+This skill is the conversation layer for workflow orchestration. It accepts a
+`TICKET_KEY` that can be a Jira ticket key (`JNS-6065`) or a GitHub issue slug
+(`acme-app-42`). The orchestrator does exactly three things: think about the
+current question and the developer's reasoning, decide what to ask or defer
+next, and dispatch subagents for artifact reading, critique generation, manifest
+assembly, and file updates. `critique-analyzer` writes its full report to a workflow artifact
 before manifest assembly so the orchestrator carries only summaries, manifest
 rows, and artifact paths instead of raw planning content.
 
