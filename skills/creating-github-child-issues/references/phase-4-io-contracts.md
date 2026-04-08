@@ -1,0 +1,145 @@
+# Phase 4 I/O Contracts (GitHub)
+
+> Read this file when validating standalone Phase 4 execution or interpreting the
+> `task-issue-creator` summary.
+>
+> **Reminder:** Keep only artifact shapes and structured verdicts in the
+> coordinator context. Plan parsing, `gh` / API operations, and plan-file edits stay
+> inside `task-issue-creator`.
+>
+> Orchestrator phase boundaries: align with
+> `../../orchestrating-github-workflow/references/data-contracts.md`.
+
+## Input Contract
+
+Primary input artifacts:
+
+```text
+ISSUE_URL   — parent issue (authoritative for owner/repo/number)
+docs/<ISSUE_SLUG>-tasks.md
+```
+
+For normal Phase 4 execution, the plan is expected to contain:
+
+| Expected section / element                          | Produced by                 | Why it matters                                    |
+| ------------------------------------------------- | --------------------------- | ------------------------------------------------- |
+| `## Tasks` with numbered `## Task <N>:` headings  | planning-github-issue-tasks | Each row maps to one workflow task                |
+| `## Execution Order Summary`                      | planning-github-issue-tasks | Preserves ordering context                        |
+| `## Decisions Log`                              | clarifying-assumptions      | Indicates critique completed before GitHub writes |
+
+The parent orchestrator is responsible for validating the normal Phase 4
+precondition before this skill runs. If this skill is used standalone and the plan
+is missing or malformed, the subagent returns `TASK_ISSUES: BLOCKED`. If
+`## Decisions Log` is missing, the subagent continues with `TASK_ISSUES: WARN`:
+the plan is still parseable, but the normal workflow precondition was skipped.
+
+## Write model (preference order)
+
+The subagent **attempts**, in order:
+
+1. **Native child / sub-issues** — GitHub’s hierarchical sub-issue relationship,
+   when the environment supports creating or attaching them non-interactively
+   (see `task-issue-creator.md` for detection; do not assume this is always
+   available).
+2. **Linked issues** — standalone issues created with `gh issue create`, with
+   explicit parent traceability in the child body (and, when practical, a
+   parent-side comment linking the child).
+3. **Task-list references** — no new GitHub issue for that task; traceability is
+   recorded only in the plan (and optionally the parent issue body) using a
+   checklist-style reference defined in the templates file.
+
+The orchestrator does not pick the model per run. The subagent records which path
+was used in the machine handoff line and per-row `Write model` column.
+
+## Output Contract
+
+Primary output artifact:
+
+```text
+docs/<ISSUE_SLUG>-tasks.md
+```
+
+After successful or partial Phase 4 completion, the plan file must include:
+
+| Addition | Consumed by | Purpose |
+| -------- | ----------- | ------- |
+| `## GitHub Task Issues` section with machine handoff line + workflow table | artifact-validator, progress-tracker, executing-github-task (later) | Phase 4 postcondition; resumable linkage |
+| Exactly one `GitHub Task Issue: …` line per numbered task section (immediately after the task heading) | artifact-validator, downstream execution | Per-task inline reference required for every row |
+
+### Machine handoff line (required)
+
+Immediately after the `## GitHub Task Issues` heading, include **one** HTML
+comment on its own line (stable key-value shape for scripts and validators):
+
+```html
+<!-- phase4-handoff parent="owner/repo#N" model="native-sub-issue|linked-issue|task-list" capability="<short free-text>" updated="<ISO-8601 UTC>" -->
+```
+
+- **parent:** canonical parent reference, same repo as workflow unless the skill
+  explicitly documented a cross-repo exception.
+- **model:** the **dominant** write model for this run (`native-sub-issue`,
+  `linked-issue`, or `task-list`). If the run mixed models after partial
+  failure, set `model="mixed"` and explain in `capability`.
+- **capability:** one short sentence stating what was detected (for example
+  `REST sub_issues GET 404`, `gh-sub-issue present`, or `fallback linked-issue`).
+- **updated:** UTC timestamp when Phase 4 last wrote this section.
+
+### Workflow table (required)
+
+Use the table shape in `./subagents/task-issue-creator-templates.md` (`Plan File
+Fragments`). Column semantics:
+
+| Column | Allowed values / notes |
+| ------ | ---------------------- |
+| Task | Integer task index matching `## Task <N>:` |
+| Issue ref | `owner/repo#number` for a concrete issue; `Not Created` if creation failed; `task-list` when that task uses task-list traceability only |
+| Title | Short title aligned with the task heading |
+| Write model | `native-sub-issue` \| `linked-issue` \| `task-list` \| `mixed` (per-row; usually matches the task’s actual linkage) |
+| Status | GitHub state when known (`OPEN`, `CLOSED`) or `Not Created` / `task-list` |
+| Dependencies | Same normalized form as the plan (`None`, `1`, `1,2`, etc.) |
+| Priority | From plan or `Unknown` |
+
+Exactly **one row per** parsed `## Task <N>:` section.
+
+### Per-task inline reference (required)
+
+In each `## Task <N>:` section, on the **first** line after the heading, include
+exactly one line of this form (no variation in the prefix):
+
+```text
+GitHub Task Issue: <owner/repo#number | Not Created | task-list>
+```
+
+Rules:
+
+- Use `owner/repo#number` iff the workflow table row for that task has a concrete
+  `Issue ref` in the same form.
+- Use `Not Created` iff the table row uses `Not Created`.
+- Use `task-list` iff the table row uses `task-list` for `Issue ref`.
+
+This line is the **exact format** referenced by
+`orchestrating-github-workflow/references/data-contracts.md` for Phase 4
+postcondition checks.
+
+## Structured Summary Contract
+
+The subagent returns a structured summary with:
+
+- `TASK_ISSUES: PASS | WARN | FAIL | BLOCKED | ERROR`
+- `Validation: PASS | FAIL | NOT_RUN`
+- `Parent: owner/repo#N`
+- `Plan file: <path | not updated>`
+- `Write model:` and `Capability:` lines mirroring the handoff comment semantics
+- Counts: tasks in plan, already linked, created now, failed creates
+- `Decisions Log: PRESENT | MISSING`
+- `Created/Linked Task Issues:` markdown table with **Issue ref**, **Title**,
+  **Write model**, **Dependencies**, **Priority**, **Outcome**
+- Explicit `Warnings:` and `Failures:` sections
+
+Treat `TASK_ISSUES: ERROR` as an unexpected tool or environment failure. The
+coordinator stops and surfaces the reason instead of interpreting the run as a
+degraded success.
+
+The `Created/Linked Task Issues` table is the handoff the parent workflow uses
+for `progress-tracker` (`TASKS` on Phase 4 completion). Preserve **Dependencies**
+and **Priority** columns for every row.
