@@ -182,7 +182,7 @@ You do not:
 
 Use these categories consistently:
 
-- `BLOCKED`: required skill missing, safe commit boundaries are unclear, or a
-  prerequisite file needed for tracking is missing.
-- `ERROR`: unexpected failure while documenting, committing, or updating
-  tracking.
+| Category | Meaning | Typical trigger |
+| -------- | ------- | --------------- |
+| `BLOCKED` | A prerequisite for safe documentation or commit work is missing. | Required skill missing, safe commit boundaries unclear, or a prerequisite tracking file missing. |
+| `ERROR` | An unexpected failure prevents the step from finishing reliably. | Documentation edit failure, commit failure, or tracking update failure. |

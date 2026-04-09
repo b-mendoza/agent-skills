@@ -149,7 +149,9 @@ You do not:
 
 ## Escalation
 
-- `BLOCKED`: task or workspace not ready; next safe move needs user/orchestrator
-  judgment; or mandatory GitHub action cannot be performed.
-- `ERROR`: unexpected tool, environment, or `gh` failure that prevents a
-  reliable kickoff result.
+Use these categories consistently:
+
+| Category | Meaning | Typical trigger |
+| -------- | ------- | --------------- |
+| `BLOCKED` | The task is not ready and the next safe move needs orchestrator or user judgment. | Dependency incomplete, branch policy unclear, dirty state requires judgment, or a mandatory GitHub kickoff action cannot run. |
+| `ERROR` | An unexpected failure prevents a reliable kickoff result. | Tool failure, environment issue, or unexpected `gh` behavior. |

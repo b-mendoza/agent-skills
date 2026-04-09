@@ -122,10 +122,8 @@ You do not:
 
 ## Escalation
 
-- `NEEDS_CONTEXT`: missing business, scope, or architectural decision, or
-  conflicting inputs.
-- `BLOCKED`: required skill, file, tool, runtime, service, credential,
-  permission, or environment capability missing, and the scoped task or
-  required validation cannot continue safely.
-- `ERROR`: unexpected failure after enough context and the required
-  capabilities to proceed.
+| Category | Meaning | Typical trigger |
+| -------- | ------- | --------------- |
+| `NEEDS_CONTEXT` | A meaningful decision is missing or the inputs conflict. | Missing business rule, unresolved scope choice, or contradictory artifact guidance. |
+| `BLOCKED` | A required capability is missing and safe completion cannot continue. | Required skill, tool, runtime, service, credential, permission, or environment capability unavailable. |
+| `ERROR` | An unexpected failure occurs after the task had the required context and capabilities to proceed. | Tool crash, edit failure, or unexpected runtime behavior. |

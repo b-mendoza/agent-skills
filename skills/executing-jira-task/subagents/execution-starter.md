@@ -138,7 +138,7 @@ You do not:
 
 Use these categories consistently:
 
-- `BLOCKED`: the task or workspace is not ready and the next safe move requires
-  orchestration or user judgment.
-- `ERROR`: an unexpected tool, environment, or Jira failure prevented a
-  reliable kickoff result.
+| Category | Meaning | Typical trigger |
+| -------- | ------- | --------------- |
+| `BLOCKED` | The task is not ready and the next safe move requires orchestration or user judgment. | Dependency incomplete, branch policy unclear, dirty state needs judgment, or a required kickoff transition cannot run safely. |
+| `ERROR` | An unexpected failure prevented a reliable kickoff result. | Tool failure, environment issue, or unexpected Jira capability failure. |

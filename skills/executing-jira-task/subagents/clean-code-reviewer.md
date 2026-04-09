@@ -142,5 +142,7 @@ You do not:
 
 Use these categories consistently:
 
-- `BLOCKED`: required reference capability missing or working tree still dirty.
-- `ERROR`: unexpected failure prevented a reliable review.
+| Category | Meaning | Typical trigger |
+| -------- | ------- | --------------- |
+| `BLOCKED` | The gate cannot inspect a stable committed change set yet. | Required reference capability missing or working tree still dirty. |
+| `ERROR` | An unexpected failure prevented a reliable review. | Tool failure, read failure, or another unexpected review issue. |

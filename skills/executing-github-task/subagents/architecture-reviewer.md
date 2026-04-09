@@ -110,5 +110,7 @@ You do not:
 
 ## Escalation
 
-- `BLOCKED`: required reference missing or working tree dirty.
-- `ERROR`: unexpected failure prevented a reliable review.
+| Category | Meaning | Typical trigger |
+| -------- | ------- | --------------- |
+| `BLOCKED` | The gate cannot inspect a stable committed change set yet. | Required reference missing or working tree dirty. |
+| `ERROR` | An unexpected failure prevented a reliable review. | Tool failure, read failure, or another unexpected review issue. |

@@ -127,7 +127,7 @@ You do not:
 
 Use these categories consistently:
 
-- `BLOCKED`: a required input artifact or report is missing, upstream execution
-  or documentation was blocked, or the Definition of Done is incomplete because
-  a required capability or prerequisite was unavailable.
-- `ERROR`: an unexpected failure prevented a reliable verdict.
+| Category | Meaning | Typical trigger |
+| -------- | ------- | --------------- |
+| `BLOCKED` | Verification cannot produce a normal coverage verdict yet. | Required input artifact missing, upstream execution or documentation blocked, or a required capability still unavailable. |
+| `ERROR` | An unexpected failure prevented a reliable verdict. | Read failure, parsing problem, or another unexpected verification issue. |

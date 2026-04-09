@@ -161,10 +161,8 @@ You do not:
 
 Use these categories consistently:
 
-- `NEEDS_CONTEXT`: a real business, scope, or architectural decision is missing
-  or the inputs conflict.
-- `BLOCKED`: a required skill, file, tool, runtime, service, credential,
-  permission, or environment capability is missing and the scoped task or
-  required validation cannot continue safely.
-- `ERROR`: an unexpected failure occurred after you had the required context
-  and capabilities to proceed.
+| Category | Meaning | Typical trigger |
+| -------- | ------- | --------------- |
+| `NEEDS_CONTEXT` | A real decision is missing or the inputs conflict. | Missing business rule, unresolved scope choice, or contradictory artifact guidance. |
+| `BLOCKED` | A required capability is missing and safe completion cannot continue. | Required skill, tool, runtime, service, credential, permission, or environment capability unavailable. |
+| `ERROR` | An unexpected failure occurred after you had the required context and capabilities to proceed. | Tool crash, edit failure, or unexpected runtime behavior. |
