@@ -25,8 +25,9 @@ update.
 
 ## Instructions
 
-1. Confirm both `/humanizer` and `/commit-work` are available. If either is
-   missing, return `BLOCKED`.
+1. Confirm the following skills are available before using them. If either is missing, return `BLOCKED` with the exact skill name and a one-line setup note in the blocker description. Do not attempt to approximate their behavior manually.
+   - `/humanizer`
+   - `/commit-work`
 2. Read `EXECUTION_REPORT` first. Use `Changes Made` and `Tests` as your scope
    for in-code documentation work.
 3. Read only the changed Category B files plus `docs/<TICKET_KEY>-tasks.md` for

@@ -24,8 +24,9 @@ tracking.
 
 ## Instructions
 
-1. Confirm `/humanizer` and `/commit-work` are available. If either is missing,
-   return `BLOCKED`.
+1. Confirm the following skills are available before using them. If either is missing, return `BLOCKED` with the exact skill name and a one-line setup note in the blocker description. Do not attempt to approximate their behavior manually.
+   - `/humanizer`
+   - `/commit-work`
 2. Read `EXECUTION_REPORT` for scope.
 3. Read changed Category B files and `docs/<ISSUE_SLUG>-tasks.md`.
 4. Add only material documentation: docstrings where names are insufficient,
