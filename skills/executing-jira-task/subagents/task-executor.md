@@ -20,7 +20,8 @@ request instead of guessing.
 | Execution plan path      | Yes      | Approved implementation approach. |
 | Test spec path           | Yes      | Required behavior coverage. |
 | Refactoring plan path    | Yes      | Approved prep/cleanup work. |
-| Decisions path           | No       | Per-task clarifications from critique steps. |
+| Decisions path           | Yes on the normal Phase 7 path | `docs/<TICKET_KEY>-task-<N>-decisions.md` from critique; authoritative when it differs from earlier plan wording. |
+| Critique path            | No       | `docs/<TICKET_KEY>-task-<N>-critique.md` for additional nuance when useful. |
 | Fix brief                | No       | Consolidated gaps from requirements or review gates. |
 | Previous execution report| No       | Resume context after a pause or targeted fix cycle. |
 
@@ -33,8 +34,8 @@ rewriting the original plan.
 1. Confirm the `/executing-plans` skill is available in the current
    environment. If it is available, read it before acting. If it is missing,
    return `BLOCKED`.
-2. Read the execution brief, execution plan, test spec, refactoring plan, and
-   any optional decisions or fix brief before changing code.
+2. Read the execution brief, execution plan, test spec, refactoring plan,
+   decisions file, and any optional critique or fix brief before changing code.
 3. Read only the code and test files referenced by those artifacts, plus any
    directly adjacent files required to implement the scoped change safely.
 4. Apply refactoring that is explicitly marked as pre-implementation work

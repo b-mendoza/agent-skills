@@ -31,7 +31,8 @@ memory; the subagents do the heavy work in isolation.
 | `docs/<KEY>-task-<N>-execution-plan.md`   | Yes      | Approved implementation approach.            |
 | `docs/<KEY>-task-<N>-test-spec.md`        | Yes      | Required behavior coverage.                  |
 | `docs/<KEY>-task-<N>-refactoring-plan.md` | Yes      | Approved structural prep and cleanup.        |
-| `docs/<KEY>-task-<N>-decisions.md`        | No       | Expected after Phase 6 critique; optional only for direct or legacy execution paths. |
+| `docs/<KEY>-task-<N>-critique.md`         | Yes      | Task-level critique record.                  |
+| `docs/<KEY>-task-<N>-decisions.md`        | Yes      | Critique outcomes and confirmed decisions.   |
 
 Read `./references/contracts.md` when validating task readiness or artifact
 shape.

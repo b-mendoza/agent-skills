@@ -6,6 +6,18 @@
 > Reminder: the orchestrator coordinates; the subagents produce the work and
 > return concise summaries.
 
+## Alignment with the parent workflow
+
+Phase 7 preconditions come from the parent orchestrator's data contracts
+(per-task rows for the planning and critique phases) and its task-loop
+readiness gate. This file is the execution skill's authoritative breakdown of
+paths, kickoff semantics, and dispatch inputs; it must not contradict those
+parent contracts.[^1]
+
+[^1]: The concrete parent orchestrator for this skill is
+    `orchestrating-jira-workflow`. Its filesystem layout is intentionally
+    unreferenced here so this skill stays portable across harnesses.
+
 ## Required input shape
 
 The orchestrator starts with exactly two explicit inputs:
@@ -19,28 +31,23 @@ All other inputs are derived from those values.
 
 ## Upstream artifacts
 
-The table below distinguishes artifacts required for every run from artifacts
-that are expected only on certain entry paths:
+| Path pattern                               | Produced by                        | Why it matters                               |
+| ------------------------------------------ | ---------------------------------- | -------------------------------------------- |
+| `docs/<KEY>.md`                            | `fetching-jira-ticket`             | Ticket snapshot and Jira context.            |
+| `docs/<KEY>-tasks.md`                      | `planning-jira-tasks`              | Task source of truth and downstream status.  |
+| `docs/<KEY>-task-<N>-brief.md`             | `planning-jira-task`               | Scope, context, and DoD.                     |
+| `docs/<KEY>-task-<N>-execution-plan.md`    | `planning-jira-task`               | Approved implementation approach.            |
+| `docs/<KEY>-task-<N>-test-spec.md`         | `planning-jira-task`               | Required behavior coverage.                  |
+| `docs/<KEY>-task-<N>-refactoring-plan.md`  | `planning-jira-task`               | Approved prep/cleanup work.                  |
+| `docs/<KEY>-task-<N>-critique.md`          | `clarifying-assumptions` (critique) | Task-level critique record.                  |
+| `docs/<KEY>-task-<N>-decisions.md`         | `clarifying-assumptions` (critique) | Decisions and confirmed plan after critique. |
 
-| Path pattern                               | Produced by                     | Why it matters                               |
-| ------------------------------------------ | ------------------------------- | -------------------------------------------- |
-| `docs/<KEY>.md`                            | `fetching-jira-ticket`          | Ticket snapshot and Jira context.            |
-| `docs/<KEY>-tasks.md`                      | `planning-jira-tasks`           | Task source of truth and downstream status.  |
-| `docs/<KEY>-task-<N>-brief.md`             | `planning-jira-task`            | Scope, context, and DoD.                     |
-| `docs/<KEY>-task-<N>-execution-plan.md`    | `planning-jira-task`            | Approved implementation approach.            |
-| `docs/<KEY>-task-<N>-test-spec.md`         | `planning-jira-task`            | Required behavior coverage.                  |
-| `docs/<KEY>-task-<N>-refactoring-plan.md`  | `planning-jira-task`            | Approved prep/cleanup work.                  |
-| `docs/<KEY>-task-<N>-decisions.md`         | `clarifying-assumptions`        | Expected after a full Phase 6 critique pass; optional only for direct or legacy execution paths. |
+**Normal orchestrated path:** all of the above through `decisions.md` are
+required before kickoff. Phase 6 critique produces `critique.md` and
+`decisions.md` before Phase 7 begins.
 
-If any artifact marked as required is missing, stop before dispatching
-subagents and tell the user which upstream skill must run first. If a
-conditional artifact is absent, follow the note in its row instead of blocking
-automatically.
-
-In the normal orchestrated workflow, Phase 6 critique produces
-`docs/<KEY>-task-<N>-decisions.md` before Phase 7 begins. The optional note
-applies only when execution is entered directly or resumed from an older path
-that predates the critique artifact.
+If any required artifact is missing, stop before dispatching subagents and name
+which upstream phase or skill must run first.
 
 ## Task readiness checklist
 
@@ -90,7 +97,7 @@ success from partial file changes alone.
 | Subagent                | Required inputs                                                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `execution-starter`     | `TICKET_KEY`, `TASK_NUMBER`, ticket snapshot path, task plan path, execution brief path, optional readiness summaries |
-| `task-executor`         | Brief path, execution plan path, test spec path, refactoring plan path, optional decisions path, optional fix brief, optional previous report |
+| `task-executor`         | Brief path, execution plan path, test spec path, refactoring plan path, decisions path; optional critique path, fix brief, previous execution report |
 | `documentation-writer`  | `EXECUTION_REPORT`, `TICKET_KEY`, `TASK_NUMBER`                                                                  |
 | `requirements-verifier` | Brief path, test spec path, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`                                           |
 | `clean-code-reviewer`   | Brief path, test spec path, refactoring plan path, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT` |
