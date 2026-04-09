@@ -207,6 +207,8 @@ For Phases 5-7, `./references/task-loop.md` remains the procedural authority
 when it adds task-loop-specific steps between the generic boundaries. In
 particular, Phase 7 determines whether progress should be recorded as
 `complete`, `failed`, or `skipped` based on the downstream execution outcome.
+Treat execution-skill `BLOCKED` results as hard-stop resume points, not as
+ordinary implementation gaps or generic fix-loop retries.
 
 > Reminder: for Phases 1-6, run the full loop in order: validator (when needed)
 > -> downstream skill -> validator -> progress update -> gate decision. For
