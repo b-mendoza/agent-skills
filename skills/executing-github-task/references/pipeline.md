@@ -16,7 +16,7 @@ Every successful task run follows this sequence:
    - Read `./contracts.md`.
    - Confirm the **Phase 7 handoff**: four Phase 5 artifacts plus
      `critique.md` and `decisions.md` exist for this `TASK_NUMBER`, matching
-     `../../orchestrating-github-workflow/references/data-contracts.md`.
+     the parent orchestrator's Phase 5–7 data contracts.
    - Stop immediately if required artifacts are missing, contradictory, or the
      selected task is not ready.
 

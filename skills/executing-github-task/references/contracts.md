@@ -8,13 +8,15 @@
 
 ## Alignment with the parent workflow
 
-Phase 7 preconditions for `orchestrating-github-workflow` are defined in
-`../../orchestrating-github-workflow/references/data-contracts.md` (per-task
-rows for phases 5–7) and detailed in
-`../../orchestrating-github-workflow/references/task-loop.md` (**6 → 7
-readiness**). This file is the execution skill’s authoritative breakdown of
-paths, kickoff semantics, and dispatch inputs; it must not contradict those
-orchestrator contracts.
+Phase 7 preconditions come from the parent orchestrator's data contracts
+(per-task rows for phases 5–7) and are detailed in the parent orchestrator's
+task-loop readiness section (**6 → 7 readiness**). This file is the execution
+skill's authoritative breakdown of paths, kickoff semantics, and dispatch
+inputs; it must not contradict those parent contracts.[^1]
+
+[^1]: The concrete parent orchestrator for this skill is
+    `orchestrating-github-workflow`. Its filesystem layout is intentionally
+    unreferenced here so this skill stays portable across harnesses.
 
 ## Required input shape
 

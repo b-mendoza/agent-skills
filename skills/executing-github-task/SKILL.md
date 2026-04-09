@@ -13,8 +13,8 @@ advance, run a targeted fix cycle, or escalate.
 **Execution kickoff** is the first point at which the workflow may mutate GitHub
 issue state or otherwise cross from critique-only work into active execution.
 Everything through Phase 6 remains critique and planning on disk; **kickoff is
-the first execution mutation boundary after the user approves implementation**
-(see `../orchestrating-github-workflow/references/task-loop.md`). The
+the first execution mutation boundary after the user approves implementation**,
+consistent with the parent orchestrator's task-loop readiness gate. The
 orchestrator running this skill keeps only concise summaries in memory;
 subagents do the heavy work in isolation.
 
@@ -27,8 +27,8 @@ subagents do the heavy work in isolation.
 
 ### Required artifacts (normal Phase 7 path)
 
-These match the orchestrator **6 → 7 readiness** gate in
-`../orchestrating-github-workflow/references/data-contracts.md`:
+These match the parent orchestrator's **6 → 7 readiness** gate for per-task
+execution:
 
 | Artifact                                      | Phase | Purpose                                      |
 | --------------------------------------------- | ----- | -------------------------------------------- |
@@ -134,8 +134,8 @@ After a successful run, this skill leaves behind these deliverables:
 ## Execution Steps
 
 1. Read `./references/contracts.md` and confirm the task is ready to cross the
-   execution boundary (including Phase 7 precondition alignment with
-   `orchestrating-github-workflow` when invoked from that skill).
+   execution boundary (including Phase 7 precondition alignment with the parent
+   orchestrator when invoked from that workflow).
 2. Read `./references/pipeline.md` and follow its normal run order exactly.
 3. Dispatch only the next required subagent, passing explicit inputs and
    keeping only structured summaries in orchestration context.
