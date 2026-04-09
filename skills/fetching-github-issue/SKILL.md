@@ -199,7 +199,7 @@ Branch on the retriever's structured status fields, not on prose:
 ## Examples
 
 <example>
-Input: `ISSUE_URL=https://github.com/acme/app/issues/42` → `ISSUE_SLUG=acme-app-42`
+Input: `ISSUE_URL=https://github.com/acme/app/issues/42` -> `ISSUE_SLUG=acme-app-42`
 
 1. Read `./subagents/issue-retriever.md`
 2. Dispatch `issue-retriever` with `ISSUE_URL`

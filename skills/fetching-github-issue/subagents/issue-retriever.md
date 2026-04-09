@@ -145,7 +145,7 @@ Render related sections in deterministic order (template rules).
 ### 5. Assemble the document
 
 > Load the bundled template only at this assembly step, then keep the
-> validate → repair → re-check loop targeted to the missing or mismatched
+> validate -> repair -> re-check loop targeted to the missing or mismatched
 > portions before you report the final summary.
 
 Read `./issue-retriever-template.md` and use the fenced Markdown snapshot shape
