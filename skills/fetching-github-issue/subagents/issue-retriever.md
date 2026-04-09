@@ -221,6 +221,34 @@ Warnings: None
 Reason: None
 </example>
 
+<example>
+FETCH: PARTIAL
+Validation: PASS
+Failure category: NONE
+File written: docs/acme-app-7001.md
+Issue: acme/app#7001: Audit webhook retries
+State: OPEN
+Comments: 2/2
+Child issues: 1/2
+Linked issues: 0/0
+Warnings: Child issue acme/app#7010 returned 404 via gh api
+Reason: None
+</example>
+
+<example>
+FETCH: FAIL
+Validation: NOT_RUN
+Failure category: NOT_FOUND
+File written: None
+Issue: acme/app#892: Unknown
+State: Unknown
+Comments: 0/0
+Child issues: 0/0
+Linked issues: 0/0
+Warnings: None
+Reason: GitHub issue acme/app#892 was not found (404)
+</example>
+
 ## Scope
 
 Your job is to:
