@@ -42,7 +42,11 @@ update.
    unit, use one commit. If safe commit boundaries are unclear from the
    execution scope, stop and return `BLOCKED` instead of creating one mixed
    commit.
-7. For each commit group, use `/commit-work` with exactly this guidance:
+7. Process commit groups one at a time. For each `/commit-work` invocation,
+   keep only the current group's Category B files in commit scope. Do not ask
+   `/commit-work` to rediscover boundaries across multiple groups at once.
+8. For each current commit group, use `/commit-work` with exactly this
+   guidance:
 
    ```markdown
    /commit-work
@@ -56,20 +60,20 @@ update.
 
    Commit only Category B files. Keep `docs/<TICKET_KEY>*.md` and other
    Category A artifacts out of every commit scope.
-8. Return every commit you create in `### Commits Made`. Multiple rows are the
+9. Return every commit you create in `### Commits Made`. Multiple rows are the
    normal outcome when the task naturally splits into multiple logical commits.
-9. Update `docs/<TICKET_KEY>-tasks.md` on disk:
+10. Update `docs/<TICKET_KEY>-tasks.md` on disk:
    - mark the task complete with the current date
    - add an implementation summary derived from `EXECUTION_REPORT`
    - add a file list derived from `EXECUTION_REPORT`
    - update the Jira Subtasks table row to `Done` if the table exists
-10. Resolve the Jira subtask key from the selected task section's
+11. Resolve the Jira subtask key from the selected task section's
    `Jira Subtask: <KEY>` line first, or from the matching row in `## Jira
    Subtasks` if the inline line is absent.
-11. If Jira capability and a subtask key are available, transition the subtask
+12. If Jira capability and a subtask key are available, transition the subtask
    and add a short completion comment. If not, record the skip instead of
    failing the whole step.
-12. Return a concise documentation report.
+13. Return a concise documentation report.
 
 ## Output Format
 

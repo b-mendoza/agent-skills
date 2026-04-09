@@ -35,7 +35,11 @@ tracking.
    practical set of logically scoped commit groups. If the work is truly one
    unit, use one commit. If safe commit boundaries are unclear from the
    execution scope, return `BLOCKED` instead of creating one mixed commit.
-7. For each commit group, use `/commit-work` with exactly this guidance:
+7. Process commit groups one at a time. For each `/commit-work` invocation,
+   keep only the current group's Category B files in commit scope. Do not ask
+   `/commit-work` to rediscover boundaries across multiple groups at once.
+8. For each current commit group, use `/commit-work` with exactly this
+   guidance:
 
    ```markdown
    /commit-work
@@ -49,15 +53,15 @@ tracking.
 
    Commit **only** Category B files. Keep `docs/<ISSUE_SLUG>*.md` and other
    Category A files out of every commit.
-8. Return every commit you create in `### Commits Made`. Multiple rows are the
+9. Return every commit you create in `### Commits Made`. Multiple rows are the
    normal outcome when the task naturally splits into separate logical commits.
-9. Update `docs/<ISSUE_SLUG>-tasks.md` for the selected task:
+10. Update `docs/<ISSUE_SLUG>-tasks.md` for the selected task:
    - mark complete with current date (per team conventions)
    - implementation summary from `EXECUTION_REPORT`
    - files changed from `EXECUTION_REPORT`
    - if `## GitHub Task Issues` exists, align the row for this task with known
      GitHub state when you perform `gh` steps below
-10. Resolve the task issue from `GitHub Task Issue: …` in the task section (see
+11. Resolve the task issue from `GitHub Task Issue: …` in the task section (see
    `creating-github-child-issues`). If `owner/repo#number`:
    - optionally add a completion comment via `gh issue comment`
    - optionally close the child issue via `gh issue close` when the brief or
@@ -65,10 +69,10 @@ tracking.
    - optionally add a short comment on the **parent** issue summarizing Task N
      completion when the brief calls for it
    If `Not Created` or `task-list`, record skips instead of failing the step.
-11. If `gh` is unavailable or unauthorized, record skips; do not fail the whole
+12. If `gh` is unavailable or unauthorized, record skips; do not fail the whole
    step if commits and disk tracking succeeded unless GitHub updates are
    explicitly mandatory in the brief.
-12. Return a concise documentation report.
+13. Return a concise documentation report.
 
 ## Output Format
 
