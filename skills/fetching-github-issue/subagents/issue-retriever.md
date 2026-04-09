@@ -76,6 +76,17 @@ gh issue view <ISSUE_NUMBER> --repo <owner>/<repo> --json title,body,state,label
 Use the JSON payload to populate metadata, labels, assignees, and top-level
 context. Map `state` to `OPEN` / `CLOSED` (or equivalent) for `## Metadata`.
 
+**Body formatting:** When populating `## Description` and `## Comments`,
+preserve useful formatting such as lists, fenced code blocks, links, and
+tables. Outside fenced code blocks, rewrite GitHub-authored Markdown heading
+lines as bold labels so body content cannot collide with reserved snapshot
+headings. Example: a line that reads `## Steps to reproduce` in the issue
+body becomes `**Steps to reproduce**` in the snapshot.
+
+Serialize multi-value metadata (labels, assignees) as comma-separated strings
+sorted alphabetically by display text when rendering them inside
+`## Metadata`. For empty scalar values in the metadata table, write `_None_`.
+
 **Comments:** Prefer inline `comments` from `--json` when your `gh` version
 includes them. Otherwise fetch comments via:
 
@@ -162,21 +173,38 @@ Every required top-level heading from the fenced snapshot shape must appear in
 the file. The title line must match `# <ISSUE_SLUG>: <Issue title>` using the
 issue title from GitHub.
 
+Normalize timestamps with time to `YYYY-MM-DD HH:MM UTC`, and preserve
+date-only values as `YYYY-MM-DD`. The retrieval preamble at the top of the
+file must include both `Retrieved on` (using the normalized timestamp) and
+`Source` (the `ISSUE_URL` or `owner/repo#N` reference).
+
 ### 6. Post-write validation gate: validate, repair, and re-check
 
 After writing the file, re-read it and verify:
 
 - Every required top-level heading from the fenced snapshot shape exists
-- `## Metadata` table includes required rows in template order; empty scalars use
-  `_None_`
+- The title line matches `# <ISSUE_SLUG>: <Issue title>`
+- The retrieval preamble includes both `Retrieved on` and `Source`
+- `## Metadata` table includes required rows in template order; empty scalars
+  use `_None_`
 - `## Description` and `## Acceptance Criteria` follow extraction rules
 - `## Comments`, `## Retrieval Warnings`, `## Child Issues`, `## Linked Issues`,
   `## Labels`, `## Assignees`, `## Milestone`, `## Projects`, `## Attachments`
-  obey the template’s empty vs populated rules
+  obey the template's empty vs populated rules
+- Parent comment count in the file matches the retrieved data
+- The number of child-issue and linked-issue entries in the file matches the
+  number discovered on the parent issue, with full entries for retrieved items
+  and `Not retrieved` placeholders for any unretrieved ones
 - Nested comment headings follow the template for parent and related issues
-- Partial retrieval markers match `## Retrieval Warnings`
-- No body content outside fenced code uses leading `#`, `##`, or `###` at line
-  start
+- Any partial comment retrieval warning has a matching terminal marker in the
+  affected `## Comments` or `#### Comments` section
+- Each unretrieved child or linked issue has both a warning entry under
+  `## Retrieval Warnings` and a placeholder entry in the correct section,
+  rather than being silently dropped
+- `## Retrieval Warnings` is `_None_` on full success, or lists every warning
+  on partial success
+- Outside fenced code blocks, no rendered body line begins with Markdown
+  heading markers such as `# `, `## `, or `### `
 - Deterministic ordering rules are satisfied
 
 If validation fails, fix only the missing or mismatched portions, rewrite the
