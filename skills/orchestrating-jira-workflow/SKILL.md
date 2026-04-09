@@ -170,6 +170,10 @@ Use these rules throughout the workflow:
   relevant planning phase. `BLOCKERS_PRESENT=true` is a hard stop before Jira
   writes or task execution, even if the generic user gate would otherwise allow
   advancing.
+- **Treat execution kickoff as downstream-owned.** Once the normal Phase 5 + 6
+  handoff validates, `executing-jira-task` owns the execution-side kickoff
+  boundary, including readiness checks, safe startup state changes, and whether
+  a Jira `In Progress` transition can happen.
 - **Preserve resumability.** Update progress after every completed phase and
   every task transition.
 - **Separate artifact lifecycles.** Orchestration artifacts stay on disk and are
@@ -324,19 +328,22 @@ summary needed to decide the next move:
 - `PREFLIGHT: FAIL` or `PREFLIGHT: ERROR` -> stop before entering the phase
 - Critical validator or progress failures -> stop progression and present the
   blocking summary
-- Phase 7 `BLOCKED` from `task-executor`, `documentation-writer`, or
-  `requirements-verifier` -> surface the exact missing capability or blocked
-  dependency, treat it as a user-steered pause, and resume from the blocked
-  Phase 7 step after it is resolved
+- Phase 7 `BLOCKED` from `execution-starter`, `task-executor`,
+  `documentation-writer`, or `requirements-verifier` -> surface the exact
+  missing capability, unsafe workspace state, or blocked dependency, treat it
+  as a user-steered pause, and resume from the blocked Phase 7 step after it
+  is resolved
 - Downstream execution `ERROR` or exhausted execution-skill fix cycle -> do not
   mark the task complete; follow `./references/task-loop.md` and
   `./references/error-handling.md`
 - Retry or re-plan loop exhausted -> present the accumulated feedback and ask
   the user how to proceed
 
-## Example
+## Examples
 
 <example>
+Happy path
+
 Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 
 1. Dispatch `progress-tracker` with `ACTION=read`
@@ -353,4 +360,22 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 8. Tell the user: "Ticket fetched. Moving to task planning."
 
 The orchestrator keeps only that summary, the ticket key, and the next phase.
+</example>
+
+<example>
+Phase 7 kickoff blocker
+
+Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
+
+1. `progress-tracker` reports `Resume from: Phase 7, Task 2`
+2. Dispatch `preflight-checker` for the remaining range and confirm resume with
+   the user
+3. Read `./references/task-loop.md`
+4. Validate the normal Phase 5 + 6 handoff for Task 2
+5. Invoke `executing-jira-task`
+6. `execution-starter` returns `BLOCKED` because the worktree contains unrelated
+   local changes that need user direction before kickoff
+7. Record the task as a blocked Phase 7 stop, present the blocker summary, and
+   do not treat it as an ordinary implementation gap
+8. Resume from the same Phase 7 step after the workspace state is resolved
 </example>
