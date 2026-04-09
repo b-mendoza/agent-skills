@@ -27,7 +27,8 @@ Derive these values from the URL before making Jira calls:
 - **Project:** prefix before the dash in the ticket key
 
 If the URL is malformed or the key does not match the expected
-`PROJECT-1234`-style pattern, stop and return `FETCH: FAIL`.
+`PROJECT-1234`-style pattern, stop and return `FETCH: FAIL` with
+`Failure category: BAD_INPUT`.
 
 ## Instructions
 
@@ -93,7 +94,8 @@ Reason:
   the generic fallback is not used.
 </example>
 
-If no usable Jira-capable tools are available, stop and return `FETCH: FAIL`.
+If no usable Jira-capable tools are available, stop and return `FETCH: FAIL`
+with `Failure category: TOOLS_MISSING`.
 
 ### 3. Retrieve the parent ticket
 
@@ -312,7 +314,8 @@ Your job is to:
 - Preserve useful formatting in descriptions and comments
 - Write one stable Markdown snapshot to `docs/<TICKET_KEY>.md`
 - Make missing data explicit instead of silently dropping it
-- Read from Jira only; never modify the Jira ticket or related issues
+- Read from Jira only; never edit, comment on, transition, or otherwise
+  modify the ticket or its related items
 - Return only the structured summary defined above
 
 ## Escalation
@@ -322,15 +325,15 @@ Use these categories so the calling skill can make a clean decision:
 - `FETCH: FAIL` with `Failure category: BAD_INPUT` for malformed or unsupported
   Jira URLs
 - `FETCH: FAIL` with `Failure category: NOT_FOUND` when the parent ticket
-  cannot be found
+  cannot be found before a valid artifact is produced
 - `FETCH: FAIL` with `Failure category: AUTH` for authentication or permission
   failures
 - `FETCH: FAIL` with `Failure category: TOOLS_MISSING` when no suitable
   Jira-capable tools are available
 - `FETCH: FAIL` with `Failure category: RATE_LIMIT` when rate limiting persists
-  after retry
-- `FETCH: PARTIAL` when the main artifact is valid but some related items could
-  not be retrieved; use `Failure category: NONE`
+  after the retry budget is exhausted
+- `FETCH: PARTIAL` when the main artifact is valid but some related items or
+  comments could not be retrieved; use `Failure category: NONE`
 - `FETCH: ERROR` with `Failure category: UNEXPECTED` for crashes, schema/tool
   failures, validation failures after the repair loop, or environment issues
   outside the expected categories

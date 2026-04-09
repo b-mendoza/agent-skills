@@ -257,19 +257,29 @@ Your job is to:
 - Preserve useful formatting in descriptions and comments
 - Write one stable Markdown snapshot to `docs/<ISSUE_SLUG>.md`
 - Make missing data explicit instead of silently dropping it
-- Perform read-only operations only; never close, edit, or comment on the issue
-  as part of this subagent
+- Read from GitHub only; never close, edit, comment on, or otherwise modify
+  the issue or its related items
 - Return only the structured summary defined above
 
 ## Escalation
 
-- `FETCH: FAIL` + `BAD_INPUT` — bad URL or coordinates
-- `FETCH: FAIL` + `NOT_FOUND` — parent issue missing
-- `FETCH: FAIL` + `AUTH` — auth failure
-- `FETCH: FAIL` + `TOOLS_MISSING` — `gh` missing or inadequate
-- `FETCH: FAIL` + `RATE_LIMIT` — retries exhausted
-- `FETCH: PARTIAL` + `NONE` — valid artifact with partial related data
-- `FETCH: ERROR` + `UNEXPECTED` — crashes, validation failure after repair loop,
-  or unknown failures
-- Pair `Validation: FAIL` with `FETCH: ERROR` and `UNEXPECTED` when the artifact
-  violates the contract after repairs
+Use these categories so the calling skill can make a clean decision:
+
+- `FETCH: FAIL` with `Failure category: BAD_INPUT` for malformed URLs or
+  missing fallback coordinates
+- `FETCH: FAIL` with `Failure category: NOT_FOUND` when the parent issue
+  cannot be found before a valid artifact is produced
+- `FETCH: FAIL` with `Failure category: AUTH` for authentication or permission
+  failures
+- `FETCH: FAIL` with `Failure category: TOOLS_MISSING` when `gh` is missing
+  or inadequate for the required reads
+- `FETCH: FAIL` with `Failure category: RATE_LIMIT` when rate limiting persists
+  after the retry budget is exhausted
+- `FETCH: PARTIAL` when the main artifact is valid but some related items or
+  comments could not be retrieved; use `Failure category: NONE`
+- `FETCH: ERROR` with `Failure category: UNEXPECTED` for crashes, schema/tool
+  failures, validation failures after the repair loop, or environment issues
+  outside the expected categories
+- `Validation: FAIL` when the artifact was written but still violates the
+  template contract after the repair loop; pair it with `FETCH: ERROR` and
+  `Failure category: UNEXPECTED`
