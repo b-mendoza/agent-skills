@@ -198,12 +198,21 @@ sequential.
 
 ## Standard Phase Cycle
 
-Every phase follows this cycle:
+Phases 1-6 follow this full cycle. Phase 7 uses the same precondition ->
+downstream skill -> progress -> gate structure, but does not add an
+orchestrator-level postcondition validator because `executing-jira-task` owns
+its internal completion and quality-gate semantics.
 
-> Reminder: run the full loop in order: validator (when needed) -> downstream
-> skill -> validator -> progress update -> gate decision. Use
-> `./references/data-contracts.md` for exact PASS/FAIL semantics at the
-> boundary.
+For Phases 5-7, `./references/task-loop.md` remains the procedural authority
+when it adds task-loop-specific steps between the generic boundaries. In
+particular, Phase 7 determines whether progress should be recorded as
+`complete`, `failed`, or `skipped` based on the downstream execution outcome.
+
+> Reminder: for Phases 1-6, run the full loop in order: validator (when needed)
+> -> downstream skill -> validator -> progress update -> gate decision. For
+> Phase 7, use the execution-skill-owned variant described in
+> `./references/task-loop.md`. Use `./references/data-contracts.md` for exact
+> PASS/FAIL/ERROR semantics at the boundary.
 
 1. **Announce** the phase banner.
 2. **Validate preconditions** by dispatching `artifact-validator` when a
