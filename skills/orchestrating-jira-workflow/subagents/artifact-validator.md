@@ -26,30 +26,30 @@ requested boundary, then follow the validation procedure that follows it.
 ### Phase Boundary Matrix
 
 For Phase 1, the checks below are the orchestrator-facing shorthand for the
-stable snapshot contract owned by `../fetching-jira-ticket/SKILL.md`.
+stable snapshot contract owned by `../../fetching-jira-ticket/SKILL.md`.
 
 For Phase 2 and Phase 3 preconditions, do not fall back to the older shorthand
 of "contains `## Tasks` and has task entries." Those boundaries must stay
-aligned with the richer contract owned by `../planning-jira-tasks/SKILL.md` and
-consumed by `../clarifying-assumptions/SKILL.md`.
+aligned with the richer contract owned by `../../planning-jira-tasks/SKILL.md` and
+consumed by `../../clarifying-assumptions/SKILL.md`.
 
 For the clarification boundaries, validate the artifact outputs that the
 downstream skill writes to disk. The orchestrator still handles
 `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT` separately from this validator.
 
 For Phase 4 postcondition and the Phase 5 precondition, validate the stronger
-handoff owned by `../creating-jira-subtasks/SKILL.md`: the workflow-level
+handoff owned by `../../creating-jira-subtasks/SKILL.md`: the workflow-level
 `## Jira Subtasks` table plus the inline `Jira Subtask: <KEY>` lines for
 linked tasks.
 
 For the Phase 5 postcondition and Phase 6 precondition, validate the concrete
-planning handoff owned by `../planning-jira-task/SKILL.md`: brief, execution
+planning handoff owned by `../../planning-jira-task/SKILL.md`: brief, execution
 plan, test spec, and refactoring plan. The detailed section-level requirements
 inside those files remain owned by that downstream skill.
 
 For the Phase 7 precondition, validate the normal workflow handoff from Phases
 5 and 6. This confirms critique completed before execution begins.
-`../executing-jira-task/references/contracts.md` remains authoritative for the
+`../../executing-jira-task/references/contracts.md` remains authoritative for the
 execution skill's own required versus conditional input semantics.
 
 | Phase | Direction     | File                                 | Checks                                                         |

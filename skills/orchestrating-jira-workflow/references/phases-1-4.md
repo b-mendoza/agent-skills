@@ -16,7 +16,7 @@ postconditions -> update progress -> gate check**
 
 ## Phase 1 - Fetch Ticket
 
-**Skill:** `fetching-jira-ticket` at `../fetching-jira-ticket/SKILL.md`
+**Skill:** `fetching-jira-ticket` at `../../fetching-jira-ticket/SKILL.md`
 
 1. Announce Phase 1.
 2. There is no artifact precondition for a fresh start.
@@ -48,7 +48,7 @@ postconditions -> update progress -> gate check**
 
 ## Phase 2 - Plan Tasks
 
-**Skill:** `planning-jira-tasks` at `../planning-jira-tasks/SKILL.md`
+**Skill:** `planning-jira-tasks` at `../../planning-jira-tasks/SKILL.md`
 
 1. Announce Phase 2.
 2. Dispatch `artifact-validator` with:
@@ -100,7 +100,7 @@ postconditions -> update progress -> gate check**
 
 ## Phase 3 - Clarify Assumptions + Critique Plan
 
-**Skill:** `clarifying-assumptions` at `../clarifying-assumptions/SKILL.md`
+**Skill:** `clarifying-assumptions` at `../../clarifying-assumptions/SKILL.md`
 **Mode:** `upfront`
 
 1. Announce Phase 3.
@@ -195,7 +195,7 @@ Only proceed to Phase 4 when the user explicitly chooses option 1.
 
 ## Phase 4 - Create Jira Subtasks
 
-**Skill:** `creating-jira-subtasks` at `../creating-jira-subtasks/SKILL.md`
+**Skill:** `creating-jira-subtasks` at `../../creating-jira-subtasks/SKILL.md`
 
 1. Announce Phase 4.
 2. Dispatch `artifact-validator` with:

@@ -55,7 +55,7 @@ Before entering the loop for a task:
 
 ## Phase 5 — Plan Task Execution
 
-**Skill:** `planning-jira-task` (at `../planning-jira-task/SKILL.md`)
+**Skill:** `planning-jira-task` (at `../../planning-jira-task/SKILL.md`)
 
 **Announce:**
 
@@ -139,7 +139,7 @@ coverage shape, and the refactoring verdict.
 
 ## Phase 6 — Clarify + Critique Execution Plan
 
-**Skill:** `clarifying-assumptions` (at `../clarifying-assumptions/SKILL.md`)
+**Skill:** `clarifying-assumptions` (at `../../clarifying-assumptions/SKILL.md`)
 **Mode:** `critique`
 
 **Announce:**
@@ -262,7 +262,7 @@ Ready to start execution kickoff and implementation? (y/n)
 
 ## Phase 7 — Kick Off and Execute Task
 
-**Skill:** `executing-jira-task` (at `../executing-jira-task/SKILL.md`)
+**Skill:** `executing-jira-task` (at `../../executing-jira-task/SKILL.md`)
 
 **Announce:**
 
@@ -292,7 +292,7 @@ task:
 - `docs/<KEY>-task-<N>-decisions.md`
 
 This gate confirms that critique completed before execution begins. Once it
-passes, `../executing-jira-task/references/contracts.md` is authoritative for
+passes, `../../executing-jira-task/references/contracts.md` is authoritative for
 the execution skill's own required versus conditional artifact semantics.
 
 **Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY` and

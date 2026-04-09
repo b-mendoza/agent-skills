@@ -42,7 +42,7 @@ Subtasks` exists and has one key."
 
 For Phase 5 postcondition and Phase 6 precondition, this quick reference names
 the concrete four-file planning handoff. The detailed section requirements
-inside those files are owned by `../planning-jira-task/SKILL.md` and its
+inside those files are owned by `../../planning-jira-task/SKILL.md` and its
 `references/data-contracts.md`.
 
 | Phase | Direction     | File to check                      | Expected checks                  |
@@ -53,7 +53,7 @@ inside those files are owned by `../planning-jira-task/SKILL.md` and its
 | 7     | precondition  | Standard Phase 5 + 6 workflow handoff | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`, `docs/<KEY>-task-<N>-critique.md`, and `docs/<KEY>-task-<N>-decisions.md` all exist; this confirms the normal workflow reached execution after critique completion |
 
 For Phase 7 specifically, this table defines the orchestrator's normal
-workflow-gate check. `../executing-jira-task/references/contracts.md` remains
+workflow-gate check. `../../executing-jira-task/references/contracts.md` remains
 authoritative for the execution skill's own required versus conditional input
 semantics.
 
