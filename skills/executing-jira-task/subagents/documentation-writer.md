@@ -160,6 +160,43 @@ COMPLETE
 `COMPLETE` is the normal success outcome. Multiple commits are preferred when
 they improve reviewability. `BLOCKED` and `ERROR` are escalation outcomes.
 
+Failure example:
+
+```markdown
+## Documentation Report
+
+### Status
+BLOCKED
+
+### Files Documented
+| File | What was added or updated |
+| ---- | ------------------------- |
+| `None` | `None` |
+
+### Files Intentionally Skipped
+- None
+
+### Documentation Decisions
+- None
+
+### Humanizer Applied
+- No (blocked before prose changes were finalized)
+
+### Commits Made
+None
+
+### Tracking Updates
+- Task plan file: failed
+- Task status line: failed
+- Implementation summary: failed
+- Files changed list: failed
+- Jira table row: skipped
+- Jira transition/comment: skipped
+
+### Blockers or Ambiguities
+- The changed Category B files cannot be partitioned into safe commit groups from the execution scope provided.
+```
+
 ## Scope
 
 Your job is to:

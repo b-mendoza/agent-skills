@@ -118,6 +118,35 @@ READY
 `READY` is the normal kickoff success outcome. `BLOCKED` and `ERROR` are the
 escalation outcomes.
 
+Failure example:
+
+```markdown
+## Execution Kickoff Report
+
+### Status
+BLOCKED
+
+### Task Readiness
+- Task exists: Yes
+- Dependencies complete: No
+- Planning artifacts aligned: Yes
+
+### Workspace Readiness
+- Branch/worktree state: blocked
+- Local changes handling: clean
+- Notes: The selected task still depends on Task 2 according to the task plan.
+
+### Jira Kickoff
+- Subtask key: `JNS-6071`
+- Transition to `In Progress`: skipped
+
+### Next Step
+- Wait for the prerequisite task to complete or escalate the dependency issue
+
+### Blockers or Ambiguities
+- Task 3 cannot start until Task 2 is complete.
+```
+
 ## Scope
 
 Your job is to:

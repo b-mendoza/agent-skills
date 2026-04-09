@@ -76,6 +76,58 @@ execution or documentation could not complete because a required capability,
 permission, prerequisite, or context dependency was unavailable. `ERROR` is an
 unexpected verification failure.
 
+Example:
+
+```markdown
+## Requirements Verification
+
+### Verdict
+FAIL
+
+### Requirements Checklist
+| # | Requirement | Implemented | Tested | Documented | Status |
+| - | ----------- | ----------- | ------ | ---------- | ------ |
+| 1 | Invalidate cache after update | Yes | Yes | Yes | OK |
+| 2 | Handle missing task id gracefully | No | No | No | GAP |
+
+### Gaps
+| # | Requirement | Gap Description | What Needs to Happen |
+| - | ----------- | --------------- | -------------------- |
+| 1 | Handle missing task id gracefully | No guard clause or test covers this path | Add the guard behavior and one focused test |
+
+### Regression Check
+- Existing tests: all passing
+- New tests: 8/8 passing
+
+### Summary
+One DoD item is still open. Address the missing guard-path behavior before the
+quality gates run.
+```
+
+Failure example:
+
+```markdown
+## Requirements Verification
+
+### Verdict
+BLOCKED
+
+### Requirements Checklist
+| # | Requirement | Implemented | Tested | Documented | Status |
+| - | ----------- | ----------- | ------ | ---------- | ------ |
+| 1 | Run integration sync end to end | No | No | No | GAP |
+
+### Gaps
+None
+
+### Regression Check
+- Existing tests: blocked upstream
+- New tests: blocked upstream
+
+### Summary
+Blocked by `EXECUTION_REPORT`: the required integration environment was unavailable, so the task cannot be verified yet.
+```
+
 ## Scope
 
 You do:

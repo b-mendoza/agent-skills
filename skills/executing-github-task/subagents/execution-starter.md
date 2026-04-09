@@ -132,6 +132,37 @@ READY
 - None
 ```
 
+Failure example:
+
+```markdown
+## Execution Kickoff Report
+
+### Status
+BLOCKED
+
+### Task Readiness
+- Task exists: Yes
+- Dependencies complete: No
+- Planning artifacts aligned: Yes
+
+### Workspace Readiness
+- Branch/worktree state: blocked
+- Local changes handling: blocked
+- Notes: Task 2 is still marked in progress, so Task 3 cannot start safely.
+
+### GitHub Kickoff (gh)
+- Task issue ref: acme/app#100
+- Parent issue ref (if used): acme/app#42
+- Actions taken: none
+- Result: skipped - kickoff stopped before any GitHub mutation
+
+### Next Step
+- Wait for the prerequisite task to complete or escalate the dependency issue
+
+### Blockers or Ambiguities
+- Task 3 depends on Task 2, which is not complete in the task plan.
+```
+
 ## Scope
 
 You do:

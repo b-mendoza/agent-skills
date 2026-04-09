@@ -101,6 +101,73 @@ permission, artifact, or decision gap here.
 when any Definition of Done item remains unfinished because execution was
 blocked. `NEEDS_CONTEXT`, `BLOCKED`, and `ERROR` are escalation outcomes.
 
+Example:
+
+```markdown
+## Execution Report
+
+### Status
+COMPLETE
+
+### Refactoring Applied
+- `src/tasks/cache.ts` - extracted cache key helper before feature work
+
+### Changes Made
+- `src/tasks/cache.ts` - added task-level cache invalidation path
+
+### Tests
+- Commands run: `pnpm vitest run src/tasks/cache.test.ts`
+- Result: 8/8 passing
+- New or updated tests: `src/tasks/cache.test.ts`
+- Pre-existing failures: None
+
+### Skills Referenced
+- `/executing-plans` - used for execution order and focused validation
+
+### Definition of Done Checklist
+- [x] Cache invalidation added
+- [x] Regression tests updated
+
+### Blockers or Context Needed
+- None
+
+### Out-of-Scope Observations
+- None
+```
+
+Failure example:
+
+```markdown
+## Execution Report
+
+### Status
+BLOCKED
+
+### Refactoring Applied
+- None
+
+### Changes Made
+- None
+
+### Tests
+- Commands run: None
+- Result: blocked before execution
+- New or updated tests: None
+- Pre-existing failures: None
+
+### Skills Referenced
+- `/executing-plans` - confirmed execution order before stopping
+
+### Definition of Done Checklist
+- [ ] Run integration test suite - required test database credentials are unavailable
+
+### Blockers or Context Needed
+- Required integration test credentials are missing, so the task cannot satisfy its Definition of Done safely.
+
+### Out-of-Scope Observations
+- None
+```
+
 ## Scope
 
 You do:

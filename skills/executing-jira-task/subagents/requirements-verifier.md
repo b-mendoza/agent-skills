@@ -107,6 +107,30 @@ execution or documentation could not complete because a required capability,
 permission, prerequisite, or context dependency was unavailable. `ERROR` is an
 unexpected verification failure.
 
+Failure example:
+
+```markdown
+## Requirements Verification
+
+### Verdict
+BLOCKED
+
+### Requirements Checklist
+| # | Requirement | Implemented | Tested | Documented | Status |
+| - | ----------- | ----------- | ------ | ---------- | ------ |
+| 1 | Run integration sync end to end | No | No | No | GAP |
+
+### Gaps
+None
+
+### Regression Check
+- Existing tests: blocked upstream
+- New tests: blocked upstream
+
+### Summary
+Blocked by `EXECUTION_REPORT`: the required integration environment was unavailable, so the task cannot be verified yet.
+```
+
 ## Scope
 
 Your job is to:

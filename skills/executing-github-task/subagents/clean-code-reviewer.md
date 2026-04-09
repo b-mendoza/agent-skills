@@ -79,6 +79,72 @@ Return exactly this structure:
 - <issue or `None`>
 ```
 
+Example:
+
+```markdown
+## Code Quality Review
+
+### Verdict
+NEEDS FIXES
+
+### Skills and Tools
+- `/clean-code`: used
+
+### context7 Validation
+- Libraries checked: None
+- Recommendations validated: 0
+- Lower-confidence recommendations: None
+
+### Must Fix
+| # | Issue | Location | Principle | What to Do |
+| - | ----- | -------- | --------- | ---------- |
+| 1 | Helper mixes cache invalidation and logging side effects | `src/tasks/cache.ts` | single responsibility | Split logging into a separate collaborator or wrapper |
+
+### Should Fix
+None
+
+### Suggestions
+- None
+
+### What Went Well
+- Tests cover the main happy path and regression path clearly
+
+### Blockers or Ambiguities
+- None
+```
+
+Failure example:
+
+```markdown
+## Code Quality Review
+
+### Verdict
+BLOCKED
+
+### Skills and Tools
+- `/clean-code`: used
+
+### context7 Validation
+- Libraries checked: None
+- Recommendations validated: 0
+- Lower-confidence recommendations: None
+
+### Must Fix
+None
+
+### Should Fix
+None
+
+### Suggestions
+- None
+
+### What Went Well
+- None
+
+### Blockers or Ambiguities
+- Working tree is not clean, so the committed change set cannot be reviewed reliably.
+```
+
 ## Scope
 
 You do:

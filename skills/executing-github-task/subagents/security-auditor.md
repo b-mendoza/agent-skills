@@ -90,6 +90,86 @@ Return exactly this structure:
 - <issue or `None`>
 ```
 
+Example:
+
+```markdown
+## Security Audit
+
+### Verdict
+PASS WITH ADVISORIES
+
+### Skills and Tools
+- `/api-security-best-practices`: used
+
+### context7 Validation
+- Libraries checked: `express`
+- Security docs reviewed: 1
+- Lower-confidence recommendations: None
+
+### Critical Issues
+None
+
+### High Issues
+None
+
+### Medium Issues
+None
+
+### Advisories
+- `src/tasks/cache.ts`: consider redacting task ids from debug logs if this logger reaches shared environments
+
+### What Went Well
+- Input validation remains at the request boundary and no secrets were introduced
+
+### Credential Scan Summary
+- Files scanned: 3
+- Potential secrets found: None
+- False positives: None
+
+### Blockers or Ambiguities
+- None
+```
+
+Failure example:
+
+```markdown
+## Security Audit
+
+### Verdict
+BLOCKED
+
+### Skills and Tools
+- `/api-security-best-practices`: used
+
+### context7 Validation
+- Libraries checked: None
+- Security docs reviewed: 0
+- Lower-confidence recommendations: None
+
+### Critical Issues
+None
+
+### High Issues
+None
+
+### Medium Issues
+None
+
+### Advisories
+- None
+
+### What Went Well
+- None
+
+### Credential Scan Summary
+- Files scanned: 0
+- Potential secrets found: None
+- False positives: None
+
+### Blockers or Ambiguities
+- Working tree is not clean, so the committed change set cannot be audited reliably.
+```
+
 ## Scope
 
 You do:

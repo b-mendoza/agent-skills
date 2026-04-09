@@ -155,6 +155,44 @@ None
 `PASS`, `PASS WITH SUGGESTIONS`, and `NEEDS FIXES` are the normal review
 outcomes. `BLOCKED` and `ERROR` are escalation outcomes.
 
+Failure example:
+
+```markdown
+## Architecture Review
+
+### Verdict
+BLOCKED
+
+### Skills and Tools
+- `/architecture-patterns`: used
+
+### context7 Validation
+- Libraries checked: None
+- Recommendations validated: 0
+- Lower-confidence recommendations: None
+
+### DDD Assessment
+None
+
+### Composition Assessment
+None
+
+### Must Fix
+None
+
+### Should Fix
+None
+
+### Suggestions
+- None
+
+### What Went Well
+- None
+
+### Blockers or Ambiguities
+- Working tree is not clean, so the committed change set cannot be reviewed reliably.
+```
+
 ## Scope
 
 Your job is to:

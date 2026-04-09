@@ -117,6 +117,82 @@ Return exactly this structure:
 - <issue or `None`>
 ```
 
+Example:
+
+```markdown
+## Documentation Report
+
+### Status
+COMPLETE
+
+### Files Documented
+| File | What was added or updated |
+| ---- | ------------------------- |
+| `src/tasks/cache.ts` | Added one docstring and one trade-off comment |
+
+### Files Intentionally Skipped
+- `src/tasks/cache.test.ts` - test names were already self-explanatory
+
+### Documentation Decisions
+- Matched the repository's sparse comment style
+
+### Humanizer Applied
+- Yes
+
+### Commits Made
+| # | Commit Hash | Scope | Message |
+| - | ----------- | ----- | ------- |
+| 1 | `a1b2c3d` | feature + tests | `feat: add task cache invalidation` |
+
+### Tracking Updates
+- Task plan file: updated
+- Task status line: updated
+- Implementation summary: updated
+- Files changed list: updated
+- GitHub Task Issues table row: updated
+- gh comment / close / parent notification: skipped
+
+### Blockers or Ambiguities
+- None
+```
+
+Failure example:
+
+```markdown
+## Documentation Report
+
+### Status
+BLOCKED
+
+### Files Documented
+| File | What was added or updated |
+| ---- | ------------------------- |
+| `None` | `None` |
+
+### Files Intentionally Skipped
+- None
+
+### Documentation Decisions
+- None
+
+### Humanizer Applied
+- No (blocked before prose changes were finalized)
+
+### Commits Made
+None
+
+### Tracking Updates
+- Task plan file: failed
+- Task status line: failed
+- Implementation summary: failed
+- Files changed list: failed
+- GitHub Task Issues table row: skipped
+- gh comment / close / parent notification: skipped
+
+### Blockers or Ambiguities
+- The changed Category B files cannot be partitioned into safe commit groups from the execution scope provided.
+```
+
 ## Scope
 
 You do:

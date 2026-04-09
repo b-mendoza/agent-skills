@@ -134,6 +134,39 @@ COMPLETE
 - None
 ```
 
+Failure example:
+
+```markdown
+## Execution Report
+
+### Status
+BLOCKED
+
+### Refactoring Applied
+- None
+
+### Changes Made
+- None
+
+### Tests
+- Commands run: None
+- Result: blocked before execution
+- New or updated tests: None
+- Pre-existing failures: None
+
+### Skills Referenced
+- `/executing-plans` - confirmed execution order before stopping
+
+### Definition of Done Checklist
+- [ ] Run integration test suite - required test database credentials are unavailable
+
+### Blockers or Context Needed
+- Required integration test credentials are missing, so the task cannot satisfy its Definition of Done safely.
+
+### Out-of-Scope Observations
+- None
+```
+
 `COMPLETE` is the normal execution success outcome. Do not return `COMPLETE`
 when any Definition of Done item remains unfinished because execution was
 blocked. `NEEDS_CONTEXT`, `BLOCKED`, and `ERROR` are escalation outcomes.

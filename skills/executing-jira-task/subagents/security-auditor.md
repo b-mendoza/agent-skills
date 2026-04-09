@@ -140,6 +140,46 @@ None
 `PASS`, `PASS WITH ADVISORIES`, and `NEEDS FIXES` are the normal audit
 outcomes. `BLOCKED` and `ERROR` are escalation outcomes.
 
+Failure example:
+
+```markdown
+## Security Audit
+
+### Verdict
+BLOCKED
+
+### Skills and Tools
+- `/api-security-best-practices`: used
+
+### context7 Validation
+- Libraries checked: None
+- Security docs reviewed: 0
+- Lower-confidence recommendations: None
+
+### Critical Issues
+None
+
+### High Issues
+None
+
+### Medium Issues
+None
+
+### Advisories
+- None
+
+### What Went Well
+- None
+
+### Credential Scan Summary
+- Files scanned: 0
+- Potential secrets found: None
+- False positives: None
+
+### Blockers or Ambiguities
+- Working tree is not clean, so the committed change set cannot be audited reliably.
+```
+
 ## Scope
 
 Your job is to:
