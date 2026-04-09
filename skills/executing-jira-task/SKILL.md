@@ -36,20 +36,6 @@ memory; the subagents do the heavy work in isolation.
 Read `./references/contracts.md` when validating task readiness or artifact
 shape.
 
-## Output Contract
-
-After a successful run, this skill leaves behind these deliverables:
-
-- **Category B implementation artifacts:** committed source code, tests, config
-  changes, and in-code documentation.
-- **Category A orchestration artifacts:** updated on disk but left
-  uncommitted, including task status, implementation summary, file list, and
-  optional Jira tracking.
-- **Kickoff summary:** a returned execution-kickoff record covering readiness,
-  workspace state, and whether the Jira subtask was moved to `In Progress`.
-- **Task-only completion report:** a concise user-facing report summarising the
-  selected task's execution, commits, and gate verdicts.
-
 ## Workflow Overview
 
 These are internal execution steps inside the parent workflow's Phase 7.
@@ -82,8 +68,8 @@ Quality-gate fix cycles happen after internal step 5.
 | `architecture-reviewer` | `./subagents/architecture-reviewer.md` | Reviews domain boundaries, composition, and architectural fit.                 |
 | `security-auditor`      | `./subagents/security-auditor.md`      | Audits the committed change set for exploitable security weaknesses.           |
 
-Read only the subagent you are about to dispatch. Do not preload all
-definitions.
+Use this registry as a lookup table. Read exactly one subagent definition per
+dispatch, then pass only the inputs that subagent needs.
 
 ## How This Skill Works
 
@@ -91,6 +77,11 @@ The orchestrator uses direct reads only to load this skill, the reference file
 for the current phase, and the specific subagent it is about to dispatch.
 Everything else is delegated. Pass file paths and short summaries between
 subagents instead of raw file contents or command output.
+
+In practice, the orchestrator does only three kinds of work directly: load the
+current instructions, dispatch the next specialist, and keep the smallest
+summary needed for the next decision. Execution, mutation, analysis, and
+artifact updates stay inside the specialist subagents.
 
 Every task run follows the same validation loop: confirm readiness, cross the
 execution boundary deliberately, verify Definition of Done coverage before the
@@ -107,6 +98,20 @@ Treat artifacts in two categories:
 If a selected task is already complete, blocked by unmet prerequisites, or
 produces a repeated unresolved blocker, stop and report that state instead of
 forcing the pipeline forward.
+
+## Output Contract
+
+After a successful run, this skill leaves behind these deliverables:
+
+- **Category B implementation artifacts:** committed source code, tests, config
+  changes, and in-code documentation.
+- **Category A orchestration artifacts:** updated on disk but left
+  uncommitted, including task status, implementation summary, file list, and
+  optional Jira tracking.
+- **Kickoff summary:** a returned execution-kickoff record covering readiness,
+  workspace state, and whether the Jira subtask was moved to `In Progress`.
+- **Task-only completion report:** a concise user-facing report summarising the
+  selected task's execution, commits, and gate verdicts.
 
 ## Phase Guide
 
@@ -135,7 +140,8 @@ forcing the pipeline forward.
 This skill stays reliable by keeping scope tight, preserving artifact
 boundaries, and fixing only the phase that actually failed.
 
-- Execute one task per invocation and stop after reporting the result.
+- Execute one task per invocation, then stop and wait for a new invocation for
+  the next task.
 - Keep the task plan as the source of truth. If execution reveals a plan change
   is needed, escalate instead of silently rewriting the plan.
 - Preserve Category A artifacts on disk and out of git history.

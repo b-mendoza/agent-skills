@@ -44,20 +44,6 @@ These match the orchestrator **6 → 7 readiness** gate in
 Read `./references/contracts.md` when validating task readiness or artifact
 shape.
 
-## Output Contract
-
-After a successful run, this skill leaves behind these deliverables:
-
-- **Category B implementation artifacts:** committed source code, tests, config
-  changes, and in-code documentation.
-- **Category A orchestration artifacts:** updated on disk but left uncommitted,
-  including task status, implementation summary, file list, and optional
-  GitHub tracking updates recorded in the plan.
-- **Kickoff summary:** a returned `KICKOFF_REPORT` covering readiness,
-  workspace state, and GitHub kickoff actions (or documented skips).
-- **Task-only completion report:** a concise user-facing report summarising the
-  selected task's execution, commits, and gate verdicts.
-
 ## Workflow Overview
 
 These are internal execution steps inside the parent workflow's Phase 7. Read
@@ -90,7 +76,8 @@ Quality-gate fix cycles happen after internal step 5.
 | `architecture-reviewer`   | `./subagents/architecture-reviewer.md`   | Domain boundaries, composition, architectural fit.                      |
 | `security-auditor`      | `./subagents/security-auditor.md`        | Exploitable weaknesses in the committed change set.                   |
 
-Read only the subagent you are about to dispatch. Do not preload all definitions.
+Use this registry as a lookup table. Read exactly one subagent definition per
+dispatch, then pass only the inputs that subagent needs.
 
 ## How This Skill Works
 
@@ -98,6 +85,11 @@ The orchestrator uses direct reads only to load this skill, the reference file
 for the current phase, and the specific subagent it is about to dispatch.
 Everything else is delegated. Pass file paths and short summaries between
 subagents instead of raw file contents or command output.
+
+In practice, the orchestrator does only three kinds of work directly: load the
+current instructions, dispatch the next specialist, and carry forward the
+smallest summary needed for the next decision. Execution, mutation, analysis,
+and artifact updates stay inside the specialist subagents.
 
 Every task run follows the same validation loop: confirm readiness, cross the
 **kickoff mutation boundary** deliberately after critique approval, verify
@@ -115,6 +107,20 @@ Treat artifacts in two categories:
 If a selected task is already complete, blocked by unmet prerequisites, or
 produces a repeated unresolved blocker, stop and report that state instead of
 forcing the pipeline forward.
+
+## Output Contract
+
+After a successful run, this skill leaves behind these deliverables:
+
+- **Category B implementation artifacts:** committed source code, tests, config
+  changes, and in-code documentation.
+- **Category A orchestration artifacts:** updated on disk but left uncommitted,
+  including task status, implementation summary, file list, and optional
+  GitHub tracking updates recorded in the plan.
+- **Kickoff summary:** a returned `KICKOFF_REPORT` covering readiness,
+  workspace state, and GitHub kickoff actions (or documented skips).
+- **Task-only completion report:** a concise user-facing report summarising the
+  selected task's execution, commits, and gate verdicts.
 
 ## Phase Guide
 
@@ -141,7 +147,8 @@ forcing the pipeline forward.
 
 ## Operating Constraints
 
-- Execute one task per invocation and stop after reporting the result.
+- Execute one task per invocation, then stop and wait for a new invocation for
+  the next task.
 - Keep the task plan as the source of truth. If execution reveals a plan change
   is needed, escalate instead of silently rewriting the plan.
 - Preserve Category A artifacts on disk and out of git history.
