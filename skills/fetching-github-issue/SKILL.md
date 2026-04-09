@@ -164,8 +164,8 @@ Handle them this way:
 - `FETCH: FAIL`: stop and relay the failure category plus the reason
 - `FETCH: ERROR`: stop and relay the failure category plus the reason as an
   unexpected failure
-- `Validation: FAIL` with `FETCH: PASS` or `FETCH: PARTIAL`: stop and relay that
-  the snapshot contract was not met
+- `Validation: FAIL` with `FETCH: ERROR`: stop and relay that the snapshot
+  contract was not met
 - Any inconsistent pairing, such as `FETCH: PASS` with `Validation: NOT_RUN`:
   treat it as `FETCH: ERROR` and stop
 
