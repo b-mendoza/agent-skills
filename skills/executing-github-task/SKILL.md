@@ -159,7 +159,9 @@ After a successful run, this skill leaves behind these deliverables:
 
 ## Example
 
-```markdown
+<example>
+Happy path
+
 Input:
 - `ISSUE_SLUG=acme-app-42`
 - `TASK_NUMBER=3`
@@ -173,8 +175,25 @@ Input:
 5. Dispatch `requirements-verifier`.
    - `VERIFICATION_RESULT` -> `PASS`
 6. Run `clean-code-reviewer`, then `architecture-reviewer`, then `security-auditor`.
-   - Example: `clean-code-reviewer` -> `NEEDS FIXES`
-7. Consolidate blocking issues, re-dispatch `task-executor`, then `documentation-writer`,
-   then re-run only failing gates in order.
-8. Report kickoff outcome, final verdicts, commits, files changed, and any skipped GitHub updates.
-```
+   - All gates return a pass variant
+7. Report kickoff outcome, final verdicts, commits, files changed, and any skipped GitHub updates.
+</example>
+
+<example>
+Targeted fix path
+
+Input:
+- `ISSUE_SLUG=acme-app-42`
+- `TASK_NUMBER=3`
+
+1. `execution-starter` returns `READY`.
+2. `task-executor` returns `COMPLETE`.
+3. `documentation-writer` returns `COMPLETE`.
+4. `requirements-verifier` returns `FAIL` because one DoD item is untested.
+5. Re-dispatch `task-executor` with only the verifier gap summary.
+6. Re-dispatch `documentation-writer` for the new Category B delta.
+7. Re-run `requirements-verifier`.
+   - `VERIFICATION_RESULT` -> `PASS`
+8. Continue into the review gates, and if one gate returns `NEEDS FIXES`, re-run
+   only that gate's targeted fix cycle instead of the whole pipeline.
+</example>

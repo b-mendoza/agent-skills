@@ -152,7 +152,9 @@ boundaries, and fixing only the phase that actually failed.
 
 ## Example
 
-```markdown
+<example>
+Happy path
+
 Input:
 - `TICKET_KEY=JNS-6065`
 - `TASK_NUMBER=3`
@@ -166,8 +168,25 @@ Input:
 5. Dispatch `requirements-verifier`.
    - `VERIFICATION_RESULT` -> `PASS`
 6. Run `clean-code-reviewer`, then `architecture-reviewer`, then `security-auditor`.
-   - Example gate path: `clean-code-reviewer` -> `NEEDS FIXES`
-7. If one or more review gates return `NEEDS FIXES`, consolidate only the blocking issues from the failing gates, re-dispatch `task-executor`, then `documentation-writer`, then re-run only those failing gates in order.
-   - Re-run example: `clean-code-reviewer` -> `PASS WITH SUGGESTIONS`
-8. Report the kickoff outcome, final verdicts, commits, files changed, and any skipped Jira updates.
-```
+   - All gates return a pass variant
+7. Report the kickoff outcome, final verdicts, commits, files changed, and any skipped Jira updates.
+</example>
+
+<example>
+Targeted fix path
+
+Input:
+- `TICKET_KEY=JNS-6065`
+- `TASK_NUMBER=3`
+
+1. `execution-starter` returns `READY`.
+2. `task-executor` returns `COMPLETE`.
+3. `documentation-writer` returns `COMPLETE`.
+4. `requirements-verifier` returns `FAIL` because one DoD item is still untested.
+5. Re-dispatch `task-executor` with only the verifier gap summary.
+6. Re-dispatch `documentation-writer` for the new Category B delta.
+7. Re-run `requirements-verifier`.
+   - `VERIFICATION_RESULT` -> `PASS`
+8. Continue into the review gates, and if one gate returns `NEEDS FIXES`, re-run
+   only that gate's targeted fix cycle instead of the whole pipeline.
+</example>
