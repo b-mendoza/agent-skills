@@ -350,9 +350,15 @@ TICKET_KEY: <KEY>
 ACTION: update_task
 TASK_NUMBER: <N>
 PHASE: 7
-STATUS: complete
-SUMMARY: "Implemented — N files changed, N commits"
+STATUS: <complete | failed | skipped>
+SUMMARY: "<completion, failure, or user-directed stop summary>"
 ```
+
+Use `STATUS=complete` only when `executing-jira-task` reports a successful task
+completion path. If the execution skill stops with a blocker, error, or
+exhausted fix cycle, follow `./error-handling.md` and record `failed` (or
+`skipped` when the user explicitly chooses to accept or stop without finishing
+the task).
 
 `update_task` already mirrors the per-task completion state into the
 workflow-level Task Execution table. Do not dispatch a second workflow-level
