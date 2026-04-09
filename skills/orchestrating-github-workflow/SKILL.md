@@ -350,6 +350,9 @@ summary needed to decide the next move:
 - `PREFLIGHT: FAIL` or `PREFLIGHT: ERROR` -> stop before entering the phase
 - Critical validator or progress failures -> stop progression and present the
   blocking summary
+- Phase 7 blocker, downstream execution error, or exhausted execution-skill fix
+  cycle -> do not mark the task complete; follow `./references/task-loop.md`
+  and `./references/error-handling.md`
 - Retry or re-plan loop exhausted -> present the accumulated feedback and ask
   the user how to proceed
 
