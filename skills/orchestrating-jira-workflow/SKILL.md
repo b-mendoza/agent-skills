@@ -323,9 +323,13 @@ summary needed to decide the next move:
 - `PREFLIGHT: FAIL` or `PREFLIGHT: ERROR` -> stop before entering the phase
 - Critical validator or progress failures -> stop progression and present the
   blocking summary
-- Phase 7 blocker, downstream execution error, or exhausted execution-skill fix
-  cycle -> do not mark the task complete; follow `./references/task-loop.md`
-  and `./references/error-handling.md`
+- Phase 7 `BLOCKED` from `task-executor`, `documentation-writer`, or
+  `requirements-verifier` -> surface the exact missing capability or blocked
+  dependency, treat it as a user-steered pause, and resume from the blocked
+  Phase 7 step after it is resolved
+- Downstream execution `ERROR` or exhausted execution-skill fix cycle -> do not
+  mark the task complete; follow `./references/task-loop.md` and
+  `./references/error-handling.md`
 - Retry or re-plan loop exhausted -> present the accumulated feedback and ask
   the user how to proceed
 
