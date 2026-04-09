@@ -318,6 +318,13 @@ gates internally. The orchestrator does not intervene in kickoff handling or
 quality gate fix cycles unless the downstream skill returns a blocker or
 exhausts its internal retry budget.
 
+If `executing-github-task` reports `BLOCKED` because `task-executor`,
+`documentation-writer`, or `requirements-verifier` could not proceed due to a
+missing tool, runtime, credential, permission, or environment capability, stop
+the task immediately. Surface the exact blocker to the user, do not treat it as
+an ordinary implementation gap, and resume from this Phase 7 step only after
+the capability is restored.
+
 ### Quality gate escalation
 
 The orchestrator only acts when the skill reports that its fix cycle limit is
@@ -363,6 +370,10 @@ task completion path. If the execution skill stops with a blocker, error, or
 exhausted fix cycle, follow `./error-handling.md` and record `failed` (or
 `skipped` when the user explicitly chooses to accept or stop without finishing
 the task).
+
+When recording a blocker-driven stop as `failed`, keep the summary explicit
+about the missing capability and the fact that the task should resume from
+Phase 7 once the blocker is resolved.
 
 `update_task` already mirrors the per-task completion state into the
 workflow-level Task Execution table. Do not dispatch a second workflow-level
