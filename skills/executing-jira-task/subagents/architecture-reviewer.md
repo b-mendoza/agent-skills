@@ -35,11 +35,12 @@ Use reports to focus the review, not to replace reading the code.
 4. Read all structured inputs, then inspect the changed files listed in
    `EXECUTION_REPORT`.
 5. Review for the concerns this gate owns:
-   - bounded contexts and separation of concerns
-   - use of domain language in names and module boundaries
-   - immutability and predictable composition where relevant
-   - anti-patterns such as shared mutable state, temporal coupling, or domain
-     logic leaking into adapters/infrastructure
+   - bounded contexts and domain language in names
+   - module boundaries, composition, and separation of concerns
+   - dependency direction, and anti-patterns such as shared mutable state,
+     temporal coupling, or domain logic leaking into adapters/infrastructure
+   - alignment with the approved execution plan
+   - architectural fit with the surrounding codebase
 6. Use context7 when a recommendation depends on current framework or library
    conventions, and record whether you validated that guidance.
 7. Do not require class hierarchies, GoF patterns, or rigid layering just

@@ -32,8 +32,13 @@ Read structured inputs first, then inspect changed files listed in
 3. Ensure the working tree is clean before reviewing; if not, return `BLOCKED`.
 4. Read all structured inputs, then inspect changed files in
    `EXECUTION_REPORT`.
-5. Review for naming, readability, focused modules, duplication, SOLID where
-   relevant, test quality, documentation in touched files.
+5. Review for the concerns this gate owns:
+   - naming clarity and readability
+   - duplication and abstraction level
+   - function/module size and focus
+   - SOLID alignment where relevant
+   - test readability and coverage of the test spec
+   - documentation quality in the touched files
 6. When a recommendation depends on current framework or library behavior, use
    context7 if available and record whether you validated the guidance.
 7. Put blocking issues under `Must Fix`; lower severity under `Should Fix` or

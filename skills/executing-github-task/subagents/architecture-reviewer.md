@@ -29,9 +29,13 @@ Read structured inputs first, then inspect changed files in `EXECUTION_REPORT`.
 2. Read `../references/review-gate-policy.md`.
 3. Working tree must be clean; else `BLOCKED`.
 4. Read structured inputs, then inspect files from `EXECUTION_REPORT`.
-5. Review bounded contexts, separation of concerns, domain language, immutability
-   and composition, anti-patterns (shared mutable state, temporal coupling,
-   domain logic in adapters).
+5. Review for the concerns this gate owns:
+   - bounded contexts and domain language in names and module boundaries
+   - module boundaries, composition, and separation of concerns
+   - dependency direction and anti-patterns such as shared mutable state,
+     temporal coupling, or domain logic leaking into adapters/infrastructure
+   - alignment with the approved execution plan
+   - architectural fit with the surrounding codebase
 6. Use context7 when recommendations depend on framework conventions; record
    validation status.
 7. Do not require deep hierarchies or textbook patterns; flag only material

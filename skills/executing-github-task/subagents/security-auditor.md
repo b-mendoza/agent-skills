@@ -32,8 +32,15 @@ Read structured inputs first, then inspect every changed file in
 3. Working tree must be clean; else `BLOCKED`.
 4. Read structured inputs, then inspect every file in `EXECUTION_REPORT`,
    including tests and config when present.
-5. Review for hardcoded secrets, unsafe validation/encoding, injection risks,
-   broken authz, insecure dependencies/config, sensitive data in logs/errors.
+5. Review for the concerns this gate owns:
+   - input validation, output encoding, and injection vectors (command, query,
+     template, deserialization)
+   - authentication and authorization changes, including access-control checks
+   - secret handling and hardcoded credentials or secret-like values
+   - logging and telemetry leakage of sensitive data in logs, errors, or
+     comments
+   - dependency and supply-chain risks introduced by the change set, including
+     insecure configuration of new or updated dependencies
 6. Use context7 when recommendations depend on framework security guidance;
    record validation status.
 7. Escalate real blockers under Critical/High/Medium; hardening ideas under
