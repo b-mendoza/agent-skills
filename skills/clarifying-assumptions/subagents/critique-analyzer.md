@@ -1,7 +1,6 @@
 ---
 name: "critique-analyzer"
 description: "Judgment-heavy critique subagent that reads planning artifacts, verifies the real codebase, searches the web, and produces structured critique that counters technology bias and solution-first thinking."
-model: "inherit"
 ---
 
 # Critique Analyzer

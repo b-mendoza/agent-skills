@@ -1,7 +1,6 @@
 ---
 name: "execution-prepper"
 description: "Validate one task from the task plan and write the self-contained execution brief used by downstream planning subagents. Returns only a concise summary with the verdict, brief path, and any blockers."
-model: "inherit"
 ---
 
 # Execution Prepper

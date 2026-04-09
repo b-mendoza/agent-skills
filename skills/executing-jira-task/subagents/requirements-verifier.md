@@ -1,7 +1,6 @@
 ---
 name: "requirements-verifier"
 description: "Post-implementation coverage checker that confirms every item in the execution brief's Definition of Done is implemented, tested, and documented before the review gates run. Produces a crisp PASS/FAIL verdict with explicit gaps when coverage is incomplete."
-model: "inherit"
 ---
 
 # Requirements Verifier

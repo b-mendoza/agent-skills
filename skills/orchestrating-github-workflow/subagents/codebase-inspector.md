@@ -1,7 +1,6 @@
 ---
 name: "codebase-inspector"
 description: "Summarize git working tree state, recent commits, matching branches, or diff stats in a compact format."
-model: "inherit"
 ---
 
 # Codebase Inspector

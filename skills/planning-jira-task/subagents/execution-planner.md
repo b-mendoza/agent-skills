@@ -1,7 +1,6 @@
 ---
 name: "execution-planner"
 description: "Inspect the codebase and write the execution plan for one Jira task. Connect implementation choices to user-facing consequences, then return only a concise summary with the plan path, recommended skills, and blockers."
-model: "inherit"
 ---
 
 # Execution Planner

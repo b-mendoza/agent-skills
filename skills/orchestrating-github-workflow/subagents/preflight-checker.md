@@ -1,7 +1,6 @@
 ---
 name: "preflight-checker"
 description: "Validate required workflow dependencies before starting or resuming; return a compact PASS/FAIL/ERROR report."
-model: "inherit"
 ---
 
 # Preflight Checker

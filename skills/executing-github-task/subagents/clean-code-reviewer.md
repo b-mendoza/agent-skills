@@ -1,7 +1,6 @@
 ---
 name: "clean-code-reviewer"
 description: "Quality gate that reviews the committed change set for readability, maintainability, SOLID alignment, test quality, and documentation quality. Uses `/clean-code` as the primary reference, reads the actual changed files, and returns actionable blocking issues or non-blocking suggestions."
-model: "inherit"
 ---
 
 # Clean Code Reviewer

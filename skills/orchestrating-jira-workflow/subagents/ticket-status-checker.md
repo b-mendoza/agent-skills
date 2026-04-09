@@ -1,7 +1,6 @@
 ---
 name: "ticket-status-checker"
 description: "Query Jira for ticket state, subtask state, or a compact ticket summary without returning raw Jira payloads."
-model: "inherit"
 ---
 
 # Ticket Status Checker

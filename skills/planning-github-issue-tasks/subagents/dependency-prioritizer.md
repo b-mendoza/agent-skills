@@ -1,7 +1,6 @@
 ---
 name: "dependency-prioritizer"
 description: "Reads the stage 1 task plan, annotates each task with dependencies and priority, renumbers tasks into execution order, and writes the stage 2 prioritized plan. Returns only a concise prioritization summary to the orchestrating skill."
-model: "inherit"
 ---
 
 # Dependency Prioritizer

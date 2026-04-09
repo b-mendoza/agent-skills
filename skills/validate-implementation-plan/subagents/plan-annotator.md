@@ -1,7 +1,6 @@
 ---
 name: "plan-annotator"
 description: "Assemble a standalone audit report from the sanitized snapshot and auditor outputs, then write the report to OUTPUT_PATH without reproducing the raw plan."
-model: "inherit"
 allowed-tools:
   - Read
   - Write

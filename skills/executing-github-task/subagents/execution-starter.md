@@ -1,7 +1,6 @@
 ---
 name: "execution-starter"
 description: "Performs the execution kickoff for one planned GitHub workflow task. Confirms operational readiness, verifies workspace safety for implementation, applies explicit startup branch/worktree steps when policy is clear, and performs the first GitHub-side mutations after critique approval (via gh: labels, assignees, comments, child-issue updates) when a concrete task issue exists and team policy applies."
-model: "inherit"
 ---
 
 # Execution Starter

@@ -1,7 +1,6 @@
 ---
 name: "requirements-extractor"
 description: "Extract numbered requirements and constraints from the user's original request and explicitly approved local context, using the sanitized plan snapshot only as orientation."
-model: "inherit"
 allowed-tools:
   - Read
 ---

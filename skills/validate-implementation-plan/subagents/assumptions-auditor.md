@@ -1,7 +1,6 @@
 ---
 name: "assumptions-auditor"
 description: "Identify assumptions in the sanitized plan snapshot, resolve what can be verified from approved context, and return unresolved items for the orchestrator to clarify with the user."
-model: "inherit"
 allowed-tools:
   - Read
 ---

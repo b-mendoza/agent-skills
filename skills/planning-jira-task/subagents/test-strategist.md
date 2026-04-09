@@ -1,7 +1,6 @@
 ---
 name: "test-strategist"
 description: "Write the behavior-driven test specification for one Jira task. Use the brief, execution plan, and existing project testing patterns to define what must be verified, then return only a concise summary."
-model: "inherit"
 ---
 
 # Test Strategist

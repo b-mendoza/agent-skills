@@ -1,7 +1,6 @@
 ---
 name: "documentation-writer"
 description: "Documentation, commit, and tracking specialist for one executed Jira task. Adds minimal in-code documentation only where the task-executor changed Category B files, commits Category B work using `/commit-work`, updates task-tracking artifacts on disk, and records any skipped Jira updates."
-model: "inherit"
 ---
 
 # Documentation Writer

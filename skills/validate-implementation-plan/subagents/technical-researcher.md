@@ -1,7 +1,6 @@
 ---
 name: "technical-researcher"
 description: "Review technical claims from the sanitized plan snapshot against explicitly approved local evidence files. This subagent does not browse the public web."
-model: "inherit"
 allowed-tools:
   - Read
 ---

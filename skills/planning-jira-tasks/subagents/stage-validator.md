@@ -1,7 +1,6 @@
 ---
 name: "stage-validator"
 description: "Validates artifacts at each boundary of the planning-jira-tasks pipeline: preflight input checks, inter-stage structural checks, and final output-contract checks. Returns only a concise structural verdict so the orchestrating skill can decide whether to proceed or retry."
-model: "inherit"
 ---
 
 # Stage Validator

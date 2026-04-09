@@ -1,7 +1,6 @@
 ---
 name: "execution-starter"
 description: "Performs the execution kickoff for one planned Jira task. Confirms the selected task is operationally ready, verifies the workspace state is safe for implementation, applies explicit startup state changes such as branch/worktree preparation when the policy is clear, and moves the Jira subtask to `In Progress` when the capability and subtask key are available."
-model: "inherit"
 ---
 
 # Execution Starter

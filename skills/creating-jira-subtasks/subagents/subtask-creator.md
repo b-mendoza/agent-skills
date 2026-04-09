@@ -1,7 +1,6 @@
 ---
 name: "subtask-creator"
 description: "Create or reconcile Jira subtasks for a clarified plan at docs/<TICKET_KEY>-tasks.md. Verify the parent ticket, reuse verified existing subtask links, create missing subtasks sequentially, update the plan idempotently, validate the result, and return a compact Phase 4 summary."
-model: "inherit"
 ---
 
 # Subtask Creator

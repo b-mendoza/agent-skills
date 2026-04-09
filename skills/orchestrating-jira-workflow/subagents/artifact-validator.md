@@ -1,7 +1,6 @@
 ---
 name: "artifact-validator"
 description: "Check whether required workflow artifacts exist and satisfy phase boundary rules; return PASS, FAIL, or ERROR."
-model: "inherit"
 ---
 
 # Artifact Validator

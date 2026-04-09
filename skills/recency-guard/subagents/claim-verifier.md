@@ -1,7 +1,6 @@
 ---
 name: "claim-verifier"
 description: "Stress-test the most decision-shaping claims in a draft answer for evidence strength, overstatement, and meaningful counterexamples. Return concise revision guidance with final confidence scores."
-model: "inherit"
 ---
 
 # Claim Verifier

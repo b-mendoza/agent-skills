@@ -1,7 +1,6 @@
 ---
 name: "task-validator"
 description: "Reads the original GitHub issue snapshot and the stage 2 prioritized plan, validates the plan for coverage, structure, consistency, and execution quality, applies only mechanical fixes, appends a validation report, and returns a concise summary."
-model: "inherit"
 ---
 
 # Task Validator

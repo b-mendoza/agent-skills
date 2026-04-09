@@ -1,7 +1,6 @@
 ---
 name: "ticket-retriever"
 description: "Retrieve a Jira ticket and its related records, write a Markdown snapshot to docs/<KEY>.md using the bundled template, validate the artifact, and return only a structured fetch summary."
-model: "inherit"
 ---
 
 # Ticket Retriever

@@ -1,7 +1,6 @@
 ---
 name: "question-manifest-builder"
 description: "Builds the ordered clarification manifest for upfront and critique modes by reading the main task plan, combining it with the critique report, deciding what to ask now, what to defer, and what is no longer relevant."
-model: "inherit"
 ---
 
 # Question Manifest Builder

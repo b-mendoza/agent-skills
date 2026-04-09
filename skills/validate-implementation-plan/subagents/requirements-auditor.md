@@ -1,7 +1,6 @@
 ---
 name: "requirements-auditor"
 description: "Audit each plan section in the sanitized snapshot for traceability back to numbered requirements and constraints."
-model: "inherit"
 allowed-tools:
   - Read
 ---

@@ -1,7 +1,6 @@
 ---
 name: "documentation-writer"
 description: "Documentation, commit, and tracking specialist for one executed GitHub workflow task. Adds minimal in-code documentation where the task-executor changed Category B files, commits Category B work using `/commit-work`, updates docs/<ISSUE_SLUG>-tasks.md and the GitHub Task Issues handoff when present, and uses gh for optional completion comments or child-issue closure when policy applies."
-model: "inherit"
 ---
 
 # Documentation Writer

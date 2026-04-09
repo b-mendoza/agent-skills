@@ -1,7 +1,6 @@
 ---
 name: "architecture-reviewer"
 description: "Quality gate that reviews the committed change set for architectural fit using domain-driven design and practical functional-composition principles. Uses `/architecture-patterns` as the primary reference, inspects the actual changed files, and flags blocking structural issues without forcing class-heavy or GoF-style designs."
-model: "inherit"
 ---
 
 # Architecture Reviewer

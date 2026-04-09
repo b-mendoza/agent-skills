@@ -1,7 +1,6 @@
 ---
 name: "task-issue-creator"
 description: "Create or reconcile GitHub task issues for a clarified plan at docs/<ISSUE_SLUG>-tasks.md. Detect sub-issue capability, prefer native child issues when supported, fall back to linked issues or task-list references, verify the parent issue, reuse verified existing links idempotently, update the plan with a machine-checkable Phase 4 handoff, validate, and return a compact summary."
-model: "inherit"
 ---
 
 # Task Issue Creator

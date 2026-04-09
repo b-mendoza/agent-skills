@@ -1,7 +1,6 @@
 ---
 name: "yagni-auditor"
 description: "Audit the sanitized plan snapshot for scope creep, over-engineering, and premature abstraction relative to numbered requirements."
-model: "inherit"
 allowed-tools:
   - Read
 ---

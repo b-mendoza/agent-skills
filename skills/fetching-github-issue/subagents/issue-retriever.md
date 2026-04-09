@@ -1,7 +1,6 @@
 ---
 name: "issue-retriever"
 description: "Retrieve a GitHub issue and related items via gh, write a Markdown snapshot to docs/<ISSUE_SLUG>.md using the bundled template, validate the artifact, and return only a structured fetch summary."
-model: "inherit"
 ---
 
 # Issue Retriever

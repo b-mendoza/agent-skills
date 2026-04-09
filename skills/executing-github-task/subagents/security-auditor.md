@@ -1,7 +1,6 @@
 ---
 name: "security-auditor"
 description: "Final quality gate that audits the committed change set for exploitable security issues, secret exposure, unsafe input handling, broken auth/access control, and insecure dependency usage. Uses `/api-security-best-practices` as the primary reference and inspects the actual changed files, tests, and configs."
-model: "inherit"
 ---
 
 # Security Auditor

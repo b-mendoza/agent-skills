@@ -1,7 +1,6 @@
 ---
 name: "task-planner"
 description: "Reads a Jira ticket snapshot and produces the stage 1 task plan. Starts with Problem Framing, then decomposes the ticket into self-contained lettered tasks with enough local context for zero-context execution. Returns only a concise planning summary to the orchestrating skill."
-model: "inherit"
 ---
 
 # Task Planner

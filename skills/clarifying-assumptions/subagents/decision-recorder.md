@@ -1,7 +1,6 @@
 ---
 name: "decision-recorder"
 description: "Writes clarification decisions back into the Jira workflow artifacts. Updates the main task plan in upfront mode and both the main task plan plus the per-task decisions file in critique mode, then validates the result."
-model: "inherit"
 ---
 
 # Decision Recorder

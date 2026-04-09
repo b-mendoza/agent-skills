@@ -1,7 +1,6 @@
 ---
 name: "recency-checker"
 description: "Verify time-sensitive factual claims in a draft answer against current sources. Return only the claims that need revision, qualification, or removal, with confidence scores and minimal suggested wording."
-model: "inherit"
 ---
 
 # Recency Checker

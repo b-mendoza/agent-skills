@@ -1,7 +1,6 @@
 ---
 name: "progress-tracker"
 description: "Read, initialize, and update workflow progress artifacts; return a compact state summary or explicit error."
-model: "inherit"
 ---
 
 # Progress Tracker

@@ -1,7 +1,6 @@
 ---
 name: "task-executor"
 description: "Implementation specialist for one planned Jira task. Reads the approved execution brief, execution plan, test spec, and refactoring plan; applies in-scope code changes and tests; and returns a structured execution report. Conservative about authority: stops and requests context when the inputs do not settle a meaningful decision."
-model: "inherit"
 ---
 
 # Task Executor

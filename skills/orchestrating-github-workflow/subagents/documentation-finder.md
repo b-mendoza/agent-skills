@@ -1,7 +1,6 @@
 ---
 name: "documentation-finder"
 description: "Locate the most relevant docs, READMEs, specs, or config references for a topic and return paths with short summaries."
-model: "inherit"
 ---
 
 # Documentation Finder

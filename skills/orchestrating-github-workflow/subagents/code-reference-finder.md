@@ -1,7 +1,6 @@
 ---
 name: "code-reference-finder"
 description: "Find code symbols, patterns, files, or conceptual implementation touchpoints and return concise matches."
-model: "inherit"
 ---
 
 # Code Reference Finder

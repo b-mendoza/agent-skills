@@ -1,7 +1,6 @@
 ---
 name: "issue-status-checker"
 description: "Query GitHub for issue state, related task issues, or a compact summary without returning raw API payloads."
-model: "inherit"
 ---
 
 # Issue Status Checker
