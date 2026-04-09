@@ -73,12 +73,20 @@ TASK_NUMBER: <N>    (task-specific boundaries only)
 The subagent returns a structured verdict:
 
 ```
-VALIDATION: <PASS | FAIL>
+VALIDATION: <PASS | FAIL | ERROR>
 Phase: <N> | Direction: <precondition | postcondition>
 File: <path>
 Checks:
   - File exists: <yes/no>
   - <Section check>: <pass/fail - detail if failed>
+```
+
+If the validator itself cannot complete, it returns:
+
+```text
+VALIDATION: ERROR
+Phase: <N> | Direction: <precondition | postcondition>
+Reason: <what prevented validation>
 ```
 
 For Phases 3 and 6, validation covers only the artifact boundary. The
