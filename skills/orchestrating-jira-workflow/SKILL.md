@@ -114,7 +114,8 @@ Return raw subagent output only when the user explicitly asks for it.
 
 ## Subagent Registry
 
-Read a subagent definition only when you are about to dispatch that subagent.
+Use this registry as a lookup table. Read exactly one subagent definition per
+dispatch, then pass only the inputs that subagent needs.
 
 | Subagent                | Path                                   | Purpose                                              |
 | ----------------------- | -------------------------------------- | ---------------------------------------------------- |
