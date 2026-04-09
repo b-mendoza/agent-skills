@@ -68,10 +68,11 @@ prose. If retrieval is partial, the artifact must record that explicitly in
 or linked issue that could not be hydrated.
 
 Treat `./subagents/issue-retriever-template.md` as the authoritative snapshot
-shape. The section table below is the scan-friendly summary of that contract.
+shape. The section tables below are the scan-friendly summary of that contract,
+cross-referenced against `docs/fetching-pipeline-spec.md` §5 and §13.
 
-At minimum, the final document must include these sections (orchestrator and
-`artifact-validator` align on this set):
+**Locked-core sections** (shared with `fetching-jira-ticket`; same names,
+same relative order):
 
 | Section | Why it exists |
 | ------- | ------------- |
@@ -80,19 +81,25 @@ At minimum, the final document must include these sections (orchestrator and
 | `## Acceptance Criteria` | Definition-of-done source (dedicated extraction when present in body) |
 | `## Comments` | Decisions, clarifications, and implementation hints |
 | `## Retrieval Warnings` | Stable disclosure for partial related-item or API limits |
-| `## Child Issues` | GitHub sub-issues / child work items when discoverable |
 | `## Linked Issues` | Cross-referenced or otherwise linked issues for dependency context |
-| `## Labels` | Scoped classification |
-| `## Assignees` | Ownership |
 
-The template also declares these **stable** optional sections (use `_None_` when
-empty):
+**Locked platform-slot section** (shared concept, platform-named; Jira uses
+`## Subtasks`):
 
 | Section | Why it exists |
 | ------- | ------------- |
+| `## Child Issues` | GitHub sub-issues / child work items when discoverable |
+
+**Platform-extension sections** (GitHub-specific; registered in spec §13 as
+expected divergence). All stay stably present with `_None_` when empty:
+
+| Section | Why it exists |
+| ------- | ------------- |
+| `## Labels` | Scoped classification |
+| `## Assignees` | Ownership |
 | `## Milestone` | Release or iteration bucket when set |
 | `## Projects` | Project board / project fields when retrievable without excessive custom setup |
-| `## Attachments` | Placeholder for file-like assets; GitHub rarely exposes a Jira-style attachment list—record `_None_` unless you have concrete linked assets to enumerate |
+| `## Attachments` | Placeholder for file-like assets; GitHub rarely exposes a Jira-style attachment list — record `_None_` unless you have concrete linked assets to enumerate |
 
 ## How This Skill Works
 
@@ -109,9 +116,9 @@ matches the output contract and, when a file is written, reports validation
 status consistently.
 
 This coordinator may do four things directly: read its bundled skill files,
-normalize identifiers from the URL or fallback inputs, dispatch the retriever,
-and relay the retriever's structured summary. Everything else stays inside the
-subagent.
+derive identifiers from `ISSUE_URL` or fallback coordinates, dispatch the
+retriever, and relay the retriever's structured summary. Everything else stays
+inside the subagent.
 
 ### 1. Dispatch the retriever
 
@@ -177,10 +184,10 @@ on the category, then use `Reason` only for user-facing detail.
 Using only the subagent's structured summary, tell the caller:
 
 - The file path written, when one exists
-- The issue reference and title
-- Retrieved versus discovered comment counts
+- The issue identity (`Issue: <owner>/<repo>#<N>: <Title>`)
+- The issue state (`State: OPEN | CLOSED`)
+- Retrieved versus discovered counts for comments
 - Retrieved versus discovered counts for child issues and linked issues
-- Any labels/assignees summary counts as returned by the subagent
 - Any warnings or fatal reason
 - Any failure category, when one exists
 - That this phase is retrieval only and does not mutate GitHub

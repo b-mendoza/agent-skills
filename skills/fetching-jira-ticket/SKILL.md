@@ -64,9 +64,11 @@ partial, the artifact must record that explicitly in `## Retrieval Warnings`
 and via placeholder entries for the missing subtasks or linked issues.
 
 Treat `./subagents/ticket-retriever-template.md` as the authoritative snapshot
-shape. The section table below is the scan-friendly summary of that contract.
+shape. The section tables below are the scan-friendly summary of that contract,
+cross-referenced against `docs/fetching-pipeline-spec.md` §5 and §13.
 
-At minimum, the final document must include these sections:
+**Locked-core sections** (shared with `fetching-github-issue`; same names,
+same relative order):
 
 | Section | Why it exists |
 | ------- | ------------- |
@@ -75,8 +77,20 @@ At minimum, the final document must include these sections:
 | `## Acceptance Criteria` | Definition-of-done source, including extracted AC when present |
 | `## Comments` | Decisions, clarifications, and implementation hints |
 | `## Retrieval Warnings` | Stable disclosure point for partial related-item retrieval |
-| `## Subtasks` | Existing Jira execution breakdown |
 | `## Linked Issues` | Dependency and surrounding context |
+
+**Locked platform-slot section** (shared concept, platform-named; GitHub uses
+`## Child Issues`):
+
+| Section | Why it exists |
+| ------- | ------------- |
+| `## Subtasks` | Existing Jira execution breakdown |
+
+**Platform-extension sections** (Jira-specific; registered in spec §13 as
+expected divergence):
+
+| Section | Why it exists |
+| ------- | ------------- |
 | `## Attachments` | File-level reference metadata |
 | `## Custom Fields` | Non-standard fields that may carry requirements |
 
@@ -104,8 +118,9 @@ Read `./subagents/ticket-retriever.md`, then dispatch it with:
 
 - `JIRA_URL`
 
-The subagent owns input validation, Jira-capable MCP tool discovery, ticket
-and relationship retrieval, document assembly, output validation, and cleanup.
+The subagent owns input validation, Jira-capable MCP tool discovery and
+auth checks, ticket and relationship retrieval, document assembly, output
+validation, and cleanup.
 
 ### 2. Interpret the structured result
 
@@ -162,13 +177,14 @@ on the category, then use `Reason` only for user-facing detail.
 Using only the subagent's structured summary, tell the caller:
 
 - The file path written, when one exists
-- The ticket title, status, and type
-- Retrieved versus discovered parent-comment counts
+- The ticket identity (`Ticket: <TICKET_KEY>: <Summary>`)
+- The ticket state (`Status: ... | Type: ...`)
+- Retrieved versus discovered counts for parent comments
 - Retrieved versus discovered counts for subtasks and linked issues
-- Attachment count
+- Attachment count (Jira platform-extension field, per spec §13)
 - Any warnings or fatal reason
 - Any failure category, when one exists
-- That this phase is retrieval only and does not modify Jira
+- That this phase is retrieval only and does not mutate Jira
 
 ## Escalation
 
