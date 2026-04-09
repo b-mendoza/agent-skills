@@ -105,6 +105,10 @@ read the artifact; use short reports when a prior verdict is required.
 Symbolic handoff names (`KICKOFF_REPORT`, `EXECUTION_REPORT`, etc.) refer to
 the full markdown outputs returned by those subagents.
 
+`EXECUTION_REPORT` and `DOCUMENTATION_REPORT` may carry blocked-state
+information. Downstream steps must preserve those statuses instead of inferring
+success from partial file changes alone.
+
 | Subagent                | Required inputs |
 | ----------------------- | --------------- |
 | `execution-starter`     | `ISSUE_SLUG`, `TASK_NUMBER`, issue snapshot path, task plan path, execution brief path; optional readiness summaries from the parent |
@@ -129,14 +133,21 @@ git history.
 
 After a successful run, all of the following should be true:
 
-1. Execution kickoff either performed the planned GitHub startup actions via
+1. `EXECUTION_REPORT` and `DOCUMENTATION_REPORT` both indicate successful
+   completion rather than blocked partial progress.
+2. Execution kickoff either performed the planned GitHub startup actions via
    `gh` or reported clearly why each action was skipped.
-2. Category B changes are committed.
-3. The task section in `docs/<ISSUE_SLUG>-tasks.md` includes completion
+3. Category B changes are committed.
+4. The task section in `docs/<ISSUE_SLUG>-tasks.md` includes completion
    metadata consistent with your team template (e.g. status, implementation
    summary, files changed).
-4. If `## GitHub Task Issues` exists, the row for this task reflects current
+5. If `## GitHub Task Issues` exists, the row for this task reflects current
    GitHub state when known (e.g. updated status or notes from `gh`).
-5. Optional `gh` completion steps on the child or parent issue (comment, close
+6. Optional `gh` completion steps on the child or parent issue (comment, close
    child issue when policy requires, label changes) are either completed or
    reported as skipped with a reason.
+
+Partial progress alone does not satisfy successful completion. If a required
+task step, test, or validation command could not run because a capability or
+prerequisite was unavailable, the task remains blocked until that dependency is
+resolved.

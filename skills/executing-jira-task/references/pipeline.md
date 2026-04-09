@@ -45,32 +45,42 @@ Every successful task run follows this sequence:
    - This step adds in-code documentation, commits Category B files, updates
      Category A tracking artifacts on disk, and attempts Jira updates when
      capability exists.
+   - Collect only the structured `DOCUMENTATION_REPORT`.
 
-7. **Dispatch `requirements-verifier`.**
+7. **Handle documentation results before continuing.**
+   - `COMPLETE` means continue.
+   - `BLOCKED` or `ERROR` means stop normal execution and use
+     `./retry-and-escalation.md`.
+
+8. **Dispatch `requirements-verifier`.**
    - Pass brief path, test spec path, `EXECUTION_REPORT`, and
      `DOCUMENTATION_REPORT`.
    - Treat this as the postcondition check for implementation completeness.
 
-8. **Resolve requirements gaps before review gates.**
+9. **Resolve requirements gaps before review gates.**
    - If the verifier returns `PASS`, continue.
+   - If it returns `BLOCKED`, stop the pipeline immediately. Missing required
+     capability, missing access, or blocked documentation is not a normal fix
+     loop; use `./retry-and-escalation.md` and resume only after the blocker is
+     resolved.
    - If it returns `FAIL` and the gaps are plainly in scope, create a concise
      fix brief from the reported gaps, re-dispatch `task-executor`, then
      `documentation-writer`, then re-run `requirements-verifier`.
    - If the reported gaps expose an ambiguous brief, conflicting artifacts, or
      a probable planning mistake, stop and ask the user instead of guessing.
 
-9. **Run the quality gates in order.**
+10. **Run the quality gates in order.**
    - `clean-code-reviewer`
    - `architecture-reviewer`
    - `security-auditor`
 
-10. **Interpret gate verdicts.**
+11. **Interpret gate verdicts.**
    - `PASS`, `PASS WITH SUGGESTIONS`, and `PASS WITH ADVISORIES` let the
      pipeline continue.
    - `NEEDS FIXES` triggers the targeted fix cycle described below.
    - `BLOCKED` or `ERROR` stops the run and escalates.
 
-11. **Report the outcome.**
+12. **Report the outcome.**
    - Summarise what changed.
    - Include kickoff status, commit hashes/messages, gate verdicts, files
      changed, and any Jira tracking that was skipped or failed.

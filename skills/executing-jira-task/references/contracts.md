@@ -83,6 +83,10 @@ Report labels such as `KICKOFF_REPORT`, `EXECUTION_REPORT`, and `CODE_REVIEW`
 are symbolic handoff names for the full markdown outputs returned by those
 subagents.
 
+`EXECUTION_REPORT` and `DOCUMENTATION_REPORT` may carry blocked-state
+information. Downstream steps must preserve those statuses instead of inferring
+success from partial file changes alone.
+
 | Subagent                | Required inputs                                                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `execution-starter`     | `TICKET_KEY`, `TASK_NUMBER`, ticket snapshot path, task plan path, execution brief path, optional readiness summaries |
@@ -107,13 +111,20 @@ workflow can resume later, but those files stay out of git history.
 
 After a successful run, all of the following should be true:
 
-1. Execution kickoff either moved the Jira subtask to `In Progress` or reported
+1. `EXECUTION_REPORT` and `DOCUMENTATION_REPORT` both indicate successful
+   completion rather than blocked partial progress.
+2. Execution kickoff either moved the Jira subtask to `In Progress` or reported
    clearly why that step was skipped.
-2. Category B changes are committed.
-3. The task section in `docs/<KEY>-tasks.md` includes:
+3. Category B changes are committed.
+4. The task section in `docs/<KEY>-tasks.md` includes:
    - `**Status:** ✅ Complete (<date>)`
    - `**Implementation summary:**`
    - `**Files changed:**`
-4. If a `## Jira Subtasks` table exists, the selected row is updated to `Done`.
-5. Optional Jira transition/comment work is either completed or reported as
+5. If a `## Jira Subtasks` table exists, the selected row is updated to `Done`.
+6. Optional Jira transition/comment work is either completed or reported as
    skipped with a reason.
+
+Partial progress alone does not satisfy successful completion. If a required
+task step, test, or validation command could not run because a capability or
+prerequisite was unavailable, the task remains blocked until that dependency is
+resolved.

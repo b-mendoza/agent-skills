@@ -12,7 +12,7 @@
 | `execution-starter`      | `READY`, `BLOCKED`, `ERROR`                                        | Continue on `READY`; otherwise pause and resolve before implementation starts |
 | `task-executor`          | `COMPLETE`, `NEEDS_CONTEXT`, `BLOCKED`, `ERROR`                    | Continue on `COMPLETE`; otherwise pause and resolve before continuing |
 | `documentation-writer`   | `COMPLETE`, `BLOCKED`, `ERROR`                                     | Continue on `COMPLETE`; otherwise stop and surface the blocker |
-| `requirements-verifier`  | `PASS`, `FAIL`, `BLOCKED`, `ERROR`                                 | Re-run coverage fix loop on clear in-scope gaps; escalate ambiguous or blocked cases |
+| `requirements-verifier`  | `PASS`, `FAIL`, `BLOCKED`, `ERROR`                                 | Re-run coverage fix loop only on clear in-scope `FAIL` gaps; stop and resolve blocked cases before resuming |
 | Review gates             | `PASS`, `PASS WITH SUGGESTIONS`, `PASS WITH ADVISORIES`, `NEEDS FIXES`, `BLOCKED`, `ERROR` | Continue on non-blocking passes; run targeted fix cycle on `NEEDS FIXES`; stop on `BLOCKED`/`ERROR` |
 
 ## When to ask the user
@@ -24,8 +24,8 @@ Ask for user input instead of improvising when any of these occur:
 2. `execution-starter` reports that branch/worktree or dirty-state handling
    needs a user or orchestrator decision.
 3. Required planning artifacts conflict with each other.
-4. A required supporting skill or MCP capability is missing and the run cannot
-   proceed safely.
+4. A required supporting skill, tool, runtime, permission, or environment
+   capability is missing and the run cannot proceed safely.
 5. The same ambiguity or gate failure persists after the retry limit.
 6. A Jira update requires credentials or permissions that are not available in
    the current environment.
@@ -60,3 +60,6 @@ When a subagent reports a missing required skill or tool:
 3. Stop the pipeline at that phase.
 4. Resume from the blocked phase after the user confirms the capability is
    available.
+
+This rule also applies when the missing capability is discovered during task
+execution or required validation, not only during initial preflight.
