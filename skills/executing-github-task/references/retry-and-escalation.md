@@ -25,24 +25,22 @@ Ask for user input instead of improvising when any of these occur:
    needs a user or orchestrator decision.
 3. Required planning artifacts conflict with each other.
 4. A required supporting skill, tool, runtime, permission, or environment
-   capability is missing and the run cannot proceed safely (including `gh` not
-   installed or not authenticated when GitHub updates are mandatory for your
-   team).
+   capability is missing and the run cannot proceed safely. This includes the
+   platform integration (the tracker CLI or API) being unavailable when tracker
+   updates are mandatory for the team or task policy.
 5. The same ambiguity or gate failure persists after the retry limit.
-6. A GitHub operation fails with permissions or policy errors that cannot be
+6. A tracker operation fails with permissions or policy errors that cannot be
    resolved inside the session.
 
 ## Retry limits
 
-- `task-executor` ambiguity/context loop: maximum **3** re-dispatches for the
-  same blocker.
-- Requirements coverage fix loop: maximum **3** cycles.
-- Quality-gate targeted fix loop: maximum **3** cycles.
+- `task-executor` ambiguity/context loop: maximum 3 re-dispatches for the same
+  blocker.
+- Requirements coverage fix loop: maximum 3 cycles.
+- Quality-gate targeted fix loop: maximum 3 cycles.
 
-If a loop reaches its limit, stop and report accumulated findings rather than
-retrying with unchanged inputs. The parent `orchestrating-github-workflow` may
-then present options to the user (see `task-loop.md` quality-gate escalation
-example).
+If a loop reaches its limit, stop and report the accumulated findings rather
+than trying again with unchanged inputs.
 
 ## Non-blocking outcomes
 
@@ -50,9 +48,9 @@ Report these but do not reopen the task automatically:
 
 - `PASS WITH SUGGESTIONS`
 - `PASS WITH ADVISORIES`
-- GitHub label/comment/assignee/close steps skipped because there was no child
-  issue (`Not Created` / `task-list`), or `gh` was unavailable, or the team
-  chose not to mutate the issue at kickoff/completion
+- Tracker updates skipped because the tracker reference was a "not created"
+  placeholder, the integration was unavailable, or the team chose not to
+  mutate the tracker at kickoff/completion
 - Pre-existing failing tests explicitly reported and outside the selected task’s
   scope
 
@@ -61,7 +59,7 @@ Report these but do not reopen the task automatically:
 When a subagent reports a missing required skill or tool:
 
 1. Surface the exact capability name.
-2. Include install or setup instructions returned by the subagent (e.g. `gh auth login`).
+2. Include the install or setup instructions returned by the subagent.
 3. Stop the pipeline at that phase.
 4. Resume from the blocked phase after the user confirms the capability is
    available.

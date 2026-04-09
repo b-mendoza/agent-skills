@@ -25,10 +25,12 @@ Ask for user input instead of improvising when any of these occur:
    needs a user or orchestrator decision.
 3. Required planning artifacts conflict with each other.
 4. A required supporting skill, tool, runtime, permission, or environment
-   capability is missing and the run cannot proceed safely.
+   capability is missing and the run cannot proceed safely. This includes the
+   platform integration (the tracker CLI or API) being unavailable when tracker
+   updates are mandatory for the team or task policy.
 5. The same ambiguity or gate failure persists after the retry limit.
-6. A Jira update requires credentials or permissions that are not available in
-   the current environment.
+6. A tracker operation fails with permissions or policy errors that cannot be
+   resolved inside the session.
 
 ## Retry limits
 
@@ -46,8 +48,9 @@ These should be reported but should not reopen the task automatically:
 
 - `PASS WITH SUGGESTIONS`
 - `PASS WITH ADVISORIES`
-- Jira transition/comment skipped because no key or no authenticated Jira
-  capability was available
+- Tracker updates skipped because the tracker reference was a "not created"
+  placeholder, the integration was unavailable, or the team chose not to
+  mutate the tracker at kickoff/completion
 - Pre-existing failing tests that were explicitly reported and are outside the
   selected task's scope
 
@@ -56,7 +59,7 @@ These should be reported but should not reopen the task automatically:
 When a subagent reports a missing required skill or tool:
 
 1. Surface the exact capability name.
-2. Include the install or setup instruction returned by the subagent.
+2. Include the install or setup instructions returned by the subagent.
 3. Stop the pipeline at that phase.
 4. Resume from the blocked phase after the user confirms the capability is
    available.
