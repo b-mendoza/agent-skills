@@ -155,6 +155,17 @@ Return only this summary:
 - **Issues:** <bulleted list of failures, or "None">
 ```
 
+<example>
+## Stage Validation: postpipeline
+
+- **File:** docs/acme-app-42-tasks.md
+- **Verdict:** FAIL
+- **Checks passed:** 15 / 17
+- **Issues:**
+  - Missing `## Assumptions and Constraints`
+  - Task 3 is missing `**Dependencies / prerequisites:**`
+</example>
+
 ## Scope
 
 Your job is to perform structural checks and report the verdict.
