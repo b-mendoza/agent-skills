@@ -166,7 +166,7 @@ as the literal output contract. Write the final snapshot to:
 docs/<ISSUE_SLUG>.md
 ```
 
-Treat this file as a preserved workflow artifact. Write it, validate it, and
+Treat this file as a preserved workflow artifact for resumability. Write it, validate it, and
 leave it in place, but do not stage or commit it.
 
 Every required top-level heading from the fenced snapshot shape must appear in
@@ -183,28 +183,35 @@ file must include both `Retrieved on` (using the normalized timestamp) and
 After writing the file, re-read it and verify:
 
 - Every required top-level heading from the fenced snapshot shape exists
+- Repeated nested headings are present only when their parent item exists, and
+  every materialized item follows the template's nested shape
+- `## Description` is present and explicitly represented with either the source
+  issue body or `_None_`
 - The title line matches `# <ISSUE_SLUG>: <Issue title>`
 - The retrieval preamble includes both `Retrieved on` and `Source`
-- `## Metadata` table includes required rows in template order; empty scalars
-  use `_None_`
-- `## Description` and `## Acceptance Criteria` follow extraction rules
-- `## Comments`, `## Retrieval Warnings`, `## Child Issues`, `## Linked Issues`,
-  `## Labels`, `## Assignees`, `## Milestone`, `## Projects`, `## Attachments`
-  obey the template's empty vs populated rules
+- The metadata table includes every required row in template order, and empty
+  scalar values are written as `_None_`
 - Parent comment count in the file matches the retrieved data
 - The number of child-issue and linked-issue entries in the file matches the
   number discovered on the parent issue, with full entries for retrieved items
   and `Not retrieved` placeholders for any unretrieved ones
-- Nested comment headings follow the template for parent and related issues
-- Any partial comment retrieval warning has a matching terminal marker in the
-  affected `## Comments` or `#### Comments` section
-- Each unretrieved child or linked issue has both a warning entry under
-  `## Retrieval Warnings` and a placeholder entry in the correct section,
-  rather than being silently dropped
+- Within issue and comment body content, useful formatting is preserved and,
+  outside fenced code blocks, no rendered body line begins with Markdown
+  heading markers such as `# `, `## `, or `### `
+- For each rendered parent comment, child issue, linked issue, or `Not
+  retrieved` placeholder, the required nested headings and fields from the
+  template appear exactly once
+- `## Acceptance Criteria` follows the precedence and extraction rules defined
+  above
 - `## Retrieval Warnings` is `_None_` on full success, or lists every warning
   on partial success
-- Outside fenced code blocks, no rendered body line begins with Markdown
-  heading markers such as `# `, `## `, or `### `
+- Any partial comment retrieval warning has a matching terminal marker in the
+  affected `## Comments` or `#### Comments` section
+- Each unretrieved child or linked issue has both a warning entry and a
+  placeholder entry in the correct section, rather than being silently dropped
+- `## Labels`, `## Assignees`, `## Milestone`, `## Projects`, and
+  `## Attachments` are either `_None_` or valid content matching the template's
+  rules
 - Deterministic ordering rules are satisfied
 
 If validation fails, fix only the missing or mismatched portions, rewrite the
