@@ -42,6 +42,10 @@ keep the original letter label in parentheses for traceability.
 
 Read `./dependency-prioritizer-template.md` only when assembling the document.
 
+**Important:** Stage 1 uses `## Ticket Summary`. Insert `## Execution Order
+Summary` immediately after `## Ticket Summary` per the template (before
+`## Problem Framing`).
+
 ## How to Prioritize Stage 2
 
 1. Verify that `/writing-plans` is available before doing any other work.

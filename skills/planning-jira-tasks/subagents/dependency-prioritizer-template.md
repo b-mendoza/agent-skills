@@ -1,5 +1,8 @@
 Apply these structural additions to the plan during the write step. The input plan's content (task objectives, implementation notes, DoD, etc.) is preserved unchanged — only annotations, renumbering, and new sections are added.
 
+Stage 1 uses `## Ticket Summary`. Insert `## Execution Order Summary`
+**immediately after** `## Ticket Summary` and **before** `## Problem Framing`.
+
 ### Replace letter labels with numbers
 
 ```markdown
