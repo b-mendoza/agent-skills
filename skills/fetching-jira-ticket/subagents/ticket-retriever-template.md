@@ -52,7 +52,7 @@ values, such as Jira due dates without a time component, as `YYYY-MM-DD`.
 
 ## Description
 
-<full description body — preserve lists, links, tables, and code fences; rewrite Jira-authored heading lines as bold labels; or _None_ if Jira has no description>
+<full description body after acceptance-criteria extraction — preserve lists, links, tables, and code fences; rewrite Jira-authored heading lines as bold labels; or _None_ if Jira has no description or the body is empty after extraction>
 
 ## Acceptance Criteria
 
@@ -147,10 +147,12 @@ values, such as Jira due dates without a time component, as `YYYY-MM-DD`.
   `**Steps**`.
 - In `## Acceptance Criteria`, use the dedicated Jira field when present. If
   that field is empty, inspect description sections in this precedence order:
-  `Acceptance Criteria`, `AC`, `Definition of Done`. Use only sections with
-  the highest-precedence label that is present. If multiple sections share that
-  winning label, keep them in source order and label each block with
-  `**Source:** <label>`.
+  `Acceptance Criteria`, `AC`, `Definition of Done` or
+  `Definition of Done (DoD)`. Use only sections with the highest-precedence
+  label that is present. If multiple sections share that winning label, keep
+  them in source order and label each block with `**Source:** <label>`. If
+  none exist, write `_None_` under `## Acceptance Criteria` and keep the full
+  body under `## Description`.
 - In `## Custom Fields`, include every non-empty custom field that is not
   already represented in `## Metadata`, `## Acceptance Criteria`, or another
   dedicated section. Sort rows alphabetically by field name.

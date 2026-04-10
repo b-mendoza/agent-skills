@@ -109,15 +109,11 @@ Fetch the parent ticket and gather all relevant non-empty data, including:
 - Full description, preserving useful formatting such as lists, code fences,
   links, and tables. Rewrite Jira-authored Markdown heading lines as bold
   labels so they cannot collide with reserved snapshot headings
-- Acceptance criteria using this precedence:
-  1. Dedicated Jira acceptance-criteria field, when present and non-empty.
-     If this exists, use only that field and ignore description-derived
-     sections
-  2. Otherwise, inspect description sections in this precedence order:
-     `Acceptance Criteria`, `AC`, `Definition of Done`
-  3. Use only sections with the highest-precedence label that is present
-  4. If multiple sections share that winning label, keep them in source order
-     and label each block with `**Source:** <label>`
+- Acceptance criteria: apply the precedence rules in
+  `ticket-retriever-template.md` to the dedicated Jira field and, when that
+  field is empty, to the description body. Remove the winning AC blocks from
+  the material placed under `## Description` so AC is not duplicated unless
+  the template says otherwise
 - All parent comments in chronological order with author and timestamp
 - If parent-comment retrieval becomes partial after the parent issue is known,
   keep the successfully retrieved comments, append
