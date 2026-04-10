@@ -382,3 +382,21 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42` → `ISSUE_SLUG=acme-ap
 
 The orchestrator keeps only that summary, the `ISSUE_SLUG`, and the next phase.
 </example>
+
+<example>
+Phase 7 kickoff blocker
+
+Input: `ISSUE_URL=https://github.com/acme/app/issues/42` → `ISSUE_SLUG=acme-app-42`
+
+1. `progress-tracker` reports `Resume from: Phase 7, Task 2`
+2. Dispatch `preflight-checker` for the remaining range and confirm resume with
+   the user
+3. Read `./references/task-loop.md`
+4. Validate the normal Phase 5 + 6 handoff for Task 2
+5. Invoke `executing-github-task`
+6. `task-executor` returns `BLOCKED` because the worktree contains unrelated
+   local changes that need user direction before kickoff
+7. Record the task as a blocked Phase 7 stop, present the blocker summary, and
+   do not treat it as an ordinary implementation gap
+8. Resume from the same Phase 7 step after the workspace state is resolved
+</example>
