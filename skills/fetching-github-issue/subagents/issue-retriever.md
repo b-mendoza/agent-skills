@@ -222,7 +222,10 @@ return `FETCH: ERROR`, `Validation: FAIL`, `Failure category: UNEXPECTED`.
 
 ## Output Format
 
-Return only the summary below.
+Return only the summary below. The caller relies on it as the only return
+payload from this subagent. Keep it machine-readable and concise so the
+coordinator can branch on status, validation, and failure category without
+re-reading the artifact or inferring state from prose.
 
 ```text
 FETCH: <PASS | PARTIAL | FAIL | ERROR>
