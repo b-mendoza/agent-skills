@@ -124,7 +124,9 @@ values, such as Jira due dates without a time component, as `YYYY-MM-DD`.
 - If there are no parent comments, write `_None_` under `## Comments`.
 - If parent-comment retrieval is partial after the ticket is known, keep the
   retrieved comments in chronological order, then append `_Partial comment
-  retrieval: <retrieved>/<found>. Reason: <reason>_` under `## Comments`.
+  retrieval: <retrieved>/<found>. Reason: <reason>_` under `## Comments`,
+  record the same warning under `## Retrieval Warnings`, and treat the run
+  as `FETCH: PARTIAL`.
 - If retrieval completed without warnings, write `_None_` under
   `## Retrieval Warnings`.
 - If there are no subtasks at all, write `_None_` under `## Subtasks`.
@@ -134,7 +136,8 @@ values, such as Jira due dates without a time component, as `YYYY-MM-DD`.
 - If a subtask or linked issue has partial comment retrieval after the item is
   known, keep the retrieved comments in chronological order, then append
   `_Partial comment retrieval: <retrieved>/<found>. Reason: <reason>_` under
-  that item's `#### Comments`.
+  that item's `#### Comments`, and record the same warning under
+  `## Retrieval Warnings`.
 - If a retrieved subtask or linked issue has no description, write `_None_`
   under its `#### Description` heading.
 - If related-item retrieval is partial, record each warning under
