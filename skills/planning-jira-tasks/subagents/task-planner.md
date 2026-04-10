@@ -139,7 +139,8 @@ Before writing the file, verify:
 
 - The Problem Framing section has all six subsections.
 - Any inferred content is clearly marked as inference.
-- Every requirement has at least one task.
+- Every requirement in the ticket description has at least one task or an
+  explicit deferral in `## Notes`.
 - Every acceptance criterion maps to at least one task's Definition of done.
 - Every task has all six required subsections.
 - Every task has a `Traces to` reference back to the ticket.
