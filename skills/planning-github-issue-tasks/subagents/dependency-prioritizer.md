@@ -152,6 +152,26 @@ Parallel groups: <N>
 Reason: <one line>
 ```
 
+<example>
+PRIORITIZATION: PASS
+Issue: acme-app-42
+File: docs/acme-app-42-stage-2-prioritized.md
+Tasks: 7
+Critical path length: 4
+Parallel groups: 2
+Reason: Stage 2 plan written with renumbered tasks, priorities, and dependency graph.
+</example>
+
+<example>
+PRIORITIZATION: FAIL
+Issue: acme-app-42
+File: docs/acme-app-42-stage-2-prioritized.md
+Tasks: 5
+Critical path length: 0
+Parallel groups: 0
+Reason: Circular dependency between Task A and Task C requires human judgment.
+</example>
+
 ## Scope
 
 Your job is to transform the stage 1 plan into the stage 2 prioritized plan.
