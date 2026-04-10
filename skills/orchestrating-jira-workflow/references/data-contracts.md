@@ -50,7 +50,7 @@ inside those files are owned by `../../planning-jira-task/SKILL.md` and its
 | 5     | postcondition | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | All 4 concrete Phase 5 planning artifacts exist |
 | 6     | precondition  | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | Same as Phase 5 postcondition |
 | 6     | postcondition | `docs/<KEY>-task-<N>-critique.md` + `docs/<KEY>-task-<N>-decisions.md` | Both critique and decisions artifacts exist |
-| 7     | precondition  | Standard Phase 5 + 6 workflow handoff | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`, `docs/<KEY>-task-<N>-critique.md`, and `docs/<KEY>-task-<N>-decisions.md` all exist; this confirms the normal workflow reached execution after critique completion |
+| 7     | precondition  | Standard Phase 1-6 execution handoff | `docs/<KEY>.md`, `docs/<KEY>-tasks.md`, `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`, `docs/<KEY>-task-<N>-critique.md`, and `docs/<KEY>-task-<N>-decisions.md` all exist; this confirms the normal workflow reached execution after critique completion (**6 → 7 readiness**) |
 
 For Phase 7 specifically, this table defines the orchestrator's normal
 workflow-gate check. `../../executing-jira-task/references/contracts.md` remains
@@ -93,6 +93,26 @@ For Phases 3 and 6, validation covers only the artifact boundary. The
 clarification skill's final summary still carries `RE_PLAN_NEEDED` and
 `BLOCKERS_PRESENT`, and the orchestrator must honor those flags separately at
 the gate step.
+
+`progress-tracker` dispatches use the same `TICKET_KEY` for workflow identity.
+When reading or updating per-task state, include `TASK_NUMBER` as the playbook
+specifies.
+
+### Progress tracker dispatch (summary)
+
+Read `../subagents/progress-tracker.md` for full behavior. Typical orchestrator
+inputs:
+
+```
+TICKET_KEY: <KEY>
+ACTION: read | initialize | update | initialize_task | update_task
+```
+
+- **`update`:** `PHASE` (1–4), `STATUS`, `SUMMARY`; for `PHASE=4` and
+  `STATUS=complete`, include `TASKS` (metadata for the workflow task table, from
+  the Phase 4 downstream summary).
+- **`initialize_task`:** `TASK_NUMBER`, `TASK_TITLE`
+- **`update_task`:** `TASK_NUMBER`, `PHASE` (5–7), `STATUS`, `SUMMARY`
 
 ---
 
@@ -137,6 +157,6 @@ The orchestrator does not need to decide artifact categories dynamically.
 Keep this distinction in mind when coordinating the workflow:
 
 - **Category A** (orchestration artifacts, `docs/<KEY>*.md`): updated on disk
-  only, preserved across sessions.
+  only, preserved across sessions, never committed.
 - **Category B** (implementation output): source code, tests, config changes —
   committed normally.
