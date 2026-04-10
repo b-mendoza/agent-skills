@@ -64,8 +64,7 @@ partial, the artifact must record that explicitly in `## Retrieval Warnings`
 and via placeholder entries for the missing subtasks or linked issues.
 
 Treat `./subagents/ticket-retriever-template.md` as the authoritative snapshot
-shape. The section tables below are the scan-friendly summary of that contract,
-cross-referenced against `docs/fetching-pipeline-spec.md` §5 and §13.
+shape. The section tables below are the scan-friendly summary of that contract.
 
 **Locked-core sections** (shared with `fetching-github-issue`; same names,
 same relative order):
@@ -86,8 +85,8 @@ same relative order):
 | ------- | ------------- |
 | `## Subtasks` | Existing Jira execution breakdown |
 
-**Platform-extension sections** (Jira-specific; registered in spec §13 as
-expected divergence):
+**Platform-extension sections** (Jira-specific; expected to differ between
+fetching skills):
 
 | Section | Why it exists |
 | ------- | ------------- |

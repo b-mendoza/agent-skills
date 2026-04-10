@@ -68,8 +68,7 @@ prose. If retrieval is partial, the artifact must record that explicitly in
 or linked issue that could not be hydrated.
 
 Treat `./subagents/issue-retriever-template.md` as the authoritative snapshot
-shape. The section tables below are the scan-friendly summary of that contract,
-cross-referenced against `docs/fetching-pipeline-spec.md` §5 and §13.
+shape. The section tables below are the scan-friendly summary of that contract.
 
 **Locked-core sections** (shared with `fetching-jira-ticket`; same names,
 same relative order):
@@ -90,8 +89,8 @@ same relative order):
 | ------- | ------------- |
 | `## Child Issues` | GitHub sub-issues / child work items when discoverable |
 
-**Platform-extension sections** (GitHub-specific; registered in spec §13 as
-expected divergence). All stay stably present with `_None_` when empty:
+**Platform-extension sections** (GitHub-specific; expected to differ between
+fetching skills). All stay stably present with `_None_` when empty:
 
 | Section | Why it exists |
 | ------- | ------------- |
