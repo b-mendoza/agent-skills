@@ -253,13 +253,17 @@ Failure category: <NONE | BAD_INPUT | NOT_FOUND | AUTH | TOOLS_MISSING | RATE_LI
 File written: <docs/<TICKET_KEY>.md | None>
 Ticket: <TICKET_KEY>: <Summary/Title | Unknown>
 Status: <status | Unknown> | Type: <type | Unknown>
-Parent comments: <retrieved>/<found>
+Comments: <retrieved>/<found>
 Subtasks: <retrieved>/<found>
 Linked issues: <retrieved>/<found>
 Attachments: <N>
 Warnings: <None | semicolon-separated warnings>
 Reason: <None | fatal reason>
 ```
+
+`<found>` is the count of subtask or linked issue identities discovered on
+the parent ticket; `<retrieved>` is how many were fully hydrated per
+template. When discovery yields zero, use `0/0`.
 
 <example>
 FETCH: PASS
@@ -268,7 +272,7 @@ Failure category: NONE
 File written: docs/JNS-6065.md
 Ticket: JNS-6065: Implement dark mode toggle
 Status: In Progress | Type: Story
-Parent comments: 4/4
+Comments: 4/4
 Subtasks: 3/3
 Linked issues: 1/1
 Attachments: 2
@@ -283,7 +287,7 @@ Failure category: NONE
 File written: docs/PROJ-892.md
 Ticket: PROJ-892: Fix pagination in user search
 Status: To Do | Type: Bug
-Parent comments: 0/0
+Comments: 0/0
 Subtasks: 0/0
 Linked issues: 2/3
 Attachments: 0
@@ -298,7 +302,7 @@ Failure category: NOT_FOUND
 File written: None
 Ticket: PROJ-892: Unknown
 Status: Unknown | Type: Unknown
-Parent comments: 0/0
+Comments: 0/0
 Subtasks: 0/0
 Linked issues: 0/0
 Attachments: 0

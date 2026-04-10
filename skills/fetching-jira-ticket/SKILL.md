@@ -178,9 +178,9 @@ Using only the subagent's structured summary, tell the caller:
 - The file path written, when one exists
 - The ticket identity (`Ticket: <TICKET_KEY>: <Summary>`)
 - The ticket state (`Status: ... | Type: ...`)
-- Retrieved versus discovered counts for parent comments
+- Retrieved versus discovered counts for comments
 - Retrieved versus discovered counts for subtasks and linked issues
-- Attachment count (Jira platform-extension field, per spec §13)
+- Attachment count (Jira platform-extension field)
 - Any warnings or fatal reason
 - Any failure category, when one exists
 - That this phase is retrieval only and does not mutate Jira
@@ -211,7 +211,7 @@ Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-6065`
    File written: docs/JNS-6065.md
    Ticket: JNS-6065: Implement dark mode toggle
    Status: In Progress | Type: Story
-   Parent comments: 4/4
+   Comments: 4/4
    Subtasks: 3/3
    Linked issues: 1/1
    Attachments: 2
@@ -221,7 +221,7 @@ Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-6065`
 4. Report:
    "Ticket fetched to `docs/JNS-6065.md`.
    `JNS-6065: Implement dark mode toggle` is `In Progress` (`Story`).
-   Retrieved 4/4 parent comments, 3/3 subtasks, 1/1 linked issues, and 2
+   Retrieved 4/4 comments, 3/3 subtasks, 1/1 linked issues, and 2
    attachments. Retrieval only; Jira was not modified."
 </example>
 
@@ -238,7 +238,7 @@ Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-7001`
    File written: docs/JNS-7001.md
    Ticket: JNS-7001: Audit webhook retries
    Status: To Do | Type: Task
-   Parent comments: 2/2
+   Comments: 2/2
    Subtasks: 1/2
    Linked issues: 0/0
    Attachments: 0
@@ -248,7 +248,7 @@ Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-7001`
 4. Report:
    "Ticket fetched to `docs/JNS-7001.md` with retrieval warnings.
    `JNS-7001: Audit webhook retries` is `To Do` (`Task`).
-   Retrieved 2/2 parent comments, 1/2 subtasks, 0/0 linked issues, and 0
+   Retrieved 2/2 comments, 1/2 subtasks, 0/0 linked issues, and 0
    attachments. Warning: Could not retrieve JNS-7002 (404 Not Found).
    Retrieval only; Jira was not modified."
 </example>
