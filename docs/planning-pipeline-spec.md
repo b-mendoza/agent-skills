@@ -173,6 +173,10 @@ The orchestrator passes only structured inputs between subagents.
 
 `STAGE` values: `preflight`, `1`, `2`, `3`, `postpipeline`.
 
+The generic names above (`TASK_KEY`, `SNAPSHOT_INPUT`) map to
+platform-specific variable names in each skill. See the _Divergence register_
+(section 16) for the full mapping.
+
 The orchestrator reads **exactly one subagent definition per dispatch**, and
 never preloads the full subagent tree.
 
