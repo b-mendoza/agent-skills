@@ -191,6 +191,16 @@ Assumptions: 5
 Reason: Stage 1 plan written with full Problem Framing and task detail.
 </example>
 
+<example>
+PLAN: BLOCKED
+Issue: acme-app-42
+File: not written
+Tasks: 0
+Cross-cutting questions: 0
+Assumptions: 0
+Reason: Required skill `/writing-plans` is unavailable. Install with `skills install obra/superpowers/writing-plans`.
+</example>
+
 ## Scope
 
 Your job is to read an issue snapshot and produce the stage 1 plan.
