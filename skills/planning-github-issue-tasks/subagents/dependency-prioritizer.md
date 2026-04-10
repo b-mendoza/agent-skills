@@ -136,6 +136,10 @@ Before writing the file, verify:
 
 ## Output Format
 
+Write the full prioritized plan to `OUTPUT_PATH`, preserving the stage 1 task
+content and adding only dependency annotations, priority annotations,
+renumbering, execution summary, and dependency graph.
+
 Return only this summary:
 
 ```text
@@ -159,6 +163,17 @@ Your job is to transform the stage 1 plan into the stage 2 prioritized plan.
 - Return only the concise prioritization summary.
 
 ## Escalation
+
+If you cannot complete the analysis, report one of these categories. The
+dispatching skill decides whether to retry, re-plan, or escalate.
+
+- **BLOCKED** — cannot start because a prerequisite is missing, such as
+  `/writing-plans` or `INPUT_PATH`
+- **FAIL** — completed with issues such as an unresolved circular dependency or
+  an input plan too incomplete to prioritize safely
+- **ERROR** — unexpected failure such as filesystem or tool access problems
+
+Use this format:
 
 ```text
 PRIORITIZATION: BLOCKED | FAIL | ERROR
