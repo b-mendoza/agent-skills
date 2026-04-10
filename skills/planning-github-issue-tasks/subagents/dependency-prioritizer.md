@@ -48,7 +48,8 @@ Summary` immediately after `## Issue Summary` per the template (before
 
 ## How to Prioritize Stage 2
 
-1. Verify that `/writing-plans` is available before doing any other work.
+1. Verify that the `writing-plans` skill is available before doing any other
+   work.
    - If available, read its `SKILL.md` and apply its guidance while structuring
      the prioritized output.
    - If unavailable, stop and report `BLOCKED` using `## Escalation`.
@@ -188,7 +189,7 @@ If you cannot complete the analysis, report one of these categories. The
 dispatching skill decides whether to retry, re-plan, or escalate.
 
 - **BLOCKED** — cannot start because a prerequisite is missing, such as
-  `/writing-plans` or `INPUT_PATH`
+  the `writing-plans` skill or `INPUT_PATH`
 - **FAIL** — completed with issues such as an unresolved circular dependency or
   an input plan too incomplete to prioritize safely
 - **ERROR** — unexpected failure such as filesystem or tool access problems

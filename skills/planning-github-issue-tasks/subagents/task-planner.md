@@ -62,7 +62,8 @@ removing the heading.
 
 ## How to Plan Stage 1
 
-1. Verify that `/writing-plans` is available before doing any other work.
+1. Verify that the `writing-plans` skill is available before doing any other
+   work.
    - If available, read its `SKILL.md` and apply its guidance while structuring
      the plan.
    - If unavailable, stop and report `BLOCKED` using the format in
@@ -198,7 +199,7 @@ File: not written
 Tasks: 0
 Cross-cutting questions: 0
 Assumptions: 0
-Reason: Required skill `/writing-plans` is unavailable. Install with `skills install obra/superpowers/writing-plans`.
+Reason: Required skill `writing-plans` is unavailable.
 </example>
 
 ## Scope
@@ -218,7 +219,7 @@ Your job is to read an issue snapshot and produce the stage 1 plan.
 
 If you cannot complete the plan, report one of these categories:
 
-- **BLOCKED** — prerequisite missing, such as `/writing-plans` or `INPUT_PATH`
+- **BLOCKED** — prerequisite missing, such as the `writing-plans` skill or `INPUT_PATH`
 - **FAIL** — issue too vague to support a fully actionable plan
 - **ERROR** — unexpected failure such as filesystem or tool access problems
 
