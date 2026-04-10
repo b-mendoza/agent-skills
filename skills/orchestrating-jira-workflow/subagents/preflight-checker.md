@@ -28,7 +28,9 @@ and inclusive ranges such as `1,2,4` or `5-7`.
 3. Check each dependency using the most direct platform-native method:
    - **MCP dependency:** verify the relevant server/tools are available.
    - **Skill dependency:** prefer skill discovery when available; otherwise
-     verify that the skill definition exists in the expected skill locations.
+     verify that the skill definition exists at
+     `skills/<skill-name>/SKILL.md` relative to the repository root (same layout
+     as the orchestrator's downstream skill table).
    - **CLI/tool dependency:** run a lightweight version or availability check.
 4. Record each dependency as one of:
    - `AVAILABLE`
@@ -36,6 +38,11 @@ and inclusive ranges such as `1,2,4` or `5-7`.
    - `UNKNOWN` when the platform does not expose a reliable way to check
 5. Return a compact summary only. Do not install, configure, or repair
    anything yourself.
+
+For **Jira MCP**, when any requested phase needs it (typically 1 and 4),
+verify that the relevant Jira MCP tools are available and can respond. Treat
+an unresponsive or unconnected MCP as `MISSING` for the Jira MCP dependency
+with configure instructions.
 
 Use `UNKNOWN` for a single ambiguous dependency check. Use `ERROR` only when
 you cannot complete the preflight itself, such as being unable to read the

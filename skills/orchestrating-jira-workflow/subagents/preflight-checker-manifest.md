@@ -34,9 +34,14 @@ here (preflight) and by each subagent at runtime (defense-in-depth).
 
 ---
 
-## Phase 3 — Clarify (clarifying-assumptions)
+## Phase 3 — Clarify (`clarifying-assumptions`, upfront)
 
-No external dependencies. Conversational skill, inline execution.
+| Dependency               | Type  | Used by               | How to check                                        | Install / configure             |
+| ------------------------ | ----- | --------------------- | --------------------------------------------------- | ------------------------------- |
+| `clarifying-assumptions` | Skill | Phase 3 orchestration | `skills/.../clarifying-assumptions/SKILL.md` exists | Add skill at expected repo path |
+
+No external dependencies beyond the skill file. Conversational skill; inline
+execution.
 
 ---
 
@@ -60,10 +65,14 @@ No external dependencies. Conversational skill, inline execution.
 
 ---
 
-## Phase 6 — Clarify + Critique (clarifying-assumptions, critique mode)
+## Phase 6 — Clarify + Critique (`clarifying-assumptions`, critique mode)
 
-No external dependencies. Conversational skill with inline critique-analyzer
-dispatch.
+| Dependency               | Type  | Used by               | How to check                                        | Install / configure             |
+| ------------------------ | ----- | --------------------- | --------------------------------------------------- | ------------------------------- |
+| `clarifying-assumptions` | Skill | Phase 6 orchestration | `skills/.../clarifying-assumptions/SKILL.md` exists | Add skill at expected repo path |
+
+No external dependencies beyond the skill. Conversational skill with inline
+critique-analyzer dispatch.
 
 ---
 
@@ -88,6 +97,7 @@ dispatch.
 | Jira MCP                     | MCP   | 1, 4     |
 | git CLI                      | Tool  | 5        |
 | /writing-plans               | Skill | 2, 5     |
+| `clarifying-assumptions`     | Skill | 3, 6     |
 | /find-skills                 | Skill | 5        |
 | /test-driven-development     | Skill | 5        |
 | /vitest                      | Skill | 5        |
@@ -97,6 +107,9 @@ dispatch.
 | /clean-code                  | Skill | 7        |
 | /architecture-patterns       | Skill | 7        |
 | /api-security-best-practices | Skill | 7        |
-| context7 MCP                 | MCP   | 7        |
 
-**Total: 13 dependencies** (2 MCPs, 1 CLI tool, 10 skills)
+`context7` is **recommended but not required** for Phase 7 review quality. The
+reviewers are written to use it when available and to lower confidence when it
+is not. Do not fail preflight solely because `context7` is unavailable.
+
+**Total: 14 dependencies** (1 MCP, 1 CLI tool, 12 skills)
