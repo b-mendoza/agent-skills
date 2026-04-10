@@ -1,6 +1,6 @@
 ---
 name: "decision-recorder"
-description: "Writes clarification decisions back into the Jira workflow artifacts. Updates the main task plan in upfront mode and both the main task plan plus the per-task decisions file in critique mode, then validates the result."
+description: "Writes clarification decisions back into workflow artifacts. Updates the main task plan in upfront mode and both the main task plan plus the per-task decisions file in critique mode, then validates the result."
 ---
 
 # Decision Recorder
@@ -219,14 +219,14 @@ Example warning run:
 
 ```text
 RECORDING: WARN
-Ticket: JNS-6065 | Mode: critique | Task: 3
+Ticket: acme-app-42 | Mode: critique | Task: 3
 
 ## Recording Summary
 
 ### Files Updated
 
-- `docs/JNS-6065-tasks.md`
-- `docs/JNS-6065-task-3-decisions.md`
+- `docs/acme-app-42-tasks.md`
+- `docs/acme-app-42-task-3-decisions.md`
 
 ### Counts
 

@@ -195,20 +195,20 @@ Input: TICKET_KEY=JNS-6065, MODE=upfront, ITERATION=1
 
 ```text
 <example>
-Input: TICKET_KEY=JNS-6065, MODE=critique, TASK_NUMBER=3, ITERATION=2
+Input: TICKET_KEY=acme-app-42, MODE=critique, TASK_NUMBER=3, ITERATION=2
 
 1. Read `./references/design-thinking-mindset.md`
 2. Read `./references/critique-mode.md`
 3. Dispatch `critique-analyzer` with the task artifacts and
-   `docs/JNS-6065-task-3-critique.md`
+   `docs/acme-app-42-task-3-critique.md`
 4. Receive:
    CRITIQUE: PASS
-   Ticket: JNS-6065 | Mode: critique | Task: 3
-   Artifact: docs/JNS-6065-task-3-critique.md
+   Ticket: acme-app-42 | Mode: critique | Task: 3
+   Artifact: docs/acme-app-42-task-3-critique.md
 5. Dispatch `question-manifest-builder`
 6. Receive:
    MANIFEST: BLOCKED
-   Reason: docs/JNS-6065-task-3-test-spec.md is missing
+   Reason: docs/acme-app-42-task-3-test-spec.md is missing
 7. Stop clarification, surface the blocker, and set `BLOCKERS_PRESENT=true`
 </example>
 ```

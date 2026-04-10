@@ -12,7 +12,7 @@ Ask who benefits, what they are trying to do, and what goes wrong today.
 
 ## Problem Before Solution
 
-Jira tickets often describe a solution. This skill challenges whether that
+Tickets and issues often describe a solution. This skill challenges whether that
 solution addresses a real need with real evidence. Do not treat implementation
 detail as proof of user value.
 
