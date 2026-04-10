@@ -62,7 +62,8 @@ removing the heading.
 
 ## How to Plan Stage 1
 
-1. Verify that `/writing-plans` is available before doing any other work.
+1. Verify that the `writing-plans` skill is available before doing any other
+   work.
    - If available, read its `SKILL.md` and apply its guidance while structuring
      the plan.
    - If unavailable, stop and report `BLOCKED` using the format in
@@ -87,12 +88,12 @@ into critique or clarification prompts.
 
 Answer these six subsections under `## Problem Framing`:
 
-1. **End User** - who directly experiences the outcome
-2. **Underlying Need** - the problem in user terms
-3. **Proposed Solution** - what the ticket prescribes
-4. **Solution-Problem Fit** - how well the solution addresses the need
-5. **Alternative Approaches Not Explored** - other plausible paths, if any
-6. **Evidence Basis** - what evidence supports the chosen solution
+1. **End User** — who directly experiences the outcome
+2. **Underlying Need** — the problem in user terms
+3. **Proposed Solution** — what the ticket prescribes
+4. **Solution-Problem Fit** — how well the solution addresses the need
+5. **Alternative Approaches Not Explored** — other plausible paths, if any
+6. **Evidence Basis** — what evidence supports the chosen solution
 
 Use `Not stated in ticket` honestly whenever the ticket does not provide the
 answer.
@@ -189,7 +190,7 @@ File: not written
 Tasks: 0
 Cross-cutting questions: 0
 Assumptions: 0
-Reason: Required skill `/writing-plans` is unavailable. Install with `skills install obra/superpowers/writing-plans`.
+Reason: Required skill `writing-plans` is unavailable.
 </example>
 
 ## Scope
@@ -209,11 +210,11 @@ Your job is to read a ticket snapshot and produce the stage 1 plan.
 If you cannot complete the plan, report one of these categories. The
 dispatching skill decides whether to retry, re-plan, or escalate.
 
-- **BLOCKED** - cannot start because a prerequisite is missing, such as
-  `/writing-plans` or `INPUT_PATH`
-- **FAIL** - completed with issues because the ticket is too vague or incomplete
+- **BLOCKED** — cannot start because a prerequisite is missing, such as
+  the planning guidance skill or `INPUT_PATH`
+- **FAIL** — completed with issues because the ticket is too vague or incomplete
   to support a fully actionable plan
-- **ERROR** - unexpected failure such as filesystem or tool access problems
+- **ERROR** — unexpected failure such as filesystem or tool access problems
 
 Use this format:
 

@@ -216,10 +216,10 @@ Your job is to validate the prioritized plan against the original ticket.
 If you cannot complete validation, report one of these categories. The
 dispatching skill decides whether to retry, re-plan, or escalate.
 
-- **BLOCKED** - cannot start because `TICKET_PATH` or `PLAN_PATH` is missing
-- **FAIL** - validation completed, but one or more FAIL-severity issues remain
+- **BLOCKED** — cannot start because `TICKET_PATH` or `PLAN_PATH` is missing
+- **FAIL** — validation completed, but one or more FAIL-severity issues remain
   after all mechanical fixes were applied
-- **ERROR** - unexpected failure such as filesystem or tool access problems
+- **ERROR** — unexpected failure such as filesystem or tool access problems
 
 Use the same summary schema as `## Output Format` so the dispatching skill can
 parse one structure for success and escalation cases.

@@ -48,7 +48,8 @@ Summary` immediately after `## Ticket Summary` per the template (before
 
 ## How to Prioritize Stage 2
 
-1. Verify that `/writing-plans` is available before doing any other work.
+1. Verify that the `writing-plans` skill is available before doing any other
+   work.
    - If available, read its `SKILL.md` and apply its guidance while structuring
      the prioritized output.
    - If unavailable, stop and report `BLOCKED` using `## Escalation`.
@@ -70,9 +71,9 @@ Summary` immediately after `## Ticket Summary` per the template (before
 
 Use these classifications:
 
-- **Hard dependency** - this task cannot start until the dependency completes
-- **Soft dependency** - it is useful but not strictly required to go later
-- **Parallel** - the tasks can proceed independently
+- **Hard dependency** — this task cannot start until the dependency completes
+- **Soft dependency** — useful but not strictly required to go later
+- **Parallel** — the tasks can proceed independently
 
 Be conservative. If you are unsure whether a relationship is hard or soft, call
 it soft unless the upstream output or shared-file risk makes the dependency
@@ -187,11 +188,11 @@ Your job is to transform the stage 1 plan into the stage 2 prioritized plan.
 If you cannot complete the analysis, report one of these categories. The
 dispatching skill decides whether to retry, re-plan, or escalate.
 
-- **BLOCKED** - cannot start because a prerequisite is missing, such as
-  `/writing-plans` or `INPUT_PATH`
-- **FAIL** - completed with issues such as an unresolved circular dependency or
+- **BLOCKED** — cannot start because a prerequisite is missing, such as
+  the planning guidance skill or `INPUT_PATH`
+- **FAIL** — completed with issues such as an unresolved circular dependency or
   an input plan too incomplete to prioritize safely
-- **ERROR** - unexpected failure such as filesystem or tool access problems
+- **ERROR** — unexpected failure such as filesystem or tool access problems
 
 Use this format:
 
