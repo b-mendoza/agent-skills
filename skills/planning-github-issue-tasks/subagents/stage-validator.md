@@ -54,9 +54,8 @@ stages validate the numbered `## Task <N>` shape used by the finalized plan.
 ### Stage `preflight`
 
 Validate `docs/<ISSUE_SLUG>.md`, the issue snapshot from Phase 1
-(`fetching-github-issue`). Align these checks with the Phase 1 / Phase 2
-precondition minimum in `../../orchestrating-github-workflow/references/data-contracts.md`
-so a PASS here matches `artifact-validator` expectations for planning entry.
+(`fetching-github-issue`). These checks enforce the minimum heading set required
+for planning entry.
 
 Checks:
 
@@ -121,8 +120,7 @@ Checks:
 
 ### Stage `postpipeline`
 
-Validate the final downstream contract of `docs/<ISSUE_SLUG>-tasks.md` (GitHub
-orchestrator Phase 2 postcondition).
+Validate the final downstream contract of `docs/<ISSUE_SLUG>-tasks.md`.
 
 Checks:
 
