@@ -77,9 +77,9 @@ postconditions -> update progress -> gate check**
    - `docs/<KEY>-stage-1-detailed.md` exists
    - `docs/<KEY>-stage-2-prioritized.md` exists
    - `docs/<KEY>-tasks.md` exists
-   - The final plan contains `## Ticket Summary`, `## Problem Framing`,
-     `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`,
-     `## Tasks`, `## Execution Order Summary`, `## Dependency Graph`, and
+   - The final plan contains `## Ticket Summary`, `## Execution Order Summary`,
+     `## Problem Framing`, `## Assumptions and Constraints`,
+     `## Cross-Cutting Open Questions`, `## Tasks`, `## Dependency Graph`, and
      `## Validation Report`
    - The final plan has at least 2 numbered task entries
    - Each numbered task includes the eight required subsections from
