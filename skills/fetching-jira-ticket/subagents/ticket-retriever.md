@@ -202,7 +202,7 @@ After writing the file, re-read it and verify:
   every materialized item follows the template's nested shape
 - `## Description` is present and explicitly represented with either the source
   description body or `_None_`
-- The title line matches `<TICKET_KEY>: <Summary>`
+- The title line matches `# <TICKET_KEY>: <Summary>`
 - The retrieval preamble includes both `Retrieved on` and `Source`
 - The metadata table includes every required row in template order, and empty
   scalar values are written as `_None_`
