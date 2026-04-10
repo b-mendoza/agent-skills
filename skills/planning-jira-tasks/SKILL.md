@@ -52,11 +52,11 @@ The final plan must contain all of these sections for downstream phases:
 | Section                               | Consumed by                                                         |
 | ------------------------------------- | ------------------------------------------------------------------- |
 | `## Ticket Summary`                   | `clarifying-assumptions`                                            |
+| `## Execution Order Summary`          | `creating-jira-subtasks`                                            |
 | `## Problem Framing`                  | `clarifying-assumptions`, critique paths                            |
 | `## Assumptions and Constraints`      | `clarifying-assumptions`                                            |
 | `## Cross-Cutting Open Questions`     | `clarifying-assumptions`                                            |
 | `## Tasks` with numbered task entries | `clarifying-assumptions`, `creating-jira-subtasks`, task execution |
-| `## Execution Order Summary`          | `creating-jira-subtasks`                                            |
 | `## Dependency Graph`                 | task execution and critique                                         |
 | `## Validation Report`               | `clarifying-assumptions`                                            |
 
