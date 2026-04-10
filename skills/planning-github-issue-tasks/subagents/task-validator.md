@@ -74,7 +74,7 @@ mechanical structural issues directly when there is one correct answer.
 
 | # | Check | Severity |
 | - | ----- | -------- |
-| 5 | Every task has all 8 required subsections in the finalized plan | FAIL |
+| 5 | Every task has all 6 core subsections | FAIL |
 | 6 | Every task has a Dependencies annotation | FAIL |
 | 7 | Every task has a Priority annotation | WARN |
 | 8 | Task numbering is sequential with no gaps | FAIL |
@@ -176,6 +176,26 @@ WARN: <N>
 FAIL: <N>
 Reason: <one line>
 ```
+
+<example>
+TASK_VALIDATION: PASS
+Issue: acme-app-42
+File: docs/acme-app-42-tasks.md
+PASS: 16
+WARN: 3
+FAIL: 0
+Reason: Final plan validated, report appended, and only warning-level issues remain.
+</example>
+
+<example>
+TASK_VALIDATION: FAIL
+Issue: acme-app-42
+File: docs/acme-app-42-tasks.md
+PASS: 15
+WARN: 3
+FAIL: 1
+Reason: Requirement coverage gap could not be fixed mechanically and is listed in Unresolved Issues.
+</example>
 
 ## Scope
 
