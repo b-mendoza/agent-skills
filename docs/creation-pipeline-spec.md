@@ -67,8 +67,10 @@ modification. That imposes the following rules on every file in both skills:
 5. **Platform-specific tooling is allowed, but only in platform-specific
    places.** The Jira skill may reference Jira MCP tools inside
    `subtask-creator.md`. The GitHub skill may reference `gh` in
-   `task-issue-creator.md`. Neither integration should appear in SKILL.md
-   or `phase-4-io-contracts.md`.
+   `task-issue-creator.md`. Neither integration should appear as an
+   instruction in SKILL.md or `phase-4-io-contracts.md`. Naming a platform
+   tool in the SKILL.md intro to describe what is delegated to the subagent
+   (e.g. "`gh` calls stay inside `task-issue-creator`") is acceptable.
 
 ## 3. Vocabulary (placeholders)
 
