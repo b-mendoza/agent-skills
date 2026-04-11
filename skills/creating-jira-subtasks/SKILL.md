@@ -83,7 +83,8 @@ The short version:
 - A missing `## Decisions Log` downgrades the run to `SUBTASKS: WARN` rather
   than blocking it.
 - Successful Phase 4 output is still the validated presence of `## Jira
-  Subtasks` plus `Jira Subtask: <KEY>` lines in linked task sections.
+  Subtasks` plus `Jira Subtask: <KEY>` lines in linked task sections, per
+  `./references/phase-4-io-contracts.md`.
 
 ## Execution Steps
 

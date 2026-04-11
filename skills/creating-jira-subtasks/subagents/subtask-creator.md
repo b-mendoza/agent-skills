@@ -38,21 +38,19 @@ The plan is expected to contain a `## Tasks` section with numbered
 `## Task <N>: <title>` headings. If the file is missing or uses an unsupported
 task shape, return `SUBTASKS: BLOCKED`.
 
+Parse each task's title and these subsections when present: `Objective`,
+`Relevant requirements and context`, `Questions to answer before starting`,
+`Implementation notes`, `Definition of done`, `Likely files / artifacts
+affected`, `Dependencies / prerequisites`, and `Priority`.
+
 ## Instructions
 
 1. **Resolve the ticket and load the plan**
    - Derive `TICKET_KEY` from `JIRA_URL`.
    - Read `docs/<TICKET_KEY>-tasks.md`.
-   - Confirm the file contains `## Tasks` and at least one numbered
-     `## Task <N>:` heading.
-   - Parse each task's title and these subsections from the current plan:
-     `Objective`, `Relevant requirements and context`, `Questions to answer
-     before starting`, `Implementation notes`, `Definition of done`, `Likely
-     files / artifacts affected`, `Dependencies / prerequisites`, and
-     `Priority`.
-   - Record whether `## Decisions Log` is present. It is expected for normal
-     Phase 4 execution, but if it is missing, continue with a warning instead
-     of silently failing.
+   - Confirm `## Tasks` and at least one `## Task <N>:` heading.
+   - Record whether `## Decisions Log` is present. If missing, continue with a
+     warning (WARN-eligible) rather than blocking.
 
 2. **Capture existing Jira linkage before creating anything**
    - Detect existing `Jira Subtask: <KEY>` lines inside task sections.
@@ -112,8 +110,9 @@ task shape, return `SUBTASKS: BLOCKED`.
      - otherwise place it after the first top-level heading
    - Read `./subtask-creator-templates.md` and use the `Plan File Fragments`
      table shape for `## Jira Subtasks`.
-   - The table must contain one row per parsed task.
-
+   - The table must contain **exactly one row per parsed task**. `Dependencies`
+     and `Priority` columns must mirror the plan (use `None` / `Unknown` as
+     fallbacks).
    - Use Jira's current status when you have it for verified existing subtasks.
      For newly created subtasks, use `To Do` unless Jira immediately reports a
      different status.
@@ -122,7 +121,7 @@ task shape, return `SUBTASKS: BLOCKED`.
    - Re-read the updated plan file.
    - Verify:
      - exactly one `## Jira Subtasks` table exists
-     - the table has one row per parsed task
+     - the table has one row per parsed task; column order matches the template
      - every verified or newly created key has a matching `Jira Subtask: <KEY>`
        line in the task section
      - every Jira key referenced in the plan still points to the parent ticket

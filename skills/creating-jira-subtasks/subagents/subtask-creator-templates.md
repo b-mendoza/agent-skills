@@ -37,8 +37,8 @@ Use this table shape when inserting or refreshing `## Jira Subtasks`:
 ```markdown
 ## Jira Subtasks
 
-| Task | Subtask Key | Title | Status |
-| ---- | ----------- | ----- | ------ |
-| 1    | JNS-6070    | Set up database schema | To Do |
-| 2    | Not Created | Implement API layer    | Not Created |
+| Task | Subtask Key | Title | Status | Dependencies | Priority |
+| ---- | ----------- | ----- | ------ | ------------ | -------- |
+| 1    | JNS-6070    | Set up database schema | To Do       | None         | High     |
+| 2    | Not Created | Implement API layer    | Not Created | 1            | High     |
 ```
