@@ -172,8 +172,8 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42` → `ISSUE_SLUG=acme-ap
    Reason: All tasks are now traced to GitHub issues or explicit task-list rows per contract.
 
    Created/Linked Task Issues:
-   | Task | Issue ref | Title | Write model | Dependencies | Priority | Status |
-   | ---- | --------- | ----- | ----------- | ------------ | -------- | ------ |
+   | Task | Issue ref | Title | Write model | Dependencies | Priority | Outcome |
+   | ---- | --------- | ----- | ----------- | ------------ | -------- | ------- |
    | 1    | acme/app#100 | Task 1: Set up schema | linked-issue | None | High | Already linked |
    | 2    | acme/app#101 | Task 2: Implement API layer | linked-issue | 1 | High | Created now |
    | 3    | acme/app#102 | Task 3: Add integration tests | linked-issue | 2 | Medium | Created now |
