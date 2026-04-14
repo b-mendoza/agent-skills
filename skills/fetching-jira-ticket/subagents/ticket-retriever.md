@@ -68,7 +68,8 @@ If multiple tools can satisfy the same operation, choose deterministically:
 Retry only read operations that fail due to explicit rate limiting or transient
 service unavailability from the chosen Jira tools. Use at most 2 retries per
 operation, with backoff delays of 1 second and then 3 seconds. Do not retry
-bad input, auth failures, not-found responses, or schema/tool mismatches.
+bad input, auth failures, not-found on the parent ticket, or schema/tool
+mismatches.
 If rate limits persist after the retry budget is exhausted, stop and return
 `FETCH: FAIL` with `Failure category: RATE_LIMIT`.
 
