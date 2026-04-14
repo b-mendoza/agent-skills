@@ -149,7 +149,6 @@ Using only the subagent's structured summary, tell the caller:
 - Retrieved versus discovered counts for subtasks and linked issues, where the
   discovered total may be `UNKNOWN` when discovery could not be verified, or
   `N/A` when the parent ticket was not retrieved and discovery never ran
-- Attachment count (Jira platform-extension field)
 - Any warnings or fatal reason
 - Any failure category, when one exists
 - That this phase is retrieval only and does not mutate Jira
