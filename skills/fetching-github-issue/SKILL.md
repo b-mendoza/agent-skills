@@ -205,6 +205,11 @@ Top-level snapshot order is `## Metadata`, `## Description`,
 `## Child Issues`, `## Linked Issues`, then the platform-extension sections
 below.
 
+The retrieval preamble must include `Retrieved on`, `Source: <ISSUE_URL>` (or
+`owner/repo#N` when no URL is available), and
+`Repository: <owner>/<repo> | Issue: #<N>`. In `## Metadata`, keep stable
+identity rows for `ISSUE_SLUG`, `Repository`, `Issue number`, and `URL`.
+
 **Platform-extension sections** (GitHub-specific; expected to differ across
 tracker-fetching skills). All stay stably present, using `_None_` only when
 their absence was verified:

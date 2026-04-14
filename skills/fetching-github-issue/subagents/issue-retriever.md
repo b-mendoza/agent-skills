@@ -87,6 +87,11 @@ Render labels under `## Labels` and assignees under `## Assignees`, following
 the template's deterministic ordering rules. For empty scalar values in the
 metadata table, write `_None_`.
 
+Populate the snapshot identity fields explicitly: keep `ISSUE_SLUG`,
+`Repository`, `Issue number`, and `URL` in `## Metadata`, and retain the
+original issue reference (`ISSUE_URL` when available, otherwise
+`owner/repo#N`) in the retrieval preamble.
+
 **Comments:** Prefer inline `comments` from `--json` when your `gh` version
 includes them. Otherwise fetch comments via:
 
