@@ -103,12 +103,13 @@ Validation is reported separately:
 For related-item count lines in the summary:
 
 - `0/0` means the retriever verified that no items exist
-- `<retrieved>/UNKNOWN` means the retriever could not verify total discovery
-  for that section and the artifact must be treated as incomplete
+- `<retrieved>/UNKNOWN` means the parent issue was retrieved but discovery
+  for that section could not be verified; the retriever records a warning and
+  treats the run as `FETCH: PARTIAL`
 - `N/A` for `Child issues` and `Linked issues` means the parent issue was not
   retrieved and related-item discovery never ran (for example,
   `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` or
-  `0/UNKNOWN` in that case.
+  `<retrieved>/UNKNOWN` in that case.
 
 Failure categories are:
 
@@ -188,7 +189,7 @@ issue/ticket-fetching skills; the platform-slot section appears between
 | ------- | ------------- |
 | `## Metadata` | Core issue and repository context for planning and validation |
 | `## Description` | Primary source of requirements (issue body, normalized) |
-| `## Acceptance Criteria` | Definition-of-done source (dedicated extraction when present in body) |
+| `## Acceptance Criteria` | Definition-of-done source, including extracted AC when present |
 | `## Comments` | Decisions, clarifications, and implementation hints |
 | `## Retrieval Warnings` | Stable disclosure for partial related-item or API limits |
 | `## Linked Issues` | Dependency and surrounding context |
