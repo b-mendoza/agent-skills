@@ -81,10 +81,8 @@ The retriever returns a summary with these top-level fields:
 
 - `FETCH: PASS` -> retrieval and validation succeeded
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
-  related items could not be fully retrieved (including partial parent or nested
-  comment retrieval, incomplete hydration of discovered subtasks or linked
-  issues, subtask or linked-issue discovery that could not be verified, or
-  other gaps recorded under `## Retrieval Warnings`)
+  related items could not be retrieved, or related-item discovery could not be
+  verified
 - `FETCH: FAIL` -> deterministic failure such as bad input, ticket not found,
   missing auth, rate limits after retry, or no usable Jira tools
 - `FETCH: ERROR` -> unexpected tool or environment failure
@@ -100,16 +98,14 @@ Validation is reported separately:
 For related-item count lines in the summary (see the retriever output format for
 definitions of `<retrieved>` and `<found>`):
 
-- `0/0` means the retriever verified that no items exist in that bucket (for
-  example, no parent comments, or no subtasks or linked issues discovered on
-  the parent ticket)
-- `<retrieved>/UNKNOWN` for `Subtasks` or `Linked issues` means the parent
-  ticket was retrieved but discovery for that section could not be verified;
-  the retriever records a warning and treats the run as `FETCH: PARTIAL`
+- `0/0` means the retriever verified that no items exist
+- `<retrieved>/UNKNOWN` means the parent ticket was retrieved but discovery
+  for that section could not be verified; the retriever records a warning and
+  treats the run as `FETCH: PARTIAL`
 - `N/A` for `Subtasks` and `Linked issues` means the parent ticket was not
   retrieved and related-item discovery never ran (for example,
   `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` or
-  `<retrieved>/UNKNOWN` in that case
+  `<retrieved>/UNKNOWN` in that case.
 
 Failure categories are:
 
@@ -170,10 +166,8 @@ headings, such as comment entries or per-issue subsections, appear only when
 their parent section has material to render. If a top-level section has no
 data, the heading still appears and the section body is `_None_`. For
 `## Subtasks` and `## Linked Issues`, that `_None_` reflects the retrieved
-parent ticket's relationship data (verified empty), not unverified discovery;
-see `./subagents/ticket-retriever-template.md` for how this differs from the
-GitHub snapshot's section-level `_Unknown` markers. Downstream
-skills rely on stable headings rather than best-effort prose. If retrieval is
+parent ticket's relationship data (verified empty), not unverified discovery.
+Downstream skills rely on stable headings rather than best-effort prose. If retrieval is
 partial, the artifact must record that explicitly in `## Retrieval Warnings`
 and via placeholder entries for the missing subtasks or linked issues. The
 snapshot preamble and metadata must also preserve the ticket's identity fields
