@@ -93,9 +93,10 @@ utility summaries for coordination and only pass them forward when the
 downstream skill explicitly asks for them. Follow every step defined in the
 skill.
 
-The skill is expected to run a multi-subagent planning pipeline (execution
-brief, execution plan, test strategy, refactoring advice). Exact subagent names
-live in `planning-github-task`.
+The skill is expected to run a multi-subagent planning pipeline: `execution-planner`
+builds the execution plan and brief, `test-strategist` produces the test strategy,
+and `refactoring-advisor` produces the refactoring recommendation. The
+authoritative subagent contracts live in `planning-github-task`.
 
 **Validate output:** Dispatch `artifact-validator`:
 
@@ -205,8 +206,9 @@ User: "You're right, let's go async."
 
 Phase 5 (re-dispatch):
 `planning-github-task` reruns only the invalidated subagents for the decision:
-"Use async event for notifications." The planner updates the plan, tests adjust,
-and refactoring guidance refreshes to match the new approach.
+"Use async event for notifications." `execution-planner` updates the plan,
+`test-strategist` adjusts test cases, and `refactoring-advisor` refreshes the
+refactoring recommendation to match the new approach.
 
 Phase 6 (iteration 2):
 critique-analyzer: Notification decision resolved. No new concerns.
