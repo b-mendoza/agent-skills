@@ -1,6 +1,6 @@
 ---
 name: "planning-jira-tasks"
-description: 'Phase 2 of the orchestrating-jira-workflow pipeline. Reads a ticket snapshot at docs/<TICKET_KEY>.md and produces a detailed, self-contained task plan at docs/<TICKET_KEY>-tasks.md through a three-stage subagent pipeline (plan -> prioritize -> validate). Invoked by the orchestrating-jira-workflow skill, not intended for standalone use. This skill orchestrates the pipeline, preserves planning artifacts for resume and critique, and never does planning work itself.'
+description: 'Phase 2 of the orchestrating-jira-workflow pipeline. Reads a ticket snapshot at docs/<TICKET_KEY>.md and produces a detailed, self-contained task plan at docs/<TICKET_KEY>-tasks.md through a three-stage subagent pipeline (plan → prioritize → validate). Invoked by the orchestrating-jira-workflow skill, not intended for standalone use. This skill orchestrates the pipeline, preserves planning artifacts for resume and critique, and never does planning work itself.'
 ---
 
 # Planning Jira Tasks
@@ -162,16 +162,16 @@ recovery map when deciding which stage to dispatch or retry next.
 | Phase / gate    | Dispatch                              | Required output                         | On failure |
 | --------------- | ------------------------------------- | --------------------------------------- | ---------- |
 | `preflight`     | `stage-validator`                     | Ticket snapshot is present and complete | Stop with `Failure category: PREFLIGHT` |
-| Stage 1         | `task-planner` -> `stage-validator`   | `docs/<KEY>-stage-1-detailed.md` passes Stage 1 checks | Retry Stage 1 only, then re-run Stage 1 gate |
-| Stage 2         | `dependency-prioritizer` -> `stage-validator` | `docs/<KEY>-stage-2-prioritized.md` passes Stage 2 checks | Retry Stage 2 only, then re-run Stage 2 gate |
-| Stage 3         | `task-validator` -> `stage-validator` | `docs/<KEY>-tasks.md` passes Stage 3 checks | Retry Stage 3 only, then re-run Stage 3 gate |
+| Stage 1         | `task-planner` → `stage-validator`    | `docs/<KEY>-stage-1-detailed.md` passes Stage 1 checks | Retry Stage 1 only, then re-run Stage 1 gate |
+| Stage 2         | `dependency-prioritizer` → `stage-validator` | `docs/<KEY>-stage-2-prioritized.md` passes Stage 2 checks | Retry Stage 2 only, then re-run Stage 2 gate |
+| Stage 3         | `task-validator` → `stage-validator`  | `docs/<KEY>-tasks.md` passes Stage 3 checks | Retry Stage 3 only, then re-run Stage 3 gate |
 | `postpipeline`  | `stage-validator`                     | Final downstream contract is intact     | Re-dispatch Stage 3, then re-run Stage 3 and post-pipeline gates |
 
 ## Execution Paths
 
 Use one of these paths:
 
-- **Normal path:** `preflight -> stage 1 -> stage 2 -> stage 3 -> postpipeline`
+- **Normal path:** `preflight → stage 1 → stage 2 → stage 3 → postpipeline`
 - **Re-plan path:** read `./references/re-plan-cycle.md`, identify the earliest
   affected stage, resume from that stage using the preserved on-disk artifacts,
   then rerun every downstream stage and finish with `postpipeline`
