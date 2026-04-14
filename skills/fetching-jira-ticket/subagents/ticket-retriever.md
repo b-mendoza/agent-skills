@@ -157,6 +157,14 @@ context:
 
 Fetch every page when the environment paginates comments or search results.
 
+Use `0/0` for `Subtasks` or `Linked issues` only when the parent ticket
+positively reports no such relationships, or when the required search or
+query tool returns a verified empty result. If the parent's relationship
+fields and any required search or query tool cannot be read to verify
+discovery, record a warning under `## Retrieval Warnings` naming the affected
+section and the reason, set the corresponding count in the summary to
+`<retrieved>/UNKNOWN`, and treat the run as `FETCH: PARTIAL`.
+
 Render repeated sections in deterministic order:
 
 - Subtasks by ticket key ascending
@@ -222,6 +230,10 @@ After writing the file, re-read it and verify:
 - The number of subtask and linked-issue entries in the file matches the number
   discovered on the parent ticket, with full entries for retrieved items and
   `Not retrieved` placeholders for any unretrieved ones
+- If subtask or linked-issue discovery could not be verified after the parent
+  ticket was retrieved, the same warning appears under `## Retrieval Warnings`
+  and the summary reports `<retrieved>/UNKNOWN` for the affected section
+  instead of `0/0`
 - Within Jira-authored description and comment body content, useful formatting
   is preserved and, outside fenced code blocks, no rendered body line begins
   with Markdown heading markers such as `# `, `## `, or `### `
@@ -262,8 +274,8 @@ File written: <docs/<TICKET_KEY>.md | None>
 Ticket: <TICKET_KEY>: <Summary/Title | Unknown>
 Status: <status | Unknown> | Type: <type | Unknown>
 Comments: <retrieved>/<found>
-Subtasks: <retrieved>/<found>
-Linked issues: <retrieved>/<found>
+Subtasks: <retrieved>/<found | UNKNOWN>
+Linked issues: <retrieved>/<found | UNKNOWN>
 Attachments: <N>
 Warnings: <None | semicolon-separated warnings>
 Reason: <None | fatal reason>
@@ -273,10 +285,13 @@ For each `<retrieved>/<found>` line, `<found>` is the discovered total for that
 section and `<retrieved>` is how many entries were fully hydrated into the
 snapshot. For `Comments`, counts refer to parent comments. For `Subtasks` and
 `Linked issues`, counts refer to related item identities discovered on the
-parent ticket. When discovery yields zero, use `0/0`. When the parent
-ticket was not retrieved (for example, `Failure category: NOT_FOUND` before
-any snapshot), discovery for related items did not run; use `N/A` for
-`Subtasks` and `Linked issues` instead of `0/0`.
+parent ticket. When discovery yields a verified zero, use `0/0`. When the
+parent ticket was retrieved but discovery for `Subtasks` or `Linked issues`
+could not be verified, use `<retrieved>/UNKNOWN`, record a warning, and
+treat the run as `FETCH: PARTIAL`. When the parent ticket was not retrieved
+(for example, `Failure category: NOT_FOUND` before any snapshot), discovery
+for related items did not run; use `N/A` for `Subtasks` and `Linked issues`
+instead of `0/0` or `<retrieved>/UNKNOWN`.
 
 <example>
 FETCH: PASS
@@ -330,7 +345,7 @@ Your job is to:
 - Read Jira data through the currently available Jira-capable tools
 - Preserve useful formatting in descriptions and comments
 - Write one stable Markdown snapshot to `docs/<TICKET_KEY>.md`
-- Make missing data explicit instead of silently dropping it
+- Make missing or unverified data explicit instead of silently dropping it
 - Read from Jira only; never edit, comment on, transition, or otherwise
   modify the ticket or its related items
 - Return only the structured summary defined above

@@ -83,7 +83,8 @@ The retriever returns a summary with these top-level fields:
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
   related items could not be fully retrieved (including partial parent or nested
   comment retrieval, incomplete hydration of discovered subtasks or linked
-  issues, or other gaps recorded under `## Retrieval Warnings`)
+  issues, subtask or linked-issue discovery that could not be verified, or
+  other gaps recorded under `## Retrieval Warnings`)
 - `FETCH: FAIL` -> deterministic failure such as bad input, ticket not found,
   missing auth, rate limits after retry, or no usable Jira tools
 - `FETCH: ERROR` -> unexpected tool or environment failure
@@ -102,10 +103,13 @@ definitions of `<retrieved>` and `<found>`):
 - `0/0` means the retriever verified that no items exist in that bucket (for
   example, no parent comments, or no subtasks or linked issues discovered on
   the parent ticket)
+- `<retrieved>/UNKNOWN` for `Subtasks` or `Linked issues` means the parent
+  ticket was retrieved but discovery for that section could not be verified;
+  the retriever records a warning and treats the run as `FETCH: PARTIAL`
 - `N/A` for `Subtasks` and `Linked issues` means the parent ticket was not
   retrieved and related-item discovery never ran (for example,
-  `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` in that
-  case
+  `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` or
+  `<retrieved>/UNKNOWN` in that case
 
 Failure categories are:
 
@@ -142,9 +146,9 @@ Using only the subagent's structured summary, tell the caller:
 - The ticket identity (`Ticket: <TICKET_KEY>: <Summary>`)
 - The ticket state (`Status: ... | Type: ...`)
 - Retrieved versus discovered counts for comments
-- Retrieved versus discovered counts for subtasks and linked issues, using `N/A`
-  when the parent ticket was not retrieved and discovery for those lines never
-  ran
+- Retrieved versus discovered counts for subtasks and linked issues, where the
+  discovered total may be `UNKNOWN` when discovery could not be verified, or
+  `N/A` when the parent ticket was not retrieved and discovery never ran
 - Attachment count (Jira platform-extension field)
 - Any warnings or fatal reason
 - Any failure category, when one exists
