@@ -48,7 +48,7 @@ Read a subagent definition only when you are about to dispatch it.
 This skill is intentionally narrow. It coordinates retrieval, not Jira
 mutation, planning, or execution. Keep only:
 
-- The ticket identity or URL needed for the next phase
+- `TICKET_KEY` and the URL needed for the next phase
 - The file path written
 - Counts and warnings from the retriever summary
 - Any fatal reason that requires user action
