@@ -20,9 +20,11 @@ postconditions -> update progress -> gate check**
 
 1. Announce Phase 1.
 2. There is no artifact precondition for a fresh start.
-3. Read the phase skill and invoke it with `ISSUE_URL` (and derived
-   `OWNER`, `REPO`, `ISSUE_NUMBER`, `ISSUE_SLUG` as the skill defines). Prefer
-   `gh` as the primary transport unless the skill documents a different path.
+3. Read the phase skill and invoke it with `ISSUE_URL` as the preferred input
+   (or the triple `OWNER` / `REPO` / `ISSUE_NUMBER` as a fallback when a URL is
+   not available). Do not pass `ISSUE_SLUG` as an input — `fetching-github-issue`
+   derives it internally and returns it on the summary line `File written: docs/<ISSUE_SLUG>.md`.
+   Prefer `gh` as the primary transport unless the skill documents a different path.
 4. Dispatch `artifact-validator` with:
 
    ```

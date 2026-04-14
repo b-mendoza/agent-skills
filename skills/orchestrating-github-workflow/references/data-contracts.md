@@ -32,9 +32,24 @@ issues when supported, then linked issues, then task-list references. Validation
 must match whichever model the skill recorded, while still requiring a
 workflow-level table plus per-task inline references for resumability.
 
+**Phase 1 snapshot conventions (consumed by Phase 2+):**
+
+- **Timestamp normalization.** Timestamps that carry a time are normalized to
+  `YYYY-MM-DD HH:MM UTC`; date-only values are preserved as `YYYY-MM-DD`.
+  Downstream phases read the snapshot under that format.
+- **`_Unknown. <reason>_` vs. `_None_`.** A `_Unknown. <reason>_` marker means
+  the retriever could not verify presence or absence of the item (for example
+  because a linked item was inaccessible); a `_None_` marker means absence was
+  verified. They are not interchangeable. Downstream consumers must treat
+  `_Unknown_` as missing information rather than a confirmed empty state.
+- **`FETCH: PARTIAL` with `Validation: PASS` is a success.** The parent
+  snapshot is valid, but some related items or comments could not be retrieved
+  and are recorded under `## Retrieval Warnings`. The Phase 1 postcondition
+  validator should still run and pass.
+
 | Phase | Direction     | Files to check           | Expected checks                                                |
 | ----- | ------------- | ------------------------ | -------------------------------------------------------------- |
-| 1     | postcondition | `docs/<ISSUE_SLUG>.md`   | File exists and contains the required Phase 1 snapshot headings defined by `fetching-github-issue` (stable even when sections are empty), including at minimum: `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Child Issues`, `## Linked Issues`, `## Labels`, `## Assignees` — plus any additional headings that skill declares stable (for example `## Milestone`, `## Projects`, `## Attachments`) |
+| 1     | postcondition | `docs/<ISSUE_SLUG>.md`   | File exists and contains the Phase 1 snapshot headings defined by `fetching-github-issue` (stable even when sections are empty). At minimum the locked-core headings: `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, and the locked platform-slot heading `## Child Issues`. Plus the GitHub platform-extension headings that skill declares stable: `## Linked Issues`, `## Labels`, `## Assignees`, `## Milestone`, `## Projects`, `## Attachments` |
 | 2     | precondition  | `docs/<ISSUE_SLUG>.md`   | Same as Phase 1 postcondition                                  |
 | 2     | postcondition | `docs/<ISSUE_SLUG>-tasks.md` + planning intermediates | `docs/<ISSUE_SLUG>-stage-1-detailed.md` and `docs/<ISSUE_SLUG>-stage-2-prioritized.md` exist; `docs/<ISSUE_SLUG>-tasks.md` exists; final plan contains `## Issue Summary`, `## Problem Framing`, `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`, `## Tasks`, `## Execution Order Summary`, `## Dependency Graph`, and `## Validation Report`; plan has ≥2 numbered task entries with the required task subsections from `planning-github-issue-tasks` |
 | 3     | precondition  | `docs/<ISSUE_SLUG>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
@@ -98,6 +113,27 @@ For Phases 3 and 6, validation covers only the artifact boundary. The
 clarification skill's final summary still carries `RE_PLAN_NEEDED` and
 `BLOCKERS_PRESENT`, and the orchestrator must honor those flags separately at
 the gate step.
+
+### Phase 1 retriever summary (two-field contract)
+
+`fetching-github-issue` returns a structured summary with three fields — the
+orchestrator must read them together, not collapse them into a single status:
+
+```
+FETCH: <PASS | PARTIAL | FAIL | ERROR>
+Validation: <PASS | FAIL | NOT_RUN>
+Failure category: <NONE | BAD_INPUT | NOT_FOUND | AUTH | TOOLS_MISSING | RATE_LIMIT | UNEXPECTED>
+File written: docs/<ISSUE_SLUG>.md | None
+```
+
+How to interpret the pair:
+
+| FETCH     | Validation | Orchestrator action                                                                                         |
+| --------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
+| `PASS`    | `PASS`     | Success. Proceed to the Phase 1 postcondition validator on the written file.                                |
+| `PARTIAL` | `PASS`     | Success with warnings. Proceed to the Phase 1 postcondition validator; do not treat as failure.             |
+| `FAIL`    | `NOT_RUN`  | Retrieval failed before the artifact was written. Do not run the postcondition validator; route on `Failure category` per `./error-handling.md`. |
+| `ERROR`   | `FAIL`     | Artifact was written but violates the template. Route on `Failure category: UNEXPECTED` per `./error-handling.md`. |
 
 `progress-tracker` dispatches use the same `ISSUE_SLUG` key for workflow identity.
 When reading or updating per-task state, include `TASK_NUMBER` as the playbook
