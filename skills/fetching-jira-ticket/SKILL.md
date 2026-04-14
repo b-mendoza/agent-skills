@@ -48,7 +48,7 @@ Read a subagent definition only when you are about to dispatch it.
 This skill is intentionally narrow. It coordinates retrieval, not Jira
 mutation, planning, or execution. Keep only:
 
-- The ticket key or URL needed for the next phase
+- The ticket identity or URL needed for the next phase
 - The file path written
 - Counts and warnings from the retriever summary
 - Any fatal reason that requires user action
@@ -81,7 +81,9 @@ The retriever returns a summary with these top-level fields:
 
 - `FETCH: PASS` -> retrieval and validation succeeded
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
-  related items could not be retrieved
+  related items could not be fully retrieved (including partial parent or nested
+  comment retrieval, incomplete hydration of discovered subtasks or linked
+  issues, or other gaps recorded under `## Retrieval Warnings`)
 - `FETCH: FAIL` -> deterministic failure such as bad input, ticket not found,
   missing auth, rate limits after retry, or no usable Jira tools
 - `FETCH: ERROR` -> unexpected tool or environment failure
@@ -93,6 +95,17 @@ Validation is reported separately:
 - `Validation: PASS` -> the written file satisfies the template contract
 - `Validation: FAIL` -> the file was written but still violates the contract
 - `Validation: NOT_RUN` -> retrieval failed before validation could happen
+
+For related-item count lines in the summary (see the retriever output format for
+definitions of `<retrieved>` and `<found>`):
+
+- `0/0` means the retriever verified that no items exist in that bucket (for
+  example, no parent comments, or no subtasks or linked issues discovered on
+  the parent ticket)
+- `N/A` for `Subtasks` and `Linked issues` means the parent ticket was not
+  retrieved and related-item discovery never ran (for example,
+  `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` in that
+  case
 
 Failure categories are:
 
@@ -129,7 +142,9 @@ Using only the subagent's structured summary, tell the caller:
 - The ticket identity (`Ticket: <TICKET_KEY>: <Summary>`)
 - The ticket state (`Status: ... | Type: ...`)
 - Retrieved versus discovered counts for comments
-- Retrieved versus discovered counts for subtasks and linked issues
+- Retrieved versus discovered counts for subtasks and linked issues, using `N/A`
+  when the parent ticket was not retrieved and discovery for those lines never
+  ran
 - Attachment count (Jira platform-extension field)
 - Any warnings or fatal reason
 - Any failure category, when one exists
@@ -150,10 +165,17 @@ The document must contain every top-level heading from the fenced Markdown
 snapshot shape in `./subagents/ticket-retriever-template.md`. Repeated nested
 headings, such as comment entries or per-issue subsections, appear only when
 their parent section has material to render. If a top-level section has no
-data, the heading still appears and the section body is `_None_`. Downstream
+data, the heading still appears and the section body is `_None_`. For
+`## Subtasks` and `## Linked Issues`, that `_None_` reflects the retrieved
+parent ticket's relationship data (verified empty), not unverified discovery;
+see `./subagents/ticket-retriever-template.md` for how this differs from the
+GitHub snapshot's section-level `_Unknown` markers. Downstream
 skills rely on stable headings rather than best-effort prose. If retrieval is
 partial, the artifact must record that explicitly in `## Retrieval Warnings`
-and via placeholder entries for the missing subtasks or linked issues.
+and via placeholder entries for the missing subtasks or linked issues. The
+snapshot preamble and metadata must also preserve the ticket's identity fields
+and source URL so downstream phases can reason about the artifact without
+re-deriving them.
 
 Treat `./subagents/ticket-retriever-template.md` as the authoritative snapshot
 shape bundled with this skill; no external spec file is required. The section
@@ -182,6 +204,11 @@ skill uses `## Child Issues`):
 Top-level snapshot order is `## Metadata`, `## Description`,
 `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`,
 `## Subtasks`, `## Linked Issues`, then the platform-extension sections below.
+
+The retrieval preamble must include `Retrieved on`, `Source: <JIRA_URL>`, and
+`Workspace: <workspace> | Project: <project> | Ticket: <TICKET_KEY>`. In
+`## Metadata`, keep stable identity rows for `Ticket Key`, `Workspace`,
+`Project`, and `URL`.
 
 **Platform-extension sections** (Jira-specific; expected to differ across
 tracker-fetching skills). All stay stably present with `_None_` when empty:

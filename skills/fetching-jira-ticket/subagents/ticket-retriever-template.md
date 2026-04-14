@@ -19,6 +19,18 @@ Use tables only when there is at least one row to show. If there is no data
 for `## Attachments` or `## Custom Fields`, write `_None_` under the heading
 instead of an empty table.
 
+**GitHub comparison (`_Unknown` markers):** The paired GitHub issue template
+uses `_Unknown. ..._` under `## Child Issues` or `## Linked Issues` when
+discovery cannot be verified (for example, a missing API capability). This
+Jira template does not use an equivalent section-level `_Unknown` marker for
+those headings on purpose: subtask keys and linked-issue identities are
+expected to come from the **retrieved parent ticket's** relationship fields (or
+reads keyed off that parent). When the parent is loaded, an empty
+`## Subtasks` or `## Linked Issues` means the parent reported no such
+relationships—write `_None_`. When a known key cannot be hydrated, use the
+missing-item placeholder shapes under **Conditional Rules**; partial runs are
+`FETCH: PARTIAL` with warnings, not an unverified empty section.
+
 Normalize timestamps with time to `YYYY-MM-DD HH:MM UTC`. Preserve date-only
 values, such as Jira due dates without a time component, as `YYYY-MM-DD`.
 
@@ -27,6 +39,7 @@ values, such as Jira due dates without a time component, as `YYYY-MM-DD`.
 
 > Retrieved on: <YYYY-MM-DD HH:MM UTC>
 > Source: <JIRA_URL>
+> Workspace: <workspace> | Project: <project> | Ticket: <TICKET_KEY>
 
 ## Metadata
 
@@ -34,6 +47,7 @@ values, such as Jira due dates without a time component, as `YYYY-MM-DD`.
 | --------------- | ----- |
 | Ticket Key      | …     |
 | Workspace       | …     |
+| Project         | …     |
 | Status          | …     |
 | Resolution      | …     |
 | Type            | …     |
@@ -49,6 +63,7 @@ values, such as Jira due dates without a time component, as `YYYY-MM-DD`.
 | Created         | …     |
 | Updated         | …     |
 | Due Date        | …     |
+| URL             | …     |
 
 ## Description
 

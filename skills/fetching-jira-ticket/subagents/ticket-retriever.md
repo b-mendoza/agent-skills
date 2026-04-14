@@ -133,6 +133,10 @@ strings sorted alphabetically by display text. If a custom-field value remains
 structured after flattening, serialize it as compact JSON with object keys
 sorted alphabetically.
 
+Populate the snapshot identity fields explicitly: keep `Ticket Key`,
+`Workspace`, `Project`, and `URL` in `## Metadata`, and retain the original
+`JIRA_URL` in the retrieval preamble.
+
 ### 4. Retrieve subtasks and linked issues
 
 Determine how many subtasks and linked issues exist on the parent ticket.
@@ -177,7 +181,7 @@ For each unretrieved subtask or linked issue:
 > validate -> repair -> re-check loop targeted to the missing or mismatched
 > portions before you report the final summary.
 
-Read the bundled `./ticket-retriever-template.md` and use the fenced Markdown
+Read the bundled `./subagents/ticket-retriever-template.md` and use the fenced Markdown
 snapshot shape in that file as the literal output contract. Write the final
 snapshot to:
 
@@ -196,7 +200,9 @@ must list the warnings and each missing related item must also appear as a
 placeholder entry in its own section. For empty scalar values in the metadata
 table, write `_None_` in the value column. Normalize timestamps with time to
 `YYYY-MM-DD HH:MM UTC`, and preserve date-only values as `YYYY-MM-DD`. Do not
-download attachment binaries.
+download attachment binaries. The retrieval preamble must include
+`Retrieved on`, `Source: <JIRA_URL>`, and
+`Workspace: <workspace> | Project: <project> | Ticket: <TICKET_KEY>`.
 
 ### 6. Post-write validation gate: validate, repair, and re-check
 
@@ -208,7 +214,8 @@ After writing the file, re-read it and verify:
 - `## Description` is present and explicitly represented with either the source
   description body or `_None_`
 - The title line matches `# <TICKET_KEY>: <Summary>`
-- The retrieval preamble includes both `Retrieved on` and `Source`
+- The retrieval preamble includes `Retrieved on`, `Source`, and
+  `Workspace: <workspace> | Project: <project> | Ticket: <TICKET_KEY>`
 - The metadata table includes every required row in template order, and empty
   scalar values are written as `_None_`
 - Parent comment count matches the retrieved data
@@ -266,7 +273,10 @@ For each `<retrieved>/<found>` line, `<found>` is the discovered total for that
 section and `<retrieved>` is how many entries were fully hydrated into the
 snapshot. For `Comments`, counts refer to parent comments. For `Subtasks` and
 `Linked issues`, counts refer to related item identities discovered on the
-parent ticket. When discovery yields zero, use `0/0`.
+parent ticket. When discovery yields zero, use `0/0`. When the parent
+ticket was not retrieved (for example, `Failure category: NOT_FOUND` before
+any snapshot), discovery for related items did not run; use `N/A` for
+`Subtasks` and `Linked issues` instead of `0/0`.
 
 <example>
 FETCH: PASS
@@ -306,8 +316,8 @@ File written: None
 Ticket: PROJ-892: Unknown
 Status: Unknown | Type: Unknown
 Comments: 0/0
-Subtasks: 0/0
-Linked issues: 0/0
+Subtasks: N/A
+Linked issues: N/A
 Attachments: 0
 Warnings: None
 Reason: Jira ticket PROJ-892 was not found (404)
