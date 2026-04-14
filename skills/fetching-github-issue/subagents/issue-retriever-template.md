@@ -11,9 +11,11 @@ do not copy those explanatory notes into the final snapshot.
 Every top-level heading in the Markdown block is always required. Repeated
 nested headings are example shapes for items that actually exist.
 
-If a section has no data, keep the top-level heading and write `_None_`
-beneath it instead of omitting the section. For empty scalar values in
-`## Metadata`, write `_None_` in the `Value` column.
+If a section has no data and that absence was verified, keep the top-level
+heading and write `_None_` beneath it instead of omitting the section. If the
+retriever could not verify whether a section is empty because discovery or
+capability was unavailable, use an `_Unknown. ..._` marker instead. For empty
+scalar values in `## Metadata`, write `_None_` in the `Value` column.
 
 Use tables only when there is at least one row to show. If there is no data
 for `## Labels` or `## Assignees`, write `_None_` under the heading instead of
@@ -115,7 +117,7 @@ values as `YYYY-MM-DD`.
 
 ## Projects
 
-<table, bullet list of project membership, or _None_>
+<table, bullet list of project membership, _Unknown. Project membership not determined: <reason>_, or _None_ when absence was verified>
 
 ## Attachments
 
@@ -132,10 +134,18 @@ _None_ or a short bullet list of explicitly linked binary or upload URLs found i
   treat the run as `FETCH: PARTIAL`.
 - If retrieval completed without warnings, write `_None_` under
   `## Retrieval Warnings`.
-- If there are no child issues discovered, write `_None_` under
-  `## Child Issues`.
-- If there are no linked issues discovered, write `_None_` under
-  `## Linked Issues`.
+- If there are no child issues discovered and that absence was verified, write
+  `_None_` under `## Child Issues`.
+- If child-issue discovery could not be verified, write
+  `_Unknown. Child issue discovery unavailable: <reason>_` under
+  `## Child Issues`, record the same warning under `## Retrieval Warnings`,
+  and treat the run as `FETCH: PARTIAL`.
+- If there are no linked issues discovered and that absence was verified,
+  write `_None_` under `## Linked Issues`.
+- If linked-issue discovery could not be verified, write
+  `_Unknown. Linked issue discovery unavailable: <reason>_` under
+  `## Linked Issues`, record the same warning under `## Retrieval Warnings`,
+  and treat the run as `FETCH: PARTIAL`.
 - If a child or linked issue has no comments, write `_None_` under its
   `#### Comments` heading.
 - If a child or linked issue has partial comment retrieval after the item is
@@ -148,6 +158,11 @@ _None_ or a short bullet list of explicitly linked binary or upload URLs found i
 - If related-item retrieval is partial, record each warning under
   `## Retrieval Warnings` and include a placeholder entry for every unretrieved
   discovered key in its respective section.
+- If project membership cannot be determined because the required capability is
+  unavailable or discovery otherwise cannot be completed, write
+  `_Unknown. Project membership not determined: <reason>_` under `## Projects`,
+  record the same warning under `## Retrieval Warnings`, and treat the run as
+  `FETCH: PARTIAL` rather than collapsing that state to `_None_`.
 - In issue and comment bodies, preserve useful formatting such as lists, links,
   tables, and code fences. Outside fenced code blocks, rewrite Markdown heading
   lines as bold labels so body content cannot collide with reserved snapshot

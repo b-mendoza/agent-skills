@@ -83,9 +83,9 @@ lines as bold labels so body content cannot collide with reserved snapshot
 headings. Example: a line that reads `## Steps to reproduce` in the issue
 body becomes `**Steps to reproduce**` in the snapshot.
 
-Serialize multi-value metadata (labels, assignees) as comma-separated strings
-sorted alphabetically by display text when rendering them inside
-`## Metadata`. For empty scalar values in the metadata table, write `_None_`.
+Render labels under `## Labels` and assignees under `## Assignees`, following
+the template's deterministic ordering rules. For empty scalar values in the
+metadata table, write `_None_`.
 
 **Comments:** Prefer inline `comments` from `--json` when your `gh` version
 includes them. Otherwise fetch comments via:
@@ -111,9 +111,9 @@ date under `## Milestone`; else `_None_`.
 
 **Projects:** If you can retrieve project membership with a small number of
 `gh api` / GraphQL calls without interactive setup, summarize under
-`## Projects`. If not available, write `_None_` and add a single-line warning
-under `## Retrieval Warnings` only when project data is likely material and
-missing.
+`## Projects`. If project membership cannot be verified, write the template's
+unknown marker instead of `_None_`, add a single-line warning under
+`## Retrieval Warnings`, and treat the run as `FETCH: PARTIAL`.
 
 **Attachments:** Default `## Attachments` to `_None_`. Optionally list explicit
 URLs in bodies that clearly point to uploaded or binary assets.
@@ -131,8 +131,11 @@ template’s partial-comment rules and return `FETCH: PARTIAL`.
     supported;
   - or GraphQL fields for sub-issues / tracked issues when documented for your
     host.
-  If no API exposes child issues, treat **discovered** count as `0` and use
-  `_None_` under `## Child Issues` without calling it a failure.
+  Use `0/0` only when a supported mechanism positively verifies that there are
+  no child issues. If no supported mechanism can verify child-issue discovery,
+  write the template's child-issue unknown marker, add a warning under
+  `## Retrieval Warnings`, set the child-issue count to `0/UNKNOWN`, and treat
+  the run as `FETCH: PARTIAL`.
 
 - **Linked issues:** Prefer timeline cross-reference events:
 
@@ -145,6 +148,12 @@ Parse items that introduce a relationship to another issue (for example
 cross-references, connected events). Build a deduplicated list of
 `owner/repo#number`. For each linked issue, fetch enough detail with
 `gh issue view <n> --repo owner/repo --json ...` to fill the template.
+
+Use `0/0` only when a supported mechanism positively verifies that there are no
+linked issues. If no supported mechanism can verify linked-issue discovery,
+write the template's linked-issue unknown marker, add a warning under
+`## Retrieval Warnings`, set the linked-issue count to `0/UNKNOWN`, and treat
+the run as `FETCH: PARTIAL`.
 
 When an individual child or linked issue cannot be hydrated after discovery,
 continue with others, add a `## Retrieval Warnings` entry, and add a placeholder
@@ -163,7 +172,7 @@ Render related sections in deterministic order (template rules).
 > validate -> repair -> re-check loop targeted to the missing or mismatched
 > portions before you report the final summary.
 
-Read the bundled `./issue-retriever-template.md` and use the fenced Markdown
+Read the bundled `./subagents/issue-retriever-template.md` and use the fenced Markdown
 snapshot shape as the literal output contract. Write the final snapshot to:
 
 ```text
@@ -182,7 +191,9 @@ Normalize timestamps with time to `YYYY-MM-DD HH:MM UTC`, and preserve
 date-only values as `YYYY-MM-DD`. The retrieval preamble at the top of the
 file must match the template and include `Retrieved on` (using the normalized
 timestamp), `Source` (the `ISSUE_URL` or `owner/repo#N` reference), and
-`Repository: <owner>/<repo> | Issue: #<N>`.
+`Repository: <owner>/<repo> | Issue: #<N>`. Use `_None_` only for sections
+whose emptiness was verified. If child-issue, linked-issue, or project
+discovery could not be verified, use the template's unknown marker instead.
 
 ### 6. Post-write validation gate: validate, repair, and re-check
 
@@ -201,7 +212,8 @@ After writing the file, re-read it and verify:
 - Parent comment count in the file matches the retrieved data
 - The number of child-issue and linked-issue entries in the file matches the
   number discovered on the parent issue, with full entries for retrieved items
-  and `Not retrieved` placeholders for any unretrieved ones
+  and `Not retrieved` placeholders for any unretrieved ones; or the section
+  uses the template's unknown marker when discovery could not be verified
 - Within issue and comment body content, useful formatting is preserved and,
   outside fenced code blocks, no rendered body line begins with Markdown
   heading markers such as `# `, `## `, or `### `
@@ -216,9 +228,18 @@ After writing the file, re-read it and verify:
   affected `## Comments` or `#### Comments` section
 - Each unretrieved child or linked issue has both a warning entry and a
   placeholder entry in the correct section, rather than being silently dropped
-- `## Labels`, `## Assignees`, `## Milestone`, `## Projects`, and
-  `## Attachments` are either `_None_` or valid content matching the template's
-  rules
+- If child-issue, linked-issue, or project discovery could not be verified
+  after the parent issue was retrieved, the affected section uses the
+  template's unknown marker, the same warning appears under
+  `## Retrieval Warnings`, and the summary reports `<retrieved>/UNKNOWN`
+  instead of `0/0`
+- On `FETCH: FAIL` when the parent issue was never retrieved, the summary
+  uses `N/A` for `Child issues` and `Linked issues` (discovery did not run),
+  not `0/UNKNOWN`
+- `## Labels`, `## Assignees`, `## Milestone`, and `## Attachments` are either
+  `_None_` or valid content matching the template's rules
+- `## Projects` is either `_None_`, the template's unknown marker, or valid
+  content matching the template's rules
 - Deterministic ordering rules are satisfied
 
 If validation fails, fix only the missing or mismatched portions, rewrite the
@@ -242,8 +263,8 @@ File written: <docs/<ISSUE_SLUG>.md | None>
 Issue: <owner>/<repo>#<N>: <Title | Unknown>
 State: <OPEN | CLOSED | Unknown>
 Comments: <retrieved>/<found>
-Child issues: <retrieved>/<found>
-Linked issues: <retrieved>/<found>
+Child issues: <retrieved>/<found | UNKNOWN>
+Linked issues: <retrieved>/<found | UNKNOWN>
 Warnings: <None | semicolon-separated warnings>
 Reason: <None | fatal reason>
 ```
@@ -252,7 +273,16 @@ For each `<retrieved>/<found>` line, `<found>` is the discovered total for that
 section and `<retrieved>` is how many entries were fully hydrated into the
 snapshot. For `Comments`, counts refer to parent comments. For `Child issues`
 and `Linked issues`, counts refer to related item identities discovered on the
-parent issue (or timeline). When discovery yields zero, use `0/0`.
+parent issue (or timeline). Use `0/0` only when the retriever positively
+verified that no items exist. When the parent issue was not retrieved (for
+example, `Failure category: NOT_FOUND` before any snapshot), discovery for
+related items did not run; use `N/A` for `Child issues` and `Linked issues`
+instead of `0/0` or `0/UNKNOWN`. If discovery could not be verified for a
+related section after the parent was retrieved, use `<retrieved>/UNKNOWN`,
+record a warning, and treat the run as `FETCH: PARTIAL`. Apply the same
+explicit-partial rule when `## Projects` cannot be verified because the
+required GitHub capability is unavailable: render the template's unknown
+marker, record the warning, and do not collapse that state to `_None_`.
 
 <example>
 FETCH: PASS
@@ -276,9 +306,9 @@ File written: docs/acme-app-7001.md
 Issue: acme/app#7001: Audit webhook retries
 State: OPEN
 Comments: 2/2
-Child issues: 1/2
-Linked issues: 0/0
-Warnings: Child issue acme/app#7010 returned 404 via gh api
+Child issues: 0/UNKNOWN
+Linked issues: 1/1
+Warnings: Child issue discovery unavailable: sub_issues endpoint unsupported on this host
 Reason: None
 </example>
 
@@ -290,8 +320,8 @@ File written: None
 Issue: acme/app#892: Unknown
 State: Unknown
 Comments: 0/0
-Child issues: 0/0
-Linked issues: 0/0
+Child issues: N/A
+Linked issues: N/A
 Warnings: None
 Reason: GitHub issue acme/app#892 was not found (404)
 </example>
@@ -303,7 +333,7 @@ Your job is to:
 - Read GitHub data through `gh` and `gh api`
 - Preserve useful formatting in descriptions and comments
 - Write one stable Markdown snapshot to `docs/<ISSUE_SLUG>.md`
-- Make missing data explicit instead of silently dropping it
+- Make missing or unverified data explicit instead of silently dropping it
 - Read from GitHub only; never close, edit, comment on, or otherwise modify
   the issue or its related items
 - Return only the structured summary defined above
@@ -323,7 +353,9 @@ Use these categories so the calling skill can make a clean decision:
 - `FETCH: FAIL` with `Failure category: RATE_LIMIT` when rate limiting persists
   after the retry budget is exhausted
 - `FETCH: PARTIAL` when the main artifact is valid but some related items or
-  comments could not be retrieved; use `Failure category: NONE`
+  comments could not be retrieved, related-item discovery could not be
+  verified, or `## Projects` membership could not be determined because the
+  required capability was unavailable; use `Failure category: NONE`
 - `FETCH: ERROR` with `Failure category: UNEXPECTED` for crashes, schema/tool
   failures, validation failures after the repair loop, or environment issues
   outside the expected categories

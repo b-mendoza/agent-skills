@@ -85,7 +85,9 @@ The retriever returns a summary with these top-level fields:
 
 - `FETCH: PASS` -> retrieval and validation succeeded
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
-  related items could not be retrieved
+  related items could not be retrieved, related-item discovery could not be
+  verified, or `## Projects` membership could not be determined because the
+  required capability was unavailable
 - `FETCH: FAIL` -> deterministic failure such as bad input, issue not found,
   missing auth, rate limits after retry, or unusable `gh` environment
 - `FETCH: ERROR` -> unexpected tool or environment failure
@@ -97,6 +99,16 @@ Validation is reported separately:
 - `Validation: PASS` -> the written file satisfies the template contract
 - `Validation: FAIL` -> the file was written but still violates the contract
 - `Validation: NOT_RUN` -> retrieval failed before validation could happen
+
+For related-item count lines in the summary:
+
+- `0/0` means the retriever verified that no items exist
+- `<retrieved>/UNKNOWN` means the retriever could not verify total discovery
+  for that section and the artifact must be treated as incomplete
+- `N/A` for `Child issues` and `Linked issues` means the parent issue was not
+  retrieved and related-item discovery never ran (for example,
+  `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` or
+  `0/UNKNOWN` in that case.
 
 Failure categories are:
 
@@ -113,7 +125,8 @@ Handle them this way:
 
 - `FETCH: PASS` with `Validation: PASS`: report success and continue
 - `FETCH: PARTIAL` with `Validation: PASS`: report success with warnings and
-  make the incompleteness visible
+  make the incompleteness visible, including capability-unavailable
+  `## Projects` cases
 - `FETCH: FAIL`: stop and relay the failure category plus the reason
 - `FETCH: ERROR`: stop and relay the failure category plus the reason as an
   unexpected failure
@@ -133,7 +146,9 @@ Using only the subagent's structured summary, tell the caller:
 - The issue identity (`Issue: <owner>/<repo>#<N>: <Title>`)
 - The issue state (`State: OPEN | CLOSED`)
 - Retrieved versus discovered counts for comments
-- Retrieved versus discovered counts for child issues and linked issues
+- Retrieved versus discovered counts for child issues and linked issues, where
+  the discovered total may be `UNKNOWN` when discovery could not be verified,
+  or `N/A` when the parent issue was not retrieved and discovery never ran
 - Any warnings or fatal reason
 - Any failure category, when one exists
 - That this phase is retrieval only and does not mutate GitHub
@@ -152,11 +167,14 @@ Do not commit it as part of implementation history.
 The document must contain every top-level heading from the fenced Markdown
 snapshot shape in `./subagents/issue-retriever-template.md`. Repeated nested
 headings appear only when their parent section has material to render. If a
-top-level section has no data, the heading still appears and the section body is
-`_None_`. Downstream skills rely on stable headings rather than best-effort
-prose. If retrieval is partial, the artifact must record that explicitly in
+top-level section has verified empty data, the heading still appears and the
+section body is `_None_`. If the retriever could not verify whether a section
+is empty, the artifact must use the template's unknown marker instead.
+Downstream skills rely on stable headings rather than best-effort prose. If
+retrieval is partial, the artifact must record that explicitly in
 `## Retrieval Warnings` and use the template's placeholder shapes for any child
-or linked issue that could not be hydrated.
+or linked issue that could not be hydrated, or the template's unknown marker
+when a section could not be verified as empty.
 
 Treat `./subagents/issue-retriever-template.md` as the authoritative snapshot
 shape bundled with this skill; no external spec file is required. The section
@@ -188,14 +206,15 @@ Top-level snapshot order is `## Metadata`, `## Description`,
 below.
 
 **Platform-extension sections** (GitHub-specific; expected to differ across
-tracker-fetching skills). All stay stably present with `_None_` when empty:
+tracker-fetching skills). All stay stably present, using `_None_` only when
+their absence was verified:
 
 | Section | Why it exists |
 | ------- | ------------- |
 | `## Labels` | Scoped classification |
 | `## Assignees` | Ownership |
 | `## Milestone` | Release or iteration bucket when set |
-| `## Projects` | Project board / project fields when retrievable without excessive custom setup |
+| `## Projects` | Project board / project fields when retrievable without excessive custom setup; when not determinable, render the template's unknown marker instead of `_None_` |
 | `## Attachments` | Placeholder for file-like assets; GitHub rarely exposes a Jira-style attachment list - record `_None_` unless you have concrete linked assets to enumerate |
 
 ## Escalation
@@ -251,15 +270,16 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/7001`
    Issue: acme/app#7001: Audit webhook retries
    State: OPEN
    Comments: 2/2
-   Child issues: 1/2
-   Linked issues: 0/0
-   Warnings: Child issue acme/app#7010 returned 404 via gh api
+   Child issues: 0/UNKNOWN
+   Linked issues: 1/1
+   Warnings: Child issue discovery unavailable: sub_issues endpoint unsupported on this host
    Reason: None
 
 4. Report:
    "Issue fetched to `docs/acme-app-7001.md` with retrieval warnings.
    `acme/app#7001: Audit webhook retries` is `OPEN`.
-   Retrieved 2/2 comments, 1/2 child issues, 0/0 linked issues.
-   Warning: Child issue acme/app#7010 returned 404 via gh api.
+   Retrieved 2/2 comments, 0/UNKNOWN child issues, 1/1 linked issues.
+   Warning: Child issue discovery unavailable: sub_issues endpoint unsupported
+   on this host.
    Retrieval only; GitHub was not modified."
 </example>
