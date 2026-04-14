@@ -16,8 +16,8 @@ beneath it instead of omitting the section. For empty scalar values in
 `## Metadata`, write `_None_` in the `Value` column.
 
 Use tables only when there is at least one row to show. If there is no data
-for `## Labels` or `## Assignees`, you may use `_None_` under the heading
-instead of an empty table.
+for `## Labels` or `## Assignees`, write `_None_` under the heading instead of
+an empty table.
 
 Normalize timestamps with time to `YYYY-MM-DD HH:MM UTC`. Preserve date-only
 values as `YYYY-MM-DD`.
@@ -124,8 +124,8 @@ _None_ or a short bullet list of explicitly linked binary or upload URLs found i
 
 ## Conditional Rules
 
-- If there are no issue comments, write `_None_` under `## Comments`.
-- If comment retrieval is partial after the issue is known, keep the retrieved
+- If there are no parent comments, write `_None_` under `## Comments`.
+- If parent-comment retrieval is partial after the issue is known, keep the retrieved
   comments in chronological order, then append
   `_Partial comment retrieval: <retrieved>/<found>. Reason: <reason>_` under
   `## Comments`, record the same warning under `## Retrieval Warnings`, and

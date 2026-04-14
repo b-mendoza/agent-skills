@@ -35,8 +35,8 @@ stop and return `FETCH: FAIL` with `Failure category: BAD_INPUT`.
 
 ## Instructions
 
-Follow steps 1–7 in order. Keep intermediate JSON, exploratory tool output, and
-full document contents out of the final reply.
+Follow steps 1 through 7 in order. Keep intermediate JSON, exploratory tool
+output, and full document contents out of the final reply.
 
 ### 1. Validate the input and establish identifiers
 
@@ -97,10 +97,14 @@ gh api "repos/<owner>/<repo>/issues/<ISSUE_NUMBER>/comments" --paginate
 Fetch every page. Sort by GitHub’s order (typically ascending by creation) for
 the snapshot. For each comment capture author login, timestamp, and body.
 
-**Acceptance criteria extraction:** Apply the precedence rules in
-`issue-retriever-template.md` to the issue body. Remove the winning AC blocks
-from the material placed under `## Description` so AC is not duplicated
-unless the template says otherwise.
+**Acceptance criteria extraction:** Inspect the issue body for sections titled
+`Acceptance Criteria`, otherwise `AC`, otherwise `Definition of Done` or
+`Definition of Done (DoD)`. Use only sections with the highest-precedence label
+that is present. If multiple sections share that label, keep them in source
+order and prefix each extracted block with `**Source:** <label>`. If none
+exist, write `_None_` under `## Acceptance Criteria` and keep the full body
+under `## Description`. Remove the winning AC blocks from the material placed
+under `## Description` so AC is not duplicated.
 
 **Milestone:** If `milestone` is present in JSON, render title and optional due
 date under `## Milestone`; else `_None_`.
@@ -159,8 +163,8 @@ Render related sections in deterministic order (template rules).
 > validate -> repair -> re-check loop targeted to the missing or mismatched
 > portions before you report the final summary.
 
-Read `./issue-retriever-template.md` and use the fenced Markdown snapshot shape
-as the literal output contract. Write the final snapshot to:
+Read the bundled `./issue-retriever-template.md` and use the fenced Markdown
+snapshot shape as the literal output contract. Write the final snapshot to:
 
 ```text
 docs/<ISSUE_SLUG>.md
@@ -170,13 +174,15 @@ Treat this file as a preserved workflow artifact for resumability. Write it, val
 leave it in place, but do not stage or commit it.
 
 Every required top-level heading from the fenced snapshot shape must appear in
-the file. The title line must match `# <ISSUE_SLUG>: <Issue title>` using the
-issue title from GitHub.
+the file. Repeated nested headings appear only for items that actually exist or
+for required `Not retrieved` placeholders. The title line must match
+`# <ISSUE_SLUG>: <Issue title>` using the issue title from GitHub.
 
 Normalize timestamps with time to `YYYY-MM-DD HH:MM UTC`, and preserve
 date-only values as `YYYY-MM-DD`. The retrieval preamble at the top of the
-file must include both `Retrieved on` (using the normalized timestamp) and
-`Source` (the `ISSUE_URL` or `owner/repo#N` reference).
+file must match the template and include `Retrieved on` (using the normalized
+timestamp), `Source` (the `ISSUE_URL` or `owner/repo#N` reference), and
+`Repository: <owner>/<repo> | Issue: #<N>`.
 
 ### 6. Post-write validation gate: validate, repair, and re-check
 
@@ -188,7 +194,8 @@ After writing the file, re-read it and verify:
 - `## Description` is present and explicitly represented with either the source
   issue body or `_None_`
 - The title line matches `# <ISSUE_SLUG>: <Issue title>`
-- The retrieval preamble includes both `Retrieved on` and `Source`
+- The retrieval preamble matches the template and includes `Retrieved on`,
+  `Source`, and `Repository: <owner>/<repo> | Issue: #<N>`
 - The metadata table includes every required row in template order, and empty
   scalar values are written as `_None_`
 - Parent comment count in the file matches the retrieved data
@@ -224,7 +231,7 @@ return `FETCH: ERROR`, `Validation: FAIL`, `Failure category: UNEXPECTED`.
 
 Return only the summary below. The caller relies on it as the only return
 payload from this subagent. Keep it machine-readable and concise so the
-coordinator can branch on status, validation, and failure category without
+calling skill can branch on status, validation, and failure category without
 re-reading the artifact or inferring state from prose.
 
 ```text
@@ -241,9 +248,11 @@ Warnings: <None | semicolon-separated warnings>
 Reason: <None | fatal reason>
 ```
 
-`<found>` is the count of child or linked issue identities discovered on the
-parent (or timeline); `<retrieved>` is how many were fully hydrated per
-template. When discovery yields zero, use `0/0`.
+For each `<retrieved>/<found>` line, `<found>` is the discovered total for that
+section and `<retrieved>` is how many entries were fully hydrated into the
+snapshot. For `Comments`, counts refer to parent comments. For `Child issues`
+and `Linked issues`, counts refer to related item identities discovered on the
+parent issue (or timeline). When discovery yields zero, use `0/0`.
 
 <example>
 FETCH: PASS

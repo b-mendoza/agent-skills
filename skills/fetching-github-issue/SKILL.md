@@ -47,59 +47,6 @@ Read a subagent definition only when you are about to dispatch it.
 | -------- | ---- | ------- |
 | `issue-retriever` | `./subagents/issue-retriever.md` | Uses `gh` (and `gh api` where needed) to read GitHub data, writes `docs/<ISSUE_SLUG>.md`, validates the artifact, and returns a concise fetch summary |
 
-## Output Contract
-
-Primary artifact:
-
-```text
-docs/<ISSUE_SLUG>.md
-```
-
-Treat `docs/<ISSUE_SLUG>.md` as a preserved workflow artifact for resumability.
-Do not commit it as part of implementation history.
-
-The document must contain every top-level heading from the fenced Markdown
-snapshot shape in `./subagents/issue-retriever-template.md`. Repeated nested
-headings appear only when their parent section has material to render. If a
-top-level section has no data, the heading still appears and the section body is
-`_None_`. Downstream skills rely on stable headings rather than best-effort
-prose. If retrieval is partial, the artifact must record that explicitly in
-`## Retrieval Warnings` and use the template’s placeholder shapes for any child
-or linked issue that could not be hydrated.
-
-Treat `./subagents/issue-retriever-template.md` as the authoritative snapshot
-shape. The section tables below are the scan-friendly summary of that contract.
-
-**Locked-core sections** (shared with `fetching-jira-ticket`; same names,
-same relative order):
-
-| Section | Why it exists |
-| ------- | ------------- |
-| `## Metadata` | Core issue and repository context for planning and validation |
-| `## Description` | Primary source of requirements (issue body, normalized) |
-| `## Acceptance Criteria` | Definition-of-done source (dedicated extraction when present in body) |
-| `## Comments` | Decisions, clarifications, and implementation hints |
-| `## Retrieval Warnings` | Stable disclosure for partial related-item or API limits |
-| `## Linked Issues` | Cross-referenced or otherwise linked issues for dependency context |
-
-**Locked platform-slot section** (shared concept, platform-named; Jira uses
-`## Subtasks`):
-
-| Section | Why it exists |
-| ------- | ------------- |
-| `## Child Issues` | GitHub sub-issues / child work items when discoverable |
-
-**Platform-extension sections** (GitHub-specific; expected to differ between
-fetching skills). All stay stably present with `_None_` when empty:
-
-| Section | Why it exists |
-| ------- | ------------- |
-| `## Labels` | Scoped classification |
-| `## Assignees` | Ownership |
-| `## Milestone` | Release or iteration bucket when set |
-| `## Projects` | Project board / project fields when retrievable without excessive custom setup |
-| `## Attachments` | Placeholder for file-like assets; GitHub rarely exposes a Jira-style attachment list — record `_None_` unless you have concrete linked assets to enumerate |
-
 ## How This Skill Works
 
 This skill is intentionally narrow. It coordinates retrieval, not mutation,
@@ -137,8 +84,8 @@ reads, document assembly, output validation, and cleanup.
 The retriever returns a summary with these top-level fields:
 
 - `FETCH: PASS` -> retrieval and validation succeeded
-- `FETCH: PARTIAL` -> artifact was written and validated, but some related data
-  could not be retrieved
+- `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
+  related items could not be retrieved
 - `FETCH: FAIL` -> deterministic failure such as bad input, issue not found,
   missing auth, rate limits after retry, or unusable `gh` environment
 - `FETCH: ERROR` -> unexpected tool or environment failure
@@ -191,6 +138,66 @@ Using only the subagent's structured summary, tell the caller:
 - Any failure category, when one exists
 - That this phase is retrieval only and does not mutate GitHub
 
+## Output Contract
+
+Primary artifact:
+
+```text
+docs/<ISSUE_SLUG>.md
+```
+
+Treat `docs/<ISSUE_SLUG>.md` as a preserved workflow artifact for resumability.
+Do not commit it as part of implementation history.
+
+The document must contain every top-level heading from the fenced Markdown
+snapshot shape in `./subagents/issue-retriever-template.md`. Repeated nested
+headings appear only when their parent section has material to render. If a
+top-level section has no data, the heading still appears and the section body is
+`_None_`. Downstream skills rely on stable headings rather than best-effort
+prose. If retrieval is partial, the artifact must record that explicitly in
+`## Retrieval Warnings` and use the template's placeholder shapes for any child
+or linked issue that could not be hydrated.
+
+Treat `./subagents/issue-retriever-template.md` as the authoritative snapshot
+shape bundled with this skill; no external spec file is required. The section
+tables below are the scan-friendly summary of that contract.
+
+**Locked-core sections** (same names and relative order across the paired
+issue/ticket-fetching skills; the platform-slot section appears between
+`## Retrieval Warnings` and `## Linked Issues`):
+
+| Section | Why it exists |
+| ------- | ------------- |
+| `## Metadata` | Core issue and repository context for planning and validation |
+| `## Description` | Primary source of requirements (issue body, normalized) |
+| `## Acceptance Criteria` | Definition-of-done source (dedicated extraction when present in body) |
+| `## Comments` | Decisions, clarifications, and implementation hints |
+| `## Retrieval Warnings` | Stable disclosure for partial related-item or API limits |
+| `## Linked Issues` | Dependency and surrounding context |
+
+**Locked platform-slot section** (shared concept; the parallel ticket-fetching
+skill uses `## Subtasks`):
+
+| Section | Why it exists |
+| ------- | ------------- |
+| `## Child Issues` | GitHub sub-issues / child work items when discoverable |
+
+Top-level snapshot order is `## Metadata`, `## Description`,
+`## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`,
+`## Child Issues`, `## Linked Issues`, then the platform-extension sections
+below.
+
+**Platform-extension sections** (GitHub-specific; expected to differ across
+tracker-fetching skills). All stay stably present with `_None_` when empty:
+
+| Section | Why it exists |
+| ------- | ------------- |
+| `## Labels` | Scoped classification |
+| `## Assignees` | Ownership |
+| `## Milestone` | Release or iteration bucket when set |
+| `## Projects` | Project board / project fields when retrievable without excessive custom setup |
+| `## Attachments` | Placeholder for file-like assets; GitHub rarely exposes a Jira-style attachment list - record `_None_` unless you have concrete linked assets to enumerate |
+
 ## Escalation
 
 Branch on the retriever's structured status fields, not on prose:
@@ -202,7 +209,7 @@ Branch on the retriever's structured status fields, not on prose:
 | `FETCH: FAIL` | Stop and surface the failure category plus reason |
 | `FETCH: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or contract failure |
 
-## Examples
+## Example
 
 <example>
 Input: `ISSUE_URL=https://github.com/acme/app/issues/42` -> `ISSUE_SLUG=acme-app-42`
@@ -246,10 +253,13 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/7001`
    Comments: 2/2
    Child issues: 1/2
    Linked issues: 0/0
-   Warnings: Child issue #7010 returned 404 via gh api
+   Warnings: Child issue acme/app#7010 returned 404 via gh api
    Reason: None
 
 4. Report:
    "Issue fetched to `docs/acme-app-7001.md` with retrieval warnings.
-   Child issues 1/2 retrieved; see `## Retrieval Warnings`. Retrieval only."
+   `acme/app#7001: Audit webhook retries` is `OPEN`.
+   Retrieved 2/2 comments, 1/2 child issues, 0/0 linked issues.
+   Warning: Child issue acme/app#7010 returned 404 via gh api.
+   Retrieval only; GitHub was not modified."
 </example>
