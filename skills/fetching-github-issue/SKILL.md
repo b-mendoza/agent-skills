@@ -72,8 +72,8 @@ Read `./subagents/issue-retriever.md`, then dispatch it with:
 
 - `ISSUE_URL` when available, otherwise `OWNER`, `REPO`, and `ISSUE_NUMBER`
 
-The subagent owns input validation, `gh` availability and auth checks, GitHub
-reads, document assembly, output validation, and cleanup.
+The subagent owns input validation, `gh` availability and auth checks, issue
+and relationship retrieval, document assembly, output validation, and cleanup.
 
 ### 2. Interpret the structured result
 
