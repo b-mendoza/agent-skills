@@ -58,7 +58,7 @@ matches the output contract and, when a file is written, reports validation
 status consistently.
 
 This coordinator may do four things directly: read its bundled skill files,
-derive identifiers from the Jira URL, dispatch the retriever, and relay the
+derive identifiers from the input URL, dispatch the retriever, and relay the
 retriever's structured summary. Everything else stays inside the subagent.
 
 ### 1. Dispatch the retriever

@@ -62,9 +62,9 @@ matches the output contract and, when a file is written, reports validation
 status consistently.
 
 This coordinator may do four things directly: read its bundled skill files,
-derive identifiers from `ISSUE_URL` or fallback coordinates, dispatch the
-retriever, and relay the retriever's structured summary. Everything else stays
-inside the subagent.
+derive identifiers from the input URL (or fallback coordinates when no URL is
+provided), dispatch the retriever, and relay the retriever's structured
+summary. Everything else stays inside the subagent.
 
 ### 1. Dispatch the retriever
 
