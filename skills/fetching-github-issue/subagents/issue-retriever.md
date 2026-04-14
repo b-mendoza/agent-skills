@@ -61,9 +61,10 @@ field layout across all `gh` versions—adapt field names to what the installed
 
 Retry only read operations that fail due to explicit rate limiting (`403` with
 rate limit, `429`) or transient server errors (`5xx`). Use at most 2 retries
-per operation, with backoff 1s then 3s. Do not retry bad input, auth failures,
-or 404 on the parent issue. If rate limits persist, return `FETCH: FAIL` with
-`Failure category: RATE_LIMIT`.
+per operation, with backoff delays of 1 second and then 3 seconds. Do not
+retry bad input, auth failures, or 404 on the parent issue. If rate limits
+persist after the retry budget is exhausted, stop and return `FETCH: FAIL`
+with `Failure category: RATE_LIMIT`.
 
 ### 3. Retrieve the parent issue
 
@@ -248,8 +249,9 @@ After writing the file, re-read it and verify:
 - Deterministic ordering rules are satisfied
 
 If validation fails, fix only the missing or mismatched portions, rewrite the
-artifact, and validate again. Maximum 3 repair passes. If still failing,
-return `FETCH: ERROR`, `Validation: FAIL`, `Failure category: UNEXPECTED`.
+artifact, and validate again. Use a targeted repair loop with a maximum of 3
+passes. If the artifact still fails validation after the repair loop, return
+`FETCH: ERROR`, `Validation: FAIL`, and `Failure category: UNEXPECTED`.
 
 ### 7. Return only the structured summary
 
