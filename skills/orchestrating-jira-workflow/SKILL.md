@@ -33,15 +33,20 @@ Extract these values from the URL when present:
 ## Workflow Overview
 
 ```
-Phase 1: Fetch ticket        -> docs/<KEY>.md
-Phase 2: Plan tasks          -> docs/<KEY>-tasks.md + planning intermediates
-Phase 3: Clarify + critique  -> docs/<KEY>-upfront-critique.md + docs/<KEY>-tasks.md updates
-Phase 4: Create subtasks     -> docs/<KEY>-tasks.md updated with `## Jira Subtasks` + per-task subtask links
-Phase 5: Plan task execution -> docs/<KEY>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md
-Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-critique.md + docs/<KEY>-task-<N>-decisions.md
+Phase 1: Fetch ticket        -> docs/<TICKET_KEY>.md
+Phase 2: Plan tasks          -> docs/<TICKET_KEY>-tasks.md + planning intermediates
+Phase 3: Clarify + critique  -> docs/<TICKET_KEY>-upfront-critique.md + docs/<TICKET_KEY>-tasks.md updates
+Phase 4: Create subtasks     -> docs/<TICKET_KEY>-tasks.md updated with `## Jira Subtasks` + per-task subtask links
+Phase 5: Plan task execution -> docs/<TICKET_KEY>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md
+Phase 6: Clarify + critique  -> docs/<TICKET_KEY>-task-<N>-critique.md + docs/<TICKET_KEY>-task-<N>-decisions.md
 Phase 7: Kick off + execute  -> first side effects, code changes, tests, commits
          ^___________________/  repeat phases 5-7 per task
 ```
+
+Throughout this skill, `<TICKET_KEY>` means the derived ticket key from
+`JIRA_URL` (for example `JNS-6065`). All orchestration and downstream artifact
+paths use that placeholder; the downstream `fetching-jira-ticket` skill writes
+`docs/<TICKET_KEY>.md` under that exact name.
 
 ## Output Contract
 
@@ -61,20 +66,20 @@ For Phase 1, `docs/<TICKET_KEY>.md` is the stable Jira snapshot defined by
 section.
 
 For Phase 2, the authoritative downstream contract includes the preserved
-planning intermediates `docs/<KEY>-stage-1-detailed.md` and
-`docs/<KEY>-stage-2-prioritized.md`, plus a final `docs/<KEY>-tasks.md` with
+planning intermediates `docs/<TICKET_KEY>-stage-1-detailed.md` and
+`docs/<TICKET_KEY>-stage-2-prioritized.md`, plus a final `docs/<TICKET_KEY>-tasks.md` with
 the full plan structure consumed by Phases 3 and 4.
 
 For Phase 3, the authoritative downstream contract also includes the upfront
 critique artifact written by `clarifying-assumptions`:
 
-- `docs/<KEY>-upfront-critique.md`
+- `docs/<TICKET_KEY>-upfront-critique.md`
 
 For Phase 6, the authoritative downstream contract also includes the task-level
 critique artifacts written by `clarifying-assumptions` in `MODE=critique`:
 
-- `docs/<KEY>-task-<N>-critique.md`
-- `docs/<KEY>-task-<N>-decisions.md`
+- `docs/<TICKET_KEY>-task-<N>-critique.md`
+- `docs/<TICKET_KEY>-task-<N>-decisions.md`
 
 Those Phase 6 artifacts are the normal workflow gate into Phase 7. Once that
 gate passes, `executing-jira-task` owns the execution-side readiness contract,
@@ -86,19 +91,19 @@ as gate inputs. They are not validator artifacts, but they are part of the
 phase boundary contract the orchestrator must honor.
 
 For Phase 4, the authoritative downstream contract is owned by
-`creating-jira-subtasks`. Treat `docs/<KEY>-tasks.md` as valid for downstream
+`creating-jira-subtasks`. Treat `docs/<TICKET_KEY>-tasks.md` as valid for downstream
 use only when it carries the workflow-level `## Jira Subtasks` table plus the
-inline `Jira Subtask: <KEY>` links for linked tasks. The downstream
+inline `Jira Subtask: <TICKET_KEY>` links for linked tasks. The downstream
 `Created/Linked Subtasks` table is the structured handoff for workflow progress
 tracking.
 
 For Phase 5, the authoritative downstream contract is owned by
 `planning-jira-task`. The stable planning handoff is the concrete four-file set:
 
-- `docs/<KEY>-task-<N>-brief.md`
-- `docs/<KEY>-task-<N>-execution-plan.md`
-- `docs/<KEY>-task-<N>-test-spec.md`
-- `docs/<KEY>-task-<N>-refactoring-plan.md`
+- `docs/<TICKET_KEY>-task-<N>-brief.md`
+- `docs/<TICKET_KEY>-task-<N>-execution-plan.md`
+- `docs/<TICKET_KEY>-task-<N>-test-spec.md`
+- `docs/<TICKET_KEY>-task-<N>-refactoring-plan.md`
 
 Treat those files as the planning boundary consumed by Phases 6 and 7. The
 detailed section-level requirements for each file stay owned by the downstream
@@ -177,7 +182,8 @@ Use these rules throughout the workflow:
 - **Preserve resumability.** Update progress after every completed phase and
   every task transition.
 - **Separate artifact lifecycles.** Orchestration artifacts stay on disk and are
-  never committed. Implementation artifacts are handled by downstream skills.
+  never committed or deleted. Implementation artifacts are handled by downstream
+  skills.
 - **Escalate loudly.** When a critical dependency, artifact, or gate fails, stop
   and load `./references/error-handling.md`.
 
