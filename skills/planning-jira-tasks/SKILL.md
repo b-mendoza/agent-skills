@@ -236,7 +236,7 @@ re-plan rules require it.
 5. **Stage 3 - Validate**
    Read the `task-validator` definition and dispatch it with:
    - `TICKET_KEY=<TICKET_KEY>`
-   - `TICKET_PATH=docs/<TICKET_KEY>.md`
+   - `SNAPSHOT_PATH=docs/<TICKET_KEY>.md`
    - `PLAN_PATH=docs/<TICKET_KEY>-stage-2-prioritized.md`
    - `OUTPUT_PATH=docs/<TICKET_KEY>-tasks.md`
    - `VALIDATION_ISSUES=<issues list>` only when retrying Stage 3 or repairing
@@ -291,7 +291,7 @@ TICKET_KEY = JNS-6065
 5. Validate stage 2
    -> PASS
 6. Dispatch `task-validator` with
-   `TICKET_PATH=docs/JNS-6065.md`,
+   `SNAPSHOT_PATH=docs/JNS-6065.md`,
    `PLAN_PATH=docs/JNS-6065-stage-2-prioritized.md`,
    `OUTPUT_PATH=docs/JNS-6065-tasks.md`
    -> wrote final plan

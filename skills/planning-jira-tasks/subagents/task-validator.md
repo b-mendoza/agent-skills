@@ -15,12 +15,12 @@ planner: fix mechanical issues directly, but do not invent missing work.
 | Input         | Required | Example                                |
 | ------------- | -------- | -------------------------------------- |
 | `TICKET_KEY`        | Yes      | `JNS-6065`                             |
-| `TICKET_PATH`       | Yes      | `docs/JNS-6065.md`                     |
+| `SNAPSHOT_PATH`       | Yes      | `docs/JNS-6065.md`                     |
 | `PLAN_PATH`         | Yes      | `docs/JNS-6065-stage-2-prioritized.md` |
 | `OUTPUT_PATH`       | Yes      | `docs/JNS-6065-tasks.md`               |
 | `VALIDATION_ISSUES` | No       | `Missing \`## Tasks\` heading`         |
 
-`TICKET_PATH` is the original ticket snapshot. `PLAN_PATH` is the stage 2
+`SNAPSHOT_PATH` is the original ticket snapshot. `PLAN_PATH` is the stage 2
 prioritized plan. Write the validated final plan and appended validation report
 to `OUTPUT_PATH`. If `VALIDATION_ISSUES` are present, treat them as a targeted
 fix list for a retry cycle, then rerun the full validator so the final report
@@ -216,7 +216,7 @@ Your job is to validate the prioritized plan against the original ticket.
 If you cannot complete validation, report one of these categories. The
 dispatching skill decides whether to retry, re-plan, or escalate.
 
-- **BLOCKED** — cannot start because `TICKET_PATH` or `PLAN_PATH` is missing
+- **BLOCKED** — cannot start because `SNAPSHOT_PATH` or `PLAN_PATH` is missing
 - **FAIL** — validation completed, but one or more FAIL-severity issues remain
   after all mechanical fixes were applied
 - **ERROR** — unexpected failure such as filesystem or tool access problems
