@@ -1,6 +1,6 @@
 ---
 name: "fetching-jira-ticket"
-description: 'Phase 1 of `orchestrating-jira-workflow`: retrieve a Jira ticket into a stable Markdown snapshot for downstream workflow phases. Use this as a workflow phase, not as a standalone implementation skill, whenever a Jira URL needs to become `docs/<KEY>.md` with predictable headings for metadata, description, acceptance criteria, comments, subtasks, linked issues, attachments, and custom fields. This skill coordinates retrieval only: it does not modify Jira, create branches, or start implementation.'
+description: 'Phase 1 of `orchestrating-jira-workflow`: retrieve a Jira ticket into a stable Markdown snapshot for downstream workflow phases. Use this as a workflow phase, not as a standalone implementation skill, whenever a Jira URL needs to become `docs/<TICKET_KEY>.md` with predictable headings for metadata, description, acceptance criteria, comments, subtasks, linked issues, attachments, and custom fields. This skill coordinates retrieval only: it does not modify Jira, create branches, or start implementation.'
 ---
 
 # Fetching Jira Ticket
@@ -41,57 +41,7 @@ Read a subagent definition only when you are about to dispatch it.
 
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
-| `ticket-retriever` | `./subagents/ticket-retriever.md` | Reads Jira data, writes `docs/<KEY>.md`, validates the artifact, and returns a concise fetch summary |
-
-## Output Contract
-
-Primary artifact:
-
-```text
-docs/<TICKET_KEY>.md
-```
-
-Treat `docs/<TICKET_KEY>.md` as a preserved workflow artifact for resumability.
-Do not commit it as part of implementation history.
-
-The document must contain every top-level heading from the fenced Markdown
-snapshot shape in `./subagents/ticket-retriever-template.md`. Repeated nested
-headings, such as comment entries or per-issue subsections, appear only when
-their parent section has material to render. If a top-level section has no
-data, the heading still appears and the section body is `_None_`. Downstream
-skills rely on stable headings rather than best-effort prose. If retrieval is
-partial, the artifact must record that explicitly in `## Retrieval Warnings`
-and via placeholder entries for the missing subtasks or linked issues.
-
-Treat `./subagents/ticket-retriever-template.md` as the authoritative snapshot
-shape. The section tables below are the scan-friendly summary of that contract.
-
-**Locked-core sections** (shared with `fetching-github-issue`; same names,
-same relative order):
-
-| Section | Why it exists |
-| ------- | ------------- |
-| `## Metadata` | Core ticket context for planning and validation |
-| `## Description` | Primary source of requirements |
-| `## Acceptance Criteria` | Definition-of-done source, including extracted AC when present |
-| `## Comments` | Decisions, clarifications, and implementation hints |
-| `## Retrieval Warnings` | Stable disclosure point for partial related-item retrieval |
-| `## Linked Issues` | Dependency and surrounding context |
-
-**Locked platform-slot section** (shared concept, platform-named; GitHub uses
-`## Child Issues`):
-
-| Section | Why it exists |
-| ------- | ------------- |
-| `## Subtasks` | Existing Jira execution breakdown |
-
-**Platform-extension sections** (Jira-specific; expected to differ between
-fetching skills):
-
-| Section | Why it exists |
-| ------- | ------------- |
-| `## Attachments` | File-level reference metadata |
-| `## Custom Fields` | Non-standard fields that may carry requirements |
+| `ticket-retriever` | `./subagents/ticket-retriever.md` | Uses the available Jira integration to read Jira data, writes `docs/<TICKET_KEY>.md`, validates the artifact, and returns a concise fetch summary |
 
 ## How This Skill Works
 
@@ -117,9 +67,9 @@ Read `./subagents/ticket-retriever.md`, then dispatch it with:
 
 - `JIRA_URL`
 
-The subagent owns input validation, Jira-capable MCP tool discovery and
-auth checks, ticket and relationship retrieval, document assembly, output
-validation, and cleanup.
+The subagent owns input validation, Jira-capable integration discovery and auth
+checks, ticket and relationship retrieval, document assembly, output validation,
+and cleanup.
 
 ### 2. Interpret the structured result
 
@@ -130,8 +80,8 @@ validation, and cleanup.
 The retriever returns a summary with these top-level fields:
 
 - `FETCH: PASS` -> retrieval and validation succeeded
-- `FETCH: PARTIAL` -> artifact was written and validated, but some parent
-  comments or related data could not be retrieved
+- `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
+  related items could not be retrieved
 - `FETCH: FAIL` -> deterministic failure such as bad input, ticket not found,
   missing auth, rate limits after retry, or no usable Jira tools
 - `FETCH: ERROR` -> unexpected tool or environment failure
@@ -185,6 +135,62 @@ Using only the subagent's structured summary, tell the caller:
 - Any failure category, when one exists
 - That this phase is retrieval only and does not mutate Jira
 
+## Output Contract
+
+Primary artifact:
+
+```text
+docs/<TICKET_KEY>.md
+```
+
+Treat `docs/<TICKET_KEY>.md` as a preserved workflow artifact for resumability.
+Do not commit it as part of implementation history.
+
+The document must contain every top-level heading from the fenced Markdown
+snapshot shape in `./subagents/ticket-retriever-template.md`. Repeated nested
+headings, such as comment entries or per-issue subsections, appear only when
+their parent section has material to render. If a top-level section has no
+data, the heading still appears and the section body is `_None_`. Downstream
+skills rely on stable headings rather than best-effort prose. If retrieval is
+partial, the artifact must record that explicitly in `## Retrieval Warnings`
+and via placeholder entries for the missing subtasks or linked issues.
+
+Treat `./subagents/ticket-retriever-template.md` as the authoritative snapshot
+shape bundled with this skill; no external spec file is required. The section
+tables below are the scan-friendly summary of that contract.
+
+**Locked-core sections** (same names and relative order across the paired
+issue/ticket-fetching skills; the platform-slot section appears between
+`## Retrieval Warnings` and `## Linked Issues`):
+
+| Section | Why it exists |
+| ------- | ------------- |
+| `## Metadata` | Core ticket context for planning and validation |
+| `## Description` | Primary source of requirements |
+| `## Acceptance Criteria` | Definition-of-done source, including extracted AC when present |
+| `## Comments` | Decisions, clarifications, and implementation hints |
+| `## Retrieval Warnings` | Stable disclosure point for partial related-item retrieval |
+| `## Linked Issues` | Dependency and surrounding context |
+
+**Locked platform-slot section** (shared concept; the parallel issue-fetching
+skill uses `## Child Issues`):
+
+| Section | Why it exists |
+| ------- | ------------- |
+| `## Subtasks` | Existing Jira execution breakdown |
+
+Top-level snapshot order is `## Metadata`, `## Description`,
+`## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`,
+`## Subtasks`, `## Linked Issues`, then the platform-extension sections below.
+
+**Platform-extension sections** (Jira-specific; expected to differ across
+tracker-fetching skills). All stay stably present with `_None_` when empty:
+
+| Section | Why it exists |
+| ------- | ------------- |
+| `## Attachments` | File-level reference metadata |
+| `## Custom Fields` | Non-standard fields that may carry requirements |
+
 ## Escalation
 
 Branch on the retriever's structured status fields, not on prose:
@@ -196,7 +202,7 @@ Branch on the retriever's structured status fields, not on prose:
 | `FETCH: FAIL` | Stop and surface the failure category plus reason |
 | `FETCH: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or contract failure |
 
-## Examples
+## Example
 
 <example>
 Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-6065`

@@ -80,7 +80,7 @@ values, such as Jira due dates without a time component, as `YYYY-MM-DD`.
 
 #### Description
 
-<body>
+<body or _None_>
 
 #### Comments
 
@@ -98,7 +98,7 @@ values, such as Jira due dates without a time component, as `YYYY-MM-DD`.
 
 #### Description
 
-<body>
+<body or _None_>
 
 #### Comments
 

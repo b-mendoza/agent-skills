@@ -1,6 +1,6 @@
 ---
 name: "ticket-retriever"
-description: "Retrieve a Jira ticket and its related records, write a Markdown snapshot to docs/<KEY>.md using the bundled template, validate the artifact, and return only a structured fetch summary."
+description: "Retrieve a Jira ticket and its related records, write a Markdown snapshot to docs/<TICKET_KEY>.md using the bundled template, validate the artifact, and return only a structured fetch summary."
 ---
 
 # Ticket Retriever
@@ -32,8 +32,8 @@ If the URL is malformed or the key does not match the expected
 
 ## Instructions
 
-Follow steps 1-7 in order. Keep intermediate Jira payloads, exploratory tool
-output, and document contents out of the final reply.
+Follow steps 1 through 7 in order. Keep intermediate Jira payloads, exploratory
+tool output, and full document contents out of the final reply.
 
 ### 1. Validate the input and establish identifiers
 
@@ -41,9 +41,9 @@ Confirm the input is a Jira issue URL and extract the ticket key. Keep the full
 URL for reporting and derivation, but perform Jira reads using the key and any
 workspace context required by the environment.
 
-### 2. Discover Jira-capable MCP tools
+### 2. Discover Jira-capable read tools
 
-Before the first Jira read, inspect the current MCP environment and identify
+Before the first Jira read, inspect the current environment and identify
 which tool or tools can perform these operations:
 
 - Read a single issue with fields and relationships
@@ -72,10 +72,10 @@ bad input, auth failures, not-found responses, or schema/tool mismatches.
 If the final retry still returns a rate-limit response, stop and return
 `FETCH: FAIL` with `Failure category: RATE_LIMIT`.
 
-If the chosen Jira MCP server exposes an authentication step or `mcp_auth`
-tool, complete that auth flow once before the first Jira read. If auth cannot
-be completed or access still fails afterward, stop and return `FETCH: FAIL`
-with `Failure category: AUTH`.
+If the chosen Jira integration exposes an authentication step, complete that
+flow once before the first Jira read. If auth cannot be completed or access
+still fails afterward, stop and return `FETCH: FAIL` with
+`Failure category: AUTH`.
 
 <example>
 Available tools after schema inspection:
@@ -109,11 +109,15 @@ Fetch the parent ticket and gather all relevant non-empty data, including:
 - Full description, preserving useful formatting such as lists, code fences,
   links, and tables. Rewrite Jira-authored Markdown heading lines as bold
   labels so they cannot collide with reserved snapshot headings
-- Acceptance criteria: apply the precedence rules in
-  `ticket-retriever-template.md` to the dedicated Jira field and, when that
-  field is empty, to the description body. Remove the winning AC blocks from
-  the material placed under `## Description` so AC is not duplicated unless
-  the template says otherwise
+- Acceptance criteria: use the dedicated Jira field when present. If that field
+  is empty, inspect description sections in this precedence order:
+  `Acceptance Criteria`, `AC`, `Definition of Done`, `Definition of Done (DoD)`.
+  Use only sections with the highest-precedence label that is present. If
+  multiple sections share that label, keep them in source order and prefix each
+  block with `**Source:** <label>`. If none exist, write `_None_` under
+  `## Acceptance Criteria` and keep the full description under
+  `## Description`. Remove the winning AC blocks from the material placed under
+  `## Description` so AC is not duplicated
 - All parent comments in chronological order with author and timestamp
 - If parent-comment retrieval becomes partial after the parent issue is known,
   keep the successfully retrieved comments, append
@@ -173,8 +177,9 @@ For each unretrieved subtask or linked issue:
 > validate -> repair -> re-check loop targeted to the missing or mismatched
 > portions before you report the final summary.
 
-Read `./ticket-retriever-template.md` and use the fenced Markdown snapshot
-shape in that file as the literal output contract. Write the final snapshot to:
+Read the bundled `./ticket-retriever-template.md` and use the fenced Markdown
+snapshot shape in that file as the literal output contract. Write the final
+snapshot to:
 
 ```text
 docs/<TICKET_KEY>.md
@@ -239,7 +244,7 @@ passes. If the artifact still fails validation after the repair loop, return
 
 Return only the summary below. The caller relies on it as the only return
 payload from this subagent. Keep it machine-readable and concise so the
-orchestrator can branch on status, validation, and failure category without
+calling skill can branch on status, validation, and failure category without
 re-reading the artifact or inferring state from prose.
 
 ```text
@@ -257,9 +262,11 @@ Warnings: <None | semicolon-separated warnings>
 Reason: <None | fatal reason>
 ```
 
-`<found>` is the count of subtask or linked issue identities discovered on
-the parent ticket; `<retrieved>` is how many were fully hydrated per
-template. When discovery yields zero, use `0/0`.
+For each `<retrieved>/<found>` line, `<found>` is the discovered total for that
+section and `<retrieved>` is how many entries were fully hydrated into the
+snapshot. For `Comments`, counts refer to parent comments. For `Subtasks` and
+`Linked issues`, counts refer to related item identities discovered on the
+parent ticket. When discovery yields zero, use `0/0`.
 
 <example>
 FETCH: PASS
@@ -310,7 +317,7 @@ Reason: Jira ticket PROJ-892 was not found (404)
 
 Your job is to:
 
-- Read Jira data through the currently available MCP tools
+- Read Jira data through the currently available Jira-capable tools
 - Preserve useful formatting in descriptions and comments
 - Write one stable Markdown snapshot to `docs/<TICKET_KEY>.md`
 - Make missing data explicit instead of silently dropping it
