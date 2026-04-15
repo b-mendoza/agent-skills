@@ -35,7 +35,7 @@ stop and return `FETCH: FAIL` with `Failure category: BAD_INPUT`.
 
 ## Instructions
 
-Follow steps 1 through 7 in order. Keep intermediate JSON, exploratory tool
+Follow steps 1 through 6 in order. Keep intermediate JSON, exploratory tool
 output, and full document contents out of the final reply.
 
 ### 1. Validate the input and establish identifiers
@@ -256,7 +256,8 @@ artifact, and validate again. Use a targeted repair loop with a maximum of 3
 passes. If the artifact still fails validation after the repair loop, return
 `FETCH: ERROR`, `Validation: FAIL`, and `Failure category: UNEXPECTED`.
 
-### 7. Return only the structured summary
+End every run with only the structured summary under **Output Format** below—no
+other prose in the final reply.
 
 ## Output Format
 
