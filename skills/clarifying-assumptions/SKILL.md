@@ -18,7 +18,7 @@ rows, and artifact paths instead of raw planning content.
 
 | Input | Required | Example |
 | --- | --- | --- |
-| `TICKET_KEY` | Yes | `JNS-6065` |
+| `TICKET_KEY` | Yes | `JNS-6065` or `acme-app-42` |
 | `MODE` | Yes | `upfront` or `critique` |
 | `TASK_NUMBER` | Required for `MODE=critique` | `3` |
 | `ITERATION` | No | `1`, `2`, or `3` |
@@ -113,7 +113,7 @@ blocking verdict and reason.
 
 | Subagent | Path | Purpose |
 | --- | --- | --- |
-| `critique-analyzer` | `./subagents/critique-analyzer.md` | Reads planning artifacts, verifies the real codebase, searches the web, and returns structured critique |
+| `critique-analyzer` | `./subagents/critique-analyzer.md` | Reads planning artifacts, verifies the real codebase, searches the web, writes the critique artifact, and returns a concise verdict plus artifact path |
 | `question-manifest-builder` | `./subagents/question-manifest-builder.md` | Reads the task plan plus the critique report and returns an ordered manifest of what to ask now, what to defer, and what is no longer relevant |
 | `decision-recorder` | `./subagents/decision-recorder.md` | Writes clarification artifacts, updates the main task plan, creates per-task decisions files when needed, and validates the result |
 
@@ -131,6 +131,11 @@ Keep only these items inline while the skill is running:
 Everything else comes from delegated subagents through concise verdicts,
 manifest rows, and artifact paths. The manifest is the source of truth for what
 gets asked once execution starts.
+
+In the parent workflows in this repo, `MODE=upfront` is the plan-wide
+clarification pass and `MODE=critique` is the per-task clarification pass just
+before execution. The mode names, inputs, and artifact paths are the runtime
+contract; the phase numbers are parent-workflow context only.
 
 On retries or later iterations, re-dispatch each subagent with the current
 artifact paths and inputs. Do not treat prior subagent output as authoritative
@@ -214,6 +219,13 @@ Input: TICKET_KEY=JNS-6065, MODE=upfront, ITERATION=1
    CRITIQUE: PASS
    Ticket: JNS-6065 | Mode: upfront | Task: -
    Artifact: docs/JNS-6065-upfront-critique.md
+   
+   ## Critique Summary
+   
+   - Problem-framing items: 2
+   - Technology critique items: 3
+   - User-impact items: 0
+   - Suppressed due to prior decisions: 0
 5. Dispatch `question-manifest-builder` with
    `docs/JNS-6065-upfront-critique.md` and `docs/JNS-6065-tasks.md`
 6. Receive:
@@ -226,7 +238,23 @@ Input: TICKET_KEY=JNS-6065, MODE=upfront, ITERATION=1
 9. Receive:
    RECORDING: PASS
    Ticket: JNS-6065 | Mode: upfront | Task: -
-   Files updated: docs/JNS-6065-tasks.md
+   
+   ## Recording Summary
+   
+   ### Files Updated
+   
+   - `docs/JNS-6065-tasks.md`
+   
+   ### Counts
+   
+   - Decisions recorded: 8
+   - Deferred questions tagged: 4
+   - Questions marked irrelevant: 0
+   - Implementation notes updated: 1
+   
+   ### Validation
+   
+   - PASS
 10. Present final summary:
     Critique artifact: docs/JNS-6065-upfront-critique.md
     Files updated: docs/JNS-6065-tasks.md
