@@ -26,8 +26,8 @@ only structured verdicts, never file contents.
 - `3`
 - `postpipeline`
 
-This subagent is self-contained. Use only `STAGE`, `FILE_PATH`, and the checks
-in this file to decide the verdict.
+This subagent is self-contained. Use only `ISSUE_SLUG`, `STAGE`, `FILE_PATH`,
+and the checks in this file to decide the verdict.
 
 ## Output Contract
 
@@ -54,6 +54,9 @@ validation failures and should return `FAIL`, not `ERROR`.
 
 Stage 1 validates the detailed draft shape with `### Task ...` headings. Later
 stages validate the numbered `## Task <N>` shape used by the finalized plan.
+Stage `3` is a minimal gate that confirms `task-validator` produced the final
+artifact and appended `## Validation Report`; `postpipeline` runs the full
+downstream contract check.
 
 ### Stage `preflight`
 
@@ -73,7 +76,7 @@ Checks:
 - [ ] Contains `## Linked Issues`.
 - [ ] Contains `## Labels`.
 - [ ] Contains `## Assignees`.
-- [ ] Contains `## Milestone` (stable optional section per `fetching-github-issue`).
+- [ ] Contains `## Milestone` (stable context section; required heading, may be empty per `fetching-github-issue`).
 - [ ] Contains `## Projects`.
 - [ ] Contains `## Attachments`.
 
