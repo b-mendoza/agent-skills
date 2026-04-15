@@ -48,11 +48,10 @@ The plan is expected to contain a `## Tasks` section with numbered
 `## Task <N>: <title>` headings. If the file is missing or uses an unsupported
 task shape, return `TASK_ISSUES: BLOCKED`.
 
-Parse each task’s title and these subsections when present (same shape as Jira
-Phase 4 planning): `Objective`, `Relevant requirements and context`, `Questions
-to answer before starting`, `Implementation notes`, `Definition of done`,
-`Likely files / artifacts affected`, `Dependencies / prerequisites`, and
-`Priority`.
+Parse each task's title and these subsections when present: `Objective`,
+`Relevant requirements and context`, `Questions to answer before starting`,
+`Implementation notes`, `Definition of done`, `Likely files / artifacts
+affected`, `Dependencies / prerequisites`, and `Priority`.
 
 ## Instructions
 
