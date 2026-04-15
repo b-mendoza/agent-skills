@@ -5,10 +5,10 @@ description: 'Phase 1 of `orchestrating-jira-workflow`: retrieve a Jira ticket i
 
 # Fetching Jira Ticket
 
-You are a Phase 1 coordinator. Your job is to turn a Jira URL into a validated
-local snapshot by dispatching one retrieval specialist, keeping only its
-structured summary, and reporting the result in a form the orchestrator can
-carry forward.
+You are a Phase 1 coordinator. Your job is to turn a Jira ticket reference
+into a validated local snapshot by dispatching one retrieval specialist,
+keeping only its structured summary, and reporting the result in a form the
+orchestrator can carry forward.
 
 ## Inputs
 
@@ -58,8 +58,8 @@ matches the output contract and, when a file is written, reports validation
 status consistently.
 
 This coordinator may do four things directly: read its bundled skill files,
-derive identifiers from the input URL, dispatch the retriever, and relay the
-retriever's structured summary. Everything else stays inside the subagent.
+derive identifiers from the input contract, dispatch the retriever, and relay
+the retriever's structured summary. Everything else stays inside the subagent.
 
 ### 1. Dispatch the retriever
 
@@ -83,10 +83,11 @@ The retriever returns a summary with these top-level fields:
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
   related items could not be retrieved, or related-item discovery could not be
   verified
-- Parent comment retrieval and subtask / linked-issue retrieval or discovery
-  gaps use `PARTIAL`; `## Attachments` and `## Custom Fields` are populated
-  from the retrieved parent ticket payload and do not introduce a separate
-  unverifiable-section state analogous to unknown discovery on related items
+- Shared rule: parent comment retrieval and subtask / linked-issue retrieval
+  or discovery gaps use `PARTIAL`
+- Jira-specific: `## Attachments` and `## Custom Fields` are populated from
+  the retrieved parent ticket payload and do not introduce a separate
+  unknown-discovery state
 - `FETCH: FAIL` -> deterministic failure such as bad input, ticket not found,
   missing auth, rate limits after retry, or no usable Jira tools
 - `FETCH: ERROR` -> unexpected tool or environment failure
@@ -110,9 +111,9 @@ For count lines in the summary:
   was not retrieved and those retrieval steps never ran (for example,
   `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` or
   `<retrieved>/UNKNOWN` in that case
-- `Attachments: <N>` is the number of attachment rows under `## Attachments`;
-  use `Attachments: N/A` when the parent ticket was not retrieved (that section
-  was not populated from a successful parent read)
+- `Attachments: <N>` is the number of attachment entries under
+  `## Attachments`; use `Attachments: N/A` when the parent ticket was not
+  retrieved (that section was not populated from a successful parent read)
 
 Failure categories are:
 
@@ -129,7 +130,7 @@ Handle them this way:
 
 - `FETCH: PASS` with `Validation: PASS`: report success and continue
 - `FETCH: PARTIAL` with `Validation: PASS`: report success with warnings and
-  make the incompleteness visible
+  make the incompleteness visible, including any template unknown markers
 - `Validation: FAIL`: stop and relay contract failure (any `FETCH`)
 - `FETCH: FAIL`: stop and relay the failure category plus the reason
 - `FETCH: ERROR`: stop and relay the failure category plus the reason as an
@@ -149,8 +150,8 @@ Using only the subagent's structured summary, tell the caller:
 - The ticket state (`Status: ... | Type: ...`)
 - Retrieved versus discovered counts for comments, or `N/A` when the parent
   ticket was not retrieved
-- The attachment row count (`Attachments: <N>`), or `N/A` when the parent ticket
-  was not retrieved
+- The attachment entry count (`Attachments: <N>`), or `N/A` when the parent
+  ticket was not retrieved
 - Retrieved versus discovered counts for subtasks and linked issues, where the
   discovered total may be `UNKNOWN` when discovery could not be verified, or
   `N/A` when the parent ticket was not retrieved and discovery never ran
@@ -179,7 +180,8 @@ marker when discovery could not be verified after the parent ticket was
 retrieved, and use placeholder entries for known related items that could not
 be hydrated. Downstream skills rely on stable headings rather than best-effort
 prose. If retrieval is partial, the artifact must record that explicitly in
-`## Retrieval Warnings`.
+`## Retrieval Warnings` and use placeholder entries for any known related item
+that could not be hydrated.
 
 Treat `./subagents/ticket-retriever-template.md` as the authoritative snapshot
 shape bundled with this skill; no external spec file is required. The section
@@ -191,11 +193,11 @@ issue/ticket-fetching skills; the platform-slot section appears between
 
 | Section | Why it exists |
 | ------- | ------------- |
-| `## Metadata` | Core ticket context for planning and validation |
-| `## Description` | Primary source of requirements |
+| `## Metadata` | Core tracker identity and context for planning and validation |
+| `## Description` | Primary source of requirements after normalization |
 | `## Acceptance Criteria` | Definition-of-done source, including extracted AC when present |
 | `## Comments` | Decisions, clarifications, and implementation hints |
-| `## Retrieval Warnings` | Stable disclosure point for partial related-item retrieval |
+| `## Retrieval Warnings` | Stable disclosure for partial retrieval and capability limits |
 | `## Linked Issues` | Dependency and surrounding context |
 
 **Locked platform-slot section** (shared concept; the parallel issue-fetching
@@ -215,8 +217,8 @@ The retrieval preamble must include `Retrieved on`, `Source: <JIRA_URL>`, and
 `Project`, and `URL`.
 
 **Platform-extension sections** (Jira-specific; expected to differ across
-tracker-fetching skills). All stay stably present with `_None_` when their
-absence was verified:
+tracker-fetching skills). All stay stably present, using `_None_` only when
+their absence was verified:
 
 | Section | Why it exists |
 | ------- | ------------- |

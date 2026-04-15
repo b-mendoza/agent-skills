@@ -55,7 +55,7 @@ Read each candidate tool's schema before you call it. Do not hardcode one
 platform's tool names. Map the available tools in the current environment to
 those operations and continue only if the required coverage exists, whether by
 direct per-issue reads from relationship keys already present on the parent
-issue or by search/query tools.
+ticket or by search/query tools.
 
 If multiple tools can satisfy the same operation, choose deterministically:
 
@@ -103,7 +103,7 @@ Fetch the parent ticket and gather all relevant non-empty data, including:
   `## Description`. Remove the winning AC blocks from the material placed under
   `## Description` so AC is not duplicated
 - All parent comments in chronological order with author and timestamp
-- If parent-comment retrieval becomes partial after the parent issue is known,
+- If parent-comment retrieval becomes partial after the parent ticket is known,
   keep the successfully retrieved comments, append
   `_Partial comment retrieval: <retrieved>/<found>. Reason: <reason>_` under
   `## Comments`, record the same warning under `## Retrieval Warnings`, and
@@ -173,9 +173,9 @@ For each unretrieved subtask or linked issue:
 > validate -> repair -> re-check loop targeted to the missing or mismatched
 > portions before you report the final summary.
 
-Read the bundled `./subagents/ticket-retriever-template.md` and use the fenced Markdown
-snapshot shape in that file as the literal output contract. Write the final
-snapshot to:
+Read the bundled `./subagents/ticket-retriever-template.md` and use the fenced
+Markdown snapshot shape in that file as the literal output contract. Write the
+final snapshot to:
 
 ```text
 docs/<TICKET_KEY>.md
@@ -184,17 +184,18 @@ docs/<TICKET_KEY>.md
 Treat this file as a preserved workflow artifact for resumability. Write it,
 validate it, and leave it in place, but do not stage or commit it.
 
-Every required top-level heading from that fenced snapshot shape must appear in
-the file. Repeated nested headings appear only for items that actually exist or
-for required `Not retrieved` placeholders. Keep the heading for every required
-section. Use `_None_` only for sections whose emptiness was verified. If
-subtask or linked-issue discovery could not be verified after the parent ticket
-was retrieved, use the template's unknown marker instead of `_None_`. If retrieval is partial,
+Every required top-level heading from the fenced Markdown snapshot shape must
+appear in the file. Repeated nested headings appear only for items that
+actually exist or for required `Not retrieved` placeholders. Use `_None_` only
+for sections whose emptiness was verified. If subtask or linked-issue
+discovery could not be verified after the parent ticket was retrieved, use the
+template's unknown marker instead of `_None_`. If retrieval is partial,
 `## Retrieval Warnings` must list the warnings and each missing related item
 must also appear as a placeholder entry in its own section. For empty scalar
 values in the metadata table, write `_None_` in the value column. Normalize
-timestamps with time to `YYYY-MM-DD HH:MM UTC`, and preserve date-only values as
-`YYYY-MM-DD`. Do not download attachment binaries. The retrieval preamble must
+timestamps that include a time component to `YYYY-MM-DD HH:MM UTC`, and
+preserve date-only values as `YYYY-MM-DD`. Do not download attachment
+binaries. The retrieval preamble must
 include `Retrieved on`, `Source: <JIRA_URL>`, and
 `Workspace: <workspace> | Project: <project> | Ticket: <TICKET_KEY>`.
 
@@ -202,7 +203,8 @@ include `Retrieved on`, `Source: <JIRA_URL>`, and
 
 After writing the file, re-read it and verify:
 
-- Every required top-level heading from the fenced snapshot shape exists
+- Every required top-level heading from the fenced Markdown snapshot shape
+  exists
 - Repeated nested headings are present only when their parent item exists, and
   every materialized item follows the template's nested shape
 - `## Description` is present and explicitly represented with either the source
@@ -225,9 +227,9 @@ After writing the file, re-read it and verify:
   `N/A` for `Comments`, `Subtasks`, `Linked issues`, and `Attachments` (parent
   read and those sections did not run), not `0/0`, `0/UNKNOWN`, or a numeric
   attachment count
-- Within Jira-authored description and comment body content, useful formatting
-  is preserved and, outside fenced code blocks, no rendered body line begins
-  with Markdown heading markers such as `# `, `## `, or `### `
+- Within parent and related description and comment body content, useful
+  formatting is preserved and, outside fenced code blocks, no rendered body
+  line begins with Markdown heading markers such as `# `, `## `, or `### `
 - For each rendered parent comment, subtask, linked issue, or `Not retrieved`
   placeholder, the required nested headings and fields from the template appear
   exactly once
@@ -283,8 +285,9 @@ treat the run as `FETCH: PARTIAL`. When the parent ticket was not retrieved
 (for example, `Failure category: NOT_FOUND` before any snapshot), parent
 comment retrieval and related-item discovery did not run; use `N/A` for
 `Comments`, `Subtasks`, and `Linked issues` instead of `0/0` or
-`<retrieved>/UNKNOWN`. For `Attachments`, report the number of rows under
-`## Attachments`; use `N/A` when the parent ticket was not retrieved.
+`<retrieved>/UNKNOWN`. For `Attachments`, report the number of attachment
+entries under `## Attachments`; use `N/A` when the parent ticket was not
+retrieved.
 
 <example>
 FETCH: PASS

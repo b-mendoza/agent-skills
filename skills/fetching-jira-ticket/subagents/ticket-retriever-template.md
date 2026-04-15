@@ -35,8 +35,9 @@ run as `FETCH: PARTIAL`. When identities are known but a related item cannot be
 hydrated, use the missing-item placeholder shapes under **Conditional Rules**;
 partial runs are `FETCH: PARTIAL` with warnings.
 
-Normalize timestamps with time to `YYYY-MM-DD HH:MM UTC`. Preserve date-only
-values, such as Jira due dates without a time component, as `YYYY-MM-DD`.
+Normalize timestamps that include a time component to `YYYY-MM-DD HH:MM UTC`.
+Preserve date-only values, such as Jira due dates without a time component, as
+`YYYY-MM-DD`.
 
 ```markdown
 # <TICKET_KEY>: <Summary>
