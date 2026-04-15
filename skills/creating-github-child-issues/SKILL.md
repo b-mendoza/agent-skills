@@ -60,7 +60,7 @@ Inside Phase 4, keep only:
 - The validation verdict
 - The task / issue ref / write model / title / dependency / priority / outcome rows needed for progress reporting
 - Any warning or fatal reason that requires user attention
-- Any platform-specific creation metadata the subagent returns (for auditability)
+- Any platform-specific creation metadata the subagent returns for auditability
 
 Relay only the structured fields the subagent returns. Raw `gh` JSON, full API
 responses, raw file contents, and intermediate parse details stay inside
@@ -92,7 +92,7 @@ The short version:
 - A missing `## Decisions Log` downgrades the run to `TASK_ISSUES: WARN` rather
   than blocking it.
 - Successful Phase 4 output is still the validated presence of
-  `## GitHub Task Issues` with the required machine handoff comment and
+  `## GitHub Task Issues` with the required machine handoff HTML comment and
   workflow table, plus `GitHub Task Issue: …` lines in task sections,
   per `./references/phase-4-io-contracts.md`.
 
@@ -138,7 +138,7 @@ Using only the subagent's structured summary, tell the caller:
 - The `Created/Linked Task Issues` table, including dependency and priority
   metadata for each task
 - Any platform-specific creation metadata the subagent returned, including the
-  effective **write model** and **capability detection** outcome (short)
+  effective **write model** and short **capability** outcome
 - Any warnings or failures
 - That no implementation has started and new issues remain open at their
   GitHub state unless already closed

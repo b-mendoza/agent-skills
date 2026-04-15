@@ -227,6 +227,10 @@ priority value. Include **one row per parsed task** when the plan file was
 updated. For tasks without a concrete issue, use `Not Created` or `task-list` in
 `Issue ref` and an outcome such as `Create failed` or `Task list only`.
 
+Always emit `Write model:` and `Capability:` lines, including early exits. When
+the run stops before concrete creation or validation, populate them with the
+best detected or intended write path so the summary shape stays stable.
+
 This returned summary table is intentionally different from the plan-file
 workflow table. The plan artifact records platform `Status`; this summary
 records Phase 4 `Outcome`.
