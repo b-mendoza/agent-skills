@@ -1,18 +1,22 @@
 ---
 name: "executing-jira-task"
-description: 'Execute exactly one planned Jira task using pre-produced planning artifacts and a specialist pipeline. Use when the user says "execute task 2", "implement task 4", "work on task 1 for PROJ-123", or when `orchestrating-jira-workflow` reaches the per-task execution phase. Requires `docs/<TICKET_KEY>-tasks.md` from `planning-jira-tasks` plus per-task artifacts from `planning-jira-task`. Phase 7 begins with an explicit execution kickoff that performs readiness checks and the first execution-side mutations, then continues through implementation, review gates, and reporting for one task only.'
+description: 'Execute exactly one planned Jira workflow task using pre-produced planning and critique artifacts and a specialist pipeline. Use when the user says "execute task 2", "implement task 4", "work on task 1 for PROJ-123", or when `orchestrating-jira-workflow` reaches Phase 7 for a task. Requires the four Phase 5 artifacts and two Phase 6 artifacts from `planning-jira-task` and `clarifying-assumptions` (critique mode). Phase 7 begins with an explicit execution kickoff, the first mutation boundary after critique approval, that performs readiness checks and Jira-side startup updates when appropriate, then continues through implementation, review gates, and reporting for one task only.'
 ---
 
 # Executing Jira Task
 
-This skill is the per-task execution orchestrator for a Jira workflow. It does
-exactly three things: **validate** that the selected task is ready, **dispatch**
-the right specialist for each phase, and **decide** whether to advance, run a
-targeted fix cycle, or escalate. Phase 7 starts with an explicit
-**execution kickoff**: the first execution-side mutation boundary where the
-workflow confirms readiness, applies safe startup state changes, and only then
-hands off to the implementer. The orchestrator keeps only concise summaries in
-memory; the subagents do the heavy work in isolation.
+This skill is the per-task execution orchestrator for the Jira workflow. It
+does exactly three things: **validate** that the selected task is ready,
+**dispatch** the right specialist for each phase, and **decide** whether to
+advance, run a targeted fix cycle, or escalate.
+
+**Execution kickoff** is the first point at which the workflow may mutate Jira
+state or otherwise cross from critique-only work into active execution.
+Everything through Phase 6 remains critique and planning on disk; **kickoff is
+the first execution mutation boundary after the user approves implementation**,
+consistent with the parent orchestrator's task-loop readiness gate. The
+orchestrator running this skill keeps only concise summaries in memory;
+subagents do the heavy work in isolation.
 
 ## Inputs
 
@@ -21,18 +25,21 @@ memory; the subagents do the heavy work in isolation.
 | `TICKET_KEY`  | Yes      | `JNS-6065` | Used to derive artifact and Jira paths. |
 | `TASK_NUMBER` | Yes      | `3`        | Exactly one task per invocation.        |
 
-### Required artifacts
+### Required artifacts (normal Phase 7 path)
 
-| Artifact                                  | Required | Purpose                                      |
-| ----------------------------------------- | -------- | -------------------------------------------- |
-| `docs/<KEY>.md`                           | Yes      | Ticket snapshot and Jira context.            |
-| `docs/<KEY>-tasks.md`                     | Yes      | Source of truth for task selection/status.   |
-| `docs/<KEY>-task-<N>-brief.md`            | Yes      | Scope, DoD, and execution constraints.       |
-| `docs/<KEY>-task-<N>-execution-plan.md`   | Yes      | Approved implementation approach.            |
-| `docs/<KEY>-task-<N>-test-spec.md`        | Yes      | Required behavior coverage.                  |
-| `docs/<KEY>-task-<N>-refactoring-plan.md` | Yes      | Approved structural prep and cleanup.        |
-| `docs/<KEY>-task-<N>-critique.md`         | Yes      | Task-level critique record.                  |
-| `docs/<KEY>-task-<N>-decisions.md`        | Yes      | Critique outcomes and confirmed decisions.   |
+These match the parent orchestrator's **6 → 7 readiness** gate for per-task
+execution:
+
+| Artifact                                  | Phase | Required | Purpose                                    |
+| ----------------------------------------- | ----- | -------- | ------------------------------------------ |
+| `docs/<KEY>.md`                           | 1     | Yes      | Ticket snapshot and Jira context.          |
+| `docs/<KEY>-tasks.md`                     | 2–4   | Yes      | Source of truth for task selection/status. |
+| `docs/<KEY>-task-<N>-brief.md`            | 5     | Yes      | Scope, DoD, and execution constraints.     |
+| `docs/<KEY>-task-<N>-execution-plan.md`   | 5     | Yes      | Approved implementation approach.          |
+| `docs/<KEY>-task-<N>-test-spec.md`        | 5     | Yes      | Required behavior coverage.                |
+| `docs/<KEY>-task-<N>-refactoring-plan.md` | 5     | Yes      | Approved structural prep and cleanup.      |
+| `docs/<KEY>-task-<N>-critique.md`         | 6     | Yes      | Task-level critique record.                |
+| `docs/<KEY>-task-<N>-decisions.md`        | 6     | Yes      | Critique outcomes and confirmed decisions. |
 
 Read `./references/contracts.md` when validating task readiness or artifact
 shape.
@@ -63,7 +70,7 @@ Quality-gate fix cycles happen after internal step 5.
 | ----------------------- | -------------------------------------- | ------------------------------------------------------------------------------ |
 | `execution-starter`     | `./subagents/execution-starter.md`     | Performs execution kickoff: readiness checks, safe startup state changes, and Jira `In Progress` transition when possible. |
 | `task-executor`         | `./subagents/task-executor.md`         | Implements the scoped change and tests from the approved planning artifacts.   |
-| `documentation-writer`  | `./subagents/documentation-writer.md`  | Adds in-code documentation, commits Category B files, and updates tracking.    |
+| `documentation-writer`  | `./subagents/documentation-writer.md`  | Adds in-code documentation, commits Category B files, updates `docs/<TICKET_KEY>-tasks.md`, and performs optional Jira completion updates on the subtask. |
 | `requirements-verifier` | `./subagents/requirements-verifier.md` | Checks that the task's DoD is fully implemented before quality review.         |
 | `clean-code-reviewer`   | `./subagents/clean-code-reviewer.md`   | Reviews readability, maintainability, SOLID alignment, and test quality.       |
 | `architecture-reviewer` | `./subagents/architecture-reviewer.md` | Reviews domain boundaries, composition, and architectural fit.                 |
@@ -80,21 +87,22 @@ Everything else is delegated. Pass file paths and short summaries between
 subagents instead of raw file contents or command output.
 
 In practice, the orchestrator does only three kinds of work directly: load the
-current instructions, dispatch the next specialist, and keep the smallest
+current instructions, dispatch the next specialist, and carry forward the smallest
 summary needed for the next decision. Execution, mutation, analysis, and
 artifact updates stay inside the specialist subagents.
 
 Every task run follows the same validation loop: confirm readiness, cross the
-execution boundary deliberately, verify Definition of Done coverage before the
-review gates, and re-run only the failing phase when a targeted fix is needed.
+**kickoff mutation boundary** deliberately after critique approval, verify
+Definition of Done coverage before the review gates, and re-run only the failing
+phase when a targeted fix is needed.
 
 Treat artifacts in two categories:
 
-- **Category A: orchestration artifacts.** `docs/<KEY>*.md`, progress files,
-  plans, briefs, test specs, refactoring plans, and decision logs. These stay
-  on disk, are never committed, and are never deleted.
-- **Category B: implementation artifacts.** Source code, tests, config changes,
-  and in-code documentation. These are committed normally.
+- **Category A:** `docs/<KEY>*.md`, progress files, briefs, plans, test specs,
+  refactoring plans, critique, and decisions. Stay on disk, never committed,
+  never deleted.
+- **Category B:** source code, tests, config, in-code documentation. Committed
+  normally.
 
 If a selected task is already complete, blocked by unmet prerequisites, or
 produces a repeated unresolved blocker, stop and report that state instead of
@@ -106,27 +114,28 @@ After a successful run, this skill leaves behind these deliverables:
 
 - **Category B implementation artifacts:** committed source code, tests, config
   changes, and in-code documentation.
-- **Category A orchestration artifacts:** updated on disk but left
-  uncommitted, including task status, implementation summary, file list, and
-  optional Jira tracking.
-- **Kickoff summary:** a returned execution-kickoff record covering readiness,
+- **Category A orchestration artifacts:** updated on disk but left uncommitted,
+  including task status, implementation summary, file list, and optional Jira
+  tracking.
+- **Kickoff summary:** a returned `KICKOFF_REPORT` covering readiness,
   workspace state, and whether the Jira subtask was moved to `In Progress`.
 - **Task-only completion report:** a concise user-facing report summarising the
   selected task's execution, commits, and gate verdicts.
 
 ## Phase Guide
 
-| When you need...                                 | Read...                                   |
-| ------------------------------------------------ | ----------------------------------------- |
-| Artifact contracts and task readiness checks     | `./references/contracts.md`               |
-| The normal execution flow, kickoff, and fix-loop order | `./references/pipeline.md`          |
-| Status handling, retries, and user escalations   | `./references/retry-and-escalation.md`    |
-| Shared reviewer expectations for quality gates   | `./references/review-gate-policy.md`      |
+| When you need...                                      | Read...                                |
+| ----------------------------------------------------- | -------------------------------------- |
+| Artifact contracts and task readiness checks          | `./references/contracts.md`            |
+| Normal execution flow, kickoff, fix-loop order        | `./references/pipeline.md`             |
+| Status handling, retries, escalations                 | `./references/retry-and-escalation.md` |
+| Shared reviewer expectations                          | `./references/review-gate-policy.md`   |
 
 ## Execution Steps
 
 1. Read `./references/contracts.md` and confirm the task is ready to cross the
-   execution boundary.
+   execution boundary (including Phase 7 precondition alignment with the parent
+   orchestrator when invoked from that workflow).
 2. Read `./references/pipeline.md` and follow its normal run order exactly.
 3. Dispatch only the next required subagent, passing explicit inputs and
    keeping only structured summaries in orchestration context.
@@ -138,9 +147,6 @@ After a successful run, this skill leaves behind these deliverables:
 
 ## Operating Constraints
 
-This skill stays reliable by keeping scope tight, preserving artifact
-boundaries, and fixing only the phase that actually failed.
-
 - Execute one task per invocation, then stop and wait for a new invocation for
   the next task.
 - Keep the task plan as the source of truth. If execution reveals a plan change
@@ -148,7 +154,7 @@ boundaries, and fixing only the phase that actually failed.
 - Preserve Category A artifacts on disk and out of git history.
 - Keep fix cycles targeted. Re-run only the failing verification or review
   steps, not the entire pipeline.
-- Treat missing required skills, missing MCP capability, or unresolved
+- Treat missing required skills, missing tracker capability, or unresolved
   ambiguity as orchestration decisions. Surface them clearly and stop.
 
 ## Example
