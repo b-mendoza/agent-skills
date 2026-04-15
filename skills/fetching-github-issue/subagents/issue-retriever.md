@@ -62,9 +62,9 @@ field layout across all `gh` versions—adapt field names to what the installed
 Retry only read operations that fail due to explicit rate limiting (`403` with
 rate limit, `429`) or transient server errors (`5xx`). Use at most 2 retries
 per operation, with backoff delays of 1 second and then 3 seconds. Do not
-retry bad input, auth failures, or 404 on the parent issue. If rate limits
-persist after the retry budget is exhausted, stop and return `FETCH: FAIL`
-with `Failure category: RATE_LIMIT`.
+retry bad input, auth failures, 404 on the parent issue, or schema/tool
+mismatches. If rate limits persist after the retry budget is exhausted, stop
+and return `FETCH: FAIL` with `Failure category: RATE_LIMIT`.
 
 ### 3. Retrieve the parent issue
 
@@ -178,8 +178,9 @@ Render related sections in deterministic order (template rules).
 > validate -> repair -> re-check loop targeted to the missing or mismatched
 > portions before you report the final summary.
 
-Read the bundled `./subagents/issue-retriever-template.md` and use the fenced Markdown
-snapshot shape as the literal output contract. Write the final snapshot to:
+Read the bundled `./subagents/issue-retriever-template.md` and use the fenced
+Markdown snapshot shape in that file as the literal output contract. Write the
+final snapshot to:
 
 ```text
 docs/<ISSUE_SLUG>.md
@@ -188,14 +189,14 @@ docs/<ISSUE_SLUG>.md
 Treat this file as a preserved workflow artifact for resumability. Write it, validate it, and
 leave it in place, but do not stage or commit it.
 
-Every required top-level heading from the fenced snapshot shape must appear in
-the file. Repeated nested headings appear only for items that actually exist or
-for required `Not retrieved` placeholders. The title line must match
-`# <ISSUE_SLUG>: <Issue title>` using the issue title from GitHub.
+Every required top-level heading from the fenced Markdown snapshot shape must
+appear in the file. Repeated nested headings appear only for items that
+actually exist or for required `Not retrieved` placeholders. The title line
+must match `# <ISSUE_SLUG>: <Issue title>` using the issue title from GitHub.
 
-Normalize timestamps with time to `YYYY-MM-DD HH:MM UTC`, and preserve
-date-only values as `YYYY-MM-DD`. The retrieval preamble at the top of the
-file must match the template and include `Retrieved on` (using the normalized
+Normalize timestamps that include a time component to `YYYY-MM-DD HH:MM UTC`,
+and preserve date-only values as `YYYY-MM-DD`. The retrieval preamble at the
+top of the file must match the template and include `Retrieved on` (using the normalized
 timestamp), `Source` (the `ISSUE_URL` or `owner/repo#N` reference), and
 `Repository: <owner>/<repo> | Issue: #<N>`. Use `_None_` only for sections
 whose emptiness was verified. If child-issue, linked-issue, or project
@@ -205,7 +206,8 @@ discovery could not be verified, use the template's unknown marker instead.
 
 After writing the file, re-read it and verify:
 
-- Every required top-level heading from the fenced snapshot shape exists
+- Every required top-level heading from the fenced Markdown snapshot shape
+  exists
 - Repeated nested headings are present only when their parent item exists, and
   every materialized item follows the template's nested shape
 - `## Description` is present and explicitly represented with either the source
@@ -220,9 +222,9 @@ After writing the file, re-read it and verify:
   number discovered on the parent issue, with full entries for retrieved items
   and `Not retrieved` placeholders for any unretrieved ones; or the section
   uses the template's unknown marker when discovery could not be verified
-- Within issue and comment body content, useful formatting is preserved and,
-  outside fenced code blocks, no rendered body line begins with Markdown
-  heading markers such as `# `, `## `, or `### `
+- Within parent and related description and comment body content, useful
+  formatting is preserved and, outside fenced code blocks, no rendered body
+  line begins with Markdown heading markers such as `# `, `## `, or `### `
 - For each rendered parent comment, child issue, linked issue, or `Not
   retrieved` placeholder, the required nested headings and fields from the
   template appear exactly once
@@ -287,9 +289,10 @@ verified that no items exist. When the parent issue was not retrieved (for
 example, `Failure category: NOT_FOUND` before any snapshot), parent comment
 retrieval and related-item discovery did not run; use `N/A` for `Comments`,
 `Child issues`, and `Linked issues` instead of `0/0` or `0/UNKNOWN`. For
-`Attachments`, report the number of entries rendered under `## Attachments`;
-use `N/A` when the parent issue was not retrieved. If discovery could not be
-verified for a related section after the parent was retrieved, use
+`Attachments`, report the number of attachment entries rendered under
+`## Attachments`; use `N/A` when the parent issue was not retrieved. If
+discovery could not be verified for a related section after the parent was
+retrieved, use
 `<retrieved>/UNKNOWN`, record a warning, and treat the run as `FETCH: PARTIAL`.
 Apply the same explicit-partial rule when `## Projects` cannot be verified
 because the required GitHub capability is unavailable: render the template's

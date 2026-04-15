@@ -62,9 +62,9 @@ matches the output contract and, when a file is written, reports validation
 status consistently.
 
 This coordinator may do four things directly: read its bundled skill files,
-derive identifiers from the input URL (or fallback coordinates when no URL is
-provided), dispatch the retriever, and relay the retriever's structured
-summary. Everything else stays inside the subagent.
+derive identifiers from the input contract (including fallback coordinates when
+no URL is provided), dispatch the retriever, and relay the retriever's
+structured summary. Everything else stays inside the subagent.
 
 ### 1. Dispatch the retriever
 
@@ -86,12 +86,12 @@ The retriever returns a summary with these top-level fields:
 
 - `FETCH: PASS` -> retrieval and validation succeeded
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
-  related items could not be retrieved, or related-item discovery could not be
-  verified
-- Parent comment retrieval and child-issue / linked-issue retrieval or
-  discovery gaps use `PARTIAL`; `## Projects` also uses `PARTIAL` when
-  membership cannot be determined because the required capability was
-  unavailable
+  related items could not be retrieved, or discovery of related items or
+  project membership could not be verified
+- Shared rule: parent comment retrieval and child-issue / linked-issue
+  retrieval or discovery gaps use `PARTIAL`
+- GitHub-specific: `## Projects` also uses `PARTIAL` when membership cannot be
+  determined because the required capability was unavailable
 - `FETCH: FAIL` -> deterministic failure such as bad input, issue not found,
   missing auth, rate limits after retry, or no usable GitHub read capability
 - `FETCH: ERROR` -> unexpected tool or environment failure
@@ -115,9 +115,9 @@ For count lines in the summary:
   issue was not retrieved and those retrieval steps never ran (for example,
   `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` or
   `<retrieved>/UNKNOWN` in that case
-- `Attachments: <N>` is the number of entries under `## Attachments`; use
-  `Attachments: N/A` when the parent issue was not retrieved (that section was
-  not populated from a successful parent read)
+- `Attachments: <N>` is the number of attachment entries under
+  `## Attachments`; use `Attachments: N/A` when the parent issue was not
+  retrieved (that section was not populated from a successful parent read)
 
 Failure categories are:
 
@@ -135,8 +135,7 @@ Handle them this way:
 
 - `FETCH: PASS` with `Validation: PASS`: report success and continue
 - `FETCH: PARTIAL` with `Validation: PASS`: report success with warnings and
-  make the incompleteness visible, including capability-unavailable
-  `## Projects` cases
+  make the incompleteness visible, including any template unknown markers
 - `Validation: FAIL`: stop and relay contract failure (any `FETCH`)
 - `FETCH: FAIL`: stop and relay the failure category plus the reason
 - `FETCH: ERROR`: stop and relay the failure category plus the reason as an
@@ -178,15 +177,16 @@ Do not commit it as part of implementation history.
 
 The document must contain every top-level heading from the fenced Markdown
 snapshot shape in `./subagents/issue-retriever-template.md`. Repeated nested
-headings appear only when their parent section has material to render. If a
-top-level section has verified empty data, the heading still appears and the
-section body is `_None_`. If the retriever could not verify whether a section
-is empty, the artifact must use the template's unknown marker instead.
-Downstream skills rely on stable headings rather than best-effort prose. If
-retrieval is partial, the artifact must record that explicitly in
-`## Retrieval Warnings` and use the template's placeholder shapes for any child
-or linked issue that could not be hydrated, or the template's unknown marker
-when a section could not be verified as empty.
+headings, such as comment entries or per-related-item subsections, appear only
+when their parent section has material to render. If a top-level section has
+verified empty data, the heading still appears and the section body is
+`_None_`. If the retriever could not verify whether a section is empty, the
+artifact must use the template's unknown marker instead. Downstream skills rely
+on stable headings rather than best-effort prose. If retrieval is partial, the
+artifact must record that explicitly in `## Retrieval Warnings` and use the
+template's placeholder shapes for any child or linked issue that could not be
+hydrated, or the template's unknown marker when a section could not be
+verified as empty.
 
 Treat `./subagents/issue-retriever-template.md` as the authoritative snapshot
 shape bundled with this skill; no external spec file is required. The section
@@ -198,11 +198,11 @@ issue/ticket-fetching skills; the platform-slot section appears between
 
 | Section | Why it exists |
 | ------- | ------------- |
-| `## Metadata` | Core issue and repository context for planning and validation |
-| `## Description` | Primary source of requirements (issue body, normalized) |
+| `## Metadata` | Core tracker identity and context for planning and validation |
+| `## Description` | Primary source of requirements after normalization |
 | `## Acceptance Criteria` | Definition-of-done source, including extracted AC when present |
 | `## Comments` | Decisions, clarifications, and implementation hints |
-| `## Retrieval Warnings` | Stable disclosure for partial related-item or API limits |
+| `## Retrieval Warnings` | Stable disclosure for partial retrieval and capability limits |
 | `## Linked Issues` | Dependency and surrounding context |
 
 **Locked platform-slot section** (shared concept; the parallel ticket-fetching
@@ -232,7 +232,7 @@ their absence was verified:
 | `## Assignees` | Ownership |
 | `## Milestone` | Release or iteration bucket when set |
 | `## Projects` | Project board / project fields when retrievable without excessive custom setup; when not determinable, render the template's unknown marker instead of `_None_` |
-| `## Attachments` | Placeholder for file-like assets; GitHub rarely exposes a Jira-style attachment list - record `_None_` unless you have concrete linked assets to enumerate |
+| `## Attachments` | File-like asset references when they can be identified from explicit linked uploads or binary URLs |
 
 ## Escalation
 

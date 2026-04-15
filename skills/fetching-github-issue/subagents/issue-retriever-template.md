@@ -34,8 +34,8 @@ Use tables only when there is at least one row to show. If there is no data
 for `## Labels` or `## Assignees`, write `_None_` under the heading instead of
 an empty table.
 
-Normalize timestamps with time to `YYYY-MM-DD HH:MM UTC`. Preserve date-only
-values as `YYYY-MM-DD`.
+Normalize timestamps that include a time component to `YYYY-MM-DD HH:MM UTC`.
+Preserve date-only values as `YYYY-MM-DD`.
 
 ```markdown
 # <ISSUE_SLUG>: <Issue title>
@@ -134,7 +134,7 @@ values as `YYYY-MM-DD`.
 
 ## Attachments
 
-_None_ or a short bullet list of explicitly linked binary or upload URLs found in issue or comment bodies (GitHub does not mirror Jira-style attachment metadata).
+_None_ or a short bullet list of explicitly linked upload or binary asset URLs found in issue or comment bodies.
 ```
 
 ## Conditional Rules
