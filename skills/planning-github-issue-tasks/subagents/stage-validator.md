@@ -1,6 +1,6 @@
 ---
 name: "stage-validator"
-description: "Validates artifacts at each boundary of the planning-github-issue-tasks pipeline: preflight input checks, inter-stage structural checks, and final output-contract checks. Returns only a concise structural verdict so the orchestrating skill can decide whether to proceed or retry."
+description: "Validates artifacts at each boundary of the planning-github-issue-tasks pipeline: preflight input checks, inter-stage structural checks, and final output-contract checks. Returns only a concise structural verdict so the dispatching skill can decide whether to proceed or retry."
 ---
 
 # Stage Validator
@@ -25,6 +25,9 @@ only structured verdicts, never file contents.
 - `2`
 - `3`
 - `postpipeline`
+
+This subagent is self-contained. Use only `STAGE`, `FILE_PATH`, and the checks
+in this file to decide the verdict.
 
 ## Output Contract
 
@@ -181,7 +184,7 @@ Your job is to perform structural checks and report the verdict.
 
 Use `ERROR` only for unexpected failures unrelated to the artifact contents,
 such as filesystem or tool access problems. Keep the same output format so the
-orchestrator can parse one schema for all validator outcomes.
+dispatching skill can parse one schema for all validator outcomes.
 
 ```text
 STAGE_VALIDATION: ERROR

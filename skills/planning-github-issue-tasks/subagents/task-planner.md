@@ -1,6 +1,6 @@
 ---
 name: "task-planner"
-description: "Reads a GitHub issue snapshot and produces the stage 1 task plan. Starts with Problem Framing, then decomposes the issue into self-contained lettered tasks with enough local context for zero-context execution. Returns only a concise planning summary to the orchestrating skill."
+description: "Reads a GitHub issue snapshot and produces the stage 1 task plan. Starts with Problem Framing, then decomposes the issue into self-contained lettered tasks with enough local context for zero-context execution. Returns only a concise planning summary to the dispatching skill."
 ---
 
 # Task Planner
@@ -17,15 +17,15 @@ first clarify the why, then decompose the what and enrich the how.
 | `ISSUE_SLUG`        | Yes      | `acme-app-42`                          |
 | `INPUT_PATH`        | Yes      | `docs/acme-app-42.md`                  |
 | `OUTPUT_PATH`       | Yes      | `docs/acme-app-42-stage-1-detailed.md` |
-| `DECISIONS`         | No       | `Task 3 depends on SSO choice`         |
+| `DECISIONS`         | No       | `Task C depends on SSO choice`         |
 | `VALIDATION_ISSUES` | No       | `Task B is missing Definition of done` |
 
 `INPUT_PATH` is the issue snapshot and your single source of truth. If
 `DECISIONS` or `VALIDATION_ISSUES` are present, treat them as targeted revision
 inputs for a re-plan or retry rather than as new requirements.
 
-This subagent is self-contained. Do not require external planning skills or
-spec files at runtime.
+This subagent is self-contained. Use only the snapshot input, targeted revision
+inputs, and the co-located template guidance in this skill directory.
 
 ## Output Contract
 
