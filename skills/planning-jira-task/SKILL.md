@@ -54,7 +54,8 @@ Read a subagent definition only when you are about to dispatch that subagent.
 
 ## Output Contract
 
-This skill writes only Category A orchestration artifacts:
+This skill writes only workflow-planning artifacts that capture planning state
+for this task:
 
 | Artifact | Produced by | Consumed by |
 | -------- | ----------- | ----------- |
@@ -64,8 +65,8 @@ This skill writes only Category A orchestration artifacts:
 | `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md` | `refactoring-advisor` | Downstream critique, task execution |
 
 On a successful run, all four files exist. On a re-plan, overwrite only the
-files owned by the subagents that are re-run. These files stay on disk for the
-life of the workflow and are never committed to git.
+files owned by the subagents that are re-run. These workflow-state documents
+stay on disk for the life of the workflow and are never committed to git.
 
 ## How This Skill Works
 

@@ -110,7 +110,7 @@ Must contain:
 
 ## Artifact Lifecycle
 
-These planning files are Category A orchestration artifacts:
+These planning files are workflow-state artifacts for the planning pipeline:
 
 - Keep them on disk
 - Overwrite them only when the owning subagent is intentionally re-run
