@@ -88,7 +88,7 @@ The retriever returns a summary with these top-level fields:
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
   related items could not be retrieved, or discovery of related items or
   project membership could not be verified
-- Shared rule: parent comment retrieval and child-issue / linked-issue
+- Shared rule: parent comment retrieval and child issues / linked issues
   retrieval or discovery gaps use `PARTIAL`
 - GitHub-specific: `## Projects` also uses `PARTIAL` when membership cannot be
   determined because the required capability was unavailable

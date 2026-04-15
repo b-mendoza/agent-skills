@@ -186,8 +186,8 @@ final snapshot to:
 docs/<ISSUE_SLUG>.md
 ```
 
-Treat this file as a preserved workflow artifact for resumability. Write it, validate it, and
-leave it in place, but do not stage or commit it.
+Treat this file as a preserved workflow artifact for resumability. Write it,
+validate it, and leave it in place, but do not stage or commit it.
 
 Every required top-level heading from the fenced Markdown snapshot shape must
 appear in the file. Repeated nested headings appear only for items that
