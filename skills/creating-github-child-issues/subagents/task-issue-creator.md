@@ -11,12 +11,12 @@ primary transport** for auth, discovery, issue create/view, and API calls
 (`gh api`). Reuse verified existing links instead of duplicating issues, create
 only missing issues when the chosen write model requires it, repair
 `docs/<ISSUE_SLUG>-tasks.md` in place, and return a concise summary the
-coordinator can route on.
+orchestrator can route on.
 
-Do **not** assume native GitHub sub-issues are always available: run explicit
-capability detection, record the outcome in the handoff comment, and fall back
-per `./task-issue-creator-templates.md` and the preference order in
-`../references/phase-4-io-contracts.md`.
+Run explicit capability detection before choosing the write path. Record the
+outcome in the handoff comment, use `./task-issue-creator-templates.md` for
+issue-body and plan-fragment shapes, and follow the write-model preference
+order in `../references/phase-4-io-contracts.md`.
 
 ## Inputs
 
@@ -48,10 +48,18 @@ The plan is expected to contain a `## Tasks` section with numbered
 `## Task <N>: <title>` headings. If the file is missing or uses an unsupported
 task shape, return `TASK_ISSUES: BLOCKED`.
 
-Parse each task's title and these subsections when present: `Objective`,
-`Relevant requirements and context`, `Questions to answer before starting`,
-`Implementation notes`, `Definition of done`, `Likely files / artifacts
-affected`, `Dependencies / prerequisites`, and `Priority`.
+Parse each task's title and these subsections when present, in the same order
+used by `./task-issue-creator-templates.md`: `Objective`,
+`Relevant requirements and context`, `Dependencies / prerequisites`,
+`Questions to answer before starting`, `Implementation notes`,
+`Definition of done`, and `Likely files / artifacts affected`.
+
+Also parse `Priority` when present so the workflow table and structured summary
+can preserve it.
+
+Normal Phase 4 artifacts may also include `## Execution Order Summary`.
+Preserve it if present, but treat numbered task sections as the parse boundary
+for this phase.
 
 ## Instructions
 
@@ -149,9 +157,9 @@ affected`, `Dependencies / prerequisites`, and `Priority`.
      **Write model** to `linked-issue` for that row, and ensure the body still
      has parent traceability.
 
-   - On **rate limit** (HTTP 403 with rate limit messaging), wait **5 seconds**
-     and retry **once** for that create. If it still fails, record **Failed
-     creates**, continue with other tasks when possible.
+   - On **rate limit** (HTTP 403 or 429 with rate limit messaging), wait
+     **5 seconds** and retry **once** for that create. If it still fails,
+     record **Failed creates**, continue with other tasks when possible.
 
 8. **Update the local plan file idempotently**
    - Update only `docs/<ISSUE_SLUG>-tasks.md`.
@@ -224,8 +232,9 @@ workflow table. The plan artifact records platform `Status`; this summary
 records Phase 4 `Outcome`.
 
 When the run stops before plan updates or create attempts complete,
-`Created/Linked Task Issues` may be an empty table with only the header row. If
-the run stops before create attempts begin, report `Failed creates: 0`.
+`Created/Linked Task Issues` may be an empty table with only the header row, as
+shown in the blocked example. If the run stops before create attempts begin,
+report `Failed creates: 0`.
 
 Status rules:
 
@@ -358,5 +367,7 @@ correct top-level status. The dispatching skill decides what to do next.
 - **All tasks that require concrete issues remain unlinked after attempts:**
   `TASK_ISSUES: FAIL`
 - **Post-write validation still failing after one repair pass:** `TASK_ISSUES: FAIL`
-- **Repair pass:** fix markdown only; never create new issues during repair
-- **Unexpected error:** `TASK_ISSUES: ERROR`
+- **Repair pass:** fix the local markdown artifact only; never create new
+  GitHub issues during repair; if the file still cannot be repaired, return
+  `TASK_ISSUES: FAIL`
+- **Unexpected tool or environment failure:** `TASK_ISSUES: ERROR`

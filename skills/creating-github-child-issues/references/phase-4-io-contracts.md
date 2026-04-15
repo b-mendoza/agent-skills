@@ -4,10 +4,10 @@
 > `task-issue-creator` summary.
 >
 > **Reminder:** Keep only artifact shapes and structured verdicts in the
-> coordinator context. Plan parsing, `gh` / API operations, and plan-file edits stay
+> orchestrator context. Plan parsing, `gh` / API operations, and plan-file edits stay
 > inside `task-issue-creator`.
 >
-> This skill is self-contained. When a parent orchestrator drives the phase,
+> This skill is self-contained. When a parent workflow drives the phase,
 > its own data contract should consume the output artifact shapes below; this
 > skill does not depend on the parent's files being present.
 
@@ -25,10 +25,10 @@ For normal Phase 4 execution, the plan is expected to contain:
 | Expected section / element                         | Produced by                     | Why it matters                                    |
 | -------------------------------------------------- | ------------------------------- | ------------------------------------------------- |
 | `## Tasks` with numbered `## Task <N>:` headings   | Upstream planning phase         | Each row maps to one workflow task                |
-| `## Execution Order Summary`                       | Upstream planning phase         | Preserves ordering context                        |
+| `## Execution Order Summary`                       | Upstream planning phase         | Preserves task ordering context                   |
 | `## Decisions Log`                                 | Clarification / critique phase  | Indicates critique completed before GitHub writes |
 
-The parent orchestrator is responsible for validating the normal Phase 4
+The parent workflow is responsible for validating the normal Phase 4
 precondition before this skill runs. If this skill is used standalone and the plan
 is missing or malformed, the subagent returns `TASK_ISSUES: BLOCKED`. If
 `## Decisions Log` is missing, the subagent continues with `TASK_ISSUES: WARN`:
@@ -49,8 +49,8 @@ The subagent **attempts**, in order:
    recorded only in the plan (and optionally the parent issue body) using a
    checklist-style reference defined in the templates file.
 
-The orchestrator does not pick the model per run. The subagent records which path
-was used in the machine handoff line and per-row `Write model` column.
+The orchestrator does not pick the model per run. The subagent records which
+path was used in the machine handoff comment and per-row `Write model` column.
 
 ## Output Contract
 
@@ -64,20 +64,21 @@ After successful or partial Phase 4 completion, the plan file must include:
 
 | Addition | Consumed by | Purpose |
 | -------- | ----------- | ------- |
-| `## GitHub Task Issues` section with machine handoff line + workflow table | Downstream validation, progress tracking, and task execution phases | Phase 4 postcondition; resumable linkage |
+| `## GitHub Task Issues` section with machine handoff comment + workflow table | Downstream validation, progress tracking, and task execution phases | Phase 4 postcondition; resumable linkage |
 | Exactly one `GitHub Task Issue: …` line per numbered task section (immediately after the task heading) | Downstream validation and execution | Per-task inline reference required for every row |
 
-### Machine handoff line (required)
+### Machine handoff comment (required)
 
 Immediately after the `## GitHub Task Issues` heading, include **one** HTML
 comment on its own line (stable key-value shape for scripts and validators):
 
 ```html
-<!-- phase4-handoff parent="owner/repo#N" model="native-sub-issue|linked-issue|task-list|mixed" capability="<short free-text>" updated="<ISO-8601 UTC>" -->
+<!-- phase4-handoff parent="owner/repo#N" model="linked-issue" capability="<short free-text>" updated="<ISO-8601 UTC>" -->
 ```
 
-- **parent:** canonical parent reference, same repo as workflow unless the skill
-  explicitly documented a cross-repo exception.
+- **parent:** canonical parent reference, same repo as the parent issue /
+  workflow repository unless the skill explicitly documented a cross-repo
+  exception.
 - **model:** the **dominant** write model for this run (`native-sub-issue`,
   `linked-issue`, or `task-list`). If the run mixed models after partial
   failure, set `model="mixed"` and explain in `capability`.
@@ -87,8 +88,8 @@ comment on its own line (stable key-value shape for scripts and validators):
 
 ### Workflow table (required)
 
-Use the table shape in `../subagents/task-issue-creator-templates.md` (`Plan file
-fragments`). Column semantics:
+Use the table shape in `../subagents/task-issue-creator-templates.md`
+(`Plan file fragments`). Column semantics:
 
 | Column | Allowed values / notes |
 | ------ | ---------------------- |
@@ -123,7 +124,7 @@ Rules:
 - Use `task-list` iff the table row uses `task-list` for `Issue ref`.
 
 This line is the **exact format** consumed by downstream Phase 4 postcondition
-checks (for example, a parent orchestrator's data-contracts reference).
+checks and validation references.
 
 ## Structured Summary Contract
 
@@ -142,7 +143,7 @@ The subagent returns a structured summary with:
 - Explicit `Warnings:` and `Failures:` sections
 
 Treat `TASK_ISSUES: ERROR` as an unexpected tool or environment failure. The
-coordinator stops and surfaces the reason instead of interpreting the run as a
+orchestrator stops and surfaces the reason instead of interpreting the run as a
 degraded success.
 
 When the run stops before plan updates or create attempts complete,

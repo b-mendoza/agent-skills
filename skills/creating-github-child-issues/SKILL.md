@@ -10,7 +10,7 @@ Create or reconcile GitHub task issues for a clarified plan at
 specialist subagent, keeping only its structured summary, and reporting the
 outcome the parent workflow needs for progress tracking.
 
-The coordinator does four things directly: read its bundled files, derive
+The orchestrator does four things directly: read its bundled files, derive
 identifiers from `ISSUE_URL`, dispatch `task-issue-creator`, and relay the
 subagent's summary. Plan parsing, `gh` calls, GitHub API probes, and plan-file
 edits all stay inside `task-issue-creator` after dispatch.
@@ -25,8 +25,8 @@ Derive these values from the URL when you need to describe the parent issue:
 
 - **OWNER:** path segment after `github.com/` (lowercase for slug stability).
 - **REPO:** next path segment (lowercase).
-- **ISSUE_NUMBER:** numeric segment after `/issues/`.
-- **ISSUE_SLUG:** `<owner>-<repo>-<issue_number>`.
+- **PARENT_NUMBER:** numeric segment after `/issues/`.
+- **ISSUE_SLUG:** `<owner>-<repo>-<parent_number>`.
 
 Prefer passing the full `ISSUE_URL` downstream. It is the authoritative context
 for `gh --repo` and for verifying the parent issue.
@@ -46,7 +46,7 @@ Read a subagent definition only when you are about to dispatch it.
 
 | Subagent             | Path                                    | Purpose                                                         |
 | -------------------- | --------------------------------------- | --------------------------------------------------------------- |
-| `task-issue-creator` | `./subagents/task-issue-creator.md`     | Reconcile the plan with GitHub and return a structured Phase 4 summary |
+| `task-issue-creator` | `./subagents/task-issue-creator.md`     | Reconcile the clarified plan with GitHub and return a structured Phase 4 summary |
 
 ## How This Skill Works
 
@@ -58,15 +58,15 @@ Inside Phase 4, keep only:
 
 - The structured `TASK_ISSUES` verdict
 - The validation verdict
-- The task / issue ref / title / dependency / priority / outcome rows needed for progress reporting
+- The task / issue ref / write model / title / dependency / priority / outcome rows needed for progress reporting
 - Any warning or fatal reason that requires user attention
-- The recorded **write model** and **capability** summary from the subagent (for auditability)
+- Any platform-specific creation metadata the subagent returns (for auditability)
 
 Relay only the structured fields the subagent returns. Raw `gh` JSON, full API
 responses, raw file contents, and intermediate parse details stay inside
 `task-issue-creator` unless the user explicitly asks for them.
 
-## Input and Output Contracts
+## Phase 4 Contract
 
 Primary artifact:
 
@@ -74,8 +74,8 @@ Primary artifact:
 docs/<ISSUE_SLUG>-tasks.md
 ```
 
-For the complete standalone input contract, output contract, machine handoff
-line, and summary-field definitions, read `./references/phase-4-io-contracts.md`.
+For the complete standalone input contract, output contract, and summary-field
+definitions, read `./references/phase-4-io-contracts.md`.
 
 That bundled reference file is the authoritative local I/O contract for this
 skill. Placement and repair rules remain defined in the subagent. Do not rely
@@ -85,6 +85,9 @@ The short version:
 
 - The plan is expected to contain numbered `## Task <N>:` sections under
   `## Tasks`.
+- Normal Phase 4 plans are also expected to include
+  `## Execution Order Summary`, although Phase 4 parsing keys off numbered
+  task sections rather than that summary.
 - Standalone malformed or missing plans resolve to `TASK_ISSUES: BLOCKED`.
 - A missing `## Decisions Log` downgrades the run to `TASK_ISSUES: WARN` rather
   than blocking it.
@@ -132,25 +135,15 @@ Using only the subagent's structured summary, tell the caller:
 - Total tasks in plan, already linked tasks, newly created issues, and failed creates
 - The `Created/Linked Task Issues` table, including dependency and priority
   metadata for each task
-- The effective **write model** and **capability detection** outcome (short)
+- Any platform-specific creation metadata the subagent returned, including the
+  effective **write model** and **capability detection** outcome (short)
 - Any warnings or failures
 - That no implementation has started and new issues remain open at their
   GitHub state unless already closed
 
-Use dispatch to run `task-issue-creator`. If dispatch is unavailable, report
-the skill as blocked rather than reproducing the subagent inline.
-
-## Escalation
-
-Use the subagent's structured verdict as the only routing input:
-
-| Summary state | Coordinator action |
-| ------------- | ------------------ |
-| `TASK_ISSUES: PASS` with `Validation: PASS` | Report success and proceed |
-| `TASK_ISSUES: WARN` with `Validation: PASS` | Report usable output with warnings and make failed or skipped linkage visible |
-| `TASK_ISSUES: BLOCKED` | Stop and surface the plan-shape or unsafe-linkage issue |
-| `TASK_ISSUES: FAIL` | Stop and surface the fatal GitHub or validation failure |
-| `TASK_ISSUES: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or local contract failure |
+Dispatch `task-issue-creator` as a subagent. If the environment cannot invoke
+subagents, report the skill as blocked rather than reproducing the subagent
+inline.
 
 ## Example
 
@@ -195,3 +188,15 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42` (the subagent derives `
    1 task was already linked and 3 issues were created now.
    No implementation has started."
 </example>
+
+## Escalation
+
+Use the subagent's structured verdict as the only routing input:
+
+| Summary state | Orchestrator action |
+| ------------- | ------------------ |
+| `TASK_ISSUES: PASS` with `Validation: PASS` | Report success and proceed |
+| `TASK_ISSUES: WARN` with `Validation: PASS` | Report usable output with warnings and make failed or skipped linkage visible |
+| `TASK_ISSUES: BLOCKED` | Stop and surface the plan-shape or unsafe-linkage issue |
+| `TASK_ISSUES: FAIL` | Stop and surface the fatal GitHub or validation failure |
+| `TASK_ISSUES: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or local contract failure |
