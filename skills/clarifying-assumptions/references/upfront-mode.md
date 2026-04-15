@@ -6,7 +6,7 @@
 > this phase. Subagents read artifacts, assemble the manifest, and write file
 > updates.
 >
-> Use the parent skill's `## Escalation` table as the authoritative verdict
+> Use the main `SKILL.md` file's `## Escalation` table as the authoritative verdict
 > routing policy. This playbook focuses on phase flow and inline questioning.
 
 ## 1. Dispatch `critique-analyzer`
@@ -53,19 +53,24 @@ Handle the verdicts:
 
 ## 3. Present the manifest
 
-Show the manifest summary before asking the first question:
+Show the manifest summary before asking the first question. Reuse the
+`question-manifest-builder` header counts and `## Questions For Now` table
+shape instead of inventing a new preview schema.
+
+Do not preview the per-item `Brief` blocks for Model A rows yet. Tier 3
+problem-framing items still follow the Model A rule: the developer answers
+before seeing the critique.
 
 ```markdown
 ## Question Manifest — <TICKET_KEY>
 
-Questions for now: <N>
-Deferred to later tasks: <M>
+Questions now: <N> | Deferred: <M> | Irrelevant: <R>
 
-| # | Category | Short description | Model | Skippable |
-| --- | --- | --- | --- | --- |
-| 1 | Problem framing | End user not identified | A | No |
-| 2 | Critique | Redis chosen without project-fit rationale | B | Yes |
-| 3 | Cross-cutting | Error-handling approach | B | Yes |
+| # | Item ID | Category | Severity | Model | Skippable | Affects |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | PF1 | Problem framing | HIGH | A | No | All |
+| 2 | TC1 | Critique | MEDIUM | B | Yes | Task 1 |
+| 3 | CQ1 | Cross-cutting | MEDIUM | B | Yes | All |
 ```
 
 After the preview, ask:
@@ -147,14 +152,16 @@ Use the recorder summary plus session counts to present:
 ```markdown
 ## Clarification Complete — <TICKET_KEY> (Upfront)
 
+- Critique artifact: <path>
+- Files updated: <path list or ->
 - Questions resolved: <N>
 - Questions skipped: <N>
 - Questions deferred: <N>
 - Blocking items: <N>
 - Overrides: <N>
 - Plan-changing decisions: <N>
-- Re-plan needed: <Yes/No>
-- Blockers present: <Yes/No>
+- RE_PLAN_NEEDED: <true|false>
+- BLOCKERS_PRESENT: <true|false>
 ```
 
 If `RE_PLAN_NEEDED=true`, tell the orchestrator to re-run planning before

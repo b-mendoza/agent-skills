@@ -5,7 +5,7 @@
 > Reminder: critique mode stays conversational for the developer, but subagents
 > still own artifact reading, deferred-question filtering, and file writes.
 >
-> Use the parent skill's `## Escalation` table as the authoritative verdict
+> Use the main `SKILL.md` file's `## Escalation` table as the authoritative verdict
 > routing policy. This playbook focuses on phase flow and inline questioning.
 
 ## 1. Dispatch `critique-analyzer`
@@ -124,6 +124,8 @@ Read `../subagents/decision-recorder.md`, then dispatch with:
 - `ITERATION=<ITERATION or 1>`
 - `DECISIONS=<resolved decisions from the session>`
 - `RESOLVED_IRRELEVANT=<items marked no longer applicable>`
+- `DEFERRED_QUESTIONS=<new future-task questions created during this session>`
+  only when the discussion surfaces items that should be revisited later
 - `IMPLEMENTATION_UPDATES=<any implementation-note edits caused by switch decisions>`
 
 In critique mode, `decision-recorder` creates or updates
@@ -137,14 +139,16 @@ Use the recorder summary plus session counts to present:
 ```markdown
 ## Critique & Clarification Complete — Task <TASK_NUMBER>
 
+- Critique artifact: <path>
+- Files updated: <path list or ->
 - Critique items resolved: <N>
 - User-impact items resolved: <N>
 - Deferred questions resolved: <N>
 - Questions marked irrelevant: <N>
 - Blocking items: <N>
 - Overrides: <N>
-- Re-plan needed: <Yes/No>
-- Blockers present: <Yes/No>
+- RE_PLAN_NEEDED: <true|false>
+- BLOCKERS_PRESENT: <true|false>
 ```
 
 If `RE_PLAN_NEEDED=true`, tell the orchestrator to re-run the per-task planning
