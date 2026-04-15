@@ -52,26 +52,33 @@ affected`, `Dependencies / prerequisites`, and `Priority`.
    - Record whether `## Decisions Log` is present. If missing, continue with a
      warning (WARN-eligible) rather than blocking.
 
-2. **Capture existing Jira linkage before creating anything**
-   - Detect existing `Jira Subtask: <KEY>` lines inside task sections.
-   - Detect existing `## Jira Subtasks` table rows if they are already present.
-   - Treat the current task section content as the source of truth for the
-     subtask description. The clarified plan already reflects Phase 3 updates.
-
-3. **Verify the parent ticket and safe reuse candidates**
+2. **Verify the parent ticket**
    - Use the available Jira-capable MCP tools to fetch the parent ticket from
      `JIRA_URL` or `TICKET_KEY`.
    - Extract the parent issue key, the project key, and the actual subtask
      issue type name for this project. Use the project's returned subtask issue
      type name for every create request.
+   - If the parent cannot be fetched (404, auth failure, or no Jira-capable
+     tools available), return `SUBTASKS: FAIL` with a clear failure reason. Do
+     not create children against an unverified parent.
+
+3. **Capture existing Jira linkage before creating anything**
+   - Detect existing `Jira Subtask: <KEY>` lines inside task sections.
+   - Detect existing `## Jira Subtasks` table rows if they are already present.
+   - Treat the current task section content as the source of truth for the
+     subtask description. The clarified plan already reflects Phase 3 updates.
+
+4. **Verify existing keys are safe to reuse (idempotent)**
    - For every existing Jira key found in the plan, verify that:
      - the issue exists
      - the issue's parent is `TICKET_KEY`
    - If any existing key is invalid or belongs to a different parent, stop and
      return `SUBTASKS: BLOCKED`. Do not create replacement issues silently;
      that risks duplicates and breaks resumability.
+   - If an issue exists and is already linked correctly, count it as **Already
+     linked**; do not recreate.
 
-4. **Build payloads for tasks that are still unlinked**
+5. **Build payloads for tasks that are still unlinked**
    - For each task without a verified Jira key, build this summary:
 
      ```text
@@ -85,21 +92,21 @@ affected`, `Dependencies / prerequisites`, and `Priority`.
      present, let it reinforce interpretation, but do not resurrect older task
      text that the clarified plan has already replaced.
 
-5. **Create only the missing subtasks**
+6. **Create only the missing subtasks**
    - Create missing subtasks sequentially, one at a time.
    - For each create request, pass:
      - project key
      - verified subtask issue type
      - parent ticket key
-     - exact summary from step 4
-     - exact description from step 4
+     - exact summary from step 5
+     - exact description from step 5
    - After each create, require a Jira-style issue key in the response before
      treating the create as successful.
    - If Jira returns a 429 or rate-limit error, wait 5 seconds and retry that
      same request once. If the retry fails, record the failure and continue.
    - Continue past individual create failures so partial success is visible.
 
-6. **Update the local plan file idempotently**
+7. **Update the local plan file idempotently**
    - Update only `docs/<TICKET_KEY>-tasks.md`.
    - For every verified or newly created subtask, ensure the task section
      contains exactly one `Jira Subtask: <KEY>` line immediately after the task
@@ -117,7 +124,7 @@ affected`, `Dependencies / prerequisites`, and `Priority`.
      For newly created subtasks, use `To Do` unless Jira immediately reports a
      different status.
 
-7. **Validate and repair the artifact**
+8. **Validate and repair the artifact**
    - Re-read the updated plan file.
    - Verify:
      - exactly one `## Jira Subtasks` table exists
@@ -130,7 +137,7 @@ affected`, `Dependencies / prerequisites`, and `Priority`.
    - During repair, do not create additional Jira issues. Only fix the plan
      file representation.
 
-8. **Return the structured summary**
+9. **Return the structured summary**
    - Return only the structured summary below.
    - Keep Jira payloads, raw file contents, and conversational narration
      internal to this run.
