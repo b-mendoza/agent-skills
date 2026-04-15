@@ -16,12 +16,13 @@ workflow stays resumable and your context stays lean.
 
 | Input        | Required | Example                                                     |
 | ------------ | -------- | ----------------------------------------------------------- |
-| `JIRA_URL`   | Preferred| `https://vukaheavyindustries.atlassian.net/browse/JNS-6065` |
-| `TICKET_KEY` | Fallback | `JNS-6065`                                                  |
+| `JIRA_URL`   | Required for Phase 1 | `https://vukaheavyindustries.atlassian.net/browse/JNS-6065` |
+| `TICKET_KEY` | Resume/progress only | `JNS-6065`                                                  |
 
 Prefer the full Jira URL because it carries workspace context for Jira reads
 and writes. If the user provides only `TICKET_KEY`, you may use it to check
-local progress, but ask for the full `JIRA_URL` before any Jira-dependent phase
+local progress and resume state, but obtain the full `JIRA_URL` before
+dispatching `fetching-jira-ticket` in Phase 1 or any later Jira-dependent phase
 that needs workspace context.
 
 Extract these values from the URL when present:
@@ -239,7 +240,7 @@ ordinary implementation gaps or generic fix-loop retries.
    targeted re-plan/retry loop.
 
 Use `./references/data-contracts.md` when you need the exact boundary checks or
-PASS/FAIL semantics for a phase transition.
+PASS/FAIL/ERROR semantics for a phase transition.
 
 For Phases 3 and 6, the gate check uses both the validator verdict and the
 downstream clarification summary. Advance only when
@@ -287,12 +288,15 @@ Load the right reference file based on the phase you are about to run:
 ### 1. Resolve the ticket identifier
 
 Derive `TICKET_KEY` from `JIRA_URL` when available. If you only have
-`TICKET_KEY`, use it for local progress discovery, then ask for the full
-`JIRA_URL` before any Jira-dependent phase that requires workspace access.
+`TICKET_KEY`, use it for local progress discovery, then obtain the full
+`JIRA_URL` before dispatching Phase 1 `fetching-jira-ticket` or any later
+Jira-dependent phase that requires workspace access.
 
 ### 2. Read progress state
 
-Dispatch `progress-tracker` with `ACTION=read`.
+Dispatch `progress-tracker` with `ACTION=read` and `TICKET_KEY` (exact inputs
+per `./subagents/progress-tracker.md`; quick reference in
+`./references/data-contracts.md`).
 
 Interpret the summary:
 
@@ -308,6 +312,9 @@ workflow will start:
 - Fresh start -> `PHASES=1-7`
 - Resume in phases 1-4 -> `PHASES=<current incomplete phase through 7>`
 - Resume in phases 5-7 -> `PHASES=<current task phase through 7>`
+
+Pass `TICKET_KEY` and the computed `PHASES` range so the checker can validate
+the remaining workflow dependencies.
 
 Interpret the result:
 
