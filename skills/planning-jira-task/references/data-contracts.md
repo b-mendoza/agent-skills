@@ -42,8 +42,7 @@ Optional upstream context:
 - `docs/<TICKET_KEY>.md` may provide extra ticket snapshot context if a
   subagent needs it
 - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md` is available on
-  critique-driven
-  re-plan cycles (produced by the critique step)
+  critique-driven re-plan cycles (produced by the critique step)
 - Per-task lines or notes that reference a Jira subtask (for example
   `Jira Subtask: <KEY>` lines) may already be present from an earlier
   task-linking step; when this skill is invoked outside the normal orchestrated

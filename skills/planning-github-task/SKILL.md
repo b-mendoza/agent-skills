@@ -74,11 +74,14 @@ stay on disk for the life of the workflow and are never committed to git.
   expectations.
 - Read `./references/pipeline.md` when running the standard planning pipeline
   or a critique-driven re-plan.
-- At each boundary, validate that the current input artifact exists before
-  dispatch, then confirm that the expected output artifact was written before
-  advancing.
-- Pass only explicit handoffs between steps: `ISSUE_SLUG`, task number, decision
-  file path, and artifact file paths.
+- At each boundary, validate that the current required input exists before
+  dispatch: the task plan and task section for `execution-prepper`, then the
+  prior-stage artifacts for later subagents. Confirm that the expected output
+  artifact was written before advancing.
+- Pass only the explicit handoffs required for the current stage: task identity
+  inputs for `execution-prepper`, plus `RE_PLAN` and `DECISIONS_FILE` on
+  critique-driven reruns; then prior-stage artifact paths and
+  `DECISIONS_FILE` when applicable for later stages.
 - Keep only verdicts, file paths, and next-step-relevant notes from each
   subagent.
 - Advance sequentially. Rerun only the subagents invalidated by critique, plus
@@ -101,7 +104,9 @@ source of truth for the actual orchestration order.
 1. Read `./references/data-contracts.md` and confirm the task-plan prerequisites
    exist for `ISSUE_SLUG` and `TASK_NUMBER`.
 2. Read `./references/pipeline.md`.
-3. Dispatch the first required subagent from the registry with its required
+3. Use `./references/pipeline.md` to determine the next required subagent. On a
+   standard run, start with `execution-prepper`. On a critique-driven re-plan,
+   start at the earliest invalidated stage. Pass only that subagent's required
    explicit inputs. For `execution-prepper`, pass only `ISSUE_SLUG`,
    `TASK_NUMBER`, and when applicable `RE_PLAN` and `DECISIONS_FILE`. For later
    stages, pass the artifact file paths required by `./references/pipeline.md`.
@@ -109,7 +114,9 @@ source of truth for the actual orchestration order.
    decision.
 5. Continue until all required planning artifacts are written and confirmed, or
    a blocker is surfaced.
-6. Report the artifact paths and key planning decisions to the user.
+6. Report completion with the task number and title, all four artifact paths,
+   one or two sentences on the recommended approach, the number or shape of
+   tests specified, and the refactoring verdict.
 
 ## Example
 
@@ -126,7 +133,7 @@ Input:
    `BRIEF_FILE=docs/acme-app-42-task-2-brief.md`
 4. Subagent returns:
    `PLAN: PASS`
-   `Plan: docs/acme-app-42-task-2-execution-plan.md`
+   `Execution plan: docs/acme-app-42-task-2-execution-plan.md`
 5. Dispatch `test-strategist` with
    `BRIEF_FILE=docs/acme-app-42-task-2-brief.md` and
    `PLAN_FILE=docs/acme-app-42-task-2-execution-plan.md`
@@ -139,9 +146,14 @@ Input:
    `TEST_SPEC_FILE=docs/acme-app-42-task-2-test-spec.md`
 8. Subagent returns:
    `REFACTORING: PASS`
-   `Plan: docs/acme-app-42-task-2-refactoring-plan.md`
+   `Refactoring plan: docs/acme-app-42-task-2-refactoring-plan.md`
 9. Tell the user:
-   "Task 2 planning complete. Four planning artifacts are ready for critique."
+   "Task 2 - Add webhook retry handling planning complete.
+   Artifacts: brief, execution plan, test spec, and refactoring plan written.
+   Recommended approach: add retry orchestration in the webhook service, then
+   thread retry state through the worker path.
+   Tests: 3 behavior groups with 6 high-priority checks.
+   Refactoring verdict: Refactor during implementation."
 
 The orchestrator keeps only those summaries and the artifact paths.
 </example>

@@ -42,8 +42,7 @@ Optional upstream context:
 - `docs/<ISSUE_SLUG>.md` may provide extra issue snapshot context if a subagent
   needs it
 - `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-decisions.md` is available on
-  critique-driven
-  re-plan cycles (produced by the critique step)
+  critique-driven re-plan cycles (produced by the critique step)
 - Per-task lines or notes that reference a GitHub task issue (for example child
   issue URLs or numbers) may already be present from an earlier task-linking
   step; when this skill is invoked outside the normal orchestrated entry,
