@@ -1,6 +1,6 @@
 ---
 name: "planning-jira-task"
-description: 'Plan how to execute one task from `docs/<TICKET_KEY>-tasks.md`. Runs a four-subagent pipeline that validates the task, writes an execution brief, inspects the codebase, defines behavior-driven tests, and evaluates refactoring needs. Produces `docs/<TICKET_KEY>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md` for one task only. Use when the user says "plan task 3", "prepare task 2 for execution", "how should we implement task 1", or when invoked as the planning phase of a multi-phase workflow. This skill creates planning artifacts only; it does not change git state, transition Jira issues, or modify product code.'
+description: 'Plan how to execute one task from `docs/<TICKET_KEY>-tasks.md`. Runs a four-subagent pipeline that validates the task, writes an execution brief, inspects the codebase, defines behavior-driven tests, and evaluates refactoring needs. Produces `docs/<TICKET_KEY>-task-<TASK_NUMBER>-{brief,execution-plan,test-spec,refactoring-plan}.md` for one task only. Use when the user says "plan task 3", "prepare task 2 for execution", "how should we implement task 1", or when invoked as the planning phase of a multi-phase workflow. This skill creates planning artifacts only; it does not change git state, transition Jira issues, or modify product code.'
 ---
 
 # Planning Jira Task
@@ -58,10 +58,10 @@ This skill writes only Category A orchestration artifacts:
 
 | Artifact | Produced by | Consumed by |
 | -------- | ----------- | ----------- |
-| `docs/<TICKET_KEY>-task-<N>-brief.md` | `execution-prepper` | All downstream planning subagents, downstream critique, task execution |
-| `docs/<TICKET_KEY>-task-<N>-execution-plan.md` | `execution-planner` | Downstream critique, task execution |
-| `docs/<TICKET_KEY>-task-<N>-test-spec.md` | `test-strategist` | Downstream critique, task execution |
-| `docs/<TICKET_KEY>-task-<N>-refactoring-plan.md` | `refactoring-advisor` | Downstream critique, task execution |
+| `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md` | `execution-prepper` | All downstream planning subagents, downstream critique, task execution |
+| `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md` | `execution-planner` | Downstream critique, task execution |
+| `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md` | `test-strategist` | Downstream critique, task execution |
+| `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md` | `refactoring-advisor` | Downstream critique, task execution |
 
 On a successful run, all four files exist. On a re-plan, overwrite only the
 files owned by the subagents that are re-run. These files stay on disk for the
@@ -100,9 +100,10 @@ source of truth for the actual orchestration order.
 1. Read `./references/data-contracts.md` and confirm the task-plan prerequisites
    exist for `TICKET_KEY` and `TASK_NUMBER`.
 2. Read `./references/pipeline.md`.
-3. Dispatch the first required subagent from the registry with explicit inputs
-   only (`TICKET_KEY`, `TASK_NUMBER`, and when applicable `RE_PLAN`,
-   `DECISIONS_FILE`).
+3. Dispatch the first required subagent from the registry with its required
+   explicit inputs. For `execution-prepper`, pass only `TICKET_KEY`,
+   `TASK_NUMBER`, and when applicable `RE_PLAN` and `DECISIONS_FILE`. For later
+   stages, pass the artifact file paths required by `./references/pipeline.md`.
 4. Retain only its verdict, artifact path, and the notes needed for the next
    decision.
 5. Continue until all required planning artifacts are written and confirmed, or
@@ -120,15 +121,21 @@ Input:
 2. Subagent returns:
    `PREP: PASS`
    `Brief: docs/JNS-6065-task-2-brief.md`
-3. Dispatch `execution-planner` with the brief path
+3. Dispatch `execution-planner` with
+   `BRIEF_FILE=docs/JNS-6065-task-2-brief.md`
 4. Subagent returns:
    `PLAN: PASS`
    `Plan: docs/JNS-6065-task-2-execution-plan.md`
-5. Dispatch `test-strategist`
+5. Dispatch `test-strategist` with
+   `BRIEF_FILE=docs/JNS-6065-task-2-brief.md` and
+   `PLAN_FILE=docs/JNS-6065-task-2-execution-plan.md`
 6. Subagent returns:
    `TEST_SPEC: PASS`
    `Spec: docs/JNS-6065-task-2-test-spec.md`
-7. Dispatch `refactoring-advisor`
+7. Dispatch `refactoring-advisor` with
+   `BRIEF_FILE=docs/JNS-6065-task-2-brief.md`,
+   `PLAN_FILE=docs/JNS-6065-task-2-execution-plan.md`, and
+   `TEST_SPEC_FILE=docs/JNS-6065-task-2-test-spec.md`
 8. Subagent returns:
    `REFACTORING: PASS`
    `Plan: docs/JNS-6065-task-2-refactoring-plan.md`
