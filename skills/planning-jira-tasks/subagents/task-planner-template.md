@@ -99,4 +99,5 @@ codebase exploration`.>
 ambiguity, things the ticket doesn't specify but that will need to be done.>
 ```
 
-Downstream skills parse these headings programmatically — changing or omitting headings breaks the pipeline.
+Downstream steps in this skill expect these headings to remain unchanged. If you
+change or omit them, update the paired contracts and validators in lockstep.

@@ -172,7 +172,7 @@ Return only this summary:
 
 ```text
 PLAN: PASS | FAIL | BLOCKED | ERROR
-Ticket: <TICKET_KEY>
+TICKET_KEY: <TICKET_KEY>
 File: <OUTPUT_PATH or "not written">
 Tasks: <N>
 Cross-cutting questions: <N>
@@ -182,7 +182,7 @@ Reason: <one line>
 
 <example>
 PLAN: PASS
-Ticket: JNS-6065
+TICKET_KEY: JNS-6065
 File: docs/JNS-6065-stage-1-detailed.md
 Tasks: 7
 Cross-cutting questions: 3
@@ -192,7 +192,7 @@ Reason: Stage 1 plan written with full Problem Framing and task detail.
 
 <example>
 PLAN: BLOCKED
-Ticket: JNS-6065
+TICKET_KEY: JNS-6065
 File: not written
 Tasks: 0
 Cross-cutting questions: 0
@@ -226,7 +226,7 @@ Use this format:
 
 ```text
 PLAN: BLOCKED | FAIL | ERROR
-Ticket: <TICKET_KEY>
+TICKET_KEY: <TICKET_KEY>
 File: <OUTPUT_PATH or "not written">
 Tasks: <N>
 Cross-cutting questions: <N>

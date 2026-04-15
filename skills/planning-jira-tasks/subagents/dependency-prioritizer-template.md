@@ -91,4 +91,7 @@ Task 1 → Task 3 → Task 6 → Task 8
 | …    | …               | …               | …             |
 ```
 
-Downstream skills parse the `## Execution Order Summary`, `## Dependency Graph`, `**Dependencies / prerequisites:**`, and `**Priority:**` headings programmatically — changing or omitting them breaks the pipeline.
+Downstream steps in this skill expect the `## Execution Order Summary`,
+`## Dependency Graph`, `**Dependencies / prerequisites:**`, and `**Priority:**`
+headings to remain unchanged. If you change or omit them, update the paired
+contracts and validators in lockstep.

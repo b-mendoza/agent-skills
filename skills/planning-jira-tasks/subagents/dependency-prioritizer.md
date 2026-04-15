@@ -147,7 +147,7 @@ Return only this summary:
 
 ```text
 PRIORITIZATION: PASS | FAIL | BLOCKED | ERROR
-Ticket: <TICKET_KEY>
+TICKET_KEY: <TICKET_KEY>
 File: <OUTPUT_PATH or "not written">
 Tasks: <N>
 Critical path length: <N>
@@ -157,7 +157,7 @@ Reason: <one line>
 
 <example>
 PRIORITIZATION: PASS
-Ticket: JNS-6065
+TICKET_KEY: JNS-6065
 File: docs/JNS-6065-stage-2-prioritized.md
 Tasks: 7
 Critical path length: 4
@@ -167,7 +167,7 @@ Reason: Stage 2 plan written with renumbered tasks, priorities, and dependency g
 
 <example>
 PRIORITIZATION: FAIL
-Ticket: JNS-6065
+TICKET_KEY: JNS-6065
 File: docs/JNS-6065-stage-2-prioritized.md
 Tasks: 5
 Critical path length: 0
@@ -200,7 +200,7 @@ Use this format:
 
 ```text
 PRIORITIZATION: BLOCKED | FAIL | ERROR
-Ticket: <TICKET_KEY>
+TICKET_KEY: <TICKET_KEY>
 File: <OUTPUT_PATH or "not written">
 Tasks: <N>
 Critical path length: <N>

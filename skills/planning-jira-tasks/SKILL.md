@@ -1,6 +1,6 @@
 ---
 name: "planning-jira-tasks"
-description: 'Phase 2 of the orchestrating-jira-workflow pipeline. Reads a ticket snapshot at docs/<TICKET_KEY>.md and produces a detailed, self-contained task plan at docs/<TICKET_KEY>-tasks.md through a three-stage subagent pipeline (plan → prioritize → validate). Invoked by the orchestrating-jira-workflow skill, not intended for standalone use. This skill orchestrates the pipeline, preserves planning artifacts for resume and critique, and never does planning work itself.'
+description: 'Phase 2 of the Jira planning workflow. Reads a Jira ticket snapshot at docs/<TICKET_KEY>.md and produces a detailed, self-contained task plan at docs/<TICKET_KEY>-tasks.md through a three-stage subagent pipeline (plan → prioritize → validate). Preserves planning artifacts for resume and critique and returns only concise handoff summaries.'
 ---
 
 # Planning Jira Tasks
@@ -12,8 +12,9 @@ boundary, preserves planning artifacts for resume and critique, and returns
 only concise handoff summaries to the parent workflow. It does not decompose
 work, prioritize dependencies, or validate plan quality inline.
 
-**Compatibility:** Downstream phases already use `TICKET_KEY`, so no alias is
-required. All artifact paths use `docs/<TICKET_KEY>…`.
+**Compatibility:** Downstream phases already use `TICKET_KEY`-oriented handoffs
+and paths, so no alias mapping is required. All artifact paths in this skill
+use `docs/<TICKET_KEY>…`.
 
 ## Inputs
 
@@ -70,7 +71,7 @@ The final plan must contain all of these sections for downstream phases:
 | `## Cross-Cutting Open Questions`     | `clarifying-assumptions`                                            |
 | `## Tasks` marker section plus separate `## Task N` headings | `clarifying-assumptions`, `creating-jira-subtasks`, task execution |
 | `## Dependency Graph`                 | task execution and critique                                         |
-| `## Validation Report`               | `clarifying-assumptions`                                            |
+| `## Validation Report`                | `clarifying-assumptions`                                            |
 
 Each final task entry must include these eight subsections:
 
@@ -92,14 +93,13 @@ Phase 3.
 
 ### Return handoff
 
-Return only a concise phase handoff to the parent orchestrator:
-
-Return `PLANNING: PASS` only when `PLAN: PASS`, `PRIORITIZATION: PASS`,
-`TASK_VALIDATION: PASS`, and every `STAGE_VALIDATION` gate returned `PASS`.
+Return only the concise phase handoff below. Use `PLANNING: PASS` only when
+`PLAN: PASS`, `PRIORITIZATION: PASS`, `TASK_VALIDATION: PASS`, and every
+`STAGE_VALIDATION` gate returned `PASS`.
 
 ```text
 PLANNING: PASS | FAIL
-Ticket: <TICKET_KEY>
+TICKET_KEY: <TICKET_KEY>
 File: <final file path or "not written">
 Tasks: <N>
 Cross-cutting questions: <N>
@@ -356,7 +356,7 @@ TICKET_KEY = JNS-6065
 9. Return:
 
    PLANNING: PASS
-   Ticket: JNS-6065
+   TICKET_KEY: JNS-6065
    File: docs/JNS-6065-tasks.md
    Tasks: 7
    Cross-cutting questions: 3
