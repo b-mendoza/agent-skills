@@ -36,20 +36,14 @@ When `MODE=critique`, these per-task artifacts must also exist:
 - `docs/<KEY>-task-<N>-test-spec.md`
 - `docs/<KEY>-task-<N>-refactoring-plan.md`
 
-## Workflow Overview
+The skill derives these additional subagent handoff inputs from the top-level
+inputs:
 
-| Mode | Goal | Delegated work | Inline work |
-| --- | --- | --- | --- |
-| `upfront` | Challenge the whole plan before execution starts | critique generation, manifest assembly, file updates | Socratic questioning and decision capture |
-| `critique` | Challenge one task just before execution | critique generation, deferred-question filtering, file updates | Evaluate reasoning and make final task-level decisions |
-
-## Subagent Registry
-
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `critique-analyzer` | `./subagents/critique-analyzer.md` | Reads planning artifacts, verifies the real codebase, searches the web, and returns structured critique |
-| `question-manifest-builder` | `./subagents/question-manifest-builder.md` | Reads the task plan plus the critique report and returns an ordered manifest of what to ask now, what to defer, and what is no longer relevant |
-| `decision-recorder` | `./subagents/decision-recorder.md` | Writes clarification artifacts, updates the main task plan, creates per-task decisions files when needed, and validates the result |
+| Dispatch target | Derived inputs |
+| --- | --- |
+| `critique-analyzer` | `MAIN_PLAN_FILE`, `ARTIFACTS`, `CRITIQUE_REPORT_FILE`, and in `MODE=critique` `TASK_NUMBER`, plus optional prior-decision inputs |
+| `question-manifest-builder` | `PLAN_FILE`, `CRITIQUE_REPORT_FILE`, and in `MODE=critique` `TASK_NUMBER` plus `CURRENT_TASK_ARTIFACTS` |
+| `decision-recorder` | `ITERATION`, `DECISIONS`, optional `DEFERRED_QUESTIONS`, optional `IMPLEMENTATION_UPDATES`, and in `MODE=critique` `TASK_NUMBER`, `TASK_TITLE`, plus `RESOLVED_IRRELEVANT` |
 
 ## Input and Output Contracts
 
@@ -73,7 +67,9 @@ Additional upstream artifacts:
 - `MODE=critique`: task brief, execution plan, test spec, and refactoring plan
 
 These sections and upstream artifacts are required input preconditions for the
-skill.
+skill. The parent workflow defines the detailed contents of the `stage-*` and
+`task-*` planning artifacts; this skill requires only the paths and readable
+markdown at those locations.
 
 ### Output contract
 
@@ -106,6 +102,21 @@ If clarification stops early because a subagent returned `BLOCKED`, `FAIL`, or
 `ERROR`, still emit the same minimum fields with `Files updated: -` plus the
 blocking verdict and reason.
 
+## Pipeline / Workflow Overview
+
+| Mode | Goal | Delegated work | Inline work |
+| --- | --- | --- | --- |
+| `upfront` | Challenge the whole plan before execution starts | critique generation, manifest assembly, file updates | Socratic questioning and decision capture |
+| `critique` | Challenge one task just before execution | critique generation, deferred-question filtering, file updates | Evaluate reasoning and make final task-level decisions |
+
+## Subagent Registry
+
+| Subagent | Path | Purpose |
+| --- | --- | --- |
+| `critique-analyzer` | `./subagents/critique-analyzer.md` | Reads planning artifacts, verifies the real codebase, searches the web, and returns structured critique |
+| `question-manifest-builder` | `./subagents/question-manifest-builder.md` | Reads the task plan plus the critique report and returns an ordered manifest of what to ask now, what to defer, and what is no longer relevant |
+| `decision-recorder` | `./subagents/decision-recorder.md` | Writes clarification artifacts, updates the main task plan, creates per-task decisions files when needed, and validates the result |
+
 ## How This Skill Works
 
 Keep only these items inline while the skill is running:
@@ -132,7 +143,7 @@ Run the workflow in this order:
    the web, and write the critique artifact.
 3. Dispatch `question-manifest-builder` with the critique artifact path and the
    plan path to build the ordered manifest. In `MODE=critique`, also include
-   `TASK_NUMBER` and the current task artifact list.
+   `TASK_NUMBER` and `CURRENT_TASK_ARTIFACTS`.
 4. Walk the manifest one question at a time inline, deciding what to confirm,
    revise, defer, or block.
    Carry each manifest `Item ID` unchanged into the decision list so later
@@ -171,6 +182,7 @@ Then load only the mode-specific playbook for the active run:
 4. Be direct about shallow thinking on Tier 3 items, but keep the tone mentor-like.
 5. Present every critique item; do not silently accept a subagent recommendation.
 6. Respect skip only for Tier 2 items. Tier 3 hard gates cannot be skipped.
+   Tier definitions come from `./subagents/critique-analyzer-rubric.md`.
 7. When the interface supports structured choices, use them for discrete
    options; otherwise use numbered options.
 8. Keep question blocks scannable. Use tables or diagrams only when they clarify a real trade-off.
@@ -181,7 +193,7 @@ Expect parseable verdicts from subagents and route them like this:
 
 | Source | Verdicts to expect | Orchestrator action |
 | --- | --- | --- |
-| `critique-analyzer` | `CRITIQUE: FAIL` | Stop and surface the reason to the user |
+| `critique-analyzer` | `CRITIQUE: FAIL` | Stop and surface the required `Reason:` line to the user |
 | `critique-analyzer` | `CRITIQUE: WARN` | Continue only if the missing context does not invalidate the critique |
 | `question-manifest-builder` | `MANIFEST: BLOCKED` or `MANIFEST: FAIL` | Stop and surface the manifest issue |
 | `question-manifest-builder` | `MANIFEST: WARN` | Continue, but mention what was omitted or guessed |
@@ -215,8 +227,11 @@ Input: TICKET_KEY=JNS-6065, MODE=upfront, ITERATION=1
    RECORDING: PASS
    Ticket: JNS-6065 | Mode: upfront | Task: -
    Files updated: docs/JNS-6065-tasks.md
-10. Present final summary with `RE_PLAN_NEEDED=true` and
-    `BLOCKERS_PRESENT=false`
+10. Present final summary:
+    Critique artifact: docs/JNS-6065-upfront-critique.md
+    Files updated: docs/JNS-6065-tasks.md
+    RE_PLAN_NEEDED: true
+    BLOCKERS_PRESENT: false
 </example>
 ```
 
@@ -234,10 +249,16 @@ Input: TICKET_KEY=acme-app-42, MODE=critique, TASK_NUMBER=3, ITERATION=2
    Artifact: docs/acme-app-42-task-3-critique.md
 5. Dispatch `question-manifest-builder` with
    `docs/acme-app-42-task-3-critique.md`,
-   `docs/acme-app-42-tasks.md`, and the current task artifact list
+   `docs/acme-app-42-tasks.md`, and `CURRENT_TASK_ARTIFACTS`
 6. Receive:
    MANIFEST: BLOCKED
    Reason: docs/acme-app-42-task-3-test-spec.md is missing
-7. Stop clarification, surface the blocker, and set `BLOCKERS_PRESENT=true`
+7. Stop clarification and present final summary:
+   Critique artifact: docs/acme-app-42-task-3-critique.md
+   Files updated: -
+   RE_PLAN_NEEDED: false
+   BLOCKERS_PRESENT: true
+   Blocking verdict: MANIFEST: BLOCKED
+   Reason: docs/acme-app-42-task-3-test-spec.md is missing
 </example>
 ```
