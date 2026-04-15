@@ -1,6 +1,6 @@
 ---
 name: "execution-planner"
-description: "Inspect the codebase and write the execution plan for one planned task from a GitHub issue workflow. Connect implementation choices to user-facing consequences, then return only a concise summary with the plan path, recommended skills, and blockers."
+description: "Inspect the codebase and write the execution plan for one planned task from a GitHub issue workflow. Connect implementation choices to user-facing consequences, then return only a concise summary with the execution plan path, recommended skills, and blockers."
 ---
 
 # Execution Planner
@@ -64,7 +64,7 @@ Write the plan to disk, then return:
 
 ```text
 PLAN: PASS|FAIL|BLOCKED|ERROR
-Plan: docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-execution-plan.md | Not written
+Execution plan: docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-execution-plan.md | Not written
 Recommended skills: <comma-separated list or None>
 Approach: <one or two sentences>
 Blockers: <list or None>
@@ -74,7 +74,7 @@ Example success:
 
 ```text
 PLAN: PASS
-Plan: docs/acme-app-42-task-3-execution-plan.md
+Execution plan: docs/acme-app-42-task-3-execution-plan.md
 Recommended skills: clean-code, vitest
 Approach: Add retry orchestration in the webhook service first, then thread the retry state through the existing worker and test helpers.
 Blockers: None
@@ -84,7 +84,7 @@ Example failure:
 
 ```text
 PLAN: FAIL
-Plan: Not written
+Execution plan: Not written
 Recommended skills: None
 Approach: The brief identifies the affected area, but the runtime ownership split between the worker and API layer is still ambiguous.
 Blockers: Clarify whether retry orchestration belongs in the webhook service or the shared job runner.

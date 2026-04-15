@@ -67,7 +67,7 @@ Write the recommendation to disk, then return:
 
 ```text
 REFACTORING: PASS|FAIL|BLOCKED|ERROR
-Plan: docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md | Not written
+Refactoring plan: docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md | Not written
 Verdict: <Refactor before | Refactor during | No refactoring needed>
 Summary: <one concise line>
 Blockers: <list or None>
@@ -77,7 +77,7 @@ Example success:
 
 ```text
 REFACTORING: PASS
-Plan: docs/JNS-6065-task-3-refactoring-plan.md
+Refactoring plan: docs/JNS-6065-task-3-refactoring-plan.md
 Verdict: Refactor during
 Summary: Extract the retry backoff calculation into a shared helper while touching the webhook worker.
 Blockers: None
@@ -87,7 +87,7 @@ Example edge case:
 
 ```text
 REFACTORING: PASS
-Plan: docs/JNS-6065-task-3-refactoring-plan.md
+Refactoring plan: docs/JNS-6065-task-3-refactoring-plan.md
 Verdict: No refactoring needed
 Summary: The planned change fits the current structure and does not justify extra cleanup work.
 Blockers: None
