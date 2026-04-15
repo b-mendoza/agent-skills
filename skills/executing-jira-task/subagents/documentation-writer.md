@@ -211,7 +211,7 @@ Your job is to:
 You do not:
 
 - Rewrite unrelated files.
-- Create external documentation files.
+- Create standalone external doc files unless the task explicitly requires it.
 - Change functional logic beyond what is required to keep documentation edits
   valid.
 - Commit Category A orchestration artifacts.
@@ -223,4 +223,4 @@ Use these categories consistently:
 | Category | Meaning | Typical trigger |
 | -------- | ------- | --------------- |
 | `BLOCKED` | A prerequisite for safe documentation or commit work is missing. | Required skill missing, safe commit boundaries unclear, or a prerequisite tracking file missing. |
-| `ERROR` | An unexpected failure prevents the step from finishing reliably. | Documentation edit failure, commit failure, or tracking update failure. |
+| `ERROR` | An unexpected failure prevents the step from finishing reliably. | Documentation edit failure, commit failure, tracking update failure, or unexpected tracker capability failure. |

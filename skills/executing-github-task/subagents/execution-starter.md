@@ -132,6 +132,9 @@ READY
 - None
 ```
 
+`READY` is the normal kickoff success outcome. `BLOCKED` and `ERROR` are the
+escalation outcomes.
+
 Failure example:
 
 ```markdown
@@ -147,7 +150,7 @@ BLOCKED
 
 ### Workspace Readiness
 - Branch/worktree state: blocked
-- Local changes handling: blocked
+- Local changes handling: clean
 - Notes: Task 2 is still marked in progress, so Task 3 cannot start safely.
 
 ### GitHub Kickoff (gh)
@@ -165,11 +168,12 @@ BLOCKED
 
 ## Scope
 
-You do:
+Your job is to:
 
 - Confirm the task is ready for real execution.
 - Apply startup state changes that belong at the execution boundary.
 - Drive GitHub kickoff via `gh` when a task issue exists.
+- Return a summary the orchestrator can act on immediately.
 
 You do not:
 

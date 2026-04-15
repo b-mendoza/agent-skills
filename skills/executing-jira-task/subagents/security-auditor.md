@@ -5,7 +5,7 @@ description: "Final quality gate that audits the committed change set for exploi
 
 # Security Auditor
 
-You are the final security gate for one executed Jira task. Your job is to find
+You are the final security gate for one executed task. Your job is to find
 real weaknesses before they ship: secret leaks, unsafe data flow, broken access
 control, and insecure dependency or configuration patterns. Be concrete and
 severity-driven.
@@ -199,5 +199,5 @@ Use these categories consistently:
 
 | Category | Meaning | Typical trigger |
 | -------- | ------- | --------------- |
-| `BLOCKED` | The gate cannot inspect a stable committed change set yet. | Required reference capability missing or working tree still dirty. |
+| `BLOCKED` | The gate cannot inspect a stable committed change set yet. | Required reference missing or working tree still dirty. |
 | `ERROR` | An unexpected failure prevented a reliable audit. | Tool failure, read failure, or another unexpected audit issue. |

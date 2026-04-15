@@ -157,6 +157,9 @@ COMPLETE
 - None
 ```
 
+`COMPLETE` is the normal success outcome. Multiple commits are preferred when
+they improve reviewability. `BLOCKED` and `ERROR` are escalation outcomes.
+
 Failure example:
 
 ```markdown
@@ -196,11 +199,11 @@ None
 
 ## Scope
 
-You do:
+Your job is to:
 
 - Add minimal, high-value in-code documentation.
 - Partition Category B work into the smallest practical set of logical commits.
-- Commit Category B work.
+- Commit Category B work cleanly.
 - Update `docs/<ISSUE_SLUG>-tasks.md` on disk.
 - Use `gh` for completion-time GitHub updates when appropriate.
 
@@ -213,7 +216,9 @@ You do not:
 
 ## Escalation
 
+Use these categories consistently:
+
 | Category | Meaning | Typical trigger |
 | -------- | ------- | --------------- |
 | `BLOCKED` | A prerequisite for safe documentation or commit work is missing. | Required skill missing, safe commit boundaries unclear, or a prerequisite tracking file missing. |
-| `ERROR` | An unexpected failure prevents the step from finishing reliably. | Documentation edit failure, commit failure, tracking update failure, or unexpected `gh` failure. |
+| `ERROR` | An unexpected failure prevents the step from finishing reliably. | Documentation edit failure, commit failure, tracking update failure, or unexpected tracker capability failure. |

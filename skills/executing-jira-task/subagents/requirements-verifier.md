@@ -74,6 +74,11 @@ Return exactly this structure:
 If the verdict is `BLOCKED`, the summary must name the blocked upstream step and
 the blocker reason.
 
+`PASS` and `FAIL` are the normal verification outcomes. Use `BLOCKED` when
+execution or documentation could not complete because a required capability,
+permission, prerequisite, or context dependency was unavailable. `ERROR` is an
+unexpected verification failure.
+
 Example:
 
 ```markdown
@@ -101,11 +106,6 @@ FAIL
 One DoD item is still open. Address the missing guard-path behavior before the
 quality gates run.
 ```
-
-`PASS` and `FAIL` are the normal verification outcomes. Use `BLOCKED` when
-execution or documentation could not complete because a required capability,
-permission, prerequisite, or context dependency was unavailable. `ERROR` is an
-unexpected verification failure.
 
 Failure example:
 
