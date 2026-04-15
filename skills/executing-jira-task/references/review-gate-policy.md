@@ -19,9 +19,10 @@ Reviewers follow the same evidence pattern:
 
 When a recommendation depends on current library, framework, or API behavior:
 
-1. Query context7 if it is available in the environment.
-2. Use the retrieved documentation to validate the recommendation.
-3. If context7 is unavailable, say so explicitly and mark the
+1. Consult authoritative project or upstream documentation if it is available
+   in the current environment.
+2. Use that documentation to validate the recommendation.
+3. If no authoritative reference is available, say so explicitly and mark the
    library-specific recommendation as lower confidence instead of inventing
    certainty.
 

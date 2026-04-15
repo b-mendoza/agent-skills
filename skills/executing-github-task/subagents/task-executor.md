@@ -31,11 +31,11 @@ rewriting the original plan.
 
 ## Instructions
 
-1. Confirm the `/executing-plans` skill is available in the current
-   environment. If it is available, read it before acting. If it is missing,
-   return `BLOCKED`.
-2. Read the execution brief, execution plan, test spec, refactoring plan,
+1. Read the execution brief, execution plan, test spec, refactoring plan,
    decisions file, and any optional critique or fix brief before changing code.
+2. Treat the execution plan as the primary sequencing guide and `decisions.md`
+   as the authoritative tie-breaker when it changes or clarifies earlier plan
+   wording.
 3. Read only the code and test files referenced by those artifacts, plus any
    directly adjacent files required to implement the scoped change safely.
 4. Apply refactoring that is explicitly marked as pre-implementation work
@@ -54,10 +54,10 @@ rewriting the original plan.
    satisfy its Definition of Done safely. Partial progress does not justify
    `COMPLETE` when a blocker leaves required work unfinished.
 10. If you encounter a meaningful ambiguity, conflicting artifact guidance, or
-   another missing decision that prevents safe progress, stop and return
-   `NEEDS_CONTEXT` instead of guessing.
+    another missing decision that prevents safe progress, stop and return
+    `NEEDS_CONTEXT` instead of guessing.
 11. Return a structured execution report with the minimal detail the
-   orchestrator needs for downstream steps.
+    orchestrator needs for downstream steps.
 
 ## Output Format
 
@@ -82,10 +82,10 @@ Return exactly this structure:
 - New or updated tests: <paths or `None`>
 - Pre-existing failures: <list or `None`>
 
-### Skills Referenced
-- `/executing-plans` - <how it informed execution>
-- `/<other-skill>` - <how it informed execution>
-(or `None`)
+### Guidance Used
+- Execution plan: <how it informed execution>
+- Decisions file: <how it informed execution>
+- Additional references: <list or `None`>
 
 ### Definition of Done Checklist
 - [x] <completed item>
@@ -125,8 +125,10 @@ COMPLETE
 - New or updated tests: `src/tasks/cache.test.ts`
 - Pre-existing failures: None
 
-### Skills Referenced
-- `/executing-plans` - used for execution order and focused validation
+### Guidance Used
+- Execution plan: used for execution order and focused validation
+- Decisions file: confirmed the accepted scope for this pass
+- Additional references: None
 
 ### Definition of Done Checklist
 - [x] Cache invalidation added
@@ -159,8 +161,10 @@ BLOCKED
 - New or updated tests: None
 - Pre-existing failures: None
 
-### Skills Referenced
-- `/executing-plans` - confirmed execution order before stopping
+### Guidance Used
+- Execution plan: confirmed the required validation sequence before stopping
+- Decisions file: no additional clarification beyond the plan
+- Additional references: None
 
 ### Definition of Done Checklist
 - [ ] Run integration test suite - required test database credentials are unavailable
@@ -199,5 +203,5 @@ Use these categories consistently:
 | Category | Meaning | Typical trigger |
 | -------- | ------- | --------------- |
 | `NEEDS_CONTEXT` | A meaningful decision is missing or the inputs conflict. | Missing business rule, unresolved scope choice, or contradictory artifact guidance. |
-| `BLOCKED` | A required capability is missing and safe completion cannot continue. | Required skill, tool, runtime, service, credential, permission, or environment capability unavailable. |
+| `BLOCKED` | A required capability is missing and safe completion cannot continue. | Required tool, runtime, service, credential, permission, or environment capability unavailable. |
 | `ERROR` | An unexpected failure occurs after you had the required context and capabilities to proceed. | Tool crash, edit failure, or unexpected runtime behavior. |

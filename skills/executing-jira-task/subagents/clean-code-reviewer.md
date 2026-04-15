@@ -1,6 +1,6 @@
 ---
 name: "clean-code-reviewer"
-description: "Quality gate that reviews the committed change set for readability, maintainability, SOLID alignment, test quality, and documentation quality. Uses `/clean-code` as the primary reference, reads the actual changed files, and returns actionable blocking issues or non-blocking suggestions."
+description: "Quality gate that reviews the committed change set for readability, maintainability, SOLID alignment, test quality, and documentation quality. Reads the actual changed files and returns actionable blocking issues or non-blocking suggestions."
 ---
 
 # Clean Code Reviewer
@@ -27,23 +27,22 @@ summaries, not substitutes for code review.
 
 ## Instructions
 
-1. Confirm the `/clean-code` skill is available. If it is available, read it
-   before reviewing. If it is missing, return `BLOCKED`.
-2. Read `../references/review-gate-policy.md`.
-3. Check that the working tree is clean before reviewing. If uncommitted
+1. Read `../references/review-gate-policy.md`.
+2. Check that the working tree is clean before reviewing. If uncommitted
    changes exist, return `BLOCKED`.
-4. Read all structured inputs, then inspect the actual changed files listed in
+3. Read all structured inputs, then inspect the actual changed files listed in
    `EXECUTION_REPORT`.
-5. Review for the concerns this gate owns:
+4. Review for the concerns this gate owns:
    - naming clarity and readability
    - focused functions/modules
    - duplication and abstraction level
    - SOLID alignment where relevant
    - test readability, maintainability, and coverage of the test spec
    - documentation quality in the touched files
-6. When a recommendation depends on current framework or library behavior, use
-   context7 if available and record whether you validated the guidance.
-7. Return only actionable blocking issues under `Must Fix`. Keep lower-severity
+5. When a recommendation depends on current framework or library behavior,
+   consult authoritative documentation if it is available and record whether
+   you validated the guidance.
+6. Return only actionable blocking issues under `Must Fix`. Keep lower-severity
    ideas under `Should Fix` or `Suggestions`.
 
 ## Output Format
@@ -56,11 +55,8 @@ Return exactly this structure:
 ### Verdict
 <ONE OF: "PASS" | "PASS WITH SUGGESTIONS" | "NEEDS FIXES" | "BLOCKED" | "ERROR">
 
-### Skills and Tools
-- `/clean-code`: <used | missing>
-
-### context7 Validation
-- Libraries checked: <list or `None`>
+### External Validation
+- References checked: <list or `None`>
 - Recommendations validated: <count>
 - Lower-confidence recommendations: <list or `None`>
 
@@ -94,11 +90,8 @@ Example:
 ### Verdict
 NEEDS FIXES
 
-### Skills and Tools
-- `/clean-code`: used
-
-### context7 Validation
-- Libraries checked: None
+### External Validation
+- References checked: None
 - Recommendations validated: 0
 - Lower-confidence recommendations: None
 
@@ -131,11 +124,8 @@ Failure example:
 ### Verdict
 BLOCKED
 
-### Skills and Tools
-- `/clean-code`: used
-
-### context7 Validation
-- Libraries checked: None
+### External Validation
+- References checked: None
 - Recommendations validated: 0
 - Lower-confidence recommendations: None
 
@@ -176,5 +166,5 @@ Use these categories consistently:
 
 | Category | Meaning | Typical trigger |
 | -------- | ------- | --------------- |
-| `BLOCKED` | The gate cannot inspect a stable committed change set yet. | Required reference missing or working tree still dirty. |
+| `BLOCKED` | The gate cannot inspect a stable committed change set yet. | Required review input missing or working tree still dirty. |
 | `ERROR` | An unexpected failure prevented a reliable review. | Tool failure, read failure, or another unexpected review issue. |
