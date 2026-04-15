@@ -1,6 +1,15 @@
 # Critique Analyzer — Output Template
 
-Use this template after the verdict and metadata lines.
+When writing `CRITIQUE_REPORT_FILE`, do not copy this title or the instruction
+lines into the artifact. The written file must start with:
+
+```text
+CRITIQUE: <PASS|WARN>
+Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
+Artifact: <CRITIQUE_REPORT_FILE>
+```
+
+Then continue with the body below.
 
 > Downstream skills parse this structure. Keep section names stable.
 
@@ -42,9 +51,9 @@ Include this section only in `MODE=upfront`.
 
 | # | Severity | Decision made | Source artifact | Alternatives | Why this matters |
 | --- | --- | --- | --- | --- | --- |
-| 1 | HIGH | <decision> | <artifact> | <named options> | <project-specific consequence> |
+| TC1 | HIGH | <decision> | <artifact> | <named options> | <project-specific consequence> |
 
-#### Item 1: <short title>
+#### TC1: <short title>
 
 - Decision: <planner's choice>
 - Why this looks questionable: <project-specific reasoning>

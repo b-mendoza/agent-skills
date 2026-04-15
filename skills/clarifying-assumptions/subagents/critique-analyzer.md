@@ -22,7 +22,7 @@ instead of holding the whole analysis inline.
 | `MODE` | Yes | `upfront` or `critique` |
 | `TICKET_KEY` | Yes | `JNS-6065` |
 | `MAIN_PLAN_FILE` | Yes | `docs/JNS-6065-tasks.md` |
-| `ARTIFACTS` | Yes | `docs/JNS-6065-stage-1-detailed.md` |
+| `ARTIFACTS` | Yes | `docs/JNS-6065-stage-1-detailed.md`, `docs/JNS-6065-stage-2-prioritized.md` |
 | `CRITIQUE_REPORT_FILE` | Yes | `docs/JNS-6065-upfront-critique.md` |
 | `TASK_NUMBER` | Required for `MODE=critique` | `3` |
 | `PRIOR_DECISIONS_FILE` | Optional | `docs/JNS-6065-task-3-decisions.md` |
@@ -86,12 +86,31 @@ Use the rubric to decide what to challenge:
 - In `MODE=critique`, focus on task-level critique plus user-impact trade-offs
 
 Read `./critique-analyzer-template.md` at write time and follow it exactly.
+When writing `CRITIQUE_REPORT_FILE`, omit the template file's title and
+instruction prose. The artifact itself must begin with these lines:
+
+```text
+CRITIQUE: <PASS|WARN>
+Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
+Artifact: <CRITIQUE_REPORT_FILE>
+```
+
+Then continue with the template body beginning at `## Critique Report`.
+
+Use stable item IDs throughout the report:
+
+- `PF<n>` for problem-framing items
+- `TC<n>` for technology critique items
+- `UI<n>` for user-impact items
+
 Write the full critique report to `CRITIQUE_REPORT_FILE`.
 
 ### 6. Validate before returning
 
 Re-read `CRITIQUE_REPORT_FILE` after writing it and confirm that the report:
 
+- begins with `CRITIQUE: PASS` or `CRITIQUE: WARN`
+- includes the ticket metadata and artifact path lines before `## Critique Report`
 - follows the required template structure
 - includes the mode-appropriate critique sections
 - is the artifact you want downstream steps to parse

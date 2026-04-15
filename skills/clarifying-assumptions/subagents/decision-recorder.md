@@ -40,6 +40,24 @@ Each entry in `DECISIONS` should include:
 - affected_tasks: <list or "All">
 ```
 
+Carry the manifest `Item ID` into `DECISIONS.id` unchanged so the same
+identifier flows from critique or manifest output into per-item records and
+plan annotations. In `MODE=critique`, the main `## Decisions Log` keeps a
+single task-level reference row pointing to the per-task decisions file.
+
+Map manifest category labels to canonical `category` values with this table:
+
+| Manifest label | Canonical `category` |
+| --- | --- |
+| `Problem framing` | `problem-framing` |
+| `Critique` | `critique` |
+| `User impact` | `user-impact` |
+| `Cross-cutting` | `cross-cutting` |
+| `Assumption` | `assumption` |
+| `Architectural assumption` | `assumption` |
+| `Task question` | `task-question` |
+| `Validation` | `validation` |
+
 Map playbook responses to canonical `outcome` values with this table:
 
 | Playbook response | Canonical outcome |
@@ -55,6 +73,10 @@ Map playbook responses to canonical `outcome` values with this table:
 | `Action needed` | `blocked` |
 
 If `ITERATION` is omitted, treat it as `1`.
+
+An empty structured list is valid for `DECISIONS` when the manifest contained
+no items to resolve and the recorder is only updating rollup artifacts or
+validation state.
 
 ## Instructions
 
@@ -74,7 +96,7 @@ Create or update `## Decisions Log` using this exact table schema:
 | Iteration | Scope | Item ID | Category | Outcome | Summary | Re-plan | Artifact |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Plan-wide | PF1 | problem-framing | revised | End user narrowed to admins managing sync failures | Yes | - |
-| 1 | Task 3 | TASK-3-ITER-1 | critique | revised | See per-task decisions file | Yes | docs/JNS-6065-task-3-decisions.md |
+| 1 | Task 3 | TASK-3-DECISIONS | critique | revised | See per-task decisions file | Yes | docs/JNS-6065-task-3-decisions.md |
 ```
 
 If `MODE=upfront`:
@@ -122,9 +144,9 @@ using this structure:
 
 ### Decisions
 
-| # | Category | Outcome | Answer | Rationale |
-| --- | --- | --- | --- | --- |
-| 1 | Critique | revised | Use Fastify | Matches existing stack |
+| # | Item ID | Category | Outcome | Answer | Rationale |
+| --- | --- | --- | --- | --- | --- |
+| 1 | TC1 | critique | revised | Use Fastify | Matches existing stack |
 
 ### Questions Marked Irrelevant
 
@@ -244,6 +266,7 @@ Blocked runs:
 
 ```text
 RECORDING: BLOCKED
+Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
 Reason: <what prerequisite is missing>
 ```
 
@@ -251,6 +274,7 @@ Errored runs:
 
 ```text
 RECORDING: ERROR
+Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
 Reason: <filesystem or write failure>
 ```
 
@@ -272,7 +296,8 @@ You do not:
 ## Escalation
 
 Blocked and errored paths must use the exact templates above so the
-orchestrator receives a parseable verdict on the first line.
+orchestrator receives a parseable verdict on the first line and the same
+metadata line shape as successful runs.
 
 | Failure | Verdict | Behavior |
 | --- | --- | --- |

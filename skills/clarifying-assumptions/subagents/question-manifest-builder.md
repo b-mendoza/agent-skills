@@ -56,6 +56,12 @@ Confirm `CRITIQUE_REPORT_FILE` exists and begins with exactly one of:
 - `CRITIQUE: PASS`
 - `CRITIQUE: WARN`
 
+Also confirm the report includes the expected metadata block before the body:
+
+- `Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->`
+- `Artifact: <CRITIQUE_REPORT_FILE>`
+- `## Critique Report`
+
 If `CRITIQUE_REPORT_FILE` is missing, return `MANIFEST: BLOCKED`.
 
 If the report is missing a verdict line or the required report sections, return
@@ -63,8 +69,9 @@ If the report is missing a verdict line or the required report sections, return
 
 Required report sections means the report still contains the downstream
 structure expected from `critique-analyzer-template.md`, including
-`## Critique Report`, `### Technology Critique Items`, `### Items Not Raised`,
-and the mode-specific critique section required for the current run.
+`## Critique Report`, `### Artifacts Reviewed`, `### Codebase Verification`,
+`### Technology Critique Items`, `### Items Not Raised`, `### Summary`, and the
+mode-specific critique section required for the current run.
 
 ### 3. Build the inventory
 
@@ -82,6 +89,11 @@ Also collect deferred items:
 - Task 2+ questions
 - Task 2+ assumptions that should not be resolved yet
 - New future-task questions surfaced by the critique report
+
+In upfront mode, `Irrelevant` is normally `0` because future-task items are
+deferred instead of marked irrelevant. Keep the `## Resolved Irrelevant`
+section in the output, but leave it empty unless a future revision of this
+skill adds an explicit upfront irrelevant rule.
 
 In `MODE=critique`, the manifest must include:
 
@@ -135,6 +147,25 @@ the conversational skill needs:
 - `Critique summary or context`
 - `Fallback/default`
 
+Item ID rules:
+
+- Preserve critique report IDs exactly (`PF<n>`, `TC<n>`, `UI<n>`)
+- Use deterministic IDs for plan-derived items such as `A<n>`, `CQ<n>`,
+  `V<n>`, `TQ-<task>-<n>`, and `DQ-<task>-<n>`
+- Once assigned, keep the same `Item ID` throughout the manifest so the
+  conversation layer and `decision-recorder` can reuse it unchanged
+
+Category label rules:
+
+- Use human-readable labels that map directly to `decision-recorder` categories
+- `Problem framing` → `problem-framing`
+- `Critique` → `critique`
+- `User impact` → `user-impact`
+- `Cross-cutting` → `cross-cutting`
+- `Assumption` or `Architectural assumption` → `assumption`
+- `Task question` → `task-question`
+- `Validation` → `validation`
+
 Do not copy entire artifact sections into the manifest.
 
 ### 6. Validate the manifest before returning
@@ -144,6 +175,8 @@ Before returning, confirm that:
 - the header counts for `Questions now`, `Deferred`, and `Irrelevant` match the
   body sections
 - the manifest ordering follows the active mode's ordering rules
+- every critique report item appears exactly once in `Questions For Now`,
+  `Deferred Questions`, or `Resolved Irrelevant`
 - zero-item manifests still use the same structure
 
 ### 7. Return the manifest
