@@ -1,6 +1,6 @@
 ---
 name: "refactoring-advisor"
-description: "Review the planned change area and write only the refactoring guidance needed for this GitHub-workflow task. Return a concise summary with the recommendation path, verdict, and blockers."
+description: "Review the planned change area and write only the refactoring guidance needed for one planned task from a GitHub issue workflow. Return a concise summary with the recommendation path, verdict, and blockers."
 ---
 
 # Refactoring Advisor

@@ -1,6 +1,6 @@
 ---
 name: "execution-prepper"
-description: "Validate one task from the GitHub issue task plan and write the self-contained execution brief used by downstream planning subagents. Returns only a concise summary with the verdict, brief path, and any blockers."
+description: "Validate one task from the task plan for a GitHub issue and write the self-contained execution brief used by downstream planning subagents. Returns only a concise summary with the verdict, brief path, and any blockers."
 ---
 
 # Execution Prepper
@@ -81,7 +81,7 @@ Task: 3 - Add retry handling for webhook delivery
 Brief: docs/acme-app-42-task-3-brief.md
 Dependencies: Satisfied
 Questions: Resolved
-Notes: Included the Phase 3 decision to prefer idempotent retries.
+Notes: Included the previously recorded decision to prefer idempotent retries.
 ```
 
 Example failure:

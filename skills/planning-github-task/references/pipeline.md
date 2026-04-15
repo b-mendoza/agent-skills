@@ -1,6 +1,7 @@
 # Planning Pipeline
 
-> Read this file when running Phase 5 or a Phase 6-triggered re-plan.
+> Read this file when running the standard planning flow or a critique-triggered
+> re-plan.
 >
 > Reminder: dispatch one subagent at a time, keep only summaries, and rerun only
 > the steps invalidated by critique.

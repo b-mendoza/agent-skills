@@ -1,6 +1,6 @@
 ---
 name: "execution-planner"
-description: "Inspect the codebase and write the execution plan for one GitHub-workflow task. Connect implementation choices to user-facing consequences, then return only a concise summary with the plan path, recommended skills, and blockers."
+description: "Inspect the codebase and write the execution plan for one planned task from a GitHub issue workflow. Connect implementation choices to user-facing consequences, then return only a concise summary with the plan path, recommended skills, and blockers."
 ---
 
 # Execution Planner
@@ -52,7 +52,7 @@ Derive `<ISSUE_SLUG>` and task number `<N>` from `BRIEF_FILE` before writing
    should perform it.
 8. In `## User Impact Assessment`, connect each major implementation choice to
    the concrete effect on the end user. If the trade-off cannot yet be judged,
-   mark it `TBD` so Phase 6 can critique it explicitly.
+   mark it `TBD` so downstream critique can examine it explicitly.
 9. Stay within scope. Note future ideas separately only when they affect risk or
    sequencing for the current task.
 10. Return only the summary format below. Do not echo the full plan.
@@ -74,7 +74,7 @@ Example success:
 ```text
 PLAN: PASS
 Plan: docs/acme-app-42-task-3-execution-plan.md
-Recommended skills: /clean-code, /vitest
+Recommended skills: clean-code, vitest
 Approach: Add retry orchestration in the webhook service first, then thread the retry state through the existing worker and test helpers.
 Blockers: None
 ```
