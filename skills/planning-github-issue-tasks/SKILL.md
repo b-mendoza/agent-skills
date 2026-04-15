@@ -71,7 +71,7 @@ The final plan must contain all of these sections for downstream phases:
 | `## Problem Framing`                  | `clarifying-assumptions`, critique paths                               |
 | `## Assumptions and Constraints`      | `clarifying-assumptions`                                               |
 | `## Cross-Cutting Open Questions`     | `clarifying-assumptions`                                               |
-| `## Tasks` with numbered task entries | `clarifying-assumptions`, `creating-github-child-issues`, task execution |
+| `## Tasks` marker section plus separate `## Task N` headings | `clarifying-assumptions`, `creating-github-child-issues`, task execution |
 | `## Dependency Graph`                 | task execution and critique                                            |
 | `## Validation Report`                | `clarifying-assumptions`                                               |
 

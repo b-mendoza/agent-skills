@@ -102,6 +102,8 @@ Validate `docs/<TICKET_KEY>-stage-2-prioritized.md`, the output of
 Checks:
 
 - [ ] File exists at the specified path.
+- [ ] Contains `## Ticket Summary`.
+- [ ] Contains `## Tasks`.
 - [ ] Every task has `**Dependencies / prerequisites:**`.
 - [ ] Every task has `**Priority:**`.
 - [ ] Tasks are numbered sequentially (`## Task 1: <Title>`, `## Task 2: <Title>`, ...).

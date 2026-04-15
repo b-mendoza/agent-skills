@@ -5,7 +5,14 @@ Stage 1 uses `## Issue Summary`. Insert `## Execution Order Summary`
 
 ### Replace letter labels with numbers
 
+Retain `## Tasks` as a short marker section immediately before the numbered
+task sections, and give it one explanatory line so it is not empty:
+
 ```markdown
+## Tasks
+
+The numbered task sections below are the executable task list for this plan.
+
 ## Task 1: <Title> ← was "Task C"
 ```
 
@@ -14,8 +21,8 @@ Stage 1 uses `## Issue Summary`. Insert `## Execution Order Summary`
 Immediately after the task heading:
 
 ```markdown
-> **Priority:** Risk=4 Complexity=3 Value-unlock=5 Dependency=4 | Total=16/20
-> **Was:** Task C | **Rationale:** On the critical path; unblocks Tasks 2, 3, 5.
+**Priority:** Risk=4 Complexity=3 Value-unlock=5 Dependency=4 | Total=16/20
+**Was:** Task C | **Rationale:** On the critical path; unblocks Tasks 2, 3, 5.
 ```
 
 ### Add dependency annotations to each task

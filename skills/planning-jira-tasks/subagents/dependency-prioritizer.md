@@ -33,7 +33,10 @@ Path: `OUTPUT_PATH`
 
 Preserve the stage 1 task content and add only:
 
-- Renumbered task headings in execution order
+- Renumbered task headings promoted from stage 1 `### Task X` headings to
+  stage 2 `## Task N: <Title>` headings in execution order
+- The `## Tasks` heading retained as a short marker section immediately before
+  the numbered `## Task N` sections
 - `**Priority:**` annotations on every task
 - `**Dependencies / prerequisites:**` annotations on every task
 - `**Dependency rationale:**` text for meaningful relationships
@@ -119,6 +122,7 @@ Before writing the file, verify:
 
 - Every task has a `**Priority:**` annotation.
 - Every task has a `**Dependencies / prerequisites:**` section.
+- Every task heading uses the `## Task <N>: <Title>` format.
 - Every dependency reference points to a valid renumbered task.
 - No hard dependency is violated by the final order.
 - `## Execution Order Summary` and `## Dependency Graph` are present.
