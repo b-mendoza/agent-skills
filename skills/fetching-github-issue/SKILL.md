@@ -1,6 +1,6 @@
 ---
 name: "fetching-github-issue"
-description: 'Phase 1 of `orchestrating-github-workflow`: retrieve a GitHub issue into a stable Markdown snapshot for downstream workflow phases. Use this as a workflow phase, not as a standalone implementation skill, when an issue URL or owner/repo/number needs to become `docs/<ISSUE_SLUG>.md` with predictable headings for metadata, description, acceptance criteria, comments, child issues, linked issues, labels, assignees, and optional milestone/projects/attachments. Primary transport is the GitHub CLI (`gh`). This skill coordinates retrieval only: it does not modify GitHub state beyond read-only queries, create branches, or start implementation.'
+description: 'Phase 1 of `orchestrating-github-workflow`: retrieve a GitHub issue into a stable Markdown snapshot for downstream workflow phases. Use this as a workflow phase, not as a standalone implementation skill, when an issue URL or owner/repo/number needs to become `docs/<ISSUE_SLUG>.md` with predictable headings for metadata, description, acceptance criteria, comments, child issues, linked issues, labels, assignees, and optional milestone/projects/attachments. The bundled retriever handles GitHub reads, validation, and snapshot assembly. This skill coordinates retrieval only: it does not modify GitHub state beyond read-only queries, create branches, or start implementation.'
 ---
 
 # Fetching GitHub Issue
@@ -26,9 +26,9 @@ stability):
 - **OWNER**, **REPO**, **ISSUE_NUMBER** from `ISSUE_URL` when present
 
 Prefer passing `ISSUE_URL` downstream when you have it; it removes ambiguity and
-matches `gh issue view` usage. If only `OWNER` / `REPO` / `ISSUE_NUMBER` are
-provided, the subagent must still run `gh` with an explicit `--repo owner/repo`
-(or equivalent) scope.
+matches the retriever's direct-issue read path. If only `OWNER` / `REPO` /
+`ISSUE_NUMBER` are provided, the subagent must still use explicit `owner/repo`
+repository scope for GitHub reads.
 
 ## Workflow Overview
 
@@ -45,7 +45,7 @@ Read a subagent definition only when you are about to dispatch it.
 
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
-| `issue-retriever` | `./subagents/issue-retriever.md` | Uses `gh` (and `gh api` where needed) to read GitHub data, writes `docs/<ISSUE_SLUG>.md`, validates the artifact, and returns a concise fetch summary |
+| `issue-retriever` | `./subagents/issue-retriever.md` | Uses the bundled GitHub read path to retrieve GitHub data, writes `docs/<ISSUE_SLUG>.md`, validates the artifact, and returns a concise fetch summary |
 
 ## How This Skill Works
 
@@ -72,8 +72,9 @@ Read `./subagents/issue-retriever.md`, then dispatch it with:
 
 - `ISSUE_URL` when available, otherwise `OWNER`, `REPO`, and `ISSUE_NUMBER`
 
-The subagent owns input validation, `gh` availability and auth checks, issue
-and relationship retrieval, document assembly, output validation, and cleanup.
+The subagent owns input validation, GitHub read-path availability and auth
+checks, issue and relationship retrieval, document assembly, output validation,
+and cleanup.
 
 ### 2. Interpret the structured result
 
@@ -85,11 +86,14 @@ The retriever returns a summary with these top-level fields:
 
 - `FETCH: PASS` -> retrieval and validation succeeded
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
-  related items could not be retrieved, related-item discovery could not be
-  verified, or `## Projects` membership could not be determined because the
-  required capability was unavailable
+  related items could not be retrieved, or related-item discovery could not be
+  verified
+- Parent comment retrieval and child-issue / linked-issue retrieval or
+  discovery gaps use `PARTIAL`; `## Projects` also uses `PARTIAL` when
+  membership cannot be determined because the required capability was
+  unavailable
 - `FETCH: FAIL` -> deterministic failure such as bad input, issue not found,
-  missing auth, rate limits after retry, or unusable `gh` environment
+  missing auth, rate limits after retry, or no usable GitHub read capability
 - `FETCH: ERROR` -> unexpected tool or environment failure
 - `Failure category` -> machine-readable cause for `FETCH: FAIL` or
   `FETCH: ERROR`
@@ -121,8 +125,9 @@ Failure categories are:
 - `BAD_INPUT` -> malformed URL, missing coordinates, or unusable slug
 - `NOT_FOUND` -> the parent issue could not be found before a valid artifact
   was produced
-- `AUTH` -> GitHub access was denied or not authenticated (`gh auth status`)
-- `TOOLS_MISSING` -> `gh` not installed or insufficient for required reads
+- `AUTH` -> GitHub access was denied or not authenticated
+- `TOOLS_MISSING` -> no usable GitHub read capability was available for the
+  required reads
 - `RATE_LIMIT` -> GitHub API rate-limited and retry budget was exhausted
 - `UNEXPECTED` -> tool or environment failure outside the expected categories
 

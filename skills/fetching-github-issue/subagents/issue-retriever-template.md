@@ -13,9 +13,22 @@ nested headings are example shapes for items that actually exist.
 
 If a section has no data and that absence was verified, keep the top-level
 heading and write `_None_` beneath it instead of omitting the section. If the
-retriever could not verify whether a section is empty because discovery or
-capability was unavailable, use an `_Unknown. ..._` marker instead. For empty
-scalar values in `## Metadata`, write `_None_` in the `Value` column.
+retriever could not verify whether `## Child Issues`, `## Linked Issues`, or
+`## Projects` are empty because discovery or capability was unavailable after
+the parent issue was retrieved, use the `_Unknown. ..._` markers described in
+**Conditional Rules** instead of `_None_`. For empty scalar values in
+`## Metadata`, write `_None_` in the `Value` column.
+
+**`## Child Issues`, `## Linked Issues`, and `## Projects`:** Child-issue
+identities, linked-issue identities, and project membership normally come from
+the **retrieved parent issue** or reads keyed from it. `_None_` means verified
+empty. If child-issue discovery, linked-issue discovery, or project membership
+cannot be verified after the parent issue was retrieved, write the appropriate
+`_Unknown. ..._` marker under the affected section, record the same warning
+under `## Retrieval Warnings`, and treat the run as `FETCH: PARTIAL`. When a
+child or linked issue identity is known but that item cannot be hydrated, use
+the missing-item placeholder shapes under **Conditional Rules**; partial runs
+are `FETCH: PARTIAL` with warnings.
 
 Use tables only when there is at least one row to show. If there is no data
 for `## Labels` or `## Assignees`, write `_None_` under the heading instead of
