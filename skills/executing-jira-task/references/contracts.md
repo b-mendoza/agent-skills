@@ -14,9 +14,9 @@ Phase 7 preconditions come from the parent orchestrator's data contracts
 breakdown of paths, kickoff semantics, and dispatch inputs; it must not
 contradict those parent contracts.[^1]
 
-[^1]: The concrete parent orchestrator for this skill is
-    `orchestrating-jira-workflow`. Its filesystem layout is intentionally
-    unreferenced here so this skill stays portable across harnesses.
+[^1]: The concrete parent is the corresponding Jira workflow orchestrator. Its
+    filesystem layout is intentionally unreferenced here so this skill stays
+    portable across harnesses.
 
 ## Required input shape
 
@@ -133,15 +133,17 @@ After a successful run, all of the following should be true:
 
 1. `EXECUTION_REPORT` and `DOCUMENTATION_REPORT` both indicate successful
    completion rather than blocked partial progress.
-2. Execution kickoff either moved the Jira subtask to `In Progress` or reported
-   clearly why that step was skipped.
+2. Execution kickoff either performed the planned Jira startup actions
+   (transition, comment, or both) or reported clearly why each action was
+   skipped.
 3. Category B changes are committed.
 4. The task section in `docs/<KEY>-tasks.md` includes completion metadata
    consistent with your team template (e.g. status, implementation summary,
    files changed).
-5. If a `## Jira Subtasks` table exists, the selected row is updated to `Done`.
-6. Optional Jira transition/comment work is either completed or reported as
-   skipped with a reason.
+5. If a `## Jira Subtasks` table exists, the selected row is updated to reflect
+   current Jira state, typically `Done` after successful completion.
+6. Optional Jira completion updates are either completed or reported as skipped
+   with a reason.
 
 Partial progress alone does not satisfy successful completion. If a required
 task step, test, or validation command could not run because a capability or

@@ -46,13 +46,16 @@ decision-relevant.
 6. Treat kickoff as **idempotent** on resume: if GitHub already shows the
    intended “started” state (e.g. label present, kickoff comment already posted),
    record that and return `READY` without duplicating mutations.
-7. Resolve the **GitHub task issue** from the selected task section:
-   - read `GitHub Task Issue: …` (see `creating-github-child-issues`).
+7. Resolve the **GitHub task issue** from the selected task section's
+   `GitHub Task Issue: <value>` line first, or from the matching row in
+   `## GitHub Task Issues` if the inline line is absent.
    - If the value is `owner/repo#number`, that is the primary target for `gh`
      issue commands for **this task**.
-   - If `Not Created` or `task-list`, there is no dedicated child issue for `gh`
-     task-scoped updates; optionally use the **parent** issue from the snapshot
-     metadata if the brief calls for a parent comment—otherwise record skip.
+   - If the value is `Not Created` or `task-list`, there is no dedicated child
+     issue for task-scoped `gh` updates; optionally use the **parent** issue
+     from the snapshot metadata if the brief calls for a parent comment.
+   - If no dedicated task issue exists and no parent comment is required,
+     record the skip instead of improvising tracker state.
 8. When you have a concrete `owner/repo#` for the task issue and `gh` works:
    - perform startup updates appropriate to the brief and repo conventions,
      such as:

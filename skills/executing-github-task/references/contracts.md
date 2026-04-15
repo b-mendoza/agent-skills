@@ -14,9 +14,9 @@ Phase 7 preconditions come from the parent orchestrator's data contracts
 breakdown of paths, kickoff semantics, and dispatch inputs; it must not
 contradict those parent contracts.[^1]
 
-[^1]: The concrete parent orchestrator for this skill is
-    `orchestrating-github-workflow`. Its filesystem layout is intentionally
-    unreferenced here so this skill stays portable across harnesses.
+[^1]: The concrete parent is the corresponding GitHub workflow orchestrator.
+    Its filesystem layout is intentionally unreferenced here so this skill
+    stays portable across harnesses.
 
 ## Required input shape
 
@@ -67,11 +67,12 @@ Confirm all of the following before the kickoff step:
 6. If `docs/<ISSUE_SLUG>-task-<N>-decisions.md` records a later decision that
    differs from the Phase 2 task plan, treat `decisions.md` as authoritative.
 7. **GitHub task issue reference** (optional for code work, required for full
-   traceability): resolve from the task section’s `GitHub Task Issue: …` line
-   (see `creating-github-child-issues`). Values may be `owner/repo#number`,
-   `Not Created`, or `task-list`. Missing or `Not Created` does not block local
-   implementation; it limits what `execution-starter` and
-   `documentation-writer` can do with `gh` on a dedicated child issue.
+   traceability): resolve from the task section's `GitHub Task Issue: <value>`
+   line first, or from the matching row in `## GitHub Task Issues` if the
+   inline line is absent. Values may be `owner/repo#number`, `Not Created`, or
+   `task-list`. Missing or `Not Created` does not block local implementation;
+   it limits what `execution-starter` and `documentation-writer` can do with
+   `gh` on a dedicated child issue.
 
 ## Execution kickoff boundary
 
@@ -145,8 +146,8 @@ After a successful run, all of the following should be true:
 4. The task section in `docs/<ISSUE_SLUG>-tasks.md` includes completion
    metadata consistent with your team template (e.g. status, implementation
    summary, files changed).
-5. If `## GitHub Task Issues` exists, the row for this task reflects current
-   GitHub state when known (e.g. updated status or notes from `gh`).
+5. If `## GitHub Task Issues` exists, the row for this task is updated to
+   reflect current tracker state or completion notes when known.
 6. Optional `gh` completion steps on the child or parent issue (comment, close
    child issue when policy requires, label changes) are either completed or
    reported as skipped with a reason.

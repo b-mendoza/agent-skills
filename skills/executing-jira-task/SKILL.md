@@ -33,7 +33,7 @@ execution:
 | Artifact                                  | Phase | Required | Purpose                                    |
 | ----------------------------------------- | ----- | -------- | ------------------------------------------ |
 | `docs/<KEY>.md`                           | 1     | Yes      | Ticket snapshot and Jira context.          |
-| `docs/<KEY>-tasks.md`                     | 2–4   | Yes      | Source of truth for task selection/status. |
+| `docs/<KEY>-tasks.md`                     | 2–4   | Yes      | Task plan, `## Jira Subtasks`, statuses. |
 | `docs/<KEY>-task-<N>-brief.md`            | 5     | Yes      | Scope, DoD, and execution constraints.     |
 | `docs/<KEY>-task-<N>-execution-plan.md`   | 5     | Yes      | Approved implementation approach.          |
 | `docs/<KEY>-task-<N>-test-spec.md`        | 5     | Yes      | Required behavior coverage.                |
@@ -68,7 +68,7 @@ Quality-gate fix cycles happen after internal step 5.
 
 | Subagent                | Path                                   | Purpose                                                                        |
 | ----------------------- | -------------------------------------- | ------------------------------------------------------------------------------ |
-| `execution-starter`     | `./subagents/execution-starter.md`     | Performs execution kickoff: readiness checks, safe startup state changes, and Jira `In Progress` transition when possible. |
+| `execution-starter`     | `./subagents/execution-starter.md`     | Execution kickoff: readiness, workspace checks, and first Jira-side startup updates (transition, comments) when appropriate. |
 | `task-executor`         | `./subagents/task-executor.md`         | Implements the scoped change and tests from the approved planning artifacts.   |
 | `documentation-writer`  | `./subagents/documentation-writer.md`  | Adds in-code documentation, commits Category B files, updates `docs/<TICKET_KEY>-tasks.md`, and performs optional Jira completion updates on the subtask. |
 | `requirements-verifier` | `./subagents/requirements-verifier.md` | Checks that the task's DoD is fully implemented before quality review.         |
@@ -118,7 +118,7 @@ After a successful run, this skill leaves behind these deliverables:
   including task status, implementation summary, file list, and optional Jira
   tracking.
 - **Kickoff summary:** a returned `KICKOFF_REPORT` covering readiness,
-  workspace state, and whether the Jira subtask was moved to `In Progress`.
+  workspace state, and Jira kickoff actions (or documented skips).
 - **Task-only completion report:** a concise user-facing report summarising the
   selected task's execution, commits, and gate verdicts.
 
@@ -166,7 +166,7 @@ Input:
 - `TICKET_KEY=JNS-6065`
 - `TASK_NUMBER=3`
 
-1. Validate that `docs/JNS-6065-task-3-*.md` artifacts exist and Task 3 is not complete.
+1. Validate Phase 5 + 6 artifacts exist; Task 3 is not already complete.
 2. Dispatch `execution-starter` to confirm readiness and perform the first side effects.
    - `KICKOFF_REPORT` -> `READY`
 3. Dispatch `task-executor` with the artifact paths.

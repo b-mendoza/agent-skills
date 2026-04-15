@@ -1,6 +1,6 @@
 ---
 name: "execution-starter"
-description: "Performs the execution kickoff for one planned Jira task. Confirms the selected task is operationally ready, verifies the workspace state is safe for implementation, applies explicit startup state changes such as branch/worktree preparation when the policy is clear, and moves the Jira subtask to `In Progress` when the capability and subtask key are available."
+description: "Performs the execution kickoff for one planned Jira task. Confirms the selected task is operationally ready, verifies the workspace state is safe for implementation, applies explicit startup state changes such as branch/worktree preparation when the policy is clear, and performs Jira-side kickoff updates such as moving the subtask to `In Progress` or adding a start comment when the capability and subtask key are available."
 ---
 
 # Execution Starter
@@ -50,11 +50,17 @@ artifacts.
 7. Resolve the Jira subtask key from the selected task section's
    `Jira Subtask: <KEY>` line first, or from the matching row in `## Jira
    Subtasks` if the inline line is absent.
-8. If the task has a Jira subtask key and Jira capability is available, move
-   the subtask to `In Progress`. If the key or capability is missing, record
-   the skip and continue.
-9. Return a concise kickoff report. Do not implement code, run the full test
-   plan, or commit anything.
+8. If the task has a Jira subtask key and Jira capability is available,
+   perform the startup updates the brief or team conventions require, such as:
+   - move the subtask to `In Progress`
+   - add a short kickoff comment when the brief or team policy calls for it
+   If the key or capability is missing, record the skip and continue.
+9. If Jira capability is unavailable, unauthorized, or returns a permission
+   error, record skip or `blocked` with reason. Do not fail the whole kickoff
+   for optional Jira polish if the workspace is ready unless the brief says the
+   Jira update is mandatory.
+10. Return a concise kickoff report. Do not implement code, run the full test
+    plan, or commit anything.
 
 ## Output Format
 
@@ -78,7 +84,8 @@ Return exactly this structure:
 
 ### Jira Kickoff
 - Subtask key: <key or `None`>
-- Transition to `In Progress`: <done | skipped | blocked>
+- Actions taken: <transition | comment | none>
+- Result: <done | skipped | blocked> — <detail>
 
 ### Next Step
 - <usually `Dispatch task-executor` or a specific blocker>
@@ -107,7 +114,8 @@ READY
 
 ### Jira Kickoff
 - Subtask key: `JNS-6071`
-- Transition to `In Progress`: done
+- Actions taken: transition
+- Result: done — moved the subtask to `In Progress`
 
 ### Next Step
 - Dispatch task-executor
@@ -139,7 +147,8 @@ BLOCKED
 
 ### Jira Kickoff
 - Subtask key: `JNS-6071`
-- Transition to `In Progress`: skipped
+- Actions taken: none
+- Result: skipped - kickoff stopped before any Jira mutation
 
 ### Next Step
 - Wait for the prerequisite task to complete or escalate the dependency issue
@@ -154,7 +163,7 @@ Your job is to:
 
 - Confirm the selected task is ready for real execution.
 - Apply only the startup state changes that belong at the execution boundary.
-- Move the Jira subtask to `In Progress` when possible.
+- Use the available Jira transport for kickoff updates when a subtask exists.
 - Return a summary the orchestrator can act on immediately.
 
 You do not:
@@ -170,5 +179,5 @@ Use these categories consistently:
 
 | Category | Meaning | Typical trigger |
 | -------- | ------- | --------------- |
-| `BLOCKED` | The task is not ready and the next safe move requires orchestrator or user judgment. | Dependency incomplete, branch policy unclear, dirty state needs judgment, or a required kickoff transition cannot run safely. |
+| `BLOCKED` | The task is not ready and the next safe move requires orchestrator or user judgment. | Dependency incomplete, branch policy unclear, dirty state needs judgment, or a mandatory Jira kickoff action cannot run safely. |
 | `ERROR` | An unexpected failure prevented a reliable kickoff result. | Tool failure, environment issue, or unexpected Jira capability failure. |
