@@ -346,9 +346,13 @@ ISSUE_SLUG = acme-app-42
    `PLAN_PATH=docs/acme-app-42-stage-2-prioritized.md`,
    `OUTPUT_PATH=docs/acme-app-42-tasks.md`
    -> wrote final plan
-7. Validate `STAGE=3` and `STAGE=postpipeline`
+7. Dispatch `stage-validator` with `ISSUE_SLUG=acme-app-42`,
+   `STAGE=3`, `FILE_PATH=docs/acme-app-42-tasks.md`
    -> PASS
-8. Return:
+8. Dispatch `stage-validator` with `ISSUE_SLUG=acme-app-42`,
+   `STAGE=postpipeline`, `FILE_PATH=docs/acme-app-42-tasks.md`
+   -> PASS
+9. Return:
 
    PLANNING: PASS
    Issue: acme-app-42

@@ -344,9 +344,13 @@ TICKET_KEY = JNS-6065
    `PLAN_PATH=docs/JNS-6065-stage-2-prioritized.md`,
    `OUTPUT_PATH=docs/JNS-6065-tasks.md`
    -> wrote final plan
-7. Validate `STAGE=3` and `STAGE=postpipeline`
+7. Dispatch `stage-validator` with `TICKET_KEY=JNS-6065`,
+   `STAGE=3`, `FILE_PATH=docs/JNS-6065-tasks.md`
    -> PASS
-8. Return:
+8. Dispatch `stage-validator` with `TICKET_KEY=JNS-6065`,
+   `STAGE=postpipeline`, `FILE_PATH=docs/JNS-6065-tasks.md`
+   -> PASS
+9. Return:
 
    PLANNING: PASS
    Ticket: JNS-6065
