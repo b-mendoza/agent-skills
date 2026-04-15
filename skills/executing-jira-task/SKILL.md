@@ -168,7 +168,8 @@ Input:
 - `TASK_NUMBER=3`
 
 1. Validate Phase 5 + 6 artifacts exist; Task 3 is not already complete.
-2. Dispatch `execution-starter` to confirm readiness and perform the first side effects.
+2. Dispatch `execution-starter` for kickoff (first Jira-side mutations after
+   critique).
    - `KICKOFF_REPORT` -> `READY`
 3. Dispatch `task-executor` with the artifact paths.
    - `EXECUTION_REPORT` -> `COMPLETE`

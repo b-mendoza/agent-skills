@@ -103,7 +103,7 @@ When one or more reviewers return `NEEDS FIXES`:
    fix brief.
 2. Re-dispatch `task-executor` with the original planning artifacts plus that
    fix brief.
-3. Re-dispatch `documentation-writer` so the new Category B changes are
+3. Re-dispatch `documentation-writer` so new Category B changes are
    committed and tracking artifacts are updated.
 4. Re-run only the gate(s) that previously failed, in their original order.
 5. If every previously failing gate now passes, finish the task. Otherwise use
