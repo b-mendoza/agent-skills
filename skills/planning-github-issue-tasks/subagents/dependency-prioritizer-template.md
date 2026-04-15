@@ -20,7 +20,7 @@ Immediately after the task heading:
 
 ### Add dependency annotations to each task
 
-(See Part 1 in the subagent definition for the annotation format.)
+(See `### Dependency analysis` in the subagent definition for the annotation format.)
 
 After renumbering, all `Dependencies / prerequisites` must use NEW task numbers
 with the old label in parentheses for traceability:
