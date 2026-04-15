@@ -187,7 +187,7 @@ recovery map when deciding which stage to dispatch or retry next.
 | Stage 1         | `task-planner` → `stage-validator`    | `PLAN: PASS` and `docs/<ISSUE_SLUG>-stage-1-detailed.md` passes Stage 1 checks | Stop on `PLAN: FAIL | BLOCKED | ERROR`; retry Stage 1 only on a Stage 1 gate failure |
 | Stage 2         | `dependency-prioritizer` → `stage-validator` | `PRIORITIZATION: PASS` and `docs/<ISSUE_SLUG>-stage-2-prioritized.md` passes Stage 2 checks | Stop on `PRIORITIZATION: FAIL | BLOCKED | ERROR`; retry Stage 2 only on a Stage 2 gate failure |
 | Stage 3         | `task-validator` → `stage-validator`  | `TASK_VALIDATION: PASS` and `docs/<ISSUE_SLUG>-tasks.md` passes Stage 3 checks | Stop on `TASK_VALIDATION: FAIL | BLOCKED | ERROR`; retry Stage 3 only on a Stage 3 gate failure |
-| `postpipeline`  | `stage-validator`                     | Final downstream contract is intact     | Re-dispatch Stage 3, then re-run Stage 3 and post-pipeline gates |
+| `postpipeline`  | `stage-validator`                     | Final downstream contract is intact     | Re-dispatch Stage 3, then re-run `STAGE=3` and `STAGE=postpipeline` |
 
 ## Execution Paths
 
@@ -212,6 +212,7 @@ re-plan rules require it.
      artifacts from the prior run.
    - Stop after 3 critique-driven re-plan iterations and escalate instead of
      looping indefinitely.
+   - This re-plan cap is separate from the per-gate retry cap in Step 7.
    - Start at **Stage 1** when the critique changes issue interpretation,
      scope, assumptions, or task decomposition.
    - Start at **Stage 2** when the stage 1 task content is still valid but
@@ -303,9 +304,11 @@ re-plan rules require it.
    This confirms the full output contract for downstream phases.
 
 7. **Targeted retry loop**
-   This loop applies only to `STAGE_VALIDATION: FAIL` results. If a stage
-   subagent returns `PLAN: FAIL`, `PRIORITIZATION: FAIL`, or
+   This loop applies only to `STAGE_VALIDATION: FAIL` results for Stage 1,
+   Stage 2, Stage 3, and `postpipeline`. Preflight failures are terminal per
+   Step 2. If a stage subagent returns `PLAN: FAIL`, `PRIORITIZATION: FAIL`, or
    `TASK_VALIDATION: FAIL`, stop and return `PLANNING: FAIL`.
+   Re-plan iterations and per-gate retry cycles are tracked separately.
 
    For any failing validator gate:
    - Collect only the validator's issues list.
