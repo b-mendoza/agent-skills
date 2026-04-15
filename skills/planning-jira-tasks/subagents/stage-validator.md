@@ -26,9 +26,12 @@ only structured verdicts, never file contents.
 - `3`
 - `postpipeline`
 
-## Instructions
+## Output Contract
 
-Return one structured verdict using the format in `## Output Format`.
+No file is written. Read `FILE_PATH`, run the checks for the requested
+`STAGE`, and return only the concise summary from `## Output Format`.
+
+## How to Validate Stages
 
 - Use `PASS` when the artifact exists and satisfies every required structural
   check for the requested stage.
@@ -38,9 +41,7 @@ Return one structured verdict using the format in `## Output Format`.
   such as filesystem or tool access problems.
 
 Missing files, missing sections, and missing required fields are normal
-validation failures and should return `Verdict: FAIL`, not `ERROR`.
-
-### Validation Procedure
+validation failures and should return `FAIL`, not `ERROR`.
 
 1. Read the file at `FILE_PATH`.
 2. Run the checks for the requested `STAGE`.
@@ -83,6 +84,7 @@ Checks:
       `### Alternative Approaches Not Explored`, `### Evidence Basis`).
 - [ ] Contains `## Assumptions and Constraints`.
 - [ ] Contains `## Cross-Cutting Open Questions`.
+- [ ] Contains `## Notes`.
 - [ ] Contains at least 2 task sections using `### Task ...` headings.
 - [ ] Every task has `**Objective:**`.
 - [ ] Every task has `**Relevant requirements and context:**`.
@@ -144,23 +146,21 @@ Checks:
 Return only this summary:
 
 ```text
-## Stage Validation: <STAGE>
-
-- **File:** <FILE_PATH>
-- **Verdict:** PASS | FAIL | ERROR
-- **Checks passed:** <N> / <total> | n/a
-- **Issues:** <bulleted list of failures, or "None">
+STAGE_VALIDATION: PASS | FAIL | ERROR
+Stage: <STAGE>
+File: <FILE_PATH>
+Checks passed: <N> / <total> | n/a
+Issues: None | <semicolon-separated list of failures>
+Reason: <one line>
 ```
 
 <example>
-## Stage Validation: postpipeline
-
-- **File:** docs/JNS-6065-tasks.md
-- **Verdict:** FAIL
-- **Checks passed:** 15 / 17
-- **Issues:**
-  - Missing `## Assumptions and Constraints`
-  - Task 3 is missing `**Dependencies / prerequisites:**`
+STAGE_VALIDATION: FAIL
+Stage: postpipeline
+File: docs/JNS-6065-tasks.md
+Checks passed: 15 / 17
+Issues: Missing `## Assumptions and Constraints`; Task 3 is missing `**Dependencies / prerequisites:**`
+Reason: 2 required structural checks failed.
 </example>
 
 ## Scope
@@ -179,11 +179,10 @@ such as filesystem or tool access problems. Keep the same output format so the
 orchestrator can parse one schema for all validator outcomes.
 
 ```text
-## Stage Validation: <STAGE>
-
-- **File:** <FILE_PATH>
-- **Verdict:** ERROR
-- **Checks passed:** n/a
-- **Issues:**
-  - <what went wrong>
+STAGE_VALIDATION: ERROR
+Stage: <STAGE>
+File: <FILE_PATH>
+Checks passed: n/a
+Issues: <what went wrong>
+Reason: Unexpected validation failure prevented structural checks.
 ```
