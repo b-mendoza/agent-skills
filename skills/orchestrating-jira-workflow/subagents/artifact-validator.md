@@ -39,8 +39,8 @@ downstream skill writes to disk. The orchestrator still handles
 
 For Phase 4 postcondition and the Phase 5 precondition, validate the stronger
 handoff owned by `../../creating-jira-subtasks/SKILL.md`: the workflow-level
-`## Jira Subtasks` table plus the inline `Jira Subtask: <KEY>` lines for
-linked tasks.
+`## Jira Subtasks` table plus exactly one inline `Jira Subtask:` marker for
+every numbered task section.
 
 For the Phase 5 postcondition and Phase 6 precondition, validate the concrete
 planning handoff owned by `../../planning-jira-task/SKILL.md`: brief, execution
@@ -48,7 +48,8 @@ plan, test spec, and refactoring plan. The detailed section-level requirements
 inside those files remain owned by that downstream skill.
 
 For the Phase 7 precondition, validate the normal workflow handoff from Phases
-5 and 6. This confirms critique completed before execution begins.
+1–6. This confirms the ticket snapshot, workflow task plan, and critique
+artifacts all exist before execution begins.
 `../../executing-jira-task/references/contracts.md` remains authoritative for the
 execution skill's own required versus conditional input semantics.
 
@@ -60,12 +61,12 @@ execution skill's own required versus conditional input semantics.
 | 3     | precondition  | `docs/<KEY>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
 | 3     | postcondition | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | `docs/<KEY>-upfront-critique.md` exists; `docs/<KEY>-tasks.md` contains `## Decisions Log` |
 | 4     | precondition  | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition                                  |
-| 4     | postcondition | `docs/<KEY>-tasks.md`                | Contains a `## Jira Subtasks` table; table has one row per numbered task; rows may use `Not Created`, but every Jira-style key in the table has a matching inline `Jira Subtask: <KEY>` line in the corresponding task section |
+| 4     | postcondition | `docs/<KEY>-tasks.md`                | Contains a `## Jira Subtasks` table; table has one row per numbered task; every numbered task section contains exactly one inline `Jira Subtask:` line whose value matches that task's workflow-table row (`<KEY>` or `Not Created`) |
 | 5     | precondition  | `docs/<KEY>-tasks.md`                | Same as Phase 4 postcondition                                  |
 | 5     | postcondition | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | All 4 concrete planning artifacts exist for task `N`           |
 | 6     | precondition  | `docs/<KEY>-task-<N>-brief.md` + `docs/<KEY>-task-<N>-execution-plan.md` + `docs/<KEY>-task-<N>-test-spec.md` + `docs/<KEY>-task-<N>-refactoring-plan.md` | Same as Phase 5 postcondition                                  |
 | 6     | postcondition | `docs/<KEY>-task-<N>-critique.md` + `docs/<KEY>-task-<N>-decisions.md` | Both critique and decisions artifacts exist for task `N`       |
-| 7     | precondition  | Standard Phase 5 + 6 workflow handoff | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`, `docs/<KEY>-task-<N>-critique.md`, and `docs/<KEY>-task-<N>-decisions.md` all exist |
+| 7     | precondition  | Standard Phase 1–6 workflow handoff | `docs/<KEY>.md`, `docs/<KEY>-tasks.md`, `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md`, `docs/<KEY>-task-<N>-critique.md`, and `docs/<KEY>-task-<N>-decisions.md` all exist |
 
 If the phase boundary is unclear, consult `../references/data-contracts.md`
 for the same matrix in reference form.
@@ -85,11 +86,11 @@ for the same matrix in reference form.
    plus the companion planning or decisions artifact expected at that boundary.
 7. For the Phase 4 postcondition and Phase 5 precondition, confirm the plan
    contains a `## Jira Subtasks` table, that the table covers the numbered
-   tasks, and that every Jira-style key in the table has a matching inline
-   `Jira Subtask: <KEY>` line in the corresponding task section.
-8. For the Phase 7 precondition, confirm the planning artifacts still exist and
-   that the standard Phase 6 handoff artifacts are present for the normal
-   workflow path into execution.
+   tasks, and that every numbered task section contains exactly one inline
+   `Jira Subtask:` line whose value matches the table row for that task.
+8. For the Phase 7 precondition, confirm the ticket snapshot and workflow task
+   plan still exist, then verify that the standard Phase 5 and Phase 6 handoff
+   artifacts are present for the normal workflow path into execution.
 9. Return only the structured verdict.
 
 Be precise about what failed. The orchestrator needs a specific missing file,

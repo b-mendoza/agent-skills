@@ -30,7 +30,8 @@ Issues` exists and has one row."
 **Phase 4 write-model reminder:** Downstream creation prefers native child
 issues when supported, then linked issues, then task-list references. Validation
 must match whichever model the skill recorded, while still requiring a
-workflow-level table plus per-task inline references for resumability.
+workflow-level table plus exactly one per-task inline reference in every
+numbered task section for resumability.
 
 **Phase 1 snapshot conventions (consumed by Phase 2+):**
 

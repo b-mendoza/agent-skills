@@ -93,7 +93,8 @@ phase boundary contract the orchestrator must honor.
 For Phase 4, the authoritative downstream contract is owned by
 `creating-jira-subtasks`. Treat `docs/<TICKET_KEY>-tasks.md` as valid for downstream
 use only when it carries the workflow-level `## Jira Subtasks` table plus the
-inline `Jira Subtask: <TICKET_KEY>` links for linked tasks. The downstream
+exact per-task inline `Jira Subtask: <KEY | Not Created>` marker in every
+numbered task section. The downstream
 `Created/Linked Subtasks` table is the structured handoff for workflow progress
 tracking.
 

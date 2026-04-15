@@ -44,8 +44,9 @@ downstream skill writes to disk. The orchestrator still handles
 For Phase 4 postcondition and the Phase 5 precondition, validate the stronger
 handoff owned by `../../creating-github-child-issues/SKILL.md`: the
 workflow-level `## GitHub Task Issues` table plus the per-task inline issue
-references recorded for each numbered plan task (exact line format owned by that
-skill).
+references recorded for each numbered plan task, with exactly one inline
+`GitHub Task Issue:` marker in every numbered task section (exact line format
+owned by that skill).
 
 For the Phase 5 postcondition and Phase 6 precondition, validate the concrete
 planning handoff owned by `../../planning-github-task/SKILL.md`: brief, execution
@@ -65,7 +66,7 @@ the execution skill's own required versus conditional input semantics.
 | 3     | precondition  | `docs/<ISSUE_SLUG>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
 | 3     | postcondition | `docs/<ISSUE_SLUG>-upfront-critique.md` + `docs/<ISSUE_SLUG>-tasks.md` | `docs/<ISSUE_SLUG>-upfront-critique.md` exists; `docs/<ISSUE_SLUG>-tasks.md` contains `## Decisions Log` |
 | 4     | precondition  | `docs/<ISSUE_SLUG>-upfront-critique.md` + `docs/<ISSUE_SLUG>-tasks.md` | Same as Phase 3 postcondition                                  |
-| 4     | postcondition | `docs/<ISSUE_SLUG>-tasks.md`         | Contains `## GitHub Task Issues`; includes the machine handoff comment defined by `creating-github-child-issues`; has the workflow-level table with one row per numbered plan task; rows may use `Not Created` or equivalent; every row that names a concrete GitHub issue has a matching per-task inline reference in the corresponding task section (exact line format owned by `creating-github-child-issues`) |
+| 4     | postcondition | `docs/<ISSUE_SLUG>-tasks.md`         | Contains `## GitHub Task Issues`; includes the machine handoff comment defined by `creating-github-child-issues`; has the workflow-level table with one row per numbered plan task; every numbered task section contains exactly one inline `GitHub Task Issue:` line whose value matches that task's workflow-table row (`owner/repo#number`, `Not Created`, or `task-list`), using the exact line format owned by `creating-github-child-issues` |
 | 5     | precondition  | `docs/<ISSUE_SLUG>-tasks.md`         | Same as Phase 4 postcondition                                  |
 | 5     | postcondition | `docs/<ISSUE_SLUG>-task-<N>-brief.md` + `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` + `docs/<ISSUE_SLUG>-task-<N>-test-spec.md` + `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` | All 4 concrete planning artifacts exist for task `N`           |
 | 6     | precondition  | Same four files as Phase 5 postcondition | Same as Phase 5 postcondition                                  |
@@ -90,9 +91,10 @@ the same matrix in reference form.
    plus the companion planning or decisions artifact expected at that boundary.
 7. For the Phase 4 postcondition and Phase 5 precondition, confirm the plan
    contains `## GitHub Task Issues`, includes the machine handoff comment under
-   that heading, that the table covers the numbered tasks, and that every table
-   row that references a concrete GitHub issue has a matching per-task inline
-   reference in the correct task section (per `creating-github-child-issues`).
+   that heading, that the table covers the numbered tasks, and that every
+   numbered task section contains exactly one inline `GitHub Task Issue:` line
+   whose value matches the workflow-table row for that task (per
+   `creating-github-child-issues`).
 8. For the Phase 7 precondition, confirm the issue snapshot and workflow task
    plan still exist, then verify that the standard Phase 5 and Phase 6 handoff
    artifacts are present for the normal workflow path into execution.

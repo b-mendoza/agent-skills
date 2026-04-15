@@ -35,7 +35,7 @@ Subtasks` exists and has one key."
 | 3     | precondition  | `docs/<KEY>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
 | 3     | postcondition | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | `docs/<KEY>-upfront-critique.md` exists; `docs/<KEY>-tasks.md` contains `## Decisions Log` |
 | 4     | precondition  | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition                                  |
-| 4     | postcondition | `docs/<KEY>-tasks.md`   | Contains a `## Jira Subtasks` table; table has one row per numbered task; rows may use `Not Created`, but every row with a Jira-style key has a matching inline `Jira Subtask: <KEY>` line in the corresponding task section |
+| 4     | postcondition | `docs/<KEY>-tasks.md`   | Contains a `## Jira Subtasks` table; table has one row per numbered task; every numbered task section contains exactly one inline `Jira Subtask:` line whose value matches that task's workflow-table row (`<KEY>` or `Not Created`) |
 | 5     | precondition  | `docs/<KEY>-tasks.md`   | Same as Phase 4 postcondition                                  |
 
 ### Phases 5–7 (per task)
