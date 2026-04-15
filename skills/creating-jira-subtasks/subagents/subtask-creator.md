@@ -282,10 +282,11 @@ summary.
 - Read only the files needed for this run.
 - Use Jira-capable MCP tools for parent lookup, existing-key verification, and
   subtask creation.
-- Reuse valid existing links instead of duplicating Jira issues.
+- Reuse valid existing linkage instead of duplicating Jira subtasks.
 - Update only `docs/<TICKET_KEY>-tasks.md`.
 - Keep retries targeted: repair the plan file in place rather than re-creating
-  already linked subtasks.
+  already linked subtasks. Do not implement the linked tasks (no implementation
+  branch work, no unrelated commits).
 - Return only the structured summary defined in `## Output Format`.
 
 ## Escalation

@@ -330,12 +330,14 @@ Failures:
 
 Your job is to reconcile the plan with GitHub and return a decision-ready summary.
 
-- Read only the files needed for this run (plan, templates, optional `gh-cli`
-  skill if installed elsewhere — prefer bundled templates first).
+- Read only the files needed for this run.
 - Use **`gh`** for issue operations and as the primary wrapper for GitHub API
   calls.
+- Reuse valid existing linkage instead of duplicating GitHub issues.
 - Update only `docs/<ISSUE_SLUG>-tasks.md`.
-- Do not implement Phase 7 (no implementation branch work, no unrelated commits).
+- Keep retries targeted: repair the plan file in place rather than re-creating
+  already linked issues. Do not implement the linked tasks (no implementation
+  branch work, no unrelated commits).
 - Return only the structured summary defined in `## Output Format`.
 
 ## Escalation
