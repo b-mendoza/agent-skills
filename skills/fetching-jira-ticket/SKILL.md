@@ -58,8 +58,9 @@ matches the output contract and, when a file is written, reports validation
 status consistently.
 
 This coordinator may do four things directly: read its bundled skill files,
-derive identifiers from the input contract, dispatch the retriever, and relay
-the retriever's structured summary. Everything else stays inside the subagent.
+derive identifiers from the input contract (including workspace, project, and
+ticket key derived from `JIRA_URL`), dispatch the retriever, and relay the
+retriever's structured summary. Everything else stays inside the subagent.
 
 ### 1. Dispatch the retriever
 
@@ -83,8 +84,8 @@ The retriever returns a summary with these top-level fields:
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
   related items could not be retrieved, or related-item discovery could not be
   verified
-- Shared rule: parent comment retrieval and subtask / linked-issue retrieval
-  or discovery gaps use `PARTIAL`
+- Shared rule: parent comment retrieval and subtasks / linked issues
+  retrieval or discovery gaps use `PARTIAL`
 - Jira-specific: `## Attachments` and `## Custom Fields` are populated from
   the retrieved parent ticket payload and do not introduce a separate
   unknown-discovery state
@@ -175,13 +176,13 @@ snapshot shape in `./subagents/ticket-retriever-template.md`. Repeated nested
 headings, such as comment entries or per-related-item subsections, appear only
 when their parent section has material to render. If a top-level section has
 verified empty data, the heading still appears and the section body is
-`_None_`. For `## Subtasks` and `## Linked Issues`, use the template's unknown
-marker when discovery could not be verified after the parent ticket was
-retrieved, and use placeholder entries for known related items that could not
-be hydrated. Downstream skills rely on stable headings rather than best-effort
-prose. If retrieval is partial, the artifact must record that explicitly in
-`## Retrieval Warnings` and use placeholder entries for any known related item
-that could not be hydrated.
+`_None_`. If the retriever could not verify whether a section is empty, the
+artifact must use the template's unknown marker instead. Downstream skills rely
+on stable headings rather than best-effort prose. If retrieval is partial, the
+artifact must record that explicitly in `## Retrieval Warnings` and use the
+template's placeholder shapes for any subtask or linked issue that could not be
+hydrated, or the template's unknown marker when a section could not be
+verified as empty.
 
 Treat `./subagents/ticket-retriever-template.md` as the authoritative snapshot
 shape bundled with this skill; no external spec file is required. The section
