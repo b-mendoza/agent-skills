@@ -33,6 +33,7 @@ Use `TICKET_KEY` and `TASK_NUMBER` as the only task identity inputs. Write only
 2. Locate `## Task <TASK_NUMBER>:`. If it is missing, report `BLOCKED`.
 3. Validate task readiness:
    - The task has dependency information.
+   - The task has priority information.
    - Every dependency listed for this task is already marked complete.
    - Questions are resolved, explicitly waived, or recorded as a conscious
      follow-up decision.

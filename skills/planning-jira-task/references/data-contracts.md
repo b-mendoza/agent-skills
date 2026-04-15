@@ -21,6 +21,7 @@ Required content inside that file for `TASK_NUMBER=<N>`:
 - `Definition of done` content exists
 - `Likely files / artifacts affected` content exists
 - `Dependencies / prerequisites` content exists, even if the value is `None`
+- `Priority` content exists
 - `Questions to answer before starting` content exists, even if the value is
   `None`
 
@@ -31,16 +32,21 @@ Expected upstream workflow state:
   conscious follow-up decisions
 - If a `## Decisions Log` section exists, treat it as the latest authority over
   earlier task-plan wording
-- In the full Jira workflow, Phase 4 has already added a `## Jira Subtasks`
-  table, but planning does not depend on Jira linkage to assemble the brief
+- When invoked as part of a multi-phase workflow, `docs/<TICKET_KEY>-tasks.md`
+  may contain a `## Jira Subtasks` section with one row per numbered task and
+  matching per-task inline references; this skill tolerates but does not
+  require that table
 
 Optional upstream context:
 
-- `docs/<TICKET_KEY>.md` may provide extra ticket context if a subagent needs it
+- `docs/<TICKET_KEY>.md` may provide extra ticket snapshot context if a
+  subagent needs it
 - `docs/<TICKET_KEY>-task-<N>-decisions.md` is available on critique-driven
-  re-plan cycles
-- `Jira Subtask: <KEY>` lines may already be present from Phase 4; planning
-  should tolerate them when present, but it does not require them
+  re-plan cycles (produced in Phase 6)
+- Per-task lines or notes that reference a Jira subtask (for example
+  `Jira Subtask: <KEY>` lines) may already be present from Phase 4; when this
+  skill is invoked outside the normal orchestrated Phase 5 entry, tolerate
+  their absence but do not invent them
 
 ## Downstream Artifacts
 

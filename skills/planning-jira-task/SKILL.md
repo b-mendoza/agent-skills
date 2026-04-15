@@ -1,6 +1,6 @@
 ---
 name: "planning-jira-task"
-description: 'Plan how to execute one task from `docs/<TICKET_KEY>-tasks.md`. Runs a four-subagent pipeline that validates the task, writes an execution brief, inspects the codebase, defines behavior-driven tests, and evaluates refactoring needs. Produces `docs/<TICKET_KEY>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md` for one task only. Use when the user says "plan task 3", "prepare task 2 for execution", "how should we implement task 1", or when `orchestrating-jira-workflow` enters Phase 5. This skill creates planning artifacts only; it does not change git state, transition Jira issues, or modify product code.'
+description: 'Plan how to execute one task from `docs/<TICKET_KEY>-tasks.md`. Runs a four-subagent pipeline that validates the task, writes an execution brief, inspects the codebase, defines behavior-driven tests, and evaluates refactoring needs. Produces `docs/<TICKET_KEY>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md` for one task only. Use when the user says "plan task 3", "prepare task 2 for execution", "how should we implement task 1", or when invoked as the planning phase of a multi-phase workflow. This skill creates planning artifacts only; it does not change git state, transition Jira issues, or modify product code.'
 ---
 
 # Planning Jira Task
@@ -29,8 +29,8 @@ and surface the blocker with a concise summary.
 Read `./references/data-contracts.md` when you need the upstream prerequisites
 or downstream artifact expectations.
 
-Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns. Read
-`./references/pipeline.md` when deciding which stages to rerun.
+Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns (Phase 6).
+Read `./references/pipeline.md` when deciding which stages to rerun.
 
 ## Workflow Overview
 
@@ -47,10 +47,10 @@ This skill writes only Category A orchestration artifacts:
 
 | Artifact | Produced by | Consumed by |
 | -------- | ----------- | ----------- |
-| `docs/<KEY>-task-<N>-brief.md` | `execution-prepper` | All downstream planning subagents, critique, execution |
-| `docs/<KEY>-task-<N>-execution-plan.md` | `execution-planner` | critique, execution |
-| `docs/<KEY>-task-<N>-test-spec.md` | `test-strategist` | critique, execution |
-| `docs/<KEY>-task-<N>-refactoring-plan.md` | `refactoring-advisor` | critique, execution |
+| `docs/<TICKET_KEY>-task-<N>-brief.md` | `execution-prepper` | All downstream planning subagents, Phase 6 critique, Phase 7 execution |
+| `docs/<TICKET_KEY>-task-<N>-execution-plan.md` | `execution-planner` | Phase 6 critique, Phase 7 execution |
+| `docs/<TICKET_KEY>-task-<N>-test-spec.md` | `test-strategist` | Phase 6 critique, Phase 7 execution |
+| `docs/<TICKET_KEY>-task-<N>-refactoring-plan.md` | `refactoring-advisor` | Phase 6 critique, Phase 7 execution |
 
 On a successful run, all four files exist. On a re-plan, overwrite only the
 files owned by the subagents that are re-run. These files stay on disk for the
@@ -76,8 +76,8 @@ Read a subagent definition only when you are about to dispatch that subagent.
 - At each boundary, validate that the current input artifact exists before
   dispatch, then confirm that the expected output artifact was written before
   advancing.
-- Pass only explicit handoffs between steps: ticket key, task number, decision
-  file path, and artifact file paths.
+- Pass only explicit handoffs between steps: `TICKET_KEY`, task number,
+  decision file path, and artifact file paths.
 - Keep only verdicts, file paths, and next-step-relevant notes from each
   subagent.
 - Advance sequentially. Rerun only the subagents invalidated by critique, plus
@@ -101,7 +101,8 @@ source of truth for the actual orchestration order.
    exist for `TICKET_KEY` and `TASK_NUMBER`.
 2. Read `./references/pipeline.md`.
 3. Dispatch the first required subagent from the registry with explicit inputs
-   only.
+   only (`TICKET_KEY`, `TASK_NUMBER`, and when applicable `RE_PLAN`,
+   `DECISIONS_FILE`).
 4. Retain only its verdict, artifact path, and the notes needed for the next
    decision.
 5. Continue until all required planning artifacts are written and confirmed, or
@@ -115,7 +116,7 @@ Input:
 - `TICKET_KEY=PROJ-123`
 - `TASK_NUMBER=2`
 
-1. Dispatch `execution-prepper`
+1. Dispatch `execution-prepper` with `TICKET_KEY`, `TASK_NUMBER`
 2. Subagent returns:
    `PREP: PASS`
    `Brief: docs/PROJ-123-task-2-brief.md`
