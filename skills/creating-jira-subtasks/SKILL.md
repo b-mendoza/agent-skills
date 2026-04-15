@@ -59,9 +59,8 @@ Inside Phase 4, keep only:
 - The validation verdict
 - The task / subtask key / title / dependency / priority / outcome rows needed for progress reporting
 - Any warning or fatal reason that requires user attention
-
-Jira Phase 4 uses a single native subtask path, so the structured summary does
-not include additional write-model or capability metadata lines.
+- Jira uses a single native subtask path, so no separate write-model or
+  capability lines are expected in the summary
 
 Relay only the structured fields the subagent returns. Raw Jira payloads, full
 API responses, raw file contents, and intermediate parse details stay inside
@@ -138,6 +137,8 @@ Using only the subagent's structured summary, tell the caller:
   creates
 - The `Created/Linked Subtasks` table, including dependency and priority
   metadata for each task
+- That Jira uses the native subtask path, so no write-model or capability line
+  is expected in the summary
 - Any warnings or failures
 - That no implementation has started and linked subtasks remain in `To Do`
   unless Jira already shows another status
@@ -157,7 +158,7 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 
    SUBTASKS: PASS
    Validation: PASS
-   Ticket: PROJ-123
+   Parent: PROJ-123
    Plan file: docs/PROJ-123-tasks.md
    Tasks in plan: 4
    Already linked: 1
