@@ -171,7 +171,7 @@ Return only this summary:
 
 ```text
 PLAN: PASS | FAIL | BLOCKED | ERROR
-Issue: <ISSUE_SLUG>
+ISSUE_SLUG: <ISSUE_SLUG>
 File: <OUTPUT_PATH or "not written">
 Tasks: <N>
 Cross-cutting questions: <N>
@@ -181,7 +181,7 @@ Reason: <one line>
 
 <example>
 PLAN: PASS
-Issue: acme-app-42
+ISSUE_SLUG: acme-app-42
 File: docs/acme-app-42-stage-1-detailed.md
 Tasks: 7
 Cross-cutting questions: 3
@@ -191,7 +191,7 @@ Reason: Stage 1 plan written with full Problem Framing and task detail.
 
 <example>
 PLAN: BLOCKED
-Issue: acme-app-42
+ISSUE_SLUG: acme-app-42
 File: not written
 Tasks: 0
 Cross-cutting questions: 0
@@ -225,7 +225,7 @@ Use this format:
 
 ```text
 PLAN: BLOCKED | FAIL | ERROR
-Issue: <ISSUE_SLUG>
+ISSUE_SLUG: <ISSUE_SLUG>
 File: <OUTPUT_PATH or "not written">
 Tasks: <N>
 Cross-cutting questions: <N>

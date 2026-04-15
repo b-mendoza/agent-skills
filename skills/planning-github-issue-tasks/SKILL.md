@@ -1,6 +1,6 @@
 ---
 name: "planning-github-issue-tasks"
-description: 'Phase 2 of the orchestrating-github-workflow pipeline. Reads a GitHub issue snapshot at docs/<ISSUE_SLUG>.md and produces a detailed, self-contained task plan at docs/<ISSUE_SLUG>-tasks.md through a three-stage subagent pipeline (plan → prioritize → validate). Invoked by the orchestrating-github-workflow skill, not intended for standalone use. This skill orchestrates the pipeline, preserves planning artifacts for resume and critique, and never does planning work itself. Downstream clarification uses TICKET_KEY = ISSUE_SLUG for path compatibility.'
+description: 'Phase 2 of the GitHub planning workflow. Reads a GitHub issue snapshot at docs/<ISSUE_SLUG>.md and produces a detailed, self-contained task plan at docs/<ISSUE_SLUG>-tasks.md through a three-stage subagent pipeline (plan → prioritize → validate). Preserves planning artifacts for resume and critique and returns only concise handoff summaries.'
 ---
 
 # Planning GitHub Issue Tasks
@@ -12,9 +12,10 @@ boundary, preserves planning artifacts for resume and critique, and returns
 only concise handoff summaries to the parent workflow. It does not decompose
 work, prioritize dependencies, or validate plan quality inline.
 
-**Compatibility:** `clarifying-assumptions` expects `TICKET_KEY`. For this
-workflow, **`TICKET_KEY` and `ISSUE_SLUG` are the same string** (for example
-`acme-app-42`). All artifact paths use `docs/<ISSUE_SLUG>…`.
+**Compatibility:** Downstream phases use `TICKET_KEY`-oriented handoffs and
+paths. In this workflow, **`TICKET_KEY` and `ISSUE_SLUG` are the same string**
+(for example `acme-app-42`). All artifact paths in this skill use
+`docs/<ISSUE_SLUG>…`.
 
 ## Inputs
 
@@ -94,14 +95,13 @@ Phase 3.
 
 ### Return handoff
 
-Return only a concise phase handoff to the parent orchestrator:
-
-Return `PLANNING: PASS` only when `PLAN: PASS`, `PRIORITIZATION: PASS`,
-`TASK_VALIDATION: PASS`, and every `STAGE_VALIDATION` gate returned `PASS`.
+Return only the concise phase handoff below. Use `PLANNING: PASS` only when
+`PLAN: PASS`, `PRIORITIZATION: PASS`, `TASK_VALIDATION: PASS`, and every
+`STAGE_VALIDATION` gate returned `PASS`.
 
 ```text
 PLANNING: PASS | FAIL
-Issue: <ISSUE_SLUG>
+ISSUE_SLUG: <ISSUE_SLUG>
 File: <final file path or "not written">
 Tasks: <N>
 Cross-cutting questions: <N>
@@ -358,7 +358,7 @@ ISSUE_SLUG = acme-app-42
 9. Return:
 
    PLANNING: PASS
-   Issue: acme-app-42
+   ISSUE_SLUG: acme-app-42
    File: docs/acme-app-42-tasks.md
    Tasks: 7
    Cross-cutting questions: 3

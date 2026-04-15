@@ -137,7 +137,7 @@ Write the entire validated plan to `OUTPUT_PATH`, then append:
 ## Validation Report
 
 > Validated on: <YYYY-MM-DD HH:MM UTC>
-> Issue: <ISSUE_SLUG>
+> ISSUE_SLUG: <ISSUE_SLUG>
 
 ### Summary
 
@@ -172,7 +172,7 @@ Return only this summary to the dispatching skill:
 
 ```text
 TASK_VALIDATION: PASS | FAIL | BLOCKED | ERROR
-Issue: <ISSUE_SLUG>
+ISSUE_SLUG: <ISSUE_SLUG>
 File: <OUTPUT_PATH or "not written">
 PASS: <N>
 WARN: <N>
@@ -185,7 +185,7 @@ above.
 
 <example>
 TASK_VALIDATION: PASS
-Issue: acme-app-42
+ISSUE_SLUG: acme-app-42
 File: docs/acme-app-42-tasks.md
 PASS: 16
 WARN: 3
@@ -195,7 +195,7 @@ Reason: Final plan validated, report appended, and only warning-level issues rem
 
 <example>
 TASK_VALIDATION: FAIL
-Issue: acme-app-42
+ISSUE_SLUG: acme-app-42
 File: docs/acme-app-42-tasks.md
 PASS: 15
 WARN: 3
@@ -229,7 +229,7 @@ Use this format:
 
 ```text
 TASK_VALIDATION: BLOCKED | FAIL | ERROR
-Issue: <ISSUE_SLUG>
+ISSUE_SLUG: <ISSUE_SLUG>
 File: <OUTPUT_PATH or "not written">
 PASS: <N>
 WARN: <N>

@@ -147,7 +147,7 @@ Return only this summary:
 
 ```text
 PRIORITIZATION: PASS | FAIL | BLOCKED | ERROR
-Issue: <ISSUE_SLUG>
+ISSUE_SLUG: <ISSUE_SLUG>
 File: <OUTPUT_PATH or "not written">
 Tasks: <N>
 Critical path length: <N>
@@ -157,7 +157,7 @@ Reason: <one line>
 
 <example>
 PRIORITIZATION: PASS
-Issue: acme-app-42
+ISSUE_SLUG: acme-app-42
 File: docs/acme-app-42-stage-2-prioritized.md
 Tasks: 7
 Critical path length: 4
@@ -167,7 +167,7 @@ Reason: Stage 2 plan written with renumbered tasks, priorities, and dependency g
 
 <example>
 PRIORITIZATION: FAIL
-Issue: acme-app-42
+ISSUE_SLUG: acme-app-42
 File: docs/acme-app-42-stage-2-prioritized.md
 Tasks: 5
 Critical path length: 0
@@ -200,7 +200,7 @@ Use this format:
 
 ```text
 PRIORITIZATION: BLOCKED | FAIL | ERROR
-Issue: <ISSUE_SLUG>
+ISSUE_SLUG: <ISSUE_SLUG>
 File: <OUTPUT_PATH or "not written">
 Tasks: <N>
 Critical path length: <N>
