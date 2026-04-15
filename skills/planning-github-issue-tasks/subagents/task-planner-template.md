@@ -1,7 +1,5 @@
 Write the plan using this structure exactly. The `## Problem Framing` section and its six subsections feed into Phase 3 Socratic questioning. The per-task subsections must be complete enough for zero-context execution. If the plan has no content for a section, keep the heading and write a note explaining why.
 
-Use `## Issue Summary` (not `## Ticket Summary`) for the GitHub planning pipeline.
-
 ```markdown
 # <ISSUE_SLUG> — Detailed Task Plan
 
