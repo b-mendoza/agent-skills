@@ -30,7 +30,7 @@ h3. Likely Files / Artifacts Affected
 <List>
 ```
 
-## Plan File Fragments
+## Plan file fragments
 
 ### Workflow table shape (`## Jira Subtasks`)
 
@@ -41,8 +41,8 @@ Use this table shape when inserting or refreshing `## Jira Subtasks`:
 
 | Task | Subtask Key | Title | Status | Dependencies | Priority |
 | ---- | ----------- | ----- | ------ | ------------ | -------- |
-| 1    | JNS-6070    | Set up database schema | To Do       | None         | High     |
-| 2    | Not Created | Implement API layer    | Not Created | 1            | High     |
+| 1    | PROJ-200    | Task 1: Set up database schema | To Do       | None         | High     |
+| 2    | Not Created | Task 2: Implement API layer    | Not Created | 1            | High     |
 ```
 
 **Column order is normative** for machine-friendly parsing.
@@ -50,7 +50,7 @@ Use this table shape when inserting or refreshing `## Jira Subtasks`:
 ### Per-task inline line (immediately after `## Task <N>:` heading)
 
 ```markdown
-Jira Subtask: JNS-6070
+Jira Subtask: PROJ-200
 ```
 
 For failures:

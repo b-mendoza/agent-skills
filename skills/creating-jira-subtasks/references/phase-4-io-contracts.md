@@ -4,10 +4,10 @@
 > the `subtask-creator` summary.
 >
 > **Reminder:** Keep only artifact shapes and structured verdicts in the
-> coordinator context. Plan parsing, Jira operations, and plan-file edits stay
+> orchestrator context. Plan parsing, Jira operations, and plan-file edits stay
 > inside `subtask-creator`.
 >
-> This skill is self-contained. When a parent orchestrator drives the phase,
+> This skill is self-contained. When a parent workflow drives the phase,
 > its own data contract should consume the output artifact shapes below; this
 > skill does not depend on the parent's files being present.
 
@@ -24,15 +24,24 @@ For normal Phase 4 execution, the plan is expected to contain:
 
 | Expected section / element                          | Produced by                    | Why it matters                               |
 | --------------------------------------------------- | ------------------------------ | -------------------------------------------- |
-| `## Tasks` with numbered `## Task <N>:` headings    | Upstream planning phase        | Each task maps to one Jira subtask           |
+| `## Tasks` with numbered `## Task <N>:` headings    | Upstream planning phase        | Each parsed task maps to one Jira subtask row |
 | `## Execution Order Summary`                        | Upstream planning phase        | Preserves task ordering context              |
 | `## Decisions Log`                                  | Clarification / critique phase | Indicates critique is complete before Jira writes |
 
-The parent orchestrator is responsible for validating the normal Phase 4
+The parent workflow is responsible for validating the normal Phase 4
 precondition before this skill runs. If this skill is used standalone and the
 plan is missing or malformed, the subagent returns `SUBTASKS: BLOCKED`. If
 `## Decisions Log` is missing, the subagent continues with `SUBTASKS: WARN`:
 the plan is still parseable, but the normal workflow precondition was skipped.
+
+## Write path
+
+Phase 4 in Jira uses the project's native subtask relationship only.
+
+This contract uses a single native write path, so it does not negotiate
+alternate write models or emit capability / handoff metadata lines in the
+structured summary. The subagent either links a concrete Jira subtask or
+records `Not Created` for that task in the plan artifact and summary.
 
 ## Output Contract
 
@@ -51,8 +60,8 @@ After successful or partial Phase 4 completion, the plan file must include:
 
 ### Workflow table (required)
 
-Use the table shape in `../subagents/subtask-creator-templates.md` (`Plan File
-Fragments`). Column semantics:
+Use the table shape in `../subagents/subtask-creator-templates.md`
+(`Plan file fragments`). Column semantics:
 
 | Column | Allowed values / notes |
 | ------ | ---------------------- |
@@ -85,7 +94,7 @@ Rules:
 - Use `Not Created` iff the table row uses `Not Created`.
 
 This line is the **exact format** consumed by downstream Phase 4 postcondition
-checks (for example, a parent orchestrator's data-contracts reference).
+checks and validation references.
 
 ## Structured Summary Contract
 
@@ -103,7 +112,7 @@ The subagent returns a structured summary with:
 - Explicit `Warnings:` and `Failures:` sections
 
 Treat `SUBTASKS: ERROR` as an unexpected tool or environment failure. The
-coordinator stops and surfaces the reason instead of interpreting the run as a
+orchestrator stops and surfaces the reason instead of interpreting the run as a
 degraded success.
 
 When the run stops before plan updates or create attempts complete,

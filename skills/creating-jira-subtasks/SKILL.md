@@ -10,7 +10,7 @@ Create or reconcile Jira subtasks for a clarified task plan at
 specialist subagent, keeping only its structured summary, and reporting the
 outcome the parent workflow needs for progress tracking.
 
-The coordinator does four things directly: read its bundled files, derive
+The orchestrator does four things directly: read its bundled files, derive
 identifiers from `JIRA_URL`, dispatch `subtask-creator`, and relay the
 subagent's summary. Plan parsing, Jira operations, and plan-file edits all stay
 inside `subtask-creator` after dispatch.
@@ -19,13 +19,13 @@ inside `subtask-creator` after dispatch.
 
 | Input      | Required | Example                                                     |
 | ---------- | -------- | ----------------------------------------------------------- |
-| `JIRA_URL` | Yes      | `https://vukaheavyindustries.atlassian.net/browse/JNS-6065` |
+| `JIRA_URL` | Yes      | `https://workspace.atlassian.net/browse/PROJ-123` |
 
 Derive these values from the URL when you need to describe the ticket:
 
 - **Workspace:** subdomain before `.atlassian.net`
 - **Project:** prefix before the dash in the ticket key
-- **Ticket key:** full path segment, such as `JNS-6065`
+- **Ticket key:** full path segment, such as `PROJ-123`
 
 Prefer passing the full `JIRA_URL` downstream rather than only `TICKET_KEY`.
 The URL carries the workspace context needed for Jira reads and writes.
@@ -60,11 +60,14 @@ Inside Phase 4, keep only:
 - The task / subtask key / title / dependency / priority / outcome rows needed for progress reporting
 - Any warning or fatal reason that requires user attention
 
-Relay only the structured fields the subagent returns. Raw Jira payloads, raw
-file contents, and intermediate parse details stay inside `subtask-creator`
-unless the user explicitly asks for them.
+Jira Phase 4 uses a single native subtask path, so the structured summary does
+not include additional write-model or capability metadata lines.
 
-## Input and Output Contracts
+Relay only the structured fields the subagent returns. Raw Jira payloads, full
+API responses, raw file contents, and intermediate parse details stay inside
+`subtask-creator` unless the user explicitly asks for them.
+
+## Phase 4 Contract
 
 Primary artifact:
 
@@ -83,12 +86,16 @@ The short version:
 
 - The plan is expected to contain numbered `## Task <N>:` sections under
   `## Tasks`.
+- Normal Phase 4 plans are also expected to include
+  `## Execution Order Summary`, although Phase 4 parsing keys off numbered
+  task sections rather than that summary.
 - Standalone malformed or missing plans resolve to `SUBTASKS: BLOCKED`.
 - A missing `## Decisions Log` downgrades the run to `SUBTASKS: WARN` rather
   than blocking it.
-- Successful Phase 4 output is still the validated presence of `## Jira
-  Subtasks` with the required workflow table, plus `Jira Subtask: <KEY | Not
-  Created>` lines in task sections, per `./references/phase-4-io-contracts.md`.
+- Successful Phase 4 output is still the validated presence of
+  `## Jira Subtasks` with the required workflow table, plus
+  `Jira Subtask: <KEY | Not Created>` lines in task sections, per
+  `./references/phase-4-io-contracts.md`.
 
 ## Execution Steps
 
@@ -98,7 +105,7 @@ Read `./subagents/subtask-creator.md`, then dispatch it with:
 
 - `JIRA_URL`
 
-The subagent owns plan parsing, Jira-capable MCP tool discovery, parent lookup,
+The subagent owns plan parsing, Jira-capable tool discovery, parent lookup,
 idempotent reuse of existing subtask links, sequential creation of missing
 subtasks, plan-file updates, and post-write validation.
 
@@ -124,7 +131,7 @@ Handle the returned summary this way:
 
 Using only the subagent's structured summary, tell the caller:
 
-- The ticket key and updated plan-file path
+- The parent ticket reference (`TICKET_KEY`) and updated plan-file path
 - Total tasks in plan, already linked tasks, newly created subtasks, and failed
   creates
 - The `Created/Linked Subtasks` table, including dependency and priority
@@ -133,20 +140,9 @@ Using only the subagent's structured summary, tell the caller:
 - That no implementation has started and linked subtasks remain in `To Do`
   unless Jira already shows another status
 
-Use dispatch to run `subtask-creator`. If dispatch is unavailable, report the
-skill as blocked rather than reproducing the subagent inline.
-
-## Escalation
-
-Use the subagent's structured verdict as the only routing input:
-
-| Summary state | Coordinator action |
-| ------------- | ------------------ |
-| `SUBTASKS: PASS` with `Validation: PASS` | Report success and proceed |
-| `SUBTASKS: WARN` with `Validation: PASS` | Report usable output with warnings and make failed or skipped linkage visible |
-| `SUBTASKS: BLOCKED` | Stop and surface the plan-shape or unsafe-linkage issue |
-| `SUBTASKS: FAIL` | Stop and surface the fatal Jira or validation failure |
-| `SUBTASKS: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or local contract failure |
+Dispatch `subtask-creator` as a subagent. If the environment cannot invoke
+subagents, report the skill as blocked rather than reproducing the subagent
+inline.
 
 ## Example
 
@@ -188,3 +184,15 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
    1 task was already linked and 3 subtasks were created now.
    No implementation has started."
 </example>
+
+## Escalation
+
+Use the subagent's structured verdict as the only routing input:
+
+| Summary state | Orchestrator action |
+| ------------- | ------------------ |
+| `SUBTASKS: PASS` with `Validation: PASS` | Report success and proceed |
+| `SUBTASKS: WARN` with `Validation: PASS` | Report usable output with warnings and make failed or skipped linkage visible |
+| `SUBTASKS: BLOCKED` | Stop and surface the plan-shape or unsafe-linkage issue |
+| `SUBTASKS: FAIL` | Stop and surface the fatal Jira or validation failure |
+| `SUBTASKS: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or local contract failure |
