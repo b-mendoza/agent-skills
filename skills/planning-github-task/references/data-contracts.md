@@ -32,12 +32,10 @@ Expected upstream workflow state:
   conscious follow-up decisions
 - If a `## Decisions Log` section exists, treat it as the latest authority over
   earlier task-plan wording
-- In the normal orchestrated Phase 5 entry, `docs/<ISSUE_SLUG>-tasks.md` also
-  satisfies the Phase 4 handoff contract from
-  `../../orchestrating-github-workflow/references/data-contracts.md`: it
-  contains `## GitHub Task Issues`, the workflow-level table has one row per
-  numbered task, and any row with a concrete GitHub issue has a matching
-  per-task inline reference
+- When invoked as part of a multi-phase workflow, `docs/<ISSUE_SLUG>-tasks.md`
+  may contain a `## GitHub Task Issues` section with one row per numbered task
+  and matching per-task inline references; this skill tolerates but does not
+  require that table
 
 Optional upstream context:
 
@@ -117,10 +115,3 @@ These planning files are Category A orchestration artifacts:
 - Overwrite them only when the owning subagent is intentionally re-run
 - Do not delete them as cleanup
 - Do not commit them to git
-
-## Orchestrator alignment
-
-Phase 5 postcondition and Phase 6 precondition in
-`../../orchestrating-github-workflow/references/data-contracts.md` expect exactly
-these four files. Section-level detail is owned by this skill and the subagents
-above.

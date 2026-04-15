@@ -1,6 +1,6 @@
 ---
 name: "planning-github-task"
-description: 'Plan how to execute one task from `docs/<ISSUE_SLUG>-tasks.md`. Runs a four-subagent pipeline that validates the task, writes an execution brief, inspects the codebase, defines behavior-driven tests, and evaluates refactoring needs. Produces `docs/<ISSUE_SLUG>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md` for one task only. Use when the user says "plan task 3", "prepare task 2 for execution", "how should we implement task 1", or when `orchestrating-github-workflow` enters Phase 5. This skill creates planning artifacts only; it does not change git state, mutate GitHub issues, or modify product code.'
+description: 'Plan how to execute one task from `docs/<ISSUE_SLUG>-tasks.md`. Runs a four-subagent pipeline that validates the task, writes an execution brief, inspects the codebase, defines behavior-driven tests, and evaluates refactoring needs. Produces `docs/<ISSUE_SLUG>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md` for one task only. Use when the user says "plan task 3", "prepare task 2 for execution", "how should we implement task 1", or when invoked as the planning phase of a multi-phase workflow. This skill creates planning artifacts only; it does not change git state, mutate GitHub issues, or modify product code.'
 ---
 
 # Planning GitHub Task
@@ -13,10 +13,9 @@ artifacts live on disk; the orchestrator keeps only concise summaries in
 context.
 
 Success means the four planning artifacts exist and are ready for Phase 6
-(`clarifying-assumptions` in critique mode) and Phase 7 (`executing-github-task`).
-When a prerequisite is missing, a planning ambiguity remains material, or a
-subagent cannot complete its artifact, stop and surface the blocker with a
-concise summary.
+critique and Phase 7 execution. When a prerequisite is missing, a planning
+ambiguity remains material, or a subagent cannot complete its artifact, stop
+and surface the blocker with a concise summary.
 
 ## Inputs
 
@@ -33,10 +32,6 @@ or downstream artifact expectations.
 Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns (Phase 6).
 Read `./references/pipeline.md` when deciding which stages to rerun.
 
-**Path compatibility with Phase 6:** The clarification skill uses `TICKET_KEY` as
-its workflow key input; when the GitHub orchestrator invokes Phase 6, it passes
-`TICKET_KEY=<ISSUE_SLUG>`. Artifact paths are identical: `docs/<ISSUE_SLUG>-task-<N>-*.md`.
-
 ## Workflow Overview
 
 1. `execution-prepper` validates the task and writes the execution brief.
@@ -52,16 +47,14 @@ This skill writes only Category A orchestration artifacts:
 
 | Artifact | Produced by | Consumed by |
 | -------- | ----------- | ----------- |
-| `docs/<ISSUE_SLUG>-task-<N>-brief.md` | `execution-prepper` | Downstream planning subagents, Phase 6 critique, Phase 7 execution |
-| `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` | `execution-planner` | Phase 6, Phase 7 |
-| `docs/<ISSUE_SLUG>-task-<N>-test-spec.md` | `test-strategist` | Phase 6, Phase 7 |
-| `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` | `refactoring-advisor` | Phase 6, Phase 7 |
+| `docs/<ISSUE_SLUG>-task-<N>-brief.md` | `execution-prepper` | All downstream planning subagents, Phase 6 critique, Phase 7 execution |
+| `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` | `execution-planner` | Phase 6 critique, Phase 7 execution |
+| `docs/<ISSUE_SLUG>-task-<N>-test-spec.md` | `test-strategist` | Phase 6 critique, Phase 7 execution |
+| `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` | `refactoring-advisor` | Phase 6 critique, Phase 7 execution |
 
 On a successful run, all four files exist. On a re-plan, overwrite only the
 files owned by the subagents that are re-run. These files stay on disk for the
 life of the workflow and are never committed to git.
-
-Align detailed section expectations with `../orchestrating-github-workflow/references/task-loop.md` and `../orchestrating-github-workflow/references/data-contracts.md` at phase boundaries.
 
 ## Subagent Registry
 
