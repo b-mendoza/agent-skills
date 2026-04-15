@@ -20,12 +20,11 @@ per `./task-issue-creator-templates.md` and the preference order in
 
 ## Inputs
 
-| Input        | Required | Example                                 |
-| ------------ | -------- | --------------------------------------- |
-| `ISSUE_URL`  | Yes      | `https://github.com/acme/app/issues/42` |
-| `ISSUE_SLUG` | No       | `acme-app-42`                           |
+| Input       | Required | Example                                 |
+| ----------- | -------- | --------------------------------------- |
+| `ISSUE_URL` | Yes      | `https://github.com/acme/app/issues/42` |
 
-Derive when `ISSUE_SLUG` is omitted:
+Derive these values from `ISSUE_URL`:
 
 - **OWNER, REPO, PARENT_NUMBER** from `ISSUE_URL` (normalize owner/repo to
   lowercase for slug stability).

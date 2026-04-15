@@ -1,6 +1,6 @@
 ---
 name: "creating-github-child-issues"
-description: 'Phase 4 of the orchestrating-github-workflow pipeline. Use after the task plan has been clarified and the user has explicitly approved GitHub writes. This skill reads only its bundled files, dispatches the `task-issue-creator` subagent with `ISSUE_URL` (and optional `ISSUE_SLUG`), and returns a concise phase summary after GitHub task issues are created or reconciled and `docs/<ISSUE_SLUG>-tasks.md` is updated with the Phase 4 handoff contract.'
+description: 'Phase 4 of the orchestrating-github-workflow pipeline. Use after the task plan has been clarified and the user has explicitly approved GitHub writes. This skill reads only its bundled files, dispatches the `task-issue-creator` subagent with `ISSUE_URL`, and returns a concise phase summary after GitHub task issues are created or reconciled and `docs/<ISSUE_SLUG>-tasks.md` is updated with the Phase 4 handoff contract.'
 ---
 
 # Creating GitHub Child Issues
@@ -11,18 +11,17 @@ specialist subagent, keeping only its structured summary, and reporting the
 outcome the parent workflow needs for progress tracking.
 
 The coordinator does four things directly: read its bundled files, derive
-`ISSUE_SLUG` from `ISSUE_URL` when needed, dispatch `task-issue-creator`, and
-relay the subagent's summary. Plan parsing, `gh` calls, GitHub API probes, and
-plan-file edits all stay inside `task-issue-creator` after dispatch.
+identifiers from `ISSUE_URL`, dispatch `task-issue-creator`, and relay the
+subagent's summary. Plan parsing, `gh` calls, GitHub API probes, and plan-file
+edits all stay inside `task-issue-creator` after dispatch.
 
 ## Inputs
 
-| Input         | Required | Example                                      |
-| ------------- | -------- | -------------------------------------------- |
-| `ISSUE_URL`   | Yes      | `https://github.com/acme/app/issues/42`      |
-| `ISSUE_SLUG`  | No       | `acme-app-42`                                |
+| Input       | Required | Example                                 |
+| ----------- | -------- | --------------------------------------- |
+| `ISSUE_URL` | Yes      | `https://github.com/acme/app/issues/42` |
 
-Derive when `ISSUE_SLUG` is omitted:
+Derive these values from the URL when you need to describe the parent issue:
 
 - **OWNER:** path segment after `github.com/` (lowercase for slug stability).
 - **REPO:** next path segment (lowercase).
@@ -36,7 +35,7 @@ for `gh --repo` and for verifying the parent issue.
 
 ```text
 1. Read the task-issue-creator definition
-2. Dispatch it with ISSUE_URL (and ISSUE_SLUG if already known)
+2. Dispatch it with ISSUE_URL
 3. Interpret its structured result
 4. Report only the concise phase summary to the caller
 ```
@@ -96,7 +95,6 @@ The short version:
 Read `./subagents/task-issue-creator.md`, then dispatch it with:
 
 - `ISSUE_URL`
-- `ISSUE_SLUG` when already known (otherwise the subagent derives it from the URL)
 
 The subagent owns plan parsing, `gh` availability checks, parent verification,
 write-model capability detection, idempotent reuse of existing linkage,
@@ -152,7 +150,7 @@ Use the subagent's structured verdict as the only routing input:
 ## Example
 
 <example>
-Input: `ISSUE_URL=https://github.com/acme/app/issues/42` → `ISSUE_SLUG=acme-app-42`
+Input: `ISSUE_URL=https://github.com/acme/app/issues/42` (the subagent derives `ISSUE_SLUG=acme-app-42`)
 
 1. Read `./subagents/task-issue-creator.md`
 2. Dispatch `task-issue-creator` with `ISSUE_URL`
