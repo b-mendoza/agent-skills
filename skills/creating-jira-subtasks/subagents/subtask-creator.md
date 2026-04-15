@@ -177,7 +177,9 @@ report `Failed creates: 0`.
 
 Use these status rules:
 
-- `PASS`: every task is now linked to a valid Jira subtask and validation passed
+- `PASS`: every task is now linked to a valid Jira subtask and validation
+  passed; no blocking warnings (Decisions Log missing alone → `WARN`, not
+  `PASS`)
 - `WARN`: validation passed, but the run had non-fatal issues such as a missing
   Decisions Log or some tasks still not linked due to individual create
   failures
