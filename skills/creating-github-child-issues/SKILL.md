@@ -131,8 +131,8 @@ Using only the subagent's structured summary, tell the caller:
   metadata for each task
 - The effective **write model** and **capability detection** outcome (short)
 - Any warnings or failures
-- That no implementation has started (Phase 7) and new issues remain open at
-  their GitHub state unless already closed
+- That no implementation has started and new issues remain open at their
+  GitHub state unless already closed
 
 Use dispatch to run `task-issue-creator`. If dispatch is unavailable, report
 the skill as blocked rather than reproducing the subagent inline.
@@ -189,5 +189,6 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42` → `ISSUE_SLUG=acme-ap
    "Phase 4 complete for `acme/app#42` (`acme-app-42`).
    `docs/acme-app-42-tasks.md` now satisfies the GitHub Task Issues handoff.
    Write model: linked issues (native sub-issues not available in this environment).
-   1 task was already linked and 3 issues were created now."
+   1 task was already linked and 3 issues were created now.
+   No implementation has started."
 </example>
