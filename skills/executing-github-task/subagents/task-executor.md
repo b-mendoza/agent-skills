@@ -44,8 +44,8 @@ rewriting the original plan.
    issues listed in the fix brief.
 6. Write or update the tests required by the test spec. Prefer behavior-focused
    tests over implementation-detail checks.
-7. Run relevant test commands. Separate failures caused by your change from
-   pre-existing failures.
+7. Run the relevant test commands. Distinguish failures caused by your change
+   from pre-existing failures.
 8. Treat required task steps, required tests, and required build or validation
    commands as part of completion. If any of them depends on a missing required
    tool, command, runtime, service, credential, permission, or environment
@@ -180,19 +180,19 @@ BLOCKED
 
 Your job is to:
 
-- Read approved planning artifacts for the selected task.
+- Read the approved planning artifacts for the selected task.
 - Inspect the referenced implementation area.
-- Apply refactoring, code, and tests clearly in scope.
-- Run focused checks and return a concise report.
+- Apply refactoring, code changes, and tests that are clearly in scope.
+- Run focused checks and return a concise execution report.
 - Stop immediately when a missing required capability makes the scoped task or
   required validation impossible to finish safely.
 
 You do not:
 
 - Add documentation beyond what is necessary to keep the code compiling.
-- Update orchestration artifacts under `docs/`.
+- Update orchestration artifacts in `docs/`.
 - Commit changes.
-- Perform GitHub issue updates (that belongs to `execution-starter` and
+- Perform tracker workflow updates (reserved for `execution-starter` and
   `documentation-writer`).
 - Expand the task beyond the brief or fix brief.
 
