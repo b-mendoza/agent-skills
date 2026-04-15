@@ -5,15 +5,15 @@ description: 'Plan how to execute one task from `docs/<TICKET_KEY>-tasks.md`. Ru
 
 # Planning Jira Task
 
-Plan exactly how to execute one task from the ticket task plan. This
+Plan exactly how to execute one task from the task plan for a Jira ticket. This
 orchestrator does three things: **think** (interpret summaries and plan state),
 **decide** (choose the next planning dispatch or re-plan path), and
 **dispatch** (hand execution-heavy work to co-located subagents). The planning
 artifacts live on disk; the orchestrator keeps only concise summaries in
 context.
 
-Success means the four planning artifacts exist and are ready for Phase 6
-critique and Phase 7 execution. When a prerequisite is missing, a planning
+Success means the four planning artifacts exist and are ready for downstream
+critique and task execution. When a prerequisite is missing, a planning
 ambiguity remains material, or a subagent cannot complete its artifact, stop
 and surface the blocker with a concise summary.
 
@@ -29,8 +29,8 @@ and surface the blocker with a concise summary.
 Read `./references/data-contracts.md` when you need the upstream prerequisites
 or downstream artifact expectations.
 
-Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns (Phase 6).
-Read `./references/pipeline.md` when deciding which stages to rerun.
+Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns. Read
+`./references/pipeline.md` when deciding which stages to rerun.
 
 ## Workflow Overview
 
@@ -39,22 +39,7 @@ Read `./references/pipeline.md` when deciding which stages to rerun.
 3. `test-strategist` writes the behavior-driven test specification.
 4. `refactoring-advisor` writes the refactoring recommendation.
 5. The skill returns only a concise planning summary and the artifact paths
-   needed for Phase 6 critique and Phase 7 execution.
-
-## Output Contract
-
-This skill writes only Category A orchestration artifacts:
-
-| Artifact | Produced by | Consumed by |
-| -------- | ----------- | ----------- |
-| `docs/<TICKET_KEY>-task-<N>-brief.md` | `execution-prepper` | All downstream planning subagents, Phase 6 critique, Phase 7 execution |
-| `docs/<TICKET_KEY>-task-<N>-execution-plan.md` | `execution-planner` | Phase 6 critique, Phase 7 execution |
-| `docs/<TICKET_KEY>-task-<N>-test-spec.md` | `test-strategist` | Phase 6 critique, Phase 7 execution |
-| `docs/<TICKET_KEY>-task-<N>-refactoring-plan.md` | `refactoring-advisor` | Phase 6 critique, Phase 7 execution |
-
-On a successful run, all four files exist. On a re-plan, overwrite only the
-files owned by the subagents that are re-run. These files stay on disk for the
-life of the workflow and are never committed to git.
+   needed for downstream critique and task execution.
 
 ## Subagent Registry
 
@@ -66,6 +51,21 @@ life of the workflow and are never committed to git.
 | `refactoring-advisor` | `./subagents/refactoring-advisor.md` | Recommend only the refactoring needed for this task |
 
 Read a subagent definition only when you are about to dispatch that subagent.
+
+## Output Contract
+
+This skill writes only Category A orchestration artifacts:
+
+| Artifact | Produced by | Consumed by |
+| -------- | ----------- | ----------- |
+| `docs/<TICKET_KEY>-task-<N>-brief.md` | `execution-prepper` | All downstream planning subagents, downstream critique, task execution |
+| `docs/<TICKET_KEY>-task-<N>-execution-plan.md` | `execution-planner` | Downstream critique, task execution |
+| `docs/<TICKET_KEY>-task-<N>-test-spec.md` | `test-strategist` | Downstream critique, task execution |
+| `docs/<TICKET_KEY>-task-<N>-refactoring-plan.md` | `refactoring-advisor` | Downstream critique, task execution |
+
+On a successful run, all four files exist. On a re-plan, overwrite only the
+files owned by the subagents that are re-run. These files stay on disk for the
+life of the workflow and are never committed to git.
 
 ## How This Skill Works
 
@@ -91,8 +91,8 @@ source of truth for the actual orchestration order.
 
 | Situation | Reference file | Purpose |
 | --------- | -------------- | ------- |
-| Standard Phase 5 run | `./references/pipeline.md` | Dispatch order, handoffs, and success criteria |
-| Re-plan after Phase 6 critique | `./references/pipeline.md` | Targeted rerun rules and retry limit |
+| Standard planning run | `./references/pipeline.md` | Dispatch order, handoffs, and success criteria |
+| Re-plan after critique | `./references/pipeline.md` | Targeted rerun rules and retry limit |
 | Contract questions | `./references/data-contracts.md` | Upstream prerequisites and downstream consumers |
 
 ## Execution Steps
@@ -113,25 +113,25 @@ source of truth for the actual orchestration order.
 
 <example>
 Input:
-- `TICKET_KEY=PROJ-123`
+- `TICKET_KEY=JNS-6065`
 - `TASK_NUMBER=2`
 
 1. Dispatch `execution-prepper` with `TICKET_KEY`, `TASK_NUMBER`
 2. Subagent returns:
    `PREP: PASS`
-   `Brief: docs/PROJ-123-task-2-brief.md`
+   `Brief: docs/JNS-6065-task-2-brief.md`
 3. Dispatch `execution-planner` with the brief path
 4. Subagent returns:
    `PLAN: PASS`
-   `Plan: docs/PROJ-123-task-2-execution-plan.md`
+   `Plan: docs/JNS-6065-task-2-execution-plan.md`
 5. Dispatch `test-strategist`
 6. Subagent returns:
    `TEST_SPEC: PASS`
-   `Spec: docs/PROJ-123-task-2-test-spec.md`
+   `Spec: docs/JNS-6065-task-2-test-spec.md`
 7. Dispatch `refactoring-advisor`
 8. Subagent returns:
    `REFACTORING: PASS`
-   `Plan: docs/PROJ-123-task-2-refactoring-plan.md`
+   `Plan: docs/JNS-6065-task-2-refactoring-plan.md`
 9. Tell the user:
    "Task 2 planning complete. Four planning artifacts are ready for critique."
 

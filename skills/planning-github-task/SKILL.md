@@ -5,15 +5,15 @@ description: 'Plan how to execute one task from `docs/<ISSUE_SLUG>-tasks.md`. Ru
 
 # Planning GitHub Task
 
-Plan exactly how to execute one task from the GitHub issue task plan. This
+Plan exactly how to execute one task from the task plan for a GitHub issue. This
 orchestrator does three things: **think** (interpret summaries and plan state),
 **decide** (choose the next planning dispatch or re-plan path), and
 **dispatch** (hand execution-heavy work to co-located subagents). The planning
 artifacts live on disk; the orchestrator keeps only concise summaries in
 context.
 
-Success means the four planning artifacts exist and are ready for Phase 6
-critique and Phase 7 execution. When a prerequisite is missing, a planning
+Success means the four planning artifacts exist and are ready for downstream
+critique and task execution. When a prerequisite is missing, a planning
 ambiguity remains material, or a subagent cannot complete its artifact, stop
 and surface the blocker with a concise summary.
 
@@ -29,8 +29,8 @@ and surface the blocker with a concise summary.
 Read `./references/data-contracts.md` when you need the upstream prerequisites
 or downstream artifact expectations.
 
-Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns (Phase 6).
-Read `./references/pipeline.md` when deciding which stages to rerun.
+Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns. Read
+`./references/pipeline.md` when deciding which stages to rerun.
 
 ## Workflow Overview
 
@@ -39,22 +39,7 @@ Read `./references/pipeline.md` when deciding which stages to rerun.
 3. `test-strategist` writes the behavior-driven test specification.
 4. `refactoring-advisor` writes the refactoring recommendation.
 5. The skill returns only a concise planning summary and the artifact paths
-   needed for Phase 6 critique and Phase 7 execution.
-
-## Output Contract
-
-This skill writes only Category A orchestration artifacts:
-
-| Artifact | Produced by | Consumed by |
-| -------- | ----------- | ----------- |
-| `docs/<ISSUE_SLUG>-task-<N>-brief.md` | `execution-prepper` | All downstream planning subagents, Phase 6 critique, Phase 7 execution |
-| `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` | `execution-planner` | Phase 6 critique, Phase 7 execution |
-| `docs/<ISSUE_SLUG>-task-<N>-test-spec.md` | `test-strategist` | Phase 6 critique, Phase 7 execution |
-| `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` | `refactoring-advisor` | Phase 6 critique, Phase 7 execution |
-
-On a successful run, all four files exist. On a re-plan, overwrite only the
-files owned by the subagents that are re-run. These files stay on disk for the
-life of the workflow and are never committed to git.
+   needed for downstream critique and task execution.
 
 ## Subagent Registry
 
@@ -66,6 +51,21 @@ life of the workflow and are never committed to git.
 | `refactoring-advisor` | `./subagents/refactoring-advisor.md` | Recommend only the refactoring needed for this task |
 
 Read a subagent definition only when you are about to dispatch that subagent.
+
+## Output Contract
+
+This skill writes only Category A orchestration artifacts:
+
+| Artifact | Produced by | Consumed by |
+| -------- | ----------- | ----------- |
+| `docs/<ISSUE_SLUG>-task-<N>-brief.md` | `execution-prepper` | All downstream planning subagents, downstream critique, task execution |
+| `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` | `execution-planner` | Downstream critique, task execution |
+| `docs/<ISSUE_SLUG>-task-<N>-test-spec.md` | `test-strategist` | Downstream critique, task execution |
+| `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` | `refactoring-advisor` | Downstream critique, task execution |
+
+On a successful run, all four files exist. On a re-plan, overwrite only the
+files owned by the subagents that are re-run. These files stay on disk for the
+life of the workflow and are never committed to git.
 
 ## How This Skill Works
 
@@ -91,8 +91,8 @@ source of truth for the actual orchestration order.
 
 | Situation | Reference file | Purpose |
 | --------- | -------------- | ------- |
-| Standard Phase 5 run | `./references/pipeline.md` | Dispatch order, handoffs, and success criteria |
-| Re-plan after Phase 6 critique | `./references/pipeline.md` | Targeted rerun rules and retry limit |
+| Standard planning run | `./references/pipeline.md` | Dispatch order, handoffs, and success criteria |
+| Re-plan after critique | `./references/pipeline.md` | Targeted rerun rules and retry limit |
 | Contract questions | `./references/data-contracts.md` | Upstream prerequisites and downstream consumers |
 
 ## Execution Steps
