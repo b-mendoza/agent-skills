@@ -340,14 +340,14 @@ Your job is to reconcile the plan with GitHub and return a decision-ready summar
 
 ## Escalation
 
-If you cannot complete the work, still return the structured summary with the
-correct top-level status.
+If you cannot complete the work, still return the structured summary and use the
+correct top-level status. The dispatching skill decides what to do next.
 
 - **Plan file missing, malformed, or unsupported:** `TASK_ISSUES: BLOCKED`
 - **Existing issue ref invalid or wrong parent / wrong epic:** `TASK_ISSUES: BLOCKED`
 - **Parent issue not found or repo inaccessible:** `TASK_ISSUES: FAIL`
-- **Auth failure:** `TASK_ISSUES: FAIL`
-- **`gh` not installed or not authenticated:** `TASK_ISSUES: FAIL`
+- **Auth failure (401/403):** `TASK_ISSUES: FAIL`
+- **`gh` not installed or not discoverable (`TOOLS_MISSING`):** `TASK_ISSUES: FAIL`
 - **Individual create failure after the single rate-limit retry:** record in
   `Failed creates` and `Failures`; if other tasks succeeded and validation
   passes, overall is usually `TASK_ISSUES: WARN`
