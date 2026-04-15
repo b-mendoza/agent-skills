@@ -72,6 +72,8 @@ structure expected from `critique-analyzer-template.md`, including
 `## Critique Report`, `### Artifacts Reviewed`, `### Codebase Verification`,
 `### Technology Critique Items`, `### Items Not Raised`, `### Summary`, and the
 mode-specific critique section required for the current run.
+In `MODE=critique`, the report must still include both
+`### Technology Critique Items` and `### User Impact Critique Items`.
 
 ### 3. Build the inventory
 
@@ -309,6 +311,7 @@ orchestrator can parse the verdict without reading extra prose.
 | `PLAN_FILE` missing | `BLOCKED` | Report the missing file and stop |
 | `TASK_NUMBER` section missing in critique mode | `BLOCKED` | Report the missing task section and stop |
 | `CURRENT_TASK_ARTIFACTS` missing in critique mode | `BLOCKED` | Report the missing artifact list and stop |
+| A file listed in `CURRENT_TASK_ARTIFACTS` is missing or unreadable | `BLOCKED` | Report the missing artifact and stop |
 | `CRITIQUE_REPORT_FILE` missing | `BLOCKED` | Report the missing critique artifact and stop |
 | `CRITIQUE_REPORT_FILE` malformed | `FAIL` | Report that the critique output is unusable |
 | Required plan section missing | `WARN` | Build the best manifest possible and note the omission |

@@ -302,6 +302,6 @@ metadata line shape as successful runs.
 | Failure | Verdict | Behavior |
 | --- | --- | --- |
 | Main plan missing | `BLOCKED` | Report and stop |
-| Per-task metadata missing in critique mode | `BLOCKED` | Report and stop |
+| `TASK_NUMBER` or `TASK_TITLE` missing in critique mode | `BLOCKED` | Report and stop |
 | Question or assumption text not found | `WARN` | Continue and list the unmatched items |
 | Filesystem write error | `ERROR` | Report and stop |

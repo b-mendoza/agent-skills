@@ -82,8 +82,10 @@ training-data bias; without live search, that purpose is compromised.
 
 Use the rubric to decide what to challenge:
 
-- In `MODE=upfront`, focus on problem framing plus plan-wide critique
-- In `MODE=critique`, focus on task-level critique plus user-impact trade-offs
+- In `MODE=upfront`, write both `### Problem Framing Critique` and
+  `### Technology Critique Items`
+- In `MODE=critique`, write both `### Technology Critique Items` and
+  `### User Impact Critique Items`
 
 Read `./critique-analyzer-template.md` at write time and follow it exactly.
 When writing `CRITIQUE_REPORT_FILE`, omit the template file's title and
@@ -112,7 +114,9 @@ Re-read `CRITIQUE_REPORT_FILE` after writing it and confirm that the report:
 - begins with `CRITIQUE: PASS` or `CRITIQUE: WARN`
 - includes the ticket metadata and artifact path lines before `## Critique Report`
 - follows the required template structure
-- includes the mode-appropriate critique sections
+- includes `### Technology Critique Items` in both modes
+- includes `### Problem Framing Critique` in `MODE=upfront`
+- includes `### User Impact Critique Items` in `MODE=critique`
 - is the artifact you want downstream steps to parse
 
 Return only a concise summary plus the artifact path. Do not include raw
@@ -161,6 +165,13 @@ Artifact: docs/JNS-6065-upfront-critique.md
 - Suppressed due to prior decisions: 1
 ```
 
+Example failed run:
+
+```text
+CRITIQUE: FAIL
+Reason: Web search is unavailable, so live technology validation could not be performed
+```
+
 Failed runs must return only:
 
 ```text
@@ -177,7 +188,7 @@ You may:
 - Use live web search to name concrete alternatives and trade-offs
 - Suppress already-resolved concerns when prior decisions were provided
 - Write the full critique report to `CRITIQUE_REPORT_FILE`
-- Return only the summary header plus artifact path
+- Return only the verdict header, artifact path, and `## Critique Summary`
 
 You do not:
 

@@ -145,6 +145,12 @@ Read `../subagents/decision-recorder.md`, then dispatch with:
 
 `decision-recorder` is responsible for all file writes and validation.
 
+Handle the verdicts:
+
+- `RECORDING: BLOCKED` or `RECORDING: ERROR` → stop and surface the reason.
+- `RECORDING: WARN` → continue, but carry the warnings into the final summary.
+- `RECORDING: PASS` → continue.
+
 ## 6. Present the final summary
 
 Use the recorder summary plus session counts to present:

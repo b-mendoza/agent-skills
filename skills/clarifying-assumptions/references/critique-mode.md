@@ -132,6 +132,12 @@ In critique mode, `decision-recorder` creates or updates
 `docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md` and also updates the main
 task plan.
 
+Handle the verdicts:
+
+- `RECORDING: BLOCKED` or `RECORDING: ERROR` → stop and surface the reason.
+- `RECORDING: WARN` → continue, but carry the warnings into the final summary.
+- `RECORDING: PASS` → continue.
+
 ## 6. Present the final summary
 
 Use the recorder summary plus session counts to present:
