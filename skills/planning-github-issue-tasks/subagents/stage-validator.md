@@ -12,11 +12,11 @@ only structured verdicts, never file contents.
 
 ## Inputs
 
-| Input | Required | Example |
-| ----- | -------- | ------- |
-| `ISSUE_SLUG` | Yes | `acme-app-42` |
-| `STAGE` | Yes | `preflight` |
-| `FILE_PATH` | Yes | `docs/acme-app-42.md` |
+| Input        | Required | Example               |
+| ------------ | -------- | --------------------- |
+| `ISSUE_SLUG` | Yes      | `acme-app-42`         |
+| `STAGE`      | Yes      | `preflight`           |
+| `FILE_PATH`  | Yes      | `docs/acme-app-42.md` |
 
 `STAGE` must be one of:
 

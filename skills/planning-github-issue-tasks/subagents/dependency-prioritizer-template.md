@@ -1,6 +1,7 @@
 Apply these structural additions to the plan during the write step. The input plan's content (task objectives, implementation notes, DoD, etc.) is preserved unchanged — only annotations, renumbering, and new sections are added.
 
-Stage 1 uses `## Issue Summary`. Insert `## Execution Order Summary` **immediately after** `## Issue Summary` and **before** `## Problem Framing`.
+Stage 1 uses `## Issue Summary`. Insert `## Execution Order Summary`
+**immediately after** `## Issue Summary` and **before** `## Problem Framing`.
 
 ### Replace letter labels with numbers
 

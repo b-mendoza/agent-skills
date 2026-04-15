@@ -12,13 +12,13 @@ not a planner: fix mechanical issues directly, but do not invent missing work.
 
 ## Inputs
 
-| Input | Required | Example |
-| ----- | -------- | ------- |
-| `ISSUE_SLUG` | Yes | `acme-app-42` |
-| `SNAPSHOT_PATH` | Yes | `docs/acme-app-42.md` |
-| `PLAN_PATH` | Yes | `docs/acme-app-42-stage-2-prioritized.md` |
-| `OUTPUT_PATH` | Yes | `docs/acme-app-42-tasks.md` |
-| `VALIDATION_ISSUES` | No | `Missing \`## Tasks\` heading` |
+| Input               | Required | Example                                  |
+| ------------------- | -------- | ---------------------------------------- |
+| `ISSUE_SLUG`        | Yes      | `acme-app-42`                            |
+| `SNAPSHOT_PATH`     | Yes      | `docs/acme-app-42.md`                    |
+| `PLAN_PATH`         | Yes      | `docs/acme-app-42-stage-2-prioritized.md` |
+| `OUTPUT_PATH`       | Yes      | `docs/acme-app-42-tasks.md`              |
+| `VALIDATION_ISSUES` | No       | `Missing \`## Tasks\` heading`           |
 
 `SNAPSHOT_PATH` is the Phase 1 issue snapshot. `PLAN_PATH` is the stage 2
 prioritized plan. Write the validated final plan and appended validation report
@@ -63,42 +63,42 @@ mechanical structural issues directly when there is one correct answer.
 
 #### Coverage
 
-| # | Check | Severity |
-| - | ----- | -------- |
-| 1 | Every requirement in `## Description` is addressed | FAIL |
-| 2 | Every acceptance criterion maps to at least one task's DoD | FAIL |
-| 3 | Every **retrieved** child issue in `## Child Issues` is accounted for (merged, referenced, or explicitly out of scope) | WARN |
-| 4 | Actionable comments (decisions, clarifications) are reflected | WARN |
+| #   | Check                                                                                                           | Severity |
+| --- | --------------------------------------------------------------------------------------------------------------- | -------- |
+| 1   | Every requirement in `## Description` is addressed                                                              | FAIL     |
+| 2   | Every acceptance criterion maps to at least one task's DoD                                                      | FAIL     |
+| 3   | Every **retrieved** child issue in `## Child Issues` is accounted for (merged, referenced, or explicitly out of scope) | WARN     |
+| 4   | Actionable comments (decisions, clarifications) are reflected                                                   | WARN     |
 
 #### Structure
 
-| # | Check | Severity |
-| - | ----- | -------- |
-| 5 | Every task has all 6 core subsections | FAIL |
-| 6 | Every task has a Dependencies annotation | FAIL |
-| 7 | Every task has a Priority annotation | WARN |
-| 8 | Task numbering is sequential with no gaps | FAIL |
-| 9 | Execution Order Summary table is present and complete | WARN |
-| 10 | Dependency Graph section is present | WARN |
+| #   | Check                                                 | Severity |
+| --- | ----------------------------------------------------- | -------- |
+| 5   | Every task has all 6 core subsections                 | FAIL     |
+| 6   | Every task has a Dependencies annotation              | FAIL     |
+| 7   | Every task has a Priority annotation                  | WARN     |
+| 8   | Task numbering is sequential with no gaps             | FAIL     |
+| 9   | Execution Order Summary table is present and complete | WARN     |
+| 10  | Dependency Graph section is present                   | WARN     |
 
 #### Consistency
 
-| # | Check | Severity |
-| - | ----- | -------- |
-| 11 | No circular dependencies | FAIL |
-| 12 | Hard dependency references point to valid task numbers | FAIL |
-| 13 | No task is ordered before its hard dependency | FAIL |
-| 14 | No two tasks have identical objectives | WARN |
-| 15 | Cross-cutting questions do not duplicate per-task questions | WARN |
+| #   | Check                                                       | Severity |
+| --- | ----------------------------------------------------------- | -------- |
+| 11  | No circular dependencies                                    | FAIL     |
+| 12  | Hard dependency references point to valid task numbers      | FAIL     |
+| 13  | No task is ordered before its hard dependency               | FAIL     |
+| 14  | No two tasks have identical objectives                      | WARN     |
+| 15  | Cross-cutting questions do not duplicate per-task questions | WARN     |
 
 #### Quality
 
-| # | Check | Severity |
-| - | ----- | -------- |
-| 16 | No vague DoD ("works", "is complete", "functions properly") | WARN |
-| 17 | Task count is appropriate for issue scope | WARN |
-| 18 | No empty or "TBD" Implementation Notes | WARN |
-| 19 | Assumptions are numbered and referenced by at least one task | WARN |
+| #   | Check                                                        | Severity |
+| --- | ------------------------------------------------------------ | -------- |
+| 16  | No vague DoD ("works", "is complete", "functions properly")  | WARN     |
+| 17  | Task count is appropriate for scope                          | WARN     |
+| 18  | No empty or "TBD" Implementation Notes                       | WARN     |
+| 19  | Assumptions are numbered and referenced by at least one task | WARN     |
 
 ### How to handle results
 
@@ -106,8 +106,8 @@ mechanical structural issues directly when there is one correct answer.
   numbering gaps, missing headings, or broken references. If fixing would
   require planning judgment, leave the plan content intact and record the failure
   in `### Unresolved Issues`.
-- **WARN items** — Note them in the report for downstream awareness. Do not block
-  the artifact unless they also imply a FAIL-severity structural break.
+- **WARN items** — Note them in the report for downstream awareness. Do not
+  block the artifact unless they also imply a FAIL-severity structural break.
 
 ### Write policy
 
@@ -212,11 +212,11 @@ snapshot.
 
 ## Escalation
 
-If you cannot complete validation, report one of these categories:
+If you cannot complete validation, report one of these categories. The
+dispatching skill decides whether to retry, re-plan, or escalate.
 
 - **BLOCKED** — `SNAPSHOT_PATH` or `PLAN_PATH` is missing
-- **FAIL** — validation completed, but one or more FAIL-severity issues remain
-  after mechanical fixes
+- **FAIL** — one or more FAIL-severity issues remain after mechanical fixes
 - **ERROR** — unexpected failure such as filesystem or tool access problems
 
 Use this format:

@@ -12,13 +12,13 @@ first clarify the why, then decompose the what and enrich the how.
 
 ## Inputs
 
-| Input | Required | Example |
-| ----- | -------- | ------- |
-| `ISSUE_SLUG` | Yes | `acme-app-42` |
-| `INPUT_PATH` | Yes | `docs/acme-app-42.md` |
-| `OUTPUT_PATH` | Yes | `docs/acme-app-42-stage-1-detailed.md` |
-| `DECISIONS` | No | `Task 3 depends on SSO choice` |
-| `VALIDATION_ISSUES` | No | `Task B is missing Definition of done` |
+| Input               | Required | Example                                |
+| ------------------- | -------- | -------------------------------------- |
+| `ISSUE_SLUG`        | Yes      | `acme-app-42`                          |
+| `INPUT_PATH`        | Yes      | `docs/acme-app-42.md`                  |
+| `OUTPUT_PATH`       | Yes      | `docs/acme-app-42-stage-1-detailed.md` |
+| `DECISIONS`         | No       | `Task 3 depends on SSO choice`         |
+| `VALIDATION_ISSUES` | No       | `Task B is missing Definition of done` |
 
 `INPUT_PATH` is the issue snapshot and your single source of truth. If
 `DECISIONS` or `VALIDATION_ISSUES` are present, treat them as targeted revision
@@ -93,7 +93,7 @@ Answer these six subsections under `## Problem Framing`:
 3. **Proposed Solution** — what the issue prescribes
 4. **Solution-Problem Fit** — how well the solution addresses the need
 5. **Alternative Approaches Not Explored** — other plausible paths, if any
-6. **Evidence Basis** — what evidence supports the chosen direction
+6. **Evidence Basis** — what evidence supports the chosen solution
 
 Use `Not stated in issue` honestly whenever the snapshot does not provide the
 answer.
@@ -163,7 +163,7 @@ Before writing the file, verify:
 - Merging UI and backend work into one task because they serve the same feature
 - Ignoring comments that add scope, decisions, or clarifications
 - Creating a vague "miscellaneous" task instead of a clear unit of work
-- Copy-pasting the issue body into implementation notes
+- Copy-pasting the `## Description` section into implementation notes
 - Writing vague DoD items like "works correctly"
 - Omitting fallback guidance from open questions
 - Assuming shared context across tasks instead of repeating key local details
@@ -217,11 +217,14 @@ Your job is to read an issue snapshot and produce the stage 1 plan.
 
 ## Escalation
 
-If you cannot complete the plan, report one of these categories:
+If you cannot complete the plan, report one of these categories. The
+dispatching skill decides whether to retry, re-plan, or escalate.
 
 - **BLOCKED** — prerequisite missing, such as the `writing-plans` skill or `INPUT_PATH`
-- **FAIL** — issue too vague to support a fully actionable plan
+- **FAIL** — snapshot too vague to support a fully actionable plan
 - **ERROR** — unexpected failure such as filesystem or tool access problems
+
+Use this format:
 
 ```text
 PLAN: BLOCKED | FAIL | ERROR

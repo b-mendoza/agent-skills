@@ -18,29 +18,37 @@ workflow, **`TICKET_KEY` and `ISSUE_SLUG` are the same string** (for example
 
 ## Inputs
 
-| Input | Required | Example |
-| ----- | -------- | ------- |
-| `ISSUE_SLUG` | Yes | `acme-app-42` |
-| `RE_PLAN` | No | `true` |
-| `DECISIONS` | No | `Task 3 depends on SSO choice` |
+| Input         | Required | Example                        |
+| ------------- | -------- | ------------------------------ |
+| `ISSUE_SLUG`  | Yes      | `acme-app-42`                  |
+| `RE_PLAN`     | No       | `true`                         |
+| `DECISIONS`   | No       | `Task 3 depends on SSO choice` |
 
 Phase 2 is file-driven, so `ISSUE_SLUG` is sufficient. `ISSUE_URL` is not
 required once the issue snapshot already exists on disk.
 
-The issue snapshot must already exist at `docs/<ISSUE_SLUG>.md` with the stable
-Phase 1 headings produced by `fetching-github-issue`. The `stage-validator`
-preflight enforces the minimum heading set required for planning entry,
-including
-`## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`,
-`## Retrieval Warnings`, `## Child Issues`, `## Linked Issues`, `## Labels`,
-`## Assignees`, `## Milestone`, `## Projects`, and `## Attachments` (the last
-three are stable sections in the Phase 1 template, often `_None_`).
+The issue snapshot must already exist at `docs/<ISSUE_SLUG>.md` with these
+sections, produced by `fetching-github-issue`:
 
-If any required check fails, treat Phase 1 as incomplete and stop with a
-preflight failure.
+| Required section         | Why it matters                              |
+| ------------------------ | ------------------------------------------- |
+| `## Description`         | Primary source for identifying work items   |
+| `## Acceptance Criteria` | Maps to Definition of Done per task         |
+| `## Comments`            | Captures scope changes and clarifications   |
+| `## Child Issues`        | Prevents duplicate planning                 |
+| `## Linked Issues`       | Preserves dependency awareness              |
 
-If `RE_PLAN=true`, load `./references/re-plan-cycle.md` and pass the supplied
-`DECISIONS` only to the stages that need plan revisions.
+Stable context sections (`## Metadata`, `## Retrieval Warnings`, `## Labels`,
+`## Assignees`, `## Milestone`, `## Projects`, `## Attachments`) are also
+required by the `stage-validator` preflight and are produced by
+`fetching-github-issue` even when empty.
+
+If any are missing, treat Phase 1 as incomplete and stop with a preflight
+failure.
+
+If `RE_PLAN=true`, reuse the same `ISSUE_SLUG`, load
+`./references/re-plan-cycle.md`, and pass the supplied `DECISIONS` only to the
+stages that need plan revisions.
 
 ## Output Contract
 
@@ -48,19 +56,18 @@ If `RE_PLAN=true`, load `./references/re-plan-cycle.md` and pass the supplied
 
 Final artifact path: `docs/<ISSUE_SLUG>-tasks.md`
 
-The final plan must contain all of these sections (the Phase 2 postcondition for
-downstream phases):
+The final plan must contain all of these sections for downstream phases:
 
-| Section                               | Consumed by                                                    |
-| ------------------------------------- | -------------------------------------------------------------- |
-| `## Issue Summary`                    | `clarifying-assumptions`                                       |
-| `## Execution Order Summary`         | Ordering and tracking                                          |
-| `## Problem Framing`                  | `clarifying-assumptions`, critique paths                       |
-| `## Assumptions and Constraints`      | `clarifying-assumptions`                                       |
-| `## Cross-Cutting Open Questions`     | `clarifying-assumptions`                                       |
-| `## Tasks` with numbered task entries | `clarifying-assumptions`, child-issue creation, task execution |
-| `## Dependency Graph`                 | task execution and critique                                    |
-| `## Validation Report`               | `clarifying-assumptions`                                       |
+| Section                               | Consumed by                                                            |
+| ------------------------------------- | ---------------------------------------------------------------------- |
+| `## Issue Summary`                    | `clarifying-assumptions`                                               |
+| `## Execution Order Summary`          | `creating-github-child-issues`                                         |
+| `## Problem Framing`                  | `clarifying-assumptions`, critique paths                               |
+| `## Assumptions and Constraints`      | `clarifying-assumptions`                                               |
+| `## Cross-Cutting Open Questions`     | `clarifying-assumptions`                                               |
+| `## Tasks` with numbered task entries | `clarifying-assumptions`, `creating-github-child-issues`, task execution |
+| `## Dependency Graph`                 | task execution and critique                                            |
+| `## Validation Report`                | `clarifying-assumptions`                                               |
 
 Each final task entry must include these eight subsections:
 
@@ -117,23 +124,23 @@ docs/<ISSUE_SLUG>-tasks.md
 Each stage writes a Category A orchestration artifact that stays on disk for
 Phase 3 critique, targeted retries, and workflow resume:
 
-| Stage | File | Produced by |
-| ----- | ---- | ----------- |
-| 1 | `docs/<ISSUE_SLUG>-stage-1-detailed.md` | `task-planner` |
-| 2 | `docs/<ISSUE_SLUG>-stage-2-prioritized.md` | `dependency-prioritizer` |
-| 3 | `docs/<ISSUE_SLUG>-tasks.md` | `task-validator` |
+| Stage | File                                       | Produced by              |
+| ----- | ------------------------------------------ | ------------------------ |
+| 1     | `docs/<ISSUE_SLUG>-stage-1-detailed.md`    | `task-planner`           |
+| 2     | `docs/<ISSUE_SLUG>-stage-2-prioritized.md` | `dependency-prioritizer` |
+| 3     | `docs/<ISSUE_SLUG>-tasks.md`               | `task-validator`         |
 
 Preserve these planning artifacts on disk. They support resume and critique
 workflows, and they stay out of git history as orchestration artifacts.
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| -------- | ---- | ------- |
-| `task-planner` | `./subagents/task-planner.md` | Decompose the issue and draft the stage 1 plan |
-| `dependency-prioritizer` | `./subagents/dependency-prioritizer.md` | Annotate dependencies and determine execution order |
-| `task-validator` | `./subagents/task-validator.md` | Validate the prioritized plan and append QA findings |
-| `stage-validator` | `./subagents/stage-validator.md` | Check preflight, inter-stage, and final output gates |
+| Subagent                 | Path                                    | Purpose                                              |
+| ------------------------ | --------------------------------------- | ---------------------------------------------------- |
+| `task-planner`           | `./subagents/task-planner.md`           | Decompose the issue and draft the stage 1 plan       |
+| `dependency-prioritizer` | `./subagents/dependency-prioritizer.md` | Annotate dependencies and determine execution order  |
+| `task-validator`         | `./subagents/task-validator.md`         | Validate the prioritized plan and append QA findings |
+| `stage-validator`        | `./subagents/stage-validator.md`        | Check preflight, inter-stage, and final output gates |
 
 Read a subagent definition only when you are about to dispatch that subagent.
 Do not read the stage artifacts inline unless a validator or subagent contract
@@ -171,10 +178,12 @@ recovery map when deciding which stage to dispatch or retry next.
 
 ## Execution Paths
 
+Use one of these paths:
+
 - **Normal path:** `preflight → stage 1 → stage 2 → stage 3 → postpipeline`
 - **Re-plan path:** read `./references/re-plan-cycle.md`, identify the earliest
-  affected stage, resume from that stage using preserved on-disk artifacts, then
-  rerun every downstream stage and finish with `postpipeline`
+  affected stage, resume from that stage using the preserved on-disk artifacts,
+  then rerun every downstream stage and finish with `postpipeline`
 
 Use targeted fix loops only. When a gate fails, re-dispatch the stage that
 produced the failing artifact, pass only the validator's issues list, and

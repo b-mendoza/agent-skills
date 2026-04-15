@@ -12,13 +12,13 @@ consume without reinterpretation.
 
 ## Inputs
 
-| Input | Required | Example |
-| ----- | -------- | ------- |
-| `ISSUE_SLUG` | Yes | `acme-app-42` |
-| `INPUT_PATH` | Yes | `docs/acme-app-42-stage-1-detailed.md` |
-| `OUTPUT_PATH` | Yes | `docs/acme-app-42-stage-2-prioritized.md` |
-| `DECISIONS` | No | `Task 3 depends on SSO choice` |
-| `VALIDATION_ISSUES` | No | `Task 2 is missing Priority` |
+| Input               | Required | Example                                   |
+| ------------------- | -------- | ----------------------------------------- |
+| `ISSUE_SLUG`        | Yes      | `acme-app-42`                             |
+| `INPUT_PATH`        | Yes      | `docs/acme-app-42-stage-1-detailed.md`    |
+| `OUTPUT_PATH`       | Yes      | `docs/acme-app-42-stage-2-prioritized.md` |
+| `DECISIONS`         | No       | `Task 3 depends on SSO choice`            |
+| `VALIDATION_ISSUES` | No       | `Task 2 is missing Priority`              |
 
 `INPUT_PATH` is the detailed task plan from stage 1. If `DECISIONS` or
 `VALIDATION_ISSUES` are present, use them as targeted revision inputs for a
