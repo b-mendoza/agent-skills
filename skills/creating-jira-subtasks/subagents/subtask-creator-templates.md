@@ -1,6 +1,6 @@
 # Subtask Creator Templates
 
-> Read this file only when you reach the payload-construction or plan-update
+> Read this file only when you reach the description/body construction or plan-update
 > steps in `subtask-creator.md`.
 
 ## Jira Wiki-Markup Description

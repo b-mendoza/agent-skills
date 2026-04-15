@@ -1,6 +1,6 @@
 # Task Issue Creator Templates
 
-> Read this file only when you reach the issue-body construction or plan-update
+> Read this file only when you reach the description/body construction or plan-update
 > steps in `task-issue-creator.md`.
 
 ## GitHub issue body (linked-issue and native-sub-issue)
@@ -73,7 +73,7 @@ task as a checklist item. Minimum plan-side record:
 Replace placeholders before writing:
 
 ```html
-<!-- phase4-handoff parent="OWNER/REPO#PARENT_N" model="linked-issue" capability="REST sub_issues unavailable; using gh issue create + parent URL in body" updated="2026-04-08T12:00:00Z" -->
+<!-- phase4-handoff parent="OWNER/REPO#PARENT_NUMBER" model="linked-issue" capability="REST sub_issues unavailable; using gh issue create + parent URL in body" updated="2026-04-08T12:00:00Z" -->
 ```
 
 ### Workflow table shape (`## GitHub Task Issues`)
@@ -85,9 +85,9 @@ Replace placeholders before writing:
 
 | Task | Issue ref | Title | Write model | Status | Dependencies | Priority |
 | ---- | --------- | ----- | ----------- | ------ | ------------ | -------- |
-| 1    | acme/app#100 | Set up database schema | linked-issue | OPEN | None | High |
-| 2    | Not Created | Implement API layer | linked-issue | Not Created | 1 | High |
-| 3    | task-list | Polish copy | task-list | task-list | None | Low |
+| 1    | acme/app#100 | Task 1: Set up database schema | linked-issue | OPEN | None | High |
+| 2    | Not Created | Task 2: Implement API layer | linked-issue | Not Created | 1 | High |
+| 3    | task-list | Task 3: Polish copy | task-list | task-list | None | Low |
 ```
 
 **Column order is normative** for machine-friendly parsing.
