@@ -24,9 +24,9 @@ For normal Phase 4 execution, the plan is expected to contain:
 
 | Expected section / element                          | Produced by                    | Why it matters                               |
 | --------------------------------------------------- | ------------------------------ | -------------------------------------------- |
-| `## Tasks` with numbered `## Task <N>:` headings    | Upstream planning phase        | Each parsed task maps to one Jira subtask row |
+| `## Tasks` with numbered `## Task <N>:` headings    | Upstream planning phase        | Each parsed task maps to one workflow row |
 | `## Execution Order Summary`                        | Upstream planning phase        | Preserves task ordering context              |
-| `## Decisions Log`                                  | Clarification / critique phase | Indicates critique is complete before Jira writes |
+| `## Decisions Log`                                  | Clarification / critique phase | Indicates critique completed before Jira writes |
 
 The parent workflow is responsible for validating the normal Phase 4
 precondition before this skill runs. If this skill is used standalone and the
@@ -34,7 +34,7 @@ plan is missing or malformed, the subagent returns `SUBTASKS: BLOCKED`. If
 `## Decisions Log` is missing, the subagent continues with `SUBTASKS: WARN`:
 the plan is still parseable, but the normal workflow precondition was skipped.
 
-## Write path
+## Write Path
 
 Phase 4 in Jira uses the project's native subtask relationship only.
 
@@ -67,7 +67,7 @@ Use the table shape in `../subagents/subtask-creator-templates.md`
 | ------ | ---------------------- |
 | Task | Integer task index matching `## Task <N>:` |
 | Subtask Key | Jira issue key (e.g., `PROJ-200`) for a concrete subtask; `Not Created` if creation failed |
-| Title | Short title aligned with the task heading |
+| Title | Task heading text, typically `Task <N>: <Short title>` |
 | Status | Jira workflow status when known (`To Do`, `In Progress`, `Done`, etc.) or `Not Created` |
 | Dependencies | Same normalized form as the plan (`None`, `1`, `1,2`, etc.) |
 | Priority | From plan or `Unknown` |
@@ -102,7 +102,7 @@ The subagent returns a structured summary with:
 
 - `SUBTASKS: PASS | WARN | FAIL | BLOCKED | ERROR`
 - `Validation: PASS | FAIL | NOT_RUN`
-- `Ticket: <TICKET_KEY>`
+- `Parent: <TICKET_KEY>`
 - `Plan file: <path | not updated>`
 - Counts: tasks in plan, already linked, created now, failed creates
 - `Decisions Log: PRESENT | MISSING`
@@ -119,6 +119,6 @@ When the run stops before plan updates or create attempts complete,
 `Created/Linked Subtasks` may be header-only. This is still contract-valid for
 early `BLOCKED`, `FAIL`, or `ERROR` exits.
 
-The `Created/Linked Subtasks` table is the handoff downstream progress tracking
-uses on Phase 4 completion. Preserve **Dependencies** and **Priority** columns
-for every row.
+The `Created/Linked Subtasks` table is the structured handoff downstream
+progress tracking uses after Phase 4 completion. Preserve **Dependencies** and
+**Priority** columns for every row.

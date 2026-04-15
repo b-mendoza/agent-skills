@@ -24,7 +24,7 @@ For normal Phase 4 execution, the plan is expected to contain:
 
 | Expected section / element                         | Produced by                     | Why it matters                                    |
 | -------------------------------------------------- | ------------------------------- | ------------------------------------------------- |
-| `## Tasks` with numbered `## Task <N>:` headings   | Upstream planning phase         | Each row maps to one workflow task                |
+| `## Tasks` with numbered `## Task <N>:` headings   | Upstream planning phase         | Each parsed task maps to one workflow row         |
 | `## Execution Order Summary`                       | Upstream planning phase         | Preserves task ordering context                   |
 | `## Decisions Log`                                 | Clarification / critique phase  | Indicates critique completed before GitHub writes |
 
@@ -34,9 +34,9 @@ is missing or malformed, the subagent returns `TASK_ISSUES: BLOCKED`. If
 `## Decisions Log` is missing, the subagent continues with `TASK_ISSUES: WARN`:
 the plan is still parseable, but the normal workflow precondition was skipped.
 
-## Write model (preference order)
+## Write Path
 
-The subagent **attempts**, in order:
+The subagent attempts these write models, in order:
 
 1. **Native child / sub-issues** — GitHub’s hierarchical sub-issue relationship,
    when the environment supports creating or attaching them non-interactively
@@ -95,7 +95,7 @@ Use the table shape in `../subagents/task-issue-creator-templates.md`
 | ------ | ---------------------- |
 | Task | Integer task index matching `## Task <N>:` |
 | Issue ref | `owner/repo#number` for a concrete issue; `Not Created` if creation failed; `task-list` when that task uses task-list traceability only |
-| Title | Short title aligned with the task heading |
+| Title | Task heading text, typically `Task <N>: <Short title>` |
 | Write model | `native-sub-issue` \| `linked-issue` \| `task-list` \| `mixed` (per-row; usually matches the task’s actual linkage) |
 | Status | GitHub state when known (`OPEN`, `CLOSED`) or `Not Created` / `task-list` |
 | Dependencies | Same normalized form as the plan (`None`, `1`, `1,2`, etc.) |
@@ -142,6 +142,10 @@ The subagent returns a structured summary with:
   **Title**, **Write model**, **Dependencies**, **Priority**, **Outcome**
 - Explicit `Warnings:` and `Failures:` sections
 
+`Write model:` and `Capability:` remain required even on early exits. When the
+run stops before concrete creation or validation, populate them with the best
+detected or intended write path so the summary shape stays stable.
+
 Treat `TASK_ISSUES: ERROR` as an unexpected tool or environment failure. The
 orchestrator stops and surfaces the reason instead of interpreting the run as a
 degraded success.
@@ -150,6 +154,6 @@ When the run stops before plan updates or create attempts complete,
 `Created/Linked Task Issues` may be header-only. This is still contract-valid
 for early `BLOCKED`, `FAIL`, or `ERROR` exits.
 
-The `Created/Linked Task Issues` table is the handoff downstream progress
-tracking uses on Phase 4 completion. Preserve **Dependencies** and **Priority**
-columns for every row.
+The `Created/Linked Task Issues` table is the structured handoff downstream
+progress tracking uses after Phase 4 completion. Preserve **Dependencies** and
+**Priority** columns for every row.
