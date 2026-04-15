@@ -126,6 +126,8 @@ Handle the returned summary this way:
 - Any result paired with `Validation: FAIL`: treat the phase as incomplete even
   if some Jira writes succeeded, because the local plan contract is not
   trustworthy yet.
+- Any result paired with `Validation: NOT_RUN`: treat the phase as incomplete;
+  no trustworthy local post-write artifact was produced for downstream use.
 
 ### 3. Report only the summary
 
@@ -196,3 +198,6 @@ Use the subagent's structured verdict as the only routing input:
 | `SUBTASKS: BLOCKED` | Stop and surface the plan-shape or unsafe-linkage issue |
 | `SUBTASKS: FAIL` | Stop and surface the fatal Jira or validation failure |
 | `SUBTASKS: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or local contract failure |
+
+Treat `Validation: NOT_RUN` as incomplete Phase 4 output even when the
+top-level status is already `BLOCKED`, `FAIL`, or `ERROR`.
