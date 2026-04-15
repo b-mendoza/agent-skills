@@ -18,8 +18,8 @@ startup mutations, and return a short readiness summary.
 | ------------------ | -------- | ----- |
 | `TICKET_KEY`       | Yes      | Used to derive ticket and plan paths. |
 | `TASK_NUMBER`      | Yes      | The selected task to start. |
-| Ticket snapshot path | Yes    | Usually `docs/<KEY>.md`. |
-| Task plan path     | Yes      | Usually `docs/<KEY>-tasks.md`. |
+| Ticket snapshot path | Yes    | Usually `docs/<TICKET_KEY>.md`. |
+| Task plan path     | Yes      | Usually `docs/<TICKET_KEY>-tasks.md`. |
 | Execution brief path | Yes    | Scope, dependencies, and execution constraints. |
 | Optional context summaries | No | Current Jira status or codebase state summaries from the parent orchestrator. |
 
@@ -43,12 +43,12 @@ artifacts.
    next move is not explicit, return `BLOCKED` instead of improvising.
 5. Resolve dirty-worktree handling only when the policy is explicit. If local
    changes need a judgment call, stop and return `BLOCKED`.
-6. Treat kickoff as idempotent on resume. If the branch/worktree is already in
+6. Treat kickoff as **idempotent** on resume. If the branch/worktree is already in
    the intended state or the Jira subtask is already `In Progress` because a
    previous kickoff partially completed, record the current state and return
    `READY` rather than trying to force the startup action again.
 7. Resolve the Jira subtask key from the selected task section's
-   `Jira Subtask: <KEY>` line first, or from the matching row in `## Jira
+   `Jira Subtask: <SUBTASK_KEY>` line first, or from the matching row in `## Jira
    Subtasks` if the inline line is absent.
 8. If the task has a Jira subtask key and Jira capability is available,
    perform the startup updates the brief or team conventions require, such as:

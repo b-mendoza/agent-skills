@@ -33,14 +33,14 @@ All standard artifact paths derive from `TICKET_KEY` and `TASK_NUMBER`.
 
 | Path pattern                               | Produced by                        | Why it matters                               |
 | ------------------------------------------ | ---------------------------------- | -------------------------------------------- |
-| `docs/<KEY>.md`                            | `fetching-jira-ticket`             | Ticket snapshot and Jira context.            |
-| `docs/<KEY>-tasks.md`                      | `planning-jira-tasks`              | Task source of truth and downstream status.  |
-| `docs/<KEY>-task-<N>-brief.md`             | `planning-jira-task`               | Scope, context, and DoD.                     |
-| `docs/<KEY>-task-<N>-execution-plan.md`    | `planning-jira-task`               | Approved implementation approach.            |
-| `docs/<KEY>-task-<N>-test-spec.md`         | `planning-jira-task`               | Required behavior coverage.                  |
-| `docs/<KEY>-task-<N>-refactoring-plan.md`  | `planning-jira-task`               | Approved prep/cleanup work.                  |
-| `docs/<KEY>-task-<N>-critique.md`          | `clarifying-assumptions` (critique) | Task-level critique record.                  |
-| `docs/<KEY>-task-<N>-decisions.md`         | `clarifying-assumptions` (critique) | Decisions and confirmed plan after critique. |
+| `docs/<TICKET_KEY>.md`                            | `fetching-jira-ticket`             | Ticket snapshot and Jira context.            |
+| `docs/<TICKET_KEY>-tasks.md`                      | `planning-jira-tasks` (+ later phases) | Task source of truth, `## Jira Subtasks`, per-task `Jira Subtask:` lines. |
+| `docs/<TICKET_KEY>-task-<N>-brief.md`             | `planning-jira-task`               | Scope, context, and DoD.                     |
+| `docs/<TICKET_KEY>-task-<N>-execution-plan.md`    | `planning-jira-task`               | Approved implementation approach.            |
+| `docs/<TICKET_KEY>-task-<N>-test-spec.md`         | `planning-jira-task`               | Required behavior coverage.                  |
+| `docs/<TICKET_KEY>-task-<N>-refactoring-plan.md`  | `planning-jira-task`               | Approved prep/cleanup work.                  |
+| `docs/<TICKET_KEY>-task-<N>-critique.md`          | `clarifying-assumptions` (critique) | Task-level critique record.                  |
+| `docs/<TICKET_KEY>-task-<N>-decisions.md`         | `clarifying-assumptions` (critique) | Decisions and confirmed plan after critique. |
 
 **Normal orchestrated path:** all of the above through `decisions.md` are
 required before kickoff; the parent workflow's Phase 7 precondition check
@@ -54,8 +54,9 @@ which upstream phase or skill must run first.
 
 Confirm all of the following before the kickoff step:
 
-1. `docs/<KEY>-tasks.md` contains a `## Task <N>:` (or equivalent numbered task
-   heading) for the selected task, consistent with the plan format.
+1. `docs/<TICKET_KEY>-tasks.md` contains a `## Task <N>:` (or equivalent
+   numbered task heading) for the selected task, consistent with the plan
+   format.
 2. The task is not already marked complete unless the user explicitly asked to
    re-run or revise it.
 3. Dependencies or prerequisite tasks referenced in the plan are already
@@ -64,14 +65,14 @@ Confirm all of the following before the kickoff step:
    between plan and per-task files → stop and escalate.
 5. Questions for the selected task are resolved, explicitly waived, or recorded
    as conscious follow-ups in the task plan or critique decisions.
-6. If `docs/<KEY>-task-<N>-decisions.md` records a later decision that differs
-   from the Phase 2 task plan, treat `decisions.md` as authoritative.
+6. If `docs/<TICKET_KEY>-task-<N>-decisions.md` records a later decision that
+   differs from the Phase 2 task plan, treat `decisions.md` as authoritative.
 7. **Jira subtask reference** (optional for code work, required for full
-   traceability): resolve from the task section's `Jira Subtask: <KEY>` line
-   first, or from the matching row in `## Jira Subtasks` if the inline line is
-   absent. Missing Jira linkage does not block local implementation; it limits
-   what `execution-starter` and `documentation-writer` can do for Jira-side
-   kickoff and completion updates.
+   traceability): resolve from the task section's
+   `Jira Subtask: <SUBTASK_KEY>` line first, or from the matching row in
+   `## Jira Subtasks` if the inline line is absent. Missing Jira linkage does
+   not block local implementation; it limits what `execution-starter` and
+   `documentation-writer` can do for Jira-side kickoff and completion updates.
 
 ## Execution kickoff boundary
 
@@ -121,7 +122,7 @@ success from partial file changes alone.
 
 | Category | Contents | Git behavior | Lifecycle |
 | -------- | -------- | ------------ | --------- |
-| A        | `docs/<KEY>*.md`, progress files, briefs, plans, test specs, refactoring plans, critique, decisions | Never committed | Never deleted |
+| A        | `docs/<TICKET_KEY>*.md`, progress files, briefs, plans, test specs, refactoring plans, critique, decisions | Never committed | Never deleted |
 | B        | Source, tests, config, in-code docs | Committed normally | Normal project rules |
 
 `documentation-writer` may update Category A artifacts on disk so the
@@ -137,9 +138,9 @@ After a successful run, all of the following should be true:
    (transition, comment, or both) or reported clearly why each action was
    skipped.
 3. Category B changes are committed.
-4. The task section in `docs/<KEY>-tasks.md` includes completion metadata
-   consistent with your team template (e.g. status, implementation summary,
-   files changed).
+4. The task section in `docs/<TICKET_KEY>-tasks.md` includes completion
+   metadata consistent with your team template (e.g. status, implementation
+   summary, files changed).
 5. If a `## Jira Subtasks` table exists, the selected row is updated to reflect
    current Jira state, typically `Done` after successful completion.
 6. Optional Jira completion updates are either completed or reported as skipped

@@ -32,14 +32,14 @@ execution:
 
 | Artifact                                  | Phase | Required | Purpose                                    |
 | ----------------------------------------- | ----- | -------- | ------------------------------------------ |
-| `docs/<KEY>.md`                           | 1     | Yes      | Ticket snapshot and Jira context.          |
-| `docs/<KEY>-tasks.md`                     | 2–4   | Yes      | Task plan, `## Jira Subtasks`, statuses. |
-| `docs/<KEY>-task-<N>-brief.md`            | 5     | Yes      | Scope, DoD, and execution constraints.     |
-| `docs/<KEY>-task-<N>-execution-plan.md`   | 5     | Yes      | Approved implementation approach.          |
-| `docs/<KEY>-task-<N>-test-spec.md`        | 5     | Yes      | Required behavior coverage.                |
-| `docs/<KEY>-task-<N>-refactoring-plan.md` | 5     | Yes      | Approved structural prep and cleanup.      |
-| `docs/<KEY>-task-<N>-critique.md`         | 6     | Yes      | Task-level critique record.                |
-| `docs/<KEY>-task-<N>-decisions.md`        | 6     | Yes      | Critique outcomes and confirmed decisions. |
+| `docs/<TICKET_KEY>.md`                           | 1     | Yes      | Ticket snapshot and Jira context.          |
+| `docs/<TICKET_KEY>-tasks.md`                     | 2–4   | Yes      | Task plan, `## Jira Subtasks`, statuses.   |
+| `docs/<TICKET_KEY>-task-<N>-brief.md`            | 5     | Yes      | Scope, DoD, and execution constraints.     |
+| `docs/<TICKET_KEY>-task-<N>-execution-plan.md`   | 5     | Yes      | Approved implementation approach.          |
+| `docs/<TICKET_KEY>-task-<N>-test-spec.md`        | 5     | Yes      | Required behavior coverage.                |
+| `docs/<TICKET_KEY>-task-<N>-refactoring-plan.md` | 5     | Yes      | Approved structural prep and cleanup.      |
+| `docs/<TICKET_KEY>-task-<N>-critique.md`         | 6     | Yes      | Task-level critique record.                |
+| `docs/<TICKET_KEY>-task-<N>-decisions.md`        | 6     | Yes      | Critique outcomes and confirmed decisions. |
 
 Read `./references/contracts.md` when validating task readiness or artifact
 shape.
@@ -98,7 +98,8 @@ phase when a targeted fix is needed.
 
 Treat artifacts in two categories:
 
-- **Category A:** `docs/<KEY>*.md`, progress files, briefs, plans, test specs,
+- **Category A:** `docs/<TICKET_KEY>*.md`, progress files, briefs, plans, test
+  specs,
   refactoring plans, critique, and decisions. Stay on disk, never committed,
   never deleted.
 - **Category B:** source code, tests, config, in-code documentation. Committed

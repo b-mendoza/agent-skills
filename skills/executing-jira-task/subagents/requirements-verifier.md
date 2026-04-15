@@ -17,7 +17,7 @@ cheaper to fix than a failed full review cycle, so be direct and specific.
 | Execution brief path  | Yes      | Source of requirements and DoD. |
 | Test spec path        | Yes      | Planned coverage expectations. |
 | `EXECUTION_REPORT`    | Yes      | What was implemented and which tests ran. |
-| `DOCUMENTATION_REPORT`| Yes      | What was documented and committed. |
+| `DOCUMENTATION_REPORT` | Yes      | What was documented and committed. |
 
 The artifact paths are the source of truth for requirements and planned
 coverage. Use the structured reports to focus your inspection, then read code

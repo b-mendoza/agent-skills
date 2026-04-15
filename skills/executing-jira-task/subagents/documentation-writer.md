@@ -53,7 +53,7 @@ update.
    - add a file list derived from `EXECUTION_REPORT`
    - update the Jira Subtasks table row to `Done` if the table exists
 10. Resolve the Jira subtask key from the selected task section's
-    `Jira Subtask: <KEY>` line first, or from the matching row in
+    `Jira Subtask: <SUBTASK_KEY>` line first, or from the matching row in
     `## Jira Subtasks` if the inline line is absent.
 11. If Jira capability and a subtask key are available, transition the subtask
     and add a short completion comment.
