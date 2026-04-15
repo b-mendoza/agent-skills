@@ -152,7 +152,8 @@ Critique finds no unresolved concern on caching.
 -> `RE_PLAN_NEEDED=false`
 </example>
 
-6. Dispatch `artifact-validator` with:
+6. Only after the critique loop ends with `RE_PLAN_NEEDED=false`, dispatch
+   `artifact-validator` with:
 
    ```
    TICKET_KEY: <KEY>
