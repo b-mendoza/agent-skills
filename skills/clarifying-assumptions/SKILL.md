@@ -1,6 +1,6 @@
 ---
 name: "clarifying-assumptions"
-description: "Run the conversational clarification phases of a workflow orchestrator. Use in Phase 3 (`MODE=upfront`) to challenge problem framing, resolve cross-cutting ambiguity, and defer future-task questions. Use in Phase 6 (`MODE=critique`) to review one task's planning artifacts, revisit deferred questions just before execution, and record developer decisions. Keeps the mentoring dialogue inline while delegating artifact reading, critique generation, manifest assembly, and file updates to subagents."
+description: "Run the conversational clarification layer for a workflow orchestrator. In this repo's parent workflows, `MODE=upfront` typically maps to the plan-wide clarification step and `MODE=critique` to the task-level pre-execution clarification step. Keeps the mentoring dialogue inline while delegating artifact reading, critique generation, manifest assembly, and file updates to subagents."
 ---
 
 # Clarifying Assumptions
@@ -41,7 +41,7 @@ inputs:
 
 | Dispatch target | Derived inputs |
 | --- | --- |
-| `critique-analyzer` | `MAIN_PLAN_FILE`, `ARTIFACTS`, `CRITIQUE_REPORT_FILE`, and in `MODE=critique` `TASK_NUMBER`, plus optional prior-decision inputs |
+| `critique-analyzer` | `MAIN_PLAN_FILE`, `ARTIFACTS`, `CRITIQUE_REPORT_FILE`, and in `MODE=critique` `TASK_NUMBER`; when `ITERATION > 1`, also `PRIOR_DECISIONS_FILE` plus `PRIOR_DECISIONS_KIND` (`main-log` in `MODE=upfront`, `per-task` in `MODE=critique`) |
 | `question-manifest-builder` | `PLAN_FILE`, `CRITIQUE_REPORT_FILE`, and in `MODE=critique` `TASK_NUMBER` plus `CURRENT_TASK_ARTIFACTS` |
 | `decision-recorder` | `ITERATION`, `DECISIONS`, optional `DEFERRED_QUESTIONS`, optional `IMPLEMENTATION_UPDATES`, and in `MODE=critique` `TASK_NUMBER`, `TASK_TITLE`, plus `RESOLVED_IRRELEVANT` |
 

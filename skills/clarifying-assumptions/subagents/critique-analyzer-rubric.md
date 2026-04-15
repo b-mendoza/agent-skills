@@ -30,7 +30,8 @@ In `MODE=critique`, look for these categories:
 - **User impact**
   - Latency, data freshness, workflow friction
   - Accessibility or reliability consequences
-  - Trade-offs that conflict with the end user and need established in Phase 3
+  - Trade-offs that conflict with the end user and need captured in the plan's
+    problem framing
 
 ## Severity Rubric
 

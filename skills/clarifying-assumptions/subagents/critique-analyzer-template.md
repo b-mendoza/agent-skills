@@ -36,7 +36,7 @@ Then continue with the body below.
 
 Include this section only in `MODE=upfront`.
 
-| # | Severity | Dimension | Finding | Why this matters | Tier |
+| Item ID | Severity | Dimension | Finding | Why this matters | Tier |
 | --- | --- | --- | --- | --- | --- |
 | PF1 | HIGH | End user | <finding> | <impact> | Tier 3 |
 
@@ -49,7 +49,7 @@ Include this section only in `MODE=upfront`.
 
 ### Technology Critique Items
 
-| # | Severity | Decision made | Source artifact | Alternatives | Why this matters |
+| Item ID | Severity | Decision made | Source artifact | Alternatives | Why this matters |
 | --- | --- | --- | --- | --- | --- |
 | TC1 | HIGH | <decision> | <artifact> | <named options> | <project-specific consequence> |
 
@@ -81,7 +81,7 @@ Include this section only in `MODE=critique`.
 
 - Implementation decision: <planner's choice>
 - User-facing consequence: <concrete impact>
-- Problem-framing link: <connection back to Phase 3>
+- Problem-framing link: <connection back to the plan's problem framing>
 - Severity: <HIGH / MEDIUM / LOW>
 
 ### Items Not Raised
