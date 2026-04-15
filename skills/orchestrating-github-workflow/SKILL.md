@@ -23,9 +23,11 @@ workflow stays resumable and your context stays lean.
 
 Prefer the full issue URL because it carries owner and repo context for `gh` and
 for stable artifact naming. If the user provides only `OWNER`, `REPO`, and
-`ISSUE_NUMBER`, use them to build `ISSUE_SLUG` and to read local progress, but
-ask for the full `ISSUE_URL` before any GitHub-dependent phase that needs
-authoritative remote context.
+`ISSUE_NUMBER`, use them to build `ISSUE_SLUG` and to read local progress. That
+triple is also sufficient for Phase 1 `fetching-github-issue` when a URL is not
+available. Prefer the full `ISSUE_URL` whenever you have it, and ask for it
+later if a downstream phase needs canonical remote context or if it would
+remove ambiguity.
 
 Derive and normalize:
 
@@ -37,8 +39,8 @@ Derive and normalize:
 
 Extract from `ISSUE_URL` when present:
 
-- Parse `https://github.com/<owner>/<repo>/issues/<number>` (including
-  `github.com` enterprise hosts if applicable — same path pattern).
+- Parse issue URLs that follow `https://<host>/<owner>/<repo>/issues/<number>`,
+  including GitHub Enterprise hosts that use the same path pattern.
 
 ## Workflow Overview
 
@@ -52,6 +54,13 @@ Phase 6: Clarify + critique    -> docs/<ISSUE_SLUG>-task-<N>-critique.md + docs/
 Phase 7: Kick off + execute    -> first side effects, code changes, tests, commits
          ^____________________/  repeat phases 5-7 per task
 ```
+
+Throughout this skill, `<ISSUE_SLUG>` means the normalized
+`<owner>-<repo>-<issue_number>` key derived from `ISSUE_URL` when available, or
+from `OWNER`, `REPO`, and `ISSUE_NUMBER` otherwise. All orchestration and
+downstream artifact paths use that placeholder; the downstream
+`fetching-github-issue` skill writes `docs/<ISSUE_SLUG>.md` under that exact
+name.
 
 ## Output Contract
 
@@ -190,6 +199,10 @@ Use these rules throughout the workflow:
   relevant planning phase. `BLOCKERS_PRESENT=true` is a hard stop before GitHub
   writes or task execution, even if the generic user gate would otherwise allow
   advancing.
+- **Treat execution kickoff as downstream-owned.** Once the normal Phase 5 + 6
+  handoff validates, `executing-github-task` owns the execution-side kickoff
+  boundary, including readiness checks, safe startup state changes, and whether
+  execution can begin.
 - **Preserve resumability.** Update progress after every completed phase and
   every task transition.
 - **Separate artifact lifecycles.** Orchestration artifacts stay on disk and are
@@ -200,7 +213,8 @@ Use these rules throughout the workflow:
 
 Inline work is limited to conversational coordination, such as:
 
-- Asking the user for `ISSUE_URL` when only owner/repo/number is known
+- Asking the user for `ISSUE_URL` when it would remove ambiguity or when a
+  downstream phase explicitly needs canonical URL context
 - Walking through clarify/critique prompts that a downstream skill explicitly
   keeps inline
 - Presenting gate options that require user confirmation
@@ -236,7 +250,7 @@ not as ordinary implementation gaps or generic fix-loop retries.
 > -> downstream skill -> validator -> progress update -> gate decision. For
 > Phase 7, use the execution-skill-owned variant described in
 > `./references/task-loop.md`. Use `./references/data-contracts.md` for exact
-> PASS/FAIL semantics at the boundary.
+> PASS/FAIL/ERROR semantics at the boundary.
 
 1. **Announce** the phase banner.
 2. **Validate preconditions** by dispatching `artifact-validator` when a
@@ -249,7 +263,7 @@ not as ordinary implementation gaps or generic fix-loop retries.
    targeted re-plan/retry loop.
 
 Use `./references/data-contracts.md` when you need the exact boundary checks or
-PASS/FAIL semantics for a phase transition.
+PASS/FAIL/ERROR semantics for a phase transition.
 
 For Phases 3 and 6, the gate check uses both the validator verdict and the
 downstream clarification summary. Advance only when
@@ -298,9 +312,10 @@ Load the right reference file based on the phase you are about to run:
 
 Build `ISSUE_SLUG` from `ISSUE_URL` when available. If you only have
 `OWNER`, `REPO`, and `ISSUE_NUMBER`, normalize owner and repo to lowercase,
-compute `ISSUE_SLUG`, use it for local progress discovery, then ask for the full
-`ISSUE_URL` before any GitHub-dependent phase that needs authoritative remote
-context.
+compute `ISSUE_SLUG`, and use it for local progress discovery. That triple is
+also enough to start Phase 1 `fetching-github-issue` when a URL is unavailable.
+Prefer the full `ISSUE_URL` when you have it, and ask for it later if a
+downstream phase needs canonical remote context.
 
 ### 2. Read progress state
 
