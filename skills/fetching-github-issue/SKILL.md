@@ -193,7 +193,8 @@ shape bundled with this skill; no external spec file is required. The section
 tables below are the scan-friendly summary of that contract.
 
 **Locked-core sections** (same names and relative order across the paired
-issue/ticket-fetching skills; the platform-slot section appears between
+issue/ticket-fetching skills; the platform-slot heading—`## Child Issues` on
+GitHub and `## Subtasks` on Jira—occupies the locked position between
 `## Retrieval Warnings` and `## Linked Issues`):
 
 | Section | Why it exists |
@@ -203,6 +204,7 @@ issue/ticket-fetching skills; the platform-slot section appears between
 | `## Acceptance Criteria` | Definition-of-done source, including extracted AC when present |
 | `## Comments` | Decisions, clarifications, and implementation hints |
 | `## Retrieval Warnings` | Stable disclosure for partial retrieval and capability limits |
+| `## Child Issues` / `## Subtasks` | Locked platform slot for the tracker-specific work-breakdown section; see the platform-slot table below for the exact heading name |
 | `## Linked Issues` | Dependency and surrounding context |
 
 **Locked platform-slot section** (shared concept; the parallel ticket-fetching
