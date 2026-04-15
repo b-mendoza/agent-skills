@@ -352,10 +352,11 @@ summary needed to decide the next move:
 - `PREFLIGHT: FAIL` or `PREFLIGHT: ERROR` -> stop before entering the phase
 - Critical validator or progress failures -> stop progression and present the
   blocking summary
-- Phase 7 `BLOCKED` from `task-executor`, `documentation-writer`, or
-  `requirements-verifier` -> surface the exact missing capability or blocked
-  dependency, treat it as a user-steered pause, and resume from the blocked
-  Phase 7 step after it is resolved
+- Phase 7 `BLOCKED` from `execution-starter`, `task-executor`,
+  `documentation-writer`, or `requirements-verifier` -> surface the exact
+  missing capability, unsafe workspace state, or blocked dependency, treat it
+  as a user-steered pause, and resume from the blocked Phase 7 step after it
+  is resolved
 - Downstream execution `ERROR` or exhausted execution-skill fix cycle -> do not
   mark the task complete; follow `./references/task-loop.md` and
   `./references/error-handling.md`
@@ -394,7 +395,7 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42` → `ISSUE_SLUG=acme-ap
 3. Read `./references/task-loop.md`
 4. Validate the normal Phase 5 + 6 handoff for Task 2
 5. Invoke `executing-github-task`
-6. `task-executor` returns `BLOCKED` because the worktree contains unrelated
+6. `execution-starter` returns `BLOCKED` because the worktree contains unrelated
    local changes that need user direction before kickoff
 7. Record the task as a blocked Phase 7 stop, present the blocker summary, and
    do not treat it as an ordinary implementation gap

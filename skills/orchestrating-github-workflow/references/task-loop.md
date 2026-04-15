@@ -320,12 +320,12 @@ gates internally. The orchestrator does not intervene in kickoff handling or
 quality gate fix cycles unless the downstream skill returns a blocker or
 exhausts its internal retry budget.
 
-If `executing-github-task` reports `BLOCKED` because `task-executor`,
-`documentation-writer`, or `requirements-verifier` could not proceed due to a
-missing tool, runtime, credential, permission, or environment capability, stop
-the task immediately. Surface the exact blocker to the user, do not treat it as
-an ordinary implementation gap, and resume from this Phase 7 step only after
-the capability is restored.
+If `executing-github-task` reports `BLOCKED` because `execution-starter`,
+`task-executor`, `documentation-writer`, or `requirements-verifier` could not
+proceed due to a missing tool, runtime, credential, permission, environment
+capability, or unsafe workspace state, stop the task immediately. Surface the
+exact blocker to the user, do not treat it as an ordinary implementation gap,
+and resume from this Phase 7 step only after the blocker is resolved.
 
 ### Quality gate escalation
 
