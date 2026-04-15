@@ -7,8 +7,9 @@
 > coordinator context. Plan parsing, `gh` / API operations, and plan-file edits stay
 > inside `task-issue-creator`.
 >
-> Orchestrator phase boundaries: align with
-> `../../orchestrating-github-workflow/references/data-contracts.md`.
+> This skill is self-contained. When a parent orchestrator drives the phase,
+> its own data contract should consume the output artifact shapes below; this
+> skill does not depend on the parent's files being present.
 
 ## Input Contract
 
@@ -117,9 +118,8 @@ Rules:
 - Use `Not Created` iff the table row uses `Not Created`.
 - Use `task-list` iff the table row uses `task-list` for `Issue ref`.
 
-This line is the **exact format** referenced by
-`orchestrating-github-workflow/references/data-contracts.md` for Phase 4
-postcondition checks.
+This line is the **exact format** consumed by downstream Phase 4 postcondition
+checks (for example, a parent orchestrator's data-contracts reference).
 
 ## Structured Summary Contract
 

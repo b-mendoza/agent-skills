@@ -1,4 +1,4 @@
-# Phase 4 I/O Contracts
+# Phase 4 I/O Contracts (Jira)
 
 > Read this file when validating standalone Phase 4 execution or interpreting
 > the `subtask-creator` summary.
@@ -7,8 +7,9 @@
 > coordinator context. Plan parsing, Jira operations, and plan-file edits stay
 > inside `subtask-creator`.
 >
-> Orchestrator phase boundaries: align with
-> `../../orchestrating-jira-workflow/references/data-contracts.md`.
+> This skill is self-contained. When a parent orchestrator drives the phase,
+> its own data contract should consume the output artifact shapes below; this
+> skill does not depend on the parent's files being present.
 
 ## Input Contract
 
@@ -79,9 +80,8 @@ Rules:
   that task has a concrete `Subtask Key` in the same form.
 - Use `Not Created` iff the table row uses `Not Created`.
 
-This line is the **exact format** referenced by
-`orchestrating-jira-workflow/references/data-contracts.md` for Phase 4
-postcondition checks.
+This line is the **exact format** consumed by downstream Phase 4 postcondition
+checks (for example, a parent orchestrator's data-contracts reference).
 
 ## Structured Summary Contract
 
