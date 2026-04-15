@@ -21,7 +21,7 @@ required. All artifact paths use `docs/<TICKET_KEY>…`.
 | ------------ | -------- | --------------------- |
 | `TICKET_KEY` | Yes      | `JNS-6065`            |
 | `RE_PLAN`    | No       | `true`                |
-| `DECISIONS`  | No       | `Task 3 depends on SSO choice` |
+| `DECISIONS`  | No       | `SSO decision changes task dependencies` |
 
 Phase 2 is file-driven, so `TICKET_KEY` is sufficient. `JIRA_URL` is not
 required once the ticket snapshot already exists on disk.
@@ -48,11 +48,10 @@ If `RE_PLAN=true`, reuse the same `TICKET_KEY`, load
 `./references/re-plan-cycle.md`, and pass the supplied `DECISIONS` only to the
 stages that need plan revisions.
 
-This skill is self-contained at runtime. Its contract lives in this file plus
-the co-located `references/` and `subagents/` files. It still expects the
-documented upstream snapshot artifact and parent workflow handoff, but it does
-not rely on external spec files or harness-specific workflow docs while
-executing it.
+This skill is self-contained at runtime. Use this file plus the co-located
+`references/` and `subagents/` files as the full execution contract. Treat the
+documented upstream snapshot artifact and parent workflow handoff as inputs,
+not as external runtime specs.
 
 ## Output Contract
 
@@ -83,6 +82,10 @@ Each final task entry must include these eight subsections:
 - `**Likely files / artifacts affected:**`
 - `**Dependencies / prerequisites:**`
 - `**Priority:**`
+
+Add `**Dependency rationale:**` immediately after
+`**Dependencies / prerequisites:**` when a dependency relationship needs a
+short explanation for downstream execution or review.
 
 Phase 2 does not add `## Decisions Log`; that artifact is appended later by
 Phase 3.
@@ -178,7 +181,7 @@ recovery map when deciding which stage to dispatch or retry next.
 
 | Phase / gate    | Dispatch                              | Required output                         | On failure |
 | --------------- | ------------------------------------- | --------------------------------------- | ---------- |
-| `preflight`     | `stage-validator`                     | Ticket snapshot is present and complete | Stop with `Failure category: PREFLIGHT` |
+| `preflight`     | `stage-validator`                     | Phase 1 snapshot document is present and complete | Stop with `Failure category: PREFLIGHT` |
 | Stage 1         | `task-planner` → `stage-validator`    | `PLAN: PASS` and `docs/<TICKET_KEY>-stage-1-detailed.md` passes Stage 1 checks | Stop on `PLAN: FAIL | BLOCKED | ERROR`; retry Stage 1 only on a Stage 1 gate failure |
 | Stage 2         | `dependency-prioritizer` → `stage-validator` | `PRIORITIZATION: PASS` and `docs/<TICKET_KEY>-stage-2-prioritized.md` passes Stage 2 checks | Stop on `PRIORITIZATION: FAIL | BLOCKED | ERROR`; retry Stage 2 only on a Stage 2 gate failure |
 | Stage 3         | `task-validator` → `stage-validator`  | `TASK_VALIDATION: PASS` and `docs/<TICKET_KEY>-tasks.md` passes Stage 3 checks | Stop on `TASK_VALIDATION: FAIL | BLOCKED | ERROR`; retry Stage 3 only on a Stage 3 gate failure |

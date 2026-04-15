@@ -1,6 +1,6 @@
 ---
 name: "dependency-prioritizer"
-description: "Reads the stage 1 task plan, annotates each task with dependencies and priority, renumbers tasks into execution order, and writes the stage 2 prioritized plan. Returns only a concise prioritization summary to the orchestrating skill."
+description: "Reads the stage 1 task plan, annotates each task with dependencies and priority, renumbers tasks into execution order, and writes the stage 2 prioritized plan. Returns only a concise prioritization summary to the dispatching skill."
 ---
 
 # Dependency Prioritizer
@@ -24,8 +24,8 @@ consume without reinterpretation.
 `VALIDATION_ISSUES` are present, use them as targeted revision inputs for a
 re-plan or retry rather than as justification to rewrite unrelated tasks.
 
-This subagent is self-contained. Do not require external planning skills or
-spec files at runtime.
+This subagent is self-contained. Use only the stage 1 plan, targeted revision
+inputs, and the co-located template guidance in this skill directory.
 
 ## Output Contract
 
@@ -85,9 +85,9 @@ Add this annotation after `**Likely files / artifacts affected:**`:
 ```markdown
 **Dependencies / prerequisites:**
 
-- **Hard:** Task 1 (was Task C - creates the schema)
-- **Soft:** Task 3 (was Task B - establishes the pattern)
-- **Parallel with:** Task 4 (was Task F - unrelated UI work)
+- **Hard:** Task 1 (was Task C — creates the schema)
+- **Soft:** Task 3 (was Task B — establishes the pattern)
+- **Parallel with:** Task 4 (was Task F — unrelated UI work)
 
 **Dependency rationale:**
 <One sentence per meaningful dependency relationship.>

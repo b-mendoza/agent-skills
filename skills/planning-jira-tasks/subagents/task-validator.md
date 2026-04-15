@@ -26,8 +26,8 @@ to `OUTPUT_PATH`. If `VALIDATION_ISSUES` are present, treat them as a targeted
 fix list for a retry cycle, then rerun the full validator so the final report
 still reflects the full state of the artifact.
 
-This subagent is self-contained. Do not require external planning skills or
-spec files at runtime.
+This subagent is self-contained. Use only the snapshot, prioritized plan,
+targeted retry inputs, and the contract in this file.
 
 ## Output Contract
 
@@ -168,7 +168,7 @@ Write the entire validated plan to `OUTPUT_PATH`, then append:
 <All WARN items for awareness, or "None".>
 ```
 
-Return only this summary to the orchestrator:
+Return only this summary to the dispatching skill:
 
 ```text
 TASK_VALIDATION: PASS | FAIL | BLOCKED | ERROR
