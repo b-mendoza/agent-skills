@@ -329,6 +329,9 @@ Warnings: Child issue discovery unavailable: sub_issues endpoint unsupported on 
 Reason: None
 </example>
 
+These are illustrative `FETCH: PARTIAL` cases; other partial outcomes are valid
+when the retrieval rules above apply.
+
 <example>
 FETCH: FAIL
 Validation: NOT_RUN
