@@ -45,8 +45,8 @@ Read a subagent definition only when you are about to dispatch it.
 
 ## How This Skill Works
 
-This skill is intentionally narrow. It coordinates retrieval, not Jira
-mutation, planning, or execution. Keep only:
+This skill is intentionally narrow. It coordinates retrieval, not mutation,
+planning, or execution. Keep only:
 
 - `TICKET_KEY` and the URL needed for the next phase
 - The file path written
@@ -82,7 +82,11 @@ The retriever returns a summary with these top-level fields:
 - `FETCH: PASS` -> retrieval and validation succeeded
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
   related items could not be retrieved, or related-item discovery could not be
-  verified
+  verified. `PARTIAL` applies to parent comment retrieval and to subtask /
+  linked-issue retrieval or discovery gaps; `## Attachments` and `## Custom
+  Fields` are populated from the retrieved parent ticket payload and do not use
+  a separate unverifiable-section state analogous to unknown discovery on
+  related items
 - `FETCH: FAIL` -> deterministic failure such as bad input, ticket not found,
   missing auth, rate limits after retry, or no usable Jira tools
 - `FETCH: ERROR` -> unexpected tool or environment failure
@@ -95,17 +99,19 @@ Validation is reported separately:
 - `Validation: FAIL` -> the file was written but still violates the contract
 - `Validation: NOT_RUN` -> retrieval failed before validation could happen
 
-For related-item count lines in the summary (see the retriever output format for
-definitions of `<retrieved>` and `<found>`):
+For count lines in the summary:
 
-- `0/0` means the retriever verified that no items exist
+- `0/0` (where that shape applies) means the retriever verified that no items
+  exist in that section
 - `<retrieved>/UNKNOWN` means the parent ticket was retrieved but discovery
   for that section could not be verified; the retriever records a warning and
   treats the run as `FETCH: PARTIAL`
-- `N/A` for `Subtasks` and `Linked issues` means the parent ticket was not
-  retrieved and related-item discovery never ran (for example,
+- `N/A` for `Comments`, `Subtasks`, or `Linked issues` means the parent ticket
+  was not retrieved and those retrieval steps never ran (for example,
   `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` or
-  `<retrieved>/UNKNOWN` in that case.
+  `<retrieved>/UNKNOWN` in that case
+- `Attachments: <N>` is the number of attachment rows under `## Attachments`;
+  use `Attachments: N/A` when the parent ticket was not retrieved
 
 Failure categories are:
 
@@ -123,11 +129,10 @@ Handle them this way:
 - `FETCH: PASS` with `Validation: PASS`: report success and continue
 - `FETCH: PARTIAL` with `Validation: PASS`: report success with warnings and
   make the incompleteness visible
+- `Validation: FAIL`: stop and relay contract failure (any `FETCH`)
 - `FETCH: FAIL`: stop and relay the failure category plus the reason
 - `FETCH: ERROR`: stop and relay the failure category plus the reason as an
   unexpected failure
-- `Validation: FAIL` with `FETCH: ERROR`: stop and relay that the snapshot
-  contract was not met
 - Any inconsistent pairing, such as `FETCH: PASS` with `Validation: NOT_RUN`:
   treat it as `FETCH: ERROR` and stop
 
@@ -141,7 +146,10 @@ Using only the subagent's structured summary, tell the caller:
 - The file path written, when one exists
 - The ticket identity (`Ticket: <TICKET_KEY>: <Summary>`)
 - The ticket state (`Status: ... | Type: ...`)
-- Retrieved versus discovered counts for comments
+- Retrieved versus discovered counts for comments, or `N/A` when the parent
+  ticket was not retrieved
+- The attachment row count (`Attachments: <N>`), or `N/A` when the parent ticket
+  was not retrieved
 - Retrieved versus discovered counts for subtasks and linked issues, where the
   discovered total may be `UNKNOWN` when discovery could not be verified, or
   `N/A` when the parent ticket was not retrieved and discovery never ran
@@ -163,16 +171,14 @@ Do not commit it as part of implementation history.
 The document must contain every top-level heading from the fenced Markdown
 snapshot shape in `./subagents/ticket-retriever-template.md`. Repeated nested
 headings, such as comment entries or per-issue subsections, appear only when
-their parent section has material to render. If a top-level section has no
-data, the heading still appears and the section body is `_None_`. For
-`## Subtasks` and `## Linked Issues`, that `_None_` reflects the retrieved
-parent ticket's relationship data (verified empty), not unverified discovery.
-Downstream skills rely on stable headings rather than best-effort prose. If retrieval is
-partial, the artifact must record that explicitly in `## Retrieval Warnings`
-and via placeholder entries for the missing subtasks or linked issues. The
-snapshot preamble and metadata must also preserve the ticket's identity fields
-and source URL so downstream phases can reason about the artifact without
-re-deriving them.
+their parent section has material to render. If a top-level section has
+verified empty data, the heading still appears and the section body is
+`_None_`. For `## Subtasks` and `## Linked Issues`, use the template's unknown
+marker when discovery could not be verified after the parent ticket was
+retrieved, and use placeholder entries for known related items that could not
+be hydrated. Downstream skills rely on stable headings rather than best-effort
+prose. If retrieval is partial, the artifact must record that explicitly in
+`## Retrieval Warnings`.
 
 Treat `./subagents/ticket-retriever-template.md` as the authoritative snapshot
 shape bundled with this skill; no external spec file is required. The section

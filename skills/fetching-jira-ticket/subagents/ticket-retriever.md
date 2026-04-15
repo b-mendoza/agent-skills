@@ -112,8 +112,8 @@ Fetch the parent ticket and gather all relevant non-empty data, including:
   links, and tables. Rewrite Jira-authored Markdown heading lines as bold
   labels so they cannot collide with reserved snapshot headings
 - Acceptance criteria: use the dedicated Jira field when present. If that field
-  is empty, inspect description sections in this precedence order:
-  `Acceptance Criteria`, `AC`, `Definition of Done`, `Definition of Done (DoD)`.
+  is empty, inspect the description for sections titled `Acceptance Criteria`,
+  otherwise `AC`, otherwise `Definition of Done` or `Definition of Done (DoD)`.
   Use only sections with the highest-precedence label that is present. If
   multiple sections share that label, keep them in source order and prefix each
   block with `**Source:** <label>`. If none exist, write `_None_` under
@@ -204,14 +204,16 @@ validate it, and leave it in place, but do not stage or commit it.
 
 Every required top-level heading from that fenced snapshot shape must appear in
 the file. Repeated nested headings appear only for items that actually exist or
-for required `Not retrieved` placeholders. If a section has no data, keep the
-heading and write `_None_`. If retrieval is partial, `## Retrieval Warnings`
-must list the warnings and each missing related item must also appear as a
-placeholder entry in its own section. For empty scalar values in the metadata
-table, write `_None_` in the value column. Normalize timestamps with time to
-`YYYY-MM-DD HH:MM UTC`, and preserve date-only values as `YYYY-MM-DD`. Do not
-download attachment binaries. The retrieval preamble must include
-`Retrieved on`, `Source: <JIRA_URL>`, and
+for required `Not retrieved` placeholders. Keep the heading for every required
+section. Use `_None_` only for sections whose emptiness was verified. If
+subtask or linked-issue discovery could not be verified after the parent ticket
+was retrieved, use the template's unknown marker instead of `_None_`. If retrieval is partial,
+`## Retrieval Warnings` must list the warnings and each missing related item
+must also appear as a placeholder entry in its own section. For empty scalar
+values in the metadata table, write `_None_` in the value column. Normalize
+timestamps with time to `YYYY-MM-DD HH:MM UTC`, and preserve date-only values as
+`YYYY-MM-DD`. Do not download attachment binaries. The retrieval preamble must
+include `Retrieved on`, `Source: <JIRA_URL>`, and
 `Workspace: <workspace> | Project: <project> | Ticket: <TICKET_KEY>`.
 
 ### 6. Post-write validation gate: validate, repair, and re-check
@@ -231,18 +233,23 @@ After writing the file, re-read it and verify:
 - Parent comment count matches the retrieved data
 - The number of subtask and linked-issue entries in the file matches the number
   discovered on the parent ticket, with full entries for retrieved items and
-  `Not retrieved` placeholders for any unretrieved ones
+  `Not retrieved` placeholders for any unretrieved ones; or the section uses the
+  template's unknown marker when discovery could not be verified
 - If subtask or linked-issue discovery could not be verified after the parent
-  ticket was retrieved, the same warning appears under `## Retrieval Warnings`
-  and the summary reports `<retrieved>/UNKNOWN` for the affected section
-  instead of `0/0`
+  ticket was retrieved, the affected section uses the template's unknown
+  marker, the same warning appears under `## Retrieval Warnings`, and the
+  summary reports `<retrieved>/UNKNOWN` instead of `0/0`
+- On `FETCH: FAIL` when the parent ticket was never retrieved, the summary uses
+  `N/A` for `Comments`, `Subtasks`, `Linked issues`, and `Attachments` (parent
+  read and those sections did not run), not `0/0`, `0/UNKNOWN`, or a numeric
+  attachment count
 - Within Jira-authored description and comment body content, useful formatting
   is preserved and, outside fenced code blocks, no rendered body line begins
   with Markdown heading markers such as `# `, `## `, or `### `
 - For each rendered parent comment, subtask, linked issue, or `Not retrieved`
   placeholder, the required nested headings and fields from the template appear
   exactly once
-- `## Acceptance Criteria` follows the precedence and merge rules defined above
+- `## Acceptance Criteria` follows the precedence and extraction rules defined above
 - `## Retrieval Warnings` is `_None_` on full success, or lists every warning
   on partial success
 - Any partial comment retrieval warning has a matching terminal marker in the
@@ -275,10 +282,10 @@ Failure category: <NONE | BAD_INPUT | NOT_FOUND | AUTH | TOOLS_MISSING | RATE_LI
 File written: <docs/<TICKET_KEY>.md | None>
 Ticket: <TICKET_KEY>: <Summary/Title | Unknown>
 Status: <status | Unknown> | Type: <type | Unknown>
-Comments: <retrieved>/<found>
-Subtasks: <retrieved>/<found | UNKNOWN>
-Linked issues: <retrieved>/<found | UNKNOWN>
-Attachments: <N>
+Comments: <retrieved>/<found | N/A>
+Subtasks: <retrieved>/<found | UNKNOWN | N/A>
+Linked issues: <retrieved>/<found | UNKNOWN | N/A>
+Attachments: <N | N/A>
 Warnings: <None | semicolon-separated warnings>
 Reason: <None | fatal reason>
 ```
@@ -291,9 +298,11 @@ parent ticket. When discovery yields a verified zero, use `0/0`. When the
 parent ticket was retrieved but discovery for `Subtasks` or `Linked issues`
 could not be verified, use `<retrieved>/UNKNOWN`, record a warning, and
 treat the run as `FETCH: PARTIAL`. When the parent ticket was not retrieved
-(for example, `Failure category: NOT_FOUND` before any snapshot), discovery
-for related items did not run; use `N/A` for `Subtasks` and `Linked issues`
-instead of `0/0` or `<retrieved>/UNKNOWN`.
+(for example, `Failure category: NOT_FOUND` before any snapshot), parent
+comment retrieval and related-item discovery did not run; use `N/A` for
+`Comments`, `Subtasks`, and `Linked issues` instead of `0/0` or
+`<retrieved>/UNKNOWN`. For `Attachments`, report the number of rows under
+`## Attachments`; use `N/A` when the parent ticket was not retrieved.
 
 <example>
 FETCH: PASS
@@ -332,10 +341,10 @@ Failure category: NOT_FOUND
 File written: None
 Ticket: PROJ-892: Unknown
 Status: Unknown | Type: Unknown
-Comments: 0/0
+Comments: N/A
 Subtasks: N/A
 Linked issues: N/A
-Attachments: 0
+Attachments: N/A
 Warnings: None
 Reason: Jira ticket PROJ-892 was not found (404)
 </example>
@@ -367,7 +376,8 @@ Use these categories so the calling skill can make a clean decision:
 - `FETCH: FAIL` with `Failure category: RATE_LIMIT` when rate limiting persists
   after the retry budget is exhausted
 - `FETCH: PARTIAL` when the main artifact is valid but some related items or
-  comments could not be retrieved; use `Failure category: NONE`
+  comments could not be retrieved, or subtask or linked-issue discovery could
+  not be verified; use `Failure category: NONE`
 - `FETCH: ERROR` with `Failure category: UNEXPECTED` for crashes, schema/tool
   failures, validation failures after the repair loop, or environment issues
   outside the expected categories
