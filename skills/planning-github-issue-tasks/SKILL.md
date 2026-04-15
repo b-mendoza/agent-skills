@@ -207,6 +207,8 @@ re-plan rules require it.
    - If `RE_PLAN=true`, read `./references/re-plan-cycle.md`, determine the
      earliest affected stage, and resume from that point using the on-disk
      artifacts from the prior run.
+   - Stop after 3 critique-driven re-plan iterations and escalate instead of
+     looping indefinitely.
    - Start at **Stage 1** when the critique changes issue interpretation,
      scope, assumptions, or task decomposition.
    - Start at **Stage 2** when the stage 1 task content is still valid but
