@@ -184,11 +184,32 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42` (the subagent derives `
    - None
 
 4. Report:
-   "Phase 4 complete for `acme/app#42` (`acme-app-42`).
-   `docs/acme-app-42-tasks.md` now satisfies the GitHub Task Issues handoff.
-   Write model: linked issues (native sub-issues not available in this environment).
-   1 task was already linked and 3 issues were created now.
-   No implementation has started."
+
+   Parent: acme/app#42
+   ISSUE_SLUG: acme-app-42
+   Plan file: docs/acme-app-42-tasks.md
+   Write model: linked-issue
+   Capability: native sub-issue REST unavailable; gh-sub-issue not installed
+   Tasks in plan: 4
+   Already linked: 1
+   Created now: 3
+   Failed creates: 0
+
+   Created/Linked Task Issues:
+   | Task | Issue ref | Title | Write model | Dependencies | Priority | Outcome |
+   | ---- | --------- | ----- | ----------- | ------------ | -------- | ------- |
+   | 1    | acme/app#100 | Task 1: Set up schema | linked-issue | None | High | Already linked |
+   | 2    | acme/app#101 | Task 2: Implement API layer | linked-issue | 1 | High | Created now |
+   | 3    | acme/app#102 | Task 3: Add integration tests | linked-issue | 2 | Medium | Created now |
+   | 4    | acme/app#103 | Task 4: Update docs | linked-issue | None | Medium | Created now |
+
+   Warnings:
+   - None
+
+   Failures:
+   - None
+
+   No implementation has started.
 </example>
 
 ## Escalation

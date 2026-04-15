@@ -181,10 +181,29 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
    - None
 
 4. Report:
-   "Phase 4 complete for `PROJ-123`.
-   `docs/PROJ-123-tasks.md` now maps all 4 tasks to Jira subtasks.
-   1 task was already linked and 3 subtasks were created now.
-   No implementation has started."
+
+   Parent: PROJ-123
+   Plan file: docs/PROJ-123-tasks.md
+   Tasks in plan: 4
+   Already linked: 1
+   Created now: 3
+   Failed creates: 0
+
+   Created/Linked Subtasks:
+   | Task | Subtask Key | Title | Dependencies | Priority | Outcome |
+   | ---- | ----------- | ----- | ------------ | -------- | ------- |
+   | 1    | PROJ-200    | Task 1: Set up schema | None | High | Already linked |
+   | 2    | PROJ-201    | Task 2: Implement API layer | 1 | High | Created now |
+   | 3    | PROJ-202    | Task 3: Add integration tests | 2 | Medium | Created now |
+   | 4    | PROJ-203    | Task 4: Update docs | None | Medium | Created now |
+
+   Warnings:
+   - None
+
+   Failures:
+   - None
+
+   No implementation has started.
 </example>
 
 ## Escalation
