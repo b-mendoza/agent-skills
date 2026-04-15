@@ -1,6 +1,6 @@
 ---
 name: "creating-jira-subtasks"
-description: 'Phase 4 of the orchestrating-jira-workflow pipeline. Use after the task plan has been clarified and the user has explicitly approved Jira writes. This skill reads only its bundled files, dispatches the `subtask-creator` subagent with `JIRA_URL`, and returns a concise phase summary after Jira subtasks are created or reconciled and `docs/<TICKET_KEY>-tasks.md` is updated with the Phase 4 handoff contract.'
+description: 'Phase 4 skill for clarified Jira task plans. Use after the task plan has been clarified and the user has explicitly approved Jira writes. This skill reads only its bundled files, dispatches the `subtask-creator` subagent with `JIRA_URL`, and returns a concise phase summary after Jira subtasks are created or reconciled and `docs/<TICKET_KEY>-tasks.md` is updated with the Phase 4 output contract.'
 ---
 
 # Creating Jira Subtasks
@@ -75,6 +75,10 @@ docs/<TICKET_KEY>-tasks.md
 For the complete standalone input contract, output contract, and summary-field
 definitions, read `./references/phase-4-io-contracts.md`.
 
+That bundled reference file is the authoritative local I/O contract for this
+skill. Placement and repair rules remain defined in the subagent. Do not rely
+on any out-of-band spec document to run Phase 4.
+
 The short version:
 
 - The plan is expected to contain numbered `## Task <N>:` sections under
@@ -83,8 +87,8 @@ The short version:
 - A missing `## Decisions Log` downgrades the run to `SUBTASKS: WARN` rather
   than blocking it.
 - Successful Phase 4 output is still the validated presence of `## Jira
-  Subtasks` plus `Jira Subtask: <KEY>` lines in linked task sections, per
-  `./references/phase-4-io-contracts.md`.
+  Subtasks` with the required workflow table, plus `Jira Subtask: <KEY | Not
+  Created>` lines in task sections, per `./references/phase-4-io-contracts.md`.
 
 ## Execution Steps
 
@@ -104,9 +108,9 @@ Handle the returned summary this way:
 
 - `SUBTASKS: PASS` with `Validation: PASS`: report success and proceed.
 - `SUBTASKS: WARN` with `Validation: PASS`: report partial success or degraded
-  input clearly. Phase 4 may still be usable if the plan file now contains
-  valid Jira keys, but make failed tasks visible so the user can retry before
-  executing them.
+  input clearly. Phase 4 may still be usable if the plan file now satisfies the
+  local Phase 4 output contract, but make failed tasks visible so the user can
+  retry before executing them.
 - `SUBTASKS: BLOCKED`: stop and relay the artifact or data-shape problem. This
   usually means the plan is missing, malformed, or contains unsafe existing
   Jira links that need manual correction.

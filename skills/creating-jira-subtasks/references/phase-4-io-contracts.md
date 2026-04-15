@@ -22,11 +22,11 @@ docs/<TICKET_KEY>-tasks.md
 
 For normal Phase 4 execution, the plan is expected to contain:
 
-| Expected section / element                          | Produced by            | Why it matters                               |
-| --------------------------------------------------- | ---------------------- | -------------------------------------------- |
-| `## Tasks` with numbered `## Task <N>:` headings    | planning-jira-tasks    | Each task maps to one Jira subtask           |
-| `## Execution Order Summary`                        | planning-jira-tasks    | Preserves task ordering context              |
-| `## Decisions Log`                                  | clarifying-assumptions | Indicates critique is complete before Jira writes |
+| Expected section / element                          | Produced by                    | Why it matters                               |
+| --------------------------------------------------- | ------------------------------ | -------------------------------------------- |
+| `## Tasks` with numbered `## Task <N>:` headings    | Upstream planning phase        | Each task maps to one Jira subtask           |
+| `## Execution Order Summary`                        | Upstream planning phase        | Preserves task ordering context              |
+| `## Decisions Log`                                  | Clarification / critique phase | Indicates critique is complete before Jira writes |
 
 The parent orchestrator is responsible for validating the normal Phase 4
 precondition before this skill runs. If this skill is used standalone and the
@@ -46,12 +46,12 @@ After successful or partial Phase 4 completion, the plan file must include:
 
 | Addition | Consumed by | Purpose |
 | -------- | ----------- | ------- |
-| `## Jira Subtasks` section with workflow table | artifact-validator, progress-tracker, executing-jira-task (later) | Phase 4 postcondition; resumable linkage |
-| Exactly one `Jira Subtask: …` line per numbered task section (immediately after the task heading) | artifact-validator, downstream execution | Per-task inline reference required for every row |
+| `## Jira Subtasks` section with workflow table | Downstream validation, progress tracking, and task execution phases | Phase 4 postcondition; resumable linkage |
+| Exactly one `Jira Subtask: …` line per numbered task section (immediately after the task heading) | Downstream validation and execution | Per-task inline reference required for every row |
 
 ### Workflow table (required)
 
-Use the table shape in `./subagents/subtask-creator-templates.md` (`Plan File
+Use the table shape in `../subagents/subtask-creator-templates.md` (`Plan File
 Fragments`). Column semantics:
 
 | Column | Allowed values / notes |
@@ -64,6 +64,10 @@ Fragments`). Column semantics:
 | Priority | From plan or `Unknown` |
 
 Exactly **one row per** parsed `## Task <N>:` section.
+
+This plan-file workflow table is intentionally different from the structured
+summary table returned by the subagent. The artifact table records current Jira
+`Status`; the summary table records Phase 4 `Outcome`.
 
 ### Per-task inline reference (required)
 
@@ -93,6 +97,7 @@ The subagent returns a structured summary with:
 - `Plan file: <path | not updated>`
 - Counts: tasks in plan, already linked, created now, failed creates
 - `Decisions Log: PRESENT | MISSING`
+- `Reason: <one line>`
 - `Created/Linked Subtasks:` markdown table with **Task**, **Subtask Key**,
   **Title**, **Dependencies**, **Priority**, **Outcome**
 - Explicit `Warnings:` and `Failures:` sections
@@ -101,6 +106,10 @@ Treat `SUBTASKS: ERROR` as an unexpected tool or environment failure. The
 coordinator stops and surfaces the reason instead of interpreting the run as a
 degraded success.
 
-The `Created/Linked Subtasks` table is the handoff the parent workflow uses
-for `progress-tracker` (`TASKS` on Phase 4 completion). Preserve **Dependencies**
-and **Priority** columns for every row.
+When the run stops before plan updates or create attempts complete,
+`Created/Linked Subtasks` may be header-only. This is still contract-valid for
+early `BLOCKED`, `FAIL`, or `ERROR` exits.
+
+The `Created/Linked Subtasks` table is the handoff downstream progress tracking
+uses on Phase 4 completion. Preserve **Dependencies** and **Priority** columns
+for every row.

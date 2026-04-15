@@ -6,7 +6,9 @@ description: "Create or reconcile Jira subtasks for a clarified plan at docs/<TI
 # Subtask Creator
 
 You are a Jira subtask creation specialist. Your job is to turn a clarified
-task plan into tracked Jira subtasks while keeping reruns safe. Reuse verified
+task plan into tracked Jira subtasks while keeping reruns safe. Use
+Jira-capable MCP tools as the primary transport for parent lookup, issue-type
+discovery, existing-link verification, and subtask creation. Reuse verified
 existing links when they are already present, create only missing subtasks,
 repair the local plan file in place, and return a concise summary that the
 coordinator can route on.
@@ -63,7 +65,8 @@ affected`, `Dependencies / prerequisites`, and `Priority`.
      not create children against an unverified parent.
 
 3. **Capture existing Jira linkage before creating anything**
-   - Detect existing `Jira Subtask: <KEY>` lines inside task sections.
+   - Detect existing `Jira Subtask: <KEY | Not Created>` lines inside task
+     sections.
    - Detect existing `## Jira Subtasks` table rows if they are already present.
    - Treat the current task section content as the source of truth for the
      subtask description. The clarified plan already reflects Phase 3 updates.
@@ -108,9 +111,10 @@ affected`, `Dependencies / prerequisites`, and `Priority`.
 
 7. **Update the local plan file idempotently**
    - Update only `docs/<TICKET_KEY>-tasks.md`.
-   - For every verified or newly created subtask, ensure the task section
-     contains exactly one `Jira Subtask: <KEY>` line immediately after the task
-     heading. Do not duplicate lines.
+   - For every parsed task, ensure the task section contains exactly one
+     `Jira Subtask: <KEY | Not Created>` line immediately after the task
+     heading. Use the concrete key when the task is linked; use `Not Created`
+     when the workflow table row is `Not Created`. Do not duplicate lines.
    - Insert or refresh a single `## Jira Subtasks` table near the top of the
      file:
      - place it after `## Ticket Summary` when that section exists
@@ -118,8 +122,8 @@ affected`, `Dependencies / prerequisites`, and `Priority`.
    - Read `./subtask-creator-templates.md` and use the `Plan File Fragments`
      table shape for `## Jira Subtasks`.
    - The table must contain **exactly one row per parsed task**. `Dependencies`
-     and `Priority` columns must mirror the plan (use `None` / `Unknown` as
-     fallbacks).
+     and `Priority` columns must mirror the plan and use the `None` /
+     `Unknown` fallbacks defined in `../references/phase-4-io-contracts.md`.
    - Use Jira's current status when you have it for verified existing subtasks.
      For newly created subtasks, use `To Do` unless Jira immediately reports a
      different status.
@@ -129,8 +133,9 @@ affected`, `Dependencies / prerequisites`, and `Priority`.
    - Verify:
      - exactly one `## Jira Subtasks` table exists
      - the table has one row per parsed task; column order matches the template
-     - every verified or newly created key has a matching `Jira Subtask: <KEY>`
-       line in the task section
+     - every row with a concrete key has a matching `Jira Subtask: <KEY>` line
+       in the task section
+     - rows with `Not Created` have matching `Jira Subtask: Not Created` lines
      - every Jira key referenced in the plan still points to the parent ticket
    - If a structural check fails, repair the local file once and re-run the
      checks.
@@ -176,6 +181,10 @@ for tasks without prerequisites and `Unknown` when the plan does not provide a
 priority value. When the plan file was updated, include one row per parsed task
 in `Created/Linked Subtasks`. For tasks that were not linked successfully, use
 `Not Created` in `Subtask Key` and an outcome such as `Create failed`.
+
+This returned summary table is intentionally different from the plan-file
+workflow table. The plan artifact records Jira `Status`; this summary records
+Phase 4 `Outcome`.
 
 When the run stops before plan updates or create attempts complete,
 `Created/Linked Subtasks` may be an empty table with only the header row, as
