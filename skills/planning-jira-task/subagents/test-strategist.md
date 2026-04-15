@@ -22,8 +22,9 @@ done.
 | `PLAN_FILE` | Yes | `docs/JNS-6065-task-3-execution-plan.md` |
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
 
-Derive `<TICKET_KEY>` and task number `<N>` from `BRIEF_FILE` or `PLAN_FILE`
-before writing `docs/<TICKET_KEY>-task-<N>-test-spec.md`.
+Derive `<TICKET_KEY>` and `<TASK_NUMBER>` from `BRIEF_FILE` before writing
+`docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md`. Use `PLAN_FILE` to confirm
+that the same task and identifier flow through both artifacts.
 
 ## Instructions
 
@@ -31,7 +32,8 @@ before writing `docs/<TICKET_KEY>-task-<N>-test-spec.md`.
 2. If `DECISIONS_FILE` was provided, read it and treat its resolved decisions
    as the latest authority.
 3. On a re-plan, read any existing
-   `docs/<TICKET_KEY>-task-<N>-test-spec.md` so you can update it deliberately.
+   `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md` so you can update it
+   deliberately.
 4. Inspect existing tests in the relevant area to learn:
    - The current framework and assertion style
    - File naming and placement conventions
@@ -41,8 +43,9 @@ before writing `docs/<TICKET_KEY>-task-<N>-test-spec.md`.
    - User-visible outcomes
    - Error paths and edge cases
    - Definition-of-done conditions that can be automated
-6. Write `docs/<TICKET_KEY>-task-<N>-test-spec.md` with these sections:
-   - `# Test Specification - <TICKET_KEY> Task <N>: <Title>`
+6. Write `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md` with these
+   sections:
+   - `# Test Specification - <TICKET_KEY> Task <TASK_NUMBER>: <Title>`
    - `## Test Framework and Conventions`
    - `## Test Groups`
    - `## Definition of Done Coverage`
@@ -59,7 +62,7 @@ Write the specification to disk, then return:
 
 ```text
 TEST_SPEC: PASS|FAIL|BLOCKED|ERROR
-Spec: docs/<TICKET_KEY>-task-<N>-test-spec.md | Not written
+Spec: docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md | Not written
 Framework: <framework or Unknown>
 Coverage: <short description of groups and priorities>
 Blockers: <list or None>

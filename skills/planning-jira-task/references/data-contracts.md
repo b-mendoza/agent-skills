@@ -11,9 +11,9 @@ Required file:
 
 - `docs/<TICKET_KEY>-tasks.md`
 
-Required content inside that file for `TASK_NUMBER=<N>`:
+Required content inside that file for `TASK_NUMBER`:
 
-- `## Task <N>:` section exists
+- `## Task <TASK_NUMBER>:` section exists
 - Task title exists
 - `Objective` content exists
 - `Relevant requirements and context` content exists
@@ -41,7 +41,8 @@ Optional upstream context:
 
 - `docs/<TICKET_KEY>.md` may provide extra ticket snapshot context if a
   subagent needs it
-- `docs/<TICKET_KEY>-task-<N>-decisions.md` is available on critique-driven
+- `docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md` is available on
+  critique-driven
   re-plan cycles (produced by the critique step)
 - Per-task lines or notes that reference a Jira subtask (for example
   `Jira Subtask: <KEY>` lines) may already be present from an earlier
@@ -50,13 +51,13 @@ Optional upstream context:
 
 ## Downstream Artifacts
 
-### `docs/<TICKET_KEY>-task-<N>-brief.md`
+### `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md`
 
 Owner: `execution-prepper`
 
 Must contain:
 
-- `# Execution Brief - <TICKET_KEY> Task <N>: <Title>`
+- `# Execution Brief - <TICKET_KEY> Task <TASK_NUMBER>: <Title>`
 - `## Objective`
 - `## Relevant Requirements and Context`
 - `## Implementation Notes`
@@ -65,13 +66,13 @@ Must contain:
 - `## Resolved Questions and Decisions`
 - `## Constraints`
 
-### `docs/<TICKET_KEY>-task-<N>-execution-plan.md`
+### `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md`
 
 Owner: `execution-planner`
 
 Must contain:
 
-- `# Execution Plan - <TICKET_KEY> Task <N>: <Title>`
+- `# Execution Plan - <TICKET_KEY> Task <TASK_NUMBER>: <Title>`
 - `## Codebase Summary`
 - `## Recommended Skills`
 - `## Implementation Approach`
@@ -80,26 +81,26 @@ Must contain:
 - `## User Impact Assessment`
 - `## Blockers / Ambiguities`
 
-### `docs/<TICKET_KEY>-task-<N>-test-spec.md`
+### `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md`
 
 Owner: `test-strategist`
 
 Must contain:
 
-- `# Test Specification - <TICKET_KEY> Task <N>: <Title>`
+- `# Test Specification - <TICKET_KEY> Task <TASK_NUMBER>: <Title>`
 - `## Test Framework and Conventions`
 - `## Test Groups`
 - `## Definition of Done Coverage`
 - `## Notes for Task Executor`
 - `## Blockers / Ambiguities`
 
-### `docs/<TICKET_KEY>-task-<N>-refactoring-plan.md`
+### `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md`
 
 Owner: `refactoring-advisor`
 
 Must contain:
 
-- `# Refactoring Recommendation - <TICKET_KEY> Task <N>: <Title>`
+- `# Refactoring Recommendation - <TICKET_KEY> Task <TASK_NUMBER>: <Title>`
 - `## Verdict`
 - `## Before Implementation`
 - `## During Implementation`

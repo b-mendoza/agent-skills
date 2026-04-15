@@ -33,8 +33,17 @@ Use `ISSUE_SLUG` and `TASK_NUMBER` as the only task identity inputs. Write only
 1. Read `docs/<ISSUE_SLUG>-tasks.md`.
 2. Locate `## Task <TASK_NUMBER>:`. If it is missing, report `BLOCKED`.
 3. Validate task readiness:
-   - The task has dependency information.
-   - The task has priority information.
+   - The task has a title.
+   - The task has `Objective` content.
+   - The task has `Relevant requirements and context` content.
+   - The task has `Implementation notes` content.
+   - The task has `Definition of done` content.
+   - The task has `Likely files / artifacts affected` content.
+   - The task has `Dependencies / prerequisites` content, even if the value is
+     `None`.
+   - The task has `Priority` content.
+   - The task has `Questions to answer before starting` content, even if the
+     value is `None`.
    - Every dependency listed for this task is already marked complete.
    - Questions are resolved, explicitly waived, or recorded as a conscious
      follow-up decision.
@@ -44,7 +53,7 @@ Use `ISSUE_SLUG` and `TASK_NUMBER` as the only task identity inputs. Write only
 6. If an existing `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-brief.md` file exists on
    a re-plan, read it so you can update it instead of rebuilding blindly.
 7. Write `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-brief.md` with these sections:
-   - `# Execution Brief - <ISSUE_SLUG> Task <N>: <Title>`
+   - `# Execution Brief - <ISSUE_SLUG> Task <TASK_NUMBER>: <Title>`
    - `## Objective`
    - `## Relevant Requirements and Context`
    - `## Implementation Notes`

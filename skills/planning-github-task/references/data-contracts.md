@@ -11,9 +11,9 @@ Required file:
 
 - `docs/<ISSUE_SLUG>-tasks.md`
 
-Required content inside that file for `TASK_NUMBER=<N>`:
+Required content inside that file for `TASK_NUMBER`:
 
-- `## Task <N>:` section exists
+- `## Task <TASK_NUMBER>:` section exists
 - Task title exists
 - `Objective` content exists
 - `Relevant requirements and context` content exists
@@ -41,7 +41,8 @@ Optional upstream context:
 
 - `docs/<ISSUE_SLUG>.md` may provide extra issue snapshot context if a subagent
   needs it
-- `docs/<ISSUE_SLUG>-task-<N>-decisions.md` is available on critique-driven
+- `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-decisions.md` is available on
+  critique-driven
   re-plan cycles (produced by the critique step)
 - Per-task lines or notes that reference a GitHub task issue (for example child
   issue URLs or numbers) may already be present from an earlier task-linking
@@ -50,13 +51,13 @@ Optional upstream context:
 
 ## Downstream Artifacts
 
-### `docs/<ISSUE_SLUG>-task-<N>-brief.md`
+### `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-brief.md`
 
 Owner: `execution-prepper`
 
 Must contain:
 
-- `# Execution Brief - <ISSUE_SLUG> Task <N>: <Title>`
+- `# Execution Brief - <ISSUE_SLUG> Task <TASK_NUMBER>: <Title>`
 - `## Objective`
 - `## Relevant Requirements and Context`
 - `## Implementation Notes`
@@ -65,13 +66,13 @@ Must contain:
 - `## Resolved Questions and Decisions`
 - `## Constraints`
 
-### `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md`
+### `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-execution-plan.md`
 
 Owner: `execution-planner`
 
 Must contain:
 
-- `# Execution Plan - <ISSUE_SLUG> Task <N>: <Title>`
+- `# Execution Plan - <ISSUE_SLUG> Task <TASK_NUMBER>: <Title>`
 - `## Codebase Summary`
 - `## Recommended Skills`
 - `## Implementation Approach`
@@ -80,26 +81,26 @@ Must contain:
 - `## User Impact Assessment`
 - `## Blockers / Ambiguities`
 
-### `docs/<ISSUE_SLUG>-task-<N>-test-spec.md`
+### `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-test-spec.md`
 
 Owner: `test-strategist`
 
 Must contain:
 
-- `# Test Specification - <ISSUE_SLUG> Task <N>: <Title>`
+- `# Test Specification - <ISSUE_SLUG> Task <TASK_NUMBER>: <Title>`
 - `## Test Framework and Conventions`
 - `## Test Groups`
 - `## Definition of Done Coverage`
 - `## Notes for Task Executor`
 - `## Blockers / Ambiguities`
 
-### `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md`
+### `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-refactoring-plan.md`
 
 Owner: `refactoring-advisor`
 
 Must contain:
 
-- `# Refactoring Recommendation - <ISSUE_SLUG> Task <N>: <Title>`
+- `# Refactoring Recommendation - <ISSUE_SLUG> Task <TASK_NUMBER>: <Title>`
 - `## Verdict`
 - `## Before Implementation`
 - `## During Implementation`

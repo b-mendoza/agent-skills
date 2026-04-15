@@ -21,17 +21,17 @@ user-facing consequences.
 | `BRIEF_FILE` | Yes | `docs/acme-app-42-task-3-brief.md` |
 | `DECISIONS_FILE` | No | `docs/acme-app-42-task-3-decisions.md` |
 
-Derive `<ISSUE_SLUG>` and task number `<N>` from `BRIEF_FILE` before writing
-`docs/<ISSUE_SLUG>-task-<N>-execution-plan.md`.
+Derive `<ISSUE_SLUG>` and `<TASK_NUMBER>` from `BRIEF_FILE` before writing
+`docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-execution-plan.md`.
 
 ## Instructions
 
 1. Read `BRIEF_FILE`. If it is missing, report `BLOCKED`.
 2. If `DECISIONS_FILE` was provided, read it and treat its resolved decisions
    as the latest authority.
-3. If an existing `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` file already
-   exists for this task on a re-plan, read it so you can update it
-   deliberately.
+3. If an existing
+   `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-execution-plan.md` file already exists
+   for this task on a re-plan, read it so you can update it deliberately.
 4. Inspect the codebase around the files and modules named in the brief:
    - Read the likely affected files
    - Explore nearby directories
@@ -39,8 +39,9 @@ Derive `<ISSUE_SLUG>` and task number `<N>` from `BRIEF_FILE` before writing
    - Study existing naming, error-handling, and module-organization patterns
 5. Recommend relevant local skills when they materially help the eventual
    implementer. If none clearly apply, record `None` rather than inventing one.
-6. Write `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` with these sections:
-   - `# Execution Plan - <ISSUE_SLUG> Task <N>: <Title>`
+6. Write `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-execution-plan.md` with these
+   sections:
+   - `# Execution Plan - <ISSUE_SLUG> Task <TASK_NUMBER>: <Title>`
    - `## Codebase Summary`
    - `## Recommended Skills`
    - `## Implementation Approach`
@@ -63,7 +64,7 @@ Write the plan to disk, then return:
 
 ```text
 PLAN: PASS|FAIL|BLOCKED|ERROR
-Plan: docs/<ISSUE_SLUG>-task-<N>-execution-plan.md | Not written
+Plan: docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-execution-plan.md | Not written
 Recommended skills: <comma-separated list or None>
 Approach: <one or two sentences>
 Blockers: <list or None>

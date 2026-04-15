@@ -23,8 +23,8 @@ harder or riskier to implement.
 | `TEST_SPEC_FILE` | Yes | `docs/acme-app-42-task-3-test-spec.md` |
 | `DECISIONS_FILE` | No | `docs/acme-app-42-task-3-decisions.md` |
 
-Derive `<ISSUE_SLUG>` and task number `<N>` from the planning artifact paths
-before writing `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md`.
+Derive `<ISSUE_SLUG>` and `<TASK_NUMBER>` from the planning artifact paths
+before writing `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-refactoring-plan.md`.
 
 ## Instructions
 
@@ -33,8 +33,8 @@ before writing `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md`.
 2. If `DECISIONS_FILE` was provided, read it and treat its resolved decisions as
    the latest authority.
 3. On a re-plan, read any existing
-   `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` so you can update it
-   deliberately.
+   `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-refactoring-plan.md` so you can update
+   it deliberately.
 4. Inspect the files named in the execution plan's file-level strategy.
 5. Recommend refactoring only when it meets all of these conditions:
    - It directly affects the area being changed for this task
@@ -45,8 +45,9 @@ before writing `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md`.
    - `Before` - required before implementation starts
    - `During` - safe to do while implementing the task
    - `Out of Scope` - worth capturing for later, but not part of this task
-7. Write `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` with these sections:
-   - `# Refactoring Recommendation - <ISSUE_SLUG> Task <N>: <Title>`
+7. Write `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-refactoring-plan.md` with these
+   sections:
+   - `# Refactoring Recommendation - <ISSUE_SLUG> Task <TASK_NUMBER>: <Title>`
    - `## Verdict`
    - `## Before Implementation`
    - `## During Implementation`
@@ -66,7 +67,7 @@ Write the recommendation to disk, then return:
 
 ```text
 REFACTORING: PASS|FAIL|BLOCKED|ERROR
-Plan: docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md | Not written
+Plan: docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-refactoring-plan.md | Not written
 Verdict: <Refactor before | Refactor during | No refactoring needed>
 Summary: <one concise line>
 Blockers: <list or None>
