@@ -240,8 +240,9 @@ After writing the file, re-read it and verify:
   `## Retrieval Warnings`, and the summary reports `<retrieved>/UNKNOWN`
   instead of `0/0`
 - On `FETCH: FAIL` when the parent issue was never retrieved, the summary
-  uses `N/A` for `Child issues` and `Linked issues` (discovery did not run),
-  not `0/UNKNOWN`
+  uses `N/A` for `Comments`, `Child issues`, `Linked issues`, and `Attachments`
+  (parent read and downstream sections did not run), not `0/0`, `0/UNKNOWN`, or
+  a numeric attachment count
 - `## Labels`, `## Assignees`, `## Milestone`, and `## Attachments` are either
   `_None_` or valid content matching the template's rules
 - `## Projects` is either `_None_`, the template's unknown marker, or valid
@@ -269,9 +270,10 @@ Failure category: <NONE | BAD_INPUT | NOT_FOUND | AUTH | TOOLS_MISSING | RATE_LI
 File written: <docs/<ISSUE_SLUG>.md | None>
 Issue: <owner>/<repo>#<N>: <Title | Unknown>
 State: <OPEN | CLOSED | Unknown>
-Comments: <retrieved>/<found>
-Child issues: <retrieved>/<found | UNKNOWN>
-Linked issues: <retrieved>/<found | UNKNOWN>
+Comments: <retrieved>/<found | N/A>
+Child issues: <retrieved>/<found | UNKNOWN | N/A>
+Linked issues: <retrieved>/<found | UNKNOWN | N/A>
+Attachments: <N | N/A>
 Warnings: <None | semicolon-separated warnings>
 Reason: <None | fatal reason>
 ```
@@ -282,14 +284,16 @@ snapshot. For `Comments`, counts refer to parent comments. For `Child issues`
 and `Linked issues`, counts refer to related item identities discovered on the
 parent issue (or timeline). Use `0/0` only when the retriever positively
 verified that no items exist. When the parent issue was not retrieved (for
-example, `Failure category: NOT_FOUND` before any snapshot), discovery for
-related items did not run; use `N/A` for `Child issues` and `Linked issues`
-instead of `0/0` or `0/UNKNOWN`. If discovery could not be verified for a
-related section after the parent was retrieved, use `<retrieved>/UNKNOWN`,
-record a warning, and treat the run as `FETCH: PARTIAL`. Apply the same
-explicit-partial rule when `## Projects` cannot be verified because the
-required GitHub capability is unavailable: render the template's unknown
-marker, record the warning, and do not collapse that state to `_None_`.
+example, `Failure category: NOT_FOUND` before any snapshot), parent comment
+retrieval and related-item discovery did not run; use `N/A` for `Comments`,
+`Child issues`, and `Linked issues` instead of `0/0` or `0/UNKNOWN`. For
+`Attachments`, report the number of entries rendered under `## Attachments`;
+use `N/A` when the parent issue was not retrieved. If discovery could not be
+verified for a related section after the parent was retrieved, use
+`<retrieved>/UNKNOWN`, record a warning, and treat the run as `FETCH: PARTIAL`.
+Apply the same explicit-partial rule when `## Projects` cannot be verified
+because the required GitHub capability is unavailable: render the template's
+unknown marker, record the warning, and do not collapse that state to `_None_`.
 
 <example>
 FETCH: PASS
@@ -301,6 +305,7 @@ State: OPEN
 Comments: 4/4
 Child issues: 0/0
 Linked issues: 1/1
+Attachments: 0
 Warnings: None
 Reason: None
 </example>
@@ -315,6 +320,7 @@ State: OPEN
 Comments: 2/2
 Child issues: 0/UNKNOWN
 Linked issues: 1/1
+Attachments: 0
 Warnings: Child issue discovery unavailable: sub_issues endpoint unsupported on this host
 Reason: None
 </example>
@@ -326,9 +332,10 @@ Failure category: NOT_FOUND
 File written: None
 Issue: acme/app#892: Unknown
 State: Unknown
-Comments: 0/0
+Comments: N/A
 Child issues: N/A
 Linked issues: N/A
+Attachments: N/A
 Warnings: None
 Reason: GitHub issue acme/app#892 was not found (404)
 </example>

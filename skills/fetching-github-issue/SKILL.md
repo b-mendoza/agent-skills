@@ -1,6 +1,6 @@
 ---
 name: "fetching-github-issue"
-description: 'Phase 1 of `orchestrating-github-workflow`: retrieve a GitHub issue into a stable Markdown snapshot for downstream workflow phases. Use this as a workflow phase when an issue URL or owner/repo/number needs to become `docs/<ISSUE_SLUG>.md` with predictable headings for metadata, description, acceptance criteria, comments, child issues, linked issues, labels, assignees, and optional milestone/projects/attachments. Primary transport is the GitHub CLI (`gh`). This skill coordinates retrieval only: it does not modify GitHub state beyond read-only queries, create branches, or start implementation.'
+description: 'Phase 1 of `orchestrating-github-workflow`: retrieve a GitHub issue into a stable Markdown snapshot for downstream workflow phases. Use this as a workflow phase, not as a standalone implementation skill, when an issue URL or owner/repo/number needs to become `docs/<ISSUE_SLUG>.md` with predictable headings for metadata, description, acceptance criteria, comments, child issues, linked issues, labels, assignees, and optional milestone/projects/attachments. Primary transport is the GitHub CLI (`gh`). This skill coordinates retrieval only: it does not modify GitHub state beyond read-only queries, create branches, or start implementation.'
 ---
 
 # Fetching GitHub Issue
@@ -100,16 +100,20 @@ Validation is reported separately:
 - `Validation: FAIL` -> the file was written but still violates the contract
 - `Validation: NOT_RUN` -> retrieval failed before validation could happen
 
-For related-item count lines in the summary:
+For count lines in the summary:
 
-- `0/0` means the retriever verified that no items exist
+- `0/0` (where that shape applies) means the retriever verified that no items
+  exist in that section
 - `<retrieved>/UNKNOWN` means the parent issue was retrieved but discovery
   for that section could not be verified; the retriever records a warning and
   treats the run as `FETCH: PARTIAL`
-- `N/A` for `Child issues` and `Linked issues` means the parent issue was not
-  retrieved and related-item discovery never ran (for example,
+- `N/A` for `Comments`, `Child issues`, or `Linked issues` means the parent
+  issue was not retrieved and those retrieval steps never ran (for example,
   `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` or
-  `<retrieved>/UNKNOWN` in that case.
+  `<retrieved>/UNKNOWN` in that case
+- `Attachments: <N>` is the number of entries under `## Attachments`; use
+  `Attachments: N/A` when the parent issue was not retrieved (that section was
+  not populated from a successful parent read)
 
 Failure categories are:
 
@@ -128,11 +132,10 @@ Handle them this way:
 - `FETCH: PARTIAL` with `Validation: PASS`: report success with warnings and
   make the incompleteness visible, including capability-unavailable
   `## Projects` cases
+- `Validation: FAIL`: stop and relay contract failure (any `FETCH`)
 - `FETCH: FAIL`: stop and relay the failure category plus the reason
 - `FETCH: ERROR`: stop and relay the failure category plus the reason as an
   unexpected failure
-- `Validation: FAIL` with `FETCH: ERROR`: stop and relay that the snapshot
-  contract was not met
 - Any inconsistent pairing, such as `FETCH: PASS` with `Validation: NOT_RUN`:
   treat it as `FETCH: ERROR` and stop
 
@@ -146,7 +149,10 @@ Using only the subagent's structured summary, tell the caller:
 - The file path written, when one exists
 - The issue identity (`Issue: <owner>/<repo>#<N>: <Title>`)
 - The issue state (`State: OPEN | CLOSED`)
-- Retrieved versus discovered counts for comments
+- Retrieved versus discovered counts for comments, or `N/A` when the parent
+  issue was not retrieved
+- The attachment entry count (`Attachments: <N>`), or `N/A` when the parent
+  issue was not retrieved
 - Retrieved versus discovered counts for child issues and linked issues, where
   the discovered total may be `UNKNOWN` when discovery could not be verified,
   or `N/A` when the parent issue was not retrieved and discovery never ran
@@ -252,14 +258,15 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42` -> `ISSUE_SLUG=acme-app
    Comments: 4/4
    Child issues: 0/0
    Linked issues: 1/1
+   Attachments: 0
    Warnings: None
    Reason: None
 
 4. Report:
    "Issue fetched to `docs/acme-app-42.md`.
    `acme/app#42: Implement dark mode toggle` is `OPEN`.
-   Retrieved 4/4 comments, 0/0 child issues, 1/1 linked issues. Retrieval only;
-   GitHub was not modified."
+   Retrieved 4/4 comments, 0/0 child issues, 1/1 linked issues, 0 attachments.
+   Retrieval only; GitHub was not modified."
 </example>
 
 <example>
@@ -278,13 +285,14 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/7001`
    Comments: 2/2
    Child issues: 0/UNKNOWN
    Linked issues: 1/1
+   Attachments: 0
    Warnings: Child issue discovery unavailable: sub_issues endpoint unsupported on this host
    Reason: None
 
 4. Report:
    "Issue fetched to `docs/acme-app-7001.md` with retrieval warnings.
    `acme/app#7001: Audit webhook retries` is `OPEN`.
-   Retrieved 2/2 comments, 0/UNKNOWN child issues, 1/1 linked issues.
+   Retrieved 2/2 comments, 0/UNKNOWN child issues, 1/1 linked issues, 0 attachments.
    Warning: Child issue discovery unavailable: sub_issues endpoint unsupported
    on this host.
    Retrieval only; GitHub was not modified."
