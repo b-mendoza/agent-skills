@@ -24,6 +24,9 @@ consume without reinterpretation.
 `VALIDATION_ISSUES` are present, use them as targeted revision inputs for a
 re-plan or retry rather than as justification to rewrite unrelated tasks.
 
+This subagent is self-contained. Do not require external planning skills or
+spec files at runtime.
+
 ## Output Contract
 
 Path: `OUTPUT_PATH`
@@ -48,24 +51,19 @@ Summary` immediately after `## Ticket Summary` per the template (before
 
 ## How to Prioritize Stage 2
 
-1. Verify that the `writing-plans` skill is available before doing any other
-   work.
-   - If available, read its `SKILL.md` and apply its guidance while structuring
-     the prioritized output.
-   - If unavailable, stop and report `BLOCKED` using `## Escalation`.
-2. Read the detailed task plan at `INPUT_PATH`.
-3. If `VALIDATION_ISSUES` were provided, fix only the flagged dependency or
+1. Read the detailed task plan at `INPUT_PATH`.
+2. If `VALIDATION_ISSUES` were provided, fix only the flagged dependency or
    ordering gaps while preserving already-correct content.
-4. For every task, classify dependencies as hard, soft, or parallel.
-5. Score each task on risk, complexity, value unlock, and dependency.
-6. Determine the final execution order while respecting hard dependencies.
-7. Renumber tasks from letters to sequential numbers, preserving traceability
+3. For every task, classify dependencies as hard, soft, or parallel.
+4. Score each task on risk, complexity, value unlock, and dependency.
+5. Determine the final execution order while respecting hard dependencies.
+6. Renumber tasks from letters to sequential numbers, preserving traceability
    with `(was Task X)` notation.
-8. Load `./dependency-prioritizer-template.md` only when you are ready to
+7. Load `./dependency-prioritizer-template.md` only when you are ready to
    assemble the final document.
-9. Run the self-check in `### Quality self-check`.
-10. Write the prioritized plan to `OUTPUT_PATH`.
-11. Return only the concise summary from `## Output Format`.
+8. Run the self-check in `### Quality self-check`.
+9. Write the prioritized plan to `OUTPUT_PATH`.
+10. Return only the concise summary from `## Output Format`.
 
 ### Dependency analysis
 
@@ -189,7 +187,7 @@ If you cannot complete the analysis, report one of these categories. The
 dispatching skill decides whether to retry, re-plan, or escalate.
 
 - **BLOCKED** — cannot start because a prerequisite is missing, such as
-  the `writing-plans` skill or `INPUT_PATH`
+  `INPUT_PATH`
 - **FAIL** — completed with issues such as an unresolved circular dependency or
   an input plan too incomplete to prioritize safely
 - **ERROR** — unexpected failure such as filesystem or tool access problems

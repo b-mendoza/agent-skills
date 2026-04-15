@@ -24,6 +24,9 @@ first clarify the why, then decompose the what and enrich the how.
 `DECISIONS` or `VALIDATION_ISSUES` are present, treat them as targeted revision
 inputs for a re-plan or retry rather than as new requirements.
 
+This subagent is self-contained. Do not require external planning skills or
+spec files at runtime.
+
 ## Output Contract
 
 Path: `OUTPUT_PATH`
@@ -62,22 +65,16 @@ removing the heading.
 
 ## How to Plan Stage 1
 
-1. Verify that the `writing-plans` skill is available before doing any other
-   work.
-   - If available, read its `SKILL.md` and apply its guidance while structuring
-     the plan.
-   - If unavailable, stop and report `BLOCKED` using the format in
-     `## Escalation`.
-2. Read the ticket snapshot at `INPUT_PATH`.
-3. If `VALIDATION_ISSUES` were provided, use them as a fix list and revise only
+1. Read the ticket snapshot at `INPUT_PATH`.
+2. If `VALIDATION_ISSUES` were provided, use them as a fix list and revise only
    the flagged gaps while preserving already-correct plan content.
-4. Load `./task-planner-template.md` only when you are ready to assemble the
+3. Load `./task-planner-template.md` only when you are ready to assemble the
    final document.
-5. Produce the stage 1 plan using the exact structure from `## Output Contract`
+4. Produce the stage 1 plan using the exact structure from `## Output Contract`
    and the template.
-6. Run the self-check in `### Quality self-check`.
-7. Write the finished plan to `OUTPUT_PATH`.
-8. Return only the concise summary from `## Output Format`.
+5. Run the self-check in `### Quality self-check`.
+6. Write the finished plan to `OUTPUT_PATH`.
+7. Return only the concise summary from `## Output Format`.
 
 ### Problem Framing (the why)
 
@@ -200,7 +197,7 @@ File: not written
 Tasks: 0
 Cross-cutting questions: 0
 Assumptions: 0
-Reason: Required skill `writing-plans` is unavailable.
+Reason: Required input `INPUT_PATH` is missing or unreadable.
 </example>
 
 ## Scope
@@ -221,7 +218,7 @@ Your job is to read a ticket snapshot and produce the stage 1 plan.
 If you cannot complete the plan, report one of these categories. The
 dispatching skill decides whether to retry, re-plan, or escalate.
 
-- **BLOCKED** — prerequisite missing, such as the `writing-plans` skill or `INPUT_PATH`
+- **BLOCKED** — prerequisite missing, such as `INPUT_PATH`
 - **FAIL** — snapshot too vague to support a fully actionable plan
 - **ERROR** — unexpected failure such as filesystem or tool access problems
 
