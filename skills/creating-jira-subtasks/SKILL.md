@@ -1,6 +1,6 @@
 ---
 name: "creating-jira-subtasks"
-description: 'Phase 4 of the orchestrating-jira-workflow pipeline. Use after the task plan has been clarified and the user has explicitly approved Jira writes. This skill reads only its bundled files, dispatches the `subtask-creator` subagent with `JIRA_URL`, and returns a concise phase summary after Jira subtasks are created or reconciled and `docs/<TICKET_KEY>-tasks.md` is updated with subtask keys.'
+description: 'Phase 4 of the orchestrating-jira-workflow pipeline. Use after the task plan has been clarified and the user has explicitly approved Jira writes. This skill reads only its bundled files, dispatches the `subtask-creator` subagent with `JIRA_URL`, and returns a concise phase summary after Jira subtasks are created or reconciled and `docs/<TICKET_KEY>-tasks.md` is updated with the Phase 4 handoff contract.'
 ---
 
 # Creating Jira Subtasks
@@ -57,7 +57,7 @@ Inside Phase 4, keep only:
 
 - The structured `SUBTASKS` verdict
 - The validation verdict
-- The task/key/title/dependency/priority rows needed for progress reporting
+- The task / subtask key / title / dependency / priority / outcome rows needed for progress reporting
 - Any warning or fatal reason that requires user attention
 
 Relay only the structured fields the subagent returns. Raw Jira payloads, raw

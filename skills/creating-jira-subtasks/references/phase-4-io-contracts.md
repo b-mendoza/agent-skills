@@ -93,8 +93,8 @@ The subagent returns a structured summary with:
 - `Plan file: <path | not updated>`
 - Counts: tasks in plan, already linked, created now, failed creates
 - `Decisions Log: PRESENT | MISSING`
-- `Created/Linked Subtasks:` markdown table with **Subtask Key**, **Title**,
-  **Dependencies**, **Priority**, **Outcome**
+- `Created/Linked Subtasks:` markdown table with **Task**, **Subtask Key**,
+  **Title**, **Dependencies**, **Priority**, **Outcome**
 - Explicit `Warnings:` and `Failures:` sections
 
 Treat `SUBTASKS: ERROR` as an unexpected tool or environment failure. The

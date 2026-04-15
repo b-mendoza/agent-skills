@@ -132,8 +132,8 @@ The subagent returns a structured summary with:
 - `Write model:` and `Capability:` lines mirroring the handoff comment semantics
 - Counts: tasks in plan, already linked, created now, failed creates
 - `Decisions Log: PRESENT | MISSING`
-- `Created/Linked Task Issues:` markdown table with **Issue ref**, **Title**,
-  **Write model**, **Dependencies**, **Priority**, **Outcome**
+- `Created/Linked Task Issues:` markdown table with **Task**, **Issue ref**,
+  **Title**, **Write model**, **Dependencies**, **Priority**, **Outcome**
 - Explicit `Warnings:` and `Failures:` sections
 
 Treat `TASK_ISSUES: ERROR` as an unexpected tool or environment failure. The
