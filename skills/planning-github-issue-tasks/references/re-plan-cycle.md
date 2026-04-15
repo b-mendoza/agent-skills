@@ -1,13 +1,14 @@
 # Re-Plan Cycle and Error Handling
 
 This file is loaded when Phase 3 critique triggers a re-plan dispatch back
-to Phase 2, or when an error occurs during the pipeline. On the happy path,
-this file is never read.
+to Phase 2, or when a recovery path needs targeted retry guidance. On the
+happy path, this file is never read.
 
 > Read this file only for re-plan or recovery paths.
 >
 > Preserve existing stage artifacts, restart from the earliest affected stage,
-> and rerun only the gates that are now invalid.
+> rerun every downstream stage whose input artifact is no longer valid, and
+> rerun the validator gates for each regenerated artifact.
 
 ## Re-Plan Cycle
 
@@ -27,8 +28,12 @@ On re-plan:
    inputs plus `DECISIONS` and, when applicable, `VALIDATION_ISSUES`.
 3. **Overwrite the affected stage artifacts** with updated versions so the
    latest plan stays resumable.
-4. **Re-run only the failing validation gates first,** then run post-pipeline
-   validation again once the updated plan is complete.
+4. **After rerunning the earliest affected stage, rerun every downstream stage
+   and its validator gate.** Use validator-only reruns only when you are fixing
+   a validator failure without changing an earlier stage artifact. Finish with
+   post-pipeline validation once the updated plan is complete.
+5. **Skip preflight unless the snapshot changed.** Re-run preflight only when
+   `docs/<ISSUE_SLUG>.md` was updated or otherwise needs revalidation.
 
 **Maximum re-plan cycles:** 3 iterations. If Phase 3 critique still has
 unresolved concerns after 3 cycles, escalate to the user.
