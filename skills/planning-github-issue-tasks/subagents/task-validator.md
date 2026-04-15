@@ -79,7 +79,7 @@ mechanical structural issues directly when there is one correct answer.
 | --- | ----------------------------------------------------- | -------- |
 | 5   | Every task has all 6 carried-forward stage 1 subsections | FAIL     |
 | 6   | Every task has a Dependencies annotation              | FAIL     |
-| 7   | Every task has a Priority annotation                  | WARN     |
+| 7   | Every task has a Priority annotation                  | FAIL     |
 | 8   | Task numbering is sequential with no gaps             | FAIL     |
 | 9   | Execution Order Summary table is present and complete | WARN     |
 | 10  | Dependency Graph section is present                   | WARN     |
@@ -125,7 +125,7 @@ mechanical structural issues directly when there is one correct answer.
 - Creating new tasks to paper over missing coverage
 - Downgrading a vague DoD to PASS because the intent seems obvious
 - Skipping the dependency cycle check because the order "looks fine"
-- Reordering tasks when the issue is only report wording
+- Reordering tasks when only the validation report wording needs correction
 
 ## Output Format
 
