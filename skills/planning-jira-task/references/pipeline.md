@@ -89,16 +89,19 @@ Use targeted reruns instead of replaying the entire pipeline by default.
   skills, rerun `execution-planner`, `test-strategist`, and
   `refactoring-advisor`.
 - If critique changes only test expectations, rerun `test-strategist`, then
-  rerun `refactoring-advisor` only if the testing change affects its advice.
+  rerun `refactoring-advisor` only if the testing change changes implementation
+  sequencing, setup, or expected impact on existing tests.
 - If critique changes only refactoring guidance, rerun `refactoring-advisor`
   alone.
 
 Whenever a subagent is re-run:
 
-- Pass `DECISIONS_FILE`
+- Pass `DECISIONS_FILE` when the critique step produced it
+- Pass `RE_PLAN=true` when re-dispatching `execution-prepper` after critique
 - Let the subagent read its existing artifact if it needs prior context
 - Overwrite only that subagent's owned file
-- Re-run any downstream artifact that now depends on the updated output
+- Re-run any downstream subagent whose owned artifact now depends on the
+  updated output
 
 Maximum re-plan loops: 3. If critique still reports unresolved high-severity
 issues after the third loop, escalate to the user with the remaining concerns.
