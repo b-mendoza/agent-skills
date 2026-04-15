@@ -102,7 +102,7 @@ For deferred questions, use the simplest fitting response form:
 
 - direct answer
 - revise current plan
-- skip with fallback
+- skip with fallback, but only when the manifest marks the item `Skippable`
 
 ### Recording rules
 
@@ -110,6 +110,8 @@ For deferred questions, use the simplest fitting response form:
 - `blocked` → set `RE_PLAN_NEEDED=true`, set `BLOCKERS_PRESENT=true`, and stop after recording the blocker
 - `Acknowledge but proceed` → record as override, no re-plan
 - `Skip` → record the fallback and warning
+- Follow the manifest's `Skippable` field. Do not skip items that were surfaced as
+  non-skippable.
 - If a deferred question is clearly obsolete, do not ask it; rely on the
   manifest builder's `RESOLVED_IRRELEVANT` list
 

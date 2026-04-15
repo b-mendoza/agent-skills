@@ -68,10 +68,12 @@ If the report is missing a verdict line or the required report sections, return
 `MANIFEST: FAIL`.
 
 Required report sections means the report still contains the downstream
-structure expected from `critique-analyzer-template.md`, including
+structure expected from `./subagents/critique-analyzer-template.md`, including
 `## Critique Report`, `### Artifacts Reviewed`, `### Codebase Verification`,
 `### Technology Critique Items`, `### Items Not Raised`, `### Summary`, and the
 mode-specific critique section required for the current run.
+In `MODE=upfront`, the report must still include both
+`### Problem Framing Critique` and `### Technology Critique Items`.
 In `MODE=critique`, the report must still include both
 `### Technology Critique Items` and `### User Impact Critique Items`.
 
