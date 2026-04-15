@@ -94,6 +94,37 @@ clarification skill's final summary still carries `RE_PLAN_NEEDED` and
 `BLOCKERS_PRESENT`, and the orchestrator must honor those flags separately at
 the gate step.
 
+### Phase 1 fetch summary (three-field contract)
+
+`fetching-jira-ticket` returns a structured summary with three fields — the
+orchestrator must read them together, not collapse them into a single status:
+
+```
+FETCH: <PASS | PARTIAL | FAIL | ERROR>
+Validation: <PASS | FAIL | NOT_RUN>
+Failure category: <NONE | BAD_INPUT | NOT_FOUND | AUTH | TOOLS_MISSING | RATE_LIMIT | UNEXPECTED>
+File written: docs/<TICKET_KEY>.md | None
+```
+
+How to interpret the result:
+
+- `PASS` + `PASS`: Success. Proceed to the Phase 1 postcondition validator on
+  the written file.
+- `PARTIAL` + `PASS`: Success with warnings. Preserve `## Retrieval Warnings`
+  and proceed to the Phase 1 postcondition validator.
+- `FAIL` + `NOT_RUN`: Retrieval failed before the artifact was written. Do not
+  run the postcondition validator; route on `Failure category` per
+  `./error-handling.md`.
+- `Validation: FAIL`: Stop and surface contract failure, regardless of
+  `FETCH`.
+- `FETCH: ERROR`: Stop and surface unexpected failure, regardless of
+  `Validation`.
+- Any inconsistent pairing, such as `FETCH: PASS` with `Validation: NOT_RUN`:
+  treat it as an unexpected Phase 1 error and stop.
+
+Branch on `Failure category` when it is present. Use `Reason` only for
+user-facing detail.
+
 `progress-tracker` dispatches use the same `TICKET_KEY` for workflow identity.
 When reading or updating per-task state, include `TASK_NUMBER` as the playbook
 specifies.

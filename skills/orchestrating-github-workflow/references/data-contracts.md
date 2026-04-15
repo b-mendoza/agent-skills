@@ -56,7 +56,7 @@ numbered task section for resumability.
 | 3     | precondition  | `docs/<ISSUE_SLUG>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
 | 3     | postcondition | `docs/<ISSUE_SLUG>-upfront-critique.md` + `docs/<ISSUE_SLUG>-tasks.md` | `docs/<ISSUE_SLUG>-upfront-critique.md` exists; `docs/<ISSUE_SLUG>-tasks.md` contains `## Decisions Log` |
 | 4     | precondition  | `docs/<ISSUE_SLUG>-upfront-critique.md` + `docs/<ISSUE_SLUG>-tasks.md` | Same as Phase 3 postcondition                                  |
-| 4     | postcondition | `docs/<ISSUE_SLUG>-tasks.md` | Contains `## GitHub Task Issues`; immediately under that heading includes the machine handoff comment defined by `creating-github-child-issues`; contains the workflow-level table with one row per numbered plan task; rows may use `Not Created` or equivalent; every row that names a concrete GitHub issue has a matching per-task inline reference in the corresponding task section (exact line format owned by `creating-github-child-issues`) |
+| 4     | postcondition | `docs/<ISSUE_SLUG>-tasks.md` | Contains `## GitHub Task Issues`; immediately under that heading includes the machine handoff comment defined by `creating-github-child-issues`; contains the workflow-level table with one row per numbered plan task; every numbered task section contains exactly one inline `GitHub Task Issue:` line whose value matches that task's workflow-table row (`owner/repo#number`, `Not Created`, or `task-list`), using the exact line format owned by `creating-github-child-issues` |
 | 5     | precondition  | `docs/<ISSUE_SLUG>-tasks.md` | Same as Phase 4 postcondition                                  |
 
 ### Phases 5–7 (per task)
@@ -115,7 +115,7 @@ clarification skill's final summary still carries `RE_PLAN_NEEDED` and
 `BLOCKERS_PRESENT`, and the orchestrator must honor those flags separately at
 the gate step.
 
-### Phase 1 retriever summary (two-field contract)
+### Phase 1 fetch summary (three-field contract)
 
 `fetching-github-issue` returns a structured summary with three fields — the
 orchestrator must read them together, not collapse them into a single status:
@@ -127,14 +127,25 @@ Failure category: <NONE | BAD_INPUT | NOT_FOUND | AUTH | TOOLS_MISSING | RATE_LI
 File written: docs/<ISSUE_SLUG>.md | None
 ```
 
-How to interpret the pair:
+How to interpret the result:
 
-| FETCH     | Validation | Orchestrator action                                                                                         |
-| --------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
-| `PASS`    | `PASS`     | Success. Proceed to the Phase 1 postcondition validator on the written file.                                |
-| `PARTIAL` | `PASS`     | Success with warnings. Proceed to the Phase 1 postcondition validator; do not treat as failure.             |
-| `FAIL`    | `NOT_RUN`  | Retrieval failed before the artifact was written. Do not run the postcondition validator; route on `Failure category` per `./error-handling.md`. |
-| `ERROR`   | `FAIL`     | Artifact was written but violates the template. Route on `Failure category: UNEXPECTED` per `./error-handling.md`. |
+- `PASS` + `PASS`: Success. Proceed to the Phase 1 postcondition validator on
+  the written file.
+- `PARTIAL` + `PASS`: Success with warnings. Proceed to the Phase 1
+  postcondition validator; do not treat as failure. This includes
+  capability-unavailable `## Projects` cases.
+- `FAIL` + `NOT_RUN`: Retrieval failed before the artifact was written. Do not
+  run the postcondition validator; route on `Failure category` per
+  `./error-handling.md`.
+- `Validation: FAIL`: Stop and surface contract failure, regardless of
+  `FETCH`.
+- `FETCH: ERROR`: Stop and surface unexpected failure, regardless of
+  `Validation`.
+- Any inconsistent pairing, such as `FETCH: PASS` with `Validation: NOT_RUN`:
+  treat it as an unexpected Phase 1 error and stop.
+
+Branch on `Failure category` when it is present. Use `Reason` only for
+user-facing detail.
 
 `progress-tracker` dispatches use the same `ISSUE_SLUG` key for workflow identity.
 When reading or updating per-task state, include `TASK_NUMBER` as the playbook
