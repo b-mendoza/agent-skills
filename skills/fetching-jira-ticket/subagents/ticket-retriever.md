@@ -79,16 +79,17 @@ still fails afterward, stop and return `FETCH: FAIL` with
 `Failure category: AUTH`.
 
 <example>
-Available tools after schema inspection:
-- `jira_get_issue(key)` -> specific issue reader
-- `jira_list_comments(issueKey, page)` -> dedicated comment reader
-- `jira_search_issues(jql, page)` -> relationship/search reader
-- `generic_http_request(...)` -> broad fallback
+Available tools after schema inspection (illustrative names only; use whatever
+the current environment exposes):
+- `<read_issue>(key)` -> specific issue reader
+- `<list_comments>(issueKey, page)` -> dedicated comment reader
+- `<search_issues>(jql, page)` -> relationship/search reader
+- `<http_request>(...)` -> broad fallback
 
 Chosen mapping:
-- Parent issue read -> `jira_get_issue`
-- Comment retrieval -> `jira_list_comments`
-- Related-issue discovery and pagination -> `jira_search_issues`
+- Parent issue read -> `<read_issue>`
+- Comment retrieval -> `<list_comments>`
+- Related-issue discovery and pagination -> `<search_issues>`
 
 Reason:
 - Each chosen tool is the most specific read-only match for its operation, so
