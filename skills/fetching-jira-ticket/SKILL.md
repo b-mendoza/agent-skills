@@ -1,6 +1,6 @@
 ---
 name: "fetching-jira-ticket"
-description: 'Phase 1 of `orchestrating-jira-workflow`: retrieve a Jira ticket into a stable Markdown snapshot for downstream workflow phases. Use this as a workflow phase, not as a standalone implementation skill, whenever a Jira URL needs to become `docs/<TICKET_KEY>.md` with predictable headings for metadata, description, acceptance criteria, comments, subtasks, linked issues, attachments, and custom fields. This skill coordinates retrieval only: it does not modify Jira, create branches, or start implementation.'
+description: 'Phase 1 of `orchestrating-jira-workflow`: retrieve a Jira ticket into a stable Markdown snapshot for downstream workflow phases. Use this as a workflow phase, not as a standalone implementation skill, whenever a Jira URL needs to become `docs/<TICKET_KEY>.md` with predictable headings for metadata, description, acceptance criteria, comments, subtasks, linked issues, attachments, and custom fields. The bundled retriever handles Jira reads, validation, and snapshot assembly. This skill coordinates retrieval only: it does not modify Jira, create branches, or start implementation.'
 ---
 
 # Fetching Jira Ticket
@@ -41,7 +41,7 @@ Read a subagent definition only when you are about to dispatch it.
 
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
-| `ticket-retriever` | `./subagents/ticket-retriever.md` | Uses the available Jira integration to read Jira data, writes `docs/<TICKET_KEY>.md`, validates the artifact, and returns a concise fetch summary |
+| `ticket-retriever` | `./subagents/ticket-retriever.md` | Uses the bundled Jira read path to retrieve Jira data, writes `docs/<TICKET_KEY>.md`, validates the artifact, and returns a concise fetch summary |
 
 ## How This Skill Works
 
@@ -67,9 +67,9 @@ Read `./subagents/ticket-retriever.md`, then dispatch it with:
 
 - `JIRA_URL`
 
-The subagent owns input validation, Jira-capable integration discovery and auth
-checks, ticket and relationship retrieval, document assembly, output validation,
-and cleanup.
+The subagent owns input validation, Jira read-path discovery and auth checks,
+ticket and relationship retrieval, document assembly, output validation, and
+cleanup.
 
 ### 2. Interpret the structured result
 
@@ -82,11 +82,11 @@ The retriever returns a summary with these top-level fields:
 - `FETCH: PASS` -> retrieval and validation succeeded
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
   related items could not be retrieved, or related-item discovery could not be
-  verified. `PARTIAL` applies to parent comment retrieval and to subtask /
-  linked-issue retrieval or discovery gaps; `## Attachments` and `## Custom
-  Fields` are populated from the retrieved parent ticket payload and do not use
-  a separate unverifiable-section state analogous to unknown discovery on
-  related items
+  verified
+- Parent comment retrieval and subtask / linked-issue retrieval or discovery
+  gaps use `PARTIAL`; `## Attachments` and `## Custom Fields` are populated
+  from the retrieved parent ticket payload and do not introduce a separate
+  unverifiable-section state analogous to unknown discovery on related items
 - `FETCH: FAIL` -> deterministic failure such as bad input, ticket not found,
   missing auth, rate limits after retry, or no usable Jira tools
 - `FETCH: ERROR` -> unexpected tool or environment failure
@@ -111,7 +111,8 @@ For count lines in the summary:
   `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` or
   `<retrieved>/UNKNOWN` in that case
 - `Attachments: <N>` is the number of attachment rows under `## Attachments`;
-  use `Attachments: N/A` when the parent ticket was not retrieved
+  use `Attachments: N/A` when the parent ticket was not retrieved (that section
+  was not populated from a successful parent read)
 
 Failure categories are:
 
@@ -170,8 +171,8 @@ Do not commit it as part of implementation history.
 
 The document must contain every top-level heading from the fenced Markdown
 snapshot shape in `./subagents/ticket-retriever-template.md`. Repeated nested
-headings, such as comment entries or per-issue subsections, appear only when
-their parent section has material to render. If a top-level section has
+headings, such as comment entries or per-related-item subsections, appear only
+when their parent section has material to render. If a top-level section has
 verified empty data, the heading still appears and the section body is
 `_None_`. For `## Subtasks` and `## Linked Issues`, use the template's unknown
 marker when discovery could not be verified after the parent ticket was
@@ -214,7 +215,8 @@ The retrieval preamble must include `Retrieved on`, `Source: <JIRA_URL>`, and
 `Project`, and `URL`.
 
 **Platform-extension sections** (Jira-specific; expected to differ across
-tracker-fetching skills). All stay stably present with `_None_` when empty:
+tracker-fetching skills). All stay stably present with `_None_` when their
+absence was verified:
 
 | Section | Why it exists |
 | ------- | ------------- |
