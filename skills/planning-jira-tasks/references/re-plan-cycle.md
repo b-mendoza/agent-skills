@@ -25,7 +25,9 @@ On re-plan:
    no longer valid. If the critique affects the whole plan, re-run all three
    stages.
 2. **Pass targeted fix inputs.** The affected subagent receives its original
-   inputs plus `DECISIONS` and, when applicable, `VALIDATION_ISSUES`.
+   inputs, plus `DECISIONS` only when the re-dispatched stage accepts it
+   (`task-planner` or `dependency-prioritizer`), and `VALIDATION_ISSUES` when
+   applicable.
 3. **Overwrite the affected stage artifacts** with updated versions so the
    latest plan stays resumable.
 4. **After rerunning the earliest affected stage, rerun every downstream stage
