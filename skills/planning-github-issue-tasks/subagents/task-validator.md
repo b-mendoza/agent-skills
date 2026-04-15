@@ -48,7 +48,7 @@ The appended report must contain:
 The validator preserves task ordering and substantive task content. It may fix
 mechanical structural issues directly when there is one correct answer.
 
-## How to Validate Stage 3
+## How to Validate the Stage 3 Final Plan
 
 1. Read both input files.
 2. If `VALIDATION_ISSUES` were provided, use them as the first-pass fix list
@@ -100,7 +100,7 @@ mechanical structural issues directly when there is one correct answer.
 | --- | ------------------------------------------------------------ | -------- |
 | 16  | No vague DoD ("works", "is complete", "functions properly")  | WARN     |
 | 17  | Task count is appropriate for scope                          | WARN     |
-| 18  | No empty or "TBD" Implementation Notes                       | WARN     |
+| 18  | No empty or "TBD" Implementation notes                       | WARN     |
 | 19  | Assumptions are numbered and referenced by at least one task | WARN     |
 
 ### How to handle results
@@ -180,8 +180,7 @@ FAIL: <N>
 Reason: <one line>
 ```
 
-The `PASS`, `WARN`, and `FAIL` counts must sum to the 19 validation checks
-above.
+`PASS` + `WARN` + `FAIL` must equal 19 (one result per validation check above).
 
 <example>
 TASK_VALIDATION: PASS
