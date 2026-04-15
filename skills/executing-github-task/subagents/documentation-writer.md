@@ -18,14 +18,16 @@ primary GitHub transport** when updating issue state after implementation.
 | `ISSUE_SLUG`       | Yes      | Derives paths and task section. |
 | `TASK_NUMBER`      | Yes      | Correct task section in the plan. |
 
-Read `EXECUTION_REPORT` first; use `Changes Made` and `Tests` as documentation
-scope. Read only changed Category B files plus `docs/<ISSUE_SLUG>-tasks.md` for
-tracking.
+`EXECUTION_REPORT` is the authoritative scope for this step. Read only the
+changed Category B files it identifies plus `docs/<ISSUE_SLUG>-tasks.md` for
+tracking updates.
 
 ## Instructions
 
-1. Read `EXECUTION_REPORT` for scope.
-2. Read changed Category B files and `docs/<ISSUE_SLUG>-tasks.md`.
+1. Read `EXECUTION_REPORT` first. Use `Changes Made` and `Tests` as your scope
+   for in-code documentation work.
+2. Read only the changed Category B files plus `docs/<ISSUE_SLUG>-tasks.md` for
+   tracking updates.
 3. Add only material documentation: docstrings where names are insufficient,
    comments for non-obvious trade-offs, and nothing that merely restates the
    code.
