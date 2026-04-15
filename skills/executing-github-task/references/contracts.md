@@ -9,10 +9,10 @@
 ## Alignment with the parent workflow
 
 Phase 7 preconditions come from the parent orchestrator's data contracts
-(per-task rows for phases 5–7) and are detailed in the parent orchestrator's
-task-loop readiness section (**6 → 7 readiness**). This file is the execution
-skill's authoritative breakdown of paths, kickoff semantics, and dispatch
-inputs; it must not contradict those parent contracts.[^1]
+(per-task rows for phases 5–7) and its task-loop readiness section
+(**6 → 7 readiness**). This file is the execution skill's authoritative
+breakdown of paths, kickoff semantics, and dispatch inputs; it must not
+contradict those parent contracts.[^1]
 
 [^1]: The concrete parent orchestrator for this skill is
     `orchestrating-github-workflow`. Its filesystem layout is intentionally
@@ -43,8 +43,9 @@ All standard artifact paths derive from `ISSUE_SLUG` and `TASK_NUMBER`.
 | `docs/<ISSUE_SLUG>-task-<N>-decisions.md`         | `clarifying-assumptions` (critique) | Decisions and confirmed plan after critique. |
 
 **Normal orchestrated path:** all of the above through `decisions.md` are
-required before kickoff; the parent workflow’s Phase 7 precondition check
-expects the four Phase 5 files plus `critique.md` and `decisions.md`.
+required before kickoff; the parent workflow's Phase 7 precondition check
+expects the issue snapshot, the task plan, the four Phase 5 files, and
+`critique.md` plus `decisions.md`.
 
 If any required artifact is missing, stop before dispatching subagents and name
 which upstream phase or skill must run first.
@@ -93,16 +94,17 @@ At kickoff, the workflow may:
   - update project fields or milestone only when the brief or team policy calls
     for it and `gh` supports the operation
 
-Use `gh` as the primary transport for these operations. If `gh` is unavailable
-or unauthenticated, record skips in the kickoff report and continue when the
-workspace is otherwise ready.
+Use `gh` as the primary transport for these operations. If tracker capability
+is unavailable or unauthenticated, record skips in the kickoff report and
+continue when the workspace is otherwise ready.
 
 Everything after a `READY` kickoff assumes the task is actively in execution.
 
 ## Dispatch contracts
 
 Pass structured inputs only. Use file paths when the downstream specialist can
-read the artifact; use short reports when a prior verdict is required.
+read the source artifact itself; use short reports when the downstream step
+needs a prior verdict or summary.
 
 Symbolic handoff names (`KICKOFF_REPORT`, `EXECUTION_REPORT`, etc.) refer to
 the full markdown outputs returned by those subagents.
@@ -125,11 +127,11 @@ success from partial file changes alone.
 
 | Category | Contents | Git behavior | Lifecycle |
 | -------- | -------- | ------------ | --------- |
-| A        | `docs/<ISSUE_SLUG>*.md`, progress files, plans, critique, decisions | Never committed | Never deleted |
+| A        | `docs/<ISSUE_SLUG>*.md`, progress files, briefs, plans, test specs, refactoring plans, critique, decisions | Never committed | Never deleted |
 | B        | Source, tests, config, in-code docs | Committed normally | Normal project rules |
 
-`documentation-writer` may update Category A artifacts on disk; they stay out of
-git history.
+`documentation-writer` may update Category A artifacts on disk so the workflow
+can resume later, but those files stay out of git history.
 
 ## Successful completion contract
 

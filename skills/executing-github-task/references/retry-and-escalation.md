@@ -9,11 +9,11 @@
 
 | Step / subagent          | Expected statuses                                                  | Orchestrator action |
 | ------------------------ | ------------------------------------------------------------------ | ------------------- |
-| `execution-starter`      | `READY`, `BLOCKED`, `ERROR`                                        | Continue on `READY`; otherwise pause before implementation |
-| `task-executor`          | `COMPLETE`, `NEEDS_CONTEXT`, `BLOCKED`, `ERROR`                    | Continue on `COMPLETE`; otherwise pause |
+| `execution-starter`      | `READY`, `BLOCKED`, `ERROR`                                        | Continue on `READY`; otherwise pause and resolve before implementation starts |
+| `task-executor`          | `COMPLETE`, `NEEDS_CONTEXT`, `BLOCKED`, `ERROR`                    | Continue on `COMPLETE`; otherwise pause and resolve before continuing |
 | `documentation-writer`   | `COMPLETE`, `BLOCKED`, `ERROR`                                     | Continue on `COMPLETE`; otherwise stop and surface the blocker |
 | `requirements-verifier`  | `PASS`, `FAIL`, `BLOCKED`, `ERROR`                                 | Re-run coverage fix loop only on clear in-scope `FAIL` gaps; stop and resolve blocked cases before resuming |
-| Review gates             | `PASS`, `PASS WITH SUGGESTIONS`, `PASS WITH ADVISORIES`, `NEEDS FIXES`, `BLOCKED`, `ERROR` | Continue on non-blocking passes; targeted fix cycle on `NEEDS FIXES`; stop on `BLOCKED`/`ERROR` |
+| Review gates             | `PASS`, `PASS WITH SUGGESTIONS`, `PASS WITH ADVISORIES`, `NEEDS FIXES`, `BLOCKED`, `ERROR` | Continue on non-blocking passes; run targeted fix cycle on `NEEDS FIXES`; stop on `BLOCKED`/`ERROR` |
 
 ## When to ask the user
 
@@ -44,15 +44,15 @@ than trying again with unchanged inputs.
 
 ## Non-blocking outcomes
 
-Report these but do not reopen the task automatically:
+These should be reported but should not reopen the task automatically:
 
 - `PASS WITH SUGGESTIONS`
 - `PASS WITH ADVISORIES`
 - Tracker updates skipped because the tracker reference was a "not created"
   placeholder, the integration was unavailable, or the team chose not to
   mutate the tracker at kickoff/completion
-- Pre-existing failing tests explicitly reported and outside the selected task’s
-  scope
+- Pre-existing failing tests that were explicitly reported and are outside the
+  selected task's scope
 
 ## Missing capability pattern
 

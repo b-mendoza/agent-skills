@@ -30,16 +30,16 @@ subagents do the heavy work in isolation.
 These match the parent orchestrator's **6 → 7 readiness** gate for per-task
 execution:
 
-| Artifact                                      | Phase | Purpose                                      |
-| --------------------------------------------- | ----- | -------------------------------------------- |
-| `docs/<ISSUE_SLUG>.md`                        | 1     | Issue snapshot and GitHub context.           |
-| `docs/<ISSUE_SLUG>-tasks.md`                  | 2–4   | Task plan, `## GitHub Task Issues`, statuses. |
-| `docs/<ISSUE_SLUG>-task-<N>-brief.md`         | 5     | Scope, DoD, execution constraints.           |
-| `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` | 5    | Approved implementation approach.            |
-| `docs/<ISSUE_SLUG>-task-<N>-test-spec.md`     | 5     | Required behavior coverage.                  |
-| `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` | 5  | Approved structural prep and cleanup.      |
-| `docs/<ISSUE_SLUG>-task-<N>-critique.md`       | 6     | Task-level critique record.                  |
-| `docs/<ISSUE_SLUG>-task-<N>-decisions.md`     | 6     | Critique outcomes and confirmed decisions.   |
+| Artifact                                      | Phase | Required | Purpose                                    |
+| --------------------------------------------- | ----- | -------- | ------------------------------------------ |
+| `docs/<ISSUE_SLUG>.md`                        | 1     | Yes      | Issue snapshot and GitHub context.         |
+| `docs/<ISSUE_SLUG>-tasks.md`                  | 2–4   | Yes      | Task plan, `## GitHub Task Issues`, statuses. |
+| `docs/<ISSUE_SLUG>-task-<N>-brief.md`         | 5     | Yes      | Scope, DoD, execution constraints.         |
+| `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` | 5    | Yes      | Approved implementation approach.          |
+| `docs/<ISSUE_SLUG>-task-<N>-test-spec.md`     | 5     | Yes      | Required behavior coverage.                |
+| `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` | 5  | Yes      | Approved structural prep and cleanup.    |
+| `docs/<ISSUE_SLUG>-task-<N>-critique.md`      | 6     | Yes      | Task-level critique record.                |
+| `docs/<ISSUE_SLUG>-task-<N>-decisions.md`     | 6     | Yes      | Critique outcomes and confirmed decisions. |
 
 Read `./references/contracts.md` when validating task readiness or artifact
 shape.
@@ -47,7 +47,7 @@ shape.
 ## Workflow Overview
 
 These are internal execution steps inside the parent workflow's Phase 7. Read
-`./references/pipeline.md` for the full run → check → fix → re-check order and
+`./references/pipeline.md` for the full run -> check -> fix -> re-check order and
 `./references/contracts.md` for readiness gates.
 
 | Internal step | Goal                                              | Primary result                          |
@@ -71,10 +71,10 @@ Quality-gate fix cycles happen after internal step 5.
 | `execution-starter`       | `./subagents/execution-starter.md`       | Execution kickoff: readiness, workspace checks, **first `gh`-based GitHub updates** (labels, assignees, comments, child-issue fields) when appropriate. |
 | `task-executor`           | `./subagents/task-executor.md`           | Implements the scoped change and tests from the approved planning artifacts. |
 | `documentation-writer`    | `./subagents/documentation-writer.md`    | In-code docs, commits Category B, updates `docs/<ISSUE_SLUG>-tasks.md`, optional `gh` completion updates on the task issue. |
-| `requirements-verifier`   | `./subagents/requirements-verifier.md`   | Confirms DoD before quality review.                                     |
-| `clean-code-reviewer`     | `./subagents/clean-code-reviewer.md`     | Readability, maintainability, SOLID alignment, test quality.            |
-| `architecture-reviewer`   | `./subagents/architecture-reviewer.md`   | Domain boundaries, composition, architectural fit.                      |
-| `security-auditor`      | `./subagents/security-auditor.md`        | Exploitable weaknesses in the committed change set.                   |
+| `requirements-verifier`   | `./subagents/requirements-verifier.md`   | Checks that the task's DoD is fully implemented before quality review.  |
+| `clean-code-reviewer`     | `./subagents/clean-code-reviewer.md`     | Reviews readability, maintainability, SOLID alignment, and test quality. |
+| `architecture-reviewer`   | `./subagents/architecture-reviewer.md`   | Reviews domain boundaries, composition, and architectural fit.          |
+| `security-auditor`        | `./subagents/security-auditor.md`        | Audits the committed change set for exploitable security weaknesses.    |
 
 Use this registry as a lookup table. Read exactly one subagent definition per
 dispatch, then pass only the inputs that subagent needs.
@@ -154,7 +154,7 @@ After a successful run, this skill leaves behind these deliverables:
 - Preserve Category A artifacts on disk and out of git history.
 - Keep fix cycles targeted. Re-run only the failing verification or review
   steps, not the entire pipeline.
-- Treat missing required skills, missing tooling (`gh` auth), or unresolved
+- Treat missing required skills, missing tracker capability, or unresolved
   ambiguity as orchestration decisions. Surface them clearly and stop.
 
 ## Example

@@ -14,9 +14,10 @@ Every successful task run follows this sequence:
 
 1. **Validate prerequisites.**
    - Read `./contracts.md`.
-   - Confirm the **Phase 7 handoff**: four Phase 5 artifacts plus
-     `critique.md` and `decisions.md` exist for this `TASK_NUMBER`, matching
-     the parent orchestrator's Phase 5–7 data contracts.
+   - Confirm the **Phase 7 handoff**: the issue snapshot, the task plan, the
+     four Phase 5 artifacts, and `critique.md` plus `decisions.md` exist for
+     this `TASK_NUMBER`, matching the parent orchestrator's Phase 5–7 data
+     contracts.
    - Stop immediately if required artifacts are missing, contradictory, or the
      selected task is not ready.
 
@@ -70,11 +71,11 @@ Every successful task run follows this sequence:
      capability, missing access, or blocked documentation is not a normal fix
      loop; use `./retry-and-escalation.md` and resume only after the blocker is
      resolved.
-   - If it returns `FAIL` and gaps are plainly in scope, build a concise fix
-     brief, re-dispatch `task-executor`, then `documentation-writer`, then
-     re-run `requirements-verifier`.
-   - If gaps indicate ambiguous briefs, conflicting artifacts, or a planning
-     mistake, stop and ask the user.
+   - If it returns `FAIL` and the gaps are plainly in scope, create a concise
+     fix brief from the reported gaps, re-dispatch `task-executor`, then
+     `documentation-writer`, then re-run `requirements-verifier`.
+   - If the reported gaps expose an ambiguous brief, conflicting artifacts, or
+     a probable planning mistake, stop and ask the user.
 
 10. **Run the quality gates in order.**
    - `clean-code-reviewer`
