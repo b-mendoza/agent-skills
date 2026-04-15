@@ -1,517 +1,473 @@
 # Fetching Pipeline Specification
 
-> **This document is the canonical reference for the retrieval pipeline
-> shared by `fetching-jira-ticket` and `fetching-github-issue`.**
+> **This document is the canonical reference for the Phase 1 snapshot-retrieval
+> skills shared by `fetching-github-issue` and `fetching-jira-ticket`.**
 >
-> When you change the pipeline, the contracts, the retry rules, or the
-> validation checklist, change **this document first**, then propagate the
-> change to both skills. See the _Change protocol_ section at the bottom.
+> When you change the retrieval pipeline, the structured summary contract, the
+> snapshot artifact shape, or the allowed platform divergences, change **this
+> document first**, then propagate the change to both skills. See the _Change
+> protocol_ section at the bottom.
 
 ## 1. Purpose and scope
 
-This spec defines the **harness-agnostic, platform-agnostic retrieval
-pipeline** that both fetching skills must implement:
+This spec defines the **harness-agnostic, platform-aware fetching pipeline**
+implemented by these two skills:
 
-- `skills/fetching-jira-ticket/` — Jira-specific retrieval coordinator
-- `skills/fetching-github-issue/` — GitHub-specific retrieval coordinator
+- `skills/fetching-github-issue/` — GitHub issue snapshot coordinator
+- `skills/fetching-jira-ticket/` — Jira ticket snapshot coordinator
 
-Each skill runs **exactly one retrieval per invocation**. It dispatches a
-single retrieval specialist subagent, interprets the structured summary it
-returns, and reports the result to the caller.
+Each skill runs **exactly one retriever dispatch per invocation**. The
+coordinator derives the routing inputs it needs, dispatches exactly one
+retriever specialist, and returns only that specialist's structured summary to
+the caller. The retriever specialist validates the input, writes the stable
+Markdown snapshot under `docs/`, and validates that artifact before reporting
+success, partial success, or failure.
 
 ### What this spec covers
 
-- Required input shape and derivation rules
-- Coordinator workflow, identity, and behavioral constraints
-- Output artifact contract (template shape, section registry)
-- Structured result contract (FETCH, Validation, Failure category)
-- Escalation rules
-- The 7-step retriever subagent pipeline
-- Retry strategy
-- Post-write validation checklist
-- Structured summary output format
+- Coordinator role and allowed direct actions
+- Required input shape by platform
+- The standard 7-step retriever pipeline
+- The structured summary contract (`FETCH`, `Validation`, `Failure category`)
+- Snapshot artifact requirements and template authority
+- Post-write validation and repair-loop rules
+- Coordinator interpretation and escalation
 - Artifact lifecycle
-- What each concrete skill **may** customize and what it **must not**
+- What each paired skill **may** customize and what it **must not**
 
 ### What this spec does not cover
 
-- The individual prose of each subagent definition or template file. Skills
-  may word instructions differently as long as the behavior, contracts, and
-  outputs match this spec.
-- Platform-specific transport details (Jira MCP tool discovery vs `gh` CLI
-  verification, exact API calls, auth flows). Those live inside the
-  platform-specific subagents.
-- The parent orchestrator's logic (`orchestrating-jira-workflow` /
-  `orchestrating-github-workflow`). This spec covers only the per-invocation
-  retrieval skill.
+- Exact CLI/API commands or exact tool names beyond platform-specific transport
+  expectations
+- The individual prose of the skill files, subagent definitions, or templates,
+  as long as their behavior and contracts match this spec
+- Parent orchestrator behavior after the snapshot is returned
+- Downstream planning or execution behavior after Phase 1 retrieval completes
 
 ## 2. Harness-agnosticism requirements
 
-Both skills must run on **OpenCode, Cursor, and Claude Code** without
-modification:
+Both fetch skills must run on **OpenCode, Cursor, and Claude Code** without
+modification. That imposes these shared rules:
 
-1. **Do not name runtime-specific tools.** Use neutral phrasing: "dispatch
-   to a subagent", not "use the Task tool" or "use the Agent tool".
+1. **Do not name harness-specific tools in shared coordinator prose.** Say
+   "dispatch the retriever subagent" or "load the bundled template", not
+   "use the Task tool", "use the Agent tool", or "use the Read tool".
 2. **Do not assume harness-specific frontmatter.** Fields like
-   `allowed-tools`, `model`, or `tools` in YAML frontmatter must not be
-   treated as contract by any shared prose.
+   `allowed-tools`, `model`, or `tools` are optional and must not be treated as
+   part of the shared contract.
 3. **Do not encode harness-specific scaffolding.** No `TODO(human)`, no
-   CLI-specific banner formats.
-4. **Prefer relative file paths** over harness-internal indirection.
-5. **Platform-specific tooling appears only in platform-specific subagents.**
-   Jira MCP references belong in `ticket-retriever.md`. `gh` CLI references
-   belong in `issue-retriever.md`. Neither transport appears in SKILL.md
-   coordinator logic.
+   "learning mode" placeholders, and no CLI-specific banner formats.
+4. **Prefer relative file paths.** Use paths like `./subagents/...` and
+   `docs/...`, not harness-internal indirection.
+5. **Platform-specific transport is allowed only in platform-specific places.**
+   The GitHub retriever may name `gh`; the Jira retriever may describe
+   Jira-capable tool discovery. Shared contract sections must stay neutral.
 
-## 3. Vocabulary (placeholders)
+## 3. Vocabulary and snapshot keying
 
-This spec uses abstract placeholders. Each concrete skill substitutes them
-with its own values:
+This spec uses abstract placeholders where the two skills differ by platform:
 
-| Placeholder          | Jira skill                       | GitHub skill                          |
-| -------------------- | -------------------------------- | ------------------------------------- |
-| `ITEM_KEY`           | `TICKET_KEY` (e.g. `JNS-6065`)  | `ISSUE_SLUG` (e.g. `acme-app-42`)    |
-| `ITEM_URL`           | `JIRA_URL`                       | `ISSUE_URL`                           |
-| `ITEM_IDENTITY`      | `<TICKET_KEY>: <Summary>`        | `<owner>/<repo>#<N>: <Title>`         |
-| `ITEM_STATE`         | `Status: <s> \| Type: <t>`       | `State: <OPEN \| CLOSED>`            |
-| `RELATED_SLOT`       | `## Subtasks`                    | `## Child Issues`                     |
-| `PLATFORM_TRANSPORT` | Jira MCP / REST                  | `gh` CLI                              |
-| `SNAPSHOT_PATH`      | `docs/<TICKET_KEY>.md`           | `docs/<ISSUE_SLUG>.md`               |
+| Placeholder     | GitHub skill             | Jira skill               |
+| --------------- | ------------------------ | ------------------------ |
+| `SNAPSHOT_KEY`  | `ISSUE_SLUG`             | `TICKET_KEY`             |
+| `SOURCE_URL`    | `ISSUE_URL`              | `JIRA_URL`               |
+| `PARENT_RECORD` | GitHub issue             | Jira ticket              |
+| `PLATFORM_SLOT` | `## Child Issues`        | `## Subtasks`            |
+| `SNAPSHOT_DOC`  | `docs/<SNAPSHOT_KEY>.md` | `docs/<SNAPSHOT_KEY>.md` |
+
+Additional GitHub-only fallback inputs are `OWNER`, `REPO`, and
+`ISSUE_NUMBER`. When `ISSUE_URL` is available, it is preferred.
+
+For GitHub, `ISSUE_SLUG` is `<owner>-<repo>-<issue_number>` with `owner` and
+`repo` normalized to lowercase for slug stability. For Jira, `TICKET_KEY` is
+derived from the final path segment in `JIRA_URL`.
 
 ## 4. Required input shape
 
-### Jira skill
+The paired fetch skills do not share one literal input schema. The canonical
+input rules are:
 
-| Input      | Required | Notes                                      |
-| ---------- | -------- | ------------------------------------------ |
-| `JIRA_URL` | Yes      | Derives workspace, project, and ticket key |
+### GitHub
 
-### GitHub skill
+| Input          | Required                                      | Notes                                                                   |
+| -------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
+| `ISSUE_URL`    | Preferred                                     | Use when available; it removes ambiguity and matches primary `gh` usage |
+| `OWNER`        | With `REPO` + `ISSUE_NUMBER` when URL absent  | Used only when `ISSUE_URL` is unavailable                               |
+| `REPO`         | With `OWNER` + `ISSUE_NUMBER` when URL absent | Used only when `ISSUE_URL` is unavailable                               |
+| `ISSUE_NUMBER` | With `OWNER` + `REPO` when URL absent         | Used only when `ISSUE_URL` is unavailable                               |
 
-| Input          | Required  | Notes                                             |
-| -------------- | --------- | ------------------------------------------------- |
-| `ISSUE_URL`    | Preferred | Derives owner, repo, issue number, and slug       |
-| `OWNER`        | Fallback  | With `REPO` + `ISSUE_NUMBER` when URL absent      |
-| `REPO`         | Fallback  | With `OWNER` + `ISSUE_NUMBER` when URL absent     |
-| `ISSUE_NUMBER` | Fallback  | With `OWNER` + `REPO` when URL absent             |
+If only coordinates are available, the retriever must scope reads explicitly to
+`owner/repo`.
 
-Both skills prefer passing the full URL downstream. The URL carries more
-context and lets the subagent derive identifiers for itself.
+### Jira
 
-## 5. Coordinator workflow and identity
+| Input      | Required | Notes                                                                 |
+| ---------- | -------- | --------------------------------------------------------------------- |
+| `JIRA_URL` | Yes      | The retriever derives workspace, project, and ticket key from the URL |
 
-The coordinator is a Phase 1 skill that turns a platform reference into a
-validated local snapshot. It is intentionally narrow: it coordinates
-retrieval, not mutation, planning, or execution.
+The paired skills must remain self-contained: neither skill relies on an
+external runtime spec file to interpret its input.
 
-### Four permitted coordinator actions
+## 5. Coordinator contract
 
-1. Read its bundled skill files (subagent definition, template)
-2. Derive identifiers from the input URL or coordinates
-3. Dispatch the retriever subagent
-4. Relay the retriever's structured summary
+The coordinator is intentionally narrow. It does four things directly:
 
-Everything else stays inside the subagent.
+1. Read its bundled skill files
+2. Derive the platform identifiers it needs from the input
+3. Dispatch exactly one retriever subagent
+4. Interpret and relay only the retriever's structured summary
 
-### Workflow steps
+The coordinator does **not**:
 
-```text
+- Inspect raw tracker payloads
+- Rewrite the snapshot artifact
+- Perform tracker mutation
+- Start implementation or planning
+
+The canonical coordinator workflow is:
+
 1. Read the retriever subagent definition
-2. Dispatch the subagent with the input URL (or coordinates)
+2. Dispatch the retriever with the platform-specific input set
 3. Interpret the structured summary it returns
-4. Report the file path, counts, and warnings to the caller
-```
+4. Report the file path, counts, warnings, and fatal reason to the caller
 
-### Success condition
+## 6. Retriever pipeline
 
-The phase succeeds only when the retriever returns a structured result that
-matches the output contract and, when a file is written, reports validation
-status consistently.
+Both retrievers follow the same 7-step pipeline, even though the transport
+details differ by platform:
 
-## 6. Output artifact contract
+1. **Validate the input and establish identifiers.**
+2. **Verify transport readiness and authentication.**
+3. **Retrieve the parent record** and parent comments.
+4. **Retrieve related items** and related comments.
+5. **Load the bundled template at assembly time** and write the snapshot to
+   `docs/<SNAPSHOT_KEY>.md`.
+6. **Re-read the artifact and run the post-write validation/repair loop.**
+7. **Return only the structured summary.**
 
-### Primary artifact
+Canonical retriever responsibilities:
+
+- Own input validation and tooling/auth checks
+- Gather the parent record plus all required related-item context
+- Assemble the artifact from the bundled template, not by ad hoc shape
+- Keep intermediate payloads, exploratory output, and full artifact text out of
+  the final reply
+- Return only the machine-readable summary defined by this spec
+
+Allowed transport differences:
+
+- **GitHub:** `gh` / `gh api` are the primary transport.
+- **Jira:** discover the currently available Jira-capable read tools, map them
+  deterministically to issue/comment/search operations, and treat missing
+  coverage as `TOOLS_MISSING`.
+
+### Shared retry policy
+
+Both retrievers share the same retry and no-retry rules:
+
+- Retry only explicit rate limits or transient service failures.
+- Use at most **2 retries per operation**, with backoff delays of **1 second**
+  and then **3 seconds**.
+- Do **not** retry bad input, auth failures, not found on the parent record, or
+  schema/tool mismatch failures.
+- If rate limiting persists after the retry budget is exhausted, return
+  `FETCH: FAIL` with `Failure category: RATE_LIMIT`.
+
+## 7. Structured summary contract
+
+Every retriever returns a structured summary with the same overall contract.
+Field names vary only where the platform requires different identity or state
+labels.
+
+### Shared top-level status fields
+
+| Field              | Allowed values                                                                        | Notes                                 |
+| ------------------ | ------------------------------------------------------------------------------------- | ------------------------------------- |
+| `FETCH`            | `PASS`, `PARTIAL`, `FAIL`, `ERROR`                                                    | Primary retrieval verdict             |
+| `Validation`       | `PASS`, `FAIL`, `NOT_RUN`                                                             | Artifact validation verdict           |
+| `Failure category` | `NONE`, `BAD_INPUT`, `NOT_FOUND`, `AUTH`, `TOOLS_MISSING`, `RATE_LIMIT`, `UNEXPECTED` | Machine-readable failure cause        |
+| `File written`     | `docs/<SNAPSHOT_KEY>.md` or `None`                                                    | Path to written artifact when present |
+| `Warnings`         | `None` or semicolon-separated warnings                                                | Retrieval warnings only               |
+| `Reason`           | `None` or fatal reason                                                                | User-facing detail, not routing logic |
+
+### Platform-specific identity and state lines
+
+| Concept                  | GitHub                             | Jira            |
+| ------------------------ | ---------------------------------- | --------------- | ------------------------------------- | ---------------- | -------- | ----------- | --------- |
+| Identity line            | `Issue: <owner>/<repo>#<N>: <Title | Unknown>`       | `Ticket: <TICKET_KEY>: <Summary/Title | Unknown>`        |
+| State line               | `State: <OPEN                      | CLOSED          | Unknown>`                             | `Status: <status | Unknown> | Type: <type | Unknown>` |
+| Platform-slot count line | `Child issues: ...`                | `Subtasks: ...` |
+
+### Shared count and attachment lines
+
+Both retrievers include:
+
+- `Comments: <retrieved>/<found | N/A>`
+- `<PLATFORM_SLOT>: <retrieved>/<found | UNKNOWN | N/A>`
+- `Linked issues: <retrieved>/<found | UNKNOWN | N/A>`
+- `Attachments: <N | N/A>`
+
+### Count semantics
+
+- `0/0` means the retriever **positively verified** that no items exist in that
+  section.
+- `<retrieved>/UNKNOWN` means the parent record was retrieved but discovery for
+  that related-item section could not be verified. The retriever records a
+  warning and treats the run as `FETCH: PARTIAL`.
+- `N/A` means the parent record was **never retrieved**, so that retrieval step
+  never ran. Do not use `0/0` or `UNKNOWN` in that case.
+- `Attachments: <N>` is the number of rendered entries or rows under
+  `## Attachments`. Use `Attachments: N/A` when the parent record was never
+  retrieved.
+
+### Canonical status meanings
+
+- `FETCH: PASS` -> retrieval and validation succeeded
+- `FETCH: PARTIAL` -> artifact was written and validated, but some related-item
+  or comment retrieval was incomplete, or allowed platform-specific discovery
+  could not be verified
+- `FETCH: FAIL` -> deterministic failure such as bad input, not found, auth
+  failure, missing tooling, or exhausted rate-limit retries
+- `FETCH: ERROR` -> unexpected environment, schema, or validation failure
+
+`Validation: FAIL` always means the artifact was written but still violates the
+template contract after the repair loop. It pairs with `FETCH: ERROR` and
+`Failure category: UNEXPECTED`.
+
+## 8. Snapshot artifact contract
+
+Primary artifact:
 
 ```text
-SNAPSHOT_PATH  (Jira: docs/<TICKET_KEY>.md  |  GitHub: docs/<ISSUE_SLUG>.md)
+docs/<SNAPSHOT_KEY>.md
 ```
 
-Treat the snapshot as a **preserved workflow artifact for resumability**.
-Write it, validate it, and leave it in place, but do not stage or commit it.
+The snapshot artifact contract is template-driven:
+
+- The bundled template's fenced Markdown shape is authoritative.
+- Every required top-level heading from that shape must appear in the written
+  file.
+- Repeated nested headings appear only for items that exist, required
+  `_Unknown. ..._` markers, or required `Not retrieved` placeholders.
+- `_None_` means the section was verified empty.
+- `_Unknown. ..._` means the parent record was retrieved but a permitted
+  discovery step could not be verified.
+- `Not retrieved` placeholders mean a related-item identity was known but the
+  item could not be hydrated completely.
 
-### Template authority
-
-Each skill has a bundled template that defines the exact artifact shape:
-
-- Jira: `./subagents/ticket-retriever-template.md`
-- GitHub: `./subagents/issue-retriever-template.md`
-
-The template is the authoritative contract. The section tables in SKILL.md
-are the scan-friendly summary.
-
-### Heading and content rules
-
-- Every top-level heading from the template must appear in the output file.
-- Repeated nested headings appear only when their parent section has
-  material to render.
-- If a top-level section has no data, keep the heading and write `_None_`.
-- For empty scalar values in `## Metadata`, write `_None_` in the value
-  column.
-- If retrieval is partial, `## Retrieval Warnings` must list every warning
-  and each missing related item must appear as a placeholder in its section.
-- Downstream skills rely on stable headings, not best-effort prose.
-
-### Section registry
-
-**Locked-core sections** (shared by both skills; same names, same relative
-order):
-
-| Section                 | Purpose                                          |
-| ----------------------- | ------------------------------------------------ |
-| `## Metadata`           | Core context for planning and validation         |
-| `## Description`        | Primary source of requirements                   |
-| `## Acceptance Criteria`| Definition-of-done source                        |
-| `## Comments`           | Decisions, clarifications, implementation hints   |
-| `## Retrieval Warnings` | Stable disclosure for partial retrieval           |
-| `## Linked Issues`      | Dependency and surrounding context               |
-
-**Locked platform-slot section** (shared concept, platform-named):
-
-| Jira section    | GitHub section     | Purpose                      |
-| --------------- | ------------------ | ---------------------------- |
-| `## Subtasks`   | `## Child Issues`  | Existing execution breakdown |
-
-**Platform-extension sections** (expected to differ between fetching
-skills):
-
-- **Jira:** `## Attachments`, `## Custom Fields`
-- **GitHub:** `## Labels`, `## Assignees`, `## Milestone`, `## Projects`,
-  `## Attachments`
-
-Platform-extension sections are stably present with `_None_` when empty.
-
-## 7. Structured result contract
-
-The retriever returns a structured summary with three independent status
-axes.
-
-### FETCH status
-
-| Value     | Meaning                                                                      |
-| --------- | ---------------------------------------------------------------------------- |
-| `PASS`    | Retrieval and validation succeeded                                           |
-| `PARTIAL` | Artifact written and validated, but some related data could not be retrieved  |
-| `FAIL`    | Deterministic failure (bad input, not found, auth, rate limit, missing tools) |
-| `ERROR`   | Unexpected tool or environment failure                                       |
-
-### Validation status
-
-| Value     | Meaning                                                    |
-| --------- | ---------------------------------------------------------- |
-| `PASS`    | Written file satisfies the template contract               |
-| `FAIL`    | File was written but violates the contract after repair    |
-| `NOT_RUN` | Retrieval failed before validation could happen            |
-
-### Failure category
-
-| Value          | Meaning                                          |
-| -------------- | ------------------------------------------------ |
-| `NONE`         | No fatal failure                                 |
-| `BAD_INPUT`    | Malformed input or unusable identifiers          |
-| `NOT_FOUND`    | Parent item not found before valid artifact      |
-| `AUTH`         | Access denied or not authenticated               |
-| `TOOLS_MISSING`| Required platform transport unavailable          |
-| `RATE_LIMIT`   | Rate limited after retry budget exhausted        |
-| `UNEXPECTED`   | Failure outside expected categories              |
-
-### Coordinator interpretation rules
-
-1. `FETCH: PASS` with `Validation: PASS` — report success and continue
-2. `FETCH: PARTIAL` with `Validation: PASS` — report success with warnings;
-   make incompleteness visible
-3. `FETCH: FAIL` — stop and relay failure category plus reason
-4. `FETCH: ERROR` — stop and relay as unexpected failure
-5. `Validation: FAIL` with `FETCH: ERROR` — stop and relay contract failure
-6. Inconsistent pairing (e.g. `FETCH: PASS` + `Validation: NOT_RUN`) —
-   treat as `FETCH: ERROR` and stop
-
-Branch on the structured fields, not on prose. Use `Reason` only for
-user-facing detail after branching on `Failure category`.
-
-## 8. Escalation
-
-| Summary state                                  | Coordinator action                                     |
-| ---------------------------------------------- | ------------------------------------------------------ |
-| `FETCH: PASS` with `Validation: PASS`          | Report success and continue                            |
-| `FETCH: PARTIAL` with `Validation: PASS`       | Report success with warnings; keep incompleteness visible |
-| `FETCH: FAIL`                                  | Stop and surface failure category plus reason          |
-| `FETCH: ERROR` or `Validation: FAIL`           | Stop and surface unexpected or contract failure        |
-
-## 9. Retriever subagent pipeline
-
-Both retriever subagents follow a 7-step sequence. Each step is
-platform-adapted but follows the same contract.
-
-### Step 1: Validate input and establish identifiers
-
-Confirm the input is valid and extract platform-specific identifiers. If
-input is malformed, return `FETCH: FAIL` with
-`Failure category: BAD_INPUT`.
-
-### Step 2: Verify platform transport
-
-Before the first read, verify the platform transport is available and
-authenticated:
-
-- **Jira:** Discover Jira-capable MCP tools by inspecting schemas. Map
-  available tools to required operations (issue reads, comment reads,
-  related-issue retrieval). Choose deterministically: prefer the most
-  specific read-only tool; keep the mapping stable for the run. If the
-  server exposes an auth step, complete it before the first read.
-- **GitHub:** Verify `gh` is on `PATH` (`gh --version`) and authenticated
-  (`gh auth status`).
-
-If the transport is unavailable, return `FETCH: FAIL` with
-`Failure category: TOOLS_MISSING`. If auth fails, return `FETCH: FAIL`
-with `Failure category: AUTH`.
-
-### Step 3: Retrieve the parent item
-
-Fetch the parent item with comprehensive metadata, full description, all
-comments in chronological order, and platform-specific fields.
-
-**Shared formatting rules:**
-
-- Preserve useful formatting: lists, fenced code blocks, links, tables
-- Outside fenced code blocks, rewrite platform-authored Markdown heading
-  lines as bold labels to prevent collision with reserved snapshot headings
-- Serialize multi-value metadata as comma-separated strings sorted
-  alphabetically by display text
-- For empty scalar metadata values, write `_None_`
-
-**Acceptance criteria extraction:**
-
-Apply the template's precedence rules. Remove the winning AC blocks from
-`## Description` so AC is not duplicated unless the template says otherwise.
-
-**Partial comment handling:**
-
-If parent-comment retrieval becomes partial after the item is known, keep
-retrieved comments, append the partial-comment marker per template rules,
-record the warning under `## Retrieval Warnings`, and treat the run as
-`FETCH: PARTIAL`.
-
-### Step 4: Retrieve related items
-
-Determine how many related items exist (subtasks/child issues and linked
-issues). For each, retrieve identity, status, full description, and all
-comments with the same formatting rules.
-
-**Shared partial retrieval rules:**
-
-- If an individual related item cannot be retrieved, continue with others
-- Add a warning under `## Retrieval Warnings`
-- Add a placeholder entry using the template's `Not retrieved` shape
-- This is `FETCH: PARTIAL`, not a silent omission
-
-**Deterministic ordering** (platform-specific rules):
-
-- **Jira:** Subtasks by ticket key ascending; linked issues by link type,
-  then ticket key ascending; attachments by filename ascending
-- **GitHub:** Child issues by number ascending; linked issues by
-  relation/context, then `owner/repo#N` ascending; labels by name
-  ascending; assignees by login ascending
-
-### Step 5: Assemble the document
-
-Load the bundled template only at this step (not earlier). Write the
-snapshot to `SNAPSHOT_PATH`.
-
-Treat the file as a **preserved workflow artifact for resumability**. Write
-it, validate it, and leave it in place, but do not stage or commit it.
-
-**Required elements:**
-
-- Title line: `# <ITEM_KEY>: <Title>`
-- Retrieval preamble with `Retrieved on` timestamp and `Source` reference
-- Every top-level heading from the template
-- Timestamps normalized to `YYYY-MM-DD HH:MM UTC`; date-only as
-  `YYYY-MM-DD`
-
-### Step 6: Post-write validation checklist
-
-After writing the file, re-read and verify. Both retriever subagents must
-satisfy this checklist (platform-adapted):
-
-1. Every required top-level heading from the fenced snapshot shape exists
-2. Repeated nested headings are present only when their parent item exists,
-   and every materialized item follows the template's nested shape
-3. `## Description` is present and explicitly represented with either the
-   source body or `_None_`
-4. The title line matches `# <ITEM_KEY>: <Title>`
-5. The retrieval preamble includes `Retrieved on` and `Source`
-6. The metadata table includes every required row in template order, and
-   empty scalar values are written as `_None_`
-7. Parent comment count in the file matches the retrieved data
-8. The number of related-item entries matches the number discovered, with
-   full entries for retrieved items and `Not retrieved` placeholders for
-   unretrieved ones
-9. Within body content, useful formatting is preserved and, outside fenced
-   code blocks, no rendered body line begins with Markdown heading markers
-   (`# `, `## `, `### `)
-10. For each materialized related item or placeholder, the required nested
-    headings and fields from the template appear exactly once
-11. `## Acceptance Criteria` follows the template's precedence and
-    extraction rules
-12. `## Retrieval Warnings` is `_None_` on full success, or lists every
-    warning on partial success
-13. Any partial comment retrieval warning has a matching terminal marker in
-    the affected comments section
-14. Each unretrieved related item has both a warning entry and a placeholder
-    entry in the correct section
-15. Platform-extension sections are either `_None_` or valid content
-    matching the template's rules
-16. Deterministic ordering rules are satisfied
-
-**Repair loop:** Fix only the missing or mismatched portions. Maximum **3**
-repair passes. If still failing, return `FETCH: ERROR`,
-`Validation: FAIL`, `Failure category: UNEXPECTED`.
-
-### Step 7: Return only the structured summary
-
-## 10. Retry strategy
-
-Retry only read operations that fail due to:
-
-- Explicit rate limiting (Jira: rate-limit responses; GitHub: `403` with
-  rate limit header, `429`)
-- Transient server errors (Jira: service unavailability; GitHub: `5xx`)
-
-**Limits:** At most **2** retries per operation, with backoff **1s** then
-**3s**.
-
-**Do not retry:** Bad input, auth failures, not-found responses, or
-tool/schema mismatches.
-
-If rate limits persist after retry budget, return `FETCH: FAIL` with
-`Failure category: RATE_LIMIT`.
-
-## 11. Structured summary output format
-
-Both retrievers return a structured summary as their only output. The
-summary must be machine-readable so the coordinator can branch on status
-fields without re-reading the artifact.
-
-### Shared fields
-
-```text
-FETCH: <PASS | PARTIAL | FAIL | ERROR>
-Validation: <PASS | FAIL | NOT_RUN>
-Failure category: <NONE | BAD_INPUT | NOT_FOUND | AUTH | TOOLS_MISSING | RATE_LIMIT | UNEXPECTED>
-File written: <SNAPSHOT_PATH | None>
-<ITEM_IDENTITY line>
-<ITEM_STATE line>
-Comments: <retrieved>/<found>
-<RELATED_SLOT count>: <retrieved>/<found>
-Linked issues: <retrieved>/<found>
-Warnings: <None | semicolon-separated warnings>
-Reason: <None | fatal reason>
-```
-
-`<found>` is the count of related item identities discovered on the parent;
-`<retrieved>` is how many were fully hydrated per template. When discovery
-yields zero, use `0/0`.
-
-### Platform-specific fields
-
-- **Jira** adds `Attachments: <N>` after the linked issues line.
-- **GitHub** omits the Attachments count (GitHub's `## Attachments` is
-  typically `_None_`).
-
-### Coordinator report content
-
-Using only the subagent's summary, the coordinator tells the caller:
-
-- The file path written (when one exists)
-- The item identity
-- The item state
-- Retrieved versus discovered counts for comments
-- Retrieved versus discovered counts for related items and linked issues
-- Platform-specific counts (Jira: attachment count)
-- Any warnings or fatal reason
-- Any failure category (when one exists)
-- That this phase is retrieval only and does not mutate the platform
+### Locked-core sections
+
+These top-level sections and their relative order are locked across the paired
+skills:
+
+| Section                  | Why it exists                                       |
+| ------------------------ | --------------------------------------------------- |
+| `## Metadata`            | Core identity and tracker context                   |
+| `## Description`         | Primary source of requirements                      |
+| `## Acceptance Criteria` | Definition-of-done source                           |
+| `## Comments`            | Decisions, clarifications, and implementation hints |
+| `## Retrieval Warnings`  | Stable disclosure point for partial retrieval       |
+| `## Linked Issues`       | Dependency and surrounding context                  |
+
+### Locked platform-slot section
+
+The shared slot between `## Retrieval Warnings` and `## Linked Issues` is
+conceptually locked, but its name differs by platform:
+
+| GitHub            | Jira          |
+| ----------------- | ------------- |
+| `## Child Issues` | `## Subtasks` |
+
+### Top-level order
+
+The canonical top-level order is:
+
+1. `## Metadata`
+2. `## Description`
+3. `## Acceptance Criteria`
+4. `## Comments`
+5. `## Retrieval Warnings`
+6. `PLATFORM_SLOT`
+7. `## Linked Issues`
+8. Platform-extension sections
+
+### Required identity blocks
+
+Each artifact must include a retrieval preamble and stable identity rows in
+`## Metadata`, with platform-specific content:
+
+| Platform | Required preamble lines                               | Required metadata identity rows |
+| -------- | ----------------------------------------------------- | ------------------------------- | ------------------------------------------------- | ------------------------------------------- |
+| GitHub   | `Retrieved on`, `Source`, `Repository: <owner>/<repo> | Issue: #<N>`                    | `ISSUE_SLUG`, `Repository`, `Issue number`, `URL` |
+| Jira     | `Retrieved on`, `Source`, `Workspace: <workspace>     | Project: <project>              | Ticket: <TICKET_KEY>`                             | `Ticket Key`, `Workspace`, `Project`, `URL` |
+
+Those identity rows are the stable minimum. The full `## Metadata` table is
+still template-defined and mandatory in template order for each platform. The
+retriever validators enforce every required metadata row from the bundled
+template, not only the identity subset listed above.
+
+### Platform-extension sections
+
+Allowed extension sections are:
+
+| GitHub           | Jira               |
+| ---------------- | ------------------ |
+| `## Labels`      | `## Attachments`   |
+| `## Assignees`   | `## Custom Fields` |
+| `## Milestone`   |                    |
+| `## Projects`    |                    |
+| `## Attachments` |                    |
+
+GitHub's `## Attachments` is a placeholder for explicitly linked file-like
+assets. Jira's `## Attachments` is a table of attachment metadata.
+
+Jira-specific rendering rules that are already fixed by the current retriever
+and template contract:
+
+- Multi-value metadata or custom-field values serialize as comma-separated
+  strings sorted by display text.
+- Structured custom-field values serialize as compact JSON with object keys
+  sorted alphabetically.
+
+## 9. Template authority and assembly
+
+Each skill's bundled template is the authoritative snapshot shape for that
+skill:
+
+- `skills/fetching-github-issue/subagents/issue-retriever-template.md`
+- `skills/fetching-jira-ticket/subagents/ticket-retriever-template.md`
+
+Canonical assembly rules:
+
+- Load the bundled template only at **assembly time**, not earlier in the run.
+- Copy the fenced Markdown shape into the artifact contract; explanatory notes
+  outside the fence remain instructions, not output.
+- Treat the bundled template as authoritative at runtime. No external spec file
+  is required during execution.
+
+## 10. Post-write validation and repair loop
+
+After writing the snapshot, the retriever must re-read it and validate at least
+these contract points:
+
+- Required top-level headings exist
+- Nested headings and placeholder shapes match the template
+- Title line and retrieval preamble match the platform template
+- Required metadata rows exist and preserve identity fields
+- Parent comment count matches the retrieved data
+- Related-item counts, placeholders, and `_Unknown. ..._` markers match the
+  discovered state
+- Acceptance-criteria extraction rules were applied correctly
+- Retrieval warnings match every partial or unknown state
+- Markdown heading lines in description/comment bodies were rewritten outside
+  fenced code blocks
+- Deterministic ordering rules were followed
+- Platform-extension sections are valid content, `_None_`, or template-defined
+  unknown markers where applicable
+- On pre-snapshot failure, `Comments`, related-item counts, and `Attachments`
+  use `N/A` rather than `0/0`, `UNKNOWN`, or numeric attachment counts
+
+Use a **targeted repair loop** with a maximum of **3** passes. If the artifact
+still fails validation after that loop, return:
+
+- `FETCH: ERROR`
+- `Validation: FAIL`
+- `Failure category: UNEXPECTED`
+
+## 11. Coordinator interpretation and escalation
+
+The coordinator branches on structured fields, not on prose:
+
+- `FETCH: PASS` with `Validation: PASS` -> report success and continue
+- `FETCH: PARTIAL` with `Validation: PASS` -> report success with warnings and
+  keep the incompleteness visible
+- `Validation: FAIL` -> stop and surface contract failure
+- `FETCH: FAIL` -> stop and surface the failure category plus reason
+- `FETCH: ERROR` -> stop and surface the unexpected failure
+- Any inconsistent pairing, such as `FETCH: PASS` with `Validation: NOT_RUN` ->
+  treat as `FETCH: ERROR`
+
+Coordinator reporting is summary-only. It may report:
+
+- File path written
+- Identity line
+- State/status line
+- Comment, related-item, and attachment counts
+- Warnings or fatal reason
+- Failure category
+- That Phase 1 is retrieval-only and does not mutate the tracker
 
 ## 12. Artifact lifecycle
 
-| Category | Contents        | Git behavior     | Lifecycle     |
-| -------- | --------------- | ---------------- | ------------- |
-| A        | `SNAPSHOT_PATH` | Never committed  | Never deleted |
+The snapshot artifact is a preserved workflow artifact for resumability:
 
-The snapshot is a workflow artifact for resumability. It stays out of git
-history. Downstream phases read it for planning context.
+- Path: `docs/<SNAPSHOT_KEY>.md`
+- Lifecycle: never deleted by the fetch skill
+- Git behavior: do not commit it as part of implementation history
+
+This is a Category A-style orchestration artifact even though the fetch skills
+do not use that label directly.
 
 ## 13. Divergence register
 
 ### Locked to this spec
 
-Both skills must express the same contract; wording may differ but behavior
-must not:
+The following aspects are locked. The paired skills may word them differently,
+but the behavior must match:
 
-- Coordinator workflow and the 4 permitted actions (section 5)
-- Locked-core section registry and ordering (section 6)
-- Structured result contract: FETCH, Validation, Failure category
-  (section 7)
-- Coordinator interpretation rules (section 7)
-- Escalation table (section 8)
-- The 7-step retriever pipeline structure (section 9)
-- Retry strategy: limits, backoff, non-retryable categories (section 10)
-- Post-write validation checklist (section 9, step 6)
-- Structured summary shared fields and `<found>` semantics (section 11)
-- Artifact lifecycle (section 12)
+- Coordinator role and allowed direct actions
+- The 4-step coordinator workflow
+- The 7-step retriever pipeline
+- The shared retry policy and `RATE_LIMIT` outcome handling
+- The structured summary contract (`FETCH`, `Validation`, `Failure category`,
+  `Warnings`, `Reason`)
+- Count semantics for `0/0`, `<retrieved>/UNKNOWN`, and `N/A`
+- The presence of `Attachments: <N | N/A>` in the structured summary
+- Template-authority and assembly timing
+- Locked-core section set and top-level order
+- Post-write validation obligations and max 3-pass repair loop
+- Coordinator interpretation and inconsistent-pairing handling
+- Snapshot artifact lifecycle
 
-### Platform-specific (expected to differ)
+### Platform-specific and expected to differ
 
-- The concrete platform transport (Jira MCP tool discovery vs `gh` CLI)
-- The input shape (single URL vs URL-or-fallback-coordinates)
-- The `ITEM_KEY` derivation and naming (`TICKET_KEY` vs `ISSUE_SLUG`)
-- The metadata table fields (Jira: 17 rows; GitHub: 9 rows)
-- The related-item metadata fields (Jira: Status/Assignee/Type; GitHub:
-  State/URL)
-- The related-item placeholder fields (Jira: Status/Assignee/Type/Retrieval
-  Status/Reason; GitHub: State/URL/Retrieval Status/Reason)
-- Platform-extension sections (Jira: Attachments, Custom Fields; GitHub:
-  Labels, Assignees, Milestone, Projects, Attachments)
-- The template preamble structure (Jira: 2 lines; GitHub: 3 lines
-  including `Repository | Issue`)
-- The `Attachments: <N>` line in the structured summary (Jira only)
-- The acceptance criteria primary source (Jira: dedicated field first, then
-  body; GitHub: body only)
-- Platform-specific deterministic ordering rules
-- The parent orchestrator references in each SKILL.md frontmatter
+The following divergences are expected and do not require harmonization beyond
+what is described here:
 
-Anything else that diverges should either be harmonized or explicitly noted
-here as an intentional platform difference.
+- Required input shape (`ISSUE_URL` or fallback coordinates vs `JIRA_URL`)
+- Transport details (`gh` vs Jira-capable tool discovery)
+- Snapshot key name (`ISSUE_SLUG` vs `TICKET_KEY`)
+- Identity and state/status summary lines
+- Retrieval preamble and metadata row sets
+- Platform-slot section (`## Child Issues` vs `## Subtasks`)
+- Platform-extension sections and their rendered shapes
+- Acceptance-criteria sourcing:
+  GitHub extracts from issue-body sections only; Jira uses a dedicated field
+  first, then description sections
+- Platform-specific partial nuance:
+  GitHub treats unverifiable `## Projects` membership as `FETCH: PARTIAL`;
+  Jira explicitly treats `## Attachments` and `## Custom Fields` as parent
+  payload sections rather than analogous unknown-discovery sections
+
+Anything else that diverges should either be harmonized or explicitly added to
+this register.
 
 ## 14. Change protocol
 
-When the fetching pipeline needs to change:
+When the fetch pipeline needs to change, follow this order:
 
-1. **Update this spec first.** Edit the relevant section(s) and the
-   divergence register if the change affects what may differ.
-2. **Update `fetching-jira-ticket`** to match. Touch `SKILL.md` and the
-   subagent files as needed.
-3. **Update `fetching-github-issue`** to match, using the same edits where
+1. **Update this spec first.** Edit the relevant section(s) and the divergence
+   register if the allowed differences change.
+2. **Update `fetching-jira-ticket`** to match. Touch `SKILL.md`, the retriever,
+   and the bundled template if affected.
+3. **Update `fetching-github-issue`** to match, using the same edits where the
    content is shared.
 4. **Verify alignment.** Re-read both skills' `SKILL.md`, retriever
-   subagent, and template side by side. Confirm they express the same
-   contract. Differences must map to an entry in the divergence register
-   (section 13).
-5. **Do not add a feature to one skill only.** If a behavior is valuable in
-   one fetching skill, it is valuable in both. Changes that only make sense
-   for one platform belong inside that platform's subagent, not in the
-   shared pipeline.
+   definitions, and bundled templates side by side. Differences must map to an
+   entry in the divergence register.
+5. **Do not add behavior to one fetch skill only** unless it is a genuine
+   platform-specific difference and is recorded in this spec.
 
-This spec is intentionally denser than a skill file. It exists to be read
-by the human author (or a future agent) at change time, not every retrieval
-run. Neither skill loads this file during normal operation.
+This spec is intentionally denser than the skill files. It exists to be read
+by a human author or future agent at change time, not during every Phase 1
+invocation.
