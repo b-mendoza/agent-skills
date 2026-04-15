@@ -53,16 +53,22 @@ stages validate the numbered `## Task <N>` shape used by the finalized plan.
 
 ### Stage `preflight`
 
-Validate `docs/<TICKET_KEY>.md`, the ticket snapshot from Phase 1.
+Validate `docs/<TICKET_KEY>.md`, the ticket snapshot from Phase 1
+(`fetching-jira-ticket`). These checks enforce the minimum heading set required
+for planning entry.
 
 Checks:
 
 - [ ] File exists at the specified path.
+- [ ] Contains `## Metadata`.
 - [ ] Contains `## Description`.
 - [ ] Contains `## Acceptance Criteria`.
 - [ ] Contains `## Comments`.
+- [ ] Contains `## Retrieval Warnings`.
 - [ ] Contains `## Subtasks`.
 - [ ] Contains `## Linked Issues`.
+- [ ] Contains `## Attachments`.
+- [ ] Contains `## Custom Fields`.
 
 ### Stage `1`
 

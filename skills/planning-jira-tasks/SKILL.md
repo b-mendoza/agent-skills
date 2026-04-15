@@ -34,6 +34,10 @@ sections, produced by `fetching-jira-ticket`:
 | `## Subtasks`            | Prevents duplicate planning                 |
 | `## Linked Issues`       | Preserves dependency awareness              |
 
+Stable context sections (`## Metadata`, `## Retrieval Warnings`, `## Attachments`,
+`## Custom Fields`) are also required by the `stage-validator` preflight and are
+produced by `fetching-jira-ticket` even when empty.
+
 If any are missing, treat Phase 1 as incomplete and stop with a preflight
 failure.
 
