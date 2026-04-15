@@ -163,8 +163,8 @@ affected`, `Dependencies / prerequisites`, and `Priority`.
    - Place `## GitHub Task Issues` after `## Issue Summary` when that section
      exists; otherwise after the first top-level heading in the file.
    - Table must have **exactly one row per parsed task**. `Dependencies` and
-     `Priority` columns must mirror the plan (use `None` / `Unknown` as in Jira
-     Phase 4).
+     `Priority` columns must mirror the plan and use the `None` / `Unknown`
+     fallbacks defined in `../references/phase-4-io-contracts.md`.
 
 9. **Validate and repair the artifact**
    - Re-read the updated plan file.
@@ -218,6 +218,10 @@ tasks without prerequisites and `Unknown` when the plan does not provide a
 priority value. Include **one row per parsed task** when the plan file was
 updated. For tasks without a concrete issue, use `Not Created` or `task-list` in
 `Issue ref` and an outcome such as `Create failed` or `Task list only`.
+
+This returned summary table is intentionally different from the plan-file
+workflow table. The plan artifact records platform `Status`; this summary
+records Phase 4 `Outcome`.
 
 When the run stops before plan updates or create attempts complete,
 `Created/Linked Task Issues` may be an empty table with only the header row. If

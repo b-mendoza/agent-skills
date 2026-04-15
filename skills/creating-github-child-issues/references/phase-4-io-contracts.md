@@ -22,11 +22,11 @@ docs/<ISSUE_SLUG>-tasks.md
 
 For normal Phase 4 execution, the plan is expected to contain:
 
-| Expected section / element                          | Produced by                 | Why it matters                                    |
-| ------------------------------------------------- | --------------------------- | ------------------------------------------------- |
-| `## Tasks` with numbered `## Task <N>:` headings  | planning-github-issue-tasks | Each row maps to one workflow task                |
-| `## Execution Order Summary`                      | planning-github-issue-tasks | Preserves ordering context                        |
-| `## Decisions Log`                              | clarifying-assumptions      | Indicates critique completed before GitHub writes |
+| Expected section / element                         | Produced by                     | Why it matters                                    |
+| -------------------------------------------------- | ------------------------------- | ------------------------------------------------- |
+| `## Tasks` with numbered `## Task <N>:` headings   | Upstream planning phase         | Each row maps to one workflow task                |
+| `## Execution Order Summary`                       | Upstream planning phase         | Preserves ordering context                        |
+| `## Decisions Log`                                 | Clarification / critique phase  | Indicates critique completed before GitHub writes |
 
 The parent orchestrator is responsible for validating the normal Phase 4
 precondition before this skill runs. If this skill is used standalone and the plan
@@ -40,8 +40,8 @@ The subagent **attempts**, in order:
 
 1. **Native child / sub-issues** — GitHub’s hierarchical sub-issue relationship,
    when the environment supports creating or attaching them non-interactively
-   (see `task-issue-creator.md` for detection; do not assume this is always
-   available).
+   (see `../subagents/task-issue-creator.md` for detection; do not assume this
+   is always available).
 2. **Linked issues** — standalone issues created with `gh issue create`, with
    explicit parent traceability in the child body (and, when practical, a
    parent-side comment linking the child).
@@ -64,8 +64,8 @@ After successful or partial Phase 4 completion, the plan file must include:
 
 | Addition | Consumed by | Purpose |
 | -------- | ----------- | ------- |
-| `## GitHub Task Issues` section with machine handoff line + workflow table | artifact-validator, progress-tracker, executing-github-task (later) | Phase 4 postcondition; resumable linkage |
-| Exactly one `GitHub Task Issue: …` line per numbered task section (immediately after the task heading) | artifact-validator, downstream execution | Per-task inline reference required for every row |
+| `## GitHub Task Issues` section with machine handoff line + workflow table | Downstream validation, progress tracking, and task execution phases | Phase 4 postcondition; resumable linkage |
+| Exactly one `GitHub Task Issue: …` line per numbered task section (immediately after the task heading) | Downstream validation and execution | Per-task inline reference required for every row |
 
 ### Machine handoff line (required)
 
@@ -73,7 +73,7 @@ Immediately after the `## GitHub Task Issues` heading, include **one** HTML
 comment on its own line (stable key-value shape for scripts and validators):
 
 ```html
-<!-- phase4-handoff parent="owner/repo#N" model="native-sub-issue|linked-issue|task-list" capability="<short free-text>" updated="<ISO-8601 UTC>" -->
+<!-- phase4-handoff parent="owner/repo#N" model="native-sub-issue|linked-issue|task-list|mixed" capability="<short free-text>" updated="<ISO-8601 UTC>" -->
 ```
 
 - **parent:** canonical parent reference, same repo as workflow unless the skill
@@ -87,8 +87,8 @@ comment on its own line (stable key-value shape for scripts and validators):
 
 ### Workflow table (required)
 
-Use the table shape in `./subagents/task-issue-creator-templates.md` (`Plan File
-Fragments`). Column semantics:
+Use the table shape in `../subagents/task-issue-creator-templates.md` (`Plan file
+fragments`). Column semantics:
 
 | Column | Allowed values / notes |
 | ------ | ---------------------- |
@@ -101,6 +101,10 @@ Fragments`). Column semantics:
 | Priority | From plan or `Unknown` |
 
 Exactly **one row per** parsed `## Task <N>:` section.
+
+This plan-file workflow table is intentionally different from the structured
+summary table returned by the subagent. The artifact table records current
+platform `Status`; the summary table records Phase 4 `Outcome`.
 
 ### Per-task inline reference (required)
 
@@ -132,6 +136,7 @@ The subagent returns a structured summary with:
 - `Write model:` and `Capability:` lines mirroring the handoff comment semantics
 - Counts: tasks in plan, already linked, created now, failed creates
 - `Decisions Log: PRESENT | MISSING`
+- `Reason: <one line>`
 - `Created/Linked Task Issues:` markdown table with **Task**, **Issue ref**,
   **Title**, **Write model**, **Dependencies**, **Priority**, **Outcome**
 - Explicit `Warnings:` and `Failures:` sections
@@ -140,6 +145,10 @@ Treat `TASK_ISSUES: ERROR` as an unexpected tool or environment failure. The
 coordinator stops and surfaces the reason instead of interpreting the run as a
 degraded success.
 
-The `Created/Linked Task Issues` table is the handoff the parent workflow uses
-for `progress-tracker` (`TASKS` on Phase 4 completion). Preserve **Dependencies**
-and **Priority** columns for every row.
+When the run stops before plan updates or create attempts complete,
+`Created/Linked Task Issues` may be header-only. This is still contract-valid
+for early `BLOCKED`, `FAIL`, or `ERROR` exits.
+
+The `Created/Linked Task Issues` table is the handoff downstream progress
+tracking uses on Phase 4 completion. Preserve **Dependencies** and **Priority**
+columns for every row.
