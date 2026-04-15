@@ -50,6 +50,12 @@ If `RE_PLAN=true`, reuse the same `ISSUE_SLUG`, load
 `./references/re-plan-cycle.md`, and pass the supplied `DECISIONS` only to the
 stages that need plan revisions.
 
+This skill is self-contained at runtime. Its contract lives in this file plus
+the co-located `references/` and `subagents/` files. It still expects the
+documented upstream snapshot artifact and parent workflow handoff, but it does
+not rely on external spec files or harness-specific workflow docs while
+executing it.
+
 ## Output Contract
 
 ### Artifact contract
@@ -86,6 +92,9 @@ Phase 3.
 ### Return handoff
 
 Return only a concise phase handoff to the parent orchestrator:
+
+Return `PLANNING: PASS` only when `PLAN: PASS`, `PRIORITIZATION: PASS`,
+`TASK_VALIDATION: PASS`, and every `STAGE_VALIDATION` gate returned `PASS`.
 
 ```text
 PLANNING: PASS | FAIL
@@ -156,6 +165,7 @@ This skill does exactly three things:
 
 The orchestrator keeps only decision-relevant handoff data between stages:
 
+- The stage subagent status summary (`PLAN`, `PRIORITIZATION`, or `TASK_VALIDATION`)
 - The validator verdict
 - The output file path for the passing stage
 - The specific issues that failed the current gate
@@ -171,9 +181,9 @@ recovery map when deciding which stage to dispatch or retry next.
 | Phase / gate    | Dispatch                              | Required output                         | On failure |
 | --------------- | ------------------------------------- | --------------------------------------- | ---------- |
 | `preflight`     | `stage-validator`                     | Issue snapshot is present and complete  | Stop with `Failure category: PREFLIGHT` |
-| Stage 1         | `task-planner` → `stage-validator`    | `docs/<ISSUE_SLUG>-stage-1-detailed.md` passes Stage 1 checks | Retry Stage 1 only, then re-run Stage 1 gate |
-| Stage 2         | `dependency-prioritizer` → `stage-validator` | `docs/<ISSUE_SLUG>-stage-2-prioritized.md` passes Stage 2 checks | Retry Stage 2 only, then re-run Stage 2 gate |
-| Stage 3         | `task-validator` → `stage-validator`  | `docs/<ISSUE_SLUG>-tasks.md` passes Stage 3 checks | Retry Stage 3 only, then re-run Stage 3 gate |
+| Stage 1         | `task-planner` → `stage-validator`    | `PLAN: PASS` and `docs/<ISSUE_SLUG>-stage-1-detailed.md` passes Stage 1 checks | Stop on `PLAN: FAIL | BLOCKED | ERROR`; retry Stage 1 only on a Stage 1 gate failure |
+| Stage 2         | `dependency-prioritizer` → `stage-validator` | `PRIORITIZATION: PASS` and `docs/<ISSUE_SLUG>-stage-2-prioritized.md` passes Stage 2 checks | Stop on `PRIORITIZATION: FAIL | BLOCKED | ERROR`; retry Stage 2 only on a Stage 2 gate failure |
+| Stage 3         | `task-validator` → `stage-validator`  | `TASK_VALIDATION: PASS` and `docs/<ISSUE_SLUG>-tasks.md` passes Stage 3 checks | Stop on `TASK_VALIDATION: FAIL | BLOCKED | ERROR`; retry Stage 3 only on a Stage 3 gate failure |
 | `postpipeline`  | `stage-validator`                     | Final downstream contract is intact     | Re-dispatch Stage 3, then re-run Stage 3 and post-pipeline gates |
 
 ## Execution Paths
@@ -225,9 +235,17 @@ re-plan rules require it.
    - `VALIDATION_ISSUES=<issues list>` only when retrying Stage 1 after a
      failed validator gate
 
+   If `PLAN` returns `FAIL`, `BLOCKED`, or `ERROR`, stop and return
+   `PLANNING: FAIL` with `Failure category: STAGE_1`.
+
    Then validate stage 1 by reading the `stage-validator` definition and
-   dispatching it with `STAGE=1` and
-   `FILE_PATH=docs/<ISSUE_SLUG>-stage-1-detailed.md`.
+   dispatching it with:
+   - `ISSUE_SLUG=<ISSUE_SLUG>`
+   - `STAGE=1`
+   - `FILE_PATH=docs/<ISSUE_SLUG>-stage-1-detailed.md`
+
+   If that validator returns `FAIL`, apply Step 7 before returning a phase
+   failure.
 
 4. **Stage 2 - Prioritize**
    Read the `dependency-prioritizer` definition and dispatch it with:
@@ -238,9 +256,17 @@ re-plan rules require it.
    - `VALIDATION_ISSUES=<issues list>` only when retrying Stage 2 after a
      failed validator gate
 
+   If `PRIORITIZATION` returns `FAIL`, `BLOCKED`, or `ERROR`, stop and return
+   `PLANNING: FAIL` with `Failure category: STAGE_2`.
+
    Then validate stage 2 by reading the `stage-validator` definition and
-   dispatching it with `STAGE=2` and
-   `FILE_PATH=docs/<ISSUE_SLUG>-stage-2-prioritized.md`.
+   dispatching it with:
+   - `ISSUE_SLUG=<ISSUE_SLUG>`
+   - `STAGE=2`
+   - `FILE_PATH=docs/<ISSUE_SLUG>-stage-2-prioritized.md`
+
+   If that validator returns `FAIL`, apply Step 7 before returning a phase
+   failure.
 
 5. **Stage 3 - Validate**
    Read the `task-validator` definition and dispatch it with:
@@ -251,8 +277,17 @@ re-plan rules require it.
    - `VALIDATION_ISSUES=<issues list>` only when retrying Stage 3 or repairing
      a failed post-pipeline gate
 
+   If `TASK_VALIDATION` returns `FAIL`, `BLOCKED`, or `ERROR`, stop and return
+   `PLANNING: FAIL` with `Failure category: STAGE_3`.
+
    Then validate stage 3 by reading the `stage-validator` definition and
-   dispatching it with `STAGE=3` and `FILE_PATH=docs/<ISSUE_SLUG>-tasks.md`.
+   dispatching it with:
+   - `ISSUE_SLUG=<ISSUE_SLUG>`
+   - `STAGE=3`
+   - `FILE_PATH=docs/<ISSUE_SLUG>-tasks.md`
+
+   If that validator returns `FAIL`, apply Step 7 before returning a phase
+   failure.
 
 6. **Post-pipeline gate**
    Read the `stage-validator` definition and dispatch it with:
@@ -263,7 +298,11 @@ re-plan rules require it.
    This confirms the full output contract for downstream phases.
 
 7. **Targeted retry loop**
-   For any failing gate:
+   This loop applies only to `STAGE_VALIDATION: FAIL` results. If a stage
+   subagent returns `PLAN: FAIL`, `PRIORITIZATION: FAIL`, or
+   `TASK_VALIDATION: FAIL`, stop and return `PLANNING: FAIL`.
+
+   For any failing validator gate:
    - Collect only the validator's issues list.
    - Re-dispatch only the stage that produced that artifact.
    - Pass the original inputs plus `VALIDATION_ISSUES=<issues list>`.
@@ -285,21 +324,22 @@ re-plan rules require it.
 ISSUE_SLUG = acme-app-42
 
 1. Dispatch `stage-validator` with `STAGE=preflight`,
+   `ISSUE_SLUG=acme-app-42`,
    `FILE_PATH=docs/acme-app-42.md`
    -> PASS
-2. Dispatch `task-planner` with
+2. Dispatch `task-planner` with `ISSUE_SLUG=acme-app-42`,
    `INPUT_PATH=docs/acme-app-42.md`,
    `OUTPUT_PATH=docs/acme-app-42-stage-1-detailed.md`
    -> wrote stage 1 artifact
 3. Validate stage 1
    -> PASS
-4. Dispatch `dependency-prioritizer` with
+4. Dispatch `dependency-prioritizer` with `ISSUE_SLUG=acme-app-42`,
    `INPUT_PATH=docs/acme-app-42-stage-1-detailed.md`,
    `OUTPUT_PATH=docs/acme-app-42-stage-2-prioritized.md`
    -> wrote stage 2 artifact
 5. Validate stage 2
    -> PASS
-6. Dispatch `task-validator` with
+6. Dispatch `task-validator` with `ISSUE_SLUG=acme-app-42`,
    `SNAPSHOT_PATH=docs/acme-app-42.md`,
    `PLAN_PATH=docs/acme-app-42-stage-2-prioritized.md`,
    `OUTPUT_PATH=docs/acme-app-42-tasks.md`
