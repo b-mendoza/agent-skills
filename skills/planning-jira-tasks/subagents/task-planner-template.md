@@ -67,10 +67,10 @@ constraints from the ticket and implicit assumptions you've inferred.>
 
 **Relevant requirements and context:**
 <Bullet list of ONLY the requirements, constraints, and background needed for
-THIS task. Reference assumption numbers or ticket sections.>
+THIS task. Reference assumption numbers or snapshot sections.>
 
-- Traces to: <Which part of the ticket description, acceptance criteria, or
-  comment this task addresses. Be specific — quote or reference section names.>
+- Traces to: <Which part of ## Description, ## Acceptance Criteria, ## Comments,
+  or a specific subtask/linked issue line this task addresses. Be specific.>
 
 **Questions to answer before starting:**
 <Uncertainties or team questions. For each, include why it matters and what the

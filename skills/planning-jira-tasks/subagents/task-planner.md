@@ -95,7 +95,7 @@ Answer these six subsections under `## Problem Framing`:
 5. **Alternative Approaches Not Explored** — other plausible paths, if any
 6. **Evidence Basis** — what evidence supports the chosen solution
 
-Use `Not stated in ticket` honestly whenever the ticket does not provide the
+Use `Not stated in ticket` honestly whenever the snapshot does not provide the
 answer.
 
 ### Decomposition (the what)
@@ -113,11 +113,19 @@ categories when relevant:
 8. Documentation
 9. Cleanup
 
+**Respect existing Jira subtasks:** When `## Subtasks` lists concrete work
+items, map them explicitly to tasks (or explain consolidation in `## Notes`) so
+planning does not duplicate tracked subtasks unintentionally.
+
+**Linked issues:** Use `## Linked Issues` for dependency and context; reflect
+hard ordering or blocking relationships in your task decomposition when the
+snapshot makes them clear.
+
 A task is a self-contained unit of work that has one clear objective, can be
 assigned to one person, and can be verified as done or not done. Split unrelated
 concerns into separate tasks.
 
-Target 4-15 tasks. If the ticket clearly justifies fewer or more, keep the plan
+Target 4–15 tasks. If the ticket clearly justifies fewer or more, keep the plan
 accurate and explain the exception in `## Notes`.
 
 ### Detailed planning (the how)
@@ -140,21 +148,23 @@ Before writing the file, verify:
 
 - The Problem Framing section has all six subsections.
 - Any inferred content is clearly marked as inference.
-- Every requirement in the ticket description has at least one task or an
-  explicit deferral in `## Notes`.
+- Every requirement in `## Description` has at least one task or an explicit
+  deferral in `## Notes`.
 - Every acceptance criterion maps to at least one task's Definition of done.
 - Every task has all six required subsections.
-- Every task has a `Traces to` reference back to the ticket.
+- Every task has a `Traces to` reference back to the ticket (description,
+  acceptance criteria, comments, or a named subtask/linked issue in the
+  snapshot).
 - Open questions are in the right place: cross-cutting vs per-task.
-- The task count is appropriate for the ticket scope, with `## Notes`
-  explaining any range exception.
+- The task count is appropriate for the scope, with `## Notes` explaining any
+  range exception.
 
 ### Common mistakes to avoid
 
 - Merging UI and backend work into one task because they serve the same feature
 - Ignoring comments that add scope, decisions, or clarifications
 - Creating a vague "miscellaneous" task instead of a clear unit of work
-- Copy-pasting the ticket description into implementation notes
+- Copy-pasting the `## Description` section into implementation notes
 - Writing vague DoD items like "works correctly"
 - Omitting fallback guidance from open questions
 - Assuming shared context across tasks instead of repeating key local details
@@ -201,7 +211,8 @@ Your job is to read a ticket snapshot and produce the stage 1 plan.
 - Produce Problem Framing honestly, especially where evidence or user need is
   not stated.
 - Produce lettered tasks that are self-contained for zero-context execution.
-- Keep every task traceable to ticket text, acceptance criteria, or comments.
+- Keep every task traceable to snapshot text, acceptance criteria, comments, or
+  enumerated subtasks/linked issues.
 - Write only to `OUTPUT_PATH`.
 - Return only the concise planning summary.
 
@@ -210,10 +221,8 @@ Your job is to read a ticket snapshot and produce the stage 1 plan.
 If you cannot complete the plan, report one of these categories. The
 dispatching skill decides whether to retry, re-plan, or escalate.
 
-- **BLOCKED** — cannot start because a prerequisite is missing, such as
-  the planning guidance skill or `INPUT_PATH`
-- **FAIL** — completed with issues because the ticket is too vague or incomplete
-  to support a fully actionable plan
+- **BLOCKED** — prerequisite missing, such as the `writing-plans` skill or `INPUT_PATH`
+- **FAIL** — snapshot too vague to support a fully actionable plan
 - **ERROR** — unexpected failure such as filesystem or tool access problems
 
 Use this format:

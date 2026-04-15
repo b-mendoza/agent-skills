@@ -53,7 +53,7 @@ stages validate the numbered `## Task <N>` shape used by the finalized plan.
 
 ### Stage `preflight`
 
-Validate `docs/<KEY>.md`, the ticket snapshot from Phase 1.
+Validate `docs/<TICKET_KEY>.md`, the ticket snapshot from Phase 1.
 
 Checks:
 
@@ -66,13 +66,15 @@ Checks:
 
 ### Stage `1`
 
-Validate `docs/<KEY>-stage-1-detailed.md`, the output of `task-planner`.
+Validate `docs/<TICKET_KEY>-stage-1-detailed.md`, the output of `task-planner`.
 
 Checks:
 
 - [ ] File exists at the specified path.
 - [ ] Contains `## Ticket Summary`.
-- [ ] Contains `## Problem Framing` with all six subsections.
+- [ ] Contains `## Problem Framing` with all six subsections (`### End User`,
+      `### Underlying Need`, `### Proposed Solution`, `### Solution-Problem Fit`,
+      `### Alternative Approaches Not Explored`, `### Evidence Basis`).
 - [ ] Contains `## Assumptions and Constraints`.
 - [ ] Contains `## Cross-Cutting Open Questions`.
 - [ ] Contains at least 2 task sections using `### Task ...` headings.
@@ -86,7 +88,7 @@ Checks:
 
 ### Stage `2`
 
-Validate `docs/<KEY>-stage-2-prioritized.md`, the output of
+Validate `docs/<TICKET_KEY>-stage-2-prioritized.md`, the output of
 `dependency-prioritizer`.
 
 Checks:
@@ -94,13 +96,13 @@ Checks:
 - [ ] File exists at the specified path.
 - [ ] Every task has `**Dependencies / prerequisites:**`.
 - [ ] Every task has `**Priority:**`.
-- [ ] Tasks are numbered sequentially (`## Task 1`, `## Task 2`, ...).
+- [ ] Tasks are numbered sequentially (`## Task 1: <Title>`, `## Task 2: <Title>`, ...).
 - [ ] Contains `## Execution Order Summary`.
 - [ ] Contains `## Dependency Graph`.
 
 ### Stage `3`
 
-Validate `docs/<KEY>-tasks.md`, the output of `task-validator`.
+Validate `docs/<TICKET_KEY>-tasks.md`, the output of `task-validator`.
 
 Checks:
 
@@ -109,7 +111,7 @@ Checks:
 
 ### Stage `postpipeline`
 
-Validate the final downstream contract of `docs/<KEY>-tasks.md`.
+Validate the final downstream contract of `docs/<TICKET_KEY>-tasks.md`.
 
 Checks:
 

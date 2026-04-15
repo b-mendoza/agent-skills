@@ -12,10 +12,10 @@ planner: fix mechanical issues directly, but do not invent missing work.
 
 ## Inputs
 
-| Input         | Required | Example                                |
-| ------------- | -------- | -------------------------------------- |
+| Input               | Required | Example                                |
+| ------------------- | -------- | -------------------------------------- |
 | `TICKET_KEY`        | Yes      | `JNS-6065`                             |
-| `SNAPSHOT_PATH`       | Yes      | `docs/JNS-6065.md`                     |
+| `SNAPSHOT_PATH`     | Yes      | `docs/JNS-6065.md`                     |
 | `PLAN_PATH`         | Yes      | `docs/JNS-6065-stage-2-prioritized.md` |
 | `OUTPUT_PATH`       | Yes      | `docs/JNS-6065-tasks.md`               |
 | `VALIDATION_ISSUES` | No       | `Missing \`## Tasks\` heading`         |
@@ -63,12 +63,12 @@ mechanical structural issues directly when there is one correct answer.
 
 #### Coverage
 
-| #   | Check                                                         | Severity |
-| --- | ------------------------------------------------------------- | -------- |
-| 1   | Every requirement in the ticket description is addressed      | FAIL     |
-| 2   | Every acceptance criterion maps to at least one task's DoD    | FAIL     |
-| 3   | Every subtask in the ticket is accounted for                  | WARN     |
-| 4   | Actionable comments (decisions, clarifications) are reflected | WARN     |
+| #   | Check                                                                                                      | Severity |
+| --- | ---------------------------------------------------------------------------------------------------------- | -------- |
+| 1   | Every requirement in `## Description` is addressed                                                         | FAIL     |
+| 2   | Every acceptance criterion maps to at least one task's DoD                                                 | FAIL     |
+| 3   | Every **retrieved** subtask in `## Subtasks` is accounted for (merged, referenced, or explicitly out of scope) | WARN     |
+| 4   | Actionable comments (decisions, clarifications) are reflected                                              | WARN     |
 
 #### Structure
 
@@ -89,27 +89,25 @@ mechanical structural issues directly when there is one correct answer.
 | 12  | Hard dependency references point to valid task numbers     | FAIL     |
 | 13  | No task is ordered before its hard dependency              | FAIL     |
 | 14  | No two tasks have identical objectives                     | WARN     |
-| 15  | Cross-cutting questions do not duplicate per-task questions | WARN    |
+| 15  | Cross-cutting questions do not duplicate per-task questions | WARN     |
 
 #### Quality
 
 | #   | Check                                                        | Severity |
 | --- | ------------------------------------------------------------ | -------- |
 | 16  | No vague DoD ("works", "is complete", "functions properly")  | WARN     |
-| 17  | Task count is appropriate for ticket scope                   | WARN     |
+| 17  | Task count is appropriate for scope                          | WARN     |
 | 18  | No empty or "TBD" Implementation Notes                       | WARN     |
 | 19  | Assumptions are numbered and referenced by at least one task | WARN     |
 
 ### How to handle results
 
-- **FAIL items**
-  Fix them directly only when they are mechanical, such as numbering gaps,
-  missing headings, or broken references. If fixing the issue would require
-  planning judgment, leave the plan content intact and record the failure in
-  `### Unresolved Issues`.
-- **WARN items**
-  Note them in the report for downstream awareness. Do not block the artifact
-  unless they also imply a FAIL-severity structural break.
+- **FAIL items** — Fix them directly only when they are mechanical, such as
+  numbering gaps, missing headings, or broken references. If fixing would
+  require planning judgment, leave the plan content intact and record the failure
+  in `### Unresolved Issues`.
+- **WARN items** — Note them in the report for downstream awareness. Do not
+  block the artifact unless they also imply a FAIL-severity structural break.
 
 ### Write policy
 
@@ -216,13 +214,9 @@ Your job is to validate the prioritized plan against the original ticket.
 If you cannot complete validation, report one of these categories. The
 dispatching skill decides whether to retry, re-plan, or escalate.
 
-- **BLOCKED** — cannot start because `SNAPSHOT_PATH` or `PLAN_PATH` is missing
-- **FAIL** — validation completed, but one or more FAIL-severity issues remain
-  after all mechanical fixes were applied
+- **BLOCKED** — `SNAPSHOT_PATH` or `PLAN_PATH` is missing
+- **FAIL** — one or more FAIL-severity issues remain after mechanical fixes
 - **ERROR** — unexpected failure such as filesystem or tool access problems
-
-Use the same summary schema as `## Output Format` so the dispatching skill can
-parse one structure for success and escalation cases.
 
 Use this format:
 

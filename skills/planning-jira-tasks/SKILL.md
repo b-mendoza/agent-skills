@@ -93,7 +93,7 @@ Artifacts preserved: <comma-separated paths>
 ## Workflow Overview
 
 ```
-docs/<KEY>.md (ticket snapshot)
+docs/<TICKET_KEY>.md (ticket snapshot)
        │
        ▼
 ┌──────────────────────────┐
@@ -109,7 +109,7 @@ docs/<KEY>.md (ticket snapshot)
 └──────────────────────────┘
          │
          ▼
-docs/<KEY>-tasks.md
+docs/<TICKET_KEY>-tasks.md
 ```
 
 Each stage writes a Category A orchestration artifact that stays on disk for
@@ -117,9 +117,9 @@ Phase 3 critique, targeted retries, and workflow resume:
 
 | Stage | File                                | Produced by            |
 | ----- | ----------------------------------- | ---------------------- |
-| 1     | `docs/<KEY>-stage-1-detailed.md`    | `task-planner`         |
-| 2     | `docs/<KEY>-stage-2-prioritized.md` | `dependency-prioritizer` |
-| 3     | `docs/<KEY>-tasks.md`               | `task-validator`       |
+| 1     | `docs/<TICKET_KEY>-stage-1-detailed.md`    | `task-planner`         |
+| 2     | `docs/<TICKET_KEY>-stage-2-prioritized.md` | `dependency-prioritizer` |
+| 3     | `docs/<TICKET_KEY>-tasks.md`               | `task-validator`       |
 
 Preserve these planning artifacts on disk. They support resume and critique
 workflows, and they stay out of git history as orchestration artifacts.
@@ -162,9 +162,9 @@ recovery map when deciding which stage to dispatch or retry next.
 | Phase / gate    | Dispatch                              | Required output                         | On failure |
 | --------------- | ------------------------------------- | --------------------------------------- | ---------- |
 | `preflight`     | `stage-validator`                     | Ticket snapshot is present and complete | Stop with `Failure category: PREFLIGHT` |
-| Stage 1         | `task-planner` → `stage-validator`    | `docs/<KEY>-stage-1-detailed.md` passes Stage 1 checks | Retry Stage 1 only, then re-run Stage 1 gate |
-| Stage 2         | `dependency-prioritizer` → `stage-validator` | `docs/<KEY>-stage-2-prioritized.md` passes Stage 2 checks | Retry Stage 2 only, then re-run Stage 2 gate |
-| Stage 3         | `task-validator` → `stage-validator`  | `docs/<KEY>-tasks.md` passes Stage 3 checks | Retry Stage 3 only, then re-run Stage 3 gate |
+| Stage 1         | `task-planner` → `stage-validator`    | `docs/<TICKET_KEY>-stage-1-detailed.md` passes Stage 1 checks | Retry Stage 1 only, then re-run Stage 1 gate |
+| Stage 2         | `dependency-prioritizer` → `stage-validator` | `docs/<TICKET_KEY>-stage-2-prioritized.md` passes Stage 2 checks | Retry Stage 2 only, then re-run Stage 2 gate |
+| Stage 3         | `task-validator` → `stage-validator`  | `docs/<TICKET_KEY>-tasks.md` passes Stage 3 checks | Retry Stage 3 only, then re-run Stage 3 gate |
 | `postpipeline`  | `stage-validator`                     | Final downstream contract is intact     | Re-dispatch Stage 3, then re-run Stage 3 and post-pipeline gates |
 
 ## Execution Paths

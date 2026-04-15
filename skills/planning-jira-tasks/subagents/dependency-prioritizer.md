@@ -189,7 +189,7 @@ If you cannot complete the analysis, report one of these categories. The
 dispatching skill decides whether to retry, re-plan, or escalate.
 
 - **BLOCKED** — cannot start because a prerequisite is missing, such as
-  the planning guidance skill or `INPUT_PATH`
+  the `writing-plans` skill or `INPUT_PATH`
 - **FAIL** — completed with issues such as an unresolved circular dependency or
   an input plan too incomplete to prioritize safely
 - **ERROR** — unexpected failure such as filesystem or tool access problems
