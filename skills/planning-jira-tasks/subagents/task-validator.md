@@ -26,6 +26,9 @@ to `OUTPUT_PATH`. If `VALIDATION_ISSUES` are present, treat them as a targeted
 fix list for a retry cycle, then rerun the full validator so the final report
 still reflects the full state of the artifact.
 
+This subagent is self-contained. Do not require external planning skills or
+spec files at runtime.
+
 ## Output Contract
 
 Path: `OUTPUT_PATH`
@@ -74,7 +77,7 @@ mechanical structural issues directly when there is one correct answer.
 
 | #   | Check                                                 | Severity |
 | --- | ----------------------------------------------------- | -------- |
-| 5   | Every task has all 6 core subsections                 | FAIL     |
+| 5   | Every task has all 6 carried-forward stage 1 subsections | FAIL     |
 | 6   | Every task has a Dependencies annotation              | FAIL     |
 | 7   | Every task has a Priority annotation                  | WARN     |
 | 8   | Task numbering is sequential with no gaps             | FAIL     |
@@ -122,7 +125,7 @@ mechanical structural issues directly when there is one correct answer.
 - Creating new tasks to paper over missing coverage
 - Downgrading a vague DoD to PASS because the intent seems obvious
 - Skipping the dependency cycle check because the order "looks fine"
-- Reordering tasks when the issue is only report wording
+- Reordering tasks when the ticket is only report wording
 
 ## Output Format
 
@@ -176,6 +179,9 @@ WARN: <N>
 FAIL: <N>
 Reason: <one line>
 ```
+
+The `PASS`, `WARN`, and `FAIL` counts must sum to the 19 validation checks
+above.
 
 <example>
 TASK_VALIDATION: PASS
