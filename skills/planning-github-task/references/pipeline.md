@@ -6,9 +6,9 @@
 > Reminder: dispatch one subagent at a time, keep only summaries, and rerun only
 > the steps invalidated by critique.
 
-## Standard Run
+## Standard Pipeline
 
-### 1. Dispatch `execution-prepper`
+### Stage 1. Dispatch `execution-prepper`
 
 Inputs:
 
@@ -24,7 +24,7 @@ Interpret the result:
 - `PREP: BLOCKED` -> stop and surface the missing prerequisite artifact
 - `PREP: ERROR` -> stop and ask the user how to proceed
 
-### 2. Dispatch `execution-planner`
+### Stage 2. Dispatch `execution-planner`
 
 Inputs:
 
@@ -38,7 +38,7 @@ Interpret the result:
 - `PLAN: BLOCKED` -> stop and surface the missing input artifact
 - `PLAN: ERROR` -> stop and ask the user how to proceed
 
-### 3. Dispatch `test-strategist`
+### Stage 3. Dispatch `test-strategist`
 
 Inputs:
 
@@ -53,7 +53,7 @@ Interpret the result:
 - `TEST_SPEC: BLOCKED` -> stop and surface the missing input artifact
 - `TEST_SPEC: ERROR` -> stop and ask the user how to proceed
 
-### 4. Dispatch `refactoring-advisor`
+### Stage 4. Dispatch `refactoring-advisor`
 
 Inputs:
 
@@ -69,7 +69,7 @@ Interpret the result:
 - `REFACTORING: BLOCKED` -> stop and surface the missing input artifact
 - `REFACTORING: ERROR` -> stop and ask the user how to proceed
 
-### 5. Report completion
+### Stage 5. Report Completion
 
 Return a short summary containing:
 

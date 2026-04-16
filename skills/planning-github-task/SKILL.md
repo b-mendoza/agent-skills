@@ -32,7 +32,7 @@ or downstream artifact expectations.
 Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns. Read
 `./references/pipeline.md` when deciding which stages to rerun.
 
-## Workflow Overview
+## Pipeline Stages
 
 1. `execution-prepper` validates the task and writes the execution brief.
 2. `execution-planner` inspects the codebase and writes the execution plan.
@@ -68,7 +68,7 @@ On a successful run, all four files exist. On a re-plan, overwrite only the
 files owned by the subagents that are re-run. These workflow-state documents
 stay on disk for the life of the workflow and are never committed to git.
 
-## How This Skill Works
+## Dispatch Rules
 
 - Read `./references/data-contracts.md` when checking prerequisites or artifact
   expectations.
@@ -88,10 +88,10 @@ stay on disk for the life of the workflow and are never committed to git.
   their downstream dependents.
 - Surface blockers and pause for resolution when ambiguity remains.
 
-## Phase Guide
+## Reference Guide
 
-This table tells you which reference to load. `## Execution Steps` remains the
-source of truth for the actual orchestration order.
+This table tells you which reference to load. `## Orchestration Steps` remains
+the source of truth for the actual pipeline order.
 
 | Situation | Reference file | Purpose |
 | --------- | -------------- | ------- |
@@ -99,7 +99,7 @@ source of truth for the actual orchestration order.
 | Re-plan after critique | `./references/pipeline.md` | Targeted rerun rules and retry limit |
 | Contract questions | `./references/data-contracts.md` | Upstream prerequisites and downstream consumers |
 
-## Execution Steps
+## Orchestration Steps
 
 1. Read `./references/data-contracts.md` and confirm the task-plan prerequisites
    exist for `ISSUE_SLUG` and `TASK_NUMBER`.
