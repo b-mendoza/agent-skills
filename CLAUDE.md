@@ -12,7 +12,8 @@ that needs to run on both.
 
 The repo is the artifact: the codebase IS the skill definitions. Most edits
 in this repo are skill or subagent authoring tasks. When that is the work,
-read the relevant best-practice doc before editing.
+use the routing table in `Skill-Authoring Guidance` to choose the minimum
+best-practice docs to read before editing.
 
 ## Repository Layout
 
@@ -27,60 +28,21 @@ read the relevant best-practice doc before editing.
 | [`opencode.jsonc`](./opencode.jsonc)     | OpenCode configuration (currently MCP server registration only).        |
 | [`README.md`](./README.md)               | Human-facing repo overview and skill catalog.                           |
 
-## Skill-Authoring Conventions
+## Skill-Authoring Guidance
 
-When authoring or editing a skill, subagent, or reference file, consult the
-relevant doc below. The file at the link is the source of truth — the line
-here is a hook, not a substitute.
+When authoring or editing a skill, subagent, or reference file, read only the
+docs named for your task before editing. The linked docs are the source of
+truth; [`docs/best-practices/README.md`](./docs/best-practices/README.md) is
+the full index for uncommon cases.
 
-- **[Progressive disclosure](./docs/best-practices/progressive-disclosure.md)** —
-  Keep `SKILL.md` under ~500 lines; push mode/phase content into
-  `references/` and per-subagent content into `subagents/`.
-- **[Context window protection](./docs/best-practices/context-window-protection.md)** —
-  Orchestrators dispatch and synthesize; subagents do the heavy reading.
-  Pass file paths and summaries between steps, never raw output.
-- **[Subagent-default execution](./docs/best-practices/subagent-default-execution.md)** —
-  Decide inline vs. delegate per step using the two-question test, not by
-  step complexity.
-- **[Positive constraint framing](./docs/best-practices/positive-constraint-framing.md)** —
-  Name what the agent IS allowed to do; reserve negation for safety
-  boundaries. Brief in-file reminders may name forbidden tools.
-- **[Instruction reinforcement](./docs/best-practices/instruction-reinforcement.md)** —
-  At the top of long reference files, restate critical constraints in 1–3
-  lines. Do not repeat in every file.
-- **[Structural conventions](./docs/best-practices/structural-conventions.md)** —
-  Skills: identity → inputs → registry → behavior → example. Subagents:
-  identity → inputs → instructions → output → scope → escalation.
-- **[Input and output contracts](./docs/best-practices/input-output-contracts.md)** —
-  Document required inputs, output paths, and required output sections.
-  Prefer URLs over pre-extracted keys as inputs.
-- **[Escalation patterns](./docs/best-practices/escalation-patterns.md)** —
-  Every subagent ends with explicit failure categories. Fail loudly; the
-  orchestrator decides recovery.
-- **[Template extraction](./docs/best-practices/template-extraction.md)** —
-  Output templates over ~80 lines move into a sibling file loaded only at
-  the assembly step.
-- **[Identity and mental-model statements](./docs/best-practices/identity-and-mental-model.md)** —
-  Open every skill and subagent with what-it-is and why-it-exists, calibrated
-  to complexity.
-- **[Example strategy](./docs/best-practices/example-strategy.md)** —
-  Include a dispatch round-trip example in skills, an output-format example
-  in subagents, and at least one failure example.
-- **[Validation loops](./docs/best-practices/validation-loops.md)** —
-  Every phase: announce → validate preconditions → execute → validate
-  postconditions → update progress → gate. Max 3 fix cycles per task.
-- **[Naming conventions](./docs/best-practices/naming-conventions.md)** —
-  Skills use gerunds (`creating-jira-subtasks`); subagents use role nouns
-  (`log-analyzer`). Frontmatter `name` matches the directory name.
-- **[Artifact lifecycle management](./docs/best-practices/artifact-lifecycle.md)** —
-  Orchestration artifacts (progress files, ticket snapshots) are never
-  committed. Implementation artifacts (source, tests, configs) are.
-- **[Empirical validation over self-report](./docs/best-practices/empirical-validation.md)** —
-  Validate skill changes by running the workflow and observing behavior, not
-  by asking the agent whether the fix will work.
-
-For folder layout when scaffolding a new skill, see
-[`docs/best-practices/quick-reference-skill-structure.md`](./docs/best-practices/quick-reference-skill-structure.md).
+| Task | Read before editing |
+| ---- | ------------------- |
+| Create a new skill | [`quick-reference-skill-structure`](./docs/best-practices/quick-reference-skill-structure.md), [`structural-conventions`](./docs/best-practices/structural-conventions.md), [`naming-conventions`](./docs/best-practices/naming-conventions.md), [`identity-and-mental-model`](./docs/best-practices/identity-and-mental-model.md) |
+| Restructure a large `SKILL.md` or move content into supporting files | [`progressive-disclosure`](./docs/best-practices/progressive-disclosure.md), [`template-extraction`](./docs/best-practices/template-extraction.md) |
+| Add or edit a subagent | [`subagent-default-execution`](./docs/best-practices/subagent-default-execution.md), [`context-window-protection`](./docs/best-practices/context-window-protection.md), [`escalation-patterns`](./docs/best-practices/escalation-patterns.md), [`input-output-contracts`](./docs/best-practices/input-output-contracts.md) |
+| Write or revise instructions, constraints, examples, or long reference files | [`positive-constraint-framing`](./docs/best-practices/positive-constraint-framing.md), [`example-strategy`](./docs/best-practices/example-strategy.md), [`instruction-reinforcement`](./docs/best-practices/instruction-reinforcement.md) |
+| Add validation steps or fix loops | [`validation-loops`](./docs/best-practices/validation-loops.md), [`empirical-validation`](./docs/best-practices/empirical-validation.md) |
+| Decide what artifacts to commit, keep local, or delete | [`artifact-lifecycle`](./docs/best-practices/artifact-lifecycle.md) |
 
 ## Verification
 
