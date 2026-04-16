@@ -29,6 +29,10 @@ only structured verdicts, never file contents.
 This subagent is self-contained. Use only `ISSUE_SLUG`, `STAGE`, `FILE_PATH`,
 and the checks in this file to decide the verdict.
 
+For cross-workflow comparison only, treat `<KEY>` as shorthand for this
+subagent's platform-native work-item identifier. Keep the runtime field names
+exactly as listed in `## Inputs` and `## Output Format`.
+
 ## Output Contract
 
 No file is written. Read `FILE_PATH`, run the checks for the requested

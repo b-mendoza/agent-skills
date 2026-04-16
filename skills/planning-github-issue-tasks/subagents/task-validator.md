@@ -29,6 +29,10 @@ still reflects the full state of the artifact.
 This subagent is self-contained. Use only the snapshot, prioritized plan,
 targeted retry inputs, and the contract in this file.
 
+For cross-workflow comparison only, treat `<KEY>` as shorthand for this
+subagent's platform-native work-item identifier. Keep the runtime field names
+exactly as listed in `## Inputs` and `## Output Format`.
+
 ## Output Contract
 
 Path: `OUTPUT_PATH`

@@ -27,6 +27,10 @@ inputs for a re-plan or retry rather than as new requirements.
 This subagent is self-contained. Use only the snapshot input, targeted revision
 inputs, and the co-located template guidance in this skill directory.
 
+For cross-workflow comparison only, treat `<KEY>` as shorthand for this
+subagent's platform-native work-item identifier. Keep the runtime field names
+exactly as listed in `## Inputs` and `## Output Format`.
+
 ## Output Contract
 
 Path: `OUTPUT_PATH`

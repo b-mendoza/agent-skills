@@ -12,10 +12,16 @@ boundary, preserves planning artifacts for resume and critique, and returns
 only concise handoff summaries to the parent workflow. It does not decompose
 work, prioritize dependencies, or validate plan quality inline.
 
-**Compatibility:** Downstream phases use `TICKET_KEY`-oriented handoffs and
-paths. In this workflow, **`TICKET_KEY` and `ISSUE_SLUG` are the same string**
-(for example `acme-app-42`). All artifact paths in this skill use
-`docs/<ISSUE_SLUG>…`.
+**Compatibility:**
+
+- Downstream phases use `TICKET_KEY`-oriented handoffs and paths.
+- In this workflow, **`TICKET_KEY` and `ISSUE_SLUG` are the same string** (for
+  example `acme-app-42`).
+- For cross-workflow comparison only, treat `<KEY>` as shorthand for this
+  skill's platform-native work-item identifier. Runtime dispatches and returned
+  summaries still use `ISSUE_SLUG`.
+
+All artifact paths in this skill use `docs/<ISSUE_SLUG>…`.
 
 ## Inputs
 

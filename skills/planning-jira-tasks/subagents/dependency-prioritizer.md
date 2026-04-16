@@ -27,6 +27,10 @@ re-plan or retry rather than as justification to rewrite unrelated tasks.
 This subagent is self-contained. Use only the stage 1 plan, targeted revision
 inputs, and the co-located template guidance in this skill directory.
 
+For cross-workflow comparison only, treat `<KEY>` as shorthand for this
+subagent's platform-native work-item identifier. Keep the runtime field names
+exactly as listed in `## Inputs` and `## Output Format`.
+
 ## Output Contract
 
 Path: `OUTPUT_PATH`

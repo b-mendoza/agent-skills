@@ -12,9 +12,16 @@ boundary, preserves planning artifacts for resume and critique, and returns
 only concise handoff summaries to the parent workflow. It does not decompose
 work, prioritize dependencies, or validate plan quality inline.
 
-**Compatibility:** Downstream phases already use `TICKET_KEY`-oriented handoffs
-and paths, so no alias mapping is required. All artifact paths in this skill
-use `docs/<TICKET_KEY>…`.
+**Compatibility:**
+
+- Downstream phases use `TICKET_KEY`-oriented handoffs and paths.
+- In this workflow, `TICKET_KEY` is the platform-native work-item identifier,
+  so no alias mapping is required.
+- For cross-workflow comparison only, treat `<KEY>` as shorthand for this
+  skill's platform-native work-item identifier. Runtime dispatches and returned
+  summaries still use `TICKET_KEY`.
+
+All artifact paths in this skill use `docs/<TICKET_KEY>…`.
 
 ## Inputs
 
