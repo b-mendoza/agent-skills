@@ -53,6 +53,7 @@ The main plan file at `docs/<TICKET_KEY>-tasks.md` must contain these sections:
 
 | Section | Used for |
 | --- | --- |
+| `## Ticket Summary` or `## Issue Summary` | Platform-native summary section consumed upstream; either heading satisfies this input contract |
 | `## Problem Framing` | Tier 3 hard-gate questions and user-impact context |
 | `## Assumptions and Constraints` | Assumptions to confirm, revise, or defer |
 | `## Cross-Cutting Open Questions` | Plan-wide blocking questions |
