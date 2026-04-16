@@ -99,8 +99,8 @@ Return exactly this structure:
 - Task status line: <updated | failed>
 - Implementation summary: <updated | failed>
 - Files changed list: <updated | failed>
-- Jira Subtasks table row: <updated | skipped | failed>
-- Jira transition/comment: <updated | skipped | failed>
+- Tracker table row: <updated | skipped | failed>
+- Tracker completion actions: <updated | skipped | failed>
 
 ### Blockers or Ambiguities
 - <issue or `None`>
@@ -138,8 +138,8 @@ COMPLETE
 - Task status line: updated
 - Implementation summary: updated
 - Files changed list: updated
-- Jira Subtasks table row: skipped
-- Jira transition/comment: skipped
+- Tracker table row: skipped
+- Tracker completion actions: skipped
 
 ### Blockers or Ambiguities
 - None
@@ -178,8 +178,8 @@ None
 - Task status line: failed
 - Implementation summary: failed
 - Files changed list: failed
-- Jira Subtasks table row: skipped
-- Jira transition/comment: skipped
+- Tracker table row: skipped
+- Tracker completion actions: skipped
 
 ### Blockers or Ambiguities
 - The changed Category B files cannot be partitioned into safe commit groups from the execution scope provided.
