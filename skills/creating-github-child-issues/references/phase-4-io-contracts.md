@@ -20,6 +20,13 @@ ISSUE_URL   — parent issue (authoritative for owner/repo/number)
 docs/<ISSUE_SLUG>-tasks.md
 ```
 
+Derive these stable identifiers from `ISSUE_URL`:
+
+- **OWNER:** path segment after `github.com/` (lowercase for slug stability)
+- **REPO:** next path segment (lowercase)
+- **PARENT_NUMBER:** numeric segment after `/issues/`
+- **ISSUE_SLUG:** `<owner>-<repo>-<parent_number>`
+
 For normal Phase 4 execution, the plan is expected to contain:
 
 | Expected section / element                         | Produced by                     | Why it matters                                    |
@@ -34,7 +41,7 @@ is missing or malformed, the subagent returns `TASK_ISSUES: BLOCKED`. If
 `## Decisions Log` is missing, the subagent continues with `TASK_ISSUES: WARN`:
 the plan is still parseable, but the normal workflow precondition was skipped.
 
-## Write Path
+## Platform Behavior
 
 The subagent attempts these write models, in order:
 
@@ -52,7 +59,15 @@ The subagent attempts these write models, in order:
 The orchestrator does not pick the model per run. The subagent records which
 path was used in the machine handoff comment and per-row `Write model` column.
 
-## Output Contract
+When a task resolves to **task-list** traceability only:
+
+- The workflow table row uses `Issue ref = task-list`,
+  `Write model = task-list`, and `Status = task-list`
+- The task section uses `GitHub Task Issue: task-list`
+- The optional checklist note shown in the templates file is a local traceability
+  aid, not a separate contract surface
+
+## Output Artifact Contract
 
 Primary output artifact:
 
@@ -88,8 +103,13 @@ comment on its own line (stable key-value shape for scripts and validators):
 
 ### Workflow table (required)
 
-Use the table shape in `../subagents/task-issue-creator-templates.md`
-(`Plan file fragments`). Column semantics:
+Use the example `## GitHub Task Issues` section in
+`../subagents/task-issue-creator-templates.md`. Column order is fixed:
+
+| Task | Issue ref | Title | Write model | Status | Dependencies | Priority |
+| ---- | --------- | ----- | ----------- | ------ | ------------ | -------- |
+
+Column semantics:
 
 | Column | Allowed values / notes |
 | ------ | ---------------------- |
@@ -102,6 +122,10 @@ Use the table shape in `../subagents/task-issue-creator-templates.md`
 | Priority | From plan or `Unknown` |
 
 Exactly **one row per** parsed `## Task <N>:` section.
+
+Use `Not Created` in both `Issue ref` and `Status` when a concrete issue create
+attempt failed. Use `task-list` in `Issue ref`, `Write model`, and `Status`
+only when the task is intentionally recorded as plan-only traceability.
 
 This plan-file workflow table is intentionally different from the structured
 summary table returned by the subagent. The artifact table records current
@@ -133,6 +157,7 @@ The subagent returns a structured summary with:
 - `TASK_ISSUES: PASS | WARN | FAIL | BLOCKED | ERROR`
 - `Validation: PASS | FAIL | NOT_RUN`
 - `Parent: owner/repo#N`
+- `ISSUE_SLUG: <issue_slug>`
 - `Plan file: <path | not updated>`
 - `Write model:` and `Capability:` lines mirroring the handoff comment semantics
 - Counts: tasks in plan, already linked, created now, failed creates
@@ -142,9 +167,13 @@ The subagent returns a structured summary with:
   **Title**, **Write model**, **Dependencies**, **Priority**, **Outcome**
 - Explicit `Warnings:` and `Failures:` sections
 
-`Write model:` and `Capability:` remain required even on early exits. When the
-run stops before concrete creation or validation, populate them with the best
-detected or intended write path so the summary shape stays stable.
+`ISSUE_SLUG:` is required on every summary, including early exits. `Write model:`
+and `Capability:` remain required even when the run stops before concrete
+creation or validation.
+
+When the run stops before concrete creation or validation, populate `Write
+model:` and `Capability:` with the best detected or intended write path so the
+summary shape stays stable.
 
 Treat `TASK_ISSUES: ERROR` as an unexpected tool or environment failure. The
 orchestrator stops and surfaces the reason instead of interpreting the run as a
@@ -157,3 +186,28 @@ for early `BLOCKED`, `FAIL`, or `ERROR` exits.
 The `Created/Linked Task Issues` table is the structured handoff downstream
 progress tracking uses after Phase 4 completion. Preserve **Dependencies** and
 **Priority** columns for every row.
+
+When the plan file was updated, include one summary row per parsed task. For
+tasks without a concrete issue, use `Not Created` or `task-list` in `Issue ref`
+and an `Outcome` that makes the result explicit, such as `Create failed` or
+`Task list only`.
+
+If the run stops before create attempts begin, report `Failed creates: 0`.
+
+## Status and Validation Semantics
+
+- **PASS:** every task has a valid handoff row and matching per-task line;
+  validation passed; no blocking warnings
+- **WARN:** validation passed, but the run had non-fatal issues such as a
+  missing `## Decisions Log`, mixed / degraded linkage, some `Not Created`
+  rows, or other recoverable GitHub degradation
+- **BLOCKED:** the plan is missing, malformed, unsupported, or contains unsafe
+  existing refs that cannot be reused safely
+- **FAIL:** parent verification failed, auth failed, `gh` is unavailable, all
+  concrete-expected tasks remained unlinked after attempts, or post-write
+  validation could not be repaired
+- **ERROR:** an unexpected filesystem, tool, or environment failure interrupted
+  the run
+
+Use `Validation: NOT_RUN` only when the run failed before any plan-file update
+or post-write validation could occur.

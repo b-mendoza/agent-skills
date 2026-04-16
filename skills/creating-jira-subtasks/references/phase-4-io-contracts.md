@@ -20,6 +20,12 @@ JIRA_URL   — parent ticket (authoritative for workspace/project/key)
 docs/<TICKET_KEY>-tasks.md
 ```
 
+Derive these stable identifiers from `JIRA_URL`:
+
+- **Workspace:** subdomain before `.atlassian.net`
+- **Project:** prefix before the dash in the ticket key
+- **TICKET_KEY:** full path segment, such as `PROJ-123`
+
 For normal Phase 4 execution, the plan is expected to contain:
 
 | Expected section / element                          | Produced by                    | Why it matters                               |
@@ -34,7 +40,7 @@ plan is missing or malformed, the subagent returns `SUBTASKS: BLOCKED`. If
 `## Decisions Log` is missing, the subagent continues with `SUBTASKS: WARN`:
 the plan is still parseable, but the normal workflow precondition was skipped.
 
-## Write Path
+## Platform Behavior
 
 Phase 4 in Jira uses the project's native subtask relationship only.
 
@@ -43,7 +49,7 @@ alternate write models or emit capability / handoff metadata lines in the
 structured summary. The subagent either links a concrete Jira subtask or
 records `Not Created` for that task in the plan artifact and summary.
 
-## Output Contract
+## Output Artifact Contract
 
 Primary output artifact:
 
@@ -60,8 +66,13 @@ After successful or partial Phase 4 completion, the plan file must include:
 
 ### Workflow table (required)
 
-Use the table shape in `../subagents/subtask-creator-templates.md`
-(`Plan file fragments`). Column semantics:
+Use the example `## Jira Subtasks` section in
+`../subagents/subtask-creator-templates.md`. Column order is fixed:
+
+| Task | Subtask Key | Title | Status | Dependencies | Priority |
+| ---- | ----------- | ----- | ------ | ------------ | -------- |
+
+Column semantics:
 
 | Column | Allowed values / notes |
 | ------ | ---------------------- |
@@ -73,6 +84,9 @@ Use the table shape in `../subagents/subtask-creator-templates.md`
 | Priority | From plan or `Unknown` |
 
 Exactly **one row per** parsed `## Task <N>:` section.
+
+Use `Not Created` in both `Subtask Key` and `Status` when a create attempt
+failed.
 
 This plan-file workflow table is intentionally different from the structured
 summary table returned by the subagent. The artifact table records current Jira
@@ -103,6 +117,7 @@ The subagent returns a structured summary with:
 - `SUBTASKS: PASS | WARN | FAIL | BLOCKED | ERROR`
 - `Validation: PASS | FAIL | NOT_RUN`
 - `Parent: <TICKET_KEY>`
+- `TICKET_KEY: <TICKET_KEY>`
 - `Plan file: <path | not updated>`
 - Counts: tasks in plan, already linked, created now, failed creates
 - `Decisions Log: PRESENT | MISSING`
@@ -110,6 +125,12 @@ The subagent returns a structured summary with:
 - `Created/Linked Subtasks:` markdown table with **Task**, **Subtask Key**,
   **Title**, **Dependencies**, **Priority**, **Outcome**
 - Explicit `Warnings:` and `Failures:` sections
+
+`TICKET_KEY:` is required on every summary, including early exits. Keep this
+explicit stable identifier line even though it mirrors `Parent:`.
+
+This contract does **not** include `Write model:` or `Capability:` lines for
+Jira Phase 4 reporting.
 
 Treat `SUBTASKS: ERROR` as an unexpected tool or environment failure. The
 orchestrator stops and surfaces the reason instead of interpreting the run as a
@@ -122,3 +143,26 @@ early `BLOCKED`, `FAIL`, or `ERROR` exits.
 The `Created/Linked Subtasks` table is the structured handoff downstream
 progress tracking uses after Phase 4 completion. Preserve **Dependencies** and
 **Priority** columns for every row.
+
+When the plan file was updated, include one summary row per parsed task. For
+tasks without a concrete Jira key, use `Not Created` in `Subtask Key` and an
+`Outcome` that makes the result explicit, such as `Create failed`.
+
+If the run stops before create attempts begin, report `Failed creates: 0`.
+
+## Status and Validation Semantics
+
+- **PASS:** every task is linked to a valid Jira subtask and validation passed;
+  no blocking warnings
+- **WARN:** validation passed, but the run had non-fatal issues such as a
+  missing `## Decisions Log` or some tasks still not linked after individual
+  create failures
+- **BLOCKED:** the plan is missing, malformed, unsupported, or contains unsafe
+  existing Jira links that cannot be reused safely
+- **FAIL:** parent lookup failed, auth failed, Jira-capable tools were missing,
+  all tasks remained unlinked after create attempts, or post-write validation
+  could not be repaired
+- **ERROR:** an unexpected tool or environment failure interrupted the run
+
+Use `Validation: NOT_RUN` only when the run failed before any plan-file update
+or post-write validation could occur.
