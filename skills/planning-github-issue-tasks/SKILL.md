@@ -97,7 +97,10 @@ Phase 3.
 
 Return only the concise phase handoff below. Use `PLANNING: PASS` only when
 `PLAN: PASS`, `PRIORITIZATION: PASS`, `TASK_VALIDATION: PASS`, and every
-`STAGE_VALIDATION` gate returned `PASS`.
+`STAGE_VALIDATION` gate returned `PASS`. If any `stage-validator` dispatch
+returns `STAGE_VALIDATION: ERROR`, stop at that gate and return
+`PLANNING: FAIL` with the existing stage-specific `Failure category`; the
+`Reason` must explicitly state that the validator errored.
 
 ```text
 PLANNING: PASS | FAIL
@@ -183,11 +186,11 @@ recovery map when deciding which stage to dispatch or retry next.
 
 | Phase / gate    | Dispatch                              | Required output                         | On failure |
 | --------------- | ------------------------------------- | --------------------------------------- | ---------- |
-| `preflight`     | `stage-validator`                     | Phase 1 snapshot document is present and complete | Stop with `Failure category: PREFLIGHT` |
-| Stage 1         | `task-planner` → `stage-validator`    | `PLAN: PASS` and `docs/<ISSUE_SLUG>-stage-1-detailed.md` passes Stage 1 checks | Stop on `PLAN: FAIL | BLOCKED | ERROR`; retry Stage 1 only on a Stage 1 gate failure |
-| Stage 2         | `dependency-prioritizer` → `stage-validator` | `PRIORITIZATION: PASS` and `docs/<ISSUE_SLUG>-stage-2-prioritized.md` passes Stage 2 checks | Stop on `PRIORITIZATION: FAIL | BLOCKED | ERROR`; retry Stage 2 only on a Stage 2 gate failure |
-| Stage 3         | `task-validator` → `stage-validator`  | `TASK_VALIDATION: PASS` and `docs/<ISSUE_SLUG>-tasks.md` passes Stage 3 checks | Stop on `TASK_VALIDATION: FAIL | BLOCKED | ERROR`; retry Stage 3 only on a Stage 3 gate failure |
-| `postpipeline`  | `stage-validator`                     | Final downstream contract is intact     | Re-dispatch Stage 3, then re-run `STAGE=3` and `STAGE=postpipeline` |
+| `preflight`     | `stage-validator`                     | Phase 1 snapshot document is present and complete | Stop on `STAGE_VALIDATION: FAIL` or `STAGE_VALIDATION: ERROR` with `Failure category: PREFLIGHT` |
+| Stage 1         | `task-planner` → `stage-validator`    | `PLAN: PASS` and `docs/<ISSUE_SLUG>-stage-1-detailed.md` passes Stage 1 checks | Stop on `PLAN: FAIL`, `PLAN: BLOCKED`, or `PLAN: ERROR`; retry Stage 1 only on `STAGE_VALIDATION: FAIL`; stop on `STAGE_VALIDATION: ERROR` with `Failure category: STAGE_1` |
+| Stage 2         | `dependency-prioritizer` → `stage-validator` | `PRIORITIZATION: PASS` and `docs/<ISSUE_SLUG>-stage-2-prioritized.md` passes Stage 2 checks | Stop on `PRIORITIZATION: FAIL`, `PRIORITIZATION: BLOCKED`, or `PRIORITIZATION: ERROR`; retry Stage 2 only on `STAGE_VALIDATION: FAIL`; stop on `STAGE_VALIDATION: ERROR` with `Failure category: STAGE_2` |
+| Stage 3         | `task-validator` → `stage-validator`  | `TASK_VALIDATION: PASS` and `docs/<ISSUE_SLUG>-tasks.md` passes Stage 3 checks | Stop on `TASK_VALIDATION: FAIL`, `TASK_VALIDATION: BLOCKED`, or `TASK_VALIDATION: ERROR`; retry Stage 3 only on `STAGE_VALIDATION: FAIL`; stop on `STAGE_VALIDATION: ERROR` with `Failure category: STAGE_3` |
+| `postpipeline`  | `stage-validator`                     | Final downstream contract is intact     | Re-dispatch Stage 3, then re-run `STAGE=3` and `STAGE=postpipeline` only on `STAGE_VALIDATION: FAIL`; stop on `STAGE_VALIDATION: ERROR` with `Failure category: POSTPIPELINE` |
 
 ## Execution Paths
 
@@ -229,8 +232,14 @@ re-plan rules require it.
    - `STAGE=preflight`
    - `FILE_PATH=docs/<ISSUE_SLUG>.md`
 
-   If the verdict is FAIL, stop and return `PLANNING: FAIL` with
+   If the validator returns `STAGE_VALIDATION: FAIL`, stop and return
+   `PLANNING: FAIL` with
    `Failure category: PREFLIGHT`.
+
+   If the validator returns `STAGE_VALIDATION: ERROR`, stop and return
+   `PLANNING: FAIL` with
+   `Failure category: PREFLIGHT`. The `Reason` must explicitly state that the
+   validator errored.
 
 3. **Stage 1 - Plan**
    Read the `task-planner` definition and dispatch it with:
@@ -250,8 +259,12 @@ re-plan rules require it.
    - `STAGE=1`
    - `FILE_PATH=docs/<ISSUE_SLUG>-stage-1-detailed.md`
 
-   If that validator returns `FAIL`, apply Step 7 before returning a phase
-   failure.
+   If that validator returns `STAGE_VALIDATION: FAIL`, apply Step 7 before
+   returning a phase failure.
+
+   If that validator returns `STAGE_VALIDATION: ERROR`, stop and return
+   `PLANNING: FAIL` with `Failure category: STAGE_1`. The `Reason` must
+   explicitly state that the validator errored.
 
 4. **Stage 2 - Prioritize**
    Read the `dependency-prioritizer` definition and dispatch it with:
@@ -271,8 +284,12 @@ re-plan rules require it.
    - `STAGE=2`
    - `FILE_PATH=docs/<ISSUE_SLUG>-stage-2-prioritized.md`
 
-   If that validator returns `FAIL`, apply Step 7 before returning a phase
-   failure.
+   If that validator returns `STAGE_VALIDATION: FAIL`, apply Step 7 before
+   returning a phase failure.
+
+   If that validator returns `STAGE_VALIDATION: ERROR`, stop and return
+   `PLANNING: FAIL` with `Failure category: STAGE_2`. The `Reason` must
+   explicitly state that the validator errored.
 
 5. **Stage 3 - Validate**
    Read the `task-validator` definition and dispatch it with:
@@ -292,8 +309,12 @@ re-plan rules require it.
    - `STAGE=3`
    - `FILE_PATH=docs/<ISSUE_SLUG>-tasks.md`
 
-   If that validator returns `FAIL`, apply Step 7 before returning a phase
-   failure.
+   If that validator returns `STAGE_VALIDATION: FAIL`, apply Step 7 before
+   returning a phase failure.
+
+   If that validator returns `STAGE_VALIDATION: ERROR`, stop and return
+   `PLANNING: FAIL` with `Failure category: STAGE_3`. The `Reason` must
+   explicitly state that the validator errored.
 
 6. **Post-pipeline gate**
    Read the `stage-validator` definition and dispatch it with:
@@ -303,11 +324,20 @@ re-plan rules require it.
 
    This confirms the full output contract for downstream phases.
 
+   If that validator returns `STAGE_VALIDATION: FAIL`, apply Step 7.
+
+   If that validator returns `STAGE_VALIDATION: ERROR`, stop and return
+   `PLANNING: FAIL` with `Failure category: POSTPIPELINE`. The `Reason` must
+   explicitly state that the validator errored.
+
 7. **Targeted retry loop**
    This loop applies only to `STAGE_VALIDATION: FAIL` results for Stage 1,
-   Stage 2, Stage 3, and `postpipeline`. Preflight failures are terminal per
-   Step 2. If a stage subagent returns `PLAN: FAIL`, `PRIORITIZATION: FAIL`, or
-   `TASK_VALIDATION: FAIL`, stop and return `PLANNING: FAIL`.
+   Stage 2, Stage 3, and `postpipeline`. `STAGE_VALIDATION: ERROR` is terminal
+   at the current gate and never enters this loop. Preflight failures are
+   terminal per Step 2. If a stage subagent returns `PLAN: FAIL | BLOCKED |
+   ERROR`, `PRIORITIZATION: FAIL | BLOCKED | ERROR`, or
+   `TASK_VALIDATION: FAIL | BLOCKED | ERROR`, stop and return
+   `PLANNING: FAIL`.
    Re-plan iterations and per-gate retry cycles are tracked separately.
 
    For any failing validator gate:
