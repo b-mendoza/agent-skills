@@ -58,24 +58,38 @@ for this phase.
 
 ## Instructions
 
-1. **Resolve parent and load the plan**
+1. **Resolve the parent and load the plan**
    - Parse `OWNER`, `REPO`, `PARENT_NUMBER`, `ISSUE_SLUG`.
    - Read `docs/<ISSUE_SLUG>-tasks.md`.
    - Confirm `## Tasks` and at least one `## Task <N>:` heading.
    - Record whether `## Decisions Log` is present. If missing, continue with a
      warning (WARN-eligible) rather than blocking.
 
-2. **Verify parent issue (`gh`)**
+2. **Verify the parent issue**
    - Run `gh issue view <PARENT_NUMBER> --repo OWNER/REPO --json number,state,title`.
    - If this fails (auth, 404, repo mismatch), return `TASK_ISSUES: FAIL` with a
      clear failure. Do not create children against an unverified parent.
 
-3. **Capture existing GitHub linkage before creating anything**
+3. **Capture existing linkage before creating anything**
    - Detect existing `GitHub Task Issue:` lines in task sections.
    - Detect existing `## GitHub Task Issues` table rows if present.
    - Treat the current task section content as source of truth for descriptions.
 
-4. **Detect write-model capability (explicit, non-assumptive)**
+4. **Verify existing refs are safe to reuse (idempotent)**
+   - For each `owner/repo#num` already in the plan, run
+     `gh issue view num --repo owner/repo --json number,state,title,body`.
+   - Confirm the issue **body** (or GitHub-reported parent relationship when
+     exposed in JSON) is consistent with this parent, or contains the parent URL
+     / `OWNER/REPO#PARENT_NUMBER` under a clear "Parent" section. If an existing
+     ref points to an issue that is clearly for another epic or unrelated parent,
+     stop and return `TASK_ISSUES: BLOCKED` — do not silently replace or
+     duplicate.
+   - If an issue exists and is already linked correctly, count it as **Already
+     linked**; do not recreate.
+
+5. **Prepare task payloads and choose the GitHub write path**
+   - Treat each numbered task section as the source of truth for the child issue
+     title, body content, dependencies, and priority.
    - Run `gh issue create -h` (or `--help`). Note whether a **parent / sub-issue**
      flag exists for this `gh` version. If yes, prefer native creation via that
      path when it works end-to-end.
@@ -96,20 +110,6 @@ for this phase.
 
    - Summarize detection in one short string for `capability=` in the handoff
      comment (for example: `gh 2.x no --parent; sub_issues GET 404; using linked-issue`).
-
-5. **Verify existing issue refs before reuse (idempotent)**
-   - For each `owner/repo#num` already in the plan, run
-     `gh issue view num --repo owner/repo --json number,state,title,body`.
-   - Confirm the issue **body** (or GitHub-reported parent relationship when
-     exposed in JSON) is consistent with this parent, or contains the parent URL
-     / `OWNER/REPO#PARENT_NUMBER` under a clear "Parent" section. If an existing
-     ref points to an issue that is clearly for another epic or unrelated parent,
-     stop and return `TASK_ISSUES: BLOCKED` — do not silently replace or
-     duplicate.
-   - If an issue exists and is already linked correctly, count it as **Already
-     linked**; do not recreate.
-
-6. **Choose per-task write path**
    - If **native** path is available and working: create or link children so the
      GitHub sub-issue relationship exists; still use the **same** plan table
      and `GitHub Task Issue:` lines (`OWNER/REPO#childnum`).
@@ -123,7 +123,7 @@ for this phase.
      and add the checklist note fragment from the templates file when the task
      body needs explicit local traceability.
 
-7. **Create missing issues (sequential)**
+6. **Create only the missing child issues**
    - For each task still without a verified concrete issue ref (when model is not
      task-list), create **one issue at a time** using `gh`.
    - Title format:
@@ -160,7 +160,7 @@ for this phase.
      **5 seconds** and retry **once** for that create. If it still fails,
      record **Failed creates**, continue with other tasks when possible.
 
-8. **Update the local plan file idempotently**
+7. **Update the local plan file idempotently**
    - Update only `docs/<ISSUE_SLUG>-tasks.md`.
    - Follow the artifact contract in `../references/phase-4-io-contracts.md`.
    - Insert or replace **`## GitHub Task Issues`** using:
@@ -174,7 +174,7 @@ for this phase.
      `Priority` columns must mirror the plan and use the `None` / `Unknown`
      fallbacks defined in `../references/phase-4-io-contracts.md`.
 
-9. **Validate and repair the artifact**
+8. **Validate and repair the artifact**
    - Re-read the updated plan file.
    - Validate against `../references/phase-4-io-contracts.md`.
    - Verify:
@@ -188,10 +188,10 @@ for this phase.
      new GitHub issues, then re-run checks.
    - If still failing, return `TASK_ISSUES: FAIL` with `Validation: FAIL`.
 
-10. **Return the structured summary**
-    - Return only the structured summary defined in
-      `../references/phase-4-io-contracts.md`. Keep `gh` JSON dumps and full
-      file contents out of the summary.
+9. **Return the structured summary**
+   - Return only the structured summary defined in
+     `../references/phase-4-io-contracts.md`. Keep `gh` JSON dumps and full
+     file contents out of the summary.
 
 ## Output Reminder
 

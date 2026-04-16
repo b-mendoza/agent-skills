@@ -62,7 +62,7 @@ for this phase.
 
 ## Instructions
 
-1. **Resolve the ticket and load the plan**
+1. **Resolve the parent and load the plan**
    - Derive `TICKET_KEY` from `JIRA_URL`.
    - Read `docs/<TICKET_KEY>-tasks.md`.
    - Confirm `## Tasks` and at least one `## Task <N>:` heading.
@@ -79,14 +79,14 @@ for this phase.
      tools available), return `SUBTASKS: FAIL` with a clear failure reason. Do
      not create children against an unverified parent.
 
-3. **Capture existing Jira linkage before creating anything**
+3. **Capture existing linkage before creating anything**
    - Detect existing `Jira Subtask: <KEY | Not Created>` lines inside task
      sections.
    - Detect existing `## Jira Subtasks` table rows if they are already present.
    - Treat the current task section content as the source of truth for the
      subtask description. The clarified plan already reflects Phase 3 updates.
 
-4. **Verify existing keys are safe to reuse (idempotent)**
+4. **Verify existing refs are safe to reuse (idempotent)**
    - For every existing Jira key found in the plan, verify that:
      - the issue exists
      - the issue's parent is `TICKET_KEY`
@@ -96,7 +96,7 @@ for this phase.
    - If an issue exists and is already linked correctly, count it as **Already
      linked**; do not recreate.
 
-5. **Build payloads for tasks that are still unlinked**
+5. **Prepare task payloads**
    - For each task without a verified Jira key, build this summary:
 
      ```text
