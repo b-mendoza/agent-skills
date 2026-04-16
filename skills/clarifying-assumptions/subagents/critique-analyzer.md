@@ -52,7 +52,7 @@ already consciously resolved by the developer.
 
 ### 2. Load the rubric
 
-Read `./subagents/critique-analyzer-rubric.md` before deciding what to critique. It
+Read `./critique-analyzer-rubric.md` before deciding what to critique. It
 defines the critique dimensions, severity rubric, and "do not raise" rules.
 
 ### 3. Verify the real codebase
@@ -87,7 +87,7 @@ Use the rubric to decide what to challenge:
 - In `MODE=critique`, write both `### Technology Critique Items` and
   `### User Impact Critique Items`
 
-Read `./subagents/critique-analyzer-template.md` at write time and follow it exactly.
+Read `./critique-analyzer-template.md` at write time and follow it exactly.
 When writing `CRITIQUE_REPORT_FILE`, omit the template file's title and
 instruction prose. The artifact itself must begin with these lines:
 
