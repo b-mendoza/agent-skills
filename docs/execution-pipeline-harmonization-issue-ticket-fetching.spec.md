@@ -38,13 +38,13 @@
 | Output contract | No broken `FETCH` / `Validation` / failure-category contract was found. |
 | Main transport divergence | GitHub intentionally hard-requires `gh` / `gh api`; Jira intentionally uses tool discovery and schema-driven selection. |
 | Input asymmetry | GitHub accepts `ISSUE_URL` or `OWNER` / `REPO` / `ISSUE_NUMBER`; Jira accepts `JIRA_URL` only. This asymmetry is intentional and preserved. |
-| Documentation drift | Low-severity drift existed in the second example blocks. Only one approved example fix was applied in Phase 2. |
+| Documentation drift | Low-severity drift existed in the second coordinator example in `skills/fetching-github-issue/SKILL.md`. Only one approved example fix was applied in Phase 2. |
 
 ---
 
 ## Shared Execution Pipeline
 
-1. The coordinator receives one parent reference and derives only the identifiers needed to dispatch the retriever.
+1. The coordinator receives a parent issue or ticket reference in one of the accepted platform-specific input shapes: URL-style input for both skills, or explicit `OWNER` / `REPO` / `ISSUE_NUMBER` coordinates for GitHub, and derives only the identifiers needed to dispatch the retriever.
 2. The coordinator reads the bundled retriever definition only when it is about to dispatch it.
 3. The coordinator dispatches exactly one retrieval specialist for the run.
 4. The retriever validates input and establishes the stable local identifier used for the artifact path.
@@ -116,8 +116,8 @@ Platform-extension sections may follow after that locked shared core.
 | Count form | Canonical meaning |
 | ---------- | ----------------- |
 | `0/0` | The retriever positively verified that no items exist in that section. |
-| `<retrieved>/<known_total>` | The total number of related identities is known, but some items were not fully hydrated. This is the canonical cross-skill `FETCH: PARTIAL` example model for this harmonized pair. |
-| `<retrieved>/UNKNOWN` | The parent item was retrieved, but discovery for that section could not be verified. This is a valid runtime partial state, but not the canonical paired example model for future symmetry edits in this pass. |
+| `<retrieved>/<known_total>` | The total number of related identities is known, but some items were not fully hydrated. This is the canonical paired coordinator `SKILL.md` `FETCH: PARTIAL` example model for this harmonized pair. |
+| `<retrieved>/UNKNOWN` | The parent item was retrieved, but discovery for that section could not be verified. This remains a valid runtime partial state, including in retriever examples, but it is not the canonical paired coordinator `SKILL.md` example model for this pass. |
 | `N/A` | The parent item was not retrieved, so downstream retrieval for that section never ran. |
 | `Attachments: <N>` | The number of rendered entries under `## Attachments`. Use `Attachments: N/A` when the parent item was not retrieved. |
 
@@ -160,7 +160,7 @@ These differences are native to the platforms and were explicitly preserved in t
 - No broken dispatch boundary or output contract was found.
 - The main observed divergence was transport strategy: GitHub hard-requires `gh` / `gh api`, while Jira uses tool discovery.
 - A low-severity input asymmetry existed: GitHub accepted `ISSUE_URL` or `OWNER` / `REPO` / `ISSUE_NUMBER`, while Jira accepted `JIRA_URL` only.
-- Low-severity documentation drift existed in the second example blocks.
+- Low-severity documentation drift existed in the second coordinator example in `skills/fetching-github-issue/SKILL.md`.
 
 ### Phase 1 authoritative decisions
 
@@ -172,15 +172,17 @@ These differences are native to the platforms and were explicitly preserved in t
 - Editorial and symmetry-only fixes may be applied autonomously.
 - Any change to accepted inputs, output headings or schema, failure semantics, or tool requirements requires explicit user confirmation first.
 - Documentation-only parity additions beyond explicitly approved changes were not authorized.
-- The canonical `FETCH: PARTIAL` example model for this pair is the Jira-style known-item retrieval gap or partial-hydration case using `<retrieved>/<known_total>`, not the discovery-gap `0/UNKNOWN` case.
+- The canonical paired coordinator `SKILL.md` `FETCH: PARTIAL` example model for this pair is the Jira-style known-item retrieval gap or partial-hydration case using `<retrieved>/<known_total>`, not the discovery-gap `0/UNKNOWN` case.
+- Retriever examples were intentionally left free to show other valid partial states, including `0/UNKNOWN`, when those examples match runtime semantics.
 
 ---
 
 ## Approved Change Applied in Phase 2
 
-- One and only one change was applied during Phase 2.
-- `skills/fetching-github-issue/SKILL.md` had its second example rewritten from a discovery-gap `FETCH: PARTIAL` case (`0/UNKNOWN`) to a GitHub-native known-child retrieval gap case (`1/2`).
+- One and only one coordinator-example change was applied during Phase 2.
+- `skills/fetching-github-issue/SKILL.md` had its second coordinator example rewritten from a discovery-gap `FETCH: PARTIAL` case (`0/UNKNOWN`) to a GitHub-native known-child retrieval gap case (`1/2`).
 - The purpose of that change was to align the coordinator-level canonical `FETCH: PARTIAL` example with the approved paired model while preserving GitHub-native terminology and output shape.
+- Retriever examples were intentionally left unchanged.
 - No changes were made to accepted inputs, headings or schema, failure semantics, tool requirements, or the intentional platform divergences recorded above.
 
 ---
@@ -195,7 +197,7 @@ These differences are native to the platforms and were explicitly preserved in t
 - Do not change `FETCH`, `Validation`, failure-category meanings, count semantics, placeholder rules, unknown-marker rules, or repair-loop semantics without explicit approval.
 - Do not treat symmetry as a reason to remove platform-native metadata, sections, or retrieval behaviors that are intentionally different.
 - Do not apply documentation-only parity additions beyond the explicitly approved scope of the harmonization pass.
-- Do not treat the discovery-gap `0/UNKNOWN` state as invalid. It remains a valid runtime partial state; it is simply not the canonical paired example model for this pass.
+- Do not treat the discovery-gap `0/UNKNOWN` state as invalid. It remains a valid runtime partial state; it is simply not the canonical paired coordinator `SKILL.md` example model for this pass.
 
 ---
 
@@ -204,7 +206,7 @@ These differences are native to the platforms and were explicitly preserved in t
 - Is the proposed change purely editorial or symmetry-only? If not, stop and get explicit user approval.
 - Does the change alter accepted inputs, output headings or schema, failure semantics, tool requirements, or an intentional platform divergence? If yes, stop and get explicit user approval.
 - Does each skill remain self-contained, with its bundled retriever and bundled template still authoritative at runtime?
-- If examples are being edited, does the paired canonical `FETCH: PARTIAL` example remain the known-item retrieval gap model using `<retrieved>/<known_total>`?
+- If coordinator `SKILL.md` examples are being edited, does the paired canonical `FETCH: PARTIAL` example remain the known-item retrieval gap model using `<retrieved>/<known_total>`?
 - If partial semantics are touched, do warnings, unknown markers, placeholder entries, and count lines still agree with one another?
 - Can the coordinator still branch only on structured result fields without inspecting raw payloads, full artifact bodies, or this spec file?
 - Is the proposed diff limited to the minimum approved surface area?
