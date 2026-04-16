@@ -169,9 +169,9 @@ These differences are native to the platforms and were explicitly preserved in t
   - GitHub inputs: `ISSUE_URL` or `OWNER` / `REPO` / `ISSUE_NUMBER`
   - Jira input: `JIRA_URL`
   - GitHub `## Child Issues` vs Jira `## Subtasks`
-- Editorial and symmetry-only fixes may be applied autonomously.
+- Pure editorial clarifications that preserve meaning may be applied autonomously.
 - Any change to accepted inputs, output headings or schema, failure semantics, or tool requirements requires explicit user confirmation first.
-- Documentation-only parity additions beyond explicitly approved changes were not authorized.
+- Any new symmetry or parity edit, even if documentation-only, requires explicit user confirmation first unless that exact edit was already explicitly approved for the current pass.
 - The canonical paired coordinator `SKILL.md` `FETCH: PARTIAL` example model for this pair is the Jira-style known-item retrieval gap or partial-hydration case using `<retrieved>/<known_total>`, not the discovery-gap `0/UNKNOWN` case.
 - Retriever examples were intentionally left free to show other valid partial states, including `0/UNKNOWN`, when those examples match runtime semantics.
 
@@ -196,14 +196,14 @@ These differences are native to the platforms and were explicitly preserved in t
 - Do not rename or collapse the platform-slot headings `## Child Issues` and `## Subtasks`.
 - Do not change `FETCH`, `Validation`, failure-category meanings, count semantics, placeholder rules, unknown-marker rules, or repair-loop semantics without explicit approval.
 - Do not treat symmetry as a reason to remove platform-native metadata, sections, or retrieval behaviors that are intentionally different.
-- Do not apply documentation-only parity additions beyond the explicitly approved scope of the harmonization pass.
+- Do not apply any new symmetry or parity addition or correction without explicit approval. Pure editorial clarifications that preserve meaning are the only autonomous documentation edits allowed.
 - Do not treat the discovery-gap `0/UNKNOWN` state as invalid. It remains a valid runtime partial state; it is simply not the canonical paired coordinator `SKILL.md` example model for this pass.
 
 ---
 
 ## Future Harmonization Checklist
 
-- Is the proposed change purely editorial or symmetry-only? If not, stop and get explicit user approval.
+- Is the proposed change a new symmetry or parity edit? If yes, stop and get explicit user approval. Only pure editorial clarifications that preserve meaning may proceed autonomously.
 - Does the change alter accepted inputs, output headings or schema, failure semantics, tool requirements, or an intentional platform divergence? If yes, stop and get explicit user approval.
 - Does each skill remain self-contained, with its bundled retriever and bundled template still authoritative at runtime?
 - If coordinator `SKILL.md` examples are being edited, does the paired canonical `FETCH: PARTIAL` example remain the known-item retrieval gap model using `<retrieved>/<known_total>`?
