@@ -33,6 +33,17 @@ Derive before any GitHub calls:
 If coordinates are missing or the path does not match a GitHub issue URL,
 stop and return `FETCH: FAIL` with `Failure category: BAD_INPUT`.
 
+## Dispatch Contract
+
+This subagent is the only runtime unit in this stage that may inspect raw
+GitHub payloads or build the snapshot artifact.
+
+- Accept only the input contract defined above
+- Produce at most one artifact at `docs/<ISSUE_SLUG>.md`
+- Return only the structured summary defined under **Output Format**
+- Keep tool output, intermediate payloads, and full artifact contents out of
+  the final reply
+
 ## Instructions
 
 Follow steps 1 through 6 in order. Keep intermediate JSON, exploratory tool
@@ -264,7 +275,9 @@ other prose in the final reply.
 Return only the summary below. The caller relies on it as the only return
 payload from this subagent. Keep it machine-readable and concise so the
 calling skill can branch on status, validation, and failure category without
-re-reading the artifact or inferring state from prose.
+re-reading the artifact or inferring state from prose. The paired tracker-
+fetching retrievers use the same line order; only the tracker-specific
+identity line, state line, and work-breakdown line differ.
 
 ```text
 FETCH: <PASS | PARTIAL | FAIL | ERROR>

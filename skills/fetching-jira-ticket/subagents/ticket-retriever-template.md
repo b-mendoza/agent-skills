@@ -19,6 +19,11 @@ retrieved, use the `_Unknown. ..._` markers described in **Conditional Rules**
 instead of `_None_`. For empty scalar values in `## Metadata`, write `_None_`
 in the `Value` column.
 
+The paired tracker-fetching templates share the same locked core section order:
+`## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`,
+`## Retrieval Warnings`, the tracker-specific work-breakdown section, and
+`## Linked Issues`. Platform-extension sections follow after that locked core.
+
 Use tables only when there is at least one row to show. If there is no data
 for `## Attachments` or `## Custom Fields`, write `_None_` under the heading
 instead of an empty table.

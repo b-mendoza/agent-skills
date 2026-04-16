@@ -19,6 +19,11 @@ the parent issue was retrieved, use the `_Unknown. ..._` markers described in
 **Conditional Rules** instead of `_None_`. For empty scalar values in
 `## Metadata`, write `_None_` in the `Value` column.
 
+The paired tracker-fetching templates share the same locked core section order:
+`## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`,
+`## Retrieval Warnings`, the tracker-specific work-breakdown section, and
+`## Linked Issues`. Platform-extension sections follow after that locked core.
+
 **`## Child Issues`, `## Linked Issues`, and `## Projects`:** Child-issue
 identities, linked-issue identities, and project membership normally come from
 the **retrieved parent issue** or reads keyed from it. `_None_` means verified

@@ -43,6 +43,18 @@ Read a subagent definition only when you are about to dispatch it.
 | -------- | ---- | ------- |
 | `ticket-retriever` | `./subagents/ticket-retriever.md` | Uses the bundled Jira read path to retrieve Jira data, writes `docs/<TICKET_KEY>.md`, validates the artifact, and returns a concise fetch summary |
 
+## Dispatch Contract
+
+This stage dispatches exactly one bundled retriever subagent.
+
+- Read `./subagents/ticket-retriever.md` only when you are ready to dispatch it
+- Pass only the stage input contract values plus any directly derived identifiers
+- Treat the retriever as the only component allowed to read raw Jira payloads,
+  assemble the snapshot, validate the artifact, and decide whether the run is
+  `PASS`, `PARTIAL`, `FAIL`, or `ERROR`
+- Keep only the retriever's structured summary in orchestrator context; do not
+  inspect raw payloads or rewrite the artifact in this coordinator
+
 ## How This Skill Works
 
 This skill is intentionally narrow. It coordinates retrieval, not mutation,
@@ -78,7 +90,9 @@ cleanup.
 > coordinator dispatches, interprets, and relays summaries; it does not inspect
 > raw Jira payloads or rewrite the artifact.
 
-The retriever returns a summary with these top-level fields:
+The retriever returns the locked summary shape used by the paired tracker-
+fetching skills. Only the tracker-specific identity line, state line, and
+work-breakdown line differ:
 
 - `FETCH: PASS` -> retrieval and validation succeeded
 - `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
@@ -142,6 +156,21 @@ Handle them this way:
 Do not infer fatal cause from prose when `Failure category` is present. Branch
 on the category, then use `Reason` only for user-facing detail.
 
+Locked summary line order:
+
+1. `FETCH`
+2. `Validation`
+3. `Failure category`
+4. `File written`
+5. Tracker identity line (`Ticket: ...` on Jira)
+6. Tracker state line (`Status: ... | Type: ...` on Jira)
+7. `Comments`
+8. Work-breakdown line (`Subtasks: ...` on Jira)
+9. `Linked issues`
+10. `Attachments`
+11. `Warnings`
+12. `Reason`
+
 ### 3. Report only the summary
 
 Using only the subagent's structured summary, tell the caller:
@@ -185,8 +214,8 @@ hydrated, or the template's unknown marker when a section could not be
 verified as empty.
 
 Treat `./subagents/ticket-retriever-template.md` as the authoritative snapshot
-shape bundled with this skill; no external spec file is required. The section
-tables below are the scan-friendly summary of that contract.
+shape bundled with this skill. The section tables below are the scan-friendly
+summary of that contract.
 
 **Locked-core sections** (same names and relative order across the paired
 issue/ticket-fetching skills; the platform-slot heading—`## Child Issues` on
