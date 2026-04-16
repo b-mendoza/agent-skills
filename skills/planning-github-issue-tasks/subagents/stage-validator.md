@@ -116,11 +116,15 @@ Checks:
 
 - [ ] File exists at the specified path.
 - [ ] Contains `## Issue Summary`.
+- [ ] Contains `## Execution Order Summary` immediately after `## Issue Summary` (before `## Problem Framing`).
+- [ ] Contains `## Problem Framing` with all six subsections (`### End User`, `### Underlying Need`, `### Proposed Solution`, `### Solution-Problem Fit`, `### Alternative Approaches Not Explored`, `### Evidence Basis`).
+- [ ] Contains `## Assumptions and Constraints`.
+- [ ] Contains `## Cross-Cutting Open Questions`.
+- [ ] Contains `## Notes`.
 - [ ] Contains `## Tasks`.
 - [ ] Every task has `**Dependencies / prerequisites:**`.
 - [ ] Every task has `**Priority:**`.
 - [ ] Tasks are numbered sequentially (`## Task 1: <Title>`, `## Task 2: <Title>`, ...).
-- [ ] Contains `## Execution Order Summary`.
 - [ ] Contains `## Dependency Graph`.
 
 ### Stage `3`
