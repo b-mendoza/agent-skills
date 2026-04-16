@@ -21,7 +21,7 @@ startup mutations, and return a short readiness summary.
 | Ticket snapshot path | Yes    | Usually `docs/<TICKET_KEY>.md`. |
 | Task plan path     | Yes      | Usually `docs/<TICKET_KEY>-tasks.md`. |
 | Execution brief path | Yes    | Scope, dependencies, and execution constraints. |
-| Optional context summaries | No | Current Jira status or codebase state summaries from the parent orchestrator. |
+| Optional context summaries | No | Current Jira status or codebase state summaries already reduced to concise status notes. |
 
 Path inputs are file paths to read directly. Optional context summaries should
 stay brief and decision-relevant; they are not a substitute for the source
@@ -82,8 +82,9 @@ Return exactly this structure:
 - Local changes handling: <clean | isolated | blocked>
 - Notes: <summary or `None`>
 
-### Jira Kickoff
-- Subtask key: <key or `None`>
+### Tracker Kickoff
+- Primary reference: <subtask key or `None`>
+- Secondary reference: `None`
 - Actions taken: <transition | comment | none>
 - Result: <done | skipped | blocked> — <detail>
 
@@ -112,8 +113,9 @@ READY
 - Local changes handling: clean
 - Notes: None
 
-### Jira Kickoff
-- Subtask key: `JNS-6071`
+### Tracker Kickoff
+- Primary reference: `JNS-6071`
+- Secondary reference: `None`
 - Actions taken: transition
 - Result: done — moved the subtask to `In Progress`
 
@@ -145,8 +147,9 @@ BLOCKED
 - Local changes handling: clean
 - Notes: The selected task still depends on Task 2 according to the task plan.
 
-### Jira Kickoff
-- Subtask key: `JNS-6071`
+### Tracker Kickoff
+- Primary reference: `JNS-6071`
+- Secondary reference: `None`
 - Actions taken: none
 - Result: skipped - kickoff stopped before any Jira mutation
 

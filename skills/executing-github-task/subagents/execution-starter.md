@@ -23,9 +23,9 @@ primary transport** for issue-side updates.
 | Issue snapshot path   | Yes      | Usually `docs/<ISSUE_SLUG>.md`. |
 | Task plan path        | Yes      | Usually `docs/<ISSUE_SLUG>-tasks.md`. |
 | Execution brief path  | Yes      | Scope, dependencies, constraints. |
-| Optional summaries    | No       | Issue status or codebase state from parent. |
+| Optional context summaries | No | Issue status or codebase state summaries already reduced to concise status notes. |
 
-Path inputs are files to read. Optional summaries stay brief and
+Path inputs are files to read. Optional context summaries stay brief and
 decision-relevant.
 
 ## Instructions
@@ -91,9 +91,9 @@ Return exactly this structure:
 - Local changes handling: <clean | isolated | blocked>
 - Notes: <summary or `None`>
 
-### GitHub Kickoff (gh)
-- Task issue ref: <owner/repo#num | task-list | Not Created | None>
-- Parent issue ref (if used): <owner/repo#num or `None`>
+### Tracker Kickoff
+- Primary reference: <owner/repo#num | task-list | Not Created | None>
+- Secondary reference: <owner/repo#num or `None`>
 - Actions taken: <labels | assignee | comment on child | comment on parent | none>
 - Result: <done | skipped | blocked> — <detail>
 
@@ -122,9 +122,9 @@ READY
 - Local changes handling: clean
 - Notes: None
 
-### GitHub Kickoff (gh)
-- Task issue ref: acme/app#100
-- Parent issue ref (if used): acme/app#42
+### Tracker Kickoff
+- Primary reference: acme/app#100
+- Secondary reference: acme/app#42
 - Actions taken: labels, comment on child
 - Result: done — added `status/in-progress` and commented start of implementation
 
@@ -156,9 +156,9 @@ BLOCKED
 - Local changes handling: clean
 - Notes: Task 2 is still marked in progress, so Task 3 cannot start safely.
 
-### GitHub Kickoff (gh)
-- Task issue ref: acme/app#100
-- Parent issue ref (if used): acme/app#42
+### Tracker Kickoff
+- Primary reference: acme/app#100
+- Secondary reference: acme/app#42
 - Actions taken: none
 - Result: skipped - kickoff stopped before any GitHub mutation
 
