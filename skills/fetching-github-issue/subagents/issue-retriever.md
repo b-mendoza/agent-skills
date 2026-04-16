@@ -56,7 +56,10 @@ Compute `ISSUE_SLUG`. For all `gh` commands, pass explicit repository scope when
 needed: `--repo owner/repo` (or use the full URL form `gh issue view https://...`
 where supported).
 
-### 2. Verify `gh` is usable
+### 2. Establish the tracker read path
+
+Before the first tracker read, confirm that the supported read path for this
+run is available and can perform the required retrieval steps.
 
 Before the first GitHub read:
 

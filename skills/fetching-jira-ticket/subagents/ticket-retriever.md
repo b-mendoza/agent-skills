@@ -52,7 +52,10 @@ Confirm the input is a Jira issue URL and extract the ticket key. Keep the full
 URL for reporting and derivation, but perform Jira reads using the key and any
 workspace context required by the environment.
 
-### 2. Discover Jira-capable read tools
+### 2. Establish the tracker read path
+
+Before the first tracker read, confirm that the available read path can perform
+the required retrieval steps for this run.
 
 Before the first Jira read, inspect the current environment and identify
 which tool or tools can perform these operations:
