@@ -54,13 +54,11 @@ This skill is intentionally narrow. The parent workflow is responsible for
 Phase 4 gating and progress tracking; this skill assumes the Phase 3 approval
 step has already happened before GitHub writes begin.
 
-Inside Phase 4, keep only:
-
-- The structured `TASK_ISSUES` verdict
-- The validation verdict
-- The task / issue ref / write model / title / dependency / priority / outcome rows needed for progress reporting
-- Any warning or fatal reason that requires user attention
-- Any platform-specific creation metadata the subagent returns for auditability
+Inside Phase 4, keep only the routing verdicts plus the caller-facing rollup.
+For GitHub, that means the parent / artifact identifiers, creation totals,
+warnings or failures, the linkage rollup the caller needs for progress
+tracking, and the effective write-path / capability outcome when it matters for
+auditability.
 
 Relay only the structured fields the subagent returns. Raw `gh` JSON, full API
 responses, raw file contents, and intermediate parse details stay inside
@@ -77,24 +75,9 @@ docs/<ISSUE_SLUG>-tasks.md
 For the complete standalone input contract, output contract, and summary-field
 definitions, read `./references/phase-4-io-contracts.md`.
 
-That bundled reference file is the authoritative local I/O contract for this
-skill. Placement and repair rules remain defined in the subagent. Do not rely
-on any out-of-band spec document to run Phase 4.
-
-The short version:
-
-- The plan is expected to contain numbered `## Task <N>:` sections under
-  `## Tasks`.
-- Normal Phase 4 plans are also expected to include
-  `## Execution Order Summary`, although Phase 4 parsing keys off numbered
-  task sections rather than that summary.
-- Standalone malformed or missing plans resolve to `TASK_ISSUES: BLOCKED`.
-- A missing `## Decisions Log` downgrades the run to `TASK_ISSUES: WARN` rather
-  than blocking it.
-- Successful Phase 4 output is still the validated presence of
-  `## GitHub Task Issues` with the required machine handoff HTML comment and
-  workflow table, plus `GitHub Task Issue: …` lines in task sections,
-  per `./references/phase-4-io-contracts.md`.
+That bundled reference file is the only normative Phase 4 contract source for
+this skill. `SKILL.md` covers dispatch, routing, and reporting only. The
+subagent defines how to achieve the contract but does not replace it.
 
 ## Execution Steps
 
@@ -133,15 +116,13 @@ Handle the returned summary this way:
 
 Using only the subagent's structured summary, tell the caller:
 
-- The parent issue reference (`owner/repo#number`), `ISSUE_SLUG`, and updated plan-file path
-- Total tasks in plan, already linked tasks, newly created issues, and failed creates
-- The `Created/Linked Task Issues` table, including dependency and priority
-  metadata for each task
-- Any platform-specific creation metadata the subagent returned, including the
-  effective **write model** and short **capability** outcome
-- Any warnings or failures
-- That no implementation has started and new issues remain open at their
-  GitHub state unless already closed
+- Use the subagent summary as routing input; do not rewrite its contract schema
+  inside `SKILL.md`.
+- Surface the caller-facing rollup: parent reference, `ISSUE_SLUG`, updated
+  plan-file path, creation totals, warnings or failures, and the reminder that
+  no implementation has started.
+- Include the effective **write model** / **capability** outcome when it helps
+  explain which GitHub creation path ran.
 
 Dispatch `task-issue-creator` as a subagent. If the environment cannot invoke
 subagents, report the skill as blocked rather than reproducing the subagent
@@ -154,62 +135,20 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42` (the subagent derives `
 
 1. Read `./subagents/task-issue-creator.md`
 2. Dispatch `task-issue-creator` with `ISSUE_URL`
-3. Subagent returns:
+3. Subagent returns the contract-defined summary from
+   `./references/phase-4-io-contracts.md`, for example:
 
    TASK_ISSUES: PASS
    Validation: PASS
-   Parent: acme/app#42
-   Plan file: docs/acme-app-42-tasks.md
-   Write model: linked-issue
-   Capability: native sub-issue REST unavailable; gh-sub-issue not installed
-   Tasks in plan: 4
-   Already linked: 1
-   Created now: 3
-   Failed creates: 0
-   Decisions Log: PRESENT
-   Reason: All tasks are now traced to GitHub issues or explicit task-list rows per contract.
-
-   Created/Linked Task Issues:
-   | Task | Issue ref | Title | Write model | Dependencies | Priority | Outcome |
-   | ---- | --------- | ----- | ----------- | ------------ | -------- | ------- |
-   | 1    | acme/app#100 | Task 1: Set up schema | linked-issue | None | High | Already linked |
-   | 2    | acme/app#101 | Task 2: Implement API layer | linked-issue | 1 | High | Created now |
-   | 3    | acme/app#102 | Task 3: Add integration tests | linked-issue | 2 | Medium | Created now |
-   | 4    | acme/app#103 | Task 4: Update docs | linked-issue | None | Medium | Created now |
-
-   Warnings:
-   - None
-
-   Failures:
-   - None
-
-4. Report:
-
    Parent: acme/app#42
    ISSUE_SLUG: acme-app-42
    Plan file: docs/acme-app-42-tasks.md
    Write model: linked-issue
    Capability: native sub-issue REST unavailable; gh-sub-issue not installed
-   Tasks in plan: 4
-   Already linked: 1
-   Created now: 3
-   Failed creates: 0
+   ...
 
-   Created/Linked Task Issues:
-   | Task | Issue ref | Title | Write model | Dependencies | Priority | Outcome |
-   | ---- | --------- | ----- | ----------- | ------------ | -------- | ------- |
-   | 1    | acme/app#100 | Task 1: Set up schema | linked-issue | None | High | Already linked |
-   | 2    | acme/app#101 | Task 2: Implement API layer | linked-issue | 1 | High | Created now |
-   | 3    | acme/app#102 | Task 3: Add integration tests | linked-issue | 2 | Medium | Created now |
-   | 4    | acme/app#103 | Task 4: Update docs | linked-issue | None | Medium | Created now |
-
-   Warnings:
-   - None
-
-   Failures:
-   - None
-
-   No implementation has started.
+4. Route on that summary, then relay only the caller-facing rollup. Include the
+   write-path / capability outcome when it helps explain the GitHub result.
 </example>
 
 ## Escalation

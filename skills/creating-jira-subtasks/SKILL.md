@@ -53,14 +53,11 @@ This skill is intentionally narrow. The parent workflow is responsible for
 Phase 4 gating and progress tracking; this skill assumes the Phase 3 approval
 step has already happened before Jira writes begin.
 
-Inside Phase 4, keep only:
-
-- The structured `SUBTASKS` verdict
-- The validation verdict
-- The task / subtask key / title / dependency / priority / outcome rows needed for progress reporting
-- Any warning or fatal reason that requires user attention
-- Jira uses a single native subtask path, so no separate write-model or
-  capability lines are expected in the summary
+Inside Phase 4, keep only the routing verdicts plus the caller-facing rollup.
+For Jira, that means the parent / artifact identifiers, creation totals,
+warnings or failures, and the linkage rollup the caller needs for progress
+tracking. Jira stays on the single native subtask path, so no write-model or
+capability metadata is expected in the summary.
 
 Relay only the structured fields the subagent returns. Raw Jira payloads, full
 API responses, raw file contents, and intermediate parse details stay inside
@@ -77,24 +74,9 @@ docs/<TICKET_KEY>-tasks.md
 For the complete standalone input contract, output contract, and summary-field
 definitions, read `./references/phase-4-io-contracts.md`.
 
-That bundled reference file is the authoritative local I/O contract for this
-skill. Placement and repair rules remain defined in the subagent. Do not rely
-on any out-of-band spec document to run Phase 4.
-
-The short version:
-
-- The plan is expected to contain numbered `## Task <N>:` sections under
-  `## Tasks`.
-- Normal Phase 4 plans are also expected to include
-  `## Execution Order Summary`, although Phase 4 parsing keys off numbered
-  task sections rather than that summary.
-- Standalone malformed or missing plans resolve to `SUBTASKS: BLOCKED`.
-- A missing `## Decisions Log` downgrades the run to `SUBTASKS: WARN` rather
-  than blocking it.
-- Successful Phase 4 output is still the validated presence of
-  `## Jira Subtasks` with the required workflow table, plus
-  `Jira Subtask: <KEY | Not Created>` lines in task sections, per
-  `./references/phase-4-io-contracts.md`.
+That bundled reference file is the only normative Phase 4 contract source for
+this skill. `SKILL.md` covers dispatch, routing, and reporting only. The
+subagent defines how to achieve the contract but does not replace it.
 
 ## Execution Steps
 
@@ -132,16 +114,12 @@ Handle the returned summary this way:
 
 Using only the subagent's structured summary, tell the caller:
 
-- The parent ticket reference (`TICKET_KEY`) and updated plan-file path
-- Total tasks in plan, already linked tasks, newly created subtasks, and failed
-  creates
-- The `Created/Linked Subtasks` table, including dependency and priority
-  metadata for each task
-- That Jira uses the native subtask path, so no write-model or capability line
-  is expected in the summary
-- Any warnings or failures
-- That no implementation has started and linked subtasks remain in `To Do`
-  unless Jira already shows another status
+- Use the subagent summary as routing input; do not rewrite its contract schema
+  inside `SKILL.md`.
+- Surface the caller-facing rollup: parent reference, explicit `TICKET_KEY`,
+  updated plan-file path, creation totals, warnings or failures, and the
+  reminder that no implementation has started.
+- Do not add GitHub-style write-model or capability lines to the Jira report.
 
 Dispatch `subtask-creator` as a subagent. If the environment cannot invoke
 subagents, report the skill as blocked rather than reproducing the subagent
@@ -154,57 +132,18 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 
 1. Read `./subagents/subtask-creator.md`
 2. Dispatch `subtask-creator` with `JIRA_URL`
-3. Subagent returns:
+3. Subagent returns the contract-defined summary from
+   `./references/phase-4-io-contracts.md`, for example:
 
    SUBTASKS: PASS
    Validation: PASS
    Parent: PROJ-123
+   TICKET_KEY: PROJ-123
    Plan file: docs/PROJ-123-tasks.md
-   Tasks in plan: 4
-   Already linked: 1
-   Created now: 3
-   Failed creates: 0
-   Decisions Log: PRESENT
-   Reason: All tasks are now linked to Jira subtasks.
+   ...
 
-   Created/Linked Subtasks:
-   | Task | Subtask Key | Title                         | Dependencies | Priority | Outcome        |
-   | ---- | ----------- | ----------------------------- | ------------ | -------- | -------------- |
-   | 1    | PROJ-200    | Task 1: Set up schema         | None         | High     | Already linked |
-   | 2    | PROJ-201    | Task 2: Implement API layer   | 1            | High     | Created now    |
-   | 3    | PROJ-202    | Task 3: Add integration tests | 2            | Medium   | Created now    |
-   | 4    | PROJ-203    | Task 4: Update docs           | None         | Medium   | Created now    |
-
-   Warnings:
-   - None
-
-   Failures:
-   - None
-
-4. Report:
-
-   Parent: PROJ-123
-   Plan file: docs/PROJ-123-tasks.md
-   Tasks in plan: 4
-   Already linked: 1
-   Created now: 3
-   Failed creates: 0
-
-   Created/Linked Subtasks:
-   | Task | Subtask Key | Title | Dependencies | Priority | Outcome |
-   | ---- | ----------- | ----- | ------------ | -------- | ------- |
-   | 1    | PROJ-200    | Task 1: Set up schema | None | High | Already linked |
-   | 2    | PROJ-201    | Task 2: Implement API layer | 1 | High | Created now |
-   | 3    | PROJ-202    | Task 3: Add integration tests | 2 | Medium | Created now |
-   | 4    | PROJ-203    | Task 4: Update docs | None | Medium | Created now |
-
-   Warnings:
-   - None
-
-   Failures:
-   - None
-
-   No implementation has started.
+4. Route on that summary, then relay only the caller-facing rollup. Do not add
+   GitHub-style write-path metadata to the Jira report.
 </example>
 
 ## Escalation
