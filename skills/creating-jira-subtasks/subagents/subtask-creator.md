@@ -40,23 +40,18 @@ Primary artifact:
 docs/<TICKET_KEY>-tasks.md
 ```
 
-### Primary artifact and expected plan shape
+For the authoritative standalone Phase 4 contract, including accepted plan
+shape, required artifact additions, structured summary fields, and status
+semantics, read `../references/phase-4-io-contracts.md` before validation or
+final reporting.
 
 Throughout this file, a "task" means one numbered `## Task <N>:` section in the
-plan.
-
-The plan is expected to contain a `## Tasks` section with numbered
-`## Task <N>: <title>` headings. If the file is missing or uses an unsupported
-task shape, return `SUBTASKS: BLOCKED`.
-
-Parse each task's title and these subsections when present, in the same order
-used by `./subtask-creator-templates.md`: `Objective`,
+plan. Parse each task's title and these subsections when present: `Objective`,
 `Relevant requirements and context`, `Dependencies / prerequisites`,
 `Questions to answer before starting`, `Implementation notes`,
-`Definition of done`, and `Likely files / artifacts affected`.
-
-Also parse `Priority` when present so the workflow table and structured summary
-can preserve it.
+`Definition of done`, and `Likely files / artifacts affected`. Also parse
+`Priority` when present so the plan artifact and structured summary can
+preserve it.
 
 Treat plan subsection labels and the Jira Wiki-Markup `h3.` labels as semantic
 matches even when the casing differs.
@@ -131,6 +126,7 @@ for this phase.
 
 7. **Update the local plan file idempotently**
    - Update only `docs/<TICKET_KEY>-tasks.md`.
+   - Follow the artifact contract in `../references/phase-4-io-contracts.md`.
    - For every parsed task, ensure the task section contains exactly one
      `Jira Subtask: <KEY | Not Created>` line immediately after the task
      heading. Use the concrete key when the task is linked; use `Not Created`
@@ -138,8 +134,8 @@ for this phase.
    - Insert or refresh a single `## Jira Subtasks` table:
      - place it after `## Ticket Summary` when that section exists
      - otherwise place it after the first top-level heading
-   - Read `./subtask-creator-templates.md` and use the workflow table from the
-     `Plan file fragments` section for `## Jira Subtasks`.
+   - Read `./subtask-creator-templates.md` and use the example
+     `## Jira Subtasks` section for the workflow table shape.
    - The table must contain **exactly one row per parsed task**. `Dependencies`
      and `Priority` columns must mirror the plan and use the `None` /
      `Unknown` fallbacks defined in `../references/phase-4-io-contracts.md`.
@@ -149,9 +145,11 @@ for this phase.
 
 8. **Validate and repair the artifact**
    - Re-read the updated plan file.
+   - Validate against `../references/phase-4-io-contracts.md`.
    - Verify:
      - exactly one `## Jira Subtasks` table exists
-     - the table has one row per parsed task; column order matches the template
+     - the table has one row per parsed task and matches the contract-defined
+       column order
      - every row with a concrete key has a matching `Jira Subtask: <KEY>` line
        in the task section
      - rows with `Not Created` have matching `Jira Subtask: Not Created` lines
@@ -164,155 +162,34 @@ for this phase.
      with `Validation: FAIL`.
 
 9. **Return the structured summary**
-   - Return only the structured summary below.
+   - Return only the structured summary defined in
+     `../references/phase-4-io-contracts.md`.
    - Keep Jira payloads, raw file contents, and conversational narration
      internal to this run.
 
-## Output Format
+## Output Reminder
 
-Return only this structure:
+Return only the Jira Phase 4 summary defined in
+`../references/phase-4-io-contracts.md`.
 
-```text
-SUBTASKS: <PASS | WARN | FAIL | BLOCKED | ERROR>
-Validation: <PASS | FAIL | NOT_RUN>
-Parent: <TICKET_KEY>
-Plan file: <path or "not updated">
-Tasks in plan: <N>
-Already linked: <N>
-Created now: <N>
-Failed creates: <N>
-Decisions Log: <PRESENT | MISSING>
-Reason: <one line>
+Before returning, confirm:
 
-Created/Linked Subtasks:
-| Task | Subtask Key | Title | Dependencies | Priority | Outcome |
-| ---- | ----------- | ----- | ------------ | -------- | ------- |
-| 1    | PROJ-200    | Task 1: Set up schema | None | High | Already linked |
-| 2    | PROJ-201    | Task 2: Implement API | 1 | High | Created now |
-
-Warnings:
-- <warning or "None">
-
-Failures:
-- <failure or "None">
-```
-
-Populate `Dependencies` and `Priority` from the current task plan. Use `None`
-for tasks without prerequisites and `Unknown` when the plan does not provide a
-priority value. When the plan file was updated, include one row per parsed task
-in `Created/Linked Subtasks`. For tasks that were not linked successfully, use
-`Not Created` in `Subtask Key` and an outcome such as `Create failed`.
-
-This returned summary table is intentionally different from the plan-file
-workflow table. The plan artifact records Jira `Status`; this summary records
-Phase 4 `Outcome`.
-
-When the run stops before plan updates or create attempts complete,
-`Created/Linked Subtasks` may be an empty table with only the header row, as
-shown in the blocked example. If the run stops before create attempts begin,
-report `Failed creates: 0`.
-
-Status rules:
-
-- **PASS:** every task is now linked to a valid Jira subtask and validation
-  passed; no blocking warnings (Decisions Log missing alone → `WARN`, not
-  `PASS`)
-- **WARN:** validation passed, but the run had non-fatal issues such as a
-  missing Decisions Log or some tasks still not linked due to individual
-  create failures
-- **BLOCKED:** missing or malformed plan, unsupported task shape, or unsafe
-  existing Jira links that must be corrected before continuing
-- **FAIL:** fatal Jira or output-contract failure, including parent not found
-  or inaccessible, auth failure, missing Jira tools, all tasks remaining
-  unlinked after create attempts, or post-write validation that cannot be
-  repaired
-- **ERROR:** unexpected tool or environment failure unrelated to the artifact
-
-Use `Validation: NOT_RUN` only when the run failed before any plan-file update
-or post-write validation could occur.
-
-<example>
-Full success after a safe rerun:
-
-SUBTASKS: PASS
-Validation: PASS
-Parent: PROJ-123
-Plan file: docs/PROJ-123-tasks.md
-Tasks in plan: 4
-Already linked: 1
-Created now: 3
-Failed creates: 0
-Decisions Log: PRESENT
-Reason: All tasks are now linked to valid Jira subtasks.
-
-Created/Linked Subtasks:
-| Task | Subtask Key | Title | Dependencies | Priority | Outcome |
-| ---- | ----------- | ----- | ------------ | -------- | ------- |
-| 1    | PROJ-200    | Task 1: Set up schema | None | High | Already linked |
-| 2    | PROJ-201    | Task 2: Implement API | 1 | High | Created now |
-| 3    | PROJ-202    | Task 3: Add tests | 2 | Medium | Created now |
-| 4    | PROJ-203    | Task 4: Update docs | None | Medium | Created now |
-
-Warnings:
-- None
-
-Failures:
-- None
-</example>
-
-<example>
-Partial success with one failed create:
-
-SUBTASKS: WARN
-Validation: PASS
-Parent: PROJ-412
-Plan file: docs/PROJ-412-tasks.md
-Tasks in plan: 4
-Already linked: 0
-Created now: 3
-Failed creates: 1
-Decisions Log: PRESENT
-Reason: The plan was updated, but not every task could be linked.
-
-Created/Linked Subtasks:
-| Task | Subtask Key | Title | Dependencies | Priority | Outcome |
-| ---- | ----------- | ----- | ------------ | -------- | ------- |
-| 1    | PROJ-420    | Task 1: Configure auth middleware | None | High | Created now |
-| 2    | PROJ-421    | Task 2: Implement token refresh | 1 | High | Created now |
-| 3    | Not Created | Task 3: Add session management | 2 | Medium | Create failed |
-| 4    | PROJ-422    | Task 4: Add rate limiting | 2 | Medium | Created now |
-
-Warnings:
-- Task 3 is still unlinked in Jira.
-
-Failures:
-- Task 3: "Add session management" - 429 Too Many Requests (retry also failed)
-</example>
-
-<example>
-Blocked rerun because an existing key is unsafe to reuse:
-
-SUBTASKS: BLOCKED
-Validation: NOT_RUN
-Parent: PROJ-412
-Plan file: not updated
-Tasks in plan: 4
-Already linked: 0
-Created now: 0
-Failed creates: 0
-Decisions Log: PRESENT
-Reason: Existing Jira linkage in the plan is unsafe to reuse.
-
-Created/Linked Subtasks:
-| Task | Subtask Key | Title | Dependencies | Priority | Outcome |
-| ---- | ----------- | ----- | ------------ | -------- | ------- |
-
-Warnings:
-- None
-
-Failures:
-- Task 2 references PROJ-999, but that issue is not a subtask of PROJ-412.
-</example>
+- Re-open the `## Structured Summary Contract` section in
+  `../references/phase-4-io-contracts.md` and emit every required line /
+  section in that order.
+- Do not paraphrase, omit, or reorder required summary sections just because
+  the run exited early or partially succeeded.
+- `TICKET_KEY:` is always present, including early exits.
+- The summary does **not** invent `Write model:` or `Capability:` lines for
+  Jira.
+- The `Created/Linked Subtasks` table preserves `Dependencies` and `Priority`,
+  and it records Phase 4 `Outcome` rather than the plan artifact's Jira
+  `Status`.
+- When the plan file was updated, include one summary row per parsed task.
+  Header-only is valid only for early exits before the run reached a complete
+  plan update / create summary.
+- `Warnings:` and `Failures:` are always present, even when they contain only
+  `None`.
 
 ## Scope
 
@@ -327,24 +204,24 @@ summary.
 - Keep retries targeted: repair the plan file in place rather than re-creating
   already linked subtasks. Do not implement the linked tasks (no implementation
   branch work, no unrelated commits).
-- Return only the structured summary defined in `## Output Format`.
+- Return only the structured summary defined in
+  `../references/phase-4-io-contracts.md`.
 
 ## Escalation
 
-If you cannot complete the work, still return the structured summary and use the
-correct top-level status. The dispatching skill decides what to do next.
+If you cannot complete the work, still return the contract-defined summary and
+apply the status semantics in `../references/phase-4-io-contracts.md`. The
+dispatching skill decides what to do next.
 
-- **Plan file missing, malformed, or unsupported:** `SUBTASKS: BLOCKED`
-- **Existing Jira key invalid or wrong parent:** `SUBTASKS: BLOCKED`
-- **Parent ticket not found or inaccessible:** `SUBTASKS: FAIL`
-- **Auth failure (401/403):** `SUBTASKS: FAIL`
-- **No usable Jira-capable tools discovered (`TOOLS_MISSING`):** `SUBTASKS: FAIL`
-- **Individual create failure after the single retry:** record it in `Failed creates`
-  and `Failures`; when validation passes and other tasks succeeded, the overall
-  result is usually `SUBTASKS: WARN`
-- **All tasks remain unlinked after create attempts:** `SUBTASKS: FAIL`
-- **Post-write validation still failing after one repair pass:** `SUBTASKS: FAIL`
-- **Repair pass:** fix the local markdown artifact only; never create new Jira
-  issues during repair; if the file still cannot be repaired, return
-  `SUBTASKS: FAIL`
-- **Unexpected tool or environment failure:** `SUBTASKS: ERROR`
+Common operational triggers:
+
+- Missing or malformed plan, unsupported shape, or unsafe existing Jira links:
+  return the blocked outcome
+- Parent ticket inaccessible, auth failed, or no Jira-capable tools were
+  available: return the fail outcome
+- Individual create failure after the single retry: record it in `Failures`; if
+  other tasks succeeded and validation passes, the overall result is usually the
+  warn outcome
+- Repair pass: fix the local markdown artifact only; never create new Jira
+  issues during repair
+- Unexpected tool or environment failure: return the error outcome

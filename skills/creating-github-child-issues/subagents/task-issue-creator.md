@@ -39,23 +39,18 @@ Primary artifact:
 docs/<ISSUE_SLUG>-tasks.md
 ```
 
-### Primary artifact and expected plan shape
+For the authoritative standalone Phase 4 contract, including accepted plan
+shape, required artifact additions, structured summary fields, and status
+semantics, read `../references/phase-4-io-contracts.md` before validation or
+final reporting.
 
 Throughout this file, a "task" means one numbered `## Task <N>:` section in the
-plan.
-
-The plan is expected to contain a `## Tasks` section with numbered
-`## Task <N>: <title>` headings. If the file is missing or uses an unsupported
-task shape, return `TASK_ISSUES: BLOCKED`.
-
-Parse each task's title and these subsections when present, in the same order
-used by `./task-issue-creator-templates.md`: `Objective`,
+plan. Parse each task's title and these subsections when present: `Objective`,
 `Relevant requirements and context`, `Dependencies / prerequisites`,
 `Questions to answer before starting`, `Implementation notes`,
-`Definition of done`, and `Likely files / artifacts affected`.
-
-Also parse `Priority` when present so the workflow table and structured summary
-can preserve it.
+`Definition of done`, and `Likely files / artifacts affected`. Also parse
+`Priority` when present so the plan artifact and structured summary can
+preserve it.
 
 Normal Phase 4 artifacts may also include `## Execution Order Summary`.
 Preserve it if present, but treat numbered task sections as the parse boundary
@@ -124,8 +119,9 @@ for this phase.
      traceability and rate limits allow.
    - If **linked-issue** is impossible (for example repeated auth failure mid-run)
      for a specific task, fall back to **task-list** for that task only: no new
-     issue; set table row to `task-list` and per-task line to `task-list`, and
-     add the checklist bullet from the templates file.
+     issue. Mirror the `task-list` value in the workflow row and per-task line,
+     and add the checklist note fragment from the templates file when the task
+     body needs explicit local traceability.
 
 7. **Create missing issues (sequential)**
    - For each task still without a verified concrete issue ref (when model is not
@@ -137,7 +133,10 @@ for this phase.
      ```
 
    - Body: read `./task-issue-creator-templates.md` and use the **GitHub issue
-     body** template. Substitute `PARENT_URL` with the canonical `ISSUE_URL` form.
+     body** fragment. Substitute `PARENT_URL` with the canonical `ISSUE_URL`
+     form. Use the same section order for linked issues and native sub-issues,
+     and keep the `## Parent` traceability line even when GitHub also exposes
+     hierarchy.
    - After `gh issue create`, capture the new issue number from command output or
      follow-up `gh issue list --limit 1 --json number` as appropriate; require a
      definite `OWNER/REPO#number` before counting **Created now**.
@@ -163,9 +162,10 @@ for this phase.
 
 8. **Update the local plan file idempotently**
    - Update only `docs/<ISSUE_SLUG>-tasks.md`.
-   - Insert or replace **`## GitHub Task Issues`** with:
-     - Machine handoff HTML comment (see `../references/phase-4-io-contracts.md`)
-     - Workflow table from `./task-issue-creator-templates.md`
+   - Follow the artifact contract in `../references/phase-4-io-contracts.md`.
+   - Insert or replace **`## GitHub Task Issues`** using:
+     - the machine handoff comment shape from `./task-issue-creator-templates.md`
+     - the workflow table shape from `./task-issue-creator-templates.md`
    - For every task, ensure **exactly one** `GitHub Task Issue: …` line
      **immediately after** the `## Task <N>:` heading (repair duplicates).
    - Place `## GitHub Task Issues` after `## Issue Summary` when that section
@@ -176,170 +176,45 @@ for this phase.
 
 9. **Validate and repair the artifact**
    - Re-read the updated plan file.
+   - Validate against `../references/phase-4-io-contracts.md`.
    - Verify:
-     - `## GitHub Task Issues` exists with the handoff comment and table.
-     - Table has one row per parsed task; column order matches the template.
-     - Every row with concrete `owner/repo#num` has a matching `GitHub Task Issue:
-       owner/repo#num` line in that task section.
-     - Rows with `Not Created` or `task-list` match their per-task lines.
+     - `## GitHub Task Issues` exists with the required handoff comment and table
+     - the table has one row per parsed task and matches the contract-defined
+       column order
+     - every row with concrete `owner/repo#num` has a matching `GitHub Task
+       Issue: owner/repo#num` line in that task section
+     - rows with `Not Created` or `task-list` match their per-task lines
    - If a structural check fails, repair the local file **once** without creating
      new GitHub issues, then re-run checks.
    - If still failing, return `TASK_ISSUES: FAIL` with `Validation: FAIL`.
 
 10. **Return the structured summary**
-    - Return only the structured summary below. Keep `gh` JSON dumps and full file
-      contents out of the summary.
+    - Return only the structured summary defined in
+      `../references/phase-4-io-contracts.md`. Keep `gh` JSON dumps and full
+      file contents out of the summary.
 
-## Output Format
+## Output Reminder
 
-Return only this structure:
+Return only the GitHub Phase 4 summary defined in
+`../references/phase-4-io-contracts.md`.
 
-```text
-TASK_ISSUES: <PASS | WARN | FAIL | BLOCKED | ERROR>
-Validation: <PASS | FAIL | NOT_RUN>
-Parent: OWNER/REPO#PARENT_NUMBER
-Plan file: <path or "not updated">
-Write model: <native-sub-issue | linked-issue | task-list | mixed>
-Capability: <one line — mirrors handoff comment capability text>
-Tasks in plan: <N>
-Already linked: <N>
-Created now: <N>
-Failed creates: <N>
-Decisions Log: <PRESENT | MISSING>
-Reason: <one line>
+Before returning, confirm:
 
-Created/Linked Task Issues:
-| Task | Issue ref | Title | Write model | Dependencies | Priority | Outcome |
-| ---- | --------- | ----- | ----------- | ------------ | -------- | ------- |
-| 1    | acme/app#100 | Task 1: Set up schema | linked-issue | None | High | Already linked |
-| 2    | acme/app#101 | Task 2: Implement API | linked-issue | 1 | High | Created now |
-
-Warnings:
-- <warning or "None">
-
-Failures:
-- <failure or "None">
-```
-
-Populate `Dependencies` and `Priority` from the current task plan. Use `None` for
-tasks without prerequisites and `Unknown` when the plan does not provide a
-priority value. Include **one row per parsed task** when the plan file was
-updated. For tasks without a concrete issue, use `Not Created` or `task-list` in
-`Issue ref` and an outcome such as `Create failed` or `Task list only`.
-
-Always emit `Write model:` and `Capability:` lines, including early exits. When
-the run stops before concrete creation or validation, populate them with the
-best detected or intended write path so the summary shape stays stable.
-
-This returned summary table is intentionally different from the plan-file
-workflow table. The plan artifact records platform `Status`; this summary
-records Phase 4 `Outcome`.
-
-When the run stops before plan updates or create attempts complete,
-`Created/Linked Task Issues` may be an empty table with only the header row, as
-shown in the blocked example. If the run stops before create attempts begin,
-report `Failed creates: 0`.
-
-Status rules:
-
-- **PASS:** every task has a valid handoff row and matching per-task line;
-  validation passed; no blocking warnings (Decisions Log missing alone → WARN, not
-  PASS).
-- **WARN:** validation passed but Decisions Log missing, mixed/partial models,
-  some `Not Created`, or non-fatal GitHub degradation.
-- **BLOCKED:** missing/malformed plan, unsupported shape, or unsafe existing refs.
-- **FAIL:** parent not found, auth failure, `gh` missing, all concrete-expected
-  tasks unlinked after attempts, or validation unrepaired.
-- **ERROR:** unexpected filesystem or environment failure.
-
-Use `Validation: NOT_RUN` only when the run failed before any plan-file update or
-post-write validation could occur.
-
-<example>
-Native path via REST link after create:
-
-TASK_ISSUES: PASS
-Validation: PASS
-Parent: acme/app#42
-Plan file: docs/acme-app-42-tasks.md
-Write model: native-sub-issue
-Capability: sub_issues GET 200; linked children via REST after gh issue create
-Tasks in plan: 2
-Already linked: 0
-Created now: 2
-Failed creates: 0
-Decisions Log: PRESENT
-Reason: All tasks linked as sub-issues with parent traceability in body.
-
-Created/Linked Task Issues:
-| Task | Issue ref | Title | Write model | Dependencies | Priority | Outcome |
-| ---- | --------- | ----- | ----------- | ------------ | -------- | ------- |
-| 1    | acme/app#100 | Task 1: Schema | native-sub-issue | None | High | Created now |
-| 2    | acme/app#101 | Task 2: API | native-sub-issue | 1 | High | Created now |
-
-Warnings:
-- None
-
-Failures:
-- None
-</example>
-
-<example>
-Linked-issue fallback, one failure:
-
-TASK_ISSUES: WARN
-Validation: PASS
-Parent: acme/app#42
-Plan file: docs/acme-app-42-tasks.md
-Write model: linked-issue
-Capability: sub_issues GET 404; gh issue create with parent URL in body
-Tasks in plan: 3
-Already linked: 1
-Created now: 1
-Failed creates: 1
-Decisions Log: PRESENT
-Reason: Partial linkage; task 3 still missing a GitHub issue.
-
-Created/Linked Task Issues:
-| Task | Issue ref | Title | Write model | Dependencies | Priority | Outcome |
-| ---- | --------- | ----- | ----------- | ------------ | -------- | ------- |
-| 1    | acme/app#90 | Task 1: Schema | linked-issue | None | High | Already linked |
-| 2    | acme/app#101 | Task 2: API | linked-issue | 1 | Medium | Created now |
-| 3    | Not Created | Task 3: Docs | linked-issue | 2 | Low | Create failed |
-
-Warnings:
-- Task 3 remains without a GitHub issue.
-
-Failures:
-- Task 3: rate limited after retry
-</example>
-
-<example>
-Blocked unsafe ref:
-
-TASK_ISSUES: BLOCKED
-Validation: NOT_RUN
-Parent: acme/app#42
-Plan file: not updated
-Write model: linked-issue
-Capability: detected wrong-parent issue ref in plan
-Tasks in plan: 2
-Already linked: 0
-Created now: 0
-Failed creates: 0
-Decisions Log: PRESENT
-Reason: Existing GitHub linkage in the plan is unsafe to reuse.
-
-Created/Linked Task Issues:
-| Task | Issue ref | Title | Write model | Dependencies | Priority | Outcome |
-| ---- | --------- | ----- | ----------- | ------------ | -------- | ------- |
-
-Warnings:
-- None
-
-Failures:
-- Task 1 references acme/app#999, whose body does not trace to parent acme/app#42.
-</example>
+- Re-open the `## Structured Summary Contract` section in
+  `../references/phase-4-io-contracts.md` and emit every required line /
+  section in that order.
+- Do not paraphrase, omit, or reorder required summary sections just because
+  the run exited early or partially succeeded.
+- `ISSUE_SLUG:`, `Write model:`, and `Capability:` are always present,
+  including early exits.
+- The `Created/Linked Task Issues` table preserves `Dependencies` and
+  `Priority`, and it records Phase 4 `Outcome` rather than the plan artifact's
+  GitHub `Status`.
+- When the plan file was updated, include one summary row per parsed task.
+  Header-only is valid only for early exits before the run reached a complete
+  plan update / create summary.
+- `Warnings:` and `Failures:` are always present, even when they contain only
+  `None`.
 
 ## Scope
 
@@ -353,25 +228,24 @@ Your job is to reconcile the plan with GitHub and return a decision-ready summar
 - Keep retries targeted: repair the plan file in place rather than re-creating
   already linked issues. Do not implement the linked tasks (no implementation
   branch work, no unrelated commits).
-- Return only the structured summary defined in `## Output Format`.
+- Return only the structured summary defined in
+  `../references/phase-4-io-contracts.md`.
 
 ## Escalation
 
-If you cannot complete the work, still return the structured summary and use the
-correct top-level status. The dispatching skill decides what to do next.
+If you cannot complete the work, still return the contract-defined summary and
+apply the status semantics in `../references/phase-4-io-contracts.md`. The
+dispatching skill decides what to do next.
 
-- **Plan file missing, malformed, or unsupported:** `TASK_ISSUES: BLOCKED`
-- **Existing issue ref invalid or wrong parent / wrong epic:** `TASK_ISSUES: BLOCKED`
-- **Parent issue not found or repo inaccessible:** `TASK_ISSUES: FAIL`
-- **Auth failure (401/403):** `TASK_ISSUES: FAIL`
-- **`gh` not installed or not discoverable (`TOOLS_MISSING`):** `TASK_ISSUES: FAIL`
-- **Individual create failure after the single rate-limit retry:** record in
-  `Failed creates` and `Failures`; if other tasks succeeded and validation
-  passes, overall is usually `TASK_ISSUES: WARN`
-- **All tasks that require concrete issues remain unlinked after attempts:**
-  `TASK_ISSUES: FAIL`
-- **Post-write validation still failing after one repair pass:** `TASK_ISSUES: FAIL`
-- **Repair pass:** fix the local markdown artifact only; never create new
-  GitHub issues during repair; if the file still cannot be repaired, return
-  `TASK_ISSUES: FAIL`
-- **Unexpected tool or environment failure:** `TASK_ISSUES: ERROR`
+Common operational triggers:
+
+- Missing or malformed plan, unsupported shape, or unsafe existing refs:
+  return the blocked outcome
+- Parent issue inaccessible, auth failed, or `gh` unavailable: return the fail
+  outcome
+- Individual create failure after the single retry: record it in `Failures`; if
+  other tasks succeeded and validation passes, the overall result is usually the
+  warn outcome
+- Repair pass: fix the local markdown artifact only; never create new GitHub
+  issues during repair
+- Unexpected tool or environment failure: return the error outcome
