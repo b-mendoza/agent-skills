@@ -1,4 +1,4 @@
-# Critique Mode — Phase 6 Playbook
+# Critique Mode Playbook
 
 > Read `./design-thinking-mindset.md` first.
 >
@@ -6,9 +6,11 @@
 > still own artifact reading, deferred-question filtering, and file writes.
 >
 > Use the main `SKILL.md` file's `## Escalation` table as the authoritative verdict
-> routing policy. This playbook focuses on phase flow and inline questioning.
+> routing policy. This playbook focuses on the canonical stage flow and inline questioning.
 
-## 1. Dispatch `critique-analyzer`
+## Stage 2 — Analyze Artifacts
+
+Dispatch `critique-analyzer`.
 
 Read `../subagents/critique-analyzer.md`, then dispatch with:
 
@@ -32,7 +34,9 @@ Handle the verdicts:
 - `CRITIQUE: WARN` → continue only if the warning does not invalidate the task critique.
 - `CRITIQUE: PASS` → continue.
 
-## 2. Dispatch `question-manifest-builder`
+## Stage 3 — Build Manifest
+
+Dispatch `question-manifest-builder`.
 
 Read `../subagents/question-manifest-builder.md`, then dispatch with:
 
@@ -50,7 +54,7 @@ Read `../subagents/question-manifest-builder.md`, then dispatch with:
 The manifest builder returns:
 
 - Critique items for the current task
-- User-impact items linked to Phase 3 problem framing
+- User-impact items linked to the plan-wide problem framing
 - Deferred questions that still matter for this task
 - Deferred questions that are now irrelevant
 
@@ -60,7 +64,7 @@ Handle the verdicts:
 - `MANIFEST: WARN` → continue, but carry the warning into the final summary.
 - `MANIFEST: PASS` → continue.
 
-## 3. Present the task manifest
+## Stage 4 — Preview Manifest
 
 Show the developer a concise preview:
 
@@ -76,7 +80,7 @@ Deferred questions now irrelevant: <R>
 If there are no items left after filtering, say so clearly and skip to the
 recording step with an empty decision list.
 
-## 4. Walk items one at a time
+## Stage 4 — Clarify Inline
 
 Every item in critique mode uses Model B.
 
@@ -115,7 +119,9 @@ For deferred questions, use the simplest fitting response form:
 - If a deferred question is clearly obsolete, do not ask it; rely on the
   manifest builder's `RESOLVED_IRRELEVANT` list
 
-## 5. Dispatch `decision-recorder`
+## Stage 5 — Record Decisions
+
+Dispatch `decision-recorder`.
 
 Read `../subagents/decision-recorder.md`, then dispatch with:
 
@@ -140,7 +146,7 @@ Handle the verdicts:
 - `RECORDING: WARN` → continue, but carry the warnings into the final summary.
 - `RECORDING: PASS` → continue.
 
-## 6. Present the final summary
+## Stage 5 — Present Final Summary
 
 Use the recorder summary plus session counts to present:
 
@@ -149,14 +155,14 @@ Use the recorder summary plus session counts to present:
 
 - Critique artifact: <path>
 - Files updated: <path list or ->
+- RE_PLAN_NEEDED: <true|false>
+- BLOCKERS_PRESENT: <true|false>
 - Critique items resolved: <N>
 - User-impact items resolved: <N>
 - Deferred questions resolved: <N>
 - Questions marked irrelevant: <N>
 - Blocking items: <N>
 - Overrides: <N>
-- RE_PLAN_NEEDED: <true|false>
-- BLOCKERS_PRESENT: <true|false>
 ```
 
 If `RE_PLAN_NEEDED=true`, tell the orchestrator to re-run the per-task planning

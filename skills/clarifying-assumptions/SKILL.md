@@ -1,6 +1,6 @@
 ---
 name: "clarifying-assumptions"
-description: "Run the conversational clarification layer for a workflow orchestrator. In this repo's parent workflows, `MODE=upfront` typically maps to the plan-wide clarification step and `MODE=critique` to the task-level pre-execution clarification step. Keeps the mentoring dialogue inline while delegating artifact reading, critique generation, manifest assembly, and file updates to subagents."
+description: "Run the conversational clarification layer for a workflow orchestrator. `MODE=upfront` is the plan-wide clarification pass and `MODE=critique` is the task-level pre-execution clarification pass. Keeps the mentoring dialogue inline while delegating artifact reading, critique generation, manifest assembly, and file updates to subagents."
 ---
 
 # Clarifying Assumptions
@@ -27,7 +27,7 @@ rows, and artifact paths instead of raw planning content.
 
 The main task plan must already exist at `docs/<TICKET_KEY>-tasks.md`. The
 required plan sections and artifact contracts are part of this skill's
-preconditions and are defined in `## Input and Output Contracts`.
+preconditions and are defined below.
 
 When `MODE=critique`, these per-task artifacts must also exist:
 
@@ -67,9 +67,8 @@ Additional upstream artifacts:
 - `MODE=critique`: task brief, execution plan, test spec, and refactoring plan
 
 These sections and upstream artifacts are required input preconditions for the
-skill. The parent workflow defines the detailed contents of the `stage-*` and
-`task-*` planning artifacts; this skill requires only the paths and readable
-markdown at those locations.
+skill. This skill requires only the paths above plus readable markdown at those
+locations.
 
 ### Output contract
 
@@ -81,7 +80,7 @@ implementation code.
 | `docs/<KEY>-upfront-critique.md` or `docs/<KEY>-task-<N>-critique.md` | Full critique report written before manifest assembly so later steps consume the artifact path instead of the full report body |
 | `docs/<KEY>-tasks.md` updates | Main plan updated so downstream execution consumes resolved decisions instead of open ambiguity |
 | `## Decisions Log` rows | Durable audit trail for plan-wide and task-level clarification decisions |
-| Deferred question tags | Phase 6 can identify which questions must be revisited later |
+| Deferred question tags | Later critique-mode runs can identify which questions must be revisited later |
 | `docs/<KEY>-task-<N>-decisions.md` | Critique-mode record of task-level decisions for re-planning and execution |
 | `RE_PLAN_NEEDED` in the final summary | Signals whether planning should be re-run before execution |
 | `BLOCKERS_PRESENT` in the final summary | Signals that clarification ended with unresolved items and execution must not proceed |
@@ -101,6 +100,19 @@ these fields in a stable shape:
 If clarification stops early because a subagent returned `BLOCKED`, `FAIL`, or
 `ERROR`, still emit the same minimum fields with `Files updated: -` plus the
 blocking verdict and reason.
+
+## Canonical Pipeline Stages
+
+Use the same stage names and ordering regardless of whether the caller is a
+Jira workflow or a GitHub workflow.
+
+| Stage | Name | Purpose |
+| --- | --- | --- |
+| 1 | Load guidance | Read the design-thinking reference and the active mode playbook |
+| 2 | Analyze artifacts | Dispatch `critique-analyzer` to read artifacts, inspect the codebase, and write the critique artifact |
+| 3 | Build manifest | Dispatch `question-manifest-builder` to turn the critique artifact plus plan context into the ordered manifest |
+| 4 | Clarify inline | Walk the manifest one item at a time with the developer and capture decisions |
+| 5 | Record decisions | Dispatch `decision-recorder` to update workflow artifacts, validate them, and return the final write summary |
 
 ## Pipeline / Workflow Overview
 
@@ -132,10 +144,10 @@ Everything else comes from delegated subagents through concise verdicts,
 manifest rows, and artifact paths. The manifest is the source of truth for what
 gets asked once execution starts.
 
-In the parent workflows in this repo, `MODE=upfront` is the plan-wide
-clarification pass and `MODE=critique` is the per-task clarification pass just
-before execution. The mode names, inputs, and artifact paths are the runtime
-contract; the phase numbers are parent-workflow context only.
+`MODE=upfront` is the plan-wide clarification pass and `MODE=critique` is the
+per-task clarification pass just before execution. The mode names, inputs, and
+artifact paths are the runtime contract; any parent-workflow phase numbers are
+outside this skill's contract.
 
 On retries or later iterations, re-dispatch each subagent with the current
 artifact paths and inputs. Do not treat prior subagent output as authoritative
@@ -143,17 +155,18 @@ state once the underlying artifacts or decisions have changed.
 
 Run the workflow in this order:
 
-1. Load the design-thinking reference and the current mode's playbook.
-2. Dispatch `critique-analyzer` to read artifacts, inspect the codebase, search
+1. Stage 1 `Load guidance`: load the design-thinking reference and the current
+   mode's playbook.
+2. Stage 2 `Analyze artifacts`: dispatch `critique-analyzer` to read artifacts, inspect the codebase, search
    the web, and write the critique artifact.
-3. Dispatch `question-manifest-builder` with the critique artifact path and the
+3. Stage 3 `Build manifest`: dispatch `question-manifest-builder` with the critique artifact path and the
    plan path to build the ordered manifest. In `MODE=critique`, also include
    `TASK_NUMBER` and `CURRENT_TASK_ARTIFACTS`.
-4. Walk the manifest one question at a time inline, deciding what to confirm,
+4. Stage 4 `Clarify inline`: walk the manifest one question at a time inline, deciding what to confirm,
    revise, defer, or block.
    Carry each manifest `Item ID` unchanged into the decision list so later
    recording and plan annotations stay traceable.
-5. Dispatch `decision-recorder` with the resolved decisions and let it update
+5. Stage 5 `Record decisions`: dispatch `decision-recorder` with the resolved decisions and let it update
    the workflow artifacts plus validate the result. Include `ITERATION` and
    `IMPLEMENTATION_UPDATES` when present. In `MODE=upfront`, also include
    `DEFERRED_QUESTIONS`. In `MODE=critique`, also include `TASK_NUMBER`,
@@ -168,7 +181,7 @@ The inline questioning loop uses two reasoning patterns:
   original decision, the critique, and ask the developer whether the reasoning
   holds up.
 
-## Phase Guide
+## Reference Loading
 
 Read `./references/design-thinking-mindset.md` first for both modes.
 
@@ -176,8 +189,8 @@ Then load only the mode-specific playbook for the active run:
 
 | Mode | Reference file | When to load |
 | --- | --- | --- |
-| `upfront` | `./references/upfront-mode.md` | Before Phase 3 clarification starts |
-| `critique` | `./references/critique-mode.md` | Before Phase 6 task-level clarification starts |
+| `upfront` | `./references/upfront-mode.md` | During Stage 1, before the plan-wide clarification run starts |
+| `critique` | `./references/critique-mode.md` | During Stage 1, before the task-level clarification run starts |
 
 ## Behavioral Guardrails
 

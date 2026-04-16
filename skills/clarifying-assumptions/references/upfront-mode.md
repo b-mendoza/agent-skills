@@ -1,4 +1,4 @@
-# Upfront Mode — Phase 3 Playbook
+# Upfront Mode Playbook
 
 > Read `./design-thinking-mindset.md` first.
 >
@@ -7,9 +7,11 @@
 > updates.
 >
 > Use the main `SKILL.md` file's `## Escalation` table as the authoritative verdict
-> routing policy. This playbook focuses on phase flow and inline questioning.
+> routing policy. This playbook focuses on the canonical stage flow and inline questioning.
 
-## 1. Dispatch `critique-analyzer`
+## Stage 2 — Analyze Artifacts
+
+Dispatch `critique-analyzer`.
 
 Read `../subagents/critique-analyzer.md`, then dispatch with:
 
@@ -30,7 +32,9 @@ Handle the verdicts:
   critique.
 - `CRITIQUE: PASS` → continue.
 
-## 2. Dispatch `question-manifest-builder`
+## Stage 3 — Build Manifest
+
+Dispatch `question-manifest-builder`.
 
 Read `../subagents/question-manifest-builder.md`, then dispatch with:
 
@@ -51,7 +55,7 @@ Handle the verdicts:
 - `MANIFEST: WARN` → continue, but mention the warning in the final summary.
 - `MANIFEST: PASS` → continue.
 
-## 3. Present the manifest
+## Stage 4 — Preview Manifest
 
 Show the manifest summary before asking the first question. Reuse the
 `question-manifest-builder` header counts and `## Questions For Now` table
@@ -77,7 +81,7 @@ After the preview, ask:
 
 > Ready to start? I'll walk through these one at a time.
 
-## 4. Walk the manifest
+## Stage 4 — Clarify Inline
 
 Always show progress:
 
@@ -132,7 +136,9 @@ For assumptions and direct questions, use the simplest fitting options:
   live manifest
 - New question for a future task → add it to `DEFERRED_QUESTIONS`
 
-## 5. Dispatch `decision-recorder`
+## Stage 5 — Record Decisions
+
+Dispatch `decision-recorder`.
 
 Read `../subagents/decision-recorder.md`, then dispatch with:
 
@@ -151,7 +157,7 @@ Handle the verdicts:
 - `RECORDING: WARN` → continue, but carry the warnings into the final summary.
 - `RECORDING: PASS` → continue.
 
-## 6. Present the final summary
+## Stage 5 — Present Final Summary
 
 Use the recorder summary plus session counts to present:
 
@@ -160,14 +166,14 @@ Use the recorder summary plus session counts to present:
 
 - Critique artifact: <path>
 - Files updated: <path list or ->
+- RE_PLAN_NEEDED: <true|false>
+- BLOCKERS_PRESENT: <true|false>
 - Questions resolved: <N>
 - Questions skipped: <N>
 - Questions deferred: <N>
 - Blocking items: <N>
 - Overrides: <N>
 - Plan-changing decisions: <N>
-- RE_PLAN_NEEDED: <true|false>
-- BLOCKERS_PRESENT: <true|false>
 ```
 
 If `RE_PLAN_NEEDED=true`, tell the orchestrator to re-run planning before
