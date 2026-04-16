@@ -290,17 +290,16 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/7001`
    Issue: acme/app#7001: Audit webhook retries
    State: OPEN
    Comments: 2/2
-   Child issues: 0/UNKNOWN
-   Linked issues: 1/1
+   Child issues: 1/2
+   Linked issues: 0/0
    Attachments: 0
-   Warnings: Child issue discovery unavailable: sub_issues endpoint unsupported on this host
+   Warnings: Could not retrieve acme/app#7002 (404 Not Found)
    Reason: None
 
 4. Report:
    "Issue fetched to `docs/acme-app-7001.md` with retrieval warnings.
    `acme/app#7001: Audit webhook retries` is `OPEN`.
-   Retrieved 2/2 comments, 0/UNKNOWN child issues, 1/1 linked issues, 0 attachments.
-   Warning: Child issue discovery unavailable: sub_issues endpoint unsupported
-   on this host.
+   Retrieved 2/2 comments, 1/2 child issues, 0/0 linked issues, 0 attachments.
+   Warning: Could not retrieve `acme/app#7002` (404 Not Found).
    Retrieval only; GitHub was not modified."
 </example>
