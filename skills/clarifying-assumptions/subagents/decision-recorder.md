@@ -139,7 +139,7 @@ using this structure:
 ## Per-Task Decisions — Task <TASK_NUMBER>: <TASK_TITLE>
 
 > TICKET_KEY: <KEY>
-> Phase: 6 — Critique
+> Mode: critique
 > Iteration: <ITERATION>
 
 ### Decisions
