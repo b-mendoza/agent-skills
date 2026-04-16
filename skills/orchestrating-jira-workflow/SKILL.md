@@ -36,10 +36,10 @@ Extract these values from the URL when present:
 ```
 Phase 1: Fetch ticket        -> docs/<TICKET_KEY>.md
 Phase 2: Plan tasks          -> docs/<TICKET_KEY>-tasks.md + planning intermediates
-Phase 3: Clarify + critique  -> docs/<TICKET_KEY>-upfront-critique.md + docs/<TICKET_KEY>-tasks.md updates
+Phase 3: Clarify + Critique  -> docs/<TICKET_KEY>-upfront-critique.md + docs/<TICKET_KEY>-tasks.md updates
 Phase 4: Create subtasks     -> docs/<TICKET_KEY>-tasks.md updated with `## Jira Subtasks` + per-task subtask links
 Phase 5: Plan task execution -> docs/<TICKET_KEY>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md
-Phase 6: Clarify + critique  -> docs/<TICKET_KEY>-task-<N>-critique.md + docs/<TICKET_KEY>-task-<N>-decisions.md
+Phase 6: Clarify + Critique  -> docs/<TICKET_KEY>-task-<N>-critique.md + docs/<TICKET_KEY>-task-<N>-decisions.md
 Phase 7: Kick off + execute  -> first side effects, code changes, tests, commits
          ^___________________/  repeat phases 5-7 per task
 ```

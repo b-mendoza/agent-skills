@@ -71,8 +71,8 @@ execution.
 | ------------------------ | ----- | --------------------- | --------------------------------------------------- | ------------------------------- |
 | `clarifying-assumptions` | Skill | Phase 6 orchestration | `skills/.../clarifying-assumptions/SKILL.md` exists | Add skill at expected repo path |
 
-No external dependencies beyond the skill. Conversational skill with inline
-critique-analyzer dispatch.
+No external dependencies beyond the skill file. Conversational skill; inline
+execution.
 
 ---
 

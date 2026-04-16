@@ -69,14 +69,14 @@ execution.
 
 ---
 
-## Phase 6 — Clarify + critique (`clarifying-assumptions`, critique mode)
+## Phase 6 — Clarify + Critique (`clarifying-assumptions`, critique mode)
 
 | Dependency                 | Type  | Used by               | How to check                                   | Install / configure         |
 | -------------------------- | ----- | --------------------- | ---------------------------------------------- | --------------------------- |
 | `clarifying-assumptions`   | Skill | Phase 6 orchestration | `skills/.../clarifying-assumptions/SKILL.md` exists | Add skill at expected repo path |
 
-No external dependencies beyond the skill. Conversational skill with inline
-helper dispatch.
+No external dependencies beyond the skill file. Conversational skill; inline
+execution.
 
 ---
 

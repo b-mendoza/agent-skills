@@ -47,10 +47,10 @@ Extract from `ISSUE_URL` when present:
 ```
 Phase 1: Fetch issue           -> docs/<ISSUE_SLUG>.md
 Phase 2: Plan tasks            -> docs/<ISSUE_SLUG>-tasks.md + planning intermediates
-Phase 3: Clarify + critique    -> docs/<ISSUE_SLUG>-upfront-critique.md + docs/<ISSUE_SLUG>-tasks.md updates
+Phase 3: Clarify + Critique    -> docs/<ISSUE_SLUG>-upfront-critique.md + docs/<ISSUE_SLUG>-tasks.md updates
 Phase 4: Create task issues    -> docs/<ISSUE_SLUG>-tasks.md updated with `## GitHub Task Issues` + per-task issue references
 Phase 5: Plan task execution   -> docs/<ISSUE_SLUG>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md
-Phase 6: Clarify + critique    -> docs/<ISSUE_SLUG>-task-<N>-critique.md + docs/<ISSUE_SLUG>-task-<N>-decisions.md
+Phase 6: Clarify + Critique    -> docs/<ISSUE_SLUG>-task-<N>-critique.md + docs/<ISSUE_SLUG>-task-<N>-decisions.md
 Phase 7: Kick off + execute    -> first side effects, code changes, tests, commits
          ^____________________/  repeat phases 5-7 per task
 ```
