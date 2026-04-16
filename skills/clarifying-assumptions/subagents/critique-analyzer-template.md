@@ -73,7 +73,7 @@ Include this section only in `MODE=upfront`.
 
 Include this section only in `MODE=critique`.
 
-| # | Severity | Implementation decision | User-facing consequence | Problem-framing link |
+| Item ID | Severity | Implementation decision | User-facing consequence | Problem-framing link |
 | --- | --- | --- | --- | --- |
 | UI1 | HIGH | <decision> | <consequence> | <how it affects the identified user and need> |
 
