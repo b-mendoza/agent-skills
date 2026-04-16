@@ -6,7 +6,7 @@
 > contents or logs through the orchestrator.
 >
 > `./contracts.md` remains the authoritative source for readiness checks and
-> dispatch input contracts. This file is the ordered runbook.
+> dispatch handoff contracts. This file is the ordered runbook.
 
 ## Standard phase cycle
 
@@ -14,10 +14,9 @@ Every successful task run follows this sequence:
 
 1. **Validate prerequisites.**
    - Read `./contracts.md`.
-   - Confirm the **Phase 7 handoff**: the ticket snapshot, the task plan, the
-     four Phase 5 artifacts, and `critique.md` plus `decisions.md` exist for
-     this `TASK_NUMBER`, matching the parent orchestrator's Phase 5–7 data
-     contracts.
+   - Confirm the **execution handoff**: the ticket snapshot, the task plan, the
+     per-task brief, execution plan, test spec, refactoring plan, critique
+     record, and decisions record all exist for this `TASK_NUMBER`.
    - Stop immediately if required artifacts are missing, contradictory, or the
      selected task is not ready.
 
@@ -28,7 +27,7 @@ Every successful task run follows this sequence:
      boundary after critique approval** (including the first Jira-side startup
      updates reserved for starting implementation).
    - Collect only the structured `KICKOFF_REPORT`.
-   - On a Phase 7 resume, kickoff is **idempotent**: if startup conditions were
+   - On resume, kickoff is **idempotent**: if startup conditions were
      already satisfied or Jira state already reflects `In Progress`, record the
      current state and continue instead of reapplying startup mutations blindly.
 

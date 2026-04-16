@@ -20,7 +20,7 @@ instead of guessing.
 | Execution plan path       | Yes      | Approved implementation approach. |
 | Test spec path            | Yes      | Required behavior coverage. |
 | Refactoring plan path     | Yes      | Approved prep/cleanup work. |
-| Decisions path            | Yes on the normal Phase 7 path | `docs/<ISSUE_SLUG>-task-<N>-decisions.md` from critique; authoritative when it differs from earlier plan wording. |
+| Decisions path            | Yes on the standard execution path | `docs/<ISSUE_SLUG>-task-<N>-decisions.md`; authoritative when it differs from earlier plan wording. |
 | Critique path             | No       | `docs/<ISSUE_SLUG>-task-<N>-critique.md` for additional nuance when useful. |
 | Fix brief                 | No       | Consolidated gaps from requirements-verifier or review gates. |
 | Previous execution report | No       | Resume context after a pause or targeted fix cycle. |

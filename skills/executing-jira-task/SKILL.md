@@ -1,6 +1,6 @@
 ---
 name: "executing-jira-task"
-description: 'Execute exactly one planned Jira workflow task using pre-produced planning and critique artifacts and a specialist pipeline. Use when the user says "execute task 2", "implement task 4", "work on task 1 for PROJ-123", or when `orchestrating-jira-workflow` reaches Phase 7 for a task. Requires the four Phase 5 artifacts and two Phase 6 artifacts from `planning-jira-task` and `clarifying-assumptions` (critique mode). Phase 7 begins with an explicit execution kickoff, the first mutation boundary after critique approval, that performs readiness checks and Jira-side startup updates when appropriate, then continues through implementation, review gates, and reporting for one task only.'
+description: 'Execute exactly one planned Jira workflow task using pre-produced task artifacts and a specialist pipeline. Use when the user says "execute task 2", "implement task 4", or "work on task 1 for PROJ-123". Requires the task snapshot, task plan, per-task planning artifacts, critique record, and decisions record for the selected task. Execution begins with an explicit kickoff, the first mutation boundary after critique approval, then continues through implementation, documentation, requirements verification, review gates, targeted fix cycles, and final reporting for one task only.'
 ---
 
 # Executing Jira Task
@@ -12,11 +12,10 @@ advance, run a targeted fix cycle, or escalate.
 
 **Execution kickoff** is the first point at which the workflow may mutate Jira
 state or otherwise cross from critique-only work into active execution.
-Everything through Phase 6 remains critique and planning on disk; **kickoff is
-the first execution mutation boundary after the user approves implementation**,
-consistent with the parent orchestrator's task-loop readiness gate. The
-orchestrator running this skill keeps only concise summaries in memory;
-subagents do the heavy work in isolation.
+Everything before kickoff remains critique and planning on disk; **kickoff is
+the first execution mutation boundary after the user approves
+implementation**. The orchestrator running this skill keeps only concise
+summaries in memory; subagents do the heavy work in isolation.
 
 ## Inputs
 
@@ -25,10 +24,7 @@ subagents do the heavy work in isolation.
 | `TICKET_KEY`  | Yes      | `JNS-6065` | Used to derive artifact and Jira paths. |
 | `TASK_NUMBER` | Yes      | `3`        | Exactly one task per invocation.        |
 
-### Required artifacts (normal Phase 7 path)
-
-These match the parent orchestrator's **6 → 7 readiness** gate for per-task
-execution:
+### Required artifacts
 
 | Artifact                                  | Phase | Required | Purpose                                    |
 | ----------------------------------------- | ----- | -------- | ------------------------------------------ |
@@ -46,20 +42,20 @@ shape.
 
 ## Workflow Overview
 
-These are internal execution steps inside the parent workflow's Phase 7.
-Read `./references/pipeline.md` for the full run -> check -> fix -> re-check
-order and `./references/contracts.md` for readiness gates.
+These are the execution skill's ordered internal stages. Read
+`./references/pipeline.md` for the full run -> check -> fix -> re-check order
+and `./references/contracts.md` for readiness and handoff contracts.
 
-| Internal step | Goal                                          | Primary result                            |
-| ------------- | --------------------------------------------- | ----------------------------------------- |
-| 0             | Validate prerequisites and task readiness     | Ready-to-run task or explicit blocker     |
-| 1             | Kick off execution and apply first side effects | `KICKOFF_REPORT`                        |
-| 2             | Implement the planned change                  | `EXECUTION_REPORT`                        |
-| 3             | Document, commit, and update tracking         | `DOCUMENTATION_REPORT`                    |
-| 4             | Verify requirements coverage                  | `VERIFICATION_RESULT`                     |
-| 5             | Run clean-code, architecture, security gates  | Review verdicts and actionable feedback   |
-| 6             | Run targeted fix cycles only where needed     | Re-validated task or escalation           |
-| 7             | Report final outcome to the user              | One concise task completion summary       |
+| Internal stage | Goal | Primary result |
+| -------------- | ---- | -------------- |
+| 0. Readiness | Validate prerequisites and task readiness | Ready-to-run task or explicit blocker |
+| 1. Kickoff | Apply first side effects and establish active execution state | `KICKOFF_REPORT` |
+| 2. Execution | Implement the planned change | `EXECUTION_REPORT` |
+| 3. Documentation | Add in-code docs, commit Category B work, and update tracking | `DOCUMENTATION_REPORT` |
+| 4. Requirements Verification | Confirm Definition of Done coverage before review gates | `VERIFICATION_RESULT` |
+| 5. Quality Gates | Run clean-code, architecture, and security review in order | Review verdicts and actionable feedback |
+| 6. Targeted Fix Cycle | Re-run only the failing verification or review path | Re-validated task or escalation |
+| 7. Final Report | Report the selected task's final outcome | One concise task completion summary |
 
 Requirements gaps are resolved after internal step 4 and before internal step 5.
 Quality-gate fix cycles happen after internal step 5.
@@ -135,8 +131,7 @@ After a successful run, this skill leaves behind these deliverables:
 ## Execution Steps
 
 1. Read `./references/contracts.md` and confirm the task is ready to cross the
-   execution boundary (including Phase 7 precondition alignment with the parent
-   orchestrator when invoked from that workflow).
+   execution boundary.
 2. Read `./references/pipeline.md` and follow its normal run order exactly.
 3. Dispatch only the next required subagent, passing explicit inputs and
    keeping only structured summaries in orchestration context.
@@ -167,7 +162,7 @@ Input:
 - `TICKET_KEY=JNS-6065`
 - `TASK_NUMBER=3`
 
-1. Validate Phase 5 + 6 artifacts exist; Task 3 is not already complete.
+1. Validate the required per-task artifacts exist; Task 3 is not already complete.
 2. Dispatch `execution-starter` for kickoff (first Jira-side mutations after
    critique).
    - `KICKOFF_REPORT` -> `READY`

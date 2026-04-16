@@ -6,17 +6,11 @@
 > Reminder: the orchestrator coordinates; subagents produce the work and return
 > concise summaries.
 
-## Alignment with the parent workflow
+## Readiness contract
 
-Phase 7 preconditions come from the parent orchestrator's data contracts
-(per-task rows for phases 5–7) and its task-loop readiness section
-(**6 → 7 readiness**). This file is the execution skill's authoritative
-breakdown of paths, kickoff semantics, and dispatch inputs; it must not
-contradict those parent contracts.[^1]
-
-[^1]: The concrete parent is the corresponding GitHub workflow orchestrator.
-    Its filesystem layout is intentionally unreferenced here so this skill
-    stays portable across harnesses.
+This file is the execution skill's authoritative breakdown of required
+artifacts, kickoff semantics, and dispatch inputs. Use it as the local source
+of truth for deciding whether execution may start.
 
 ## Required input shape
 
@@ -29,23 +23,20 @@ The orchestrator starts with exactly two explicit inputs:
 
 All standard artifact paths derive from `ISSUE_SLUG` and `TASK_NUMBER`.
 
-## Upstream artifacts
+## Required artifacts
 
-| Path pattern                                      | Produced by              | Why it matters |
-| ------------------------------------------------- | ------------------------ | -------------- |
-| `docs/<ISSUE_SLUG>.md`                           | `fetching-github-issue`  | Issue snapshot and GitHub context. |
-| `docs/<ISSUE_SLUG>-tasks.md`                     | `planning-github-issue-tasks` (+ later phases) | Task source of truth, `## GitHub Task Issues`, per-task `GitHub Task Issue:` lines. |
-| `docs/<ISSUE_SLUG>-task-<N>-brief.md`            | `planning-github-task`   | Scope, context, DoD. |
-| `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md`   | `planning-github-task`   | Approved implementation approach. |
-| `docs/<ISSUE_SLUG>-task-<N>-test-spec.md`        | `planning-github-task`   | Required behavior coverage. |
-| `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` | `planning-github-task`   | Approved prep/cleanup work. |
-| `docs/<ISSUE_SLUG>-task-<N>-critique.md`         | `clarifying-assumptions` (critique) | Task-level critique report. |
-| `docs/<ISSUE_SLUG>-task-<N>-decisions.md`         | `clarifying-assumptions` (critique) | Decisions and confirmed plan after critique. |
+| Path pattern | Why it matters |
+| ------------ | -------------- |
+| `docs/<ISSUE_SLUG>.md` | Issue snapshot and GitHub context. |
+| `docs/<ISSUE_SLUG>-tasks.md` | Task source of truth, `## GitHub Task Issues`, per-task `GitHub Task Issue:` lines. |
+| `docs/<ISSUE_SLUG>-task-<N>-brief.md` | Scope, context, and DoD. |
+| `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` | Approved implementation approach. |
+| `docs/<ISSUE_SLUG>-task-<N>-test-spec.md` | Required behavior coverage. |
+| `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` | Approved prep and cleanup work. |
+| `docs/<ISSUE_SLUG>-task-<N>-critique.md` | Task-level critique record. |
+| `docs/<ISSUE_SLUG>-task-<N>-decisions.md` | Decisions and confirmed plan after critique. |
 
-**Normal orchestrated path:** all of the above through `decisions.md` are
-required before kickoff; the parent workflow's Phase 7 precondition check
-expects the issue snapshot, the task plan, the four Phase 5 files, and
-`critique.md` plus `decisions.md`.
+The standard execution path requires all of the above before kickoff.
 
 If any required artifact is missing, stop before dispatching subagents and name
 which upstream phase or skill must run first.
@@ -76,10 +67,9 @@ Confirm all of the following before the kickoff step:
 
 ## Execution kickoff boundary
 
-Phase 7 kickoff inside `executing-github-task` is the **first execution
-mutation boundary after critique approval**. Before kickoff, do not label,
-assign, or comment on GitHub issues for the purpose of starting implementation,
-except what the parent orchestrator already defined outside this skill.
+Kickoff inside `executing-github-task` is the **first execution mutation
+boundary after critique approval**. Before kickoff, do not label, assign, or
+comment on GitHub issues for the purpose of starting implementation.
 
 At kickoff, the workflow may:
 
@@ -116,7 +106,7 @@ success from partial file changes alone.
 
 | Subagent                | Required inputs |
 | ----------------------- | --------------- |
-| `execution-starter`     | `ISSUE_SLUG`, `TASK_NUMBER`, issue snapshot path, task plan path, execution brief path; optional readiness summaries from the parent |
+| `execution-starter`     | `ISSUE_SLUG`, `TASK_NUMBER`, issue snapshot path, task plan path, execution brief path; optional readiness summaries already reduced to concise status notes |
 | `task-executor`         | Paths to brief, execution plan, test spec, refactoring plan, decisions path; optional critique path, fix brief, previous execution report |
 | `documentation-writer`  | `EXECUTION_REPORT`, `ISSUE_SLUG`, `TASK_NUMBER` |
 | `requirements-verifier` | Brief path, test spec path, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT` |
