@@ -1,11 +1,12 @@
 # Subtask Creator Templates
 
-> Read this file only when you reach the description/body construction or plan-update
-> steps in `subtask-creator.md`.
+> Read this file only when you reach the description/body construction or
+> plan-update steps in `subtask-creator.md`.
+>
+> These are literal fragments and examples. Phase 4 contract semantics live in
+> `../references/phase-4-io-contracts.md`.
 
-## Jira Wiki-Markup Description
-
-Use this exact section order when assembling the Jira description for a task:
+## Jira Wiki-Markup description fragment
 
 ```text
 h3. Objective
@@ -30,11 +31,7 @@ h3. Likely Files / Artifacts Affected
 <List>
 ```
 
-## Plan file fragments
-
-### Workflow table shape (`## Jira Subtasks`)
-
-Use this table shape when inserting or refreshing `## Jira Subtasks`:
+## Example `## Jira Subtasks` section
 
 ```markdown
 ## Jira Subtasks
@@ -45,15 +42,11 @@ Use this table shape when inserting or refreshing `## Jira Subtasks`:
 | 2    | Not Created | Task 2: Implement API layer    | Not Created | 1            | High     |
 ```
 
-**Column order is normative** for machine-friendly parsing.
-
-### Per-task inline line (immediately after `## Task <N>:` heading)
+## Example per-task inline lines
 
 ```markdown
 Jira Subtask: PROJ-200
 ```
-
-For failures:
 
 ```markdown
 Jira Subtask: Not Created
