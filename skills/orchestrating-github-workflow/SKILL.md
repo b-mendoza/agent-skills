@@ -388,7 +388,7 @@ summary needed to decide the next move:
 - Retry or re-plan loop exhausted -> present the accumulated feedback and ask
   the user how to proceed
 
-## Example
+## Examples
 
 <example>
 Input: `ISSUE_URL=https://github.com/acme/app/issues/42` → `ISSUE_SLUG=acme-app-42`
