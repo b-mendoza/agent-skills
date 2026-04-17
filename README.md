@@ -109,3 +109,13 @@ The repo currently vendors 16 third-party skills. They are stored under
 | [`test-driven-development`](.agents/skills/test-driven-development/SKILL.md)         | `obra/superpowers`                   |
 | [`vitest`](.agents/skills/vitest/SKILL.md)                                           | `antfu/skills`                       |
 | [`writing-plans`](.agents/skills/writing-plans/SKILL.md)                             | `obra/superpowers`                   |
+
+## Notes for editing
+
+- Skills in this repo need to work in both OpenCode and Claude Code, so keep the
+  format simple and portable.
+- Before editing a skill, subagent, or reference file, read the relevant guide in
+  [`docs/best-practices/README.md`](docs/best-practices/README.md).
+- There is no formal validator or CI pipeline for skill authoring at the moment,
+  so checks are manual.
+- Progress files under `docs/` are local working files. Do not commit them.
