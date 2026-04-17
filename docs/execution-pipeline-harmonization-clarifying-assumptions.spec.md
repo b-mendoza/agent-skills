@@ -95,6 +95,29 @@ contract shape:
 | Per-task decisions file | `docs/<KEY>-task-<N>-decisions.md` in `critique` |
 | Final summary flags | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT` |
 
+### Orchestrator-level contract expectations
+
+The parent workflow owns the clarification boundary contract at its entry and
+exit points. The downstream clarification skill remains responsible for its
+internal five-stage execution, while the orchestrator remains responsible for
+the workflow-level validation and routing around that execution.
+
+| Orchestrator responsibility | Canonical expectation |
+| --- | --- |
+| Entry points | Invoke `clarifying-assumptions` only at the parent workflow's plan-wide clarification boundary and task-level critique boundary |
+| Input normalization | Pass the clarification skill its required top-level inputs exactly as declared in this spec, including alias normalization at the parent-workflow boundary when the platform-native identifier is not already `TICKET_KEY` |
+| Precondition gating | Validate that the mode-specific upstream artifact set still exists before invoking the clarification skill |
+| Re-plan routing | Treat `RE_PLAN_NEEDED=true` as a targeted loop back to the immediately preceding planning phase for the same work item or task, then re-run the clarification boundary |
+| Blocker gating | Treat `BLOCKERS_PRESENT=true` as a hard stop before downstream write or execution phases |
+| Postcondition validation | Validate only the clarification-owned artifact boundary after the skill returns: critique artifact plus decisions surface |
+| User gate after clean clarification | Even when `BLOCKERS_PRESENT=false`, require the parent workflow's normal user confirmation before advancing into downstream write or execution phases |
+| Mutation boundary | Keep Phase 3 and Phase 6 clarification-only at orchestrator level; implementation kickoff, platform mutations, and execution-state changes remain downstream to later phases |
+
+These expectations are harmonized across Jira-side and GitHub-side
+orchestrators. Platform-native validators may retain their own parameter names
+and later-phase write models, but they must preserve the same clarification
+boundary semantics.
+
 ### Stable per-item identity contract
 
 - Critique report item IDs must remain stable across the full pipeline.
