@@ -100,8 +100,6 @@ The skill runs a 4-subagent pipeline:
 3. `test-strategist` — writes the behavior-driven test specification
 4. `refactoring-advisor` — writes the refactoring recommendation
 
-The authoritative subagent contracts live in `planning-github-task`.
-
 **Validate output:** Dispatch `artifact-validator`:
 
 ```
@@ -298,10 +296,9 @@ task:
 - `docs/<ISSUE_SLUG>-task-<N>-decisions.md`
 
 This gate confirms that critique completed before execution begins — the
-distinct **6 → 7 readiness gate**. Once it passes,
-`../../executing-github-task/references/contracts.md` is
-authoritative for the execution skill's own required versus conditional artifact
-semantics.
+distinct **6 → 7 readiness gate**. For this workflow, the Phase 7 precondition
+is exactly the standard handoff listed above; do not widen it with
+execution-skill-internal optional inputs.
 
 **Invoke:** Read the skill's SKILL.md and invoke with `ISSUE_SLUG` and
 `TASK_NUMBER` (and owner/repo/issue context as the skill defines). Keep any

@@ -45,13 +45,12 @@ every numbered task section.
 For the Phase 5 postcondition and Phase 6 precondition, validate the concrete
 planning handoff owned by `../../planning-jira-task/SKILL.md`: brief, execution
 plan, test spec, and refactoring plan. The detailed section-level requirements
-inside those files remain owned by that downstream skill.
+inside those files are outside this validator's contract.
 
 For the Phase 7 precondition, validate the normal workflow handoff from Phases
 1–6. This confirms the ticket snapshot, workflow task plan, and critique
-artifacts all exist before execution begins.
-`../../executing-jira-task/references/contracts.md` remains authoritative for the
-execution skill's own required versus conditional input semantics.
+artifacts all exist before execution begins. Do not widen this check with
+execution-skill-internal optional inputs.
 
 | Phase | Direction     | File                                 | Checks                                                         |
 | ----- | ------------- | ------------------------------------ | -------------------------------------------------------------- |

@@ -23,8 +23,8 @@ advance, retry, or stop.
 Use the phase-boundary matrix below to determine the exact checks for the
 requested boundary, then follow the validation procedure that follows it.
 
-The matrix matches `../references/data-contracts.md`. If anything conflicts,
-treat `data-contracts.md` as authoritative.
+The matrix matches `../references/data-contracts.md`. Use the same boundary
+rules in both places.
 
 ### Phase Boundary Matrix
 
@@ -51,12 +51,11 @@ owned by that skill).
 For the Phase 5 postcondition and Phase 6 precondition, validate the concrete
 planning handoff owned by `../../planning-github-task/SKILL.md`: brief, execution
 plan, test spec, and refactoring plan. The detailed section-level requirements
-inside those files remain owned by that downstream skill.
+inside those files are outside this validator's contract.
 
 For the Phase 7 precondition, validate the normal workflow handoff from Phases
 5 and 6. This confirms critique completed before execution begins.
-`../../executing-github-task/references/contracts.md` remains authoritative for
-the execution skill's own required versus conditional input semantics.
+Do not widen this check with execution-skill-internal optional inputs.
 
 | Phase | Direction     | File                                 | Checks                                                         |
 | ----- | ------------- | ------------------------------------ | -------------------------------------------------------------- |

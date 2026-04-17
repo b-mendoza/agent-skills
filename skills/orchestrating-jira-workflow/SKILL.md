@@ -99,17 +99,16 @@ numbered task section. The downstream
 `Created/Linked Subtasks` table is the structured handoff for workflow progress
 tracking.
 
-For Phase 5, the authoritative downstream contract is owned by
-`planning-jira-task`. The stable planning handoff is the concrete four-file set:
+For Phase 5, the stable planning handoff is the concrete four-file set:
 
 - `docs/<TICKET_KEY>-task-<N>-brief.md`
 - `docs/<TICKET_KEY>-task-<N>-execution-plan.md`
 - `docs/<TICKET_KEY>-task-<N>-test-spec.md`
 - `docs/<TICKET_KEY>-task-<N>-refactoring-plan.md`
 
-Treat those files as the planning boundary consumed by Phases 6 and 7. The
-detailed section-level requirements for each file stay owned by the downstream
-Phase 5 skill.
+Treat those files as the planning boundary consumed by Phases 6 and 7. This
+workflow contract checks that the full file set exists; it does not add extra
+section-level rules beyond that boundary.
 
 After each phase or gate, return only:
 

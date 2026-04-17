@@ -291,9 +291,9 @@ task:
 - `docs/<KEY>-task-<N>-critique.md`
 - `docs/<KEY>-task-<N>-decisions.md`
 
-This gate confirms that critique completed before execution begins. Once it
-passes, `../../executing-jira-task/references/contracts.md` is authoritative for
-the execution skill's own required versus conditional artifact semantics.
+This gate confirms that critique completed before execution begins. For this
+workflow, the Phase 7 precondition is exactly the standard handoff listed above;
+do not widen it with execution-skill-internal optional inputs.
 
 **Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY` and
 `TASK_NUMBER`. Keep any pre-task utility summaries at hand for coordination,

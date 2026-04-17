@@ -63,8 +63,8 @@ numbered task section for resumability.
 
 For Phase 5 postcondition and Phase 6 precondition, this quick reference names
 the concrete four-file planning handoff. The detailed section requirements
-inside those files are owned by `../../planning-github-task/SKILL.md` and its
-`references/data-contracts.md`.
+inside those files are outside this workflow contract; the orchestrator boundary
+here is the presence of the full four-file handoff.
 
 | Phase | Direction     | Files to check                      | Expected checks                  |
 | ----- | ------------- | ----------------------------------- | -------------------------------- |
@@ -74,9 +74,9 @@ inside those files are owned by `../../planning-github-task/SKILL.md` and its
 | 7     | precondition  | Standard Phase 1-6 execution handoff | `docs/<ISSUE_SLUG>.md`, `docs/<ISSUE_SLUG>-tasks.md`, `docs/<ISSUE_SLUG>-task-<N>-brief.md`, `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md`, `docs/<ISSUE_SLUG>-task-<N>-test-spec.md`, `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md`, `docs/<ISSUE_SLUG>-task-<N>-critique.md`, and `docs/<ISSUE_SLUG>-task-<N>-decisions.md` all exist; this confirms the normal workflow reached execution after critique completion (**6 → 7 readiness**) |
 
 For Phase 7 specifically, this table defines the orchestrator's normal
-workflow-gate check. `../../executing-github-task/references/contracts.md`
-remains authoritative for the execution skill's own required versus
-conditional input semantics.
+workflow-gate check. The boundary is the standard Phase 1-6 handoff listed
+above; execution-skill-internal optional inputs do not change this validator
+contract.
 
 ---
 
