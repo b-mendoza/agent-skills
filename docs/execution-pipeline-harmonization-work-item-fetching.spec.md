@@ -6,9 +6,13 @@ validated_skills:
   - "skills/fetching-github-issue"
   - "skills/fetching-jira-ticket"
 generated_from:
-  report: "docs/execution-pipeline-harmonization-work-item-fetching.phase0-report.md"
-  triage: "docs/execution-pipeline-harmonization-work-item-fetching.phase1-triage-ledger.md"
-  change_summary: "docs/execution-pipeline-harmonization-work-item-fetching.phase2-change-summary.md"
+  report: "docs/orchestrator-alignment-report-work-item-fetching.md"
+  triage: "docs/orchestrator-alignment-ledger-work-item-fetching.md"
+  change_summary: "docs/orchestrator-alignment-changes-work-item-fetching.md"
+  orchestrator_alignment:
+    report: "docs/orchestrator-alignment-report-work-item-fetching.md"
+    ledger: "docs/orchestrator-alignment-ledger-work-item-fetching.md"
+    change_summary: "docs/orchestrator-alignment-changes-work-item-fetching.md"
 ---
 
 # Work-Item Fetching Harmonization Spec
@@ -25,6 +29,7 @@ It covers the post-Phase-2 shared execution contract for:
 - pipeline stage names and ordering
 - snapshot artifact shape
 - subagent dispatch conventions
+- orchestrator-facing Phase 1 fetch and validation gates
 - allowed platform-specific divergence boundaries
 
 It does not act as a runtime dependency. The skills remain self-contained and
@@ -32,16 +37,20 @@ distributable from their own `SKILL.md`, `subagents/`, and template files.
 
 ## Traceability
 
-- Phase 0 report identified `P0-C1`, `P0-D1`, and `P0-V1`.
-- Phase 1 ledger classified `P0-C1` and `P0-V1` as `FIX`, and `P0-D1` as
-  `DEFER`.
-- Phase 2 change summary recorded the applied stage-model and harness-agnostic
-  contract wording fixes, with no new findings.
+- This spec is the surviving canonical record of the earlier downstream pass,
+  including historical findings `P0-C1`, `P0-D1`, and `P0-V1`, their recorded
+  `FIX`/`DEFER` outcomes, and the resulting paired-skill contract state.
+- Orchestrator alignment report identified `CA-001`, `CA-002`, and `CA-003`.
+- Orchestrator alignment ledger classified all three orchestrator findings as
+  `FIX`, with zero `PRESERVE`, zero `DEFER`, and zero `SPEC_STALENESS`
+  entries in that pass.
+- Orchestrator alignment change summary recorded only those three ledgered
+  fixes, with no new findings.
 
-This spec reflects the on-disk state after Phase 2 for:
-
-- `skills/fetching-github-issue`
-- `skills/fetching-jira-ticket`
+This spec reflects the on-disk state after Phase 2 and the later
+orchestrator-alignment pass for the paired fetching skills plus the matching
+orchestrator `references/data-contracts.md` and `subagents/artifact-validator.md`
+files on both platforms.
 
 ## Canonical Alias Model
 
@@ -268,6 +277,23 @@ Shared branching rules:
 - any inconsistent pairing, such as `FETCH: PASS` with `Validation: NOT_RUN`, is
   treated as an error state.
 
+### Orchestrator Phase 1 gate shape
+
+At the orchestrator level, the Phase 1 fetch boundary is shape-aligned across
+both workflows:
+
+- preserve the full 12-line retriever summary in the locked line order; do not
+  collapse it into an abbreviated summary
+- treat `FETCH: PASS` plus `Validation: PASS` as the only unconditional success
+  state
+- `FETCH: PARTIAL` plus `Validation: PASS`: preserve warnings and still run the
+  same artifact contract as a success-with-warnings state
+- `FETCH: FAIL`, `FETCH: ERROR`, `Validation: FAIL`, or any inconsistent status
+  pairing as non-advancing states
+- require the orchestrator-facing snapshot gate to preserve the same locked
+  heading-order contract defined for the downstream artifact
+- treat the Phase 2 precondition as the same snapshot contract shape
+
 ## Subagent Dispatch Conventions
 
 The paired coordinator skills use the same dispatch model:
@@ -355,6 +381,12 @@ This is a content-source difference, not a pipeline or summary-shape drift.
 On GitHub, the corresponding artifact state is the explicit marker
 `_Unknown. Project membership not determined: <reason>_`, not `_None_`.
 
+### Orchestrator-level preserved divergence decisions from this pass
+
+None. The orchestrator alignment ledger recorded zero `PRESERVE` entries, so
+this pass did not add any new orchestrator-only divergence boundary beyond the
+downstream platform differences already listed above.
+
 ## Decisions From This Pass
 
 ### `P0-C1` - Fixed
@@ -404,7 +436,59 @@ Result in final files:
 GitHub still accepts `ISSUE_URL` or fallback coordinates, and Jira remains
 `JIRA_URL`-only.
 
+## Decisions From Orchestrator Pass
+
+### `CA-001` - Fixed
+
+Decision:
+The orchestrator-facing Phase 1 handoff is canonicalized as the same locked
+12-line fetch summary already owned by the downstream retrievers.
+
+Rationale from orchestrator ledger:
+The ledger classified the old "three-field contract" wording as plain
+contract-shape drift because both downstream fetching skills already expose the
+full structured summary and coordinators are expected to branch on those
+structured fields.
+
+Result in final files:
+Both orchestrator `references/data-contracts.md` files now restate the full
+12-line Phase 1 summary in order and direct branching on the complete summary.
+
+### `CA-002` - Fixed
+
+Decision:
+The GitHub orchestrator Phase 1 validator now treats all five GitHub extension
+sections as an explicit required ordered set.
+
+Rationale from orchestrator ledger:
+The ledger classified the older example-style validator wording as contract
+weakening because the downstream and spec contracts already lock `## Labels`,
+`## Assignees`, `## Milestone`, `## Projects`, and `## Attachments` as stable
+top-level extension headings.
+
+Result in final files:
+The GitHub `artifact-validator` now explicitly requires `## Labels`,
+`## Assignees`, `## Milestone`, `## Projects`, and `## Attachments`.
+
+### `CA-003` - Fixed
+
+Decision:
+The orchestrator-level Phase 1 snapshot gate now treats locked top-level heading
+order as part of the contract shape on both platforms.
+
+Rationale from orchestrator ledger:
+The ledger classified heading-presence-only checks as pure structure drift
+because the downstream and spec contracts already lock the Phase 1 artifact in
+a stable ordered shape.
+
+Result in final files:
+Both orchestrator contract references and both `artifact-validator` subagents
+now require locked heading order, not heading presence only.
+
 ## Deferred Items
+
+The earlier paired-skill deferred item remains in force below. The
+orchestrator-alignment pass added zero new `DEFER` entries.
 
 ### `P0-D1`
 
@@ -420,6 +504,11 @@ GitHub still accepts `ISSUE_URL` or fallback coordinates, and Jira remains
 - blocking ambiguity:
   The intended cross-workflow coordinator handoff contract is unspecified.
 
+## Spec Staleness / Follow-Up
+
+No `SPEC_STALENESS` entries were recorded in the orchestrator-alignment pass.
+No spec follow-up was opened from that run.
+
 ## Known Non-Goals
 
 This harmonization does not cover:
@@ -430,5 +519,9 @@ This harmonization does not cover:
 - redesigning the input contract beyond what the final files already support
 - changing tool-level implementation procedures beyond the contract-layer fixes
   authorized in the ledger
+- redesigning orchestrator phases beyond the Phase 1 fetch handoff and the
+  snapshot-validation gate that directly consumes it
+- replacing downstream skill-owned contracts with orchestrator-owned copies of
+  every lower-level rule
 - adding references from the skills back to this spec
 - turning this spec into a required runtime file for either skill
