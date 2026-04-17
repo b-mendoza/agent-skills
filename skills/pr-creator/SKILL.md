@@ -34,7 +34,7 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
 </philosophy>
 
 <platform_adaptation scope="cross-cutting">
-  The GitHub-only command blocks in Phases 2, 6, 8, and 9 assume a GitHub remote (GitHub Enterprise hosts follow the GitHub branch). When `remote.origin.url` points to a non-GitHub host, read `./references/platform-adaptation.md` once at the end of Phase 1 and follow the matching platform branches for preflight/auth, labels, create, and verify. Do NOT load this reference for GitHub or GHE remotes. Do NOT skip it for non-GitHub remotes.
+  The GitHub-only command blocks in Phases 2, 6, 8, and 9 assume a GitHub remote (GitHub Enterprise hosts follow the GitHub branch). When `remote.origin.url` points to a non-GitHub host, read `./references/platform-adaptation.md` once at the end of Phase 1 and follow the matching platform branches for preflight/auth, labels, create, and verify. Load this reference only for non-GitHub remotes; GitHub and GHE skip it.
 </platform_adaptation>
 
 <failure_handling scope="all-phases">
@@ -54,7 +54,7 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
   - `EMPTY_DIFF` — the source branch has nothing to compare against the target
   - `CREATE_ERROR` — the platform create command failed after confirmation
 
-  Every phase-level `<hard_rule>` that stops the workflow MUST emit this exact envelope with one of these five categories. Do not invent new categories. Do not emit free-form failure prose.
+  Every phase-level `<hard_rule>` that stops the workflow uses this exact envelope with one of these five categories. Use only categories from this enum; emit no free-form failure prose.
 </failure_handling>
 
 <context>
@@ -68,7 +68,7 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
     | `BODY_OVERRIDE`   | No       | `## Summary ...`                            |
     | `LABELS_OVERRIDE` | No       | `documentation,enhancement`                 |
 
-    Ask for any missing inputs during the workflow. `PR_STATE` defaults to `draft`; accept only `{draft, ready}`.
+    Ask for any missing inputs during the workflow. `PR_STATE` defaults to `draft`; accepted values are `{draft, ready}`.
   </inputs>
 
   <branch_terminology>
@@ -118,7 +118,7 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
         Detect the hosting platform from `remote.origin.url`. GitHub Enterprise hosts follow the GitHub branch. If the working tree has uncommitted changes, tell the user those changes are not part of the PR until committed.
       </step>
       <step id="1.3" name="gather-missing-inputs">
-        Ask for `TARGET_BRANCH` if it was not already supplied. Do NOT silently default the target branch. If `PR_STATE` is supplied, confirm it is `draft` or `ready`; otherwise default to `draft`.
+        Ask for `TARGET_BRANCH` if it was not already supplied — never silently default it. If `PR_STATE` is supplied, confirm it is `draft` or `ready`; otherwise default to `draft`.
       </step>
       <step id="1.4" name="load-platform-adaptation-if-needed">
         If the remote is not GitHub, read `./references/platform-adaptation.md` and follow the matching platform branch for the GitHub-only command blocks in Phases 2, 6, 8, and 9.
@@ -141,13 +141,13 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
         ```
       </step>
       <step id="2.2" name="push-gate">
-        If the head branch is not on the remote, or local commits are ahead of `origin/<current_branch>`, tell the user a push is required before the PR can be created and before the compare diff is trustworthy. Ask for confirmation, then run:
+        If the head branch is not on the remote, or local commits are ahead of `origin/<current_branch>`, tell the user a push is required before the PR can be created and before the compare diff is trustworthy. Wait for explicit confirmation, then run:
 
         ```bash
         git push -u origin <current_branch>
         ```
 
-        REMINDER: Do NOT run `git push` without explicit confirmation. A declined push must halt with `HEAD_BRANCH_UNPUSHED`, not a retry.
+        > Reminder: `git push` runs only after explicit confirmation. A declined push halts with `HEAD_BRANCH_UNPUSHED` (it is not a retry trigger).
       </step>
       <step id="2.3" name="non-github-preflight">
         For non-GitHub remotes, follow the matching preflight and auth flow in `./references/platform-adaptation.md` before moving to the diff step.
@@ -156,7 +156,7 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
     <hard_rule>If `gh auth status` fails, stop with the `AUTH` envelope (see `<failure_handling>`).</hard_rule>
     <hard_rule>If the user declines the required push, stop with the `HEAD_BRANCH_UNPUSHED` envelope.</hard_rule>
     <hard_rule>If the target branch does not exist on the remote, stop with the `BASE_BRANCH_MISSING` envelope and ask the user for a valid base branch.</hard_rule>
-    <gate>Do not enter Phase 3 until auth passes, the head branch is on the remote with no commits ahead, and the target branch resolves.</gate>
+    <gate>Enter Phase 3 only after auth passes, the head branch is on the remote with no commits ahead, and the target branch resolves.</gate>
   </phase>
 
   <phase id="3" name="analyze-full-diff">
@@ -206,7 +206,7 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
         - `ci` for CI/CD changes
         - `build` for build tooling or dependency system changes
 
-        If the diff straddles two types, present both options and wait for the user to choose; do NOT silently pick.
+        If the diff straddles two types, present both options and wait for the user to choose.
       </step>
       <step id="4.2" name="compose-title">
         Add an optional scope only when one module, domain, or subsystem clearly dominates the diff. Format as `type(scope): description` or `type: description`. Keep the description concise and lowercase. Wrap code identifiers, file names, and technical keywords in backticks. No trailing period.
@@ -219,7 +219,7 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
         - `refactor(api): extract review metadata mapping`
       </step>
       <step id="4.3" name="apply-title-override">
-        If `TITLE_OVERRIDE` is supplied, use it exactly. Do NOT merge it with auto-generated content.
+        If `TITLE_OVERRIDE` is supplied, use it as the entire title — no merging with auto-generated content.
       </step>
     </steps>
   </phase>
@@ -248,10 +248,10 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
         ```
       </step>
       <step id="5.2" name="ground-in-diff">
-        Write from the actual diff, not from assumptions, commit messages, branch names, ticket IDs, or prior chat. Be specific about file paths, behaviors, and user-visible outcomes. Mention tests only when they were added, changed, or are relevant to risk.
+        Write from the actual diff. Be specific about file paths, behaviors, and user-visible outcomes. Mention tests only when they were added, changed, or are relevant to risk. The sources of truth are the diff and the changed file paths — not commit messages, branch names, ticket IDs, or prior chat.
       </step>
       <step id="5.3" name="apply-body-override">
-        If `BODY_OVERRIDE` is supplied, use it exactly. Do NOT merge it with auto-generated content.
+        If `BODY_OVERRIDE` is supplied, use it as the entire body — no merging with auto-generated content.
       </step>
     </steps>
   </phase>
@@ -268,16 +268,16 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
         gh label list --limit 100
         ```
 
-        Suggest only labels that exist in that output. Use the PR type and diff content to guide suggestions. Skip labels silently if none fit. Do NOT invent labels.
+        Suggest only labels that appear in that output. Use the PR type and diff content to guide suggestions. If none fit, skip labels silently.
       </step>
       <step id="6.3" name="apply-labels-override">
-        If `LABELS_OVERRIDE` is supplied, use it instead of auto-suggestions. All overridden labels must still exist per `gh label list`.
+        If `LABELS_OVERRIDE` is supplied, use it instead of auto-suggestions. Every overridden label must still appear in `gh label list`.
       </step>
       <step id="6.4" name="labels-non-github">
         For non-GitHub remotes, follow the platform-specific label guidance in `./references/platform-adaptation.md` instead of calling `gh`.
       </step>
     </steps>
-    <hard_rule>Require at least one reviewer before PR creation.</hard_rule>
+    <hard_rule>At least one reviewer is attached before PR creation.</hard_rule>
   </phase>
 
   <phase id="7" name="preview-and-revise">
@@ -299,16 +299,16 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
         <generated description>
         ```
 
-        Empty fields MUST print `none`.
+        Empty fields print `none`.
       </step>
       <step id="7.2" name="validation-loop">
         Ask the user to confirm or request edits. Apply requested title, body, reviewer, label, or status changes, then show the updated preview again.
       </step>
       <step id="7.3" name="three-cycle-escape">
-        If three preview cycles still do not converge, ask the user for explicit final values instead of continuing to redraft. Do NOT produce a fourth speculative redraft.
+        After three preview cycles that have not converged, ask the user for explicit final values rather than producing a fourth speculative redraft.
       </step>
     </steps>
-    <gate>Do not enter Phase 8 until the user has explicitly approved the most recent preview. Preview approval is required even when `TITLE_OVERRIDE`, `BODY_OVERRIDE`, or `LABELS_OVERRIDE` were supplied.</gate>
+    <gate>Enter Phase 8 only after the user has explicitly approved the most recent preview. Preview approval is required even when `TITLE_OVERRIDE`, `BODY_OVERRIDE`, or `LABELS_OVERRIDE` were supplied.</gate>
   </phase>
 
   <phase id="8" name="create-pr">
@@ -339,15 +339,15 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
           --reviewer "<reviewer1>,<reviewer2>"
         ```
 
-        For GitHub, add labels only when they exist and the user approved them. Use `-l` or `--label` in the form supported by the installed `gh` version.
+        For GitHub, attach labels only when they exist in `gh label list` and the user approved them. Use `-l` or `--label` in the form supported by the installed `gh` version.
 
-        REMINDER: Do NOT invoke `gh pr create` before the user explicitly approves the latest preview. Any field changed after approval invalidates approval — re-enter Phase 7.
+        > Reminder: `gh pr create` runs only after the user approves the most recent preview. Any field changed after approval invalidates approval — re-enter Phase 7.
       </step>
       <step id="8.2" name="non-github-create">
         For non-GitHub remotes, follow the matching create flow in `./references/platform-adaptation.md`.
       </step>
     </steps>
-    <hard_rule>The `gh pr create` invocation must match `PR_STATE` (`--draft` for `draft`, omitted for `ready`).</hard_rule>
+    <hard_rule>The `gh pr create` invocation matches `PR_STATE` (`--draft` for `draft`, omitted for `ready`).</hard_rule>
   </phase>
 
   <phase id="9" name="verify">
@@ -447,5 +447,5 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
 </examples>
 
 <reference_material>
-  - `./references/platform-adaptation.md` — load only when the remote is not GitHub.
+  - `./references/platform-adaptation.md` — read only when the remote is not GitHub.
 </reference_material>
