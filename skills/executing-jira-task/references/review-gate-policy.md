@@ -36,5 +36,7 @@ When a recommendation depends on current library, framework, or API behavior:
 ## Output discipline
 
 - Prefer short tables or bullets over long prose.
-- Skip empty issue sections instead of filling them with filler text.
+- Preserve the fixed section list defined by the reviewer subagent you are running.
+- When a required section is empty, emit that section with an explicit `None`
+  placeholder instead of omitting it or adding filler text.
 - If there are no blockers, say so directly.
