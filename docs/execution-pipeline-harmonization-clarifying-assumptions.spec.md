@@ -299,6 +299,31 @@ at the clarification boundary is shared and contractually stable.
   declared that phase numbers are outside its contract, so embedding
   `Phase: 6 — Critique` violated the stated boundary.
 
+## Orchestrator Cascade Verification Outcome
+
+This harmonization run verified the orchestrator-facing clarification boundary
+against both parent workflows and the downstream `clarifying-assumptions`
+contract. The Phase 0 report found no shape-level drift, the Phase 1 ledger
+recorded no triage entries, and Phase 2 therefore applied no changes.
+
+### Orchestrator-level FIX decisions from this run
+
+The Phase 1 ledger recorded no `FIX` entries for the orchestrator cascade.
+
+| Finding | Status | Rationale |
+| --- | --- | --- |
+| None | No fix applied | `docs/orchestrator-alignment-ledger-clarifying-assumptions.md` records `FIX = 0`, so Phase 2 correctly made no orchestrator or downstream contract changes |
+
+### Orchestrator-level PRESERVE boundaries from this run
+
+The Phase 1 ledger recorded no `PRESERVE` entries that required new
+orchestrator-level divergence handling beyond the standing platform boundaries
+already captured in this spec.
+
+| Boundary | Status | Notes |
+| --- | --- | --- |
+| None | No new preserve decisions | `docs/orchestrator-alignment-ledger-clarifying-assumptions.md` records `PRESERVE = 0` |
+
 ## Deferred Items
 
 The Phase 1 ledger recorded no `DEFER` entries.
