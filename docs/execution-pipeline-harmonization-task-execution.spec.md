@@ -102,13 +102,17 @@ Both skills must preserve the same two-category lifecycle:
 
 | Category | Shape |
 | -------- | ----- |
-| Category A | `docs/<WORK_KEY>*.md`, progress files, briefs, plans, test specs, refactoring plans, critique, decisions; kept on disk, never committed, never deleted by this pipeline |
+| Category A | current skill contracts define this broadly as `docs/<WORK_KEY>*.md`, including progress files, briefs, plans, test specs, refactoring plans, critique, and decisions; kept on disk, never committed, never deleted by this pipeline |
 | Category B | source, tests, config, in-code documentation; committed normally |
 
 Lifecycle rule:
 
 - `documentation-writer` may update Category A files on disk for workflow
   continuity, but commit scope is Category B only
+- the enumerated artifact family in this spec defines the standard task-execution
+  artifacts that must exist on the normal execution path, but it does not narrow
+  the broader current-state Category A lifecycle contract for other matching
+  `docs/<WORK_KEY>*.md` artifacts that the skills still classify into Category A
 
 ### Symbolic handoff shape
 
