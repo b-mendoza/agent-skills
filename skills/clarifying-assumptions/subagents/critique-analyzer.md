@@ -25,8 +25,8 @@ instead of holding the whole analysis inline.
 | `ARTIFACTS` | Yes | `docs/JNS-6065-stage-1-detailed.md`, `docs/JNS-6065-stage-2-prioritized.md` |
 | `CRITIQUE_REPORT_FILE` | Yes | `docs/JNS-6065-upfront-critique.md` |
 | `TASK_NUMBER` | Required for `MODE=critique` | `3` |
-| `PRIOR_DECISIONS_FILE` | Optional | `docs/JNS-6065-task-3-decisions.md` |
-| `PRIOR_DECISIONS_KIND` | Required when `PRIOR_DECISIONS_FILE` is provided | `main-log` or `per-task` |
+| `PRIOR_DECISIONS_FILE` | Yes | `docs/JNS-6065-task-3-decisions.md` |
+| `PRIOR_DECISIONS_KIND` | Yes | `main-log` or `per-task` |
 
 Use `MAIN_PLAN_FILE` for shared plan context. Use `ARTIFACTS` for the
 mode-specific planning outputs:
@@ -46,9 +46,26 @@ mode-specific planning outputs:
 
 - Read `MAIN_PLAN_FILE`.
 - Read every file in `ARTIFACTS`.
+- Consult `PRIOR_DECISIONS_FILE` on every run before deciding what to raise.
 
-If `PRIOR_DECISIONS_FILE` is provided, read it and suppress concerns that were
-already consciously resolved by the developer.
+Use `PRIOR_DECISIONS_KIND` to decide how to read the decisions source:
+
+- `main-log`: read the `## Decisions Log` rows from the main tasks file.
+- `per-task`: read the per-task decisions file when it exists.
+
+If `PRIOR_DECISIONS_FILE` does not exist yet, treat it as an empty decisions
+source and continue without warning.
+
+When consulting prior decisions:
+
+- Use your own judgment to decide whether a candidate concern is already
+  answered by substance.
+- Do not rely on `Item ID`, list position, or surface phrasing. Those can
+  change between iterations.
+- Only treat entries with a recorded answer or resolved outcome as already
+  answered.
+- Do not raise a new critique item when the Decisions Log already records an
+  answer to the same underlying question.
 
 ### 2. Load the rubric
 
@@ -105,6 +122,16 @@ Use stable item IDs throughout the report:
 - `TC<n>` for technology critique items
 - `UI<n>` for user-impact items
 
+The written critique must reflect the decisions-log consult you already
+performed in Step 1:
+
+- Raise only items that still need the developer's attention in this run.
+- If a candidate concern is already answered in the Decisions Log, omit it from
+  the critique instead of emitting it for downstream filtering.
+- If every candidate concern is already answered, write a valid critique report
+  with zero critique items in the relevant sections and explain the outcome in
+  `### Items Not Raised`.
+
 Write the full critique report to `CRITIQUE_REPORT_FILE`.
 
 ### 6. Validate before returning
@@ -146,7 +173,6 @@ Then return:
 - Problem-framing items: <N>
 - Technology critique items: <N>
 - User-impact items: <N>
-- Suppressed due to prior decisions: <N>
 - Warning: <present only for WARN>
 ```
 
@@ -162,7 +188,6 @@ Artifact: docs/JNS-6065-upfront-critique.md
 - Problem-framing items: 2
 - Technology critique items: 3
 - User-impact items: 0
-- Suppressed due to prior decisions: 1
 ```
 
 Example failed run:
@@ -186,7 +211,7 @@ You may:
 - Read `MAIN_PLAN_FILE` and every file in `ARTIFACTS`
 - Verify the actual stack before critiquing technology choices
 - Use live web search to name concrete alternatives and trade-offs
-- Suppress already-resolved concerns when prior decisions were provided
+- Consult the Decisions Log on every run and omit already-answered concerns
 - Write the full critique report to `CRITIQUE_REPORT_FILE`
 - Return only the verdict header, artifact path, and `## Critique Summary`
 
@@ -213,4 +238,4 @@ Reason: <what went wrong>
 | All mode-specific artifacts missing | `FAIL` | Report and stop |
 | `CRITIQUE_REPORT_FILE` write fails | `FAIL` | Report and stop |
 | Some artifacts missing | `WARN` | Critique what is available and name the missing files |
-| Prior decisions file missing | `WARN` | Treat as first-pass critique and say suppression was skipped |
+| Prior decisions file is unreadable after it exists | `WARN` | Continue with the available artifacts and say decisions-log consultation was incomplete |

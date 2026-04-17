@@ -86,11 +86,10 @@ Include this section only in `MODE=critique`.
 
 ### Items Not Raised
 
-- <resolved or suppressed concern>
+- <candidate concern already answered in the Decisions Log or otherwise no longer worth raising>
 
 ### Summary
 
 - Problem-framing items: <N>
 - Technology critique items: <N>
 - User-impact items: <N>
-- Suppressed due to prior decisions: <N>

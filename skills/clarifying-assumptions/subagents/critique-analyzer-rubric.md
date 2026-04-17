@@ -53,7 +53,7 @@ Problem-framing items also map to tiers:
 Do not raise an item when:
 
 - The existing stack already constrains the decision and the plan respects that constraint
-- The developer already resolved the concern in a prior decisions file
+- The Decisions Log already records an answer to the same concern, even if the wording, order, or item ID changed between iterations
 - The difference is purely stylistic and has no meaningful trade-off
 - You cannot name a concrete alternative or explain why it matters
 
