@@ -1,53 +1,43 @@
-# Agent skills
+# agent-skills
 
-This repo is a small skill library for Cursor-style coding agents. Each skill
-is a Markdown file with instructions, references, and co-located subagents.
-The main pattern in this repo is to keep orchestration thin and push detailed
-work into subagents so the top-level agent does not drown in context.
+`agent-skills` is a repository of skills for coding agents. This repository is
+the product. It holds the skills we write here, a small set of third party
+skills we keep in the repository, and the docs we use to keep OpenCode and
+Claude Code aligned.
 
-## Current layout
+## What is in this repository
 
-- [`skills/`](skills/) contains 12 first-party skills.
-- [`docs/`](docs/) contains design notes, improvement plans, and supporting
-  workflow documentation.
-- [`.agents/skills/`](.agents/skills/) contains 16 vendored third-party skills.
-- [`.claude/skills/`](.claude/skills/) mirrors those installed skills for
-  Claude-style discovery.
-- [`skills-lock.json`](skills-lock.json) tracks the installed third-party skill
-  set.
+- [`skills/`](skills/) has 19 first party skills.
+- [`docs/`](docs/) has workflow notes, design specs, and writing guidance.
+- [`docs/best-practices/`](docs/best-practices/) is the best place to start if
+  you want to edit a skill.
+- [`.agents/skills/`](.agents/skills/) has 10 third party skills for OpenCode.
+- [`.claude/skills/`](.claude/skills/) mirrors the same 10 skills for Claude
+  Code.
+- [`skills-lock.json`](skills-lock.json) records the third party skill set.
+- [`opencode.jsonc`](opencode.jsonc) stores OpenCode config.
 
-## First-party skills
+## First party skills
 
-Seven of the 12 first-party skills form the Jira workflow. The other five are
-standalone utilities.
+Most of the first party skills fall into two workflow groups, one for Jira and
+one for GitHub. The rest are utility skills you can use on their own.
 
 ### Jira workflow
 
-The Jira workflow starts with
-[`orchestrating-jira-workflow`](skills/orchestrating-jira-workflow/SKILL.md).
-It coordinates the full ticket-to-code flow, saves progress to
-`docs/<TICKET_KEY>-progress.md`, and resumes from disk when needed. It relies
-on utility subagents for preflight checks, validation, progress tracking,
-ticket status checks, codebase inspection, code reference lookup, and
-documentation lookup.
-
-The seven workflow phases are:
-
-1. [`fetching-jira-ticket`](skills/fetching-jira-ticket/SKILL.md) fetches a
-   Jira ticket and writes a local snapshot to `docs/<TICKET_KEY>.md`.
-2. [`planning-jira-tasks`](skills/planning-jira-tasks/SKILL.md) breaks the
-   ticket into ordered tasks and writes `docs/<TICKET_KEY>-tasks.md`.
-3. [`clarifying-assumptions`](skills/clarifying-assumptions/SKILL.md) in
-   upfront mode pressure-tests the overall plan before task execution starts.
-4. [`creating-jira-subtasks`](skills/creating-jira-subtasks/SKILL.md) creates
-   Jira subtasks from the approved task plan and records the new keys.
-5. [`planning-jira-task`](skills/planning-jira-task/SKILL.md) creates an
-   execution plan for one task, including codebase analysis, testing, and
-   refactoring guidance.
-6. [`clarifying-assumptions`](skills/clarifying-assumptions/SKILL.md) in
-   critique mode reviews the single-task plan and surfaces task-specific gaps.
-7. [`executing-jira-task`](skills/executing-jira-task/SKILL.md) implements the
-   task, runs review passes, and updates both the local plan and Jira.
+- [`orchestrating-jira-workflow`](skills/orchestrating-jira-workflow/SKILL.md)
+  runs the full Jira ticket flow.
+- [`fetching-jira-ticket`](skills/fetching-jira-ticket/SKILL.md) saves a ticket
+  snapshot to `docs/<TICKET_KEY>.md`.
+- [`planning-jira-tasks`](skills/planning-jira-tasks/SKILL.md) turns that ticket
+  into a task plan in `docs/<TICKET_KEY>-tasks.md`.
+- [`clarifying-assumptions`](skills/clarifying-assumptions/SKILL.md) handles the
+  plan review and the critique pass for each task.
+- [`creating-jira-subtasks`](skills/creating-jira-subtasks/SKILL.md) creates or
+  updates Jira subtasks after approval.
+- [`planning-jira-task`](skills/planning-jira-task/SKILL.md) writes the planning
+  files for one task.
+- [`executing-jira-task`](skills/executing-jira-task/SKILL.md) carries one
+  planned task through implementation and review.
 
 ### GitHub workflow
 
@@ -66,49 +56,41 @@ The seven workflow phases are:
 - [`executing-github-task`](skills/executing-github-task/SKILL.md) carries one
   planned task through implementation and review.
 
-### Standalone skills
+### Utility skills
 
 - [`generate-handoff-document`](skills/generate-handoff-document/SKILL.md)
-  creates a resumable handoff package for an in-progress session, including
-  structured context, insights, optional claim validation, and a final
-  cold-start handoff document.
+  builds a handoff document for a session that needs to be resumed later.
 - [`validate-implementation-plan`](skills/validate-implementation-plan/SKILL.md)
-  audits AI-generated implementation plans for missing requirements, YAGNI
-  violations, and shaky assumptions before execution starts.
-- [`recency-guard`](skills/recency-guard/SKILL.md) checks factual claims for
-  freshness, completeness, and confidence by combining web research with
-  verification passes.
-- [`pr-creator`](skills/pr-creator/SKILL.md) prepares a pull request from the
-  current branch, drafts the title and body, and creates it after confirmation.
+  reviews implementation plans for missing requirements, weak assumptions, and
+  unnecessary work.
+- [`recency-guard`](skills/recency-guard/SKILL.md) checks answers that depend on
+  current facts.
+- [`pr-creator`](skills/pr-creator/SKILL.md) prepares and opens a pull request
+  from the current branch.
+- [`prompt-structurer`](skills/prompt-structurer/SKILL.md) turns prose prompts
+  into structured XML prompts.
 - [`workflow-skill-architect`](skills/workflow-skill-architect/SKILL.md) helps
-  design new multi-step skills by deciding what should stay inline, become a
-  subagent, or move into references.
+  turn a repeatable process into a reusable skill or set of subagents.
 
-## Installed third-party skills
+## Third party skills kept in the repo
 
-The repo currently vendors 16 third-party skills. They are stored under
-[`.agents/skills/`](.agents/skills/) and exposed through
-[`.claude/skills/`](.claude/skills/). The source of truth is
+The repository currently includes 10 third party skills. They live in
+[`.agents/skills/`](.agents/skills/), are mirrored in
+[`.claude/skills/`](.claude/skills/), and are pinned in
 [`skills-lock.json`](skills-lock.json).
 
-| Skill                                                                                | Source                               |
-| ------------------------------------------------------------------------------------ | ------------------------------------ |
-| [`api-security-best-practices`](.agents/skills/api-security-best-practices/SKILL.md) | `sickn33/antigravity-awesome-skills` |
-| [`architecture-patterns`](.agents/skills/architecture-patterns/SKILL.md)             | `wshobson/agents`                    |
-| [`clean-code`](.agents/skills/clean-code/SKILL.md)                                   | `sickn33/antigravity-awesome-skills` |
-| [`code-review-excellence`](.agents/skills/code-review-excellence/SKILL.md)           | `wshobson/agents`                    |
-| [`commit-work`](.agents/skills/commit-work/SKILL.md)                                 | `softaworks/agent-toolkit`           |
-| [`executing-plans`](.agents/skills/executing-plans/SKILL.md)                         | `obra/superpowers`                   |
-| [`find-skills`](.agents/skills/find-skills/SKILL.md)                                 | `vercel-labs/skills`                 |
-| [`gh-cli`](.agents/skills/gh-cli/SKILL.md)                                           | `github/awesome-copilot`             |
-| [`grill-me`](.agents/skills/grill-me/SKILL.md)                                       | `mattpocock/skills`                  |
-| [`humanizer`](.agents/skills/humanizer/SKILL.md)                                     | `blader/humanizer`                   |
-| [`progressive-disclosure`](.agents/skills/progressive-disclosure/SKILL.md)           | `flpbalada/my-opencode-config`       |
-| [`receiving-code-review`](.agents/skills/receiving-code-review/SKILL.md)             | `obra/superpowers`                   |
-| [`subagent-driven-development`](.agents/skills/subagent-driven-development/SKILL.md) | `obra/superpowers`                   |
-| [`test-driven-development`](.agents/skills/test-driven-development/SKILL.md)         | `obra/superpowers`                   |
-| [`vitest`](.agents/skills/vitest/SKILL.md)                                           | `antfu/skills`                       |
-| [`writing-plans`](.agents/skills/writing-plans/SKILL.md)                             | `obra/superpowers`                   |
+| Skill | Source |
+| ----- | ------ |
+| [`code-review-excellence`](.agents/skills/code-review-excellence/SKILL.md) | `wshobson/agents` |
+| [`commit-work`](.agents/skills/commit-work/SKILL.md) | `softaworks/agent-toolkit` |
+| [`executing-plans`](.agents/skills/executing-plans/SKILL.md) | `obra/superpowers` |
+| [`gh-cli`](.agents/skills/gh-cli/SKILL.md) | `github/awesome-copilot` |
+| [`grill-me`](.agents/skills/grill-me/SKILL.md) | `mattpocock/skills` |
+| [`humanizer`](.agents/skills/humanizer/SKILL.md) | `blader/humanizer` |
+| [`receiving-code-review`](.agents/skills/receiving-code-review/SKILL.md) | `obra/superpowers` |
+| [`subagent-driven-development`](.agents/skills/subagent-driven-development/SKILL.md) | `obra/superpowers` |
+| [`test-driven-development`](.agents/skills/test-driven-development/SKILL.md) | `obra/superpowers` |
+| [`writing-plans`](.agents/skills/writing-plans/SKILL.md) | `obra/superpowers` |
 
 ## Notes for editing
 
