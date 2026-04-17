@@ -13,6 +13,17 @@ Create a review-ready pull request from the current branch.
 Invoked when the user asks to create or open a PR, draft pull request, merge request, code review request, or says their work is ready for review.
 </scope>
 
+<how_this_skill_works>
+  You are the orchestrator of a user-in-the-loop PR creation workflow. Your role is:
+
+  - **Observe**: read repo, branch, and platform state via direct `git` and platform CLI calls; read CODEOWNERS and the existing label list.
+  - **Decide**: pick the conventional commit type, scope, reviewer set, and label set from real evidence — diff content, file ownership, and the actual repo label list.
+  - **Confirm**: present a complete preview to the user and accept the most recent approved version exactly as approved.
+  - **Submit**: invoke the platform's PR-create command after explicit approval, then verify and return the URL.
+
+  Inline by design: every observation feeds the user-confirmation loop one step later, so each result is consumed immediately rather than carried as ballast. The one carve-out is the full `git diff` payload (Phase 3), which is loaded only after the size gate passes — see Phase 3 for the ordering.
+</how_this_skill_works>
+
 <philosophy>
   <core_principle>
     Keep the user in the loop at every decision point — gather missing inputs, validate branch state, draft from the actual compare diff, preview, apply user edits, and submit only after explicit confirmation.
