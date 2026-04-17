@@ -51,8 +51,8 @@ Phase 3: Clarify + Critique    -> docs/<ISSUE_SLUG>-upfront-critique.md + docs/<
 Phase 4: Create task issues    -> docs/<ISSUE_SLUG>-tasks.md updated with `## GitHub Task Issues` + per-task issue references
 Phase 5: Plan task execution   -> docs/<ISSUE_SLUG>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md
 Phase 6: Clarify + Critique    -> docs/<ISSUE_SLUG>-task-<N>-critique.md + docs/<ISSUE_SLUG>-task-<N>-decisions.md
-Phase 7: Kick off + execute    -> first side effects, code changes, tests, commits
-         ^____________________/  repeat phases 5-7 per task
+Phase 7: Readiness -> Kickoff -> Execution -> Documentation -> Requirements Verification -> Quality Gates -> Targeted Fix Cycle -> Final Report
+         ^_________________________________________________________________________________________________________________________________/  repeat phases 5-7 per task
 ```
 
 Throughout this skill, `<ISSUE_SLUG>` means the normalized
