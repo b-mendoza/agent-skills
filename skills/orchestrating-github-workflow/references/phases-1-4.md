@@ -219,12 +219,13 @@ it validates that the skill recorded a coherent handoff in `docs/<ISSUE_SLUG>-ta
 3. Expect the validated Phase 3 outputs needed for safe GitHub writes:
    - `docs/<ISSUE_SLUG>-upfront-critique.md` exists
    - `docs/<ISSUE_SLUG>-tasks.md` contains the validated decisions log
-4. Read the phase skill and invoke it with `ISSUE_URL` (or equivalent owner/repo/issue
-   inputs the skill defines). Prefer `gh` for creates and links unless the skill
-   documents otherwise.
+4. Read the phase skill and invoke it with `ISSUE_URL`, passed through unchanged
+   as the authoritative parent reference. Prefer `gh` for creates and links
+   unless the skill documents otherwise.
 5. The downstream skill creates or reconciles GitHub task issues (per the chosen
-   write model), updates `docs/<ISSUE_SLUG>-tasks.md` with the Phase 4 handoff
-   artifacts, and returns the `Created/Linked Task Issues` summary table plus any
+   write model), updates `docs/<ISSUE_SLUG>-tasks.md` with the exact downstream-owned
+   Phase 4 handoff artifacts, and returns a structured summary that includes
+   `Write model:`, `Capability:`, the `Created/Linked Task Issues` table, and any
    warnings or failures.
 6. Dispatch `artifact-validator` with:
 
@@ -234,13 +235,17 @@ it validates that the skill recorded a coherent handoff in `docs/<ISSUE_SLUG>-ta
    DIRECTION: postcondition
    ```
 
-7. Expect the validated Phase 4 handoff contract (exact column names may follow
-   the downstream skill; semantics must match `./data-contracts.md`):
-   - `docs/<ISSUE_SLUG>-tasks.md` contains a `## GitHub Task Issues` workflow-level table
-   - The table has one row per numbered plan task
-   - Rows may use `Not Created` or equivalent, but every row that references a
-     concrete issue has a matching per-task inline reference line in the
-     corresponding task section (format owned by `creating-github-child-issues`)
+7. Expect the validated Phase 4 handoff contract:
+   - `docs/<ISSUE_SLUG>-tasks.md` contains a `## GitHub Task Issues` section
+   - The required `<!-- phase4-handoff ... -->` machine handoff comment appears
+     immediately under that heading
+   - The workflow table has one row per numbered plan task
+   - Every numbered task section contains exactly one inline
+     `GitHub Task Issue: <owner/repo#number | Not Created | task-list>` line
+     immediately after the task heading
+   - The inline `GitHub Task Issue:` value for each task exactly matches the
+     corresponding workflow-table row, including concrete issue refs,
+     `Not Created`, and `task-list`
 8. Dispatch `progress-tracker` with:
 
    ```

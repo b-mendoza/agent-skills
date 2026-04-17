@@ -112,10 +112,12 @@ configured API path) support them cleanly; otherwise **linked issues** with an
 explicit parent/child narrative in the task plan; otherwise **task-list
 references** in the parent issue body or plan only if the first two are not
 viable. Treat `docs/<ISSUE_SLUG>-tasks.md` as valid for downstream use only when
-it carries the workflow-level `## GitHub Task Issues` table plus the per-task
-inline issue references required for a resumable handoff. The downstream
-`Created/Linked Task Issues` table is the structured handoff for workflow
-progress tracking.
+it contains the `## GitHub Task Issues` section, the required machine handoff
+comment immediately under that heading, and the exact per-task inline
+`GitHub Task Issue: <owner/repo#number | Not Created | task-list>` references
+required for a resumable handoff. The downstream structured handoff for
+workflow progress tracking includes `Write model:`, `Capability:`, and the
+`Created/Linked Task Issues` table.
 
 For Phase 5, the authoritative downstream contract is owned by
 `planning-github-task`. The stable planning handoff is the concrete four-file
