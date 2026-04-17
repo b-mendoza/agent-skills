@@ -18,7 +18,7 @@ here (preflight) and by each subagent at runtime (defense-in-depth).
 
 ---
 
-## Phase 1 — Fetch (`fetching-github-issue`)
+## Phase 1 — Fetch Work Item (`fetching-github-issue`)
 
 | Dependency              | Type  | Used by               | How to check                                      | Install / configure                          |
 | ----------------------- | ----- | --------------------- | ------------------------------------------------- | ------------------------------------------ |
@@ -27,7 +27,7 @@ here (preflight) and by each subagent at runtime (defense-in-depth).
 
 ---
 
-## Phase 2 — Plan (`planning-github-issue-tasks`)
+## Phase 2 — Plan Tasks (`planning-github-issue-tasks`)
 
 | Dependency                   | Type  | Used by                              | How to check                                        | Install / configure                             |
 | ---------------------------- | ----- | ------------------------------------ | --------------------------------------------------- | ----------------------------------------------- |
@@ -36,7 +36,7 @@ here (preflight) and by each subagent at runtime (defense-in-depth).
 
 ---
 
-## Phase 3 — Clarify (`clarifying-assumptions`, upfront)
+## Phase 3 — Clarify + Critique (`clarifying-assumptions`, upfront)
 
 | Dependency                 | Type  | Used by               | How to check                                   | Install / configure         |
 | -------------------------- | ----- | --------------------- | ---------------------------------------------- | --------------------------- |
@@ -47,7 +47,7 @@ execution.
 
 ---
 
-## Phase 4 — Create task issues (`creating-github-child-issues`)
+## Phase 4 — Create Child Items (`creating-github-child-issues`)
 
 | Dependency                   | Type  | Used by               | How to check                                      | Install / configure                    |
 | ---------------------------- | ----- | --------------------- | ------------------------------------------------- | -------------------------------------- |
@@ -56,7 +56,7 @@ execution.
 
 ---
 
-## Phase 5 — Plan task (`planning-github-task`)
+## Phase 5 — Plan Task Execution (`planning-github-task`)
 
 | Dependency               | Type  | Used by                                                 | How to check                                                  | Install / configure                                       |
 | ------------------------ | ----- | ------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------- |
@@ -80,7 +80,7 @@ execution.
 
 ---
 
-## Phase 7 — Kick off + execute (`executing-github-task`)
+## Phase 7 — Kick Off + Execute (`executing-github-task`)
 
 | Dependency                   | Type  | Used by                | How to check                                                      | Install / configure                                                             |
 | ---------------------------- | ----- | ---------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |

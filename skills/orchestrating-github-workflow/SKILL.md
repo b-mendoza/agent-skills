@@ -45,10 +45,10 @@ Extract from `ISSUE_URL` when present:
 ## Workflow Overview
 
 ```
-Phase 1: Fetch issue           -> docs/<ISSUE_SLUG>.md
+Phase 1: Fetch work item       -> docs/<ISSUE_SLUG>.md
 Phase 2: Plan tasks            -> docs/<ISSUE_SLUG>-tasks.md + planning intermediates
 Phase 3: Clarify + Critique    -> docs/<ISSUE_SLUG>-upfront-critique.md + docs/<ISSUE_SLUG>-tasks.md updates
-Phase 4: Create task issues    -> docs/<ISSUE_SLUG>-tasks.md updated with `## GitHub Task Issues` + per-task issue references
+Phase 4: Create child items    -> docs/<ISSUE_SLUG>-tasks.md updated with `## GitHub Task Issues` + per-task issue references
 Phase 5: Plan task execution   -> docs/<ISSUE_SLUG>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md
 Phase 6: Clarify + Critique    -> docs/<ISSUE_SLUG>-task-<N>-critique.md + docs/<ISSUE_SLUG>-task-<N>-decisions.md
 Phase 7: Readiness -> Kickoff -> Execution -> Documentation -> Requirements Verification -> Quality Gates -> Targeted Fix Cycle -> Final Report

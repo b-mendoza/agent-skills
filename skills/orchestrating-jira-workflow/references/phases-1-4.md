@@ -14,7 +14,7 @@ postconditions -> update progress -> gate check**
 
 ---
 
-## Phase 1 - Fetch Ticket
+## Phase 1 - Fetch Work Item
 
 **Skill:** `fetching-jira-ticket` at `../../fetching-jira-ticket/SKILL.md`
 
@@ -195,7 +195,7 @@ Only proceed to Phase 4 when the user explicitly chooses option 1.
 
 ---
 
-## Phase 4 - Create Jira Subtasks
+## Phase 4 - Create Child Items
 
 **Skill:** `creating-jira-subtasks` at `../../creating-jira-subtasks/SKILL.md`
 

@@ -14,7 +14,7 @@ postconditions -> update progress -> gate check**
 
 ---
 
-## Phase 1 - Fetch Issue
+## Phase 1 - Fetch Work Item
 
 **Skill:** `fetching-github-issue` at `../../fetching-github-issue/SKILL.md`
 
@@ -198,7 +198,7 @@ Only proceed to Phase 4 when the user explicitly chooses option 1.
 
 ---
 
-## Phase 4 - Create GitHub Task Issues
+## Phase 4 - Create Child Items
 
 **Skill:** `creating-github-child-issues` at `../../creating-github-child-issues/SKILL.md`
 

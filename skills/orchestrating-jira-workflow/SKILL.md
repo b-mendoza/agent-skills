@@ -34,10 +34,10 @@ Extract these values from the URL when present:
 ## Workflow Overview
 
 ```
-Phase 1: Fetch ticket        -> docs/<TICKET_KEY>.md
+Phase 1: Fetch work item     -> docs/<TICKET_KEY>.md
 Phase 2: Plan tasks          -> docs/<TICKET_KEY>-tasks.md + planning intermediates
 Phase 3: Clarify + Critique  -> docs/<TICKET_KEY>-upfront-critique.md + docs/<TICKET_KEY>-tasks.md updates
-Phase 4: Create subtasks     -> docs/<TICKET_KEY>-tasks.md updated with `## Jira Subtasks` + per-task subtask links
+Phase 4: Create child items  -> docs/<TICKET_KEY>-tasks.md updated with `## Jira Subtasks` + per-task subtask links
 Phase 5: Plan task execution -> docs/<TICKET_KEY>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md
 Phase 6: Clarify + Critique  -> docs/<TICKET_KEY>-task-<N>-critique.md + docs/<TICKET_KEY>-task-<N>-decisions.md
 Phase 7: Readiness -> Kickoff -> Execution -> Documentation -> Requirements Verification -> Quality Gates -> Targeted Fix Cycle -> Final Report

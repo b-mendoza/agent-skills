@@ -18,7 +18,7 @@ here (preflight) and by each subagent at runtime (defense-in-depth).
 
 ---
 
-## Phase 1 — Fetch (fetching-jira-ticket)
+## Phase 1 — Fetch Work Item (`fetching-jira-ticket`)
 
 | Dependency | Type | Used by          | How to check                           | Install / configure                       |
 | ---------- | ---- | ---------------- | -------------------------------------- | ----------------------------------------- |
@@ -26,7 +26,7 @@ here (preflight) and by each subagent at runtime (defense-in-depth).
 
 ---
 
-## Phase 2 — Plan (planning-jira-tasks)
+## Phase 2 — Plan Tasks (`planning-jira-tasks`)
 
 | Dependency     | Type  | Used by                              | How to check                                        | Install / configure                             |
 | -------------- | ----- | ------------------------------------ | --------------------------------------------------- | ----------------------------------------------- |
@@ -34,7 +34,7 @@ here (preflight) and by each subagent at runtime (defense-in-depth).
 
 ---
 
-## Phase 3 — Clarify (`clarifying-assumptions`, upfront)
+## Phase 3 — Clarify + Critique (`clarifying-assumptions`, upfront)
 
 | Dependency               | Type  | Used by               | How to check                                        | Install / configure             |
 | ------------------------ | ----- | --------------------- | --------------------------------------------------- | ------------------------------- |
@@ -45,7 +45,7 @@ execution.
 
 ---
 
-## Phase 4 — Create (creating-jira-subtasks)
+## Phase 4 — Create Child Items (`creating-jira-subtasks`)
 
 | Dependency | Type | Used by         | How to check          | Install / configure |
 | ---------- | ---- | --------------- | --------------------- | ------------------- |
@@ -53,7 +53,7 @@ execution.
 
 ---
 
-## Phase 5 — Plan task (planning-jira-task)
+## Phase 5 — Plan Task Execution (`planning-jira-task`)
 
 | Dependency               | Type  | Used by                                                 | How to check                                                  | Install / configure                                       |
 | ------------------------ | ----- | ------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------- |
@@ -76,7 +76,7 @@ execution.
 
 ---
 
-## Phase 7 — Kick Off + Execute (executing-jira-task)
+## Phase 7 — Kick Off + Execute (`executing-jira-task`)
 
 | Dependency                   | Type  | Used by                | How to check                                                      | Install / configure                                                             |
 | ---------------------------- | ----- | ---------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
