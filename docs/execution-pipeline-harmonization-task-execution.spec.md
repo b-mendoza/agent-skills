@@ -168,8 +168,28 @@ Shape rule:
 
 - the report title and fixed section list are contract shape
 - section body content may vary by task and platform
-- empty required sections remain present and use explicit `None` placeholders
-  when the subagent contract requires them
+- required empty sections stay present; the current contracts require explicit
+  `None` placeholders for these empty sections:
+  - kickoff: `### Blockers or Ambiguities` when empty, and `Workspace Readiness`
+    notes or tracker reference fields where the contract spells out `None`
+  - execution: `### Refactoring Applied`, `### Blockers or Context Needed`, and
+    `### Out-of-Scope Observations` when empty; `### Tests` and `### Guidance Used`
+    also use `None` in specific list fields when empty
+  - documentation: `### Files Intentionally Skipped`,
+    `### Documentation Decisions`, `### Commits Made`, and
+    `### Blockers or Ambiguities` when empty
+  - requirements verification: `### Gaps` when empty
+  - clean-code review: `### External Validation` list fields, `### Must Fix`,
+    `### Should Fix`, `### Suggestions`, `### What Went Well`, and
+    `### Blockers or Ambiguities` when empty
+  - architecture review: `### External Validation`, `### DDD Assessment`,
+    `### Composition Assessment`, `### Must Fix`, `### Should Fix`,
+    `### Suggestions`, `### What Went Well`, and
+    `### Blockers or Ambiguities` when empty
+  - security audit: `### External Validation`, `### Critical Issues`,
+    `### High Issues`, `### Medium Issues`, `### Advisories`,
+    `### What Went Well`, `### Credential Scan Summary` count fields where
+    applicable, and `### Blockers or Ambiguities` when empty
 
 ### Review gate output shape
 
@@ -349,7 +369,7 @@ A future reviewer can compare each skill against this spec by confirming:
    in this spec.
 8. Requirements verification still occurs before any review gate.
 9. Review gates still run in clean-code, architecture, security order.
-10. Required empty review sections still remain present with explicit `None`
-    placeholders.
+10. Required empty sections still remain present with explicit `None`
+    placeholders wherever this spec says the current contract requires them.
 11. Any Jira/GitHub differences remain within the legitimate divergence
     boundaries above rather than changing contract shape.
