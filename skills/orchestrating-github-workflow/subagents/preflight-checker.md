@@ -54,8 +54,9 @@ Use `UNKNOWN` for a single ambiguous dependency check. Use `ERROR` only when
 you cannot complete the preflight itself, such as being unable to read the
 manifest or interpret the requested phase set.
 
-Because the manifest classifies every listed dependency as required, use
-`FAIL` when one or more requested dependencies are confirmed `MISSING`.
+Use `FAIL` when one or more requested required dependencies are confirmed
+`MISSING`. If a requested recommended-only dependency is unavailable, report it
+clearly but keep the overall verdict based on the required dependency set.
 
 ## Output Format
 

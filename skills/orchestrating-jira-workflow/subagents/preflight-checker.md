@@ -48,8 +48,9 @@ Use `UNKNOWN` for a single ambiguous dependency check. Use `ERROR` only when
 you cannot complete the preflight itself, such as being unable to read the
 manifest or interpret the requested phase set.
 
-Because the manifest classifies every listed dependency as required, use
-`FAIL` when one or more requested dependencies are confirmed `MISSING`.
+Use `FAIL` when one or more requested required dependencies are confirmed
+`MISSING`. If a requested recommended-only dependency is unavailable, report it
+clearly but keep the overall verdict based on the required dependency set.
 
 ## Output Format
 
@@ -75,12 +76,11 @@ Omit the `Missing:` or `Unknown:` section when it would be empty.
 PREFLIGHT: FAIL
 Ticket: JNS-6065
 Phases: 5-7
-Summary: 2 required dependencies are missing for the remaining phases.
-Available: 5 | Missing: 2 | Unknown: 0
+Summary: 1 required dependency is missing for the remaining phases.
+Available: 5 | Missing: 1 | Unknown: 0
 
 Missing:
 - /humanizer (Phase 7, used by documentation-writer) - install `skills install blader/humanizer`
-- context7 MCP (Phase 7, used by quality gate reviewers) - connect the context7 MCP server
 </example>
 
 ## Scope
