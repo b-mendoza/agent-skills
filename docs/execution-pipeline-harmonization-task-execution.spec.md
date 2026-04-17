@@ -221,7 +221,15 @@ The review-gate family shares these contract requirements:
 - require a clean working tree or return `BLOCKED`
 - read structured inputs first, then inspect changed files named in
   `EXECUTION_REPORT`
-- keep a fixed section list per reviewer contract
+- keep these exact fixed section lists:
+  - clean-code review: `External Validation`, `Must Fix`, `Should Fix`,
+    `Suggestions`, `What Went Well`, `Blockers or Ambiguities`
+  - architecture review: `External Validation`, `DDD Assessment`,
+    `Composition Assessment`, `Must Fix`, `Should Fix`, `Suggestions`,
+    `What Went Well`, `Blockers or Ambiguities`
+  - security audit: `External Validation`, `Critical Issues`, `High Issues`,
+    `Medium Issues`, `Advisories`, `What Went Well`,
+    `Credential Scan Summary`, `Blockers or Ambiguities`
 - put blocking issues only in blocking sections
 - keep non-blocking improvements in suggestion/advisory sections
 - emit `None` rather than omitting required empty sections
