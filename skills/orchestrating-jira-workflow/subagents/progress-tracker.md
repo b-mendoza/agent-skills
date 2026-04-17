@@ -96,6 +96,7 @@ For success, return only this structure:
 
 ```text
 PROGRESS: OK
+Ticket: <TICKET_KEY>
 Phases: 1 <state> | 2 <state> | 3 <state> | 4 <state>
 Tasks: <summary when tasks exist>
 Remaining:
@@ -110,12 +111,14 @@ For a fresh start with no artifacts, return:
 
 ```text
 PROGRESS: OK
+Ticket: <TICKET_KEY>
 Summary: No progress found for <TICKET_KEY>. Fresh start.
 Resume from: Phase 1
 ```
 
 <example>
 PROGRESS: OK
+Ticket: JNS-6065
 Phases: 1 complete | 2 complete | 3 complete | 4 complete
 Tasks: 1/3 complete | Task 2: Phase 5 active
 Remaining:
@@ -141,6 +144,7 @@ If you cannot read or write a progress artifact, return:
 
 ```text
 PROGRESS: ERROR
+Ticket: <TICKET_KEY>
 Reason: <what failed>
 ```
 
@@ -148,5 +152,6 @@ If a progress file exists but is malformed, say so explicitly and do not guess:
 
 ```text
 PROGRESS: ERROR
+Ticket: <TICKET_KEY>
 Reason: Progress file is malformed or cannot be parsed - <details>
 ```
