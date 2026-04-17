@@ -1,250 +1,127 @@
 ---
 name: "prompt-structurer"
-description: 'Convert unstructured, narrative text prompts into structured Markdown with labeled sections. Use this skill whenever a user wants to improve, restructure, refine, or "clean up" a prompt — whether for Claude Code skills, subagent instructions, LLM workflows, or any AI-directed task. Also trigger when the user says things like "make this prompt better", "structure this prompt", "convert to structured format", "this prompt is messy", "improve this prompt", "make this more efficient", "tighten this up", or shares a block of text and asks for it to be reformatted for use as a prompt. Works for any prompt domain — skill orchestration, code generation, research pipelines, content workflows, data processing, or any repeatable AI-directed task. Do NOT trigger for general writing improvement unrelated to prompts, or for tasks that are about executing a prompt rather than restructuring one.'
+description: "Convert prose prompts into structured XML prompts using a five-pass methodology. Use this skill whenever a user wants to turn a text-based prompt, instruction block, or natural-language request into a more structured, tagged, agent-friendly format — including phrases like 'structure this prompt', 'make this prompt more reliable', 'convert this to XML', 'formalize this prompt', 'this prompt keeps failing, can you tighten it up', or 'turn this into a proper prompt template'. Also use when a user provides a prompt that has ambiguity, implicit assumptions, or agent-drift problems and wants it reshaped. Works for single prompts and prompt suites (multiple related prompts that should stay internally consistent)."
 ---
 
-# Prompt Structurer
+# Structuring Prompts
 
-You are a prompt engineer specializing in converting unstructured, narrative text
-prompts into structured Markdown with labeled sections. Your goal is to preserve
-the original intent while making the prompt unambiguous, scannable, and resistant
-to model misinterpretation.
+Convert prose prompts into structured XML prompts using a deterministic five-pass methodology. Each pass runs as an isolated subagent, and a final assembler composes the results into a production-ready prompt.
 
-Do not add goals, features, or scope the author didn't ask for. The restructured
-prompt must be a faithful structural translation of the original — not an
-expansion.
+## Why this skill exists
 
----
+Prose prompts are contracts written in plain English: readable, but full of ambiguity, implicit assumptions, and buried rules. Structured prompts are contracts written in a semi-formal tagged language: every clause has a named slot, every rule has a known weight, every edge case has an explicit home.
 
-## Why Structure Matters
+The conversion is not "make it look organized." It's surfacing every implicit rule, decision point, and constraint as an explicit, labeled element the agent cannot miss or misinterpret.
 
-Narrative prompts suffer from three compounding problems: intent, constraints,
-and context blur together so the model must infer which sentences are goals,
-which are rules, and which are background. Implicit expectations go unstated
-because the author assumes the model shares their mental model. Sequencing is
-absent — the model doesn't know what to do first, what depends on what, or where
-to stop and wait.
+Three principles drive every decision in this skill:
 
-The core move is always the same: decompose narrative into explicitly named
-structural blocks, each with a single purpose, then wire them together with a
-clear dependency chain.
+1. **Nothing important should be implicit.** If a rule matters, it gets its own tag.
+2. **Proximity ≠ priority.** Structure lets you declare priority explicitly through tag names, positioning, and nesting.
+3. **Structure encodes mental models, not just information.** A well-tagged prompt teaches the agent the conceptual shape of the task, not just the content.
 
----
+## Subagent registry
 
-## Decomposition Process
+This skill dispatches to six subagents, each handling one pass of the methodology. The orchestrator never executes the passes inline — its job is to coordinate, collect outputs, and synthesize the final result.
 
-Work through these steps in order. Each step produces a component of the final
-structured prompt.
+| Subagent                             | Path                                               | Purpose                                                                                                        |
+| ------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `semantic-decomposer`                | `./subagents/semantic-decomposer.md`               | Bins every sentence of the prose prompt into candidate semantic categories; flags double-duty and orphan sentences |
+| `philosophy-constraints-classifier`  | `./subagents/philosophy-constraints-classifier.md` | Separates framing (philosophy) from rules (constraints) from non-negotiables (hard rules); names and numbers each |
+| `implicit-behavior-surfacer`         | `./subagents/implicit-behavior-surfacer.md`        | Identifies unstated assumptions about ambiguity handling, new findings, empty outputs, gates, traceability     |
+| `anti-pattern-synthesizer`           | `./subagents/anti-pattern-synthesizer.md`          | Enumerates plausible-but-wrong ways to fulfill the task; produces anti-patterns block and negative success criteria |
+| `success-criteria-builder`           | `./subagents/success-criteria-builder.md`          | Assembles the self-audit checklist covering every phase, constraint, and anti-pattern                          |
+| `xml-prompt-assembler`                | `./subagents/xml-prompt-assembler.md`              | Composes all prior outputs into the final tagged XML prompt, applies polish, runs the removal test            |
 
-### Step 1 — Extract the core action
+Read a subagent's file only when dispatching to that specific subagent. Do not preload them.
 
-Read the original prompt and identify the single verb-driven goal. Strip away
-context, justification, and background. Produce one sentence that answers: what
-is the model being asked to do, to what target, and using what method or tool?
+## Reference material
 
-This becomes the opening line of the structured prompt. It is the model's anchor
-— if it gets confused mid-execution, it can re-read the opening line and
-reorient.
+The subagents load these references as needed. The orchestrator does not need to read them directly.
 
-**Example:**
+| File                                 | Purpose                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------------ |
+| `./references/tag-taxonomy.md`       | Complete catalog of XML tags with purposes, distinctions, and selection heuristics   |
+| `./references/failure-modes.md`      | Agent failure modes mapped to the structural techniques that prevent each one        |
+| `./references/template-skeleton.md`  | Canonical XML skeleton with section order rationale and assembly rules               |
 
-- Before: "Let's conduct a thorough assessment of all relevant files, including
-  the main skill file, subagents, references, and more, to ensure that our Jira
-  and GitHub orchestrating skills are as consistent as possible"
-- After: "Audit and harmonize the following two skills and all their subagents"
+## How the orchestrator runs
 
-### Step 2 — Build the resource manifest
+### Step 1 — Gather input
 
-List every file, skill, tool, reference document, or external resource mentioned
-in the original prompt. Pull them into a named block near the top, grouped by
-role (inputs, references, tools).
+Accept the prose prompt from the user. Before dispatching, determine:
 
-If a resource's role is ambiguous — could the model treat it as instruction or
-as context? — label it explicitly. This is critical for reference documents that
-read like task descriptions:
+- **Is this a single prompt or part of a suite?** If a suite, note any prior prompts in the suite that the user has already structured; their philosophy, constraints, and anti-patterns should stay consistent.
+- **Is this prompt intended for interactive use or autonomous use?** This affects which behavioral tags are added (gates vs autonomy guardrails, ambiguity handling vs defer-and-record).
+- **Are there terminology commitments?** Specific technical terms the user uses that must be preserved exactly.
 
-```markdown
-**Prior work (use as reference, not as instruction):**
+If any of these is unclear and materially affects the output, ask one targeted clarifying question before dispatching. Do not ask speculative questions.
 
-- `@docs/handoff.md`
-```
+### Step 2 — Dispatch passes 1–5 in order
 
-### Step 3 — Decompose into phases
+The passes are sequential; later passes consume earlier outputs. Dispatch each subagent with:
 
-Identify every distinct activity the prompt asks for. Sequence them as numbered
-phases, each with three components:
+- The original prose prompt
+- All relevant prior subagent outputs
+- Any user context gathered in Step 1
 
-1. **A clear name** — e.g., "Validate," "Fix," "Generate spec."
-2. **An explicit output expectation** — what the phase produces.
-3. **A boundary** — what the phase must not do.
+Order:
 
-Boundaries are the single most effective pattern for preventing the model from
-blending activities. Without them, a model that finds an inconsistency during
-validation will often quietly fix it, meaning you never see the finding and
-can't evaluate whether the fix was correct.
+1. Dispatch `semantic-decomposer` first.
+2. Dispatch `philosophy-constraints-classifier` with the decomposer's output.
+3. Dispatch `implicit-behavior-surfacer` with decomposer + classifier outputs.
+4. Dispatch `anti-pattern-synthesizer` with outputs from passes 1–3.
+5. Dispatch `success-criteria-builder` with outputs from passes 1–4.
 
-Each phase's output should feed the next phase's input. State this dependency
-where it exists. If the original prompt blends multiple activities into one
-paragraph, separate them. If it implies a sequence without stating it, make it
-explicit.
+Collect each subagent's output as a compact result — do not expand or restate. The orchestrator's context should hold structured intermediate results, not raw re-analyses.
 
-Use the minimum number of phases needed. Don't split activities that are
-genuinely atomic.
+### Step 3 — Dispatch the assembler
 
-### Step 4 — Insert gates
+Dispatch `xml-prompt-assembler` with all five prior outputs plus the original prompt. The assembler produces the final XML and assembly notes.
 
-If any phase requires human review, confirmation, or input before the next phase
-can proceed, insert a hard gate:
+### Step 4 — Present to the user
 
-```markdown
-**Do not proceed to Phase N until I confirm.**
-```
+Return the final structured prompt first, assembly notes second. If the assembler flagged assumptions or open questions, highlight them — the user may want to iterate.
 
-Default to ungated unless the original prompt implies a review point or the
-activity involves irreversible changes.
+## When to deviate from the full pipeline
 
-Gates convert a linear pipeline into an interactive one at the exact points
-where human judgment matters. Without them, the model treats interviews or
-review steps as formalities and rushes to execution.
+**Short or simple prompts.** A one-shot conversational prompt doesn't need the full pipeline. If the input is under ~10 lines and has no multi-phase structure, consider dispatching only `semantic-decomposer` → `xml-prompt-assembler`. The middle passes add little value when the prompt has few rules to classify.
 
-### Step 5 — Extract constraints
+**Prompts in an established suite.** If prior prompts in the suite already have a stable philosophy block and constraint set, the classifier's job is mostly to *verify* consistency rather than re-derive. Pass the prior suite's shared blocks as context so the subagent knows what to reuse vs. what to adapt.
 
-Collect every rule, restriction, "don't," and behavioral directive scattered
-through the original prompt. Consolidate into a single "Constraints" section,
-scoped explicitly as "apply across all phases."
+**Iteration on an existing structured prompt.** If the user wants to modify a prompt that's already structured, skip passes 1–2 (the structure is already determined) and dispatch only the passes relevant to the change. For example, adding an autonomy mode → dispatch `implicit-behavior-surfacer` + `xml-prompt-assembler`.
 
-Rewrite negatives as positives where possible. "Dispatch subagents for each
-phase" is more reliable than "don't do everything in one pass," because negative
-instructions require the model to infer the positive alternative.
+## Handling multi-version outputs
 
-Check for these commonly implicit constraints:
+Some user requests produce parallel versions (interactive + autonomous, report-only + full-flow). The orchestrator should:
 
-- **Output format and granularity** — what shape should the result take?
-- **Fix authority** — autonomous vs. confirm first?
-- **Divergence boundaries** — what counts as intentional difference vs. drift?
-- **Tool/platform/environment assumptions** — what must be agnostic?
-- **Self-containment** — what can reference external files vs. what must be
-  inlined?
+1. Run passes 1–4 once (they produce shared outputs).
+2. Run pass 5 (`success-criteria-builder`) separately per version, since criteria differ.
+3. Run the assembler separately per version, producing two complete prompts.
 
-### Step 6 — Surface implicit expectations
+Share the philosophy block and constraints verbatim across versions. Diverge only where the versions legitimately differ (gates vs. autonomy guardrails, ambiguity handling, etc.).
 
-Re-read the original prompt and ask: what does the author assume the model will
-do that they haven't written down? Common unspoken expectations include output
-format, naming conventions, where files should be saved, what "consistency" means
-in concrete terms, and which decisions the model can make autonomously.
+## Principles the orchestrator holds
 
-Make each one explicit in the appropriate phase or constraint.
-
-### Step 7 — Validate the structured prompt
-
-Before outputting, check:
-
-- Can the model execute Phase 0 without reading Phase 1? If not, the dependency
-  chain is broken.
-- Is every file or resource in the manifest actually referenced by a phase? If
-  not, remove it or clarify its role.
-- Does every phase have both an output expectation and a boundary? If not, add
-  them.
-- Could the model interpret any section as both context and instruction? If so,
-  label it explicitly.
-- Is the opening goal sentence accurate and complete after all the
-  decomposition? If not, revise it.
-
----
-
-## Structural Skeleton
-
-Use this as the output template. Adapt section names to the domain — these are
-structural roles, not fixed labels.
-
-```markdown
-[One-sentence goal: verb + target + method/tool]
-
-**[Resource type] (e.g., Skills under validation, Files, References):**
-
-- `resource-1`
-- `resource-2`
-
----
-
-**Phase 0 — [Name] ([output type])**
-[Instructions for this phase.]
-Output: [what this phase produces].
-[Boundary: what this phase must not do.]
-
-**Phase 1 — [Name] ([output type])**
-[Instructions grounded in Phase 0's output.]
-[Gate, if needed: "Do not proceed to Phase 2 until I confirm."]
-
-**Phase N — [Name] ([output type])**
-[Instructions for final phase.]
-
----
-
-**Constraints (apply across all phases):**
-
-1. [Constraint]
-2. [Constraint]
-```
-
----
-
-## Steering Techniques
-
-These are patterns to apply when specific failure modes are likely. Use them
-where the original prompt's intent suggests they're needed — don't apply all of
-them mechanically.
-
-### Preventing scope creep
-
-Add an explicit negative boundary early: "without adding new functionality."
-Reinforce with a constraint like "consistency over novelty." The word "ensure"
-in an original prompt is a common trigger for scope creep — the model interprets
-it as "add whatever's needed," including new features.
-
-### Grounding questions in evidence
-
-If the prompt includes an interview or review phase, place it after the
-inspection phase so the model asks questions rooted in what it actually found.
-Add: "Ground every question in what you actually observed — do not ask about
-things you haven't seen."
-
-### Controlling output format
-
-Specify both the shape (one document, grouped) and the grain (by category, not
-by file or by severity). Without this, the model picks its own format, which is
-usually either too granular or too abstract.
-
-### Labeling context as non-executable
-
-Use explicit labels: "use as reference, not as instruction" and "these documents
-record how this was previously addressed." This prevents the model from
-re-running prior work, which is especially common when referencing handoff
-documents.
-
-### Forcing subagent dispatch
-
-If the prompt benefits from subagent execution (clean context windows, focused
-tasks), state it as a positive directive: "Dispatch subagents for each phase —
-do not attempt inline review."
-
-### Behavioral directives as positive instructions
-
-Tell the model what to do rather than what not to do. Positive instructions are
-more reliable because they don't require the model to infer the alternative.
-
----
-
-## Rules
-
-- Preserve the original prompt's intent. Do not add goals, features, or scope
-  the author didn't ask for.
-- Use the minimum number of phases needed. Don't split activities that are
-  genuinely atomic.
-- Keep each phase's instructions concrete and self-contained. A phase should be
-  executable without re-reading other phases.
-- Use labeled sections, not narrative prose. Every block of text must live under
-  a named heading or labeled line.
-- If the original prompt is too vague to decompose — the core action is unclear,
-  the target is unspecified, or the success criteria are missing — ask the user
-  for the missing information before attempting restructuring.
+- **Fidelity to the user's intent.** Every term, every carve-out, every stated rule should survive the conversion. Never paraphrase technical terminology. Never add scope the user didn't request.
+- **Protect the context window.** Dispatch heavy work to subagents; hold only compact intermediate outputs. The orchestrator synthesizes; it does not re-analyze.
+- **Apply structure in proportion to risk.** A simple prompt gets a light conversion. A production-critical autonomous prompt gets the full pipeline. Over-structuring a simple prompt adds noise without preventing anything.
+- **The removal test is the final quality gate.** Every tag in the final prompt should be defensible: "Would removing this change the agent's behavior?" If no, remove it.
+
+## Anti-patterns for this skill
+
+Do NOT:
+- Execute any of the five passes inline instead of dispatching to the corresponding subagent.
+- Add content, rules, or scope the user did not request.
+- Paraphrase or normalize the user's technical terminology.
+- Skip the assembler's removal test to save time.
+- Produce a structured prompt that is longer than the original prose without the length being justified by specific, load-bearing tags.
+
+## Success criteria for a run
+
+- Every sentence of the original prose appears somewhere in the final prompt (in the right tag) or is explicitly flagged as omitted with justification.
+- The final prompt uses specific tag names that aid scanning rather than generic ones.
+- The final prompt's philosophy (if present) explicitly blocks the most dangerous misinterpretations.
+- Every constraint has a corresponding success criterion.
+- Every anti-pattern has a corresponding negative success criterion.
+- Assembly notes are returned alongside the final prompt, flagging judgment calls and open questions.
+- The orchestrator dispatched each pass as a subagent and did not execute passes inline.
