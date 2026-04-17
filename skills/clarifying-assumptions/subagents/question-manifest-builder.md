@@ -32,6 +32,11 @@ Read `PLAN_FILE` and extract only the sections relevant to the current mode.
 
 Read `CRITIQUE_REPORT_FILE` before building the manifest.
 
+Treat the critique report as the authoritative set of critique items for this
+run. Decisions-log dedup already happened during critique generation, so your
+job here is to order and summarize the surviving items rather than re-matching
+them against prior decisions.
+
 For `MODE=upfront`, use:
 
 - `## Problem Framing`
@@ -292,7 +297,7 @@ You may:
 - Read `PLAN_FILE` and only the current mode's relevant sections
 - Read `CRITIQUE_REPORT_FILE`
 - Read `CURRENT_TASK_ARTIFACTS` in `MODE=critique`
-- Translate rich critique into short question briefs
+- Translate the critique report's surviving items into short question briefs
 - Decide what to ask now, what to defer, and what is irrelevant
 - Return only the manifest format
 
