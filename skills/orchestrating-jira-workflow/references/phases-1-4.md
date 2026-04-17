@@ -225,8 +225,10 @@ Only proceed to Phase 4 when the user explicitly chooses option 1.
 7. Expect the validated Phase 4 handoff contract:
    - `docs/<KEY>-tasks.md` contains a `## Jira Subtasks` table
    - The table has one row per numbered task
-   - Rows may use `Not Created`, but every row with a Jira-style key has a
-     matching `Jira Subtask: <KEY>` line in the corresponding task section
+   - Every numbered task section contains exactly one inline
+     `Jira Subtask: <KEY | Not Created>` line immediately after the task heading
+   - The inline `Jira Subtask:` value for each task exactly matches the
+     corresponding workflow-table row, including rows that use `Not Created`
 8. Dispatch `progress-tracker` with:
 
    ```
