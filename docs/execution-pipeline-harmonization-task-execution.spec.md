@@ -330,9 +330,9 @@ content-level, not shape-level.
 | -------- | ------------ | -------------- | ---------------------- |
 | workflow key field | `TICKET_KEY` | `ISSUE_SLUG` | Different tracker identifier models drive path derivation |
 | snapshot artifact meaning | ticket snapshot and Jira context | issue snapshot and GitHub context | Same artifact role, different tracker content |
-| task plan table | `## Jira Subtasks` and `Jira Subtask:` lines | `## GitHub Task Issues` and `GitHub Task Issue:` lines | Same traceability role, different tracker entities |
-| kickoff actions | transition subtask, add start comment | `gh` label/assignee/comment/project-field actions | Same kickoff phase, different tracker operations |
-| completion updates | Jira subtask done state and completion comment | `gh` completion updates on child or parent issue | Same completion-side tracking role, different tracker transport |
+| task plan table | `## Jira Subtasks` and `Jira Subtask:` lines | `## GitHub Task Issues` and `GitHub Task Issue:` lines whose values may be `owner/repo#number`, `Not Created`, or `task-list` | Same traceability role, different tracker entities |
+| kickoff actions | transition subtask, add start comment | `gh` label/assignee/comment/project-field or milestone updates, with task-scoped child-issue actions when `GitHub Task Issue: owner/repo#number` exists; when the value is `Not Created` or `task-list`, only an optional parent comment is allowed if the brief calls for it, otherwise the step records a skip | Same kickoff phase, different tracker operations |
+| completion updates | Jira subtask done state and completion comment | `gh` completion updates only when `GitHub Task Issue: owner/repo#number` exists, including optional child completion comment, optional child closure, and optional parent completion comment when the brief calls for it; when the value is `Not Created` or `task-list`, the step records skips instead of parent fallback updates | Same completion-side tracking role, different tracker transport |
 | optional reference semantics | secondary reference stays `None` in current Jira contract | child/parent issue relationships may exist in GitHub content | GitHub task issue model exposes parent/child issue relationships more directly |
 
 ### Non-permitted shape divergence
