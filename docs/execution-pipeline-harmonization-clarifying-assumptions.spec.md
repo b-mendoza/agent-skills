@@ -347,6 +347,11 @@ additional follow-up items for the canonical clarification contract.
 - Defining Jira-specific fetch, write, or execution behavior
 - Defining GitHub-specific fetch, `gh`, or execution behavior
 - Redesigning the Phase 2 planning pipeline that produces the upstream task plan
+- Making Jira and GitHub orchestrators interchangeable runtimes with shared
+  validator inputs, identical prompt wording, or identical downstream write
+  models
+- Introducing shared mutable runtime state between parent orchestrators and the
+  clarification skill beyond the documented artifact and summary-flag boundary
 - Changing the conversational mentoring style beyond what is required to keep a
   stable clarification contract
 - Introducing runtime dependencies on this spec file or any Phase 0/1/2
