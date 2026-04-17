@@ -41,7 +41,7 @@ inputs:
 
 | Dispatch target | Derived inputs |
 | --- | --- |
-| `critique-analyzer` | `MAIN_PLAN_FILE`, `ARTIFACTS`, `CRITIQUE_REPORT_FILE`, and in `MODE=critique` `TASK_NUMBER`; when `ITERATION > 1`, also `PRIOR_DECISIONS_FILE` plus `PRIOR_DECISIONS_KIND` (`main-log` in `MODE=upfront`, `per-task` in `MODE=critique`) |
+| `critique-analyzer` | `MAIN_PLAN_FILE`, `ARTIFACTS`, `CRITIQUE_REPORT_FILE`, `PRIOR_DECISIONS_FILE`, `PRIOR_DECISIONS_KIND` (`main-log` in `MODE=upfront`, `per-task` in `MODE=critique`), and in `MODE=critique` `TASK_NUMBER` |
 | `question-manifest-builder` | `PLAN_FILE`, `CRITIQUE_REPORT_FILE`, and in `MODE=critique` `TASK_NUMBER` plus `CURRENT_TASK_ARTIFACTS` |
 | `decision-recorder` | `ITERATION`, `DECISIONS`, optional `DEFERRED_QUESTIONS`, optional `IMPLEMENTATION_UPDATES`, and in `MODE=critique` `TASK_NUMBER`, `TASK_TITLE`, plus `RESOLVED_IRRELEVANT` |
 
@@ -110,7 +110,7 @@ Jira workflow or a GitHub workflow.
 | Stage | Name | Purpose |
 | --- | --- | --- |
 | 1 | Load guidance | Read the design-thinking reference and the active mode playbook |
-| 2 | Analyze artifacts | Dispatch `critique-analyzer` to read artifacts, inspect the codebase, and write the critique artifact |
+| 2 | Analyze artifacts | Dispatch `critique-analyzer` to read artifacts, consult the Decisions Log, inspect the codebase, and write the critique artifact |
 | 3 | Build manifest | Dispatch `question-manifest-builder` to turn the critique artifact plus plan context into the ordered manifest |
 | 4 | Clarify inline | Walk the manifest one item at a time with the developer and capture decisions |
 | 5 | Record decisions | Dispatch `decision-recorder` to update workflow artifacts, validate them, and return the final write summary |
@@ -119,14 +119,14 @@ Jira workflow or a GitHub workflow.
 
 | Mode | Goal | Delegated work | Inline work |
 | --- | --- | --- | --- |
-| `upfront` | Challenge the whole plan before execution starts | critique generation, manifest assembly, file updates | Socratic questioning and decision capture |
-| `critique` | Challenge one task just before execution | critique generation, deferred-question filtering, file updates | Evaluate reasoning and make final task-level decisions |
+| `upfront` | Challenge the whole plan before execution starts | critique generation with Decisions Log dedup, manifest assembly, file updates | Socratic questioning and decision capture |
+| `critique` | Challenge one task just before execution | critique generation with Decisions Log dedup, manifest assembly, file updates | Evaluate reasoning and make final task-level decisions |
 
 ## Subagent Registry
 
 | Subagent | Path | Purpose |
 | --- | --- | --- |
-| `critique-analyzer` | `./subagents/critique-analyzer.md` | Reads planning artifacts, verifies the real codebase, searches the web, writes the critique artifact, and returns a concise verdict plus artifact path |
+| `critique-analyzer` | `./subagents/critique-analyzer.md` | Reads planning artifacts, consults the Decisions Log on every run, verifies the real codebase, searches the web, writes the critique artifact, and returns a concise verdict plus artifact path |
 | `question-manifest-builder` | `./subagents/question-manifest-builder.md` | Reads the task plan plus the critique report and returns an ordered manifest of what to ask now, what to defer, and what is no longer relevant |
 | `decision-recorder` | `./subagents/decision-recorder.md` | Writes clarification artifacts, updates the main task plan, creates per-task decisions files when needed, and validates the result |
 
@@ -143,7 +143,8 @@ Keep only these items inline while the skill is running:
 
 Everything else comes from delegated subagents through concise verdicts,
 manifest rows, and artifact paths. The manifest is the source of truth for what
-gets asked once execution starts.
+gets asked once execution starts, but `critique-analyzer` is the source of
+truth for whether a concern still needs to be raised at all in the current run.
 
 `MODE=upfront` is the plan-wide clarification pass and `MODE=critique` is the
 per-task clarification pass just before execution. The mode names, inputs, and
@@ -154,15 +155,24 @@ On retries or later iterations, re-dispatch each subagent with the current
 artifact paths and inputs. Do not treat prior subagent output as authoritative
 state once the underlying artifacts or decisions have changed.
 
+Manifest IDs and wording can drift between iterations. Because of that,
+`critique-analyzer` must re-read the Decisions Log every run and decide by
+substance whether a candidate question has already been answered. Do not leave
+that judgment to Stage 3.
+
 Run the workflow in this order:
 
 1. Stage 1 `Load guidance`: load the design-thinking reference and the current
    mode's playbook.
-2. Stage 2 `Analyze artifacts`: dispatch `critique-analyzer` to read artifacts, inspect the codebase, search
-   the web, and write the critique artifact.
+2. Stage 2 `Analyze artifacts`: dispatch `critique-analyzer` to read artifacts,
+   consult the current Decisions Log, inspect the codebase, search the web, and
+   write the critique artifact. Always include `PRIOR_DECISIONS_FILE` and
+   `PRIOR_DECISIONS_KIND`, even on `ITERATION=1`.
 3. Stage 3 `Build manifest`: dispatch `question-manifest-builder` with the critique artifact path and the
    plan path to build the ordered manifest. In `MODE=critique`, also include
    `TASK_NUMBER` and `CURRENT_TASK_ARTIFACTS`.
+   If the manifest returns `Questions now: 0`, treat that as a valid no-op and
+   skip directly to Stage 5 without emitting a placeholder prompt.
 4. Stage 4 `Clarify inline`: walk the manifest one question at a time inline, deciding what to confirm,
    revise, defer, or block.
    Carry each manifest `Item ID` unchanged into the decision list so later
@@ -228,7 +238,8 @@ Input: TICKET_KEY=JNS-6065, MODE=upfront, ITERATION=1
 1. Read `./references/design-thinking-mindset.md`
 2. Read `./references/upfront-mode.md`
 3. Dispatch `critique-analyzer` with the plan file, stage artifacts, and
-   `docs/JNS-6065-upfront-critique.md`
+   `docs/JNS-6065-upfront-critique.md`, plus `docs/JNS-6065-tasks.md` as
+   `PRIOR_DECISIONS_FILE` and `PRIOR_DECISIONS_KIND=main-log`
 4. Receive:
    CRITIQUE: PASS
    Ticket: JNS-6065 | Mode: upfront | Task: -
@@ -239,7 +250,6 @@ Input: TICKET_KEY=JNS-6065, MODE=upfront, ITERATION=1
    - Problem-framing items: 2
    - Technology critique items: 3
    - User-impact items: 0
-   - Suppressed due to prior decisions: 0
 5. Dispatch `question-manifest-builder` with
    `docs/JNS-6065-upfront-critique.md` and `docs/JNS-6065-tasks.md`
 6. Receive:
@@ -284,7 +294,9 @@ Input: TICKET_KEY=acme-app-42, MODE=critique, TASK_NUMBER=3, ITERATION=2
 1. Read `./references/design-thinking-mindset.md`
 2. Read `./references/critique-mode.md`
 3. Dispatch `critique-analyzer` with the task artifacts and
-   `docs/acme-app-42-task-3-critique.md`
+   `docs/acme-app-42-task-3-critique.md`, plus
+   `docs/acme-app-42-task-3-decisions.md` as `PRIOR_DECISIONS_FILE` and
+   `PRIOR_DECISIONS_KIND=per-task`
 4. Receive:
    CRITIQUE: PASS
    Ticket: acme-app-42 | Mode: critique | Task: 3
