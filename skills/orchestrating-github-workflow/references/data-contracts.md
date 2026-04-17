@@ -115,19 +115,28 @@ clarification skill's final summary still carries `RE_PLAN_NEEDED` and
 `BLOCKERS_PRESENT`, and the orchestrator must honor those flags separately at
 the gate step.
 
-### Phase 1 fetch summary (three-field contract)
+### Phase 1 fetch summary (12-line contract)
 
-`fetching-github-issue` returns a structured summary with three fields — the
-orchestrator must read them together, not collapse them into a single status:
+`fetching-github-issue` returns the locked 12-line structured summary below.
+Read the complete summary in order and branch on those structured fields rather
+than on abbreviated prose or a single status line:
 
 ```
 FETCH: <PASS | PARTIAL | FAIL | ERROR>
 Validation: <PASS | FAIL | NOT_RUN>
 Failure category: <NONE | BAD_INPUT | NOT_FOUND | AUTH | TOOLS_MISSING | RATE_LIMIT | UNEXPECTED>
 File written: docs/<ISSUE_SLUG>.md | None
+Issue: <owner>/<repo>#<N>: <Title | Unknown>
+State: <OPEN | CLOSED | Unknown>
+Comments: <retrieved>/<found | N/A>
+Child issues: <retrieved>/<found | UNKNOWN | N/A>
+Linked issues: <retrieved>/<found | UNKNOWN | N/A>
+Attachments: <N | N/A>
+Warnings: <None | semicolon-separated warnings>
+Reason: <None | fatal reason>
 ```
 
-How to interpret the result:
+How to interpret the structured summary:
 
 - `PASS` + `PASS`: Success. Proceed to the Phase 1 postcondition validator on
   the written file.
