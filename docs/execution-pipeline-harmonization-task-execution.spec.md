@@ -191,6 +191,28 @@ Shape rule:
     `### What Went Well`, `### Credential Scan Summary` count fields where
     applicable, and `### Blockers or Ambiguities` when empty
 
+### Final report shape
+
+The current skills define a minimal final-report template for the successful
+completion path. It is part of the canonical pipeline and uses this fixed
+top-level shape:
+
+| Position | Required content |
+| -------- | ---------------- |
+| opening line | `Task <N> complete: <title>` |
+| summary line | `Summary: <2-3 sentences>` |
+| pipeline block | `Pipeline:` followed by these lines in order: `Kickoff`, `Execution`, `Documentation/commits`, `Requirements verification`, `Clean code review`, `Architecture review`, `Security audit` |
+| commits block | `Commits:` followed by commit bullets |
+| files block | `Files changed:` followed by path bullets |
+| remaining-items block | `Remaining items:` followed by issue bullets or explicit `None` |
+
+Final-report rule:
+
+- this spec requires the fixed block order above for the completion-summary path
+- `Remaining items` uses explicit `None` when empty
+- current execution-skill references do not define a separate alternate final
+  report template for blocked or error stop-states
+
 ### Review gate output shape
 
 The review-gate family shares these contract requirements:
@@ -371,5 +393,7 @@ A future reviewer can compare each skill against this spec by confirming:
 9. Review gates still run in clean-code, architecture, security order.
 10. Required empty sections still remain present with explicit `None`
     placeholders wherever this spec says the current contract requires them.
-11. Any Jira/GitHub differences remain within the legitimate divergence
+11. The final completion report still matches the minimal fixed block order in
+    `Final report shape`.
+12. Any Jira/GitHub differences remain within the legitimate divergence
     boundaries above rather than changing contract shape.
