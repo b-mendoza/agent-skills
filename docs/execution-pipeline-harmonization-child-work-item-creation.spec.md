@@ -6,9 +6,12 @@ validated_skills:
   - "skills/creating-github-child-issues"
   - "skills/creating-jira-subtasks"
 generated_from:
-  report: "docs/child-work-item-creation-phase-0-reconciliation-report.md"
-  triage: "docs/child-work-item-creation-phase-1-triage-ledger.md"
-  change_summary: "docs/child-work-item-creation-phase-2-change-summary.md"
+  downstream_report: "docs/child-work-item-creation-phase-0-reconciliation-report.md"
+  downstream_triage: "docs/child-work-item-creation-phase-1-triage-ledger.md"
+  downstream_change_summary: "docs/child-work-item-creation-phase-2-change-summary.md"
+  orchestrator_report: "docs/orchestrator-alignment-report-child-work-item-creation.md"
+  orchestrator_triage: "docs/orchestrator-alignment-ledger-child-work-item-creation.md"
+  orchestrator_change_summary: "docs/orchestrator-alignment-changes-child-work-item-creation.md"
 ---
 
 # Child Work-Item Creation Harmonization Spec
@@ -16,21 +19,24 @@ generated_from:
 ## Purpose
 
 This document is the canonical shape-level harmonization reference for the
-paired Phase 4 child work-item creation skills after the Phase 1 triage and the
-Phase 2 no-op pass.
+paired Phase 4 child work-item creation skills and the orchestrator-level Phase
+4 handoff expectations verified after the downstream harmonization pass and the
+orchestrator-level Phase 2 fix pass.
 
 It defines the shared execution contract for:
 
 - coordinator inputs and outputs
+- orchestrator-level Phase 4 handoff expectations
 - subagent inputs and outputs
 - plan-artifact additions
 - pipeline stage names and ordering
 - subagent dispatch conventions
 - allowed platform-specific divergence boundaries
 
-It does not act as a runtime dependency. The validated skills remain
-self-contained in their own `SKILL.md`, `subagents/`, `templates`, and
-reference files.
+It does not act as a runtime dependency. The validated skills and orchestrators
+remain self-contained in their own `SKILL.md`, `subagents/`, `templates`, and
+reference files, and future audits should treat this spec as a canonical audit
+reference rather than as an imported runtime dependency.
 
 ## Traceability
 
@@ -40,9 +46,18 @@ reference files.
   `F-001`, `F-002`, and `F-005` as `DEFER`.
 - Phase 2 change summary recorded that zero entries were marked `FIX`, zero
   fixes were applied, and the target skill files were left unchanged.
+- Orchestrator Phase 0 report identified six orchestrator-level findings:
+  `CA-001`, `CA-002`, `CA-003`, `CO-001`, `CC-001`, and `CC-002`.
+- Orchestrator Phase 1 ledger classified `CA-001`, `CA-002`, `CA-003`, and
+  `CC-002` as `FIX`, `CO-001` and `CC-001` as `DEFER`, and recorded no
+  orchestrator-level `PRESERVE` or `SPEC_STALENESS` entries.
+- Orchestrator Phase 2 change summary recorded that those four `FIX` entries
+  were applied in the Jira and GitHub orchestrator Phase 4 references.
 
-This spec therefore codifies the current on-disk contract without introducing
-new runtime changes.
+This spec therefore codifies the current on-disk contract after the downstream
+harmonization pass and the orchestrator-level cascade corrections, without
+introducing new runtime dependencies or rewriting the downstream Phase 4 skill
+contracts.
 
 ## Canonical Alias Model
 
@@ -69,6 +84,14 @@ ordering:
 2. Dispatch the subagent with the parent URL input.
 3. Interpret the structured summary returned by the subagent.
 4. Report only the concise phase summary to the caller.
+
+At the orchestrator level, Phase 4 remains valid only when the coordinator:
+
+- dispatches the authoritative parent URL unchanged as the Phase 4 input
+- treats the downstream structured summary as the routing input for progress and
+  gating rather than re-describing Phase 4 from raw artifact inspection alone
+- preserves platform-native Phase 4 output details where this spec marks them as
+  intentional divergence boundaries
 
 ### Subagent pipeline
 
@@ -271,9 +294,24 @@ Shared early-exit behavior:
 - `Warnings:` and `Failures:` are always present, even when they contain only
   `None`
 
+### Orchestrator Phase 4 handoff consumption shape
+
+When a top-level Jira or GitHub workflow orchestrator consumes the downstream
+Phase 4 skill, the Phase 4 handoff contract is:
+
+- dispatch the authoritative parent URL unchanged to the downstream Phase 4 skill
+- treat the downstream structured summary as the routing surface for progress,
+  gating, and user-facing Phase 4 rollup
+- treat `Validation: PASS` as the signal that the local Phase 4 artifact is
+  trustworthy for downstream use
+- treat `Validation: FAIL` or `Validation: NOT_RUN` as an incomplete Phase 4
+  boundary even if some remote child-item writes occurred
+- preserve GitHub-only `Write model:` and `Capability:` lines when present
+  instead of collapsing them into generic prose
+
 ## Subagent Dispatch Conventions
 
-Both coordinator skills follow the same dispatch rules:
+Both Phase 4 coordinator skills follow the same dispatch rules:
 
 - read the subagent definition only when about to dispatch it
 - dispatch exactly one bundled subagent per run
@@ -284,12 +322,26 @@ Both coordinator skills follow the same dispatch rules:
 - if subagent dispatch is unavailable, report the phase as blocked rather than
   reproducing the subagent inline
 
+Top-level orchestrator Phase 4 restatement rules:
+
+- do not loosen authoritative parent-URL dispatch into alternate equivalent
+  payloads when the downstream Phase 4 skill defines the URL as authoritative
+- do not restate artifact postconditions as schema-equivalent approximations;
+  retain the exact downstream-owned heading, inline marker, and row-matching
+  rules
+- when the downstream summary includes required platform metadata lines, treat
+  them as part of the handoff contract rather than optional narration
+
 Canonical dispatch mapping:
 
 | Coordinator skill | Subagent | Dispatch input |
 | --- | --- | --- |
 | `creating-github-child-issues` | `task-issue-creator` | `ISSUE_URL` |
 | `creating-jira-subtasks` | `subtask-creator` | `JIRA_URL` |
+
+This mapping covers the paired Phase 4 skills themselves. The top-level
+workflow orchestrators consume the resulting structured summaries but do not
+replace these downstream dispatch contracts.
 
 ## Platform-Specific Divergence Boundaries
 
@@ -341,9 +393,14 @@ flattened away without a new harmonization decision.
   when concrete issue creation is not possible for a task; Jira Phase 4 is
   defined around concrete subtasks or `Not Created`.
 
+No additional orchestrator-level `PRESERVE` boundaries were introduced in this
+run. The orchestrator pass only propagated the already-preserved downstream
+platform differences above; it did not identify any new orchestrator-only
+divergence that should remain unharmonized.
+
 ## Decisions Recorded In This Pass
 
-### Documentation-only canonicalization
+### Downstream canonicalization baseline
 
 No Phase 2 fixes were applied. The Phase 2 change summary records:
 
@@ -353,6 +410,34 @@ No Phase 2 fixes were applied. The Phase 2 change summary records:
 
 This Phase 3 spec therefore records the canonical harmonization boundary from
 the current files rather than describing any post-Phase-2 code or contract edit.
+
+### Orchestrator-level fixes applied in the cascade pass
+
+1. `CA-001` was fixed in the Jira orchestrator Phase 4 playbook.
+   Rationale: the Phase 1 ledger classified this as a pure contract-shape
+   omission because the orchestrator narrowed the downstream rule by failing to
+   require an inline `Jira Subtask:` line for `Not Created` rows. The fix was to
+   restate the exact-one inline-line requirement for every numbered task.
+
+2. `CA-002` was fixed in the GitHub orchestrator Phase 4 playbook.
+   Rationale: the Phase 1 ledger classified this as a shape-only drift because
+   the playbook had loosened both dispatch and artifact expectations. The fix
+   restored unchanged `ISSUE_URL` dispatch and the exact downstream-owned Phase 4
+   artifact contract, including the handoff comment and inline matching for
+   concrete refs, `Not Created`, and `task-list`.
+
+3. `CA-003` was fixed in the GitHub orchestrator top-level Phase 4 validity
+   rule.
+   Rationale: the Phase 1 ledger classified this as a minimal documentation
+   correction because the required machine handoff comment is a preserved
+   contract element, not optional explanation. The fix restated that the comment
+   is part of artifact validity.
+
+4. `CC-002` was fixed in the GitHub orchestrator Phase 4 references.
+   Rationale: the Phase 1 ledger classified this as a straightforward cascade
+   correction because the preserved GitHub-only `Write model:` and `Capability:`
+   lines already existed downstream. The fix carried those required lines into
+   the orchestrator-facing Phase 4 handoff description.
 
 ### Preserved decisions from the Phase 1 ledger
 
@@ -368,6 +453,12 @@ the current files rather than describing any post-Phase-2 code or contract edit.
    Rationale: downstream created/linked summary rows must reflect each
    platform's real linkage outcomes, so a forced common table would either drop
    GitHub data or invent Jira-only placeholders.
+
+### Preserved decisions from the orchestrator Phase 1 ledger
+
+None. The orchestrator-level ledger recorded zero `PRESERVE` entries in this
+run, so no new platform-divergence boundary was introduced beyond the existing
+downstream-preserved differences documented above.
 
 ### Deferred naming decisions from the Phase 1 ledger
 
@@ -416,6 +507,36 @@ decision terms.
 - current outcome: the summary envelopes remain platform-native, with GitHub's
   extra metadata preserved and the naming-level harmonization left unresolved
 
+### CO-001
+
+- finding reference: `CO-001`
+- unresolved drift: cross-orchestrator strictness drift in how precisely the
+  Jira and GitHub playbooks restate downstream Phase 4 handoff rules
+- why deferred: the Phase 1 ledger treated this as a synthesized consistency
+  finding built from narrower concrete gaps already addressed by `CA-001` and
+  `CA-002`, so it did not point to one minimal standalone correction boundary
+- current outcome: the concrete playbook fixes were applied, but this spec does
+  not separately treat `CO-001` as its own independent runtime requirement
+
+### CC-001
+
+- finding reference: `CC-001`
+- unresolved drift: orchestrator-level summary-routing semantics are not yet
+  normalized as one minimal Phase 4 contract slice across the playbook,
+  data-contract quick reference, and error-handling references
+- why deferred: the Phase 1 ledger concluded that propagating downstream verdict
+  and validation routing into orchestrator control flow is a broader contract
+  refinement than the shape fixes applied in Phase 2
+- current outcome: this spec now states that coordinators interpret the
+  structured summary as routing input, but the full orchestrator-level routing
+  wording remains deferred for a later pass
+
+## Spec Staleness / Follow-Up
+
+- `SPEC_STALENESS`: None in this run. The orchestrator Phase 1 ledger recorded
+  zero `SPEC_STALENESS` entries, and the Phase 2 change summary reported no new
+  inconsistencies discovered during the fix pass.
+
 ## Known Non-Goals
 
 This harmonization spec does not cover:
@@ -426,7 +547,13 @@ This harmonization spec does not cover:
   details beyond contract shape
 - runtime implementation details for creating child items, probing capability,
   or parsing plan content
+- rewriting downstream skill contracts wholesale during an orchestrator-level
+  cascade pass
+- specifying the full orchestrator control-flow matrix for every Phase 4 summary
+  verdict beyond the currently documented handoff expectations; that follow-up
+  remains deferred where noted above
 - any change that makes either skill depend on this spec file at runtime
+- any change that makes either orchestrator depend on this spec file at runtime
 - unifying platform-native nouns where Phase 1 explicitly deferred the naming
   choice
 - validating or changing vendored skills, lockfiles, or unrelated workflow docs
