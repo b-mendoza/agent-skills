@@ -167,25 +167,33 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
 
   <phase id="3" name="analyze-full-diff">
     <steps>
-      <step id="3.1" name="run-whole-range-commands">
-        Run verbatim:
+      <step id="3.1" name="survey-range">
+        Survey the range cheaply first — these commands return summaries, not raw patch content:
 
         ```bash
         git log --oneline origin/<target_branch>..origin/<current_branch>
         git diff --shortstat origin/<target_branch>...origin/<current_branch>
         git diff --stat origin/<target_branch>...origin/<current_branch>
         git diff --name-only origin/<target_branch>...origin/<current_branch>
+        ```
+
+        Use the `--shortstat` line (insertions + deletions) and the file list to evaluate the size gate in step 3.2.
+      </step>
+      <step id="3.2" name="size-gate">
+        If `--shortstat` reports roughly more than 1000 changed lines, or the file list spans clearly unrelated areas, ask the user whether to proceed or split the work into smaller PRs. Continue only after explicit confirmation that a large PR should proceed. A declined large-PR proposal ends the workflow (the create path is not retried).
+      </step>
+      <step id="3.3" name="load-full-diff">
+        Once the size gate passes (either under-threshold or explicitly confirmed), load the full patch:
+
+        ```bash
         git diff origin/<target_branch>...origin/<current_branch>
         ```
 
-        Use this data to understand the whole PR, not just the latest commit.
-      </step>
-      <step id="3.2" name="size-gate">
-        If the diff is roughly over 1000 lines, or clearly spans unrelated areas, ask the user whether to proceed or split the work into smaller PRs. Only continue after the user explicitly confirms a large PR should proceed. A declined large-PR proposal ends the workflow; do not retry the create path.
+        Use this to ground the title and description in actual changed lines, not just the file list.
       </step>
     </steps>
     <hard_rule>If there are no commits or no diff, stop with the `EMPTY_DIFF` envelope.</hard_rule>
-    <gate>Do not enter Phase 4 until the diff range is non-empty and any large-PR confirmation is explicit.</gate>
+    <gate>Enter Phase 4 only after the diff range is non-empty, the size gate has passed, and step 3.3 has loaded the full diff.</gate>
   </phase>
 
   <phase id="4" name="draft-title">
