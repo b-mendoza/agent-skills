@@ -54,7 +54,8 @@ plan, test spec, and refactoring plan. The detailed section-level requirements
 inside those files are outside this validator's contract.
 
 For the Phase 7 precondition, validate the normal workflow handoff from Phases
-5 and 6. This confirms critique completed before execution begins.
+1-6. This confirms the issue snapshot, workflow task plan, and critique
+artifacts all exist before execution begins.
 Do not widen this check with execution-skill-internal optional inputs.
 
 | Phase | Direction     | File                                 | Checks                                                         |

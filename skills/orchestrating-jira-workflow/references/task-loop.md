@@ -282,9 +282,11 @@ DIRECTION: precondition
 TASK_NUMBER: <N>
 ```
 
-Expected: the standard workflow handoff from Phases 5 and 6 is present for the
+Expected: the standard workflow handoff from Phases 1-6 is present for the
 task:
 
+- `docs/<KEY>.md`
+- `docs/<KEY>-tasks.md`
 - `docs/<KEY>-task-<N>-brief.md`
 - `docs/<KEY>-task-<N>-execution-plan.md`
 - `docs/<KEY>-task-<N>-test-spec.md`
@@ -293,8 +295,8 @@ task:
 - `docs/<KEY>-task-<N>-decisions.md`
 
 This gate confirms that critique completed before execution begins. For this
-workflow, the Phase 7 precondition is exactly the standard handoff listed above;
-do not widen it with execution-skill-internal optional inputs.
+workflow, the Phase 7 precondition is exactly the standard handoff listed
+above; do not widen it with execution-skill-internal optional inputs.
 
 **Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY` and
 `TASK_NUMBER`. Keep any pre-task utility summaries at hand for coordination,
