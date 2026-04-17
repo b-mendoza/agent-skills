@@ -1,7 +1,7 @@
 ---
 title: "Execution Pipeline Harmonization Spec: Task Execution"
 slug: "task-execution"
-slug_derivation: "Chosen from the shared skill-pair function: executing exactly one planned task through kickoff, implementation, verification, review, fix loops, and final reporting. Renameable later if a broader harmonization taxonomy is adopted."
+slug_derivation: "Chosen from the shared skill-pair function: executing exactly one planned task through kickoff, implementation, verification, review, fix loops, and final reporting."
 applies_to:
   - "skills/executing-jira-task"
   - "skills/executing-github-task"
