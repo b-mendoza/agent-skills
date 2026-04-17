@@ -49,6 +49,23 @@ The seven workflow phases are:
 7. [`executing-jira-task`](skills/executing-jira-task/SKILL.md) implements the
    task, runs review passes, and updates both the local plan and Jira.
 
+### GitHub workflow
+
+- [`orchestrating-github-workflow`](skills/orchestrating-github-workflow/SKILL.md)
+  runs the full GitHub issue flow.
+- [`fetching-github-issue`](skills/fetching-github-issue/SKILL.md) saves an issue
+  snapshot to `docs/<ISSUE_SLUG>.md`.
+- [`planning-github-issue-tasks`](skills/planning-github-issue-tasks/SKILL.md)
+  turns that issue into a task plan in `docs/<ISSUE_SLUG>-tasks.md`.
+- [`clarifying-assumptions`](skills/clarifying-assumptions/SKILL.md) is reused
+  here for the same review and critique steps.
+- [`creating-github-child-issues`](skills/creating-github-child-issues/SKILL.md)
+  creates or updates child issues after approval.
+- [`planning-github-task`](skills/planning-github-task/SKILL.md) writes the
+  planning files for one task.
+- [`executing-github-task`](skills/executing-github-task/SKILL.md) carries one
+  planned task through implementation and review.
+
 ### Standalone skills
 
 - [`generate-handoff-document`](skills/generate-handoff-document/SKILL.md)
