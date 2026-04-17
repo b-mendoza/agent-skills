@@ -247,11 +247,12 @@ orchestrator-level postcondition validator because `executing-github-task` owns
 its internal completion and quality-gate semantics.
 
 For Phases 5-7, `./references/task-loop.md` remains the procedural authority
-when it adds task-loop-specific steps between the generic boundaries. In
-particular, Phase 5 initializes per-task progress after the precondition passes
-and before invoking `planning-github-task`.
-Treat execution-skill `BLOCKED` results in Phase 7 as hard-stop resume points,
-not as ordinary implementation gaps or generic fix-loop retries.
+when it adds task-loop-specific steps between the generic boundaries. In that
+playbook, initialize per-task progress only after the Phase 5 precondition
+passes, record Phase 7 outcomes as `complete`, `failed`, or `skipped` based on
+the downstream execution result, and treat execution-skill `BLOCKED` results as
+hard-stop resume points rather than ordinary implementation gaps or generic
+fix-loop retries.
 
 > Reminder: for Phases 1-6, run the full loop in order: validator (when needed)
 > -> downstream skill -> validator -> progress update -> gate decision. For
