@@ -1,7 +1,7 @@
 ---
-title: "Execution Pipeline Harmonization Spec: Task Planning"
-skill_group_slug: "task-planning"
-slug_derivation: "Chosen from the shared function of both validated skills: they are Phase 2 task-planning orchestrators for different platforms. `task-planning` is the shortest accurate hyphenated label that covers both without baking in Jira- or GitHub-specific terminology."
+title: "Execution Pipeline Harmonization Spec: Work Item Set Planning"
+skill_group_slug: "work-item-set-planning"
+slug_derivation: "Chosen to make Phase 2 explicit: both validated skills plan the creation of the full set of work items for different platforms. `work-item-set-planning` is the shortest accurate hyphenated label that distinguishes this phase from later single-work-item execution planning without baking in Jira- or GitHub-specific terminology."
 validated_skills:
   - "skills/planning-github-issue-tasks"
   - "skills/planning-jira-tasks"
@@ -11,13 +11,13 @@ generated_from:
   change_summary: "docs/execution-pipeline-harmonization-task-planning.change-summary.md"
 ---
 
-# Task Planning Harmonization Spec
+# Work Item Set Planning Harmonization Spec
 
 ## Purpose
 
 This document is the canonical shape-level harmonization spec for the Phase 2
-task-planning skills after the Phase 2 corrections authorized by the triage
-ledger and applied in the change summary.
+skills that plan the creation of the full work-item set, after the Phase 2
+corrections authorized by the triage ledger and applied in the change summary.
 
 It covers only shared contract shape:
 
@@ -419,10 +419,11 @@ The upstream Phase 2 artifact shape consumed by those phases remains aligned.
 
 ### D001
 
-- Decision: The canonical harmonization slug is `task-planning`.
-- Rationale: both validated skills are Phase 2 task-planning orchestrators with
-  the same three-stage planning pipeline. No narrower shared label from the
-  current file set is more accurate without introducing platform-specific terms.
+- Decision: The canonical harmonization slug is `work-item-set-planning`.
+- Rationale: both validated skills are Phase 2 orchestrators that plan the full
+  work-item set with the same three-stage planning pipeline. This label is more
+  specific than `task-planning` and avoids confusion with later single-work-item
+  execution planning, without introducing platform-specific terms.
 
 ### D002
 
@@ -482,8 +483,8 @@ This harmonization spec does not cover:
 
 ## Canonical Summary
 
-After the Phase 2 correction, the GitHub and Jira Phase 2 task-planning skills
-share one canonical shape-level contract:
+After the Phase 2 correction, the GitHub and Jira Phase 2 work-item-set-
+planning skills share one canonical shape-level contract:
 
 - the same five pipeline gates
 - the same three planning subagents plus one structural validator
