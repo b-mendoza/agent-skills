@@ -381,27 +381,70 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
   If a mid-run mutation invalidates earlier state — a push changes the diff signal, `.github/CODEOWNERS` only partly covers the changed files, labels mutate between list and create, or the user commits more work after Phase 1 — re-enter the earliest affected phase, tell the user why, and require a fresh explicit confirmation before advancing. Do not resume from cached state.
 </new_finding_rule>
 
-<example>
-  Input:
-  - Current branch: `docs/pr-creator-skill`
-  - Target branch: `main`
-  - PR state: `draft`
+<examples>
+  <example name="happy-path">
+    Input:
+    - Current branch: `docs/pr-creator-skill`
+    - Target branch: `main`
+    - PR state: `draft`
 
-  Flow:
-  1. Inspect the remote URL, current branch, and working tree state.
-  2. Fetch remote refs and confirm `gh auth status` passes.
-  3. Compare `origin/main...origin/docs/pr-creator-skill`.
-  4. Draft:
-     - Title: `docs(skills): strengthen the pr-creator workflow`
-     - Reviewers: `@docs-team`
-     - Labels: `documentation`
-  5. Show preview and let the user edit it.
-  6. After confirmation, run the platform-appropriate create command.
+    Flow:
+    1. Inspect the remote URL, current branch, and working tree state.
+    2. Fetch remote refs and confirm `gh auth status` passes.
+    3. Survey `origin/main...origin/docs/pr-creator-skill` (`--shortstat` reports 280 insertions, 60 deletions — under the size gate). Load the full diff.
+    4. Draft:
+       - Title: `docs(skills): strengthen the pr-creator workflow`
+       - Reviewers: `@docs-team`
+       - Labels: `documentation`
+    5. Show preview; user requests one wording change to the Summary; show updated preview; user approves.
+    6. Run `gh pr create --draft ...`.
 
-  Output:
-  - PR URL returned to the user
-  - Final preview values recorded in the reply
-</example>
+    Output:
+    - PR URL returned to the user.
+    - Final preview values recorded in the reply.
+  </example>
+
+  <example name="failure-envelope-declined-push">
+    Input:
+    - Current branch: `feat/checkout-redesign` (3 local commits ahead of `origin/feat/checkout-redesign`)
+    - Target branch: `main`
+
+    Flow:
+    1. Phase 1 inspection completes; platform = GitHub.
+    2. Phase 2 preflight reports the head branch is on the remote but local is 3 commits ahead.
+    3. Tell the user: "Your local branch is 3 commits ahead of `origin/feat/checkout-redesign`. A push is required before the PR can be created. Confirm to push?"
+    4. User replies "no".
+
+    Output:
+
+    ```text
+    PR_CREATE: HEAD_BRANCH_UNPUSHED
+    Reason: Local branch is 3 commits ahead of origin/feat/checkout-redesign and the user declined the push.
+    Next step: Push the branch manually (`git push origin feat/checkout-redesign`) and re-run the skill, or amend the commits before pushing.
+    ```
+
+    The workflow halts. The create path is not retried.
+  </example>
+
+  <example name="re-entry-after-mid-run-mutation">
+    Input:
+    - Current branch: `feat/billing-export`
+    - Target branch: `main`
+
+    Flow:
+    1. Phases 1–5 complete; preview is shown in Phase 7.
+    2. Before approving, the user says: "Hold on, I just committed two more files."
+    3. Re-enter Phase 1: re-run `git status --short --branch`; surface the new commits and confirm they belong in this PR.
+    4. Re-enter Phase 2: re-run preflight (the local branch is now ahead of origin again — request push confirmation, push).
+    5. Re-enter Phase 3: re-survey the diff (now 1100 lines — fires the size gate; user confirms proceed). Load the full diff.
+    6. Phases 4–6 redraft from the new diff. Phase 7 shows a fresh preview reflecting the new state.
+    7. User approves; Phase 8 creates the PR.
+
+    Output:
+    - PR URL returned to the user.
+    - Final preview values reflect the post-mutation diff, not the stale Phase 5 draft.
+  </example>
+</examples>
 
 <reference_material>
   - `./references/platform-adaptation.md` — load only when the remote is not GitHub.
