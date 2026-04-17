@@ -331,6 +331,16 @@ The Phase 1 ledger recorded no `DEFER` entries.
 | Finding | Status | Notes |
 | --- | --- | --- |
 | None | No deferred work | `docs/clarifying-assumptions-harmonization-triage-ledger.md` reports `DEFER = 0` |
+| Orchestrator cascade | No deferred work | `docs/orchestrator-alignment-ledger-clarifying-assumptions.md` records `DEFER = 0` |
+
+## Spec Staleness / Follow-Up
+
+The orchestrator alignment pass recorded no `SPEC_STALENESS` entries and no
+additional follow-up items for the canonical clarification contract.
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| None | No staleness follow-up required | `docs/orchestrator-alignment-ledger-clarifying-assumptions.md` records `SPEC_STALENESS = 0` and the Phase 0 report found no spec lag at the orchestrator boundary |
 
 ## Known Non-Goals
 
