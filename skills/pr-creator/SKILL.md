@@ -94,9 +94,22 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
   </output_contract>
 </context>
 
+## Pipeline Overview
+
+| Phase | Purpose                                                     | Gate to next phase                                                        |
+| ----- | ----------------------------------------------------------- | ------------------------------------------------------------------------- |
+| 1     | Identify repo, platform, head branch, inputs                | Platform detected; `TARGET_BRANCH` and `PR_STATE` known                   |
+| 2     | Preflight: auth, push state, base resolve                   | Auth passes; head on remote with no commits ahead; target branch resolves |
+| 3     | Survey diff, size-gate, then load full diff                 | Diff range non-empty; large-PR confirmation explicit if applicable        |
+| 4     | Draft conventional-commit title                             | Title produced (or `TITLE_OVERRIDE` applied exactly)                      |
+| 5     | Draft description grounded in diff                          | Description produced (or `BODY_OVERRIDE` applied exactly)                 |
+| 6     | Suggest reviewers (CODEOWNERS) and labels (`gh label list`) | At least one reviewer attached                                            |
+| 7     | Show preview and iterate until convergence                  | User explicitly approves the most recent preview                          |
+| 8     | Create PR via platform CLI                                  | Create command returns success                                            |
+| 9     | Verify created PR and return URL                            | URL captured; base/head match the approved preview                        |
+
 <phases>
   <phase id="1" name="identify-repo-and-head">
-    <purpose>Identify repo, hosting platform, and head branch; surface uncommitted work; gather missing inputs.</purpose>
     <steps>
       <step id="1.1" name="inspect-repo">
         Run, verbatim:
@@ -121,7 +134,6 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
   </phase>
 
   <phase id="2" name="preflight-validation">
-    <purpose>Confirm auth, remote state, and that base/head can produce a PR at all.</purpose>
     <steps>
       <step id="2.1" name="github-preflight-commands">
         For GitHub remotes, run verbatim:
@@ -154,7 +166,6 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
   </phase>
 
   <phase id="3" name="analyze-full-diff">
-    <purpose>Ground the draft in the whole PR range, not just the latest commit.</purpose>
     <steps>
       <step id="3.1" name="run-whole-range-commands">
         Run verbatim:
@@ -178,7 +189,6 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
   </phase>
 
   <phase id="4" name="draft-title">
-    <purpose>Produce a conventional-commit title grounded in the diff.</purpose>
     <steps>
       <step id="4.1" name="pick-type">
         Pick the most accurate conventional commit type from the branch diff:
@@ -213,7 +223,6 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
   </phase>
 
   <phase id="5" name="draft-description">
-    <purpose>Produce a PR body grounded in the actual diff.</purpose>
     <steps>
       <step id="5.1" name="apply-body-template">
         Unless `BODY_OVERRIDE` is supplied, use this structure:
@@ -246,7 +255,6 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
   </phase>
 
   <phase id="6" name="suggest-reviewers-and-labels">
-    <purpose>Suggest reviewers from CODEOWNERS and labels from repo metadata.</purpose>
     <steps>
       <step id="6.1" name="reviewers">
         Check `.github/CODEOWNERS`, then `CODEOWNERS`, if either file exists. Match changed files against the most relevant owners. Present the suggested reviewers to the user and let them edit the list. If no CODEOWNERS file exists, ask the user for at least one reviewer.
@@ -271,7 +279,6 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
   </phase>
 
   <phase id="7" name="preview-and-revise">
-    <purpose>Show the complete preview and iterate until the user approves.</purpose>
     <steps>
       <step id="7.1" name="show-preview">
         Show the complete preview before creating anything:
@@ -303,7 +310,6 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
   </phase>
 
   <phase id="8" name="create-pr">
-    <purpose>Create the PR on the detected hosting platform.</purpose>
     <steps>
       <step id="8.1" name="github-create">
         After explicit confirmation, create the PR with the CLI that matches the detected hosting platform. Prefer a heredoc or body file for long descriptions.
@@ -343,7 +349,6 @@ Invoked when the user asks to create or open a PR, draft pull request, merge req
   </phase>
 
   <phase id="9" name="verify">
-    <purpose>Confirm the created PR matches the approved preview and return the URL.</purpose>
     <steps>
       <step id="9.1" name="capture-url-and-verify">
         Capture and return the PR URL. Confirm the created PR uses the intended base and head branches.
