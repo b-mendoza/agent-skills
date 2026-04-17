@@ -80,16 +80,13 @@ postconditions -> update progress -> gate check**
    ```
 
 7. Expect the full Phase 2 contract, not the older shorthand only:
-   - `docs/<ISSUE_SLUG>-stage-1-detailed.md` exists
-   - `docs/<ISSUE_SLUG>-stage-2-prioritized.md` exists
-   - `docs/<ISSUE_SLUG>-tasks.md` exists
-   - The final plan contains `## Issue Summary`, `## Problem Framing`,
-     `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`,
-     `## Tasks`, `## Execution Order Summary`, `## Dependency Graph`, and
-     `## Validation Report`
-   - The final plan has at least 2 numbered task entries
-   - Each numbered task includes the eight required subsections from
-     `planning-github-issue-tasks`
+    - `docs/<ISSUE_SLUG>-stage-1-detailed.md` exists
+    - `docs/<ISSUE_SLUG>-stage-2-prioritized.md` exists
+    - `docs/<ISSUE_SLUG>-tasks.md` exists
+    - The final plan preserves this required top-level section order: `## Issue Summary`, `## Execution Order Summary`, `## Problem Framing`, `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`, `## Tasks`, `## Dependency Graph`, and `## Validation Report`
+    - The final plan has at least 2 numbered task entries
+    - Each numbered task includes the eight required subsections from
+      `planning-github-issue-tasks`
 8. Dispatch `progress-tracker` with:
 
    ```
