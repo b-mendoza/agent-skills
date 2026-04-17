@@ -7,6 +7,9 @@ sources:
   - "docs/task-planning-harmonization-phase-0-report.md"
   - "docs/task-planning-harmonization-phase-1-triage-ledger.md"
   - "docs/task-planning-harmonization-phase-2-change-summary.md"
+  - "docs/orchestrator-alignment-report-task-planning.md"
+  - "docs/orchestrator-alignment-ledger-task-planning.md"
+  - "docs/orchestrator-alignment-changes-task-planning.md"
   - "skills/planning-github-task/SKILL.md"
   - "skills/planning-github-task/references/pipeline.md"
   - "skills/planning-github-task/references/data-contracts.md"
@@ -17,8 +20,14 @@ sources:
   - "skills/planning-jira-task/SKILL.md"
   - "skills/planning-jira-task/references/pipeline.md"
   - "skills/planning-jira-task/references/data-contracts.md"
+  - "skills/orchestrating-github-workflow/SKILL.md"
+  - "skills/orchestrating-github-workflow/references/task-loop.md"
+  - "skills/orchestrating-github-workflow/references/data-contracts.md"
+  - "skills/orchestrating-jira-workflow/SKILL.md"
+  - "skills/orchestrating-jira-workflow/references/task-loop.md"
+  - "skills/orchestrating-jira-workflow/references/data-contracts.md"
   - "CLAUDE.md"
-traceability_chain: "Phase 0 established zero drift in shape, Phase 1 recorded zero `FIX`/`PRESERVE`/`DEFER` entries, Phase 2 confirmed no changes were required, and this spec records that harmonized state without changing either skill."
+traceability_chain: "Task-planning Phase 0 established zero downstream drift in shape, task-planning Phase 1 recorded zero `FIX`/`PRESERVE`/`DEFER` entries, task-planning Phase 2 confirmed no downstream changes were required, orchestrator-alignment Phase 0 found one shared GitHub task-loop contract defect expressed in three audit categories, orchestrator-alignment Phase 1 classified all three as `FIX`, orchestrator-alignment Phase 2 repaired the GitHub task-loop wording, and this spec now records the harmonized downstream-plus-orchestrator state in one canonical reference."
 ---
 
 # Execution Pipeline Harmonization Spec
@@ -30,6 +39,12 @@ the task-planning skill pair:
 
 - `skills/planning-github-task`
 - `skills/planning-jira-task`
+
+It also records the orchestrator-facing Phase 5 planning boundary those skills
+expose to:
+
+- `skills/orchestrating-github-workflow`
+- `skills/orchestrating-jira-workflow`
 
 It is descriptive, not normative for runtime loading. The skills remain
 self-contained and must not depend on this file.
@@ -43,8 +58,17 @@ self-contained and must not depend on this file.
   harmonized structure rather than introducing new shape changes.
 - Phase 2 change summary: confirmed no skill-file fixes were applied and no new
   findings were discovered.
-- This spec: converts that verified state into one harness-agnostic reference
-  for future audits.
+- Orchestrator alignment Phase 0 report: found one underlying GitHub
+  orchestrator task-loop defect expressed as three category-specific findings,
+  all limited to Phase 5 contract-shape wording.
+- Orchestrator alignment Phase 1 ledger: classified those three findings as
+  `FIX` because they were pure shape drift rather than legitimate platform
+  divergence.
+- Orchestrator alignment Phase 2 change summary: confirmed the GitHub
+  orchestrator Phase 5 task-loop wording was updated to the canonical four-stage
+  order with brief ownership restored to `execution-prepper`.
+- This spec: converts that verified downstream-plus-orchestrator state into one
+  harness-agnostic reference for future audits.
 
 ## Canonical Shared Model
 
@@ -74,6 +98,15 @@ Artifact lifecycle shape:
 - Overwrite only the file owned by an intentionally re-run subagent.
 - Do not delete planning artifacts as cleanup.
 - Do not commit planning artifacts to git.
+
+Canonical orchestrator planning-boundary pattern:
+
+- Orchestrators own the Phase 5 workflow gate, user-facing summary, and
+  artifact-presence validation.
+- Downstream planning skills own the internal section contract of the four Phase
+  5 planning artifacts.
+- Orchestrators may summarize stage outcomes, but they do not redefine stage
+  order, owned artifacts, or artifact ownership.
 
 ## Shared Contract Shape Definitions
 
@@ -114,6 +147,26 @@ Expected readiness state:
 - Open questions are resolved, explicitly waived, or recorded as follow-up
   decisions.
 - `## Decisions Log`, when present, overrides earlier task-plan wording.
+
+### Orchestrator-Level Phase 5 Boundary Shape
+
+When a workflow orchestrator invokes a task-planning skill for Phase 5, the
+shared contract shape is:
+
+- The orchestrator passes only the platform-native work-item identifier and
+  `TASK_NUMBER`, plus critique rerun inputs when applicable.
+- The orchestrator treats the planning skill as the authority for the internal
+  four-stage pipeline and detailed section requirements.
+- The orchestrator describes the Phase 5 pipeline as four ordered subagent
+  stages: `execution-prepper` -> `execution-planner` -> `test-strategist` ->
+  `refactoring-advisor`.
+- The orchestrator describes brief ownership as belonging to
+  `execution-prepper`, not `execution-planner`.
+- The orchestrator's stable Phase 5 handoff into later phases is the concrete
+  four-file artifact set, not raw subagent output.
+- The orchestrator retains only a concise completion summary: artifact paths,
+  one or two sentences on the recommended approach, the test coverage shape,
+  and the refactoring verdict.
 
 ### Downstream Artifact Section Shape
 
@@ -269,6 +322,21 @@ shared contract shape.
 
 No other divergence boundary is canonical in the current harmonized state.
 
+### Orchestrator-Level Divergence Boundaries
+
+Phase 1 recorded zero orchestrator-level `PRESERVE` ledger entries. The current
+orchestrator state still has explicit platform-vocabulary boundaries that are
+not drift because they preserve the same Phase 5 contract shape.
+
+| Divergence boundary | GitHub form | Jira form | Justification |
+| ------------------- | ----------- | --------- | ------------- |
+| Phase 5 invocation field name | `ISSUE_SLUG` | `TICKET_KEY` | The orchestrator passes the same identity role into the downstream planning skill while keeping platform-native workflow vocabulary. |
+| Planning-boundary owner reference | `planning-github-task` | `planning-jira-task` | Each orchestrator must name its own downstream planning skill, but both preserve the same four-file Phase 5 handoff contract. |
+| Four-file handoff path token | `docs/<ISSUE_SLUG>-task-<N>-...` | `docs/<TICKET_KEY>-task-<N>-...` | The file set and ownership are identical; only the identifier token differs. |
+| Next-step dispatch wording | file path or `ISSUE_SLUG` / issue reference | file path or ticket key | The orchestration handoff language reflects the platform's native tracking object without changing the planning contract. |
+
+No additional orchestrator-level divergence is canonical from this pass.
+
 ## Decisions Made During This Pass
 
 ### Decision 1: Preserve the current zero-drift contract as the canonical shape
@@ -325,22 +393,96 @@ Result:
 
 - The spec is a reference document under `docs/` only.
 
+### Decision 5: Extend the canonical spec to cover orchestrator-facing Phase 5 boundaries
+
+Rationale:
+
+- The original spec was sufficient for downstream skill alignment, which is why
+  the earlier task-planning harmonization pass found zero downstream drift.
+- The orchestrator-alignment ledger notes that any future need to extend the
+  canonical spec for orchestrator-level outcomes belongs in Phase 3 rather than
+  as a new `SPEC_STALENESS` finding.
+- Future audits need one canonical place to verify that orchestrators defer the
+  internal stage contract to the planning skills while still documenting the
+  correct four-file handoff and summary boundary.
+
+Result:
+
+- This spec now includes explicit orchestrator-level Phase 5 boundary
+  expectations alongside the downstream planning contract.
+
+### Decision 6: Record the Phase 2 GitHub orchestrator repair as one underlying fix with three audit views
+
+Rationale:
+
+- The Phase 1 ledger recorded three `FIX` entries: `contract alignment / 1`,
+  `cross-orchestrator consistency / 1`, and `cascade completeness / 1`.
+- All three entries reference the same underlying defect in
+  `skills/orchestrating-github-workflow/references/task-loop.md`: omission of
+  `execution-prepper`, incorrect brief ownership, and resulting drift from both
+  the Jira orchestrator and the downstream GitHub planning skill.
+- Phase 2 corrected that wording without changing dependencies, tools, or
+  functional capability, which confirms the ledger's classification rationale.
+
+Result:
+
+- The canonical orchestrator contract now explicitly requires the four-stage
+  order and `execution-prepper` brief ownership, and treats the three Phase 1
+  `FIX` entries as category views of one repaired contract-shape defect.
+
+### Decision 7: Treat orchestrator platform wording as bounded divergence, not as grounds for new preservation entries
+
+Rationale:
+
+- The orchestrator-alignment pass recorded zero `PRESERVE` findings because the
+  reviewed zero-drift references did not require triage entries.
+- The current Jira and GitHub orchestrators still use different platform-native
+  nouns at the Phase 5 boundary, but those differences do not alter stage order,
+  artifact ownership, or the four-file handoff.
+
+Result:
+
+- This spec now lists those orchestrator-level vocabulary differences as
+  explicit divergence boundaries so future passes do not misclassify them as
+  drift.
+
 ## Deferred Items
 
 Every `DEFER` entry from the Phase 1 ledger:
 
 - None. `docs/task-planning-harmonization-phase-1-triage-ledger.md` records
   zero `DEFER` entries.
+- None. `docs/orchestrator-alignment-ledger-task-planning.md` records zero
+  `DEFER` entries.
+
+## Spec Staleness / Follow-up
+
+Every `SPEC_STALENESS` entry from the reviewed ledgers:
+
+- None. `docs/task-planning-harmonization-phase-1-triage-ledger.md` records
+  zero `SPEC_STALENESS` entries.
+- None. `docs/orchestrator-alignment-ledger-task-planning.md` records zero
+  `SPEC_STALENESS` entries.
+
+Follow-up note:
+
+- The orchestrator-alignment ledger explicitly states that extending this spec
+  for orchestrator-level outcomes was a Phase 3 documentation task, not a
+  contradiction requiring a `SPEC_STALENESS` classification.
 
 ## Known Non-Goals
 
 This harmonization spec does not cover:
 
 - Editing either planning skill or any subagent definition.
+- Editing either orchestrator during this documentation phase.
 - Merging GitHub and Jira skills into one runtime skill.
 - Normalizing platform-specific nouns out of the skills.
+- Replacing orchestrator-owned Phase 5 task-loop instructions with this spec, or
+  making orchestrators load this file at runtime.
 - Defining critique-step contracts beyond the `DECISIONS_FILE` handoff used by
   reruns.
+- Defining Phases 6 and 7 beyond the planning-boundary handoff they consume.
 - Changing artifact lifecycle policy.
 - Introducing new validation tooling, schema enforcement, or CI.
 - Defining how downstream task-execution or critique skills consume these
