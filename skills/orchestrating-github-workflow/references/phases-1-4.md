@@ -66,7 +66,9 @@ postconditions -> update progress -> gate check**
 3. Expect: `docs/<ISSUE_SLUG>.md` exists and still satisfies the full Phase 1
    snapshot contract, not just a single-section check.
 4. Read the phase skill and invoke it with:
-   - `ISSUE_SLUG` (and `ISSUE_URL` or owner/repo/number as the skill requires)
+   - `ISSUE_SLUG`
+   - Optional: `RE_PLAN=true`
+   - Optional: `DECISIONS=<accepted decisions from critique>`
 5. The downstream skill produces `docs/<ISSUE_SLUG>-tasks.md` plus planning
    intermediates.
 6. Dispatch `artifact-validator` with:
