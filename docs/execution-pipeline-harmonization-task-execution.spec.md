@@ -9,6 +9,9 @@ source_inputs:
   - "docs/execution-pipeline-harmonization-task-execution.reconciliation-report.md"
   - "docs/execution-pipeline-harmonization-task-execution.triage-ledger.md"
   - "docs/execution-pipeline-harmonization-task-execution.change-summary.md"
+  - "docs/orchestrator-alignment-report-task-execution.md"
+  - "docs/orchestrator-alignment-ledger-task-execution.md"
+  - "docs/orchestrator-alignment-changes-task-execution.md"
   - "CLAUDE.md"
 status: "canonical"
 phase: 3
@@ -36,6 +39,26 @@ This spec covers:
 - Phase 1 harmonization decisions that govern the current shared shape
 
 This spec does not introduce new steps, tools, dependencies, or capabilities.
+
+## Traceability
+
+- The downstream harmonization pass established the canonical per-task execution
+  shape captured in this spec.
+- The orchestrator alignment pass reviewed how
+  `skills/orchestrating-jira-workflow` and
+  `skills/orchestrating-github-workflow` restate and escalate that Phase 7
+  contract.
+- The Phase 1 orchestrator ledger classified four findings as `FIX`, with zero
+  `PRESERVE`, zero `DEFER`, and zero `SPEC_STALENESS` entries.
+- The Phase 2 orchestrator change summary recorded that both orchestrators now
+  summarize Phase 7 with the full downstream stage order and now include
+  blocked review-gate verdicts from `clean-code-reviewer`,
+  `architecture-reviewer`, and `security-auditor` in Phase 7 escalation
+  handling.
+
+This spec therefore remains the canonical downstream contract reference while
+also documenting the orchestrator-level Phase 7 expectations that must stay in
+sync with it.
 
 ## Canonical Shared Contract Shape
 
@@ -263,6 +286,27 @@ Ordering rules:
 - the run stops after the selected task; it never auto-continues to the next
   task
 
+### Orchestrator-level Phase 7 restatement contract
+
+When a top-level Jira or GitHub workflow orchestrator refers to Phase 7 of task
+execution, it must preserve the downstream execution-stage shape rather than
+compressing it into older shorthand.
+
+Required orchestrator-level expectations:
+
+- a Phase 7 workflow summary must use the full downstream stage order:
+  `Readiness -> Kickoff -> Execution -> Documentation -> Requirements Verification -> Quality Gates -> Targeted Fix Cycle -> Final Report`
+- a Phase 7 summary may remain concise, but it must not omit the existence of
+  documentation, requirements verification, ordered review gates, targeted fix
+  cycles, or the final report
+- a Phase 7 escalation summary must treat blocked or error outcomes from the
+  full downstream pipeline as in-scope escalation inputs, including blocked
+  review-gate verdicts from `clean-code-reviewer`, `architecture-reviewer`, and
+  `security-auditor`
+- this restatement rule is shape-only; it does not require orchestrators to
+  take over runtime execution decisions that remain owned by the downstream
+  execution skills
+
 ## Subagent Dispatch Conventions
 
 Both skills must use the same orchestration conventions:
@@ -351,6 +395,99 @@ The following are shape drift and should be harmonized rather than preserved:
 
 ## Decisions From This Pass
 
+### Orchestrator alignment decisions from this run
+
+#### Decision 1: Fix Jira Phase 7 overview restatement
+
+Source:
+
+- Orchestrator Phase 1 ledger `Entry 1`
+- Orchestrator Phase 2 applied fix `Entry 1`
+
+Decision:
+
+- the Jira orchestrator must summarize Phase 7 using the full downstream stage
+  order:
+  `Readiness -> Kickoff -> Execution -> Documentation -> Requirements Verification -> Quality Gates -> Targeted Fix Cycle -> Final Report`
+
+Rationale derived from the Phase 1 ledger:
+
+- the earlier Jira wording was shape drift against the canonical execution
+  pipeline, not a legitimate Jira-specific divergence
+- keeping the full stage order in the orchestrator preserves downstream
+  contract visibility without changing tooling, runtime behavior, or Jira-only
+  content
+
+#### Decision 2: Fix GitHub Phase 7 overview restatement
+
+Source:
+
+- Orchestrator Phase 1 ledger `Entry 2`
+- Orchestrator Phase 2 applied fix `Entry 2`
+
+Decision:
+
+- the GitHub orchestrator must summarize Phase 7 using the same full downstream
+  stage order:
+  `Readiness -> Kickoff -> Execution -> Documentation -> Requirements Verification -> Quality Gates -> Targeted Fix Cycle -> Final Report`
+
+Rationale derived from the Phase 1 ledger:
+
+- the earlier GitHub wording had the same shape-level compression as the Jira
+  variant and likewise drifted from the canonical downstream contract
+- restoring the full stage order keeps the orchestrator aligned with the owned
+  downstream execution shape without introducing new GitHub-specific behavior
+
+#### Decision 3: Fix Jira Phase 7 escalation surface
+
+Source:
+
+- Orchestrator Phase 1 ledger `Entry 3`
+- Orchestrator Phase 2 applied fix `Entry 3`
+
+Decision:
+
+- the Jira orchestrator's Phase 7 escalation handling must include blocked
+  review-gate verdicts from `clean-code-reviewer`, `architecture-reviewer`, and
+  `security-auditor` alongside earlier blockers from `execution-starter`,
+  `task-executor`, `documentation-writer`, and `requirements-verifier`
+
+Rationale derived from the Phase 1 ledger:
+
+- the downstream execution contract already requires blocked and error states to
+  be preserved across the full pipeline, including review gates
+- widening the Jira orchestrator's escalation summary is therefore a contract
+  shape correction, not a new execution capability
+
+#### Decision 4: Fix GitHub Phase 7 escalation surface
+
+Source:
+
+- Orchestrator Phase 1 ledger `Entry 4`
+- Orchestrator Phase 2 applied fix `Entry 4`
+
+Decision:
+
+- the GitHub orchestrator's Phase 7 escalation handling must include blocked
+  review-gate verdicts from `clean-code-reviewer`, `architecture-reviewer`, and
+  `security-auditor` alongside earlier blockers from `execution-starter`,
+  `task-executor`, `documentation-writer`, and `requirements-verifier`
+
+Rationale derived from the Phase 1 ledger:
+
+- the missing review-gate blockers were contract-shape drift, not a legitimate
+  GitHub-only divergence
+- widening the escalation summary keeps the orchestrator consistent with the
+  downstream pipeline it delegates to while preserving GitHub workflow
+  independence
+
+### Orchestrator-level preserve boundaries from this run
+
+No additional orchestrator-level `PRESERVE` boundaries were identified. The
+Phase 1 ledger records `PRESERVE: 0`, so this run introduces no new
+platform-divergence boundary beyond the downstream content-level differences
+already documented in `Platform-Specific Divergence Boundaries`.
+
 ### Decision 1: Preserve fixed review section lists with explicit `None`
 
 Source:
@@ -386,6 +523,11 @@ Audit implication:
 No deferred items. The Phase 1 ledger records `DEFER: 0`, and the Phase 2
 change summary states `No deferred items.`
 
+## Spec Staleness / Follow-Up
+
+No spec staleness items were recorded in this run. The Phase 1 ledger records
+`SPEC_STALENESS: 0`, and the Phase 2 change summary states `None.`
+
 ## Known Non-Goals
 
 This harmonization does not cover:
@@ -394,6 +536,10 @@ This harmonization does not cover:
 - adding new tracker operations, commands, or dependencies
 - altering commit strategy beyond the existing documentation-writer contract
 - redefining task-planning phases that happen before per-task execution begins
+- collapsing Jira and GitHub top-level orchestrators into a shared runtime or
+  shared tracker behavior layer
+- requiring top-level orchestrators to inspect raw execution artifacts instead
+  of honoring downstream Phase 7 summaries and verdicts
 - harmonizing the semantic content of Jira-specific and GitHub-specific tracker
   operations where the underlying platforms genuinely differ
 - making the runtime skills depend on this spec file
