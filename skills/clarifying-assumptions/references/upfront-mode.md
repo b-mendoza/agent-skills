@@ -22,8 +22,12 @@ Read `../subagents/critique-analyzer.md`, then dispatch with:
   - `docs/<TICKET_KEY>-stage-1-detailed.md`
   - `docs/<TICKET_KEY>-stage-2-prioritized.md`
 - `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-upfront-critique.md`
-- `PRIOR_DECISIONS_FILE=docs/<TICKET_KEY>-tasks.md` only when `ITERATION > 1`
-- `PRIOR_DECISIONS_KIND=main-log` when `PRIOR_DECISIONS_FILE` is provided
+- `PRIOR_DECISIONS_FILE=docs/<TICKET_KEY>-tasks.md`
+- `PRIOR_DECISIONS_KIND=main-log`
+
+The analyzer consults the main `## Decisions Log` on every run, including
+`ITERATION=1`. It decides by substance whether a candidate concern is already
+answered, so changed wording or reassigned item IDs do not justify re-asking it.
 
 Handle the verdicts:
 
@@ -80,6 +84,9 @@ Questions now: <N> | Deferred: <M> | Irrelevant: <R>
 After the preview, ask:
 
 > Ready to start? I'll walk through these one at a time.
+
+If `Questions now: 0`, say so clearly, do not emit a placeholder prompt, and
+skip directly to Stage 5 with an empty decision list.
 
 ## Stage 4 — Clarify Inline
 

@@ -25,8 +25,12 @@ Read `../subagents/critique-analyzer.md`, then dispatch with:
   - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md`
 - `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-task-<TASK_NUMBER>-critique.md`
 - `PRIOR_DECISIONS_FILE=docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md`
-  only when `ITERATION > 1`
-- `PRIOR_DECISIONS_KIND=per-task` when `PRIOR_DECISIONS_FILE` is provided
+- `PRIOR_DECISIONS_KIND=per-task`
+
+The analyzer consults that decisions file on every run, including
+`ITERATION=1`. If the file does not exist yet, it treats the source as empty.
+When the file exists, it judges prior answers by substance rather than by item
+ID or exact wording.
 
 Handle the verdicts:
 
@@ -77,8 +81,8 @@ Deferred questions still relevant: <Q>
 Deferred questions now irrelevant: <R>
 ```
 
-If there are no items left after filtering, say so clearly and skip to the
-recording step with an empty decision list.
+If there are no items left after filtering, say so clearly, do not emit a
+placeholder prompt, and skip to the recording step with an empty decision list.
 
 ## Stage 4 — Clarify Inline
 
