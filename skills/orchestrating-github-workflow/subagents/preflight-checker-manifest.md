@@ -10,11 +10,12 @@
 
 ## Classification
 
-All dependencies are **Required**. A passing preflight verifies that every
-requested dependency is available, with `UNKNOWN` reserved only for inherently
-ambiguous checks. Any requested dependency confirmed as `MISSING` produces a
-`FAIL` verdict. There is no optional/recommended tier. This is enforced both
-here (preflight) and by each subagent at runtime (defense-in-depth).
+Dependencies listed in a phase table are required unless that phase explicitly
+marks one as recommended-only. A passing preflight verifies that every
+requested required dependency is available, with `UNKNOWN` reserved only for
+inherently ambiguous checks. Any requested required dependency confirmed as
+`MISSING` produces a `FAIL` verdict. This is enforced both here (preflight)
+and by each subagent at runtime (defense-in-depth).
 
 ---
 
@@ -93,9 +94,9 @@ execution.
 | `/architecture-patterns`     | Skill | architecture-reviewer  | Run `/find-skills architecture-patterns` or check skill dir       | `skills install wshobson/agents/architecture-patterns`                          |
 | `/api-security-best-practices` | Skill | security-auditor     | Run `/find-skills api-security-best-practices` or check skill dir | `skills install sickn33/antigravity-awesome-skills/api-security-best-practices` |
 
-`context7` is **recommended but not required** for Phase 7 review quality. The
-reviewers are written to use it when available and to lower confidence when it
-is not. Do not fail preflight solely because `context7` is unavailable.
+`context7` is recommended-only for Phase 7 review quality. The reviewers use it
+when available and lower confidence when it is not. Do not fail preflight
+solely because `context7` is unavailable.
 
 ---
 
