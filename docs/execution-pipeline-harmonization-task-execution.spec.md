@@ -291,16 +291,32 @@ Canonical subagent roster and sequence:
 
 Dispatch-shape requirements by handoff:
 
-- `execution-starter` receives the two top-level inputs plus snapshot path, task
-  plan path, and execution brief path
-- `task-executor` receives planning artifact paths and optional fix/resume
-  context
+- `execution-starter` receives this exact current-state shape:
+  - required: the two top-level inputs, snapshot path, task plan path, and
+    execution brief path
+  - optional: concise readiness/context summaries already reduced to short
+    status notes (for example current tracker status or codebase-state notes);
+    these supplement but do not replace the path-based source artifacts
+- `task-executor` receives this exact current-state shape:
+  - required: brief path, execution plan path, test spec path, refactoring plan
+    path, decisions path
+  - optional: critique path, fix brief, previous execution report
 - `documentation-writer` receives `EXECUTION_REPORT` plus the two top-level
   inputs
 - `requirements-verifier` receives brief path, test spec path,
   `EXECUTION_REPORT`, and `DOCUMENTATION_REPORT`
+- `clean-code-reviewer` receives brief path, test spec path, refactoring plan
+  path, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, and
+  `VERIFICATION_RESULT`
+- `architecture-reviewer` receives brief path, execution plan path,
+  `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT`, and
+  `CODE_REVIEW`
+- `security-auditor` receives brief path, `EXECUTION_REPORT`,
+  `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT`, `CODE_REVIEW`, and
+  `ARCHITECTURE_REVIEW`
 - later reviewers accumulate earlier verdicts in order instead of skipping
-  earlier gates
+  earlier gates, but that accumulation does not replace reviewer-specific
+  required artifact paths that are part of the current contract shape
 
 ## Platform-Specific Divergence Boundaries
 
