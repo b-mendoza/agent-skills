@@ -370,10 +370,11 @@ summary needed to decide the next move:
 - Critical validator or progress failures -> stop progression and present the
   blocking summary
 - Phase 7 `BLOCKED` from `execution-starter`, `task-executor`,
-  `documentation-writer`, or `requirements-verifier` -> surface the exact
-  missing capability, unsafe workspace state, or blocked dependency, treat it
-  as a user-steered pause, and resume from the blocked Phase 7 step after it
-  is resolved
+  `documentation-writer`, `requirements-verifier`, `clean-code-reviewer`,
+  `architecture-reviewer`, or `security-auditor` -> surface the exact missing
+  capability, unsafe workspace state, or blocked dependency, treat it as a
+  user-steered pause, and resume from the blocked Phase 7 step after it is
+  resolved
 - Downstream execution `ERROR` or exhausted execution-skill fix cycle -> do not
   mark the task complete; follow `./references/task-loop.md` and
   `./references/error-handling.md`
