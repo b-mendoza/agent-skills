@@ -244,6 +244,28 @@ creates unnecessary drift risk and breaks the shared-skill boundary.
 Justification: downstream side-effect behavior belongs to later workflow phases,
 not to the clarification pipeline.
 
+### Boundary 6: Parent validator parameter names
+
+- Jira validator dispatches use `TICKET_KEY`.
+- GitHub validator dispatches use `ISSUE_SLUG`.
+- The shared clarification skill still receives the normalized runtime input
+  name `TICKET_KEY`.
+
+Justification: validator dispatches are parent-workflow-local contracts, while
+the clarification skill boundary remains normalized and shared.
+
+### Boundary 7: Parent user-gate wording after clarification
+
+- Jira may present Jira-specific next-step language before Phase 4 or Phase 7.
+- GitHub may present GitHub-specific next-step language before Phase 4 or Phase
+  7.
+- Both orchestrators must still preserve the same clarification-owned gate
+  semantics: stop on blockers, re-plan on `RE_PLAN_NEEDED`, and require an
+  explicit user go-ahead before mutation phases.
+
+Justification: prompt wording may stay platform-native, but the branching logic
+at the clarification boundary is shared and contractually stable.
+
 ## Decisions Made During This Pass
 
 ### F-001: Neutral summary-slot alias accepted
