@@ -148,6 +148,16 @@ Each numbered phase is owned by a dedicated downstream skill. Read that skill's
 | 6     | `clarifying-assumptions` | `../clarifying-assumptions/SKILL.md` |
 | 7     | `executing-jira-task`  | `../executing-jira-task/SKILL.md`    |
 
+## Clarification Dispatch Mapping
+
+`clarifying-assumptions` always receives its workflow identity through input
+`TICKET_KEY`. For the Jira workflow, pass the Jira ticket key directly.
+
+| Phase | Mode | Dispatch inputs |
+| ----- | ---- | --------------- |
+| 3     | `upfront` | `TICKET_KEY=<TICKET_KEY>`, `MODE=upfront`, `ITERATION=<N>` |
+| 6     | `critique` | `TICKET_KEY=<TICKET_KEY>`, `MODE=critique`, `TASK_NUMBER=<N>`, `ITERATION=<N>` |
+
 ## How This Skill Works
 
 The orchestrator protects its context window aggressively. It holds only:

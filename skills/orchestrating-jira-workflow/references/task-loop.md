@@ -169,10 +169,11 @@ Expected: the same four Phase 5 planning artifacts still exist:
 **Invoke:** Read the skill's SKILL.md and invoke with:
 
 - `MODE=critique`
-- `TICKET_KEY`
+- `TICKET_KEY=<KEY>`
 - `TASK_NUMBER`
 - `ITERATION=<current iteration or 1>`
 
+`clarifying-assumptions` uses `TICKET_KEY` as its workflow key for this run.
 The skill derives the standard artifact paths from `TICKET_KEY` and
 `TASK_NUMBER`. The Phase 5 planning artifacts remain on disk for its delegated
 reads.

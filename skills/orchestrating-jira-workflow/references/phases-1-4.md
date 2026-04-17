@@ -117,11 +117,12 @@ postconditions -> update progress -> gate check**
    - `docs/<KEY>-stage-2-prioritized.md` still exists
    - `docs/<KEY>-tasks.md` still satisfies the full Phase 2 postcondition
 4. Read the phase skill and invoke it with:
-   - `MODE=upfront`
-   - `TICKET_KEY`
-   - `ITERATION=<current iteration or 1>`
-   - Let the skill derive the standard artifact paths from `TICKET_KEY`; the
-     validated Phase 2 artifacts stay on disk for the downstream reads
+    - `MODE=upfront`
+    - `TICKET_KEY=<KEY>`
+    - `ITERATION=<current iteration or 1>`
+    - `clarifying-assumptions` uses `TICKET_KEY` as its workflow key for this
+      run. Let the skill derive the standard artifact paths from that value; the
+      validated Phase 2 artifacts stay on disk for the downstream reads
 5. The downstream skill handles user-facing critique and clarification inline,
    while delegating its analysis helpers.
 

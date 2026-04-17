@@ -167,9 +167,16 @@ Each numbered phase is owned by a dedicated downstream skill. Read that skill's
 | 6     | `clarifying-assumptions`   | `../clarifying-assumptions/SKILL.md`     |
 | 7     | `executing-github-task`    | `../executing-github-task/SKILL.md`      |
 
-**Note:** `clarifying-assumptions` expects input `TICKET_KEY`. For this workflow,
-set **`TICKET_KEY` = `ISSUE_SLUG`** so artifact paths resolve to
-`docs/<ISSUE_SLUG>-…`.
+## Clarification Dispatch Mapping
+
+`clarifying-assumptions` always receives its workflow identity through input
+`TICKET_KEY`. For the GitHub workflow, map `ISSUE_SLUG` into that input so the
+clarification artifacts resolve to `docs/<ISSUE_SLUG>-...`.
+
+| Phase | Mode | Dispatch inputs |
+| ----- | ---- | --------------- |
+| 3     | `upfront` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=upfront`, `ITERATION=<N>` |
+| 6     | `critique` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=critique`, `TASK_NUMBER=<N>`, `ITERATION=<N>` |
 
 ## How This Skill Works
 
