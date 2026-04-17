@@ -17,15 +17,16 @@ early and return a compact verdict the orchestrator can act on immediately.
 | `ISSUE_SLUG`  | Yes      | `acme-app-42`                                        |
 | `PHASES`      | No       | `1,2,3,4` or `5-7`                                   |
 | `ISSUE_URL`   | No       | `https://github.com/acme/app/issues/42`              |
+| `OWNER`       | No       | `acme`                                               |
+| `REPO`        | No       | `app`                                                |
 
 If `PHASES` is omitted, validate the full workflow. If it is provided, check
 only the dependencies needed by those remaining phases. Accept both comma lists
 and inclusive ranges such as `1,2,4` or `5-7`.
 
-When phases include GitHub reads or writes (typically 1, 4, and 7), prefer
-having `ISSUE_URL` or owner/repo context available so you can run a lightweight
-`gh` check; the orchestrator may pass it even though this subagent does not
-require it for every phase range.
+When phases include GitHub reads or writes (typically 1, 4, and 7), the
+orchestrator may pass `ISSUE_URL`, `OWNER`, and `REPO` as additional issue
+context even though this subagent does not require them for every phase range.
 
 ## Instructions
 

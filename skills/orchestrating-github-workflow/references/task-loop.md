@@ -44,6 +44,10 @@ Before entering the loop for a task:
    | Relevant code to locate     | `code-reference-finder`  |
    | Documentation / config      | `documentation-finder`   |
 
+   For `issue-status-checker`, pass `ISSUE_URL` when available. Otherwise pass
+   `OWNER`, `REPO`, and `ISSUE_NUMBER` with `ISSUE_SLUG`; `ISSUE_SLUG` alone is
+   not enough to locate the issue.
+
    Not all dispatches are needed every time — use judgment based on the task.
 
 4. **Prepare task tracking.** Do not initialize task progress yet.
