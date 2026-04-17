@@ -40,8 +40,8 @@ Phase 3: Clarify + Critique  -> docs/<TICKET_KEY>-upfront-critique.md + docs/<TI
 Phase 4: Create subtasks     -> docs/<TICKET_KEY>-tasks.md updated with `## Jira Subtasks` + per-task subtask links
 Phase 5: Plan task execution -> docs/<TICKET_KEY>-task-<N>-{brief,execution-plan,test-spec,refactoring-plan}.md
 Phase 6: Clarify + Critique  -> docs/<TICKET_KEY>-task-<N>-critique.md + docs/<TICKET_KEY>-task-<N>-decisions.md
-Phase 7: Kick off + execute  -> first side effects, code changes, tests, commits
-         ^___________________/  repeat phases 5-7 per task
+Phase 7: Readiness -> Kickoff -> Execution -> Documentation -> Requirements Verification -> Quality Gates -> Targeted Fix Cycle -> Final Report
+         ^_______________________________________________________________________________________________________________________________/  repeat phases 5-7 per task
 ```
 
 Throughout this skill, `<TICKET_KEY>` means the derived ticket key from
