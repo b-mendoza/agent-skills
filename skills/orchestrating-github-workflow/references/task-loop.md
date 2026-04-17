@@ -93,10 +93,14 @@ utility summaries for coordination and only pass them forward when the
 downstream skill explicitly asks for them. Follow every step defined in the
 skill.
 
-The skill is expected to run a multi-subagent planning pipeline: `execution-planner`
-builds the execution plan and brief, `test-strategist` produces the test strategy,
-and `refactoring-advisor` produces the refactoring recommendation. The
-authoritative subagent contracts live in `planning-github-task`.
+The skill runs a 4-subagent pipeline:
+
+1. `execution-prepper` — validates the task and assembles the execution brief
+2. `execution-planner` — inspects the codebase and writes the execution plan
+3. `test-strategist` — writes the behavior-driven test specification
+4. `refactoring-advisor` — writes the refactoring recommendation
+
+The authoritative subagent contracts live in `planning-github-task`.
 
 **Validate output:** Dispatch `artifact-validator`:
 
