@@ -140,14 +140,17 @@ Shared handoff rule:
 The canonical report family uses fixed sectioned markdown with an explicit
 top-level status or verdict line.
 
-Required shared patterns:
+Required report contracts:
 
-- `execution-starter` returns `## Execution Kickoff Report` with `### Status`
-- `task-executor` returns `## Execution Report` with `### Status`
-- `documentation-writer` returns `## Documentation Report` with `### Status`
-- `requirements-verifier` returns `## Requirements Verification` with
-  `### Verdict`
-- review gates return a review-specific title with `### Verdict`
+| Stage / subagent | Title | Status section | Fixed sections after status |
+| ---------------- | ----- | -------------- | --------------------------- |
+| kickoff / `execution-starter` | `## Execution Kickoff Report` | `### Status` | `### Task Readiness`, `### Workspace Readiness`, `### Tracker Kickoff`, `### Next Step`, `### Blockers or Ambiguities` |
+| execution / `task-executor` | `## Execution Report` | `### Status` | `### Refactoring Applied`, `### Changes Made`, `### Tests`, `### Guidance Used`, `### Definition of Done Checklist`, `### Blockers or Context Needed`, `### Out-of-Scope Observations` |
+| documentation / `documentation-writer` | `## Documentation Report` | `### Status` | `### Files Documented`, `### Files Intentionally Skipped`, `### Documentation Decisions`, `### Prose Review`, `### Commits Made`, `### Tracking Updates`, `### Blockers or Ambiguities` |
+| requirements verification / `requirements-verifier` | `## Requirements Verification` | `### Verdict` | `### Requirements Checklist`, `### Gaps`, `### Regression Check`, `### Summary` |
+| clean-code review / `clean-code-reviewer` | `## Code Quality Review` | `### Verdict` | `### External Validation`, `### Must Fix`, `### Should Fix`, `### Suggestions`, `### What Went Well`, `### Blockers or Ambiguities` |
+| architecture review / `architecture-reviewer` | `## Architecture Review` | `### Verdict` | `### External Validation`, `### DDD Assessment`, `### Composition Assessment`, `### Must Fix`, `### Should Fix`, `### Suggestions`, `### What Went Well`, `### Blockers or Ambiguities` |
+| security review / `security-auditor` | `## Security Audit` | `### Verdict` | `### External Validation`, `### Critical Issues`, `### High Issues`, `### Medium Issues`, `### Advisories`, `### What Went Well`, `### Credential Scan Summary`, `### Blockers or Ambiguities` |
 
 Shared status vocabulary by stage:
 
@@ -342,9 +345,11 @@ A future reviewer can compare each skill against this spec by confirming:
 4. The pipeline stage order still matches the canonical sequence.
 5. The same seven subagents still own the same pipeline roles.
 6. Structured handoff names still match the canonical report family.
-7. Requirements verification still occurs before any review gate.
-8. Review gates still run in clean-code, architecture, security order.
-9. Required empty review sections still remain present with explicit `None`
-   placeholders.
-10. Any Jira/GitHub differences remain within the legitimate divergence
+7. Each stage report still uses the canonical title and fixed section list named
+   in this spec.
+8. Requirements verification still occurs before any review gate.
+9. Review gates still run in clean-code, architecture, security order.
+10. Required empty review sections still remain present with explicit `None`
+    placeholders.
+11. Any Jira/GitHub differences remain within the legitimate divergence
     boundaries above rather than changing contract shape.
