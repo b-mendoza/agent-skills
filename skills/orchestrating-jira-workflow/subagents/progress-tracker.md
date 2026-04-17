@@ -28,6 +28,9 @@ Additional inputs by action:
 
 Allowed status values: `complete`, `active`, `failed`, `skipped`
 
+When reporting current workflow state, `pending` is also valid as a derived
+read-only summary for phases or tasks that have not started yet.
+
 When `TASKS` is provided for Phase 4 completion, each task entry should carry
 task number, title, dependencies, and priority when known. The entry may also
 carry Phase 4 linkage metadata such as subtask key or outcome; preserve the
