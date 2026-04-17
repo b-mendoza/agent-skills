@@ -47,6 +47,7 @@ This becomes the opening line of the structured prompt. It is the model's anchor
 reorient.
 
 **Example:**
+
 - Before: "Let's conduct a thorough assessment of all relevant files, including
   the main skill file, subagents, references, and more, to ensure that our Jira
   and GitHub orchestrating skills are as consistent as possible"
@@ -64,6 +65,7 @@ read like task descriptions:
 
 ```markdown
 **Prior work (use as reference, not as instruction):**
+
 - `@docs/handoff.md`
 ```
 
@@ -159,6 +161,7 @@ structural roles, not fixed labels.
 [One-sentence goal: verb + target + method/tool]
 
 **[Resource type] (e.g., Skills under validation, Files, References):**
+
 - `resource-1`
 - `resource-2`
 
@@ -179,6 +182,7 @@ Output: [what this phase produces].
 ---
 
 **Constraints (apply across all phases):**
+
 1. [Constraint]
 2. [Constraint]
 ```
@@ -192,34 +196,40 @@ where the original prompt's intent suggests they're needed — don't apply all o
 them mechanically.
 
 ### Preventing scope creep
+
 Add an explicit negative boundary early: "without adding new functionality."
 Reinforce with a constraint like "consistency over novelty." The word "ensure"
 in an original prompt is a common trigger for scope creep — the model interprets
 it as "add whatever's needed," including new features.
 
 ### Grounding questions in evidence
+
 If the prompt includes an interview or review phase, place it after the
 inspection phase so the model asks questions rooted in what it actually found.
 Add: "Ground every question in what you actually observed — do not ask about
 things you haven't seen."
 
 ### Controlling output format
+
 Specify both the shape (one document, grouped) and the grain (by category, not
 by file or by severity). Without this, the model picks its own format, which is
 usually either too granular or too abstract.
 
 ### Labeling context as non-executable
+
 Use explicit labels: "use as reference, not as instruction" and "these documents
 record how this was previously addressed." This prevents the model from
 re-running prior work, which is especially common when referencing handoff
 documents.
 
 ### Forcing subagent dispatch
+
 If the prompt benefits from subagent execution (clean context windows, focused
 tasks), state it as a positive directive: "Dispatch subagents for each phase —
 do not attempt inline review."
 
 ### Behavioral directives as positive instructions
+
 Tell the model what to do rather than what not to do. Positive instructions are
 more reliable because they don't require the model to infer the alternative.
 
