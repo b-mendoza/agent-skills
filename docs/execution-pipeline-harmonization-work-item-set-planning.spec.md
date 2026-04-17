@@ -6,9 +6,9 @@ validated_skills:
   - "skills/planning-github-issue-tasks"
   - "skills/planning-jira-tasks"
 generated_from:
-  report: "docs/execution-pipeline-harmonization-task-planning.report.md"
-  triage: "docs/execution-pipeline-harmonization-task-planning.triage.md"
-  change_summary: "docs/execution-pipeline-harmonization-task-planning.change-summary.md"
+  report: "docs/orchestrator-alignment-report-work-item-set-planning.md"
+  triage: "docs/orchestrator-alignment-ledger-work-item-set-planning.md"
+  change_summary: "docs/orchestrator-alignment-changes-work-item-set-planning.md"
 ---
 
 # Work Item Set Planning Harmonization Spec
@@ -18,6 +18,11 @@ generated_from:
 This document is the canonical shape-level harmonization spec for the Phase 2
 skills that plan the creation of the full work-item set, after the Phase 2
 corrections authorized by the triage ledger and applied in the change summary.
+
+For this run, the spec also records the orchestrator-facing Phase 2 contract
+that surrounds those planning skills: the dispatch inputs the orchestrators may
+send, the planning intermediates they must preserve across the Phase 2 boundary,
+and the top-level final-plan order they must validate before Phase 3 critique.
 
 It covers only shared contract shape:
 
@@ -34,16 +39,23 @@ self-contained and executable from their own `SKILL.md`, `subagents/`, and
 
 ## Traceability
 
-- Phase 0 report: established the baseline alignment and identified `F001` and
-  `F002`.
-- Phase 1 triage ledger: classified `F001` as `FIX` and `F002` as `DEFER`.
-- Phase 2 change summary: recorded the implemented Stage 2 validator correction
-  for `F001` and confirmed `F002` remained untouched.
+- Phase 0 report: established the baseline alignment and identified `F001`,
+  `F002`, and `F003`.
+- Phase 1 triage ledger: classified `F001`, `F002`, and `F003` as `FIX`.
+- Phase 2 change summary: recorded the applied GitHub orchestrator dispatch and
+  final-plan-order corrections for `F001`, `F002`, and `F003`, with no new
+  `DEFER` or `SPEC_STALENESS` entries.
 
 This spec reflects the post-Phase-2 file state on disk for:
 
 - `skills/planning-github-issue-tasks`
 - `skills/planning-jira-tasks`
+- `skills/orchestrating-github-workflow/references/phases-1-4.md`
+- `skills/orchestrating-github-workflow/references/data-contracts.md`
+- `skills/orchestrating-github-workflow/subagents/artifact-validator.md`
+- `skills/orchestrating-jira-workflow/references/phases-1-4.md`
+- `skills/orchestrating-jira-workflow/references/data-contracts.md`
+- `skills/orchestrating-jira-workflow/subagents/artifact-validator.md`
 
 ## Canonical Alias Model
 
@@ -94,6 +106,23 @@ field:
 | Work-item identifier | `ISSUE_SLUG` | `TICKET_KEY` | required scalar string |
 | Re-plan flag | `RE_PLAN` | `RE_PLAN` | optional boolean-like flag |
 | Revision input | `DECISIONS` | `DECISIONS` | optional freeform string |
+
+### Orchestrator-level Phase 2 dispatch contract
+
+At the orchestrator boundary, the Phase 2 planning dispatch is shape-aligned
+across both platforms.
+
+- GitHub dispatches `planning-github-issue-tasks` with required `ISSUE_SLUG`.
+- Jira dispatches `planning-jira-tasks` with required `TICKET_KEY`.
+- Both orchestrators may additionally pass optional `RE_PLAN` and
+  `DECISIONS` inputs when a re-plan or decision-carrying rerun is needed.
+- No extra fetch-time locator fields belong to this dispatch once the snapshot
+  artifact already exists on disk.
+
+This matches the post-Phase-2 GitHub orchestrator wording in
+`skills/orchestrating-github-workflow/references/phases-1-4.md:68-72` and the
+Jira orchestrator wording in
+`skills/orchestrating-jira-workflow/references/phases-1-4.md:64-66`, `132-147`.
 
 ### Artifact path shape
 
@@ -150,6 +179,38 @@ Conditional field currently present but not canonically triggered:
 Its placement is harmonized when used: immediately after
 `**Dependencies / prerequisites:**`. Its trigger remains deferred; see
 `Deferred Items`.
+
+### Orchestrator-level Phase 2 boundary contract
+
+The orchestrator-facing Phase 2 postcondition and Phase 3 precondition share
+the same required boundary shape.
+
+Required planning intermediates:
+
+1. `docs/<KEY>-stage-1-detailed.md`
+2. `docs/<KEY>-stage-2-prioritized.md`
+3. `docs/<KEY>-tasks.md`
+
+Required top-level final-plan order at that boundary:
+
+1. `<SUMMARY_HEADING>`
+2. `## Execution Order Summary`
+3. `## Problem Framing`
+4. `## Assumptions and Constraints`
+5. `## Cross-Cutting Open Questions`
+6. `## Tasks`
+7. one or more numbered `## Task <N>: <Title>` sections
+8. `## Dependency Graph`
+9. `## Validation Report`
+
+The orchestrator references on both platforms now describe that same boundary:
+
+- GitHub: `skills/orchestrating-github-workflow/references/data-contracts.md:55`,
+  `skills/orchestrating-github-workflow/references/phases-1-4.md:82-89`, and
+  `skills/orchestrating-github-workflow/subagents/artifact-validator.md:65`
+- Jira: `skills/orchestrating-jira-workflow/references/data-contracts.md:34`,
+  `skills/orchestrating-jira-workflow/references/phases-1-4.md:76-86`, and
+  `skills/orchestrating-jira-workflow/subagents/artifact-validator.md:60`
 
 ### Stage 1 artifact shape
 
@@ -296,6 +357,12 @@ Issues: None | <semicolon-separated list of failures>
 Reason: <one line>
 ```
 
+### Cross-Orchestrator Alignment Note
+
+For this run, the orchestrator-level Phase 2 contract is aligned across Jira
+and GitHub except for platform-native identifier and summary-heading nouns.
+Ordering, required planning intermediates, and boundary shape remain shared.
+
 ## Subagent Dispatch Conventions
 
 The shared dispatch contract is:
@@ -345,8 +412,8 @@ The validator enforces the Stage 1 draft shape:
 
 ### Stage 2 boundary
 
-The validator enforces the Stage 2 prioritized-plan shape, including the Phase 2
-`F001` correction:
+The validator enforces the Stage 2 prioritized-plan shape, including the
+earlier planning-skill harmonization pass's Stage 2 validator correction:
 
 - summary heading present
 - `## Execution Order Summary` immediately after the summary heading
@@ -372,6 +439,10 @@ artifact.
 
 The following differences are legitimate content-level or platform-native
 divergences and are not shape drift.
+
+No new orchestrator-level `PRESERVE` findings were classified in this run. The
+allowed divergence boundaries below remain the explicit preserve set for this
+scope.
 
 ### Identifier field name
 
@@ -430,17 +501,22 @@ The upstream Phase 2 artifact shape consumed by those phases remains aligned.
 - Decision: The canonical Stage 2 shape now explicitly requires preservation of
   the carried-forward Stage 1 sections and immediate placement of
   `## Execution Order Summary` after the summary heading.
-- Rationale: Phase 1 triage classified `F001` as `FIX`, and Phase 2 implemented
-  that validator correction in both `stage-validator.md` files.
+- Rationale: this records the historical outcome of the earlier planning-skill
+  harmonization pass, where finding `F001` was classified as `FIX` and the
+  matching validator correction was applied in both `stage-validator.md`
+  files. It is not a reference to this orchestrator-alignment run's `F001`
+  ledger entry.
 
 ### D003
 
 - Decision: `**Dependency rationale:**` remains part of the documented Stage 2
   and final-plan shape when used, but this spec does not define a new trigger
   for when it becomes mandatory.
-- Rationale: Phase 1 triage classified `F002` as `DEFER` because the current
-  sources do not define a validator-observable trigger with enough precision to
-  standardize confidently.
+- Rationale: this preserves the historical outcome of the earlier planning-
+  skill harmonization pass, where finding `F002` was classified as `DEFER`
+  because the sources did not define a validator-observable trigger with enough
+  precision to standardize confidently. It does not describe a `DEFER`
+  classification from this orchestrator-alignment run.
 
 ### D004
 
@@ -451,9 +527,49 @@ The upstream Phase 2 artifact shape consumed by those phases remains aligned.
   differences as legitimate to preserve, while still needing a self-contained
   comparison vocabulary.
 
+### D005
+
+- Decision: The canonical spec now states the orchestrator-level Phase 2
+  dispatch contract explicitly as platform-native key plus optional `RE_PLAN`
+  and `DECISIONS`.
+- Rationale: Phase 1 ledger entry `F001` classified the previous GitHub wording
+  as `FIX` because adding `ISSUE_URL`, `OWNER`, `REPO`, or `ISSUE_NUMBER` at the
+  planning boundary was unjustified shape drift once `docs/<ISSUE_SLUG>.md`
+  already existed.
+
+### D006
+
+- Decision: The canonical spec documents the orchestrator-level Phase 2
+  boundary using the broader canonical three-artifact handoff shape:
+  `stage-1-detailed`, `stage-2-prioritized`, and the final `-tasks` file, with
+  the final file using the shared top-level section order beginning with
+  `<SUMMARY_HEADING>` then `## Execution Order Summary`.
+- Rationale: Phase 1 ledger entries `F002` and `F003` classified the GitHub
+  orchestrator ordering drift as `FIX`, and the Phase 2 change summary records
+  that the cited GitHub orchestrator references were corrected to match the Jira
+  orchestrator and downstream planning-skill contract. The intermediate
+  `stage-1-detailed` and `stage-2-prioritized` artifacts are recorded here as
+  part of that canonical boundary shape, not as a newly introduced correction
+  from this run.
+
+### D007
+
+- Decision: This run records no new orchestrator-level `PRESERVE` decisions
+  beyond the already-documented platform-native identifier, noun, snapshot, and
+  downstream-consumer naming differences in this spec.
+- Rationale: the Phase 1 ledger explicitly states that no `PRESERVE`, `DEFER`,
+  or `SPEC_STALENESS` entries were authorized from the Phase 0 finding list for
+  this scope.
+
 ## Deferred Items
 
-### F002
+### This run
+
+- No `DEFER` entries were classified in
+  `docs/orchestrator-alignment-ledger-work-item-set-planning.md`.
+- The Phase 2 change summary confirms `DEFER: None` for this run.
+
+### Historical F002 From The Prior Planning-Skill Harmonization Pass
 
 - Ledger category: `DEFER`
 - Short description: the contract includes conditional
@@ -464,6 +580,18 @@ The upstream Phase 2 artifact shape consumed by those phases remains aligned.
   the field.
 - Spec treatment: preserve the field's placement and existence in examples, but
   do not encode a mandatory trigger or validator rule.
+- Historical note: this `F002` identifier belongs to the earlier planning-
+  skill harmonization pass's finding ledger, not to the orchestrator-alignment
+  run documented above. It remains in the canonical spec to preserve that
+  earlier rationale, not as a new `DEFER` result from this run.
+
+## Spec Staleness / Follow-Up
+
+### This run
+
+- No `SPEC_STALENESS` entries were classified in
+  `docs/orchestrator-alignment-ledger-work-item-set-planning.md`.
+- The Phase 2 change summary confirms `SPEC_STALENESS: None` for this run.
 
 ## Known Non-Goals
 
@@ -477,9 +605,15 @@ This harmonization spec does not cover:
 4. downstream critique or execution behavior beyond the final artifact sections
    they consume
 5. whether `**Dependency rationale:**` should become unconditional or what exact
-   heuristic should trigger it
+    heuristic should trigger it
 6. rewording platform-native nouns like issue, ticket, child issue, or subtask
-7. runtime coupling that would require these skills to import or read this spec
+7. changing dependencies, transports, or tools just to make orchestrator prose
+   match across platforms
+8. changing platform-specific behavior or write models solely to force symmetry
+   where the workflows legitimately differ
+9. runtime coupling between the Jira and GitHub orchestrators
+10. runtime coupling that would require these skills or orchestrators to import
+    or read this spec
 
 ## Canonical Summary
 
@@ -492,6 +626,8 @@ planning skills share one canonical shape-level contract:
 - the same return-schema families
 - the same retry and re-plan conventions
 - the same Stage 1, Stage 2, Stage 3, and postpipeline boundary intent
+- the same orchestrator-level Phase 2 dispatch shape, boundary intermediates,
+  and final-plan order
 
 The remaining differences are platform-native naming and snapshot-content
 differences, not pipeline-shape divergence.
