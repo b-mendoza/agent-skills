@@ -126,7 +126,7 @@ precondition has passed.
    `docs/<ISSUE_SLUG>-task-<N>-progress.md`.
 2. Update the corresponding task row in the main progress file's Task
    Execution table:
-   - Current Phase → `Phase 5 - planning`
+   - Current Phase → `5/7 Plan`
    - Status → `🔄 Active`
 3. Append a one-line entry to the main file's `## Execution Log`:
    ```
@@ -144,7 +144,7 @@ precondition has passed.
    ```
 4. Write the updated per-task file.
 5. Update the corresponding task row in the main progress file:
-   - Current Phase → `Phase <PHASE> - <phase name>`
+   - Current Phase → `<PHASE>/7 <phase name>`
    - Status → the new status display value
    - If `PHASE=7` and `STATUS=complete`, set Status to `✅ Complete`
 6. Append a one-line entry to the main file's `## Execution Log`:
