@@ -2,371 +2,420 @@
 title: "Execution Pipeline Harmonization Spec: Clarifying Assumptions"
 status: "validated-canonical-spec"
 skill_group_slug: "clarifying-assumptions"
-slug_derivation: "Derived from the shared subject matter of the compared Jira-side and GitHub-side clarification workflows: both Phase 3 and Phase 6 flows dispatch the same `clarifying-assumptions` skill for plan-wide and task-level clarification-and-critique, while platform differences are limited to identifier shape and a small set of upstream artifact headings."
-target_skill: "skills/clarifying-assumptions"
+slug_derivation: "Derived from the shared subject matter of the compared Jira-side and GitHub-side workflows: both parent workflows dispatch the same `clarifying-assumptions` skill in plan-wide and task-level clarification phases, and the compared subagents belong to that same clarification contract surface."
+canonical_spec_path: "docs/execution-pipeline-harmonization-clarifying-assumptions.spec.md"
+target_skill: "skills/clarifying-assumptions/SKILL.md"
+target_subagents:
+  - "skills/clarifying-assumptions/subagents/critique-analyzer.md"
+  - "skills/clarifying-assumptions/subagents/question-manifest-builder.md"
+  - "skills/clarifying-assumptions/subagents/decision-recorder.md"
 comparison_inputs:
   - "skills/orchestrating-jira-workflow/SKILL.md"
-  - "skills/planning-jira-tasks/SKILL.md"
   - "skills/orchestrating-github-workflow/SKILL.md"
+  - "skills/planning-jira-tasks/SKILL.md"
   - "skills/planning-github-issue-tasks/SKILL.md"
 phase_inputs:
   - "docs/clarifying-assumptions-harmonization-report.md"
   - "docs/clarifying-assumptions-harmonization-triage-ledger.md"
   - "docs/clarifying-assumptions-harmonization-change-summary.md"
+phase_decision_counts:
+  FIX: 0
+  PRESERVE: 0
+  DEFER: 0
+traceability_chain: "report -> ledger -> change summary -> spec"
 ---
 
 # Canonical Harmonization Spec
 
 ## Purpose
 
-This specification defines the canonical execution pipeline contract for the
-shared clarification layer used by the Jira-side and GitHub-side workflows.
-It is the standalone harmonization target for `skills/clarifying-assumptions`
-after Phase 2 validation.
+This specification captures the current harmonized execution-pipeline contract
+for the shared clarification workflow used by the Jira-side and GitHub-side
+orchestrators.
 
-The canonical subject is one workflow concept with two runtime entry points:
+It is a documentation artifact, not a runtime dependency. The skill continues to
+function from its own `SKILL.md`, subagents, and references. This spec exists so
+future harmonization and audit passes have one canonical, self-contained record
+of the contract currently on disk.
 
-- plan-wide clarification before implementation starts (`MODE=upfront`)
-- task-level clarification immediately before task execution (`MODE=critique`)
+This spec is traceable to the authoritative Phase 0-2 artifacts:
 
-The pipeline, contract shapes, and subagent handoffs are shared. Platform
-differences remain bounded to upstream identifier forms and a narrow set of
-artifact-heading aliases.
+- `docs/clarifying-assumptions-harmonization-report.md`
+- `docs/clarifying-assumptions-harmonization-triage-ledger.md`
+- `docs/clarifying-assumptions-harmonization-change-summary.md`
+
+## Current Pass Outcome
+
+- Phase 0 report findings: `0`
+- Phase 1 triage counts: `FIX=0`, `PRESERVE=0`, `DEFER=0`
+- Phase 2 applied fixes: none
+- Phase 3 canonicalization posture: document the current harmonized state on disk
+
+Because the ledger is a zero-entry ledger, this pass made no FIX decisions and
+applied no hidden runtime edits. The canonical spec records the current shared
+contract exactly as implemented by the existing skill and subagent files.
 
 ## Shared Contract Shape Definitions
 
-### Canonical identity
+### Canonical identity shape
 
-- Canonical work-item placeholder: `<KEY>`
-- Runtime input name accepted by `clarifying-assumptions`: `TICKET_KEY`
-- Jira runtime meaning: `TICKET_KEY=<JIRA ticket key>`
-- GitHub runtime meaning: `TICKET_KEY=<ISSUE_SLUG>`
-
-This alias is canonical because the clarification skill is shared across both
-workflow families, while the parent workflows retain their platform-native
-inputs.
-
-### Top-level inputs
-
-| Input | Required | Canonical meaning |
+| Field | Shape | Meaning |
 | --- | --- | --- |
-| `TICKET_KEY` | Yes | Shared work-item key used in all clarification artifact paths |
-| `MODE` | Yes | `upfront` or `critique` |
-| `TASK_NUMBER` | Required for `MODE=critique` | Current task ordinal |
-| `ITERATION` | No | Clarification pass count; default `1` |
+| `TICKET_KEY` | string | Shared clarification identity used in runtime inputs and artifact paths |
+| Jira mapping | Jira ticket key such as `JNS-6065` | Parent workflow passes the Jira-native key directly |
+| GitHub mapping | Issue slug such as `acme-app-42` | Parent workflow normalizes `ISSUE_SLUG` into `TICKET_KEY` before dispatch |
+| `MODE` | enum: `upfront` or `critique` | Selects plan-wide or task-level clarification pipeline |
+| `TASK_NUMBER` | integer-like string | Required only in `MODE=critique` |
+| `ITERATION` | integer-like string | Optional clarification pass counter; omitted means the skill treats it as the current run |
 
-### Required main-plan sections
+`TICKET_KEY` is the canonical cross-platform clarification boundary. Parent
+workflows may keep platform-native identifiers internally, but the shared skill
+contract is normalized at dispatch time.
 
-The main plan file at `docs/<KEY>-tasks.md` must expose this downstream
-contract shape:
+### Main plan input shape
 
-| Canonical section contract | Accepted runtime shape |
+The clarification skill consumes a main plan file at `docs/<TICKET_KEY>-tasks.md`
+with this required section shape:
+
+| Contract field | Accepted structure |
 | --- | --- |
-| Platform-native summary section | `## Ticket Summary` or `## Issue Summary` |
+| Summary section | `## Ticket Summary` or `## Issue Summary` |
 | Problem framing | `## Problem Framing` |
 | Assumptions | `## Assumptions and Constraints` |
 | Cross-cutting questions | `## Cross-Cutting Open Questions` |
-| Task inventory | `## Tasks` plus separate task headings |
+| Task inventory | `## Tasks` plus task-specific headings |
 | Validation surface | `## Validation Report` |
 | Dependency surface | `## Dependency Graph` |
 
-### Mode-specific upstream artifact sets
+The summary heading is the only platform-native heading alias explicitly
+accepted by the current shared clarification contract.
 
-| Mode | Required artifacts |
+### Mode-specific upstream artifact shape
+
+| Mode | Required artifact set |
 | --- | --- |
 | `upfront` | `docs/<KEY>-stage-1-detailed.md`, `docs/<KEY>-stage-2-prioritized.md` |
 | `critique` | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md` |
 
-### Shared subagent handoff shapes
+The shared skill requires readable markdown at those paths and does not depend
+on platform-specific fetch or planning internals once those artifacts exist.
 
-| Dispatch target | Required inputs | Conditional inputs |
+### Shared subagent dispatch input shapes
+
+| Dispatch target | Required fields | Conditional fields |
 | --- | --- | --- |
-| `critique-analyzer` | `MODE`, `TICKET_KEY`, `MAIN_PLAN_FILE`, `ARTIFACTS`, `CRITIQUE_REPORT_FILE` | `TASK_NUMBER` in `critique`; `PRIOR_DECISIONS_FILE` plus `PRIOR_DECISIONS_KIND` when `ITERATION > 1` |
-| `question-manifest-builder` | `MODE`, `TICKET_KEY`, `PLAN_FILE`, `CRITIQUE_REPORT_FILE` | `TASK_NUMBER` plus `CURRENT_TASK_ARTIFACTS` in `critique` |
-| `decision-recorder` | `TICKET_KEY`, `MODE`, `DECISIONS` | `ITERATION`; `DEFERRED_QUESTIONS`; `IMPLEMENTATION_UPDATES`; and in `critique` also `TASK_NUMBER`, `TASK_TITLE`, `RESOLVED_IRRELEVANT` |
+| `critique-analyzer` | `MODE`, `TICKET_KEY`, `MAIN_PLAN_FILE`, `ARTIFACTS`, `CRITIQUE_REPORT_FILE`, `PRIOR_DECISIONS_FILE`, `PRIOR_DECISIONS_KIND` | `TASK_NUMBER` in `MODE=critique` |
+| `question-manifest-builder` | `MODE`, `TICKET_KEY`, `PLAN_FILE`, `CRITIQUE_REPORT_FILE` | `TASK_NUMBER`, `CURRENT_TASK_ARTIFACTS` in `MODE=critique` |
+| `decision-recorder` | `TICKET_KEY`, `MODE`, `DECISIONS` | `ITERATION`, `DEFERRED_QUESTIONS`, `IMPLEMENTATION_UPDATES`, and in `MODE=critique` also `TASK_NUMBER`, `TASK_TITLE`, `RESOLVED_IRRELEVANT` |
 
-### Shared output shapes
+Current on-disk contract detail: `PRIOR_DECISIONS_FILE` and
+`PRIOR_DECISIONS_KIND` are always included in `critique-analyzer` dispatches,
+including `ITERATION=1`.
 
-| Output surface | Canonical contract |
+### Critique artifact shape
+
+The critique artifact is written before manifest assembly and uses this stable
+header shape:
+
+```text
+CRITIQUE: <PASS|WARN>
+Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
+Artifact: <path>
+```
+
+The artifact body then begins at `## Critique Report` and must preserve the
+mode-specific required sections:
+
+- `MODE=upfront`: `### Problem Framing Critique`, `### Technology Critique Items`
+- `MODE=critique`: `### Technology Critique Items`, `### User Impact Critique Items`
+
+Stable critique item IDs are part of the contract shape:
+
+- `PF<n>` for problem-framing items
+- `TC<n>` for technology critique items
+- `UI<n>` for user-impact items
+
+### Manifest shape
+
+Successful manifest output starts with this stable header shape:
+
+```text
+MANIFEST: <PASS|WARN>
+Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
+Task title: <title or ->
+Questions now: <N> | Deferred: <N> | Irrelevant: <N>
+```
+
+The manifest body then contains three stable sections:
+
+- `## Questions For Now`
+- `## Deferred Questions`
+- `## Resolved Irrelevant`
+
+Per-question briefs use these stable fields:
+
+- `Item ID`
+- `Category`
+- `Severity`
+- `Model`
+- `Skippable`
+- `Affects`
+- `Original decision or question`
+- `Critique summary`
+- `Fallback/default`
+
+Manifest-derived non-critique IDs may use deterministic patterns such as
+`A<n>`, `CQ<n>`, `V<n>`, `TQ-<task>-<n>`, and `DQ-<task>-<n>`.
+
+### Decision-recording shape
+
+`decision-recorder` accepts a structured `DECISIONS` list whose entries include:
+
+- `id`
+- `category`
+- `question`
+- `outcome`
+- `answer`
+- `rationale`
+- `fallback`
+- `affected_tasks`
+
+Canonical `category` values are:
+
+- `problem-framing`
+- `critique`
+- `user-impact`
+- `cross-cutting`
+- `assumption`
+- `task-question`
+- `validation`
+
+Canonical `outcome` values are:
+
+- `confirmed`
+- `revised`
+- `skipped`
+- `resolved`
+- `override`
+- `blocked`
+
+The manifest `Item ID` flows unchanged into `DECISIONS.id`, plan annotations,
+and any per-task decisions artifact.
+
+### Shared write/result shape
+
+| Surface | Stable contract |
 | --- | --- |
-| Critique artifact | `docs/<KEY>-upfront-critique.md` or `docs/<KEY>-task-<N>-critique.md` |
-| Main plan updates | `docs/<KEY>-tasks.md` updated with clarified state |
-| Decisions log | `## Decisions Log` in the main plan |
-| Per-task decisions file | `docs/<KEY>-task-<N>-decisions.md` in `critique` |
-| Final summary flags | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT` |
+| Upfront critique artifact | `docs/<KEY>-upfront-critique.md` |
+| Task critique artifact | `docs/<KEY>-task-<N>-critique.md` |
+| Main plan updates | `docs/<KEY>-tasks.md` updated in place |
+| Decisions log | `## Decisions Log` table in the main plan |
+| Per-task decisions file | `docs/<KEY>-task-<N>-decisions.md` in `MODE=critique` |
+| Deferred marker suffix | ` [DEFERRED — will ask before Task <N> execution]` |
+| Irrelevant marker suffix | ` [RESOLVED AS IRRELEVANT — <short reason>]` |
+| Decision marker suffix | ` [DECISION <Item ID> — <outcome>: <short answer>]` |
 
-### Orchestrator-level contract expectations
+### Final summary shape
 
-The parent workflow owns the clarification boundary contract at its entry and
-exit points. The downstream clarification skill remains responsible for its
-internal five-stage execution, while the orchestrator remains responsible for
-the workflow-level validation and routing around that execution.
+Every successful clarification run ends with at least these fields:
 
-| Orchestrator responsibility | Canonical expectation |
-| --- | --- |
-| Entry points | Invoke `clarifying-assumptions` only at the parent workflow's plan-wide clarification boundary and task-level critique boundary |
-| Input normalization | Pass the clarification skill its required top-level inputs exactly as declared in this spec, including alias normalization at the parent-workflow boundary when the platform-native identifier is not already `TICKET_KEY` |
-| Precondition gating | Validate that the mode-specific upstream artifact set still exists before invoking the clarification skill |
-| Re-plan routing | Treat `RE_PLAN_NEEDED=true` as a targeted loop back to the immediately preceding planning phase for the same work item or task, then re-run the clarification boundary |
-| Blocker gating | Treat `BLOCKERS_PRESENT=true` as a hard stop before downstream write or execution phases |
-| Postcondition validation | Validate only the clarification-owned artifact boundary after the skill returns: critique artifact plus decisions surface |
-| User gate after clean clarification | Even when `BLOCKERS_PRESENT=false`, require the parent workflow's normal user confirmation before advancing into downstream write or execution phases |
-| Mutation boundary | Keep Phase 3 and Phase 6 clarification-only at orchestrator level; implementation kickoff, platform mutations, and execution-state changes remain downstream to later phases |
+- `Critique artifact: <path>`
+- `Files updated: <path list or ->`
+- `RE_PLAN_NEEDED: <true|false>`
+- `BLOCKERS_PRESENT: <true|false>`
 
-These expectations are harmonized across Jira-side and GitHub-side
-orchestrators. Platform-native validators may retain their own parameter names
-and later-phase write models, but they must preserve the same clarification
-boundary semantics.
+If the run stops early because a subagent returned `BLOCKED`, `FAIL`, or
+`ERROR`, the same minimum summary shape still applies, with `Files updated: -`
+and the blocking verdict and reason included.
 
-### Stable per-item identity contract
+## Pipeline Stage Names And Ordering
 
-- Critique report item IDs must remain stable across the full pipeline.
-- Valid critique-origin prefixes are `PF<n>`, `TC<n>`, and `UI<n>`.
-- Manifest-derived IDs may use deterministic non-critique prefixes such as
-  `A<n>`, `CQ<n>`, `V<n>`, `TQ-<task>-<n>`, and `DQ-<task>-<n>`.
-- `decision-recorder` must carry each manifest `Item ID` unchanged into
-  recorded decisions and plan annotations.
+The harmonized clarification pipeline has exactly five stages in this fixed
+order for both Jira-side and GitHub-side parent workflows:
 
-## Canonical Pipeline Stages
-
-The harmonized clarification pipeline has exactly five canonical stages in this
-order for both Jira-side and GitHub-side workflows:
-
-| Order | Stage name | Canonical purpose |
+| Order | Stage name | Canonical behavior |
 | --- | --- | --- |
-| 1 | Load guidance | Read the design-thinking reference and the active mode playbook |
-| 2 | Analyze artifacts | Dispatch `critique-analyzer` to inspect artifacts, verify the codebase, and write the critique artifact |
-| 3 | Build manifest | Dispatch `question-manifest-builder` to transform critique plus plan context into an ordered manifest |
-| 4 | Clarify inline | Walk manifest items with the developer, one item at a time, and collect decisions |
-| 5 | Record decisions | Dispatch `decision-recorder` to update artifacts, validate them, and return the write summary |
+| 1 | `Load guidance` | Read `design-thinking-mindset` and the active mode playbook |
+| 2 | `Analyze artifacts` | Dispatch `critique-analyzer`, verify artifacts and codebase, write critique artifact |
+| 3 | `Build manifest` | Dispatch `question-manifest-builder` from critique artifact plus plan context |
+| 4 | `Clarify inline` | Walk the manifest with the developer one item at a time and collect decisions |
+| 5 | `Record decisions` | Dispatch `decision-recorder`, update artifacts, validate writes, and produce the final summary |
 
-No platform-specific variant may rename, reorder, skip, or merge these stages
-inside the clarification skill contract.
+Presentation rules that are part of the stage contract:
 
-## Stage Semantics By Mode
+- Manifest preview stays inside Stage 4, not as a separate stage.
+- Final recap stays inside Stage 5 after the recorder returns.
+- No platform-specific variant may rename, reorder, or merge these stages inside
+  the shared clarification contract.
+
+## Mode-Specific Pipeline Semantics
 
 ### `MODE=upfront`
 
-- Scope: plan-wide clarification before implementation begins
-- Critique sections required: `Problem Framing Critique`, `Technology Critique Items`
-- Manifest focus: hard-gate framing issues, architectural assumptions,
-  validation failures, cross-cutting questions, and Task 1 questions
-- Deferred behavior: future-task questions are deferred, not resolved inline
+- Entry point: parent workflow Phase 3 clarification boundary
+- Scope: whole-plan clarification before child-item creation or execution
+- Prior decisions source: main plan `## Decisions Log` shape (`PRIOR_DECISIONS_KIND=main-log`)
+- Main manifest focus: problem framing, technology critique, cross-cutting open
+  questions, architectural assumptions, validation failures, and Task 1
+  questions
+- Future-task behavior: future-task questions are deferred rather than resolved
+  inline
 
 ### `MODE=critique`
 
-- Scope: task-level clarification immediately before executing one task
-- Critique sections required: `Technology Critique Items`, `User Impact Critique Items`
-- Manifest focus: current-task critique, user-impact concerns, still-relevant
-  deferred questions, and current-task unresolved assumptions
-- Irrelevant behavior: deferred questions whose premise is no longer true are
-  recorded as irrelevant rather than asked again
+- Entry point: parent workflow Phase 6 clarification boundary
+- Scope: current-task clarification immediately before real task execution
+- Prior decisions source: per-task decisions file shape (`PRIOR_DECISIONS_KIND=per-task`)
+- Main manifest focus: current-task technology critique, user-impact critique,
+  still-relevant deferred questions, and unresolved current-task assumptions
+- No-longer-valid deferred items are recorded as irrelevant rather than asked
+  again
 
 ## Subagent Dispatch Conventions
 
-### General dispatch rules
+### General conventions
 
-- Read the subagent definition immediately before dispatch.
-- Pass only explicit inputs named in that subagent contract.
-- Preserve artifact-path handoffs; do not inline raw artifact bodies into later
-  stages unless the downstream contract explicitly requires it.
-- Keep dependent stages sequential: Stage 3 depends on Stage 2 output, and Stage
-  5 depends on Stage 4 decisions.
+- Read the target subagent definition immediately before dispatch.
+- Pass only the explicit named inputs for that subagent.
+- Preserve artifact-path handoffs instead of carrying full artifact bodies inline.
+- Keep Stage 2, Stage 3, and Stage 5 sequential because each depends on the
+  prior stage's output.
+- Re-dispatch subagents against current artifact paths on retries or later
+  iterations; do not treat old subagent output as authoritative after artifacts
+  change.
 
 ### Verdict routing conventions
 
-| Source | Expected verdicts | Canonical routing |
+| Source | Expected verdict family | Routing contract |
 | --- | --- | --- |
-| `critique-analyzer` | `CRITIQUE: PASS`, `CRITIQUE: WARN`, `CRITIQUE: FAIL` | `FAIL` stops; `WARN` continues only if critique validity is preserved |
-| `question-manifest-builder` | `MANIFEST: PASS`, `MANIFEST: WARN`, `MANIFEST: BLOCKED`, `MANIFEST: FAIL` | `BLOCKED` and `FAIL` stop; `WARN` continues with surfaced warning |
-| `decision-recorder` | `RECORDING: PASS`, `RECORDING: WARN`, `RECORDING: BLOCKED`, `RECORDING: ERROR` | `BLOCKED` and `ERROR` stop; `WARN` continues with surfaced warning |
+| `critique-analyzer` | `CRITIQUE: PASS | WARN | FAIL` | `FAIL` stops; `WARN` may continue only if critique remains usable |
+| `question-manifest-builder` | `MANIFEST: PASS | WARN | BLOCKED | FAIL` | `BLOCKED` and `FAIL` stop; `WARN` continues with surfaced omissions |
+| `decision-recorder` | `RECORDING: PASS | WARN | BLOCKED | ERROR` | `BLOCKED` and `ERROR` stop; `WARN` continues with surfaced write warnings |
 
 ### Inline clarification conventions
 
-- Ask one manifest item per message.
+- Ask one question per message.
 - Ask only manifest-backed questions.
-- Carry each `Item ID` unchanged into recorded decisions.
+- Carry each `Item ID` unchanged into the decision list.
 - Use Model A only for Tier 3 problem-framing hard gates.
 - Use Model B for all other items.
-- Respect manifest `Skippable` rules instead of inventing new skip behavior.
+- Respect manifest `Skippable` values instead of inventing new skip behavior.
 
 ## Platform-Specific Divergence Boundaries
 
-Platform differences are valid only at these boundaries.
+Only these divergence boundaries are part of the current harmonized contract.
 
-### Boundary 1: Work-item identity at parent-workflow entry
+### 1. Parent-workflow identity shape
 
-- Jira parent workflows operate on `TICKET_KEY` values such as `JNS-6065`.
-- GitHub parent workflows operate on `ISSUE_SLUG` values such as `acme-app-42`.
-- The shared clarification skill normalizes both to runtime input `TICKET_KEY`.
+- Jira parents use Jira ticket keys.
+- GitHub parents use `ISSUE_SLUG` locally.
+- The shared clarification skill receives normalized `TICKET_KEY` in both cases.
 
-Justification: the clarification layer owns one artifact family and one
-dispatch contract, so identifier normalization belongs at the parent-workflow to
-shared-skill boundary, not inside later subagent stages.
+Justification: normalization at the shared-skill boundary preserves one artifact
+family and one clarification dispatch contract while letting parent workflows
+keep platform-native identifiers internally.
 
-### Boundary 2: Platform-native summary heading in the main plan
+### 2. Main-plan summary heading alias
 
 - Jira planning outputs `## Ticket Summary`.
 - GitHub planning outputs `## Issue Summary`.
-- The canonical clarification contract accepts either heading as the same input
-  slot.
+- The clarification contract accepts either heading as the same summary slot.
 
-Justification: the heading text is platform-native upstream language, while the
-clarification pipeline consumes the same semantic summary payload in both cases.
+Justification: this is the only verified platform-native heading divergence in
+the compared planning outputs that the shared clarification skill explicitly
+normalizes.
 
-### Boundary 3: Upstream fetch and planning provenance
+### 3. Upstream planning artifact provenance
 
-- Jira provenance: ticket snapshot and Jira planning artifacts.
-- GitHub provenance: issue snapshot and GitHub planning artifacts.
-- The clarification skill treats both only as pre-existing readable markdown at
-  canonical path families.
+- Jira clarification runs consume Jira-generated snapshot and planning artifacts.
+- GitHub clarification runs consume GitHub-generated snapshot and planning artifacts.
+- The shared clarification pipeline treats them only as readable markdown at the
+  canonical path families already required by the skill.
 
-Justification: provenance differences matter to fetch and planning skills, but
-not to the clarification pipeline once artifact contracts are satisfied.
+Justification: provenance differences belong to fetch/planning stages, not to
+the clarification pipeline once the artifact contract has been satisfied.
 
-### Boundary 4: Parent orchestration phase numbering
+### 4. Parent gate wording and downstream mutation targets
 
-- Jira and GitHub orchestrators both currently invoke clarification in Phases 3
-  and 6.
-- Those ordinals are parent-workflow metadata only and are outside the runtime
-  contract of `clarifying-assumptions`.
+- Jira parents use Jira-specific user-facing language and later Jira writes.
+- GitHub parents use GitHub-specific user-facing language and later GitHub writes.
+- Both parents still gate clarification results with the same branch logic:
+  respect `RE_PLAN_NEEDED`, stop on `BLOCKERS_PRESENT`, and require the normal
+  user approval before moving into downstream mutation or execution phases.
 
-Justification: coupling clarification-owned artifacts to parent phase numbers
-creates unnecessary drift risk and breaks the shared-skill boundary.
+Justification: platform-specific wording and later side effects are downstream
+workflow concerns, while clarification-owned gate semantics remain shared.
 
-### Boundary 5: Platform-specific downstream creation and execution phases
+### 5. Parent validator and planning-skill parameter names
 
-- Jira continues into subtask creation and Jira task execution.
-- GitHub continues into task-issue creation and GitHub task execution.
-- The clarification contract exposes only artifact updates and gate flags used by
-  those later phases.
+- Jira planning and validator contracts continue to use `TICKET_KEY`.
+- GitHub planning and validator contracts continue to use `ISSUE_SLUG`.
+- The clarification skill boundary remains normalized to `TICKET_KEY`.
 
-Justification: downstream side-effect behavior belongs to later workflow phases,
-not to the clarification pipeline.
-
-### Boundary 6: Parent validator parameter names
-
-- Jira validator dispatches use `TICKET_KEY`.
-- GitHub validator dispatches use `ISSUE_SLUG`.
-- The shared clarification skill still receives the normalized runtime input
-  name `TICKET_KEY`.
-
-Justification: validator dispatches are parent-workflow-local contracts, while
-the clarification skill boundary remains normalized and shared.
-
-### Boundary 7: Parent user-gate wording after clarification
-
-- Jira may present Jira-specific next-step language before Phase 4 or Phase 7.
-- GitHub may present GitHub-specific next-step language before Phase 4 or Phase
-  7.
-- Both orchestrators must still preserve the same clarification-owned gate
-  semantics: stop on blockers, re-plan on `RE_PLAN_NEEDED`, and require an
-  explicit user go-ahead before mutation phases.
-
-Justification: prompt wording may stay platform-native, but the branching logic
-at the clarification boundary is shared and contractually stable.
+Justification: those names are local to parent workflow and planning contracts;
+the compared clarification boundary is shared and should stay stable.
 
 ## Decisions Made During This Pass
 
-### F-001: Neutral summary-slot alias accepted
+### Ledger-backed decision record
 
-- Decision: the canonical input contract now names the platform-native summary
-  section explicitly as `## Ticket Summary` or `## Issue Summary`.
-- Rationale: the ledger classified the omission as a `FIX` because the upstream
-  planning skills already advertised that section as consumed downstream, so the
-  receiving skill needed an explicit handshake instead of an implicit one.
+- `FIX`: none
+- `PRESERVE`: none
+- `DEFER`: none
 
-### F-002: Stable user-impact item IDs made explicit at the artifact boundary
+The Phase 1 ledger is a zero-entry ledger. That means this pass made no
+ledger-backed remediation decisions, no ledger-backed preserve exceptions, and
+no ledger-backed deferments.
 
-- Decision: the critique template uses `Item ID` for user-impact rows.
-- Rationale: the ledger classified this as a `FIX` because stable IDs already
-  functioned as a durable cross-step contract from critique to manifest to
-  recorder, and the generic `#` label weakened that parseable boundary.
+### Explicit no-FIX statement
 
-### F-003: Subagent-local helper paths normalized to sibling-relative form
+No FIX decisions were made during this pass.
 
-- Decision: helper references inside `skills/clarifying-assumptions/subagents/`
-  use sibling-relative paths.
-- Rationale: the ledger classified this as a `FIX` because mixed path bases in
-  the same package introduced contract-shape drift and made the local runtime
-  model harder to follow consistently.
+Rationale: `docs/clarifying-assumptions-harmonization-triage-ledger.md` records
+`FIX: 0`, and `docs/clarifying-assumptions-harmonization-change-summary.md`
+states that no target skill or subagent files were modified in Phase 2.
 
-### F-004: Parent phase ordinals removed from clarification-owned artifacts
+### Canonicalization decision for this spec
 
-- Decision: the per-task decisions-file schema records skill-owned metadata only
-  and does not embed parent-workflow phase numbers.
-- Rationale: the ledger classified this as a `FIX` because the skill already
-  declared that phase numbers are outside its contract, so embedding
-  `Phase: 6 — Critique` violated the stated boundary.
-
-## Orchestrator Cascade Verification Outcome
-
-This harmonization run verified the orchestrator-facing clarification boundary
-against both parent workflows and the downstream `clarifying-assumptions`
-contract. The Phase 0 report found no shape-level drift, the Phase 1 ledger
-recorded no triage entries, and Phase 2 therefore applied no changes.
-
-### Orchestrator-level FIX decisions from this run
-
-The Phase 1 ledger recorded no `FIX` entries for the orchestrator cascade.
-
-| Finding | Status | Rationale |
-| --- | --- | --- |
-| None | No fix applied | `docs/orchestrator-alignment-ledger-clarifying-assumptions.md` records `FIX = 0`, so Phase 2 correctly made no orchestrator or downstream contract changes |
-
-### Orchestrator-level PRESERVE boundaries from this run
-
-The Phase 1 ledger recorded no `PRESERVE` entries that required new
-orchestrator-level divergence handling beyond the standing platform boundaries
-already captured in this spec.
-
-| Boundary | Status | Notes |
-| --- | --- | --- |
-| None | No new preserve decisions | `docs/orchestrator-alignment-ledger-clarifying-assumptions.md` records `PRESERVE = 0` |
+- Decision: keep `clarifying-assumptions` as the canonical harmonization slug and
+  update `docs/execution-pipeline-harmonization-clarifying-assumptions.spec.md`
+  in place.
+- Rationale: the compared Jira-side and GitHub-side workflows both dispatch the
+  same shared `clarifying-assumptions` skill and the Phase 0 report found no
+  shape-level drift requiring a narrower or broader subject grouping.
 
 ## Deferred Items
 
-The Phase 1 ledger recorded no `DEFER` entries.
+The Phase 1 triage ledger contains no `DEFER` entries.
 
-| Finding | Status | Notes |
+| Entry | Status | Source rationale |
 | --- | --- | --- |
-| None | No deferred work | `docs/clarifying-assumptions-harmonization-triage-ledger.md` reports `DEFER = 0` |
-| Orchestrator cascade | No deferred work | `docs/orchestrator-alignment-ledger-clarifying-assumptions.md` records `DEFER = 0` |
-
-## Spec Staleness / Follow-Up
-
-The orchestrator alignment pass recorded no `SPEC_STALENESS` entries and no
-additional follow-up items for the canonical clarification contract.
-
-| Item | Status | Notes |
-| --- | --- | --- |
-| None | No staleness follow-up required | `docs/orchestrator-alignment-ledger-clarifying-assumptions.md` records `SPEC_STALENESS = 0` and the Phase 0 report found no spec lag at the orchestrator boundary |
+| None | No deferred work recorded | The ledger reports `DEFER: 0` and contains zero triage entries |
 
 ## Known Non-Goals
 
-- Defining Jira-specific fetch, write, or execution behavior
-- Defining GitHub-specific fetch, `gh`, or execution behavior
-- Redesigning the Phase 2 planning pipeline that produces the upstream task plan
-- Making Jira and GitHub orchestrators interchangeable runtimes with shared
-  validator inputs, identical prompt wording, or identical downstream write
-  models
-- Introducing shared mutable runtime state between parent orchestrators and the
-  clarification skill beyond the documented artifact and summary-flag boundary
-- Changing the conversational mentoring style beyond what is required to keep a
-  stable clarification contract
-- Introducing runtime dependencies on this spec file or any Phase 0/1/2
-  harmonization artifacts
-- Defining implementation-code quality standards for Phase 7 execution
+- Defining Jira-specific fetch, child-item creation, or execution behavior
+- Defining GitHub-specific fetch, `gh`, child-issue creation, or execution behavior
+- Redesigning the upstream Phase 2 planning pipelines
+- Defining the internals of Phase 1 fetch contracts beyond the planning and
+  clarification artifacts already consumed here
+- Making the spec file a runtime dependency for `skills/clarifying-assumptions`
+- Adding new tools, dependencies, or functional behavior to the skill or its
+  subagents
+- Harmonizing parent workflows into identical wording, validator parameters, or
+  downstream write models
+- Defining implementation-code quality or execution policies for Phase 7 work
 
 ## Canonical Outcome
 
-The validated canonical model is a single shared clarification pipeline with:
+The current canonical model is a single shared clarification pipeline with:
 
-- one normalized work-item key at the clarification boundary
-- one five-stage stage order
-- one stable subagent chain
-- one per-item identity contract
-- tightly bounded platform divergence at upstream naming and provenance edges only
+- one normalized clarification identity field: `TICKET_KEY`
+- one five-stage execution order
+- one shared subagent chain: `critique-analyzer` -> `question-manifest-builder`
+  -> `decision-recorder`
+- one stable per-item identity flow from critique to manifest to recorder
+- tightly bounded platform divergence only at verified parent-workflow edges
 
-This specification is the canonical harmonization record for the validated
-clarifying-assumptions workflow pair/group.
+This spec is the canonical Phase 3 reference for future harmonization and audit
+passes for the shared clarification workflow group.
