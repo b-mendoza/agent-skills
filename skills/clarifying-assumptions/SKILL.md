@@ -115,6 +115,10 @@ Jira workflow or a GitHub workflow.
 | 4 | Clarify inline | Walk the manifest one item at a time with the developer and capture decisions |
 | 5 | Record decisions | Dispatch `decision-recorder` to update workflow artifacts, validate them, and return the final write summary |
 
+Manifest preview belongs inside Stage 4. Final user-facing recap belongs inside
+Stage 5 after the recorder returns. Do not invent extra pipeline stages for
+those two presentation steps.
+
 ## Pipeline / Workflow Overview
 
 | Mode | Goal | Delegated work | Inline work |
