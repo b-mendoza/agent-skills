@@ -55,12 +55,12 @@ Read `../subagents/question-manifest-builder.md`, then dispatch with:
   - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md`
 - `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-task-<TASK_NUMBER>-critique.md`
 
-The manifest builder returns:
+The manifest builder returns the same three-way manifest shape used in upfront
+mode:
 
-- Critique items for the current task
-- User-impact items linked to the plan-wide problem framing
-- Deferred questions that still matter for this task
-- Deferred questions that are now irrelevant
+- Questions for now
+- Deferred questions
+- Resolved irrelevant items
 
 Handle the verdicts:
 
@@ -68,25 +68,40 @@ Handle the verdicts:
 - `MANIFEST: WARN` → continue, but carry the warning into the final summary.
 - `MANIFEST: PASS` → continue.
 
-## Stage 4 — Preview Manifest
+### Stage 4 substep — Preview Manifest
 
-Show the developer a concise preview:
+Show the manifest summary before asking the first question. Reuse the
+`question-manifest-builder` header counts and `## Questions For Now` table
+shape instead of inventing a different critique-mode preview schema.
 
 ```markdown
-## Critique & Clarification Manifest — Task <TASK_NUMBER>
+## Question Manifest — <TICKET_KEY> / Task <TASK_NUMBER>
 
-Critique items: <C>
-User-impact items: <U>
-Deferred questions still relevant: <Q>
-Deferred questions now irrelevant: <R>
+Questions now: <N> | Deferred: <M> | Irrelevant: <R>
+
+| # | Item ID | Category | Severity | Model | Skippable | Affects |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | TC1 | Critique | HIGH | B | No | Task <TASK_NUMBER> |
+| 2 | UI1 | User impact | MEDIUM | B | Yes | Task <TASK_NUMBER> |
+| 3 | DQ-<TASK_NUMBER>-1 | Task question | MEDIUM | B | Yes | Task <TASK_NUMBER> |
 ```
 
 If there are no items left after filtering, say so clearly, do not emit a
 placeholder prompt, and skip to the recording step with an empty decision list.
 
+After the preview, ask:
+
+> Ready to start? I'll walk through these one at a time.
+
 ## Stage 4 — Clarify Inline
 
 Every item in critique mode uses Model B.
+
+Always show progress:
+
+```text
+Question <current>/<total> — [<category>]
+```
 
 Use this flow:
 
@@ -150,12 +165,16 @@ Handle the verdicts:
 - `RECORDING: WARN` → continue, but carry the warnings into the final summary.
 - `RECORDING: PASS` → continue.
 
-## Stage 5 — Present Final Summary
+### Stage 5 substep — Present Final Summary
+
+Keep the first four lines in the same order as the main `SKILL.md` final
+summary contract, then add any extra counts that help the user understand what
+happened in this run.
 
 Use the recorder summary plus session counts to present:
 
 ```markdown
-## Critique & Clarification Complete — Task <TASK_NUMBER>
+## Clarification Complete — <TICKET_KEY> / Task <TASK_NUMBER>
 
 - Critique artifact: <path>
 - Files updated: <path list or ->
