@@ -59,7 +59,7 @@ Handle the verdicts:
 - `MANIFEST: WARN` → continue, but mention the warning in the final summary.
 - `MANIFEST: PASS` → continue.
 
-## Stage 4 — Preview Manifest
+### Stage 4 substep — Preview Manifest
 
 Show the manifest summary before asking the first question. Reuse the
 `question-manifest-builder` header counts and `## Questions For Now` table
@@ -164,12 +164,16 @@ Handle the verdicts:
 - `RECORDING: WARN` → continue, but carry the warnings into the final summary.
 - `RECORDING: PASS` → continue.
 
-## Stage 5 — Present Final Summary
+### Stage 5 substep — Present Final Summary
+
+Keep the first four lines in the same order as the main `SKILL.md` final
+summary contract, then add any extra counts that help the user understand what
+happened in this run.
 
 Use the recorder summary plus session counts to present:
 
 ```markdown
-## Clarification Complete — <TICKET_KEY> (Upfront)
+## Clarification Complete — <TICKET_KEY>
 
 - Critique artifact: <path>
 - Files updated: <path list or ->
