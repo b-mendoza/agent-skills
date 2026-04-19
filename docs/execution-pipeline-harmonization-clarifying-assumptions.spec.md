@@ -15,9 +15,9 @@ comparison_inputs:
   - "skills/planning-jira-tasks/SKILL.md"
   - "skills/planning-github-issue-tasks/SKILL.md"
 phase_inputs:
-  - "docs/clarifying-assumptions-harmonization-report.md"
-  - "docs/clarifying-assumptions-harmonization-triage-ledger.md"
-  - "docs/clarifying-assumptions-harmonization-change-summary.md"
+  - "docs/orchestrator-alignment-report-clarifying-assumptions.md"
+  - "docs/orchestrator-alignment-ledger-clarifying-assumptions.md"
+  - "docs/orchestrator-alignment-changes-clarifying-assumptions.md"
 phase_decision_counts:
   FIX: 0
   PRESERVE: 0
@@ -40,20 +40,31 @@ of the contract currently on disk.
 
 This spec is traceable to the authoritative Phase 0-2 artifacts:
 
-- `docs/clarifying-assumptions-harmonization-report.md`
-- `docs/clarifying-assumptions-harmonization-triage-ledger.md`
-- `docs/clarifying-assumptions-harmonization-change-summary.md`
+- `docs/orchestrator-alignment-report-clarifying-assumptions.md`
+- `docs/orchestrator-alignment-ledger-clarifying-assumptions.md`
+- `docs/orchestrator-alignment-changes-clarifying-assumptions.md`
+
+## Run Notes
+
+- This Phase 3 run resolved a prompt-path conflict in favor of
+  `docs/execution-pipeline-harmonization-clarifying-assumptions.spec.md`.
+  The task prompt also mentioned
+  `docs/execution-pipeline-harmonization-child-issue-creation.spec.md`, but the
+  scoped canonical reference, skill-group slug, and inspected orchestrator
+  boundary all point to `clarifying-assumptions`, so this canonical spec is the
+  authoritative Phase 3 target.
 
 ## Current Pass Outcome
 
 - Phase 0 report findings: `0`
 - Phase 1 triage counts: `FIX=0`, `PRESERVE=0`, `DEFER=0`
+- Phase 1 spec staleness count: `SPEC_STALENESS=0`
 - Phase 2 applied fixes: none
 - Phase 3 canonicalization posture: document the current harmonized state on disk
 
-Because the ledger is a zero-entry ledger, this pass made no FIX decisions and
-applied no hidden runtime edits. The canonical spec records the current shared
-contract exactly as implemented by the existing skill and subagent files.
+Because the ledger is a zero-entry ledger, this pass made no FIX decisions,
+applied no hidden runtime edits, and records the current shared contract exactly
+as implemented by the existing skill and subagent files.
 
 ## Shared Contract Shape Definitions
 
@@ -228,6 +239,37 @@ If the run stops early because a subagent returned `BLOCKED`, `FAIL`, or
 `ERROR`, the same minimum summary shape still applies, with `Files updated: -`
 and the blocking verdict and reason included.
 
+## Orchestrator-Level Contract Expectations
+
+These expectations define the shared parent-workflow boundary at the
+clarification handoff without turning this spec into a runtime dependency.
+
+### Clarification entry mapping
+
+| Parent workflow phase | Downstream mode | Required parent-owned inputs |
+| --- | --- | --- |
+| Jira Phase 3 | `upfront` | `TICKET_KEY=<jira ticket key>`, `MODE=upfront`, optional `ITERATION` |
+| GitHub Phase 3 | `upfront` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=upfront`, optional `ITERATION` |
+| Jira Phase 6 | `critique` | `TICKET_KEY=<jira ticket key>`, `MODE=critique`, `TASK_NUMBER`, optional `ITERATION` |
+| GitHub Phase 6 | `critique` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=critique`, `TASK_NUMBER`, optional `ITERATION` |
+
+Parent orchestrators own only the normalized clarification entry contract above.
+They do not precompute downstream-only fields such as `MAIN_PLAN_FILE`,
+`ARTIFACTS`, `CRITIQUE_REPORT_FILE`, `PRIOR_DECISIONS_FILE`, or
+`PRIOR_DECISIONS_KIND`; those remain clarification-skill-owned derivations.
+
+### Parent gate expectations
+
+- Validate the expected upstream planning artifacts before entering clarification.
+- Treat `RE_PLAN_NEEDED=true` as a mandatory reopen of the immediately preceding
+  planning phase.
+- Treat `BLOCKERS_PRESENT=true` as a hard stop before child-item creation,
+  downstream platform writes, or task execution.
+- Require the normal parent user-approval gate before proceeding from successful
+  clarification into downstream mutation or execution phases.
+- Keep platform-specific wording, write targets, and later side effects outside
+  the shared clarification contract.
+
 ## Pipeline Stage Names And Ordering
 
 The harmonized clarification pipeline has exactly five stages in this fixed
@@ -362,18 +404,29 @@ the compared clarification boundary is shared and should stay stable.
 - `FIX`: none
 - `PRESERVE`: none
 - `DEFER`: none
+- `SPEC_STALENESS`: none
 
 The Phase 1 ledger is a zero-entry ledger. That means this pass made no
 ledger-backed remediation decisions, no ledger-backed preserve exceptions, and
-no ledger-backed deferments.
+no ledger-backed deferments or spec-staleness follow-ups.
 
 ### Explicit no-FIX statement
 
 No FIX decisions were made during this pass.
 
-Rationale: `docs/clarifying-assumptions-harmonization-triage-ledger.md` records
-`FIX: 0`, and `docs/clarifying-assumptions-harmonization-change-summary.md`
-states that no target skill or subagent files were modified in Phase 2.
+Rationale: `docs/orchestrator-alignment-ledger-clarifying-assumptions.md`
+records `FIX: 0`, and
+`docs/orchestrator-alignment-changes-clarifying-assumptions.md` states that no
+orchestrator files were modified in Phase 2.
+
+### Explicit no-PRESERVE statement
+
+No ledger-backed PRESERVE decisions were made during this pass.
+
+Rationale: the Phase 0 report found the two orchestrators already aligned at the
+shared clarification boundary, so the only preserved differences are the
+platform-divergence boundaries documented in this spec rather than per-finding
+exceptions that needed triage.
 
 ### Canonicalization decision for this spec
 
@@ -384,6 +437,16 @@ states that no target skill or subagent files were modified in Phase 2.
   same shared `clarifying-assumptions` skill and the Phase 0 report found no
   shape-level drift requiring a narrower or broader subject grouping.
 
+### Phase 2 application record for this run
+
+- Applied FIX decisions from Phase 2: none
+- Phase 2 file modifications relevant to this spec: none
+- Phase 3 action taken here: reflect the verified harmonized state and the zero-
+  entry ledger outcome in the canonical spec
+
+Rationale: the Phase 1 ledger authorized no fixes, so Phase 3 preserves the
+existing runtime contract and updates traceability only.
+
 ## Deferred Items
 
 The Phase 1 triage ledger contains no `DEFER` entries.
@@ -392,6 +455,14 @@ The Phase 1 triage ledger contains no `DEFER` entries.
 | --- | --- | --- |
 | None | No deferred work recorded | The ledger reports `DEFER: 0` and contains zero triage entries |
 
+## Spec Staleness / Follow-up
+
+The Phase 1 triage ledger contains no `SPEC_STALENESS` entries.
+
+| Entry | Status | Source rationale |
+| --- | --- | --- |
+| None | No spec follow-up recorded | The ledger reports `SPEC_STALENESS: 0` and contains zero triage entries |
+
 ## Known Non-Goals
 
 - Defining Jira-specific fetch, child-item creation, or execution behavior
@@ -399,6 +470,11 @@ The Phase 1 triage ledger contains no `DEFER` entries.
 - Redesigning the upstream Phase 2 planning pipelines
 - Defining the internals of Phase 1 fetch contracts beyond the planning and
   clarification artifacts already consumed here
+- Requiring the orchestrators to mirror each other's local parameter names,
+  validator inputs, or user-facing wording outside the normalized clarification
+  boundary
+- Reclassifying already-accepted platform divergence as drift when the shared
+  clarification dispatch contract and gate semantics still match
 - Making the spec file a runtime dependency for `skills/clarifying-assumptions`
 - Adding new tools, dependencies, or functional behavior to the skill or its
   subagents
