@@ -7,7 +7,7 @@ Claude Code aligned.
 
 ## What is in this repository
 
-- [`skills/`](skills/) has 21 first party skills.
+- [`skills/`](skills/) has 22 first party skills.
 - [`docs/`](docs/) has workflow notes, design specs, and writing guidance.
 - [`docs/best-practices/`](docs/best-practices/) is the best place to start if
   you want to edit a skill.
@@ -75,6 +75,9 @@ one for GitHub. The rest are utility skills you can use on their own.
 - [`improving-test-suites`](skills/improving-test-suites/SKILL.md) turns test
   files into minimal, high-signal behavior-focused harnesses with just-in-time
   testing and security references.
+- [`rewriting-code-strictly`](skills/rewriting-code-strictly/SKILL.md) rewrites
+  Python, TypeScript/JavaScript, and Go code for strict typing, validated
+  boundaries, and maintainable idioms with per-language playbooks.
 - [`workflow-skill-architect`](skills/workflow-skill-architect/SKILL.md) helps
   turn a repeatable process into a reusable skill or set of subagents.
 
