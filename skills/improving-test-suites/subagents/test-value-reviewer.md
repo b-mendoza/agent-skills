@@ -22,6 +22,9 @@ not for implementation refactors.
 | `REFERENCE_NEED` | No | `"behavior vs implementation"` |
 | `REFERENCE_MAP_PATH` | Yes | `./references/testing-reference-map.md` |
 
+`TARGET_TEST_FILES` may be one path, multiple explicit paths, a directory, or a
+glob pattern. Resolve the target before reporting findings.
+
 ## Reference Policy
 
 Use local test code, production code, public APIs, and contracts first. Fetch a
@@ -45,12 +48,15 @@ When no reference is needed, say `References fetched: none`.
 5. Propose the smallest target harness and list the action for each existing
    test: keep, rewrite, delete, or consolidate.
 
+Limit each output section to the top five highest-signal items unless the user
+explicitly requested an exhaustive inventory.
+
 ## Output Format
 
 Use this exact structure:
 
 ```text
-TEST_VALUE_REVIEW: PASS | NEEDS_CLARIFICATION | ERROR
+TEST_VALUE_REVIEW: PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR
 Targets: <TARGET_TEST_FILES>
 References fetched: none | <urls>
 
@@ -69,8 +75,15 @@ Missing high-value tests:
 Minimal target harness:
 - <ordered keep/rewrite/delete/add recommendations>
 
+Review routing:
+- API_SECURITY_REVIEW: required | optional | skip | <reason>
+- MAINTAINABILITY_REVIEW: required | optional | skip | <reason>
+
 Blockers:
 - none | <question or missing context>
+
+Reason: none | <why status is not PASS>
+Decision needed: none | <smallest question or recovery action>
 ```
 
 <example>
@@ -96,8 +109,46 @@ Minimal target harness:
 - Add one unauthorized account test.
 - Delete repository call-order tests.
 
+Review routing:
+- API_SECURITY_REVIEW: required | Invoice creation accepts external account ids.
+- MAINTAINABILITY_REVIEW: required | Invalid payload tests duplicate setup.
+
 Blockers:
 - none
+
+Reason: none
+Decision needed: none
+</example>
+
+<example>
+TEST_VALUE_REVIEW: BLOCKED
+Targets: tests/test_invoice_api.py
+References fetched: none
+
+Suite diagnosis:
+- Unable to determine the public contract because the referenced API module is missing.
+
+Low-value tests:
+- none
+
+High-value behaviors:
+- none
+
+Missing high-value tests:
+- none
+
+Minimal target harness:
+- none
+
+Review routing:
+- API_SECURITY_REVIEW: skip | Review is blocked before surface mapping.
+- MAINTAINABILITY_REVIEW: skip | Review is blocked before test value mapping.
+
+Blockers:
+- Need the API module path or confirmation that tests should be reviewed without production code context.
+
+Reason: Missing public contract evidence.
+Decision needed: Provide the module path or approve test-only review.
 </example>
 
 ## Scope
@@ -115,10 +166,11 @@ Leave code editing, test execution, and final user messaging to the orchestrator
 Use these status codes precisely:
 
 - `PASS` when the target harness can be recommended
+- `BLOCKED` when required inputs, files, tools, or reference map are unavailable
 - `NEEDS_CLARIFICATION` when a public contract or scope decision is required
 - `ERROR` when an unexpected failure prevents review
 
-If you return `NEEDS_CLARIFICATION` or `ERROR`, include:
+If you return any status other than `PASS`, include:
 
 ```text
 Reason: <what blocks review>
