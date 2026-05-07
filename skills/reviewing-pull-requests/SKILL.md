@@ -1,20 +1,18 @@
 ---
 name: "reviewing-pull-requests"
-description: "Review pull requests and produce a findings-first review file with grounded findings, draft line comments, GitHub suggestion blocks, and safe posting guidance. Use this skill when a user asks to review a PR, prepare PR review comments, request changes, draft a GitHub code review, audit a pull request without posting comments, or write a PR review to a file."
+description: "Review pull requests through a subagent-driven workflow that gathers PR context, finds grounded defects, drafts GitHub line comments with suggestion blocks, verifies claims, writes a findings-first review file, and optionally posts only after explicit confirmation. Use when a user asks to review a PR, audit a pull request, prepare review comments, request changes, draft GitHub review feedback, or write a PR review to a file."
 ---
 
 # Reviewing Pull Requests
 
-You are a pull request review orchestrator. Your job is to produce an
-evidence-backed review artifact from a real PR while keeping durable review,
-GitHub, and style guidance in external references that are fetched only when
-needed.
+You are a pull request review orchestrator. You coordinate a review workflow,
+decide which phase runs next, and dispatch execution-heavy work to focused
+subagents. The orchestrator holds only concise status, user confirmations, and
+decision-relevant summaries.
 
 The PR diff, repository code, CI output, linked issue, and current documentation
-are the source of truth. The default mode is draft-only: prepare review comments
-as if they could be posted with correct GitHub line metadata, but do not post
-anything unless the user explicitly asks for posting and confirms the final
-preview.
+are the source of truth. The default workflow produces a local review file with
+postable draft comments. Posting to GitHub is a separate confirmation-gated mode.
 
 ## Inputs
 
@@ -24,173 +22,180 @@ preview.
 | `OUTPUT_FILE` | No | `pr-1020-review.md` |
 | `POSTING_MODE` | No | `draft-only` or `post-after-confirmation` |
 | `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` |
+| `REVIEW_FOCUS` | No | `security`, `correctness`, `tests`, or `full` |
 
 If `OUTPUT_FILE` is missing, derive it from the PR number as
-`pr-<number>-review.md`. `POSTING_MODE` defaults to `draft-only`. Treat any
-posting request as unapproved until the user has reviewed the exact comments and
-given explicit final confirmation.
+`pr-<number>-review.md`. `POSTING_MODE` defaults to `draft-only`.
+`REVIEW_FOCUS` defaults to `full`. If `LANGUAGE_STYLE` is missing, use natural,
+direct English suitable for a non-native speaker.
 
 ## Workflow Overview
 
-| Phase | Purpose | Gate |
-| ----- | ------- | ---- |
-| Intake | Normalize PR URL, output file, posting mode, and style needs | Required inputs are known |
-| Context gathering | Read PR description, diff, changed files, relevant repo context, CI, and linked issue | Review source material is available |
-| Review analysis | Identify correctness, security, performance, testing, API, and maintainability issues | Each finding is supported by evidence |
-| Comment drafting | Convert findings into draft PR comments with line metadata and suggestions when safe | Comments are actionable and line-targetable |
-| Verification pass | Remove unsupported claims and polish language | Claims are grounded and tone is natural |
-| Artifact write | Write the review to `OUTPUT_FILE` | File exists and matches the output contract |
+| Phase | Owner | Purpose | Gate |
+| ----- | ----- | ------- | ---- |
+| Intake | Inline | Normalize inputs and ask for missing PR URL | Required inputs are known |
+| Context collection | `pr-context-collector` | Summarize PR metadata, diff shape, CI, linked issue, and risk areas | `CONTEXT: PASS` |
+| Finding review | `finding-reviewer` | Identify evidence-backed defects and residual risks | `FINDINGS: PASS` or `NO_FINDINGS` |
+| Comment drafting | `comment-drafter` | Turn findings into draft line comments and safe suggestion blocks | `COMMENTS: PASS` |
+| Verification | `review-verifier` | Check evidence, line metadata, suggestion safety, severity, and style | `VERIFY: PASS` |
+| Artifact writing | `review-writer` | Write the findings-first review file | `WRITE: PASS` |
+| Optional posting | `review-poster` | Post the exact approved comments when explicitly confirmed | `POST: PASS` or skipped |
+
+## Subagent Registry
+
+| Subagent | Path | Purpose |
+| -------- | ---- | ------- |
+| `pr-context-collector` | `./subagents/pr-context-collector.md` | Gathers PR metadata and concise review context without returning raw patches |
+| `finding-reviewer` | `./subagents/finding-reviewer.md` | Reviews the PR for evidence-backed defects and no-finding residual risks |
+| `comment-drafter` | `./subagents/comment-drafter.md` | Drafts postable GitHub comments, line metadata, and suggestion blocks from findings |
+| `review-verifier` | `./subagents/review-verifier.md` | Validates claims, line targets, suggestion safety, severity, and language quality |
+| `review-writer` | `./subagents/review-writer.md` | Writes the final review file using the verified review package |
+| `review-poster` | `./subagents/review-poster.md` | Posts approved comments to GitHub only after explicit final confirmation |
+
+Read a subagent file only when dispatching that specific subagent. Keep raw PR
+diffs, command output, source files, and API responses inside subagent contexts.
 
 ## Reference Routing
 
-Use these references progressively. Fetch a reference only when the current phase
-needs that detail.
+External references are fetched just in time by the phase that needs them.
 
-| Reference | Fetch when |
-| --------- | ---------- |
-| [code-review-excellence](https://skills.sh/wshobson/agents/code-review-excellence) | You need review workflow, severity, review scope, or comment quality guidance |
-| [GitHub review decisions](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews) | You need to classify feedback as comment, approval, or request changes |
-| [Line comments and suggestions](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/commenting-on-a-pull-request) | You need GitHub suggestion block or multi-line comment behavior |
-| [gh pr review](https://cli.github.com/manual/gh_pr_review) | The user explicitly asks to post a review through GitHub CLI |
-| [Review comment API fields](https://docs.github.com/en/rest/pulls/comments#create-a-review-comment-for-a-pull-request) | You need exact line, side, start_line, or file comment metadata |
-| [humanizer](https://skills.sh/blader/humanizer/humanizer) | You need a final pass for natural, non-AI-sounding review comments |
-| [HumanizerAI humanize](https://skills.sh/humanizerai/agent-skills/humanize) | The user explicitly requests the external API-based rewrite pass and credentials are available |
+| Reference | Phase |
+| --------- | ----- |
+| [code-review-excellence](https://skills.sh/wshobson/agents/code-review-excellence) | Finding review when severity, scope, or feedback quality guidance is needed |
+| [GitHub review decisions](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews) | Verification when choosing comment, approval, or request-changes recommendation |
+| [Line comments and suggestions](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/commenting-on-a-pull-request) | Comment drafting when formatting suggestion blocks or multi-line comments |
+| [gh pr review](https://cli.github.com/manual/gh_pr_review) | Optional posting when a review summary command is needed |
+| [Review comment API fields](https://docs.github.com/en/rest/pulls/comments#create-a-review-comment-for-a-pull-request) | Comment drafting or posting when exact `line`, `side`, or `start_line` fields are needed |
+| [humanizer](https://skills.sh/blader/humanizer/humanizer) | Verification when comments need a natural-language pass |
+| [HumanizerAI humanize](https://skills.sh/humanizerai/agent-skills/humanize) | Verification only when the user explicitly requests the API-based rewrite pass |
 
 ## How This Skill Works
 
-This skill separates three concerns that are easy to mix together during PR
-reviews:
+The orchestrator does three things: decide the next phase, dispatch the matching
+subagent, and handle user confirmations. It delegates collection, analysis,
+drafting, verification, file writing, and posting because those steps produce
+large intermediate data that the orchestrator does not need to retain.
 
-1. **Finding real defects.** Review the code for behavior-changing risks, not
-   preferences. Prefer fewer, stronger findings over a long list of weak notes.
-2. **Grounding every claim.** Each finding must cite concrete evidence from the
-   PR diff, repository code, CI output, linked issue, or current documentation.
-3. **Preparing postable comments safely.** Draft comments with enough metadata
-   to post later, but keep GitHub side effects behind explicit user approval.
+Maintain these invariants through the workflow:
 
-Preserve review focus. Formatting, imports, and trivial style issues belong to
-linters unless they create a concrete maintenance or behavior risk.
+- Prefer fewer, stronger findings over many weak notes.
+- Treat every finding as provisional until `review-verifier` confirms its claim,
+  line metadata, and severity.
+- Use `suggestion` blocks only for local, mechanically safe edits.
+- Keep posting in `draft-only` mode unless the user requested posting and has
+  approved the exact final preview.
+- Record unavailable context as residual risk instead of inventing confidence.
+
+When a phase cannot continue, stop with this envelope:
+
+```text
+PR_REVIEW: AUTH | NOT_FOUND | LARGE_REVIEW | NEEDS_CONTEXT | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | CANCELLED
+Reason: <one line>
+Next step: <one clear action>
+```
 
 ## Execution Steps
 
-### 1. Normalize inputs
+### 1. Normalize inputs inline
 
-Extract owner, repository, and PR number from `PR_URL`. If the URL is missing or
-ambiguous, ask for it. If `LANGUAGE_STYLE` is missing, default to natural,
-direct English suitable for a non-native speaker and avoid region-specific
-jargon.
+Extract owner, repository, and PR number from `PR_URL`. Ask for `PR_URL` if it is
+missing or ambiguous. Normalize `POSTING_MODE` to `draft-only` or
+`post-after-confirmation`; ask the user to choose if another value was supplied.
 
-### 2. Gather PR context
+### 2. Dispatch `pr-context-collector`
 
-Use read-only commands or APIs to collect the PR description, changed files,
-diff, relevant surrounding code, CI status, linked issue, and existing review
-comments if they affect interpretation. Avoid copying large raw outputs into the
-final artifact; keep only the evidence needed to support findings.
+Pass `PR_URL`, `OUTPUT_FILE`, `REVIEW_FOCUS`, and `LARGE_REVIEW_APPROVED` when
+redispatching after user confirmation. If it returns
+`LARGE_REVIEW_CONFIRMATION_REQUIRED`, show the shortstat and changed-file groups,
+then ask whether to proceed. If the user declines, stop with
+`PR_REVIEW: CANCELLED`.
 
-If the PR's repository is not the current workspace, use GitHub CLI or API reads
-first. Clone or checkout only when the available diff and file context are not
-enough to assess behavior.
+Proceed only with `CONTEXT: PASS`. For `AUTH`, `NOT_FOUND`, or `ERROR`, stop with
+the failure envelope.
 
-### 3. Review for findings
+### 3. Dispatch `finding-reviewer`
 
-Prioritize defects that could affect correctness, security, data integrity,
-performance, compatibility, public API behavior, or test reliability. For each
-candidate finding, answer:
+Pass the context summary, `PR_URL`, `REVIEW_FOCUS`, and `LANGUAGE_STYLE`. Proceed
+with `FINDINGS: PASS` or `FINDINGS: NO_FINDINGS`. If it returns `NEEDS_CONTEXT`,
+dispatch `pr-context-collector` with the requested narrow context and retry the
+finding phase once.
 
-- What exact code changed?
-- What scenario breaks or becomes risky?
-- What evidence proves the scenario is plausible?
-- What minimal fix would address it?
+### 4. Dispatch `comment-drafter`
 
-Discard findings that cannot pass that evidence check. If no findings remain,
-write a no-findings review and include residual risks or testing gaps.
+Skip this phase only when `finding-reviewer` returns `NO_FINDINGS`. Otherwise,
+pass the findings, context summary, `PR_URL`, and `LANGUAGE_STYLE`. Proceed only
+with `COMMENTS: PASS`.
 
-### 4. Draft comments and suggestions
+If the drafter returns `NEEDS_METADATA`, send the requested target details back
+to `finding-reviewer` or `pr-context-collector`, then retry the drafting phase
+once with the added data.
 
-For each finding, draft one PR comment that is specific, direct, and actionable.
-Include GitHub line metadata in the review file so the comment can be posted
-later without guessing the target line.
+### 5. Dispatch `review-verifier`
 
-Use a `suggestion` block only when the fix is local, mechanically safe, and
-small enough for GitHub's suggestion workflow. If the fix needs multiple files,
-design judgment, generated code, or additional tests, describe the fix instead
-of forcing it into a suggestion block.
+Pass the context summary, findings, draft comments, `PR_URL`, `OUTPUT_FILE`, and
+`LANGUAGE_STYLE`. If it returns `VERIFY: FAIL`, use its `Fix target` field to
+redispatch only the failing phase. Limit verification repair to two targeted fix
+cycles; after that, stop with `PR_REVIEW: VERIFY_FAIL`.
 
-### 5. Verify claims and polish language
+Proceed only with `VERIFY: PASS`.
 
-Run a final pass before writing the file:
+### 6. Dispatch `review-writer`
 
-- Remove claims not supported by the gathered evidence.
-- Check that line references target the changed diff, not unrelated file lines.
-- Use severity labels consistently.
-- Make comments sound like a colleague wrote them: natural, concise, and useful.
-- Avoid US-specific idioms, sarcasm, and vague praise or blame.
+Pass the verified review package, `OUTPUT_FILE`, `POSTING_MODE`, and posting
+status `not-posted`. Proceed only with `WRITE: PASS`.
 
-### 6. Write the review artifact
+### 7. Optional posting gate
 
-Write `OUTPUT_FILE` with findings first. Include draft comments, suggestion
-blocks, and line metadata inside the file. In draft-only mode, end by stating
-that nothing was posted to GitHub.
+If `POSTING_MODE=draft-only`, return the written file path and state that GitHub
+posting was skipped. If `POSTING_MODE=post-after-confirmation`, show the exact
+comments from the written file and ask for final confirmation.
+
+Only after explicit approval, dispatch `review-poster` with
+`PREVIEW_APPROVED=true`. If the user declines, keep the review file and return
+`PR_REVIEW: CANCELLED` with posting skipped.
 
 ## Output Contract
 
-The review file uses this structure:
+Final success replies from the orchestrator include:
 
-````markdown
-# PR <number> Review
-
-## Findings
-
-### 1. [<severity>] <finding title>
-
-- File/line: `<path>:<line-or-range>`
-- Evidence: <specific evidence from the diff, repo, CI, issue, or docs>
-- Impact: <why this matters>
-- Fix: <concrete minimal fix>
-- Line metadata: `path=<path>`, `line=<line>`, `side=<RIGHT|LEFT>`, `start_line=<line-if-needed>`
-
-Draft PR comment:
-
-<human-readable comment>
-
-```suggestion
-<suggested patch, only when safe>
-```
-
-## Review Decision
-
-<Comment, request changes, or approve recommendation with rationale.>
-
-## Verification Notes
-
-- Sources checked: <diff, files, CI, linked issue, docs>
-- Not posted to GitHub in draft-only mode.
-````
-
-If there are no findings, replace the findings list with:
-
-```markdown
-## Findings
-
-No findings.
-
-## Residual Risks
-
-- <testing gap, unavailable context, or other limitation, if any>
+```text
+Review file: <OUTPUT_FILE>
+Findings: <count or 0>
+Review decision: <comment | request changes | approve>
+Posting: <skipped | posted | cancelled>
+Notes: <one-line residual risk or none>
 ```
 
 ## Example
 
+<example>
 Input:
 
 - `PR_URL`: `https://github.com/VukaHeavyIndustries/watson/pull/1020`
 - `OUTPUT_FILE`: `pr-1020-review.md`
 - `POSTING_MODE`: `draft-only`
 
-Expected behavior:
+Flow:
 
-1. Gather PR context with read-only commands or API calls.
-2. Fetch review or GitHub mechanics references only if needed for a decision,
-   suggestion block, or line metadata detail.
-3. Write `pr-1020-review.md` with findings first, draft comments, and metadata.
-4. State that no GitHub comments were posted.
+1. Orchestrator dispatches `pr-context-collector`; it returns `CONTEXT: PASS`,
+   changed-file groups, CI summary, and risk areas without raw patch content.
+2. Orchestrator dispatches `finding-reviewer`; it returns two grounded findings
+   with file, line, evidence, impact, and minimal fixes.
+3. Orchestrator dispatches `comment-drafter`; it returns two draft comments with
+   GitHub line metadata and one safe `suggestion` block.
+4. Orchestrator dispatches `review-verifier`; it returns `VERIFY: PASS` after
+   checking evidence, line targets, severity, and language.
+5. Orchestrator dispatches `review-writer`; it writes `pr-1020-review.md`.
+6. Because posting mode is `draft-only`, the workflow ends without posting to
+   GitHub.
+
+Output:
+
+```text
+Review file: pr-1020-review.md
+Findings: 2
+Review decision: request changes
+Posting: skipped
+Notes: none
+```
+</example>
