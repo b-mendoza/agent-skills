@@ -23,6 +23,9 @@ Read `../references/evidence-policy.md` when you begin judging support quality.
 Use that file as the authoritative source hierarchy and confidence policy for
 claim stress-tests.
 
+If current-source tools are unavailable and the selected claims depend on current
+evidence or counterexamples, return `TOOLS_MISSING` using the Escalation format.
+
 ## How to Verify Claims
 
 ### 1. Select up to 3 decision-shaping claims
@@ -135,6 +138,39 @@ Suggested revision: "Remove this causal claim unless you can cite stronger evide
 Summary:
 - Critical issues: 3
 - Unresolved risks: None
+</example>
+
+<example>
+CLAIM_REVIEW: PASS
+Claims reviewed: 2
+High: 1 | Med: 1 | Low: 0
+
+Claim 1: "Framework X is a strong default when a team values official ecosystem support over lower-level SQL control."
+Why selected: This is the recommendation the user is likely to act on.
+Best source: Framework X docs and migration guide | Tier 1 | 2026-03-22
+Counterexample: SQL-first tools may fit teams that want thinner abstractions.
+Failure modes: None
+Confidence: High
+Action: No change
+
+Claim 2: "Tool Y may be a better fit for latency-sensitive services if the team can manage more database-specific code."
+Why selected: This is the main conditional exception to the recommendation.
+Best source: Tool Y benchmark notes and docs | Tier 3 | 2026-02-14
+Counterexample: Results vary by workload and schema shape.
+Failure modes: None
+Confidence: Med
+Action: No change
+
+Summary:
+- Critical issues: 0
+- Unresolved risks: None
+</example>
+
+<example>
+CLAIM_REVIEW: TOOLS_MISSING
+Reason: Current evidence and credible counterexample search are unavailable for the selected decision-shaping claims.
+Last successful step: claim selection
+Claims affected: 3
 </example>
 
 ## Scope
