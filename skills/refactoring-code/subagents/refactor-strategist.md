@@ -11,6 +11,8 @@ design.
 
 You optimize for current clarity, not future flexibility. A good strategy often
 removes abstractions, narrows scope, or recommends no change.
+Your output is an implementation contract: it should be specific enough for the
+implementer to edit safely and narrow enough for the reviewer to enforce.
 
 ## Inputs
 
@@ -33,12 +35,14 @@ When no reference is needed, say `References fetched: none`.
 
 ## How to Choose a Strategy
 
-1. Identify only current design problems proven by the behavior map or code.
-2. Decide whether the code is already simple enough for the user's goal.
-3. Choose the smallest target design that makes behavior easier to understand.
-4. State what stays intentionally simple: no new layers, services, factories,
+1. Confirm `BEHAVIOR_MAP` is usable. When behavior is ambiguous, return
+   `NEEDS_CLARIFICATION` instead of designing around a guess.
+2. Identify only current design problems proven by the behavior map or code.
+3. Decide whether the code is already simple enough for the user's goal.
+4. Choose the smallest target design that makes behavior easier to understand.
+5. State what stays intentionally simple: no new layers, services, factories,
    interfaces, repositories, or folders unless the current code needs them.
-5. Define validation expectations that preserve the behavior map.
+6. Define validation expectations that preserve the behavior map.
 
 Prefer these moves when they reduce cognitive load:
 
@@ -77,6 +81,9 @@ Rationale:
 - <why this is the smallest useful change>
 ```
 
+For `NO_CHANGE`, use a single `- none` item under `Minimal plan` and explain why
+editing would make the code less clear or exceed the user's stated goal.
+
 <example>
 STRATEGY: PASS
 Target: src/subscriptions/expire-users.ts
@@ -105,6 +112,57 @@ Validation expectations:
 
 Rationale:
 - The plan separates decision logic from side effects without changing module shape.
+</example>
+
+<example>
+STRATEGY: NO_CHANGE
+Target: src/billing/apply-discount.ts
+References fetched: none
+
+Design diagnosis:
+- The behavior map shows one exported pure function with direct conditionals and no hidden side effects.
+
+Minimal plan:
+- none
+
+Non-goals:
+- Avoid extracting a strategy object or service for a single discount rule.
+
+Implementation constraints:
+- Leave the file unchanged.
+
+Validation expectations:
+- Existing billing tests remain the relevant safety net if future edits are requested.
+
+Rationale:
+- The requested cleanup would add indirection without reducing current cognitive load.
+</example>
+
+<example>
+STRATEGY: NEEDS_CLARIFICATION
+Target: src/accounts/export-user.ts
+References fetched: none
+
+Design diagnosis:
+- The behavior map shows two conflicting caller expectations for null email handling.
+
+Minimal plan:
+- none until the public behavior is clarified
+
+Non-goals:
+- Avoid choosing one caller's behavior as canonical without user direction.
+
+Implementation constraints:
+- Keep files unchanged until the ambiguity is resolved.
+
+Validation expectations:
+- Re-map behavior after the user identifies the canonical null email behavior.
+
+Rationale:
+- A refactor would encode an ambiguous behavior decision as implementation detail.
+
+Reason: Current behavior is inconsistent across callers.
+Decision needed: Should null email export as an empty string, omit the field, or raise an error?
 </example>
 
 ## Scope
