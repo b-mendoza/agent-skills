@@ -22,12 +22,16 @@ not for exhaustive attack catalogs.
 | `TEST_VALUE_REVIEW` | No | Output from `test-value-reviewer` |
 | `REFERENCE_MAP_PATH` | Yes | `./references/testing-reference-map.md` |
 
+`TARGET_TEST_FILES` may be one path, multiple explicit paths, a directory, or a
+glob pattern. Resolve the target before reporting findings.
+
 ## Reference Policy
 
 Use local API contracts, schemas, auth rules, and error behavior first. Fetch
 OWASP or framework documentation from `REFERENCE_MAP_PATH` only when it changes a
-specific security test recommendation. Use the repository's recency-checking
-workflow when current security guidance materially affects the decision.
+specific security test recommendation. When current security guidance materially
+affects the decision, flag the exact freshness claim for the orchestrator to
+verify with `recency-guard` or an equivalent freshness check.
 
 When no reference is needed, say `References fetched: none`.
 
@@ -44,14 +48,18 @@ When no reference is needed, say `References fetched: none`.
 5. Mark the review `NOT_APPLICABLE` when no API or security-sensitive surface is
    present.
 
+Limit each output section to the top five highest-signal items unless the user
+explicitly requested an exhaustive inventory.
+
 ## Output Format
 
 Use this exact structure:
 
 ```text
-API_SECURITY_REVIEW: PASS | NOT_APPLICABLE | NEEDS_CLARIFICATION | ERROR
+API_SECURITY_REVIEW: PASS | NOT_APPLICABLE | BLOCKED | NEEDS_CLARIFICATION | ERROR
 Targets: <TARGET_TEST_FILES>
 References fetched: none | <urls>
+Freshness check needed: none | <claim for orchestrator to verify>
 
 Surface reviewed:
 - <API, schema, auth, input, file, network, or boundary surface>
@@ -70,12 +78,16 @@ Recommended minimal additions:
 
 Blockers:
 - none | <question or missing context>
+
+Reason: none | <why status is not PASS or NOT_APPLICABLE>
+Decision needed: none | <smallest question or recovery action>
 ```
 
 <example>
 API_SECURITY_REVIEW: PASS
 Targets: tests/test_invoice_api.py
 References fetched: https://owasp.org/API-Security/editions/2023/en/0x11-t10/
+Freshness check needed: none
 
 Surface reviewed:
 - Invoice creation API accepts account ids and caller identity from external input.
@@ -94,6 +106,37 @@ Recommended minimal additions:
 
 Blockers:
 - none
+
+Reason: none
+Decision needed: none
+</example>
+
+<example>
+API_SECURITY_REVIEW: NOT_APPLICABLE
+Targets: tests/test_currency_formatting.py
+References fetched: none
+Freshness check needed: none
+
+Surface reviewed:
+- Pure formatting helper with no external input boundary beyond typed function arguments.
+
+Current high-value coverage:
+- none
+
+Missing high-value tests:
+- none
+
+Low-value security tests:
+- none
+
+Recommended minimal additions:
+- none
+
+Blockers:
+- none
+
+Reason: No API or security-sensitive surface found.
+Decision needed: none
 </example>
 
 ## Scope
@@ -113,10 +156,11 @@ Use these status codes precisely:
 
 - `PASS` when security-relevant recommendations are complete
 - `NOT_APPLICABLE` when the target has no API or security-sensitive surface
+- `BLOCKED` when required inputs, files, tools, or reference map are unavailable
 - `NEEDS_CLARIFICATION` when the contract or threat boundary is unclear
 - `ERROR` when an unexpected failure prevents review
 
-If you return `NEEDS_CLARIFICATION` or `ERROR`, include:
+If you return any status other than `PASS` or `NOT_APPLICABLE`, include:
 
 ```text
 Reason: <what blocks review>
