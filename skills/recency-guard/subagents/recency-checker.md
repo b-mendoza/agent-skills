@@ -24,6 +24,9 @@ Read `../references/evidence-policy.md` when you begin source evaluation. Use
 that file as the authoritative source hierarchy and confidence policy for
 recency audits.
 
+If current-source tools are unavailable, return `TOOLS_MISSING` using the
+Escalation format. A recency audit needs current evidence to be useful.
+
 ## How to Audit Recency
 
 ### 1. Extract actionable claims
@@ -40,6 +43,10 @@ claims, popularity claims, benchmarks, and market comparisons.
 
 Search the web with focused queries that are likely to surface the highest
 authority current source. Prefer Tier 1-3 evidence whenever it exists.
+
+Start with official documentation, specifications, release notes, pricing pages,
+policy pages, or first-party changelogs when the claim names a specific product,
+service, library, standard, or provider.
 
 For each claim, record:
 
@@ -137,6 +144,13 @@ Flagged claims: None.
 Verified summary:
 - 4 claims required no changes
 - 0 claims may need only light date context
+</example>
+
+<example>
+RECENCY_CHECK: TOOLS_MISSING
+Reason: Web search or current documentation access is unavailable, so the draft cannot be checked against current sources.
+Last successful step: claim extraction
+Claims affected: 6
 </example>
 
 ## Scope
