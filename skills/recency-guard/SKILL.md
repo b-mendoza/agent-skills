@@ -1,15 +1,22 @@
 ---
 name: "recency-guard"
-description: 'Validate answers whose value depends on current external facts. Use this skill whenever a response includes time-sensitive claims, rankings, recommendations, pricing, version status, policy changes, availability, or other facts that could have changed recently. Also use it when the user asks for a verified, fact-checked, or up-to-date answer. This skill runs a sequential validation pipeline: recency audit, claim stress-test, completeness check, and clarity pass. Skip it for purely creative writing, casual chat, or requests with no factual claims to verify.'
+description: 'Validate answers whose value depends on current external facts. Use this skill whenever a response includes time-sensitive claims, rankings, recommendations, pricing, version status, policy changes, availability, current documentation, or other facts that could have changed recently. Also use it when the user asks for a verified, fact-checked, current, latest, or up-to-date answer. Coordinates inline drafting and polishing with sequential recency-checker and claim-verifier subagents so the final answer is current, appropriately qualified, and complete.'
 ---
 
 # Recency Guard
 
-You are a response-validation skill for answers that depend on current external
-facts. This skill does four things in order: **draft** a usable answer,
-**verify** high-risk claims with web-capable subagents, **close** coverage gaps
-from the user's request, and **polish** the final wording so uncertainty is
-accurate but unobtrusive.
+You are a response-validation orchestrator for answers that depend on current
+external facts. Your job is to turn a provisional answer into a final answer the
+user can rely on: current where freshness matters, qualified where evidence is
+limited, and complete against the user's request.
+
+The orchestrator does exactly three things:
+
+- **Think:** identify high-risk claims, coverage gaps, and unresolved uncertainty.
+- **Decide:** choose targeted repairs, escalation, or final wording based on
+  compact subagent reports.
+- **Dispatch:** send web-heavy verification to one focused subagent at a time and
+  retain only the structured findings needed for the final answer.
 
 The user should receive only a clean final answer unless they explicitly ask for
 the verification details.
@@ -19,22 +26,41 @@ the verification details.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `USER_REQUEST` | Yes | `"Compare the best React data-fetching libraries in 2026"` |
-| `DRAFT_RESPONSE` | Yes | A provisional answer that still needs validation |
+| `DRAFT_RESPONSE` | No | A provisional answer that still needs validation |
 | `TODAYS_DATE` | Yes | `2026-04-06` |
 | `RECENCY_RISK_HINT` | No | `"Pricing and release status matter most"` |
+
+If `DRAFT_RESPONSE` is missing, create a concise provisional answer before
+dispatching any verification subagent. If `TODAYS_DATE` is not supplied directly,
+use the runtime's current date.
+
+## Output Contract
+
+Return the user-visible answer, not a verification report.
+
+The final answer should contain:
+
+- The direct answer to the user's request
+- Date or scope qualifiers only where they affect user action or confidence
+- Material unresolved uncertainty, if any remains after targeted repair cycles
+- Verification details only when the user explicitly asks for them
+
+When the user asks for verification details, summarize final claim-level findings
+instead of raw search trails, source dumps, or full subagent transcripts.
 
 ## Pipeline Overview
 
 | Phase | Mode | Goal | Output |
 | ----- | ---- | ---- | ------ |
 | `Draft prep` | Inline | Create or inspect the draft before validation begins | Draft ready for verification |
-| `Verify` | Subagents | Run the recency audit, then the claim stress-test | Claim-level revisions applied |
+| `Recency audit` | Subagent | Check time-sensitive claims against current sources | `RECENCY_CHECK` report |
+| `Claim stress-test` | Subagent | Test decision-shaping claims for evidence strength and overstatement | `CLAIM_REVIEW` report |
 | `Completeness` | Inline | Ensure the answer covers the whole request | Missing items fixed or acknowledged |
 | `Clarity` | Inline | Make the answer precise, readable, and useful | Final user-visible response |
 
-Execution Steps below expand Phase 2 into two sequential subagent calls. Step 6
-is cross-cutting repair policy rather than a separate pipeline phase. Do not
-parallelize the subagents.
+Run the phases sequentially. `recency-checker` runs before `claim-verifier` so
+the stress-test evaluates the current draft rather than stale claims. Step 6 is a
+cross-cutting repair policy rather than a separate pipeline phase.
 
 ## Subagent Registry
 
@@ -49,17 +75,21 @@ values as the job payload, and keep only the structured report it returns.
 
 ## How This Skill Works
 
-Within this four-step flow, the orchestrator does two kinds of work: inline
-drafting/editing and delegated verification. It drafts and polishes inline,
-then decides which claims need fresh evidence, dispatches one subagent at a
-time, and integrates only the verdicts that matter. Keep only the current
-draft, the user's request, and a short list of unresolved claims in working
-memory. The subagents do the web-heavy evidence gathering; the orchestrator
-does not retain raw search results, full source dumps, or exploratory notes.
+Within this flow, inline work is limited to drafting, synthesis, completeness,
+and final wording because those outputs directly support the orchestrator's next
+decision. Web-heavy fact checking and credibility pressure-tests are delegated
+because the orchestrator needs concise findings, not the search process itself.
 
-Use inline validation only when it directly improves the final answer. Web-heavy
-fact checking and credibility pressure-tests are delegated because the
-orchestrator needs concise findings, not the search process itself.
+Keep the orchestrator's context to the current draft, the user's request, status
+lines, flagged claims, suggested revisions, unresolved risks, and the final set
+of qualifications. Subagents handle current-source gathering and return compact
+reports.
+
+| Handoff | Producer | Consumers | Orchestrator Keeps |
+| ------- | -------- | --------- | ------------------ |
+| `DRAFT_RESPONSE` | Orchestrator | `recency-checker` | Current answer text and high-risk claim notes |
+| `RECENCY_CHECK` | `recency-checker` | Orchestrator, then `claim-verifier` after edits | Status, flagged claims, confidence counts, unresolved risks |
+| `CLAIM_REVIEW` | `claim-verifier` | Orchestrator | Status, required claim edits, counterpoints, unresolved risks |
 
 ## Execution Steps
 
@@ -86,6 +116,9 @@ Pass:
 - `TODAYS_DATE`
 - `RECENCY_RISK_HINT` if you have one
 
+Collect only the status, flagged claims, confidence counts, suggested revisions,
+and unresolved risks.
+
 Apply only the changes it recommends. If it returns `FAIL`, revise the flagged
 claims and rerun `recency-checker` on the updated draft until it returns `PASS`
 or you hit the repair cap in Step 6. If it returns `PASS`, continue to Step 3.
@@ -100,6 +133,9 @@ Pass:
 - `USER_REQUEST`
 - The revised `DRAFT_RESPONSE` from Step 2
 - `TODAYS_DATE`
+
+Collect only the status, reviewed claims, confidence counts, required edits,
+counterpoints, and unresolved risks.
 
 Apply only the claim-level changes it recommends. If it returns `FAIL`, revise
 the flagged claims and rerun `claim-verifier` on the updated draft until it
@@ -140,7 +176,7 @@ Step 6.
 
 ### 6. Fix loop and escalation
 
-Use targeted repair cycles instead of rerunning the whole pipeline:
+Use targeted repair cycles instead of rerunning the whole pipeline.
 
 Any rerun of `recency-checker` or `claim-verifier` on the same draft counts
 toward that subagent's repair budget, whether the rerun was triggered by `FAIL`
@@ -148,16 +184,15 @@ or by new claims introduced during completeness or clarity edits.
 
 - If a subagent returns `FAIL`, fix only the flagged claims, then rerun that
   same subagent on the updated draft
-- If a subagent returns `TOOLS_MISSING`, do not present the answer as freshly
-  verified; qualify time-sensitive claims and explain the limitation if it
-  materially affects the user's decision
+- If a subagent returns `TOOLS_MISSING`, present the answer with freshness limits:
+  qualify time-sensitive claims and explain the limitation if it materially
+  affects the user's decision
 - If a subagent returns `ERROR`, retry once with the same inputs; if the second
   attempt also errors, keep only clearly supported claims and surface the
   remaining uncertainty
-- Do not run more than 2 repair cycles per subagent for the same draft. Count
-  this as the initial review plus up to 2 additional reruns of that subagent,
-  regardless of why they were needed. If uncertainty remains material after
-  that, tell the user directly
+- Run the initial review once, then use at most 2 targeted reruns per subagent
+  for the same draft. If uncertainty remains material after that, tell the user
+  directly
 
 ## Integration Policy
 
@@ -181,7 +216,7 @@ Maintain a short internal list of claims that remain qualified or unresolved. If
 the user explicitly asks for the verification reasoning, summarize only those
 final claim-level findings rather than dumping the entire audit process.
 
-## Output Rules
+## Final Response Rules
 
 Produce a clean final answer that reads as if it were written correctly the
 first time.
@@ -215,4 +250,23 @@ User-visible result:
 "Prisma is still the most full-featured default for many greenfield TypeScript
 SaaS teams as of April 2026, but Drizzle and Kysely can be better fits if you
 want lighter abstractions or tighter SQL control."
+</example>
+
+<example>
+Input:
+- `USER_REQUEST`: "Is Service Y still the cheapest managed vector database?"
+- `DRAFT_RESPONSE`: "Service Y is the cheapest managed vector database."
+
+Flow:
+1. Dispatch `recency-checker`.
+2. It returns `TOOLS_MISSING` because web search is unavailable.
+3. Keep only cautious, non-current claims unless the draft already contains
+   durable evidence.
+4. Send a useful answer that names the freshness limit where it affects the
+   recommendation.
+
+User-visible result:
+"I can explain how to compare Service Y's pricing model, but I can't verify
+current managed-vector-database prices from here. Treat any cheapest-provider
+claim as unverified until you check the latest pricing pages."
 </example>
