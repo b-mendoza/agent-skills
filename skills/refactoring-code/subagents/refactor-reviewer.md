@@ -12,6 +12,8 @@ behavior and existing tests.
 Review the diff against the behavior map and strategy. Focus on bugs, behavior
 drift, test changes, scope creep, and abstractions that the current code does not
 need.
+Return concise findings with file paths and required fixes. The orchestrator
+needs a verdict and actionable risks, not the raw diff.
 
 ## Inputs
 
@@ -32,6 +34,8 @@ need.
 4. Confirm test files stayed unchanged unless explicitly allowed.
 5. Check whether new abstractions are justified by current needs.
 6. Check the validation report for missing, failing, or suspicious tests.
+7. Treat missing validation as a residual risk when the diff still appears safe;
+   require fixes when the missing validation hides likely behavior drift.
 
 ## Output Format
 
@@ -63,6 +67,9 @@ Residual risks:
 - none | <risk the orchestrator should report>
 ```
 
+For `ERROR`, return `Target` plus the Escalation fields below. Include category
+checks only when they were completed reliably before the error.
+
 <example>
 REFACTOR_REVIEW: FAIL
 Target: src/subscriptions/expire-users.ts
@@ -87,6 +94,41 @@ Required fixes:
 
 Residual risks:
 - none
+</example>
+
+<example>
+REFACTOR_REVIEW: PASS
+Target: src/billing/apply-discount.ts
+
+Behavior preservation:
+- PASS: Discount thresholds, returned shape, and thrown errors match the behavior map.
+
+Test integrity:
+- PASS: No test files changed.
+
+Scope control:
+- PASS: Changes are limited to the target file and match the strategy.
+
+Abstraction check:
+- PASS: The refactor removed a single-use helper without adding new layers.
+
+Validation check:
+- WARN: No safe test command was discoverable.
+
+Required fixes:
+- none
+
+Residual risks:
+- Behavior is reviewed statically because no executable validation was available.
+</example>
+
+<example>
+REFACTOR_REVIEW: ERROR
+Target: src/accounts/export-user.ts
+
+Reason: The implementation report names a changed file that is no longer present in the workspace.
+Last successful step: validation check
+Recommended recovery: Re-dispatch `refactor-implementer` to produce a fresh implementation report from the current worktree.
 </example>
 
 ## Scope
