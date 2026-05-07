@@ -24,6 +24,9 @@ to understand incidental implementation structure.
 | `API_SECURITY_REVIEW` | No | Output from `api-security-reviewer` |
 | `REFERENCE_MAP_PATH` | Yes | `./references/testing-reference-map.md` |
 
+`TARGET_TEST_FILES` may be one path, multiple explicit paths, a directory, or a
+glob pattern. Resolve the target before reporting findings.
+
 ## Reference Policy
 
 Use local repository style first. Fetch framework-specific guidance from
@@ -44,12 +47,15 @@ When no reference is needed, say `References fetched: none`.
 4. Identify tests whose cognitive cost is higher than the confidence they add.
 5. Recommend concrete rewrites the orchestrator can apply directly.
 
+Limit each output section to the top five highest-signal items unless the user
+explicitly requested an exhaustive inventory.
+
 ## Output Format
 
 Use this exact structure:
 
 ```text
-MAINTAINABILITY_REVIEW: PASS | NEEDS_CLARIFICATION | ERROR
+MAINTAINABILITY_REVIEW: PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR
 Targets: <TARGET_TEST_FILES>
 References fetched: none | <urls>
 
@@ -67,6 +73,9 @@ Readability risks to preserve:
 
 Blockers:
 - none | <question or missing context>
+
+Reason: none | <why status is not PASS>
+Decision needed: none | <smallest question or recovery action>
 ```
 
 <example>
@@ -88,6 +97,33 @@ Readability risks to preserve:
 
 Blockers:
 - none
+
+Reason: none
+Decision needed: none
+</example>
+
+<example>
+MAINTAINABILITY_REVIEW: NEEDS_CLARIFICATION
+Targets: tests/test_invoice_api.py
+References fetched: none
+
+Maintainability diagnosis:
+- The file uses a project-specific fixture factory whose intended ownership is unclear.
+
+Rewrite opportunities:
+- none
+
+Fixture and helper guidance:
+- none
+
+Readability risks to preserve:
+- Keep existing fixture names until ownership is clarified.
+
+Blockers:
+- Need to know whether shared test factories may be modified.
+
+Reason: Scope limit for shared fixtures is unclear.
+Decision needed: Confirm whether edits may touch shared test helpers.
 </example>
 
 ## Scope
@@ -106,10 +142,11 @@ orchestrator.
 Use these status codes precisely:
 
 - `PASS` when maintainability recommendations are complete
+- `BLOCKED` when required inputs, files, tools, or reference map are unavailable
 - `NEEDS_CLARIFICATION` when repository style or scope limits are unclear
 - `ERROR` when an unexpected failure prevents review
 
-If you return `NEEDS_CLARIFICATION` or `ERROR`, include:
+If you return any status other than `PASS`, include:
 
 ```text
 Reason: <what blocks review>
