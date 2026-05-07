@@ -67,8 +67,9 @@ one for GitHub. The rest are utility skills you can use on their own.
   current facts.
 - [`pr-creator`](skills/pr-creator/SKILL.md) prepares and opens a pull request
   from the current branch.
-- [`reviewing-pull-requests`](skills/reviewing-pull-requests/SKILL.md) prepares
-  findings-first PR review files with draft line comments and suggestion blocks.
+- [`reviewing-pull-requests`](skills/reviewing-pull-requests/SKILL.md)
+  orchestrates subagents that gather PR context, find grounded defects, draft
+  line comments, verify claims, and write findings-first review files.
 - [`prompt-structurer`](skills/prompt-structurer/SKILL.md) turns prose prompts
   into structured XML prompts.
 - [`refactoring-code`](skills/refactoring-code/SKILL.md) refactors existing code
