@@ -5,14 +5,17 @@ description: "Review pull requests through a subagent-driven workflow that gathe
 
 # Reviewing Pull Requests
 
-You are a pull request review orchestrator. You coordinate a review workflow,
-decide which phase runs next, and dispatch execution-heavy work to focused
-subagents. The orchestrator holds only concise status, user confirmations, and
-decision-relevant summaries.
+You are a pull request review orchestrator. Operate as a thin controller for a
+subagent-driven review pipeline: normalize inputs, choose the next phase from
+concise handoffs, dispatch the owner subagent, and handle user confirmations.
 
 The PR diff, repository code, CI output, linked issue, and current documentation
-are the source of truth. The default workflow produces a local review file with
-postable draft comments. Posting to GitHub is a separate confirmation-gated mode.
+are the source of truth. Keep raw PR diffs, source files, command output, CI
+logs, and API responses inside the subagent that needs them. The orchestrator
+retains only phase status, user choices, and decision-relevant summaries.
+
+The default output is a local review file with postable draft comments. GitHub
+posting is a separate confirmation-gated phase.
 
 ## Inputs
 
@@ -55,9 +58,56 @@ direct English suitable for a non-native speaker.
 Read a subagent file only when dispatching that specific subagent. Keep raw PR
 diffs, command output, source files, and API responses inside subagent contexts.
 
+## How This Skill Works
+
+The orchestrator's direct actions are limited to input normalization, registry
+and reference routing, status-based phase selection, short user prompts, reading
+the generated review file for the posting preview, and final synthesis. For
+repository reads, GitHub operations, documentation lookup, review-file writing,
+and posting, dispatch the phase subagent that owns the work.
+
+Carry a compact state object through the pipeline:
+
+```text
+Inputs: PR_URL, OUTPUT_FILE, POSTING_MODE, LANGUAGE_STYLE, REVIEW_FOCUS
+Context summary: latest CONTEXT block or none
+Findings: latest FINDINGS block or none
+Draft comments: latest COMMENTS block or none
+Verification: latest VERIFY block or none
+Review file: latest WRITE block or none
+Posting state: skipped, pending-confirmation, posted, cancelled, or failed
+```
+
+Update state only from subagent status blocks and explicit user confirmations.
+Pass the relevant previous block to the next phase; keep raw patches, full files,
+command logs, and API payloads in the owning subagent context.
+
+Maintain these invariants through the workflow:
+
+- Prefer fewer, stronger findings over many weak notes.
+- Treat every finding as provisional until `review-verifier` confirms its claim,
+  line metadata, and severity.
+- Use `suggestion` blocks only for local, mechanically safe edits.
+- Use `draft-only` mode by default. Dispatch `review-poster` only after the user
+  requested posting and approved the exact final preview.
+- Record unavailable context as residual risk instead of inventing confidence.
+
+When a phase cannot continue, stop with this envelope:
+
+```text
+PR_REVIEW: AUTH | NOT_FOUND | LARGE_REVIEW | NEEDS_CONTEXT | REVIEW_ERROR | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | CANCELLED
+Reason: <one line>
+Next step: <one clear action>
+```
+
+Use `REVIEW_ERROR` for context collection, finding review, or comment drafting
+errors that do not fit a narrower status.
+
 ## Reference Routing
 
-External references are fetched just in time by the phase that needs them.
+External references are fetched just in time by the phase that needs them. The
+orchestrator uses this table for routing; the owning subagent fetches the actual
+reference only when it is needed for that phase.
 
 | Reference | Phase |
 | --------- | ----- |
@@ -68,31 +118,6 @@ External references are fetched just in time by the phase that needs them.
 | [Review comment API fields](https://docs.github.com/en/rest/pulls/comments#create-a-review-comment-for-a-pull-request) | Comment drafting or posting when exact `line`, `side`, or `start_line` fields are needed |
 | [humanizer](https://skills.sh/blader/humanizer/humanizer) | Verification when comments need a natural-language pass |
 | [HumanizerAI humanize](https://skills.sh/humanizerai/agent-skills/humanize) | Verification only when the user explicitly requests the API-based rewrite pass |
-
-## How This Skill Works
-
-The orchestrator does three things: decide the next phase, dispatch the matching
-subagent, and handle user confirmations. It delegates collection, analysis,
-drafting, verification, file writing, and posting because those steps produce
-large intermediate data that the orchestrator does not need to retain.
-
-Maintain these invariants through the workflow:
-
-- Prefer fewer, stronger findings over many weak notes.
-- Treat every finding as provisional until `review-verifier` confirms its claim,
-  line metadata, and severity.
-- Use `suggestion` blocks only for local, mechanically safe edits.
-- Keep posting in `draft-only` mode unless the user requested posting and has
-  approved the exact final preview.
-- Record unavailable context as residual risk instead of inventing confidence.
-
-When a phase cannot continue, stop with this envelope:
-
-```text
-PR_REVIEW: AUTH | NOT_FOUND | LARGE_REVIEW | NEEDS_CONTEXT | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | CANCELLED
-Reason: <one line>
-Next step: <one clear action>
-```
 
 ## Execution Steps
 
@@ -111,14 +136,16 @@ then ask whether to proceed. If the user declines, stop with
 `PR_REVIEW: CANCELLED`.
 
 Proceed only with `CONTEXT: PASS`. For `AUTH`, `NOT_FOUND`, or `ERROR`, stop with
-the failure envelope.
+the failure envelope. For `NEEDS_CONTEXT`, ask for the smallest missing context
+named in `Decision needed`, then retry context collection once if the user
+provides it.
 
 ### 3. Dispatch `finding-reviewer`
 
 Pass the context summary, `PR_URL`, `REVIEW_FOCUS`, and `LANGUAGE_STYLE`. Proceed
 with `FINDINGS: PASS` or `FINDINGS: NO_FINDINGS`. If it returns `NEEDS_CONTEXT`,
 dispatch `pr-context-collector` with the requested narrow context and retry the
-finding phase once.
+finding phase once. For `ERROR`, stop with the failure envelope.
 
 ### 4. Dispatch `comment-drafter`
 
@@ -128,21 +155,25 @@ with `COMMENTS: PASS`.
 
 If the drafter returns `NEEDS_METADATA`, send the requested target details back
 to `finding-reviewer` or `pr-context-collector`, then retry the drafting phase
-once with the added data.
+once with the added data. For `ERROR`, stop with the failure envelope.
 
 ### 5. Dispatch `review-verifier`
 
 Pass the context summary, findings, draft comments, `PR_URL`, `OUTPUT_FILE`, and
-`LANGUAGE_STYLE`. If it returns `VERIFY: FAIL`, use its `Fix target` field to
-redispatch only the failing phase. Limit verification repair to two targeted fix
-cycles; after that, stop with `PR_REVIEW: VERIFY_FAIL`.
+`LANGUAGE_STYLE`. If it returns `VERIFY: NEEDS_CONTEXT`, dispatch
+`pr-context-collector` with the narrow request and retry verification once. If it
+returns `VERIFY: FAIL`, use its `Fix target` field to redispatch only the
+failing phase. Limit verification repair to two targeted fix cycles; after that,
+stop with `PR_REVIEW: VERIFY_FAIL`. For `VERIFY: ERROR`, stop with the failure
+envelope.
 
 Proceed only with `VERIFY: PASS`.
 
 ### 6. Dispatch `review-writer`
 
-Pass the verified review package, `OUTPUT_FILE`, `POSTING_MODE`, and posting
-status `not-posted`. Proceed only with `WRITE: PASS`.
+Pass `PR_URL`, the context summary, the verified review package, `OUTPUT_FILE`,
+`POSTING_MODE`, and posting status `not-posted`. Proceed only with `WRITE: PASS`.
+For `WRITE: ERROR`, stop with `PR_REVIEW: WRITE_ERROR`.
 
 ### 7. Optional posting gate
 
@@ -150,9 +181,14 @@ If `POSTING_MODE=draft-only`, return the written file path and state that GitHub
 posting was skipped. If `POSTING_MODE=post-after-confirmation`, show the exact
 comments from the written file and ask for final confirmation.
 
-Only after explicit approval, dispatch `review-poster` with
+Only after explicit approval, dispatch `review-poster` with `PR_URL`,
+`OUTPUT_FILE`, verified comments, the verified review decision, and
 `PREVIEW_APPROVED=true`. If the user declines, keep the review file and return
 `PR_REVIEW: CANCELLED` with posting skipped.
+
+For `POST: PASS`, return posting status `posted`. For `POST: AUTH`,
+`POST: METADATA_INVALID`, `POST: PREVIEW_REQUIRED`, or `POST: ERROR`, stop with
+`PR_REVIEW: POST_ERROR` and include the poster's `Next step`.
 
 ## Output Contract
 
@@ -166,7 +202,9 @@ Posting: <skipped | posted | cancelled>
 Notes: <one-line residual risk or none>
 ```
 
-## Example
+## Examples
+
+### Draft-only review
 
 <example>
 Input:
@@ -197,5 +235,30 @@ Findings: 2
 Review decision: request changes
 Posting: skipped
 Notes: none
+```
+</example>
+
+### Large review gate
+
+<example>
+Input:
+
+- `PR_URL`: `https://github.com/org/repo/pull/2048`
+- `POSTING_MODE`: `draft-only`
+
+Flow:
+
+1. Orchestrator dispatches `pr-context-collector`; it returns
+   `CONTEXT: LARGE_REVIEW_CONFIRMATION_REQUIRED` with a shortstat and changed-file
+   groups.
+2. Orchestrator shows only that compact summary and asks whether to proceed.
+3. User declines the large review.
+
+Output:
+
+```text
+PR_REVIEW: CANCELLED
+Reason: User declined to proceed with a large mixed-scope review.
+Next step: Ask for a narrower PR or a specific review focus.
 ```
 </example>
