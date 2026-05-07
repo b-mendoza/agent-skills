@@ -7,7 +7,7 @@ Claude Code aligned.
 
 ## What is in this repository
 
-- [`skills/`](skills/) has 19 first party skills.
+- [`skills/`](skills/) has 20 first party skills.
 - [`docs/`](docs/) has workflow notes, design specs, and writing guidance.
 - [`docs/best-practices/`](docs/best-practices/) is the best place to start if
   you want to edit a skill.
@@ -69,6 +69,9 @@ one for GitHub. The rest are utility skills you can use on their own.
   from the current branch.
 - [`prompt-structurer`](skills/prompt-structurer/SKILL.md) turns prose prompts
   into structured XML prompts.
+- [`refactoring-code`](skills/refactoring-code/SKILL.md) refactors existing code
+  through behavior mapping, minimal strategy, implementation, and review
+  subagents while preserving observable behavior.
 - [`workflow-skill-architect`](skills/workflow-skill-architect/SKILL.md) helps
   turn a repeatable process into a reusable skill or set of subagents.
 
