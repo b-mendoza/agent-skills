@@ -76,8 +76,9 @@ one for GitHub. The rest are utility skills you can use on their own.
   files into minimal, high-signal behavior-focused harnesses with just-in-time
   testing and security references.
 - [`rewriting-code-strictly`](skills/rewriting-code-strictly/SKILL.md) rewrites
-  Python, TypeScript/JavaScript, and Go code for strict typing, validated
-  boundaries, and maintainable idioms with per-language playbooks.
+  Python, TypeScript/JavaScript, and Go code through baseline mapping, strict
+  rewrite strategy, implementation, and review subagents with per-language
+  playbooks.
 - [`workflow-skill-architect`](skills/workflow-skill-architect/SKILL.md) helps
   turn a repeatable process into a reusable skill or set of subagents.
 
