@@ -13,6 +13,13 @@ This skill treats refactoring as disciplined internal change, not a rewrite. The
 orchestrator keeps only concise reports and decisions in context; subagents do
 the raw code inspection, editing, validation, and review.
 
+The orchestrator does exactly three things:
+
+- **Think:** compare concise subagent reports against the user's goal and scope.
+- **Decide:** choose the next phase, ask targeted questions, or stop safely.
+- **Dispatch:** pass explicit inputs to one subagent at a time and retain only the
+  structured result needed for the next decision.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -27,7 +34,22 @@ If `TARGET_PATH` is missing, ask one focused question for the path before
 starting. If the user supplies multiple unrelated targets, run one complete
 cycle per target unless they explicitly ask for a broad architectural pass.
 
-## Workflow Overview
+## Output Contract
+
+Return the final handoff in this order:
+
+1. Current behavior summary
+2. Design diagnosis focused on current problems only
+3. Code changes made
+4. Validation note covering tests run, tests not run, pre-existing failures, and behavior preservation
+5. Review outcome and any remaining risks
+6. Brief improvement summary covering simplicity, readability, maintainability, domain clarity, and side-effect separation where applicable
+
+For `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, or `ERROR`, return the status,
+the smallest reason it stopped, the next decision needed, and any validation that
+was already completed.
+
+## Pipeline Overview
 
 | Phase | Mode | Goal | Output |
 | ----- | ---- | ---- | ------ |
@@ -50,6 +72,27 @@ Read a subagent file only when dispatching that specific subagent. Keep the
 orchestrator's context to status lines, file paths, verdicts, and concise
 summaries.
 
+## How This Skill Works
+
+Hold the current code's behavior as the source of truth. The behavior map creates
+the safe baseline. The strategy names only problems that exist now and selects a
+minimal target design. The implementer makes small edits against that strategy.
+The reviewer protects the boundary: same behavior, same tests, smaller code.
+
+Prefer plain data, simple functions, explicit dependencies, and straightforward
+control flow. Architecture patterns, DDD language, Functional Core / Imperative
+Shell, and SOLID are tools for clarifying current behavior; they are not goals by
+themselves.
+
+Pass structured handoffs between phases:
+
+| Handoff | Producer | Consumers | Orchestrator Keeps |
+| ------- | -------- | --------- | ------------------ |
+| `BEHAVIOR_MAP` | `behavior-mapper` | `refactor-strategist`, `refactor-implementer`, `refactor-reviewer` | Status, behavior facts, risk notes, validation command |
+| `STRATEGY` | `refactor-strategist` | `refactor-implementer`, `refactor-reviewer` | Status, minimal plan, non-goals, constraints |
+| `IMPLEMENTATION` | `refactor-implementer` | `refactor-reviewer` | Status, files changed, validation summary, reviewer focus |
+| `REFACTOR_REVIEW` | `refactor-reviewer` | Orchestrator, optionally `refactor-implementer` for fixes | Verdict, required fixes, residual risks |
+
 ## Reference Routing
 
 Only `refactor-strategist` should fetch conceptual references, and only when a
@@ -69,21 +112,9 @@ specific design decision needs them. Local code evidence is usually enough.
 | Bounded contexts | https://martinfowler.com/bliki/BoundedContext.html |
 | SOLID as pragmatic discipline | https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html |
 
-When external current best practices materially affect the recommendation, use
-the repository's recency-checking workflow or equivalent freshness check before
-treating the reference as current.
-
-## How This Skill Works
-
-Hold the current code's behavior as the source of truth. The behavior map creates
-the safe baseline. The strategy names only problems that exist now and selects a
-minimal target design. The implementer makes small edits against that strategy.
-The reviewer protects the boundary: same behavior, same tests, smaller code.
-
-Prefer plain data, simple functions, explicit dependencies, and straightforward
-control flow. Architecture patterns, DDD language, Functional Core / Imperative
-Shell, and SOLID are tools for clarifying current behavior; they are not goals by
-themselves.
+When current external guidance materially affects the recommendation, route that
+check through `recency-guard` or an equivalent freshness check before treating the
+reference as current.
 
 ## Execution Steps
 
@@ -103,6 +134,9 @@ the user the smallest question that resolves the blocker.
 If the mapper returns `NO_CHANGE_CANDIDATE`, continue to strategy anyway; the
 strategy decides whether to stop or proceed.
 
+If the mapper returns `ERROR`, stop and report the mapper's recovery action. A
+refactor without a behavior baseline is unsafe.
+
 ### 2. Dispatch `refactor-strategist`
 
 Pass:
@@ -118,6 +152,9 @@ Collect the `STRATEGY` status, diagnosis, minimal plan, non-goals, and validatio
 expectations. If it returns `NO_CHANGE`, report that the code is already simple
 enough for the stated goal and stop without editing.
 
+If it returns `NEEDS_CLARIFICATION` or `ERROR`, ask the targeted question or
+report the recovery action. Keep editing paused until strategy is safe.
+
 ### 3. Dispatch `refactor-implementer`
 
 Pass:
@@ -131,6 +168,11 @@ Pass:
 The implementer edits only what the strategy justifies. Test files stay unchanged
 unless the user explicitly requested test edits.
 
+If the implementer returns `BLOCKED` or `ERROR`, stop and report the reason,
+files touched before the block, and smallest recovery action. If it returns
+`PASS_WITH_WARNINGS`, continue to review and preserve the warning for the final
+handoff.
+
 ### 4. Dispatch `refactor-reviewer`
 
 Pass:
@@ -143,26 +185,34 @@ Pass:
 If the reviewer returns `PASS`, proceed to the user handoff.
 
 If it returns `FAIL`, re-dispatch `refactor-implementer` with only the required
-fixes from the review, then re-run `refactor-reviewer`. Use at most two targeted
-fix cycles. If review still fails, stop and report the unresolved issues instead
-of continuing to reshape the code.
+fixes from the review. Collect the fresh `IMPLEMENTATION` report and validation
+summary, then re-run `refactor-reviewer`. Use at most two targeted fix cycles. If
+review still fails, stop and report the unresolved issues instead of continuing
+to reshape the code.
+
+If it returns `ERROR`, stop and report the reviewer's recommended recovery.
 
 ### 5. Return the handoff
 
-Report the result in this order:
-
-1. Current behavior summary
-2. Design diagnosis focused on current problems only
-3. Code changes made
-4. Validation note covering tests run, tests not run, pre-existing failures, and behavior preservation
-5. Review outcome and any remaining risks
-6. Brief improvement summary covering simplicity, readability, maintainability, domain clarity, and side-effect separation where applicable
+Use the Output Contract above. Keep the handoff compact; include file paths,
+commands, verdicts, and residual risks rather than raw diffs or command output.
 
 ## Validation Loop
 
-The review loop is targeted: fix only reviewer-identified problems, then rerun
-only the reviewer. A passing implementation still needs review because passing
-tests do not prove the refactor stayed minimal or avoided behavior drift.
+Validation is empirical and phase-gated:
+
+1. Map current behavior before design or editing.
+2. Validate the implementation with the user's `TEST_COMMAND`, the mapper's
+   suggested command, or the smallest discoverable existing check.
+3. Review the diff against the behavior map and strategy.
+4. Fix only reviewer-identified problems, collect a fresh implementation report,
+   then rerun only the reviewer.
+5. Use at most two targeted fix cycles. If the limit is exhausted, report the
+   unresolved review findings instead of broadening the refactor.
+
+Passing tests are necessary evidence, not the full proof. The review gate checks
+behavior preservation, scope control, and abstraction discipline that tests may
+not cover.
 
 ## Example
 
@@ -188,7 +238,8 @@ Flow:
 7. Orchestrator dispatches `refactor-reviewer`.
 8. Reviewer returns `REFACTOR_REVIEW: PASS` because behavior and tests stayed
    intact and no speculative layer was introduced.
-9. Orchestrator returns the concise user handoff.
+9. Orchestrator returns the concise user handoff with behavior, diagnosis,
+   changes, validation, review, and residual risks.
 </example>
 
 <example>
@@ -199,4 +250,15 @@ Review failure handling:
 2. Orchestrator re-dispatches `refactor-implementer` with that single finding.
 3. Implementer inlines the service into small pure functions.
 4. Reviewer reruns and returns `REFACTOR_REVIEW: PASS`.
+</example>
+
+<example>
+No-change handling:
+
+1. Mapper returns `BEHAVIOR_MAP: NO_CHANGE_CANDIDATE` with current behavior and
+   validation evidence.
+2. Strategist returns `STRATEGY: NO_CHANGE` because the code is already clear and
+   the requested cleanup would add indirection.
+3. Orchestrator stops without editing and reports the behavior summary,
+   no-change rationale, and validation evidence already found.
 </example>
