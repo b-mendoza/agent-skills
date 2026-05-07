@@ -1,10 +1,15 @@
 # Platform Adaptation
 
-> Read this file only when `remote.origin.url` does not point to GitHub.
+> Read this file only when `remote.origin.url` does not point to GitHub or a
+> GitHub Enterprise host that works with `gh`.
 >
 > Preserve the same workflow: validate auth, compare the full branch diff, show
 > a preview, wait for explicit confirmation, create the PR or MR, then return
 > the resulting URL.
+
+Platform-aware subagents read this file just in time. Return the same compact
+status envelopes defined by the calling subagent; do not return raw CLI logs to
+the orchestrator.
 
 ## GitLab
 
@@ -41,7 +46,7 @@ preview-first flow and then:
 
 1. Detect whether the repository uses a supported Bitbucket CLI or a custom API
    wrapper.
-2. If no supported CLI or API flow is available, stop and ask the user which
+2. If no supported CLI or API flow is available, return `BLOCKED` and ask which
    Bitbucket workflow their team expects. Do not fall back to `gh`.
 3. Reuse the drafted title, body, reviewer, label, and draft decisions.
 4. If the Bitbucket tooling can list labels reliably, use it. Otherwise skip
@@ -58,6 +63,8 @@ Use the main skill's failure format for non-GitHub flows too:
 - `HEAD_BRANCH_UNPUSHED` when the head branch must be pushed and the user
   declines or the push cannot complete
 - `EMPTY_DIFF` when there is nothing meaningful to compare
+- `BLOCKED` when the platform workflow cannot be determined safely
+- `CANCELLED` when the user declines a non-push confirmation gate
 - `CREATE_ERROR` when the platform create command fails after confirmation
 
 ## Platform Invariants
