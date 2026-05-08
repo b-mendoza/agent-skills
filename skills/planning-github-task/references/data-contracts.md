@@ -1,6 +1,8 @@
 # Planning GitHub Task Data Contracts
 
-> Read this file when checking prerequisites or artifact handoffs.
+> Read this file when checking prerequisites, artifact handoffs, or lifecycle
+> rules. Load `./references/artifact-templates.md` only when exact artifact
+> heading shape is needed.
 >
 > Reminder: the orchestrator keeps summaries and file paths, not raw task-plan
 > content.
@@ -42,70 +44,23 @@ Optional upstream context:
 - `docs/<ISSUE_SLUG>.md` may provide extra issue snapshot context if a subagent
   needs it
 - `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-decisions.md` is available on
-  critique-driven re-plan cycles (produced by the critique step)
-- Per-task lines or notes that reference a GitHub task issue (for example child
-  issue URLs or numbers) may already be present from an earlier task-linking
-  step; when this skill is invoked outside the normal orchestrated entry,
-  tolerate their absence but do not invent them
+  critique-driven re-plan cycles
+- Per-task lines or notes that reference a GitHub task issue may already be
+  present from an earlier task-linking step; tolerate their absence when this
+  skill is invoked outside the normal orchestrated entry
 
 ## Downstream Artifacts
 
-### `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-brief.md`
+| Artifact | Owner | Template |
+| -------- | ----- | -------- |
+| `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-brief.md` | `execution-prepper` | `Execution Brief Template` |
+| `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-execution-plan.md` | `execution-planner` | `Execution Plan Template` |
+| `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-test-spec.md` | `test-strategist` | `Test Specification Template` |
+| `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-refactoring-plan.md` | `refactoring-advisor` | `Refactoring Recommendation Template` |
 
-Owner: `execution-prepper`
-
-Must contain:
-
-- `# Execution Brief - <ISSUE_SLUG> Task <TASK_NUMBER>: <Title>`
-- `## Objective`
-- `## Relevant Requirements and Context`
-- `## Implementation Notes`
-- `## Definition of Done`
-- `## Likely Files / Artifacts Affected`
-- `## Resolved Questions and Decisions`
-- `## Constraints`
-
-### `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-execution-plan.md`
-
-Owner: `execution-planner`
-
-Must contain:
-
-- `# Execution Plan - <ISSUE_SLUG> Task <TASK_NUMBER>: <Title>`
-- `## Codebase Summary`
-- `## Recommended Skills`
-- `## Implementation Approach`
-- `## File-Level Strategy`
-- `## Risks and Considerations`
-- `## User Impact Assessment`
-- `## Blockers / Ambiguities`
-
-### `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-test-spec.md`
-
-Owner: `test-strategist`
-
-Must contain:
-
-- `# Test Specification - <ISSUE_SLUG> Task <TASK_NUMBER>: <Title>`
-- `## Test Framework and Conventions`
-- `## Test Groups`
-- `## Definition of Done Coverage`
-- `## Notes for Task Executor`
-- `## Blockers / Ambiguities`
-
-### `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-refactoring-plan.md`
-
-Owner: `refactoring-advisor`
-
-Must contain:
-
-- `# Refactoring Recommendation - <ISSUE_SLUG> Task <TASK_NUMBER>: <Title>`
-- `## Verdict`
-- `## Before Implementation`
-- `## During Implementation`
-- `## Out of Scope`
-- `## Impact on Existing Tests`
-- `## Blockers / Ambiguities`
+Each artifact must follow its matching template in
+`./references/artifact-templates.md`. For quick boundary checks, validate the
+path, owner, task identifier, and presence of the expected top-level heading.
 
 ## Artifact Lifecycle
 
