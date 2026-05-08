@@ -32,7 +32,7 @@ skill-name/
 ```
 
 Use only the directories the package needs. Paths in generated files are
-relative to the skill root and use forward slashes.
+relative to the file that contains them and use forward slashes.
 
 ## Frontmatter
 

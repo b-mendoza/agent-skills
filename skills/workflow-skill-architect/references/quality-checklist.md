@@ -30,7 +30,7 @@ a validation gate, not as always-loaded prompt content.
 ## Progressive Disclosure Checks
 
 - `SKILL.md` tells the agent what to load, when, and why.
-- Long templates or detailed checklists are in `references/`.
+- Long templates or detailed checklists are kept in bundled reference files.
 - Subagent files are read only when dispatched.
 - External sources replace long static explanations but do not become mandatory
   for normal execution.

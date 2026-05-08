@@ -62,7 +62,7 @@ subagents handle detailed analysis and return concise results.
 4. For each workflow step or artifact, dispatch `step-architect` with explicit
    inputs and ask it to return only the analysis summary plus complete files.
 5. Synthesize the step outputs into a coherent skill package: `SKILL.md`,
-   `subagents/`, `references/`, and optional `scripts/` or `assets/`.
+   `./subagents/`, `./references/`, and optional scripts or assets.
 6. Dispatch `definition-reviewer` before final delivery. Fix only failed checks,
    then re-run review up to three cycles.
 7. Deliver the final files, integration notes, and any external docs the agent

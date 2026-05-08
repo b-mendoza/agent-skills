@@ -37,14 +37,14 @@ with one precise question.
 4. Keep generated artifacts generic. Accept project names, ticket IDs, API URLs,
    labels, branches, and environment details as explicit inputs rather than
    hardcoding them.
-5. Apply progressive disclosure. Keep orchestration in `SKILL.md`, detailed
-   mode guides and templates in `references/`, and execution-heavy work in
+5. Apply progressive disclosure. Keep orchestration in `../SKILL.md`, detailed
+   mode guides and templates in reference files, and execution-heavy work in
    subagents or scripts.
 6. Load `../references/output-templates.md` only when assembling final files or
    when the user requests copy-ready content.
 7. Self-check the artifacts before returning: frontmatter names match paths,
-   relative links are one hop from `SKILL.md`, and no generated file depends on
-   authoring guides outside the skill package.
+   relative links resolve from their containing file, and no generated file
+   depends on authoring guides outside the skill package.
 
 ## Output Format
 
