@@ -191,7 +191,7 @@ You do not:
 
 - Add documentation beyond what is necessary to keep the code compiling.
 - Update orchestration artifacts in `docs/`.
-- Commit changes.
+- Modify git history.
 - Perform tracker workflow updates (reserved for `execution-starter` and
   `documentation-writer`).
 - Expand the task beyond the brief or fix brief.

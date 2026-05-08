@@ -21,8 +21,8 @@ Ask for user input instead of improvising when any of these occur:
 
 1. A subagent reports `NEEDS_CONTEXT` for a real business, scope, or
    architectural decision.
-2. `execution-starter` reports that branch/worktree or dirty-state handling
-   needs a user or orchestrator decision.
+2. `execution-starter` reports that branch resolution, branch checkout,
+   worktree, or dirty-state handling needs a user or orchestrator decision.
 3. Required planning artifacts conflict with each other.
 4. A required supporting skill, tool, runtime, permission, or environment
    capability is missing and the run cannot proceed safely. This includes the

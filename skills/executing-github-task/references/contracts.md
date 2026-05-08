@@ -28,7 +28,7 @@ All standard artifact paths derive from `ISSUE_SLUG` and `TASK_NUMBER`.
 | Path pattern | Why it matters |
 | ------------ | -------------- |
 | `docs/<ISSUE_SLUG>.md` | Issue snapshot and GitHub context. |
-| `docs/<ISSUE_SLUG>-tasks.md` | Task source of truth, `## GitHub Task Issues`, per-task `GitHub Task Issue:` lines. |
+| `docs/<ISSUE_SLUG>-tasks.md` | Task source of truth, `## GitHub Task Issues`, per-task `GitHub Task Issue:` lines, and planner-generated branch names. |
 | `docs/<ISSUE_SLUG>-task-<N>-brief.md` | Scope, context, and DoD. |
 | `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` | Approved implementation approach. |
 | `docs/<ISSUE_SLUG>-task-<N>-test-spec.md` | Required behavior coverage. |
@@ -64,6 +64,12 @@ Confirm all of the following before the kickoff step:
    `task-list`. Missing or `Not Created` does not block local implementation;
    it limits what `execution-starter` and `documentation-writer` can do with
    `gh` on a dedicated child issue.
+8. **Planner-generated branch name** (required for execution): resolve from the
+   selected task section's `**Branch name:**` line first, or from the matching
+   row in `## Execution Order Summary` if the inline line is absent. Missing or
+   conflicting branch names block kickoff because implementation would start on
+   the wrong task branch. In current-child-issue mode, the repeated branch for
+   the selected task row is still the branch to enter.
 
 ## Execution kickoff boundary
 
@@ -74,6 +80,7 @@ comment on GitHub issues for the purpose of starting implementation.
 At kickoff, the workflow may:
 
 - confirm or adjust branch/worktree readiness (when policy is explicit)
+- switch or check out the planner-generated branch for the selected task
 - apply dirty-worktree handling only when the policy is clear
 - perform **GitHub-side startup updates via `gh`** when a concrete task issue
   exists, for example:
@@ -106,7 +113,7 @@ success from partial file changes alone.
 
 | Subagent                | Required inputs |
 | ----------------------- | --------------- |
-| `execution-starter`     | `ISSUE_SLUG`, `TASK_NUMBER`, issue snapshot path, task plan path, execution brief path; optional readiness summaries already reduced to concise status notes |
+| `execution-starter`     | `ISSUE_SLUG`, `TASK_NUMBER`, issue snapshot path, task plan path with branch names, execution brief path; optional readiness summaries already reduced to concise status notes |
 | `task-executor`         | Paths to brief, execution plan, test spec, refactoring plan, decisions path; optional critique path, fix brief, previous execution report |
 | `documentation-writer`  | `EXECUTION_REPORT`, `ISSUE_SLUG`, `TASK_NUMBER` |
 | `requirements-verifier` | Brief path, test spec path, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT` |
@@ -118,8 +125,8 @@ success from partial file changes alone.
 
 | Category | Contents | Git behavior | Lifecycle |
 | -------- | -------- | ------------ | --------- |
-| A        | `docs/<ISSUE_SLUG>*.md`, progress files, briefs, plans, test specs, refactoring plans, critique, decisions | Never committed | Never deleted |
-| B        | Source, tests, config, in-code docs | Committed normally | Normal project rules |
+| A        | `docs/<ISSUE_SLUG>*.md`, progress files, briefs, plans, test specs, refactoring plans, critique, decisions | Keep out of git history | Never deleted |
+| B        | Source, tests, config, in-code docs | Changed by this workflow | Normal project rules |
 
 `documentation-writer` may update Category A artifacts on disk so the workflow
 can resume later, but those files stay out of git history.
@@ -132,7 +139,8 @@ After a successful run, all of the following should be true:
    completion rather than blocked partial progress.
 2. Execution kickoff either performed the planned GitHub startup actions via
    `gh` or reported clearly why each action was skipped.
-3. Category B changes are committed.
+3. Category B changes are present in the task-scoped change set and reflected in
+   the execution/documentation reports.
 4. The task section in `docs/<ISSUE_SLUG>-tasks.md` includes completion
    metadata consistent with your team template (e.g. status, implementation
    summary, files changed).

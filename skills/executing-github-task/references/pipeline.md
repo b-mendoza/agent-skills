@@ -21,8 +21,10 @@ Every successful task run follows this sequence:
      selected task is not ready.
 
 2. **Dispatch `execution-starter`.**
-   - Pass `ISSUE_SLUG`, `TASK_NUMBER`, issue snapshot path, task plan path, and
-     execution brief path.
+    - Pass `ISSUE_SLUG`, `TASK_NUMBER`, issue snapshot path, task plan path, and
+      execution brief path.
+    - It must resolve the planner-generated branch for this task from the task
+      plan and switch or check out that branch before returning `READY`.
    - Treat this as the explicit **execution kickoff** — the **first mutation
      boundary after critique approval** (including the first `gh` actions
      reserved for starting implementation on GitHub).
@@ -48,10 +50,10 @@ Every successful task run follows this sequence:
      `./retry-and-escalation.md`.
 
 6. **Dispatch `documentation-writer`.**
-   - Pass `EXECUTION_REPORT`, `ISSUE_SLUG`, and `TASK_NUMBER`.
-   - This step adds in-code documentation, commits Category B files, updates
-     Category A tracking in `docs/<ISSUE_SLUG>-tasks.md`, and performs optional
-     `gh` completion updates when a task issue exists and policy requires it.
+    - Pass `EXECUTION_REPORT`, `ISSUE_SLUG`, and `TASK_NUMBER`.
+    - This step adds in-code documentation, updates Category A tracking in
+      `docs/<ISSUE_SLUG>-tasks.md`, and performs optional `gh` completion
+      updates when a task issue exists and policy requires it.
    - Collect only the structured `DOCUMENTATION_REPORT`.
 
 7. **Handle documentation results before continuing.**
@@ -88,9 +90,9 @@ Every successful task run follows this sequence:
     - `BLOCKED` or `ERROR` stops the run and escalates.
 
 12. **Report the outcome.**
-    - Summarise what changed.
-    - Include kickoff status, commit hashes/messages, gate verdicts, files
-      changed, and any GitHub/`gh` steps skipped or failed.
+     - Summarise what changed.
+     - Include kickoff status, gate verdicts, files changed, and any
+       GitHub/`gh` steps skipped or failed.
     - Stop after the selected task. Do not continue to the next task
       automatically.
 
@@ -102,7 +104,7 @@ When one or more reviewers return `NEEDS FIXES`:
    fix brief.
 2. Re-dispatch `task-executor` with the original planning artifacts plus that
    fix brief.
-3. Re-dispatch `documentation-writer` so new Category B changes are committed
+3. Re-dispatch `documentation-writer` so new Category B changes are documented
    and tracking artifacts are updated.
 4. Re-run only the gate(s) that previously failed, in their original order.
 5. If every previously failing gate now passes, finish the task. Otherwise use
@@ -120,14 +122,11 @@ Summary: <2-3 sentences>
 Pipeline:
 - Kickoff: <status>
 - Execution: <status>
-- Documentation/commits: <status>
+- Documentation/tracking: <status>
 - Requirements verification: <verdict>
 - Clean code review: <verdict>
 - Architecture review: <verdict>
 - Security audit: <verdict>
-
-Commits:
-- <short hash> - <message>
 
 Files changed:
 - <path>
