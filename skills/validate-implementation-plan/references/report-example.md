@@ -1,4 +1,7 @@
-# Sample Audit: Retry Mechanism Plan
+# Report Example
+
+Read this file only when assembling the final audit and a concrete layout
+example would help. It is an example, not an additional checklist.
 
 ## Audit Scope
 
@@ -66,8 +69,8 @@ Findings:
 | Assumption Audit | 1 | 0 | 1 |
 
 Confidence is high for the out-of-scope findings because the baseline request is
-short and explicit. The only initially ambiguous area was tracing
-infrastructure, and user clarification resolved it.
+short and explicit. The only initially ambiguous area was tracing infrastructure,
+and user clarification resolved it.
 
 ## Resolved Assumptions
 
