@@ -1,11 +1,8 @@
 # Project State Snapshot Template
 
-> Read this file only when `state-snapshot-writer` is assembling the final
-> report. Local Git evidence is primary; cite external sources only next to
-> findings they actually support. Use `./external-sources.md` to look up
-> public references such as code review guides, OWASP categories, the test
-> pyramid, twelve-factor config, semantic versioning, or API compatibility
-> rules instead of restating them in the report.
+> Load this file only when assembling the final report. Use local evidence first;
+> use `./external-sources.md` only for static background needed by a specific
+> finding.
 
 ## Report Shape
 
@@ -38,15 +35,16 @@
 - **What changed:** ...
 - **Files involved:** ...
 - **Evidence:** ...
-- **Why it appears to have changed:** fact or inference, clearly labeled
+- **Why it appears to have changed:** fact or labeled inference
 - **Developer context:** ...
 - **Risk level:** Low / Medium / High
 - **What to review next:** ...
 
 ## 4. Behavioral Impact
 
-Separate confirmed behavior changes, likely behavior changes, and possible
-behavior changes that need verification.
+- **Confirmed:** ...
+- **Likely:** ...
+- **Possible, needs verification:** ...
 
 ## 5. Risks, Gotchas, and Smells
 
@@ -56,18 +54,19 @@ behavior changes that need verification.
 
 ## 6. Test and Validation Review
 
-- Tests added, removed, or changed.
+- Tests added, removed, changed, or missing.
 - Important behavior not covered.
 - Tests that look brittle, redundant, or implementation-focused.
-- Validation commands to run, adapted to this project.
+- Project-specific validation commands to run.
 
 ## 7. Dependency, Config, Tooling, and Security Notes
 
-Only areas touched or implicated. If nothing relevant changed, say so briefly.
+Only include areas touched or clearly implicated. If nothing relevant changed,
+say so briefly.
 
 ## 8. Questions Before Merging or Continuing
 
-Key questions a human developer should answer before trusting the changes.
+- ...
 
 ## 9. Recommended Next Actions
 
@@ -82,21 +81,14 @@ Plain-English handoff for continuing safely.
 
 ## Depth Rules
 
-For `OUTPUT_DEPTH=brief`, keep the same section order and use the fewest
-useful bullets. For `OUTPUT_DEPTH=standard`, include evidence-backed themes
-and risks without broad architecture review. For `OUTPUT_DEPTH=deep`,
-inspect additional surrounding context only for changed high-risk areas.
+| Depth | Rule |
+| ----- | ---- |
+| `brief` | Keep the same section order with the fewest useful bullets. |
+| `standard` | Include evidence-backed themes and risks without broad architecture review. |
+| `deep` | Inspect additional surrounding context only for changed high-risk areas. |
 
-## Example Theme
+## Example Risk Row
 
 ```markdown
-### Theme: Token Refresh Flow
-
-- **What changed:** Middleware now accepts a refresh cookie before rebuilding the session.
-- **Files involved:** `src/auth/middleware.ts`, `tests/auth-refresh.test.ts`
-- **Evidence:** Both files appear in the base delta.
-- **Why it appears to have changed:** Inference. The branch reads as adding automatic token refresh to reduce forced logouts.
-- **Developer context:** Authentication boundary; logout, expiry, and cookie validation all need re-review.
-- **Risk level:** High
-- **What to review next:** Cookie validation, expiry handling, logout invalidation, regression coverage. See OWASP code review guide via `./external-sources.md` if a deeper category is needed.
+| High | Auth | Refresh cookie handling changed | `src/auth/middleware.ts` in base delta | Authentication boundary; logout and expiry behavior need review | Medium | Re-check cookie validation and run auth regression tests. See OWASP code review guide if deeper security framing is needed. |
 ```

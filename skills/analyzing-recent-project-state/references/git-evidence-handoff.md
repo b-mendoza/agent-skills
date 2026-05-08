@@ -1,6 +1,7 @@
 # Git Evidence Handoff Template
 
-> Read this file only when `git-evidence-collector` is formatting its final result. Keep raw diffs and command output out of the returned handoff.
+> Load this file only when `git-evidence-collector` formats its final result.
+> Return summaries and command names, not raw diffs or full command output.
 
 ## Template
 
@@ -8,7 +9,7 @@
 GIT_EVIDENCE: PASS | NOT_GIT | PATH_ERROR | ERROR
 Project path: <path>
 Branch: <branch and upstream/ahead/behind if known>
-Working tree: <clean or summary of staged/unstaged/untracked>
+Working tree: <clean or staged/unstaged/untracked summary>
 Base branch: <resolved base, not found, or not needed>
 Base comparison: <summary or not run with reason>
 Recent commits reviewed:
@@ -26,14 +27,23 @@ Risk signals:
 Test signals:
 - <tests added/changed/removed/missing signals>
 Dependency/config/tooling signals:
-- <relevant package, lockfile, env, CI, Docker, tooling, or none>
+- <package, lockfile, env, CI, Docker, tooling, or none>
 Context limitations:
 - <limitation or none>
 Commands run:
-- <command names only, not full output>
+- <command names only>
 Reason: none | <why status is not PASS>
 Decision needed: none | <smallest orchestrator action>
 ```
+
+## Status Rules
+
+| Status | Use when |
+| ------ | -------- |
+| `PASS` | Enough Git evidence exists for snapshot writing. |
+| `NOT_GIT` | The target is outside a Git worktree. |
+| `PATH_ERROR` | `PROJECT_PATH` is missing or inaccessible. |
+| `ERROR` | An unexpected command or filesystem failure occurred. |
 
 ## Example
 
@@ -47,28 +57,14 @@ Base comparison: 8 files changed, mostly auth middleware and tests
 Recent commits reviewed:
 - a1b2c3d Add token refresh middleware
 Changed-file groups:
-- Source: src/auth/middleware.ts, src/auth/session.ts
-- Tests: tests/auth-refresh.test.ts
-Diff stats:
-- Working tree: 2 files changed, 48 insertions, 10 deletions
-- Staged: none
-- Base delta: 8 files changed, 210 insertions, 40 deletions
-Preliminary themes:
-- Auth token refresh flow changed across middleware and session handling.
+- Source: 2 auth files
+- Tests: 1 auth test
 Risk signals:
-- Security boundary touched: token refresh behavior now accepts an additional cookie.
-Test signals:
-- New auth-refresh test exists; logout regression coverage unclear.
-Dependency/config/tooling signals:
-- none
+- Security boundary touched: refresh-token behavior changed.
 Context limitations:
-- Did not inspect full auth package beyond changed files.
+- Full auth package not inspected.
 Commands run:
 - git status, git log, git diff, git show
 Reason: none
 Decision needed: none
 ```
-
-## Status Rules
-
-Use `PASS` when enough Git evidence exists for snapshot writing. Use `NOT_GIT` when the target is outside a Git worktree, `PATH_ERROR` when `PROJECT_PATH` is missing or inaccessible, and `ERROR` for unexpected command or filesystem failures.

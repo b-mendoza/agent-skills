@@ -1,79 +1,61 @@
 # External Sources
 
-> Read this file only when local Git evidence raises a concrete question that
-> public guidance can answer. Fetch the smallest relevant URL; the bundled
-> `SKILL.md`, subagents, handoff template, report template, and verification
-> checklist remain authoritative for execution.
+> Use this index only after local evidence raises a concrete question. Fetch the
+> smallest relevant URL, apply it to that finding, then return to local evidence.
 
-This file replaces long inline heuristic explanations. Public sources cover
-static knowledge (Git command semantics, code review heuristics, security
-review categories, twelve-factor config, semantic versioning, API
-compatibility, etc.) so the always-loaded prompt stays small. Local project
-documentation, tests, code conventions, and repository history take priority
-over generic external advice.
+This file keeps reusable static background out of the always-loaded skill and
+subagent prompts. The bundled skill files define the workflow; these websites
+provide optional just-in-time support for interpretation.
 
 ## Loading Rules
 
-- Use bundled references first for workflow-specific behavior.
-- Fetch external URLs only when an observed local change needs a heuristic,
-  command-syntax clarification, or source-backed rationale.
-- Fetch one source first; fetch a second only when the first does not answer
-  the question.
-- Apply the source to the specific finding, then return to local evidence.
-- If a web source conflicts with a bundled contract or visible project
-  convention, follow the local source and note the discrepancy only when it
-  affects the user.
+- Start from Git evidence, project docs, tests, and repository conventions.
+- Fetch one source first. Fetch a second only when the first does not answer the
+  concrete question.
+- Cite fetched sources only beside the finding they support.
+- Follow bundled contracts and visible project conventions over generic public
+  guidance.
 
 ## Source Routing
 
-| Reference key | URL | Use when |
-| ------------- | --- | -------- |
-| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Maintaining or explaining the staged loading model used by this skill |
-| `progressive-disclosure-ux` | https://www.nngroup.com/articles/progressive-disclosure/ | A short public explanation of showing only phase-relevant information |
-| `context-engineering` | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | Background on just-in-time retrieval and long-horizon agent context |
-| `git-status` | https://git-scm.com/docs/git-status | Status flags, porcelain output, branch state, or short format unclear |
-| `git-diff` | https://git-scm.com/docs/git-diff | Unstaged vs staged behavior, rename detection, mode changes, or `--stat` semantics unclear |
-| `git-log` | https://git-scm.com/docs/git-log | Pretty formats, walk options, decoration, or graph rendering unclear |
-| `git-show` | https://git-scm.com/docs/git-show | Commit + stat + summary view of HEAD or a specific revision unclear |
-| `git-revisions` | https://git-scm.com/docs/gitrevisions | Revision and range syntax, including `A...B`, `A..B`, merge bases |
-| `code-review-looking-for` | https://google.github.io/eng-practices/review/reviewer/looking-for.html | General code review judgment: design, functionality, complexity, naming, comments, docs |
-| `code-review-navigate` | https://google.github.io/eng-practices/review/reviewer/navigate.html | How to navigate a change: where to start reading, depth, context |
-| `code-smell` | https://martinfowler.com/bliki/CodeSmell.html | Source-backed definition of code smells when calling one out in the report |
-| `refactoring-smells` | https://refactoring.guru/refactoring/smells | Catalog of common smells (duplication, large class, shotgun surgery, etc.) |
-| `test-pyramid` | https://martinfowler.com/bliki/TestPyramid.html | Calling out brittle, missing, or over-leveled tests |
-| `e2e-skepticism` | https://testing.googleblog.com/2015/04/just-say-no-to-more-end-to-end-tests.html | Pushing back on excessive end-to-end coverage in changed areas |
-| `owasp-code-review` | https://owasp.org/www-project-code-review-guide/ | Security-sensitive change touches auth, input validation, secrets, serialization, or trust boundaries |
-| `owasp-top-ten` | https://owasp.org/www-project-top-ten/ | Categorizing a security risk in user-facing terms |
-| `owasp-cheatsheets` | https://cheatsheetseries.owasp.org/ | Concrete control or hardening guidance for a named security risk |
-| `twelve-factor-config` | https://12factor.net/config | Environment variables, secrets, or runtime config drift between dev and prod |
-| `twelve-factor-parity` | https://12factor.net/dev-prod-parity | Local vs production behavior, Docker/CI mismatch, or environment-specific bugs |
-| `semver` | https://semver.org/ | Dependency bumps or public API change requires breaking-change reasoning |
-| `conventional-commits` | https://www.conventionalcommits.org/en/v1.0.0/ | Commit log indicates intended scope or breaking-change signal |
-| `microsoft-rest-guidelines` | https://github.com/microsoft/api-guidelines | Public REST interface, versioning, or response shape changed |
+| Key | URL | Use when |
+| --- | --- | -------- |
+| `git-status` | https://git-scm.com/docs/git-status | Status flags, branch state, porcelain output, or short format semantics |
+| `git-diff` | https://git-scm.com/docs/git-diff | Staged/unstaged diff behavior, stats, mode changes, or rename detection |
+| `git-log` | https://git-scm.com/docs/git-log | Commit walks, formatting, decoration, or graph options |
+| `git-show` | https://git-scm.com/docs/git-show | Inspecting HEAD or a specific commit with stat or summary output |
+| `git-revisions` | https://git-scm.com/docs/gitrevisions | Revision ranges, `A..B`, `A...B`, or merge-base semantics |
+| `review-what-to-look-for` | https://google.github.io/eng-practices/review/reviewer/looking-for.html | General review judgment: design, functionality, complexity, tests, naming, docs |
+| `review-navigation` | https://google.github.io/eng-practices/review/reviewer/navigate.html | Choosing where to start reading and how deeply to inspect a change |
+| `code-smell` | https://martinfowler.com/bliki/CodeSmell.html | Source-backed definition of a code smell |
+| `refactoring-smells` | https://refactoring.guru/refactoring/smells | Catalog lookup for duplication, large class, shotgun surgery, and related smells |
+| `test-pyramid` | https://martinfowler.com/bliki/TestPyramid.html | Framing missing, brittle, or poorly leveled tests |
+| `e2e-skepticism` | https://testing.googleblog.com/2015/04/just-say-no-to-more-end-to-end-tests.html | Pushing back on excessive end-to-end coverage |
+| `owasp-code-review` | https://owasp.org/www-project-code-review-guide/ | Security-sensitive changes touching auth, input validation, secrets, serialization, or trust boundaries |
+| `owasp-top-ten` | https://owasp.org/www-project-top-ten/ | Categorizing a web-app security risk in user-facing terms |
+| `owasp-cheatsheets` | https://cheatsheetseries.owasp.org/ | Concrete hardening guidance for a named security control |
+| `twelve-factor-config` | https://12factor.net/config | Environment variables, secrets, or runtime config drift |
+| `twelve-factor-parity` | https://12factor.net/dev-prod-parity | Local, CI, staging, and production parity concerns |
+| `semver` | https://semver.org/ | Dependency bumps or public API changes require breaking-change reasoning |
+| `dependency-review` | https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review | Dependency additions or lockfile churn need supply-chain review framing |
+| `conventional-commits` | https://www.conventionalcommits.org/en/v1.0.0/ | Commit messages indicate intended scope or breaking-change signals |
+| `microsoft-rest-guidelines` | https://github.com/microsoft/api-guidelines | Public REST interface, versioning, response shape, or compatibility changed |
 | `google-aip-compat` | https://google.aip.dev/180 | API or schema backward-compatibility judgment is required |
 
-## How To Use Returned Web Content
+## Source Note Format
 
-When you fetch a source, summarize it into one of these forms before applying
-it to the report:
+When a source is fetched, summarize it before applying it:
 
 ```text
 EXTERNAL_SOURCE: OK
 Source: <url>
-Used for: <decision or finding>
-Relevant facts:
-- <fact 1>
-- <fact 2>
-Workflow impact: <none | adjusted finding | added confidence note>
+Used for: <finding>
+Relevant fact: <one or two short facts>
+Workflow impact: <none | adjusted finding | confidence note>
 ```
-
-Cite the source briefly next to the finding it supports (one inline link is
-enough). Do not embed long quotes from the page in the report.
 
 ## Network Unavailable
 
-Continue from local Git evidence and bundled references. State that external
-material was not fetched, avoid claiming version-specific facts, and add a
-short confidence note only when missing source material would have changed
-the recommendation. Use the report's existing risk and validation sections;
-do not invent a separate "uncertainty" appendix.
+Continue from local evidence and bundled references. Avoid version-specific
+claims that require web confirmation, and add a confidence note only when the
+missing source would materially change the recommendation.
