@@ -1,6 +1,6 @@
 ---
 name: "rewriting-code-strictly"
-description: "Rewrite existing Python, TypeScript/JavaScript, or Go code for strict static typing, validated external boundaries, and maintainable idioms while preserving runtime behavior. Use when the user asks to rewrite, harden, make strict, remove unsafe escape hatches, add boundary validation, or align with mypy, Pyright, tsc, go vet, or Staticcheck. Coordinates baseline mapping, strategy, implementation, and review through co-located subagents while loading only one language playbook and the external docs needed for concrete decisions."
+description: "Rewrite existing Python, TypeScript/JavaScript, or Go code for strict static typing, boundary validation, and maintainable idioms while preserving behavior. Use when the user asks to harden code, remove unsafe escape hatches, add validation, or align with mypy, Pyright, tsc, go vet, or Staticcheck. Coordinates baseline mapping, strategy, implementation, and review through co-located subagents, one language playbook, and optional just-in-time external sources."
 ---
 
 # Rewriting Code Strictly
@@ -13,7 +13,7 @@ The orchestrator does three things:
 - **Decide:** pick the next phase, ask one targeted question, or stop safely.
 - **Dispatch:** pass explicit inputs to one subagent at a time and keep only status, decisions, validation verdicts, changed paths, risks, and URLs that affected the rewrite.
 
-Subagents inspect raw code, plan, fetch external docs only when a decision depends on them, edit files, run checks, and review the diff.
+Subagents inspect raw code, plan, fetch external websites only when a concrete decision depends on them, edit files, run checks, and review the diff.
 
 ## Inputs
 
@@ -48,7 +48,7 @@ For `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, or `ERROR`, return the status
 | ----- | --------- | ----- | ------ |
 | Intake | Inline | None | Dispatch packet |
 | Baseline | Subagent | `strict-baseline-mapper` | `STRICT_BASELINE` report |
-| Strategy | Subagent | `strict-rewrite-strategist` + one language playbook | `STRICT_STRATEGY` report |
+| Strategy | Subagent | `strict-rewrite-strategist` + one language playbook + optional source map | `STRICT_STRATEGY` report |
 | Implementation | Subagent | `strict-rewrite-implementer` | `STRICT_IMPLEMENTATION` report |
 | Review | Subagent | `strict-rewrite-reviewer` | `STRICT_REVIEW` verdict |
 | Handoff | Inline | Optional `orchestration-examples.md` | Final response |
@@ -58,7 +58,7 @@ For `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, or `ERROR`, return the status
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
 | `strict-baseline-mapper` | `./subagents/strict-baseline-mapper.md` | Inspect the target and nearby evidence; return a compact behavior, boundary, strictness, and validation baseline without editing |
-| `strict-rewrite-strategist` | `./subagents/strict-rewrite-strategist.md` | Load the target language playbook, fetch only decision-changing external docs, and propose the minimal strict rewrite plan |
+| `strict-rewrite-strategist` | `./subagents/strict-rewrite-strategist.md` | Load the target language playbook, fetch only decision-changing external sources, and propose the minimal strict rewrite plan |
 | `strict-rewrite-implementer` | `./subagents/strict-rewrite-implementer.md` | Apply the approved rewrite, preserve behavior, and run the relevant existing checks |
 | `strict-rewrite-reviewer` | `./subagents/strict-rewrite-reviewer.md` | Review the diff for behavior drift, strictness gaps, boundary-validation mistakes, scope creep, and validation quality |
 
@@ -67,19 +67,20 @@ Read a subagent file only when dispatching that specific subagent.
 ## Progressive Loading Map
 
 Load exactly the file or URL needed for the current decision. Never preload references or subagents.
+All bundled paths are relative to this skill folder.
 
 | Need | Load |
 | ---- | ---- |
-| Python target details, fetch map, idioms | `./references/python-playbook.md` |
-| TypeScript or JavaScript target details, fetch map, idioms | `./references/typescript-playbook.md` |
-| Go target details, fetch map, idioms | `./references/go-playbook.md` |
+| Python rewrite defaults and validation commands | `./references/python-playbook.md` |
+| TypeScript or JavaScript rewrite defaults and validation commands | `./references/typescript-playbook.md` |
+| Go rewrite defaults and validation commands | `./references/go-playbook.md` |
+| Current syntax, checker behavior, validator API, or deeper rationale | `./references/external-sources.md`, then fetch the smallest relevant URL |
 | Concrete dispatch round-trip, no-change handling, or unavailable-reference handling | `./references/orchestration-examples.md` |
 | Subagent specifics (instructions, output format, escalation) | The matching `./subagents/*.md` file at dispatch time |
-| Current syntax, checker behavior, validator API, or disputed idiom | The smallest URL listed in the relevant playbook's fetch map |
 
-The strategist selects exactly one language playbook from the table after the language is known (use file extension when present: `.py`, `.ts`/`.tsx`/`.js`/`.jsx`, `.go`).
+The strategist selects exactly one language playbook after the language is known (use file extension when present: `.py`, `.ts`/`.tsx`/`.js`/`.jsx`, `.go`). It loads `external-sources.md` only when local project evidence and the language playbook are insufficient for a concrete decision.
 
-If a needed external website is unavailable, the strategist either proceeds from project evidence and records the unavailable URL with the risk, or returns `NEEDS_CLARIFICATION`. Skill execution does not require external docs in the common case.
+If a needed external website is unavailable, the strategist either proceeds from project evidence and records the unavailable URL with the risk, or returns `NEEDS_CLARIFICATION`. Normal execution should not require network access.
 
 ## Core Decision Rule
 
@@ -98,7 +99,7 @@ Use existing project settings as the authority. If the project already enforces 
 
 2. **Dispatch `strict-baseline-mapper`.** Pass the dispatch packet. Keep only its concise report. On `NEEDS_CLARIFICATION`, ask the smallest unblocking question. On `ERROR`, stop and report the recovery. On `NO_CHANGE_CANDIDATE`, continue; the strategist makes the final stop/proceed decision.
 
-3. **Dispatch `strict-rewrite-strategist`.** Pass the dispatch packet, the baseline report, and the Progressive Loading Map row for the language. Keep only the strategy fields: status, playbook path, static typing decisions, runtime validation decisions, edit plan, non-goals, validation plan, references fetched or unavailable. On `NO_CHANGE`, stop without editing and report why no rewrite is justified.
+3. **Dispatch `strict-rewrite-strategist`.** Pass the dispatch packet, the baseline report, the Progressive Loading Map row for the language, and the optional source-map row. Keep only the strategy fields: status, playbook path, static typing decisions, runtime validation decisions, edit plan, non-goals, validation plan, references fetched or unavailable. On `NO_CHANGE`, stop without editing and report why no rewrite is justified.
 
 4. **Dispatch `strict-rewrite-implementer`.** Pass the dispatch packet, the baseline report, the strategy report, and `REVIEW_FIXES` only during a targeted repair cycle. Keep only the implementation fields: status, changed files, patch summary, behavior-preservation notes, validation result, deviations, reviewer focus. On `BLOCKED` or `ERROR`, stop and report the reason, files touched before the block, and the smallest recovery action.
 
@@ -117,6 +118,6 @@ Input:
 - `TARGET_CODE`: `src/payments/webhook.ts`
 - `USER_GOAL`: `"remove unsafe any and validate the webhook payload"`
 
-The mapper identifies TypeScript and an untrusted webhook body. The strategist reads `./references/typescript-playbook.md`, fetches Zod docs only because the project already uses Zod, and proposes a minimal plan. The implementer changes the boundary from `any` to `unknown`, validates once at the boundary, and runs the existing checks. The reviewer confirms behavior, scope, validation placement, and strictness before the orchestrator returns the handoff.
+The mapper identifies TypeScript and an untrusted webhook body. The strategist reads `./references/typescript-playbook.md`, loads `./references/external-sources.md` only because the validator API matters, fetches the smallest Zod URL, and proposes a minimal plan. The implementer changes the boundary from `any` to `unknown`, validates once at the boundary, and runs the existing checks. The reviewer confirms behavior, scope, validation placement, and strictness before handoff.
 
 Load `./references/orchestration-examples.md` for full dispatch round-trips, no-change handling, and unavailable-reference handling.

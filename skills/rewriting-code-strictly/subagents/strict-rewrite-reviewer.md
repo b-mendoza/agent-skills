@@ -68,51 +68,25 @@ STRICT_REVIEW: FAIL
 Target: src/payments/webhook.ts
 
 Behavior preservation:
-- PASS: Unknown event handling and database update behavior appear preserved.
+- PASS: Unknown events remain non-fatal.
 
 Strictness quality:
-- FAIL: `event.data as PaymentEventData` replaces `any` with an assertion instead of validating or narrowing.
+- FAIL: `event.data as PaymentEventData` replaces `any` with an assertion.
 
 Boundary validation:
-- FAIL: The schema validates only after internal update logic has already read payload fields.
+- FAIL: Payload fields are read before parsing.
 
 Scope and dependency control:
 - PASS: No new dependencies were added.
 
 Validation check:
-- PASS: `npm test -- payments && npx tsc --noEmit` passed.
+- PASS: Targeted tests and typecheck passed.
 
 Required fixes:
-- src/payments/webhook.ts: Parse or narrow the payload before any internal field reads; remove the broad assertion.
+- src/payments/webhook.ts: Parse or narrow the payload before internal field reads.
 
 Residual risks:
 - none
-</example>
-
-<example>
-STRICT_REVIEW: PASS
-Target: internal/api/user_handler.go
-
-Behavior preservation:
-- PASS: Response codes and error messages match the baseline.
-
-Strictness quality:
-- PASS: Stable request shape now decodes into a concrete struct instead of `map[string]any`.
-
-Boundary validation:
-- PASS: Required semantic checks occur immediately after JSON decoding.
-
-Scope and dependency control:
-- PASS: The rewrite uses the standard library and changed only the target handler.
-
-Validation check:
-- WARN: `go test ./...` was not available, but `go test ./internal/api` passed.
-
-Required fixes:
-- none
-
-Residual risks:
-- Full repository tests were not run.
 </example>
 
 ## Scope

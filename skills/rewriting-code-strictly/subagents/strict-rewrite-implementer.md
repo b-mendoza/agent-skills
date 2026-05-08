@@ -70,21 +70,18 @@ Target: src/payments/webhook.ts
 Files changed: src/payments/webhook.ts
 
 Changes made:
-- Changed webhook body input from `any` to `unknown`.
-- Added a focused Zod schema for consumed event fields.
-- Passed parsed payload into existing update logic.
+- Changed boundary input from `any` to `unknown` and parsed it before internal use.
 
 Behavior preservation:
-- Unknown event handling and database update semantics match the baseline.
+- Unknown event handling remains non-fatal.
 
 Strictness and validation improvements:
-- Untrusted payload is parsed once at the boundary before internal use.
-- Internal handler no longer performs unchecked property reads on `any`.
+- Untrusted payload is validated before internal field reads.
 
 Checks run:
 - Command: npm test -- payments && npx tsc --noEmit
 - Result: pass
-- Notes: Existing payment tests and typecheck passed.
+- Notes: Targeted tests and typecheck passed.
 
 Deviations from strategy:
 - none

@@ -2,7 +2,7 @@
 
 > Read this file only when a concrete dispatch round-trip, a no-change case,
 > or an unavailable-reference case would clarify execution. Language details
-> live in the language playbooks and their linked websites.
+> live in the language playbooks and optional external source map.
 
 ## Boundary Rewrite Round Trip
 
@@ -17,7 +17,7 @@ Flow:
 1. Orchestrator dispatches `strict-baseline-mapper`.
 2. Mapper returns `STRICT_BASELINE: PASS`: TypeScript, untrusted webhook body, `any` at the boundary, existing payment tests.
 3. Orchestrator dispatches `strict-rewrite-strategist`.
-4. Strategist reads `./references/typescript-playbook.md`, fetches Zod docs because the project already uses Zod, and returns a minimal plan: accept `unknown`, parse once at the webhook boundary, pass the inferred payload type internally, leave persistence code alone.
+4. Strategist reads `./references/typescript-playbook.md`, loads `./references/external-sources.md` only because the Zod API choice affects implementation, fetches the smallest relevant Zod URL, and returns a minimal plan: accept `unknown`, parse once at the webhook boundary, pass the inferred payload type internally, leave persistence code alone.
 5. Orchestrator dispatches `strict-rewrite-implementer`.
 6. Implementer edits the webhook file, runs the supplied command, and returns `STRICT_IMPLEMENTATION: PASS`.
 7. Orchestrator dispatches `strict-rewrite-reviewer`.

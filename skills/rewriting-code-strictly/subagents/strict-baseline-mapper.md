@@ -68,25 +68,25 @@ Use `NO_CHANGE_CANDIDATE` when the code looks already strict and maintainable fo
 STRICT_BASELINE: PASS
 Target: src/payments/webhook.ts
 Language: typescript
-Files inspected: src/payments/webhook.ts, src/payments/webhook.test.ts, tsconfig.json, package.json
+Files inspected: src/payments/webhook.ts, src/payments/webhook.test.ts, tsconfig.json
 
 Current behavior:
-- Accepts a webhook request, extracts payment status, updates payment records, and returns a 200 on recognized events.
+- Updates payments for recognized webhook events; unknown events remain non-fatal.
 
 Trust boundaries:
-- Webhook body enters as untrusted JSON and is currently passed through as `any`.
+- Webhook body is untrusted JSON currently read through `any`.
 
 Weak strictness points:
-- Boundary payload is `any`; unknown event types rely on unchecked property reads.
+- Unchecked property reads can hide missing fields.
 
 Project settings and dependencies:
-- `strict` enabled in tsconfig. Project already depends on Zod.
+- `strict` is enabled and the project already uses Zod.
 
 Existing tests and validation:
-- Existing payment tests cover success and unknown events. Recommended command: npm test -- payments && npx tsc --noEmit.
+- Recommended command: npm test -- payments && npx tsc --noEmit.
 
 Risk notes:
-- Unknown event behavior must stay non-fatal.
+- Unknown event behavior must remain non-fatal.
 
 Clarifying questions:
 - none
