@@ -2,6 +2,8 @@
 
 > Read this file only when you need a dispatch round-trip example or a
 > concrete fix-cycle example. Phase order lives in `./pipeline.md`.
+> Report shapes live in the template reference files and load only at return
+> time.
 
 ## Happy Path
 

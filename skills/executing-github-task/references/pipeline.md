@@ -78,6 +78,8 @@
     - `BLOCKED` or `ERROR`: stop and escalate.
 
 12. **Report the outcome.**
+    - Read `./template-final-report.md` only when assembling the final
+      user-facing report.
     - Summarise what changed: kickoff status, gate verdicts, files changed,
       any GitHub/`gh` steps skipped or failed.
     - Stop after the selected task. Do not auto-continue.
@@ -96,25 +98,5 @@ When one or more reviewers return `NEEDS FIXES`:
 5. If every previously failing gate now passes, finish the task. Otherwise use
    `./retry-and-escalation.md`.
 
-## Report template
-
-```markdown
-Task <N> complete: <title>
-
-Summary: <2-3 sentences>
-
-Pipeline:
-- Kickoff: <status>
-- Execution: <status>
-- Documentation/tracking: <status>
-- Requirements verification: <verdict>
-- Clean code review: <verdict>
-- Architecture review: <verdict>
-- Security audit: <verdict>
-
-Files changed:
-- <path>
-
-Remaining items:
-- <issue or "None">
-```
+The final report shape lives in `./template-final-report.md` so the template
+loads only at the reporting boundary.
