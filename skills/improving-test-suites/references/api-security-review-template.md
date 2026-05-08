@@ -1,4 +1,7 @@
-# API Security Review Report Template
+# API Security Review Template
+
+> Load this file immediately before returning `API_SECURITY_REVIEW`. For sample
+> completed reports, load `./references/report-examples.md` only when needed.
 
 Return this exact structure.
 
@@ -28,34 +31,4 @@ Blockers:
 
 Reason: none | <why status is not PASS or NOT_APPLICABLE>
 Decision needed: none | <smallest question or recovery action>
-```
-
-## Example
-
-```text
-API_SECURITY_REVIEW: PASS
-Targets: tests/test_invoice_api.py
-References fetched: https://owasp.org/API-Security/editions/2023/en/0x11-t10/
-Freshness gap: none
-
-Surface reviewed:
-- Invoice creation API accepts account ids and caller identity from external input.
-
-Current high-value coverage:
-- Missing required account id is rejected with a validation error.
-
-Missing high-value tests:
-- Caller cannot create an invoice for an account they do not own.
-
-Low-value security tests:
-- none
-
-Recommended minimal additions:
-- Add one unauthorized account test through the public API response.
-
-Blockers:
-- none
-
-Reason: none
-Decision needed: none
 ```

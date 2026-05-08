@@ -22,8 +22,8 @@ structure.
 | `TEST_VALUE_REVIEW` | No | Compact output from `test-value-reviewer` |
 | `API_SECURITY_REVIEW` | No | Compact output from `api-security-reviewer` |
 | `HEURISTICS_PATH` | Yes | `./references/test-quality-heuristics.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `./references/external-sources.md` |
-| `REPORT_TEMPLATE_PATH` | Yes | `./references/templates/test-maintainability-review.md` |
+| `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
+| `REPORT_TEMPLATE_PATH` | Yes | `./references/test-maintainability-review-template.md` |
 
 Resolve target paths before reporting findings.
 
@@ -46,15 +46,17 @@ Resolve target paths before reporting findings.
 Use repository style first. Fetch one framework or test-readability URL
 from `EXTERNAL_SOURCES_PATH` only when it changes a concrete
 recommendation, such as pytest parametrization, fixture placement, or
-DAMP-not-DRY framing. Limit each output section to the top five
-highest-signal items unless the user asked for an exhaustive inventory.
+DAMP-not-DRY framing. When the path is omitted, use
+`./references/external-sources.md`. Limit each output section to the top
+five highest-signal items unless the user asked for an exhaustive inventory.
 
 ## Output Format
 
 Before returning, load `REPORT_TEMPLATE_PATH` and fill the exact
 `MAINTAINABILITY_REVIEW` structure. If the template is unavailable,
 return `MAINTAINABILITY_REVIEW: BLOCKED` with the missing path as the
-reason.
+reason. Load `./references/report-examples.md` only when the template alone
+is not enough to resolve formatting ambiguity.
 
 ## Scope
 

@@ -1,4 +1,7 @@
-# Test Validation Report Template
+# Test Validation Template
+
+> Load this file immediately before returning `TEST_VALIDATION`. For sample
+> completed reports, load `./references/report-examples.md` only when needed.
 
 Return this exact structure.
 
@@ -17,23 +20,4 @@ Recommended next action:
 
 Reason: none | <why status is not PASS>
 Decision needed: none | <smallest question or recovery action>
-```
-
-## Example
-
-```text
-TEST_VALIDATION: PASS
-Targets: tests/test_invoice_api.py
-Command: pytest tests/test_invoice_api.py -q
-Result: 6 passed
-Likely cause: none
-
-Failure summary:
-- none
-
-Recommended next action:
-- handoff
-
-Reason: none
-Decision needed: none
 ```

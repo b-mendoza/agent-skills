@@ -20,7 +20,7 @@ dumping raw logs.
 | `CHANGED_FILES` | Yes | `tests/test_billing.py` |
 | `SUGGESTED_VALIDATION_COMMAND` | No | `pytest tests/test_billing.py -q` |
 | `SCOPE_LIMITS` | No | `"test files only"` |
-| `REPORT_TEMPLATE_PATH` | Yes | `./references/templates/test-validation.md` |
+| `REPORT_TEMPLATE_PATH` | Yes | `./references/test-validation-template.md` |
 
 ## Instructions
 
@@ -38,7 +38,9 @@ dumping raw logs.
 
 Before returning, load `REPORT_TEMPLATE_PATH` and fill the exact
 `TEST_VALIDATION` structure. If the template is unavailable, return
-`TEST_VALIDATION: BLOCKED` with the missing path as the reason.
+`TEST_VALIDATION: BLOCKED` with the missing path as the reason. Load
+`./references/report-examples.md` only when the template alone is not enough
+to resolve formatting ambiguity.
 
 ## Scope
 

@@ -2,10 +2,12 @@
 
 > Read this file before classifying tests during a value, API/security, or
 > maintainability review, or before synthesizing the minimal harness decision.
-> For deeper rationale, fetch the relevant URL from `./external-sources.md`.
+> For deeper rationale, fetch the relevant URL from
+> `./references/external-sources.md`.
 
-This file holds the small operational scaffolding that keeps reviews and
-harness decisions consistent without bloating the always-loaded prompt.
+This file holds only operational categories and ordering rules. Deeper testing
+rationale lives behind the source keys in `./references/external-sources.md` and
+is fetched only when it changes a concrete decision.
 
 ## Trade-Off Priority
 
@@ -21,44 +23,30 @@ override higher-priority ones:
 ## Low-Value Test Categories
 
 Mark a target test as a delete, rewrite, or consolidate candidate when it
-matches one of the categories below and does not also protect a high-value
-behavior in the next section:
+matches one of these categories and does not protect a high-value behavior.
 
-- `implementation-detail-assertion` — verifies private call order, internal
-  state, or refactor-sensitive structure rather than observable behavior.
-- `duplicated-coverage` — repeats a behavior already covered, with no new
-  input class or failure mode.
-- `trivial-assertion` — exercises a getter, constant, or constructor without
-  proving meaningful behavior.
-- `unstable-mock` — pins mock interaction order or specific call counts that
-  are incidental to the public contract.
-- `over-specific-fixture` — depends on incidental fixture shape that changes
-  whenever unrelated code changes.
-- `unclear-business-value` — passes today but no reviewer can name the rule it
-  protects.
-- `verbose-low-yield` — long setup or many assertions for a small confidence
-  gain that a parametrized or smaller test would match.
-
-For source-backed framing of behavior vs. implementation tests, fetch
-`behavior-vs-implementation`, `prefer-public-apis`, or
-`implementation-details-react` from `./external-sources.md`.
+| Category | Local signal | Optional source keys |
+| -------- | ------------ | -------------------- |
+| `implementation-detail-assertion` | Verifies private call order, internal state, or refactor-sensitive structure instead of observable behavior | `behavior-vs-implementation`, `prefer-public-apis`, `implementation-details-react` |
+| `duplicated-coverage` | Repeats an already-covered behavior with no new input class or failure mode | `how-to-know-what-to-test`, `test-pyramid` |
+| `trivial-assertion` | Exercises a getter, constant, or constructor without proving meaningful behavior | `how-to-know-what-to-test`, `swe-google-unit-testing` |
+| `unstable-mock` | Pins mock order or call counts that are incidental to the public contract | `mocks-arent-stubs`, `behavior-vs-implementation` |
+| `over-specific-fixture` | Depends on incidental fixture shape that changes with unrelated code | `damp-not-dry`, `xunit-test-patterns` |
+| `unclear-business-value` | No reviewer can name the rule the passing test protects | `how-to-know-what-to-test`, `swe-google-unit-testing` |
+| `verbose-low-yield` | Uses long setup or many assertions for confidence a smaller test would match | `damp-not-dry`, `pytest-parametrize` |
 
 ## High-Value Behavior Categories
 
-Recommend keeping or adding a test when it protects one of:
+Recommend keeping or adding a test when it protects one of these behaviors.
 
-- Public API, library, or tool contracts the caller depends on.
-- Critical business logic, pricing, billing, eligibility, or state machines.
-- Schema validation: rejection of invalid, missing, or malformed inputs.
-- Security-sensitive behavior: auth, permissions, ownership, secret handling,
-  unsafe deserialization, path/network/file boundaries.
-- Meaningful failure handling: error paths the caller, operator, or user
-  observes.
-- Realistic production edge cases: concurrency, retries, idempotency,
-  pagination boundaries, time/timezone transitions.
-
-For source-backed prioritization, fetch `how-to-know-what-to-test`,
-`swe-google-unit-testing`, or `owasp-api-top-10` from `./external-sources.md`.
+| Category | Keep or add when | Optional source keys |
+| -------- | ---------------- | -------------------- |
+| `public-contract` | A public API, library, tool, or UI contract that callers depend on can break | `prefer-public-apis`, `testing-library-principles` |
+| `critical-business-logic` | Pricing, billing, eligibility, state machines, or other core rules can regress | `how-to-know-what-to-test`, `swe-google-unit-testing` |
+| `schema-validation` | Invalid, missing, malformed, or unsafe inputs must be rejected predictably | `owasp-api-testing`, `owasp-api-top-10` |
+| `security-sensitive-behavior` | Auth, permissions, ownership, secrets, path, network, file, or unsafe deserialization boundaries can fail | `owasp-api-top-10`, `owasp-cheatsheets` |
+| `meaningful-failure-handling` | The caller, user, or operator observes a specific error path | `swe-google-unit-testing`, `how-to-know-what-to-test` |
+| `production-edge-case` | Realistic concurrency, retry, idempotency, pagination, time, or timezone behavior can break | `test-pyramid`, `swe-google-unit-testing` |
 
 ## Minimal Harness Rules
 
@@ -77,8 +65,8 @@ When proposing the minimal target harness:
 ## Classification Reporting
 
 Use the category names above verbatim when filling `Low-value tests`,
-`High-value behaviors`, and `Recommended minimal additions` slots in the
-review templates. This keeps the orchestrator's synthesis predictable.
+`High-value behaviors`, and `Recommended minimal additions` slots in the review
+templates. This keeps the orchestrator's synthesis predictable.
 
 ## Standalone Reminder
 

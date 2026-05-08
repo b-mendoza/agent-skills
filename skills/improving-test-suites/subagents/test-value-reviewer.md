@@ -19,8 +19,8 @@ that fails for real behavior breaks, not for implementation refactors.
 | `SCOPE_LIMITS` | No | `"test files only"` |
 | `REFERENCE_NEED` | No | `"behavior vs implementation"` |
 | `HEURISTICS_PATH` | Yes | `./references/test-quality-heuristics.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `./references/external-sources.md` |
-| `REPORT_TEMPLATE_PATH` | Yes | `./references/templates/test-value-review.md` |
+| `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
+| `REPORT_TEMPLATE_PATH` | Yes | `./references/test-value-review-template.md` |
 
 Resolve target paths before reporting findings.
 
@@ -41,6 +41,7 @@ Resolve target paths before reporting findings.
 
 Use local code first. Fetch one URL from `EXTERNAL_SOURCES_PATH` only when
 it changes a concrete keep, delete, rewrite, consolidate, or add decision.
+When the path is omitted, use `./references/external-sources.md`.
 Limit each output section to the top five highest-signal items unless the
 user asked for an exhaustive inventory.
 
@@ -50,7 +51,8 @@ Before returning, load `REPORT_TEMPLATE_PATH` and fill the exact
 `TEST_VALUE_REVIEW` structure. Use the category names from `HEURISTICS_PATH`
 verbatim for low-value tests and high-value behaviors. If the template is
 unavailable, return `TEST_VALUE_REVIEW: BLOCKED` with the missing path as
-the reason.
+the reason. Load `./references/report-examples.md` only when the template
+alone is not enough to resolve formatting ambiguity.
 
 ## Scope
 

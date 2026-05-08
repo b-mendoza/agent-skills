@@ -63,10 +63,12 @@ concise decision summaries.
 
 | Need | Load | When |
 | ---- | ---- | ---- |
-| Detailed phase routing, status handling, and repair limit | `./references/orchestration-protocol.md` | After intake, before dispatching the first reviewer |
+| Detailed phase routing and status handling | `./references/orchestration-protocol.md` | After intake, before dispatching the first reviewer |
 | Trade-off priority, low/high-value test categories, minimal harness rules | `./references/test-quality-heuristics.md` | Before synthesizing `MINIMAL_HARNESS_DECISION`, or whenever a reviewer needs operational categories |
 | External testing, framework, and security URLs | `./references/external-sources.md` | Only when a concrete decision needs source-backed support beyond local code and bundled heuristics |
-| Final user handoff format | `./references/templates/final-handoff.md` | Immediately before the final response |
+| Targeted validation repair rules | `./references/repair-protocol.md` | Only after a validation failure, blocker, or retryable error |
+| Report examples | `./references/report-examples.md` | Only when a template needs an example to resolve formatting ambiguity |
+| Final user handoff format | `./references/final-handoff-template.md` | Immediately before the final response |
 | Subagent report format | Template path listed in the dispatch packet | Immediately before the subagent returns its report |
 
 This skill is standalone. Use only co-located files under this skill folder,
@@ -95,21 +97,22 @@ the smallest relevant URL from `./references/external-sources.md`.
    question only when the target, scope, or validation command is required
    and missing.
 2. Load `./references/orchestration-protocol.md` and follow its phase
-   routing, status handling, and repair limit.
+   routing and status handling.
 3. Dispatch subagents with explicit inputs only. Include
-   `EXTERNAL_SOURCES_PATH`, `HEURISTICS_PATH`, and the relevant report
-   template path when the subagent needs them.
+   `HEURISTICS_PATH` and the relevant one-hop report template path. Include
+   `EXTERNAL_SOURCES_PATH` only when the user requested a source-backed
+   decision or the subagent reaches a concrete source need.
 4. Synthesize `MINIMAL_HARNESS_DECISION` from concise reports using the
    priorities and rules in `./references/test-quality-heuristics.md`. Skip
    editing when no safe change is justified.
-5. Validate empirically with the narrowest relevant command. Use targeted
+5. Validate empirically with the narrowest relevant command. When validation
+   fails or blocks, load `./references/repair-protocol.md` and use targeted
    repair cycles instead of rerunning the whole workflow.
-6. Load `./references/templates/final-handoff.md` and return the final
-   handoff.
+6. Load `./references/final-handoff-template.md` and return the final handoff.
 
 ## Output Contract
 
-Return the final answer using `./references/templates/final-handoff.md`.
+Return the final answer using `./references/final-handoff-template.md`.
 Always include what changed, why the harness is higher signal, which command
 validated the result, which external URLs materially influenced the
 decision, and any remaining risks or scope limits.
