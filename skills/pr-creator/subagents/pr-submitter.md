@@ -21,9 +21,9 @@ approved in preview, then verify the resulting URL and branch fields.
 | `LABELS` | No | `documentation` |
 | `PR_STATE` | Yes | `draft` |
 | `PREVIEW_APPROVED` | Yes | `true` |
-| `CONTRACT_PATH` | No | `./references/contracts/pr-submitter.md` |
-| `EXTERNAL_RESOURCES_PATH` | No | `./references/external-resources.md` |
-| `PLATFORM_ADAPTER_PATH` | No | `./references/platform-adaptation.md` |
+| `CONTRACT_PATH` | No | `../references/contracts/pr-submitter.md` |
+| `EXTERNAL_RESOURCES_PATH` | No | `../references/external-resources.md` |
+| `PLATFORM_ADAPTER_PATH` | No | `../references/platform-adaptation.md` |
 
 `PREVIEW_APPROVED=true` means the orchestrator already received explicit user
 approval for these exact values.

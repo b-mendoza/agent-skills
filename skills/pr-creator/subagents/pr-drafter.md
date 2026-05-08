@@ -17,9 +17,9 @@ description while preserving exact user overrides.
 | `BODY_OVERRIDE` | No | `## Summary\n...` |
 | `TYPE_CHOICE` | No | `docs` |
 | `SCOPE_CHOICE` | No | `skills` |
-| `BODY_TEMPLATE_PATH` | No | `./references/execution-contracts.md` |
-| `CONTRACT_PATH` | No | `./references/contracts/pr-drafter.md` |
-| `EXTERNAL_RESOURCES_PATH` | No | `./references/external-resources.md` |
+| `BODY_TEMPLATE_PATH` | No | `../references/execution-contracts.md` |
+| `CONTRACT_PATH` | No | `../references/contracts/pr-drafter.md` |
+| `EXTERNAL_RESOURCES_PATH` | No | `../references/external-resources.md` |
 
 `TITLE_OVERRIDE` and `BODY_OVERRIDE` are complete replacements.
 

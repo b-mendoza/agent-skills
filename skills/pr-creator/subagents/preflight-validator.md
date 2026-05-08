@@ -17,9 +17,9 @@ branch-state verdict.
 | `CURRENT_BRANCH` | Yes | `docs/pr-creator-skill` |
 | `TARGET_BRANCH` | Yes | `main` |
 | `PUSH_APPROVED` | No | `true` |
-| `CONTRACT_PATH` | No | `./references/contracts/preflight-validator.md` |
-| `EXTERNAL_RESOURCES_PATH` | No | `./references/external-resources.md` |
-| `PLATFORM_ADAPTER_PATH` | No | `./references/platform-adaptation.md` |
+| `CONTRACT_PATH` | No | `../references/contracts/preflight-validator.md` |
+| `EXTERNAL_RESOURCES_PATH` | No | `../references/external-resources.md` |
+| `PLATFORM_ADAPTER_PATH` | No | `../references/platform-adaptation.md` |
 
 `PUSH_APPROVED=true` means the orchestrator already received explicit user
 permission to push the current branch.

@@ -15,13 +15,13 @@ into reviewer and label choices that are safe to preview.
 | `PLATFORM` | Yes | `github` |
 | `CURRENT_BRANCH` | Yes | `docs/pr-creator-skill` |
 | `TARGET_BRANCH` | Yes | `main` |
-| `CHANGED_FILES` | Yes | `skills/pr-creator/SKILL.md` |
+| `CHANGED_FILES` | Yes | `../SKILL.md` |
 | `DIFF_SUMMARY` | Yes | `documentation-only skill restructure` |
 | `REVIEWERS` | No | `alice,bob` |
 | `LABELS_OVERRIDE` | No | `documentation,enhancement` |
-| `CONTRACT_PATH` | No | `./references/contracts/review-metadata-suggester.md` |
-| `EXTERNAL_RESOURCES_PATH` | No | `./references/external-resources.md` |
-| `PLATFORM_ADAPTER_PATH` | No | `./references/platform-adaptation.md` |
+| `CONTRACT_PATH` | No | `../references/contracts/review-metadata-suggester.md` |
+| `EXTERNAL_RESOURCES_PATH` | No | `../references/external-resources.md` |
+| `PLATFORM_ADAPTER_PATH` | No | `../references/platform-adaptation.md` |
 
 Use `REVIEWERS` as the exact reviewer list when supplied, after platform
 normalization.

@@ -16,8 +16,8 @@ metadata.
 | `CURRENT_BRANCH` | Yes | `docs/pr-creator-skill` |
 | `TARGET_BRANCH` | Yes | `main` |
 | `LARGE_PR_APPROVED` | No | `true` |
-| `CONTRACT_PATH` | No | `./references/contracts/diff-analyzer.md` |
-| `EXTERNAL_RESOURCES_PATH` | No | `./references/external-resources.md` |
+| `CONTRACT_PATH` | No | `../references/contracts/diff-analyzer.md` |
+| `EXTERNAL_RESOURCES_PATH` | No | `../references/external-resources.md` |
 
 Analyze `origin/<target_branch>...origin/<current_branch>` only after preflight
 confirms both remote refs are comparable.

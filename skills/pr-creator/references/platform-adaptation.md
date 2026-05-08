@@ -2,7 +2,7 @@
 
 > Load this file when the remote is GitLab, Bitbucket, unknown, or when GitHub
 > tooling cannot authenticate against a GitHub-compatible repository. Fetch exact
-> command or API syntax from `./references/external-resources.md` only for the
+> command or API syntax from `./external-resources.md` only for the
 > active platform.
 
 Non-GitHub flows keep the same safety gates: validate auth, confirm remote refs,
@@ -29,7 +29,7 @@ Reuse the approved preview values exactly:
 
 ## Failure Mapping
 
-Use the failure envelope in `./references/execution-contracts.md`:
+Use the failure envelope in `./execution-contracts.md`:
 
 | Situation | Envelope code |
 | --------- | ------------- |

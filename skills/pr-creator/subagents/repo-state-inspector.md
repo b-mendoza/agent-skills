@@ -15,8 +15,8 @@ state, classify the remote, and return routing facts without raw command output.
 | `TARGET_BRANCH` | No | `main` |
 | `PR_STATE` | No | `draft` |
 | `REMOTE_NAME` | No | `origin` |
-| `CONTRACT_PATH` | No | `./references/contracts/repo-state-inspector.md` |
-| `EXTERNAL_RESOURCES_PATH` | No | `./references/external-resources.md` |
+| `CONTRACT_PATH` | No | `../references/contracts/repo-state-inspector.md` |
+| `EXTERNAL_RESOURCES_PATH` | No | `../references/external-resources.md` |
 
 Use `origin` when `REMOTE_NAME` is missing. Report `Target branch: missing`
 instead of guessing a target branch.

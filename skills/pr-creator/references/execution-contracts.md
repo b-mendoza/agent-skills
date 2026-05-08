@@ -2,7 +2,7 @@
 
 > Load this file when mapping a failure, showing the PR preview, using the body
 > template, or printing the final result. Subagent return formats live in
-> `./references/contracts/<subagent-name>.md` and are loaded only by that
+> `./contracts/<subagent-name>.md` and are loaded only by that
 > subagent.
 
 ## Failure Envelope
@@ -68,7 +68,7 @@ Description:
 ## PR Body Template
 
 Use this body when the user did not provide `BODY_OVERRIDE`. For deeper writing
-guidance, load `./references/external-resources.md` and fetch one source from
+guidance, load `./external-resources.md` and fetch one source from
 "Writing and Review Sources".
 
 ```markdown
