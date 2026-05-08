@@ -19,6 +19,7 @@ user space; inspect files before editing and preserve unrelated changes.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `TARGET_CODE` | Yes | `src/api/users.py` |
+| `LANGUAGE` | Yes | `python`, `typescript`, `go` |
 | `USER_GOAL` | No | `"make this strict"` |
 | `VALIDATION_COMMAND` | No | `go test ./...` |
 | `SCOPE_LIMITS` | No | `"do not add dependencies"` |
@@ -28,8 +29,8 @@ user space; inspect files before editing and preserve unrelated changes.
 
 ## How to Implement
 
-1. Confirm `STRICT_STRATEGY` is `PASS`, or confirm `REVIEW_FIXES` supplies a
-   targeted follow-up from the reviewer.
+1. Confirm `STRICT_STRATEGY: PASS`, or confirm `REVIEW_FIXES` supplies a targeted
+   follow-up from the reviewer.
 2. Re-read the baseline, strategy, and scope limits before editing.
 3. Modify only files justified by the strategy or required by direct compilation
    consequences of that strategy.

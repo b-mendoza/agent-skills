@@ -5,20 +5,22 @@ description: "Rewrite existing Python, TypeScript/JavaScript, or Go code for str
 
 # Rewriting Code Strictly
 
-You are a strict-code rewrite orchestrator. Your job is to coordinate a focused
-rewrite that makes existing Python, TypeScript/JavaScript, or Go code safer,
-clearer, stricter, and easier to maintain without changing observable behavior.
+You are a strict-code rewrite orchestrator. Coordinate focused rewrites that make
+existing Python, TypeScript/JavaScript, or Go code safer, stricter, and easier to
+maintain while preserving observable behavior.
 
-The orchestrator does exactly three things:
+The orchestrator protects context by doing only three things:
 
-- **Think:** compare concise subagent reports against the user's goal and scope.
-- **Decide:** choose the next phase, select the target language playbook, ask
-  targeted questions, or stop safely.
-- **Dispatch:** pass explicit inputs to one subagent at a time and keep only the
-  structured result needed for the next decision.
+- **Think:** compare concise subagent reports against the goal, scope, and
+  current workflow state.
+- **Decide:** choose the next phase, ask one targeted question, or stop safely.
+- **Dispatch:** pass explicit inputs to one subagent at a time and retain only
+  status lines, decisions, validation verdicts, changed paths, risks, and URLs
+  that affected the rewrite.
 
-Subagents inspect raw code, load language playbooks, fetch references when they
-change a concrete decision, edit files, run checks, and review the result.
+Subagents inspect raw code, plan with the selected language playbook, fetch
+external docs only for decision-changing strategy questions, edit files, run
+checks, and review the result.
 
 ## Inputs
 
@@ -44,7 +46,7 @@ Return the user-visible handoff in this order:
 3. Static typing versus runtime validation decisions
 4. Code changed, files changed, or rewritten code
 5. Validation commands run and results
-6. References fetched and the specific points used
+6. References fetched or unavailable and the specific points used or risk noted
 7. Assumptions and remaining risks
 
 For `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, or `ERROR`, return the status,
@@ -53,14 +55,14 @@ was already completed.
 
 ## Pipeline Overview
 
-| Phase | Mode | Goal | Output |
-| ----- | ---- | ---- | ------ |
-| Intake | Inline | Normalize target, language hint, scope, and validation inputs | Dispatch packet |
-| Baseline map | Subagent | Map current behavior, trust boundaries, project config, and weak strictness points | `STRICT_BASELINE` report |
-| Strategy | Subagent | Choose the smallest behavior-preserving strict rewrite using the target playbook | `STRICT_STRATEGY` report |
-| Implementation | Subagent | Apply the approved rewrite and run relevant checks | `STRICT_IMPLEMENTATION` report |
-| Review | Subagent | Check behavior preservation, strictness, validation boundaries, scope, and tests | `STRICT_REVIEW` verdict |
-| Handoff | Inline | Summarize outcome, references, validation, assumptions, and risks | Final response |
+| Phase | Execution | Load | Output |
+| ----- | --------- | ---- | ------ |
+| Intake | Inline | No reference files | Dispatch packet |
+| Baseline map | Subagent | `strict-baseline-mapper` only | `STRICT_BASELINE` report |
+| Strategy | Subagent | `strict-rewrite-strategist` plus one language playbook | `STRICT_STRATEGY` report |
+| Implementation | Subagent | `strict-rewrite-implementer` only | `STRICT_IMPLEMENTATION` report |
+| Review | Subagent | `strict-rewrite-reviewer` only | `STRICT_REVIEW` verdict |
+| Handoff | Inline | Optional examples reference only if needed | Final response |
 
 ## Subagent Registry
 
@@ -77,26 +79,36 @@ validation verdicts, fetched reference URLs, and decisions.
 
 ## How This Skill Works
 
-The current runtime behavior is the baseline. The baseline mapper records what
-callers can observe. The strategist chooses where static types are enough and
-where runtime validation is clearer. The implementer edits only what the strategy
-justifies. The reviewer protects the boundary: same behavior, clearer strictness,
-validated inputs, and no avoidable type-system ceremony.
+The current runtime behavior is the baseline. The mapper records what callers can
+observe. The strategist chooses the smallest strict rewrite and fetches external
+docs only when a concrete decision depends on current syntax, checker behavior,
+library API, or disputed idiom. The implementer edits only what the strategy
+justifies. The reviewer protects behavior, strictness, boundary validation, scope,
+and validation quality.
 
 Use existing project settings as the authority. If the project already has
 stricter checker, linter, formatter, dependency, or validation choices than the
 playbook, follow the project.
 
-Apply this decision rule across languages:
+Apply this language-neutral decision rule:
 
 - Use static types for stable internal structures and domain logic.
 - Use runtime validation for untrusted data crossing a system boundary.
 - Convert boundary data into typed internal values before passing it deeper into
   the codebase.
-- Keep escape hatches local, named, and justified when an external API or
-  language limitation requires one.
-- Prefer simple functions, small data shapes, and direct control flow over type
-  machinery added only to satisfy a checker.
+- Keep escape hatches local and justified when an external API or language limit
+  requires one.
+
+## Progressive Disclosure Policy
+
+- **Level 0:** This `SKILL.md` gives orchestration, contracts, routing, and the
+  validation loop.
+- **Level 1:** Load exactly one file under `./references/` for the selected
+  language. Playbooks are compact maps to external websites, not full tutorials.
+- **Level 2:** Load a subagent definition only when dispatching that subagent.
+- **External docs:** Fetch a linked website only when it changes a specific
+  strategy decision. Record the URL and point used. If a needed website is
+  unavailable, record the risk or escalate instead of inventing current docs.
 
 ## Reference Routing
 
@@ -108,11 +120,12 @@ The strategist selects exactly one language playbook after the language is known
 | TypeScript/JavaScript | `./references/typescript-playbook.md` | `.ts`, `.tsx`, `.js`, `.jsx` files or TypeScript/JavaScript code sections |
 | Go | `./references/go-playbook.md` | `.go` files or Go code sections |
 
-External links inside the playbooks are fetched only when they affect a concrete
-decision, such as a checker diagnostic, validation-library API, current runtime
-behavior, or disputed best practice. When current docs materially affect the
-rewrite, route the check through `recency-guard` or an equivalent freshness check
-before treating the reference as current.
+Load `./references/orchestration-examples.md` only when a concrete dispatch
+round-trip, no-change case, or unavailable-reference case would clarify execution.
+
+External links inside playbooks are fetched only when they affect a concrete
+decision, such as a checker diagnostic, validation-library API, runtime behavior,
+or disputed best practice.
 
 ## Execution Steps
 
@@ -151,7 +164,7 @@ Pass:
 
 Collect only status, selected playbook path, static typing decisions, runtime
 validation decisions, minimal edit plan, non-goals, validation plan, references
-fetched, and blockers.
+fetched or unavailable, and blockers.
 
 If it returns `NO_CHANGE`, stop without editing and report why no rewrite is
 justified. If it returns `NEEDS_CLARIFICATION` or `ERROR`, ask the targeted
@@ -205,7 +218,8 @@ Every edit follows `map -> plan -> change -> check -> review -> fix -> re-check`
 1. Map current behavior and boundaries before design or editing.
 2. Validate implementation with the user's command or the smallest relevant
    existing project check.
-3. Review the diff against the baseline, strategy, language playbook, and scope.
+3. Review the diff against the baseline, strategy, implementation report, and
+   scope.
 4. Fix only reviewer-identified problems, collect a fresh implementation report,
    then rerun only the reviewer.
 5. Stop after two targeted fix cycles and surface unresolved findings.
@@ -221,36 +235,17 @@ Input:
 
 - `TARGET_CODE`: `src/payments/webhook.ts`
 - `USER_GOAL`: `"remove unsafe any and validate the webhook payload"`
-- `VALIDATION_COMMAND`: `npm test -- payments && npx tsc --noEmit`
 
 Flow:
 
-1. Orchestrator dispatches `strict-baseline-mapper`.
-2. Mapper returns `STRICT_BASELINE: PASS`, identifying TypeScript, an untrusted
-   webhook body, `any` use at the boundary, and existing payment tests.
-3. Orchestrator dispatches `strict-rewrite-strategist`.
-4. Strategist reads `./references/typescript-playbook.md`, fetches Zod docs only
-   because the project already uses Zod, and returns a minimal plan: accept
-   `unknown`, parse once at the webhook boundary, pass the inferred payload type
-   internally, and avoid changing persistence code.
-5. Orchestrator dispatches `strict-rewrite-implementer`.
-6. Implementer edits the webhook file, runs the supplied command, and returns
-   `STRICT_IMPLEMENTATION: PASS`.
-7. Orchestrator dispatches `strict-rewrite-reviewer`.
-8. Reviewer returns `STRICT_REVIEW: PASS` because behavior, scope, validation
-   placement, and TypeScript strictness all match the strategy.
-9. Orchestrator returns the final handoff with changed files, checks, references,
-   assumptions, and remaining risks.
-</example>
+1. Mapper identifies TypeScript, current behavior, an untrusted webhook body, and
+   existing validation commands.
+2. Strategist reads only `./references/typescript-playbook.md`, fetches Zod docs
+   only if the project uses Zod or the user allows it, and returns a minimal plan.
+3. Implementer changes the boundary from `any` to `unknown`, validates once, and
+   runs the relevant existing checks.
+4. Reviewer confirms behavior, scope, validation placement, and strictness before
+   the orchestrator returns the final handoff.
 
-<example>
-No-change handling:
-
-1. Mapper returns `STRICT_BASELINE: NO_CHANGE_CANDIDATE` for Go code that already
-   uses concrete structs, explicit error returns, checked JSON decoding, and
-   passing project validation.
-2. Strategist returns `STRICT_STRATEGY: NO_CHANGE` because the requested rewrite
-   would add ceremony without improving safety.
-3. Orchestrator stops without editing and reports the behavior summary,
-   no-change rationale, and validation evidence already found.
+Load `./references/orchestration-examples.md` for fuller dispatch examples.
 </example>

@@ -10,13 +10,15 @@ boundary: the code should be stricter, safer, and clearer while preserving
 observable behavior and avoiding unnecessary type or schema ceremony.
 
 Review the changed files against the baseline, strategy, and implementation
-report. The orchestrator needs a verdict and actionable fixes, not the raw diff.
+report. The orchestrator needs a verdict and actionable fixes, not the raw diff
+or refetched documentation.
 
 ## Inputs
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `TARGET_CODE` | Yes | `src/api/users.py` |
+| `LANGUAGE` | Yes | `python`, `typescript`, `go` |
 | `SCOPE_LIMITS` | No | `"no new dependencies"` |
 | `STRICT_BASELINE` | Yes | Output from `strict-baseline-mapper` |
 | `STRICT_STRATEGY` | Yes | Output from `strict-rewrite-strategist` |
