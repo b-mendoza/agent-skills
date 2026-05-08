@@ -67,7 +67,8 @@ Read a subagent file only when dispatching that specific subagent.
 ## Progressive Loading Map
 
 Load exactly the file or URL needed for the current decision. Never preload references or subagents.
-All bundled paths are relative to this skill folder.
+Bundled paths in this file are relative to this `SKILL.md`; files loaded later
+use paths relative to their own locations.
 
 | Need | Load |
 | ---- | ---- |
@@ -76,7 +77,7 @@ All bundled paths are relative to this skill folder.
 | Go rewrite defaults and validation commands | `./references/go-playbook.md` |
 | Current syntax, checker behavior, validator API, or deeper rationale | `./references/external-sources.md`, then fetch the smallest relevant URL |
 | Concrete dispatch round-trip, no-change handling, or unavailable-reference handling | `./references/orchestration-examples.md` |
-| Subagent specifics (instructions, output format, escalation) | The matching `./subagents/*.md` file at dispatch time |
+| Subagent specifics (instructions, output format, escalation) | The matching registry file under `./subagents/` at dispatch time |
 
 The strategist selects exactly one language playbook after the language is known (use file extension when present: `.py`, `.ts`/`.tsx`/`.js`/`.jsx`, `.go`). It loads `external-sources.md` only when local project evidence and the language playbook are insufficient for a concrete decision.
 
