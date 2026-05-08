@@ -35,16 +35,17 @@ context even though this subagent does not require them for every phase range.
 3. Check each dependency using the most direct platform-native method:
    - **MCP dependency:** verify the relevant server/tools are available.
    - **Skill dependency:** prefer skill discovery when available; otherwise
-     verify that the skill definition exists at
-     `skills/<skill-name>/SKILL.md` relative to the repository root (same layout
-     as the orchestrator’s downstream skill table).
+     verify the manifest path for that sibling skill. Paths in the manifest are
+     relative to `./preflight-checker-manifest.md` in this `subagents/` folder.
    - **CLI/tool dependency:** run a lightweight version or availability check.
 4. Record each dependency as one of:
    - `AVAILABLE`
    - `MISSING`
    - `UNKNOWN` when the platform does not expose a reliable way to check
-5. Return a compact summary only. Do not install, configure, or repair
-   anything yourself.
+5. If a missing dependency needs current setup instructions, read
+   `../references/external-sources.md` and fetch only the relevant setup URL.
+6. Return a compact summary only. Do not install, configure, or repair anything
+   yourself.
 
 For **GitHub CLI (`gh`)**, when any requested phase needs it, run at least
 `gh --version`. When phases include 1, 4, or 7, also run `gh auth status` (or
@@ -82,13 +83,12 @@ Omit the `Missing:` or `Unknown:` section when it would be empty.
 <example>
 PREFLIGHT: FAIL
 Issue: acme-app-42
-Phases: 5-7
-Summary: 2 required dependencies are missing for the remaining phases.
-Available: 6 | Missing: 2 | Unknown: 0
+Phases: 1-4
+Summary: 1 required dependency is missing for the remaining phases.
+Available: 4 | Missing: 1 | Unknown: 0
 
 Missing:
-- skills/planning-github-task/SKILL.md (Phase 5, used by orchestrator) - add or install the `planning-github-task` skill at the expected path
-- /humanizer (Phase 7, used by documentation-writer) - install `skills install blader/humanizer`
+- GitHub CLI (`gh`) (Phase 1, 4, used by GitHub reads/writes) - install `gh` and authenticate
 </example>
 
 ## Scope
