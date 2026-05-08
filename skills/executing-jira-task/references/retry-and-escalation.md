@@ -7,52 +7,48 @@
 
 ## Status handling
 
-| Step / subagent          | Expected statuses                                                  | Orchestrator action |
-| ------------------------ | ------------------------------------------------------------------ | ------------------- |
-| `execution-starter`      | `READY`, `BLOCKED`, `ERROR`                                        | Continue on `READY`; otherwise pause and resolve before implementation starts |
-| `task-executor`          | `COMPLETE`, `NEEDS_CONTEXT`, `BLOCKED`, `ERROR`                    | Continue on `COMPLETE`; otherwise pause and resolve before continuing |
-| `documentation-writer`   | `COMPLETE`, `BLOCKED`, `ERROR`                                     | Continue on `COMPLETE`; otherwise stop and surface the blocker |
-| `requirements-verifier`  | `PASS`, `FAIL`, `BLOCKED`, `ERROR`                                 | Re-run coverage fix loop only on clear in-scope `FAIL` gaps; stop and resolve blocked cases before resuming |
-| Review gates             | `PASS`, `PASS WITH SUGGESTIONS`, `PASS WITH ADVISORIES`, `NEEDS FIXES`, `BLOCKED`, `ERROR` | Continue on non-blocking passes; run targeted fix cycle on `NEEDS FIXES`; stop on `BLOCKED`/`ERROR` |
+| Step / subagent | Expected statuses | Orchestrator action |
+| --------------- | ----------------- | ------------------- |
+| `execution-starter` | `READY`, `BLOCKED`, `ERROR` | Continue on `READY`; otherwise pause and resolve before implementation starts |
+| `task-executor` | `COMPLETE`, `NEEDS_CONTEXT`, `BLOCKED`, `ERROR` | Continue on `COMPLETE`; otherwise pause and resolve |
+| `documentation-writer` | `COMPLETE`, `BLOCKED`, `ERROR` | Continue on `COMPLETE`; otherwise stop and surface the blocker |
+| `requirements-verifier` | `PASS`, `FAIL`, `BLOCKED`, `ERROR` | Re-run coverage fix loop only on clear in-scope `FAIL` gaps; stop and resolve blocked cases first |
+| Review gates | `PASS`, `PASS WITH SUGGESTIONS`, `PASS WITH ADVISORIES`, `NEEDS FIXES`, `BLOCKED`, `ERROR` | Continue on non-blocking passes; targeted fix cycle on `NEEDS FIXES`; stop on `BLOCKED`/`ERROR` |
 
 ## When to ask the user
 
-Ask for user input instead of improvising when any of these occur:
+Ask for user input rather than improvising when:
 
 1. A subagent reports `NEEDS_CONTEXT` for a real business, scope, or
    architectural decision.
 2. `execution-starter` reports that branch resolution, branch checkout,
-   worktree, or dirty-state handling needs a user or orchestrator decision.
+   worktree, or dirty-state handling needs a decision.
 3. Required planning artifacts conflict with each other.
 4. A required supporting skill, tool, runtime, permission, or environment
-   capability is missing and the run cannot proceed safely. This includes the
-   platform integration (the tracker CLI or API) being unavailable when tracker
-   updates are mandatory for the team or task policy.
+   capability is missing and the run cannot proceed safely. Includes the
+   tracker CLI or API being unavailable when tracker updates are mandatory.
 5. The same ambiguity or gate failure persists after the retry limit.
-6. A tracker operation fails with permissions or policy errors that cannot be
-   resolved inside the session.
+6. A tracker operation fails with permissions or policy errors that cannot
+   be resolved inside the session.
 
 ## Retry limits
 
-- `task-executor` ambiguity/context loop: maximum 3 re-dispatches for the same
-  blocker.
-- Requirements coverage fix loop: maximum 3 cycles.
-- Quality-gate targeted fix loop: maximum 3 cycles.
+- `task-executor` ambiguity/context loop: max 3 re-dispatches per blocker.
+- Requirements coverage fix loop: max 3 cycles.
+- Quality-gate targeted fix loop: max 3 cycles.
 
-If a loop reaches its limit, stop and report the accumulated findings rather
-than trying again with unchanged inputs.
+If a loop reaches its limit, stop and report findings instead of trying again
+with unchanged inputs.
 
 ## Non-blocking outcomes
 
-These should be reported but should not reopen the task automatically:
+Reported but should not reopen the task:
 
 - `PASS WITH SUGGESTIONS`
 - `PASS WITH ADVISORIES`
-- Tracker updates skipped because the tracker reference was a "not created"
-  placeholder, the integration was unavailable, or the team chose not to
-  mutate the tracker at kickoff/completion
-- Pre-existing failing tests that were explicitly reported and are outside the
-  selected task's scope
+- Tracker updates skipped because the reference was a placeholder, the
+  integration was unavailable, or the team chose not to mutate the tracker
+- Pre-existing failing tests outside the selected task's scope
 
 ## Missing capability pattern
 
@@ -61,8 +57,7 @@ When a subagent reports a missing required skill or tool:
 1. Surface the exact capability name.
 2. Include the install or setup instructions returned by the subagent.
 3. Stop the pipeline at that phase.
-4. Resume from the blocked phase after the user confirms the capability is
-   available.
+4. Resume after the user confirms the capability is available.
 
-This rule also applies when the missing capability is discovered during task
+This rule also applies when a missing capability is discovered during task
 execution or required validation, not only during initial preflight.

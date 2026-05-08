@@ -2,117 +2,100 @@
 
 > Read this file when running the normal task-execution phases.
 >
-> Reminder: dispatch specialists and pass compact inputs. Do not carry raw file
-> contents or logs through the orchestrator.
+> Reminder: dispatch specialists and pass compact inputs. Do not carry raw
+> file contents or logs through the orchestrator.
 >
-> `./contracts.md` remains the authoritative source for readiness checks and
-> dispatch handoff contracts. This file is the ordered runbook.
+> `./contracts.md` is authoritative for readiness checks and dispatch handoff
+> shapes; this file is the ordered runbook.
 
 ## Standard phase cycle
 
-Every successful task run follows this sequence:
-
 1. **Validate prerequisites.**
    - Read `./contracts.md`.
-   - Confirm the **execution handoff**: the ticket snapshot, the task plan, the
-     per-task brief, execution plan, test spec, refactoring plan, critique
-     record, and decisions record all exist for this `TASK_NUMBER`.
-   - Stop immediately if required artifacts are missing, contradictory, or the
-     selected task is not ready.
+   - Confirm the ticket snapshot, task plan, per-task brief, execution plan,
+     test spec, refactoring plan, critique, and decisions all exist for this
+     `TASK_NUMBER`.
+   - Stop if any required artifact is missing, contradictory, or the task is
+     not ready.
 
 2. **Dispatch `execution-starter`.**
-    - Pass `TICKET_KEY`, `TASK_NUMBER`, the ticket snapshot path, the task plan
-      path, and the execution brief path.
-    - It must resolve the planner-generated branch for this task from the task
-      plan and switch or check out that branch before returning `READY`.
-   - Treat this as the explicit **execution kickoff** — the **first mutation
-     boundary after critique approval** (including the first Jira-side startup
-     updates reserved for starting implementation).
+   - Pass `TICKET_KEY`, `TASK_NUMBER`, ticket snapshot path, task plan path,
+     and execution brief path.
+   - It must resolve the planner-generated branch and switch or check out
+     that branch before returning `READY`.
+   - Treat this as the **first mutation boundary after critique approval**
+     (including the first Jira-side startup updates).
    - Collect only the structured `KICKOFF_REPORT`.
-   - On resume, kickoff is **idempotent**: if startup conditions were
-     already satisfied or Jira state already reflects `In Progress`, record the
-     current state and continue instead of reapplying startup mutations blindly.
+   - On resume, kickoff is idempotent: if startup conditions or Jira state
+     already reflect `In Progress`, record current state and continue.
 
-3. **Handle kickoff results before continuing.**
-   - `READY` means the task has crossed the execution boundary and can proceed.
-   - `BLOCKED` or `ERROR` means stop normal execution and use
+3. **Handle kickoff results.**
+   - `READY` continues. `BLOCKED` or `ERROR` stops normal execution; use
      `./retry-and-escalation.md`.
 
 4. **Dispatch `task-executor`.**
    - Pass artifact paths under `docs/<TICKET_KEY>-task-<N>-*.md`, the
-     required `docs/<TICKET_KEY>-task-<N>-decisions.md`, optional
-     `docs/<TICKET_KEY>-task-<N>-critique.md`, and any targeted fix brief.
+     required `decisions.md`, optional `critique.md`, and any fix brief.
    - Collect only the structured `EXECUTION_REPORT`.
 
-5. **Handle executor escalations before continuing.**
-   - `COMPLETE` means continue.
-   - `NEEDS_CONTEXT`, `BLOCKED`, or `ERROR` means stop normal execution and use
+5. **Handle executor escalations.**
+   - `COMPLETE` continues. `NEEDS_CONTEXT`, `BLOCKED`, or `ERROR` stops; use
      `./retry-and-escalation.md`.
 
 6. **Dispatch `documentation-writer`.**
-    - Pass `EXECUTION_REPORT`, `TICKET_KEY`, and `TASK_NUMBER`.
-    - This step adds in-code documentation, updates Category A tracking in
-      `docs/<TICKET_KEY>-tasks.md`, and performs optional Jira completion
-      updates when a subtask exists and policy requires it.
+   - Pass `EXECUTION_REPORT`, `TICKET_KEY`, and `TASK_NUMBER`.
+   - Adds in-code documentation, updates Category A tracking in
+     `docs/<TICKET_KEY>-tasks.md`, and performs optional Jira completion
+     updates when a subtask exists and policy requires.
    - Collect only the structured `DOCUMENTATION_REPORT`.
 
-7. **Handle documentation results before continuing.**
-   - `COMPLETE` means continue.
-   - `BLOCKED` or `ERROR` means stop normal execution and use
+7. **Handle documentation results.**
+   - `COMPLETE` continues. `BLOCKED` or `ERROR` stops; use
      `./retry-and-escalation.md`.
 
 8. **Dispatch `requirements-verifier`.**
-   - Pass brief path, test spec path, `EXECUTION_REPORT`, and
-     `DOCUMENTATION_REPORT`.
-   - Postcondition for implementation completeness before review gates.
+   - Pass brief path, test spec path, `EXECUTION_REPORT`,
+     `DOCUMENTATION_REPORT`. Postcondition for implementation completeness
+     before review gates.
 
 9. **Resolve requirements gaps before review gates.**
-   - If the verifier returns `PASS`, continue.
-   - If it returns `BLOCKED`, stop the pipeline immediately. Missing required
-     capability, missing access, or blocked documentation is not a normal fix
-     loop; use `./retry-and-escalation.md` and resume only after the blocker is
-     resolved.
-   - If it returns `FAIL` and the gaps are plainly in scope, create a concise
-     fix brief from the reported gaps, re-dispatch `task-executor`, then
-     `documentation-writer`, then re-run `requirements-verifier`.
-   - If the reported gaps expose an ambiguous brief, conflicting artifacts, or
-     a probable planning mistake, stop and ask the user.
+   - `PASS` continues.
+   - `BLOCKED` stops the pipeline; use `./retry-and-escalation.md` and resume
+     only after the blocker is resolved.
+   - `FAIL` with in-scope gaps: build a concise fix brief from the reported
+     gaps, re-dispatch `task-executor`, then `documentation-writer`, then
+     re-run `requirements-verifier`.
+   - If the gaps expose ambiguous brief, conflicting artifacts, or a probable
+     planning mistake: stop and ask the user.
 
-10. **Run the quality gates in order.**
-   - `clean-code-reviewer`
-   - `architecture-reviewer`
-   - `security-auditor`
+10. **Run quality gates in order.** `clean-code-reviewer`,
+    `architecture-reviewer`, then `security-auditor`.
 
 11. **Interpret gate verdicts.**
-   - `PASS`, `PASS WITH SUGGESTIONS`, and `PASS WITH ADVISORIES` let the
-     pipeline continue.
-   - `NEEDS FIXES` triggers the targeted fix cycle below.
-   - `BLOCKED` or `ERROR` stops the run and escalates.
+    - `PASS`, `PASS WITH SUGGESTIONS`, `PASS WITH ADVISORIES`: continue.
+    - `NEEDS FIXES`: trigger the targeted fix cycle below.
+    - `BLOCKED` or `ERROR`: stop and escalate.
 
 12. **Report the outcome.**
-    - Summarise what changed.
-    - Include kickoff status, gate verdicts, files changed, and any Jira
-      tracking that was skipped or failed.
-   - Stop after the selected task. Do not continue to the next task
-     automatically.
+    - Summarise what changed: kickoff status, gate verdicts, files changed,
+      any Jira tracking that was skipped or failed.
+    - Stop after the selected task. Do not auto-continue.
 
 ## Targeted fix cycle
 
 When one or more reviewers return `NEEDS FIXES`:
 
-1. Consolidate only the blocking issues from the failing gates into a single
-   fix brief.
-2. Re-dispatch `task-executor` with the original planning artifacts plus that
-   fix brief.
+1. Consolidate only the blocking issues from failing gates into a single fix
+   brief.
+2. Re-dispatch `task-executor` with original planning artifacts plus the fix
+   brief.
 3. Re-dispatch `documentation-writer` so new Category B changes are documented
    and tracking artifacts are updated.
-4. Re-run only the gate(s) that previously failed, in their original order.
+4. Re-run only the previously failing gate(s), in original order.
 5. If every previously failing gate now passes, finish the task. Otherwise use
    `./retry-and-escalation.md`.
 
 ## Report template
-
-Use a short final summary shaped like this:
 
 ```markdown
 Task <N> complete: <title>
