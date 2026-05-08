@@ -1,8 +1,10 @@
 # Review File Template
 
 > Read this file only from `review-writer` while assembling `OUTPUT_FILE`.
-> Preserve verified findings and comments exactly. This template is formatting
-> guidance, not permission to change verified content.
+> Preserve verified findings, comments, metadata, and suggestion blocks exactly.
+
+The review file must stand alone without chat context. It should be findings
+first, concise, and explicit about residual risks and posting status.
 
 ## With Findings
 
@@ -20,7 +22,8 @@ PR: <PR_URL>
 - Evidence: <specific evidence>
 - Impact: <why this matters>
 - Fix: <minimal fix>
-- Line metadata: `path=<path>`, `line=<line>`, `side=<RIGHT|LEFT>`, `start_line=<line-or-none>`
+- Line metadata: `path=<path>`, `line=<line>`, `side=<RIGHT|LEFT>`, `start_line=<line-or-none>`, `start_side=<side-or-none>`
+- Sources checked: <diff, files, CI, issue, docs, URLs>
 
 Draft PR comment:
 
@@ -40,7 +43,6 @@ Or: `Suggestion: none`
 
 ## Verification Notes
 
-- Sources checked: <diff, files, CI, issue, docs, URLs>
 - Residual risks: <risks or none>
 - Posting status: <not posted | posted | cancelled>
 ````

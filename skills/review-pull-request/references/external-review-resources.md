@@ -1,70 +1,78 @@
 # External Review Resources
 
-> Read this file when a phase needs current GitHub mechanics, code-review
-> judgment, security guidance, writing/tone rules, or progressive-disclosure
-> background. Fetch one URL at a time, keep page contents inside your own
-> context, and return only the applied rule plus the URL you used.
+> Read this file only when a phase needs current code-review judgment, security
+> guidance, GitHub mechanics, writing/tone rules, or skill-maintenance context.
+> Fetch one URL at a time and return only the applied rule plus the URL.
 
-This index is the single source of static knowledge for this skill. Subagents
-delegate "what is the rule?" questions here so the always-loaded prompt stays
-small. Each row tells you when to fetch and what the page provides.
+This standalone URL map replaces bulky in-prompt explanations. Choose the row
+that matches the immediate question, fetch that source with the available web or
+documentation tool, apply it, and cite the URL in `Sources checked` or
+`References fetched`.
 
 ## Fetch Policy
 
-1. Find the row that matches your current need.
-2. Fetch only that URL with your available web/documentation tool.
-3. Apply the rule to the current artifact.
-4. Cite the URL in `Sources checked` or `References fetched`.
-5. Discard the fetched page from your output. Never forward raw page contents
-   to the orchestrator.
-
-If no web tool is available, proceed using the bundled instructions, set
-`References fetched: none`, and add a residual risk noting which rule could
-not be re-verified against current docs.
+1. Prefer official product documentation for GitHub mechanics and dependency
+   behavior.
+2. Prefer established engineering references for review judgment and tone.
+3. Fetch only the URL needed for the current decision.
+4. Keep fetched page contents out of orchestrator output; summarize only the
+   applied rule.
+5. If no web tool is available, proceed from the bundled workflow and record a
+   residual risk naming the rule that could not be re-verified.
 
 ## Code Review Judgment
 
 | Need | Source |
 | ---- | ------ |
-| Full reviewer checklist (correctness, design, complexity, tests, naming, comments, style, consistency, docs) | https://google.github.io/eng-practices/review/reviewer/looking-for.html |
-| Reviewer responsibilities, scope, and pace | https://google.github.io/eng-practices/review/reviewer/ |
-| How to write useful, kind, and specific review comments | https://google.github.io/eng-practices/review/reviewer/comments.html |
-| Conventional review labels (`praise`, `nitpick`, `suggestion`, `issue`, `question`, `thought`, `chore`) and decorations (`blocking`, `non-blocking`) | https://conventionalcomments.org/ |
+| What reviewers should look for: correctness, design, complexity, tests, naming, comments, style, consistency, docs | https://google.github.io/eng-practices/review/reviewer/looking-for.html |
+| Reviewer responsibilities, scope, and general process | https://google.github.io/eng-practices/review/reviewer/ |
+| Navigating a change list and deciding inspection order | https://google.github.io/eng-practices/review/reviewer/navigate.html |
+| Review speed and when to request changes | https://google.github.io/eng-practices/review/reviewer/speed.html |
+| Large-change guidance and why broad PRs need extra care | https://google.github.io/eng-practices/review/developer/small-cls.html |
+| GitLab high-impact-risk checklist and review process | https://docs.gitlab.com/development/code_review/ |
+
+## Security Review
+
+| Need | Source |
+| ---- | ------ |
 | Security-focused code review checklist by topic | https://owasp.org/www-project-code-review-guide/ |
-| GitLab review process and high-impact-risk checklist | https://docs.gitlab.com/development/code_review/ |
+| Application security verification categories for deeper checks | https://owasp.org/www-project-application-security-verification-standard/ |
+| OWASP Top 10 risk categories for web applications | https://owasp.org/www-project-top-ten/ |
+
+## Comment Language And Labels
+
+| Need | Source |
+| ---- | ------ |
+| Useful, kind, and specific review comments | https://google.github.io/eng-practices/review/reviewer/comments.html |
+| Conventional review labels and blocking/non-blocking decorations | https://conventionalcomments.org/ |
+| Plain technical writing principles | https://developers.google.com/tech-writing/one/just-enough-grammar |
+| Patterns that signal AI-generated prose | https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing |
 
 ## GitHub Review Mechanics
 
 | Need | Source |
 | ---- | ------ |
-| Pull request review decisions (`COMMENT`, `APPROVE`, `REQUEST_CHANGES`) | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews |
-| Reviewing proposed changes (UI workflow) | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/reviewing-proposed-changes-in-a-pull-request |
+| Pull request review decisions: comment, approve, request changes | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews |
+| Reviewing proposed changes in the GitHub UI | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/reviewing-proposed-changes-in-a-pull-request |
 | Adding line comments and inline `suggestion` blocks | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/commenting-on-a-pull-request |
-| Review comment REST fields (`path`, `line`, `side`, `start_line`, `start_side`) | https://docs.github.com/en/rest/pulls/comments#create-a-review-comment-for-a-pull-request |
-| Create-review REST endpoint (`event`, `body`, `comments[]`) | https://docs.github.com/en/rest/pulls/reviews#create-a-review-for-a-pull-request |
+| Review comment REST fields: `path`, `line`, `side`, `start_line`, `start_side` | https://docs.github.com/en/rest/pulls/comments#create-a-review-comment-for-a-pull-request |
+| Create-review REST endpoint: `event`, `body`, `comments[]` | https://docs.github.com/en/rest/pulls/reviews#create-a-review-for-a-pull-request |
 | `gh pr review` CLI flags and behavior | https://cli.github.com/manual/gh_pr_review |
 | `gh api` for arbitrary REST calls when `gh pr review` is insufficient | https://cli.github.com/manual/gh_api |
 
-## Writing And Tone
+## Dependency-Specific Claims
 
-| Need | Source |
-| ---- | ------ |
-| Plain technical writing principles | https://developers.google.com/tech-writing/one/just-enough-grammar |
-| Patterns that signal AI-generated prose (avoid them in comments) | https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing |
+When a finding depends on a library, framework, cloud service, API, SDK, or CLI,
+fetch current official documentation for that dependency before treating behavior
+as factual. Cite the exact URL in `Sources checked` or `References fetched`.
+Treat training-data recall about dependency behavior as a hypothesis until a
+current source confirms it.
 
-## Progressive Disclosure Background
+## Skill Maintenance And Progressive Disclosure
 
 | Need | Source |
 | ---- | ------ |
 | Skill-style progressive disclosure example | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
-| Anthropic Agent Skills overview (loading model, anatomy, levels) | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview |
-| Anthropic Agent Skills authoring best practices | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |
-| Nielsen Norman Group on progressive disclosure as a UX pattern | https://www.nngroup.com/articles/progressive-disclosure/ |
-
-## Dependency-Specific Claims
-
-When a finding depends on a library, framework, cloud service, API, SDK, or
-CLI, fetch the current official documentation for that dependency before
-treating the behavior as factual. Cite the exact URL in `Sources checked` or
-`References fetched`. Treat training-data recall about library behavior as a
-hypothesis, not a fact, until confirmed against current docs.
+| Agent Skills loading model, anatomy, and levels | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview |
+| Agent Skills authoring best practices | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |
+| Progressive disclosure as a UX pattern | https://www.nngroup.com/articles/progressive-disclosure/ |
