@@ -27,6 +27,8 @@ Then return:
 ## Manifest Summary
 
 - Warning: <present only for WARN>
+- Not surfaced: <N> lower-severity items retained in the critique artifact
+  <present only when N > 0>
 
 ## Questions For Now
 
@@ -42,9 +44,9 @@ Then return:
 
 ## Deferred Questions
 
-| # | Item ID | Category | Deferred to |
-| --- | --- | --- | --- |
-| 1 | DQ-3-1 | Task question | Task 3 |
+| # | Item ID | Category | Severity | Deferred to |
+| --- | --- | --- | --- | --- |
+| 1 | DQ-3-1 | Task question | HIGH | Task 3 |
 
 ## Resolved Irrelevant
 
@@ -63,6 +65,8 @@ Questions now: 1 | Deferred: 1 | Irrelevant: 0
 
 ## Manifest Summary
 
+- Not surfaced: 2 lower-severity items retained in the critique artifact
+
 ## Questions For Now
 
 | # | Item ID | Category | Severity | Model | Skippable | Affects |
@@ -77,9 +81,9 @@ Questions now: 1 | Deferred: 1 | Irrelevant: 0
 
 ## Deferred Questions
 
-| # | Item ID | Category | Deferred to |
-| --- | --- | --- | --- |
-| 1 | DQ-3-1 | Task question | Task 3 |
+| # | Item ID | Category | Severity | Deferred to |
+| --- | --- | --- | --- | --- |
+| 1 | DQ-3-1 | Task question | HIGH | Task 3 |
 
 ## Resolved Irrelevant
 

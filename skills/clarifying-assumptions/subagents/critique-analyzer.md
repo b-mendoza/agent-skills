@@ -86,6 +86,12 @@ short current evidence needed by the rubric. For method background, use
 `../references/external-sources.md`. For exact library or framework
 behavior, prefer that project's official documentation.
 
+When current sources contradict each other, apply the rubric's evidence
+conflict rule: try to resolve the disagreement by authority, recency,
+version, scope, and project fit. If the contradiction still matters after
+that research, keep the item user-facing by setting `Severity` to `HIGH`
+and summarizing the conflict in the critique report.
+
 If current evidence cannot be gathered, fail loudly. This subagent exists
 to correct training-data bias; without current evidence, that purpose is
 compromised.
@@ -111,7 +117,10 @@ Use stable item IDs throughout the report:
 
 The written critique must reflect the decisions-log consult from Step 1:
 
-- Raise only items that still need the developer's attention this run.
+- Write only unresolved items that still need recording or developer
+  attention this run.
+- Mark unresolved evidence conflicts as `HIGH` so the manifest builder
+  surfaces them to the developer.
 - If a candidate concern is already answered in the Decisions Log, omit
   it from the critique instead of emitting it for downstream filtering.
 - If every candidate concern is already answered, write a valid critique

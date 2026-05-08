@@ -64,13 +64,26 @@ library, architecture, testing, security, performance, or maintainability.
 Keep evidence short in the artifact. Cite enough for downstream review,
 but do not paste raw search output or whole pages.
 
+When sources disagree, first try to resolve the conflict by checking
+source authority, recency, version applicability, scope, and fit for this
+project. If credible current sources still materially contradict each
+other after that research, raise or retain the critique item, set
+`Severity` to `HIGH`, and state the contradiction in the item's web
+findings. The developer must see unresolved evidence conflicts because
+there is no single safe default for the agent to choose silently.
+
 ## Severity Rubric
 
 | Severity | Meaning |
 | --- | --- |
-| `HIGH` | A core assumption is unvalidated, the default choice looks unjustified, or a clearly better fit exists for this project |
+| `HIGH` | A core assumption is unvalidated, the default choice looks unjustified, a clearly better fit exists for this project, or credible current sources materially contradict each other after research |
 | `MEDIUM` | Real alternatives or trade-offs exist and were not considered deeply enough |
-| `LOW` | Worth surfacing for awareness, but not obviously the wrong call |
+| `LOW` | Worth recording for awareness in the critique artifact, but not worth interrupting the developer |
+
+`HIGH` is the user-surfacing threshold. Treat `HIGH` and any future
+severity explicitly above `HIGH` as eligible for the clarification
+manifest. `MEDIUM` and `LOW` items remain in the critique artifact for
+auditability, but they are not user-facing questions.
 
 Problem-framing items also map to tiers:
 

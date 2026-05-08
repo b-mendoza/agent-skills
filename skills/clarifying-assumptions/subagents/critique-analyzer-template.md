@@ -68,6 +68,8 @@ Include this section only in `MODE=upfront`.
 - Web findings:
   - <source or search result summary>
   - <source or search result summary>
+- Evidence conflict: <none, or summarize unresolved contradictory sources
+  that justify HIGH severity>
 
 ### User Impact Critique Items
 

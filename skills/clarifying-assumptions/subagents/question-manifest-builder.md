@@ -91,8 +91,10 @@ In `MODE=upfront`, the report must include both
 
 Read `./question-manifest-builder-rules.md`, then build the inventory,
 ordering, item IDs, category labels, and compact question briefs from
-that file. Keep manifest rows concise; do not copy entire artifact
-sections into the response.
+that file. Apply the user-surfacing gate from the rules before adding any
+item to `Questions For Now`: only `HIGH` or higher severity items become
+developer-facing questions. Keep manifest rows concise; do not copy entire
+artifact sections into the response.
 
 ### 4. Validate the manifest before returning
 
@@ -101,8 +103,13 @@ Before returning, confirm:
 - the header counts for `Questions now`, `Deferred`, and `Irrelevant`
   match the body sections
 - the manifest ordering follows the active mode's ordering rules
-- every critique report item appears exactly once in `Questions For
+- every user-surfaceable item appears exactly once in `Questions For
   Now`, `Deferred Questions`, or `Resolved Irrelevant`
+- no `Questions For Now` or `Deferred Questions` row has severity below
+  `HIGH`
+- lower-severity critique items are left in the critique artifact and, if
+  useful, summarized in `## Manifest Summary` instead of being marked
+  deferred or irrelevant
 - zero-item manifests still use the same structure
 
 ### 5. Return the manifest
@@ -129,9 +136,10 @@ You may:
 - Read `CRITIQUE_REPORT_FILE`
 - Read `CURRENT_TASK_ARTIFACTS` in `MODE=critique`
 - Read `./question-manifest-builder-rules.md` when building the manifest
-- Translate the critique report's surviving items into short question
-  briefs
-- Decide what to ask now, what to defer, and what is irrelevant
+- Translate eligible critique report items into short question briefs
+- Decide what to ask now, what to defer, what is irrelevant, and what is
+  retained only in the critique artifact because it is below the
+  user-surfacing threshold
 - Return only the manifest format
 
 Delegate critique analysis, web research, file edits, and developer
