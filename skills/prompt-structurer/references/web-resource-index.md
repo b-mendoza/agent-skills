@@ -55,7 +55,7 @@ question at hand.
 | URL | What It Covers |
 | --- | --- |
 | https://www.nngroup.com/articles/progressive-disclosure/ | Concept, benefits, and split between primary and secondary information |
-| https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure | Skill-shaped example of progressive disclosure for an agent skill |
+| https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Skill-shaped example of progressive disclosure for an agent skill |
 | https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/overview | Claude Agent Skills packaging and progressive disclosure for skills |
 | https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices | Authoring patterns, references, subagents, and skill discovery |
 

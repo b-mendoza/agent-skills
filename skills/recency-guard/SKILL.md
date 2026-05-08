@@ -77,7 +77,7 @@ only what the current step needs, in this order.
 | Subagent output formats and worked examples | `./references/output-templates.md` |
 | Subagent runbook for the current dispatch | One file from `./subagents/` |
 | Conceptual background on this disclosure pattern | <https://www.nngroup.com/articles/progressive-disclosure/> |
-| Worked example of progressive disclosure as a published skill | <https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure> |
+| Worked example of progressive disclosure as a published skill | <https://skills.sh/flpbalada/fb-skills/progressive-disclosure> |
 
 Use the bundled references first. Fetch an external URL only when a local
 rule is ambiguous or a high-stakes judgment depends on it. If a link is

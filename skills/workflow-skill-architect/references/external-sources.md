@@ -18,7 +18,7 @@ the user's instructions, host system rules, and the local skill's contracts.
 | Claude Code documentation index for page discovery | https://code.claude.com/docs/llms.txt |
 | Cursor skill format, discovery paths, frontmatter fields, optional directories | https://cursor.com/docs/skills |
 | Cursor agent workflow guidance, planning, context management, skills vs rules | https://cursor.com/blog/agent-best-practices |
-| Skills.sh example of progressive disclosure as a skill | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Skills.sh example of progressive disclosure as a skill | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | UX definition of progressive disclosure and staged disclosure | https://www.nngroup.com/articles/progressive-disclosure/ |
 | Agent Skills open-standard context | https://agentskills.io |
 

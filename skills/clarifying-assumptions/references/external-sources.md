@@ -34,7 +34,7 @@ Use the `Use when` column to decide whether to fetch.
 
 | Topic | Use when | URLs |
 | ----- | -------- | ---- |
-| Agent Skills loading model and progressive disclosure | Explaining why this skill ships layered files instead of one large prompt | https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/overview ; https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices ; https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Agent Skills loading model and progressive disclosure | Explaining why this skill ships layered files instead of one large prompt | https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/overview ; https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices ; https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | Progressive disclosure as a UX and design principle | Explaining why bundled references and external URLs load only when needed | https://www.nngroup.com/articles/progressive-disclosure/ |
 | Subagent isolation and context-window protection | Explaining why artifact reading, manifest assembly, and file writes are delegated to subagents | https://docs.claude.com/en/docs/claude-code/sub-agents |
 | Design Thinking framework | Coaching the developer on empathy-first, problem-before-solution thinking during clarification | https://www.nngroup.com/articles/design-thinking/ |

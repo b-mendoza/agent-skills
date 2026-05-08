@@ -38,7 +38,7 @@ contracts.
 | `gh-graphql-review-thread`   | https://docs.github.com/en/graphql/reference/objects#pullrequestreviewthread                 | Collector needs thread-level metadata such as `isResolved`, `isOutdated`, or root comment ID          |
 | `gh-cli-api`                 | https://cli.github.com/manual/gh_api                                                         | Collector or poster needs `gh api` flags, GraphQL invocation, or pagination behavior                  |
 | `gh-cli-pr-view`             | https://cli.github.com/manual/gh_pr_view                                                     | Collector needs `gh pr view` JSON fields or comment flags                                             |
-| `progressive-disclosure-skill` | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure                      | Future maintainer is changing the staged loading model used by this skill                             |
+| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure                      | Future maintainer is changing the staged loading model used by this skill                             |
 | `progressive-disclosure-ux`  | https://www.nngroup.com/articles/progressive-disclosure/                                     | Future maintainer needs a neutral explanation of progressive disclosure                               |
 
 ## Current Documentation Rule

@@ -56,7 +56,7 @@ not be re-verified against current docs.
 
 | Need | Source |
 | ---- | ------ |
-| Skill-style progressive disclosure example | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Skill-style progressive disclosure example | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | Anthropic Agent Skills overview (loading model, anatomy, levels) | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview |
 | Anthropic Agent Skills authoring best practices | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |
 | Nielsen Norman Group on progressive disclosure as a UX pattern | https://www.nngroup.com/articles/progressive-disclosure/ |

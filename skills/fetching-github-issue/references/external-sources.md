@@ -23,7 +23,7 @@
 
 | Reference key | URL | Use when |
 | ------------- | --- | -------- |
-| `progressive-disclosure-skill` | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure | Maintaining or explaining staged loading in this skill |
+| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Maintaining or explaining staged loading in this skill |
 | `progressive-disclosure-ux` | https://www.nngroup.com/articles/progressive-disclosure/ | A short public explanation of revealing only needed information would help |
 | `gh-issue-view` | https://cli.github.com/manual/gh_issue_view | Parent issue command flags or JSON fields are unclear |
 | `gh-api` | https://cli.github.com/manual/gh_api | REST, GraphQL, pagination, headers, host, or `jq` behavior through `gh api` is unclear |

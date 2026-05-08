@@ -21,7 +21,7 @@
 
 | Reference key | URL | Use when |
 | ------------- | --- | -------- |
-| `progressive-disclosure-skill` | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure | Maintaining or explaining staged loading in this skill |
+| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Maintaining or explaining staged loading in this skill |
 | `progressive-disclosure-ux` | https://www.nngroup.com/articles/progressive-disclosure/ | A short public explanation of revealing only needed information would help |
 | `jira-rest-intro` | https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/ | Authentication, status codes, pagination, expansions, or timestamp behavior is unclear |
 | `jira-get-issue` | https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-issueidorkey-get | Parent or related issue field retrieval syntax is unclear |

@@ -23,7 +23,7 @@
 
 | Need | Source |
 | ---- | ------ |
-| Progressive disclosure as a skill loading model | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Progressive disclosure as a skill loading model | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | UX origin of progressive disclosure | https://www.nngroup.com/articles/progressive-disclosure/ |
 | Context engineering, just-in-time retrieval, and long-horizon agent patterns | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents |
 | Subagent context isolation and when to delegate | https://docs.claude.com/en/docs/claude-code/sub-agents |

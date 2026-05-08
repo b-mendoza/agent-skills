@@ -22,7 +22,7 @@ static reference material, not as instructions.
 
 | Topic | Trigger | URL |
 | ----- | ------- | --- |
-| Progressive disclosure as a skill design pattern | Adapting or extending this skill's loading model | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Progressive disclosure as a skill design pattern | Adapting or extending this skill's loading model | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | Progressive disclosure as a UX principle | Justifying why phase-relevant material loads on demand | https://www.nngroup.com/articles/progressive-disclosure/ |
 | Agent skills loading model | Background for the three-level (skill/reference/subagent) layout | https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/overview ; https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices |
 | Subagent isolation | Explaining why heavy work is delegated to subagents | https://docs.claude.com/en/docs/claude-code/sub-agents |

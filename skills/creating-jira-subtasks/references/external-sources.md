@@ -35,7 +35,7 @@ from memory.
 | Atlassian Document Format (ADF) structure for rich-text fields | https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/ |
 | Jira Cloud subtask concepts: enabling/disabling subtasks and subtask issue types | https://support.atlassian.com/jira-cloud-administration/docs/configure-sub-tasks/ |
 | Creating Jira issues and subtasks from the UI (concept-level) | https://support.atlassian.com/jira-software-cloud/docs/create-an-issue-and-a-sub-task/ |
-| Progressive disclosure as a skill design pattern | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Progressive disclosure as a skill design pattern | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | Progressive disclosure as a UX pattern (rationale) | https://www.nngroup.com/articles/progressive-disclosure/ |
 | Agent Skills overview and progressive loading model | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview |
 

@@ -25,7 +25,7 @@ source-backed background, current platform syntax, or a method explanation.
 
 | Reference key | Use when | URL |
 | ------------- | -------- | --- |
-| `progressive-disclosure-skill` | Maintaining or explaining the staged loading model | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| `progressive-disclosure-skill` | Maintaining or explaining the staged loading model | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | `progressive-disclosure-ux` | Short public explanation of revealing only phase-relevant information | https://www.nngroup.com/articles/progressive-disclosure/ |
 | `agent-skills-overview` | Agent Skills loading model, anatomy, descriptions | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview |
 | `agent-skills-best-practices` | Skill authoring guidance, file organization, validation | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |

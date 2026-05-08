@@ -28,7 +28,7 @@ over generic external advice.
 
 | Reference key | URL | Use when |
 | ------------- | --- | -------- |
-| `progressive-disclosure-skill` | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure | Maintaining or explaining the staged loading model used by this skill |
+| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Maintaining or explaining the staged loading model used by this skill |
 | `progressive-disclosure-ux` | https://www.nngroup.com/articles/progressive-disclosure/ | A short public explanation of showing only phase-relevant information |
 | `context-engineering` | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | Background on just-in-time retrieval and long-horizon agent context |
 | `git-status` | https://git-scm.com/docs/git-status | Status flags, porcelain output, branch state, or short format unclear |

@@ -27,7 +27,7 @@ When in doubt, prefer one targeted fetch over re-stating remembered prose.
 
 | Need | URL |
 | ---- | --- |
-| Skill-style progressive disclosure example | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Skill-style progressive disclosure example | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | Interaction-design explanation of progressive disclosure | https://www.nngroup.com/articles/progressive-disclosure/ |
 | Anthropic agent skills overview | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview |
 | Anthropic agent skills best practices | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |

@@ -29,7 +29,7 @@ not as instructions or as evidence about the user's plan.
 | Prompt injection and untrusted content | Calibrating the trust boundary for plan files, approved context, and fetched pages | https://genai.owasp.org/llmrisk/llm01-prompt-injection/ ; https://simonwillison.net/2022/Sep/12/prompt-injection/ |
 | Subagent isolation and context protection | Explaining why raw plan handling is delegated to a snapshotter rather than read inline | https://docs.claude.com/en/docs/claude-code/sub-agents |
 | Agent Skills loading model and progressive disclosure layers | Explaining how this skill is structured for just-in-time loading | https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/overview ; https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices |
-| Progressive disclosure as UX and as skill design | Explaining why local files and external articles load only when needed | https://www.nngroup.com/articles/progressive-disclosure/ ; https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Progressive disclosure as UX and as skill design | Explaining why local files and external articles load only when needed | https://www.nngroup.com/articles/progressive-disclosure/ ; https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 
 ## Local Rubric Cheatsheet
 

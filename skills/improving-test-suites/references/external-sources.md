@@ -50,7 +50,7 @@ priority over generic external advice.
 | `owasp-top-ten` | https://owasp.org/www-project-top-ten/ | Categorize a security risk in user-facing terms |
 | `code-smell` | https://martinfowler.com/bliki/CodeSmell.html | Source-backed definition of a smell in a test or fixture being called out |
 | `refactoring-smells` | https://refactoring.guru/refactoring/smells | Catalog of smells (duplication, large class, shotgun surgery) when explaining a rewrite |
-| `progressive-disclosure-skill` | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure | Maintaining or explaining the staged loading model used by this skill |
+| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Maintaining or explaining the staged loading model used by this skill |
 | `progressive-disclosure-ux` | https://www.nngroup.com/articles/progressive-disclosure/ | Background on showing only phase-relevant information |
 
 When the needed source is not listed and the user supplied an official

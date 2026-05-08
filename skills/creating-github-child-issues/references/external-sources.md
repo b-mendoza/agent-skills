@@ -36,7 +36,7 @@ markdown task-list construct that you cannot write confidently from memory.
 | GitHub REST sub-issues endpoints, required `X-GitHub-Api-Version`, payload shape | https://docs.github.com/en/rest/issues/sub-issues |
 | Adding sub-issues from the GitHub product UI (concept-level) | https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues |
 | GitHub task-list markdown rules (`- [ ] owner/repo#N`) | https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/about-task-lists |
-| Progressive disclosure as a skill design pattern | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Progressive disclosure as a skill design pattern | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | Progressive disclosure as a UX pattern (rationale) | https://www.nngroup.com/articles/progressive-disclosure/ |
 | Agent Skills overview and progressive loading model | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview |
 

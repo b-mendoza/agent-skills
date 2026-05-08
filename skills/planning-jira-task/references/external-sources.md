@@ -29,7 +29,7 @@ flip the active artifact decision.
 | `agent-skills-best-practices` | https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices | A change to layering, naming, or progressive loading is being considered |
 | `claude-subagents` | https://docs.claude.com/en/docs/claude-code/sub-agents | Subagent isolation, dispatch boundaries, or summary-only handoff is in question |
 | `context-engineering` | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | Context-window protection or handoff design could change orchestration |
-| `progressive-disclosure-skill` | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure | Maintaining or explaining staged loading inside this skill |
+| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Maintaining or explaining staged loading inside this skill |
 | `progressive-disclosure-ux` | https://www.nngroup.com/articles/progressive-disclosure/ | A short public description of progressive disclosure would help |
 
 ### Task readiness and acceptance

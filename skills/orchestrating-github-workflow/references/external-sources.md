@@ -39,7 +39,7 @@ being preloaded into the orchestrator's prompt.
 
 | Need | Source |
 | ---- | ------ |
-| Progressive disclosure for skill content layering | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Progressive disclosure for skill content layering | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | Original UX framing of progressive disclosure | https://www.nngroup.com/articles/progressive-disclosure/ |
 | Context engineering, just-in-time retrieval, long-horizon agent loops | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents |
 | Subagent context isolation and when to delegate | https://docs.claude.com/en/docs/claude-code/sub-agents |

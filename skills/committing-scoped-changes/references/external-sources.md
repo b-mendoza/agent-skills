@@ -31,7 +31,7 @@ are insufficient.
 
 | Reference key | URL | Use when |
 | ------------- | --- | -------- |
-| `progressive-disclosure-skill` | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure | Maintaining the skill's disclosure layers or explaining why references load just in time |
+| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Maintaining the skill's disclosure layers or explaining why references load just in time |
 | `progressive-disclosure-ux` | https://www.nngroup.com/articles/progressive-disclosure/ | A short, public explanation of hiding advanced detail until needed would help |
 | `context-engineering` | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | Just-in-time retrieval, long-horizon agent context patterns, or subagent isolation rationale |
 
