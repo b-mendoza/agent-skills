@@ -17,7 +17,7 @@
       "source": "obra/superpowers",
       "sourceType": "github",
       "skillPath": "skills/executing-plans/SKILL.md",
-      "computedHash": "2f709d1a2c7564f8ce6a9bb707e7f5451117ba80f8e8e2302662c29bc61246a6"
+      "computedHash": "b41c919caf1bb07fbacb0e29899ac513f9eb11cd4dd695975ad352c2c03cc4d7"
     },
     "gh-cli": {
       "source": "github/awesome-copilot",
