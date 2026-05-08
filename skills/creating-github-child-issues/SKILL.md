@@ -30,8 +30,8 @@ context that flows to the subagent and to `gh --repo`:
 
 ## Progressive Loading Map
 
-Read each row's target file **only** when the listed need arises. Bundled files
-are one hop from `SKILL.md`; never preload them.
+Read each row's target file **only** when the listed need arises. Load paths
+are relative to this `SKILL.md`; never preload them.
 
 | Need | Load |
 | ---- | ---- |
