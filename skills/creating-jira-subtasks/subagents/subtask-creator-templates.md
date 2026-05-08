@@ -1,14 +1,18 @@
 # Subtask Creator Templates
 
-Read this file only when constructing Jira descriptions or refreshing the local
-plan's `## Jira Subtasks` section.
+> Read this file only when constructing Jira descriptions or refreshing the
+> local plan's `## Jira Subtasks` section.
 
 These are literal fragments and examples. Phase 4 artifact semantics live in
 `../references/phase-4-io-contracts.md`. If a Jira REST transport requires
 Atlassian Document Format, fetch the ADF source from
-`../references/external-sources.md` and convert these same sections.
+`../references/external-sources.md` and convert these same sections into ADF
+block nodes without changing their meaning.
 
 ## Jira Description Section Order
+
+The following order is normative; the exact markup is whatever the active
+Jira transport accepts (plain text, wiki markup, or ADF).
 
 ```text
 h3. Objective

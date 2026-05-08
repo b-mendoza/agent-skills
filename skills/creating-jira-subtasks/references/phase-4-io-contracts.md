@@ -1,15 +1,16 @@
 # Phase 4 I/O Contracts (Jira)
 
-Read this file when validating standalone Phase 4 execution, updating the plan
-artifact, or interpreting the `subtask-creator` summary.
-
-> Keep only artifact shapes and structured verdicts in orchestrator context.
-> Plan parsing, Jira operations, and plan-file edits stay inside
+> Read this file when validating standalone Phase 4 execution, updating the
+> plan artifact, or interpreting the `subtask-creator` summary.
+>
+> **Reminder:** the orchestrator only retains artifact paths and the structured
+> verdict. Plan parsing, Jira operations, and plan-file edits stay inside
 > `subtask-creator`.
 
-This skill is self-contained. External URLs in `./external-sources.md` are
-optional just-in-time sources for current platform syntax; the artifact contract
-below remains local and normative.
+This skill is self-contained: the contract below remains local and normative
+even when network access is unavailable. External URLs in
+`./external-sources.md` are optional just-in-time sources for current platform
+syntax; they never override what is specified here.
 
 ## Input Contract
 
@@ -34,22 +35,21 @@ Expected normal-workflow plan shape:
 | `## Execution Order Summary` | Preserves task ordering context |
 | `## Decisions Log` | Indicates critique or clarification happened before Jira writes |
 
-If the plan is missing or malformed, return `SUBTASKS: BLOCKED`. If the plan is
-parseable but lacks `## Decisions Log`, continue with a warning.
+If the plan is missing or malformed, return `SUBTASKS: BLOCKED`. If the plan
+is parseable but lacks `## Decisions Log`, continue with a warning.
 
 ## Platform Behavior
 
-Jira Phase 4 uses the project's native subtask relationship. A concrete task is
-linked when the plan records a Jira subtask key whose parent is `TICKET_KEY`.
-Tasks that could not be created are recorded as `Not Created`.
+Jira Phase 4 uses the project's native subtask relationship. A concrete task
+is linked when the plan records a Jira subtask key whose parent is
+`TICKET_KEY`. Tasks that could not be created are recorded as `Not Created`.
 
 The Jira summary does not include GitHub-style `Write model:` or `Capability:`
 lines.
 
-For current REST payload details, read `./external-sources.md` and fetch the Jira
-Cloud REST v3 source. In particular, direct REST v3 calls may require Atlassian
-Document Format for rich-text fields; local templates define semantic sections,
-not a mandatory transport encoding.
+For current REST payload details, ADF requirements, or subtask configuration,
+read `./external-sources.md` and fetch the smallest relevant URL. Local
+templates define semantic sections, not a mandatory transport encoding.
 
 ## Output Artifact Contract
 
@@ -68,8 +68,8 @@ After successful or partial completion, the plan file includes:
 
 ### Workflow Table
 
-Use the example in `../subagents/subtask-creator-templates.md`. Column order is
-fixed:
+Use the example in `../subagents/subtask-creator-templates.md`. Column order
+is fixed:
 
 | Task | Subtask Key | Title | Status | Dependencies | Priority |
 | ---- | ----------- | ----- | ------ | ------------ | -------- |
@@ -90,8 +90,8 @@ The table contains exactly one row per parsed task. Use `Not Created` in both
 
 ### Per-Task Inline Reference
 
-In each `## Task <N>:` section, the first line after the heading uses this exact
-form:
+In each `## Task <N>:` section, the first line after the heading uses this
+exact form:
 
 ```text
 Jira Subtask: <KEY | Not Created>
@@ -118,8 +118,8 @@ The subagent returns:
   **Title**, **Dependencies**, **Priority**, and **Outcome**
 - Explicit `Warnings:` and `Failures:` sections
 
-`TICKET_KEY:` is required on every summary, including early exits. When the run
-stops before create attempts begin, report `Failed creates: 0` and use a
+`TICKET_KEY:` is required on every summary, including early exits. When the
+run stops before create attempts begin, report `Failed creates: 0` and use a
 header-only linkage table if no task rows are safe to report.
 
 When the plan file was updated, include one summary row per parsed task. For
@@ -136,8 +136,8 @@ explicit `Outcome`, such as `Create failed`.
 | `FAIL` | Parent lookup, auth, Jira tooling, all creates, or post-write validation failed |
 | `ERROR` | Unexpected tool or environment failure interrupted the run |
 
-Use `Validation: NOT_RUN` only when no plan-file update or post-write validation
-could occur.
+Use `Validation: NOT_RUN` only when no plan-file update or post-write
+validation could occur.
 
 ## Validation Checklist
 
