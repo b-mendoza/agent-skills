@@ -6,8 +6,19 @@ GitHub child issues or sub-issues.
 
 > **Reminder:** The required sections and per-task fields below are the
 > binding output contract. For background on GitHub's parent-issue /
-> sub-issue hierarchy or branch-name validity, see `./external-sources.md`
+> sub-issue hierarchy or branch-name validity, see `./references/external-sources.md`
 > (`github-sub-issues`, `git-check-ref-format`).
+
+## Optional Source Lookups
+
+Use the local contract first. Fetch external sources only for current platform
+behavior or branch-name edge cases:
+
+| Need | Source key in `./references/external-sources.md` |
+| ---- | ------------------------------------- |
+| GitHub parent / sub-issue semantics | `github-sub-issues` |
+| Git branch-name edge case | `git-check-ref-format` |
+| Team branch-prefix convention background | `conventional-branches`, `feature-branch-workflow` |
 
 ## Snapshot Contract
 

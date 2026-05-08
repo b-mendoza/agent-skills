@@ -1,11 +1,11 @@
 # Execution Guide
 
 Read this file when running the normal planning path or when continuing from a
-re-plan decision. Load `./re-plan-cycle.md` first for `RE_PLAN=true`.
+re-plan decision. Load `./references/re-plan-cycle.md` first for `RE_PLAN=true`.
 
 > Keep raw stage artifacts out of orchestrator context. Dispatch subagents and
 > retain only verdicts, paths, issue lists, branch counts, and retry counts.
-> Background on dispatch and isolation is in `./external-sources.md`
+> Background on dispatch and isolation is in `./references/external-sources.md`
 > (`claude-code-subagents`, `agent-skills-overview`).
 
 ## Normal Path
@@ -26,7 +26,7 @@ Run these gates in order:
 
 | Gate | Dispatch | Required output | On failure |
 | ---- | -------- | --------------- | ---------- |
-| `preflight` | `stage-validator` | Snapshot exists and satisfies `./output-contract.md` | Stop with `Failure category: PREFLIGHT` |
+| `preflight` | `stage-validator` | Snapshot exists and satisfies `./references/output-contract.md` | Stop with `Failure category: PREFLIGHT` |
 | Stage 1 | `task-planner`, then `stage-validator` | `PLAN: PASS` and `docs/<ISSUE_SLUG>-stage-1-detailed.md` passes Stage 1 | Retry Stage 1 only on validator `FAIL`; stop on subagent failure or validator `ERROR` |
 | Stage 2 | `dependency-prioritizer`, then `stage-validator` | `PRIORITIZATION: PASS` and `docs/<ISSUE_SLUG>-stage-2-prioritized.md` passes Stage 2 | Retry Stage 2 only on validator `FAIL`; stop on subagent failure or validator `ERROR` |
 | Stage 3 | `task-validator`, then `stage-validator` | `TASK_VALIDATION: PASS` and `docs/<ISSUE_SLUG>-tasks.md` passes Stage 3 | Retry Stage 3 only on validator `FAIL`; stop on subagent failure or validator `ERROR` |

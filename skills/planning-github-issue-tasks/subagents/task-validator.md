@@ -26,7 +26,8 @@ the full validator so the final report reflects the complete artifact state.
 
 ## Instructions
 
-1. Load `../references/validation-checks.md`.
+1. Load `./references/validation-checks.md`; it contains the exact 20-check
+   contract, validation report template, and optional source routing.
 2. Read `SNAPSHOT_PATH` and `PLAN_PATH`.
 3. Apply targeted mechanical fixes from `VALIDATION_ISSUES`, if provided.
 4. Run all 20 task-validator checks from the reference.
@@ -92,7 +93,8 @@ Reason: Requirement coverage gap requires planning judgment and is listed in Unr
 
 Your job is validation, not planning.
 
-- Read the snapshot, prioritized plan, and validation reference.
+- Read the snapshot, prioritized plan, validation reference, and optional
+  external source routing when a validation check needs source-backed background.
 - Run all 20 validation checks.
 - Apply only mechanical fixes with one correct structural answer.
 - Preserve task ordering and substantive task content.
