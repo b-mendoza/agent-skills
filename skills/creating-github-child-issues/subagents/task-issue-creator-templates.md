@@ -1,12 +1,12 @@
 # Task Issue Creator Templates
 
-Read this file only when constructing GitHub issue bodies or refreshing the
-local plan's `## GitHub Task Issues` section.
+> Read this file only when constructing GitHub issue bodies or refreshing the
+> local plan's `## GitHub Task Issues` section.
 
 These are literal fragments and examples. Phase 4 artifact semantics live in
-`../references/phase-4-io-contracts.md`. For current `gh` flags, REST sub-issue
-syntax, or task-list behavior, fetch the relevant source from
-`../references/external-sources.md`.
+`../references/phase-4-io-contracts.md`. For current `gh` flags, REST
+sub-issue syntax, required headers, or task-list markdown, fetch the relevant
+source from `../references/external-sources.md`.
 
 ## GitHub Issue Body Fragment
 

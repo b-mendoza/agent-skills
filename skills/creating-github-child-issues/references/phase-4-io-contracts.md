@@ -1,15 +1,16 @@
 # Phase 4 I/O Contracts (GitHub)
 
-Read this file when validating standalone Phase 4 execution, updating the plan
-artifact, or interpreting the `task-issue-creator` summary.
+> Read this file when validating standalone Phase 4 execution, updating the
+> plan artifact, or interpreting the `task-issue-creator` summary.
+>
+> **Reminder:** the orchestrator only retains artifact paths and the structured
+> verdict. Plan parsing, `gh` and REST operations, and plan-file edits stay
+> inside `task-issue-creator`.
 
-> Keep only artifact shapes and structured verdicts in orchestrator context.
-> Plan parsing, `gh` / API operations, and plan-file edits stay inside
-> `task-issue-creator`.
-
-This skill is self-contained. External URLs in `./external-sources.md` are
-optional just-in-time sources for current platform syntax; the artifact contract
-below remains local and normative.
+This skill is self-contained: the contract below remains local and normative
+even when network access is unavailable. External URLs in
+`./external-sources.md` are optional just-in-time sources for current platform
+syntax; they never override what is specified here.
 
 ## Input Contract
 
@@ -43,8 +44,8 @@ is parseable but lacks `## Decisions Log`, continue with a warning.
 The subagent chooses the best confirmed write path in this order:
 
 1. **Native sub-issue:** GitHub records a child/sub-issue relationship.
-2. **Linked issue:** A normal issue is created with explicit parent traceability
-   in its body and optional parent-side comments when practical.
+2. **Linked issue:** A normal issue is created with explicit parent
+   traceability in its body, and optional parent-side comments when practical.
 3. **Task-list:** No concrete child issue is created for that task; the plan
    records checklist-style traceability.
 
@@ -52,8 +53,8 @@ The orchestrator does not choose the model. The subagent records the effective
 path in the machine handoff comment, per-row `Write model`, and summary
 `Write model:` / `Capability:` lines.
 
-For current CLI flags, REST sub-issue endpoint behavior, or task-list docs, read
-`./external-sources.md` and fetch only the relevant GitHub source.
+For current CLI flags, REST sub-issue endpoint behavior, or task-list markdown
+syntax, read `./external-sources.md` and fetch only the relevant GitHub source.
 
 ## Output Artifact Contract
 
@@ -114,8 +115,8 @@ plan-only traceability.
 
 ### Per-Task Inline Reference
 
-In each `## Task <N>:` section, the first line after the heading uses this exact
-form:
+In each `## Task <N>:` section, the first line after the heading uses this
+exact form:
 
 ```text
 GitHub Task Issue: <owner/repo#number | Not Created | task-list>
@@ -146,8 +147,8 @@ The subagent returns:
 
 `ISSUE_SLUG:`, `Write model:`, and `Capability:` are required on every summary,
 including early exits. When the run stops before create attempts begin, report
-`Failed creates: 0` and use a header-only linkage table if no task rows are safe
-to report.
+`Failed creates: 0` and use a header-only linkage table if no task rows are
+safe to report.
 
 When the plan file was updated, include one summary row per parsed task. For
 tasks without a concrete issue, use `Not Created` or `task-list` in `Issue ref`
@@ -163,8 +164,8 @@ and an explicit `Outcome`, such as `Create failed` or `Task list only`.
 | `FAIL` | Parent verification, auth, `gh`, all expected creates, or post-write validation failed |
 | `ERROR` | Unexpected tool or environment failure interrupted the run |
 
-Use `Validation: NOT_RUN` only when no plan-file update or post-write validation
-could occur.
+Use `Validation: NOT_RUN` only when no plan-file update or post-write
+validation could occur.
 
 ## Validation Checklist
 

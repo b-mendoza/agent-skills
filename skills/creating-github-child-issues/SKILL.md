@@ -5,14 +5,14 @@ description: "Creates or reconciles GitHub child task issues for an approved Pha
 
 # Creating GitHub Child Issues
 
-You are a Phase 4 GitHub child-issue orchestration skill. Your job is to keep the
-caller-facing workflow small: derive identifiers from `ISSUE_URL`, load only the
-local contract or external source map when needed, dispatch `task-issue-creator`,
-and relay the structured result.
+You are a Phase 4 GitHub child-issue orchestrator. The orchestrator does three
+things: **derive identifiers** from `ISSUE_URL`, **dispatch** `task-issue-creator`
+with the original URL, and **relay** the structured Phase 4 summary to the
+caller.
 
-The subagent owns plan parsing, `gh` operations, API capability probes, plan-file
-edits, and validation. The orchestrator keeps only verdicts, paths, counts,
-write-path metadata, warnings, and failures.
+The subagent owns plan parsing, `gh` CLI and REST API calls, capability
+detection, plan-file edits, and validation. The orchestrator keeps only
+verdicts, paths, counts, write-path metadata, warnings, and failures.
 
 ## Inputs
 
@@ -20,26 +20,28 @@ write-path metadata, warnings, and failures.
 | ----- | -------- | ------- |
 | `ISSUE_URL` | Yes | `https://github.com/acme/app/issues/42` |
 
-Derive these values only for routing and reporting:
+Derive locally for routing and reporting only. The full URL is the canonical
+context that flows to the subagent and to `gh --repo`:
 
 - **OWNER:** path segment after `github.com/`, lowercased for slug stability
 - **REPO:** next path segment, lowercased for slug stability
 - **PARENT_NUMBER:** numeric segment after `/issues/`
 - **ISSUE_SLUG:** `<owner>-<repo>-<parent_number>`
 
-Pass the full `ISSUE_URL` to the subagent. It is the authoritative context for
-`gh --repo` and parent issue verification.
-
 ## Progressive Loading Map
+
+Read each row's target file **only** when the listed need arises. Bundled files
+are one hop from `SKILL.md`; never preload them.
 
 | Need | Load |
 | ---- | ---- |
 | Phase 4 artifact shape, summary fields, or status semantics | `./references/phase-4-io-contracts.md` |
-| Current GitHub CLI, REST sub-issue, task-list, or prompt-disclosure docs | `./references/external-sources.md`, then fetch only the relevant URL |
+| Current GitHub CLI flags, REST sub-issue endpoint behavior, task-list semantics, or progressive-disclosure rationale | `./references/external-sources.md`, then fetch only the smallest relevant URL |
 | Child issue creation or reconciliation | `./subagents/task-issue-creator.md` |
 
-External URLs are optional just-in-time sources. This skill remains executable
-from its bundled files when network access is unavailable.
+External URLs are **optional, just-in-time** sources. This skill remains
+executable from its bundled files when network access is unavailable; the
+subagent and references include enough local guidance for routine runs.
 
 ## Subagent Registry
 
@@ -78,9 +80,9 @@ status is already `BLOCKED`, `FAIL`, or `ERROR`.
 Return only the subagent's structured summary plus a short caller-facing rollup.
 The full summary schema lives in `./references/phase-4-io-contracts.md`.
 
-Include `Write model:` and `Capability:` when reporting GitHub results, because
+Always include `Write model:` and `Capability:` when reporting GitHub results.
 GitHub child-issue support varies by CLI version, repository, API availability,
-and installed extensions.
+and installed extensions, so the run-time path matters to the caller.
 
 ## Example
 
