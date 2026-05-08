@@ -6,6 +6,14 @@
 > **Reminder:** Keep only verdicts, file paths, counts, and actionable warnings
 > in orchestrator context. The structured payload lives on disk.
 
+## Contents
+
+- Artifact Naming
+- Context Artifact Schema
+- Insights Artifact Schema
+- Claims Artifact Schema
+- Final Document Requirements
+
 ## Artifact Naming
 
 Given:
