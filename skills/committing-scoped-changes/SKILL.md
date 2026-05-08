@@ -1,18 +1,20 @@
 ---
 name: "committing-scoped-changes"
-description: "Create reviewable atomic commits from explicit file or folder paths by orchestrating scoped git inspection, local context lookup, commit-boundary planning, staged-diff review, verification, and commit execution. Use when the user asks to commit only selected files, split work into logical commits, avoid one large commit, commit ticket-scoped changes, or prepare a clean series of commits for review."
+description: "Create reviewable atomic commits from explicit file or folder paths after the user asks to commit. Use when the user wants to commit only selected files, split broad work into logical commits, preserve unrelated changes, commit ticket-scoped work, or prepare a clean review series with scoped git inspection, boundary planning, staged-diff review, verification, and commit execution."
 ---
 
 # Committing Scoped Changes
 
 You are a scoped commit orchestrator. Your job is to turn explicit file or folder
-paths into one or more reviewable commits while keeping raw git output, patches,
-and local documentation details inside focused subagents.
+paths into one or more reviewable commits after the user has asked for commits to
+be created. You protect the user's worktree by preserving unrelated changes,
+keeping the path scope explicit, and delegating raw git/file inspection and
+commit execution to focused subagents.
 
-The orchestrator does three things: **decide** commit flow state, **ask** the user
-for missing scope or intent, and **dispatch** execution-heavy work to subagents.
-It holds only concise summaries, commit plans, user decisions, and final commit
-results.
+The orchestrator does exactly three things: **decide** the next workflow state,
+**ask** for missing scope or intent, and **dispatch** execution-heavy work to
+subagents. It retains only path scope, concise subagent summaries, approved
+commit plans, user decisions, and final commit reports.
 
 ## Inputs
 
@@ -24,15 +26,22 @@ results.
 | `COMMIT_STYLE` | No | `Conventional Commits`, `repo style` |
 | `VERIFICATION_HINT` | No | `run payment tests` |
 
-Ask for `CHANGE_PATHS` if missing. When `CONTEXT_QUERY` is supplied without a
-location, use `docs/`. Default `COMMIT_STYLE` to the repository's existing style;
-if the repo has no clear pattern, use Conventional Commits.
+Normalize inputs before dispatching:
+
+- Ask one targeted question when `CHANGE_PATHS` is missing or ambiguous.
+- Treat `CHANGE_PATHS` as the allowed commit scope. Preserve changes outside the
+  scope unless the user explicitly expands it.
+- Use `docs/` when `CONTEXT_QUERY` is supplied without `CONTEXT_LOCATION`.
+- Infer `COMMIT_STYLE` from recent repository commits when it is not supplied; if
+  no style is clear, use Conventional Commits.
+- Set `COMMIT_REQUEST_CONFIRMED=true` only when the user has asked to create
+  commits, not when they only asked for a plan or review.
 
 ## Workflow Overview
 
 | Phase | Owner | Purpose | Gate |
 | ----- | ----- | ------- | ---- |
-| Intake | Inline | Normalize path scope, context query, commit style, and verification hint | Required path scope is known |
+| Intake | Inline | Normalize commit authority, path scope, context query, commit style, and verification hint | Required path scope and commit request are known |
 | State and context | `scoped-state-summarizer` | Inspect scoped working tree changes and summarize relevant local context | Scoped change summary is available |
 | Boundary planning | `commit-boundary-planner` | Convert the scoped summary into atomic commit groups | Each group has one reason and message |
 | User decision | Inline | Ask only for missing intent, mixed-hunk decisions, or scope changes | Plan is actionable |
@@ -47,8 +56,10 @@ if the repo has no clear pattern, use Conventional Commits.
 | `commit-boundary-planner` | `./subagents/commit-boundary-planner.md` | Produces atomic commit groups, message candidates, verification suggestions, and any needed user decisions |
 | `scoped-commit-executor` | `./subagents/scoped-commit-executor.md` | Stages and commits one planned group at a time after verifying the staged diff matches the approved plan |
 
-Read a subagent file only when dispatching that specific subagent. Keep raw git
-output, raw documentation, and full patches out of the orchestrator context.
+Read a subagent file only when dispatching that specific subagent. Use subagents
+for git inspection, local context lookup, staged-diff review, verification, and
+commit creation. Use inline work only to normalize inputs, choose the next phase,
+ask the user for decisions, and report concise results.
 
 ## Reference Routing
 
@@ -65,26 +76,30 @@ orchestrator. The subagent should return only the conclusion it used.
 
 ## How This Skill Works
 
-`CHANGE_PATHS` defines the allowed commit scope. Include changes inside those
-paths, and ask before expanding the scope or excluding material in-scope changes.
-`CONTEXT_QUERY` explains why the changes exist; use it to avoid guessing intent
-from file names or code shape alone.
+`CHANGE_PATHS` is an allow-list for commit candidates. Include in-scope material
+changes in the plan, preserve out-of-scope work, and ask before expanding scope or
+leaving meaningful in-scope changes uncommitted.
 
-Commit groups should be independently reviewable and revertable. A good group can
-be summarized with one specific message. If a group needs two unrelated reasons,
-split it. If two file changes only make sense together, keep them together.
+`CONTEXT_QUERY` explains why the changes exist. Use it to avoid guessing intent
+from file names or code shape alone, especially when a scoped diff contains
+multiple plausible reasons.
 
-Inline work is reserved for decisions that require the conversation context:
-normalizing user inputs, choosing whether to ask a question, accepting or revising
-the planner's proposed groups, and reporting final results.
+Commit groups are independently reviewable and revertable. A good group has one
+reviewer-facing reason and one specific message. Split unrelated reasons. Keep
+dependent implementation, tests, and fixtures together when splitting would
+create a broken intermediate state.
+
+Staged scoped changes are inputs to the plan, not automatic permission to commit.
+The planner must account for them, and the executor commits them only when they
+belong to the approved group.
 
 ## Execution Steps
 
-### 1. Normalize Inputs
+### 1. Normalize Inputs and Authority
 
-Resolve placeholders in `CHANGE_PATHS`. Ask a targeted question when a path,
-ticket key, context location, or commit style is missing and materially affects
-safe commit decisions.
+Resolve placeholders in `CHANGE_PATHS` and confirm the user is asking for commits
+to be created. Ask a targeted question when a path, ticket key, context location,
+or commit style is missing and materially affects safe commit decisions.
 
 ### 2. Dispatch `scoped-state-summarizer`
 
@@ -92,8 +107,8 @@ Pass `CHANGE_PATHS`, `CONTEXT_QUERY`, `CONTEXT_LOCATION`, and `COMMIT_STYLE`.
 Proceed only with `SCOPED_STATE: PASS`.
 
 If the subagent returns `NEEDS_CONTEXT`, ask the user for the missing intent or
-context location before continuing. If it returns `NO_SCOPED_CHANGES` or
-`BLOCKED`, stop with the failure envelope.
+context location before continuing. If it returns `NO_SCOPED_CHANGES`, `BLOCKED`,
+or `ERROR`, stop with the failure envelope.
 
 ### 3. Dispatch `commit-boundary-planner`
 
@@ -102,13 +117,14 @@ reference URLs that may help resolve unclear boundaries or message format.
 
 Proceed with `COMMIT_PLAN: PASS`. If the planner returns `NEEDS_DECISION`, ask
 the smallest user question, then redispatch with the answer. If it returns
-`BLOCKED`, stop with the failure envelope.
+`BLOCKED` or `ERROR`, stop with the failure envelope.
 
 ### 4. Execute Planned Groups
 
 For each approved group, dispatch `scoped-commit-executor` with the exact group
 plan, `CHANGE_PATHS`, `COMMIT_STYLE`, `VERIFICATION_HINT`, and
-`COMMIT_REQUEST_CONFIRMED=true`.
+`COMMIT_REQUEST_CONFIRMED=true`. Execute one group at a time so every commit has
+its own staged-diff review, verification result, and commit report.
 
 After each successful commit, redispatch `scoped-state-summarizer` before running
 the next group. This prevents stale plans after hooks, formatting, or concurrent
@@ -126,10 +142,15 @@ check to decide the next step:
   commit boundary.
 - Stop after three failed attempts for the same group and report the blocker.
 
+If the executor returns `BLOCKED`, `COMMIT_ERROR`, or `ERROR`, use the failure
+envelope. Ask for a user decision when recovery would change scope, message
+intent, staging boundaries, or verification expectations.
+
 ### 6. Report Results
 
 Return the commit list, per-commit summaries, verification status, remaining
-scoped changes, and unrelated changes left untouched. Do not paste raw diffs.
+scoped changes, and unrelated changes left untouched. Report concise summaries
+instead of raw diffs, raw command output, or copied documentation.
 
 ## Output Contract
 
@@ -146,10 +167,11 @@ Unrelated changes left untouched: <none or concise list>
 References fetched: <none or concise list>
 ```
 
-When blocked, report:
+When blocked or failed, report:
 
 ```text
-COMMIT_SCOPED_CHANGES: BLOCKED | NEEDS_CONTEXT | NO_SCOPED_CHANGES | VERIFY_FAILED
+COMMIT_SCOPED_CHANGES: <status>
+Status values: BLOCKED | NEEDS_CONTEXT | NO_SCOPED_CHANGES | VERIFY_FAILED | COMMIT_ERROR | ERROR
 Reason: <one line>
 Next step: <one clear action or question>
 ```
@@ -188,6 +210,31 @@ Commits created:
 Remaining scoped changes: none
 Unrelated changes left untouched: README.md modified
 References fetched: none
+```
+</example>
+
+<example>
+Mixed staged state:
+
+`CHANGE_PATHS=src/checkout/`, and the index already contains unrelated staged
+changes in `README.md` plus checkout retry changes.
+
+Flow:
+
+1. Orchestrator dispatches `scoped-state-summarizer`; it reports staged scoped
+   checkout changes and unrelated staged `README.md` changes outside scope.
+2. Orchestrator dispatches `commit-boundary-planner`; it produces a checkout
+   retry group and notes that unrelated staged content must stay out of the
+   commit.
+3. Orchestrator dispatches `scoped-commit-executor`; the executor returns
+   `BLOCKED` if the existing index cannot be safely separated non-interactively.
+
+Output:
+
+```text
+COMMIT_SCOPED_CHANGES: BLOCKED
+Reason: The index contains unrelated staged README.md changes outside CHANGE_PATHS.
+Next step: Unstage the unrelated README.md changes or confirm a revised scope before committing the checkout group.
 ```
 </example>
 
