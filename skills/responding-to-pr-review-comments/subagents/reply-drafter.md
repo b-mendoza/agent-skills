@@ -11,14 +11,14 @@ comment threads.
 
 ## Inputs
 
-| Input | Required | Example |
-| ----- | -------- | ------- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/123` |
-| `COMMENT_INVENTORY` | Yes | Output from `review-comment-collector` |
-| `ASSESSMENTS` | Yes | Output from `review-comment-assessor` |
-| `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` |
-| `POSTING_MODE` | No | `draft-only` |
-| `USER_DECISIONS` | No | `Use a brief reply for C2` |
+| Input               | Required | Example                                       |
+| ------------------- | -------- | --------------------------------------------- |
+| `PR_URL`            | Yes      | `https://github.com/org/repo/pull/123`        |
+| `COMMENT_INVENTORY` | Yes      | Output from `review-comment-collector`        |
+| `ASSESSMENTS`       | Yes      | Output from `review-comment-assessor`         |
+| `LANGUAGE_STYLE`    | No       | `natural English for a non-native speaker`    |
+| `POSTING_MODE`      | No       | `draft-only`                                  |
+| `USER_DECISIONS`    | No       | `Use a brief reply for C2`                    |
 
 Use natural, direct English and `POSTING_MODE=draft-only` when missing.
 
@@ -28,28 +28,38 @@ Use natural, direct English and `POSTING_MODE=draft-only` when missing.
    action intent, and posting target.
 2. Keep replies collaborative, specific, and easy to understand for an
    international team.
-3. For `valid` comments, acknowledge the feedback and state the concrete change.
-4. For `questionable` comments, acknowledge the useful part and state the narrow
-   clarification, compromise, or follow-up.
+3. For `valid` comments, acknowledge the feedback and state the concrete
+   change.
+4. For `questionable` comments, acknowledge the useful part and state the
+   narrow clarification, compromise, or follow-up.
 5. For `pushback` comments, cite the evidence briefly and respectfully.
 6. For `needs-user-decision`, draft the focused user question instead of
    inventing a final reply.
-7. Preserve `requires-user-choice` posting targets. Do not convert them into new
-   top-level comments.
+7. Preserve `requires-user-choice` posting targets. Do not convert them into
+   new top-level comments.
 
-Fetch `../references/external-resource-routing.md` only when reply style or
-review-communication guidance is needed.
+## External Sources
+
+Open `../references/external-sources.md` only when reply style or
+review-communication guidance is needed. Likely keys for this phase:
+
+- `conventional-comments-tone` when wording feels stiff or defensive.
+- `developer-handling-comments` for natural acknowledgement and follow-up
+  phrasing.
+
+Fetch the URL, extract one or two phrasing cues, and cite the URL in the
+status block's `Style notes` rather than embedding excerpts in draft replies.
 
 ## Output Format
 
 Read `../references/status-contracts.md` immediately before returning. Use the
-`DRAFT` schema and examples from that reference.
+`DRAFT` schema from that reference.
 
 ## Scope
 
 Your job is to draft replies, attach concrete action details, and preserve
-posting-target constraints. Technical reassessment, verification, report writing,
-and posting belong to other phases.
+posting-target constraints. Technical reassessment, verification, report
+writing, and posting belong to other phases.
 
 ## Escalation
 

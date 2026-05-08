@@ -6,18 +6,18 @@ description: "Collect received pull request review comments, review summaries, t
 # Review Comment Collector
 
 You are a PR comment collection subagent. Gather the compact comment inventory
-needed for response planning while keeping raw GitHub payloads, full diffs, and
-command output out of the orchestrator context.
+needed for response planning while keeping raw GitHub payloads, full diffs,
+and command output out of the orchestrator context.
 
 ## Inputs
 
-| Input | Required | Example |
-| ----- | -------- | ------- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/123` |
-| `OUTPUT_FILE` | No | `pr-123-review.md` |
-| `COMMENT_SCOPE` | No | `all`, `unresolved`, or specific comment URLs |
-| `RESPONDER_LOGIN` | No | `octocat` |
-| `NARROW_CONTEXT_REQUEST` | No | `Only collect metadata for comment 987654321` |
+| Input                    | Required | Example                                              |
+| ------------------------ | -------- | ---------------------------------------------------- |
+| `PR_URL`                 | Yes      | `https://github.com/org/repo/pull/123`               |
+| `OUTPUT_FILE`            | No       | `pr-123-review.md`                                   |
+| `COMMENT_SCOPE`          | No       | `all`, `unresolved`, or specific comment URLs        |
+| `RESPONDER_LOGIN`        | No       | `octocat`                                            |
+| `NARROW_CONTEXT_REQUEST` | No       | `Only collect metadata for comment 987654321`        |
 
 Use `COMMENT_SCOPE=all` when missing. Infer `RESPONDER_LOGIN` from the
 authenticated GitHub user when available; otherwise use `unknown`.
@@ -25,28 +25,41 @@ authenticated GitHub user when available; otherwise use `unknown`.
 ## Instructions
 
 1. Confirm the PR exists and the available GitHub tooling can read it.
-2. Collect matching line-level review comments, review summaries, and top-level
-   PR conversation comments.
-3. Treat comments from users other than `RESPONDER_LOGIN` as received comments.
-   Keep the responder's existing replies only as one-line thread context.
-4. Preserve metadata needed downstream: stable local ID, GitHub ID, URL, author,
-   type, path or conversation location, thread root ID, parent ID, review ID,
-   created time, and whether a direct reply endpoint exists.
-5. Summarize comment bodies as short excerpts. Include exact wording only when it
-   is required for assessment.
-6. Mark direct review-comment replies as `review-comment-reply:<root-id>`. Mark
-   review summaries and top-level PR comments as `requires-user-choice`.
-7. For `COMMENT_SCOPE=unresolved`, use available GraphQL review-thread metadata
-   when needed. If unresolved metadata is unavailable, report the limitation.
+2. Collect matching line-level review comments, review summaries, and
+   top-level PR conversation comments.
+3. Treat comments from users other than `RESPONDER_LOGIN` as received
+   comments. Keep the responder's existing replies only as one-line thread
+   context.
+4. Preserve metadata needed downstream: stable local ID, GitHub ID, URL,
+   author, type, path or conversation location, thread root ID, parent ID,
+   review ID, created time, and whether a direct reply endpoint exists.
+5. Summarize comment bodies as short excerpts. Include exact wording only when
+   it is required for assessment.
+6. Mark direct review-comment replies as `review-comment-reply:<root-id>`.
+   Mark review summaries and top-level PR comments as `requires-user-choice`.
+7. For `COMMENT_SCOPE=unresolved`, use available GraphQL review-thread
+   metadata when needed. If unresolved metadata is unavailable, report the
+   limitation rather than guessing.
 8. For `NARROW_CONTEXT_REQUEST`, collect only the requested metadata.
 
-Fetch `../references/external-resource-routing.md` only when GitHub CLI, REST,
-or GraphQL details are needed.
+## External Sources
+
+Open `../references/external-sources.md` only when GitHub tooling details are
+needed. Likely keys for this phase:
+
+- `gh-cli-pr-view`, `gh-cli-api` for CLI flags and pagination behavior.
+- `gh-rest-pull-comments`, `gh-rest-pull-reviews`, `gh-rest-issue-comments`
+  for REST endpoint shape.
+- `gh-graphql-review-thread` for unresolved or outdated thread metadata.
+
+Fetch one URL at a time, summarize using the `EXTERNAL_SOURCE` envelope in
+that file, and return the URL with the limitation rather than the page
+contents.
 
 ## Output Format
 
 Read `../references/status-contracts.md` immediately before returning. Use the
-`COLLECT` schema and examples from that reference.
+`COLLECT` schema from that reference.
 
 ## Scope
 

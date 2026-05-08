@@ -11,14 +11,14 @@ posting targets before a report or GitHub side effect is produced.
 
 ## Inputs
 
-| Input | Required | Example |
-| ----- | -------- | ------- |
-| `PR_URL` | Yes | `https://github.com/org/repo/pull/123` |
-| `OUTPUT_FILE` | Yes | `pr-123-review.md` |
-| `COMMENT_INVENTORY` | Yes | Output from `review-comment-collector` |
-| `ASSESSMENTS` | Yes | Output from `review-comment-assessor` |
-| `DRAFT_REPLIES` | Yes | Output from `reply-drafter` |
-| `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` |
+| Input               | Required | Example                                       |
+| ------------------- | -------- | --------------------------------------------- |
+| `PR_URL`            | Yes      | `https://github.com/org/repo/pull/123`        |
+| `OUTPUT_FILE`       | Yes      | `pr-123-review.md`                            |
+| `COMMENT_INVENTORY` | Yes      | Output from `review-comment-collector`        |
+| `ASSESSMENTS`       | Yes      | Output from `review-comment-assessor`         |
+| `DRAFT_REPLIES`     | Yes      | Output from `reply-drafter`                   |
+| `LANGUAGE_STYLE`    | No       | `natural English for a non-native speaker`    |
 
 ## Instructions
 
@@ -26,29 +26,40 @@ posting targets before a report or GitHub side effect is produced.
    draft reply or user-facing question.
 2. Check evidence: each classification cites concrete code, diff, test, CI,
    linked issue, or documentation sources.
-3. Check recency: claims about libraries, platforms, APIs, policies, pricing, or
-   versions use current official documentation.
+3. Check recency: claims about libraries, platforms, APIs, policies, pricing,
+   or versions use current official documentation.
 4. Check action feasibility: planned actions match classifications and can be
    implemented or explained without hidden assumptions.
-5. Check reply quality: wording is natural, concise, collaborative, and aligned
-   with `LANGUAGE_STYLE`.
-6. Check posting safety: only `review-comment-reply:<root-id>` targets are ready
-   for direct posting; unsupported targets remain `requires-user-choice`.
+5. Check reply quality: wording is natural, concise, collaborative, and
+   aligned with `LANGUAGE_STYLE`.
+6. Check posting safety: only `review-comment-reply:<root-id>` targets are
+   ready for direct posting; unsupported targets remain
+   `requires-user-choice`.
 7. On failure, identify the smallest phase and comment ID to repair.
 
-Fetch `../references/external-resource-routing.md` when verifying current docs,
-GitHub posting semantics, or reply tone.
+## External Sources
+
+Open `../references/external-sources.md` only when verifying current docs,
+GitHub posting semantics, or reply tone. Likely keys for this phase:
+
+- `conventional-comments-tone` for language quality checks.
+- `gh-rest-pull-comments` to confirm a `review-comment-reply` target is the
+  correct shape for the underlying thread.
+- Vendor or framework documentation for any recency-sensitive claim.
+
+Fetch the URL, summarize with the `EXTERNAL_SOURCE` envelope, and cite the
+URL inside the relevant `Checks` line rather than embedding the page.
 
 ## Output Format
 
 Read `../references/status-contracts.md` immediately before returning. Use the
-`VERIFY` schema and examples from that reference.
+`VERIFY` schema and the verification-failure example from that reference.
 
 ## Scope
 
 Your job is to validate the response package and return targeted repairs or a
-compact verified package. Collection, reassessment, redrafting, report writing,
-and posting belong to their owning phases.
+compact verified package. Collection, reassessment, redrafting, report
+writing, and posting belong to their owning phases.
 
 ## Escalation
 

@@ -1,17 +1,20 @@
-# Status Contracts and Report Template
+# Status Contracts
 
-Read this file when a subagent is ready to produce or verify output. Keep status
-blocks compact: include evidence references and URLs, not raw payloads, diffs,
-full source files, long logs, or long documentation excerpts.
+> Read this file when a subagent is ready to produce or verify a status block.
+> Keep blocks compact: include evidence references and URLs, not raw payloads,
+> diffs, full source files, long logs, or long documentation excerpts.
+
+The report file format and writing rules live in
+[`./report-template.md`](./report-template.md). Background sources and tone
+guidance live in [`./external-sources.md`](./external-sources.md).
 
 ## Shared Values
 
-Classifications: `valid`, `questionable`, `pushback`, `needs-user-decision`.
-
-Action intents: `implement`, `clarify`, `push-back`, `ask-user`.
-
-Posting targets: `review-comment-reply:<root-id>` for supported review-comment
-threads, `requires-user-choice` for review summaries and top-level PR comments.
+- **Classifications:** `valid`, `questionable`, `pushback`, `needs-user-decision`.
+- **Action intents:** `implement`, `clarify`, `push-back`, `ask-user`.
+- **Posting targets:** `review-comment-reply:<root-id>` for supported
+  review-comment threads; `requires-user-choice` for review summaries and
+  top-level PR comments.
 
 ## Collector Output
 
@@ -128,55 +131,7 @@ Reason: none | <why status is not PASS>
 Next step: none | <smallest recovery action>
 ```
 
-## Report Template
-
-The report file path is `OUTPUT_FILE`. It must be understandable without the
-conversation context and contain these sections in order:
-
-```markdown
-# PR <number> Review Comment Assessment
-
-PR: <PR_URL>
-Posting mode: <POSTING_MODE>
-Posting status: <POSTING_STATUS>
-
-## PR Summary
-
-<short summary of the PR and review-comment response state>
-
-## Comment Assessments
-
-### <Comment ID>: <short topic>
-
-- Comment: <URL or stable ID>
-- Author: <login>
-- Location: <path:line-range or PR conversation>
-- Classification: <valid | questionable | pushback | needs-user-decision>
-- Evidence: <specific evidence and URLs>
-- Planned action: <action>
-- Posting target: <target>
-- Verification notes: <notes>
-
-Draft reply:
-
-> <reply text>
-
-## Action Summary
-
-- Implement: <items or none>
-- Clarify: <items or none>
-- Ask user: <items or none>
-
-## Pushback Summary
-
-- <items or none>
-
-## Posting Status
-
-<not-posted, posted, or cancelled with unsupported targets>
-```
-
-## Examples
+## Schema Examples
 
 Successful assessment item:
 
@@ -191,7 +146,7 @@ Successful assessment item:
   Drafting guidance: Thank them and say we will align the status code with existing route behavior.
 ```
 
-Targeted verification failure:
+Targeted verification failure (illustrates `Fix target` and `Required fixes`):
 
 ```text
 VERIFY: FAIL
