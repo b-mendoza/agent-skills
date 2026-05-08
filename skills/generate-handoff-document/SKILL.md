@@ -1,17 +1,17 @@
 ---
 name: "generate-handoff-document"
-description: 'Generate a resumable handoff document from an in-progress conversation, review, debugging session, or investigation. Dispatches co-located subagents to extract original instructions and Q&A context, capture evidence-backed insights, optionally validate claims from tracking files, and assemble a cold-start-ready handoff file plus structured working artifacts. Use when the user says "create a handoff doc", "save this for later", "document what we found", "update the resumption file", or wants a fresh agent to resume later without relying on chat history.'
+description: 'Generate a resumable handoff package from an in-progress conversation, review, debugging session, or investigation. Dispatches co-located subagents to extract scope and Q&A context, capture evidence-backed insights, optionally validate tracking-file claims, and assemble a cold-start handoff document. Use when the user says "create a handoff doc", "save this for later", "document what we found", "update the resumption file", or wants a fresh agent to resume without chat history.'
 ---
 
 # Generating Handoff Documents
 
-Create a resumable handoff package for an in-progress analytical session. This
-orchestrator does three things: **think** (identify missing inputs and failed
-gates), **decide** (choose the next specialist or targeted rerun), and
-**dispatch** (send extraction, validation, and assembly work to co-located
-subagents). The working data lives on disk as structured artifacts; the
-orchestrator keeps only verdicts, paths, counts, and unresolved questions in
-context.
+Create a resumable handoff package for an in-progress analytical session. The
+orchestrator does three things: **think** about missing inputs and failed gates,
+**decide** which specialist or targeted rerun is needed, and **dispatch** the
+actual extraction, validation, and assembly work to co-located subagents.
+
+Working data lives on disk as structured artifacts. Keep only verdicts, file
+paths, counts, warnings, and unresolved questions in orchestrator context.
 
 ## Inputs
 
@@ -23,8 +23,7 @@ context.
 | `CONTEXT_SOURCE` | No | `current conversation` or `docs/transcript.md` |
 
 If the user omits optional values, infer them from the session when that is
-safe. Read `./references/data-contracts.md` when deriving sibling artifact
-paths or checking the structured artifact schemas.
+safe. Ask one short question when `TARGET_FILE` is unclear.
 
 ## Workflow Overview
 
@@ -36,6 +35,17 @@ paths or checking the structured artifact schemas.
    document.
 5. The orchestrator validates the final document and reruns only the failing
    stage(s).
+
+## Progressive Disclosure Map
+
+Read the smallest file that answers the current question.
+
+| Need | Load | Purpose |
+| ---- | ---- | ------- |
+| Artifact names, JSON schemas, or required final sections | `./references/data-contracts.md` | Canonical local contract for every stage |
+| A dispatch round-trip example | `./references/dispatch-example.md` | Example of inputs, subagent summaries, and final report |
+| Conceptual background or current external guidance | `./references/external-resources.md` | Optional links to fetch only when background is needed |
+| Final handoff template | `./subagents/document-assembler-template.md` | Loaded by `document-assembler` only at assembly time |
 
 ## Subagent Registry
 
@@ -50,18 +60,18 @@ Read a subagent definition only when you are about to dispatch it.
 
 ## How This Skill Works
 
-- Read `./references/data-contracts.md` when you need the sibling artifact
-  naming rules, JSON schemas, or final-section requirements.
-- Pass only explicit handoffs between stages: source path, target artifact
-  path, subject, and optional tracking files.
-- Keep only verdicts, file paths, counts, and actionable warnings from each
-  subagent. The detailed payload stays in the artifact files.
-- Treat claims from tracking files as provisional even after validation. The
-  final handoff must preserve that caution for the next agent.
+The orchestrator is a router and quality gate, not the extractor. It passes
+explicit handoffs between stages: source path, target artifact path, subject,
+and optional tracking files.
+
+- Keep detailed payloads in artifact files; retain only summaries in context.
+- Treat tracking-file claims as provisional even after validation. The final
+  handoff keeps that caution visible for the next agent.
+- Use external URLs only for optional background. Local files define the
+  required contracts, output sections, and workflow behavior.
 - Use targeted fix cycles. If source extraction is incomplete, rerun the
-  relevant upstream subagent and the downstream stages that consume it. If the
-  problem is only document coherence or formatting, rerun `document-assembler`
-  only.
+  upstream subagent and downstream consumers. If only coherence or formatting
+  fails, rerun `document-assembler`.
 - Stop and surface the blocker if dispatch is unavailable or if three fix
   cycles fail to produce a coherent handoff.
 
@@ -88,16 +98,10 @@ On success, `TARGET_FILE` contains five sections:
 If no tracking files were provided, Section 4 must explicitly say so and tell
 the next agent to verify any factual claims independently.
 
-## Phase Guide
-
-| Situation | Reference file | Purpose |
-| --------- | -------------- | ------- |
-| Contract or artifact-path questions | `./references/data-contracts.md` | Derive sibling artifact names and confirm the schemas/required sections |
-
 ## Execution Steps
 
-1. Confirm `TARGET_FILE` and derive the sibling artifact paths described in
-   `./references/data-contracts.md`.
+1. Confirm `TARGET_FILE`; then read `./references/data-contracts.md` and derive
+   sibling artifact paths.
 2. Dispatch `context-extractor` with `CONTEXT_SOURCE` and `CONTEXT_FILE`.
 3. Dispatch `insight-documenter` with `CONTEXT_SOURCE` and `INSIGHTS_FILE`.
 4. If `TRACKING_FILES` exist, dispatch `claim-validator` with
@@ -117,43 +121,5 @@ the next agent to verify any factual claims independently.
 8. Return the final handoff path plus a concise summary of counts, warnings, and
    open questions.
 
-## Example
-
-<example>
-Input:
-- `TARGET_FILE=docs/auth-review-handoff.md`
-- `SUBJECT=Authentication review`
-- `TRACKING_FILES=docs/auth-review-notes.md`
-
-Derived working artifacts:
-- `docs/auth-review-handoff.context.json`
-- `docs/auth-review-handoff.insights.json`
-- `docs/auth-review-handoff.claims.json`
-
-1. Dispatch `context-extractor`
-2. Subagent returns:
-   `CONTEXT: PASS`
-   `File: docs/auth-review-handoff.context.json`
-   `Q&A exchanges: 4`
-3. Dispatch `insight-documenter`
-4. Subagent returns:
-   `INSIGHTS: PASS`
-   `File: docs/auth-review-handoff.insights.json`
-   `Insights: 6`
-5. Dispatch `claim-validator`
-6. Subagent returns:
-   `CLAIMS: WARN`
-   `File: docs/auth-review-handoff.claims.json`
-   `Claims checked: 9`
-   `Unverified: 2`
-7. Dispatch `document-assembler`
-8. Subagent returns:
-   `HANDOFF: PASS`
-   `File: docs/auth-review-handoff.md`
-   `Open questions: 2`
-9. Report:
-   "Handoff document written to `docs/auth-review-handoff.md`. The session is
-   resumable from disk; two open questions remain."
-
-The orchestrator keeps only those summaries and file paths.
-</example>
+Read `./references/dispatch-example.md` if you need an example of the complete
+dispatch round trip.
