@@ -1,14 +1,17 @@
 # Phases 1-4 - Linear Pipeline
 
-> Read this file when entering Phase 1, 2, 3, or 4. For exact artifact checks,
-> load `./data-contracts.md` and dispatch `artifact-validator`; do not inspect
-> artifacts inline in the orchestrator.
+> Read this file when entering Phase 1, 2, 3, or 4. For exact artifact
+> checks, load `./data-contracts.md` and dispatch `artifact-validator`; do
+> not inspect artifacts inline in the orchestrator. For Jira REST or
+> Atlassian setup syntax that the downstream skill cannot answer, fetch one
+> URL from `./external-sources.md`.
 
-After Phase 4 completes and the user selects a task, read `./task-loop.md`.
+After Phase 4 completes and the user selects a task, read
+`./task-loop.md`.
 
-For every phase, use the standard cycle from `./workflow-policy.md`: announce,
-validate preconditions when present, invoke the downstream skill, validate
-postconditions, update progress, and run the gate.
+For every phase, use the standard cycle from `./workflow-policy.md`:
+announce, validate preconditions when present, invoke the downstream
+skill, validate postconditions, update progress, and run the gate.
 
 ## Phase 1 - Fetch Work Item
 

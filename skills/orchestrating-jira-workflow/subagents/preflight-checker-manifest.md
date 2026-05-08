@@ -4,8 +4,10 @@
 > preflight checker. Preflight reports availability only; it does not install,
 > connect, or repair dependencies.
 >
-> For current Jira MCP setup details, load `../references/external-sources.md`
-> and fetch the Atlassian Rovo MCP source only if the user needs setup help.
+> For current Jira MCP setup details, load
+> `../references/external-sources.md` and fetch the Atlassian Rovo MCP
+> URL from the `Jira / Atlassian setup` section only when the user needs
+> setup help.
 
 ## Classification
 

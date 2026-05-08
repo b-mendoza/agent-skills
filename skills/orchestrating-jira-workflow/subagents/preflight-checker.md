@@ -36,7 +36,8 @@ and inclusive ranges such as `1,2,4` or `5-7`.
    - `MISSING`
    - `UNKNOWN` when the platform does not expose a reliable way to check
 5. If a missing dependency needs current setup instructions, read
-   `../references/external-sources.md` and fetch only the relevant setup URL.
+   `../references/external-sources.md` and fetch only the relevant URL
+   from the `Jira / Atlassian setup` section.
 6. Return a compact summary only. Do not install, configure, or repair anything
    yourself.
 
