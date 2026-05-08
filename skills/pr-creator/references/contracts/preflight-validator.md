@@ -1,9 +1,9 @@
-# Output Contract — Preflight Validator
+# Output Contract - Preflight Validator
 
-> Loaded by the `preflight-validator` subagent at return time. The orchestrator
-> uses only the summary fields to decide whether to push, retry, or escalate.
+> Load at return time. The orchestrator uses this verdict to push, retry, or
+> escalate.
 
-## Status Template
+## Template
 
 ```text
 PREFLIGHT: PASS | PUSH_REQUIRED | AUTH | BASE_BRANCH_MISSING | HEAD_BRANCH_UNPUSHED | BLOCKED | ERROR
@@ -17,19 +17,15 @@ Reason: none | <why status is not PASS>
 Decision needed: none | <smallest user decision or recovery action>
 ```
 
-## Status Codes
+## Codes
 
-| Code | Use When |
-| ---- | -------- |
-| `PASS` | Auth, target ref, and source ref are all comparable remotely |
-| `PUSH_REQUIRED` | Source branch is missing or local-ahead and no `PUSH_APPROVED=true` was supplied |
-| `AUTH` | Platform CLI, token, or permission is missing or invalid |
-| `BASE_BRANCH_MISSING` | Target branch cannot be found on the remote |
-| `HEAD_BRANCH_UNPUSHED` | Source branch is still not comparable after an approved push |
-| `BLOCKED` | Repository or platform state prevents safe progress |
-| `ERROR` | Unexpected validation failure |
-
-Fill `Reason` and `Decision needed` for every non-`PASS` result.
+- `PASS`: auth, target ref, and source ref are remotely comparable.
+- `PUSH_REQUIRED`: source branch is missing or local-ahead without approval.
+- `AUTH`: platform CLI, token, or permission is missing or invalid.
+- `BASE_BRANCH_MISSING`: target branch is absent on the remote.
+- `HEAD_BRANCH_UNPUSHED`: approved push did not make the source comparable.
+- `BLOCKED`: repository or platform state prevents safe progress.
+- `ERROR`: unexpected validation failure.
 
 ## Example
 

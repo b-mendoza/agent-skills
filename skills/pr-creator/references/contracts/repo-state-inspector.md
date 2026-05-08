@@ -1,9 +1,8 @@
-# Output Contract — Repo State Inspector
+# Output Contract - Repo State Inspector
 
-> Loaded by the `repo-state-inspector` subagent at return time. The orchestrator
-> uses only the summary fields when routing the next phase.
+> Load at return time. The orchestrator uses only these summary fields.
 
-## Status Template
+## Template
 
 ```text
 REPO_STATE: PASS | BLOCKED | ERROR
@@ -19,15 +18,11 @@ Reason: none | <why status is not PASS>
 Decision needed: none | <smallest user decision or orchestrator action>
 ```
 
-## Status Codes
+## Codes
 
-| Code | Use When |
-| ---- | -------- |
-| `PASS` | Routing data is available and the working tree is safe to inspect further |
-| `BLOCKED` | Not a git repository, detached HEAD, or no branch can be named safely |
-| `ERROR` | Unexpected inspection failure |
-
-Fill `Reason` and `Decision needed` for every non-`PASS` result.
+- `PASS`: routing data is available.
+- `BLOCKED`: not a git repo, detached HEAD, or no safe branch name.
+- `ERROR`: unexpected inspection failure.
 
 ## Example
 

@@ -1,9 +1,9 @@
-# Output Contract — PR Submitter
+# Output Contract - PR Submitter
 
-> Loaded by the `pr-submitter` subagent at return time. The orchestrator uses
-> the verified URL and field summary for the final success block.
+> Load at return time. The orchestrator uses the verified URL and field summary
+> for final output.
 
-## Status Template
+## Template
 
 ```text
 PR_SUBMIT: PASS | BLOCKED | CREATE_ERROR | AUTH | ERROR
@@ -20,17 +20,13 @@ Reason: none | <why status is not PASS>
 Decision needed: none | <smallest recovery action>
 ```
 
-## Status Codes
+## Codes
 
-| Code | Use When |
-| ---- | -------- |
-| `PASS` | Approved PR is created and verification of URL, base, head, and title passes |
-| `BLOCKED` | `PREVIEW_APPROVED` is not `true` or a required approved value is empty |
-| `CREATE_ERROR` | Creation or post-creation verification fails after approval |
-| `AUTH` | Platform CLI or credentials are missing or invalid at submission time |
-| `ERROR` | Unexpected submission failure |
-
-Fill `Reason` and `Decision needed` for every non-`PASS` result.
+- `PASS`: approved PR is created and verified.
+- `BLOCKED`: approval or a required approved value is missing.
+- `CREATE_ERROR`: creation or verification failed after approval.
+- `AUTH`: platform CLI or credentials are missing or invalid.
+- `ERROR`: unexpected submission failure.
 
 ## Example
 

@@ -1,9 +1,9 @@
-# Output Contract — Diff Analyzer
+# Output Contract - Diff Analyzer
 
-> Loaded by the `diff-analyzer` subagent at return time. Keep raw patches inside
-> the subagent; the orchestrator receives only the summary fields below.
+> Load at return time. Keep raw patches inside the subagent; return this concise
+> summary only.
 
-## Status Template
+## Template
 
 ```text
 DIFF_ANALYSIS: PASS | LARGE_PR_CONFIRMATION_REQUIRED | EMPTY_DIFF | ERROR
@@ -31,18 +31,12 @@ Reason: none | <why status is not PASS>
 Decision needed: none | <smallest confirmation or recovery action>
 ```
 
-## Status Codes
+## Codes
 
-| Code | Use When |
-| ---- | -------- |
-| `PASS` | Compare range has meaningful changes and the size gate is satisfied |
-| `LARGE_PR_CONFIRMATION_REQUIRED` | Range exceeds the size gate or spans clearly unrelated areas, and `LARGE_PR_APPROVED=true` was not supplied |
-| `EMPTY_DIFF` | Compare range has no commits or no meaningful diff against the target |
-| `ERROR` | Unexpected analysis failure |
-
-Fill `Reason` and `Decision needed` for every non-`PASS` result. Group long
-file lists by area; include exact paths only when they matter for downstream
-metadata.
+- `PASS`: meaningful diff and size gate satisfied.
+- `LARGE_PR_CONFIRMATION_REQUIRED`: size or mixed-purpose gate needs approval.
+- `EMPTY_DIFF`: no commits or no meaningful diff against the target.
+- `ERROR`: unexpected analysis failure.
 
 ## Example
 
@@ -71,5 +65,5 @@ Risk notes:
 - Large mixed surface may be hard to review as one PR.
 
 Reason: Size gate exceeded and the branch spans API, UI, and docs.
-Decision needed: Ask the user whether to proceed with one large PR or split it.
+Decision needed: Ask whether to proceed with one large PR or split it.
 </example>

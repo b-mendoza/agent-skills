@@ -1,14 +1,11 @@
-# Execution Contracts (Orchestrator)
+# Execution Contracts
 
-> Load this file when handling a subagent failure, showing the preview, applying
-> the PR body template, or printing the final success block.
->
-> Per-subagent return formats are not in this file. Each subagent loads its own
-> output contract from `./contracts/<subagent-name>.md` at return time.
+> Load this file when mapping a failure, showing the PR preview, using the body
+> template, or printing the final result. Subagent return formats live in
+> `./references/contracts/<subagent-name>.md` and are loaded only by that
+> subagent.
 
-## Orchestrator Failure Envelope
-
-Use this envelope when the workflow cannot safely continue:
+## Failure Envelope
 
 ```text
 PR_CREATE: AUTH | BASE_BRANCH_MISSING | HEAD_BRANCH_UNPUSHED | EMPTY_DIFF | BLOCKED | CANCELLED | CREATE_ERROR
@@ -16,37 +13,27 @@ Reason: <one line>
 Next step: <one clear action>
 ```
 
-### Failure mapping
+## Failure Map
 
-| Code | Use When |
-| ---- | -------- |
-| `AUTH` | Platform CLI, token, or permission is missing or invalid |
-| `BASE_BRANCH_MISSING` | The target branch cannot be found on the remote |
-| `HEAD_BRANCH_UNPUSHED` | The source branch is absent or stale remotely and cannot be pushed, or the user declined to push |
-| `EMPTY_DIFF` | The trusted compare range has nothing meaningful to submit |
-| `BLOCKED` | Repository state, unsupported platform, or a missing required value prevents safe progress |
-| `CANCELLED` | The user declines a non-push confirmation gate |
-| `CREATE_ERROR` | PR/MR creation or verification fails after approval |
-
-### Mapping subagent codes to the envelope
-
-| Subagent code | Envelope code |
+| Source status | Envelope code |
 | ------------- | ------------- |
 | `PREFLIGHT: AUTH`, `PR_SUBMIT: AUTH`, `REVIEW_METADATA: AUTH` | `AUTH` |
 | `PREFLIGHT: BASE_BRANCH_MISSING` | `BASE_BRANCH_MISSING` |
-| `PREFLIGHT: HEAD_BRANCH_UNPUSHED` | `HEAD_BRANCH_UNPUSHED` |
+| `PREFLIGHT: HEAD_BRANCH_UNPUSHED` or declined push | `HEAD_BRANCH_UNPUSHED` |
 | `DIFF_ANALYSIS: EMPTY_DIFF` | `EMPTY_DIFF` |
 | `REPO_STATE: BLOCKED`, `PREFLIGHT: BLOCKED`, `PR_SUBMIT: BLOCKED` | `BLOCKED` |
-| User declines a confirmation gate | `CANCELLED` |
+| User declines large-PR or create confirmation | `CANCELLED` |
 | `PR_SUBMIT: CREATE_ERROR` | `CREATE_ERROR` |
-| Any subagent `ERROR` | `BLOCKED` (with the subagent reason and the next safe action) |
+| Any subagent `ERROR` | `BLOCKED` with the subagent reason |
+
+Recover by re-running only the earliest affected phase. After three
+non-converging preview or validation cycles, ask the user for exact final values
+or permission to stop.
 
 ## Preview Template
 
 Show this before creating anything. Any edit to title, body, reviewer, label,
-branch, or state invalidates approval. Show a fresh preview after the affected
-phase re-runs. After three non-converging preview cycles, ask the user for
-explicit final values.
+branch, or state invalidates approval.
 
 ```text
 PR Preview
@@ -80,10 +67,9 @@ Description:
 
 ## PR Body Template
 
-Use this body when the user did not provide `BODY_OVERRIDE`. Mention tests only
-when the diff analysis reports test changes or test-relevant risk. For deeper
-guidance on writing good descriptions, fetch the entries grouped under "PR
-Writing and Review Quality" in `./external-resources.md`.
+Use this body when the user did not provide `BODY_OVERRIDE`. For deeper writing
+guidance, load `./references/external-resources.md` and fetch one source from
+"Writing and Review Sources".
 
 ```markdown
 ## Summary

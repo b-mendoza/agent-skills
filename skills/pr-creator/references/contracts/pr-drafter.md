@@ -1,9 +1,9 @@
-# Output Contract — PR Drafter
+# Output Contract - PR Drafter
 
-> Loaded by the `pr-drafter` subagent at return time. The orchestrator uses the
-> resulting title, body, and source attribution for the preview step.
+> Load at return time. The orchestrator uses title, body, and source attribution
+> for the preview.
 
-## Status Template
+## Template
 
 ```text
 PR_DRAFT: PASS | NEEDS_CHOICE | ERROR
@@ -22,16 +22,11 @@ Reason: none | <why status is not PASS>
 Decision needed: none | <smallest user choice or recovery action>
 ```
 
-## Status Codes
+## Codes
 
-| Code | Use When |
-| ---- | -------- |
-| `PASS` | A grounded title and body are produced from the diff analysis or exact overrides |
-| `NEEDS_CHOICE` | Two or more type or scope options are equally plausible and no explicit choice was supplied |
-| `ERROR` | Unexpected drafting failure |
-
-Fill `Reason` and `Decision needed` for every non-`PASS` result. Title and body
-overrides, when provided, are exact replacements and must be returned verbatim.
+- `PASS`: grounded title and body are ready for preview.
+- `NEEDS_CHOICE`: type or scope ambiguity needs a user choice.
+- `ERROR`: unexpected drafting failure.
 
 ## Example
 
@@ -56,8 +51,7 @@ create gates while reducing raw git and diff output in the orchestrator.
 
 ## Impact
 
-- PR creation runs with clearer phase boundaries and less orchestrator context
-  pollution.
+- PR creation runs with clearer phase boundaries and less context pollution.
 - No runtime migration is required for existing skill consumers.
 
 Sources used:

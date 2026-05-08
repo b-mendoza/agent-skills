@@ -1,9 +1,9 @@
-# Output Contract — Review Metadata Suggester
+# Output Contract - Review Metadata Suggester
 
-> Loaded by the `review-metadata-suggester` subagent at return time. The
-> orchestrator uses the reviewer and label fields to populate the preview.
+> Load at return time. The orchestrator uses reviewer and label fields in the
+> preview.
 
-## Status Template
+## Template
 
 ```text
 REVIEW_METADATA: PASS | NEEDS_REVIEWER | INVALID_LABELS | AUTH | ERROR
@@ -17,18 +17,13 @@ Reason: none | <why status is not PASS>
 Decision needed: none | <smallest user decision or recovery action>
 ```
 
-## Status Codes
+## Codes
 
-| Code | Use When |
-| ---- | -------- |
-| `PASS` | At least one reviewer is resolved and any labels exist on the platform |
-| `NEEDS_REVIEWER` | Neither user input nor CODEOWNERS provides at least one reviewer |
-| `INVALID_LABELS` | A `LABELS_OVERRIDE` entry is not present in the platform's existing labels |
-| `AUTH` | Platform CLI or credentials prevent reviewer or label lookup |
-| `ERROR` | Unexpected metadata failure |
-
-Fill `Reason` and `Decision needed` for every non-`PASS` result. When invalid
-labels are reported, include a nearby valid alternative when one is obvious.
+- `PASS`: at least one reviewer is resolved and labels are valid.
+- `NEEDS_REVIEWER`: no user or CODEOWNERS reviewer is available.
+- `INVALID_LABELS`: an override label is absent from platform labels.
+- `AUTH`: platform tooling or credentials prevent lookup.
+- `ERROR`: unexpected metadata failure.
 
 ## Example
 

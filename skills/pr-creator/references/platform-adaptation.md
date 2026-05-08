@@ -1,71 +1,42 @@
 # Platform Adaptation
 
-> Read this file when the remote is not GitHub or GitHub Enterprise, or when
-> the installed `gh` workflow cannot authenticate against the repository.
->
-> URLs for command syntax and platform docs live in
-> `./external-resources.md`. Fetch only the entry relevant to the current
-> decision.
+> Load this file when the remote is GitLab, Bitbucket, unknown, or when GitHub
+> tooling cannot authenticate against a GitHub-compatible repository. Fetch exact
+> command or API syntax from `./references/external-resources.md` only for the
+> active platform.
 
-Non-GitHub PR/MR creation uses the same orchestrator gates as GitHub:
-validate auth and remote refs, compare the full branch diff, preview exact
-fields, wait for user approval, create, verify, and return the URL.
+Non-GitHub flows keep the same safety gates: validate auth, confirm remote refs,
+compare the approved branch range, preview exact fields, wait for user approval,
+create, verify, and return the URL.
 
-## GitLab Strategy
+## Strategy Map
 
-Use GitLab merge-request semantics while preserving the skill contracts:
+| Platform | Local behavior | External source trigger |
+| -------- | -------------- | ----------------------- |
+| GitLab | Use merge-request semantics and the team's installed `glab` or approved API wrapper | Fetch GitLab MR, `glab mr create`, labels, or Code Owners docs when flags or fields are uncertain |
+| Bitbucket | Use the repository's standard CLI or REST wrapper; return `BLOCKED` when no safe create path is discoverable | Fetch Bitbucket create-PR, pull-request API, refs API, or default-reviewer docs |
+| Unknown or self-hosted | Ask which hosting platform and tooling to use before creating anything | Fetch only the docs for the user-named platform or tool |
 
-- Confirm `glab` (or the team's standard GitLab tooling) is installed and
-  authenticated.
-- Fetch remote refs, verify the target branch, and verify the source branch
-  is remotely comparable.
-- Request explicit user approval before pushing a missing or stale source
-  branch.
-- Use `glab mr create` (or the documented team workflow) to map approved
-  preview fields to target branch, source branch, title, description, draft
-  state, reviewers, and labels.
-- Verify the created MR URL and branch fields before returning
-  `PR_SUBMIT: PASS`.
+## Field Mapping
 
-For exact `glab` flags, label commands, or Code Owners syntax, consult the
-"GitLab" section of `./external-resources.md`.
+Reuse the approved preview values exactly:
 
-## Bitbucket Strategy
-
-Bitbucket workflows vary by team and hosting setup. Preserve the
-preview-first flow and use the repository's standard CLI or API wrapper when
-available.
-
-- Detect the supported Bitbucket CLI/API path for the repository.
-- Return `BLOCKED` when no safe create workflow is discoverable and ask which
-  team workflow to use.
-- Reuse the approved title, body, reviewer, label, draft/ready, base, and
-  head values.
-- Suggest labels only when the tooling can list existing labels reliably.
-- Verify the resulting PR URL and base/head branches.
-
-For exact REST endpoints or default-reviewer behavior, consult the
-"Bitbucket" section of `./external-resources.md`.
-
-## Unknown or Self-Hosted Platforms
-
-When the platform classifier returns `unknown`:
-
-- Do not improvise a create command. Return `BLOCKED` and ask the user which
-  hosting platform and tooling to use.
-- If the user names a tool (for example, a custom REST wrapper or
-  `git push --set-upstream` plus an HTTP API), reuse the approved preview
-  values exactly and verify the resulting URL before reporting success.
+- Target branch maps to base or target branch.
+- Current branch maps to source or head branch.
+- Title and body map to PR or MR title and description.
+- Draft or ready state maps to the platform's equivalent when supported.
+- Reviewers and labels are included only after platform validation.
 
 ## Failure Mapping
 
-Use the orchestrator failure envelope in `./execution-contracts.md` for
-non-GitHub flows too:
+Use the failure envelope in `./references/execution-contracts.md`:
 
-- `AUTH` for missing, unauthenticated, or unauthorized platform tooling.
-- `BASE_BRANCH_MISSING` for a missing target branch.
-- `HEAD_BRANCH_UNPUSHED` when the source branch cannot be compared remotely.
-- `EMPTY_DIFF` when the compare range has no meaningful changes.
-- `BLOCKED` when the platform workflow cannot be determined safely.
-- `CANCELLED` when the user declines a non-push confirmation gate.
-- `CREATE_ERROR` when creation or verification fails after approval.
+| Situation | Envelope code |
+| --------- | ------------- |
+| Missing tooling, token, or permission | `AUTH` |
+| Missing target branch | `BASE_BRANCH_MISSING` |
+| Source branch cannot be compared remotely | `HEAD_BRANCH_UNPUSHED` |
+| Empty compare range | `EMPTY_DIFF` |
+| Platform or create workflow cannot be determined safely | `BLOCKED` |
+| User declines a confirmation gate | `CANCELLED` |
+| Creation or verification fails after approval | `CREATE_ERROR` |

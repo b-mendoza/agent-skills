@@ -1,95 +1,85 @@
-# External Resources
+# External Source Map
 
-> Load this file when a subagent needs authoritative command syntax, platform
-> behavior, PR-writing guidance, or progressive-disclosure background. Fetch
-> only the URL relevant to the current decision.
+> Load this file only when exact command syntax, platform behavior,
+> PR-writing guidance, or progressive-disclosure background is needed. Fetch one
+> relevant URL, not the whole map.
 
-This reference is standalone. It replaces in-prompt static explanations with
-public web resources that the agent retrieves on demand. Prefer the official
-docs and installed CLI help for command flags. Use article-style resources for
-writing quality and conceptual background, never for exact command syntax.
+This standalone source map keeps static reference material out of prompts. The
+local skill contracts remain authoritative for workflow behavior; external pages
+provide current syntax, platform details, and optional rationale.
 
-## Retrieval Policy
+## Fetch Rules
 
-Fetch an external doc when one of these applies:
+- Prefer official product documentation for commands, flags, API behavior, and
+  hosting-platform rules.
+- Prefer installed CLI help when the local version may differ from public docs.
+- Use articles and engineering guides for writing quality and review heuristics,
+  not for exact command syntax.
+- If network access is unavailable, proceed with bundled contracts, avoid
+  version-specific claims, and ask the user when exact platform behavior is a
+  safety gate.
 
-- The installed CLI version differs from a remembered command syntax.
-- A non-GitHub platform is detected.
-- The PR-writing or Conventional Commit choice is genuinely ambiguous.
-- CODEOWNERS, reviewer, or label behavior affects whether the workflow can
-  continue safely.
-- The skill must explain a concept (progressive disclosure, draft vs. ready,
-  small-CL guidance) and an authoritative external source exists.
+## Workflow Source Map
 
-When in doubt, prefer one targeted fetch over re-stating remembered prose.
-
-## Progressive Disclosure and Agent Skills Background
-
-| Need | URL |
-| ---- | --- |
-| Skill-style progressive disclosure example | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
-| Interaction-design explanation of progressive disclosure | https://www.nngroup.com/articles/progressive-disclosure/ |
-| Anthropic agent skills overview | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview |
-| Anthropic agent skills best practices | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |
-| Anthropic Claude Code subagents | https://docs.claude.com/en/docs/claude-code/sub-agents |
-| Cursor agent skills | https://cursor.com/docs/skills |
+| Need | Fetch |
+| ---- | ----- |
+| Progressive-disclosure example for skills | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
+| UX background for progressive disclosure | https://www.nngroup.com/articles/progressive-disclosure/ |
+| Agent Skills overview | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview |
+| Agent Skills best practices | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |
+| Claude Code subagents | https://docs.claude.com/en/docs/claude-code/sub-agents |
+| Cursor skills | https://cursor.com/docs/skills |
 | OpenCode agents | https://opencode.ai/docs/agents/ |
 
-## Git Compare and Branch State
+## Git State and Compare Sources
 
-| Need | URL |
-| ---- | --- |
+| Need | Fetch |
+| ---- | ----- |
 | `git diff` ranges and `...` semantics | https://git-scm.com/docs/git-diff |
 | Commit range inspection | https://git-scm.com/docs/git-log |
 | Working-tree status | https://git-scm.com/docs/git-status |
 | Fetching remote refs | https://git-scm.com/docs/git-fetch |
 | Pushing branches | https://git-scm.com/docs/git-push |
 | Listing remote branches | https://git-scm.com/docs/git-ls-remote |
-| GitHub compare commits and branches | https://docs.github.com/en/pull-requests/committing-changes-to-your-project/viewing-and-comparing-commits/comparing-commits |
+| GitHub compare behavior | https://docs.github.com/en/pull-requests/committing-changes-to-your-project/viewing-and-comparing-commits/comparing-commits |
 
-## GitHub and GitHub Enterprise
+## GitHub Sources
 
-| Need | URL |
-| ---- | --- |
+| Need | Fetch |
+| ---- | ----- |
 | GitHub CLI manual | https://cli.github.com/manual/ |
-| `gh auth status` | https://cli.github.com/manual/gh_auth_status |
-| `gh repo view` | https://cli.github.com/manual/gh_repo_view |
-| `gh pr create` | https://cli.github.com/manual/gh_pr_create |
-| `gh pr view` | https://cli.github.com/manual/gh_pr_view |
-| `gh pr ready` (draft <-> ready) | https://cli.github.com/manual/gh_pr_ready |
-| `gh label list` | https://cli.github.com/manual/gh_label_list |
-| Creating a pull request | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request |
+| Auth status | https://cli.github.com/manual/gh_auth_status |
+| Repository inspection | https://cli.github.com/manual/gh_repo_view |
+| Create PR | https://cli.github.com/manual/gh_pr_create |
+| Verify PR | https://cli.github.com/manual/gh_pr_view |
+| Mark PR ready | https://cli.github.com/manual/gh_pr_ready |
+| List labels | https://cli.github.com/manual/gh_label_list |
+| GitHub pull request creation | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request |
 | Draft pull requests | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests#draft-pull-requests |
-| Requesting PR reviews | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/requesting-a-pull-request-review |
-| CODEOWNERS overview and syntax | https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners |
-| GitHub labels | https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/managing-labels |
+| Requesting reviews | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/requesting-a-pull-request-review |
+| CODEOWNERS syntax | https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners |
+| Labels | https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/managing-labels |
 
-## PR Writing and Review Quality
+## Writing and Review Sources
 
-| Need | URL |
-| ---- | --- |
-| Conventional Commits spec | https://www.conventionalcommits.org/en/v1.0.0/ |
-| Google CL description guidance | https://google.github.io/eng-practices/review/developer/cl-descriptions.html |
-| Google small-change guidance | https://google.github.io/eng-practices/review/developer/small-cls.html |
-| Google reviewer guidance (review etiquette) | https://google.github.io/eng-practices/review/reviewer/ |
-| GitHub blog on writing better commit messages | https://github.blog/developer-skills/github/writing-better-commit-messages/ |
-| "How to Write a Git Commit Message" (Chris Beams) | https://cbea.ms/git-commit/ |
-| Anatomy of a high-quality PR description (Conventional Commits in practice) | https://www.conventionalcommits.org/en/v1.0.0/#examples |
+| Need | Fetch |
+| ---- | ----- |
+| Conventional Commit title syntax | https://www.conventionalcommits.org/en/v1.0.0/ |
+| High-quality CL descriptions | https://google.github.io/eng-practices/review/developer/cl-descriptions.html |
+| Small-change guidance | https://google.github.io/eng-practices/review/developer/small-cls.html |
+| Reviewer expectations | https://google.github.io/eng-practices/review/reviewer/ |
+| Commit-message writing | https://github.blog/developer-skills/github/writing-better-commit-messages/ |
+| Detailed commit message conventions | https://cbea.ms/git-commit/ |
 
-## GitLab
+## Non-GitHub Sources
 
-| Need | URL |
-| ---- | --- |
+| Need | Fetch |
+| ---- | ----- |
 | GitLab merge request workflow | https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/ |
 | GitLab CLI project | https://gitlab.com/gitlab-org/cli |
-| `glab mr create` command source docs | https://gitlab.com/gitlab-org/cli/-/blob/main/docs/source/mr/create.md |
+| `glab mr create` docs | https://gitlab.com/gitlab-org/cli/-/blob/main/docs/source/mr/create.md |
 | GitLab labels | https://docs.gitlab.com/user/project/labels/ |
 | GitLab Code Owners | https://docs.gitlab.com/user/project/codeowners/ |
-
-## Bitbucket
-
-| Need | URL |
-| ---- | --- |
 | Bitbucket Cloud create pull request | https://support.atlassian.com/bitbucket-cloud/docs/create-a-pull-request/ |
 | Bitbucket pull request REST API | https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/ |
 | Bitbucket branch refs REST API | https://developer.atlassian.com/cloud/bitbucket/rest/api-group-refs/ |
