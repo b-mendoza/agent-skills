@@ -38,7 +38,7 @@ baseline from the implementation plan itself.
 | Shared status codes, retry loop, annotation schema, report contract | `./references/audit-protocol.md` |
 | Optional method background and external website links | `./references/external-sources.md` |
 | Full report layout example | `./references/report-example.md` (annotator only, on demand) |
-| Specialist execution details | The specific `./subagents/*.md` file immediately before dispatch |
+| Specialist execution details | The specific registry file under `./subagents/` immediately before dispatch |
 
 External URLs are optional just-in-time source material. The skill works offline;
 fetch a website only when the active subagent needs method rationale beyond its
