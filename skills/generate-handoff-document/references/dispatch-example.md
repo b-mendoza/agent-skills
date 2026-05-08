@@ -1,7 +1,7 @@
 # Dispatch Example
 
 > Read this file only when an example would clarify dispatch order, expected
-> summaries, or the final response shape.
+> subagent summaries, or the final response shape returned to the user.
 
 ## Example
 
@@ -11,7 +11,7 @@ Input:
 - `SUBJECT=Authentication review`
 - `TRACKING_FILES=docs/auth-review-notes.md`
 
-Derived working artifacts:
+Derived working artifacts (per `./data-contracts.md`):
 
 - `docs/auth-review-handoff.context.json`
 - `docs/auth-review-handoff.insights.json`
@@ -60,7 +60,19 @@ Dispatch round trip:
 
    ```text
    Handoff document written to docs/auth-review-handoff.md. The session is
-   resumable from disk; two open questions remain.
+   resumable from disk; two open questions and two unverified claims remain.
    ```
 
 The orchestrator keeps only those summaries and file paths.
+
+## Skipping Stage 3
+
+When `TRACKING_FILES` is not provided, replace steps 5-6 with:
+
+```text
+CLAIMS: SKIPPED
+Reason: No tracking files supplied; next agent will verify claims independently.
+```
+
+`document-assembler` then produces Section 4 with the explicit "no tracking
+files" directive instead of a validation checklist.

@@ -1,7 +1,7 @@
 # Document Assembler Template
 
-Use this template only at assembly time after reading the structured artifacts.
-Replace every placeholder before writing the final document.
+> Use this template only at assembly time, after reading the structured
+> artifacts. Replace every placeholder before writing the final document.
 
 ```markdown
 # Handoff Document: <SUBJECT>
@@ -56,8 +56,8 @@ note>
 
 ## 5. Open Questions & Recommended Next Steps
 
-**Fulfills:** Preserve continuity so the next agent knows what remains open and
-what to do next.
+**Fulfills:** Preserve continuity so the next agent knows what remains open
+and what to do next.
 
 ### Open Questions
 

@@ -5,9 +5,14 @@ description: "Extract the original mandate, instruction amendments, and chronolo
 
 # Context Extractor
 
-You are a context-extraction subagent. Reconstruct the mandate and clarifying
-history that a fresh agent would need, store that structure on disk, and return
-only a concise summary to the orchestrator.
+You are a context-extraction subagent. Your purpose is to reconstruct the
+mandate and clarifying history that a fresh agent would need to resume the
+work, store that structure on disk, and return only a concise summary to the
+orchestrator. You preserve attribution and chronology so a cold-start reader
+can trust the record without rereading the transcript.
+
+> **Reminder:** Detailed payloads belong in `CONTEXT_FILE`. Return only counts,
+> a verdict, and a short reason to the orchestrator.
 
 ## Inputs
 
@@ -16,11 +21,12 @@ only a concise summary to the orchestrator.
 | `CONTEXT_SOURCE` | Yes | `current conversation` |
 | `CONTEXT_FILE` | Yes | `docs/auth-review-handoff.context.json` |
 
-Path note: `./references/...` paths are relative to the skill root.
+Paths starting with `./` are relative to the skill root.
 
 ## Instructions
 
-1. Read the provided conversation history or transcript.
+1. Read the provided conversation history or transcript named in
+   `CONTEXT_SOURCE`.
 2. Read `./references/data-contracts.md` and use its Context Artifact Schema.
 3. Extract the original instructions:
    - preserve the user's wording where it materially defines scope
@@ -34,9 +40,13 @@ Path note: `./references/...` paths are relative to the skill root.
      note when helpful
 5. Record instruction amendments separately whenever the user narrowed,
    expanded, or redirected the work after the initial mandate.
-6. Write `CONTEXT_FILE` using the referenced schema.
-7. Check that every Q&A entry is ordered and attributed before returning.
+6. Write `CONTEXT_FILE` using the referenced schema. Overwrite any prior
+   contents.
+7. Verify every Q&A entry is ordered and attributed before returning.
 8. Return only the concise status summary.
+
+If concepts like JSON Schema or transcript-style note taking are unclear, see
+`./references/external-sources.md` and fetch only the relevant URL.
 
 ## Output Format
 
@@ -61,7 +71,8 @@ Your job is to:
 
 - extract the mandate, amendments, and Q&A chronology
 - preserve speaker attribution and ordering
-- write the structured artifact and return only summary counts
+- write the structured artifact
+- return only summary counts plus a short reason
 
 The orchestrator decides whether ambiguity is acceptable or requires a user
 follow-up.
@@ -73,7 +84,8 @@ If you can write the artifact but the original mandate is fuzzy, report:
 ```text
 CONTEXT: WARN
 File: <CONTEXT_FILE>
-Reason: Could not identify one clean initial mandate; consolidated from several early messages.
+Reason: Could not identify one clean initial mandate; consolidated from
+several early messages.
 ```
 
 If you cannot read the source or write the artifact, report:

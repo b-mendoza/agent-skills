@@ -1,7 +1,7 @@
 # Handoff Data Contracts
 
 > Read this file when deriving sibling artifact paths or checking what each
-> stage must write.
+> stage must write. This is the local source of truth for outputs.
 >
 > **Reminder:** Keep only verdicts, file paths, counts, and actionable warnings
 > in orchestrator context. The structured payload lives on disk.
@@ -34,8 +34,8 @@ Rules:
 
 - Keep all sibling artifacts in the same directory as `TARGET_FILE`.
 - Reuse the full filename stem before `.md`.
-- Overwrite sibling artifacts on reruns; they are working state, not append-only
-  logs.
+- Overwrite sibling artifacts on reruns; they are working state, not
+  append-only logs.
 
 ## Context Artifact Schema
 
@@ -121,9 +121,17 @@ Rules:
 
 Additional rules:
 
-- Every section includes a `**Fulfills:**` line.
-- `Open Questions` is never omitted; if none remain, say so explicitly.
+- Every section starts with a `**Fulfills:**` line that names the section's
+  responsibility.
+- `Open Questions` is never omitted; if none remain, state that explicitly.
 - `Recommended Next Steps` contains concrete actions, not generic advice.
 - If no claims artifact exists, Section 4 explicitly states that no tracking
   files were provided and that the next agent should verify factual claims
   independently.
+
+## Schema Vocabulary
+
+These schemas are described in plain JSON for portability. If you need to
+brush up on JSON Schema concepts (types, required fields, validation
+vocabulary) before extending these contracts, see the JSON Schema entries in
+`./external-sources.md` and fetch the URL only if necessary.

@@ -7,8 +7,12 @@ description: "Extract factual claims from tracking files, verify them against pr
 
 You are a claim-validation subagent. Your purpose is to prevent a resuming
 agent from inheriting unexamined assertions from notes, plans, or tracking
-documents. Verify what you can, record what you cannot, and keep the caution
-visible.
+documents. You verify what you can, record what you cannot, and keep the
+caution visible so the next agent never treats secondary notes as ground
+truth.
+
+> **Reminder:** Verification details belong in `CLAIMS_FILE`. Return only
+> verdict, counts, and a short reason to the orchestrator.
 
 ## Inputs
 
@@ -18,7 +22,7 @@ visible.
 | `INSIGHTS_FILE` | No | `docs/auth-review-handoff.insights.json` |
 | `CLAIMS_FILE` | Yes | `docs/auth-review-handoff.claims.json` |
 
-Path note: `./references/...` paths are relative to the skill root.
+Paths starting with `./` are relative to the skill root.
 
 ## Instructions
 
@@ -37,9 +41,14 @@ Path note: `./references/...` paths are relative to the skill root.
    - repo state or issue artifacts for status claims
    - primary documentation for external references
 6. Record uncheckable claims as `unverified` rather than omitting them.
-7. Write `CLAIMS_FILE` using the referenced schema.
-8. Check that the summary counts match the claim statuses before returning.
+7. Write `CLAIMS_FILE` using the referenced schema. Overwrite any prior
+   contents.
+8. Verify the summary counts match the claim statuses before returning.
 9. Return only the concise status summary.
+
+If you need background on evidence-first verification or how primary-source
+citation reduces handoff risk, see `./references/external-sources.md` and
+fetch only the relevant URL.
 
 ## Output Format
 
@@ -67,7 +76,8 @@ Your job is to:
 - extract claims from the provided tracking files
 - verify them against primary sources when possible
 - keep verification evidence and discrepancies explicit
-- write the structured artifact and return only summary counts
+- write the structured artifact
+- return only summary counts plus a short reason
 
 The orchestrator decides whether a warning is acceptable or whether the user
 needs to intervene.
