@@ -18,9 +18,9 @@ and validation gates. External pages are optional just-in-time background.
 
 ## Fetch Policy
 
-- Use `./references/data-contracts.md` for artifact paths, schemas, final
+- Use `./data-contracts.md` for artifact paths, schemas, final
   document sections, and local execution contracts.
-- Use `./references/quality-checklist.md` for validation gates and rerun
+- Use `./quality-checklist.md` for validation gates and rerun
   routing.
 - Fetch external URLs for rationale, current platform behavior, or examples
   that would otherwise bloat local prompts.

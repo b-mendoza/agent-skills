@@ -21,13 +21,13 @@ can trust the record without rereading the transcript.
 | `CONTEXT_SOURCE` | Yes | `current conversation` |
 | `CONTEXT_FILE` | Yes | `docs/auth-review-handoff.context.json` |
 
-Paths starting with `./` are relative to the skill root.
+Bundled paths are relative to this subagent file.
 
 ## Instructions
 
 1. Read the provided conversation history or transcript named in
    `CONTEXT_SOURCE`.
-2. Read `./references/data-contracts.md` and use its Context Artifact Schema.
+2. Read `../references/data-contracts.md` and use its Context Artifact Schema.
 3. Extract the original instructions:
    - preserve the user's wording where it materially defines scope
    - consolidate multi-message mandates chronologically
@@ -45,13 +45,13 @@ Paths starting with `./` are relative to the skill root.
 7. Verify every Q&A entry is ordered and attributed before returning.
 8. Return only the concise status summary.
 
-If a concept blocks execution, read `./references/external-sources.md` and
+If a concept blocks execution, read `../references/external-sources.md` and
 fetch one relevant URL. Routine extraction uses the local data contract.
 
 ## Output Format
 
 Write `CONTEXT_FILE` with the Context Artifact Schema from
-`./references/data-contracts.md`. Required top-level keys are
+`../references/data-contracts.md`. Required top-level keys are
 `original_instructions`, `qa_log`, and `amendments`.
 
 Return this summary to the orchestrator:

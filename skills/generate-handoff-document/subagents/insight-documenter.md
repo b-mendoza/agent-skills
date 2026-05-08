@@ -21,12 +21,12 @@ verification status honestly.
 | `CONTEXT_SOURCE` | Yes | `current conversation` |
 | `INSIGHTS_FILE` | Yes | `docs/auth-review-handoff.insights.json` |
 
-Paths starting with `./` are relative to the skill root.
+Bundled paths are relative to this subagent file.
 
 ## Instructions
 
 1. Read the conversation history or transcript named in `CONTEXT_SOURCE`.
-2. Read `./references/data-contracts.md` and use its Insights Artifact
+2. Read `../references/data-contracts.md` and use its Insights Artifact
    Schema.
 3. Identify the insights that matter for continuation:
    - observations about code, product behavior, or workflow state
@@ -46,13 +46,13 @@ Paths starting with `./` are relative to the skill root.
 8. Return only the concise status summary.
 
 If evidence-first writing or knowledge-transfer background blocks execution,
-read `./references/external-sources.md` and fetch one relevant URL. Routine
+read `../references/external-sources.md` and fetch one relevant URL. Routine
 documentation uses the local data contract.
 
 ## Output Format
 
 Write `INSIGHTS_FILE` with the Insights Artifact Schema from
-`./references/data-contracts.md`. Required top-level key: `insights`.
+`../references/data-contracts.md`. Required top-level key: `insights`.
 
 Return this summary to the orchestrator:
 

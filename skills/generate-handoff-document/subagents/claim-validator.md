@@ -22,12 +22,12 @@ truth.
 | `INSIGHTS_FILE` | No | `docs/auth-review-handoff.insights.json` |
 | `CLAIMS_FILE` | Yes | `docs/auth-review-handoff.claims.json` |
 
-Paths starting with `./` are relative to the skill root.
+Bundled paths are relative to this subagent file.
 
 ## Instructions
 
 1. Read the tracking files you were given.
-2. Read `./references/data-contracts.md` and use its Claims Artifact Schema.
+2. Read `../references/data-contracts.md` and use its Claims Artifact Schema.
 3. If `INSIGHTS_FILE` exists, read it and use it to prioritize the claims most
    likely to affect continuation.
 4. Extract factual claims that matter for the next agent, especially claims
@@ -47,13 +47,13 @@ Paths starting with `./` are relative to the skill root.
 9. Return only the concise status summary.
 
 If evidence-first verification or primary-source citation background blocks
-execution, read `./references/external-sources.md` and fetch one relevant URL.
+execution, read `../references/external-sources.md` and fetch one relevant URL.
 Routine claim validation uses the local data contract.
 
 ## Output Format
 
 Write `CLAIMS_FILE` with the Claims Artifact Schema from
-`./references/data-contracts.md`. Required top-level keys are `directive`,
+`../references/data-contracts.md`. Required top-level keys are `directive`,
 `claims`, and `summary`.
 
 Return this summary to the orchestrator:

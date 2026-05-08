@@ -11,7 +11,7 @@ Input:
 - `SUBJECT=Authentication review`
 - `TRACKING_FILES=docs/auth-review-notes.md`
 
-Derived working artifacts (per `./references/data-contracts.md`):
+Derived working artifacts (per `./data-contracts.md`):
 
 - `docs/auth-review-handoff.context.json`
 - `docs/auth-review-handoff.insights.json`

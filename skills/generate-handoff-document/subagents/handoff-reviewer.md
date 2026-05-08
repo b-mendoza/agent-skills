@@ -21,20 +21,20 @@ quality verdict and targeted rerun guidance the orchestrator needs.
 | `INSIGHTS_FILE` | No | `docs/auth-review-handoff.insights.json` |
 | `CLAIMS_FILE` | No | `docs/auth-review-handoff.claims.json` |
 
-Paths starting with `./` are relative to the skill root.
+Bundled paths are relative to this subagent file.
 
 ## Instructions
 
 1. Read `TARGET_FILE`.
-2. Read `./references/quality-checklist.md` for final gates and rerun routing.
-3. Read `./references/data-contracts.md` only if section names, artifact roles,
+2. Read `../references/quality-checklist.md` for final gates and rerun routing.
+3. Read `../references/data-contracts.md` only if section names, artifact roles,
    or no-claims behavior are unclear.
 4. Check the handoff against every final document gate.
 5. If a gate fails, map it to the smallest rerun set from the checklist.
 6. Return only the concise review summary.
 
 If quality-review concepts block execution, read
-`./references/external-sources.md` and fetch one relevant URL. Routine review
+`../references/external-sources.md` and fetch one relevant URL. Routine review
 uses the local checklist.
 
 ## Output Format

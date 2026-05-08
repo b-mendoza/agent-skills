@@ -23,12 +23,12 @@ traceability, uncertainty, and continuity rather than smoothing them away.
 | `INSIGHTS_FILE` | Yes | `docs/auth-review-handoff.insights.json` |
 | `CLAIMS_FILE` | No | `docs/auth-review-handoff.claims.json` |
 
-Paths starting with `./` are relative to the skill root.
+Bundled paths are relative to this subagent file.
 
 ## Instructions
 
-1. Read `./references/data-contracts.md` for the final document requirements.
-2. Read `./references/handoff-template.md` only when you are ready
+1. Read `../references/data-contracts.md` for the final document requirements.
+2. Read `../references/handoff-template.md` only when you are ready
    to assemble. The template is intentionally loaded just-in-time at this
    step.
 3. Read `CONTEXT_FILE` and `INSIGHTS_FILE`. Read `CLAIMS_FILE` if one was
@@ -50,12 +50,12 @@ Paths starting with `./` are relative to the skill root.
 9. Return only the concise status summary.
 
 If session-handoff conventions or decision-record formatting block execution,
-read `./references/external-sources.md` and fetch one relevant URL. Routine
+read `../references/external-sources.md` and fetch one relevant URL. Routine
 assembly uses the local template and data contract.
 
 ## Output Format
 
-The final document must follow `./references/handoff-template.md`.
+The final document must follow `../references/handoff-template.md`.
 
 Return this summary to the orchestrator:
 
