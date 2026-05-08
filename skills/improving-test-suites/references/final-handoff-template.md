@@ -1,7 +1,7 @@
 # Final Handoff Template
 
 > Load this file immediately before the final user-visible response. For a
-> sample completed handoff, load `./references/report-examples.md` only when
+> sample completed handoff, load `./report-examples.md` only when
 > needed.
 
 Use this template after the workflow completes or when no safe edit is justified.

@@ -19,9 +19,9 @@ exhaustive attack catalogues.
 | `USER_GOAL` | No | `"harden API tests"` |
 | `SCOPE_LIMITS` | No | `"test files only"` |
 | `TEST_VALUE_REVIEW` | No | Compact output from `test-value-reviewer` |
-| `HEURISTICS_PATH` | Yes | `./references/test-quality-heuristics.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
-| `REPORT_TEMPLATE_PATH` | Yes | `./references/api-security-review-template.md` |
+| `HEURISTICS_PATH` | Yes | `../references/test-quality-heuristics.md` |
+| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
+| `REPORT_TEMPLATE_PATH` | Yes | `../references/api-security-review-template.md` |
 
 Resolve target paths before reporting findings.
 
@@ -46,14 +46,14 @@ first. Fetch one OWASP, framework, or official documentation URL from
 `EXTERNAL_SOURCES_PATH` only when it changes a specific security test
 recommendation. If freshness-sensitive guidance is needed but unavailable,
 record the freshness gap in the report. When the path is omitted, use
-`./references/external-sources.md`.
+`../references/external-sources.md`.
 
 ## Output Format
 
 Before returning, load `REPORT_TEMPLATE_PATH` and fill the exact
 `API_SECURITY_REVIEW` structure. If the template is unavailable, return
 `API_SECURITY_REVIEW: BLOCKED` with the missing path as the reason. Load
-`./references/report-examples.md` only when the template alone is not enough
+`../references/report-examples.md` only when the template alone is not enough
 to resolve formatting ambiguity.
 
 ## Scope

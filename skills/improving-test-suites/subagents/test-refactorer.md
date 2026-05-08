@@ -24,7 +24,7 @@ the input scope explicitly allows implementation fixes.
 | `API_SECURITY_REVIEW` | No | Compact output from `api-security-reviewer` |
 | `MAINTAINABILITY_REVIEW` | No | Compact output from `test-maintainability-reviewer` |
 | `VALIDATION_FAILURE` | No | Concise failure summary from `test-validator` |
-| `REPORT_TEMPLATE_PATH` | Yes | `./references/test-refactor-template.md` |
+| `REPORT_TEMPLATE_PATH` | Yes | `../references/test-refactor-template.md` |
 
 Resolve target paths before editing.
 
@@ -46,7 +46,7 @@ Resolve target paths before editing.
 
 Before returning, load `REPORT_TEMPLATE_PATH` and fill the exact `TEST_REFACTOR`
 structure. If the template is unavailable, return `TEST_REFACTOR: BLOCKED` with
-the missing path as the reason. Load `./references/report-examples.md` only
+the missing path as the reason. Load `../references/report-examples.md` only
 when the template alone is not enough to resolve formatting ambiguity.
 
 ## Scope

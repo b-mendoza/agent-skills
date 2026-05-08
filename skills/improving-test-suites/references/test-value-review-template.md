@@ -1,7 +1,7 @@
 # Test Value Review Template
 
 > Load this file immediately before returning `TEST_VALUE_REVIEW`. For sample
-> completed reports, load `./references/report-examples.md` only when needed.
+> completed reports, load `./report-examples.md` only when needed.
 
 Return this exact structure.
 

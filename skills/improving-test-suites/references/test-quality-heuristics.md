@@ -3,10 +3,10 @@
 > Read this file before classifying tests during a value, API/security, or
 > maintainability review, or before synthesizing the minimal harness decision.
 > For deeper rationale, fetch the relevant URL from
-> `./references/external-sources.md`.
+> `./external-sources.md`.
 
 This file holds only operational categories and ordering rules. Deeper testing
-rationale lives behind the source keys in `./references/external-sources.md` and
+rationale lives behind the source keys in `./external-sources.md` and
 is fetched only when it changes a concrete decision.
 
 ## Trade-Off Priority

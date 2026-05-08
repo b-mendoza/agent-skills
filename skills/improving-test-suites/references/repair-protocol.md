@@ -37,6 +37,6 @@ changed files, decision needed, and retry count in context.
 
 ## Handoff After Repair
 
-Before the final response, load `./references/final-handoff-template.md`.
+Before the final response, load `./final-handoff-template.md`.
 Include the repair count, final validation result, unresolved blockers, skipped
 optional reviews, and any likely production bug candidate in `Remaining risks`.

@@ -17,8 +17,8 @@ scope:
 | `TEST_COMMAND` | Supplied or obvious | Prefer the narrow target command |
 | `SCOPE_LIMITS` | Supplied or important | Example: `test files only` |
 | `REFERENCE_NEED` | User named a topic | Example: `pytest parametrization` |
-| `EXTERNAL_SOURCES_PATH` | Only when source-backed support is requested or needed | `./references/external-sources.md` |
-| `HEURISTICS_PATH` | Review subagents and synthesis | `./references/test-quality-heuristics.md` |
+| `EXTERNAL_SOURCES_PATH` | Only when source-backed support is requested or needed | `./external-sources.md` |
+| `HEURISTICS_PATH` | Review subagents and synthesis | `./test-quality-heuristics.md` |
 | `REPORT_TEMPLATE_PATH` | Every subagent | The template that matches that subagent |
 
 ## Phase Routing
@@ -26,8 +26,8 @@ scope:
 ### 1. Test Value Review
 
 Dispatch `test-value-reviewer` with the dispatch packet, `HEURISTICS_PATH`, and
-`REPORT_TEMPLATE_PATH=./references/test-value-review-template.md`.
-Include `EXTERNAL_SOURCES_PATH=./references/external-sources.md` only when the
+`REPORT_TEMPLATE_PATH=./test-value-review-template.md`.
+Include `EXTERNAL_SOURCES_PATH=./external-sources.md` only when the
 user requested a source-backed decision or the reviewer reaches a concrete
 source need.
 
@@ -54,13 +54,13 @@ result.
 
 Use these template paths:
 
-- `api-security-reviewer`: `./references/api-security-review-template.md`
-- `test-maintainability-reviewer`: `./references/test-maintainability-review-template.md`
+- `api-security-reviewer`: `./api-security-review-template.md`
+- `test-maintainability-reviewer`: `./test-maintainability-review-template.md`
 
 ### 3. Minimal Harness Decision
 
 Synthesize `MINIMAL_HARNESS_DECISION` using the priorities and rules in
-`./references/test-quality-heuristics.md`. Include:
+`./test-quality-heuristics.md`. Include:
 
 - Tests or areas to delete, rewrite, consolidate, keep, and add
 - Public behavior contracts and failure modes to preserve
@@ -77,7 +77,7 @@ template.
 Dispatch `test-refactorer` with the original dispatch packet,
 `MINIMAL_HARNESS_DECISION`, concise review reports, any validation failure
 summary from a repair cycle, and
-`REPORT_TEMPLATE_PATH=./references/test-refactor-template.md`.
+`REPORT_TEMPLATE_PATH=./test-refactor-template.md`.
 
 Collect only: status, changed files, actions applied, production code
 changes, unapplied decisions, potential production bugs, suggested
@@ -87,7 +87,7 @@ validation command, reason, and decision needed.
 
 Dispatch `test-validator` with target files, test command if supplied,
 changed files, suggested validation command, scope limits, and
-`REPORT_TEMPLATE_PATH=./references/test-validation-template.md`.
+`REPORT_TEMPLATE_PATH=./test-validation-template.md`.
 
 Collect only: status, command, concise result, likely cause, failure
 summary, recommended next action, reason, and decision needed.
@@ -108,12 +108,12 @@ gives enough evidence for a safe edit. Record the skipped optional review as
 a remaining risk.
 
 When validation returns `FAIL`, `BLOCKED`, or repeated `ERROR`, load
-`./references/repair-protocol.md`. Keep the repair details out of the normal
+`./repair-protocol.md`. Keep the repair details out of the normal
 prompt path until they are needed.
 
 ## Handoff
 
 Before the user-visible final response, load
-`./references/final-handoff-template.md`. Include changed harness summary,
+`./final-handoff-template.md`. Include changed harness summary,
 files changed, validation command and result, fetched URLs, and remaining
 risks.
