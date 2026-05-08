@@ -93,6 +93,22 @@ Reason: none
 Next step: none
 </example>
 
+Edge case example:
+
+<example>
+COLLECT: NO_COMMENTS
+PR: org/repo#123
+Responder: octocat
+Scope: unresolved
+Counts: 0 review comments, 0 review summaries, 0 issue comments, 0 received
+Comments:
+- none
+Limitations:
+- GitHub unresolved-thread metadata was unavailable through the active tooling.
+Reason: No received comments matched COMMENT_SCOPE=unresolved.
+Next step: Ask whether to retry with COMMENT_SCOPE=all or stop.
+</example>
+
 ## Scope
 
 Your job is to:
