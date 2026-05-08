@@ -5,100 +5,34 @@ description: "Check whether required workflow artifacts exist and satisfy phase 
 
 # Artifact Validator
 
-You are a validation subagent. Verify the artifact expected at a specific phase
-boundary and return a short verdict that tells the orchestrator whether it can
-advance, retry, or stop.
+You are a validation subagent. Verify one requested workflow boundary and return
+a compact verdict that tells the orchestrator whether it can advance, retry, or
+stop.
 
 ## Inputs
 
-| Input          | Required | Example         |
-| -------------- | -------- | --------------- |
-| `ISSUE_SLUG`   | Yes      | `acme-app-42`   |
-| `PHASE`        | Yes      | `2`             |
-| `DIRECTION`    | Yes      | `postcondition` |
-| `TASK_NUMBER`  | Required only for task-specific phases 5–7 | `3` |
+| Input | Required | Example |
+| ----- | -------- | ------- |
+| `ISSUE_SLUG` | Yes | `acme-app-42` |
+| `PHASE` | Yes | `2` |
+| `DIRECTION` | Yes | `postcondition` |
+| `TASK_NUMBER` | Required only for task-specific phases 5-7 | `3` |
 
 ## Instructions
 
-Use the phase-boundary matrix below to determine the exact checks for the
-requested boundary, then follow the validation procedure that follows it.
-
-The matrix matches `../references/data-contracts.md`. Use the same boundary
-rules in both places.
-
-### Phase Boundary Matrix
-
-For Phase 1, the checks below are the orchestrator-facing summary of the stable
-snapshot contract owned by `../../fetching-github-issue/SKILL.md`.
-
-For Phase 2 and Phase 3 preconditions, do not fall back to the older shorthand
-of "contains `## Tasks` and has task entries." Those boundaries must stay
-aligned with the richer contract owned by
-`../../planning-github-issue-tasks/SKILL.md` and consumed by
-`../../clarifying-assumptions/SKILL.md`.
-
-For the clarification boundaries, validate the artifact outputs that the
-downstream skill writes to disk. The orchestrator still handles
-`RE_PLAN_NEEDED` and `BLOCKERS_PRESENT` separately from this validator.
-
-For Phase 4 postcondition and the Phase 5 precondition, validate the stronger
-handoff owned by `../../creating-github-child-issues/SKILL.md`: the
-workflow-level `## GitHub Task Issues` table plus the per-task inline issue
-references recorded for each numbered plan task, with exactly one inline
-`GitHub Task Issue:` marker in every numbered task section (exact line format
-owned by that skill).
-
-For the Phase 5 postcondition and Phase 6 precondition, validate the concrete
-planning handoff owned by `../../planning-github-task/SKILL.md`: brief, execution
-plan, test spec, and refactoring plan. The detailed section-level requirements
-inside those files are outside this validator's contract.
-
-For the Phase 7 precondition, validate the normal workflow handoff from Phases
-1-6. This confirms the issue snapshot, workflow task plan, and critique
-artifacts all exist before execution begins.
-Do not widen this check with execution-skill-internal optional inputs.
-
-| Phase | Direction     | File                                 | Checks                                                         |
-| ----- | ------------- | ------------------------------------ | -------------------------------------------------------------- |
-| 1     | postcondition | `docs/<ISSUE_SLUG>.md`               | File exists and preserves the locked Phase 1 snapshot top-level heading order defined by `fetching-github-issue` (stable even when sections are empty): `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Child Issues`, `## Linked Issues`, `## Labels`, `## Assignees`, `## Milestone`, `## Projects`, `## Attachments` |
-| 2     | precondition  | `docs/<ISSUE_SLUG>.md`               | Same as Phase 1 postcondition                                  |
-| 2     | postcondition | `docs/<ISSUE_SLUG>-tasks.md` + planning intermediates | `docs/<ISSUE_SLUG>-stage-1-detailed.md` exists; `docs/<ISSUE_SLUG>-stage-2-prioritized.md` exists; `docs/<ISSUE_SLUG>-tasks.md` exists; final plan preserves this required top-level section order: `## Issue Summary`, `## Execution Order Summary`, `## Problem Framing`, `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`, `## Tasks`, `## Dependency Graph`, and `## Validation Report`; plan has at least 2 numbered task entries with the required task subsections from `planning-github-issue-tasks` |
-| 3     | precondition  | `docs/<ISSUE_SLUG>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
-| 3     | postcondition | `docs/<ISSUE_SLUG>-upfront-critique.md` + `docs/<ISSUE_SLUG>-tasks.md` | `docs/<ISSUE_SLUG>-upfront-critique.md` exists; `docs/<ISSUE_SLUG>-tasks.md` contains `## Decisions Log` |
-| 4     | precondition  | `docs/<ISSUE_SLUG>-upfront-critique.md` + `docs/<ISSUE_SLUG>-tasks.md` | Same as Phase 3 postcondition                                  |
-| 4     | postcondition | `docs/<ISSUE_SLUG>-tasks.md`         | Contains `## GitHub Task Issues`; includes the machine handoff comment defined by `creating-github-child-issues`; has the workflow-level table with one row per numbered plan task; every numbered task section contains exactly one inline `GitHub Task Issue:` line whose value matches that task's workflow-table row (`owner/repo#number`, `Not Created`, or `task-list`), using the exact line format owned by `creating-github-child-issues` |
-| 5     | precondition  | `docs/<ISSUE_SLUG>-tasks.md`         | Same as Phase 4 postcondition                                  |
-| 5     | postcondition | `docs/<ISSUE_SLUG>-task-<N>-brief.md` + `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` + `docs/<ISSUE_SLUG>-task-<N>-test-spec.md` + `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` | All 4 concrete planning artifacts exist for task `N`           |
-| 6     | precondition  | Same four files as Phase 5 postcondition | Same as Phase 5 postcondition                                  |
-| 6     | postcondition | `docs/<ISSUE_SLUG>-task-<N>-critique.md` + `docs/<ISSUE_SLUG>-task-<N>-decisions.md` | Both critique and decisions artifacts exist for task `N`       |
-| 7     | precondition  | Standard Phase 1-6 execution handoff | `docs/<ISSUE_SLUG>.md`, `docs/<ISSUE_SLUG>-tasks.md`, `docs/<ISSUE_SLUG>-task-<N>-brief.md`, `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md`, `docs/<ISSUE_SLUG>-task-<N>-test-spec.md`, `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md`, `docs/<ISSUE_SLUG>-task-<N>-critique.md`, and `docs/<ISSUE_SLUG>-task-<N>-decisions.md` all exist; this confirms the normal workflow reached execution after critique completion (**6 → 7 readiness**) |
-
-If the phase boundary is unclear, consult `../references/data-contracts.md` for
-the same matrix in reference form.
-
-### Validation Procedure
-
-1. Determine the expected file or file set for the requested phase boundary.
-2. Check existence first.
-3. When content validation is required, use targeted section/pattern checks
+1. Read `../references/data-contracts.md` for the requested `PHASE` and
+   `DIRECTION`.
+2. Use only the matching row or section for that boundary.
+3. Check file existence first.
+4. When content validation is required, use targeted section and pattern checks
    rather than reading full files into context.
-4. When the boundary expects a file set, list the expected artifacts explicitly
-   in the `Checks` section.
-5. For the Phase 2 postcondition and Phase 3 precondition, validate both the
-   preserved stage artifacts and the full final-plan structure, because the
-   next phase depends on all of them.
-6. For the Phase 3 and Phase 6 postconditions, validate the critique artifact
-   plus the companion planning or decisions artifact expected at that boundary.
-7. For the Phase 4 postcondition and Phase 5 precondition, confirm the plan
-   contains `## GitHub Task Issues`, includes the machine handoff comment under
-   that heading, that the table covers the numbered tasks, and that every
-   numbered task section contains exactly one inline `GitHub Task Issue:` line
-   whose value matches the workflow-table row for that task (per
-   `creating-github-child-issues`).
-8. For the Phase 7 precondition, confirm the issue snapshot and workflow task
-   plan still exist, then verify that the standard Phase 5 and Phase 6 handoff
-   artifacts are present for the normal workflow path into execution.
-9. Return only the structured verdict.
+5. When the boundary expects a file set, list each expected artifact explicitly
+   in `Checks`.
+6. For Phase 3 and Phase 6, validate only the artifact boundary. The
+   orchestrator handles `RE_PLAN_NEEDED` and `BLOCKERS_PRESENT` separately.
+7. For Phase 7, validate only the standard Phase 1-6 handoff. Execution-skill
+   optional inputs stay outside this validator's contract.
+8. Return only the structured verdict.
 
 Be precise about what failed. The orchestrator needs a specific missing file,
 missing section, or failed count check so it can decide whether to re-run a
