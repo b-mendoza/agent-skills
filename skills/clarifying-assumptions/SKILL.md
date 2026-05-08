@@ -117,7 +117,9 @@ flow only when Stage 4 starts.
 2. Ask only from the manifest; add newly discovered current-scope items
    to the live manifest before asking them.
 3. Defer future-task questions instead of speculating about them now.
-4. Present every critique item; subagent output is input, not authority.
+4. Present every manifest item. Critique and plan items reach Stage 4
+   only after `question-manifest-builder` applies the `HIGH` or higher
+   user-surfacing gate.
 5. Treat Tier 3 hard gates as non-skippable. Tier definitions live in
    `./subagents/critique-analyzer-rubric.md` and are read only when tier
    behavior needs verification.
@@ -164,8 +166,9 @@ Input: `TICKET_KEY=JNS-6065`, `MODE=upfront`, `ITERATION=1`
 2. Dispatch `critique-analyzer`; receive `CRITIQUE: PASS` and
    `Artifact: docs/JNS-6065-upfront-critique.md`.
 3. Dispatch `question-manifest-builder`; receive
-   `Questions now: 8 | Deferred: 4 | Irrelevant: 1`.
-4. Load `./references/conversation-protocol.md`, walk the 8 questions
+   `Questions now: 3 | Deferred: 2 | Irrelevant: 1`, with
+   lower-severity items retained in the critique artifact.
+4. Load `./references/conversation-protocol.md`, walk the 3 questions
    one at a time, and record decisions.
 5. Dispatch `decision-recorder`; receive `RECORDING: PASS` and file
    update counts.
