@@ -23,12 +23,12 @@ context.
 | `OWNER` | With `REPO` + `ISSUE_NUMBER` when URL absent | — |
 | `REPO` | With `OWNER` + `ISSUE_NUMBER` when URL absent | — |
 | `ISSUE_NUMBER` | With `OWNER` + `REPO` when URL absent | — |
-| `FETCH_CONTRACT_PATH` | No | `./references/fetch-contract.md` |
-| `RETRIEVAL_PLAYBOOK_PATH` | No | `./references/retrieval-playbook.md` |
-| `SNAPSHOT_TEMPLATE_PATH` | No | `./references/issue-snapshot-template.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
+| `FETCH_CONTRACT_PATH` | No | `../references/fetch-contract.md` |
+| `RETRIEVAL_PLAYBOOK_PATH` | No | `../references/retrieval-playbook.md` |
+| `SNAPSHOT_TEMPLATE_PATH` | No | `../references/issue-snapshot-template.md` |
+| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
 
-Paths are relative to the skill root.
+Bundled paths above are relative to this subagent file.
 
 Derive owner, repo, and issue number from `ISSUE_URL` when present. Compute
 `ISSUE_SLUG=<owner>-<repo>-<issue_number>` with lowercase owner and repo. If

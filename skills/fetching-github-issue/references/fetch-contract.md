@@ -116,7 +116,7 @@ appear only when the section has material or a required `Not retrieved`
 placeholder. Use `_None_` for verified empty sections; use the template's
 `_Unknown..._` markers when child-issue, linked-issue, or project discovery
 is unverified after the parent issue was retrieved. The full snapshot shape
-lives in `./references/issue-snapshot-template.md`.
+lives in `./issue-snapshot-template.md`.
 
 ## Coordinator Report Phrasing
 

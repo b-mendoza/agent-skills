@@ -99,7 +99,7 @@ to that comment section, record the same warning under
 
 ## Assembly
 
-Read `./references/issue-snapshot-template.md` only at assembly time. Copy
+Read `./issue-snapshot-template.md` only at assembly time. Copy
 the fenced shape into `docs/<ISSUE_SLUG>.md` and fill it from retrieved
 data. Top-level headings are always required. For empty scalar metadata
 values, write `_None_`. Normalize timestamps with times to
