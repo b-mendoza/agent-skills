@@ -4,10 +4,23 @@ Read this file when `dependency-prioritizer` is turning the stage 1 plan into
 the ordered stage 2 plan.
 
 > **Reminder:** Apply the operational rules below first. Fetch a URL from
-> `./external-sources.md` only when you need background (for example
+> `./references/external-sources.md` only when you need background (for example
 > `git-check-ref-format` for branch-name validity edge cases, `topological-sort`
 > for ordering rationale, `rice-scoring` for prioritization rationale, or
 > `feature-branch-workflow` for the `feature/` prefix convention).
+
+## Optional Source Lookups
+
+The local rules below are enough for normal execution. Use these source keys
+only when an edge case or explanation needs source-backed support:
+
+| Need | Source key in `./references/external-sources.md` |
+| ---- | ------------------------------------- |
+| Git ref validity edge case | `git-check-ref-format` |
+| `feature/` branch convention background | `feature-branch-workflow` |
+| Topological-sort definition or cycle handling | `topological-sort` |
+| Prioritization scoring rationale | `rice-scoring` |
+| Jira parent / subtask behavior | `jira-subtasks` |
 
 ## Dependency Classes
 
@@ -23,8 +36,7 @@ unless an upstream output or shared-file risk makes the order mandatory.
 ## Prioritization
 
 Score each task from 1 to 5 on Risk, Complexity, Value unlock, and Dependency.
-Total is the sum out of 20. (For background on similar weighted prioritization
-schemes see `rice-scoring` in `./external-sources.md`.)
+Total is the sum out of 20.
 
 Apply ordering rules in this order:
 
@@ -34,8 +46,7 @@ Apply ordering rules in this order:
 4. Defer low-risk, low-complexity tasks when nothing depends on them.
 5. Group related tasks when it reduces context switching and keeps the graph valid.
 
-The final order must be a valid topological sort. See `topological-sort` in
-`./external-sources.md` for definition and corner cases.
+The final order must be a valid topological sort.
 
 ## Branch Naming
 
@@ -60,9 +71,10 @@ Rules:
 - Lowercase the Jira key.
 - Slugify the task title as short kebab-case; prefer a short slug over copying
   the full title.
-- Branch names must be valid Git refs. Validate against `git-check-ref-format`
-  in `./external-sources.md` (no spaces, no `..`, no leading or trailing `/`,
-  no trailing `.lock`, none of `~`, `^`, `:`, `?`, `*`, `[`, or backslash).
+- Branch names must be valid Git refs: no spaces, no `..`, no leading or
+  trailing `/`, no trailing `.lock`, and none of `~`, `^`, `:`, `?`, `*`, `[`,
+  or backslash. Fetch `git-check-ref-format` only for edge cases not covered
+  here.
 
 ## Current-Subtask Mode
 

@@ -6,8 +6,19 @@ Jira subtasks.
 
 > **Reminder:** The required sections and per-task fields below are the
 > binding output contract. For background on Jira's parent-ticket / subtask
-> hierarchy or branch-name validity, see `./external-sources.md`
+> hierarchy or branch-name validity, see `./references/external-sources.md`
 > (`jira-subtasks`, `git-check-ref-format`).
+
+## Optional Source Lookups
+
+Use the local contract first. Fetch external sources only for current platform
+behavior or branch-name edge cases:
+
+| Need | Source key in `./references/external-sources.md` |
+| ---- | ------------------------------------- |
+| Jira parent / subtask semantics | `jira-subtasks` |
+| Git branch-name edge case | `git-check-ref-format` |
+| Team branch-prefix convention background | `conventional-branches`, `feature-branch-workflow` |
 
 ## Snapshot Contract
 

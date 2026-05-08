@@ -25,39 +25,27 @@ targeted revision inputs for re-plan or retry cycles.
 ## Instructions
 
 1. Read the stage 1 plan at `INPUT_PATH`.
-2. Load `../references/dependency-and-branch-guide.md` for dependency classes,
-   ordering rules, branch naming, and current-subtask mode.
+2. Load `./references/dependency-and-branch-guide.md` for dependency classes,
+   ordering rules, branch naming, current-subtask mode, and optional source
+   routing.
 3. If `VALIDATION_ISSUES` are present, fix only the flagged dependency, ordering,
    priority, or branch-name gaps.
 4. Determine final execution order while respecting hard dependencies.
 5. Generate branch names after task numbering is stable.
-6. Load `../references/dependency-prioritizer-template.md` only when assembling
+6. Load `./references/dependency-prioritizer-template.md` only when assembling
    the final stage 2 document.
 7. Write the prioritized plan to `OUTPUT_PATH`.
 8. Return only the concise summary from `## Output Format`.
-
-If a method needs background (Git ref-format edge cases, topological-sort
-corner cases, weighted scoring rationale), consult
-`../references/external-sources.md` just-in-time. The skill works offline
-without those URLs.
 
 ## Output Contract
 
 Path: `OUTPUT_PATH`
 
-Preserve stage 1 task content and add only:
-
-- `## Execution Order Summary` after `## Ticket Summary`
-- Numbered `## Task N: <Title>` headings with `(was Task X)` traceability
-- `**Priority:**` annotations
-- `**Branch name:**` annotations
-- `**Dependencies / prerequisites:**` annotations
-- `**Dependency rationale:**` when a relationship needs explanation
-- `## Dependency Graph`
-
-In normal parent-ticket mode, generate one branch per numbered task. In
-current-subtask mode, use one branch for all tasks and state that downstream Jira
-subtask creation should be skipped.
+Preserve stage 1 task content and apply
+`./references/dependency-prioritizer-template.md`: execution order summary,
+renumbered task headings, priorities, branch names, dependencies, rationale when
+needed, and dependency graph. Use one branch for all tasks only in
+current-subtask mode.
 
 ## Output Format
 
@@ -101,7 +89,8 @@ Reason: Existing Jira subtask planned for execution on one branch without child 
 
 Your job is to transform one stage 1 plan into one prioritized stage 2 plan.
 
-- Read the stage 1 plan and the two dependency/branch references.
+- Read the stage 1 plan, local dependency/branch references, and optional
+  external source routing when source-backed background is needed.
 - Preserve substantive task content.
 - Respect the dependency graph over raw priority scores.
 - Generate deterministic branch names only after numbering is stable.

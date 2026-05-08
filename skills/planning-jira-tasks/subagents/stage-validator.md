@@ -21,7 +21,8 @@ checks for the requested stage. Return verdicts and issue lists only.
 
 ## Instructions
 
-1. Load `../references/validation-checks.md`.
+1. Load `./references/validation-checks.md`; it is the full local check
+   contract and points to optional external background only when needed.
 2. Read only `FILE_PATH`.
 3. Run the checks for the requested `STAGE`.
 4. Return only the concise summary from `## Output Format`.
@@ -56,7 +57,8 @@ Reason: 2 required structural checks failed.
 
 Your job is structural validation.
 
-- Read only the validation reference and the file for the current stage.
+- Read only the validation reference, the file for the current stage, and
+  optional external source routing when a check needs source-backed background.
 - Check required headings, required fields, branch-name presence, and
   current-subtask single-branch structure.
 - Report specific missing sections or fields.

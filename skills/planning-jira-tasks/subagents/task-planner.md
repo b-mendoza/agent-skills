@@ -27,44 +27,25 @@ permission to rewrite unrelated plan content.
 ## Instructions
 
 1. Read the ticket snapshot at `INPUT_PATH`.
-2. Load `../references/task-planning-guide.md` for decomposition, problem
-   framing, current-subtask detection, and quality checks.
+2. Load `./references/task-planning-guide.md` for decomposition, problem
+   framing, current-subtask detection, quality checks, and optional source
+   routing.
 3. If `VALIDATION_ISSUES` are present, revise only the flagged gaps while
    preserving already-correct content.
-4. Load `../references/task-planner-template.md` only when assembling the final
+4. Load `./references/task-planner-template.md` only when assembling the final
    stage 1 document.
 5. Write the finished plan to `OUTPUT_PATH`.
 6. Return only the concise summary from `## Output Format`.
-
-If a method needs background (problem-framing rationale, traceability,
-definition-of-done quality, INVEST), consult `../references/external-sources.md`
-just-in-time. The skill works offline without those URLs.
 
 ## Output Contract
 
 Path: `OUTPUT_PATH`
 
-The stage 1 plan must contain, in order:
-
-- `## Ticket Summary`
-- `## Problem Framing`
-- `## Assumptions and Constraints`
-- `## Cross-Cutting Open Questions`
-- `## Tasks`
-- `## Notes`
-
-Each stage 1 task uses letter labels (`### Task A`, `### Task B`) and includes:
-
-- `**Objective:**`
-- `**Relevant requirements and context:**` with a `Traces to` line
-- `**Questions to answer before starting:**`
-- `**Implementation notes:**`
-- `**Definition of done:**`
-- `**Likely files / artifacts affected:**`
-
-If the snapshot shows the current ticket is already a Jira subtask, record the
-current-subtask scope note described in `../references/task-planning-guide.md`.
-Stage 2 will convert that note into a single branch for all tasks.
+The stage 1 plan follows `./references/task-planner-template.md` exactly:
+summary, problem framing, assumptions, cross-cutting questions, lettered tasks,
+and notes. Every task must include traceability plus the six required per-task
+fields from `./references/task-planning-guide.md`. If the snapshot is already
+Jira child work, include the guide's current-subtask scope note.
 
 ## Output Format
 
@@ -105,7 +86,8 @@ Reason: Required input `INPUT_PATH` is missing or unreadable.
 
 Your job is to read one Jira snapshot and produce one stage 1 plan.
 
-- Read only the ticket snapshot and the two task-planning references.
+- Read only the ticket snapshot, local task-planning references, and optional
+  external source routing when source-backed background is needed.
 - Mark inferred problem framing honestly.
 - Produce self-contained, traceable lettered tasks.
 - Preserve current-subtask scope when the snapshot indicates it.

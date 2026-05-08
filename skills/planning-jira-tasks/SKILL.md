@@ -5,16 +5,15 @@ description: "Phase 2 of the Jira planning workflow. Reads a Jira ticket snapsho
 
 # Planning Jira Ticket Tasks
 
-Plan a Jira ticket into a structured execution artifact at
-`docs/<TICKET_KEY>-tasks.md`. This skill is the Phase 2 orchestrator in the Jira
-workflow: it dispatches specialist subagents, validates each artifact boundary,
-preserves planning artifacts for resume and critique, and returns concise
-handoff summaries to the parent workflow.
+Plan a Jira ticket snapshot into `docs/<TICKET_KEY>-tasks.md`. This is the
+Phase 2 orchestrator for the Jira planning workflow: it routes stages,
+dispatches specialists, preserves stage artifacts for resume and critique, and
+returns a concise handoff.
 
-The orchestrator does three things: **route** to the right stage, **dispatch**
-subagents with explicit file paths, and **decide** whether to advance, retry, or
-escalate from concise verdicts. Detailed contracts, retry rules, templates, and
-external source links are loaded only when needed.
+The orchestrator keeps only workflow state, subagent verdicts, paths, counts,
+and user decisions in context. Detailed contracts, templates, validation checks,
+and source-backed background are loaded just in time from bundled references or
+optional external URLs.
 
 ## Inputs
 
@@ -25,32 +24,22 @@ external source links are loaded only when needed.
 | `DECISIONS` | No | `SSO decision changes task dependencies` |
 
 Phase 2 is file-driven. `docs/<TICKET_KEY>.md` must already exist as the Jira
-ticket snapshot. Load `./references/output-contract.md` when you need the exact
-snapshot, final-plan, or branch-name contract.
+ticket snapshot.
 
 ## Progressive Loading Map
 
 | Need | Load |
 | ---- | ---- |
-| Exact final artifact contract, required sections, branch-name policy, current-subtask behavior | `./references/output-contract.md` |
-| Normal execution path, dispatch payloads, gate handling, retry loop, example | `./references/execution-guide.md` |
-| Critique-driven re-plan or recovery from preserved stage artifacts | `./references/re-plan-cycle.md` |
-| Optional just-in-time URL routing for branch validity, prioritization rationale, Jira subtasks, agent-skill patterns, or progressive-disclosure background | `./references/external-sources.md` |
+| Normal run, dispatch payloads, retry loop | `./references/execution-guide.md` |
+| Final artifact contract, branch policy, subtask handling | `./references/output-contract.md` |
+| Critique-driven re-plan or recovery from stage artifacts | `./references/re-plan-cycle.md` |
+| Source-backed background or current platform syntax | `./references/external-sources.md` |
+| Subagent-specific guides, templates, or validation checks | Load only from the dispatched subagent |
 
-Subagent definitions are loaded only when dispatching that subagent. Subagents
-load their own phase references just in time. The skill is fully functional
-offline; external URLs in `./references/external-sources.md` are progressive
-enhancement only.
-
-Subagent-owned references:
-
-| Reference | Loaded by |
-| --------- | --------- |
-| `./references/task-planning-guide.md` | `task-planner` during analysis |
-| `./references/task-planner-template.md` | `task-planner` during document assembly |
-| `./references/dependency-and-branch-guide.md` | `dependency-prioritizer` during analysis |
-| `./references/dependency-prioritizer-template.md` | `dependency-prioritizer` during document assembly |
-| `./references/validation-checks.md` | `stage-validator` and `task-validator` during checks |
+All bundled paths are relative to this skill folder and travel with the package.
+External URLs are optional progressive enhancement: fetch them only when local
+contracts need background or current syntax, and proceed from bundled references
+when network access is unavailable.
 
 ## Subagent Registry
 
@@ -61,60 +50,26 @@ Subagent-owned references:
 | `task-validator` | `./subagents/task-validator.md` | Validate the prioritized plan and append QA findings |
 | `stage-validator` | `./subagents/stage-validator.md` | Check preflight, inter-stage, and final structural gates |
 
-## Workflow Overview
-
-```text
-docs/<TICKET_KEY>.md
-       |
-       v
-stage-validator preflight
-       |
-       v
-task-planner -> docs/<TICKET_KEY>-stage-1-detailed.md
-       |
-       v
-dependency-prioritizer -> docs/<TICKET_KEY>-stage-2-prioritized.md
-       |
-       v
-task-validator -> docs/<TICKET_KEY>-tasks.md
-       |
-       v
-stage-validator postpipeline
-```
-
-Each stage writes a Category A orchestration artifact that stays on disk for
-critique, targeted retries, and workflow resume:
-
-| Stage | File | Produced by |
-| ----- | ---- | ----------- |
-| 1 | `docs/<TICKET_KEY>-stage-1-detailed.md` | `task-planner` |
-| 2 | `docs/<TICKET_KEY>-stage-2-prioritized.md` | `dependency-prioritizer` |
-| 3 | `docs/<TICKET_KEY>-tasks.md` | `task-validator` |
-
-Preserve these artifacts on disk. They are workflow state, not implementation
-outputs, and stay out of git history.
-
-## Branch and Subtask Policy
-
-The final plan must list a `**Branch name:**` for every numbered task that may
-become a Jira subtask. The dependency-prioritizer generates those names after
-task numbering is stable.
-
-When the source snapshot is itself a Jira subtask, keep the work scoped to the
-current subtask: use one branch for all task sections and state that downstream
-subtask creation should be skipped. This avoids creating subtasks of a subtask
-and keeps direct subtask execution inside a single PR/branch.
-
-## Execution Paths
+## Workflow
 
 | Path | When | Next reference |
 | ---- | ---- | -------------- |
 | Normal | `RE_PLAN` is absent or `false` | `./references/execution-guide.md` |
 | Re-plan | `RE_PLAN=true` with critique decisions | `./references/re-plan-cycle.md`, then `./references/execution-guide.md` |
 
-Use targeted fix loops only. When a gate fails, re-dispatch the stage that
-produced the failing artifact, pass only the validator's issues list, and rerun
-only the failing gate. Stop after 3 failed cycles for the same gate.
+The normal path is: preflight snapshot validation, Stage 1 detailed planning,
+Stage 1 validation, Stage 2 dependency/branch planning, Stage 2 validation,
+Stage 3 final validation report, Stage 3 validation, postpipeline validation,
+handoff.
+
+Preserve `docs/<TICKET_KEY>-stage-1-detailed.md`,
+`docs/<TICKET_KEY>-stage-2-prioritized.md`, and
+`docs/<TICKET_KEY>-tasks.md` on disk. They are orchestration state for resume,
+critique, and targeted retries; they are not implementation outputs.
+
+Use targeted fix loops only. Re-dispatch the stage that produced the failing
+artifact, pass only the validator's issue list, rerun only the failing gate, and
+stop after 3 failed cycles for the same gate.
 
 ## Return Format
 
@@ -139,11 +94,9 @@ Artifacts preserved: <comma-separated paths>
 <example>
 Input: `TICKET_KEY=JNS-6065`
 
-1. Load `./references/execution-guide.md`.
+1. Load `./references/execution-guide.md` for the dispatch payloads.
 2. Dispatch `stage-validator` for `preflight`; it returns `STAGE_VALIDATION: PASS`.
-3. Dispatch `task-planner`; it writes `docs/JNS-6065-stage-1-detailed.md`.
-4. Dispatch `dependency-prioritizer`; it writes `docs/JNS-6065-stage-2-prioritized.md` with branch names such as `feature/jns-6065-task-1-auth-schema`.
-5. Dispatch `task-validator`; it writes `docs/JNS-6065-tasks.md` and appends `## Validation Report`.
-6. Dispatch `stage-validator` for `postpipeline`; it returns `STAGE_VALIDATION: PASS`.
-7. Return the concise `PLANNING: PASS` handoff.
+3. Dispatch `task-planner`, `dependency-prioritizer`, and `task-validator` in sequence, validating after each produced artifact.
+4. Dispatch `stage-validator` for `postpipeline`; it returns `STAGE_VALIDATION: PASS`.
+5. Return the concise `PLANNING: PASS` handoff with preserved artifact paths.
 </example>

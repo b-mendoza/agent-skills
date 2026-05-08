@@ -4,16 +4,29 @@ Read this file when `task-planner` is turning a Jira ticket snapshot into the
 stage 1 detailed plan.
 
 > **Reminder:** Apply the operational sections below first. Fetch a URL from
-> `./external-sources.md` only when you need background on a method or a
+> `./references/external-sources.md` only when you need background on a method or a
 > definition (for example `five-whys`, `requirements-traceability`,
 > `definition-of-done`, `invest-criteria`, or `yagni`).
+
+## Optional Source Lookups
+
+The local rules below are enough for normal execution. Use these source keys
+only when a planning judgment needs method background or a cited rationale:
+
+| Need | Source key in `./references/external-sources.md` |
+| ---- | ------------------------------------- |
+| Underlying-need analysis | `five-whys` |
+| Traceability expectations | `requirements-traceability` |
+| Concrete completion criteria | `definition-of-done` |
+| Task-quality sanity check | `invest-criteria` |
+| Avoiding speculative scope | `yagni` |
+| Jira parent / subtask behavior | `jira-subtasks` |
 
 ## Problem Framing
 
 Capture the problem the ticket is trying to solve, not just the solution it
 prescribes. Mark inferred content as inference; gaps become Phase 3 critique
-fuel. For underlying-need framing background, see `five-whys` in
-`./external-sources.md`.
+fuel.
 
 Required subsections under `## Problem Framing`:
 
@@ -35,9 +48,8 @@ likely owner, and a verifiable definition of done. Useful categories when
 relevant: requirements, infrastructure, data changes, core logic, integration,
 UI/UX, testing, documentation, cleanup.
 
-Target 4-15 tasks. If the ticket clearly justifies fewer or more, keep the
-plan accurate and explain the exception in `## Notes`. For task-quality
-sanity-checks see `invest-criteria` in `./external-sources.md`.
+Target 4-15 tasks. If the ticket clearly justifies fewer or more, keep the plan
+accurate and explain the exception in `## Notes`.
 
 ## Existing Subtasks and Linked Issues
 
@@ -50,8 +62,7 @@ relationships in task decomposition when the snapshot makes them clear.
 
 If `## Metadata` indicates the current work item is a Jira subtask, or the
 snapshot otherwise shows it is already child work, record that in both
-`## Assumptions and Constraints` and `## Notes`. For Jira's parent / subtask
-hierarchy background, see `jira-subtasks` in `./external-sources.md`.
+`## Assumptions and Constraints` and `## Notes`.
 
 Use this wording in `## Notes` when applicable:
 
@@ -75,8 +86,7 @@ For each stage 1 task, write all six subsections:
 - `**Likely files / artifacts affected:**`
 
 Use letter labels (`Task A`, `Task B`, `Task C`). Stage 2 assigns final task
-numbers, dependencies, priorities, and branch names. For concrete vs. vague
-done-items see `definition-of-done` in `./external-sources.md`.
+numbers, dependencies, priorities, and branch names.
 
 ## Quality Self-Check
 
