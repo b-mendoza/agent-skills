@@ -1,12 +1,14 @@
 # Task Issue Creator Templates
 
-> Read this file only when you reach the description/body construction or
-> plan-update steps in `task-issue-creator.md`.
->
-> These are literal fragments and examples. Phase 4 contract semantics live in
-> `../references/phase-4-io-contracts.md`.
+Read this file only when constructing GitHub issue bodies or refreshing the
+local plan's `## GitHub Task Issues` section.
 
-## GitHub issue body fragment
+These are literal fragments and examples. Phase 4 artifact semantics live in
+`../references/phase-4-io-contracts.md`. For current `gh` flags, REST sub-issue
+syntax, or task-list behavior, fetch the relevant source from
+`../references/external-sources.md`.
+
+## GitHub Issue Body Fragment
 
 ```markdown
 ## Parent
@@ -31,7 +33,7 @@ Workflow task: **<N>** (from `docs/<ISSUE_SLUG>-tasks.md`)
 
 ## Questions to answer before starting
 
-<From plan or "None — all resolved">
+<From plan or "None - all resolved">
 
 ## Implementation notes
 
@@ -46,19 +48,19 @@ Workflow task: **<N>** (from `docs/<ISSUE_SLUG>-tasks.md`)
 <From plan>
 ```
 
-## Example task-list note
+## Example Task-List Note
 
 ```markdown
 - [ ] **(task-list)** This task is tracked as a checklist item on the parent issue or in this plan; no child issue number.
 ```
 
-## Example machine handoff comment
+## Example Machine Handoff Comment
 
 ```html
 <!-- phase4-handoff parent="OWNER/REPO#PARENT_NUMBER" model="linked-issue" capability="REST sub_issues unavailable; using gh issue create + parent URL in body" updated="2026-04-08T12:00:00Z" -->
 ```
 
-## Example `## GitHub Task Issues` section
+## Example `## GitHub Task Issues` Section
 
 ```markdown
 ## GitHub Task Issues
@@ -72,7 +74,7 @@ Workflow task: **<N>** (from `docs/<ISSUE_SLUG>-tasks.md`)
 | 3    | task-list | Task 3: Polish copy | task-list | task-list | None | Low |
 ```
 
-## Example per-task inline lines
+## Example Per-Task Inline Lines
 
 ```markdown
 GitHub Task Issue: acme/app#100
