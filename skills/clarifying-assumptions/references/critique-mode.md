@@ -50,9 +50,10 @@ Read `../subagents/question-manifest-builder.md`, then dispatch
 | `CURRENT_TASK_ARTIFACTS` | `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md`, `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md`, `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md`, `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md` |
 | `CRITIQUE_REPORT_FILE` | `docs/<TICKET_KEY>-task-<TASK_NUMBER>-critique.md` |
 
-The manifest builder returns the same three-way shape used in upfront
-mode: questions for now, deferred questions, and resolved irrelevant
-items. A zero-item manifest is valid.
+The manifest builder applies the `HIGH` or higher user-surfacing gate,
+then returns the same three-way shape used in upfront mode: questions for
+now, deferred questions, and resolved irrelevant items. A zero-item
+manifest is valid.
 
 ## Stage 4 - Clarify Inline
 

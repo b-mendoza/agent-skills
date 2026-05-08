@@ -25,7 +25,9 @@ framing.
 
 Before asking the first question, show the manifest header counts and the
 `## Questions For Now` table shape returned by `question-manifest-builder`.
-Do not invent a second preview schema.
+Do not invent a second preview schema. The manifest has already applied
+the `HIGH` or higher user-surfacing gate; do not add lower-severity items
+to the preview or question loop.
 
 ```markdown
 ## Question Manifest - <TICKET_KEY>[ / Task <TASK_NUMBER>]

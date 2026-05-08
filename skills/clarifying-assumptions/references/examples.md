@@ -34,10 +34,14 @@ Artifact: docs/JNS-6065-upfront-critique.md
 MANIFEST: PASS
 Ticket: JNS-6065 | Mode: upfront | Task: -
 Task title: -
-Questions now: 8 | Deferred: 4 | Irrelevant: 1
+Questions now: 3 | Deferred: 2 | Irrelevant: 1
+
+## Manifest Summary
+
+- Not surfaced: 3 lower-severity items retained in the critique artifact
 ```
 
-6. Read `./conversation-protocol.md`, walk the 8 questions one at a
+6. Read `./conversation-protocol.md`, walk the 3 questions one at a
    time, then dispatch
    `decision-recorder` with the resolved decisions and deferred items.
 7. Receive `RECORDING: PASS` plus the file update counts.

@@ -45,9 +45,10 @@ Read `../subagents/question-manifest-builder.md`, then dispatch
 | `PLAN_FILE` | `docs/<TICKET_KEY>-tasks.md` |
 | `CRITIQUE_REPORT_FILE` | `docs/<TICKET_KEY>-upfront-critique.md` |
 
-The manifest builder returns the ordered questions to ask now, questions
-to defer, and any warnings about malformed or missing sections. A
-zero-item manifest is valid.
+The manifest builder applies the `HIGH` or higher user-surfacing gate,
+then returns the ordered questions to ask now, questions to defer, and
+any warnings about malformed or missing sections. A zero-item manifest is
+valid.
 
 ## Stage 4 - Clarify Inline
 
