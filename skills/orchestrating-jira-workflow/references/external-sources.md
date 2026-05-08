@@ -30,9 +30,10 @@ preloaded into the orchestrator's prompt.
 | Trigger | Pick a URL from |
 | ------- | --------------- |
 | User asks why this workflow loads files just-in-time, or you must explain context engineering choices | [Concepts](#concepts) |
+| `preflight-checker` reports a downstream skill `MISSING` / `UNKNOWN`, or the user needs skill installation / discovery help | [Agent skill runtime docs](#agent-skill-runtime-docs) |
 | `preflight-checker` reports `Jira MCP MISSING` or the user needs setup help | [Jira / Atlassian setup](#jira--atlassian-setup) |
 | You need the exact field name, endpoint, or query syntax for a Jira read or write | [Jira REST API](#jira-rest-api-syntax) |
-| You are authoring or revising a sibling skill or subagent and need design guidance | [Skill-authoring background](#skill-authoring-background-optional) |
+| You are authoring or revising a downstream skill or utility subagent and need design guidance | [Skill-authoring background](#skill-authoring-background-optional) |
 
 ## Concepts
 
@@ -43,6 +44,16 @@ preloaded into the orchestrator's prompt.
 | Context engineering, just-in-time retrieval, long-horizon agent loops | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents |
 | Subagent context isolation and when to delegate | https://docs.claude.com/en/docs/claude-code/sub-agents |
 | Skill format reference (frontmatter, structure, capabilities) | https://docs.claude.com/en/docs/claude-code/skills |
+
+## Agent Skill Runtime Docs
+
+| Need | Source |
+| ---- | ------ |
+| Agent Skills loading model and package anatomy | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview |
+| Skill authoring and packaging best practices | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |
+| Claude Code skill installation and runtime behavior | https://code.claude.com/docs/en/skills |
+| Cursor skill format and discovery paths | https://cursor.com/docs/skills |
+| Runtime-agnostic Agent Skills context | https://agentskills.io |
 
 ## Jira / Atlassian Setup
 
@@ -66,7 +77,7 @@ preloaded into the orchestrator's prompt.
 ## Skill-Authoring Background (optional)
 
 Use this section only when the user asks about how this skill itself was
-written, or when extending this orchestrator with a new sibling skill. None of
+written, or when extending this orchestrator with a new downstream skill. None of
 these URLs need to be fetched during normal Jira workflow execution.
 
 | Need | Source |

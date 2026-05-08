@@ -4,7 +4,9 @@
 > checks, load `./data-contracts.md` and dispatch `artifact-validator`; do
 > not inspect artifacts inline in the orchestrator. For Jira REST or
 > Atlassian setup syntax that the downstream skill cannot answer, fetch one
-> URL from `./external-sources.md`.
+> URL from `./external-sources.md`. Load `./downstream-skills.md` only
+> when you need the phase-to-skill dependency map or dispatch contract
+> details.
 
 After Phase 4 completes and the user selects a task, read
 `./task-loop.md`.
@@ -15,7 +17,7 @@ skill, validate postconditions, update progress, and run the gate.
 
 ## Phase 1 - Fetch Work Item
 
-**Skill:** `fetching-jira-ticket` at `../../fetching-jira-ticket/SKILL.md`
+**Skill:** `fetching-jira-ticket`
 
 1. Announce Phase 1.
 2. Invoke the downstream skill with `JIRA_URL`.
@@ -30,7 +32,7 @@ skill, validate postconditions, update progress, and run the gate.
 
 ## Phase 2 - Plan Tasks
 
-**Skill:** `planning-jira-tasks` at `../../planning-jira-tasks/SKILL.md`
+**Skill:** `planning-jira-tasks`
 
 1. Announce Phase 2.
 2. Dispatch `artifact-validator` for `PHASE=2`, `DIRECTION=precondition`.
@@ -45,7 +47,7 @@ skill, validate postconditions, update progress, and run the gate.
 
 ## Phase 3 - Clarify Assumptions + Critique Plan
 
-**Skill:** `clarifying-assumptions` at `../../clarifying-assumptions/SKILL.md`
+**Skill:** `clarifying-assumptions`
 **Mode:** `upfront`
 
 1. Announce Phase 3.
@@ -77,7 +79,7 @@ Proceed to Phase 4 only when the user explicitly chooses option 1.
 
 ## Phase 4 - Create Child Items
 
-**Skill:** `creating-jira-subtasks` at `../../creating-jira-subtasks/SKILL.md`
+**Skill:** `creating-jira-subtasks`
 
 1. Announce Phase 4.
 2. Dispatch `artifact-validator` for `PHASE=4`, `DIRECTION=precondition`.

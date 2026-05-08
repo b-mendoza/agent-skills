@@ -127,8 +127,8 @@ user-facing detail.
 
 ### Progress Tracker Dispatch (summary)
 
-Read `../subagents/progress-tracker.md` for full behavior. Typical
-orchestrator inputs:
+When dispatching `progress-tracker`, read its subagent definition from the
+registry. Typical orchestrator inputs:
 
 ```
 TICKET_KEY: <KEY>

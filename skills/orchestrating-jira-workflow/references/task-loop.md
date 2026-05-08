@@ -4,7 +4,9 @@
 > artifact checks, load `./data-contracts.md` and dispatch
 > `artifact-validator`; do not inspect artifacts inline in the
 > orchestrator. For background on context engineering or subagent
-> isolation, fetch one URL from `./external-sources.md`.
+> isolation, fetch one URL from `./external-sources.md`. Load
+> `./downstream-skills.md` only when you need phase-to-skill dispatch
+> contract details.
 
 Each task passes through Phase 5 (plan), Phase 6 (critique), and Phase 7
 (kickoff + execute). If `progress-tracker` reports a mid-task resume point, skip
@@ -33,7 +35,7 @@ progress file.
 
 ## Phase 5 - Plan Task Execution
 
-**Skill:** `planning-jira-task` at `../../planning-jira-task/SKILL.md`
+**Skill:** `planning-jira-task`
 
 1. Announce Phase 5 for Task `<N>`.
 2. Dispatch `artifact-validator` for `PHASE=5`, `DIRECTION=precondition`,
@@ -52,7 +54,7 @@ progress file.
 
 ## Phase 6 - Clarify + Critique Execution Plan
 
-**Skill:** `clarifying-assumptions` at `../../clarifying-assumptions/SKILL.md`
+**Skill:** `clarifying-assumptions`
 **Mode:** `critique`
 
 1. Announce Phase 6 for Task `<N>`.
@@ -85,7 +87,7 @@ happens here.
 
 ## Phase 7 - Kick Off And Execute Task
 
-**Skill:** `executing-jira-task` at `../../executing-jira-task/SKILL.md`
+**Skill:** `executing-jira-task`
 
 1. Announce Phase 7 for Task `<N>`.
 2. Dispatch `artifact-validator` for `PHASE=7`, `DIRECTION=precondition`,
