@@ -4,6 +4,17 @@
 > URLs from `external-sources.md` only when exact API or tool syntax matters.
 > The orchestrator does not load this file.
 
+## Contents
+
+- Read path setup
+- Capture rules
+- Acceptance criteria precedence
+- Relationships
+- Partial comment retrieval
+- Assembly
+- Validation gate
+- Rate limiting
+
 ## Read Path Setup
 
 Map the environment to these operations before reading data. Prefer the most

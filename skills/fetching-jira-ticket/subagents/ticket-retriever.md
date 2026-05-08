@@ -11,7 +11,8 @@ status summary that keeps raw Jira payloads out of the caller's context.
 
 > Return only the structured summary. Load detailed references just in time:
 > the playbook before reads, external sources only for exact syntax checks,
-> and the snapshot template only at assembly.
+> the snapshot template only at assembly, and the fetch contract only when
+> validating the final summary shape.
 
 ## Inputs
 
@@ -49,7 +50,8 @@ key is not a Jira-style `PROJECT-1234` key, return `FETCH: FAIL` with
    contract.
 7. Run the post-write validation gate from the playbook. Repair only missing
    or mismatched portions and re-check; max 3 repair passes.
-8. Return only the summary under **Output Format**.
+8. Read `FETCH_CONTRACT_PATH` only for exact summary ordering, count
+   semantics, and examples, then return the locked summary with no prose.
 
 Use at most 2 retries for explicit rate limiting or transient service
 failures, with 1s then 3s backoff. Classify exhausted limits as `FETCH: FAIL`
@@ -57,57 +59,10 @@ with `Failure category: RATE_LIMIT`.
 
 ## Output Format
 
-Return exactly this shape and no other prose:
-
-```text
-FETCH: <PASS | PARTIAL | FAIL | ERROR>
-Validation: <PASS | FAIL | NOT_RUN>
-Failure category: <NONE | BAD_INPUT | NOT_FOUND | AUTH | TOOLS_MISSING | RATE_LIMIT | UNEXPECTED>
-File written: <docs/<TICKET_KEY>.md | None>
-Ticket: <TICKET_KEY>: <Summary/Title | Unknown>
-Status: <status | Unknown> | Type: <type | Unknown>
-Comments: <retrieved>/<found | N/A>
-Subtasks: <retrieved>/<found | UNKNOWN | N/A>
-Linked issues: <retrieved>/<found | UNKNOWN | N/A>
-Attachments: <N | N/A>
-Warnings: <None | semicolon-separated warnings>
-Reason: <None | fatal reason>
-```
-
-Use `0/0` only for verified empty sections. Use `<retrieved>/UNKNOWN` when
-the parent ticket was retrieved but discovery for that section could not be
-verified. Use `N/A` for downstream sections when the parent ticket was not
-retrieved.
-
-<example>
-FETCH: PASS
-Validation: PASS
-Failure category: NONE
-File written: docs/JNS-6065.md
-Ticket: JNS-6065: Implement dark mode toggle
-Status: In Progress | Type: Story
-Comments: 4/4
-Subtasks: 3/3
-Linked issues: 1/1
-Attachments: 2
-Warnings: None
-Reason: None
-</example>
-
-<example>
-FETCH: FAIL
-Validation: NOT_RUN
-Failure category: NOT_FOUND
-File written: None
-Ticket: PROJ-892: Unknown
-Status: Unknown | Type: Unknown
-Comments: N/A
-Subtasks: N/A
-Linked issues: N/A
-Attachments: N/A
-Warnings: None
-Reason: Jira ticket PROJ-892 was not found (404)
-</example>
+Return no prose. Load `FETCH_CONTRACT_PATH` and emit the 12-line summary from
+its `Locked Summary Line Order` section exactly. Use its count rules and
+retriever summary examples to resolve `PASS`, `PARTIAL`, `FAIL`, and `ERROR`
+states.
 
 ## Scope
 

@@ -1,8 +1,8 @@
 # External Sources
 
 > Read this file only to choose public URLs for just-in-time retrieval.
-> Fetch the smallest number of pages that can change the current Jira
-> retrieval decision. The skill is usable without web access; bundled
+> Static background and current API details live here as links instead of in
+> always-loaded prompts. The skill is usable without web access; bundled
 > routing, contracts, capture rules, and templates cover normal execution.
 
 ## Fetch Policy
@@ -21,6 +21,9 @@
 
 | Reference key | URL | Use when |
 | ------------- | --- | -------- |
+| `agent-skills-overview` | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview | The skill loading model or staged file access needs source-backed context |
+| `agent-skills-best-practices` | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices | Maintaining this package's concise SKILL.md, one-hop references, or examples |
+| `context-engineering` | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | Context-window and just-in-time retrieval rationale is needed |
 | `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Maintaining or explaining staged loading in this skill |
 | `progressive-disclosure-ux` | https://www.nngroup.com/articles/progressive-disclosure/ | A short public explanation of revealing only needed information would help |
 | `jira-rest-intro` | https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/ | Authentication, status codes, pagination, expansions, or timestamp behavior is unclear |

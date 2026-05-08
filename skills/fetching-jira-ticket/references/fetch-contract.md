@@ -4,6 +4,15 @@
 > coordinator report, or checking the artifact contract. Keep raw Jira
 > payloads inside the retriever.
 
+## Contents
+
+- Summary semantics
+- Count rules
+- Locked summary line order
+- Retriever summary examples
+- Artifact contract
+- Coordinator report phrasing
+
 ## Summary Semantics
 
 | Field | Meaning |
@@ -44,6 +53,41 @@ Warnings: <None | semicolon-separated warnings>
 Reason: <None | fatal reason>
 ```
 
+## Retriever Summary Examples
+
+Use these examples only when assembling or checking the final retriever
+summary. They are not coordinator report text.
+
+<example>
+FETCH: PASS
+Validation: PASS
+Failure category: NONE
+File written: docs/PROJ-1234.md
+Ticket: PROJ-1234: Implement dark mode toggle
+Status: In Progress | Type: Story
+Comments: 4/4
+Subtasks: 3/3
+Linked issues: 1/1
+Attachments: 2
+Warnings: None
+Reason: None
+</example>
+
+<example>
+FETCH: FAIL
+Validation: NOT_RUN
+Failure category: NOT_FOUND
+File written: None
+Ticket: PROJ-892: Unknown
+Status: Unknown | Type: Unknown
+Comments: N/A
+Subtasks: N/A
+Linked issues: N/A
+Attachments: N/A
+Warnings: None
+Reason: Jira ticket PROJ-892 was not found (404)
+</example>
+
 ## Artifact Contract
 
 Primary artifact: `docs/<TICKET_KEY>.md`.
@@ -78,14 +122,14 @@ and that Jira was not modified. For `FAIL`, `ERROR`, or `Validation: FAIL`,
 report the failure category and reason without inspecting raw payloads.
 
 <example>
-Ticket fetched to `docs/JNS-6065.md`. `JNS-6065: Implement dark mode toggle`
+Ticket fetched to `docs/PROJ-1234.md`. `PROJ-1234: Implement dark mode toggle`
 is `In Progress` (`Story`). Retrieved 4/4 comments, 3/3 subtasks, 1/1 linked
 issues, and 2 attachments. Retrieval only; Jira was not modified.
 </example>
 
 <example>
-Ticket fetched to `docs/JNS-7001.md` with retrieval warnings.
-`JNS-7001: Audit webhook retries` is `To Do` (`Task`). Retrieved 2/2
+Ticket fetched to `docs/PROJ-7001.md` with retrieval warnings.
+`PROJ-7001: Audit webhook retries` is `To Do` (`Task`). Retrieved 2/2
 comments, 1/2 subtasks, 0/0 linked issues, and 0 attachments. Warning: Could
-not retrieve JNS-7002 (404 Not Found). Retrieval only; Jira was not modified.
+not retrieve PROJ-7002 (404 Not Found). Retrieval only; Jira was not modified.
 </example>

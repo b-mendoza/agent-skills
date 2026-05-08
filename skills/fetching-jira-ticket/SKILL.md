@@ -1,28 +1,25 @@
 ---
 name: "fetching-jira-ticket"
-description: "Retrieve a Jira ticket into a stable Markdown snapshot for downstream workflow phases. Use when a Jira URL needs to become docs/<TICKET_KEY>.md with predictable tracker context while preserving the coordinator context window. The bundled retriever performs Jira reads, artifact assembly, validation, and concise reporting; this skill coordinates retrieval only and does not mutate Jira."
+description: "Retrieves a Jira ticket into docs/<TICKET_KEY>.md. Use when a Jira URL needs a read-only, validated Markdown snapshot for downstream workflow phases."
 ---
 
 # Fetching Jira Ticket
 
-You are a Jira retrieval coordinator. Turn one Jira URL into a validated local
-snapshot by dispatching the bundled retriever, retaining only its structured
-summary, and reporting the result for the next workflow phase.
+You are a Jira retrieval coordinator. Keep the coordinator context small:
+derive the ticket identity, dispatch `ticket-retriever`, retain only its
+structured summary, and report the handoff state.
 
-The coordinator does three things: derive identifiers from the input URL,
-dispatch `ticket-retriever`, and branch on the returned summary. Jira payload
-inspection, artifact writing, repair, and validation stay inside the
-retriever.
-
-This skill is standalone. It depends only on files bundled in this folder and
-on optional public URLs listed in `./references/external-sources.md` for
-just-in-time syntax checks.
+This skill is standalone. Bundled files define the workflow, contracts, and
+templates. Public URLs in `./references/external-sources.md` are optional
+just-in-time sources for current Jira syntax or progressive-disclosure
+rationale; normal execution still works from local files when web access is
+unavailable.
 
 ## Inputs
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `JIRA_URL` | Yes | `https://vukaheavyindustries.atlassian.net/browse/JNS-6065` |
+| `JIRA_URL` | Yes | `https://workspace.atlassian.net/browse/PROJ-1234` |
 
 Derive workspace from the Atlassian subdomain, `TICKET_KEY` from the final
 path segment, and project from the key prefix. Pass the full `JIRA_URL` to
@@ -38,18 +35,18 @@ Read the subagent file only when dispatching it.
 
 ## Progressive Disclosure Map
 
-| Layer | File or source | Load when |
-| ----- | -------------- | --------- |
-| Always | This `SKILL.md` | The skill triggers |
-| Status semantics | `./references/fetch-contract.md` | Interpreting non-trivial retriever results or formatting the final report |
-| Retriever rules | `./references/retrieval-playbook.md` | Inside the retriever, before Jira reads |
-| Snapshot shape | `./references/ticket-snapshot-template.md` | Inside the retriever, only at document assembly |
-| External sources | `./references/external-sources.md` | Exact Jira API syntax, auth, pagination, or rate-limit behavior could change the current decision |
-| Subagent definition | `./subagents/ticket-retriever.md` | Dispatching `ticket-retriever` |
+| Need | Load |
+| ---- | ---- |
+| Coordinate routing and dispatch | This `SKILL.md` |
+| Status semantics, exact summary lines, report phrasing | `./references/fetch-contract.md` |
+| Jira retrieval procedure and validation gate | `./references/retrieval-playbook.md` inside `ticket-retriever` |
+| Markdown snapshot shape | `./references/ticket-snapshot-template.md` only during assembly |
+| Current public docs or source-backed rationale | `./references/external-sources.md`, then fetch only the relevant URL |
+| Retriever behavior | `./subagents/ticket-retriever.md` only when dispatching |
 
-The coordinator passes paths and relevant URLs to the retriever instead of
-loading detailed references itself. It keeps only identifiers, the artifact
-path, structured statuses, counts, warnings, and fatal reasons.
+The coordinator passes reference paths to the retriever instead of loading
+detailed playbooks or raw Jira data. Keep only identifiers, the artifact path,
+structured statuses, counts, warnings, and fatal reasons.
 
 ## Dispatch Pattern
 
@@ -77,17 +74,15 @@ contract defines a safer action.
 
 ## Output Contract
 
-Primary artifact when retrieval reaches assembly:
+The retriever writes at most one local workflow snapshot:
 
 ```text
 docs/<TICKET_KEY>.md
 ```
 
-The artifact is a local workflow snapshot for resumability. Leave it in place;
-do not stage or commit it as implementation history. Use
-`./references/fetch-contract.md` for the locked summary line order, count
-semantics, failure categories, top-level snapshot headings, and report
-phrasing.
+Leave the snapshot in place and unstaged for workflow resumability. Load
+`./references/fetch-contract.md` only when you need exact summary ordering,
+count semantics, heading order, or final report phrasing.
 
 ## Escalation
 
@@ -99,19 +94,17 @@ actionable by the user, such as a malformed URL or missing authentication.
 ## Examples
 
 <example>
-Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-6065`
+Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-1234`
 
-Flow: derive `JNS-6065`, dispatch `ticket-retriever`, receive `FETCH: PASS`
-and `Validation: PASS`, then report that `docs/JNS-6065.md` was written with
-the ticket identity, status/type, relationship counts, attachment count, and
-no Jira mutation.
+Flow: derive `PROJ-1234`, dispatch `ticket-retriever`, receive `FETCH: PASS`
+and `Validation: PASS`, then report `docs/PROJ-1234.md`, the ticket identity,
+counts, warnings, and that Jira was not modified.
 </example>
 
 <example>
-Input: `JIRA_URL=https://vukaheavyindustries.atlassian.net/browse/JNS-7001`
+Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-7001`
 
 Flow: dispatch `ticket-retriever`, receive `FETCH: PARTIAL` and
-`Validation: PASS`, then report the file path with the warning
-`Could not retrieve JNS-7002 (404 Not Found)`. Continue only with the warning
-visible to downstream phases.
+`Validation: PASS`, then report the file path and warning. Continue only with
+the warning visible to downstream phases.
 </example>
