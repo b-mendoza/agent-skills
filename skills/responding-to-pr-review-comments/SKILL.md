@@ -1,201 +1,226 @@
 ---
 name: "responding-to-pr-review-comments"
-description: "Assess received pull request review comments, decide whether to accept, clarify, or push back, draft natural replies for existing comment threads, write an evidence-backed action report, and optionally post only after explicit confirmation. Use when a user asks to review PR comments, prepare reviewer replies, triage code review feedback, respond to PR comments, or summarize how to address received review feedback."
+description: "Assess received pull request review comments through a subagent-driven workflow, decide whether to accept, clarify, or push back, draft natural replies for existing comment threads, write an evidence-backed action report, and optionally post only after explicit confirmation. Use when a user asks to review PR comments, respond to reviewer feedback, prepare PR comment replies, triage code review feedback, summarize how to address review comments, or decide which reviewer comments to implement versus push back on."
 ---
 
 # Responding to PR Review Comments
 
 You are a PR review-response orchestrator. Turn received review comments into an
 evidence-backed response plan: collect the existing comments, evaluate each one
-against the code and current documentation, draft replies in the user's voice,
-and write a local report. GitHub posting is a separate confirmation-gated action.
+against the PR and relevant sources, draft replies in the user's voice, write a
+local report, and handle optional posting only after explicit approval.
+
+The orchestrator does exactly three things: **think** about phase state,
+**decide** what subagent or user decision is needed next, and **dispatch** work
+through the subagent registry. GitHub reads and writes, repository inspection,
+documentation lookup, evidence gathering, report writing, and posting are
+delegated so raw data stays out of the orchestrator context.
 
 ## Inputs
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `PR_URL` | Yes | `https://github.com/VukaHeavyIndustries/watson/pull/1051` |
-| `OUTPUT_FILE` | No | `pr-1051-review.md` |
+| `PR_URL` | Yes | `https://github.com/org/repo/pull/123` |
+| `OUTPUT_FILE` | No | `pr-123-review.md` |
 | `POSTING_MODE` | No | `draft-only` or `post-after-confirmation` |
 | `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` |
 | `COMMENT_SCOPE` | No | `all`, `unresolved`, or specific comment URLs |
+| `RESPONDER_LOGIN` | No | `octocat` |
 
 Derive owner, repository, and PR number from `PR_URL`. If `OUTPUT_FILE` is
 missing, use `pr-<number>-review.md`. `POSTING_MODE` defaults to `draft-only`,
 `COMMENT_SCOPE` defaults to `all`, and `LANGUAGE_STYLE` defaults to natural,
-direct English suitable for a non-native speaker.
+direct English suitable for a non-native speaker. If `RESPONDER_LOGIN` is
+missing, let the collector infer it from the authenticated GitHub user when
+available.
+
+## Workflow Overview
+
+| Phase | Owner | Purpose | Gate |
+| ----- | ----- | ------- | ---- |
+| Intake | Inline | Normalize inputs and ask for missing required values | Inputs are known |
+| Comment collection | `review-comment-collector` | Gather received comment inventory and posting metadata | `COLLECT: PASS` |
+| Assessment | `review-comment-assessor` | Classify each comment with evidence and action intent | `ASSESS: PASS` or user decision |
+| Reply drafting | `reply-drafter` | Draft natural replies and concrete action plans | `DRAFT: PASS` |
+| Verification | `response-verifier` | Check evidence, current claims, reply tone, and posting targets | `VERIFY: PASS` |
+| Report writing | `response-report-writer` | Write the local assessment artifact | `WRITE: PASS` |
+| Optional posting | `thread-reply-poster` | Post exact approved replies to existing review-comment threads | `POST: PASS` or skipped |
+
+## Subagent Registry
+
+| Subagent | Path | Purpose |
+| -------- | ---- | ------- |
+| `review-comment-collector` | `./subagents/review-comment-collector.md` | Collects PR review comments, review summaries, issue comments, and reply metadata without returning raw API payloads |
+| `review-comment-assessor` | `./subagents/review-comment-assessor.md` | Evaluates received comments against code, diff, tests, CI, linked context, and current docs |
+| `reply-drafter` | `./subagents/reply-drafter.md` | Turns assessments into natural replies and concrete action plans |
+| `response-verifier` | `./subagents/response-verifier.md` | Validates evidence, recency-sensitive claims, reply tone, action feasibility, and posting targets |
+| `response-report-writer` | `./subagents/response-report-writer.md` | Writes the final Markdown report from the verified response package |
+| `thread-reply-poster` | `./subagents/thread-reply-poster.md` | Posts approved replies to existing review-comment threads and verifies the side effect |
+
+Read a subagent definition only when dispatching that subagent. Keep API
+payloads, raw diffs, source files, command output, and documentation excerpts in
+the owning subagent context.
 
 ## Output Contract
 
 Path: `OUTPUT_FILE`
 
-The report must contain:
+The report contains these sections:
 
 - `# PR <number> Review Comment Assessment`
 - `## PR Summary`
 - `## Comment Assessments`
-- One entry per received comment with comment URL or ID, author, excerpt,
-  assessment, evidence, planned action, draft reply, and posting target
 - `## Action Summary`
 - `## Pushback Summary`
 - `## Posting Status`
 
-Set posting status to `not-posted` unless the user explicitly requested posting
-and approved the exact replies after reviewing the generated report.
+Each comment assessment includes comment URL or stable ID, author, excerpt,
+location, classification, evidence, planned action, draft reply, posting target,
+and verification notes.
 
-## Workflow Overview
+Final success replies from the orchestrator include:
 
-| Phase | Mode | Purpose |
-| ----- | ---- | ------- |
-| Intake | Inline | Normalize inputs and derive artifact names |
-| Comment collection | Tooling or delegated | Gather existing review comments, review summaries, and PR issue comments |
-| Assessment | Inline or delegated | Classify each comment as valid, questionable, pushback, or needs user decision |
-| Reply drafting | Inline or delegated | Draft concise replies and concrete action plans |
-| Verification | Inline or delegated | Check evidence, current documentation, comment targets, and tone |
-| Report writing | Inline | Write the assessment file |
-| Optional posting | Confirmation-gated | Post exact approved replies to existing review-comment threads |
+```text
+PR_COMMENT_RESPONSE: PASS
+Report: <OUTPUT_FILE>
+Comments assessed: <number>
+Actions: <implement count> implement, <clarify count> clarify, <pushback count> push back
+Posting: <not-posted | posted | cancelled>
+Notes: <residual risk or none>
+```
 
 ## How This Skill Works
 
-Use the PR URL and live GitHub context as the source of truth. Collect received
-comments before assessing them, and preserve enough metadata to identify where a
-reply would go: comment type, comment ID, URL, author, file path, line range, and
-thread context when available.
+Carry a compact state object through the pipeline:
 
-Use subagents when the review has many independent comments, touches unrelated
-areas of the codebase, or needs separate evidence gathering. Keep raw API
-responses, large diffs, source files, and documentation excerpts inside the
-worker that needs them. The orchestrator keeps only compact comment summaries,
-assessment decisions, evidence references, and final draft replies.
+```text
+Inputs: PR_URL, OUTPUT_FILE, POSTING_MODE, LANGUAGE_STYLE, COMMENT_SCOPE, RESPONDER_LOGIN
+Comment inventory: latest COLLECT block or none
+Assessments: latest ASSESS block or none
+Draft replies: latest DRAFT block or none
+Verification: latest VERIFY block or none
+Report file: latest WRITE block or none
+Posting state: skipped, pending-confirmation, posted, cancelled, or failed
+```
 
-Prefer accepting valid feedback with a concrete fix. Push back only when the
-evidence shows the comment is incorrect, out of scope, stale, or would make the
+Update state only from subagent status blocks and explicit user confirmations.
+Pass the relevant previous block to the next phase; dispatch a subagent again for
+details instead of retaining raw content in the orchestrator.
+
+Prefer accepting valid feedback with a concrete fix. Push back only when evidence
+shows the comment is incorrect, out of scope, stale, or would make the
 implementation worse. If the right answer depends on product intent or team
-preference, mark the comment as `needs-user-decision` and ask one focused
-question.
+preference, ask one focused question and mark the item `needs-user-decision`.
+
+When a phase cannot continue, stop with this envelope:
+
+```text
+PR_COMMENT_RESPONSE: AUTH | NOT_FOUND | NO_COMMENTS | NEEDS_USER_DECISION | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | CANCELLED
+Reason: <one line>
+Next step: <one clear action>
+```
 
 ## Reference Routing
 
-Fetch these references only when the phase needs them.
+External references are fetched just in time by the phase that needs them.
 
-| Reference | Use when |
-| --------- | -------- |
-| [receiving-code-review](https://skills.sh/obra/superpowers/receiving-code-review) | Assessing whether to accept, clarify, or push back on reviewer feedback |
-| [subagent-driven-development](https://skills.sh/obra/superpowers/subagent-driven-development) | Splitting many independent comments into parallel assessment work |
-| [recency-guard](https://skills.sh/b-mendoza/agent-skills/recency-guard) | Verifying claims that depend on current documentation, APIs, versions, or policy |
-| [humanizer](https://skills.sh/blader/humanizer/humanizer) | Polishing draft replies so they sound natural and human-written |
-| [GitHub CLI manual](https://cli.github.com/manual/) | Looking up `gh` commands or `gh api` invocation details |
-| [List PR review comments](https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28#list-review-comments-on-a-pull-request) | Collecting line-level PR review comments and IDs |
-| [Create a reply to a review comment](https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28#create-a-reply-for-a-review-comment) | Posting an approved reply to an existing review-comment thread |
-| [List issue comments](https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#list-issue-comments-for-a-repository) | Distinguishing top-level PR conversation comments from review-comment threads |
+| Reference | Phase |
+| --------- | ----- |
+| [receiving-code-review](https://skills.sh/obra/superpowers/receiving-code-review) | Assessment when deciding whether to accept, clarify, or push back |
+| [subagent-driven-development](https://skills.sh/obra/superpowers/subagent-driven-development) | Assessment when comments split into independent work streams |
+| [recency-guard](https://skills.sh/b-mendoza/agent-skills/recency-guard) | Verification when claims depend on current docs, APIs, versions, or policy |
+| [humanizer](https://skills.sh/blader/humanizer/humanizer) | Drafting or verification when replies need a natural-language pass |
+| [GitHub CLI manual](https://cli.github.com/manual/) | Collection or posting when `gh` invocation details are needed |
+| [List PR review comments](https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28#list-review-comments-on-a-pull-request) | Collection of line-level review comments |
+| [Create a reply to a review comment](https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28#create-a-reply-for-a-review-comment) | Posting approved replies to existing review-comment threads |
+| [List issue comments](https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28#list-issue-comments-for-a-repository) | Collection of top-level PR conversation comments |
 
 ## Execution Steps
 
-### 1. Normalize inputs
+### 1. Normalize inputs inline
 
 Extract owner, repository, and PR number from `PR_URL`. Ask for the PR URL if it
 is missing or ambiguous. Normalize `POSTING_MODE` to `draft-only` or
-`post-after-confirmation`; ask for a choice if another value was supplied.
+`post-after-confirmation`; ask the user to choose if another value was supplied.
 
-### 2. Collect received comments
+### 2. Dispatch `review-comment-collector`
 
-Use GitHub context to collect comments in `COMMENT_SCOPE`. Include line-level PR
-review comments, review summaries, and top-level PR conversation comments when
-the user's wording says "comments" without narrowing the type.
+Pass all normalized inputs. Proceed only with `COLLECT: PASS`. For `NO_COMMENTS`,
+stop with the failure envelope. For `AUTH`, `NOT_FOUND`, or `ERROR`, stop with
+the smallest recovery action from the collector.
 
-For each comment, retain this compact record:
+### 3. Dispatch `review-comment-assessor`
 
-```text
-Comment: <URL or stable ID>
-Type: <review-comment | review-summary | issue-comment>
-Author: <login>
-Location: <file:line-range or PR conversation>
-Excerpt: <short quoted excerpt>
-Thread context: <one-line summary or none>
-```
+Pass the comment inventory, `PR_URL`, `COMMENT_SCOPE`, and `LANGUAGE_STYLE`.
+Proceed with `ASSESS: PASS`. If it returns `NEEDS_CONTEXT`, redispatch the
+collector or assessor with only the requested narrow context, then retry once. If
+it returns `NEEDS_USER_DECISION`, ask the focused question and retry the affected
+comment after the user answers.
 
-If comments cannot be fetched because of authentication or access, stop and
-report the smallest command or permission needed to continue.
+### 4. Dispatch `reply-drafter`
 
-### 3. Assess each comment
+Pass the comment inventory, assessments, `LANGUAGE_STYLE`, and `POSTING_MODE`.
+Proceed only with `DRAFT: PASS`. If it returns `NEEDS_USER_DECISION`, ask the
+focused question and retry only the affected reply.
 
-For each received comment, inspect the relevant code, diff, tests, CI, linked
-issue, and current docs needed to judge the feedback. Classify the comment as:
+### 5. Dispatch `response-verifier`
 
-- `valid`: implement or document the requested change
-- `questionable`: partially valid, unclear, or needs a narrower adjustment
-- `pushback`: evidence supports declining the suggestion
-- `needs-user-decision`: requires product, style, or team preference input
+Pass the inventory, assessments, draft replies, `PR_URL`, `OUTPUT_FILE`, and
+`LANGUAGE_STYLE`. If verification returns `VERIFY: FAIL`, use `Fix target` to
+redispatch only the failing collector, assessor, or drafter phase. Limit
+verification repair to two targeted fix cycles; after that, stop with
+`PR_COMMENT_RESPONSE: VERIFY_FAIL`.
 
-Record the evidence that supports the classification. Use file paths, line
-references, test names, documentation links, or PR context instead of general
-confidence statements.
+### 6. Dispatch `response-report-writer`
 
-### 4. Draft replies and actions
-
-For every comment, draft a reply that could be posted directly to the existing
-thread. Use `LANGUAGE_STYLE`, keep the tone collaborative, and avoid US-specific
-jargon. Include the concrete action next to the reply: code change, test change,
-documentation update, clarification question, or pushback rationale.
-
-For review summaries or issue-style PR comments that do not have a thread reply
-endpoint, mark the posting target as `requires-user-choice` rather than turning
-the reply into a new top-level comment.
-
-### 5. Verify the package
-
-Check that every assessment has evidence, every reply matches the assessment,
-and every action is feasible. Use the recency reference for current external
-claims and the humanizer reference when the replies need a stronger natural
-language pass.
-
-Use targeted fix cycles: repair only the failed comment assessment or reply, then
-recheck that item. After two targeted repair cycles for the same item, surface the
-remaining uncertainty in the report.
-
-### 6. Write the report
-
-Write `OUTPUT_FILE` using the output contract. End with a short PR summary and a
-clear action list that separates changes to implement from comments to push back
-on or clarify.
+Pass the verified response package, `PR_URL`, `OUTPUT_FILE`, `POSTING_MODE`, and
+posting status `not-posted`. Proceed only with `WRITE: PASS`; otherwise stop with
+`PR_COMMENT_RESPONSE: WRITE_ERROR`.
 
 ### 7. Optional posting gate
 
-If `POSTING_MODE=draft-only`, return the report path and posting status
+If `POSTING_MODE=draft-only`, return the written report path and posting status
 `not-posted`.
 
 If `POSTING_MODE=post-after-confirmation`, show the exact replies from the report
-and ask for explicit approval before posting. Post only the approved replies to
-existing review-comment threads. If a comment type cannot be replied to without
-creating a new top-level comment, ask the user how to handle it.
+and ask for final approval. After approval, dispatch `thread-reply-poster` with
+`PREVIEW_APPROVED=true`. If the user declines, keep the report and return posting
+status `cancelled`.
+
+For `POST: PASS`, return posting status `posted`. For `POST: TARGET_UNSUPPORTED`,
+report which replies were posted or skipped and ask how to handle unsupported
+targets. For `POST: PREVIEW_REQUIRED`, `POST: AUTH`, or `POST: ERROR`, stop with
+`PR_COMMENT_RESPONSE: POST_ERROR` and include the poster's next step.
 
 ## Example
 
 <example>
 Input:
 
-- `PR_URL`: `https://github.com/VukaHeavyIndustries/watson/pull/1051`
-- `OUTPUT_FILE`: `pr-1051-review.md`
+- `PR_URL`: `https://github.com/org/repo/pull/123`
+- `OUTPUT_FILE`: `pr-123-review.md`
 - `POSTING_MODE`: `draft-only`
 - `LANGUAGE_STYLE`: `natural English for a non-native speaker`
 
 Flow:
 
-1. Collect all received PR comments and preserve IDs, URLs, authors, excerpts,
-   and line targets.
-2. Assess each comment against the PR diff, relevant files, tests, and current
-   docs.
-3. Draft one natural reply and one action decision per comment.
-4. Verify the evidence and tone.
-5. Write `pr-1051-review.md` and skip GitHub posting.
+1. Orchestrator dispatches `review-comment-collector`; it returns `COLLECT: PASS`
+   with four received comments and posting targets.
+2. Orchestrator dispatches `review-comment-assessor`; it classifies two comments
+   as `valid`, one as `questionable`, and one as `pushback` with evidence.
+3. Orchestrator dispatches `reply-drafter`; it drafts four replies and actions.
+4. Orchestrator dispatches `response-verifier`; it returns `VERIFY: PASS`.
+5. Orchestrator dispatches `response-report-writer`; it writes `pr-123-review.md`.
+6. Because posting mode is `draft-only`, posting is skipped.
 
 Output:
 
 ```text
-Review comment report: pr-1051-review.md
-Comments assessed: <count>
-Actions: <count to implement>, <count to clarify>, <count to push back>
+PR_COMMENT_RESPONSE: PASS
+Report: pr-123-review.md
+Comments assessed: 4
+Actions: 2 implement, 1 clarify, 1 push back
 Posting: not-posted
-Notes: <residual risk or none>
+Notes: none
 ```
 </example>
