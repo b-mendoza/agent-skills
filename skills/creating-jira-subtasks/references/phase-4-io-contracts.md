@@ -1,53 +1,55 @@
 # Phase 4 I/O Contracts (Jira)
 
-> Read this file when validating standalone Phase 4 execution or interpreting
-> the `subtask-creator` summary.
->
-> **Reminder:** Keep only artifact shapes and structured verdicts in the
-> orchestrator context. Plan parsing, Jira operations, and plan-file edits stay
-> inside `subtask-creator`.
->
-> This skill is self-contained. When a parent workflow drives the phase,
-> its own data contract should consume the output artifact shapes below; this
-> skill does not depend on the parent's files being present.
+Read this file when validating standalone Phase 4 execution, updating the plan
+artifact, or interpreting the `subtask-creator` summary.
+
+> Keep only artifact shapes and structured verdicts in orchestrator context.
+> Plan parsing, Jira operations, and plan-file edits stay inside
+> `subtask-creator`.
+
+This skill is self-contained. External URLs in `./external-sources.md` are
+optional just-in-time sources for current platform syntax; the artifact contract
+below remains local and normative.
 
 ## Input Contract
 
-Primary input artifacts:
+Primary inputs:
 
 ```text
-JIRA_URL   — parent ticket (authoritative for workspace/project/key)
+JIRA_URL
 docs/<TICKET_KEY>-tasks.md
 ```
 
-Derive these stable identifiers from `JIRA_URL`:
+Derive stable identifiers from `JIRA_URL`:
 
 - **Workspace:** subdomain before `.atlassian.net`
 - **Project:** prefix before the dash in the ticket key
 - **TICKET_KEY:** full path segment, such as `PROJ-123`
 
-For normal Phase 4 execution, the plan is expected to contain:
+Expected normal-workflow plan shape:
 
-| Expected section / element                          | Produced by                    | Why it matters                               |
-| --------------------------------------------------- | ------------------------------ | -------------------------------------------- |
-| `## Tasks` with numbered `## Task <N>:` headings    | Upstream planning phase        | Each parsed task maps to one workflow row |
-| `## Execution Order Summary`                        | Upstream planning phase        | Preserves task ordering context              |
-| `## Decisions Log`                                  | Clarification / critique phase | Indicates critique completed before Jira writes |
+| Expected section / element | Why it matters |
+| -------------------------- | -------------- |
+| `## Tasks` with numbered `## Task <N>:` headings | Each task maps to one Jira subtask row |
+| `## Execution Order Summary` | Preserves task ordering context |
+| `## Decisions Log` | Indicates critique or clarification happened before Jira writes |
 
-The parent workflow is responsible for validating the normal Phase 4
-precondition before this skill runs. If this skill is used standalone and the
-plan is missing or malformed, the subagent returns `SUBTASKS: BLOCKED`. If
-`## Decisions Log` is missing, the subagent continues with `SUBTASKS: WARN`:
-the plan is still parseable, but the normal workflow precondition was skipped.
+If the plan is missing or malformed, return `SUBTASKS: BLOCKED`. If the plan is
+parseable but lacks `## Decisions Log`, continue with a warning.
 
 ## Platform Behavior
 
-Phase 4 in Jira uses the project's native subtask relationship only.
+Jira Phase 4 uses the project's native subtask relationship. A concrete task is
+linked when the plan records a Jira subtask key whose parent is `TICKET_KEY`.
+Tasks that could not be created are recorded as `Not Created`.
 
-This contract uses a single native write path, so it does not negotiate
-alternate write models or emit capability / handoff metadata lines in the
-structured summary. The subagent either links a concrete Jira subtask or
-records `Not Created` for that task in the plan artifact and summary.
+The Jira summary does not include GitHub-style `Write model:` or `Capability:`
+lines.
+
+For current REST payload details, read `./external-sources.md` and fetch the Jira
+Cloud REST v3 source. In particular, direct REST v3 calls may require Atlassian
+Document Format for rich-text fields; local templates define semantic sections,
+not a mandatory transport encoding.
 
 ## Output Artifact Contract
 
@@ -57,17 +59,17 @@ Primary output artifact:
 docs/<TICKET_KEY>-tasks.md
 ```
 
-After successful or partial Phase 4 completion, the plan file must include:
+After successful or partial completion, the plan file includes:
 
-| Addition | Consumed by | Purpose |
-| -------- | ----------- | ------- |
-| `## Jira Subtasks` section with workflow table | Downstream validation, progress tracking, and task execution phases | Phase 4 postcondition; resumable linkage |
-| Exactly one `Jira Subtask: …` line per numbered task section (immediately after the task heading) | Downstream validation and execution | Per-task inline reference required for every row |
+| Addition | Purpose |
+| -------- | ------- |
+| `## Jira Subtasks` workflow table | Phase 4 postcondition and resumable linkage |
+| One `Jira Subtask: ...` line per numbered task section | Per-task reference consumed by downstream phases |
 
-### Workflow table (required)
+### Workflow Table
 
-Use the example `## Jira Subtasks` section in
-`../subagents/subtask-creator-templates.md`. Column order is fixed:
+Use the example in `../subagents/subtask-creator-templates.md`. Column order is
+fixed:
 
 | Task | Subtask Key | Title | Status | Dependencies | Priority |
 | ---- | ----------- | ----- | ------ | ------------ | -------- |
@@ -77,92 +79,70 @@ Column semantics:
 | Column | Allowed values / notes |
 | ------ | ---------------------- |
 | Task | Integer task index matching `## Task <N>:` |
-| Subtask Key | Jira issue key (e.g., `PROJ-200`) for a concrete subtask; `Not Created` if creation failed |
+| Subtask Key | Jira issue key for a concrete subtask, or `Not Created` |
 | Title | Task heading text, typically `Task <N>: <Short title>` |
-| Status | Jira workflow status when known (`To Do`, `In Progress`, `Done`, etc.) or `Not Created` |
-| Dependencies | Same normalized form as the plan (`None`, `1`, `1,2`, etc.) |
-| Priority | From plan or `Unknown` |
+| Status | Jira workflow status when known, or `Not Created` |
+| Dependencies | Normalized plan dependency value, such as `None`, `1`, or `1,2` |
+| Priority | Plan priority or `Unknown` |
 
-Exactly **one row per** parsed `## Task <N>:` section.
+The table contains exactly one row per parsed task. Use `Not Created` in both
+`Subtask Key` and `Status` when a create attempt failed.
 
-Use `Not Created` in both `Subtask Key` and `Status` when a create attempt
-failed.
+### Per-Task Inline Reference
 
-This plan-file workflow table is intentionally different from the structured
-summary table returned by the subagent. The artifact table records current Jira
-`Status`; the summary table records Phase 4 `Outcome`.
-
-### Per-task inline reference (required)
-
-In each `## Task <N>:` section, on the **first** line after the heading, include
-exactly one line of this form (no variation in the prefix):
+In each `## Task <N>:` section, the first line after the heading uses this exact
+form:
 
 ```text
 Jira Subtask: <KEY | Not Created>
 ```
 
-Rules:
-
-- Use the Jira subtask key (e.g., `PROJ-200`) iff the workflow table row for
-  that task has a concrete `Subtask Key` in the same form.
-- Use `Not Created` iff the table row uses `Not Created`.
-
-This line is the **exact format** consumed by downstream Phase 4 postcondition
-checks and validation references.
+The inline value matches that task's workflow-table `Subtask Key`.
 
 ## Structured Summary Contract
 
-The subagent returns a structured summary with:
+The subagent returns:
 
 - `SUBTASKS: PASS | WARN | FAIL | BLOCKED | ERROR`
 - `Validation: PASS | FAIL | NOT_RUN`
 - `Parent: <TICKET_KEY>`
 - `TICKET_KEY: <TICKET_KEY>`
 - `Plan file: <path | not updated>`
-- Counts: tasks in plan, already linked, created now, failed creates
+- `Tasks in plan: <n>`
+- `Already linked: <n>`
+- `Created now: <n>`
+- `Failed creates: <n>`
 - `Decisions Log: PRESENT | MISSING`
 - `Reason: <one line>`
 - `Created/Linked Subtasks:` markdown table with **Task**, **Subtask Key**,
-  **Title**, **Dependencies**, **Priority**, **Outcome**
+  **Title**, **Dependencies**, **Priority**, and **Outcome**
 - Explicit `Warnings:` and `Failures:` sections
 
-`TICKET_KEY:` is required on every summary, including early exits. Keep this
-explicit stable identifier line even though it mirrors `Parent:`.
-
-This contract does **not** include `Write model:` or `Capability:` lines for
-Jira Phase 4 reporting.
-
-Treat `SUBTASKS: ERROR` as an unexpected tool or environment failure. The
-orchestrator stops and surfaces the reason instead of interpreting the run as a
-degraded success.
-
-When the run stops before plan updates or create attempts complete,
-`Created/Linked Subtasks` may be header-only. This is still contract-valid for
-early `BLOCKED`, `FAIL`, or `ERROR` exits.
-
-The `Created/Linked Subtasks` table is the structured handoff downstream
-progress tracking uses after Phase 4 completion. Preserve **Dependencies** and
-**Priority** columns for every row.
+`TICKET_KEY:` is required on every summary, including early exits. When the run
+stops before create attempts begin, report `Failed creates: 0` and use a
+header-only linkage table if no task rows are safe to report.
 
 When the plan file was updated, include one summary row per parsed task. For
 tasks without a concrete Jira key, use `Not Created` in `Subtask Key` and an
-`Outcome` that makes the result explicit, such as `Create failed`.
-
-If the run stops before create attempts begin, report `Failed creates: 0`.
+explicit `Outcome`, such as `Create failed`.
 
 ## Status and Validation Semantics
 
-- **PASS:** every task is linked to a valid Jira subtask and validation passed;
-  no blocking warnings
-- **WARN:** validation passed, but the run had non-fatal issues such as a
-  missing `## Decisions Log` or some tasks still not linked after individual
-  create failures
-- **BLOCKED:** the plan is missing, malformed, unsupported, or contains unsafe
-  existing Jira links that cannot be reused safely
-- **FAIL:** parent lookup failed, auth failed, Jira-capable tools were missing,
-  all tasks remained unlinked after create attempts, or post-write validation
-  could not be repaired
-- **ERROR:** an unexpected tool or environment failure interrupted the run
+| Status | Meaning |
+| ------ | ------- |
+| `PASS` | Every task is linked to a valid Jira subtask and validation passed |
+| `WARN` | Validation passed with non-fatal issues, such as missing decisions log or failed individual creates |
+| `BLOCKED` | Plan shape or existing linkage is unsafe to proceed |
+| `FAIL` | Parent lookup, auth, Jira tooling, all creates, or post-write validation failed |
+| `ERROR` | Unexpected tool or environment failure interrupted the run |
 
-Use `Validation: NOT_RUN` only when the run failed before any plan-file update
-or post-write validation could occur.
+Use `Validation: NOT_RUN` only when no plan-file update or post-write validation
+could occur.
+
+## Validation Checklist
+
+- Exactly one `## Jira Subtasks` table exists.
+- The table columns match the fixed order above.
+- The table has one row per parsed task.
+- Every concrete Jira key in the plan exists and belongs to `TICKET_KEY`.
+- Every workflow-table value has a matching per-task `Jira Subtask:` line.

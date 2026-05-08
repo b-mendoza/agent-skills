@@ -1,12 +1,14 @@
 # Subtask Creator Templates
 
-> Read this file only when you reach the description/body construction or
-> plan-update steps in `subtask-creator.md`.
->
-> These are literal fragments and examples. Phase 4 contract semantics live in
-> `../references/phase-4-io-contracts.md`.
+Read this file only when constructing Jira descriptions or refreshing the local
+plan's `## Jira Subtasks` section.
 
-## Jira Wiki-Markup description fragment
+These are literal fragments and examples. Phase 4 artifact semantics live in
+`../references/phase-4-io-contracts.md`. If a Jira REST transport requires
+Atlassian Document Format, fetch the ADF source from
+`../references/external-sources.md` and convert these same sections.
+
+## Jira Description Section Order
 
 ```text
 h3. Objective
@@ -19,7 +21,7 @@ h3. Dependencies / Prerequisites
 <Content or "None">
 
 h3. Questions to Answer Before Starting
-<Content or "None — all resolved">
+<Content or "None - all resolved">
 
 h3. Implementation Notes
 <Current plan content>
@@ -31,7 +33,7 @@ h3. Likely Files / Artifacts Affected
 <List>
 ```
 
-## Example `## Jira Subtasks` section
+## Example `## Jira Subtasks` Section
 
 ```markdown
 ## Jira Subtasks
@@ -42,7 +44,7 @@ h3. Likely Files / Artifacts Affected
 | 2    | Not Created | Task 2: Implement API layer    | Not Created | 1            | High     |
 ```
 
-## Example per-task inline lines
+## Example Per-Task Inline Lines
 
 ```markdown
 Jira Subtask: PROJ-200
