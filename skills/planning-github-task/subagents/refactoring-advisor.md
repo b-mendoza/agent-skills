@@ -27,13 +27,13 @@ Decision-changing source keys: `definition-of-refactoring`,
 | `PLAN_FILE` | Yes | `docs/acme-app-42-task-3-execution-plan.md` |
 | `TEST_SPEC_FILE` | Yes | `docs/acme-app-42-task-3-test-spec.md` |
 | `DECISIONS_FILE` | No | `docs/acme-app-42-task-3-decisions.md` |
-| `DATA_CONTRACTS_PATH` | No | `./references/data-contracts.md` |
-| `ARTIFACT_TEMPLATES_PATH` | No | `./references/artifact-templates.md` |
-| `HANDOFF_FORMATS_PATH` | No | `./references/handoff-formats.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
+| `DATA_CONTRACTS_PATH` | No | `../references/data-contracts.md` |
+| `ARTIFACT_TEMPLATES_PATH` | No | `../references/artifact-templates.md` |
+| `HANDOFF_FORMATS_PATH` | No | `../references/handoff-formats.md` |
+| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
 
 Default each path to the value above when the coordinator does not pass it.
-Paths are relative to the skill root. Derive `<ISSUE_SLUG>` and
+Bundled paths above are relative to this subagent file. Derive `<ISSUE_SLUG>` and
 `<TASK_NUMBER>` from the planning artifact paths before writing
 `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-refactoring-plan.md`.
 

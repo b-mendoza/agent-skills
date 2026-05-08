@@ -12,10 +12,10 @@ Pass these paths with each subagent dispatch unless a caller already
 provided a more specific bundled path:
 
 ```text
-DATA_CONTRACTS_PATH: ./references/data-contracts.md
-ARTIFACT_TEMPLATES_PATH: ./references/artifact-templates.md
-HANDOFF_FORMATS_PATH: ./references/handoff-formats.md
-EXTERNAL_SOURCES_PATH: ./references/external-sources.md
+DATA_CONTRACTS_PATH: ./data-contracts.md
+ARTIFACT_TEMPLATES_PATH: ./artifact-templates.md
+HANDOFF_FORMATS_PATH: ./handoff-formats.md
+EXTERNAL_SOURCES_PATH: ./external-sources.md
 ```
 
 The orchestrator does not fetch external methodology sources in advance. A
