@@ -1,57 +1,61 @@
-# Re-Plan Cycle and Error Handling
+# Re-Plan Cycle and Recovery
 
-This file is loaded when Phase 3 critique triggers a re-plan dispatch back
-to Phase 2, or when a recovery path needs targeted retry guidance. On the
-happy path, this file is never read.
+Read this file only when Phase 3 critique re-dispatches Phase 2 with
+`RE_PLAN=true`, or when recovering from a failed validator gate with preserved
+stage artifacts.
 
-> Read this file only for re-plan or recovery paths.
->
-> Preserve existing stage artifacts, restart from the earliest affected stage,
-> rerun every downstream stage whose input artifact is no longer valid, and
-> rerun the validator gates for each regenerated artifact.
+> Recovery rule: preserve existing stage artifacts, restart from the earliest
+> affected stage, rerun downstream stages whose inputs changed, and rerun only
+> the validator gates for regenerated artifacts.
 
-## Re-Plan Cycle
+## Re-Plan Inputs
 
-If Phase 3 critique triggers a re-plan, the orchestrator re-dispatches this
-skill with the same `ISSUE_SLUG`, plus:
+The orchestrator re-dispatches this skill with the same `ISSUE_SLUG`, plus:
 
-- `RE_PLAN=true` — signals this is a re-dispatch
-- `DECISIONS` — the decisions from Phase 3 that require plan changes
+| Input | Meaning |
+| ----- | ------- |
+| `RE_PLAN=true` | Signals this is a critique-driven re-dispatch |
+| `DECISIONS` | Phase 3 decisions that require plan changes |
 
-On re-plan:
+## Earliest Affected Stage
 
-1. **Re-dispatch only the affected stages first.** Use the new decisions and
-   the existing on-disk artifacts to update only the parts of the plan that are
-   no longer valid. If the critique affects the whole plan, re-run all three
-   stages.
-2. **Pass targeted fix inputs.** The affected subagent receives its original
-   inputs, plus `DECISIONS` only when the re-dispatched stage accepts it
-   (`task-planner` or `dependency-prioritizer`), and `VALIDATION_ISSUES` when
-   applicable.
-3. **Overwrite the affected stage artifacts** with updated versions so the
-   latest plan stays resumable.
-4. **After rerunning the earliest affected stage, rerun every downstream stage
-   and its validator gate.** Use validator-only reruns only when you are fixing
-   a validator failure without changing an earlier stage artifact. Finish with
-   post-pipeline validation once the updated plan is complete.
-5. **Skip preflight unless the snapshot changed.** Re-run preflight only when
-   `docs/<ISSUE_SLUG>.md` was updated or otherwise needs revalidation.
+| Start at | When decisions affect |
+| -------- | --------------------- |
+| Stage 1 | Issue interpretation, scope, assumptions, task decomposition, or current-child-issue detection |
+| Stage 2 | Ordering, dependencies, priority, branch names, or child-issue-vs-single-branch mode while task content remains valid |
+| Stage 3 | Final validation report, mechanical structure, or downstream contract wording only |
 
-**Maximum re-plan cycles:** 3 iterations. If Phase 3 critique still has
-unresolved concerns after 3 cycles, escalate to the user.
+After rerunning the earliest affected stage, rerun every downstream stage and
+finish with post-pipeline validation. Skip preflight unless
+`docs/<ISSUE_SLUG>.md` changed or must be revalidated.
 
-This re-plan budget is separate from the per-gate targeted fix budget below:
-re-plan tracks critique-driven planning revisions, while targeted fix cycles
-track repeated failures at the same validator boundary.
+## Branch Preservation
+
+Preserve branch names for unchanged tasks when those names may already have been
+shared with downstream child-issue creation or implementation. Regenerate branch
+names only for tasks whose number, title, or current-child-issue mode changed.
+
+If the issue is itself a GitHub child issue or sub-issue, keep every task on the
+same single branch during re-plan. Do not introduce child-issue branch names.
+
+## Targeted Fix Budget
+
+Re-plan iterations and validator retries are tracked separately:
+
+| Loop | Limit | Counts |
+| ---- | ----- | ------ |
+| Re-plan | 3 iterations | Critique-driven planning revisions |
+| Targeted validator fix | 3 cycles per gate | Repeated failures at the same structural gate |
+
+If the limit is exhausted, stop and return `PLANNING: FAIL` with the relevant
+failure category and a one-line reason.
 
 ## Error Handling
 
-- If any subagent fails, stop the pipeline. Report the failure with the stage
-  number and the subagent's structured summary.
-- If a `stage-validator` check fails, re-dispatch only the stage that produced
-  that artifact. Pass the validator's issues list as `VALIDATION_ISSUES`, then
-  re-run only that failing gate.
-- **Maximum targeted fix cycles per gate:** 3. If the same gate still fails
-  after the third cycle, stop and report.
-- Intermediate files are always preserved — they are never deleted, regardless
-  of success or failure.
+- If a stage subagent returns `FAIL`, `BLOCKED`, or `ERROR`, stop the pipeline
+  and report that stage as the failure category.
+- If `stage-validator` returns `FAIL`, re-dispatch only the stage that produced
+  the failing artifact and pass the validator's issues as `VALIDATION_ISSUES`.
+- If `stage-validator` returns `ERROR`, stop at that gate and report that the
+  validator errored.
+- Preserve intermediate files regardless of success or failure.
