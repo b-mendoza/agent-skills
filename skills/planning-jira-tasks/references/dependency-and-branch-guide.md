@@ -3,6 +3,12 @@
 Read this file when `dependency-prioritizer` is turning the stage 1 plan into
 the ordered stage 2 plan.
 
+> **Reminder:** Apply the operational rules below first. Fetch a URL from
+> `./external-sources.md` only when you need background (for example
+> `git-check-ref-format` for branch-name validity edge cases, `topological-sort`
+> for ordering rationale, `rice-scoring` for prioritization rationale, or
+> `feature-branch-workflow` for the `feature/` prefix convention).
+
 ## Dependency Classes
 
 | Class | Meaning |
@@ -16,12 +22,9 @@ unless an upstream output or shared-file risk makes the order mandatory.
 
 ## Prioritization
 
-Score each task from 1 to 5 on:
-
-- Risk
-- Complexity
-- Value unlock
-- Dependency
+Score each task from 1 to 5 on Risk, Complexity, Value unlock, and Dependency.
+Total is the sum out of 20. (For background on similar weighted prioritization
+schemes see `rice-scoring` in `./external-sources.md`.)
 
 Apply ordering rules in this order:
 
@@ -31,7 +34,8 @@ Apply ordering rules in this order:
 4. Defer low-risk, low-complexity tasks when nothing depends on them.
 5. Group related tasks when it reduces context switching and keeps the graph valid.
 
-The final order must be a valid topological sort.
+The final order must be a valid topological sort. See `topological-sort` in
+`./external-sources.md` for definition and corner cases.
 
 ## Branch Naming
 
@@ -54,11 +58,11 @@ Rules:
 - Use an explicit team prefix from the snapshot or `DECISIONS` if provided;
   otherwise use `feature/`.
 - Lowercase the Jira key.
-- Slugify the task title as short kebab-case.
-- Keep branch names deterministic and valid for Git refs: no spaces, no trailing
-  slash or dot, no `..`, and no characters such as `~`, `^`, `:`, `?`, `*`, `[`,
-  or backslash.
-- Keep names readable; prefer a short slug over copying the full task title.
+- Slugify the task title as short kebab-case; prefer a short slug over copying
+  the full title.
+- Branch names must be valid Git refs. Validate against `git-check-ref-format`
+  in `./external-sources.md` (no spaces, no `..`, no leading or trailing `/`,
+  no trailing `.lock`, none of `~`, `^`, `:`, `?`, `*`, `[`, or backslash).
 
 ## Current-Subtask Mode
 

@@ -4,6 +4,11 @@ Read this file when checking Phase 2 inputs, final artifact requirements,
 branch-name requirements, or the special handling for tickets that are already
 Jira subtasks.
 
+> **Reminder:** The required sections and per-task fields below are the
+> binding output contract. For background on Jira's parent-ticket / subtask
+> hierarchy or branch-name validity, see `./external-sources.md`
+> (`jira-subtasks`, `git-check-ref-format`).
+
 ## Snapshot Contract
 
 Input snapshot path: `docs/<TICKET_KEY>.md`

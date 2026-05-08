@@ -36,6 +36,10 @@ permission to rewrite unrelated plan content.
 5. Write the finished plan to `OUTPUT_PATH`.
 6. Return only the concise summary from `## Output Format`.
 
+If a method needs background (problem-framing rationale, traceability,
+definition-of-done quality, INVEST), consult `../references/external-sources.md`
+just-in-time. The skill works offline without those URLs.
+
 ## Output Contract
 
 Path: `OUTPUT_PATH`

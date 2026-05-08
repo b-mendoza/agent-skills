@@ -2,6 +2,11 @@
 
 Read this file only from `stage-validator` or `task-validator`.
 
+> **Reminder:** These check lists are the structural contract. Apply them
+> exactly. For background or definitions (for example branch validity edge
+> cases via `git-check-ref-format`, or dependency-cycle / topological-sort
+> definitions), see `./external-sources.md`.
+
 ## Stage Validator Checks
 
 ### Stage `preflight`
