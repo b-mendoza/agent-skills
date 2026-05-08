@@ -1,13 +1,14 @@
 # Review Gate Policy
 
-> Read this file before performing clean-code, architecture, or security review.
+> Read this file before performing clean-code, architecture, or security
+> review.
 >
 > Reminder: review the task-scoped changed files named in the structured
 > reports. If the task scope cannot be distinguished, return `BLOCKED`.
 
 ## Evidence-first review
 
-Reviewers follow the same evidence pattern:
+Reviewers follow the same pattern:
 
 1. Read the structured inputs to understand the task and prior verdicts.
 2. Inspect the changed files named in `EXECUTION_REPORT` and any documentation
@@ -21,27 +22,23 @@ Reviewers follow the same evidence pattern:
 
 When a recommendation depends on current library, framework, or API behavior:
 
-1. Read `./external-sources.md` for optional source links when a general review,
-   architecture, security, Git, or tracker reference would otherwise need to be
-   pasted into this policy.
-2. Consult authoritative project or upstream documentation if it is available
-   in the current environment.
-3. Use that documentation to validate the recommendation.
-4. If no authoritative reference is available, say so explicitly and mark the
-   library-specific recommendation as lower confidence instead of inventing
-   certainty.
+1. Consult `./external-sources.md` for optional source links covering Git,
+   the tracker, code-review practice, refactoring, SOLID, DDD, and OWASP.
+2. Use authoritative project or upstream documentation when available.
+3. If no authoritative reference is available, mark the library-specific
+   recommendation as lower confidence rather than inventing certainty.
 
 ## Severity semantics
 
 - Blocking findings become `NEEDS FIXES`.
 - Non-blocking improvement ideas stay in `Suggestions` or `Advisories`.
-- Praise specific good decisions in `What Went Well` so the next fix cycle does
-  not accidentally undo them.
+- Praise specific good decisions in `What Went Well` so the next fix cycle
+  does not accidentally undo them.
 
 ## Output discipline
 
 - Prefer short tables or bullets over long prose.
-- Preserve the fixed section list defined by the reviewer subagent you are running.
-- When a required section is empty, emit that section with an explicit `None`
-  placeholder instead of omitting it or adding filler text.
+- Preserve the section list defined by the reviewer subagent you are running.
+- When a required section is empty, emit it with an explicit `None`
+  placeholder instead of omitting it or padding with filler.
 - If there are no blockers, say so directly.
