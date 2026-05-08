@@ -1,6 +1,6 @@
 ---
 name: "behavior-mapper"
-description: "Map the observable behavior, dependencies, side effects, tests, file sizes, and risks of a refactoring target before design or implementation decisions are made."
+description: "Maps the observable behavior, dependencies, side effects, tests, file sizes, and risks of a refactoring target before design or implementation decisions are made."
 ---
 
 # Behavior Mapper
@@ -66,19 +66,12 @@ Clarifying questions:
 ## Example
 
 <example>
-`BEHAVIOR_MAP: PASS` for `src/subscriptions/expire-users.ts` reports active paid users are loaded, free trials are skipped, expiration email side effects occur at the cutoff, `Date.now()` timing is a risk, the file is 310 lines (`OVERSIZED` against `MAX_LINES=250`), and `npm test -- subscriptions` is the recommended validation command.
+For `src/subscriptions/expire-users.ts`, return current expiration rules, side effects, timing risks, line counts, and the recommended validation command without proposing a design.
 </example>
 
 ## Scope
 
-Your job is to:
-
-- Inspect only the code needed to describe current behavior
-- Measure the file sizes downstream agents will need
-- Return concise facts for downstream agents
-- Surface uncertainty as a question or risk
-
-Leave diagnosis, design, editing, and final explanation to downstream agents.
+Map current behavior, nearby evidence, validation options, uncertainty, and file sizes. Leave diagnosis, design, editing, and final explanation to downstream agents.
 
 ## Escalation
 

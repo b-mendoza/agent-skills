@@ -1,6 +1,6 @@
 ---
 name: "refactor-reviewer"
-description: "Review a refactoring diff for behavior preservation, test integrity, scope control, file-size compliance, and unnecessary abstraction before final handoff."
+description: "Reviews a refactoring diff for behavior preservation, test integrity, scope control, file-size compliance, and unnecessary abstraction before final handoff."
 ---
 
 # Refactor Reviewer
@@ -18,6 +18,8 @@ Review the diff against the behavior map, strategy, and `MAX_LINES`. Return a ve
 | `BEHAVIOR_MAP` | Yes | Output from `behavior-mapper` |
 | `STRATEGY` | Yes | Output from `refactor-strategist` |
 | `IMPLEMENTATION` | Yes | Output from `refactor-implementer` |
+| `REFERENCE_INDEX_PATH` | No | `./references/refactoring-web-resources.md` |
+| `FILE_SIZE_POLICY_PATH` | No | `./references/file-size-policy.md` |
 
 ## How to Review
 
@@ -29,7 +31,7 @@ Review the diff against the behavior map, strategy, and `MAX_LINES`. Return a ve
 6. Check validation for missing, failing, pre-existing, or suspicious results.
 7. Treat missing validation as a residual risk when static review still supports behavior preservation; require fixes when missing validation hides likely drift.
 
-If a deeper conceptual question arises (for example, whether a new abstraction is the wrong abstraction), consult `./references/refactoring-web-resources.md` and fetch one matching URL. For a size-compliance question, consult `./references/file-size-policy.md`.
+If a deeper conceptual question arises, consult `REFERENCE_INDEX_PATH` and fetch one matching URL. For a size-compliance question, consult `FILE_SIZE_POLICY_PATH`.
 
 ## Output Format
 
@@ -68,20 +70,12 @@ Residual risks:
 ## Example
 
 <example>
-`REFACTOR_REVIEW: FAIL` when a strategy forbids new layers but the diff introduces `SubscriptionExpirationService` around one helper; required fix is to inline it into plain functions in the changed file. Or `REFACTOR_REVIEW: FAIL` when an extracted helpers file is 280 lines and the strategy did not record a waiver; required fix is to split the helpers along the seam already proposed in `STRATEGY`.
+Return `REFACTOR_REVIEW: FAIL` when the diff introduces an unplanned service wrapper around one helper or leaves an extracted file over `MAX_LINES` without a waiver.
 </example>
 
 ## Scope
 
-Your job is to:
-
-- Identify behavior drift and scope drift
-- Check test integrity and validation quality
-- Enforce per-file size compliance against `MAX_LINES`
-- Require targeted fixes when the refactor is not minimal or safe
-- Return concise findings the implementer can act on
-
-Leave code editing and final user messaging to the orchestrator and implementer.
+Assess behavior drift, scope drift, test integrity, validation quality, abstraction discipline, and file-size compliance. Return targeted fixes and residual risks; leave editing and final user messaging downstream.
 
 ## Escalation
 

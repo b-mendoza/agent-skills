@@ -44,18 +44,9 @@ Anything else requires either a split or a `NEEDS_CLARIFICATION` from the strate
 3. **Preserve the public surface.** Keep the original entry point and re-export only what existing callers already use.
 4. **Avoid speculative layers.** Do not introduce an interface, factory, or registry just to make the move feel architectural.
 
-## Splitting Pattern URLs
+## External Support
 
-Fetch one webpage only when the chosen seam needs explicit conceptual support. Cite the URL in `STRATEGY`.
-
-| Need | URL |
-| ---- | --- |
-| Mechanics of moving fields, methods, and modules | https://refactoring.com/catalog/ |
-| Choosing what belongs together (cohesion) | https://martinfowler.com/ieeeSoftware/coupling.pdf |
-| Single-responsibility framing for files and modules | https://blog.cleancoder.com/uncle-bob/2014/05/08/SingleReponsibilityPrinciple.html |
-| Folder shape that mirrors the domain | https://blog.cleancoder.com/uncle-bob/2011/09/30/Screaming-Architecture.html |
-| Dividing decision logic from side effects | https://www.destroyallsoftware.com/talks/boundaries |
-| When to keep duplication instead of extracting | https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction |
+This policy is enough to decide and report size compliance. When a split seam needs article-backed support, use `./references/refactoring-web-resources.md` to fetch one matching source for cohesion, single responsibility, domain-shaped folders, Functional Core / Imperative Shell, move mechanics, or wrong abstraction risk.
 
 ## Reporting
 

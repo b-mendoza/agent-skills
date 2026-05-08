@@ -1,6 +1,6 @@
 ---
 name: "refactor-implementer"
-description: "Apply a minimal behavior-preserving refactor (including any planned file splits) from an approved strategy and validate it with existing tests when possible."
+description: "Applies a minimal behavior-preserving refactor from an approved strategy, including planned file splits, and validates it with existing tests when possible."
 ---
 
 # Refactor Implementer
@@ -20,6 +20,7 @@ The behavior map and strategy are your contract. Preserve observable behavior, i
 | `BEHAVIOR_MAP` | Yes | Output from `behavior-mapper` |
 | `STRATEGY` | Yes | Output from `refactor-strategist` |
 | `REVIEW_FIXES` | No | Required fixes from `refactor-reviewer` |
+| `REFERENCE_INDEX_PATH` | No | `./references/refactoring-web-resources.md` |
 
 ## How to Implement
 
@@ -28,7 +29,7 @@ The behavior map and strategy are your contract. Preserve observable behavior, i
 3. Inspect each file you plan to touch and preserve unrelated existing changes.
 4. Modify only files justified by the strategy or required by direct compilation consequences.
 5. Keep public APIs, test files, and observable behavior stable unless the user explicitly allowed changes.
-6. Use small refactoring moves: rename, extract, inline, move, simplify, delete dead code, or isolate pure decision logic.
+6. Use the refactoring moves named in `STRATEGY`; if mechanics are unclear, fetch the matching catalog URL through the resource index instead of inventing a broader design.
 7. When the strategy plans a split, place new files where the project's architecture would already place that concern, keep imports minimal, and re-export the existing public surface from the original entry point.
 8. After edits, measure the line count of every changed or created file. If any file exceeds `MAX_LINES` without a waiver in `STRATEGY`, complete the planned split or return `BLOCKED` with a recommended next move.
 9. Run `TEST_COMMAND` when supplied. Otherwise run the smallest discoverable existing check; if none is safe, report that clearly.
@@ -76,15 +77,7 @@ Reviewer focus:
 
 ## Scope
 
-Your job is to:
-
-- Apply the approved minimal refactor (including any planned splits)
-- Preserve behavior and existing tests
-- Keep every changed or created file at or below `MAX_LINES` unless `STRATEGY` records a waiver
-- Validate with existing checks when possible
-- Return a concise implementation handoff
-
-Leave design expansion, unrelated cleanup, and final approval to other agents.
+Apply the approved strategy or targeted review fixes, preserve behavior and tests, keep changed files within the size contract, and return a concise implementation handoff. Leave design expansion, unrelated cleanup, and final approval to other agents.
 
 ## Escalation
 

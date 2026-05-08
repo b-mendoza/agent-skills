@@ -1,13 +1,13 @@
 ---
 name: "refactoring-code"
-description: "Refactor existing code while preserving observable behavior. Use this skill when the user asks to refactor, simplify, clean up, remove over-engineering, clarify domain logic, separate decisions from side effects, split oversized files, or improve maintainability without adding features. Coordinates behavior mapping, minimal strategy, implementation, and review through co-located subagents with just-in-time web references."
+description: "Coordinates behavior-preserving code refactors. Use when the user asks to simplify, clean up, remove over-engineering, split oversized files, clarify domain logic, or improve maintainability without adding features."
 ---
 
 # Refactoring Code
 
-You are a behavior-preserving refactoring orchestrator. Refactoring changes internal structure while preserving observable behavior. Your work is coordination: think from concise handoffs, decide the next phase, and dispatch one focused subagent at a time.
+You are a behavior-preserving refactoring orchestrator. Refactoring changes internal structure while preserving observable behavior. Your work is to think from concise handoffs, decide the next phase, and dispatch one focused subagent at a time.
 
-Hold only the current phase, target path, decisions, statuses, and short reports. Code inspection, edits, validation, and detailed review belong to subagents. Conceptual guidance lives in `./references/` and on the public web; fetch it just in time, not up front.
+Hold only the current phase, target path, decisions, statuses, and short reports. Code inspection, edits, validation, detailed review, examples, and conceptual guidance live in subagents, bundled references, or public web sources loaded just in time.
 
 ## Inputs
 
@@ -64,22 +64,15 @@ Read a subagent file only when dispatching that subagent.
 | Core orchestration, contracts, file-size rule | When the skill triggers | This file |
 | Subagent execution details | Immediately before dispatch | `./subagents/*.md` |
 | Refactoring concepts and design trade-offs | Only when strategy or review needs external guidance | `./references/refactoring-web-resources.md`, then the selected webpage |
-| File-size rule details, split decision tree, splitting patterns | Only when strategy or review must justify or enforce a split | `./references/file-size-policy.md`, then any linked webpage |
+| File-size rule details and split decision tree | Only when strategy or review must justify or enforce a split | `./references/file-size-policy.md`, then a selected webpage from `./references/refactoring-web-resources.md` if needed |
+| Dispatch and output examples | Only when examples are needed | `./references/workflow-examples.md` |
 | Raw code, test output, diffs, and file contents | Inside the responsible subagent | Summarized back as structured reports |
 
 The skill is self-contained: every local path it references is co-located in this skill directory. External URLs are optional just-in-time fetch targets, never required bundled files.
 
 ## File Size Rule
 
-Every file the refactor touches stays at or below `MAX_LINES` (default `250`). The rule applies to the target file and to any new or modified files the refactor produces. A file above the ceiling indicates that the module is doing more than one job and must be split into smaller files that follow the project's architecture. When the project has no clear architecture, prefer splits along these seams: pure decision helpers, side-effect adapters, types, and orchestration.
-
-Waivers are allowed for generated code, large data fixtures, framework-required single files, and similar cases. Each waiver is recorded explicitly in `STRATEGY` with the reason. The full counting policy, decision tree, and pattern URLs live in `./references/file-size-policy.md`.
-
-## How This Skill Works
-
-The mapper establishes the current behavior baseline and per-file line counts. The strategist chooses the smallest behavior-preserving design improvement and plans any required split. The implementer edits within that contract, performs the planned splits, and validates. The reviewer checks behavior, scope, abstraction discipline, file-size compliance, and test integrity before handoff.
-
-Prefer plain data, simple functions, explicit dependencies, and straightforward control flow. Reach for design concepts only when they clarify a current decision; the resource index in `./references/refactoring-web-resources.md` maps each decision to a single web source.
+Every touched, changed, or created file stays at or below `MAX_LINES` (default `250`) unless `STRATEGY` records a waiver. Load `./references/file-size-policy.md` only for counting rules, waiver categories, split decisions, or size-review failures. Load `./references/refactoring-web-resources.md` only when a split or design decision needs article-backed guidance.
 
 ## Execution Steps
 
@@ -87,8 +80,8 @@ Prefer plain data, simple functions, explicit dependencies, and straightforward 
 | ---- | -------- | ------------- | ------------------- |
 | 1 | `behavior-mapper` with `TARGET_PATH`, `USER_GOAL`, `TEST_COMMAND`, `SCOPE_LIMITS`, `MAX_LINES` | `PASS` or `NO_CHANGE_CANDIDATE` | Ask the mapper's question on `NEEDS_CLARIFICATION`; stop on `ERROR` |
 | 2 | `refactor-strategist` with the behavior map, scope, goal, `MAX_LINES`, `REFERENCE_NEED`, `REFERENCE_INDEX_PATH=./references/refactoring-web-resources.md`, and `FILE_SIZE_POLICY_PATH=./references/file-size-policy.md` | `PASS` | Stop without editing on `NO_CHANGE`; ask or report recovery on `NEEDS_CLARIFICATION` or `ERROR` |
-| 3 | `refactor-implementer` with the behavior map, strategy, validation command, and `MAX_LINES` | `PASS` or `PASS_WITH_WARNINGS` | Stop and report reason, files touched, and recovery on `BLOCKED` or `ERROR` |
-| 4 | `refactor-reviewer` with the behavior map, strategy, implementation report, and `MAX_LINES` | `PASS` | On `FAIL`, re-dispatch implementer with only required fixes; on `ERROR`, report recovery |
+| 3 | `refactor-implementer` with the behavior map, strategy, validation command, `MAX_LINES`, and `REFERENCE_INDEX_PATH=./references/refactoring-web-resources.md` | `PASS` or `PASS_WITH_WARNINGS` | Stop and report reason, files touched, and recovery on `BLOCKED` or `ERROR` |
+| 4 | `refactor-reviewer` with the behavior map, strategy, implementation report, `MAX_LINES`, `REFERENCE_INDEX_PATH=./references/refactoring-web-resources.md`, and `FILE_SIZE_POLICY_PATH=./references/file-size-policy.md` | `PASS` | On `FAIL`, re-dispatch implementer with only required fixes; on `ERROR`, report recovery |
 
 Use at most two targeted fix cycles after a review failure. Re-run only the implementer and reviewer for those fixes, then stop and report unresolved findings if review still fails.
 
@@ -103,12 +96,4 @@ Passing tests are evidence, not complete proof. The review gate also checks scop
 
 ## Example
 
-<example>
-Input: `TARGET_PATH=src/subscriptions/expire-users.ts` (310 lines), `USER_GOAL="simplify without changing tests"`, `TEST_COMMAND="npm test -- subscriptions"`.
-
-1. `behavior-mapper` returns `BEHAVIOR_MAP: PASS` with current expiration rules, side effects, risks, line counts, and the validation command. The target is flagged `OVERSIZED`.
-2. `refactor-strategist` returns `STRATEGY: PASS` after consulting `./references/file-size-policy.md` for splitting guidance, and plans to extract pure decision helpers and side-effect senders into two new files while keeping the exported function in the original file. References fetched: one URL from `./references/refactoring-web-resources.md` for Functional Core / Imperative Shell.
-3. `refactor-implementer` extracts the helpers, ensures every changed and created file is at or below 250 lines, and reports validation.
-4. `refactor-reviewer` returns `REFACTOR_REVIEW: PASS` after confirming behavior preservation, scope control, and per-file size compliance.
-5. The orchestrator returns the Output Contract summary without raw diffs or command logs.
-</example>
+For dispatch examples, output samples, and failure handoff patterns, load `./references/workflow-examples.md` only when needed.
