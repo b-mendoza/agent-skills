@@ -28,16 +28,17 @@ and inclusive ranges such as `1,2,4` or `5-7`.
 3. Check each dependency using the most direct platform-native method:
    - **MCP dependency:** verify the relevant server/tools are available.
    - **Skill dependency:** prefer skill discovery when available; otherwise
-     verify that the skill definition exists at
-     `skills/<skill-name>/SKILL.md` relative to the repository root (same layout
-     as the orchestrator's downstream skill table).
+     verify the manifest path for that sibling skill. Paths in the manifest are
+     relative to `./preflight-checker-manifest.md` in this `subagents/` folder.
    - **CLI/tool dependency:** run a lightweight version or availability check.
 4. Record each dependency as one of:
    - `AVAILABLE`
    - `MISSING`
    - `UNKNOWN` when the platform does not expose a reliable way to check
-5. Return a compact summary only. Do not install, configure, or repair
-   anything yourself.
+5. If a missing dependency needs current setup instructions, read
+   `../references/external-sources.md` and fetch only the relevant setup URL.
+6. Return a compact summary only. Do not install, configure, or repair anything
+   yourself.
 
 For **Jira MCP**, when any requested phase needs it (typically 1 and 4),
 verify that the relevant Jira MCP tools are available and can respond. Treat
@@ -75,12 +76,12 @@ Omit the `Missing:` or `Unknown:` section when it would be empty.
 <example>
 PREFLIGHT: FAIL
 Ticket: JNS-6065
-Phases: 5-7
+Phases: 1-4
 Summary: 1 required dependency is missing for the remaining phases.
-Available: 5 | Missing: 1 | Unknown: 0
+Available: 4 | Missing: 1 | Unknown: 0
 
 Missing:
-- /humanizer (Phase 7, used by documentation-writer) - install `skills install blader/humanizer`
+- Jira MCP (Phase 1, 4, used by Jira reads/writes) - connect Jira MCP in the host runtime
 </example>
 
 ## Scope

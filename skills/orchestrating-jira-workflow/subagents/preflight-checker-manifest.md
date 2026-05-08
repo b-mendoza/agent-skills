@@ -1,126 +1,78 @@
-# Preflight Checker — Dependency Manifest
+# Preflight Checker - Dependency Manifest
 
-> This file contains the full dependency manifest for the preflight checker.
-> Read this when performing a preflight check to know exactly what to verify.
+> This file contains the direct dependency manifest for the Jira workflow
+> preflight checker. Preflight reports availability only; it does not install,
+> connect, or repair dependencies.
 >
-> Reminder: preflight reports availability only. It does not install, connect,
-> or repair dependencies.
-
----
+> For current Jira MCP setup details, load `../references/external-sources.md`
+> and fetch the Atlassian Rovo MCP source only if the user needs setup help.
 
 ## Classification
 
-Dependencies listed in a phase table are required unless that phase explicitly
-marks one as recommended-only. A passing preflight verifies that every
-requested required dependency is available, with `UNKNOWN` reserved only for
-inherently ambiguous checks. Any requested required dependency confirmed as
-`MISSING` produces a `FAIL` verdict. This is enforced both here (preflight)
-and by each subagent at runtime (defense-in-depth).
+This manifest covers dependencies owned directly by the orchestrating workflow:
+co-located subagents, sibling downstream skills, and platform transport needed
+for Jira reads/writes. Downstream skills own their own transitive skill/tool
+dependencies and should validate them when invoked.
 
----
+Any requested required dependency confirmed as `MISSING` produces
+`PREFLIGHT: FAIL`. Use `UNKNOWN` only when the platform does not expose a
+reliable check. Use `ERROR` only when preflight itself cannot run.
 
-## Phase 1 — Fetch Work Item (`fetching-jira-ticket`)
+## Phase 1 - Fetch Work Item
 
-| Dependency             | Type  | Used by               | How to check                                      | Install / configure                          |
-| ---------------------- | ----- | --------------------- | ------------------------------------------------- | -------------------------------------------- |
-| Jira MCP               | MCP   | ticket-retriever      | Attempt to list Jira-related MCP tools            | Connect Jira MCP in your IDE/CLI settings    |
-| `fetching-jira-ticket` | Skill | Phase 1 orchestration | `skills/…/fetching-jira-ticket/SKILL.md` exists   | Add skill at expected repo path              |
+| Dependency | Type | Used by | How to check | Configure |
+| ---------- | ---- | ------- | ------------ | --------- |
+| Jira MCP | MCP | Jira ticket retrieval | Verify Jira-related MCP tools are available and responsive | Connect Jira MCP in the host runtime |
+| `fetching-jira-ticket` | Skill | Phase 1 orchestration | `../../fetching-jira-ticket/SKILL.md` exists | Install sibling skill at expected path |
 
----
+## Phase 2 - Plan Tasks
 
-## Phase 2 — Plan Tasks (`planning-jira-tasks`)
+| Dependency | Type | Used by | How to check | Configure |
+| ---------- | ---- | ------- | ------------ | --------- |
+| `planning-jira-tasks` | Skill | Phase 2 orchestration | `../../planning-jira-tasks/SKILL.md` exists | Install sibling skill at expected path |
 
-| Dependency            | Type  | Used by                              | How to check                                        | Install / configure                             |
-| --------------------- | ----- | ------------------------------------ | --------------------------------------------------- | ----------------------------------------------- |
-| /writing-plans        | Skill | task-planner, dependency-prioritizer | Run `/find-skills writing-plans` or check skill dir | `skills install obra/superpowers/writing-plans` |
-| `planning-jira-tasks` | Skill | Phase 2 orchestration                | `skills/…/planning-jira-tasks/SKILL.md` exists      | Add skill at expected repo path                 |
+## Phase 3 - Clarify + Critique
 
----
+| Dependency | Type | Used by | How to check | Configure |
+| ---------- | ---- | ------- | ------------ | --------- |
+| `clarifying-assumptions` | Skill | Phase 3 orchestration | `../../clarifying-assumptions/SKILL.md` exists | Install sibling skill at expected path |
 
-## Phase 3 — Clarify + Critique (`clarifying-assumptions`, upfront)
+## Phase 4 - Create Child Items
 
-| Dependency               | Type  | Used by               | How to check                                        | Install / configure             |
-| ------------------------ | ----- | --------------------- | --------------------------------------------------- | ------------------------------- |
-| `clarifying-assumptions` | Skill | Phase 3 orchestration | `skills/.../clarifying-assumptions/SKILL.md` exists | Add skill at expected repo path |
+| Dependency | Type | Used by | How to check | Configure |
+| ---------- | ---- | ------- | ------------ | --------- |
+| Jira MCP | MCP | Jira subtask creation/linking | Same as Phase 1 | Same as Phase 1 |
+| `creating-jira-subtasks` | Skill | Phase 4 orchestration | `../../creating-jira-subtasks/SKILL.md` exists | Install sibling skill at expected path |
 
-No external dependencies beyond the skill file. Conversational skill; inline
-execution.
+## Phase 5 - Plan Task Execution
 
----
+| Dependency | Type | Used by | How to check | Configure |
+| ---------- | ---- | ------- | ------------ | --------- |
+| `planning-jira-task` | Skill | Phase 5 orchestration | `../../planning-jira-task/SKILL.md` exists | Install sibling skill at expected path |
 
-## Phase 4 — Create Child Items (`creating-jira-subtasks`)
+## Phase 6 - Clarify + Critique Task Plan
 
-| Dependency               | Type  | Used by               | How to check                                     | Install / configure               |
-| ------------------------ | ----- | --------------------- | ------------------------------------------------ | --------------------------------- |
-| Jira MCP                 | MCP   | subtask-creator       | Same check as Phase 1                            | Same as Phase 1                   |
-| `creating-jira-subtasks` | Skill | Phase 4 orchestration | `skills/…/creating-jira-subtasks/SKILL.md` exists | Add skill at expected repo path   |
+| Dependency | Type | Used by | How to check | Configure |
+| ---------- | ---- | ------- | ------------ | --------- |
+| `clarifying-assumptions` | Skill | Phase 6 orchestration | `../../clarifying-assumptions/SKILL.md` exists | Install sibling skill at expected path |
 
----
+## Phase 7 - Kick Off + Execute
 
-## Phase 5 — Plan Task Execution (`planning-jira-task`)
+| Dependency | Type | Used by | How to check | Configure |
+| ---------- | ---- | ------- | ------------ | --------- |
+| `executing-jira-task` | Skill | Phase 7 orchestration | `../../executing-jira-task/SKILL.md` exists | Install sibling skill at expected path |
 
-| Dependency               | Type  | Used by                                                 | How to check                                                  | Install / configure                                       |
-| ------------------------ | ----- | ------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------- |
-| git CLI                  | Tool  | execution-prepper (branch management)                   | Run `git --version`                                           | Install git                                               |
-| /find-skills             | Skill | execution-planner                                       | Try invoking `/find-skills` with a test query                 | `skills install vercel-labs/skills/find-skills`           |
-| /writing-plans           | Skill | execution-planner, test-strategist, refactoring-advisor | Run `/find-skills writing-plans` or check skill dir           | `skills install obra/superpowers/writing-plans`           |
-| /test-driven-development | Skill | test-strategist                                         | Run `/find-skills test-driven-development` or check skill dir | `skills install obra/superpowers/test-driven-development` |
-| /vitest                  | Skill | test-strategist                                         | Run `/find-skills vitest` or check skill dir                  | `skills install antfu/skills/vitest`                      |
-| `planning-jira-task`     | Skill | Phase 5 orchestration                                   | `skills/…/planning-jira-task/SKILL.md` exists                 | Add skill at expected repo path                           |
+## Quick Reference
 
----
+| Dependency | Type | Phase(s) |
+| ---------- | ---- | -------- |
+| Jira MCP | MCP | 1, 4 |
+| `fetching-jira-ticket` | Skill | 1 |
+| `planning-jira-tasks` | Skill | 2 |
+| `clarifying-assumptions` | Skill | 3, 6 |
+| `creating-jira-subtasks` | Skill | 4 |
+| `planning-jira-task` | Skill | 5 |
+| `executing-jira-task` | Skill | 7 |
 
-## Phase 6 — Clarify + Critique (`clarifying-assumptions`, critique mode)
-
-| Dependency               | Type  | Used by               | How to check                                        | Install / configure             |
-| ------------------------ | ----- | --------------------- | --------------------------------------------------- | ------------------------------- |
-| `clarifying-assumptions` | Skill | Phase 6 orchestration | `skills/.../clarifying-assumptions/SKILL.md` exists | Add skill at expected repo path |
-
-No external dependencies beyond the skill file. Conversational skill; inline
-execution.
-
----
-
-## Phase 7 — Kick Off + Execute (`executing-jira-task`)
-
-| Dependency                   | Type  | Used by                | How to check                                                      | Install / configure                                                             |
-| ---------------------------- | ----- | ---------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `executing-jira-task`        | Skill | Phase 7 orchestration  | `skills/…/executing-jira-task/SKILL.md` exists                    | Add skill at expected repo path                                                 |
-| /commit-work                 | Skill | documentation-writer   | Run `/find-skills commit-work` or check skill dir                 | `skills install softaworks/agent-toolkit/commit-work`                           |
-| /humanizer                   | Skill | documentation-writer   | Run `/find-skills humanizer` or check skill dir                   | `skills install blader/humanizer`                                               |
-| /executing-plans             | Skill | task-executor          | Run `/find-skills executing-plans` or check skill dir             | `skills install obra/superpowers/executing-plans`                               |
-| /clean-code                  | Skill | clean-code-reviewer    | Run `/find-skills clean-code` or check skill dir                  | `skills install sickn33/antigravity-awesome-skills/clean-code`                  |
-| /architecture-patterns       | Skill | architecture-reviewer  | Run `/find-skills architecture-patterns` or check skill dir       | `skills install wshobson/agents/architecture-patterns`                          |
-| /api-security-best-practices | Skill | security-auditor       | Run `/find-skills api-security-best-practices` or check skill dir | `skills install sickn33/antigravity-awesome-skills/api-security-best-practices` |
-| context7 MCP (recommended-only) | MCP | Quality gate reviewers | Attempt to list context7 MCP tools                                | Connect context7 MCP in your IDE/CLI settings                                   |
-
----
-
-## Quick Reference — All Dependencies
-
-| Dependency                   | Type  | Phase(s) |
-| ---------------------------- | ----- | -------- |
-| Jira MCP                     | MCP   | 1, 4     |
-| `fetching-jira-ticket`       | Skill | 1        |
-| git CLI                      | Tool  | 5        |
-| /writing-plans               | Skill | 2, 5     |
-| `planning-jira-tasks`        | Skill | 2        |
-| `clarifying-assumptions`     | Skill | 3, 6     |
-| `creating-jira-subtasks`     | Skill | 4        |
-| /find-skills                 | Skill | 5        |
-| /test-driven-development     | Skill | 5        |
-| /vitest                      | Skill | 5        |
-| `planning-jira-task`         | Skill | 5        |
-| `executing-jira-task`        | Skill | 7        |
-| /commit-work                 | Skill | 7        |
-| /humanizer                   | Skill | 7        |
-| /executing-plans             | Skill | 7        |
-| /clean-code                  | Skill | 7        |
-| /architecture-patterns       | Skill | 7        |
-| /api-security-best-practices | Skill | 7        |
-
-`context7` is recommended-only for Phase 7 review quality. The reviewers use it
-when available and lower confidence when it is not. Do not fail preflight
-solely because `context7` is unavailable.
-
-**Total: 19 dependencies** (1 MCP, 1 CLI tool, 17 skills)
+Deduplicate repeated dependencies, such as `clarifying-assumptions`, when
+reporting `Available`, `Missing`, and `Unknown` counts.
