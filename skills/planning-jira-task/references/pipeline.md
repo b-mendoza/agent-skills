@@ -6,6 +6,21 @@
 > Reminder: dispatch one subagent at a time, keep only summaries, and rerun only
 > the steps invalidated by critique.
 
+## Shared Reference Paths
+
+Pass these paths with each subagent dispatch unless a caller already provided a
+more specific bundled path:
+
+```text
+DATA_CONTRACTS_PATH: ./references/data-contracts.md
+ARTIFACT_TEMPLATES_PATH: ./references/artifact-templates.md
+EXTERNAL_SOURCES_PATH: ./references/external-sources.md
+```
+
+The orchestrator does not fetch external methodology sources in advance. A
+subagent reads `EXTERNAL_SOURCES_PATH` only when a public source can change its
+current artifact decision, then returns exact URLs in `References fetched`.
+
 ## Standard Pipeline
 
 ### Stage 1. Dispatch `execution-prepper`
@@ -16,6 +31,7 @@ Inputs:
 - `TASK_NUMBER`
 - `RE_PLAN` when applicable
 - `DECISIONS_FILE` when applicable
+- Shared reference paths
 
 Interpret the result:
 
@@ -30,6 +46,7 @@ Inputs:
 
 - `BRIEF_FILE`
 - `DECISIONS_FILE` when applicable
+- Shared reference paths
 
 Interpret the result:
 
@@ -45,6 +62,7 @@ Inputs:
 - `BRIEF_FILE`
 - `PLAN_FILE`
 - `DECISIONS_FILE` when applicable
+- Shared reference paths
 
 Interpret the result:
 
@@ -61,6 +79,7 @@ Inputs:
 - `PLAN_FILE`
 - `TEST_SPEC_FILE`
 - `DECISIONS_FILE` when applicable
+- Shared reference paths
 
 Interpret the result:
 
@@ -78,6 +97,7 @@ Return a short summary containing:
 - One or two sentences on the recommended approach
 - The number or shape of tests specified
 - The refactoring verdict
+- Any exact `References fetched` URLs, or `none`
 
 ## Re-Plan Rules
 
@@ -105,3 +125,12 @@ Whenever a subagent is re-run:
 
 Maximum re-plan loops: 3. If critique still reports unresolved high-severity
 issues after the third loop, escalate to the user with the remaining concerns.
+
+## Validation Loop
+
+At each stage, confirm the required input artifact exists before dispatching and
+confirm the expected output artifact exists after the subagent returns `PASS`.
+When validation fails, re-dispatch only the owner of the failed artifact with the
+specific issue and re-check only that failed condition. Retry a failed artifact
+validation repair at most 3 times per stage, then escalate with the failed
+condition.
