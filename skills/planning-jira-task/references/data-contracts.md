@@ -1,7 +1,7 @@
 # Planning Jira Task Data Contracts
 
 > Read this file when checking prerequisites, artifact handoffs, or lifecycle
-> rules. Load `./references/artifact-templates.md` only when exact artifact
+> rules. Load `./artifact-templates.md` only when exact artifact
 > heading shape is needed.
 >
 > Reminder: the orchestrator keeps summaries and file paths, not raw task-plan
@@ -59,7 +59,7 @@ Optional upstream context:
 | `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md` | `refactoring-advisor` | `Refactoring Recommendation Template` |
 
 Each artifact must follow its matching template in
-`./references/artifact-templates.md`. For quick boundary checks, validate the
+`./artifact-templates.md`. For quick boundary checks, validate the
 path, owner, task identifier, and presence of the expected top-level heading.
 
 ## Artifact Lifecycle

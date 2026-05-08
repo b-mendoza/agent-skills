@@ -24,13 +24,13 @@ Decision-changing source keys: `yagni` or `wrong-abstraction` in
 | ----- | -------- | ------- |
 | `BRIEF_FILE` | Yes | `docs/JNS-6065-task-3-brief.md` |
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
-| `DATA_CONTRACTS_PATH` | No | `./references/data-contracts.md` |
-| `ARTIFACT_TEMPLATES_PATH` | No | `./references/artifact-templates.md` |
-| `HANDOFF_FORMATS_PATH` | No | `./references/handoff-formats.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
+| `DATA_CONTRACTS_PATH` | No | `../references/data-contracts.md` |
+| `ARTIFACT_TEMPLATES_PATH` | No | `../references/artifact-templates.md` |
+| `HANDOFF_FORMATS_PATH` | No | `../references/handoff-formats.md` |
+| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
 
 Default each path to the value above when the coordinator does not pass it.
-Paths are relative to the skill root. Derive `<TICKET_KEY>` and
+Bundled paths above are relative to this subagent file. Derive `<TICKET_KEY>` and
 `<TASK_NUMBER>` from `BRIEF_FILE` before writing
 `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md`.
 

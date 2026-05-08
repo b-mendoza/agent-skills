@@ -26,13 +26,13 @@ or `jira-user-stories` in `EXTERNAL_SOURCES_PATH`.
 | `TASK_NUMBER` | Yes | `3` |
 | `RE_PLAN` | No | `true` |
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
-| `DATA_CONTRACTS_PATH` | No | `./references/data-contracts.md` |
-| `ARTIFACT_TEMPLATES_PATH` | No | `./references/artifact-templates.md` |
-| `HANDOFF_FORMATS_PATH` | No | `./references/handoff-formats.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
+| `DATA_CONTRACTS_PATH` | No | `../references/data-contracts.md` |
+| `ARTIFACT_TEMPLATES_PATH` | No | `../references/artifact-templates.md` |
+| `HANDOFF_FORMATS_PATH` | No | `../references/handoff-formats.md` |
+| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
 
 Default each path to the value above when the coordinator does not pass it.
-Paths are relative to the skill root. Use `TICKET_KEY` and `TASK_NUMBER` as
+Bundled paths above are relative to this subagent file. Use `TICKET_KEY` and `TASK_NUMBER` as
 the only task identity inputs and write only
 `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md`.
 
