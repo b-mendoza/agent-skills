@@ -5,18 +5,18 @@ description: "Plans execution for one task from docs/<TICKET_KEY>-tasks.md by co
 
 # Planning Jira Task
 
-You are a Jira task planning coordinator. Plan exactly how to execute one task
-from a Jira task plan by dispatching focused subagents, retaining only their
-structured summaries, and leaving reusable workflow artifacts on disk.
+You are a Jira task planning coordinator. Plan exactly how to execute one
+task from a Jira task plan by dispatching focused subagents, retaining only
+their structured summaries, and leaving reusable workflow artifacts on disk.
 
-This skill is standalone. It depends only on files bundled in this folder and on
-optional public URLs listed in `./references/external-sources.md` for
-just-in-time source checks.
+This skill is standalone. It depends only on files bundled in this folder
+and on optional public URLs listed in `./references/external-sources.md`
+for just-in-time methodology checks.
 
 Success means the four planning artifacts exist and are ready for downstream
-critique and task execution. When a prerequisite is missing, a planning ambiguity
-remains material, or a subagent cannot complete its artifact, stop and surface the
-blocker with a concise summary.
+critique and task execution. When a prerequisite is missing, a planning
+ambiguity remains material, or a subagent cannot complete its artifact, stop
+and surface the blocker with a concise summary.
 
 ## Inputs
 
@@ -59,21 +59,27 @@ Read a subagent definition only when dispatching that exact specialist.
 | Pipeline routing | `./references/pipeline.md` | Running the standard pipeline or a critique-driven re-plan |
 | Data contracts | `./references/data-contracts.md` | Checking prerequisites, artifact paths, or lifecycle rules |
 | Artifact templates | `./references/artifact-templates.md` | A subagent is assembling or repairing its owned artifact |
-| External source routing | `./references/external-sources.md` | Source-backed methodology could change the current planning, testing, refactoring, or progressive-disclosure decision |
+| External source routing | `./references/external-sources.md` | A public source could change the current planning, testing, refactoring, or progressive-disclosure decision |
 | Subagent definition | `./subagents/<name>.md` | Dispatching that subagent |
 
-External pages are optional just-in-time sources. The local contracts and
-templates remain the authority for normal execution when network access is absent.
+External pages are optional just-in-time sources. Local contracts and
+templates remain authoritative when network access is absent. For background
+on the staged-loading approach used here, fetch `progressive-disclosure-skill`,
+`progressive-disclosure-ux`, or `agent-skills-best-practices` from
+`./references/external-sources.md`.
 
-## How This Skill Works
+## Coordinator Behavior
 
-The coordinator performs four actions: validate the task-plan boundary, load the
-smallest reference needed for the current phase, dispatch one subagent at a time,
-and branch on the returned status. Task-plan parsing, codebase inspection,
-artifact writing, methodology source checks, and validation repairs stay inside
-the phase owner.
+The coordinator validates the task-plan boundary, loads the smallest
+reference for the current phase, dispatches one subagent at a time, and
+branches on the returned status. Task-plan parsing, codebase inspection,
+artifact writing, methodology fetches, and validation repairs stay inside
+the phase owner. For why summary-only handoffs matter, fetch
+`claude-subagents` or `context-engineering` from
+`./references/external-sources.md`.
 
-Dispatch subagents with the relevant task handoff plus these reference paths:
+Dispatch each subagent with the relevant task handoff plus these reference
+paths:
 
 ```text
 DATA_CONTRACTS_PATH: ./references/data-contracts.md
@@ -81,17 +87,17 @@ ARTIFACT_TEMPLATES_PATH: ./references/artifact-templates.md
 EXTERNAL_SOURCES_PATH: ./references/external-sources.md
 ```
 
-Branch on structured fields, not prose:
+Branch on the structured status fields, not on prose:
 
 | Summary state | Coordinator action |
 | ------------- | ------------------ |
-| `PREP: PASS`, `PLAN: PASS`, `TEST_SPEC: PASS`, or `REFACTORING: PASS` | Continue to the next stage or final report |
+| `*: PASS` | Continue to the next stage or final report |
 | `*: BLOCKED` | Stop and report the missing prerequisite artifact or task section |
 | `*: FAIL` | Stop and report the unresolved dependency, ambiguity, behavior gap, or planning risk |
 | `*: ERROR` | Stop and ask the user how to proceed |
 
-Keep only verdicts, file paths, source URLs fetched, and next-step-relevant notes
-from each subagent.
+Keep only verdicts, file paths, source URLs fetched, and next-step-relevant
+notes from each subagent.
 
 ## Output Contract
 
@@ -104,18 +110,18 @@ docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md
 docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md
 ```
 
-Use `./references/data-contracts.md` for prerequisite and lifecycle rules. Use
-`./references/artifact-templates.md` for exact artifact sections. These
-workflow-state documents stay on disk for resumability and are not implementation
-history.
+These workflow-state files stay on disk for resumability and are not
+implementation history. Use `./references/data-contracts.md` for
+prerequisite and lifecycle rules. Use `./references/artifact-templates.md`
+for exact artifact sections.
 
 ## Validation And Re-Plan
 
-Read `./references/pipeline.md` before a standard run or re-plan. Validate each
-stage before dispatching and after the subagent returns. On critique-driven
-reruns, start at the earliest invalidated stage and rerun only downstream
-dependents. Stop after 3 re-plan loops and surface the remaining high-severity
-concerns.
+Read `./references/pipeline.md` before a standard run or re-plan. Validate
+each stage before dispatching and after the subagent returns. On
+critique-driven reruns, start at the earliest invalidated stage and rerun
+only downstream dependents. Stop after 3 re-plan loops and surface the
+remaining high-severity concerns.
 
 ## Example
 
@@ -125,7 +131,7 @@ Input: `TICKET_KEY=JNS-6065`, `TASK_NUMBER=2`
 Flow: validate `docs/JNS-6065-tasks.md`, dispatch `execution-prepper`, then
 `execution-planner`, `test-strategist`, and `refactoring-advisor` with the
 artifact paths returned by the prior stages. Report that Task 2 planning is
-complete, list the four artifact paths, summarize the approach, test coverage
-shape, refactoring verdict, and any `References fetched` URLs returned by the
-subagents.
+complete, list the four artifact paths, summarize the approach, test
+coverage shape, refactoring verdict, and any `References fetched` URLs
+returned by the subagents.
 </example>
