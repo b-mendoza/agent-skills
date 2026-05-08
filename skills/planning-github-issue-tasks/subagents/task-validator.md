@@ -26,7 +26,7 @@ the full validator so the final report reflects the complete artifact state.
 
 ## Instructions
 
-1. Load `./references/validation-checks.md`; it contains the exact 20-check
+1. Load `../references/validation-checks.md`; it contains the exact 20-check
    contract, validation report template, and optional source routing.
 2. Read `SNAPSHOT_PATH` and `PLAN_PATH`.
 3. Apply targeted mechanical fixes from `VALIDATION_ISSUES`, if provided.

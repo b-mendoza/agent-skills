@@ -27,12 +27,12 @@ permission to rewrite unrelated plan content.
 ## Instructions
 
 1. Read the issue snapshot at `INPUT_PATH`.
-2. Load `./references/task-planning-guide.md` for decomposition, problem
+2. Load `../references/task-planning-guide.md` for decomposition, problem
    framing, current-child-issue detection, quality checks, and optional source
    routing.
 3. If `VALIDATION_ISSUES` are present, revise only the flagged gaps while
    preserving already-correct content.
-4. Load `./references/task-planner-template.md` only when assembling the final
+4. Load `../references/task-planner-template.md` only when assembling the final
    stage 1 document.
 5. Write the finished plan to `OUTPUT_PATH`.
 6. Return only the concise summary from `## Output Format`.
@@ -41,10 +41,10 @@ permission to rewrite unrelated plan content.
 
 Path: `OUTPUT_PATH`
 
-The stage 1 plan follows `./references/task-planner-template.md` exactly:
+The stage 1 plan follows `../references/task-planner-template.md` exactly:
 summary, problem framing, assumptions, cross-cutting questions, lettered tasks,
 and notes. Every task must include traceability plus the six required per-task
-fields from `./references/task-planning-guide.md`. If the snapshot is already
+fields from `../references/task-planning-guide.md`. If the snapshot is already
 GitHub child work, include the guide's current-child-issue scope note.
 
 ## Output Format

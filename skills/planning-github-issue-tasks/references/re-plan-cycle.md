@@ -10,7 +10,7 @@ stage artifacts.
 
 > **Reminder:** The recovery rules below are operational. For background on
 > staged loading and just-in-time retrieval rationale, see
-> `./references/external-sources.md` (`progressive-disclosure-skill`,
+> `./external-sources.md` (`progressive-disclosure-skill`,
 > `progressive-disclosure-ux`).
 
 ## Re-Plan Inputs

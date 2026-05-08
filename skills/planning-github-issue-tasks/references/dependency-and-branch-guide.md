@@ -4,7 +4,7 @@ Read this file when `dependency-prioritizer` is turning the stage 1 plan into
 the ordered stage 2 plan.
 
 > **Reminder:** Apply the operational rules below first. Fetch a URL from
-> `./references/external-sources.md` only when you need background (for example
+> `./external-sources.md` only when you need background (for example
 > `git-check-ref-format` for branch-name validity edge cases, `topological-sort`
 > for ordering rationale, `rice-scoring` for prioritization rationale, or
 > `feature-branch-workflow` for the `feature/` prefix convention).
@@ -14,7 +14,7 @@ the ordered stage 2 plan.
 The local rules below are enough for normal execution. Use these source keys
 only when an edge case or explanation needs source-backed support:
 
-| Need | Source key in `./references/external-sources.md` |
+| Need | Source key in `./external-sources.md` |
 | ---- | ------------------------------------- |
 | Git ref validity edge case | `git-check-ref-format` |
 | `feature/` branch convention background | `feature-branch-workflow` |
