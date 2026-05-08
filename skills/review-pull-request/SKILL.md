@@ -5,9 +5,9 @@ description: "Review one pull request through a progressive, subagent-driven wor
 
 # Review Pull Request
 
-You are a single-PR review orchestrator. You normalize one PR input, dispatch the
-right phase subagent, make decisions from structured status blocks, and ask the
-user for confirmation before any GitHub posting side effect.
+You are a single-PR review orchestrator. You normalize one PR input, dispatch
+the right phase subagent, decide from structured status blocks, and require
+explicit confirmation before any GitHub posting side effect.
 
 The orchestrator keeps only workflow state, concise subagent summaries, user
 choices, and final synthesis. Raw diffs, source files, command output, CI logs,
@@ -20,94 +20,88 @@ needs them.
 | ----- | -------- | ------- |
 | `PR_URL` | Yes | `https://github.com/org/repo/pull/1020` |
 | `OUTPUT_FILE` | No | `pr-1020-review.md` |
-| `POSTING_MODE` | No | `draft-only` or `post-after-confirmation` |
-| `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` |
-| `REVIEW_FOCUS` | No | `full`, `security`, `correctness`, or `tests` |
+| `POSTING_MODE` | No | `draft-only` (default) or `post-after-confirmation` |
+| `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` (default) |
+| `REVIEW_FOCUS` | No | `full` (default), `security`, `correctness`, or `tests` |
 
-If `OUTPUT_FILE` is missing, derive `pr-<number>-review.md`. Default
-`POSTING_MODE` to `draft-only`, `REVIEW_FOCUS` to `full`, and `LANGUAGE_STYLE` to
-natural, direct English.
-
-## Workflow Overview
-
-| Phase | Owner | Purpose | Continue on |
-| ----- | ----- | ------- | ----------- |
-| Intake | Inline | Parse one PR URL and normalize options | Inputs complete |
-| Context | `pr-context-collector` | Gather PR metadata, diff shape, CI, issue links, and risk areas | `CONTEXT: PASS` |
-| Findings | `finding-reviewer` | Find evidence-backed defects and residual risks | `FINDINGS: PASS` or `FINDINGS: NO_FINDINGS` |
-| Comments | `comment-drafter` | Draft postable line comments and safe suggestions | `COMMENTS: PASS` |
-| Verify | `review-verifier` | Check evidence, line targets, severity, suggestions, and tone | `VERIFY: PASS` |
-| Write | `review-writer` | Write the local findings-first review file | `WRITE: PASS` |
-| Post | `review-poster` | Optionally post approved comments to GitHub | `POST: PASS` or skipped |
+If `OUTPUT_FILE` is missing, derive `pr-<number>-review.md` from `PR_URL`.
 
 ## Subagent Registry
 
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
-| `pr-context-collector` | `./subagents/pr-context-collector.md` | Collects compact PR context without returning raw patches |
-| `finding-reviewer` | `./subagents/finding-reviewer.md` | Reviews changed code for grounded findings and residual risks |
-| `comment-drafter` | `./subagents/comment-drafter.md` | Converts findings into GitHub-ready comment drafts |
-| `review-verifier` | `./subagents/review-verifier.md` | Validates the review package before writing or posting |
-| `review-writer` | `./subagents/review-writer.md` | Writes the local Markdown review artifact |
-| `review-poster` | `./subagents/review-poster.md` | Posts only exact, approved, verified comments |
+| `pr-context-collector` | `./subagents/pr-context-collector.md` | Collect compact PR context without returning raw patches |
+| `finding-reviewer` | `./subagents/finding-reviewer.md` | Surface evidence-backed defects and residual risks |
+| `comment-drafter` | `./subagents/comment-drafter.md` | Convert findings into GitHub-ready comment drafts |
+| `review-verifier` | `./subagents/review-verifier.md` | Validate the review package before writing or posting |
+| `review-writer` | `./subagents/review-writer.md` | Write the local Markdown review artifact |
+| `review-poster` | `./subagents/review-poster.md` | Post only exact, approved, verified comments |
 
 Read a subagent file only when dispatching that phase.
 
 ## Progressive Disclosure
 
-Use this skill in three layers:
+Run this skill in three layers. Static knowledge (GitHub mechanics, code-review
+judgment, security checklists, writing rules) lives behind URLs in the
+references file; subagents fetch only the rule they need at the moment they
+need it.
 
 | Layer | What loads | When |
 | ----- | ---------- | ---- |
 | Level 0 | This `SKILL.md` | Always, when the skill triggers |
-| Level 1 | `./references/external-review-resources.md` and `./references/review-file-template.md` | Only when a phase needs external guidance or the review-file template |
-| Level 2 | `./subagents/*.md` | Only when dispatching that subagent |
+| Level 1 | `./references/external-review-resources.md` | When any phase needs current GitHub mechanics, code-review judgment, security guidance, or writing-style rules |
+| Level 1 | `./references/review-file-template.md` | Only by `review-writer` while assembling `OUTPUT_FILE` |
+| Level 2 | `./subagents/<name>.md` | Only when dispatching that subagent |
+| Level 3 | External URLs listed in `external-review-resources.md` | On demand, fetched by the subagent that needs the rule |
 
-Subagents fetch external websites just in time when current GitHub behavior,
-code-review judgment, security review, writing guidance, or progressive
-disclosure background matters. They fetch the smallest relevant source, apply
-the rule, cite the URL in their status block, and avoid returning raw web page
-content to the orchestrator.
+Subagents cite the URL they fetched in their status block and never forward
+raw page contents to the orchestrator.
 
-## How This Skill Works
+## Workflow
+
+| Phase | Owner | Continue on |
+| ----- | ----- | ----------- |
+| Intake | Inline | Inputs complete |
+| Context | `pr-context-collector` | `CONTEXT: PASS` |
+| Findings | `finding-reviewer` | `FINDINGS: PASS` or `FINDINGS: NO_FINDINGS` |
+| Comments | `comment-drafter` | `COMMENTS: PASS` (skipped if `NO_FINDINGS`) |
+| Verify | `review-verifier` | `VERIFY: PASS` |
+| Write | `review-writer` | `WRITE: PASS` |
+| Post | `review-poster` | `POST: PASS` or skipped |
 
 Carry this compact state through the pipeline:
 
 ```text
 Inputs: PR_URL, OUTPUT_FILE, POSTING_MODE, LANGUAGE_STYLE, REVIEW_FOCUS
-Context: latest CONTEXT block or none
-Findings: latest FINDINGS block or none
-Comments: latest COMMENTS block or none
-Verification: latest VERIFY block or none
-Review file: latest WRITE block or none
-Posting: skipped, pending-confirmation, posted, cancelled, or failed
+Latest status: <CONTEXT | FINDINGS | COMMENTS | VERIFY | WRITE | POST block>
+Posting: skipped | pending-confirmation | posted | cancelled | failed
 ```
 
 Keep these invariants:
 
-- Review exactly one PR per run.
+- Review exactly one PR per run; ask the user to pick one if multiple URLs arrive.
 - Prefer fewer, stronger findings over many weak notes.
-- Treat every finding as provisional until `review-verifier` passes it.
+- Treat every finding as provisional until `review-verifier` returns `PASS`.
 - Use `suggestion` blocks only for local, mechanically safe edits.
-- Keep posting confirmation-gated and default to draft-only output.
-- Record missing context as residual risk instead of filling gaps by guesswork.
+- Default to `draft-only`; require explicit approval of the file preview before posting.
+- Record missing context as residual risk instead of guessing.
 
 ## Phase Guide
 
-1. Normalize inputs inline. If multiple PR URLs are present, ask which single PR
-   to review before dispatching any subagent.
-2. Dispatch `pr-context-collector`. If it returns a large-review gate, show only
-   the shortstat and changed-file groups, then ask whether to proceed.
-3. Dispatch `finding-reviewer` with the context summary. If it needs narrow
-   context, redispatch `pr-context-collector` once for that request, then retry.
-4. Dispatch `comment-drafter` unless findings are `NO_FINDINGS`. If metadata is
-   missing, collect only the requested metadata and retry once.
-5. Dispatch `review-verifier`. Repair only the failing phase named in `Fix
-   target`. Limit repair to two verification cycles.
-6. Dispatch `review-writer` with the verified package. It loads the local review
-   template only when writing the file.
-7. If `POSTING_MODE=post-after-confirmation`, show the exact file preview and ask
-   for final approval. Dispatch `review-poster` only after approval.
+1. Normalize inputs inline. If multiple PR URLs are present, ask which single
+   PR to review before dispatching any subagent.
+2. Dispatch `pr-context-collector`. On `LARGE_REVIEW_CONFIRMATION_REQUIRED`,
+   show the shortstat and changed-file groups, ask whether to proceed, and
+   re-dispatch with `LARGE_REVIEW_APPROVED=true` if approved.
+3. Dispatch `finding-reviewer` with the context summary. On `NEEDS_CONTEXT`,
+   re-dispatch `pr-context-collector` once with the narrow request, then retry.
+4. Dispatch `comment-drafter` unless findings are `NO_FINDINGS`. On
+   `NEEDS_METADATA`, collect only the requested metadata and retry once.
+5. Dispatch `review-verifier`. On `FAIL`, repair only the phase named in
+   `Fix target`. Cap repair at two verification cycles before escalating.
+6. Dispatch `review-writer` with the verified package.
+7. If `POSTING_MODE=post-after-confirmation`, show the exact file preview and
+   ask for final approval. Dispatch `review-poster` only after approval.
 
 ## Failure Envelope
 
@@ -136,12 +130,10 @@ Notes: <one-line residual risk or none>
 <example>
 Input: `PR_URL=https://github.com/org/repo/pull/1020`, `POSTING_MODE=draft-only`
 
-1. `pr-context-collector` returns `CONTEXT: PASS` with shortstat, CI summary, and
-   risk areas.
+1. `pr-context-collector` returns `CONTEXT: PASS` with shortstat, CI summary, and risk areas.
 2. `finding-reviewer` returns `FINDINGS: PASS` with two grounded findings.
 3. `comment-drafter` returns `COMMENTS: PASS` with two line comments.
-4. `review-verifier` returns `VERIFY: PASS` after checking evidence and line
-   targets.
+4. `review-verifier` returns `VERIFY: PASS`.
 5. `review-writer` writes `pr-1020-review.md`.
 
 Output:

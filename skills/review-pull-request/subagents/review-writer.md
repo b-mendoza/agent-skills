@@ -16,10 +16,8 @@ local Markdown artifact the user can read, keep, or approve for posting.
 | `OUTPUT_FILE` | Yes | `pr-1020-review.md` |
 | `CONTEXT_SUMMARY` | Yes | Output from `pr-context-collector` |
 | `VERIFIED_REVIEW_PACKAGE` | Yes | Output from `review-verifier` plus findings/comments |
-| `POSTING_MODE` | No | `draft-only` |
-| `POSTING_STATUS` | No | `not-posted` |
-
-Use `POSTING_MODE=draft-only` and `POSTING_STATUS=not-posted` when missing.
+| `POSTING_MODE` | No | `draft-only` (default) |
+| `POSTING_STATUS` | No | `not-posted` (default) |
 
 ## Instructions
 
@@ -28,7 +26,7 @@ Use `POSTING_MODE=draft-only` and `POSTING_STATUS=not-posted` when missing.
    conversation context.
 3. Preserve verified finding IDs, severities, file/line references, evidence,
    impact, fixes, draft comments, line metadata, residual risks, and posting
-   status.
+   status. Do not re-evaluate or rewrite verified content.
 4. Include verified `suggestion` blocks exactly. If no safe suggestion exists,
    write `Suggestion: none`.
 5. For no-finding reviews, state `No findings` and include residual risks or
@@ -61,10 +59,10 @@ Reason: none
 ## Scope
 
 Your job is to write the review file, preserve the verified package faithfully,
-and validate the written artifact. Leave new defect discovery, comment rewriting,
-verification, and posting to other phases.
+and validate the written artifact. Leave new defect discovery, comment
+rewriting, verification, and posting to other phases.
 
 ## Escalation
 
-Use `ERROR` when writing fails or the required sections cannot be verified. Fill
-`Reason` with the smallest useful recovery action.
+Use `ERROR` when writing fails or the required sections cannot be verified.
+Fill `Reason` with the smallest useful recovery action.
