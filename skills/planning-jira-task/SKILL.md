@@ -1,21 +1,22 @@
 ---
 name: "planning-jira-task"
-description: 'Plan how to execute one task from `docs/<TICKET_KEY>-tasks.md`. Runs a four-subagent pipeline that validates the task, writes an execution brief, inspects the codebase, defines behavior-driven tests, and evaluates refactoring needs. Produces `docs/<TICKET_KEY>-task-<TASK_NUMBER>-{brief,execution-plan,test-spec,refactoring-plan}.md` for one task only. Use when the user says "plan task 3", "prepare task 2 for execution", "how should we implement task 1", or when invoked as the planning phase of a multi-phase workflow. This skill creates planning artifacts only; it does not change git state, transition Jira issues, or modify product code.'
+description: "Plans execution for one task from docs/<TICKET_KEY>-tasks.md by coordinating brief, implementation plan, test specification, and refactoring recommendation artifacts before critique or implementation."
 ---
 
 # Planning Jira Task
 
-Plan exactly how to execute one task from the task plan for a Jira ticket. This
-orchestrator does three things: **think** (interpret summaries and plan state),
-**decide** (choose the next planning dispatch or re-plan path), and
-**dispatch** (hand execution-heavy work to co-located subagents). The planning
-artifacts live on disk; the orchestrator keeps only concise summaries in
-context.
+You are a Jira task planning coordinator. Plan exactly how to execute one task
+from a Jira task plan by dispatching focused subagents, retaining only their
+structured summaries, and leaving reusable workflow artifacts on disk.
+
+This skill is standalone. It depends only on files bundled in this folder and on
+optional public URLs listed in `./references/external-sources.md` for
+just-in-time source checks.
 
 Success means the four planning artifacts exist and are ready for downstream
-critique and task execution. When a prerequisite is missing, a planning
-ambiguity remains material, or a subagent cannot complete its artifact, stop
-and surface the blocker with a concise summary.
+critique and task execution. When a prerequisite is missing, a planning ambiguity
+remains material, or a subagent cannot complete its artifact, stop and surface the
+blocker with a concise summary.
 
 ## Inputs
 
@@ -26,20 +27,18 @@ and surface the blocker with a concise summary.
 | `RE_PLAN` | No | `true` |
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
 
-Read `./references/data-contracts.md` when you need the upstream prerequisites
-or downstream artifact expectations.
+Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns.
 
-Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns. Read
-`./references/pipeline.md` when deciding which stages to rerun.
+## Workflow Overview
 
-## Pipeline Stages
-
-1. `execution-prepper` validates the task and writes the execution brief.
-2. `execution-planner` inspects the codebase and writes the execution plan.
-3. `test-strategist` writes the behavior-driven test specification.
-4. `refactoring-advisor` writes the refactoring recommendation.
-5. The skill returns only a concise planning summary and the artifact paths
-   needed for downstream critique and task execution.
+| Step | Owner | Output |
+| ---- | ----- | ------ |
+| Check prerequisites | Inline with `data-contracts.md` | Verified task-plan input or blocker |
+| Prepare execution brief | `execution-prepper` | `PREP` summary and brief path |
+| Plan implementation | `execution-planner` | `PLAN` summary and execution-plan path |
+| Specify tests | `test-strategist` | `TEST_SPEC` summary and test-spec path |
+| Advise refactoring | `refactoring-advisor` | `REFACTORING` summary and recommendation path |
+| Report result | Inline | Short planning summary and artifact paths |
 
 ## Subagent Registry
 
@@ -50,110 +49,83 @@ Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns. Read
 | `test-strategist` | `./subagents/test-strategist.md` | Define behavior-driven tests for the task |
 | `refactoring-advisor` | `./subagents/refactoring-advisor.md` | Recommend only the refactoring needed for this task |
 
-Read a subagent definition only when you are about to dispatch that subagent.
+Read a subagent definition only when dispatching that exact specialist.
+
+## Progressive Disclosure Policy
+
+| Layer | File or source | Load when |
+| ----- | -------------- | --------- |
+| Core orchestration | This `SKILL.md` | Always, when the skill triggers |
+| Pipeline routing | `./references/pipeline.md` | Running the standard pipeline or a critique-driven re-plan |
+| Data contracts | `./references/data-contracts.md` | Checking prerequisites, artifact paths, or lifecycle rules |
+| Artifact templates | `./references/artifact-templates.md` | A subagent is assembling or repairing its owned artifact |
+| External source routing | `./references/external-sources.md` | Source-backed methodology could change the current planning, testing, refactoring, or progressive-disclosure decision |
+| Subagent definition | `./subagents/<name>.md` | Dispatching that subagent |
+
+External pages are optional just-in-time sources. The local contracts and
+templates remain the authority for normal execution when network access is absent.
+
+## How This Skill Works
+
+The coordinator performs four actions: validate the task-plan boundary, load the
+smallest reference needed for the current phase, dispatch one subagent at a time,
+and branch on the returned status. Task-plan parsing, codebase inspection,
+artifact writing, methodology source checks, and validation repairs stay inside
+the phase owner.
+
+Dispatch subagents with the relevant task handoff plus these reference paths:
+
+```text
+DATA_CONTRACTS_PATH: ./references/data-contracts.md
+ARTIFACT_TEMPLATES_PATH: ./references/artifact-templates.md
+EXTERNAL_SOURCES_PATH: ./references/external-sources.md
+```
+
+Branch on structured fields, not prose:
+
+| Summary state | Coordinator action |
+| ------------- | ------------------ |
+| `PREP: PASS`, `PLAN: PASS`, `TEST_SPEC: PASS`, or `REFACTORING: PASS` | Continue to the next stage or final report |
+| `*: BLOCKED` | Stop and report the missing prerequisite artifact or task section |
+| `*: FAIL` | Stop and report the unresolved dependency, ambiguity, behavior gap, or planning risk |
+| `*: ERROR` | Stop and ask the user how to proceed |
+
+Keep only verdicts, file paths, source URLs fetched, and next-step-relevant notes
+from each subagent.
 
 ## Output Contract
 
-This skill writes only workflow-planning artifacts that capture planning state
-for this task:
+This skill writes only workflow-planning artifacts for one task:
 
-| Artifact | Produced by | Consumed by |
-| -------- | ----------- | ----------- |
-| `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md` | `execution-prepper` | All downstream planning subagents, downstream critique, task execution |
-| `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md` | `execution-planner` | Downstream critique, task execution |
-| `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md` | `test-strategist` | Downstream critique, task execution |
-| `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md` | `refactoring-advisor` | Downstream critique, task execution |
+```text
+docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md
+docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md
+docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md
+docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md
+```
 
-On a successful run, all four files exist. On a re-plan, overwrite only the
-files owned by the subagents that are re-run. These workflow-state documents
-stay on disk for the life of the workflow and are never committed to git.
+Use `./references/data-contracts.md` for prerequisite and lifecycle rules. Use
+`./references/artifact-templates.md` for exact artifact sections. These
+workflow-state documents stay on disk for resumability and are not implementation
+history.
 
-## Dispatch Rules
+## Validation And Re-Plan
 
-- Read `./references/data-contracts.md` when checking prerequisites or artifact
-  expectations.
-- Read `./references/pipeline.md` when running the standard planning pipeline
-  or a critique-driven re-plan.
-- At each boundary, validate that the current required input exists before
-  dispatch: the task plan and task section for `execution-prepper`, then the
-  prior-stage artifacts for later subagents. Confirm that the expected output
-  artifact was written before advancing.
-- Pass only the explicit handoffs required for the current stage: task identity
-  inputs for `execution-prepper`, plus `RE_PLAN` and `DECISIONS_FILE` on
-  critique-driven reruns; then prior-stage artifact paths and
-  `DECISIONS_FILE` when applicable for later stages.
-- Keep only verdicts, file paths, and next-step-relevant notes from each
-  subagent.
-- Advance sequentially. Rerun only the subagents invalidated by critique, plus
-  their downstream dependents.
-- Surface blockers and pause for resolution when ambiguity remains.
-
-## Reference Guide
-
-This table tells you which reference to load. `## Orchestration Steps` remains
-the source of truth for the actual pipeline order.
-
-| Situation | Reference file | Purpose |
-| --------- | -------------- | ------- |
-| Standard planning run | `./references/pipeline.md` | Dispatch order, handoffs, and success criteria |
-| Re-plan after critique | `./references/pipeline.md` | Targeted rerun rules and retry limit |
-| Contract questions | `./references/data-contracts.md` | Upstream prerequisites and downstream consumers |
-
-## Orchestration Steps
-
-1. Read `./references/data-contracts.md` and confirm the task-plan prerequisites
-   exist for `TICKET_KEY` and `TASK_NUMBER`.
-2. Read `./references/pipeline.md`.
-3. Use `./references/pipeline.md` to determine the next required subagent. On a
-   standard run, start with `execution-prepper`. On a critique-driven re-plan,
-   start at the earliest invalidated stage. Pass only that subagent's required
-   explicit inputs. For `execution-prepper`, pass only `TICKET_KEY`,
-   `TASK_NUMBER`, and when applicable `RE_PLAN` and `DECISIONS_FILE`. For later
-   stages, pass the artifact file paths required by `./references/pipeline.md`.
-4. Retain only its verdict, artifact path, and the notes needed for the next
-   decision.
-5. Continue until all required planning artifacts are written and confirmed, or
-   a blocker is surfaced.
-6. Report completion with the task number and title, all four artifact paths,
-   one or two sentences on the recommended approach, the number or shape of
-   tests specified, and the refactoring verdict.
+Read `./references/pipeline.md` before a standard run or re-plan. Validate each
+stage before dispatching and after the subagent returns. On critique-driven
+reruns, start at the earliest invalidated stage and rerun only downstream
+dependents. Stop after 3 re-plan loops and surface the remaining high-severity
+concerns.
 
 ## Example
 
 <example>
-Input:
-- `TICKET_KEY=JNS-6065`
-- `TASK_NUMBER=2`
+Input: `TICKET_KEY=JNS-6065`, `TASK_NUMBER=2`
 
-1. Dispatch `execution-prepper` with `TICKET_KEY`, `TASK_NUMBER`
-2. Subagent returns:
-   `PREP: PASS`
-   `Brief: docs/JNS-6065-task-2-brief.md`
-3. Dispatch `execution-planner` with
-   `BRIEF_FILE=docs/JNS-6065-task-2-brief.md`
-4. Subagent returns:
-   `PLAN: PASS`
-   `Execution plan: docs/JNS-6065-task-2-execution-plan.md`
-5. Dispatch `test-strategist` with
-   `BRIEF_FILE=docs/JNS-6065-task-2-brief.md` and
-   `PLAN_FILE=docs/JNS-6065-task-2-execution-plan.md`
-6. Subagent returns:
-   `TEST_SPEC: PASS`
-   `Spec: docs/JNS-6065-task-2-test-spec.md`
-7. Dispatch `refactoring-advisor` with
-   `BRIEF_FILE=docs/JNS-6065-task-2-brief.md`,
-   `PLAN_FILE=docs/JNS-6065-task-2-execution-plan.md`, and
-   `TEST_SPEC_FILE=docs/JNS-6065-task-2-test-spec.md`
-8. Subagent returns:
-   `REFACTORING: PASS`
-   `Refactoring plan: docs/JNS-6065-task-2-refactoring-plan.md`
-9. Tell the user:
-   "Task 2 - Add webhook retry handling planning complete.
-   Artifacts: brief, execution plan, test spec, and refactoring plan written.
-   Recommended approach: add retry orchestration in the webhook service, then
-   thread retry state through the worker path.
-   Tests: 3 behavior groups with 6 high-priority checks.
-   Refactoring verdict: Refactor during implementation."
-
-The orchestrator keeps only those summaries and the artifact paths.
+Flow: validate `docs/JNS-6065-tasks.md`, dispatch `execution-prepper`, then
+`execution-planner`, `test-strategist`, and `refactoring-advisor` with the
+artifact paths returned by the prior stages. Report that Task 2 planning is
+complete, list the four artifact paths, summarize the approach, test coverage
+shape, refactoring verdict, and any `References fetched` URLs returned by the
+subagents.
 </example>
