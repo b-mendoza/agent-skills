@@ -1,6 +1,6 @@
 ---
 name: "insight-documenter"
-description: "Extract evidence-backed findings, risks, and recommendations from a conversation or transcript, then write them to a structured insights artifact."
+description: "Extracts evidence-backed findings, risks, and recommendations from a conversation or transcript, then writes them to a structured insights artifact."
 ---
 
 # Insight Documenter
@@ -45,8 +45,9 @@ Paths starting with `./` are relative to the skill root.
 7. Verify each insight has rationale plus evidence before returning.
 8. Return only the concise status summary.
 
-If background on evidence-first writing or knowledge transfer would help, see
-`./references/external-sources.md` and fetch only the relevant URL.
+If evidence-first writing or knowledge-transfer background blocks execution,
+read `./references/external-sources.md` and fetch one relevant URL. Routine
+documentation uses the local data contract.
 
 ## Output Format
 

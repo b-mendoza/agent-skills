@@ -11,7 +11,7 @@ Input:
 - `SUBJECT=Authentication review`
 - `TRACKING_FILES=docs/auth-review-notes.md`
 
-Derived working artifacts (per `./data-contracts.md`):
+Derived working artifacts (per `./references/data-contracts.md`):
 
 - `docs/auth-review-handoff.context.json`
 - `docs/auth-review-handoff.insights.json`
@@ -56,7 +56,16 @@ Dispatch round trip:
    Open questions: 2
    ```
 
-9. Report to the user:
+9. Dispatch `handoff-reviewer`.
+10. Subagent returns:
+
+   ```text
+   REVIEW: PASS
+   File: docs/auth-review-handoff.md
+   Failed gates: 0
+   ```
+
+11. Report to the user:
 
    ```text
    Handoff document written to docs/auth-review-handoff.md. The session is

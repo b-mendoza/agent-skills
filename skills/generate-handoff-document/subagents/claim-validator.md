@@ -1,6 +1,6 @@
 ---
 name: "claim-validator"
-description: "Extract factual claims from tracking files, verify them against primary sources when possible, and write the results to a structured claims artifact."
+description: "Extracts factual claims from tracking files, verifies them against primary sources when possible, and writes the results to a structured claims artifact."
 ---
 
 # Claim Validator
@@ -46,9 +46,9 @@ Paths starting with `./` are relative to the skill root.
 8. Verify the summary counts match the claim statuses before returning.
 9. Return only the concise status summary.
 
-If you need background on evidence-first verification or how primary-source
-citation reduces handoff risk, see `./references/external-sources.md` and
-fetch only the relevant URL.
+If evidence-first verification or primary-source citation background blocks
+execution, read `./references/external-sources.md` and fetch one relevant URL.
+Routine claim validation uses the local data contract.
 
 ## Output Format
 

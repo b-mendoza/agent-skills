@@ -129,9 +129,12 @@ Additional rules:
   files were provided and that the next agent should verify factual claims
   independently.
 
+The assembly template lives in `./references/handoff-template.md` and is loaded
+only by `document-assembler` when it is ready to write `TARGET_FILE`.
+
 ## Schema Vocabulary
 
 These schemas are described in plain JSON for portability. If you need to
 brush up on JSON Schema concepts (types, required fields, validation
 vocabulary) before extending these contracts, see the JSON Schema entries in
-`./external-sources.md` and fetch the URL only if necessary.
+`./references/external-sources.md` and fetch the URL only if necessary.

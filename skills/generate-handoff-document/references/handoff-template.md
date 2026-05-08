@@ -1,4 +1,4 @@
-# Document Assembler Template
+# Handoff Template
 
 > Use this template only at assembly time, after reading the structured
 > artifacts. Replace every placeholder before writing the final document.

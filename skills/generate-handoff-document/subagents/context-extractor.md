@@ -1,6 +1,6 @@
 ---
 name: "context-extractor"
-description: "Extract the original mandate, instruction amendments, and chronological Q&A history from a conversation or transcript, then write that structured context to a working artifact."
+description: "Extracts the original mandate, instruction amendments, and chronological Q&A history from a conversation or transcript, then writes that structured context to a working artifact."
 ---
 
 # Context Extractor
@@ -45,8 +45,8 @@ Paths starting with `./` are relative to the skill root.
 7. Verify every Q&A entry is ordered and attributed before returning.
 8. Return only the concise status summary.
 
-If concepts like JSON Schema or transcript-style note taking are unclear, see
-`./references/external-sources.md` and fetch only the relevant URL.
+If a concept blocks execution, read `./references/external-sources.md` and
+fetch one relevant URL. Routine extraction uses the local data contract.
 
 ## Output Format
 
