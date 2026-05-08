@@ -2,6 +2,10 @@
 
 Load this file before deciding what to critique.
 
+For deeper method background or current technology-landscape context, use
+`../references/external-sources.md` and fetch only the relevant URL. The rubric
+below remains the local execution contract.
+
 ## Upfront Mode Dimensions
 
 In `MODE=upfront`, look for these categories:

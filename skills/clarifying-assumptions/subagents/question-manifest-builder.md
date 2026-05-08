@@ -190,105 +190,17 @@ Before returning, confirm that:
 
 ### 7. Return the manifest
 
-Return only the structured manifest format below.
+Read `./question-manifest-builder-template.md` only when formatting the final
+response. Return exactly that structured manifest shape and no extra prose.
 
 ## Output Format
 
-Successful runs must start with exactly one of these headers:
+Successful runs start with `MANIFEST: PASS` or `MANIFEST: WARN` and include the
+ticket metadata, task title, and counts. Blocked and failed runs start with
+`MANIFEST: BLOCKED` or `MANIFEST: FAIL` and include only a `Reason:` line.
 
-```text
-MANIFEST: PASS
-Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
-Task title: <title or ->
-Questions now: <N> | Deferred: <N> | Irrelevant: <N>
-```
-
-```text
-MANIFEST: WARN
-Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
-Task title: <title or ->
-Questions now: <N> | Deferred: <N> | Irrelevant: <N>
-```
-
-Then return:
-
-```markdown
-## Manifest Summary
-
-- Warning: <present only for WARN>
-
-## Questions For Now
-
-| # | Item ID | Category | Severity | Model | Skippable | Affects |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | PF1 | Problem framing | HIGH | A | No | All |
-
-### Brief 1 — PF1
-
-- Original decision or question: <text>
-- Critique summary: <text>
-- Fallback/default: <text or none>
-
-## Deferred Questions
-
-| # | Item ID | Category | Deferred to |
-| --- | --- | --- | --- |
-| 1 | DQ-3-1 | Task question | Task 3 |
-
-## Resolved Irrelevant
-
-| # | Item ID | Reason |
-| --- | --- | --- |
-| 1 | DQ-3-2 | Already resolved by Task 2 decision log |
-```
-
-Example successful run:
-
-```text
-MANIFEST: PASS
-Ticket: JNS-6065 | Mode: upfront | Task: -
-Task title: -
-Questions now: 1 | Deferred: 1 | Irrelevant: 0
-
-## Manifest Summary
-
-## Questions For Now
-
-| # | Item ID | Category | Severity | Model | Skippable | Affects |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | PF1 | Problem framing | HIGH | A | No | All |
-
-### Brief 1 — PF1
-
-- Original decision or question: Who is the actual end user?
-- Critique summary: The plan assumes admins and support engineers are the same persona.
-- Fallback/default: none
-
-## Deferred Questions
-
-| # | Item ID | Category | Deferred to |
-| --- | --- | --- | --- |
-| 1 | DQ-3-1 | Task question | Task 3 |
-
-## Resolved Irrelevant
-
-| # | Item ID | Reason |
-| --- | --- | --- |
-```
-
-Blocked runs:
-
-```text
-MANIFEST: BLOCKED
-Reason: <what is missing>
-```
-
-Failed runs:
-
-```text
-MANIFEST: FAIL
-Reason: <what was malformed or unparseable>
-```
+Use `./question-manifest-builder-template.md` for the full response schema and
+example.
 
 ## Scope
 
@@ -310,8 +222,8 @@ You do not:
 
 ## Escalation
 
-Blocked and failed paths must use the exact templates above so the
-orchestrator can parse the verdict without reading extra prose.
+Blocked and failed paths must use `./question-manifest-builder-template.md` so
+the orchestrator can parse the verdict without reading extra prose.
 
 | Failure | Verdict | Behavior |
 | --- | --- | --- |

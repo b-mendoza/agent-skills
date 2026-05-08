@@ -83,14 +83,19 @@ project directly:
 - Identify architectural patterns already in use so the critique reflects the
   real codebase instead of generic best practices.
 
-### 4. Gather current web evidence
+### 4. Gather current evidence
 
 For each substantive framework, library, or tooling decision:
 
-- Search the web for current status, maintenance, and alternatives.
-- Search for project-relevant comparisons.
+- Use live web or documentation lookup for current status, maintenance, and alternatives.
+- Search for project-relevant comparisons or official vendor guidance.
 - Prefer current-year queries.
 - Capture only the short findings needed to justify the critique artifact.
+
+Use `../references/external-sources.md` when the needed background is covered by
+the bundled external-source map, such as progressive disclosure, design thinking,
+root-cause questioning, or broad technology-radar context. For exact library or
+framework behavior, prefer that project's official documentation.
 
 If web search is unavailable, fail loudly. This subagent exists to correct
 training-data bias; without live search, that purpose is compromised.

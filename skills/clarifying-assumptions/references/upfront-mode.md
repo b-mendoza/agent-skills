@@ -8,6 +8,9 @@
 >
 > Use the main `SKILL.md` file's `## Escalation` table as the authoritative verdict
 > routing policy. This playbook focuses on the canonical stage flow and inline questioning.
+>
+> Load `./clarification-contracts.md` only when validating required sections,
+> artifact paths, or derived subagent handoffs.
 
 ## Stage 2 — Analyze Artifacts
 

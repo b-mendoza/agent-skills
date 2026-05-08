@@ -1,8 +1,10 @@
 # Design Thinking Mindset
 
-Load this file before either mode-specific playbook.
+Load this file before either mode-specific playbook. For deeper background on
+design thinking, Double Diamond, progressive disclosure, or root-cause prompts,
+load `./external-sources.md` and fetch only the relevant URL.
 
-These principles govern every clarification exchange:
+These local principles govern every clarification exchange:
 
 ## Empathy First
 
@@ -31,3 +33,14 @@ but frame the exchange as coaching. The goal is better judgment, not a gotcha.
 Keep the conversation layer focused on the current manifest item and the
 developer's answer. Let subagents read files, inspect the repo, and write
 artifacts.
+
+## Optional External Background
+
+Use external articles as just-in-time rationale, not as required startup
+context. Normal execution works from the bundled files in this skill.
+
+| Need | Fetch from `./external-sources.md` |
+| --- | --- |
+| Design-thinking rationale | NN/g Design Thinking 101 or Design Council Framework for Innovation |
+| Progressive-disclosure rationale | Skills.sh progressive-disclosure example or NN/g Progressive Disclosure |
+| Root-cause questioning pattern | Atlassian 5 Whys |
