@@ -36,7 +36,7 @@ is omitted, treat it as `1`.
 ## Progressive Loading Map
 
 Load a file only when the current decision needs it. Every path is
-relative to this skill folder.
+relative to the file that contains it.
 
 | Need | Load |
 | --- | --- |
