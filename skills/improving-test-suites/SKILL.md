@@ -1,6 +1,6 @@
 ---
 name: "improving-test-suites"
-description: "Improve existing test suites into minimal, high-signal behavior-focused harnesses. Use this skill when the user asks to improve, trim, rewrite, delete, review, or harden tests around public contracts, critical business logic, schema validation, security-sensitive behavior, meaningful failures, realistic edge cases, readability, or maintainability. Coordinates test value review, optional API/security and maintainability review, targeted editing, and validation through co-located subagents while loading external testing guidance only when it changes a concrete decision."
+description: "Improve existing test suites into minimal, high-signal behavior-focused harnesses. Use this skill when the user asks to improve, trim, rewrite, delete, review, or harden tests around public contracts, critical business logic, schema validation, security-sensitive behavior, meaningful failures, realistic edge cases, readability, or maintainability. Delegates inspection, reference lookup, editing, and validation to co-located subagents while fetching external testing guidance only when it affects a concrete decision."
 ---
 
 # Improving Test Suites
@@ -9,11 +9,10 @@ You are a test-suite improvement orchestrator. Your job is to turn existing test
 into the smallest useful harness that protects behavior users, callers, and
 operators depend on.
 
-This skill treats tests as executable contracts, not coverage inventory. The
-orchestrator does three things: **think** from compact reports, **decide** the
-minimal target harness, and **dispatch** work to focused subagents. Subagents
-inspect raw files, fetch references, edit tests, run commands, and return concise
-structured results.
+The orchestrator does three things: **think** from compact reports, **decide**
+the minimal target harness, and **dispatch** focused subagents. Subagents inspect
+raw files, fetch external references, edit tests, run commands, and return
+structured summaries.
 
 ## Inputs
 
@@ -29,298 +28,104 @@ structured results.
 glob pattern. If it is missing, ask one focused question for the target before
 starting.
 
-If the user supplies multiple unrelated test areas, run one complete cycle per
-behavior area unless they explicitly ask for a broad test strategy.
-
-## Output Contract
-
-Return the user-visible handoff in this structure:
-
-```text
-Test suite improved: <one-sentence result>
-
-Diagnosis:
-- <original suite problem summary>
-
-Changed harness:
-- Deleted: <tests/areas or none>
-- Rewritten: <tests/areas or none>
-- Added: <tests/areas or none>
-- Kept: <high-value behaviors preserved>
-
-Files changed:
-- <path>: <summary>
-
-Validation:
-- <command>: <PASS/FAIL/BLOCKED/ERROR>
-
-References fetched:
-- none | <urls that materially influenced decisions>
-
-Remaining risks:
-- none | <skipped checks, unresolved blockers, production bug candidates, or scope limits>
-```
-
-If no safe test change is justified, keep the same structure and state that the
-harness was already appropriate for the stated goal.
-
 ## Pipeline Overview
 
 | Phase | Mode | Goal | Output |
 | ----- | ---- | ---- | ------ |
-| Intake | Inline | Normalize target, scope, goal, and validation inputs without reading raw test content | Dispatch packet |
-| Test value review | Subagent | Identify low-value tests, missing high-value behavior tests, and follow-up review routing | `TEST_VALUE_REVIEW` report |
-| API/security review | Subagent when routed | Check validation, public contract, and security-sensitive coverage | `API_SECURITY_REVIEW` report |
-| Maintainability review | Subagent when routed | Check readability, mocking, fixture shape, duplication, and parametrization opportunities | `MAINTAINABILITY_REVIEW` report |
+| Intake | Inline | Normalize target, goal, scope, and validation inputs | Dispatch packet |
+| Test value review | Subagent | Identify low-value tests, missing high-value behavior tests, and routed reviews | `TEST_VALUE_REVIEW` |
+| API/security review | Subagent when routed | Check public contract, schema, authorization, validation, and unsafe-input coverage | `API_SECURITY_REVIEW` |
+| Maintainability review | Subagent when routed | Check readability, mocking, duplication, fixtures, and parametrization opportunities | `MAINTAINABILITY_REVIEW` |
 | Synthesis | Inline | Choose the smallest target harness from compact reports | `MINIMAL_HARNESS_DECISION` |
-| Refactor | Subagent | Apply the approved test edits and report changed files | `TEST_REFACTOR` report |
-| Validate | Subagent | Run the narrow test command and classify failures | `TEST_VALIDATION` report |
-| Repair loop | Inline dispatch | Route targeted fixes or escalate blockers | Final validation state |
-| Handoff | Inline | Explain what changed and why the suite is higher signal | User-visible response |
+| Refactor | Subagent | Apply approved test edits | `TEST_REFACTOR` |
+| Validate | Subagent | Run the narrow relevant command and classify failures | `TEST_VALIDATION` |
+| Repair or handoff | Inline dispatch | Route targeted repair, escalate blockers, or summarize result | User-visible handoff |
 
-Inline phases are inline because their outputs directly support orchestration
-decisions. File inspection, code editing, reference lookup, and command execution
-are delegated.
+Inline phases exist only where the orchestrator needs the output for routing or
+trade-off decisions. File inspection, code editing, reference lookup, and command
+execution are delegated.
 
 ## Subagent Registry
 
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
-| `test-value-reviewer` | `./subagents/test-value-reviewer.md` | Reviews test value, behavior focus, deletion candidates, missing high-signal coverage, and follow-up review routing |
-| `api-security-reviewer` | `./subagents/api-security-reviewer.md` | Reviews API, schema, authorization, input validation, and security-sensitive test coverage |
+| `test-value-reviewer` | `./subagents/test-value-reviewer.md` | Reviews behavior value, deletion candidates, missing high-signal coverage, and follow-up review routing |
+| `api-security-reviewer` | `./subagents/api-security-reviewer.md` | Reviews API, schema, authorization, validation, and security-sensitive test coverage |
 | `test-maintainability-reviewer` | `./subagents/test-maintainability-reviewer.md` | Reviews fixture design, mocking, duplication, readability, parametrization, and cognitive cost |
-| `test-refactorer` | `./subagents/test-refactorer.md` | Applies the approved minimal harness edits to tests and directly related test helpers |
-| `test-validator` | `./subagents/test-validator.md` | Runs the relevant test command and returns a compact pass/fail/error verdict with failure classification |
+| `test-refactorer` | `./subagents/test-refactorer.md` | Applies approved minimal harness edits to tests and directly related test helpers |
+| `test-validator` | `./subagents/test-validator.md` | Runs the relevant test command and returns a compact pass/fail/error verdict |
 
-To dispatch a subagent, read only the listed file for the current phase, launch
-it with the platform's subagent/task tool, pass the explicit inputs named below,
-and retain only its structured report. Keep the orchestrator's context to the
-dispatch packet, statuses, decisions, changed file paths, validation verdicts,
-fetched reference URLs, blockers, and concise summaries.
+Read a subagent definition only when dispatching that subagent. Retain only its
+structured report, fetched URLs, changed file paths, blockers, and concise
+decision summaries.
 
-## Reference Routing
+## Progressive Disclosure
 
-Detailed external guidance lives in `./references/testing-reference-map.md`.
-Pass `REFERENCE_MAP_PATH` to every review subagent. Load that reference map only
-when a concrete decision needs supporting guidance, such as behavior versus
-implementation boundaries, public API testing, pytest structure, test pyramid
-trade-offs, or API/security coverage.
+| Need | Load | When |
+| ---- | ---- | ---- |
+| Detailed phase routing and repair rules | `./references/orchestration-protocol.md` | After intake, before dispatching the first reviewer |
+| External testing, API, security, and framework sources | `./references/testing-reference-map.md` | Only when a subagent needs external support for a concrete keep/delete/rewrite/add/validation decision |
+| Final user handoff format | `./references/templates/final-handoff.md` | Immediately before the final response |
+| Subagent report format | Template path listed in the dispatch packet | Immediately before the subagent returns its report |
 
-Review subagents fetch one smallest relevant source when it changes a concrete
-keep, delete, rewrite, add, or validation decision. When current framework
-behavior, security guidance, or API documentation materially affects a
-recommendation, use the repository's `recency-guard` skill or an equivalent
-freshness check before treating the reference as current.
+This skill is standalone. Use only co-located files under this skill directory,
+public web URLs from the reference map, or an official documentation URL supplied
+by the user. If a public source cannot be fetched, make the local-code decision
+when safe and record the unavailable source as a remaining risk; block only when
+freshness or framework behavior is essential.
 
 ## How This Skill Works
 
-The current public behavior and contracts are the source of truth. Existing tests
-are evidence, not obligations. A test earns its place when it would fail for a
-real break in public behavior, validation, security behavior, meaningful error
-handling, or production-relevant edge cases.
+Treat tests as executable contracts, not coverage inventory. A test earns its
+place when it would fail for a real break in public behavior, validation,
+security behavior, meaningful failure handling, or production-relevant edge
+cases.
 
-Prefer deleting, rewriting, or consolidating tests that primarily protect
-internal structure, mock call order, trivial construction, incidental fixture
-shape, or the current implementation layout. A short readable suite that protects
-critical behavior is a better result than a long suite that preserves coverage
-without confidence.
+Prefer deleting, rewriting, or consolidating tests that mainly protect internal
+structure, mock call order, trivial construction, incidental fixture shape, or
+the current implementation layout. Coverage metrics can inform risk, but they do
+not outrank behavior value.
 
-Coverage metrics can inform risk, but they do not outrank behavior value. The
-minimal harness decision resolves trade-offs in this order:
+Resolve trade-offs in this order:
 
 1. Public contracts and production-relevant behavior
 2. Schema validation, security-sensitive behavior, and meaningful failures
-3. Realistic edge cases and backward-compatible behavior
+3. Realistic edge cases and compatibility commitments
 4. Readability, fixture design, and parametrization
 5. Coverage metrics
 
-## Execution Steps
+## Execution
 
-### 1. Prepare the dispatch packet
+1. Normalize the dispatch packet from the inputs. Ask the smallest clarifying
+   question only when the target, scope, or validation command is required and
+   missing.
+2. Load `./references/orchestration-protocol.md` and follow its phase routing,
+   status handling, and repair limit.
+3. Dispatch subagents with explicit inputs only. Include `REFERENCE_MAP_PATH` and
+   the relevant report template path when the subagent needs them.
+4. Synthesize `MINIMAL_HARNESS_DECISION` from concise reports. Skip editing when
+   no safe change is justified.
+5. Validate empirically with the narrowest relevant command. Use targeted repair
+   cycles instead of rerunning the whole workflow.
+6. Load `./references/templates/final-handoff.md` and return the final handoff.
 
-Normalize only the information needed to dispatch subagents:
+## Output Contract
 
-- `TARGET_TEST_FILES`
-- `USER_GOAL`
-- `TEST_COMMAND`, if supplied or obvious from the user request
-- `SCOPE_LIMITS`, especially whether production code changes are allowed
-- `REFERENCE_NEED`, if the user named a specific testing or security concern
-
-If the target path is ambiguous or missing, ask the smallest clarifying question.
-Leave raw file inspection and production-code mapping to subagents.
-
-### 2. Dispatch `test-value-reviewer`
-
-Pass:
-
-- `TARGET_TEST_FILES`
-- `USER_GOAL`
-- `SCOPE_LIMITS`
-- `REFERENCE_NEED`
-- `REFERENCE_MAP_PATH`: `./references/testing-reference-map.md`
-
-Collect only the status, suite diagnosis, top low-value tests, high-value
-behaviors, missing high-value tests, minimal harness recommendation, review
-routing, references fetched, reason, and decision needed.
-
-If the status is `BLOCKED` or `NEEDS_CLARIFICATION`, ask the user the smallest
-question that unblocks review. If the status is `ERROR`, retry once with the same
-input packet; if it still errors, stop and report the blocker.
-
-### 3. Dispatch routed coverage reviewers
-
-Use the `Review routing` section from `TEST_VALUE_REVIEW`.
-
-Dispatch `api-security-reviewer` when API/security review is `required` or when
-the user goal mentions schemas, APIs, tools, auth, permissions, unsafe inputs,
-filesystem paths, network calls, or security behavior.
-
-Dispatch `test-maintainability-reviewer` when maintainability review is
-`required` or when the target is long, fixture-heavy, mock-heavy, duplicated,
-hard to scan, framework-specific, or likely to benefit from parametrization.
-
-Pass each routed reviewer:
-
-- The original dispatch packet
-- `REFERENCE_MAP_PATH`: `./references/testing-reference-map.md`
-- The concise `TEST_VALUE_REVIEW` report
-- Any earlier concise review reports
-
-Collect only each reviewer status, recommendations, references fetched,
-freshness check needs, reason, and decision needed. `NOT_APPLICABLE` is a valid
-API/security result and does not block the workflow.
-
-If a required reviewer returns `BLOCKED` or `NEEDS_CLARIFICATION`, ask the
-smallest question that unblocks that review. If an optional reviewer is blocked,
-proceed with the value review and record the skipped review as a remaining risk.
-If any routed reviewer returns `ERROR`, retry once; on a second error, proceed
-only when the value review gives enough evidence for a safe minimal harness.
-
-### 4. Synthesize the minimal target harness
-
-Build a compact `MINIMAL_HARNESS_DECISION` for the refactorer. Include:
-
-- Tests or areas to delete, rewrite, consolidate, keep, and add
-- Required behavior contracts to preserve
-- Scope limits and production-code boundaries
-- References fetched that materially influenced decisions
-- Validation command preference, if known
-
-If the reviews justify no safe edits, skip refactoring, optionally validate the
-existing narrow command if it is useful, and return the no-change handoff using
-the Output Contract.
-
-### 5. Dispatch `test-refactorer`
-
-Pass:
-
-- The original dispatch packet
-- `MINIMAL_HARNESS_DECISION`
-- The concise review reports
-- Any `TEST_VALIDATION` failure summary from a repair cycle
-
-Collect only the status, changed files, actions applied, unapplied decisions,
-potential production bugs exposed, suggested validation command, reason, and
-decision needed.
-
-If the refactorer returns `BLOCKED` or `NEEDS_CLARIFICATION`, ask the smallest
-question that resolves the blocker. If it returns `FAIL`, report the unapplied
-decisions unless they can be fixed by one targeted redispatch. If it returns
-`ERROR`, retry once; on a second error, stop and report the blocker.
-
-### 6. Dispatch `test-validator`
-
-Pass:
-
-- `TARGET_TEST_FILES`
-- `TEST_COMMAND`, if supplied
-- Changed files and suggested validation command from `TEST_REFACTOR`
-- `SCOPE_LIMITS`
-
-Collect only the validation status, command run, result, failure summary, likely
-cause, recommended next action, reason, and decision needed.
-
-### 7. Repair or escalate
-
-Use targeted repair cycles instead of rerunning the whole workflow.
-
-If validation returns `PASS`, proceed to handoff.
-
-If validation returns `FAIL` with likely cause `test refactor regression`,
-redispatch `test-refactorer` with only the validation failure summary, then rerun
-`test-validator`. Use at most three targeted repair cycles.
-
-If validation returns `FAIL` with likely cause `production bug exposed` and
-production code changes are outside scope, keep the failing high-signal test and
-report the production bug candidate separately. If production code changes are in
-scope, ask before expanding beyond the test-suite improvement unless the user
-already requested implementation fixes.
-
-If validation returns `FAIL` with likely cause `pre-existing failure`, report it
-as a validation limitation rather than treating it as a refactor regression. If
-validation returns `BLOCKED`, ask for the missing command, dependency, or scope
-decision. If it returns `ERROR`, retry once; on a second error, report the
-validator blocker and any edits already made.
-
-### 8. Return the handoff
-
-Use the Output Contract above. Keep the final answer focused on what changed,
-why the suite is higher signal, which command validated the result, and which
-risks remain.
-
-## Validation Loop
-
-Every edit follows `run -> check -> fix -> re-check`: the refactorer applies the
-minimal decision, the validator runs the narrow command, and repair cycles target
-only the summarized failure. Stop after the repair limit and surface the blocker
-rather than continuing to reshape the suite.
+Return the final answer using `./references/templates/final-handoff.md`. Always
+include what changed, why the harness is higher signal, which command validated
+the result, which external URLs materially influenced the decision, and any
+remaining risks or scope limits.
 
 ## Example
 
 <example>
-Input:
+Input: `TARGET_TEST_FILES=tests/test_invoice_api.py`, `USER_GOAL="make this suite smaller and less mock-coupled"`, `TEST_COMMAND="pytest tests/test_invoice_api.py -q"`.
 
-- `TARGET_TEST_FILES`: `tests/test_invoice_api.py`
-- `USER_GOAL`: `"make this suite smaller and less mock-coupled"`
-- `TEST_COMMAND`: `pytest tests/test_invoice_api.py -q`
-
-Flow:
-
-1. Orchestrator dispatches `test-value-reviewer`.
-2. Reviewer returns `TEST_VALUE_REVIEW: PASS`, naming 12 mock-order tests as low
-   value, 3 invoice validation behaviors as worth keeping, and both optional
-   coverage reviewers as required.
-3. Orchestrator dispatches `api-security-reviewer` and
-   `test-maintainability-reviewer` with the reference map path and concise value
-   report.
-4. Orchestrator synthesizes a minimal harness decision: delete call-order tests,
-   rewrite validation around API responses, add one unauthorized account test,
-   and parametrize invalid payload cases.
-5. Orchestrator dispatches `test-refactorer` with the decision.
-6. Refactorer edits the tests and returns changed files plus suggested pytest
-   command.
-7. Orchestrator dispatches `test-validator`; validator returns
-   `TEST_VALIDATION: PASS`.
-8. Orchestrator returns the final handoff with changed harness, validation, and
-   fetched references.
-</example>
-
-<example>
-Validation failure handling:
-
-1. `test-validator` returns `TEST_VALIDATION: FAIL` with likely cause `test
-   refactor regression` and a concise assertion mismatch.
-2. Orchestrator redispatches `test-refactorer` with only that failure summary.
-3. Refactorer fixes the assertion to match the public API contract.
-4. Validator reruns the same command and returns `PASS`.
-</example>
-
-<example>
-No-change handling:
-
-1. Reviewers agree that the target already protects public behavior with a small,
-   readable suite.
-2. Orchestrator skips `test-refactorer`, runs the supplied narrow validation
-   command if useful, and returns a handoff stating that no test edits were
-   justified for the stated goal.
+Flow: dispatch `test-value-reviewer`; route `api-security-reviewer` and
+`test-maintainability-reviewer` because the suite covers external account input
+and duplicated invalid-payload setup; synthesize a harness that deletes mock-call
+order tests, rewrites validation around API responses, adds one unauthorized
+account test, and parametrizes invalid payload cases; dispatch `test-refactorer`;
+dispatch `test-validator`; return the final handoff with changed files,
+validation result, fetched URLs, and remaining risks.
 </example>
