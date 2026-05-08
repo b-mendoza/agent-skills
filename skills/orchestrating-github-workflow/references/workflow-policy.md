@@ -33,8 +33,9 @@ Phases 1-6 use this cycle:
 1. Announce the phase banner.
 2. Validate preconditions by dispatching `artifact-validator` when the
    phase has a precondition.
-3. Invoke the downstream skill by reading its sibling `SKILL.md` just in
-   time.
+3. Invoke the downstream skill by name through the host runtime. Load
+   `./downstream-skills.md` first only when the phase-to-skill contract is
+   needed.
 4. Validate postconditions by dispatching `artifact-validator`.
 5. Update progress by dispatching `progress-tracker`.
 6. Run the gate check: advance automatically, ask the user, or enter a

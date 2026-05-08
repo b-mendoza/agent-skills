@@ -20,9 +20,9 @@ This skill package is standalone: every reference and utility subagent
 it owns lives inside this folder, and every external concept or
 platform-doc link is centralized in
 [`./references/external-sources.md`](./references/external-sources.md).
-Sibling downstream skills are runtime dependencies that
-[`preflight-checker`](./subagents/preflight-checker.md) verifies before
-use.
+Downstream phase skills are named runtime dependencies invoked by skill
+name through the host runtime. [`preflight-checker`](./subagents/preflight-checker.md)
+verifies they are available before use.
 
 ## Inputs
 
@@ -76,6 +76,7 @@ that answers the current decision; never preload the whole package.
 | Phases 5-7 per-task loop | [`./references/task-loop.md`](./references/task-loop.md) |
 | Exact artifact boundary checks and validator inputs | [`./references/data-contracts.md`](./references/data-contracts.md) |
 | Error recovery, blockers, retry budgets | [`./references/error-handling.md`](./references/error-handling.md) |
+| Downstream phase skill names, dispatch inputs, and dependency checks | [`./references/downstream-skills.md`](./references/downstream-skills.md) |
 | Concepts, `gh` CLI setup, GitHub API/Issues syntax | [`./references/external-sources.md`](./references/external-sources.md), then fetch one URL at a time |
 | Utility work | The single subagent file from [Subagent Registry](#subagent-registry) |
 
@@ -97,30 +98,14 @@ when you are about to dispatch that subagent.
 | `code-reference-finder` | [`./subagents/code-reference-finder.md`](./subagents/code-reference-finder.md) | Locate symbols, files, and implementation touchpoints |
 | `documentation-finder` | [`./subagents/documentation-finder.md`](./subagents/documentation-finder.md) | Find relevant docs and return concise summaries |
 
-## Downstream Skills
+## Downstream Skill Dependencies
 
-Each numbered phase is owned by a sibling skill. Read the sibling
-`SKILL.md` only when entering that phase. If this package is installed
-alone, install the required siblings or stop at preflight.
-
-| Phase | Skill | Path relative to this skill |
-| ----- | ----- | --------------------------- |
-| 1 | `fetching-github-issue` | `../fetching-github-issue/SKILL.md` |
-| 2 | `planning-github-issue-tasks` | `../planning-github-issue-tasks/SKILL.md` |
-| 3 | `clarifying-assumptions` | `../clarifying-assumptions/SKILL.md` |
-| 4 | `creating-github-child-issues` | `../creating-github-child-issues/SKILL.md` |
-| 5 | `planning-github-task` | `../planning-github-task/SKILL.md` |
-| 6 | `clarifying-assumptions` | `../clarifying-assumptions/SKILL.md` |
-| 7 | `executing-github-task` | `../executing-github-task/SKILL.md` |
-
-`clarifying-assumptions` receives the workflow key through `TICKET_KEY`.
-Map `ISSUE_SLUG` into that input so artifacts resolve to
-`docs/<ISSUE_SLUG>-...`:
-
-| Phase | Mode | Dispatch inputs |
-| ----- | ---- | --------------- |
-| 3 | `upfront` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=upfront`, `ITERATION=<N>` |
-| 6 | `critique` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=critique`, `TASK_NUMBER=<N>`, `ITERATION=<N>` |
+Each numbered phase is owned by a named runtime skill. Load
+[`./references/downstream-skills.md`](./references/downstream-skills.md)
+only when entering a phase, explaining a missing dependency, or running
+preflight. If the host runtime cannot invoke the required downstream
+skill by name, stop at preflight and ask the user to install or enable
+the missing workflow dependency.
 
 ## Output Contract
 
@@ -152,9 +137,10 @@ execution skills.
 2. Dispatch `progress-tracker` with `ACTION=read` and `ISSUE_SLUG`.
 3. Decide the resume point from the compact progress summary.
 4. Dispatch `preflight-checker` for only the remaining phase range.
-5. If you need the resume mapping, gate rules, or the standard phase
-   cycle, load
-   [`./references/workflow-policy.md`](./references/workflow-policy.md).
+5. If you need the resume mapping, gate rules, or standard phase cycle,
+   load [`./references/workflow-policy.md`](./references/workflow-policy.md).
+   If you need the phase-to-skill map, load
+   [`./references/downstream-skills.md`](./references/downstream-skills.md).
 6. Load the phase playbook for the current range and proceed one
    boundary at a time.
 
@@ -191,7 +177,7 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42`
 2. Dispatch `progress-tracker` with `ACTION=read`.
 3. No progress found, so dispatch `preflight-checker` with `PHASES=1-7`.
 4. Read `./references/phases-1-4.md` and enter Phase 1.
-5. Invoke `../fetching-github-issue/SKILL.md`.
+5. Invoke downstream skill `fetching-github-issue`.
 6. Dispatch `artifact-validator` for Phase 1 postcondition.
 7. Dispatch `progress-tracker` with `ACTION=update`, `PHASE=1`, `STATUS=complete`.
 8. Tell the user: `Issue fetched. Moving to task planning.`

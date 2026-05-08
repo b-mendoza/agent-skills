@@ -34,9 +34,9 @@ context even though this subagent does not require them for every phase range.
 2. Build the dependency set for the requested `PHASES`.
 3. Check each dependency using the most direct platform-native method:
    - **MCP dependency:** verify the relevant server/tools are available.
-   - **Skill dependency:** prefer skill discovery when available; otherwise
-     verify the manifest path for that sibling skill. Paths in the manifest are
-     relative to `./preflight-checker-manifest.md` in this `subagents/` folder.
+   - **Skill dependency:** verify that the host runtime can discover or invoke
+     the named skill. If the runtime exposes no reliable discovery mechanism,
+     report `UNKNOWN` and include the named skill in the setup action.
    - **CLI/tool dependency:** run a lightweight version or availability check.
 4. Record each dependency as one of:
    - `AVAILABLE`
@@ -44,7 +44,7 @@ context even though this subagent does not require them for every phase range.
    - `UNKNOWN` when the platform does not expose a reliable way to check
 5. If a missing dependency needs current setup instructions, read
    `../references/external-sources.md` and fetch one URL from the
-   `GitHub CLI setup` section.
+   `GitHub CLI setup` or runtime skill docs section.
 6. Return a compact summary only. Do not install, configure, or repair anything
    yourself.
 
@@ -58,8 +58,10 @@ you cannot complete the preflight itself, such as being unable to read the
 manifest or interpret the requested phase set.
 
 Use `FAIL` when one or more requested required dependencies are confirmed
-`MISSING`. If a requested recommended-only dependency is unavailable, report it
-clearly but keep the overall verdict based on the required dependency set.
+`MISSING`, or when a required skill dependency is `UNKNOWN` and the host cannot
+confirm that the skill can be invoked by name. If a requested recommended-only
+dependency is unavailable, report it clearly but keep the overall verdict based
+on the required dependency set.
 
 ## Output Format
 
@@ -113,6 +115,8 @@ Phases: <checked phases or "unknown">
 Summary: <why the preflight could not be completed>
 ```
 
-If one dependency check is ambiguous, keep the overall report as `PASS` or
-`FAIL` based on the required dependencies you could verify, and list the
-ambiguous dependency under `Unknown:`.
+If a non-blocking dependency check is ambiguous, keep the overall report as
+`PASS` or `FAIL` based on the required dependencies you could verify, and list
+the ambiguous dependency under `Unknown:`. If a required downstream skill is
+ambiguous, return `FAIL` and ask the user to install, enable, or confirm the
+named skill before continuing.

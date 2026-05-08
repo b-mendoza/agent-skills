@@ -30,10 +30,11 @@ being preloaded into the orchestrator's prompt.
 | Trigger | Pick a URL from |
 | ------- | --------------- |
 | User asks why this workflow loads files just-in-time, or you must explain context engineering choices | [Concepts](#concepts) |
+| `preflight-checker` reports a downstream skill `MISSING` / `UNKNOWN`, or the user needs skill installation / discovery help | [Agent skill runtime docs](#agent-skill-runtime-docs) |
 | `preflight-checker` reports `gh MISSING` or the user needs setup / auth help | [GitHub CLI setup](#github-cli-setup) |
 | You need the exact `gh` flag, JSON field, or REST/GraphQL endpoint for an issue read or write | [GitHub CLI / API syntax](#github-cli--api-syntax) |
 | A subagent needs to know whether sub-issues, dependencies, or projects v2 are exposed for this repo | [GitHub Issues capabilities](#github-issues-capabilities) |
-| You are authoring or revising a sibling skill or subagent and need design guidance | [Skill-authoring background](#skill-authoring-background-optional) |
+| You are authoring or revising a downstream skill or utility subagent and need design guidance | [Skill-authoring background](#skill-authoring-background-optional) |
 
 ## Concepts
 
@@ -44,6 +45,16 @@ being preloaded into the orchestrator's prompt.
 | Context engineering, just-in-time retrieval, long-horizon agent loops | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents |
 | Subagent context isolation and when to delegate | https://docs.claude.com/en/docs/claude-code/sub-agents |
 | Skill format reference (frontmatter, structure, capabilities) | https://docs.claude.com/en/docs/claude-code/skills |
+
+## Agent Skill Runtime Docs
+
+| Need | Source |
+| ---- | ------ |
+| Agent Skills loading model and package anatomy | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview |
+| Skill authoring and packaging best practices | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices |
+| Claude Code skill installation and runtime behavior | https://code.claude.com/docs/en/skills |
+| Cursor skill format and discovery paths | https://cursor.com/docs/skills |
+| Runtime-agnostic Agent Skills context | https://agentskills.io |
 
 ## GitHub CLI Setup
 
@@ -82,7 +93,7 @@ being preloaded into the orchestrator's prompt.
 ## Skill-Authoring Background (optional)
 
 Use this section only when the user asks how this skill itself was
-written, or when extending this orchestrator with a new sibling skill.
+written, or when extending this orchestrator with a new downstream skill.
 None of these URLs need to be fetched during normal GitHub workflow
 execution.
 

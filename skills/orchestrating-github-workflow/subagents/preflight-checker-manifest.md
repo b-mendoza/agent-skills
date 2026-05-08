@@ -4,65 +4,69 @@
 > preflight checker. Preflight reports availability only; it does not install,
 > connect, or repair dependencies.
 >
-> For current GitHub CLI setup details, load
-> `../references/external-sources.md` and fetch one URL from the
-> `GitHub CLI setup` section only when the user needs setup help.
+> For current GitHub CLI setup or runtime skill-installation details, load
+> `../references/external-sources.md` and fetch one URL from the relevant
+> setup section only when the user needs setup help.
 
 ## Classification
 
 This manifest covers dependencies owned directly by the orchestrating workflow:
-co-located subagents, sibling downstream skills, and platform transport needed
-for GitHub reads/writes. Downstream skills own their own transitive skill/tool
-dependencies and should validate them when invoked.
+co-located subagents, named runtime downstream skills, and platform transport
+needed for GitHub reads/writes. Downstream skills own their own transitive
+skill/tool dependencies and should validate them when invoked.
+
+Skill dependencies are checked by runtime skill discovery or invocation registry.
+This standalone package carries the full dependency manifest inside this folder.
 
 Any requested required dependency confirmed as `MISSING` produces
-`PREFLIGHT: FAIL`. Use `UNKNOWN` only when the platform does not expose a
-reliable check. Use `ERROR` only when preflight itself cannot run.
+`PREFLIGHT: FAIL`. A required downstream skill that cannot be verified by the
+host runtime also produces `PREFLIGHT: FAIL` with the dependency listed under
+`Unknown`. Use `ERROR` only when preflight itself cannot run.
 
 ## Phase 1 - Fetch Work Item
 
 | Dependency | Type | Used by | How to check | Configure |
 | ---------- | ---- | ------- | ------------ | --------- |
 | GitHub CLI (`gh`) | Tool | Issue fetch/API access | `gh --version`; for auth, `gh auth status` | Install `gh` and authenticate |
-| `fetching-github-issue` | Skill | Phase 1 orchestration | `../../fetching-github-issue/SKILL.md` exists | Install sibling skill at expected path |
+| `fetching-github-issue` | Skill | Phase 1 orchestration | Runtime reports skill available/invokable | Install or enable named downstream skill |
 
 ## Phase 2 - Plan Tasks
 
 | Dependency | Type | Used by | How to check | Configure |
 | ---------- | ---- | ------- | ------------ | --------- |
-| `planning-github-issue-tasks` | Skill | Phase 2 orchestration | `../../planning-github-issue-tasks/SKILL.md` exists | Install sibling skill at expected path |
+| `planning-github-issue-tasks` | Skill | Phase 2 orchestration | Runtime reports skill available/invokable | Install or enable named downstream skill |
 
 ## Phase 3 - Clarify + Critique
 
 | Dependency | Type | Used by | How to check | Configure |
 | ---------- | ---- | ------- | ------------ | --------- |
-| `clarifying-assumptions` | Skill | Phase 3 orchestration | `../../clarifying-assumptions/SKILL.md` exists | Install sibling skill at expected path |
+| `clarifying-assumptions` | Skill | Phase 3 orchestration | Runtime reports skill available/invokable | Install or enable named downstream skill |
 
 ## Phase 4 - Create Child Items
 
 | Dependency | Type | Used by | How to check | Configure |
 | ---------- | ---- | ------- | ------------ | --------- |
 | GitHub CLI (`gh`) | Tool | Issue create/link/update | Same as Phase 1 | Same as Phase 1 |
-| `creating-github-child-issues` | Skill | Phase 4 orchestration | `../../creating-github-child-issues/SKILL.md` exists | Install sibling skill at expected path |
+| `creating-github-child-issues` | Skill | Phase 4 orchestration | Runtime reports skill available/invokable | Install or enable named downstream skill |
 
 ## Phase 5 - Plan Task Execution
 
 | Dependency | Type | Used by | How to check | Configure |
 | ---------- | ---- | ------- | ------------ | --------- |
-| `planning-github-task` | Skill | Phase 5 orchestration | `../../planning-github-task/SKILL.md` exists | Install sibling skill at expected path |
+| `planning-github-task` | Skill | Phase 5 orchestration | Runtime reports skill available/invokable | Install or enable named downstream skill |
 
 ## Phase 6 - Clarify + Critique Task Plan
 
 | Dependency | Type | Used by | How to check | Configure |
 | ---------- | ---- | ------- | ------------ | --------- |
-| `clarifying-assumptions` | Skill | Phase 6 orchestration | `../../clarifying-assumptions/SKILL.md` exists | Install sibling skill at expected path |
+| `clarifying-assumptions` | Skill | Phase 6 orchestration | Runtime reports skill available/invokable | Install or enable named downstream skill |
 
 ## Phase 7 - Kick Off + Execute
 
 | Dependency | Type | Used by | How to check | Configure |
 | ---------- | ---- | ------- | ------------ | --------- |
 | GitHub CLI (`gh`) | Tool | Execution issue state/comments | Same as Phase 1 | Same as Phase 1 |
-| `executing-github-task` | Skill | Phase 7 orchestration | `../../executing-github-task/SKILL.md` exists | Install sibling skill at expected path |
+| `executing-github-task` | Skill | Phase 7 orchestration | Runtime reports skill available/invokable | Install or enable named downstream skill |
 
 ## Quick Reference
 
