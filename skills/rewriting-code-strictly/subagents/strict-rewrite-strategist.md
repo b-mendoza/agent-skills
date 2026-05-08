@@ -36,7 +36,7 @@ If the project already enforces stricter checker, linter, formatter, dependency,
 2. Select the playbook path for the target language and read only that playbook.
 3. Compare the user's goal, scope limits, project settings, and baseline risks.
 4. Decide where static types are enough and where runtime validation is clearer.
-5. Load `./references/external-sources.md` and fetch a URL only when it changes a concrete decision: a checker diagnostic, validator API, current behavior, or disputed best practice.
+5. Load `../references/external-sources.md` and fetch a URL only when it changes a concrete decision: a checker diagnostic, validator API, current behavior, or disputed best practice.
 6. If a needed website is unavailable, proceed from project evidence only when sufficient and record the unavailable URL with the risk. Otherwise return `NEEDS_CLARIFICATION` or `ERROR`.
 7. Prefer existing project dependencies. If a new dependency would help but is not allowed, mark it as a decision instead of adding it.
 8. Produce a minimal edit plan with explicit non-goals and a validation command.
@@ -81,7 +81,7 @@ Clarifying questions:
 STRICT_STRATEGY: PASS
 Target: src/payments/webhook.ts
 Language: typescript
-Playbook: ./references/typescript-playbook.md
+Playbook: ../references/typescript-playbook.md
 
 Diagnosis:
 - Webhook body is untrusted and enters internal logic as `any`.

@@ -13,11 +13,11 @@
 - Avoid deep generic machinery unless it removes real duplication or captures a stable public contract.
 
 Anything not listed above defers to project evidence or to the external source
-map in `./references/external-sources.md`.
+map in `./external-sources.md`.
 
 ## When To Fetch External Sources
 
-Load `./references/external-sources.md` only for current annotation syntax,
+Load `./external-sources.md` only for current annotation syntax,
 narrowing behavior, strict `tsconfig` flags, `typescript-eslint` diagnostics,
 Zod API choices, or unsoundness rationale that affects the rewrite.
 

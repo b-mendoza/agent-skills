@@ -13,11 +13,11 @@
 - Keep `Any`, `cast`, `# type: ignore`, and checker-specific ignores local and justified when an external API or language limit forces them.
 
 Anything not listed above defers to project evidence or to the external source
-map in `./references/external-sources.md`.
+map in `./external-sources.md`.
 
 ## When To Fetch External Sources
 
-Load `./references/external-sources.md` only for current annotation syntax,
+Load `./external-sources.md` only for current annotation syntax,
 checker flags, Pyright or mypy configuration, Pydantic behavior, legacy implicit
 optional cleanup, or type-system tradeoffs that are not clear from the project.
 

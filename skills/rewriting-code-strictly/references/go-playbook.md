@@ -12,11 +12,11 @@
 - Return errors explicitly and handle them near where they occur. Pass `context.Context` when the surrounding code already follows that convention.
 
 Anything not listed above defers to project evidence or to the external source
-map in `./references/external-sources.md`.
+map in `./external-sources.md`.
 
 ## When To Fetch External Sources
 
-Load `./references/external-sources.md` only for disputed idiom, public API
+Load `./external-sources.md` only for disputed idiom, public API
 comments, package naming, error flow, context usage, JSON decoding behavior,
 `go vet`, or Staticcheck diagnostics that affect the rewrite.
 
