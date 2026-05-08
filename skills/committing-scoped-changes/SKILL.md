@@ -5,17 +5,18 @@ description: "Create reviewable atomic git commits from explicit file or folder 
 
 # Committing Scoped Changes
 
-You are a scoped commit orchestrator. Turn explicit file or folder paths into one
-or more reviewable git commits after the user has asked for commits to be
-created. You coordinate the workflow; co-located subagents inspect repository
-state, plan boundaries, stage changes, verify, and create commits.
+You are a scoped commit orchestrator. You do exactly three things: **normalize
+inputs**, **decide the next phase or the smallest user question**, and
+**synthesize concise reports** from subagent results. Co-located subagents do
+the heavy work: inspect repository state, plan boundaries, stage hunks, verify,
+and create commits.
 
-The orchestrator does three things: normalize inputs, choose the next phase or
-ask for a missing decision, and synthesize concise reports. It retains only path
-scope, subagent summaries, approved plans, user decisions, and commit results.
+The orchestrator retains only path scope, subagent summaries, approved plans,
+user decisions, and commit results. Raw diffs, full command output, and copied
+article text never enter the orchestrator's context.
 
-This skill is standalone. It refers only to co-located files in this folder and
-public URLs listed in `./references/external-sources.md`.
+This skill package is standalone. Every path it references is either inside
+this folder or a public URL listed in `./references/external-sources.md`.
 
 ## Inputs
 
@@ -31,9 +32,11 @@ Normalize inputs before dispatching:
 
 - Ask one targeted question when `CHANGE_PATHS` is missing or ambiguous.
 - Treat `CHANGE_PATHS` as the allowed commit scope until the user expands it.
-- Use `docs/` when `CONTEXT_QUERY` is supplied without `CONTEXT_LOCATION`.
-- Infer `COMMIT_STYLE` from recent commits when it is not supplied.
-- Set `COMMIT_REQUEST_CONFIRMED=true` only when the user asked to create commits.
+- Default `CONTEXT_LOCATION` to `docs/` when `CONTEXT_QUERY` is supplied without
+  a location.
+- Infer `COMMIT_STYLE` from recent commits when not supplied.
+- Set `COMMIT_REQUEST_CONFIRMED=true` only when the user has asked for commits
+  to be created.
 
 ## Workflow Overview
 
@@ -56,18 +59,24 @@ Normalize inputs before dispatching:
 
 Read a subagent file only when dispatching that subagent.
 
-## Progressive Disclosure Policy
+## Progressive Loading Policy
 
-| Layer | File or source | Load when |
-| ----- | -------------- | --------- |
-| Core orchestration | This `SKILL.md` | Always, when the skill triggers |
-| External source routing | `./references/external-sources.md` | A public article or docs page could change the next decision |
-| Report contracts | `./references/report-contracts.md` | Formatting a subagent result or final user report |
-| Subagent definitions | `./subagents/*.md` | Dispatching that exact specialist |
-| Public websites | URLs from `external-sources.md` | Static guidance is needed and local rules are insufficient |
+Load the smallest artifact that answers the current decision. Do not preload
+references, subagent files, or external pages.
 
-Pass relevant URLs to subagents instead of fetching pages in the orchestrator.
-Subagents return the one-line conclusion they used, not copied article text.
+| Need | Load |
+| ---- | ---- |
+| Core orchestration and routing | This `SKILL.md` (always loaded) |
+| Public URL routing for Git mechanics, atomic-commit theory, message style, or progressive disclosure rationale | `./references/external-sources.md`, then fetch only the relevant URL |
+| Format the final user-facing report | `./references/report-contract-orchestrator.md` |
+| Format the state summarizer return value | `./references/report-contract-state-summarizer.md` (loaded inside that subagent) |
+| Format the boundary planner return value | `./references/report-contract-boundary-planner.md` (loaded inside that subagent) |
+| Format the commit executor return value | `./references/report-contract-commit-executor.md` (loaded inside that subagent) |
+| Utility work | The single subagent file from the registry |
+
+External URLs are passed to the subagent doing the work. Subagents return the
+URL plus a one-line conclusion, never copied article text. Bundled rules in
+this package win over web content when they conflict.
 
 ## How This Skill Works
 
@@ -75,34 +84,34 @@ Subagents return the one-line conclusion they used, not copied article text.
 changes in the plan, preserve out-of-scope work, and ask before expanding scope
 or leaving meaningful in-scope changes uncommitted.
 
-Commit groups are independently reviewable and revertable. A good group has one
-reviewer-facing reason, a specific message, and the smallest meaningful
-verification. Keep dependent implementation, tests, and fixtures together when
-splitting would create a broken intermediate state.
-
 Existing staged changes are inputs to the plan, not permission to commit. The
-planner accounts for them, and the executor commits them only when they belong to
+planner accounts for them; the executor commits them only when they belong to
 the approved group.
 
 After each successful commit, redispatch `scoped-state-summarizer` before the
-next group. This refreshes the plan after hooks, formatting, generated files, or
-concurrent workspace changes.
+next group. This refreshes the plan after hooks, formatting, generated files,
+or concurrent workspace changes.
+
+For atomic-commit grouping rationale, Conventional Commits syntax, or commit-
+message style guidance, route through `./references/external-sources.md`. The
+orchestrator does not embed that static theory inline.
 
 ## Execution Steps
 
 1. Normalize inputs and confirm commit authority.
 2. Dispatch `scoped-state-summarizer` with scope, context, and style inputs.
-3. If the state summary names a `Reference need`, load `external-sources.md` and
-   pass only the relevant URLs to `commit-boundary-planner`.
-4. Dispatch `commit-boundary-planner`; ask the smallest user question for any
+3. If the state summary names a `Reference need`, look it up in
+   `./references/external-sources.md` and pass only the matching URL to
+   `commit-boundary-planner`.
+4. Dispatch `commit-boundary-planner`. Ask the smallest user question for any
    `NEEDS_DECISION` result, then redispatch with the answer.
 5. Dispatch `scoped-commit-executor` once per approved group with
    `COMMIT_REQUEST_CONFIRMED=true`. Pass staging or commit reference URLs only
    when the group plan or executor reports that Git command semantics matter.
-6. Refresh state after each commit; re-plan if remaining scoped changes differ
-   from the approved plan.
-7. Before the final response, load `report-contracts.md` and use the
-   orchestrator report contract.
+6. Refresh state after each commit; replan if the remaining scoped changes
+   differ from the approved plan.
+7. Before the final response, load `./references/report-contract-orchestrator.md`
+   and use the orchestrator report contract.
 
 ## Failure Handling
 
@@ -121,7 +130,16 @@ Use structured subagent statuses to choose the next action:
 Input: `CHANGE_PATHS=src/checkout/, tests/checkout/`, `CONTEXT_QUERY=JNS-6880`,
 `COMMIT_STYLE=Conventional Commits`.
 
-Flow: dispatch state summarizer, plan one checkout retry group, execute one
-commit, refresh state, then report the SHA, verification command, no remaining
-scoped changes, and unrelated files left untouched.
+1. Dispatch `scoped-state-summarizer`. It returns `SCOPED_STATE: PASS` with a
+   single retry-related diff and matching ticket context.
+2. Dispatch `commit-boundary-planner`. It returns one group:
+   `fix(checkout): retry failed payment confirmation` with verification
+   `npm test -- checkout`.
+3. Dispatch `scoped-commit-executor`. It stages the planned files, reviews the
+   staged diff, runs the test, and returns `COMMIT_EXECUTE: PASS` with SHA
+   `abc1234`.
+4. Refresh state; no scoped changes remain.
+5. Load `./references/report-contract-orchestrator.md` and report SHA,
+   verification command, no remaining scoped changes, and that `README.md` was
+   left untouched.
 </example>
