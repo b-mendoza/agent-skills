@@ -7,7 +7,7 @@ Claude Code aligned.
 
 ## What is in this repository
 
-- [`skills/`](skills/) has 24 first party skills.
+- [`skills/`](skills/) has 25 first party skills.
 - [`docs/`](docs/) has workflow notes, design specs, and writing guidance.
 - [`docs/best-practices/`](docs/best-practices/) is the best place to start if
   you want to edit a skill.
@@ -67,6 +67,9 @@ one for GitHub. The rest are utility skills you can use on their own.
   current facts.
 - [`pr-creator`](skills/pr-creator/SKILL.md) prepares and opens a pull request
   from the current branch.
+- [`committing-scoped-changes`](skills/committing-scoped-changes/SKILL.md)
+  creates reviewable atomic commits from explicit file or folder paths while
+  loading commit guidance and context only as needed.
 - [`reviewing-pull-requests`](skills/reviewing-pull-requests/SKILL.md)
   orchestrates subagents that gather PR context, find grounded defects, draft
   line comments, verify claims, and write findings-first review files.
