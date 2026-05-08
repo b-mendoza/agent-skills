@@ -1,141 +1,95 @@
 # Template Skeleton
 
-This is the skeleton for a fully-structured XML prompt. Use it as the assembly frame for the final output. Not every section is required — omit sections that don't apply, but run the full list as a mental checklist so omission is conscious, not accidental.
+> Read this file only during final assembly. It is a checklist, not a requirement to emit every tag.
 
----
+Use this skeleton to assemble a structured XML prompt. Include only sections that change agent behavior.
 
-## Section order rationale
+## Section Order
 
-Tags appear in this order for a reason. The agent reads top to bottom; early tags frame how later tags are interpreted.
+| Order | Section | Reason |
+| --- | --- | --- |
+| 1 | `<task>` | Establishes the thesis first |
+| 2 | `<dispatch_rule>` | Keeps delegation visible before work starts |
+| 3 | `<scope>` and `<goal>` | Bounds and motivates the work |
+| 4 | `<philosophy>` | Frames interpretation before rules and steps |
+| 5 | `<context>` | Supplies background before execution |
+| 6 | `<phases>` or `<steps>` | Defines the work sequence |
+| 7 | `<anti_patterns>` and edge handlers | Blocks wrong paths around execution |
+| 8 | `<constraints>` | States broad rules with full context available |
+| 9 | `<success_criteria>` | Ends with the audit checklist |
 
-1. `<task>` first — establishes the thesis before anything else.
-2. `<dispatch_rule>` second if applicable — critical cross-cutting behavior can't wait.
-3. `<scope>` and `<goal>` next — bound and motivate the work.
-4. `<philosophy>` before `<constraints>` — philosophy shapes how constraints are read.
-5. `<context>` / `<problem_context>` when needed — the agent should know the backstory before the method.
-6. `<phases>` / `<method>` / `<steps>` — the actual work.
-7. `<anti_patterns>`, escape hatches, autonomy guardrails — behavior shaping that surrounds the method.
-8. `<constraints>` with `scope="all-phases"` — cross-cutting rules, placed here because they refer back to everything above.
-9. `<success_criteria>` last — the audit checklist naturally reads last.
-
----
-
-## Skeleton
+## XML Skeleton
 
 ```xml
 <task>
-  [One sentence: what this prompt accomplishes.]
+  [One sentence describing what this prompt accomplishes.]
 </task>
-
 <dispatch_rule>
-  [Only if using subagents] How work is distributed.
+  [Only when delegation matters.]
 </dispatch_rule>
-
 <scope>
-  [What's in-bounds: files, systems, entities.]
+  <in_scope>[What the agent may inspect, change, or decide.]</in_scope>
+  <out_of_scope>[What remains outside the task.]</out_of_scope>
 </scope>
-
 <goal>
-  [The outcome in human terms. Distinct from success criteria.]
+  [Human outcome, distinct from mechanical success criteria.]
 </goal>
-
 <philosophy>
-  <core_principle>
-    [The mental model the agent should adopt.]
-  </core_principle>
-  <what_it_means>
-    [Positive framing of the approach.]
-  </what_it_means>
-  <what_it_does_NOT_mean>
-    [Negative framing — common misinterpretations to block.]
-  </what_it_does_NOT_mean>
-  <rule_of_thumb>
-    [A quick decision heuristic.]
-  </rule_of_thumb>
+  <core_principle>[Central mental model.]</core_principle>
+  <what_it_means>[Positive interpretation.]</what_it_means>
+  <what_it_does_NOT_mean>[Misinterpretations to block.]</what_it_does_NOT_mean>
+  <rule_of_thumb>[Decision heuristic.]</rule_of_thumb>
 </philosophy>
-
 <context>
-  [If needed] Background the agent can't infer from the task alone.
+  [Background the agent cannot infer.]
 </context>
-
 <phases>
-  <phase id="N" name="..." mode="...">
-    <purpose>[What this phase accomplishes.]</purpose>
+  <phase id="1" name="..." mode="...">
+    <purpose>[Why this phase exists.]</purpose>
     <steps>
-      <step id="N.M" name="...">
-        [Step instructions.]
-      </step>
+      <step id="1.1" name="...">[Instruction.]</step>
     </steps>
-    <o>[What this phase produces.]</o>
-    <hard_rule>[Anything absolute about this phase.]</hard_rule>
-    <gate>[If applicable] Stop condition before next phase.</gate>
+    <output>[What this phase produces.]</output>
+    <hard_rule>[Phase-specific non-negotiable.]</hard_rule>
+    <gate>[Stop condition, if applicable.]</gate>
   </phase>
 </phases>
-
 <anti_patterns>
-  [Explicit list of things NOT to do that would look like completing the task.]
+  Do NOT:
+  - [Specific wrong action.]
 </anti_patterns>
-
 <new_finding_rule>
-  [What to do when the agent discovers something the prompt didn't anticipate.]
+  [How to route unexpected discoveries.]
 </new_finding_rule>
-
 <ambiguity_handling>
-  [What to do when multiple interpretations are plausible.]
+  [Fallback when multiple interpretations are plausible.]
 </ambiguity_handling>
-
 <autonomy_guardrails>
-  [If running autonomously] Rules that keep the agent from asking the user mid-run.
+  [Rules for unattended runs.]
 </autonomy_guardrails>
-
 <constraints scope="all-phases">
-  <constraint id="1" name="...">
-    [Rule description.]
-  </constraint>
+  <constraint id="1" name="...">[Broad rule.]</constraint>
 </constraints>
-
 <success_criteria>
-  [Checkable statements of done. Mix of positive and negative.]
+  - [Observable post-run check.]
 </success_criteria>
 ```
 
----
+## Assembly Rules
 
-## Assembly rules
+- Omit empty sections.
+- Preserve user terminology exactly unless the user asked for renaming.
+- Use specific tag names for suite prompts where generic names would collide.
+- Use attributes for metadata instead of prose clutter.
+- Repeat the most important rule at the phase or step where violation is likely.
+- Prefer separate prompt versions for substantially different modes.
+- Run the removal test: every emitted tag should earn its place.
 
-**When a section is empty, omit the tag entirely rather than leaving it blank.** Empty tags create noise.
+## Common Deviations
 
-**Nest sub-tags consistently.** If `<philosophy>` has sub-tags in one prompt, use the same sub-tag names (where applicable) in the next prompt. Internal consistency across a prompt suite matters.
-
-**Prefer specific tag names over generic ones.** `<harmonization_philosophy>` is better than `<philosophy>` if the prompt suite includes multiple philosophy-like blocks. Specificity aids scanning.
-
-**Use XML attributes for metadata.** `<phase id="0" name="validate" mode="report-only">` puts workflow metadata in attributes without cluttering content. Attributes include `id`, `name`, `mode`, `scope`, `status`.
-
-**Preserve the user's technical terminology.** If the user said "issue key" don't rename it "ticket ID." If they said "subagent" don't generalize to "helper agent." Technical terms anchor the prompt to the user's mental model.
-
----
-
-## When to deviate from the skeleton
-
-**Short prompts (one-shot, single-phase):** drop `<phases>`, `<dispatch_rule>`, `<gate>`, and most edge-case handlers. Keep `<task>`, `<scope>`, `<constraints>`, `<success_criteria>`. The skeleton is for prompts that do real work; a simple prompt just needs clear boundaries.
-
-**Interview-style prompts:** add `<gate>` tags to enforce turn-taking. Move `<ambiguity_handling>` out of autonomy mode and into "ask the user" mode.
-
-**Fully autonomous prompts:** require `<autonomy_guardrails>`, durable output files in each phase, and explicit DEFER buckets instead of user prompts.
-
-**Multi-prompt suites:** extract shared blocks (philosophy, constraints) into identical copies across prompts. Consistency across the suite matters more than cleverness within any single prompt.
-
----
-
-## Final check before delivery
-
-Before returning the assembled prompt, walk the skeleton top to bottom and ask:
-
-- Is `<task>` a single sentence that captures the thesis?
-- Does `<philosophy>` explicitly block the most dangerous misinterpretations?
-- Does each `<phase>` have a clear purpose, output, and hard rule?
-- Do `<anti_patterns>` cover the plausible-but-wrong interpretations?
-- Do `<success_criteria>` let you verify correctness post-run by inspection?
-- Would removing any tag change the agent's behavior? If no, consider removing it.
-
-The last check — the removal test — is the most important. Every tag should earn its place.
+| Situation | Deviation |
+| --- | --- |
+| Short one-shot prompt | Use `<task>`, `<scope>`, `<output>`, and `<success_criteria>` only |
+| Interview-style prompt | Add `<gate>` tags for turn-taking |
+| Autonomous prompt | Add `<autonomy_guardrails>`, traceability, and defer handling |
+| Prompt suite | Keep shared philosophy and constraints consistent across prompts |
