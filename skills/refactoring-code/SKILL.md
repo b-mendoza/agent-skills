@@ -62,13 +62,13 @@ Read a subagent file only when dispatching that subagent.
 | Need | Load Point | Location |
 | ---- | ---------- | -------- |
 | Core orchestration, contracts, file-size rule | When the skill triggers | This file |
-| Subagent execution details | Immediately before dispatch | `./subagents/*.md` |
+| Subagent execution details | Immediately before dispatch | The selected registry path under `./subagents/` |
 | Refactoring concepts and design trade-offs | Only when strategy or review needs external guidance | `./references/refactoring-web-resources.md`, then the selected webpage |
 | File-size rule details and split decision tree | Only when strategy or review must justify or enforce a split | `./references/file-size-policy.md`, then a selected webpage from `./references/refactoring-web-resources.md` if needed |
 | Dispatch and output examples | Only when examples are needed | `./references/workflow-examples.md` |
 | Raw code, test output, diffs, and file contents | Inside the responsible subagent | Summarized back as structured reports |
 
-The skill is self-contained: every local path it references is co-located in this skill directory. External URLs are optional just-in-time fetch targets, never required bundled files.
+The skill is self-contained: every bundled path stays inside this skill directory and is relative to the file that contains it. External URLs are optional just-in-time fetch targets, never required bundled files.
 
 ## File Size Rule
 
