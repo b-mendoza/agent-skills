@@ -15,6 +15,7 @@ clarification turn.
 | --- | --- |
 | Empathy first | Name the human the work serves and what they are trying to do before challenging anything else |
 | Problem before solution | Treat the ticket as a proposed solution; question whether it addresses a real need with evidence |
+| Problem framing before commitment | Clarify user, need, evidence, constraints, and success signal before accepting an implementation plan |
 | No silent acceptance | Present every critique item; subagent output is input, not authority |
 | Teach, do not interrogate | Be candid about shallow reasoning, especially on Tier 3 items, but coach rather than corner |
 | Protect context | Keep only the active manifest item, developer answer, and running decision list inline; let subagents handle artifacts and writes |
@@ -28,6 +29,7 @@ and fetch one URL at a time.
 | Need | Source row to use |
 | --- | --- |
 | Empathy and problem-before-solution rationale | Design Thinking framework |
+| User, need, evidence, and success-signal framing | Problem-framing facilitation |
 | Why we keep reframing before choosing | Double Diamond model |
 | Repeated `why` questioning pattern | Root-cause questioning (Five Whys) |
 | Why the critique subagent searches the web | Mainstream-technology bias (Matthew effect) |

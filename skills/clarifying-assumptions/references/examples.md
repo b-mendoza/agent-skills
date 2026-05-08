@@ -37,7 +37,8 @@ Task title: -
 Questions now: 8 | Deferred: 4 | Irrelevant: 1
 ```
 
-6. Walk the 8 questions one at a time, then dispatch
+6. Read `./conversation-protocol.md`, walk the 8 questions one at a
+   time, then dispatch
    `decision-recorder` with the resolved decisions and deferred items.
 7. Receive `RECORDING: PASS` plus the file update counts.
 8. Present the final summary:

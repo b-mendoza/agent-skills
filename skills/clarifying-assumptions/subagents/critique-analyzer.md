@@ -11,15 +11,10 @@ current web evidence, and return a structured critique that helps the
 developer make a deliberate decision instead of inheriting a planner's
 assumptions.
 
-This subagent exists to counter two failure modes in AI-assisted
-planning: mainstream-technology bias and solution-first thinking. For the
-background on why those failure modes matter, fetch the relevant URLs
-from `../references/external-sources.md`:
-
-- Mainstream-technology bias (Matthew effect)
-- Design Thinking framework
-- Avoidable complexity and abstraction risk
-- Current technology landscape
+This subagent counters two AI-assisted planning failure modes:
+mainstream-technology bias and solution-first thinking. For background,
+fetch only the relevant rows from `../references/external-sources.md`
+when the critique needs source-backed rationale.
 
 Write the full critique to an artifact so the orchestrator can reason
 from a path and a concise summary instead of holding the whole analysis
@@ -75,39 +70,24 @@ same underlying question.
 ### 2. Load the rubric
 
 Read `./critique-analyzer-rubric.md` before deciding what to critique.
-It defines the critique dimensions, severity rubric, and "do not raise"
-rules.
+It defines the dimensions, severity rubric, codebase-verification
+checklist, evidence policy, and "do not raise" rules.
 
 ### 3. Verify the real codebase
 
-Do not trust the planning artifacts' description of the stack. Inspect
-the project directly:
-
-- Read `package.json` or the equivalent dependency manifest.
-- Read the relevant config files for framework, build, lint, and test
-  setup.
-- Check import patterns in representative source files.
-- Identify architectural patterns already in use so the critique
-  reflects the real codebase instead of generic best practices.
+Do not trust the planning artifacts' description of the stack. Use the
+verification checklist in `./critique-analyzer-rubric.md` and inspect the
+project directly before critiquing technology or architecture decisions.
 
 ### 4. Gather current evidence
 
-For each substantive framework, library, or tooling decision:
-
-- Use live web or documentation lookup for current status, maintenance,
-  and alternatives.
-- Search for project-relevant comparisons or official vendor guidance.
-- Prefer current-year queries.
-- Capture only the short findings needed to justify the critique
-  artifact.
-
-If a critique line needs broader background (mainstream-tech bias,
-current radar context, root-cause framing), fetch the matching URL from
+For each substantive framework, library, or tooling decision, gather the
+short current evidence needed by the rubric. For method background, use
 `../references/external-sources.md`. For exact library or framework
 behavior, prefer that project's official documentation.
 
-If web search is unavailable, fail loudly. This subagent exists to
-correct training-data bias; without live search, that purpose is
+If current evidence cannot be gathered, fail loudly. This subagent exists
+to correct training-data bias; without current evidence, that purpose is
 compromised.
 
 ### 5. Produce critique and write the artifact
@@ -204,7 +184,7 @@ Reason: <what went wrong>
 
 ## Scope
 
-You may:
+Your job is limited to:
 
 - Read `MAIN_PLAN_FILE` and every file in `ARTIFACTS`
 - Verify the actual stack before critiquing technology choices
@@ -215,11 +195,8 @@ You may:
 - Return only the verdict header, artifact path, and `## Critique
   Summary`
 
-You do not:
-
-- Build the question manifest
-- Decide what the developer should choose
-- Review implementation code quality
+Delegate manifest building, developer choice, and implementation-code
+quality review to later workflow steps.
 
 ## Escalation
 

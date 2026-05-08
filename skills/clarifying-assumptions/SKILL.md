@@ -18,7 +18,8 @@ the same five stages and the same final summary shape.
 This skill is standalone. Every dependency is a relative path inside this
 folder. Conceptual background lives behind URLs in
 `./references/external-sources.md` and is fetched only when needed; the
-skill executes correctly with no network access.
+core workflow runs from bundled files. If current technology evidence is
+unavailable, follow `critique-analyzer` escalation.
 
 ## Inputs
 
@@ -42,6 +43,7 @@ relative to this skill folder.
 | Behavioral rules and posture for clarification | `./references/design-thinking-mindset.md` |
 | Plan-wide upfront execution | `./references/upfront-mode.md` |
 | Task-level critique execution | `./references/critique-mode.md` |
+| Stage 4 conversation turns, response choices, and final summary details | `./references/conversation-protocol.md` |
 | Artifact preconditions, derived subagent inputs, output artifact contracts | `./references/clarification-contracts.md` |
 | Dispatch round-trip examples | `./references/examples.md` |
 | External rationale, current technology context, or method background | `./references/external-sources.md`, then fetch one URL |
@@ -66,7 +68,7 @@ slugs, and other workflow keys.
 | 1 | Load guidance | Read the design-thinking reference and the active mode playbook |
 | 2 | Analyze artifacts | Dispatch `critique-analyzer` to read artifacts, consult prior decisions, verify the codebase, gather current evidence, and write the critique artifact |
 | 3 | Build manifest | Dispatch `question-manifest-builder` to turn the critique artifact plus plan context into the ordered manifest |
-| 4 | Clarify inline | Walk the manifest one item at a time with the developer and capture decisions |
+| 4 | Clarify inline | Load the shared conversation protocol, walk the manifest one item at a time, and capture decisions |
 | 5 | Record decisions | Dispatch `decision-recorder` to update workflow artifacts, validate them, and return the final write summary |
 
 Run the stages this way:
@@ -81,8 +83,9 @@ Run the stages this way:
 4. Dispatch `question-manifest-builder` with the critique artifact path
    and plan context. A zero-item manifest is a valid no-op; skip directly
    to Stage 5.
-5. In Stage 4, ask one manifest item at a time. Carry each manifest
-   `Item ID` unchanged into the decision list.
+5. When entering Stage 4, load `./references/conversation-protocol.md`.
+   Ask one manifest item at a time and carry each manifest `Item ID`
+   unchanged into the decision list.
 6. Dispatch `decision-recorder` with resolved decisions, deferred items,
    implementation updates, and critique-mode task metadata when present.
 7. Present the final summary using the stable contract below.
@@ -106,20 +109,20 @@ as state.
 
 ## Behavioral Guardrails
 
-1. Ask one question per message.
-2. Ask only from the manifest; if a new item emerges, add it before asking
-   it.
+Keep these rules in force across both modes. Load
+`./references/conversation-protocol.md` for the detailed turn-by-turn
+flow only when Stage 4 starts.
+
+1. Ask one manifest item per message.
+2. Ask only from the manifest; add newly discovered current-scope items
+   to the live manifest before asking them.
 3. Defer future-task questions instead of speculating about them now.
-4. Be direct about shallow thinking on Tier 3 items, but keep the tone
-   mentor-like.
-5. Present every critique item; subagent output is input, not authority.
-6. Respect skip only for Tier 2 items. Tier 3 hard gates cannot be
-   skipped. Tier definitions live in
-   `./subagents/critique-analyzer-rubric.md`.
-7. When the interface supports structured choices, use them for discrete
-   options; otherwise use numbered options.
-8. Keep question blocks scannable. Use tables or diagrams only when they
-   clarify a real trade-off.
+4. Present every critique item; subagent output is input, not authority.
+5. Treat Tier 3 hard gates as non-skippable. Tier definitions live in
+   `./subagents/critique-analyzer-rubric.md` and are read only when tier
+   behavior needs verification.
+6. Use structured choices for discrete options when the interface supports
+   them; otherwise use numbered options.
 
 ## Escalation
 
@@ -157,12 +160,13 @@ If clarification stops early because a subagent returned `BLOCKED`,
 Input: `TICKET_KEY=JNS-6065`, `MODE=upfront`, `ITERATION=1`
 
 1. Load `./references/design-thinking-mindset.md` and
-   `./references/upfront-mode.md`.
+    `./references/upfront-mode.md`.
 2. Dispatch `critique-analyzer`; receive `CRITIQUE: PASS` and
    `Artifact: docs/JNS-6065-upfront-critique.md`.
 3. Dispatch `question-manifest-builder`; receive
    `Questions now: 8 | Deferred: 4 | Irrelevant: 1`.
-4. Walk the 8 questions one at a time and record decisions.
+4. Load `./references/conversation-protocol.md`, walk the 8 questions
+   one at a time, and record decisions.
 5. Dispatch `decision-recorder`; receive `RECORDING: PASS` and file
    update counts.
 6. Present the final summary and tell the parent workflow whether

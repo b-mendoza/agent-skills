@@ -37,6 +37,33 @@ In `MODE=critique`, look for these categories:
   - Trade-offs that conflict with the end user and need captured in the
     plan's problem framing
 
+## Codebase Verification Checklist
+
+Inspect enough of the real project to anchor the critique in the current
+codebase rather than generic advice.
+
+| Check | Look for |
+| --- | --- |
+| Dependency manifest | Package manager, runtime, framework, top relevant dependencies |
+| Config files | Build, lint, test, framework, deployment, or language settings |
+| Representative source files | Import patterns, routing, data access, state management, testing style |
+| Existing architecture | Conventions the plan should preserve or intentionally change |
+
+## Evidence Policy
+
+Use current evidence only for decisions that materially affect framework,
+library, architecture, testing, security, performance, or maintainability.
+
+| Evidence need | Source |
+| --- | --- |
+| Exact API or framework behavior | Official project documentation or vendor guidance |
+| Maintenance, adoption, or maturity signal | Official release notes, project repository, vendor status page, or Thoughtworks Radar |
+| Method rationale | `../references/external-sources.md` source map |
+| Alternative comparison | Current source that names concrete trade-offs relevant to this project |
+
+Keep evidence short in the artifact. Cite enough for downstream review,
+but do not paste raw search output or whole pages.
+
 ## Severity Rubric
 
 | Severity | Meaning |

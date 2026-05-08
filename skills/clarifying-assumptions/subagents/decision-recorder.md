@@ -28,51 +28,9 @@ the whole conversation.
 | `RESOLVED_IRRELEVANT` | Optional | Deferred questions that no longer apply |
 | `IMPLEMENTATION_UPDATES` | Optional | Implementation-note replacements |
 
-Each entry in `DECISIONS` should include:
-
-```text
-- id: <stable item id>
-- category: <problem-framing | critique | user-impact | cross-cutting | assumption | task-question | validation>
-- question: <short prompt or decision text>
-- outcome: <confirmed | revised | skipped | resolved | override | blocked>
-- answer: <final answer or selected option>
-- rationale: <developer reasoning>
-- fallback: <used when skipped>
-- affected_tasks: <list or "All">
-```
-
-Carry the manifest `Item ID` into `DECISIONS.id` unchanged so the same
-identifier flows from critique or manifest output into per-item records
-and plan annotations. In `MODE=critique`, the main `## Decisions Log`
-keeps a single task-level reference row pointing to the per-task
-decisions file.
-
-Map manifest category labels to canonical `category` values:
-
-| Manifest label | Canonical `category` |
-| --- | --- |
-| `Problem framing` | `problem-framing` |
-| `Critique` | `critique` |
-| `User impact` | `user-impact` |
-| `Cross-cutting` | `cross-cutting` |
-| `Assumption` | `assumption` |
-| `Architectural assumption` | `assumption` |
-| `Task question` | `task-question` |
-| `Validation` | `validation` |
-
-Map playbook responses to canonical `outcome` values:
-
-| Playbook response | Canonical outcome |
-| --- | --- |
-| `Keep current approach` | `confirmed` |
-| `Confirm` | `confirmed` |
-| `Switch to <alternative>` | `revised` |
-| `Revise` | `revised` |
-| `Resolved` | `resolved` |
-| `Acknowledge but proceed` | `override` |
-| `Skip` | `skipped` |
-| `I need more information` | `blocked` |
-| `Action needed` | `blocked` |
+Read `./decision-recorder-template.md` when normalizing `DECISIONS`.
+It contains the input schema, category mapping, outcome mapping, and
+artifact table schemas.
 
 If `ITERATION` is omitted, treat it as `1`. An empty structured list is
 valid for `DECISIONS` when the manifest contained no items to resolve
@@ -87,8 +45,8 @@ Read `docs/<TICKET_KEY>-tasks.md`. If it does not exist, return
 
 ### 2. Update the main decisions log
 
-Read `./decision-recorder-template.md` when writing the `## Decisions
-Log` table. Use its exact schema.
+Use the `## Decisions Log` table schema from
+`./decision-recorder-template.md`.
 
 If `MODE=upfront`:
 
@@ -123,9 +81,9 @@ record a warning instead of inventing a replacement target.
 
 ### 4. Create or update the per-task decisions file
 
-In `MODE=critique`, read `./decision-recorder-template.md` when writing
-`docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md`. Use the template's
-exact section names and table schema.
+In `MODE=critique`, use the per-task decisions schema from
+`./decision-recorder-template.md` when writing
+`docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md`.
 
 ### 5. Validate
 
@@ -158,19 +116,16 @@ Blocked and errored runs start with `RECORDING: BLOCKED` or
 
 ## Scope
 
-You may:
+Your job is limited to:
 
 - Update the main tasks file
 - Create or update the per-task decisions file in critique mode
 - Record warnings when exact targets cannot be found
 - Return only the structured summary
 
-You do not:
-
-- Re-run critique analysis
-- Ask the developer follow-up questions
-- Invent missing sections beyond the minimum needed to create a valid
-  decisions log
+Delegate critique analysis and developer follow-up questions to earlier
+workflow stages. Create only the minimum missing markdown needed for a
+valid decisions log.
 
 ## Escalation
 

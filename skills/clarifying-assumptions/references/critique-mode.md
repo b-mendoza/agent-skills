@@ -1,187 +1,92 @@
 # Critique Mode Playbook
 
-> Read `./design-thinking-mindset.md` first.
+> Read this file for `MODE=critique`. The skill loads it with
+> `./design-thinking-mindset.md`; load `./conversation-protocol.md` only
+> when Stage 4 starts.
 >
 > **Reminder:** Critique mode stays conversational for the developer, but
 > subagents still own artifact reading, deferred-question filtering, and
 > file writes.
->
-> Use `SKILL.md`'s `## Escalation` table as the authoritative verdict
-> routing policy. Use `./clarification-contracts.md` only when validating
-> required sections, artifact paths, or derived dispatch handoffs.
->
-> For why we re-challenge user impact at the task level instead of trusting
-> upfront framing, see `./external-sources.md` → Design Thinking framework
-> and Mainstream-technology bias.
 
-## Stage 2 — Analyze Artifacts
+Use `SKILL.md`'s `## Escalation` table for verdict routing. Use
+`./clarification-contracts.md` only when validating required sections,
+artifact paths, or derived handoffs. For rationale behind task-level user
+impact checks or current-technology critique, fetch the Design Thinking or
+Mainstream-technology bias rows from `./external-sources.md` only when
+needed.
 
-Dispatch `critique-analyzer`.
+## Stage 2 - Analyze Artifacts
 
-Read `../subagents/critique-analyzer.md`, then dispatch with:
+Read `../subagents/critique-analyzer.md`, then dispatch
+`critique-analyzer` with:
 
-- `MODE=critique`
-- `TICKET_KEY=<TICKET_KEY>`
-- `TASK_NUMBER=<TASK_NUMBER>`
-- `MAIN_PLAN_FILE=docs/<TICKET_KEY>-tasks.md`
-- `ARTIFACTS`
-  - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md`
-  - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md`
-  - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md`
-  - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md`
-- `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-task-<TASK_NUMBER>-critique.md`
-- `PRIOR_DECISIONS_FILE=docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md`
-- `PRIOR_DECISIONS_KIND=per-task`
+| Input | Value |
+| --- | --- |
+| `MODE` | `critique` |
+| `TICKET_KEY` | `<TICKET_KEY>` |
+| `TASK_NUMBER` | `<TASK_NUMBER>` |
+| `MAIN_PLAN_FILE` | `docs/<TICKET_KEY>-tasks.md` |
+| `ARTIFACTS` | `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md`, `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md`, `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md`, `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md` |
+| `CRITIQUE_REPORT_FILE` | `docs/<TICKET_KEY>-task-<TASK_NUMBER>-critique.md` |
+| `PRIOR_DECISIONS_FILE` | `docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md` |
+| `PRIOR_DECISIONS_KIND` | `per-task` |
 
-The analyzer consults that decisions file on every run, including
-`ITERATION=1`. If the file does not exist yet, it treats the source as
-empty. When the file exists, it judges prior answers by substance rather
-than by item ID or exact wording.
+The analyzer consults the per-task decisions file on every run. If the
+file does not exist yet, it treats the source as empty. When the file
+exists, it judges prior answers by substance rather than item ID or exact
+wording.
 
-Verdict routing follows `SKILL.md`'s `## Escalation` table.
+## Stage 3 - Build Manifest
 
-## Stage 3 — Build Manifest
+Read `../subagents/question-manifest-builder.md`, then dispatch
+`question-manifest-builder` with:
 
-Dispatch `question-manifest-builder`.
+| Input | Value |
+| --- | --- |
+| `MODE` | `critique` |
+| `TICKET_KEY` | `<TICKET_KEY>` |
+| `TASK_NUMBER` | `<TASK_NUMBER>` |
+| `PLAN_FILE` | `docs/<TICKET_KEY>-tasks.md` |
+| `CURRENT_TASK_ARTIFACTS` | `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md`, `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md`, `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md`, `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md` |
+| `CRITIQUE_REPORT_FILE` | `docs/<TICKET_KEY>-task-<TASK_NUMBER>-critique.md` |
 
-Read `../subagents/question-manifest-builder.md`, then dispatch with:
+The manifest builder returns the same three-way shape used in upfront
+mode: questions for now, deferred questions, and resolved irrelevant
+items. A zero-item manifest is valid.
 
-- `MODE=critique`
-- `TICKET_KEY=<TICKET_KEY>`
-- `TASK_NUMBER=<TASK_NUMBER>`
-- `PLAN_FILE=docs/<TICKET_KEY>-tasks.md`
-- `CURRENT_TASK_ARTIFACTS`
-  - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md`
-  - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md`
-  - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-test-spec.md`
-  - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md`
-- `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-task-<TASK_NUMBER>-critique.md`
+## Stage 4 - Clarify Inline
 
-The manifest builder returns the same three-way manifest shape used in
-upfront mode:
+Load `./conversation-protocol.md` and follow its preview, turn, response,
+and recording rules.
 
-- Questions for now
-- Deferred questions
-- Resolved irrelevant items
+Critique-specific rules:
 
-### Stage 4 substep — Preview Manifest
+1. Every item uses `Model=B`; do not run the Tier 3 Model A flow.
+2. Resolve only current-task critique, user-impact, assumption, and
+   deferred-question items.
+3. If a deferred question is clearly obsolete, do not ask it; rely on the
+   manifest builder's `Resolved Irrelevant` list.
+4. Follow the manifest `Skippable` field. Items surfaced as
+   non-skippable stay non-skippable.
 
-Show the manifest summary before asking the first question. Reuse the
-`question-manifest-builder` header counts and `## Questions For Now`
-table shape; do not invent a different critique-mode preview schema.
+## Stage 5 - Record Decisions
 
-```markdown
-## Question Manifest — <TICKET_KEY> / Task <TASK_NUMBER>
+Read `../subagents/decision-recorder.md`, then dispatch
+`decision-recorder` with:
 
-Questions now: <N> | Deferred: <M> | Irrelevant: <R>
-
-| # | Item ID | Category | Severity | Model | Skippable | Affects |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | TC1 | Critique | HIGH | B | No | Task <TASK_NUMBER> |
-| 2 | UI1 | User impact | MEDIUM | B | Yes | Task <TASK_NUMBER> |
-| 3 | DQ-<TASK_NUMBER>-1 | Task question | MEDIUM | B | Yes | Task <TASK_NUMBER> |
-```
-
-If there are no items left after filtering, say so clearly, do not emit
-a placeholder prompt, and skip to the recording step with an empty
-decision list.
-
-After the preview, ask:
-
-> Ready to start? I'll walk through these one at a time.
-
-## Stage 4 — Clarify Inline
-
-Every item in critique mode uses Model B.
-
-Always show progress:
-
-```text
-Question <current>/<total> — [<category>]
-```
-
-Use this flow:
-
-1. Present the original decision or unresolved question.
-2. Present the critique, trade-offs, or user-impact consequence.
-3. Ask the developer whether the reasoning holds up, and why.
-4. Record the decision and rationale.
-
-For critique and user-impact items, present these options when a discrete
-choice is needed:
-
-1. `Keep current approach`
-2. `Switch to <alternative>`
-3. `I need more information`
-4. `Acknowledge but proceed`
-
-Record `I need more information` and `Action needed` style responses as
-the canonical `blocked` outcome for the recorder.
-
-For deferred questions, use the simplest fitting response form:
-
-- direct answer
-- revise current plan
-- skip with fallback, but only when the manifest marks the item
-  `Skippable`
-
-### Recording rules
-
-- `Switch to <alternative>` → set `RE_PLAN_NEEDED=true`
-- `blocked` → set `RE_PLAN_NEEDED=true`, set `BLOCKERS_PRESENT=true`,
-  and stop after recording the blocker
-- `Acknowledge but proceed` → record as override, no re-plan
-- `Skip` → record the fallback and warning
-- Follow the manifest's `Skippable` field. Do not skip items that were
-  surfaced as non-skippable.
-- If a deferred question is clearly obsolete, do not ask it; rely on the
-  manifest builder's `RESOLVED_IRRELEVANT` list
-
-## Stage 5 — Record Decisions
-
-Dispatch `decision-recorder`.
-
-Read `../subagents/decision-recorder.md`, then dispatch with:
-
-- `TICKET_KEY=<TICKET_KEY>`
-- `MODE=critique`
-- `TASK_NUMBER=<TASK_NUMBER>`
-- `TASK_TITLE=<task title from the manifest>`
-- `ITERATION=<ITERATION or 1>`
-- `DECISIONS=<resolved decisions from the session>`
-- `RESOLVED_IRRELEVANT=<items marked no longer applicable>`
-- `DEFERRED_QUESTIONS=<new future-task questions created during this session>`
-  only when the discussion surfaces items that should be revisited later
-- `IMPLEMENTATION_UPDATES=<any implementation-note edits caused by switch decisions>`
+| Input | Value |
+| --- | --- |
+| `TICKET_KEY` | `<TICKET_KEY>` |
+| `MODE` | `critique` |
+| `TASK_NUMBER` | `<TASK_NUMBER>` |
+| `TASK_TITLE` | task title from the manifest |
+| `ITERATION` | `<ITERATION or 1>` |
+| `DECISIONS` | resolved decisions from Stage 4 |
+| `RESOLVED_IRRELEVANT` | items marked no longer applicable |
+| `DEFERRED_QUESTIONS` | new future-task questions created during discussion, if any |
+| `IMPLEMENTATION_UPDATES` | implementation-note edits caused by revised decisions |
 
 In critique mode, `decision-recorder` creates or updates
-`docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md` and also updates the
-main task plan. Verdict routing follows `SKILL.md`'s `## Escalation`
-table.
-
-### Stage 5 substep — Present Final Summary
-
-Keep the first four lines in the same order as the `SKILL.md` final
-summary contract, then add any extra counts that help the user
-understand what happened in this run.
-
-```markdown
-## Clarification Complete — <TICKET_KEY> / Task <TASK_NUMBER>
-
-- Critique artifact: <path>
-- Files updated: <path list or ->
-- RE_PLAN_NEEDED: <true|false>
-- BLOCKERS_PRESENT: <true|false>
-- Critique items resolved: <N>
-- User-impact items resolved: <N>
-- Deferred questions resolved: <N>
-- Questions marked irrelevant: <N>
-- Blocking items: <N>
-- Overrides: <N>
-```
-
-If `RE_PLAN_NEEDED=true`, tell the orchestrator to re-run the per-task
-planning phase before execution begins.
-
-If `BLOCKERS_PRESENT=true`, tell the orchestrator to stop before
-execution and escalate the unresolved items.
+`docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md` and updates the main
+task plan. After it returns, use `./conversation-protocol.md` to present
+the final summary.

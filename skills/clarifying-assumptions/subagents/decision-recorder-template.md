@@ -3,6 +3,50 @@
 Read this file only when writing decision artifacts or formatting the final
 recording summary.
 
+## Decision Input Schema
+
+Each entry in `DECISIONS` uses this shape:
+
+```text
+- id: <stable item id>
+- category: <problem-framing | critique | user-impact | cross-cutting | assumption | task-question | validation>
+- question: <short prompt or decision text>
+- outcome: <confirmed | revised | skipped | resolved | override | blocked>
+- answer: <final answer or selected option>
+- rationale: <developer reasoning>
+- fallback: <used when skipped>
+- affected_tasks: <list or "All">
+```
+
+Carry the manifest `Item ID` into `DECISIONS.id` unchanged. In
+`MODE=critique`, the main `## Decisions Log` keeps a single task-level
+reference row pointing to the per-task decisions file.
+
+## Mapping Tables
+
+| Manifest label | Canonical `category` |
+| --- | --- |
+| `Problem framing` | `problem-framing` |
+| `Critique` | `critique` |
+| `User impact` | `user-impact` |
+| `Cross-cutting` | `cross-cutting` |
+| `Assumption` | `assumption` |
+| `Architectural assumption` | `assumption` |
+| `Task question` | `task-question` |
+| `Validation` | `validation` |
+
+| Playbook response | Canonical outcome |
+| --- | --- |
+| `Keep current approach` | `confirmed` |
+| `Confirm` | `confirmed` |
+| `Switch to <alternative>` | `revised` |
+| `Revise` | `revised` |
+| `Resolved` | `resolved` |
+| `Acknowledge but proceed` | `override` |
+| `Skip` | `skipped` |
+| `I need more information` | `blocked` |
+| `Action needed` | `blocked` |
+
 ## Main Decisions Log
 
 Create or update `## Decisions Log` with this exact table schema:

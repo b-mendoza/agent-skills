@@ -1,181 +1,81 @@
 # Upfront Mode Playbook
 
-> Read `./design-thinking-mindset.md` first.
+> Read this file for `MODE=upfront`. The skill loads it with
+> `./design-thinking-mindset.md`; load `./conversation-protocol.md` only
+> when Stage 4 starts.
 >
-> **Reminder:** The conversational layer does not read or edit the plan
-> directly in this phase. Subagents read artifacts, assemble the
-> manifest, and write file updates.
->
-> Use `SKILL.md`'s `## Escalation` table as the authoritative verdict
-> routing policy. Use `./clarification-contracts.md` only when validating
-> required sections, artifact paths, or derived dispatch handoffs.
->
-> For why we run Tier 3 problem-framing items as Model A (developer
-> answers before seeing critique), see `./external-sources.md` →
-> Design Thinking framework and Five Whys.
+> **Reminder:** The conversation layer does not read or edit the plan
+> directly. Subagents read artifacts, assemble the manifest, and write
+> file updates.
 
-## Stage 2 — Analyze Artifacts
+Use `SKILL.md`'s `## Escalation` table for verdict routing. Use
+`./clarification-contracts.md` only when validating required sections,
+artifact paths, or derived handoffs. For rationale behind Model A and
+problem-before-solution questioning, fetch the Design Thinking or Five
+Whys rows from `./external-sources.md` only when needed.
 
-Dispatch `critique-analyzer`.
+## Stage 2 - Analyze Artifacts
 
-Read `../subagents/critique-analyzer.md`, then dispatch with:
+Read `../subagents/critique-analyzer.md`, then dispatch
+`critique-analyzer` with:
 
-- `MODE=upfront`
-- `TICKET_KEY=<TICKET_KEY>`
-- `MAIN_PLAN_FILE=docs/<TICKET_KEY>-tasks.md`
-- `ARTIFACTS`
-  - `docs/<TICKET_KEY>-stage-1-detailed.md`
-  - `docs/<TICKET_KEY>-stage-2-prioritized.md`
-- `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-upfront-critique.md`
-- `PRIOR_DECISIONS_FILE=docs/<TICKET_KEY>-tasks.md`
-- `PRIOR_DECISIONS_KIND=main-log`
+| Input | Value |
+| --- | --- |
+| `MODE` | `upfront` |
+| `TICKET_KEY` | `<TICKET_KEY>` |
+| `MAIN_PLAN_FILE` | `docs/<TICKET_KEY>-tasks.md` |
+| `ARTIFACTS` | `docs/<TICKET_KEY>-stage-1-detailed.md`, `docs/<TICKET_KEY>-stage-2-prioritized.md` |
+| `CRITIQUE_REPORT_FILE` | `docs/<TICKET_KEY>-upfront-critique.md` |
+| `PRIOR_DECISIONS_FILE` | `docs/<TICKET_KEY>-tasks.md` |
+| `PRIOR_DECISIONS_KIND` | `main-log` |
 
-The analyzer consults the main `## Decisions Log` on every run, including
-`ITERATION=1`. It judges by substance, so changed wording or reassigned
-item IDs do not justify re-asking an already answered concern.
+The analyzer consults the main `## Decisions Log` on every run,
+including `ITERATION=1`. It judges by substance, so changed wording or
+reassigned item IDs do not justify re-asking an already answered concern.
 
-Verdict routing follows `SKILL.md`'s `## Escalation` table.
+## Stage 3 - Build Manifest
 
-## Stage 3 — Build Manifest
+Read `../subagents/question-manifest-builder.md`, then dispatch
+`question-manifest-builder` with:
 
-Dispatch `question-manifest-builder`.
+| Input | Value |
+| --- | --- |
+| `MODE` | `upfront` |
+| `TICKET_KEY` | `<TICKET_KEY>` |
+| `PLAN_FILE` | `docs/<TICKET_KEY>-tasks.md` |
+| `CRITIQUE_REPORT_FILE` | `docs/<TICKET_KEY>-upfront-critique.md` |
 
-Read `../subagents/question-manifest-builder.md`, then dispatch with:
+The manifest builder returns the ordered questions to ask now, questions
+to defer, and any warnings about malformed or missing sections. A
+zero-item manifest is valid.
 
-- `MODE=upfront`
-- `TICKET_KEY=<TICKET_KEY>`
-- `PLAN_FILE=docs/<TICKET_KEY>-tasks.md`
-- `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-upfront-critique.md`
+## Stage 4 - Clarify Inline
 
-The manifest builder returns:
+Load `./conversation-protocol.md` and follow its preview, turn, response,
+and recording rules.
 
-- The ordered list of questions to ask now
-- The list of questions to defer to later tasks
-- Any warnings about malformed or missing sections
+Upfront-specific rules:
 
-### Stage 4 substep — Preview Manifest
+1. `Model=A` applies only to Tier 3 problem-framing items.
+2. Do not reveal `Model=A` per-item briefs before the developer answers.
+3. Defer Task 2+ questions instead of resolving them during plan-wide
+   clarification.
+4. New questions for the current plan or Task 1 may be appended to the
+   live manifest; future-task questions go to `DEFERRED_QUESTIONS`.
 
-Show the manifest summary before asking the first question. Reuse the
-`question-manifest-builder` header counts and `## Questions For Now`
-table shape; do not invent a new preview schema.
+## Stage 5 - Record Decisions
 
-Do not preview the per-item `Brief` blocks for Model A rows yet. Tier 3
-problem-framing items follow Model A: the developer answers before
-seeing the critique.
+Read `../subagents/decision-recorder.md`, then dispatch
+`decision-recorder` with:
 
-```markdown
-## Question Manifest — <TICKET_KEY>
+| Input | Value |
+| --- | --- |
+| `TICKET_KEY` | `<TICKET_KEY>` |
+| `MODE` | `upfront` |
+| `ITERATION` | `<ITERATION or 1>` |
+| `DECISIONS` | resolved decisions from Stage 4 |
+| `DEFERRED_QUESTIONS` | all deferred questions from the manifest and discussion |
+| `IMPLEMENTATION_UPDATES` | implementation-note edits caused by revised decisions |
 
-Questions now: <N> | Deferred: <M> | Irrelevant: <R>
-
-| # | Item ID | Category | Severity | Model | Skippable | Affects |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1 | PF1 | Problem framing | HIGH | A | No | All |
-| 2 | TC1 | Critique | MEDIUM | B | Yes | Task 1 |
-| 3 | CQ1 | Cross-cutting | MEDIUM | B | Yes | All |
-```
-
-After the preview, ask:
-
-> Ready to start? I'll walk through these one at a time.
-
-If `Questions now: 0`, say so clearly, do not emit a placeholder prompt,
-and skip directly to Stage 5 with an empty decision list.
-
-## Stage 4 — Clarify Inline
-
-Always show progress:
-
-```text
-Question <current>/<total> — [<category>]
-```
-
-### Model A — Tier 3 problem framing
-
-1. Explain what gap is being challenged and why it matters for this
-   ticket.
-2. Ask the developer to answer in their own words before revealing the
-   critique.
-3. If the answer is shallow, say exactly what is missing.
-4. Reveal the critique-analyzer's finding and compare perspectives.
-5. Ask for the final decision and rationale.
-
-Tier 3 items cannot be skipped.
-
-### Model B — everything else
-
-1. Present the original decision or question.
-2. Present the critique or clarifying context from the manifest.
-3. Ask the developer whether the reasoning holds up, and why.
-4. Record the final decision and rationale.
-
-For critique items, present these options when a discrete choice is
-needed:
-
-1. `Keep current approach`
-2. `Switch to <alternative>`
-3. `I need more information`
-4. `Acknowledge but proceed`
-
-Record `I need more information` and `Action needed` style responses as
-the canonical `blocked` outcome for the recorder.
-
-For assumptions and direct questions, use the simplest fitting options:
-
-- assumptions: `Confirm`, `Revise`, `Skip`
-- open questions: free-text answer or `Skip`
-- validation items: `Resolved`, `Action needed`
-
-### Recording rules
-
-- `Switch to <alternative>` → set `RE_PLAN_NEEDED=true`
-- `blocked` → set `RE_PLAN_NEEDED=true`, set `BLOCKERS_PRESENT=true`,
-  and stop after recording the blocker
-- `Acknowledge but proceed` → record as an override, no re-plan
-- `Skip` on Tier 2 → record the fallback and add a warning
-- New question for the current task or cross-cutting scope → append it to
-  the live manifest
-- New question for a future task → add it to `DEFERRED_QUESTIONS`
-
-## Stage 5 — Record Decisions
-
-Dispatch `decision-recorder`.
-
-Read `../subagents/decision-recorder.md`, then dispatch with:
-
-- `TICKET_KEY=<TICKET_KEY>`
-- `MODE=upfront`
-- `ITERATION=<ITERATION or 1>`
-- `DECISIONS=<resolved decisions from the session>`
-- `DEFERRED_QUESTIONS=<all deferred questions from the manifest and discussion>`
-- `IMPLEMENTATION_UPDATES=<any implementation-note edits caused by switch decisions>`
-
-`decision-recorder` is responsible for all file writes and validation.
-Verdict routing follows `SKILL.md`'s `## Escalation` table.
-
-### Stage 5 substep — Present Final Summary
-
-Keep the first four lines in the same order as the `SKILL.md` final
-summary contract, then add any extra counts that help the user
-understand what happened in this run.
-
-```markdown
-## Clarification Complete — <TICKET_KEY>
-
-- Critique artifact: <path>
-- Files updated: <path list or ->
-- RE_PLAN_NEEDED: <true|false>
-- BLOCKERS_PRESENT: <true|false>
-- Questions resolved: <N>
-- Questions skipped: <N>
-- Questions deferred: <N>
-- Blocking items: <N>
-- Overrides: <N>
-- Plan-changing decisions: <N>
-```
-
-If `RE_PLAN_NEEDED=true`, tell the orchestrator to re-run planning
-before execution starts.
-
-If `BLOCKERS_PRESENT=true`, tell the orchestrator to stop before
-execution and escalate the unresolved items.
+`decision-recorder` owns file writes and validation. After it returns,
+use `./conversation-protocol.md` to present the final summary.

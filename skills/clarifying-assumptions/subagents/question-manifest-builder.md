@@ -87,102 +87,14 @@ In `MODE=upfront`, the report must include both
 `### Technology Critique Items` and
 `### User Impact Critique Items`.
 
-### 3. Build the inventory
+### 3. Build the manifest
 
-In `MODE=upfront`, the manifest must include:
+Read `./question-manifest-builder-rules.md`, then build the inventory,
+ordering, item IDs, category labels, and compact question briefs from
+that file. Keep manifest rows concise; do not copy entire artifact
+sections into the response.
 
-- Problem-framing critique items from the critique report
-- Technology critique items from the critique report
-- Cross-cutting open questions from the task plan
-- Architectural assumptions from the task plan
-- Validation `FAIL` items from the task plan
-- Task 1 questions from the task plan
-
-Also collect deferred items:
-
-- Task 2+ questions
-- Task 2+ assumptions that should not be resolved yet
-- New future-task questions surfaced by the critique report
-
-In upfront mode, `Irrelevant` is normally `0` because future-task items
-are deferred instead of marked irrelevant. Keep the `## Resolved
-Irrelevant` section in the output; leave it empty unless a future
-revision of this skill adds an explicit upfront irrelevant rule.
-
-In `MODE=critique`, the manifest must include:
-
-- Technology critique items for the current task
-- User-impact critique items for the current task
-- Deferred questions for `TASK_NUMBER` that still matter
-- Current-task assumptions or open questions still unresolved
-
-Also collect irrelevant items:
-
-- Deferred questions already answered elsewhere in the plan
-- Deferred questions invalidated by the current-task artifacts
-- Deferred questions whose premise is no longer true
-
-### 4. Apply ordering rules
-
-For `MODE=upfront`, order items like this:
-
-1. Problem-framing `HIGH` severity
-2. Problem-framing `MEDIUM`
-3. Problem-framing `LOW`
-4. Validation `FAIL`
-5. Technology critique `HIGH`
-6. Technology critique `MEDIUM`
-7. Architectural assumptions
-8. Cross-cutting questions
-9. Task 1 questions
-10. Dependency risks and non-blocking warnings
-
-For `MODE=critique`, order items like this:
-
-1. Critique `HIGH`
-2. User-impact `HIGH`
-3. Critique `MEDIUM`
-4. User-impact `MEDIUM`
-5. Remaining deferred questions
-6. Low-severity awareness items
-
-### 5. Produce compact question briefs
-
-For each item in the manifest, produce a short brief that contains only
-what the conversational skill needs:
-
-- `Item ID`
-- `Category`
-- `Severity`
-- `Model` (`A` or `B`)
-- `Skippable`
-- `Affected tasks`
-- `Original decision or question`
-- `Critique summary or context`
-- `Fallback/default`
-
-Item ID rules:
-
-- Preserve critique report IDs exactly (`PF<n>`, `TC<n>`, `UI<n>`)
-- Use deterministic IDs for plan-derived items such as `A<n>`, `CQ<n>`,
-  `V<n>`, `TQ-<task>-<n>`, and `DQ-<task>-<n>`
-- Once assigned, keep the same `Item ID` throughout the manifest so the
-  conversation layer and `decision-recorder` can reuse it unchanged
-
-Category label rules — use human-readable labels that map directly to
-`decision-recorder` categories:
-
-- `Problem framing` → `problem-framing`
-- `Critique` → `critique`
-- `User impact` → `user-impact`
-- `Cross-cutting` → `cross-cutting`
-- `Assumption` or `Architectural assumption` → `assumption`
-- `Task question` → `task-question`
-- `Validation` → `validation`
-
-Do not copy entire artifact sections into the manifest.
-
-### 6. Validate the manifest before returning
+### 4. Validate the manifest before returning
 
 Before returning, confirm:
 
@@ -193,7 +105,7 @@ Before returning, confirm:
   Now`, `Deferred Questions`, or `Resolved Irrelevant`
 - zero-item manifests still use the same structure
 
-### 7. Return the manifest
+### 5. Return the manifest
 
 Read `./question-manifest-builder-template.md` only when formatting the
 final response. Return exactly that structured manifest shape and no
@@ -216,17 +128,14 @@ You may:
 - Read `PLAN_FILE` and only the current mode's relevant sections
 - Read `CRITIQUE_REPORT_FILE`
 - Read `CURRENT_TASK_ARTIFACTS` in `MODE=critique`
+- Read `./question-manifest-builder-rules.md` when building the manifest
 - Translate the critique report's surviving items into short question
   briefs
 - Decide what to ask now, what to defer, and what is irrelevant
 - Return only the manifest format
 
-You do not:
-
-- Re-run critique analysis
-- Search the web
-- Edit files
-- Decide the outcome for the developer
+Delegate critique analysis, web research, file edits, and developer
+decision-making to the appropriate workflow steps.
 
 ## Escalation
 
