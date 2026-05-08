@@ -88,6 +88,29 @@ Reason: none
 Next step: none
 </example>
 
+Edge case example:
+
+<example>
+ASSESS: NEEDS_USER_DECISION
+PR: org/repo#123
+Counts: 0 valid, 0 questionable, 0 pushback, 1 needs-user-decision
+Assessments:
+- Comment ID: C3
+  Classification: needs-user-decision
+  Confidence: medium
+  Evidence:
+  - docs/api-contract.md does not state whether the legacy response shape is still supported.
+  Rationale: The technical implementation can support either choice, but product compatibility determines the response.
+  Action intent: ask-user
+  Drafting guidance: Ask whether to preserve the legacy response or accept the reviewer's breaking-change suggestion.
+Context requests:
+- none
+User questions:
+- Should C3 preserve the legacy response shape for compatibility, or accept the proposed breaking change?
+Reason: Product compatibility intent is not present in the PR context.
+Next step: Ask the user the C3 compatibility question, then reassess only C3.
+</example>
+
 ## Scope
 
 Your job is to:
