@@ -1,17 +1,14 @@
-> Read this file only during document assembly. Copy only the fenced Markdown
-> shape into the artifact; explanatory notes outside the fence are retriever
-> instructions, not output content.
-
 # Ticket Snapshot Template
 
-Write the snapshot using the structure below. Every top-level heading in the
-Markdown block is required. Repeated nested headings are shapes for items that
-exist or required `Not retrieved` placeholders.
+> Read this file only during document assembly. Copy the fenced Markdown
+> shape below into `docs/<TICKET_KEY>.md`. Prose outside the fence is
+> retriever instruction, not output content.
 
-If a section has no data and that absence was verified, keep the heading and
-write `_None_`. If the retriever could not verify whether `## Subtasks` or
-`## Linked Issues` are empty after the parent ticket was retrieved, use the
-`_Unknown..._` markers in **Conditional Rules** instead of `_None_`.
+Every top-level heading in the fenced block is required. Repeated nested
+headings are shapes for items that exist or required `Not retrieved`
+placeholders. Write `_None_` for verified empty sections. Use the
+`_Unknown..._` markers from **Conditional Rules** when subtask or
+linked-issue discovery is unverified after the parent ticket was retrieved.
 
 ```markdown
 # <TICKET_KEY>: <Summary>
@@ -115,24 +112,22 @@ write `_None_`. If the retriever could not verify whether `## Subtasks` or
 
 ## Conditional Rules
 
-- If there are no parent comments, write `_None_` under `## Comments`.
-- If retrieval completed without warnings, write `_None_` under
-  `## Retrieval Warnings`.
-- If there are no verified subtasks, write `_None_` under `## Subtasks`.
-- If subtask discovery could not be verified, write
-  `_Unknown. Subtask discovery unavailable: <reason>_` under `## Subtasks` and
-  record the same warning under `## Retrieval Warnings`.
-- If there are no verified linked issues, write `_None_` under
-  `## Linked Issues`.
-- If linked-issue discovery could not be verified, write
-  `_Unknown. Linked issue discovery unavailable: <reason>_` under
-  `## Linked Issues` and record the same warning under `## Retrieval Warnings`.
-- If a subtask or linked issue has no comments, write `_None_` under its
-  `#### Comments` heading.
-- If a retrieved subtask or linked issue has no description, write `_None_`
-  under its `#### Description` heading.
-- Use tables for `## Attachments` and `## Custom Fields` only when at least one
-  row exists; otherwise write `_None_`.
+- `## Comments` with no parent comments: `_None_`.
+- `## Retrieval Warnings` with no warnings: `_None_`.
+- `## Subtasks` with no verified subtasks: `_None_`.
+- `## Subtasks` with unverified discovery:
+  `_Unknown. Subtask discovery unavailable: <reason>_` plus a matching
+  warning under `## Retrieval Warnings`.
+- `## Linked Issues` with no verified links: `_None_`.
+- `## Linked Issues` with unverified discovery:
+  `_Unknown. Linked issue discovery unavailable: <reason>_` plus a matching
+  warning under `## Retrieval Warnings`.
+- A retrieved subtask or linked issue with no description:
+  `_None_` under its `#### Description`.
+- A retrieved subtask or linked issue with no comments:
+  `_None_` under its `#### Comments`.
+- `## Attachments` and `## Custom Fields`: render the table only when at
+  least one row exists; otherwise write `_None_`.
 
 ### Missing Subtask Placeholder
 

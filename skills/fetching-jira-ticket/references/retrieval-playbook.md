@@ -1,121 +1,117 @@
 # Jira Retrieval Playbook
 
-> Load this file inside `ticket-retriever` before Jira reads. Use external URLs
-> from `external-sources.md` only when exact current API or tool syntax matters.
+> Load this file inside `ticket-retriever` before Jira reads. Use external
+> URLs from `external-sources.md` only when exact API or tool syntax matters.
+> The orchestrator does not load this file.
 
 ## Read Path Setup
 
-Map the available environment to these operations before reading data:
+Map the environment to these operations before reading data. Prefer the most
+specific read-only tool, then the schema closest to Jira issue/comment/search
+semantics, then keep the mapping stable for the run.
 
 | Operation | Required capability |
 | --------- | ------------------- |
 | Parent issue | Read one Jira issue by key with fields and relationships |
-| Comments | Read parent and related-item comments, inline or by endpoint, with pagination |
-| Related issues | Retrieve subtasks and linked issues by key, parent relationship fields, or verified search/query |
+| Comments | Read parent and related-item comments with pagination |
+| Related issues | Retrieve subtasks and linked issues by key, parent fields, or verified search/query |
 | Metadata | Resolve field names, attachment metadata, and custom fields without downloading binaries |
 
-Choose deterministic read tools: prefer the most specific read-only tool, then
-the schema that most directly matches Jira issue/comment/search semantics, then
-keep the mapping stable for the run. Complete available authentication once
-before the first Jira read. Return `AUTH` when access is denied or auth cannot be
-completed, and `TOOLS_MISSING` when no Jira-capable read path can cover the
-required operations.
+Complete authentication once before the first read. Return `AUTH` when access
+is denied or auth cannot be completed; `TOOLS_MISSING` when no Jira-capable
+read path covers the required operations. For exact REST shapes, auth, and
+pagination, fetch `jira-rest-intro`, `jira-get-issue`, or `jira-comments` from
+`external-sources.md` only when the current decision needs them.
 
-## Parent Ticket Retrieval
+## Capture Rules
 
-Capture relevant non-empty parent data:
+**Parent ticket.** Capture all non-empty values among: key, summary; status,
+resolution, type, priority; assignee, reporter; labels, components, sprint,
+epic, fix versions, affects versions; created, updated, due dates; full
+description with formatting preserved; acceptance criteria (see precedence);
+parent comments in chronological order with author and timestamp; attachment
+metadata (filename, media type, size); non-empty custom fields not represented
+elsewhere, sorted by field name.
 
-- Key and summary.
-- Status, resolution, issue type, priority.
-- Assignee and reporter.
-- Labels, components, sprint, epic, fix versions, affects versions.
-- Created, updated, and due dates.
-- Full description with useful lists, links, tables, and code fences preserved.
-- Acceptance criteria from a dedicated field when present, otherwise from the
-  description using the precedence in **Acceptance Criteria Extraction**.
-- Parent comments in chronological order with author and timestamp.
-- Attachment metadata: filename, media type, and size.
-- Non-empty custom fields not represented elsewhere, sorted by field name.
+**Heading rewrite.** Outside fenced code blocks, rewrite Jira-authored
+Markdown headings (`#`–`####`) as bold labels so body content cannot collide
+with reserved snapshot headings. Example: `## Steps` becomes `**Steps**`.
 
-Rewrite Jira-authored Markdown heading lines outside fenced code blocks as bold
-labels so body content cannot collide with reserved snapshot headings. Example:
-`## Steps` becomes `**Steps**`.
+**Multi-value flattening.** Serialize arrays as comma-separated strings sorted
+alphabetically by display text. If a custom-field value remains structured
+after flattening, serialize compact JSON with object keys sorted
+alphabetically. For Atlassian rich-text fields, fetch `jira-adf` from
+`external-sources.md` only when normalization is unclear.
 
-Serialize multi-value metadata and custom-field values as comma-separated strings
-sorted alphabetically by display text. If a custom-field value remains structured
-after flattening, serialize compact JSON with object keys sorted alphabetically.
+## Acceptance Criteria Precedence
 
-## Acceptance Criteria Extraction
-
-Use the dedicated Jira acceptance-criteria field when present. If that field is
-empty, inspect the description in this precedence order:
-
-1. `Acceptance Criteria`
-2. `AC`
-3. `Definition of Done` or `Definition of Done (DoD)`
-
-Use only sections with the highest-precedence label present. If multiple
-sections share that label, keep them in source order and prefix each block with
-`**Source:** <label>`. Remove the winning blocks from `## Description`. If no
-criteria exist, write `_None_` under `## Acceptance Criteria` and keep the full
-description under `## Description`.
+1. Use the dedicated Jira acceptance-criteria field when present and non-empty.
+2. Otherwise scan the description in this label order: `Acceptance Criteria`,
+   then `AC`, then `Definition of Done` or `Definition of Done (DoD)`.
+3. Use only sections matching the highest-precedence label found. If multiple
+   sections share that label, keep them in source order, prefix each block
+   with `**Source:** <label>`, and remove the winning blocks from
+   `## Description`.
+4. If no criteria exist, write `_None_` under `## Acceptance Criteria` and
+   keep the full description under `## Description`.
 
 ## Relationships
 
-Determine discovered totals for subtasks and linked issues before claiming full
-success. Use `0/0` only when the parent issue or a verified query proves the
-section is empty. If discovery cannot be verified after the parent ticket was
-retrieved, render the template's unknown marker, add the same warning under
-`## Retrieval Warnings`, report `<retrieved>/UNKNOWN`, and return
-`FETCH: PARTIAL`.
+Determine totals before claiming full success. Use `0/0` only when the parent
+issue or a verified query proves the section is empty. If discovery cannot be
+verified after the parent ticket was retrieved, render the template's unknown
+marker, add the same warning under `## Retrieval Warnings`, report
+`<retrieved>/UNKNOWN`, and return `FETCH: PARTIAL`.
 
-For each discovered subtask or linked issue, retrieve enough context to render:
+For each retrieved subtask or linked issue, capture: key, summary, status,
+assignee, type, full description (with heading rewrite), comments in
+chronological order, and link type for linked issues (e.g., `blocks`,
+`is blocked by`, `relates`).
 
-- Key, summary, status, assignee, and type.
-- Full description with formatting preserved and heading lines rewritten.
-- Comments in chronological order, with partial comment gaps made visible.
-- Link type for linked issues, such as `blocks`, `is blocked by`, or `relates`.
-
-If one related item cannot be hydrated, continue with the others, add a warning,
-and render the matching `Not retrieved` placeholder from the template. Order
-subtasks by key, linked issues by link type then key, attachments by filename,
-and custom fields by field name.
+If one related item cannot be hydrated, continue with the others, add a
+warning, and render the matching `Not retrieved` placeholder. Order subtasks
+by key, linked issues by link type then key, attachments by filename, and
+custom fields by field name.
 
 ## Partial Comment Retrieval
 
-When comment retrieval is partial after the parent or related item is known,
-keep retrieved comments, append
-`_Partial comment retrieval: <retrieved>/<found>. Reason: <reason>_` to that
-comment section, record the same warning under `## Retrieval Warnings`, and
-return `FETCH: PARTIAL`.
+When parent or related-item comments are partial, keep retrieved comments,
+append `_Partial comment retrieval: <retrieved>/<found>. Reason: <reason>_`
+to that comment section, record the same warning under
+`## Retrieval Warnings`, and return `FETCH: PARTIAL`.
 
 ## Assembly
 
-Read `./references/ticket-snapshot-template.md` only at assembly time. Copy the
-fenced Markdown shape into `docs/<TICKET_KEY>.md` and fill it from retrieved
-data. Top-level headings are always required. For empty scalar metadata values,
-write `_None_`. Normalize timestamps with times to `YYYY-MM-DD HH:MM UTC`; keep
-date-only values as `YYYY-MM-DD`. Leave the artifact in place and unstaged.
+Read `./references/ticket-snapshot-template.md` only at assembly time. Copy
+the fenced shape into `docs/<TICKET_KEY>.md` and fill it from retrieved data.
+Top-level headings are always required. For empty scalar metadata values,
+write `_None_`. Normalize timestamps with times to `YYYY-MM-DD HH:MM UTC`;
+keep date-only values as `YYYY-MM-DD`. Leave the artifact in place and
+unstaged.
 
 ## Validation Gate
 
 After writing, re-read the artifact and verify:
 
 - Every required top-level heading exists in template order.
-- The title is `# <TICKET_KEY>: <Summary>`.
-- The preamble includes `Retrieved on`, `Source`, and workspace/project/ticket.
-- The metadata table includes required rows in template order.
-- `## Description` and `## Acceptance Criteria` follow the extraction rules.
+- Title is `# <TICKET_KEY>: <Summary>`.
+- Preamble includes `Retrieved on`, `Source`, and workspace/project/ticket.
+- `## Metadata` table has the required rows in template order.
+- `## Description` and `## Acceptance Criteria` follow the precedence rules.
 - Parent comment count matches retrieved parent comments.
-- Subtask and linked-issue sections match discovered identities, placeholders,
-  or unknown markers.
-- Partial comment warnings have matching terminal markers in comment sections.
-- Each unretrieved related item has both a warning and placeholder.
-- Heading-like body lines outside fenced code blocks were rewritten as bold
-  labels.
-- Attachment and custom-field sections are `_None_` or valid tables.
+- Subtasks, linked issues, attachments, custom fields match discovered
+  identities, placeholders, or unknown markers.
+- Each unretrieved related item has both a warning and a placeholder.
+- Heading-like body lines outside code fences were rewritten as bold labels.
 - Repeated sections follow deterministic ordering.
 
-If validation fails, fix only missing or mismatched portions, rewrite, and
-re-check. Use at most 3 repair passes. After the limit, return `FETCH: ERROR`,
+If validation fails, fix only the missing or mismatched portions, rewrite,
+and re-check. Max 3 repair passes. After the limit, return `FETCH: ERROR`,
 `Validation: FAIL`, and `Failure category: UNEXPECTED`.
+
+## Rate Limiting
+
+For exact retry policy and limit categories, fetch `jira-rate-limits` from
+`external-sources.md` when needed. Default behavior: at most 2 retries with
+1s then 3s backoff; classify exhausted limits as `FETCH: FAIL` with
+`Failure category: RATE_LIMIT`.

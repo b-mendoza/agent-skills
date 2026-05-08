@@ -1,8 +1,8 @@
 # Fetch Contract
 
-> Load this file when interpreting the retriever summary, formatting the final
-> coordinator report, or checking the artifact contract. Keep raw Jira payloads
-> inside the retriever.
+> Load this file when interpreting the retriever summary, formatting the
+> coordinator report, or checking the artifact contract. Keep raw Jira
+> payloads inside the retriever.
 
 ## Summary Semantics
 
@@ -10,24 +10,22 @@
 | ----- | ------- |
 | `FETCH: PASS` | Retrieval and validation succeeded with no known gaps |
 | `FETCH: PARTIAL` | A valid artifact was written, but comments, related items, or discovery are incomplete |
-| `FETCH: FAIL` | Deterministic blocker such as bad input, not found, auth, missing tools, or rate limit |
+| `FETCH: FAIL` | Deterministic blocker: bad input, not found, auth, missing tools, or rate limit |
 | `FETCH: ERROR` | Unexpected tool, schema, environment, or validation failure |
 | `Validation: PASS` | Written artifact satisfies the template contract |
-| `Validation: FAIL` | Artifact was written but still violates the contract after repair attempts |
-| `Validation: NOT_RUN` | Retrieval stopped before document assembly or validation |
+| `Validation: FAIL` | Artifact violates the contract after repair attempts |
+| `Validation: NOT_RUN` | Retrieval stopped before assembly or validation |
 
 Failure categories: `NONE`, `BAD_INPUT`, `NOT_FOUND`, `AUTH`, `TOOLS_MISSING`,
 `RATE_LIMIT`, `UNEXPECTED`.
 
 ## Count Rules
 
-- `0/0` means the retriever verified that no entries exist in that section.
-- `<retrieved>/UNKNOWN` means the parent ticket was retrieved but discovery for
-  that section could not be verified; this is `FETCH: PARTIAL`.
-- `N/A` for `Comments`, `Subtasks`, `Linked issues`, or `Attachments` means the
-  parent ticket was not retrieved and those downstream reads did not run.
-- `Attachments: <N>` counts metadata rows rendered under `## Attachments`; the
-  retriever does not download binaries.
+- `0/0` — verified empty section.
+- `<retrieved>/UNKNOWN` — parent ticket retrieved, but discovery for that
+  section could not be verified; classify the run as `FETCH: PARTIAL`.
+- `N/A` — parent ticket was not retrieved, so downstream reads did not run.
+- `Attachments: <N>` counts metadata rows only; binaries are not downloaded.
 
 ## Locked Summary Line Order
 
@@ -50,21 +48,14 @@ Reason: <None | fatal reason>
 
 Primary artifact: `docs/<TICKET_KEY>.md`.
 
-The document must contain every top-level heading from
-`./references/ticket-snapshot-template.md`. Repeated nested headings appear only
-when the parent section has material or a required `Not retrieved` placeholder.
-Use `_None_` only for verified empty sections. Use the template's `_Unknown..._`
-markers when subtask or linked-issue discovery cannot be verified after the
-parent ticket was retrieved.
-
-Locked top-level order:
+Required top-level headings, in order:
 
 | Section | Purpose |
 | ------- | ------- |
-| `## Metadata` | Core tracker identity and context |
+| `## Metadata` | Tracker identity and context |
 | `## Description` | Normalized requirements source |
-| `## Acceptance Criteria` | Definition-of-done material, extracted when present |
-| `## Comments` | Decisions, clarifications, and implementation hints |
+| `## Acceptance Criteria` | Definition-of-done material when present |
+| `## Comments` | Decisions, clarifications, implementation hints |
 | `## Retrieval Warnings` | Stable disclosure for partial retrieval |
 | `## Subtasks` | Jira work-breakdown slot |
 | `## Linked Issues` | Dependencies and surrounding context |
@@ -73,8 +64,13 @@ Locked top-level order:
 
 The preamble includes `Retrieved on`, `Source: <JIRA_URL>`, and
 `Workspace: <workspace> | Project: <project> | Ticket: <TICKET_KEY>`.
+Repeated nested headings appear only when the section has material or a
+required `Not retrieved` placeholder. Use `_None_` for verified empty
+sections; use the template's `_Unknown..._` markers when subtask or
+linked-issue discovery is unverified after the parent ticket was retrieved.
+The full snapshot shape lives in `./references/ticket-snapshot-template.md`.
 
-## Coordinator Reports
+## Coordinator Report Phrasing
 
 For `PASS` or `PARTIAL`, report the file path, ticket identity, status/type,
 comment count, subtask count, linked-issue count, attachment count, warnings,
@@ -82,14 +78,14 @@ and that Jira was not modified. For `FAIL`, `ERROR`, or `Validation: FAIL`,
 report the failure category and reason without inspecting raw payloads.
 
 <example>
-Ticket fetched to `docs/JNS-6065.md`. `JNS-6065: Implement dark mode toggle` is
-`In Progress` (`Story`). Retrieved 4/4 comments, 3/3 subtasks, 1/1 linked
+Ticket fetched to `docs/JNS-6065.md`. `JNS-6065: Implement dark mode toggle`
+is `In Progress` (`Story`). Retrieved 4/4 comments, 3/3 subtasks, 1/1 linked
 issues, and 2 attachments. Retrieval only; Jira was not modified.
 </example>
 
 <example>
-Ticket fetched to `docs/JNS-7001.md` with retrieval warnings. `JNS-7001: Audit
-webhook retries` is `To Do` (`Task`). Retrieved 2/2 comments, 1/2 subtasks,
-0/0 linked issues, and 0 attachments. Warning: Could not retrieve JNS-7002
-(404 Not Found). Retrieval only; Jira was not modified.
+Ticket fetched to `docs/JNS-7001.md` with retrieval warnings.
+`JNS-7001: Audit webhook retries` is `To Do` (`Task`). Retrieved 2/2
+comments, 1/2 subtasks, 0/0 linked issues, and 0 attachments. Warning: Could
+not retrieve JNS-7002 (404 Not Found). Retrieval only; Jira was not modified.
 </example>
