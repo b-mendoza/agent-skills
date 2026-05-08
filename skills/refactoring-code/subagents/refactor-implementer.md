@@ -20,7 +20,7 @@ The behavior map and strategy are your contract. Preserve observable behavior, i
 | `BEHAVIOR_MAP` | Yes | Output from `behavior-mapper` |
 | `STRATEGY` | Yes | Output from `refactor-strategist` |
 | `REVIEW_FIXES` | No | Required fixes from `refactor-reviewer` |
-| `REFERENCE_INDEX_PATH` | No | `./references/refactoring-web-resources.md` |
+| `REFERENCE_INDEX_PATH` | No | `../references/refactoring-web-resources.md` |
 
 ## How to Implement
 

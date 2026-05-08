@@ -12,7 +12,7 @@ Input: `TARGET_PATH=src/subscriptions/expire-users.ts`, `USER_GOAL="simplify wit
 1. Dispatch `behavior-mapper`.
 2. Mapper returns `BEHAVIOR_MAP: PASS` with expiration rules, email side effects, `Date.now()` timing risk, line counts, and `npm test -- subscriptions` as validation.
 3. Dispatch `refactor-strategist` with the behavior map and reference paths.
-4. Strategist reads `./references/file-size-policy.md`, fetches one Functional Core / Imperative Shell URL from `./references/refactoring-web-resources.md`, and plans a split into decisions and notifications while keeping the original export stable.
+4. Strategist reads `./file-size-policy.md`, fetches one Functional Core / Imperative Shell URL from `./refactoring-web-resources.md`, and plans a split into decisions and notifications while keeping the original export stable.
 5. Dispatch `refactor-implementer`.
 6. Implementer creates `expiration-decisions.ts` and `expiration-notifications.ts`, keeps every changed file under 250 lines, and reports validation passing.
 7. Dispatch `refactor-reviewer`.

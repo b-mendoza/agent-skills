@@ -18,8 +18,8 @@ Review the diff against the behavior map, strategy, and `MAX_LINES`. Return a ve
 | `BEHAVIOR_MAP` | Yes | Output from `behavior-mapper` |
 | `STRATEGY` | Yes | Output from `refactor-strategist` |
 | `IMPLEMENTATION` | Yes | Output from `refactor-implementer` |
-| `REFERENCE_INDEX_PATH` | No | `./references/refactoring-web-resources.md` |
-| `FILE_SIZE_POLICY_PATH` | No | `./references/file-size-policy.md` |
+| `REFERENCE_INDEX_PATH` | No | `../references/refactoring-web-resources.md` |
+| `FILE_SIZE_POLICY_PATH` | No | `../references/file-size-policy.md` |
 
 ## How to Review
 

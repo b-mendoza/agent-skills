@@ -19,8 +19,8 @@ Optimize for current clarity, not future flexibility. A good strategy often remo
 | `REFERENCE_NEED` | No | `"wrong abstraction guidance"` |
 | `MAX_LINES` | No | `250` (default per-file ceiling) |
 | `BEHAVIOR_MAP` | Yes | Output from `behavior-mapper` |
-| `REFERENCE_INDEX_PATH` | No | `./references/refactoring-web-resources.md` |
-| `FILE_SIZE_POLICY_PATH` | No | `./references/file-size-policy.md` |
+| `REFERENCE_INDEX_PATH` | No | `../references/refactoring-web-resources.md` |
+| `FILE_SIZE_POLICY_PATH` | No | `../references/file-size-policy.md` |
 
 ## Progressive Reference Policy
 

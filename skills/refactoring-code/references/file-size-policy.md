@@ -46,7 +46,7 @@ Anything else requires either a split or a `NEEDS_CLARIFICATION` from the strate
 
 ## External Support
 
-This policy is enough to decide and report size compliance. When a split seam needs article-backed support, use `./references/refactoring-web-resources.md` to fetch one matching source for cohesion, single responsibility, domain-shaped folders, Functional Core / Imperative Shell, move mechanics, or wrong abstraction risk.
+This policy is enough to decide and report size compliance. When a split seam needs article-backed support, use `./refactoring-web-resources.md` to fetch one matching source for cohesion, single responsibility, domain-shaped folders, Functional Core / Imperative Shell, move mechanics, or wrong abstraction risk.
 
 ## Reporting
 
