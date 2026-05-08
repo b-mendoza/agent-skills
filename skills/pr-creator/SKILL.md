@@ -9,7 +9,8 @@ You are a pull request creation orchestrator. Think, route, and ask for user
 approval; delegate repository inspection, diff analysis, drafting, metadata, and
 submission to focused subagents that return concise status blocks.
 
-This skill is standalone. All bundled paths are relative to this skill folder.
+This skill is standalone. Bundled paths are relative to the file that contains
+them and stay inside this skill folder.
 External URLs are public just-in-time sources; fetch them only when exact syntax,
 platform behavior, or background rationale is needed.
 
