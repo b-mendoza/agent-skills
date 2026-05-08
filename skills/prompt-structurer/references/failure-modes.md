@@ -1,8 +1,12 @@
 # Failure Modes
 
-> Read this file only when deciding whether a prompt needs edge-case handling. Fetch external resources through `web-resource-index.md` only when these local patterns are insufficient.
+> Read this file only when deciding whether a prompt needs explicit edge-case
+> handling. Fetch a single URL from `web-resource-index.md` (Lilian Weng's
+> overview or Anthropic long-context tips are the primary sources) only when
+> these local patterns are insufficient.
 
-Use this compact map to connect common agent failures to prompt structures that prevent them.
+Use this compact map to connect common agent failures to prompt structures
+that prevent them.
 
 ## Risk Map
 
@@ -16,18 +20,32 @@ Use this compact map to connect common agent failures to prompt structures that 
 | Autonomous run stalls | The agent asks the user mid-run | Add `<autonomy_guardrails>` and a defer-and-record rule |
 | Unexpected finding is resolved silently | The agent makes an unreviewed decision | Add `<new_finding_rule>` with a durable reporting path |
 | Decision history is lost | The final answer lacks traceability | Require durable outputs or evidence fields |
-| Broad cleanup expands scope | The agent changes tools, dependencies, or unrelated files | Add `what_it_does_NOT_mean`, `<anti_patterns>`, and negative success criteria |
+| Broad cleanup expands scope | The agent changes tools, dependencies, or unrelated files | Add `what_it_does_NOT_mean`, `<anti_patterns>`, and matching negative success criteria |
 | Mode branches mix together | Interactive and autonomous instructions both apply | Prefer separate prompt versions over complex branching |
 | Success resembles failure | Output looks plausible but cannot be checked | Add specific `<success_criteria>` tied to outputs and constraints |
 
 ## Diagnostic Questions
 
-- Is the prompt multi-phase? Consider hoisted rules, phase outputs, and gates.
-- Is a key word overloaded, such as `harmonize`, `clean up`, `review`, or `safe`? Add philosophy and anti-patterns.
-- Will the prompt run without a human present? Add autonomy guardrails, traceability, and defer handling.
+- Is the prompt multi-phase? Consider hoisted rules, phase outputs, and
+  gates.
+- Is a key word overloaded, such as `harmonize`, `clean up`, `review`, or
+  `safe`? Add philosophy and anti-patterns.
+- Will the prompt run without a human present? Add autonomy guardrails,
+  traceability, and defer handling.
 - Can output categories be empty? Require explicit zero-finding statements.
-- Could a helpful-looking action violate scope? Add concrete anti-patterns and matching negative criteria.
+- Could a helpful-looking action violate scope? Add concrete anti-patterns
+  and matching negative criteria.
 
 ## Application Rule
 
-Add safeguards in proportion to risk. A simple one-shot prompt usually needs a clear task, scope, output, and criteria. A production autonomous workflow usually needs philosophy, constraints, gates or guardrails, anti-patterns, traceability, and success criteria.
+Add safeguards in proportion to risk. A simple one-shot prompt usually needs
+a clear task, scope, output, and criteria. A production autonomous workflow
+usually needs philosophy, constraints, gates or guardrails, anti-patterns,
+traceability, and success criteria.
+
+## Going Deeper
+
+- For broader failure-mode taxonomy and research-backed mitigations: fetch
+  the Lilian Weng prompt-engineering overview via `web-resource-index.md`.
+- For long-context retrieval failures specifically: fetch the Anthropic
+  long-context tips via `web-resource-index.md`.

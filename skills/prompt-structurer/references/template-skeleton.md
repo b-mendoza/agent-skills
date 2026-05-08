@@ -1,8 +1,12 @@
 # Template Skeleton
 
-> Read this file only during final assembly. It is a checklist, not a requirement to emit every tag.
+> Read this file only during final assembly. It is a checklist, not a
+> requirement to emit every tag. Fetch one URL from `web-resource-index.md`
+> (Anthropic XML tags guide or Anthropic prompting best practices) only when
+> a section choice still feels uncertain after this skeleton.
 
-Use this skeleton to assemble a structured XML prompt. Include only sections that change agent behavior.
+Use this skeleton to assemble a structured XML prompt. Include only sections
+that change agent behavior; omit the rest.
 
 ## Section Order
 
@@ -79,9 +83,11 @@ Use this skeleton to assemble a structured XML prompt. Include only sections tha
 
 - Omit empty sections.
 - Preserve user terminology exactly unless the user asked for renaming.
-- Use specific tag names for suite prompts where generic names would collide.
+- Use specific tag names for suite prompts where generic names would
+  collide.
 - Use attributes for metadata instead of prose clutter.
-- Repeat the most important rule at the phase or step where violation is likely.
+- Repeat the most important rule at the phase or step where violation is
+  likely.
 - Prefer separate prompt versions for substantially different modes.
 - Run the removal test: every emitted tag should earn its place.
 
@@ -93,3 +99,10 @@ Use this skeleton to assemble a structured XML prompt. Include only sections tha
 | Interview-style prompt | Add `<gate>` tags for turn-taking |
 | Autonomous prompt | Add `<autonomy_guardrails>`, traceability, and defer handling |
 | Prompt suite | Keep shared philosophy and constraints consistent across prompts |
+
+## Going Deeper
+
+- For tag-by-tag rationale, naming patterns, and parsing benefits: fetch the
+  Anthropic XML tags guide via `web-resource-index.md`.
+- For long-context section ordering and grounding: fetch the Anthropic
+  prompting best practices guide via `web-resource-index.md`.
