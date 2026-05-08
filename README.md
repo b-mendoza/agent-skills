@@ -73,9 +73,9 @@ one for GitHub. The rest are utility skills you can use on their own.
 - [`committing-scoped-changes`](skills/committing-scoped-changes/SKILL.md)
   creates reviewable atomic commits from explicit file or folder paths while
   loading commit guidance and context only as needed.
-- [`reviewing-pull-requests`](skills/reviewing-pull-requests/SKILL.md)
-  orchestrates subagents that gather PR context, find grounded defects, draft
-  line comments, verify claims, and write findings-first review files.
+- [`review-pull-request`](skills/review-pull-request/SKILL.md) reviews one PR
+  through progressively disclosed subagents, external review resources, and a
+  confirmation-gated posting path.
 - [`responding-to-pr-review-comments`](skills/responding-to-pr-review-comments/SKILL.md)
   assesses received PR review comments, drafts replies, plans actions, and keeps
   posting confirmation-gated.
