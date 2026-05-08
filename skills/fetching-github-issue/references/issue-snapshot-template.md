@@ -1,18 +1,15 @@
-> Read this file only during document assembly. Copy only the fenced Markdown
-> shape into the artifact; explanatory notes outside the fence are retriever
-> instructions, not output content.
-
 # Issue Snapshot Template
 
-Write the snapshot using the structure below. Every top-level heading in the
-Markdown block is required. Repeated nested headings are shapes for items that
-exist or required `Not retrieved` placeholders.
+> Read this file only during document assembly. Copy the fenced Markdown
+> shape below into `docs/<ISSUE_SLUG>.md`. Prose outside the fence is
+> retriever instruction, not output content.
 
-If a section has no data and that absence was verified, keep the heading and
-write `_None_`. If the retriever could not verify whether `## Child Issues`,
-`## Linked Issues`, or `## Projects` are empty after the parent issue was
-retrieved, use the `_Unknown..._` markers in **Conditional Rules** instead of
-`_None_`.
+Every top-level heading in the fenced block is required. Repeated nested
+headings are shapes for items that exist or required `Not retrieved`
+placeholders. Write `_None_` for verified empty sections. Use the
+`_Unknown..._` markers from **Conditional Rules** when child-issue,
+linked-issue, or project discovery is unverified after the parent issue was
+retrieved.
 
 ```markdown
 # <ISSUE_SLUG>: <Issue title>
@@ -116,28 +113,25 @@ _None_ or a short bullet list of explicitly linked upload or binary asset URLs f
 
 ## Conditional Rules
 
-- If there are no parent comments, write `_None_` under `## Comments`.
-- If retrieval completed without warnings, write `_None_` under
-  `## Retrieval Warnings`.
-- If there are no verified child issues, write `_None_` under
-  `## Child Issues`.
-- If child-issue discovery could not be verified, write
-  `_Unknown. Child issue discovery unavailable: <reason>_` under
-  `## Child Issues` and record the same warning under `## Retrieval Warnings`.
-- If there are no verified linked issues, write `_None_` under
-  `## Linked Issues`.
-- If linked-issue discovery could not be verified, write
-  `_Unknown. Linked issue discovery unavailable: <reason>_` under
-  `## Linked Issues` and record the same warning under `## Retrieval Warnings`.
-- If project membership cannot be determined, write
-  `_Unknown. Project membership not determined: <reason>_` under `## Projects`
-  and record the same warning under `## Retrieval Warnings`.
-- If a child or linked issue has no comments, write `_None_` under its
-  `#### Comments` heading.
-- If a retrieved child or linked issue has no description, write `_None_` under
-  its `#### Description` heading.
-- Use tables for `## Labels` and `## Assignees` only when at least one row
-  exists; otherwise write `_None_`.
+- `## Comments` with no parent comments: `_None_`.
+- `## Retrieval Warnings` with no warnings: `_None_`.
+- `## Child Issues` with no verified child issues: `_None_`.
+- `## Child Issues` with unverified discovery:
+  `_Unknown. Child issue discovery unavailable: <reason>_` plus a matching
+  warning under `## Retrieval Warnings`.
+- `## Linked Issues` with no verified links: `_None_`.
+- `## Linked Issues` with unverified discovery:
+  `_Unknown. Linked issue discovery unavailable: <reason>_` plus a matching
+  warning under `## Retrieval Warnings`.
+- `## Projects` when membership cannot be determined:
+  `_Unknown. Project membership not determined: <reason>_` plus a matching
+  warning under `## Retrieval Warnings`.
+- A retrieved child or linked issue with no description:
+  `_None_` under its `#### Description`.
+- A retrieved child or linked issue with no comments:
+  `_None_` under its `#### Comments`.
+- `## Labels` and `## Assignees`: render the table only when at least one
+  row exists; otherwise write `_None_`.
 
 ### Missing Child Issue Placeholder
 
