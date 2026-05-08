@@ -28,7 +28,7 @@ All standard artifact paths derive from `TICKET_KEY` and `TASK_NUMBER`.
 | Path pattern | Why it matters |
 | ------------ | -------------- |
 | `docs/<TICKET_KEY>.md` | Ticket snapshot and Jira context. |
-| `docs/<TICKET_KEY>-tasks.md` | Task source of truth, `## Jira Subtasks`, per-task `Jira Subtask:` lines. |
+| `docs/<TICKET_KEY>-tasks.md` | Task source of truth, `## Jira Subtasks`, per-task `Jira Subtask:` lines, and planner-generated branch names. |
 | `docs/<TICKET_KEY>-task-<N>-brief.md` | Scope, context, and DoD. |
 | `docs/<TICKET_KEY>-task-<N>-execution-plan.md` | Approved implementation approach. |
 | `docs/<TICKET_KEY>-task-<N>-test-spec.md` | Required behavior coverage. |
@@ -64,6 +64,12 @@ Confirm all of the following before the kickoff step:
    `## Jira Subtasks` if the inline line is absent. Missing Jira linkage does
    not block local implementation; it limits what `execution-starter` and
    `documentation-writer` can do for Jira-side kickoff and completion updates.
+8. **Planner-generated branch name** (required for execution): resolve from the
+   selected task section's `**Branch name:**` line first, or from the matching
+   row in `## Execution Order Summary` if the inline line is absent. Missing or
+   conflicting branch names block kickoff because implementation would start on
+   the wrong task branch. In current-subtask mode, the repeated branch for the
+   selected task row is still the branch to enter.
 
 ## Execution kickoff boundary
 
@@ -75,6 +81,7 @@ implementation.
 At kickoff, the workflow may:
 
 - confirm or adjust branch/worktree readiness (when policy is explicit)
+- switch or check out the planner-generated branch for the selected task
 - apply dirty-worktree handling only when the policy is clear
 - perform Jira-side startup updates when a concrete subtask exists, for example:
   - move the Jira subtask to `In Progress`
@@ -100,7 +107,7 @@ success from partial file changes alone.
 
 | Subagent                | Required inputs                                                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `execution-starter`     | `TICKET_KEY`, `TASK_NUMBER`, ticket snapshot path, task plan path, execution brief path; optional readiness summaries already reduced to concise status notes |
+| `execution-starter`     | `TICKET_KEY`, `TASK_NUMBER`, ticket snapshot path, task plan path with branch names, execution brief path; optional readiness summaries already reduced to concise status notes |
 | `task-executor`         | Paths to brief, execution plan, test spec, refactoring plan, decisions path; optional critique path, fix brief, previous execution report |
 | `documentation-writer`  | `EXECUTION_REPORT`, `TICKET_KEY`, `TASK_NUMBER`                                                                  |
 | `requirements-verifier` | Brief path, test spec path, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`                                           |
@@ -112,8 +119,8 @@ success from partial file changes alone.
 
 | Category | Contents | Git behavior | Lifecycle |
 | -------- | -------- | ------------ | --------- |
-| A        | `docs/<TICKET_KEY>*.md`, progress files, briefs, plans, test specs, refactoring plans, critique, decisions | Never committed | Never deleted |
-| B        | Source, tests, config, in-code docs | Committed normally | Normal project rules |
+| A        | `docs/<TICKET_KEY>*.md`, progress files, briefs, plans, test specs, refactoring plans, critique, decisions | Keep out of git history | Never deleted |
+| B        | Source, tests, config, in-code docs | Changed by this workflow | Normal project rules |
 
 `documentation-writer` may update Category A artifacts on disk so the
 workflow can resume later, but those files stay out of git history.
@@ -127,7 +134,8 @@ After a successful run, all of the following should be true:
 2. Execution kickoff either performed the planned Jira startup actions
    (transition, comment, or both) or reported clearly why each action was
    skipped.
-3. Category B changes are committed.
+3. Category B changes are present in the task-scoped change set and reflected in
+   the execution/documentation reports.
 4. The task section in `docs/<TICKET_KEY>-tasks.md` includes completion
    metadata consistent with your team template (e.g. status, implementation
    summary, files changed).

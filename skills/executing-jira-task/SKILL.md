@@ -29,7 +29,7 @@ summaries in memory; subagents do the heavy work in isolation.
 | Artifact                                  | Phase | Required | Purpose                                    |
 | ----------------------------------------- | ----- | -------- | ------------------------------------------ |
 | `docs/<TICKET_KEY>.md`                           | 1     | Yes      | Ticket snapshot and Jira context.          |
-| `docs/<TICKET_KEY>-tasks.md`                     | 2–4   | Yes      | Task plan, `## Jira Subtasks`, statuses.   |
+| `docs/<TICKET_KEY>-tasks.md`                     | 2–4   | Yes      | Task plan, branch names, `## Jira Subtasks`, statuses. |
 | `docs/<TICKET_KEY>-task-<N>-brief.md`            | 5     | Yes      | Scope, DoD, and execution constraints.     |
 | `docs/<TICKET_KEY>-task-<N>-execution-plan.md`   | 5     | Yes      | Approved implementation approach.          |
 | `docs/<TICKET_KEY>-task-<N>-test-spec.md`        | 5     | Yes      | Required behavior coverage.                |
@@ -51,7 +51,7 @@ and `./references/contracts.md` for readiness and handoff contracts.
 | 0. Readiness | Validate prerequisites and task readiness | Ready-to-run task or explicit blocker |
 | 1. Kickoff | Apply first side effects and establish active execution state | `KICKOFF_REPORT` |
 | 2. Execution | Implement the planned change | `EXECUTION_REPORT` |
-| 3. Documentation | Add in-code docs, commit Category B work, and update tracking | `DOCUMENTATION_REPORT` |
+| 3. Documentation | Add in-code docs and update tracking | `DOCUMENTATION_REPORT` |
 | 4. Requirements Verification | Confirm Definition of Done coverage before review gates | `VERIFICATION_RESULT` |
 | 5. Quality Gates | Run clean-code, architecture, and security review in order | Review verdicts and actionable feedback |
 | 6. Targeted Fix Cycle | Re-run only the failing verification or review path | Re-validated task or escalation |
@@ -66,11 +66,11 @@ Quality-gate fix cycles happen after internal step 5.
 | ----------------------- | -------------------------------------- | ------------------------------------------------------------------------------ |
 | `execution-starter`     | `./subagents/execution-starter.md`     | Execution kickoff: readiness, workspace checks, and first Jira-side startup updates (transition, comments) when appropriate. |
 | `task-executor`         | `./subagents/task-executor.md`         | Implements the scoped change and tests from the approved planning artifacts.   |
-| `documentation-writer`  | `./subagents/documentation-writer.md`  | Adds in-code documentation, commits Category B files, updates `docs/<TICKET_KEY>-tasks.md`, and performs optional Jira completion updates on the subtask. |
+| `documentation-writer`  | `./subagents/documentation-writer.md`  | Adds in-code documentation, updates `docs/<TICKET_KEY>-tasks.md`, and performs optional Jira completion updates on the subtask. |
 | `requirements-verifier` | `./subagents/requirements-verifier.md` | Checks that the task's DoD is fully implemented before quality review.         |
 | `clean-code-reviewer`   | `./subagents/clean-code-reviewer.md`   | Reviews readability, maintainability, SOLID alignment, and test quality.       |
 | `architecture-reviewer` | `./subagents/architecture-reviewer.md` | Reviews domain boundaries, composition, and architectural fit.                 |
-| `security-auditor`      | `./subagents/security-auditor.md`      | Audits the committed change set for exploitable security weaknesses.           |
+| `security-auditor`      | `./subagents/security-auditor.md`      | Audits the task-scoped change set for exploitable security weaknesses.         |
 
 Use this registry as a lookup table. Read exactly one subagent definition per
 dispatch, then pass only the inputs that subagent needs.
@@ -81,6 +81,10 @@ The orchestrator uses direct reads only to load this skill, the reference file
 for the current phase, and the specific subagent it is about to dispatch.
 Everything else is delegated. Pass file paths and short summaries between
 subagents instead of raw file contents or command output.
+
+External URLs are optional just-in-time background. Read
+`./references/external-sources.md` only when a phase needs source-backed context
+that would otherwise bloat the prompt; normal execution relies on bundled files.
 
 In practice, the orchestrator does only three kinds of work directly: load the
 current instructions, dispatch the next specialist, and carry forward the smallest
@@ -95,11 +99,10 @@ phase when a targeted fix is needed.
 Treat artifacts in two categories:
 
 - **Category A:** `docs/<TICKET_KEY>*.md`, progress files, briefs, plans, test
-  specs,
-  refactoring plans, critique, and decisions. Stay on disk, never committed,
-  never deleted.
-- **Category B:** source code, tests, config, in-code documentation. Committed
-  normally.
+  specs, refactoring plans, critique, and decisions. Stay on disk, out of git
+  history, never deleted.
+- **Category B:** source code, tests, config, in-code documentation. Changed by
+  this workflow and handled afterward by normal project rules.
 
 If a selected task is already complete, blocked by unmet prerequisites, or
 produces a repeated unresolved blocker, stop and report that state instead of
@@ -109,15 +112,15 @@ forcing the pipeline forward.
 
 After a successful run, this skill leaves behind these deliverables:
 
-- **Category B implementation artifacts:** committed source code, tests, config
-  changes, and in-code documentation.
-- **Category A orchestration artifacts:** updated on disk but left uncommitted,
+- **Category B implementation artifacts:** source code, tests, config changes,
+  and in-code documentation.
+- **Category A orchestration artifacts:** updated on disk as local workflow artifacts,
   including task status, implementation summary, file list, and optional Jira
   tracking.
 - **Kickoff summary:** a returned `KICKOFF_REPORT` covering readiness,
   workspace state, and Jira kickoff actions (or documented skips).
 - **Task-only completion report:** a concise user-facing report summarising the
-  selected task's execution, commits, and gate verdicts.
+  selected task's execution, changed files, and gate verdicts.
 
 ## Phase Guide
 
@@ -127,6 +130,8 @@ After a successful run, this skill leaves behind these deliverables:
 | Normal execution flow, kickoff, fix-loop order        | `./references/pipeline.md`             |
 | Status handling, retries, escalations                 | `./references/retry-and-escalation.md` |
 | Shared reviewer expectations                          | `./references/review-gate-policy.md`   |
+| External source links for just-in-time background      | `./references/external-sources.md`     |
+| Dispatch examples and targeted fix examples           | `./references/examples.md`             |
 
 ## Execution Steps
 
@@ -155,42 +160,15 @@ After a successful run, this skill leaves behind these deliverables:
 
 ## Example
 
-<example>
-Happy path
+Input: `TICKET_KEY=JNS-6065`, `TASK_NUMBER=3`
 
-Input:
-- `TICKET_KEY=JNS-6065`
-- `TASK_NUMBER=3`
+1. Validate required artifacts and task readiness.
+2. Dispatch `execution-starter`; it resolves the planner-generated branch,
+   switches or checks it out, and returns `KICKOFF_REPORT -> READY`.
+3. Dispatch `task-executor`, `documentation-writer`, `requirements-verifier`,
+   then the three review gates in order.
+4. Report the kickoff outcome, gate verdicts, files changed, and any skipped Jira
+   updates.
 
-1. Validate the required per-task artifacts exist; Task 3 is not already complete.
-2. Dispatch `execution-starter` for kickoff (first Jira-side mutations after
-   critique).
-   - `KICKOFF_REPORT` -> `READY`
-3. Dispatch `task-executor` with the artifact paths.
-   - `EXECUTION_REPORT` -> `COMPLETE`
-4. Dispatch `documentation-writer` with `EXECUTION_REPORT`, `TICKET_KEY`, and `TASK_NUMBER`.
-5. Dispatch `requirements-verifier`.
-   - `VERIFICATION_RESULT` -> `PASS`
-6. Run `clean-code-reviewer`, then `architecture-reviewer`, then `security-auditor`.
-   - All gates return a pass variant
-7. Report the kickoff outcome, final verdicts, commits, files changed, and any skipped Jira updates.
-</example>
-
-<example>
-Targeted fix path
-
-Input:
-- `TICKET_KEY=JNS-6065`
-- `TASK_NUMBER=3`
-
-1. `execution-starter` returns `READY`.
-2. `task-executor` returns `COMPLETE`.
-3. `documentation-writer` returns `COMPLETE`.
-4. `requirements-verifier` returns `FAIL` because one DoD item is still untested.
-5. Re-dispatch `task-executor` with only the verifier gap summary.
-6. Re-dispatch `documentation-writer` for the new Category B delta.
-7. Re-run `requirements-verifier`.
-   - `VERIFICATION_RESULT` -> `PASS`
-8. Continue into the review gates, and if one gate returns `NEEDS FIXES`, re-run
-   only that gate's targeted fix cycle instead of the whole pipeline.
-</example>
+Read `./references/examples.md` only when you need detailed happy-path or
+targeted-fix examples.

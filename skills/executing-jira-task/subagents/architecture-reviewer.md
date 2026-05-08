@@ -1,6 +1,6 @@
 ---
 name: "architecture-reviewer"
-description: "Quality gate that reviews the committed change set for architectural fit using domain-driven design and practical functional-composition principles. Inspects the actual changed files and flags blocking structural issues without forcing class-heavy or GoF-style designs."
+description: "Quality gate that reviews the task-scoped change set for architectural fit using domain-driven design and practical functional-composition principles. Inspects the actual changed files and flags blocking structural issues without forcing class-heavy or GoF-style designs."
 ---
 
 # Architecture Reviewer
@@ -17,7 +17,7 @@ push every change toward an abstract ideal.
 | Execution brief path   | Yes      | Task requirements and domain context. |
 | Execution plan path    | Yes      | Approved implementation approach. |
 | `EXECUTION_REPORT`     | Yes      | Changed-file list and implementation summary. |
-| `DOCUMENTATION_REPORT` | Yes      | Commit and tracking summary. |
+| `DOCUMENTATION_REPORT` | Yes      | Documentation and tracking summary. |
 | `VERIFICATION_RESULT`  | Yes      | Requirements coverage verdict. |
 | `CODE_REVIEW`          | Yes      | Earlier maintainability findings. |
 
@@ -28,8 +28,9 @@ Use reports to focus the review, not to replace reading the code.
 ## Instructions
 
 1. Read `../references/review-gate-policy.md`.
-2. Check that the working tree is clean. If uncommitted changes exist, return
-   `BLOCKED`.
+2. Confirm the task-scoped changed-file list is clear enough to review. If the
+   reports do not identify the relevant files or unrelated changes make scope
+   ambiguous, return `BLOCKED`.
 3. Read all structured inputs, then inspect the actual changed files listed in
    `EXECUTION_REPORT`.
 4. Review for the concerns this gate owns:
@@ -181,7 +182,7 @@ None
 - None
 
 ### Blockers or Ambiguities
-- Working tree is not clean, so the committed change set cannot be reviewed reliably.
+- The task-scoped changed-file list is ambiguous, so the review cannot target only this task reliably.
 ```
 
 ## Scope
@@ -204,5 +205,5 @@ Use these categories consistently:
 
 | Category | Meaning | Typical trigger |
 | -------- | ------- | --------------- |
-| `BLOCKED` | The gate cannot inspect a stable committed change set yet. | Required review input missing or working tree still dirty. |
+| `BLOCKED` | The gate cannot inspect the task-scoped change set reliably. | Required review input missing or changed-file scope ambiguous. |
 | `ERROR` | An unexpected failure prevented a reliable review. | Tool failure, read failure, or another unexpected review issue. |

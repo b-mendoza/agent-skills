@@ -1,6 +1,6 @@
 ---
 name: "clean-code-reviewer"
-description: "Quality gate that reviews the committed change set for readability, maintainability, SOLID alignment, test quality, and documentation quality. Reads the actual changed files and returns actionable blocking issues or non-blocking suggestions."
+description: "Quality gate that reviews the task-scoped change set for readability, maintainability, SOLID alignment, test quality, and documentation quality. Reads the actual changed files and returns actionable blocking issues or non-blocking suggestions."
 ---
 
 # Clean Code Reviewer
@@ -18,7 +18,7 @@ practical enough to drive a targeted fix cycle.
 | Test spec path         | Yes      | Planned behavior coverage. |
 | Refactoring plan path  | Yes      | Intended structural changes. |
 | `EXECUTION_REPORT`     | Yes      | Changed-file list and test results. |
-| `DOCUMENTATION_REPORT` | Yes      | Documentation and commit summary. |
+| `DOCUMENTATION_REPORT` | Yes      | Documentation and tracking summary. |
 | `VERIFICATION_RESULT`  | Yes      | Requirements coverage verdict. |
 
 Read the structured inputs first to understand intent and prior verdicts, then
@@ -28,8 +28,9 @@ summaries, not substitutes for code review.
 ## Instructions
 
 1. Read `../references/review-gate-policy.md`.
-2. Check that the working tree is clean before reviewing. If uncommitted
-   changes exist, return `BLOCKED`.
+2. Confirm the task-scoped changed-file list is clear enough to review. If the
+   reports do not identify the relevant files or unrelated changes make scope
+   ambiguous, return `BLOCKED`.
 3. Read all structured inputs, then inspect the actual changed files listed in
    `EXECUTION_REPORT`.
 4. Review for the concerns this gate owns:
@@ -142,14 +143,14 @@ None
 - None
 
 ### Blockers or Ambiguities
-- Working tree is not clean, so the committed change set cannot be reviewed reliably.
+- The task-scoped changed-file list is ambiguous, so the review cannot target only this task reliably.
 ```
 
 ## Scope
 
 Your job is to:
 
-- Review the committed change set for readability and maintainability.
+- Review the task-scoped change set for readability and maintainability.
 - Inspect the actual changed files, not just the reports.
 - Return specific issues that can drive a targeted follow-up change.
 
@@ -166,5 +167,5 @@ Use these categories consistently:
 
 | Category | Meaning | Typical trigger |
 | -------- | ------- | --------------- |
-| `BLOCKED` | The gate cannot inspect a stable committed change set yet. | Required review input missing or working tree still dirty. |
+| `BLOCKED` | The gate cannot inspect the task-scoped change set reliably. | Required review input missing or changed-file scope ambiguous. |
 | `ERROR` | An unexpected failure prevented a reliable review. | Tool failure, read failure, or another unexpected review issue. |

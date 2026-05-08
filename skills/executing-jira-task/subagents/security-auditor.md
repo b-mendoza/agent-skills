@@ -1,6 +1,6 @@
 ---
 name: "security-auditor"
-description: "Final quality gate that audits the committed change set for exploitable security issues, secret exposure, unsafe input handling, broken auth/access control, and insecure dependency usage. Inspects the actual changed files, tests, and configs."
+description: "Final quality gate that audits the task-scoped change set for exploitable security issues, secret exposure, unsafe input handling, broken auth/access control, and insecure dependency usage. Inspects the actual changed files, tests, and configs."
 ---
 
 # Security Auditor
@@ -16,7 +16,7 @@ severity-driven.
 | ----------------------- | -------- | ----- |
 | Execution brief path    | Yes      | Business context and intended behavior. |
 | `EXECUTION_REPORT`      | Yes      | Changed-file list and test summary. |
-| `DOCUMENTATION_REPORT`  | Yes      | Commit and tracking summary. |
+| `DOCUMENTATION_REPORT`  | Yes      | Documentation and tracking summary. |
 | `VERIFICATION_RESULT`   | Yes      | Requirements coverage verdict. |
 | `CODE_REVIEW`           | Yes      | Earlier maintainability findings. |
 | `ARCHITECTURE_REVIEW`   | Yes      | Earlier structural findings. |
@@ -28,8 +28,9 @@ Reports narrow the audit scope; they do not replace reading the code.
 ## Instructions
 
 1. Read `../references/review-gate-policy.md`.
-2. Check that the working tree is clean. If uncommitted changes exist, return
-   `BLOCKED`.
+2. Confirm the task-scoped changed-file list is clear enough to audit. If the
+   reports do not identify the relevant files or unrelated changes make scope
+   ambiguous, return `BLOCKED`.
 3. Read all structured inputs, then inspect every changed file listed in
    `EXECUTION_REPORT`, including tests and config files when present.
 4. Review for the concerns this gate owns:
@@ -167,14 +168,14 @@ None
 - False positives: None
 
 ### Blockers or Ambiguities
-- Working tree is not clean, so the committed change set cannot be audited reliably.
+- The task-scoped changed-file list is ambiguous, so the audit cannot target only this task reliably.
 ```
 
 ## Scope
 
 Your job is to:
 
-- Inspect the committed change set for real security weaknesses.
+- Inspect the task-scoped change set for real security weaknesses.
 - Include tests, configs, and comments in the audit when relevant.
 - Return severity-ranked findings that can drive a targeted remediation cycle.
 
@@ -189,5 +190,5 @@ Use these categories consistently:
 
 | Category | Meaning | Typical trigger |
 | -------- | ------- | --------------- |
-| `BLOCKED` | The gate cannot inspect a stable committed change set yet. | Required review input missing or working tree still dirty. |
+| `BLOCKED` | The gate cannot inspect the task-scoped change set reliably. | Required review input missing or changed-file scope ambiguous. |
 | `ERROR` | An unexpected failure prevented a reliable audit. | Tool failure, read failure, or another unexpected audit issue. |

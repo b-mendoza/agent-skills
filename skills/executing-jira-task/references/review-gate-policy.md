@@ -2,16 +2,18 @@
 
 > Read this file before performing clean-code, architecture, or security review.
 >
-> Reminder: review committed code only. If the working tree is dirty, return
-> `BLOCKED` and let the orchestrator resolve it first.
+> Reminder: review the task-scoped changed files named in the structured
+> reports. If the task scope cannot be distinguished, return `BLOCKED`.
 
 ## Evidence-first review
 
 Reviewers follow the same evidence pattern:
 
 1. Read the structured inputs to understand the task and prior verdicts.
-2. Verify the working tree is clean before reviewing.
-3. Inspect the changed files named in `EXECUTION_REPORT`.
+2. Inspect the changed files named in `EXECUTION_REPORT` and any documentation
+   changes named in `DOCUMENTATION_REPORT`.
+3. If unrelated changes make the task-scoped change set ambiguous, return
+   `BLOCKED` with the specific ambiguity.
 4. Use reports as summaries, not substitutes for reading the code.
 5. Return concise findings with clear file locations and concrete remediation.
 
@@ -19,10 +21,13 @@ Reviewers follow the same evidence pattern:
 
 When a recommendation depends on current library, framework, or API behavior:
 
-1. Consult authoritative project or upstream documentation if it is available
+1. Read `./external-sources.md` for optional source links when a general review,
+   architecture, security, Git, or tracker reference would otherwise need to be
+   pasted into this policy.
+2. Consult authoritative project or upstream documentation if it is available
    in the current environment.
-2. Use that documentation to validate the recommendation.
-3. If no authoritative reference is available, say so explicitly and mark the
+3. Use that documentation to validate the recommendation.
+4. If no authoritative reference is available, say so explicitly and mark the
    library-specific recommendation as lower confidence instead of inventing
    certainty.
 
