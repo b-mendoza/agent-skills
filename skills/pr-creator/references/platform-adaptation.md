@@ -1,79 +1,64 @@
 # Platform Adaptation
 
-> Read this file only when `remote.origin.url` does not point to GitHub or a
-> GitHub Enterprise host that works with `gh`.
->
-> Preserve the same workflow: validate auth, compare the full branch diff, show
-> a preview, wait for explicit confirmation, create the PR or MR, then return
-> the resulting URL.
+> Read this file only when the remote is not GitHub/GitHub Enterprise or the
+> installed `gh` workflow cannot authenticate against the repository.
 
-Platform-aware subagents read this file just in time. Return the same compact
-status envelopes defined by the calling subagent; do not return raw CLI logs to
-the orchestrator.
+Non-GitHub PR/MR creation uses the same orchestrator gates: validate auth and
+remote refs, compare the full branch diff, preview exact fields, wait for user
+approval, create, verify, and return the URL.
 
-## GitLab
+For command details, read `./references/external-resources.md` and fetch only the
+platform docs relevant to the detected host.
 
-Use the same drafting logic from the main skill, then adapt the full execution
-path to GitLab:
+## GitLab Strategy
 
-1. Confirm `glab` is installed and authenticated before continuing.
-2. Fetch remote refs and verify the target branch exists on the remote.
-3. Verify the source branch exists on the remote and is up to date with the
-   local branch tip. If it is missing or stale, ask the user for permission to
-   push it first. If the user declines, stop with `PR_CREATE: HEAD_BRANCH_UNPUSHED`.
-4. Reuse the same title, body, reviewer, label, and draft decisions from the
-   preview loop.
-5. If the installed `glab` version clearly supports listing labels, use that to
-   suggest existing labels. Otherwise skip auto-suggested labels or ask the user
-   for explicit labels instead of guessing.
-6. Create the merge request with `glab mr create`, mapping:
-   - base branch -> target branch
-   - head branch -> source branch
-   - title -> title
-   - description -> description
-   - draft state -> draft or ready
-   - reviewers -> reviewer equivalents supported by the installed `glab` version
-7. Verify the created merge request URL and confirm it uses the intended base
-   and head branches before returning it to the user.
+Use GitLab merge-request semantics while preserving the skill contracts:
 
-If the local `glab` version exposes different flag names, use its built-in help
-to map the preview fields to the correct create command instead of guessing.
+- Confirm `glab` or the repository's standard GitLab tooling is installed and
+  authenticated.
+- Fetch remote refs, verify the target branch, and verify the source branch is
+  remotely comparable.
+- Request explicit user approval before pushing a missing or stale source branch.
+- Use `glab mr create` or the documented team workflow to map approved preview
+  fields to target branch, source branch, title, description, draft state,
+  reviewers, and labels.
+- Verify the created MR URL and branch fields before returning `PR_SUBMIT: PASS`.
 
-## Bitbucket
+Fetch these docs only when needed:
 
-Bitbucket workflows vary more by team and hosting setup, so keep the same
-preview-first flow and then:
+- GitLab merge requests: https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/
+- GitLab CLI: https://gitlab.com/gitlab-org/cli
+- `glab mr create`: https://gitlab.com/gitlab-org/cli/-/blob/main/docs/source/mr/create.md
+- GitLab labels: https://docs.gitlab.com/user/project/labels/
 
-1. Detect whether the repository uses a supported Bitbucket CLI or a custom API
-   wrapper.
-2. If no supported CLI or API flow is available, return `BLOCKED` and ask which
-   Bitbucket workflow their team expects. Do not fall back to `gh`.
-3. Reuse the drafted title, body, reviewer, label, and draft decisions.
-4. If the Bitbucket tooling can list labels reliably, use it. Otherwise skip
-   label suggestions or ask the user for explicit labels.
-5. Create the pull request with the repository's standard tooling.
-6. Return the resulting PR URL and confirm the chosen base/head branches.
+## Bitbucket Strategy
+
+Bitbucket workflows vary by team and hosting setup. Preserve the preview-first
+flow and use the repository's standard CLI or API wrapper when available.
+
+- Detect the supported Bitbucket CLI/API path for the repository.
+- Return `BLOCKED` when no safe create workflow is discoverable and ask which
+  team workflow to use.
+- Reuse the approved title, body, reviewer, label, draft/ready, base, and head
+  values.
+- Suggest labels only when the tooling can list existing labels reliably.
+- Verify the resulting PR URL and base/head branches.
+
+Fetch these docs only when needed:
+
+- Bitbucket Cloud PRs: https://support.atlassian.com/bitbucket-cloud/docs/create-a-pull-request/
+- Bitbucket PR REST API: https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/
+- Bitbucket refs REST API: https://developer.atlassian.com/cloud/bitbucket/rest/api-group-refs/
 
 ## Failure Mapping
 
-Use the main skill's failure format for non-GitHub flows too:
+Use the failure envelope in `./references/execution-contracts.md` for non-GitHub
+flows too:
 
-- `AUTH` when the platform CLI is missing, unauthenticated, or lacks permission
-- `BASE_BRANCH_MISSING` when the target branch does not exist remotely
-- `HEAD_BRANCH_UNPUSHED` when the head branch must be pushed and the user
-  declines or the push cannot complete
-- `EMPTY_DIFF` when there is nothing meaningful to compare
-- `BLOCKED` when the platform workflow cannot be determined safely
-- `CANCELLED` when the user declines a non-push confirmation gate
-- `CREATE_ERROR` when the platform create command fails after confirmation
-
-## Platform Invariants
-
-Keep these rules unchanged across platforms:
-
-- Ask for the target branch when it was not supplied.
-- Base the title and description on the actual compare diff.
-- Require at least one reviewer before creation.
-- Show the full preview before creating anything.
-- Create only after explicit confirmation.
-- Return the final URL and the chosen base/head branches.
+- `AUTH` for missing, unauthenticated, or unauthorized platform tooling.
+- `BASE_BRANCH_MISSING` for a missing target branch.
+- `HEAD_BRANCH_UNPUSHED` when the source branch cannot be compared remotely.
+- `EMPTY_DIFF` when the compare range has no meaningful changes.
+- `BLOCKED` when the platform workflow cannot be determined safely.
+- `CANCELLED` when the user declines a non-push confirmation gate.
+- `CREATE_ERROR` when creation or verification fails after approval.
