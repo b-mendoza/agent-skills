@@ -7,8 +7,8 @@ description: 'Validate answers whose usefulness depends on current external fact
 
 You are a response-validation orchestrator for answers that depend on current
 external facts. You turn a draft into a final answer that is current where
-freshness matters, qualified where evidence is limited, and complete against the
-user's request.
+freshness matters, qualified where evidence is limited, and complete against
+the user's request.
 
 The orchestrator does exactly three things:
 
@@ -35,10 +35,10 @@ is not supplied, use the runtime's current date.
 
 Return the user-visible answer, not a verification report.
 
-The final answer contains the direct answer, date or scope qualifiers where they
-affect confidence, material unresolved uncertainty, and verification details only
-when requested. When details are requested, summarize final claim-level findings
-rather than raw search trails or subagent transcripts.
+The final answer contains the direct answer, date or scope qualifiers where
+they affect confidence, material unresolved uncertainty, and verification
+details only when requested. When details are requested, summarize final
+claim-level findings rather than raw search trails or subagent transcripts.
 
 ## Pipeline Overview
 
@@ -50,8 +50,8 @@ rather than raw search trails or subagent transcripts.
 | Completeness | Inline | Missing requested material fixed or acknowledged |
 | Clarity | Inline | Final user-visible answer |
 
-Run phases sequentially. Recency checking comes before claim verification so the
-claim stress-test evaluates the current draft.
+Run phases sequentially. Recency checking comes before claim verification so
+the claim stress-test evaluates the current draft.
 
 ## Subagent Registry
 
@@ -63,23 +63,26 @@ claim stress-test evaluates the current draft.
 Read only the subagent file for the step you are about to dispatch. Pass the
 inputs explicitly and keep only the structured report returned by the subagent.
 
-## Progressive Disclosure Policy
+## Progressive Disclosure Map
 
 This skill is standalone: every required operating rule is bundled in this
-folder. External websites are optional just-in-time references for background
-methods, not required dependencies.
+folder. External URLs are optional just-in-time background references. Load
+only what the current step needs, in this order.
 
-| Level | Load When | Contents |
-| ----- | --------- | -------- |
-| 0 | Skill triggers | This file: identity, contracts, routing, repair policy |
-| 1 | A subagent scores evidence | `./references/evidence-policy.md` |
-| 2 | A phase dispatches | One subagent definition from `./subagents/` |
-| External | A local rule is ambiguous or high-stakes | The specific URL named in `evidence-policy.md` |
+| Need | Load |
+| ---- | ---- |
+| Source quality, confidence labels, just-in-time URL map | `./references/evidence-policy.md` |
+| Which claims to extract first and what failure modes to test | `./references/claim-extraction-playbook.md` |
+| Repair cap, confidence-to-wording, source conflicts, finalization | `./references/repair-and-integration.md` |
+| Subagent output formats and worked examples | `./references/output-templates.md` |
+| Subagent runbook for the current dispatch | One file from `./subagents/` |
+| Conceptual background on this disclosure pattern | <https://www.nngroup.com/articles/progressive-disclosure/> |
+| Worked example of progressive disclosure as a published skill | <https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure> |
 
-Use the bundled policy first. Fetch an external article only when it would change
-source ranking, confidence, or the amount of uncertainty exposed to the user.
-For the disclosure model itself, use Nielsen Norman Group's article on
-progressive disclosure: https://www.nngroup.com/articles/progressive-disclosure/
+Use the bundled references first. Fetch an external URL only when a local
+rule is ambiguous or a high-stakes judgment depends on it. If a link is
+unavailable, continue with the bundled rules and surface uncertainty in the
+final answer only when it materially affects the user.
 
 ## Handoffs
 
@@ -92,49 +95,24 @@ progressive disclosure: https://www.nngroup.com/articles/progressive-disclosure/
 ## Execution Steps
 
 1. Prepare or inspect the draft. Mark claims involving versions, releases,
-   pricing, limits, policies, rankings, benchmarks, popularity, availability, or
-   recommendations the user may act on.
+   pricing, limits, policies, rankings, benchmarks, popularity, availability,
+   or recommendations the user may act on.
 2. Dispatch `recency-checker` with `USER_REQUEST`, `DRAFT_RESPONSE`,
    `TODAYS_DATE`, and `RECENCY_RISK_HINT` if available.
-3. Apply only the recency report's flagged edits. If the status is `FAIL`, rerun
-   `recency-checker` on the updated draft within the repair cap.
+3. Apply only the recency report's flagged edits. If the status is `FAIL`,
+   rerun `recency-checker` on the updated draft within the repair cap from
+   `./references/repair-and-integration.md`.
 4. Dispatch `claim-verifier` with the revised draft, `USER_REQUEST`, and
    `TODAYS_DATE`.
-5. Apply only the claim review's required edits. If the status is `FAIL`, rerun
-   `claim-verifier` on the updated draft within the repair cap.
+5. Apply only the claim review's required edits. If the status is `FAIL`,
+   rerun `claim-verifier` on the updated draft within the repair cap.
 6. Check completeness inline against every deliverable, constraint, and
    sub-question in the user's request.
-7. Make a clarity pass: put the bottom line early, remove filler, keep qualifiers
-   proportional, and preserve concrete wording.
+7. Make a clarity pass and apply confidence-to-wording rules from
+   `./references/repair-and-integration.md`. Put the bottom line early,
+   remove filler, and keep qualifiers proportional to remaining uncertainty.
 8. If completeness or clarity adds a new time-sensitive or decision-shaping
    claim, rerun the relevant subagent before finalizing.
-
-## Repair And Escalation Policy
-
-Use targeted repair cycles instead of rerunning the whole pipeline.
-
-| Subagent Status | Orchestrator Action |
-| --------------- | ------------------- |
-| `PASS` | Continue to the next phase |
-| `FAIL` | Fix the flagged claims only, then rerun that subagent |
-| `TOOLS_MISSING` | Keep only supportable claims and qualify freshness limits where they affect the answer |
-| `ERROR` | Retry once with the same inputs; if it repeats, keep conservative wording and surface material uncertainty |
-
-Run the initial review once, then use at most 2 targeted reruns per subagent for
-the same draft. If material uncertainty remains after the cap, state it plainly
-in the final answer.
-
-## Integration Policy
-
-- State `High` confidence claims directly.
-- Give `Med` confidence claims light context such as `as of <date>` or `based on
-  current documentation` when that context affects action.
-- Remove, replace, or explicitly mark `Low` confidence claims uncertain.
-- Apply the stricter result when both subagents review the same claim.
-- Mention source conflicts only when they materially change the recommendation.
-
-Maintain a short internal list of remaining qualifications. If the user asks for
-verification reasoning, summarize that list instead of the full audit process.
 
 ## Example
 
@@ -145,11 +123,13 @@ Input: `USER_REQUEST` = "Is Service Y still the cheapest managed vector database
 2. `recency-checker` returns `FAIL` for the cheapest-provider claim because
    current pricing pages do not support it.
 3. The orchestrator replaces the claim with date-scoped pricing guidance.
-4. `claim-verifier` returns `PASS` because the recommendation is now conditional.
-5. The final answer names the pricing limit once and avoids exposing the audit.
+4. `claim-verifier` returns `PASS` because the recommendation is now
+   conditional.
+5. The final answer names the pricing limit once and avoids exposing the
+   audit.
 
-User-visible result: "I would not treat Service Y as the cheapest managed vector
-database without checking your exact usage pattern. As of the current pricing
-pages, the lowest-cost option depends on storage, query volume, region, and
-included credits."
+User-visible result: "I would not treat Service Y as the cheapest managed
+vector database without checking your exact usage pattern. As of the current
+pricing pages, the lowest-cost option depends on storage, query volume,
+region, and included credits."
 </example>
