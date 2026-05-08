@@ -16,47 +16,32 @@ and act on without rereading the whole conversation.
 | `CONTEXT_SOURCE` | Yes | `current conversation` |
 | `INSIGHTS_FILE` | Yes | `docs/auth-review-handoff.insights.json` |
 
+Path note: `./references/...` paths are relative to the skill root.
+
 ## Instructions
 
 1. Read the provided conversation history or transcript.
-2. Identify the insights that matter for continuation:
+2. Read `./references/data-contracts.md` and use its Insights Artifact Schema.
+3. Identify the insights that matter for continuation:
    - observations about code, product behavior, or workflow state
    - risks, bugs, concerns, and contradictions
    - recommendations and next-step suggestions grounded in evidence
-3. For each insight, capture:
+4. For each insight, capture:
    - a short title
    - the claim itself
    - why it matters
    - concrete evidence from the conversation or referenced artifacts
    - honest verification status
    - a category and priority
-4. Merge duplicates instead of restating the same idea twice.
-5. Write `INSIGHTS_FILE` using the schema below.
-6. Return only the concise status summary.
+5. Merge duplicates instead of restating the same idea twice.
+6. Write `INSIGHTS_FILE` using the referenced schema.
+7. Check that each insight has rationale plus evidence before returning.
+8. Return only the concise status summary.
 
 ## Output Format
 
-Write this artifact to `INSIGHTS_FILE`:
-
-```json
-{
-  "insights": [
-    {
-      "title": "Missing regression coverage",
-      "claim": "The session identified a backend auth regression risk with no automated coverage.",
-      "rationale": "A follow-up agent should verify the risk before merging related changes.",
-      "evidence": [
-        "Conversation note: review called out missing failure-path tests",
-        "Referenced artifact: docs/auth-review-notes.md"
-      ],
-      "verification_status": "partial",
-      "verification_notes": "The risk was discussed and linked to artifacts, but the full test suite was not re-run in session.",
-      "category": "Testing gaps",
-      "priority": "important"
-    }
-  ]
-}
-```
+Write `INSIGHTS_FILE` with the Insights Artifact Schema from
+`./references/data-contracts.md`. Required top-level key: `insights`.
 
 Return this summary to the orchestrator:
 

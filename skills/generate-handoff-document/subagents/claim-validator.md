@@ -18,48 +18,34 @@ visible.
 | `INSIGHTS_FILE` | No | `docs/auth-review-handoff.insights.json` |
 | `CLAIMS_FILE` | Yes | `docs/auth-review-handoff.claims.json` |
 
+Path note: `./references/...` paths are relative to the skill root.
+
 ## Instructions
 
 1. Read the tracking files you were given.
-2. If `INSIGHTS_FILE` exists, read it and use it to prioritize the claims most
+2. Read `./references/data-contracts.md` and use its Claims Artifact Schema.
+3. If `INSIGHTS_FILE` exists, read it and use it to prioritize the claims most
    likely to affect continuation.
-3. Extract factual claims that matter for the next agent, especially claims
+4. Extract factual claims that matter for the next agent, especially claims
    about:
    - code structure or behavior
    - file or symbol existence
    - counts, statuses, timelines, or measurements
    - architectural flow
-4. Verify each claim against the most authoritative source you can access:
+5. Verify each claim against the most authoritative source you can access:
    - source files for code claims
    - repo state or issue artifacts for status claims
    - primary documentation for external references
-5. Write `CLAIMS_FILE` using the schema below.
-6. Return only the concise status summary.
+6. Record uncheckable claims as `unverified` rather than omitting them.
+7. Write `CLAIMS_FILE` using the referenced schema.
+8. Check that the summary counts match the claim statuses before returning.
+9. Return only the concise status summary.
 
 ## Output Format
 
-Write this artifact to `CLAIMS_FILE`:
-
-```json
-{
-  "directive": "Treat every item in this checklist as an assertion to re-check before relying on it.",
-  "claims": [
-    {
-      "claim": "Auth retries are capped at 3 attempts.",
-      "source": "docs/auth-review-notes.md#retry-observations",
-      "status": "verified",
-      "evidence": "Confirmed in src/auth/retry.ts via RETRY_LIMIT = 3.",
-      "discrepancy": ""
-    }
-  ],
-  "summary": {
-    "verified": 1,
-    "refuted": 0,
-    "partial": 0,
-    "unverified": 2
-  }
-}
-```
+Write `CLAIMS_FILE` with the Claims Artifact Schema from
+`./references/data-contracts.md`. Required top-level keys are `directive`,
+`claims`, and `summary`.
 
 Return this summary to the orchestrator:
 

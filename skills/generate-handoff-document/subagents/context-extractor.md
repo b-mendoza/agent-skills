@@ -16,49 +16,33 @@ only a concise summary to the orchestrator.
 | `CONTEXT_SOURCE` | Yes | `current conversation` |
 | `CONTEXT_FILE` | Yes | `docs/auth-review-handoff.context.json` |
 
+Path note: `./references/...` paths are relative to the skill root.
+
 ## Instructions
 
 1. Read the provided conversation history or transcript.
-2. Extract the original instructions:
+2. Read `./references/data-contracts.md` and use its Context Artifact Schema.
+3. Extract the original instructions:
    - preserve the user's wording where it materially defines scope
    - consolidate multi-message mandates chronologically
    - include constraints, success criteria, and scope boundaries
-3. Build the Q&A log:
+4. Build the Q&A log:
    - capture each exchange that clarified, constrained, corrected, or advanced
      the work
    - keep the original ordering
    - record `asker`, `answerer`, `question`, `answer`, and a brief `context`
      note when helpful
-4. Record instruction amendments separately whenever the user narrowed,
+5. Record instruction amendments separately whenever the user narrowed,
    expanded, or redirected the work after the initial mandate.
-5. Write `CONTEXT_FILE` using the schema below.
-6. Return only the concise status summary.
+6. Write `CONTEXT_FILE` using the referenced schema.
+7. Check that every Q&A entry is ordered and attributed before returning.
+8. Return only the concise status summary.
 
 ## Output Format
 
-Write this artifact to `CONTEXT_FILE`:
-
-```json
-{
-  "original_instructions": "Review the auth changes and capture unresolved risks.",
-  "qa_log": [
-    {
-      "number": 1,
-      "asker": "assistant",
-      "answerer": "user",
-      "question": "Should the review focus on backend auth only?",
-      "answer": "Yes, ignore the UI follow-up.",
-      "context": "Scope clarification"
-    }
-  ],
-  "amendments": [
-    {
-      "description": "User excluded UI follow-up work from scope.",
-      "after_qa_number": 1
-    }
-  ]
-}
-```
+Write `CONTEXT_FILE` with the Context Artifact Schema from
+`./references/data-contracts.md`. Required top-level keys are
+`original_instructions`, `qa_log`, and `amendments`.
 
 Return this summary to the orchestrator:
 

@@ -19,26 +19,31 @@ the original chat transcript.
 | `INSIGHTS_FILE` | Yes | `docs/auth-review-handoff.insights.json` |
 | `CLAIMS_FILE` | No | `docs/auth-review-handoff.claims.json` |
 
+Path note: `./references/...` and `./subagents/...` paths are relative to the
+skill root.
+
 ## Instructions
 
-1. Read `./subagents/document-assembler-template.md` only when you are ready to
+1. Read `./references/data-contracts.md` for final document requirements.
+2. Read `./subagents/document-assembler-template.md` only when you are ready to
    assemble the final document.
-2. Read `CONTEXT_FILE` and `INSIGHTS_FILE`. Read `CLAIMS_FILE` if one was
+3. Read `CONTEXT_FILE` and `INSIGHTS_FILE`. Read `CLAIMS_FILE` if one was
    provided.
-3. Populate the template completely:
+4. Populate the template completely:
    - keep every required major section
    - include a `**Fulfills:**` line in each section
    - preserve uncertainty instead of smoothing it away
-4. Derive `Open Questions` and `Recommended Next Steps` from unresolved items in
+5. Derive `Open Questions` and `Recommended Next Steps` from unresolved items in
    the source artifacts. If none remain, say so explicitly.
-5. Run a traceability and readability pass:
+6. Run a traceability and readability pass:
    - no placeholder text remains
    - no orphaned references remain
    - the flow is understandable to a cold-start reader
    - the claims section either includes the validation directive or the explicit
      "no tracking files" note
-6. Write `TARGET_FILE`, replacing any previous contents.
-7. Return only the concise status summary.
+7. Write `TARGET_FILE`, replacing any previous contents.
+8. Re-check the written file against the final requirements before returning.
+9. Return only the concise status summary.
 
 ## Output Format
 
