@@ -1,15 +1,15 @@
 # Planning Pipeline
 
-> Read this file when running the standard planning flow or a critique-triggered
-> re-plan.
+> Read this file when running the standard planning flow or a
+> critique-triggered re-plan.
 >
-> Reminder: dispatch one subagent at a time, keep only summaries, and rerun only
-> the steps invalidated by critique.
+> Reminder: dispatch one subagent at a time, keep only summaries, and rerun
+> only the steps invalidated by critique.
 
 ## Shared Reference Paths
 
-Pass these paths with each subagent dispatch unless a caller already provided a
-more specific bundled path:
+Pass these paths with each subagent dispatch unless a caller already
+provided a more specific bundled path:
 
 ```text
 DATA_CONTRACTS_PATH: ./references/data-contracts.md
@@ -18,77 +18,32 @@ EXTERNAL_SOURCES_PATH: ./references/external-sources.md
 ```
 
 The orchestrator does not fetch external methodology sources in advance. A
-subagent reads `EXTERNAL_SOURCES_PATH` only when a public source can change its
-current artifact decision, then returns exact URLs in `References fetched`.
+subagent reads `EXTERNAL_SOURCES_PATH` only when a public source can change
+its current artifact decision, then returns exact URLs in
+`References fetched`. For why subagent isolation matters, see
+`claude-subagents` and `context-engineering` in `EXTERNAL_SOURCES_PATH`.
 
 ## Standard Pipeline
 
-### Stage 1. Dispatch `execution-prepper`
+| Stage | Subagent | Required inputs | Optional inputs | Result fields |
+| ----- | -------- | --------------- | --------------- | ------------- |
+| 1 | `execution-prepper` | `ISSUE_SLUG`, `TASK_NUMBER` | `RE_PLAN`, `DECISIONS_FILE` | `PREP`, brief path |
+| 2 | `execution-planner` | `BRIEF_FILE` | `DECISIONS_FILE` | `PLAN`, plan path, recommended skills |
+| 3 | `test-strategist` | `BRIEF_FILE`, `PLAN_FILE` | `DECISIONS_FILE` | `TEST_SPEC`, spec path, framework |
+| 4 | `refactoring-advisor` | `BRIEF_FILE`, `PLAN_FILE`, `TEST_SPEC_FILE` | `DECISIONS_FILE` | `REFACTORING`, plan path, verdict |
 
-Inputs:
+Always pass the shared reference paths in addition to the inputs above.
 
-- `ISSUE_SLUG`
-- `TASK_NUMBER`
-- `RE_PLAN` when applicable
-- `DECISIONS_FILE` when applicable
-- Shared reference paths
+### Stage outcomes
 
-Interpret the result:
+| Status returned | Coordinator action |
+| --------------- | ------------------ |
+| `*: PASS` | Continue with the returned artifact path |
+| `*: FAIL` | Stop and surface the dependency, ambiguity, behavior gap, or planning risk |
+| `*: BLOCKED` | Stop and surface the missing prerequisite or input artifact |
+| `*: ERROR` | Stop and ask the user how to proceed |
 
-- `PREP: PASS` -> continue with the returned brief path
-- `PREP: FAIL` -> stop and surface the dependency or ambiguity to the user
-- `PREP: BLOCKED` -> stop and surface the missing prerequisite artifact
-- `PREP: ERROR` -> stop and ask the user how to proceed
-
-### Stage 2. Dispatch `execution-planner`
-
-Inputs:
-
-- `BRIEF_FILE`
-- `DECISIONS_FILE` when applicable
-- Shared reference paths
-
-Interpret the result:
-
-- `PLAN: PASS` -> continue with the returned plan path
-- `PLAN: FAIL` -> stop and surface the ambiguity or planning gap
-- `PLAN: BLOCKED` -> stop and surface the missing input artifact
-- `PLAN: ERROR` -> stop and ask the user how to proceed
-
-### Stage 3. Dispatch `test-strategist`
-
-Inputs:
-
-- `BRIEF_FILE`
-- `PLAN_FILE`
-- `DECISIONS_FILE` when applicable
-- Shared reference paths
-
-Interpret the result:
-
-- `TEST_SPEC: PASS` -> continue with the returned spec path
-- `TEST_SPEC: FAIL` -> stop and surface the behavior gap
-- `TEST_SPEC: BLOCKED` -> stop and surface the missing input artifact
-- `TEST_SPEC: ERROR` -> stop and ask the user how to proceed
-
-### Stage 4. Dispatch `refactoring-advisor`
-
-Inputs:
-
-- `BRIEF_FILE`
-- `PLAN_FILE`
-- `TEST_SPEC_FILE`
-- `DECISIONS_FILE` when applicable
-- Shared reference paths
-
-Interpret the result:
-
-- `REFACTORING: PASS` -> planning is complete
-- `REFACTORING: FAIL` -> stop and surface the ambiguity or risk
-- `REFACTORING: BLOCKED` -> stop and surface the missing input artifact
-- `REFACTORING: ERROR` -> stop and ask the user how to proceed
-
-### Stage 5. Report Completion
+### Stage 5. Report completion
 
 Return a short summary containing:
 
@@ -103,34 +58,31 @@ Return a short summary containing:
 
 Use targeted reruns instead of replaying the entire pipeline by default.
 
-- If critique changes task scope, definition of done, resolved questions, or the
-  brief's task context, rerun `execution-prepper` and every downstream subagent.
-- If critique changes implementation approach, file strategy, or recommended
-  skills, rerun `execution-planner`, `test-strategist`, and
-  `refactoring-advisor`.
-- If critique changes only test expectations, rerun `test-strategist`, then
-  rerun `refactoring-advisor` only if the testing change changes implementation
-  sequencing, setup, or expected impact on existing tests.
-- If critique changes only refactoring guidance, rerun `refactoring-advisor`
-  alone.
+| Critique change | Rerun |
+| --------------- | ----- |
+| Task scope, definition of done, resolved questions, or brief context | `execution-prepper` and every downstream subagent |
+| Implementation approach, file strategy, or recommended skills | `execution-planner`, `test-strategist`, `refactoring-advisor` |
+| Test expectations only | `test-strategist`; rerun `refactoring-advisor` only if the change moves implementation sequencing, setup, or test impact |
+| Refactoring guidance only | `refactoring-advisor` alone |
 
 Whenever a subagent is re-run:
 
 - Pass `DECISIONS_FILE` when the critique step produced it
 - Pass `RE_PLAN=true` when re-dispatching `execution-prepper` after critique
-- Let the subagent read its existing artifact if it needs prior context
+- Let the subagent read its existing artifact for prior context
 - Overwrite only that subagent's owned file
 - Re-run any downstream subagent whose owned artifact now depends on the
   updated output
 
 Maximum re-plan loops: 3. If critique still reports unresolved high-severity
-issues after the third loop, escalate to the user with the remaining concerns.
+issues after the third loop, escalate to the user with the remaining
+concerns.
 
 ## Validation Loop
 
-At each stage, confirm the required input artifact exists before dispatching and
-confirm the expected output artifact exists after the subagent returns `PASS`.
-When validation fails, re-dispatch only the owner of the failed artifact with the
-specific issue and re-check only that failed condition. Retry a failed artifact
-validation repair at most 3 times per stage, then escalate with the failed
-condition.
+At each stage, confirm the required input artifact exists before dispatching
+and confirm the expected output artifact exists after the subagent returns
+`PASS`. When validation fails, re-dispatch only the owner of the failed
+artifact with the specific issue and re-check only that failed condition.
+Retry a failed artifact-validation repair at most 3 times per stage, then
+escalate with the failed condition.
