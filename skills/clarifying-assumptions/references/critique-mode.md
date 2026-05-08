@@ -2,14 +2,17 @@
 
 > Read `./design-thinking-mindset.md` first.
 >
-> Reminder: critique mode stays conversational for the developer, but subagents
-> still own artifact reading, deferred-question filtering, and file writes.
+> **Reminder:** Critique mode stays conversational for the developer, but
+> subagents still own artifact reading, deferred-question filtering, and
+> file writes.
 >
-> Use the main `SKILL.md` file's `## Escalation` table as the authoritative verdict
-> routing policy. This playbook focuses on the canonical stage flow and inline questioning.
+> Use `SKILL.md`'s `## Escalation` table as the authoritative verdict
+> routing policy. Use `./clarification-contracts.md` only when validating
+> required sections, artifact paths, or derived dispatch handoffs.
 >
-> Load `./clarification-contracts.md` only when validating required sections,
-> artifact paths, or derived subagent handoffs.
+> For why we re-challenge user impact at the task level instead of trusting
+> upfront framing, see `./external-sources.md` → Design Thinking framework
+> and Mainstream-technology bias.
 
 ## Stage 2 — Analyze Artifacts
 
@@ -31,15 +34,11 @@ Read `../subagents/critique-analyzer.md`, then dispatch with:
 - `PRIOR_DECISIONS_KIND=per-task`
 
 The analyzer consults that decisions file on every run, including
-`ITERATION=1`. If the file does not exist yet, it treats the source as empty.
-When the file exists, it judges prior answers by substance rather than by item
-ID or exact wording.
+`ITERATION=1`. If the file does not exist yet, it treats the source as
+empty. When the file exists, it judges prior answers by substance rather
+than by item ID or exact wording.
 
-Handle the verdicts:
-
-- `CRITIQUE: FAIL` → stop and surface the reason.
-- `CRITIQUE: WARN` → continue only if the warning does not invalidate the task critique.
-- `CRITIQUE: PASS` → continue.
+Verdict routing follows `SKILL.md`'s `## Escalation` table.
 
 ## Stage 3 — Build Manifest
 
@@ -58,24 +57,18 @@ Read `../subagents/question-manifest-builder.md`, then dispatch with:
   - `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md`
 - `CRITIQUE_REPORT_FILE=docs/<TICKET_KEY>-task-<TASK_NUMBER>-critique.md`
 
-The manifest builder returns the same three-way manifest shape used in upfront
-mode:
+The manifest builder returns the same three-way manifest shape used in
+upfront mode:
 
 - Questions for now
 - Deferred questions
 - Resolved irrelevant items
 
-Handle the verdicts:
-
-- `MANIFEST: BLOCKED` or `MANIFEST: FAIL` → stop and surface the reason.
-- `MANIFEST: WARN` → continue, but carry the warning into the final summary.
-- `MANIFEST: PASS` → continue.
-
 ### Stage 4 substep — Preview Manifest
 
 Show the manifest summary before asking the first question. Reuse the
-`question-manifest-builder` header counts and `## Questions For Now` table
-shape instead of inventing a different critique-mode preview schema.
+`question-manifest-builder` header counts and `## Questions For Now`
+table shape; do not invent a different critique-mode preview schema.
 
 ```markdown
 ## Question Manifest — <TICKET_KEY> / Task <TASK_NUMBER>
@@ -89,8 +82,9 @@ Questions now: <N> | Deferred: <M> | Irrelevant: <R>
 | 3 | DQ-<TASK_NUMBER>-1 | Task question | MEDIUM | B | Yes | Task <TASK_NUMBER> |
 ```
 
-If there are no items left after filtering, say so clearly, do not emit a
-placeholder prompt, and skip to the recording step with an empty decision list.
+If there are no items left after filtering, say so clearly, do not emit
+a placeholder prompt, and skip to the recording step with an empty
+decision list.
 
 After the preview, ask:
 
@@ -121,23 +115,25 @@ choice is needed:
 3. `I need more information`
 4. `Acknowledge but proceed`
 
-Record `I need more information` and `Action needed` style responses as the
-canonical `blocked` outcome for the recorder.
+Record `I need more information` and `Action needed` style responses as
+the canonical `blocked` outcome for the recorder.
 
 For deferred questions, use the simplest fitting response form:
 
 - direct answer
 - revise current plan
-- skip with fallback, but only when the manifest marks the item `Skippable`
+- skip with fallback, but only when the manifest marks the item
+  `Skippable`
 
 ### Recording rules
 
 - `Switch to <alternative>` → set `RE_PLAN_NEEDED=true`
-- `blocked` → set `RE_PLAN_NEEDED=true`, set `BLOCKERS_PRESENT=true`, and stop after recording the blocker
+- `blocked` → set `RE_PLAN_NEEDED=true`, set `BLOCKERS_PRESENT=true`,
+  and stop after recording the blocker
 - `Acknowledge but proceed` → record as override, no re-plan
 - `Skip` → record the fallback and warning
-- Follow the manifest's `Skippable` field. Do not skip items that were surfaced as
-  non-skippable.
+- Follow the manifest's `Skippable` field. Do not skip items that were
+  surfaced as non-skippable.
 - If a deferred question is clearly obsolete, do not ask it; rely on the
   manifest builder's `RESOLVED_IRRELEVANT` list
 
@@ -159,22 +155,15 @@ Read `../subagents/decision-recorder.md`, then dispatch with:
 - `IMPLEMENTATION_UPDATES=<any implementation-note edits caused by switch decisions>`
 
 In critique mode, `decision-recorder` creates or updates
-`docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md` and also updates the main
-task plan.
-
-Handle the verdicts:
-
-- `RECORDING: BLOCKED` or `RECORDING: ERROR` → stop and surface the reason.
-- `RECORDING: WARN` → continue, but carry the warnings into the final summary.
-- `RECORDING: PASS` → continue.
+`docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md` and also updates the
+main task plan. Verdict routing follows `SKILL.md`'s `## Escalation`
+table.
 
 ### Stage 5 substep — Present Final Summary
 
-Keep the first four lines in the same order as the main `SKILL.md` final
-summary contract, then add any extra counts that help the user understand what
-happened in this run.
-
-Use the recorder summary plus session counts to present:
+Keep the first four lines in the same order as the `SKILL.md` final
+summary contract, then add any extra counts that help the user
+understand what happened in this run.
 
 ```markdown
 ## Clarification Complete — <TICKET_KEY> / Task <TASK_NUMBER>
@@ -191,8 +180,8 @@ Use the recorder summary plus session counts to present:
 - Overrides: <N>
 ```
 
-If `RE_PLAN_NEEDED=true`, tell the orchestrator to re-run the per-task planning
-phase before execution begins.
+If `RE_PLAN_NEEDED=true`, tell the orchestrator to re-run the per-task
+planning phase before execution begins.
 
-If `BLOCKERS_PRESENT=true`, tell the orchestrator to stop before execution and
-escalate the unresolved items.
+If `BLOCKERS_PRESENT=true`, tell the orchestrator to stop before
+execution and escalate the unresolved items.

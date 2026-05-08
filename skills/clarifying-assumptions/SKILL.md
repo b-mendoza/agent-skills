@@ -5,14 +5,20 @@ description: "Runs the conversational clarification layer for workflow orchestra
 
 # Clarifying Assumptions
 
-You are the conversation layer for workflow orchestration. You think about the
-current manifest item, decide what to ask or defer next, and dispatch bundled
-subagents for artifact-heavy work. Keep the developer dialogue inline; keep raw
-plans, critique reports, repository inspection, and file writes inside subagents.
+You are the conversation layer for workflow orchestration. You think about
+the current manifest item, decide what to ask or defer next, and dispatch
+bundled subagents for artifact-heavy work. Keep the developer dialogue
+inline; keep raw plans, critique reports, repository inspection, and file
+writes inside subagents.
 
-`MODE=upfront` challenges the whole plan before execution starts. `MODE=critique`
-challenges one task just before execution. Both modes use the same five stages
-and the same final summary shape.
+`MODE=upfront` challenges the whole plan before execution starts.
+`MODE=critique` challenges one task just before execution. Both modes use
+the same five stages and the same final summary shape.
+
+This skill is standalone. Every dependency is a relative path inside this
+folder. Conceptual background lives behind URLs in
+`./references/external-sources.md` and is fetched only when needed; the
+skill executes correctly with no network access.
 
 ## Inputs
 
@@ -23,22 +29,24 @@ and the same final summary shape.
 | `TASK_NUMBER` | Required for `MODE=critique` | `3` |
 | `ITERATION` | No | `1`, `2`, or `3` |
 
-`<KEY>` in path examples is the same value as `TICKET_KEY`. If `ITERATION` is
-omitted, treat it as `1`.
+`<KEY>` in path examples is the same value as `TICKET_KEY`. If `ITERATION`
+is omitted, treat it as `1`.
 
 ## Progressive Loading Map
 
+Load a file only when the current decision needs it. Every path is
+relative to this skill folder.
+
 | Need | Load |
 | --- | --- |
-| Artifact preconditions, derived subagent inputs, and output artifact contracts | `./references/clarification-contracts.md` |
-| Clarification posture and design-thinking principles | `./references/design-thinking-mindset.md` |
+| Behavioral rules and posture for clarification | `./references/design-thinking-mindset.md` |
 | Plan-wide upfront execution | `./references/upfront-mode.md` |
 | Task-level critique execution | `./references/critique-mode.md` |
-| External source-backed rationale, current conceptual articles, or deeper method background | `./references/external-sources.md`, then fetch only the relevant URL |
+| Artifact preconditions, derived subagent inputs, output artifact contracts | `./references/clarification-contracts.md` |
 | Dispatch round-trip examples | `./references/examples.md` |
+| External rationale, current technology context, or method background | `./references/external-sources.md`, then fetch one URL |
 
-Load subagent definitions only when dispatching that subagent. All bundled paths
-are relative to this skill folder; the skill is standalone when downloaded.
+Read subagent definitions only when dispatching that specific subagent.
 
 ## Subagent Registry
 
@@ -50,8 +58,8 @@ are relative to this skill folder; the skill is standalone when downloaded.
 
 ## Workflow
 
-Use the same stage names and ordering for Jira tickets, GitHub issue slugs, and
-other workflow keys.
+Use the same stage names and ordering for Jira tickets, GitHub issue
+slugs, and other workflow keys.
 
 | Stage | Name | Purpose |
 | --- | --- | --- |
@@ -63,23 +71,26 @@ other workflow keys.
 
 Run the stages this way:
 
-1. Load `./references/clarification-contracts.md` if artifact paths, required
-   sections, or derived dispatch inputs need to be checked.
-2. Load `./references/design-thinking-mindset.md` and then the active mode
-   playbook: `./references/upfront-mode.md` or `./references/critique-mode.md`.
+1. Load `./references/clarification-contracts.md` only if artifact paths,
+   required sections, or derived dispatch inputs need to be checked.
+2. Load `./references/design-thinking-mindset.md` and then the active
+   mode playbook: `./references/upfront-mode.md` or
+   `./references/critique-mode.md`.
 3. Dispatch `critique-analyzer` with the mode-specific artifacts, critique
    report path, `PRIOR_DECISIONS_FILE`, and `PRIOR_DECISIONS_KIND`.
-4. Dispatch `question-manifest-builder` with the critique artifact path and plan
-   context. A zero-item manifest is a valid no-op; skip directly to Stage 5.
-5. In Stage 4, ask one manifest item at a time. Carry each manifest `Item ID`
-   unchanged into the decision list.
+4. Dispatch `question-manifest-builder` with the critique artifact path
+   and plan context. A zero-item manifest is a valid no-op; skip directly
+   to Stage 5.
+5. In Stage 4, ask one manifest item at a time. Carry each manifest
+   `Item ID` unchanged into the decision list.
 6. Dispatch `decision-recorder` with resolved decisions, deferred items,
    implementation updates, and critique-mode task metadata when present.
 7. Present the final summary using the stable contract below.
 
 ## Inline State
 
-Keep only these items in the conversation layer while the skill is running:
+Keep only these items in the conversation layer while the skill is
+running:
 
 - Current manifest item
 - Developer response
@@ -88,23 +99,27 @@ Keep only these items in the conversation layer while the skill is running:
 - `BLOCKERS_PRESENT`
 - Active critique artifact path
 
-Everything else should arrive as concise subagent verdicts, manifest rows, and
-artifact paths. On retries or later iterations, re-dispatch subagents with the
-current artifact paths instead of treating prior subagent output as state.
+Everything else should arrive as concise subagent verdicts, manifest rows,
+and artifact paths. On retries or later iterations, re-dispatch subagents
+with the current artifact paths instead of treating prior subagent output
+as state.
 
 ## Behavioral Guardrails
 
 1. Ask one question per message.
-2. Ask only from the manifest; if a new item emerges, add it before asking it.
+2. Ask only from the manifest; if a new item emerges, add it before asking
+   it.
 3. Defer future-task questions instead of speculating about them now.
-4. Be direct about shallow thinking on Tier 3 items, but keep the tone mentor-like.
+4. Be direct about shallow thinking on Tier 3 items, but keep the tone
+   mentor-like.
 5. Present every critique item; subagent output is input, not authority.
-6. Respect skip only for Tier 2 items. Tier 3 hard gates cannot be skipped.
-   Tier definitions live in `./subagents/critique-analyzer-rubric.md`.
-7. When the interface supports structured choices, use them for discrete options;
-   otherwise use numbered options.
-8. Keep question blocks scannable. Use tables or diagrams only when they clarify
-   a real trade-off.
+6. Respect skip only for Tier 2 items. Tier 3 hard gates cannot be
+   skipped. Tier definitions live in
+   `./subagents/critique-analyzer-rubric.md`.
+7. When the interface supports structured choices, use them for discrete
+   options; otherwise use numbered options.
+8. Keep question blocks scannable. Use tables or diagrams only when they
+   clarify a real trade-off.
 
 ## Escalation
 
@@ -119,8 +134,8 @@ Expect parseable verdicts from subagents and route them like this:
 | `decision-recorder` | `RECORDING: BLOCKED` or `RECORDING: ERROR` | Stop and ask the user how to proceed |
 | `decision-recorder` | `RECORDING: WARN` | Present warnings in the final summary and continue |
 
-Rerun only the failed stage after a targeted fix. Stop after three failed fix
-cycles for the same issue and ask the user how to proceed.
+Rerun only the failed stage after a targeted fix. Stop after three failed
+fix cycles for the same issue and ask the user how to proceed.
 
 ## Output Contract
 
@@ -133,19 +148,25 @@ Every run ends with this stable minimum summary:
 - BLOCKERS_PRESENT: <true|false>
 ```
 
-If clarification stops early because a subagent returned `BLOCKED`, `FAIL`, or
-`ERROR`, still emit the same four fields with `Files updated: -`, then include
-the blocking verdict and reason.
+If clarification stops early because a subagent returned `BLOCKED`,
+`FAIL`, or `ERROR`, still emit the same four fields with
+`Files updated: -`, then include the blocking verdict and reason.
 
 ## Example
 
 Input: `TICKET_KEY=JNS-6065`, `MODE=upfront`, `ITERATION=1`
 
-1. Load `./references/design-thinking-mindset.md` and `./references/upfront-mode.md`.
+1. Load `./references/design-thinking-mindset.md` and
+   `./references/upfront-mode.md`.
 2. Dispatch `critique-analyzer`; receive `CRITIQUE: PASS` and
    `Artifact: docs/JNS-6065-upfront-critique.md`.
-3. Dispatch `question-manifest-builder`; receive `Questions now: 8 | Deferred: 4 | Irrelevant: 1`.
+3. Dispatch `question-manifest-builder`; receive
+   `Questions now: 8 | Deferred: 4 | Irrelevant: 1`.
 4. Walk the 8 questions one at a time and record decisions.
-5. Dispatch `decision-recorder`; receive `RECORDING: PASS` and file update counts.
-6. Present the final summary and tell the parent workflow whether re-planning or
-   blocker escalation is required.
+5. Dispatch `decision-recorder`; receive `RECORDING: PASS` and file
+   update counts.
+6. Present the final summary and tell the parent workflow whether
+   re-planning or blocker escalation is required.
+
+For deeper round-trip traces (including a blocked critique-mode run),
+read `./references/examples.md`.

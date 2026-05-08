@@ -1,7 +1,10 @@
 # Clarification Contracts
 
-Read this file when validating inputs, deriving subagent handoffs, or checking
-which orchestration artifacts this skill may update.
+> Read this file when validating inputs, deriving subagent handoffs, or
+> checking which orchestration artifacts this skill may update.
+>
+> **Reminder:** This file is the operational contract. Conceptual
+> background lives behind URLs in `./external-sources.md`.
 
 ## Input Preconditions
 
@@ -26,8 +29,9 @@ Additional upstream artifacts:
 | `upfront` | `docs/<KEY>-stage-1-detailed.md`, `docs/<KEY>-stage-2-prioritized.md` |
 | `critique` | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md` |
 
-If a required artifact is missing, let the relevant subagent return its parseable
-`BLOCKED`, `FAIL`, or `WARN` verdict instead of reading raw files inline.
+If a required artifact is missing, let the relevant subagent return its
+parseable `BLOCKED`, `FAIL`, or `WARN` verdict instead of reading raw
+files inline.
 
 ## Derived Subagent Inputs
 
@@ -81,9 +85,9 @@ implementation code.
 | `RE_PLAN_NEEDED` in the final summary | Signals whether planning should be re-run before execution |
 | `BLOCKERS_PRESENT` in the final summary | Signals that clarification ended with unresolved items and execution must stop |
 
-These are orchestration artifacts. Preserve them for resumability and keep them
-out of version control unless a parent workflow explicitly defines a different
-artifact lifecycle.
+These are orchestration artifacts. Preserve them for resumability and
+keep them out of version control unless a parent workflow explicitly
+defines a different artifact lifecycle.
 
 ## Final Summary Contract
 
@@ -96,5 +100,5 @@ Every successful run ends with these fields in this order:
 - BLOCKERS_PRESENT: <true|false>
 ```
 
-If a subagent blocks or fails, emit the same fields with `Files updated: -`, then
-include `Blocking verdict:` and `Reason:`.
+If a subagent blocks or fails, emit the same fields with
+`Files updated: -`, then include `Blocking verdict:` and `Reason:`.

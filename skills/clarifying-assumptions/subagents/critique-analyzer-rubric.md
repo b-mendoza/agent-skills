@@ -1,10 +1,10 @@
 # Critique Analyzer Rubric
 
-Load this file before deciding what to critique.
-
-For deeper method background or current technology-landscape context, use
-`../references/external-sources.md` and fetch only the relevant URL. The rubric
-below remains the local execution contract.
+> Load this file before deciding what to critique. The rubric below is
+> the local execution contract.
+>
+> **Reminder:** For method background or current technology-landscape
+> context, use `../references/external-sources.md` and fetch one URL.
 
 ## Upfront Mode Dimensions
 
@@ -34,12 +34,10 @@ In `MODE=critique`, look for these categories:
 - **User impact**
   - Latency, data freshness, workflow friction
   - Accessibility or reliability consequences
-  - Trade-offs that conflict with the end user and need captured in the plan's
-    problem framing
+  - Trade-offs that conflict with the end user and need captured in the
+    plan's problem framing
 
 ## Severity Rubric
-
-Use the same labels across all categories, but interpret them in context.
 
 | Severity | Meaning |
 | --- | --- |
@@ -56,8 +54,10 @@ Problem-framing items also map to tiers:
 
 Do not raise an item when:
 
-- The existing stack already constrains the decision and the plan respects that constraint
-- The Decisions Log already records an answer to the same concern, even if the wording, order, or item ID changed between iterations
+- The existing stack already constrains the decision and the plan
+  respects that constraint
+- The Decisions Log already records an answer to the same concern, even
+  if the wording, order, or item ID changed between iterations
 - The difference is purely stylistic and has no meaningful trade-off
 - You cannot name a concrete alternative or explain why it matters
 

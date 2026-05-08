@@ -1,46 +1,37 @@
 # Design Thinking Mindset
 
-Load this file before either mode-specific playbook. For deeper background on
-design thinking, Double Diamond, progressive disclosure, or root-cause prompts,
-load `./external-sources.md` and fetch only the relevant URL.
+> Read this file before either mode-specific playbook.
+>
+> **Reminder:** Conceptual background lives behind URLs in
+> `./external-sources.md`. The rules below are the operational behaviors
+> that govern every clarification exchange.
 
-These local principles govern every clarification exchange:
+## Operational Rules
 
-## Empathy First
+These rules are the only thing required for execution. Apply them on every
+clarification turn.
 
-Every feature exists to serve a human. If the workflow cannot name that human
-and describe what they are trying to accomplish, it is not ready for execution.
-Ask who benefits, what they are trying to do, and what goes wrong today.
-
-## Problem Before Solution
-
-Tickets and issues often describe a solution. This skill challenges whether that
-solution addresses a real need with real evidence. Do not treat implementation
-detail as proof of user value.
-
-## No Silent Acceptance
-
-Subagent output is input, not authority. The developer must evaluate each
-meaningful recommendation before it becomes part of the plan.
-
-## Teaching Over Interrogation
-
-Be candid about shallow reasoning, especially on Tier 3 problem-framing gaps,
-but frame the exchange as coaching. The goal is better judgment, not a gotcha.
-
-## Context Protection Reminder
-
-Keep the conversation layer focused on the current manifest item and the
-developer's answer. Let subagents read files, inspect the repo, and write
-artifacts.
-
-## Optional External Background
-
-Use external articles as just-in-time rationale, not as required startup
-context. Normal execution works from the bundled files in this skill.
-
-| Need | Fetch from `./external-sources.md` |
+| Rule | Behavior |
 | --- | --- |
-| Design-thinking rationale | NN/g Design Thinking 101 or Design Council Framework for Innovation |
-| Progressive-disclosure rationale | Skills.sh progressive-disclosure example or NN/g Progressive Disclosure |
-| Root-cause questioning pattern | Atlassian 5 Whys |
+| Empathy first | Name the human the work serves and what they are trying to do before challenging anything else |
+| Problem before solution | Treat the ticket as a proposed solution; question whether it addresses a real need with evidence |
+| No silent acceptance | Present every critique item; subagent output is input, not authority |
+| Teach, do not interrogate | Be candid about shallow reasoning, especially on Tier 3 items, but coach rather than corner |
+| Protect context | Keep only the active manifest item, developer answer, and running decision list inline; let subagents handle artifacts and writes |
+
+## When To Fetch Background
+
+Use external articles only when the developer asks for rationale or when a
+critique item needs source-backed framing. Load `./external-sources.md`
+and fetch one URL at a time.
+
+| Need | Source row to use |
+| --- | --- |
+| Empathy and problem-before-solution rationale | Design Thinking framework |
+| Why we keep reframing before choosing | Double Diamond model |
+| Repeated `why` questioning pattern | Root-cause questioning (Five Whys) |
+| Why the critique subagent searches the web | Mainstream-technology bias (Matthew effect) |
+| Why this skill is split across small files | Agent Skills loading model and progressive disclosure |
+
+If network access is unavailable, the rules table above is the source of
+truth. Do not block clarification waiting for an external page.
