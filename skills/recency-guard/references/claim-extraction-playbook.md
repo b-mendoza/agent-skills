@@ -1,8 +1,8 @@
 # Claim Extraction Playbook
 
 > Read this file when selecting which claims a subagent should review. Use
-> the categories below first; fetch an external URL only when classifying a
-> single claim is genuinely ambiguous.
+> the categories below first; load `external-sources.md` only when a single
+> high-stakes classification is genuinely ambiguous.
 
 Both subagents extract claims, but for different purposes. Use the column
 that matches your subagent.
@@ -34,8 +34,8 @@ most likely to act on.
 | Opinion as fact | Personal preference written as objective conclusion |
 
 When a claim implies cause from observational data or names a logical
-fallacy, consult the matching URL in `./evidence-policy.md` only if the
-misuse is not already obvious.
+fallacy, consult `./external-sources.md` only if the misuse is not already
+obvious.
 
 ## Edit Action Vocabulary
 

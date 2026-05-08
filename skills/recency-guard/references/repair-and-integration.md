@@ -5,7 +5,8 @@
 
 ## Repair Cap
 
-Use targeted repair cycles instead of rerunning the whole pipeline.
+Use targeted repair cycles instead of rerunning the whole pipeline. Keep only
+the latest concise verdict and unresolved risks in orchestrator context.
 
 | Subagent Status | Orchestrator Action |
 | --------------- | ------------------- |

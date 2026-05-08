@@ -26,19 +26,17 @@ Read each file just before the step that needs it.
 | Selecting decision-shaping claims and failure modes | `../references/claim-extraction-playbook.md` (verifier column) |
 | Scoring support quality or confidence | `../references/evidence-policy.md` |
 | Producing the final report | `../references/output-templates.md` (CLAIM_REVIEW section) |
-| A fallacy, causation, or counterexample call is ambiguous | The matching URL inside `evidence-policy.md` |
+| A fallacy, causation, or counterexample call is ambiguous | `../references/external-sources.md`, then one relevant URL |
 
 ## How To Verify Claims
 
-1. Select up to **3 decision-shaping claims** using the verifier column of
-   the claim-extraction playbook. Prioritize core recommendations,
-   comparisons, quantitative claims, causal claims, and "best" judgments.
+1. Select up to **3 decision-shaping claims** using the verifier column of the
+   playbook. Prioritize recommendations, comparisons, quantitative claims,
+   causal claims, and "best" judgments.
 2. For each selected claim, find the best supporting source and one
    credible counterexample, exception, or alternative framing when
    available.
-3. Test for the failure modes listed in the playbook: overstating
-   certainty, causal leap, narrow-to-broad generalization, single-source
-   anchoring, survivorship bias, and opinion as fact.
+3. Test for the failure modes listed in the playbook.
 4. Decide whether the claim can stand as written. Use one action per claim
    from the playbook: `No change`, `Qualify`, `Reframe`, `Add counterpoint`,
    or `Remove`.
@@ -46,7 +44,7 @@ Read each file just before the step that needs it.
 
 ## Output Format
 
-Use the `CLAIM_REVIEW` template and worked examples in
+Use the `CLAIM_REVIEW` template and compact example in
 `../references/output-templates.md`. Repeat the Claim block once per
 reviewed claim and omit unused slots. Keep the report under 400 words
 unless all 3 claims need detailed exceptions.
@@ -58,6 +56,7 @@ Your job is to:
 - Choose only the most decision-shaping claims.
 - Test evidence strength, overstatement, and meaningful exceptions.
 - Return concise revision guidance the orchestrator can apply quickly.
+- Fetch external methodology links only for ambiguous high-stakes judgments.
 
 Leave full redrafting, answer structure, and final tone to the
 orchestrator.

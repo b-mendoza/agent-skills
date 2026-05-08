@@ -5,7 +5,8 @@
 > focused on procedure.
 
 Use the template as written for the matching subagent. Do not add fields
-outside the template.
+outside the template. Examples are intentionally compact; load external sources
+only for methodology, not for report shape.
 
 ## RECENCY_CHECK Template
 
@@ -33,7 +34,7 @@ Unresolved risks:
 If no claims are flagged, write `Flagged claims: None.` Only entries under
 `Flagged claims` require edits.
 
-### RECENCY_CHECK Examples
+### RECENCY_CHECK Example
 
 <example>
 RECENCY_CHECK: FAIL
@@ -50,18 +51,10 @@ Flagged claims:
 
 Verified summary:
 - 4 claims required no changes
-- 1 claim may need only light date context
+- 0 claims may need only light date context
 
 Unresolved risks:
 - None
-</example>
-
-<example>
-RECENCY_CHECK: TOOLS_MISSING
-Reason: Web search or current documentation access is unavailable, so the
-draft cannot be checked against current sources.
-Last successful step: claim extraction
-Claims affected: 6
 </example>
 
 ## CLAIM_REVIEW Template
@@ -91,12 +84,12 @@ Use `Action: No change` only when the claim is acceptable as written. If a
 claim needs a caveat, softer framing, counterpoint, or removal, return
 `FAIL` and give a suggested revision.
 
-### CLAIM_REVIEW Examples
+### CLAIM_REVIEW Example
 
 <example>
 CLAIM_REVIEW: FAIL
-Claims reviewed: 2
-High: 0 | Med: 2 | Low: 0
+Claims reviewed: 1
+High: 0 | Med: 1 | Low: 0
 
 Claim 1: "Prisma is the best TypeScript ORM for new SaaS products."
 Why selected: This is the user's likely decision point.
@@ -107,26 +100,9 @@ Confidence: Med
 Action: Reframe
 Suggested revision: "Prisma is a strong default for many greenfield TypeScript SaaS teams, while Drizzle can be a better fit for teams that prefer thinner abstractions and SQL-first workflows."
 
-Claim 2: "Tool X reduces latency by 40%."
-Why selected: Quantitative claims strongly affect credibility.
-Best source: Vendor benchmark blog | Tier 3 | 2025-11-20
-Counterexample: Independent reports show smaller gains under different workloads.
-Failure modes: Narrow-to-broad leap, Single-source anchoring
-Confidence: Med
-Action: Qualify
-Suggested revision: "Vendor benchmarks reported latency reductions of up to 40%, though results vary by workload."
-
 Summary:
-- Critical issues: 2
+- Critical issues: 1
 - Unresolved risks: None
-</example>
-
-<example>
-CLAIM_REVIEW: TOOLS_MISSING
-Reason: Current evidence and credible counterexample search are unavailable
-for the selected decision-shaping claims.
-Last successful step: claim selection
-Claims affected: 3
 </example>
 
 ## TOOLS_MISSING / ERROR Status Block

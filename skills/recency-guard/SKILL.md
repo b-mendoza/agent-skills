@@ -1,6 +1,6 @@
 ---
 name: "recency-guard"
-description: 'Validate answers whose usefulness depends on current external facts. Use this skill when a response includes time-sensitive claims, rankings, recommendations, prices, versions, policies, availability, current documentation, or other facts that may have changed recently. Also use it when the user asks for a verified, fact-checked, current, latest, or up-to-date answer. Coordinates a lean draft with recency-checker and claim-verifier subagents so the final answer is current, qualified, and complete without exposing verification work unless requested.'
+description: "Validates answers that depend on current external facts, including prices, versions, policies, rankings, recommendations, documentation, and availability. Use when the user asks for current, latest, verified, fact-checked, or up-to-date answers. Coordinates recency-checker and claim-verifier subagents to produce a current, qualified final answer."
 ---
 
 # Recency Guard
@@ -10,14 +10,14 @@ external facts. You turn a draft into a final answer that is current where
 freshness matters, qualified where evidence is limited, and complete against
 the user's request.
 
-The orchestrator does exactly three things:
+The orchestrator does three things:
 
 - **Think:** identify high-risk claims, coverage gaps, and uncertainty.
 - **Decide:** choose repairs, escalation, or final wording from concise reports.
 - **Dispatch:** send web-heavy verification to one focused subagent at a time.
 
-The user receives only a clean final answer unless they ask for verification
-details.
+Keep only decision-relevant summaries in context. The user receives a clean
+final answer unless they ask for verification details.
 
 ## Inputs
 
@@ -25,20 +25,11 @@ details.
 | ----- | -------- | ------- |
 | `USER_REQUEST` | Yes | `"Compare the best React data-fetching libraries in 2026"` |
 | `DRAFT_RESPONSE` | No | A provisional answer that still needs validation |
-| `TODAYS_DATE` | Yes | `2026-04-06` |
+| `TODAYS_DATE` | No | `2026-04-06` |
 | `RECENCY_RISK_HINT` | No | `"Pricing and release status matter most"` |
 
 If `DRAFT_RESPONSE` is missing, draft a concise answer first. If `TODAYS_DATE`
 is not supplied, use the runtime's current date.
-
-## Output Contract
-
-Return the user-visible answer, not a verification report.
-
-The final answer contains the direct answer, date or scope qualifiers where
-they affect confidence, material unresolved uncertainty, and verification
-details only when requested. When details are requested, summarize final
-claim-level findings rather than raw search trails or subagent transcripts.
 
 ## Pipeline Overview
 
@@ -66,31 +57,22 @@ inputs explicitly and keep only the structured report returned by the subagent.
 ## Progressive Disclosure Map
 
 This skill is standalone: every required operating rule is bundled in this
-folder. External URLs are optional just-in-time background references. Load
-only what the current step needs, in this order.
+folder. External URLs are optional background sources, not prerequisites. Load
+only what the current step needs.
 
 | Need | Load |
 | ---- | ---- |
-| Source quality, confidence labels, just-in-time URL map | `./references/evidence-policy.md` |
-| Which claims to extract first and what failure modes to test | `./references/claim-extraction-playbook.md` |
+| Source tiers, evidence minimums, confidence labels | `./references/evidence-policy.md` |
+| Claim categories, failure modes, edit actions | `./references/claim-extraction-playbook.md` |
 | Repair cap, confidence-to-wording, source conflicts, finalization | `./references/repair-and-integration.md` |
-| Subagent output formats and worked examples | `./references/output-templates.md` |
+| Subagent report templates and compact examples | `./references/output-templates.md` |
+| Optional source-evaluation and progressive-disclosure background URLs | `./references/external-sources.md` |
 | Subagent runbook for the current dispatch | One file from `./subagents/` |
-| Conceptual background on this disclosure pattern | <https://www.nngroup.com/articles/progressive-disclosure/> |
-| Worked example of progressive disclosure as a published skill | <https://skills.sh/flpbalada/fb-skills/progressive-disclosure> |
 
-Use the bundled references first. Fetch an external URL only when a local
-rule is ambiguous or a high-stakes judgment depends on it. If a link is
-unavailable, continue with the bundled rules and surface uncertainty in the
-final answer only when it materially affects the user.
-
-## Handoffs
-
-| Handoff | Producer | Consumer | Keep In Orchestrator Context |
-| ------- | -------- | -------- | ---------------------------- |
-| `DRAFT_RESPONSE` | Orchestrator | `recency-checker` | Current draft and high-risk claim notes |
-| `RECENCY_CHECK` | `recency-checker` | Orchestrator, then `claim-verifier` after edits | Status, flagged claims, confidence counts, suggested revisions, unresolved risks |
-| `CLAIM_REVIEW` | `claim-verifier` | Orchestrator | Status, required claim edits, counterpoints, unresolved risks |
+Fetch an external URL only when a local rule is ambiguous, a high-stakes
+judgment needs more background, or the user asks for verification methodology.
+If a link is unavailable, continue with the bundled rules and surface
+uncertainty only when it materially affects the answer.
 
 ## Execution Steps
 
@@ -99,20 +81,33 @@ final answer only when it materially affects the user.
    or recommendations the user may act on.
 2. Dispatch `recency-checker` with `USER_REQUEST`, `DRAFT_RESPONSE`,
    `TODAYS_DATE`, and `RECENCY_RISK_HINT` if available.
-3. Apply only the recency report's flagged edits. If the status is `FAIL`,
-   rerun `recency-checker` on the updated draft within the repair cap from
-   `./references/repair-and-integration.md`.
+3. Apply only the recency report's flagged edits. On `FAIL`, load
+   `./references/repair-and-integration.md` and rerun only within its repair
+   cap.
 4. Dispatch `claim-verifier` with the revised draft, `USER_REQUEST`, and
    `TODAYS_DATE`.
-5. Apply only the claim review's required edits. If the status is `FAIL`,
-   rerun `claim-verifier` on the updated draft within the repair cap.
+5. Apply only the claim review's required edits. On `FAIL`, rerun only within
+   the same repair cap.
 6. Check completeness inline against every deliverable, constraint, and
    sub-question in the user's request.
-7. Make a clarity pass and apply confidence-to-wording rules from
-   `./references/repair-and-integration.md`. Put the bottom line early,
-   remove filler, and keep qualifiers proportional to remaining uncertainty.
-8. If completeness or clarity adds a new time-sensitive or decision-shaping
+7. Apply confidence-to-wording rules from
+   `./references/repair-and-integration.md`, put the bottom line early, and
+   keep qualifiers proportional to remaining uncertainty.
+8. If the final pass adds a new time-sensitive or decision-shaping
    claim, rerun the relevant subagent before finalizing.
+
+## Output Contract
+
+Return the user-visible answer, not a verification report. Include direct
+answers, material date or scope qualifiers, unresolved uncertainty that affects
+action, and verification details only when requested.
+
+## Validation
+
+- `SKILL.md` is the routing layer; detailed rules stay in one-hop references.
+- Subagent files are read only for the current dispatch.
+- External URLs are optional and fetched one at a time for the current judgment.
+- Each repair cycle changes only flagged claims and stops at the repair cap.
 
 ## Example
 

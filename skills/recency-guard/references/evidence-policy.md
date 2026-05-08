@@ -1,26 +1,12 @@
 # Evidence Policy
 
 > Read this file inside `recency-guard` subagents when scoring source quality
-> or confidence. Use the bundled rules first; fetch a linked URL only for an
-> ambiguous or high-stakes judgment.
+> or confidence. Use the bundled rules first; load `external-sources.md` only
+> for an ambiguous high-stakes methodology judgment.
 
-This file is the standalone authority for source tiers, confidence labels,
-and just-in-time external references. The links provide deeper static
-background; they do not replace current evidence for the claim being
-checked.
-
-## Just-In-Time Reference Map
-
-| Need | Fetch Only If Needed | URL |
-| ---- | -------------------- | --- |
-| Lateral reading and source investigation | A source's credibility, origin, or coverage context is unclear | <https://hapgood.us/2019/06/19/sift-the-four-moves/> |
-| Currency, relevance, authority, accuracy, purpose | A source evaluation needs a fuller checklist | <https://library.csuchico.edu/sites/default/files/craap-test.pdf> |
-| Common reasoning fallacies | A claim may rely on a recognizable argumentative fallacy | <https://owl.purdue.edu/owl/general_writing/academic_writing/logic_in_argumentative_writing/fallacies.html> |
-| Correlation versus causation | A claim implies cause from association or observational evidence | <https://www.scribbr.com/methodology/correlation-vs-causation/> |
-| Progressive disclosure model (background) | You need conceptual grounding for staged disclosure | <https://www.nngroup.com/articles/progressive-disclosure/> |
-
-If a link is unavailable, continue with the bundled rules and report
-uncertainty only when it materially affects the user's answer.
+This file is the local authority for source tiers, confidence labels, and
+minimum evidence. External links provide deeper static background; they do not
+replace current evidence for the claim being checked.
 
 ## Source Quality Hierarchy
 
@@ -33,16 +19,15 @@ uncertainty only when it materially affects the user's answer.
 | 5 | Practitioner and community content | Conference talks, respected blogs, Stack Overflow, forum answers |
 | 6 | Unvetted or low-accountability content | Social posts, anonymous blogs, scraped pages, AI-generated pages |
 
-When a source is both official and current, classify it by role: canonical
-docs, API references, specs, pricing, and policy pages are Tier 1;
-announcements, release notes, changelogs, and engineering blog posts are
-Tier 3.
+Classify official sources by role: canonical docs, specs, pricing, and policy
+pages are Tier 1; announcements, release notes, changelogs, and engineering
+blogs are Tier 3.
 
 ## Confidence Labels
 
-Use topic-appropriate freshness windows. Around 30 days is a good default
-for fast-moving product, version, pricing, and policy questions; slower
-standards, research, and historical claims can justify older evidence.
+Use topic-appropriate freshness windows. Around 30 days is a good default for
+fast-moving product, version, pricing, and policy questions; slower standards,
+research, and historical claims can justify older evidence.
 
 | Score | Use When |
 | ----- | -------- |
@@ -73,3 +58,5 @@ causal claims, and overstatement carry the most weight.
 - For quantitative benchmarks, preserve source scope, workload, date, and
   sponsor context in the suggested wording when those details affect
   interpretation.
+- For ambiguous source-evaluation, fallacy, or causal-reasoning calls, load
+  `./external-sources.md` and fetch one relevant URL.
