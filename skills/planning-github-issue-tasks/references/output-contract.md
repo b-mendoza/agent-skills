@@ -4,6 +4,11 @@ Read this file when checking Phase 2 inputs, final artifact requirements,
 branch-name requirements, or the special handling for issues that are already
 GitHub child issues or sub-issues.
 
+> **Reminder:** The required sections and per-task fields below are the
+> binding output contract. For background on GitHub's parent-issue /
+> sub-issue hierarchy or branch-name validity, see `./external-sources.md`
+> (`github-sub-issues`, `git-check-ref-format`).
+
 ## Snapshot Contract
 
 Input snapshot path: `docs/<ISSUE_SLUG>.md`

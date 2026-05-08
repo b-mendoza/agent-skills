@@ -8,6 +8,11 @@ stage artifacts.
 > affected stage, rerun downstream stages whose inputs changed, and rerun only
 > the validator gates for regenerated artifacts.
 
+> **Reminder:** The recovery rules below are operational. For background on
+> staged loading and just-in-time retrieval rationale, see
+> `./external-sources.md` (`progressive-disclosure-skill`,
+> `progressive-disclosure-ux`).
+
 ## Re-Plan Inputs
 
 The orchestrator re-dispatches this skill with the same `ISSUE_SLUG`, plus:

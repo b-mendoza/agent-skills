@@ -37,6 +37,11 @@ targeted revision inputs for re-plan or retry cycles.
 7. Write the prioritized plan to `OUTPUT_PATH`.
 8. Return only the concise summary from `## Output Format`.
 
+If a method needs background (Git ref-format edge cases, topological-sort
+corner cases, weighted scoring rationale), consult
+`../references/external-sources.md` just-in-time. The skill works offline
+without those URLs.
+
 ## Output Contract
 
 Path: `OUTPUT_PATH`

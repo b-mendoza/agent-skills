@@ -3,14 +3,19 @@
 Read this file when `task-planner` is turning a GitHub issue snapshot into the
 stage 1 detailed plan.
 
+> **Reminder:** Apply the operational sections below first. Fetch a URL from
+> `./external-sources.md` only when you need background on a method or a
+> definition (for example `five-whys`, `requirements-traceability`,
+> `definition-of-done`, `invest-criteria`, or `yagni`).
+
 ## Problem Framing
 
-Before decomposing work, identify the problem the issue is trying to solve, not
-only the solution it prescribes. Be explicit about what the issue states versus
-what you infer. Gaps are useful because Phase 3 can turn them into critique or
-clarification prompts.
+Capture the problem the issue is trying to solve, not just the solution it
+prescribes. Mark inferred content as inference; gaps become Phase 3 critique
+fuel. For underlying-need framing background, see `five-whys` in
+`./external-sources.md`.
 
-Include these subsections under `## Problem Framing`:
+Required subsections under `## Problem Framing`:
 
 | Subsection | What to capture |
 | ---------- | --------------- |
@@ -25,30 +30,29 @@ Use `Not stated in issue` when the snapshot does not provide an answer.
 
 ## Decomposition
 
-Identify discrete units of work required to resolve the issue. Use these
-categories when relevant: requirements, infrastructure, data changes, core
-logic, integration, UI/UX, testing, documentation, and cleanup.
+Split the work into self-contained units, each with one clear objective, one
+likely owner, and a verifiable definition of done. Useful categories when
+relevant: requirements, infrastructure, data changes, core logic, integration,
+UI/UX, testing, documentation, cleanup.
 
-A task is a self-contained unit of work with one clear objective, one likely
-owner, and a verifiable definition of done. Split unrelated concerns into
-separate tasks.
-
-Target 4-15 tasks. If the issue clearly justifies fewer or more, keep the plan
-accurate and explain the exception in `## Notes`.
+Target 4-15 tasks. If the issue clearly justifies fewer or more, keep the
+plan accurate and explain the exception in `## Notes`. For task-quality
+sanity-checks see `invest-criteria` in `./external-sources.md`.
 
 ## Existing Child Issues and Linked Issues
 
 When `## Child Issues` lists concrete work items, map them to tasks or explain
-any consolidation in `## Notes`. This prevents duplicate planning.
-
-Use `## Linked Issues` for dependency and context. Reflect hard ordering or
-blocking relationships in task decomposition when the snapshot makes them clear.
+any consolidation in `## Notes` to prevent duplicate planning. Use `## Linked
+Issues` for dependency and context; reflect hard ordering or blocking
+relationships in task decomposition when the snapshot makes them clear.
 
 ## Current-Child-Issue Detection
 
 If `## Metadata` indicates the current work item is a GitHub child issue or
-sub-issue, or the snapshot otherwise shows it is already child work, record that
-in both `## Assumptions and Constraints` and `## Notes`.
+sub-issue, or the snapshot otherwise shows it is already child work, record
+that in both `## Assumptions and Constraints` and `## Notes`. For GitHub's
+parent / sub-issue hierarchy background, see `github-sub-issues` in
+`./external-sources.md`.
 
 Use this wording in `## Notes` when applicable:
 
@@ -72,7 +76,8 @@ For each stage 1 task, write all six subsections:
 - `**Likely files / artifacts affected:**`
 
 Use letter labels (`Task A`, `Task B`, `Task C`). Stage 2 assigns final task
-numbers, dependencies, priorities, and branch names.
+numbers, dependencies, priorities, and branch names. For concrete vs. vague
+done-items see `definition-of-done` in `./external-sources.md`.
 
 ## Quality Self-Check
 

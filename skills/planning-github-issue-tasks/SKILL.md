@@ -35,10 +35,12 @@ snapshot, final-plan, or branch-name contract.
 | Exact final artifact contract, required sections, branch-name policy, current-child-issue behavior | `./references/output-contract.md` |
 | Normal execution path, dispatch payloads, gate handling, retry loop, example | `./references/execution-guide.md` |
 | Critique-driven re-plan or recovery from preserved stage artifacts | `./references/re-plan-cycle.md` |
-| Static source links for progressive disclosure, Git branch syntax, GitHub child issues, or agent-skill patterns | `./references/external-sources.md` |
+| Optional just-in-time URL routing for branch validity, prioritization rationale, GitHub sub-issues, agent-skill patterns, or progressive-disclosure background | `./references/external-sources.md` |
 
 Subagent definitions are loaded only when dispatching that subagent. Subagents
-load their own phase references just in time.
+load their own phase references just in time. The skill is fully functional
+offline; external URLs in `./references/external-sources.md` are progressive
+enhancement only.
 
 Subagent-owned references:
 

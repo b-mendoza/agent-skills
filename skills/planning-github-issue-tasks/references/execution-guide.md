@@ -5,6 +5,8 @@ re-plan decision. Load `./re-plan-cycle.md` first for `RE_PLAN=true`.
 
 > Keep raw stage artifacts out of orchestrator context. Dispatch subagents and
 > retain only verdicts, paths, issue lists, branch counts, and retry counts.
+> Background on dispatch and isolation is in `./external-sources.md`
+> (`claude-code-subagents`, `agent-skills-overview`).
 
 ## Normal Path
 
