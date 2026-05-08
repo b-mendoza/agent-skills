@@ -2,40 +2,33 @@
 
 > Read this file only when a public page can change the next commit decision.
 > Fetch the smallest number of URLs that resolve the open question and pass them
-> to the working subagent. The orchestrator does not paste fetched article text
-> into its own context.
+> to the working specialist. Return source URLs plus conclusions, not copied
+> article text.
 
-External pages are progressive-disclosure material. They replace bundled static
-guidance about Git mechanics, atomic-commit theory, and message conventions so
-the always-loaded skill body stays small. Bundled rules in this skill package
-(input contracts, subagent registry, report contracts, escalation codes) remain
-authoritative for execution; web content only resolves details when local rules
-are insufficient.
+External pages replace bundled static explanations of Git mechanics, commit
+grouping theory, message conventions, and progressive disclosure. Core local
+contracts still define execution; network access is optional.
 
 ## Fetch Policy
 
-- Fetch a page only when its answer can change grouping, message syntax, staging
+- Fetch only when the answer can change grouping, message syntax, staging
   behavior, verification, or final reporting.
-- Pass URLs to the subagent doing the work; do not load article text in the
-  orchestrator.
-- After a subagent fetches a URL, it returns the URL plus a one-line conclusion
-  (see "Return Format" below).
-- If a fetch fails, continue from bundled rules when safe and report the missing
-  reference in the subagent's `References fetched` line.
-- Local rules win when they conflict with web content. Note the conflict only
-  when it affects the user's commit.
+- Give URLs to the specialist doing the work.
+- Continue from bundled rules when a fetch fails and safe execution is still
+  clear.
+- Local rules, user instructions, and repository state win over web content.
 
 ## Source Routing
 
-### Skill design and progressive disclosure
+### Skill Design And Progressive Disclosure
 
 | Reference key | URL | Use when |
 | ------------- | --- | -------- |
-| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Maintaining the skill's disclosure layers or explaining why references load just in time |
+| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Maintaining this skill's disclosure layers or explaining just-in-time retrieval |
 | `progressive-disclosure-ux` | https://www.nngroup.com/articles/progressive-disclosure/ | A short, public explanation of hiding advanced detail until needed would help |
 | `context-engineering` | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | Just-in-time retrieval, long-horizon agent context patterns, or subagent isolation rationale |
 
-### Git mechanics (used by state summarizer and commit executor)
+### Git Mechanics
 
 | Reference key | URL | Use when |
 | ------------- | --- | -------- |
@@ -43,10 +36,11 @@ are insufficient.
 | `git-status` | https://git-scm.com/docs/git-status | Exact porcelain or status field behavior is unclear |
 | `git-diff` | https://git-scm.com/docs/git-diff | Exact unstaged or staged diff invocation, pathspec, or context behavior is unclear |
 | `git-add` | https://git-scm.com/docs/git-add | Exact pathspec, `--patch`, or `--update` staging semantics are unclear |
+| `git-restore` | https://git-scm.com/docs/git-restore | Exact unstaging or worktree restoration behavior is unclear |
 | `interactive-staging` | https://git-scm.com/book/en/v2/Git-Tools-Interactive-Staging | Mixed hunks need a check on whether safe non-interactive separation exists |
 | `git-commit` | https://git-scm.com/docs/git-commit | Commit creation flags, message behavior, hook side effects, or amend rules are unclear |
 
-### Commit grouping and message style (used by boundary planner)
+### Commit Grouping And Message Style
 
 | Reference key | URL | Use when |
 | ------------- | --- | -------- |
@@ -56,8 +50,7 @@ are insufficient.
 
 ## Return Format
 
-When a subagent fetches a URL, summarize the fetch in one of these forms before
-returning to the orchestrator.
+When a specialist fetches a URL, summarize it in one of these forms.
 
 Single-line form (preferred when the fetch only confirmed an existing decision):
 

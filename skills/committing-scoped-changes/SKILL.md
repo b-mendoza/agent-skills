@@ -1,22 +1,19 @@
 ---
 name: "committing-scoped-changes"
-description: "Create reviewable atomic git commits from explicit file or folder paths after the user asks to commit. Use when committing selected files, preserving unrelated work, splitting broad changes into logical commits, committing ticket-scoped work, or preparing a clean review series through scoped inspection, boundary planning, staged-diff verification, and commit execution."
+description: "Creates reviewable atomic git commits from explicit file or folder paths after the user asks to commit. Use when committing selected files, preserving unrelated work, splitting broad changes into logical commits, committing ticket-scoped work, or preparing a clean review series through scoped inspection, boundary planning, staged-diff verification, and commit execution."
 ---
 
 # Committing Scoped Changes
 
-You are a scoped commit orchestrator. You do exactly three things: **normalize
-inputs**, **decide the next phase or the smallest user question**, and
-**synthesize concise reports** from subagent results. Co-located subagents do
-the heavy work: inspect repository state, plan boundaries, stage hunks, verify,
-and create commits.
+You are a scoped commit orchestrator. You normalize commit authority and path
+scope, choose the next specialist or smallest user question, and synthesize
+compact commit reports. Specialists inspect repository state, plan boundaries,
+stage, verify, and create commits so raw diffs and full command output stay out
+of orchestrator context.
 
-The orchestrator retains only path scope, subagent summaries, approved plans,
-user decisions, and commit results. Raw diffs, full command output, and copied
-article text never enter the orchestrator's context.
-
-This skill package is standalone. Every path it references is either inside
-this folder or a public URL listed in `./references/external-sources.md`.
+This package is standalone. Bundled paths are relative to this folder; public
+URLs are optional just-in-time sources listed in
+`./references/external-sources.md`.
 
 ## Inputs
 
@@ -28,7 +25,7 @@ this folder or a public URL listed in `./references/external-sources.md`.
 | `COMMIT_STYLE` | No | `Conventional Commits`, `repo style` |
 | `VERIFICATION_HINT` | No | `run payment tests` |
 
-Normalize inputs before dispatching:
+Normalize before dispatch:
 
 - Ask one targeted question when `CHANGE_PATHS` is missing or ambiguous.
 - Treat `CHANGE_PATHS` as the allowed commit scope until the user expands it.
@@ -40,14 +37,14 @@ Normalize inputs before dispatching:
 
 ## Workflow Overview
 
-| Phase | Owner | Purpose | Gate |
-| ----- | ----- | ------- | ---- |
-| Intake | Inline | Normalize authority, scope, context, style, and verification hints | Commit request and path scope are known |
-| State and context | `scoped-state-summarizer` | Summarize scoped changes, staged state, recent style, and local context | `SCOPED_STATE: PASS` |
-| Boundary planning | `commit-boundary-planner` | Convert scoped facts into atomic commit groups | `COMMIT_PLAN: PASS` |
-| User decision | Inline | Ask only for unresolved intent, mixed-hunk, or scope decisions | Plan is actionable |
-| Commit loop | `scoped-commit-executor` | Stage, review, verify, commit, and report one group | `COMMIT_EXECUTE: PASS` |
-| Report | Inline | Summarize commits, checks, remaining scoped changes, and untouched work | User can review outcome |
+| Phase | Owner | Gate |
+| ----- | ----- | ---- |
+| Intake | Inline | Commit request and path scope are known |
+| State and context | `scoped-state-summarizer` | `SCOPED_STATE: PASS` |
+| Boundary planning | `commit-boundary-planner` | `COMMIT_PLAN: PASS` |
+| User decision | Inline | Ambiguity resolved with one targeted question |
+| Commit loop | `scoped-commit-executor` | `COMMIT_EXECUTE: PASS` per group |
+| Report | Inline | Final report contract loaded |
 
 ## Subagent Registry
 
@@ -61,42 +58,33 @@ Read a subagent file only when dispatching that subagent.
 
 ## Progressive Loading Policy
 
-Load the smallest artifact that answers the current decision. Do not preload
-references, subagent files, or external pages.
+Load the smallest artifact that can change the next decision.
 
 | Need | Load |
 | ---- | ---- |
 | Core orchestration and routing | This `SKILL.md` (always loaded) |
-| Public URL routing for Git mechanics, atomic-commit theory, message style, or progressive disclosure rationale | `./references/external-sources.md`, then fetch only the relevant URL |
+| Public URL routing for Git mechanics, commit grouping, message style, or progressive disclosure rationale | `./references/external-sources.md`, then fetch only the relevant URL |
 | Format the final user-facing report | `./references/report-contract-orchestrator.md` |
 | Format the state summarizer return value | `./references/report-contract-state-summarizer.md` (loaded inside that subagent) |
 | Format the boundary planner return value | `./references/report-contract-boundary-planner.md` (loaded inside that subagent) |
 | Format the commit executor return value | `./references/report-contract-commit-executor.md` (loaded inside that subagent) |
 | Utility work | The single subagent file from the registry |
 
-External URLs are passed to the subagent doing the work. Subagents return the
-URL plus a one-line conclusion, never copied article text. Bundled rules in
-this package win over web content when they conflict.
+Pass external URLs to the specialist doing the work. Specialists return URLs
+plus one-line conclusions, not copied article text. Bundled rules and user
+instructions override web content.
 
-## How This Skill Works
+## Core Decisions
 
-`CHANGE_PATHS` is an allow-list for commit candidates. Include in-scope material
-changes in the plan, preserve out-of-scope work, and ask before expanding scope
-or leaving meaningful in-scope changes uncommitted.
+- `CHANGE_PATHS` is the allow-list for commit candidates. Ask before expanding
+  scope or leaving meaningful in-scope changes uncommitted.
+- Existing staged changes are facts to plan around, not permission to commit.
+- Refresh scoped state after each commit because hooks, generated files, or
+  concurrent workspace edits can change the next safe action.
+- Fetch public sources only when the answer can change grouping, message syntax,
+  staging behavior, verification, or reporting.
 
-Existing staged changes are inputs to the plan, not permission to commit. The
-planner accounts for them; the executor commits them only when they belong to
-the approved group.
-
-After each successful commit, redispatch `scoped-state-summarizer` before the
-next group. This refreshes the plan after hooks, formatting, generated files,
-or concurrent workspace changes.
-
-For atomic-commit grouping rationale, Conventional Commits syntax, or commit-
-message style guidance, route through `./references/external-sources.md`. The
-orchestrator does not embed that static theory inline.
-
-## Execution Steps
+## Execution
 
 1. Normalize inputs and confirm commit authority.
 2. Dispatch `scoped-state-summarizer` with scope, context, and style inputs.
@@ -110,19 +98,16 @@ orchestrator does not embed that static theory inline.
    when the group plan or executor reports that Git command semantics matter.
 6. Refresh state after each commit; replan if the remaining scoped changes
    differ from the approved plan.
-7. Before the final response, load `./references/report-contract-orchestrator.md`
-   and use the orchestrator report contract.
+7. Load `./references/report-contract-orchestrator.md` for the final response.
 
 ## Failure Handling
 
-Use structured subagent statuses to choose the next action:
-
-- `NEEDS_CONTEXT` or `NEEDS_DECISION`: ask one targeted user question.
-- `NO_SCOPED_CHANGES`: report that nothing in `CHANGE_PATHS` is commit-worthy.
-- `VERIFY_FAILED`: retry only the failing recovery inside scope, up to three
-  attempts, then report the blocker.
-- `BLOCKED`, `COMMIT_ERROR`, or `ERROR`: stop with the failure contract unless a
-  safe, in-scope recovery is explicit.
+| Status | Next action |
+| ------ | ----------- |
+| `NEEDS_CONTEXT`, `NEEDS_DECISION` | Ask one targeted user question |
+| `NO_SCOPED_CHANGES` | Report that `CHANGE_PATHS` has nothing commit-worthy |
+| `VERIFY_FAILED` | Retry only the failing in-scope recovery, up to three attempts |
+| `BLOCKED`, `COMMIT_ERROR`, `ERROR` | Stop with the failure contract unless a safe in-scope recovery is explicit |
 
 ## Example
 
@@ -130,16 +115,13 @@ Use structured subagent statuses to choose the next action:
 Input: `CHANGE_PATHS=src/checkout/, tests/checkout/`, `CONTEXT_QUERY=JNS-6880`,
 `COMMIT_STYLE=Conventional Commits`.
 
-1. Dispatch `scoped-state-summarizer`. It returns `SCOPED_STATE: PASS` with a
-   single retry-related diff and matching ticket context.
-2. Dispatch `commit-boundary-planner`. It returns one group:
+1. `scoped-state-summarizer` returns `SCOPED_STATE: PASS` with one retry-related
+   diff and matching context.
+2. `commit-boundary-planner` returns one group:
    `fix(checkout): retry failed payment confirmation` with verification
    `npm test -- checkout`.
-3. Dispatch `scoped-commit-executor`. It stages the planned files, reviews the
-   staged diff, runs the test, and returns `COMMIT_EXECUTE: PASS` with SHA
-   `abc1234`.
-4. Refresh state; no scoped changes remain.
-5. Load `./references/report-contract-orchestrator.md` and report SHA,
-   verification command, no remaining scoped changes, and that `README.md` was
-   left untouched.
+3. `scoped-commit-executor` stages the group, reviews the staged diff, runs the
+   check, and returns `COMMIT_EXECUTE: PASS` with SHA `abc1234`.
+4. The orchestrator refreshes state, loads the final report contract, and reports
+   the SHA, verification, remaining scoped changes, and untouched unrelated work.
 </example>

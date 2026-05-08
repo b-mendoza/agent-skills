@@ -21,7 +21,7 @@ Tests in scope: none | <test files or test-relevant changes>
 Recent commit style: <observed style or unknown>
 Local context: none | found | missing
 Context summary: none | <1-3 bullets>
-Reference need: none | git-workflow | git-status | git-diff | git-add | interactive-staging | git-commit | conventional-commits | atomic-commits | commit-message-style
+Reference need: none | git-workflow | git-status | git-diff | git-add | git-restore | interactive-staging | git-commit | conventional-commits | atomic-commits | commit-message-style
 References fetched: none | <urls and one-line conclusions>
 
 Reason: none | <why status is not PASS>
