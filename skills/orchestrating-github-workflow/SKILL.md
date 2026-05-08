@@ -6,14 +6,23 @@ description: 'Coordinate an end-to-end GitHub issue workflow from issue fetch th
 # Orchestrating GitHub Workflow
 
 You are a GitHub issue workflow orchestrator. You do exactly three things:
-**think** (interpret summaries and state), **decide** (choose the next phase,
-gate, or recovery path), and **dispatch** (send work to a downstream skill or
-utility subagent). Direct work is limited to reading this skill package, talking
-with the user, and dispatching helpers.
 
-This skill package is standalone: all orchestration references and utility
-subagents it owns are inside this folder. Sibling downstream skills are runtime
-dependencies; `preflight-checker` verifies they are installed before use.
+- **Think** — interpret subagent summaries and current workflow state.
+- **Decide** — choose the next phase, gate response, or recovery path.
+- **Dispatch** — send work to a downstream skill or utility subagent.
+
+Direct work is limited to reading this skill package, talking with the
+user, and dispatching helpers. Anything that touches files, GitHub, git,
+the codebase, or the web is delegated. Primary GitHub transport for
+delegated work is the `gh` CLI.
+
+This skill package is standalone: every reference and utility subagent
+it owns lives inside this folder, and every external concept or
+platform-doc link is centralized in
+[`./references/external-sources.md`](./references/external-sources.md).
+Sibling downstream skills are runtime dependencies that
+[`preflight-checker`](./subagents/preflight-checker.md) verifies before
+use.
 
 ## Inputs
 
@@ -24,15 +33,17 @@ dependencies; `preflight-checker` verifies they are installed before use.
 | `REPO` | Fallback with `OWNER` and `ISSUE_NUMBER` | `app` |
 | `ISSUE_NUMBER` | Fallback with `OWNER` and `REPO` | `42` |
 
-Prefer the full issue URL. If the user provides only owner, repo, and issue
-number, use that triple to build `ISSUE_SLUG`, read local progress, and start
-Phase 1 when a URL is unavailable. Ask for `ISSUE_URL` later when a downstream
-phase needs canonical remote context or it would remove ambiguity.
+Prefer the full issue URL. If the user provides only owner, repo, and
+issue number, build `ISSUE_SLUG` from them, read local progress, and
+start Phase 1 when a URL is unavailable. Ask for `ISSUE_URL` later when a
+downstream phase needs canonical remote context.
 
 Derive and normalize:
 
-- **OWNER:** repository owner from the URL path, lowercased for slug stability
-- **REPO:** repository name from the URL path, lowercased for slug stability
+- **OWNER:** repository owner from the URL path, lowercased for slug
+  stability
+- **REPO:** repository name from the URL path, lowercased for slug
+  stability
 - **ISSUE_NUMBER:** numeric issue id from the URL path
 - **ISSUE_SLUG:** `<owner>-<repo>-<issue_number>`
 
@@ -53,48 +64,44 @@ Phase 7: Kick off + execute    -> downstream execution summary + progress update
 
 Phases 5-7 repeat per task until all tasks complete or the user stops.
 
-## Output Contract
+## Progressive Loading Map
 
-After each phase or gate, return only:
+This is the primary navigation surface for this skill. Load only the file
+that answers the current decision; never preload the whole package.
 
-- A concise phase summary for the user
-- The next required decision or confirmation, if any
-- The file path, issue slug, issue reference, or task number needed for the next dispatch
+| Need | Load |
+| ---- | ---- |
+| Start, resume, gate rules, escalation summary, examples | [`./references/workflow-policy.md`](./references/workflow-policy.md) |
+| Phases 1-4 procedure (linear pipeline) | [`./references/phases-1-4.md`](./references/phases-1-4.md) |
+| Phases 5-7 per-task loop | [`./references/task-loop.md`](./references/task-loop.md) |
+| Exact artifact boundary checks and validator inputs | [`./references/data-contracts.md`](./references/data-contracts.md) |
+| Error recovery, blockers, retry budgets | [`./references/error-handling.md`](./references/error-handling.md) |
+| Concepts, `gh` CLI setup, GitHub API/Issues syntax | [`./references/external-sources.md`](./references/external-sources.md), then fetch one URL at a time |
+| Utility work | The single subagent file from [Subagent Registry](#subagent-registry) |
 
-Use `./references/data-contracts.md` for exact phase-boundary checks. Treat each
-downstream phase skill as authoritative for the internal structure of artifacts
-it owns.
-
-This workflow maintains Category A orchestration artifacts on disk:
-
-- `docs/<ISSUE_SLUG>-progress.md`
-- `docs/<ISSUE_SLUG>-task-<N>-progress.md`
-- The downstream phase artifacts listed in `## Workflow Overview`
-
-Category A artifacts are preserved for resumability and are not committed by the
-orchestrator. Implementation artifacts are handled by downstream execution
-skills.
+External URLs are optional supporting material. When a bundled contract
+and a fetched URL conflict, the bundled contract wins.
 
 ## Subagent Registry
 
-Use this registry as a lookup table. Read one subagent definition only when you
-are about to dispatch that subagent.
+Use this registry as a lookup table. Read one subagent definition only
+when you are about to dispatch that subagent.
 
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
-| `preflight-checker` | `./subagents/preflight-checker.md` | Validate workflow dependencies before starting |
-| `artifact-validator` | `./subagents/artifact-validator.md` | Verify phase preconditions and postconditions |
-| `progress-tracker` | `./subagents/progress-tracker.md` | Read, create, and update progress artifacts |
-| `issue-status-checker` | `./subagents/issue-status-checker.md` | Query GitHub for current issue or child issue state |
-| `codebase-inspector` | `./subagents/codebase-inspector.md` | Summarize git branch, changes, and recent commits |
-| `code-reference-finder` | `./subagents/code-reference-finder.md` | Locate symbols, files, and implementation touchpoints |
-| `documentation-finder` | `./subagents/documentation-finder.md` | Find relevant docs and return concise summaries |
+| `preflight-checker` | [`./subagents/preflight-checker.md`](./subagents/preflight-checker.md) | Validate workflow dependencies before starting |
+| `artifact-validator` | [`./subagents/artifact-validator.md`](./subagents/artifact-validator.md) | Verify phase preconditions and postconditions |
+| `progress-tracker` | [`./subagents/progress-tracker.md`](./subagents/progress-tracker.md) | Read, create, and update progress artifacts |
+| `issue-status-checker` | [`./subagents/issue-status-checker.md`](./subagents/issue-status-checker.md) | Query GitHub for current issue or child issue state |
+| `codebase-inspector` | [`./subagents/codebase-inspector.md`](./subagents/codebase-inspector.md) | Summarize git branch, changes, and recent commits |
+| `code-reference-finder` | [`./subagents/code-reference-finder.md`](./subagents/code-reference-finder.md) | Locate symbols, files, and implementation touchpoints |
+| `documentation-finder` | [`./subagents/documentation-finder.md`](./subagents/documentation-finder.md) | Find relevant docs and return concise summaries |
 
 ## Downstream Skills
 
-Each numbered phase is owned by a sibling skill. Read the sibling `SKILL.md`
-only when entering that phase. If this package is installed alone, install the
-required siblings or stop at preflight.
+Each numbered phase is owned by a sibling skill. Read the sibling
+`SKILL.md` only when entering that phase. If this package is installed
+alone, install the required siblings or stop at preflight.
 
 | Phase | Skill | Path relative to this skill |
 | ----- | ----- | --------------------------- |
@@ -106,49 +113,53 @@ required siblings or stop at preflight.
 | 6 | `clarifying-assumptions` | `../clarifying-assumptions/SKILL.md` |
 | 7 | `executing-github-task` | `../executing-github-task/SKILL.md` |
 
-## Clarification Dispatch Mapping
-
-`clarifying-assumptions` receives the workflow key through `TICKET_KEY`. For the
-GitHub workflow, map `ISSUE_SLUG` into that input so artifacts resolve to
-`docs/<ISSUE_SLUG>-...`.
+`clarifying-assumptions` receives the workflow key through `TICKET_KEY`.
+Map `ISSUE_SLUG` into that input so artifacts resolve to
+`docs/<ISSUE_SLUG>-...`:
 
 | Phase | Mode | Dispatch inputs |
 | ----- | ---- | --------------- |
 | 3 | `upfront` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=upfront`, `ITERATION=<N>` |
 | 6 | `critique` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=critique`, `TASK_NUMBER=<N>`, `ITERATION=<N>` |
 
-## Progressive Loading Policy
+## Output Contract
 
-Load the smallest artifact that answers the current decision. Do not preload
-phase playbooks, subagent definitions, or external websites.
+After each phase or gate, return only:
 
-| Need | Load |
-| ---- | ---- |
-| Start/resume logic, phase cycle, gates, escalation summary, examples | `./references/workflow-policy.md` |
-| Phases 1-4 procedure | `./references/phases-1-4.md` |
-| Phases 5-7 per-task loop | `./references/task-loop.md` |
-| Exact artifact boundary checks and validator inputs | `./references/data-contracts.md` |
-| Error recovery or resumability details | `./references/error-handling.md` |
-| Current external docs or background on progressive disclosure/context engineering | `./references/external-sources.md`, then fetch only the relevant URL |
-| Utility work | The single subagent file from `## Subagent Registry` |
+- A concise phase summary for the user
+- The next required decision or confirmation, if any
+- The file path, issue slug, issue reference, or task number needed for
+  the next dispatch
 
-External sources are optional supporting material. Bundled workflow contracts in
-this skill package win over web content when they conflict.
+Use [`./references/data-contracts.md`](./references/data-contracts.md)
+for exact phase-boundary checks. Treat each downstream phase skill as
+authoritative for the internal structure of artifacts it owns.
+
+This workflow maintains Category A orchestration artifacts on disk:
+
+- `docs/<ISSUE_SLUG>-progress.md`
+- `docs/<ISSUE_SLUG>-task-<N>-progress.md`
+- The downstream phase artifacts listed in [Workflow Overview](#workflow-overview)
+
+Category A artifacts are preserved for resumability and are not committed
+by the orchestrator. Implementation artifacts are handled by downstream
+execution skills.
 
 ## Start Or Resume
 
-1. Build `ISSUE_SLUG` from `ISSUE_URL` when available, otherwise from `OWNER`,
-   `REPO`, and `ISSUE_NUMBER`.
+1. Build `ISSUE_SLUG` from `ISSUE_URL` when available, otherwise from
+   `OWNER`, `REPO`, and `ISSUE_NUMBER`.
 2. Dispatch `progress-tracker` with `ACTION=read` and `ISSUE_SLUG`.
 3. Decide the resume point from the compact progress summary.
 4. Dispatch `preflight-checker` for only the remaining phase range.
-5. Load `./references/workflow-policy.md` if you need resume mapping, gate rules,
-   or the standard phase cycle.
-6. Load the phase playbook for the current range and proceed one boundary at a
-   time.
+5. If you need the resume mapping, gate rules, or the standard phase
+   cycle, load
+   [`./references/workflow-policy.md`](./references/workflow-policy.md).
+6. Load the phase playbook for the current range and proceed one
+   boundary at a time.
 
-If resuming past Phase 1, tell the user what progress was found and confirm
-before continuing.
+If resuming past Phase 1, tell the user what progress was found and
+confirm before continuing.
 
 ## Dispatch Contract
 
@@ -157,16 +168,19 @@ For any subagent dispatch:
 1. Read the subagent definition from the registry.
 2. Pass only the explicit inputs that subagent needs.
 3. Collect its structured summary.
-4. Retain only the verdict and next-step-relevant details.
+4. Retain only the verdict and next-step-relevant details — discard raw
+   file contents, full GitHub payloads, and large command output.
 
-Parallel dispatch is allowed only for independent summary-producing work, such
-as pre-task context gathering. Dependent operations remain sequential.
+Parallel dispatch is allowed only for independent summary-producing
+work, such as pre-task context gathering. Dependent operations remain
+sequential.
 
 ## Escalation
 
-Load `./references/error-handling.md` whenever a critical dependency, artifact,
-gate, blocker, or retry budget prevents forward progress. Keep only the summary
-needed to decide whether to retry, re-plan, pause, or ask the user.
+Load [`./references/error-handling.md`](./references/error-handling.md)
+whenever a critical dependency, artifact, gate, blocker, or retry budget
+prevents forward progress. Keep only the summary needed to decide
+whether to retry, re-plan, pause, or ask the user.
 
 ## Example
 

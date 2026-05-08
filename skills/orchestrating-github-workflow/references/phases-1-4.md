@@ -1,8 +1,10 @@
 # Phases 1-4 - Linear Pipeline
 
-> Read this file when entering Phase 1, 2, 3, or 4. For exact artifact checks,
-> load `./data-contracts.md` and dispatch `artifact-validator`; do not inspect
-> artifacts inline in the orchestrator.
+> Read this file when entering Phase 1, 2, 3, or 4. For exact artifact
+> checks, load `./data-contracts.md` and dispatch `artifact-validator`;
+> do not inspect artifacts inline in the orchestrator. For `gh` flag,
+> REST endpoint, or sub-issue capability questions that the downstream
+> skill cannot answer, fetch one URL from `./external-sources.md`.
 
 After Phase 4 completes and the user selects a task, read `./task-loop.md`.
 

@@ -1,45 +1,100 @@
 # External Sources
 
-> Read this file only when you need current platform docs, setup details, or
-> general background. Fetch one URL at a time and keep only the facts needed for
-> the current decision. Bundled workflow contracts in this skill package remain
-> authoritative for execution.
+> Read this file only when you need general background, setup details, or
+> current API/CLI syntax. Fetch one URL at a time, summarize the result,
+> and discard the raw page. The bundled workflow contracts in this skill
+> package remain authoritative for execution.
+
+This file is the only outbound knowledge hub for this skill. Every
+context-heavy concept, setup instruction, and platform-syntax reference
+lives behind a URL below so it can be retrieved just in time instead of
+being preloaded into the orchestrator's prompt.
 
 ## Loading Rules
 
-- Use bundled references first for workflow-specific behavior.
-- Fetch external URLs for current syntax, setup instructions, or conceptual
-  background that would otherwise bloat the prompt.
-- Do not fetch external sources during routine phase execution when the bundled
-  contract already answers the question.
-- If a web source conflicts with a bundled workflow contract, follow the bundled
-  contract and note the discrepancy only if it affects the user.
+- Use bundled references (`./workflow-policy.md`, `./phases-1-4.md`,
+ `./task-loop.md`, `./data-contracts.md`, `./error-handling.md`) for
+ anything workflow-specific.
+- Fetch an external URL only when (a) the bundled contract does not
+ answer the question, and (b) the answer would otherwise force a long
+ inline instruction.
+- Fetch one URL at a time. Summarize, then move on.
+- If a web source conflicts with a bundled contract, follow the bundled
+ contract and surface the discrepancy only when it affects the user's
+ decision.
+- Do not paraphrase whole pages back to the orchestrator; return only
+ the single fact or step the current decision needs.
 
-## Progressive Disclosure And Context
+## When To Fetch
+
+| Trigger | Pick a URL from |
+| ------- | --------------- |
+| User asks why this workflow loads files just-in-time, or you must explain context engineering choices | [Concepts](#concepts) |
+| `preflight-checker` reports `gh MISSING` or the user needs setup / auth help | [GitHub CLI setup](#github-cli-setup) |
+| You need the exact `gh` flag, JSON field, or REST/GraphQL endpoint for an issue read or write | [GitHub CLI / API syntax](#github-cli--api-syntax) |
+| A subagent needs to know whether sub-issues, dependencies, or projects v2 are exposed for this repo | [GitHub Issues capabilities](#github-issues-capabilities) |
+| You are authoring or revising a sibling skill or subagent and need design guidance | [Skill-authoring background](#skill-authoring-background-optional) |
+
+## Concepts
 
 | Need | Source |
 | ---- | ------ |
-| Progressive disclosure concept and disclosure levels | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
-| UX origin of progressive disclosure | https://www.nngroup.com/articles/progressive-disclosure/ |
-| Context engineering, just-in-time retrieval, and long-horizon agent patterns | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents |
+| Progressive disclosure for skill content layering | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Original UX framing of progressive disclosure | https://www.nngroup.com/articles/progressive-disclosure/ |
+| Context engineering, just-in-time retrieval, long-horizon agent loops | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents |
 | Subagent context isolation and when to delegate | https://docs.claude.com/en/docs/claude-code/sub-agents |
+| Skill format reference (frontmatter, structure, capabilities) | https://docs.claude.com/en/docs/claude-code/skills |
 
-## GitHub And GitHub CLI
+## GitHub CLI Setup
 
 | Need | Source |
 | ---- | ------ |
-| GitHub CLI overview, auth, Enterprise host behavior | https://cli.github.com/manual/ |
-| `gh auth status` and authentication checks | https://cli.github.com/manual/gh_auth_status |
-| `gh issue view` fields and read options | https://cli.github.com/manual/gh_issue_view |
+| Install `gh` on macOS, Linux, Windows | https://github.com/cli/cli#installation |
+| `gh auth login` and authentication flow | https://cli.github.com/manual/gh_auth_login |
+| `gh auth status` and token diagnostics | https://cli.github.com/manual/gh_auth_status |
+| Required scopes for issue and project operations | https://docs.github.com/en/get-started/learning-about-github/access-permissions-on-github |
+| Configuring `gh` for GitHub Enterprise hosts | https://cli.github.com/manual/gh_help_environment |
+
+## GitHub CLI / API Syntax
+
+| Need | Source |
+| ---- | ------ |
+| `gh` manual root (subcommand reference) | https://cli.github.com/manual/ |
+| `gh issue view` fields and read flags | https://cli.github.com/manual/gh_issue_view |
 | `gh issue create` flags and behavior | https://cli.github.com/manual/gh_issue_create |
-| `gh api` for GraphQL or REST fallback paths | https://cli.github.com/manual/gh_api |
-| GitHub Issues concepts and issue management | https://docs.github.com/en/issues |
-| GitHub sub-issues | https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues |
-| GitHub issue dependencies | https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies |
+| `gh issue edit` (labels, assignees, milestones, state) | https://cli.github.com/manual/gh_issue_edit |
+| `gh issue comment` (write comments without leaving the CLI) | https://cli.github.com/manual/gh_issue_comment |
+| `gh api` for REST and GraphQL fallback paths | https://cli.github.com/manual/gh_api |
+| GitHub REST: Issues | https://docs.github.com/en/rest/issues/issues |
+| GitHub REST: Issue comments | https://docs.github.com/en/rest/issues/comments |
+| GitHub GraphQL schema explorer | https://docs.github.com/en/graphql/overview/explorer |
+
+## GitHub Issues Capabilities
+
+| Need | Source |
+| ---- | ------ |
+| Issues product overview | https://docs.github.com/en/issues |
+| Sub-issues (native parent/child relationships) | https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues |
+| Issue dependencies (blocking and blocked-by) | https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies |
+| Task lists inside issue bodies | https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/about-task-lists |
+| Linking pull requests to issues | https://docs.github.com/en/issues/tracking-your-work-with-issues/linking-a-pull-request-to-an-issue |
+
+## Skill-Authoring Background (optional)
+
+Use this section only when the user asks how this skill itself was
+written, or when extending this orchestrator with a new sibling skill.
+None of these URLs need to be fetched during normal GitHub workflow
+execution.
+
+| Need | Source |
+| ---- | ------ |
+| Skill authoring overview and best-practice index | https://github.com/anthropics/skills |
+| Sub-agent design guidance | https://docs.claude.com/en/docs/claude-code/sub-agents |
 
 ## How To Use Returned Web Content
 
-When you fetch a source, summarize it into one of these forms:
+When you fetch a source, condense it to one of these forms before
+continuing:
 
 ```text
 EXTERNAL_SOURCE: OK
@@ -51,5 +106,14 @@ Relevant facts:
 Workflow impact: <none | changed next step | user action needed>
 ```
 
-If the source cannot be fetched, continue with bundled contracts when possible
-and report the missing external confirmation only when it blocks the user.
+If the source cannot be fetched, fall back to bundled contracts when
+possible and surface the missing external confirmation only when it
+blocks the user:
+
+```text
+EXTERNAL_SOURCE: UNAVAILABLE
+Source: <url>
+Used for: <decision or setup question>
+Fallback: <bundled contract or local heuristic used instead>
+Workflow impact: <none | needs user action>
+```

@@ -1,82 +1,76 @@
 # Data Contracts - Artifact Validation Quick Reference
 
-> Consult this file when you need to know exactly what to pass to
-> `artifact-validator` at a phase boundary, or what a PASS/FAIL verdict means
-> for your next decision.
->
-> Reminder: the orchestrator reads skill/reference/subagent files, talks to the
-> user, and dispatches helpers. Validation stays delegated; this file is the
-> compact contract reference, not a substitute for the phase playbooks.
->
-> Use the validator's structured verdict as the orchestration decision input.
-> Do not replace it with ad hoc raw-file checks at the orchestrator level.
+> Read this when you need to know exactly what to pass to
+> `artifact-validator` at a phase boundary, or what a verdict means for
+> the next decision. Validation stays delegated; this file is the compact
+> contract reference, not a substitute for the phase playbooks. For `gh`
+> flag, REST/GraphQL field, or capability questions, fetch one URL from
+> `./external-sources.md` instead of inlining them here.
+
+The validator's structured verdict is the orchestration decision input.
+Do not replace it with ad hoc raw-file checks at the orchestrator level.
 
 ---
 
 ## Validation by Phase Transition
 
-Each row shows what to dispatch to `artifact-validator` and what to expect.
+Each row shows what to dispatch to `artifact-validator` and what to
+expect.
 
-### Phases 1–4
+### Phases 1-4
 
-For Phase 1, the compact gate below mirrors the stable snapshot contract owned
-by `fetching-github-issue`. Treat that downstream skill as the authoritative
-definition of `docs/<ISSUE_SLUG>.md`.
+For Phase 1, the gate below mirrors the stable snapshot contract owned
+by `fetching-github-issue`. Treat that downstream skill as the
+authoritative definition of `docs/<ISSUE_SLUG>.md`.
 
-For Phase 4 and the Phase 5 precondition, use the stronger handoff contract
-owned by `creating-github-child-issues`, not a shorthand of "`## GitHub Task
-Issues` exists and has one row."
+For Phase 4 and the Phase 5 precondition, use the stronger handoff
+contract owned by `creating-github-child-issues`.
 
-**Phase 4 write-model reminder:** Downstream creation prefers native child
-issues when supported, then linked issues, then task-list references. Validation
-must match whichever model the skill recorded, while still requiring a
-workflow-level table plus exactly one per-task inline reference in every
-numbered task section for resumability.
+**Phase 4 write-model reminder:** Downstream creation prefers native
+child issues when supported, then linked issues, then task-list
+references. Validation must match whichever model the skill recorded,
+while still requiring a workflow-level table plus exactly one per-task
+inline reference in every numbered task section for resumability.
 
 **Phase 1 snapshot conventions (consumed by Phase 2+):**
 
-- **Timestamp normalization.** Timestamps that carry a time are normalized to
-  `YYYY-MM-DD HH:MM UTC`; date-only values are preserved as `YYYY-MM-DD`.
-  Downstream phases read the snapshot under that format.
-- **`_Unknown. <reason>_` vs. `_None_`.** A `_Unknown. <reason>_` marker means
-  the retriever could not verify presence or absence of the item (for example
-  because a linked item was inaccessible); a `_None_` marker means absence was
-  verified. They are not interchangeable. Downstream consumers must treat
-  `_Unknown_` as missing information rather than a confirmed empty state.
+- **Timestamp normalization.** Timestamps that carry a time are
+ normalized to `YYYY-MM-DD HH:MM UTC`; date-only values are preserved
+ as `YYYY-MM-DD`.
+- **`_Unknown. <reason>_` vs. `_None_`.** A `_Unknown_` marker means the
+ retriever could not verify presence or absence of the item; `_None_`
+ means absence was verified. They are not interchangeable.
 - **`FETCH: PARTIAL` with `Validation: PASS` is a success.** The parent
-  snapshot is valid, but some related items or comments could not be retrieved
-  and are recorded under `## Retrieval Warnings`. The Phase 1 postcondition
-  validator should still run and pass.
+ snapshot is valid, but some related items or comments could not be
+ retrieved and are recorded under `## Retrieval Warnings`.
 
-| Phase | Direction     | Files to check           | Expected checks                                                |
-| ----- | ------------- | ------------------------ | -------------------------------------------------------------- |
-| 1     | postcondition | `docs/<ISSUE_SLUG>.md`   | File exists and preserves the locked Phase 1 snapshot top-level heading order defined by `fetching-github-issue` (stable even when sections are empty): `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Child Issues`, `## Linked Issues`, `## Labels`, `## Assignees`, `## Milestone`, `## Projects`, `## Attachments` |
-| 2     | precondition  | `docs/<ISSUE_SLUG>.md`   | Same as Phase 1 postcondition                                  |
-| 2     | postcondition | `docs/<ISSUE_SLUG>-tasks.md` + planning intermediates | `docs/<ISSUE_SLUG>-stage-1-detailed.md` and `docs/<ISSUE_SLUG>-stage-2-prioritized.md` exist; `docs/<ISSUE_SLUG>-tasks.md` exists; final plan preserves this required top-level section order: `## Issue Summary`, `## Execution Order Summary`, `## Problem Framing`, `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`, `## Tasks`, `## Dependency Graph`, and `## Validation Report`; plan has ≥2 numbered task entries with the required task subsections from `planning-github-issue-tasks` |
-| 3     | precondition  | `docs/<ISSUE_SLUG>-tasks.md` + planning intermediates | Same as Phase 2 postcondition                                  |
-| 3     | postcondition | `docs/<ISSUE_SLUG>-upfront-critique.md` + `docs/<ISSUE_SLUG>-tasks.md` | `docs/<ISSUE_SLUG>-upfront-critique.md` exists; `docs/<ISSUE_SLUG>-tasks.md` contains `## Decisions Log` |
-| 4     | precondition  | `docs/<ISSUE_SLUG>-upfront-critique.md` + `docs/<ISSUE_SLUG>-tasks.md` | Same as Phase 3 postcondition                                  |
-| 4     | postcondition | `docs/<ISSUE_SLUG>-tasks.md` | Contains `## GitHub Task Issues`; immediately under that heading includes the machine handoff comment defined by `creating-github-child-issues`; contains the workflow-level table with one row per numbered plan task; every numbered task section contains exactly one inline `GitHub Task Issue:` line whose value matches that task's workflow-table row (`owner/repo#number`, `Not Created`, or `task-list`), using the exact line format owned by `creating-github-child-issues` |
-| 5     | precondition  | `docs/<ISSUE_SLUG>-tasks.md` | Same as Phase 4 postcondition                                  |
+| Phase | Direction | Files to check | Expected checks |
+| ----- | --------- | -------------- | --------------- |
+| 1 | postcondition | `docs/<ISSUE_SLUG>.md` | File exists and preserves the locked Phase 1 snapshot top-level heading order defined by `fetching-github-issue` (stable even when sections are empty): `## Metadata`, `## Description`, `## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`, `## Child Issues`, `## Linked Issues`, `## Labels`, `## Assignees`, `## Milestone`, `## Projects`, `## Attachments` |
+| 2 | precondition | `docs/<ISSUE_SLUG>.md` | Same as Phase 1 postcondition |
+| 2 | postcondition | `docs/<ISSUE_SLUG>-tasks.md` + planning intermediates | `docs/<ISSUE_SLUG>-stage-1-detailed.md` and `docs/<ISSUE_SLUG>-stage-2-prioritized.md` exist; `docs/<ISSUE_SLUG>-tasks.md` exists; final plan preserves this section order: `## Issue Summary`, `## Execution Order Summary`, `## Problem Framing`, `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`, `## Tasks`, `## Dependency Graph`, `## Validation Report`; ≥2 numbered task entries with the required task subsections |
+| 3 | precondition | `docs/<ISSUE_SLUG>-tasks.md` + planning intermediates | Same as Phase 2 postcondition |
+| 3 | postcondition | `docs/<ISSUE_SLUG>-upfront-critique.md` + `docs/<ISSUE_SLUG>-tasks.md` | `docs/<ISSUE_SLUG>-upfront-critique.md` exists; `docs/<ISSUE_SLUG>-tasks.md` contains `## Decisions Log` |
+| 4 | precondition | `docs/<ISSUE_SLUG>-upfront-critique.md` + `docs/<ISSUE_SLUG>-tasks.md` | Same as Phase 3 postcondition |
+| 4 | postcondition | `docs/<ISSUE_SLUG>-tasks.md` | Contains `## GitHub Task Issues`; immediately under that heading includes the machine handoff comment defined by `creating-github-child-issues`; contains the workflow-level table with one row per numbered plan task; every numbered task section contains exactly one inline `GitHub Task Issue:` line whose value matches that task's workflow-table row (`owner/repo#number`, `Not Created`, or `task-list`) |
+| 5 | precondition | `docs/<ISSUE_SLUG>-tasks.md` | Same as Phase 4 postcondition |
 
-### Phases 5–7 (per task)
+### Phases 5-7 (per task)
 
-For Phase 5 postcondition and Phase 6 precondition, this quick reference names
-the concrete four-file planning handoff. The detailed section requirements
-inside those files are outside this workflow contract; the orchestrator boundary
-here is the presence of the full four-file handoff.
+The orchestrator boundary here is the presence of the full four-file
+planning handoff. Detailed section requirements inside those files are
+owned by the downstream planning skill.
 
-| Phase | Direction     | Files to check                      | Expected checks                  |
-| ----- | ------------- | ----------------------------------- | -------------------------------- |
-| 5     | postcondition | `docs/<ISSUE_SLUG>-task-<N>-brief.md` + `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md` + `docs/<ISSUE_SLUG>-task-<N>-test-spec.md` + `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md` | All 4 concrete Phase 5 planning artifacts exist |
-| 6     | precondition  | Same four files as Phase 5 postcondition | Same as Phase 5 postcondition |
-| 6     | postcondition | `docs/<ISSUE_SLUG>-task-<N>-critique.md` + `docs/<ISSUE_SLUG>-task-<N>-decisions.md` | Both critique and decisions artifacts exist |
-| 7     | precondition  | Standard Phase 1-6 execution handoff | `docs/<ISSUE_SLUG>.md`, `docs/<ISSUE_SLUG>-tasks.md`, `docs/<ISSUE_SLUG>-task-<N>-brief.md`, `docs/<ISSUE_SLUG>-task-<N>-execution-plan.md`, `docs/<ISSUE_SLUG>-task-<N>-test-spec.md`, `docs/<ISSUE_SLUG>-task-<N>-refactoring-plan.md`, `docs/<ISSUE_SLUG>-task-<N>-critique.md`, and `docs/<ISSUE_SLUG>-task-<N>-decisions.md` all exist; this confirms the normal workflow reached execution after critique completion (**6 → 7 readiness**) |
+| Phase | Direction | Files to check | Expected checks |
+| ----- | --------- | -------------- | --------------- |
+| 5 | postcondition | `docs/<ISSUE_SLUG>-task-<N>-brief.md` + `-execution-plan.md` + `-test-spec.md` + `-refactoring-plan.md` | All 4 Phase 5 planning artifacts exist |
+| 6 | precondition | Same four files as Phase 5 postcondition | Same as Phase 5 postcondition |
+| 6 | postcondition | `docs/<ISSUE_SLUG>-task-<N>-critique.md` + `-decisions.md` | Both critique and decisions artifacts exist |
+| 7 | precondition | Standard Phase 1-6 execution handoff | `docs/<ISSUE_SLUG>.md`, `docs/<ISSUE_SLUG>-tasks.md`, all four Phase 5 + two Phase 6 task artifacts exist (6 → 7 readiness) |
 
-For Phase 7 specifically, this table defines the orchestrator's normal
-workflow-gate check. The boundary is the standard Phase 1-6 handoff listed
-above; execution-skill-internal optional inputs do not change this validator
-contract.
+For Phase 7, this table defines the orchestrator's normal workflow-gate
+check. Execution-skill-internal optional inputs do not change this
+validator contract.
 
 ---
 
@@ -112,14 +106,13 @@ Reason: <what prevented validation>
 
 For Phases 3 and 6, validation covers only the artifact boundary. The
 clarification skill's final summary still carries `RE_PLAN_NEEDED` and
-`BLOCKERS_PRESENT`, and the orchestrator must honor those flags separately at
-the gate step.
+`BLOCKERS_PRESENT`, and the orchestrator must honor those flags
+separately at the gate step.
 
-### Phase 1 fetch summary (12-line contract)
+### Phase 1 Fetch Summary (12-line contract)
 
-`fetching-github-issue` returns the locked 12-line structured summary below.
-Read the complete summary in order and branch on those structured fields rather
-than on abbreviated prose or a single status line:
+`fetching-github-issue` returns this locked 12-line summary. Branch on
+the structured fields, not on a single status line.
 
 ```
 FETCH: <PASS | PARTIAL | FAIL | ERROR>
@@ -136,58 +129,48 @@ Warnings: <None | semicolon-separated warnings>
 Reason: <None | fatal reason>
 ```
 
-How to interpret the structured summary:
+Interpret it as:
 
-- `PASS` + `PASS`: Success. Proceed to the Phase 1 postcondition validator on
-  the written file.
-- `PARTIAL` + `PASS`: Success with warnings. Proceed to the Phase 1
-  postcondition validator; do not treat as failure. This includes
-  capability-unavailable `## Projects` cases.
-- `FAIL` + `NOT_RUN`: Retrieval failed before the artifact was written. Do not
-  run the postcondition validator; route on `Failure category` per
-  `./error-handling.md`.
-- `Validation: FAIL`: Stop and surface contract failure, regardless of
-  `FETCH`.
-- `FETCH: ERROR`: Stop and surface unexpected failure, regardless of
-  `Validation`.
-- Any inconsistent pairing, such as `FETCH: PASS` with `Validation: NOT_RUN`:
-  treat it as an unexpected Phase 1 error and stop.
+| Pair | Meaning | Action |
+| ---- | ------- | ------ |
+| `PASS` + `PASS` | Success | Run Phase 1 postcondition validator |
+| `PARTIAL` + `PASS` | Success with warnings (includes capability-unavailable `## Projects` cases) | Proceed to postcondition validator |
+| `FAIL` + `NOT_RUN` | Retrieval failed before write | Skip postcondition; route on `Failure category` per `./error-handling.md` |
+| `Validation: FAIL` | Contract failure | Stop and surface, regardless of `FETCH` |
+| `FETCH: ERROR` | Unexpected failure | Stop and surface, regardless of `Validation` |
+| Any inconsistent pair (e.g. `PASS` + `NOT_RUN`) | Treat as unexpected Phase 1 error | Stop |
 
-Branch on `Failure category` when it is present. Use `Reason` only for
+Branch on `Failure category` when present. Use `Reason` only for
 user-facing detail.
 
-`progress-tracker` dispatches use the same `ISSUE_SLUG` key for workflow identity.
-When reading or updating per-task state, include `TASK_NUMBER` as the playbook
-specifies.
+### Progress Tracker Dispatch (summary)
 
-### Progress tracker dispatch (summary)
-
-Read `../subagents/progress-tracker.md` for full behavior. Typical orchestrator
-inputs:
+Read `../subagents/progress-tracker.md` for full behavior. Typical
+orchestrator inputs:
 
 ```
 ISSUE_SLUG: <slug>
 ACTION: read | initialize | update | initialize_task | update_task
 ```
 
-- **`update`:** `PHASE` (1–4), `STATUS`, `SUMMARY`; for `PHASE=4` and
-  `STATUS=complete`, include `TASKS` (metadata for the workflow task table, from
-  the Phase 4 downstream summary).
-- **`initialize_task`:** `TASK_NUMBER`, `TASK_TITLE`
-- **`update_task`:** `TASK_NUMBER`, `PHASE` (5–7), `STATUS`, `SUMMARY`
+- `update`: `PHASE` (1-4), `STATUS`, `SUMMARY`; for `PHASE=4` and
+  `STATUS=complete`, include `TASKS` (metadata for the workflow task
+  table, from the Phase 4 downstream summary).
+- `initialize_task`: `TASK_NUMBER`, `TASK_TITLE`.
+- `update_task`: `TASK_NUMBER`, `PHASE` (5-7), `STATUS`, `SUMMARY`.
 
 ---
 
 ## Handling Verdicts
 
-**On PASS:** Proceed to the next step in the execution cycle. No action
-needed — do not narrate the validation result unless the user asks.
+**On PASS:** proceed to the next step in the execution cycle. Do not
+narrate the validation result unless the user asks.
 
-**On FAIL:** Do not proceed. The response depends on the direction:
+**On FAIL:** do not proceed.
 
-| Direction     | On FAIL                                                                                                               |
-| ------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Precondition  | A required artifact is missing. Tell the user which phase produced it and offer to run that phase.                    |
+| Direction | On FAIL |
+| --------- | ------- |
+| Precondition | A required artifact is missing. Tell the user which phase produced it and offer to run that phase. |
 | Postcondition | The phase did not produce its expected artifact. Report the specific check that failed and offer to re-run the phase. |
 
 <example>
@@ -198,27 +181,19 @@ VALIDATION: FAIL
 Phase: 2 | Direction: postcondition
 File: docs/acme-app-42-tasks.md + planning intermediates
 Checks:
-  - docs/acme-app-42-stage-1-detailed.md exists: pass
-  - docs/acme-app-42-stage-2-prioritized.md exists: pass
   - docs/acme-app-42-tasks.md exists: pass
   - Contains ## Validation Report: fail - missing section
-  - Numbered task entries with required subsections: pass
 
 Orchestrator to user:
-"Phase 2 (Plan Tasks) did not produce a plan that satisfies the downstream
-contract for clarification. The final task plan is missing `## Validation
-Report`, so Phase 3 would be working from an incomplete artifact. Would you
-like me to re-run Phase 2?"
+"Phase 2 (Plan Tasks) is missing `## Validation Report`, so Phase 3 would
+be working from an incomplete artifact. Re-run Phase 2?"
 </example>
 
 ---
 
 ## Artifact Categories
 
-The orchestrator does not need to decide artifact categories dynamically.
-Keep this distinction in mind when coordinating the workflow:
-
-- **Category A** (orchestration artifacts, `docs/<ISSUE_SLUG>*.md`): updated on disk
-  only, preserved across sessions, never committed.
-- **Category B** (implementation output): source code, tests, config changes —
-  committed normally.
+- **Category A** (orchestration artifacts, `docs/<ISSUE_SLUG>*.md`):
+  updated on disk only, preserved across sessions, never committed.
+- **Category B** (implementation output): source code, tests, config
+  changes — committed normally by the downstream execution skill.

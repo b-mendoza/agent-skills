@@ -4,8 +4,9 @@
 > preflight checker. Preflight reports availability only; it does not install,
 > connect, or repair dependencies.
 >
-> For current GitHub CLI setup details, load `../references/external-sources.md`
-> and fetch the relevant GitHub CLI source only if the user needs setup help.
+> For current GitHub CLI setup details, load
+> `../references/external-sources.md` and fetch one URL from the
+> `GitHub CLI setup` section only when the user needs setup help.
 
 ## Classification
 
