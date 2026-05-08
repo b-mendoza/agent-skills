@@ -39,7 +39,7 @@ be safely inferred, ask one concise question.
 | Final validation, retry loop, and portability checks | `./references/quality-checklist.md` |
 
 All bundled references are one level from `SKILL.md`. Keep dependencies inside
-this skill folder; downloaded skills include only their own package files.
+this skill package; downloaded skills include only their own package files.
 
 ## Subagent Registry
 
@@ -118,7 +118,8 @@ minimum gates:
 
 - `SKILL.md` stays under 500 lines and contains only core routing content.
 - Frontmatter `name` matches the containing skill folder or subagent file.
-- All referenced bundled paths exist and are relative to the skill folder.
+- All referenced bundled paths exist, stay inside the package, and are relative
+  to the file that contains them.
 - The package is standalone: no links to this repository's internal docs.
 - Detailed static material lives in `references/` or external URLs, not in the
   always-loaded skill body.

@@ -8,9 +8,9 @@ output contracts, or portability rules.
 | Level | File type | Load timing | Contents |
 | ----- | --------- | ----------- | -------- |
 | 0 | `SKILL.md` | When the skill triggers | Identity, inputs, routing, subagent registry, short workflow, validation gates |
-| 1 | `references/*.md` | Just in time | Detailed templates, examples, checklists, mode guides, external source links |
-| 2 | `subagents/*.md` | Only on dispatch | Specialist instructions, contracts, scope, escalation |
-| Script | `scripts/*` | Execute, not read, when deterministic work is needed | Validation, conversion, parsing, or other fragile logic |
+| 1 | Reference files | Just in time | Detailed templates, examples, checklists, mode guides, external source links |
+| 2 | Subagent files | Only on dispatch | Specialist instructions, contracts, scope, escalation |
+| Script | Script files | Execute, not read, when deterministic work is needed | Validation, conversion, parsing, or other fragile logic |
 
 Keep `SKILL.md` under 500 lines. Put static explanations, large examples, and
 templates in one-hop reference files. Avoid reference chains where a reference
@@ -119,3 +119,6 @@ A downloaded skill cannot rely on source-repository docs, task files, local
 paths, or project-specific configuration. Include required behavior in the
 skill package, accept instance-specific values as inputs, and link external
 websites only as optional just-in-time source material.
+
+Bundled file paths must stay inside the skill package and be written relative
+to the file that contains the reference.
