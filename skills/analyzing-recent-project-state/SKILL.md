@@ -5,9 +5,9 @@ description: "Produce a recent project state snapshot from Git evidence. Use thi
 
 # Analyzing Recent Project State
 
-You are a recent-state analysis skill for software projects. Your job is to explain what the project looks like **right now** from recent Git evidence, not to perform a full architecture review.
+You are a recent-state analysis orchestrator for software projects. Your job is to help a developer continue safely by explaining what the project looks like **right now** from recent Git evidence, without expanding into a full architecture review.
 
-Treat Git history, diffs, project docs, tests, and local conventions as the source of truth. Use external references only as just-in-time review heuristics when they help judge a specific observed change.
+The orchestrator does three things: **think** about scope and user intent, **decide** which phase runs next, and **dispatch** raw Git inspection and report-quality checks to focused subagents. Keep raw diffs, command output, and broad code reads inside the subagent that needs them.
 
 ## Inputs
 
@@ -15,24 +15,34 @@ Treat Git history, diffs, project docs, tests, and local conventions as the sour
 | ----- | -------- | ------- |
 | `PROJECT_PATH` | Yes | `.` or `/path/to/repo` |
 | `BASE_BRANCH` | No | `main`, `develop`, or `origin/main` |
-| `REVIEW_FOCUS` | No | `security`, `tests`, `dependencies`, `full` |
+| `REVIEW_FOCUS` | No | `full`, `security`, `tests`, `dependencies`, `config` |
 | `OUTPUT_DEPTH` | No | `brief`, `standard`, or `deep` |
 
-If `PROJECT_PATH` is missing, use the current workspace when that is clearly the target. Infer `BASE_BRANCH` from refs and repository conventions; ask only if the base branch materially changes the analysis and cannot be inferred.
+If `PROJECT_PATH` is missing, use the current workspace when that is clearly the target. Use `REVIEW_FOCUS=full` and `OUTPUT_DEPTH=standard` when the user does not specify them. Infer `BASE_BRANCH` from refs and repository conventions; ask only if base choice materially affects the analysis and cannot be inferred.
 
 ## Workflow Overview
 
-| Phase | Purpose | Output |
-| ----- | ------- | ------ |
-| Intake | Normalize path, base branch, focus, and depth | Analysis scope |
-| Git snapshot | Inspect branch, working tree, recent commits, and diffs | Evidence map |
-| Theme analysis | Group recent changes by purpose and impact | Change themes |
-| Targeted reference lookup | Fetch outside guidance only when a finding needs it | Brief cited heuristic |
-| Report | Explain current state, risks, validation, and next actions | Project state snapshot |
+| Phase | Owner | Purpose | Output |
+| ----- | ----- | ------- | ------ |
+| Intake | Inline | Normalize path, base branch, focus, and depth | Analysis scope |
+| Git evidence | `git-evidence-collector` | Inspect recent Git state and summarize raw evidence | `GIT_EVIDENCE` handoff |
+| Snapshot writing | `state-snapshot-writer` | Turn evidence into the user-facing project state report | Draft snapshot report |
+| Verification | `snapshot-verifier` | Check grounding, format, and actionability | `SNAPSHOT_VERIFY` verdict |
+| Final response | Inline | Return the verified report or an escalation | User-visible answer |
+
+## Subagent Registry
+
+| Subagent | Path | Purpose |
+| -------- | ---- | ------- |
+| `git-evidence-collector` | `./subagents/git-evidence-collector.md` | Runs the Git inspection pass and returns a compact evidence map without raw diffs or command dumps |
+| `state-snapshot-writer` | `./subagents/state-snapshot-writer.md` | Groups recent changes by theme, inspects only necessary context, fetches external heuristics just in time, and drafts the snapshot report |
+| `snapshot-verifier` | `./subagents/snapshot-verifier.md` | Validates that the report is grounded in evidence, separates facts from inferences, and contains practical next actions |
+
+Read a subagent file only when dispatching that specific subagent. Keep the orchestrator's retained state to the inputs, the latest status block from each phase, and the final verified report.
 
 ## How This Skill Works
 
-This skill helps a developer continue safely after recent work. It answers five questions:
+This skill answers five questions:
 
 - What changed recently?
 - Why did it likely change?
@@ -40,79 +50,45 @@ This skill helps a developer continue safely after recent work. It answers five 
 - What risks, gotchas, code smells, or questionable decisions deserve human review?
 - What should be reviewed, tested, fixed, or improved next?
 
-Keep the scope tied to recent Git evidence. Inspect broader code only when recent changes require context, then state what you checked and what you skipped.
-
-## Reference Routing
-
-Fetch external references only when they help evaluate a concrete observed change. Cite them briefly in the relevant section. If web access is unavailable, continue from local evidence and name the reference that would have helped.
-
-| Reference | Use When |
-| --------- | -------- |
-| [git-status](https://git-scm.com/docs/git-status), [git-diff](https://git-scm.com/docs/git-diff), [git-log](https://git-scm.com/docs/git-log), [git-show](https://git-scm.com/docs/git-show), [gitrevisions](https://git-scm.com/docs/gitrevisions) | Git ranges, staged vs. unstaged state, merge bases, renames, mode changes, or command semantics need clarification |
-| [Google Engineering Practices: What to look for in a code review](https://google.github.io/eng-practices/review/reviewer/looking-for.html) | Design, functionality, complexity, tests, naming, comments, docs, consistency, or context depth need judgment |
-| [Martin Fowler: Code Smell](https://martinfowler.com/bliki/CodeSmell.html) and [Refactoring.Guru: Code Smells](https://refactoring.guru/refactoring/smells) | Maintainability concerns such as duplication, speculative generality, shotgun surgery, oversized units, weak boundaries, or excessive coupling appear |
-| [Martin Fowler: Test Pyramid](https://martinfowler.com/bliki/TestPyramid.html) and [Google Testing Blog: Just Say No to More End-to-End Tests](https://testing.googleblog.com/2015/04/just-say-no-to-more-end-to-end-tests.html) | Tests look missing, brittle, too high-level, implementation-focused, or misaligned with changed behavior |
-| [OWASP Code Review Guide](https://owasp.org/www-project-code-review-guide/) and [OWASP Top 10](https://owasp.org/www-project-top-ten/) | Changes touch authentication, authorization, validation, secrets, serialization, dependency trust, user data, or security boundaries |
-| [The Twelve-Factor App: Config](https://12factor.net/config) | Environment variables, checked-in config, secrets, deployment-specific values, or local vs. production configuration changed |
-| [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) | Dependency bumps, public API compatibility, commit intent, release risk, or breaking-change signals need interpretation |
+Use recent Git evidence as the primary source of truth. Use project documentation, tests, and local conventions before generic external advice. External references are routed through `./references/external-review-heuristics.md` and fetched only when a concrete observed change needs that heuristic.
 
 ## Execution Steps
 
-### 1. Establish Scope
+### 1. Normalize Inputs Inline
 
-Identify the target repository or directory, current branch, requested focus, and output depth. Prefer project-specific documentation and conventions over generic external guidance.
+Resolve `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, and `OUTPUT_DEPTH`. If the target path is ambiguous, ask one targeted question. Otherwise proceed.
 
-### 2. Run the Required Git Pass
+### 2. Dispatch `git-evidence-collector`
 
-Run or adapt these commands from `PROJECT_PATH`:
+Pass the normalized inputs. Proceed when it returns `GIT_EVIDENCE: PASS`.
 
-```bash
-git status --short --branch
-git log --oneline --decorate --graph -n 20
-git diff --stat
-git diff
-git diff --cached --stat
-git diff --cached
-git show --stat --summary HEAD
+If it returns `NOT_GIT`, `PATH_ERROR`, or `ERROR`, stop with:
+
+```text
+RECENT_STATE: <status>
+Reason: <one line>
+Next step: <one clear action>
 ```
 
-When relevant, also inspect recent changed files and base-branch deltas:
+### 3. Dispatch `state-snapshot-writer`
 
-```bash
-git log --name-status -n 10
-git diff <base-branch>...HEAD
-git diff origin/<base-branch>...HEAD
-```
+Pass the `GIT_EVIDENCE` handoff plus the normalized inputs. The writer owns any necessary local code inspection and just-in-time external reference fetching.
 
-### 3. Build the Evidence Map
+If the writer returns `SNAPSHOT_WRITE: NEEDS_CONTEXT` or `SNAPSHOT_WRITE: ERROR`, stop with the same `RECENT_STATE` escalation envelope. Otherwise collect the draft report. Retain the report, not the raw evidence trail.
 
-Capture branch state, staged changes, unstaged changes, untracked files, recent commits reviewed, base comparison, and signs of generated files, lockfile changes, conflicts, rebases, migrations, schema changes, API changes, CI/CD changes, or unrelated diffs.
+### 4. Dispatch `snapshot-verifier`
 
-### 4. Analyze by Theme
+Pass the draft report, the `GIT_EVIDENCE` handoff, and the normalized inputs. If it returns `SNAPSHOT_VERIFY: PASS`, continue to final response.
 
-Group changes by theme rather than by file. For each theme, explain files involved, evidence, confirmed changes, likely intent, affected behavior or structure, developer context, risk level, and the next review step.
+If it returns `SNAPSHOT_VERIFY: FAIL`, redispatch `state-snapshot-writer` with only the verifier's targeted fixes and the original evidence handoff. Re-run verification after the rewrite. Use at most two targeted fix cycles; if the report still fails, return the best report with a short verification-limit note.
 
-Use careful language when inferring intent. Separate facts from inferences and name the evidence that would confirm or disprove uncertain claims.
+### 5. Return the Report
 
-### 5. Review Risk and Validation
-
-Flag risks as `High`, `Medium`, or `Low` with confidence, evidence, why it matters, and a recommended action. Treat security issues, data loss, broken builds, production failures, broken API contracts, and serious maintainability regressions as high-risk when evidence supports that severity.
-
-Review tests, dependencies, configuration, tooling, and security only when changed or clearly implicated. Recommend validation commands only when project scripts or conventions make them apparent.
-
-### 6. Validate the Report
-
-Before returning, check that the report:
-
-- Explains reasoning instead of listing files mechanically
-- Distinguishes confirmed behavior changes from likely or possible changes
-- Includes concrete next actions for the highest-risk items
-- Notes skipped context when the repository is too large for complete inspection
-- Keeps external references tied to specific findings rather than preloaded background
+Return the verified report as Markdown. Keep process details out of the user-visible answer unless the user asks for them or a phase could not complete.
 
 ## Output Contract
 
-Return a Markdown report with these sections. Omit irrelevant sections only when truly irrelevant; if there are no findings, say so.
+The final report contains these sections. Omit a section only when it is truly irrelevant; if there are no findings, state that explicitly.
 
 1. **Executive Summary:** branch/tree state, main themes, overall risk, most important context.
 2. **Git State:** branch, staged/unstaged/untracked changes, commits reviewed, base comparison.
@@ -125,6 +101,8 @@ Return a Markdown report with these sections. Omit irrelevant sections only when
 9. **Recommended Next Actions:** must do, should do soon, nice to have.
 10. **Final Developer Briefing:** plain-English handoff for continuing safely.
 
+For `OUTPUT_DEPTH=brief`, keep the same section order with shorter bullets. For `OUTPUT_DEPTH=deep`, inspect more surrounding context in changed high-risk areas while staying scoped to recent work.
+
 ## Example
 
 <example>
@@ -133,13 +111,16 @@ Input:
 - `PROJECT_PATH`: `.`
 - `BASE_BRANCH`: `origin/main`
 - `REVIEW_FOCUS`: `full`
+- `OUTPUT_DEPTH`: `standard`
 
 Flow:
 
-1. Inspect Git status, recent commits, unstaged and staged diffs, and the base-branch delta.
-2. Group changes into themes such as authentication refactor, test updates, dependency bump, and config changes.
-3. Fetch OWASP guidance only if the authentication diff raises a concrete security question.
-4. Return a report that identifies likely intent, behavior impact, risks, missing validation, and next actions.
+1. Orchestrator dispatches `git-evidence-collector`.
+2. Collector returns `GIT_EVIDENCE: PASS` with branch state, changed-file groups, diff stats, recent commits, test/config/dependency signals, and context limits.
+3. Orchestrator dispatches `state-snapshot-writer` with the compact evidence handoff.
+4. Writer groups changes into themes, fetches OWASP guidance only if an authentication diff raises a concrete security question, and returns the report.
+5. Orchestrator dispatches `snapshot-verifier`.
+6. Verifier returns `SNAPSHOT_VERIFY: PASS`, so the orchestrator returns the report.
 
 Output:
 
