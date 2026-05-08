@@ -1,412 +1,134 @@
 # Task Loop - Phases 5-7
 
-> Read this file when entering the per-task execution loop.
->
-> Reminder: the orchestrator reads skill/reference/subagent files, talks to the
-> user, and dispatches helpers. Codebase inspection, searches, Jira queries,
-> and file updates stay delegated.
+> Read this file when entering the per-task execution loop. For exact artifact
+> checks, load `./data-contracts.md` and dispatch `artifact-validator`; do not
+> inspect artifacts inline in the orchestrator.
 
 Each task passes through Phase 5 (plan), Phase 6 (critique), and Phase 7
-(execution kickoff + execute) before the next task begins.
-
-If `progress-tracker` already reported a mid-task resume point such as
-`Resume from: Phase 6, Task 2` or `Resume from: Phase 7, Task 2`, skip Task
-Selection and re-enter the loop directly at that phase for that task.
-
----
+(kickoff + execute). If `progress-tracker` reports a mid-task resume point, skip
+task selection and re-enter at the reported phase for that task.
 
 ## Task Selection
 
 Before entering the loop for a task:
 
-1. **Get remaining tasks.** Dispatch `progress-tracker`:
+1. Dispatch `progress-tracker` with `ACTION=read` and `TICKET_KEY`.
+2. Present remaining tasks with dependency, priority, and status metadata from
+   the compact progress summary.
+3. Let the user choose the task. Never auto-select.
+4. Optionally gather independent pre-task context in parallel:
 
-   ```
-   TICKET_KEY: <KEY>
-   ACTION: read
-   ```
+| Need | Dispatch to |
+| ---- | ----------- |
+| Current Jira status | `ticket-status-checker` |
+| Working tree / branch state | `codebase-inspector` |
+| Likely implementation touchpoints | `code-reference-finder` |
+| Relevant docs or config | `documentation-finder` |
 
-   The summary shows which tasks are complete and which remain, including the
-   dependency, priority, and status metadata needed for task selection.
+Do not initialize task progress during selection. Initialize it only after the
+Phase 5 precondition passes and only if the task does not already have a
+progress file.
 
-2. **Present remaining tasks to the user.** Show the task list with
-   dependencies, priority, and status from the `progress-tracker` summary.
-   Let the user choose — never auto-select.
+## Phase 5 - Plan Task Execution
 
-3. **Gather pre-task context.** Dispatch relevant utility subagents to gather
-   context the downstream skill's kickoff and execution steps may need. These
-   are independent and can run in parallel:
+**Skill:** `planning-jira-task` at `../../planning-jira-task/SKILL.md`
 
-   | Need                        | Dispatch to             |
-   | --------------------------- | ----------------------- |
-   | Current ticket status       | `ticket-status-checker` |
-   | Working tree / branch state | `codebase-inspector`    |
-   | Relevant code to locate     | `code-reference-finder` |
-   | Documentation / config      | `documentation-finder`  |
+1. Announce Phase 5 for Task `<N>`.
+2. Dispatch `artifact-validator` for `PHASE=5`, `DIRECTION=precondition`,
+   `TASK_NUMBER=<N>`.
+3. If the precondition passes and the task progress file does not exist,
+   dispatch `progress-tracker` with `ACTION=initialize_task`.
+4. Invoke the downstream skill with `TICKET_KEY` and `TASK_NUMBER`.
+5. Retain only the downstream completion summary: four artifact paths, approach
+   summary, test coverage shape, and refactoring verdict.
+6. Dispatch `artifact-validator` for `PHASE=5`, `DIRECTION=postcondition`,
+   `TASK_NUMBER=<N>`.
+7. Dispatch `progress-tracker` with `ACTION=update_task`, `PHASE=5`,
+   `STATUS=complete`, and a one-line planning summary.
 
-   Not all dispatches are needed every time — use judgment based on the task.
+**Gate:** Automatic. Proceed to Phase 6 when validation passes.
 
-4. **Prepare task tracking.** Do not initialize task progress yet.
+## Phase 6 - Clarify + Critique Execution Plan
 
-   Initialize it only after the Phase 5 precondition passes and only when the
-   selected task does not already have a progress file.
-
----
-
-## Phase 5 — Plan Task Execution
-
-**Skill:** `planning-jira-task` (at `../../planning-jira-task/SKILL.md`)
-
-**Announce:**
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Phase 5/7 — Plan Task Execution (Task <N>)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-**Validate preconditions:** Dispatch `artifact-validator`:
-
-```
-TICKET_KEY: <KEY>
-PHASE: 5
-DIRECTION: precondition
-TASK_NUMBER: <N>
-```
-
-**Start task tracking:** If the Phase 5 precondition passes and this task does
-not already have a progress file, dispatch `progress-tracker`:
-
-```text
-TICKET_KEY: <KEY>
-ACTION: initialize_task
-TASK_NUMBER: <N>
-TASK_TITLE: "<title>"
-```
-
-If resuming a task that already has a progress file, do not re-initialize it.
-Keep the existing task progress artifact and continue from the reported phase.
-
-**Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY` and
-`TASK_NUMBER`. Retain the pre-task utility summaries for coordination and only
-pass them forward when the downstream skill explicitly asks for them. Follow
-every step defined in the skill.
-
-The skill runs a 4-subagent pipeline:
-
-1. `execution-prepper` — validates task and assembles the execution brief
-2. `execution-planner` — analyzes task and codebase, produces execution plan
-3. `test-strategist` — defines behavior-driven tests
-4. `refactoring-advisor` — evaluates pre-implementation refactoring needs
-
-**Validate output:** Dispatch `artifact-validator`:
-
-```
-TICKET_KEY: <KEY>
-PHASE: 5
-DIRECTION: postcondition
-TASK_NUMBER: <N>
-```
-
-Expected: the full Phase 5 planning handoff exists for the task:
-
-- `docs/<KEY>-task-<N>-brief.md`
-- `docs/<KEY>-task-<N>-execution-plan.md`
-- `docs/<KEY>-task-<N>-test-spec.md`
-- `docs/<KEY>-task-<N>-refactoring-plan.md`
-
-Treat `planning-jira-task` as the owner of the detailed section contract inside
-those files.
-
-**Update progress:** Dispatch `progress-tracker`:
-
-```
-TICKET_KEY: <KEY>
-ACTION: update_task
-TASK_NUMBER: <N>
-PHASE: 5
-STATUS: complete
-SUMMARY: "Planning complete — <approach summary>"
-```
-
-Retain the downstream completion summary at orchestration level: the four
-artifact paths, one or two sentences on the recommended approach, the test
-coverage shape, and the refactoring verdict.
-
-**Gate:** Automatic → proceed to Phase 6.
-
----
-
-## Phase 6 — Clarify + Critique Execution Plan
-
-**Skill:** `clarifying-assumptions` (at `../../clarifying-assumptions/SKILL.md`)
+**Skill:** `clarifying-assumptions` at `../../clarifying-assumptions/SKILL.md`
 **Mode:** `critique`
 
-**Announce:**
+1. Announce Phase 6 for Task `<N>`.
+2. Dispatch `artifact-validator` for `PHASE=6`, `DIRECTION=precondition`,
+   `TASK_NUMBER=<N>`.
+3. Invoke `clarifying-assumptions` with `MODE=critique`, `TICKET_KEY=<KEY>`,
+   `TASK_NUMBER=<N>`, and `ITERATION=<N>`.
+4. Let the downstream skill critique the Phase 5 planning artifacts and walk the
+   user through critique items.
+5. If `RE_PLAN_NEEDED=true`, re-dispatch Phase 5 with `RE_PLAN=true` and
+   `DECISIONS_FILE=docs/<KEY>-task-<N>-decisions.md`, then run Phase 6 again.
+   Maximum: 3 iterations.
+6. After `RE_PLAN_NEEDED=false`, dispatch `artifact-validator` for `PHASE=6`,
+   `DIRECTION=postcondition`, `TASK_NUMBER=<N>`.
+7. Dispatch `progress-tracker` with `ACTION=update_task`, `PHASE=6`,
+   `STATUS=complete`, and a one-line critique summary.
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Phase 6/7 — Clarify + Critique (Task <N>)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+**Gate:** First honor `BLOCKERS_PRESENT`. If it is `true`, stop before execution
+and surface the unresolved blockers.
 
-**Validate preconditions:** Dispatch `artifact-validator`:
+If blockers are clear, ask:
 
-```
-TICKET_KEY: <KEY>
-PHASE: 6
-DIRECTION: precondition
-TASK_NUMBER: <N>
-```
-
-Expected: the same four Phase 5 planning artifacts still exist:
-
-- `docs/<KEY>-task-<N>-brief.md`
-- `docs/<KEY>-task-<N>-execution-plan.md`
-- `docs/<KEY>-task-<N>-test-spec.md`
-- `docs/<KEY>-task-<N>-refactoring-plan.md`
-
-**Invoke:** Read the skill's SKILL.md and invoke with:
-
-- `MODE=critique`
-- `TICKET_KEY=<KEY>`
-- `TASK_NUMBER`
-- `ITERATION=<current iteration or 1>`
-
-`clarifying-assumptions` uses `TICKET_KEY` as its workflow key for this run.
-The skill derives the standard artifact paths from `TICKET_KEY` and
-`TASK_NUMBER`. The Phase 5 planning artifacts remain on disk for its delegated
-reads.
-
-The skill dispatches its `critique-analyzer` to review the planning artifacts,
-then walks the user through all critique items and any deferred questions for
-this task.
-
-### Re-plan cycle
-
-If the skill reports `RE_PLAN_NEEDED=true`:
-
-1. Re-dispatch Phase 5 (`planning-jira-task`) with:
-   - `RE_PLAN=true`
-   - `DECISIONS_FILE=docs/<KEY>-task-<N>-decisions.md`
-2. Let `planning-jira-task` decide the targeted reruns: rerun only the
-   invalidated Phase 5 subagents plus their downstream dependents.
-3. After the targeted Phase 5 rerun completes, re-dispatch Phase 6 to critique
-   the updated plan.
-4. Maximum 3 iterations. After 3, present accumulated critique to the user and
-   ask how to proceed.
-
-<example>
-Re-plan cycle for per-task planning:
-
-Phase 6 (iteration 1):
-critique-analyzer: "The execution plan uses a synchronous HTTP call for
-the notification service. User impact: 200-500ms added latency on every
-save. Alternative: async event via message queue."
-User: "You're right, let's go async."
-→ RE_PLAN_NEEDED=true
-
-Phase 5 (re-dispatch):
-`planning-jira-task` reruns only the invalidated subagents for the decision:
-"Use async event for notifications." `execution-planner` updates the plan,
-`test-strategist` adjusts test cases, and `refactoring-advisor` refreshes the
-refactoring recommendation to match the new approach.
-
-Phase 6 (iteration 2):
-critique-analyzer: Notification decision resolved. No new concerns.
-User confirms plan.
-→ RE_PLAN_NEEDED=false → advance to gate
-</example>
-
-**Validate output:** Dispatch `artifact-validator`:
-
-```
-TICKET_KEY: <KEY>
-PHASE: 6
-DIRECTION: postcondition
-TASK_NUMBER: <N>
-```
-
-Expected: `docs/<KEY>-task-<N>-decisions.md` exists, even if it only records
-that no additional decisions were needed beyond critique approval, and
-`docs/<KEY>-task-<N>-critique.md` exists for the task-level critique report.
-
-**Update progress:** Dispatch `progress-tracker`:
-
-```
-TICKET_KEY: <KEY>
-ACTION: update_task
-TASK_NUMBER: <N>
-PHASE: 6
-STATUS: complete
-SUMMARY: "N critique items addressed, plan confirmed"
-```
-
-**Gate:** First honor the clarification summary.
-
-If `BLOCKERS_PRESENT=true`, stop before execution and surface the unresolved
-items. Do not offer Phase 7 as the next step until the blockers are resolved.
-
-If `BLOCKERS_PRESENT=false`, user confirmation is still required. The user must
-confirm the plan is ready for implementation before Phase 7 begins. This keeps
-Phase 6 critique-only in the execution sense: no implementation, no kickoff,
-no Jira `In Progress` transition, and no commits happen here. Recording
-critique outcomes in `docs/<KEY>-task-<N>-decisions.md` is still in scope.
-Phase 7 kickoff remains the first execution mutation boundary.
-
-```
+```text
 The execution plan for Task <N> has been critiqued and updated.
 Ready to start execution kickoff and implementation? (y/n)
 ```
 
----
+Phase 6 is critique-only: no implementation, kickoff, Jira transition, or commit
+happens here.
 
-## Phase 7 — Kick Off and Execute Task
+## Phase 7 - Kick Off And Execute Task
 
-**Skill:** `executing-jira-task` (at `../../executing-jira-task/SKILL.md`)
+**Skill:** `executing-jira-task` at `../../executing-jira-task/SKILL.md`
 
-**Announce:**
+1. Announce Phase 7 for Task `<N>`.
+2. Dispatch `artifact-validator` for `PHASE=7`, `DIRECTION=precondition`,
+   `TASK_NUMBER=<N>`.
+3. Invoke the downstream skill with `TICKET_KEY` and `TASK_NUMBER`. Pass pre-task
+   utility summaries only if the downstream skill explicitly accepts them.
+4. Let `executing-jira-task` own kickoff, implementation, documentation,
+   requirements verification, quality gates, and its internal fix cycles.
+5. If the downstream skill returns `BLOCKED`, stop the task, surface the blocker,
+   and record a resume point at Phase 7.
+6. If the downstream skill exhausts its quality-gate fix cycle, load
+   `./error-handling.md` and present the accumulated feedback to the user.
+7. Dispatch `progress-tracker` with `ACTION=update_task`, `PHASE=7`, and
+   `STATUS=<complete | failed | skipped>` based on the downstream outcome.
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Phase 7/7 — Kick Off + Execute (Task <N>)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+Use `STATUS=complete` only when the downstream skill reports a successful task
+completion path. Use `failed` for blocker/error stops unless the user explicitly
+chooses to skip or accept an incomplete task.
 
-**Validate preconditions:** Dispatch `artifact-validator`:
-
-```
-TICKET_KEY: <KEY>
-PHASE: 7
-DIRECTION: precondition
-TASK_NUMBER: <N>
-```
-
-Expected: the standard workflow handoff from Phases 1-6 is present for the
-task:
-
-- `docs/<KEY>.md`
-- `docs/<KEY>-tasks.md`
-- `docs/<KEY>-task-<N>-brief.md`
-- `docs/<KEY>-task-<N>-execution-plan.md`
-- `docs/<KEY>-task-<N>-test-spec.md`
-- `docs/<KEY>-task-<N>-refactoring-plan.md`
-- `docs/<KEY>-task-<N>-critique.md`
-- `docs/<KEY>-task-<N>-decisions.md`
-
-This gate confirms that critique completed before execution begins. For this
-workflow, the Phase 7 precondition is exactly the standard handoff listed
-above; do not widen it with execution-skill-internal optional inputs.
-
-**Invoke:** Read the skill's SKILL.md and invoke with `TICKET_KEY` and
-`TASK_NUMBER`. Keep any pre-task utility summaries at hand for coordination,
-but do not treat them as required top-level inputs unless the downstream skill
-explicitly accepts them. Follow every step defined in the skill.
-
-The downstream skill starts with an explicit **execution kickoff**. That kickoff
-is the first mutation boundary after critique approval. It is where the
-workflow:
-
-- confirms task/workspace readiness
-- applies any safe startup state changes
-- transitions the Jira subtask to `In Progress` when possible
-- returns `READY` or a clear blocker before implementation begins
-
-The skill manages its own kickoff step, implementation pipeline, and quality
-gates internally. The orchestrator does not intervene in kickoff handling or
-quality gate fix cycles unless the downstream skill returns a blocker or
-exhausts its internal retry budget.
-
-If `executing-jira-task` reports `BLOCKED` because `execution-starter`,
-`task-executor`, `documentation-writer`, or `requirements-verifier` could not
-proceed due to a missing tool, runtime, credential, permission, environment
-capability, or unsafe workspace state, stop the task immediately. Surface the
-exact blocker to the user, do not treat it as an ordinary implementation gap,
-and resume from this Phase 7 step only after the blocker is resolved.
-
-### Quality gate escalation
-
-The orchestrator only acts when the skill reports that its fix cycle limit is
-exhausted. In that case, present the accumulated gate feedback to the user:
-
-<example>
-Quality gates did not pass after 3 fix cycles for Task 2.
-
-Accumulated feedback:
-
-- clean-code-reviewer: "extract-validation module has 4 functions over 30
-  lines each — violates single-responsibility"
-- architecture-reviewer: PASS
-- security-auditor: PASS
-
-Options:
-
-1. Accept the current state and move to the next task
-2. Provide guidance for a different approach
-3. Re-run the full task pipeline from Phase 5 (for fundamental approach issues)
-</example>
-
-Option 3 is for fundamental approach failures — not for minor code quality
-issues that can be accepted.
-
-There is no orchestrator-level Phase 7 postcondition artifact check. The
-downstream execution skill owns its internal kickoff and quality gates and
-returns the completion summary that drives the workflow update.
-
-**Update progress:** Dispatch `progress-tracker`:
-
-```
-TICKET_KEY: <KEY>
-ACTION: update_task
-TASK_NUMBER: <N>
-PHASE: 7
-STATUS: <complete | failed | skipped>
-SUMMARY: "<completion, failure, or user-directed stop summary>"
-```
-
-Use `STATUS=complete` only when `executing-jira-task` reports a successful task
-completion path. If the execution skill stops with a blocker, error, or
-exhausted fix cycle, follow `./error-handling.md` and record `failed` (or
-`skipped` when the user explicitly chooses to accept or stop without finishing
-the task).
-
-When recording a blocker-driven stop as `failed`, keep the summary explicit
-about the missing capability and the fact that the task should resume from
-Phase 7 once the blocker is resolved.
-
-`update_task` already mirrors the per-task completion state into the
-workflow-level Task Execution table. Do not dispatch a second workflow-level
-`update` call here.
-
----
+There is no orchestrator-level Phase 7 postcondition validator.
 
 ## Loop Continuation
 
 After Phase 7 completes for a task:
 
-1. Return to the **Task Selection** procedure above.
+1. Return to Task Selection.
 2. Present remaining tasks to the user.
-3. The user selects the next task — never auto-continue.
-4. Continue until all tasks are complete or the user stops.
-
----
+3. Continue only after the user selects the next task or asks to stop.
 
 ## Final Summary
 
-When all tasks are complete (or the user decides to stop), dispatch
-`progress-tracker` with `ACTION=read` for the final state, then present:
+When all tasks are complete or the user stops, dispatch `progress-tracker` with
+`ACTION=read` and present a compact workflow summary:
 
 ```markdown
-## Workflow Summary — <TICKET_KEY>
+## Workflow Summary - <TICKET_KEY>
 
-| Phase | Status      | Key outcome                            |
-| ----- | ----------- | -------------------------------------- |
-| 1     | ✅ Complete | Ticket fetched (N comments)            |
-| 2     | ✅ Complete | N tasks planned                        |
-| 3     | ✅ Complete | N/N questions resolved, N critiqued    |
-| 4     | ✅ Complete | N tasks linked to Jira subtasks        |
-| 5–7   | ✅ Complete | N/N tasks planned, critiqued, kicked off, executed |
+| Phase | Status | Key outcome |
+| ----- | ------ | ----------- |
+| 1 | Complete | Ticket fetched |
+| 2 | Complete | Tasks planned |
+| 3 | Complete | Questions resolved and plan critiqued |
+| 4 | Complete | Tasks linked to Jira subtasks |
+| 5-7 | Complete | Tasks planned, critiqued, kicked off, and executed |
 
-Per-task detail in docs/<TICKET_KEY>-task-<N>-progress.md.
-All artifacts are in docs/<TICKET_KEY>*.
+Per-task detail: `docs/<TICKET_KEY>-task-<N>-progress.md`
+Artifacts: `docs/<TICKET_KEY>*`
 ```
