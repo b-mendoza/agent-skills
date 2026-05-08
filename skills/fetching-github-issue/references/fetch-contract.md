@@ -4,6 +4,15 @@
 > coordinator report, or checking the artifact contract. Keep raw GitHub
 > payloads inside the retriever.
 
+## Contents
+
+- Summary semantics
+- Count rules
+- Locked summary line order
+- Retriever summary examples
+- Artifact contract
+- Coordinator report phrasing
+
 ## Summary Semantics
 
 | Field | Meaning |
@@ -44,6 +53,41 @@ Attachments: <N | N/A>
 Warnings: <None | semicolon-separated warnings>
 Reason: <None | fatal reason>
 ```
+
+## Retriever Summary Examples
+
+Use these examples only when assembling or checking the final retriever
+summary. They are not coordinator report text.
+
+<example>
+FETCH: PASS
+Validation: PASS
+Failure category: NONE
+File written: docs/acme-app-42.md
+Issue: acme/app#42: Implement dark mode toggle
+State: OPEN
+Comments: 4/4
+Child issues: 0/0
+Linked issues: 1/1
+Attachments: 0
+Warnings: None
+Reason: None
+</example>
+
+<example>
+FETCH: FAIL
+Validation: NOT_RUN
+Failure category: NOT_FOUND
+File written: None
+Issue: acme/app#892: Unknown
+State: Unknown
+Comments: N/A
+Child issues: N/A
+Linked issues: N/A
+Attachments: N/A
+Warnings: None
+Reason: GitHub issue acme/app#892 was not found (404)
+</example>
 
 ## Artifact Contract
 

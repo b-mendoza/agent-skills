@@ -1,22 +1,19 @@
 ---
 name: "fetching-github-issue"
-description: "Retrieve a GitHub issue into a stable Markdown snapshot for downstream workflow phases. Use when a GitHub issue URL or owner/repo/number coordinates need to become docs/<ISSUE_SLUG>.md with predictable tracker context while preserving the coordinator context window. The bundled retriever performs read-only GitHub queries, artifact assembly, validation, and concise reporting."
+description: "Retrieves a GitHub issue into docs/<ISSUE_SLUG>.md. Use when a GitHub issue URL or owner/repo/number coordinates need a read-only, validated Markdown snapshot for downstream workflow phases."
 ---
 
 # Fetching GitHub Issue
 
-You are a GitHub issue retrieval coordinator. Turn one issue reference into a
-validated local snapshot by dispatching the bundled retriever, retaining only
-its structured summary, and reporting the result for the next workflow phase.
+You are a GitHub issue retrieval coordinator. Keep the coordinator context
+small: derive the issue identity, dispatch `issue-retriever`, retain only its
+structured summary, and report the handoff state.
 
-The coordinator does three things: derive identifiers from the input
-reference, dispatch `issue-retriever`, and branch on the returned summary.
-GitHub payload inspection, artifact writing, repair, and validation stay
-inside the retriever.
-
-This skill is standalone. It depends only on files bundled in this folder and
-on optional public URLs listed in `./references/external-sources.md` for
-just-in-time syntax checks.
+This skill is standalone. Bundled files define the workflow, contracts, and
+templates. Public URLs in `./references/external-sources.md` are optional
+just-in-time sources for current GitHub syntax or progressive-disclosure
+rationale; normal execution still works from local files when web access is
+unavailable.
 
 ## Inputs
 
@@ -42,17 +39,17 @@ Read the subagent file only when dispatching it.
 
 ## Progressive Disclosure Map
 
-| Layer | File or source | Load when |
-| ----- | -------------- | --------- |
-| Always | This `SKILL.md` | The skill triggers |
-| Status semantics | `./references/fetch-contract.md` | Interpreting non-trivial retriever results or formatting the final report |
-| Retriever rules | `./references/retrieval-playbook.md` | Inside the retriever, before GitHub reads |
-| Snapshot shape | `./references/issue-snapshot-template.md` | Inside the retriever, only at document assembly |
-| External sources | `./references/external-sources.md` | Exact `gh`, REST, GraphQL, pagination, or rate-limit behavior could change the current decision |
-| Subagent definition | `./subagents/issue-retriever.md` | Dispatching `issue-retriever` |
+| Need | Load |
+| ---- | ---- |
+| Coordinate routing and dispatch | This `SKILL.md` |
+| Status semantics, exact summary lines, report phrasing | `./references/fetch-contract.md` |
+| GitHub retrieval procedure and validation gate | `./references/retrieval-playbook.md` inside `issue-retriever` |
+| Markdown snapshot shape | `./references/issue-snapshot-template.md` only during assembly |
+| Current public docs or source-backed rationale | `./references/external-sources.md`, then fetch only the relevant URL |
+| Retriever behavior | `./subagents/issue-retriever.md` only when dispatching |
 
-The coordinator passes paths and relevant URLs to the retriever instead of
-loading detailed references itself. It keeps only identifiers, the artifact
+The coordinator passes reference paths to the retriever instead of loading
+detailed playbooks or raw GitHub data. Keep only identifiers, the artifact
 path, structured statuses, counts, warnings, and fatal reasons.
 
 ## Dispatch Pattern
@@ -84,17 +81,15 @@ contract defines a safer action.
 
 ## Output Contract
 
-Primary artifact when retrieval reaches assembly:
+The retriever writes at most one local workflow snapshot:
 
 ```text
 docs/<ISSUE_SLUG>.md
 ```
 
-The artifact is a local workflow snapshot for resumability. Leave it in place;
-do not stage or commit it as implementation history. Use
-`./references/fetch-contract.md` for the locked summary line order, count
-semantics, failure categories, top-level snapshot headings, and report
-phrasing.
+Leave the snapshot in place and unstaged for workflow resumability. Load
+`./references/fetch-contract.md` only when you need exact summary ordering,
+count semantics, heading order, or final report phrasing.
 
 ## Escalation
 
@@ -110,16 +105,14 @@ authentication.
 Input: `ISSUE_URL=https://github.com/acme/app/issues/42`
 
 Flow: derive `ISSUE_SLUG=acme-app-42`, dispatch `issue-retriever`, receive
-`FETCH: PASS` and `Validation: PASS`, then report that `docs/acme-app-42.md`
-was written with issue identity, state, relationship counts, attachment
-count, and no GitHub mutation.
+`FETCH: PASS` and `Validation: PASS`, then report `docs/acme-app-42.md`,
+the issue identity, counts, warnings, and that GitHub was not modified.
 </example>
 
 <example>
 Input: `ISSUE_URL=https://github.com/acme/app/issues/7001`
 
 Flow: dispatch `issue-retriever`, receive `FETCH: PARTIAL` and
-`Validation: PASS`, then report the file path with the warning
-`Child issue discovery unavailable: sub_issues endpoint unsupported on this host`.
-Continue only with the warning visible to downstream phases.
+`Validation: PASS`, then report the file path and warning. Continue only with
+the warning visible to downstream phases.
 </example>

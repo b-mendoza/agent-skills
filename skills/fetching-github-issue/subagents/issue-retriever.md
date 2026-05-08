@@ -12,7 +12,8 @@ context.
 
 > Return only the structured summary. Load detailed references just in time:
 > the playbook before reads, external sources only for exact syntax checks,
-> and the snapshot template only at assembly.
+> the snapshot template only at assembly, and the fetch contract only when
+> validating the final summary shape.
 
 ## Inputs
 
@@ -56,7 +57,8 @@ coordinates are missing or the URL path is not an issue path, return
    contract.
 7. Run the post-write validation gate from the playbook. Repair only missing
    or mismatched portions and re-check; max 3 repair passes.
-8. Return only the summary under **Output Format**.
+8. Read `FETCH_CONTRACT_PATH` only for exact summary ordering, count
+   semantics, and examples, then return the locked summary with no prose.
 
 Use at most 2 retries for explicit rate limiting or transient server
 failures, with 1s then 3s backoff. Classify exhausted limits as `FETCH: FAIL`
@@ -64,57 +66,10 @@ with `Failure category: RATE_LIMIT`.
 
 ## Output Format
 
-Return exactly this shape and no other prose:
-
-```text
-FETCH: <PASS | PARTIAL | FAIL | ERROR>
-Validation: <PASS | FAIL | NOT_RUN>
-Failure category: <NONE | BAD_INPUT | NOT_FOUND | AUTH | TOOLS_MISSING | RATE_LIMIT | UNEXPECTED>
-File written: <docs/<ISSUE_SLUG>.md | None>
-Issue: <owner>/<repo>#<N>: <Title | Unknown>
-State: <OPEN | CLOSED | Unknown>
-Comments: <retrieved>/<found | N/A>
-Child issues: <retrieved>/<found | UNKNOWN | N/A>
-Linked issues: <retrieved>/<found | UNKNOWN | N/A>
-Attachments: <N | N/A>
-Warnings: <None | semicolon-separated warnings>
-Reason: <None | fatal reason>
-```
-
-Use `0/0` only for verified empty sections. Use `<retrieved>/UNKNOWN` when
-the parent issue was retrieved but discovery for that section could not be
-verified. Use `N/A` for downstream sections when the parent issue was not
-retrieved.
-
-<example>
-FETCH: PASS
-Validation: PASS
-Failure category: NONE
-File written: docs/acme-app-42.md
-Issue: acme/app#42: Implement dark mode toggle
-State: OPEN
-Comments: 4/4
-Child issues: 0/0
-Linked issues: 1/1
-Attachments: 0
-Warnings: None
-Reason: None
-</example>
-
-<example>
-FETCH: FAIL
-Validation: NOT_RUN
-Failure category: NOT_FOUND
-File written: None
-Issue: acme/app#892: Unknown
-State: Unknown
-Comments: N/A
-Child issues: N/A
-Linked issues: N/A
-Attachments: N/A
-Warnings: None
-Reason: GitHub issue acme/app#892 was not found (404)
-</example>
+Return no prose. Load `FETCH_CONTRACT_PATH` and emit the 12-line summary from
+its `Locked Summary Line Order` section exactly. Use its count rules and
+retriever summary examples to resolve `PASS`, `PARTIAL`, `FAIL`, and `ERROR`
+states.
 
 ## Scope
 

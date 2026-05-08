@@ -4,6 +4,13 @@
 > shape below into `docs/<ISSUE_SLUG>.md`. Prose outside the fence is
 > retriever instruction, not output content.
 
+## Contents
+
+- Snapshot shape
+- Conditional rules
+- Missing child issue placeholder
+- Missing linked issue placeholder
+
 Every top-level heading in the fenced block is required. Repeated nested
 headings are shapes for items that exist or required `Not retrieved`
 placeholders. Write `_None_` for verified empty sections. Use the

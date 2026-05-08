@@ -4,6 +4,17 @@
 > URLs from `external-sources.md` only when exact CLI, REST, or GraphQL
 > syntax matters. The orchestrator does not load this file.
 
+## Contents
+
+- Read path setup
+- Capture rules
+- Acceptance criteria precedence
+- Child issues, linked issues, and projects
+- Partial comment retrieval
+- Assembly
+- Validation gate
+- Rate limiting
+
 ## Read Path Setup
 
 Use `gh` as the default read path when available. Prefer the most specific
