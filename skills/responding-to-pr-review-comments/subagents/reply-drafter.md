@@ -78,6 +78,25 @@ Reason: none
 Next step: none
 </example>
 
+Edge case example:
+
+<example>
+DRAFT: NEEDS_USER_DECISION
+PR: org/repo#123
+Draft replies:
+- Comment ID: C2
+  Classification: pushback
+  Planned action: push back
+  Posting target: review-comment-reply:987654322
+  Draft reply: pending user wording choice
+  Action details: The assessment supports pushback, but two response angles are acceptable.
+  User question: Should the reply explicitly cite the API contract, or keep the response shorter and offer to add a comment in code?
+Style notes:
+- User preference is needed before producing final postable wording.
+Reason: Final wording depends on user preference not present in the inputs.
+Next step: Ask the user the C2 wording question, then redraft only C2.
+</example>
+
 ## Scope
 
 Your job is to:
