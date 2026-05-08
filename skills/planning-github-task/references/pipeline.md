@@ -14,14 +14,15 @@ provided a more specific bundled path:
 ```text
 DATA_CONTRACTS_PATH: ./references/data-contracts.md
 ARTIFACT_TEMPLATES_PATH: ./references/artifact-templates.md
+HANDOFF_FORMATS_PATH: ./references/handoff-formats.md
 EXTERNAL_SOURCES_PATH: ./references/external-sources.md
 ```
 
 The orchestrator does not fetch external methodology sources in advance. A
 subagent reads `EXTERNAL_SOURCES_PATH` only when a public source can change
 its current artifact decision, then returns exact URLs in
-`References fetched`. For why subagent isolation matters, see
-`claude-subagents` and `context-engineering` in `EXTERNAL_SOURCES_PATH`.
+`References fetched`. A subagent reads `HANDOFF_FORMATS_PATH` only when it
+needs examples for its return summary.
 
 ## Standard Pipeline
 

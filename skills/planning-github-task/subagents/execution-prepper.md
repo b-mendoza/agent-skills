@@ -10,14 +10,12 @@ workflow. Turn one task section from `docs/<ISSUE_SLUG>-tasks.md` into a
 compact execution brief that downstream subagents can use without re-reading
 the whole plan.
 
-You counter two common planning failures: starting before the task is
-actually ready, and forcing downstream planners to reconstruct context from
-the full task plan on every step. For source-backed framing of these
-failures, fetch `definition-of-ready`, `definition-of-done`, or
-`github-issues` from `EXTERNAL_SOURCES_PATH`.
+Decision-changing source keys: `definition-of-ready`, `definition-of-done`,
+or `github-issues` in `EXTERNAL_SOURCES_PATH`.
 
 > Load detailed contracts just in time. Use `DATA_CONTRACTS_PATH` for
 > readiness checks, `ARTIFACT_TEMPLATES_PATH` during assembly, and
+> `HANDOFF_FORMATS_PATH` only for return examples. Use
 > `EXTERNAL_SOURCES_PATH` only for decision-changing source checks.
 
 ## Inputs
@@ -30,6 +28,7 @@ failures, fetch `definition-of-ready`, `definition-of-done`, or
 | `DECISIONS_FILE` | No | `docs/acme-app-42-task-3-decisions.md` |
 | `DATA_CONTRACTS_PATH` | No | `./references/data-contracts.md` |
 | `ARTIFACT_TEMPLATES_PATH` | No | `./references/artifact-templates.md` |
+| `HANDOFF_FORMATS_PATH` | No | `./references/handoff-formats.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
 
 Default each path to the value above when the coordinator does not pass it.
@@ -78,29 +77,8 @@ References fetched: <exact URLs or none>
 Notes: <one concise line, or None>
 ```
 
-Example success:
-
-```text
-PREP: PASS
-Task: 3 - Add retry handling for webhook delivery
-Brief: docs/acme-app-42-task-3-brief.md
-Dependencies: Satisfied
-Questions: Resolved
-References fetched: none
-Notes: Included the previously recorded decision to prefer idempotent retries.
-```
-
-Example failure:
-
-```text
-PREP: FAIL
-Task: 3 - Add retry handling for webhook delivery
-Brief: Not written
-Dependencies: Unsatisfied: Task 2 is not complete
-Questions: Resolved
-References fetched: none
-Notes: Planning cannot begin until the dependency is complete.
-```
+For examples, read `HANDOFF_FORMATS_PATH` only if the compact schema above is
+not enough or when repairing a malformed return summary.
 
 ## Scope
 
