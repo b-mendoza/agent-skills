@@ -1,161 +1,119 @@
 ---
 name: "prompt-structurer"
-description: "Convert prose prompts into structured XML prompts through a staged, subagent-driven methodology. Use this skill when a user asks to structure, harden, formalize, convert, tighten, or debug a prompt; mentions XML tags, prompt templates, agent drift, ambiguity, implicit assumptions, success criteria, anti-patterns, autonomous prompts, or prompt suites; or provides natural-language instructions that need to become a reliable agent contract."
+description: "Convert prose prompts into compact, structured XML prompts through staged subagent passes. Use when a user asks to structure, harden, formalize, debug, or convert a prompt; mentions XML tags, agent drift, ambiguity, hidden assumptions, success criteria, anti-patterns, autonomous prompts, or prompt suites; or provides natural-language instructions that need to become a reliable agent contract."
 ---
 
 # Prompt Structurer
 
-You are the orchestration layer for turning prose prompts into structured XML
-prompts. You preserve the user's intent, choose the right amount of structure,
-dispatch specialized passes, and return a final prompt plus concise assembly
-notes.
+Prompt Structurer is a portable orchestration skill for turning prose prompts
+into executable XML prompt contracts. The orchestrator preserves intent, selects
+the smallest useful analysis flow, dispatches specialized passes, and returns a
+final prompt with concise assembly notes.
 
-This skill is self-contained. The local files under `subagents/` and
-`references/` are sufficient to run every flow without web access. External
-URLs in `references/web-resource-index.md` are progressive enrichment: fetch
-one only when a decision still needs deeper rationale or current platform
-guidance after the local files have been consulted.
-
-## How This Skill Works
-
-The orchestrator does three things:
-
-- **Coordinate.** Capture inputs, classify the flow, and select passes.
-- **Dispatch.** Send each pass to its dedicated subagent with the smallest
-  required context, and collect concise findings only.
-- **Synthesize.** Hand the prior outputs to the assembler and return the
-  final XML prompt plus assembly notes.
-
-Analysis, classification, taxonomy work, and final XML composition belong to
-subagents, not the orchestrator. The orchestrator never reads the full
-analysis transcripts; it keeps only the structured handoff each subagent
-returns.
+The package is self-contained: bundled subagents and references are enough to
+run without network access. External URLs are optional just-in-time background
+sources that replace long static explanations in the skill files.
 
 ## Inputs
 
 | Input | Required | Example |
-| --- | --- | --- |
-| `PROMPT_TEXT` | Yes | The prose prompt, instruction block, or prompt-suite entry to structure |
+| ----- | -------- | ------- |
+| `PROMPT_TEXT` | Yes | Prose prompt, instruction block, or prompt-suite entry to structure |
 | `RUN_STYLE` | No | `interactive`, `autonomous`, or unknown |
-| `SUITE_CONTEXT` | No | Prior structured prompts or shared conventions that should stay consistent |
+| `SUITE_CONTEXT` | No | Existing structured prompts or shared suite conventions |
 | `TERMINOLOGY` | No | Terms to preserve exactly, such as `issue key`, `subagent`, or `ledger` |
-| `CHANGE_REQUEST` | No | For revising an existing structured prompt, the specific change requested |
+| `CHANGE_REQUEST` | No | Specific revision requested for an existing structured prompt |
 
-Ask one targeted clarifying question only when a missing input would
-materially change the final prompt.
+Ask one targeted clarifying question only when the missing answer would change
+the final prompt contract.
 
-## Subagent Pipeline
+## Output Contract
 
-Each pass is a dispatched subagent. The orchestrator passes the original
-prompt and the relevant prior outputs, and stores only the structured
-findings each subagent returns.
+Return the final XML prompt first, then assembly notes with assumptions,
+sections omitted, resources fetched, and suggested follow-ups. Preserve user
+terminology unless the user requested renaming.
+
+## Subagent Registry
 
 | Pass | Subagent | Path | Produces |
-| --- | --- | --- | --- |
-| 1 | `semantic-decomposer` | `./subagents/semantic-decomposer.md` | Sentence-to-category map, double-duty content, orphan content |
-| 2 | `philosophy-constraints-classifier` | `./subagents/philosophy-constraints-classifier.md` | Philosophy, constraints, hard rules, ambiguous classifications |
-| 3 | `implicit-behavior-surfacer` | `./subagents/implicit-behavior-surfacer.md` | Ambiguity handling, new-finding behavior, gates, autonomy, traceability |
-| 4 | `anti-pattern-synthesizer` | `./subagents/anti-pattern-synthesizer.md` | Plausible-but-wrong completions and matching negative criteria |
-| 5 | `success-criteria-builder` | `./subagents/success-criteria-builder.md` | Observable post-run audit checklist |
+| ---- | -------- | ---- | -------- |
+| 1 | `semantic-decomposer` | `./subagents/semantic-decomposer.md` | Sentence-to-category map and source-preservation notes |
+| 2 | `philosophy-constraints-classifier` | `./subagents/philosophy-constraints-classifier.md` | Philosophy, constraints, hard rules, and ambiguities |
+| 3 | `implicit-behavior-surfacer` | `./subagents/implicit-behavior-surfacer.md` | Ambiguity, autonomy, gate, empty-output, and traceability gaps |
+| 4 | `anti-pattern-synthesizer` | `./subagents/anti-pattern-synthesizer.md` | Plausible wrong paths and matching negative criteria |
+| 5 | `success-criteria-builder` | `./subagents/success-criteria-builder.md` | Observable post-run checklist and coverage gaps |
 | 6 | `xml-prompt-assembler` | `./subagents/xml-prompt-assembler.md` | Final XML prompt and assembly notes |
 
-Read a subagent file only when dispatching that subagent. Never preload the
-full pipeline.
+Read a subagent file only when dispatching that pass.
 
 ## Flow Selection
 
 | Flow | Use When | Dispatches |
-| --- | --- | --- |
-| `light` | Under roughly 10 lines, no multi-phase workflow, low autonomy risk | `semantic-decomposer`, `xml-prompt-assembler` |
-| `full` | Multi-phase, autonomous, safety-sensitive, or repeatedly failing prompt | All six subagents in pipeline order |
-| `suite` | Prompt must align with existing suite conventions | `full` plus shared suite blocks passed into every pass |
-| `revision` | Existing structured prompt needs a targeted change | Only the affected analysis pass(es), then assembler |
+| ---- | -------- | ---------- |
+| `light` | Short one-shot prompt with low autonomy risk | Passes 1 and 6 |
+| `full` | Multi-phase, autonomous, safety-sensitive, or repeatedly failing prompt | All passes in order |
+| `suite` | Prompt must align with existing suite conventions | `full`, with shared suite blocks passed into every pass |
+| `revision` | Existing structured prompt needs a targeted change | Affected analysis pass(es), then pass 6 |
 
 ## Progressive Loading Map
 
-Local files live one hop from `SKILL.md`. Load each only when the orchestrator
-or a subagent needs it for the current decision.
-
 | Need | Load |
-| --- | --- |
-| Local catalog of XML tags and tag-selection tests | `./references/tag-taxonomy.md` |
-| Map of common agent failure modes to preventive prompt structures | `./references/failure-modes.md` |
-| XML section order, skeleton, assembly rules, and common deviations | `./references/template-skeleton.md` |
-| External background, source-backed rationale, or current platform guidance | `./references/web-resource-index.md`, then fetch one targeted URL |
+| ---- | ---- |
+| Tag selection or tag naming | `./references/tag-taxonomy.md` |
+| Edge cases, agent drift, autonomy, gates, or wrong-path risks | `./references/failure-modes.md` |
+| Final XML section order and removal test | `./references/template-skeleton.md` |
+| Source-backed rationale, current vendor guidance, or progressive-disclosure background | `./references/web-resource-index.md`, then fetch one targeted URL |
 
-The local references contain the minimum complete process. The web-resource
-index is the only place the skill names external URLs, so updates to those
-sources are localized to one file.
+Use local references first. Fetch a web resource only when the local package is
+insufficient for the current decision, the user asks for source-backed
+rationale, or model/platform guidance may have changed.
 
-## Progressive Disclosure Policy
+## How This Skill Works
 
-> Reminder: never preload references or subagents. Each layer earns its load
-> at the moment it is needed.
+The orchestrator does exactly three things:
 
-Load information in this order:
+- Coordinate: capture inputs, choose a flow, and route passes.
+- Dispatch: send each pass the original prompt plus only relevant prior outputs.
+- Synthesize: hand compact findings to the assembler and return the final prompt.
 
-1. Use this `SKILL.md` for routing, contracts, and pipeline decisions.
-2. Read only the subagent file that is about to be dispatched.
-3. Let that subagent load only the local reference file named in its
-   instructions.
-4. Fetch a single web resource only when the local file is insufficient, the
-   user asks for source-backed rationale, or the subagent needs current
-   prompt-engineering guidance.
-5. Keep handoffs compact: each subagent returns structured findings, not a
-   full re-analysis transcript.
-
-This mirrors the principle of progressive disclosure in interface design:
-primary content stays prominent, secondary material is available on demand,
-and advanced background stays out of context until it changes a decision.
+Subagents perform analysis and return structured findings. The orchestrator
+keeps summaries, statuses, fetched URLs, and user-facing decisions, not raw
+analysis transcripts.
 
 ## Execution
 
-1. Capture the original prompt and any explicit user constraints.
-2. Choose `light`, `full`, `suite`, or `revision` based on risk and
-   complexity.
-3. Dispatch passes in pipeline order, supplying only the original prompt and
-   relevant prior findings.
-4. If a subagent returns `BLOCKED`, ask the smallest useful clarifying
-   question, or skip only the blocked enhancement when the final prompt can
-   still be valid.
-5. Dispatch `xml-prompt-assembler` with the completed outputs.
-6. Return the final XML prompt first, then assembly notes and any
-   assumptions.
+1. Capture `PROMPT_TEXT`, explicit constraints, run style, suite context, and change request.
+2. Choose `light`, `full`, `suite`, or `revision`.
+3. Dispatch passes in pipeline order, loading only the current subagent file.
+4. If a subagent returns `BLOCKED` or `FAIL`, ask the smallest useful question or continue only when the skipped enhancement is nonessential.
+5. Dispatch `xml-prompt-assembler` with the completed pass outputs.
+6. Check the result against the run-level success criteria below.
+7. Fix only failed checks and re-run the relevant pass; stop after three fix cycles.
+
+## Run-Level Success Criteria
+
+- Meaningful source content is represented, intentionally split, or explicitly omitted with justification.
+- Each emitted XML tag changes agent behavior if removed.
+- Constraints, anti-patterns, and success criteria audit the same behaviors.
+- Assembly notes list assumptions, omitted sections, fetched resources, and follow-up options.
+- Progressive disclosure was preserved: no subagent, reference, or URL was loaded before it was needed.
 
 ## Example
 
 Input: `Structure this prompt so an agent audits Jira tickets, records findings, and does not change code.`
 
-Dispatch summary:
+Round trip:
 
-1. `semantic-decomposer` returns task, scope, output, and double-duty
-   sentences.
-2. `philosophy-constraints-classifier` identifies report-only audit as a hard
-   rule.
-3. `implicit-behavior-surfacer` adds empty-output handling and a new-finding
-   rule.
-4. `anti-pattern-synthesizer` blocks code edits and unsupported ticket
-   assumptions.
-5. `success-criteria-builder` creates audit criteria for findings and zero
-   findings.
-6. `xml-prompt-assembler` returns the final XML prompt and notes that no web
-   resources were needed.
+1. The orchestrator selects `full` because report-only auditing has scope and empty-output risks.
+2. `semantic-decomposer` maps task, output, hard rule, and edge-case signals.
+3. `philosophy-constraints-classifier` classifies report-only behavior as a hard rule.
+4. `implicit-behavior-surfacer` adds explicit empty-output and new-finding handling.
+5. `anti-pattern-synthesizer` blocks code edits and unsupported ticket assumptions.
+6. `success-criteria-builder` creates audit checks for findings, no-findings cases, and unchanged files.
+7. `xml-prompt-assembler` returns the final XML prompt and notes whether any web resource was fetched.
 
 ## Boundaries
 
-The orchestrator coordinates, decides, dispatches, and synthesizes. Analysis
-work belongs to subagents. Preserve user terminology exactly unless the user
-asks for renaming. Add structure in proportion to risk: every tag in the
-final prompt should change agent behavior if removed.
-
-## Run-Level Success Criteria
-
-- Every meaningful sentence from the original prompt is represented,
-  intentionally split, or explicitly omitted with justification.
-- The final XML uses specific tags that encode behavior, not decorative
-  organization.
-- Constraints, anti-patterns, and success criteria correspond to each other.
-- Assembly notes identify assumptions, omitted sections, fetched resources,
-  and follow-up options.
-- The context footprint stays progressive: no subagent or reference is loaded
-  before it is needed, and at most one external URL is fetched per pass.
+Add structure in proportion to risk. A simple prompt should stay simple. A
+production autonomous workflow usually earns philosophy, constraints, gates or
+guardrails, anti-patterns, traceability, and success criteria.
