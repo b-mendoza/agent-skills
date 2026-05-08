@@ -9,9 +9,8 @@
 
 This playbook describes **what to do and in what order**. Concrete CLI flags,
 REST headers, payload field names, and other version-sensitive syntax live in
-`./external-sources.md` (Source Map URLs and Offline Cheatsheet). Fetch the
-smallest relevant URL only when local cheatsheet shapes do not match observed
-behavior.
+`./external-sources.md`. Use installed `gh` help first when offline; fetch the
+smallest relevant URL only when current syntax or product behavior is uncertain.
 
 ## Execution Steps
 
@@ -49,16 +48,13 @@ behavior.
 4. **Choose the write path.**
    - Prefer **native sub-issues** when confirmed by the current environment.
    - Capability probe order:
-     1. `gh issue create --help` for a parent or sub-issue option.
-     2. `gh extension list` for an installed extension that supports
-        sub-issue creation.
-     3. The REST sub-issues `GET` endpoint for the parent. HTTP 200 means
-        the endpoint is available; 404 or 410 means it is not.
-   - The exact probe commands and the current `X-GitHub-Api-Version` value
-     live in `./external-sources.md`. Fetch the **GitHub REST sub-issues**
-     URL only if the cheatsheet probe returns an unexpected status.
+      1. Installed `gh issue create` capability for parent/sub-issue support.
+      2. Installed `gh` extensions that support sub-issue creation.
+      3. GitHub REST sub-issue support for the parent issue.
+   - Exact probe commands, REST paths, headers, payload fields, and current
+     status-code meanings live in `./external-sources.md`.
    - Record a short `Capability:` string, such as
-     `gh no --parent; sub_issues GET 404; using linked-issue`.
+     `native unavailable; using linked-issue`.
 
 5. **Prepare missing task issue payloads.**
    - For each task without a verified concrete issue ref, build the title:
@@ -73,10 +69,8 @@ behavior.
      traceability section even when a native relationship is also created.
 
 6. **Create or link only missing work items.**
-   - For `native-sub-issue`, create the child issue first, then link it via
-     the REST sub-issues `POST` endpoint. The required headers and payload
-     field name (e.g., `sub_issue_id`) live in the **GitHub REST sub-issues**
-     entry of `./external-sources.md`.
+   - For `native-sub-issue`, create the child issue first, then link it with
+     the current GitHub REST sub-issue operation from `./external-sources.md`.
    - For `linked-issue`, create the child issue and rely on the parent
      URL/reference in the child body.
    - If concrete issue creation is impossible for a specific task, fall back

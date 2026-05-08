@@ -3,10 +3,10 @@
 > Read this file only when constructing GitHub issue bodies or refreshing the
 > local plan's `## GitHub Task Issues` section.
 
-These are literal fragments and examples. Phase 4 artifact semantics live in
+These are literal local artifact fragments. Phase 4 artifact semantics live in
 `../references/phase-4-io-contracts.md`. For current `gh` flags, REST
-sub-issue syntax, required headers, or task-list markdown, fetch the relevant
-source from `../references/external-sources.md`.
+sub-issue syntax, required headers, or parent-body task-list markdown, fetch
+the relevant source from `../references/external-sources.md`.
 
 ## GitHub Issue Body Fragment
 
@@ -48,16 +48,18 @@ Workflow task: **<N>** (from `docs/<ISSUE_SLUG>-tasks.md`)
 <From plan>
 ```
 
-## Example Task-List Note
+## Task-List Fallback Note
 
 ```markdown
-- [ ] **(task-list)** This task is tracked as a checklist item on the parent issue or in this plan; no child issue number.
+Task-list fallback records plan-only traceability when no concrete child issue
+can be created. Use `task-list` in local tables and inline lines; fetch the
+GitHub task-list source only before editing parent issue checklist markdown.
 ```
 
 ## Example Machine Handoff Comment
 
 ```html
-<!-- phase4-handoff parent="OWNER/REPO#PARENT_NUMBER" model="linked-issue" capability="REST sub_issues unavailable; using gh issue create + parent URL in body" updated="2026-04-08T12:00:00Z" -->
+<!-- phase4-handoff parent="OWNER/REPO#PARENT_NUMBER" model="<write-model>" capability="<short detection summary>" updated="2026-04-08T12:00:00Z" -->
 ```
 
 ## Example `## GitHub Task Issues` Section

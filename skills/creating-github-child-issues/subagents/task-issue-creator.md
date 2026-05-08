@@ -56,8 +56,8 @@ Primary artifact: `docs/<ISSUE_SLUG>-tasks.md`.
    bodies or refreshing the `## GitHub Task Issues` section.
 6. Read `../references/external-sources.md` only when current `gh` syntax,
    REST sub-issue endpoints, headers, task-list semantics, or extension
-   behavior cannot be confirmed from the local Offline Cheatsheet. Fetch the
-   smallest relevant URL.
+   behavior cannot be confirmed from installed help or the bundled fallback
+   rules. Fetch the smallest relevant URL.
 7. Return only the structured summary. Keep raw `gh` JSON, full file contents,
    and intermediate parse details inside this run.
 

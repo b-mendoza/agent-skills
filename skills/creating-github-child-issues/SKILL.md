@@ -36,7 +36,7 @@ are one hop from `SKILL.md`; never preload them.
 | Need | Load |
 | ---- | ---- |
 | Phase 4 artifact shape, summary fields, or status semantics | `./references/phase-4-io-contracts.md` |
-| Current GitHub CLI flags, REST sub-issue endpoint behavior, task-list semantics, or progressive-disclosure rationale | `./references/external-sources.md`, then fetch only the smallest relevant URL |
+| Current GitHub CLI flags, REST sub-issue endpoint behavior, task-list semantics, or skill-maintenance rationale | `./references/external-sources.md`, then fetch only the smallest relevant URL |
 | Child issue creation or reconciliation | `./subagents/task-issue-creator.md` |
 
 External URLs are **optional, just-in-time** sources. This skill remains
@@ -91,18 +91,9 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42`
 
 1. The orchestrator derives `ISSUE_SLUG=acme-app-42` for reporting.
 2. The orchestrator dispatches `task-issue-creator` with `ISSUE_URL`.
-3. The subagent returns:
-
-```markdown
-TASK_ISSUES: PASS
-Validation: PASS
-Parent: acme/app#42
-ISSUE_SLUG: acme-app-42
-Plan file: docs/acme-app-42-tasks.md
-Write model: linked-issue
-Capability: REST sub_issues unavailable; using gh issue create + parent URL in body
-```
-
+3. The subagent returns the contract summary with `TASK_ISSUES: PASS`,
+   `Validation: PASS`, parent, plan path, detected write model, capability,
+   counts, warnings, and failures.
 4. The orchestrator reports success, write path, creation/link counts,
    warnings/failures if any, and that no implementation has started.
 </example>

@@ -85,7 +85,7 @@ Field semantics:
 | ----- | ------- |
 | `parent` | Canonical parent reference |
 | `model` | Dominant run model: `native-sub-issue`, `linked-issue`, `task-list`, or `mixed` |
-| `capability` | Short detection result, such as `REST sub_issues GET 404` or `fallback linked-issue` |
+| `capability` | Short detection result, such as `native unavailable` or `fallback linked-issue` |
 | `updated` | UTC timestamp for the last Phase 4 write |
 
 ### Workflow Table
