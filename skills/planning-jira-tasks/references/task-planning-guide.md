@@ -4,7 +4,7 @@ Read this file when `task-planner` is turning a Jira ticket snapshot into the
 stage 1 detailed plan.
 
 > **Reminder:** Apply the operational sections below first. Fetch a URL from
-> `./references/external-sources.md` only when you need background on a method or a
+> `./external-sources.md` only when you need background on a method or a
 > definition (for example `five-whys`, `requirements-traceability`,
 > `definition-of-done`, `invest-criteria`, or `yagni`).
 
@@ -13,7 +13,7 @@ stage 1 detailed plan.
 The local rules below are enough for normal execution. Use these source keys
 only when a planning judgment needs method background or a cited rationale:
 
-| Need | Source key in `./references/external-sources.md` |
+| Need | Source key in `./external-sources.md` |
 | ---- | ------------------------------------- |
 | Underlying-need analysis | `five-whys` |
 | Traceability expectations | `requirements-traceability` |

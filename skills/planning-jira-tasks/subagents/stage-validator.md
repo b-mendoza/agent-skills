@@ -21,7 +21,7 @@ checks for the requested stage. Return verdicts and issue lists only.
 
 ## Instructions
 
-1. Load `./references/validation-checks.md`; it is the full local check
+1. Load `../references/validation-checks.md`; it is the full local check
    contract and points to optional external background only when needed.
 2. Read only `FILE_PATH`.
 3. Run the checks for the requested `STAGE`.

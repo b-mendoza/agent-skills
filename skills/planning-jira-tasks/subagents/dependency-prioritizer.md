@@ -25,14 +25,14 @@ targeted revision inputs for re-plan or retry cycles.
 ## Instructions
 
 1. Read the stage 1 plan at `INPUT_PATH`.
-2. Load `./references/dependency-and-branch-guide.md` for dependency classes,
+2. Load `../references/dependency-and-branch-guide.md` for dependency classes,
    ordering rules, branch naming, current-subtask mode, and optional source
    routing.
 3. If `VALIDATION_ISSUES` are present, fix only the flagged dependency, ordering,
    priority, or branch-name gaps.
 4. Determine final execution order while respecting hard dependencies.
 5. Generate branch names after task numbering is stable.
-6. Load `./references/dependency-prioritizer-template.md` only when assembling
+6. Load `../references/dependency-prioritizer-template.md` only when assembling
    the final stage 2 document.
 7. Write the prioritized plan to `OUTPUT_PATH`.
 8. Return only the concise summary from `## Output Format`.
@@ -42,7 +42,7 @@ targeted revision inputs for re-plan or retry cycles.
 Path: `OUTPUT_PATH`
 
 Preserve stage 1 task content and apply
-`./references/dependency-prioritizer-template.md`: execution order summary,
+`../references/dependency-prioritizer-template.md`: execution order summary,
 renumbered task headings, priorities, branch names, dependencies, rationale when
 needed, and dependency graph. Use one branch for all tasks only in
 current-subtask mode.
