@@ -36,7 +36,9 @@ ticket snapshot.
 | Source-backed background or current platform syntax | `./references/external-sources.md` |
 | Subagent-specific guides, templates, or validation checks | Load only from the dispatched subagent |
 
-All bundled paths are relative to this skill folder and travel with the package.
+Bundled paths in this file are relative to this `SKILL.md`; files loaded later
+use paths relative to their own locations. All bundled files travel with the
+package.
 External URLs are optional progressive enhancement: fetch them only when local
 contracts need background or current syntax, and proceed from bundled references
 when network access is unavailable.
