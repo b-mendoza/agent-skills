@@ -35,7 +35,7 @@ files are one hop from `SKILL.md`; never preload them.
 | Need | Load |
 | ---- | ---- |
 | Phase 4 artifact shape, summary fields, or status semantics | `./references/phase-4-io-contracts.md` |
-| Current Jira REST v3 syntax, subtask configuration, Atlassian Document Format, or progressive-disclosure rationale | `./references/external-sources.md`, then fetch only the smallest relevant URL |
+| Current Jira REST v3 syntax, subtask configuration, Atlassian Document Format, or skill-maintenance rationale | `./references/external-sources.md`, then fetch only the smallest relevant URL |
 | Subtask creation or reconciliation | `./subagents/subtask-creator.md` |
 
 External URLs are **optional, just-in-time** sources. This skill remains
@@ -89,16 +89,8 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 
 1. The orchestrator derives `TICKET_KEY=PROJ-123` for reporting.
 2. The orchestrator dispatches `subtask-creator` with `JIRA_URL`.
-3. The subagent returns:
-
-```markdown
-SUBTASKS: PASS
-Validation: PASS
-Parent: PROJ-123
-TICKET_KEY: PROJ-123
-Plan file: docs/PROJ-123-tasks.md
-```
-
+3. The subagent returns the contract summary with `SUBTASKS: PASS`,
+   `Validation: PASS`, parent, plan path, counts, warnings, and failures.
 4. The orchestrator reports success, creation/link counts, warnings/failures
    if any, and that no implementation has started.
 </example>

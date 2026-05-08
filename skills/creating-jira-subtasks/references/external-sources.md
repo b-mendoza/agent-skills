@@ -9,8 +9,8 @@
 This file is the just-in-time layer for platform-specific syntax. Bundled
 references and the subagent already describe **what** to do for normal Phase 4
 runs; come here for **how** to phrase a current Jira REST request, ADF
-payload, or product configuration question that you cannot write confidently
-from memory.
+payload, or product configuration question that the active Jira tool cannot
+confirm locally.
 
 ## Fetch Policy
 
@@ -18,16 +18,16 @@ from memory.
    subagent's instructions first. Fetch a URL only when an endpoint, payload
    field, scope, ADF node type, or subtask configuration question cannot be
    confirmed locally.
-2. Fetch only URLs listed in the **Source Map** below. Treat links inside a
+2. Fetch only URLs listed in the source maps below. Treat links inside a
    fetched page as out of scope unless that destination is also listed.
 3. Use at most two fetched pages per run. Summarize the relevant fact in one
    or two sentences before applying it; do not paste the page back into the
    workflow.
-4. If the network is unavailable, continue with the **Offline Cheatsheet**
-   plus the bundled playbook and contracts. Note any remaining uncertainty in
+4. If the network is unavailable, continue with **Offline Fallback Rules** plus
+   the bundled playbook and contracts. Note any remaining uncertainty in
    `Warnings:` rather than guessing version-specific behavior.
 
-## Source Map
+## Runtime Source Map
 
 | Need | Source URL |
 | ---- | ---------- |
@@ -35,8 +35,16 @@ from memory.
 | Atlassian Document Format (ADF) structure for rich-text fields | https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/ |
 | Jira Cloud subtask concepts: enabling/disabling subtasks and subtask issue types | https://support.atlassian.com/jira-cloud-administration/docs/configure-sub-tasks/ |
 | Creating Jira issues and subtasks from the UI (concept-level) | https://support.atlassian.com/jira-software-cloud/docs/create-an-issue-and-a-sub-task/ |
+
+## Maintainer Source Map
+
+Fetch these only when editing the skill definition itself, not during normal
+Jira subtask execution.
+
+| Need | Source URL |
+| ---- | ---------- |
 | Progressive disclosure as a skill design pattern | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
-| Progressive disclosure as a UX pattern (rationale) | https://www.nngroup.com/articles/progressive-disclosure/ |
+| Progressive disclosure as a UX pattern | https://www.nngroup.com/articles/progressive-disclosure/ |
 | Agent Skills overview and progressive loading model | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview |
 
 ## Source Usage Notes
@@ -52,63 +60,24 @@ from memory.
   enablement, available issue types, hierarchy) but **not** API payload
   syntax. Use them to confirm that subtasks are enabled for the project or
   that an issue type is configured as a subtask type.
-- **Progressive-disclosure links** exist for skill maintenance rationale only.
-  Normal Phase 4 execution does not need to fetch them.
+- **Maintainer sources** exist for skill maintenance rationale only. Normal
+  Phase 4 execution does not fetch them.
 
-## Offline Cheatsheet
+## Offline Fallback Rules
 
-These shapes are derived from common Jira Cloud REST v3 behavior and are
-sufficient for routine Phase 4 runs. They are **not** authoritative; treat the
-Source Map URLs as the source of truth when something looks wrong, and prefer
-the active Jira-capable tool's own request format whenever it differs.
+When URLs cannot be fetched, prefer the active Jira-capable tool's built-in
+request format and error messages over remembered REST syntax. The local
+workflow still needs only these stable operations:
 
-### Parent verification
+| Operation | Required result |
+| --------- | --------------- |
+| Verify parent ticket | Confirm the parent exists; capture verified parent key, project key, status, summary, and available subtask issue type |
+| Verify existing subtask key | Confirm the issue exists, belongs to the parent, and uses a configured subtask issue type |
+| Create missing subtask | Send project, parent, subtask issue type, summary, and description in the format accepted by the active transport |
+| Preserve description semantics | Keep the local section order from `../subagents/subtask-creator-templates.md` in plain text, wiki markup, or ADF |
+| Diagnose configuration errors | Treat disabled subtasks or invalid subtask issue types as configuration failures to surface in `Failures:` |
 
-Fetch the parent issue and capture `key`, `fields.project.key`,
-`fields.status.name`, `fields.summary`, and the available subtask issue type
-configured for the project.
-
-```http
-GET /rest/api/3/issue/{TICKET_KEY}?fields=summary,status,project,issuetype
-```
-
-### Existing subtask reuse check
-
-```http
-GET /rest/api/3/issue/{SUBTASK_KEY}?fields=summary,status,project,parent,issuetype
-```
-
-The fetched issue counts as already-linked when its `fields.parent.key`
-matches `TICKET_KEY` and its issue type is a configured subtask type.
-
-### Subtask create (semantic shape)
-
-```text
-POST /rest/api/3/issue
-{
-  "fields": {
-    "project":   { "key": "<PROJECT_KEY>" },
-    "parent":    { "key": "<TICKET_KEY>" },
-    "issuetype": { "id":  "<SUBTASK_ISSUE_TYPE_ID>" },
-    "summary":   "Task <N>: <Short title>",
-    "description": <plain text | wiki markup | ADF object>
-  }
-}
-```
-
-The transport may require Atlassian Document Format for `description`. When a
-plain-text or wiki-markup body is rejected, fetch the **Atlassian Document
-Format** URL above and convert the same description sections without changing
-their meaning. The plain-text section order from
-`../subagents/subtask-creator-templates.md` maps 1:1 onto ADF block nodes.
-
-### Configuration probes
-
-Use Atlassian support docs to confirm that:
-
-- subtasks are enabled for the project, and
-- a subtask-style issue type is configured and visible to the project.
-
-Fetch the **Jira Cloud subtask concepts** URL only when the create call
-returns a configuration error (e.g., "issue type not valid for project" or
-"subtasks disabled").
+If Jira rejects plain text or wiki markup for rich-text fields and the ADF docs
+cannot be fetched, build the smallest valid document-like structure supported by
+the active tool while preserving the same section labels and content order. Note
+the uncertainty in `Warnings:`.

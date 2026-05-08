@@ -11,29 +11,30 @@ block nodes without changing their meaning.
 
 ## Jira Description Section Order
 
-The following order is normative; the exact markup is whatever the active
-Jira transport accepts (plain text, wiki markup, or ADF).
+The following order is normative; the active Jira transport decides the exact
+encoding (plain text, wiki markup, or ADF). Fetch the ADF source only when the
+transport requires JSON-rich-text payloads.
 
 ```text
-h3. Objective
+Objective
 <Objective text>
 
-h3. Relevant Requirements and Context
+Relevant Requirements and Context
 <Bullet list or paragraph>
 
-h3. Dependencies / Prerequisites
+Dependencies / Prerequisites
 <Content or "None">
 
-h3. Questions to Answer Before Starting
+Questions to Answer Before Starting
 <Content or "None - all resolved">
 
-h3. Implementation Notes
+Implementation Notes
 <Current plan content>
 
-h3. Definition of Done
+Definition of Done
 <Checklist or bullets>
 
-h3. Likely Files / Artifacts Affected
+Likely Files / Artifacts Affected
 <List>
 ```
 

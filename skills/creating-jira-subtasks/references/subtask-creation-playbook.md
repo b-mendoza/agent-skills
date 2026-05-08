@@ -9,9 +9,9 @@
 
 This playbook describes **what to do and in what order**. Concrete REST
 endpoints, payload field names, ADF JSON shape, and other version-sensitive
-syntax live in `./external-sources.md` (Source Map URLs and Offline
-Cheatsheet). Fetch the smallest relevant URL only when local cheatsheet
-shapes do not match observed behavior.
+syntax live in `./external-sources.md`. Use the active Jira tool's request
+format first when offline; fetch the smallest relevant URL only when current
+syntax or product behavior is uncertain.
 
 ## Execution Steps
 

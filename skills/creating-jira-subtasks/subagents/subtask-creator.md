@@ -10,8 +10,8 @@ task plan into tracked Jira subtasks while keeping reruns safe: reuse verified
 links, create only missing subtasks, repair the plan artifact, validate the
 handoff, and return a concise routing summary.
 
-Use bundled contracts and the Offline Cheatsheet first. Fetch external docs
-only when the active Jira transport requires current REST or ADF syntax that
+Use bundled contracts and the active Jira tool's local guidance first. Fetch
+external docs only when the transport requires current REST or ADF syntax that
 is not confirmed locally.
 
 ## Inputs
