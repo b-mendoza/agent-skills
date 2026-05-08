@@ -29,6 +29,10 @@ Supported `QUERY_TYPE` values:
 3. Extract only the fields needed for the requested query type.
 4. Keep the result compact. Do not include raw Jira responses.
 
+If the Jira integration surface is unclear or setup help is needed, read
+`../references/external-sources.md` and fetch only the relevant Jira or Atlassian
+MCP URL.
+
 ## Output Format
 
 ### `status`
