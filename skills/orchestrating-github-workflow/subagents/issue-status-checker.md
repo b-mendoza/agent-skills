@@ -41,6 +41,10 @@ Supported `QUERY_TYPE` values:
 3. Extract only the fields needed for the requested query type.
 4. Keep the result compact. Do not paste raw JSON or full issue bodies.
 
+If `gh` syntax or current issue capability support is unclear, read
+`../references/external-sources.md` and fetch only the relevant GitHub CLI or
+GitHub Issues URL.
+
 For `task-issues`, use the richest structural data `gh` provides for the
 installed version (for example JSON fields such as `subIssues`, `parent`, or
 tracked references when available). If `gh` cannot enumerate related task
