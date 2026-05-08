@@ -6,6 +6,13 @@
 Use these templates as the local artifact contract. External sources may inform
 wording or rationale, but they do not replace these headings.
 
+## Contents
+
+- Execution Brief Template
+- Execution Plan Template
+- Test Specification Template
+- Refactoring Recommendation Template
+
 ## Execution Brief Template
 
 ```markdown

@@ -12,10 +12,13 @@ flip the active artifact decision.
 ## Fetch Policy
 
 - Fetch a source only when it can change the current artifact decision.
+- Prefer zero external fetches on routine runs; local contracts are enough when
+  the decision is straightforward.
 - Prefer official or primary sources for exact methodology definitions.
 - Use conceptual articles to justify a narrow decision, not to broaden scope.
 - Use at most two pages per stage. Summarize in one or two sentences before
   applying the concept to the artifact.
+- Cite exact URLs; do not paste long excerpts into planning artifacts.
 - If fetching fails, continue from local contracts and record the
   unreachable URL in the subagent's `References fetched` or `Notes`.
 
@@ -26,10 +29,10 @@ flip the active artifact decision.
 | Reference key | URL | Use when |
 | ------------- | --- | -------- |
 | `agent-skills-overview` | https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/overview | The multi-file structure, frontmatter, or loading model of this skill is in question |
-| `agent-skills-best-practices` | https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/best-practices | A change to layering, naming, or progressive loading is being considered |
-| `claude-subagents` | https://docs.claude.com/en/docs/claude-code/sub-agents | Subagent isolation, dispatch boundaries, or summary-only handoff is in question |
+| `agent-skills-best-practices` | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices | A change to concision, layering, naming, or progressive loading is being considered |
+| `claude-subagents` | https://code.claude.com/docs/en/sub-agents | Subagent isolation, dispatch boundaries, or summary-only handoff is in question |
 | `context-engineering` | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | Context-window protection or handoff design could change orchestration |
-| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Maintaining or explaining staged loading inside this skill |
+| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Catalog-level reference for staged loading; prefer official docs if this page lacks source content |
 | `progressive-disclosure-ux` | https://www.nngroup.com/articles/progressive-disclosure/ | A short public description of progressive disclosure would help |
 
 ### Task readiness and acceptance

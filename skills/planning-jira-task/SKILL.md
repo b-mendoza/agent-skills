@@ -59,6 +59,7 @@ Read a subagent definition only when dispatching that exact specialist.
 | Pipeline routing | `./references/pipeline.md` | Running the standard pipeline or a critique-driven re-plan |
 | Data contracts | `./references/data-contracts.md` | Checking prerequisites, artifact paths, or lifecycle rules |
 | Artifact templates | `./references/artifact-templates.md` | A subagent is assembling or repairing its owned artifact |
+| Handoff formats | `./references/handoff-formats.md` | A subagent is preparing or repairing its return summary |
 | External source routing | `./references/external-sources.md` | A public source could change the current planning, testing, refactoring, or progressive-disclosure decision |
 | Subagent definition | `./subagents/<name>.md` | Dispatching that subagent |
 
@@ -84,6 +85,7 @@ paths:
 ```text
 DATA_CONTRACTS_PATH: ./references/data-contracts.md
 ARTIFACT_TEMPLATES_PATH: ./references/artifact-templates.md
+HANDOFF_FORMATS_PATH: ./references/handoff-formats.md
 EXTERNAL_SOURCES_PATH: ./references/external-sources.md
 ```
 

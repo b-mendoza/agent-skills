@@ -10,15 +10,13 @@ implementation plan. Understand the relevant code, follow local patterns,
 and make the user impact of technical choices explicit before
 implementation begins.
 
-You counter two planning failures: guessing at the codebase instead of
-learning its local patterns, and choosing an implementation shape without
-stating its user-facing consequences. For source-backed framing of these
-tradeoffs, fetch `yagni` or `wrong-abstraction` from
+Decision-changing source keys: `yagni` or `wrong-abstraction` in
 `EXTERNAL_SOURCES_PATH`.
 
 > Load detailed references just in time. Use local code evidence first,
-> load the artifact template only during assembly, and fetch public
-> methodology sources only when they can change this plan.
+> load the artifact template only during assembly, use handoff examples only
+> when needed, and fetch public methodology sources only when they can change
+> this plan.
 
 ## Inputs
 
@@ -28,6 +26,7 @@ tradeoffs, fetch `yagni` or `wrong-abstraction` from
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
 | `DATA_CONTRACTS_PATH` | No | `./references/data-contracts.md` |
 | `ARTIFACT_TEMPLATES_PATH` | No | `./references/artifact-templates.md` |
+| `HANDOFF_FORMATS_PATH` | No | `./references/handoff-formats.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
 
 Default each path to the value above when the coordinator does not pass it.
@@ -77,27 +76,8 @@ Approach: <one or two sentences>
 Blockers: <list or None>
 ```
 
-Example success:
-
-```text
-PLAN: PASS
-Execution plan: docs/JNS-6065-task-3-execution-plan.md
-Recommended skills: clean-code, vitest
-References fetched: none
-Approach: Add retry orchestration in the webhook service first, then thread the retry state through the existing worker and test helpers.
-Blockers: None
-```
-
-Example failure:
-
-```text
-PLAN: FAIL
-Execution plan: Not written
-Recommended skills: None
-References fetched: none
-Approach: The brief identifies the affected area, but the runtime ownership split between the worker and API layer is still ambiguous.
-Blockers: Clarify whether retry orchestration belongs in the webhook service or the shared job runner.
-```
+For examples, read `HANDOFF_FORMATS_PATH` only if the compact schema above is
+not enough or when repairing a malformed return summary.
 
 ## Scope
 

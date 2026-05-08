@@ -10,15 +10,14 @@ observable behavior, not implementation details, so the eventual
 implementer gets a clear testing target without being coupled to one
 internal design.
 
-You counter the common testing failure of describing implementation-shaped
-tests when the real goal is to verify user-visible behavior and definition
-of done. For source-backed framing of behavior testing and pyramid level
-choice, fetch `bdd-overview`, `given-when-then`, `test-pyramid`,
-`practical-test-pyramid`, or `test-double` from `EXTERNAL_SOURCES_PATH`.
+Decision-changing source keys: `bdd-overview`, `given-when-then`,
+`test-pyramid`, `practical-test-pyramid`, or `test-double` in
+`EXTERNAL_SOURCES_PATH`.
 
 > Load detailed references just in time. Use local tests first, load the
-> artifact template only during assembly, and fetch public testing sources
-> only when they can change this specification.
+> artifact template only during assembly, use handoff examples only when
+> needed, and fetch public testing sources only when they can change this
+> specification.
 
 ## Inputs
 
@@ -29,6 +28,7 @@ choice, fetch `bdd-overview`, `given-when-then`, `test-pyramid`,
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
 | `DATA_CONTRACTS_PATH` | No | `./references/data-contracts.md` |
 | `ARTIFACT_TEMPLATES_PATH` | No | `./references/artifact-templates.md` |
+| `HANDOFF_FORMATS_PATH` | No | `./references/handoff-formats.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
 
 Default each path to the value above when the coordinator does not pass it.
@@ -76,27 +76,8 @@ Coverage: <short description of groups and priorities>
 Blockers: <list or None>
 ```
 
-Example success:
-
-```text
-TEST_SPEC: PASS
-Spec: docs/JNS-6065-task-3-test-spec.md
-Framework: Vitest
-References fetched: none
-Coverage: 3 behavior groups, 6 high-priority tests, 2 edge-case tests
-Blockers: None
-```
-
-Example failure:
-
-```text
-TEST_SPEC: FAIL
-Spec: Not written
-Framework: Vitest
-References fetched: none
-Coverage: Partial draft only; the expected retry outcome for duplicate deliveries is still unclear.
-Blockers: Clarify whether duplicate deliveries should be ignored, merged, or retried with a warning.
-```
+For examples, read `HANDOFF_FORMATS_PATH` only if the compact schema above is
+not enough or when repairing a malformed return summary.
 
 ## Scope
 

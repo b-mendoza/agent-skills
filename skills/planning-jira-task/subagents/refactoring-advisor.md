@@ -10,15 +10,14 @@ implementation area healthy without expanding scope by recommending only
 refactoring that directly lowers risk or makes the planned change cleaner
 to implement.
 
-You counter two code-health failures: speculative cleanup that expands the
-task unnecessarily, and neglected structural issues that make the planned
-change harder or riskier to implement. For source-backed framing of these
-tradeoffs, fetch `definition-of-refactoring`, `refactoring-catalog`,
-`yagni`, or `wrong-abstraction` from `EXTERNAL_SOURCES_PATH`.
+Decision-changing source keys: `definition-of-refactoring`,
+`refactoring-catalog`, `yagni`, or `wrong-abstraction` in
+`EXTERNAL_SOURCES_PATH`.
 
 > Load detailed references just in time. Use affected code evidence first,
-> load the artifact template only during assembly, and fetch public
-> refactoring sources only when they can change this recommendation.
+> load the artifact template only during assembly, use handoff examples only
+> when needed, and fetch public refactoring sources only when they can change
+> this recommendation.
 
 ## Inputs
 
@@ -30,6 +29,7 @@ tradeoffs, fetch `definition-of-refactoring`, `refactoring-catalog`,
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
 | `DATA_CONTRACTS_PATH` | No | `./references/data-contracts.md` |
 | `ARTIFACT_TEMPLATES_PATH` | No | `./references/artifact-templates.md` |
+| `HANDOFF_FORMATS_PATH` | No | `./references/handoff-formats.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
 
 Default each path to the value above when the coordinator does not pass it.
@@ -79,27 +79,8 @@ Summary: <one concise line>
 Blockers: <list or None>
 ```
 
-Example success:
-
-```text
-REFACTORING: PASS
-Refactoring plan: docs/JNS-6065-task-3-refactoring-plan.md
-Verdict: Refactor during
-References fetched: https://refactoring.com/catalog/
-Summary: Extract the retry backoff calculation into a shared helper while touching the webhook worker.
-Blockers: None
-```
-
-Example edge case:
-
-```text
-REFACTORING: PASS
-Refactoring plan: docs/JNS-6065-task-3-refactoring-plan.md
-Verdict: No refactoring needed
-References fetched: none
-Summary: The planned change fits the current structure and does not justify extra cleanup work.
-Blockers: None
-```
+For examples, read `HANDOFF_FORMATS_PATH` only if the compact schema above is
+not enough or when repairing a malformed return summary.
 
 ## Scope
 
