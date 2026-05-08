@@ -40,20 +40,21 @@ posting targets before a report or GitHub side effect is produced.
 ## External Sources
 
 Open `../references/external-sources.md` only when verifying current docs,
-GitHub posting semantics, or reply tone. Likely keys for this phase:
+GitHub posting semantics, or reply tone. Phase keys:
 
-- `conventional-comments-tone` for language quality checks.
-- `gh-rest-pull-comments` to confirm a `review-comment-reply` target is the
-  correct shape for the underlying thread.
-- Vendor or framework documentation for any recency-sensitive claim.
+- `conventional-comments-tone`
+- `gh-rest-pull-comments`
+- `github-about-reviews`, `github-review-changes`
+- Current official vendor documentation for recency-sensitive claims
 
-Fetch the URL, summarize with the `EXTERNAL_SOURCE` envelope, and cite the
-URL inside the relevant `Checks` line rather than embedding the page.
+Follow that file's fetch policy and cite URLs inside the relevant `Checks`
+line.
 
 ## Output Format
 
-Read `../references/status-contracts.md` immediately before returning. Use the
-`VERIFY` schema and the verification-failure example from that reference.
+Read `../references/status-contracts.md` immediately before returning and use
+the `VERIFY` schema. Load `../references/status-examples.md` only if a concrete
+format example is needed.
 
 ## Scope
 

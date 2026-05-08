@@ -45,21 +45,21 @@ authenticated GitHub user when available; otherwise use `unknown`.
 ## External Sources
 
 Open `../references/external-sources.md` only when GitHub tooling details are
-needed. Likely keys for this phase:
+needed. Phase keys:
 
-- `gh-cli-pr-view`, `gh-cli-api` for CLI flags and pagination behavior.
+- `gh-cli-pr-view`, `gh-cli-api`
 - `gh-rest-pull-comments`, `gh-rest-pull-reviews`, `gh-rest-issue-comments`
-  for REST endpoint shape.
-- `gh-graphql-review-thread` for unresolved or outdated thread metadata.
+- `gh-graphql-review-thread`
+- `github-about-reviews`, `github-review-changes`
 
-Fetch one URL at a time, summarize using the `EXTERNAL_SOURCE` envelope in
-that file, and return the URL with the limitation rather than the page
+Follow that file's fetch policy and return URLs or limitations instead of page
 contents.
 
 ## Output Format
 
-Read `../references/status-contracts.md` immediately before returning. Use the
-`COLLECT` schema from that reference.
+Read `../references/status-contracts.md` immediately before returning and use
+the `COLLECT` schema. Load `../references/status-examples.md` only if a concrete
+format example is needed.
 
 ## Scope
 

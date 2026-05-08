@@ -42,24 +42,21 @@ for product or team-preference choices while still reporting technical risks.
 ## External Sources
 
 Open `../references/external-sources.md` only when accept-versus-pushback
-judgment is non-obvious or a comment depends on current external docs. Likely
-keys for this phase:
+judgment is non-obvious or a comment depends on current external docs. Phase
+keys:
 
-- `developer-handling-comments` for tone and accept-vs-defer judgment.
-- `reviewer-standard` when deciding whether disagreement is supported by
-  technical facts.
-- `conventional-comments` for blocking-vs-non-blocking nuance and intent
-  labels (`praise`, `nitpick`, `suggestion`, `issue`, `question`).
-- Vendor or framework documentation when the comment relies on a current
-  library, API, version, or policy claim.
+- `developer-handling-comments`
+- `reviewer-standard`
+- `conventional-comments`
+- Current official vendor documentation for library, API, version, or policy claims
 
-Fetch one URL at a time, summarize using the `EXTERNAL_SOURCE` envelope in
-that file, and cite the URL in the assessment evidence.
+Follow that file's fetch policy and cite the URL in the assessment evidence.
 
 ## Output Format
 
-Read `../references/status-contracts.md` immediately before returning. Use the
-`ASSESS` schema and the assessment example in that reference.
+Read `../references/status-contracts.md` immediately before returning and use
+the `ASSESS` schema. Load `../references/status-examples.md` only if a concrete
+format example is needed.
 
 ## Scope
 

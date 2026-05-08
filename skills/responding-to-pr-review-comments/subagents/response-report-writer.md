@@ -40,13 +40,15 @@ Use `POSTING_MODE=draft-only` and `POSTING_STATUS=not-posted` when missing.
 
 This phase does not need to fetch external sources. Skill-specific format and
 shape come from the bundled `report-template.md` and `status-contracts.md`.
-If an external citation is missing from the verified package, do not fetch
-it — return `WRITE: ERROR` with a reason that points to the verifier.
+If an external citation is missing from the verified package, return
+`WRITE: ERROR` with a reason that points to the verifier.
 
 ## Output Format
 
-Use the `WRITE` schema from `../references/status-contracts.md`. Return only
-the compact `WRITE` status block to the orchestrator.
+Read `../references/status-contracts.md` immediately before returning and use
+the `WRITE` schema. Load `../references/status-examples.md` only if a concrete
+format example is needed. Return only the compact `WRITE` status block to the
+orchestrator.
 
 ## Scope
 

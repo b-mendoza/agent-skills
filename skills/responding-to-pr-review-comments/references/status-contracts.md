@@ -1,12 +1,12 @@
 # Status Contracts
 
-> Read this file when a subagent is ready to produce or verify a status block.
-> Keep blocks compact: include evidence references and URLs, not raw payloads,
-> diffs, full source files, long logs, or long documentation excerpts.
+> Read this file when a subagent or orchestrator is ready to produce or verify a
+> status block. Keep blocks compact: include evidence references and URLs, not
+> raw payloads, diffs, full source files, long logs, or long documentation excerpts.
 
-The report file format and writing rules live in
-[`./report-template.md`](./report-template.md). Background sources and tone
-guidance live in [`./external-sources.md`](./external-sources.md).
+The report file format lives in [`./report-template.md`](./report-template.md).
+Background sources live in [`./external-sources.md`](./external-sources.md).
+Concrete examples live in [`./status-examples.md`](./status-examples.md).
 
 ## Shared Values
 
@@ -131,41 +131,24 @@ Reason: none | <why status is not PASS>
 Next step: none | <smallest recovery action>
 ```
 
-## Schema Examples
-
-Successful assessment item:
+## Orchestrator Failure Envelope
 
 ```text
-- Comment ID: C1
-  Classification: valid
-  Confidence: high
-  Evidence:
-  - src/api.ts:42 returns 500 for a missing resource while existing route tests expect 404 for the same case.
-  Rationale: The reviewer identified an inconsistent error mapping.
-  Action intent: implement
-  Drafting guidance: Thank them and say we will align the status code with existing route behavior.
+PR_COMMENT_RESPONSE: AUTH | NOT_FOUND | NO_COMMENTS | NEEDS_USER_DECISION | RESPONSE_ERROR | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | CANCELLED
+Reason: <one line>
+Next step: <one clear action>
 ```
 
-Targeted verification failure (illustrates `Fix target` and `Required fixes`):
+## Final Orchestrator Success
 
 ```text
-VERIFY: FAIL
-PR: org/repo#123
-Output file: pr-123-review.md
-Checks:
-- Coverage: PASS - all comments represented
-- Evidence: FAIL - C2 pushback lacks code or documentation evidence
-- Recency: NOT_APPLICABLE - no current external claims
-- Actions: PASS - actions match classifications
-- Language: PASS - replies are natural and concise
-- Posting targets: PASS - unsupported targets remain marked for user choice
-Fix target: assessor:C2
-Required fixes:
-- Add concrete evidence for the C2 pushback or change the classification.
-Verified response package:
-- withheld until checks pass
-Residual risks:
-- none
-Reason: One assessment lacks evidence.
-Next step: Redispatch assessor for C2 only.
+PR_COMMENT_RESPONSE: PASS
+Report: <OUTPUT_FILE>
+Comments assessed: <number>
+Actions: <implement count> implement, <clarify count> clarify, <pushback count> push back
+Posting: <not-posted | posted | cancelled>
+Notes: <residual risk or none>
 ```
+
+Use [`./status-examples.md`](./status-examples.md) only when a concrete example
+is needed.

@@ -41,19 +41,19 @@ Use natural, direct English and `POSTING_MODE=draft-only` when missing.
 ## External Sources
 
 Open `../references/external-sources.md` only when reply style or
-review-communication guidance is needed. Likely keys for this phase:
+review-communication guidance is needed. Phase keys:
 
-- `conventional-comments-tone` when wording feels stiff or defensive.
-- `developer-handling-comments` for natural acknowledgement and follow-up
-  phrasing.
+- `conventional-comments-tone`
+- `developer-handling-comments`
 
-Fetch the URL, extract one or two phrasing cues, and cite the URL in the
-status block's `Style notes` rather than embedding excerpts in draft replies.
+Follow that file's fetch policy and cite one or two phrasing cues in `Style
+notes` instead of embedding excerpts in draft replies.
 
 ## Output Format
 
-Read `../references/status-contracts.md` immediately before returning. Use the
-`DRAFT` schema from that reference.
+Read `../references/status-contracts.md` immediately before returning and use
+the `DRAFT` schema. Load `../references/status-examples.md` only if a concrete
+format example is needed.
 
 ## Scope
 

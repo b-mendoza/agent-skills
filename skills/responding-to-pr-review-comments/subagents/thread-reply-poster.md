@@ -37,18 +37,19 @@ returns `POST: PREVIEW_REQUIRED`.
 ## External Sources
 
 Open `../references/external-sources.md` only when GitHub CLI or REST endpoint
-details are needed. Likely keys for this phase:
+details are needed. Phase keys:
 
-- `gh-rest-pull-comments` for the review-comment reply endpoint shape.
-- `gh-cli-api` for `gh api` flags, GraphQL invocation, or pagination.
+- `gh-rest-pull-comments`
+- `gh-cli-api`
 
-Fetch the URL, summarize with the `EXTERNAL_SOURCE` envelope, and cite it in
-the status block rather than embedding the page contents.
+Follow that file's fetch policy and cite URLs in the status block rather than
+embedding page contents.
 
 ## Output Format
 
-Use the `POST` schema from `../references/status-contracts.md`. Return only
-the compact posting status block to the orchestrator.
+Read `../references/status-contracts.md` immediately before returning and use
+the `POST` schema. Load `../references/status-examples.md` only if a concrete
+format example is needed.
 
 ## Scope
 
