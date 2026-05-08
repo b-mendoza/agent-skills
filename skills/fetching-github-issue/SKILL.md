@@ -1,14 +1,17 @@
 ---
 name: "fetching-github-issue"
-description: 'Phase 1 of `orchestrating-github-workflow`: retrieve a GitHub issue into a stable Markdown snapshot for downstream workflow phases. Use this as a workflow phase, not as a standalone implementation skill, when an issue URL or owner/repo/number needs to become `docs/<ISSUE_SLUG>.md` with predictable headings for metadata, description, acceptance criteria, comments, child issues, linked issues, labels, assignees, and optional milestone/projects/attachments. The bundled retriever handles GitHub reads, validation, and snapshot assembly. This skill coordinates retrieval only: it does not modify GitHub state beyond read-only queries, create branches, or start implementation.'
+description: "Retrieve a GitHub issue into a stable Markdown snapshot for downstream workflow phases. Use when a GitHub issue URL or owner/repo/number coordinates need to become docs/<ISSUE_SLUG>.md with predictable tracker context while preserving the coordinator context window. The bundled retriever performs read-only GitHub queries, artifact assembly, validation, and concise reporting."
 ---
 
 # Fetching GitHub Issue
 
-You are a Phase 1 coordinator. Your job is to turn a GitHub issue reference
-into a validated local snapshot by dispatching one retrieval specialist, keeping
-only its structured summary, and reporting the result in a form the orchestrator
-can carry forward.
+You are a GitHub issue retrieval coordinator. Turn one issue reference into a
+validated local snapshot by dispatching the bundled retriever, retaining only its
+structured summary, and reporting the result for the next workflow phase.
+
+This skill is standalone. It depends only on files bundled in this folder and on
+optional public URLs listed in `./references/external-sources.md` for
+just-in-time source checks.
 
 ## Inputs
 
@@ -19,316 +22,113 @@ can carry forward.
 | `REPO` | With `OWNER` + `ISSUE_NUMBER` when URL absent | `app` |
 | `ISSUE_NUMBER` | With `OWNER` + `REPO` when URL absent | `42` |
 
-Derive when needed (normalize **owner** and **repo** to lowercase for slug
-stability):
-
-- **ISSUE_SLUG:** `<owner>-<repo>-<issue_number>`
-- **OWNER**, **REPO**, **ISSUE_NUMBER** from `ISSUE_URL` when present
-
-Prefer passing `ISSUE_URL` downstream when you have it; it removes ambiguity and
-matches the retriever's direct-issue read path. If only `OWNER` / `REPO` /
-`ISSUE_NUMBER` are provided, the subagent must still use explicit `owner/repo`
-repository scope for GitHub reads.
+Derive `OWNER`, `REPO`, and `ISSUE_NUMBER` from `ISSUE_URL` when present.
+Normalize owner and repo to lowercase for `ISSUE_SLUG=<owner>-<repo>-<number>`.
+Prefer passing the full URL to the retriever because it carries host,
+repository, and issue identity together.
 
 ## Workflow Overview
 
-```text
-1. Read the retriever subagent definition
-2. Dispatch the subagent with ISSUE_URL (or OWNER, REPO, ISSUE_NUMBER)
-3. Interpret the structured summary it returns
-4. Report the file path, counts, and warnings to the caller
-```
+| Step | Owner | Output |
+| ---- | ----- | ------ |
+| Normalize input | Inline | URL or explicit coordinates plus `ISSUE_SLUG` |
+| Retrieve snapshot | `issue-retriever` | Structured `FETCH` summary and optional `docs/<ISSUE_SLUG>.md` |
+| Interpret result | Inline, with `fetch-contract.md` if needed | Continue, warn, or stop |
+| Report | Inline | One concise user-facing phase result |
 
 ## Subagent Registry
 
-Read a subagent definition only when you are about to dispatch it.
-
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
-| `issue-retriever` | `./subagents/issue-retriever.md` | Uses the bundled GitHub read path to retrieve GitHub data, writes `docs/<ISSUE_SLUG>.md`, validates the artifact, and returns a concise fetch summary |
+| `issue-retriever` | `./subagents/issue-retriever.md` | Reads GitHub data, writes and validates `docs/<ISSUE_SLUG>.md`, and returns a compact fetch summary |
 
-## Dispatch Contract
+Read the subagent file only when dispatching that exact specialist.
 
-This stage dispatches exactly one bundled retriever subagent.
+## Progressive Disclosure Policy
 
-- Read `./subagents/issue-retriever.md` only when you are ready to dispatch it
-- Pass only the stage input contract values plus any directly derived identifiers
-- Treat the retriever as the only component allowed to read raw GitHub payloads,
-  assemble the snapshot, validate the artifact, and decide whether the run is
-  `PASS`, `PARTIAL`, `FAIL`, or `ERROR`
-- Keep only the retriever's structured summary in orchestrator context; do not
-  inspect raw payloads or rewrite the artifact in this coordinator
+| Layer | File or source | Load when |
+| ----- | -------------- | --------- |
+| Core orchestration | This `SKILL.md` | Always, when the skill triggers |
+| Status and reporting contract | `./references/fetch-contract.md` | Interpreting non-trivial retriever results or formatting final reports |
+| Retriever execution rules | `./references/retrieval-playbook.md` | Passed to the retriever; loaded by the retriever before GitHub reads |
+| Snapshot template | `./references/issue-snapshot-template.md` | Loaded by the retriever only during document assembly |
+| External source routing | `./references/external-sources.md` | Exact `gh`, REST, GraphQL, pagination, rate-limit, or progressive-disclosure source material could change the current decision |
+| Subagent definition | `./subagents/issue-retriever.md` | Dispatching `issue-retriever` |
+
+Pass paths and relevant URLs to the retriever instead of loading detailed
+references in the coordinator. The coordinator keeps only identifiers, the
+artifact path, structured statuses, counts, warnings, and fatal reasons.
 
 ## How This Skill Works
 
-This skill is intentionally narrow. It coordinates retrieval, not mutation,
-planning, or execution. Keep only:
+The coordinator performs four actions: derive identifiers from the issue
+reference, read bundled routing files, dispatch `issue-retriever`, and branch on
+the returned summary. GitHub payload inspection, relationship discovery,
+artifact writing, artifact repair, and validation stay inside the retriever.
 
-- `ISSUE_SLUG` and the URL or coordinates needed for the next phase
-- The file path written
-- Counts and warnings from the retriever summary
-- Any fatal reason that requires user action
+Dispatch `issue-retriever` with:
 
-This phase succeeds only when the retriever returns a structured result that
-matches the output contract and, when a file is written, reports validation
-status consistently.
+```text
+ISSUE_URL: <input URL, when available>
+OWNER: <owner, when URL absent>
+REPO: <repo, when URL absent>
+ISSUE_NUMBER: <number, when URL absent>
+FETCH_CONTRACT_PATH: ./references/fetch-contract.md
+RETRIEVAL_PLAYBOOK_PATH: ./references/retrieval-playbook.md
+SNAPSHOT_TEMPLATE_PATH: ./references/issue-snapshot-template.md
+EXTERNAL_SOURCES_PATH: ./references/external-sources.md
+```
 
-This coordinator may do four things directly: read its bundled skill files,
-derive identifiers from the input contract (including fallback coordinates when
-no URL is provided), dispatch the retriever, and relay the retriever's
-structured summary. Everything else stays inside the subagent.
+Branch on structured fields, not prose:
 
-### 1. Dispatch the retriever
+| Summary state | Coordinator action |
+| ------------- | ------------------ |
+| `FETCH: PASS` with `Validation: PASS` | Report success and continue |
+| `FETCH: PARTIAL` with `Validation: PASS` | Report success with visible warnings and continue only if downstream phases can tolerate partial context |
+| `Validation: FAIL` | Stop and report the contract failure |
+| `FETCH: FAIL` | Stop and report `Failure category` plus `Reason` |
+| `FETCH: ERROR` | Stop and report the unexpected failure |
 
-Read `./subagents/issue-retriever.md`, then dispatch it with:
-
-- `ISSUE_URL` when available, otherwise `OWNER`, `REPO`, and `ISSUE_NUMBER`
-
-The subagent owns input validation, GitHub read-path availability and auth
-checks, issue and relationship retrieval, document assembly, output validation,
-and cleanup.
-
-### 2. Interpret the structured result
-
-> Reminder: branch on the structured result fields, not on prose. This
-> coordinator dispatches, interprets, and relays summaries; it does not inspect
-> raw GitHub payloads or rewrite the artifact.
-
-The retriever returns the locked summary shape used by the paired tracker-
-fetching skills. Only the tracker-specific identity line, state line, and
-work-breakdown line differ:
-
-- `FETCH: PASS` -> retrieval and validation succeeded
-- `FETCH: PARTIAL` -> artifact was written and validated, but some comments or
-  related items could not be retrieved, or discovery of related items or
-  project membership could not be verified
-- Shared rule: parent comment retrieval and child issues / linked issues
-  retrieval or discovery gaps use `PARTIAL`
-- GitHub-specific: `## Projects` also uses `PARTIAL` when membership cannot be
-  determined because the required capability was unavailable
-- `FETCH: FAIL` -> deterministic failure such as bad input, issue not found,
-  missing auth, rate limits after retry, or no usable GitHub read capability
-- `FETCH: ERROR` -> unexpected tool or environment failure
-- `Failure category` -> machine-readable cause for `FETCH: FAIL` or
-  `FETCH: ERROR`
-
-Validation is reported separately:
-
-- `Validation: PASS` -> the written file satisfies the template contract
-- `Validation: FAIL` -> the file was written but still violates the contract
-- `Validation: NOT_RUN` -> retrieval failed before validation could happen
-
-For count lines in the summary:
-
-- `0/0` (where that shape applies) means the retriever verified that no items
-  exist in that section
-- `<retrieved>/UNKNOWN` means the parent issue was retrieved but discovery
-  for that section could not be verified; the retriever records a warning and
-  treats the run as `FETCH: PARTIAL`
-- `N/A` for `Comments`, `Child issues`, or `Linked issues` means the parent
-  issue was not retrieved and those retrieval steps never ran (for example,
-  `Failure category: NOT_FOUND` before any snapshot). Do not use `0/0` or
-  `<retrieved>/UNKNOWN` in that case
-- `Attachments: <N>` is the number of attachment entries under
-  `## Attachments`; use `Attachments: N/A` when the parent issue was not
-  retrieved (that section was not populated from a successful parent read)
-
-Failure categories are:
-
-- `NONE` -> no fatal failure occurred
-- `BAD_INPUT` -> malformed URL, missing coordinates, or unusable slug
-- `NOT_FOUND` -> the parent issue could not be found before a valid artifact
-  was produced
-- `AUTH` -> GitHub access was denied or not authenticated
-- `TOOLS_MISSING` -> no usable GitHub read capability was available for the
-  required reads
-- `RATE_LIMIT` -> GitHub API rate-limited and retry budget was exhausted
-- `UNEXPECTED` -> tool or environment failure outside the expected categories
-
-Handle them this way:
-
-- `FETCH: PASS` with `Validation: PASS`: report success and continue
-- `FETCH: PARTIAL` with `Validation: PASS`: report success with warnings and
-  make the incompleteness visible, including any template unknown markers
-- `Validation: FAIL`: stop and relay contract failure (any `FETCH`)
-- `FETCH: FAIL`: stop and relay the failure category plus the reason
-- `FETCH: ERROR`: stop and relay the failure category plus the reason as an
-  unexpected failure
-- Any inconsistent pairing, such as `FETCH: PASS` with `Validation: NOT_RUN`:
-  treat it as `FETCH: ERROR` and stop
-
-Do not infer fatal cause from prose when `Failure category` is present. Branch
-on the category, then use `Reason` only for user-facing detail.
-
-Locked summary line order:
-
-1. `FETCH`
-2. `Validation`
-3. `Failure category`
-4. `File written`
-5. Tracker identity line (`Issue: ...` on GitHub)
-6. Tracker state line (`State: ...` on GitHub)
-7. `Comments`
-8. Work-breakdown line (`Child issues: ...` on GitHub)
-9. `Linked issues`
-10. `Attachments`
-11. `Warnings`
-12. `Reason`
-
-### 3. Report only the summary
-
-Using only the subagent's structured summary, tell the caller:
-
-- The file path written, when one exists
-- The issue identity (`Issue: <owner>/<repo>#<N>: <Title>`)
-- The issue state (`State: OPEN | CLOSED`)
-- Retrieved versus discovered counts for comments, or `N/A` when the parent
-  issue was not retrieved
-- The attachment entry count (`Attachments: <N>`), or `N/A` when the parent
-  issue was not retrieved
-- Retrieved versus discovered counts for child issues and linked issues, where
-  the discovered total may be `UNKNOWN` when discovery could not be verified,
-  or `N/A` when the parent issue was not retrieved and discovery never ran
-- Any warnings or fatal reason
-- Any failure category, when one exists
-- That this phase is retrieval only and does not mutate GitHub
+If a returned status pairing is inconsistent, load `./references/fetch-contract.md`
+and treat the run as an error unless that contract gives a safer action.
 
 ## Output Contract
 
-Primary artifact:
+Primary artifact, when retrieval reaches document assembly:
 
 ```text
 docs/<ISSUE_SLUG>.md
 ```
 
-Treat `docs/<ISSUE_SLUG>.md` as a preserved workflow artifact for resumability.
-Do not commit it as part of implementation history.
+The artifact is a local workflow snapshot for resumability. Leave it in place;
+do not stage or commit it as implementation history.
 
-The document must contain every top-level heading from the fenced Markdown
-snapshot shape in `./subagents/issue-retriever-template.md`. Repeated nested
-headings, such as comment entries or per-related-item subsections, appear only
-when their parent section has material to render. If a top-level section has
-verified empty data, the heading still appears and the section body is
-`_None_`. If the retriever could not verify whether a section is empty, the
-artifact must use the template's unknown marker instead. Downstream skills rely
-on stable headings rather than best-effort prose. If retrieval is partial, the
-artifact must record that explicitly in `## Retrieval Warnings` and use the
-template's placeholder shapes for any child or linked issue that could not be
-hydrated, or the template's unknown marker when a section could not be
-verified as empty.
-
-Treat `./subagents/issue-retriever-template.md` as the authoritative snapshot
-shape bundled with this skill. The section tables below are the scan-friendly
-summary of that contract.
-
-**Locked-core sections** (same names and relative order across the paired
-issue/ticket-fetching skills; the platform-slot heading—`## Child Issues` on
-GitHub and `## Subtasks` on Jira—occupies the locked position between
-`## Retrieval Warnings` and `## Linked Issues`):
-
-| Section | Why it exists |
-| ------- | ------------- |
-| `## Metadata` | Core tracker identity and context for planning and validation |
-| `## Description` | Primary source of requirements after normalization |
-| `## Acceptance Criteria` | Definition-of-done source, including extracted AC when present |
-| `## Comments` | Decisions, clarifications, and implementation hints |
-| `## Retrieval Warnings` | Stable disclosure for partial retrieval and capability limits |
-| `## Child Issues` / `## Subtasks` | Locked platform slot for the tracker-specific work-breakdown section; see the platform-slot table below for the exact heading name |
-| `## Linked Issues` | Dependency and surrounding context |
-
-**Locked platform-slot section** (shared concept; the parallel ticket-fetching
-skill uses `## Subtasks`):
-
-| Section | Why it exists |
-| ------- | ------------- |
-| `## Child Issues` | GitHub sub-issues / child work items when discoverable |
-
-Top-level snapshot order is `## Metadata`, `## Description`,
-`## Acceptance Criteria`, `## Comments`, `## Retrieval Warnings`,
-`## Child Issues`, `## Linked Issues`, then the platform-extension sections
-below.
-
-The retrieval preamble must include `Retrieved on`, `Source: <ISSUE_URL>` (or
-`owner/repo#N` when no URL is available), and
-`Repository: <owner>/<repo> | Issue: #<N>`. In `## Metadata`, keep stable
-identity rows for `ISSUE_SLUG`, `Repository`, `Issue number`, and `URL`.
-
-**Platform-extension sections** (GitHub-specific; expected to differ across
-tracker-fetching skills). All stay stably present, using `_None_` only when
-their absence was verified:
-
-| Section | Why it exists |
-| ------- | ------------- |
-| `## Labels` | Scoped classification |
-| `## Assignees` | Ownership |
-| `## Milestone` | Release or iteration bucket when set |
-| `## Projects` | Project board / project fields when retrievable without excessive custom setup; when not determinable, render the template's unknown marker instead of `_None_` |
-| `## Attachments` | File-like asset references when they can be identified from explicit linked uploads or binary URLs |
+Use `./references/fetch-contract.md` for the locked summary line order, count
+semantics, failure categories, top-level snapshot headings, and report examples.
 
 ## Escalation
 
-Branch on the retriever's structured status fields, not on prose:
-
-| Summary state | Coordinator action |
-| ------------- | ------------------ |
-| `FETCH: PASS` with `Validation: PASS` | Report success and continue |
-| `FETCH: PARTIAL` with `Validation: PASS` | Report success with warnings and keep the incompleteness visible |
-| `FETCH: FAIL` | Stop and surface the failure category plus reason |
-| `FETCH: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or contract failure |
+Stop and surface the retriever's structured failure when the summary reports
+`BAD_INPUT`, `NOT_FOUND`, `AUTH`, `TOOLS_MISSING`, `RATE_LIMIT`, `UNEXPECTED`, or
+`Validation: FAIL`. Ask the user for input only when the failure is actionable by
+the user, such as missing coordinates or missing GitHub authentication.
 
 ## Example
 
 <example>
-Input: `ISSUE_URL=https://github.com/acme/app/issues/42` -> `ISSUE_SLUG=acme-app-42`
+Input: `ISSUE_URL=https://github.com/acme/app/issues/42`
 
-1. Read `./subagents/issue-retriever.md`
-2. Dispatch `issue-retriever` with `ISSUE_URL`
-3. Subagent returns:
-
-   FETCH: PASS
-   Validation: PASS
-   Failure category: NONE
-   File written: docs/acme-app-42.md
-   Issue: acme/app#42: Implement dark mode toggle
-   State: OPEN
-   Comments: 4/4
-   Child issues: 0/0
-   Linked issues: 1/1
-   Attachments: 0
-   Warnings: None
-   Reason: None
-
-4. Report:
-   "Issue fetched to `docs/acme-app-42.md`.
-   `acme/app#42: Implement dark mode toggle` is `OPEN`.
-   Retrieved 4/4 comments, 0/0 child issues, 1/1 linked issues, 0 attachments.
-   Retrieval only; GitHub was not modified."
+Flow: derive `ISSUE_SLUG=acme-app-42`, dispatch `issue-retriever`, receive
+`FETCH: PASS` and `Validation: PASS`, then report that `docs/acme-app-42.md` was
+written with issue identity, state, relationship counts, attachment count, and
+no GitHub mutation.
 </example>
 
 <example>
 Input: `ISSUE_URL=https://github.com/acme/app/issues/7001`
 
-1. Read `./subagents/issue-retriever.md`
-2. Dispatch `issue-retriever` with `ISSUE_URL`
-3. Subagent returns:
-
-   FETCH: PARTIAL
-   Validation: PASS
-   Failure category: NONE
-   File written: docs/acme-app-7001.md
-   Issue: acme/app#7001: Audit webhook retries
-   State: OPEN
-   Comments: 2/2
-   Child issues: 1/2
-   Linked issues: 0/0
-   Attachments: 0
-   Warnings: Could not retrieve acme/app#7002 (404 Not Found)
-   Reason: None
-
-4. Report:
-   "Issue fetched to `docs/acme-app-7001.md` with retrieval warnings.
-   `acme/app#7001: Audit webhook retries` is `OPEN`.
-   Retrieved 2/2 comments, 1/2 child issues, 0/0 linked issues, 0 attachments.
-   Warning: Could not retrieve `acme/app#7002` (404 Not Found).
-   Retrieval only; GitHub was not modified."
+Flow: dispatch `issue-retriever`, receive `FETCH: PARTIAL` and
+`Validation: PASS`, then report the file path and warning such as
+`Child issue discovery unavailable: sub_issues endpoint unsupported on this host`.
+Continue only with the warning visible to downstream phases.
 </example>
