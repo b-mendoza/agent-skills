@@ -112,7 +112,7 @@ Repeated nested headings appear only when the section has material or a
 required `Not retrieved` placeholder. Use `_None_` for verified empty
 sections; use the template's `_Unknown..._` markers when subtask or
 linked-issue discovery is unverified after the parent ticket was retrieved.
-The full snapshot shape lives in `./references/ticket-snapshot-template.md`.
+The full snapshot shape lives in `./ticket-snapshot-template.md`.
 
 ## Coordinator Report Phrasing
 

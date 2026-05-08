@@ -93,7 +93,7 @@ to that comment section, record the same warning under
 
 ## Assembly
 
-Read `./references/ticket-snapshot-template.md` only at assembly time. Copy
+Read `./ticket-snapshot-template.md` only at assembly time. Copy
 the fenced shape into `docs/<TICKET_KEY>.md` and fill it from retrieved data.
 Top-level headings are always required. For empty scalar metadata values,
 write `_None_`. Normalize timestamps with times to `YYYY-MM-DD HH:MM UTC`;

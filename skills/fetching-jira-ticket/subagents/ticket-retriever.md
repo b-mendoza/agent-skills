@@ -19,12 +19,12 @@ status summary that keeps raw Jira payloads out of the caller's context.
 | Input | Required | Default |
 | ----- | -------- | ------- |
 | `JIRA_URL` | Yes | — |
-| `FETCH_CONTRACT_PATH` | No | `./references/fetch-contract.md` |
-| `RETRIEVAL_PLAYBOOK_PATH` | No | `./references/retrieval-playbook.md` |
-| `SNAPSHOT_TEMPLATE_PATH` | No | `./references/ticket-snapshot-template.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
+| `FETCH_CONTRACT_PATH` | No | `../references/fetch-contract.md` |
+| `RETRIEVAL_PLAYBOOK_PATH` | No | `../references/retrieval-playbook.md` |
+| `SNAPSHOT_TEMPLATE_PATH` | No | `../references/ticket-snapshot-template.md` |
+| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
 
-Paths are relative to the skill root.
+Bundled paths above are relative to this subagent file.
 
 Derive workspace from the Atlassian subdomain, `TICKET_KEY` from the final
 URL segment, and project from the key prefix. If the URL is malformed or the
