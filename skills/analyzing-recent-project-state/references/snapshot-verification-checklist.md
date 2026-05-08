@@ -1,6 +1,11 @@
 # Snapshot Verification Checklist
 
-> Read this file only when `snapshot-verifier` is checking a draft report. Verify by comparing the report to `GIT_EVIDENCE`; do not perform a fresh full analysis.
+> Read this file only when `snapshot-verifier` is checking a draft report.
+> Verify by comparing the report to `GIT_EVIDENCE`; do not perform a fresh
+> full analysis. If a check needs source-backed background (general code
+> review judgment, test pyramid framing, OWASP categories, twelve-factor
+> config), open `./external-sources.md` and fetch the smallest relevant URL
+> instead of inlining heuristics.
 
 ## Required Checks
 
@@ -37,4 +42,6 @@ Decision needed: Redispatch writer with required fixes.
 
 ## Fix Guidance
 
-Return only targeted fixes. The orchestrator will redispatch `state-snapshot-writer` with those issues and the original evidence handoff, then re-run this checklist.
+Return only targeted fixes. The orchestrator will redispatch
+`state-snapshot-writer` with those issues and the original evidence handoff,
+then re-run this checklist.

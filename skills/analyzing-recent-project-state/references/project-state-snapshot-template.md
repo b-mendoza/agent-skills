@@ -1,6 +1,11 @@
 # Project State Snapshot Template
 
-> Read this file only when `state-snapshot-writer` is assembling the final report. Local Git evidence is primary; cite external sources only next to findings they actually support.
+> Read this file only when `state-snapshot-writer` is assembling the final
+> report. Local Git evidence is primary; cite external sources only next to
+> findings they actually support. Use `./external-sources.md` to look up
+> public references such as code review guides, OWASP categories, the test
+> pyramid, twelve-factor config, semantic versioning, or API compatibility
+> rules instead of restating them in the report.
 
 ## Report Shape
 
@@ -40,7 +45,8 @@
 
 ## 4. Behavioral Impact
 
-Separate confirmed behavior changes, likely behavior changes, and possible behavior changes that need verification.
+Separate confirmed behavior changes, likely behavior changes, and possible
+behavior changes that need verification.
 
 ## 5. Risks, Gotchas, and Smells
 
@@ -76,18 +82,21 @@ Plain-English handoff for continuing safely.
 
 ## Depth Rules
 
-For `OUTPUT_DEPTH=brief`, keep the same section order and use the fewest useful bullets. For `OUTPUT_DEPTH=standard`, include evidence-backed themes and risks without broad architecture review. For `OUTPUT_DEPTH=deep`, inspect additional surrounding context only for changed high-risk areas.
+For `OUTPUT_DEPTH=brief`, keep the same section order and use the fewest
+useful bullets. For `OUTPUT_DEPTH=standard`, include evidence-backed themes
+and risks without broad architecture review. For `OUTPUT_DEPTH=deep`,
+inspect additional surrounding context only for changed high-risk areas.
 
 ## Example Theme
 
 ```markdown
 ### Theme: Token Refresh Flow
 
-- **What changed:** The middleware now accepts a refresh cookie before rebuilding the session.
+- **What changed:** Middleware now accepts a refresh cookie before rebuilding the session.
 - **Files involved:** `src/auth/middleware.ts`, `tests/auth-refresh.test.ts`
-- **Evidence:** Both files changed in the base delta.
-- **Why it appears to have changed:** Inference: the branch appears to add automatic token refresh to reduce forced logins.
-- **Developer context:** This touches an authentication boundary, so logout, expiry, and cookie validation behavior need review.
+- **Evidence:** Both files appear in the base delta.
+- **Why it appears to have changed:** Inference. The branch reads as adding automatic token refresh to reduce forced logouts.
+- **Developer context:** Authentication boundary; logout, expiry, and cookie validation all need re-review.
 - **Risk level:** High
-- **What to review next:** Verify cookie validation, expiry handling, logout invalidation, and regression coverage.
+- **What to review next:** Cookie validation, expiry handling, logout invalidation, regression coverage. See OWASP code review guide via `./external-sources.md` if a deeper category is needed.
 ```
