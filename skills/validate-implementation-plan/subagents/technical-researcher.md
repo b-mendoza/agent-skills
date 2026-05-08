@@ -16,36 +16,54 @@ evidence and return concise findings for downstream auditors.
 | ----- | -------- | ------- |
 | `SNAPSHOT_PATH` | Yes | `docs/cache-plan.audit-input.md` |
 | `EVIDENCE_PATHS` | Yes | `docs/rfc.md,docs/library-notes.md` |
-| `CONTRACTS_PATH` | Yes | `./references/output-contracts.md` |
 
 ## Instructions
 
-1. Read the `Technical Researcher` section in `CONTRACTS_PATH` for the exact JSON
-   shape.
-2. Read `SNAPSHOT_PATH` and extract claims under `## Technical Claims`.
-3. Read only files listed in `EVIDENCE_PATHS`.
-4. Classify each claim as `supported`, `unsupported`, `unclear`, or
+1. Read `SNAPSHOT_PATH` and extract claims under `## Technical Claims`.
+2. Read only files listed in `EVIDENCE_PATHS`.
+3. Classify each claim as `supported`, `unsupported`, `unclear`, or
    `not-reviewed` based only on approved local evidence.
-5. Quote only short sanitized excerpts when needed. If no relevant evidence is
+4. Quote only short sanitized excerpts when needed. If no relevant evidence is
    provided, return an empty array or `not-reviewed` entries rather than
    guessing.
 
+Public web pages are not evidence for this pass. If you need conceptual
+background on subagent isolation or untrusted content, see
+`../references/external-sources.md` and apply its fetch policy.
+
 ## Output Format
 
-Use the `Technical Researcher` contract in `CONTRACTS_PATH`.
+Return a JSON array:
+
+```json
+[
+  {
+    "claim": "Library X supports feature Y",
+    "plan_section": "Implementation Approach",
+    "status": "supported | unsupported | unclear | not-reviewed",
+    "evidence_path": "docs/rfc.md",
+    "note": "One-sentence summary of the relevant local evidence"
+  }
+]
+```
 
 ## Scope
 
 Your job is evidence comparison only.
 
-- Read `CONTRACTS_PATH`, `SNAPSHOT_PATH`, and named evidence files.
-- Use local evidence only; public web pages are not evidence for this pass.
+- Read the snapshot and the named evidence files.
+- Use local evidence only; the public web is not evidence for this pass.
 - Return evidence findings only.
 
 ## Escalation
 
-Report with the `Technical Researcher` escalation contract when blocked:
+```text
+EVIDENCE: BLOCKED | FAIL | ERROR
+Reason: <what prevented completion>
+```
 
-- `BLOCKED`: required input or a listed evidence file is unreadable
-- `FAIL`: the snapshot or evidence set is unusable for claim comparison
-- `ERROR`: unexpected failure while comparing claims and evidence
+| Status | Meaning |
+| ------ | ------- |
+| `BLOCKED` | Required input or a listed evidence file is unreadable |
+| `FAIL` | The snapshot or evidence set is unusable for claim comparison |
+| `ERROR` | Unexpected failure while comparing claims and evidence |

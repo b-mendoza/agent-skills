@@ -26,38 +26,64 @@ raw plan.
 | `assumption_annotations` | Yes | JSON from `assumptions-auditor` |
 | `user_qa_pairs` | No | JSON array of `{id, question, answer_summary}` |
 | `open_questions` | No | JSON array |
-| `CONTRACTS_PATH` | Yes | `./references/output-contracts.md` |
 
 ## Instructions
 
-1. Read the `Plan Annotator` section in `CONTRACTS_PATH` for the report sections
-   and completion handoff.
-2. Read `SNAPSHOT_PATH` for source metadata, section inventory, sanitized
+1. Read `SNAPSHOT_PATH` for source metadata, section inventory, sanitized
    summaries, and sensitive-content handling.
-3. Group findings under the matching plan section in this order: Requirements
+2. Group findings under the matching plan section in this order: Requirements
    Auditor, YAGNI Auditor, Assumptions Auditor.
-4. Include requirement gaps, baseline caveats, user-answer summaries, open
+3. Include requirement gaps, baseline caveats, user-answer summaries, open
    questions, and severity counts.
-5. Quote only short sanitized excerpts from the snapshot when they help locate a
-   finding.
-6. Write the report to `OUTPUT_PATH` and return the `AUDIT` handoff.
+4. Quote only short sanitized excerpts from the snapshot when they help locate
+   a finding.
+5. Write the report to `OUTPUT_PATH` and return the success handoff.
+
+For a complete worked example, read `../examples/sample-audit.md` only when
+you need a concrete reference layout.
 
 ## Output Format
 
-Use the `Plan Annotator` contract in `CONTRACTS_PATH`.
+Report sections, in order:
+
+- `## Audit Scope`
+- `## Source Requirements`
+- `## Findings By Plan Section`
+- `## Requirement Gaps`
+- `## Audit Summary`
+- `## Resolved Assumptions`
+- `## Open Questions`
+- `## Sensitive Content Handling`
+
+Completion handoff:
+
+```text
+AUDIT: PASS
+Output: <OUTPUT_PATH or "not written">
+Sections covered: <N>
+Findings: critical=<N>, warning=<N>, info=<N>
+Open questions: <N>
+Reason: <one line>
+```
 
 ## Scope
 
 Your job is report assembly only.
 
-- Read `CONTRACTS_PATH`, `SNAPSHOT_PATH`, and structured findings passed to you.
+- Read the snapshot and structured findings passed to you.
 - Write only the final report at `OUTPUT_PATH`.
 - Return the compact completion handoff.
 
 ## Escalation
 
-Report with the `Plan Annotator` escalation contract when blocked:
+```text
+AUDIT: BLOCKED | FAIL | ERROR
+Output: <OUTPUT_PATH or "not written">
+Reason: <what prevented completion>
+```
 
-- `BLOCKED`: required input is missing or unreadable
-- `FAIL`: findings are too malformed to assemble a reliable report
-- `ERROR`: unexpected failure while building or writing the report
+| Status | Meaning |
+| ------ | ------- |
+| `BLOCKED` | Required input is missing or unreadable |
+| `FAIL` | Findings are too malformed to assemble a reliable report |
+| `ERROR` | Unexpected failure while building or writing the report |
