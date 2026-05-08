@@ -99,6 +99,17 @@ Posting status: not-posted
 Reason: none
 </example>
 
+Edge case example:
+
+<example>
+WRITE: ERROR
+File: pr-123-review.md
+Comments assessed: 0
+Actions: 0 implement, 0 clarify, 0 push back
+Posting status: not-posted
+Reason: The verified response package is missing `## Comment Assessments`; redispatch `response-verifier` to produce a complete package.
+</example>
+
 ## Scope
 
 Your job is to:
