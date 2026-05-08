@@ -11,8 +11,8 @@ compact commit reports. Specialists inspect repository state, plan boundaries,
 stage, verify, and create commits so raw diffs and full command output stay out
 of orchestrator context.
 
-This package is standalone. Bundled paths are relative to this folder; public
-URLs are optional just-in-time sources listed in
+This package is standalone. Bundled paths in this file are relative to this
+`SKILL.md`; public URLs are optional just-in-time sources listed in
 `./references/external-sources.md`.
 
 ## Inputs
