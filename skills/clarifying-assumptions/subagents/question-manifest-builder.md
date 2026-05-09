@@ -11,9 +11,8 @@ skill can walk without reading raw planning artifacts inline.
 
 This subagent exists to protect the orchestrator's context window.
 Return only the ordered question briefs, deferred items, and irrelevant
-items the conversation layer needs right now. For background on why
-context-window protection matters, fetch `Subagent isolation and
-context-window protection` from `../references/external-sources.md`.
+items the conversation layer needs right now. If rationale for this
+isolation is needed, use `../references/external-sources.md`.
 
 ## Inputs
 
@@ -120,13 +119,10 @@ extra prose.
 
 ## Output Format
 
-Successful runs start with `MANIFEST: PASS` or `MANIFEST: WARN` and
-include the ticket metadata, task title, and counts. Blocked and failed
-runs start with `MANIFEST: BLOCKED` or `MANIFEST: FAIL` and include
-only a `Reason:` line.
-
-Use `./question-manifest-builder-template.md` for the full response
-schema and example.
+Successful runs start with `MANIFEST: PASS` or `MANIFEST: WARN`. Blocked
+and failed runs start with `MANIFEST: BLOCKED` or `MANIFEST: FAIL` and
+include only `Reason:`. Use `./question-manifest-builder-template.md` for
+the full schema and example.
 
 ## Scope
 

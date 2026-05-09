@@ -106,13 +106,9 @@ Return only the structured summary from
 ## Output Format
 
 Read `./decision-recorder-template.md` only when formatting the final
-response. Successful or warning runs start with `RECORDING: PASS` or
-`RECORDING: WARN`, then include the recording summary, file list,
-counts, and validation result.
-
-Blocked and errored runs start with `RECORDING: BLOCKED` or
-`RECORDING: ERROR`, then include the ticket metadata line and one
-`Reason:` line.
+response. Successful runs start with `RECORDING: PASS` or
+`RECORDING: WARN`; blocked and errored runs start with
+`RECORDING: BLOCKED` or `RECORDING: ERROR` and include one `Reason:` line.
 
 ## Scope
 
