@@ -10,16 +10,9 @@
 
 ## When To Fetch Background
 
-The workflow runs offline from this file. Fetch one URL from
-`./external-sources.md` only for rationale, coaching, or source-backed
-framing.
-
-| Need | Source row |
-| --- | --- |
-| Why user needs come before solution details | Design Thinking framework |
-| Why repeated `why` questions are acceptable | Root-cause questioning |
-| Why question details are revealed gradually | Progressive disclosure as a UX and design principle |
-| Why critique items are not silently accepted | Prompt-injection awareness |
+The workflow runs offline from this file. Fetch one matching URL from
+`./external-sources.md` only when the developer asks why a questioning
+pattern, staged reveal, or trust-boundary rule is being applied.
 
 ## Preview Manifest
 

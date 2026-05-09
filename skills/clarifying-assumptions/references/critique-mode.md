@@ -8,12 +8,10 @@
 > subagents still own artifact reading, deferred-question filtering, and
 > file writes.
 
-Use `SKILL.md`'s `## Escalation` table for verdict routing. Use
-`./clarification-contracts.md` only when validating required sections,
-artifact paths, or derived handoffs. For rationale behind task-level user
-impact checks or current-technology critique, fetch the Design Thinking or
-Mainstream-technology bias rows from `./external-sources.md` only when
-needed.
+Use `SKILL.md`'s escalation table for verdict routing. Load
+`./clarification-contracts.md` only when validating paths, sections, or
+derived handoffs. Fetch rationale from `./external-sources.md` only when
+the developer asks why this mode uses user-impact or technology critique.
 
 ## Stage 2 - Analyze Artifacts
 

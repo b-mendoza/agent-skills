@@ -22,18 +22,6 @@ clarification turn.
 
 ## When To Fetch Background
 
-Use external articles only when the developer asks for rationale or when a
-critique item needs source-backed framing. Load `./external-sources.md`
-and fetch one URL at a time.
-
-| Need | Source row to use |
-| --- | --- |
-| Empathy and problem-before-solution rationale | Design Thinking framework |
-| User, need, evidence, and success-signal framing | Problem-framing facilitation |
-| Why we keep reframing before choosing | Double Diamond model |
-| Repeated `why` questioning pattern | Root-cause questioning (Five Whys) |
-| Why the critique subagent searches the web | Mainstream-technology bias (Matthew effect) |
-| Why this skill is split across small files | Agent Skills loading model and progressive disclosure |
-
-If network access is unavailable, the rules table above is the source of
-truth. Do not block clarification waiting for an external page.
+For rationale, coaching, or source-backed framing, load
+`./external-sources.md` and fetch one matching row. If network access is
+unavailable, continue with the rules above.

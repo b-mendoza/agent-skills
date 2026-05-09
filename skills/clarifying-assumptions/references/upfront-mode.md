@@ -8,11 +8,10 @@
 > directly. Subagents read artifacts, assemble the manifest, and write
 > file updates.
 
-Use `SKILL.md`'s `## Escalation` table for verdict routing. Use
-`./clarification-contracts.md` only when validating required sections,
-artifact paths, or derived handoffs. For rationale behind Model A and
-problem-before-solution questioning, fetch the Design Thinking or Five
-Whys rows from `./external-sources.md` only when needed.
+Use `SKILL.md`'s escalation table for verdict routing. Load
+`./clarification-contracts.md` only when validating paths, sections, or
+derived handoffs. Fetch rationale from `./external-sources.md` only when
+the developer asks why this mode uses problem-before-solution questioning.
 
 ## Stage 2 - Analyze Artifacts
 
