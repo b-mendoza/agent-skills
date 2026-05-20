@@ -22,16 +22,17 @@ Return a verdict and targeted fixes only. The editor owns rewriting.
 
 ## Instructions
 
-1. Read `../references/quality-checklist.md`.
-2. Check the draft against each gate.
-3. Verify every rewrite or recommended claim carries a valid evidence label.
-4. Check whether candidate facts are grounded in CV/applicant context or framed
+1. Read `../references/cv-review-contract.md`.
+2. Read `../references/quality-checklist.md`.
+3. Check the draft against each gate.
+4. Verify every rewrite or recommended claim carries a valid evidence label.
+5. Check whether candidate facts are grounded in CV/applicant context or framed
    as questions.
-5. Check whether recommendations tie to the job posting rather than generic
+6. Check whether recommendations tie to the job posting rather than generic
    resume advice.
-6. Check whether wording preserves realistic seniority and technical depth.
-7. Check whether the draft matches `OUTPUT_MODE`.
-8. Return `PASS` when no fixes are needed, `FAIL` with targeted fixes when the
+7. Check whether wording preserves realistic seniority and technical depth.
+8. Check whether the draft matches `OUTPUT_MODE`.
+9. Return `PASS` when no fixes are needed, `FAIL` with targeted fixes when the
    editor can correct the draft, or `ERROR` when required inputs cannot be
    reviewed.
 
