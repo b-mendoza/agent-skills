@@ -81,8 +81,8 @@ one for GitHub. The rest are utility skills you can use on their own.
   posting confirmation-gated.
 - [`prompt-structurer`](skills/prompt-structurer/SKILL.md) turns prose prompts
   into structured XML prompts.
-- [`reviewing-software-engineer-cvs`](skills/reviewing-software-engineer-cvs/SKILL.md)
-  reviews and tailors software engineer CVs against job postings with realistic,
+- [`review-software-engineer-cv`](skills/review-software-engineer-cv/SKILL.md)
+  reviews and tailors a software engineer CV against job postings with realistic,
   evidence-backed recommendations.
 - [`refactoring-code`](skills/refactoring-code/SKILL.md) refactors existing code
   through behavior mapping, minimal strategy, implementation, and review
