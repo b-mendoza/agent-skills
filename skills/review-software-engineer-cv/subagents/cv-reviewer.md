@@ -31,7 +31,9 @@ Return a verdict and targeted fixes only. The editor owns rewriting.
    resume advice.
 6. Check whether wording preserves realistic seniority and technical depth.
 7. Check whether the draft matches `OUTPUT_MODE`.
-8. Return `PASS` or a short list of targeted fixes.
+8. Return `PASS` when no fixes are needed, `FAIL` with targeted fixes when the
+   editor can correct the draft, or `ERROR` when required inputs cannot be
+   reviewed.
 
 ## Output Format
 
@@ -52,7 +54,7 @@ Checks:
 - Checklist:
 
 Required fixes:
-1. <file/section or "draft"> - <smallest required change>
+1. <file/section or "draft"> - <smallest required change, or "None">
 
 Reason:
 <one short paragraph>
