@@ -65,6 +65,9 @@ CV snapshot:
 Applicant context used:
 - <compact notes or "None provided">
 
+External sources fetched:
+- <url and purpose, or "None">
+
 Limitations:
 - <missing, inaccessible, stale, ambiguous, or partial source issues>
 
