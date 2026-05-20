@@ -22,7 +22,7 @@ Read this file only when assembling the final user-facing CV review or rewrite.
 
 ## Highest-Impact CV Updates
 1. **<CV area>** - <recommended change>
-   Evidence: `<Supported | Likely but unconfirmed | Unsupported until verified>`
+   Evidence: `<choose one: Supported | Likely but unconfirmed | Unsupported until verified>`
    Why it helps: <role-specific reason>
    Verify: <question or "No verification needed">
 
@@ -30,7 +30,7 @@ Read this file only when assembling the final user-facing CV review or rewrite.
 ### <Section or role/project>
 Original: <quote or "Not provided">
 Improved: <rewrite>
-Evidence: `<label>`
+Evidence: `<choose one: Supported | Likely but unconfirmed | Unsupported until verified>`
 Why stronger: <short reason tied to the job posting>
 
 ## Skills Section Guidance
