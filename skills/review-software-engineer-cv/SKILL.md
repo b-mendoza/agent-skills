@@ -75,12 +75,15 @@ facts.
 6. Dispatch `cv-tailoring-editor` with `SOURCE_INTAKE`, `ROLE_FIT`, the
    original CV/job sources when available, `APPLICANT_CONTEXT`, and
    `OUTPUT_MODE`.
-7. Dispatch `cv-reviewer` with `TAILORING_DRAFT`, `SOURCE_INTAKE`, `ROLE_FIT`,
+7. If the tailoring draft is `ERROR`, stop and surface the editor failure with
+   the smallest useful recovery action. If it is `PARTIAL`, continue to review
+   with the stated limitations preserved.
+8. Dispatch `cv-reviewer` with `TAILORING_DRAFT`, `SOURCE_INTAKE`, `ROLE_FIT`,
    and `OUTPUT_MODE`.
-8. If review fails, redispatch `cv-tailoring-editor` with the prior
+9. If review fails, redispatch `cv-tailoring-editor` with the prior
    `TAILORING_DRAFT` and only the required fixes from `cv-reviewer`; rerun
    review. Use at most three targeted fix cycles, then surface the blocker.
-9. Return the reviewed report. Include phase notes only for partial input,
+10. Return the reviewed report. Include phase notes only for partial input,
    inaccessible URLs, unresolved integrity risks, or user-requested detail.
 
 ## Output Contract
