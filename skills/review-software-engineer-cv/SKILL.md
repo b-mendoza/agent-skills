@@ -80,7 +80,8 @@ facts.
    with the stated limitations preserved.
 8. Dispatch `cv-reviewer` with `TAILORING_DRAFT`, `SOURCE_INTAKE`, `ROLE_FIT`,
    and `OUTPUT_MODE`.
-9. If review fails, redispatch `cv-tailoring-editor` with the prior
+9. If review is `ERROR`, stop and surface the reviewer failure. If review is
+   `FAIL`, redispatch `cv-tailoring-editor` with the prior
    `TAILORING_DRAFT` and only the required fixes from `cv-reviewer`; rerun
    review. Use at most three targeted fix cycles, then surface the blocker.
 10. Return the reviewed report. Include phase notes only for partial input,
