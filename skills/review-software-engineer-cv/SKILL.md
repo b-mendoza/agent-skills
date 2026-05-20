@@ -69,15 +69,18 @@ facts.
    remains for the requested mode.
 4. Dispatch `role-fit-mapper` with `SOURCE_INTAKE`, `APPLICANT_CONTEXT`, and
    `OUTPUT_MODE`.
-5. Dispatch `cv-tailoring-editor` with `SOURCE_INTAKE`, `ROLE_FIT`, the
+5. If role fit is `ERROR`, stop and surface the mapping failure with the
+   smallest useful recovery action. If it is `PARTIAL`, continue with the
+   stated limitations carried forward.
+6. Dispatch `cv-tailoring-editor` with `SOURCE_INTAKE`, `ROLE_FIT`, the
    original CV/job sources when available, `APPLICANT_CONTEXT`, and
    `OUTPUT_MODE`.
-6. Dispatch `cv-reviewer` with `TAILORING_DRAFT`, `SOURCE_INTAKE`, `ROLE_FIT`,
+7. Dispatch `cv-reviewer` with `TAILORING_DRAFT`, `SOURCE_INTAKE`, `ROLE_FIT`,
    and `OUTPUT_MODE`.
-7. If review fails, redispatch `cv-tailoring-editor` with the prior
+8. If review fails, redispatch `cv-tailoring-editor` with the prior
    `TAILORING_DRAFT` and only the required fixes from `cv-reviewer`; rerun
    review. Use at most three targeted fix cycles, then surface the blocker.
-8. Return the reviewed report. Include phase notes only for partial input,
+9. Return the reviewed report. Include phase notes only for partial input,
    inaccessible URLs, unresolved integrity risks, or user-requested detail.
 
 ## Output Contract
