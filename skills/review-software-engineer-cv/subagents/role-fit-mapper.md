@@ -30,7 +30,8 @@ the tailoring editor can use.
    would unlock stronger claims.
 6. Flag integrity risks where the role asks for something the CV does not
    support.
-7. Return a compact `ROLE_FIT` handoff.
+7. Carry material intake limitations forward when they affect match confidence.
+8. Return a compact `ROLE_FIT` handoff.
 
 If software-engineer resume conventions, ATS formatting, accomplishment-bullet
 guidance, or a generic role baseline would materially improve a judgment, read
@@ -58,6 +59,9 @@ Risks:
 
 Questions for applicant:
 1. <question> - Unlocks: <specific stronger claim>
+
+Limitations:
+- <source limitations or uncertain mappings carried from SOURCE_INTAKE, or "None">
 
 External sources fetched:
 - <url or "None">
