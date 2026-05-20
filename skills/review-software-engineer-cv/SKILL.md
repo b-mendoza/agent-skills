@@ -74,9 +74,9 @@ facts.
    `OUTPUT_MODE`.
 6. Dispatch `cv-reviewer` with `TAILORING_DRAFT`, `SOURCE_INTAKE`, `ROLE_FIT`,
    and `OUTPUT_MODE`.
-7. If review fails, redispatch `cv-tailoring-editor` with only the required
-   fixes from `cv-reviewer`; rerun review. Use at most three targeted fix
-   cycles, then surface the blocker.
+7. If review fails, redispatch `cv-tailoring-editor` with the prior
+   `TAILORING_DRAFT` and only the required fixes from `cv-reviewer`; rerun
+   review. Use at most three targeted fix cycles, then surface the blocker.
 8. Return the reviewed report. Include phase notes only for partial input,
    inaccessible URLs, unresolved integrity risks, or user-requested detail.
 
