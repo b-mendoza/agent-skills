@@ -7,7 +7,7 @@ Claude Code aligned.
 
 ## What is in this repository
 
-- [`skills/`](skills/) has 26 first party skills.
+- [`skills/`](skills/) has 27 first party skills.
 - [`docs/`](docs/) has workflow notes, design specs, and writing guidance.
 - [`docs/best-practices/`](docs/best-practices/) is the best place to start if
   you want to edit a skill.
@@ -81,6 +81,9 @@ one for GitHub. The rest are utility skills you can use on their own.
   posting confirmation-gated.
 - [`prompt-structurer`](skills/prompt-structurer/SKILL.md) turns prose prompts
   into structured XML prompts.
+- [`reviewing-software-engineer-cvs`](skills/reviewing-software-engineer-cvs/SKILL.md)
+  reviews and tailors software engineer CVs against job postings with realistic,
+  evidence-backed recommendations.
 - [`refactoring-code`](skills/refactoring-code/SKILL.md) refactors existing code
   through behavior mapping, minimal strategy, implementation, and review
   subagents while preserving observable behavior.
