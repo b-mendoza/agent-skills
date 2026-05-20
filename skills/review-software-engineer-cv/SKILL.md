@@ -63,8 +63,10 @@ facts.
 1. Normalize `OUTPUT_MODE`; default to `review` when the user does not specify.
 2. Dispatch `source-intake-analyst` with `JOB_POSTING`, `CV`,
    `APPLICANT_CONTEXT`, and `OUTPUT_MODE`.
-3. If source intake is `BLOCKED`, ask for the smallest missing source. If it is
-   `PARTIAL`, continue only when enough evidence remains for the requested mode.
+3. If source intake is `ERROR`, stop and surface the intake failure with the
+   smallest useful recovery action. If it is `BLOCKED`, ask for the smallest
+   missing source. If it is `PARTIAL`, continue only when enough evidence
+   remains for the requested mode.
 4. Dispatch `role-fit-mapper` with `SOURCE_INTAKE`, `APPLICANT_CONTEXT`, and
    `OUTPUT_MODE`.
 5. Dispatch `cv-tailoring-editor` with `SOURCE_INTAKE`, `ROLE_FIT`, the
