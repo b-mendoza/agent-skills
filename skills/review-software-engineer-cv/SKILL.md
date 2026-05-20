@@ -81,9 +81,11 @@ facts.
 8. Dispatch `cv-reviewer` with `TAILORING_DRAFT`, `SOURCE_INTAKE`, `ROLE_FIT`,
    and `OUTPUT_MODE`.
 9. If review is `ERROR`, stop and surface the reviewer failure. If review is
-   `FAIL`, redispatch `cv-tailoring-editor` with the prior
-   `TAILORING_DRAFT` and only the required fixes from `cv-reviewer`; rerun
-   review. Use at most three targeted fix cycles, then surface the blocker.
+   `FAIL`, redispatch `cv-tailoring-editor` with `SOURCE_INTAKE`, `ROLE_FIT`,
+   the original CV/job sources when available, `APPLICANT_CONTEXT`,
+   `OUTPUT_MODE`, the prior `TAILORING_DRAFT`, and only the required fixes from
+   `cv-reviewer`; rerun review. Use at most three targeted fix cycles, then
+   surface the blocker.
 10. Return the reviewed report. Include phase notes only for partial input,
    inaccessible URLs, unresolved integrity risks, or user-requested detail.
 
