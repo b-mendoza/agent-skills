@@ -31,6 +31,7 @@ Read this file only when assembling the final user-facing CV review or rewrite.
 Original: <quote or "Not provided">
 Improved: <rewrite>
 Evidence: `<choose one: Supported | Likely but unconfirmed | Unsupported until verified>`
+Verify: <question or "No verification needed">
 Why stronger: <short reason tied to the job posting>
 
 ## Skills Section Guidance
