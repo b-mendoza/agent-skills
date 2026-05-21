@@ -107,7 +107,7 @@ read release artifacts and post a readiness comment, but it may not deploy,
 merge, or bypass CI. Deployment and rollback are sensitive actions.`
 
 1. Orchestrator classifies the run as `new`.
-2. Orchestrator loads `flow-design-playbook.md`, `mermaid-style-guide.md`, and `output-templates.md`.
-3. Orchestrator dispatches `diagram-builder` and receives a candidate Markdown document.
+2. Orchestrator dispatches `diagram-builder` with `RUN_MODE=new`.
+3. `diagram-builder` loads `flow-design-playbook.md`, `mermaid-style-guide.md`, and `output-templates.md`, then returns a candidate Markdown document.
 4. Orchestrator dispatches `diagram-quality-reviewer`.
-5. If review passes, the final Markdown is returned. If review fails, only the failed checks are sent back for targeted repair.
+5. If review passes, the final Markdown is returned. If review fails, the orchestrator re-dispatches `diagram-builder` with the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks.
