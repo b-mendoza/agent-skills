@@ -31,7 +31,7 @@ are optional source material; the bundled files are enough to run offline.
 | `COMPLETION_CRITERIA` | Yes | `Ready, blocked, needs more validation, escalated` |
 | `EXISTING_FLOW_OR_DIAGRAM` | No | Existing Mermaid block, file, or process description |
 | `REFINEMENT_REQUEST` | No | `Improve the current diagram without changing scope` |
-| `APPROVED_REFINEMENT_GAPS` | No | `Add human gate and blocked terminal state only` |
+| `APPROVED_REFINEMENT_GAPS` | No | `G1 and G3 only` |
 
 Ask one concise clarifying question only when a missing value would change the
 diagram contract. If assumptions are safe and reversible, mark them explicitly.
