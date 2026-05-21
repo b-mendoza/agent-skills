@@ -1,7 +1,8 @@
 # Quality Gate Checklist
 
-> Load this file only when reviewing a candidate diagram or repairing failed
-> checks. Reject failed candidates and re-check only the failed areas.
+> Load this file only when reviewing a candidate diagram or preparing targeted
+> repair feedback. Failed checks guide the builder repair; the full reviewer
+> gate runs again after each repaired candidate.
 
 ## Review Checks
 
@@ -20,8 +21,8 @@
 ## Fix Loop
 
 1. Return `REVIEW: FAIL` with specific failed checks.
-2. Send only those failed checks to the builder.
-3. Re-run only the failed check group after repair.
+2. Send only those failed checks to the builder as `REVIEW_FEEDBACK`.
+3. After the builder repairs the candidate, run the full `diagram-quality-reviewer` checklist again against the updated candidate.
 4. Stop after three fix cycles for the same candidate.
 5. Escalate to the user if missing information or approval blocks a valid diagram.
 
