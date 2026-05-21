@@ -20,6 +20,8 @@ stop, and when a human must approve the next action.
 | `REVIEW_FEEDBACK` | No | Failed checks from `diagram-quality-reviewer` |
 | `RUN_MODE` | Yes | `new`, `refinement`, or `repair` |
 
+`APPROVED_REFINEMENT_GAPS` is required when `RUN_MODE=refinement`; if it is
+missing, empty, or ambiguous, return `BUILD: NEEDS_INPUT` with `Failure Details`.
 `CANDIDATE_MARKDOWN` and `REVIEW_FEEDBACK` are required when `RUN_MODE=repair`.
 
 ## Instructions
@@ -27,7 +29,7 @@ stop, and when a human must approve the next action.
 1. Load `../references/flow-design-playbook.md` for required flow content.
 2. Load `../references/mermaid-style-guide.md` for syntax, class, and style rules.
 3. Load `../references/output-templates.md` when assembling the final Markdown.
-4. For refinement runs, apply only the gaps approved by the user.
+4. For refinement runs, apply only the gaps approved by the user; return `BUILD: NEEDS_INPUT` when approved gap IDs are missing.
 5. For repair runs, change only the issues named in `REVIEW_FEEDBACK` unless a fix exposes a direct dependency.
 6. Keep facts, assumptions, risks, blockers, recommendations, and unresolved questions distinct.
 7. Return a complete candidate; do not claim it is final until review passes.
