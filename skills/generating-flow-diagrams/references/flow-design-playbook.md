@@ -1,31 +1,26 @@
 # Flow Design Playbook
 
 > Load this file only when planning or building the diagram content. External
-> articles in `external-sources.md` can provide rationale, but this file is the
+> articles in `external-sources.md` can provide background, but this file is the
 > runnable local contract.
 
-## Core Model
+## Local Contract
 
-A useful agent-flow diagram is an operating contract, not decoration. Include a
-node, decision, gate, output, or terminal state whenever a step changes trust,
-scope, safety, evidence quality, completion status, or user authority.
+Add a node, decision, gate, output, or terminal state whenever a step changes
+authority, evidence quality, risk, scope, completion status, or user control.
 
 ## Required Flow Coverage
 
 Represent these elements when relevant to the process:
 
-- Start or intake.
-- Boundary, authority, and trust model.
-- Context snapshot or input collection.
-- Access or evidence availability decision.
-- Classification by work type, risk, scope, or readiness category.
-- Validation checks for objective, success proof, affected parties, scope, dependencies, risks, evidence, technical claims, alternatives, priority, and need for spike, review, research, or escalation.
-- Evidence synthesis.
-- Decisions for contradictory evidence, invalid claims, missing information, oversized scope, dependencies, and escalation.
-- Human confirmation gates for sensitive actions.
-- Output, report, comment, or artifact drafting.
-- Final readiness or completion decision.
-- Terminal states such as ready, needs refinement, blocked, deferred, not actionable, or escalated.
+| Category | Include |
+| -------- | ------- |
+| Intake and boundary | Start, inputs, role, authority, trust model |
+| Evidence | Source availability, collection, validation, synthesis |
+| Decisions | Work type, risk, scope, readiness, contradictions, missing information |
+| Safety gates | Human confirmation for sensitive actions and mutation limits |
+| Output | Report, comment, artifact, recommendation, or handoff |
+| Terminal states | Ready, needs refinement, blocked, deferred, not actionable, escalated |
 
 ## Human Gate Contract
 
@@ -58,6 +53,5 @@ paths rather than being resolved silently.
 
 ## Category Separation
 
-Separate these categories in the diagram or supporting text when they are
-present: facts, assumptions, risks, blockers, recommendations, and unresolved
-questions.
+Keep facts, assumptions, risks, blockers, recommendations, and unresolved
+questions separate in the diagram or supporting text when they appear.
