@@ -23,8 +23,9 @@ silently expanding scope.
 2. Identify only concrete gaps that the generation process could improve.
 3. Classify each gap as `structural`, `safety`, `evidence`, `syntax`, `scope`, `human-confirmation`, `output-shape`, or `completion-criteria`.
 4. Propose the smallest fix for each gap without applying it.
-5. If no meaningful gaps exist, return `PREFLIGHT: PASS`.
-6. If gaps exist, return `PREFLIGHT: NEEDS_CONFIRMATION` and a confirmation question.
+5. Assign stable deterministic gap IDs in discovery order (`G1`, `G2`, `G3`).
+6. If no meaningful gaps exist, return `PREFLIGHT: PASS`.
+7. If gaps exist, return `PREFLIGHT: NEEDS_CONFIRMATION` and a confirmation question that asks which gap IDs are approved.
 
 ## Output Format
 
@@ -32,11 +33,11 @@ silently expanding scope.
 PREFLIGHT: PASS | NEEDS_CONFIRMATION | BLOCKED | ERROR
 
 ## Gap Inventory
-| Gap | Type | Why It Matters | Proposed Change |
-| --- | ---- | -------------- | --------------- |
+| ID | Gap | Type | Why It Matters | Proposed Change |
+| -- | --- | ---- | -------------- | --------------- |
 
 ## Confirmation Question
-[One concise question asking which gaps are approved, or `none` for PASS.]
+[One concise question asking which gap IDs are approved, or `none` for PASS.]
 
 ## Summary
 - Existing flow usable as baseline: yes/no
