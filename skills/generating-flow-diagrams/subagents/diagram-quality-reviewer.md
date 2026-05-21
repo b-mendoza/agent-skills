@@ -16,9 +16,11 @@ return concise, targeted fixes.
 | `CANDIDATE_MARKDOWN` | Yes | Candidate from `diagram-builder` |
 | `PROCESS_INPUTS` | Yes | Normalized bundle from `../references/input-contract.md` |
 | `RUN_MODE` | Yes | `new`, `refinement`, or `repair` |
-| `APPROVED_REFINEMENT_GAPS` | No | User-approved gap list for refinement |
+| `APPROVED_REFINEMENT_GAPS` | No | User-approved gap list for refinement, or `none` |
 
-`APPROVED_REFINEMENT_GAPS` is required when `RUN_MODE=refinement`.
+`APPROVED_REFINEMENT_GAPS` is required when `RUN_MODE=refinement`; `none` is a
+valid explicit no-op approval and means the candidate must preserve the current
+scope without adding refinement changes.
 
 ## Instructions
 
