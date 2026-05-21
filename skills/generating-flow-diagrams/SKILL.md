@@ -111,4 +111,4 @@ merge, or bypass CI. Deployment and rollback are sensitive actions.`
 2. Orchestrator dispatches `diagram-builder` with `RUN_MODE=new`.
 3. `diagram-builder` loads `flow-design-playbook.md`, `mermaid-style-guide.md`, and `output-templates.md`, then returns a candidate Markdown document.
 4. Orchestrator dispatches `diagram-quality-reviewer`.
-5. If review passes, the final Markdown is returned. If review fails, the orchestrator re-dispatches `diagram-builder` with the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks.
+5. If review passes, the final Markdown is returned. If review fails, the orchestrator re-dispatches `diagram-builder` with the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks. If any subagent returns a blocked, needs-input, or error status, the orchestrator stops with the reported recovery action.
