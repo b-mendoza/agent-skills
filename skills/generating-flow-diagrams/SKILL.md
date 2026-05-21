@@ -70,7 +70,7 @@ The orchestrator does three things:
 ## Execution
 
 1. Capture all inputs and classify the run as `new` or `refinement`.
-2. For `refinement`, dispatch `refinement-analyst` before generating a revised diagram. If it returns `PREFLIGHT: NEEDS_CONFIRMATION`, ask the confirmation question and stop.
+2. For `refinement`, dispatch `refinement-analyst` before generating a revised diagram. Continue only on `PREFLIGHT: PASS`; on `PREFLIGHT: NEEDS_CONFIRMATION`, ask the confirmation question and stop; on `PREFLIGHT: BLOCKED` or `PREFLIGHT: ERROR`, stop with the reported recovery action.
 3. Load orchestration-level references only when the orchestrator must format a user-facing confirmation or fetch external rationale. Detailed design, Mermaid, and quality references are loaded by the dispatched subagent.
 4. Dispatch `diagram-builder` with the original inputs, approved gaps, and any concise constraints from prior phases.
 5. Dispatch `diagram-quality-reviewer` with the candidate output and applicable inputs.
