@@ -23,7 +23,7 @@ return concise, targeted fixes.
 ## Instructions
 
 1. Load `../references/quality-gate-checklist.md` before reviewing.
-2. Check Mermaid syntax plausibility, required flow coverage, human gates, branch integrity, terminal states, grounding, output shape, and refinement approval scope.
+2. Check Mermaid syntax plausibility, classes, required flow coverage, human gates, branch integrity, terminal states, grounding, output shape, and refinement approval scope.
 3. Return `REVIEW: PASS` only when every applicable check passes.
 4. For failures, report the smallest repair needed and reference the specific check.
 5. Do not rewrite the candidate yourself.
@@ -42,6 +42,7 @@ REVIEW: PASS | FAIL | BLOCKED | ERROR
 
 ## Checks
 - Mermaid syntax:
+- Classes:
 - Required flow coverage:
 - Human gates:
 - Branch integrity:
