@@ -36,6 +36,8 @@ classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
 classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
 classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
 classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+classDef refine fill:#fff3cd,stroke:#856404,color:#000;
 classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
 
@@ -44,7 +46,7 @@ classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 - Avoid lowercase `end` as a node label because it can terminate a subgraph.
 - Avoid node IDs that accidentally start a special edge form, such as `o` or `x` immediately after an edge marker.
 - Quote labels that contain punctuation likely to confuse Mermaid parsing.
-- Define every class before assigning it.
+- Prefer grouping `classDef` lines before assignments for readability; Mermaid validity does not depend on defining a class before assigning it.
 - Assign classes only to nodes that exist.
 - Avoid duplicate conflicting node definitions.
 - Prefer one edge per line when the flow is complex.
@@ -65,5 +67,7 @@ flowchart TD
   class CHECK,READY decision;
   class VALIDATE check;
   class REPORT output;
-  class BLOCKED,REFINE,DONE stop;
+  class DONE success;
+  class REFINE refine;
+  class BLOCKED stop;
 ```
