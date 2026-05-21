@@ -16,7 +16,9 @@ return concise, targeted fixes.
 | `CANDIDATE_MARKDOWN` | Yes | Candidate from `diagram-builder` |
 | `PROCESS_INPUTS` | Yes | Required fields from `SKILL.md` |
 | `RUN_MODE` | Yes | `new`, `refinement`, or `repair` |
-| `APPROVED_REFINEMENT_GAPS` | Required for refinement | User-approved gap list |
+| `APPROVED_REFINEMENT_GAPS` | No | User-approved gap list for refinement |
+
+`APPROVED_REFINEMENT_GAPS` is required when `RUN_MODE=refinement`.
 
 ## Instructions
 
@@ -43,6 +45,8 @@ REVIEW: PASS | FAIL | BLOCKED | ERROR
 - Required flow coverage:
 - Human gates:
 - Branch integrity:
+- Validation flow:
+- Terminal states:
 - Grounding:
 - Refinement approval:
 - Output contract:
