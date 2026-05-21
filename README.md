@@ -7,7 +7,7 @@ Claude Code aligned.
 
 ## What is in this repository
 
-- [`skills/`](skills/) has 27 first party skills.
+- [`skills/`](skills/) has 28 first party skills.
 - [`docs/`](docs/) has workflow notes, design specs, and writing guidance.
 - [`docs/best-practices/`](docs/best-practices/) is the best place to start if
   you want to edit a skill.
@@ -81,6 +81,9 @@ one for GitHub. The rest are utility skills you can use on their own.
   posting confirmation-gated.
 - [`prompt-structurer`](skills/prompt-structurer/SKILL.md) turns prose prompts
   into structured XML prompts.
+- [`generating-flow-diagrams`](skills/generating-flow-diagrams/SKILL.md) creates
+  or refines Markdown plus Mermaid diagrams for AI-agent workflows with human
+  gates and quality checks.
 - [`review-software-engineer-cv`](skills/review-software-engineer-cv/SKILL.md)
   reviews and tailors a software engineer CV against job postings with realistic,
   evidence-backed recommendations.
