@@ -75,7 +75,7 @@ The orchestrator does three things:
 4. Dispatch `diagram-builder` with the original inputs, approved gaps, and any concise constraints from prior phases.
 5. Continue only on `BUILD: PASS`; on `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with `Failure Details` and the reported recovery action.
 6. Dispatch `diagram-quality-reviewer` with the candidate output and applicable inputs.
-7. If review fails, dispatch `diagram-builder` with the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks; re-run the reviewer. Stop after three fix cycles and ask the user how to proceed.
+7. On `REVIEW: BLOCKED` or `REVIEW: ERROR`, stop with the validation blocker and recovery action. If `REVIEW: FAIL`, dispatch `diagram-builder` with the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks; if repair returns `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with `Failure Details`; otherwise re-run the reviewer. Stop after three fix cycles and ask the user how to proceed.
 8. Return the final Markdown only after `diagram-quality-reviewer` returns `REVIEW: PASS`.
 
 ## Output Contract
