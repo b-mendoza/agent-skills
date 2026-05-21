@@ -5,8 +5,7 @@
 
 ## Refinement Pre-Check Template
 
-Use this when an existing flow has improvable gaps that need user approval before
-generation proceeds:
+Use this when gap fixes need user approval before generation proceeds:
 
 ```markdown
 ## Refinement Pre-Check
@@ -25,7 +24,7 @@ Which gap IDs should I include or fix in the revised flow? Reply with IDs like
 # <PROCESS_NAME>
 
 <Short paragraph describing the workflow boundary, agent authority, trust model,
-allowed actions, forbidden actions, and mutation limits.>
+allowed actions, boundaries, and mutation limits.>
 
 ```mermaid
 flowchart TD
@@ -41,8 +40,7 @@ Readiness rule: <optional completion or sensitive-action rule>
 
 ## Optional Report Template Pattern
 
-Include a report template only when it helps the workflow user act on the final
-state:
+Include a report template only when it helps the workflow user act:
 
 ```text
 Status: ready | blocked | needs refinement | deferred | escalated
