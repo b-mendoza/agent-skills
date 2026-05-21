@@ -18,6 +18,9 @@
 | Refinement approval | Refinement output includes only user-approved gap fixes |
 | Output contract | Final Markdown has title, boundary paragraph, one Mermaid diagram, and optional templates/rules only when useful |
 
+Fetch current Mermaid documentation from `external-sources.md` only when a syntax
+uncertainty affects the verdict.
+
 ## Fix Loop
 
 1. Return `REVIEW: FAIL` with specific failed checks.
