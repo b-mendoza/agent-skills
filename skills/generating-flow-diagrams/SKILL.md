@@ -36,6 +36,11 @@ are optional source material; the bundled files are enough to run offline.
 Ask one concise clarifying question only when a missing value would change the
 diagram contract. If assumptions are safe and reversible, mark them explicitly.
 
+For subagent dispatches, assemble `PROCESS_INPUTS` as the normalized bundle of
+required top-level process fields, supplied optional context, run classification,
+and explicit assumptions. Keep `APPROVED_REFINEMENT_GAPS` as a separate dispatch
+input so refinement approvals remain visible to the builder and reviewer.
+
 ## Progressive Loading Map
 
 | Need | Load |
@@ -70,13 +75,14 @@ The orchestrator does three things:
 ## Execution
 
 1. Capture all inputs and classify the run as `new` or `refinement`.
-2. For `refinement`, dispatch `refinement-analyst` before generating a revised diagram. Continue only on `PREFLIGHT: PASS`; on `PREFLIGHT: NEEDS_CONFIRMATION`, ask the confirmation question and stop; on `PREFLIGHT: BLOCKED` or `PREFLIGHT: ERROR`, stop with the reported recovery action.
-3. Load orchestration-level references only when the orchestrator must format a user-facing confirmation or fetch external rationale. Detailed design, Mermaid, and quality references are loaded by the dispatched subagent.
-4. Dispatch `diagram-builder` with the original inputs, approved gaps, and any concise constraints from prior phases.
-5. Continue only on `BUILD: PASS`; on `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with `Failure Details` and the reported recovery action.
-6. Dispatch `diagram-quality-reviewer` with the candidate output and applicable inputs.
-7. On `REVIEW: BLOCKED` or `REVIEW: ERROR`, stop with the validation blocker and recovery action. If `REVIEW: FAIL`, dispatch `diagram-builder` with the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks; if repair returns `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with `Failure Details`; otherwise re-run the reviewer. Stop after three fix cycles and ask the user how to proceed.
-8. Return the final Markdown only after `diagram-quality-reviewer` returns `REVIEW: PASS`.
+2. Assemble `PROCESS_INPUTS` from the normalized top-level process inputs, supplied optional context, run classification, and explicit assumptions.
+3. For `refinement`, dispatch `refinement-analyst` before generating a revised diagram. Continue only on `PREFLIGHT: PASS`; on `PREFLIGHT: NEEDS_CONFIRMATION`, ask the confirmation question and stop; on `PREFLIGHT: BLOCKED` or `PREFLIGHT: ERROR`, stop with the reported recovery action.
+4. Load orchestration-level references only when the orchestrator must format a user-facing confirmation or fetch external rationale. Detailed design, Mermaid, and quality references are loaded by the dispatched subagent.
+5. Dispatch `diagram-builder` with `PROCESS_INPUTS`, `RUN_MODE=new` or `RUN_MODE=refinement`, `APPROVED_REFINEMENT_GAPS` when refinement has approved gaps, and any concise constraints from prior phases.
+6. Continue only on `BUILD: PASS`; on `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with `Failure Details` and the reported recovery action.
+7. Dispatch `diagram-quality-reviewer` with `CANDIDATE_MARKDOWN`, `PROCESS_INPUTS`, `RUN_MODE`, and `APPROVED_REFINEMENT_GAPS` when refinement scope applies.
+8. On `REVIEW: BLOCKED` or `REVIEW: ERROR`, stop with the validation blocker and recovery action. If `REVIEW: FAIL`, dispatch `diagram-builder` with `PROCESS_INPUTS`, the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks; if repair returns `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with `Failure Details`; otherwise re-run the full reviewer. Stop after three fix cycles and ask the user how to proceed.
+9. Return the final Markdown only after `diagram-quality-reviewer` returns `REVIEW: PASS`.
 
 ## Output Contract
 
@@ -98,7 +104,7 @@ A valid run satisfies these checks:
 - `SKILL.md` stays a routing layer; detailed templates, style guidance, quality checks, and external links live in `references/`.
 - Local paths referenced by this skill exist inside this package.
 - Refinements include only user-approved gap fixes.
-- The final Mermaid candidate passes the quality gate after at most three targeted fix cycles.
+- The final Mermaid candidate passes the quality gate after at most three builder repair cycles; each repair uses targeted `REVIEW_FEEDBACK`, then the full reviewer gate reruns.
 - External URLs are optional just-in-time sources, not required runtime dependencies.
 
 ## Example
@@ -108,7 +114,7 @@ read release artifacts and post a readiness comment, but it may not deploy,
 merge, or bypass CI. Deployment and rollback are sensitive actions.`
 
 1. Orchestrator classifies the run as `new`.
-2. Orchestrator dispatches `diagram-builder` with `RUN_MODE=new`.
+2. Orchestrator assembles `PROCESS_INPUTS` and dispatches `diagram-builder` with `PROCESS_INPUTS` and `RUN_MODE=new`.
 3. `diagram-builder` loads `flow-design-playbook.md`, `mermaid-style-guide.md`, and `output-templates.md`, then returns a candidate Markdown document.
-4. Orchestrator dispatches `diagram-quality-reviewer`.
-5. If review passes, the final Markdown is returned. If review fails, the orchestrator re-dispatches `diagram-builder` with the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks. If any subagent returns a blocked, needs-input, or error status, the orchestrator stops with the reported recovery action.
+4. Orchestrator dispatches `diagram-quality-reviewer` with `CANDIDATE_MARKDOWN`, `PROCESS_INPUTS`, and `RUN_MODE`.
+5. If review passes, the final Markdown is returned. If review fails, the orchestrator re-dispatches `diagram-builder` with `PROCESS_INPUTS`, the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks, then re-runs the full reviewer. If any subagent returns a blocked, needs-input, or error status, the orchestrator stops with the reported recovery action.
