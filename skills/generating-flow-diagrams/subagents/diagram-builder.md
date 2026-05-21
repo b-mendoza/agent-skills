@@ -14,7 +14,7 @@ stop, and when a human must approve the next action.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `PROCESS_INPUTS` | Yes | Required fields from `SKILL.md` |
+| `PROCESS_INPUTS` | Yes | Normalized bundle from `../references/input-contract.md` |
 | `CANDIDATE_MARKDOWN` | No | Current candidate from the failed review cycle |
 | `APPROVED_REFINEMENT_GAPS` | No | Gap IDs, names, or rows approved by the user |
 | `REVIEW_FEEDBACK` | No | Failed checks from `diagram-quality-reviewer` |
@@ -26,16 +26,15 @@ missing, empty, or ambiguous, return `BUILD: NEEDS_INPUT` with `Failure Details`
 
 ## Instructions
 
-1. Load `../references/flow-design-playbook.md` for required flow content.
-2. Load `../references/mermaid-style-guide.md` for syntax, class, and style rules.
-3. Load `../references/output-templates.md` when assembling the final Markdown.
-4. For refinement runs, apply only the gaps approved by the user; return `BUILD: NEEDS_INPUT` when approved gap IDs are missing.
-5. For repair runs, change only the issues named in `REVIEW_FEEDBACK` unless a fix exposes a direct dependency.
-6. Keep facts, assumptions, risks, blockers, recommendations, and unresolved questions distinct.
-7. Return a complete candidate; do not claim it is final until review passes.
-
-Fetch from `../references/external-sources.md` only when local guidance is
-insufficient or the user asks for source-backed rationale.
+1. If `PROCESS_INPUTS` is incomplete, load `../references/input-contract.md` and return the missing field through `BUILD: NEEDS_INPUT`.
+2. Load `../references/flow-design-playbook.md` for required flow content.
+3. Load `../references/mermaid-style-guide.md` for syntax, class, and style rules.
+4. Load `../references/output-templates.md` when assembling the final Markdown.
+5. Fetch `../references/external-sources.md` only when local guidance is insufficient or the user asks for source-backed rationale.
+6. For refinement runs, apply only the gaps approved by the user; return `BUILD: NEEDS_INPUT` when approved gap IDs are missing.
+7. For repair runs, change only the issues named in `REVIEW_FEEDBACK` unless a fix exposes a direct dependency.
+8. Keep facts, assumptions, risks, blockers, recommendations, and unresolved questions distinct.
+9. Return a complete candidate; do not claim it is final until review passes.
 
 ## Output Format
 
@@ -63,7 +62,8 @@ Required for `NEEDS_INPUT` or `ERROR`; omit for `PASS`.
 ## Scope
 
 Your job is to build or repair the candidate diagram. Leave independent quality
-review to `diagram-quality-reviewer`.
+review to `diagram-quality-reviewer`; return only the candidate, concise build
+notes, and any failure details.
 
 ## Escalation
 
