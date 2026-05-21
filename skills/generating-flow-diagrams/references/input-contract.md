@@ -40,5 +40,7 @@ Send subagents a concise `PROCESS_INPUTS` bundle containing:
 - Supplied optional context from the user.
 - Explicit assumptions.
 
-Keep `APPROVED_REFINEMENT_GAPS` as a separate dispatch input so approval scope is
-visible to the builder and reviewer. Send `RUN_MODE` as its own dispatch input.
+Keep refinement controls outside `PROCESS_INPUTS`: send `EXISTING_FLOW_OR_DIAGRAM`
+as the baseline for refinement runs, keep `APPROVED_REFINEMENT_GAPS` as a
+separate dispatch input so approval scope is visible to the builder and reviewer,
+and send `RUN_MODE` as its own dispatch input.
