@@ -5,7 +5,10 @@
 
 ## Required Process Fields
 
-Normalize user input into `PROCESS_INPUTS` with these fields when available:
+Every `PROCESS_INPUTS` bundle includes these dispatch keys. Values may come from
+explicit user wording or from explicit assumptions when the clarification policy
+allows them. Ask for clarification when a missing value changes the diagram
+contract.
 
 | Field | Purpose | Example |
 | ----- | ------- | ------- |
@@ -24,14 +27,16 @@ Normalize user input into `PROCESS_INPUTS` with these fields when available:
 ## Clarification Policy
 
 Ask one concise question when any missing field would change authority, sensitive
-actions, allowed outputs, or terminal states. If the missing value only affects
-wording, continue with an explicit assumption.
+actions, allowed outputs, evidence requirements, human confirmation, or terminal
+states. If a missing value only affects wording, continue with an explicit
+assumption in `PROCESS_INPUTS`.
 
 ## Dispatch Shape
 
 Send subagents a concise `PROCESS_INPUTS` bundle containing:
 
-- Normalized fields from the table above.
+- Normalized fields from the table above, using explicit assumptions where the
+  clarification policy allows them.
 - Supplied optional context from the user.
 - Explicit assumptions.
 
