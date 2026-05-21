@@ -54,12 +54,12 @@ candidate that must be returned to the user.
 
 1. Capture all inputs and classify the run as `new` or `refinement`.
 2. Normalize `PROCESS_SPEC` into `PROCESS_INPUTS`; load `./references/input-contract.md` when the field checklist or missing-field policy is needed.
-3. For `refinement`, dispatch `refinement-analyst` before generating a revised diagram, including `APPROVED_REFINEMENT_GAPS` when supplied. Treat `APPROVED_REFINEMENT_GAPS=none` as explicit approval to keep the candidate and refinement scope unchanged. Continue only on `PREFLIGHT: PASS`; on `PREFLIGHT: NEEDS_CONFIRMATION`, ask the confirmation question and stop; on `PREFLIGHT: BLOCKED` or `PREFLIGHT: ERROR`, stop with the reported recovery action.
+3. For `refinement`, dispatch `refinement-analyst` before generating a revised diagram, including `EXISTING_FLOW_OR_DIAGRAM`, `PROCESS_INPUTS`, and `APPROVED_REFINEMENT_GAPS` when supplied. Treat `APPROVED_REFINEMENT_GAPS=none` as explicit approval to keep the candidate and refinement scope unchanged; when preflight passes because there are no meaningful gaps, use `none` as the downstream approval scope. Continue only on `PREFLIGHT: PASS`; on `PREFLIGHT: NEEDS_CONFIRMATION`, ask the confirmation question and stop; on `PREFLIGHT: BLOCKED` or `PREFLIGHT: ERROR`, stop with the reported recovery action.
 4. Load orchestration-level references only when formatting a user-facing confirmation, normalizing inputs, or fetching external rationale. Design, Mermaid, template, and quality references are loaded by the dispatched subagent.
-5. Dispatch `diagram-builder` with `PROCESS_INPUTS`, `RUN_MODE=new` or `RUN_MODE=refinement`, `APPROVED_REFINEMENT_GAPS` when refinement scope applies, and any concise constraints from prior phases. Pass `none` through unchanged when the approved refinement scope is an explicit no-op.
+5. Dispatch `diagram-builder` with `PROCESS_INPUTS`, `RUN_MODE=new` or `RUN_MODE=refinement`, `EXISTING_FLOW_OR_DIAGRAM` for refinements, `APPROVED_REFINEMENT_GAPS` when refinement scope applies, and any concise constraints from prior phases. Pass `none` through unchanged when the approved refinement scope is an explicit no-op.
 6. Continue only on `BUILD: PASS`; on `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with `Failure Details` and the reported recovery action.
-7. Dispatch `diagram-quality-reviewer` with `CANDIDATE_MARKDOWN`, `PROCESS_INPUTS`, `RUN_MODE`, and `APPROVED_REFINEMENT_GAPS` when refinement scope applies, including explicit `none` approvals.
-8. On `REVIEW: BLOCKED` or `REVIEW: ERROR`, stop with the validation blocker and recovery action. If `REVIEW: FAIL`, dispatch `diagram-builder` with `PROCESS_INPUTS`, the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks; if repair returns `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with `Failure Details`; otherwise re-run the full reviewer. Stop after three fix cycles and ask the user how to proceed.
+7. Dispatch `diagram-quality-reviewer` with `CANDIDATE_MARKDOWN`, `PROCESS_INPUTS`, `RUN_MODE`, `EXISTING_FLOW_OR_DIAGRAM` for refinements, and `APPROVED_REFINEMENT_GAPS` when refinement scope applies, including explicit `none` approvals.
+8. On `REVIEW: BLOCKED` or `REVIEW: ERROR`, stop with the validation blocker and recovery action. If `REVIEW: FAIL` and the run is a refinement with `APPROVED_REFINEMENT_GAPS=none`, stop and ask the user whether to approve the specific failed-check repairs before changing the candidate. For other `REVIEW: FAIL` results, dispatch `diagram-builder` with `PROCESS_INPUTS`, `EXISTING_FLOW_OR_DIAGRAM` when repairing a refinement, the current candidate, `RUN_MODE=repair`, the original `APPROVED_REFINEMENT_GAPS` when refinement scope applies, and `REVIEW_FEEDBACK` containing only the failed checks; if repair returns `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with `Failure Details`; otherwise re-run the full reviewer with the same refinement baseline and approval inputs. Stop after three fix cycles and ask the user how to proceed.
 9. Return the final Markdown only after `diagram-quality-reviewer` returns `REVIEW: PASS`.
 
 ## Output Contract
@@ -83,7 +83,7 @@ A valid run satisfies these checks:
 - Local paths referenced by this skill exist inside this package.
 - `PROCESS_INPUTS` is produced for every run and follows the bundled input contract when the field checklist is needed.
 - Refinements include only user-approved gap fixes.
-- The final Mermaid candidate passes the quality gate after at most three builder repair cycles; each repair uses targeted `REVIEW_FEEDBACK`, then the full reviewer gate reruns.
+- The final Mermaid candidate passes the quality gate after at most three builder repair cycles; each repair uses targeted `REVIEW_FEEDBACK`, preserves the original refinement approval scope, then the full reviewer gate reruns.
 - External URLs are optional just-in-time sources, not required runtime dependencies.
 
 ## Example
@@ -93,6 +93,6 @@ posts readiness comments. Deploy and rollback require human approval.`
 
 1. Normalize the process into `PROCESS_INPUTS` and dispatch `diagram-builder`.
 2. Dispatch `diagram-quality-reviewer` with the candidate.
-3. If review fails, send only failed checks back to `diagram-builder` for repair,
-   then rerun the full review.
+3. If review fails, send only failed checks and the original approval scope back
+   to `diagram-builder` for repair, then rerun the full review.
 4. Return the final Markdown only after `REVIEW: PASS`.
