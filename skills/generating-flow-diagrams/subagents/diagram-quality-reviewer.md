@@ -14,7 +14,7 @@ return concise, targeted fixes.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `CANDIDATE_MARKDOWN` | Yes | Candidate from `diagram-builder` |
-| `PROCESS_INPUTS` | Yes | Required fields from `SKILL.md` |
+| `PROCESS_INPUTS` | Yes | Normalized bundle from `../references/input-contract.md` |
 | `RUN_MODE` | Yes | `new`, `refinement`, or `repair` |
 | `APPROVED_REFINEMENT_GAPS` | No | User-approved gap list for refinement |
 
@@ -23,13 +23,11 @@ return concise, targeted fixes.
 ## Instructions
 
 1. Load `../references/quality-gate-checklist.md` before reviewing.
-2. Check Mermaid syntax plausibility, classes, required flow coverage, human gates, branch integrity, validation flow, terminal states, grounding, output shape, and refinement approval scope.
+2. Apply every applicable checklist category; load `../references/input-contract.md` only if missing process fields affect the verdict.
 3. Return `REVIEW: PASS` only when every applicable check passes.
 4. For failures, report the smallest repair needed and reference the specific check.
-5. Do not rewrite the candidate yourself.
-
-Fetch current Mermaid documentation through `../references/external-sources.md`
-only when syntax uncertainty affects the verdict.
+5. Fetch current Mermaid documentation through `../references/external-sources.md` only when syntax uncertainty affects the verdict.
+6. Do not rewrite the candidate yourself.
 
 ## Output Format
 
