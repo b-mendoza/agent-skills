@@ -5,11 +5,12 @@
 
 ## Local Rules
 
-- Use `flowchart TD` by default; use `LR` only when a horizontal lifecycle is clearer.
-- Use short uppercase node IDs and readable labels, such as `VERIFY_CLAIMS`.
-- Use rounded nodes for start and terminals, rectangles for process steps, and diamonds for decisions.
+- Default to `flowchart TD`; use `LR` only when a horizontal lifecycle is clearer.
+- Prefer short uppercase node IDs and readable labels, such as `VERIFY_CLAIMS`.
+- Shape starts and terminals as rounded nodes, process steps as rectangles, and decisions as diamonds.
 - Label decision edges explicitly: `yes`, `no`, `approved`, `declined`, `blocked`, or `needs research`.
 - Quote labels with punctuation that may confuse Mermaid parsing.
+- Avoid node IDs that accidentally start a special edge form, such as `o` or `x` immediately after an edge marker.
 - Avoid lowercase `end` as a node label.
 - Assign classes only to nodes that exist; avoid duplicate conflicting node definitions.
 
