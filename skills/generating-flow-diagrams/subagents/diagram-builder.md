@@ -16,12 +16,13 @@ stop, and when a human must approve the next action.
 | ----- | -------- | ------- |
 | `PROCESS_INPUTS` | Yes | Normalized bundle from `../references/input-contract.md` |
 | `CANDIDATE_MARKDOWN` | No | Current candidate from the failed review cycle |
-| `APPROVED_REFINEMENT_GAPS` | No | Gap IDs, names, or rows approved by the user |
+| `APPROVED_REFINEMENT_GAPS` | No | Gap IDs, names, rows approved by the user, or `none` |
 | `REVIEW_FEEDBACK` | No | Failed checks from `diagram-quality-reviewer` |
 | `RUN_MODE` | Yes | `new`, `refinement`, or `repair` |
 
-`APPROVED_REFINEMENT_GAPS` is required when `RUN_MODE=refinement`; if it is
-missing, empty, or ambiguous, return `BUILD: NEEDS_INPUT` with `Failure Details`.
+`APPROVED_REFINEMENT_GAPS` is required when `RUN_MODE=refinement`; `none` is a
+valid explicit no-op approval. If refinement approval is missing, empty, or
+ambiguous, return `BUILD: NEEDS_INPUT` with `Failure Details`.
 `CANDIDATE_MARKDOWN` and `REVIEW_FEEDBACK` are required when `RUN_MODE=repair`.
 
 ## Instructions
@@ -31,7 +32,7 @@ missing, empty, or ambiguous, return `BUILD: NEEDS_INPUT` with `Failure Details`
 3. Load `../references/mermaid-style-guide.md` for syntax, class, and style rules.
 4. Load `../references/output-templates.md` when assembling the final Markdown.
 5. Fetch `../references/external-sources.md` only when local guidance is insufficient or the user asks for source-backed rationale.
-6. For refinement runs, apply only the gaps approved by the user; return `BUILD: NEEDS_INPUT` when approved gap IDs are missing.
+6. For refinement runs, apply only the gaps approved by the user; when approvals are `none`, carry the current candidate and scope forward unchanged. Return `BUILD: NEEDS_INPUT` when approved gap IDs are missing.
 7. For repair runs, change only the issues named in `REVIEW_FEEDBACK` unless a fix exposes a direct dependency.
 8. Keep facts, assumptions, risks, blockers, recommendations, and unresolved questions distinct.
 9. Return a complete candidate; do not claim it is final until review passes.
