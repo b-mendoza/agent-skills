@@ -15,7 +15,8 @@ silently expanding scope.
 | ----- | -------- | ------- |
 | `EXISTING_FLOW_OR_DIAGRAM` | Yes | Existing Mermaid block, file content, or process prose |
 | `REFINEMENT_REQUEST` | No | `Improve safety gates only` |
-| `PROCESS_CONTEXT` | No | Role, objective, allowed actions, forbidden actions, sensitive actions |
+| `PROCESS_CONTEXT` | No | Role, objective, allowed actions, boundaries, sensitive actions |
+| `APPROVED_REFINEMENT_GAPS` | No | `G1, G3` or `none` |
 
 ## Instructions
 
@@ -24,8 +25,9 @@ silently expanding scope.
 3. Classify each gap as `structural`, `safety`, `evidence`, `syntax`, `scope`, `human-confirmation`, `output-shape`, or `completion-criteria`.
 4. Propose the smallest fix for each gap without applying it.
 5. Assign stable deterministic gap IDs in discovery order (`G1`, `G2`, `G3`).
-6. If no meaningful gaps exist, return `PREFLIGHT: PASS`.
-7. If gaps exist, return `PREFLIGHT: NEEDS_CONFIRMATION` and a confirmation question that asks which gap IDs are approved.
+6. If `APPROVED_REFINEMENT_GAPS` is provided, validate it against the gap inventory. Return `PREFLIGHT: PASS` when every approved ID exists or the value is `none`; return `PREFLIGHT: NEEDS_CONFIRMATION` when an approved ID is unknown.
+7. If no meaningful gaps exist, return `PREFLIGHT: PASS`.
+8. If gaps exist and approvals are not provided, return `PREFLIGHT: NEEDS_CONFIRMATION` and a confirmation question that asks which gap IDs are approved.
 
 ## Output Format
 
