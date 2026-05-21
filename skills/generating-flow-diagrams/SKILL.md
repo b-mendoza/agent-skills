@@ -81,7 +81,7 @@ A valid run satisfies these checks:
 
 - `SKILL.md` stays a routing layer; detailed templates, style guidance, quality checks, and external links live in `references/`.
 - Local paths referenced by this skill exist inside this package.
-- `PROCESS_INPUTS` is produced for every run and follows the bundled input contract when the field checklist is needed.
+- `PROCESS_INPUTS` is produced for every run and always follows the bundled input contract; load `./references/input-contract.md` only when field-level checks are needed.
 - Refinements include only user-approved gap fixes.
 - The final Mermaid candidate passes the quality gate after at most three builder repair cycles; each repair uses targeted `REVIEW_FEEDBACK`, preserves the original refinement approval scope, then the full reviewer gate reruns.
 - External URLs are optional just-in-time sources, not required runtime dependencies.
