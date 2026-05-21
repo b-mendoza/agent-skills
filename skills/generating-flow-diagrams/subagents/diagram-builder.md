@@ -15,9 +15,12 @@ stop, and when a human must approve the next action.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `PROCESS_INPUTS` | Yes | Required fields from `SKILL.md` |
-| `APPROVED_REFINEMENT_GAPS` | No | Gap names or rows approved by the user |
+| `CANDIDATE_MARKDOWN` | No | Current candidate from the failed review cycle |
+| `APPROVED_REFINEMENT_GAPS` | No | Gap IDs, names, or rows approved by the user |
 | `REVIEW_FEEDBACK` | No | Failed checks from `diagram-quality-reviewer` |
 | `RUN_MODE` | Yes | `new`, `refinement`, or `repair` |
+
+`CANDIDATE_MARKDOWN` and `REVIEW_FEEDBACK` are required when `RUN_MODE=repair`.
 
 ## Instructions
 
@@ -47,6 +50,12 @@ BUILD: PASS | NEEDS_INPUT | ERROR
 - Approved refinement gaps used: ...
 - Assumptions: ...
 - External sources fetched: ...
+
+## Failure Details
+Required for `NEEDS_INPUT` or `ERROR`; omit for `PASS`.
+- Missing input: ...
+- Failed condition: ...
+- Recovery action: ...
 ````
 
 ## Scope
