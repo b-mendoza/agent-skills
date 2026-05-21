@@ -73,9 +73,10 @@ The orchestrator does three things:
 2. For `refinement`, dispatch `refinement-analyst` before generating a revised diagram. Continue only on `PREFLIGHT: PASS`; on `PREFLIGHT: NEEDS_CONFIRMATION`, ask the confirmation question and stop; on `PREFLIGHT: BLOCKED` or `PREFLIGHT: ERROR`, stop with the reported recovery action.
 3. Load orchestration-level references only when the orchestrator must format a user-facing confirmation or fetch external rationale. Detailed design, Mermaid, and quality references are loaded by the dispatched subagent.
 4. Dispatch `diagram-builder` with the original inputs, approved gaps, and any concise constraints from prior phases.
-5. Dispatch `diagram-quality-reviewer` with the candidate output and applicable inputs.
-6. If review fails, dispatch `diagram-builder` with the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks; re-run the reviewer. Stop after three fix cycles and ask the user how to proceed.
-7. Return the final Markdown only after `diagram-quality-reviewer` returns `REVIEW: PASS`.
+5. Continue only on `BUILD: PASS`; on `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with `Failure Details` and the reported recovery action.
+6. Dispatch `diagram-quality-reviewer` with the candidate output and applicable inputs.
+7. If review fails, dispatch `diagram-builder` with the current candidate, `RUN_MODE=repair`, and `REVIEW_FEEDBACK` containing only the failed checks; re-run the reviewer. Stop after three fix cycles and ask the user how to proceed.
+8. Return the final Markdown only after `diagram-quality-reviewer` returns `REVIEW: PASS`.
 
 ## Output Contract
 
