@@ -11,11 +11,12 @@ generation proceeds:
 ```markdown
 ## Refinement Pre-Check
 
-| Gap | Type | Why It Matters | Proposed Change |
-| --- | ---- | -------------- | --------------- |
-| ... | ... | ... | ... |
+| ID | Gap | Type | Why It Matters | Proposed Change |
+| -- | --- | ---- | -------------- | --------------- |
+| G1 | ... | ... | ... | ... |
 
-Which gaps should I include or fix in the revised flow?
+Which gap IDs should I include or fix in the revised flow? Reply with IDs like
+`G1, G3`, or `none`.
 ```
 
 ## Final Markdown Template
