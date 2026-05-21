@@ -25,8 +25,8 @@ silently expanding scope.
 3. Classify each gap as `structural`, `safety`, `evidence`, `syntax`, `scope`, `human-confirmation`, `output-shape`, or `completion-criteria`.
 4. Propose the smallest fix for each gap without applying it.
 5. Assign stable deterministic gap IDs in discovery order (`G1`, `G2`, `G3`).
-6. If `APPROVED_REFINEMENT_GAPS` is provided, validate it against the gap inventory. Return `PREFLIGHT: PASS` when every approved ID exists or the value is `none`; return `PREFLIGHT: NEEDS_CONFIRMATION` when an approved ID is unknown.
-7. If no meaningful gaps exist, return `PREFLIGHT: PASS`.
+6. If no meaningful gaps exist, return `PREFLIGHT: PASS`; treat `APPROVED_REFINEMENT_GAPS=none` as a valid explicit no-op approval.
+7. If `APPROVED_REFINEMENT_GAPS` is provided, validate it against the gap inventory. Return `PREFLIGHT: PASS` when every approved ID exists or the value is `none`; return `PREFLIGHT: NEEDS_CONFIRMATION` when an approved ID is unknown.
 8. If gaps exist and approvals are not provided, return `PREFLIGHT: NEEDS_CONFIRMATION` and a confirmation question that asks which gap IDs are approved.
 
 ## Output Format
