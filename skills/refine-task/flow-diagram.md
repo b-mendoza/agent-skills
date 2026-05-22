@@ -53,7 +53,7 @@ flowchart TD
   DRAFT_READY_MODE -->|no| DRAFT_OUT(["Draft: return Refinement review complete with Mode, Status, and Comment"])
   MODE_DECISION -->|post-comment requested| POST_ALLOWED_GATE{"POST_ALLOWED=yes?"}
   POST_ALLOWED_GATE -->|yes| POST_AVAILABLE{"Posting available?"}
-  POST_ALLOWED_GATE -->|no| BLOCKED_POST(["Blocked: do not post; return reason plus final comment draft"])
+  POST_ALLOWED_GATE -->|no| RETURN_REVIEWER_MODE(["Return reviewer mode and final comment without posting"])
   POST_AVAILABLE -->|yes| POST_COMMENT["Post only the returned refinement comment"]
   POST_AVAILABLE -->|no| READY_TO_POST_OUT
   POST_COMMENT --> POSTED_OUT(["Posted: return Refinement review complete with Mode, Status, and Comment"])
@@ -70,9 +70,9 @@ flowchart TD
   class REVIEWER_POLICY,READINESS_CHECKS,VERIFY_CLAIMS,QUALITY_CHECK,FIX_CYCLE check;
   class ASK_SOURCE,ASK_POSTING,ASK_APPROVAL human;
   class INTAKE,WRITE_INTENT,COLLECT_POINTERS,DISPATCH,CLASSIFY,ASSEMBLE_COMMENT,REVIEW_RETURN,COORDINATOR_KEEP,INCLUDE_REC,NEUTRALIZE_REC,POST_COMMENT guard;
-  class DRAFT_OUT,READY_TO_POST_OUT,POSTED_OUT output;
+  class DRAFT_OUT,READY_TO_POST_OUT,POSTED_OUT,RETURN_REVIEWER_MODE output;
   class DEFER_MUTATION refine;
-  class BLOCKED_SOURCE,BLOCKED_POSTING,BLOCKED_ACCESS,BLOCKED_POST stop;
+  class BLOCKED_SOURCE,BLOCKED_POSTING,BLOCKED_ACCESS stop;
 ```
 
 Readiness rule: the workflow completes only as `Draft`, `Ready to post`, `Posted`, `Blocked`, or `Deferred` after the reviewer returns a compact verdict and final comment, quality validation passes or safe failure handling is reported, and the coordinator returns only retained verdict fields plus the final comment. Posting requires explicit posting intent, available tooling, and `POST_ALLOWED=yes`; otherwise the coordinator must not mutate the tracker.
