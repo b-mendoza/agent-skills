@@ -68,3 +68,16 @@ flowchart TD
   class DONE success;
   class WAIT_PATHS,STOP_NO_AUTH,NO_CHANGES,WAIT_CONTEXT,STATE_BLOCKED,WAIT_DECISION,PLAN_BLOCKED,SCOPE_DECLINED,VERIFY_BLOCKED,EXEC_BLOCKED stop;
 ```
+
+Readiness rule: commit execution is allowed only when `COMMIT_REQUEST_CONFIRMED=true`, `CHANGE_PATHS` is explicit, the planner has approved scoped commit groups, and any required human scope decision has an approve branch.
+
+Final report contract:
+
+| Field | Required Content |
+| --- | --- |
+| Status | success, `NO_SCOPED_CHANGES`, blocked, error, or failure |
+| Commits | SHA and message for each created commit |
+| Verification | Checks run and pass/fail outcome |
+| Remaining scoped changes | Any in-scope changes not committed and why |
+| Untouched unrelated work | Confirmation that unrelated work was preserved |
+| Questions or blockers | Only unresolved decisions needed for safe continuation |
