@@ -32,7 +32,7 @@ assumptions explicitly.
 
 | Need | Load |
 | ---- | ---- |
-| Input normalization or missing-field checks | `./references/input-contract.md` |
+| Missing-field checks or clarification policy | `./references/input-contract.md` |
 | Refinement gap inventory and confirmation gate | Dispatch `./subagents/refinement-analyst.md`; load `./references/output-templates.md` only to format the user-facing confirmation request |
 | Candidate diagram creation or repair | Dispatch `./subagents/diagram-builder.md`; it loads `./references/flow-design-playbook.md`, `./references/mermaid-style-guide.md`, and `./references/output-templates.md` only as needed |
 | Quality gate and fix loop | Dispatch `./subagents/diagram-quality-reviewer.md`; it loads `./references/quality-gate-checklist.md` |
