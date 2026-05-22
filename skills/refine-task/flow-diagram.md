@@ -70,3 +70,5 @@ flowchart TD
   class DEFER_MUTATION refine;
   class BLOCKED_SOURCE,BLOCKED_POSTING,BLOCKED_ACCESS,BLOCKED_POST stop;
 ```
+
+Readiness rule: the workflow completes only as `Draft`, `Posted`, `Blocked`, or `Deferred` after the reviewer returns a compact verdict and final comment, quality validation passes or safe failure handling is reported, and the coordinator returns only retained verdict fields plus the final comment. Posting requires explicit posting intent, available tooling, and `POST_ALLOWED=yes`; otherwise the coordinator must not mutate the tracker.
