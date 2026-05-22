@@ -39,9 +39,9 @@ flowchart TD
 
   COMMIT_NEXT --> EXEC_ACTIONS[Executor stages only group paths, reviews staged diff, runs verification, creates commit]
   EXEC_ACTIONS --> EXEC_RESULT{COMMIT_EXECUTE result}
-  EXEC_RESULT -->|VERIFY_FAILED| RECOVER{Safe in-scope recovery available and attempts remain?}
+  EXEC_RESULT -->|VERIFY_FAILED| RECOVER{Safe in-scope recovery available and under 3 attempts?}
   RECOVER -->|yes| COMMIT_NEXT
-  RECOVER -->|no| VERIFY_BLOCKED([Blocked: verification failure contract])
+  RECOVER -->|no| VERIFY_FAILED([VERIFY_FAILED: verification failure contract])
   EXEC_RESULT -->|COMMIT_ERROR or ERROR| EXEC_BLOCKED([Blocked: commit execution failure contract])
   EXEC_RESULT -->|PASS| RECORD_SHA[Record commit SHA and verification evidence]
 
@@ -66,7 +66,7 @@ flowchart TD
   class ASK_PATHS,ASK_CONTEXT,ASK_DECISION,HUMAN_SCOPE human;
   class FINAL_REPORT output;
   class DONE success;
-  class WAIT_PATHS,STOP_NO_AUTH,NO_CHANGES,WAIT_CONTEXT,STATE_BLOCKED,WAIT_DECISION,PLAN_BLOCKED,SCOPE_DECLINED,VERIFY_BLOCKED,EXEC_BLOCKED stop;
+  class WAIT_PATHS,STOP_NO_AUTH,NO_CHANGES,WAIT_CONTEXT,STATE_BLOCKED,WAIT_DECISION,PLAN_BLOCKED,SCOPE_DECLINED,VERIFY_FAILED,EXEC_BLOCKED stop;
 ```
 
 Readiness rule: commit execution is allowed only when `COMMIT_REQUEST_CONFIRMED=true`, `CHANGE_PATHS` is explicit, the planner has approved scoped commit groups, and any required human scope decision has an approve branch.
