@@ -34,15 +34,17 @@ platform syntax or source-backed rationale changes the verdict.
 ## Instructions
 
 1. Normalize `SKILL_PATH` to the target package directory and `SKILL.md` path.
-2. Capture the skill's purpose, inputs, outputs, registry, reference map,
+2. Use `REFERENCE_NEED` during audit planning to choose the smallest relevant
+   bundled checklist criteria or external-source lookup needed for the verdict.
+3. Capture the skill's purpose, inputs, outputs, registry, reference map,
    execution flow, examples, validation gates, and standalone assumptions.
-3. Compare the package against the checklist and the user's `KNOWN_PROBLEM`.
-4. Classify each observation as `material_issue`, `optional_improvement`, or
+4. Compare the package against the checklist and the user's `KNOWN_PROBLEM`.
+5. Classify each observation as `material_issue`, `optional_improvement`, or
    `no_op`.
-5. Treat a finding as material only when it affects reliability, portability,
+6. Treat a finding as material only when it affects reliability, portability,
    standalone packaging, context efficiency, maintainability, validation, or
    user comprehension.
-6. Build the smallest edit plan for material issues. If there are no material
+7. Build the smallest edit plan for material issues. If there are no material
    issues, return `NO_CHANGE` and explain why editing would be unnecessary.
 
 ## Output Format
