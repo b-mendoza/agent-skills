@@ -52,4 +52,19 @@ flowchart TD
   MORE_GROUPS -->|yes| COMMIT_NEXT
   MORE_GROUPS -->|no| FINAL_REPORT[Load orchestrator report contract and synthesize final report]
   FINAL_REPORT --> DONE([Success: report SHAs, verification, remaining scoped changes, untouched unrelated work])
+
+  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
+
+  class HAS_PATHS,AUTH,STATE_RESULT,REF_NEED,PLAN_RESULT,SENSITIVE_SCOPE,EXEC_RESULT,RECOVER,REMAINING,MORE_GROUPS decision;
+  class INTAKE,SET_SCOPE,DISPATCH_STATE,LOOKUP_REF,PLAN,APPROVE_GROUPS,EXEC_ACTIONS,RECORD_SHA,REFRESH check;
+  class ASK_PATHS,ASK_CONTEXT,ASK_DECISION,HUMAN_SCOPE human;
+  class FINAL_REPORT output;
+  class DONE success;
+  class WAIT_PATHS,STOP_NO_AUTH,NO_CHANGES,WAIT_CONTEXT,STATE_BLOCKED,WAIT_DECISION,PLAN_BLOCKED,SCOPE_DECLINED,VERIFY_BLOCKED,EXEC_BLOCKED stop;
 ```
