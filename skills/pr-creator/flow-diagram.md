@@ -12,16 +12,16 @@ flowchart TD
   TARGET_CHECK -->|yes| PLATFORM["Detect platform and adapt happy path<br/>GitHub default; use GitLab, Bitbucket, or unknown-platform contract when needed"]
   PLATFORM --> PLATFORM_KNOWN{Exact platform behavior or syntax known?}
   PLATFORM_KNOWN -->|no| FETCH_DOCS["Fetch optional external docs only for exact platform behavior"]
-  FETCH_DOCS --> DISPATCH_REPO
-  PLATFORM_KNOWN -->|yes| DISPATCH_REPO["Dispatch repo-state-inspector<br/>collect current branch, remote refs, working-tree state, auth, and platform availability"]
+  FETCH_DOCS --> DISPATCH_REPO["Dispatch repo-state-inspector<br/>collect current branch, remote refs, working-tree state, auth, and platform availability"]
+  PLATFORM_KNOWN -->|yes| DISPATCH_REPO
   DISPATCH_REPO --> REPO_OK{Repository evidence usable?}
   REPO_OK -->|no| FAILURE_REPO["Load failure output contract<br/>report failed or blocked status with one next step"]
   FAILURE_REPO --> FAILED([Failed or blocked])
   REPO_OK -->|yes| DISPATCH_PREFLIGHT["Dispatch preflight-validator<br/>confirm auth, comparable remote refs, branch publish status, and local-change boundary"]
   DISPATCH_PREFLIGHT --> LOCAL_CHANGES{Uncommitted local changes present?}
   LOCAL_CHANGES -->|yes| NOTE_LOCAL["Record boundary:<br/>local uncommitted changes stay outside PR until committed"]
-  NOTE_LOCAL --> PREFLIGHT_READY
-  LOCAL_CHANGES -->|no| PREFLIGHT_READY{Preflight gates pass?}
+  NOTE_LOCAL --> PREFLIGHT_READY{Preflight gates pass?}
+  LOCAL_CHANGES -->|no| PREFLIGHT_READY
   PREFLIGHT_READY -->|no| RECOVERABLE_PREFLIGHT{Failing gate recoverable?}
   RECOVERABLE_PREFLIGHT -->|no| FAILURE_PREFLIGHT["Load failure output contract<br/>include failed gate and one clear next step"]
   FAILURE_PREFLIGHT --> FAILED
@@ -38,8 +38,8 @@ flowchart TD
   DISPATCH_DIFF --> DIFF_SCOPE{Large or mixed-purpose PR?}
   DIFF_SCOPE -->|yes| SCOPE_GATE["Human gate: approve proceeding with large or mixed-purpose PR<br/>target: current branch diff<br/>reason: review risk is elevated<br/>risk: lower review quality; safer alternative: split or stop"]
   SCOPE_GATE -->|declined| SCOPE_BLOCKED([Blocked: user declined large or mixed-purpose PR])
-  SCOPE_GATE -->|approved| DRAFT
-  DIFF_SCOPE -->|no| DRAFT["Dispatch pr-drafter<br/>produce preview-ready title and body using overrides when provided"]
+  SCOPE_GATE -->|approved| DRAFT["Dispatch pr-drafter<br/>produce preview-ready title and body using overrides when provided"]
+  DIFF_SCOPE -->|no| DRAFT
   DRAFT --> META["Dispatch review-metadata-suggester<br/>suggest reviewers and labels from input, CODEOWNERS, platform reviewer data, and platform labels"]
   META --> REVIEWER_CHECK{At least one reviewer available?}
   REVIEWER_CHECK -->|no| ASK_REVIEWER["Ask user for at least one reviewer"]
