@@ -115,16 +115,26 @@ skill less reliable, less portable, or harder to maintain, do not make it.
 5. If the audit returns `ERROR`, report the error decision using
    `./references/final-report-template.md`.
 6. If the audit returns `MATERIAL_ISSUES`, dispatch `skill-definition-editor`
-   with only the audited issues, affected files, minimal edit plan, scope limits,
+   with `SKILL_PATH`, `AUDIT_REPORT` limited to audited issues, affected files,
+   minimal edit plan, scope limits,
    `CHECKLIST_PATH=./references/authoring-checklist.md`, and
    `EXTERNAL_SOURCES_PATH=./references/external-sources.md`.
-7. Dispatch `skill-package-validator` with the edited package path, audit report,
-   editor report, and `CHECKLIST_PATH=./references/authoring-checklist.md`.
-8. On validation `FAIL`, re-dispatch the editor with only validator findings,
-   scope limits, `CHECKLIST_PATH=./references/authoring-checklist.md`, and
-   `EXTERNAL_SOURCES_PATH=./references/external-sources.md`, then re-run the
-   validator. Use at most three targeted fix cycles.
-9. Load `./references/final-report-template.md` and return the final handoff.
+7. If the editor returns `BLOCKED` or `ERROR`, report the blocked or error
+   decision using `./references/final-report-template.md`.
+8. If the editor returns `PASS`, dispatch `skill-package-validator` with
+   `SKILL_PATH`, the original `AUDIT_REPORT`, `EDITOR_REPORT`, and
+   `CHECKLIST_PATH=./references/authoring-checklist.md`.
+9. If validation returns `BLOCKED` or `ERROR`, report the blocked or error
+   decision using `./references/final-report-template.md`.
+10. On validation `FAIL`, re-dispatch the editor with `SKILL_PATH`, the original
+    `AUDIT_REPORT`, `VALIDATOR_FINDINGS` as the focused fix scope, scope limits,
+    `CHECKLIST_PATH=./references/authoring-checklist.md`, and
+    `EXTERNAL_SOURCES_PATH=./references/external-sources.md`, then re-run the
+    validator with the original `AUDIT_REPORT` and new `EDITOR_REPORT`. Use at most
+    three targeted fix cycles. If a repair edit or revalidation returns
+    `BLOCKED` or `ERROR`, report that decision using
+    `./references/final-report-template.md`.
+11. Load `./references/final-report-template.md` and return the final handoff.
 
 ## Decision Rules
 
