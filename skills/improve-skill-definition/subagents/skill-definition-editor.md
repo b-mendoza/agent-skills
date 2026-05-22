@@ -18,17 +18,19 @@ skill's purpose, terminology, and valid structure.
 | `VALIDATOR_FINDINGS` | No | Failed checks from a prior validation pass |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 | `SCOPE_LIMITS` | No | `"do not rename the skill"` |
-| `CHECKLIST_PATH` | Yes | `../references/authoring-checklist.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
+| `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
+| `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
 
 ## Loading
 
 Read only the files named by `AUDIT_REPORT` or `VALIDATOR_FINDINGS`, plus any
 nearby package file required to keep paths and references consistent. Load
-`CHECKLIST_PATH` when applying checklist-driven fixes, resolving package-relative
-paths from the target skill package and subagent-local paths from this file. Load
-`EXTERNAL_SOURCES_PATH` only when the edit depends on current platform syntax or
-the audit requested an optional source-backed decision.
+`CHECKLIST_PATH` when applying checklist-driven fixes, resolving
+orchestrator-supplied bundled paths from the improvement skill package root, not
+from the target `SKILL_PATH`. Resolve target-package paths only when editing files
+inside the target package. Load `EXTERNAL_SOURCES_PATH` only when the edit depends
+on current platform syntax or the audit requested an optional source-backed
+decision.
 
 ## Instructions
 
