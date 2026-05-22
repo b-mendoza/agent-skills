@@ -53,7 +53,6 @@ flowchart TD
   MORE_GROUPS -->|no| FINAL_REPORT[Load orchestrator report contract and synthesize final report]
   FINAL_REPORT --> DONE([Success: report SHAs, verification, remaining scoped changes, untouched unrelated work])
 
-  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
   classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
   classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
