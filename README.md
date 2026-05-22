@@ -85,8 +85,9 @@ one for GitHub. The rest are utility skills you can use on their own.
   or refines Markdown plus Mermaid diagrams for AI-agent workflows with human
   gates and quality checks.
 - [`refine-task`](skills/refine-task/SKILL.md) reviews Jira tickets, Jira epics,
-  GitHub issues, and GitHub epic-style parent
-  issues for readiness without mutating tracker content or metadata.
+  GitHub issues, and GitHub epic-style parent issues for readiness, drafts the
+  single allowed refinement comment, and posts it only after confirmation without
+  mutating tracker content or metadata.
 - [`review-software-engineer-cv`](skills/review-software-engineer-cv/SKILL.md)
   reviews and tailors a software engineer CV against job postings with realistic,
   evidence-backed recommendations.
