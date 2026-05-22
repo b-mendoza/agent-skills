@@ -16,9 +16,9 @@ flowchart TD
   ASK_PR --> PRURL
   PRURL -->|yes| FETCH[Collect GitHub review comments, summaries, PR comments, reply metadata, and PR diff]
   FETCH --> DATA_OK{GitHub data available?}
-  DATA_OK -->|auth or not found| FAIL_DATA([Blocked failure: auth, not-found, or runtime error])
+  DATA_OK -->|auth, not found, or runtime error| FAIL_DATA([PR_COMMENT_RESPONSE AUTH, NOT_FOUND, or RESPONSE_ERROR])
   DATA_OK -->|yes| COMMENTS{In-scope comments found?}
-  COMMENTS -->|no| FAIL_NONE([Blocked failure: no-comments])
+  COMMENTS -->|no| FAIL_NONE([PR_COMMENT_RESPONSE NO_COMMENTS])
   COMMENTS -->|yes| DISPATCH[Dispatch focused subagents; keep raw payloads, diffs, long docs, and command output outside compact orchestrator state]
   DISPATCH --> CONTEXT[Inspect relevant code, PR context, existing replies, and status contracts]
   CONTEXT --> EXT_NEEDED{Need current external source for a source-backed claim?}
