@@ -68,4 +68,19 @@ flowchart TD
   POST --> POST_STATUS{"POST status"}
   POST_STATUS -->|POST: PASS| SUCCESS_POSTED([Success: verified review posted to GitHub])
   POST_STATUS -->|post error| FAIL_POST([Terminal: post error])
+
+  class ONE_PR,CHOSEN,LARGE,PROCEED,CONTEXT_STATUS,FINDINGS_STATUS,RETRY_FINDINGS_STATUS,VERIFY_ROUTE,COMMENTS_STATUS,RETRY_COMMENTS_STATUS,VERIFY_STATUS,REPAIR_GATE,WRITE_STATUS,POST_MODE,APPROVED,POST_STATUS decision;
+  class PLAYBOOK,CONTEXT,FINDINGS,COMMENTS,VERIFY,WRITE,POST,NARROW_CONTEXT,RETRY_FINDINGS,COLLECT_METADATA,RETRY_COMMENTS,REPAIR check;
+  class ASK_PR,ASK_PROCEED,APPROVAL human;
+  class LOCAL_REVIEW,PREVIEW output;
+  class SUCCESS_DRAFT,SUCCESS_POSTED success;
+  class FAIL_INPUT,CANCELLED,FAIL_LARGE,FAIL_CONTEXT,FAIL_CONTEXT2,FAIL_FINDINGS,FAIL_COMMENTS,FAIL_VERIFY,FAIL_WRITE,FAIL_POST stop;
+  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
