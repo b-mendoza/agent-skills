@@ -37,7 +37,7 @@ flowchart TD
   VERIFY_OK -->|no, with fix target| VERIFY_REPAIR{Fewer than two targeted verification fix cycles used?}
   VERIFY_REPAIR -->|yes| REPAIR[Repair only the named collector, assessor, or drafter target]
   REPAIR --> VERIFY
-  VERIFY_REPAIR -->|no| FAIL_VERIFY([PR_COMMENT_RESPONSE VERIFY_FAIL or NEEDS_USER_DECISION])
+  VERIFY_REPAIR -->|no| FAIL_VERIFY([PR_COMMENT_RESPONSE VERIFY_FAIL])
   VERIFY_OK -->|yes| REPORT_PATH{OUTPUT_FILE known and safe to write?}
   REPORT_PATH -->|no| ASK_OUTPUT[Ask for safe OUTPUT_FILE or confirm default report path]
   ASK_OUTPUT --> REPORT_PATH
