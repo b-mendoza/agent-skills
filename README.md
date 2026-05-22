@@ -7,7 +7,7 @@ Claude Code aligned.
 
 ## What is in this repository
 
-- [`skills/`](skills/) has 29 first party skills.
+- [`skills/`](skills/) has 29 first-party skills.
 - [`docs/`](docs/) has workflow notes, design specs, and writing guidance.
 - [`docs/best-practices/`](docs/best-practices/) is the best place to start if
   you want to edit a skill.
@@ -17,9 +17,9 @@ Claude Code aligned.
 - [`skills-lock.json`](skills-lock.json) records the third party skill set.
 - [`opencode.jsonc`](opencode.jsonc) stores OpenCode config.
 
-## First party skills
+## First-party skills
 
-Most of the first party skills fall into two workflow groups, one for Jira and
+Most of the first-party skills fall into two workflow groups, one for Jira and
 one for GitHub. The rest are utility skills you can use on their own.
 
 ### Jira workflow
