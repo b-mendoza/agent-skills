@@ -29,7 +29,7 @@ flowchart TD
   FINDINGS --> FINDINGS_STATUS{"FINDINGS status"}
   FINDINGS_STATUS -->|FINDINGS: PASS| COMMENTS["Dispatch comment-drafter"]
   FINDINGS_STATUS -->|FINDINGS: NO_FINDINGS| VERIFY["Dispatch review-verifier"]
-  FINDINGS_STATUS -->|FINDINGS: NEEDS_CONTEXT| NARROW_CONTEXT["Dispatch context collector once with narrow request"]
+  FINDINGS_STATUS -->|FINDINGS: NEEDS_CONTEXT| NARROW_CONTEXT["Dispatch pr-context-collector once with narrow request"]
   NARROW_CONTEXT --> RETRY_FINDINGS["Retry finding-reviewer once"]
   RETRY_FINDINGS --> RETRY_FINDINGS_STATUS{"Retry findings status"}
   RETRY_FINDINGS_STATUS -->|pass or no findings| VERIFY_ROUTE{"Findings found?"}
