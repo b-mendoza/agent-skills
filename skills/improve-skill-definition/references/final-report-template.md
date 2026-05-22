@@ -53,3 +53,18 @@ Question:
 Validation completed:
 - [Checks already performed]
 ```
+
+## Error
+
+```markdown
+Decision: error
+
+Failed condition:
+- [Smallest failed condition or tool/runtime error]
+
+Known context:
+- [Inputs, status, or files involved]
+
+Recovery:
+- [Smallest next step, or `none`]
+```
