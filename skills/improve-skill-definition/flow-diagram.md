@@ -55,7 +55,7 @@ flowchart TD
   LOAD_CHANGED_TEMPLATE --> CHANGED([Decision: changed])
 
   VALIDATION_STATUS -->|FAIL| RETRY_GATE{Targeted repair cycles used fewer than 3?}
-  RETRY_GATE -->|yes| REPAIR[Re-dispatch editor with only validator findings]
+  RETRY_GATE -->|yes| REPAIR[Re-dispatch editor with original required inputs and validator findings as fix scope]
   REPAIR --> REPAIR_STATUS{Repair edit status?}
   REPAIR_STATUS -->|PASS| VALIDATE
   REPAIR_STATUS -->|BLOCKED| REPAIR_BLOCKED[Retain repair blocker and smallest escalation question]
@@ -97,4 +97,5 @@ flowchart TD
 Readiness rule: A final handoff is ready only after `final-report-template.md` is
 loaded and the outcome is one of `changed`, `no change`, `blocked`, or `error`.
 Failed validation may trigger at most three targeted editor and validator repair
-cycles before escalation.
+cycles before escalation. Repair dispatches preserve required editor inputs while
+using validator findings as the focused fix scope.
