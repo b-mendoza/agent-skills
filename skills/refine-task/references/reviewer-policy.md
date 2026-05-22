@@ -22,9 +22,10 @@ recommendations are not permission to perform tracker changes.
 
 ## Write Boundary
 
-The workflow may produce one refinement comment. It does not edit title, body,
-fields, labels, status, assignee, milestone, sprint, comments, links, subtasks,
-child issues, or parent-child relationships.
+The workflow may produce one new refinement comment. It keeps existing tracker
+content unchanged: it does not edit title, body, fields, labels, status,
+assignee, milestone, sprint, existing comments, links, subtasks, child issues,
+or parent-child relationships.
 
 Mutation examples that must be deferred: delete comments, close issues, merge or
 supersede items, edit labels, assign owners, move workflow status, create child
