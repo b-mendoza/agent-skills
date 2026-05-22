@@ -113,3 +113,10 @@ Blockers:
 | Missing or ambiguous `CHANGE_PATHS` | Needs input |
 | No user commit request | Blocked |
 | State, planning, verification, or commit failure without safe recovery | Blocked or failure contract |
+
+Unresolved questions:
+
+| Question | Handling |
+| --- | --- |
+| Should scope expand beyond `CHANGE_PATHS`? | Ask before expanding. |
+| Should meaningful in-scope changes be left uncommitted? | Ask before leaving them behind. |
