@@ -17,7 +17,7 @@ reshuffle, or polish content without changing behavior.
 | Area | Pass condition |
 | ---- | -------------- |
 | Frontmatter | `name` and `description` are portable; `name` matches the skill directory or subagent file basename |
-| Skill body | `SKILL.md` is normally under 500 lines and limited to identity, inputs, outputs, routing, workflow, validation, and a concise example |
+| Skill body | `SKILL.md` is under 500 lines and limited to identity, inputs, outputs, routing, workflow, validation, and a concise example |
 | Paths | Bundled paths are relative to the file that names them, exist on disk, and stay inside the skill package |
 | Standalone package | Runtime behavior does not depend on repository-local docs, absolute paths, private config, sibling skills, or unavailable files |
 | Progressive disclosure | Detailed templates, long examples, source indexes, mode guides, and large checklists live in `references/` and load just in time |
