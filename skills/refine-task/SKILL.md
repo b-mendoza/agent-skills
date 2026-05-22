@@ -36,7 +36,7 @@ for one source item.
 2. Dispatch refinement-reviewer with compact source pointers and user intent.
 3. Branch on the returned structured status.
 4. Post only when WRITE_MODE=post-comment, posting is available, and the reviewer returned POST_ALLOWED=yes.
-5. Otherwise return the reviewer comment as a draft.
+5. If the reviewer returns a postable comment that is not posted, return `Mode: Ready to post`; otherwise return the reviewer mode and comment.
 ```
 
 ## Subagent Registry
@@ -99,6 +99,10 @@ Comment: <final comment or draft>
 Use `Posted` only after the coordinator successfully posts the exact refinement
 comment returned by the reviewer.
 
+Use `Ready to post` when the reviewer returns a postable comment but the
+coordinator does not post it, such as draft or unknown write mode, or a safe
+post-comment run where posting is not performed.
+
 If the reviewer reports a mutation-only request with no refinement review to
 perform, return `Mode: Deferred` and explain that the mutation belongs in a
 separate approved workflow.
@@ -120,5 +124,5 @@ Input: `Review https://github.com/acme/app/issues/42 for readiness and draft a r
 
 Flow: normalize `ITEM_URL`, dispatch `refinement-reviewer` with
 `WRITE_MODE=draft`, receive `REVIEW_STATUS=Needs refinement` and
-`POST_ALLOWED=no`, then return the draft comment.
+`Comment mode=Draft`, then return the draft comment.
 </example>
