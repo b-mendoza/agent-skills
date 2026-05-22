@@ -114,19 +114,23 @@ skill less reliable, less portable, or harder to maintain, do not make it.
    the blocked decision using `./references/final-report-template.md`.
 5. If the audit returns `ERROR`, report the error decision using
    `./references/final-report-template.md`.
-6. If the audit returns `MATERIAL_ISSUES`, dispatch `skill-definition-editor`
-   with `SKILL_PATH`, `AUDIT_REPORT` limited to audited issues, affected files,
+6. If the audit returns `MATERIAL_ISSUES`, confirm `SCOPE_LIMITS` allow the
+   required fix. If they do not, ask one focused user decision about the
+   conflicting scope limit or report the blocked decision using
+   `./references/final-report-template.md`.
+7. When scope allows the fix, dispatch `skill-definition-editor` with
+   `SKILL_PATH`, `AUDIT_REPORT` limited to audited issues, affected files,
    minimal edit plan, scope limits,
    `CHECKLIST_PATH=./references/authoring-checklist.md`, and
    `EXTERNAL_SOURCES_PATH=./references/external-sources.md`.
-7. If the editor returns `BLOCKED` or `ERROR`, report the blocked or error
+8. If the editor returns `BLOCKED` or `ERROR`, report the blocked or error
    decision using `./references/final-report-template.md`.
-8. If the editor returns `PASS`, dispatch `skill-package-validator` with
+9. If the editor returns `PASS`, dispatch `skill-package-validator` with
    `SKILL_PATH`, the original `AUDIT_REPORT`, `EDITOR_REPORT`, and
    `CHECKLIST_PATH=./references/authoring-checklist.md`.
-9. If validation returns `BLOCKED` or `ERROR`, report the blocked or error
-   decision using `./references/final-report-template.md`.
-10. On validation `FAIL`, re-dispatch the editor with `SKILL_PATH`, the original
+10. If validation returns `BLOCKED` or `ERROR`, report the blocked or error
+    decision using `./references/final-report-template.md`.
+11. On validation `FAIL`, re-dispatch the editor with `SKILL_PATH`, the original
     `AUDIT_REPORT`, `VALIDATOR_FINDINGS` as the focused fix scope, scope limits,
     `CHECKLIST_PATH=./references/authoring-checklist.md`, and
     `EXTERNAL_SOURCES_PATH=./references/external-sources.md`, then re-run the
@@ -134,7 +138,7 @@ skill less reliable, less portable, or harder to maintain, do not make it.
     three targeted fix cycles. If a repair edit or revalidation returns
     `BLOCKED` or `ERROR`, report that decision using
     `./references/final-report-template.md`.
-11. Load `./references/final-report-template.md` and return the final handoff.
+12. Load `./references/final-report-template.md` and return the final handoff.
 
 ## Decision Rules
 
