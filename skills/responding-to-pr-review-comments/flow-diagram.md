@@ -40,17 +40,17 @@ flowchart TD
   REPORT_PATH -->|no| ASK_OUTPUT[Ask for safe OUTPUT_FILE or confirm default report path]
   ASK_OUTPUT --> REPORT_PATH
   REPORT_PATH -->|yes| WRITE_REPORT[Write verified Markdown report to OUTPUT_FILE with drafts, evidence, risks, blockers, and action intents]
-  WRITE_REPORT --> POST_MODE{POSTING_MODE requests posting?}
-  POST_MODE -->|no or draft-only| NOT_POSTED([Complete: not-posted with verified report path])
-  POST_MODE -->|yes| PREVIEW[Show exact final posting preview: target thread, reply text, reason, risk, reversibility, and safer draft-only alternative]
+  WRITE_REPORT --> POST_MODE{POSTING_MODE value?}
+  POST_MODE -->|draft-only| NOT_POSTED([PR_COMMENT_RESPONSE PASS, posting not-posted])
+  POST_MODE -->|post-after-confirmation| PREVIEW[Show exact final posting preview: target thread, reply text, reason, risk, reversibility, and safer draft-only alternative]
   PREVIEW --> APPROVAL{User explicitly approves exact preview?}
-  APPROVAL -->|declined| CANCELLED([Complete: cancelled; report remains local])
+  APPROVAL -->|declined| CANCELLED([PR_COMMENT_RESPONSE CANCELLED, report remains local])
   APPROVAL -->|approved| TARGETS{All targets are supported review-comment threads?}
-  TARGETS -->|no| NEEDS_CHOICE([Blocked: requires-user-choice for unsupported posting targets])
+  TARGETS -->|no| NEEDS_CHOICE([PR_COMMENT_RESPONSE NEEDS_USER_DECISION, unsupported targets require user choice])
   TARGETS -->|yes| POST[Post exact approved replies; record GitHub result metadata]
   POST --> POST_OK{Posting succeeded?}
-  POST_OK -->|yes| POSTED([Complete: posted with posting result])
-  POST_OK -->|no| FAIL_POST([Failed: posting error with report and failure envelope])
+  POST_OK -->|yes| POSTED([PR_COMMENT_RESPONSE PASS, posting posted])
+  POST_OK -->|no| FAIL_POST([PR_COMMENT_RESPONSE POST_ERROR])
 
   classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
