@@ -75,13 +75,11 @@ flowchart TD
   class LOCAL_REVIEW,PREVIEW output;
   class SUCCESS_DRAFT,SUCCESS_POSTED success;
   class FAIL_INPUT,CANCELLED,FAIL_LARGE,FAIL_CONTEXT,FAIL_CONTEXT2,FAIL_FINDINGS,FAIL_COMMENTS,FAIL_VERIFY,FAIL_WRITE,FAIL_POST stop;
-  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
   classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
   classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
   classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
-  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
 
