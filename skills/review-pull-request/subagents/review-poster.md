@@ -31,11 +31,13 @@ Posting is available only when `PREVIEW_APPROVED=true`.
    docs for the chosen method, and apply the documented fields.
 3. When `VERIFIED_COMMENTS` contains line comments, validate every line comment
    has `path`, `line`, `side`, and any required `start_line` or `start_side`
-   before posting. Return the metadata-invalid status when fields are
+   before posting. Return `POST: METADATA_INVALID` when fields are
    incomplete.
-4. Post comments with the exact bodies and metadata from `VERIFIED_COMMENTS`.
-   For summary-only/no-finding reviews, read `OUTPUT_FILE` and post the
-   approved review body from that file with zero comments.
+4. When `VERIFIED_COMMENTS` contains line comments, post them with the exact
+   bodies and metadata from `VERIFIED_COMMENTS`. For summary-only/no-finding
+   reviews, read `OUTPUT_FILE` and post the complete file contents verbatim as
+   the approved review body with zero comments, whether using `gh pr review` or
+   the GitHub review API.
 5. Read back the created review or comments through the API or CLI and confirm
    they are visible.
 6. Before returning, load `../references/status-review-poster.md` and use that
