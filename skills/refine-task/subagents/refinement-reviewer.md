@@ -58,7 +58,7 @@ Reference paths are skill-root-relative and are supplied by the coordinator.
 REVIEW: PASS | BLOCKED | FAIL | ERROR
 REVIEW_STATUS: Ready | Needs refinement | Needs split | Needs spike | Blocked | Not actionable
 POST_ALLOWED: yes | no
-Comment mode: Draft | Ready to post | Posted elsewhere not performed | Deferred
+Comment mode: Draft | Ready to post | Blocked | Deferred
 
 ## Compact Summary
 - Item type:
@@ -80,6 +80,10 @@ Use `POST_ALLOWED=yes` only when `WRITE_MODE=post-comment`, the requested action
 is exactly posting a refinement comment, and no unresolved mutation or safety
 gate prevents posting. This subagent does not post; it reports whether posting is
 allowed for the coordinator.
+
+Use `Comment mode=Ready to post` for a postable refinement comment,
+`Comment mode=Blocked` when review cannot proceed safely, and
+`Comment mode=Deferred` when the request belongs in a separate approved workflow.
 
 ## Scope
 
