@@ -1,6 +1,6 @@
 ---
 name: "refine-task"
-description: "Reviewer-only refinement for Jira tickets, Jira epics, GitHub issues, and GitHub epic-style parent issues. Use when the user asks to triage, refine, assess readiness, review acceptance criteria, find blockers, validate technical claims, suggest splits, recommend subtasks, or draft/post a refinement comment without mutating tracker metadata or issue content."
+description: "Reviewer-only refinement for Jira tickets, Jira epics, GitHub issues, and GitHub epic-style parent issues. Use when the user asks to triage, refine, assess readiness, review acceptance criteria, find blockers, validate technical claims, suggest splits, recommend subtasks, or draft/post the single allowed refinement comment while leaving tracker metadata, issue content, and existing comments unchanged."
 ---
 
 # Refine Task
@@ -80,9 +80,10 @@ QUALITY_CHECKLIST_PATH: ./references/review-quality-checklist.md
 EXTERNAL_SOURCES_PATH: ./references/external-sources.md
 ```
 
-Keep only the returned `REVIEW_STATUS`, `POST_ALLOWED`, `Comment mode`, blocked
-reason if any, and final comment or draft. Do not keep raw tracker payloads,
-long source text, or full analysis notes in coordinator context.
+Keep only the returned `REVIEW_STATUS`, `POST_ALLOWED`, `Comment mode` (`Draft`,
+`Ready to post`, `Blocked`, or `Deferred`), blocked reason if any, and final
+comment or draft. Do not keep raw tracker payloads, long source text, or full
+analysis notes in coordinator context.
 
 ## Output Contract
 
@@ -90,10 +91,13 @@ Return one of these outcomes:
 
 ```text
 Refinement review complete.
-Mode: Draft | Posted | Blocked | Deferred
+Mode: Draft | Ready to post | Posted | Blocked | Deferred
 Status: Ready | Needs refinement | Needs split | Needs spike | Blocked | Not actionable
 Comment: <final comment or draft>
 ```
+
+Use `Posted` only after the coordinator successfully posts the exact refinement
+comment returned by the reviewer.
 
 If the reviewer reports a mutation-only request with no refinement review to
 perform, return `Mode: Deferred` and explain that the mutation belongs in a
