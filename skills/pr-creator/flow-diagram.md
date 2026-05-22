@@ -81,3 +81,5 @@ flowchart TD
   class ASK_TARGET,NOTE_LOCAL,FETCH_DOCS,FREEZE guard;
   class FAILURE_REPO,FAILURE_PREFLIGHT,FAILURE_LABELS,FAILURE_SUBMIT,TARGET_BLOCKED,FAILED,ESCALATE,PUSH_BLOCKED,SCOPE_BLOCKED,REVIEWER_BLOCKED,PREVIEW_BLOCKED stop;
 ```
+
+Readiness rule: the orchestrator may dispatch `pr-submitter` only after repository checks, comparable remote refs, diff analysis, draft preview, reviewer and label validation, sensitive-action gates, and explicit preview approval all pass.
