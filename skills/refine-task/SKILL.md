@@ -73,11 +73,11 @@ ITEM_URL: <input URL, if available>
 ITEM_CONTEXT: <compact pasted context or file path, if available>
 WRITE_MODE: draft | post-comment | unknown
 HUMAN_APPROVALS: <explicit approvals, if any>
-REVIEWER_POLICY_PATH: ./references/reviewer-policy.md
-REFINEMENT_CHECKS_PATH: ./references/refinement-checks.md
-COMMENT_TEMPLATE_PATH: ./references/comment-template.md
-QUALITY_CHECKLIST_PATH: ./references/review-quality-checklist.md
-EXTERNAL_SOURCES_PATH: ./references/external-sources.md
+REVIEWER_POLICY_PATH: ../references/reviewer-policy.md
+REFINEMENT_CHECKS_PATH: ../references/refinement-checks.md
+COMMENT_TEMPLATE_PATH: ../references/comment-template.md
+QUALITY_CHECKLIST_PATH: ../references/review-quality-checklist.md
+EXTERNAL_SOURCES_PATH: ../references/external-sources.md
 ```
 
 Keep only the returned `REVIEW_STATUS`, `POST_ALLOWED`, `Comment mode` (`Draft`,
