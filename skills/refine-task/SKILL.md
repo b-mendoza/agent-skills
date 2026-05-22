@@ -68,6 +68,9 @@ for the decision at hand.
 Dispatch `refinement-reviewer` with only the source pointers and decisions it
 needs:
 
+The reference paths in this dispatch block are relative to
+`subagents/refinement-reviewer.md`.
+
 ```text
 ITEM_URL: <input URL, if available>
 ITEM_CONTEXT: <compact pasted context or file path, if available>
