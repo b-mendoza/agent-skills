@@ -82,8 +82,9 @@ is exactly posting a refinement comment, and no unresolved mutation or safety
 gate prevents posting. This subagent does not post; it reports whether posting is
 allowed for the coordinator.
 
-Use `Comment mode=Ready to post` for a postable refinement comment,
-`Comment mode=Blocked` when review cannot proceed safely, and
+Use `Comment mode=Ready to post` for a refinement comment that is safe to post
+exactly as returned, `Comment mode=Draft` when the comment needs user review
+before posting, `Comment mode=Blocked` when review cannot proceed safely, and
 `Comment mode=Deferred` when the request belongs in a separate approved workflow.
 
 ## Scope
