@@ -22,8 +22,8 @@ flowchart TD
   STATE_RESULT -->|PASS| REF_NEED{Reference need named?}
 
   REF_NEED -->|yes| LOOKUP_REF[Load external-sources and select only relevant public URL]
-  REF_NEED -->|no| PLAN[Dispatch commit-boundary-planner with state facts]
-  LOOKUP_REF --> PLAN[Dispatch commit-boundary-planner with selected URL conclusion]
+  REF_NEED -->|no| PLAN[Dispatch commit-boundary-planner]
+  LOOKUP_REF --> PLAN
 
   PLAN --> PLAN_RESULT{COMMIT_PLAN result}
   PLAN_RESULT -->|NEEDS_DECISION| ASK_DECISION[Ask smallest user decision question]
