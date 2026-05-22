@@ -70,16 +70,10 @@ flowchart TD
 
 Readiness rule: commit execution is allowed only when `COMMIT_REQUEST_CONFIRMED=true`, `CHANGE_PATHS` is explicit, the planner has approved scoped commit groups, and any required human scope decision has an approve branch.
 
-Final report contract:
-
-| Field | Required Content |
-| --- | --- |
-| Status | success, `NO_SCOPED_CHANGES`, blocked, error, or failure |
-| Commits | SHA and message for each created commit |
-| Verification | Checks run and pass/fail outcome |
-| Remaining scoped changes | Any in-scope changes not committed and why |
-| Untouched unrelated work | Confirmation that unrelated work was preserved |
-| Questions or blockers | Only unresolved decisions needed for safe continuation |
+Final report contract: load
+[`./references/report-contract-orchestrator.md`](./references/report-contract-orchestrator.md)
+after commit execution or terminal failure and use its success or failure
+structure as the source of truth.
 
 Facts:
 
