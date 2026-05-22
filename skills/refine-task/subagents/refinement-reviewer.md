@@ -23,16 +23,17 @@ comment.
 | `ITEM_CONTEXT` | Optional | Pasted issue content, comments, linked context summary, or file path |
 | `WRITE_MODE` | Optional | `draft`, `post-comment`, or unknown |
 | `HUMAN_APPROVALS` | Optional | Explicit approvals for sensitive recommendations |
-| `REVIEWER_POLICY_PATH` | Yes | `./references/reviewer-policy.md` |
-| `REFINEMENT_CHECKS_PATH` | Yes | `./references/refinement-checks.md` |
-| `COMMENT_TEMPLATE_PATH` | Yes | `./references/comment-template.md` |
-| `QUALITY_CHECKLIST_PATH` | Yes | `./references/review-quality-checklist.md` |
-| `EXTERNAL_SOURCES_PATH` | Yes | `./references/external-sources.md` |
+| `REVIEWER_POLICY_PATH` | Yes | `../references/reviewer-policy.md` |
+| `REFINEMENT_CHECKS_PATH` | Yes | `../references/refinement-checks.md` |
+| `COMMENT_TEMPLATE_PATH` | Yes | `../references/comment-template.md` |
+| `QUALITY_CHECKLIST_PATH` | Yes | `../references/review-quality-checklist.md` |
+| `EXTERNAL_SOURCES_PATH` | Yes | `../references/external-sources.md` |
 
 If both `ITEM_URL` and usable `ITEM_CONTEXT` are missing, return `REVIEW: BLOCKED`
 with one request for the source item.
 
-Reference paths are skill-root-relative and are supplied by the coordinator.
+Reference paths are relative to this subagent file and are supplied by the
+coordinator.
 
 ## Instructions
 
