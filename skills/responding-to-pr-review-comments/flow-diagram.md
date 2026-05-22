@@ -49,9 +49,7 @@ flowchart TD
   POST_MODE -->|post-after-confirmation| PREVIEW[Show exact final posting preview: target thread, reply text, reason, risk, reversibility, and safer draft-only alternative]
   PREVIEW --> APPROVAL{User explicitly approves exact preview?}
   APPROVAL -->|declined| CANCELLED([PR_COMMENT_RESPONSE CANCELLED, report remains local])
-  APPROVAL -->|approved| TARGETS{All targets are supported review-comment threads?}
-  TARGETS -->|no| NEEDS_CHOICE([PR_COMMENT_RESPONSE NEEDS_USER_DECISION, unsupported targets require user choice])
-  TARGETS -->|yes| POST[Post exact approved replies; record GitHub result metadata]
+  APPROVAL -->|approved| POST[Post exact approved replies to supported review-comment threads; record skipped unsupported targets]
   POST --> POST_OK{Posting succeeded?}
   POST_OK -->|yes| POSTED([PR_COMMENT_RESPONSE PASS, posting posted])
   POST_OK -->|no| FAIL_POST([PR_COMMENT_RESPONSE POST_ERROR])
@@ -64,13 +62,13 @@ flowchart TD
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,USER_DECISION,DECISION_RESOLVED,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,WRITE_OK,POST_MODE,APPROVAL,TARGETS,POST_OK decision;
+  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,USER_DECISION,DECISION_RESOLVED,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,WRITE_OK,POST_MODE,APPROVAL,POST_OK decision;
   class INTAKE,FETCH,DISPATCH,CONTEXT,CLASSIFY,REASSESS,DRAFT,VERIFY,REPAIR check;
   class EXT_SOURCE guard;
   class ASK_PR,ASK_DECISION,ASK_OUTPUT,PREVIEW human;
   class WRITE_REPORT,POST output;
   class NOT_POSTED,CANCELLED,POSTED success;
-  class FAIL_DATA,FAIL_NONE,FAIL_VERIFY,FAIL_WRITE,NEEDS_CHOICE,FAIL_POST stop;
+  class FAIL_DATA,FAIL_NONE,FAIL_VERIFY,FAIL_WRITE,FAIL_POST stop;
 ```
 
 Report shape: the written report follows
