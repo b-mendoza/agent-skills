@@ -83,3 +83,5 @@ flowchart TD
 ```
 
 Readiness rule: the orchestrator may dispatch `pr-submitter` only after repository checks, comparable remote refs, diff analysis, draft preview, reviewer and label validation, sensitive-action gates, and explicit preview approval all pass.
+
+Failure envelope rule: every blocked, failed, or escalated terminal state must return a single status, the gate that stopped progress, evidence used, and one clear next step.
