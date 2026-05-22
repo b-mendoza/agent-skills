@@ -47,7 +47,7 @@ inside the subagent that fetched them.
 | `comment-drafter` | `./subagents/comment-drafter.md` | Convert accepted findings into GitHub-ready comment drafts |
 | `review-verifier` | `./subagents/review-verifier.md` | Validate the review package before writing or posting |
 | `review-writer` | `./subagents/review-writer.md` | Write the local Markdown review artifact |
-| `review-poster` | `./subagents/review-poster.md` | Post only exact, approved, verified comments |
+| `review-poster` | `./subagents/review-poster.md` | Post only the exact, approved, verified review |
 
 Read a subagent file only when dispatching that phase.
 
