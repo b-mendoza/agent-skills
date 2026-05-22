@@ -1,6 +1,6 @@
 ---
 name: "skill-package-validator"
-description: "Validates a skill package after no-change audit or targeted edits using concrete standalone, path, contract, and progressive-disclosure checks."
+description: "Validates a skill package after targeted edits using concrete standalone, path, contract, and progressive-disclosure checks."
 ---
 
 # Skill Package Validator
