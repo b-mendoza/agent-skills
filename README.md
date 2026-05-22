@@ -103,6 +103,9 @@ one for GitHub. The rest are utility skills you can use on their own.
   playbooks.
 - [`workflow-skill-architect`](skills/workflow-skill-architect/SKILL.md) helps
   turn a repeatable process into a reusable skill or set of subagents.
+- [`improving-skill-definitions`](skills/improving-skill-definitions/SKILL.md)
+  improves existing skill packages only when inspection finds a material issue
+  worth fixing.
 
 ## Third party skills kept in the repo
 
