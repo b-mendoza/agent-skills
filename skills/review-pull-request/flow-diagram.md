@@ -84,3 +84,15 @@ flowchart TD
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
+
+Readiness rule: the review is ready only after `review-verifier` returns `VERIFY: PASS` and `review-writer` returns `WRITE: PASS`. Posting is never implicit; it requires `POSTING_MODE=post-after-confirmation`, an exact preview of the verified review file, and explicit final user approval.
+
+Status report shape:
+
+```text
+Review file:
+Findings count:
+Review decision:
+Posting state:
+Notes:
+```
