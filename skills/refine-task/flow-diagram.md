@@ -48,14 +48,15 @@ flowchart TD
   REVIEW_RETURN --> COORDINATOR_KEEP["Coordinator retains only verdict fields and final comment; keeps raw payloads and long analysis out of top-level context"]
   COORDINATOR_KEEP --> MODE_DECISION{"Output mode?"}
 
-  MODE_DECISION -->|draft or unknown| DRAFT_POSTABLE{"Reviewer says comment is postable?"}
-  DRAFT_POSTABLE -->|yes| READY_TO_POST_OUT(["Ready to post: return Refinement review complete with Mode, Status, and Comment"])
-  DRAFT_POSTABLE -->|no| DRAFT_OUT(["Draft: return Refinement review complete with Mode, Status, and Comment"])
-  MODE_DECISION -->|post-comment requested| POST_GATE{"POST_ALLOWED=yes and posting available?"}
-  POST_GATE -->|yes| POST_COMMENT["Post only the returned refinement comment"]
+  MODE_DECISION -->|draft or unknown| DRAFT_READY_MODE{"Comment mode=Ready to post?"}
+  DRAFT_READY_MODE -->|yes| READY_TO_POST_OUT(["Ready to post: return Refinement review complete with Mode, Status, and Comment"])
+  DRAFT_READY_MODE -->|no| DRAFT_OUT(["Draft: return Refinement review complete with Mode, Status, and Comment"])
+  MODE_DECISION -->|post-comment requested| POST_ALLOWED_GATE{"POST_ALLOWED=yes?"}
+  POST_ALLOWED_GATE -->|yes| POST_AVAILABLE{"Posting available?"}
+  POST_ALLOWED_GATE -->|no| BLOCKED_POST(["Blocked: do not post; return reason plus final comment draft"])
+  POST_AVAILABLE -->|yes| POST_COMMENT["Post only the returned refinement comment"]
+  POST_AVAILABLE -->|no| READY_TO_POST_OUT
   POST_COMMENT --> POSTED_OUT(["Posted: return Refinement review complete with Mode, Status, and Comment"])
-  POST_GATE -->|postable but not posted| READY_TO_POST_OUT
-  POST_GATE -->|no| BLOCKED_POST(["Blocked: do not post; return reason plus final comment draft"])
 
   classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
@@ -65,7 +66,7 @@ flowchart TD
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class SOURCE_AVAILABLE,MUTATION_ONLY,POSTING_CLARITY,ACCESS_OK,TECH_CLAIMS,SENSITIVE_REC,APPROVAL_AVAILABLE,QUALITY_PASS,MODE_DECISION,DRAFT_POSTABLE,POST_GATE decision;
+  class SOURCE_AVAILABLE,MUTATION_ONLY,POSTING_CLARITY,ACCESS_OK,TECH_CLAIMS,SENSITIVE_REC,APPROVAL_AVAILABLE,QUALITY_PASS,MODE_DECISION,DRAFT_READY_MODE,POST_ALLOWED_GATE,POST_AVAILABLE decision;
   class REVIEWER_POLICY,READINESS_CHECKS,VERIFY_CLAIMS,QUALITY_CHECK,FIX_CYCLE check;
   class ASK_SOURCE,ASK_POSTING,ASK_APPROVAL human;
   class INTAKE,WRITE_INTENT,COLLECT_POINTERS,DISPATCH,CLASSIFY,ASSEMBLE_COMMENT,REVIEW_RETURN,COORDINATOR_KEEP,INCLUDE_REC,NEUTRALIZE_REC,POST_COMMENT guard;
