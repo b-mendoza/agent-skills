@@ -33,9 +33,9 @@ Posting is available only when `PREVIEW_APPROVED=true`.
    has `path`, `line`, `side`, and any required `start_line` or `start_side`
    before posting. Return the metadata-invalid status when fields are
    incomplete.
-4. Post comments with the exact bodies and metadata from `VERIFIED_COMMENTS`, or
-   post the approved summary review with zero comments for summary-only/no-
-   finding reviews.
+4. Post comments with the exact bodies and metadata from `VERIFIED_COMMENTS`.
+   For summary-only/no-finding reviews, read `OUTPUT_FILE` and post the
+   approved review body from that file with zero comments.
 5. Read back the created review or comments through the API or CLI and confirm
    they are visible.
 6. Before returning, load `../references/status-review-poster.md` and use that
