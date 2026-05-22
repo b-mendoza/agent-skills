@@ -9,6 +9,7 @@
 - Prefer short uppercase node IDs and readable labels, such as `VERIFY_CLAIMS`.
 - Shape starts and terminals as rounded nodes, process steps as rectangles, and decisions as diamonds.
 - Label decision edges explicitly: `yes`, `no`, `approved`, `declined`, `blocked`, or `needs research`.
+- Prefer one edge per line when the flow is complex.
 - Quote labels with punctuation that may confuse Mermaid parsing.
 - Avoid node IDs that accidentally start a special edge form, such as `o` or `x` immediately after an edge marker.
 - Avoid lowercase `end` as a node label.
