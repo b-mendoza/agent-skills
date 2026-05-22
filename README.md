@@ -81,7 +81,7 @@ one for GitHub. The rest are utility skills you can use on their own.
   posting confirmation-gated.
 - [`prompt-structurer`](skills/prompt-structurer/SKILL.md) turns prose prompts
   into structured XML prompts.
-- [`generating-flow-diagrams`](skills/generating-flow-diagrams/SKILL.md) creates
+- [`generate-flow-diagram`](skills/generate-flow-diagram/SKILL.md) creates
   or refines Markdown plus Mermaid diagrams for AI-agent workflows with human
   gates and quality checks.
 - [`refine-task`](skills/refine-task/SKILL.md)
