@@ -58,7 +58,7 @@ flowchart TD
   WRITE_STATUS -->|WRITE: PASS| LOCAL_REVIEW["Confirm verified local Markdown review file"]
   WRITE_STATUS -->|write error| FAIL_WRITE([Terminal: write error])
 
-  LOCAL_REVIEW --> PREVIEW["Show exact file preview and report findings count, decision, posting state, notes"]
+  LOCAL_REVIEW --> PREVIEW["Show exact file preview and report Review file, Findings, Review decision, Posting, Notes"]
   PREVIEW --> POST_MODE{"POSTING_MODE is post-after-confirmation?"}
   POST_MODE -->|no, draft-only| SUCCESS_DRAFT([Success: verified draft saved locally])
   POST_MODE -->|yes| APPROVAL["Ask for explicit final approval to post exact verified review"]
@@ -89,8 +89,8 @@ Status report shape:
 
 ```text
 Review file:
-Findings count:
+Findings:
 Review decision:
-Posting state:
+Posting:
 Notes:
 ```
