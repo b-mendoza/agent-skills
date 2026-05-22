@@ -16,7 +16,7 @@ recommendations are not permission to perform tracker changes.
 | Outcome | Meaning |
 | ------- | ------- |
 | `Draft` | Return a comment body for the user to review or post manually. |
-| `Ready to post` | Coordinator may post exactly the refinement comment if posting is explicitly requested and available. |
+| `Ready to post` | The comment is safe to post exactly as returned; the coordinator may post it only when posting is explicitly requested and available, otherwise it returns this mode without mutating the tracker. |
 | `Blocked` | Review cannot proceed safely because source context, access, or authorization is missing. |
 | `Deferred` | User requested a tracker mutation that belongs in a separate approved workflow. |
 
