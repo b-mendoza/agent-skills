@@ -93,3 +93,8 @@ flowchart TD
   class NO_CHANGE,CHANGED success;
   class BLOCKED,ERROR,AUDIT_BLOCKED,AUDIT_ERROR,EDIT_BLOCKED,EDIT_ERROR,REPAIR_BLOCKED,REPAIR_ERROR,VALIDATION_BLOCKED,VALIDATION_ERROR,ESCALATE_FAIL stop;
 ```
+
+Readiness rule: A final handoff is ready only after `final-report-template.md` is
+loaded and the outcome is one of `changed`, `no change`, `blocked`, or `error`.
+Failed validation may trigger at most three targeted editor and validator repair
+cycles before escalation.
