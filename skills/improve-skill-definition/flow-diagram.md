@@ -97,5 +97,7 @@ flowchart TD
 Readiness rule: A final handoff is ready only after `final-report-template.md` is
 loaded and the outcome is one of `changed`, `no change`, `blocked`, or `error`.
 Failed validation may trigger at most three targeted editor and validator repair
-cycles before escalation. Repair dispatches preserve required editor inputs while
-using validator findings as the focused fix scope.
+cycles. If validation still returns `FAIL` after the third cycle, report a
+blocked decision with remaining findings and attempted repairs. Repair dispatches
+preserve required editor inputs while using validator findings as the focused
+fix scope.
