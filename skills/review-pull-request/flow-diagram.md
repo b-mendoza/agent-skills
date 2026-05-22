@@ -55,7 +55,7 @@ flowchart TD
   REPAIR_GATE -->|no| FAIL_VERIFY([Terminal: verify fail])
 
   WRITE --> WRITE_STATUS{"WRITE status"}
-  WRITE_STATUS -->|WRITE: PASS| LOCAL_REVIEW["Write verified local Markdown review file"]
+  WRITE_STATUS -->|WRITE: PASS| LOCAL_REVIEW["Confirm verified local Markdown review file"]
   WRITE_STATUS -->|write error| FAIL_WRITE([Terminal: write error])
 
   LOCAL_REVIEW --> PREVIEW["Show exact file preview and report findings count, decision, posting state, notes"]
