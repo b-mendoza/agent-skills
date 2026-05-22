@@ -15,15 +15,16 @@ observable package properties, not to accept self-reported improvement.
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `AUDIT_REPORT` | Yes | Audit verdict and issues |
 | `EDITOR_REPORT` | No | Change summary from `skill-definition-editor` |
-| `CHECKLIST_PATH` | Yes | `../references/authoring-checklist.md` |
+| `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 
 ## Loading
 
-Load `CHECKLIST_PATH` first, resolving package-relative paths from the target
-skill package and subagent-local paths from this file. Inspect the target
-`SKILL.md`, each local path it references, and any changed files listed in
-`EDITOR_REPORT`. Inspect additional package files only when needed to verify
+Load `CHECKLIST_PATH` first, resolving orchestrator-supplied bundled paths from
+the improvement skill package root, not from the target `SKILL_PATH`. Resolve
+target-package paths only when inspecting files inside the target package. Inspect
+the target `SKILL.md`, each local path it references, and any changed files listed
+in `EDITOR_REPORT`. Inspect additional package files only when needed to verify
 contracts, path validity, standalone packaging, or line counts.
 
 ## Instructions
