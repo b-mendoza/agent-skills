@@ -18,18 +18,18 @@ reward activity or architectural churn.
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 | `SCOPE_LIMITS` | No | `"do not rename files"` |
 | `REFERENCE_NEED` | No | `"Claude Code subagent syntax"` |
-| `CHECKLIST_PATH` | Yes | `../references/authoring-checklist.md` |
-| `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
+| `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
+| `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
 
 ## Loading
 
-Load `CHECKLIST_PATH` before classification. If the orchestrator supplies a
-package-relative path, resolve it from the target skill package; otherwise use
-the subagent-local bundled reference path. Read the target `SKILL.md` first,
-then inspect only package files needed to verify suspected issues: referenced
-subagents, referenced references, scripts, and path targets. Load
-`EXTERNAL_SOURCES_PATH` only when current platform syntax or source-backed
-rationale changes the verdict.
+Load `CHECKLIST_PATH` before classification. Resolve orchestrator-supplied
+bundled paths from the improvement skill package root, not from the target
+`SKILL_PATH`. Resolve target-package paths only when inspecting files inside the
+target package. Read the target `SKILL.md` first, then inspect only package files
+needed to verify suspected issues: referenced subagents, referenced references,
+scripts, and path targets. Load `EXTERNAL_SOURCES_PATH` only when current
+platform syntax or source-backed rationale changes the verdict.
 
 ## Instructions
 
