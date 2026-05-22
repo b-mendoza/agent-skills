@@ -53,4 +53,20 @@ flowchart TD
   POST_GATE -->|yes| POST_COMMENT["Post only the returned refinement comment"]
   POST_COMMENT --> POSTED_OUT(["Posted: return Refinement review complete with Mode, Status, and Comment"])
   POST_GATE -->|no| BLOCKED_POST(["Blocked: do not post; return reason plus final comment draft"])
+
+  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
+
+  class SOURCE_AVAILABLE,MUTATION_ONLY,POSTING_CLARITY,ACCESS_OK,TECH_CLAIMS,SENSITIVE_REC,APPROVAL_AVAILABLE,QUALITY_PASS,MODE_DECISION,POST_GATE decision;
+  class REVIEWER_POLICY,READINESS_CHECKS,VERIFY_CLAIMS,QUALITY_CHECK,FIX_CYCLE check;
+  class ASK_SOURCE,ASK_POSTING,ASK_APPROVAL human;
+  class INTAKE,WRITE_INTENT,COLLECT_POINTERS,DISPATCH,CLASSIFY,ASSEMBLE_COMMENT,REVIEW_RETURN,COORDINATOR_KEEP,INCLUDE_REC,NEUTRALIZE_REC,POST_COMMENT guard;
+  class DRAFT_OUT,POSTED_OUT output;
+  class DEFER_MUTATION refine;
+  class BLOCKED_SOURCE,BLOCKED_POSTING,BLOCKED_ACCESS,BLOCKED_POST stop;
 ```
