@@ -63,4 +63,21 @@ flowchart TD
   FINAL --> SUCCESS([Success: verified PR or MR URL])
   VERIFY_URL -->|no| FAILURE_SUBMIT["Load failure output contract<br/>return failed status with one clear next step"]
   FAILURE_SUBMIT --> FAILED
+
+  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
+
+  class TARGET_CHECK,PLATFORM_KNOWN,REPO_OK,LOCAL_CHANGES,PREFLIGHT_READY,RECOVERABLE_PREFLIGHT,CYCLE_CHECK,PUSH_NEEDED,DIFF_SCOPE,REVIEWER_CHECK,LABEL_CHECK,RECOVER_LABELS,PREVIEW_CHANGES,VERIFY_URL decision;
+  class DISPATCH_REPO,DISPATCH_PREFLIGHT,TRUSTED_DIFF,DISPATCH_DIFF,DRAFT,META,RECOVER_PREFLIGHT,RECOVER_META,EARLIEST_PHASE,SUBMIT check;
+  class PUSH_GATE,SCOPE_GATE,APPROVAL_GATE human;
+  class PREVIEW,FINAL output;
+  class SUCCESS success;
+  class ASK_TARGET,NOTE_LOCAL,FETCH_DOCS,FREEZE guard;
+  class FAILURE_REPO,FAILURE_PREFLIGHT,FAILURE_LABELS,FAILURE_SUBMIT,TARGET_BLOCKED,FAILED,ESCALATE,PUSH_BLOCKED,SCOPE_BLOCKED,REVIEWER_BLOCKED,PREVIEW_BLOCKED stop;
 ```
