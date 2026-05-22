@@ -105,3 +105,11 @@ Risks:
 | Unrelated work could be staged or committed accidentally | Executor stages only approved scoped groups and reviews staged diff before commit. |
 | Hooks or generated files can change the worktree | Orchestrator refreshes scoped state after each commit and replans if needed. |
 | Scope ambiguity can cause unsafe commits | Workflow stops for one targeted user question. |
+
+Blockers:
+
+| Blocker | Terminal State |
+| --- | --- |
+| Missing or ambiguous `CHANGE_PATHS` | Needs input |
+| No user commit request | Blocked |
+| State, planning, verification, or commit failure without safe recovery | Blocked or failure contract |
