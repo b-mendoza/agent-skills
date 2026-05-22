@@ -69,26 +69,12 @@ flowchart TD
   class FAIL_DATA,FAIL_NONE,FAIL_VERIFY,NEEDS_CHOICE,FAIL_POST stop;
 ```
 
-Report contract:
+Report shape: the written report follows
+[`references/report-template.md`](./references/report-template.md). Status
+blocks and terminal response envelopes follow
+[`references/status-contracts.md`](./references/status-contracts.md).
 
-```text
-Status: not-posted | posted | cancelled | failed | blocked
-PR: <PR_URL>
-Output file: <OUTPUT_FILE>
-Scope and posting mode:
-Evidence checked:
-Per-comment assessment:
-Action intents:
-Draft replies:
-Unsupported targets:
-Risks and blockers:
-User decisions:
-Posting preview:
-Posting results:
-Failure envelope:
-```
-
-Readiness rule: the run is complete only when the report is verified and
-written, or when a blocked, cancelled, failed, or posted terminal state records
-the reason, evidence, and safe next action. Posting is allowed only after the
-user approves the exact final preview.
+Readiness rule: the run is complete when it can emit `PR_COMMENT_RESPONSE:
+PASS` with a verified report path and posting status, or when it emits one of
+the documented failure envelope codes with the reason and next action. Posting
+is allowed only after the user approves the exact final preview.
