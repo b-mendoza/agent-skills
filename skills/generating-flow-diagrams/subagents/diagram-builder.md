@@ -36,7 +36,7 @@ When repairing a refinement, keep the original `EXISTING_FLOW_OR_DIAGRAM` and
 3. Load `../references/mermaid-style-guide.md` for syntax, class, and style rules.
 4. Load `../references/output-templates.md` when assembling the final Markdown.
 5. Fetch `../references/external-sources.md` only when local guidance is insufficient or the user asks for source-backed rationale.
-6. For refinement runs, build from `EXISTING_FLOW_OR_DIAGRAM` and apply only the gaps approved by the user; when approvals are `none`, carry the baseline candidate and scope forward unchanged. Return `BUILD: NEEDS_INPUT` when the baseline or approved gap IDs are missing.
+6. For refinement runs, build from `EXISTING_FLOW_OR_DIAGRAM` and apply only the gaps approved by the user; when approvals are `none`, carry the baseline flow, diagram, file content, or process prose and scope forward unchanged. Return `BUILD: NEEDS_INPUT` when the baseline or approved gap IDs are missing.
 7. For repair runs, change only the issues named in `REVIEW_FEEDBACK` unless a fix exposes a direct dependency, and preserve the original refinement baseline and approved gap scope when those inputs are present.
 8. Keep facts, assumptions, risks, blockers, recommendations, and unresolved questions distinct.
 9. Return a complete candidate; do not claim it is final until review passes.
