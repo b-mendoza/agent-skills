@@ -27,7 +27,8 @@ flowchart TD
   EXT_SOURCE --> CLASSIFY[Classify each comment with evidence, risk, action intent, support level, and draft response path]
   CLASSIFY --> USER_DECISION{Product intent or team preference decides the answer?}
   USER_DECISION -->|yes| ASK_DECISION[Ask one focused user question; record decision as evidence]
-  ASK_DECISION --> DRAFT
+  ASK_DECISION --> REASSESS[Reassess only affected items with the user decision]
+  REASSESS --> USER_DECISION
   USER_DECISION -->|no| DRAFT[Draft natural replies, per-comment action intents, and phase status blocks]
   DRAFT --> VERIFY[Verify evidence, tone, action intent, scope, unsupported targets, and posting safety]
   VERIFY --> VERIFY_OK{Verification passes?}
@@ -57,7 +58,7 @@ flowchart TD
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
   class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,USER_DECISION,VERIFY_OK,REPORT_PATH,POST_MODE,APPROVAL,TARGETS,POST_OK decision;
-  class INTAKE,FETCH,DISPATCH,CONTEXT,CLASSIFY,DRAFT,VERIFY check;
+  class INTAKE,FETCH,DISPATCH,CONTEXT,CLASSIFY,REASSESS,DRAFT,VERIFY check;
   class EXT_SOURCE guard;
   class ASK_PR,ASK_DECISION,ASK_OUTPUT,PREVIEW human;
   class WRITE_REPORT,POST output;
