@@ -90,3 +90,10 @@ Facts:
 | Scope | User-provided `CHANGE_PATHS` is the commit allow-list. |
 | Existing staged changes | Treated as facts for planning, not as permission to commit. |
 | External sources | Optional and used only when they can change a commit decision. |
+
+Assumptions:
+
+| Item | Detail |
+| --- | --- |
+| Commit request | `COMMIT_REQUEST_CONFIRMED=true` is set only after the user asks for commits. |
+| Report synthesis | The orchestrator loads the final report contract after commit execution or terminal failure. |
