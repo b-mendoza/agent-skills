@@ -54,7 +54,10 @@ flowchart TD
   PREVIEW --> APPROVAL_GATE["Human gate: explicit preview approval<br/>target: PR or MR creation<br/>reason: submission is sensitive<br/>risk: public or team-visible artifact; safer alternative: revise preview or stop"]
   APPROVAL_GATE -->|declined| PREVIEW_CHANGES{User requests field changes?}
   PREVIEW_CHANGES -->|yes| EARLIEST_PHASE["Re-run earliest affected phase<br/>draft, metadata, diff, or preflight depending on changed field"]
-  EARLIEST_PHASE --> DRAFT
+  EARLIEST_PHASE -->|title or body change| DRAFT
+  EARLIEST_PHASE -->|reviewer or label change| META
+  EARLIEST_PHASE -->|diff-affecting change| DISPATCH_DIFF
+  EARLIEST_PHASE -->|branch or preflight change| DISPATCH_PREFLIGHT
   PREVIEW_CHANGES -->|no| PREVIEW_BLOCKED([Blocked: preview not approved])
   APPROVAL_GATE -->|approved| FREEZE["Freeze approved preview fields<br/>do not change branch, state, title, body, reviewers, or labels without reapproval"]
   FREEZE --> SUBMIT["Dispatch pr-submitter<br/>create PR or MR using approved preview only"]
