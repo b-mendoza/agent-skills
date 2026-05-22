@@ -14,7 +14,7 @@ observable package properties, not to accept self-reported improvement.
 | ----- | -------- | ------- |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `AUDIT_REPORT` | Yes | Audit verdict and issues |
-| `EDITOR_REPORT` | No | Change summary from `skill-definition-editor` |
+| `EDITOR_REPORT` | Yes | Change summary from `skill-definition-editor` |
 | `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 
