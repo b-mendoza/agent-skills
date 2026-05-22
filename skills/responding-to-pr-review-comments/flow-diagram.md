@@ -26,11 +26,11 @@ flowchart TD
   EXT_NEEDED -->|no| CLASSIFY
   EXT_SOURCE --> CLASSIFY[Classify each comment with evidence, risk, action intent, support level, and draft response path]
   CLASSIFY --> USER_DECISION{Product intent or team preference decides the answer?}
-  USER_DECISION -->|yes| ASK_DECISION[Ask one focused user question; record decision as evidence]
+  USER_DECISION -->|yes| DECISION_RETRY{Fewer than three user-decision cycles used?}
+  DECISION_RETRY -->|no| FAIL_DECISION([PR_COMMENT_RESPONSE NEEDS_USER_DECISION])
+  DECISION_RETRY -->|yes| ASK_DECISION[Ask one focused user question; record decision as evidence]
   ASK_DECISION --> REASSESS[Reassess only affected items with the user decision]
-  REASSESS --> DECISION_RESOLVED{Decision resolved within allowed reassessment attempts?}
-  DECISION_RESOLVED -->|no| FAIL_VERIFY([PR_COMMENT_RESPONSE NEEDS_USER_DECISION])
-  DECISION_RESOLVED -->|yes| USER_DECISION
+  REASSESS --> USER_DECISION
   USER_DECISION -->|no| DRAFT[Draft natural replies, per-comment action intents, and phase status blocks]
   DRAFT --> VERIFY[Verify evidence, tone, action intent, scope, unsupported targets, and posting safety]
   VERIFY --> VERIFY_OK{Verification passes?}
@@ -63,14 +63,14 @@ flowchart TD
   classDef cancelled fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,USER_DECISION,DECISION_RESOLVED,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,WRITE_OK,POST_MODE,APPROVAL,POST_OK decision;
+  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,USER_DECISION,DECISION_RETRY,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,WRITE_OK,POST_MODE,APPROVAL,POST_OK decision;
   class INTAKE,FETCH,DISPATCH,CONTEXT,CLASSIFY,REASSESS,DRAFT,VERIFY,REPAIR check;
   class EXT_SOURCE guard;
   class ASK_PR,ASK_DECISION,ASK_OUTPUT,PREVIEW human;
   class WRITE_REPORT,POST output;
   class NOT_POSTED,POSTED success;
   class CANCELLED cancelled;
-  class FAIL_DATA,FAIL_NONE,FAIL_VERIFY,FAIL_WRITE,FAIL_POST stop;
+  class FAIL_DATA,FAIL_NONE,FAIL_DECISION,FAIL_VERIFY,FAIL_WRITE,FAIL_POST stop;
 ```
 
 Report shape: the written report follows
