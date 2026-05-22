@@ -73,11 +73,12 @@ flowchart TD
   classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
   classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
-  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
+  classDef refine fill:#ffe0b2,stroke:#e65100,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
   class TARGET_CHECK,PLATFORM_KNOWN,REPO_OK,LOCAL_CHANGES,PREFLIGHT_READY,RECOVERABLE_PREFLIGHT,CYCLE_CHECK,PUSH_NEEDED,DIFF_SCOPE,REVIEWER_CHECK,LABEL_CHECK,RECOVER_LABELS,PREVIEW_CHANGES,VERIFY_URL decision;
-  class DISPATCH_REPO,DISPATCH_PREFLIGHT,TRUSTED_DIFF,DISPATCH_DIFF,DRAFT,META,RECOVER_PREFLIGHT,RECOVER_META,EARLIEST_PHASE,SUBMIT check;
+  class DISPATCH_REPO,DISPATCH_PREFLIGHT,TRUSTED_DIFF,DISPATCH_DIFF,DRAFT,META,RECOVER_PREFLIGHT,RECOVER_META,SUBMIT check;
+  class EARLIEST_PHASE refine;
   class PUSH_GATE,SCOPE_GATE,APPROVAL_GATE human;
   class PREVIEW,FINAL output;
   class SUCCESS success;
