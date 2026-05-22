@@ -47,7 +47,7 @@ flowchart TD
 
   RECORD_SHA --> REFRESH[Refresh scoped state because hooks, generated files, or concurrent edits may change safety]
   REFRESH --> REMAINING{Remaining scoped changes differ from approved plan?}
-  REMAINING -->|yes| PLAN
+  REMAINING -->|yes| REF_NEED
   REMAINING -->|no| MORE_GROUPS{More approved groups?}
   MORE_GROUPS -->|yes| COMMIT_NEXT
   MORE_GROUPS -->|no| FINAL_REPORT[Load orchestrator report contract and synthesize final report]
