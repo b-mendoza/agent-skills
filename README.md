@@ -84,7 +84,7 @@ one for GitHub. The rest are utility skills you can use on their own.
 - [`generating-flow-diagrams`](skills/generating-flow-diagrams/SKILL.md) creates
   or refines Markdown plus Mermaid diagrams for AI-agent workflows with human
   gates and quality checks.
-- [`triaging-jira-github-issues`](skills/triaging-jira-github-issues/SKILL.md)
+- [`refine-task`](skills/refine-task/SKILL.md)
   reviews Jira tickets, Jira epics, GitHub issues, and GitHub epic-style parent
   issues for readiness without mutating tracker content or metadata.
 - [`review-software-engineer-cv`](skills/review-software-engineer-cv/SKILL.md)
