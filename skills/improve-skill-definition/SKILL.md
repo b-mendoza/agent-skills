@@ -110,14 +110,21 @@ skill less reliable, less portable, or harder to maintain, do not make it.
    `EXTERNAL_SOURCES_PATH=./references/external-sources.md`.
 3. If the audit returns `NO_CHANGE`, stop without editing and report the no-op
    decision using `./references/final-report-template.md`.
-4. If the audit returns `MATERIAL_ISSUES`, dispatch `skill-definition-editor`
-   with only the audited issues, affected files, minimal edit plan, and scope
-   limits.
-5. Dispatch `skill-package-validator` with the edited package path, audit report,
-   editor report, and checklist path.
-6. On validation `FAIL`, re-dispatch the editor with only validator findings,
-   then re-run the validator. Use at most three targeted fix cycles.
-7. Load `./references/final-report-template.md` and return the final handoff.
+4. If the audit returns `BLOCKED`, ask the smallest needed question or report
+   the blocked decision using `./references/final-report-template.md`.
+5. If the audit returns `ERROR`, report the error decision using
+   `./references/final-report-template.md`.
+6. If the audit returns `MATERIAL_ISSUES`, dispatch `skill-definition-editor`
+   with only the audited issues, affected files, minimal edit plan, scope limits,
+   `CHECKLIST_PATH=./references/authoring-checklist.md`, and
+   `EXTERNAL_SOURCES_PATH=./references/external-sources.md`.
+7. Dispatch `skill-package-validator` with the edited package path, audit report,
+   editor report, and `CHECKLIST_PATH=./references/authoring-checklist.md`.
+8. On validation `FAIL`, re-dispatch the editor with only validator findings,
+   scope limits, `CHECKLIST_PATH=./references/authoring-checklist.md`, and
+   `EXTERNAL_SOURCES_PATH=./references/external-sources.md`, then re-run the
+   validator. Use at most three targeted fix cycles.
+9. Load `./references/final-report-template.md` and return the final handoff.
 
 ## Decision Rules
 
