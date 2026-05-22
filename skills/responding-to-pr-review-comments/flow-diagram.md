@@ -32,7 +32,10 @@ flowchart TD
   USER_DECISION -->|no| DRAFT[Draft natural replies, per-comment action intents, and phase status blocks]
   DRAFT --> VERIFY[Verify evidence, tone, action intent, scope, unsupported targets, and posting safety]
   VERIFY --> VERIFY_OK{Verification passes?}
-  VERIFY_OK -->|no| FAIL_VERIFY([Blocked failure: unrecoverable verification or needs-user-decision])
+  VERIFY_OK -->|no, with fix target| VERIFY_REPAIR{Fewer than two targeted verification fix cycles used?}
+  VERIFY_REPAIR -->|yes| REPAIR[Repair only the named collector, assessor, or drafter target]
+  REPAIR --> VERIFY
+  VERIFY_REPAIR -->|no| FAIL_VERIFY([PR_COMMENT_RESPONSE VERIFY_FAIL or NEEDS_USER_DECISION])
   VERIFY_OK -->|yes| REPORT_PATH{OUTPUT_FILE known and safe to write?}
   REPORT_PATH -->|no| ASK_OUTPUT[Ask for safe OUTPUT_FILE or confirm default report path]
   ASK_OUTPUT --> REPORT_PATH
@@ -57,8 +60,8 @@ flowchart TD
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,USER_DECISION,VERIFY_OK,REPORT_PATH,POST_MODE,APPROVAL,TARGETS,POST_OK decision;
-  class INTAKE,FETCH,DISPATCH,CONTEXT,CLASSIFY,REASSESS,DRAFT,VERIFY check;
+  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,USER_DECISION,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,POST_MODE,APPROVAL,TARGETS,POST_OK decision;
+  class INTAKE,FETCH,DISPATCH,CONTEXT,CLASSIFY,REASSESS,DRAFT,VERIFY,REPAIR check;
   class EXT_SOURCE guard;
   class ASK_PR,ASK_DECISION,ASK_OUTPUT,PREVIEW human;
   class WRITE_REPORT,POST output;
