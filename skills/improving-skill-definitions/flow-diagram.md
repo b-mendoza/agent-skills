@@ -76,4 +76,20 @@ flowchart TD
   CHANGED --> HANDOFF_CHANGED[Return concise handoff with material issues, files changed, validation, resources, and risks]
   BLOCKED --> HANDOFF_BLOCKED[Return concise blocked handoff with reason, question, and completed checks]
   ERROR --> HANDOFF_ERROR[Return concise error handoff with failed condition and known context]
+
+  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
+
+  class PATH_OK,AUDIT_STATUS,SAFE_VERDICT_GATE,SCOPE_GATE,EDIT_STATUS,VALIDATION_STATUS,RETRY_GATE,REPAIR_STATUS decision;
+  class BOUNDARY,SAFE_VERDICT_GATE,SCOPE_GATE,RETRY_GATE guard;
+  class AUDIT,EDIT,VALIDATE,REPAIR check;
+  class ASK_PATH,ASK_SAFE_VERDICT,ASK_SCOPE human;
+  class LOAD_NO_CHANGE_TEMPLATE,LOAD_CHANGED_TEMPLATE,LOAD_BLOCKED_TEMPLATE,LOAD_ERROR_TEMPLATE,HANDOFF,HANDOFF_CHANGED,HANDOFF_BLOCKED,HANDOFF_ERROR output;
+  class NO_CHANGE,CHANGED success;
+  class BLOCKED,ERROR,AUDIT_BLOCKED,AUDIT_ERROR,EDIT_BLOCKED,EDIT_ERROR,REPAIR_BLOCKED,REPAIR_ERROR,VALIDATION_BLOCKED,VALIDATION_ERROR,ESCALATE_FAIL stop;
 ```
