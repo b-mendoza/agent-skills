@@ -97,3 +97,11 @@ Assumptions:
 | --- | --- |
 | Commit request | `COMMIT_REQUEST_CONFIRMED=true` is set only after the user asks for commits. |
 | Report synthesis | The orchestrator loads the final report contract after commit execution or terminal failure. |
+
+Risks:
+
+| Risk | Mitigation |
+| --- | --- |
+| Unrelated work could be staged or committed accidentally | Executor stages only approved scoped groups and reviews staged diff before commit. |
+| Hooks or generated files can change the worktree | Orchestrator refreshes scoped state after each commit and replans if needed. |
+| Scope ambiguity can cause unsafe commits | Workflow stops for one targeted user question. |
