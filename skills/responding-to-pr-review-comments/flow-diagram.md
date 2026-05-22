@@ -42,7 +42,9 @@ flowchart TD
   REPORT_PATH -->|no| ASK_OUTPUT[Ask for safe OUTPUT_FILE or confirm default report path]
   ASK_OUTPUT --> REPORT_PATH
   REPORT_PATH -->|yes| WRITE_REPORT[Write verified Markdown report to OUTPUT_FILE with drafts, evidence, risks, blockers, and action intents]
-  WRITE_REPORT --> POST_MODE{POSTING_MODE value?}
+  WRITE_REPORT --> WRITE_OK{Report write succeeded?}
+  WRITE_OK -->|no| FAIL_WRITE([PR_COMMENT_RESPONSE WRITE_ERROR])
+  WRITE_OK -->|yes| POST_MODE{POSTING_MODE value?}
   POST_MODE -->|draft-only| NOT_POSTED([PR_COMMENT_RESPONSE PASS, posting not-posted])
   POST_MODE -->|post-after-confirmation| PREVIEW[Show exact final posting preview: target thread, reply text, reason, risk, reversibility, and safer draft-only alternative]
   PREVIEW --> APPROVAL{User explicitly approves exact preview?}
@@ -62,13 +64,13 @@ flowchart TD
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,USER_DECISION,DECISION_RESOLVED,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,POST_MODE,APPROVAL,TARGETS,POST_OK decision;
+  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,USER_DECISION,DECISION_RESOLVED,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,WRITE_OK,POST_MODE,APPROVAL,TARGETS,POST_OK decision;
   class INTAKE,FETCH,DISPATCH,CONTEXT,CLASSIFY,REASSESS,DRAFT,VERIFY,REPAIR check;
   class EXT_SOURCE guard;
   class ASK_PR,ASK_DECISION,ASK_OUTPUT,PREVIEW human;
   class WRITE_REPORT,POST output;
   class NOT_POSTED,CANCELLED,POSTED success;
-  class FAIL_DATA,FAIL_NONE,FAIL_VERIFY,NEEDS_CHOICE,FAIL_POST stop;
+  class FAIL_DATA,FAIL_NONE,FAIL_VERIFY,FAIL_WRITE,NEEDS_CHOICE,FAIL_POST stop;
 ```
 
 Report shape: the written report follows
