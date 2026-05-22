@@ -81,3 +81,12 @@ Final report contract:
 | Remaining scoped changes | Any in-scope changes not committed and why |
 | Untouched unrelated work | Confirmation that unrelated work was preserved |
 | Questions or blockers | Only unresolved decisions needed for safe continuation |
+
+Facts:
+
+| Item | Detail |
+| --- | --- |
+| Authority | The orchestrator normalizes authority and delegates git inspection, staging, verification, and commit creation to specialists. |
+| Scope | User-provided `CHANGE_PATHS` is the commit allow-list. |
+| Existing staged changes | Treated as facts for planning, not as permission to commit. |
+| External sources | Optional and used only when they can change a commit decision. |
