@@ -12,7 +12,7 @@ network access is unavailable.
 
 | Need | Source |
 | ---- | ------ |
-| Progressive disclosure concept and cognitive-load rationale | https://skills.sh/flpbalada/my-opencode-config/progressive-disclosure |
+| Progressive disclosure concept and cognitive-load rationale | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | Context engineering and keeping agents focused | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents |
 | Subagent architecture concepts | https://docs.anthropic.com/en/docs/claude-code/sub-agents |
 
