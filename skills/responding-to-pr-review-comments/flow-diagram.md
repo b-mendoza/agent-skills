@@ -60,6 +60,7 @@ flowchart TD
   classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
   classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef cancelled fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
   class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,USER_DECISION,DECISION_RESOLVED,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,WRITE_OK,POST_MODE,APPROVAL,POST_OK decision;
@@ -67,7 +68,8 @@ flowchart TD
   class EXT_SOURCE guard;
   class ASK_PR,ASK_DECISION,ASK_OUTPUT,PREVIEW human;
   class WRITE_REPORT,POST output;
-  class NOT_POSTED,CANCELLED,POSTED success;
+  class NOT_POSTED,POSTED success;
+  class CANCELLED cancelled;
   class FAIL_DATA,FAIL_NONE,FAIL_VERIFY,FAIL_WRITE,FAIL_POST stop;
 ```
 
