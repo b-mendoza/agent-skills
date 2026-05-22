@@ -134,9 +134,10 @@ skill less reliable, less portable, or harder to maintain, do not make it.
     `AUDIT_REPORT`, `VALIDATOR_FINDINGS` as the focused fix scope, scope limits,
     `CHECKLIST_PATH=./references/authoring-checklist.md`, and
     `EXTERNAL_SOURCES_PATH=./references/external-sources.md`, then re-run the
-    validator with the original `AUDIT_REPORT` and new `EDITOR_REPORT`. Use at most
-    three targeted fix cycles. If a repair edit or revalidation returns
-    `BLOCKED` or `ERROR`, report that decision using
+    validator with `SKILL_PATH`, the original `AUDIT_REPORT`, the new
+    `EDITOR_REPORT`, and `CHECKLIST_PATH=./references/authoring-checklist.md`.
+    Use at most three targeted fix cycles. If a repair edit or revalidation
+    returns `BLOCKED` or `ERROR`, report that decision using
     `./references/final-report-template.md`.
 12. Load `./references/final-report-template.md` and return the final handoff.
 
