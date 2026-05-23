@@ -8,7 +8,7 @@ flowchart TD
   INTAKE --> BOUNDARY["State authority boundary<br/>orchestrator delegates repo inspection, diff analysis, drafting, metadata validation, and submission"]
   BOUNDARY --> TARGET_CHECK{TARGET_BRANCH provided?}
   TARGET_CHECK -->|no| ASK_TARGET["Ask focused question:<br/>which target branch?"]
-  ASK_TARGET --> TARGET_BLOCKED([Blocked: waiting for TARGET_BRANCH])
+  ASK_TARGET --> LOAD_FAILURE_OUTPUT["Load failure output contract<br/>return blocked or escalated status with one next step"]
   TARGET_CHECK -->|yes| PLATFORM["Detect platform and adapt happy path<br/>GitHub default; use GitLab, Bitbucket, or unknown-platform contract when needed"]
   PLATFORM --> PLATFORM_KNOWN{Exact platform behavior or syntax known?}
   PLATFORM_KNOWN -->|no| FETCH_DOCS["Fetch optional external docs only for exact platform behavior"]
@@ -26,10 +26,10 @@ flowchart TD
   RECOVERABLE_PREFLIGHT -->|no| FAILURE_PREFLIGHT["Load failure output contract<br/>include failed gate and one clear next step"]
   FAILURE_PREFLIGHT --> FAILED
   RECOVERABLE_PREFLIGHT -->|yes| CYCLE_CHECK{Fewer than three non-converging fix cycles?}
-  CYCLE_CHECK -->|no| ESCALATE([Escalated: three non-converging fix cycles])
+  CYCLE_CHECK -->|no| LOAD_FAILURE_OUTPUT
   CYCLE_CHECK -->|yes| PUSH_NEEDED{Current branch must be pushed?}
   PUSH_NEEDED -->|yes| PUSH_GATE["Human gate: approve pushing current branch<br/>target: remote branch<br/>reason: make compare ref available<br/>risk: publishes commits; reversible by deleting remote branch<br/>safer alternative: stop and let user push manually"]
-  PUSH_GATE -->|declined| PUSH_BLOCKED([Blocked: user declined branch push])
+  PUSH_GATE -->|declined| LOAD_FAILURE_OUTPUT
   PUSH_GATE -->|approved| RECOVER_PREFLIGHT["Recover only failing preflight gate<br/>record approval and rerun earliest affected phase"]
   PUSH_NEEDED -->|no| RECOVER_PREFLIGHT
   RECOVER_PREFLIGHT --> DISPATCH_REPO
@@ -37,19 +37,19 @@ flowchart TD
   TRUSTED_DIFF --> DISPATCH_DIFF["Dispatch diff-analyzer<br/>assess size, purpose, risk, and change summary"]
   DISPATCH_DIFF --> DIFF_SCOPE{Large or mixed-purpose PR?}
   DIFF_SCOPE -->|yes| SCOPE_GATE["Human gate: approve proceeding with large or mixed-purpose PR<br/>target: current branch diff<br/>reason: review risk is elevated<br/>risk: lower review quality; safer alternative: split or stop"]
-  SCOPE_GATE -->|declined| SCOPE_BLOCKED([Blocked: user declined large or mixed-purpose PR])
+  SCOPE_GATE -->|declined| LOAD_FAILURE_OUTPUT
   SCOPE_GATE -->|approved| DRAFT["Dispatch pr-drafter<br/>produce preview-ready title and body using overrides when provided"]
   DIFF_SCOPE -->|no| DRAFT
   DRAFT --> META["Dispatch review-metadata-suggester<br/>suggest reviewers and labels from input, CODEOWNERS, platform reviewer data, and platform labels"]
   META --> REVIEWER_CHECK{At least one reviewer available?}
   REVIEWER_CHECK -->|no| ASK_REVIEWER["Ask user for at least one reviewer"]
-  ASK_REVIEWER --> REVIEWER_BLOCKED([Blocked: waiting for required reviewer])
+  ASK_REVIEWER --> LOAD_FAILURE_OUTPUT
   REVIEWER_CHECK -->|yes| LABEL_CHECK{Labels valid for platform?}
   LABEL_CHECK -->|no| RECOVER_LABELS{Recoverable label metadata issue?}
   RECOVER_LABELS -->|no| FAILURE_LABELS["Load failure output contract<br/>include invalid labels and one next step"]
   FAILURE_LABELS --> FAILED
   RECOVER_LABELS -->|yes| META_CYCLE_CHECK{Fewer than three metadata recovery cycles?}
-  META_CYCLE_CHECK -->|no| ESCALATE
+  META_CYCLE_CHECK -->|no| LOAD_FAILURE_OUTPUT
   META_CYCLE_CHECK -->|yes| RECOVER_META["Recover only metadata gate<br/>refresh platform labels or ask focused question"]
   RECOVER_META --> META
   LABEL_CHECK -->|yes| PREVIEW["Load preview output contract<br/>show exact branch, target branch, state, title, body, reviewers, labels, and platform"]
@@ -60,7 +60,7 @@ flowchart TD
   EARLIEST_PHASE -->|reviewer or label change| META
   EARLIEST_PHASE -->|diff-affecting change| DISPATCH_DIFF
   EARLIEST_PHASE -->|branch or preflight change| DISPATCH_PREFLIGHT
-  PREVIEW_CHANGES -->|no| PREVIEW_BLOCKED([Blocked: preview not approved])
+  PREVIEW_CHANGES -->|no| LOAD_FAILURE_OUTPUT
   APPROVAL_GATE -->|approved| FREEZE["Freeze approved preview fields<br/>do not change branch, state, title, body, reviewers, or labels without reapproval"]
   FREEZE --> SUBMIT["Dispatch pr-submitter<br/>create PR or MR using approved preview only"]
   SUBMIT --> VERIFY_URL{Platform returns verified PR or MR URL?}
@@ -68,6 +68,12 @@ flowchart TD
   FINAL --> SUCCESS([Success: verified PR or MR URL])
   VERIFY_URL -->|no| FAILURE_SUBMIT["Load failure output contract<br/>return failed status with one clear next step"]
   FAILURE_SUBMIT --> FAILED
+  LOAD_FAILURE_OUTPUT -->|missing target branch| TARGET_BLOCKED([Blocked: waiting for TARGET_BRANCH])
+  LOAD_FAILURE_OUTPUT -->|fix cycles exhausted| ESCALATE([Escalated: three non-converging fix cycles])
+  LOAD_FAILURE_OUTPUT -->|push declined| PUSH_BLOCKED([Blocked: user declined branch push])
+  LOAD_FAILURE_OUTPUT -->|scope declined| SCOPE_BLOCKED([Blocked: user declined large or mixed-purpose PR])
+  LOAD_FAILURE_OUTPUT -->|reviewer missing| REVIEWER_BLOCKED([Blocked: waiting for required reviewer])
+  LOAD_FAILURE_OUTPUT -->|preview not approved| PREVIEW_BLOCKED([Blocked: preview not approved])
 
   classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
@@ -82,7 +88,7 @@ flowchart TD
   class DISPATCH_REPO,DISPATCH_PREFLIGHT,TRUSTED_DIFF,DISPATCH_DIFF,DRAFT,META,RECOVER_PREFLIGHT,RECOVER_META,SUBMIT check;
   class EARLIEST_PHASE refine;
   class PUSH_GATE,SCOPE_GATE,APPROVAL_GATE human;
-  class PREVIEW,FINAL output;
+  class LOAD_FAILURE_OUTPUT,PREVIEW,FINAL output;
   class SUCCESS success;
   class ASK_TARGET,NOTE_LOCAL,FETCH_DOCS,FREEZE guard;
   class FAILURE_REPO,FAILURE_PREFLIGHT,FAILURE_LABELS,FAILURE_SUBMIT,TARGET_BLOCKED,FAILED,ESCALATE,PUSH_BLOCKED,SCOPE_BLOCKED,REVIEWER_BLOCKED,PREVIEW_BLOCKED stop;
