@@ -26,7 +26,9 @@ constraints.
 | `REFERENCE_NEED` | No | `"current Claude subagent guidance"` |
 
 If `SKILL_PATH` is missing, ask one focused question for the target path. Default
-to portable markdown-compatible skills when `TARGET_RUNTIME` is unspecified.
+to portable markdown-compatible skills when `TARGET_RUNTIME` is unspecified. When
+asking a required user question, stop and wait for the answer before resuming the
+relevant phase; do not treat the question itself as the final blocked handoff.
 
 ## Output Contract
 
@@ -75,6 +77,19 @@ optional improvements considered and rejected.
 Read a subagent file only when dispatching that subagent. Retain only its status,
 findings, file paths, fetched URLs, and concise summaries.
 
+## Status Contracts
+
+| Dispatch | Return statuses |
+| -------- | --------------- |
+| `skill-package-auditor` | `NO_CHANGE`, `MATERIAL_ISSUES`, `BLOCKED`, `ERROR` |
+| `skill-definition-editor` | `PASS`, `BLOCKED`, `ERROR` |
+| Repair `skill-definition-editor` | `PASS`, `BLOCKED`, `ERROR` |
+| `skill-package-validator` | `PASS`, `FAIL`, `BLOCKED`, `ERROR` |
+
+Each branch handles only the listed statuses. `BLOCKED` means ask the smallest
+focused question when a user decision can unblock the current phase; otherwise
+load `./references/final-report-template.md` and return the blocked handoff.
+
 ## Progressive Disclosure Map
 
 | Need | Load | When |
@@ -111,25 +126,32 @@ skill less reliable, less portable, or harder to maintain, do not make it.
 3. If the audit returns `NO_CHANGE`, stop without editing and report the no-op
    decision using `./references/final-report-template.md`.
 4. If the audit returns `BLOCKED`, ask the smallest needed question or report
-   the blocked decision using `./references/final-report-template.md`.
+   the blocked decision using `./references/final-report-template.md`. If a
+   question is needed for a safe verdict, stop and wait for the answer, then
+   resume audit with the new input.
 5. If the audit returns `ERROR`, report the error decision using
    `./references/final-report-template.md`.
 6. If the audit returns `MATERIAL_ISSUES`, confirm `SCOPE_LIMITS` allow the
    required fix. If they do not, ask one focused user decision about the
-   conflicting scope limit or report the blocked decision using
+   conflicting scope limit, stop and wait for the answer, then resume the scope
+   gate; otherwise report the blocked decision using
    `./references/final-report-template.md`.
 7. When scope allows the fix, dispatch `skill-definition-editor` with
    `SKILL_PATH`, `AUDIT_REPORT` limited to audited issues, affected files,
    minimal edit plan, scope limits,
    `CHECKLIST_PATH=./references/authoring-checklist.md`, and
    `EXTERNAL_SOURCES_PATH=./references/external-sources.md`.
-8. If the editor returns `BLOCKED` or `ERROR`, report the blocked or error
-   decision using `./references/final-report-template.md`.
+8. If the editor returns `BLOCKED`, ask one focused question for the editor
+   blocker, stop and wait for the answer, then re-dispatch the editor with the
+   new input. If the editor returns `ERROR`, report the error decision using
+   `./references/final-report-template.md`.
 9. If the editor returns `PASS`, dispatch `skill-package-validator` with
    `SKILL_PATH`, the original `AUDIT_REPORT`, `EDITOR_REPORT`, and
    `CHECKLIST_PATH=./references/authoring-checklist.md`.
-10. If validation returns `BLOCKED` or `ERROR`, report the blocked or error
-    decision using `./references/final-report-template.md`.
+10. If validation returns `BLOCKED`, ask one focused question for the validation
+    blocker, stop and wait for the answer, then re-run validation with the new
+    input. If validation returns `ERROR`, report the error decision using
+    `./references/final-report-template.md`.
 11. On validation `FAIL`, re-dispatch the editor with `SKILL_PATH`, the original
     `AUDIT_REPORT`, `VALIDATOR_FINDINGS` as the focused fix scope, scope limits,
     `CHECKLIST_PATH=./references/authoring-checklist.md`, and
@@ -138,8 +160,10 @@ skill less reliable, less portable, or harder to maintain, do not make it.
     `EDITOR_REPORT`, and `CHECKLIST_PATH=./references/authoring-checklist.md`.
     Use at most three targeted fix cycles. If validation still returns `FAIL`
     after the third targeted fix cycle, report a blocked decision with the
-    remaining validation findings and attempted repairs. If a repair edit or
-    revalidation returns `BLOCKED` or `ERROR`, report that decision using
+    remaining validation findings and attempted repairs. If a repair edit returns
+    `BLOCKED`, ask one focused question for the repair blocker, stop and wait for
+    the answer, then re-dispatch the repair. If a repair edit or revalidation
+    returns `ERROR`, report that decision using
     `./references/final-report-template.md`.
 12. Load `./references/final-report-template.md` and return the final handoff.
 
