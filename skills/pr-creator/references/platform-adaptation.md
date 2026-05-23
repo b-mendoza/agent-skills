@@ -1,9 +1,9 @@
 # Platform Adaptation
 
-> Load this file when the remote is GitLab, Bitbucket, unknown, or when GitHub
-> tooling cannot authenticate against a GitHub-compatible repository. Fetch exact
-> command or API syntax from `./external-resources.md` only for the
-> active platform.
+> Load this file after `repo-state-inspector` reports the platform or adapter
+> need, when the remote is GitLab, Bitbucket, unknown, or when GitHub tooling
+> cannot authenticate against a GitHub-compatible repository. Fetch exact command
+> or API syntax from `./external-resources.md` only for the active platform.
 
 Non-GitHub flows keep the same safety gates: validate auth, confirm remote refs,
 compare the approved branch range, preview exact fields, wait for user approval,
