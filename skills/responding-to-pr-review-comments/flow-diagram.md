@@ -25,7 +25,12 @@ flowchart TD
   EXT_NEEDED -->|yes| EXT_SOURCE[Fetch only needed source; record claim, source, and reason]
   EXT_NEEDED -->|no| CLASSIFY
   EXT_SOURCE --> CLASSIFY[Classify each comment with evidence, risk, action intent, support level, and draft response path]
-  CLASSIFY --> USER_DECISION{Product intent or team preference decides the answer?}
+  CLASSIFY --> ASSESS_CONTEXT{ASSESS: NEEDS_CONTEXT?}
+  ASSESS_CONTEXT -->|yes| CONTEXT_RETRY{Narrow context redispatch already used?}
+  CONTEXT_RETRY -->|no| NARROW_LOOKUP[Run the requested narrow lookup once and keep only compact evidence]
+  NARROW_LOOKUP --> CLASSIFY
+  CONTEXT_RETRY -->|yes| FAIL_CONTEXT(["PR_COMMENT_RESPONSE: RESPONSE_ERROR"])
+  ASSESS_CONTEXT -->|no| USER_DECISION{Product intent or team preference decides the answer?}
   USER_DECISION -->|yes| DECISION_RETRY{Fewer than three user-decision cycles used?}
   DECISION_RETRY -->|no| FAIL_DECISION(["PR_COMMENT_RESPONSE: NEEDS_USER_DECISION"])
   DECISION_RETRY -->|yes| ASK_DECISION[Ask one focused user question; record decision as evidence]
@@ -63,14 +68,14 @@ flowchart TD
   classDef cancelled fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,USER_DECISION,DECISION_RETRY,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,WRITE_OK,POST_MODE,APPROVAL,POST_OK decision;
-  class INTAKE,FETCH,DISPATCH,CONTEXT,CLASSIFY,REASSESS,DRAFT,VERIFY,REPAIR check;
+  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,ASSESS_CONTEXT,CONTEXT_RETRY,USER_DECISION,DECISION_RETRY,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,WRITE_OK,POST_MODE,APPROVAL,POST_OK decision;
+  class INTAKE,FETCH,DISPATCH,CONTEXT,CLASSIFY,NARROW_LOOKUP,REASSESS,DRAFT,VERIFY,REPAIR check;
   class EXT_SOURCE guard;
   class ASK_PR,ASK_DECISION,ASK_OUTPUT,PREVIEW human;
   class WRITE_REPORT,POST output;
   class NOT_POSTED,POSTED success;
   class CANCELLED cancelled;
-  class FAIL_DATA,FAIL_NONE,FAIL_DECISION,FAIL_VERIFY,FAIL_WRITE,FAIL_POST stop;
+  class FAIL_DATA,FAIL_NONE,FAIL_CONTEXT,FAIL_DECISION,FAIL_VERIFY,FAIL_WRITE,FAIL_POST stop;
 ```
 
 Report shape: the written report follows
