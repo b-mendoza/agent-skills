@@ -13,6 +13,7 @@ Message: <commit message>
 Staged diff reviewed: yes | no
 Verification: pass | fail | not-run
 Verification command: none | <command>
+Recovery classification: none | same-scope-same-group-retry | needs-user-decision | terminal
 References fetched: none | <urls and one-line conclusions>
 Summary: <what changed and why>
 Remaining scoped changes: unknown | none | <concise list>
@@ -25,6 +26,13 @@ Decision needed: none | <smallest recovery action>
 state inspection after the commit. The orchestrator typically refreshes state by
 re-dispatching `scoped-state-summarizer`.
 
+For `COMMIT_EXECUTE: VERIFY_FAILED`, set `Recovery classification` precisely.
+Use `same-scope-same-group-retry` only when the next attempt keeps the same
+approved group and stays inside `CHANGE_PATHS`. Use `needs-user-decision` for
+commit-without-verification, changed grouping, changed scope, or recovery that
+cannot be chosen safely by the executor. Use `terminal` when no safe recovery is
+available.
+
 ## Examples
 
 <example>
@@ -35,6 +43,7 @@ Message: fix(checkout): retry failed payment confirmation
 Staged diff reviewed: yes
 Verification: pass
 Verification command: npm test -- checkout
+Recovery classification: none
 References fetched: none
 Summary: Adds retry handling for failed checkout confirmation and covers it with checkout tests.
 Remaining scoped changes: unknown
@@ -51,6 +60,7 @@ Message: fix(checkout): retry failed payment confirmation
 Staged diff reviewed: yes
 Verification: fail
 Verification command: npm test -- checkout
+Recovery classification: needs-user-decision
 References fetched: none
 Summary: Retry behavior and tests were staged, but checkout tests failed.
 Remaining scoped changes: unknown
