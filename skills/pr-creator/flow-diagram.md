@@ -48,7 +48,9 @@ flowchart TD
   LABEL_CHECK -->|no| RECOVER_LABELS{Recoverable label metadata issue?}
   RECOVER_LABELS -->|no| FAILURE_LABELS["Load failure output contract<br/>include invalid labels and one next step"]
   FAILURE_LABELS --> FAILED
-  RECOVER_LABELS -->|yes| RECOVER_META["Recover only metadata gate<br/>refresh platform labels or ask focused question"]
+  RECOVER_LABELS -->|yes| META_CYCLE_CHECK{Fewer than three metadata recovery cycles?}
+  META_CYCLE_CHECK -->|no| ESCALATE
+  META_CYCLE_CHECK -->|yes| RECOVER_META["Recover only metadata gate<br/>refresh platform labels or ask focused question"]
   RECOVER_META --> META
   LABEL_CHECK -->|yes| PREVIEW["Load preview output contract<br/>show exact branch, target branch, state, title, body, reviewers, labels, and platform"]
   PREVIEW --> APPROVAL_GATE["Human gate: explicit preview approval<br/>target: PR or MR creation<br/>reason: submission is sensitive<br/>risk: public or team-visible artifact; safer alternative: revise preview or stop"]
@@ -76,7 +78,7 @@ flowchart TD
   classDef refine fill:#ffe0b2,stroke:#e65100,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class TARGET_CHECK,PLATFORM_KNOWN,REPO_OK,LOCAL_CHANGES,PREFLIGHT_READY,RECOVERABLE_PREFLIGHT,CYCLE_CHECK,PUSH_NEEDED,DIFF_SCOPE,REVIEWER_CHECK,LABEL_CHECK,RECOVER_LABELS,PREVIEW_CHANGES,VERIFY_URL decision;
+  class TARGET_CHECK,PLATFORM_KNOWN,REPO_OK,LOCAL_CHANGES,PREFLIGHT_READY,RECOVERABLE_PREFLIGHT,CYCLE_CHECK,PUSH_NEEDED,DIFF_SCOPE,REVIEWER_CHECK,LABEL_CHECK,RECOVER_LABELS,META_CYCLE_CHECK,PREVIEW_CHANGES,VERIFY_URL decision;
   class DISPATCH_REPO,DISPATCH_PREFLIGHT,TRUSTED_DIFF,DISPATCH_DIFF,DRAFT,META,RECOVER_PREFLIGHT,RECOVER_META,SUBMIT check;
   class EARLIEST_PHASE refine;
   class PUSH_GATE,SCOPE_GATE,APPROVAL_GATE human;
