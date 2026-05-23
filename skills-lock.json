@@ -25,6 +25,12 @@
       "skillPath": "skills/executing-plans/SKILL.md",
       "computedHash": "b41c919caf1bb07fbacb0e29899ac513f9eb11cd4dd695975ad352c2c03cc4d7"
     },
+    "generate-flow-diagram": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/generate-flow-diagram/SKILL.md",
+      "computedHash": "79931cbab88de7d32312207ac84c217cd689cc551636cbcb270a5a5ed1000409"
+    },
     "generate-handoff-document": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
