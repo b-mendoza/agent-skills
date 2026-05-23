@@ -20,8 +20,8 @@ network access is unavailable.
 
 | Need | Source |
 | ---- | ------ |
-| Jira issue and work item concepts | https://support.atlassian.com/jira-software-cloud/docs/what-are-issues/ |
-| Jira issue types | https://support.atlassian.com/jira-software-cloud/docs/what-are-issue-types/ |
+| Jira work item concepts | https://support.atlassian.com/jira-cloud-administration/docs/what-are-issues/ |
+| Jira work types and hierarchy | https://support.atlassian.com/jira-cloud-administration/docs/what-are-issue-types/ |
 | Atlassian epics | https://www.atlassian.com/agile/project-management/epics |
 | GitHub issue concepts | https://docs.github.com/en/issues/tracking-your-work-with-issues/about-issues |
 | GitHub tasklists and sub-issue style planning | https://docs.github.com/en/issues/tracking-your-work-with-issues/using-tasklists |
@@ -35,7 +35,7 @@ network access is unavailable.
 | Agile user stories overview | https://www.atlassian.com/agile/project-management/user-stories |
 | Acceptance criteria overview | https://www.atlassian.com/work-management/project-management/acceptance-criteria |
 | Gherkin syntax for testable scenarios | https://cucumber.io/docs/gherkin/reference/ |
-| Spikes as research work | https://www.mountaingoatsoftware.com/agile/user-stories/spikes |
+| Spikes as research work | https://www.mountaingoatsoftware.com/blog/spikes |
 
 ## Design Thinking And User Journey Context
 
