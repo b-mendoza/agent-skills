@@ -66,6 +66,12 @@
       "sourceType": "github",
       "skillPath": "skills/generate-handoff-document/SKILL.md",
       "computedHash": "c52fa77b0b70d559fa0fa5960317c7270547be947308f3b65d2d168990a872f6"
+    },
+    "pr-creator": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/pr-creator/SKILL.md",
+      "computedHash": "9af7bc1d68778101a2b2511c16c9207f639ae753491f1c15bfc76fc86e598bed"
     }
   }
 }
