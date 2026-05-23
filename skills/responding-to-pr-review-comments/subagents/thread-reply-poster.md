@@ -25,14 +25,21 @@ returns `POST: PREVIEW_REQUIRED`.
 
 1. Read `../references/status-contracts.md` for the `POST` status schema.
 2. Post only the exact approved text to targets marked
-   `review-comment-reply:<root-id>`.
+   `review-comment-reply:<root-id>` where `<root-id>` is a top-level review
+   comment ID.
 3. Use GitHub's existing review-comment reply endpoint for direct thread
    replies.
-4. Skip `requires-user-choice` targets and report them without inventing a
-   new posting shape.
+4. Skip `requires-user-choice:review-summary`,
+   `requires-user-choice:issue-comment`,
+   `requires-user-choice:unsupported-review-reply`, and
+   `requires-user-choice:unresolved-metadata` targets and report them without
+   inventing a new posting shape.
 5. Preserve reply text exactly. If the text needs editing, return
    `POST: PREVIEW_REQUIRED`.
-6. Verify each created reply with a read-back API or CLI call.
+6. Return `POST: TARGET_UNSUPPORTED` for unsupported targets that reached this
+   phase, including review summaries, issue comments, top-level PR comments,
+   replies-to-replies, unresolved metadata limitations, or missing root IDs.
+7. Verify each created reply with a read-back API or CLI call.
 
 ## External Sources
 
