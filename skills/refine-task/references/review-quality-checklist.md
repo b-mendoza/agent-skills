@@ -16,6 +16,8 @@
 | Output shape | The final comment contains all required sections from `comment-template.md`. |
 | Empty sections | Empty sections use `None` when omission could be ambiguous. |
 | External sources | Any fetched website is listed in the compact summary or evidence reviewed section. |
+| Return routing | The reviewer output includes `REVIEW`, `REVIEW_STATUS`, `POST_ALLOWED`, `Comment mode`, final comment, and validation summary so the coordinator can route deterministically. |
+| Posting side effects | Posting is attempted only once for the exact returned comment; post failure returns the exact unposted comment and failure reason without duplicate retry. |
 
 ## Fix Loop
 
@@ -33,3 +35,5 @@
 | Premature `Ready` | Change status to `Needs refinement`, `Needs split`, `Needs spike`, or `Blocked` and name the blocker. |
 | Missing output section | Add the section with `None` if no content exists. |
 | Technical claim unsupported | Fetch or cite trusted docs, or ask for owner clarification. |
+| Reviewer return ambiguous | Add the missing verdict field or validation note before returning. |
+| Posting outcome ambiguous | Return `Ready to post` or `Blocked` with the exact unposted comment and failure reason. |
