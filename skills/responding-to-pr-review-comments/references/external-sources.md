@@ -22,6 +22,10 @@ syntax, and phrasing cues.
 - If a public source conflicts with a bundled contract or visible project
   convention, follow the local source and note the discrepancy only when it
   affects the user.
+- If a required current source is unavailable, route the owning phase to
+  `NEEDS_CONTEXT` when the claim cannot be safely removed or qualified.
+- If current sources conflict and product, policy, or team preference decides
+  the answer, ask one focused user question instead of guessing.
 
 ## Source Routing
 
