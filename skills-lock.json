@@ -54,6 +54,12 @@
       "sourceType": "github",
       "skillPath": "skills/writing-plans/SKILL.md",
       "computedHash": "2b986445454a025ca2c3839f8a2024747e8cce0517948437232cd113d2719060"
+    },
+    "committing-scoped-changes": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/committing-scoped-changes/SKILL.md",
+      "computedHash": "eea82ead1cabc00f94ab157b8d1105239a0b49934e5c38eabb9e5428fb129c6a"
     }
   }
 }
