@@ -14,6 +14,7 @@ Commits created:
 
 Remaining scoped changes: <none or concise list>
 Unrelated changes left untouched: <none or concise list>
+Post-commit refresh: <SCOPED_STATE: PASS | NO_SCOPED_CHANGES and one-line result>
 References fetched: <none or concise list>
 ```
 
@@ -26,6 +27,21 @@ Reason: <one line>
 Next step: <one clear action or question>
 ```
 
+## Status Mapping
+
+Use the exact `COMMIT_SCOPED_CHANGES` status from the flow terminal node:
+
+| Source status | Final status |
+| ------------- | ------------ |
+| Missing or ambiguous `CHANGE_PATHS` | `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT` |
+| `SCOPED_STATE: NEEDS_CONTEXT` | `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT` |
+| `COMMIT_PLAN: NEEDS_DECISION` | `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT` |
+| `COMMIT_EXECUTE: VERIFY_FAILED` with no safe retry | `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` |
+| `SCOPED_STATE: NO_SCOPED_CHANGES` before commits | `COMMIT_SCOPED_CHANGES: NO_SCOPED_CHANGES` |
+| Any subagent `BLOCKED` status | `COMMIT_SCOPED_CHANGES: BLOCKED` |
+| `COMMIT_EXECUTE: COMMIT_ERROR` | `COMMIT_SCOPED_CHANGES: COMMIT_ERROR` |
+| Any subagent `ERROR` status | `COMMIT_SCOPED_CHANGES: ERROR` |
+
 ## Examples
 
 <example>
@@ -36,6 +52,7 @@ Commits created:
 
 Remaining scoped changes: none
 Unrelated changes left untouched: README.md modified
+Post-commit refresh: SCOPED_STATE: NO_SCOPED_CHANGES - no scoped changes remain after commit.
 References fetched: none
 </example>
 
