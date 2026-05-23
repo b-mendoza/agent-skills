@@ -39,9 +39,10 @@ coordinator.
 
 1. Load `REVIEWER_POLICY_PATH` before interpreting tracker mutations, write mode,
    gates, or lifecycle recommendations.
-2. Build a compact source snapshot from available context. If linked context or
-   evidence is missing, continue only when the missing data is non-blocking;
-   otherwise prepare a `Blocked` comment.
+2. Build a compact source snapshot from available context. Classify missing
+   evidence as a non-blocking gap, unsupported technical claim, contradiction, or
+   missing access/source context. Continue only when the missing data is
+   non-blocking; otherwise prepare a `Blocked` comment.
 3. Load `REFINEMENT_CHECKS_PATH` when running readiness checks. Record only check
    outcomes and evidence pointers, not full source text.
 4. Load `EXTERNAL_SOURCES_PATH` only when a source-backed refresher, current
@@ -81,6 +82,11 @@ Use `POST_ALLOWED=yes` only when `WRITE_MODE=post-comment`, the requested action
 is exactly posting a refinement comment, and no unresolved mutation or safety
 gate prevents posting. This subagent does not post; it reports whether posting is
 allowed for the coordinator.
+
+Return `REVIEW=PASS` only after the quality checklist passes. Return
+`REVIEW=FAIL` when review completed but the same quality issue remains after
+three targeted fix cycles. Return `REVIEW=ERROR` for unexpected runtime, tool,
+fetch, or parsing failures and set `POST_ALLOWED=no`.
 
 Use `Comment mode=Ready to post` for a refinement comment that is safe to post
 exactly as returned, `Comment mode=Draft` when the comment needs user review
