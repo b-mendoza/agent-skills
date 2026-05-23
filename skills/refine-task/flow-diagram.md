@@ -53,7 +53,7 @@ flowchart TD
   DRAFT_READY_MODE -->|no| DRAFT_OUT(["Draft: return Refinement review complete with Mode, Status, and Comment"])
   MODE_DECISION -->|post-comment requested| POST_ALLOWED_GATE{"POST_ALLOWED=yes?"}
   POST_ALLOWED_GATE -->|yes| POST_AVAILABLE{"Posting available?"}
-  POST_ALLOWED_GATE -->|no| RETURN_REVIEWER_MODE(["Return reviewer mode and final comment without posting"])
+  POST_ALLOWED_GATE -->|no| RETURN_REVIEWER_MODE(["Return reviewer Mode, Status, and Comment without posting"])
   POST_AVAILABLE -->|yes| POST_COMMENT["Post only the returned refinement comment"]
   POST_AVAILABLE -->|no| READY_TO_POST_OUT
   POST_COMMENT --> POSTED_OUT(["Posted: return Refinement review complete with Mode, Status, and Comment"])

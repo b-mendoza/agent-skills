@@ -36,7 +36,7 @@ for one source item.
 2. Dispatch refinement-reviewer with compact source pointers and user intent.
 3. Branch on the returned structured status.
 4. Post only when WRITE_MODE=post-comment, posting is available, and the reviewer returned POST_ALLOWED=yes.
-5. If the reviewer returns `Comment mode=Ready to post` and the coordinator does not post, return `Mode: Ready to post`; otherwise return the reviewer mode and comment.
+5. If the reviewer returns `Comment mode=Ready to post` and the coordinator does not post, return `Mode: Ready to post`; otherwise return the reviewer Mode, Status, and Comment.
 ```
 
 ## Subagent Registry
