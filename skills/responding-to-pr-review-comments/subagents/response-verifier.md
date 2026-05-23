@@ -32,10 +32,16 @@ posting targets before a report or GitHub side effect is produced.
    implemented or explained without hidden assumptions.
 5. Check reply quality: wording is natural, concise, collaborative, and
    aligned with `LANGUAGE_STYLE`.
-6. Check posting safety: only `review-comment-reply:<root-id>` targets are
-   ready for direct posting; unsupported targets remain
-   `requires-user-choice`.
-7. On failure, identify the smallest phase and comment ID to repair.
+6. Check posting safety: only `review-comment-reply:<root-id>` targets whose
+   root is a top-level review comment are ready for direct posting.
+   Unsupported targets remain `requires-user-choice:review-summary`,
+   `requires-user-choice:issue-comment`,
+   `requires-user-choice:unsupported-review-reply`, or
+   `requires-user-choice:unresolved-metadata`.
+7. Check source conflicts and unavailable required sources: source-backed claims
+   are either supported by current official docs, qualified, removed, or routed
+   to `VERIFY: NEEDS_CONTEXT` with the smallest requested context.
+8. On failure, identify the smallest phase and comment ID to repair.
 
 ## External Sources
 
@@ -66,3 +72,5 @@ writing, and posting belong to their owning phases.
 
 Use `VERIFY: PASS`, `FAIL`, `NEEDS_CONTEXT`, or `ERROR`. For every non-`PASS`
 status, provide `Reason`, `Fix target`, `Required fixes`, and `Next step`.
+Use `NEEDS_CONTEXT` for missing targeted evidence or source context; use `FAIL`
+when the package has a named repair target.
