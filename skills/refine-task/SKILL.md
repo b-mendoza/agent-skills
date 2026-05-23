@@ -32,11 +32,12 @@ for one source item.
 ## Workflow Overview
 
 ```text
-1. Normalize inputs and detect write intent.
-2. Dispatch refinement-reviewer with compact source pointers and user intent.
-3. Branch on the returned structured status.
-4. Post only when WRITE_MODE=post-comment, posting is available, and the reviewer returned POST_ALLOWED=yes.
-5. If the reviewer returns `Comment mode=Ready to post` and the coordinator does not post, return `Mode: Ready to post`; otherwise return the reviewer Mode, Status, and Comment.
+1. Normalize inputs, set reviewer-only authority, and detect write intent.
+2. Defer tracker mutations beyond one new refinement comment.
+3. Build a compact source snapshot, classify missing evidence, and block only when missing access or source context prevents review.
+4. Dispatch refinement-reviewer with compact pointers, user intent, approvals, mutation limits, and bundled reference paths.
+5. Route the returned `REVIEW`, `REVIEW_STATUS`, `Comment mode`, and `POST_ALLOWED` before choosing output mode.
+6. Post only the exact returned comment once when WRITE_MODE=post-comment, posting is available, and POST_ALLOWED=yes.
 ```
 
 ## Subagent Registry
@@ -83,9 +84,10 @@ QUALITY_CHECKLIST_PATH: ../references/review-quality-checklist.md
 EXTERNAL_SOURCES_PATH: ../references/external-sources.md
 ```
 
-Keep only the returned `REVIEW_STATUS`, `POST_ALLOWED`, `Comment mode` (`Draft`,
-`Ready to post`, `Blocked`, or `Deferred`), blocked reason if any, and final
-comment or draft. Do not keep raw tracker payloads, long source text, or full
+Keep only the returned `REVIEW` (`PASS`, `BLOCKED`, `FAIL`, or `ERROR`),
+`REVIEW_STATUS`, `POST_ALLOWED`, `Comment mode` (`Draft`, `Ready to post`,
+`Blocked`, or `Deferred`), blocked reason if any, final comment or draft, and
+validation summary. Do not keep raw tracker payloads, long source text, or full
 analysis notes in coordinator context.
 
 ## Output Contract
@@ -97,10 +99,13 @@ Refinement review complete.
 Mode: Draft | Ready to post | Posted | Blocked | Deferred
 Status: Ready | Needs refinement | Needs split | Needs spike | Blocked | Not actionable
 Comment: <final comment or draft>
+Validation: <quality checklist summary, post failure reason, or remaining risk>
 ```
 
 Use `Posted` only after the coordinator successfully posts the exact refinement
-comment returned by the reviewer.
+comment returned by the reviewer. If posting fails, do not retry automatically;
+return `Mode: Ready to post` or `Mode: Blocked` with the exact unposted comment
+and the failure reason.
 
 Use `Ready to post` when the reviewer returns `Comment mode=Ready to post` but
 the coordinator does not post it, such as draft or unknown write mode, or a safe
@@ -109,6 +114,10 @@ post-comment run where posting is not performed.
 If the reviewer reports a mutation-only request with no refinement review to
 perform, return `Mode: Deferred` and explain that the mutation belongs in a
 separate approved workflow.
+
+If the reviewer returns `REVIEW=BLOCKED`, `REVIEW=FAIL`, or `REVIEW=ERROR`,
+return `Mode: Blocked`, preserve the safest returned comment when available, and
+include the blocked reason, failed checks, or error category in `Validation`.
 
 ## Escalation
 
@@ -120,12 +129,16 @@ If a gate is unavailable during an autonomous run, keep the safe reviewer-only
 path: return a draft, ask a neutral question in the comment, and defer sensitive
 recommendations.
 
+If posting fails after the exact comment is submitted once, stop with the safe
+reviewer-only path: return the exact unposted comment and the post failure
+reason without retrying into duplicate side effects.
+
 ## Example
 
 <example>
 Input: `Review https://github.com/acme/app/issues/42 for readiness and draft a refinement comment.`
 
 Flow: normalize `ITEM_URL`, dispatch `refinement-reviewer` with
-`WRITE_MODE=draft`, receive `REVIEW_STATUS=Needs refinement` and
-`Comment mode=Draft`, then return the draft comment.
+`WRITE_MODE=draft`, receive `REVIEW=PASS`, `REVIEW_STATUS=Needs refinement`,
+`Comment mode=Draft`, and validation summary, then return the draft comment.
 </example>
