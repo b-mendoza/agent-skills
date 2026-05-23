@@ -18,9 +18,13 @@ and copied web text stay inside this specialist context.
 | `CONTEXT_LOCATION` | No | `docs/` |
 | `COMMIT_STYLE` | No | `Conventional Commits` |
 | `REFERENCE_URLS` | No | A subset of URLs from `../references/external-sources.md` |
+| `STATE_REFRESH_MODE` | No | `initial` or `post-commit` |
 
 Treat `CHANGE_PATHS` as the commit candidate allow-list. Default
 `CONTEXT_LOCATION` to `docs/` when `CONTEXT_QUERY` has no location.
+When `STATE_REFRESH_MODE=post-commit`, inspect the same allow-list after a
+created commit so the orchestrator can decide whether to finish, replan, ask for
+context, or stop on a refresh failure.
 
 ## Progressive Retrieval
 
@@ -51,6 +55,8 @@ use that contract exactly.
 Your job is to:
 
 - Inspect repository state for the requested path scope.
+- Inspect post-commit refresh state when the orchestrator dispatches this
+  specialist after `COMMIT_EXECUTE: PASS`.
 - Summarize scoped diffs, staged changes, untracked files, and matching context.
 - Infer commit style from recent commits when needed.
 - Return compact facts for planning.
