@@ -8,8 +8,10 @@
 
 The refinement review treats the Jira or GitHub item as source material. The
 reviewer may inspect available context, evaluate readiness, ask questions, and
-produce one refinement comment or draft. The reviewer's authority is advisory:
-recommendations are not permission to perform tracker changes.
+produce one refinement comment or draft. The coordinator may post that exact
+comment once when posting is explicitly requested, available, and allowed. The
+reviewer's authority is advisory: recommendations are not permission to perform
+tracker changes.
 
 ## Allowed Outcomes
 
@@ -25,7 +27,9 @@ recommendations are not permission to perform tracker changes.
 The workflow may produce one new refinement comment. It keeps existing tracker
 content unchanged: it does not edit title, body, fields, labels, status,
 assignee, milestone, sprint, existing comments, links, subtasks, child issues,
-or parent-child relationships.
+or parent-child relationships. If a post attempt fails, the coordinator returns
+the exact unposted comment and failure reason instead of retrying into duplicate
+side effects.
 
 Mutation examples that must be deferred: delete comments, close issues, merge or
 supersede items, edit labels, assign owners, move workflow status, create child
@@ -49,12 +53,16 @@ consider superseding this item?`
 
 1. Boundary: identify item type and write mode.
 2. Mutation gate: detect and defer tracker mutations beyond the refinement comment.
-3. Snapshot: list evidence reviewed and missing evidence.
+3. Snapshot: list evidence reviewed and classify missing evidence as
+   non-blocking gaps, unsupported claims, contradictions, or blocking missing
+   access/source context.
 4. Classification: identify item type and relevance state.
 5. Readiness checks: run the checklist that applies to the item.
 6. Synthesis: separate facts, assumptions, gaps, and recommendations.
 7. Recommendation gates: approve, neutralize, or defer sensitive recommendations.
 8. Comment: assemble the final comment or draft.
+9. Return routing: expose `REVIEW`, `REVIEW_STATUS`, `POST_ALLOWED`, `Comment mode`,
+   the final comment, and validation summary for coordinator routing.
 
 ## Readiness Rule
 
