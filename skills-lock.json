@@ -61,6 +61,12 @@
       "skillPath": "skills/recency-guard/SKILL.md",
       "computedHash": "1c6e334f498e5d686e27997b79065daa717910b27e4d9ed081eb958da85fe66c"
     },
+    "responding-to-pr-review-comments": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/responding-to-pr-review-comments/SKILL.md",
+      "computedHash": "09a6e11898b9d1bda403598b19b282ab741766b1930a421d8a20db521914c17b"
+    },
     "subagent-driven-development": {
       "source": "obra/superpowers",
       "sourceType": "github",
