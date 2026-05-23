@@ -37,7 +37,12 @@ flowchart TD
   ASK_DECISION --> REASSESS[Reassess only affected items with the user decision]
   REASSESS --> USER_DECISION
   USER_DECISION -->|no| DRAFT[Draft natural replies, per-comment action intents, and phase status blocks]
-  DRAFT --> VERIFY[Verify evidence, tone, action intent, scope, unsupported targets, and posting safety]
+  DRAFT --> DRAFT_DECISION{DRAFT: NEEDS_USER_DECISION?}
+  DRAFT_DECISION -->|yes| DRAFT_RETRY{Fewer than three draft-decision cycles used?}
+  DRAFT_RETRY -->|no| FAIL_DECISION
+  DRAFT_RETRY -->|yes| ASK_DRAFT[Ask one focused wording or response-choice question]
+  ASK_DRAFT --> DRAFT
+  DRAFT_DECISION -->|no| VERIFY[Verify evidence, tone, action intent, scope, unsupported targets, and posting safety]
   VERIFY --> VERIFY_OK{Verification passes?}
   VERIFY_OK -->|no, with fix target| VERIFY_REPAIR{Fewer than two targeted verification fix cycles used?}
   VERIFY_REPAIR -->|yes| REPAIR[Repair only the named collector, assessor, or drafter target]
@@ -68,10 +73,10 @@ flowchart TD
   classDef cancelled fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,ASSESS_CONTEXT,CONTEXT_RETRY,USER_DECISION,DECISION_RETRY,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,WRITE_OK,POST_MODE,APPROVAL,POST_OK decision;
+  class PRURL,DATA_OK,COMMENTS,EXT_NEEDED,ASSESS_CONTEXT,CONTEXT_RETRY,USER_DECISION,DECISION_RETRY,DRAFT_DECISION,DRAFT_RETRY,VERIFY_OK,VERIFY_REPAIR,REPORT_PATH,WRITE_OK,POST_MODE,APPROVAL,POST_OK decision;
   class INTAKE,FETCH,DISPATCH,CONTEXT,CLASSIFY,NARROW_LOOKUP,REASSESS,DRAFT,VERIFY,REPAIR check;
   class EXT_SOURCE guard;
-  class ASK_PR,ASK_DECISION,ASK_OUTPUT,PREVIEW human;
+  class ASK_PR,ASK_DECISION,ASK_DRAFT,ASK_OUTPUT,PREVIEW human;
   class WRITE_REPORT,POST output;
   class NOT_POSTED,POSTED success;
   class CANCELLED cancelled;
