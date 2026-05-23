@@ -34,9 +34,16 @@ for product or team-preference choices while still reporting technical risks.
    stale, out of scope, or worse than the current implementation.
 4. Cite concrete evidence: file paths, line references, test names, CI checks,
    linked issue text, or documentation URLs.
-5. Ask for user input only when product intent or team preference determines
-   the answer.
-6. Return compact findings; keep raw diffs, full files, logs, and long docs
+5. For recency-sensitive library, API, platform, policy, pricing, or version
+   claims, use current official documentation. If a required source is
+   unavailable, return `ASSESS: NEEDS_CONTEXT` with the smallest source request
+   or remove/qualify the claim when the evidence still supports a safe answer.
+6. When current sources conflict and the conflict depends on product, policy,
+   or team preference, return `ASSESS: NEEDS_USER_DECISION` with one focused
+   question.
+7. Ask for user input only when product intent, team preference, unsupported
+   target choice, or source conflict determines the answer.
+8. Return compact findings; keep raw diffs, full files, logs, and long docs
    out of the status block.
 
 ## External Sources
