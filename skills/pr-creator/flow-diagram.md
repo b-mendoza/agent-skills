@@ -33,7 +33,7 @@ flowchart TD
   PUSH_GATE -->|approved| RECOVER_PREFLIGHT["Recover only failing preflight gate<br/>record approval and rerun earliest affected phase"]
   PUSH_NEEDED -->|no| RECOVER_PREFLIGHT
   RECOVER_PREFLIGHT --> DISPATCH_REPO
-  PREFLIGHT_READY -->|yes| TRUSTED_DIFF["Use trusted compare diff<br/>origin/&lt;target_branch&gt;...origin/&lt;current_branch&gt; after refs are comparable"]
+  PREFLIGHT_READY -->|yes| TRUSTED_DIFF["Use trusted compare diff<br/>origin/<target_branch>...origin/<current_branch> after refs are comparable"]
   TRUSTED_DIFF --> DISPATCH_DIFF["Dispatch diff-analyzer<br/>assess size, purpose, risk, and change summary"]
   DISPATCH_DIFF --> DIFF_SCOPE{Large or mixed-purpose PR?}
   DIFF_SCOPE -->|yes| SCOPE_GATE["Human gate: approve proceeding with large or mixed-purpose PR<br/>target: current branch diff<br/>reason: review risk is elevated<br/>risk: lower review quality; safer alternative: split or stop"]
