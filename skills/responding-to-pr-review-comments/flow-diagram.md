@@ -88,7 +88,8 @@ Report shape: the written report follows
 blocks and terminal response envelopes follow
 [`references/status-contracts.md`](./references/status-contracts.md).
 
-Readiness rule: the run is complete when it can emit `PR_COMMENT_RESPONSE:
-PASS` with a verified report path and posting status, or when it emits one of
-the documented failure envelope codes with the reason and next action. Posting
-is allowed only after the user approves the exact final preview.
+Readiness rule: the run is complete when it can emit `PR_COMMENT_RESPONSE: PASS`
+with a verified report path and `Posting: <not-posted | posted | cancelled>`,
+or when it emits one of the documented failure envelope codes with the reason
+and next action. Posting is allowed only after the user approves the exact final
+preview.
