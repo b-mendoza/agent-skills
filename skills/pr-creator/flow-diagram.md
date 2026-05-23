@@ -75,7 +75,7 @@ flowchart TD
   classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
   classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
-  classDef refine fill:#ffe0b2,stroke:#e65100,color:#000;
+  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
   class TARGET_CHECK,PLATFORM_KNOWN,REPO_OK,LOCAL_CHANGES,PREFLIGHT_READY,RECOVERABLE_PREFLIGHT,CYCLE_CHECK,PUSH_NEEDED,DIFF_SCOPE,REVIEWER_CHECK,LABEL_CHECK,RECOVER_LABELS,META_CYCLE_CHECK,PREVIEW_CHANGES,VERIFY_URL decision;
