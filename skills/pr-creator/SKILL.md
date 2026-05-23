@@ -6,8 +6,9 @@ description: "Create review-ready pull requests from the current branch with a p
 # PR Creator
 
 You are a pull request creation orchestrator. Think, route, and ask for user
-approval; delegate repository inspection, diff analysis, drafting, metadata, and
-submission to focused subagents that return concise status blocks.
+approval; delegate repository inspection, platform adaptation, preflight checks,
+diff analysis, drafting, metadata, and submission to focused subagents that
+return concise status blocks.
 
 This skill is standalone. Bundled paths are relative to the file that contains
 them and stay inside this skill folder.
@@ -57,20 +58,31 @@ contract files, or external resources.
 ## Workflow
 
 1. Normalize inputs inline and ask the smallest missing-value question.
-2. Dispatch `repo-state-inspector`. If local changes exist, state that they are
-   outside the PR until committed; continue only on `REPO_STATE: PASS`.
-3. Dispatch `preflight-validator`. Ask before pushing; redispatch with
-   `PUSH_APPROVED=true` only after explicit user approval.
-4. Dispatch `diff-analyzer`. If the large or mixed-purpose gate trips, summarize
-   the issue and ask whether to proceed as one PR.
-5. Dispatch `pr-drafter`, then `review-metadata-suggester`. Resolve each
-   `NEEDS_*`, `INVALID_LABELS`, or `NEEDS_CHOICE` result with one focused user
-   question and redispatch the affected subagent.
-6. Load `./references/execution-contracts.md`, show the exact preview, and ask
-   for approval. Any edit to branch, state, title, body, reviewers, or labels
-   invalidates approval and re-runs the earliest affected phase.
-7. Dispatch `pr-submitter` only after the latest preview is approved. Return the
-   verified URL using the final success block.
+2. Dispatch `repo-state-inspector`. On `REPO_STATE: PASS`, record any
+   uncommitted-work boundary before preflight; local uncommitted changes stay
+   outside the PR until committed. Map `REPO_STATE: BLOCKED | ERROR` through the
+   failure envelope.
+3. Apply `./references/platform-adaptation.md` only after repo-state evidence
+   identifies the platform or adapter need, then dispatch `preflight-validator`.
+4. Route `PREFLIGHT: PUSH_REQUIRED` to `GATE_PUSH_APPROVAL`; redispatch with
+   `PUSH_APPROVED=true` only after explicit approval. Map `PREFLIGHT: AUTH`,
+   `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `BLOCKED`, and `ERROR` through
+   `./references/execution-contracts.md`.
+5. Dispatch `diff-analyzer`. Route `DIFF_ANALYSIS: LARGE_PR_CONFIRMATION_REQUIRED`
+   to `GATE_SCOPE_APPROVAL`; route `EMPTY_DIFF` and `ERROR` through the failure
+   envelope.
+6. Dispatch `pr-drafter`, then `review-metadata-suggester`. Resolve
+   `PR_DRAFT: NEEDS_CHOICE`, `REVIEW_METADATA: NEEDS_REVIEWER`, and
+   `REVIEW_METADATA: INVALID_LABELS` through focused bounded gates
+   (`GATE_DRAFT_CHOICE`, `GATE_REVIEWER`, `GATE_LABELS`) and redispatch the
+   affected subagent. There is no skip route around the required reviewer.
+7. Load `./references/execution-contracts.md`, show the exact preview, and route
+   approval through `GATE_PREVIEW_APPROVAL`. Any edit to branch, state, title,
+   body, reviewers, or labels invalidates approval and re-runs the earliest
+   affected phase.
+8. Freeze the approved preview fields, then dispatch `pr-submitter`. Return the
+   verified URL and submitted metadata on `PR_SUBMIT: PASS`; map `BLOCKED`,
+   `CREATE_ERROR`, `AUTH`, and `ERROR` through the failure envelope.
 
 For any non-pass status, load `./references/execution-contracts.md`, map the
 status to the failure envelope, and recover only the failing gate. Stop after
@@ -80,13 +92,16 @@ three non-converging fix cycles and ask the user for the final decision.
 
 - Use `origin/<target_branch>...origin/<current_branch>` as the trusted diff
   only after preflight confirms both remote refs are comparable.
-- Ask before pushing, before proceeding with a large or mixed-purpose PR, and
-  before creating the PR.
+- Ask at `GATE_PUSH_APPROVAL` before pushing, `GATE_SCOPE_APPROVAL` before
+  proceeding with a large or mixed-purpose PR, and `GATE_PREVIEW_APPROVAL` before
+  creating the PR.
 - Require at least one reviewer from user input, CODEOWNERS, or an explicit user
   answer before submission.
 - Use only labels that the hosting platform reports as existing.
 - Fetch external URLs for static guidance instead of copying that guidance into
   the prompt; preserve this skill's local contracts when sources disagree.
+- Recover only the failing gate or earliest affected phase. Stop after three
+  non-converging recovery cycles.
 
 ## Output Contract
 
