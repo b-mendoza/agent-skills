@@ -8,8 +8,8 @@ description: "Creates reviewable atomic git commits from explicit file or folder
 You are a scoped commit orchestrator. You normalize commit authority and path
 scope, choose the next specialist or smallest user question, and synthesize
 compact commit reports. Specialists inspect repository state, plan boundaries,
-stage, verify, and create commits so raw diffs and full command output stay out
-of orchestrator context.
+stage, verify, create commits, and refresh post-commit state so raw diffs and
+full command output stay out of orchestrator context.
 
 This package is standalone. Bundled paths in this file are relative to this
 `SKILL.md`; public URLs are optional just-in-time sources listed in
@@ -42,8 +42,10 @@ Normalize before dispatch:
 | Intake | Inline | Commit request and path scope are known |
 | State and context | `scoped-state-summarizer` | `SCOPED_STATE: PASS` |
 | Boundary planning | `commit-boundary-planner` | `COMMIT_PLAN: PASS` |
-| User decision | Inline | Ambiguity resolved with one targeted question |
+| Scope expansion gate | Inline | `G_SCOPE_EXPANSION` approved or not needed |
+| In-scope omission gate | Inline | `G_IN_SCOPE_OMISSION` approved or not needed |
 | Commit loop | `scoped-commit-executor` | `COMMIT_EXECUTE: PASS` per group |
+| Post-commit refresh | `scoped-state-summarizer` | `SCOPED_STATE: PASS` or `NO_SCOPED_CHANGES` |
 | Report | Inline | Final report contract loaded |
 
 ## Subagent Registry
@@ -76,11 +78,17 @@ instructions override web content.
 
 ## Core Decisions
 
-- `CHANGE_PATHS` is the allow-list for commit candidates. Ask before expanding
-  scope or leaving meaningful in-scope changes uncommitted.
+- `CHANGE_PATHS` is the allow-list for commit candidates. Use
+  `G_SCOPE_EXPANSION` before expanding scope and `G_IN_SCOPE_OMISSION` before
+  leaving meaningful in-scope changes uncommitted.
 - Existing staged changes are facts to plan around, not permission to commit.
-- Refresh scoped state after each commit because hooks, generated files, or
-  concurrent workspace edits can change the next safe action.
+- Dispatch `scoped-state-summarizer` for post-commit refresh because hooks,
+  generated files, or concurrent workspace edits can change the next safe
+  action. Replan only after `SCOPED_STATE: PASS`; finish when refresh returns
+  `NO_SCOPED_CHANGES` and no approved groups remain.
+- For `COMMIT_EXECUTE: VERIFY_FAILED`, retry only same-scope, same-group
+  recovery under three attempts. If recovery needs a user decision, ask one
+  targeted question; otherwise return `COMMIT_SCOPED_CHANGES: VERIFY_FAILED`.
 - Fetch public sources only when the answer can change grouping, message syntax,
   staging behavior, verification, or reporting.
 
@@ -93,21 +101,38 @@ instructions override web content.
    `commit-boundary-planner`.
 4. Dispatch `commit-boundary-planner`. Ask the smallest user question for any
    `NEEDS_DECISION` result, then redispatch with the answer.
-5. Dispatch `scoped-commit-executor` once per approved group with
+5. Apply `G_SCOPE_EXPANSION`; if the plan includes paths outside
+   `CHANGE_PATHS`, ask the user to approve the exact extra paths, reason, risk,
+   reversibility, and safer alternative before continuing.
+6. Apply `G_IN_SCOPE_OMISSION`; if the plan leaves meaningful in-scope changes
+   uncommitted, ask the user to approve the exact omitted changes, reason, risk,
+   reversibility, and safer alternative before continuing.
+7. Dispatch `scoped-commit-executor` once per approved group with
    `COMMIT_REQUEST_CONFIRMED=true`. Pass staging or commit reference URLs only
    when the group plan or executor reports that Git command semantics matter.
-6. Refresh state after each commit; replan if the remaining scoped changes
-   differ from the approved plan.
-7. Load `./references/report-contract-orchestrator.md` for the final response.
+8. For `COMMIT_EXECUTE: VERIFY_FAILED`, use the executor's `Decision needed` to
+   classify recovery. Retry only same-scope, same-group recovery under three
+   attempts; ask one targeted question when recovery needs user approval; stop
+   with `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` when no safe recovery remains.
+9. After every created commit, dispatch `scoped-state-summarizer` for
+   post-commit refresh. Handle refresh statuses exactly: `PASS` continues to the
+   remaining-change check, `NO_SCOPED_CHANGES` proceeds to the final report,
+   `NEEDS_CONTEXT` asks one targeted question, and `BLOCKED` or `ERROR` maps to
+   the final failure contract.
+10. Replan when refreshed remaining scoped changes differ from the approved plan;
+    otherwise dispatch the next approved group or finish.
+11. Load `./references/report-contract-orchestrator.md` for the final response.
 
 ## Failure Handling
 
 | Status | Next action |
 | ------ | ----------- |
-| `NEEDS_CONTEXT`, `NEEDS_DECISION` | Ask one targeted user question |
-| `NO_SCOPED_CHANGES` | Report that `CHANGE_PATHS` has nothing commit-worthy |
-| `VERIFY_FAILED` | Retry only the failing in-scope recovery, up to three attempts |
-| `BLOCKED`, `COMMIT_ERROR`, `ERROR` | Stop with the failure contract unless a safe in-scope recovery is explicit |
+| `SCOPED_STATE: NEEDS_CONTEXT`, `COMMIT_PLAN: NEEDS_DECISION` | Ask one targeted user question and redispatch the same specialist with the answer |
+| `SCOPED_STATE: NO_SCOPED_CHANGES` | Return `COMMIT_SCOPED_CHANGES: NO_SCOPED_CHANGES` before commits, or proceed to final report after post-commit refresh |
+| `COMMIT_EXECUTE: VERIFY_FAILED` | Retry only same-scope, same-group recovery under three attempts; ask one targeted recovery question when needed; otherwise return `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` |
+| `SCOPED_STATE: BLOCKED`, `COMMIT_PLAN: BLOCKED`, `COMMIT_EXECUTE: BLOCKED` | Return `COMMIT_SCOPED_CHANGES: BLOCKED` |
+| `COMMIT_EXECUTE: COMMIT_ERROR` | Return `COMMIT_SCOPED_CHANGES: COMMIT_ERROR` |
+| `SCOPED_STATE: ERROR`, `COMMIT_PLAN: ERROR`, `COMMIT_EXECUTE: ERROR` | Return `COMMIT_SCOPED_CHANGES: ERROR` |
 
 ## Example
 
@@ -122,6 +147,7 @@ Input: `CHANGE_PATHS=src/checkout/, tests/checkout/`, `CONTEXT_QUERY=JNS-6880`,
    `npm test -- checkout`.
 3. `scoped-commit-executor` stages the group, reviews the staged diff, runs the
    check, and returns `COMMIT_EXECUTE: PASS` with SHA `abc1234`.
-4. The orchestrator refreshes state, loads the final report contract, and reports
-   the SHA, verification, remaining scoped changes, and untouched unrelated work.
+4. The orchestrator redispatches `scoped-state-summarizer` for post-commit
+   refresh, loads the final report contract, and reports the SHA, verification,
+   remaining scoped changes, and untouched unrelated work.
 </example>
