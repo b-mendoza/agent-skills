@@ -19,21 +19,21 @@ Next step: <one clear action>
 | ------------- | ------------- |
 | `PREFLIGHT: AUTH`, `PR_SUBMIT: AUTH`, `REVIEW_METADATA: AUTH` | `AUTH` |
 | `PREFLIGHT: BASE_BRANCH_MISSING` | `BASE_BRANCH_MISSING` |
-| `PREFLIGHT: HEAD_BRANCH_UNPUSHED` or declined push | `HEAD_BRANCH_UNPUSHED` |
+| `PREFLIGHT: HEAD_BRANCH_UNPUSHED` or declined `GATE_PUSH_APPROVAL` | `HEAD_BRANCH_UNPUSHED` |
 | `DIFF_ANALYSIS: EMPTY_DIFF` | `EMPTY_DIFF` |
-| `REPO_STATE: BLOCKED`, `PREFLIGHT: BLOCKED`, `PR_SUBMIT: BLOCKED` | `BLOCKED` |
-| User declines large-PR or create confirmation | `CANCELLED` |
-| `PR_SUBMIT: CREATE_ERROR` | `CREATE_ERROR` |
-| Any subagent `ERROR` | `BLOCKED` with the subagent reason |
+| `REPO_STATE: BLOCKED`, `PREFLIGHT: BLOCKED`, `PR_SUBMIT: BLOCKED`, unresolved `REVIEW_METADATA: INVALID_LABELS`, bounded `GATE_PUSH_APPROVAL`, `GATE_DRAFT_CHOICE`, `GATE_REVIEWER`, or `GATE_LABELS` exhaustion | `BLOCKED` |
+| User declines `GATE_SCOPE_APPROVAL`, `GATE_DRAFT_CHOICE`, `GATE_REVIEWER`, `GATE_LABELS`, or `GATE_PREVIEW_APPROVAL`; or `GATE_SCOPE_APPROVAL` reaches its limit | `CANCELLED` |
+| `PR_SUBMIT: CREATE_ERROR` or `PR_SUBMIT: ERROR` | `CREATE_ERROR` |
+| Any non-submit subagent `ERROR` | `BLOCKED` with the subagent reason |
 
-Recover by re-running only the earliest affected phase. After three
-non-converging preview or validation cycles, ask the user for exact final values
-or permission to stop.
+Recover by re-running only the failing gate or earliest affected phase. After
+three non-converging preview, draft-choice, reviewer, label, or validation
+cycles, ask the user for exact final values or permission to stop.
 
 ## Preview Template
 
-Show this before creating anything. Any edit to title, body, reviewer, label,
-branch, or state invalidates approval.
+Show this before `GATE_PREVIEW_APPROVAL`. Any edit to title, body, reviewer,
+label, branch, or state invalidates approval.
 
 ```text
 PR Preview
@@ -58,7 +58,7 @@ Base: <target_branch>
 Head: <current_branch>
 Title: <title>
 State: <draft|ready>
-Reviewers: <reviewer list or none>
+Reviewers: <reviewer list>
 Labels: <label list or none>
 
 Description:
