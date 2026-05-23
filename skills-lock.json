@@ -19,12 +19,6 @@
       "skillPath": "skills/executing-plans/SKILL.md",
       "computedHash": "b41c919caf1bb07fbacb0e29899ac513f9eb11cd4dd695975ad352c2c03cc4d7"
     },
-    "gh-cli": {
-      "source": "github/awesome-copilot",
-      "sourceType": "github",
-      "skillPath": "skills/gh-cli/SKILL.md",
-      "computedHash": "cbe644b0c6760ae2a1eaafa39133920d889331327065d92a131675a665273e56"
-    },
     "grill-me": {
       "source": "mattpocock/skills",
       "sourceType": "github",
