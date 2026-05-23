@@ -62,3 +62,18 @@ criteria.
 Classify every finding as source-backed fact, reviewer assumption, missing
 evidence, contradiction, or recommendation. Use missing evidence as evidence of a
 gap; do not fill gaps with plausible details.
+
+## Evidence Snapshot And Access
+
+Build a compact source snapshot before readiness checks. Include only source
+pointers such as item body, comments, subtasks, linked items, docs, code
+references, trusted external documentation, and timestamps when available.
+
+Classify missing evidence before deciding whether to block:
+
+| Classification | Handling |
+| -------------- | -------- |
+| Non-blocking gap | Continue review, mark the gap, and ask a refinement question. |
+| Unsupported technical claim | Verify against trusted docs or codebase evidence, then mark invalid claim, gap, spike need, or blocker based on impact. |
+| Contradiction | Name the conflicting evidence and ask the owner to resolve it. |
+| Missing access or source context | Return `REVIEW=BLOCKED` when meaningful review cannot proceed. |
