@@ -1,78 +1,102 @@
 # refine-task reviewer-only refinement flow
 
-This workflow keeps the coordinator thin and evidence-focused: it normalizes a Jira ticket, Jira epic, GitHub issue, or GitHub parent issue request; dispatches `refinement-reviewer` with compact source pointers; and returns or posts exactly one refinement comment only when posting is explicitly authorized and available. Tracker items are treated as evidence to review, not state to mutate; all edits, lifecycle changes, child creation, link changes, splitting actions, and other mutations are deferred to separate approved workflows.
+This workflow keeps the coordinator thin and evidence-focused. It normalizes a Jira ticket, Jira epic, GitHub issue, or GitHub epic-style parent issue request; writes the review intent; collects compact evidence pointers; dispatches `refinement-reviewer`; and returns or posts exactly one refinement comment. Tracker items are evidence to review, not state to mutate. The coordinator may post one new comment only when posting is explicitly requested, tooling is available, and `POST_ALLOWED=yes`.
 
 ```mermaid
 flowchart TD
-  START(["Start: refine-task refinement request"]) --> INTAKE["Normalize inputs: ITEM_URL preferred, ITEM_CONTEXT optional, WRITE_MODE, HUMAN_APPROVALS, reference paths"]
-  INTAKE --> SOURCE_AVAILABLE{"Source item available?"}
-  SOURCE_AVAILABLE -->|no| ASK_SOURCE["Ask one concise question for source item or usable context"]
-  ASK_SOURCE --> BLOCKED_SOURCE(["Blocked: no source item or context"])
+  START(["Start: refine-task refinement request"]) --> INTAKE["Normalize inputs: ITEM_URL preferred, ITEM_CONTEXT optional, WRITE_MODE, HUMAN_APPROVALS, bundled reference paths"]
+  INTAKE --> ROLE_BOUNDARY["Set reviewer-only authority: normalize context, collect compact pointers, dispatch reviewer, return or post one refinement comment"]
+  ROLE_BOUNDARY --> SOURCE_AVAILABLE{"Source item or usable context available?"}
+
+  SOURCE_AVAILABLE -->|no| ASK_SOURCE["Ask one concise question for ITEM_URL or usable ITEM_CONTEXT"]
+  ASK_SOURCE --> BLOCKED_SOURCE(["Blocked: no source item or usable context"])
   SOURCE_AVAILABLE -->|yes| WRITE_INTENT["Detect write intent: draft, post-comment, or unknown"]
 
-  WRITE_INTENT --> MUTATION_ONLY{"Request is mutation-only or outside comment review?"}
-  MUTATION_ONLY -->|yes| DEFER_MUTATION(["Deferred: route tracker mutations to separate approved workflow"])
-  MUTATION_ONLY -->|no| POSTING_CLARITY{"Posting intent and tooling clear if posting requested?"}
-  POSTING_CLARITY -->|not posting requested| COLLECT_POINTERS["Collect compact evidence pointers: item body, comments, subtasks, linked items, docs, code references"]
-  POSTING_CLARITY -->|yes| COLLECT_POINTERS
-  POSTING_CLARITY -->|no| ASK_POSTING["Ask one concise question about posting authorization or tooling"]
+  WRITE_INTENT --> MUTATION_ONLY{"Request asks for tracker mutation beyond one new comment?"}
+  MUTATION_ONLY -->|yes| DEFER_MUTATION(["Deferred: route metadata edits, body edits, lifecycle changes, child creation, links, splits, and other mutations to a separate approved workflow"])
+  MUTATION_ONLY -->|no| POST_INTENT{"Posting requested?"}
+
+  POST_INTENT -->|no| SNAPSHOT["Build compact source snapshot: body, comments, subtasks, linked items, docs, code references, and source timestamps when available"]
+  POST_INTENT -->|yes| POST_PRECHECK{"Posting authorization and tooling clear?"}
+  POST_PRECHECK -->|no| ASK_POSTING["Ask one concise question about posting authorization or tooling"]
   ASK_POSTING --> BLOCKED_POSTING(["Blocked: posting authorization or access unclear"])
+  POST_PRECHECK -->|yes| SNAPSHOT
 
-  COLLECT_POINTERS --> ACCESS_OK{"Required evidence accessible?"}
-  ACCESS_OK -->|no| BLOCKED_ACCESS(["Blocked: missing access prevents review"])
-  ACCESS_OK -->|yes| DISPATCH["Dispatch refinement-reviewer with compact source pointers, user intent, and bundled reference paths"]
+  SNAPSHOT --> CLASSIFY_EVIDENCE["Classify missing evidence: non-blocking gaps, unsupported technical claims, contradictions, or missing access/source context"]
+  CLASSIFY_EVIDENCE --> ACCESS_GATE{"Missing access or source context blocks review?"}
+  ACCESS_GATE -->|yes| BLOCKED_ACCESS(["Blocked: missing access or source context prevents review"])
+  ACCESS_GATE -->|no| DISPATCH["Dispatch refinement-reviewer with compact pointers, write intent, approvals, mutation limits, and bundled reference paths"]
 
-  DISPATCH --> REVIEWER_POLICY["Reviewer loads policy references progressively and confirms boundaries, gates, and phase order"]
-  REVIEWER_POLICY --> READINESS_CHECKS["Run readiness checks: objective, scope, acceptance criteria, dependencies, risks, delivery shape, evidence gaps"]
-  READINESS_CHECKS --> TECH_CLAIMS{"Technical claims need verification?"}
-  TECH_CLAIMS -->|yes| VERIFY_CLAIMS["Verify against trusted official docs or codebase evidence"]
-  TECH_CLAIMS -->|no| CLASSIFY
-  VERIFY_CLAIMS --> CLASSIFY["Classify REVIEW_STATUS: Ready, Needs refinement, Needs split, Needs spike, Blocked, or Not actionable"]
+  DISPATCH --> REVIEW_POLICY["Reviewer loads policy references progressively and confirms boundaries, gates, phase order, and evidence standard"]
+  REVIEW_POLICY --> READINESS_CHECKS["Run readiness checks: objective, scope, acceptance criteria, dependencies, risks, delivery shape, evidence gaps"]
+  READINESS_CHECKS --> TECH_CLAIMS{"Technical claims present?"}
+  TECH_CLAIMS -->|yes| VERIFY_CLAIMS["Verify claims against trusted official docs or codebase evidence"]
+  TECH_CLAIMS -->|no| STATUS_CLASSIFY
+  VERIFY_CLAIMS --> CLAIMS_SUPPORTED{"Required claim evidence found?"}
+  CLAIMS_SUPPORTED -->|no| MARK_GAP["Mark as evidence gap, neutral question, spike need, or blocker based on impact"]
+  CLAIMS_SUPPORTED -->|yes| STATUS_CLASSIFY
+  MARK_GAP --> STATUS_CLASSIFY["Classify REVIEW_STATUS: Ready, Needs refinement, Needs split, Needs spike, Blocked, or Not actionable"]
 
-  CLASSIFY --> SENSITIVE_REC{"Sensitive recommendation would materially change comment?"}
+  STATUS_CLASSIFY --> SENSITIVE_REC{"Sensitive lifecycle, split, spike, security, data, permissions, migration, customer-impact, or operational recommendation would be stated?"}
   SENSITIVE_REC -->|yes| APPROVAL_AVAILABLE{"Human approval available?"}
-  APPROVAL_AVAILABLE -->|approved| INCLUDE_REC["Include approved recommendation with rationale and safer path"]
-  APPROVAL_AVAILABLE -->|declined| NEUTRALIZE_REC["Convert recommendation to neutral question or defer it"]
-  APPROVAL_AVAILABLE -->|missing| ASK_APPROVAL["Ask one concise question or avoid the gated recommendation"]
-  ASK_APPROVAL --> NEUTRALIZE_REC
+  APPROVAL_AVAILABLE -->|approved| INCLUDE_REC["Include approved recommendation with rationale, target, risk, reversibility, and safer alternative"]
+  APPROVAL_AVAILABLE -->|declined| NEUTRALIZE_REC["Convert to neutral question or defer recommendation"]
+  APPROVAL_AVAILABLE -->|missing| ASK_OR_DEFER["Ask one concise approval question or avoid the gated recommendation"]
+  ASK_OR_DEFER --> NEUTRALIZE_REC
   SENSITIVE_REC -->|no| ASSEMBLE_COMMENT
   INCLUDE_REC --> ASSEMBLE_COMMENT
-  NEUTRALIZE_REC --> ASSEMBLE_COMMENT["Assemble exactly one refinement comment or draft using the comment template"]
+  NEUTRALIZE_REC --> ASSEMBLE_COMMENT["Assemble exactly one refinement comment using evidence-backed findings, actionable gaps, questions, and validation summary"]
 
-  ASSEMBLE_COMMENT --> QUALITY_CHECK["Run review quality checklist: evidence support, actionable gaps, boundary compliance, no unsupported claims"]
+  ASSEMBLE_COMMENT --> QUALITY_CHECK["Run quality checklist: evidence support, actionable gaps, boundary compliance, no unsupported claims, single-comment output"]
   QUALITY_CHECK --> QUALITY_PASS{"Quality checklist passes?"}
-  QUALITY_PASS -->|no| FIX_CYCLE["Run targeted fix cycle without expanding scope"]
+  QUALITY_PASS -->|yes| REVIEW_RETURN["Reviewer returns REVIEW, REVIEW_STATUS, POST_ALLOWED, Comment mode, final comment, and validation summary"]
+  QUALITY_PASS -->|no| FIX_COUNT{"Fewer than 3 targeted fix cycles used?"}
+  FIX_COUNT -->|yes| FIX_CYCLE["Fix only failed checks without expanding scope"]
   FIX_CYCLE --> QUALITY_CHECK
-  QUALITY_PASS -->|yes| REVIEW_RETURN["Reviewer returns compact REVIEW, REVIEW_STATUS, POST_ALLOWED, Comment mode, final comment, and validation"]
+  FIX_COUNT -->|no| REVIEW_FAIL["Return REVIEW=FAIL with failed checks, final safe comment or reason unavailable, and validation summary"]
+  REVIEW_FAIL --> REVIEW_RETURN
 
-  REVIEW_RETURN --> COORDINATOR_KEEP["Coordinator retains only verdict fields and final comment; keeps raw payloads and long analysis out of top-level context"]
-  COORDINATOR_KEEP --> MODE_DECISION{"Output mode?"}
+  REVIEW_RETURN --> REVIEW_ROUTER{"REVIEW value?"}
+  REVIEW_ROUTER -->|ERROR| ERROR_OUT(["Blocked: reviewer error, return reason and no tracker mutation"])
+  REVIEW_ROUTER -->|FAIL| FAIL_OUT(["Blocked: quality failures remain after bounded fix loop"])
+  REVIEW_ROUTER -->|BLOCKED| BLOCKED_OUT(["Blocked: return reviewer status, reason, and comment if available"])
+  REVIEW_ROUTER -->|PASS| FIELD_ROUTER["Route by REVIEW_STATUS, Comment mode, and POST_ALLOWED before output"]
 
-  MODE_DECISION -->|draft or unknown| DRAFT_READY_MODE{"Comment mode=Ready to post?"}
-  DRAFT_READY_MODE -->|yes| READY_TO_POST_OUT(["Ready to post: return Refinement review complete with Mode, Status, and Comment"])
-  DRAFT_READY_MODE -->|no| DRAFT_OUT(["Draft: return Refinement review complete with Mode, Status, and Comment"])
-  MODE_DECISION -->|post-comment requested| POST_ALLOWED_GATE{"POST_ALLOWED=yes?"}
-  POST_ALLOWED_GATE -->|yes| POST_AVAILABLE{"Posting available?"}
-  POST_ALLOWED_GATE -->|no| RETURN_REVIEWER_MODE(["Return reviewer Mode, Status, and Comment without posting"])
-  POST_AVAILABLE -->|yes| POST_COMMENT["Post only the returned refinement comment"]
+  FIELD_ROUTER --> COORDINATOR_KEEP["Coordinator retains only verdict fields and final comment; raw payloads and long analysis stay out of coordinator context"]
+  COORDINATOR_KEEP --> MODE_DECISION{"WRITE_MODE?"}
+
+  MODE_DECISION -->|draft or unknown| DRAFT_MODE{"Comment mode?"}
+  DRAFT_MODE -->|Draft| DRAFT_OUT(["Draft: return Mode, REVIEW_STATUS, final comment, and validation summary"])
+  DRAFT_MODE -->|Ready to post| READY_TO_POST_OUT(["Ready to post: return Mode, REVIEW_STATUS, final comment, and validation summary"])
+  DRAFT_MODE -->|Blocked| BLOCKED_OUT
+  DRAFT_MODE -->|Deferred| DEFERRED_OUT(["Deferred: return reason, status, final comment if available, and no tracker mutation"])
+
+  MODE_DECISION -->|post-comment| POST_ALLOWED_GATE{"POST_ALLOWED=yes?"}
+  POST_ALLOWED_GATE -->|no| RETURN_REVIEWER_MODE["Do not post; return reviewer Comment mode, REVIEW_STATUS, final comment, and reason"]
+  RETURN_REVIEWER_MODE --> DRAFT_MODE
+  POST_ALLOWED_GATE -->|yes| POST_AVAILABLE{"Posting tooling available?"}
   POST_AVAILABLE -->|no| READY_TO_POST_OUT
-  POST_COMMENT --> POSTED_OUT(["Posted: return Refinement review complete with Mode, Status, and Comment"])
+  POST_AVAILABLE -->|yes| POST_COMMENT["Post exactly the returned final comment once; do not edit, expand, retry into duplicates, or mutate other tracker fields"]
+  POST_COMMENT --> POST_SUCCESS{"Post succeeded?"}
+  POST_SUCCESS -->|yes| POSTED_OUT(["Posted: return Mode=Posted, REVIEW_STATUS, posted comment, and validation summary"])
+  POST_SUCCESS -->|no| POST_FAIL(["Blocked or Ready to post: return post failure reason, exact unposted comment, and no retry side effect"])
+
+  class SOURCE_AVAILABLE,MUTATION_ONLY,POST_INTENT,POST_PRECHECK,ACCESS_GATE,TECH_CLAIMS,CLAIMS_SUPPORTED,SENSITIVE_REC,APPROVAL_AVAILABLE,QUALITY_PASS,FIX_COUNT,REVIEW_ROUTER,MODE_DECISION,DRAFT_MODE,POST_ALLOWED_GATE,POST_AVAILABLE,POST_SUCCESS decision;
+  class ROLE_BOUNDARY,CLASSIFY_EVIDENCE,REVIEW_POLICY,READINESS_CHECKS,VERIFY_CLAIMS,QUALITY_CHECK,FIELD_ROUTER,COORDINATOR_KEEP check;
+  class ASK_SOURCE,ASK_POSTING,ASK_OR_DEFER human;
+  class SNAPSHOT,DISPATCH,ASSEMBLE_COMMENT,REVIEW_RETURN,RETURN_REVIEWER_MODE,POST_COMMENT output;
+  class DRAFT_OUT,READY_TO_POST_OUT,POSTED_OUT success;
+  class DEFER_MUTATION,DEFERRED_OUT refine;
+  class BLOCKED_SOURCE,BLOCKED_POSTING,BLOCKED_ACCESS,ERROR_OUT,FAIL_OUT,BLOCKED_OUT,POST_FAIL stop;
 
   classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
   classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
   classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
   classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
-
-  class SOURCE_AVAILABLE,MUTATION_ONLY,POSTING_CLARITY,ACCESS_OK,TECH_CLAIMS,SENSITIVE_REC,APPROVAL_AVAILABLE,QUALITY_PASS,MODE_DECISION,DRAFT_READY_MODE,POST_ALLOWED_GATE,POST_AVAILABLE decision;
-  class REVIEWER_POLICY,READINESS_CHECKS,VERIFY_CLAIMS,QUALITY_CHECK,FIX_CYCLE check;
-  class ASK_SOURCE,ASK_POSTING,ASK_APPROVAL human;
-  class INTAKE,WRITE_INTENT,COLLECT_POINTERS,DISPATCH,CLASSIFY,ASSEMBLE_COMMENT,REVIEW_RETURN,COORDINATOR_KEEP,INCLUDE_REC,NEUTRALIZE_REC,POST_COMMENT guard;
-  class DRAFT_OUT,READY_TO_POST_OUT,POSTED_OUT,RETURN_REVIEWER_MODE output;
-  class DEFER_MUTATION refine;
-  class BLOCKED_SOURCE,BLOCKED_POSTING,BLOCKED_ACCESS stop;
 ```
 
-Readiness rule: the workflow completes only as `Draft`, `Ready to post`, `Posted`, `Blocked`, or `Deferred` after the reviewer returns a compact verdict and final comment, quality validation passes or safe failure handling is reported, and the coordinator returns only retained verdict fields plus the final comment. Posting requires explicit posting intent, available tooling, and `POST_ALLOWED=yes`; otherwise the coordinator must not mutate the tracker.
+Readiness rule: the workflow completes only as `Draft`, `Ready to post`, `Posted`, `Blocked`, or `Deferred`. Completion requires a compact reviewer verdict, explicit routing by `REVIEW`, `REVIEW_STATUS`, `Comment mode`, and `POST_ALLOWED`, and either a passing quality checklist or safe terminal handling for `FAIL`, `ERROR`, blocked access, or posting failure. Posting may happen only once, only for the exact reviewer-returned final comment, and only when `WRITE_MODE=post-comment`, posting tooling is available, and `POST_ALLOWED=yes`.
