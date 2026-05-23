@@ -18,6 +18,7 @@ Groups:
   Message: <proposed commit message>
   Verification: <smallest meaningful check or not-run reason>
   Staging notes: <file-level staging or exact mixed-hunk caution>
+  Scope gate: none | G_SCOPE_EXPANSION | G_IN_SCOPE_OMISSION
   Risk notes: none | <concise risk>
 
 Reason: none | <why status is not PASS>
@@ -27,6 +28,11 @@ Decision needed: none | <smallest user decision or orchestrator action>
 A valid group has a single reviewer-facing reason, a specific message, the
 smallest meaningful verification, and a staging note that the executor can act
 on without ambiguity.
+
+Use `G_SCOPE_EXPANSION` when a group needs paths outside `CHANGE_PATHS`. Use
+`G_IN_SCOPE_OMISSION` when the plan intentionally leaves meaningful in-scope
+changes uncommitted. The orchestrator asks the human gate question; this planner
+only names the required gate and the exact decision needed.
 
 ## Examples
 
@@ -43,6 +49,7 @@ Groups:
   Message: fix(checkout): retry failed payment confirmation
   Verification: npm test -- checkout
   Staging notes: file-level staging is sufficient
+  Scope gate: none
   Risk notes: retry behavior changes payment confirmation timing
 
 Reason: none

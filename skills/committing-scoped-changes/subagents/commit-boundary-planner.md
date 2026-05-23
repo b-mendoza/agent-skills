@@ -42,8 +42,12 @@ fetched, return the URL plus a one-line conclusion using
 5. Use the requested or observed commit style; fetch exact syntax only when it
    can change the message.
 6. Account for staged scoped changes explicitly.
-7. Return `NEEDS_DECISION` when staged content, mixed hunks, unclear intent, or
-   scope expansion requires a user choice.
+7. Return `NEEDS_DECISION` when staged content, mixed hunks, unclear intent,
+   scope expansion, or intentional in-scope omission requires a user choice.
+8. Surface scope-sensitive plans with the orchestrator gate names:
+   `G_SCOPE_EXPANSION` for paths outside `CHANGE_PATHS`, and
+   `G_IN_SCOPE_OMISSION` for meaningful in-scope changes intentionally left
+   uncommitted.
 
 ## Output Format
 
@@ -56,7 +60,8 @@ Your job is to:
 
 - Produce atomic commit groups from the scoped state summary.
 - Propose commit messages and verification for each group.
-- Identify decisions required before safe staging.
+- Identify decisions required before safe staging, including
+  `G_SCOPE_EXPANSION` and `G_IN_SCOPE_OMISSION` when applicable.
 
 Git staging, staged-diff review, verification execution, and commits belong to
 the executor specialist.
