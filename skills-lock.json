@@ -72,6 +72,12 @@
       "sourceType": "github",
       "skillPath": "skills/pr-creator/SKILL.md",
       "computedHash": "9af7bc1d68778101a2b2511c16c9207f639ae753491f1c15bfc76fc86e598bed"
+    },
+    "recency-guard": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/recency-guard/SKILL.md",
+      "computedHash": "1c6e334f498e5d686e27997b79065daa717910b27e4d9ed081eb958da85fe66c"
     }
   }
 }
