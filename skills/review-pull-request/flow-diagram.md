@@ -14,15 +14,15 @@ flowchart TD
   ONE_PR -->|none| FAIL_INPUT([Terminal: needs context])
 
   NORMALIZE --> PLAYBOOK["Load review-workflow-playbook.md"]
-  PLAYBOOK --> LARGE{"Large review requires proceed confirmation?"}
-  LARGE -->|yes| ASK_PROCEED["Ask user whether to proceed"]
-  ASK_PROCEED --> PROCEED{"Proceed approved?"}
-  PROCEED -->|no| FAIL_LARGE([Terminal: large review not approved])
-  PROCEED -->|yes| CONTEXT["Dispatch pr-context-collector"]
-  LARGE -->|no| CONTEXT
+  PLAYBOOK --> CONTEXT["Dispatch pr-context-collector"]
 
   CONTEXT --> CONTEXT_STATUS{"CONTEXT status"}
   CONTEXT_STATUS -->|CONTEXT: PASS| FINDINGS["Dispatch finding-reviewer"]
+  CONTEXT_STATUS -->|CONTEXT: LARGE_REVIEW_CONFIRMATION_REQUIRED| ASK_PROCEED["Ask user whether to proceed with large review"]
+  ASK_PROCEED --> PROCEED{"Proceed approved?"}
+  PROCEED -->|no| FAIL_LARGE([Terminal: large review not approved])
+  PROCEED -->|yes| CONTEXT_APPROVED["Dispatch pr-context-collector with LARGE_REVIEW_APPROVED=true"]
+  CONTEXT_APPROVED --> CONTEXT_STATUS
   CONTEXT_STATUS -->|auth or not found| FAIL_CONTEXT([Terminal: auth or not found])
   CONTEXT_STATUS -->|needs context or error| FAIL_CONTEXT2([Terminal: needs context or review error])
 
@@ -69,8 +69,8 @@ flowchart TD
   POST_STATUS -->|POST: PASS| SUCCESS_POSTED([Success: verified review posted to GitHub])
   POST_STATUS -->|post error| FAIL_POST([Terminal: post error])
 
-  class ONE_PR,CHOSEN,LARGE,PROCEED,CONTEXT_STATUS,FINDINGS_STATUS,RETRY_FINDINGS_STATUS,VERIFY_ROUTE,COMMENTS_STATUS,RETRY_COMMENTS_STATUS,VERIFY_STATUS,REPAIR_GATE,WRITE_STATUS,POST_MODE,APPROVED,POST_STATUS decision;
-  class PLAYBOOK,CONTEXT,FINDINGS,COMMENTS,VERIFY,WRITE,POST,NARROW_CONTEXT,RETRY_FINDINGS,COLLECT_METADATA,RETRY_COMMENTS,REPAIR check;
+  class ONE_PR,CHOSEN,PROCEED,CONTEXT_STATUS,FINDINGS_STATUS,RETRY_FINDINGS_STATUS,VERIFY_ROUTE,COMMENTS_STATUS,RETRY_COMMENTS_STATUS,VERIFY_STATUS,REPAIR_GATE,WRITE_STATUS,POST_MODE,APPROVED,POST_STATUS decision;
+  class PLAYBOOK,CONTEXT,CONTEXT_APPROVED,FINDINGS,COMMENTS,VERIFY,WRITE,POST,NARROW_CONTEXT,RETRY_FINDINGS,COLLECT_METADATA,RETRY_COMMENTS,REPAIR check;
   class ASK_PR,ASK_PROCEED,APPROVAL human;
   class LOCAL_REVIEW,PREVIEW output;
   class SUCCESS_DRAFT,SUCCESS_POSTED success;
