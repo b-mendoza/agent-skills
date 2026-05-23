@@ -49,6 +49,9 @@ Or: `Suggestion: none`
 
 ## No Findings
 
+Use `approve` when residual risks do not block approval; otherwise use `comment`
+so the review can report residual risks without approving the pull request.
+
 ```markdown
 # PR <number> Review
 
@@ -60,7 +63,7 @@ No findings.
 
 ## Review Decision
 
-approve/comment because <short rationale>.
+<approve | comment> because <short rationale>.
 
 ## Residual Risks
 
