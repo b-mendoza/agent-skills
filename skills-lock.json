@@ -60,6 +60,12 @@
       "sourceType": "github",
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
       "computedHash": "eea82ead1cabc00f94ab157b8d1105239a0b49934e5c38eabb9e5428fb129c6a"
+    },
+    "generate-handoff-document": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/generate-handoff-document/SKILL.md",
+      "computedHash": "c52fa77b0b70d559fa0fa5960317c7270547be947308f3b65d2d168990a872f6"
     }
   }
 }
