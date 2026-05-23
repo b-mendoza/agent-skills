@@ -56,12 +56,19 @@ Read a subagent file only when dispatching that phase.
 1. Normalize inputs inline. If multiple PR URLs are present, ask which single PR
    to review before dispatching subagents.
 2. Read `./references/review-workflow-playbook.md` when beginning execution.
-3. Dispatch one phase at a time and retain only the phase status block plus the
+3. Route exact status values from `./references/status-*.md`; do not collapse
+   distinct outcomes such as `AUTH`, `NOT_FOUND`, `NEEDS_CONTEXT`, and `ERROR`.
+4. Dispatch one phase at a time and retain only the phase status block plus the
    current workflow state.
-4. Use `review-verifier` as the quality gate. Repair only the phase named by the
-   verifier and stop after the playbook's retry limit.
-5. Default to `draft-only`. Dispatch `review-poster` only after showing the exact
-   review preview and receiving explicit final approval.
+5. For `FINDINGS: NO_FINDINGS`, set a review decision candidate before
+   verification: `approve` when residual risks do not block approval; otherwise
+   `comment`.
+6. Use `review-verifier` as the quality gate. Repair only the phase named by the
+   verifier and stop after the playbook's retry limit. Route `VERIFY: NEEDS_CONTEXT`
+   to context escalation and `VERIFY: ERROR` to review error.
+7. Default to `draft-only`. Dispatch `review-poster` only after showing the exact
+   review preview and receiving explicit final approval; route each `POST:*`
+   status through the playbook.
 
 ## Review Invariants
 
