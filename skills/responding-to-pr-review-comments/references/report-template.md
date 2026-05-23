@@ -59,8 +59,12 @@ Draft reply:
   PR change log.
 - Place each draft reply inside a single blockquote so the user can copy it
   without trailing prose.
-- Preserve `requires-user-choice` posting targets verbatim. Do not silently
-  rewrite them to `review-comment-reply:<root-id>`.
+- Preserve `requires-user-choice:review-summary`,
+  `requires-user-choice:issue-comment`,
+  `requires-user-choice:unsupported-review-reply`, and
+  `requires-user-choice:unresolved-metadata` posting targets verbatim. Do not
+  silently rewrite them to `review-comment-reply:<root-id>` or invent a new
+  posting shape.
 - Cite external URLs inline next to the evidence that uses them. Do not embed
   long quotes from external pages.
 
