@@ -16,9 +16,9 @@ flowchart TD
   ASK_PR --> PRURL
   PRURL -->|yes| FETCH[Collect GitHub review comments, summaries, PR comments, reply metadata, and PR diff]
   FETCH --> DATA_OK{GitHub data available?}
-  DATA_OK -->|auth, not found, or runtime error| FAIL_DATA([PR_COMMENT_RESPONSE AUTH, NOT_FOUND, or RESPONSE_ERROR])
+  DATA_OK -->|auth, not found, or runtime error| FAIL_DATA(["PR_COMMENT_RESPONSE: AUTH | NOT_FOUND | RESPONSE_ERROR"])
   DATA_OK -->|yes| COMMENTS{In-scope comments found?}
-  COMMENTS -->|no| FAIL_NONE([PR_COMMENT_RESPONSE NO_COMMENTS])
+  COMMENTS -->|no| FAIL_NONE(["PR_COMMENT_RESPONSE: NO_COMMENTS"])
   COMMENTS -->|yes| DISPATCH[Dispatch focused subagents; keep raw payloads, diffs, long docs, and command output outside compact orchestrator state]
   DISPATCH --> CONTEXT[Inspect relevant code, PR context, existing replies, and status contracts]
   CONTEXT --> EXT_NEEDED{Need current external source for a source-backed claim?}
@@ -27,7 +27,7 @@ flowchart TD
   EXT_SOURCE --> CLASSIFY[Classify each comment with evidence, risk, action intent, support level, and draft response path]
   CLASSIFY --> USER_DECISION{Product intent or team preference decides the answer?}
   USER_DECISION -->|yes| DECISION_RETRY{Fewer than three user-decision cycles used?}
-  DECISION_RETRY -->|no| FAIL_DECISION([PR_COMMENT_RESPONSE NEEDS_USER_DECISION])
+  DECISION_RETRY -->|no| FAIL_DECISION(["PR_COMMENT_RESPONSE: NEEDS_USER_DECISION"])
   DECISION_RETRY -->|yes| ASK_DECISION[Ask one focused user question; record decision as evidence]
   ASK_DECISION --> REASSESS[Reassess only affected items with the user decision]
   REASSESS --> USER_DECISION
@@ -37,22 +37,22 @@ flowchart TD
   VERIFY_OK -->|no, with fix target| VERIFY_REPAIR{Fewer than two targeted verification fix cycles used?}
   VERIFY_REPAIR -->|yes| REPAIR[Repair only the named collector, assessor, or drafter target]
   REPAIR --> VERIFY
-  VERIFY_REPAIR -->|no| FAIL_VERIFY([PR_COMMENT_RESPONSE VERIFY_FAIL])
+  VERIFY_REPAIR -->|no| FAIL_VERIFY(["PR_COMMENT_RESPONSE: VERIFY_FAIL"])
   VERIFY_OK -->|yes| REPORT_PATH{OUTPUT_FILE known and safe to write?}
   REPORT_PATH -->|no| ASK_OUTPUT[Ask for safe OUTPUT_FILE or confirm default report path]
   ASK_OUTPUT --> REPORT_PATH
   REPORT_PATH -->|yes| WRITE_REPORT[Write verified Markdown report to OUTPUT_FILE with drafts, evidence, risks, blockers, and action intents]
   WRITE_REPORT --> WRITE_OK{Report write succeeded?}
-  WRITE_OK -->|no| FAIL_WRITE([PR_COMMENT_RESPONSE WRITE_ERROR])
+  WRITE_OK -->|no| FAIL_WRITE(["PR_COMMENT_RESPONSE: WRITE_ERROR"])
   WRITE_OK -->|yes| POST_MODE{POSTING_MODE value?}
-  POST_MODE -->|draft-only| NOT_POSTED([PR_COMMENT_RESPONSE PASS, posting not-posted])
+  POST_MODE -->|draft-only| NOT_POSTED(["PR_COMMENT_RESPONSE: PASS<br/>Posting: not-posted"])
   POST_MODE -->|post-after-confirmation| PREVIEW[Show exact final posting preview: target thread, reply text, reason, risk, reversibility, and safer draft-only alternative]
   PREVIEW --> APPROVAL{User explicitly approves exact preview?}
-  APPROVAL -->|declined| CANCELLED([PR_COMMENT_RESPONSE CANCELLED, report remains local])
+  APPROVAL -->|declined| CANCELLED(["PR_COMMENT_RESPONSE: CANCELLED<br/>Posting: cancelled"])
   APPROVAL -->|approved| POST[Post exact approved replies to supported review-comment threads; record skipped unsupported targets]
   POST --> POST_OK{Posting succeeded?}
-  POST_OK -->|yes| POSTED([PR_COMMENT_RESPONSE PASS, posting posted])
-  POST_OK -->|no| FAIL_POST([PR_COMMENT_RESPONSE POST_ERROR])
+  POST_OK -->|yes| POSTED(["PR_COMMENT_RESPONSE: PASS<br/>Posting: posted"])
+  POST_OK -->|no| FAIL_POST(["PR_COMMENT_RESPONSE: POST_ERROR"])
 
   classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
