@@ -16,11 +16,17 @@ are present.
 | ----- | -------- | ------- |
 | `PR_URL` | Yes | `https://github.com/org/repo/pull/1020` |
 | `OUTPUT_FILE` | Yes | `pr-1020-review.md` |
-| `VERIFIED_COMMENTS` | No | Comment package from `review-verifier`, or empty for summary-only/no-finding reviews |
+| `VERIFIED_COMMENTS` | No | Verified comment package from `review-verifier`; omit or leave blank for summary-only/no-finding reviews |
 | `REVIEW_DECISION` | Yes | `comment`, `request changes`, or `approve` |
 | `PREVIEW_APPROVED` | Yes | `true` |
 
 Posting is available only when `PREVIEW_APPROVED=true`.
+
+Interpret `VERIFIED_COMMENTS` this way: absent or blank means there are zero
+verified line comments and the review body comes from `OUTPUT_FILE`; when it is
+present, parse line comments only from a `Comments:` list. An empty `Comments:`
+list also means zero line comments and uses `OUTPUT_FILE` as the complete review
+body.
 
 ## Instructions
 
