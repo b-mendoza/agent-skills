@@ -12,6 +12,13 @@
 | `VERIFY: NEEDS_CONTEXT` | More source context is required before verification can finish |
 | `VERIFY: ERROR` | Unexpected verification failure |
 
+## Input Notes
+
+When `FINDINGS: NO_FINDINGS` skips comment drafting, the orchestrator supplies
+`REVIEW_DECISION_CANDIDATE` as `approve` or `comment`. `review-verifier` checks
+that candidate against residual risks and reports the verified review decision
+in the output below.
+
 ## Output Format
 
 ```text
