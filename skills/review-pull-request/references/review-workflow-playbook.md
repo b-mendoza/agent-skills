@@ -23,6 +23,7 @@ Carry this compact state between phases:
 ```text
 Inputs: PR_URL, OUTPUT_FILE, POSTING_MODE, LANGUAGE_STYLE, REVIEW_FOCUS
 Latest status: <CONTEXT | FINDINGS | COMMENTS | VERIFY | WRITE | POST block>
+Review decision candidate: none | comment | approve
 Posting: skipped | pending-confirmation | posted | cancelled | failed
 Repair cycles: <0-2>
 ```
@@ -41,9 +42,9 @@ Repair cycles: <0-2>
    narrow request, then retry findings once. Route retry `FINDINGS: NEEDS_CONTEXT`
    to `PR_REVIEW: NEEDS_CONTEXT`; route retry `FINDINGS: ERROR` to
    `PR_REVIEW: REVIEW_ERROR`.
-6. On `FINDINGS: NO_FINDINGS`, skip `comment-drafter` and set the review
-   decision candidate before verification: `approve` when residual risks do not
-   block approval; otherwise `comment`.
+6. On `FINDINGS: NO_FINDINGS`, skip `comment-drafter`, set
+   `REVIEW_DECISION_CANDIDATE`, and pass it to `review-verifier`: `approve` when
+   residual risks do not block approval; otherwise `comment`.
 7. Route initial `COMMENTS: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
 8. On `COMMENTS: NEEDS_METADATA`, collect only the requested line metadata and
    retry comment drafting once. Route retry `COMMENTS: NEEDS_METADATA` or
