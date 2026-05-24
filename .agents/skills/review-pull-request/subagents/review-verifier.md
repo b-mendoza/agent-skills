@@ -17,16 +17,19 @@ instructions instead of rewriting the whole review package.
 | `CONTEXT_SUMMARY` | Yes | Output from `pr-context-collector` |
 | `FINDINGS` | Yes | Output from `finding-reviewer` |
 | `DRAFT_COMMENTS` | No | Output from `comment-drafter` |
+| `REVIEW_DECISION_CANDIDATE` | No | `approve` or `comment` when `FINDINGS: NO_FINDINGS` |
 | `OUTPUT_FILE` | No | `pr-1020-review.md` |
 | `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` |
 
-`DRAFT_COMMENTS` may be absent when findings are `NO_FINDINGS`.
+`DRAFT_COMMENTS` may be absent when findings are `NO_FINDINGS`. In that case,
+`REVIEW_DECISION_CANDIDATE` is required so verification can confirm the final
+review decision instead of deriving it implicitly.
 
 ## Instructions
 
 1. Verify evidence support, line metadata, suggestion safety, severity, review
-   decision, language, and residual risks against the PR diff and repository
-   context.
+   decision, `REVIEW_DECISION_CANDIDATE` when present, language, and residual
+   risks against the PR diff and repository context.
 2. Load `../references/external-review-resources.md` only when an exact rule is
    uncertain. Fetch one URL at a time and cite only applied URLs.
 3. Reject vague findings, approximate line targets, unsafe suggestions,
