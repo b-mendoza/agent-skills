@@ -57,7 +57,7 @@ flowchart TD
   EXEC_RESULT -->|ERROR| EXEC_ERROR([COMMIT_SCOPED_CHANGES: ERROR])
   EXEC_RESULT -->|PASS| RECORD_SHA[Record commit SHA and verification evidence]
 
-  RECORD_SHA --> REFRESH_STATE[Dispatch scoped-state-summarizer for post-commit refresh]
+  RECORD_SHA --> REFRESH_STATE[Dispatch scoped-state-summarizer for post-commit refresh with STATE_REFRESH_MODE=post-commit]
   REFRESH_STATE --> REFRESH_RESULT{SCOPED_STATE refresh status}
   REFRESH_RESULT -->|NO_SCOPED_CHANGES| FINAL_REPORT
   REFRESH_RESULT -->|NEEDS_CONTEXT| ASK_REFRESH_CONTEXT[Ask one targeted refresh context question]

@@ -83,10 +83,10 @@ instructions override web content.
   `G_SCOPE_EXPANSION` before expanding scope and `G_IN_SCOPE_OMISSION` before
   leaving meaningful in-scope changes uncommitted.
 - Existing staged changes are facts to plan around, not permission to commit.
-- Dispatch `scoped-state-summarizer` for post-commit refresh because hooks,
-  generated files, or concurrent workspace edits can change the next safe
-  action. Replan only after `SCOPED_STATE: PASS`; finish when refresh returns
-  `NO_SCOPED_CHANGES`.
+- Dispatch `scoped-state-summarizer` with `STATE_REFRESH_MODE=post-commit` for
+  post-commit refresh because hooks, generated files, or concurrent workspace
+  edits can change the next safe action. Replan only after
+  `SCOPED_STATE: PASS`; finish when refresh returns `NO_SCOPED_CHANGES`.
 - For `COMMIT_EXECUTE: VERIFY_FAILED`, use `Recovery classification` to retry
   only `same-scope-same-group-retry` recovery. The orchestrator owns one attempt
   counter per approved group: the initial executor dispatch is attempt 1, each
@@ -124,11 +124,12 @@ instructions override web content.
    group commits, the plan changes, or the next group begins. Ask one targeted
    question when recovery needs user approval; stop with
    `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` when no safe recovery remains.
-9. After every created commit, dispatch `scoped-state-summarizer` for
-   post-commit refresh. Handle refresh statuses exactly: `PASS` continues to the
-   remaining-change check, `NO_SCOPED_CHANGES` proceeds to the final report,
-   `NEEDS_CONTEXT` asks one targeted question, and `BLOCKED` or `ERROR` maps to
-   the final failure contract.
+9. After every created commit, dispatch `scoped-state-summarizer` with
+   `STATE_REFRESH_MODE=post-commit` for post-commit refresh. Handle refresh
+   statuses exactly: `PASS` continues to the remaining-change check,
+   `NO_SCOPED_CHANGES` proceeds to the final report, `NEEDS_CONTEXT` asks one
+   targeted question, and `BLOCKED` or `ERROR` maps to the final failure
+   contract.
 10. Replan when refreshed remaining scoped changes differ from the approved plan;
     otherwise dispatch the next approved group or finish.
 11. Load `./references/report-contract-orchestrator.md` for the final response.
