@@ -86,7 +86,7 @@ instructions override web content.
 - Dispatch `scoped-state-summarizer` for post-commit refresh because hooks,
   generated files, or concurrent workspace edits can change the next safe
   action. Replan only after `SCOPED_STATE: PASS`; finish when refresh returns
-  `NO_SCOPED_CHANGES` and no approved groups remain.
+  `NO_SCOPED_CHANGES`.
 - For `COMMIT_EXECUTE: VERIFY_FAILED`, use `Recovery classification` to retry
   only same-scope, same-group recovery under three attempts. If recovery needs a
   user decision, ask one targeted question; otherwise return
