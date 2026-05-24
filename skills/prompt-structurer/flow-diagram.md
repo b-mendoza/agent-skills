@@ -53,4 +53,20 @@ flowchart TD
 
   OUTPUT --> NOTES["Assembly notes: assumptions, omitted sections, resources fetched, web approval or local-only fallback, follow-ups"]
   NOTES --> DONE([PASS])
+
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
+  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
+
+  class HAVE_PROMPT,CONTRADICTION,WEB_NEED,SELECT,REV_SCOPE,PASSES,REPAIR decision;
+  class WEB_APPROVAL human;
+  class INTAKE,WEB_FETCH,LOCAL_ONLY,LIGHT,FULL,SUITE,SUITE_CTX,REVISION,AFFECTED,P1L,P6L,P1F,P2,P3,P4,P5,P6F,P6R,FIX,CHECK check;
+  class OUTPUT,NOTES output;
+  class DONE success;
+  class BLOCKED,FAIL,REV_ESCALATE stop;
+  class REPAIR_NEEDED refine;
 ```
