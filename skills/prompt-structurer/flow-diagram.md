@@ -70,3 +70,5 @@ flowchart TD
   class BLOCKED,FAIL,REV_ESCALATE stop;
   class REPAIR_NEEDED refine;
 ```
+
+Completion rule: return `PASS` only when the XML prompt is assembled and success criteria pass; return `BLOCKED`, `FAIL`, `ERROR`, or `repair-needed` when required input, contradictions, unexpected failures, or unresolved failed checks prevent a final contract. Web fetches and revision mutations are sensitive: use local references first, fetch only after approval when needed or requested, record fetched resources or local-only fallback in assembly notes, and keep revision changes inside `CHANGE_REQUEST`.
