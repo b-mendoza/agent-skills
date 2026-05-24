@@ -95,4 +95,22 @@ flowchart TD
   AUDIT_FAIL --> HANDOFF
   AUDIT_BLOCKED --> HANDOFF
   AUDIT_ERROR --> HANDOFF
+
+  class PLAN_AUTH,ORIGIN,ANSWER_AUTH,OUTPUT_AUTH,EXTERNAL_CHECK,SNAP_OK,SNAP_RETRY_OK,REQ_OK,REQ_RETRY_OK,TECH_EVIDENCE,TECH_OK,TECH_RETRY_OK,MALFORMED,RETRY_OK,ASSUMPTIONS,ASM_ANSWER_AUTH,HARD_GATES,REPORT_OK,REPORT_RETRY_OK,STATUS decision;
+  class LOAD_TRUST,SNAPSHOT,EXTRACT,TECH,REQ_AUDIT,YAGNI_AUDIT,ASM_AUDIT,VALIDATE_OUTPUTS,ANNOTATE check;
+  class ASK_ORIGIN,ASK_ASSUMPTIONS human;
+  class SET_PATHS,RECORD_ORIGIN,RECORD_ANSWERS,CONTINUE_WITH_GAP,SKIP_TECH,RERUN_NEEDED output;
+  class HANDOFF output;
+  class AUDIT_PASS success;
+  class AUDIT_FAIL,AUDIT_BLOCKED refine;
+  class AUDIT_ERROR stop;
+
+  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
