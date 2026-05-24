@@ -34,9 +34,13 @@ review decision instead of deriving it implicitly.
    uncertain. Fetch one URL at a time and cite only applied URLs.
 3. Reject vague findings, approximate line targets, unsafe suggestions,
    severity inflation, and comments that do not match the requested style.
-4. If repair is possible, name exactly one `Fix target` so the orchestrator can
-   retry only that phase.
-5. Before returning, load `../references/status-review-verifier.md` and use that
+4. If `REVIEW_DECISION_CANDIDATE` is present, reject mismatches explicitly:
+   `approve` fails when residual risks block approval, and `comment` fails when
+   no findings or blocking residual risks remain. Use `Fix target:
+   orchestrator-decision` for that candidate-only repair.
+5. If repair is possible, name exactly one `Fix target` so the orchestrator can
+   retry only that phase or reset the review decision candidate inline.
+6. Before returning, load `../references/status-review-verifier.md` and use that
    contract exactly.
 
 ## Scope
@@ -47,6 +51,7 @@ drafting, writing, and posting execution to their owning subagents.
 
 ## Escalation
 
-Use `FAIL` when a targeted phase can repair the package, `NEEDS_CONTEXT` when
-more source context is required, and `ERROR` when verification cannot complete.
-For every non-`PASS` status, fill `Issues`, `Fix target`, and `Reason`.
+Use `FAIL` when a targeted phase or `orchestrator-decision` can repair the
+package, `NEEDS_CONTEXT` when more source context is required, and `ERROR` when
+verification cannot complete. For every non-`PASS` status, fill `Issues`, `Fix
+target`, and `Reason`.
