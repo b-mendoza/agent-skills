@@ -55,4 +55,21 @@ flowchart TD
   REPORT_CHECKLIST --> FINAL
   REPORT_QUESTIONS --> FINAL
   PARTIAL_REPORT --> PARTIAL_FINAL([Complete: partial reviewed report with limitations])
+
+  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
+
+  class CHECK_REQUIRED,SOURCE_OK,UNSUPPORTED,USER_VERIFY,PASSES,FIX_CYCLES,LIMITATION_STATE,MODE decision;
+  class NORMALIZE,INTAKE,LIMITS,MAP,TAILOR,LABEL,REVIEW,RERUN,INCLUDE_CONFIRMED,EXCLUDE_UNVERIFIED check;
+  class ASK_REQUIRED,QUESTIONS guard;
+  class USER_VERIFY human;
+  class REPORT_REVIEW,REPORT_REWRITE,REPORT_CHECKLIST,REPORT_QUESTIONS,PARTIAL_REPORT output;
+  class FINAL,PARTIAL_FINAL success;
+  class BLOCKED_MISSING,BLOCKED_EVIDENCE,BLOCKED_RISK,BLOCKED_VERIFY,PHASE_ERROR stop;
 ```
