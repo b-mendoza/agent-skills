@@ -84,7 +84,7 @@ flowchart TD
   POST_MODE -->|"no"| SUCCESS_DRAFT([Success: verified draft saved locally])
   POST_MODE -->|"yes"| APPROVAL["Ask for explicit final approval to post the exact verified preview"]
   APPROVAL --> APPROVED{"Exact preview approved?"}
-  APPROVED -->|"declined"| SUCCESS_DRAFT
+  APPROVED -->|"declined"| SUCCESS_CANCELLED([Success: verified draft saved locally; posting cancelled])
   APPROVED -->|"approved"| POST["Dispatch review-poster"]
 
   POST --> POST_STATUS{"review-poster status"}
@@ -98,7 +98,7 @@ flowchart TD
   class CONTRACTS,CONTEXT,CONTEXT_APPROVED,FINDINGS,NARROW_CONTEXT,NARROW_CONTEXT_APPROVED,RETRY_FINDINGS,COMMENTS,COLLECT_METADATA,RETRY_COMMENTS,NO_FINDING_DECISION,VERIFY,REPAIR,WRITE,POST check;
   class ASK_PR,ASK_LARGE,ASK_NARROW_LARGE,APPROVAL human;
   class LOCAL_REVIEW,PREVIEW output;
-  class SUCCESS_DRAFT,SUCCESS_POSTED success;
+  class SUCCESS_DRAFT,SUCCESS_CANCELLED,SUCCESS_POSTED success;
   class FAIL_CANCELLED,FAIL_INPUT,FAIL_LARGE,FAIL_AUTH,FAIL_NOT_FOUND,FAIL_CONTEXT,FAIL_CONTEXT_ERROR,FAIL_FINDINGS_ERROR,FAIL_COMMENTS_ERROR,FAIL_VERIFY_CONTEXT,FAIL_VERIFY_ERROR,FAIL_VERIFY,FAIL_WRITE,FAIL_POST_PREVIEW,FAIL_POST_AUTH,FAIL_POST_METADATA,FAIL_POST_ERROR stop;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
   classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
