@@ -34,10 +34,10 @@ flowchart TD
   PLAN_RESULT -->|PASS| APPROVE_GROUPS[Use approved commit groups, messages, and verification checks]
 
   APPROVE_GROUPS --> G_SCOPE_EXPANSION{G_SCOPE_EXPANSION: plan includes paths outside CHANGE_PATHS?}
+  G_SCOPE_EXPANSION -->|no| G_IN_SCOPE_OMISSION{G_IN_SCOPE_OMISSION: meaningful in-scope changes omitted?}
   G_SCOPE_EXPANSION -->|yes| HUMAN_EXPAND[Human gate: target extra paths, reason, risk, reversibility, safer alternative]
   HUMAN_EXPAND -->|approved| G_IN_SCOPE_OMISSION
   HUMAN_EXPAND -->|declined| SCOPE_DECLINED([COMMIT_SCOPED_CHANGES: BLOCKED])
-  G_SCOPE_EXPANSION -->|no| G_IN_SCOPE_OMISSION{G_IN_SCOPE_OMISSION: meaningful in-scope changes omitted?}
 
   G_IN_SCOPE_OMISSION -->|yes| HUMAN_OMIT[Human gate: target omitted changes, reason, risk, reversibility, safer alternative]
   HUMAN_OMIT -->|approved| COMMIT_NEXT
