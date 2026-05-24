@@ -7,12 +7,6 @@
       "skillPath": "plugins/developer-essentials/skills/code-review-excellence/SKILL.md",
       "computedHash": "0f585a4ad2f6d8353069ca9051c6f0e8865abb9d3a6a268d423784c3c3852962"
     },
-    "commit-work": {
-      "source": "softaworks/agent-toolkit",
-      "sourceType": "github",
-      "skillPath": "skills/commit-work/SKILL.md",
-      "computedHash": "88cec816d028de357ae7ede3ace36a2bc235a225e3e7d2bb18cdb5190ab6c482"
-    },
     "committing-scoped-changes": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
