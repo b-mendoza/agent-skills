@@ -73,3 +73,5 @@ flowchart TD
   class FINAL,PARTIAL_FINAL success;
   class BLOCKED_MISSING,BLOCKED_EVIDENCE,BLOCKED_RISK,BLOCKED_VERIFY,PHASE_ERROR stop;
 ```
+
+Completion rule: finish with a final reviewed report, a blocked missing-source request, a partial reviewed report with labeled limitations, a phase error, or a blocker after three failed targeted fix cycles.
