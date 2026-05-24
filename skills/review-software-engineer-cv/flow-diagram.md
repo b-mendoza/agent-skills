@@ -75,3 +75,5 @@ flowchart TD
 ```
 
 Completion rule: finish with a final reviewed report, a blocked missing-source request, a partial reviewed report with labeled limitations, a phase error, or a blocker after three failed targeted fix cycles.
+
+Sensitive-action rule: any recommendation or rewrite that would publish a candidate claim must be supported by the CV, applicant context, or job posting; otherwise it must be confirmed by the user, excluded, kept as a verification question, or handed off as unresolved rather than asserted.
