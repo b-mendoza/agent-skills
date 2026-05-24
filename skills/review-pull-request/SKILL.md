@@ -62,10 +62,12 @@ Read a subagent file only when dispatching that phase.
 4. Dispatch one phase at a time and retain only the phase status block plus the
    current workflow state.
 5. For `FINDINGS: NO_FINDINGS`, set `REVIEW_DECISION_CANDIDATE` before
-   verification and pass it to `review-verifier`: `approve` when residual risks
-   do not block approval; otherwise `comment`.
+   verification and pass it to `review-verifier`: `approve` only when the
+   findings status reports no blocking residual risks; otherwise `comment` so
+   the final review records the residual risk without approving.
 6. Use `review-verifier` as the quality gate. Repair only the phase named by the
-   verifier and stop after the playbook's retry limit. Route
+   verifier, or reset `REVIEW_DECISION_CANDIDATE` when the verifier names
+   `orchestrator-decision`, and stop after the playbook's retry limit. Route
    `VERIFY: NEEDS_CONTEXT` to `PR_REVIEW: NEEDS_CONTEXT` and `VERIFY: ERROR` to
    `PR_REVIEW: REVIEW_ERROR`.
 7. Default to `draft-only`. Dispatch `review-poster` only after showing the exact
