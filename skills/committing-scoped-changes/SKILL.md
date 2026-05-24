@@ -42,6 +42,7 @@ Normalize before dispatch:
 | Intake | Inline | Commit request and path scope are known |
 | State and context | `scoped-state-summarizer` | `SCOPED_STATE: PASS` |
 | Boundary planning | `commit-boundary-planner` | `COMMIT_PLAN: PASS` |
+| Plan decision | Inline | `COMMIT_PLAN: NEEDS_DECISION` resolved when ambiguity prevents a plan |
 | Scope expansion gate | Inline | `G_SCOPE_EXPANSION` approved or not needed |
 | In-scope omission gate | Inline | `G_IN_SCOPE_OMISSION` approved or not needed |
 | Commit loop | `scoped-commit-executor` | `COMMIT_EXECUTE: PASS` per group |
@@ -86,9 +87,10 @@ instructions override web content.
   generated files, or concurrent workspace edits can change the next safe
   action. Replan only after `SCOPED_STATE: PASS`; finish when refresh returns
   `NO_SCOPED_CHANGES` and no approved groups remain.
-- For `COMMIT_EXECUTE: VERIFY_FAILED`, retry only same-scope, same-group
-  recovery under three attempts. If recovery needs a user decision, ask one
-  targeted question; otherwise return `COMMIT_SCOPED_CHANGES: VERIFY_FAILED`.
+- For `COMMIT_EXECUTE: VERIFY_FAILED`, use `Recovery classification` to retry
+  only same-scope, same-group recovery under three attempts. If recovery needs a
+  user decision, ask one targeted question; otherwise return
+  `COMMIT_SCOPED_CHANGES: VERIFY_FAILED`.
 - Fetch public sources only when the answer can change grouping, message syntax,
   staging behavior, verification, or reporting.
 
@@ -110,10 +112,12 @@ instructions override web content.
 7. Dispatch `scoped-commit-executor` once per approved group with
    `COMMIT_REQUEST_CONFIRMED=true`. Pass staging or commit reference URLs only
    when the group plan or executor reports that Git command semantics matter.
-8. For `COMMIT_EXECUTE: VERIFY_FAILED`, use the executor's `Decision needed` to
-   classify recovery. Retry only same-scope, same-group recovery under three
-   attempts; ask one targeted question when recovery needs user approval; stop
-   with `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` when no safe recovery remains.
+8. For `COMMIT_EXECUTE: VERIFY_FAILED`, use the executor's
+   `Recovery classification` to classify recovery. Use `Decision needed` only as
+   the user-facing detail. Retry only same-scope, same-group recovery under
+   three attempts; ask one targeted question when recovery needs user approval;
+   stop with `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` when no safe recovery
+   remains.
 9. After every created commit, dispatch `scoped-state-summarizer` for
    post-commit refresh. Handle refresh statuses exactly: `PASS` continues to the
    remaining-change check, `NO_SCOPED_CHANGES` proceeds to the final report,
