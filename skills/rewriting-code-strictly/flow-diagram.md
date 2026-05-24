@@ -98,3 +98,5 @@ flowchart TD
   class PASS,NO_CHANGE success;
   class NEEDS_CLARIFICATION,BLOCKED,ERROR,BASELINE_BLOCKED,BASELINE_ERROR,EXT_DECLINED,STRATEGY_BLOCKED,STRATEGY_ERROR,IMPLEMENT_BLOCKED,IMPLEMENT_ERROR,VALIDATE_DECLINED,REVIEW_BLOCKED,REVIEW_ERROR stop;
 ```
+
+Readiness rule: the workflow reaches `PASS` only after the reviewer verifies behavior preservation, approved-scope compliance, strictness decisions, changed paths or rewritten code, validation evidence, assumptions, risks, and references. External fetches and validation execution must be pre-approved by provided inputs or project authority, or must pass an explicit approve/decline gate with audit notes; declined sensitive actions become `NEEDS_CLARIFICATION` or `BLOCKED`. The workflow reaches `NO_CHANGE` only from the strategist before edits. Reviewer failures may trigger at most two targeted implementer repair cycles; unresolved findings become `BLOCKED` or `ERROR` with the smallest safe recovery.
