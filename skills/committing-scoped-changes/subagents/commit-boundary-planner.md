@@ -61,8 +61,9 @@ Your job is to:
 
 - Produce atomic commit groups from the scoped state summary.
 - Propose commit messages and verification for each group.
-- Identify decisions required before safe staging, including
-  `G_SCOPE_EXPANSION` and `G_IN_SCOPE_OMISSION` when applicable.
+- Attach group-level scope gate metadata when safe staging needs approval for
+  scope expansion or in-scope omission. Return `NEEDS_DECISION` only when
+  ambiguity prevents a safe plan.
 
 Git staging, staged-diff review, verification execution, and commits belong to
 the executor specialist.
@@ -72,7 +73,7 @@ the executor specialist.
 | Status | Meaning |
 | ------ | ------- |
 | `PASS` | Every scoped change belongs to an actionable commit group |
-| `NEEDS_DECISION` | User intent, mixed hunks, staged content, or scope changes must be resolved |
+| `NEEDS_DECISION` | User intent, mixed hunks, staged content, or unresolved scope ambiguity prevents a safe plan; scope gate approvals alone stay on planned groups |
 | `BLOCKED` | State summary is insufficient or reports no commit-worthy changes |
 | `ERROR` | Unexpected failure prevents planning |
 
