@@ -30,7 +30,7 @@ If `OUTPUT_FILE` is missing, derive `pr-<number>-review.md` from `PR_URL`.
 | Phase order, repair limits, posting gate, failure envelope, final reply | `./references/review-workflow-playbook.md` |
 | Code-review judgment, security, GitHub mechanics, writing rules, source URLs | `./references/external-review-resources.md` |
 | Status contracts and phase output shapes | `./references/status-*.md` |
-| Final Markdown review artifact template | `./references/review-file-template.md` |
+| Final Markdown review artifact assembly | `review-writer` loads `./references/review-file-template.md` |
 | Phase execution details | Only the selected file under `./subagents/` |
 
 Fetch external websites only from `external-review-resources.md` or from current
