@@ -19,6 +19,13 @@ When `FINDINGS: NO_FINDINGS` skips comment drafting, the orchestrator supplies
 that candidate against residual risks and reports the verified review decision
 in the output below.
 
+Candidate mismatch is a repairable `VERIFY: FAIL`: use `Fix target:
+orchestrator-decision` when the only issue is an approval candidate that should
+be `comment` because residual risks block approval, or a comment candidate that
+should be `approve` because no findings or blocking residual risks remain. Use a
+subagent fix target only when the mismatch comes from missing context, unclear
+findings, or invalid draft comments.
+
 ## Output Format
 
 ```text
@@ -43,7 +50,7 @@ Issues:
 - <issue or none>
 
 References fetched: <URLs used, or none>
-Fix target: none | pr-context-collector | finding-reviewer | comment-drafter
+Fix target: none | orchestrator-decision | pr-context-collector | finding-reviewer | comment-drafter
 Reason: none | <why status is not PASS>
 ```
 
