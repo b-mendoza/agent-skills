@@ -88,8 +88,12 @@ instructions override web content.
   action. Replan only after `SCOPED_STATE: PASS`; finish when refresh returns
   `NO_SCOPED_CHANGES`.
 - For `COMMIT_EXECUTE: VERIFY_FAILED`, use `Recovery classification` to retry
-  only same-scope, same-group recovery under three attempts. If recovery needs a
-  user decision, ask one targeted question; otherwise return
+  only `same-scope-same-group-retry` recovery. The orchestrator owns one attempt
+  counter per approved group: the initial executor dispatch is attempt 1, each
+  same-group retry increments the counter before redispatch, the cap is three
+  executor attempts total per group, and the counter resets when the group
+  commits, the plan changes, or the next group begins. If recovery needs a user
+  decision, ask one targeted question; otherwise return
   `COMMIT_SCOPED_CHANGES: VERIFY_FAILED`.
 - Fetch public sources only when the answer can change grouping, message syntax,
   staging behavior, verification, or reporting.
@@ -114,10 +118,12 @@ instructions override web content.
    when the group plan or executor reports that Git command semantics matter.
 8. For `COMMIT_EXECUTE: VERIFY_FAILED`, use the executor's
    `Recovery classification` to classify recovery. Use `Decision needed` only as
-   the user-facing detail. Retry only same-scope, same-group recovery under
-   three attempts; ask one targeted question when recovery needs user approval;
-   stop with `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` when no safe recovery
-   remains.
+   the user-facing detail. Retry only `same-scope-same-group-retry` recovery
+   while the approved group's executor attempt counter is below three total
+   attempts; increment that counter before redispatch and reset it when the
+   group commits, the plan changes, or the next group begins. Ask one targeted
+   question when recovery needs user approval; stop with
+   `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` when no safe recovery remains.
 9. After every created commit, dispatch `scoped-state-summarizer` for
    post-commit refresh. Handle refresh statuses exactly: `PASS` continues to the
    remaining-change check, `NO_SCOPED_CHANGES` proceeds to the final report,
@@ -133,7 +139,7 @@ instructions override web content.
 | ------ | ----------- |
 | `SCOPED_STATE: NEEDS_CONTEXT`, `COMMIT_PLAN: NEEDS_DECISION` | Ask one targeted user question and redispatch the same specialist with the answer |
 | `SCOPED_STATE: NO_SCOPED_CHANGES` | Return `COMMIT_SCOPED_CHANGES: NO_SCOPED_CHANGES` before commits, or proceed to final report after post-commit refresh |
-| `COMMIT_EXECUTE: VERIFY_FAILED` | Retry only same-scope, same-group recovery under three attempts; ask one targeted recovery question when needed; otherwise return `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` |
+| `COMMIT_EXECUTE: VERIFY_FAILED` | Retry only `same-scope-same-group-retry` recovery while the approved group's executor attempt counter is below three total attempts; ask one targeted recovery question when needed; otherwise return `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` |
 | `SCOPED_STATE: BLOCKED`, `COMMIT_PLAN: BLOCKED`, `COMMIT_EXECUTE: BLOCKED` | Return `COMMIT_SCOPED_CHANGES: BLOCKED` |
 | `COMMIT_EXECUTE: COMMIT_ERROR` | Return `COMMIT_SCOPED_CHANGES: COMMIT_ERROR` |
 | `SCOPED_STATE: ERROR`, `COMMIT_PLAN: ERROR`, `COMMIT_EXECUTE: ERROR` | Return `COMMIT_SCOPED_CHANGES: ERROR` |

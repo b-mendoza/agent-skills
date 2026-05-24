@@ -46,8 +46,8 @@ flowchart TD
 
   COMMIT_NEXT --> EXEC_ACTIONS[Executor stages only group paths, reviews staged diff, runs verification, creates commit]
   EXEC_ACTIONS --> EXEC_RESULT{COMMIT_EXECUTE status}
-  EXEC_RESULT -->|VERIFY_FAILED| VERIFY_CLASSIFY{Recovery safe, same-scope, same-group, and under 3 attempts?}
-  VERIFY_CLASSIFY -->|yes| RETRY_SAME_GROUP[Retry same approved group without expanding scope]
+  EXEC_RESULT -->|VERIFY_FAILED| VERIFY_CLASSIFY{Recovery classification same-scope-same-group-retry and group attempt count below 3 total attempts?}
+  VERIFY_CLASSIFY -->|yes| RETRY_SAME_GROUP[Increment group attempt counter and retry same approved group]
   RETRY_SAME_GROUP --> COMMIT_NEXT
   VERIFY_CLASSIFY -->|no: decision needed| ASK_VERIFY[Ask one targeted recovery decision question]
   ASK_VERIFY --> WAIT_VERIFY([COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT])
@@ -102,6 +102,7 @@ Facts:
 | Scope | User-provided `CHANGE_PATHS` is the commit allow-list. |
 | Existing staged changes | Treated as facts for planning, not as permission to commit. |
 | External sources | Optional and used only when they can change a commit decision. |
+| Verification retry counter | The orchestrator owns one counter per approved group, counts the initial executor dispatch as attempt 1, increments before each same-group retry, caps at three total attempts, and resets on commit success, replan, or next group. |
 
 Assumptions:
 
@@ -116,7 +117,7 @@ Risks:
 | --- | --- |
 | Unrelated work could be staged or committed accidentally | Executor stages only approved scoped groups and reviews staged diff before commit. |
 | Hooks or generated files can change the worktree | Orchestrator dispatches `scoped-state-summarizer` for post-commit refresh and replans only after `SCOPED_STATE: PASS`. |
-| Verification recovery can repeat unsafe actions | Workflow retries only same-scope, same-group recovery under three attempts; otherwise it asks one targeted question or returns `COMMIT_SCOPED_CHANGES: VERIFY_FAILED`. |
+| Verification recovery can repeat unsafe actions | Workflow retries only `same-scope-same-group-retry` recovery while the group attempt counter is below three total attempts; otherwise it asks one targeted question or returns `COMMIT_SCOPED_CHANGES: VERIFY_FAILED`. |
 | Scope ambiguity can cause unsafe commits | Workflow separates `G_SCOPE_EXPANSION` from `G_IN_SCOPE_OMISSION` and stops for one targeted user question. |
 
 Blockers:
