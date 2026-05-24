@@ -42,9 +42,10 @@ fetched, return the URL plus a one-line conclusion using
 5. Use the requested or observed commit style; fetch exact syntax only when it
    can change the message.
 6. Account for staged scoped changes explicitly.
-7. Return `NEEDS_DECISION` when staged content, mixed hunks, unclear intent,
-   scope expansion, or intentional in-scope omission requires a user choice.
-8. Surface scope-sensitive plans with the orchestrator gate names:
+7. Return `NEEDS_DECISION` when staged content, mixed hunks, or unclear intent
+   prevents a safe plan.
+8. For scope expansion or intentional in-scope omission, return planned groups
+   with explicit scope gate names unless ambiguity prevents planning:
    `G_SCOPE_EXPANSION` for paths outside `CHANGE_PATHS`, and
    `G_IN_SCOPE_OMISSION` for meaningful in-scope changes intentionally left
    uncommitted.

@@ -18,7 +18,7 @@ Groups:
   Message: <proposed commit message>
   Verification: <smallest meaningful check or not-run reason>
   Staging notes: <file-level staging or exact mixed-hunk caution>
-  Scope gate: none | G_SCOPE_EXPANSION | G_IN_SCOPE_OMISSION
+  Scope gates: none | one or more of G_SCOPE_EXPANSION, G_IN_SCOPE_OMISSION
   Risk notes: none | <concise risk>
 
 Reason: none | <why status is not PASS>
@@ -31,8 +31,10 @@ on without ambiguity.
 
 Use `G_SCOPE_EXPANSION` when a group needs paths outside `CHANGE_PATHS`. Use
 `G_IN_SCOPE_OMISSION` when the plan intentionally leaves meaningful in-scope
-changes uncommitted. The orchestrator asks the human gate question; this planner
-only names the required gate and the exact decision needed.
+changes uncommitted. A group can name both gates when both approvals are needed.
+The orchestrator asks the human gate question; this planner names the required
+gates on the group and reserves `COMMIT_PLAN: NEEDS_DECISION` for ambiguity that
+prevents a safe plan.
 
 ## Examples
 
@@ -49,7 +51,7 @@ Groups:
   Message: fix(checkout): retry failed payment confirmation
   Verification: npm test -- checkout
   Staging notes: file-level staging is sufficient
-  Scope gate: none
+  Scope gates: none
   Risk notes: retry behavior changes payment confirmation timing
 
 Reason: none
