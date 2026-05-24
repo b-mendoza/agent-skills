@@ -90,3 +90,7 @@ flowchart TD
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
 ```
+
+Readiness rule: hand off only after validation has been run or its warning recorded and the reviewer passes, or stop with `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, or `ERROR` using the smallest stopping reason, next decision needed, validation already completed, and remaining risks.
+
+Readiness rule: hand off only after validation has been run or its warning recorded and the reviewer passes, or stop with `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, or `ERROR` using the smallest stopping reason, next decision needed, validation already completed, and remaining risks.
