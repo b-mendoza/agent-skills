@@ -23,6 +23,7 @@ References fetched: <none or concise list>
 ```text
 COMMIT_SCOPED_CHANGES: <status>
 Status values: BLOCKED | NEEDS_CONTEXT | NO_SCOPED_CHANGES | VERIFY_FAILED | COMMIT_ERROR | ERROR
+Commits created before failure: <none or compact list of sha and message>
 Reason: <one line>
 Next step: <one clear action or question>
 ```
@@ -59,6 +60,7 @@ References fetched: none
 
 <example>
 COMMIT_SCOPED_CHANGES: NO_SCOPED_CHANGES
+Commits created before failure: none
 Reason: src/payments/ has no tracked, staged, or untracked changes.
 Next step: Confirm the intended path scope or skip the commit request.
 </example>
