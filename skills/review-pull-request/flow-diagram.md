@@ -30,7 +30,7 @@ flowchart TD
 
   FINDINGS --> FINDINGS_STATUS{"finding-reviewer status"}
   FINDINGS_STATUS -->|"FINDINGS: PASS"| COMMENTS["Dispatch comment-drafter"]
-  FINDINGS_STATUS -->|"FINDINGS: NO_FINDINGS"| NO_FINDING_DECISION["Set review decision candidate: approve when residual risks do not block approval; otherwise comment"]
+  FINDINGS_STATUS -->|"FINDINGS: NO_FINDINGS"| NO_FINDING_DECISION["Set REVIEW_DECISION_CANDIDATE for verifier: approve when residual risks do not block approval; otherwise comment"]
   FINDINGS_STATUS -->|"FINDINGS: NEEDS_CONTEXT"| NARROW_CONTEXT["Dispatch pr-context-collector once with narrow context request"]
   FINDINGS_STATUS -->|"FINDINGS: ERROR"| FAIL_FINDINGS_ERROR([Terminal: PR_REVIEW: REVIEW_ERROR])
 
@@ -49,7 +49,7 @@ flowchart TD
   RETRY_FINDINGS_STATUS -->|"FINDINGS: ERROR"| FAIL_FINDINGS_ERROR
 
   COMMENTS --> COMMENTS_STATUS{"comment-drafter status"}
-  COMMENTS_STATUS -->|"COMMENTS: PASS"| VERIFY["Dispatch review-verifier"]
+  COMMENTS_STATUS -->|"COMMENTS: PASS"| VERIFY
   COMMENTS_STATUS -->|"COMMENTS: NEEDS_METADATA"| COLLECT_METADATA["Collect requested line metadata once"]
   COMMENTS_STATUS -->|"COMMENTS: ERROR"| FAIL_COMMENTS_ERROR([Terminal: PR_REVIEW: REVIEW_ERROR])
 
@@ -61,7 +61,7 @@ flowchart TD
 
   NO_FINDING_DECISION --> VERIFY
 
-  VERIFY --> VERIFY_STATUS{"review-verifier status"}
+  VERIFY["Dispatch review-verifier with findings/comments and REVIEW_DECISION_CANDIDATE when present"] --> VERIFY_STATUS{"review-verifier status"}
   VERIFY_STATUS -->|"VERIFY: PASS"| WRITE["Dispatch review-writer using ./references/review-file-template.md"]
   VERIFY_STATUS -->|"VERIFY: FAIL"| REPAIR_GATE{"Repair cycles fewer than two?"}
   VERIFY_STATUS -->|"VERIFY: NEEDS_CONTEXT"| FAIL_VERIFY_CONTEXT([Terminal: PR_REVIEW: NEEDS_CONTEXT])
