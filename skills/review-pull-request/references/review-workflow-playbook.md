@@ -59,7 +59,9 @@ Repair cycles: <0-2>
 10. Dispatch `review-writer` only after `VERIFY: PASS`; route `WRITE: ERROR` to
     `PR_REVIEW: WRITE_ERROR`.
 11. If `POSTING_MODE=post-after-confirmation`, show the exact file preview and
-    ask for final approval. Dispatch `review-poster` only after approval.
+    ask for final approval. Dispatch `review-poster` only after approval. If the
+    user declines, keep the verified draft saved locally and set posting to
+    `cancelled`.
 12. Route `POST: PASS` to posted success. Route `POST: PREVIEW_REQUIRED`,
      `POST: AUTH`, `POST: METADATA_INVALID`, and `POST: ERROR` to
      `PR_REVIEW: POST_ERROR` with the poster's `Reason` and `Next step`.
