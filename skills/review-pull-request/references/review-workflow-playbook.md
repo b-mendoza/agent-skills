@@ -41,7 +41,10 @@ Repair cycles: <0-2>
 5. On `FINDINGS: NEEDS_CONTEXT`, dispatch `pr-context-collector` once with the
    narrow request, then retry findings once. Route retry `FINDINGS: NEEDS_CONTEXT`
    to `PR_REVIEW: NEEDS_CONTEXT`; route retry `FINDINGS: ERROR` to
-   `PR_REVIEW: REVIEW_ERROR`.
+   `PR_REVIEW: REVIEW_ERROR`. If the narrow context collection returns
+   `CONTEXT: LARGE_REVIEW_CONFIRMATION_REQUIRED`, use the same approval gate as
+   rule 2 and re-dispatch the narrow request with `LARGE_REVIEW_APPROVED=true`
+   only if approved.
 6. On `FINDINGS: NO_FINDINGS`, skip `comment-drafter`, set
    `REVIEW_DECISION_CANDIDATE`, and pass it to `review-verifier`: `approve` when
    residual risks do not block approval; otherwise `comment`.
