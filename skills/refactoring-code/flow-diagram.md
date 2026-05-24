@@ -71,4 +71,22 @@ flowchart TD
   FIX_SENSITIVE -->|no| IMPLEMENT
   FIX_COUNT -->|no| UNRESOLVED([BLOCKED: unresolved review findings after two fix cycles])
 
+  class HAS_TARGET,MAP_STATUS,WEB_NEED,WEB_APPROVED,STRATEGY_STATUS,SENSITIVE_PLAN,PLAN_APPROVED,IMPLEMENT_STATUS,VALIDATION_GATE,VALIDATION_APPROVED,VALIDATION_RESULT,REVIEW_STATUS,FIX_COUNT,FIX_SENSITIVE,FIX_APPROVED decision;
+  class MAP,STRATEGY,STRATEGY_LOCAL,IMPLEMENT,RUN_VALIDATION,REVIEW,FIX_SCOPE check;
+  class WEB_GATE,PLAN_GATE,VALIDATION_APPROVAL,FIX_GATE human;
+  class BUNDLED_ONLY,VALIDATION_WARNING guard;
+  class HANDOFF output;
+  class DONE success;
+  class ASK_PATH,MAP_QUESTION,STRATEGY_QUESTION refine;
+  class NEEDS_CLARIFICATION,NO_CHANGE,BLOCKED_DECLINED,BLOCKED_IMPLEMENT,BLOCKED_VALIDATION,BLOCKED_VALIDATION_FAIL,BLOCKED_FIX,UNRESOLVED,ERROR_MAP,ERROR_STRATEGY,ERROR_IMPLEMENT,ERROR_VALIDATION,ERROR_REVIEW stop;
+
+  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
+
 ```
