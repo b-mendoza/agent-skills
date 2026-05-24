@@ -1,6 +1,6 @@
 # Review Pull Request Skill Flow
 
-This workflow reviews exactly one pull request for `skills/review-pull-request/`. The orchestrator may normalize inputs, load package contracts, coordinate phase subagents, verify evidence-backed findings and GitHub-ready comments, write a local Markdown review artifact, preview the exact verified file, and post to GitHub only after `POSTING_MODE=post-after-confirmation` plus explicit approval of that exact preview. Raw diffs, logs, API payloads, fetched pages, and large source content stay inside phase subagents.
+This workflow reviews exactly one pull request from the supplied `PR_URL`. The orchestrator may normalize inputs, load package contracts, coordinate phase subagents, verify evidence-backed findings and GitHub-ready comments, write a local Markdown review artifact, preview the exact verified file, and post to GitHub only after `POSTING_MODE=post-after-confirmation` plus explicit approval of that exact preview. Raw diffs, logs, API payloads, fetched pages, and large source content stay inside phase subagents.
 
 ```mermaid
 flowchart TD
