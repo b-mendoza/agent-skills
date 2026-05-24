@@ -114,3 +114,7 @@ flowchart TD
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
+
+Readiness rule: snapshot creation and requirement extraction are hard gates. The
+source implementation plan remains unchanged. Full audit details are written to
+the standalone report unless the user explicitly asks to see them in chat.
