@@ -13,7 +13,7 @@ flowchart TD
   ONE_PR -->|"one PR URL"| NORMALIZE
   ONE_PR -->|"no PR URL"| FAIL_INPUT([Terminal: PR_REVIEW: NEEDS_CONTEXT])
 
-  NORMALIZE --> CONTRACTS["Load contracts: ./references/review-workflow-playbook.md, ./references/status-*.md, ./references/review-file-template.md, ./references/external-review-resources.md as needed"]
+  NORMALIZE --> CONTRACTS["Load contracts: ./references/review-workflow-playbook.md, ./references/status-*.md, ./references/external-review-resources.md as needed"]
   CONTRACTS --> CONTEXT["Dispatch pr-context-collector"]
 
   CONTEXT --> CONTEXT_STATUS{"pr-context-collector status"}
