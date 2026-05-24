@@ -138,7 +138,7 @@ instructions override web content.
 
 | Status | Next action |
 | ------ | ----------- |
-| `SCOPED_STATE: NEEDS_CONTEXT`, `COMMIT_PLAN: NEEDS_DECISION` | Ask one targeted user question and redispatch the same specialist with the answer |
+| `SCOPED_STATE: NEEDS_CONTEXT`, `COMMIT_PLAN: NEEDS_DECISION` | Ask one targeted user question, return `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT` while waiting, then redispatch the same specialist after the answer is provided |
 | `SCOPED_STATE: NO_SCOPED_CHANGES` | Return `COMMIT_SCOPED_CHANGES: NO_SCOPED_CHANGES` before commits, or proceed to final report after post-commit refresh |
 | `COMMIT_EXECUTE: VERIFY_FAILED` | Retry only `same-scope-same-group-retry` recovery while the approved group's executor attempt counter is below three total attempts; ask one targeted recovery question when needed; otherwise return `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` |
 | `SCOPED_STATE: BLOCKED`, `COMMIT_PLAN: BLOCKED`, `COMMIT_EXECUTE: BLOCKED` | Return `COMMIT_SCOPED_CHANGES: BLOCKED` |
