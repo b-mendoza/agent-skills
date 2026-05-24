@@ -46,16 +46,20 @@ Repair cycles: <0-2>
    rule 2 and re-dispatch the narrow request with `LARGE_REVIEW_APPROVED=true`
    only if approved.
 6. On `FINDINGS: NO_FINDINGS`, skip `comment-drafter`, set
-   `REVIEW_DECISION_CANDIDATE`, and pass it to `review-verifier`: `approve` when
-   residual risks do not block approval; otherwise `comment`.
+   `REVIEW_DECISION_CANDIDATE`, and pass it to `review-verifier`: `approve` only
+   when the findings status reports no blocking residual risks; otherwise
+   `comment` so the review records residual risk without approving.
 7. Route initial `COMMENTS: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
 8. On `COMMENTS: NEEDS_METADATA`, collect only the requested line metadata and
    retry comment drafting once. Route retry `COMMENTS: NEEDS_METADATA` or
    `COMMENTS: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
 9. On `VERIFY: FAIL`, repair only the phase named in `Fix target`, then re-run
-   verification. Stop after two verification repair cycles and escalate to
-   `PR_REVIEW: VERIFY_FAIL`. Route `VERIFY: NEEDS_CONTEXT` to
-   `PR_REVIEW: NEEDS_CONTEXT`; route `VERIFY: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
+   verification. If `Fix target` is `orchestrator-decision`, reset
+   `REVIEW_DECISION_CANDIDATE` from the verifier issue and residual risks, then
+   re-run verification without redispatching another phase. Stop after two
+   verification repair cycles and escalate to `PR_REVIEW: VERIFY_FAIL`. Route
+   `VERIFY: NEEDS_CONTEXT` to `PR_REVIEW: NEEDS_CONTEXT`; route `VERIFY: ERROR`
+   to `PR_REVIEW: REVIEW_ERROR`.
 10. Dispatch `review-writer` only after `VERIFY: PASS`; route `WRITE: ERROR` to
     `PR_REVIEW: WRITE_ERROR`.
 11. If `POSTING_MODE=post-after-confirmation`, show the exact file preview and

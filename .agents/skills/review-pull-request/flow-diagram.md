@@ -30,7 +30,7 @@ flowchart TD
 
   FINDINGS --> FINDINGS_STATUS{"finding-reviewer status"}
   FINDINGS_STATUS -->|"FINDINGS: PASS"| COMMENTS["Dispatch comment-drafter"]
-  FINDINGS_STATUS -->|"FINDINGS: NO_FINDINGS"| NO_FINDING_DECISION["Set REVIEW_DECISION_CANDIDATE for verifier: approve when residual risks do not block approval; otherwise comment"]
+  FINDINGS_STATUS -->|"FINDINGS: NO_FINDINGS"| NO_FINDING_DECISION["Set REVIEW_DECISION_CANDIDATE for verifier: approve only when no blocking residual risks remain; otherwise comment"]
   FINDINGS_STATUS -->|"FINDINGS: NEEDS_CONTEXT"| NARROW_CONTEXT["Dispatch pr-context-collector once with narrow context request"]
   FINDINGS_STATUS -->|"FINDINGS: ERROR"| FAIL_FINDINGS_ERROR([Terminal: PR_REVIEW: REVIEW_ERROR])
 
@@ -71,7 +71,7 @@ flowchart TD
   VERIFY_STATUS -->|"VERIFY: NEEDS_CONTEXT"| FAIL_VERIFY_CONTEXT([Terminal: PR_REVIEW: NEEDS_CONTEXT])
   VERIFY_STATUS -->|"VERIFY: ERROR"| FAIL_VERIFY_ERROR([Terminal: PR_REVIEW: REVIEW_ERROR])
 
-  REPAIR_GATE -->|"yes"| REPAIR["Repair only verifier-named Fix target: pr-context-collector, finding-reviewer, or comment-drafter"]
+  REPAIR_GATE -->|"yes"| REPAIR["Repair only verifier-named Fix target: orchestrator-decision, pr-context-collector, finding-reviewer, or comment-drafter"]
   REPAIR_GATE -->|"no"| FAIL_VERIFY([Terminal: PR_REVIEW: VERIFY_FAIL])
   REPAIR --> VERIFY
 

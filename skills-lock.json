@@ -83,7 +83,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/review-pull-request/SKILL.md",
-      "computedHash": "1a4e6633f8708849d1cde8f99ecac34ebbe4b627b32608cc12dc8f8697fd0e82"
+      "computedHash": "0fb21c6890abff9f65933f7010ba1018c04217852026611dcd70a0e04dfb1e9a"
     },
     "subagent-driven-development": {
       "source": "obra/superpowers",
