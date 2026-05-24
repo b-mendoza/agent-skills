@@ -36,27 +36,29 @@ Repair cycles: <0-2>
 3. Route each context status explicitly: `CONTEXT: AUTH` to `PR_REVIEW: AUTH`,
    `CONTEXT: NOT_FOUND` to `PR_REVIEW: NOT_FOUND`, `CONTEXT: NEEDS_CONTEXT` to
    `PR_REVIEW: NEEDS_CONTEXT`, and `CONTEXT: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
-4. On `FINDINGS: NEEDS_CONTEXT`, dispatch `pr-context-collector` once with the
+4. Route initial `FINDINGS: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
+5. On `FINDINGS: NEEDS_CONTEXT`, dispatch `pr-context-collector` once with the
    narrow request, then retry findings once. Route retry `FINDINGS: NEEDS_CONTEXT`
    to `PR_REVIEW: NEEDS_CONTEXT`; route retry `FINDINGS: ERROR` to
    `PR_REVIEW: REVIEW_ERROR`.
-5. On `FINDINGS: NO_FINDINGS`, skip `comment-drafter` and set the review
+6. On `FINDINGS: NO_FINDINGS`, skip `comment-drafter` and set the review
    decision candidate before verification: `approve` when residual risks do not
    block approval; otherwise `comment`.
-6. On `COMMENTS: NEEDS_METADATA`, collect only the requested line metadata and
+7. Route initial `COMMENTS: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
+8. On `COMMENTS: NEEDS_METADATA`, collect only the requested line metadata and
    retry comment drafting once. Route retry `COMMENTS: NEEDS_METADATA` or
    `COMMENTS: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
-7. On `VERIFY: FAIL`, repair only the phase named in `Fix target`, then re-run
+9. On `VERIFY: FAIL`, repair only the phase named in `Fix target`, then re-run
    verification. Stop after two verification repair cycles and escalate to
    `PR_REVIEW: VERIFY_FAIL`. Route `VERIFY: NEEDS_CONTEXT` to
    `PR_REVIEW: NEEDS_CONTEXT`; route `VERIFY: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
-8. Dispatch `review-writer` only after `VERIFY: PASS`; route `WRITE: ERROR` to
-   `PR_REVIEW: WRITE_ERROR`.
-9. If `POSTING_MODE=post-after-confirmation`, show the exact file preview and
-   ask for final approval. Dispatch `review-poster` only after approval.
-10. Route `POST: PASS` to posted success. Route `POST: PREVIEW_REQUIRED`,
-    `POST: AUTH`, `POST: METADATA_INVALID`, and `POST: ERROR` to
-    `PR_REVIEW: POST_ERROR` with the poster's `Reason` and `Next step`.
+10. Dispatch `review-writer` only after `VERIFY: PASS`; route `WRITE: ERROR` to
+    `PR_REVIEW: WRITE_ERROR`.
+11. If `POSTING_MODE=post-after-confirmation`, show the exact file preview and
+    ask for final approval. Dispatch `review-poster` only after approval.
+12. Route `POST: PASS` to posted success. Route `POST: PREVIEW_REQUIRED`,
+     `POST: AUTH`, `POST: METADATA_INVALID`, and `POST: ERROR` to
+     `PR_REVIEW: POST_ERROR` with the poster's `Reason` and `Next step`.
 
 ## Failure Envelope
 
