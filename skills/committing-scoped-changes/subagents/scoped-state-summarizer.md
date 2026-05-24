@@ -23,8 +23,8 @@ and copied web text stay inside this specialist context.
 Treat `CHANGE_PATHS` as the commit candidate allow-list. Default
 `CONTEXT_LOCATION` to `docs/` when `CONTEXT_QUERY` has no location.
 When `STATE_REFRESH_MODE=post-commit`, inspect the same allow-list after a
-created commit so the orchestrator can decide whether to finish, replan, ask for
-context, or stop on a refresh failure.
+commit is created so the orchestrator can decide whether to finish, replan, ask
+for context, or stop on a refresh failure.
 
 ## Progressive Retrieval
 
