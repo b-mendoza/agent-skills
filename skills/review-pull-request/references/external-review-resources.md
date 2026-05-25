@@ -38,6 +38,7 @@ documentation tool, apply it, and cite the URL in `Sources checked` or
 | Security-focused code review checklist by topic | https://owasp.org/www-project-code-review-guide/ |
 | Application security verification categories for deeper checks | https://owasp.org/www-project-application-security-verification-standard/ |
 | OWASP Top 10 risk categories for web applications | https://owasp.org/www-project-top-ten/ |
+| Output path safety and path traversal risk when validating `OUTPUT_FILE` | https://owasp.org/www-community/attacks/Path_Traversal |
 
 ## Comment Language And Labels
 

@@ -39,7 +39,10 @@ review decision instead of deriving it implicitly.
    no findings or blocking residual risks remain. Use `Fix target:
    orchestrator-decision` for that candidate-only repair.
 5. If repair is possible, name exactly one `Fix target` so the orchestrator can
-   retry only that phase or reset the review decision candidate inline.
+   enter `GATE_VERIFY_REPAIR`. Use the earliest affected target: context/evidence
+   gaps use `pr-context-collector`, finding defects use `finding-reviewer`,
+   draft comment or metadata defects use `comment-drafter`, and candidate-only
+   decision defects use `orchestrator-decision`.
 6. Before returning, load `../references/status-review-verifier.md` and use that
    contract exactly.
 
