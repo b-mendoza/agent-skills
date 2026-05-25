@@ -78,4 +78,5 @@ Read `../subagents/decision-recorder.md`, then dispatch
 | `IMPLEMENTATION_UPDATES` | implementation-note edits caused by revised decisions |
 
 `decision-recorder` owns file writes and validation. After it returns,
-use `./conversation-protocol.md` to present the final summary.
+use `./conversation-protocol.md` to present the final summary, including
+the `Accepted decisions summary:` retained by the parent orchestrator.

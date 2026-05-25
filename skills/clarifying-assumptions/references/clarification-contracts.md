@@ -84,6 +84,8 @@ implementation code.
 | `docs/<KEY>-task-<N>-decisions.md` | Critique-mode record of task-level decisions for re-planning and execution |
 | `RE_PLAN_NEEDED` in the final summary | Signals whether planning should be re-run before execution |
 | `BLOCKERS_PRESENT` in the final summary | Signals that clarification ended with unresolved items and execution must stop |
+| `Accepted decisions summary` in upfront-mode final summaries | Parent orchestrators pass accepted decisions back into plan rework |
+| `Decisions file` in critique-mode final summaries | Parent orchestrators pass the per-task decisions artifact into task rework |
 
 These are orchestration artifacts. Preserve them for resumability and
 keep them out of version control unless a parent workflow explicitly
@@ -100,5 +102,19 @@ Every successful run ends with these fields in this order:
 - BLOCKERS_PRESENT: <true|false>
 ```
 
-If a subagent blocks or fails, emit the same fields with
-`Files updated: -`, then include `Blocking verdict:` and `Reason:`.
+For `MODE=upfront`, append:
+
+```markdown
+- Accepted decisions summary: <concise summary or ->
+```
+
+For `MODE=critique`, append:
+
+```markdown
+- Decisions file: docs/<KEY>-task-<N>-decisions.md | -
+```
+
+If top-level inputs are invalid or a subagent blocks or fails, emit the
+same first four fields with `Files updated: -`, then include
+`Blocking verdict:` and `Reason:`. Include the mode-specific retained
+field only when it is available.

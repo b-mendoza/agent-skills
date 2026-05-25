@@ -88,4 +88,5 @@ Read `../subagents/decision-recorder.md`, then dispatch
 In critique mode, `decision-recorder` creates or updates
 `docs/<TICKET_KEY>-task-<TASK_NUMBER>-decisions.md` and updates the main
 task plan. After it returns, use `./conversation-protocol.md` to present
-the final summary.
+the final summary, including the `Decisions file:` retained by the
+parent orchestrator.

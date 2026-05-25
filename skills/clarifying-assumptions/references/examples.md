@@ -52,6 +52,7 @@ Questions now: 3 | Deferred: 2 | Irrelevant: 1
 - Files updated: docs/JNS-6065-tasks.md
 - RE_PLAN_NEEDED: true
 - BLOCKERS_PRESENT: false
+- Accepted decisions summary: PF1 revised end-user framing; TC1 kept current approach with constraint
 ```
 
 ## Critique Mode Blocked Round Trip
@@ -88,6 +89,7 @@ Reason: docs/acme-app-42-task-3-test-spec.md is missing
 - Files updated: -
 - RE_PLAN_NEEDED: false
 - BLOCKERS_PRESENT: true
+- Decisions file: -
 - Blocking verdict: MANIFEST: BLOCKED
 - Reason: docs/acme-app-42-task-3-test-spec.md is missing
 ```

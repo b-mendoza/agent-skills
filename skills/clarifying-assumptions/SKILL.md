@@ -63,6 +63,12 @@ Read subagent definitions only when dispatching that specific subagent.
 Use the same stages for Jira tickets, GitHub issue slugs, and other
 workflow keys.
 
+Before Stage 1, validate that `MODE` is `upfront` or `critique` and
+that `TASK_NUMBER` is present for `MODE=critique`. On invalid inputs,
+skip subagent dispatch and emit the stable summary shape with
+`Files updated: -`, `BLOCKERS_PRESENT=true`,
+`Blocking verdict: INPUT: BLOCKED`, and `Reason:`.
+
 | Stage | Action | Routing |
 | --- | --- | --- |
 | 1 | Load guidance | Read `./references/design-thinking-mindset.md` and the active mode playbook |
@@ -114,11 +120,11 @@ Expect parseable verdicts from subagents and route them like this:
 
 | Source | Verdicts to expect | Orchestrator action |
 | --- | --- | --- |
-| `critique-analyzer` | `CRITIQUE: FAIL` | Stop and surface the required `Reason:` line |
+| `critique-analyzer` | `CRITIQUE: FAIL` | Capture the required `Reason:` line and emit the stable summary with blocking details |
 | `critique-analyzer` | `CRITIQUE: WARN` | Continue only if the missing context does not invalidate the critique |
-| `question-manifest-builder` | `MANIFEST: BLOCKED` or `MANIFEST: FAIL` | Stop and surface the manifest issue |
+| `question-manifest-builder` | `MANIFEST: BLOCKED` or `MANIFEST: FAIL` | Capture the manifest issue and emit the stable summary with blocking details |
 | `question-manifest-builder` | `MANIFEST: WARN` | Continue, but mention what was omitted or guessed |
-| `decision-recorder` | `RECORDING: BLOCKED` or `RECORDING: ERROR` | Stop and ask the user how to proceed |
+| `decision-recorder` | `RECORDING: BLOCKED` or `RECORDING: ERROR` | Capture the recorder reason and emit the stable summary with blocking details |
 | `decision-recorder` | `RECORDING: WARN` | Present warnings in the final summary and continue |
 
 Rerun only the failed stage after a targeted fix. Stop after three failed
@@ -135,9 +141,14 @@ Every run ends with this stable minimum summary:
 - BLOCKERS_PRESENT: <true|false>
 ```
 
-If clarification stops early because a subagent returned `BLOCKED`,
-`FAIL`, or `ERROR`, still emit the same four fields with
-`Files updated: -`, then include the blocking verdict and reason.
+For `MODE=upfront`, include `Accepted decisions summary:` after the four
+required fields. For `MODE=critique`, include `Decisions file:` after the
+four required fields.
+
+If clarification stops early because top-level inputs are invalid or a
+subagent returned `BLOCKED`, `FAIL`, or `ERROR`, still emit the same
+four fields in the same order with `Files updated: -`, then include
+`Blocking verdict:` and `Reason:`.
 
 ## Example
 
@@ -149,6 +160,7 @@ Input: `TICKET_KEY=JNS-6065`, `MODE=upfront`, `ITERATION=1`
 3. Dispatch `question-manifest-builder`; receive `Questions now: 3`.
 4. Read `./references/conversation-protocol.md`, ask the three items,
    then dispatch `decision-recorder`.
-5. Present the four-field final summary.
+5. Present the stable final summary, including the upfront accepted
+   decisions summary.
 
 For deeper traces, read `./references/examples.md`.

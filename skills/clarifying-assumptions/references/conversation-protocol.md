@@ -134,6 +134,19 @@ Start every final summary with these four fields in this order:
 - BLOCKERS_PRESENT: <true|false>
 ```
 
+Then add the parent-retained mode field:
+
+```markdown
+- Accepted decisions summary: <concise summary or ->
+- Decisions file: docs/<KEY>-task-<N>-decisions.md | -
+```
+
+Use only the line for the active mode. If the run stops early because
+inputs are invalid or a subagent returns `BLOCKED`, `FAIL`, or `ERROR`,
+keep the first four fields in order with `Files updated: -`, then add
+`Blocking verdict:` and `Reason:`. Include the mode field only when it is
+available.
+
 For upfront mode, add useful counts such as:
 
 ```markdown
