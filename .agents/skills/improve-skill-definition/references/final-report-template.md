@@ -3,6 +3,41 @@
 Read this file immediately before the final handoff. Keep the report concise and
 lead with the decision.
 
+## Approval Required
+
+```markdown
+Decision: approval required
+
+Workflow quality verdict:
+- `SOUND` | `NEEDS_REFINEMENT` | `FUNDAMENTALLY_FLAWED`: [plain explanation]
+
+Subagent architecture verdict:
+- `APPROPRIATE` | `PARTIALLY_REDUNDANT` | `UNNECESSARY_OR_OVERCOMPLICATED` | `NOT_APPLICABLE`: [affected subagents and recommendation]
+
+Flow diagram verdict:
+- `COHERENT` | `MISSING` | `STALE` | `NEEDS_GENERATE_FLOW_DIAGRAM` | `FLOW_CONTRACT_FLAWED`: [source-of-truth finding]
+
+Personality assessment:
+- Summary: [current target personality or missing]
+- `PERSONALITY_VERDICT`: `FITS_PURPOSE` | `NEEDS_REFINEMENT` | `MISSING_BUT_RECOMMENDED` | `NOT_APPLICABLE` | `CONFLICTS_WITH_SKILL`
+- Checks run: [purpose fit, audience fit, tone safety, workflow fit, artifact consistency]
+- Recommendation: [keep, refine, replace, add, or skip]
+- Alternatives: [at least five target-specific options]
+
+Gap inventory:
+| id | severity | type | affected files | issue | required fix | diagram delegation |
+| -- | -------- | ---- | -------------- | ----- | ------------ | ------------------ |
+
+Mutation plan:
+- [Exact create/edit/delete/no-op plan by path]
+
+Quality gate plan:
+- [Checks the validator must pass]
+
+Approval request:
+- Reply with a personality decision and `all`, `none`, or specific gap ids.
+```
+
 ## Changed
 
 ```markdown
@@ -31,6 +66,10 @@ Decision: no change
 
 Evidence:
 - [Concrete reason the package is already good enough]
+
+Personality assessment:
+- Summary: [current target personality or `not applicable`]
+- Verdict: [why the decision is acceptable without mutation]
 
 Optional improvements considered and rejected:
 - [Idea and reason it was not worth changing]
