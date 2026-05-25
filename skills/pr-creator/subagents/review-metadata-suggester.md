@@ -30,14 +30,18 @@ normalization.
 
 1. Match changed files against `.github/CODEOWNERS`, then `CODEOWNERS`, using
    the most specific owner pattern available.
-2. Prefer explicit `REVIEWERS` over CODEOWNERS suggestions.
-3. Return `NEEDS_REVIEWER` when no reviewer source yields at least one reviewer.
-4. Validate labels against the platform's existing labels; suggest only existing
+2. Treat CODEOWNERS matches as reviewer candidates; use them only when platform
+   metadata or docs confirm they are requestable for the active repository and
+   target branch.
+3. Prefer explicit `REVIEWERS` over CODEOWNERS suggestions.
+4. Return `NEEDS_REVIEWER` when no reviewer source yields at least one valid
+   reviewer.
+5. Validate labels against the platform's existing labels; suggest only existing
    labels and report invalid overrides.
-5. For GitLab, Bitbucket, or unknown platforms, read `PLATFORM_ADAPTER_PATH`.
-6. Fetch CODEOWNERS, reviewer, or label docs from `EXTERNAL_RESOURCES_PATH` only
+6. For GitLab, Bitbucket, or unknown platforms, read `PLATFORM_ADAPTER_PATH`.
+7. Fetch CODEOWNERS, reviewer, or label docs from `EXTERNAL_RESOURCES_PATH` only
    when syntax or platform behavior is uncertain.
-7. Before returning, read `CONTRACT_PATH` and produce that status block.
+8. Before returning, read `CONTRACT_PATH` and produce that status block.
 
 ## Output Format
 

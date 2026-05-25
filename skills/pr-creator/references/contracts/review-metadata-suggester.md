@@ -19,11 +19,23 @@ Decision needed: none | <smallest user decision or recovery action>
 
 ## Codes
 
-- `PASS`: at least one reviewer is resolved and labels are valid.
-- `NEEDS_REVIEWER`: no user or CODEOWNERS reviewer is available.
+- `PASS`: at least one valid reviewer is resolved and labels are valid.
+- `NEEDS_REVIEWER`: no user or platform-valid CODEOWNERS reviewer is available.
 - `INVALID_LABELS`: an override label is absent from platform labels.
 - `AUTH`: platform tooling or credentials prevent lookup.
 - `ERROR`: unexpected metadata failure.
+
+`Reviewer source: CODEOWNERS` means a matched owner is requestable for the
+active repository and target branch. If matched owners are missing, invalid, or
+not eligible for review requests on the active platform, return
+`NEEDS_REVIEWER`.
+
+## Orchestrator Routing
+
+On `NEEDS_REVIEWER`, the orchestrator asks one focused reviewer question and
+redispatches only `review-metadata-suggester` with that answer. On
+`INVALID_LABELS`, it asks for valid existing labels or removal, then redispatches
+only this subagent. `AUTH` maps to `AUTH`; `ERROR` maps to `BLOCKED`.
 
 ## Example
 

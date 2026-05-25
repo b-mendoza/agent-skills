@@ -28,6 +28,12 @@ Decision needed: none | <smallest user choice or recovery action>
 - `NEEDS_CHOICE`: type or scope ambiguity needs a user choice.
 - `ERROR`: unexpected drafting failure.
 
+## Orchestrator Routing
+
+On `NEEDS_CHOICE`, the orchestrator asks one focused type or scope question,
+then redispatches only `pr-drafter` with the user's exact `TYPE_CHOICE` or
+`SCOPE_CHOICE`. `ERROR` maps to the `BLOCKED` failure envelope.
+
 ## Example
 
 <example>

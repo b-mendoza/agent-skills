@@ -57,24 +57,48 @@ contract files, or external resources.
 ## Workflow
 
 1. Normalize inputs inline and ask the smallest missing-value question.
-2. Dispatch `repo-state-inspector`. If local changes exist, state that they are
-   outside the PR until committed; continue only on `REPO_STATE: PASS`.
-3. Dispatch `preflight-validator`. Ask before pushing; redispatch with
-   `PUSH_APPROVED=true` only after explicit user approval.
-4. Dispatch `diff-analyzer`. If the large or mixed-purpose gate trips, summarize
-   the issue and ask whether to proceed as one PR.
-5. Dispatch `pr-drafter`, then `review-metadata-suggester`. Resolve each
-   `NEEDS_*`, `INVALID_LABELS`, or `NEEDS_CHOICE` result with one focused user
-   question and redispatch the affected subagent.
-6. Load `./references/execution-contracts.md`, show the exact preview, and ask
+2. Dispatch `repo-state-inspector`. Continue only on `REPO_STATE: PASS`. If
+   local changes exist, state that they are outside the PR until committed. Use
+   the returned platform and adapter-needed fields before loading
+   `./references/platform-adaptation.md`.
+3. When the platform is GitLab, Bitbucket, GitHub Enterprise, or unknown, load
+   `./references/platform-adaptation.md`; fetch external docs only for exact
+   active-platform syntax. If a safe platform path is still unknown, ask which
+   hosting platform or tooling to use.
+4. Dispatch `preflight-validator`. Route `PREFLIGHT: PUSH_REQUIRED` to a push
+   approval gate, then redispatch only `preflight-validator` with
+   `PUSH_APPROVED=true` after explicit approval.
+5. Dispatch `diff-analyzer` only after `PREFLIGHT: PASS`. If it returns
+   `DIFF_ANALYSIS: LARGE_PR_CONFIRMATION_REQUIRED`, ask whether to proceed as
+   one PR, then redispatch only `diff-analyzer` with `LARGE_PR_APPROVED=true`
+   when approved.
+6. Dispatch `pr-drafter`, then `review-metadata-suggester`. Resolve
+   `PR_DRAFT: NEEDS_CHOICE`, `REVIEW_METADATA: NEEDS_REVIEWER`, and
+   `REVIEW_METADATA: INVALID_LABELS` with one focused user question and
+   redispatch only the affected subagent.
+7. Load `./references/execution-contracts.md`, show the exact preview, and ask
    for approval. Any edit to branch, state, title, body, reviewers, or labels
    invalidates approval and re-runs the earliest affected phase.
-7. Dispatch `pr-submitter` only after the latest preview is approved. Return the
-   verified URL using the final success block.
+8. Freeze approved preview fields, then dispatch `pr-submitter` with only those
+   values. Verify URL, base, head, title, and state before returning the final
+   success block.
 
 For any non-pass status, load `./references/execution-contracts.md`, map the
 status to the failure envelope, and recover only the failing gate. Stop after
-three non-converging fix cycles and ask the user for the final decision.
+three non-converging preflight, scope, draft, reviewer, label, preview, or
+submission cycles and ask the user for exact recovery values or permission to
+stop.
+
+## Status Routing
+
+| Source | Continue | User gate or retry | Failure envelope |
+| ------ | -------- | ------------------ | ---------------- |
+| `REPO_STATE` | `PASS` | none | `BLOCKED`, `ERROR` -> `BLOCKED` |
+| `PREFLIGHT` | `PASS` | `PUSH_REQUIRED` -> push approval then `PUSH_APPROVED=true` | `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `BLOCKED`, `ERROR` |
+| `DIFF_ANALYSIS` | `PASS` | `LARGE_PR_CONFIRMATION_REQUIRED` -> scope approval then `LARGE_PR_APPROVED=true` | `EMPTY_DIFF`, `ERROR` -> `BLOCKED` |
+| `PR_DRAFT` | `PASS` | `NEEDS_CHOICE` -> one type or scope choice | `ERROR` -> `BLOCKED` |
+| `REVIEW_METADATA` | `PASS` | `NEEDS_REVIEWER`, `INVALID_LABELS` -> one metadata question | `AUTH`, `ERROR` -> `BLOCKED` |
+| `PR_SUBMIT` | `PASS` | none | `BLOCKED`, `CREATE_ERROR`, `AUTH`, `ERROR` |
 
 ## Core Rules
 
@@ -82,9 +106,12 @@ three non-converging fix cycles and ask the user for the final decision.
   only after preflight confirms both remote refs are comparable.
 - Ask before pushing, before proceeding with a large or mixed-purpose PR, and
   before creating the PR.
-- Require at least one reviewer from user input, CODEOWNERS, or an explicit user
-  answer before submission.
+- Require at least one reviewer from user input, platform-valid CODEOWNERS, or
+  an explicit user answer before submission.
 - Use only labels that the hosting platform reports as existing.
+- Preserve approved preview fields exactly during submission; any change to
+  branch, state, title, body, reviewers, or labels requires a new preview
+  approval.
 - Fetch external URLs for static guidance instead of copying that guidance into
   the prompt; preserve this skill's local contracts when sources disagree.
 
