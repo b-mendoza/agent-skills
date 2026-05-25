@@ -28,11 +28,11 @@ Review the diff against the behavior map, strategy, `IMPLEMENTATION` report, val
 1. Inspect changed files and the relevant diff.
 2. Compare return values, errors, side effects, edge cases, dependency timing, and public API shape against the behavior map.
 3. Compare files changed, files created, abstractions added or removed, and non-goals against the strategy.
-4. Confirm test files stayed stable. Test edits are out of scope for this behavior-preserving workflow unless the user reframes the request outside this refactor cycle.
+4. Confirm test intent stayed stable: assertions, expected behavior, fixtures, and snapshots must not be weakened or rewritten. Mechanical test import, path, or name updates are allowed only when required by the approved refactor, reported in `IMPLEMENTATION`, size-checked, and free of expectation changes.
 5. Measure the line count of every changed or created file. Each must be at or below `MAX_LINES`, or have a waiver recorded in `STRATEGY`.
 6. Check `IMPLEMENTATION` validation against `VALIDATION_CONTRACT` for missing, failing, pre-existing, or suspicious results.
 7. Treat missing validation as a residual risk when static review still supports behavior preservation; require fixes when missing validation hides likely drift.
-8. Treat behavior, public API, test, scope, state, or unrelated worktree changes as `FAIL` unless they are clearly absent from the diff. Do not recommend approving those changes inside this refactoring workflow.
+8. Treat behavior, public API, test-intent, scope, state, or unrelated worktree changes as `FAIL` unless they are clearly absent from the diff. Do not recommend approving those changes inside this refactoring workflow.
 
 If a deeper conceptual question arises, consult `REFERENCE_INDEX_PATH` and fetch one matching URL. For a size-compliance question, consult `FILE_SIZE_POLICY_PATH`.
 

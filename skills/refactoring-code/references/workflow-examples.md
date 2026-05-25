@@ -14,7 +14,7 @@ Input: `TARGET_PATH=src/subscriptions/expire-users.ts`, `USER_GOAL="simplify wit
 3. Orchestrator resolves `REFERENCE_NEED`, records reference status, and asks before any public web fetch if required.
 4. Dispatch `refactor-strategist` with the behavior map, reference status, and reference paths.
 5. Strategist reads `./file-size-policy.md`, fetches one Functional Core / Imperative Shell URL from `./refactoring-web-resources.md` when allowed, and plans a split into decisions and notifications while keeping the original export stable.
-6. Orchestrator blocks any behavior/API/test/scope/state drift, asks for any required file-size waiver, and chooses the validation contract before implementation.
+6. Orchestrator blocks any behavior/API/test-intent/scope/state drift, asks for any required file-size waiver, and chooses the validation contract before implementation.
 7. Dispatch `refactor-implementer`.
 8. Implementer creates `expiration-decisions.ts` and `expiration-notifications.ts`, keeps every changed file under 250 lines, runs the approved validation command or records the warning, and reports validation passing.
 9. Dispatch `refactor-reviewer`.
@@ -75,10 +75,10 @@ File size plan:
 Waivers: none
 
 Non-goals:
-- Do not change persistence APIs, test expectations, or notification semantics.
+- Do not change persistence APIs, test expectations, fixtures, snapshots, assertions, or notification semantics.
 
 Implementation constraints:
-- Preserve cutoff equality, the existing exported function name, public API shape, tests, state behavior, and unrelated worktree changes.
+- Preserve cutoff equality, the existing exported function name, public API shape, test intent, state behavior, and unrelated worktree changes. Mechanical test import updates are allowed only if the split requires them.
 
 Validation expectations:
 - npm test -- subscriptions passes or reports a clearly pre-existing failure.
@@ -99,7 +99,7 @@ Behavior preservation:
 - PASS: cutoff equality and side effects match the behavior map.
 
 Test integrity:
-- PASS: tests were not weakened or rewritten.
+- PASS: test expectations, fixtures, snapshots, and assertions were not weakened or rewritten.
 
 Scope control:
 - FAIL: the diff introduced SubscriptionExpirationService, which was not in STRATEGY.
@@ -118,4 +118,33 @@ Required fixes:
 
 Residual risks:
 - none
+```
+
+## Final Handoff Sample
+
+```markdown
+Status: PASS
+
+Current behavior summary:
+- `expireUsers` expires paid subscriptions at or before the cutoff and sends the same notification side effects.
+
+Design diagnosis:
+- Expiration decisions and notification side effects were interleaved in one oversized module.
+
+Code changes made:
+- Split pure expiration predicates into `src/subscriptions/expiration-decisions.ts`.
+- Split notification payload construction into `src/subscriptions/expiration-notifications.ts`.
+- Kept `src/subscriptions/expire-users.ts` as the public entry point.
+
+Validation note:
+- Ran `npm test -- subscriptions`: pass.
+
+Review outcome and remaining risks:
+- `REFACTOR_REVIEW: PASS`; no residual risks.
+
+File-size compliance summary:
+- All changed and created files are under `MAX_LINES=250`.
+
+Improvement summary:
+- The refactor separates decisions from side effects while preserving behavior and the public API.
 ```

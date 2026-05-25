@@ -4,6 +4,8 @@
 
 `MAX_LINES` defaults to `250` and is the per-file ceiling for any file the refactor produces or modifies. The rule keeps modules cohesive, reviewable, and editor-friendly. A file above the ceiling indicates that the module is doing more than one job or is mixing concerns at different abstraction levels.
 
+This policy measures allowed file changes only. Changes to test intent, such as assertion edits, weakened expectations, fixture updates, or snapshot updates, are outside the behavior-preserving refactor boundary; mechanical test import, path, or name updates required by an approved refactor are allowed and size-checked.
+
 ## Counting Policy
 
 - Count physical lines as reported by the host editor or `wc -l`.
@@ -18,7 +20,7 @@
 | New files produced by a split | Yes |
 | Files modified as a direct compilation consequence | Yes |
 | Files only referenced (no edits) | No |
-| Test files modified to follow a rename | Yes |
+| Test files modified only for approved mechanical import, path, or name updates | Yes |
 
 ## Permitted Waivers
 

@@ -38,9 +38,10 @@ If no reference is needed, write `References fetched: none`. If public web acces
 3. Decide whether the code is already simple enough for the user's goal and within `MAX_LINES`.
 4. Choose the smallest target design that makes current behavior easier to understand.
 5. When the behavior map flags `OVERSIZED`, plan a split that follows the project's architecture (or the seams in `FILE_SIZE_POLICY_PATH`) and keeps the public surface stable. Record any waiver and reason.
-6. State non-goals that prevent scope drift: files, APIs, layers, tests, behavior, public surfaces, state, or abstractions that stay unchanged.
-7. Treat behavior, public API, test, scope, state, or unrelated worktree changes as out of scope for this workflow. Return `NEEDS_CLARIFICATION` when the user's goal requires one of those changes instead of normalizing it into the plan.
-8. Define validation expectations that preserve the behavior map.
+6. State non-goals that prevent scope drift: files, APIs, layers, test intent, behavior, public surfaces, state, or abstractions that stay unchanged.
+7. Treat behavior, public API, test expectation, fixture, snapshot, assertion, scope, state, or unrelated worktree changes as out of scope for this workflow. Return `NEEDS_CLARIFICATION` when the user's goal requires one of those changes instead of normalizing it into the plan.
+8. Allow mechanical test import, path, or name updates only when they are required by the approved refactor. Identify them in implementation constraints so the implementer reports them, counts them against `MAX_LINES`, and leaves test intent unchanged.
+9. Define validation expectations that preserve the behavior map.
 
 Prefer moves that reduce cognitive load: rename, extract small pure decision functions, inline single-use abstractions, move side effects outward, delete dead or speculative code, simplify conditionals while preserving edge-case semantics, and split oversized files along existing seams.
 
@@ -69,7 +70,7 @@ Non-goals:
 - <what remains unabstracted or untouched>
 
 Implementation constraints:
-- <behavior, file, API, test, scope, state, worktree, and per-file size constraints>
+- <behavior, file, API, test-intent, allowed mechanical-test-update, scope, state, worktree, and per-file size constraints>
 
 Validation expectations:
 - <existing tests or behavior checks that should still pass>
@@ -94,7 +95,7 @@ Use these status codes precisely:
 
 - `PASS` when a small useful refactor is justified
 - `NO_CHANGE` when the code is already simple enough for the stated goal and within `MAX_LINES`
-- `NEEDS_CLARIFICATION` when a user decision is needed before safe strategy, including required public references or out-of-scope behavior/API/test/scope/state changes
+- `NEEDS_CLARIFICATION` when a user decision is needed before safe strategy, including required public references or out-of-scope behavior/API/test-intent/scope/state changes
 - `ERROR` when an unexpected failure prevents completion
 
 For `NEEDS_CLARIFICATION` or `ERROR`, include:

@@ -1,6 +1,6 @@
 # Refactoring Code
 
-This workflow coordinates one deterministic, behavior-preserving refactor cycle for a required `TARGET_PATH`. The orchestrator owns phase routing, evidence handoffs, permission gates, and final status; `behavior-mapper`, `refactor-strategist`, `refactor-implementer`, and `refactor-reviewer` keep inspection, strategy, implementation plus validation, and review isolated. The workflow may inspect code, delegate safe validation, and fetch optional public references only for concrete strategy or review decisions when allowed; it must stop instead of normalizing behavior, public API, test, scope, state, unrelated worktree, destructive validation, public web, or file-size waiver changes outside the approved behavior-preserving refactor boundary.
+This workflow coordinates one deterministic, behavior-preserving refactor cycle for a required `TARGET_PATH`. The orchestrator owns phase routing, evidence handoffs, permission gates, and final status; `behavior-mapper`, `refactor-strategist`, `refactor-implementer`, and `refactor-reviewer` keep inspection, strategy, implementation plus validation, and review isolated. The workflow may inspect code, delegate safe validation, apply mechanical test import/path/name updates required by an approved refactor, and fetch optional public references only for concrete strategy or review decisions when allowed; it must stop instead of normalizing behavior, public API, test intent, scope, state, unrelated worktree, destructive validation, public web, or file-size waiver changes outside the approved behavior-preserving refactor boundary.
 
 ```mermaid
 flowchart TD
@@ -8,7 +8,7 @@ flowchart TD
   INPUTS --> HAS_TARGET{TARGET_PATH provided?}
   HAS_TARGET -->|no| ASK_PATH["Ask one focused question for target path"]
   ASK_PATH --> STOP_NEEDS_TARGET([NEEDS_CLARIFICATION: TARGET_PATH required])
-  HAS_TARGET -->|yes| BOUNDARY["Set behavior-preserving boundary: one target cycle, stable public surface, no unrelated worktree changes"]
+  HAS_TARGET -->|yes| BOUNDARY["Set behavior-preserving boundary: one target cycle, stable public surface, stable test intent, no unrelated worktree changes"]
 
   BOUNDARY --> MAP["Dispatch behavior-mapper: inspect target, callers, dependencies, tests, behavior, side effects, risks, and file sizes"]
   MAP --> MAP_STATUS{BEHAVIOR_MAP status}
@@ -45,9 +45,9 @@ flowchart TD
   STRATEGY_STATUS -->|NEEDS_CLARIFICATION| STRATEGY_QUESTION["Return smallest required strategy decision"]
   STRATEGY_QUESTION --> STOP_NEEDS_STRATEGY([NEEDS_CLARIFICATION: strategy decision required])
   STRATEGY_STATUS -->|ERROR| STOP_ERROR_STRATEGY([ERROR: strategy failed])
-  STRATEGY_STATUS -->|PASS| SCOPE_DRIFT{Plan requires behavior, public API, test, scope, state, or unrelated worktree change?}
+  STRATEGY_STATUS -->|PASS| SCOPE_DRIFT{Plan requires behavior, public API, test-intent, scope, state, or unrelated worktree change?}
 
-  SCOPE_DRIFT -->|yes| STOP_BLOCKED_SCOPE([BLOCKED: out-of-scope change; reframe outside this refactoring workflow])
+  SCOPE_DRIFT -->|yes| STOP_BLOCKED_SCOPE([BLOCKED: out-of-scope change; reframe outside this behavior-preserving workflow])
   SCOPE_DRIFT -->|no| SIZE_WAIVER{Strategy records file-size waiver?}
   SIZE_WAIVER -->|yes| SIZE_GATE["Ask approval for file-size waiver: target file, reason, risk, split alternative, audit note"]
   SIZE_GATE --> SIZE_APPROVED{User approves?}
@@ -78,7 +78,7 @@ flowchart TD
 
   REVIEW_STATUS -->|FAIL| FIX_COUNT{Fewer than two targeted fix cycles used?}
   FIX_COUNT -->|no| STOP_BLOCKED_REVIEW([BLOCKED: unresolved review findings after two fix cycles])
-  FIX_COUNT -->|yes| FIX_SCOPE{Reviewer-required fix stays behavior-preserving and within approved strategy?}
+  FIX_COUNT -->|yes| FIX_SCOPE{Reviewer-required fix stays behavior-preserving, preserves test intent, and remains within approved strategy?}
   FIX_SCOPE -->|no| STOP_BLOCKED_FIX_SCOPE([BLOCKED: required fix is out of scope for behavior-preserving refactor])
   FIX_SCOPE -->|yes| FIX_WAIVER{Fix needs new file-size waiver?}
   FIX_WAIVER -->|yes| FIX_SIZE_GATE["Ask approval for file-size waiver: target file, reason, risk, split alternative, audit note"]
@@ -107,4 +107,4 @@ flowchart TD
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
 
-Final user-facing status rule: return only `PASS`, `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, or `ERROR`. Build the final handoff only after the implementer has run validation or recorded a validation warning and `refactor-reviewer` returns `PASS`; otherwise stop with the smallest reason, next decision needed, validation already completed, and remaining risks.
+Final user-facing status rule: start with `Status: PASS`, `Status: NO_CHANGE`, `Status: NEEDS_CLARIFICATION`, `Status: BLOCKED`, or `Status: ERROR`. Build the final handoff only after the implementer has run validation or recorded a validation warning and `refactor-reviewer` returns `PASS`; otherwise stop with the smallest reason, next decision needed, validation already completed, and remaining risks.
