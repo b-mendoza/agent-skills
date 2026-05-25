@@ -34,7 +34,9 @@ Validate `docs/<TICKET_KEY>-stage-1-detailed.md`.
 - Contains `## Assumptions and Constraints`.
 - Contains `## Cross-Cutting Open Questions`.
 - Contains `## Notes`.
-- Contains at least 2 task sections using `### Task ...` headings.
+- Contains at least 2 task sections using `### Task ...` headings, unless
+  `## Assumptions and Constraints` or `## Notes` records the internal
+  current-subtask exception for a single execution task.
 - Every task has `**Objective:**`.
 - Every task has `**Relevant requirements and context:**`.
 - Every task has `**Questions to answer before starting:**`.
@@ -59,8 +61,20 @@ Validate `docs/<TICKET_KEY>-stage-2-prioritized.md`.
 - Numbered tasks use `## Task <N>: <Title>` with no gaps.
 - Every numbered task has `**Priority:**`.
 - Every numbered task has `**Branch name:**`.
+- Every branch name satisfies the deterministic branch contract from
+  `./output-contract.md`: default parent-ticket
+  `feature/<ticket-key-lower>-task-<n>-<short-task-slug>`, current-subtask
+  `feature/<ticket-key-lower>-<short-ticket-slug>`, or a clearly stated team
+  prefix with the same deterministic suffix.
+- Every numbered task preserves the carried-forward Stage 1 fields:
+  `**Objective:**`, `**Relevant requirements and context:**`,
+  `**Questions to answer before starting:**`, `**Implementation notes:**`,
+  `**Definition of done:**`, and `**Likely files / artifacts affected:**`.
+- Every numbered task preserves a `Traces to` reference.
 - Every numbered task has `**Dependencies / prerequisites:**`.
 - Contains `## Dependency Graph`.
+- Hard dependency references point to valid renumbered tasks.
+- No numbered task appears before one of its hard dependencies.
 - If current-subtask mode is stated, all task branch names are identical.
 
 ### Stage `3`
@@ -80,11 +94,23 @@ Validate the final downstream contract of `docs/<TICKET_KEY>-tasks.md`.
 - `## Assumptions and Constraints` exists.
 - `## Cross-Cutting Open Questions` exists.
 - `## Tasks` exists.
+- `## Notes` exists.
 - `## Dependency Graph` exists.
 - `## Validation Report` exists.
-- At least 2 numbered task sections exist, unless current-subtask mode explicitly justifies a smaller execution plan.
+- Top-level headings preserve the final order from `./output-contract.md`:
+  `## Ticket Summary`, `## Execution Order Summary`, `## Problem Framing`,
+  `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`,
+  `## Tasks`, numbered `## Task N: <Title>` sections, `## Notes`,
+  `## Dependency Graph`, then `## Validation Report`.
+- At least 2 numbered task sections exist, unless the plan records the internal
+  current-subtask exception for a smaller execution plan.
 - Every numbered task has `**Priority:**`.
 - Every numbered task has `**Branch name:**`.
+- Every branch name satisfies the deterministic branch contract from
+  `./output-contract.md`: default parent-ticket
+  `feature/<ticket-key-lower>-task-<n>-<short-task-slug>`, current-subtask
+  `feature/<ticket-key-lower>-<short-ticket-slug>`, or a clearly stated team
+  prefix with the same deterministic suffix.
 - Every numbered task has `**Objective:**`.
 - Every numbered task has `**Relevant requirements and context:**`.
 - Every numbered task has `**Questions to answer before starting:**`.
@@ -92,7 +118,9 @@ Validate the final downstream contract of `docs/<TICKET_KEY>-tasks.md`.
 - Every numbered task has `**Definition of done:**`.
 - Every numbered task has `**Likely files / artifacts affected:**`.
 - Every numbered task has `**Dependencies / prerequisites:**`.
-- If current-subtask mode is stated, every numbered task uses the same branch name.
+- If current-subtask mode is stated, every numbered task uses the same branch
+  name and that branch follows the current-subtask branch contract from
+  `./output-contract.md`.
 
 ## Task Validator Checks
 
@@ -119,7 +147,7 @@ Run these checks against the original snapshot and the stage 2 prioritized plan.
 | 17 | No vague definition-of-done items such as `works`, `is complete`, or `functions properly` | WARN |
 | 18 | Task count is appropriate for scope | WARN |
 | 19 | No empty or `TBD` implementation notes remain | WARN |
-| 20 | Branch names are valid Git ref-style names and respect current-subtask single-branch mode when applicable | FAIL |
+| 20 | Branch names are valid Git ref-style names, follow the deterministic branch contract from `./output-contract.md`, and respect current-subtask single-branch mode when applicable | FAIL |
 
 ## Result Handling
 

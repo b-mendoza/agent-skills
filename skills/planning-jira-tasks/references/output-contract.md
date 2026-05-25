@@ -54,8 +54,9 @@ The final plan must preserve this top-level order:
 5. `## Cross-Cutting Open Questions`
 6. `## Tasks`
 7. `## Task N: <Title>` sections
-8. `## Dependency Graph`
-9. `## Validation Report`
+8. `## Notes`
+9. `## Dependency Graph`
+10. `## Validation Report`
 
 `## Problem Framing` must contain:
 
@@ -103,6 +104,9 @@ feature/jns-6065-task-1-auth-schema
 Use a team-provided branch prefix when one is explicit in the snapshot or
 `DECISIONS`; otherwise use `feature/`. Keep the rest of the branch deterministic:
 lowercase work-item key, `task-<n>`, and a short kebab-case task-title slug.
+Validators must check both Git ref legality and this deterministic branch shape.
+When a team-provided prefix is used, the prefix may replace `feature/`, but the
+ticket key, task number, and task-title slug remain deterministic.
 
 ## Current-Subtask Mode
 
@@ -122,6 +126,10 @@ Default current-subtask branch:
 ```text
 feature/<ticket-key-lower>-<short-ticket-slug>
 ```
+
+When a team-provided prefix is used in current-subtask mode, the prefix may
+replace `feature/`, but the ticket key and short ticket slug remain
+deterministic.
 
 ## Return Handoff
 

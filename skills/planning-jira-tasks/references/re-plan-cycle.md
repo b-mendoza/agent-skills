@@ -45,15 +45,19 @@ branch during re-plan. Do not introduce child-subtask branch names.
 
 ## Targeted Fix Budget
 
-Re-plan iterations and validator retries are tracked separately:
+Critique-driven re-plan iteration limits are owned by the parent Jira
+orchestrator that re-dispatches this skill. This skill receives only
+`RE_PLAN=true` plus `DECISIONS`; it does not receive or enforce the parent
+iteration count.
+
+Validator retries are local to this Phase 2 run:
 
 | Loop | Limit | Counts |
 | ---- | ----- | ------ |
-| Re-plan | 3 iterations | Critique-driven planning revisions |
 | Targeted validator fix | 3 cycles per gate | Repeated failures at the same structural gate |
 
-If the limit is exhausted, stop and return `PLANNING: FAIL` with the relevant
-failure category and a one-line reason.
+If the targeted validator fix limit is exhausted, stop and return
+`PLANNING: FAIL` with the relevant failure category and a one-line reason.
 
 ## Error Handling
 

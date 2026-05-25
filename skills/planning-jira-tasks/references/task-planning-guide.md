@@ -49,7 +49,11 @@ relevant: requirements, infrastructure, data changes, core logic, integration,
 UI/UX, testing, documentation, cleanup.
 
 Target 4-15 tasks. If the ticket clearly justifies fewer or more, keep the plan
-accurate and explain the exception in `## Notes`.
+accurate and explain the exception in `## Notes`. Current-subtask mode has one
+internal workflow exception: a single execution task is allowed when additional
+task splitting would invent subtasks of the subtask rather than clarify
+execution. Record that reasoning in `## Notes`; this is this skill's workflow
+rule, not a Jira platform rule.
 
 ## Existing Subtasks and Linked Issues
 

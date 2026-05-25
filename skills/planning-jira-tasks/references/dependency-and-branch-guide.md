@@ -69,6 +69,8 @@ Rules:
 - Use an explicit team prefix from the snapshot or `DECISIONS` if provided;
   otherwise use `feature/`.
 - Lowercase the Jira key.
+- Keep `task-<n>` tied to the final numbered task and use the task-title slug
+  from that same numbered task.
 - Slugify the task title as short kebab-case; prefer a short slug over copying
   the full title.
 - Branch names must be valid Git refs: no spaces, no `..`, no leading or
@@ -99,6 +101,9 @@ Before writing the stage 2 file, verify:
 
 - Every task has `**Priority:**`.
 - Every task has `**Branch name:**`.
+- Branch names follow the deterministic parent-ticket or current-subtask
+  pattern from `./output-contract.md`, allowing only an explicit team prefix
+  override.
 - Every task has `**Dependencies / prerequisites:**`.
 - Every task heading uses `## Task <N>: <Title>`.
 - Every dependency reference points to a valid renumbered task.
