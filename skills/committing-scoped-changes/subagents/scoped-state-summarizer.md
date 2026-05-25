@@ -39,8 +39,8 @@ one-line conclusion using `../references/external-sources.md`.
 
 1. Confirm the workspace is a usable git repository.
 2. Resolve each requested path as `tracked`, `untracked`, `missing`, or `mixed`.
-3. Summarize scoped status, staged scoped changes, untracked files, tests, and
-   unrelated out-of-scope changes by path or count.
+3. Summarize scoped status, staged scoped changes, staged outside-scope entries,
+   untracked files, tests, and unrelated out-of-scope changes by path or count.
 4. Inspect patches only enough to summarize intent, risk, and mixed-hunk risk.
 5. When `CONTEXT_QUERY` is provided, read only matching local context sections.
 6. Infer recent commit style unless `COMMIT_STYLE` is explicit.

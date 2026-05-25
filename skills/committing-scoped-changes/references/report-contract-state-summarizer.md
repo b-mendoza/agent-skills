@@ -15,6 +15,7 @@ Scoped changes:
 - <file or area>: <concise behavioral or structural summary>
 
 Staged scoped changes: none | <concise summary>
+Staged outside scope: none | <concise list or count>
 Untracked in scope: none | <concise list>
 Unrelated changes outside scope: none | <concise list or count>
 Mixed-hunk risk: none | <file and reason>
@@ -55,6 +56,7 @@ Scoped changes:
 - tests/checkout/retry.test.ts: covers retry success and retry exhaustion
 
 Staged scoped changes: none
+Staged outside scope: none
 Untracked in scope: none
 Unrelated changes outside scope: README.md modified
 Mixed-hunk risk: none

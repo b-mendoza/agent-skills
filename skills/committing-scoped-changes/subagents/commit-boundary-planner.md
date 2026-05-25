@@ -41,7 +41,9 @@ fetched, return the URL plus a one-line conclusion using
    changes, behavior changes, and tests when they have different reasons.
 5. Use the requested or observed commit style; fetch exact syntax only when it
    can change the message.
-6. Account for staged scoped changes explicitly.
+6. Account for staged scoped changes explicitly. Treat staged outside-scope
+   entries from the state summary as protected facts; include them only through
+   `G_SCOPE_EXPANSION` and an explicit group plan.
 7. Return `NEEDS_DECISION` when staged content, mixed hunks, or unclear intent
    prevents a safe plan.
 8. For scope expansion or intentional in-scope omission, return planned groups

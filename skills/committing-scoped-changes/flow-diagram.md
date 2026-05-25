@@ -1,6 +1,6 @@
 # Committing Scoped Changes
 
-This workflow creates reviewable atomic git commits only after the user explicitly asks to commit. The orchestrator treats `CHANGE_PATHS` as the commit allow-list, preserves unrelated work and index entries, and uses specialist subagents for scoped state inspection, commit boundary planning, scoped execution, and post-commit refresh. Existing staged changes are planning facts, not permission to commit. Scope expansion, intentional in-scope omission, ambiguous inputs, unsafe verification recovery, and refresh blockers require one targeted user decision before mutation continues. External references are routed just in time to the active specialist only when they can change that specialist's current decision; initial state inspection may receive only supplied relevant URLs, and raw article text stays out of orchestrator context.
+This workflow creates reviewable atomic git commits only after the user explicitly asks to commit. The orchestrator treats `CHANGE_PATHS` as the initial commit allow-list, builds `APPROVED_COMMIT_SCOPE` only from that scope plus exact approved expansions, preserves unrelated work and index entries, and uses specialist subagents for scoped state inspection, commit boundary planning, scoped execution, and post-commit refresh. Existing staged changes are planning facts, not permission to commit. Scope expansion, intentional in-scope omission, ambiguous inputs, unsafe verification recovery, and refresh blockers require one targeted user decision before mutation continues. External references are routed just in time to the active specialist only when they can change that specialist's current decision; initial state inspection may receive only supplied relevant URLs, and raw article text stays out of orchestrator context.
 
 ```mermaid
 flowchart TD
@@ -11,7 +11,7 @@ flowchart TD
   HAS_PATHS -->|yes| AUTH{"User explicitly asked to create commits?"}
 
   AUTH -->|no| STATUS_NO_AUTH["Select COMMIT_SCOPED_CHANGES: BLOCKED for missing commit authority"]
-  AUTH -->|yes| SET_SCOPE["Set COMMIT_REQUEST_CONFIRMED=true and treat CHANGE_PATHS as allow-list"]
+  AUTH -->|yes| SET_SCOPE["Set COMMIT_REQUEST_CONFIRMED=true and APPROVED_COMMIT_SCOPE=CHANGE_PATHS"]
 
   SET_SCOPE --> INIT_STATE_REFS{"Initial state REFERENCE_URLS supplied and clearly relevant?"}
   INIT_STATE_REFS -->|yes| PASS_STATE_REFS["Pass supplied relevant URL(s) only to scoped-state-summarizer; keep raw article text out of orchestrator context"]
@@ -40,7 +40,8 @@ flowchart TD
 
   APPROVE_GROUPS --> G_SCOPE_EXPANSION{"G_SCOPE_EXPANSION: plan includes paths outside CHANGE_PATHS?"}
   G_SCOPE_EXPANSION -->|yes| HUMAN_EXPAND["Human gate: target extra paths, reason, risk, reversibility, safer alternative"]
-  HUMAN_EXPAND -->|approved| G_IN_SCOPE_OMISSION{"G_IN_SCOPE_OMISSION: meaningful in-scope changes omitted?"}
+  HUMAN_EXPAND -->|approved| ADD_APPROVED_SCOPE["Add only approved exact extra paths to APPROVED_COMMIT_SCOPE"]
+  ADD_APPROVED_SCOPE --> G_IN_SCOPE_OMISSION{"G_IN_SCOPE_OMISSION: meaningful in-scope changes omitted?"}
   HUMAN_EXPAND -->|declined| STATUS_SCOPE_DECLINED["Select COMMIT_SCOPED_CHANGES: BLOCKED for declined scope expansion"]
   G_SCOPE_EXPANSION -->|no| G_IN_SCOPE_OMISSION
 
@@ -50,10 +51,10 @@ flowchart TD
   G_IN_SCOPE_OMISSION -->|no| EXEC_REF
 
   EXEC_REF -->|yes| LOOKUP_EXEC_REF["Select only relevant public URL(s) for scoped-commit-executor; keep raw article text out of orchestrator context"]
-  EXEC_REF -->|no| COMMIT_NEXT["Dispatch scoped-commit-executor for next approved group"]
+  EXEC_REF -->|no| COMMIT_NEXT["Dispatch scoped-commit-executor for next approved group with APPROVED_COMMIT_SCOPE"]
   LOOKUP_EXEC_REF --> COMMIT_NEXT
 
-  COMMIT_NEXT --> EXEC_ACTIONS["Executor stages only group paths, reviews staged diff, runs verification, creates commit"]
+  COMMIT_NEXT --> EXEC_ACTIONS["Executor isolates preserved staged entries, stages only approved group paths, reviews staged diff, runs verification, creates commit"]
   EXEC_ACTIONS --> EXEC_RESULT{"COMMIT_EXECUTE status"}
   EXEC_RESULT -->|VERIFY_FAILED| RECOVERY_CLASSIFY{"Recovery classification"}
   RECOVERY_CLASSIFY -->|retryable same-scope same-group under cap| RETRY_SAME_GROUP["Increment group attempt counter and retry same approved group"]
@@ -114,13 +115,13 @@ flowchart TD
 
   class HAS_PATHS,AUTH,INIT_STATE_REFS,STATE_RESULT,PLAN_REF,PLAN_RESULT,G_SCOPE_EXPANSION,G_IN_SCOPE_OMISSION,EXEC_REF,EXEC_RESULT,RECOVERY_CLASSIFY,REFRESH_RESULT,REMAINING,MORE_GROUPS decision;
   class G_SCOPE_EXPANSION,G_IN_SCOPE_OMISSION guard;
-  class INTAKE,SET_SCOPE,PASS_STATE_REFS,DISPATCH_STATE,ADOPT_STATE,LOOKUP_PLAN_REF,PLAN,APPROVE_GROUPS,LOOKUP_EXEC_REF,COMMIT_NEXT,EXEC_ACTIONS,RETRY_SAME_GROUP,RECORD_SHA,REFRESH_STATE,ADOPT_REFRESH check;
+  class INTAKE,SET_SCOPE,PASS_STATE_REFS,DISPATCH_STATE,ADOPT_STATE,LOOKUP_PLAN_REF,PLAN,APPROVE_GROUPS,ADD_APPROVED_SCOPE,LOOKUP_EXEC_REF,COMMIT_NEXT,EXEC_ACTIONS,RETRY_SAME_GROUP,RECORD_SHA,REFRESH_STATE,ADOPT_REFRESH check;
   class ASK_PATHS,ASK_CONTEXT,ASK_DECISION,HUMAN_EXPAND,HUMAN_OMIT,ASK_VERIFY,ASK_REFRESH_CONTEXT human;
   class FORMAT_STATUS,FINAL_SUCCESS,DONE output;
   class STATUS_NEEDS_PATHS,STATUS_NO_AUTH,STATUS_NO_CHANGES,STATUS_WAIT_CONTEXT,STATUS_STATE_BLOCKED,STATUS_STATE_ERROR,STATUS_WAIT_DECISION,STATUS_PLAN_BLOCKED,STATUS_PLAN_ERROR,STATUS_SCOPE_DECLINED,STATUS_OMISSION_DECLINED,STATUS_WAIT_VERIFY,STATUS_VERIFY_FAILED,STATUS_EXEC_BLOCKED,STATUS_COMMIT_ERROR,STATUS_EXEC_ERROR,STATUS_WAIT_REFRESH,STATUS_REFRESH_BLOCKED,STATUS_REFRESH_ERROR stop;
 ```
 
-Readiness rule: proceed only when commit authority is explicit, `CHANGE_PATHS` is unambiguous, planned groups stay within the allow-list or receive explicit approval, intentional in-scope omissions receive explicit approval, and every post-commit refresh confirms the next safe action.
+Readiness rule: proceed only when commit authority is explicit, `CHANGE_PATHS` is unambiguous, planned groups stay within `APPROVED_COMMIT_SCOPE`, intentional in-scope omissions receive explicit approval, preserved staged entries can be isolated safely, and every post-commit refresh confirms the next safe action.
 
 Final report/status contract: every success, terminal failure, no-change, blocked, error, or waiting outcome loads `./references/report-contract-orchestrator.md` and emits the required `COMMIT_SCOPED_CHANGES` structure before the run stops. A later user answer to a waiting status starts a new run from the relevant upstream context rather than bypassing the formatting contract.
 
@@ -129,8 +130,8 @@ Facts:
 | Item | Detail |
 | --- | --- |
 | Authority | The orchestrator normalizes authority and delegates git inspection, staging, verification, commit creation, and post-commit refresh to specialists. |
-| Scope | User-provided `CHANGE_PATHS` is the commit allow-list. |
-| Existing staged changes | Treated as facts for planning, not as permission to commit. |
+| Scope | User-provided `CHANGE_PATHS` starts the commit allow-list; approved exact expansions become `APPROVED_COMMIT_SCOPE`. |
+| Existing staged changes | Treated as facts for planning, not as permission to commit; executor preserves unrelated staged entries or blocks before committing. |
 | Just-in-time references | Initial state inspection may receive only supplied relevant `REFERENCE_URLS`; planner and executor reference routing uses only URL(s) relevant to the current specialist decision. |
 | Raw external text | Raw article or documentation text stays out of orchestrator context; specialists summarize only decision-relevant findings. |
 | Verification retry counter | The orchestrator owns one counter per approved group, counts the initial executor dispatch as attempt 1, increments before each same-group retry, caps at three total attempts, and resets on commit success, replan, or next group. |
@@ -148,10 +149,10 @@ Risks:
 
 | Risk | Mitigation |
 | --- | --- |
-| Unrelated work could be staged or committed accidentally | Executor stages only approved scoped groups and reviews staged diff before commit. |
+| Unrelated work could be staged or committed accidentally | Executor stages only approved groups inside `APPROVED_COMMIT_SCOPE`, isolates preserved staged entries, and reviews staged diff before commit. |
 | Hooks or generated files can change the worktree | Orchestrator dispatches `scoped-state-summarizer` for post-commit refresh and adopts the refreshed state before continuing. |
 | Verification recovery can repeat unsafe actions | Workflow retries only the retryable same-scope same-group path while under the attempt cap; otherwise it asks one targeted question or returns `COMMIT_SCOPED_CHANGES: VERIFY_FAILED`. |
-| Scope ambiguity can cause unsafe commits | Workflow separates `G_SCOPE_EXPANSION` from `G_IN_SCOPE_OMISSION` and stops for one targeted user decision. |
+| Scope ambiguity can cause unsafe commits | Workflow separates `G_SCOPE_EXPANSION` from `G_IN_SCOPE_OMISSION`, records exact approved paths in `APPROVED_COMMIT_SCOPE`, and stops for one targeted user decision. |
 | External references can pollute context | Reference routing is specialist-local and just in time; raw article text is not accumulated in orchestrator context. |
 
 Blockers:
@@ -168,7 +169,7 @@ Unresolved questions:
 
 | Question | Handling |
 | --- | --- |
-| Should scope expand beyond `CHANGE_PATHS`? | Use `G_SCOPE_EXPANSION` and ask before expanding. |
+| Should scope expand beyond `CHANGE_PATHS`? | Use `G_SCOPE_EXPANSION`, ask before expanding, and add only approved exact paths to `APPROVED_COMMIT_SCOPE`. |
 | Should meaningful in-scope changes be left uncommitted? | Use `G_IN_SCOPE_OMISSION` and ask before leaving them behind. |
 | Should verification recovery alter scope, group boundaries, or commit strategy? | Classify as needs user decision; do not retry automatically. |
 | Did post-commit hooks or generated files change the next safe action? | Adopt refreshed `SCOPED_STATE` and refreshed `Reference need` before replanning or continuing. |
