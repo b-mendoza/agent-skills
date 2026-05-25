@@ -1,7 +1,7 @@
 # Fetching GitHub Issue
 
 The coordinator retrieves exactly one GitHub issue into a validated local
-Markdown snapshot. It may derive identifiers, dispatch the delegated
+Markdown snapshot. It may normalize issue coordinates, dispatch the delegated
 `issue-retriever`, interpret only the retriever's structured summary, and report
 handoff state. Raw GitHub data stays out of coordinator context. The delegated
 retriever performs read-only GitHub queries, may write at most one unstaged file
@@ -9,64 +9,81 @@ at `docs/<ISSUE_SLUG>.md`, and must not modify GitHub.
 
 ```mermaid
 flowchart TD
-  START([Start: fetch one GitHub issue]) --> INPUT{ISSUE_URL supplied?}
-  INPUT -->|yes| DERIVE[Derive OWNER, REPO, ISSUE_NUMBER from URL]
-  INPUT -->|no| COORDS{OWNER, REPO, ISSUE_NUMBER supplied?}
-  COORDS -->|yes| NORMALIZE[Normalize owner and repo lowercase]
-  COORDS -->|no| BAD_INPUT([FETCH: FAIL - BAD_INPUT])
+  START([Start: GitHub issue reference provided]) --> INPUT_CHECK{Valid issue reference?}
+  INPUT_CHECK -->|ISSUE_URL| DERIVE["Derive OWNER, REPO, and ISSUE_NUMBER from URL"]
+  INPUT_CHECK -->|OWNER + REPO + ISSUE_NUMBER| DERIVE
+  INPUT_CHECK -->|missing or malformed| BAD_INPUT([FETCH: FAIL - BAD_INPUT - Validation: NOT_RUN])
 
-  DERIVE --> NORMALIZE
-  NORMALIZE --> SLUG[Set ISSUE_SLUG = owner-repo-number]
-  SLUG --> DISPATCH[Coordinator dispatches issue-retriever with reference paths and identifiers]
+  DERIVE --> NORMALIZE["Normalize owner and repo lowercase"]
+  NORMALIZE --> ARTIFACT_ID["Set ISSUE_SLUG and target docs/<ISSUE_SLUG>.md"]
+  ARTIFACT_ID --> DISPATCH["Dispatch issue-retriever with ISSUE_URL or coordinates and reference paths"]
 
-  subgraph RETRIEVER["Delegated issue-retriever boundary"]
-    DISPATCH --> PRECHECK{GitHub tools and auth available?}
-    PRECHECK -->|no tools| TOOLS_FAIL([FETCH: FAIL - TOOLS_MISSING])
-    PRECHECK -->|auth missing| AUTH_FAIL([FETCH: FAIL - AUTH])
-    PRECHECK -->|yes| QUERY[Read-only GitHub queries for issue, comments, linked data, labels, assignees, milestone, projects, and attachment-like links]
-    QUERY --> FOUND{Issue found and readable?}
-    FOUND -->|not found| NOT_FOUND([FETCH: FAIL - NOT_FOUND])
-    FOUND -->|rate limited| RATE_LIMIT([FETCH: FAIL - RATE_LIMIT])
-    FOUND -->|unexpected error| UNEXPECTED([FETCH: ERROR - UNEXPECTED])
-    FOUND -->|yes| ASSEMBLE[Assemble docs/ISSUE_SLUG.md from snapshot template]
-    ASSEMBLE --> VALIDATE{Artifact validation passes?}
-    VALIDATE -->|no| VALIDATION_FAIL([Validation: FAIL])
-    VALIDATE -->|yes| FETCH_STATUS{Fetch complete?}
-    FETCH_STATUS -->|complete| PASS([FETCH: PASS with Validation: PASS])
-    FETCH_STATUS -->|partial but valid| PARTIAL([FETCH: PARTIAL with Validation: PASS])
+  subgraph RETRIEVER [Delegated issue-retriever boundary]
+    RETRIEVER_ENTRY["issue-retriever starts"] --> PRECHECK{GitHub read path available?}
+    PRECHECK -->|auth missing| AUTH_STOP([FETCH: FAIL - AUTH - Validation: NOT_RUN])
+    PRECHECK -->|tools missing| TOOLS_STOP([FETCH: FAIL - TOOLS_MISSING - Validation: NOT_RUN])
+    PRECHECK -->|rate limited| RATE_STOP([FETCH: FAIL - RATE_LIMIT - Validation: NOT_RUN])
+    PRECHECK -->|unexpected error| ERROR_STOP([FETCH: ERROR - UNEXPECTED - Validation: NOT_RUN])
+    PRECHECK -->|yes| READ["Run read-only GitHub queries"]
+
+    READ --> FOUND{Issue found and readable?}
+    FOUND -->|not found| NOT_FOUND([FETCH: FAIL - NOT_FOUND - Validation: NOT_RUN])
+    FOUND -->|rate limited| RATE_STOP
+    FOUND -->|unexpected error| ERROR_STOP
+    FOUND -->|yes| COLLECT["Collect GitHub issue data required by the retrieval playbook and snapshot template"]
+
+    COLLECT --> ASSEMBLE["Assemble docs/<ISSUE_SLUG>.md from snapshot template"]
+    ASSEMBLE --> WRITE["Write one unstaged local snapshot"]
+    WRITE --> VALIDATE["Validate snapshot against fetch contract, playbook, and template"]
+    VALIDATE --> VALIDATION{Validation pass?}
+    VALIDATION -->|no after repair loop| VALIDATION_FAIL([FETCH: ERROR - UNEXPECTED - Validation: FAIL])
+    VALIDATION -->|yes| DISCOVERY{Required discovery complete?}
+    DISCOVERY -->|yes| PASS([FETCH: PASS - Validation: PASS])
+    DISCOVERY -->|partial but valid| PARTIAL([FETCH: PARTIAL - Validation: PASS])
   end
 
-  PASS --> SUMMARY[Retriever returns locked structured summary only]
+  DISPATCH --> RETRIEVER_ENTRY
+
+  BAD_INPUT --> SUMMARY["Locked summary/report carries FETCH, Validation, Failure category, File written, counts, warnings, and reason"]
+  AUTH_STOP --> SUMMARY
+  TOOLS_STOP --> SUMMARY
+  RATE_STOP --> SUMMARY
+  ERROR_STOP --> SUMMARY
+  NOT_FOUND --> SUMMARY
+  VALIDATION_FAIL --> SUMMARY
+  PASS --> SUMMARY
   PARTIAL --> SUMMARY
-  BAD_INPUT --> REPORT_FAIL[Coordinator reports failure category and recovery action]
-  TOOLS_FAIL --> REPORT_FAIL
-  AUTH_FAIL --> REPORT_FAIL
-  NOT_FOUND --> REPORT_FAIL
-  RATE_LIMIT --> REPORT_FAIL
-  UNEXPECTED --> REPORT_FAIL
-  VALIDATION_FAIL --> REPORT_FAIL
 
-  SUMMARY --> HANDOFF{Downstream phases tolerate partial context?}
-  HANDOFF -->|PASS or tolerated PARTIAL| REPORT_OK[Coordinator reports path, issue identity, counts, warnings, and GitHub-not-modified confirmation]
-  HANDOFF -->|PARTIAL not tolerated| REPORT_PARTIAL[Coordinator reports partial handoff state and stop reason]
+  SUMMARY --> COORDINATOR["Coordinator interprets structured summary without raw GitHub payloads"]
+  COORDINATOR --> RESULT_STATUS{Result status?}
+  RESULT_STATUS -->|FETCH: PASS with Validation: PASS| REPORT["Report path, issue identity, counts, warnings, and GitHub-not-modified confirmation"]
+  RESULT_STATUS -->|FETCH: PARTIAL with Validation: PASS| DOWNSTREAM{Downstream phase tolerates partial context?}
+  RESULT_STATUS -->|FETCH: FAIL with Validation: NOT_RUN| FAILURE_REPORT["Report failure category, reason, recovery action, and GitHub not modified"]
+  RESULT_STATUS -->|FETCH: ERROR or Validation: FAIL| FAILURE_REPORT
+  RESULT_STATUS -->|inconsistent status pairing| CONTRACT_CHECK["Consult fetch-contract.md before reporting error"]
+  CONTRACT_CHECK --> FAILURE_REPORT
+  DOWNSTREAM -->|yes| REPORT
+  DOWNSTREAM -->|no| PARTIAL_REPORT["Report partial context warning and stop reason"]
+  FAILURE_REPORT --> STOP([Stopped for user recovery])
+  PARTIAL_REPORT --> STOP
+  REPORT --> DONE([Ready for downstream workflow])
 
-  REPORT_OK --> DONE([Ready for downstream workflow])
-  REPORT_PARTIAL --> DEFERRED([Deferred: partial context not acceptable])
-  REPORT_FAIL --> STOP([Stopped for actionable recovery])
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class INPUT,COORDS,PRECHECK,FOUND,VALIDATE,FETCH_STATUS,HANDOFF decision;
-  class DERIVE,NORMALIZE,SLUG,DISPATCH,QUERY,ASSEMBLE check;
-  class SUMMARY,REPORT_OK,REPORT_PARTIAL output;
-  class PASS,DONE success;
-  class PARTIAL,DEFERRED refine;
-  class BAD_INPUT,TOOLS_FAIL,AUTH_FAIL,NOT_FOUND,RATE_LIMIT,UNEXPECTED,VALIDATION_FAIL,REPORT_FAIL,STOP stop;
+  class INPUT_CHECK,PRECHECK,FOUND,VALIDATION,DISCOVERY,RESULT_STATUS,DOWNSTREAM decision;
+  class DERIVE,NORMALIZE,ARTIFACT_ID,DISPATCH,RETRIEVER_ENTRY,READ,COLLECT,ASSEMBLE,WRITE,VALIDATE,COORDINATOR,CONTRACT_CHECK check;
+  class SUMMARY,FAILURE_REPORT,REPORT,PARTIAL_REPORT output;
+  class PASS,PARTIAL,DONE success;
+  class BAD_INPUT,AUTH_STOP,TOOLS_STOP,RATE_STOP,ERROR_STOP,NOT_FOUND,VALIDATION_FAIL,STOP stop;
 ```
 
-Completion rule: retrieval is complete only when the coordinator receives a
-structured summary proving `FETCH: PASS` or tolerated `FETCH: PARTIAL` with
-`Validation: PASS`, reports the unstaged snapshot path, and confirms GitHub was
-not modified.
+Readiness rule: continue only after `FETCH: PASS` with `Validation: PASS`, or
+after `FETCH: PARTIAL` with `Validation: PASS` when the next workflow phase
+explicitly tolerates partial context.
 
-Sensitive-action rule: editing, closing, commenting on, assigning, labeling,
-staging, or committing is outside this workflow and must route to a separate
-approved workflow.
+Boundary rule: GitHub mutations, local staging, and commits are out of scope;
+route them to a separate approved workflow.
