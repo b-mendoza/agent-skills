@@ -14,7 +14,7 @@ are demonstrated.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `REFERENCE_URL` | Yes | `https://example.com/sample-architecture` |
+| `REFERENCE_URL` | No | `https://example.com/sample-architecture` |
 | `TARGET_SCOPE` | Yes | `billing module` |
 | `BUSINESS_GOALS_AND_PAIN_POINTS` | Yes | `module boundaries are hard to understand` |
 | `KNOWN_DOMAIN_LANGUAGE` | No | `orders, invoices, settlements` |
