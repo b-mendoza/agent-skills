@@ -63,11 +63,33 @@ Read the subagent file only when dispatching it.
 | Exact comment shape and status definitions | `./references/comment-template.md` only when assembling output |
 | Final run validation and fix loop | `./references/review-quality-checklist.md` only before returning or posting |
 | Optional source-backed background or current platform docs | `./references/external-sources.md`, then fetch only the relevant URL |
+| Visual workflow audit or user-requested diagram | `./flow-diagram.md` only when the flow needs to be inspected or explained |
 
 Use local references first. Fetch external websites only when the user asks for
 source-backed rationale, current Jira/GitHub syntax matters, a referenced
 library/framework/API/CLI must be verified, or the local guidance is too terse
 for the decision at hand.
+
+## Coordinator Gate Rules
+
+Normalize write intent before dispatch:
+
+| User intent | `WRITE_MODE` | Coordinator action |
+| ----------- | ------------ | ------------------ |
+| Review, triage, assess, refine, or draft feedback | `draft` | Dispatch the reviewer and return a draft or ready-to-post comment without mutating the tracker. |
+| Post/add this refinement comment after review | `post-comment` | Confirm authorization and available posting tooling, then dispatch the reviewer. |
+| Ambiguous wording such as "handle this" or "clean this up" | `unknown` | Dispatch the reviewer in the safe draft path unless the request is mutation-only. |
+
+A mutation-only request asks for tracker state changes without a refinement
+review, such as editing the title/body, changing fields, labels, assignee,
+status, sprint, milestone, links, parent-child relationships, existing comments,
+or creating child work. Return `Mode: Deferred` for those requests and point to a
+separate approved workflow.
+
+If the request mixes refinement review with a sensitive recommendation, pass the
+request through review but treat lifecycle, split, spike, security, data,
+permissions, migration, customer-impact, and operational-risk recommendations as
+human-gated unless explicit approval is present.
 
 ## Dispatch Contract
 
@@ -109,6 +131,11 @@ Comment: <final comment or draft>
 Use `Posted` only after the coordinator successfully posts the exact refinement
 comment returned by the reviewer.
 
+`REVIEW` describes whether the reviewer workflow completed safely. It is not the
+same as the work item's readiness status. A successful review can return
+`REVIEW=PASS` with `Status: Ready`, `Needs refinement`, `Needs split`,
+`Needs spike`, `Blocked`, or `Not actionable`.
+
 Use the reviewer `REVIEW` state as the first output gate. The subagent emits the
 field as `REVIEW: <state>`; coordinator gate labels use `REVIEW=<state>` for the
 same state values.
@@ -134,6 +161,21 @@ If the reviewer reports a mutation-only request with no refinement review to
 perform, return `Mode: Deferred` and explain that the mutation belongs in a
 separate approved workflow.
 
+## Coordinator Validation
+
+Before returning or posting, verify these observable conditions:
+
+- A source item or usable context was supplied, or the response is `Mode: Blocked`
+  with one recovery question.
+- `REVIEW=PASS` is the only state that reaches draft, ready-to-post, or posting
+  output handling.
+- `POST_ALLOWED=yes` is present only for `WRITE_MODE=post-comment` with explicit
+  authorization and available posting tooling.
+- The returned `Comment` is exactly the reviewer's comment when posting, with no
+  coordinator edits beyond adding posting failure context outside the comment.
+- `Mode: Posted` is used only after one successful post attempt.
+- `Mode: Deferred` is used for mutation-only requests outside refinement review.
+
 ## Escalation
 
 Ask the user one concise question when no source item is available, when posting
@@ -150,6 +192,16 @@ recommendations.
 Input: `Review https://github.com/acme/app/issues/42 for readiness and draft a refinement comment.`
 
 Flow: normalize `ITEM_URL`, dispatch `refinement-reviewer` with
-`WRITE_MODE=draft`, receive `REVIEW_STATUS=Needs refinement` and
-`Comment mode=Draft`, then return the draft comment.
+`WRITE_MODE=draft`, receive `REVIEW=PASS`, `REVIEW_STATUS=Needs refinement`, and
+`Comment mode=Draft`, then return the draft comment. The non-ready status does
+not make the reviewer run a failure; it means the review completed and found
+gaps.
+</example>
+
+<example>
+Input: `Close this Jira ticket and create the missing subtasks.`
+
+Flow: classify the request as mutation-only, return `Mode: Deferred` with
+`Status: Not actionable`, and explain that lifecycle and child-work changes
+belong in a separate approved workflow.
 </example>

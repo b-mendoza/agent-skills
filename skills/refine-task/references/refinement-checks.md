@@ -25,6 +25,22 @@ applicable`.
 | Rationale | Why this approach, and what alternatives or trade-offs justify it? | Decision records, comments, designs, constraints |
 | Priority | Which decisions or subtasks unlock others, and what should happen first, later, or not at all? | Dependencies, risk sequence, delivery plan, release dates |
 
+## Item Type Focus
+
+Apply the core checks differently based on the item under review:
+
+| Item type | Additional review focus |
+| --------- | ----------------------- |
+| Jira epic or GitHub parent issue | Parent outcome, coherent child grouping, child readiness, dependency order, milestone or release slice, progress signal, and whether child work can be verified independently. |
+| Jira story/task/bug or GitHub leaf issue | Single user or system outcome, clear acceptance criteria, implementation boundary, direct dependencies, and whether subtasks are necessary or only administrative. |
+| Jira subtask or GitHub sub-issue | Parent alignment, independently verifiable scope, blocker relationship to siblings, and whether the sub-item duplicates parent acceptance criteria instead of owning a specific slice. |
+| Duplicate, obsolete, or superseded item | Evidence for non-actionability, owner confirmation needed, and a neutral lifecycle question instead of an ungated close/merge recommendation. |
+
+For Jira or GitHub hierarchy claims, distinguish the current tracker state from a
+recommended structure. The reviewer may recommend or question a parent-child
+shape, but the comment should not imply that links, child work, or dependency
+relationships have been changed.
+
 ## Technical Claim Verification
 
 Use trusted docs or codebase evidence for claims involving current library,
@@ -48,6 +64,10 @@ Consider a split when the item combines multiple goals, personas, workflows,
 systems, releases, risk profiles, owners, or independent acceptance criteria.
 Gate split recommendations through `reviewer-policy.md` before presenting them
 as recommendations.
+
+For parent issues and epics, a split signal may mean rebalancing child work
+rather than splitting the parent itself. Name which child outcome, dependency,
+or acceptance criterion creates the split pressure.
 
 ## Spike Signals
 

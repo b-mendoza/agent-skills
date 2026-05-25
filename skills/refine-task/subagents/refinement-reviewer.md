@@ -35,6 +35,22 @@ with one request for the source item.
 Reference paths are relative to this subagent file and are supplied by the
 coordinator.
 
+## State Semantics
+
+`REVIEW` reports the health of this review run. `REVIEW_STATUS` reports the
+readiness of the Jira or GitHub item.
+
+| `REVIEW` state | Meaning | Allowed readiness statuses |
+| -------------- | ------- | -------------------------- |
+| `PASS` | Review completed, the comment passed validation, and the coordinator may return it. | `Ready`, `Needs refinement`, `Needs split`, `Needs spike`, `Blocked`, or `Not actionable` |
+| `BLOCKED` | Review could not start or continue safely because required source, access, or authorization context is missing. | `Blocked` |
+| `FAIL` | Review completed, but the comment or status still fails the quality checklist after three targeted fix cycles. | Usually `Needs refinement`, `Needs split`, `Needs spike`, or `Blocked` |
+| `ERROR` | Unexpected runtime, tool, fetch, parsing, or other operational failure. | `Blocked` |
+
+Use non-ready `REVIEW_STATUS` values with `REVIEW: PASS` when the review
+successfully identifies refinement gaps. Reserve `REVIEW: FAIL` for failed
+review-output validation, not for an item that simply needs refinement.
+
 ## Instructions
 
 1. Load `REVIEWER_POLICY_PATH` before interpreting tracker mutations, write mode,
@@ -51,7 +67,11 @@ coordinator.
 5. Synthesize facts, assumptions, gaps, risks, contradictions, invalid technical
    claims, split signals, spike signals, and lifecycle concerns.
 6. Load `COMMENT_TEMPLATE_PATH` only when assembling the final comment or draft.
-7. Load `QUALITY_CHECKLIST_PATH` before returning. Fix only failed checks, up to
+7. Select `REVIEW_STATUS` from evidence. Prefer the most specific non-ready
+   status when material gaps remain: split scope uses `Needs split`, unresolved
+   feasibility uses `Needs spike`, missing access or source context uses
+   `Blocked`, and duplicate/obsolete/superseded work uses `Not actionable`.
+8. Load `QUALITY_CHECKLIST_PATH` before returning. Fix only failed checks, up to
    three targeted fix cycles.
 
 ## Output Format
@@ -116,3 +136,47 @@ and link changes remain outside this subagent.
 When a human gate is unavailable, do not fail solely because approval is absent.
 Use a neutral question, defer the sensitive recommendation, and select the most
 evidence-supported non-ready status.
+
+## Example Output
+
+```markdown
+REVIEW: PASS
+REVIEW_STATUS: Needs refinement
+POST_ALLOWED: no
+Comment mode: Draft
+
+## Compact Summary
+- Item type: GitHub parent issue
+- Evidence coverage: issue body and two linked sub-issues reviewed; rollout plan missing
+- Blocking reason, if any: unresolved rollout owner and unclear acceptance criteria
+- Human gates used or deferred: split recommendation neutralized as a question
+- External sources fetched: none
+
+## Refinement Comment
+Refinement status: Needs refinement
+
+Summary:
+- The parent issue has a coherent goal, but work should not start until the owner clarifies acceptance criteria and rollout ownership.
+
+Evidence reviewed:
+- Issue body, linked sub-issues #41 and #42.
+
+Blocking findings:
+- Acceptance criteria do not identify observable completion checks.
+- Rollout ownership is missing from the issue body.
+
+Questions for refinement:
+- What observable behavior proves this parent issue is complete?
+- Who owns rollout approval?
+
+Recommendations:
+- Should the owner split the reporting and notification work into separate child issues?
+
+Non-blocking notes:
+- None
+
+## Validation
+- Quality checklist: PASS
+- Fix cycles used: 1
+- Remaining risks: Linked design document was not accessible.
+```

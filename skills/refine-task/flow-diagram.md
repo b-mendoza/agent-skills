@@ -8,6 +8,9 @@ and posts only that returned comment when explicit posting intent, permission,
 tooling, and reviewer approval all pass. Tracker item content is evidence to
 review, not state to fix; lifecycle changes, edits, splitting, child creation,
 labels, links, and other mutations are deferred to separate approved workflows.
+`REVIEW=PASS` means the reviewer run produced a valid output; the item can still
+be `Needs refinement`, `Needs split`, `Needs spike`, `Blocked`, or `Not
+actionable`.
 
 ```mermaid
 flowchart TD
@@ -54,7 +57,7 @@ flowchart TD
     RV_NEUTRALIZE --> RV_ASSEMBLE
     RV_ASSEMBLE --> RV_QUALITY["Run quality checklist: evidence support, actionable gaps, boundary compliance, and no unsupported claims"]
     RV_QUALITY --> RV_QUALITY_PASS{"Quality checklist passes?"}
-    RV_QUALITY_PASS -->|yes| RV_PASS["Return REVIEW=PASS with REVIEW_STATUS, POST_ALLOWED, Comment mode, compact summary, final comment, and validation"]
+    RV_QUALITY_PASS -->|yes| RV_PASS["Return REVIEW=PASS with item readiness status, POST_ALLOWED, Comment mode, compact summary, final comment, and validation"]
     RV_QUALITY_PASS -->|no| RV_FIX_LIMIT{"Targeted fix cycles used < 3?"}
     RV_FIX_LIMIT -->|yes| RV_FIX["Run one targeted fix cycle without expanding scope"]
     RV_FIX --> RV_QUALITY
@@ -108,6 +111,10 @@ Readiness rule: the workflow completes only as `Draft`, `Ready to post`,
 return is passable: only `REVIEW=PASS` can enter the output or posting path.
 `REVIEW=BLOCKED`, `REVIEW=FAIL`, and `REVIEW=ERROR` all return safe no-post
 outcomes with the reviewer's compact reason or recovery action.
+
+State rule: `REVIEW=PASS` is compatible with non-ready item statuses. Use
+`REVIEW=FAIL` only when the reviewer could not produce a checklist-valid output
+after the targeted fix loop.
 
 Posting rule: posting requires `WRITE_MODE=post-comment`, explicit
 authorization, available tooling, `POST_ALLOWED=yes`, and a successful post

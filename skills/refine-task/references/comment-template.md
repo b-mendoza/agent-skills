@@ -14,6 +14,17 @@
 | `Blocked` | Missing access, missing source context, permissions, or required owner input prevents meaningful review. |
 | `Not actionable` | The item appears duplicate, obsolete, superseded, or otherwise not suitable for implementation as written. |
 
+## Status Selection Notes
+
+- Use `Needs split` when scope decomposition is the main blocker. Use `Needs
+  refinement` when split discussion is only one of several ordinary gaps.
+- Use `Needs spike` when a specific research question blocks planning. Include
+  the proposed validation method and exit criteria in the comment.
+- Use `Not actionable` only with evidence that the item is duplicate, obsolete,
+  superseded, already completed, or outside the team's implementation path.
+- Use `Blocked` when missing access, missing source context, or required owner
+  authorization prevents a meaningful readiness review.
+
 ## Comment Shape
 
 ```text
@@ -43,6 +54,8 @@ Non-blocking notes:
 - Keep the summary short and decision-oriented.
 - Put owner decisions in `Questions for refinement`, not hidden in prose.
 - Put sensitive lifecycle, split, or spike guidance in `Recommendations` only when approved or clearly framed as non-mutating advice.
+- For epics and parent issues, describe child-work changes as questions or
+  recommendations unless the user provided explicit approval to recommend them.
 - Cite evidence compactly, such as `issue body`, `comment by @owner on 2026-05-21`, `linked issue #42`, `design doc section 3`, or `official API docs`.
 - State `None` rather than deleting a section if deleting it could hide that the category was checked.
 

@@ -11,6 +11,23 @@ reviewer may inspect available context, evaluate readiness, ask questions, and
 produce one refinement comment or draft. The reviewer's authority is advisory:
 recommendations are not permission to perform tracker changes.
 
+## State And Status Policy
+
+Keep workflow state separate from item readiness:
+
+- `REVIEW: PASS` means the review workflow produced a valid comment or draft.
+  It may still report `Ready`, `Needs refinement`, `Needs split`, `Needs spike`,
+  `Blocked`, or `Not actionable` as the item status.
+- `REVIEW: BLOCKED` means required source, access, or authorization context is
+  missing, so the review cannot proceed safely.
+- `REVIEW: FAIL` means the review output failed its quality checklist after
+  three targeted fix cycles.
+- `REVIEW: ERROR` means an unexpected runtime, tool, fetch, or parsing failure
+  interrupted the run.
+
+Use `REVIEW_STATUS` and the tracker-facing comment to describe the item's
+readiness. Use `REVIEW` to tell the coordinator how to route the run.
+
 ## Allowed Outcomes
 
 | Outcome | Meaning |
@@ -30,6 +47,10 @@ or parent-child relationships.
 Mutation examples that must be deferred: delete comments, close issues, merge or
 supersede items, edit labels, assign owners, move workflow status, create child
 work, split items, or change links.
+
+Drafting a recommendation or neutral question about those actions is still
+inside reviewer scope when it is evidence-backed and gated. Performing the
+action, or presenting it as already approved, remains outside scope.
 
 ## Posting Boundary
 
@@ -54,6 +75,10 @@ Gate before stating these as recommendations:
 If approval is unavailable, convert the recommendation into a neutral question
 or concern. Example: `This appears duplicated by ISSUE-123. Should the owner
 consider superseding this item?`
+
+For parent-child work, recommending a shape is advisory. Creating Jira child
+work, adding GitHub sub-issues, changing parent links, reprioritizing children,
+or altering dependencies belongs to a separate approved workflow.
 
 ## Phase Order
 
