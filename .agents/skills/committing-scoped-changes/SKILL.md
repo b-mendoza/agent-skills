@@ -30,6 +30,8 @@ Normalize before dispatch:
 
 - Ask one targeted question when `CHANGE_PATHS` is missing or ambiguous.
 - Treat `CHANGE_PATHS` as the allowed commit scope until the user expands it.
+- Track `APPROVED_COMMIT_SCOPE` as `CHANGE_PATHS` plus only exact paths approved
+  through `G_SCOPE_EXPANSION`; pass it to the executor for every group.
 - Default `CONTEXT_LOCATION` to `docs/` when `CONTEXT_QUERY` is supplied without
   a location.
 - Infer `COMMIT_STYLE` from recent commits when not supplied.
@@ -84,7 +86,11 @@ override web content.
 - `CHANGE_PATHS` is the allow-list for commit candidates. Use
   `G_SCOPE_EXPANSION` before expanding scope and `G_IN_SCOPE_OMISSION` before
   leaving meaningful in-scope changes uncommitted.
+- `APPROVED_COMMIT_SCOPE` is the executor's effective allow-list. It starts as
+  `CHANGE_PATHS` and changes only by explicit `G_SCOPE_EXPANSION` approval.
 - Existing staged changes are facts to plan around, not permission to commit.
+  Staged content outside the approved group stays protected unless the plan and
+  approved scope explicitly include it.
 - Dispatch `scoped-state-summarizer` with `STATE_REFRESH_MODE=post-commit` for
   post-commit refresh because hooks, generated files, or concurrent workspace
   edits can change the next safe action. When the refresh returns
@@ -120,14 +126,16 @@ override web content.
    `NEEDS_DECISION` result, then redispatch with the answer.
 5. Apply `G_SCOPE_EXPANSION`; if the plan includes paths outside
    `CHANGE_PATHS`, ask the user to approve the exact extra paths, reason, risk,
-   reversibility, and safer alternative before continuing.
+   reversibility, and safer alternative before continuing. When approved, add
+   only those exact paths to `APPROVED_COMMIT_SCOPE`; when no expansion is
+   needed, keep `APPROVED_COMMIT_SCOPE=CHANGE_PATHS`.
 6. Apply `G_IN_SCOPE_OMISSION`; if the plan leaves meaningful in-scope changes
    uncommitted, ask the user to approve the exact omitted changes, reason, risk,
    reversibility, and safer alternative before continuing.
 7. Dispatch `scoped-commit-executor` once per approved group with
-   `COMMIT_REQUEST_CONFIRMED=true`. Pass staging or commit reference URLs only
-   when the group plan or executor reports that Git command semantics matter for
-   the next approved group.
+   `COMMIT_REQUEST_CONFIRMED=true` and the current `APPROVED_COMMIT_SCOPE`. Pass
+   staging or commit reference URLs only when the group plan or executor reports
+   that Git command semantics matter for the next approved group.
 8. For `COMMIT_EXECUTE: VERIFY_FAILED`, use the executor's
    `Recovery classification` as an exclusive branch. Retry only
    `same-scope-same-group-retry` while the approved group's executor attempt

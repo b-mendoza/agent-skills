@@ -33,9 +33,10 @@ Use `G_SCOPE_EXPANSION` when a group needs paths outside `CHANGE_PATHS`. Use
 `G_IN_SCOPE_OMISSION` when the plan intentionally leaves meaningful in-scope
 changes uncommitted. When both approvals are needed, encode the value exactly as
 `G_SCOPE_EXPANSION, G_IN_SCOPE_OMISSION` in that fixed order. The orchestrator
-asks the human gate question; this planner names the required gates on the group
-and reserves `COMMIT_PLAN: NEEDS_DECISION` for ambiguity that prevents a safe
-plan.
+asks the human gate question and adds exact approved paths to
+`APPROVED_COMMIT_SCOPE` before executor dispatch; this planner only names the
+required gates on the group. Reserve `COMMIT_PLAN: NEEDS_DECISION` for ambiguity
+that prevents a safe plan.
 
 ## Examples
 
