@@ -53,9 +53,12 @@ key is not a Jira-style `PROJECT-1234` key, return `FETCH: FAIL` with
 8. Read `FETCH_CONTRACT_PATH` only for exact summary ordering, count
    semantics, and examples, then return the locked summary with no prose.
 
-Use at most 2 retries for explicit rate limiting or transient service
-failures, with 1s then 3s backoff. Classify exhausted limits as `FETCH: FAIL`
-with `Failure category: RATE_LIMIT`.
+Use Jira-provided retry guidance for explicit rate limiting when available:
+honor `Retry-After` or `X-RateLimit-Reset`, preserve `RateLimit-Reason` in
+warnings or the fatal reason, then apply the local retry budget. When no
+explicit timing is available, use at most 2 retries with 1s then 3s backoff
+and jitter. Classify exhausted limits as `FETCH: FAIL` with
+`Failure category: RATE_LIMIT`.
 
 ## Output Format
 

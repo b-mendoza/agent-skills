@@ -44,8 +44,8 @@ parent comments in chronological order with author and timestamp; attachment
 metadata (filename, media type, size); non-empty custom fields not represented
 elsewhere, sorted by field name.
 
-**Heading rewrite.** Outside fenced code blocks, rewrite Jira-authored
-Markdown headings (`#`–`####`) as bold labels so body content cannot collide
+**Heading rewrite.** Outside fenced code blocks, rewrite Jira-authored ATX
+Markdown headings (`#`-`######`) as bold labels so body content cannot collide
 with reserved snapshot headings. Example: `## Steps` becomes `**Steps**`.
 
 **Multi-value flattening.** Serialize arrays as comma-separated strings sorted
@@ -93,12 +93,14 @@ to that comment section, record the same warning under
 
 ## Assembly
 
-Read `./ticket-snapshot-template.md` only at assembly time. Copy
-the fenced shape into `docs/<TICKET_KEY>.md` and fill it from retrieved data.
-Top-level headings are always required. For empty scalar metadata values,
-write `_None_`. Normalize timestamps with times to `YYYY-MM-DD HH:MM UTC`;
-keep date-only values as `YYYY-MM-DD`. Leave the artifact in place and
-unstaged.
+Read `./ticket-snapshot-template.md` only at assembly time. Before filling the
+template, normalize all retrieved Markdown body content by rewriting
+Jira-authored ATX headings (`#`-`######`) outside fenced code blocks as bold
+labels. Copy the fenced shape into `docs/<TICKET_KEY>.md` and fill it from
+retrieved data. Top-level headings are always required. For empty scalar
+metadata values, write `_None_`. Normalize timestamps with times to
+`YYYY-MM-DD HH:MM UTC`; keep date-only values as `YYYY-MM-DD`. Leave the
+artifact in place and unstaged.
 
 ## Validation Gate
 
@@ -123,6 +125,8 @@ and re-check. Max 3 repair passes. After the limit, return `FETCH: ERROR`,
 ## Rate Limiting
 
 For exact retry policy and limit categories, fetch `jira-rate-limits` from
-`external-sources.md` when needed. Default behavior: at most 2 retries with
-1s then 3s backoff; classify exhausted limits as `FETCH: FAIL` with
-`Failure category: RATE_LIMIT`.
+`external-sources.md` when needed. When Jira returns rate-limit metadata, honor
+`Retry-After` or `X-RateLimit-Reset`, preserve `RateLimit-Reason`, and retry
+only while the local retry budget remains. Default behavior without explicit
+timing: at most 2 retries with 1s then 3s backoff and jitter. Classify
+exhausted limits as `FETCH: FAIL` with `Failure category: RATE_LIMIT`.

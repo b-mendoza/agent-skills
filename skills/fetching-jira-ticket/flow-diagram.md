@@ -21,17 +21,25 @@ flowchart TD
     RETRIEVER_ENTRY["ticket-retriever starts"] --> PRECHECK{Jira read path available?}
     PRECHECK -->|auth missing| AUTH_STOP([FETCH: FAIL - AUTH - Validation: NOT_RUN])
     PRECHECK -->|tools missing| TOOLS_STOP([FETCH: FAIL - TOOLS_MISSING - Validation: NOT_RUN])
-    PRECHECK -->|rate limited| RATE_STOP([FETCH: FAIL - RATE_LIMIT - Validation: NOT_RUN])
+    PRECHECK -->|rate limited| RATE_HANDLE["Inspect Jira rate-limit response metadata"]
     PRECHECK -->|unexpected error| ERROR_STOP([FETCH: ERROR - UNEXPECTED - Validation: NOT_RUN])
     PRECHECK -->|yes| READ["Run read-only Jira queries"]
 
+    RATE_HANDLE --> RATE_META{Retry guidance available?}
+    RATE_META -->|Retry-After or X-RateLimit-Reset| RATE_WAIT["Honor Jira retry timing and RateLimit-Reason when present"]
+    RATE_META -->|no explicit timing| LOCAL_RETRY{Local retry budget remains?}
+    RATE_WAIT --> LOCAL_RETRY
+    LOCAL_RETRY -->|yes| READ
+    LOCAL_RETRY -->|no| RATE_STOP([FETCH: FAIL - RATE_LIMIT - Validation: NOT_RUN])
+
     READ --> FOUND{Ticket found and readable?}
     FOUND -->|not found| NOT_FOUND([FETCH: FAIL - NOT_FOUND - Validation: NOT_RUN])
-    FOUND -->|rate limited| RATE_STOP
+    FOUND -->|rate limited| RATE_HANDLE
     FOUND -->|unexpected error| ERROR_STOP
-    FOUND -->|yes| COLLECT["Collect Jira ticket data required by the retrieval playbook and snapshot template"]
+    FOUND -->|yes| COLLECT["Collect Jira ticket, subtask, and linked issue data required by the retrieval playbook and snapshot template"]
 
-    COLLECT --> ASSEMBLE["Assemble docs/<TICKET_KEY>.md from snapshot template"]
+    COLLECT --> NORMALIZE_MD["Rewrite user-authored ATX headings levels 1-6 outside code fences before template assembly"]
+    NORMALIZE_MD --> ASSEMBLE["Assemble docs/<TICKET_KEY>.md from snapshot template"]
     ASSEMBLE --> WRITE["Write one unstaged local snapshot"]
     WRITE --> VALIDATE["Validate snapshot against fetch contract, playbook, and template"]
     VALIDATE --> VALIDATION{Validation pass?}
@@ -43,7 +51,7 @@ flowchart TD
 
   DISPATCH --> RETRIEVER_ENTRY
 
-  BAD_INPUT --> SUMMARY["Locked summary/report carries FETCH, Validation, Failure category, File written, counts, warnings, and reason"]
+  BAD_INPUT --> SUMMARY["12-line fetch summary and coordinator report carry FETCH, Validation, Failure category, File written, counts, warnings, and reason"]
   AUTH_STOP --> SUMMARY
   TOOLS_STOP --> SUMMARY
   RATE_STOP --> SUMMARY
@@ -73,8 +81,8 @@ flowchart TD
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class INPUT_CHECK,PRECHECK,FOUND,VALIDATION,DISCOVERY,RESULT_STATUS,DOWNSTREAM decision;
-  class DERIVE,NORMALIZE,ARTIFACT_ID,DISPATCH,RETRIEVER_ENTRY,READ,COLLECT,ASSEMBLE,WRITE,VALIDATE,COORDINATOR,CONTRACT_CHECK check;
+  class INPUT_CHECK,PRECHECK,RATE_META,LOCAL_RETRY,FOUND,VALIDATION,DISCOVERY,RESULT_STATUS,DOWNSTREAM decision;
+  class DERIVE,NORMALIZE,ARTIFACT_ID,DISPATCH,RETRIEVER_ENTRY,RATE_HANDLE,RATE_WAIT,READ,COLLECT,NORMALIZE_MD,ASSEMBLE,WRITE,VALIDATE,COORDINATOR,CONTRACT_CHECK check;
   class SUMMARY,FAILURE_REPORT,REPORT,PARTIAL_REPORT output;
   class PASS,PARTIAL,DONE success;
   class BAD_INPUT,AUTH_STOP,TOOLS_STOP,RATE_STOP,ERROR_STOP,NOT_FOUND,VALIDATION_FAIL,STOP stop;
