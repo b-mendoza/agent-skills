@@ -8,72 +8,83 @@ flowchart TD
   INPUTS --> NORMALIZE["Normalize OWNER, REPO, ISSUE_NUMBER, and ISSUE_SLUG"]
   NORMALIZE --> BOUNDARY["State role, authority, trust model, and mutation limits"]
   BOUNDARY --> PROGRESS["Read local progress summary via progress-tracker"]
-  PROGRESS --> RESUME{"Existing progress?"}
+  PROGRESS --> RESUME{"Existing progress or resume point found?"}
 
-  RESUME -->|no| PREFLIGHT_P1["Preflight Phase 1"]
+  RESUME -->|no| NEED_SOURCE_P1{"Issue source available for Phase 1?"}
+  NEED_SOURCE_P1 -->|no| BLOCKED_SOURCE([Blocked: issue URL or owner / repo / issue number required])
+  NEED_SOURCE_P1 -->|yes| PREFLIGHT_P1["Preflight Phase 1"]
   RESUME -->|yes| RESUME_POINT["Choose resume point from progress artifacts and verdicts"]
   RESUME_POINT --> RESUME_GATE{"Resume past Phase 1?"}
-  RESUME_GATE -->|no| PREFLIGHT_P1
+  RESUME_GATE -->|no| NEED_SOURCE_P1
   RESUME_GATE -->|yes| ASK_RESUME["Ask user to confirm resume point"]
-  ASK_RESUME -->|confirmed| PREFLIGHT_NEXT["Preflight remaining phases"]
   ASK_RESUME -->|declined| STOPPED([Stopped by user])
-  PREFLIGHT_NEXT --> PHASE_ROUTE{"Next phase?"}
+  ASK_RESUME -->|confirmed| PREFLIGHT_NEXT["Preflight remaining phases"]
+  PREFLIGHT_P1 --> PREFLIGHT_OK{"Preflight verdict passes?"}
+  PREFLIGHT_NEXT --> PREFLIGHT_OK
+  PREFLIGHT_OK -->|no| BLOCKED_PREFLIGHT([Blocked or escalated: preflight failure])
+  PREFLIGHT_OK -->|yes| ROUTE{"Choose next ready phase"}
 
-  PREFLIGHT_P1 --> P1["Phase 1: fetch work item with fetching-github-issue"]
-  P1 --> V1{"Artifact validation pass?"}
+  ROUTE -->|Phase 1| P1["Phase 1: fetch work item with fetching-github-issue"]
+  ROUTE -->|Phase 2| P2
+  ROUTE -->|Phase 3| P3
+  ROUTE -->|write approval| WRITE_READY
+  ROUTE -->|task selection| TASK_SELECT
+  ROUTE -->|Phase 5| P5
+  ROUTE -->|Phase 6| P6
+  ROUTE -->|execution approval| GATE_EXEC
+
+  P1 --> V1{"Phase 1 artifact validation pass?"}
   V1 -->|no| BLOCKED([Blocked])
   V1 -->|yes| P2["Phase 2: plan tasks with planning-github-issue-tasks"]
-
-  PHASE_ROUTE -->|Phase 1| PREFLIGHT_P1
-  PHASE_ROUTE -->|Phase 2| P2
-  PHASE_ROUTE -->|Phase 3| P3
-  PHASE_ROUTE -->|Phase 4| GH_WRITE_GATE
-  PHASE_ROUTE -->|Phase 5| TASK_SELECT
-  PHASE_ROUTE -->|Phase 6| P6
-  PHASE_ROUTE -->|Phase 7| EXEC_GATE
-
-  P2 --> V2{"Planning artifact validation pass?"}
+  P2 --> V2{"Task plan artifact validation pass?"}
   V2 -->|no| BLOCKED
-  V2 -->|yes| P3["Phase 3: clarify assumptions and critique issue task plan"]
+  V2 -->|yes| P3["Phase 3: clarify assumptions and critique task plan"]
 
-  P3 --> V3{"Validation pass?"}
+  P3 --> V3{"Phase 3 validation pass?"}
   V3 -->|no| BLOCKED
-  V3 -->|yes| P3_FLAGS{"Blockers or re-plan needed?"}
-  P3_FLAGS -->|blockers present| BLOCKED
-  P3_FLAGS -->|re-plan needed and fewer than 3 attempts| P2
-  P3_FLAGS -->|re-plan attempts exhausted| ESCALATED([Escalated])
-  P3_FLAGS -->|no blockers| GH_WRITE_READY([Ready for GitHub write approval])
-  GH_WRITE_READY --> GH_WRITE_GATE{"Approve GitHub writes?"}
+  V3 -->|yes| C3{"Blockers or re-plan needed?"}
+  C3 -->|blockers present| BLOCKED
+  C3 -->|RE_PLAN_NEEDED| LOOP3{"Phase 3 re-plan count fewer than 3 attempts?"}
+  LOOP3 -->|yes| P2
+  LOOP3 -->|no| ESCALATED([Escalated])
+  C3 -->|ready| WRITE_READY([Ready for GitHub write approval])
+  WRITE_READY --> NEED_WRITE_CONTEXT{"GitHub write context available?"}
+  NEED_WRITE_CONTEXT -->|no| BLOCKED_WRITE_CONTEXT([Blocked: issue URL or owner / repo / issue context required])
+  NEED_WRITE_CONTEXT -->|yes| GATE_WRITE{"Approve GitHub writes for child items?"}
 
-  GH_WRITE_GATE -->|declined| RECORD_GH_DECLINE["Record declined GitHub write decision and handoff"]
-  RECORD_GH_DECLINE --> STOPPED
-  GH_WRITE_GATE -->|approved| P4["Phase 4: create child items with creating-github-child-issues"]
+  GATE_WRITE -->|declined| RECORD_WRITE_DECLINE["Record declined GitHub write decision and handoff"]
+  RECORD_WRITE_DECLINE --> STOPPED
+  GATE_WRITE -->|approved| P4["Phase 4: create child items with creating-github-child-issues"]
   P4 --> V4{"Child item validation pass?"}
   V4 -->|no| BLOCKED
   V4 -->|yes| TASK_READY([Ready for task selection])
   TASK_READY --> TASK_SELECT{"User selects task?"}
 
-  TASK_SELECT -->|selected| P5["Phase 5: plan task execution with planning-github-task"]
+  TASK_SELECT -->|selected| TASK_CONTEXT["Optionally gather GitHub status, codebase, code reference, and docs context"]
   TASK_SELECT -->|no tasks remain| WORKFLOW_DONE([Workflow complete])
   TASK_SELECT -->|stop| STOPPED
+  TASK_CONTEXT --> P5["Phase 5: plan task execution with planning-github-task"]
   P5 --> V5{"Execution planning artifact validation pass?"}
   V5 -->|no| BLOCKED
   V5 -->|yes| P6["Phase 6: clarify and critique execution plan"]
 
-  P6 --> V6{"Validation pass?"}
+  P6 --> V6{"Phase 6 validation pass?"}
   V6 -->|no| BLOCKED
-  V6 -->|yes| P6_FLAGS{"Blockers or re-plan needed?"}
-  P6_FLAGS -->|blockers present| BLOCKED
-  P6_FLAGS -->|re-plan needed and fewer than 3 attempts| P5
-  P6_FLAGS -->|re-plan attempts exhausted| ESCALATED
-  P6_FLAGS -->|no blockers| EXEC_READY([Ready for execution])
-  EXEC_READY --> EXEC_GATE{"Confirm real task execution?"}
+  V6 -->|yes| C6{"Blockers or re-plan needed?"}
+  C6 -->|blockers present| BLOCKED
+  C6 -->|RE_PLAN_NEEDED| LOOP6{"Phase 6 re-plan count fewer than 3 attempts?"}
+  LOOP6 -->|yes| P5
+  LOOP6 -->|no| ESCALATED
+  C6 -->|ready| EXEC_READY([Ready for execution])
+  EXEC_READY --> GATE_EXEC{"Confirm critiqued task plan and start real execution?"}
 
-  EXEC_GATE -->|declined| RECORD_EXEC_DECLINE["Record declined execution decision and handoff"]
+  GATE_EXEC -->|declined| RECORD_EXEC_DECLINE["Record declined execution decision and handoff"]
   RECORD_EXEC_DECLINE --> STOPPED
-  EXEC_GATE -->|confirmed| P7["Phase 7: kick off and execute task with executing-github-task"]
-  P7 --> DOWNSTREAM["Downstream skill owns git, file, code, CI, GitHub, web, and quality fix cycles"]
-  DOWNSTREAM --> TASK_DONE([Task complete])
+  GATE_EXEC -->|confirmed| P7["Phase 7: kick off and execute task with executing-github-task"]
+  P7 --> EXEC_RESULT{"Downstream execution result?"}
+  EXEC_RESULT -->|internal fixes needed| P7
+  EXEC_RESULT -->|blocked or error| BLOCKED_P7([Blocked or escalated: execution failure report])
+  EXEC_RESULT -->|task complete| TASK_DONE([Task complete])
   TASK_DONE --> NEXT_TASK{"Choose next task or stop?"}
   NEXT_TASK -->|next task| TASK_SELECT
   NEXT_TASK -->|stop| STOPPED
@@ -96,13 +107,13 @@ flowchart TD
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class RESUME,RESUME_GATE,PHASE_ROUTE,V1,V2,V3,P3_FLAGS,GH_WRITE_GATE,V4,TASK_SELECT,V5,V6,P6_FLAGS,EXEC_GATE,NEXT_TASK decision;
-  class PREFLIGHT_P1,PREFLIGHT_NEXT,V1,V2,V3,V4,V5,V6 check;
-  class ASK_RESUME,GH_WRITE_GATE,TASK_SELECT,EXEC_GATE,NEXT_TASK human;
-  class GH_WRITE_READY,TASK_READY,EXEC_READY,TASK_DONE,RECORD_GH_DECLINE,RECORD_EXEC_DECLINE,TRACK,EVIDENCE output;
+  class RESUME,NEED_SOURCE_P1,RESUME_GATE,PREFLIGHT_OK,ROUTE,V1,V2,V3,C3,LOOP3,NEED_WRITE_CONTEXT,GATE_WRITE,V4,TASK_SELECT,V5,V6,C6,LOOP6,GATE_EXEC,EXEC_RESULT,NEXT_TASK decision;
+  class PREFLIGHT_P1,PREFLIGHT_NEXT,P1,P2,P3,P4,TASK_CONTEXT,P5,P6,P7 check;
+  class ASK_RESUME,GATE_WRITE,TASK_SELECT,GATE_EXEC,NEXT_TASK human;
+  class WRITE_READY,TASK_READY,EXEC_READY,TASK_DONE,RECORD_WRITE_DECLINE,RECORD_EXEC_DECLINE,TRACK,EVIDENCE output;
   class WORKFLOW_DONE success;
-  class P3_FLAGS,P6_FLAGS refine;
-  class BLOCKED,ESCALATED,STOPPED stop;
+  class LOOP3,LOOP6 refine;
+  class BLOCKED_SOURCE,BLOCKED_PREFLIGHT,BLOCKED,BLOCKED_WRITE_CONTEXT,BLOCKED_P7,ESCALATED,STOPPED stop;
   class BOUNDARY guard;
 ```
 
