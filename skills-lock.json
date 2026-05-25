@@ -97,6 +97,12 @@
       "skillPath": "skills/test-driven-development/SKILL.md",
       "computedHash": "126f1ebf6ccd414f42544f6e83d8cc5adb089e1108eaffb7c400701e37eecd9f"
     },
+    "workflow-skill-architect": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/workflow-skill-architect/SKILL.md",
+      "computedHash": "c2ec77f9b05027ba5fed7f85c51f2ba0020deffd7848414bafd36aff4357c125"
+    },
     "writing-plans": {
       "source": "obra/superpowers",
       "sourceType": "github",
