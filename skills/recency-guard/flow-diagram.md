@@ -67,6 +67,15 @@ flowchart TD
   LIMIT_GATE -->|uncertainty material| MATERIAL_UNCERTAINTY
   LIMIT_GATE -->|not material| READY([READY: final user-visible answer])
 
+  classDef guard fill:#fff3cd,stroke:#856404,color:#000;
+  classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
+  classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
+  classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
+  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
+  classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
+
   class DATE,DRAFT_CHECK,MUTATION,RECENCY_STATUS,RECENCY_REPAIR,RECENCY_ERROR,CLAIM_STATUS,CLAIM_REPAIR,CLAIM_ERROR,COMPLETE,NEW_CLAIM_CHECK,LIMIT_GATE decision;
   class RECENCY_INIT,RECENCY_RERUN,RECENCY_RETRY,CLAIM_INIT,CLAIM_RERUN,CLAIM_RETRY check;
   class BOUNDARY,RISK,RECENCY_FIX,RECENCY_LIMIT,CLAIM_SELECT,CLAIM_FIX,CLAIM_LIMIT,OVERLAP,COMPLETE_FIX guard;
