@@ -116,7 +116,7 @@ File: <OUTPUT_FILE>
 Comments assessed: <number>
 Actions: <implement count> implement, <clarify count> clarify, <pushback count> push back
 Posting status: <not-posted | posted>
-Read-back verified: <yes | no>
+Read-back verified: <yes | no, writer template/read-back self-check only>
 Reason: none | <why status is ERROR>
 ```
 

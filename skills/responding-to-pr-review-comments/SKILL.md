@@ -131,10 +131,12 @@ Response policy:
    Route `VERIFY: ERROR` to `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
 8. Confirm `OUTPUT_FILE` is known and safe, asking up to three focused output
    path questions if needed. Dispatch `response-report-writer` with the
-   verified package, then read back the report to verify path, status blocks,
-   drafts, evidence, residual risks, blocking user-decision items, and action
-   intents. Route `WRITE: ERROR` or failed read-back verification to
-   `PR_COMMENT_RESPONSE: WRITE_ERROR`.
+   verified package; the writer reads back the file and reports whether the
+   write matched the template. The orchestrator then performs a separate
+   contract read-back for path, status blocks, drafts, evidence, residual
+   risks, blocking user-decision items, and action intents. Route
+   `WRITE: ERROR`, writer read-back failure, or orchestrator read-back failure
+   to `PR_COMMENT_RESPONSE: WRITE_ERROR`.
 9. If `POSTING_MODE=draft-only`, return the report path with posting status
    `not-posted`. If `POSTING_MODE=post-after-confirmation`, build the exact
    final preview and dispatch `thread-reply-poster` only after explicit user
