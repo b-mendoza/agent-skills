@@ -34,6 +34,7 @@ Use the exact `COMMIT_SCOPED_CHANGES` status from the flow terminal node:
 
 | Source status | Final status |
 | ------------- | ------------ |
+| No commit request authority | `COMMIT_SCOPED_CHANGES: BLOCKED` |
 | Missing or ambiguous `CHANGE_PATHS` | `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT` |
 | `SCOPED_STATE: NEEDS_CONTEXT` | `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT` |
 | `COMMIT_PLAN: NEEDS_DECISION` | `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT` |
