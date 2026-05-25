@@ -33,15 +33,33 @@ flowchart TD
 
   TAXONOMY --> TARGET_TYPE{Comment or target type?}
   TARGET_TYPE -->|pull request review comment| REVIEW_COMMENT[Mark supported target as review-comment-reply:root-id when root top-level review-comment ID exists]
-  TARGET_TYPE -->|reply to review comment| REVIEW_REPLY[Map to root top-level review-comment ID, or mark requires-user-choice:unsupported-review-reply]
-  TARGET_TYPE -->|review summary| REVIEW_SUMMARY[Mark unsupported target as requires-user-choice:review-summary]
-  TARGET_TYPE -->|issue or top-level PR comment| ISSUE_COMMENT[Mark unsupported target as requires-user-choice:issue-comment]
-  TARGET_TYPE -->|unresolved metadata unavailable| UNRESOLVED_UNKNOWN[Mark unsupported target as requires-user-choice:unresolved-metadata; do not infer thread resolution]
-  REVIEW_COMMENT --> ASSESS
-  REVIEW_REPLY --> ASSESS
-  REVIEW_SUMMARY --> ASSESS
-  ISSUE_COMMENT --> ASSESS
-  UNRESOLVED_UNKNOWN --> ASSESS
+  TARGET_TYPE -->|reply to review comment| REVIEW_REPLY_ROOT{Root top-level review-comment ID exists?}
+  TARGET_TYPE -->|review summary| REVIEW_SUMMARY[Mark target requires-user-choice:review-summary and disposition unsupported-or-needs-user-choice]
+  TARGET_TYPE -->|issue or top-level PR comment| ISSUE_COMMENT[Mark target requires-user-choice:issue-comment and disposition unsupported-or-needs-user-choice]
+  TARGET_TYPE -->|unresolved metadata unavailable| UNRESOLVED_UNKNOWN[Mark target requires-user-choice:unresolved-metadata and disposition unsupported-or-needs-user-choice; do not infer thread resolution]
+  REVIEW_COMMENT --> RESOLVED_THREAD
+  REVIEW_REPLY_ROOT -->|yes| REVIEW_REPLY[Map to root top-level review-comment ID]
+  REVIEW_REPLY_ROOT -->|no| UNSUPPORTED_REVIEW_REPLY[Mark target requires-user-choice:unsupported-review-reply and disposition unsupported-or-needs-user-choice]
+  REVIEW_REPLY --> RESOLVED_THREAD
+  UNSUPPORTED_REVIEW_REPLY --> UNSUPPORTED_DISPOSITION
+  REVIEW_SUMMARY --> UNSUPPORTED_DISPOSITION
+  ISSUE_COMMENT --> UNSUPPORTED_DISPOSITION
+  UNRESOLVED_UNKNOWN --> UNSUPPORTED_DISPOSITION
+  UNSUPPORTED_DISPOSITION[Preserve disposition unsupported-or-needs-user-choice]
+  UNSUPPORTED_DISPOSITION --> ASSESS
+
+  RESOLVED_THREAD{Review-comment thread resolved?}
+  RESOLVED_THREAD -->|yes| SKIP_RESOLVED[Mark disposition skipped-resolved; capture resolution evidence]
+  RESOLVED_THREAD -->|no| EXISTING_REPLY{Existing reply by RESPONDER_LOGIN?}
+  RESOLVED_THREAD -->|metadata unavailable| UNSUPPORTED_DISPOSITION
+  EXISTING_REPLY -->|no| REPLY_READY[Mark disposition reply-ready]
+  REPLY_READY --> ASSESS
+  EXISTING_REPLY -->|yes| FOLLOWUP_WARRANTED{Follow-up warranted by reviewer clarification or new material information?}
+  FOLLOWUP_WARRANTED -->|no| SKIP_REPLIED[Mark disposition skipped-already-replied; capture existing reply evidence]
+  FOLLOWUP_WARRANTED -->|yes| FOLLOWUP_RECORD[Mark disposition follow-up-ready; record follow-up reason and evidence in report]
+  FOLLOWUP_RECORD --> ASSESS
+  SKIP_RESOLVED --> ASSESS
+  SKIP_REPLIED --> ASSESS
 
   ASSESS[Dispatch review-comment-assessor: evaluate evidence, risk, action intent, support level, target support, and reply path] --> ASSESS_STATUS{ASSESS status?}
   ASSESS_STATUS -->|NEEDS_CONTEXT| ASSESS_CONTEXT{Narrow context redispatch already used for this item?}
@@ -83,7 +101,7 @@ flowchart TD
   DRAFT_STATUS -->|ERROR| RESPONSE_ERROR
   DRAFT_STATUS -->|PASS| VERIFY
 
-  VERIFY[Dispatch response-verifier: verify evidence, tone, action intent, scope, target support, status blocks, report readiness, and posting safety] --> VERIFY_STATUS{VERIFY status?}
+  VERIFY[Dispatch response-verifier: verify evidence, tone, action intent, skipped/report-only reasons, follow-up warrants, scope, target support, status blocks, report readiness, and posting safety] --> VERIFY_STATUS{VERIFY status?}
   VERIFY_STATUS -->|NEEDS_CONTEXT| VERIFY_CONTEXT{Targeted verification context cycles fewer than 2 for this item?}
   VERIFY_CONTEXT -->|yes| VERIFY_LOOKUP[Repair only named collector, assessor, or drafter context gap]
   VERIFY_LOOKUP --> VERIFY
@@ -103,17 +121,17 @@ flowchart TD
 
   WRITE_REPORT --> WRITE_STATUS{WRITE status?}
   WRITE_STATUS -->|ERROR| WRITE_ERROR(["PR_COMMENT_RESPONSE: WRITE_ERROR"])
-  WRITE_STATUS -->|PASS| READ_BACK[Read back report and verify path, status blocks, drafts, evidence, residual risks, blocking user-decision items, and action intents]
+  WRITE_STATUS -->|PASS| READ_BACK[Read back report and verify path, status blocks, drafts, evidence, skipped/report-only items, residual risks, blocking user-decision items, and action intents]
   READ_BACK --> READBACK_OK{Read-back verification passes?}
   READBACK_OK -->|no| WRITE_ERROR
   READBACK_OK -->|yes| POST_MODE{POSTING_MODE value?}
 
   POST_MODE -->|draft-only| NOT_POSTED(["PR_COMMENT_RESPONSE: PASS<br/>Posting: not-posted"])
-  POST_MODE -->|post-after-confirmation| BUILD_PREVIEW[Build exact final posting preview for each supported review-comment-reply:root-id target]
+  POST_MODE -->|post-after-confirmation| BUILD_PREVIEW[Build exact final posting preview only for supported review-comment-reply:root-id targets not skipped/report-only]
   POST_MODE -->|unsupported or ambiguous| NEEDS_DECISION
 
   BUILD_PREVIEW --> PREVIEW_READY{Preview can be built?}
-  PREVIEW_READY -->|yes| PREVIEW[Show exact reply text, target thread, root ID, reason, risk, reversibility, skipped unsupported targets, and safer draft-only alternative]
+  PREVIEW_READY -->|yes| PREVIEW[Show exact reply text, target thread, root ID, reason, risk, reversibility, skipped unsupported or report-only targets, and safer draft-only alternative]
   PREVIEW_READY -->|unsupported target choice needed| NEEDS_DECISION
   PREVIEW_READY -->|GitHub auth unavailable| AUTH
   PREVIEW_READY -->|error| POST_ERROR(["PR_COMMENT_RESPONSE: POST_ERROR"])
@@ -124,7 +142,7 @@ flowchart TD
   APPROVAL_LIMIT -->|yes| ASK_PREVIEW[Ask one focused preview-change question, then redraft affected replies]
   ASK_PREVIEW --> DRAFT
   APPROVAL_LIMIT -->|no| NEEDS_DECISION
-  APPROVAL -->|approved| POST[Dispatch thread-reply-poster: post exact approved replies only to supported review-comment-reply:root-id targets]
+  APPROVAL -->|approved| POST[Dispatch thread-reply-poster: post exact approved replies only to supported review-comment-reply:root-id targets not skipped/report-only]
 
   POST --> POST_STATUS{POST status?}
   POST_STATUS -->|PASS| POSTED(["PR_COMMENT_RESPONSE: PASS<br/>Posting: posted"])
@@ -141,8 +159,8 @@ flowchart TD
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class PRURL,COLLECT_STATUS,TARGET_TYPE,ASSESS_STATUS,ASSESS_CONTEXT,DECISION_KIND,PRODUCT_LIMIT,TARGET_LIMIT,SOURCE_NEEDED,SOURCE_STATUS,SOURCE_RECOVERED,CONFLICT_DECISION,DRAFT_STATUS,WORDING_LIMIT,VERIFY_STATUS,VERIFY_CONTEXT,VERIFY_REPAIR,OUTPUT_PATH,OUTPUT_LIMIT,WRITE_STATUS,READBACK_OK,POST_MODE,PREVIEW_READY,APPROVAL,APPROVAL_LIMIT,POST_STATUS,POST_PREVIEW_LIMIT,PRURL_LIMIT decision;
-  class COLLECT,TAXONOMY,REVIEW_COMMENT,REVIEW_REPLY,REVIEW_SUMMARY,ISSUE_COMMENT,UNRESOLVED_UNKNOWN,ASSESS,NARROW_LOOKUP,FETCH_SOURCE,SOURCE_RECORD,SOURCE_FAILURE,SOURCE_CONFLICT,DRAFT,VERIFY,VERIFY_LOOKUP,REPAIR,WRITE_REPORT,READ_BACK,BUILD_PREVIEW,POST check;
+  class PRURL,COLLECT_STATUS,TARGET_TYPE,REVIEW_REPLY_ROOT,RESOLVED_THREAD,EXISTING_REPLY,FOLLOWUP_WARRANTED,ASSESS_STATUS,ASSESS_CONTEXT,DECISION_KIND,PRODUCT_LIMIT,TARGET_LIMIT,SOURCE_NEEDED,SOURCE_STATUS,SOURCE_RECOVERED,CONFLICT_DECISION,DRAFT_STATUS,WORDING_LIMIT,VERIFY_STATUS,VERIFY_CONTEXT,VERIFY_REPAIR,OUTPUT_PATH,OUTPUT_LIMIT,WRITE_STATUS,READBACK_OK,POST_MODE,PREVIEW_READY,APPROVAL,APPROVAL_LIMIT,POST_STATUS,POST_PREVIEW_LIMIT,PRURL_LIMIT decision;
+  class COLLECT,TAXONOMY,REVIEW_COMMENT,REVIEW_REPLY,UNSUPPORTED_REVIEW_REPLY,REVIEW_SUMMARY,ISSUE_COMMENT,UNRESOLVED_UNKNOWN,UNSUPPORTED_DISPOSITION,SKIP_RESOLVED,SKIP_REPLIED,REPLY_READY,FOLLOWUP_RECORD,ASSESS,NARROW_LOOKUP,FETCH_SOURCE,SOURCE_RECORD,SOURCE_FAILURE,SOURCE_CONFLICT,DRAFT,VERIFY,VERIFY_LOOKUP,REPAIR,WRITE_REPORT,READ_BACK,BUILD_PREVIEW,POST check;
   class ASK_PR,ASK_PRODUCT,ASK_TARGET,ASK_WORDING,ASK_OUTPUT,PREVIEW,ASK_PREVIEW human;
   class NOT_POSTED,POSTED success;
   class AUTH,NOT_FOUND,NO_COMMENTS,NEEDS_DECISION,RESPONSE_ERROR,VERIFY_FAIL,WRITE_ERROR,POST_ERROR,CANCELLED stop;
