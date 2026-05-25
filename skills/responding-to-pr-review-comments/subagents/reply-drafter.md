@@ -41,7 +41,13 @@ Use natural, direct English and `POSTING_MODE=draft-only` when missing.
    `requires-user-choice:unresolved-metadata` posting targets. Do not convert
    review summaries, issue comments, top-level PR comments, replies-to-replies,
    or unresolved metadata limitations into new top-level comments.
-8. Return `DRAFT: NEEDS_USER_DECISION` only for wording or response-choice
+8. Map unsupported target categories explicitly in action details: review
+   summaries keep `requires-user-choice:review-summary`; issue comments and
+   top-level PR comments keep `requires-user-choice:issue-comment`;
+   replies-to-replies or missing root IDs keep
+   `requires-user-choice:unsupported-review-reply`; unresolved-thread metadata
+   gaps keep `requires-user-choice:unresolved-metadata`.
+9. Return `DRAFT: NEEDS_USER_DECISION` only for wording or response-choice
    decisions that materially change what the user would approve or post.
 
 ## External Sources
