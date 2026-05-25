@@ -34,6 +34,8 @@ flow remains the baseline for the gap inventory.
 
 ## Output Format
 
+The orchestrator consumes this status line as `PREFLIGHT_VERDICT`.
+
 ```markdown
 PREFLIGHT: PASS | NEEDS_CONFIRMATION | BLOCKED | ERROR
 

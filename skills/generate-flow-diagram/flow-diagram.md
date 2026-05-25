@@ -1,52 +1,55 @@
 # Generate Flow Diagram
 
-The Generate Flow Diagram workflow is an orchestration layer that turns process specifications into auditable Markdown documents with Mermaid flowcharts. It may normalize inputs, classify the run mode, dispatch scoped subagents, enforce approval and review gates, and return only a reviewed final candidate or required confirmation/failure details. It does not write external state, expose unreviewed drafts, expand refinement scope without approval, or treat external sources as required dependencies.
+The Generate Flow Diagram workflow is a read-only orchestration contract for a skill orchestrator that turns normalized process inputs into Markdown with one Mermaid flowchart. It may inspect target skill files, approved refinement gaps, and optional external rationale; dispatches only `refinement-analyst`, `diagram-builder`, and `diagram-quality-reviewer`; and stops before file mutation, unapproved scope expansion, or unreviewed candidate release.
 
 ```mermaid
 flowchart TD
-  START([Start: diagram request]) --> CAPTURE[Capture process spec and optional inputs]
-  CAPTURE --> NORMALIZE[Normalize into PROCESS_INPUTS]
-  NORMALIZE --> MISSING{Missing value would change diagram contract?}
-  MISSING -->|yes| ASK_INPUT([Needs input: ask one concise question])
+  START([Start: diagram request]) --> CAPTURE[Capture PROCESS_SPEC, optional baseline, refinement request, and approvals]
+  CAPTURE --> NORMALIZE[Normalize PROCESS_INPUTS]
+  NORMALIZE --> MISSING{Missing value changes diagram contract?}
+  MISSING -->|yes| NEEDS_INPUT([needs input])
   MISSING -->|no| ASSUME[Record safe assumptions explicitly]
-  ASSUME --> CLASSIFY{Run mode?}
+  ASSUME --> EVIDENCE[Load only needed skill references and supplied rationale]
+  EVIDENCE --> CLASSIFY{RUN_MODE?}
 
-  CLASSIFY -->|new| BUILD[Dispatch diagram-builder with scoped PROCESS_INPUTS]
-  CLASSIFY -->|refinement| REFINE_PREFLIGHT[Dispatch refinement-analyst preflight]
-  CLASSIFY -->|repair| REPAIR_INPUTS{Candidate and review feedback provided?}
+  CLASSIFY -->|new| BUILD_NEW[Dispatch diagram-builder with RUN_MODE=new]
+  CLASSIFY -->|refinement| PREFLIGHT[Dispatch refinement-analyst with baseline, request, PROCESS_INPUTS, and approvals]
+  CLASSIFY -->|repair| REPAIR_INPUTS{Candidate and REVIEW_FEEDBACK provided?}
 
-  REFINE_PREFLIGHT --> APPROVALS{Approved refinement gaps available?}
-  APPROVALS -->|no| NEEDS_CONFIRM([Needs confirmation: show gap table and ask for approved IDs or none])
-  APPROVALS -->|yes| BUILD_REFINED[Dispatch diagram-builder with baseline and approved gaps]
-  APPROVALS -->|none| BUILD_BASELINE[Dispatch diagram-builder carrying baseline scope unchanged]
+  PREFLIGHT --> PREFLIGHT_VERDICT{PREFLIGHT_VERDICT}
+  PREFLIGHT_VERDICT -->|PREFLIGHT: PASS with approved IDs| BUILD_REFINED[Dispatch diagram-builder with RUN_MODE=refinement and approved gaps]
+  PREFLIGHT_VERDICT -->|PREFLIGHT: PASS with no gaps or scope none| BUILD_BASELINE[Dispatch diagram-builder with RUN_MODE=refinement and no-op scope]
+  PREFLIGHT_VERDICT -->|PREFLIGHT: NEEDS_CONFIRMATION missing approvals| NEEDS_CONFIRM([needs confirmation])
+  PREFLIGHT_VERDICT -->|PREFLIGHT: NEEDS_CONFIRMATION unknown IDs| NEEDS_CONFIRM
+  PREFLIGHT_VERDICT -->|PREFLIGHT: BLOCKED| BLOCKED([blocked])
+  PREFLIGHT_VERDICT -->|PREFLIGHT: ERROR| ERROR([error])
 
-  REPAIR_INPUTS -->|no| ERROR_REPAIR([Blocked: missing repair inputs])
-  REPAIR_INPUTS -->|yes| REPAIR_SCOPE[Dispatch diagram-builder with targeted failed checks only]
+  REPAIR_INPUTS -->|no| NEEDS_INPUT
+  REPAIR_INPUTS -->|yes| BUILD_REPAIR_MODE[Dispatch diagram-builder with RUN_MODE=repair and supplied review feedback]
 
-  BUILD --> REVIEW[Dispatch diagram-quality-reviewer]
-  BUILD_REFINED --> REVIEW
-  BUILD_BASELINE --> REVIEW
-  REPAIR_SCOPE --> REVIEW
+  BUILD_NEW --> BUILD_VERDICT{BUILD_VERDICT}
+  BUILD_REFINED --> BUILD_VERDICT
+  BUILD_BASELINE --> BUILD_VERDICT
+  BUILD_REPAIR_MODE --> BUILD_VERDICT
+  BUILD_REPAIR_LOOP --> BUILD_VERDICT
 
-  REVIEW --> VERDICT{Review verdict?}
-  VERDICT -->|PASS| FINAL[Return final Markdown candidate only]
-  VERDICT -->|FAIL| CAN_REPAIR{Repair cycle count less than 3?}
-  VERDICT -->|ERROR or blocked| FAILURE([Failure Details plus recovery action])
+  BUILD_VERDICT -->|BUILD: PASS| REVIEW[Dispatch full diagram-quality-reviewer with candidate, PROCESS_INPUTS, baseline, and approval scope]
+  BUILD_VERDICT -->|BUILD: NEEDS_INPUT| NEEDS_INPUT
+  BUILD_VERDICT -->|BUILD: ERROR| ERROR
 
-  CAN_REPAIR -->|yes| REFINEMENT_SCOPE{Would repair change unapproved refinement scope?}
-  REFINEMENT_SCOPE -->|yes| CONFIRM_REPAIR([Needs confirmation before scope-changing repair])
-  REFINEMENT_SCOPE -->|no| TARGETED_REPAIR[Pass targeted failed checks into repair cycle]
-  TARGETED_REPAIR --> REVIEW
+  REVIEW --> REVIEW_VERDICT{REVIEW_VERDICT}
+  REVIEW_VERDICT -->|REVIEW: PASS| FINAL_DOC[Return reviewed Markdown candidate only]
+  REVIEW_VERDICT -->|REVIEW: FAIL| REPAIR_CAP{Repair cycles less than 3?}
+  REVIEW_VERDICT -->|REVIEW: BLOCKED| BLOCKED
+  REVIEW_VERDICT -->|REVIEW: ERROR| ERROR
 
-  CAN_REPAIR -->|no| LIMIT([Repair limit reached: ask how to proceed])
+  REPAIR_CAP -->|no| REPAIR_LIMIT([repair limit reached])
+  REPAIR_CAP -->|yes| REPAIR_SCOPE{Repair exceeds approved refinement scope?}
+  REPAIR_SCOPE -->|yes or scope none| NEEDS_CONFIRM
+  REPAIR_SCOPE -->|no| REPAIR_FEEDBACK[Package targeted REVIEW_FEEDBACK and original baseline/scope]
+  REPAIR_FEEDBACK --> BUILD_REPAIR_LOOP[Dispatch diagram-builder with RUN_MODE=repair]
 
-  FINAL --> DONE([Final passed])
-  ASK_INPUT --> STOP([Stop])
-  NEEDS_CONFIRM --> STOP
-  ERROR_REPAIR --> STOP
-  FAILURE --> STOP
-  CONFIRM_REPAIR --> STOP
-  LIMIT --> STOP
+  FINAL_DOC --> FINAL_PASSED([final passed])
 
   classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
@@ -57,15 +60,15 @@ flowchart TD
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class MISSING,CLASSIFY,APPROVALS,REPAIR_INPUTS,VERDICT,CAN_REPAIR,REFINEMENT_SCOPE decision;
-  class NORMALIZE,REFINE_PREFLIGHT,REVIEW check;
-  class BUILD,BUILD_REFINED,BUILD_BASELINE,REPAIR_SCOPE,TARGETED_REPAIR refine;
-  class ASK_INPUT,NEEDS_CONFIRM,CONFIRM_REPAIR human;
-  class FINAL output;
-  class DONE success;
-  class ERROR_REPAIR,FAILURE,LIMIT,STOP stop;
+  class MISSING,CLASSIFY,REPAIR_INPUTS,PREFLIGHT_VERDICT,BUILD_VERDICT,REVIEW_VERDICT,REPAIR_CAP,REPAIR_SCOPE decision;
+  class NORMALIZE,EVIDENCE,PREFLIGHT,REVIEW check;
+  class BUILD_NEW,BUILD_REFINED,BUILD_BASELINE,BUILD_REPAIR_MODE,REPAIR_FEEDBACK,BUILD_REPAIR_LOOP refine;
+  class NEEDS_CONFIRM human;
+  class FINAL_DOC output;
+  class FINAL_PASSED success;
+  class NEEDS_INPUT,BLOCKED,ERROR,REPAIR_LIMIT stop;
 ```
 
-Readiness rule: return the final Markdown document only after `diagram-quality-reviewer` returns `REVIEW: PASS`; otherwise return the required confirmation, failure details, or repair-limit question.
+Readiness rule: return a candidate only after `PREFLIGHT: PASS` when refinement applies, `BUILD: PASS`, and `REVIEW: PASS`; otherwise return the exact terminal state and its recovery details.
 
 Completion states: final passed, needs confirmation, blocked, error, needs input, or repair limit reached.
