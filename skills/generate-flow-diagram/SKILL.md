@@ -17,16 +17,18 @@ optional just-in-time sources for current Mermaid syntax or design rationale.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `PROCESS_SPEC` | Yes | `Create a deployment-review flow: the deployment reviewer decides whether a release candidate is safe; inputs are PRs, CI, changelogs, and rollback plans; outputs are readiness comments; allowed actions are reading artifacts, summarizing risks, and posting comments; boundaries are no deploy or CI bypass; sensitive actions are deploy and rollback; HUMAN_CONFIRMATION_REQUIREMENTS is approval before recommending deploy; evidence comes from CI, runbooks, and incident history; completion states are ready, blocked, needs validation, or escalated.` |
-| `EXISTING_FLOW_OR_DIAGRAM` | No | Existing Mermaid block, file, or process description |
+| `PROCESS_SPEC` | Yes for new diagrams; optional for refinements | `Create a deployment-review flow: the deployment reviewer decides whether a release candidate is safe; inputs are PRs, CI, changelogs, and rollback plans; outputs are readiness comments; allowed actions are reading artifacts, summarizing risks, and posting comments; boundaries are no deploy or CI bypass; sensitive actions are deploy and rollback; HUMAN_CONFIRMATION_REQUIREMENTS is approval before recommending deploy; evidence comes from CI, runbooks, and incident history; completion states are ready, blocked, needs validation, or escalated.` |
+| `EXISTING_FLOW_OR_DIAGRAM` | Yes for refinements | Existing Mermaid block, file, or process description |
 | `REFINEMENT_REQUEST` | No | `Improve the current diagram without changing scope` |
 | `APPROVED_REFINEMENT_GAPS` | No | `G1 and G3 only` or `none` |
 
-Normalize `PROCESS_SPEC` into `PROCESS_INPUTS` for every run. Load
-`./references/input-contract.md` only when field-level checks, missing-field
-handling, or a clarification question are needed. Ask one concise question only
-when a missing value would change the diagram contract; otherwise mark safe
-assumptions explicitly.
+Every run produces `PROCESS_INPUTS`. For new diagrams, normalize
+`PROCESS_SPEC`. For refinements, derive `PROCESS_INPUTS` from
+`EXISTING_FLOW_OR_DIAGRAM`, `REFINEMENT_REQUEST`, any supplied `PROCESS_SPEC`,
+and explicit assumptions. Load `./references/input-contract.md` only when
+field-level checks, missing-field handling, or a clarification question are
+needed. Ask one concise question only when a missing value would change the
+diagram contract; otherwise mark safe assumptions explicitly.
 
 ## Progressive Loading Map
 
@@ -53,7 +55,7 @@ candidate that must be returned to the user.
 ## Execution
 
 1. Capture all inputs and classify the current pass as `RUN_MODE=new`, `RUN_MODE=refinement`, or `RUN_MODE=repair`.
-2. Normalize `PROCESS_SPEC` into `PROCESS_INPUTS`; load `./references/input-contract.md` when the field checklist or missing-field policy is needed.
+2. Normalize the available process source into `PROCESS_INPUTS`: use `PROCESS_SPEC` for new diagrams, and use `EXISTING_FLOW_OR_DIAGRAM`, `REFINEMENT_REQUEST`, any supplied `PROCESS_SPEC`, and explicit assumptions for refinements. Load `./references/input-contract.md` when the field checklist or missing-field policy is needed.
 3. For `RUN_MODE=refinement`, dispatch `refinement-analyst` before generating a revised diagram, including `EXISTING_FLOW_OR_DIAGRAM`, `PROCESS_INPUTS`, `REFINEMENT_REQUEST`, and `APPROVED_REFINEMENT_GAPS` when supplied. Consume its return as `PREFLIGHT_VERDICT`: continue only on `PREFLIGHT: PASS`; on `PREFLIGHT: NEEDS_CONFIRMATION`, ask the confirmation question and stop at needs confirmation; on `PREFLIGHT: BLOCKED` or `PREFLIGHT: ERROR`, stop with the reported recovery action. Treat `APPROVED_REFINEMENT_GAPS=none` as explicit approval to keep the candidate and refinement scope unchanged; when preflight passes because there are no meaningful gaps, use `none` as the downstream approval scope.
 4. Load orchestration-level references only when formatting a user-facing confirmation, normalizing inputs, or fetching external rationale. Design, Mermaid, template, and quality references are loaded by the dispatched subagent.
 5. Dispatch `diagram-builder` with `PROCESS_INPUTS`, `RUN_MODE`, and the inputs required for that mode: `RUN_MODE=new` uses the normalized scope, `RUN_MODE=refinement` includes `EXISTING_FLOW_OR_DIAGRAM` and `APPROVED_REFINEMENT_GAPS`, and `RUN_MODE=repair` includes `CANDIDATE_MARKDOWN` plus targeted `REVIEW_FEEDBACK`. Pass `none` through unchanged when the approved refinement scope is an explicit no-op; if repair inputs are missing, stop at needs input.
@@ -81,7 +83,7 @@ A valid run satisfies these checks:
 
 - `SKILL.md` stays a routing layer; detailed templates, style guidance, quality checks, and external links live in `references/`.
 - Local paths referenced by this skill exist inside this package.
-- `PROCESS_INPUTS` is produced for every run and always follows the bundled input contract; load `./references/input-contract.md` only when field-level checks are needed.
+- `PROCESS_INPUTS` is produced for every run from the available process source and follows the bundled input contract; load `./references/input-contract.md` only when field-level checks are needed.
 - Refinements include only user-approved gap fixes.
 - The final Mermaid candidate passes the quality gate after at most three builder repair cycles; each repair uses targeted `REVIEW_FEEDBACK`, preserves the original refinement approval scope, then the full reviewer gate reruns.
 - External URLs are optional just-in-time sources, not required runtime dependencies.
@@ -89,11 +91,12 @@ A valid run satisfies these checks:
 
 ## Example
 
-Input: `Create a deployment-review flow. The agent reads release artifacts and
-posts readiness comments. Deploy and rollback require human approval.`
+Input: `Refine this Mermaid deployment-review diagram so the approval gates are
+clearer, but do not add new scope.`
 
-1. Normalize the process into `PROCESS_INPUTS` and dispatch `diagram-builder`.
-2. Dispatch `diagram-quality-reviewer` with the candidate.
-3. If review fails, send only failed checks and the original approval scope back
-   to `diagram-builder` for repair, then rerun the full review.
-4. Return the final Markdown only after `REVIEW: PASS`.
+1. Classify the run as `RUN_MODE=refinement` and derive `PROCESS_INPUTS` from the supplied diagram plus the refinement request.
+2. Dispatch `refinement-analyst`; it returns `PREFLIGHT: NEEDS_CONFIRMATION` with gaps `G1` and `G2`.
+3. Ask which gap IDs are approved. If the user replies `G1`, dispatch `diagram-builder` with the baseline, `PROCESS_INPUTS`, and `APPROVED_REFINEMENT_GAPS=G1`.
+4. Dispatch `diagram-quality-reviewer` with the candidate and the original approval scope.
+5. If review fails, send only failed checks and the original approval scope back to `diagram-builder` for repair, then rerun the full review.
+6. Return the final Markdown only after `REVIEW: PASS`.

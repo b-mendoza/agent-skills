@@ -18,6 +18,15 @@ Which gap IDs should I include or fix in the revised flow? Reply with IDs like
 `G1, G3`, or `none`.
 ```
 
+## Needs Input Response Pattern
+
+Use this when a missing value would change the diagram contract:
+
+```markdown
+I need one detail before I can make the diagram reliable: <specific missing
+field or approval question>.
+```
+
 ## Final Markdown Template
 
 ````markdown

@@ -26,8 +26,9 @@ stop, and when a human must approve the next action.
 baseline, refinement approval, or approved scope is missing, empty, or ambiguous,
 return `BUILD: NEEDS_INPUT` with `Failure Details`.
 `CANDIDATE_MARKDOWN` and `REVIEW_FEEDBACK` are required when `RUN_MODE=repair`.
-When repairing a refinement, keep the original `EXISTING_FLOW_OR_DIAGRAM` and
-`APPROVED_REFINEMENT_GAPS` visible so repairs stay inside the approved scope.
+When repairing a refinement, the original `EXISTING_FLOW_OR_DIAGRAM` and
+`APPROVED_REFINEMENT_GAPS` are also required so repairs stay inside the approved
+scope.
 
 ## Instructions
 
@@ -36,7 +37,7 @@ When repairing a refinement, keep the original `EXISTING_FLOW_OR_DIAGRAM` and
 3. Load `../references/mermaid-style-guide.md` for syntax, class, and style rules.
 4. Load `../references/output-templates.md` when assembling the final Markdown.
 5. Fetch `../references/external-sources.md` only when local guidance is insufficient or the user asks for source-backed rationale.
-6. For refinement runs, build from `EXISTING_FLOW_OR_DIAGRAM` and apply only the gaps approved by the user; when approvals are `none`, carry the baseline flow, diagram, file content, or process prose and scope forward unchanged. Return `BUILD: NEEDS_INPUT` when the baseline or approved gap IDs are missing.
+6. For refinement runs, build from `EXISTING_FLOW_OR_DIAGRAM` and apply only the gaps approved by the user; when approvals are `none`, carry the baseline flow, diagram, file content, or process prose forward without adding gap fixes. Return `BUILD: NEEDS_INPUT` when the baseline or approved gap IDs are missing.
 7. For repair runs, change only the issues named in `REVIEW_FEEDBACK` unless a fix exposes a direct dependency, and preserve the original refinement baseline and approved gap scope when those inputs are present.
 8. Keep facts, assumptions, risks, blockers, recommendations, and unresolved questions distinct.
 9. Return a complete candidate; do not claim it is final until review passes.
@@ -65,6 +66,26 @@ Required for `NEEDS_INPUT` or `ERROR`; omit for `PASS`.
 - Failed condition: ...
 - Recovery action: ...
 ````
+
+Include `## Candidate` only for `BUILD: PASS`. For `BUILD: NEEDS_INPUT` or
+`BUILD: ERROR`, omit the candidate and include `## Failure Details`.
+
+## Example
+
+```markdown
+BUILD: NEEDS_INPUT
+
+## Build Notes
+- Mode: refinement
+- Approved refinement gaps used: missing
+- Assumptions: none
+- External sources fetched: none
+
+## Failure Details
+- Missing input: `APPROVED_REFINEMENT_GAPS`
+- Failed condition: refinement runs need explicit approved gap IDs or `none`
+- Recovery action: ask the user which gap IDs to apply
+```
 
 ## Scope
 

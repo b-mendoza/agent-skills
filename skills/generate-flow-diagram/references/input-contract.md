@@ -1,7 +1,15 @@
 # Input Contract
 
-> Load this file only when normalizing `PROCESS_SPEC`, checking whether required
-> process details are missing, or drafting a clarification question.
+> Load this file only when normalizing process source material, checking whether
+> required process details are missing, or drafting a clarification question.
+
+## Source Policy
+
+Every run must produce a `PROCESS_INPUTS` bundle. For new diagrams, derive it
+from `PROCESS_SPEC`. For refinements, derive it from
+`EXISTING_FLOW_OR_DIAGRAM`, `REFINEMENT_REQUEST`, any supplied `PROCESS_SPEC`,
+and explicit assumptions. Do not require a separate `PROCESS_SPEC` when the
+baseline already provides enough process contract to review and preserve scope.
 
 ## Required Process Fields
 
@@ -40,8 +48,9 @@ Send subagents a concise `PROCESS_INPUTS` bundle containing:
 - Supplied optional context from the user.
 - Explicit assumptions.
 
-Keep refinement controls outside `PROCESS_INPUTS`: send `EXISTING_FLOW_OR_DIAGRAM`
-as the baseline for refinement runs, send `REFINEMENT_REQUEST` as refinement
-control data, keep `APPROVED_REFINEMENT_GAPS` as a separate dispatch input so
-approval scope is visible to the builder and reviewer, and send `RUN_MODE` as its
-own dispatch input.
+Keep refinement controls outside `PROCESS_INPUTS`: send
+`EXISTING_FLOW_OR_DIAGRAM` as the baseline for refinement runs, send
+`REFINEMENT_REQUEST` as refinement control data, keep
+`APPROVED_REFINEMENT_GAPS` as a separate dispatch input so approval scope is
+visible to the builder and reviewer, and send `RUN_MODE` as its own dispatch
+input.

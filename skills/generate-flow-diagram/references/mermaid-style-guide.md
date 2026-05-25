@@ -14,6 +14,7 @@
 - Avoid node IDs that accidentally start a special edge form, such as `o` or `x` immediately after an edge marker.
 - Avoid lowercase `end` as a node label.
 - Assign classes only to nodes that exist; avoid duplicate conflicting node definitions.
+- During repair or refinement, change the smallest Mermaid surface that satisfies the failed check and approved scope.
 
 ## Class Palette
 

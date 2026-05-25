@@ -10,6 +10,7 @@
 | ----- | -------------- |
 | Mermaid syntax | One fenced `mermaid` block; valid `flowchart` declaration; balanced brackets and quotes; no malformed arrows |
 | Classes | Class assignments target only existing nodes; `classDef` ordering does not determine validity |
+| Input normalization | Candidate reflects `PROCESS_INPUTS` derived from the supplied process spec or refinement baseline; unknowns are assumptions, questions, or blockers |
 | Flow coverage | Intake, boundary, validation, synthesis, decisions, outputs, and terminal states are represented when relevant |
 | Human gates | Every sensitive action has approve and decline paths plus audit or handoff handling |
 | Branch integrity | Every branch has a destination; every decision has named outcomes |

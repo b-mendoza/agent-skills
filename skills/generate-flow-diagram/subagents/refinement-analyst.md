@@ -53,6 +53,27 @@ PREFLIGHT: PASS | NEEDS_CONFIRMATION | BLOCKED | ERROR
 - Notes: ...
 ```
 
+## Example
+
+```markdown
+PREFLIGHT: NEEDS_CONFIRMATION
+
+## Gap Inventory
+| ID | Gap | Type | Why It Matters | Proposed Change |
+| -- | --- | ---- | -------------- | --------------- |
+| G1 | Sensitive deploy action has no decline branch. | human-confirmation | The user cannot see what happens when approval is denied. | Add an explicit declined path to a blocked or handoff state. |
+| G2 | Readiness output omits unresolved questions. | output-shape | The final comment could hide incomplete evidence. | Add unresolved questions to the output template. |
+
+## Confirmation Question
+Which gap IDs should I include in the revised flow? Reply with IDs like `G1`, or `none`.
+
+## Summary
+- Existing flow usable as baseline: yes
+- Approved gaps already provided: no
+- Effective approved scope: pending
+- Notes: no diagram changes have been made
+```
+
 ## Scope
 
 Your job is to inspect, classify, and ask for approval. Leave diagram generation
