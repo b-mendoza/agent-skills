@@ -117,4 +117,5 @@ For `MODE=critique`, append:
 If top-level inputs are invalid or a subagent blocks or fails, emit the
 same first four fields with `Files updated: -`, then include
 `Blocking verdict:` and `Reason:`. Include the mode-specific retained
-field only when it is available.
+field only when it is available. Use `Critique artifact: -` when the run
+stops before a critique artifact is created.

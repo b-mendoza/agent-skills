@@ -1,12 +1,12 @@
 # Clarifying Assumptions Flow
 
-The `clarifying-assumptions` skill is a shared, platform-agnostic conversation-layer coordinator for workflow clarification in Jira/GitHub orchestration. It may validate top-level inputs, load active local references, dispatch bundled subagents, ask one manifest item at a time, and emit a parseable final summary. It does not mutate Jira/GitHub, implement changes, read or write raw artifacts inline, or let external evidence override bundled contracts.
+The `clarifying-assumptions` skill is a shared, platform-agnostic conversation-layer coordinator for workflow clarification in Jira/GitHub orchestration. It may validate top-level inputs, load active local references, dispatch bundled subagents, ask one manifest item at a time, track warning summaries, and emit a parseable final summary. It does not mutate Jira/GitHub, implement changes, read or write raw artifacts inline, duplicate decision records on reruns, or let external evidence override bundled contracts.
 
 ```mermaid
 flowchart TD
   START([Start clarification run]) --> INPUTS["Receive TICKET_KEY, MODE, optional TASK_NUMBER, ITERATION default 1"]
   INPUTS --> VALIDATE{"Inputs valid?<br/>MODE is upfront or critique<br/>TASK_NUMBER present for critique"}
-  VALIDATE -->|no| INPUT_BLOCKED["Input blocked<br/>Capture missing or invalid field"]
+  VALIDATE -->|no| INPUT_BLOCKED["Input blocked<br/>Capture missing or invalid field<br/>Use Critique artifact: - and Files updated: -"]
   VALIDATE -->|yes| LOAD["Stage 1: load design-thinking-mindset and active mode playbook"]
   LOAD --> MODE{"Active mode?"}
 
@@ -22,13 +22,13 @@ flowchart TD
   CRITIQUE_VERDICT -->|CRITIQUE: PASS| BUILD_MANIFEST
   CRITIQUE_WARN --> BUILD_MANIFEST
 
-  BUILD_MANIFEST["Stage 3: dispatch question-manifest-builder<br/>Subagent reads critique artifact and plan context<br/>Applies HIGH-or-higher surfacing gate"] --> MANIFEST_VERDICT{"manifest-builder verdict?"}
+  BUILD_MANIFEST["Stage 3: dispatch question-manifest-builder<br/>Subagent reads critique artifact, plan context,<br/>active mode artifacts, and task title when needed<br/>Applies HIGH-or-higher surfacing gate"] --> MANIFEST_VERDICT{"manifest-builder verdict?"}
   MANIFEST_VERDICT -->|MANIFEST: BLOCKED or FAIL| MANIFEST_STOP["Manifest stopped<br/>Capture blocking issue"]
-  MANIFEST_VERDICT -->|MANIFEST: WARN| MANIFEST_WARN["Continue with warning<br/>Mention omitted or guessed items"]
+  MANIFEST_VERDICT -->|MANIFEST: WARN| MANIFEST_WARN["Continue with warning<br/>Keep one-line warning summary"]
   MANIFEST_VERDICT -->|MANIFEST: PASS| PREVIEW
   MANIFEST_WARN --> PREVIEW
 
-  PREVIEW["Stage 4: load conversation-protocol<br/>Preview counts and Questions For Now table"] --> QUESTION_COUNT{"Questions now?"}
+  PREVIEW["Stage 4: load conversation-protocol<br/>Show warning summaries when present<br/>Preview counts and Questions For Now table"] --> QUESTION_COUNT{"Questions now?"}
   QUESTION_COUNT -->|0| ZERO_ITEMS["Skip question loop<br/>Use empty decision list"]
   QUESTION_COUNT -->|one or more| ASK["Ask exactly one user-facing manifest item<br/>Keep active item, response,<br/>decision list, flags, and critique path inline"]
 
@@ -49,7 +49,7 @@ flowchart TD
   BLOCK_DECISION --> RECORD_STAGE
   ZERO_ITEMS --> RECORD_STAGE
 
-  RECORD_STAGE["Stage 5: dispatch decision-recorder once<br/>Pass decisions, deferred questions,<br/>implementation updates, and critique-mode task metadata"] --> RECORD_VERDICT{"decision-recorder verdict?"}
+  RECORD_STAGE["Stage 5: dispatch decision-recorder once<br/>Pass decisions, deferred questions,<br/>implementation updates, and critique-mode task metadata<br/>Recorder validates idempotent rows, markers,<br/>and zero-decision summaries"] --> RECORD_VERDICT{"decision-recorder verdict?"}
   RECORD_VERDICT -->|RECORDING: BLOCKED or ERROR| RECORD_STOP["Recording stopped<br/>Capture recorder verdict and reason"]
   RECORD_VERDICT -->|RECORDING: WARN| FINAL_WARN["Continue with final warnings"]
   RECORD_VERDICT -->|RECORDING: PASS| FINAL_SUMMARY
@@ -60,11 +60,11 @@ flowchart TD
   MANIFEST_STOP --> FAILURE_SUMMARY
   RECORD_STOP --> FAILURE_SUMMARY
 
-  FAILURE_SUMMARY["Present failed or blocked parseable summary:<br/>Critique artifact<br/>Files updated<br/>RE_PLAN_NEEDED<br/>BLOCKERS_PRESENT<br/>Blocking verdict<br/>Blocking reason<br/>Upfront accepted decisions summary when available<br/>Critique decisions file path when available"] --> FAILURE_KIND{"Failure kind?"}
+  FAILURE_SUMMARY["Present failed or blocked parseable summary:<br/>Critique artifact path or -<br/>Files updated<br/>RE_PLAN_NEEDED<br/>BLOCKERS_PRESENT<br/>Blocking verdict<br/>Blocking reason<br/>Upfront accepted decisions summary when available<br/>Critique decisions file path when available"] --> FAILURE_KIND{"Failure kind?"}
   FAILURE_KIND -->|input or subagent error| FAILED_DONE([Failed due to input or subagent error])
   FAILURE_KIND -->|blocked before parent advancement| BLOCKED_DONE
 
-  FINAL_SUMMARY["Present stable final summary:<br/>Critique artifact<br/>Files updated<br/>RE_PLAN_NEEDED<br/>BLOCKERS_PRESENT<br/>Upfront accepted decisions summary for upfront mode<br/>Critique decisions file path for critique mode<br/>Optional counts and warnings"] --> FLAGS{"Final flags?"}
+  FINAL_SUMMARY["Present stable final summary:<br/>Critique artifact<br/>Files updated<br/>RE_PLAN_NEEDED<br/>BLOCKERS_PRESENT<br/>Upfront accepted decisions summary for upfront mode<br/>Critique decisions file path for critique mode<br/>Optional counts, warning summaries, and recorder warnings"] --> FLAGS{"Final flags?"}
   FLAGS -->|BLOCKERS_PRESENT=true| BLOCKED_DONE([Blocked before parent advancement<br/>Parent workflow stops and escalates])
   FLAGS -->|RE_PLAN_NEEDED=true| REPLAN_DONE([Complete with replan required<br/>Parent re-runs relevant planning phase])
   FLAGS -->|both false| DONE([Complete with no replan])

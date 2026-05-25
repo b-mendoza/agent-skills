@@ -22,6 +22,10 @@ Do not invent a second preview schema. The manifest has already applied
 the `HIGH` or higher user-surfacing gate; do not add lower-severity items
 to the preview or question loop.
 
+If `critique-analyzer` or `question-manifest-builder` returned `WARN`,
+include a one-line warning summary before the preview table. Keep the raw
+subagent details out of the conversation layer.
+
 ```markdown
 ## Question Manifest - <TICKET_KEY>[ / Task <TASK_NUMBER>]
 

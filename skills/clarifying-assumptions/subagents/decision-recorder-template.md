@@ -20,7 +20,9 @@ Each entry in `DECISIONS` uses this shape:
 
 Carry the manifest `Item ID` into `DECISIONS.id` unchanged. In
 `MODE=critique`, the main `## Decisions Log` keeps a single task-level
-reference row pointing to the per-task decisions file.
+reference row pointing to the per-task decisions file. When `DECISIONS`
+is empty, write no placeholder rows and return zero counts after
+validating the required files.
 
 ## Mapping Tables
 
@@ -59,6 +61,14 @@ Create or update `## Decisions Log` with this exact table schema:
 | 1 | Plan-wide | PF1 | problem-framing | revised | End user narrowed to admins managing sync failures | Yes | - |
 | 1 | Task 3 | TASK-3-DECISIONS | critique | revised | See per-task decisions file | Yes | docs/JNS-6065-task-3-decisions.md |
 ```
+
+Rows are idempotent:
+
+- Upfront rows are unique by `Iteration`, `Scope`, and `Item ID`.
+- Critique reference rows are unique by `Iteration`, `Scope`, and
+  `Artifact`.
+- Re-running the same clarification updates the existing row instead of
+  appending a duplicate.
 
 ## Per-Task Decisions File
 
@@ -125,6 +135,9 @@ Then return:
 - PASS
 - WARN: <warning text> (repeat as needed)
 ```
+
+Include a warning when an existing row was updated instead of appending a
+duplicate.
 
 ## Examples
 

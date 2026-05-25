@@ -66,16 +66,16 @@ workflow keys.
 Before Stage 1, validate that `MODE` is `upfront` or `critique` and
 that `TASK_NUMBER` is present for `MODE=critique`. On invalid inputs,
 skip subagent dispatch and emit the stable summary shape with
-`Files updated: -`, `BLOCKERS_PRESENT=true`,
+`Critique artifact: -`, `Files updated: -`, `BLOCKERS_PRESENT=true`,
 `Blocking verdict: INPUT: BLOCKED`, and `Reason:`.
 
 | Stage | Action | Routing |
 | --- | --- | --- |
 | 1 | Load guidance | Read `./references/design-thinking-mindset.md` and the active mode playbook |
-| 2 | Analyze artifacts | Dispatch `critique-analyzer` using the active playbook's inputs |
-| 3 | Build manifest | Dispatch `question-manifest-builder` with the critique artifact path and plan context |
+| 2 | Analyze artifacts | Dispatch `critique-analyzer` using the active playbook's inputs and the derived path contract |
+| 3 | Build manifest | Dispatch `question-manifest-builder` with the critique artifact path, plan context, and active mode artifacts |
 | 4 | Clarify inline | Read `./references/conversation-protocol.md`, then ask one manifest item at a time |
-| 5 | Record decisions | Dispatch `decision-recorder`; present the stable final summary |
+| 5 | Record decisions | Dispatch `decision-recorder` once; present the stable final summary |
 
 Load `./references/clarification-contracts.md` only when a path,
 precondition, or output-contract question must be checked. A zero-item
@@ -91,6 +91,7 @@ Keep only this state inline:
 - `RE_PLAN_NEEDED`
 - `BLOCKERS_PRESENT`
 - Active critique artifact path
+- Warning summaries from subagent `WARN` verdicts
 
 Everything else arrives as subagent verdicts, manifest rows, and artifact
 paths. On retries, re-dispatch the failed stage with current paths instead
@@ -120,10 +121,13 @@ Expect parseable verdicts from subagents and route them like this:
 
 | Source | Verdicts to expect | Orchestrator action |
 | --- | --- | --- |
+| `critique-analyzer` | `CRITIQUE: PASS` | Continue to manifest building with the returned artifact path |
 | `critique-analyzer` | `CRITIQUE: FAIL` | Capture the required `Reason:` line and emit the stable summary with blocking details |
 | `critique-analyzer` | `CRITIQUE: WARN` | Continue only if the missing context does not invalidate the critique |
+| `question-manifest-builder` | `MANIFEST: PASS` | Continue to the Stage 4 preview and question loop |
 | `question-manifest-builder` | `MANIFEST: BLOCKED` or `MANIFEST: FAIL` | Capture the manifest issue and emit the stable summary with blocking details |
 | `question-manifest-builder` | `MANIFEST: WARN` | Continue, but mention what was omitted or guessed |
+| `decision-recorder` | `RECORDING: PASS` | Present the stable final summary |
 | `decision-recorder` | `RECORDING: BLOCKED` or `RECORDING: ERROR` | Capture the recorder reason and emit the stable summary with blocking details |
 | `decision-recorder` | `RECORDING: WARN` | Present warnings in the final summary and continue |
 
