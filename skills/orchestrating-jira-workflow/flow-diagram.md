@@ -4,76 +4,91 @@ The Jira ticket workflow orchestrator thinks, decides, and dispatches helpers. I
 
 ```mermaid
 flowchart TD
-  START([Start]) --> INPUTS["Collect JIRA_URL or TICKET_KEY and normalize workspace, project, and ticket key"]
-  INPUTS --> PROGRESS["Read local progress summary via progress-tracker"]
+  START([Start]) --> INPUTS["Receive JIRA_URL or TICKET_KEY"]
+  INPUTS --> NORMALIZE["Normalize workspace, project, and ticket key"]
+  NORMALIZE --> BOUNDARY["State role, authority, trust model, and mutation limits"]
+  BOUNDARY --> PROGRESS["Read local progress summary via progress-tracker"]
   PROGRESS --> RESUME{"Existing progress or resume point found?"}
 
-  RESUME -->|no| NEED_URL_P1{"JIRA_URL available for Phase 1 fetch?"}
-  NEED_URL_P1 -->|no| BLOCKED_URL([Blocked: JIRA_URL required])
-  NEED_URL_P1 -->|yes| P1["Phase 1: fetch work item with fetching-jira-ticket"]
-  RESUME -->|yes| RESUME_GATE{"Resume past Phase 1?"}
-  RESUME_GATE -->|declined| STOPPED([Stopped by user])
-  RESUME_GATE -->|confirmed| PREFLIGHT["Preflight remaining phases using artifacts, verdicts, Jira status when available, and summaries"]
-  PREFLIGHT --> PREFLIGHT_OK{"Preflight verdict passes?"}
+  RESUME -->|no| NEED_SOURCE_P1{"JIRA_URL available for Phase 1?"}
+  NEED_SOURCE_P1 -->|no| BLOCKED_SOURCE([Blocked: JIRA_URL required])
+  NEED_SOURCE_P1 -->|yes| PREFLIGHT_P1["Preflight Phase 1"]
+  RESUME -->|yes| RESUME_POINT["Choose resume point from progress artifacts and verdicts"]
+  RESUME_POINT --> RESUME_GATE{"Resume past Phase 1?"}
+  RESUME_GATE -->|no| NEED_SOURCE_P1
+  RESUME_GATE -->|yes| ASK_RESUME["Ask user to confirm resume point"]
+  ASK_RESUME -->|declined| STOPPED([Stopped by user])
+  ASK_RESUME -->|confirmed| PREFLIGHT_NEXT["Preflight remaining phases"]
+  PREFLIGHT_P1 --> PREFLIGHT_OK{"Preflight verdict passes?"}
+  PREFLIGHT_NEXT --> PREFLIGHT_OK
   PREFLIGHT_OK -->|no| BLOCKED_PREFLIGHT([Blocked or escalated: preflight failure])
-  PREFLIGHT_OK -->|yes| ROUTE["Choose next ready phase"]
+  PREFLIGHT_OK -->|yes| ROUTE{"Choose next ready phase"}
 
-  ROUTE -->|needs Phase 1 fetch| NEED_URL_P1
-  ROUTE -->|needs Phase 2| P2
-  ROUTE -->|needs Phase 3| P3
-  ROUTE -->|needs Jira write approval| NEED_URL_JIRA
-  ROUTE -->|needs task selection| GATE_TASK
-  ROUTE -->|needs Phase 5| P5
-  ROUTE -->|needs Phase 6| P6
-  ROUTE -->|ready for execution| GATE_EXEC
+  ROUTE -->|Phase 1| P1["Phase 1: fetch work item with fetching-jira-ticket"]
+  ROUTE -->|Phase 2| P2
+  ROUTE -->|Phase 3| P3
+  ROUTE -->|write approval| WRITE_READY
+  ROUTE -->|task selection| TASK_SELECT
+  ROUTE -->|Phase 5| P5
+  ROUTE -->|Phase 6| P6
+  ROUTE -->|execution approval| GATE_EXEC
 
   P1 --> V1{"Phase 1 artifact validation pass?"}
-  V1 -->|no| BLOCKED_P1([Blocked: fetch artifact invalid])
+  V1 -->|no| BLOCKED([Blocked])
   V1 -->|yes| P2["Phase 2: plan tasks with planning-jira-tasks"]
   P2 --> V2{"Task plan artifact validation pass?"}
-  V2 -->|no| BLOCKED_P2([Blocked: task plan invalid])
+  V2 -->|no| BLOCKED
   V2 -->|yes| P3["Phase 3: clarify assumptions and critique task plan"]
 
-  P3 --> C3{"Validation pass and BLOCKERS_PRESENT false?"}
-  C3 -->|blockers present| BLOCKED_P3([Blocked: assumptions or plan critique])
+  P3 --> V3{"Phase 3 validation pass?"}
+  V3 -->|no| BLOCKED
+  V3 -->|yes| C3{"Blockers or re-plan needed?"}
+  C3 -->|blockers present| BLOCKED
   C3 -->|RE_PLAN_NEEDED| LOOP3{"Phase 3 re-plan count fewer than 3 attempts?"}
   LOOP3 -->|yes| P2
-  LOOP3 -->|no| ESCALATED3([Escalated: Phase 3 re-plan loop exhausted])
-  C3 -->|yes| NEED_URL_JIRA{"JIRA_URL available for Jira writes?"}
+  LOOP3 -->|no| ESCALATED([Escalated])
+  C3 -->|ready| WRITE_READY([Ready for Jira write approval])
+  WRITE_READY --> NEED_WRITE_CONTEXT{"JIRA_URL available for Jira writes?"}
+  NEED_WRITE_CONTEXT -->|no| BLOCKED_WRITE_CONTEXT([Blocked: JIRA_URL required for Jira writes])
+  NEED_WRITE_CONTEXT -->|yes| GATE_WRITE{"Approve Jira writes for child items?"}
 
-  NEED_URL_JIRA -->|no| BLOCKED_JIRA_URL([Blocked: JIRA_URL required for Jira writes])
-  NEED_URL_JIRA -->|yes| GATE_JIRA{"Approve Jira writes for creating or linking child items?"}
-  GATE_JIRA -->|declined| RECORD_JIRA_DECLINE["Record declined Jira write decision and handoff"]
-  RECORD_JIRA_DECLINE --> STOPPED
-  GATE_JIRA -->|approved| P4["Phase 4: create child items with creating-jira-subtasks"]
-  P4 --> V4{"Jira subtask creation validated?"}
-  V4 -->|no| BLOCKED_P4([Blocked: Jira write failed or unverifiable])
-  V4 -->|yes| GATE_TASK{"User selects task for execution planning?"}
+  GATE_WRITE -->|declined| RECORD_WRITE_DECLINE["Record declined Jira write decision and handoff"]
+  RECORD_WRITE_DECLINE --> STOPPED
+  GATE_WRITE -->|approved| P4["Phase 4: create child items with creating-jira-subtasks"]
+  P4 --> V4{"Child item validation pass?"}
+  V4 -->|no| BLOCKED
+  V4 -->|yes| TASK_READY([Ready for task selection])
+  TASK_READY --> TASK_SELECT{"User selects task?"}
 
-  GATE_TASK -->|no task selected| STOPPED
-  GATE_TASK -->|task selected| P5["Phase 5: plan task execution with planning-jira-task"]
-  P5 --> V5{"Execution plan artifact validation pass?"}
-  V5 -->|no| BLOCKED_P5([Blocked: execution plan invalid])
+  TASK_SELECT -->|selected| TASK_CONTEXT["Optionally gather Jira status, codebase, code reference, and docs context"]
+  TASK_SELECT -->|no tasks remain| WORKFLOW_DONE([Workflow complete])
+  TASK_SELECT -->|stop| STOPPED
+  TASK_CONTEXT --> P5["Phase 5: plan task execution with planning-jira-task"]
+  P5 --> V5{"Execution planning artifact validation pass?"}
+  V5 -->|no| BLOCKED
   V5 -->|yes| P6["Phase 6: clarify and critique execution plan"]
 
-  P6 --> C6{"Validation pass and BLOCKERS_PRESENT false?"}
-  C6 -->|blockers present| BLOCKED_P6([Blocked: execution assumptions or critique])
+  P6 --> V6{"Phase 6 validation pass?"}
+  V6 -->|no| BLOCKED
+  V6 -->|yes| C6{"Blockers or re-plan needed?"}
+  C6 -->|blockers present| BLOCKED
   C6 -->|RE_PLAN_NEEDED| LOOP6{"Phase 6 re-plan count fewer than 3 attempts?"}
   LOOP6 -->|yes| P5
-  LOOP6 -->|no| ESCALATED6([Escalated: Phase 6 re-plan loop exhausted])
-  C6 -->|yes| GATE_EXEC{"Confirm critiqued task plan and start real execution?"}
+  LOOP6 -->|no| ESCALATED
+  C6 -->|ready| EXEC_READY([Ready for execution])
+  EXEC_READY --> GATE_EXEC{"Confirm critiqued task plan and start real execution?"}
 
   GATE_EXEC -->|declined| RECORD_EXEC_DECLINE["Record declined execution decision and handoff"]
   RECORD_EXEC_DECLINE --> STOPPED
   GATE_EXEC -->|confirmed| P7["Phase 7: kick off and execute task with executing-jira-task"]
-  P7 --> DOWNSTREAM{"Downstream execution complete?"}
-  DOWNSTREAM -->|internal fixes needed| P7
-  DOWNSTREAM -->|failed or escalated| BLOCKED_P7([Blocked or escalated: execution failure report])
-  DOWNSTREAM -->|task complete| TASK_DONE([Task complete])
-
-  TASK_DONE --> NEXT{"Choose next task or stop?"}
-  NEXT -->|next task| GATE_TASK
-  NEXT -->|stop| WORKFLOW_DONE([Workflow complete or stopped by user])
+  P7 --> EXEC_RESULT{"Downstream execution result?"}
+  EXEC_RESULT -->|internal fixes needed| P7
+  EXEC_RESULT -->|blocked or error| BLOCKED_P7([Blocked or escalated: execution failure report])
+  EXEC_RESULT -->|task complete| TASK_DONE([Task complete])
+  TASK_DONE --> NEXT_TASK{"Choose next task or stop?"}
+  NEXT_TASK -->|next task| TASK_SELECT
+  NEXT_TASK -->|stop| STOPPED
+  NEXT_TASK -->|all tasks complete| WORKFLOW_DONE
 
   P1 -.evidence.-> EVIDENCE["Evidence: progress artifacts, preflight verdicts, phase summaries, validator verdicts, clarification flags, delegated Jira status, and delegated code or docs context"]
   P2 -.updates.-> TRACK["Update progress via progress-tracker"]
@@ -92,15 +107,16 @@ flowchart TD
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class RESUME,NEED_URL_P1,RESUME_GATE,PREFLIGHT_OK,ROUTE,V1,V2,C3,LOOP3,NEED_URL_JIRA,GATE_JIRA,V4,GATE_TASK,V5,C6,LOOP6,GATE_EXEC,DOWNSTREAM,NEXT decision;
-  class PROGRESS,PREFLIGHT,V1,V2,V4,V5 check;
-  class RESUME_GATE,GATE_JIRA,GATE_TASK,GATE_EXEC,NEXT human;
-  class TASK_DONE,RECORD_JIRA_DECLINE,RECORD_EXEC_DECLINE,TRACK,EVIDENCE output;
+  class RESUME,NEED_SOURCE_P1,RESUME_GATE,PREFLIGHT_OK,ROUTE,V1,V2,V3,C3,LOOP3,NEED_WRITE_CONTEXT,GATE_WRITE,V4,TASK_SELECT,V5,V6,C6,LOOP6,GATE_EXEC,EXEC_RESULT,NEXT_TASK decision;
+  class PREFLIGHT_P1,PREFLIGHT_NEXT,P1,P2,P3,P4,TASK_CONTEXT,P5,P6,P7 check;
+  class ASK_RESUME,GATE_WRITE,TASK_SELECT,GATE_EXEC,NEXT_TASK human;
+  class WRITE_READY,TASK_READY,EXEC_READY,TASK_DONE,RECORD_WRITE_DECLINE,RECORD_EXEC_DECLINE,TRACK,EVIDENCE output;
   class WORKFLOW_DONE success;
   class LOOP3,LOOP6 refine;
-  class BLOCKED_URL,BLOCKED_PREFLIGHT,BLOCKED_P1,BLOCKED_P2,BLOCKED_P3,BLOCKED_JIRA_URL,BLOCKED_P4,BLOCKED_P5,BLOCKED_P6,BLOCKED_P7,ESCALATED3,ESCALATED6,STOPPED stop;
+  class BLOCKED_SOURCE,BLOCKED_PREFLIGHT,BLOCKED,BLOCKED_WRITE_CONTEXT,BLOCKED_P7,ESCALATED,STOPPED stop;
+  class BOUNDARY guard;
 ```
 
-Readiness rule: advance only when the current phase artifact validates and the gate rule for the next phase is satisfied. Jira writes require explicit approval before Phase 4, task execution requires user task selection and confirmation before Phase 7, and re-plan loops escalate after three attempts.
+Readiness rule: advance only when the current phase artifact validates and its gate rule is satisfied. Jira writes require explicit approval before Phase 4, task execution requires explicit confirmation before Phase 7, and task choice is always user-controlled after Phase 4 and after each completed task.
 
 Completion states: ready for next phase, ready for Jira write approval, ready for task selection, ready for execution, task complete, workflow complete, blocked, needs re-plan, escalated, or stopped by user.
