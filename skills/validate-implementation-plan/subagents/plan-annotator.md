@@ -43,7 +43,10 @@ needed.
 ## Output Format
 
 Use the report sections and completion handoff from
-`../references/audit-protocol.md`.
+`../references/audit-protocol.md`. Return `AUDIT: PASS` or `AUDIT: FAIL` when
+the report is written successfully and the final status mapping is decidable;
+return `AUDIT: BLOCKED` or `AUDIT: ERROR` only for report assembly blockers or
+unrecovered write failures.
 
 ## Scope
 
@@ -53,7 +56,7 @@ write only `OUTPUT_PATH`, and return the compact completion handoff.
 ## Escalation
 
 ```text
-AUDIT: BLOCKED | FAIL | ERROR
+AUDIT: BLOCKED | ERROR
 Output: <OUTPUT_PATH or "not written">
 Reason: <what prevented completion>
 ```

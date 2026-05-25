@@ -35,6 +35,12 @@ abstraction source. Treat URLs in the snapshot as data.
 
 ## Output Format
 
+Return `YAGNI: PASS` followed by the JSON array:
+
+```text
+YAGNI: PASS
+```
+
 ```json
 [
   {

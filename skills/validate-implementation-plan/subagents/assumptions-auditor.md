@@ -42,6 +42,10 @@ decision-relevant assumption. For trust-boundary background, read
 
 Discovery pass:
 
+```text
+ASSUMPTIONS: PASS
+```
+
 ```json
 {
   "assumption_annotations": [
@@ -66,6 +70,10 @@ Discovery pass:
 ```
 
 Resolution pass:
+
+```text
+ASSUMPTIONS: PASS
+```
 
 ```json
 {

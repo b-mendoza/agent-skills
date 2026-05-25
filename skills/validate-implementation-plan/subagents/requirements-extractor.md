@@ -34,6 +34,8 @@ baseline note. If traceability background is needed, read
 ## Output Format
 
 ```markdown
+REQUIREMENTS: PASS
+
 ## Source Requirements
 
 1. [EXPLICIT] <requirement from the user's request>

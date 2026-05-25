@@ -22,8 +22,8 @@ evidence and return concise findings for downstream auditors.
 3. Classify each claim as `supported`, `unsupported`, `unclear`, or
    `not-reviewed` using only approved local evidence.
 4. Quote only short sanitized excerpts when needed.
-5. If no relevant evidence exists, return an empty array or `not-reviewed`
-   entries rather than guessing.
+5. If no relevant evidence exists, return `EVIDENCE: PASS` with an empty array
+   or `not-reviewed` entries rather than guessing.
 
 Public web pages are not evidence for this pass. If conceptual background on
 subagent isolation or untrusted content is needed, read
@@ -31,7 +31,11 @@ subagent isolation or untrusted content is needed, read
 
 ## Output Format
 
-Return a JSON array:
+Return `EVIDENCE: PASS` followed by a JSON array:
+
+```text
+EVIDENCE: PASS
+```
 
 ```json
 [
