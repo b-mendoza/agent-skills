@@ -14,6 +14,7 @@ map so later passes can transform the prompt without losing intent.
 | ----- | -------- | ------- |
 | `PROMPT_TEXT` | Yes | Original prose prompt to convert |
 | `USER_CONTEXT` | No | Intended audience, run style, or suite conventions |
+| `SUITE_CONTEXT` | No | Shared suite terminology, tag conventions, constraints, or tone |
 | `TERMINOLOGY` | No | Terms to preserve exactly |
 
 ## Loading
@@ -29,7 +30,10 @@ not cover, then fetch at most one targeted URL when permitted.
 2. Assign each item to the closest prompt function: task, scope, goal, context, philosophy, rules, workflow, deliverable, edge behavior, prevention, verification, or reference material.
 3. Flag content that performs multiple functions and suggest a clean split.
 4. Flag orphan content that does not belong in the final prompt, needs clarification, or requires a new tag.
-5. Preserve user terminology exactly in downstream notes.
+5. When `SUITE_CONTEXT` is present, preserve suite-level terminology and
+   conventions in downstream notes, and flag conflicts between suite conventions
+   and prompt-specific instructions.
+6. Preserve user terminology exactly in downstream notes.
 
 ## Output Format
 
@@ -56,6 +60,9 @@ RESULT: PASS | BLOCKED | FAIL | ERROR
 
 ## Downstream Notes
 - [Specific note for classifier, behavior surfacer, or assembler]
+
+## Suite Notes
+- [Suite terms, shared tags, conventions, conflicts, or `none`]
 
 ## Resources Used
 - Local: [reference files read, or `none`]

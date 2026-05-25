@@ -43,9 +43,28 @@ the user requested renaming.
 | 3 | `implicit-behavior-surfacer` | `./subagents/implicit-behavior-surfacer.md` | Ambiguity, autonomy, gate, empty-output, and traceability gaps |
 | 4 | `anti-pattern-synthesizer` | `./subagents/anti-pattern-synthesizer.md` | Plausible wrong paths and matching negative criteria |
 | 5 | `success-criteria-builder` | `./subagents/success-criteria-builder.md` | Observable post-run checklist and coverage gaps |
-| 6 | `xml-prompt-assembler` | `./subagents/xml-prompt-assembler.md` | Final XML prompt and assembly notes |
+| 6 | `xml-prompt-assembler` | `./subagents/xml-prompt-assembler.md` | Routeable result status, final XML prompt, and assembly notes |
 
 Read a subagent file only when dispatching that pass.
+
+## Pass Status Contract
+
+Every dispatched pass returns a first-line status:
+
+```markdown
+RESULT: PASS | BLOCKED | FAIL | ERROR
+```
+
+Route on that line only. `PASS` means the pass completed and its named output
+sections are safe for downstream use. `BLOCKED` means required input is missing.
+`FAIL` means the pass completed but found contradictions or unauditable content
+that prevents reliable assembly. `ERROR` means an unexpected tool, filesystem,
+or runtime failure occurred.
+
+When `xml-prompt-assembler` returns `RESULT: PASS`, strip that internal status
+from the user-facing response and return the XML prompt first. For `light` or
+`revision` flows, pass an `OMITTED_PASS_REASON` for every skipped upstream pass
+so the assembler can distinguish intentional omission from missing input.
 
 ## Flow Selection
 
@@ -57,6 +76,12 @@ Evaluate flows in this order and choose the first matching flow.
 | 2 | `suite` | `SUITE_CONTEXT` must govern conventions | `full`, with shared suite blocks passed into every pass |
 | 3 | `full` | Prompt is multi-phase, autonomous, safety-sensitive, or repeatedly failing | All passes in order |
 | 4 | `light` | None of the higher-precedence triggers apply and the prompt is a short one-shot with low autonomy risk | Passes 1 and 6 |
+
+In `suite` flow, include `SUITE_CONTEXT` in every pass payload. Each pass
+preserves suite-level terminology, tag conventions, shared constraints, tone,
+and output conventions unless they conflict with the user's prompt-specific
+request. Surface conflicts as `BLOCKED` when a missing user choice is needed or
+`FAIL` when the suite and prompt cannot both be honored.
 
 ## Progressive Loading Map
 
@@ -79,7 +104,9 @@ current external rationale is needed but cannot be fetched.
 The orchestrator does exactly three things:
 
 - Coordinate: capture inputs, choose a flow, and route passes.
-- Dispatch: send each pass the original prompt plus only relevant prior outputs.
+- Dispatch: send each pass the original prompt, selected flow, resource status,
+  suite context when present, relevant prior outputs, and any intentional
+  omission reasons.
 - Synthesize: hand compact findings to the assembler and return the final prompt.
 
 Subagents perform analysis and return structured findings. The orchestrator
@@ -94,16 +121,18 @@ analysis transcripts.
 4. Choose `revision`, `suite`, `full`, or `light` using the precedence table.
 5. For `revision`, confirm the existing XML prompt and baseline content are sufficient, confirm `CHANGE_REQUEST` stays in scope and preserves task meaning, identify the affected pass range, and rerun any required upstream prerequisites before affected passes.
 6. Dispatch passes in pipeline order, loading only the current subagent file.
-7. If a subagent returns `BLOCKED`, `FAIL`, or `ERROR`, surface the matching status and ask the smallest useful question or recovery action.
-8. Dispatch `xml-prompt-assembler` with the completed pass outputs.
+7. Read the first `RESULT:` line from each pass. If a subagent returns `BLOCKED`, `FAIL`, or `ERROR`, surface the matching status and ask the smallest useful question or recovery action.
+8. Dispatch `xml-prompt-assembler` with the completed pass outputs, selected `FLOW`, source/resource status, and any `OMITTED_PASS_REASON` values.
 9. Check the result against the run-level success criteria below.
 10. When criteria fail, map each failure to the earliest affected pass, rerun that pass and downstream dependent passes, and preserve unaffected sections. Stop after three fix cycles with `REPAIR_NEEDED`.
 
 ## Run-Level Success Criteria
 
-- Meaningful source content is represented, intentionally split, or explicitly omitted with justification.
+- Meaningful source content and governing suite conventions are represented,
+  intentionally split, or explicitly omitted with justification.
 - Each emitted XML tag changes agent behavior if removed.
 - Constraints, anti-patterns, and success criteria audit the same behaviors.
+- Any status, gate, retry, or escalation behavior in the source prompt is represented as routeable contract language.
 - Assembly notes list assumptions, omitted sections, fetched resources or `LOCAL_ONLY`/`RATIONALE_OMITTED`, and follow-up options.
 - Progressive disclosure was preserved: no subagent, reference, or URL was loaded before it was needed.
 - Terminal status is one of `PASS`, `BLOCKED`, `FAIL`, `ERROR`, or `REPAIR_NEEDED`.
@@ -120,10 +149,10 @@ Round trip:
 4. `implicit-behavior-surfacer` adds explicit empty-output and new-finding handling.
 5. `anti-pattern-synthesizer` blocks code edits and unsupported ticket assumptions.
 6. `success-criteria-builder` creates audit checks for findings, no-findings cases, and unchanged files.
-7. `xml-prompt-assembler` returns the final XML prompt and notes whether any web resource was fetched.
+7. `xml-prompt-assembler` returns `RESULT: PASS`, the final XML prompt, and notes whether any web resource was fetched; the orchestrator strips the internal status before replying.
 
 ## Boundaries
 
 Add structure in proportion to risk. A simple prompt should stay simple. A
 production autonomous workflow usually earns philosophy, constraints, gates or
-guardrails, anti-patterns, traceability, and success criteria.
+guardrails, status routing, anti-patterns, traceability, and success criteria.

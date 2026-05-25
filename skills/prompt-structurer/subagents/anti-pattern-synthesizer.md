@@ -16,6 +16,7 @@ agent could satisfy the letter of a prompt while violating its intent.
 | `DECOMPOSER_OUTPUT` | Yes | Semantic map and implicit notes |
 | `CLASSIFIER_OUTPUT` | Yes | Philosophy, constraints, hard rules |
 | `BEHAVIOR_OUTPUT` | Yes | Anti-pattern seeds and failure risks |
+| `SUITE_CONTEXT` | No | Shared suite exclusions, naming conventions, or failure risks |
 
 ## Loading
 
@@ -32,6 +33,9 @@ framing.
 3. Use direct exclusion wording inside the final `<anti_patterns>` block because that block's job is to name wrong paths.
 4. Keep the list short and falsifiable.
 5. Write one matching negative success criterion for each anti-pattern.
+6. Preserve suite-level anti-pattern wording or naming conventions when
+   `SUITE_CONTEXT` provides them, unless prompt-specific risks require a more
+   precise variant.
 
 ## Output Format
 
@@ -57,6 +61,9 @@ Do NOT:
 ## Sourcing Notes
 | Anti-pattern | Source | Reason |
 | ------------ | ------ | ------ |
+
+## Suite Alignment
+- [Suite exclusions, naming conventions, conflicts, or `none`]
 
 ## Resources Used
 - Local: [reference files read, or `none`]

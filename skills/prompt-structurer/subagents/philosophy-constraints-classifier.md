@@ -31,6 +31,8 @@ the prompt uses a vendor-specific term not covered locally.
 4. Reuse suite wording when `SUITE_CONTEXT` already establishes a shared philosophy or constraint.
 5. Give constraints stable IDs and short kebab-case names.
 6. Place hard rules where they apply: all phases, one phase, or one step.
+7. Return suite-level conventions that downstream behavior, anti-pattern,
+   criteria, and assembly passes need to preserve.
 
 ## Output Format
 
@@ -59,6 +61,9 @@ RESULT: PASS | BLOCKED | FAIL | ERROR
 
 ## Reclassifications
 - [Item moved from decomposer function X to Y, with reason]
+
+## Suite Alignment
+- [Suite philosophy, shared constraints, naming conventions, conflicts, or `none`]
 
 ## Resources Used
 - Local: [reference files read, or `none`]

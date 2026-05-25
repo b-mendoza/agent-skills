@@ -41,7 +41,7 @@ flowchart TD
   P1L --> P6L["Pass 6: xml-prompt-assembler (./subagents/xml-prompt-assembler.md)"]
 
   FULL --> P1F["Pass 1: semantic-decomposer (./subagents/semantic-decomposer.md)"]
-  SUITE --> SUITE_CTX["Pass SUITE_CONTEXT and shared suite blocks into every pass"]
+  SUITE --> SUITE_CTX["Pass SUITE_CONTEXT and shared suite blocks into every pass; require suite alignment notes"]
   SUITE_CTX --> P1F
   P1F --> P2F["Pass 2: philosophy-constraints-classifier (./subagents/philosophy-constraints-classifier.md)"]
   P2F --> P3F["Pass 3: implicit-behavior-surfacer (./subagents/implicit-behavior-surfacer.md)"]
@@ -67,7 +67,7 @@ flowchart TD
   PASS_STATUS -->|BLOCKED| BLOCKED_PASS([BLOCKED: ask smallest useful question])
   PASS_STATUS -->|FAIL| FAIL_PASS([FAIL: failed pass prevents contract assembly])
   PASS_STATUS -->|ERROR| ERROR_STOP([ERROR: surface unexpected execution failure])
-  PASS_STATUS -->|none| CHECK["Check run-level success criteria: source coverage, behavioral tags, aligned constraints, assembly notes, progressive disclosure"]
+  PASS_STATUS -->|none| CHECK["Check run-level success criteria: source and suite coverage, behavioral tags, aligned constraints, assembly notes, progressive disclosure"]
 
   CHECK --> CRITERIA{"Criteria pass?"}
   CRITERIA -->|yes| OUTPUT["Return final XML prompt first, then assembly notes with assumptions, omitted sections, resources, LOCAL_ONLY or RATIONALE_OMITTED status, and follow-ups"]
