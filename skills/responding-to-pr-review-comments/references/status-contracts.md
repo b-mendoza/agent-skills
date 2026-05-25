@@ -10,13 +10,18 @@ Concrete examples live in [`./status-examples.md`](./status-examples.md).
 
 ## Shared Values
 
-- **Classifications:** `valid`, `questionable`, `pushback`, `needs-user-decision`.
+- **Classifications:** `valid`, `questionable`, `pushback`,
+  `needs-user-decision`; skipped/report-only items may use
+  `not-assessed-report-only` when they bypass assessment.
 - **Action intents:** `implement`, `clarify`, `push-back`, `ask-user`.
 - **Posting targets:** `review-comment-reply:<root-id>` for supported
   review-comment threads whose root is a top-level review comment;
   `requires-user-choice:review-summary`, `requires-user-choice:issue-comment`,
   `requires-user-choice:unsupported-review-reply`, or
   `requires-user-choice:unresolved-metadata` for targets the poster must skip.
+- **Reply dispositions:** `reply-ready`, `follow-up-ready`,
+  `skipped-resolved`, `skipped-already-replied`, or
+  `unsupported-or-needs-user-choice`.
 
 ## Collector Output
 
@@ -36,6 +41,11 @@ Comments:
   Excerpt: <short quote or summary>
   Thread context: <one-line context or none>
   Posting target: <review-comment-reply:<root-id> | requires-user-choice:review-summary | requires-user-choice:issue-comment | requires-user-choice:unsupported-review-reply | requires-user-choice:unresolved-metadata>
+  Thread resolved: <yes | no | unknown>
+  Resolution evidence: <thread metadata, URL, or none>
+  Existing responder reply: <none | id, URL, created time, and short excerpt>
+  Reply disposition: <reply-ready | follow-up-ready | skipped-resolved | skipped-already-replied | unsupported-or-needs-user-choice>
+  Skip or follow-up reason: <reason and evidence, or none>
 Limitations:
 - <missing metadata, unavailable endpoint, or none>
 Reason: none | <why status is not PASS>
@@ -50,12 +60,13 @@ PR: <owner>/<repo>#<number>
 Counts: <n valid>, <n questionable>, <n pushback>, <n needs-user-decision>
 Assessments:
 - Comment ID: <C1>
-  Classification: <valid | questionable | pushback | needs-user-decision>
+  Classification: <valid | questionable | pushback | needs-user-decision | not-assessed-report-only>
   Confidence: <high | medium | low>
   Evidence:
   - <specific source and why it matters>
   Rationale: <short reasoning>
   Action intent: <implement | clarify | push-back | ask-user>
+  Reply disposition: <reply-ready | follow-up-ready | skipped-resolved | skipped-already-replied | unsupported-or-needs-user-choice>
   Drafting guidance: <tone, caveat, or reply angle>
 Context requests:
 - <smallest missing context request or none>
@@ -72,11 +83,13 @@ DRAFT: PASS | NEEDS_USER_DECISION | ERROR
 PR: <owner>/<repo>#<number>
 Draft replies:
 - Comment ID: <C1>
-  Classification: <valid | questionable | pushback | needs-user-decision>
+  Classification: <valid | questionable | pushback | needs-user-decision | not-assessed-report-only>
   Planned action: <code change | test change | docs change | clarify | push back | ask user>
+  Reply disposition: <reply-ready | follow-up-ready | skipped-resolved | skipped-already-replied | unsupported-or-needs-user-choice>
   Posting target: <review-comment-reply:<root-id> | requires-user-choice:review-summary | requires-user-choice:issue-comment | requires-user-choice:unsupported-review-reply | requires-user-choice:unresolved-metadata>
-  Draft reply: <reply text, ready for user review>
+  Draft reply: <reply text, ready for user review | none for skipped/report-only>
   Action details: <specific action to take>
+  Skip or follow-up reason: <reason and evidence, or none>
   User question: <question or none>
 Style notes:
 - <tone or language note, or none>
@@ -97,11 +110,12 @@ Checks:
 - Actions: <PASS | FAIL> - <note>
 - Language: <PASS | FAIL> - <note>
 - Posting targets: <PASS | FAIL> - <note>
+- Skipped/report-only: <PASS | FAIL> - <note>
 Fix target: none | <collector | assessor | drafter>:<comment id>
 Required fixes:
 - <specific fix or none>
 Verified response package:
-- <compact per-comment verified assessment, reply, action, posting target, and citations>
+- <compact per-comment verified assessment or skip reason, reply if any, action, posting target, reply disposition, and citations>
 Residual risks:
 - <risk or none>
 Reason: none | <why status is not PASS>
@@ -115,6 +129,7 @@ WRITE: PASS | ERROR
 File: <OUTPUT_FILE>
 Comments assessed: <number>
 Actions: <implement count> implement, <clarify count> clarify, <pushback count> push back
+Skipped/report-only: <count>
 Posting status: <not-posted | posted>
 Read-back verified: <yes | no, writer template/read-back self-check only>
 Reason: none | <why status is ERROR>
@@ -129,7 +144,7 @@ Output file: <OUTPUT_FILE>
 Posted replies: <number>
 Read-back verified: <yes | no>
 Skipped replies:
-- <comment id and reason, or none>
+- <comment id, reason, and reply disposition, or none>
 Reason: none | <why status is not PASS>
 Next step: none | <smallest recovery action>
 ```

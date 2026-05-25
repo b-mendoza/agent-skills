@@ -15,12 +15,14 @@ Input: `PR_URL=https://github.com/org/repo/pull/123`, `POSTING_MODE=draft-only`.
    `requires-user-choice:issue-comment`,
    `requires-user-choice:unsupported-review-reply`, or
    `requires-user-choice:unresolved-metadata`.
-3. The orchestrator dispatches `review-comment-assessor` and receives two
+3. The orchestrator marks resolved threads and already-replied threads as
+   report-only unless a follow-up is warranted.
+4. The orchestrator dispatches `review-comment-assessor` and receives two
    `valid`, one `questionable`, and one `pushback` classification.
-4. The orchestrator dispatches `reply-drafter`, then `response-verifier`.
-5. The orchestrator dispatches `response-report-writer`, which writes
+5. The orchestrator dispatches `reply-drafter`, then `response-verifier`.
+6. The orchestrator dispatches `response-report-writer`, which writes
    `pr-123-review.md`.
-6. The orchestrator reads back the report and returns
+7. The orchestrator reads back the report and returns
    `PR_COMMENT_RESPONSE: PASS` with `Posting: not-posted`.
 
 ## Successful Assessment Item
@@ -33,6 +35,7 @@ Input: `PR_URL=https://github.com/org/repo/pull/123`, `POSTING_MODE=draft-only`.
   - src/api.ts:42 returns 500 for a missing resource while tests/api.test.ts:88 expects 404 for the same route family.
   Rationale: The reviewer identified an inconsistent error mapping.
   Action intent: implement
+  Reply disposition: reply-ready
   Drafting guidance: Thank them and say the route will be aligned with existing 404 behavior.
 ```
 
@@ -49,6 +52,7 @@ Checks:
 - Actions: PASS - actions match classifications
 - Language: PASS - replies are natural and concise
 - Posting targets: PASS - unsupported targets remain marked for user choice
+- Skipped/report-only: PASS - skipped items have evidence and are excluded from posting
 Fix target: assessor:C2
 Required fixes:
 - Add concrete evidence for the C2 pushback or change the classification.
