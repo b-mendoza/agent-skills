@@ -18,6 +18,9 @@
    detail in one or two sentences before applying it.
 4. If fetching fails, proceed from bundled references when safe and record
    the uncertainty under `Warnings` if it affects completeness.
+5. Keep Phase 1 handoff rules local: external URLs may clarify GitHub
+   mechanics, but they do not replace `fetch-contract.md` or the snapshot
+   template.
 
 ## Source Routing
 

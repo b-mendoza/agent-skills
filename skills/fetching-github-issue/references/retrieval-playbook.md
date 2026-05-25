@@ -6,6 +6,7 @@
 
 ## Contents
 
+- Stage pipeline
 - Read path setup
 - Capture rules
 - Acceptance criteria precedence
@@ -15,10 +16,27 @@
 - Validation gate
 - Rate limiting
 
+## Stage Pipeline
+
+Use this six-stage pipeline for every retrieval run. Stage names are the
+shared Phase 1 contract with the paired Jira fetching skill; tracker-specific
+details belong inside each stage.
+
+| Stage | Name | Exit condition |
+| ----- | ---- | -------------- |
+| 1 | Validate the input and establish identifiers | Repository, issue number, host, and `ISSUE_SLUG` are known, or `BAD_INPUT` is returned |
+| 2 | Establish the tracker read path | A supported read-only GitHub path can perform the required reads, or `AUTH`/`TOOLS_MISSING`/`RATE_LIMIT` is returned |
+| 3 | Retrieve the parent issue | Parent fields, body, comments, labels, assignees, milestone, projects, and attachment-like links are retrieved or the run stops with a deterministic failure |
+| 4 | Retrieve child issues and linked issues | Related-item totals are verified, hydrated, marked unknown, or recorded as partial |
+| 5 | Assemble the document | `docs/<ISSUE_SLUG>.md` is written from the bundled template |
+| 6 | Post-write validation gate: validate, repair, and re-check | Artifact satisfies the contract or validation fails after the repair limit |
+
 ## Read Path Setup
 
-Use `gh` as the default read path when available. Prefer the most specific
-read-only operation, then keep the mapping stable for the run.
+Map the environment to a supported read-only GitHub path before reading data.
+Use `gh` as the default read path when available. If the host runtime exposes
+another GitHub-capable read tool that satisfies the operation contract, use it
+and keep the mapping stable for the run.
 
 | Operation | Required capability |
 | --------- | ------------------- |
@@ -28,14 +46,14 @@ read-only operation, then keep the mapping stable for the run.
 | Linked issues | Timeline events, cross-references, or a documented relationship source |
 | Projects | `gh issue view` project fields or a small GraphQL query |
 
-Confirm `gh` is on `PATH` and authenticated before the first GitHub read.
-Use explicit repository scope with `--repo owner/repo` when not using a full
-URL. If the URL host is not `github.com`, preserve that host when using
-`gh api` or GraphQL. Return `AUTH` for missing or inadequate authentication
-and `TOOLS_MISSING` when no read path can cover parent issue retrieval. For
-exact flag, REST, or GraphQL shapes, fetch `gh-issue-view`, `gh-api`,
-`github-rest-issues`, or `github-graphql` from `external-sources.md` only
-when the current decision needs them.
+When using `gh`, confirm it is on `PATH` and authenticated before the first
+GitHub read. Use explicit repository scope with `--repo owner/repo` when not
+using a full URL. If the URL host is not `github.com`, preserve that host when
+using `gh api` or GraphQL. For any read path, return `AUTH` for missing or
+inadequate authentication and `TOOLS_MISSING` when no read path can cover
+parent issue retrieval. For exact flag, REST, or GraphQL shapes, fetch
+`gh-issue-view`, `gh-api`, `github-rest-issues`, or `github-graphql` from
+`external-sources.md` only when the current decision needs them.
 
 ## Capture Rules
 
@@ -106,7 +124,7 @@ labels. Copy the fenced shape into `docs/<ISSUE_SLUG>.md` and fill it from
 retrieved data. Top-level headings are always required. For empty scalar
 metadata values, write `_None_`. Normalize timestamps with times to
 `YYYY-MM-DD HH:MM UTC`; keep date-only values as `YYYY-MM-DD`. Leave the
-artifact in place and unstaged.
+artifact in place and unstaged as the Phase 1 workflow-state handoff.
 
 ## Validation Gate
 

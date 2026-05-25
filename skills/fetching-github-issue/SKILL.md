@@ -15,6 +15,12 @@ just-in-time sources for current GitHub syntax or progressive-disclosure
 rationale; normal execution still works from local files when web access is
 unavailable.
 
+Workflow role: this is the Phase 1 fetch-work-item step for the GitHub
+orchestration workflow. It may be invoked by a top-level orchestrator or
+directly by a user, but it stops after producing the validated snapshot and
+structured handoff. Later task planning, child-issue creation, later-phase
+validation, and GitHub mutations stay with downstream workflow skills.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -87,9 +93,10 @@ The retriever writes at most one local workflow snapshot:
 docs/<ISSUE_SLUG>.md
 ```
 
-Leave the snapshot in place and unstaged for workflow resumability. Load
+Treat the snapshot as a workflow-state handoff for later phases, not
+implementation history. Leave it in place and unstaged for resumability. Load
 `./references/fetch-contract.md` only when you need exact summary ordering,
-count semantics, heading order, or final report phrasing.
+count semantics, heading order, lifecycle rules, or final report phrasing.
 
 ## Escalation
 
@@ -106,7 +113,9 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42`
 
 Flow: derive `ISSUE_SLUG=acme-app-42`, dispatch `issue-retriever`, receive
 `FETCH: PASS` and `Validation: PASS`, then report `docs/acme-app-42.md`,
-the issue identity, counts, warnings, and that GitHub was not modified.
+the issue identity, counts, warnings, and that GitHub was not modified. If
+called by the GitHub orchestrator, this 12-line summary and file path are
+the Phase 1 handoff.
 </example>
 
 <example>

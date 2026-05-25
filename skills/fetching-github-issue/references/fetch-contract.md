@@ -6,12 +6,23 @@
 
 ## Contents
 
+- Orchestration handoff role
 - Summary semantics
 - Count rules
 - Locked summary line order
 - Retriever summary examples
 - Artifact contract
 - Coordinator report phrasing
+
+## Orchestration Handoff Role
+
+This contract defines the complete Phase 1 handoff for the GitHub workflow.
+The coordinator and any top-level orchestrator retain the locked 12-line
+summary, the written file path, warnings, and fatal reason. Raw GitHub
+payloads and full artifact contents stay inside `issue-retriever`.
+
+`docs/<ISSUE_SLUG>.md` is a workflow-state snapshot for downstream phases.
+Leave it on disk and unstaged; do not treat it as implementation history.
 
 ## Summary Semantics
 
@@ -91,7 +102,8 @@ Reason: GitHub issue acme/app#892 was not found (404)
 
 ## Artifact Contract
 
-Primary artifact: `docs/<ISSUE_SLUG>.md`.
+Primary artifact: `docs/<ISSUE_SLUG>.md`. It is the Phase 1 workflow-state
+snapshot consumed by later GitHub orchestration phases.
 
 Required top-level headings, in order:
 
@@ -122,9 +134,10 @@ lives in `./issue-snapshot-template.md`.
 
 For `PASS` or `PARTIAL`, report the file path, issue identity, state,
 comment count, child-issue count, linked-issue count, attachment count,
-warnings, and that GitHub was not modified. For `FAIL`, `ERROR`, or
-`Validation: FAIL`, report the failure category and reason without
-inspecting raw payloads.
+warnings, and that GitHub was not modified. When invoked by the top-level
+workflow, this report is the Phase 1 decision input before artifact
+validation. For `FAIL`, `ERROR`, or `Validation: FAIL`, report the failure
+category and reason without inspecting raw payloads.
 
 <example>
 Issue fetched to `docs/acme-app-42.md`. `acme/app#42: Implement dark mode

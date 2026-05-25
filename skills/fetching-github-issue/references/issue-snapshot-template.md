@@ -17,6 +17,8 @@ placeholders. Write `_None_` for verified empty sections. Use the
 `_Unknown..._` markers from **Conditional Rules** when child-issue,
 linked-issue, or project discovery is unverified after the parent issue was
 retrieved.
+The rendered file is a Phase 1 workflow-state handoff for downstream
+orchestration phases and should remain unstaged.
 
 ```markdown
 # <ISSUE_SLUG>: <Issue title>

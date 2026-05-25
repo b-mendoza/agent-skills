@@ -1,11 +1,13 @@
 # Fetching GitHub Issue
 
-The coordinator retrieves exactly one GitHub issue into a validated local
-Markdown snapshot. It may normalize issue coordinates, dispatch the delegated
-`issue-retriever`, interpret only the retriever's structured summary, and report
-handoff state. Raw GitHub data stays out of coordinator context. The delegated
-retriever performs read-only GitHub queries, may write at most one unstaged file
-at `docs/<ISSUE_SLUG>.md`, and must not modify GitHub.
+The coordinator is the GitHub workflow's Phase 1 fetch-work-item step. It
+retrieves exactly one GitHub issue into a validated local Markdown snapshot,
+may normalize issue coordinates, dispatch the delegated `issue-retriever`,
+interpret only the retriever's structured summary, and report handoff state.
+Raw GitHub data stays out of coordinator context. The delegated retriever
+performs read-only GitHub queries, may write at most one unstaged workflow-state
+file at `docs/<ISSUE_SLUG>.md`, and must not modify GitHub or invoke later
+workflow phases.
 
 ```mermaid
 flowchart TD
