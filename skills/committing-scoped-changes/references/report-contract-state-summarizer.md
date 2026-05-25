@@ -32,6 +32,9 @@ Decision needed: none | <smallest user decision or orchestrator action>
 `Reference need` values match the reference keys in
 `./external-sources.md`. Use the same key string.
 
+When `STATE_REFRESH_MODE` is omitted, report `State refresh mode: initial`.
+Always emit the `State refresh mode` field for every status.
+
 For `State refresh mode: post-commit`, the same status vocabulary applies. The
 orchestrator uses `PASS` to compare remaining scoped changes with the approved
 plan, `NO_SCOPED_CHANGES` to proceed to the final report, `NEEDS_CONTEXT` to ask
