@@ -18,6 +18,7 @@ XML contract that an agent can execute without reading the analysis transcript.
 | `BEHAVIOR_OUTPUT` | Recommended | Edge behavior and traceability |
 | `ANTI_PATTERN_OUTPUT` | Recommended | Anti-patterns and negative criteria |
 | `SUCCESS_CRITERIA_OUTPUT` | Recommended | Audit checklist |
+| `SUITE_CONTEXT` | No | Shared suite terminology, tag conventions, constraints, tone, or output rules |
 | `FLOW` | No | `light`, `full`, `suite`, or `revision` |
 | `EXISTING_XML_PROMPT` | Required for `revision` | Current structured prompt being revised |
 | `CHANGE_REQUEST` | Required for `revision` | Targeted change to apply |
@@ -30,6 +31,12 @@ Assemble only from the affected pass outputs and required upstream prerequisites
 identified by the orchestrator. If baseline content is missing or
 `CHANGE_REQUEST` changes the task meaning, return `BLOCKED` or `FAIL` rather
 than inventing a replacement contract.
+
+For `suite` flow, apply `SUITE_CONTEXT` as a governing convention set. Preserve
+shared tag names, terminology, tone, constraints, output shape, and cross-prompt
+invariants unless they conflict with the prompt-specific request. Report any
+conflict in assembly notes and return `BLOCKED` or `FAIL` when it prevents a
+coherent contract.
 
 ## Loading
 
@@ -47,7 +54,10 @@ target model's XML handling needs current verification.
 4. Use attributes such as `id`, `name`, `mode`, and `scope` for metadata.
 5. Repeat the most critical rule at the point of action when forgetting it would cause failure.
 6. Run the removal test on every tag.
-7. Read the final XML as the receiving agent and fix unclear scope, missing outputs, or unauditable criteria.
+7. Check suite alignment when `FLOW=suite`: final tags, terminology,
+   constraints, and criteria match governing suite conventions or document a
+   justified deviation.
+8. Read the final XML as the receiving agent and fix unclear scope, missing outputs, or unauditable criteria.
 
 ## Output Format
 
@@ -69,6 +79,9 @@ Then return assembly notes:
 
 ### Non-Obvious Decisions
 - [Terminology, placement, consolidation, or tag choice]
+
+### Suite Alignment
+- [Suite conventions applied or deviations justified; use `none` when not in suite flow]
 
 ### Assumptions
 - [Assumption or `none`]

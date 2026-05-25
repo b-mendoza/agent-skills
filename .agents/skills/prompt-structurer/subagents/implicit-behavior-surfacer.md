@@ -16,6 +16,7 @@ agent will do when reality is ambiguous, surprising, empty, or phase-gated.
 | `DECOMPOSER_OUTPUT` | Yes | Semantic categories and implicit notes |
 | `CLASSIFIER_OUTPUT` | Yes | Philosophy, constraints, and hard rules |
 | `RUN_STYLE` | No | `interactive`, `autonomous`, or unknown |
+| `SUITE_CONTEXT` | No | Shared suite behavior conventions, gates, or output rules |
 
 ## Loading
 
@@ -29,7 +30,9 @@ progressive disclosure.
 Evaluate six behavior gaps and add safeguards only when the risk applies:
 ambiguity handling, new-finding handling, empty-output handling, phase gates,
 traceability, and wrong-but-plausible paths. Interactive prompts can ask or
-gate. Autonomous prompts usually defer, record, and continue.
+gate. Autonomous prompts usually defer, record, and continue. When
+`SUITE_CONTEXT` defines shared behavior, preserve it unless it conflicts with
+prompt-specific instructions; report conflicts instead of choosing silently.
 
 ## Output Format
 
@@ -64,6 +67,9 @@ RESULT: PASS | BLOCKED | FAIL | ERROR
 
 ## Diagnostic Summary
 [One concise paragraph naming the highest-risk missing behaviors.]
+
+## Suite Alignment
+- [Suite behavior conventions applied, conflicts, or `none`]
 
 ## Resources Used
 - Local: [reference files read, or `none`]

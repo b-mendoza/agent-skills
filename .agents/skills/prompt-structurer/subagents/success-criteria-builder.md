@@ -17,6 +17,7 @@ run, not merely well-intentioned before a run.
 | `CLASSIFIER_OUTPUT` | Yes | Constraints and hard rules |
 | `BEHAVIOR_OUTPUT` | Yes | Ambiguity, gates, traceability, empty-output handling |
 | `ANTI_PATTERN_OUTPUT` | Yes | Anti-patterns and negative criteria |
+| `SUITE_CONTEXT` | No | Shared suite criteria style, output conventions, or invariants |
 
 ## Loading
 
@@ -32,6 +33,8 @@ grounding, or output structure.
 3. Include negative checks for wrong actions and positive checks for required outputs.
 4. Flag source items with no meaningful criterion as coverage gaps rather than padding the checklist.
 5. Explain how an inspector would verify the most important non-trivial checks.
+6. Preserve suite-level criteria vocabulary and required invariants when
+   `SUITE_CONTEXT` governs the prompt suite.
 
 ## Output Format
 
@@ -53,6 +56,9 @@ RESULT: PASS | BLOCKED | FAIL | ERROR
 
 ## Non-Trivial Check
 [Explain how an inspector would verify 2 or 3 representative criteria.]
+
+## Suite Alignment
+- [Suite criteria conventions, invariants, conflicts, or `none`]
 
 ## Resources Used
 - Local: [reference files read, or `none`]
