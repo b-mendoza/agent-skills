@@ -101,22 +101,27 @@ workflow. The remaining skills are standalone utilities.
 - [`workflow-skill-architect`](skills/workflow-skill-architect/SKILL.md) turns a
   repeatable process into a reusable skill package.
 
-## Third party skills kept in the repo
+## Installed skill packages
 
-The repository currently includes 10 third party skills. They live in
-[`.agents/skills/`](.agents/skills/), are mirrored in
-[`.claude/skills/`](.claude/skills/), and are pinned in
-[`skills-lock.json`](skills-lock.json).
+The repository currently has 17 pinned skill packages under
+[`.agents/skills/`](.agents/skills/). The lockfile records their source and hash.
 
 | Skill | Source |
 | ----- | ------ |
 | [`code-review-excellence`](.agents/skills/code-review-excellence/SKILL.md) | `wshobson/agents` |
-| [`commit-work`](.agents/skills/commit-work/SKILL.md) | `softaworks/agent-toolkit` |
+| [`committing-scoped-changes`](.agents/skills/committing-scoped-changes/SKILL.md) | `b-mendoza/agent-skills` |
 | [`executing-plans`](.agents/skills/executing-plans/SKILL.md) | `obra/superpowers` |
-| [`gh-cli`](.agents/skills/gh-cli/SKILL.md) | `github/awesome-copilot` |
+| [`generate-flow-diagram`](.agents/skills/generate-flow-diagram/SKILL.md) | `b-mendoza/agent-skills` |
+| [`generate-handoff-document`](.agents/skills/generate-handoff-document/SKILL.md) | `b-mendoza/agent-skills` |
 | [`grill-me`](.agents/skills/grill-me/SKILL.md) | `mattpocock/skills` |
 | [`humanizer`](.agents/skills/humanizer/SKILL.md) | `blader/humanizer` |
+| [`improve-skill-definition`](.agents/skills/improve-skill-definition/SKILL.md) | `b-mendoza/agent-skills` |
+| [`pr-creator`](.agents/skills/pr-creator/SKILL.md) | `b-mendoza/agent-skills` |
+| [`prompt-structurer`](.agents/skills/prompt-structurer/SKILL.md) | `b-mendoza/agent-skills` |
 | [`receiving-code-review`](.agents/skills/receiving-code-review/SKILL.md) | `obra/superpowers` |
+| [`recency-guard`](.agents/skills/recency-guard/SKILL.md) | `b-mendoza/agent-skills` |
+| [`responding-to-pr-review-comments`](.agents/skills/responding-to-pr-review-comments/SKILL.md) | `b-mendoza/agent-skills` |
+| [`review-pull-request`](.agents/skills/review-pull-request/SKILL.md) | `b-mendoza/agent-skills` |
 | [`subagent-driven-development`](.agents/skills/subagent-driven-development/SKILL.md) | `obra/superpowers` |
 | [`test-driven-development`](.agents/skills/test-driven-development/SKILL.md) | `obra/superpowers` |
 | [`writing-plans`](.agents/skills/writing-plans/SKILL.md) | `obra/superpowers` |
