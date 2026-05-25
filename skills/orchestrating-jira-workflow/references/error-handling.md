@@ -83,7 +83,7 @@ Two levels of progress files maintain state:
 
 ### Resume procedure
 
-1. Dispatch `progress-tracker` with `ACTION=read`:
+1. Dispatch `progress-tracker` with `TICKET_KEY=<KEY>` and `ACTION=read`:
 
    ```
    TICKET_KEY: <KEY>

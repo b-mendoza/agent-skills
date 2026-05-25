@@ -16,7 +16,7 @@ task selection and re-enter at the reported phase for that task.
 
 Before entering the loop for a task:
 
-1. Dispatch `progress-tracker` with `ACTION=read` and `TICKET_KEY`.
+1. Dispatch `progress-tracker` with `TICKET_KEY` and `ACTION=read`.
 2. Present remaining tasks with dependency, priority, and status metadata from
    the compact progress summary.
 3. Let the user choose the task. Never auto-select.
@@ -29,6 +29,9 @@ Before entering the loop for a task:
 | Likely implementation touchpoints | `code-reference-finder` |
 | Relevant docs or config | `documentation-finder` |
 
+For `ticket-status-checker`, pass `TICKET_KEY` and the narrowest useful
+`QUERY_TYPE` (`status` or `subtasks` for task selection context).
+
 Do not initialize task progress during selection. Initialize it only after the
 Phase 5 precondition passes and only if the task does not already have a
 progress file.
@@ -38,17 +41,19 @@ progress file.
 **Skill:** `planning-jira-task`
 
 1. Announce Phase 5 for Task `<N>`.
-2. Dispatch `artifact-validator` for `PHASE=5`, `DIRECTION=precondition`,
-   `TASK_NUMBER=<N>`.
+2. Dispatch `artifact-validator` with `TICKET_KEY=<KEY>`, `PHASE=5`,
+   `DIRECTION=precondition`, `TASK_NUMBER=<N>`.
 3. If the precondition passes and the task progress file does not exist,
-   dispatch `progress-tracker` with `ACTION=initialize_task`.
+   dispatch `progress-tracker` with `TICKET_KEY=<KEY>`,
+   `ACTION=initialize_task`, `TASK_NUMBER=<N>`, and `TASK_TITLE=<title>`.
 4. Invoke the downstream skill with `TICKET_KEY` and `TASK_NUMBER`.
 5. Retain only the downstream completion summary: four artifact paths, approach
    summary, test coverage shape, and refactoring verdict.
-6. Dispatch `artifact-validator` for `PHASE=5`, `DIRECTION=postcondition`,
-   `TASK_NUMBER=<N>`.
-7. Dispatch `progress-tracker` with `ACTION=update_task`, `PHASE=5`,
-   `STATUS=complete`, and a one-line planning summary.
+6. Dispatch `artifact-validator` with `TICKET_KEY=<KEY>`, `PHASE=5`,
+   `DIRECTION=postcondition`, `TASK_NUMBER=<N>`.
+7. Dispatch `progress-tracker` with `TICKET_KEY=<KEY>`,
+   `ACTION=update_task`, `TASK_NUMBER=<N>`, `PHASE=5`, `STATUS=complete`,
+   and a one-line planning summary.
 
 **Gate:** Automatic. Proceed to Phase 6 when validation passes.
 
@@ -58,19 +63,22 @@ progress file.
 **Mode:** `critique`
 
 1. Announce Phase 6 for Task `<N>`.
-2. Dispatch `artifact-validator` for `PHASE=6`, `DIRECTION=precondition`,
-   `TASK_NUMBER=<N>`.
+2. Dispatch `artifact-validator` with `TICKET_KEY=<KEY>`, `PHASE=6`,
+   `DIRECTION=precondition`, `TASK_NUMBER=<N>`.
 3. Invoke `clarifying-assumptions` with `MODE=critique`, `TICKET_KEY=<KEY>`,
    `TASK_NUMBER=<N>`, and `ITERATION=<N>`.
 4. Let the downstream skill critique the Phase 5 planning artifacts and walk the
    user through critique items.
-5. If `RE_PLAN_NEEDED=true`, re-dispatch Phase 5 with `RE_PLAN=true` and
+5. If `RE_PLAN_NEEDED=true`, re-dispatch Phase 5 with `TICKET_KEY=<KEY>`,
+   `TASK_NUMBER=<N>`, `RE_PLAN=true`, and
    `DECISIONS_FILE=docs/<KEY>-task-<N>-decisions.md`, then run Phase 6 again.
    Maximum: 3 iterations.
-6. After `RE_PLAN_NEEDED=false`, dispatch `artifact-validator` for `PHASE=6`,
-   `DIRECTION=postcondition`, `TASK_NUMBER=<N>`.
-7. Dispatch `progress-tracker` with `ACTION=update_task`, `PHASE=6`,
-   `STATUS=complete`, and a one-line critique summary.
+6. After `RE_PLAN_NEEDED=false`, dispatch `artifact-validator` with
+   `TICKET_KEY=<KEY>`, `PHASE=6`, `DIRECTION=postcondition`,
+   `TASK_NUMBER=<N>`.
+7. Dispatch `progress-tracker` with `TICKET_KEY=<KEY>`,
+   `ACTION=update_task`, `TASK_NUMBER=<N>`, `PHASE=6`, `STATUS=complete`,
+   and a one-line critique summary.
 
 **Gate:** First honor `BLOCKERS_PRESENT`. If it is `true`, stop before execution
 and surface the unresolved blockers.
@@ -90,8 +98,8 @@ happens here.
 **Skill:** `executing-jira-task`
 
 1. Announce Phase 7 for Task `<N>`.
-2. Dispatch `artifact-validator` for `PHASE=7`, `DIRECTION=precondition`,
-   `TASK_NUMBER=<N>`.
+2. Dispatch `artifact-validator` with `TICKET_KEY=<KEY>`, `PHASE=7`,
+   `DIRECTION=precondition`, `TASK_NUMBER=<N>`.
 3. Invoke the downstream skill with `TICKET_KEY` and `TASK_NUMBER`. Pass pre-task
    utility summaries only if the downstream skill explicitly accepts them.
 4. Let `executing-jira-task` own kickoff, implementation, documentation,
@@ -106,9 +114,10 @@ happens here.
      verifier or reviewer findings to the user.
 6. Retain the report's completion/blocker verdict, quality-gate summary,
    implementation artifact summary, retry counts, and next required action.
-7. Dispatch `progress-tracker` with `ACTION=update_task`, `PHASE=7`, and
-   `STATUS=<complete | active | failed | skipped>` based on the downstream
-   outcome.
+7. Dispatch `progress-tracker` with `TICKET_KEY=<KEY>`,
+   `ACTION=update_task`, `TASK_NUMBER=<N>`, `PHASE=7`,
+   `STATUS=<complete | active | failed | skipped>`, and a one-line summary
+   based on the downstream outcome.
 
 Use `STATUS=complete` only for `FINAL_TASK_REPORT` status `COMPLETE`. Use
 `STATUS=active` for `STOPPED_FOR_USER_INPUT` so the task remains resumable.
@@ -128,7 +137,7 @@ After Phase 7 completes for a task:
 ## Final Summary
 
 When all tasks are complete or the user stops, dispatch `progress-tracker` with
-`ACTION=read` and present a compact workflow summary:
+`TICKET_KEY=<KEY>`, `ACTION=read`, and present a compact workflow summary:
 
 ```markdown
 ## Workflow Summary - <TICKET_KEY>

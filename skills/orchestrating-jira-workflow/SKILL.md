@@ -121,9 +121,10 @@ execution skills.
 ## Start Or Resume
 
 1. Derive `TICKET_KEY` from `JIRA_URL` when available.
-2. Dispatch `progress-tracker` with `ACTION=read` and `TICKET_KEY`.
+2. Dispatch `progress-tracker` with `TICKET_KEY` and `ACTION=read`.
 3. Decide the resume point from the compact progress summary.
-4. Dispatch `preflight-checker` for only the remaining phase range.
+4. Dispatch `preflight-checker` with `TICKET_KEY` and only the remaining
+   phase range.
 5. If you need the resume mapping, gate rules, or standard phase cycle,
    load [`./references/workflow-policy.md`](./references/workflow-policy.md).
    If you need the phase-to-skill map, load
@@ -139,10 +140,11 @@ before continuing.
 For any subagent dispatch:
 
 1. Read the subagent definition from the registry.
-2. Pass only the explicit inputs that subagent needs.
+2. Pass the stable workflow key (`TICKET_KEY`) plus only the explicit
+   inputs that subagent needs.
 3. Collect its structured summary.
 4. Retain only the verdict and next-step-relevant details — discard raw
- file contents, full Jira payloads, and large command output.
+   file contents, full Jira payloads, and large command output.
 
 Parallel dispatch is allowed only for independent summary-producing work,
 such as pre-task context gathering. Dependent operations remain sequential.
@@ -160,12 +162,17 @@ to retry, re-plan, pause, or ask the user.
 Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 
 1. Derive `TICKET_KEY=PROJ-123`.
-2. Dispatch `progress-tracker` with `ACTION=read`.
-3. No progress found, so dispatch `preflight-checker` with `PHASES=1-7`.
+2. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`,
+   `ACTION=read`.
+3. No progress found, so dispatch `preflight-checker` with
+   `TICKET_KEY=PROJ-123`, `PHASES=1-7`.
 4. Read `./references/phases-1-4.md` and enter Phase 1.
 5. Invoke downstream skill `fetching-jira-ticket`.
-6. Dispatch `artifact-validator` for Phase 1 postcondition.
-7. Dispatch `progress-tracker` with `ACTION=update`, `PHASE=1`, `STATUS=complete`.
+6. Dispatch `artifact-validator` with `TICKET_KEY=PROJ-123`, `PHASE=1`,
+   `DIRECTION=postcondition`.
+7. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`,
+   `ACTION=update`, `PHASE=1`, `STATUS=complete`,
+   `SUMMARY="Ticket fetched"`.
 8. Tell the user: `Ticket fetched. Moving to task planning.`
 
 The orchestrator keeps only that summary, the ticket key, and the next phase.
