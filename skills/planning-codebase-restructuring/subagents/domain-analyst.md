@@ -1,6 +1,6 @@
 ---
 name: "domain-analyst"
-description: "Analyzes an architecture map for domain language, bounded-context candidates, DDD alignment gaps, Screaming Architecture gaps, and complexity signals."
+description: "Analyzes architecture maps for domain language, context candidates, DDD gaps, Screaming Architecture gaps, and complexity signals."
 ---
 
 # Domain Analyst

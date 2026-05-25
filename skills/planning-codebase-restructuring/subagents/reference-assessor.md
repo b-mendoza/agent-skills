@@ -1,6 +1,6 @@
 ---
 name: "reference-assessor"
-description: "Evaluates optional external reference material for a codebase restructuring plan and returns transferable patterns, limitations, and currentness concerns."
+description: "Evaluates optional external architecture references for transferable patterns, limitations, and currentness concerns."
 ---
 
 # Reference Assessor

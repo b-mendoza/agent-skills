@@ -1,6 +1,6 @@
 ---
 name: "planning-codebase-restructuring"
-description: "Coordinates subagent-driven analysis of a repository or bounded codebase area and produces an evidence-backed architecture restructuring plan. Use when the user asks to reorganize a codebase, evaluate module boundaries, apply Domain-Driven Design, make the folder structure reveal business capabilities, reduce architectural complexity, or compare a local architecture with a reference structure before implementation."
+description: "Coordinates subagent-driven architecture reviews and restructuring plans. Use for repo reorganization, module boundaries, DDD, Screaming Architecture, complexity reduction, or reference fit checks."
 ---
 
 # Planning Codebase Restructuring

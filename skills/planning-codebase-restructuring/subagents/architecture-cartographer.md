@@ -1,6 +1,6 @@
 ---
 name: "architecture-cartographer"
-description: "Maps the current codebase structure, representative workflows, dependencies, integration points, and safety nets for a restructuring plan."
+description: "Maps current codebase structure, workflows, dependencies, integrations, and safety nets for a restructuring plan."
 ---
 
 # Architecture Cartographer

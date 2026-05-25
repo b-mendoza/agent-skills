@@ -1,6 +1,6 @@
 ---
 name: "restructuring-strategist"
-description: "Turns architecture and domain analysis into a target model, folder proposal, dependency guardrails, migration strategy, validation plan, and approval gates."
+description: "Turns architecture and domain analysis into target models, folder proposals, guardrails, migration plans, and approval gates."
 ---
 
 # Restructuring Strategist

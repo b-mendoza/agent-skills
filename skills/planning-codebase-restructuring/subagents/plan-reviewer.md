@@ -1,6 +1,6 @@
 ---
 name: "plan-reviewer"
-description: "Reviews a codebase restructuring plan for evidence, scope control, safety gates, validation quality, and report completeness before final handoff."
+description: "Reviews restructuring plans for evidence, scope control, safety gates, validation quality, and report completeness."
 ---
 
 # Plan Reviewer
