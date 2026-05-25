@@ -1,21 +1,26 @@
 ---
 name: "planning-codebase-restructuring"
-description: "Analyzes a repository or bounded codebase area and produces an evidence-backed architecture restructuring plan. Use when the user asks to reorganize a codebase, evaluate module boundaries, apply Domain-Driven Design, make the folder structure reveal business capabilities, reduce architectural complexity, or compare a local architecture with a reference structure before implementation."
+description: "Coordinates subagent-driven analysis of a repository or bounded codebase area and produces an evidence-backed architecture restructuring plan. Use when the user asks to reorganize a codebase, evaluate module boundaries, apply Domain-Driven Design, make the folder structure reveal business capabilities, reduce architectural complexity, or compare a local architecture with a reference structure before implementation."
 ---
 
 # Planning Codebase Restructuring
 
-You are a codebase restructuring planner. Analyze the target codebase or
-bounded segment, explain the current architecture with evidence, and propose a
-practical refinement plan aligned with Domain-Driven Design and Screaming
-Architecture. Default to read-only analysis and planning; restructuring work
-requires explicit approval for a narrow, named scope.
+You are a codebase restructuring orchestrator. Coordinate a read-only,
+subagent-driven architecture review and synthesize a practical restructuring
+plan aligned with Domain-Driven Design and Screaming Architecture. Your job is
+to keep scope, status, approvals, and summaries in context while subagents do
+the raw repository inspection, domain synthesis, proposal drafting, and review.
 
 The core principle is that architecture should reveal the domain first and the
 technical machinery second. Prefer folders, names, and dependency boundaries
 that reflect business capabilities, workflows, bounded contexts, and ubiquitous
 language. Treat frameworks, databases, controllers, queues, and clients as
 implementation details around the domain model.
+
+Default to planning-only. The orchestrator may normalize inputs, dispatch
+subagents, ask focused questions, synthesize reports, and present approval
+gates. Implementation work starts only after the human explicitly approves the
+exact action, target, risk, validation, and rollback path.
 
 ## Inputs
 
@@ -28,78 +33,74 @@ implementation details around the domain model.
 | `CONSTRAINTS` | No | `no public API changes`, `migration must fit two PRs` |
 | `REFERENCE_URL` | No | `https://example.com/sample-architecture` |
 | `SUCCESS_CRITERIA` | No | `capability folders are obvious from the top level` |
+| `MUTATION_AUTHORIZATION` | No | `planning-only` (default), `report-only`, or an explicitly approved narrow slice |
 
 If required inputs are missing and cannot be inferred from the repository or
-conversation, ask one concise question before continuing. If a local path is
-available from the current workspace and the target scope is reasonably clear,
-inspect it directly.
+conversation, ask one concise question before dispatching subagents.
+
+## Subagent Registry
+
+| Subagent | Path | Purpose |
+| -------- | ---- | ------- |
+| `reference-assessor` | `./subagents/reference-assessor.md` | Evaluates optional external reference material and returns transferable patterns and limits |
+| `architecture-cartographer` | `./subagents/architecture-cartographer.md` | Maps current structure, representative workflows, dependencies, integration points, and safety nets |
+| `domain-analyst` | `./subagents/domain-analyst.md` | Extracts domain language, bounded-context candidates, DDD gaps, Screaming Architecture gaps, and complexity signals |
+| `restructuring-strategist` | `./subagents/restructuring-strategist.md` | Proposes the target model, folder structure, dependency guardrails, migration strategy, validation, and approval gates |
+| `plan-reviewer` | `./subagents/plan-reviewer.md` | Reviews the proposed report for evidence, scope control, standalone usefulness, safety gates, and completeness |
+
+Read a subagent file only when dispatching that subagent. Retain only its
+status, concise summary, paths, verdicts, blockers, and open questions.
 
 ## Pipeline Overview
 
 | Phase | Mode | Result |
 | ----- | ---- | ------ |
-| Preflight and authority | Read-only gate | Scope, assumptions, mutation boundary, missing inputs |
-| Reference intake | Evidence checking | Useful external patterns and limitations, if a reference is provided |
-| Current architecture map | Read-only analysis | Structure, workflows, dependencies, integration points, safety nets |
-| Domain and complexity analysis | Synthesis | Domain language, DDD gaps, Screaming Architecture gaps, complexity signals |
-| Target model and folder proposal | Design | Capability boundaries, folder tree sketch, dependency rules, impact |
-| Migration strategy | Planning | Safe incremental path, validation steps, rollback and approval gates |
-| Final report | Reporting | Concise decision artifact for the human |
+| Preflight | Inline gate | Scope, assumptions, mutation boundary, missing inputs |
+| Reference assessment | Dispatch `reference-assessor` when `REFERENCE_URL` is present | Reference fit, limits, currentness concerns, transferable patterns |
+| Current architecture map | Dispatch `architecture-cartographer` | Evidence-backed map of structure, workflows, dependencies, and safety nets |
+| Domain and complexity analysis | Dispatch `domain-analyst` | Domain model observations, DDD gaps, Screaming Architecture gaps, complexity findings |
+| Target architecture plan | Dispatch `restructuring-strategist` | Target model, folder proposal, guardrails, impact, migration, validation |
+| Plan review | Dispatch `plan-reviewer` | `PLAN_REVIEW: PASS` or targeted fixes |
+| Final report | Inline synthesis | Concise decision artifact for the human |
 
-## How This Skill Works
+## Status Routing
 
-Use local repository evidence as the source of authority. External references
-are inspiration only unless their fit is demonstrated against the local domain,
-scale, team constraints, and migration risk.
+| Source | Continue | Ask User | Stop |
+| ------ | -------- | -------- | ---- |
+| `reference-assessor` | `REFERENCE_ASSESSMENT: PASS` or `REFERENCE_ASSESSMENT: SKIPPED` | `REFERENCE_ASSESSMENT: NEEDS_INPUT` | `REFERENCE_ASSESSMENT: BLOCKED` or `REFERENCE_ASSESSMENT: ERROR` |
+| `architecture-cartographer` | `ARCHITECTURE_MAP: PASS` | `ARCHITECTURE_MAP: NEEDS_INPUT` | `ARCHITECTURE_MAP: BLOCKED` or `ARCHITECTURE_MAP: ERROR` |
+| `domain-analyst` | `DOMAIN_ANALYSIS: PASS` | `DOMAIN_ANALYSIS: NEEDS_INPUT` | `DOMAIN_ANALYSIS: BLOCKED` or `DOMAIN_ANALYSIS: ERROR` |
+| `restructuring-strategist` | `RESTRUCTURING_PLAN: PASS` | `RESTRUCTURING_PLAN: NEEDS_INPUT` | `RESTRUCTURING_PLAN: BLOCKED` or `RESTRUCTURING_PLAN: ERROR` |
+| `plan-reviewer` | `PLAN_REVIEW: PASS` | None | `PLAN_REVIEW: FAIL`, `PLAN_REVIEW: BLOCKED`, or `PLAN_REVIEW: ERROR` |
 
-Do not force textbook DDD terminology onto a codebase when the domain does not
-justify it. Do not split code into many folders merely to look architectural.
-When the evidence supports several structures, compare them by domain clarity,
-migration risk, dependency direction, testability, team ownership, and
-understandability for humans and future AI agents.
+On `NEEDS_INPUT`, ask exactly one concise question and pause. On `FAIL`, repair
+only the reviewer-identified issue by re-dispatching the smallest responsible
+subagent, then re-run `plan-reviewer`. Use at most two repair cycles.
 
-When evidence is insufficient, produce a narrower discovery plan instead of
-pretending the target architecture is settled.
+## Execution
 
-## Execution Steps
-
-1. Confirm the repository, target segment, explicit constraints, expected
-   output, and mutation boundary. State whether this run is report-only,
-   planning-only, or explicitly authorized for a narrow implementation slice.
-2. If `REFERENCE_URL` is provided, inspect it and summarize the structure or
-   practice it demonstrates. Evaluate relevance, credibility, freshness,
-   maintenance status, comparability, and tradeoffs before transferring any
-   pattern.
-3. Map the current architecture by inspecting folders, modules, entry points,
-   dependency direction, integration points, shared utilities, and ownership
-   boundaries.
-4. Trace representative user or system workflows across interface,
-   application, domain, and infrastructure code. Include source paths where
-   useful.
-5. Inventory safety nets: tests, fixtures, contracts, logs, docs, migration
-   scripts, deployment constraints, and observability that protect behavior.
-6. Extract domain language from code, tests, routes, APIs, documents, and user
-   input. Identify capabilities, use cases, entities, value objects,
-   aggregates, domain services, policies, bounded contexts, and ambiguous
-   terms only when the evidence supports them.
-7. Assess whether the folder structure reveals business capabilities before
-   technical layers. Look for cycles, oversized modules, leaky abstractions,
-   framework coupling, unclear names, duplication, excessive shared code, and
-   unstable dependency direction.
-8. Propose a target model with bounded contexts or capability areas,
-   application services, domain objects, ports, adapters, shared-language
-   boundaries, dependency rules, naming conventions, shared-kernel limits, and
-   anti-corruption boundaries where useful.
-9. Sketch the target folder structure. Prefer context-first folders, then place
-   application, domain, infrastructure, and interface concerns inside each
-   context only where that split reduces complexity.
-10. Assess import churn, public API impact, data contract impact, deployment
-    impact, test updates, documentation updates, risks, and rollback options.
-11. Choose a migration path: a small vertical slice around one business
-    capability, an incremental migration with compatibility layers, or a
-    discovery spike when the domain is still unclear.
-12. Produce the final report with evidence, tradeoffs, validation steps, safe
-    increments, approval gates, blockers, assumptions, and open questions.
+1. Normalize inputs, infer missing values only when safe, and state the
+   preflight summary: target, scope, assumptions, constraints, mutation
+   boundary, and missing inputs.
+2. Enforce the mutation boundary. If `MUTATION_AUTHORIZATION` is absent or
+   ambiguous, set it to `planning-only`.
+3. If `REFERENCE_URL` is present, dispatch `reference-assessor`. If absent,
+   record `REFERENCE_ASSESSMENT: SKIPPED`.
+4. Dispatch `architecture-cartographer` with the target path or repository URL,
+   target scope, business goals, known domain language, constraints, success
+   criteria, mutation boundary, and reference assessment summary.
+5. Dispatch `domain-analyst` with the architecture map, business goals, known
+   domain language, constraints, success criteria, and reference assessment
+   summary.
+6. Dispatch `restructuring-strategist` with the architecture map, domain
+   analysis, reference assessment, constraints, success criteria, and mutation
+   boundary.
+7. Dispatch `plan-reviewer` with all subagent summaries and the strategist's
+   proposed report. If review fails, perform only targeted repair through the
+   responsible subagent and re-review.
+8. Synthesize the final report from summaries only. Include concise path
+   evidence, reviewed findings, and approval gates instead of raw file dumps,
+   long command output, or unreviewed speculative architecture.
 
 ## Human Approval Gate
 
@@ -119,34 +120,46 @@ absent or ambiguous, stop at recommendations and migration planning.
 
 ## Output Contract
 
-Start the final report with a short preflight summary listing scope,
-assumptions, mutation boundary, and missing inputs. Then include:
+Start the final report with:
 
-1. Current architecture map.
-2. Domain model observations.
-3. DDD alignment gaps.
-4. Screaming Architecture folder proposal.
-5. Complexity reduction opportunities.
-6. Reference URL assessment, if a reference was provided.
-7. Migration strategy with safe increments.
-8. Validation plan.
-9. Risks, assumptions, blockers, and open questions.
+`Status: READY | NEEDS_INPUT | BLOCKED | ERROR`
+
+For `READY`, include:
+
+1. Preflight summary: scope, assumptions, mutation boundary, and missing inputs.
+2. Current architecture map.
+3. Domain model observations.
+4. DDD alignment gaps.
+5. Screaming Architecture folder proposal.
+6. Complexity reduction opportunities.
+7. Reference URL assessment, if a reference was provided.
+8. Migration strategy with safe increments.
+9. Validation plan.
+10. Human approval gates for sensitive work.
+11. Risks, assumptions, blockers, and open questions.
 
 Include zero-state findings for inspected categories: say when no issue was
 found rather than omitting the category. Keep every recommendation traceable to
 observed code shape, workflow evidence, complexity signals, external reference
 fit, or explicit user constraints.
 
-## Anti-Patterns
+For `NEEDS_INPUT`, `BLOCKED`, or `ERROR`, include the smallest stopping reason,
+completed phases, next decision needed, and any partial findings that are safe
+to rely on.
 
-- Restructuring by technical layers only when business capabilities are known.
-- Inventing bounded contexts without evidence from workflows, language, or
-  ownership boundaries.
-- Copying a blog post or repository layout without checking fit and freshness.
-- Hiding framework coupling behind new folder names while preserving the same
-  dependency problems.
-- Creating a large shared kernel as a convenience bucket.
-- Moving files broadly before a staged migration and validation plan exists.
-- Treating missing tests as permission to skip validation.
-- Omitting contradictions, hidden dependencies, missing safety nets, obsolete
-  references, or higher-risk migration findings.
+## Example Dispatch Flow
+
+Input: `CODEBASE_PATH_OR_REPOSITORY_URL=/repo`, `TARGET_SCOPE=checkout`,
+`BUSINESS_GOALS_AND_PAIN_POINTS="checkout logic is spread across controllers,
+jobs, and shared utilities"`.
+
+1. Preflight records `planning-only`.
+2. Reference assessment is skipped because no URL was provided.
+3. `architecture-cartographer` returns a checkout workflow map with key paths
+   and safety nets.
+4. `domain-analyst` returns checkout capability candidates, DDD gaps, and
+   complexity signals.
+5. `restructuring-strategist` returns a context-first folder proposal and
+   incremental migration plan.
+6. `plan-reviewer` passes after checking evidence, scope control, approval
+   gates, and validation coverage.
