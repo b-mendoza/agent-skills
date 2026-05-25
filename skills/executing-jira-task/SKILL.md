@@ -35,8 +35,8 @@ before crossing the execution boundary.
 | 3. Documentation | Add in-code docs and update tracking | `DOCUMENTATION_REPORT` |
 | 4. Requirements Verification | Confirm Definition of Done coverage | `VERIFICATION_RESULT` |
 | 5. Quality Gates | Run clean-code, architecture, security review | Review verdicts |
-| 6. Targeted Fix Cycle | Re-run only failed verification or review paths | Re-validated task or escalation |
-| 7. Final Report | Report this task's outcome | Concise completion summary |
+| 6. Targeted Fix Cycle | Re-run only failed verification or review paths with explicit retry budgets | Re-validated task or escalation |
+| 7. Final Report | Report this task's outcome for the parent workflow | `FINAL_TASK_REPORT` |
 
 ## Subagent Registry
 
@@ -101,22 +101,35 @@ return time:
 3. Dispatch only the next required subagent with explicit inputs.
 4. Keep only structured summaries in orchestration context.
 5. On blockers, missing prerequisites, or failing gates, read the recovery
-   reference and run only the targeted retry or escalation path.
-6. Stop after the selected task completes or blocks; do not auto-continue.
+   reference and retry only with new context, a fix brief, or an explicit user
+   decision while staying within the retry budget.
+6. Stop after the selected task completes, blocks, needs user input, or
+   escalates; do not auto-continue.
 
 ## Output Contract
 
-After a successful run, the workflow produces Category B implementation changes,
-updates Category A tracking artifacts on disk, records eligible Jira tracker
-updates or skips, and returns one concise user-facing task report using
-`./references/template-final-report.md`.
+Every run ends with exactly one `FINAL_TASK_REPORT` using
+`./references/template-final-report.md`. Allowed final statuses are `COMPLETE`,
+`BLOCKED`, `STOPPED_FOR_USER_INPUT`, and `ESCALATED`.
+
+On `COMPLETE`, the workflow produces Category B implementation changes, updates
+Category A tracking artifacts on disk, records eligible Jira tracker updates or
+skips, and includes the quality-gate summary and implementation artifact
+summary expected by the parent orchestrator.
+
+Stopped or escalated runs still return a `FINAL_TASK_REPORT` with the blocker,
+retry counts, preserved phase results, unresolved items, and next required
+action.
 
 ## Operating Constraints
 
 - Execute one task per invocation.
 - Treat the task plan and decisions file as the source of truth.
 - Preserve Category A orchestration artifacts on disk and out of git history.
-- Keep fix cycles targeted: re-run only failing verification or review steps.
+- Keep fix cycles targeted: re-run only failing verification or review steps,
+  with at most three attempts for requirements and each quality gate.
+- Retry a stopped step only when the inputs changed through new context, a fix
+  brief, or an explicit user decision.
 - Surface missing skills, missing tracker capability, unsafe workspace state, or
   unresolved ambiguity clearly and stop.
 
@@ -128,4 +141,5 @@ Input: `TICKET_KEY=JNS-6065`, `TASK_NUMBER=3`
 2. Dispatch `execution-starter`; continue only on `KICKOFF_REPORT -> READY`.
 3. Dispatch implementation, documentation, verification, and review gates in
    `./references/pipeline.md` order.
-4. Report only Task 3 using `./references/template-final-report.md`.
+4. Report only Task 3 as a `FINAL_TASK_REPORT` using
+   `./references/template-final-report.md`.

@@ -64,7 +64,7 @@
      only after the blocker is resolved.
    - `FAIL` with in-scope gaps: build a concise fix brief from the reported
      gaps, re-dispatch `task-executor`, then `documentation-writer`, then
-     re-run `requirements-verifier`.
+     re-run `requirements-verifier`. Maximum: 3 requirements fix attempts.
    - If the gaps expose ambiguous brief, conflicting artifacts, or a probable
      planning mistake: stop and ask the user.
 
@@ -78,24 +78,44 @@
 
 12. **Report the outcome.**
     - Read `./template-final-report.md` only when assembling the final
-      user-facing report.
+      `FINAL_TASK_REPORT`.
     - Summarise what changed: kickoff status, gate verdicts, files changed,
       any Jira tracking that was skipped or failed.
+    - Include retry counts, Category A tracking paths, unresolved blockers, and
+      the next required action.
     - Stop after the selected task. Do not auto-continue.
+
+## Requirements fix cycle
+
+When `requirements-verifier` returns `FAIL` for ordinary in-scope gaps:
+
+1. Build a concise requirements fix brief from verifier findings.
+2. Re-dispatch `task-executor` with the original planning artifacts plus that
+   fix brief.
+3. Re-dispatch `documentation-writer` so new Category B changes are documented
+   and Category A tracking artifacts are updated.
+4. Re-run `requirements-verifier`.
+5. If the verifier still returns `FAIL`, repeat only while the requirements fix
+   attempt count is below 3.
+6. If the third attempt still fails, assemble `FINAL_TASK_REPORT` with status
+   `ESCALATED` and include the verifier findings.
 
 ## Targeted fix cycle
 
 When one or more reviewers return `NEEDS FIXES`:
 
-1. Consolidate only the blocking issues from failing gates into a single fix
-   brief.
+1. Consolidate only the blocking issues from the failing gate into a fix brief.
 2. Re-dispatch `task-executor` with original planning artifacts plus the fix
    brief.
 3. Re-dispatch `documentation-writer` so new Category B changes are documented
    and tracking artifacts are updated.
 4. Re-run only the previously failing gate(s), in original order.
-5. If every previously failing gate now passes, finish the task. Otherwise use
-   `./retry-and-escalation.md`.
+5. If every previously failing gate now passes, resume at the next gate or
+   final report boundary.
+6. If the gate still returns `NEEDS FIXES`, repeat only while that gate's fix
+   attempt count is below 3.
+7. If the third attempt still fails, assemble `FINAL_TASK_REPORT` with status
+   `ESCALATED` and include the accumulated gate findings.
 
 The final report shape lives in `./template-final-report.md` so the template
 loads only at the reporting boundary.

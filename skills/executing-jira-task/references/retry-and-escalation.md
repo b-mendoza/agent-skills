@@ -15,6 +15,21 @@
 | `requirements-verifier` | `PASS`, `FAIL`, `BLOCKED`, `ERROR` | Re-run coverage fix loop only on clear in-scope `FAIL` gaps; stop and resolve blocked cases first |
 | Review gates | `PASS`, `PASS WITH SUGGESTIONS`, `PASS WITH ADVISORIES`, `NEEDS FIXES`, `BLOCKED`, `ERROR` | Continue on non-blocking passes; targeted fix cycle on `NEEDS FIXES`; stop on `BLOCKED`/`ERROR` |
 
+## Recovery precondition
+
+A retry is valid only when at least one of these changed since the failed
+attempt:
+
+- a new context answer from the user
+- a fix brief built from verifier or reviewer findings
+- an explicit user decision about workspace, branch, tracker, or scope handling
+- a restored capability, permission, runtime, or credential
+
+When none of these is available, assemble `FINAL_TASK_REPORT` with status
+`STOPPED_FOR_USER_INPUT` instead of repeating the same failing action. When the
+retry path is unsafe or the relevant budget is exhausted, assemble
+`FINAL_TASK_REPORT` with status `ESCALATED`.
+
 ## When to ask the user
 
 Ask for user input rather than improvising when:
@@ -35,10 +50,15 @@ Ask for user input rather than improvising when:
 
 - `task-executor` ambiguity/context loop: max 3 re-dispatches per blocker.
 - Requirements coverage fix loop: max 3 cycles.
-- Quality-gate targeted fix loop: max 3 cycles.
+- Clean-code targeted fix loop: max 3 cycles.
+- Architecture targeted fix loop: max 3 cycles.
+- Security targeted fix loop: max 3 cycles.
 
 If a loop reaches its limit, stop and report findings instead of trying again
 with unchanged inputs.
+
+Track retry counts separately in the final report. Use `0` for a gate that
+never entered a fix cycle.
 
 ## Non-blocking outcomes
 
