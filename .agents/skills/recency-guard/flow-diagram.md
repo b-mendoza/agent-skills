@@ -1,72 +1,75 @@
 # Recency Guard
 
-Recency Guard is a read-only response-validation workflow for answers that depend on current external facts. It may draft or inspect an answer, identify high-risk or time-sensitive claims, dispatch focused verification subagents one at a time, apply only flagged edits within repair caps, and produce the final user-visible answer. Current external facts require evidence from official, canonical, or otherwise authoritative sources; no external mutations, posting, purchasing, deploying, policy changes, or irreversible actions are inside this flow.
+Recency Guard is a read-only response-validation workflow. The orchestrator may draft or inspect an answer, identify high-risk current or decision-shaping claims, and dispatch only the `recency-checker` and `claim-verifier` subagents for focused read-only verification. It may apply only subagent-flagged wording edits within the repair limits; it may not mutate external systems, post, purchase, deploy, change policy, or perform high-impact actions.
 
 ```mermaid
 flowchart TD
-  START([Start: USER_REQUEST received]) --> INPUTS[Collect inputs: USER_REQUEST, optional DRAFT_RESPONSE, optional TODAYS_DATE, optional RECENCY_RISK_HINT]
-  INPUTS --> DATE{TODAYS_DATE present?}
-  DATE -->|yes| DRAFT_CHECK{DRAFT_RESPONSE present?}
-  DATE -->|no| SET_DATE[Use runtime current date]
+  START(["Start: USER_REQUEST received"]) --> INPUTS["Collect inputs: USER_REQUEST, optional DRAFT_RESPONSE, optional TODAYS_DATE, optional RECENCY_RISK_HINT"]
+  INPUTS --> DATE{"TODAYS_DATE present?"}
+  DATE -->|yes| DRAFT_CHECK{"DRAFT_RESPONSE present?"}
+  DATE -->|no| SET_DATE["Use runtime current date and label freshness basis"]
   SET_DATE --> DRAFT_CHECK
 
-  DRAFT_CHECK -->|yes| SCOPE[State read-only boundary and freshness scope]
-  DRAFT_CHECK -->|no| DRAFT[Draft concise answer first]
-  DRAFT --> SCOPE
+  DRAFT_CHECK -->|yes| INSPECT["Inspect supplied draft answer"]
+  DRAFT_CHECK -->|no| DRAFT["Draft concise answer from USER_REQUEST"]
+  INSPECT --> BOUNDARY["State read-only role, authority, trust model, and freshness scope"]
+  DRAFT --> BOUNDARY
 
-  SCOPE --> MUTATION{External mutation requested?}
-  MUTATION -->|yes| OUT_OF_SCOPE([Outside this flow: route to separate approved workflow])
-  MUTATION -->|no| RISK[Identify high-risk and time-sensitive claims]
-  RISK --> RECENCY[Dispatch recency-checker with focused read-only verification request]
-  RECENCY --> RECENCY_STATUS{RECENCY_CHECK status?}
+  BOUNDARY --> MUTATION{"External mutation or high-impact action requested?"}
+  MUTATION -->|yes| OUT_OF_SCOPE(["Out-of-scope route: separate approved workflow"])
+  MUTATION -->|no| RISK["Identify high-risk current claims and unsupported time-sensitive wording"]
 
-  RECENCY_STATUS -->|PASS| CLAIM_SELECT[Select up to 3 decision-shaping claims]
-  RECENCY_STATUS -->|FAIL| RECENCY_FIX[Apply only recency-checker flagged edits]
-  RECENCY_STATUS -->|TOOLS_MISSING| RECENCY_LIMIT[Keep only supportable claims and qualify freshness limits]
-  RECENCY_STATUS -->|ERROR| RECENCY_ERROR{Repeated error or repair cap hit?}
+  RISK --> RECENCY_DISPATCH["Dispatch recency-checker with focused read-only verification request"]
+  RECENCY_DISPATCH --> RECENCY_STATUS{"recency-checker status?"}
+  RECENCY_STATUS -->|PASS| CLAIM_DISPATCH["Dispatch claim-verifier with revised draft; subagent selects up to 3 decision-shaping claims"]
+  RECENCY_STATUS -->|FAIL| RECENCY_FIX["Apply only recency-checker flagged edits"]
+  RECENCY_STATUS -->|TOOLS_MISSING| RECENCY_LIMIT["Keep supportable claims and qualify freshness/tool limits"]
+  RECENCY_STATUS -->|ERROR| RECENCY_ERROR{"ERROR retry used?"}
+  RECENCY_FIX --> RECENCY_RERUNS{"Targeted recency reruns used fewer than 2?"}
+  RECENCY_RERUNS -->|yes| RECENCY_DISPATCH
+  RECENCY_RERUNS -->|no| MATERIAL_FINAL
+  RECENCY_ERROR -->|no| RECENCY_RETRY["Retry recency-checker once with same focused request"]
+  RECENCY_ERROR -->|yes| MATERIAL_FINAL
+  RECENCY_RETRY --> RECENCY_DISPATCH
+  RECENCY_LIMIT --> CLAIM_DISPATCH
 
-  RECENCY_FIX --> RECENCY_CAP{Repair cap reached?}
-  RECENCY_CAP -->|no| RECENCY
-  RECENCY_CAP -->|yes| CAP_STOP([Stop at repair cap: conservative answer with uncertainty])
+  CLAIM_DISPATCH --> CLAIM_STATUS{"claim-verifier status?"}
+  CLAIM_STATUS -->|PASS| EVIDENCE["Integrate evidence: source conflicts, recency/claim overlap, confidence-to-wording"]
+  CLAIM_STATUS -->|FAIL| CLAIM_FIX["Apply only claim-verifier flagged edits"]
+  CLAIM_STATUS -->|TOOLS_MISSING| CLAIM_LIMIT["Qualify claims by evidence limits and freshness scope"]
+  CLAIM_STATUS -->|ERROR| CLAIM_ERROR{"ERROR retry used?"}
+  CLAIM_FIX --> CLAIM_RERUNS{"Targeted claim reruns used fewer than 2?"}
+  CLAIM_RERUNS -->|yes| CLAIM_DISPATCH
+  CLAIM_RERUNS -->|no| MATERIAL_FINAL
+  CLAIM_ERROR -->|no| CLAIM_RETRY["Retry claim-verifier once with same revised draft"]
+  CLAIM_ERROR -->|yes| MATERIAL_FINAL
+  CLAIM_RETRY --> CLAIM_DISPATCH
+  CLAIM_LIMIT --> EVIDENCE
 
-  RECENCY_ERROR -->|no| RECENCY
-  RECENCY_ERROR -->|yes| UNCERTAIN([Escalated: material uncertainty])
+  EVIDENCE --> CONFIDENCE{"Material uncertainty remains after integration?"}
+  CONFIDENCE -->|yes| MATERIAL_FINAL
+  CONFIDENCE -->|no| COMPLETE{"Completeness, date, scope, and confidence wording present?"}
+  COMPLETE -->|yes| FINAL_REVALIDATE{"Final wording adds a new time-sensitive or decision-shaping claim?"}
+  COMPLETE -->|no| COMPLETE_FIX["Add missing qualifiers, scope, or unresolved uncertainty"]
+  COMPLETE_FIX --> FINAL_REVALIDATE
 
-  RECENCY_LIMIT --> CLAIM_SELECT
-  CLAIM_SELECT --> CLAIMS[Dispatch claim-verifier for evidence strength, overstatement, and counterexamples]
-  CLAIMS --> CLAIM_STATUS{CLAIM_REVIEW status?}
+  FINAL_REVALIDATE -->|no| LIMITS{"Evidence, tool, or freshness limit remains?"}
+  FINAL_REVALIDATE -->|yes| REVERIFY{"Relevant subagent rerun available?"}
+  REVERIFY -->|recency or both| RECENCY_DISPATCH
+  REVERIFY -->|claim only| CLAIM_DISPATCH
+  REVERIFY -->|no cap| MATERIAL_FINAL
 
-  CLAIM_STATUS -->|PASS| OVERLAP[Apply stricter result where recency and claim reviews overlap]
-  CLAIM_STATUS -->|FAIL| CLAIM_FIX[Apply only claim-verifier flagged edits]
-  CLAIM_STATUS -->|TOOLS_MISSING| CLAIM_LIMIT[Qualify claims by evidence limits and freshness scope]
-  CLAIM_STATUS -->|ERROR| CLAIM_ERROR{Repeated error or repair cap hit?}
+  LIMITS -->|yes| LIMITED_FINAL(["Limited final answer: direct answer with date, scope, and evidence/tool limits"])
+  LIMITS -->|no| READY_FINAL(["Ready final answer: direct user-visible answer"])
+  MATERIAL_FINAL(["Material uncertainty final: conservative answer with unresolved uncertainty"])
 
-  CLAIM_FIX --> CLAIM_CAP{Repair cap reached?}
-  CLAIM_CAP -->|no| CLAIMS
-  CLAIM_CAP -->|yes| CAP_STOP
-
-  CLAIM_ERROR -->|no| CLAIMS
-  CLAIM_ERROR -->|yes| UNCERTAIN
-
-  CLAIM_LIMIT --> OVERLAP
-  OVERLAP --> COMPLETE{Inline completeness check passes?}
-  COMPLETE -->|yes| FINALIZE[Finalize direct user-visible answer]
-  COMPLETE -->|no| COMPLETE_FIX[Add missing qualifiers, scope, or unresolved uncertainty]
-  COMPLETE_FIX --> FINALIZE
-
-  FINALIZE --> OUTPUT{Output condition?}
-  OUTPUT -->|ready| READY([Ready: final answer])
-  OUTPUT -->|tools missing| BLOCKED([Blocked/tools missing: conservative answer])
-  OUTPUT -->|material uncertainty| UNCERTAIN
-  OUTPUT -->|needs repair| NEEDS_REPAIR([Needs repair/rerun])
-
-  class DATE,DRAFT_CHECK,RECENCY_STATUS,RECENCY_CAP,RECENCY_ERROR,CLAIM_STATUS,CLAIM_CAP,CLAIM_ERROR,COMPLETE,OUTPUT,MUTATION decision;
-  class RISK,RECENCY,CLAIMS,OVERLAP,COMPLETE_FIX check;
-  class SCOPE,RECENCY_FIX,RECENCY_LIMIT,CLAIM_FIX,CLAIM_LIMIT guard;
-  class DRAFT,SET_DATE,FINALIZE output;
-  class READY success;
-  class NEEDS_REPAIR refine;
-  class CAP_STOP,BLOCKED,UNCERTAIN,OUT_OF_SCOPE stop;
+  class DATE,DRAFT_CHECK,MUTATION,RECENCY_STATUS,RECENCY_RERUNS,RECENCY_ERROR,CLAIM_STATUS,CLAIM_RERUNS,CLAIM_ERROR,CONFIDENCE,COMPLETE,FINAL_REVALIDATE,REVERIFY,LIMITS decision;
+  class RISK,RECENCY_DISPATCH,CLAIM_DISPATCH,EVIDENCE check;
+  class BOUNDARY,RECENCY_FIX,RECENCY_LIMIT,CLAIM_FIX,CLAIM_LIMIT,COMPLETE_FIX guard;
+  class SET_DATE,INSPECT,DRAFT,RECENCY_RETRY,CLAIM_RETRY output;
+  class READY_FINAL success;
+  class LIMITED_FINAL refine;
+  class MATERIAL_FINAL,OUT_OF_SCOPE stop;
 
   classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
@@ -77,6 +80,8 @@ flowchart TD
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
 
-Readiness rule: Produce the user-visible final answer, not a verification report, unless the user asks for verification details. Include date and scope qualifiers, unresolved material uncertainty, or conservative wording when evidence or tools are limited.
+Readiness rule: Produce the user-visible final answer, not a verification report, unless the user asks for verification details. Final output must include date and scope qualifiers, unresolved material uncertainty, or conservative wording when evidence or tools are limited.
 
-Mutation boundary: Any external mutation or high-impact action stays outside Recency Guard and must be routed to a separate approved workflow.
+Repair limit: Each subagent gets one initial review plus at most two targeted FAIL reruns. An ERROR retry is separate and allowed once per subagent; a second ERROR or exhausted rerun capacity yields a material uncertainty final.
+
+Mutation boundary: External mutations and high-impact actions stay outside Recency Guard and route to a separate approved workflow.
