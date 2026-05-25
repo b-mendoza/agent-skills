@@ -43,10 +43,10 @@ to `all`, and `LANGUAGE_STYLE` to natural, direct English.
 
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
-| `review-comment-collector` | `./subagents/review-comment-collector.md` | Collects review comments, summaries, PR comments, and reply metadata |
+| `review-comment-collector` | `./subagents/review-comment-collector.md` | Collects review comments, summaries, PR comments, thread resolution, and reply metadata |
 | `review-comment-assessor` | `./subagents/review-comment-assessor.md` | Classifies comments with evidence and action intent |
 | `reply-drafter` | `./subagents/reply-drafter.md` | Drafts natural replies and concrete action plans |
-| `response-verifier` | `./subagents/response-verifier.md` | Checks evidence, recency, tone, actions, and posting safety |
+| `response-verifier` | `./subagents/response-verifier.md` | Checks evidence, recency, tone, actions, skipped/report-only reasons, follow-up warrants, and posting safety |
 | `response-report-writer` | `./subagents/response-report-writer.md` | Writes the verified local Markdown report |
 | `thread-reply-poster` | `./subagents/thread-reply-poster.md` | Posts exact approved replies to supported review-comment threads |
 
@@ -77,6 +77,7 @@ Latest blocks: COLLECT, ASSESS, DRAFT, VERIFY, WRITE, POST
 Posting state: not-posted, pending-confirmation, posted, cancelled, failed
 Open user decisions: comment IDs and focused questions
 Target taxonomy: review-comment-reply:<root-id>; requires-user-choice:review-summary; requires-user-choice:issue-comment; requires-user-choice:unsupported-review-reply; requires-user-choice:unresolved-metadata
+Reply disposition: reply-ready; follow-up-ready; skipped-resolved; skipped-already-replied; unsupported-or-needs-user-choice
 External sources: claim, URL, fetch date, conflict or limitation
 ```
 
@@ -89,6 +90,9 @@ Response policy:
 - Ask at most three focused questions for the same PR URL, output path,
   product/team preference, posting target, wording choice, or preview change.
 - Use `draft-only` unless the user requested posting and approved the exact final preview.
+- Treat resolved review-comment threads as report-only items.
+- Treat already-replied threads as report-only unless reviewer clarification or
+  new material information warrants a follow-up.
 - Preserve unsupported posting targets as `requires-user-choice:review-summary`,
   `requires-user-choice:issue-comment`,
   `requires-user-choice:unsupported-review-reply`, or
@@ -110,8 +114,17 @@ Response policy:
    replies-to-replies or missing root IDs as
    `requires-user-choice:unsupported-review-reply`, and unavailable
    unresolved-thread metadata as `requires-user-choice:unresolved-metadata`.
-4. Dispatch `review-comment-assessor` with the collected inventory. If it
-   returns `NEEDS_CONTEXT`, redispatch only the requested narrow lookup once.
+   Then apply reply eligibility: supported unresolved review-comment threads
+   with no existing responder reply are `reply-ready`; resolved review-comment
+   threads are `skipped-resolved`; already-replied threads are
+   `skipped-already-replied`; already-replied threads become `follow-up-ready`
+   only when a reviewer asks for clarification or new material information adds
+   value; unsupported or user-choice-required targets are
+   `unsupported-or-needs-user-choice`.
+4. Dispatch `review-comment-assessor` with the collected inventory and reply
+   dispositions. Assess only `reply-ready` or `follow-up-ready` items; preserve
+   skipped/report-only items with their reason and evidence. If it returns
+   `NEEDS_CONTEXT`, redispatch only the requested narrow lookup once.
    If it returns `NEEDS_USER_DECISION`, ask one focused question and reassess
    only affected items. Stop with `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`
    after three unresolved cycles for the same decision type. Route
@@ -120,12 +133,16 @@ Response policy:
    When a required source is unavailable, remove or qualify the claim; when a
    source conflict depends on product or policy intent, ask the user instead of
    guessing.
-6. Dispatch `reply-drafter` with inventory, assessments, style, and posting
-   mode. Ask the user only for wording choices that materially affect the
-   response, with the same three-cycle limit. Route `DRAFT: ERROR` to
+6. Dispatch `reply-drafter` with inventory, assessments, style, posting mode,
+   and reply dispositions. Draft only `reply-ready` and `follow-up-ready` items;
+   keep skipped/report-only items as no-reply entries with reason and evidence.
+   Ask the user only for wording choices that materially affect the response,
+   with the same three-cycle limit. Route `DRAFT: ERROR` to
    `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
-7. Dispatch `response-verifier`. On `VERIFY: NEEDS_CONTEXT`, repair only the
-   named context gap. On `VERIFY: FAIL`, repair only the named `Fix target`.
+7. Dispatch `response-verifier`. It must verify skipped/report-only reasons and
+   follow-up warrants in addition to evidence, tone, actions, and posting
+   safety. On `VERIFY: NEEDS_CONTEXT`, repair only the named context gap. On
+   `VERIFY: FAIL`, repair only the named `Fix target`.
    Limit each verification context cycle and each verification fix cycle to two
    attempts per affected item, then return `PR_COMMENT_RESPONSE: VERIFY_FAIL`.
    Route `VERIFY: ERROR` to `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
@@ -133,16 +150,18 @@ Response policy:
    path questions if needed. Dispatch `response-report-writer` with the
    verified package; the writer reads back the file and reports whether the
    write matched the template. The orchestrator then performs a separate
-   contract read-back for path, status blocks, drafts, evidence, residual
-   risks, blocking user-decision items, and action intents. Route
+   contract read-back for path, status blocks, drafts, evidence,
+   skipped/report-only items, residual risks, blocking user-decision items, and
+   action intents. Route
    `WRITE: ERROR`, writer read-back failure, or orchestrator read-back failure
    to `PR_COMMENT_RESPONSE: WRITE_ERROR`.
 9. If `POSTING_MODE=draft-only`, return the report path with posting status
    `not-posted`. If `POSTING_MODE=post-after-confirmation`, build the exact
-   final preview and dispatch `thread-reply-poster` only after explicit user
-   approval. If posting returns `POST: PREVIEW_REQUIRED`, rebuild and show the
-   exact preview for approval again, with at most two posting-preview repair
-   cycles before `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`. Route `AUTH`,
+   final preview only for `reply-ready` and `follow-up-ready` supported targets,
+   and dispatch `thread-reply-poster` only after explicit user approval. If
+   posting returns `POST: PREVIEW_REQUIRED`, rebuild and show the exact preview
+   for approval again, with at most two posting-preview repair cycles before
+   `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`. Route `AUTH`,
    `TARGET_UNSUPPORTED`, and `ERROR` through the documented posting branches.
 
 ## Output Contract
