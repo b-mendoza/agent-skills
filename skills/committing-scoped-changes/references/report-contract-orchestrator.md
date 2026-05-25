@@ -14,7 +14,8 @@ Commits created:
 
 Remaining scoped changes: <none or concise list>
 Unrelated changes left untouched: <none or concise list>
-Post-commit refresh: <SCOPED_STATE: PASS | NO_SCOPED_CHANGES and one-line result>
+Post-commit refreshes:
+- <sha>: <SCOPED_STATE: PASS | NO_SCOPED_CHANGES and one-line result>
 References fetched: <none or concise list>
 ```
 
@@ -57,7 +58,8 @@ Commits created:
 
 Remaining scoped changes: none
 Unrelated changes left untouched: README.md modified
-Post-commit refresh: SCOPED_STATE: NO_SCOPED_CHANGES - no scoped changes remain after commit.
+Post-commit refreshes:
+- abc1234: SCOPED_STATE: NO_SCOPED_CHANGES - no scoped changes remain after commit.
 References fetched: none
 </example>
 
