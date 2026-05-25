@@ -95,10 +95,11 @@ read the source artifact itself; use short reports when the downstream step
 needs a prior verdict.
 
 Symbolic handoff names (`KICKOFF_REPORT`, `EXECUTION_REPORT`, etc.) refer to
-the full markdown outputs returned by those subagents. `EXECUTION_REPORT` and
-`DOCUMENTATION_REPORT` may carry blocked-state information; downstream steps
-must preserve those statuses instead of inferring success from partial file
-changes.
+the full markdown outputs returned by those subagents. `FINAL_TASK_REPORT`
+refers to the full markdown output returned by this skill to the parent
+orchestrator. `EXECUTION_REPORT` and `DOCUMENTATION_REPORT` may carry
+blocked-state information; downstream steps must preserve those statuses instead
+of inferring success from partial file changes.
 
 | Subagent | Required inputs |
 | -------- | --------------- |
@@ -124,18 +125,45 @@ can resume later; those files stay out of git history.
 
 After a successful run, all of these should be true:
 
-1. `EXECUTION_REPORT` and `DOCUMENTATION_REPORT` indicate successful
+1. `FINAL_TASK_REPORT` has status `COMPLETE`.
+2. `EXECUTION_REPORT` and `DOCUMENTATION_REPORT` indicate successful
    completion rather than blocked partial progress.
-2. Execution kickoff either performed the planned GitHub startup actions via
+3. Execution kickoff either performed the planned GitHub startup actions via
    `gh` or reported clearly why each was skipped.
-3. Category B changes are present and reflected in the reports.
-4. The task section in `docs/<ISSUE_SLUG>-tasks.md` includes completion
+4. Category B changes are present and reflected in the reports.
+5. The task section in `docs/<ISSUE_SLUG>-tasks.md` includes completion
    metadata (status, implementation summary, files changed).
-5. If `## GitHub Task Issues` exists, the row for this task is updated to
+6. If `## GitHub Task Issues` exists, the row for this task is updated to
    reflect current tracker state or completion notes.
-6. Optional `gh` completion steps (comment, child-issue close, label changes)
+7. Optional `gh` completion steps (comment, child-issue close, label changes)
    are completed or reported as skipped with a reason.
+8. The final report includes the parent-retained completion/blocker verdict,
+   quality-gate summary, and implementation artifact summary.
 
 Partial progress alone does not satisfy successful completion. If a required
 step or validation could not run because of a missing capability or
 prerequisite, the task remains blocked.
+
+## Final task report contract
+
+Every terminal path returns `FINAL_TASK_REPORT` with exactly one status:
+
+| Status | Meaning | Parent orchestrator interpretation |
+| ------ | ------- | ---------------------------------- |
+| `COMPLETE` | The selected task completed implementation, documentation/tracking, requirements verification, and quality gates. | Mark Phase 7 complete for this task. |
+| `BLOCKED` | The selected task cannot proceed because a prerequisite, capability, workspace state, tracker action, or required handoff is missing or unsafe. | Record a Phase 7 resume point and surface the blocker. |
+| `STOPPED_FOR_USER_INPUT` | The next safe step requires a user or upstream planning decision. | Pause without treating the task as complete. |
+| `ESCALATED` | A retry budget was exhausted or the recovery path is unsafe. | Stop Phase 7 and present accumulated findings. |
+
+The report must include:
+
+- Evidence checked: kickoff, execution, documentation/tracking, requirements,
+  and quality gate verdicts that ran.
+- Retry counts: requirements, clean-code, architecture, and security attempts,
+  using `0` for gates that never entered a fix cycle.
+- Changed files: Category B paths or `None`.
+- Category A tracking paths: updated workflow artifacts or `None`.
+- Tracker updates: GitHub startup/completion actions taken with `gh` or
+  skipped.
+- Blockers or unresolved items.
+- Next required action.
