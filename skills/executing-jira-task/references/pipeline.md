@@ -43,10 +43,11 @@
      `./retry-and-escalation.md`.
 
 6. **Dispatch `documentation-writer`.**
-   - Pass `EXECUTION_REPORT`, `TICKET_KEY`, and `TASK_NUMBER`.
+   - Pass `Mode=UPDATE_TRACKING`, `EXECUTION_REPORT`, `TICKET_KEY`,
+     `TASK_NUMBER`, execution brief path, and task plan path.
    - Adds in-code documentation, updates Category A tracking in
-     `docs/<TICKET_KEY>-tasks.md`, and performs optional Jira completion
-     updates when a subtask exists and policy requires.
+     `docs/<TICKET_KEY>-tasks.md`, records implementation status and completion
+     eligibility, and defers final Jira completion actions.
    - Collect only the structured `DOCUMENTATION_REPORT`.
 
 7. **Handle documentation results.**
@@ -60,13 +61,16 @@
 
 9. **Resolve requirements gaps before review gates.**
    - `PASS` continues.
-   - `BLOCKED` stops the pipeline; use `./retry-and-escalation.md` and resume
-     only after the blocker is resolved.
+   - `BLOCKED` or `ERROR` stops the pipeline; use
+     `./retry-and-escalation.md` and resume only after the blocker or upstream
+     failure is resolved.
    - `FAIL` with in-scope gaps: build a concise fix brief from the reported
-     gaps, re-dispatch `task-executor`, then `documentation-writer`, then
-     re-run `requirements-verifier`. Maximum: 3 requirements fix attempts.
-   - If the gaps expose ambiguous brief, conflicting artifacts, or a probable
-     planning mistake: stop and ask the user.
+     gaps, re-dispatch `task-executor`, then `documentation-writer` with
+     `Mode=UPDATE_TRACKING`, then re-run `requirements-verifier`. Maximum: 3
+     requirements fix attempts.
+   - If the verifier returns `BLOCKED` for an ambiguous brief, conflicting
+     artifacts, missing required context, or a probable planning mistake, stop
+     and ask the user for the smallest decision that unblocks the task.
 
 10. **Run quality gates in order.** `clean-code-reviewer`,
     `architecture-reviewer`, then `security-auditor`.
@@ -76,11 +80,24 @@
     - `NEEDS FIXES`: trigger the targeted fix cycle below.
     - `BLOCKED` or `ERROR`: stop and escalate.
 
-12. **Report the outcome.**
+12. **Finalize tracker completion.**
+    - After requirements verification and all quality gates have passed,
+      re-dispatch `documentation-writer` with `Mode=FINALIZE_TRACKER`, the
+      `EXECUTION_REPORT`, previous `DOCUMENTATION_REPORT`,
+      `VERIFICATION_RESULT`, `CODE_REVIEW`, `ARCHITECTURE_REVIEW`,
+      `SECURITY_AUDIT`, `TICKET_KEY`, `TASK_NUMBER`, execution brief path, and
+      task plan path.
+    - It may perform final Jira completion comments or transitions only when a
+      concrete subtask exists and policy requires.
+    - Collect `FINAL_TRACKING_REPORT`. `COMPLETE` continues; `BLOCKED` or
+      `ERROR` stops normal execution and uses `./retry-and-escalation.md`.
+
+13. **Report the outcome.**
     - Read `./template-final-report.md` only when assembling the final
       `FINAL_TASK_REPORT`.
     - Summarise what changed: kickoff status, gate verdicts, files changed,
-      any Jira tracking that was skipped or failed.
+      final tracker completion, and any Jira tracking that was skipped or
+      failed.
     - Include retry counts, Category A tracking paths, unresolved blockers, and
       the next required action.
     - Stop after the selected task. Do not auto-continue.
@@ -93,7 +110,7 @@ When `requirements-verifier` returns `FAIL` for ordinary in-scope gaps:
 2. Re-dispatch `task-executor` with the original planning artifacts plus that
    fix brief.
 3. Re-dispatch `documentation-writer` so new Category B changes are documented
-   and Category A tracking artifacts are updated.
+   and Category A tracking artifacts are updated with `Mode=UPDATE_TRACKING`.
 4. Re-run `requirements-verifier`.
 5. If the verifier still returns `FAIL`, repeat only while the requirements fix
    attempt count is below 3.
@@ -108,7 +125,7 @@ When one or more reviewers return `NEEDS FIXES`:
 2. Re-dispatch `task-executor` with original planning artifacts plus the fix
    brief.
 3. Re-dispatch `documentation-writer` so new Category B changes are documented
-   and tracking artifacts are updated.
+   and tracking artifacts are updated with `Mode=UPDATE_TRACKING`.
 4. Re-run only the previously failing gate(s), in original order.
 5. If every previously failing gate now passes, resume at the next gate or
    final report boundary.

@@ -26,6 +26,7 @@ orchestrator is ready to return the selected task's `FINAL_TASK_REPORT`.
 - Clean code review: <verdict>
 - Architecture review: <verdict>
 - Security audit: <verdict>
+- Final tracker completion: <status or `Not attempted`>
 
 ### Retry Counts
 - Requirements fixes: <0-3>
@@ -42,7 +43,7 @@ orchestrator is ready to return the selected task's `FINAL_TASK_REPORT`.
 (or `None`)
 
 ### Tracker Updates
-- <Jira action summary, or `None`>
+- <Jira startup/completion action summary, or `None`>
 
 ### Blockers or Unresolved Items
 - <issue or `None`>
@@ -52,7 +53,8 @@ orchestrator is ready to return the selected task's `FINAL_TASK_REPORT`.
 ```
 
 Use `COMPLETE` only after implementation, documentation/tracking, requirements
-verification, and quality gates have passed. Use `BLOCKED` for missing
-prerequisites or capabilities, `STOPPED_FOR_USER_INPUT` when a decision is the
-next safe step, and `ESCALATED` when a retry budget is exhausted or recovery is
-unsafe. Report only the selected task; do not continue to another task.
+verification, quality gates, and final tracker completion or explicit tracker
+skip have passed. Use `BLOCKED` for missing prerequisites or capabilities,
+`STOPPED_FOR_USER_INPUT` when a decision is the next safe step, and `ESCALATED`
+when a retry budget is exhausted or recovery is unsafe. Report only the
+selected task; do not continue to another task.

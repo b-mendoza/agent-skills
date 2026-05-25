@@ -103,11 +103,20 @@ of inferring success from partial file changes.
 | -------- | --------------- |
 | `execution-starter` | `TICKET_KEY`, `TASK_NUMBER`, ticket snapshot path, task plan path with branch names, execution brief path |
 | `task-executor` | Paths to brief, execution plan, test spec, refactoring plan, decisions; optional critique, fix brief, previous execution report |
-| `documentation-writer` | `EXECUTION_REPORT`, `TICKET_KEY`, `TASK_NUMBER` |
+| `documentation-writer` | Mode-specific inputs; see below. |
 | `requirements-verifier` | Brief path, test spec path, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT` |
 | `clean-code-reviewer` | Brief, test spec, refactoring plan paths, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT` |
 | `architecture-reviewer` | Brief, execution plan paths, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT`, `CODE_REVIEW` |
 | `security-auditor` | Brief path, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT`, `CODE_REVIEW`, `ARCHITECTURE_REVIEW` |
+
+`documentation-writer` mode inputs:
+
+- `Mode=UPDATE_TRACKING`: `EXECUTION_REPORT`, `TICKET_KEY`, `TASK_NUMBER`,
+  execution brief path, and task plan path.
+- `Mode=FINALIZE_TRACKER`: `EXECUTION_REPORT`, previous
+  `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT`, `CODE_REVIEW`,
+  `ARCHITECTURE_REVIEW`, `SECURITY_AUDIT`, `TICKET_KEY`, `TASK_NUMBER`,
+  execution brief path, and task plan path.
 
 ## Artifact lifecycle
 
@@ -124,8 +133,8 @@ can resume later; those files stay out of git history.
 After a successful run, all of these should be true:
 
 1. `FINAL_TASK_REPORT` has status `COMPLETE`.
-2. `EXECUTION_REPORT` and `DOCUMENTATION_REPORT` indicate successful
-   completion rather than blocked partial progress.
+2. `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, and `FINAL_TRACKING_REPORT`
+   indicate successful completion rather than blocked partial progress.
 3. Execution kickoff either performed the planned Jira startup actions or
    reported clearly why each was skipped.
 4. Category B changes are present and reflected in the reports.
@@ -133,7 +142,8 @@ After a successful run, all of these should be true:
    metadata (status, implementation summary, files changed).
 6. If `## Jira Subtasks` exists, the selected row is updated to reflect
    current Jira state, typically `Done` after successful completion.
-7. Optional Jira completion updates are completed or reported as skipped.
+7. Optional Jira completion updates are completed after requirements and
+   quality gates pass, or reported as skipped.
 8. The final report includes the parent-retained completion/blocker verdict,
    quality-gate summary, and implementation artifact summary.
 
@@ -155,11 +165,11 @@ Every terminal path returns `FINAL_TASK_REPORT` with exactly one status:
 The report must include:
 
 - Evidence checked: kickoff, execution, documentation/tracking, requirements,
-  and quality gate verdicts that ran.
+  quality gate verdicts that ran, and final tracker completion when attempted.
 - Retry counts: requirements, clean-code, architecture, and security attempts,
   using `0` for gates that never entered a fix cycle.
 - Changed files: Category B paths or `None`.
 - Category A tracking paths: updated workflow artifacts or `None`.
-- Tracker updates: Jira startup/completion actions taken or skipped.
+- Tracker updates: Jira startup and final completion actions taken or skipped.
 - Blockers or unresolved items.
 - Next required action.
