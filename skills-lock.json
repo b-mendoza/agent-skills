@@ -47,7 +47,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/improve-skill-definition/SKILL.md",
-      "computedHash": "612fe02e378b1bf00aca985f77404b3605396759b015f555978a89d411b6cdaa"
+      "computedHash": "0b30551e790047080e6b07de570b519aea0ba423fc01324cf4fd23d26372805e"
     },
     "pr-creator": {
       "source": "b-mendoza/agent-skills",
