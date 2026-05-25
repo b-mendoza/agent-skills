@@ -69,6 +69,8 @@ Rules:
 - Use an explicit team prefix from the snapshot or `DECISIONS` if provided;
   otherwise use `feature/`.
 - Lowercase the issue slug.
+- Keep `task-<n>` tied to the final numbered task and use the task-title slug
+  from that same numbered task.
 - Slugify the task title as short kebab-case; prefer a short slug over copying
   the full title.
 - Branch names must be valid Git refs: no spaces, no `..`, no leading or
@@ -101,6 +103,8 @@ Before writing the stage 2 file, verify:
 - Every task has `**Branch name:**`.
 - Every task has `**Dependencies / prerequisites:**`.
 - Every task heading uses `## Task <N>: <Title>`.
+- Branch names follow the deterministic parent-issue or current-child-issue
+  pattern from `./output-contract.md`.
 - Every dependency reference points to a valid renumbered task.
 - No hard dependency is violated by the final order.
 - `## Execution Order Summary` includes a branch column.

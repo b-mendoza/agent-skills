@@ -59,8 +59,9 @@ Your job is structural validation.
 
 - Read only the validation reference, the file for the current stage, and
   optional external source routing when a check needs source-backed background.
-- Check required headings, required fields, branch-name presence, and
-  current-child-issue single-branch structure.
+- Check required headings, required fields, final heading order,
+  carried-forward task fields, dependency ordering, deterministic branch-name
+  shape, and current-child-issue single-branch structure.
 - Report specific missing sections or fields.
 - Return only the stage validation summary.
 

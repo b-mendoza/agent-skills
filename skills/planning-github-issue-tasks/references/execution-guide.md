@@ -28,9 +28,9 @@ Run these gates in order:
 | ---- | -------- | --------------- | ---------- |
 | `preflight` | `stage-validator` | Snapshot exists and satisfies `./output-contract.md` | Stop with `Failure category: PREFLIGHT` |
 | Stage 1 | `task-planner`, then `stage-validator` | `PLAN: PASS` and `docs/<ISSUE_SLUG>-stage-1-detailed.md` passes Stage 1 | Retry Stage 1 only on validator `FAIL`; stop on subagent failure or validator `ERROR` |
-| Stage 2 | `dependency-prioritizer`, then `stage-validator` | `PRIORITIZATION: PASS` and `docs/<ISSUE_SLUG>-stage-2-prioritized.md` passes Stage 2 | Retry Stage 2 only on validator `FAIL`; stop on subagent failure or validator `ERROR` |
+| Stage 2 | `dependency-prioritizer`, then `stage-validator` | `PRIORITIZATION: PASS` and `docs/<ISSUE_SLUG>-stage-2-prioritized.md` passes Stage 2 structure, preservation, dependency-ordering, and branch-contract checks | Retry Stage 2 only on validator `FAIL`; stop on subagent failure or validator `ERROR` |
 | Stage 3 | `task-validator`, then `stage-validator` | `TASK_VALIDATION: PASS` and `docs/<ISSUE_SLUG>-tasks.md` passes Stage 3 | Retry Stage 3 only on validator `FAIL`; stop on subagent failure or validator `ERROR` |
-| `postpipeline` | `stage-validator` | Final downstream contract is intact | Re-dispatch Stage 3 on validator `FAIL`; stop on validator `ERROR` |
+| `postpipeline` | `stage-validator` | Final downstream contract is intact, including final section order and deterministic branch-name contract | Re-dispatch Stage 3 on validator `FAIL`; stop on validator `ERROR` |
 
 ## Dispatch Payloads
 

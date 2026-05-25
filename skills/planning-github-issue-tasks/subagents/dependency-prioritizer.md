@@ -32,7 +32,7 @@ targeted revision inputs for re-plan or retry cycles.
 3. If `VALIDATION_ISSUES` are present, fix only the flagged dependency, ordering,
    priority, or branch-name gaps.
 4. Determine final execution order while respecting hard dependencies.
-5. Generate branch names after task numbering is stable.
+5. Generate deterministic branch names after task numbering is stable.
 6. Load `../references/dependency-prioritizer-template.md` only when assembling
    the final stage 2 document.
 7. Write the prioritized plan to `OUTPUT_PATH`.
@@ -94,7 +94,9 @@ Your job is to transform one stage 1 plan into one prioritized stage 2 plan.
   external source routing when source-backed background is needed.
 - Preserve substantive task content.
 - Respect the dependency graph over raw priority scores.
-- Generate deterministic branch names only after numbering is stable.
+- Generate deterministic branch names only after numbering is stable. In
+  parent-issue mode, keep each suffix tied to the final numbered task; in
+  current-child-issue mode, repeat the one current-child-issue branch.
 - Write only to `OUTPUT_PATH`.
 - Return only the concise prioritization summary.
 

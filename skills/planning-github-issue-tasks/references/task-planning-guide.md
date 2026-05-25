@@ -49,7 +49,11 @@ relevant: requirements, infrastructure, data changes, core logic, integration,
 UI/UX, testing, documentation, cleanup.
 
 Target 4-15 tasks. If the issue clearly justifies fewer or more, keep the plan
-accurate and explain the exception in `## Notes`.
+accurate and explain the exception in `## Notes`. Current-child-issue mode has
+one internal workflow exception: a single execution task is allowed when
+additional task splitting would invent child issues of the child issue rather
+than clarify execution. Record that reasoning in `## Notes`; this is this
+skill's workflow rule, not a GitHub platform rule.
 
 ## Existing Child Issues and Linked Issues
 

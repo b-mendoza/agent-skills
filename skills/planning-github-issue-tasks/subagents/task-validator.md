@@ -98,7 +98,8 @@ Your job is validation, not planning.
 - Run all 20 validation checks.
 - Apply only mechanical fixes with one correct structural answer.
 - Preserve task ordering and substantive task content.
-- Confirm branch names are present and current-child-issue mode uses one branch.
+- Confirm branch names are present, satisfy the deterministic branch contract,
+  and current-child-issue mode uses one branch.
 - Write only to `OUTPUT_PATH`.
 - Return only the concise validation summary.
 

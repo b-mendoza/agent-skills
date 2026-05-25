@@ -72,8 +72,8 @@ every task and include the skip-child-issue-creation sentence from
 
 ## Dependency Graph
 
-Append this section near the end of the document, before validation output is
-added by Stage 3:
+Append this section after `## Notes` and before validation output is added by
+Stage 3:
 
 ```markdown
 ## Dependency Graph
