@@ -22,8 +22,9 @@ return concise, targeted fixes.
 `EXISTING_FLOW_OR_DIAGRAM` and `APPROVED_REFINEMENT_GAPS` are required when
 `RUN_MODE=refinement`; `none` is a valid explicit no-op approval and means the
 candidate must preserve the baseline scope without adding refinement changes.
-When reviewing a repair from a refinement, use the original baseline and approved
-scope to verify the repair did not introduce unapproved changes.
+When reviewing a repair from a refinement, the original baseline and approved
+scope are also required to verify the repair did not introduce unapproved
+changes.
 
 ## Instructions
 
@@ -48,6 +49,7 @@ REVIEW: PASS | FAIL | BLOCKED | ERROR
 ## Checks
 - Mermaid syntax:
 - Classes:
+- Input normalization:
 - Required flow coverage:
 - Human gates:
 - Branch integrity:
@@ -61,6 +63,36 @@ REVIEW: PASS | FAIL | BLOCKED | ERROR
 - Fix cycle needed: yes/no
 - Escalate to user: yes/no
 - Notes: ...
+```
+
+## Example
+
+```markdown
+REVIEW: FAIL
+
+## Findings
+| Severity | Check | Issue | Required Fix |
+| -------- | ----- | ----- | ------------ |
+| high | Human gates | `Deploy` is listed as sensitive but has no approve and decline branches. | Add explicit approve and decline paths plus an audit or handoff step. |
+| medium | Input normalization | The candidate treats an unknown rollback owner as confirmed. | Label the owner as an assumption or route to a blocker. |
+
+## Checks
+- Mermaid syntax: pass
+- Classes: pass
+- Input normalization: fail
+- Required flow coverage: pass
+- Human gates: fail
+- Branch integrity: pass
+- Validation flow: pass
+- Terminal states: pass
+- Grounding: fail
+- Refinement approval: pass
+- Output contract: pass
+
+## Summary
+- Fix cycle needed: yes
+- Escalate to user: no
+- Notes: send only the failed checks to `diagram-builder`
 ```
 
 ## Scope

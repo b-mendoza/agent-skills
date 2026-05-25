@@ -9,6 +9,12 @@
 Add a node, decision, gate, output, or terminal state whenever a step changes
 authority, evidence quality, risk, scope, completion status, or user control.
 
+For refinement runs, use the existing flow or diagram as the source of truth.
+Preserve current scope, terminology, and terminal states unless the user has
+approved a specific gap fix. When approved scope is `none`, carry the baseline
+forward without adding gap fixes; if a later quality check requires a
+candidate-changing repair, the reviewer escalates for approval.
+
 ## Required Flow Coverage
 
 Represent these elements when relevant to the process:

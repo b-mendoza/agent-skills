@@ -1,15 +1,15 @@
 # Generate Flow Diagram
 
-The Generate Flow Diagram workflow is a read-only orchestration contract for a skill orchestrator that turns normalized process inputs into Markdown with one Mermaid flowchart. It may inspect target skill files, approved refinement gaps, and optional external rationale; dispatches only `refinement-analyst`, `diagram-builder`, and `diagram-quality-reviewer`; and stops before file mutation, unapproved scope expansion, or unreviewed candidate release.
+The Generate Flow Diagram workflow is a read-only orchestration contract for a skill orchestrator that turns normalized process inputs into Markdown with one Mermaid flowchart. It may inspect supplied process specs, existing flows or diagrams, approved refinement gaps, and optional external rationale; dispatches only `refinement-analyst`, `diagram-builder`, and `diagram-quality-reviewer`; and stops before file mutation, unapproved scope expansion, or unreviewed candidate release.
 
 ```mermaid
 flowchart TD
-  START([Start: diagram request]) --> CAPTURE[Capture PROCESS_SPEC, optional baseline, refinement request, and approvals]
-  CAPTURE --> NORMALIZE[Normalize PROCESS_INPUTS]
+  START([Start: diagram request]) --> CAPTURE[Capture PROCESS_SPEC and/or baseline, refinement request, and approvals]
+  CAPTURE --> NORMALIZE[Normalize PROCESS_INPUTS from spec or baseline]
   NORMALIZE --> MISSING{Missing value changes diagram contract?}
   MISSING -->|yes| NEEDS_INPUT([needs input])
   MISSING -->|no| ASSUME[Record safe assumptions explicitly]
-  ASSUME --> EVIDENCE[Load only needed skill references and supplied rationale]
+  ASSUME --> EVIDENCE[Load only needed bundled references and supplied rationale]
   EVIDENCE --> CLASSIFY{RUN_MODE?}
 
   CLASSIFY -->|new| BUILD_NEW[Dispatch diagram-builder with RUN_MODE=new]
