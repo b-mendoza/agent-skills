@@ -1,7 +1,8 @@
 # Tag Taxonomy
 
 > Read this file only when choosing, renaming, or validating XML tags. For
-> detailed rationale, load `web-resource-index.md` and fetch one targeted URL.
+> detailed rationale, load `web-resource-index.md` and fetch at most one
+> targeted URL when needed and permitted.
 
 Use the smallest tag set that changes behavior. This local catalog is enough
 for offline execution; external pages provide optional rationale and vendor

@@ -7,8 +7,8 @@ description: "Convert prose prompts into compact, structured XML prompts through
 
 Prompt Structurer is a portable orchestration skill for turning prose prompts
 into executable XML prompt contracts. The orchestrator preserves intent, selects
-the smallest useful analysis flow, dispatches specialized passes, and returns a
-final prompt with concise assembly notes.
+the smallest deterministic analysis flow, dispatches specialized passes, and
+returns a final prompt with concise assembly notes.
 
 The package is self-contained: bundled subagents and references are enough to
 run without network access. External URLs are optional just-in-time background
@@ -30,8 +30,9 @@ the final prompt contract.
 ## Output Contract
 
 Return the final XML prompt first, then assembly notes with assumptions,
-sections omitted, resources fetched, and suggested follow-ups. Preserve user
-terminology unless the user requested renaming.
+sections omitted, resources fetched, `LOCAL_ONLY` or `RATIONALE_OMITTED` when
+no URL was fetched, and suggested follow-ups. Preserve user terminology unless
+the user requested renaming.
 
 ## Subagent Registry
 
@@ -48,12 +49,14 @@ Read a subagent file only when dispatching that pass.
 
 ## Flow Selection
 
-| Flow | Use When | Dispatches |
-| ---- | -------- | ---------- |
-| `light` | Short one-shot prompt with low autonomy risk | Passes 1 and 6 |
-| `full` | Multi-phase, autonomous, safety-sensitive, or repeatedly failing prompt | All passes in order |
-| `suite` | Prompt must align with existing suite conventions | `full`, with shared suite blocks passed into every pass |
-| `revision` | Existing structured prompt needs a targeted change | Affected analysis pass(es), then pass 6 |
+Evaluate flows in this order and choose the first matching flow.
+
+| Precedence | Flow | Use When | Dispatches |
+| ---------- | ---- | -------- | ---------- |
+| 1 | `revision` | `CHANGE_REQUEST` targets an existing structured prompt | Affected analysis pass(es), required prerequisites, then pass 6 |
+| 2 | `suite` | `SUITE_CONTEXT` must govern conventions | `full`, with shared suite blocks passed into every pass |
+| 3 | `full` | Prompt is multi-phase, autonomous, safety-sensitive, or repeatedly failing | All passes in order |
+| 4 | `light` | None of the higher-precedence triggers apply and the prompt is a short one-shot with low autonomy risk | Passes 1 and 6 |
 
 ## Progressive Loading Map
 
@@ -62,11 +65,14 @@ Read a subagent file only when dispatching that pass.
 | Tag selection or tag naming | `./references/tag-taxonomy.md` |
 | Edge cases, agent drift, autonomy, gates, or wrong-path risks | `./references/failure-modes.md` |
 | Final XML section order and removal test | `./references/template-skeleton.md` |
-| Source-backed rationale, current vendor guidance, or progressive-disclosure background | `./references/web-resource-index.md`, then fetch one targeted URL |
+| Source-backed rationale, current vendor guidance, or progressive-disclosure background | `./references/web-resource-index.md`, then fetch at most one targeted URL when needed and permitted |
 
 Use local references first. Fetch a web resource only when the local package is
 insufficient for the current decision, the user asks for source-backed
-rationale, or model/platform guidance may have changed.
+rationale, or model/platform guidance may have changed, and network access is
+available and permitted. Record `LOCAL_ONLY` when bundled references are
+sufficient or no external rationale is needed; record `RATIONALE_OMITTED` when
+current external rationale is needed but cannot be fetched.
 
 ## How This Skill Works
 
@@ -83,20 +89,24 @@ analysis transcripts.
 ## Execution
 
 1. Capture `PROMPT_TEXT`, explicit constraints, run style, suite context, and change request.
-2. Choose `light`, `full`, `suite`, or `revision`.
-3. Dispatch passes in pipeline order, loading only the current subagent file.
-4. If a subagent returns `BLOCKED` or `FAIL`, ask the smallest useful question or continue only when the skipped enhancement is nonessential.
-5. Dispatch `xml-prompt-assembler` with the completed pass outputs.
-6. Check the result against the run-level success criteria below.
-7. Fix only failed checks and re-run the relevant pass; stop after three fix cycles.
+2. Reject contradictions that change task meaning with `FAIL` and the smallest targeted clarification.
+3. Resolve source needs with the local-first policy above before flow selection.
+4. Choose `revision`, `suite`, `full`, or `light` using the precedence table.
+5. For `revision`, confirm the existing XML prompt and baseline content are sufficient, confirm `CHANGE_REQUEST` stays in scope and preserves task meaning, identify the affected pass range, and rerun any required upstream prerequisites before affected passes.
+6. Dispatch passes in pipeline order, loading only the current subagent file.
+7. If a subagent returns `BLOCKED`, `FAIL`, or `ERROR`, surface the matching status and ask the smallest useful question or recovery action.
+8. Dispatch `xml-prompt-assembler` with the completed pass outputs.
+9. Check the result against the run-level success criteria below.
+10. When criteria fail, map each failure to the earliest affected pass, rerun that pass and downstream dependent passes, and preserve unaffected sections. Stop after three fix cycles with `REPAIR_NEEDED`.
 
 ## Run-Level Success Criteria
 
 - Meaningful source content is represented, intentionally split, or explicitly omitted with justification.
 - Each emitted XML tag changes agent behavior if removed.
 - Constraints, anti-patterns, and success criteria audit the same behaviors.
-- Assembly notes list assumptions, omitted sections, fetched resources, and follow-up options.
+- Assembly notes list assumptions, omitted sections, fetched resources or `LOCAL_ONLY`/`RATIONALE_OMITTED`, and follow-up options.
 - Progressive disclosure was preserved: no subagent, reference, or URL was loaded before it was needed.
+- Terminal status is one of `PASS`, `BLOCKED`, `FAIL`, `ERROR`, or `REPAIR_NEEDED`.
 
 ## Example
 
