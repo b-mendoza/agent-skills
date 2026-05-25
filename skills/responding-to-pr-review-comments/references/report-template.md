@@ -14,6 +14,7 @@ references and URLs in place of raw payloads, full diffs, or long log output.
 PR: <PR_URL>
 Posting mode: <POSTING_MODE>
 Posting status: <POSTING_STATUS>
+Final envelope intent: <PR_COMMENT_RESPONSE value and Posting value, or pending>
 
 ## PR Summary
 
@@ -50,7 +51,10 @@ Draft reply, if any:
 
 ## Posting Status
 
-<not-posted or posted; preserve unsupported targets in the comment sections>
+<not-posted, pending-confirmation, posted, cancelled, or failed. Include posted
+reply IDs/URLs, cancellation reason, auth failure, preview failure, post error,
+or unsupported/report-only reason when applicable. Preserve unsupported targets
+in the comment sections.>
 ```
 
 ## Writing Rules
@@ -71,6 +75,10 @@ Draft reply, if any:
   `requires-user-choice:unresolved-metadata` posting targets verbatim. Do not
   silently rewrite them to `review-comment-reply:<root-id>` or invent a new
   posting shape.
+- Use `pending-confirmation` only for a verified report written before an exact
+  posting preview is approved or declined. After posting, cancellation, preview
+  failure, auth failure, or post failure, rewrite this section so the report and
+  final `PR_COMMENT_RESPONSE` envelope agree.
 - Cite external URLs inline next to the evidence that uses them. Do not embed
   long quotes from external pages.
 
@@ -84,6 +92,8 @@ Before returning `WRITE: PASS`, re-read the file and confirm:
 - `Action Summary` and `Pushback Summary` reconcile with the per-comment
   classifications and planned actions.
 - `Posting Status` matches the posting status in `WRITE` output.
+- `Final envelope intent` matches the terminal envelope the orchestrator will
+  emit after any posting-related sync write.
 
 ## Minimal Section Example
 

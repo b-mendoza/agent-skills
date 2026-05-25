@@ -22,6 +22,11 @@ Concrete examples live in [`./status-examples.md`](./status-examples.md).
 - **Reply dispositions:** `reply-ready`, `follow-up-ready`,
   `skipped-resolved`, `skipped-already-replied`, or
   `unsupported-or-needs-user-choice`.
+- **Posting states:** `not-posted`, `pending-confirmation`, `posted`,
+  `cancelled`, or `failed`.
+- **Collection completeness:** `complete` when all required paginated sources
+  have been exhausted; `limited` when unavailable metadata or endpoints are
+  recorded; `incomplete` when required pages or limitations are missing.
 
 ## Collector Output
 
@@ -31,6 +36,9 @@ PR: <owner>/<repo>#<number>
 Responder: <login or unknown>
 Scope: <COMMENT_SCOPE>
 Counts: <n review comments>, <n review summaries>, <n issue comments>, <n received>
+Collection completeness: <complete | limited | incomplete>
+Pagination:
+- <source>: <complete | not paginated | incomplete | unavailable, and evidence>
 Comments:
 - Comment ID: <C1>
   GitHub ID: <id>
@@ -51,6 +59,12 @@ Limitations:
 Reason: none | <why status is not PASS>
 Next step: none | <smallest recovery action>
 ```
+
+`COLLECT: PASS` is actionable only with `Collection completeness: complete` or
+`limited`. Use `limited` when every known limitation is explicit enough for
+target taxonomy and downstream risk handling. Use `incomplete` with
+`COLLECT: ERROR` when required pagination or metadata status is unknown after
+the collector's repair attempt.
 
 ## Assessor Output
 
@@ -111,7 +125,9 @@ Checks:
 - Language: <PASS | FAIL> - <note>
 - Posting targets: <PASS | FAIL> - <note>
 - Skipped/report-only: <PASS | FAIL> - <note>
-Fix target: none | <collector | assessor | drafter>:<comment id>
+- Collection completeness: <PASS | FAIL> - <note>
+- Report/posting sync: <PASS | FAIL | NOT_APPLICABLE> - <note>
+Fix target: none | <collector | assessor | drafter>:<comment id or inventory>
 Required fixes:
 - <specific fix or none>
 Verified response package:
@@ -130,7 +146,9 @@ File: <OUTPUT_FILE>
 Comments assessed: <number>
 Actions: <implement count> implement, <clarify count> clarify, <pushback count> push back
 Skipped/report-only: <count>
-Posting status: <not-posted | posted>
+Posting status: <not-posted | pending-confirmation | posted | cancelled | failed>
+Posting outcome: <none | pending-confirmation | posted reply IDs and URLs | cancelled by user | auth failure | preview-failed | post-error>
+Final envelope intent: <PR_COMMENT_RESPONSE value and Posting value, or none>
 Read-back verified: <yes | no, writer template/read-back self-check only>
 Reason: none | <why status is ERROR>
 ```
@@ -145,14 +163,23 @@ Posted replies: <number>
 Read-back verified: <yes | no>
 Skipped replies:
 - <comment id, reason, and reply disposition, or none>
+Contract repair needed:
+- <unsupported target found in APPROVED_REPLIES, or none>
 Reason: none | <why status is not PASS>
 Next step: none | <smallest recovery action>
 ```
+
+`POST: TARGET_UNSUPPORTED` means the poster package violated the verified
+posting contract. The orchestrator removes unsupported targets from
+`APPROVED_REPLIES`, preserves their `requires-user-choice:*` target and
+`unsupported-or-needs-user-choice` disposition, redispatches verification, and
+tries again only within the documented repair limit.
 
 ## Orchestrator Failure Envelope
 
 ```text
 PR_COMMENT_RESPONSE: AUTH | NOT_FOUND | NO_COMMENTS | NEEDS_USER_DECISION | RESPONSE_ERROR | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | CANCELLED
+Posting: <cancelled | failed | none, when relevant>
 Reason: <one line>
 Next step: <one clear action>
 ```

@@ -9,7 +9,8 @@
 Input: `PR_URL=https://github.com/org/repo/pull/123`, `POSTING_MODE=draft-only`.
 
 1. The orchestrator dispatches `review-comment-collector` and receives four
-   received comments with posting targets.
+   received comments with posting targets and `Collection completeness:
+   complete`.
 2. The orchestrator normalizes posting targets as either
    `review-comment-reply:<root-id>`, `requires-user-choice:review-summary`,
    `requires-user-choice:issue-comment`,
@@ -53,6 +54,8 @@ Checks:
 - Language: PASS - replies are natural and concise
 - Posting targets: PASS - unsupported targets remain marked for user choice
 - Skipped/report-only: PASS - skipped items have evidence and are excluded from posting
+- Collection completeness: PASS - paginated review and issue-comment sources complete
+- Report/posting sync: NOT_APPLICABLE - report has not been written yet
 Fix target: assessor:C2
 Required fixes:
 - Add concrete evidence for the C2 pushback or change the classification.
