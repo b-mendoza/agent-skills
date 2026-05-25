@@ -28,8 +28,8 @@ authenticated GitHub user when available; otherwise use `unknown`.
 2. Collect matching line-level review comments, review summaries, and
    top-level PR conversation comments.
 3. Treat comments from users other than `RESPONDER_LOGIN` as received
-   comments. Keep the responder's existing replies only as one-line thread
-   context.
+   comments. Keep the responder's existing replies as compact thread context
+   with ID, URL, created time, and a short excerpt when available.
 4. Preserve metadata needed downstream: stable local ID, GitHub ID, URL,
    author, type, path or conversation location, thread root ID, parent ID,
    review ID, created time, unresolved metadata when available, and whether a
@@ -43,10 +43,23 @@ authenticated GitHub user when available; otherwise use `unknown`.
 7. Mark review summaries as `requires-user-choice:review-summary`, issue or
    top-level PR comments as `requires-user-choice:issue-comment`, and missing
    unresolved-thread metadata as `requires-user-choice:unresolved-metadata`.
-8. For `COMMENT_SCOPE=unresolved`, use available GraphQL review-thread
+8. Preserve reply eligibility metadata for each review-comment thread: whether
+   the thread is resolved, the evidence for that value, whether
+   `RESPONDER_LOGIN` already replied, and any later reviewer clarification or
+   new thread activity that may warrant a follow-up. Do not decide wording.
+9. Emit the most deterministic initial `Reply disposition` from
+   `../references/status-contracts.md`: `reply-ready` for supported unresolved
+   threads with no responder reply; `skipped-resolved` for resolved threads;
+   `skipped-already-replied` for already-replied threads without clear follow-up
+   evidence; `follow-up-ready` only when thread chronology clearly shows
+   reviewer clarification after the responder reply; and
+   `unsupported-or-needs-user-choice` for unsupported or user-choice-required
+   targets. The orchestrator may revise this disposition when later evidence
+   shows new material information.
+10. For `COMMENT_SCOPE=unresolved`, use available GraphQL review-thread
    metadata when needed. If unresolved metadata is unavailable, report the
    limitation rather than guessing.
-9. For `NARROW_CONTEXT_REQUEST`, collect only the requested metadata.
+11. For `NARROW_CONTEXT_REQUEST`, collect only the requested metadata.
 
 ## External Sources
 
