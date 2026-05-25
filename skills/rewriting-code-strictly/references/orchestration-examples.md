@@ -17,12 +17,19 @@ Flow:
 1. Orchestrator dispatches `strict-baseline-mapper`.
 2. Mapper returns `STRICT_BASELINE: PASS`: TypeScript, untrusted webhook body, `any` at the boundary, existing payment tests.
 3. Orchestrator dispatches `strict-rewrite-strategist`.
-4. Strategist reads `./typescript-playbook.md`, loads `./external-sources.md` only because the Zod API choice affects implementation, fetches the smallest relevant Zod URL, and returns a minimal plan: accept `unknown`, parse once at the webhook boundary, pass the inferred payload type internally, leave persistence code alone.
+4. Strategist reads `./typescript-playbook.md`, loads `./external-sources.md` only because the Zod API choice affects implementation, and fetches the smallest relevant Zod URL only when `REFERENCE_NEED`, project authority, or explicit approval covers the fetch. It returns a minimal plan: accept `unknown`, parse once at the webhook boundary, pass the inferred payload type internally, leave persistence code alone.
 5. Orchestrator dispatches `strict-rewrite-implementer`.
 6. Implementer edits the webhook file, runs the supplied command, and returns `STRICT_IMPLEMENTATION: PASS`.
 7. Orchestrator dispatches `strict-rewrite-reviewer`.
 8. Reviewer returns `STRICT_REVIEW: PASS`: behavior, scope, validation placement, and TypeScript strictness all match the strategy.
 9. Orchestrator returns the handoff with changed files, checks, references, assumptions, and remaining risks.
+
+## Validation Warning Handling
+
+1. Strategist returns `STRICT_STRATEGY: PASS` with a validation plan, but the user did not supply `VALIDATION_COMMAND` and project authority does not clearly permit running the discovered command.
+2. Implementer applies only the approved rewrite, records the skipped command as missing validation evidence, and returns `STRICT_IMPLEMENTATION: PASS_WITH_WARNINGS`.
+3. Orchestrator still dispatches the reviewer.
+4. Reviewer judges whether the missing validation is acceptable risk, a required targeted fix, or a blocker for the final handoff.
 
 ## No-Change Handling
 
@@ -34,4 +41,5 @@ Flow:
 
 1. Strategist needs current validator API behavior to choose between `.parse` and `.safeParse`, but the linked docs are unavailable.
 2. If project code already demonstrates the API safely, strategist proceeds from project evidence and records `unavailable: <url> (used project usage as evidence)`.
-3. If project evidence is insufficient, strategist returns `NEEDS_CLARIFICATION` or `ERROR` with the smallest recovery action instead of guessing current docs.
+3. If approval to fetch is missing, strategist returns `NEEDS_CLARIFICATION` with the target source, reason, risk, reversibility, and safer local alternative.
+4. If approval exists but the source is unavailable and project evidence is insufficient, strategist returns `NEEDS_CLARIFICATION` or `ERROR` with the smallest recovery action instead of guessing current docs.

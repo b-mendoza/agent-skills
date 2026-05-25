@@ -30,4 +30,7 @@ user explicitly permits the dependency.
 
 ## Validation Commands
 
-Prefer the user's `VALIDATION_COMMAND`. Otherwise the smallest relevant existing project check: project tests, `tsc --noEmit`, ESLint, or the configured formatter.
+Prefer the user's `VALIDATION_COMMAND`. Otherwise use the smallest relevant
+existing project check only when project authority or the approved strategy
+permits execution: project tests, `tsc --noEmit`, ESLint, or the configured
+formatter.

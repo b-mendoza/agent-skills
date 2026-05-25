@@ -30,4 +30,7 @@ passing `map[string]any` deeper.
 
 ## Validation Commands
 
-Prefer the user's `VALIDATION_COMMAND`. Otherwise the smallest relevant existing project check: `go test ./...`, `go vet ./...`, `staticcheck ./...`, `gofmt`, or `goimports`.
+Prefer the user's `VALIDATION_COMMAND`. Otherwise use the smallest relevant
+existing project check only when project authority or the approved strategy
+permits execution: `go test ./...`, `go vet ./...`, `staticcheck ./...`,
+`gofmt`, or `goimports`.

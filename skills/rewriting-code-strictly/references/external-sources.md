@@ -1,12 +1,17 @@
 # Strict Rewrite External Sources
 
 > Read this file only when project evidence and the language playbook are not
-> enough. Fetch the smallest relevant URL, use it for the decision at hand, and
-> record the URL plus the specific point used.
+> enough. When authorized, fetch the smallest relevant URL, use it for the
+> decision at hand, and record the URL plus the specific point used.
 
-External sources are optional just-in-time material. The rewrite still follows
-the local skill contract, user scope, and project configuration when network
-access is unavailable.
+External sources are optional just-in-time material. The strategist fetches a
+URL only when it can change a concrete decision and `REFERENCE_NEED`, project
+authority, or explicit approval already covers the fetch. Without that
+authorization, the strategist returns `NEEDS_CLARIFICATION` with the target
+source, reason, risk, reversibility, and safer local alternative.
+
+The rewrite still follows the local skill contract, user scope, and project
+configuration when network access is unavailable.
 
 ## Fetch Policy
 

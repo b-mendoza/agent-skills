@@ -31,4 +31,7 @@ explicitly permits the dependency.
 
 ## Validation Commands
 
-Prefer the user's `VALIDATION_COMMAND`. Otherwise the smallest relevant existing project check: `mypy`, `pyright`, targeted tests, or the configured formatter or linter.
+Prefer the user's `VALIDATION_COMMAND`. Otherwise use the smallest relevant
+existing project check only when project authority or the approved strategy
+permits execution: `mypy`, `pyright`, targeted tests, or the configured
+formatter or linter.
