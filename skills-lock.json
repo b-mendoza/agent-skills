@@ -11,7 +11,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
-      "computedHash": "b5be52aa806c60d6fe05e12b0d82523f403b2ca8fa8f29d1a5aaf429921a9d30"
+      "computedHash": "53dca211b00d44dbc5161d5d237d8685556b924bbc2b76db207b20361c8f4fdb"
     },
     "executing-plans": {
       "source": "obra/superpowers",
@@ -23,13 +23,13 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/generate-flow-diagram/SKILL.md",
-      "computedHash": "789e10314cbe53db628a1c1dfb9aa3127d74dbb13a8b0f441788e16e4be1c13c"
+      "computedHash": "6e670a93c22a7fc34cbf75daa82a6d4ef39337df6d6a55d3eaef4b149688034e"
     },
     "generate-handoff-document": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/generate-handoff-document/SKILL.md",
-      "computedHash": "4226615e352681e78a814c2601a57f5a1d17475c3dfcd07fefebef34cf974004"
+      "computedHash": "3511d49ea60e91ac12a31711286f0b13eb8209e8387a4e7c7a771c41cb85b0f7"
     },
     "grill-me": {
       "source": "mattpocock/skills",
@@ -47,19 +47,19 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/improve-skill-definition/SKILL.md",
-      "computedHash": "3e944d02d98ab9638e14c4a00539528754bdcd2e0bf951f79388381e7e17a6bc"
+      "computedHash": "612fe02e378b1bf00aca985f77404b3605396759b015f555978a89d411b6cdaa"
     },
     "pr-creator": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/pr-creator/SKILL.md",
-      "computedHash": "d5a9c4643905ac97cb1b888ac2f0a51b428a6ca2ffb4521ff2c8b24d28c11f86"
+      "computedHash": "b00b05924ccc2985da8ae7956a094ea16c76b20f0bc0f47f3543d2824f47a1be"
     },
     "prompt-structurer": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/prompt-structurer/SKILL.md",
-      "computedHash": "728e4cde1f1183e24e6a39c1c6632584b67d04e08e94bb98ea59e2b883f4e606"
+      "computedHash": "ac04a9754163d3a341c59987ec69920a883e2c76b8eaac4813102e1b18a61d24"
     },
     "receiving-code-review": {
       "source": "obra/superpowers",
@@ -77,7 +77,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/responding-to-pr-review-comments/SKILL.md",
-      "computedHash": "1e7d0774bbd965d743e86bf7664a684e42ede4d60c9e70bd444421551bd4e624"
+      "computedHash": "8fe10ef7c91187880f8fff09b22f6d8413662a6db465106bd7107e796e199e8a"
     },
     "review-pull-request": {
       "source": "b-mendoza/agent-skills",
