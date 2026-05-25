@@ -46,7 +46,9 @@ Bundled paths are relative to this subagent file.
 8. Return only the concise status summary.
 
 If a concept blocks execution, read `../references/external-sources.md` and
-fetch one relevant URL. Routine extraction uses the local data contract.
+fetch one relevant URL. Routine extraction uses the local data contract. If an
+external source is fetched or unavailable, include one concise external-status
+line in the returned summary.
 
 ## Output Format
 
@@ -64,6 +66,11 @@ Q&A exchanges: 3
 Amendments: 1
 Reason: Original mandate and later scope changes captured.
 ```
+
+Intentional statuses are `CONTEXT: PASS`, `CONTEXT: WARN`, and
+`CONTEXT: ERROR`. This subagent does not intentionally return `CONTEXT: FAIL`
+or `CONTEXT: SKIPPED`; if either appears, the orchestrator treats it as
+`Blocked: subagent error, failure, or unexpected skip`.
 
 ## Scope
 
@@ -84,6 +91,9 @@ If you can write the artifact but the original mandate is fuzzy, report:
 ```text
 CONTEXT: WARN
 File: <CONTEXT_FILE>
+Instruction blocks: <count>
+Q&A exchanges: <count>
+Amendments: <count>
 Reason: Could not identify one clean initial mandate; consolidated from
 several early messages.
 ```

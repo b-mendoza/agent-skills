@@ -47,7 +47,9 @@ Bundled paths are relative to this subagent file.
 
 If evidence-first writing or knowledge-transfer background blocks execution,
 read `../references/external-sources.md` and fetch one relevant URL. Routine
-documentation uses the local data contract.
+documentation uses the local data contract. If an external source is fetched
+or unavailable, include one concise external-status line in the returned
+summary.
 
 ## Output Format
 
@@ -64,6 +66,11 @@ Critical: 1
 Unverified or partial: 3
 Reason: Evidence-backed findings captured for continuation.
 ```
+
+Intentional statuses are `INSIGHTS: PASS`, `INSIGHTS: WARN`, and
+`INSIGHTS: ERROR`. This subagent does not intentionally return
+`INSIGHTS: FAIL` or `INSIGHTS: SKIPPED`; if either appears, the orchestrator
+treats it as `Blocked: subagent error, failure, or unexpected skip`.
 
 ## Scope
 
@@ -85,6 +92,8 @@ If the artifact is written but some findings have weak evidence, report:
 INSIGHTS: WARN
 File: <INSIGHTS_FILE>
 Insights: <count>
+Critical: <count>
+Unverified or partial: <count>
 Reason: Some findings could only be supported by indirect conversation
 evidence.
 ```

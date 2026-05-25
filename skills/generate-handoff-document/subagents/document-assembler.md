@@ -51,7 +51,9 @@ Bundled paths are relative to this subagent file.
 
 If session-handoff conventions or decision-record formatting block execution,
 read `../references/external-sources.md` and fetch one relevant URL. Routine
-assembly uses the local template and data contract.
+assembly uses the local template and data contract. If an external source is
+fetched or unavailable, include one concise external-status line in the
+returned summary.
 
 ## Output Format
 
@@ -67,6 +69,11 @@ Open questions: 2
 Quality flags: 0
 Reason: Cold-start-ready handoff written successfully.
 ```
+
+Intentional statuses are `HANDOFF: PASS`, `HANDOFF: WARN`, and
+`HANDOFF: ERROR`. This subagent does not intentionally return `HANDOFF: FAIL`
+or `HANDOFF: SKIPPED`; if either appears, the orchestrator treats it as
+`Blocked: subagent error, failure, or unexpected skip`.
 
 ## Scope
 
@@ -88,6 +95,8 @@ report:
 HANDOFF: WARN
 File: <TARGET_FILE>
 Sections: 5
+Open questions: <count>
+Quality flags: <count>
 Reason: Document written with gaps; see warning banner inside the file.
 ```
 

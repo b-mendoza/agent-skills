@@ -15,8 +15,8 @@ This package is standalone. Core behavior lives in this folder; external URLs
 are optional just-in-time background and never required for normal execution.
 
 > **Reminder:** Working data lives on disk as structured artifacts. Keep only
-> verdicts, file paths, counts, and unresolved questions in orchestrator
-> context.
+> verdicts, file paths, counts, warnings, and unresolved questions in
+> orchestrator context.
 
 ## Inputs
 
@@ -33,17 +33,36 @@ safe. Ask one short question only when `TARGET_FILE` is unclear.
 ## Workflow Overview
 
 ```text
-1. context-extractor   -> <stem>.context.json
-2. insight-documenter  -> <stem>.insights.json
-3. claim-validator     -> <stem>.claims.json   (only if TRACKING_FILES given)
-4. document-assembler  -> TARGET_FILE
-5. handoff-reviewer    -> review verdict and targeted rerun guidance
-6. orchestrator        -> reruns failing stages or reports success
+1. path/write checks   -> safe target and sibling artifact locations
+2. context-extractor   -> <stem>.context.json
+3. insight-documenter  -> <stem>.insights.json
+4. claim-validator     -> <stem>.claims.json   (only if TRACKING_FILES given)
+5. document-assembler  -> TARGET_FILE
+6. handoff-reviewer    -> review verdict and targeted rerun guidance
+7. orchestrator        -> reruns failing stages or reports success/blocker
 ```
 
-Stages run in order. Stage 3 is skipped when no tracking files are provided;
+Stages run in order. Stage 4 is skipped when no tracking files are provided;
 in that case the final document explicitly tells the next agent to verify
 factual claims independently.
+
+## Status Vocabulary
+
+Record every stage verdict exactly as returned. Route statuses this way:
+
+| Status | Meaning | Orchestrator route |
+| ------ | ------- | ------------------ |
+| `PASS` | Stage completed and downstream consumers may proceed | Continue |
+| `WARN` | Stage wrote usable output with caveats | Capture warning, then continue |
+| `FAIL` | Stage completed but output failed its contract | Block, except `REVIEW: FAIL` enters the repair loop |
+| `ERROR` | Stage could not complete because of a read, write, or unexpected failure | Block |
+| `SKIPPED` | Stage was intentionally skipped | Allowed only for `CLAIMS: SKIPPED`; otherwise block as unexpected |
+
+External-source handling uses `EXTERNAL: SKIPPED`, `EXTERNAL: USED`, or
+`EXTERNAL: UNAVAILABLE`. Continue local-only when unavailable external content
+is optional. Stop at `Blocked: required external dependency unavailable` only
+when the missing external source is required to answer a current-contract
+question.
 
 ## Subagent Registry
 
@@ -60,13 +79,13 @@ you are about to dispatch that subagent.
 
 ## Progressive Loading Map
 
-Load the smallest local file that answers the current question. Fetch external
-URLs only when conceptual background or current platform documentation would
-otherwise bloat the prompt.
+Load the smallest local file that answers the current question. Fetch one
+external URL only when conceptual background or current platform documentation
+would otherwise bloat the prompt.
 
 | Need | Load | Timing |
 | ---- | ---- | ------ |
-| Artifact naming, JSON schemas, final section contract | `./references/data-contracts.md` | Before Stage 1 and when schemas are unclear |
+| Artifact naming, JSON schemas, path/write checks, status vocabulary, final section contract | `./references/data-contracts.md` | Before Stage 1 and when schemas are unclear |
 | Final validation gates and targeted rerun routing | `./references/quality-checklist.md` | Loaded by `handoff-reviewer` only |
 | Dispatch round-trip example | `./references/dispatch-example.md` | Only when an example would clarify execution |
 | Conceptual or current external background | `./references/external-sources.md`, then one relevant URL | Only when local contracts are insufficient |
@@ -76,22 +95,44 @@ Bundled contracts win over fetched content when they conflict.
 
 ## Execution Steps
 
-1. Confirm `TARGET_FILE`; ask only if the path is unclear.
-2. Read `./references/data-contracts.md` and derive sibling artifact paths.
-3. Dispatch `context-extractor` with `CONTEXT_SOURCE` and `CONTEXT_FILE`.
-4. Dispatch `insight-documenter` with `CONTEXT_SOURCE` and `INSIGHTS_FILE`.
-5. If `TRACKING_FILES` exist, dispatch `claim-validator` with
-   `TRACKING_FILES`, `INSIGHTS_FILE`, and `CLAIMS_FILE`. Otherwise record
-   `CLAIMS: SKIPPED`.
-6. Dispatch `document-assembler` with `TARGET_FILE`, `SUBJECT`,
-   `CONTEXT_FILE`, `INSIGHTS_FILE`, and optional `CLAIMS_FILE`.
-7. Dispatch `handoff-reviewer` with `TARGET_FILE`, `CONTEXT_FILE`,
-   `INSIGHTS_FILE`, and optional `CLAIMS_FILE`.
-8. If review fails, rerun only the stages named by `handoff-reviewer` and their
-   downstream consumers. Stop after three fix cycles and surface the blocker if
-   quality gates still fail.
-9. Return the final handoff path with stage verdicts, review verdict, counts,
-   warnings, and open-question count.
+1. Confirm `TARGET_FILE`; ask only if the path is unclear. Stop with
+   `Blocked: unclear target path` until the user answers.
+2. Validate readable inputs, writable target location, and sibling artifact
+   locations. If any path or write check is unsafe, stop with
+   `Blocked: unsafe writes or missing readable/writable path`.
+3. Read `./references/data-contracts.md` and derive sibling artifact paths.
+4. Decide whether bundled contracts are sufficient. Record
+   `EXTERNAL: SKIPPED`, `EXTERNAL: USED`, or `EXTERNAL: UNAVAILABLE`; block only
+   with `Blocked: required external dependency unavailable` when a required
+   external dependency is unavailable.
+5. Dispatch `context-extractor` with `CONTEXT_SOURCE` and `CONTEXT_FILE`.
+   Continue on `CONTEXT: PASS` or `CONTEXT: WARN`; block on `CONTEXT: ERROR`,
+   `CONTEXT: FAIL`, or unexpected `CONTEXT: SKIPPED`.
+6. Dispatch `insight-documenter` with `CONTEXT_SOURCE` and `INSIGHTS_FILE`.
+   Continue on `INSIGHTS: PASS` or `INSIGHTS: WARN`; block on
+   `INSIGHTS: ERROR`, `INSIGHTS: FAIL`, or unexpected `INSIGHTS: SKIPPED`.
+7. If `TRACKING_FILES` exist, dispatch `claim-validator` with
+   `TRACKING_FILES`, `INSIGHTS_FILE`, and `CLAIMS_FILE`. Continue on
+   `CLAIMS: PASS` or `CLAIMS: WARN`; record `CLAIMS: SKIPPED` only when no
+   tracking files were provided or the claim stage explicitly reports an
+   intentional skip.
+8. Dispatch `document-assembler` with `TARGET_FILE`, `SUBJECT`,
+   `CONTEXT_FILE`, `INSIGHTS_FILE`, and optional `CLAIMS_FILE`. Continue on
+   `HANDOFF: PASS` or `HANDOFF: WARN`; block on `HANDOFF: ERROR`,
+   `HANDOFF: FAIL`, or unexpected `HANDOFF: SKIPPED`.
+9. Dispatch `handoff-reviewer` with `TARGET_FILE`, `CONTEXT_FILE`,
+   `INSIGHTS_FILE`, and optional `CLAIMS_FILE`. Complete on `REVIEW: PASS` or
+   `REVIEW: WARN`; block on `REVIEW: ERROR` or unexpected `REVIEW: SKIPPED`.
+10. If the reviewer returns `REVIEW: FAIL`, parse one or many rerun targets,
+    normalize them into the canonical order `context-extractor`,
+    `insight-documenter`, `claim-validator`, `document-assembler`,
+    `handoff-reviewer`, rerun the earliest named upstream stage plus downstream
+    consumers, then rerun review.
+11. Stop after three repair cycles and report `Blocked: repair limit exhausted`
+    if quality gates still fail.
+12. Return the final handoff path, sibling artifact paths, external status,
+    stage verdicts, review verdict, counts, warnings, and open-question count;
+    then mark the run `Completed: review pass`.
 
 ## Output Contract
 
@@ -115,7 +156,9 @@ For any subagent dispatch:
 1. Read the subagent definition from the registry.
 2. Pass only the explicit inputs that subagent needs.
 3. Collect its structured summary.
-4. Retain only the verdict, file path, and next-step-relevant counts.
+4. Retain only the verdict, file path, next-step-relevant counts, warnings, and
+   rerun targets.
+5. Route the returned status through the Status Vocabulary before proceeding.
 
 Treat tracking-file claims as provisional even after validation; the final
 handoff keeps that caution visible for the next agent.
@@ -124,4 +167,5 @@ handoff keeps that caution visible for the next agent.
 
 A complete dispatch round trip with sample subagent summaries lives in
 `./references/dispatch-example.md`. Read it only when an example would clarify
-dispatch order, expected summaries, or the final response shape.
+dispatch order, expected summaries, warning handling, rerun handling, or the
+final response shape.
