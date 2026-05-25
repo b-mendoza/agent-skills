@@ -7,8 +7,8 @@ across OpenCode and Claude Code.
 
 ## What is in this repository
 
-- [`skills/`](skills/) contains 30 first-party skills. Each skill currently has
-  its own `SKILL.md`, `subagents/`, and `references/`.
+- [`skills/`](skills/) contains 30 first-party skills. Each skill has its own
+  `SKILL.md`, with `subagents/` and `references/` added where needed.
 - [`docs/`](docs/) contains workflow notes, design specs, and project-specific
   planning documents.
 - [`docs/best-practices/`](docs/best-practices/) is the best starting point for
