@@ -114,18 +114,21 @@ Response policy:
    returns `NEEDS_CONTEXT`, redispatch only the requested narrow lookup once.
    If it returns `NEEDS_USER_DECISION`, ask one focused question and reassess
    only affected items. Stop with `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`
-   after three unresolved cycles for the same decision type.
+   after three unresolved cycles for the same decision type. Route
+   `ASSESS: ERROR` to `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
 5. Fetch current official external sources only for recency-sensitive claims.
    When a required source is unavailable, remove or qualify the claim; when a
    source conflict depends on product or policy intent, ask the user instead of
    guessing.
 6. Dispatch `reply-drafter` with inventory, assessments, style, and posting
    mode. Ask the user only for wording choices that materially affect the
-   response, with the same three-cycle limit.
+   response, with the same three-cycle limit. Route `DRAFT: ERROR` to
+   `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
 7. Dispatch `response-verifier`. On `VERIFY: NEEDS_CONTEXT`, repair only the
    named context gap. On `VERIFY: FAIL`, repair only the named `Fix target`.
    Limit verification context and fix cycles to two, then return
-   `PR_COMMENT_RESPONSE: VERIFY_FAIL`.
+   `PR_COMMENT_RESPONSE: VERIFY_FAIL`. Route `VERIFY: ERROR` to
+   `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
 8. Confirm `OUTPUT_FILE` is known and safe, asking up to three focused output
    path questions if needed. Dispatch `response-report-writer` with the
    verified package, then read back the report to verify path, status blocks,
