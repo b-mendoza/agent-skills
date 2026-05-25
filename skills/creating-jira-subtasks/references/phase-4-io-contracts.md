@@ -18,6 +18,7 @@ Primary inputs:
 
 ```text
 JIRA_URL
+APPROVED_MUTATION_SCOPE
 docs/<TICKET_KEY>-tasks.md
 ```
 
@@ -29,7 +30,8 @@ Derive stable identifiers from `JIRA_URL`:
 
 Mutation approval is a precondition: Jira subtask writes and the scoped update
 to `docs/<TICKET_KEY>-tasks.md` must already be approved by the caller or user.
-If approval is unclear in a direct invocation, return `SUBTASKS: BLOCKED` with
+Normal orchestration supplies that approval as `APPROVED_MUTATION_SCOPE`. If
+approval is unclear in a direct invocation, return `SUBTASKS: BLOCKED` with
 `Validation: NOT_RUN` rather than creating or editing anything.
 
 Expected normal-workflow plan shape:
@@ -42,6 +44,26 @@ Expected normal-workflow plan shape:
 
 If the plan is missing or malformed, return `SUBTASKS: BLOCKED`. If the plan
 is parseable but lacks `## Decisions Log`, continue with a warning.
+
+### Blocked Summary Placeholders
+
+Every early exit uses the full structured summary shape. If `JIRA_URL` is
+missing or malformed before `TICKET_KEY` can be derived, use:
+
+- `Parent: UNKNOWN`
+- `TICKET_KEY: UNKNOWN`
+- `Plan file: not updated`
+- `Tasks in plan: 0`
+- `Already linked: 0`
+- `Created now: 0`
+- `Failed creates: 0`
+- `Decisions Log: MISSING`
+- a header-only `Created/Linked Subtasks` table
+- `Reason:` naming the missing or malformed URL
+
+If approval is absent or declined after a valid `JIRA_URL` is parsed, use the
+derived `TICKET_KEY` for `Parent:` and `TICKET_KEY:`, keep `Plan file: not
+updated`, use zero counts, and name the missing approval in `Reason:`.
 
 ## Platform Behavior
 
@@ -80,6 +102,12 @@ After successful or partial completion, the plan file includes:
 | -------- | ------- |
 | `## Jira Subtasks` workflow table | Phase 4 postcondition and resumable linkage |
 | One `Jira Subtask: ...` line per numbered task section | Per-task reference consumed by downstream phases |
+
+Only `docs/<TICKET_KEY>-tasks.md` may be changed during the local artifact
+update or repair. The worker keeps a write ledger for this run, and may also
+inspect available changed-file evidence when the environment exposes it. If
+any path outside `docs/<TICKET_KEY>-tasks.md` is changed by this run, return
+`SUBTASKS: FAIL` with `Validation: FAIL`.
 
 ### Workflow Table
 
@@ -169,3 +197,4 @@ selected for execution.
 - `Not Created` values are structurally valid only when they appear in both the
   workflow table and the matching per-task inline line, and the final status is
   `SUBTASKS: WARN`.
+- The only local file changed by the run is `docs/<TICKET_KEY>-tasks.md`.

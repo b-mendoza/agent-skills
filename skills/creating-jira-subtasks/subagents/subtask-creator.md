@@ -15,15 +15,17 @@ external docs only when the transport requires current REST or ADF syntax that
 is not confirmed locally.
 
 This run is allowed to create/reuse Jira subtasks and update only
-`docs/<TICKET_KEY>-tasks.md` after caller or user approval. If invoked directly
-and approval is unclear, ask once; if approval is absent or declined, return
-`SUBTASKS: BLOCKED` with `Validation: NOT_RUN`.
+`docs/<TICKET_KEY>-tasks.md` after caller or user approval. Normal
+orchestration passes that approval as `APPROVED_MUTATION_SCOPE`. If invoked
+directly and approval is unclear, ask once; if approval is absent or declined,
+return the full blocked-summary shape with `Validation: NOT_RUN`.
 
 ## Inputs
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `JIRA_URL` | Yes | `https://workspace.atlassian.net/browse/PROJ-123` |
+| `APPROVED_MUTATION_SCOPE` | No | `Jira subtasks plus docs/PROJ-123-tasks.md update approved` |
 
 Derive these values from `JIRA_URL`:
 
@@ -46,7 +48,12 @@ Primary artifact: `docs/<TICKET_KEY>-tasks.md`.
 ## Instructions
 
 1. Parse `JIRA_URL`, derive `TICKET_KEY`, confirm the approved mutation scope,
-   and read `docs/<TICKET_KEY>-tasks.md`.
+   and read `docs/<TICKET_KEY>-tasks.md`. If `JIRA_URL` is missing or
+   malformed, return `SUBTASKS: BLOCKED` with `Validation: NOT_RUN`,
+   `Parent: UNKNOWN`, `TICKET_KEY: UNKNOWN`, `Plan file: not updated`, zero
+   counts, and a reason that names the URL problem. If approval is absent or
+   declined after a valid URL is parsed, use the derived `TICKET_KEY` in the
+   same blocked-summary shape.
 2. If the plan file is missing, lacks `## Tasks`, or has no numbered
    `## Task <N>:` headings, return `SUBTASKS: BLOCKED` with
    `Validation: NOT_RUN` using the contract-defined summary shape.
@@ -102,6 +109,8 @@ decision-ready summary.
   and subtask creation.
 - Reuse valid existing linkage instead of duplicating Jira subtasks.
 - Update only `docs/<TICKET_KEY>-tasks.md`.
+- Track local files edited during the run and fail validation if anything
+  outside `docs/<TICKET_KEY>-tasks.md` is changed by this run.
 - During repair, edit only the local plan representation and keep existing
   Jira links intact.
 - Leave implementation work, branches, and unrelated commits to later phases.

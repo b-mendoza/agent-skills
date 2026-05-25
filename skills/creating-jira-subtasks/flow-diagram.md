@@ -15,15 +15,15 @@ administrators ([Configure sub-tasks](https://support.atlassian.com/jira-cloud-a
 
 ```mermaid
 flowchart TD
-  START([Start: JIRA_URL received for approved Phase 4]) --> INPUT{Required JIRA_URL present?}
-  INPUT -->|no| ORCH_BLOCK_INPUT([SUBTASKS: BLOCKED<br/>Validation: NOT_RUN<br/>Missing JIRA_URL])
+  START([Start: JIRA_URL received for approved Phase 4]) --> INPUT{JIRA_URL present and parseable?}
+  INPUT -->|no, missing or malformed| ORCH_BLOCK_INPUT([SUBTASKS: BLOCKED<br/>Validation: NOT_RUN<br/>Parent: UNKNOWN<br/>TICKET_KEY: UNKNOWN<br/>Plan file: not updated<br/>Zero counts, header-only linkage table, and URL reason])
   INPUT -->|yes| DERIVE["Derive workspace, project prefix, TICKET_KEY, and docs/&lt;TICKET_KEY&gt;-tasks.md"]
 
   DERIVE --> UPSTREAM{Upstream approval evidence present?}
   UPSTREAM -->|yes| DISPATCH[Dispatch single worker: subtask-creator with JIRA_URL and approved mutation scope]
   UPSTREAM -->|no, standalone invocation| STANDALONE{Explicit approval for Jira writes and docs/&lt;TICKET_KEY&gt;-tasks.md update?}
   STANDALONE -->|approved| DISPATCH
-  STANDALONE -->|declined or absent| ORCH_BLOCK_APPROVAL([SUBTASKS: BLOCKED<br/>Validation: NOT_RUN<br/>Approval required before mutation])
+  STANDALONE -->|declined or absent| ORCH_BLOCK_APPROVAL([SUBTASKS: BLOCKED<br/>Validation: NOT_RUN<br/>Derived TICKET_KEY when URL is valid<br/>Plan file: not updated])
 
   DISPATCH --> W_START[Worker receives JIRA_URL and approved scope]
   W_START --> PLAN{docs/&lt;TICKET_KEY&gt;-tasks.md exists with Tasks and Task headings?}
@@ -49,7 +49,7 @@ flowchart TD
   PARTIAL -->|yes| WARN_RECORD[Record Not Created rows, warnings, and failures; continue when remaining traceability is safe]
   PARTIAL -->|no| UPDATE[Update only docs/&lt;TICKET_KEY&gt;-tasks.md idempotently]
   WARN_RECORD --> UPDATE
-  UPDATE --> BOUNDARY{Only approved plan file changed?}
+  UPDATE --> BOUNDARY{Write ledger shows only approved plan file changed?}
   BOUNDARY -->|no| W_FAIL_BOUNDARY[Return SUBTASKS: FAIL<br/>Validation: FAIL]
   BOUNDARY -->|yes| VALIDATE
 

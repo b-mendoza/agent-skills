@@ -15,18 +15,23 @@ validation. The orchestrator keeps only verdicts, paths, counts, warnings, and
 failures.
 
 Run this skill only after the caller or user has approved Jira subtask writes
-and the scoped update to `docs/<TICKET_KEY>-tasks.md`. If invoked directly and
+and the scoped update to `docs/<TICKET_KEY>-tasks.md`. Normal orchestration
+passes that approval as `APPROVED_MUTATION_SCOPE`. If invoked directly and
 approval is unclear, ask once for that approval; if approval is absent or
-declined, return `SUBTASKS: BLOCKED` with `Validation: NOT_RUN`.
+declined, return the contract-defined blocked summary with
+`Validation: NOT_RUN`.
 
 ## Inputs
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `JIRA_URL` | Yes | `https://workspace.atlassian.net/browse/PROJ-123` |
+| `APPROVED_MUTATION_SCOPE` | No | `Jira subtasks plus docs/PROJ-123-tasks.md update approved` |
 
-Derive locally for routing and reporting only. The full URL is the canonical
-context that flows to the subagent and to Jira-capable tools:
+Normal orchestrated runs include `APPROVED_MUTATION_SCOPE`. Direct standalone
+runs may collect the same approval from the user before dispatch. Derive
+locally for routing and reporting only. The full URL is the canonical context
+that flows to the subagent and to Jira-capable tools:
 
 - **Workspace:** subdomain before `.atlassian.net`
 - **Project:** prefix before the dash in the ticket key
@@ -57,15 +62,21 @@ Read a subagent definition only when dispatching that subagent.
 
 ## Workflow
 
-1. Confirm `JIRA_URL` is present, derive `TICKET_KEY` for local reporting, and
-   confirm the run is approved for Jira writes plus the scoped plan-file update.
-2. Read `./references/phase-4-io-contracts.md` only when interpreting an
+1. Confirm `JIRA_URL` is present. If it is missing or malformed, return the
+   blocked summary from `./references/phase-4-io-contracts.md` with
+   `Parent: UNKNOWN`, `TICKET_KEY: UNKNOWN`, `Plan file: not updated`, zero
+   counts, and `Validation: NOT_RUN`.
+2. Derive `TICKET_KEY` for local reporting, then confirm the run is approved
+   for Jira writes plus the scoped plan-file update. If approval is absent or
+   declined, return the same blocked-summary shape with the derived
+   `TICKET_KEY` and `Plan file: not updated`.
+3. Read `./references/phase-4-io-contracts.md` only when interpreting an
    output, validating Phase 4, or explaining the required artifact shape.
-3. Read `./subagents/subtask-creator.md` and dispatch it with `JIRA_URL`.
-   The approved mutation scope is limited to Jira subtask create/reuse actions
-   and `docs/<TICKET_KEY>-tasks.md`; it is not a separate required input.
-4. Route on the returned `SUBTASKS` and `Validation` lines.
-5. Report a concise Phase 4 rollup: parent, `TICKET_KEY`, plan path, counts,
+4. Read `./subagents/subtask-creator.md` and dispatch it with `JIRA_URL` and
+   the approved mutation scope. The approved scope is limited to Jira subtask
+   create/reuse actions and `docs/<TICKET_KEY>-tasks.md`.
+5. Route on the returned `SUBTASKS` and `Validation` lines.
+6. Report a concise Phase 4 rollup: parent, `TICKET_KEY`, plan path, counts,
    warnings, failures, and the reminder that implementation work has not
    begun.
 
@@ -96,7 +107,8 @@ Jira uses one native subtask relationship path for this workflow.
 Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 
 1. The orchestrator derives `TICKET_KEY=PROJ-123` for reporting.
-2. The orchestrator dispatches `subtask-creator` with `JIRA_URL`.
+2. The orchestrator dispatches `subtask-creator` with `JIRA_URL` and approved
+   mutation scope.
 3. The subagent returns the contract summary with `SUBTASKS: PASS`,
    `Validation: PASS`, parent, plan path, counts, warnings, and failures.
 4. The orchestrator reports success, creation/link counts, warnings/failures

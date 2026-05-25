@@ -15,7 +15,14 @@ syntax or product behavior is uncertain.
 
 ## Execution Steps
 
-1. **Verify the parent ticket.**
+1. **Confirm approved mutation scope.**
+   - Proceed only when Jira subtask writes and the scoped update to
+     `docs/<TICKET_KEY>-tasks.md` are approved.
+   - If approval is unclear in a direct invocation, return
+     `SUBTASKS: BLOCKED` with `Validation: NOT_RUN` using the blocked-summary
+     placeholders in `./phase-4-io-contracts.md`.
+
+2. **Verify the parent ticket.**
    - Use the active Jira tool (or REST v3 issue GET) to fetch the parent
      issue. Capture the verified parent key, project key, status, and summary.
    - Use Jira's returned project key for later create-metadata checks; do not
@@ -25,7 +32,7 @@ syntax or product behavior is uncertain.
    - For exact endpoint paths or required query fields, see the **Jira REST
      v3 issue endpoints** entry in `./external-sources.md`.
 
-2. **Parse plan tasks and existing linkage.**
+3. **Parse plan tasks and existing linkage.**
    - Treat each `## Task <N>:` section as one Phase 4 task.
    - Parse the title plus these subsections when present: `Objective`,
      `Relevant requirements and context`, `Dependencies / prerequisites`,
@@ -39,7 +46,7 @@ syntax or product behavior is uncertain.
    - Detect existing `Jira Subtask: <KEY | Not Created>` lines and existing
      `## Jira Subtasks` table rows.
 
-3. **Verify existing Jira refs are safe to reuse.**
+4. **Verify existing Jira refs are safe to reuse.**
    - For each existing concrete Jira key, fetch the issue and confirm its
      parent is `TICKET_KEY` and its issue type is a configured subtask type.
    - Count verified matches as already linked.
@@ -47,7 +54,7 @@ syntax or product behavior is uncertain.
      `SUBTASKS: BLOCKED`. This preserves idempotency and prevents duplicate
      subtasks.
 
-4. **Verify Jira create metadata when new subtasks are needed.**
+5. **Verify Jira create metadata when new subtasks are needed.**
    - Run this step only when at least one task lacks verified traceability.
    - Use the active Jira tool or the current REST v3 project issue-type
      metadata endpoint for the verified project key to identify createable
@@ -65,7 +72,7 @@ syntax or product behavior is uncertain.
      metadata. If a required field cannot be supplied safely, return
      `SUBTASKS: FAIL` with `Validation: NOT_RUN`.
 
-5. **Prepare missing subtask payloads.**
+6. **Prepare missing subtask payloads.**
    - For each task without a verified Jira key, build the summary:
 
    ```text
@@ -82,7 +89,7 @@ syntax or product behavior is uncertain.
    - Use the current clarified plan content as written. The decisions log
      may guide interpretation, but older task text is not resurrected.
 
-6. **Create only missing subtasks.**
+7. **Create only missing subtasks.**
    - Create missing subtasks sequentially, one at a time.
    - Pass verified project key, selected subtask issue type, parent ticket key,
      summary, and the description body in the format the active Jira
@@ -96,8 +103,10 @@ syntax or product behavior is uncertain.
    - If one create fails after retry, record it in `Failures` and continue
      with remaining tasks when possible.
 
-7. **Update the plan file idempotently.**
+8. **Update the plan file idempotently.**
    - Update only `docs/<TICKET_KEY>-tasks.md`.
+   - Track local files edited during this run; the write ledger must contain
+     only `docs/<TICKET_KEY>-tasks.md`.
    - Follow `./phase-4-io-contracts.md` for exact artifact shape.
    - Ensure each task section contains exactly one
      `Jira Subtask: <KEY | Not Created>` line immediately after the task
@@ -110,18 +119,21 @@ syntax or product behavior is uncertain.
      Use `To Do` for newly created subtasks unless Jira reports a different
      status.
 
-8. **Validate and repair once.**
+9. **Validate and repair once.**
    - Re-read the updated plan file.
    - Validate against `./phase-4-io-contracts.md`.
    - Confirm a single `## Jira Subtasks` table, the fixed column order, one
      row per task, matching inline lines, and parent-safe Jira keys.
+   - Confirm the write ledger, and any available changed-file evidence, shows
+     only `docs/<TICKET_KEY>-tasks.md` was changed by this run. If another
+     path was changed, return `SUBTASKS: FAIL` with `Validation: FAIL`.
    - If a structural check fails, repair the local markdown once and re-run
      only the failed checks.
    - During repair, create no additional Jira issues.
    - If validation still fails, return `SUBTASKS: FAIL` with
      `Validation: FAIL`.
 
-9. **Summarize.**
+10. **Summarize.**
    - Use `SUBTASKS: PASS` when every task is linked and validation passed.
    - Use `SUBTASKS: WARN` when validation passed with non-fatal warnings or
      some tasks remain `Not Created` after attempted creates. In that case,
