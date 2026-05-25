@@ -126,9 +126,9 @@ Response policy:
    `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
 7. Dispatch `response-verifier`. On `VERIFY: NEEDS_CONTEXT`, repair only the
    named context gap. On `VERIFY: FAIL`, repair only the named `Fix target`.
-   Limit verification context and fix cycles to two, then return
-   `PR_COMMENT_RESPONSE: VERIFY_FAIL`. Route `VERIFY: ERROR` to
-   `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
+   Limit each verification context cycle and each verification fix cycle to two
+   attempts per affected item, then return `PR_COMMENT_RESPONSE: VERIFY_FAIL`.
+   Route `VERIFY: ERROR` to `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
 8. Confirm `OUTPUT_FILE` is known and safe, asking up to three focused output
    path questions if needed. Dispatch `response-report-writer` with the
    verified package, then read back the report to verify path, status blocks,

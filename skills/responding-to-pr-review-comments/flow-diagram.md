@@ -84,11 +84,11 @@ flowchart TD
   DRAFT_STATUS -->|PASS| VERIFY
 
   VERIFY[Dispatch response-verifier: verify evidence, tone, action intent, scope, target support, status blocks, report readiness, and posting safety] --> VERIFY_STATUS{VERIFY status?}
-  VERIFY_STATUS -->|NEEDS_CONTEXT| VERIFY_CONTEXT{Targeted verification context cycle fewer than 2?}
+  VERIFY_STATUS -->|NEEDS_CONTEXT| VERIFY_CONTEXT{Targeted verification context cycles fewer than 2 for this item?}
   VERIFY_CONTEXT -->|yes| VERIFY_LOOKUP[Repair only named collector, assessor, or drafter context gap]
   VERIFY_LOOKUP --> VERIFY
   VERIFY_CONTEXT -->|no| VERIFY_FAIL(["PR_COMMENT_RESPONSE: VERIFY_FAIL"])
-  VERIFY_STATUS -->|FAIL with fix target| VERIFY_REPAIR{Targeted verification fix cycles fewer than 2?}
+  VERIFY_STATUS -->|FAIL with fix target| VERIFY_REPAIR{Targeted verification fix cycles fewer than 2 for this item?}
   VERIFY_REPAIR -->|yes| REPAIR[Repair only the named collector, assessor, or drafter target]
   REPAIR --> VERIFY
   VERIFY_REPAIR -->|no| VERIFY_FAIL
