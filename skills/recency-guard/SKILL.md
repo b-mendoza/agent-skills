@@ -38,11 +38,14 @@ is not supplied, use the runtime's current date.
 | Draft prep | Inline | Draft ready for verification |
 | Recency audit | `recency-checker` | `RECENCY_CHECK` report |
 | Claim stress-test | `claim-verifier` | `CLAIM_REVIEW` report |
-| Completeness | Inline | Missing requested material fixed or acknowledged |
-| Clarity | Inline | Final user-visible answer |
+| Evidence integration | Inline | Source conflicts, overlapping reviews, and confidence wording resolved |
+| Completeness and final revalidation | Inline | Missing material fixed and new risky claims rerouted |
+| Final answer | Inline | Ready final answer, limited final answer, or material uncertainty final |
 
 Run phases sequentially. Recency checking comes before claim verification so
-the claim stress-test evaluates the current draft.
+the claim stress-test evaluates the current draft. `claim-verifier` owns
+selection of up to 3 decision-shaping claims; the orchestrator supplies the
+revised draft and applies only the returned report.
 
 ## Subagent Registry
 
@@ -64,7 +67,7 @@ only what the current step needs.
 | ---- | ---- |
 | Source tiers, evidence minimums, confidence labels | `./references/evidence-policy.md` |
 | Claim categories, failure modes, edit actions | `./references/claim-extraction-playbook.md` |
-| Repair cap, confidence-to-wording, source conflicts, finalization | `./references/repair-and-integration.md` |
+| Repair cap, ERROR retry, source conflicts, confidence-to-wording, final revalidation | `./references/repair-and-integration.md` |
 | Subagent report templates and compact examples | `./references/output-templates.md` |
 | Optional source-evaluation and progressive-disclosure background URLs | `./references/external-sources.md` |
 | Subagent runbook for the current dispatch | One file from `./subagents/` |
@@ -78,36 +81,60 @@ uncertainty only when it materially affects the answer.
 
 1. Prepare or inspect the draft. Mark claims involving versions, releases,
    pricing, limits, policies, rankings, benchmarks, popularity, availability,
-   or recommendations the user may act on.
+   or recommendations the user may act on. State the read-only role, authority,
+   trust model, and freshness scope. If the user asks for an external mutation
+   or high-impact action, route it to a separate approved workflow.
 2. Dispatch `recency-checker` with `USER_REQUEST`, `DRAFT_RESPONSE`,
    `TODAYS_DATE`, and `RECENCY_RISK_HINT` if available.
 3. Apply only the recency report's flagged edits. On `FAIL`, load
    `./references/repair-and-integration.md` and rerun only within its repair
-   cap.
+   cap: one initial review plus at most 2 targeted FAIL reruns. On `ERROR`,
+   retry once with the same focused request. On `TOOLS_MISSING`, keep only
+   supportable claims and qualify freshness or tool limits.
 4. Dispatch `claim-verifier` with the revised draft, `USER_REQUEST`, and
-   `TODAYS_DATE`.
+   `TODAYS_DATE`. The subagent selects up to 3 decision-shaping claims.
 5. Apply only the claim review's required edits. On `FAIL`, rerun only within
-   the same repair cap.
-6. Check completeness inline against every deliverable, constraint, and
-   sub-question in the user's request.
-7. Apply confidence-to-wording rules from
-   `./references/repair-and-integration.md`, put the bottom line early, and
-   keep qualifiers proportional to remaining uncertainty.
-8. If the final pass adds a new time-sensitive or decision-shaping
-   claim, rerun the relevant subagent before finalizing.
+   the same repair cap. On `ERROR`, retry once with the same revised draft. On
+   `TOOLS_MISSING`, qualify claims by evidence limits and freshness scope.
+6. Integrate evidence with `./references/repair-and-integration.md`: resolve
+   source conflicts, apply the stricter result where recency and claim reviews
+   overlap, and convert confidence labels into final wording.
+7. Check material uncertainty and completeness inline against every deliverable,
+   constraint, and sub-question in the user's request. Add missing qualifiers,
+   scope, or unresolved uncertainty before finalization.
+8. If the final wording adds a new time-sensitive or decision-shaping claim,
+   rerun the relevant subagent before finalizing when repair capacity remains.
+   If no relevant rerun remains, produce a material uncertainty final.
+9. Return one user-visible terminal outcome: `Ready final answer`, `Limited
+   final answer`, or `Material uncertainty final`. For external mutation or
+   high-impact action requests, return `Out-of-scope route` to a separate
+   approved workflow. Do not expose a verification report unless the user asks
+   for verification details.
 
 ## Output Contract
 
 Return the user-visible answer, not a verification report. Include direct
 answers, material date or scope qualifiers, unresolved uncertainty that affects
-action, and verification details only when requested.
+action, and verification details only when requested. `Ready final answer` has
+no material evidence, tool, or freshness limit. `Limited final answer` is still
+useful but names the date, scope, and evidence or tool limits. `Material
+uncertainty final` is conservative and explicitly names unresolved uncertainty
+that affects action. `Out-of-scope route` sends external mutation and
+high-impact action requests to a separate approved workflow.
 
 ## Validation
 
 - `SKILL.md` is the routing layer; detailed rules stay in one-hop references.
 - Subagent files are read only for the current dispatch.
 - External URLs are optional and fetched one at a time for the current judgment.
-- Each repair cycle changes only flagged claims and stops at the repair cap.
+- `claim-verifier` selects up to 3 decision-shaping claims from the revised
+  draft.
+- Each repair cycle changes only flagged claims and stops at the repair cap:
+  one initial review plus at most 2 targeted FAIL reruns per subagent.
+- Each subagent gets at most one ERROR retry before the flow returns a material
+  uncertainty final.
+- Final wording that introduces a new time-sensitive or decision-shaping claim
+  is revalidated by the relevant subagent when repair capacity remains.
 
 ## Example
 
