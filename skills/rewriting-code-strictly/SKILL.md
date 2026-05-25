@@ -13,7 +13,9 @@ The orchestrator does three things:
 - **Decide:** pick the next phase, ask one targeted question, or stop safely.
 - **Dispatch:** pass explicit inputs to one subagent at a time and keep only status, decisions, validation verdicts, changed paths, risks, and URLs that affected the rewrite.
 
-Subagents inspect raw code, plan, fetch external websites only when a concrete decision depends on them, edit files, run checks, and review the diff.
+Subagents inspect raw code, plan, fetch external websites only when a concrete
+decision depends on them and the source is approved, edit files, run approved
+checks, and review the diff.
 
 ## Inputs
 
@@ -58,8 +60,8 @@ For `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, or `ERROR`, return the status
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
 | `strict-baseline-mapper` | `./subagents/strict-baseline-mapper.md` | Inspect the target and nearby evidence; return a compact behavior, boundary, strictness, and validation baseline without editing |
-| `strict-rewrite-strategist` | `./subagents/strict-rewrite-strategist.md` | Load the target language playbook, fetch only decision-changing external sources, and propose the minimal strict rewrite plan |
-| `strict-rewrite-implementer` | `./subagents/strict-rewrite-implementer.md` | Apply the approved rewrite, preserve behavior, and run the relevant existing checks |
+| `strict-rewrite-strategist` | `./subagents/strict-rewrite-strategist.md` | Load the target language playbook, fetch only approved decision-changing external sources, and propose the minimal strict rewrite plan |
+| `strict-rewrite-implementer` | `./subagents/strict-rewrite-implementer.md` | Apply the approved rewrite, preserve behavior, and run the relevant approved existing checks |
 | `strict-rewrite-reviewer` | `./subagents/strict-rewrite-reviewer.md` | Review the diff for behavior drift, strictness gaps, boundary-validation mistakes, scope creep, and validation quality |
 
 Read a subagent file only when dispatching that specific subagent.
@@ -75,7 +77,7 @@ use paths relative to their own locations.
 | Python rewrite defaults and validation commands | `./references/python-playbook.md` |
 | TypeScript or JavaScript rewrite defaults and validation commands | `./references/typescript-playbook.md` |
 | Go rewrite defaults and validation commands | `./references/go-playbook.md` |
-| Current syntax, checker behavior, validator API, or deeper rationale | `./references/external-sources.md`, then fetch the smallest relevant URL |
+| Current syntax, checker behavior, validator API, or deeper rationale | `./references/external-sources.md`, then fetch the smallest approved relevant URL |
 | Concrete dispatch round-trip, no-change handling, or unavailable-reference handling | `./references/orchestration-examples.md` |
 | Subagent specifics (instructions, output format, escalation) | The matching registry file under `./subagents/` at dispatch time |
 
@@ -98,19 +100,19 @@ Use existing project settings as the authority. If the project already enforces 
 
 1. **Prepare the dispatch packet.** Normalize `TARGET_CODE`, `LANGUAGE` if obvious, `USER_GOAL`, `VALIDATION_COMMAND`, `SCOPE_LIMITS`, `REFERENCE_NEED`. Ask one targeted question only if the target, language, or scope is too ambiguous to dispatch safely.
 
-2. **Dispatch `strict-baseline-mapper`.** Pass the dispatch packet. Keep only its concise report. On `NEEDS_CLARIFICATION`, ask the smallest unblocking question. On `ERROR`, stop and report the recovery. On `NO_CHANGE_CANDIDATE`, continue; the strategist makes the final stop/proceed decision.
+2. **Dispatch `strict-baseline-mapper`.** Pass the dispatch packet. Keep only its concise report. Route only on `STRICT_BASELINE: PASS | NO_CHANGE_CANDIDATE | NEEDS_CLARIFICATION | ERROR`. On `PASS`, continue to strategy. On `NO_CHANGE_CANDIDATE`, record the evidence and continue; the strategist makes the final stop/proceed decision. On `NEEDS_CLARIFICATION`, ask the smallest unblocking question. On `ERROR`, stop and report the recovery.
 
-3. **Dispatch `strict-rewrite-strategist`.** Pass the dispatch packet, the baseline report, the Progressive Loading Map row for the language, and the optional source-map row. Keep only the strategy fields: status, playbook path, static typing decisions, runtime validation decisions, edit plan, non-goals, validation plan, references fetched or unavailable. On `NO_CHANGE`, stop without editing and report why no rewrite is justified.
+3. **Dispatch `strict-rewrite-strategist`.** Pass the dispatch packet, the baseline report, the Progressive Loading Map row for the language, and the optional source-map row. Keep only the strategy fields: status, playbook path, static typing decisions, runtime validation decisions, edit plan, non-goals, validation plan, references fetched or unavailable. Route only on `STRICT_STRATEGY: PASS | NO_CHANGE | NEEDS_CLARIFICATION | ERROR`. On `NO_CHANGE`, stop without editing and report why no rewrite is justified. On `NEEDS_CLARIFICATION`, ask one strategy question for the missing decision, external fetch approval, local source, or unavailable-source disposition.
 
-4. **Dispatch `strict-rewrite-implementer`.** Pass the dispatch packet, the baseline report, the strategy report, and `REVIEW_FIXES` only during a targeted repair cycle. Keep only the implementation fields: status, changed files, patch summary, behavior-preservation notes, validation result, deviations, reviewer focus. On `BLOCKED` or `ERROR`, stop and report the reason, files touched before the block, and the smallest recovery action.
+4. **Dispatch `strict-rewrite-implementer`.** Pass the dispatch packet, the baseline report, the strategy report, and `REVIEW_FIXES` only during a targeted repair cycle. Keep only the implementation fields: status, changed files, patch summary, behavior-preservation notes, validation result, deviations, reviewer focus. Route only on `STRICT_IMPLEMENTATION: PASS | PASS_WITH_WARNINGS | BLOCKED | ERROR`. On `PASS` or `PASS_WITH_WARNINGS`, continue to review; warnings about missing, declined, unavailable, or pre-existing-failing validation become reviewer evidence. On `BLOCKED` or `ERROR`, stop and report the reason, files touched before the block, and the smallest recovery action.
 
-5. **Dispatch `strict-rewrite-reviewer`.** Pass the dispatch packet, the baseline, the strategy, and the implementation report. On `PASS`, proceed to handoff. On `FAIL`, re-dispatch the implementer with only the required fixes, then rerun the reviewer. Use at most two targeted fix cycles, then stop and report unresolved findings.
+5. **Dispatch `strict-rewrite-reviewer`.** Pass the dispatch packet, the baseline, the strategy, and the implementation report. Route only on `STRICT_REVIEW: PASS | FAIL | ERROR`. On `PASS`, proceed to handoff. On `FAIL`, re-dispatch the implementer only when the reviewer supplied actionable targeted fixes, and pass only those fixes. Use at most two targeted fix cycles, then stop as `BLOCKED` with unresolved findings, attempted repairs, and the safest next action. If the reviewer returns `FAIL` without actionable fixes, stop as `BLOCKED`.
 
 6. **Return the handoff.** Use the Output Contract. Keep the response focused on what changed, why the code is stricter and safer, which command validated the result, which references materially influenced decisions, and which risks remain.
 
 ## Validation Loop Summary
 
-`map → plan → change → check → review → fix → re-check`. Passing checks are evidence, not proof — the reviewer covers behavior drift, validation placement, dependency scope, and type-system complexity that automated checks may miss.
+`map → plan → change/check → review → targeted fix → re-check`. The implementer owns approved validation execution and records unavailable or missing validation as warning evidence. Passing checks are evidence, not proof — the reviewer covers behavior drift, validation placement, dependency scope, validation quality, and type-system complexity that automated checks may miss.
 
 ## Example
 
@@ -119,6 +121,6 @@ Input:
 - `TARGET_CODE`: `src/payments/webhook.ts`
 - `USER_GOAL`: `"remove unsafe any and validate the webhook payload"`
 
-The mapper identifies TypeScript and an untrusted webhook body. The strategist reads `./references/typescript-playbook.md`, loads `./references/external-sources.md` only because the validator API matters, fetches the smallest Zod URL, and proposes a minimal plan. The implementer changes the boundary from `any` to `unknown`, validates once at the boundary, and runs the existing checks. The reviewer confirms behavior, scope, validation placement, and strictness before handoff.
+The mapper identifies TypeScript and an untrusted webhook body. The strategist reads `./references/typescript-playbook.md`, loads `./references/external-sources.md` only because the validator API matters, fetches the smallest approved Zod URL, and proposes a minimal plan. The implementer changes the boundary from `any` to `unknown`, validates once at the boundary, and runs approved existing checks. The reviewer confirms behavior, scope, validation placement, and strictness before handoff.
 
 Load `./references/orchestration-examples.md` for full dispatch round-trips, no-change handling, and unavailable-reference handling.
