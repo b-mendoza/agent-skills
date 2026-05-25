@@ -17,10 +17,9 @@ syntax or product behavior is uncertain.
 
 1. **Verify the parent ticket.**
    - Use the active Jira tool (or REST v3 issue GET) to fetch the parent
-     issue. Capture the verified parent key, project key, status, and the
-     subtask issue type configured for the project.
-   - Use Jira's returned project key and subtask issue type for create
-     requests; do not infer them from `JIRA_URL` alone.
+     issue. Capture the verified parent key, project key, status, and summary.
+   - Use Jira's returned project key for later create-metadata checks; do not
+     infer it from `JIRA_URL` alone.
    - If the parent cannot be fetched, Jira auth fails, or no Jira-capable
      tools are available, return `SUBTASKS: FAIL` with `Validation: NOT_RUN`.
    - For exact endpoint paths or required query fields, see the **Jira REST
@@ -48,7 +47,25 @@ syntax or product behavior is uncertain.
      `SUBTASKS: BLOCKED`. This preserves idempotency and prevents duplicate
      subtasks.
 
-4. **Prepare missing subtask payloads.**
+4. **Verify Jira create metadata when new subtasks are needed.**
+   - Run this step only when at least one task lacks verified traceability.
+   - Use the active Jira tool or the current REST v3 project issue-type
+     metadata endpoint for the verified project key to identify createable
+     issue types whose metadata marks them as subtasks.
+   - If no createable subtask issue type exists, or the project reports that
+     subtasks are disabled, return `SUBTASKS: FAIL` with `Validation: NOT_RUN`.
+   - If multiple createable subtask issue types exist and the plan, caller, or
+     local configuration does not provide a deterministic approved choice,
+     return `SUBTASKS: BLOCKED` with `Validation: NOT_RUN`.
+   - If multiple createable subtask issue types exist and a deterministic
+     configured or approved choice exists, use it and record a warning.
+   - Fetch create-field metadata for the selected subtask issue type with the
+     current project issue-type field metadata endpoint. Required fields must
+     be satisfiable from the plan, parent response, default values, or
+     metadata. If a required field cannot be supplied safely, return
+     `SUBTASKS: FAIL` with `Validation: NOT_RUN`.
+
+5. **Prepare missing subtask payloads.**
    - For each task without a verified Jira key, build the summary:
 
    ```text
@@ -65,9 +82,9 @@ syntax or product behavior is uncertain.
    - Use the current clarified plan content as written. The decisions log
      may guide interpretation, but older task text is not resurrected.
 
-5. **Create only missing subtasks.**
+6. **Create only missing subtasks.**
    - Create missing subtasks sequentially, one at a time.
-   - Pass project key, verified subtask issue type, parent ticket key,
+   - Pass verified project key, selected subtask issue type, parent ticket key,
      summary, and the description body in the format the active Jira
      transport accepts.
    - For the exact issue-create payload shape and required scopes, see the
@@ -79,7 +96,7 @@ syntax or product behavior is uncertain.
    - If one create fails after retry, record it in `Failures` and continue
      with remaining tasks when possible.
 
-6. **Update the plan file idempotently.**
+7. **Update the plan file idempotently.**
    - Update only `docs/<TICKET_KEY>-tasks.md`.
    - Follow `./phase-4-io-contracts.md` for exact artifact shape.
    - Ensure each task section contains exactly one
@@ -93,7 +110,7 @@ syntax or product behavior is uncertain.
      Use `To Do` for newly created subtasks unless Jira reports a different
      status.
 
-7. **Validate and repair once.**
+8. **Validate and repair once.**
    - Re-read the updated plan file.
    - Validate against `./phase-4-io-contracts.md`.
    - Confirm a single `## Jira Subtasks` table, the fixed column order, one
@@ -104,9 +121,11 @@ syntax or product behavior is uncertain.
    - If validation still fails, return `SUBTASKS: FAIL` with
      `Validation: FAIL`.
 
-8. **Summarize.**
+9. **Summarize.**
    - Use `SUBTASKS: PASS` when every task is linked and validation passed.
    - Use `SUBTASKS: WARN` when validation passed with non-fatal warnings or
-     some tasks remain `Not Created` after attempted creates.
+     some tasks remain `Not Created` after attempted creates. In that case,
+     state that linked tasks are usable but `Not Created` rows need manual
+     resolution or rerun before those tasks are selected for execution.
    - Include every contract-required summary line and every parsed task row
      when the plan file was updated.

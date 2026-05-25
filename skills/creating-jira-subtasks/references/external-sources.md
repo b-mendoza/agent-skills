@@ -31,7 +31,7 @@ confirm locally.
 
 | Need | Source URL |
 | ---- | ---------- |
-| Jira Cloud REST v3 issue endpoints (create, get, create metadata, subtask requirements) | https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/ |
+| Jira Cloud REST v3 issue endpoints (create, get, current create-metadata issue-type and field endpoints, subtask requirements) | https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/ |
 | Atlassian Document Format (ADF) structure for rich-text fields | https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/ |
 | Jira Cloud subtask concepts: enabling/disabling subtasks and subtask issue types | https://support.atlassian.com/jira-cloud-administration/docs/configure-sub-tasks/ |
 | Creating Jira issues and subtasks from the UI (concept-level) | https://support.atlassian.com/jira-software-cloud/docs/create-an-issue-and-a-sub-task/ |
@@ -51,6 +51,9 @@ Jira subtask execution.
 
 - **Atlassian developer docs (REST v3)** are authoritative for endpoint
   paths, scopes, status codes, request bodies, and field-format requirements.
+  Prefer the current project issue-type and create-field metadata endpoints
+  over older aggregate create-metadata shortcuts when checking subtask types
+  and required create fields.
   Use them when the playbook says "create the subtask" but the exact
   endpoint, payload field, or required scope is uncertain.
 - **ADF docs** are authoritative for the JSON shape required when a Jira
@@ -71,11 +74,13 @@ workflow still needs only these stable operations:
 
 | Operation | Required result |
 | --------- | --------------- |
-| Verify parent ticket | Confirm the parent exists; capture verified parent key, project key, status, summary, and available subtask issue type |
+| Verify parent ticket | Confirm the parent exists; capture verified parent key, project key, status, and summary |
 | Verify existing subtask key | Confirm the issue exists, belongs to the parent, and uses a configured subtask issue type |
+| Verify create metadata | Confirm at least one createable subtask issue type for the verified project; block when multiple require manual selection |
+| Check required create fields | Confirm selected subtask issue type fields can be satisfied from the plan, parent, defaults, or metadata |
 | Create missing subtask | Send project, parent, subtask issue type, summary, and description in the format accepted by the active transport |
 | Preserve description semantics | Keep the local section order from `../subagents/subtask-creator-templates.md` in plain text, wiki markup, or ADF |
-| Diagnose configuration errors | Treat disabled subtasks or invalid subtask issue types as configuration failures to surface in `Failures:` |
+| Diagnose configuration errors | Treat disabled subtasks, absent createable subtask issue types, invalid subtask issue types, or unsatisfied required fields as configuration failures to surface in `Failures:` |
 
 If Jira rejects plain text or wiki markup for rich-text fields and the ADF docs
 cannot be fetched, build the smallest valid document-like structure supported by

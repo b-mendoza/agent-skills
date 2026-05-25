@@ -14,6 +14,11 @@ The subagent owns plan parsing, Jira operations, plan-file edits, and
 validation. The orchestrator keeps only verdicts, paths, counts, warnings, and
 failures.
 
+Run this skill only after the caller or user has approved Jira subtask writes
+and the scoped update to `docs/<TICKET_KEY>-tasks.md`. If invoked directly and
+approval is unclear, ask once for that approval; if approval is absent or
+declined, return `SUBTASKS: BLOCKED` with `Validation: NOT_RUN`.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -52,10 +57,13 @@ Read a subagent definition only when dispatching that subagent.
 
 ## Workflow
 
-1. Confirm `JIRA_URL` is present and derive `TICKET_KEY` for local reporting.
+1. Confirm `JIRA_URL` is present, derive `TICKET_KEY` for local reporting, and
+   confirm the run is approved for Jira writes plus the scoped plan-file update.
 2. Read `./references/phase-4-io-contracts.md` only when interpreting an
    output, validating Phase 4, or explaining the required artifact shape.
 3. Read `./subagents/subtask-creator.md` and dispatch it with `JIRA_URL`.
+   The approved mutation scope is limited to Jira subtask create/reuse actions
+   and `docs/<TICKET_KEY>-tasks.md`; it is not a separate required input.
 4. Route on the returned `SUBTASKS` and `Validation` lines.
 5. Report a concise Phase 4 rollup: parent, `TICKET_KEY`, plan path, counts,
    warnings, failures, and the reminder that implementation work has not
@@ -66,9 +74,9 @@ Read a subagent definition only when dispatching that subagent.
 | Result | Orchestrator action |
 | ------ | ------------------- |
 | `SUBTASKS: PASS` with `Validation: PASS` | Report success and proceed |
-| `SUBTASKS: WARN` with `Validation: PASS` | Report usable output with visible warnings or failed task links |
-| `SUBTASKS: BLOCKED` | Stop and surface the plan-shape or unsafe-linkage issue |
-| `SUBTASKS: FAIL` | Stop and surface the fatal Jira or validation failure |
+| `SUBTASKS: WARN` with `Validation: PASS` | Report usable linked output, visible warnings, and any `Not Created` rows that require manual resolution before that task can execute |
+| `SUBTASKS: BLOCKED` | Stop and surface missing approval, unsafe plan shape, unsafe linkage, or manual subtask-type selection |
+| `SUBTASKS: FAIL` | Stop and surface the fatal Jira, configuration, required-field, or validation failure |
 | `SUBTASKS: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or local contract failure |
 
 Treat `Validation: NOT_RUN` as incomplete Phase 4 output even when the

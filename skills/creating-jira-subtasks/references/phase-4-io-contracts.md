@@ -27,6 +27,11 @@ Derive stable identifiers from `JIRA_URL`:
 - **Project:** prefix before the dash in the ticket key
 - **TICKET_KEY:** full path segment, such as `PROJ-123`
 
+Mutation approval is a precondition: Jira subtask writes and the scoped update
+to `docs/<TICKET_KEY>-tasks.md` must already be approved by the caller or user.
+If approval is unclear in a direct invocation, return `SUBTASKS: BLOCKED` with
+`Validation: NOT_RUN` rather than creating or editing anything.
+
 Expected normal-workflow plan shape:
 
 | Expected section / element | Why it matters |
@@ -43,6 +48,16 @@ is parseable but lacks `## Decisions Log`, continue with a warning.
 Jira Phase 4 uses the project's native subtask relationship. A concrete task
 is linked when the plan records a Jira subtask key whose parent is
 `TICKET_KEY`. Tasks that could not be created are recorded as `Not Created`.
+
+When a task needs a new subtask, verify the project's current create metadata
+before writing:
+
+| Runtime condition | Status |
+| ----------------- | ------ |
+| No createable subtask issue type, or subtasks disabled for the project | `SUBTASKS: FAIL` with `Validation: NOT_RUN` |
+| Multiple createable subtask issue types and no deterministic configured or approved choice | `SUBTASKS: BLOCKED` with `Validation: NOT_RUN` |
+| Multiple createable subtask issue types with a deterministic configured or approved choice | Continue and record a warning |
+| Required create fields cannot be satisfied from the plan, parent, defaults, or metadata | `SUBTASKS: FAIL` with `Validation: NOT_RUN` |
 
 The Jira summary does not include GitHub-style `Write model:` or `Capability:`
 lines.
@@ -131,13 +146,18 @@ explicit `Outcome`, such as `Create failed`.
 | Status | Meaning |
 | ------ | ------- |
 | `PASS` | Every task is linked to a valid Jira subtask and validation passed |
-| `WARN` | Validation passed with non-fatal issues, such as missing decisions log or failed individual creates |
-| `BLOCKED` | Plan shape or existing linkage is unsafe to proceed |
-| `FAIL` | Parent lookup, auth, Jira tooling, all creates, or post-write validation failed |
+| `WARN` | Validation passed with non-fatal issues, such as missing decisions log, deterministic subtask-type choice warnings, or failed individual creates recorded as `Not Created` |
+| `BLOCKED` | Approval, plan shape, existing linkage, or ambiguous subtask-type selection is unsafe to proceed |
+| `FAIL` | Parent lookup, auth, Jira tooling, no createable subtask type, unsatisfied required fields, all creates, or post-write validation failed |
 | `ERROR` | Unexpected tool or environment failure interrupted the run |
 
 Use `Validation: NOT_RUN` only when no plan-file update or post-write
 validation could occur.
+
+`SUBTASKS: WARN` with `Validation: PASS` means the handoff artifact is
+structurally valid. Linked tasks are usable, but any task whose row says
+`Not Created` needs manual resolution or a successful rerun before that task is
+selected for execution.
 
 ## Validation Checklist
 
@@ -146,3 +166,6 @@ validation could occur.
 - The table has one row per parsed task.
 - Every concrete Jira key in the plan exists and belongs to `TICKET_KEY`.
 - Every workflow-table value has a matching per-task `Jira Subtask:` line.
+- `Not Created` values are structurally valid only when they appear in both the
+  workflow table and the matching per-task inline line, and the final status is
+  `SUBTASKS: WARN`.

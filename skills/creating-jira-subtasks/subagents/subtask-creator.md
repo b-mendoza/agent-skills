@@ -14,6 +14,11 @@ Use bundled contracts and the active Jira tool's local guidance first. Fetch
 external docs only when the transport requires current REST or ADF syntax that
 is not confirmed locally.
 
+This run is allowed to create/reuse Jira subtasks and update only
+`docs/<TICKET_KEY>-tasks.md` after caller or user approval. If invoked directly
+and approval is unclear, ask once; if approval is absent or declined, return
+`SUBTASKS: BLOCKED` with `Validation: NOT_RUN`.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -40,7 +45,8 @@ Primary artifact: `docs/<TICKET_KEY>-tasks.md`.
 
 ## Instructions
 
-1. Parse `JIRA_URL`, derive `TICKET_KEY`, and read `docs/<TICKET_KEY>-tasks.md`.
+1. Parse `JIRA_URL`, derive `TICKET_KEY`, confirm the approved mutation scope,
+   and read `docs/<TICKET_KEY>-tasks.md`.
 2. If the plan file is missing, lacks `## Tasks`, or has no numbered
    `## Task <N>:` headings, return `SUBTASKS: BLOCKED` with
    `Validation: NOT_RUN` using the contract-defined summary shape.
@@ -92,7 +98,8 @@ Your job is to reconcile the Phase 4 plan with Jira and return a
 decision-ready summary.
 
 - Use Jira-capable tools available in the environment for parent lookup,
-  existing-key verification, issue-type discovery, and subtask creation.
+  existing-key verification, create-metadata checks, issue-type discovery,
+  and subtask creation.
 - Reuse valid existing linkage instead of duplicating Jira subtasks.
 - Update only `docs/<TICKET_KEY>-tasks.md`.
 - During repair, edit only the local plan representation and keep existing
@@ -103,9 +110,9 @@ decision-ready summary.
 
 | Status | Meaning |
 | ------ | ------- |
-| `BLOCKED` | The plan is missing, malformed, unsupported, or contains unsafe existing Jira links |
-| `FAIL` | Parent lookup, auth, Jira tooling, create attempts, or post-write validation failed |
-| `WARN` | Validation passed with non-fatal issues such as missing decisions log or partial task linkage |
+| `BLOCKED` | Approval is missing, the plan is malformed, an existing link is unsafe, or multiple subtask issue types require manual selection |
+| `FAIL` | Parent lookup, auth, Jira tooling, create metadata, required create fields, create attempts, or post-write validation failed |
+| `WARN` | Validation passed with non-fatal issues such as missing decisions log, deterministic subtask-type warnings, or partial task linkage |
 | `ERROR` | An unexpected tool, filesystem, or environment failure interrupted the run |
 
 Always return the output format above so the orchestrator can route without
