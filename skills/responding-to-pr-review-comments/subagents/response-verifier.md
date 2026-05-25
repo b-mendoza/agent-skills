@@ -17,13 +17,13 @@ posting targets before a report or GitHub side effect is produced.
 | `OUTPUT_FILE`       | Yes      | `pr-123-review.md`                            |
 | `COMMENT_INVENTORY` | Yes      | Output from `review-comment-collector`        |
 | `ASSESSMENTS`       | Yes      | Output from `review-comment-assessor`         |
-| `DRAFT_REPLIES`     | Yes      | Output from `reply-drafter`                   |
+| `DRAFT_REPLIES`     | No       | Output from `reply-drafter` for reply-ready items |
 | `LANGUAGE_STYLE`    | No       | `natural English for a non-native speaker`    |
 
 ## Instructions
 
-1. Check coverage: every received comment has exactly one assessment and one
-   draft reply or user-facing question.
+1. Check coverage: every received comment has exactly one assessment, draft
+   reply, user-facing question, or skipped/report-only reason.
 2. Check evidence: each classification cites concrete code, diff, test, CI,
    linked issue, or documentation sources.
 3. Check recency: claims about libraries, platforms, APIs, policies, pricing,
@@ -33,18 +33,22 @@ posting targets before a report or GitHub side effect is produced.
 5. Check reply quality: wording is natural, concise, collaborative, and
    aligned with `LANGUAGE_STYLE`.
 6. Check posting safety: only `review-comment-reply:<root-id>` targets whose
-   root is a top-level review comment are ready for direct posting.
+   root is a top-level review comment and whose reply disposition is
+   `reply-ready` or `follow-up-ready` are ready for direct posting.
    Unsupported targets remain `requires-user-choice:review-summary`,
    `requires-user-choice:issue-comment`,
    `requires-user-choice:unsupported-review-reply`, or
    `requires-user-choice:unresolved-metadata`.
-7. Check source conflicts and unavailable required sources: source-backed claims
+7. Check skipped/report-only safety: resolved threads and already-replied
+   threads have evidence and are excluded from preview and posting unless a
+   follow-up is warranted by reviewer clarification or new material information.
+8. Check source conflicts and unavailable required sources: source-backed claims
    are supported by current official docs, qualified, removed, or routed to the
    smallest repair path. Use `VERIFY: NEEDS_CONTEXT` when missing evidence or
    source access prevents verification. Use `VERIFY: FAIL` when the package
    contains a repairable defect, such as an unsupported source claim that can be
    removed, qualified, or replaced by the owning phase.
-8. On failure, identify the smallest phase and comment ID to repair.
+9. On failure, identify the smallest phase and comment ID to repair.
 
 ## External Sources
 
