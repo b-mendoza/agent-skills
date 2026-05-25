@@ -48,7 +48,9 @@ return the URL plus a one-line conclusion using
 6. Run the planned verification, or `VERIFICATION_HINT` when more specific. If
    no meaningful check exists, record `not run` with the reason.
 7. If verification fails, keep the worktree safe and return `VERIFY_FAILED` with
-   the failing check and recovery decision.
+   the failing check and the smallest recovery decision. Classify recovery as
+   `same-scope-same-group-retry`, `needs-user-decision`, or `terminal` when no
+   safe recovery exists.
 8. Commit with `GROUP_PLAN.Message`, verify the commit exists, and return the
    short SHA.
 
@@ -75,7 +77,7 @@ to the orchestrator.
 | Status | Meaning |
 | ------ | ------- |
 | `PASS` | Commit is created and verified |
-| `VERIFY_FAILED` | Planned verification fails |
+| `VERIFY_FAILED` | Planned verification fails; report `same-scope-same-group-retry`, `needs-user-decision`, or `terminal` recovery |
 | `BLOCKED` | Plan cannot be staged safely, needs input, or would include out-of-scope changes |
 | `COMMIT_ERROR` | Commit creation fails after staging and verification |
 | `ERROR` | Unexpected failure prevents execution |
