@@ -64,54 +64,42 @@ workflow. The remaining skills are standalone utilities.
 
 ### Utility skills
 
-- [`generate-handoff-document`](skills/generate-handoff-document/SKILL.md)
-  builds a handoff document for a session that needs to be resumed later.
-- [`validate-implementation-plan`](skills/validate-implementation-plan/SKILL.md)
-  reviews implementation plans for missing requirements, weak assumptions, and
-  unnecessary work.
-- [`recency-guard`](skills/recency-guard/SKILL.md) checks answers that depend on
-  current facts.
 - [`analyzing-recent-project-state`](skills/analyzing-recent-project-state/SKILL.md)
-  explains recent repository state from Git evidence, risks, validation gaps,
-  and practical next actions.
+  summarizes recent repository changes, risks, validation gaps, and next steps.
+- [`committing-scoped-changes`](skills/committing-scoped-changes/SKILL.md)
+  creates reviewable commits from explicit file or folder paths.
+- [`generate-flow-diagram`](skills/generate-flow-diagram/SKILL.md) creates or
+  refines Markdown and Mermaid workflow diagrams.
+- [`generate-handoff-document`](skills/generate-handoff-document/SKILL.md)
+  writes a handoff document for work that needs to be resumed later.
+- [`improve-skill-definition`](skills/improve-skill-definition/SKILL.md)
+  improves an existing skill package when inspection finds a material issue.
+- [`improving-test-suites`](skills/improving-test-suites/SKILL.md) improves test
+  files with focused, behavior-oriented test coverage.
 - [`pr-creator`](skills/pr-creator/SKILL.md) prepares and opens a pull request
   from the current branch.
-- [`committing-scoped-changes`](skills/committing-scoped-changes/SKILL.md)
-  creates reviewable atomic commits from explicit file or folder paths while
-  loading commit guidance and context only as needed.
-- [`review-pull-request`](skills/review-pull-request/SKILL.md) reviews one PR
-  through progressively disclosed subagents, external review resources, and a
-  confirmation-gated posting path.
-- [`responding-to-pr-review-comments`](skills/responding-to-pr-review-comments/SKILL.md)
-  assesses received PR review comments, drafts replies, plans actions, and keeps
-  posting confirmation-gated.
 - [`prompt-structurer`](skills/prompt-structurer/SKILL.md) turns prose prompts
   into structured XML prompts.
-- [`generate-flow-diagram`](skills/generate-flow-diagram/SKILL.md) creates
-  or refines Markdown plus Mermaid diagrams for AI-agent workflows with human
-  gates and quality checks.
-- [`refine-task`](skills/refine-task/SKILL.md) reviews Jira tickets, Jira epics,
-  GitHub issues, and GitHub epic-style parent issues for readiness, drafts the
-  single allowed refinement comment, and posts it only after confirmation without
-  mutating tracker content or metadata.
-- [`review-software-engineer-cv`](skills/review-software-engineer-cv/SKILL.md)
-  reviews and tailors a software engineer CV against job postings with realistic,
-  evidence-backed recommendations.
+- [`recency-guard`](skills/recency-guard/SKILL.md) checks answers that depend on
+  current external facts.
 - [`refactoring-code`](skills/refactoring-code/SKILL.md) refactors existing code
-  through behavior mapping, minimal strategy, implementation, and review
-  subagents while preserving observable behavior.
-- [`improving-test-suites`](skills/improving-test-suites/SKILL.md) turns test
-  files into minimal, high-signal behavior-focused harnesses with just-in-time
-  testing and security references.
+  while preserving observable behavior.
+- [`refine-task`](skills/refine-task/SKILL.md) reviews Jira tickets, Jira epics,
+  GitHub issues, and GitHub parent issues for readiness.
+- [`responding-to-pr-review-comments`](skills/responding-to-pr-review-comments/SKILL.md)
+  assesses received PR review comments and drafts responses.
+- [`review-pull-request`](skills/review-pull-request/SKILL.md) reviews one pull
+  request through a confirmation-gated workflow.
+- [`review-software-engineer-cv`](skills/review-software-engineer-cv/SKILL.md)
+  reviews and tailors a software engineer CV against job postings.
 - [`rewriting-code-strictly`](skills/rewriting-code-strictly/SKILL.md) rewrites
-  Python, TypeScript/JavaScript, and Go code through baseline mapping, strict
-  rewrite strategy, implementation, and review subagents with per-language
-  playbooks.
-- [`workflow-skill-architect`](skills/workflow-skill-architect/SKILL.md) helps
-  turn a repeatable process into a reusable skill or set of subagents.
-- [`improve-skill-definition`](skills/improve-skill-definition/SKILL.md)
-  improves an existing skill package only when inspection finds a material issue
-  worth fixing.
+  Python, TypeScript, JavaScript, and Go code with stricter types and boundary
+  handling.
+- [`validate-implementation-plan`](skills/validate-implementation-plan/SKILL.md)
+  audits implementation plans for requirements coverage, avoidable complexity,
+  weak assumptions, and evidence gaps.
+- [`workflow-skill-architect`](skills/workflow-skill-architect/SKILL.md) turns a
+  repeatable process into a reusable skill package.
 
 ## Third party skills kept in the repo
 
