@@ -76,6 +76,10 @@ workflow. The remaining skills are standalone utilities.
   improves an existing skill package when inspection finds a material issue.
 - [`improving-test-suites`](skills/improving-test-suites/SKILL.md) improves test
   files with focused, behavior-oriented test coverage.
+- [`planning-codebase-restructuring`](skills/planning-codebase-restructuring/SKILL.md)
+  analyzes repository architecture and produces an evidence-backed
+  restructuring plan aligned with Domain-Driven Design and Screaming
+  Architecture.
 - [`pr-creator`](skills/pr-creator/SKILL.md) prepares and opens a pull request
   from the current branch.
 - [`prompt-structurer`](skills/prompt-structurer/SKILL.md) turns prose prompts
