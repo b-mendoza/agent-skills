@@ -128,10 +128,11 @@ The repository currently has 17 pinned skill packages under
 
 ## Notes for editing
 
-- Skills in this repo need to work in both OpenCode and Claude Code, so keep the
-  format simple and portable.
+- Keep skills portable across OpenCode and Claude Code. Use simple frontmatter
+  and plain Markdown links.
 - Before editing a skill, subagent, or reference file, read the relevant guide in
   [`docs/best-practices/README.md`](docs/best-practices/README.md).
-- There is no formal validator or CI pipeline for skill authoring at the moment,
-  so checks are manual.
-- Progress files under `docs/` are local working files. Do not commit them.
+- There is no formal validator or CI pipeline for skill authoring yet. Run the
+  manual checks listed in the project instructions.
+- Do not hand-edit [`skills-lock.json`](skills-lock.json). It is managed by the
+  skill installation tooling.
