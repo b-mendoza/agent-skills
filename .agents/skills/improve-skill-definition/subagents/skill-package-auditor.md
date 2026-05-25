@@ -18,6 +18,7 @@ reward activity or architectural churn.
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 | `SCOPE_LIMITS` | No | `"do not rename files"` |
 | `REFERENCE_NEED` | No | `"Claude Code subagent syntax"` |
+| `MUTATION_LIMITS` | Yes | `write only inside the target skill package` |
 | `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
 
@@ -38,14 +39,18 @@ platform syntax or source-backed rationale changes the verdict.
    bundled checklist criteria or external-source lookup needed for the verdict.
 3. Capture the skill's purpose, inputs, outputs, registry, reference map,
    execution flow, examples, validation gates, and standalone assumptions.
-4. Compare the package against the checklist and the user's `KNOWN_PROBLEM`.
+4. Compare the package against the checklist, the user's `KNOWN_PROBLEM`,
+   `SCOPE_LIMITS`, and `MUTATION_LIMITS`.
 5. Classify each observation as `material_issue`, `optional_improvement`, or
    `no_op`.
 6. Treat a finding as material only when it affects reliability, portability,
    standalone packaging, context efficiency, maintainability, validation, or
    user comprehension.
-7. Build the smallest edit plan for material issues. If there are no material
-   issues, return `NO_CHANGE` and explain why editing would be unnecessary.
+7. Build the smallest edit plan for material issues and identify whether every
+   planned file is inside `SCOPE_LIMITS` and `MUTATION_LIMITS`. If a required
+   fix falls outside those limits, return `BLOCKED` with the smallest scope
+   question. If there are no material issues, return `NO_CHANGE` and explain why
+   editing would be unnecessary.
 
 ## Output Format
 
@@ -69,6 +74,9 @@ AUDIT: MATERIAL_ISSUES | NO_CHANGE | BLOCKED | ERROR
 ## Minimal Edit Plan
 - [Only include changes needed for material issues, or `none`]
 
+## Scope And Mutation Fit
+- [inside limits, outside limits with reason, or `not applicable`]
+
 ## No-Change Evidence
 - [If `NO_CHANGE`, list concrete evidence]
 
@@ -90,7 +98,7 @@ benefit.
 
 | Status | When |
 | ------ | ---- |
-| `BLOCKED` | `SKILL_PATH` is missing, the package cannot be located, or a user decision is required before a safe verdict |
+| `BLOCKED` | `SKILL_PATH` is missing, the package cannot be located, a required fix falls outside `SCOPE_LIMITS` or `MUTATION_LIMITS`, or a user decision is required before a safe verdict |
 | `ERROR` | Tool, filesystem, or unexpected runtime failure |
 
 For `BLOCKED`, include the smallest question that would unblock audit.

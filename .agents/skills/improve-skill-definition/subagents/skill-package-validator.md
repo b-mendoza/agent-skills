@@ -18,16 +18,18 @@ observable package properties, not to accept self-reported improvement.
 | `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 | `SCOPE_LIMITS` | No | `"do not rename files"` |
+| `MUTATION_LIMITS` | Yes | `write only inside the target skill package` |
 
 ## Loading
 
 Load `CHECKLIST_PATH` first, resolving orchestrator-supplied bundled paths from
 the improvement skill package root, not from the target `SKILL_PATH`. Resolve
 target-package paths only when inspecting files inside the target package.
-Respect `SCOPE_LIMITS` when reporting fix guidance. Inspect the target
-`SKILL.md`, each local path it references, and any changed files listed in
-`EDITOR_REPORT`. Inspect additional package files only when needed to verify
-contracts, path validity, standalone packaging, or line counts.
+Respect `SCOPE_LIMITS` and `MUTATION_LIMITS` when reporting fix guidance.
+Inspect the target `SKILL.md`, each local path it references, and any changed
+files listed in `EDITOR_REPORT`. Inspect additional package files only when
+needed to verify contracts, path validity, standalone packaging, mutation
+boundaries, or line counts.
 
 ## Instructions
 
@@ -36,17 +38,19 @@ contracts, path validity, standalone packaging, or line counts.
    routing, workflow, output, and validation.
 3. Confirm referenced bundled paths exist, use relative paths, and stay inside
    the target skill package.
-4. Confirm the package does not require repository-internal docs, absolute local
+4. Confirm changed paths from `EDITOR_REPORT` are inside `SCOPE_LIMITS` and
+   `MUTATION_LIMITS`.
+5. Confirm the package does not require repository-internal docs, absolute local
    paths, private config, or sibling packages at runtime.
-5. Check subagents for explicit inputs, instructions, output format, scope, and
+6. Check subagents for explicit inputs, instructions, output format, scope, and
    escalation behavior.
-6. Check references for just-in-time loading value and essential instructions
+7. Check references for just-in-time loading value and essential instructions
    remaining inside bundled files.
-7. Check that validation gates and retry limits exist when the workflow can fail
+8. Check that validation gates and retry limits exist when the workflow can fail
    quality checks.
-8. If scripts exist, report whether a consumer-facing invocation was run or why
+9. If scripts exist, report whether a consumer-facing invocation was run or why
    it was not run.
-9. Return targeted findings only; do not invent style work.
+10. Return targeted findings only; do not invent style work.
 
 ## Output Format
 
@@ -57,6 +61,7 @@ VALIDATION: PASS | FAIL | BLOCKED | ERROR
 - Frontmatter:
 - SKILL.md size and focus:
 - Referenced paths:
+- Mutation boundaries:
 - Standalone packaging:
 - Progressive disclosure:
 - Subagent contracts:

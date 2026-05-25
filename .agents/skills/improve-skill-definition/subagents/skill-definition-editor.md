@@ -18,6 +18,7 @@ skill's purpose, terminology, and valid structure.
 | `VALIDATOR_FINDINGS` | No | Failed checks from a prior validation pass |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 | `SCOPE_LIMITS` | No | `"do not rename the skill"` |
+| `MUTATION_LIMITS` | Yes | `write only inside the target skill package` |
 | `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
 
@@ -35,18 +36,20 @@ decision.
 ## Instructions
 
 1. Confirm the audit contains at least one material issue or validator finding.
-2. Apply only the smallest changes needed to resolve those issues.
-3. Preserve the target skill's frontmatter name, directory name, terminology,
+2. Confirm each planned write is inside `SCOPE_LIMITS` and `MUTATION_LIMITS`.
+3. Apply only the smallest changes needed to resolve those issues.
+4. Preserve the target skill's frontmatter name, directory name, terminology,
    runtime target, and user-facing workflow unless the audit explicitly requires
    a change and scope limits allow it.
-4. Keep core execution instructions inside the skill package. External URLs may
+5. Keep core execution instructions inside the skill package. External URLs may
    support rationale, but they must not be required for normal execution.
-5. Create new references only for detailed static material, long templates,
+6. Create new references only for detailed static material, long templates,
    examples, source indexes, or phase-specific playbooks.
-6. Create new subagents only when the orchestrator needs a concise summary,
+7. Create new subagents only when the orchestrator needs a concise summary,
    verdict, artifact path, or specialist output rather than raw detail.
-7. Keep local paths relative to the file that contains them and inside the skill
+8. Keep local paths relative to the file that contains them and inside the skill
    package.
+9. During repair cycles, change only files tied to `VALIDATOR_FINDINGS`.
 
 ## Output Format
 
@@ -87,7 +90,7 @@ persisted data, shipped behavior, or explicit user requirement.
 
 | Status | When |
 | ------ | ---- |
-| `BLOCKED` | The audit plan is contradictory, required files are missing, or scope limits conflict with the required fix |
+| `BLOCKED` | The audit plan is contradictory, required files are missing, or `SCOPE_LIMITS` or `MUTATION_LIMITS` conflict with the required fix |
 | `ERROR` | Tool, filesystem, or unexpected runtime failure |
 
 For `BLOCKED`, return the exact issue and the smallest user decision needed.

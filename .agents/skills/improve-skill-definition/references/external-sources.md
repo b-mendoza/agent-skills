@@ -13,9 +13,9 @@ files.
 
 | Need | URL | Use when |
 | ---- | --- | -------- |
-| Progressive disclosure background | `https://skills.sh/flpbalada/fb-skills/progressive-disclosure` | Explaining just-in-time loading, small orchestrators, and reference extraction |
-| Claude Code subagents | `https://code.claude.com/docs/en/sub-agents` | Verifying current Claude Code subagent concepts, fields, or file placement |
-| Claude prompting XML guidance | `https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/use-xml-tags` | Verifying XML prompt-tag guidance for prompt-oriented skills |
+| Progressive disclosure background | `https://bmad-builder-docs.bmad-method.org/explanation/progressive-disclosure/` | Explaining just-in-time loading, small orchestrators, and reference extraction |
+| Claude Code subagents | `https://docs.anthropic.com/en/docs/claude-code/sub-agents` | Verifying current Claude Code subagent concepts, fields, or file placement |
+| Claude prompting XML guidance | `https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices#structure-prompts-with-xml-tags` | Verifying XML prompt-tag guidance for prompt-oriented skills |
 | Claude prompting best practices | `https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices` | Checking current prompt-structure recommendations and positive instruction framing |
 | Anthropic context engineering | `https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents` | Explaining context-window protection, summarization, and just-in-time retrieval |
 | OpenCode documentation | `https://opencode.ai/docs/` | Verifying current OpenCode runtime behavior or configuration expectations |

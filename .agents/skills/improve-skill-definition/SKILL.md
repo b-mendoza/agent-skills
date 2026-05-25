@@ -11,11 +11,12 @@ only when a concrete issue justifies the change.
 
 The orchestrator does three things: **decide** whether improvement is warranted,
 **dispatch** focused package work, and **synthesize** a concise result. It
-directly normalizes routing inputs, routes enumerated statuses, selects
-subagents, loads its own bundled references just in time, and writes the final
-handoff. Raw target-package inspection, editing, validation, and target-package
-source lookup happen in subagents so the orchestrator keeps only verdicts,
-summaries, paths, fetched URLs, and user constraints.
+directly normalizes routing inputs, derives explicit mutation limits, routes
+enumerated statuses, selects subagents, loads its own bundled references just in
+time, and writes the final handoff. Raw target-package inspection, editing,
+validation, and target-package source lookup happen in subagents so the
+orchestrator keeps only verdicts, summaries, paths, fetched URLs, and user
+constraints.
 
 ## Inputs
 
@@ -33,29 +34,16 @@ for the target path and stop until the user supplies it. Default
 
 ## Output Contract
 
-Return one of these outcomes:
+Return one of these outcomes. Load `./references/final-report-template.md`
+immediately before composing the handoff and use the section set for the chosen
+decision:
 
-```markdown
-Decision: changed | no change | blocked | error
-
-Material issues:
-- ...
-
-Files changed:
-- ...
-
-Validation:
-- ...
-
-External resources:
-- ...
-
-Remaining risks or assumptions:
-- ...
-```
-
-For `no change`, list the evidence that the skill is already good enough and any
-optional improvements considered and rejected.
+| Decision | Required sections |
+| -------- | ----------------- |
+| `changed` | Material issues, files changed, validation, external resources, remaining risks or assumptions |
+| `no change` | Evidence, optional improvements considered and rejected, validation limits |
+| `blocked` | Reason, question, validation completed, resume condition |
+| `error` | Failed condition, known context, recovery |
 
 ## Pipeline Overview
 
@@ -83,7 +71,7 @@ Route only on these enumerated subagent statuses:
 | ---- | -------- |
 | `PATH_OK` | Continue only when `SKILL_PATH` is present and locatable; otherwise return a blocked handoff with the path question. |
 | `AUDIT_STATUS` | Route only on the auditor status set in the status routing contract. |
-| `SCOPE_GATE` | Continue to edit only when the required fix is inside `SCOPE_LIMITS`; otherwise return a blocked handoff with the scope question. |
+| `SCOPE_GATE` | Continue to edit only when the required fix is inside `SCOPE_LIMITS` and `MUTATION_LIMITS`; otherwise return a blocked handoff with the scope question. |
 | `SAFE_GATE` | Ask the user only when an audit blocker requires a safe-verdict decision. |
 | `EDIT_STATUS` | Route only on the editor status set in the status routing contract. |
 | `VALIDATION_STATUS` | Route only on the validator status set in the status routing contract. |
@@ -109,6 +97,7 @@ findings, file paths, fetched URLs, and concise summaries.
 | Authoring rules and material-issue checklist | `./references/authoring-checklist.md` | Before audit and validation, or when a subagent needs criteria |
 | Optional public docs and articles | `./references/external-sources.md` | Only when current platform syntax or source-backed rationale changes a decision |
 | Final response shape | `./references/final-report-template.md` | Immediately before final handoff |
+| Visual workflow audit | `./flow-diagram.md` | Only when the user asks to inspect or revise the control flow |
 | Raw target files, diffs, and command output | Inside the responsible subagent | Summarized back as verdicts and paths |
 
 This skill is standalone. Bundled paths stay inside this skill directory and are
@@ -126,20 +115,38 @@ Prefer the smallest correct change. Preserve working structure and terminology
 when they are already clear. If deleting a proposed change would not make the
 skill less reliable, less portable, or harder to maintain, do not make it.
 
+## Default Mutation Limits
+
+Derive `MUTATION_LIMITS` during intake and pass them to every dispatched
+subagent. Unless the user explicitly expands scope, use these limits:
+
+- Write only inside the target skill package directory.
+- Preserve directory names, frontmatter names, runtime target, and user-facing
+  purpose unless the audit identifies a material issue that requires changing
+  them.
+- Treat sibling packages, runtime mirrors, lockfiles, repository-level docs, and
+  private configuration as outside scope.
+- Keep bundled paths relative to the file that names them and inside the skill
+  package.
+- Use external URLs only as optional background; never make normal execution
+  depend on fetching them.
+- During repair cycles, change only files tied to validator findings.
+
 ## Execution
 
 1. Normalize `SKILL_PATH` to the package directory, identify the target
    `SKILL.md`, normalize `KNOWN_PROBLEM`, `SCOPE_LIMITS`, and `REFERENCE_NEED`,
-   and default `TARGET_RUNTIME` to `portable Agent Skills` when absent.
+   derive `MUTATION_LIMITS`, and default `TARGET_RUNTIME` to
+   `portable Agent Skills` when absent.
 2. If `SKILL_PATH` is missing or cannot be located, load
    `./references/final-report-template.md`, return a blocked handoff with the
    completed intake checks, one `SKILL_PATH` question, and a resume condition,
    then stop until the user supplies the path.
 3. Dispatch `skill-package-auditor` with `SKILL_PATH`, `KNOWN_PROBLEM`,
    `TARGET_RUNTIME`, `SCOPE_LIMITS`, `REFERENCE_NEED`,
+   `MUTATION_LIMITS`,
    `CHECKLIST_PATH=./references/authoring-checklist.md`,
-   `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed, and
-   the mutation limits from this skill.
+   and `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed.
 4. If the audit returns `NO_CHANGE`, load
    `./references/final-report-template.md` and return the no-change handoff
    with evidence, rejected optional improvements, and validation limits.
@@ -151,16 +158,16 @@ skill less reliable, less portable, or harder to maintain, do not make it.
    `./references/final-report-template.md` and return the error handoff with
    the failed condition and known context.
 7. If the audit returns `MATERIAL_ISSUES`, confirm the required fix is inside
-   `SCOPE_LIMITS`. If it is outside scope, load
+   `SCOPE_LIMITS` and `MUTATION_LIMITS`. If it is outside scope, load
    `./references/final-report-template.md`, return a blocked handoff with the
    conflict, completed audit checks, one scope question, and a resume condition,
    then stop until the user decides.
 8. When scope allows the fix, dispatch `skill-definition-editor` with
    `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`, `AUDIT_REPORT` limited to
    audited issues, affected files, minimal edit plan,
+   `MUTATION_LIMITS`,
    `CHECKLIST_PATH=./references/authoring-checklist.md`,
-   `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed, and
-   the mutation limits from this skill.
+   and `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed.
 9. If the editor returns `BLOCKED`, load
    `./references/final-report-template.md` and return a blocked handoff with
    the blocker, completed checks, the smallest user decision if any, and a
@@ -170,6 +177,7 @@ skill less reliable, less portable, or harder to maintain, do not make it.
 11. If the editor returns `PASS`, dispatch `skill-package-validator` with
     `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`, the original
     `AUDIT_REPORT`, `EDITOR_REPORT`, changed paths from the editor report, and
+    `MUTATION_LIMITS`,
     `CHECKLIST_PATH=./references/authoring-checklist.md`.
 12. If validation returns `PASS`, load
     `./references/final-report-template.md` and return the changed handoff with
@@ -179,8 +187,9 @@ skill less reliable, less portable, or harder to maintain, do not make it.
     handoff with completed validation checks and recovery action.
 14. On validation `FAIL`, re-dispatch the editor with the original editor
     payload plus `VALIDATOR_FINDINGS`, repair cycle count, and focused fix
-    scope. Re-run the validator with the original `AUDIT_REPORT`, new
-    `EDITOR_REPORT`, changed paths, `TARGET_RUNTIME`, `SCOPE_LIMITS`, and
+    scope inside `MUTATION_LIMITS`. Re-run the validator with the original
+    `AUDIT_REPORT`, new `EDITOR_REPORT`, changed paths, `TARGET_RUNTIME`,
+    `SCOPE_LIMITS`, `MUTATION_LIMITS`, and
     `CHECKLIST_PATH=./references/authoring-checklist.md`.
 15. Use at most three targeted fix cycles. If validation still returns `FAIL`
     after the third cycle, load `./references/final-report-template.md` and
@@ -209,6 +218,8 @@ rename, reshuffle, or polish without changing behavior.
 - Subagents and references are co-located, relative-path-addressable, and loaded
   only when needed.
 - All referenced bundled paths exist.
+- Edits stay within `SCOPE_LIMITS` and `MUTATION_LIMITS`; broader sync work is
+  blocked until the user explicitly expands scope.
 - Validation results are concrete and falsifiable.
 
 ## Example
