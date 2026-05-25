@@ -115,7 +115,7 @@ WRITE: PASS | ERROR
 File: <OUTPUT_FILE>
 Comments assessed: <number>
 Actions: <implement count> implement, <clarify count> clarify, <pushback count> push back
-Posting status: <not-posted | posted | cancelled>
+Posting status: <not-posted | posted>
 Read-back verified: <yes | no>
 Reason: none | <why status is ERROR>
 ```
@@ -149,7 +149,7 @@ PR_COMMENT_RESPONSE: PASS
 Report: <OUTPUT_FILE>
 Comments assessed: <number>
 Actions: <implement count> implement, <clarify count> clarify, <pushback count> push back
-Posting: <not-posted | posted | cancelled>
+Posting: <not-posted | posted>
 Notes: <residual risk or none>
 ```
 
