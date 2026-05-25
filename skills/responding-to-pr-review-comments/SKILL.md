@@ -140,8 +140,10 @@ Response policy:
 9. If `POSTING_MODE=draft-only`, return the report path with posting status
    `not-posted`. If `POSTING_MODE=post-after-confirmation`, build the exact
    final preview and dispatch `thread-reply-poster` only after explicit user
-   approval. Route `POST: PREVIEW_REQUIRED`, `AUTH`, `TARGET_UNSUPPORTED`, and
-   `ERROR` through the documented posting branches.
+   approval. If posting returns `POST: PREVIEW_REQUIRED`, rebuild and show the
+   exact preview for approval again, with at most two posting-preview repair
+   cycles before `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`. Route `AUTH`,
+   `TARGET_UNSUPPORTED`, and `ERROR` through the documented posting branches.
 
 ## Output Contract
 
