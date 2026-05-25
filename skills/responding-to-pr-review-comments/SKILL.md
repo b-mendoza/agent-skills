@@ -147,8 +147,10 @@ only when writing or read-back checking the local report.
 
 Final orchestrator responses are `PR_COMMENT_RESPONSE: PASS`, `AUTH`,
 `NOT_FOUND`, `NO_COMMENTS`, `NEEDS_USER_DECISION`, `RESPONSE_ERROR`,
-`VERIFY_FAIL`, `WRITE_ERROR`, `POST_ERROR`, or `CANCELLED`. Successful posting
-states are `Posting: not-posted`, `Posting: posted`, or `Posting: cancelled`.
+`VERIFY_FAIL`, `WRITE_ERROR`, `POST_ERROR`, or `CANCELLED`. Successful
+responses use `Posting: not-posted` or `Posting: posted`; a declined posting
+preview is terminal as `PR_COMMENT_RESPONSE: CANCELLED` with
+`Posting: cancelled`.
 
 ## Example
 
