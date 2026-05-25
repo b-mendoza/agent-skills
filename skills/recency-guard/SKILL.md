@@ -39,7 +39,8 @@ is not supplied, use the runtime's current date.
 | Recency audit | `recency-checker` | `RECENCY_CHECK` report |
 | Claim stress-test | `claim-verifier` | `CLAIM_REVIEW` report |
 | Completeness | Inline | Missing requested material fixed or acknowledged |
-| Clarity | Inline | Final user-visible answer |
+| Final wording | Inline | `NEW_CLAIM_CHECK` and `LIMIT_GATE` resolved |
+| Clarity | Inline | `READY`, `BLOCKED_TOOLS_MISSING`, `MATERIAL_UNCERTAINTY`, `NEEDS_REPAIR`, or `OUT_OF_SCOPE` |
 
 Run phases sequentially. Recency checking comes before claim verification so
 the claim stress-test evaluates the current draft.
@@ -82,19 +83,31 @@ uncertainty only when it materially affects the answer.
 2. Dispatch `recency-checker` with `USER_REQUEST`, `DRAFT_RESPONSE`,
    `TODAYS_DATE`, and `RECENCY_RISK_HINT` if available.
 3. Apply only the recency report's flagged edits. On `FAIL`, load
-   `./references/repair-and-integration.md` and rerun only within its repair
-   cap.
+   `./references/repair-and-integration.md` and use `RECENCY_REPAIR` to allow
+   at most 2 targeted reruns. On `ERROR`, use `RECENCY_ERROR` to retry once.
+   On `TOOLS_MISSING`, set a tools-missing limitation flag and keep only
+   supportable freshness claims.
 4. Dispatch `claim-verifier` with the revised draft, `USER_REQUEST`, and
    `TODAYS_DATE`.
-5. Apply only the claim review's required edits. On `FAIL`, rerun only within
-   the same repair cap.
+5. Apply only the claim review's required edits. On `FAIL`, use
+   `CLAIM_REPAIR` to allow at most 2 targeted reruns. On `ERROR`, use
+   `CLAIM_ERROR` to retry once. On `TOOLS_MISSING`, keep the limitation flag
+   visible and qualify evidence strength.
 6. Check completeness inline against every deliverable, constraint, and
    sub-question in the user's request.
 7. Apply confidence-to-wording rules from
    `./references/repair-and-integration.md`, put the bottom line early, and
    keep qualifiers proportional to remaining uncertainty.
-8. If the final pass adds a new time-sensitive or decision-shaping
-   claim, rerun the relevant subagent before finalizing.
+8. Run `NEW_CLAIM_CHECK`. If final wording or completeness repair adds a new
+   time-sensitive claim, rerun `recency-checker`; if it adds a new
+   decision-shaping claim, rerun `claim-verifier`; if it adds both, rerun the
+   relevant checks one at a time before finalizing.
+9. Run `LIMIT_GATE`. If tools are missing and material, return
+   `BLOCKED_TOOLS_MISSING`; if uncertainty is material, return
+   `MATERIAL_UNCERTAINTY`; if neither applies, return `READY`. If a repair cap
+   is reached, return `NEEDS_REPAIR`. If the request requires external
+   mutation or a high-impact action, return `OUT_OF_SCOPE` and route it to a
+   separate approved workflow.
 
 ## Output Contract
 
@@ -102,12 +115,17 @@ Return the user-visible answer, not a verification report. Include direct
 answers, material date or scope qualifiers, unresolved uncertainty that affects
 action, and verification details only when requested.
 
+Terminal states are `READY`, `BLOCKED_TOOLS_MISSING`,
+`MATERIAL_UNCERTAINTY`, `NEEDS_REPAIR`, and `OUT_OF_SCOPE`.
+
 ## Validation
 
 - `SKILL.md` is the routing layer; detailed rules stay in one-hop references.
 - Subagent files are read only for the current dispatch.
 - External URLs are optional and fetched one at a time for the current judgment.
 - Each repair cycle changes only flagged claims and stops at the repair cap.
+- `NEW_CLAIM_CHECK` runs before terminal output.
+- `LIMIT_GATE` preserves material tools-missing and uncertainty flags.
 
 ## Example
 
