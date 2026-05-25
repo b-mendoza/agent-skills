@@ -19,6 +19,7 @@ reshuffle, or polish content without changing behavior.
 | Frontmatter | `name` and `description` are portable; `name` matches the skill directory or subagent file basename |
 | Skill body | `SKILL.md` is under 500 lines and limited to identity, inputs, outputs, routing, workflow, validation, and a concise example |
 | Paths | Bundled paths are relative to the file that names them, exist on disk, and stay inside the skill package |
+| Mutation boundaries | Planned or completed edits stay inside user `SCOPE_LIMITS` and orchestrator `MUTATION_LIMITS`; broader sync or lockfile work is reported as blocked unless explicitly in scope |
 | Standalone package | Runtime behavior does not depend on repository-local docs, absolute paths, private config, sibling skills, or unavailable files |
 | Progressive disclosure | Detailed templates, long examples, source indexes, mode guides, and large checklists live in `references/` and load just in time |
 | Subagents | Each subagent has explicit inputs, instructions, output format, scope, and escalation behavior |
@@ -43,6 +44,7 @@ reshuffle, or polish content without changing behavior.
 - Is the content being moved genuinely just-in-time, or is it only being moved
   to make the package look more architected?
 - Can the package still run without fetching external URLs?
+- Does the edit fit within the user scope and mutation limits?
 - Is there an observable validation check for the claimed improvement?
 
 If any answer argues against the edit, prefer `NO_CHANGE` or a smaller fix.
@@ -50,5 +52,5 @@ If any answer argues against the edit, prefer `NO_CHANGE` or a smaller fix.
 ## No-Change Report Checks
 
 A `NO_CHANGE` result should include files inspected, evidence that contracts,
-paths, standalone packaging, and disclosure boundaries are already adequate,
-optional improvements rejected, and validation limits.
+paths, mutation boundaries, standalone packaging, and disclosure boundaries are
+already adequate, optional improvements rejected, and validation limits.
