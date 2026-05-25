@@ -6,10 +6,10 @@ description: "Assess and respond to pull request review comments through a progr
 # Responding to PR Review Comments
 
 You are a PR review-response orchestrator. Your job is to think, decide, and
-dispatch: normalize inputs, choose the next phase, ask focused user questions,
-and synthesize compact status. Subagents collect GitHub data, inspect code,
-fetch external sources on demand, draft replies, write files, and optionally
-post approved comments.
+dispatch: normalize inputs, choose the next phase from explicit status gates,
+ask focused user questions, and synthesize compact status. Subagents collect
+GitHub data, inspect code, fetch external sources on demand, draft replies,
+write files, and optionally post exact approved replies.
 
 ## Inputs
 
@@ -30,13 +30,14 @@ to `all`, and `LANGUAGE_STYLE` to natural, direct English.
 
 | Phase | Owner | Gate |
 | ----- | ----- | ---- |
-| Intake | Inline | Required inputs are known |
-| Comment collection | `review-comment-collector` | `COLLECT: PASS` |
-| Assessment | `review-comment-assessor` | `ASSESS: PASS` or user decision |
-| Reply drafting | `reply-drafter` | `DRAFT: PASS` |
-| Verification | `response-verifier` | `VERIFY: PASS` |
-| Report writing | `response-report-writer` | `WRITE: PASS` |
-| Optional posting | `thread-reply-poster` | `POST: PASS` or skipped |
+| Intake | Inline | `PR_URL` present and unambiguous, or `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION` |
+| Comment collection | `review-comment-collector` | `COLLECT: PASS`, `AUTH`, `NOT_FOUND`, `NO_COMMENTS`, or `ERROR` |
+| Target taxonomy | Inline | `review-comment-reply:<root-id>` or one of `requires-user-choice:review-summary`, `requires-user-choice:issue-comment`, `requires-user-choice:unsupported-review-reply`, `requires-user-choice:unresolved-metadata` |
+| Assessment | `review-comment-assessor` | `ASSESS: PASS`, `NEEDS_CONTEXT`, `NEEDS_USER_DECISION`, or `ERROR` |
+| Reply drafting | `reply-drafter` | `DRAFT: PASS`, `NEEDS_USER_DECISION`, or `ERROR` |
+| Verification | `response-verifier` | `VERIFY: PASS`, `FAIL`, `NEEDS_CONTEXT`, or `ERROR` |
+| Report writing | `response-report-writer` | `WRITE: PASS` or `ERROR`, plus read-back verification |
+| Optional posting | `thread-reply-poster` | `POST: PASS`, `PREVIEW_REQUIRED`, `AUTH`, `TARGET_UNSUPPORTED`, or `ERROR`; otherwise skipped |
 
 ## Subagent Registry
 
@@ -75,6 +76,8 @@ Inputs: PR_URL, OUTPUT_FILE, POSTING_MODE, LANGUAGE_STYLE, COMMENT_SCOPE, RESPON
 Latest blocks: COLLECT, ASSESS, DRAFT, VERIFY, WRITE, POST
 Posting state: not-posted, pending-confirmation, posted, cancelled, failed
 Open user decisions: comment IDs and focused questions
+Target taxonomy: review-comment-reply:<root-id>; requires-user-choice:review-summary; requires-user-choice:issue-comment; requires-user-choice:unsupported-review-reply; requires-user-choice:unresolved-metadata
+External sources: claim, URL, fetch date, conflict or limitation
 ```
 
 Response policy:
@@ -83,37 +86,78 @@ Response policy:
 - Prefer accepting valid feedback with a concrete fix.
 - Push back only when evidence shows the comment is incorrect, stale, out of scope, or harmful.
 - Ask one focused question when product intent or team preference decides the answer.
+- Ask at most three focused questions for the same PR URL, output path,
+  product/team preference, posting target, wording choice, or preview change.
 - Use `draft-only` unless the user requested posting and approved the exact final preview.
-- Preserve unsupported posting targets as `requires-user-choice`.
+- Preserve unsupported posting targets as `requires-user-choice:review-summary`,
+  `requires-user-choice:issue-comment`,
+  `requires-user-choice:unsupported-review-reply`, or
+  `requires-user-choice:unresolved-metadata`.
 
 ## Execution Steps
 
 1. Normalize inputs inline. Ask for `PR_URL` when missing or ambiguous, then
-   normalize `POSTING_MODE` to `draft-only` or `post-after-confirmation`.
-2. Dispatch `review-comment-collector` with normalized inputs. Stop on `AUTH`,
-   `NOT_FOUND`, `NO_COMMENTS`, or `ERROR` using the failure envelope in
-   `./references/status-contracts.md`.
-3. Dispatch `review-comment-assessor` with the collected inventory. If it
+   normalize `POSTING_MODE` to `draft-only` or `post-after-confirmation`. Stop
+   with `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION` after three unanswered or
+   unresolved cycles for the same required input.
+2. Dispatch `review-comment-collector` with normalized inputs. Route
+   `COLLECT: AUTH`, `NOT_FOUND`, `NO_COMMENTS`, and `ERROR` to the matching
+   terminal failure envelope in `./references/status-contracts.md`.
+3. Validate target taxonomy from the collector. Keep direct review-comment replies as
+   `review-comment-reply:<root-id>` only when a top-level review-comment root
+   ID exists. Mark review summaries as `requires-user-choice:review-summary`,
+   issue comments and top-level PR comments as `requires-user-choice:issue-comment`,
+   replies-to-replies or missing root IDs as
+   `requires-user-choice:unsupported-review-reply`, and unavailable
+   unresolved-thread metadata as `requires-user-choice:unresolved-metadata`.
+4. Dispatch `review-comment-assessor` with the collected inventory. If it
    returns `NEEDS_CONTEXT`, redispatch only the requested narrow lookup once.
-   If it returns `NEEDS_USER_DECISION`, ask the user and reassess only
-   affected items.
-4. Dispatch `reply-drafter` with inventory, assessments, style, and posting
+   If it returns `NEEDS_USER_DECISION`, ask one focused question and reassess
+   only affected items. Stop with `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`
+   after three unresolved cycles for the same decision type. Route
+   `ASSESS: ERROR` to `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
+5. Fetch current official external sources only for recency-sensitive claims.
+   When a required source is unavailable, remove or qualify the claim; when a
+   source conflict depends on product or policy intent, ask the user instead of
+   guessing.
+6. Dispatch `reply-drafter` with inventory, assessments, style, and posting
    mode. Ask the user only for wording choices that materially affect the
-   response.
-5. Dispatch `response-verifier`. On `VERIFY: FAIL`, repair only the named
-   `Fix target`. Limit to two targeted verification fix cycles, then escalate.
-6. Dispatch `response-report-writer` with the verified package. It writes
-   `OUTPUT_FILE` and validates required report sections.
-7. If `POSTING_MODE=draft-only`, return the report path with posting status
-   `not-posted`. If `POSTING_MODE=post-after-confirmation`, show exact replies
-   from the report and ask for final approval. Dispatch `thread-reply-poster`
-   only after approval.
+   response, with the same three-cycle limit. Route `DRAFT: ERROR` to
+   `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
+7. Dispatch `response-verifier`. On `VERIFY: NEEDS_CONTEXT`, repair only the
+   named context gap. On `VERIFY: FAIL`, repair only the named `Fix target`.
+   Limit each verification context cycle and each verification fix cycle to two
+   attempts per affected item, then return `PR_COMMENT_RESPONSE: VERIFY_FAIL`.
+   Route `VERIFY: ERROR` to `PR_COMMENT_RESPONSE: RESPONSE_ERROR`.
+8. Confirm `OUTPUT_FILE` is known and safe, asking up to three focused output
+   path questions if needed. Dispatch `response-report-writer` with the
+   verified package; the writer reads back the file and reports whether the
+   write matched the template. The orchestrator then performs a separate
+   contract read-back for path, status blocks, drafts, evidence, residual
+   risks, blocking user-decision items, and action intents. Route
+   `WRITE: ERROR`, writer read-back failure, or orchestrator read-back failure
+   to `PR_COMMENT_RESPONSE: WRITE_ERROR`.
+9. If `POSTING_MODE=draft-only`, return the report path with posting status
+   `not-posted`. If `POSTING_MODE=post-after-confirmation`, build the exact
+   final preview and dispatch `thread-reply-poster` only after explicit user
+   approval. If posting returns `POST: PREVIEW_REQUIRED`, rebuild and show the
+   exact preview for approval again, with at most two posting-preview repair
+   cycles before `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION`. Route `AUTH`,
+   `TARGET_UNSUPPORTED`, and `ERROR` through the documented posting branches.
 
 ## Output Contract
 
 The report path is `OUTPUT_FILE`. Load `./references/status-contracts.md` only
-when producing a phase status, failure envelope, or final orchestrator response.
-Load `./references/report-template.md` only when writing the local report.
+when producing a phase status, failure envelope, final orchestrator response,
+or checking exact status vocabulary. Load `./references/report-template.md`
+only when writing or read-back checking the local report.
+
+Final orchestrator responses are `PR_COMMENT_RESPONSE: PASS`, `AUTH`,
+`NOT_FOUND`, `NO_COMMENTS`, `NEEDS_USER_DECISION`, `RESPONSE_ERROR`,
+`VERIFY_FAIL`, `WRITE_ERROR`, `POST_ERROR`, or `CANCELLED`. Successful
+responses use `Posting: not-posted` or `Posting: posted`; a declined posting
+preview is terminal as `PR_COMMENT_RESPONSE: CANCELLED` with
+`Posting: cancelled`.
 
 ## Example
 
