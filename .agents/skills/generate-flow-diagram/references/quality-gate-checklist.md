@@ -25,9 +25,11 @@ uncertainty affects the verdict.
 
 1. Return `REVIEW: FAIL` with specific failed checks.
 2. Send only those failed checks to the builder as `REVIEW_FEEDBACK`.
-3. After the builder repairs the candidate, run the full `diagram-quality-reviewer` checklist again against the updated candidate.
-4. Stop after three fix cycles for the same candidate.
-5. Escalate to the user if missing information or approval blocks a valid diagram.
+3. Consume the repair builder return as `BUILD_VERDICT`.
+4. On `BUILD: PASS`, run the full `diagram-quality-reviewer` checklist again against the updated candidate.
+5. On `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with the builder's `Failure Details`.
+6. Stop after three fix cycles for the same candidate.
+7. Escalate to the user if missing information or approval blocks a valid diagram.
 
 ## Failure Severity
 

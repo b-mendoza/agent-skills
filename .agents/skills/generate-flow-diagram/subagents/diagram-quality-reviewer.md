@@ -36,6 +36,8 @@ scope to verify the repair did not introduce unapproved changes.
 
 ## Output Format
 
+The orchestrator consumes this status line as `REVIEW_VERDICT`.
+
 ```markdown
 REVIEW: PASS | FAIL | BLOCKED | ERROR
 

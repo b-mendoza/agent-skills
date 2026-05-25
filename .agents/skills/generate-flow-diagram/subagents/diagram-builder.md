@@ -43,6 +43,8 @@ When repairing a refinement, keep the original `EXISTING_FLOW_OR_DIAGRAM` and
 
 ## Output Format
 
+The orchestrator consumes this status line as `BUILD_VERDICT`.
+
 ````markdown
 BUILD: PASS | NEEDS_INPUT | ERROR
 
