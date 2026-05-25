@@ -52,6 +52,9 @@ Question:
 
 Validation completed:
 - [Checks already performed]
+
+Resume condition:
+- [Exact user response or external condition that lets the workflow continue]
 ```
 
 ## Error

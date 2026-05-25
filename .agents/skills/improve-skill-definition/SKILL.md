@@ -10,10 +10,12 @@ existing skill package more reliable, portable, standalone, and context-efficien
 only when a concrete issue justifies the change.
 
 The orchestrator does three things: **decide** whether improvement is warranted,
-**dispatch** focused package work, and **synthesize** a concise result. Inspection,
-editing, validation, and external source lookup happen in subagents or bundled
-references so the orchestrator keeps only verdicts, summaries, paths, and user
-constraints.
+**dispatch** focused package work, and **synthesize** a concise result. It
+directly normalizes routing inputs, routes enumerated statuses, selects
+subagents, loads its own bundled references just in time, and writes the final
+handoff. Raw target-package inspection, editing, validation, and target-package
+source lookup happen in subagents so the orchestrator keeps only verdicts,
+summaries, paths, fetched URLs, and user constraints.
 
 ## Inputs
 
@@ -25,8 +27,9 @@ constraints.
 | `SCOPE_LIMITS` | No | `"do not rename the skill"` |
 | `REFERENCE_NEED` | No | `"current Claude subagent guidance"` |
 
-If `SKILL_PATH` is missing, ask one focused question for the target path. Default
-to portable markdown-compatible skills when `TARGET_RUNTIME` is unspecified.
+If `SKILL_PATH` is missing, return a blocked handoff with one focused question
+for the target path and stop until the user supplies it. Default
+`TARGET_RUNTIME` to `portable Agent Skills` when it is unspecified.
 
 ## Output Contract
 
@@ -63,6 +66,29 @@ optional improvements considered and rejected.
 | Edit | Dispatch `skill-definition-editor` when audit finds material issues | Targeted file changes and change summary |
 | Validate | Dispatch `skill-package-validator` | Concrete package checks and retry guidance |
 | Handoff | Inline | User-facing decision and validation summary |
+
+## Status Routing Contract
+
+Route only on these enumerated subagent statuses:
+
+| Source | Statuses |
+| ------ | -------- |
+| `skill-package-auditor` | `AUDIT: MATERIAL_ISSUES`, `AUDIT: NO_CHANGE`, `AUDIT: BLOCKED`, `AUDIT: ERROR` |
+| `skill-definition-editor` | `EDIT: PASS`, `EDIT: BLOCKED`, `EDIT: ERROR` |
+| `skill-package-validator` | `VALIDATION: PASS`, `VALIDATION: FAIL`, `VALIDATION: BLOCKED`, `VALIDATION: ERROR` |
+
+## Gate Summary
+
+| Gate | Decision |
+| ---- | -------- |
+| `PATH_OK` | Continue only when `SKILL_PATH` is present and locatable; otherwise return a blocked handoff with the path question. |
+| `AUDIT_STATUS` | Route only on the auditor status set in the status routing contract. |
+| `SCOPE_GATE` | Continue to edit only when the required fix is inside `SCOPE_LIMITS`; otherwise return a blocked handoff with the scope question. |
+| `SAFE_GATE` | Ask the user only when an audit blocker requires a safe-verdict decision. |
+| `EDIT_STATUS` | Route only on the editor status set in the status routing contract. |
+| `VALIDATION_STATUS` | Route only on the validator status set in the status routing contract. |
+| `RETRY_GATE` | Re-dispatch targeted repair only while fewer than three repair cycles have been used. |
+| `REPAIR_STATUS` | Route repair editor results as `EDIT: PASS`, `EDIT: BLOCKED`, or `EDIT: ERROR`. |
 
 ## Subagent Registry
 
@@ -102,46 +128,64 @@ skill less reliable, less portable, or harder to maintain, do not make it.
 
 ## Execution
 
-1. Normalize `SKILL_PATH` to the package directory and identify the target
-   `SKILL.md`.
-2. Dispatch `skill-package-auditor` with `SKILL_PATH`, `KNOWN_PROBLEM`,
+1. Normalize `SKILL_PATH` to the package directory, identify the target
+   `SKILL.md`, normalize `KNOWN_PROBLEM`, `SCOPE_LIMITS`, and `REFERENCE_NEED`,
+   and default `TARGET_RUNTIME` to `portable Agent Skills` when absent.
+2. If `SKILL_PATH` is missing or cannot be located, load
+   `./references/final-report-template.md`, return a blocked handoff with the
+   completed intake checks, one `SKILL_PATH` question, and a resume condition,
+   then stop until the user supplies the path.
+3. Dispatch `skill-package-auditor` with `SKILL_PATH`, `KNOWN_PROBLEM`,
    `TARGET_RUNTIME`, `SCOPE_LIMITS`, `REFERENCE_NEED`,
-   `CHECKLIST_PATH=./references/authoring-checklist.md`, and
-   `EXTERNAL_SOURCES_PATH=./references/external-sources.md`.
-3. If the audit returns `NO_CHANGE`, stop without editing and report the no-op
-   decision using `./references/final-report-template.md`.
-4. If the audit returns `BLOCKED`, ask the smallest needed question or report
-   the blocked decision using `./references/final-report-template.md`.
-5. If the audit returns `ERROR`, report the error decision using
-   `./references/final-report-template.md`.
-6. If the audit returns `MATERIAL_ISSUES`, confirm `SCOPE_LIMITS` allow the
-   required fix. If they do not, ask one focused user decision about the
-   conflicting scope limit or report the blocked decision using
-   `./references/final-report-template.md`.
-7. When scope allows the fix, dispatch `skill-definition-editor` with
-   `SKILL_PATH`, `AUDIT_REPORT` limited to audited issues, affected files,
-   minimal edit plan, scope limits,
-   `CHECKLIST_PATH=./references/authoring-checklist.md`, and
-   `EXTERNAL_SOURCES_PATH=./references/external-sources.md`.
-8. If the editor returns `BLOCKED` or `ERROR`, report the blocked or error
-   decision using `./references/final-report-template.md`.
-9. If the editor returns `PASS`, dispatch `skill-package-validator` with
-   `SKILL_PATH`, the original `AUDIT_REPORT`, `EDITOR_REPORT`, and
-   `CHECKLIST_PATH=./references/authoring-checklist.md`.
-10. If validation returns `BLOCKED` or `ERROR`, report the blocked or error
-    decision using `./references/final-report-template.md`.
-11. On validation `FAIL`, re-dispatch the editor with `SKILL_PATH`, the original
-    `AUDIT_REPORT`, `VALIDATOR_FINDINGS` as the focused fix scope, scope limits,
-    `CHECKLIST_PATH=./references/authoring-checklist.md`, and
-    `EXTERNAL_SOURCES_PATH=./references/external-sources.md`, then re-run the
-    validator with `SKILL_PATH`, the original `AUDIT_REPORT`, the new
-    `EDITOR_REPORT`, and `CHECKLIST_PATH=./references/authoring-checklist.md`.
-    Use at most three targeted fix cycles. If validation still returns `FAIL`
-    after the third targeted fix cycle, report a blocked decision with the
-    remaining validation findings and attempted repairs. If a repair edit or
-    revalidation returns `BLOCKED` or `ERROR`, report that decision using
-    `./references/final-report-template.md`.
-12. Load `./references/final-report-template.md` and return the final handoff.
+   `CHECKLIST_PATH=./references/authoring-checklist.md`,
+   `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed, and
+   the mutation limits from this skill.
+4. If the audit returns `NO_CHANGE`, load
+   `./references/final-report-template.md` and return the no-change handoff
+   with evidence, rejected optional improvements, and validation limits.
+5. If the audit returns `BLOCKED`, load
+   `./references/final-report-template.md` and return a blocked handoff with
+   the blocker, completed audit checks, recovery action, and one safe-verdict
+   question when a user decision is required.
+6. If the audit returns `ERROR`, load
+   `./references/final-report-template.md` and return the error handoff with
+   the failed condition and known context.
+7. If the audit returns `MATERIAL_ISSUES`, confirm the required fix is inside
+   `SCOPE_LIMITS`. If it is outside scope, load
+   `./references/final-report-template.md`, return a blocked handoff with the
+   conflict, completed audit checks, one scope question, and a resume condition,
+   then stop until the user decides.
+8. When scope allows the fix, dispatch `skill-definition-editor` with
+   `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`, `AUDIT_REPORT` limited to
+   audited issues, affected files, minimal edit plan,
+   `CHECKLIST_PATH=./references/authoring-checklist.md`,
+   `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed, and
+   the mutation limits from this skill.
+9. If the editor returns `BLOCKED`, load
+   `./references/final-report-template.md` and return a blocked handoff with
+   the blocker, completed checks, the smallest user decision if any, and a
+   resume condition.
+10. If the editor returns `ERROR`, load
+    `./references/final-report-template.md` and return the error handoff.
+11. If the editor returns `PASS`, dispatch `skill-package-validator` with
+    `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`, the original
+    `AUDIT_REPORT`, `EDITOR_REPORT`, changed paths from the editor report, and
+    `CHECKLIST_PATH=./references/authoring-checklist.md`.
+12. If validation returns `PASS`, load
+    `./references/final-report-template.md` and return the changed handoff with
+    material issues, files changed, validation, resources, and risks.
+13. If validation returns `BLOCKED` or `ERROR`, load
+    `./references/final-report-template.md` and return the blocked or error
+    handoff with completed validation checks and recovery action.
+14. On validation `FAIL`, re-dispatch the editor with the original editor
+    payload plus `VALIDATOR_FINDINGS`, repair cycle count, and focused fix
+    scope. Re-run the validator with the original `AUDIT_REPORT`, new
+    `EDITOR_REPORT`, changed paths, `TARGET_RUNTIME`, `SCOPE_LIMITS`, and
+    `CHECKLIST_PATH=./references/authoring-checklist.md`.
+15. Use at most three targeted fix cycles. If validation still returns `FAIL`
+    after the third cycle, load `./references/final-report-template.md` and
+    return a blocked handoff with failed checks, attempted repairs, remaining
+    risks, completed checks, and a resume condition.
 
 ## Decision Rules
 
