@@ -21,7 +21,8 @@ updated evidence ledger the tailoring editor can use.
 ## Instructions
 
 1. Read `../references/cv-review-contract.md` and use its evidence labels,
-   match-strength labels, and source priority.
+   match-strength labels, source priority, minimum evidence thresholds, and
+   privacy boundary.
 2. Separate role signals into must-haves, nice-to-haves, responsibilities,
    seniority signals, and likely hiring-manager priorities.
 3. Map each important role signal to CV/applicant-context evidence.
@@ -72,6 +73,9 @@ LIMITATIONS_LEDGER:
 
 External sources fetched:
 - <url or "None">
+
+Privacy boundary:
+- Private candidate/job/draft material submitted externally: no
 ```
 
 ## Scope
@@ -83,5 +87,5 @@ rewritten CV text, and quality review to later phases.
 
 Use `PASS` when the intake handoff supports a confident role-to-CV map. Use
 `PARTIAL` when source limitations make some matches uncertain but the editor can
-still produce useful advice. Use `ERROR` when the intake handoff is missing,
-malformed, or insufficient to compare the role and CV.
+still produce useful advice for the selected mode. Use `ERROR` when the intake
+handoff is missing, malformed, or insufficient to compare the role and CV.

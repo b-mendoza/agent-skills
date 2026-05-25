@@ -7,6 +7,7 @@ Read this file only when validating a drafted CV review or rewrite.
 | Gate | Pass condition |
 | ---- | -------------- |
 | Inputs | Draft uses the provided job posting and CV, and labels missing or partial input |
+| Minimum evidence | Selected mode met the threshold in `cv-review-contract.md`; otherwise the draft asks for the smallest missing source detail |
 | Job specificity | Recommendations tie back to visible role requirements, priorities, or repeated terms |
 | Evidence labels | Every rewrite or recommended claim has one valid evidence label |
 | Candidate facts | Candidate claims are grounded in the CV/applicant context or framed as questions |
@@ -18,6 +19,7 @@ Read this file only when validating a drafted CV review or rewrite.
 | Mode compliance | Output includes only the sections requested by `OUTPUT_MODE` |
 | Actionability | The user can see exactly what to change, why, and what to verify |
 | Checklist | Full reviews end with a concise submission checklist |
+| Privacy boundary | No private candidate material, private job text, or draft content was submitted to external resume scanners, forms, or tools |
 
 ## Review Procedure
 
@@ -35,6 +37,8 @@ Ask the editor for the smallest change that resolves the failed gate:
 - Unsupported claim: convert to a question or safer wording.
 - Dropped limitation: restore it in the limitations ledger or mark the final
   answer as partial.
+- Insufficient evidence for mode: ask for the smallest missing source detail
+  instead of producing unsupported advice.
 - Generic recommendation: tie it to a job requirement or remove it.
 - Overstated seniority: lower the claim to demonstrated contribution.
 - Mode mismatch: remove unrelated sections.

@@ -59,6 +59,12 @@ User-provided CV, applicant context, and job posting are primary evidence.
 Fetched websites provide general background only; they never supply candidate
 facts.
 
+Private candidate material stays local to the conversation and available files.
+Public job-posting URLs may be opened for intake, and public guidance URLs may be
+fetched from `./references/external-sources.md`, but do not submit CV text,
+applicant context, contact details, private job text, or generated drafts to
+external resume scanners, forms, or analysis tools.
+
 ## Execution Steps
 
 1. Normalize `OUTPUT_MODE`; use only `review`, `rewrite`, `checklist`, or
@@ -70,7 +76,9 @@ facts.
    recovery action. If it is `BLOCKED`, ask for the smallest missing source. If
    it is `PASS` or `PARTIAL`, open an evidence ledger from the intake handoff;
    for `PARTIAL`, preserve source limitations in the limitations ledger and
-   continue only when enough primary evidence remains for the requested mode.
+   continue only when the minimum evidence threshold in
+   `./references/cv-review-contract.md` is satisfied for the requested mode.
+   Otherwise ask for the smallest missing source detail and stop.
 4. Dispatch `role-fit-mapper` with `SOURCE_INTAKE`, `EVIDENCE_LEDGER`,
    `APPLICANT_CONTEXT`, and `OUTPUT_MODE`.
 5. Route on `ROLE_FIT: PASS | PARTIAL | ERROR`. If it is `ERROR`, stop and
@@ -100,7 +108,9 @@ facts.
    unresolved integrity risk.
 11. Assemble the selected output with evidence labels. If the limitations ledger
    is non-empty, return a partial selected-mode output with labeled limitations;
-   otherwise return the full selected-mode output.
+   otherwise return the full selected-mode output. Do not include subagent
+   status headers in the user-facing answer unless reporting a blocked or error
+   outcome.
 
 ## Output Contract
 

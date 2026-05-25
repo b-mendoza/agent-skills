@@ -13,6 +13,10 @@ partial-output note before the mode-specific sections:
 - <source limitation, uncertain mapping, or verification limit>
 ```
 
+Use a partial-output note only after the selected mode meets the minimum
+evidence threshold in `cv-review-contract.md`. If it does not, ask for the
+smallest missing source detail instead of assembling the report.
+
 ## `review` Mode
 
 ```markdown
@@ -103,6 +107,8 @@ Evidence notes: <what is supported vs. needs verification>
 
 - Keep the report specific to the target job posting.
 - Prefer fewer high-impact rewrites over exhaustive generic edits.
+- Do not include `TAILORING_DRAFT`, `CV_REVIEW`, or other subagent status
+  headers in the final user-facing output.
 - Preserve the applicant's apparent seniority unless applicant context supports
   a stronger level.
 - Include a partial-output note at the top when the limitations ledger is

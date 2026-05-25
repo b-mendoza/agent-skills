@@ -23,17 +23,23 @@ inputs the orchestrator needs.
 
 ## Instructions
 
-1. Confirm both required sources are present and readable.
-2. If a URL is provided, inspect it when tooling allows. If it is inaccessible
+1. Read `../references/cv-review-contract.md` for source priority, privacy
+   boundaries, and minimum evidence thresholds.
+2. Confirm both required sources are present and readable.
+3. If a URL is provided, inspect it when tooling allows. If it is inaccessible
    and no pasted/uploaded equivalent exists, report `BLOCKED`.
-3. Extract job-posting facts: role title, seniority, company/domain context,
+4. Extract job-posting facts: role title, seniority, company/domain context,
    responsibilities, must-have skills, nice-to-have skills, repeated terms,
    location/authorization constraints, and application-specific instructions.
-4. Extract CV facts: headline/profile, roles, projects, technical skills,
+5. Extract CV facts: headline/profile, roles, projects, technical skills,
    education/certifications, metrics, leadership scope, domain evidence,
    recency, and visible gaps.
-5. Preserve uncertainty. Mark ambiguous or inferred facts as limitations.
-6. Return a compact `SOURCE_INTAKE` handoff with an `EVIDENCE_LEDGER` seed,
+6. Check whether the selected `OUTPUT_MODE` has enough primary evidence to
+   continue. Use `PARTIAL` only when the mode-specific threshold is met with
+   labeled limitations; otherwise report `BLOCKED` with the smallest missing
+   source detail.
+7. Preserve uncertainty. Mark ambiguous or inferred facts as limitations.
+8. Return a compact `SOURCE_INTAKE` handoff with an `EVIDENCE_LEDGER` seed,
    limitations, and the smallest needed next action; avoid raw source dumps.
 
 Routine intake uses the local sources only. If document parsing or resume
@@ -74,6 +80,11 @@ Applicant context used:
 External sources fetched:
 - <url and purpose, or "None">
 
+Privacy boundary:
+- External sites used only for read-only guidance or public job-posting intake:
+  yes | no
+- Private candidate/job/draft material submitted externally: no
+
 LIMITATIONS_LEDGER:
 - <missing, inaccessible, stale, ambiguous, or partial source issues>
 
@@ -91,6 +102,7 @@ recommendations, rewritten text, and final validation to later phases.
 
 Use `PASS` when both required sources are readable and enough primary evidence
 exists for the requested mode. Use `BLOCKED` when the job posting or CV is
-absent, inaccessible, or leaves insufficient primary evidence. Use `PARTIAL`
-when enough information exists to continue but important details are missing.
-Use `ERROR` for unexpected tool, parsing, or file-access failures.
+absent, inaccessible, or leaves insufficient primary evidence for the selected
+mode. Use `PARTIAL` when enough information exists to continue but important
+details are missing. Use `ERROR` for unexpected tool, parsing, or file-access
+failures.

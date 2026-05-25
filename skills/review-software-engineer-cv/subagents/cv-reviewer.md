@@ -36,7 +36,11 @@ Return a verdict and targeted fixes only. The editor owns rewriting.
 8. Check whether the draft matches `OUTPUT_MODE`.
 9. Check whether limitations that affect the answer are preserved for partial
    selected-mode output.
-10. Return `PASS` when no fixes are needed, `FAIL` with targeted fixes when the
+10. Check that the selected mode met the minimum evidence threshold before any
+    partial output was assembled.
+11. Confirm external sources, if any, were used only for read-only guidance or
+    public job-posting intake, not to submit private candidate/job/draft text.
+12. Return `PASS` when no fixes are needed, `FAIL` with targeted fixes when the
    editor can correct the draft, or `ERROR` when required inputs cannot be
    reviewed.
 
@@ -48,6 +52,7 @@ Mode checked: <OUTPUT_MODE>
 
 Checks:
 - Inputs:
+- Minimum evidence:
 - Job specificity:
 - Evidence labels:
 - Candidate facts:
@@ -59,6 +64,7 @@ Checks:
 - Mode compliance:
 - Actionability:
 - Checklist:
+- Privacy boundary:
 
 Required fixes:
 1. <file/section or "draft"> - <smallest required change, or "None">

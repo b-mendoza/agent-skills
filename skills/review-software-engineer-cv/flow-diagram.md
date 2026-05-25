@@ -1,6 +1,6 @@
 # Review Software Engineer CV
 
-This workflow coordinates a read-only CV review for software engineer applications. The agent may normalize inputs, route work to intake, role-fit, tailoring, and review subagents, and produce evidence-labeled recommendations. Candidate facts may come only from the `CV` and `APPLICANT_CONTEXT`; job requirements come from `JOB_POSTING`; public resume or ATS guidance is background only and never candidate evidence.
+This workflow coordinates a read-only CV review for software engineer applications. The agent may normalize inputs, route work to intake, role-fit, tailoring, and review subagents, and produce evidence-labeled recommendations. Candidate facts may come only from the `CV` and `APPLICANT_CONTEXT`; job requirements come from `JOB_POSTING`; public resume or ATS guidance is background only and never candidate evidence. Public guidance may be fetched, but private candidate material and drafts are not submitted to external resume scanners, forms, or tools.
 
 ```mermaid
 flowchart TD
@@ -20,8 +20,10 @@ flowchart TD
   INTAKE_STATUS -->|BLOCKED| BLOCKED_EVIDENCE(["Blocked: insufficient primary evidence"])
   INTAKE_STATUS -->|ERROR| PHASE_ERROR(["Error: phase failed"])
 
-  EVIDENCE_FULL --> ROLE_FIT["Dispatch role-fit-mapper with evidence ledger"]
-  EVIDENCE_PARTIAL --> ROLE_FIT
+  EVIDENCE_FULL --> EVIDENCE_THRESHOLD{"Selected-mode evidence threshold met?"}
+  EVIDENCE_PARTIAL --> EVIDENCE_THRESHOLD
+  EVIDENCE_THRESHOLD -->|no| BLOCKED_EVIDENCE
+  EVIDENCE_THRESHOLD -->|yes| ROLE_FIT["Dispatch role-fit-mapper with evidence ledger"]
   ROLE_FIT --> ROLE_STATUS{"ROLE_FIT status"}
   ROLE_STATUS -->|PASS| ROLE_OK["Record role requirements and fit map"]
   ROLE_STATUS -->|PARTIAL| ROLE_PARTIAL["Record partial fit map and limitations"]
@@ -53,7 +55,9 @@ flowchart TD
   FIX_STATUS -->|PARTIAL| DRAFT_PARTIAL
   FIX_STATUS -->|ERROR| PHASE_ERROR
 
-  ASSEMBLE --> LIMITATIONS{"Limitations ledger non-empty?"}
+  ASSEMBLE --> PRIVACY_CHECK{"External use remained read-only?"}
+  PRIVACY_CHECK -->|no| BLOCKED_RISK
+  PRIVACY_CHECK -->|yes| LIMITATIONS{"Limitations ledger non-empty?"}
   LIMITATIONS -->|yes| PARTIAL_OUTPUT["Return selected-mode output with labeled limitations"]
   LIMITATIONS -->|no| MODE{"OUTPUT_MODE"}
 
@@ -75,7 +79,7 @@ flowchart TD
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class MODE_INPUT,CHECK_REQUIRED,INTAKE_STATUS,ROLE_STATUS,TAILOR_STATUS,CLAIM_GATE,SAFE_DELIVERABLE,REVIEW_STATUS,FIX_LIMIT,FIX_STATUS,LIMITATIONS,MODE decision;
+  class MODE_INPUT,CHECK_REQUIRED,INTAKE_STATUS,EVIDENCE_THRESHOLD,ROLE_STATUS,TAILOR_STATUS,CLAIM_GATE,SAFE_DELIVERABLE,REVIEW_STATUS,FIX_LIMIT,FIX_STATUS,PRIVACY_CHECK,LIMITATIONS,MODE decision;
   class MODE_KEEP,MODE_DEFAULT,INTAKE,EVIDENCE_FULL,EVIDENCE_PARTIAL,ROLE_FIT,ROLE_OK,ROLE_PARTIAL,TAILOR,DRAFT_OK,DRAFT_PARTIAL,RESOLVE,REVIEW,EDIT_FIX,ASSEMBLE check;
   class ASK_REQUIRED guard;
   class REPORT_REVIEW,REPORT_REWRITE,REPORT_CHECKLIST,REPORT_QUESTIONS,PARTIAL_OUTPUT output;
@@ -83,6 +87,6 @@ flowchart TD
   class BLOCKED_MISSING,BLOCKED_EVIDENCE,BLOCKED_RISK,PHASE_ERROR stop;
 ```
 
-Completion rule: finish with a full selected-mode output, a partial selected-mode output with propagated limitations, a blocked missing-source status, a blocked insufficient-evidence status, a blocked unresolved-integrity status after three targeted fix cycles or unsafe claim resolution, or a phase error.
+Completion rule: finish with a full selected-mode output, a partial selected-mode output with propagated limitations, a blocked missing-source status, a blocked insufficient-evidence status, a blocked privacy or unresolved-integrity status after three targeted fix cycles or unsafe claim resolution, or a phase error.
 
 Sensitive-action rule: publishable candidate claims, metrics, seniority signals, domain depth claims, and technology/tool claims must be directly supported by `CV` or `APPLICANT_CONTEXT`, safely weakened, excluded, or carried as verification questions. They must not be asserted from background guidance.

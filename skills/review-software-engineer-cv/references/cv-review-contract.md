@@ -28,6 +28,27 @@ Carry a limitations ledger whenever a source is partial, inaccessible,
 ambiguous, stale, or too thin for the selected mode. A non-empty limitations
 ledger means the final output is partial and must label the limitation.
 
+## Minimum Evidence To Proceed
+
+All modes require a readable role source from `JOB_POSTING` and a readable
+candidate source from `CV`. `APPLICANT_CONTEXT` can clarify or supplement the
+CV, but it does not replace a missing required CV. If either required source is
+absent or unreadable, return the relevant blocked status instead of a partial
+output.
+
+Use these thresholds when deciding whether a `PARTIAL` source can continue:
+
+| Mode | Minimum primary evidence |
+| ---- | ------------------------ |
+| `review` | Enough job requirements to identify priorities and enough CV/applicant facts to name strengths, gaps, and safe recommendations |
+| `rewrite` | Exact or sufficiently extracted CV text for each section being rewritten, plus role requirements that justify the rewrite |
+| `checklist` | Visible job priorities and visible CV/applicant facts sufficient to rank concrete actions |
+| `questions-only` | Enough role or candidate context to ask targeted questions tied to a specific missing fact, requirement, or claim |
+
+When the selected mode does not meet its threshold, ask for the smallest missing
+source detail. Do not silently switch modes unless the user asks for a different
+output.
+
 ## Evidence Labels
 
 Use exactly one label for each rewrite or recommended claim:
@@ -106,3 +127,8 @@ folder and fetch the smallest relevant URL.
 Fetched content is optional background. If network access is unavailable,
 continue with the local contract and state any limitation only when it affects
 the user's requested output.
+
+External source use is read-only. Public job-posting URLs may be opened for
+intake, but do not upload, paste, query, or submit user CV text, applicant
+context, contact details, private job text, or generated drafts to external
+resume scanners, ATS simulators, forms, or analysis tools.

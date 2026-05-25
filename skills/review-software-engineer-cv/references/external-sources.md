@@ -6,6 +6,10 @@ Fetch one relevant URL at a time.
 
 > User-provided CV, applicant context, and job posting remain primary. Public
 > websites provide presentation guidance, not candidate facts.
+>
+> External source use is read-only: fetch guidance pages, but do not submit
+> user CVs, applicant context, contact details, private job text, or generated
+> drafts to third-party resume scanners, forms, or analysis tools.
 
 ## Source Map
 
@@ -36,6 +40,8 @@ Use external sources sparingly:
 - Keep fetched-source takeaways concise.
 - Apply public advice only when it fits the specific job posting and the
   applicant's real evidence.
+- Use public job-posting URLs only for intake; do not paste private candidate
+  or draft material into external sites.
 - If sources disagree, prefer the job posting and the local CV review contract.
 - Mention external sources in the final answer only when the user asks or the
   fetched source materially shaped a recommendation.
