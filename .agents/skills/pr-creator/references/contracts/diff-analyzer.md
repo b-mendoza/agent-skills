@@ -7,10 +7,14 @@
 
 ```text
 DIFF_ANALYSIS: PASS | LARGE_PR_CONFIRMATION_REQUIRED | EMPTY_DIFF | ERROR
-Range: origin/<target_branch>...origin/<current_branch>
+Remote name: <remote_name>
+Range: <remote_name>/<target_branch>...<remote_name>/<current_branch>
 Shortstat: <insertions/deletions summary or none>
-Changed files:
-- <path or grouped area>
+Changed file paths:
+- <exact path>
+
+Changed areas:
+- none | <grouped area summary>
 
 Diff summary:
 - <grounded behavior or structural change>
@@ -48,9 +52,15 @@ approved. `EMPTY_DIFF` maps to `EMPTY_DIFF`; `ERROR` maps to `BLOCKED`.
 
 <example>
 DIFF_ANALYSIS: LARGE_PR_CONFIRMATION_REQUIRED
+Remote name: origin
 Range: origin/main...origin/feat/billing-export
 Shortstat: 38 files changed, 1460 insertions(+), 210 deletions(-)
-Changed files:
+Changed file paths:
+- api/billing/export.py
+- frontend/settings/BillingExport.tsx
+- docs/billing-export.md
+
+Changed areas:
 - api/billing export endpoints
 - frontend billing settings
 - docs export workflow

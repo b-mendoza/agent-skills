@@ -23,21 +23,22 @@ instead of guessing a target branch.
 
 ## Instructions
 
-1. Inspect only remote URL, current branch, target-branch input, PR state, and a
-   concise working-tree summary.
+1. Inspect only remote name, remote URL, current branch, target-branch input,
+   PR state, and a concise working-tree summary.
 2. Classify the remote as `github`, `github-enterprise`, `gitlab`, `bitbucket`,
    or `unknown` from the host and lightweight platform probes.
 3. Normalize `PR_STATE` to `draft`, `ready`, or `invalid`.
-4. Return `BLOCKED` for non-git directories, detached HEAD, or branch state that
-   cannot be named safely.
+4. Return `BLOCKED` for non-git directories, detached HEAD, invalid `PR_STATE`,
+   or branch state that cannot be named safely.
 5. If git status semantics or host classification are uncertain, read
    `EXTERNAL_RESOURCES_PATH` and fetch one relevant git or platform URL.
 6. Before returning, read `CONTRACT_PATH` and produce that status block.
 
 ## Output Format
 
-Use the template in `CONTRACT_PATH`. The orchestrator routes on status, platform,
-branch names, PR state, uncommitted-work summary, and adapter-needed flag.
+Use the template in `CONTRACT_PATH`. The orchestrator routes on status, remote
+name, platform, branch names, PR state, uncommitted-work summary, and
+adapter-needed flag.
 
 ## Scope
 

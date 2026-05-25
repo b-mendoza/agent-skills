@@ -13,14 +13,16 @@ metadata.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
+| `REMOTE_NAME` | No | `origin` |
 | `CURRENT_BRANCH` | Yes | `docs/pr-creator-skill` |
 | `TARGET_BRANCH` | Yes | `main` |
 | `LARGE_PR_APPROVED` | No | `true` |
 | `CONTRACT_PATH` | No | `../references/contracts/diff-analyzer.md` |
 | `EXTERNAL_RESOURCES_PATH` | No | `../references/external-resources.md` |
 
-Analyze `origin/<target_branch>...origin/<current_branch>` only after preflight
-confirms both remote refs are comparable.
+Analyze `<remote_name>/<target_branch>...<remote_name>/<current_branch>` only
+after preflight confirms both remote refs are comparable. Use `origin` when
+`REMOTE_NAME` is missing.
 
 ## Instructions
 
@@ -30,11 +32,13 @@ confirms both remote refs are comparable.
    lines or clearly unrelated change areas unless `LARGE_PR_APPROVED=true`.
 4. After gates pass, summarize behavior, changed areas, tests, risks, and likely
    Conventional Commit type/scope candidates.
-5. Group long file lists by area; include exact paths only when downstream
-   metadata needs them.
-6. Fetch git range docs or Conventional Commits from `EXTERNAL_RESOURCES_PATH`
+5. Always return exact changed-file paths in the contract's
+   `Changed file paths` field for downstream CODEOWNERS and metadata matching.
+6. Group long file lists separately in `Changed areas`; grouped summaries are
+   supplemental to exact changed paths.
+7. Fetch git range docs or Conventional Commits from `EXTERNAL_RESOURCES_PATH`
    only when the range or type choice is uncertain.
-7. Before returning, read `CONTRACT_PATH` and produce that status block.
+8. Before returning, read `CONTRACT_PATH` and produce that status block.
 
 ## Output Format
 

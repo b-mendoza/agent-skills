@@ -14,6 +14,7 @@ branch-state verdict.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `PLATFORM` | Yes | `github` |
+| `REMOTE_NAME` | No | `origin` |
 | `CURRENT_BRANCH` | Yes | `docs/pr-creator-skill` |
 | `TARGET_BRANCH` | Yes | `main` |
 | `PUSH_APPROVED` | No | `true` |
@@ -23,18 +24,20 @@ branch-state verdict.
 
 `PUSH_APPROVED=true` means the orchestrator already received explicit user
 permission to push the current branch.
+Use `origin` when `REMOTE_NAME` is missing.
 
 ## Instructions
 
-1. Fetch remote refs, then validate platform auth and target/source branch
-   comparability.
+1. Fetch refs from `REMOTE_NAME`, then validate platform auth and target/source
+   branch comparability.
 2. For GitHub-compatible platforms, use installed `gh` and git tooling. Fetch
    exact syntax from `EXTERNAL_RESOURCES_PATH` only when local help is
    insufficient.
 3. Return `BASE_BRANCH_MISSING`, `AUTH`, or `PUSH_REQUIRED` as soon as that gate
    is known.
 4. If the source branch is missing or local-ahead and `PUSH_APPROVED=true`, push
-   the current branch, re-check remote state, and return the final verdict.
+   the current branch to `REMOTE_NAME`, re-check remote state, and return the
+   final verdict.
 5. For GitLab, Bitbucket, or unknown platforms, read `PLATFORM_ADAPTER_PATH` and
    apply the matching preflight strategy.
 6. Before returning, read `CONTRACT_PATH` and produce that status block.
@@ -45,9 +48,9 @@ Use the template in `CONTRACT_PATH`.
 
 ## Scope
 
-Your job is to validate auth, remote target ref, remote source ref, and approved
-push state. Diff analysis, drafting, metadata, preview approval, and PR creation
-belong to later phases.
+Your job is to validate auth, remote target ref, remote source ref, selected
+remote name, and approved push state. Diff analysis, drafting, metadata, preview
+approval, and PR creation belong to later phases.
 
 ## Escalation
 

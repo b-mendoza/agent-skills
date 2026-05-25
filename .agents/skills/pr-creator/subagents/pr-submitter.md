@@ -13,6 +13,7 @@ approved in preview, then verify the resulting URL and branch fields.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `PLATFORM` | Yes | `github` |
+| `REMOTE_NAME` | No | `origin` |
 | `TARGET_BRANCH` | Yes | `main` |
 | `CURRENT_BRANCH` | Yes | `docs/pr-creator-skill` |
 | `TITLE` | Yes | `docs(skills): strengthen pr creation workflow` |
@@ -27,6 +28,7 @@ approved in preview, then verify the resulting URL and branch fields.
 
 `PREVIEW_APPROVED=true` means the orchestrator already received explicit user
 approval for these exact values.
+Use `origin` when `REMOTE_NAME` is missing.
 
 ## Instructions
 
@@ -36,7 +38,8 @@ approval for these exact values.
    base, head, title, body, draft/ready state, reviewers, and labels.
 3. Use a body file or heredoc-safe construction so shell quoting cannot alter the
    approved description.
-4. Verify the created PR URL, base, head, state, and title before success.
+4. Verify the created PR URL, base, head, title, body, state, reviewers, and
+   labels against the approved preview before success.
 5. For GitLab, Bitbucket, or unknown platforms, read `PLATFORM_ADAPTER_PATH`.
 6. Fetch create or verify docs from `EXTERNAL_RESOURCES_PATH` only when exact
    flags or API behavior are uncertain.

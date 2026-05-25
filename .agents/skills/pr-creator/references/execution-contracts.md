@@ -17,7 +17,7 @@ Next step: <one clear action>
 
 | Source status | Envelope code |
 | ------------- | ------------- |
-| Missing `TARGET_BRANCH`, missing active-platform path, missing type/scope choice, missing reviewer, or unresolved label choice | `BLOCKED` |
+| Missing `TARGET_BRANCH`, invalid `PR_STATE`, missing active-platform path, missing type/scope choice, missing reviewer, or unresolved label choice | `BLOCKED` |
 | `PREFLIGHT: AUTH`, `PR_SUBMIT: AUTH`, `REVIEW_METADATA: AUTH` | `AUTH` |
 | `PREFLIGHT: BASE_BRANCH_MISSING` | `BASE_BRANCH_MISSING` |
 | `PREFLIGHT: HEAD_BRANCH_UNPUSHED`, unresolved `PREFLIGHT: PUSH_REQUIRED`, or declined push | `HEAD_BRANCH_UNPUSHED` |
@@ -59,6 +59,14 @@ Status:     <draft or ready>
 Description:
 <description>
 ```
+
+## Submission Verification
+
+After creation, compare the platform-returned PR or MR against the frozen
+preview. Success requires verified URL, base branch, head branch, title, body,
+state, reviewers, and labels. If creation succeeds but any approved field cannot
+be verified or differs from the preview, return `PR_CREATE: CREATE_ERROR` with
+the mismatched field and one recovery step.
 
 ## Final Success Output
 

@@ -8,6 +8,7 @@
 ```text
 PREFLIGHT: PASS | PUSH_REQUIRED | AUTH | BASE_BRANCH_MISSING | HEAD_BRANCH_UNPUSHED | BLOCKED | ERROR
 Platform: <platform>
+Remote name: <remote_name>
 Base branch: <target_branch>
 Head branch: <current_branch>
 Head remote state: up-to-date | missing | local-ahead | unknown
@@ -19,8 +20,9 @@ Decision needed: none | <smallest user decision or recovery action>
 
 ## Codes
 
-- `PASS`: auth, target ref, and source ref are remotely comparable.
-- `PUSH_REQUIRED`: source branch is missing or local-ahead without approval.
+- `PASS`: auth, target ref, and source ref are comparable on `Remote name`.
+- `PUSH_REQUIRED`: source branch is missing from `Remote name` or local-ahead
+  without approval.
 - `AUTH`: platform CLI, token, or permission is missing or invalid.
 - `BASE_BRANCH_MISSING`: target branch is absent on the remote.
 - `HEAD_BRANCH_UNPUSHED`: approved push did not make the source comparable.
@@ -39,6 +41,7 @@ map directly to the failure envelope.
 <example>
 PREFLIGHT: PUSH_REQUIRED
 Platform: github
+Remote name: origin
 Base branch: main
 Head branch: feat/checkout-redesign
 Head remote state: local-ahead
