@@ -1,79 +1,88 @@
 # Review Software Engineer CV
 
-This workflow reviews a software engineer CV against a job posting. The agent may coordinate intake, role-fit mapping, truthful tailoring, validation, and a user-facing report, but it must not invent candidate facts, inflate seniority, fabricate metrics, or treat external resume guidance as candidate evidence. Primary evidence is the provided `CV`, `APPLICANT_CONTEXT`, and `JOB_POSTING`; optional fetched sources are background only.
+This workflow coordinates a read-only CV review for software engineer applications. The agent may normalize inputs, route work to intake, role-fit, tailoring, and review subagents, and produce evidence-labeled recommendations. Candidate facts may come only from the `CV` and `APPLICANT_CONTEXT`; job requirements come from `JOB_POSTING`; public resume or ATS guidance is background only and never candidate evidence.
 
 ```mermaid
 flowchart TD
-  START([Start: review software engineer CV]) --> NORMALIZE[Normalize OUTPUT_MODE or default to review]
-  NORMALIZE --> CHECK_REQUIRED{Readable CV and JOB_POSTING provided?}
+  START(["Start: review software engineer CV"]) --> MODE_INPUT{"OUTPUT_MODE provided and supported?"}
+  MODE_INPUT -->|supported| MODE_KEEP["Use requested OUTPUT_MODE"]
+  MODE_INPUT -->|missing or invalid| MODE_DEFAULT["Set OUTPUT_MODE to review"]
+  MODE_KEEP --> CHECK_REQUIRED{"Readable CV and JOB_POSTING provided?"}
+  MODE_DEFAULT --> CHECK_REQUIRED
 
-  CHECK_REQUIRED -->|no| ASK_REQUIRED[Ask user for missing or unreadable required source]
-  ASK_REQUIRED --> BLOCKED_MISSING([Blocked: pending required source])
+  CHECK_REQUIRED -->|no| ASK_REQUIRED["Request missing or unreadable required source"]
+  ASK_REQUIRED --> BLOCKED_MISSING(["Blocked: missing required source"])
+  CHECK_REQUIRED -->|yes| INTAKE["Dispatch source-intake-analyst"]
 
-  CHECK_REQUIRED -->|yes| INTAKE[Dispatch source-intake-analyst]
-  INTAKE -->|phase error| PHASE_ERROR([Error: phase failed])
-  INTAKE --> SOURCE_OK{Enough primary evidence remains?}
-  SOURCE_OK -->|no| BLOCKED_EVIDENCE([Blocked: insufficient evidence])
-  SOURCE_OK -->|yes| LIMITS[Record limitations for partial, inaccessible, or ambiguous sources]
+  INTAKE --> INTAKE_STATUS{"SOURCE_INTAKE status"}
+  INTAKE_STATUS -->|PASS| EVIDENCE_FULL["Open evidence ledger with usable primary sources"]
+  INTAKE_STATUS -->|PARTIAL| EVIDENCE_PARTIAL["Open evidence ledger with source limitations"]
+  INTAKE_STATUS -->|BLOCKED| BLOCKED_EVIDENCE(["Blocked: insufficient primary evidence"])
+  INTAKE_STATUS -->|ERROR| PHASE_ERROR(["Error: phase failed"])
 
-  LIMITS --> MAP[Dispatch role-fit-mapper]
-  MAP -->|phase error| PHASE_ERROR
-  MAP --> TAILOR[Dispatch cv-tailoring-editor]
-  TAILOR -->|phase error| PHASE_ERROR
-  TAILOR --> LABEL[Label rewrites and recommendations by evidence support]
-  LABEL --> UNSUPPORTED{Unsupported claims, metrics, seniority, or domain depth?}
+  EVIDENCE_FULL --> ROLE_FIT["Dispatch role-fit-mapper with evidence ledger"]
+  EVIDENCE_PARTIAL --> ROLE_FIT
+  ROLE_FIT --> ROLE_STATUS{"ROLE_FIT status"}
+  ROLE_STATUS -->|PASS| ROLE_OK["Record role requirements and fit map"]
+  ROLE_STATUS -->|PARTIAL| ROLE_PARTIAL["Record partial fit map and limitations"]
+  ROLE_STATUS -->|ERROR| PHASE_ERROR
 
-  UNSUPPORTED -->|yes| QUESTIONS[Ask user verification questions for unsupported claims]
-  QUESTIONS --> USER_VERIFY{User verifies candidate claim?}
-  USER_VERIFY -->|confirmed| INCLUDE_CONFIRMED[Include confirmed claim with evidence label]
-  USER_VERIFY -->|declined or unverified| EXCLUDE_UNVERIFIED[Exclude claim or keep it as a question]
-  USER_VERIFY -->|unresolved or handoff needed| BLOCKED_VERIFY([Blocked: unresolved verification handoff])
-  INCLUDE_CONFIRMED --> REVIEW
-  EXCLUDE_UNVERIFIED --> REVIEW
+  ROLE_OK --> TAILOR["Dispatch cv-tailoring-editor"]
+  ROLE_PARTIAL --> TAILOR
+  TAILOR --> TAILOR_STATUS{"TAILORING_DRAFT status"}
+  TAILOR_STATUS -->|PASS| DRAFT_OK["Record draft recommendations with evidence labels"]
+  TAILOR_STATUS -->|PARTIAL| DRAFT_PARTIAL["Record partial draft and limitations"]
+  TAILOR_STATUS -->|ERROR| PHASE_ERROR
 
-  UNSUPPORTED -->|no| REVIEW[Dispatch cv-reviewer with compact summaries and verdicts]
-  REVIEW -->|phase error| PHASE_ERROR
-  REVIEW --> PASSES{Quality checklist passes?}
-  PASSES -->|yes| LIMITATION_STATE{Limitations require partial report?}
-  PASSES -->|validation error| PHASE_ERROR
-  PASSES -->|no| FIX_CYCLES{Targeted fix cycles under 3?}
+  DRAFT_OK --> CLAIM_GATE{"Unsupported sensitive candidate claims remain?"}
+  DRAFT_PARTIAL --> CLAIM_GATE
+  CLAIM_GATE -->|no| REVIEW["Dispatch cv-reviewer with summaries, ledger, and TAILORING_DRAFT"]
+  CLAIM_GATE -->|yes| RESOLVE["Resolve by support, safe weakening, exclusion, or verification questions"]
+  RESOLVE --> SAFE_DELIVERABLE{"Safe selected-mode deliverable remains?"}
+  SAFE_DELIVERABLE -->|yes| REVIEW
+  SAFE_DELIVERABLE -->|no| BLOCKED_RISK(["Blocked: unresolved integrity risk"])
 
-  FIX_CYCLES -->|yes| RERUN[Run targeted editor or reviewer fix]
-  RERUN --> LABEL
-  FIX_CYCLES -->|no| BLOCKED_RISK([Blocked: unresolved integrity risk])
+  REVIEW --> REVIEW_STATUS{"CV_REVIEW status"}
+  REVIEW_STATUS -->|PASS| ASSEMBLE["Assemble selected output with evidence labels"]
+  REVIEW_STATUS -->|ERROR| PHASE_ERROR
+  REVIEW_STATUS -->|FAIL| FIX_LIMIT{"Targeted fix cycles under 3?"}
+  FIX_LIMIT -->|no| BLOCKED_RISK
+  FIX_LIMIT -->|yes| EDIT_FIX["Redispatch cv-tailoring-editor with TAILORING_DRAFT and REVIEW_FIXES"]
+  EDIT_FIX --> FIX_STATUS{"TAILORING_DRAFT status"}
+  FIX_STATUS -->|PASS| DRAFT_OK
+  FIX_STATUS -->|PARTIAL| DRAFT_PARTIAL
+  FIX_STATUS -->|ERROR| PHASE_ERROR
 
-  LIMITATION_STATE -->|yes| PARTIAL_REPORT[Return partial reviewed report with labeled limitations]
-  LIMITATION_STATE -->|no| MODE{OUTPUT_MODE}
+  ASSEMBLE --> LIMITATIONS{"Limitations ledger non-empty?"}
+  LIMITATIONS -->|yes| PARTIAL_OUTPUT["Return selected-mode output with labeled limitations"]
+  LIMITATIONS -->|no| MODE{"OUTPUT_MODE"}
 
-  MODE -->|review| REPORT_REVIEW[Return reviewed report]
-  MODE -->|rewrite| REPORT_REWRITE[Return supported rewrites with evidence labels]
-  MODE -->|checklist| REPORT_CHECKLIST[Return checklist and prioritized edits]
-  MODE -->|questions-only| REPORT_QUESTIONS[Return verification questions only]
+  MODE -->|review| REPORT_REVIEW["Return reviewed report"]
+  MODE -->|rewrite| REPORT_REWRITE["Return supported rewrites with evidence labels"]
+  MODE -->|checklist| REPORT_CHECKLIST["Return prioritized checklist"]
+  MODE -->|questions-only| REPORT_QUESTIONS["Return verification questions only"]
 
-  REPORT_REVIEW --> FINAL([Complete: final reviewed report])
+  REPORT_REVIEW --> FINAL(["Complete: full reviewed output"])
   REPORT_REWRITE --> FINAL
   REPORT_CHECKLIST --> FINAL
   REPORT_QUESTIONS --> FINAL
-  PARTIAL_REPORT --> PARTIAL_FINAL([Complete: partial reviewed report with limitations])
+  PARTIAL_OUTPUT --> PARTIAL_FINAL(["Complete: partial output with limitations"])
 
   classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
   classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
-  classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
   classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
-  classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class CHECK_REQUIRED,SOURCE_OK,UNSUPPORTED,USER_VERIFY,PASSES,FIX_CYCLES,LIMITATION_STATE,MODE decision;
-  class NORMALIZE,INTAKE,LIMITS,MAP,TAILOR,LABEL,REVIEW,RERUN,INCLUDE_CONFIRMED,EXCLUDE_UNVERIFIED check;
-  class ASK_REQUIRED,QUESTIONS guard;
-  class USER_VERIFY human;
-  class REPORT_REVIEW,REPORT_REWRITE,REPORT_CHECKLIST,REPORT_QUESTIONS,PARTIAL_REPORT output;
+  class MODE_INPUT,CHECK_REQUIRED,INTAKE_STATUS,ROLE_STATUS,TAILOR_STATUS,CLAIM_GATE,SAFE_DELIVERABLE,REVIEW_STATUS,FIX_LIMIT,FIX_STATUS,LIMITATIONS,MODE decision;
+  class MODE_KEEP,MODE_DEFAULT,INTAKE,EVIDENCE_FULL,EVIDENCE_PARTIAL,ROLE_FIT,ROLE_OK,ROLE_PARTIAL,TAILOR,DRAFT_OK,DRAFT_PARTIAL,RESOLVE,REVIEW,EDIT_FIX,ASSEMBLE check;
+  class ASK_REQUIRED guard;
+  class REPORT_REVIEW,REPORT_REWRITE,REPORT_CHECKLIST,REPORT_QUESTIONS,PARTIAL_OUTPUT output;
   class FINAL,PARTIAL_FINAL success;
-  class BLOCKED_MISSING,BLOCKED_EVIDENCE,BLOCKED_RISK,BLOCKED_VERIFY,PHASE_ERROR stop;
+  class BLOCKED_MISSING,BLOCKED_EVIDENCE,BLOCKED_RISK,PHASE_ERROR stop;
 ```
 
-Completion rule: finish with a final reviewed report, a blocked missing-source request, a partial reviewed report with labeled limitations, a phase error, or a blocker after three failed targeted fix cycles.
+Completion rule: finish with a full selected-mode output, a partial selected-mode output with propagated limitations, a blocked missing-source status, a blocked insufficient-evidence status, a blocked unresolved-integrity status after three targeted fix cycles or unsafe claim resolution, or a phase error.
 
-Sensitive-action rule: any recommendation or rewrite that would publish a candidate claim must be supported by the CV, applicant context, or job posting; otherwise it must be confirmed by the user, excluded, kept as a verification question, or handed off as unresolved rather than asserted.
+Sensitive-action rule: publishable candidate claims, metrics, seniority signals, domain depth claims, and technology/tool claims must be directly supported by `CV` or `APPLICANT_CONTEXT`, safely weakened, excluded, or carried as verification questions. They must not be asserted from background guidance.

@@ -24,9 +24,10 @@ avoid carrying long static resume advice in the prompt.
 | `APPLICANT_CONTEXT` | No | Real projects, preferred stack, target seniority, constraints, or interview-defensible details |
 | `OUTPUT_MODE` | No | `review`, `rewrite`, `checklist`, or `questions-only` |
 
-If either required input is missing or unreadable, ask for the missing source
-and stop. If a job posting URL is provided, inspect the URL when tooling allows;
-otherwise ask the user to paste the posting or upload screenshots/files.
+If `OUTPUT_MODE` is missing or unsupported, set it to `review`. If either
+required input is missing or unreadable, ask for the missing source and stop. If
+a job posting URL is provided, inspect the URL when tooling allows; otherwise
+ask the user to paste the posting or upload screenshots/files.
 
 ## Workflow Overview
 
@@ -60,43 +61,59 @@ facts.
 
 ## Execution Steps
 
-1. Normalize `OUTPUT_MODE`; default to `review` when the user does not specify.
+1. Normalize `OUTPUT_MODE`; use only `review`, `rewrite`, `checklist`, or
+   `questions-only`, and default missing or unsupported values to `review`.
 2. Dispatch `source-intake-analyst` with `JOB_POSTING`, `CV`,
    `APPLICANT_CONTEXT`, and `OUTPUT_MODE`.
-3. If source intake is `ERROR`, stop and surface the intake failure with the
-   smallest useful recovery action. If it is `BLOCKED`, ask for the smallest
-   missing source. If it is `PARTIAL`, continue only when enough evidence
-   remains for the requested mode.
-4. Dispatch `role-fit-mapper` with `SOURCE_INTAKE`, `APPLICANT_CONTEXT`, and
-   `OUTPUT_MODE`.
-5. If role fit is `ERROR`, stop and surface the mapping failure with the
-   smallest useful recovery action. If it is `PARTIAL`, continue with the
-   stated limitations carried forward.
+3. Route on `SOURCE_INTAKE: PASS | PARTIAL | BLOCKED | ERROR`. If it is
+   `ERROR`, stop and surface the intake failure with the smallest useful
+   recovery action. If it is `BLOCKED`, ask for the smallest missing source. If
+   it is `PASS` or `PARTIAL`, open an evidence ledger from the intake handoff;
+   for `PARTIAL`, preserve source limitations in the limitations ledger and
+   continue only when enough primary evidence remains for the requested mode.
+4. Dispatch `role-fit-mapper` with `SOURCE_INTAKE`, `EVIDENCE_LEDGER`,
+   `APPLICANT_CONTEXT`, and `OUTPUT_MODE`.
+5. Route on `ROLE_FIT: PASS | PARTIAL | ERROR`. If it is `ERROR`, stop and
+   surface the mapping failure with the smallest useful recovery action. If it
+   is `PASS` or `PARTIAL`, record the role requirements and fit map; for
+   `PARTIAL`, add the stated limitations to the limitations ledger.
 6. Dispatch `cv-tailoring-editor` with `SOURCE_INTAKE`, `ROLE_FIT`, the
-   original CV/job sources when available, `APPLICANT_CONTEXT`, and
-   `OUTPUT_MODE`.
-7. If the tailoring draft is `ERROR`, stop and surface the editor failure with
-   the smallest useful recovery action. If it is `PARTIAL`, continue to review
-   with the stated limitations preserved.
-8. Dispatch `cv-reviewer` with `TAILORING_DRAFT`, `SOURCE_INTAKE`, `ROLE_FIT`,
-   and `OUTPUT_MODE`.
-9. If review is `ERROR`, stop and surface the reviewer failure. If review is
-   `FAIL`, redispatch `cv-tailoring-editor` with `SOURCE_INTAKE`, `ROLE_FIT`,
-   the original CV/job sources when available, `APPLICANT_CONTEXT`,
-   `OUTPUT_MODE`, the prior `TAILORING_DRAFT`, and only the required fixes from
-   `cv-reviewer`; rerun review. Use at most three targeted fix cycles, then
-   surface the blocker.
-10. Return the reviewed report. Include phase notes only for partial input,
-   inaccessible URLs, unresolved integrity risks, or user-requested detail.
+   current `EVIDENCE_LEDGER`, the current `LIMITATIONS_LEDGER`, the original
+   CV/job sources when available, `APPLICANT_CONTEXT`, and `OUTPUT_MODE`.
+7. Route on `TAILORING_DRAFT: PASS | PARTIAL | ERROR`. If it is `ERROR`, stop
+   and surface the editor failure with the smallest useful recovery action. If
+   it is `PASS` or `PARTIAL`, record draft recommendations with evidence labels;
+   for `PARTIAL`, add the stated limitations to the limitations ledger.
+8. Before review, resolve unsupported sensitive candidate claims. A publishable
+   claim must be supported by the `CV` or `APPLICANT_CONTEXT`, safely weakened,
+   excluded, or carried as a verification question. Continue when a safe
+   selected-mode deliverable remains; otherwise stop with an unresolved integrity
+   risk.
+9. Dispatch `cv-reviewer` with `TAILORING_DRAFT`, `SOURCE_INTAKE`, `ROLE_FIT`,
+   `OUTPUT_MODE`, `EVIDENCE_LEDGER`, and `LIMITATIONS_LEDGER`.
+10. Route on `CV_REVIEW: PASS | FAIL | ERROR`. If review is `ERROR`, stop and
+   surface the reviewer failure. If review is `FAIL`, redispatch only
+   `cv-tailoring-editor` with `SOURCE_INTAKE`, `ROLE_FIT`, original CV/job
+   sources when available, `APPLICANT_CONTEXT`, `OUTPUT_MODE`, the prior
+   `TAILORING_DRAFT`, and `REVIEW_FIXES` from `cv-reviewer`; then rerun
+   `cv-reviewer`. Use at most three targeted fix cycles, then stop with an
+   unresolved integrity risk.
+11. Assemble the selected output with evidence labels. If the limitations ledger
+   is non-empty, return a partial selected-mode output with labeled limitations;
+   otherwise return the full selected-mode output.
 
 ## Output Contract
 
-The final answer follows `OUTPUT_MODE`: `review`, `rewrite`, `checklist`, or
-`questions-only`. Full mode-specific templates live in
+The final answer follows normalized `OUTPUT_MODE`: `review`, `rewrite`,
+`checklist`, or `questions-only`. Full mode-specific templates live in
 `./references/report-template.md`.
 
 Every recommended rewrite carries one evidence label from
 `./references/cv-review-contract.md`.
+
+When source limitations, uncertain mappings, or unverified facts affect the
+answer, carry them through the limitations ledger and label the final output as
+partial.
 
 ## Example
 

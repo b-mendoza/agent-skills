@@ -5,6 +5,14 @@ Read this file only when assembling the final user-facing CV review or rewrite.
 > Every recommendation and rewrite keeps an evidence label from
 > `cv-review-contract.md`.
 
+When the limitations ledger is non-empty, keep the selected mode but add a short
+partial-output note before the mode-specific sections:
+
+```markdown
+## Partial Output Note
+- <source limitation, uncertain mapping, or verification limit>
+```
+
 ## `review` Mode
 
 ```markdown
@@ -97,5 +105,6 @@ Evidence notes: <what is supported vs. needs verification>
 - Prefer fewer high-impact rewrites over exhaustive generic edits.
 - Preserve the applicant's apparent seniority unless applicant context supports
   a stronger level.
-- Include a partial-input note at the top only when missing or inaccessible
-  input materially limits the review.
+- Include a partial-output note at the top when the limitations ledger is
+  non-empty because missing, inaccessible, ambiguous, or unverified information
+  materially limits the selected-mode output.

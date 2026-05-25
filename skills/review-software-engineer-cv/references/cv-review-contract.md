@@ -15,6 +15,19 @@ Use sources in this order:
 Candidate facts come only from the CV or applicant context. Public resume
 advice can shape presentation; it cannot create experience.
 
+## Evidence And Limitations Ledgers
+
+Carry a compact evidence ledger across the workflow:
+
+- candidate facts from `CV` and `APPLICANT_CONTEXT`
+- role requirements and vocabulary from `JOB_POSTING`
+- background-only public sources, when fetched
+- verification questions, excluded claims, and safely weakened claims
+
+Carry a limitations ledger whenever a source is partial, inaccessible,
+ambiguous, stale, or too thin for the selected mode. A non-empty limitations
+ledger means the final output is partial and must label the limitation.
+
 ## Evidence Labels
 
 Use exactly one label for each rewrite or recommended claim:
@@ -53,6 +66,21 @@ applicant questions:
 Rule of thumb: a recommended line is ready only when the applicant could defend
 it in an interview using real experience.
 
+## Sensitive Candidate Claim Resolution
+
+Sensitive candidate claims include publishable claims about metrics, seniority,
+domain depth, ownership, architecture scope, leadership, tools, frameworks, or
+certifications. Before final review, resolve each unsupported sensitive claim in
+one of these ways:
+
+- support it with `CV` or `APPLICANT_CONTEXT`
+- safely weaken it to match the evidence
+- exclude it from publishable wording
+- carry it as a verification question
+
+Block only when the selected `OUTPUT_MODE` cannot produce a safe deliverable
+after those resolution options.
+
 ## Output Modes
 
 | Mode | Produce |
@@ -64,6 +92,9 @@ it in an interview using real experience.
 
 For narrower modes, keep the same evidence labels and integrity rules, then
 return only the requested sections.
+
+If `OUTPUT_MODE` is missing or unsupported, normalize it to `review` before
+dispatching downstream phases.
 
 ## External Source Policy
 

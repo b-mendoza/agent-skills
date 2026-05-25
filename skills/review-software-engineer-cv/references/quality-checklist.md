@@ -10,6 +10,8 @@ Read this file only when validating a drafted CV review or rewrite.
 | Job specificity | Recommendations tie back to visible role requirements, priorities, or repeated terms |
 | Evidence labels | Every rewrite or recommended claim has one valid evidence label |
 | Candidate facts | Candidate claims are grounded in the CV/applicant context or framed as questions |
+| Claim resolution | Unsupported sensitive claims are supported, safely weakened, excluded, or carried as verification questions |
+| Limitations ledger | Partial, inaccessible, ambiguous, or thin sources are preserved for partial output |
 | Seniority realism | Wording matches the applicant's demonstrated scope and depth |
 | Technical defensibility | Tools, frameworks, architecture, scale, and metrics are supportable or explicitly unverified |
 | Human readability | Advice improves clarity for hiring managers, not only keyword overlap |
@@ -31,6 +33,8 @@ Ask the editor for the smallest change that resolves the failed gate:
 
 - Missing evidence label: add or correct the label.
 - Unsupported claim: convert to a question or safer wording.
+- Dropped limitation: restore it in the limitations ledger or mark the final
+  answer as partial.
 - Generic recommendation: tie it to a job requirement or remove it.
 - Overstated seniority: lower the claim to demonstrated contribution.
 - Mode mismatch: remove unrelated sections.
