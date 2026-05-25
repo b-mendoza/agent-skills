@@ -101,16 +101,24 @@ commit happens here.
    downstream skill explicitly accepts them.
 4. Let `executing-github-task` own kickoff, implementation, documentation,
    requirements verification, quality gates, and its internal fix cycles.
-5. If the downstream skill returns `BLOCKED`, stop the task, surface the blocker,
-   and record a resume point at Phase 7.
-6. If the downstream skill exhausts its quality-gate fix cycle, load
-   `./error-handling.md` and present the accumulated feedback to the user.
+5. Interpret the returned `FINAL_TASK_REPORT` status:
+   - `COMPLETE`: Phase 7 succeeded for the selected task.
+   - `BLOCKED`: stop the task, surface the blocker, and record a Phase 7
+     resume point.
+   - `STOPPED_FOR_USER_INPUT`: pause Phase 7, surface the exact decision
+     needed, and do not mark the task complete.
+   - `ESCALATED`: load `./error-handling.md` and present the accumulated
+     verifier or reviewer findings to the user.
+6. Retain the report's completion/blocker verdict, quality-gate summary,
+   implementation artifact summary, retry counts, and next required action.
 7. Dispatch `progress-tracker` with `ACTION=update_task`, `PHASE=7`, and
-   `STATUS=<complete | failed | skipped>` based on the downstream outcome.
+   `STATUS=<complete | active | failed | skipped>` based on the downstream
+   outcome.
 
-Use `STATUS=complete` only when the downstream skill reports a successful task
-completion path. Use `failed` for blocker/error stops unless the user explicitly
-chooses to skip or accept an incomplete task.
+Use `STATUS=complete` only for `FINAL_TASK_REPORT` status `COMPLETE`. Use
+`STATUS=active` for `STOPPED_FOR_USER_INPUT` so the task remains resumable.
+Use `STATUS=failed` for `BLOCKED`, `ESCALATED`, or downstream `ERROR` unless
+the user explicitly chooses to skip or accept an incomplete task.
 
 There is no orchestrator-level Phase 7 postcondition validator.
 

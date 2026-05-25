@@ -97,6 +97,11 @@ references when neither issue model is viable.
    `STATUS=complete`, `SUMMARY=<one-line result>`, and `TASKS=<rows from the
    downstream Created/Linked Task Issues table>`.
 7. Surface any warnings or failed creates before task selection.
+8. Do not offer a task for Phase 5 when its `GitHub Task Issue:` value is
+   `Not Created`; require manual resolution or a successful Phase 4 rerun for
+   that task first. If the value is `task-list`, surface the degraded
+   traceability and proceed only when the user accepts that model for the
+   selected task.
 
 **Gate:** User chooses which task to execute next. Never auto-start a task.
 

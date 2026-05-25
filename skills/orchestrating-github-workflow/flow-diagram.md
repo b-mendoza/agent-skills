@@ -12,7 +12,7 @@ flowchart TD
 
   RESUME -->|no| NEED_SOURCE_P1{"Issue source available for Phase 1?"}
   NEED_SOURCE_P1 -->|no| BLOCKED_SOURCE([Blocked: issue URL or owner / repo / issue number required])
-  NEED_SOURCE_P1 -->|yes| PREFLIGHT_P1["Preflight Phase 1"]
+  NEED_SOURCE_P1 -->|yes| PREFLIGHT_P1["Preflight Phases 1-7"]
   RESUME -->|yes| RESUME_POINT["Choose resume point from progress artifacts and verdicts"]
   RESUME_POINT --> RESUME_GATE{"Resume past Phase 1?"}
   RESUME_GATE -->|no| NEED_SOURCE_P1
@@ -91,7 +91,8 @@ flowchart TD
   NEXT_TASK -->|all tasks complete| WORKFLOW_DONE
 
   P1 -.evidence.-> EVIDENCE["Evidence: progress artifacts, preflight verdicts, phase summaries, validator verdicts, clarification flags, delegated GitHub status, and delegated code or docs context"]
-  P2 -.updates.-> TRACK["Update progress via progress-tracker"]
+  P1 -.updates.-> TRACK["Update progress via progress-tracker"]
+  P2 -.updates.-> TRACK
   P3 -.updates.-> TRACK
   P4 -.updates.-> TRACK
   P5 -.updates.-> TRACK
