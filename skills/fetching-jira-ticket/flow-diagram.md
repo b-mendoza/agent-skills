@@ -1,64 +1,69 @@
 # Fetching Jira Ticket
 
-A Jira retrieval coordinator accepts one `JIRA_URL`, derives workspace, project,
-and ticket identity, then delegates read-only Jira access and local snapshot
-assembly to `ticket-retriever`. The coordinator keeps raw Jira payloads out of
-context, branches only on the retriever's structured summary, and never mutates
-Jira, stages, or commits the snapshot.
+The coordinator retrieves exactly one Jira ticket into a validated local
+Markdown snapshot. It may normalize ticket coordinates, dispatch the delegated
+`ticket-retriever`, interpret only the retriever's structured summary, and
+report handoff state. Raw Jira payloads stay out of coordinator context. The
+delegated retriever performs read-only Jira queries, may write at most one
+unstaged file at `docs/<TICKET_KEY>.md`, and must not modify Jira.
 
 ```mermaid
 flowchart TD
-  START([Start: JIRA_URL provided]) --> URL_CHECK{JIRA_URL valid?}
-  URL_CHECK -->|no| BAD_INPUT([BAD_INPUT])
-  BAD_INPUT --> INPUT_REPORT[Coordinator reports malformed URL and asks for a corrected JIRA_URL]
-  URL_CHECK -->|yes| DERIVE[Derive workspace, TICKET_KEY, and project prefix]
+  START([Start: Jira ticket reference provided]) --> INPUT_CHECK{Valid ticket reference?}
+  INPUT_CHECK -->|JIRA_URL| DERIVE["Derive workspace, TICKET_KEY, and project prefix from URL"]
+  INPUT_CHECK -->|missing or malformed| BAD_INPUT([FETCH: FAIL - BAD_INPUT - Validation: NOT_RUN])
 
-  DERIVE --> DISPATCH[Dispatch ticket-retriever with identifiers and reference paths]
-  DISPATCH --> RETRIEVE[Subagent: run read-only Jira queries]
-  RETRIEVE --> AUTH_CHECK{Jira readable?}
-  AUTH_CHECK -->|auth missing| AUTH_STOP([AUTH])
-  AUTH_CHECK -->|not found| NOT_FOUND([NOT_FOUND])
-  AUTH_CHECK -->|tools missing| TOOLS_STOP([TOOLS_MISSING])
-  AUTH_CHECK -->|rate limited| RATE_STOP([RATE_LIMIT])
-  AUTH_CHECK -->|unexpected error| ERROR_STOP([FETCH: ERROR, failure category UNEXPECTED])
-  AUTH_CHECK -->|yes| ASSEMBLE[Subagent: assemble docs/<TICKET_KEY>.md from fields, comments, subtasks, links, attachments, and custom fields]
+  DERIVE --> NORMALIZE["Normalize ticket identity"]
+  NORMALIZE --> ARTIFACT_ID["Set TICKET_KEY and target docs/<TICKET_KEY>.md"]
+  ARTIFACT_ID --> DISPATCH["Dispatch ticket-retriever with full JIRA_URL and reference paths"]
 
-  ASSEMBLE --> WRITE_LIMIT{Within mutation limit?}
-  WRITE_LIMIT -->|no| VALIDATION_FAIL([Validation: FAIL])
-  WRITE_LIMIT -->|yes| WRITE[Write one unstaged local snapshot: docs/<TICKET_KEY>.md]
-  WRITE --> VALIDATE[Subagent: validate snapshot against fetch contract, playbook, and template]
-  VALIDATE --> VALIDATION{Validation pass?}
-  VALIDATION -->|no| VALIDATION_FAIL
-  VALIDATION -->|yes| FETCH_STATE{Fetch complete?}
+  subgraph RETRIEVER [Delegated ticket-retriever boundary]
+    RETRIEVER_ENTRY["ticket-retriever starts"] --> PRECHECK{Jira read path available?}
+    PRECHECK -->|auth missing| AUTH_STOP([FETCH: FAIL - AUTH - Validation: NOT_RUN])
+    PRECHECK -->|tools missing| TOOLS_STOP([FETCH: FAIL - TOOLS_MISSING - Validation: NOT_RUN])
+    PRECHECK -->|rate limited| RATE_STOP([FETCH: FAIL - RATE_LIMIT - Validation: NOT_RUN])
+    PRECHECK -->|unexpected error| ERROR_STOP([FETCH: ERROR - UNEXPECTED - Validation: NOT_RUN])
+    PRECHECK -->|yes| READ["Run read-only Jira queries"]
 
-  FETCH_STATE -->|complete| PASS([FETCH: PASS with Validation: PASS])
-  FETCH_STATE -->|partial but usable| PARTIAL([FETCH: PARTIAL with Validation: PASS])
-  FETCH_STATE -->|failed| FETCH_FAIL([FETCH: FAIL])
+    READ --> FOUND{Ticket found and readable?}
+    FOUND -->|not found| NOT_FOUND([FETCH: FAIL - NOT_FOUND - Validation: NOT_RUN])
+    FOUND -->|rate limited| RATE_STOP
+    FOUND -->|unexpected error| ERROR_STOP
+    FOUND -->|yes| COLLECT["Collect Jira ticket data required by the retrieval playbook and snapshot template"]
 
-  PASS --> SUMMARY[Subagent returns locked structured summary only]
-  PARTIAL --> SUMMARY
-  FETCH_FAIL --> SUMMARY
-  VALIDATION_FAIL --> SUMMARY
+    COLLECT --> ASSEMBLE["Assemble docs/<TICKET_KEY>.md from snapshot template"]
+    ASSEMBLE --> WRITE["Write one unstaged local snapshot"]
+    WRITE --> VALIDATE["Validate snapshot against fetch contract, playbook, and template"]
+    VALIDATE --> VALIDATION{Validation pass?}
+    VALIDATION -->|no after repair loop| VALIDATION_FAIL([FETCH: ERROR - UNEXPECTED - Validation: FAIL])
+    VALIDATION -->|yes| DISCOVERY{Required discovery complete?}
+    DISCOVERY -->|yes| PASS([FETCH: PASS - Validation: PASS])
+    DISCOVERY -->|partial but valid| PARTIAL([FETCH: PARTIAL - Validation: PASS])
+  end
+
+  DISPATCH --> RETRIEVER_ENTRY
+
+  BAD_INPUT --> SUMMARY["Locked summary/report carries FETCH, Validation, Failure category, File written, counts, warnings, and reason"]
   AUTH_STOP --> SUMMARY
-  NOT_FOUND --> SUMMARY
   TOOLS_STOP --> SUMMARY
   RATE_STOP --> SUMMARY
   ERROR_STOP --> SUMMARY
+  NOT_FOUND --> SUMMARY
+  VALIDATION_FAIL --> SUMMARY
+  PASS --> SUMMARY
+  PARTIAL --> SUMMARY
 
-  SUMMARY --> COORDINATOR[Coordinator interprets summary without raw Jira payloads]
-  COORDINATOR --> RESULT_STATUS{Result status or failure category?}
-  RESULT_STATUS -->|FETCH: PASS or FETCH: PARTIAL with Validation: PASS| DOWNSTREAM{Downstream phase tolerates partial context?}
-  RESULT_STATUS -->|AUTH| FAILURE_REPORT[Report failure category, reason, recovery action, and Jira not modified]
-  RESULT_STATUS -->|NOT_FOUND| FAILURE_REPORT
-  RESULT_STATUS -->|TOOLS_MISSING| FAILURE_REPORT
-  RESULT_STATUS -->|RATE_LIMIT| FAILURE_REPORT
-  RESULT_STATUS -->|FETCH: FAIL| FAILURE_REPORT
-  RESULT_STATUS -->|FETCH: ERROR| FAILURE_REPORT
-  RESULT_STATUS -->|Validation: FAIL| FAILURE_REPORT
-  DOWNSTREAM -->|yes for PASS or tolerated PARTIAL| REPORT[Report path, ticket identity, counts, warnings, and Jira-not-modified confirmation]
-  DOWNSTREAM -->|no for PARTIAL| PARTIAL_REPORT[Report partial context warning and stop reason]
-  INPUT_REPORT --> STOP([Stopped for user recovery])
-  FAILURE_REPORT --> STOP
+  SUMMARY --> COORDINATOR["Coordinator interprets structured summary without raw Jira payloads"]
+  COORDINATOR --> RESULT_STATUS{Result status?}
+  RESULT_STATUS -->|FETCH: PASS with Validation: PASS| REPORT["Report path, ticket identity, counts, warnings, and Jira-not-modified confirmation"]
+  RESULT_STATUS -->|FETCH: PARTIAL with Validation: PASS| DOWNSTREAM{Downstream phase tolerates partial context?}
+  RESULT_STATUS -->|FETCH: FAIL with Validation: NOT_RUN| FAILURE_REPORT["Report failure category, reason, recovery action, and Jira not modified"]
+  RESULT_STATUS -->|FETCH: ERROR or Validation: FAIL| FAILURE_REPORT
+  RESULT_STATUS -->|inconsistent status pairing| CONTRACT_CHECK["Consult fetch-contract.md before reporting error"]
+  CONTRACT_CHECK --> FAILURE_REPORT
+  DOWNSTREAM -->|yes| REPORT
+  DOWNSTREAM -->|no| PARTIAL_REPORT["Report partial context warning and stop reason"]
+  FAILURE_REPORT --> STOP([Stopped for user recovery])
   PARTIAL_REPORT --> STOP
   REPORT --> DONE([Ready for downstream workflow])
 
@@ -68,11 +73,11 @@ flowchart TD
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class URL_CHECK,AUTH_CHECK,WRITE_LIMIT,VALIDATION,FETCH_STATE,RESULT_STATUS,DOWNSTREAM decision;
-  class DERIVE,DISPATCH,RETRIEVE,ASSEMBLE,WRITE,VALIDATE,COORDINATOR check;
-  class SUMMARY,INPUT_REPORT,FAILURE_REPORT,REPORT,PARTIAL_REPORT output;
+  class INPUT_CHECK,PRECHECK,FOUND,VALIDATION,DISCOVERY,RESULT_STATUS,DOWNSTREAM decision;
+  class DERIVE,NORMALIZE,ARTIFACT_ID,DISPATCH,RETRIEVER_ENTRY,READ,COLLECT,ASSEMBLE,WRITE,VALIDATE,COORDINATOR,CONTRACT_CHECK check;
+  class SUMMARY,FAILURE_REPORT,REPORT,PARTIAL_REPORT output;
   class PASS,PARTIAL,DONE success;
-  class BAD_INPUT,AUTH_STOP,NOT_FOUND,TOOLS_STOP,RATE_STOP,ERROR_STOP,VALIDATION_FAIL,FETCH_FAIL,STOP stop;
+  class BAD_INPUT,AUTH_STOP,TOOLS_STOP,RATE_STOP,ERROR_STOP,NOT_FOUND,VALIDATION_FAIL,STOP stop;
 ```
 
 Readiness rule: continue only after `FETCH: PASS` with `Validation: PASS`, or
