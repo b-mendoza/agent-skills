@@ -7,6 +7,7 @@
 
 ```text
 SCOPED_STATE: PASS | NEEDS_CONTEXT | NO_SCOPED_CHANGES | BLOCKED | ERROR
+State refresh mode: initial | post-commit
 Path scope:
 - <path>: tracked | untracked | missing | mixed
 
@@ -31,10 +32,20 @@ Decision needed: none | <smallest user decision or orchestrator action>
 `Reference need` values match the reference keys in
 `./external-sources.md`. Use the same key string.
 
+When `STATE_REFRESH_MODE` is omitted, report `State refresh mode: initial`.
+Always emit the `State refresh mode` field for every status.
+
+For `State refresh mode: post-commit`, the same status vocabulary applies. The
+orchestrator uses `PASS` to compare remaining scoped changes with the approved
+plan, `NO_SCOPED_CHANGES` to proceed to the final report, `NEEDS_CONTEXT` to ask
+one targeted refresh question, and `BLOCKED` or `ERROR` for the final failure
+contract.
+
 ## Examples
 
 <example>
 SCOPED_STATE: PASS
+State refresh mode: initial
 Path scope:
 - src/checkout/: tracked
 - tests/checkout/: tracked
@@ -60,6 +71,7 @@ Decision needed: none
 
 <example>
 SCOPED_STATE: NEEDS_CONTEXT
+State refresh mode: initial
 Reason: The scoped diff changes retry behavior and telemetry naming, but no matching context explains whether they share one intent.
 Decision needed: Ask whether telemetry naming belongs with the retry fix or should be separate.
 </example>
