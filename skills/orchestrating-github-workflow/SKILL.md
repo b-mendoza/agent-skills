@@ -32,11 +32,16 @@ verifies they are available before use.
 | `OWNER` | Fallback with `REPO` and `ISSUE_NUMBER` | `acme` |
 | `REPO` | Fallback with `OWNER` and `ISSUE_NUMBER` | `app` |
 | `ISSUE_NUMBER` | Fallback with `OWNER` and `REPO` | `42` |
+| `ISSUE_SLUG` | Resume / progress fallback | `acme-app-42` |
 
 Prefer the full issue URL. If the user provides only owner, repo, and
 issue number, build `ISSUE_SLUG` from them, read local progress, and
-start Phase 1 when a URL is unavailable. Ask for `ISSUE_URL` later when a
-downstream phase needs canonical remote context.
+start Phase 1 when a URL is unavailable. If the user provides only
+`ISSUE_SLUG`, use it for local progress discovery, then obtain `ISSUE_URL`
+or `OWNER` + `REPO` + `ISSUE_NUMBER` before remote GitHub reads. Ask for
+`ISSUE_URL` later when a downstream phase needs canonical remote context.
+Phase 4 child-issue creation requires `ISSUE_URL`; owner/repo fallback is
+enough for reads, but not for that write phase.
 
 Derive and normalize:
 
@@ -133,10 +138,12 @@ execution skills.
 ## Start Or Resume
 
 1. Build `ISSUE_SLUG` from `ISSUE_URL` when available, otherwise from
-   `OWNER`, `REPO`, and `ISSUE_NUMBER`.
-2. Dispatch `progress-tracker` with `ACTION=read` and `ISSUE_SLUG`.
+   `OWNER`, `REPO`, and `ISSUE_NUMBER`; if the user supplied only
+   `ISSUE_SLUG`, treat it as local-resume context only.
+2. Dispatch `progress-tracker` with `ISSUE_SLUG` and `ACTION=read`.
 3. Decide the resume point from the compact progress summary.
-4. Dispatch `preflight-checker` for only the remaining phase range.
+4. Dispatch `preflight-checker` with `ISSUE_SLUG` and only the remaining
+   phase range.
 5. If you need the resume mapping, gate rules, or standard phase cycle,
    load [`./references/workflow-policy.md`](./references/workflow-policy.md).
    If you need the phase-to-skill map, load
@@ -152,7 +159,8 @@ confirm before continuing.
 For any subagent dispatch:
 
 1. Read the subagent definition from the registry.
-2. Pass only the explicit inputs that subagent needs.
+2. Pass the stable workflow key (`ISSUE_SLUG`) plus only the explicit
+   inputs that subagent needs.
 3. Collect its structured summary.
 4. Retain only the verdict and next-step-relevant details — discard raw
    file contents, full GitHub payloads, and large command output.
@@ -174,12 +182,17 @@ whether to retry, re-plan, pause, or ask the user.
 Input: `ISSUE_URL=https://github.com/acme/app/issues/42`
 
 1. Derive `ISSUE_SLUG=acme-app-42`.
-2. Dispatch `progress-tracker` with `ACTION=read`.
-3. No progress found, so dispatch `preflight-checker` with `PHASES=1-7`.
+2. Dispatch `progress-tracker` with `ISSUE_SLUG=acme-app-42`,
+   `ACTION=read`.
+3. No progress found, so dispatch `preflight-checker` with
+   `ISSUE_SLUG=acme-app-42`, `PHASES=1-7`.
 4. Read `./references/phases-1-4.md` and enter Phase 1.
 5. Invoke downstream skill `fetching-github-issue`.
-6. Dispatch `artifact-validator` for Phase 1 postcondition.
-7. Dispatch `progress-tracker` with `ACTION=update`, `PHASE=1`, `STATUS=complete`.
+6. Dispatch `artifact-validator` with `ISSUE_SLUG=acme-app-42`, `PHASE=1`,
+   `DIRECTION=postcondition`.
+7. Dispatch `progress-tracker` with `ISSUE_SLUG=acme-app-42`,
+   `ACTION=update`, `PHASE=1`, `STATUS=complete`,
+   `SUMMARY="Issue fetched"`.
 8. Tell the user: `Issue fetched. Moving to task planning.`
 
 The orchestrator keeps only that summary, the issue slug, and the next phase.

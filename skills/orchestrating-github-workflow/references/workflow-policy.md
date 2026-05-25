@@ -76,9 +76,10 @@ before the gate can advance.
 
 ## Resume Mapping
 
-After dispatching `progress-tracker` with `ACTION=read`, choose a resume
-point from this table, then dispatch `preflight-checker` for only the
-remaining phase range.
+After dispatching `progress-tracker` with `ISSUE_SLUG=<slug>` and
+`ACTION=read`, choose a resume point from this table, then dispatch
+`preflight-checker` with `ISSUE_SLUG=<slug>` for only the remaining phase
+range.
 
 | Progress indicates | Resume from | Preflight `PHASES` |
 | ------------------ | ----------- | ------------------ |

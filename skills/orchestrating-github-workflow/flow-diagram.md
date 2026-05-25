@@ -48,8 +48,8 @@ flowchart TD
   LOOP3 -->|yes| P2
   LOOP3 -->|no| ESCALATED([Escalated])
   C3 -->|ready| WRITE_READY([Ready for GitHub write approval])
-  WRITE_READY --> NEED_WRITE_CONTEXT{"GitHub write context available?"}
-  NEED_WRITE_CONTEXT -->|no| BLOCKED_WRITE_CONTEXT([Blocked: issue URL or owner / repo / issue context required])
+  WRITE_READY --> NEED_WRITE_CONTEXT{"ISSUE_URL available for GitHub writes?"}
+  NEED_WRITE_CONTEXT -->|no| BLOCKED_WRITE_CONTEXT([Blocked: ISSUE_URL required for GitHub child-issue writes])
   NEED_WRITE_CONTEXT -->|yes| GATE_WRITE{"Approve GitHub writes for child items?"}
 
   GATE_WRITE -->|declined| RECORD_WRITE_DECLINE["Record declined GitHub write decision and handoff"]

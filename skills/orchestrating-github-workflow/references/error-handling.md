@@ -82,7 +82,7 @@ Two levels of progress files maintain state:
 
 ### Resume procedure
 
-1. Dispatch `progress-tracker` with `ACTION=read`:
+1. Dispatch `progress-tracker` with `ISSUE_SLUG=<slug>` and `ACTION=read`:
 
    ```
    ISSUE_SLUG: <slug>

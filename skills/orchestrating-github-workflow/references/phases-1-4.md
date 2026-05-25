@@ -25,9 +25,10 @@ postconditions, update progress, and run the gate.
 3. Interpret the downstream 12-line fetch summary using `./data-contracts.md`.
 4. If retrieval failed before writing an artifact, route through
    `./error-handling.md` instead of running postcondition validation.
-5. Dispatch `artifact-validator` for `PHASE=1`, `DIRECTION=postcondition`.
-6. Dispatch `progress-tracker` with `ACTION=update`, `PHASE=1`,
-   `STATUS=complete`, and a one-line fetch summary.
+5. Dispatch `artifact-validator` with `ISSUE_SLUG=<slug>`, `PHASE=1`,
+   `DIRECTION=postcondition`.
+6. Dispatch `progress-tracker` with `ISSUE_SLUG=<slug>`, `ACTION=update`,
+   `PHASE=1`, `STATUS=complete`, and a one-line fetch summary.
 
 **Gate:** Automatic. Proceed to Phase 2 when validation passes.
 
@@ -36,13 +37,15 @@ postconditions, update progress, and run the gate.
 **Skill:** `planning-github-issue-tasks`
 
 1. Announce Phase 2.
-2. Dispatch `artifact-validator` for `PHASE=2`, `DIRECTION=precondition`.
+2. Dispatch `artifact-validator` with `ISSUE_SLUG=<slug>`, `PHASE=2`,
+   `DIRECTION=precondition`.
 3. Invoke the downstream skill with `ISSUE_SLUG`.
 4. When re-planning from Phase 3, also pass `RE_PLAN=true` and the accepted
    `DECISIONS` summary from critique.
-5. Dispatch `artifact-validator` for `PHASE=2`, `DIRECTION=postcondition`.
-6. Dispatch `progress-tracker` with `ACTION=update`, `PHASE=2`,
-   `STATUS=complete`, and a one-line planning summary.
+5. Dispatch `artifact-validator` with `ISSUE_SLUG=<slug>`, `PHASE=2`,
+   `DIRECTION=postcondition`.
+6. Dispatch `progress-tracker` with `ISSUE_SLUG=<slug>`, `ACTION=update`,
+   `PHASE=2`, `STATUS=complete`, and a one-line planning summary.
 
 **Gate:** Automatic. Proceed to Phase 3 when validation passes.
 
@@ -52,16 +55,17 @@ postconditions, update progress, and run the gate.
 **Mode:** `upfront`
 
 1. Announce Phase 3.
-2. Dispatch `artifact-validator` for `PHASE=3`, `DIRECTION=precondition`.
+2. Dispatch `artifact-validator` with `ISSUE_SLUG=<slug>`, `PHASE=3`,
+   `DIRECTION=precondition`.
 3. Invoke `clarifying-assumptions` with `MODE=upfront`,
    `TICKET_KEY=<ISSUE_SLUG>`, and `ITERATION=<N>`.
 4. Let the downstream skill handle user-facing clarification and critique.
 5. If the downstream summary has `RE_PLAN_NEEDED=true`, re-run Phase 2 with the
    accepted decisions, then run Phase 3 again. Maximum: 3 re-plan loops.
-6. After `RE_PLAN_NEEDED=false`, dispatch `artifact-validator` for `PHASE=3`,
-   `DIRECTION=postcondition`.
-7. Dispatch `progress-tracker` with `ACTION=update`, `PHASE=3`,
-   `STATUS=complete`, and a one-line clarification summary.
+6. After `RE_PLAN_NEEDED=false`, dispatch `artifact-validator` with
+   `ISSUE_SLUG=<slug>`, `PHASE=3`, `DIRECTION=postcondition`.
+7. Dispatch `progress-tracker` with `ISSUE_SLUG=<slug>`, `ACTION=update`,
+   `PHASE=3`, `STATUS=complete`, and a one-line clarification summary.
 
 **Gate:** First honor `BLOCKERS_PRESENT` from the clarification summary. If it
 is `true`, stop before GitHub writes and surface the unresolved blockers.
@@ -87,17 +91,20 @@ when supported, linked issues with parent traceability, then task-list
 references when neither issue model is viable.
 
 1. Announce Phase 4.
-2. Dispatch `artifact-validator` for `PHASE=4`, `DIRECTION=precondition`.
-3. Invoke the downstream skill with `ISSUE_URL` when available, otherwise with
-   owner/repo/issue context as the skill defines.
-4. Retain only the structured write model, capability, `Created/Linked Task
+2. Dispatch `artifact-validator` with `ISSUE_SLUG=<slug>`, `PHASE=4`,
+   `DIRECTION=precondition`.
+3. Confirm `ISSUE_URL` is available. If it is missing, stop and ask the user
+   for the canonical issue URL before GitHub writes.
+4. Invoke the downstream skill with `ISSUE_URL`.
+5. Retain only the structured write model, capability, `Created/Linked Task
    Issues` summary, warnings, and failed-create notes.
-5. Dispatch `artifact-validator` for `PHASE=4`, `DIRECTION=postcondition`.
-6. Dispatch `progress-tracker` with `ACTION=update`, `PHASE=4`,
-   `STATUS=complete`, `SUMMARY=<one-line result>`, and `TASKS=<rows from the
-   downstream Created/Linked Task Issues table>`.
-7. Surface any warnings or failed creates before task selection.
-8. Do not offer a task for Phase 5 when its `GitHub Task Issue:` value is
+6. Dispatch `artifact-validator` with `ISSUE_SLUG=<slug>`, `PHASE=4`,
+   `DIRECTION=postcondition`.
+7. Dispatch `progress-tracker` with `ISSUE_SLUG=<slug>`, `ACTION=update`,
+   `PHASE=4`, `STATUS=complete`, `SUMMARY=<one-line result>`, and
+   `TASKS=<rows from the downstream Created/Linked Task Issues table>`.
+8. Surface any warnings or failed creates before task selection.
+9. Do not offer a task for Phase 5 when its `GitHub Task Issue:` value is
    `Not Created`; require manual resolution or a successful Phase 4 rerun for
    that task first. If the value is `task-list`, surface the degraded
    traceability and proceed only when the user accepts that model for the

@@ -22,10 +22,10 @@ section.
 | 1 | `fetching-github-issue` | `ISSUE_URL`, or `OWNER` + `REPO` + `ISSUE_NUMBER` | 12-line fetch summary, `ISSUE_SLUG`, written file path |
 | 2 | `planning-github-issue-tasks` | `ISSUE_SLUG`; add `RE_PLAN=true` and accepted `DECISIONS` when re-planning | planning summary, final tasks file path, warnings |
 | 3 | `clarifying-assumptions` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=upfront`, `ITERATION=<N>` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, accepted decisions summary |
-| 4 | `creating-github-child-issues` | `ISSUE_URL`, or owner/repo/issue context | write model, capability, created/linked task issue rows, warnings |
-| 5 | `planning-github-task` | `ISSUE_SLUG`, `TASK_NUMBER=<N>` | four planning artifact paths, approach summary, test coverage shape, refactoring verdict |
+| 4 | `creating-github-child-issues` | `ISSUE_URL` | write model, capability, created/linked task issue rows, warnings |
+| 5 | `planning-github-task` | `ISSUE_SLUG`, `TASK_NUMBER=<N>`; add `RE_PLAN=true` and `DECISIONS_FILE=docs/<ISSUE_SLUG>-task-<N>-decisions.md` when re-planning from Phase 6 | four planning artifact paths, approach summary, test coverage shape, refactoring verdict |
 | 6 | `clarifying-assumptions` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=critique`, `TASK_NUMBER=<N>`, `ITERATION=<N>` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions file path |
-| 7 | `executing-github-task` | `ISSUE_SLUG`, `TASK_NUMBER=<N>`, owner/repo context as accepted by the skill | `FINAL_TASK_REPORT` status, completion/blocker verdict, quality-gate summary, implementation artifact summary, retry counts, next required action |
+| 7 | `executing-github-task` | `ISSUE_SLUG`, `TASK_NUMBER=<N>` | `FINAL_TASK_REPORT` status, completion/blocker verdict, quality-gate summary, implementation artifact summary, retry counts, next required action |
 
 ## Preflight Contract
 
