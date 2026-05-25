@@ -1,29 +1,21 @@
 # planning-github-task
 
 Planning coordinator for exactly one GitHub issue task from
-`docs/<ISSUE_SLUG>-tasks.md`. The agent validates required inputs and task
-prerequisites, dispatches focused planning subagents one at a time, writes only
-four workflow-planning artifacts under `docs/`, retains structured summaries
-instead of raw subagent context, and stops on unresolved dependencies,
-ambiguity, behavior gaps, planning risk, missing artifacts, or unexpected
-errors. The workflow is intentionally shared with `planning-jira-task`; only the
-platform identifier, optional source snapshot, and artifact path placeholders
-differ.
+`docs/<ISSUE_SLUG>-tasks.md`. The agent normalizes required inputs, delegates
+task-plan readiness checks to `execution-prepper`, dispatches focused planning
+subagents one at a time, writes only four workflow-planning artifacts under
+`docs/`, retains structured summaries instead of raw subagent context, and stops
+on unresolved dependencies, ambiguity, behavior gaps, planning risk, missing
+artifacts, or unexpected errors. The workflow is intentionally shared with
+`planning-jira-task`; only the platform identifier, optional source snapshot,
+and artifact path placeholders differ.
 
 ```mermaid
 flowchart TD
   START([Start planning-github-task]) --> INTAKE[Read ISSUE_SLUG, TASK_NUMBER, optional RE_PLAN and DECISIONS_FILE]
   INTAKE --> REQUIRED_INPUTS{ISSUE_SLUG and TASK_NUMBER present?}
   REQUIRED_INPUTS -->|no| BLOCKED_INPUTS([Blocked: missing required planning input])
-  REQUIRED_INPUTS -->|yes| TASK_FILE{docs/&lt;ISSUE_SLUG&gt;-tasks.md exists?}
-  TASK_FILE -->|no| BLOCKED_TASKS([Blocked: missing upstream task plan])
-  TASK_FILE -->|yes| TASK_SECTION{Task section complete?}
-  TASK_SECTION -->|no| BLOCKED_SECTION([Blocked: missing required task fields])
-  TASK_SECTION -->|yes| LOAD_CONTEXT[Load task section, optional issue snapshot, and decisions log overrides]
-
-  LOAD_CONTEXT --> READY_CHECK{Dependencies complete, questions resolved or waived, and decisions recorded?}
-  READY_CHECK -->|no| FAIL_PREREQ([Fail: unresolved dependency, ambiguity, missing waiver, or unrecorded decision])
-  READY_CHECK -->|yes| REPLAN_CHECK{RE_PLAN requested?}
+  REQUIRED_INPUTS -->|yes| REPLAN_CHECK{RE_PLAN requested?}
 
   REPLAN_CHECK -->|no| SET_PREP[Set first stage: execution-prepper]
   REPLAN_CHECK -->|yes| INVALIDATE[Identify earliest invalidated stage and downstream dependents]
@@ -60,7 +52,7 @@ flowchart TD
   VALIDATE_OUTPUT -->|yes| RECORD_SUMMARY[Retain structured summary, artifact path, URLs, verdicts, and next-step notes]
   VALIDATE_OUTPUT -->|no| IDENTIFY_MISSING_OWNER[Identify missing artifact owner and validation issue]
   IDENTIFY_MISSING_OWNER --> REPAIR_LIMIT{Artifact repair retries <= 3?}
-  REPAIR_LIMIT -->|yes| REDISPATCH_OWNER[Redispatch only artifact owner with specific validation issue]
+  REPAIR_LIMIT -->|yes| REDISPATCH_OWNER[Redispatch only artifact owner with REPAIR_FINDINGS]
   REPAIR_LIMIT -->|no| ERROR_REPAIR([Error: artifact validation repair failed])
   REDISPATCH_OWNER --> STATUS
 
@@ -71,13 +63,13 @@ flowchart TD
   FINAL_ARTIFACTS -->|no| IDENTIFY_MISSING_OWNER
   REPORT --> COMPLETE([Planning complete])
 
-  class REQUIRED_INPUTS,TASK_FILE,TASK_SECTION,READY_CHECK,REPLAN_CHECK,REPLAN_LIMIT,ROUTE_STAGE,CHECK_BRIEF,CHECK_PLAN,CHECK_TEST_SPEC,STATUS,VALIDATE_OUTPUT,REPAIR_LIMIT,MORE_STAGES,FINAL_ARTIFACTS decision;
-  class INTAKE,LOAD_CONTEXT,INVALIDATE,SET_PREP,SET_STAGE,DISPATCH_PREP,DISPATCH_PLAN,DISPATCH_TESTS,DISPATCH_REFACTOR,RECORD_SUMMARY,IDENTIFY_MISSING_OWNER check;
+  class REQUIRED_INPUTS,REPLAN_CHECK,REPLAN_LIMIT,ROUTE_STAGE,CHECK_BRIEF,CHECK_PLAN,CHECK_TEST_SPEC,STATUS,VALIDATE_OUTPUT,REPAIR_LIMIT,MORE_STAGES,FINAL_ARTIFACTS decision;
+  class INTAKE,INVALIDATE,SET_PREP,SET_STAGE,DISPATCH_PREP,DISPATCH_PLAN,DISPATCH_TESTS,DISPATCH_REFACTOR,RECORD_SUMMARY,IDENTIFY_MISSING_OWNER check;
   class REPORT output;
   class COMPLETE success;
   class REPAIR_LIMIT,REDISPATCH_OWNER refine;
-  class BLOCKED_INPUTS,BLOCKED_TASKS,BLOCKED_SECTION,BLOCKED_BRIEF,BLOCKED_PLAN,BLOCKED_TEST_SPEC,BLOCKED_STAGE stop;
-  class FAIL_PREREQ,FAIL_REPLAN,FAIL_STAGE,ERROR_STAGE,ERROR_REPAIR stop;
+  class BLOCKED_INPUTS,BLOCKED_BRIEF,BLOCKED_PLAN,BLOCKED_TEST_SPEC,BLOCKED_STAGE stop;
+  class FAIL_REPLAN,FAIL_STAGE,ERROR_STAGE,ERROR_REPAIR stop;
 
   classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
@@ -95,9 +87,10 @@ Planning summary output:
 - Artifacts: `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-brief.md`, `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-execution-plan.md`, `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-test-spec.md`, and `docs/<ISSUE_SLUG>-task-<TASK_NUMBER>-refactoring-plan.md`.
 - Report fields: approach summary, test coverage shape, refactoring verdict, completion state, and exact References fetched URLs or `none`.
 
-Readiness rule: before dispatching any planning subagent, dependencies must be
-complete, questions must be resolved or explicitly waived, and decisions must be
-recorded in the task plan or decisions source. Planning is complete only after
-all four expected artifacts exist and every dispatched owner has returned
-`PASS`; otherwise the coordinator reports `blocked`, `fail`, or `error` without
-implementing code, deleting artifacts, or mutating unrelated files.
+Readiness rule: `execution-prepper` is the only stage that reads raw task-plan
+content and verifies dependencies, questions, decisions, and required task
+fields. Downstream stages consume artifact paths and summaries. Planning is
+complete only after all four expected artifacts exist and every dispatched
+owner has returned `PASS`; otherwise the coordinator reports `blocked`, `fail`,
+or `error` without implementing code, deleting artifacts, or mutating unrelated
+files.

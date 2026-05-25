@@ -24,17 +24,6 @@ flip the active artifact decision.
 
 ## Source Routing
 
-### Skill design and orchestration
-
-| Reference key | URL | Use when |
-| ------------- | --- | -------- |
-| `agent-skills-overview` | https://docs.anthropic.com/en/docs/agents-and-tools/agent-skills/overview | The multi-file structure, frontmatter, or loading model of this skill is in question |
-| `agent-skills-best-practices` | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices | A change to concision, layering, naming, or progressive loading is being considered |
-| `claude-subagents` | https://code.claude.com/docs/en/sub-agents | Subagent isolation, dispatch boundaries, or summary-only handoff is in question |
-| `context-engineering` | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | Context-window protection or handoff design could change orchestration |
-| `progressive-disclosure-skill` | https://skills.sh/flpbalada/fb-skills/progressive-disclosure | Catalog-level reference for staged loading; prefer official docs if this page lacks source content |
-| `progressive-disclosure-ux` | https://www.nngroup.com/articles/progressive-disclosure/ | A short public description of progressive disclosure would help |
-
 ### Task readiness and acceptance
 
 | Reference key | URL | Use when |

@@ -13,7 +13,9 @@ Required file:
 
 - `docs/<ISSUE_SLUG>-tasks.md`
 
-Required content inside that file for `TASK_NUMBER`:
+Required content inside that file for `TASK_NUMBER`. `execution-prepper`
+validates these details so the coordinator can avoid retaining raw task-plan
+content:
 
 - `## Task <TASK_NUMBER>:` section exists
 - Task title exists
