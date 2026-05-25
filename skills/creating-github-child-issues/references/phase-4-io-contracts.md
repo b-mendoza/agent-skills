@@ -28,6 +28,12 @@ Derive stable identifiers from `ISSUE_URL`:
 - **PARENT_NUMBER:** numeric segment after `/issues/`
 - **ISSUE_SLUG:** `<owner>-<repo>-<parent_number>`
 
+Mutation approval is a precondition: GitHub issue writes, child/link
+operations, accepted task-list fallback records, and the scoped update to
+`docs/<ISSUE_SLUG>-tasks.md` must already be approved by the caller or user. If
+approval is unclear in a direct invocation, return `TASK_ISSUES: BLOCKED` with
+`Validation: NOT_RUN`.
+
 Expected normal-workflow plan shape:
 
 | Expected section / element | Why it matters |
@@ -158,14 +164,20 @@ and an explicit `Outcome`, such as `Create failed` or `Task list only`.
 
 | Status | Meaning |
 | ------ | ------- |
-| `PASS` | Every task has valid traceability and validation passed |
-| `WARN` | Validation passed with non-fatal issues such as missing decisions log, mixed/degraded linkage, `Not Created`, or `task-list` rows |
-| `BLOCKED` | Plan shape or existing refs are unsafe to proceed |
+| `PASS` | Every task has a verified concrete GitHub issue ref and validation passed |
+| `WARN` | Validation passed with non-fatal issues such as missing decisions log, mixed linkage, intentional `task-list` fallback, or failed individual creates recorded as `Not Created` |
+| `BLOCKED` | Missing approval, plan shape, or existing refs are unsafe to proceed |
 | `FAIL` | Parent verification, auth, `gh`, all expected creates, or post-write validation failed |
 | `ERROR` | Unexpected tool or environment failure interrupted the run |
 
 Use `Validation: NOT_RUN` only when no plan-file update or post-write
 validation could occur.
+
+`TASK_ISSUES: WARN` with `Validation: PASS` means the handoff artifact is
+structurally valid. Concrete `owner/repo#number` rows are usable. A `task-list`
+row is intentional degraded traceability and must be surfaced before task
+selection. A `Not Created` row needs manual resolution or a successful rerun
+before that task is selected for execution.
 
 ## Validation Checklist
 
@@ -175,3 +187,8 @@ validation could occur.
 - The table has one row per parsed task.
 - Every concrete issue ref resolves and is consistent with the parent.
 - Every workflow-table value has a matching per-task `GitHub Task Issue:` line.
+- `Not Created` values are structurally valid only when they appear in both the
+  workflow-table `Issue ref` and matching inline reference, and the run returns
+  `TASK_ISSUES: WARN`.
+- `task-list` values are structurally valid only when intentionally recorded as
+  degraded traceability and the run returns `TASK_ISSUES: WARN`.

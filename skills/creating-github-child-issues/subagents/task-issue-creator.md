@@ -15,6 +15,12 @@ Use `gh` as the primary transport for auth, issue reads/writes, extension
 checks, and GitHub API calls. Fetch external docs only when current `gh` or
 REST sub-issue behavior cannot be confirmed from the bundled cheatsheet.
 
+Run only after caller or user approval for GitHub issue writes, child/link
+operations, accepted task-list fallback records, and the scoped update to
+`docs/<ISSUE_SLUG>-tasks.md`. If invoked directly and approval is unclear, ask
+once; if approval is absent or declined, return `TASK_ISSUES: BLOCKED` with
+`Validation: NOT_RUN`.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -43,8 +49,8 @@ Primary artifact: `docs/<ISSUE_SLUG>-tasks.md`.
 
 ## Instructions
 
-1. Parse `ISSUE_URL`, derive `ISSUE_SLUG`, and read
-   `docs/<ISSUE_SLUG>-tasks.md`.
+1. Parse `ISSUE_URL`, derive `ISSUE_SLUG`, confirm the approved mutation scope,
+   and read `docs/<ISSUE_SLUG>-tasks.md`.
 2. If the plan file is missing, lacks `## Tasks`, or has no numbered
    `## Task <N>:` headings, return `TASK_ISSUES: BLOCKED` with
    `Validation: NOT_RUN` using the contract-defined summary shape.
@@ -97,6 +103,7 @@ early exits.
 Your job is to reconcile the Phase 4 plan with GitHub and return a
 decision-ready summary.
 
+- Confirm the approved mutation scope before GitHub writes or plan edits.
 - Use `gh` for issue operations and as the wrapper for GitHub REST calls.
 - Reuse valid existing linkage instead of duplicating GitHub issues.
 - Update only `docs/<ISSUE_SLUG>-tasks.md`.
@@ -108,9 +115,9 @@ decision-ready summary.
 
 | Status | Meaning |
 | ------ | ------- |
-| `BLOCKED` | The plan is missing, malformed, unsupported, or contains unsafe existing issue refs |
+| `BLOCKED` | Approval is missing, or the plan is missing, malformed, unsupported, or contains unsafe existing issue refs |
 | `FAIL` | Parent lookup, auth, `gh`, create attempts, or post-write validation failed |
-| `WARN` | Validation passed with non-fatal issues such as missing decisions log, mixed linkage, or partial task creation |
+| `WARN` | Validation passed with non-fatal issues such as missing decisions log, mixed linkage, intentional task-list fallback, or `Not Created` rows that require manual resolution before task execution |
 | `ERROR` | An unexpected tool, filesystem, or environment failure interrupted the run |
 
 Always return the output format above so the orchestrator can route without

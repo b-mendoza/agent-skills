@@ -14,6 +14,11 @@ The subagent owns plan parsing, `gh` CLI and REST API calls, capability
 detection, plan-file edits, and validation. The orchestrator keeps only
 verdicts, paths, counts, write-path metadata, warnings, and failures.
 
+Run this skill only after the caller or user has approved GitHub issue writes
+and the scoped update to `docs/<ISSUE_SLUG>-tasks.md`. If invoked directly and
+approval is unclear, ask once for that approval; if approval is absent or
+declined, return `TASK_ISSUES: BLOCKED` with `Validation: NOT_RUN`.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -53,10 +58,15 @@ Read a subagent definition only when dispatching that subagent.
 
 ## Workflow
 
-1. Confirm `ISSUE_URL` is present and derive `ISSUE_SLUG` for local reporting.
+1. Confirm `ISSUE_URL` is present, derive `ISSUE_SLUG` for local reporting, and
+   confirm the run is approved for GitHub writes plus the scoped plan-file
+   update.
 2. Read `./references/phase-4-io-contracts.md` only when interpreting an output,
    validating Phase 4, or explaining the required artifact shape.
 3. Read `./subagents/task-issue-creator.md` and dispatch it with `ISSUE_URL`.
+   The approved mutation scope is limited to GitHub child-issue create/reuse
+   actions, accepted task-list fallback records, and
+   `docs/<ISSUE_SLUG>-tasks.md`; it is not a separate required input.
 4. Route on the returned `TASK_ISSUES` and `Validation` lines.
 5. Report a concise Phase 4 rollup: parent, `ISSUE_SLUG`, plan path, counts,
    write model, capability note, warnings, failures, and the reminder that
@@ -67,9 +77,9 @@ Read a subagent definition only when dispatching that subagent.
 | Result | Orchestrator action |
 | ------ | ------------------- |
 | `TASK_ISSUES: PASS` with `Validation: PASS` | Report success and proceed |
-| `TASK_ISSUES: WARN` with `Validation: PASS` | Report usable output with visible warnings or failed/degraded task links |
-| `TASK_ISSUES: BLOCKED` | Stop and surface the plan-shape or unsafe-linkage issue |
-| `TASK_ISSUES: FAIL` | Stop and surface the fatal GitHub or validation failure |
+| `TASK_ISSUES: WARN` with `Validation: PASS` | Report usable linked output, degraded `task-list` traceability, and any `Not Created` rows that require manual resolution before that task can execute |
+| `TASK_ISSUES: BLOCKED` | Stop and surface missing approval, plan-shape, or unsafe-linkage issues |
+| `TASK_ISSUES: FAIL` | Stop and surface the fatal GitHub, auth, `gh`, create/link, or validation failure |
 | `TASK_ISSUES: ERROR` or `Validation: FAIL` | Stop and surface the unexpected failure or local contract failure |
 
 Treat `Validation: NOT_RUN` as incomplete Phase 4 output even when the top-level

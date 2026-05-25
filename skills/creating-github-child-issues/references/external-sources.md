@@ -9,7 +9,7 @@
 This file is the just-in-time layer for platform-specific syntax. Bundled
 references and the subagent already describe **what** to do for normal Phase 4
 runs; come here for **how** to phrase a current `gh` command, REST request, or
-markdown task-list construct that installed help or local fallback rules cannot
+Markdown task-list construct that installed help or local fallback rules cannot
 confirm.
 
 ## Fetch Policy
@@ -36,7 +36,7 @@ confirm.
 | `gh extension list` behavior | https://cli.github.com/manual/gh_extension_list |
 | GitHub REST sub-issues endpoints, required `X-GitHub-Api-Version`, payload shape | https://docs.github.com/en/rest/issues/sub-issues |
 | Adding sub-issues from the GitHub product UI (concept-level) | https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues |
-| GitHub task-list markdown rules (`- [ ] owner/repo#N`) | https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/about-task-lists |
+| GitHub task-list markdown rules (`- [ ] owner/repo#N`) | https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/about-tasklists |
 
 ## Maintainer Source Map
 
@@ -57,9 +57,11 @@ child-issue execution.
 - **GitHub REST docs** are authoritative for sub-issue endpoint availability,
   required headers (in particular `X-GitHub-Api-Version`), payload fields, and
   response codes. Use them whenever native sub-issue linking is attempted.
-- **GitHub product docs** describe conceptual child-issue and task-list
-  behavior, not CLI syntax. Use them to explain the difference between
-  `native-sub-issue`, `linked-issue`, and `task-list` write models.
+- **GitHub product docs** describe conceptual child-issue and Markdown
+  task-list behavior, not CLI syntax. Current docs position sub-issues as the
+  replacement for retired tasklist blocks, so use `task-list` only for a plain
+  Markdown checklist fallback and explain it as degraded traceability rather
+  than a child-issue equivalent.
 - **Maintainer sources** exist for skill maintenance rationale only. Normal
   Phase 4 execution does not fetch them.
 
