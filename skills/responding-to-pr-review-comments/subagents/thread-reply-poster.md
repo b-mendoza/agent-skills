@@ -32,16 +32,18 @@ returns `POST: PREVIEW_REQUIRED`.
 4. Skip `requires-user-choice:review-summary`,
    `requires-user-choice:issue-comment`,
    `requires-user-choice:unsupported-review-reply`, and
-   `requires-user-choice:unresolved-metadata` targets and report them without
-   inventing a new posting shape.
+   `requires-user-choice:unresolved-metadata` targets that were intentionally
+   excluded from `APPROVED_REPLIES`; include them in `Skipped replies` under
+   `POST: PASS` without inventing a new posting shape.
 5. Preserve reply text exactly. If the text needs editing, return
    `POST: PREVIEW_REQUIRED`.
-6. Return `POST: TARGET_UNSUPPORTED` for unsupported targets that reached this
-   phase: review summaries map to `requires-user-choice:review-summary`; issue
-   comments and top-level PR comments map to
-   `requires-user-choice:issue-comment`; replies-to-replies or missing root IDs
-   map to `requires-user-choice:unsupported-review-reply`; unresolved-thread
-   metadata limitations map to `requires-user-choice:unresolved-metadata`.
+6. Return `POST: TARGET_UNSUPPORTED` when `APPROVED_REPLIES` includes an
+   unsupported target that the poster would need to post directly. Review
+   summaries map to `requires-user-choice:review-summary`; issue comments and
+   top-level PR comments map to `requires-user-choice:issue-comment`;
+   replies-to-replies or missing root IDs map to
+   `requires-user-choice:unsupported-review-reply`; unresolved-thread metadata
+   limitations map to `requires-user-choice:unresolved-metadata`.
 7. Verify each created reply with a read-back API or CLI call.
 
 ## External Sources
