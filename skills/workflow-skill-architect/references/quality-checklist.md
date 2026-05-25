@@ -15,8 +15,12 @@ a validation gate, not as always-loaded prompt content.
 | Standalone package | No dependency on source-repository docs, local absolute paths, tickets, branches, or private configs |
 | Progressive disclosure | Detailed templates, examples, checklists, and source links live outside `SKILL.md` |
 | Subagent contracts | Each subagent has inputs, instructions, output format, scope, and escalation |
+| Status mapping | `PASS`, `NEEDS_INPUT`, `BLOCKED`, `ERROR`, and `REVIEW: FAIL` map to deterministic orchestrator actions |
 | Context protection | Execution-heavy work is delegated; orchestrator receives summaries, paths, or verdicts |
 | External links | Links are optional just-in-time sources; local package still explains core behavior |
+| External fetch handling | Unavailable, unsafe, and conflicting sources route to local-only fallback, blocker, or user decision |
+| Review-only routing | Review requests build `FILES_UNDER_REVIEW` and return review reports, not generated files |
+| Work-item state | Create/extend/refactor requests track `WORK_ITEM_QUEUE` and `COLLECTION_MANIFEST` before synthesis |
 | Validation loop | The skill defines run/check/fix/re-check behavior with a retry limit |
 | Examples | At least one dispatch or output example shows expected behavior |
 
@@ -26,6 +30,8 @@ a validation gate, not as always-loaded prompt content.
 - Generated text does not mention repository-local authoring guides outside the package.
 - Instance-specific values are inputs, not hardcoded constants.
 - Runtime-specific frontmatter is included only when the target runtime requires it.
+- Package mutation is performed only when requested and approved; otherwise the
+  output is copy-ready files or a review report.
 
 ## Progressive Disclosure Checks
 
@@ -34,6 +40,8 @@ a validation gate, not as always-loaded prompt content.
 - Subagent files are read only when dispatched.
 - External sources replace long static explanations but do not become mandatory
   for normal execution.
+- Each loaded reference has a current-phase reason; loading multiple references
+  is acceptable only when each one is justified.
 
 ## Fix Loop
 
@@ -58,6 +66,10 @@ REVIEW: PASS | FAIL | BLOCKED | ERROR
 - Progressive disclosure:
 - Standalone packaging:
 - Subagent contracts:
+- Status mapping:
+- Review-only routing:
+- Work-item state:
+- External fetch handling:
 - Validation loop:
 
 ## Summary

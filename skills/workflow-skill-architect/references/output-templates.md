@@ -165,6 +165,26 @@ Read this file when <specific trigger>. Keep this reference one hop from
 - <Residual risks>
 ````
 
+## Collection Manifest Template
+
+Use this when the orchestrator aggregates one or more `ARCHITECTURE: PASS`
+results before synthesis.
+
+```markdown
+## Collection Manifest
+
+| Item | Artifact type | Status | Files | Registry rows | Contract summary | Validation note |
+| ---- | ------------- | ------ | ----- | ------------- | ---------------- | --------------- |
+| <item name> | <skill/subagent/reference/script/asset> | ARCHITECTURE: PASS | `<path>` | <rows or none> | <inputs/outputs/handoff> | <self-check result> |
+
+## Handoff Summary
+- Generated files:
+- References loaded:
+- External docs fetched:
+- Assumptions:
+- Remaining risks:
+```
+
 ## Review Report Template
 
 ```markdown
@@ -176,6 +196,9 @@ REVIEW: PASS | FAIL | BLOCKED | ERROR
 
 ## Summary
 - Verdict:
+- Files under review:
+- Runtime constraints:
+- Validation summary:
 - Fix cycles recommended:
 - Remaining risks:
 ```
