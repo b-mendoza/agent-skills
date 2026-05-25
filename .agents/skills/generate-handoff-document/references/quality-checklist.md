@@ -2,12 +2,13 @@
 
 > Read this file from `handoff-reviewer` after `document-assembler` returns.
 > Keep raw artifact contents inside the reviewer context; return only verdicts,
-> counts, and rerun targets to the orchestrator.
+> counts, rerun targets, warnings, and a short reason to the orchestrator.
 
 ## Contents
 
 - Review Inputs
 - Final Document Gates
+- Review Statuses
 - Targeted Rerun Routing
 - Review Summary Shape
 
@@ -35,6 +36,21 @@ A valid handoff satisfies every gate:
 | Continuation readiness | A fresh agent can continue from `TARGET_FILE` without prior chat history |
 | Placeholders | No template placeholders remain |
 
+## Review Statuses
+
+Return exactly one review status:
+
+| Status | Use when | Orchestrator route |
+| ------ | -------- | ------------------ |
+| `REVIEW: PASS` | Every gate passes with no advisory caveats | Complete |
+| `REVIEW: WARN` | Every gate passes, but nonblocking warnings remain | Capture warning, then complete |
+| `REVIEW: FAIL` | One or more gates fail and targeted rerun can repair them | Enter repair loop |
+| `REVIEW: ERROR` | Required files or checklist cannot be read | Block as subagent error |
+
+`REVIEW: SKIPPED` is not an intentional reviewer output. If it appears, the
+orchestrator treats it as `Blocked: subagent error, failure, or unexpected
+skip`.
+
 ## Targeted Rerun Routing
 
 Rerun the smallest stage set that can fix the failed gate:
@@ -47,6 +63,12 @@ Rerun the smallest stage set that can fix the failed gate:
 | Missing sections, placeholders, or unreadable flow | `document-assembler` only |
 | Multiple upstream artifact problems | Rerun each failed upstream stage, then `document-assembler` |
 
+When several gates fail, return all needed rerun targets in canonical order:
+`context-extractor`, `insight-documenter`, `claim-validator`,
+`document-assembler`. The orchestrator normalizes one or many targets into that
+order, reruns the earliest named upstream stage plus downstream consumers, and
+then reruns `handoff-reviewer`.
+
 Use at most three fix cycles. If the same gate fails after three cycles, stop
 and report the blocker with the latest stage summaries.
 
@@ -55,13 +77,14 @@ and report the blocker with the latest stage summaries.
 Return a concise review summary to the orchestrator:
 
 ```text
-REVIEW: PASS|FAIL|ERROR
+REVIEW: PASS|WARN|FAIL|ERROR
 File: <TARGET_FILE>
 Failed gates: <count>
 Rerun: <comma-separated subagents or none>
 Open questions: <count or unknown>
+Warnings: <count>
 Reason: <short reason>
 ```
 
-If web sources were fetched, include one `External sources:` line. If web access
-was unavailable, mention it only when it affected review.
+If web sources were fetched, include one `External sources:` line. If web
+access was unavailable, mention it only when it affected review.

@@ -48,7 +48,9 @@ Bundled paths are relative to this subagent file.
 
 If evidence-first verification or primary-source citation background blocks
 execution, read `../references/external-sources.md` and fetch one relevant URL.
-Routine claim validation uses the local data contract.
+Routine claim validation uses the local data contract. If an external source is
+fetched or unavailable, include one concise external-status line in the
+returned summary.
 
 ## Output Format
 
@@ -68,6 +70,11 @@ Partial: 0
 Unverified: 2
 Reason: Tracking-file claims validated and recorded.
 ```
+
+Intentional statuses are `CLAIMS: PASS`, `CLAIMS: WARN`, `CLAIMS: SKIPPED`,
+and `CLAIMS: ERROR`. This subagent does not intentionally return
+`CLAIMS: FAIL`; if it appears, the orchestrator treats it as
+`Blocked: subagent error, failure, or unexpected skip`.
 
 ## Scope
 
@@ -90,7 +97,19 @@ If some claims remain unchecked or source files are missing, report:
 CLAIMS: WARN
 File: <CLAIMS_FILE>
 Claims checked: <count>
+Verified: <count>
+Refuted: <count>
+Partial: <count>
+Unverified: <count>
 Reason: Some claims could not be fully verified; see artifact for details.
+```
+
+If `TRACKING_FILES` is empty after dispatch, report the intentional skip:
+
+```text
+CLAIMS: SKIPPED
+File: none
+Reason: No tracking files supplied; next agent must verify factual claims independently.
 ```
 
 If you cannot read the tracking files or write the artifact, report:

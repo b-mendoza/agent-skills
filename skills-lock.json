@@ -29,7 +29,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/generate-handoff-document/SKILL.md",
-      "computedHash": "77e0dcfe98487cecb6e3ffd501beb05e488421eaae1e279b69de3b07c1b42974"
+      "computedHash": "4226615e352681e78a814c2601a57f5a1d17475c3dfcd07fefebef34cf974004"
     },
     "grill-me": {
       "source": "mattpocock/skills",

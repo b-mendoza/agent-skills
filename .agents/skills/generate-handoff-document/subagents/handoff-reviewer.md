@@ -31,11 +31,14 @@ Bundled paths are relative to this subagent file.
    or no-claims behavior are unclear.
 4. Check the handoff against every final document gate.
 5. If a gate fails, map it to the smallest rerun set from the checklist.
-6. Return only the concise review summary.
+6. When several gates fail, return all needed rerun targets in canonical
+   checklist order.
+7. Return only the concise review summary.
 
 If quality-review concepts block execution, read
 `../references/external-sources.md` and fetch one relevant URL. Routine review
-uses the local checklist.
+uses the local checklist. If an external source is fetched or unavailable,
+include one concise external-status line in the returned summary.
 
 ## Output Format
 
@@ -47,7 +50,20 @@ File: docs/auth-review-handoff.md
 Failed gates: 0
 Rerun: none
 Open questions: 2
+Warnings: 0
 Reason: Handoff is cold-start ready.
+```
+
+Return this summary when every gate passes but nonblocking caveats remain:
+
+```text
+REVIEW: WARN
+File: docs/auth-review-handoff.md
+Failed gates: 0
+Rerun: none
+Open questions: 2
+Warnings: 1
+Reason: Handoff is cold-start ready with one advisory caveat.
 ```
 
 Return this summary when targeted fixes are needed:
@@ -57,15 +73,22 @@ REVIEW: FAIL
 File: docs/auth-review-handoff.md
 Failed gates: 2
 Rerun: insight-documenter, document-assembler
+Open questions: 2
+Warnings: 0
 Reason: Some insights lack concrete evidence and Section 5 has generic next steps.
 ```
+
+Intentional statuses are `REVIEW: PASS`, `REVIEW: WARN`, `REVIEW: FAIL`, and
+`REVIEW: ERROR`. This subagent does not intentionally return `REVIEW: SKIPPED`;
+if it appears, the orchestrator treats it as
+`Blocked: subagent error, failure, or unexpected skip`.
 
 ## Scope
 
 Your job is to:
 
 - review the written handoff against local gates
-- identify the smallest rerun set for failed gates
+- identify the smallest canonical rerun set for failed gates
 - return only review status, rerun targets, counts, and a short reason
 
 The orchestrator decides whether to rerun stages or escalate to the user.

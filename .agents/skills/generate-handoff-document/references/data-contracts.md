@@ -1,18 +1,38 @@
 # Handoff Data Contracts
 
-> Read this file when deriving sibling artifact paths or checking what each
-> stage must write. This is the local source of truth for outputs.
+> Read this file when deriving sibling artifact paths, checking path/write
+> safety, or checking what each stage must write. This is the local source of
+> truth for outputs.
 >
-> **Reminder:** Keep only verdicts, file paths, counts, and actionable warnings
-> in orchestrator context. The structured payload lives on disk.
+> **Reminder:** Keep only verdicts, file paths, counts, actionable warnings,
+> external status, and unresolved questions in orchestrator context. The
+> structured payload lives on disk.
 
 ## Contents
 
+- Path And Write Safety
 - Artifact Naming
+- Status Vocabulary
 - Context Artifact Schema
 - Insights Artifact Schema
 - Claims Artifact Schema
 - Final Document Requirements
+- Final Response Summary
+
+## Path And Write Safety
+
+Before deriving sibling artifacts or dispatching subagents, confirm:
+
+- `TARGET_FILE` is clear enough to identify one output path.
+- The target directory can be created or written safely.
+- The sibling artifact paths are in the same directory as `TARGET_FILE`.
+- Readable inputs named by `CONTEXT_SOURCE` or `TRACKING_FILES` exist when they
+  are file paths.
+
+If `TARGET_FILE` is unclear, ask one short target-path clarification and stop
+with `Blocked: unclear target path` until the user answers. If a path or write
+check is unsafe, stop with
+`Blocked: unsafe writes or missing readable/writable path`.
 
 ## Artifact Naming
 
@@ -36,6 +56,34 @@ Rules:
 - Reuse the full filename stem before `.md`.
 - Overwrite sibling artifacts on reruns; they are working state, not
   append-only logs.
+
+## Status Vocabulary
+
+All subagent summaries start with one of these status lines:
+
+```text
+CONTEXT: PASS|WARN|ERROR
+INSIGHTS: PASS|WARN|ERROR
+CLAIMS: PASS|WARN|SKIPPED|ERROR
+HANDOFF: PASS|WARN|ERROR
+REVIEW: PASS|WARN|FAIL|ERROR
+```
+
+The orchestrator also recognizes `FAIL` or `SKIPPED` from any non-review,
+non-claims stage as unexpected wrapper or runtime statuses. Treat them as
+`Blocked: subagent error, failure, or unexpected skip`.
+
+External-source handling uses:
+
+```text
+EXTERNAL: SKIPPED
+EXTERNAL: USED
+EXTERNAL: UNAVAILABLE
+```
+
+Continue local-only on `EXTERNAL: UNAVAILABLE` only when the missing external
+source is optional. Stop with `Blocked: required external dependency unavailable`
+when the source is required to answer the current contract question.
 
 ## Context Artifact Schema
 
@@ -129,8 +177,21 @@ Additional rules:
   files were provided and that the next agent should verify factual claims
   independently.
 
-The assembly template lives in `./handoff-template.md` and is loaded
-only by `document-assembler` when it is ready to write `TARGET_FILE`.
+The assembly template lives in `./handoff-template.md` and is loaded only by
+`document-assembler` when it is ready to write `TARGET_FILE`.
+
+## Final Response Summary
+
+After `REVIEW: PASS` or `REVIEW: WARN`, return the final summary and mark the
+run `Completed: review pass`. Include:
+
+- target handoff path
+- sibling artifact paths
+- `EXTERNAL: SKIPPED`, `EXTERNAL: USED`, or `EXTERNAL: UNAVAILABLE`
+- stage verdicts for `CONTEXT`, `INSIGHTS`, `CLAIMS`, `HANDOFF`, and `REVIEW`
+- counts returned by subagents
+- warnings captured from `WARN` or `SKIPPED` stages
+- open-question count
 
 ## Schema Vocabulary
 
