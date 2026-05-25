@@ -10,10 +10,12 @@
 | ----- | ------------- |
 | Grounding | Material claims are supported by `GIT_EVIDENCE`, narrow local context, or labeled inference. |
 | Format | The report follows the snapshot template or clearly omits irrelevant sections. |
+| Status handling | The draft report body is separable from `SNAPSHOT_WRITE: PASS`, and final-facing content contains no subagent wrapper. |
 | Risk quality | Each meaningful risk includes severity, area, evidence, impact, confidence, and action. |
 | Behavior | Confirmed, likely, and possible behavior changes are separated when applicable. |
 | Scope | Test, dependency, config, tooling, security, and performance notes appear only when touched or implicated. |
 | Validation | Suggested commands match visible project scripts, CI files, docs, or conventions. |
+| Evidence boundary | The report avoids raw diffs, full command dumps, secrets, and claims that repository changes were performed. |
 | External sources | Fetched references are cited only beside supported findings. |
 | Handoff value | The final briefing tells a developer how to continue safely. |
 

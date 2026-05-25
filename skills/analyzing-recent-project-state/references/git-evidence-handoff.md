@@ -6,7 +6,7 @@
 ## Template
 
 ```text
-GIT_EVIDENCE: PASS | NOT_GIT | PATH_ERROR | ERROR
+GIT_EVIDENCE: PASS | NOT_GIT | PATH_ERROR | NEEDS_CONTEXT | ERROR
 Project path: <path>
 Branch: <branch and upstream/ahead/behind if known>
 Working tree: <clean or staged/unstaged/untracked summary>
@@ -43,7 +43,11 @@ Decision needed: none | <smallest orchestrator action>
 | `PASS` | Enough Git evidence exists for snapshot writing. |
 | `NOT_GIT` | The target is outside a Git worktree. |
 | `PATH_ERROR` | `PROJECT_PATH` is missing or inaccessible. |
+| `NEEDS_CONTEXT` | One user decision is required before the evidence would be trustworthy. |
 | `ERROR` | An unexpected command or filesystem failure occurred. |
+
+For non-`PASS` statuses, keep every field terse and use `Decision needed` for
+the smallest concrete recovery action. Do not include raw command output.
 
 ## Example
 

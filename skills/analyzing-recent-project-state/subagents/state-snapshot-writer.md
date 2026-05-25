@@ -13,6 +13,10 @@ Reason from local evidence first. Fetch external sources only when an observed
 change needs a static review heuristic, command clarification, or source-backed
 rationale.
 
+Use read-only local inspection. Write the report in your response; do not change
+repository files, stage work, run mutating commands, or execute broad test suites
+as part of report drafting.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -51,16 +55,24 @@ Use `REVIEW_FOCUS=full` and `OUTPUT_DEPTH=standard` when missing.
 
 ## Output Format
 
-Return either:
+Return exactly one status wrapper.
+
+For successful drafts:
+
+```text
+SNAPSHOT_WRITE: PASS
+Summary: <one-line draft summary>
+Report:
+<Markdown report shaped by ../references/project-state-snapshot-template.md>
+```
+
+For escalation:
 
 ```text
 SNAPSHOT_WRITE: NEEDS_CONTEXT | ERROR
 Reason: <one line>
 Decision needed: <smallest orchestrator action>
 ```
-
-or the Markdown report shaped by
-`../references/project-state-snapshot-template.md`.
 
 ## Scope
 
@@ -78,9 +90,12 @@ to `snapshot-verifier`.
 
 Use these statuses when a trustworthy report cannot be produced:
 
+- `SNAPSHOT_WRITE: PASS` when the draft report is complete enough for
+  verification
 - `SNAPSHOT_WRITE: NEEDS_CONTEXT` when one missing input blocks a material
   judgment
 - `SNAPSHOT_WRITE: ERROR` for unexpected failures
 
-For escalation statuses, include `Reason` and `Decision needed`. Otherwise
-return the Markdown report directly.
+For escalation statuses, include `Reason` and `Decision needed`. For `PASS`,
+include only the status wrapper and report body; leave final wrapper removal to
+the orchestrator.

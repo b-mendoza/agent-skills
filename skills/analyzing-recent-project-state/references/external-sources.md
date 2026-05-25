@@ -15,6 +15,8 @@ provide optional just-in-time support for interpretation.
 - Cite fetched sources only beside the finding they support.
 - Follow bundled contracts and visible project conventions over generic public
   guidance.
+- Use external sources for static interpretation only. They do not replace
+  local evidence, justify broad web research, or authorize repository changes.
 
 ## Source Routing
 
@@ -47,7 +49,7 @@ provide optional just-in-time support for interpretation.
 When a source is fetched, summarize it before applying it:
 
 ```text
-EXTERNAL_SOURCE: OK
+EXTERNAL_SOURCE: OK | UNAVAILABLE | NOT_USED
 Source: <url>
 Used for: <finding>
 Relevant fact: <one or two short facts>

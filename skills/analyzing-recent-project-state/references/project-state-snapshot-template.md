@@ -4,6 +4,17 @@
 > use `./external-sources.md` only for static background needed by a specific
 > finding.
 
+## Report Rules
+
+- Return the report body only; omit subagent status wrappers, process logs, raw
+  diffs, and full command output.
+- Tie material claims to compact Git evidence, narrow local context, a cited
+  fetched source, or an explicit inference label.
+- Keep validation gaps, unanswered questions, and recommended commands separate
+  from confirmed facts.
+- Recommend repository-changing actions as next steps for the developer; do not
+  present them as already performed.
+
 ## Report Shape
 
 ```markdown

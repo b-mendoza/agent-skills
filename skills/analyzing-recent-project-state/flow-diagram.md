@@ -1,6 +1,6 @@
 # Analyzing Recent Project State
 
-This read-only orchestration workflow helps a developer continue safely by normalizing the requested scope, collecting compact local Git evidence, drafting a grounded project-state snapshot, and verifying the report before return. The orchestrator controls phase transitions and escalation, while `git-evidence-collector`, `state-snapshot-writer`, and `snapshot-verifier` handle focused evidence collection, drafting, and validation. Local Git state, repository docs, tests, scripts, CI files, and project conventions are primary evidence; external sources are optional, narrow, and only used for concrete local questions. The flow does not merge, deploy, mutate repository contents, bypass CI, or return raw diffs or full command dumps.
+This read-only orchestration workflow helps a developer continue safely by normalizing the requested scope, collecting compact local Git evidence, drafting a grounded project-state snapshot, and verifying the report before return. The orchestrator controls phase transitions and routes only on explicit `GIT_EVIDENCE`, `SNAPSHOT_WRITE`, and `SNAPSHOT_VERIFY` statuses, while `git-evidence-collector`, `state-snapshot-writer`, and `snapshot-verifier` handle focused evidence collection, drafting, and validation. Local Git state, repository docs, tests, scripts, CI files, and project conventions are primary evidence; external sources are optional, narrow, and only used for concrete local questions. The flow does not merge, deploy, mutate repository contents, bypass CI, or return raw diffs or full command dumps.
 
 ```mermaid
 flowchart TD
@@ -22,27 +22,27 @@ flowchart TD
 
   COLLECTOR --> COLLECT[Collect compact Git evidence and narrow repository context]
   COLLECT --> COLLECT_STATUS{Collector status}
-  COLLECT_STATUS -->|ok| EVIDENCE[Retain compact evidence: status, branch, commits, changed paths, stats, base delta, tests, docs, conventions]
-  COLLECT_STATUS -->|NOT_GIT| NOT_GIT([Escalate: NOT_GIT])
-  COLLECT_STATUS -->|PATH_ERROR| PATH_ERROR([Escalate: PATH_ERROR])
-  COLLECT_STATUS -->|NEEDS_CONTEXT| COLLECT_NEEDS([Escalate: NEEDS_CONTEXT])
-  COLLECT_STATUS -->|ERROR| COLLECT_ERROR([Escalate: ERROR])
+  COLLECT_STATUS -->|GIT_EVIDENCE: PASS| EVIDENCE[Retain compact evidence: status, branch, commits, changed paths, stats, base delta, tests, docs, conventions]
+  COLLECT_STATUS -->|GIT_EVIDENCE: NOT_GIT| NOT_GIT([Escalate: NOT_GIT])
+  COLLECT_STATUS -->|GIT_EVIDENCE: PATH_ERROR| PATH_ERROR([Escalate: PATH_ERROR])
+  COLLECT_STATUS -->|GIT_EVIDENCE: NEEDS_CONTEXT| COLLECT_NEEDS([Escalate: NEEDS_CONTEXT])
+  COLLECT_STATUS -->|GIT_EVIDENCE: ERROR| COLLECT_ERROR([Escalate: ERROR])
 
   EVIDENCE --> WRITER[Dispatch state-snapshot-writer]
   WRITER --> DRAFT[Draft developer-facing snapshot from compact evidence and narrow context]
   DRAFT --> WRITER_STATUS{Writer status}
-  WRITER_STATUS -->|ok| SNAPSHOT[Retain candidate report]
-  WRITER_STATUS -->|NEEDS_CONTEXT| WRITE_NEEDS([Escalate: NEEDS_CONTEXT])
-  WRITER_STATUS -->|ERROR| WRITE_ERROR([Escalate: ERROR])
+  WRITER_STATUS -->|SNAPSHOT_WRITE: PASS| SNAPSHOT[Retain candidate report body]
+  WRITER_STATUS -->|SNAPSHOT_WRITE: NEEDS_CONTEXT| WRITE_NEEDS([Escalate: NEEDS_CONTEXT])
+  WRITER_STATUS -->|SNAPSHOT_WRITE: ERROR| WRITE_ERROR([Escalate: ERROR])
 
   SNAPSHOT --> VERIFIER[Dispatch snapshot-verifier]
   VERIFIER --> VERIFY[Check grounding, report shape, actionability, assumptions, and validation gaps]
   VERIFY --> VERIFY_STATUS{Verifier decision}
-  VERIFY_STATUS -->|passes| FINAL[Return verified Markdown report]
-  VERIFY_STATUS -->|targeted repair needed and cycles under 2| FEEDBACK[Retain targeted verifier feedback]
+  VERIFY_STATUS -->|SNAPSHOT_VERIFY: PASS| FINAL[Return verified Markdown report body]
+  VERIFY_STATUS -->|SNAPSHOT_VERIFY: FAIL and cycles under 2| FEEDBACK[Retain targeted verifier feedback]
   VERIFY_STATUS -->|repair cycles exhausted| REPAIR_EXHAUSTED([Escalate: ERROR])
-  VERIFY_STATUS -->|unsupported claim or missing material context| VERIFY_NEEDS([Escalate: NEEDS_CONTEXT])
-  VERIFY_STATUS -->|ERROR| VERIFY_ERROR([Escalate: ERROR])
+  VERIFY_STATUS -->|SNAPSHOT_VERIFY: NEEDS_CONTEXT| VERIFY_NEEDS([Escalate: NEEDS_CONTEXT])
+  VERIFY_STATUS -->|SNAPSHOT_VERIFY: ERROR| VERIFY_ERROR([Escalate: ERROR])
 
   FEEDBACK --> REPAIR_WRITER[Dispatch state-snapshot-writer for targeted repair only]
   REPAIR_WRITER --> DRAFT
@@ -66,6 +66,6 @@ flowchart TD
   class NEEDS_CONTEXT,WAIT_CONTEXT,NOT_GIT,PATH_ERROR,COLLECT_NEEDS,COLLECT_ERROR,WRITE_NEEDS,WRITE_ERROR,REPAIR_EXHAUSTED,VERIFY_NEEDS,VERIFY_ERROR stop;
 ```
 
-Completion rule: return only a verified Markdown report or a labeled escalation state: `NOT_GIT`, `PATH_ERROR`, `NEEDS_CONTEXT`, or `ERROR`.
+Completion rule: return only a verified Markdown report body or a labeled `RECENT_STATE` escalation state: `NOT_GIT`, `PATH_ERROR`, `NEEDS_CONTEXT`, or `ERROR`.
 
 Readiness rule: claims in the final report must be tied to compact Git evidence, narrow repository context, or clearly labeled inference; validation gaps and next actions must stay separate from facts.
