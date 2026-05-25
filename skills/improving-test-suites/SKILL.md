@@ -73,16 +73,19 @@ concise decision summaries.
 | Detailed phase routing and status handling | `./references/orchestration-protocol.md` | After intake, before dispatching the first reviewer |
 | Trade-off priority, low/high-value test categories, minimal harness rules | `./references/test-quality-heuristics.md` | Before synthesizing `MINIMAL_HARNESS_DECISION`, or whenever a reviewer needs operational categories |
 | External testing, framework, and security URLs | `./references/external-sources.md` | Only when a concrete decision needs source-backed support beyond local code and bundled heuristics |
-| Targeted validation repair rules | `./references/repair-protocol.md` | Only after a validation failure, blocker, or retryable error |
+| Targeted validation repair rules | `./references/repair-protocol.md` | Only after changed-file validation fails, or after `BLOCKED`/repeated `ERROR` while already in a repair cycle |
 | Report examples | `./references/report-examples.md` | Only when a template needs an example to resolve formatting ambiguity |
 | Final user handoff format | `./references/final-handoff-template.md` | Immediately before the final response |
 | Subagent report format | Template path listed in the dispatch packet | Immediately before the subagent returns its report |
 
-This skill is standalone. Use only co-located files under this skill folder,
-public web URLs from `./references/external-sources.md`, or an official
-documentation URL supplied by the user. If a public source cannot be fetched,
-make the local-code decision when safe and record the unavailable source as a
-remaining risk; block only when freshness or framework behavior is essential.
+Bundled paths are relative to the file that names them and must stay inside
+this skill folder. When dispatching a subagent, pass template and reference
+paths exactly as listed in that subagent's input contract. This skill is
+standalone: use only co-located files under this skill folder, public web URLs
+from `./references/external-sources.md`, or an official documentation URL
+supplied by the user. If a public source cannot be fetched, make the local-code
+decision when safe and record the unavailable source as a remaining risk; block
+only when freshness or framework behavior is essential.
 
 ## Mental Model
 
@@ -94,9 +97,9 @@ internal structure, mock call order, trivial construction, incidental fixture
 shape, or the current implementation layout.
 
 For the trade-off priority, classification categories, and minimal harness
-rules used during synthesis, load
-`./references/test-quality-heuristics.md`. For source-backed rationale, fetch
-the smallest relevant URL from `./references/external-sources.md`.
+rules used during synthesis, load `./references/test-quality-heuristics.md`.
+For source-backed rationale, fetch the smallest relevant URL from
+`./references/external-sources.md`.
 
 ## Execution
 
@@ -106,7 +109,8 @@ the smallest relevant URL from `./references/external-sources.md`.
 2. Load `./references/orchestration-protocol.md` and follow its phase
    routing and status handling.
 3. Dispatch subagents with explicit inputs only. Include
-   `HEURISTICS_PATH` and the relevant one-hop report template path. Include
+   `HEURISTICS_PATH` and the relevant one-hop report template path using the
+   path values listed in the receiving subagent's input contract. Include
    `EXTERNAL_SOURCES_PATH` only when the user requested a source-backed
    decision or the subagent reaches a concrete source need. Ask before using
    unsupported external sources.
@@ -117,17 +121,21 @@ the smallest relevant URL from `./references/external-sources.md`.
    suggested command, or an inferable narrow command. For no-op decisions,
    dispatch it with `CHANGED_FILES=none`. Ask for a command or prerequisite
    only when `TEST_VALIDATION: BLOCKED` returns that decision.
-6. When validation fails after changes, load `./references/repair-protocol.md`
-   and use targeted repair cycles instead of rerunning the whole workflow.
+6. When changed-file validation fails, load `./references/repair-protocol.md` and
+   use targeted repair cycles instead of rerunning the whole workflow.
 7. Load `./references/final-handoff-template.md` and return the final handoff
    with exactly one named handoff status.
 
 ## Output Contract
 
-Return the final answer using `./references/final-handoff-template.md`.
-Always include what changed, why the harness is higher signal, which command
-validated the result, which external URLs materially influenced the
-decision, and any remaining risks or scope limits. The handoff status is one of
+Return the final answer using `./references/final-handoff-template.md`. Match
+the result language to the selected status: changed results explain why the
+harness is higher signal; no-change results give the no-op rationale;
+production-bug results name the failing behavior; blocked and error results
+report completed work plus the blocker or error. Always include changed files
+or no-op rationale, the validation command and result, external URLs that
+materially influenced the decision, and any remaining risks or scope limits. The
+handoff status is one of
 `CHANGED_PASS`, `COMPLETE_NO_SAFE_CHANGE`,
 `COMPLETE_PRODUCTION_BUG_EXPOSED`, `VALIDATION_FAILED_AFTER_REPAIR`,
 `COMPLETE_ERROR`, or `COMPLETE_BLOCKED`.

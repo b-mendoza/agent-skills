@@ -149,12 +149,12 @@ Decision needed: none
 
 ```text
 Handoff status: CHANGED_PASS
-Test suite improved: The invoice API suite now protects response-level behavior instead of repository call order.
+Result: The invoice API suite now protects response-level behavior instead of repository call order.
 
 Diagnosis:
 - The previous suite coupled most assertions to mock interaction order and duplicated invalid payload setup.
 
-Changed harness:
+Harness decision:
 - Deleted: repository call-order tests
 - Rewritten: invalid payload checks around API validation responses
 - Added: unauthorized account id rejection

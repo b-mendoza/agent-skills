@@ -7,6 +7,10 @@ fetching, edits, and validation. It may synthesize decisions and ask focused
 questions; mutations stay bounded to tests and directly related test helpers
 unless the user explicitly approves production-code fixes.
 
+Paths shown in the diagram are relative to this file. Dispatch packet values
+for subagent templates and references use the receiving subagent's input
+contract paths.
+
 ```mermaid
 flowchart TD
   START(["Start: improve target test suite"]) --> NORMALIZE["Normalize dispatch packet: TARGET_TEST_FILES, USER_GOAL, TEST_COMMAND, SCOPE_LIMITS, REFERENCE_NEED"]
@@ -106,15 +110,22 @@ flowchart TD
   HANDOFF_CONTEXT -->|yes| FINAL_CHANGED
   HANDOFF_CONTEXT -->|no| FINAL_NO_CHANGE
   VALIDATION_FAIL_CONTEXT -->|no| FINAL_NO_CHANGE
-  VALIDATION_FAIL_CONTEXT -->|yes| LOAD_REPAIR["Load ./references/repair-protocol.md"]
+  VALIDATION_FAIL_CONTEXT -->|yes| INIT_REPAIR["Initialize REPAIR_COUNT=0 if absent; preserve existing count during repair loop"]
+  INIT_REPAIR --> LOAD_REPAIR["Load ./references/repair-protocol.md"]
 
   LOAD_REPAIR --> VALIDATION_CAUSE{"Likely validation cause?"}
-  VALIDATION_CAUSE -->|test refactor regression| REPAIR_COUNT{"Targeted repair cycles under 3?"}
+  VALIDATION_CAUSE -->|test refactor regression| REPAIR_COUNT{"REPAIR_COUNT under 3?"}
   VALIDATION_CAUSE -->|production bug exposed| REQUEST_PROD_APPROVAL
-  VALIDATION_CAUSE -->|pre-existing failure or unknown| FINAL_FAILED
-  REPAIR_COUNT -->|yes| REPAIR["Dispatch ./subagents/test-refactorer.md with VALIDATION_FAILURE and bounded repair packet"]
+  VALIDATION_CAUSE -->|pre-existing failure| FINAL_FAILED
+  VALIDATION_CAUSE -->|unknown| UNKNOWN_RETRY{"Command or environment retry plausible?"}
+  UNKNOWN_RETRY -->|yes| REPAIR_COUNT
+  UNKNOWN_RETRY -->|no| FINAL_FAILED
+  REPAIR_COUNT -->|yes| INCREMENT_REPAIR["Increment REPAIR_COUNT and keep bounded repair packet"]
   REPAIR_COUNT -->|no| FINAL_FAILED
-  REPAIR --> REFACTOR_STATUS
+  INCREMENT_REPAIR --> REPAIR["Dispatch ./subagents/test-refactorer.md with VALIDATION_FAILURE, or retry validation for unknown command/environment failure"]
+  REPAIR --> REPAIR_ROUTE{"Repair action type?"}
+  REPAIR_ROUTE -->|test edit| REFACTOR_STATUS
+  REPAIR_ROUTE -->|validation retry| VALIDATION_STATUS
 
   FINAL_CHANGED["Load ./references/final-handoff-template.md with status CHANGED_PASS, changed files, validation PASS, fetched URLs, risks, scope limits, approvals"]
   FINAL_NO_CHANGE["Load ./references/final-handoff-template.md with status COMPLETE_NO_SAFE_CHANGE, no-op rationale, validation status, fetched URLs, risks, scope limits"]
@@ -138,8 +149,8 @@ flowchart TD
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class HAS_TARGET,VALUE_STATUS,API_ROUTE,API_STATUS,API_REQUIRED_GATE,API_ERROR_GATE,MAINT_ROUTE,MAINT_STATUS,MAINT_REQUIRED_GATE,MAINT_ERROR_GATE,SAFE_EDIT,MUTATION_SCOPE,PROD_APPROVAL,REFACTOR_STATUS,REFACTOR_FAIL_KIND,VALIDATION_STATUS,HANDOFF_CONTEXT,VALIDATION_FAIL_CONTEXT,VALIDATION_CAUSE,REPAIR_COUNT decision;
-  class NORMALIZE,LOAD_ORCH,VALUE,API_REVIEW,MAINT_REVIEW,SYNTHESIZE,NO_CHANGE_RECORD,VALIDATE_NO_CHANGE,CONTEXT_NO_CHANGE,REFACTOR,VALIDATE_CHANGED,CONTEXT_CHANGED,REPAIR check;
+  class HAS_TARGET,VALUE_STATUS,API_ROUTE,API_STATUS,API_REQUIRED_GATE,API_ERROR_GATE,MAINT_ROUTE,MAINT_STATUS,MAINT_REQUIRED_GATE,MAINT_ERROR_GATE,SAFE_EDIT,MUTATION_SCOPE,PROD_APPROVAL,REFACTOR_STATUS,REFACTOR_FAIL_KIND,VALIDATION_STATUS,HANDOFF_CONTEXT,VALIDATION_FAIL_CONTEXT,VALIDATION_CAUSE,UNKNOWN_RETRY,REPAIR_COUNT,REPAIR_ROUTE decision;
+  class NORMALIZE,LOAD_ORCH,VALUE,API_REVIEW,MAINT_REVIEW,SYNTHESIZE,NO_CHANGE_RECORD,VALIDATE_NO_CHANGE,CONTEXT_NO_CHANGE,REFACTOR,VALIDATE_CHANGED,CONTEXT_CHANGED,INIT_REPAIR,INCREMENT_REPAIR,REPAIR check;
   class ASK_TARGET,ASK_VALUE_BLOCKER,ASK_VALUE_CLARIFICATION,ASK_API_DECISION,ASK_MAINT_DECISION,REQUEST_PROD_APPROVAL,ASK_REFACTOR_BLOCKER,ASK_REFACTOR_CLARIFICATION,ASK_VALIDATION_COMMAND human;
   class VALUE_REPORT,API_MARK_REQUIRED,API_MARK_OPTIONAL,API_REPORT,API_NA,API_OPTIONAL_RISK,MAINT_MARK_REQUIRED,MAINT_MARK_OPTIONAL,MAINT_REPORT,MAINT_OPTIONAL_RISK,PROD_ALLOWED,REFACTOR_REPORT,FINAL_CHANGED,FINAL_NO_CHANGE,FINAL_BUG,FINAL_FAILED output;
   class LOAD_REPAIR guard;

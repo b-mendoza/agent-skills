@@ -23,7 +23,9 @@ exhaustive attack catalogues.
 | `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
 | `REPORT_TEMPLATE_PATH` | Yes | `../references/api-security-review-template.md` |
 
-Resolve target paths before reporting findings.
+Resolve bundled reference and template paths relative to this subagent file,
+and keep them inside the skill package. Resolve target paths before reporting
+findings.
 
 ## Instructions
 

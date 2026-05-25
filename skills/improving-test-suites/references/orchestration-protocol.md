@@ -4,6 +4,10 @@
 > edits, and command runs to subagents; keep the orchestrator on routing
 > decisions and compact summaries.
 
+Bundled paths named in this file are relative to this file. Dispatch packet
+values passed to subagents use the receiving subagent's input-contract paths and
+must resolve inside this skill package.
+
 ## Dispatch Packet
 
 Build and pass only these fields unless the user supplied additional relevant
@@ -16,13 +20,13 @@ scope:
 | `TEST_COMMAND` | Supplied or obvious | Prefer the narrow target command |
 | `SCOPE_LIMITS` | Supplied or important | Example: `test files only` |
 | `REFERENCE_NEED` | User named a topic | Example: `pytest parametrization` |
-| `EXTERNAL_SOURCES_PATH` | Only when source-backed support is requested or needed | `./external-sources.md` |
-| `HEURISTICS_PATH` | Review subagents and synthesis | `./test-quality-heuristics.md` |
+| `EXTERNAL_SOURCES_PATH` | Only when source-backed support is requested or needed | `../references/external-sources.md` |
+| `HEURISTICS_PATH` | Review subagents and synthesis | `../references/test-quality-heuristics.md` |
 | `REPORT_TEMPLATE_PATH` | Every subagent | The template that matches that subagent |
 
 External source use is owned by the relevant subagent dispatch. Use
-`./external-sources.md` or a user-supplied official documentation URL; ask
-before unsupported external source use.
+`../references/external-sources.md` or a user-supplied official documentation URL;
+ask before unsupported external source use.
 
 ## Flow Entity Crosswalk
 
@@ -56,9 +60,10 @@ The flow diagram uses these decision names for deterministic routing:
 ### 1. Test Value Review
 
 Dispatch `test-value-reviewer` with the dispatch packet, `HEURISTICS_PATH`, and
-`REPORT_TEMPLATE_PATH=./test-value-review-template.md`. Include
-`EXTERNAL_SOURCES_PATH=./external-sources.md` only when the user requested a
-source-backed decision or the reviewer reaches a concrete source need.
+`REPORT_TEMPLATE_PATH=../references/test-value-review-template.md`. Include
+`EXTERNAL_SOURCES_PATH=../references/external-sources.md` only when the user
+requested a source-backed decision or the reviewer reaches a concrete source
+need.
 
 Route `VALUE_STATUS` immediately:
 
@@ -81,7 +86,7 @@ Set `API_ROUTE` from the value review and visible target/goal signals:
 
 For `required` or `optional`, dispatch `api-security-reviewer` with the original
 dispatch packet, prior compact reports, `HEURISTICS_PATH`, and
-`REPORT_TEMPLATE_PATH=./api-security-review-template.md`.
+`REPORT_TEMPLATE_PATH=../references/api-security-review-template.md`.
 
 Route `API_STATUS` immediately:
 
@@ -105,7 +110,7 @@ Set `MAINT_ROUTE` from the value review and visible target/goal signals:
 
 For `required` or `optional`, dispatch `test-maintainability-reviewer` with the
 original dispatch packet, prior compact reports, `HEURISTICS_PATH`, and
-`REPORT_TEMPLATE_PATH=./test-maintainability-review-template.md`.
+`REPORT_TEMPLATE_PATH=../references/test-maintainability-review-template.md`.
 
 Route `MAINT_STATUS` immediately:
 
@@ -138,7 +143,7 @@ When a safe edit is justified and stays within tests or directly related test
 helpers, dispatch `test-refactorer` with the original dispatch packet,
 `MINIMAL_HARNESS_DECISION`, concise review reports, any validation failure
 summary from a repair cycle, and
-`REPORT_TEMPLATE_PATH=./test-refactor-template.md`.
+`REPORT_TEMPLATE_PATH=../references/test-refactor-template.md`.
 
 Ask before production-code fixes. The approval request includes target, reason,
 risk, reversibility, and safer alternative. If the user declines, hand off as
@@ -160,10 +165,10 @@ Dispatch `test-validator` after either a refactor or a no-op decision:
 
 - Changed path: include target files, changed files, suggested validation
   command, supplied `TEST_COMMAND`, scope limits, and
-  `REPORT_TEMPLATE_PATH=./test-validation-template.md`.
+  `REPORT_TEMPLATE_PATH=../references/test-validation-template.md`.
 - No-op path: include target files, `CHANGED_FILES=none`, any supplied or
   inferred command, scope limits, and
-  `REPORT_TEMPLATE_PATH=./test-validation-template.md`.
+  `REPORT_TEMPLATE_PATH=../references/test-validation-template.md`.
 
 Let `test-validator` choose the narrowest command from supplied, suggested, or
 inferable repository conventions. Ask the user only when `TEST_VALIDATION:
@@ -181,17 +186,24 @@ Route `VALIDATION_STATUS` immediately:
 
 ## Repair Routing
 
-When changed-file validation returns `FAIL`, load `./repair-protocol.md` and
-use the validator's likely cause:
+When changed-file validation returns `FAIL`, initialize `REPAIR_COUNT=0` if no
+repair count exists for the current validation failure, load
+`./repair-protocol.md`, and use the validator's likely cause:
 
 | Likely cause | Action |
 | ------------ | ------ |
-| `test refactor regression` | Redispatch `test-refactorer` with `VALIDATION_FAILURE` and a bounded repair packet, then rerun `test-validator` |
+| `test refactor regression` | If `REPAIR_COUNT` is under three, increment it, redispatch `test-refactorer` with `VALIDATION_FAILURE` and a bounded repair packet, then rerun `test-validator` |
 | `production bug exposed` | Ask before production-code fixes unless already approved; if declined or outside scope, hand off as `COMPLETE_PRODUCTION_BUG_EXPOSED` |
 | `pre-existing failure` | Hand off as `VALIDATION_FAILED_AFTER_REPAIR` with failure summary and risk |
-| `unknown` | Follow `./repair-protocol.md`; if unresolved, hand off as `VALIDATION_FAILED_AFTER_REPAIR` |
+| `unknown` | Follow `./repair-protocol.md`; if a command or environment retry is plausible and `REPAIR_COUNT` is under three, increment it and retry the failing validation once; otherwise hand off as `VALIDATION_FAILED_AFTER_REPAIR` |
 
-Stop after three targeted repair cycles.
+A repair cycle is one targeted repair attempt plus the validation rerun that
+follows it. Increment `REPAIR_COUNT` immediately before redispatching a repair
+subagent or retrying validation. Do not increment for loading the repair
+protocol, asking for approval, recording a blocker, or writing the final handoff.
+Do not reset the count after a validation rerun; if validation fails again, keep
+the current count and evaluate it before the next repair dispatch. Stop when
+`REPAIR_COUNT` is three before another targeted repair attempt.
 
 ## Handoff
 

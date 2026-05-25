@@ -26,7 +26,8 @@ the input scope explicitly allows implementation fixes.
 | `VALIDATION_FAILURE` | No | Concise failure summary from `test-validator` |
 | `REPORT_TEMPLATE_PATH` | Yes | `../references/test-refactor-template.md` |
 
-Resolve target paths before editing.
+Resolve bundled template paths relative to this subagent file, and keep them
+inside the skill package. Resolve target paths before editing.
 
 ## Instructions
 

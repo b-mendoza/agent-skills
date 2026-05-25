@@ -23,6 +23,9 @@ dumping raw logs.
 | `SCOPE_LIMITS` | No | `"test files only"` |
 | `REPORT_TEMPLATE_PATH` | Yes | `../references/test-validation-template.md` |
 
+Resolve bundled template paths relative to this subagent file, and keep them
+inside the skill package.
+
 ## Instructions
 
 1. Run `TEST_COMMAND` when supplied. Otherwise run
