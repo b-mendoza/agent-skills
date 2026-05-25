@@ -46,8 +46,8 @@ and due date) when set; project membership when verifiable without excessive
 setup; parent comments in chronological order with author, timestamp, and
 body; explicit upload or binary asset URLs found in issue or comment bodies.
 
-**Heading rewrite.** Outside fenced code blocks, rewrite GitHub-authored
-Markdown headings (`#`–`####`) as bold labels so body content cannot collide
+**Heading rewrite.** Outside fenced code blocks, rewrite GitHub-authored ATX
+Markdown headings (`#`-`######`) as bold labels so body content cannot collide
 with reserved snapshot headings. Example: `## Steps` becomes `**Steps**`.
 
 **Formatting.** Preserve useful Markdown formatting in bodies and comments
@@ -99,10 +99,12 @@ to that comment section, record the same warning under
 
 ## Assembly
 
-Read `./issue-snapshot-template.md` only at assembly time. Copy
-the fenced shape into `docs/<ISSUE_SLUG>.md` and fill it from retrieved
-data. Top-level headings are always required. For empty scalar metadata
-values, write `_None_`. Normalize timestamps with times to
+Read `./issue-snapshot-template.md` only at assembly time. Before filling the
+template, normalize all retrieved Markdown body content by rewriting
+GitHub-authored ATX headings (`#`-`######`) outside fenced code blocks as bold
+labels. Copy the fenced shape into `docs/<ISSUE_SLUG>.md` and fill it from
+retrieved data. Top-level headings are always required. For empty scalar
+metadata values, write `_None_`. Normalize timestamps with times to
 `YYYY-MM-DD HH:MM UTC`; keep date-only values as `YYYY-MM-DD`. Leave the
 artifact in place and unstaged.
 
@@ -133,6 +135,10 @@ re-check. Max 3 repair passes. After the limit, return `FETCH: ERROR`,
 ## Rate Limiting
 
 For exact retry policy and limit categories, fetch `github-rest-rate-limits`
-from `external-sources.md` when needed. Default behavior: at most 2 retries
-with 1s then 3s backoff; classify exhausted limits as `FETCH: FAIL` with
+from `external-sources.md` when needed. When GitHub returns rate-limit
+metadata, honor `retry-after` or `x-ratelimit-reset`, preserve the rate-limit
+message, and retry only while the local retry budget remains. When no explicit
+timing is available for a secondary limit, wait at least 60s before retrying.
+Default behavior for transient failures: at most 2 retries with 1s then 3s
+backoff and jitter. Classify exhausted limits as `FETCH: FAIL` with
 `Failure category: RATE_LIMIT`.
