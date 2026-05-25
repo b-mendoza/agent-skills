@@ -23,7 +23,7 @@ flowchart TD
 
   PRURL -->|yes| DERIVE_OUTPUT["Derive deterministic default OUTPUT_FILE from PR number when omitted; preserve unresolved user-supplied paths as pending"]
   DERIVE_OUTPUT --> OUTPUT_PRECHECK{OUTPUT_FILE safe and resolved before report writing?}
-  OUTPUT_PRECHECK -->|safe default or resolved path| COLLECT["Dispatch review-comment-collector: fetch PR metadata, review comments, review summaries, issue comments, existing replies, PR diff, CI, and linked context"]
+  OUTPUT_PRECHECK -->|safe default or resolved path| COLLECT["Dispatch review-comment-collector: fetch PR metadata, review comments, review summaries, issue comments, existing replies, pagination status, unresolved/thread metadata, and compact reply-target metadata"]
   OUTPUT_PRECHECK -->|unsafe, ambiguous, or unresolved user path| OUTPUT_LIMIT{OUTPUT_FILE question cycles fewer than 3?}
   OUTPUT_LIMIT -->|yes| ASK_OUTPUT[Ask for safe OUTPUT_FILE or approval of default local report path]
   ASK_OUTPUT --> DERIVE_OUTPUT
