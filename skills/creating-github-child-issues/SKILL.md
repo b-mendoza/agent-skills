@@ -15,18 +15,23 @@ detection, plan-file edits, and validation. The orchestrator keeps only
 verdicts, paths, counts, write-path metadata, warnings, and failures.
 
 Run this skill only after the caller or user has approved GitHub issue writes
-and the scoped update to `docs/<ISSUE_SLUG>-tasks.md`. If invoked directly and
+and the scoped update to `docs/<ISSUE_SLUG>-tasks.md`. Normal orchestration
+passes that approval as `APPROVED_MUTATION_SCOPE`. If invoked directly and
 approval is unclear, ask once for that approval; if approval is absent or
-declined, return `TASK_ISSUES: BLOCKED` with `Validation: NOT_RUN`.
+declined, return the contract-defined blocked summary with
+`Validation: NOT_RUN`.
 
 ## Inputs
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `ISSUE_URL` | Yes | `https://github.com/acme/app/issues/42` |
+| `APPROVED_MUTATION_SCOPE` | No | `GitHub child issues plus docs/acme-app-42-tasks.md update approved` |
 
-Derive locally for routing and reporting only. The full URL is the canonical
-context that flows to the subagent and to `gh --repo`:
+Normal orchestrated runs include `APPROVED_MUTATION_SCOPE`. Direct standalone
+runs may collect the same approval from the user before dispatch. Derive
+locally for routing and reporting only. The full URL is the canonical context
+that flows to the subagent and to `gh --repo`:
 
 - **OWNER:** path segment after `github.com/`, lowercased for slug stability
 - **REPO:** next path segment, lowercased for slug stability
@@ -58,17 +63,23 @@ Read a subagent definition only when dispatching that subagent.
 
 ## Workflow
 
-1. Confirm `ISSUE_URL` is present, derive `ISSUE_SLUG` for local reporting, and
-   confirm the run is approved for GitHub writes plus the scoped plan-file
-   update.
-2. Read `./references/phase-4-io-contracts.md` only when interpreting an output,
+1. Confirm `ISSUE_URL` is present. If it is missing or malformed, return the
+   blocked summary from `./references/phase-4-io-contracts.md` with
+   `Parent: UNKNOWN`, `ISSUE_SLUG: UNKNOWN`, `Plan file: not updated`, zero
+   counts, `Write model: unknown`, `Capability: not checked`, and
+   `Validation: NOT_RUN`.
+2. Derive `ISSUE_SLUG` for local reporting, then confirm the run is approved
+   for GitHub writes plus the scoped plan-file update. If approval is absent
+   or declined, return the same blocked-summary shape with the derived
+   `ISSUE_SLUG` and `Plan file: not updated`.
+3. Read `./references/phase-4-io-contracts.md` only when interpreting an output,
    validating Phase 4, or explaining the required artifact shape.
-3. Read `./subagents/task-issue-creator.md` and dispatch it with `ISSUE_URL`.
-   The approved mutation scope is limited to GitHub child-issue create/reuse
-   actions, accepted task-list fallback records, and
-   `docs/<ISSUE_SLUG>-tasks.md`; it is not a separate required input.
-4. Route on the returned `TASK_ISSUES` and `Validation` lines.
-5. Report a concise Phase 4 rollup: parent, `ISSUE_SLUG`, plan path, counts,
+4. Read `./subagents/task-issue-creator.md` and dispatch it with `ISSUE_URL`
+   and the approved mutation scope. The approved scope is limited to GitHub
+   child-issue create/reuse actions, accepted task-list fallback records, and
+   `docs/<ISSUE_SLUG>-tasks.md`.
+5. Route on the returned `TASK_ISSUES` and `Validation` lines.
+6. Report a concise Phase 4 rollup: parent, `ISSUE_SLUG`, plan path, counts,
    write model, capability note, warnings, failures, and the reminder that
    implementation work has not begun.
 
@@ -100,7 +111,8 @@ and installed extensions, so the run-time path matters to the caller.
 Input: `ISSUE_URL=https://github.com/acme/app/issues/42`
 
 1. The orchestrator derives `ISSUE_SLUG=acme-app-42` for reporting.
-2. The orchestrator dispatches `task-issue-creator` with `ISSUE_URL`.
+2. The orchestrator dispatches `task-issue-creator` with `ISSUE_URL` and
+   approved mutation scope.
 3. The subagent returns the contract summary with `TASK_ISSUES: PASS`,
    `Validation: PASS`, parent, plan path, detected write model, capability,
    counts, warnings, and failures.

@@ -17,15 +17,17 @@ REST sub-issue behavior cannot be confirmed from the bundled cheatsheet.
 
 Run only after caller or user approval for GitHub issue writes, child/link
 operations, accepted task-list fallback records, and the scoped update to
-`docs/<ISSUE_SLUG>-tasks.md`. If invoked directly and approval is unclear, ask
-once; if approval is absent or declined, return `TASK_ISSUES: BLOCKED` with
-`Validation: NOT_RUN`.
+`docs/<ISSUE_SLUG>-tasks.md`. Normal orchestration passes that approval as
+`APPROVED_MUTATION_SCOPE`. If invoked directly and approval is unclear, ask
+once; if approval is absent or declined, return the full blocked-summary shape
+with `Validation: NOT_RUN`.
 
 ## Inputs
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `ISSUE_URL` | Yes | `https://github.com/acme/app/issues/42` |
+| `APPROVED_MUTATION_SCOPE` | No | `GitHub child issues plus docs/acme-app-42-tasks.md update approved` |
 
 Derive these values from `ISSUE_URL`:
 
@@ -50,7 +52,13 @@ Primary artifact: `docs/<ISSUE_SLUG>-tasks.md`.
 ## Instructions
 
 1. Parse `ISSUE_URL`, derive `ISSUE_SLUG`, confirm the approved mutation scope,
-   and read `docs/<ISSUE_SLUG>-tasks.md`.
+   and read `docs/<ISSUE_SLUG>-tasks.md`. If `ISSUE_URL` is missing or
+   malformed, return `TASK_ISSUES: BLOCKED` with `Validation: NOT_RUN`,
+   `Parent: UNKNOWN`, `ISSUE_SLUG: UNKNOWN`, `Plan file: not updated`,
+   `Write model: unknown`, `Capability: not checked`, zero counts, and a
+   reason that names the URL problem. If approval is absent or declined after
+   a valid URL is parsed, use the derived parent and `ISSUE_SLUG` in the same
+   blocked-summary shape.
 2. If the plan file is missing, lacks `## Tasks`, or has no numbered
    `## Task <N>:` headings, return `TASK_ISSUES: BLOCKED` with
    `Validation: NOT_RUN` using the contract-defined summary shape.
@@ -107,6 +115,8 @@ decision-ready summary.
 - Use `gh` for issue operations and as the wrapper for GitHub REST calls.
 - Reuse valid existing linkage instead of duplicating GitHub issues.
 - Update only `docs/<ISSUE_SLUG>-tasks.md`.
+- Track local files edited during the run and fail validation if anything
+  outside `docs/<ISSUE_SLUG>-tasks.md` is changed by this run.
 - During repair, edit only the local plan representation and keep existing
   GitHub links intact.
 - Leave implementation work, branches, and unrelated commits to later phases.

@@ -18,6 +18,7 @@ Primary inputs:
 
 ```text
 ISSUE_URL
+APPROVED_MUTATION_SCOPE
 docs/<ISSUE_SLUG>-tasks.md
 ```
 
@@ -30,7 +31,8 @@ Derive stable identifiers from `ISSUE_URL`:
 
 Mutation approval is a precondition: GitHub issue writes, child/link
 operations, accepted task-list fallback records, and the scoped update to
-`docs/<ISSUE_SLUG>-tasks.md` must already be approved by the caller or user. If
+`docs/<ISSUE_SLUG>-tasks.md` must already be approved by the caller or user.
+Normal orchestration supplies that approval as `APPROVED_MUTATION_SCOPE`. If
 approval is unclear in a direct invocation, return `TASK_ISSUES: BLOCKED` with
 `Validation: NOT_RUN`.
 
@@ -44,6 +46,28 @@ Expected normal-workflow plan shape:
 
 If the plan is missing or malformed, return `TASK_ISSUES: BLOCKED`. If the plan
 is parseable but lacks `## Decisions Log`, continue with a warning.
+
+### Blocked Summary Placeholders
+
+Every early exit uses the full structured summary shape. If `ISSUE_URL` is
+missing or malformed before `ISSUE_SLUG` can be derived, use:
+
+- `Parent: UNKNOWN`
+- `ISSUE_SLUG: UNKNOWN`
+- `Plan file: not updated`
+- `Write model: unknown`
+- `Capability: not checked`
+- `Tasks in plan: 0`
+- `Already linked: 0`
+- `Created now: 0`
+- `Failed creates: 0`
+- `Decisions Log: MISSING`
+- a header-only `Created/Linked Task Issues` table
+- `Reason:` naming the missing or malformed URL
+
+If approval is absent or declined after a valid `ISSUE_URL` is parsed, use the
+derived `Parent:` and `ISSUE_SLUG:`, keep `Plan file: not updated`, use zero
+counts, and name the missing approval in `Reason:`.
 
 ## Platform Behavior
 
@@ -76,6 +100,12 @@ After successful or partial completion, the plan file includes:
 | -------- | ------- |
 | `## GitHub Task Issues` section with machine handoff comment and workflow table | Phase 4 postcondition and resumable linkage |
 | One `GitHub Task Issue: ...` line per numbered task section | Per-task reference consumed by downstream phases |
+
+Only `docs/<ISSUE_SLUG>-tasks.md` may be changed during the local artifact
+update or repair. The worker keeps a write ledger for this run, and may also
+inspect available changed-file evidence when the environment exposes it. If
+any path outside `docs/<ISSUE_SLUG>-tasks.md` is changed by this run, return
+`TASK_ISSUES: FAIL` with `Validation: FAIL`.
 
 ### Machine Handoff Comment
 
@@ -192,3 +222,4 @@ before that task is selected for execution.
   `TASK_ISSUES: WARN`.
 - `task-list` values are structurally valid only when intentionally recorded as
   degraded traceability and the run returns `TASK_ISSUES: WARN`.
+- The only local file changed by the run is `docs/<ISSUE_SLUG>-tasks.md`.

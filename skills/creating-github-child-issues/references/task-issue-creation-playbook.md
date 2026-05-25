@@ -19,7 +19,8 @@ smallest relevant URL only when current syntax or product behavior is uncertain.
      task-list fallback records, and the scoped update to
      `docs/<ISSUE_SLUG>-tasks.md` are approved.
    - If approval is unclear in a direct invocation, return
-     `TASK_ISSUES: BLOCKED` with `Validation: NOT_RUN`.
+     `TASK_ISSUES: BLOCKED` with `Validation: NOT_RUN` using the
+     blocked-summary placeholders in `./phase-4-io-contracts.md`.
 
 2. **Verify the parent issue.**
    - Look up `OWNER/REPO#PARENT_NUMBER` via `gh issue view` and capture
@@ -95,6 +96,8 @@ smallest relevant URL only when current syntax or product behavior is uncertain.
 
 8. **Update the plan file idempotently.**
    - Update only `docs/<ISSUE_SLUG>-tasks.md`.
+   - Track local files edited during this run; the write ledger must contain
+     only `docs/<ISSUE_SLUG>-tasks.md`.
    - Follow `./phase-4-io-contracts.md` for exact artifact shape.
    - Insert or replace one `## GitHub Task Issues` section after
      `## Issue Summary` when present; otherwise place it after the first
@@ -110,6 +113,9 @@ smallest relevant URL only when current syntax or product behavior is uncertain.
    - Confirm a single `## GitHub Task Issues` section, the required handoff
      comment, the fixed column order, one row per task, and matching inline
      lines.
+   - Confirm the write ledger, and any available changed-file evidence, shows
+     only `docs/<ISSUE_SLUG>-tasks.md` was changed by this run. If another
+     path was changed, return `TASK_ISSUES: FAIL` with `Validation: FAIL`.
    - If a structural check fails, repair the local markdown once and re-run
      only the failed checks.
    - During repair, create no additional GitHub issues.
