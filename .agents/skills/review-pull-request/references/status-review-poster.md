@@ -8,9 +8,9 @@
 | Status | Meaning |
 | ------ | ------- |
 | `POST: PASS` | Approved review content was posted and read back successfully |
-| `POST: PREVIEW_REQUIRED` | Final preview approval was missing |
+| `POST: PREVIEW_REQUIRED` | `HUMAN_GATE_FINAL_PREVIEW_APPROVAL` did not set `PREVIEW_APPROVED=true` for the exact verified preview |
 | `POST: AUTH` | Authentication or permission failed |
-| `POST: METADATA_INVALID` | Required line metadata was missing or invalid |
+| `POST: METADATA_INVALID` | Required review decision, comment body, or line metadata was missing or invalid |
 | `POST: ERROR` | Unexpected posting or read-back failure |
 
 ## Output Format
@@ -18,6 +18,7 @@
 ```text
 POST: <PASS | PREVIEW_REQUIRED | AUTH | METADATA_INVALID | ERROR>
 PR: <owner>/<repo>#<number>
+Preview approved: <true | false>
 Posted comments: <number>
 Review decision posted: <comment | request changes | approve | none>
 Read-back verified: <yes | no>
@@ -33,6 +34,7 @@ Next step: none | <smallest recovery action>
 ```text
 POST: PREVIEW_REQUIRED
 PR: org/repo#1020
+Preview approved: false
 Posted comments: 0
 Review decision posted: none
 Read-back verified: no

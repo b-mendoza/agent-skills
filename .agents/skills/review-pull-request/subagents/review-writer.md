@@ -22,18 +22,21 @@ local Markdown artifact the user can read, keep, or approve for posting.
 ## Instructions
 
 1. Load `../references/review-file-template.md` only while assembling the file.
-2. Write `OUTPUT_FILE` as a findings-first review that stands alone without the
+2. Treat `OUTPUT_FILE` as the already-normalized, safe workspace-relative
+   Markdown path from `GATE_INPUT_NORMALIZATION`; return `WRITE: ERROR` if it is
+   missing, absolute, outside the workspace, or not a Markdown file.
+3. Write `OUTPUT_FILE` as a findings-first review that stands alone without the
    conversation context.
-3. Preserve verified finding IDs, severities, file/line references, evidence,
+4. Preserve verified finding IDs, severities, file/line references, evidence,
    impact, fixes, draft comments, line metadata, residual risks, and posting
    status. Do not re-evaluate verified content.
-4. Include verified `suggestion` blocks exactly. If no safe suggestion exists,
+5. Include verified `suggestion` blocks exactly. If no safe suggestion exists,
    write `Suggestion: none`.
-5. For no-finding reviews, state `No findings` and include residual risks or
+6. For no-finding reviews, state `No findings` and include residual risks or
    testing gaps from verification.
-6. After writing, re-read the file and confirm required template sections are
-   present.
-7. Before returning, load `../references/status-review-writer.md` and use that
+7. After writing, re-read the file and confirm it exists at the exact
+   workspace-relative path and required template sections are present.
+8. Before returning, load `../references/status-review-writer.md` and use that
    contract exactly.
 
 ## Scope

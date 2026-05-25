@@ -21,7 +21,11 @@ structured summaries.
 | `LANGUAGE_STYLE` | No | `natural English for a non-native speaker` (default) |
 | `REVIEW_FOCUS` | No | `full` (default), `security`, `correctness`, or `tests` |
 
-If `OUTPUT_FILE` is missing, derive `pr-<number>-review.md` from `PR_URL`.
+At `GATE_INPUT_NORMALIZATION`, accept exactly one parseable GitHub pull request
+URL, validate controlled values for `POSTING_MODE` and `REVIEW_FOCUS`, and keep
+`OUTPUT_FILE` as a safe workspace-relative Markdown path. If `OUTPUT_FILE` is
+missing, derive `pr-<number>-review.md` from `PR_URL`. `LANGUAGE_STYLE` remains
+free-form guidance for tone.
 
 ## Progressive Loading Map
 
@@ -53,26 +57,33 @@ Read a subagent file only when dispatching that phase.
 
 ## How This Skill Works
 
-1. Normalize inputs inline. If multiple PR URLs are present, ask which single PR
-   to review before dispatching subagents.
+1. Run `GATE_INPUT_NORMALIZATION` inline before dispatching subagents. If
+   multiple PR URLs are present, use `HUMAN_GATE_CHOOSE_ONE_PR`; if no single
+   parseable PR URL, invalid controlled value, or unsafe output path remains,
+   stop with `PR_REVIEW: NEEDS_CONTEXT`.
 2. Read `./references/review-workflow-playbook.md` and relevant
    `./references/status-*.md` contracts when beginning execution.
 3. Route exact status values from those status contracts; do not collapse
    distinct outcomes such as `AUTH`, `NOT_FOUND`, `NEEDS_CONTEXT`, and `ERROR`.
 4. Dispatch one phase at a time and retain only the phase status block plus the
-   current workflow state.
+   current workflow state. Use `HUMAN_GATE_LARGE_REVIEW` or
+   `HUMAN_GATE_NARROW_LARGE_REVIEW` when `pr-context-collector` returns
+   `CONTEXT: LARGE_REVIEW_CONFIRMATION_REQUIRED`.
 5. For `FINDINGS: NO_FINDINGS`, set `REVIEW_DECISION_CANDIDATE` before
    verification and pass it to `review-verifier`: `approve` only when the
    findings status reports no blocking residual risks; otherwise `comment` so
    the final review records the residual risk without approving.
-6. Use `review-verifier` as the quality gate. Repair only the phase named by the
-   verifier, or reset `REVIEW_DECISION_CANDIDATE` when the verifier names
-   `orchestrator-decision`, and stop after the playbook's retry limit. Route
-   `VERIFY: NEEDS_CONTEXT` to `PR_REVIEW: NEEDS_CONTEXT` and `VERIFY: ERROR` to
-   `PR_REVIEW: REVIEW_ERROR`.
-7. Default to `draft-only`. Dispatch `review-poster` only after showing the exact
-   review preview and receiving explicit final approval; route each `POST:*`
-   status through the playbook.
+6. Use `review-verifier` as the quality gate. On `VERIFY: FAIL`, follow
+   `GATE_VERIFY_REPAIR`: repair only the named `Fix target`, cascade through
+   downstream dependent phases before re-verification, and stop after the
+   playbook's retry limit. Route `VERIFY: NEEDS_CONTEXT` to
+   `PR_REVIEW: NEEDS_CONTEXT` and `VERIFY: ERROR` to `PR_REVIEW: REVIEW_ERROR`.
+7. Default to `draft-only`. Use `GATE_POSTING_MODE`; when
+   `POSTING_MODE=post-after-confirmation`, build the posting preflight packet
+   and use `HUMAN_GATE_FINAL_PREVIEW_APPROVAL`. Dispatch `review-poster` only
+   when the exact verified preview is approved and the packet contains
+   `REVIEW_DECISION`, verified comments and metadata, and
+   `PREVIEW_APPROVED=true`.
 
 ## Review Invariants
 
@@ -81,6 +92,13 @@ Read a subagent file only when dispatching that phase.
 - Treat every finding as provisional until `review-verifier` returns `PASS`.
 - Use `suggestion` blocks only for local, mechanically safe edits.
 - Record missing context as residual risk instead of guessing.
+- Route terminal failures through `PR_REVIEW: AUTH`, `PR_REVIEW: NOT_FOUND`,
+  `PR_REVIEW: LARGE_REVIEW`, `PR_REVIEW: NEEDS_CONTEXT`,
+  `PR_REVIEW: REVIEW_ERROR`, `PR_REVIEW: VERIFY_FAIL`,
+  `PR_REVIEW: WRITE_ERROR`, or `PR_REVIEW: POST_ERROR`.
+- Treat `PR_REVIEW: VERIFIED_DRAFT_SAVED`,
+  `PR_REVIEW: VERIFIED_DRAFT_SAVED_POSTING_CANCELLED`, and
+  `PR_REVIEW: VERIFIED_REVIEW_POSTED` as success outcomes.
 
 ## Example
 

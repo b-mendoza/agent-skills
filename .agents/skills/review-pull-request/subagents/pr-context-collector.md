@@ -31,8 +31,11 @@ Derive owner, repository, and PR number from `PR_URL`. Use
 3. Read CI status and failed-check summaries when available.
 4. Inspect the diff and surrounding code enough to summarize behavior changes,
    public API changes, migrations, security-sensitive paths, and test signals.
-5. For very large or mixed-purpose PRs, return the large-review status before
-   deep inspection unless `LARGE_REVIEW_APPROVED=true`.
+5. For very large or mixed-purpose PRs, return
+   `CONTEXT: LARGE_REVIEW_CONFIRMATION_REQUIRED` before deep inspection unless
+   `LARGE_REVIEW_APPROVED=true`. Include shortstat, changed-file groups, the
+   trigger criterion, scope, risk, and the decision needed by
+   `HUMAN_GATE_LARGE_REVIEW` or `HUMAN_GATE_NARROW_LARGE_REVIEW`.
 6. For `NARROW_CONTEXT_REQUEST`, gather only the requested context and return a
    compact addendum.
 7. When GitHub behavior or API mechanics are unclear, load

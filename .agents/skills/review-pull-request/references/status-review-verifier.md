@@ -22,9 +22,16 @@ in the output below.
 Candidate mismatch is a repairable `VERIFY: FAIL`: use `Fix target:
 orchestrator-decision` when the only issue is an approval candidate that should
 be `comment` because residual risks block approval, or a comment candidate that
-should be `approve` because no findings or blocking residual risks remain. Use a
-subagent fix target only when the mismatch comes from missing context, unclear
-findings, or invalid draft comments.
+should be `approve` because no findings or blocking residual risks remain. Use
+the earliest affected subagent fix target when the mismatch comes from missing
+context, unclear findings, or invalid draft comments.
+
+`GATE_VERIFY_REPAIR` routes fixes by `Fix target`: `pr-context-collector`
+repairs cascade through `finding-reviewer`, `comment-drafter` when findings
+exist, and `review-verifier`; `finding-reviewer` repairs cascade through
+`comment-drafter` when findings exist and `review-verifier`; `comment-drafter`
+repairs return to `review-verifier`; `orchestrator-decision` repairs return
+directly to `review-verifier`.
 
 ## Output Format
 

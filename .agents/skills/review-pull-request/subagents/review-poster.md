@@ -20,7 +20,10 @@ are present.
 | `REVIEW_DECISION` | Yes | `comment`, `request changes`, or `approve` |
 | `PREVIEW_APPROVED` | Yes | `true` |
 
-Posting is available only when `PREVIEW_APPROVED=true`.
+Posting is available only when the orchestrator has passed
+`HUMAN_GATE_FINAL_PREVIEW_APPROVAL` and the posting preflight packet contains
+the exact verified preview, `REVIEW_DECISION`, verified comments and metadata,
+and `PREVIEW_APPROVED=true`.
 
 Interpret `VERIFIED_COMMENTS` this way: absent or blank means there are zero
 verified line comments and the review body comes from `OUTPUT_FILE`; when it is
@@ -35,18 +38,21 @@ body.
    summary-only reviews such as no-finding approvals.
 2. Load `../references/external-review-resources.md`, fetch the exact GitHub
    docs for the chosen method, and apply the documented fields.
-3. When `VERIFIED_COMMENTS` contains line comments, validate every line comment
+3. Before posting, confirm `PREVIEW_APPROVED=true` and `REVIEW_DECISION` is
+   `comment`, `request changes`, or `approve`; otherwise return
+   `POST: PREVIEW_REQUIRED` or `POST: METADATA_INVALID`.
+4. When `VERIFIED_COMMENTS` contains line comments, validate every line comment
    has `path`, `line`, `side`, and any required `start_line` or `start_side`
    before posting. Return `POST: METADATA_INVALID` when fields are
    incomplete.
-4. When `VERIFIED_COMMENTS` contains line comments, post them with the exact
+5. When `VERIFIED_COMMENTS` contains line comments, post them with the exact
    bodies and metadata from `VERIFIED_COMMENTS`. For summary-only/no-finding
    reviews, read `OUTPUT_FILE` and post the complete file contents verbatim as
    the approved review body with zero comments, whether using `gh pr review` or
    the GitHub review API.
-5. Read back the created review or comments through the API or CLI and confirm
+6. Read back the created review or comments through the API or CLI and confirm
    they are visible.
-6. Before returning, load `../references/status-review-poster.md` and use that
+7. Before returning, load `../references/status-review-poster.md` and use that
    contract exactly.
 
 ## Scope
