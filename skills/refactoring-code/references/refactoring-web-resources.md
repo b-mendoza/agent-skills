@@ -2,14 +2,16 @@
 
 > Read this file only when the strategist or reviewer needs external conceptual guidance for a concrete decision. Fetch the smallest matching URL set; keep article text out of orchestrator handoffs.
 
-This file is the skill's local reference router. Static refactoring guidance lives on the public web, not in the prompt. The strategist consults the table, fetches one or two pages, and cites the URLs in `STRATEGY`.
+This file is the skill's local reference router. Static refactoring guidance lives on the public web, not in the prompt. The strategist or reviewer consults the table only for concrete strategy/review decisions, fetches the smallest useful page set when public web access is allowed, and cites the URLs in its report.
 
 ## Fetch Policy
 
 1. Start from project evidence: `BEHAVIOR_MAP`, code shape, tests, and user scope.
-2. Fetch at most two URLs for one strategy decision unless the user explicitly asks for deeper research.
-3. Use fetched guidance to justify the minimal plan, never to broaden scope.
-4. If a URL is unavailable, record it as unavailable and continue from code evidence when safe.
+2. Resolve the reference status before strategy or review continues: not needed, bundled-local-only, fetched, declined-but-safe, or unavailable-but-safe.
+3. Ask before public web fetching when required by the runtime, user policy, or current approval context.
+4. Fetch at most two URLs for one strategy or review decision unless the user explicitly asks for deeper research.
+5. Use fetched guidance to justify the minimal plan, never to broaden scope.
+6. If a URL is declined or unavailable, continue only when local code evidence and bundled references are enough; record `declined-but-safe` or `unavailable-but-safe` accordingly. If the reference is required for a safe decision, stop with the smallest needed decision.
 
 ## Resource Index
 
@@ -43,4 +45,10 @@ When no web guidance is needed, report:
 
 ```text
 References fetched: none
+```
+
+Also report the reference status:
+
+```text
+Reference status: not needed | bundled-local-only | fetched | declined-but-safe | unavailable-but-safe
 ```

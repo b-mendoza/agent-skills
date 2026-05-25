@@ -22,7 +22,7 @@
 
 ## Permitted Waivers
 
-Record any waiver explicitly in `STRATEGY` with the reason. Common waivers:
+Record any waiver explicitly in `STRATEGY` with the reason. The orchestrator asks for user approval before implementation uses a waiver. Common waivers:
 
 | Waiver | Example |
 | ------ | ------- |
@@ -31,7 +31,7 @@ Record any waiver explicitly in `STRATEGY` with the reason. Common waivers:
 | Single declaration | An auto-generated type or const block where splitting harms clarity |
 | Framework-required single file | Migrations or schema files the framework loads as one unit |
 
-Anything else requires either a split or a `NEEDS_CLARIFICATION` from the strategist.
+Anything else requires either a split or a `NEEDS_CLARIFICATION` from the strategist; do not treat it as an implicit approval to exceed `MAX_LINES`.
 
 ## Split Decision Tree
 

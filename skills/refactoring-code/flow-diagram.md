@@ -1,84 +1,101 @@
 # Refactoring Code
 
-This workflow coordinates one behavior-preserving refactor for a required `TARGET_PATH`. The orchestrator keeps authority narrow: it maps current behavior, chooses the smallest useful strategy, edits only through the implementer after strategy approval, validates with the supplied or smallest safe command, reviews the diff, and stops for user approval whenever the work would change behavior, public APIs, tests, scope, state, external public web access, or file-size limits beyond the approved strategy.
+This workflow coordinates one deterministic, behavior-preserving refactor cycle for a required `TARGET_PATH`. The orchestrator owns phase routing, evidence handoffs, permission gates, and final status; `behavior-mapper`, `refactor-strategist`, `refactor-implementer`, and `refactor-reviewer` keep inspection, strategy, implementation plus validation, and review isolated. The workflow may inspect code, delegate safe validation, and fetch optional public references only for concrete strategy or review decisions when allowed; it must stop instead of normalizing behavior, public API, test, scope, state, unrelated worktree, destructive validation, public web, or file-size waiver changes outside the approved behavior-preserving refactor boundary.
 
 ```mermaid
 flowchart TD
   START([Start: refactoring request]) --> INPUTS["Collect inputs: TARGET_PATH, USER_GOAL, TEST_COMMAND, SCOPE_LIMITS, MAX_LINES, REFERENCE_NEED"]
   INPUTS --> HAS_TARGET{TARGET_PATH provided?}
   HAS_TARGET -->|no| ASK_PATH["Ask one focused question for target path"]
-  ASK_PATH --> NEEDS_CLARIFICATION([NEEDS_CLARIFICATION: target required])
-  HAS_TARGET -->|yes| SET_BOUNDARY["Set behavior-preserving boundary and one-target cycle"]
+  ASK_PATH --> STOP_NEEDS_TARGET([NEEDS_CLARIFICATION: TARGET_PATH required])
+  HAS_TARGET -->|yes| BOUNDARY["Set behavior-preserving boundary: one target cycle, stable public surface, no unrelated worktree changes"]
 
-  SET_BOUNDARY --> MAP["Dispatch behavior-mapper to inspect target, callers, dependencies, tests, behavior, risks, and file sizes"]
+  BOUNDARY --> MAP["Dispatch behavior-mapper: inspect target, callers, dependencies, tests, behavior, side effects, risks, and file sizes"]
   MAP --> MAP_STATUS{BEHAVIOR_MAP status}
   MAP_STATUS -->|NEEDS_CLARIFICATION| MAP_QUESTION["Return mapper question and stop"]
-  MAP_QUESTION --> NEEDS_CLARIFICATION
-  MAP_STATUS -->|ERROR| ERROR_MAP([ERROR: behavior mapping failed])
-  MAP_STATUS -->|PASS or NO_CHANGE_CANDIDATE| WEB_NEED{Optional public web sources needed?}
+  MAP_QUESTION --> STOP_NEEDS_MAP([NEEDS_CLARIFICATION: mapper decision required])
+  MAP_STATUS -->|ERROR| STOP_ERROR_MAP([ERROR: behavior mapping failed])
+  MAP_STATUS -->|PASS or NO_CHANGE_CANDIDATE| MAP_REPORT["Receive BEHAVIOR_MAP report: facts, uncertainty, validation option, file sizes, risk notes"]
 
-  WEB_NEED -->|yes| WEB_GATE["Request approval for public web fetching: sources, reason, risk, and bundled-only alternative"]
+  MAP_REPORT --> REF_PLAN["Resolve REFERENCE_NEED: none, bundled/local only, or concrete public source for strategy/review decision"]
+  REF_PLAN --> REF_PUBLIC{Public source needed now?}
+  REF_PUBLIC -->|no| REF_LOCAL["Record reference status: not needed or bundled-local-only"]
+  REF_PUBLIC -->|yes| WEB_ALLOWED{Public web access already allowed by runtime and user?}
+  WEB_ALLOWED -->|yes| FETCH_REFS["Fetch smallest matching public sources and record URLs"]
+  WEB_ALLOWED -->|no| WEB_GATE["Ask approval for public web fetch: sources, target decision, reason, risk, bundled-only alternative, audit note"]
   WEB_GATE --> WEB_APPROVED{User approves?}
-  WEB_APPROVED -->|approved| STRATEGY["Dispatch refactor-strategist with behavior map, scope, goal, MAX_LINES, reference paths, and approved web access"]
-  WEB_APPROVED -->|declined| BUNDLED_ONLY["Use current code evidence and bundled references only"]
-  BUNDLED_ONLY --> STRATEGY_LOCAL["Dispatch refactor-strategist without public web fetching"]
-  WEB_NEED -->|no| STRATEGY_LOCAL
+  WEB_APPROVED -->|approved| FETCH_REFS
+  WEB_APPROVED -->|declined| REF_DECLINED["Record reference event: public source declined"]
+  FETCH_REFS --> REF_FETCHED{Sources available?}
+  REF_FETCHED -->|yes| REF_FETCHED_STATUS["Record reference status: fetched URLs"]
+  REF_FETCHED -->|no| REF_UNAVAILABLE["Record reference event: public source unavailable"]
+  REF_DECLINED --> REF_DECLINED_SAFE_CHECK{Can decide safely from local evidence after declined source?}
+  REF_UNAVAILABLE --> REF_UNAVAILABLE_SAFE_CHECK{Can decide safely from local evidence after unavailable source?}
+  REF_DECLINED_SAFE_CHECK -->|yes| REF_DECLINED_SAFE["Record reference status: declined-but-safe"]
+  REF_DECLINED_SAFE_CHECK -->|no| STOP_BLOCKED_REFERENCE([BLOCKED: required reference unavailable or declined])
+  REF_UNAVAILABLE_SAFE_CHECK -->|yes| REF_UNAVAILABLE_SAFE["Record reference status: unavailable-but-safe"]
+  REF_UNAVAILABLE_SAFE_CHECK -->|no| STOP_BLOCKED_REFERENCE
 
-  STRATEGY --> STRATEGY_STATUS{STRATEGY status}
-  STRATEGY_LOCAL --> STRATEGY_STATUS
-  STRATEGY_STATUS -->|NO_CHANGE| NO_CHANGE([NO_CHANGE: report current behavior, diagnosis, and why no refactor is useful; include validation only if run])
-  STRATEGY_STATUS -->|NEEDS_CLARIFICATION| STRATEGY_QUESTION["Return smallest required decision"]
-  STRATEGY_QUESTION --> NEEDS_CLARIFICATION
-  STRATEGY_STATUS -->|ERROR| ERROR_STRATEGY([ERROR: strategy failed])
-  STRATEGY_STATUS -->|PASS| SENSITIVE_PLAN{Strategy requires explicit user approval?}
+  REF_LOCAL --> STRATEGY
+  REF_FETCHED_STATUS --> STRATEGY
+  REF_DECLINED_SAFE --> STRATEGY
+  REF_UNAVAILABLE_SAFE --> STRATEGY
+  STRATEGY["Dispatch refactor-strategist: choose smallest useful behavior-preserving plan; report diagnosis, non-goals, file-size plan, and reference status"] --> STRATEGY_STATUS{STRATEGY status}
+  STRATEGY_STATUS -->|NO_CHANGE| STOP_NO_CHANGE([NO_CHANGE: report behavior, diagnosis, reason no refactor is useful, and validation if run])
+  STRATEGY_STATUS -->|NEEDS_CLARIFICATION| STRATEGY_QUESTION["Return smallest required strategy decision"]
+  STRATEGY_QUESTION --> STOP_NEEDS_STRATEGY([NEEDS_CLARIFICATION: strategy decision required])
+  STRATEGY_STATUS -->|ERROR| STOP_ERROR_STRATEGY([ERROR: strategy failed])
+  STRATEGY_STATUS -->|PASS| SCOPE_DRIFT{Plan requires behavior, public API, test, scope, state, or unrelated worktree change?}
 
-  SENSITIVE_PLAN -->|yes| PLAN_GATE["Request approval: action, target, reason, risk, reversibility, safer alternative, and audit note"]
-  PLAN_GATE --> PLAN_APPROVED{User approves?}
-  PLAN_APPROVED -->|declined| BLOCKED_DECLINED([BLOCKED: approval declined or missing])
-  PLAN_APPROVED -->|approved| IMPLEMENT
-  SENSITIVE_PLAN -->|no| IMPLEMENT["Dispatch refactor-implementer with behavior map, approved strategy, validation command, MAX_LINES, and reference index"]
+  SCOPE_DRIFT -->|yes| STOP_BLOCKED_SCOPE([BLOCKED: out-of-scope change; reframe outside this refactoring workflow])
+  SCOPE_DRIFT -->|no| SIZE_WAIVER{Strategy records file-size waiver?}
+  SIZE_WAIVER -->|yes| SIZE_GATE["Ask approval for file-size waiver: target file, reason, risk, split alternative, audit note"]
+  SIZE_GATE --> SIZE_APPROVED{User approves?}
+  SIZE_APPROVED -->|declined| STOP_BLOCKED_SIZE([BLOCKED: file-size waiver declined or missing])
+  SIZE_APPROVED -->|approved| VALIDATION_SELECT
+  SIZE_WAIVER -->|no| VALIDATION_SELECT["Choose validation contract for implementer: TEST_COMMAND, mapper command, smallest safe check, or warning"]
+
+  VALIDATION_SELECT --> VALIDATION_AVAILABLE{Safe validation command available?}
+  VALIDATION_AVAILABLE -->|no| VALIDATION_WARNING["Record validation warning for implementer: not run, unavailable, or pre-existing failure as residual risk"]
+  VALIDATION_WARNING --> IMPLEMENT
+  VALIDATION_AVAILABLE -->|yes| VALIDATION_DESTRUCTIVE{Validation command destructive or state-mutating?}
+  VALIDATION_DESTRUCTIVE -->|yes| VALIDATION_GATE["Ask approval for validation command: action, target state, reason, risk, reversibility, safer alternative, audit note"]
+  VALIDATION_GATE --> VALIDATION_APPROVED{User approves?}
+  VALIDATION_APPROVED -->|declined| STOP_BLOCKED_VALIDATION([BLOCKED: validation approval declined or missing])
+  VALIDATION_APPROVED -->|approved| IMPLEMENT
+  VALIDATION_DESTRUCTIVE -->|no| IMPLEMENT["Dispatch refactor-implementer: apply approved plan or review fixes, run approved safe validation, and return IMPLEMENTATION report"]
 
   IMPLEMENT --> IMPLEMENT_STATUS{IMPLEMENTATION status}
-  IMPLEMENT_STATUS -->|BLOCKED| BLOCKED_IMPLEMENT([BLOCKED: report reason, files touched, and recovery])
-  IMPLEMENT_STATUS -->|ERROR| ERROR_IMPLEMENT([ERROR: implementation failed])
-  IMPLEMENT_STATUS -->|PASS or PASS_WITH_WARNINGS| VALIDATION_GATE{Validation command mutates state or is destructive?}
+  IMPLEMENT_STATUS -->|BLOCKED| STOP_BLOCKED_IMPLEMENT([BLOCKED: implementation stopped; report reason, files touched, recovery])
+  IMPLEMENT_STATUS -->|ERROR| STOP_ERROR_IMPLEMENT([ERROR: implementation failed])
+  IMPLEMENT_STATUS -->|PASS or PASS_WITH_WARNINGS| IMPLEMENT_REPORT["Consume IMPLEMENTATION report: changes, behavior preservation, file sizes, validation summary, deviations"]
 
-  VALIDATION_GATE -->|yes| VALIDATION_APPROVAL["Request approval for command, target state, reason, risk, reversibility, and safer alternative"]
-  VALIDATION_APPROVAL --> VALIDATION_APPROVED{User approves?}
-  VALIDATION_APPROVED -->|declined| BLOCKED_VALIDATION([BLOCKED: validation approval declined or missing])
-  VALIDATION_APPROVED -->|approved| RUN_VALIDATION
-  VALIDATION_GATE -->|no| RUN_VALIDATION["Run supplied or smallest safe validation command"]
-
-  RUN_VALIDATION --> VALIDATION_RESULT{Validation result}
-  VALIDATION_RESULT -->|pass| REVIEW["Dispatch refactor-reviewer with behavior map, strategy, implementation report, validation output, MAX_LINES, and policy paths"]
-  VALIDATION_RESULT -->|warning| VALIDATION_WARNING["Record missing validation, unavailable command, or pre-existing failure as residual risk"]
-  VALIDATION_WARNING --> REVIEW
-  VALIDATION_RESULT -->|fail| BLOCKED_VALIDATION_FAIL([BLOCKED: validation failed])
-  VALIDATION_RESULT -->|error| ERROR_VALIDATION([ERROR: validation command failed unexpectedly])
-
+  IMPLEMENT_REPORT --> REVIEW["Dispatch refactor-reviewer with behavior map, strategy, implementation report, MAX_LINES, policy paths, and reference status"]
   REVIEW --> REVIEW_STATUS{REFACTOR_REVIEW status}
-  REVIEW_STATUS -->|ERROR| ERROR_REVIEW([ERROR: review failed])
-  REVIEW_STATUS -->|PASS| HANDOFF["Build final handoff: behavior summary, design diagnosis, code changes, validation note, review outcome, file-size compliance, and improvement summary"]
+  REVIEW_STATUS -->|ERROR| STOP_ERROR_REVIEW([ERROR: review failed])
+  REVIEW_STATUS -->|PASS| HANDOFF["Build final handoff: behavior summary, design diagnosis, code changes, validation note, review outcome, file-size compliance, improvement summary"]
   HANDOFF --> DONE([PASS: final user handoff])
 
   REVIEW_STATUS -->|FAIL| FIX_COUNT{Fewer than two targeted fix cycles used?}
-  FIX_COUNT -->|yes| FIX_SCOPE["Re-dispatch implementer with only reviewer-required fixes"]
-  FIX_SCOPE --> FIX_SENSITIVE{Fix requires new approval?}
-  FIX_SENSITIVE -->|yes| FIX_GATE["Request approval for behavior/API/test/scope/state/size-waiver change"]
-  FIX_GATE --> FIX_APPROVED{User approves?}
-  FIX_APPROVED -->|declined| BLOCKED_FIX([BLOCKED: required fix approval declined or missing])
-  FIX_APPROVED -->|approved| IMPLEMENT
-  FIX_SENSITIVE -->|no| IMPLEMENT
-  FIX_COUNT -->|no| UNRESOLVED([BLOCKED: unresolved review findings after two fix cycles])
+  FIX_COUNT -->|no| STOP_BLOCKED_REVIEW([BLOCKED: unresolved review findings after two fix cycles])
+  FIX_COUNT -->|yes| FIX_SCOPE{Reviewer-required fix stays behavior-preserving and within approved strategy?}
+  FIX_SCOPE -->|no| STOP_BLOCKED_FIX_SCOPE([BLOCKED: required fix is out of scope for behavior-preserving refactor])
+  FIX_SCOPE -->|yes| FIX_WAIVER{Fix needs new file-size waiver?}
+  FIX_WAIVER -->|yes| FIX_SIZE_GATE["Ask approval for file-size waiver: target file, reason, risk, split alternative, audit note"]
+  FIX_SIZE_GATE --> FIX_SIZE_APPROVED{User approves?}
+  FIX_SIZE_APPROVED -->|declined| STOP_BLOCKED_FIX_SIZE([BLOCKED: fix waiver declined or missing])
+  FIX_SIZE_APPROVED -->|approved| FIX_VALIDATION_SELECT
+  FIX_WAIVER -->|no| FIX_VALIDATION_SELECT["Update validation contract for targeted reviewer fixes"]
+  FIX_VALIDATION_SELECT --> VALIDATION_AVAILABLE
 
-  class HAS_TARGET,MAP_STATUS,WEB_NEED,WEB_APPROVED,STRATEGY_STATUS,SENSITIVE_PLAN,PLAN_APPROVED,IMPLEMENT_STATUS,VALIDATION_GATE,VALIDATION_APPROVED,VALIDATION_RESULT,REVIEW_STATUS,FIX_COUNT,FIX_SENSITIVE,FIX_APPROVED decision;
-  class MAP,STRATEGY,STRATEGY_LOCAL,IMPLEMENT,RUN_VALIDATION,REVIEW,FIX_SCOPE check;
-  class WEB_GATE,PLAN_GATE,VALIDATION_APPROVAL,FIX_GATE human;
-  class BUNDLED_ONLY,VALIDATION_WARNING guard;
+  class HAS_TARGET,MAP_STATUS,REF_PUBLIC,WEB_ALLOWED,WEB_APPROVED,REF_FETCHED,REF_DECLINED_SAFE_CHECK,REF_UNAVAILABLE_SAFE_CHECK,STRATEGY_STATUS,SCOPE_DRIFT,SIZE_WAIVER,SIZE_APPROVED,VALIDATION_AVAILABLE,VALIDATION_DESTRUCTIVE,VALIDATION_APPROVED,IMPLEMENT_STATUS,REVIEW_STATUS,FIX_COUNT,FIX_SCOPE,FIX_WAIVER,FIX_SIZE_APPROVED decision;
+  class MAP,MAP_REPORT,FETCH_REFS,STRATEGY,VALIDATION_SELECT,FIX_VALIDATION_SELECT,IMPLEMENT,IMPLEMENT_REPORT,REVIEW check;
+  class WEB_GATE,SIZE_GATE,VALIDATION_GATE,FIX_SIZE_GATE human;
+  class BOUNDARY,REF_PLAN,REF_LOCAL,REF_DECLINED,REF_UNAVAILABLE,REF_FETCHED_STATUS,REF_DECLINED_SAFE,REF_UNAVAILABLE_SAFE,VALIDATION_WARNING guard;
   class HANDOFF output;
   class DONE success;
   class ASK_PATH,MAP_QUESTION,STRATEGY_QUESTION refine;
-  class NEEDS_CLARIFICATION,NO_CHANGE,BLOCKED_DECLINED,BLOCKED_IMPLEMENT,BLOCKED_VALIDATION,BLOCKED_VALIDATION_FAIL,BLOCKED_FIX,UNRESOLVED,ERROR_MAP,ERROR_STRATEGY,ERROR_IMPLEMENT,ERROR_VALIDATION,ERROR_REVIEW stop;
+  class STOP_NEEDS_TARGET,STOP_NEEDS_MAP,STOP_NEEDS_STRATEGY,STOP_NO_CHANGE,STOP_BLOCKED_REFERENCE,STOP_BLOCKED_SCOPE,STOP_BLOCKED_SIZE,STOP_BLOCKED_VALIDATION,STOP_BLOCKED_IMPLEMENT,STOP_BLOCKED_REVIEW,STOP_BLOCKED_FIX_SCOPE,STOP_BLOCKED_FIX_SIZE,STOP_ERROR_MAP,STOP_ERROR_STRATEGY,STOP_ERROR_IMPLEMENT,STOP_ERROR_REVIEW stop;
 
   classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
@@ -88,9 +105,6 @@ flowchart TD
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
-
 ```
 
-Readiness rule: hand off only after validation has been run or its warning recorded and the reviewer passes, or stop with `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, or `ERROR` using the smallest stopping reason, next decision needed, validation already completed, and remaining risks.
-
-Readiness rule: hand off only after validation has been run or its warning recorded and the reviewer passes, or stop with `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, or `ERROR` using the smallest stopping reason, next decision needed, validation already completed, and remaining risks.
+Final user-facing status rule: return only `PASS`, `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, or `ERROR`. Build the final handoff only after the implementer has run validation or recorded a validation warning and `refactor-reviewer` returns `PASS`; otherwise stop with the smallest reason, next decision needed, validation already completed, and remaining risks.

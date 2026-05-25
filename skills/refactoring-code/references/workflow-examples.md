@@ -11,13 +11,15 @@ Input: `TARGET_PATH=src/subscriptions/expire-users.ts`, `USER_GOAL="simplify wit
 
 1. Dispatch `behavior-mapper`.
 2. Mapper returns `BEHAVIOR_MAP: PASS` with expiration rules, email side effects, `Date.now()` timing risk, line counts, and `npm test -- subscriptions` as validation.
-3. Dispatch `refactor-strategist` with the behavior map and reference paths.
-4. Strategist reads `./file-size-policy.md`, fetches one Functional Core / Imperative Shell URL from `./refactoring-web-resources.md`, and plans a split into decisions and notifications while keeping the original export stable.
-5. Dispatch `refactor-implementer`.
-6. Implementer creates `expiration-decisions.ts` and `expiration-notifications.ts`, keeps every changed file under 250 lines, and reports validation passing.
-7. Dispatch `refactor-reviewer`.
-8. Reviewer returns `REFACTOR_REVIEW: PASS` for behavior preservation, scope control, validation, and size compliance.
-9. Orchestrator returns the final handoff without raw diffs or command logs.
+3. Orchestrator resolves `REFERENCE_NEED`, records reference status, and asks before any public web fetch if required.
+4. Dispatch `refactor-strategist` with the behavior map, reference status, and reference paths.
+5. Strategist reads `./file-size-policy.md`, fetches one Functional Core / Imperative Shell URL from `./refactoring-web-resources.md` when allowed, and plans a split into decisions and notifications while keeping the original export stable.
+6. Orchestrator blocks any behavior/API/test/scope/state drift, asks for any required file-size waiver, and chooses the validation contract before implementation.
+7. Dispatch `refactor-implementer`.
+8. Implementer creates `expiration-decisions.ts` and `expiration-notifications.ts`, keeps every changed file under 250 lines, runs the approved validation command or records the warning, and reports validation passing.
+9. Dispatch `refactor-reviewer`.
+10. Reviewer returns `REFACTOR_REVIEW: PASS` for behavior preservation, scope control, validation, and size compliance.
+11. Orchestrator returns `PASS` with the final handoff without raw diffs or command logs.
 </example>
 
 ## Subagent Output Samples
@@ -56,6 +58,7 @@ Clarifying questions:
 STRATEGY: PASS
 Target: src/subscriptions/expire-users.ts
 References fetched: https://www.destroyallsoftware.com/talks/boundaries
+Reference status: fetched
 
 Design diagnosis:
 - Expiration predicates and notification side effects are interleaved.
@@ -75,7 +78,7 @@ Non-goals:
 - Do not change persistence APIs, test expectations, or notification semantics.
 
 Implementation constraints:
-- Preserve cutoff equality and the existing exported function name.
+- Preserve cutoff equality, the existing exported function name, public API shape, tests, state behavior, and unrelated worktree changes.
 
 Validation expectations:
 - npm test -- subscriptions passes or reports a clearly pre-existing failure.
@@ -90,6 +93,7 @@ Rationale:
 REFACTOR_REVIEW: FAIL
 Target: src/subscriptions/expire-users.ts
 References fetched: none
+Reference status: not needed
 
 Behavior preservation:
 - PASS: cutoff equality and side effects match the behavior map.

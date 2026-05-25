@@ -21,14 +21,15 @@ Optimize for current clarity, not future flexibility. A good strategy often remo
 | `BEHAVIOR_MAP` | Yes | Output from `behavior-mapper` |
 | `REFERENCE_INDEX_PATH` | No | `../references/refactoring-web-resources.md` |
 | `FILE_SIZE_POLICY_PATH` | No | `../references/file-size-policy.md` |
+| `REFERENCE_STATUS` | No | `not needed`, `bundled-local-only`, `fetched`, `declined-but-safe`, or `unavailable-but-safe` |
 
 ## Progressive Reference Policy
 
-Use local code evidence first. When a concrete decision needs conceptual support, read `REFERENCE_INDEX_PATH`, choose the smallest matching URL set, fetch only those webpages, and cite the fetched URLs in the output.
+Use local code evidence first. When a concrete decision needs conceptual support, read `REFERENCE_INDEX_PATH`, choose the smallest matching URL set, fetch only those webpages when public web access is allowed, and cite the fetched URLs in the output.
 
 Read `FILE_SIZE_POLICY_PATH` only when the behavior map flags a file as `OVERSIZED` or when planning a split. If the split seam needs conceptual support, use `REFERENCE_INDEX_PATH` to fetch one matching URL and cite it.
 
-If no reference is needed, write `References fetched: none`. If a URL is unavailable, note it and continue from code evidence when the strategy is still safe.
+If no reference is needed, write `References fetched: none`. If public web access is declined or a URL is unavailable, continue only when the strategy is still safe from code evidence and bundled references; otherwise return `NEEDS_CLARIFICATION` with the smallest decision needed.
 
 ## How to Choose a Strategy
 
@@ -37,8 +38,9 @@ If no reference is needed, write `References fetched: none`. If a URL is unavail
 3. Decide whether the code is already simple enough for the user's goal and within `MAX_LINES`.
 4. Choose the smallest target design that makes current behavior easier to understand.
 5. When the behavior map flags `OVERSIZED`, plan a split that follows the project's architecture (or the seams in `FILE_SIZE_POLICY_PATH`) and keeps the public surface stable. Record any waiver and reason.
-6. State non-goals that prevent scope drift: files, APIs, layers, tests, or abstractions that stay unchanged.
-7. Define validation expectations that preserve the behavior map.
+6. State non-goals that prevent scope drift: files, APIs, layers, tests, behavior, public surfaces, state, or abstractions that stay unchanged.
+7. Treat behavior, public API, test, scope, state, or unrelated worktree changes as out of scope for this workflow. Return `NEEDS_CLARIFICATION` when the user's goal requires one of those changes instead of normalizing it into the plan.
+8. Define validation expectations that preserve the behavior map.
 
 Prefer moves that reduce cognitive load: rename, extract small pure decision functions, inline single-use abstractions, move side effects outward, delete dead or speculative code, simplify conditionals while preserving edge-case semantics, and split oversized files along existing seams.
 
@@ -50,6 +52,7 @@ Use this exact structure:
 STRATEGY: PASS | NO_CHANGE | NEEDS_CLARIFICATION | ERROR
 Target: <TARGET_PATH>
 References fetched: none | <urls>
+Reference status: <not needed / bundled-local-only / fetched / declined-but-safe / unavailable-but-safe>
 
 Design diagnosis:
 - <current problems worth fixing now>
@@ -66,7 +69,7 @@ Non-goals:
 - <what remains unabstracted or untouched>
 
 Implementation constraints:
-- <behavior, file, API, test, scope, and per-file size constraints>
+- <behavior, file, API, test, scope, state, worktree, and per-file size constraints>
 
 Validation expectations:
 - <existing tests or behavior checks that should still pass>
@@ -91,7 +94,7 @@ Use these status codes precisely:
 
 - `PASS` when a small useful refactor is justified
 - `NO_CHANGE` when the code is already simple enough for the stated goal and within `MAX_LINES`
-- `NEEDS_CLARIFICATION` when a user decision is needed before safe strategy
+- `NEEDS_CLARIFICATION` when a user decision is needed before safe strategy, including required public references or out-of-scope behavior/API/test/scope/state changes
 - `ERROR` when an unexpected failure prevents completion
 
 For `NEEDS_CLARIFICATION` or `ERROR`, include:
