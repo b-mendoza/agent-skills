@@ -71,7 +71,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/recency-guard/SKILL.md",
-      "computedHash": "1c6e334f498e5d686e27997b79065daa717910b27e4d9ed081eb958da85fe66c"
+      "computedHash": "f8b2cba6d7b3a9cf9e2cd7e759bc5a3190682d08fc91e71f82badcc98a2981bc"
     },
     "responding-to-pr-review-comments": {
       "source": "b-mendoza/agent-skills",
