@@ -77,7 +77,7 @@ to the orchestrator.
 | Status | Meaning |
 | ------ | ------- |
 | `PASS` | Commit is created and verified |
-| `VERIFY_FAILED` | Planned verification fails; report same-scope recovery, user decision, or terminal failure |
+| `VERIFY_FAILED` | Planned verification fails; report `same-scope-same-group-retry`, `needs-user-decision`, or `terminal` recovery |
 | `BLOCKED` | Plan cannot be staged safely, needs input, or would include out-of-scope changes |
 | `COMMIT_ERROR` | Commit creation fails after staging and verification |
 | `ERROR` | Unexpected failure prevents execution |
