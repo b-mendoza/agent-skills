@@ -37,8 +37,11 @@ returns `POST: PREVIEW_REQUIRED`.
 5. Preserve reply text exactly. If the text needs editing, return
    `POST: PREVIEW_REQUIRED`.
 6. Return `POST: TARGET_UNSUPPORTED` for unsupported targets that reached this
-   phase, including review summaries, issue comments, top-level PR comments,
-   replies-to-replies, unresolved metadata limitations, or missing root IDs.
+   phase: review summaries map to `requires-user-choice:review-summary`; issue
+   comments and top-level PR comments map to
+   `requires-user-choice:issue-comment`; replies-to-replies or missing root IDs
+   map to `requires-user-choice:unsupported-review-reply`; unresolved-thread
+   metadata limitations map to `requires-user-choice:unresolved-metadata`.
 7. Verify each created reply with a read-back API or CLI call.
 
 ## External Sources
