@@ -32,11 +32,11 @@ before crossing the execution boundary.
 | 0. Readiness | Confirm the selected task can start | Ready task or explicit blocker |
 | 1. Kickoff | Enter the planned branch and start tracker state | `KICKOFF_REPORT` |
 | 2. Execution | Implement the approved change | `EXECUTION_REPORT` |
-| 3. Documentation | Add in-code docs and update tracking | `DOCUMENTATION_REPORT` |
+| 3. Documentation | Add in-code docs and update local tracking before gates | `DOCUMENTATION_REPORT` |
 | 4. Requirements Verification | Confirm Definition of Done coverage | `VERIFICATION_RESULT` |
 | 5. Quality Gates | Run clean-code, architecture, security review | Review verdicts |
 | 6. Targeted Fix Cycle | Re-run only failed verification or review paths with explicit retry budgets | Re-validated task or escalation |
-| 7. Final Report | Report this task's outcome for the parent workflow | `FINAL_TASK_REPORT` |
+| 7. Finalize and Report | Finalize eligible tracker completion after gates and report this task's outcome | `FINAL_TRACKING_REPORT` and `FINAL_TASK_REPORT` |
 
 ## Subagent Registry
 
@@ -44,7 +44,7 @@ before crossing the execution boundary.
 | -------- | ---- | ------- |
 | `execution-starter` | `./subagents/execution-starter.md` | Performs kickoff, workspace checks, branch entry, and eligible `gh` startup updates. |
 | `task-executor` | `./subagents/task-executor.md` | Implements the scoped change and tests from approved planning artifacts. |
-| `documentation-writer` | `./subagents/documentation-writer.md` | Adds minimal in-code docs, updates task tracking, and performs optional `gh` completion updates. |
+| `documentation-writer` | `./subagents/documentation-writer.md` | Adds minimal in-code docs, updates task tracking, and finalizes optional `gh` completion updates only after gates pass. |
 | `requirements-verifier` | `./subagents/requirements-verifier.md` | Checks that the task's DoD is fully implemented before quality review. |
 | `clean-code-reviewer` | `./subagents/clean-code-reviewer.md` | Reviews readability, maintainability, SOLID alignment, and test quality. |
 | `architecture-reviewer` | `./subagents/architecture-reviewer.md` | Reviews domain boundaries, composition, and architectural fit. |
@@ -93,6 +93,10 @@ return time:
 | `architecture-reviewer` | `./references/template-architecture-review.md` |
 | `security-auditor` | `./references/template-security-audit.md` |
 
+When `documentation-writer` runs in `FINALIZE_TRACKER` mode, it uses
+`./references/template-documentation-report.md` and returns that report as
+`FINAL_TRACKING_REPORT`.
+
 ## Execution Steps
 
 1. Read `./references/contracts.md` and confirm the selected task is ready to
@@ -113,9 +117,10 @@ Every run ends with exactly one `FINAL_TASK_REPORT` using
 `BLOCKED`, `STOPPED_FOR_USER_INPUT`, and `ESCALATED`.
 
 On `COMPLETE`, the workflow produces Category B implementation changes, updates
-Category A tracking artifacts on disk, records eligible GitHub tracker updates
-or skips, and includes the quality-gate summary and implementation artifact
-summary expected by the parent orchestrator.
+Category A tracking artifacts on disk, records eligible GitHub startup updates
+or skips, finalizes eligible GitHub completion updates only after requirements
+and quality gates pass, and includes the quality-gate summary and
+implementation artifact summary expected by the parent orchestrator.
 
 Stopped or escalated runs still return a `FINAL_TASK_REPORT` with the blocker,
 retry counts, preserved phase results, unresolved items, and next required
@@ -130,6 +135,8 @@ action.
   with at most three attempts for requirements and each quality gate.
 - Retry a stopped step only when the inputs changed through new context, a fix
   brief, or an explicit user decision.
+- Defer final GitHub completion comments or closure until requirements
+  verification and all quality gates have passed.
 - Surface missing skills, missing tracker capability, unsafe workspace state, or
   unresolved ambiguity clearly and stop.
 
@@ -139,7 +146,7 @@ Input: `ISSUE_SLUG=acme-app-42`, `TASK_NUMBER=3`
 
 1. Validate required artifacts with `./references/contracts.md`.
 2. Dispatch `execution-starter`; continue only on `KICKOFF_REPORT -> READY`.
-3. Dispatch implementation, documentation, verification, and review gates in
-   `./references/pipeline.md` order.
+3. Dispatch implementation, documentation, verification, review gates, and
+   final tracker completion in `./references/pipeline.md` order.
 4. Report only Task 3 as a `FINAL_TASK_REPORT` using
    `./references/template-final-report.md`.

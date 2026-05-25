@@ -30,8 +30,11 @@ are too vague for a confident verdict.
 
 1. Read all inputs before making a verdict.
 2. Check `EXECUTION_REPORT` and `DOCUMENTATION_REPORT` status first. If either
-   shows blocked execution or completion, return `BLOCKED` and preserve the
-   blocker reason before normal gap analysis.
+   report has status `BLOCKED`, return `BLOCKED` and preserve the blocker
+   reason before normal gap analysis. If either report has status `ERROR`,
+   return `ERROR` with the upstream failure summary. If either report is
+   incomplete or missing a required status, return `BLOCKED` with the missing
+   report field.
 3. Walk the Definition of Done line by line.
 4. For each requirement, confirm implementation, test coverage, and relevant
    documentation.

@@ -105,11 +105,20 @@ of inferring success from partial file changes.
 | -------- | --------------- |
 | `execution-starter` | `ISSUE_SLUG`, `TASK_NUMBER`, issue snapshot path, task plan path with branch names, execution brief path |
 | `task-executor` | Paths to brief, execution plan, test spec, refactoring plan, decisions; optional critique, fix brief, previous execution report |
-| `documentation-writer` | `EXECUTION_REPORT`, `ISSUE_SLUG`, `TASK_NUMBER` |
+| `documentation-writer` | Mode-specific inputs; see below. |
 | `requirements-verifier` | Brief path, test spec path, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT` |
 | `clean-code-reviewer` | Brief, test spec, refactoring plan paths, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT` |
 | `architecture-reviewer` | Brief, execution plan paths, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT`, `CODE_REVIEW` |
 | `security-auditor` | Brief path, `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT`, `CODE_REVIEW`, `ARCHITECTURE_REVIEW` |
+
+`documentation-writer` mode inputs:
+
+- `Mode=UPDATE_TRACKING`: `EXECUTION_REPORT`, `ISSUE_SLUG`, `TASK_NUMBER`,
+  execution brief path, and task plan path.
+- `Mode=FINALIZE_TRACKER`: `EXECUTION_REPORT`, previous
+  `DOCUMENTATION_REPORT`, `VERIFICATION_RESULT`, `CODE_REVIEW`,
+  `ARCHITECTURE_REVIEW`, `SECURITY_AUDIT`, `ISSUE_SLUG`, `TASK_NUMBER`,
+  execution brief path, and task plan path.
 
 ## Artifact lifecycle
 
@@ -126,8 +135,8 @@ can resume later; those files stay out of git history.
 After a successful run, all of these should be true:
 
 1. `FINAL_TASK_REPORT` has status `COMPLETE`.
-2. `EXECUTION_REPORT` and `DOCUMENTATION_REPORT` indicate successful
-   completion rather than blocked partial progress.
+2. `EXECUTION_REPORT`, `DOCUMENTATION_REPORT`, and `FINAL_TRACKING_REPORT`
+   indicate successful completion rather than blocked partial progress.
 3. Execution kickoff either performed the planned GitHub startup actions via
    `gh` or reported clearly why each was skipped.
 4. Category B changes are present and reflected in the reports.
@@ -136,7 +145,8 @@ After a successful run, all of these should be true:
 6. If `## GitHub Task Issues` exists, the row for this task is updated to
    reflect current tracker state or completion notes.
 7. Optional `gh` completion steps (comment, child-issue close, label changes)
-   are completed or reported as skipped with a reason.
+   are completed after requirements and quality gates pass, or reported as
+   skipped with a reason.
 8. The final report includes the parent-retained completion/blocker verdict,
    quality-gate summary, and implementation artifact summary.
 
@@ -158,12 +168,12 @@ Every terminal path returns `FINAL_TASK_REPORT` with exactly one status:
 The report must include:
 
 - Evidence checked: kickoff, execution, documentation/tracking, requirements,
-  and quality gate verdicts that ran.
+  quality gate verdicts that ran, and final tracker completion when attempted.
 - Retry counts: requirements, clean-code, architecture, and security attempts,
   using `0` for gates that never entered a fix cycle.
 - Changed files: Category B paths or `None`.
 - Category A tracking paths: updated workflow artifacts or `None`.
-- Tracker updates: GitHub startup/completion actions taken with `gh` or
-  skipped.
+- Tracker updates: GitHub startup and final completion actions taken with `gh`
+  or skipped.
 - Blockers or unresolved items.
 - Next required action.
