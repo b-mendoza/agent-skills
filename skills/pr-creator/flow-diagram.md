@@ -4,15 +4,15 @@ The PR Creator orchestrator creates a review-ready PR or MR from the current
 branch. It may normalize inputs, delegate repository inspection, preflight, diff
 analysis, drafting, metadata, and submission, ask focused user questions, and
 fetch docs only for exact platform behavior. The trust model is compact subagent
-status blocks, comparable remote refs, platform metadata, trusted compare diff,
-and exact user approvals. It may push the current branch only after explicit
-approval, may create a PR or MR only after exact preview approval, must not
-mutate approved preview fields after approval, and keeps local uncommitted
-changes outside the PR until committed.
+status blocks, comparable refs on the recorded remote, exact changed-file paths,
+platform metadata, trusted compare diff, and exact user approvals. It may push
+the current branch only after explicit approval, may create a PR or MR only
+after exact preview approval, freezes approved preview fields after approval,
+and keeps local uncommitted changes outside the PR until committed.
 
 ```mermaid
 flowchart TD
-  START([Start: create review-ready PR or MR from current branch]) --> INTAKE["Normalize inputs<br/>TARGET_BRANCH, PR_STATE, REVIEWERS, TITLE_OVERRIDE, BODY_OVERRIDE, LABELS_OVERRIDE, current branch, remote refs, auth, trusted compare diff, CODEOWNERS, platform labels"]
+  START([Start: create review-ready PR or MR from current branch]) --> INTAKE["Normalize inputs<br/>TARGET_BRANCH, PR_STATE, REMOTE_NAME, REVIEWERS, TITLE_OVERRIDE, BODY_OVERRIDE, LABELS_OVERRIDE, current branch, remote refs, auth, trusted compare diff, CODEOWNERS, platform labels"]
   INTAKE --> BOUNDARY["State authority boundary<br/>delegate inspection, preflight, diff, drafting, metadata, and submission; ask before sensitive actions"]
   BOUNDARY --> TARGET_CHECK{TARGET_BRANCH provided?}
 
@@ -42,7 +42,7 @@ flowchart TD
   ASK_PLATFORM -->|waiting| FAIL_PLATFORM([Failure envelope: BLOCKED<br/>waiting for platform path])
 
   PREFLIGHT --> PREFLIGHT_STATUS{PREFLIGHT status}
-  PREFLIGHT_STATUS -->|PASS| TRUSTED_DIFF["Use trusted compare diff<br/>origin/&lt;target_branch&gt;...origin/&lt;current_branch&gt;<br/>only after remote refs are comparable"]
+  PREFLIGHT_STATUS -->|PASS| TRUSTED_DIFF["Use trusted compare diff<br/>&lt;remote_name&gt;/&lt;target_branch&gt;...&lt;remote_name&gt;/&lt;current_branch&gt;<br/>only after remote refs are comparable"]
   PREFLIGHT_STATUS -->|PUSH_REQUIRED| PREFLIGHT_CYCLE{Preflight recovery cycles &lt; 3?}
   PREFLIGHT_STATUS -->|AUTH| FAIL_AUTH([Failure envelope: AUTH])
   PREFLIGHT_STATUS -->|BASE_BRANCH_MISSING| FAIL_BASE([Failure envelope: BASE_BRANCH_MISSING])
@@ -51,9 +51,9 @@ flowchart TD
   PREFLIGHT_STATUS -->|ERROR| FAIL_BLOCKED
 
   PREFLIGHT_CYCLE -->|no| FINAL_DECISION["Human gate: final decision after three non-converging cycles<br/>ask for exact recovery values or permission to stop"]
-  PREFLIGHT_CYCLE -->|yes| PUSH_GATE["Human gate: approve pushing current branch<br/>action: git push current branch<br/>target: origin/&lt;current_branch&gt;<br/>reason: make compare ref available<br/>risk: publishes commits; alternative: stop and user pushes manually"]
+  PREFLIGHT_CYCLE -->|yes| PUSH_GATE["Human gate: approve pushing current branch<br/>action: git push current branch<br/>target: &lt;remote_name&gt;/&lt;current_branch&gt;<br/>reason: make compare ref available<br/>risk: publishes commits; alternative: stop and user pushes manually"]
   PUSH_GATE -->|declined| FAIL_HEAD
-  PUSH_GATE -->|approved| PREFLIGHT_PUSH["Redispatch preflight-validator only<br/>PUSH_APPROVED=true; do not rerun repo-state-inspector"]
+  PUSH_GATE -->|approved| PREFLIGHT_PUSH["Redispatch preflight-validator only<br/>PUSH_APPROVED=true; reuse recorded repo-state facts"]
   PREFLIGHT_PUSH --> PREFLIGHT_STATUS
 
   TRUSTED_DIFF --> DIFF_ANALYSIS["Dispatch diff-analyzer<br/>contract: DIFF_ANALYSIS"]
@@ -70,7 +70,7 @@ flowchart TD
   DIFF_APPROVED --> DIFF_STATUS
 
   PR_DRAFT --> DRAFT_STATUS{PR_DRAFT status}
-  DRAFT_STATUS -->|PASS| REVIEW_METADATA["Dispatch review-metadata-suggester<br/>contract: REVIEW_METADATA"]
+  DRAFT_STATUS -->|PASS| REVIEW_METADATA["Dispatch review-metadata-suggester<br/>contract: REVIEW_METADATA<br/>inputs: remote name and exact changed-file paths"]
   DRAFT_STATUS -->|NEEDS_CHOICE| DRAFT_CYCLE{Draft choice cycles &lt; 3?}
   DRAFT_STATUS -->|ERROR| FAIL_BLOCKED
 
@@ -100,7 +100,7 @@ flowchart TD
   LABEL_RETRY --> METADATA_STATUS
 
   PREVIEW --> PREVIEW_GATE["Human gate: exact preview approval<br/>action: create PR or MR<br/>target: branch, state, title, body, reviewers, labels<br/>reason: submission is sensitive<br/>risk: visible platform artifact; alternative: revise preview or stop"]
-  PREVIEW_GATE -->|approved| FREEZE["Freeze approved preview fields<br/>no branch, state, title, body, reviewer, or label mutation without reapproval"]
+  PREVIEW_GATE -->|approved| FREEZE["Freeze approved preview fields<br/>branch, state, title, body, reviewers, and labels change only through reapproval"]
   PREVIEW_GATE -->|declined with field changes| PREVIEW_CHANGES{Earliest affected phase}
   PREVIEW_GATE -->|declined without changes| FAIL_CANCELLED([Failure envelope: CANCELLED])
   PREVIEW_CHANGES -->|title, body, type, or scope| PR_DRAFT
@@ -116,15 +116,15 @@ flowchart TD
   RECOVERY_PHASE -->|title, body, type, or scope| PR_DRAFT
   RECOVERY_PHASE -->|reviewers or labels| REVIEW_METADATA
 
-  FREEZE --> SUBMIT["Dispatch pr-submitter<br/>contract: PR_SUBMIT<br/>use frozen approved values only"]
+  FREEZE --> SUBMIT["Dispatch pr-submitter<br/>contract: PR_SUBMIT<br/>use remote name and frozen approved values only"]
   SUBMIT --> SUBMIT_STATUS{PR_SUBMIT status}
-  SUBMIT_STATUS -->|PASS| VERIFY_FINAL["Verify URL, base, head, title, and state<br/>against frozen preview"]
+  SUBMIT_STATUS -->|PASS| VERIFY_FINAL["Verify URL, base, head, title, body, state, reviewers, and labels<br/>against frozen preview"]
   SUBMIT_STATUS -->|BLOCKED| FAIL_BLOCKED
   SUBMIT_STATUS -->|CREATE_ERROR| FAIL_CREATE([Failure envelope: CREATE_ERROR])
   SUBMIT_STATUS -->|AUTH| FAIL_AUTH
   SUBMIT_STATUS -->|ERROR| FAIL_BLOCKED
 
-  VERIFY_FINAL --> VERIFY_STATUS{Verification pass?}
+  VERIFY_FINAL --> VERIFY_STATUS{URL, base, head, title, body, state, reviewers, and labels verified?}
   VERIFY_STATUS -->|yes| FINAL["Load final output contract<br/>return verified PR/MR URL block"]
   VERIFY_STATUS -->|no| FAIL_CREATE
   FINAL --> SUCCESS([Success: verified PR/MR URL])
@@ -148,9 +148,9 @@ flowchart TD
 ```
 
 Readiness rule: dispatch `pr-submitter` only after `REPO_STATE: PASS`, platform
-routing is safe, `PREFLIGHT: PASS`, trusted diff analysis is complete, draft and
-metadata statuses are `PASS`, exact preview approval is recorded, and approved
-preview fields are frozen.
+routing is safe, `PREFLIGHT: PASS`, trusted diff analysis includes exact changed
+file paths, draft and metadata statuses are `PASS`, exact preview approval is
+recorded, and approved preview fields are frozen.
 
 Failure envelope rule: every `AUTH`, `BASE_BRANCH_MISSING`,
 `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `BLOCKED`, `CANCELLED`, `CREATE_ERROR`, or

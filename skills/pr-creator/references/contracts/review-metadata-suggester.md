@@ -7,6 +7,7 @@
 
 ```text
 REVIEW_METADATA: PASS | NEEDS_REVIEWER | INVALID_LABELS | AUTH | ERROR
+Remote name: <remote_name>
 Reviewers: <reviewer list or none>
 Reviewer source: user | CODEOWNERS | none
 Labels: <label list or none>
@@ -41,6 +42,7 @@ only this subagent. `AUTH` maps to `AUTH`; `ERROR` maps to `BLOCKED`.
 
 <example>
 REVIEW_METADATA: INVALID_LABELS
+Remote name: origin
 Reviewers: alice
 Reviewer source: user
 Labels: none

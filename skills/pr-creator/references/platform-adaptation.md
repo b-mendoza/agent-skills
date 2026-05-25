@@ -5,9 +5,9 @@
 > authenticate against a GitHub-compatible repository. Fetch exact command or API
 > syntax from `./external-resources.md` only for the active platform.
 
-Non-GitHub flows keep the same safety gates: validate auth, confirm remote refs,
-compare the approved branch range, preview exact fields, wait for user approval,
-create, verify, and return the URL.
+Non-GitHub flows keep the same safety gates: validate auth, confirm refs on the
+recorded remote name, compare the approved branch range, preview exact fields,
+wait for user approval, create, verify, and return the URL.
 
 ## Strategy Map
 
@@ -25,6 +25,7 @@ answers.
 
 Reuse the approved preview values exactly:
 
+- Remote name identifies the local remote whose refs were validated.
 - Target branch maps to base or target branch.
 - Current branch maps to source or head branch.
 - Title and body map to PR or MR title and description.
