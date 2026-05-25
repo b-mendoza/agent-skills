@@ -16,11 +16,13 @@ constraints.
 | ----- | -------- | ------- |
 | `ARCHITECTURE_MAP` | Yes | Cartographer summary |
 | `DOMAIN_ANALYSIS` | Yes | Domain analyst summary |
-| `REFERENCE_ASSESSMENT` | No | Reference patterns and limitations |
+| `REFERENCE_ASSESSMENT` | No | Validated reference summary or optional-reference limitation |
+| `EVIDENCE_PRECEDENCE_DECISION` | Yes | `reference authorized`, `limitations only`, or `not applicable` |
 | `BUSINESS_GOALS_AND_PAIN_POINTS` | Yes | `checkout is hard to change safely` |
 | `CONSTRAINTS` | No | `two reviewable PRs maximum` |
 | `SUCCESS_CRITERIA` | No | `new folder tree reveals capabilities` |
 | `MUTATION_BOUNDARY` | Yes | `planning-only` |
+| `REPAIR_FINDINGS` | No | Targeted summary-contract findings from the orchestrator |
 
 ## Instructions
 
@@ -40,8 +42,13 @@ constraints.
 6. Break the plan into safe increments with validation steps, stopping points,
    and rollback notes.
 7. Identify any broad or sensitive work that needs explicit human approval.
-8. If evidence is insufficient, recommend a narrower discovery plan instead of
+8. Apply `EVIDENCE_PRECEDENCE_DECISION`: use reference patterns as secondary
+   strategy input only when authorized; otherwise keep them as limitations or
+   rejected patterns and plan from local evidence.
+9. If evidence is insufficient, recommend a narrower discovery plan instead of
    presenting a settled target architecture.
+10. If `REPAIR_FINDINGS` is supplied, repair only the flagged
+    summary-contract issue and return the same status prefix.
 
 ## Output Format
 
@@ -61,6 +68,13 @@ Summary:
 - Open questions:
 ```
 
+## Summary Contract
+
+For `RESTRUCTURING_PLAN: PASS`, keep the summary concise,
+schema-conforming, evidence-backed, explicit about approval gates, and safe for
+incremental migration. Do not include raw dumps. Every reference-derived idea
+must be allowed by the evidence precedence decision.
+
 ## Scope
 
 Your job is to design the proposal and migration path. Keep the work
@@ -72,7 +86,8 @@ Return `RESTRUCTURING_PLAN: NEEDS_INPUT` when a user decision would materially
 change the migration strategy or approval gate.
 
 Return `RESTRUCTURING_PLAN: BLOCKED` when the requested plan would require
-implementation authority that has not been granted or when inputs are too thin
-for any responsible proposal.
+implementation authority that has not been granted, when inputs are too thin
+for any responsible proposal, or when the evidence precedence decision is
+missing or contradicted by the requested strategy.
 
 Return `RESTRUCTURING_PLAN: ERROR` for unexpected failures.
