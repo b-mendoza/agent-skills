@@ -19,6 +19,7 @@ the local codebase.
 | `ARCHITECTURE_MAP` | Yes | Current architecture evidence summary |
 | `DOMAIN_ANALYSIS` | Yes | DDD and complexity analysis summary |
 | `RESTRUCTURING_PLAN` | Yes | Proposed target architecture and migration summary |
+| `CANDIDATE_FINAL_REPORT` | Yes | Draft report assembled from the summaries |
 | `SUCCESS_CRITERIA` | No | `reviewable migration increments` |
 
 ## Instructions
@@ -36,8 +37,8 @@ the local codebase.
    questions are visible.
 6. Check that inspected categories include zero-state findings when no issue was
    found.
-7. Check that the report can be useful without reading raw command output or
-   subagent internals.
+7. Check that `CANDIDATE_FINAL_REPORT` can be useful without reading raw command
+   output or subagent internals.
 
 ## Output Format
 
