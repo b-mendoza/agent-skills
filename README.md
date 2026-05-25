@@ -1,21 +1,27 @@
 # agent-skills
 
-`agent-skills` is a repository of skills for coding agents. This repository is
-the product. It holds the skills we write here, a small set of third party
-skills we keep in the repository, and the docs we use to keep OpenCode and
-Claude Code aligned.
+`agent-skills` is a repository of reusable skills for coding agents. The
+repository itself is the main artifact: it contains the skills, their supporting
+subagents and references, and the docs used to keep the skill format portable
+across OpenCode and Claude Code.
 
 ## What is in this repository
 
-- [`skills/`](skills/) has 30 first-party skills.
-- [`docs/`](docs/) has workflow notes, design specs, and writing guidance.
-- [`docs/best-practices/`](docs/best-practices/) is the best place to start if
-  you want to edit a skill.
-- [`.agents/skills/`](.agents/skills/) has 10 third party skills for OpenCode.
-- [`.claude/skills/`](.claude/skills/) mirrors the same 10 skills for Claude
-  Code.
-- [`skills-lock.json`](skills-lock.json) records the third party skill set.
-- [`opencode.jsonc`](opencode.jsonc) stores OpenCode config.
+- [`skills/`](skills/) contains 30 first-party skills. Each skill currently has
+  its own `SKILL.md`, `subagents/`, and `references/`.
+- [`docs/`](docs/) contains workflow notes, design specs, and project-specific
+  planning documents.
+- [`docs/best-practices/`](docs/best-practices/) is the best starting point for
+  skill-authoring guidance.
+- [`.agents/skills/`](.agents/skills/) contains 17 pinned skill packages for
+  OpenCode discovery. Some come from this repository, and some come from other
+  repositories.
+- [`.claude/skills/`](.claude/skills/) exists as the Claude Code mirror
+  location, but it is empty in the current checkout.
+- [`skills-lock.json`](skills-lock.json) records the pinned skill set used for
+  installed skill packages.
+- [`opencode.jsonc`](opencode.jsonc) stores OpenCode configuration. It currently
+  enables the Context7 MCP server.
 
 ## First-party skills
 
