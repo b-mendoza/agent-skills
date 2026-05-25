@@ -16,11 +16,13 @@ the local codebase.
 | ----- | -------- | ------- |
 | `PREFLIGHT_SUMMARY` | Yes | Scope, assumptions, constraints, mutation boundary |
 | `REFERENCE_ASSESSMENT` | No | Reference fit and limitations |
-| `ARCHITECTURE_MAP` | Yes | Current architecture evidence summary |
-| `DOMAIN_ANALYSIS` | Yes | DDD and complexity analysis summary |
-| `RESTRUCTURING_PLAN` | Yes | Proposed target architecture and migration summary |
+| `ARCHITECTURE_MAP` | Yes | Validated current architecture evidence summary |
+| `DOMAIN_ANALYSIS` | Yes | Validated DDD and complexity analysis summary |
+| `RESTRUCTURING_PLAN` | Yes | Validated target architecture and migration summary |
+| `EVIDENCE_PRECEDENCE_DECISION` | Yes | `reference authorized`, `limitations only`, or `not applicable` |
 | `CANDIDATE_FINAL_REPORT` | Yes | Draft report assembled from the summaries |
 | `SUCCESS_CRITERIA` | No | `reviewable migration increments` |
+| `review_repair_count` | No | Number of completed `PLAN_REVIEW: FAIL` repair cycles |
 
 ## Instructions
 
@@ -39,6 +41,12 @@ the local codebase.
    found.
 7. Check that `CANDIDATE_FINAL_REPORT` can be useful without reading raw command
    output or subagent internals.
+8. Check that consumed summaries appear validated, concise, schema-conforming,
+   evidence-backed, and safe to quote.
+9. Check that any reference-derived recommendation is allowed by
+   `EVIDENCE_PRECEDENCE_DECISION`.
+10. Return targeted fixes that identify the smallest responsible subagent or
+    candidate report section.
 
 ## Output Format
 
@@ -50,6 +58,7 @@ Findings:
 - Scope and approval gates:
 - Migration safety:
 - Validation quality:
+- Summary contract and evidence precedence:
 - Completeness:
 - Required fixes:
 - Residual risks:
@@ -63,7 +72,8 @@ instead of rewriting the full report or performing fresh repository inspection.
 ## Escalation
 
 Return `PLAN_REVIEW: FAIL` when the plan is complete enough to review but needs
-targeted fixes before handoff.
+targeted fixes before handoff. Required fixes must name whether the smallest
+responsible owner is a subagent summary or a candidate report section.
 
 Return `PLAN_REVIEW: BLOCKED` when required upstream summaries are missing or
 too incomplete to review.
