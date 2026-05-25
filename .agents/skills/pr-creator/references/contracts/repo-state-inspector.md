@@ -24,6 +24,13 @@ Decision needed: none | <smallest user decision or orchestrator action>
 - `BLOCKED`: not a git repo, detached HEAD, or no safe branch name.
 - `ERROR`: unexpected inspection failure.
 
+## Orchestrator Routing
+
+On `PASS`, the orchestrator records any uncommitted-work boundary, then uses the
+returned `Platform` and `Platform adapter needed` fields to decide whether to
+load `../platform-adaptation.md` before preflight. `BLOCKED` and `ERROR` map to
+the `BLOCKED` failure envelope.
+
 ## Example
 
 <example>

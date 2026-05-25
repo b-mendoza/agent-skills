@@ -38,6 +38,12 @@ Decision needed: none | <smallest confirmation or recovery action>
 - `EMPTY_DIFF`: no commits or no meaningful diff against the target.
 - `ERROR`: unexpected analysis failure.
 
+## Orchestrator Routing
+
+On `LARGE_PR_CONFIRMATION_REQUIRED`, the orchestrator asks whether to proceed as
+one PR and redispatches only `diff-analyzer` with `LARGE_PR_APPROVED=true` when
+approved. `EMPTY_DIFF` maps to `EMPTY_DIFF`; `ERROR` maps to `BLOCKED`.
+
 ## Example
 
 <example>

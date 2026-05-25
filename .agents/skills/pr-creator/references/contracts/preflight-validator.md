@@ -27,6 +27,13 @@ Decision needed: none | <smallest user decision or recovery action>
 - `BLOCKED`: repository or platform state prevents safe progress.
 - `ERROR`: unexpected validation failure.
 
+## Orchestrator Routing
+
+On `PUSH_REQUIRED`, the orchestrator asks for explicit push approval and
+redispatches only `preflight-validator` with `PUSH_APPROVED=true` when approved.
+`AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `BLOCKED`, and `ERROR`
+map directly to the failure envelope.
+
 ## Example
 
 <example>

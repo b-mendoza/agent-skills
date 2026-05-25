@@ -28,6 +28,13 @@ Decision needed: none | <smallest recovery action>
 - `AUTH`: platform CLI or credentials are missing or invalid.
 - `ERROR`: unexpected submission failure.
 
+## Orchestrator Routing
+
+The orchestrator dispatches `pr-submitter` only after preview approval and passes
+the frozen approved values. On `PASS`, it verifies URL, base, head, title, and
+state against the preview before success. `BLOCKED`, `CREATE_ERROR`, `AUTH`, and
+`ERROR` map directly to the failure envelope.
+
 ## Example
 
 <example>

@@ -1,9 +1,9 @@
 # Platform Adaptation
 
-> Load this file when the remote is GitLab, Bitbucket, unknown, or when GitHub
-> tooling cannot authenticate against a GitHub-compatible repository. Fetch exact
-> command or API syntax from `./external-resources.md` only for the
-> active platform.
+> Load this file after `REPO_STATE: PASS` when the returned platform is GitLab,
+> Bitbucket, GitHub Enterprise, unknown, or when GitHub tooling cannot
+> authenticate against a GitHub-compatible repository. Fetch exact command or API
+> syntax from `./external-resources.md` only for the active platform.
 
 Non-GitHub flows keep the same safety gates: validate auth, confirm remote refs,
 compare the approved branch range, preview exact fields, wait for user approval,
@@ -16,6 +16,10 @@ create, verify, and return the URL.
 | GitLab | Use merge-request semantics and the team's installed `glab` or approved API wrapper | Fetch GitLab MR, `glab mr create`, labels, or Code Owners docs when flags or fields are uncertain |
 | Bitbucket | Use the repository's standard CLI or REST wrapper; return `BLOCKED` when no safe create path is discoverable | Fetch Bitbucket create-PR, pull-request API, refs API, or default-reviewer docs |
 | Unknown or self-hosted | Ask which hosting platform and tooling to use before creating anything | Fetch only the docs for the user-named platform or tool |
+
+If platform behavior is still unsafe after this lookup, route to the human gate
+for hosting platform or approved tooling and return `BLOCKED` until the user
+answers.
 
 ## Field Mapping
 

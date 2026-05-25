@@ -8,7 +8,7 @@
 ## Failure Envelope
 
 ```text
-PR_CREATE: AUTH | BASE_BRANCH_MISSING | HEAD_BRANCH_UNPUSHED | EMPTY_DIFF | BLOCKED | CANCELLED | CREATE_ERROR
+PR_CREATE: AUTH | BASE_BRANCH_MISSING | HEAD_BRANCH_UNPUSHED | EMPTY_DIFF | BLOCKED | CANCELLED | CREATE_ERROR | ESCALATED
 Reason: <one line>
 Next step: <one clear action>
 ```
@@ -17,23 +17,34 @@ Next step: <one clear action>
 
 | Source status | Envelope code |
 | ------------- | ------------- |
+| Missing `TARGET_BRANCH`, missing active-platform path, missing type/scope choice, missing reviewer, or unresolved label choice | `BLOCKED` |
 | `PREFLIGHT: AUTH`, `PR_SUBMIT: AUTH`, `REVIEW_METADATA: AUTH` | `AUTH` |
 | `PREFLIGHT: BASE_BRANCH_MISSING` | `BASE_BRANCH_MISSING` |
-| `PREFLIGHT: HEAD_BRANCH_UNPUSHED` or declined push | `HEAD_BRANCH_UNPUSHED` |
+| `PREFLIGHT: HEAD_BRANCH_UNPUSHED`, unresolved `PREFLIGHT: PUSH_REQUIRED`, or declined push | `HEAD_BRANCH_UNPUSHED` |
+| `DIFF_ANALYSIS: LARGE_PR_CONFIRMATION_REQUIRED` declined by the user | `CANCELLED` |
 | `DIFF_ANALYSIS: EMPTY_DIFF` | `EMPTY_DIFF` |
+| `PR_DRAFT: NEEDS_CHOICE` without a user answer | `BLOCKED` |
+| `REVIEW_METADATA: NEEDS_REVIEWER` without a user answer | `BLOCKED` |
+| `REVIEW_METADATA: INVALID_LABELS` without a valid label choice | `BLOCKED` |
 | `REPO_STATE: BLOCKED`, `PREFLIGHT: BLOCKED`, `PR_SUBMIT: BLOCKED` | `BLOCKED` |
 | User declines large-PR or create confirmation | `CANCELLED` |
 | `PR_SUBMIT: CREATE_ERROR` | `CREATE_ERROR` |
 | Any subagent `ERROR` | `BLOCKED` with the subagent reason |
+| Three non-converging preflight, scope, draft, reviewer, label, preview, or submission cycles | `ESCALATED` |
 
-Recover by re-running only the earliest affected phase. After three
-non-converging preview or validation cycles, ask the user for exact final values
+Recover by re-running only the earliest affected phase. For
+`PREFLIGHT: PUSH_REQUIRED`, ask for push approval and redispatch only
+`preflight-validator` with `PUSH_APPROVED=true`. For
+`DIFF_ANALYSIS: LARGE_PR_CONFIRMATION_REQUIRED`, ask for scope approval and
+redispatch only `diff-analyzer` with `LARGE_PR_APPROVED=true`. After three
+non-converging cycles in any recovery area, ask the user for exact final values
 or permission to stop.
 
 ## Preview Template
 
 Show this before creating anything. Any edit to title, body, reviewer, label,
-branch, or state invalidates approval.
+branch, or state invalidates approval. After approval, freeze the exact preview
+fields and pass only those values to `pr-submitter`.
 
 ```text
 PR Preview
