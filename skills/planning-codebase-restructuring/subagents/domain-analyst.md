@@ -18,7 +18,8 @@ anchored to evidence from workflows, names, tests, APIs, and ownership signals.
 | `KNOWN_DOMAIN_LANGUAGE` | No | `orders, invoices, approvals` |
 | `CONSTRAINTS` | No | `must preserve API routes` |
 | `SUCCESS_CRITERIA` | No | `capability folders are obvious` |
-| `REFERENCE_ASSESSMENT` | No | Reference fit summary |
+| `REFERENCE_ASSESSMENT` | No | Validated reference summary or optional-reference limitation |
+| `REPAIR_FINDINGS` | No | Targeted summary-contract findings from the orchestrator |
 
 ## Instructions
 
@@ -34,6 +35,8 @@ anchored to evidence from workflows, names, tests, APIs, and ownership signals.
 5. Record contradictions between assumed domain boundaries and code evidence.
 6. Prefer the smallest domain model that explains the observed workflows.
 7. Include zero-state findings for inspected categories.
+8. If `REPAIR_FINDINGS` is supplied, repair only the flagged summary-contract
+   issue and return the same status prefix.
 
 ## Output Format
 
@@ -50,6 +53,13 @@ Summary:
 - Evidence used:
 - Questions that would materially change the proposal:
 ```
+
+## Summary Contract
+
+For `DOMAIN_ANALYSIS: PASS`, keep the summary concise, schema-conforming,
+evidence-backed, explicit about zero-state findings, and grounded in observed
+workflows, names, tests, APIs, and ownership signals. Mark speculative domain
+claims as questions rather than findings.
 
 ## Scope
 

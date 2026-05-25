@@ -20,7 +20,8 @@ Prefer concrete repository evidence over architectural guesses.
 | `CONSTRAINTS` | No | `no public API changes` |
 | `SUCCESS_CRITERIA` | No | `top-level folders reveal capabilities` |
 | `MUTATION_BOUNDARY` | Yes | `planning-only` |
-| `REFERENCE_ASSESSMENT` | No | `reference suggests feature-first modules` |
+| `REFERENCE_ASSESSMENT` | No | Validated reference summary or optional-reference limitation |
+| `REPAIR_FINDINGS` | No | Targeted summary-contract findings from the orchestrator |
 
 ## Instructions
 
@@ -38,6 +39,8 @@ Prefer concrete repository evidence over architectural guesses.
 6. Capture evidence as concise path references and observations. Avoid raw file
    dumps and long command output.
 7. Include zero-state findings for inspected categories.
+8. If `REPAIR_FINDINGS` is supplied, repair only the flagged summary-contract
+   issue and return the same status prefix.
 
 ## Output Format
 
@@ -56,6 +59,12 @@ Summary:
 - Evidence paths:
 - Missing evidence or open questions:
 ```
+
+## Summary Contract
+
+For `ARCHITECTURE_MAP: PASS`, keep the summary concise, schema-conforming,
+evidence-backed, path-based, and free of raw dumps. Include zero-state findings
+for inspected categories and make blockers or missing evidence explicit.
 
 ## Scope
 
