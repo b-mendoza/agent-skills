@@ -31,13 +31,13 @@ to `all`, and `LANGUAGE_STYLE` to natural, direct English.
 | Phase | Owner | Gate |
 | ----- | ----- | ---- |
 | Intake | Inline | `PR_URL` present and unambiguous, or `PR_COMMENT_RESPONSE: NEEDS_USER_DECISION` |
-| Comment collection | `review-comment-collector` | `COLLECT: PASS | AUTH | NOT_FOUND | NO_COMMENTS | ERROR` |
+| Comment collection | `review-comment-collector` | `COLLECT: PASS`, `AUTH`, `NOT_FOUND`, `NO_COMMENTS`, or `ERROR` |
 | Target taxonomy | Inline | `review-comment-reply:<root-id>` or one of `requires-user-choice:review-summary`, `requires-user-choice:issue-comment`, `requires-user-choice:unsupported-review-reply`, `requires-user-choice:unresolved-metadata` |
-| Assessment | `review-comment-assessor` | `ASSESS: PASS | NEEDS_CONTEXT | NEEDS_USER_DECISION | ERROR` |
-| Reply drafting | `reply-drafter` | `DRAFT: PASS | NEEDS_USER_DECISION | ERROR` |
-| Verification | `response-verifier` | `VERIFY: PASS | FAIL | NEEDS_CONTEXT | ERROR` |
-| Report writing | `response-report-writer` | `WRITE: PASS | ERROR` plus read-back verification |
-| Optional posting | `thread-reply-poster` | `POST: PASS | PREVIEW_REQUIRED | AUTH | TARGET_UNSUPPORTED | ERROR` or skipped |
+| Assessment | `review-comment-assessor` | `ASSESS: PASS`, `NEEDS_CONTEXT`, `NEEDS_USER_DECISION`, or `ERROR` |
+| Reply drafting | `reply-drafter` | `DRAFT: PASS`, `NEEDS_USER_DECISION`, or `ERROR` |
+| Verification | `response-verifier` | `VERIFY: PASS`, `FAIL`, `NEEDS_CONTEXT`, or `ERROR` |
+| Report writing | `response-report-writer` | `WRITE: PASS` or `ERROR`, plus read-back verification |
+| Optional posting | `thread-reply-poster` | `POST: PASS`, `PREVIEW_REQUIRED`, `AUTH`, `TARGET_UNSUPPORTED`, or `ERROR`; otherwise skipped |
 
 ## Subagent Registry
 
@@ -103,7 +103,7 @@ Response policy:
 2. Dispatch `review-comment-collector` with normalized inputs. Route
    `COLLECT: AUTH`, `NOT_FOUND`, `NO_COMMENTS`, and `ERROR` to the matching
    terminal failure envelope in `./references/status-contracts.md`.
-3. Normalize target taxonomy. Keep direct review-comment replies as
+3. Validate target taxonomy from the collector. Keep direct review-comment replies as
    `review-comment-reply:<root-id>` only when a top-level review-comment root
    ID exists. Mark review summaries as `requires-user-choice:review-summary`,
    issue comments and top-level PR comments as `requires-user-choice:issue-comment`,
