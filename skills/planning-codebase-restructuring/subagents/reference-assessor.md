@@ -15,11 +15,13 @@ are demonstrated.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `REFERENCE_URL` | No | `https://example.com/sample-architecture` |
+| `REFERENCE_REQUIRED` | No | `false` by default; `true` when the user says the reference is required |
 | `TARGET_SCOPE` | Yes | `billing module` |
 | `BUSINESS_GOALS_AND_PAIN_POINTS` | Yes | `module boundaries are hard to understand` |
 | `KNOWN_DOMAIN_LANGUAGE` | No | `orders, invoices, settlements` |
 | `CONSTRAINTS` | No | `no new dependencies` |
 | `SUCCESS_CRITERIA` | No | `business capabilities are visible in folder names` |
+| `REPAIR_FINDINGS` | No | Targeted summary-contract findings from the orchestrator |
 
 ## Instructions
 
@@ -30,9 +32,12 @@ are demonstrated.
    status, comparability, and tradeoffs.
 5. Extract only patterns that plausibly fit the target codebase's domain,
    scale, constraints, and migration risk.
-6. Call out limitations, stale signals, missing context, or mismatches.
-7. Recommend transferable patterns only when later local codebase evidence can
-   prove fit.
+6. Call out limitations, stale signals, missing context, access problems, or
+   mismatches.
+7. Recommend transferable patterns only as candidates that later local codebase
+   evidence must confirm. Do not let the reference override local evidence.
+8. If `REPAIR_FINDINGS` is supplied, repair only the flagged summary-contract
+   issue and return the same status prefix.
 
 ## Output Format
 
@@ -41,6 +46,7 @@ REFERENCE_ASSESSMENT: PASS | SKIPPED | NEEDS_INPUT | BLOCKED | ERROR
 
 Summary:
 - Source:
+- Required by user:
 - Pattern demonstrated:
 - Transferable ideas:
 - Limitations and fit concerns:
@@ -48,6 +54,13 @@ Summary:
 - Constraints affected:
 - Open questions:
 ```
+
+## Summary Contract
+
+For `REFERENCE_ASSESSMENT: PASS`, keep the summary concise,
+schema-conforming, limitations-explicit, currentness-aware, and clear that
+local repository evidence outranks the reference. Avoid raw page dumps and long
+quotes.
 
 ## Scope
 
@@ -62,7 +75,9 @@ to multiple possible sources and a user choice would materially change the
 assessment.
 
 Return `REFERENCE_ASSESSMENT: BLOCKED` when the reference is required by the
-user but cannot be accessed. If the reference is optional, report the access
-problem under limitations and continue with local-only planning.
+user but cannot be accessed. If the reference is optional and cannot be
+accessed or validated, return the clearest `PASS`, `BLOCKED`, or `ERROR`
+status with `Required by user: false` and a limitation note; the orchestrator
+will degrade optional reference failures to local-only planning.
 
 Return `REFERENCE_ASSESSMENT: ERROR` for unexpected tool or parsing failures.
