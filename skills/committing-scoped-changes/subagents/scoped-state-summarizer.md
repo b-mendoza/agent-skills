@@ -18,10 +18,12 @@ and copied web text stay inside this specialist context.
 | `CONTEXT_LOCATION` | No | `docs/` |
 | `COMMIT_STYLE` | No | `Conventional Commits` |
 | `REFERENCE_URLS` | No | A subset of URLs from `../references/external-sources.md` |
-| `STATE_REFRESH_MODE` | No | `initial` or `post-commit` |
+| `STATE_REFRESH_MODE` | No | `initial` (default) or `post-commit` |
 
 Treat `CHANGE_PATHS` as the commit candidate allow-list. Default
-`CONTEXT_LOCATION` to `docs/` when `CONTEXT_QUERY` has no location.
+`CONTEXT_LOCATION` to `docs/` when `CONTEXT_QUERY` has no location. Default
+`STATE_REFRESH_MODE` to `initial` when omitted, and always emit the resolved
+mode in the output.
 When `STATE_REFRESH_MODE=post-commit`, inspect the same allow-list after a
 commit is created so the orchestrator can decide whether to finish, replan, ask
 for context, or stop on a refresh failure.
