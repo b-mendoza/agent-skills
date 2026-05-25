@@ -56,7 +56,7 @@ RESULT: PASS | BLOCKED | FAIL | ERROR
 
 ## Resources Used
 - Local: [reference files read, or `none`]
-- Web: [URLs fetched, or `none`]
+- Web: [URLs fetched, `LOCAL_ONLY`, or `RATIONALE_OMITTED`]
 ```
 
 ## Example

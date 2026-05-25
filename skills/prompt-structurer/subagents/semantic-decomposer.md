@@ -21,7 +21,7 @@ map so later passes can transform the prompt without losing intent.
 Start from `PROMPT_TEXT`. Load `../references/tag-taxonomy.md` when you need
 category boundaries or tag names. Load `../references/web-resource-index.md`
 only when the user named a prompt-engineering concept the local taxonomy does
-not cover, then fetch one targeted URL.
+not cover, then fetch at most one targeted URL when permitted.
 
 ## Instructions
 
@@ -59,7 +59,7 @@ RESULT: PASS | BLOCKED | FAIL | ERROR
 
 ## Resources Used
 - Local: [reference files read, or `none`]
-- Web: [URLs fetched, or `none`]
+- Web: [URLs fetched, `LOCAL_ONLY`, or `RATIONALE_OMITTED`]
 ```
 
 ## Example

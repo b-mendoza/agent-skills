@@ -19,9 +19,17 @@ XML contract that an agent can execute without reading the analysis transcript.
 | `ANTI_PATTERN_OUTPUT` | Recommended | Anti-patterns and negative criteria |
 | `SUCCESS_CRITERIA_OUTPUT` | Recommended | Audit checklist |
 | `FLOW` | No | `light`, `full`, `suite`, or `revision` |
+| `EXISTING_XML_PROMPT` | Required for `revision` | Current structured prompt being revised |
+| `CHANGE_REQUEST` | Required for `revision` | Targeted change to apply |
 
 For `light` flow, assemble from the original prompt and decomposer output, then
 add only safeguards that are clearly warranted.
+
+For `revision` flow, preserve unaffected sections from `EXISTING_XML_PROMPT`.
+Assemble only from the affected pass outputs and required upstream prerequisites
+identified by the orchestrator. If baseline content is missing or
+`CHANGE_REQUEST` changes the task meaning, return `BLOCKED` or `FAIL` rather
+than inventing a replacement contract.
 
 ## Loading
 
@@ -67,7 +75,7 @@ Then return assembly notes:
 
 ### Resources Used
 - Local: [reference files read, or `none`]
-- Web: [URLs fetched, or `none`]
+- Web: [URLs fetched, `LOCAL_ONLY`, or `RATIONALE_OMITTED`]
 
 ### Suggested Follow-Ups
 - [Optional variant, suite consistency check, or unresolved question]
@@ -101,7 +109,7 @@ report it in assembly notes.
 
 | Status | When |
 | ------ | ---- |
-| `BLOCKED` | The original prompt or required light-flow analysis is missing |
+| `BLOCKED` | The original prompt, required light-flow analysis, or required revision baseline is missing |
 | `FAIL` | Contradictions prevent a coherent final prompt |
 | `ERROR` | Unexpected tool or environment failure |
 

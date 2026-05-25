@@ -2,7 +2,8 @@
 
 > Read this file only during final assembly. It is a checklist, not a command
 > to emit every tag. For tag rationale or vendor-specific XML guidance, load
-> `web-resource-index.md` and fetch one targeted URL.
+> `web-resource-index.md` and fetch at most one targeted URL when needed and
+> permitted.
 
 Assemble the final XML from prior pass outputs. Include only sections that
 change behavior.
