@@ -16,6 +16,15 @@ network access is unavailable.
 | Context engineering and keeping agents focused | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents |
 | Subagent architecture concepts | https://docs.anthropic.com/en/docs/claude-code/sub-agents |
 
+## Workflow Control And Posting Safety
+
+| Need | Source |
+| ---- | ------ |
+| Bounded retry and explicit error handling patterns | https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.html |
+| Human approval before sensitive tool calls | https://openai.github.io/openai-agents-python/human_in_the_loop/ |
+| GitHub issue comment API and posting permissions | https://docs.github.com/en/rest/issues/comments |
+| Jira issue comment API and posting permissions | https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-comments/ |
+
 ## Jira And GitHub Work Items
 
 | Need | Source |

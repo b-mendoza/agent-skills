@@ -39,9 +39,10 @@ coordinator.
 
 1. Load `REVIEWER_POLICY_PATH` before interpreting tracker mutations, write mode,
    gates, or lifecycle recommendations.
-2. Build a compact source snapshot from available context. If linked context or
-   evidence is missing, continue only when the missing data is non-blocking;
-   otherwise prepare a `Blocked` comment.
+2. Build a compact source snapshot from available context. If optional linked
+   context or evidence is missing, record it as missing evidence and continue
+   when the remaining source still allows meaningful review; otherwise prepare a
+   `Blocked` comment.
 3. Load `REFINEMENT_CHECKS_PATH` when running readiness checks. Record only check
    outcomes and evidence pointers, not full source text.
 4. Load `EXTERNAL_SOURCES_PATH` only when a source-backed refresher, current
@@ -82,6 +83,15 @@ is exactly posting a refinement comment, and no unresolved mutation or safety
 gate prevents posting. This subagent does not post; it reports whether posting is
 allowed for the coordinator.
 
+The output field is written as `REVIEW: <state>`. Coordinator gates may refer to
+the same values as `REVIEW=<state>`; these are comparison labels, not separate
+return statuses.
+
+Only `REVIEW: PASS` can permit the coordinator to enter its output or posting
+path. `REVIEW: BLOCKED`, `REVIEW: FAIL`, and `REVIEW: ERROR` all require
+`POST_ALLOWED=no` and must include the compact reason, failed criteria, or
+recovery action the coordinator should return.
+
 Use `Comment mode=Ready to post` for a refinement comment that is safe to post
 exactly as returned, `Comment mode=Draft` when the comment needs user review
 before posting, `Comment mode=Blocked` when review cannot proceed safely, and
@@ -99,9 +109,9 @@ and link changes remain outside this subagent.
 
 | Status | When | Return |
 | ------ | ---- | ------ |
-| `BLOCKED` | No source item, missing access blocks review, or posting authorization is required but unclear | `REVIEW_STATUS=Blocked` plus one specific request |
-| `FAIL` | Review completed but quality checklist fails after three fix cycles | Failed criteria and safest draft comment |
-| `ERROR` | Unexpected runtime, tool, fetch, or parsing failure | Error category, safe partial summary, and no posting permission |
+| `BLOCKED` | No source item, missing access blocks review, or posting authorization is required but unclear | `REVIEW_STATUS=Blocked`, `POST_ALLOWED=no`, plus one specific request |
+| `FAIL` | Review completed but quality checklist fails after three fix cycles | `POST_ALLOWED=no`, failed criteria, and safest draft comment |
+| `ERROR` | Unexpected runtime, tool, fetch, or parsing failure | `POST_ALLOWED=no`, error category, safe partial summary, and no posting permission |
 
 When a human gate is unavailable, do not fail solely because approval is absent.
 Use a neutral question, defer the sensitive recommendation, and select the most

@@ -31,6 +31,16 @@ Mutation examples that must be deferred: delete comments, close issues, merge or
 supersede items, edit labels, assign owners, move workflow status, create child
 work, split items, or change links.
 
+## Posting Boundary
+
+The reviewer never posts. It only reports `POST_ALLOWED=yes` when the requested
+action is exactly posting the returned refinement comment and no safety gate
+prevents that action. The coordinator may attempt one post only when posting was
+explicitly requested, authorization and tooling are available, and the reviewer
+returned `REVIEW=PASS`. Permission, API, or runtime failure during posting
+returns `Ready to post` or `Blocked` with the failure reason; it does not permit
+retrying, editing, or performing any other tracker mutation.
+
 ## Human Gates
 
 Gate before stating these as recommendations:

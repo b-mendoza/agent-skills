@@ -27,16 +27,22 @@ refreshers.
 
 Prefer `ITEM_URL` over derived IDs because URLs carry workspace, repository, and
 item identity. If neither `ITEM_URL` nor usable `ITEM_CONTEXT` is present, ask
-for one source item.
+for one source item. If a source item or usable context exists but optional
+linked evidence is unavailable, pass that absence to `refinement-reviewer` as
+missing evidence instead of blocking at the coordinator.
 
 ## Workflow Overview
 
 ```text
 1. Normalize inputs and detect write intent.
-2. Dispatch refinement-reviewer with compact source pointers and user intent.
-3. Branch on the returned structured status.
-4. Post only when WRITE_MODE=post-comment, posting is available, and the reviewer returned POST_ALLOWED=yes.
-5. If the reviewer returns `Comment mode=Ready to post` and the coordinator does not post, return `Mode: Ready to post`; otherwise return the reviewer Mode, Status, and Comment.
+2. Ask for one source item when no source item or usable context exists; defer mutation-only requests to a separate approved workflow.
+3. Confirm posting authorization and tooling only when `WRITE_MODE=post-comment`.
+4. Collect compact evidence pointers; treat inaccessible optional linked evidence as reviewer readiness gaps, not coordinator blockers.
+5. Dispatch `refinement-reviewer` with compact source pointers and user intent.
+6. Branch on the returned `REVIEW` state. Only `REVIEW=PASS` can enter the output or posting path; `REVIEW=BLOCKED`, `REVIEW=FAIL`, and `REVIEW=ERROR` all return safe no-post outcomes.
+7. Post only when `WRITE_MODE=post-comment`, posting is authorized and available, and the reviewer returned `POST_ALLOWED=yes`.
+8. If posting is unavailable or fails, return `Mode: Ready to post` or `Mode: Blocked` with the reason and do not retry or mutate anything beyond the single returned comment.
+9. If the reviewer returns `Comment mode=Ready to post` and the coordinator does not post, return `Mode: Ready to post`; otherwise return the reviewer Mode, Status, and Comment.
 ```
 
 ## Subagent Registry
@@ -83,10 +89,11 @@ QUALITY_CHECKLIST_PATH: ../references/review-quality-checklist.md
 EXTERNAL_SOURCES_PATH: ../references/external-sources.md
 ```
 
-Keep only the returned `REVIEW_STATUS`, `POST_ALLOWED`, `Comment mode` (`Draft`,
-`Ready to post`, `Blocked`, or `Deferred`), blocked reason if any, and final
-comment or draft. Do not keep raw tracker payloads, long source text, or full
-analysis notes in coordinator context.
+Keep only the returned `REVIEW`, `REVIEW_STATUS`, `POST_ALLOWED`, `Comment
+mode` (`Draft`, `Ready to post`, `Blocked`, or `Deferred`), blocked reason,
+failed criteria or recovery action if any, and final comment or draft. Do not
+keep raw tracker payloads, long source text, or full analysis notes in
+coordinator context.
 
 ## Output Contract
 
@@ -102,9 +109,26 @@ Comment: <final comment or draft>
 Use `Posted` only after the coordinator successfully posts the exact refinement
 comment returned by the reviewer.
 
+Use the reviewer `REVIEW` state as the first output gate. The subagent emits the
+field as `REVIEW: <state>`; coordinator gate labels use `REVIEW=<state>` for the
+same state values.
+
+- `REVIEW=PASS`: continue to draft, ready-to-post, or posting handling.
+- `REVIEW=BLOCKED`: return `Mode: Blocked` with `Status: Blocked`, the reviewer
+  reason, and one recovery action.
+- `REVIEW=FAIL`: return `Mode: Draft` with `Status: Needs refinement`, failed
+  quality criteria, and the safest draft; do not post.
+- `REVIEW=ERROR`: return `Mode: Blocked` with `Status: Blocked`, no-post error
+  recovery, and no posting permission.
+
 Use `Ready to post` when the reviewer returns `Comment mode=Ready to post` but
 the coordinator does not post it, such as draft or unknown write mode, or a safe
 post-comment run where posting is not performed.
+
+If `WRITE_MODE=post-comment` and a post attempt fails because of permission, API,
+or runtime failure, return `Mode: Ready to post` when the comment remains safe
+for the user to post manually, or `Mode: Blocked` when the failure prevents safe
+posting. Do not retry or perform any other tracker mutation.
 
 If the reviewer reports a mutation-only request with no refinement review to
 perform, return `Mode: Deferred` and explain that the mutation belongs in a

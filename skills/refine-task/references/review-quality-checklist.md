@@ -22,7 +22,8 @@
 1. Identify failed checks and the smallest targeted fix.
 2. Revise only the affected comment section, status, gate wording, or summary.
 3. Re-run this checklist.
-4. Stop after three cycles and return `REVIEW: FAIL` if the same class of issue remains.
+4. Stop after three cycles and return `REVIEW: FAIL`, `POST_ALLOWED=no`, failed
+   criteria, and the safest draft if the same class of issue remains.
 
 ## Common Fixes
 
