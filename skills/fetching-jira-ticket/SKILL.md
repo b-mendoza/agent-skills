@@ -15,6 +15,12 @@ just-in-time sources for current Jira syntax or progressive-disclosure
 rationale; normal execution still works from local files when web access is
 unavailable.
 
+Workflow role: this is the Phase 1 fetch-work-item step for the Jira
+orchestration workflow. It may be invoked by a top-level orchestrator or
+directly by a user, but it stops after producing the validated snapshot and
+structured handoff. Later task planning, subtask creation, later-phase
+validation, and Jira mutations stay with downstream workflow skills.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -80,9 +86,10 @@ The retriever writes at most one local workflow snapshot:
 docs/<TICKET_KEY>.md
 ```
 
-Leave the snapshot in place and unstaged for workflow resumability. Load
+Treat the snapshot as a workflow-state handoff for later phases, not
+implementation history. Leave it in place and unstaged for resumability. Load
 `./references/fetch-contract.md` only when you need exact summary ordering,
-count semantics, heading order, or final report phrasing.
+count semantics, heading order, lifecycle rules, or final report phrasing.
 
 ## Escalation
 
@@ -98,7 +105,8 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-1234`
 
 Flow: derive `PROJ-1234`, dispatch `ticket-retriever`, receive `FETCH: PASS`
 and `Validation: PASS`, then report `docs/PROJ-1234.md`, the ticket identity,
-counts, warnings, and that Jira was not modified.
+counts, warnings, and that Jira was not modified. If called by the Jira
+orchestrator, this 12-line summary and file path are the Phase 1 handoff.
 </example>
 
 <example>

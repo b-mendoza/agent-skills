@@ -1,11 +1,13 @@
 # Fetching Jira Ticket
 
-The coordinator retrieves exactly one Jira ticket into a validated local
-Markdown snapshot. It may normalize ticket coordinates, dispatch the delegated
-`ticket-retriever`, interpret only the retriever's structured summary, and
-report handoff state. Raw Jira payloads stay out of coordinator context. The
-delegated retriever performs read-only Jira queries, may write at most one
-unstaged file at `docs/<TICKET_KEY>.md`, and must not modify Jira.
+The coordinator is the Jira workflow's Phase 1 fetch-work-item step. It
+retrieves exactly one Jira ticket into a validated local Markdown snapshot,
+may normalize ticket coordinates, dispatch the delegated `ticket-retriever`,
+interpret only the retriever's structured summary, and report handoff state.
+Raw Jira payloads stay out of coordinator context. The delegated retriever
+performs read-only Jira queries, may write at most one unstaged workflow-state
+file at `docs/<TICKET_KEY>.md`, and must not modify Jira or invoke later
+workflow phases.
 
 ```mermaid
 flowchart TD

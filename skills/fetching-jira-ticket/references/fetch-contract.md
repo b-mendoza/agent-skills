@@ -6,12 +6,23 @@
 
 ## Contents
 
+- Orchestration handoff role
 - Summary semantics
 - Count rules
 - Locked summary line order
 - Retriever summary examples
 - Artifact contract
 - Coordinator report phrasing
+
+## Orchestration Handoff Role
+
+This contract defines the complete Phase 1 handoff for the Jira workflow.
+The coordinator and any top-level orchestrator retain the locked 12-line
+summary, the written file path, warnings, and fatal reason. Raw Jira payloads
+and full artifact contents stay inside `ticket-retriever`.
+
+`docs/<TICKET_KEY>.md` is a workflow-state snapshot for downstream phases.
+Leave it on disk and unstaged; do not treat it as implementation history.
 
 ## Summary Semantics
 
@@ -90,7 +101,8 @@ Reason: Jira ticket PROJ-892 was not found (404)
 
 ## Artifact Contract
 
-Primary artifact: `docs/<TICKET_KEY>.md`.
+Primary artifact: `docs/<TICKET_KEY>.md`. It is the Phase 1 workflow-state
+snapshot consumed by later Jira orchestration phases.
 
 Required top-level headings, in order:
 
@@ -118,8 +130,10 @@ The full snapshot shape lives in `./ticket-snapshot-template.md`.
 
 For `PASS` or `PARTIAL`, report the file path, ticket identity, status/type,
 comment count, subtask count, linked-issue count, attachment count, warnings,
-and that Jira was not modified. For `FAIL`, `ERROR`, or `Validation: FAIL`,
-report the failure category and reason without inspecting raw payloads.
+and that Jira was not modified. When invoked by the top-level workflow, this
+report is the Phase 1 decision input before artifact validation. For `FAIL`,
+`ERROR`, or `Validation: FAIL`, report the failure category and reason without
+inspecting raw payloads.
 
 <example>
 Ticket fetched to `docs/PROJ-1234.md`. `PROJ-1234: Implement dark mode toggle`

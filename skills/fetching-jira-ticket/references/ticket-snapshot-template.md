@@ -16,6 +16,8 @@ headings are shapes for items that exist or required `Not retrieved`
 placeholders. Write `_None_` for verified empty sections. Use the
 `_Unknown..._` markers from **Conditional Rules** when subtask or
 linked-issue discovery is unverified after the parent ticket was retrieved.
+The rendered file is a Phase 1 workflow-state handoff for downstream
+orchestration phases and should remain unstaged.
 
 ```markdown
 # <TICKET_KEY>: <Summary>

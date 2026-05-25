@@ -6,6 +6,7 @@
 
 ## Contents
 
+- Stage pipeline
 - Read path setup
 - Capture rules
 - Acceptance criteria precedence
@@ -14,6 +15,21 @@
 - Assembly
 - Validation gate
 - Rate limiting
+
+## Stage Pipeline
+
+Use this six-stage pipeline for every retrieval run. Stage names are the
+shared Phase 1 contract with the paired GitHub fetching skill; tracker-specific
+details belong inside each stage.
+
+| Stage | Name | Exit condition |
+| ----- | ---- | -------------- |
+| 1 | Validate the input and establish identifiers | Workspace, project, and `TICKET_KEY` are known, or `BAD_INPUT` is returned |
+| 2 | Establish the tracker read path | A supported read-only Jira path can perform the required reads, or `AUTH`/`TOOLS_MISSING`/`RATE_LIMIT` is returned |
+| 3 | Retrieve the parent ticket | Parent fields, description, comments, attachments, and custom fields are retrieved or the run stops with a deterministic failure |
+| 4 | Retrieve subtasks and linked issues | Related-item totals are verified, hydrated, marked unknown, or recorded as partial |
+| 5 | Assemble the document | `docs/<TICKET_KEY>.md` is written from the bundled template |
+| 6 | Post-write validation gate: validate, repair, and re-check | Artifact satisfies the contract or validation fails after the repair limit |
 
 ## Read Path Setup
 
@@ -100,7 +116,7 @@ labels. Copy the fenced shape into `docs/<TICKET_KEY>.md` and fill it from
 retrieved data. Top-level headings are always required. For empty scalar
 metadata values, write `_None_`. Normalize timestamps with times to
 `YYYY-MM-DD HH:MM UTC`; keep date-only values as `YYYY-MM-DD`. Leave the
-artifact in place and unstaged.
+artifact in place and unstaged as the Phase 1 workflow-state handoff.
 
 ## Validation Gate
 
