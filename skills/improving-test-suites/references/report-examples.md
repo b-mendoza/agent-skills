@@ -148,6 +148,7 @@ Decision needed: none
 ## Final Handoff
 
 ```text
+Handoff status: CHANGED_PASS
 Test suite improved: The invoice API suite now protects response-level behavior instead of repository call order.
 
 Diagnosis:
@@ -169,5 +170,8 @@ References fetched:
 - https://testing.googleblog.com/2013/08/testing-on-toilet-test-behavior-not.html
 
 Remaining risks:
+- none
+
+Approvals and blockers:
 - none
 ```

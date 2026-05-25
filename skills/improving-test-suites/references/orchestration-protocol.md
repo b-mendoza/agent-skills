@@ -1,9 +1,8 @@
 # Orchestration Protocol
 
-> Read this file after intake. Dispatch file reads, web fetches, edits, and
-> command runs to subagents; keep the orchestrator on routing decisions and
-> compact summaries. The orchestrator only reads skill, reference, subagent,
-> and template files directly.
+> Read this file after intake. Dispatch raw file inspection, web fetches,
+> edits, and command runs to subagents; keep the orchestrator on routing
+> decisions and compact summaries.
 
 ## Dispatch Packet
 
@@ -21,45 +20,106 @@ scope:
 | `HEURISTICS_PATH` | Review subagents and synthesis | `./test-quality-heuristics.md` |
 | `REPORT_TEMPLATE_PATH` | Every subagent | The template that matches that subagent |
 
+External source use is owned by the relevant subagent dispatch. Use
+`./external-sources.md` or a user-supplied official documentation URL; ask
+before unsupported external source use.
+
+## Flow Entity Crosswalk
+
+The flow diagram uses these decision names for deterministic routing:
+
+| Decision | Meaning |
+| -------- | ------- |
+| `HAS_TARGET` | `TARGET_TEST_FILES` is present or safely inferable |
+| `VALUE_STATUS` | Immediate route for `TEST_VALUE_REVIEW` |
+| `API_ROUTE` | Required, optional, or not-needed API/security review route |
+| `API_STATUS` | Immediate route for `API_SECURITY_REVIEW` |
+| `API_REQUIRED_GATE` | Whether an API/security blocker must stop the workflow |
+| `API_ERROR_GATE` | Whether an API/security error must stop the workflow |
+| `MAINT_ROUTE` | Required, optional, or not-needed maintainability review route |
+| `MAINT_STATUS` | Immediate route for `MAINTAINABILITY_REVIEW` |
+| `MAINT_REQUIRED_GATE` | Whether a maintainability blocker must stop the workflow |
+| `MAINT_ERROR_GATE` | Whether a maintainability error must stop the workflow |
+| `SAFE_EDIT` | A safe test or helper edit is justified |
+| `MUTATION_SCOPE` | The edit stays within tests and directly related helpers |
+| `PROD_APPROVAL` | User explicitly approves a production-code fix |
+| `REFACTOR_STATUS` | Immediate route for `TEST_REFACTOR` |
+| `REFACTOR_FAIL_KIND` | Whether `TEST_REFACTOR: FAIL` exposes a production bug outside scope |
+| `VALIDATION_STATUS` | Immediate route for `TEST_VALIDATION` |
+| `HANDOFF_CONTEXT` | Validation passed with changed files or no changed files |
+| `VALIDATION_FAIL_CONTEXT` | Validation failed with changed files or no changed files |
+| `VALIDATION_CAUSE` | Validator likely-cause classification for changed-file failures |
+| `REPAIR_COUNT` | Targeted repair cycle count is still under three |
+
 ## Phase Routing
 
 ### 1. Test Value Review
 
 Dispatch `test-value-reviewer` with the dispatch packet, `HEURISTICS_PATH`, and
-`REPORT_TEMPLATE_PATH=./test-value-review-template.md`.
-Include `EXTERNAL_SOURCES_PATH=./external-sources.md` only when the
-user requested a source-backed decision or the reviewer reaches a concrete
-source need.
+`REPORT_TEMPLATE_PATH=./test-value-review-template.md`. Include
+`EXTERNAL_SOURCES_PATH=./external-sources.md` only when the user requested a
+source-backed decision or the reviewer reaches a concrete source need.
 
-Collect only: status, suite diagnosis, top low-value tests, high-value
-behaviors, missing high-value tests, minimal harness recommendation, review
-routing, fetched URLs, blockers, reason, and decision needed.
+Route `VALUE_STATUS` immediately:
 
-### 2. Routed Coverage Reviews
+| `TEST_VALUE_REVIEW` status | Orchestrator action |
+| -------------------------- | ------------------- |
+| `PASS` | Record suite diagnosis, protected behaviors, low-value gaps, review routes, fetched URLs, blockers, reason, and decision needed |
+| `BLOCKED` | Ask or report the required value-review blocker, then hand off as `COMPLETE_BLOCKED` |
+| `NEEDS_CLARIFICATION` | Ask one focused value or scope decision, then hand off as `COMPLETE_BLOCKED` |
+| `ERROR` | Hand off as `COMPLETE_ERROR` with completed work and recovery context |
 
-Dispatch `api-security-reviewer` when the value review marks it `required`,
-or when the goal/target mentions APIs, tools, schemas, auth, permissions,
-unsafe inputs, filesystem paths, network calls, or security behavior.
+### 2. API/Security Route
 
-Dispatch `test-maintainability-reviewer` when the value review marks it
-`required`, or when the target is long, fixture-heavy, mock-heavy,
-duplicated, hard to scan, framework-specific, or likely to benefit from
-parametrization.
+Set `API_ROUTE` from the value review and visible target/goal signals:
 
-Pass each reviewer the original dispatch packet, the concise earlier reports,
-`HEURISTICS_PATH`, and its report template path. Include
-`EXTERNAL_SOURCES_PATH` only when source-backed support is requested or needed.
-Treat `NOT_APPLICABLE` from the API/security reviewer as a complete non-blocking
-result.
+| Route | When |
+| ----- | ---- |
+| `required` | Value review marks `API_SECURITY_REVIEW: required`, or the goal/target clearly concerns APIs, tools, schemas, auth, permissions, unsafe inputs, filesystem paths, network calls, or security behavior |
+| `optional` | API/security risk is plausible but value evidence is already enough for a safe harness decision |
+| `not needed` | No API/security-sensitive surface is present |
 
-Use these template paths:
+For `required` or `optional`, dispatch `api-security-reviewer` with the original
+dispatch packet, prior compact reports, `HEURISTICS_PATH`, and
+`REPORT_TEMPLATE_PATH=./api-security-review-template.md`.
 
-- `api-security-reviewer`: `./api-security-review-template.md`
-- `test-maintainability-reviewer`: `./test-maintainability-review-template.md`
+Route `API_STATUS` immediately:
 
-### 3. Minimal Harness Decision
+| `API_SECURITY_REVIEW` status | Required route or value evidence insufficient | Optional route with sufficient value evidence |
+| ---------------------------- | --------------------------------------------- | ------------------------------------------- |
+| `PASS` | Record report and fetched URLs | Record report and fetched URLs |
+| `NOT_APPLICABLE` | Record `API_SECURITY_REVIEW: NOT_APPLICABLE` and continue | Record `API_SECURITY_REVIEW: NOT_APPLICABLE` and continue |
+| `BLOCKED` | Ask one focused API/security decision, prerequisite, or unsupported-source approval, then hand off as `COMPLETE_BLOCKED` | Record skipped optional API/security review as remaining risk |
+| `NEEDS_CLARIFICATION` | Ask one focused API/security decision, prerequisite, or unsupported-source approval, then hand off as `COMPLETE_BLOCKED` | Record skipped optional API/security review as remaining risk |
+| `ERROR` | Hand off as `COMPLETE_ERROR` | Record skipped optional API/security review as remaining risk |
 
-Synthesize `MINIMAL_HARNESS_DECISION` using the priorities and rules in
+### 3. Maintainability Route
+
+Set `MAINT_ROUTE` from the value review and visible target/goal signals:
+
+| Route | When |
+| ----- | ---- |
+| `required` | Value review marks `MAINTAINABILITY_REVIEW: required`, or readability/fixture/mocking problems are central to the user goal |
+| `optional` | Maintainability work may help, but value evidence is already enough for a safe harness decision |
+| `not needed` | The target is already small, clear, and not fixture-heavy, mock-heavy, duplicated, hard to scan, or framework-specific |
+
+For `required` or `optional`, dispatch `test-maintainability-reviewer` with the
+original dispatch packet, prior compact reports, `HEURISTICS_PATH`, and
+`REPORT_TEMPLATE_PATH=./test-maintainability-review-template.md`.
+
+Route `MAINT_STATUS` immediately:
+
+| `MAINTAINABILITY_REVIEW` status | Required route or value evidence insufficient | Optional route with sufficient value evidence |
+| ------------------------------- | --------------------------------------------- | ------------------------------------------- |
+| `PASS` | Record report and fetched URLs | Record report and fetched URLs |
+| `BLOCKED` | Ask one focused maintainability decision, prerequisite, or unsupported-source approval, then hand off as `COMPLETE_BLOCKED` | Record skipped optional maintainability review as remaining risk |
+| `NEEDS_CLARIFICATION` | Ask one focused maintainability decision, prerequisite, or unsupported-source approval, then hand off as `COMPLETE_BLOCKED` | Record skipped optional maintainability review as remaining risk |
+| `ERROR` | Hand off as `COMPLETE_ERROR` | Record skipped optional maintainability review as remaining risk |
+
+### 4. Minimal Harness Decision
+
+Synthesize `MINIMAL_HARNESS_DECISION` using compact reports, optional-review
+risks, fetched URLs, and the priorities and rules in
 `./test-quality-heuristics.md`. Include:
 
 - Tests or areas to delete, rewrite, consolidate, keep, and add
@@ -68,52 +128,84 @@ Synthesize `MINIMAL_HARNESS_DECISION` using the priorities and rules in
 - References fetched that materially influenced decisions
 - Preferred validation command, when known
 
-Skip refactoring when the reviews justify no safe edit. Optionally validate
-the existing narrow command if useful, then hand off using the final
-template.
+When no safe test or helper edit is justified, record the no-op rationale,
+scope limits, optional-review risks, and fetched URLs, then validate with
+`CHANGED_FILES=none`.
 
-### 4. Refactor
+### 5. Refactor
 
-Dispatch `test-refactorer` with the original dispatch packet,
+When a safe edit is justified and stays within tests or directly related test
+helpers, dispatch `test-refactorer` with the original dispatch packet,
 `MINIMAL_HARNESS_DECISION`, concise review reports, any validation failure
 summary from a repair cycle, and
 `REPORT_TEMPLATE_PATH=./test-refactor-template.md`.
 
-Collect only: status, changed files, actions applied, production code
-changes, unapplied decisions, potential production bugs, suggested
-validation command, reason, and decision needed.
+Ask before production-code fixes. The approval request includes target, reason,
+risk, reversibility, and safer alternative. If the user declines, hand off as
+`COMPLETE_PRODUCTION_BUG_EXPOSED`.
 
-### 5. Validate
+Route `REFACTOR_STATUS` immediately:
 
-Dispatch `test-validator` with target files, test command if supplied,
-changed files, suggested validation command, scope limits, and
-`REPORT_TEMPLATE_PATH=./test-validation-template.md`.
+| `TEST_REFACTOR` status | Orchestrator action |
+| ---------------------- | ------------------- |
+| `PASS` | Record changed files, skipped edits, production changes, risks, assumptions, and suggested validation command |
+| `BLOCKED` | Ask or report the required refactor blocker, then hand off as `COMPLETE_BLOCKED` |
+| `NEEDS_CLARIFICATION` | Ask one focused refactor scope or contract decision, then hand off as `COMPLETE_BLOCKED` |
+| `FAIL` | If a production bug is exposed outside approved scope, hand off as `COMPLETE_PRODUCTION_BUG_EXPOSED`; otherwise hand off as `COMPLETE_BLOCKED` |
+| `ERROR` | Hand off as `COMPLETE_ERROR` with completed work and recovery context |
 
-Collect only: status, command, concise result, likely cause, failure
-summary, recommended next action, reason, and decision needed.
+### 6. Validate
 
-## Status Handling
+Dispatch `test-validator` after either a refactor or a no-op decision:
 
-| Status | Orchestrator action |
-| ------ | ------------------- |
-| `PASS` | Advance to the next phase |
-| `NOT_APPLICABLE` | Record the result and continue |
-| `BLOCKED` | Ask the smallest question or report the missing prerequisite |
-| `NEEDS_CLARIFICATION` | Ask one focused question that resolves the decision |
-| `FAIL` | Use targeted repair when safe; otherwise report unapplied work or exposed production bug |
-| `ERROR` | Retry the same dispatch once; if it recurs, report the blocker with completed work |
+- Changed path: include target files, changed files, suggested validation
+  command, supplied `TEST_COMMAND`, scope limits, and
+  `REPORT_TEMPLATE_PATH=./test-validation-template.md`.
+- No-op path: include target files, `CHANGED_FILES=none`, any supplied or
+  inferred command, scope limits, and
+  `REPORT_TEMPLATE_PATH=./test-validation-template.md`.
 
-Optional reviewer blockers do not stop the workflow when the value review
-gives enough evidence for a safe edit. Record the skipped optional review as
-a remaining risk.
+Let `test-validator` choose the narrowest command from supplied, suggested, or
+inferable repository conventions. Ask the user only when `TEST_VALIDATION:
+BLOCKED` returns the smallest command, dependency, template, or permission
+question.
 
-When validation returns `FAIL`, `BLOCKED`, or repeated `ERROR`, load
-`./repair-protocol.md`. Keep the repair details out of the normal
-prompt path until they are needed.
+Route `VALIDATION_STATUS` immediately:
+
+| `TEST_VALIDATION` status | Changed files | No changed files |
+| ------------------------ | ------------- | ---------------- |
+| `PASS` | Hand off as `CHANGED_PASS` | Hand off as `COMPLETE_NO_SAFE_CHANGE` |
+| `FAIL` | Load `./repair-protocol.md` and route by likely cause | Hand off as `COMPLETE_NO_SAFE_CHANGE` with validation limitation or failure risk |
+| `BLOCKED` | Ask the validator's smallest question, then hand off as `COMPLETE_BLOCKED` | Ask the validator's smallest question, then hand off as `COMPLETE_BLOCKED` |
+| `ERROR` | Hand off as `COMPLETE_ERROR` | Hand off as `COMPLETE_ERROR` |
+
+## Repair Routing
+
+When changed-file validation returns `FAIL`, load `./repair-protocol.md` and
+use the validator's likely cause:
+
+| Likely cause | Action |
+| ------------ | ------ |
+| `test refactor regression` | Redispatch `test-refactorer` with `VALIDATION_FAILURE` and a bounded repair packet, then rerun `test-validator` |
+| `production bug exposed` | Ask before production-code fixes unless already approved; if declined or outside scope, hand off as `COMPLETE_PRODUCTION_BUG_EXPOSED` |
+| `pre-existing failure` | Hand off as `VALIDATION_FAILED_AFTER_REPAIR` with failure summary and risk |
+| `unknown` | Follow `./repair-protocol.md`; if unresolved, hand off as `VALIDATION_FAILED_AFTER_REPAIR` |
+
+Stop after three targeted repair cycles.
 
 ## Handoff
 
 Before the user-visible final response, load
-`./final-handoff-template.md`. Include changed harness summary,
-files changed, validation command and result, fetched URLs, and remaining
-risks.
+`./final-handoff-template.md` and choose exactly one handoff status:
+
+| Handoff status | Use when |
+| -------------- | -------- |
+| `CHANGED_PASS` | Approved test changes were applied and validation passed |
+| `COMPLETE_NO_SAFE_CHANGE` | No safe edit was justified, or no-op validation did not require mutation |
+| `COMPLETE_PRODUCTION_BUG_EXPOSED` | A high-signal test exposed a production bug outside approved edit scope |
+| `VALIDATION_FAILED_AFTER_REPAIR` | Changed-file validation failed after bounded repair handling |
+| `COMPLETE_ERROR` | A subagent or validation error prevents reliable continuation |
+| `COMPLETE_BLOCKED` | A missing target, prerequisite, command, approval, or decision blocks continuation |
+
+Every handoff records changed files or no-op rationale, validation status,
+fetched URLs, risks, scope limits, and any user approvals or blocked decisions.

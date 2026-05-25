@@ -26,8 +26,8 @@ Minimal target harness:
 - <ordered keep/rewrite/delete/add recommendations>
 
 Review routing:
-- API_SECURITY_REVIEW: required | optional | skip | <reason>
-- MAINTAINABILITY_REVIEW: required | optional | skip | <reason>
+- API_SECURITY_REVIEW: required | optional | not needed | <reason>
+- MAINTAINABILITY_REVIEW: required | optional | not needed | <reason>
 
 Blockers:
 - none | <question or missing context>

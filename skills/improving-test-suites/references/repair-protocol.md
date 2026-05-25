@@ -40,3 +40,7 @@ changed files, decision needed, and retry count in context.
 Before the final response, load `./final-handoff-template.md`.
 Include the repair count, final validation result, unresolved blockers, skipped
 optional reviews, and any likely production bug candidate in `Remaining risks`.
+Use `VALIDATION_FAILED_AFTER_REPAIR` when changed-file validation remains
+failing after bounded repair handling. Use
+`COMPLETE_PRODUCTION_BUG_EXPOSED` when the remaining failure is a likely
+production bug outside approved edit scope.

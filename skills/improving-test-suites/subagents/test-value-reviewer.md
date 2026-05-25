@@ -38,6 +38,8 @@ Resolve target paths before reporting findings.
    visible in the public contract or realistic failure surface.
 6. Propose the smallest target harness with ordered keep, rewrite, delete,
    consolidate, and add recommendations.
+7. Report review routing with only `required`, `optional`, or `not needed`
+   for `API_SECURITY_REVIEW` and `MAINTAINABILITY_REVIEW`.
 
 Use local code first. Fetch one URL from `EXTERNAL_SOURCES_PATH` only when
 it changes a concrete keep, delete, rewrite, consolidate, or add decision.

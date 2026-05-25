@@ -39,11 +39,18 @@ cannot be inferred safely.
 | Synthesis | Inline | Choose the smallest target harness from compact reports | `MINIMAL_HARNESS_DECISION` |
 | Refactor | Subagent | Apply approved test edits | `TEST_REFACTOR` |
 | Validate | Subagent | Run the narrow relevant command and classify failures | `TEST_VALIDATION` |
-| Repair or handoff | Inline dispatch | Route targeted repair, escalate blockers, or summarize result | User-visible handoff |
+| Repair or handoff | Inline dispatch | Route targeted repair, escalate blockers, or summarize result | `CHANGED_PASS`, `COMPLETE_NO_SAFE_CHANGE`, `COMPLETE_PRODUCTION_BUG_EXPOSED`, `VALIDATION_FAILED_AFTER_REPAIR`, `COMPLETE_ERROR`, or `COMPLETE_BLOCKED` |
 
 Inline phases exist only where the orchestrator needs the output for routing
 or trade-off decisions. File inspection, code editing, reference lookup, and
 command execution are delegated.
+
+After every subagent dispatch, route the returned status before doing the next
+phase. Use `VALUE_STATUS`, `API_STATUS`, `MAINT_STATUS`, `REFACTOR_STATUS`,
+and `VALIDATION_STATUS` as the status decision names. Use `API_ROUTE` and
+`MAINT_ROUTE` for routed coverage reviews. Required reviewer blockers stop or
+ask; optional reviewer blockers continue only when the value review gives enough
+evidence for a safe decision, and are recorded as remaining risk.
 
 ## Subagent Registry
 
@@ -53,7 +60,7 @@ command execution are delegated.
 | `api-security-reviewer` | `./subagents/api-security-reviewer.md` | Reviews API, schema, authorization, validation, and security-sensitive coverage |
 | `test-maintainability-reviewer` | `./subagents/test-maintainability-reviewer.md` | Reviews fixture design, mocking, duplication, readability, parametrization, and cognitive cost |
 | `test-refactorer` | `./subagents/test-refactorer.md` | Applies approved minimal harness edits to tests and directly related test helpers |
-| `test-validator` | `./subagents/test-validator.md` | Runs the relevant test command and returns a compact pass/fail/error verdict |
+| `test-validator` | `./subagents/test-validator.md` | Runs the relevant test command after refactoring or a no-op decision and returns a compact pass/fail/error verdict |
 
 Read a subagent definition only when dispatching that subagent. Retain only
 its structured report, fetched URLs, changed file paths, blockers, and
@@ -94,28 +101,36 @@ the smallest relevant URL from `./references/external-sources.md`.
 ## Execution
 
 1. Normalize the dispatch packet from the inputs. Ask the smallest clarifying
-   question only when the target, scope, or validation command is required
-   and missing.
+   question only when `TARGET_TEST_FILES` is missing and cannot be inferred
+   safely.
 2. Load `./references/orchestration-protocol.md` and follow its phase
    routing and status handling.
 3. Dispatch subagents with explicit inputs only. Include
    `HEURISTICS_PATH` and the relevant one-hop report template path. Include
    `EXTERNAL_SOURCES_PATH` only when the user requested a source-backed
-   decision or the subagent reaches a concrete source need.
+   decision or the subagent reaches a concrete source need. Ask before using
+   unsupported external sources.
 4. Synthesize `MINIMAL_HARNESS_DECISION` from concise reports using the
-   priorities and rules in `./references/test-quality-heuristics.md`. Skip
-   editing when no safe change is justified.
-5. Validate empirically with the narrowest relevant command. When validation
-   fails or blocks, load `./references/repair-protocol.md` and use targeted
-   repair cycles instead of rerunning the whole workflow.
-6. Load `./references/final-handoff-template.md` and return the final handoff.
+   priorities and rules in `./references/test-quality-heuristics.md`. Record
+   no-op rationale when no safe edit is justified.
+5. Dispatch `test-validator` with the supplied command, the refactorer's
+   suggested command, or an inferable narrow command. For no-op decisions,
+   dispatch it with `CHANGED_FILES=none`. Ask for a command or prerequisite
+   only when `TEST_VALIDATION: BLOCKED` returns that decision.
+6. When validation fails after changes, load `./references/repair-protocol.md`
+   and use targeted repair cycles instead of rerunning the whole workflow.
+7. Load `./references/final-handoff-template.md` and return the final handoff
+   with exactly one named handoff status.
 
 ## Output Contract
 
 Return the final answer using `./references/final-handoff-template.md`.
 Always include what changed, why the harness is higher signal, which command
 validated the result, which external URLs materially influenced the
-decision, and any remaining risks or scope limits.
+decision, and any remaining risks or scope limits. The handoff status is one of
+`CHANGED_PASS`, `COMPLETE_NO_SAFE_CHANGE`,
+`COMPLETE_PRODUCTION_BUG_EXPOSED`, `VALIDATION_FAILED_AFTER_REPAIR`,
+`COMPLETE_ERROR`, or `COMPLETE_BLOCKED`.
 
 ## Example
 
@@ -130,5 +145,6 @@ input and duplicated invalid-payload setup; synthesize a harness that deletes
 mock-call-order tests, rewrites validation around API responses, adds one
 unauthorized-account test, and parametrizes invalid-payload cases; dispatch
 `test-refactorer`; dispatch `test-validator`; return the final handoff with
-changed files, validation result, fetched URLs, and remaining risks.
+`CHANGED_PASS`, changed files, validation result, fetched URLs, and remaining
+risks.
 </example>
