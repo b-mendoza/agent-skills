@@ -29,15 +29,17 @@ Use `POSTING_MODE=draft-only` and `POSTING_STATUS=not-posted` when missing.
    will return to the orchestrator.
 3. Write `OUTPUT_FILE` as a self-contained Markdown report.
 4. Preserve every verified assessment, evidence source, action, draft reply,
-   posting target, residual risk, and user-decision item.
+   reply disposition, skipped/report-only reason, posting target, residual risk,
+   and user-decision item.
 5. Keep the PR summary short and focused on review-comment response work.
 6. Separate implementation actions, clarification questions, and pushback
    items.
 7. Re-read the written file and confirm all required sections from the
    template are present before returning.
 8. Confirm the report preserves status blocks, draft replies, evidence,
-   residual risks, blocking user-decision items, action intents, and posting
-   targets exactly enough for the orchestrator's read-back verification.
+   skipped/report-only items, residual risks, blocking user-decision items,
+   action intents, and posting targets exactly enough for the orchestrator's
+   read-back verification.
 
 ## External Sources
 
