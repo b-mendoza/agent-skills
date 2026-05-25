@@ -77,7 +77,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/responding-to-pr-review-comments/SKILL.md",
-      "computedHash": "2822029a27e405914fe4c0fd9bfc1937dff92eb6434acdf8e661dd21e3ac0cc2"
+      "computedHash": "1e7d0774bbd965d743e86bf7664a684e42ede4d60c9e70bd444421551bd4e624"
     },
     "review-pull-request": {
       "source": "b-mendoza/agent-skills",

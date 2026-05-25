@@ -17,34 +17,48 @@ posting targets before a report or GitHub side effect is produced.
 | `OUTPUT_FILE`       | Yes      | `pr-123-review.md`                            |
 | `COMMENT_INVENTORY` | Yes      | Output from `review-comment-collector`        |
 | `ASSESSMENTS`       | Yes      | Output from `review-comment-assessor`         |
-| `DRAFT_REPLIES`     | Yes      | Output from `reply-drafter`                   |
+| `DRAFT_REPLIES`     | No       | Output from `reply-drafter` for reply-ready items |
 | `LANGUAGE_STYLE`    | No       | `natural English for a non-native speaker`    |
+| `POSTING_OUTCOME`   | No       | `posted`, `cancelled`, `auth failure`, or `post-error` |
 
 ## Instructions
 
-1. Check coverage: every received comment has exactly one assessment and one
-   draft reply or user-facing question.
-2. Check evidence: each classification cites concrete code, diff, test, CI,
+1. Check coverage: every received comment has exactly one assessment, draft
+   reply, user-facing question, or skipped/report-only reason.
+2. Check collection completeness: the collector output must show
+   `Collection completeness: complete` or `limited`; `limited` must name each
+   missing endpoint, unavailable metadata field, or unresolved-thread
+   limitation. Return `VERIFY: FAIL` with `Fix target: collector:<comment id or
+   inventory>` when required pagination or limitation status is missing.
+3. Check evidence: each classification cites concrete code, diff, test, CI,
    linked issue, or documentation sources.
-3. Check recency: claims about libraries, platforms, APIs, policies, pricing,
+4. Check recency: claims about libraries, platforms, APIs, policies, pricing,
    or versions use current official documentation.
-4. Check action feasibility: planned actions match classifications and can be
+5. Check action feasibility: planned actions match classifications and can be
    implemented or explained without hidden assumptions.
-5. Check reply quality: wording is natural, concise, collaborative, and
+6. Check reply quality: wording is natural, concise, collaborative, and
    aligned with `LANGUAGE_STYLE`.
-6. Check posting safety: only `review-comment-reply:<root-id>` targets whose
-   root is a top-level review comment are ready for direct posting.
+7. Check posting safety: only `review-comment-reply:<root-id>` targets whose
+   root is a top-level review comment and whose reply disposition is
+   `reply-ready` or `follow-up-ready` are ready for direct posting.
    Unsupported targets remain `requires-user-choice:review-summary`,
    `requires-user-choice:issue-comment`,
    `requires-user-choice:unsupported-review-reply`, or
    `requires-user-choice:unresolved-metadata`.
-7. Check source conflicts and unavailable required sources: source-backed claims
+8. Check skipped/report-only safety: resolved threads and already-replied
+   threads have evidence and are excluded from preview and posting unless a
+   follow-up is warranted by reviewer clarification or new material information.
+9. Check post-sync safety when `POSTING_OUTCOME` is supplied: the verified
+   package must contain the final posting status, posted reply IDs or skipped
+   reasons, terminal reason, and final envelope intent needed by
+   `response-report-writer`.
+10. Check source conflicts and unavailable required sources: source-backed claims
    are supported by current official docs, qualified, removed, or routed to the
    smallest repair path. Use `VERIFY: NEEDS_CONTEXT` when missing evidence or
    source access prevents verification. Use `VERIFY: FAIL` when the package
    contains a repairable defect, such as an unsupported source claim that can be
    removed, qualified, or replaced by the owning phase.
-8. On failure, identify the smallest phase and comment ID to repair.
+11. On failure, identify the smallest phase and comment ID to repair.
 
 ## External Sources
 
@@ -53,6 +67,7 @@ GitHub posting semantics, or reply tone. Phase keys:
 
 - `conventional-comments-tone`
 - `gh-rest-pull-comments`
+- `gh-rest-pagination`
 - `github-about-reviews`, `github-review-changes`
 - Current official vendor documentation for recency-sensitive claims
 

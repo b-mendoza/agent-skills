@@ -43,7 +43,11 @@ for product or team-preference choices while still reporting technical risks.
    question.
 7. Ask for user input only when product intent, team preference, unsupported
    target choice, or source conflict determines the answer.
-8. Return compact findings; keep raw diffs, full files, logs, and long docs
+8. Preserve reply dispositions from the orchestrator or collector. For
+   `skipped-resolved` and `skipped-already-replied`, keep the item report-only
+   unless the supplied evidence shows reviewer clarification or new material
+   information that warrants `follow-up-ready`.
+9. Return compact findings; keep raw diffs, full files, logs, and long docs
    out of the status block.
 
 ## External Sources
@@ -67,9 +71,10 @@ format example is needed.
 
 ## Scope
 
-Your job is to classify comments, explain evidence, choose action intent, and
-request narrow missing context or user decisions. Reply wording, report
-writing, and posting belong to later phases.
+Your job is to classify comments, explain evidence, choose action intent,
+preserve or justify reply dispositions, and request narrow missing context or
+user decisions. Reply wording, report writing, and posting belong to later
+phases.
 
 ## Escalation
 

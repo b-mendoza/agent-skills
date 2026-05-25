@@ -37,9 +37,11 @@ syntax, and phrasing cues.
 | `conventional-comments-tone` | https://conventionalcomments.org/communication/ | Drafting or verifying wording that should sound clear, calm, and specific |
 | `github-about-reviews` | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews | Explaining review states or the difference between review comments and PR conversation comments |
 | `github-review-changes` | https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/reviewing-proposed-changes-in-a-pull-request | Confirming GitHub UI behavior for replying to or resolving PR review conversations |
-| `gh-rest-pull-comments` | https://docs.github.com/en/rest/pulls/comments?apiVersion=2022-11-28 | Collector or poster needs review-comment REST endpoints, reply metadata, or pagination behavior |
-| `gh-rest-pull-reviews` | https://docs.github.com/en/rest/pulls/reviews?apiVersion=2022-11-28 | Collector needs review body, state, or submitted-at metadata |
-| `gh-rest-issue-comments` | https://docs.github.com/en/rest/issues/comments?apiVersion=2022-11-28 | Collector needs top-level PR conversation comment endpoints |
+| `gh-rest-pull-comments` | https://docs.github.com/en/rest/pulls/comments?apiVersion=2026-03-10 | Collector or poster needs review-comment REST endpoints, reply metadata, or pagination behavior |
+| `gh-rest-pull-reviews` | https://docs.github.com/en/rest/pulls/reviews?apiVersion=2026-03-10 | Collector needs review body, state, or submitted-at metadata |
+| `gh-rest-issue-comments` | https://docs.github.com/en/rest/issues/comments?apiVersion=2026-03-10 | Collector needs top-level PR conversation comment endpoints |
+| `gh-rest-pagination` | https://docs.github.com/en/rest/using-the-rest-api/using-pagination-in-the-rest-api | Collector or verifier needs to confirm all pages were fetched or limitations were recorded |
+| `gh-rest-best-practices` | https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api | Poster needs safe handling guidance for mutative REST requests and secondary rate limits |
 | `gh-graphql-review-thread` | https://docs.github.com/en/graphql/reference/objects#pullrequestreviewthread | Collector needs thread-level metadata such as `isResolved`, `isOutdated`, or root comment ID |
 | `gh-cli-api` | https://cli.github.com/manual/gh_api | Collector or poster needs `gh api` flags, GraphQL invocation, or pagination behavior |
 | `gh-cli-pr-view` | https://cli.github.com/manual/gh_pr_view | Collector needs `gh pr view` JSON fields or comment flags |

@@ -24,8 +24,8 @@ Use natural, direct English and `POSTING_MODE=draft-only` when missing.
 
 ## Instructions
 
-1. Draft one reply per received comment using its classification, evidence,
-   action intent, and posting target.
+1. Draft replies only for `reply-ready` and `follow-up-ready` items using the
+   classification, evidence, action intent, and posting target.
 2. Keep replies collaborative, specific, and easy to understand for an
    international team.
 3. For `valid` comments, acknowledge the feedback and state the concrete
@@ -35,19 +35,23 @@ Use natural, direct English and `POSTING_MODE=draft-only` when missing.
 5. For `pushback` comments, cite the evidence briefly and respectfully.
 6. For `needs-user-decision`, draft the focused user question instead of
    inventing a final reply.
-7. Preserve `requires-user-choice:review-summary`,
+7. Preserve `skipped-resolved` and `skipped-already-replied` as report-only
+   entries with no draft reply. Include the skip reason and evidence so the
+   report explains why no reply will be posted; use
+   `not-assessed-report-only` when the skipped item bypassed assessment.
+8. Preserve `requires-user-choice:review-summary`,
    `requires-user-choice:issue-comment`,
    `requires-user-choice:unsupported-review-reply`, and
    `requires-user-choice:unresolved-metadata` posting targets. Do not convert
    review summaries, issue comments, top-level PR comments, replies-to-replies,
    or unresolved metadata limitations into new top-level comments.
-8. Map unsupported target categories explicitly in action details: review
+9. Map unsupported target categories explicitly in action details: review
    summaries keep `requires-user-choice:review-summary`; issue comments and
    top-level PR comments keep `requires-user-choice:issue-comment`;
    replies-to-replies or missing root IDs keep
    `requires-user-choice:unsupported-review-reply`; unresolved-thread metadata
    gaps keep `requires-user-choice:unresolved-metadata`.
-9. Return `DRAFT: NEEDS_USER_DECISION` only for wording or response-choice
+10. Return `DRAFT: NEEDS_USER_DECISION` only for wording or response-choice
    decisions that materially change what the user would approve or post.
 
 ## External Sources
@@ -69,9 +73,9 @@ format example is needed.
 
 ## Scope
 
-Your job is to draft replies, attach concrete action details, and preserve
-posting-target constraints. Technical reassessment, verification, report
-writing, and posting belong to other phases.
+Your job is to draft eligible replies, attach concrete action details, preserve
+skipped/report-only reasons, and preserve posting-target constraints. Technical
+reassessment, verification, report writing, and posting belong to other phases.
 
 ## Escalation
 
