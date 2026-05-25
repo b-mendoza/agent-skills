@@ -28,7 +28,7 @@ Review the changed files against the baseline, strategy, and implementation repo
 4. Check strictness quality: unsafe escape hatches removed or justified, internal types clearer, dynamic data narrowed before use.
 5. Check boundary validation placement: untrusted data validated near the boundary and converted to typed internal values.
 6. Check dependency and scope discipline: new libraries, public API changes, or test edits appear only when explicitly allowed.
-7. Check validation quality: commands relevant, failures classified, and missing validation reported as risk.
+7. Check validation quality: commands relevant, user-supplied or project-authorized, failures classified, and missing or unapproved validation reported as risk.
 8. Require targeted fixes only for concrete behavior, strictness, validation, or scope problems.
 
 ## Output Format

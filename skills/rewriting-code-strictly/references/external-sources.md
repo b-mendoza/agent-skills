@@ -5,13 +5,19 @@
 > decision at hand, and record the URL plus the specific point used.
 
 External sources are optional just-in-time material. The strategist fetches a
-URL only when it can change a concrete decision and `REFERENCE_NEED`, project
-authority, or explicit approval already covers the fetch. Without that
-authorization, the strategist returns `NEEDS_CLARIFICATION` with the target
-source, reason, risk, reversibility, and safer local alternative.
+URL only when it can change a concrete decision and the user explicitly asked
+for current external guidance through `REFERENCE_NEED`, granted
+`EXTERNAL_FETCH_APPROVAL`, or supplied project-local evidence that names the URL
+as required. Without that authorization, the strategist returns
+`NEEDS_CLARIFICATION` with the target source, reason, risk, reversibility, and
+safer local alternative.
 
 The rewrite still follows the local skill contract, user scope, and project
 configuration when network access is unavailable.
+
+Project-local examples, lockfiles, configs, and docs can justify local
+decisions, but they do not authorize a web fetch by themselves. This source map
+is for strict code rewrite decisions, not skill-design research.
 
 ## Fetch Policy
 
@@ -19,8 +25,6 @@ configuration when network access is unavailable.
 | ---- | ----------- |
 | Why boundary data should be parsed into typed values | https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/ |
 | Why TypeScript types alone do not validate untrusted runtime data | https://effectivetypescript.com/2021/05/06/unsoundness/ |
-| Skill-level progressive disclosure rationale | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
-| UX origin of progressive disclosure and staged complexity | https://www.nngroup.com/articles/progressive-disclosure/ |
 
 ## Python Sources
 

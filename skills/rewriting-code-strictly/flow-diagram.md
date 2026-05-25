@@ -1,10 +1,10 @@
 # Rewriting Code Strictly Workflow
 
-This workflow is run by a strict-rewrite orchestrator for behavior-preserving rewrites of Python, TypeScript/JavaScript, or Go code. The orchestrator normalizes target, language, scope, goal, validation command, and reference need; dispatches one bundled subagent at a time; keeps compact evidence and decisions; and stops before dependency, public API, behavior, scope, external fetch, or validation execution changes unless explicitly allowed. Baseline, strategy, and review are read-only; implementation edits only files justified by the approved strategy or direct compilation consequences. Strategy owns external-source authorization and source-risk status handling; implementation owns edit evidence and approved validation evidence; review assesses behavior preservation, strictness, scope, and validation quality.
+This workflow is run by a strict-rewrite orchestrator for behavior-preserving rewrites of Python, TypeScript/JavaScript, or Go code. The orchestrator normalizes target, language, scope, goal, validation command, reference need, and external fetch approval; dispatches one bundled subagent at a time; keeps compact evidence and decisions; and stops before dependency, public API, behavior, scope, external fetch, or validation execution expands beyond user approval or project evidence. Baseline, strategy, and review are read-only; implementation edits only files justified by the approved strategy or direct compilation consequences. Strategy owns external-source authorization and source-risk status handling; implementation owns edit evidence and user-supplied or project-authorized validation evidence; review assesses behavior preservation, strictness, scope, and validation quality.
 
 ```mermaid
 flowchart TD
-  START([Start: strict code rewrite]) --> INTAKE["Normalize inputs<br/>TARGET_CODE, LANGUAGE, USER_GOAL, VALIDATION_COMMAND, SCOPE_LIMITS, REFERENCE_NEED"]
+  START([Start: strict code rewrite]) --> INTAKE["Normalize inputs<br/>TARGET_CODE, LANGUAGE, USER_GOAL, VALIDATION_COMMAND, SCOPE_LIMITS, REFERENCE_NEED, EXTERNAL_FETCH_APPROVAL"]
   INTAKE --> TARGET_OK{TARGET_CODE present?}
   TARGET_OK -->|no| ASK_TARGET["Ask one focused question for target code or path"]
   ASK_TARGET --> NEEDS_CLARIFICATION(["NEEDS_CLARIFICATION"])
@@ -17,7 +17,7 @@ flowchart TD
   SCOPE_OK -->|no| ASK_SCOPE["Ask one focused scope question"]
   ASK_SCOPE --> NEEDS_CLARIFICATION
 
-  SCOPE_OK -->|yes| BOUNDARY["Set authority and mutation boundary<br/>preserve observable behavior; project settings are authority<br/>record external fetch and validation permissions"]
+  SCOPE_OK -->|yes| BOUNDARY["Set authority and mutation boundary<br/>preserve observable behavior; project settings are authority<br/>record external fetch approval and validation authority"]
   BOUNDARY --> BASELINE["Dispatch strict-baseline-mapper<br/>read-only map behavior, callers, tests, configs, dependencies, and weaknesses"]
   BASELINE --> BASELINE_STATUS{strict-baseline-mapper status?}
 
@@ -30,7 +30,7 @@ flowchart TD
   BASELINE_ERROR --> ERROR(["ERROR"])
 
   STRATEGY --> STRATEGY_STATUS{strict-rewrite-strategist status?}
-  STRATEGY_STATUS -->|PASS| CHANGE_GATE{Plan requires dependency, public API, behavior, or scope expansion not allowed?}
+  STRATEGY_STATUS -->|PASS| CHANGE_GATE{Plan requires dependency, public API, behavior, scope, fetch, or validation authority expansion?}
   STRATEGY_STATUS -->|NO_CHANGE| NO_CHANGE(["NO_CHANGE"])
   STRATEGY_STATUS -->|NEEDS_CLARIFICATION| STRATEGY_ASK["Ask one strategy question<br/>missing decision, external fetch approval, local source, or declined/unavailable source disposition"]
   STRATEGY_ASK --> NEEDS_CLARIFICATION
@@ -39,7 +39,7 @@ flowchart TD
 
   CHANGE_GATE -->|yes| ASK_CHANGE["Ask one focused approval question<br/>target, reason, risk, reversibility, safer alternative"]
   ASK_CHANGE --> NEEDS_CLARIFICATION
-  CHANGE_GATE -->|no| IMPLEMENT["Dispatch strict-rewrite-implementer<br/>edit only strategy-approved files or direct compilation consequences<br/>run only approved/project validation; otherwise record warning/risk evidence"]
+  CHANGE_GATE -->|no| IMPLEMENT["Dispatch strict-rewrite-implementer<br/>edit only strategy-approved files or direct compilation consequences<br/>run only user-supplied or project-authorized validation; otherwise record warning/risk evidence"]
   IMPLEMENT --> IMPLEMENT_STATUS{strict-rewrite-implementer status?}
 
   IMPLEMENT_STATUS -->|PASS| REVIEW["Dispatch strict-rewrite-reviewer<br/>read-only assess behavior preservation, strictness, scope, changed paths, references, and validation quality"]
@@ -81,4 +81,4 @@ flowchart TD
   class NEEDS_CLARIFICATION,BLOCKED,ERROR,BASELINE_ERROR,STRATEGY_ERROR,IMPLEMENT_BLOCKED,IMPLEMENT_ERROR,REVIEW_BLOCKED,REVIEW_ERROR stop;
 ```
 
-Readiness rule: the workflow reaches `PASS` only after the reviewer verifies behavior preservation, approved-scope compliance, strictness decisions, changed paths or rewritten code, validation quality, assumptions, risks, and references. External fetches are handled by the strategist through `REFERENCE_NEED` and the strategy status contract; when approval or a local source is required, the strategist returns `NEEDS_CLARIFICATION`. Validation is handled by the implementer only when already approved by `VALIDATION_COMMAND` or project authority; missing, declined, or unavailable validation is preserved as warning or risk evidence for review. The workflow reaches `NO_CHANGE` only from strategist `NO_CHANGE` before edits, including after it evaluates recorded baseline `NO_CHANGE_CANDIDATE` evidence. Reviewer `FAIL` may trigger at most two targeted implementer repair cycles using only reviewer-named fixes; missing actionable fixes or exhausted repair cycles become `BLOCKED`.
+Readiness rule: the workflow reaches `PASS` only after the reviewer verifies behavior preservation, approved-scope compliance, strictness decisions, changed paths or rewritten code, validation quality, assumptions, risks, and references. External fetches are handled by the strategist through `REFERENCE_NEED`, `EXTERNAL_FETCH_APPROVAL`, and the strategy status contract; when approval or a local source is required, the strategist returns `NEEDS_CLARIFICATION`. Validation is handled by the implementer only when supplied by `VALIDATION_COMMAND` or authorized by project evidence; missing, declined, unapproved, or unavailable validation is preserved as warning or risk evidence for review. The workflow reaches `NO_CHANGE` only from strategist `NO_CHANGE` before edits, including after it evaluates recorded baseline `NO_CHANGE_CANDIDATE` evidence. Reviewer `FAIL` may trigger at most two targeted implementer repair cycles using only reviewer-named fixes; missing actionable fixes or exhausted repair cycles become `BLOCKED`.

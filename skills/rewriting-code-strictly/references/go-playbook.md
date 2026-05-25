@@ -18,7 +18,8 @@ map in `./external-sources.md`.
 
 Load `./external-sources.md` only for disputed idiom, public API
 comments, package naming, error flow, context usage, JSON decoding behavior,
-`go vet`, or Staticcheck diagnostics that affect the rewrite.
+`go vet`, or Staticcheck diagnostics that affect the rewrite when the decision is covered by
+`REFERENCE_NEED`, `EXTERNAL_FETCH_APPROVAL`, or a required project-local source.
 
 ## Boundary Validation
 
@@ -31,6 +32,6 @@ passing `map[string]any` deeper.
 ## Validation Commands
 
 Prefer the user's `VALIDATION_COMMAND`. Otherwise use the smallest relevant
-existing project check only when project authority or the approved strategy
-permits execution: `go test ./...`, `go vet ./...`, `staticcheck ./...`,
-`gofmt`, or `goimports`.
+existing project check only when project scripts, CI config, test config, or
+nearby documentation identifies it as safe for the target: `go test ./...`,
+`go vet ./...`, `staticcheck ./...`, `gofmt`, or `goimports`.

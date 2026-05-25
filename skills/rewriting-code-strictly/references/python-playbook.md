@@ -19,7 +19,9 @@ map in `./external-sources.md`.
 
 Load `./external-sources.md` only for current annotation syntax,
 checker flags, Pyright or mypy configuration, Pydantic behavior, legacy implicit
-optional cleanup, or type-system tradeoffs that are not clear from the project.
+optional cleanup, or type-system tradeoffs that are not clear from the project
+and are covered by `REFERENCE_NEED`, `EXTERNAL_FETCH_APPROVAL`, or a required
+project-local source.
 
 ## Boundary Validation
 
@@ -32,6 +34,6 @@ explicitly permits the dependency.
 ## Validation Commands
 
 Prefer the user's `VALIDATION_COMMAND`. Otherwise use the smallest relevant
-existing project check only when project authority or the approved strategy
-permits execution: `mypy`, `pyright`, targeted tests, or the configured
-formatter or linter.
+existing project check only when project scripts, CI config, test config, or
+nearby documentation identifies it as safe for the target: `mypy`, `pyright`,
+targeted tests, or the configured formatter or linter.

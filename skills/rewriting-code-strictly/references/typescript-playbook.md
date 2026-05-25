@@ -19,7 +19,9 @@ map in `./external-sources.md`.
 
 Load `./external-sources.md` only for current annotation syntax,
 narrowing behavior, strict `tsconfig` flags, `typescript-eslint` diagnostics,
-Zod API choices, or unsoundness rationale that affects the rewrite.
+Zod API choices, or unsoundness rationale that affects the rewrite and is
+covered by `REFERENCE_NEED`, `EXTERNAL_FETCH_APPROVAL`, or a required
+project-local source.
 
 ## Boundary Validation
 
@@ -31,6 +33,6 @@ user explicitly permits the dependency.
 ## Validation Commands
 
 Prefer the user's `VALIDATION_COMMAND`. Otherwise use the smallest relevant
-existing project check only when project authority or the approved strategy
-permits execution: project tests, `tsc --noEmit`, ESLint, or the configured
-formatter.
+existing project check only when project scripts, CI config, test config, or
+nearby documentation identifies it as safe for the target: project tests,
+`tsc --noEmit`, ESLint, or the configured formatter.
