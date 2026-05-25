@@ -92,7 +92,7 @@ flowchart TD
   VERIFY_REPAIR -->|yes| REPAIR[Repair only the named collector, assessor, or drafter target]
   REPAIR --> VERIFY
   VERIFY_REPAIR -->|no| VERIFY_FAIL
-  VERIFY_STATUS -->|ERROR| VERIFY_FAIL
+  VERIFY_STATUS -->|ERROR| RESPONSE_ERROR
   VERIFY_STATUS -->|PASS| OUTPUT_PATH{OUTPUT_FILE known and safe to write?}
 
   OUTPUT_PATH -->|no| OUTPUT_LIMIT{OUTPUT_FILE question cycles fewer than 3?}
