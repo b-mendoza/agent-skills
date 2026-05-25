@@ -25,42 +25,42 @@ across OpenCode and Claude Code.
 
 ## First-party skills
 
-Most of the first-party skills fall into two workflow groups, one for Jira and
-one for GitHub. The rest are utility skills you can use on their own.
+Most first-party skills belong to either the Jira workflow or the GitHub
+workflow. The remaining skills are standalone utilities.
 
 ### Jira workflow
 
 - [`orchestrating-jira-workflow`](skills/orchestrating-jira-workflow/SKILL.md)
-  runs the full Jira ticket flow.
+  runs the full Jira ticket workflow.
 - [`fetching-jira-ticket`](skills/fetching-jira-ticket/SKILL.md) saves a ticket
   snapshot to `docs/<TICKET_KEY>.md`.
-- [`planning-jira-tasks`](skills/planning-jira-tasks/SKILL.md) turns that ticket
-  into a task plan in `docs/<TICKET_KEY>-tasks.md`.
-- [`clarifying-assumptions`](skills/clarifying-assumptions/SKILL.md) handles the
-  plan review and the critique pass for each task.
+- [`planning-jira-tasks`](skills/planning-jira-tasks/SKILL.md) turns the ticket
+  snapshot into a task plan in `docs/<TICKET_KEY>-tasks.md`.
+- [`clarifying-assumptions`](skills/clarifying-assumptions/SKILL.md) handles
+  upfront plan questions and task-level critique.
 - [`creating-jira-subtasks`](skills/creating-jira-subtasks/SKILL.md) creates or
   updates Jira subtasks after approval.
-- [`planning-jira-task`](skills/planning-jira-task/SKILL.md) writes the planning
-  files for one task.
+- [`planning-jira-task`](skills/planning-jira-task/SKILL.md) writes planning
+  files for one Jira task.
 - [`executing-jira-task`](skills/executing-jira-task/SKILL.md) carries one
-  planned task through implementation and review.
+  planned Jira task through implementation and review.
 
 ### GitHub workflow
 
 - [`orchestrating-github-workflow`](skills/orchestrating-github-workflow/SKILL.md)
-  runs the full GitHub issue flow.
-- [`fetching-github-issue`](skills/fetching-github-issue/SKILL.md) saves an issue
-  snapshot to `docs/<ISSUE_SLUG>.md`.
+  runs the full GitHub issue workflow.
+- [`fetching-github-issue`](skills/fetching-github-issue/SKILL.md) saves an
+  issue snapshot to `docs/<ISSUE_SLUG>.md`.
 - [`planning-github-issue-tasks`](skills/planning-github-issue-tasks/SKILL.md)
-  turns that issue into a task plan in `docs/<ISSUE_SLUG>-tasks.md`.
+  turns the issue snapshot into a task plan in `docs/<ISSUE_SLUG>-tasks.md`.
 - [`clarifying-assumptions`](skills/clarifying-assumptions/SKILL.md) is reused
-  here for the same review and critique steps.
+  for the same plan review and task critique steps.
 - [`creating-github-child-issues`](skills/creating-github-child-issues/SKILL.md)
   creates or updates child issues after approval.
-- [`planning-github-task`](skills/planning-github-task/SKILL.md) writes the
-  planning files for one task.
+- [`planning-github-task`](skills/planning-github-task/SKILL.md) writes planning
+  files for one GitHub task.
 - [`executing-github-task`](skills/executing-github-task/SKILL.md) carries one
-  planned task through implementation and review.
+  planned GitHub task through implementation and review.
 
 ### Utility skills
 
