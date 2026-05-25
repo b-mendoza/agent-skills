@@ -103,20 +103,20 @@ flowchart TD
 
   WRITE_REPORT --> WRITE_STATUS{WRITE status?}
   WRITE_STATUS -->|ERROR| WRITE_ERROR(["PR_COMMENT_RESPONSE: WRITE_ERROR"])
-  WRITE_STATUS -->|PASS| READ_BACK[Read back report and verify path, status blocks, drafts, evidence, risks, blockers, and action intents]
+  WRITE_STATUS -->|PASS| READ_BACK[Read back report and verify path, status blocks, drafts, evidence, residual risks, blocking user-decision items, and action intents]
   READ_BACK --> READBACK_OK{Read-back verification passes?}
   READBACK_OK -->|no| WRITE_ERROR
   READBACK_OK -->|yes| POST_MODE{POSTING_MODE value?}
 
   POST_MODE -->|draft-only| NOT_POSTED(["PR_COMMENT_RESPONSE: PASS<br/>Posting: not-posted"])
-  POST_MODE -->|post-after-confirmation| PREVIEW_REQUIRED[Build exact final posting preview for each supported review-comment-reply:root-id target]
+  POST_MODE -->|post-after-confirmation| BUILD_PREVIEW[Build exact final posting preview for each supported review-comment-reply:root-id target]
   POST_MODE -->|unsupported or ambiguous| NEEDS_DECISION
 
-  PREVIEW_REQUIRED --> POST_PREVIEW_STATUS{POST status before posting?}
-  POST_PREVIEW_STATUS -->|PREVIEW_REQUIRED| PREVIEW[Show exact reply text, target thread, root ID, reason, risk, reversibility, skipped unsupported targets, and safer draft-only alternative]
-  POST_PREVIEW_STATUS -->|TARGET_UNSUPPORTED| NEEDS_DECISION
-  POST_PREVIEW_STATUS -->|AUTH| AUTH
-  POST_PREVIEW_STATUS -->|ERROR| POST_ERROR(["PR_COMMENT_RESPONSE: POST_ERROR"])
+  BUILD_PREVIEW --> PREVIEW_READY{Preview can be built?}
+  PREVIEW_READY -->|yes| PREVIEW[Show exact reply text, target thread, root ID, reason, risk, reversibility, skipped unsupported targets, and safer draft-only alternative]
+  PREVIEW_READY -->|unsupported target choice needed| NEEDS_DECISION
+  PREVIEW_READY -->|GitHub auth unavailable| AUTH
+  PREVIEW_READY -->|error| POST_ERROR(["PR_COMMENT_RESPONSE: POST_ERROR"])
 
   PREVIEW --> APPROVAL{User explicitly approves exact final preview?}
   APPROVAL -->|declined| CANCELLED(["PR_COMMENT_RESPONSE: CANCELLED<br/>Posting: cancelled"])
