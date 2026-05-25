@@ -1,68 +1,65 @@
 # Clarifying Assumptions Flow
 
-This workflow is the conversation layer for clarifying plan-wide assumptions before execution or critiquing one task before execution. It may load only active-stage guidance, dispatch bundled subagents, ask developer-facing questions one manifest item at a time, keep limited inline state, and present a stable summary. Artifact analysis, manifest assembly, file writes, durable decision logs, re-plan signaling, and blocker recording stay inside bundled subagents.
+The `clarifying-assumptions` skill is the conversation-layer orchestrator for workflow clarification. It validates top-level inputs, loads only active-stage guidance, delegates artifact analysis, manifest assembly, and durable file writes to bundled subagents, asks one manifest item at a time, and returns a stable summary for the parent workflow. Local skill references and subagent verdicts are authoritative; public sources are optional evidence only and do not override bundled contracts.
 
 ```mermaid
 flowchart TD
-  START([Start]) --> INTAKE["Receive TICKET_KEY, MODE, optional TASK_NUMBER, optional ITERATION"]
-  INTAKE --> VALIDATE{Required inputs valid?}
-  VALIDATE -->|no| INPUT_BLOCKED([Blocked: surface blocking verdict, reason, Critique artifact, Files updated, RE_PLAN_NEEDED, BLOCKERS_PRESENT])
-  VALIDATE -->|yes| BOUNDARY["Apply authority, trust model, and mutation limits"]
+  START([Start clarification run]) --> INPUTS["Receive TICKET_KEY, MODE, optional TASK_NUMBER, ITERATION default 1"]
+  INPUTS --> VALIDATE{"Inputs valid?<br/>MODE is upfront or critique<br/>TASK_NUMBER present for critique"}
+  VALIDATE -->|no| INPUT_BLOCKED([Stopped: input error])
+  VALIDATE -->|yes| LOAD["Stage 1: load design-thinking-mindset and active mode playbook"]
+  LOAD --> MODE{"Active mode?"}
 
-  BOUNDARY --> MODE_CHECK{MODE?}
+  MODE -->|upfront| UPFRONT["Derive upfront paths:<br/>docs/KEY-tasks.md<br/>stage-1-detailed<br/>stage-2-prioritized<br/>upfront critique"]
+  MODE -->|critique| CRITIQUE_MODE["Derive critique paths:<br/>docs/KEY-tasks.md<br/>task brief, execution plan,<br/>test spec, refactoring plan,<br/>task critique and decisions"]
 
-  MODE_CHECK -->|upfront| LOAD_UPFRONT["Load design-thinking-mindset and upfront playbook"]
-  MODE_CHECK -->|critique| TASK_CHECK{TASK_NUMBER present?}
-  MODE_CHECK -->|other| INPUT_BLOCKED
+  UPFRONT --> ANALYZE
+  CRITIQUE_MODE --> ANALYZE
 
-  TASK_CHECK -->|no| INPUT_BLOCKED
-  TASK_CHECK -->|yes| LOAD_CRITIQUE["Load design-thinking-mindset and critique playbook"]
+  ANALYZE["Stage 2: dispatch critique-analyzer<br/>Subagent reads artifacts, prior decisions,<br/>optional current evidence, and writes critique report"] --> CRITIQUE_VERDICT{"critique-analyzer verdict?"}
+  CRITIQUE_VERDICT -->|CRITIQUE: FAIL| CRITIQUE_STOP([Stopped: surface Reason line])
+  CRITIQUE_VERDICT -->|CRITIQUE: WARN| CRITIQUE_WARN["Continue with warning<br/>Track omitted or weak context"]
+  CRITIQUE_VERDICT -->|CRITIQUE: PASS| BUILD_MANIFEST
+  CRITIQUE_WARN --> BUILD_MANIFEST
 
-  LOAD_UPFRONT --> DISPATCH_ANALYZER["Dispatch critique-analyzer for upfront artifacts"]
-  LOAD_CRITIQUE --> DISPATCH_ANALYZER_TASK["Dispatch critique-analyzer for task artifacts"]
-  DISPATCH_ANALYZER_TASK --> ANALYZER_VERDICT{Parseable analyzer verdict?}
-  DISPATCH_ANALYZER --> ANALYZER_VERDICT
+  BUILD_MANIFEST["Stage 3: dispatch question-manifest-builder<br/>Subagent reads critique artifact and plan context<br/>Applies HIGH-or-higher surfacing gate"] --> MANIFEST_VERDICT{"manifest-builder verdict?"}
+  MANIFEST_VERDICT -->|MANIFEST: BLOCKED or FAIL| MANIFEST_STOP([Stopped: surface manifest issue])
+  MANIFEST_VERDICT -->|MANIFEST: WARN| MANIFEST_WARN["Continue with warning<br/>Mention omitted or guessed items"]
+  MANIFEST_VERDICT -->|MANIFEST: PASS| PREVIEW
+  MANIFEST_WARN --> PREVIEW
 
-  ANALYZER_VERDICT -->|fail or error| FAIL_SUMMARY([Stop: surface blocking verdict, reason, Critique artifact, Files updated, RE_PLAN_NEEDED, BLOCKERS_PRESENT])
-  ANALYZER_VERDICT -->|pass| BUILD_MANIFEST["Dispatch question-manifest-builder"]
+  PREVIEW["Stage 4: load conversation-protocol<br/>Preview counts and Questions For Now table"] --> QUESTION_COUNT{"Questions now?"}
+  QUESTION_COUNT -->|0| ZERO_ITEMS["Skip question loop<br/>Use empty decision list"]
+  QUESTION_COUNT -->|one or more| ASK["Ask exactly one manifest item<br/>Keep active item, response,<br/>decision list, flags, and critique path inline"]
 
-  BUILD_MANIFEST --> MANIFEST_READY{Manifest valid?}
-  MANIFEST_READY -->|no| FAIL_SUMMARY
-  MANIFEST_READY -->|yes| HAS_ITEMS{Current-scope items exist?}
+  ASK --> RESPONSE{"Developer response outcome?"}
+  RESPONSE -->|substantive answer| RECORD_INLINE["Add decision and rationale<br/>Set RE_PLAN_NEEDED when revised"]
+  RESPONSE -->|skip allowed| SKIP_ALLOWED["Record fallback and warning"]
+  RESPONSE -->|new current-scope question| APPEND["Append item to live manifest<br/>Ask it before completion"]
+  RESPONSE -->|future-task question| DEFER["Add to DEFERRED_QUESTIONS<br/>Do not speculate"]
+  RESPONSE -->|I need more information or Action needed| BLOCK_DECISION["Record blocker<br/>Set RE_PLAN_NEEDED=true<br/>Set BLOCKERS_PRESENT=true"]
+  RESPONSE -->|Tier 3 or Skippable=No without substantive answer| BLOCK_DECISION
 
-  HAS_ITEMS -->|no| RECORD_ZERO["Dispatch decision-recorder for zero-item completion"]
-  HAS_ITEMS -->|yes| LOAD_PROTOCOL["Read conversation-protocol for Stage 4"]
+  RECORD_INLINE --> MORE{"More manifest items?"}
+  SKIP_ALLOWED --> MORE
+  APPEND --> ASK
+  DEFER --> MORE
+  MORE -->|yes| ASK
+  MORE -->|no| RECORD_STAGE
+  BLOCK_DECISION --> RECORD_STAGE
+  ZERO_ITEMS --> RECORD_STAGE
 
-  LOAD_PROTOCOL --> ASK_ONE["Ask one manifest item"]
-  ASK_ONE --> HUMAN_GATE{Developer answered or chose allowed option?}
+  RECORD_STAGE["Stage 5: dispatch decision-recorder once<br/>Pass decisions, deferred questions,<br/>implementation updates, and critique-mode task metadata"] --> RECORD_VERDICT{"decision-recorder verdict?"}
+  RECORD_VERDICT -->|RECORDING: BLOCKED or ERROR| RECORD_STOP([Stopped: ask user how to proceed])
+  RECORD_VERDICT -->|RECORDING: WARN| FINAL_WARN["Continue with final warnings"]
+  RECORD_VERDICT -->|RECORDING: PASS| FINAL_SUMMARY
+  FINAL_WARN --> FINAL_SUMMARY
 
-  HUMAN_GATE -->|no| WAIT([Wait: human confirmation required])
-  HUMAN_GATE -->|skipped but Tier 3 or non-skippable| ASK_ONE
-  HUMAN_GATE -->|blocked answer| RECORD_BLOCKER["Dispatch decision-recorder with blocker"]
-  HUMAN_GATE -->|answered| RECORD_DECISION["Dispatch decision-recorder with decision"]
-
-  RECORD_DECISION --> NEW_SCOPE{New current-scope item found?}
-  NEW_SCOPE -->|yes| TRACK_LIVE_ITEM["Track live manifest item only under SKILL.md guardrail; subagents own assembly and writes"]
-  TRACK_LIVE_ITEM --> ASK_ONE
-  NEW_SCOPE -->|no| MORE_ITEMS{More manifest items?}
-  MORE_ITEMS -->|yes| ASK_ONE
-  MORE_ITEMS -->|no| RECORD_COMPLETE["Dispatch decision-recorder for stable summary"]
-
-  RECORD_ZERO --> SUMMARY_READY["Present required summary fields"]
-  RECORD_COMPLETE --> SUMMARY_READY
-  RECORD_BLOCKER --> BLOCKED_SUMMARY([Blocked: surface blocking verdict, reason, Critique artifact, Files updated, RE_PLAN_NEEDED, BLOCKERS_PRESENT])
-
-  SUMMARY_READY --> REPLAN{RE_PLAN_NEEDED?}
-  REPLAN -->|yes| REPLAN_SUMMARY([Complete: surface Critique artifact, Files updated, RE_PLAN_NEEDED, BLOCKERS_PRESENT])
-  REPLAN -->|no| DONE([Complete: surface Critique artifact, Files updated, RE_PLAN_NEEDED, BLOCKERS_PRESENT])
-
-  class VALIDATE,MODE_CHECK,TASK_CHECK,ANALYZER_VERDICT,MANIFEST_READY,HAS_ITEMS,HUMAN_GATE,NEW_SCOPE,MORE_ITEMS,REPLAN decision;
-  class BOUNDARY,LOAD_UPFRONT,LOAD_CRITIQUE,LOAD_PROTOCOL check;
-  class ASK_ONE,HUMAN_GATE human;
-  class DISPATCH_ANALYZER,DISPATCH_ANALYZER_TASK,BUILD_MANIFEST,RECORD_ZERO,RECORD_BLOCKER,RECORD_DECISION,RECORD_COMPLETE output;
-  class SUMMARY_READY,DONE,REPLAN_SUMMARY success;
-  class INPUT_BLOCKED,FAIL_SUMMARY,BLOCKED_SUMMARY stop;
-  class WAIT refine;
+  FINAL_SUMMARY["Present stable final summary:<br/>Critique artifact<br/>Files updated<br/>RE_PLAN_NEEDED<br/>BLOCKERS_PRESENT<br/>Optional counts and warnings"] --> FLAGS{"Final flags?"}
+  FLAGS -->|BLOCKERS_PRESENT=true| BLOCKED_DONE([Blocked before execution<br/>Parent workflow stops and escalates])
+  FLAGS -->|RE_PLAN_NEEDED=true| REPLAN_DONE([Complete with replan required<br/>Parent re-runs relevant planning phase])
+  FLAGS -->|both false| DONE([Complete with no replan])
+  FLAGS -->|subagent or input error| FAILED_DONE([Failed due to subagent or input error])
 
   classDef guard fill:#fff3cd,stroke:#856404,color:#000;
   classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
@@ -72,6 +69,15 @@ flowchart TD
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
+
+  class VALIDATE,MODE,CRITIQUE_VERDICT,MANIFEST_VERDICT,QUESTION_COUNT,RESPONSE,MORE,RECORD_VERDICT,FLAGS decision;
+  class LOAD,UPFRONT,CRITIQUE_MODE,ANALYZE,BUILD_MANIFEST,PREVIEW,RECORD_INLINE,SKIP_ALLOWED,APPEND,DEFER,ZERO_ITEMS,RECORD_STAGE check;
+  class ASK human;
+  class CRITIQUE_WARN,MANIFEST_WARN,FINAL_WARN,BLOCK_DECISION refine;
+  class FINAL_SUMMARY output;
+  class DONE success;
+  class INPUT_BLOCKED,CRITIQUE_STOP,MANIFEST_STOP,RECORD_STOP,BLOCKED_DONE,FAILED_DONE stop;
+  class REPLAN_DONE refine;
 ```
 
-Readiness rule: the workflow is complete only after decision-recorder returns a parseable result and the conversation layer surfaces `Critique artifact`, `Files updated`, `RE_PLAN_NEEDED`, and `BLOCKERS_PRESENT`. Blocked, fail, and error terminals must also surface the blocking verdict and reason.
+Readiness rule: execution may proceed only when `BLOCKERS_PRESENT=false`; if `RE_PLAN_NEEDED=true`, the parent workflow must re-run the relevant planning phase before execution. The conversation layer never reads or edits raw planning artifacts inline, never assembles manifests inline, and never writes files directly; those actions remain delegated to the bundled subagents.
