@@ -6,7 +6,9 @@ prerequisites, dispatches focused planning subagents one at a time, writes only
 four workflow-planning artifacts under `docs/`, retains structured summaries
 instead of raw subagent context, and stops on unresolved dependencies,
 ambiguity, behavior gaps, planning risk, missing artifacts, or unexpected
-errors.
+errors. The workflow is intentionally shared with `planning-jira-task`; only the
+platform identifier, optional source snapshot, and artifact path placeholders
+differ.
 
 ```mermaid
 flowchart TD
@@ -17,7 +19,7 @@ flowchart TD
   TASK_FILE -->|no| BLOCKED_TASKS([Blocked: missing upstream task plan])
   TASK_FILE -->|yes| TASK_SECTION{Task section complete?}
   TASK_SECTION -->|no| BLOCKED_SECTION([Blocked: missing required task fields])
-  TASK_SECTION -->|yes| LOAD_CONTEXT[Load task section, optional issue snapshot, decisions log overrides]
+  TASK_SECTION -->|yes| LOAD_CONTEXT[Load task section, optional issue snapshot, and decisions log overrides]
 
   LOAD_CONTEXT --> READY_CHECK{Dependencies complete, questions resolved or waived, and decisions recorded?}
   READY_CHECK -->|no| FAIL_PREREQ([Fail: unresolved dependency, ambiguity, missing waiver, or unrecorded decision])
@@ -98,4 +100,4 @@ complete, questions must be resolved or explicitly waived, and decisions must be
 recorded in the task plan or decisions source. Planning is complete only after
 all four expected artifacts exist and every dispatched owner has returned
 `PASS`; otherwise the coordinator reports `blocked`, `fail`, or `error` without
-implementing code or deleting artifacts.
+implementing code, deleting artifacts, or mutating unrelated files.
