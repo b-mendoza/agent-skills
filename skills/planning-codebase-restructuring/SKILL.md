@@ -60,6 +60,7 @@ status, concise summary, paths, verdicts, blockers, and open questions.
 | Current architecture map | Dispatch `architecture-cartographer` | Evidence-backed map of structure, workflows, dependencies, and safety nets |
 | Domain and complexity analysis | Dispatch `domain-analyst` | Domain model observations, DDD gaps, Screaming Architecture gaps, complexity findings |
 | Target architecture plan | Dispatch `restructuring-strategist` | Target model, folder proposal, guardrails, impact, migration, validation |
+| Candidate report | Inline synthesis | Draft final report from subagent summaries |
 | Plan review | Dispatch `plan-reviewer` | `PLAN_REVIEW: PASS` or targeted fixes |
 | Final report | Inline synthesis | Concise decision artifact for the human |
 
@@ -93,14 +94,16 @@ subagent, then re-run `plan-reviewer`. Use at most two repair cycles.
    domain language, constraints, success criteria, and reference assessment
    summary.
 6. Dispatch `restructuring-strategist` with the architecture map, domain
-   analysis, reference assessment, constraints, success criteria, and mutation
-   boundary.
-7. Dispatch `plan-reviewer` with all subagent summaries and the strategist's
-   proposed report. If review fails, perform only targeted repair through the
-   responsible subagent and re-review.
-8. Synthesize the final report from summaries only. Include concise path
-   evidence, reviewed findings, and approval gates instead of raw file dumps,
-   long command output, or unreviewed speculative architecture.
+   analysis, reference assessment, business goals, constraints, success
+   criteria, and mutation boundary.
+7. Synthesize a candidate final report from summaries only. Include concise
+   path evidence, evidence-backed findings, and approval gates instead of raw
+   file dumps, long command output, or unreviewed speculative architecture.
+8. Dispatch `plan-reviewer` with the preflight summary, subagent summaries,
+   candidate final report, and success criteria. If review fails, perform only
+   targeted repair through the responsible subagent or candidate report section
+   and re-review.
+9. Deliver the reviewed final report after `PLAN_REVIEW: PASS`.
 
 ## Human Approval Gate
 
