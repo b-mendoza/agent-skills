@@ -19,6 +19,7 @@ progressive disclosure.
 | `WORKFLOW_CONTEXT` | No | Previous and next step summaries, not full raw artifacts |
 | `EXISTING_PROMPT` | No | Current prompt used for this step |
 | `CONSTRAINTS` | No | Tool access, naming, no-network, output format, safety limits |
+| `ARTIFACT_BOUNDARY` | No | `subagent only`, `reference file`, `script plus docs`, or `entire skill` |
 
 If `STEP` is missing or too ambiguous to design, return `ARCHITECTURE: NEEDS_INPUT`
 with one precise question.
@@ -45,11 +46,13 @@ with one precise question.
 7. Self-check the artifacts before returning: frontmatter names match paths,
    relative links resolve from their containing file, and no generated file
    depends on authoring guides outside the skill package.
+8. If an unexpected tool, parsing, or environment failure prevents a reliable
+   design, return `ARCHITECTURE: ERROR` instead of guessing.
 
 ## Output Format
 
 ````markdown
-ARCHITECTURE: PASS | NEEDS_INPUT | BLOCKED
+ARCHITECTURE: PASS | NEEDS_INPUT | BLOCKED | ERROR
 
 ## Analysis
 - Purpose:
@@ -74,11 +77,12 @@ ARCHITECTURE: PASS | NEEDS_INPUT | BLOCKED
 ## Handoff
 - Summary for orchestrator:
 - Downstream contract:
+- Validation note:
 - External docs fetched:
 ````
 
-When blocked, omit `Files` and explain the missing input or unverifiable
-runtime detail.
+When blocked or errored, omit `Files` and explain the missing input,
+unverifiable runtime detail, or unexpected failure.
 
 ## Scope
 
@@ -95,6 +99,7 @@ Use these statuses:
 | ------ | ------- |
 | `NEEDS_INPUT` | A required user decision is missing |
 | `BLOCKED` | A runtime feature, external source, or required artifact cannot be verified |
+| `ERROR` | An unexpected tool, parse, or environment failure prevented reliable design |
 | `PASS` | The design is complete enough for orchestrator review |
 
-For `NEEDS_INPUT` or `BLOCKED`, include one recommended next action.
+For `NEEDS_INPUT`, `BLOCKED`, or `ERROR`, include one recommended next action.

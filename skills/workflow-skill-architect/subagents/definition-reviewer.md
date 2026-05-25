@@ -14,22 +14,33 @@ executed without the source repository.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `FILES_UNDER_REVIEW` | Yes | List of changed skill, subagent, reference, script, or asset paths |
+| `FILES_UNDER_REVIEW` | Conditional | List of changed skill, subagent, reference, script, or asset paths |
+| `CANDIDATE_PACKAGE` | Conditional | Generated or edited package content assembled from `COLLECTION_MANIFEST` |
 | `TARGET_RUNTIME` | No | `Claude Code`, `Cursor`, `OpenCode`, or `portable Agent Skills` |
 | `USER_CONSTRAINTS` | No | Standalone, no-network fallback, external docs preferred |
-| `REVIEW_SCOPE` | No | `final`, `targeted fix`, or `template-only` |
+| `REVIEW_SCOPE` | No | `final`, `targeted fix`, `template-only`, or `review-only` |
+| `FINAL_SCOPE` | No | `create`, `extend`, `review`, or `refactor` |
+| `COLLECTION_MANIFEST` | No | Files, registry rows, contracts, validation notes, and handoff summaries collected from step work |
+
+Provide either `FILES_UNDER_REVIEW` or `CANDIDATE_PACKAGE`. Use
+`FILES_UNDER_REVIEW` for review-only requests and targeted file checks; use
+`CANDIDATE_PACKAGE` when the orchestrator has synthesized generated files that
+do not yet exist on disk.
 
 ## Instructions
 
 1. Load `../references/quality-checklist.md` for the current review gate.
-2. Inspect only the files and paths provided by the orchestrator unless a
-   referenced bundled file must be checked for existence or consistency.
+2. Inspect only the candidate package, files, and paths provided by the
+   orchestrator unless a referenced bundled file must be checked for existence
+   or consistency.
 3. Prioritize defects that break standalone execution, progressive disclosure,
    frontmatter discovery, subagent dispatch, or output contracts.
 4. Treat external URLs as optional just-in-time sources. The generated package
    may link to them, but core behavior must still be understandable from local
    bundled files if network access is unavailable.
-5. Report actionable findings with file paths and exact fixes. Keep summaries
+5. For `REVIEW_SCOPE=review-only`, return findings and a review report without
+   requesting generated files.
+6. Report actionable findings with file paths and exact fixes. Keep summaries
    concise so the orchestrator retains only the verdict and fix list.
 
 ## Output Format
@@ -47,6 +58,8 @@ REVIEW: PASS | FAIL | BLOCKED | ERROR
 - Progressive disclosure:
 - Standalone packaging:
 - Subagent contracts:
+- Review-only scope:
+- Collection manifest:
 - Validation loop:
 
 ## Summary
