@@ -27,14 +27,15 @@ Decision-changing source keys: `definition-of-refactoring`,
 | `PLAN_FILE` | Yes | `docs/JNS-6065-task-3-execution-plan.md` |
 | `TEST_SPEC_FILE` | Yes | `docs/JNS-6065-task-3-test-spec.md` |
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
+| `REPAIR_FINDINGS` | No | `Missing ## Impact on Existing Tests section` |
 | `DATA_CONTRACTS_PATH` | No | `../references/data-contracts.md` |
 | `ARTIFACT_TEMPLATES_PATH` | No | `../references/artifact-templates.md` |
 | `HANDOFF_FORMATS_PATH` | No | `../references/handoff-formats.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
 
 Default each path to the value above when the coordinator does not pass it.
-Bundled paths above are relative to this subagent file. Derive `<TICKET_KEY>` and
-`<TASK_NUMBER>` from the planning artifact paths before writing
+Bundled paths above are relative to this subagent file. Derive `<TICKET_KEY>`
+and `<TASK_NUMBER>` from the planning artifact paths before writing
 `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md`.
 
 ## Instructions
@@ -43,27 +44,29 @@ Bundled paths above are relative to this subagent file. Derive `<TICKET_KEY>` an
    report `BLOCKED`.
 2. If `DECISIONS_FILE` is provided, read it and treat its resolved
    decisions as the latest authority.
-3. On a re-plan, read any existing
+3. On a re-plan or repair, read any existing
    `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md` so you can
    update it deliberately.
-4. Inspect only the files named in the execution plan's file-level
+4. If `REPAIR_FINDINGS` is provided, treat it as the narrow validation issue
+   to repair. Preserve unrelated content that still satisfies the template.
+5. Inspect only the files named in the execution plan's file-level
    strategy and any directly necessary neighbors.
-5. If a refactoring definition, named move, YAGNI concern, or abstraction
+6. If a refactoring definition, named move, YAGNI concern, or abstraction
    tradeoff could change the verdict, read `EXTERNAL_SOURCES_PATH`, fetch
    the smallest relevant URL set, and record exact URLs. Otherwise record
    `none`.
-6. Recommend refactoring only when it directly affects the area being
+7. Recommend refactoring only when it directly affects the area being
    changed, reduces implementation or regression risk, stays within
    reasonable task scope, and has a concrete explainable benefit.
-7. Categorize each recommendation as `Before`, `During`, or `Out of Scope`.
-8. During assembly, read `ARTIFACT_TEMPLATES_PATH` and use the
+8. Categorize each recommendation as `Before`, `During`, or `Out of Scope`.
+9. During assembly, read `ARTIFACT_TEMPLATES_PATH` and use the
    `Refactoring Recommendation Template` as the artifact contract.
-9. Treat the summary `Verdict` as the rollup: it should tell the
+10. Treat the summary `Verdict` as the rollup: it should tell the
    orchestrator whether the task needs refactoring before implementation,
    during implementation, or not at all.
-10. `No refactoring needed` is a valid verdict. Do not invent work to fill
+11. `No refactoring needed` is a valid verdict. Do not invent work to fill
     the document.
-11. Write `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md` and
+12. Write `docs/<TICKET_KEY>-task-<TASK_NUMBER>-refactoring-plan.md` and
     return only the summary below. Do not echo the full recommendation.
 
 ## Output Format
@@ -86,8 +89,9 @@ not enough or when repairing a malformed return summary.
 
 Read the planning artifacts and relevant critique decisions, inspect only
 affected code paths, fetch public refactoring sources only when they can
-change the recommendation, write the refactoring recommendation artifact,
-and return a concise summary for the orchestrator.
+change the recommendation, address repair findings for the owned
+recommendation, write the refactoring recommendation artifact, and return a
+concise summary for the orchestrator.
 
 ## Escalation
 

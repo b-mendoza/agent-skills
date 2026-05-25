@@ -26,14 +26,15 @@ or `jira-user-stories` in `EXTERNAL_SOURCES_PATH`.
 | `TASK_NUMBER` | Yes | `3` |
 | `RE_PLAN` | No | `true` |
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
+| `REPAIR_FINDINGS` | No | `Missing ## Constraints heading in the brief` |
 | `DATA_CONTRACTS_PATH` | No | `../references/data-contracts.md` |
 | `ARTIFACT_TEMPLATES_PATH` | No | `../references/artifact-templates.md` |
 | `HANDOFF_FORMATS_PATH` | No | `../references/handoff-formats.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
 
 Default each path to the value above when the coordinator does not pass it.
-Bundled paths above are relative to this subagent file. Use `TICKET_KEY` and `TASK_NUMBER` as
-the only task identity inputs and write only
+Bundled paths above are relative to this subagent file. Use `TICKET_KEY` and
+`TASK_NUMBER` as the only task identity inputs and write only
 `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md`.
 
 ## Instructions
@@ -48,19 +49,21 @@ the only task identity inputs and write only
 4. Read `## Decisions Log` from the task plan when present.
 5. If `RE_PLAN=true` and `DECISIONS_FILE` is provided, read it and fold its
    resolved decisions into the brief.
-6. On a re-plan, read any existing
+6. On a re-plan or repair, read any existing
    `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md` so you can update it
    deliberately.
-7. If source-backed planning or progressive-disclosure guidance could change
-   the brief, read `EXTERNAL_SOURCES_PATH`, fetch the smallest relevant URL,
-   and record the exact URL. Otherwise record `none`.
-8. During assembly, read `ARTIFACT_TEMPLATES_PATH` and use the
+7. If `REPAIR_FINDINGS` is provided, treat it as the narrow validation issue
+   to repair. Preserve unrelated content that still satisfies the template.
+8. If source-backed readiness, acceptance, or task-framing guidance could
+   change the brief, read `EXTERNAL_SOURCES_PATH`, fetch the smallest relevant
+   URL, and record the exact URL. Otherwise record `none`.
+9. During assembly, read `ARTIFACT_TEMPLATES_PATH` and use the
    `Execution Brief Template` as the artifact contract.
-9. In `## Constraints`, preserve the planning boundary: implement only this
+10. In `## Constraints`, preserve the planning boundary: implement only this
    task's agreed scope, avoid unrelated files unless required, surface
    ambiguity instead of guessing, and treat downstream test/refactoring
    artifacts as authorities once produced.
-10. Write `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md` and return only
+11. Write `docs/<TICKET_KEY>-task-<TASK_NUMBER>-brief.md` and return only
     the summary below. Do not echo the brief contents.
 
 ## Output Format
@@ -83,9 +86,10 @@ not enough or when repairing a malformed return summary.
 ## Scope
 
 Read the task plan and relevant critique decisions, validate readiness,
-fetch public methodology sources only when they can change the brief, write
-or update the execution brief, and return a concise summary. This role does
-not change git branches, transition Jira issues, or modify product code.
+fetch public methodology sources only when they can change the brief, address
+repair findings for the owned brief, write or update the execution brief, and
+return a concise summary. This role does not change git branches, transition
+Jira issues, or modify product code.
 
 ## Escalation
 

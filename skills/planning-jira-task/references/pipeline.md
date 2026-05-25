@@ -6,17 +6,12 @@
 > Reminder: dispatch one subagent at a time, keep only summaries, and rerun
 > only the steps invalidated by critique.
 
-## Shared Reference Paths
+## Reference Handoff
 
-Pass these paths with each subagent dispatch unless a caller already
-provided a more specific bundled path:
-
-```text
-DATA_CONTRACTS_PATH: ./references/data-contracts.md
-ARTIFACT_TEMPLATES_PATH: ./references/artifact-templates.md
-HANDOFF_FORMATS_PATH: ./references/handoff-formats.md
-EXTERNAL_SOURCES_PATH: ./references/external-sources.md
-```
+Each subagent owns default paths to the bundled references it needs. Dispatch
+the task inputs listed below and omit reference path inputs unless the runtime
+requires explicit payload values. When explicit values are needed, use the
+subagent-relative defaults from the target subagent's input table.
 
 The orchestrator does not fetch external methodology sources in advance. A
 subagent reads `EXTERNAL_SOURCES_PATH` only when a public source can change
@@ -33,7 +28,8 @@ needs examples for its return summary.
 | 3 | `test-strategist` | `BRIEF_FILE`, `PLAN_FILE` | `DECISIONS_FILE` | `TEST_SPEC`, spec path, framework |
 | 4 | `refactoring-advisor` | `BRIEF_FILE`, `PLAN_FILE`, `TEST_SPEC_FILE` | `DECISIONS_FILE` | `REFACTORING`, plan path, verdict |
 
-Always pass the shared reference paths in addition to the inputs above.
+Reference path inputs are optional; the subagents default to their co-located
+reference files.
 
 ### Stage outcomes
 
@@ -84,6 +80,7 @@ concerns.
 At each stage, confirm the required input artifact exists before dispatching
 and confirm the expected output artifact exists after the subagent returns
 `PASS`. When validation fails, re-dispatch only the owner of the failed
-artifact with the specific issue and re-check only that failed condition.
+artifact with `REPAIR_FINDINGS` set to the specific issue and re-check only
+that failed condition.
 Retry a failed artifact-validation repair at most 3 times per stage, then
 escalate with the failed condition.

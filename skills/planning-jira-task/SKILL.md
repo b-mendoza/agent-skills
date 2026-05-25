@@ -33,8 +33,8 @@ Use `RE_PLAN` and `DECISIONS_FILE` only for critique-driven reruns.
 
 | Step | Owner | Output |
 | ---- | ----- | ------ |
-| Check prerequisites | Inline with `data-contracts.md` | Verified task-plan input or blocker |
-| Prepare execution brief | `execution-prepper` | `PREP` summary and brief path |
+| Normalize inputs | Inline | Required task identity and re-plan options, or blocker |
+| Validate readiness and prepare brief | `execution-prepper` | `PREP` summary and brief path |
 | Plan implementation | `execution-planner` | `PLAN` summary and execution-plan path |
 | Specify tests | `test-strategist` | `TEST_SPEC` summary and test-spec path |
 | Advise refactoring | `refactoring-advisor` | `REFACTORING` summary and recommendation path |
@@ -57,37 +57,28 @@ Read a subagent definition only when dispatching that exact specialist.
 | ----- | -------------- | --------- |
 | Core orchestration | This `SKILL.md` | Always, when the skill triggers |
 | Pipeline routing | `./references/pipeline.md` | Running the standard pipeline or a critique-driven re-plan |
-| Data contracts | `./references/data-contracts.md` | Checking prerequisites, artifact paths, or lifecycle rules |
+| Data contracts | `./references/data-contracts.md` | Checking invocation boundaries, artifact paths, readiness rules, or lifecycle rules |
 | Artifact templates | `./references/artifact-templates.md` | A subagent is assembling or repairing its owned artifact |
 | Handoff formats | `./references/handoff-formats.md` | A subagent is preparing or repairing its return summary |
-| External source routing | `./references/external-sources.md` | A public source could change the current planning, testing, refactoring, or progressive-disclosure decision |
+| External source routing | `./references/external-sources.md` | A public source could change the current planning, testing, or refactoring decision |
 | Subagent definition | `./subagents/<name>.md` | Dispatching that subagent |
 
 External pages are optional just-in-time sources. Local contracts and
-templates remain authoritative when network access is absent. For background
-on the staged-loading approach used here, fetch `progressive-disclosure-skill`,
-`progressive-disclosure-ux`, or `agent-skills-best-practices` from
-`./references/external-sources.md`.
+templates remain authoritative when network access is absent. The coordinator
+does not fetch methodology pages in advance.
 
 ## Coordinator Behavior
 
-The coordinator validates the task-plan boundary, loads the smallest
+The coordinator validates required invocation inputs, loads the smallest
 reference for the current phase, dispatches one subagent at a time, and
-branches on the returned status. Task-plan parsing, codebase inspection,
-artifact writing, methodology fetches, and validation repairs stay inside
-the phase owner. For why summary-only handoffs matter, fetch
-`claude-subagents` or `context-engineering` from
-`./references/external-sources.md`.
+branches on the returned status. Task-plan parsing, readiness checks,
+codebase inspection, artifact writing, methodology fetches, and validation
+repairs stay inside the phase owner.
 
-Dispatch each subagent with the relevant task handoff plus these reference
-paths:
-
-```text
-DATA_CONTRACTS_PATH: ./references/data-contracts.md
-ARTIFACT_TEMPLATES_PATH: ./references/artifact-templates.md
-HANDOFF_FORMATS_PATH: ./references/handoff-formats.md
-EXTERNAL_SOURCES_PATH: ./references/external-sources.md
-```
+Dispatch each subagent with the relevant task handoff. Reference path inputs
+are optional because each subagent defaults to the co-located files it needs.
+If a runtime requires explicit path values, use the subagent-relative defaults
+from that subagent's input table.
 
 Branch on the structured status fields, not on prose:
 
@@ -125,15 +116,19 @@ critique-driven reruns, start at the earliest invalidated stage and rerun
 only downstream dependents. Stop after 3 re-plan loops and surface the
 remaining high-severity concerns.
 
+When an artifact validation repair is needed, re-dispatch only the artifact
+owner with `REPAIR_FINDINGS` and the minimum existing artifact inputs required
+for that owner.
+
 ## Example
 
 <example>
 Input: `TICKET_KEY=JNS-6065`, `TASK_NUMBER=2`
 
-Flow: validate `docs/JNS-6065-tasks.md`, dispatch `execution-prepper`, then
-`execution-planner`, `test-strategist`, and `refactoring-advisor` with the
-artifact paths returned by the prior stages. Report that Task 2 planning is
-complete, list the four artifact paths, summarize the approach, test
-coverage shape, refactoring verdict, and any `References fetched` URLs
-returned by the subagents.
+Flow: dispatch `execution-prepper` to validate `docs/JNS-6065-tasks.md` and
+write the brief, then dispatch `execution-planner`, `test-strategist`, and
+`refactoring-advisor` with the artifact paths returned by the prior stages.
+Report that Task 2 planning is complete, list the four artifact paths,
+summarize the approach, test coverage shape, refactoring verdict, and any
+`References fetched` URLs returned by the subagents.
 </example>

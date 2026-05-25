@@ -24,14 +24,15 @@ Decision-changing source keys: `yagni` or `wrong-abstraction` in
 | ----- | -------- | ------- |
 | `BRIEF_FILE` | Yes | `docs/JNS-6065-task-3-brief.md` |
 | `DECISIONS_FILE` | No | `docs/JNS-6065-task-3-decisions.md` |
+| `REPAIR_FINDINGS` | No | `Missing ## User Impact Assessment section` |
 | `DATA_CONTRACTS_PATH` | No | `../references/data-contracts.md` |
 | `ARTIFACT_TEMPLATES_PATH` | No | `../references/artifact-templates.md` |
 | `HANDOFF_FORMATS_PATH` | No | `../references/handoff-formats.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `../references/external-sources.md` |
 
 Default each path to the value above when the coordinator does not pass it.
-Bundled paths above are relative to this subagent file. Derive `<TICKET_KEY>` and
-`<TASK_NUMBER>` from `BRIEF_FILE` before writing
+Bundled paths above are relative to this subagent file. Derive `<TICKET_KEY>`
+and `<TASK_NUMBER>` from `BRIEF_FILE` before writing
 `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md`.
 
 ## Instructions
@@ -39,28 +40,30 @@ Bundled paths above are relative to this subagent file. Derive `<TICKET_KEY>` an
 1. Read `BRIEF_FILE`. If missing, report `BLOCKED`.
 2. If `DECISIONS_FILE` is provided, read it and treat its resolved decisions
    as the latest authority.
-3. On a re-plan, read any existing
+3. On a re-plan or repair, read any existing
    `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md` so you can
    update it deliberately.
-4. Inspect the codebase around the files and modules named in the brief.
+4. If `REPAIR_FINDINGS` is provided, treat it as the narrow validation issue
+   to repair. Preserve unrelated content that still satisfies the template.
+5. Inspect the codebase around the files and modules named in the brief.
    Learn nearby directory structure, frameworks, languages, test tooling,
    naming, error-handling, and module-organization patterns.
-5. If source-backed guidance could change sequencing, user-impact framing,
+6. If source-backed guidance could change sequencing, user-impact framing,
    or a planning tradeoff, read `EXTERNAL_SOURCES_PATH`, fetch the smallest
    relevant URL, and record the exact URL. Otherwise record `none`.
-6. Recommend relevant local skills when they materially help the eventual
+7. Recommend relevant local skills when they materially help the eventual
    implementer. If none clearly apply, record `None` rather than inventing
    one.
-7. During assembly, read `ARTIFACT_TEMPLATES_PATH` and use the
+8. During assembly, read `ARTIFACT_TEMPLATES_PATH` and use the
    `Execution Plan Template` as the artifact contract.
-8. Sequence `## Implementation Approach` in the order the executor should
+9. Sequence `## Implementation Approach` in the order the executor should
    perform the work.
-9. In `## User Impact Assessment`, connect each major implementation choice
+10. In `## User Impact Assessment`, connect each major implementation choice
    to a concrete effect on the end user. Mark `TBD` when the tradeoff
    cannot yet be judged so downstream critique can examine it explicitly.
-10. Stay within scope. Note future ideas separately only when they affect
+11. Stay within scope. Note future ideas separately only when they affect
     risk or sequencing for the current task.
-11. Write `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md` and
+12. Write `docs/<TICKET_KEY>-task-<TASK_NUMBER>-execution-plan.md` and
     return only the summary below. Do not echo the full plan.
 
 ## Output Format
@@ -83,8 +86,8 @@ not enough or when repairing a malformed return summary.
 
 Read the task brief and relevant critique decisions, inspect only the code
 needed to plan this task well, fetch public methodology sources only when
-they can change the plan, write the execution plan artifact, and return a
-concise summary for the orchestrator.
+they can change the plan, address repair findings for the owned plan, write
+the execution plan artifact, and return a concise summary for the orchestrator.
 
 ## Escalation
 

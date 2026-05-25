@@ -13,6 +13,8 @@ summaries and artifact paths; it does not need full artifact contents.
 - Report exact public URLs in `References fetched`; use `none` when no source
   was fetched.
 - Use `Not written` for artifact paths when the artifact was not created.
+- On repair dispatches, mention only the `REPAIR_FINDINGS` issue addressed and
+  any remaining blocker.
 
 ## Execution Prepper Example
 
