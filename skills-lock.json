@@ -11,7 +11,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
-      "computedHash": "d70da3a95f65d6dea29ff3f10f2aab17871abbfd52cf8e0b3ed2e2b6f6c011cb"
+      "computedHash": "dd201b08c54f52280a021c8554385e5135b22660fa3d3cf408919936b713bc05"
     },
     "executing-plans": {
       "source": "obra/superpowers",
