@@ -13,8 +13,10 @@ Concrete examples live in [`./status-examples.md`](./status-examples.md).
 - **Classifications:** `valid`, `questionable`, `pushback`, `needs-user-decision`.
 - **Action intents:** `implement`, `clarify`, `push-back`, `ask-user`.
 - **Posting targets:** `review-comment-reply:<root-id>` for supported
-  review-comment threads; `requires-user-choice` for review summaries and
-  top-level PR comments.
+  review-comment threads whose root is a top-level review comment;
+  `requires-user-choice:review-summary`, `requires-user-choice:issue-comment`,
+  `requires-user-choice:unsupported-review-reply`, or
+  `requires-user-choice:unresolved-metadata` for targets the poster must skip.
 
 ## Collector Output
 
@@ -33,7 +35,7 @@ Comments:
   Location: <path:line-range or PR conversation>
   Excerpt: <short quote or summary>
   Thread context: <one-line context or none>
-  Posting target: <review-comment-reply:root-id | requires-user-choice>
+  Posting target: <review-comment-reply:<root-id> | requires-user-choice:review-summary | requires-user-choice:issue-comment | requires-user-choice:unsupported-review-reply | requires-user-choice:unresolved-metadata>
 Limitations:
 - <missing metadata, unavailable endpoint, or none>
 Reason: none | <why status is not PASS>
@@ -72,7 +74,7 @@ Draft replies:
 - Comment ID: <C1>
   Classification: <valid | questionable | pushback | needs-user-decision>
   Planned action: <code change | test change | docs change | clarify | push back | ask user>
-  Posting target: <review-comment-reply:root-id | requires-user-choice>
+  Posting target: <review-comment-reply:<root-id> | requires-user-choice:review-summary | requires-user-choice:issue-comment | requires-user-choice:unsupported-review-reply | requires-user-choice:unresolved-metadata>
   Draft reply: <reply text, ready for user review>
   Action details: <specific action to take>
   User question: <question or none>
@@ -91,7 +93,7 @@ Output file: <OUTPUT_FILE>
 Checks:
 - Coverage: <PASS | FAIL> - <note>
 - Evidence: <PASS | FAIL> - <note>
-- Recency: <PASS | FAIL | NOT_APPLICABLE> - <note>
+- Recency: <PASS | FAIL | NEEDS_CONTEXT | NOT_APPLICABLE> - <note>
 - Actions: <PASS | FAIL> - <note>
 - Language: <PASS | FAIL> - <note>
 - Posting targets: <PASS | FAIL> - <note>
@@ -113,7 +115,8 @@ WRITE: PASS | ERROR
 File: <OUTPUT_FILE>
 Comments assessed: <number>
 Actions: <implement count> implement, <clarify count> clarify, <pushback count> push back
-Posting status: <not-posted | posted | cancelled>
+Posting status: <not-posted | posted>
+Read-back verified: <yes | no, writer template/read-back self-check only>
 Reason: none | <why status is ERROR>
 ```
 
@@ -146,7 +149,7 @@ PR_COMMENT_RESPONSE: PASS
 Report: <OUTPUT_FILE>
 Comments assessed: <number>
 Actions: <implement count> implement, <clarify count> clarify, <pushback count> push back
-Posting: <not-posted | posted | cancelled>
+Posting: <not-posted | posted>
 Notes: <residual risk or none>
 ```
 

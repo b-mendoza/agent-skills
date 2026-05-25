@@ -10,12 +10,18 @@ Input: `PR_URL=https://github.com/org/repo/pull/123`, `POSTING_MODE=draft-only`.
 
 1. The orchestrator dispatches `review-comment-collector` and receives four
    received comments with posting targets.
-2. The orchestrator dispatches `review-comment-assessor` and receives two
+2. The orchestrator normalizes posting targets as either
+   `review-comment-reply:<root-id>`, `requires-user-choice:review-summary`,
+   `requires-user-choice:issue-comment`,
+   `requires-user-choice:unsupported-review-reply`, or
+   `requires-user-choice:unresolved-metadata`.
+3. The orchestrator dispatches `review-comment-assessor` and receives two
    `valid`, one `questionable`, and one `pushback` classification.
-3. The orchestrator dispatches `reply-drafter`, then `response-verifier`.
-4. The orchestrator dispatches `response-report-writer`, which writes
+4. The orchestrator dispatches `reply-drafter`, then `response-verifier`.
+5. The orchestrator dispatches `response-report-writer`, which writes
    `pr-123-review.md`.
-5. The orchestrator returns `PR_COMMENT_RESPONSE: PASS` with `Posting: not-posted`.
+6. The orchestrator reads back the report and returns
+   `PR_COMMENT_RESPONSE: PASS` with `Posting: not-posted`.
 
 ## Successful Assessment Item
 
