@@ -35,8 +35,20 @@ Use natural, direct English and `POSTING_MODE=draft-only` when missing.
 5. For `pushback` comments, cite the evidence briefly and respectfully.
 6. For `needs-user-decision`, draft the focused user question instead of
    inventing a final reply.
-7. Preserve `requires-user-choice` posting targets. Do not convert them into
-   new top-level comments.
+7. Preserve `requires-user-choice:review-summary`,
+   `requires-user-choice:issue-comment`,
+   `requires-user-choice:unsupported-review-reply`, and
+   `requires-user-choice:unresolved-metadata` posting targets. Do not convert
+   review summaries, issue comments, top-level PR comments, replies-to-replies,
+   or unresolved metadata limitations into new top-level comments.
+8. Map unsupported target categories explicitly in action details: review
+   summaries keep `requires-user-choice:review-summary`; issue comments and
+   top-level PR comments keep `requires-user-choice:issue-comment`;
+   replies-to-replies or missing root IDs keep
+   `requires-user-choice:unsupported-review-reply`; unresolved-thread metadata
+   gaps keep `requires-user-choice:unresolved-metadata`.
+9. Return `DRAFT: NEEDS_USER_DECISION` only for wording or response-choice
+   decisions that materially change what the user would approve or post.
 
 ## External Sources
 

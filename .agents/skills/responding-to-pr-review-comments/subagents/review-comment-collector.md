@@ -32,15 +32,21 @@ authenticated GitHub user when available; otherwise use `unknown`.
    context.
 4. Preserve metadata needed downstream: stable local ID, GitHub ID, URL,
    author, type, path or conversation location, thread root ID, parent ID,
-   review ID, created time, and whether a direct reply endpoint exists.
+   review ID, created time, unresolved metadata when available, and whether a
+   direct reply endpoint exists.
 5. Summarize comment bodies as short excerpts. Include exact wording only when
    it is required for assessment.
-6. Mark direct review-comment replies as `review-comment-reply:<root-id>`.
-   Mark review summaries and top-level PR comments as `requires-user-choice`.
-7. For `COMMENT_SCOPE=unresolved`, use available GraphQL review-thread
+6. Mark supported direct review-comment replies as
+   `review-comment-reply:<root-id>` only when the root is a top-level review
+   comment. Map replies to their root ID when possible; replies-to-replies or
+   missing root IDs become `requires-user-choice:unsupported-review-reply`.
+7. Mark review summaries as `requires-user-choice:review-summary`, issue or
+   top-level PR comments as `requires-user-choice:issue-comment`, and missing
+   unresolved-thread metadata as `requires-user-choice:unresolved-metadata`.
+8. For `COMMENT_SCOPE=unresolved`, use available GraphQL review-thread
    metadata when needed. If unresolved metadata is unavailable, report the
    limitation rather than guessing.
-8. For `NARROW_CONTEXT_REQUEST`, collect only the requested metadata.
+9. For `NARROW_CONTEXT_REQUEST`, collect only the requested metadata.
 
 ## External Sources
 

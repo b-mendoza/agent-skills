@@ -35,6 +35,9 @@ Use `POSTING_MODE=draft-only` and `POSTING_STATUS=not-posted` when missing.
    items.
 7. Re-read the written file and confirm all required sections from the
    template are present before returning.
+8. Confirm the report preserves status blocks, draft replies, evidence,
+   residual risks, blocking user-decision items, action intents, and posting
+   targets exactly enough for the orchestrator's read-back verification.
 
 ## External Sources
 
