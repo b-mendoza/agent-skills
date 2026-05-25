@@ -48,7 +48,7 @@ Draft reply:
 
 ## Posting Status
 
-<not-posted, posted, or cancelled with unsupported targets>
+<not-posted or posted; preserve unsupported targets in the comment sections>
 ```
 
 ## Writing Rules
