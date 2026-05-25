@@ -23,9 +23,9 @@ section.
 | 2 | `planning-jira-tasks` | `TICKET_KEY`; add `RE_PLAN=true` and accepted `DECISIONS` when re-planning | planning summary, final tasks file path, warnings |
 | 3 | `clarifying-assumptions` | `TICKET_KEY=<TICKET_KEY>`, `MODE=upfront`, `ITERATION=<N>` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, accepted decisions summary |
 | 4 | `creating-jira-subtasks` | `JIRA_URL` | created/linked subtask rows, warnings, failed-create notes |
-| 5 | `planning-jira-task` | `TICKET_KEY`, `TASK_NUMBER=<N>` | four planning artifact paths, approach summary, test coverage shape |
+| 5 | `planning-jira-task` | `TICKET_KEY`, `TASK_NUMBER=<N>` | four planning artifact paths, approach summary, test coverage shape, refactoring verdict |
 | 6 | `clarifying-assumptions` | `TICKET_KEY=<TICKET_KEY>`, `MODE=critique`, `TASK_NUMBER=<N>`, `ITERATION=<N>` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions file path |
-| 7 | `executing-jira-task` | `TICKET_KEY`, `TASK_NUMBER=<N>` | completion/blocker verdict, quality-gate summary, implementation artifact summary |
+| 7 | `executing-jira-task` | `TICKET_KEY`, `TASK_NUMBER=<N>` | `FINAL_TASK_REPORT` status, completion/blocker verdict, quality-gate summary, implementation artifact summary, retry counts, next required action |
 
 ## Preflight Contract
 
