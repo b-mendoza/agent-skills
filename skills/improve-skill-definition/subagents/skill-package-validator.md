@@ -17,14 +17,16 @@ observable package properties, not to accept self-reported improvement.
 | `EDITOR_REPORT` | Yes | Change summary from `skill-definition-editor` |
 | `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
+| `SCOPE_LIMITS` | No | `"do not rename files"` |
 
 ## Loading
 
 Load `CHECKLIST_PATH` first, resolving orchestrator-supplied bundled paths from
 the improvement skill package root, not from the target `SKILL_PATH`. Resolve
-target-package paths only when inspecting files inside the target package. Inspect
-the target `SKILL.md`, each local path it references, and any changed files listed
-in `EDITOR_REPORT`. Inspect additional package files only when needed to verify
+target-package paths only when inspecting files inside the target package.
+Respect `SCOPE_LIMITS` when reporting fix guidance. Inspect the target
+`SKILL.md`, each local path it references, and any changed files listed in
+`EDITOR_REPORT`. Inspect additional package files only when needed to verify
 contracts, path validity, standalone packaging, or line counts.
 
 ## Instructions
