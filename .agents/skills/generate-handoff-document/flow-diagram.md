@@ -18,7 +18,7 @@ flowchart TD
 
   PATH_VALIDATE --> WRITE_SAFE{"Path and write checks safe?"}
   WRITE_SAFE -->|unsafe| BLOCKED_WRITE(["Blocked: unsafe writes or missing readable/writable path"])
-  WRITE_SAFE -->|safe| READ_CONTRACTS["Read bundled data contracts and quality checklist"]
+  WRITE_SAFE -->|safe| READ_CONTRACTS["Read bundled data contracts"]
 
   READ_CONTRACTS --> LOCAL_SUFFICIENT{"Bundled contracts sufficient and current?"}
   LOCAL_SUFFICIENT -->|yes| EXT_SKIPPED["Record EXTERNAL: SKIPPED"]
@@ -33,7 +33,7 @@ flowchart TD
 
   DERIVE_PATHS --> DISPATCH_CONTEXT["Dispatch context-extractor with CONTEXT_SOURCE and context artifact path"]
   DISPATCH_CONTEXT --> CONTEXT_STATUS{"context-extractor status?"}
-  CONTEXT_STATUS -->|PASS| DISPATCH_INSIGHTS["Dispatch insight-documenter with context artifact and insights artifact path"]
+  CONTEXT_STATUS -->|PASS| DISPATCH_INSIGHTS["Dispatch insight-documenter with CONTEXT_SOURCE and INSIGHTS_FILE"]
   CONTEXT_STATUS -->|WARN| WARN_CONTEXT["Capture context warning"]
   WARN_CONTEXT --> DISPATCH_INSIGHTS
   CONTEXT_STATUS -->|ERROR or FAIL or SKIPPED| BLOCKED_SUBAGENT(["Blocked: subagent error, failure, or unexpected skip"])
