@@ -48,6 +48,10 @@ author or edit a skill, subagent, or reference document — not before.
 17. [Best-Practices Compliance as a Quality Gate](./best-practices-compliance-gate.md)
     — every skill audit and validation must check the target against this
     index and report per-practice verdicts with observable evidence.
+18. [Earned Complexity](./earned-complexity.md) — every instruction, file,
+    subagent, and reference must earn its place by observably changing
+    runtime behavior or maintainability. Includes the Material Issue Gate
+    and the Improvement Decision Tests.
 
 ## Supporting reference
 
