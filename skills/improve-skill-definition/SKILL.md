@@ -277,7 +277,7 @@ user that the workflow is badly designed.
   `MUTATION_LIMITS`.
 - Target package artifacts align with the approved flow and personality
   contracts, including the personality's operating behavior and decision
-  posture.
+  habits.
 - Subagents remain justified, distinct, and non-overlapping; unnecessary
   subagents are recommended for removal or merge.
 - Validation results are concrete, falsifiable, and tied to approved gaps.
