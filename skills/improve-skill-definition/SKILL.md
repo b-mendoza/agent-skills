@@ -145,7 +145,7 @@ Route only on these enumerated subagent statuses:
 | `APPROVAL_GATE` | Continue to edit only after explicit approval of `all`, `none`, or specific gap ids. |
 | `SCOPE_GATE` | Continue to edit only when every approved mutation is inside `SCOPE_LIMITS` and `MUTATION_LIMITS`. |
 | `EDIT_STATUS` | Route only on the editor status set in the status routing contract. |
-| `QUALITY_GATE` | Validation must prove approved-gap closure, flow coherence, personality consistency, and package hygiene. |
+| `VALIDATION_STATUS` | Validation must prove approved-gap closure, flow coherence, personality consistency, package hygiene, and best-practices compliance per `../../docs/best-practices/best-practices-compliance-gate.md`. |
 | `RETRY_GATE` | Re-dispatch targeted repair only while fewer than three repair cycles have been used. |
 | `REPAIR_STATUS` | Route repair editor results as `EDIT: PASS`, `EDIT: BLOCKED`, or `EDIT: ERROR`. |
 
@@ -315,6 +315,9 @@ user that the workflow is badly designed.
 - Subagents remain justified, distinct, and non-overlapping; unnecessary
   subagents are recommended for removal or merge.
 - Validation results are concrete, falsifiable, and tied to approved gaps.
+- Every audit and validation runs the best-practices-compliance gate per
+  `../../docs/best-practices/best-practices-compliance-gate.md` and reports
+  per-practice verdicts with observable evidence.
 
 ## Example
 
