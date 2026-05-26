@@ -59,7 +59,8 @@ counts.
 10. Confirm personality consistency: the approved personality decision is
     reflected in `references/personality.md` or explicitly skipped as
     `NOT_APPLICABLE`; `SKILL.md`, subagents, references, and templates do not
-    contradict it.
+    contradict the approved personality's operating posture, decision habits,
+    validation behavior, escalation style, or communication style.
 11. Confirm subagents are justified, distinct, non-overlapping, and covered by
     explicit inputs, instructions, output format, scope, and escalation
     behavior.
