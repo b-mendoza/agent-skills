@@ -45,6 +45,9 @@ author or edit a skill, subagent, or reference document — not before.
 16. [Handoff-File Subagent Dispatch](./handoff-file-dispatch.md) — move large
     subagent payloads to per-run files to avoid tool-call serialization
     failures and lift inline prompt-size limits.
+17. [Best-Practices Compliance as a Quality Gate](./best-practices-compliance-gate.md)
+    — every skill audit and validation must check the target against this
+    index and report per-practice verdicts with observable evidence.
 
 ## Supporting reference
 
