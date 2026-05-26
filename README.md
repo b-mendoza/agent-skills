@@ -110,6 +110,15 @@ workflow. The remaining skills are standalone utilities.
 The repository currently has 17 pinned skill packages under
 [`.agents/skills/`](.agents/skills/). The lockfile records their source and hash.
 
+For first-party skill changes, pull requests should normally update the source
+package under [`skills/`](skills/) only. The vendored discovery copies under
+`.agents/skills/` and `.claude/skills/`, plus [`skills-lock.json`](skills-lock.json),
+are refreshed after the source PR merges by the managed
+[`skills` CLI](https://www.skills.sh/docs/cli) flow. Reviewers and agents should
+not request same-PR mirror or lockfile updates for ordinary first-party skill
+edits unless the PR explicitly claims to sync installed packages or already
+touches those managed artifacts.
+
 | Skill | Source |
 | ----- | ------ |
 | [`code-review-excellence`](.agents/skills/code-review-excellence/SKILL.md) | `wshobson/agents` |
