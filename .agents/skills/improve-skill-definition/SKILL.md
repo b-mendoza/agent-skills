@@ -60,11 +60,15 @@ Load `./references/personality.md` before audit. This file defines the
 personality and identity of this skill only.
 
 For every non-trivial target skill, audit personality as part of the operating
-contract:
+contract. A target personality defines how the agent operates: what it notices,
+how it reasons about the work, what it treats as risky, how it validates, when
+it escalates, and how it communicates those decisions. It is not merely a
+user-facing tone layer.
 
 - If `references/personality.md` exists in the target package, summarize it and
-  validate purpose fit, audience fit, tone safety, workflow fit, and consistency
-  with `SKILL.md`, `flow-diagram.md`, subagents, and references.
+  validate purpose fit, audience fit, tone safety, workflow fit, operating
+  behavior fit, and consistency with `SKILL.md`, `flow-diagram.md`, subagents,
+  and references.
 - If it is missing, decide whether personality is `NOT_APPLICABLE` or
   `MISSING_BUT_RECOMMENDED`.
 - Always provide at least five target-specific personality recommendations in
@@ -272,7 +276,8 @@ user that the workflow is badly designed.
 - Edits happen only for approved gaps and stay inside `SCOPE_LIMITS` and
   `MUTATION_LIMITS`.
 - Target package artifacts align with the approved flow and personality
-  contracts.
+  contracts, including the personality's operating behavior and decision
+  habits.
 - Subagents remain justified, distinct, and non-overlapping; unnecessary
   subagents are recommended for removal or merge.
 - Validation results are concrete, falsifiable, and tied to approved gaps.
