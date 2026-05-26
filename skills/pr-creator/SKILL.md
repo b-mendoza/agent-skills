@@ -87,7 +87,8 @@ files, and external resources only at the phase that needs them.
    redispatch only the affected subagent. For `NEEDS_REVIEWER`, ask for a
    reviewer or explicit approval to continue with `Reviewers: none`, then
    redispatch `review-metadata-suggester` with either the reviewer answer or
-   `NO_REVIEWER_APPROVED=true`.
+   `NO_REVIEWER_APPROVED=true`. When redispatching with
+   `NO_REVIEWER_APPROVED=true`, omit or clear `REVIEWERS`.
 7. Load `./references/execution-contracts.md`, show the exact preview, and ask
    for approval while preserving the previously loaded personality posture.
    Any edit to branch, state, title, body, reviewers, or labels invalidates

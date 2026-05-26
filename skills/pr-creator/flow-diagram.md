@@ -90,7 +90,7 @@ flowchart TD
   REVIEWER_CYCLE -->|no| FINAL_DECISION
   REVIEWER_CYCLE -->|yes| REVIEWER_GATE["Human gate: reviewer decision<br/>provide reviewer or explicitly approve Reviewers: none"]
   REVIEWER_GATE -->|provided| METADATA_RETRY["Redispatch review-metadata-suggester only<br/>with reviewer answer"]
-  REVIEWER_GATE -->|approved no reviewer| NO_REVIEWER_APPROVAL["Record explicit no-reviewer approval<br/>redispatch review-metadata-suggester only<br/>NO_REVIEWER_APPROVED=true"]
+  REVIEWER_GATE -->|approved no reviewer| NO_REVIEWER_APPROVAL["Record explicit no-reviewer approval<br/>clear REVIEWERS<br/>redispatch review-metadata-suggester only<br/>NO_REVIEWER_APPROVED=true"]
   REVIEWER_GATE -->|waiting| FAIL_REVIEWER([Failure envelope: BLOCKED<br/>waiting for reviewer decision])
   METADATA_RETRY --> METADATA_STATUS
   NO_REVIEWER_APPROVAL --> METADATA_STATUS
