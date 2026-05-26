@@ -52,6 +52,10 @@ author or edit a skill, subagent, or reference document — not before.
     subagent, and reference must earn its place by observably changing
     runtime behavior or maintainability. Includes the Material Issue Gate
     and the Improvement Decision Tests.
+19. [Personality as Operating Posture](./personality-as-operating-posture.md)
+    — non-trivial skills define a dedicated `references/personality.md` that
+    drives how the agent investigates, decides, validates, and escalates,
+    not just how it sounds.
 
 ## Supporting reference
 
