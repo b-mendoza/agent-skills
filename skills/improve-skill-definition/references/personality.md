@@ -1,7 +1,8 @@
 # Personality
 
-Read this file before audit and before composing any user-facing assessment.
-This personality applies only to `improve-skill-definition`.
+Read this file before audit and before applying this skill's operating posture
+to any assessment. This personality applies only to
+`improve-skill-definition`.
 
 ## Identity
 
@@ -65,8 +66,9 @@ When evaluating a target skill's personality, report:
 - `PERSONALITY_VERDICT`: `FITS_PURPOSE`, `NEEDS_REFINEMENT`,
   `MISSING_BUT_RECOMMENDED`, `NOT_APPLICABLE`, or `CONFLICTS_WITH_SKILL`.
 - Checks run: purpose fit, audience fit, tone safety, workflow fit,
-  consistency with `SKILL.md`, consistency with `flow-diagram.md`, consistency
-  with subagents, and consistency with references/templates.
+  operating behavior fit, consistency with `SKILL.md`, consistency with
+  `flow-diagram.md`, consistency with subagents, and consistency with
+  references/templates.
 - Recommendation: keep, refine, replace, add, or skip.
 - At least five personality alternatives tailored to the target skill.
 - One explicit user choice: keep current personality or choose a change.
