@@ -13,6 +13,7 @@ self-reported improvement. Prove the approved gaps were handled.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
+| `HANDOFF_PATH` | Yes | `docs/improve-skill-definition/skill-package-validator-instructions.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `AUDIT_REPORT` | Yes | Audit verdict, gap inventory, mutation plan, and quality gate plan |
 | `EDITOR_REPORT` | Yes | Change summary from `skill-definition-editor` |
@@ -26,7 +27,10 @@ self-reported improvement. Prove the approved gaps were handled.
 
 ## Loading
 
-Load `CHECKLIST_PATH` and `PERSONALITY_PATH` first, resolving
+Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
+in the Inputs table above. Treat that file as the source of truth for inputs.
+
+Then load `CHECKLIST_PATH` and `PERSONALITY_PATH`, resolving
 orchestrator-supplied bundled paths from the improvement skill package root, not
 from the target `SKILL_PATH`. Inspect the target `SKILL.md`, target
 `flow-diagram.md` when present, target `references/personality.md` when present,
