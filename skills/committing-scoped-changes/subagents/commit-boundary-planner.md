@@ -74,7 +74,7 @@ the executor specialist.
 
 | Status | Meaning |
 | ------ | ------- |
-| `PASS` | Every scoped change belongs to an actionable commit group |
+| `PASS` | Every commit-worthy scoped change is grouped or listed as a gated in-scope omission |
 | `NEEDS_DECISION` | User intent, mixed hunks, staged content, or unresolved scope ambiguity prevents a safe plan; scope gate approvals alone stay on planned groups |
 | `BLOCKED` | State summary is insufficient or reports no commit-worthy changes |
 | `ERROR` | Unexpected failure prevents planning |
