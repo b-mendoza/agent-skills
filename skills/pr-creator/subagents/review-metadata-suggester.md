@@ -26,8 +26,10 @@ into reviewer and label choices that are safe to preview.
 | `PLATFORM_ADAPTER_PATH` | No | `../references/platform-adaptation.md` |
 
 Use `REVIEWERS` as the exact reviewer list when supplied, after platform
-normalization. `NO_REVIEWER_APPROVED=true` means the orchestrator received
-explicit user approval to continue with `Reviewers: none`. Use `origin` when
+normalization. Treat `none` and empty reviewer values as no explicit reviewer,
+not as requestable reviewer names. `NO_REVIEWER_APPROVED=true` means the
+orchestrator received explicit user approval to continue with `Reviewers: none`;
+for that approval path, `REVIEWERS` is omitted or cleared. Use `origin` when
 `REMOTE_NAME` is missing.
 
 ## Instructions
@@ -37,18 +39,25 @@ explicit user approval to continue with `Reviewers: none`. Use `origin` when
 2. Treat CODEOWNERS matches as reviewer candidates; use them only when platform
    metadata or docs confirm they are requestable for the active repository and
    target branch.
-3. Prefer explicit `REVIEWERS` over CODEOWNERS suggestions.
-4. Return `PASS` with `Reviewers: none` only when no reviewer source yields a
-   valid reviewer and `NO_REVIEWER_APPROVED=true`.
-5. Return `NEEDS_REVIEWER` when no reviewer source yields at least one valid
-   reviewer and explicit no-reviewer approval is absent.
-6. Validate labels against the platform's existing labels for the repository
-   identified by `REMOTE_NAME`; suggest only existing labels and report invalid
-   overrides.
-7. For GitLab, Bitbucket, or unknown platforms, read `PLATFORM_ADAPTER_PATH`.
-8. Fetch CODEOWNERS, reviewer, or label docs from `EXTERNAL_RESOURCES_PATH` only
+3. Prefer explicit `REVIEWERS` over CODEOWNERS suggestions when `REVIEWERS`
+   contains one or more normalized reviewer names.
+4. Record `Reviewers: none` with `Reviewer source: explicit-none` only when no
+   reviewer source yields a valid reviewer and `NO_REVIEWER_APPROVED=true`.
+5. Record the reviewer result, then validate labels against the platform's
+   existing labels for the repository identified by `REMOTE_NAME`; suggest only
+   existing labels and report invalid overrides.
+6. Select the final status only after reviewer resolution and label validation:
+   return `INVALID_LABELS` for absent override labels, return `PASS` only when
+   labels are valid and either at least one valid reviewer is resolved or
+   `Reviewer source: explicit-none` is recorded, and return `NEEDS_REVIEWER`
+   when no reviewer source yields at least one valid reviewer and explicit
+   no-reviewer approval is absent.
+7. Return `INVALID_LABELS` before `PASS` when both label and reviewer conditions
+   are present.
+8. For GitLab, Bitbucket, or unknown platforms, read `PLATFORM_ADAPTER_PATH`.
+9. Fetch CODEOWNERS, reviewer, or label docs from `EXTERNAL_RESOURCES_PATH` only
    when syntax or platform behavior is uncertain.
-9. Before returning, read `CONTRACT_PATH` and produce that status block.
+10. Before returning, read `CONTRACT_PATH` and produce that status block.
 
 ## Output Format
 
