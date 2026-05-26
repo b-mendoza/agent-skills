@@ -11,6 +11,11 @@ compact commit reports. Specialists inspect repository state, plan boundaries,
 stage, verify, create commits, and refresh post-commit state so raw diffs and
 full command output stay out of orchestrator context.
 
+Load `./flow-diagram.md` after this file and treat it as the source of truth
+for phase order, gates, statuses, authority changes, and terminal states. Load
+`./references/personality.md` to apply the scope-protective, atomic-commit
+posture before planning or reporting.
+
 This package is standalone. Bundled paths in this file are relative to this
 `SKILL.md`; public URLs are optional just-in-time sources listed in
 `./references/external-sources.md`. Route terminal, waiting, and success
@@ -69,6 +74,8 @@ Load the smallest artifact that can change the next decision.
 | Need | Load |
 | ---- | ---- |
 | Core orchestration and routing | This `SKILL.md` (always loaded) |
+| Source-of-truth execution flow | `./flow-diagram.md` immediately after this file |
+| Scope, atomic-commit, and detailed-message posture | `./references/personality.md` before state planning or reporting |
 | Public URL routing for Git mechanics, commit grouping, message style, or progressive disclosure rationale | `./references/external-sources.md`, then fetch or pass only the URL relevant to the active specialist decision |
 | Format final user-facing reports or waiting/terminal statuses | `./references/report-contract-orchestrator.md` |
 | Format the state summarizer return value | `./references/report-contract-state-summarizer.md` (loaded inside that subagent) |
