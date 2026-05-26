@@ -35,7 +35,13 @@ in the Inputs table above. Treat that file as the source of truth for inputs.
 
 Then load `CHECKLIST_PATH`, `PERSONALITY_PATH`, and `FLOW_DIAGRAM_PATH` before
 classification. Resolve orchestrator-supplied bundled paths from the
-improvement skill package root, not from the target `SKILL_PATH`.
+improvement skill package root, not from the target `SKILL_PATH`. Load
+`../../../docs/best-practices/README.md` to enumerate the canonical authoring
+rules for the best-practices-compliance gate; load individual
+`../../../docs/best-practices/*.md` files just-in-time when a per-practice
+verdict needs the rule text. The index in `docs/best-practices/` is the source of
+truth for authoring rules; the bundled `authoring-checklist.md` is a routing
+overlay, not a parallel rule set.
 
 Normalize `SKILL_PATH` to the target package directory and read the target
 `SKILL.md`. Read the target `flow-diagram.md` when present, target
@@ -73,19 +79,28 @@ rationale changes the verdict.
 7. Provide at least five personality recommendations tailored to the target
    skill, even when recommending that the current personality be kept.
 8. Classify each observation as `gap`, `optional_improvement`, or `no_op`.
-9. Treat a gap as material when it affects reliability, portability,
-   standalone packaging, context efficiency, maintainability, validation, user
-   comprehension, flow determinism, personality fit, or subagent necessity.
-10. For every material gap, name severity, type, affected files, evidence,
+9. Run the best-practices-compliance gate per
+   `../../../docs/best-practices/best-practices-compliance-gate.md`. Enumerate
+   every practice in `../../../docs/best-practices/README.md`. For each, assign
+   `pass`, `fail`, or `not applicable` with observable evidence. Each `fail`
+   enters the gap inventory as a material gap unless the target `SKILL.md`
+   declares a deliberate exception with a reason, in which case record
+   `pass — declared exception: <reason>` and do not add a gap.
+10. Treat a gap as material when it affects reliability, portability,
+    standalone packaging, context efficiency, maintainability, validation,
+    user comprehension, flow determinism, personality fit, subagent
+    necessity, or best-practices compliance.
+11. For every material gap, name severity, type, affected files, evidence,
     required fix, and whether semantic diagram work must be delegated to
     `generate-flow-diagram`.
-11. Build the smallest mutation plan that resolves the material gaps, including
+12. Build the smallest mutation plan that resolves the material gaps, including
     create/edit/delete/no-op actions by path. Recommend deletion, merge, phase
     collapse, or rebuild when evidence supports it.
-12. If any required fix falls outside `SCOPE_LIMITS` or `MUTATION_LIMITS`,
+13. If any required fix falls outside `SCOPE_LIMITS` or `MUTATION_LIMITS`,
     return `BLOCKED` with the smallest scope question.
-13. Return `NO_CHANGE` only when workflow, subagent architecture, flow
-    coherence, personality fit, and package hygiene are all adequate.
+14. Return `NO_CHANGE` only when workflow, subagent architecture, flow
+    coherence, personality fit, package hygiene, and best-practices compliance
+    are all adequate.
 
 ## Output Format
 
@@ -119,6 +134,11 @@ AUDIT: APPROVAL_REQUIRED | NO_CHANGE | BLOCKED | ERROR
 - Checks run:
 - Recommendation:
 - Five personality alternatives:
+
+## Best-Practices Compliance
+
+| Practice | Verdict | Evidence |
+| -------- | ------- | -------- |
 
 ## Gap Inventory
 | id | severity | type | affected files | issue | evidence | required fix | diagram delegation |
