@@ -157,16 +157,11 @@ rules; the relaxed-portability exception applies only to
 
 ## Improvement Philosophy
 
-A good skill package earns every instruction, file, subagent, reference, script,
-and external URL by changing runtime behavior or maintainability in a concrete
-way. Progressive disclosure is a tool for reducing always-loaded context, not a
-mandate to hide complexity in another file.
-
-Prefer the smallest correct change when the structure is sound. Recommend
-rebuilds, subagent removals, merges, phase collapses, or diagram recreation when
-the evidence shows the current workflow is fundamentally flawed. Do not preserve
-bad architecture out of politeness, sunk cost, or fear of saying the package is
-badly designed.
+The improvement philosophy is the
+[`earned-complexity`](../../docs/best-practices/earned-complexity.md) best
+practice. Apply it when classifying observations as `gap`,
+`optional_improvement`, or `no_op`; when sizing the mutation plan; and when
+deciding between patch and rebuild. This skill does not restate the rule.
 
 ## Default Mutation Limits
 
