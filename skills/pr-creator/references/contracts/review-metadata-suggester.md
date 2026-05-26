@@ -20,8 +20,9 @@ Decision needed: none | <smallest user decision or recovery action>
 
 ## Codes
 
-- `PASS`: at least one valid reviewer is resolved, or explicit no-reviewer
-  approval is recorded, and labels are valid.
+- `PASS`: labels are valid and either at least one valid reviewer is resolved,
+  or explicit no-reviewer approval is recorded after no reviewer source yields a
+  requestable reviewer.
 - `NEEDS_REVIEWER`: no user or platform-valid CODEOWNERS reviewer is available.
 - `INVALID_LABELS`: an override label is absent from platform labels.
 - `AUTH`: platform tooling or credentials prevent lookup.
@@ -32,15 +33,17 @@ active repository and target branch. If matched owners are missing, invalid, or
 not eligible for review requests on the active platform, return
 `NEEDS_REVIEWER` unless the orchestrator redispatched with explicit
 no-reviewer approval. `Reviewer source: explicit-none` means the user approved
-continuing with `Reviewers: none`.
+continuing with `Reviewers: none` after user and CODEOWNERS reviewer sources
+yielded no requestable reviewer.
 
 ## Orchestrator Routing
 
 On `NEEDS_REVIEWER`, the orchestrator asks one focused reviewer question and
 redispatches only `review-metadata-suggester` with that answer or with explicit
-no-reviewer approval. On `INVALID_LABELS`, it asks for valid existing labels or
-removal, then redispatches only this subagent. `AUTH` maps to `AUTH`; `ERROR`
-maps to `BLOCKED`.
+no-reviewer approval. For explicit no-reviewer approval, `REVIEWERS` is omitted
+or cleared and `NO_REVIEWER_APPROVED=true` is supplied. On `INVALID_LABELS`, it
+asks for valid existing labels or removal, then redispatches only this subagent.
+`AUTH` maps to `AUTH`; `ERROR` maps to `BLOCKED`.
 
 ## Example
 
