@@ -146,9 +146,14 @@ findings, verdicts, gap ids, file paths, fetched URLs, and concise summaries.
 | Final response shape | `./references/final-report-template.md` | Immediately before final handoff |
 | Raw target files, diffs, and command output | Inside the responsible subagent | Summarized back as verdicts, gaps, paths, and risks |
 
-This skill is standalone. Bundled paths stay inside this skill directory and are
-relative to the file that names them. External URLs are optional just-in-time
-background sources; the target skill must still run from its bundled files.
+This skill is repo-internal and intentionally not portable. It is the only
+skill in this repository that is expected to reference paths outside its own
+directory. The canonical authoring rules live in
+[`../../docs/best-practices/`](../../docs/best-practices/README.md); this skill
+loads them as just-in-time references rather than re-stating them. Target
+skills audited by this skill must still satisfy their own standalone-packaging
+rules; the relaxed-portability exception applies only to
+`improve-skill-definition` itself.
 
 ## Improvement Philosophy
 
