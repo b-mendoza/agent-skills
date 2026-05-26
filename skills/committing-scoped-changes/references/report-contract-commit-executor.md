@@ -15,6 +15,10 @@ Staged diff reviewed: yes | no
 Verification: pass | fail | not-run
 Verification command: none | <command>
 Index preservation: no pre-existing staged changes | preserved | blocked: <reason>
+Index isolation method: none | <exact method used>
+Pre-attempt staged baseline: none | <concise path/hunk summary>
+Preservation verification: not-needed | matched pre-attempt baseline | blocked: <reason>
+Attempt cleanup: not-needed | restored pre-attempt index | left staged for same-scope retry | blocked: <reason>
 Recovery classification: none | same-scope-same-group-retry | needs-user-decision | terminal
 References fetched: none | <urls and one-line conclusions>
 Summary: <what changed and why>
@@ -35,6 +39,10 @@ approved group and stays inside `APPROVED_COMMIT_SCOPE`. Use
 scope, or recovery that cannot be chosen safely by the executor. Use `terminal`
 when no safe recovery is available.
 
+For every non-`PASS` result after staging begins, report `Attempt cleanup`.
+For every commit that starts with unrelated staged content, report the isolation
+method, pre-attempt staged baseline, and preservation verification.
+
 ## Examples
 
 <example>
@@ -47,6 +55,10 @@ Staged diff reviewed: yes
 Verification: pass
 Verification command: npm test -- checkout
 Index preservation: no pre-existing staged changes
+Index isolation method: none
+Pre-attempt staged baseline: none
+Preservation verification: not-needed
+Attempt cleanup: not-needed
 Recovery classification: none
 References fetched: none
 Summary: Adds retry handling for failed checkout confirmation and covers it with checkout tests.
@@ -66,6 +78,10 @@ Staged diff reviewed: yes
 Verification: fail
 Verification command: npm test -- checkout
 Index preservation: preserved
+Index isolation method: reversible unstage/restage of unrelated staged entries
+Pre-attempt staged baseline: docs/release-notes.md staged copy update
+Preservation verification: matched pre-attempt baseline
+Attempt cleanup: restored pre-attempt index
 Recovery classification: needs-user-decision
 References fetched: none
 Summary: Retry behavior and tests were staged, but checkout tests failed.
