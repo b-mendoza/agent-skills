@@ -56,29 +56,22 @@ through `generate-flow-diagram` before syncing the rest of the package.
 
 ## Personality Contract
 
-Load `./references/personality.md` before audit. This file defines the
-personality and identity of this skill only.
+Load `./references/personality.md` before audit. It defines this skill's own
+operating posture.
 
-For every non-trivial target skill, audit personality as part of the operating
-contract. A target personality defines how the agent operates: what it notices,
-how it reasons about the work, what it treats as risky, how it validates, when
-it escalates, and how it communicates those decisions. It is not merely a
-user-facing tone layer.
+The canonical rule that every non-trivial target skill should define a
+`references/personality.md` lives in
+[`../../docs/best-practices/personality-as-operating-posture.md`](../../docs/best-practices/personality-as-operating-posture.md);
+this skill does not restate it. Workflow specifics this skill adds on top of
+the canonical rule:
 
-- If `references/personality.md` exists in the target package, summarize it and
-  validate purpose fit, audience fit, tone safety, workflow fit, operating
-  behavior fit, and consistency with `SKILL.md`, `flow-diagram.md`, subagents,
-  and references.
-- If it is missing, decide whether personality is `NOT_APPLICABLE` or
-  `MISSING_BUT_RECOMMENDED`.
+- Personality is a hard gate. No package mutation begins until the user
+  explicitly approves keeping, refining, replacing, adding, or skipping the
+  target skill's personality contract.
 - Always provide at least five target-specific personality recommendations in
-  the approval handoff.
+  the approval handoff, tailored to the audited skill's purpose.
 - Ask whether the user wants to keep the current personality or choose a
   different one.
-
-Personality is a hard gate. No package mutation begins until the user explicitly
-approves keeping, refining, replacing, adding, or skipping the target skill's
-personality contract.
 
 ## Output Contract
 
