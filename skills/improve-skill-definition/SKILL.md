@@ -173,10 +173,12 @@ subagent. Unless the user explicitly expands scope, use these limits:
   purpose unless an approved gap explicitly allows the change.
 - Treat sibling packages, runtime mirrors, lockfiles, repository-level docs, and
   private configuration as outside scope.
-- Keep bundled paths relative to the file that names them and inside the skill
-  package.
-- Use external URLs only as optional background; normal execution cannot depend
-  on fetching them.
+- Keep target-skill bundled paths relative to the file that names them and
+  inside the target skill package. This is a constraint on target skills; this
+  skill itself may reference repo-level paths such as `../../docs/best-practices/`
+  because it is the repo's single non-portable skill.
+- External URLs are optional background only; normal execution must succeed
+  from bundled files plus `docs/best-practices/`.
 - Route semantic `flow-diagram.md` changes through `generate-flow-diagram`;
   direct diagram edits are limited to non-semantic path or name corrections.
 - During repair cycles, change only files tied to validator findings and
