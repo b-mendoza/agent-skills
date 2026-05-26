@@ -58,17 +58,11 @@ Every negative verdict should teach:
 - Why it causes nondeterminism, drift, complexity, or weak execution.
 - What a better design would do instead.
 
-## Personality Assessment Pattern
+## Auditing Target Personalities
 
-When evaluating a target skill's personality, report:
-
-- Current personality summary, or `missing`.
-- `PERSONALITY_VERDICT`: `FITS_PURPOSE`, `NEEDS_REFINEMENT`,
-  `MISSING_BUT_RECOMMENDED`, `NOT_APPLICABLE`, or `CONFLICTS_WITH_SKILL`.
-- Checks run: purpose fit, audience fit, tone safety, workflow fit,
-  operating behavior fit, consistency with `SKILL.md`, consistency with
-  `flow-diagram.md`, consistency with subagents, and consistency with
-  references/templates.
-- Recommendation: keep, refine, replace, add, or skip.
-- At least five personality alternatives tailored to the target skill.
-- One explicit user choice: keep current personality or choose a change.
+The general rule that every non-trivial skill defines a
+`references/personality.md` that drives operating behavior is the
+[`personality-as-operating-posture`](../../../docs/best-practices/personality-as-operating-posture.md)
+best practice. The auditor subagent's own `Output Format` in
+`../subagents/skill-package-auditor.md` defines the exact `Personality
+Assessment` section structure. This file does not restate either.
