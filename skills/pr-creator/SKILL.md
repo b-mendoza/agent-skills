@@ -39,7 +39,7 @@ validation.
 | User-facing posture for gates, preview, failures, and final output | `./references/personality.md` |
 | Failure envelope, preview block, final output, body template | `./references/execution-contracts.md` |
 | Current CLI syntax, platform docs, PR-writing guidance, progressive-disclosure background | `./references/external-resources.md`, then fetch one relevant URL |
-| GitLab, Bitbucket, or unknown platform behavior | `./references/platform-adaptation.md` |
+| GitLab, Bitbucket, GitHub Enterprise, or unknown platform behavior | `./references/platform-adaptation.md` |
 | Workflow visualization or maintenance check | `./flow-diagram.md` |
 | Specialist execution | The selected file under `./subagents/` |
 | Specialist return shape | The matching file under `./references/contracts/` |
