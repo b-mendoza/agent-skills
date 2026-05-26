@@ -93,11 +93,36 @@ decision:
 | ----- | ---- | ------ |
 | Intake | Inline | Normalize path, runtime, scope, approval input, and mutation limits |
 | Flow Load | Inline | Load this skill's `flow-diagram.md` as execution source of truth |
-| Audit | Dispatch `skill-package-auditor` | Adversarial verdicts, personality assessment, gap inventory, and mutation plan |
+| Audit | Handoff-file dispatch `skill-package-auditor` | Adversarial verdicts, personality assessment, gap inventory, and mutation plan |
 | Approval | Inline hard gate | Stop until the user approves personality decision and gap ids |
-| Edit | Dispatch `skill-definition-editor` | Apply approved changes only |
-| Validate | Dispatch `skill-package-validator` | Quality gate and targeted repair guidance |
+| Edit | Handoff-file dispatch `skill-definition-editor` | Apply approved changes only |
+| Validate | Handoff-file dispatch `skill-package-validator` | Quality gate and targeted repair guidance |
 | Handoff | Inline | User-facing decision and validation summary |
+
+## Subagent Dispatch Protocol
+
+Every subagent in this skill (`skill-package-auditor`,
+`skill-definition-editor`, `skill-package-validator`) is dispatched via the
+[`handoff-file-dispatch`](../../docs/best-practices/handoff-file-dispatch.md)
+pattern. The orchestrator never inlines the full payload into the dispatch
+prompt. For each dispatch:
+
+1. Write a handoff file to
+   `docs/improve-skill-definition/<subagent-name>-instructions.md` (resolved
+   from the orchestrator's current working directory). Create the
+   `docs/improve-skill-definition/` directory if it does not exist. The file
+   carries every input listed for that subagent in the Execution section
+   below.
+2. Dispatch the subagent with a compact pointer prompt that names only the
+   subagent contract file and the handoff file path, and instructs the
+   subagent to read the handoff file as its first action.
+3. Delete the handoff file once the subagent returns a terminal status
+   (`PASS`, `APPROVAL_REQUIRED`, `NO_CHANGE`, `FAIL`, `BLOCKED`, or `ERROR`).
+   On re-dispatch (repair cycles), overwrite the same path with the new
+   payload before the next dispatch.
+
+Re-dispatches during repair cycles reuse the same per-subagent path so each
+handoff file always holds the current cycle's payload only.
 
 ## Status Routing Contract
 
@@ -197,12 +222,16 @@ subagent. Unless the user explicitly expands scope, use these limits:
 3. Load `./flow-diagram.md` and `./references/personality.md`. Treat the diagram
    as this skill's execution source of truth and the personality file as this
    skill's critique posture.
-4. Dispatch `skill-package-auditor` with `SKILL_PATH`, `KNOWN_PROBLEM`,
-   `TARGET_RUNTIME`, `SCOPE_LIMITS`, `REFERENCE_NEED`, `MUTATION_LIMITS`,
+4. Dispatch `skill-package-auditor` via the Subagent Dispatch Protocol. The
+   handoff file at
+   `docs/improve-skill-definition/skill-package-auditor-instructions.md` must
+   carry `SKILL_PATH`, `KNOWN_PROBLEM`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
+   `REFERENCE_NEED`, `MUTATION_LIMITS`,
    `CHECKLIST_PATH=./references/authoring-checklist.md`,
    `PERSONALITY_PATH=./references/personality.md`,
    `FLOW_DIAGRAM_PATH=./flow-diagram.md`, and
    `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed.
+   Delete the handoff file once the subagent returns a terminal status.
 5. If the audit returns `NO_CHANGE`, load
    `./references/final-report-template.md` and return the no-change handoff
    with evidence, personality assessment, rejected optional improvements, and
@@ -221,33 +250,43 @@ subagent. Unless the user explicitly expands scope, use these limits:
    approval question.
 9. Confirm every approved mutation is inside `SCOPE_LIMITS` and
    `MUTATION_LIMITS`. If not, return a blocked handoff with one scope question.
-10. Dispatch `skill-definition-editor` with `SKILL_PATH`, `TARGET_RUNTIME`,
-    `SCOPE_LIMITS`, `MUTATION_LIMITS`, `AUDIT_REPORT`,
-    `APPROVED_GAPS`, `APPROVED_PERSONALITY_DECISION`,
+10. Dispatch `skill-definition-editor` via the Subagent Dispatch Protocol.
+    The handoff file at
+    `docs/improve-skill-definition/skill-definition-editor-instructions.md`
+    must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
+    `MUTATION_LIMITS`, `AUDIT_REPORT`, `APPROVED_GAPS`,
+    `APPROVED_PERSONALITY_DECISION`,
     `CHECKLIST_PATH=./references/authoring-checklist.md`,
     `PERSONALITY_PATH=./references/personality.md`, and
     `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed.
+    Delete the handoff file once the subagent returns a terminal status.
 11. If the editor returns `BLOCKED` or `ERROR`, load
     `./references/final-report-template.md` and return the blocked or error
     handoff.
-12. If the editor returns `PASS`, dispatch `skill-package-validator` with
-    `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`, `MUTATION_LIMITS`,
-    `AUDIT_REPORT`, `EDITOR_REPORT`, `APPROVED_GAPS`,
+12. If the editor returns `PASS`, dispatch `skill-package-validator` via the
+    Subagent Dispatch Protocol. The handoff file at
+    `docs/improve-skill-definition/skill-package-validator-instructions.md`
+    must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
+    `MUTATION_LIMITS`, `AUDIT_REPORT`, `EDITOR_REPORT`, `APPROVED_GAPS`,
     `APPROVED_PERSONALITY_DECISION`, changed paths from the editor report,
     `CHECKLIST_PATH=./references/authoring-checklist.md`, and
-    `PERSONALITY_PATH=./references/personality.md`.
+    `PERSONALITY_PATH=./references/personality.md`. Delete the handoff file
+    once the subagent returns a terminal status.
 13. If validation returns `PASS`, load
     `./references/final-report-template.md` and return the changed handoff with
     material issues, files changed, validation, resources, and risks.
 14. If validation returns `BLOCKED` or `ERROR`, load
     `./references/final-report-template.md` and return the blocked or error
     handoff with completed validation checks and recovery action.
-15. On validation `FAIL`, re-dispatch the editor with the original editor
-    payload plus `VALIDATOR_FINDINGS`, repair cycle count, and focused fix scope
-    inside approved gaps and `MUTATION_LIMITS`. Re-run the validator after each
-    repair. Use at most three targeted fix cycles; after the third failed
-    validation, return a blocked handoff with failed checks, attempted repairs,
-    remaining risks, and a resume condition.
+15. On validation `FAIL`, re-dispatch the editor via the Subagent Dispatch
+    Protocol. Overwrite
+    `docs/improve-skill-definition/skill-definition-editor-instructions.md`
+    with the original editor payload plus `VALIDATOR_FINDINGS`, the repair
+    cycle count, and a focused fix scope inside approved gaps and
+    `MUTATION_LIMITS`. Re-run the validator after each repair using the same
+    write-dispatch-delete pattern. Use at most three targeted fix cycles;
+    after the third failed validation, return a blocked handoff with failed
+    checks, attempted repairs, remaining risks, and a resume condition.
 
 ## Decision Rules
 
