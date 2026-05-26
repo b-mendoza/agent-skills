@@ -37,7 +37,7 @@ the full index for uncommon cases.
 
 | Task | Read before editing |
 | ---- | ------------------- |
-| Create a new skill | [`quick-reference-skill-structure`](./docs/best-practices/quick-reference-skill-structure.md), [`structural-conventions`](./docs/best-practices/structural-conventions.md), [`naming-conventions`](./docs/best-practices/naming-conventions.md), [`identity-and-mental-model`](./docs/best-practices/identity-and-mental-model.md) |
+| Create a new skill | [`quick-reference-skill-structure`](./docs/best-practices/quick-reference-skill-structure.md), [`structural-conventions`](./docs/best-practices/structural-conventions.md), [`naming-conventions`](./docs/best-practices/naming-conventions.md), [`identity-and-mental-model`](./docs/best-practices/identity-and-mental-model.md), [`personality-as-operating-posture`](./docs/best-practices/personality-as-operating-posture.md) |
 | Restructure a large `SKILL.md` or move content into supporting files | [`progressive-disclosure`](./docs/best-practices/progressive-disclosure.md), [`template-extraction`](./docs/best-practices/template-extraction.md) |
 | Add or edit a subagent | [`subagent-default-execution`](./docs/best-practices/subagent-default-execution.md), [`context-window-protection`](./docs/best-practices/context-window-protection.md), [`escalation-patterns`](./docs/best-practices/escalation-patterns.md), [`input-output-contracts`](./docs/best-practices/input-output-contracts.md) |
 | Write or revise instructions, constraints, examples, or long reference files | [`positive-constraint-framing`](./docs/best-practices/positive-constraint-framing.md), [`example-strategy`](./docs/best-practices/example-strategy.md), [`instruction-reinforcement`](./docs/best-practices/instruction-reinforcement.md) |
