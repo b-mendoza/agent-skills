@@ -147,5 +147,6 @@ touches those managed artifacts.
   [`docs/best-practices/README.md`](docs/best-practices/README.md).
 - There is no formal validator or CI pipeline for skill authoring yet. Run the
   manual checks listed in the project instructions.
-- Do not hand-edit [`skills-lock.json`](skills-lock.json). It is managed by the
-  skill installation tooling.
+- Do not hand-edit [`skills-lock.json`](skills-lock.json) or vendored installed
+  packages under `.agents/skills/` or `.claude/skills/`. They are managed by the
+  `skills` CLI flow after source changes are merged.
