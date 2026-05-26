@@ -29,7 +29,7 @@ approved in preview, then verify the resulting URL and branch fields.
 `PREVIEW_APPROVED=true` means the orchestrator already received explicit user
 approval for these exact values.
 `REVIEWERS=none` is valid only when that exact value came from the approved
-preview.
+preview; it means omit reviewer flags and request no reviewers.
 Use `origin` when `REMOTE_NAME` is missing.
 
 ## Instructions
@@ -37,11 +37,13 @@ Use `origin` when `REMOTE_NAME` is missing.
 1. Return `BLOCKED` when approval is absent or any required approved field
    other than approved `REVIEWERS=none` is empty.
 2. For GitHub-compatible platforms, create the PR with installed `gh`, preserving
-   base, head, title, body, draft/ready state, reviewers, and labels.
+   base, head, title, body, draft/ready state, reviewers, and labels. When the
+   approved value is `REVIEWERS=none`, omit reviewer flags.
 3. Use a body file or heredoc-safe construction so shell quoting cannot alter the
    approved description.
 4. Verify the created PR URL, base, head, title, body, state, reviewers, and
-   labels against the approved preview before success.
+   labels against the approved preview before success. For `REVIEWERS=none`,
+   verify that no reviewers were requested.
 5. For GitLab, Bitbucket, or unknown platforms, read `PLATFORM_ADAPTER_PATH`.
 6. Fetch create or verify docs from `EXTERNAL_RESOURCES_PATH` only when exact
    flags or API behavior are uncertain.
