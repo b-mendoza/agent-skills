@@ -42,6 +42,9 @@ author or edit a skill, subagent, or reference document — not before.
     what to preserve, what to delete.
 15. [Empirical Validation over Self-Report](./empirical-validation.md) —
     validate fixes by behavior change, not by asking the agent.
+16. [Handoff-File Subagent Dispatch](./handoff-file-dispatch.md) — move large
+    subagent payloads to per-run files to avoid tool-call serialization
+    failures and lift inline prompt-size limits.
 
 ## Supporting reference
 
