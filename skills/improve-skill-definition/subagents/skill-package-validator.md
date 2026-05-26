@@ -32,12 +32,15 @@ in the Inputs table above. Treat that file as the source of truth for inputs.
 
 Then load `CHECKLIST_PATH` and `PERSONALITY_PATH`, resolving
 orchestrator-supplied bundled paths from the improvement skill package root, not
-from the target `SKILL_PATH`. Inspect the target `SKILL.md`, target
-`flow-diagram.md` when present, target `references/personality.md` when present,
-every changed file listed in `EDITOR_REPORT`, and any package file needed to
-verify approved-gap closure, flow coherence, personality consistency, subagent
-necessity, path validity, standalone packaging, mutation boundaries, or line
-counts.
+from the target `SKILL_PATH`. Load
+`../../../docs/best-practices/README.md` to enumerate the applicable best
+practices for the best-practices-compliance gate; load individual
+`../../../docs/best-practices/*.md` files just-in-time when a per-practice
+verdict needs the rule text. Inspect the target `SKILL.md`, target `flow-diagram.md` when
+present, target `references/personality.md` when present, every changed file
+listed in `EDITOR_REPORT`, and any package file needed to verify approved-gap
+closure, flow coherence, personality consistency, subagent necessity, path
+validity, standalone packaging, mutation boundaries, or line counts.
 
 ## Instructions
 
@@ -74,7 +77,17 @@ counts.
     workflow can fail quality checks.
 14. If scripts exist, report whether a consumer-facing invocation was run or why
     it was not run.
-15. Return targeted findings only; do not invent style work.
+15. Run the best-practices-compliance gate per
+    `../../../docs/best-practices/best-practices-compliance-gate.md`. Enumerate
+    every practice listed in `../../../docs/best-practices/README.md`. For each
+    one, return one of `pass`, `fail`, or `not applicable` with observable
+    evidence: a file path plus line range, a quoted snippet, or a one-line
+    reason for `not applicable`. Treat declared deviations in the target
+    `SKILL.md` (for example "this skill is repo-internal and intentionally not
+    portable") as `pass — declared exception: <reason>`. Any `fail` verdict
+    enters the validator's `Findings` table as a material finding unless the
+    approved-gap scope explicitly covered skipping the practice.
+16. Return targeted findings only; do not invent style work.
 
 ## Output Format
 
@@ -96,6 +109,12 @@ VALIDATION: PASS | FAIL | BLOCKED | ERROR
 - Subagent contracts and necessity:
 - Output, approval, and validation contracts:
 - Scripts:
+- Best-practices compliance gate: pass | fail (see Best-Practices Compliance section)
+
+## Best-Practices Compliance
+
+| Practice | Verdict | Evidence |
+| -------- | ------- | -------- |
 
 ## Findings
 | id | severity | file | issue | required fix |
