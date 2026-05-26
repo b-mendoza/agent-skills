@@ -52,8 +52,10 @@ bundled paths from the improvement skill package root, not from the target
    may support rationale, but normal execution cannot depend on fetching them.
 8. Create or update `references/personality.md` only according to the approved
    personality decision. Align `SKILL.md`, subagents, and references to that
-   personality where it affects behavior, verdict language, escalation style,
-   or output expectations.
+   personality where it affects operating behavior: how the target agent
+   investigates, decides, prioritizes risks, validates, escalates, and
+   communicates. Align verdict language and output expectations only where they
+   express that operating behavior.
 9. Treat target `flow-diagram.md` as the workflow source of truth when present.
    Sync `SKILL.md`, subagents, references, scripts, and templates to the
    approved flow vocabulary.
