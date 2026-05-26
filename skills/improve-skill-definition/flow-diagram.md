@@ -22,7 +22,7 @@ flowchart TD
   LOAD_PERSONALITY --> BOUNDARY["Set orchestration boundary<br/>Retain only verdicts, summaries, paths,<br/>approved gaps, fetched URLs, and user decisions<br/>Delegate raw inspection, editing, and validation"]
   BOUNDARY --> STATUS_CONTRACT["Status routing contract<br/>AUDIT: APPROVAL_REQUIRED, NO_CHANGE, BLOCKED, ERROR<br/>EDIT: PASS, BLOCKED, ERROR<br/>VALIDATION: PASS, FAIL, BLOCKED, ERROR"]
 
-  STATUS_CONTRACT --> AUDIT["Dispatch skill-package-auditor<br/>Payload: target path, known problem, runtime,<br/>scope, mutation limits, checklist path,<br/>personality path, flow path, external sources path<br/>Return: workflow/subagent/flow/personality verdicts,<br/>gap inventory, mutation plan, quality gate plan"]
+  STATUS_CONTRACT --> AUDIT["Write docs/improve-skill-definition/skill-package-auditor-instructions.md<br/>Dispatch skill-package-auditor with a compact pointer prompt<br/>naming the subagent contract file and the handoff file<br/>Delete the handoff file on terminal success"]
   AUDIT --> AUDIT_STATUS{"AUDIT status?"}
 
   AUDIT_STATUS -->|NO_CHANGE| FINAL_NO_CHANGE["Load final-report-template.md<br/>Return no-change handoff with evidence,<br/>personality assessment, rejected optional improvements,<br/>and validation limits"]
@@ -40,13 +40,13 @@ flowchart TD
   APPROVED_NONE -->|no| SCOPE_GATE{"Approved mutations inside SCOPE_LIMITS and MUTATION_LIMITS?"}
 
   SCOPE_GATE -->|no| SCOPE_BLOCK["Blocked handoff<br/>Ask one scope question<br/>Stop until user decides"]
-  SCOPE_GATE -->|yes| EDIT["Dispatch skill-definition-editor<br/>Payload: audit report, approved gaps,<br/>approved personality decision, runtime,<br/>scope, mutation limits, checklist path,<br/>personality path, external sources path<br/>Return: edit status, changed paths, blockers"]
+  SCOPE_GATE -->|yes| EDIT["Write docs/improve-skill-definition/skill-definition-editor-instructions.md<br/>Dispatch skill-definition-editor with a compact pointer prompt<br/>naming the subagent contract file and the handoff file<br/>Delete the handoff file on terminal success"]
 
   AUDIT_STATUS -->|BLOCKED| AUDIT_BLOCK["Blocked handoff<br/>Include blocker, completed checks,<br/>smallest recovery action"]
   AUDIT_STATUS -->|ERROR| AUDIT_ERROR["Retain audit error summary"]
 
   EDIT --> EDIT_STATUS{"EDIT status?"}
-  EDIT_STATUS -->|PASS| VALIDATE["Dispatch skill-package-validator<br/>Payload: audit report, editor report,<br/>approved gaps, approved personality decision,<br/>changed paths, runtime, scope, mutation limits,<br/>checklist path, personality path<br/>Return: validation status, checks, findings, risks"]
+  EDIT_STATUS -->|PASS| VALIDATE["Write docs/improve-skill-definition/skill-package-validator-instructions.md<br/>Dispatch skill-package-validator with a compact pointer prompt<br/>naming the subagent contract file and the handoff file<br/>Delete the handoff file on terminal success"]
   EDIT_STATUS -->|BLOCKED| EDIT_BLOCK["Blocked handoff<br/>Include edit blocker and smallest user decision"]
   EDIT_STATUS -->|ERROR| EDIT_ERROR["Retain edit error summary"]
 
@@ -55,7 +55,7 @@ flowchart TD
   FINAL_CHANGED --> CHANGED([Decision: changed])
 
   VALIDATION_STATUS -->|FAIL| RETRY_GATE{"Targeted repair cycles used fewer than 3?"}
-  RETRY_GATE -->|yes| REPAIR["Re-dispatch skill-definition-editor<br/>Payload: original editor payload plus validator findings,<br/>repair count, focused fix scope inside approved gaps<br/>Return: edit status, changed paths, blockers"]
+  RETRY_GATE -->|yes| REPAIR["Write docs/improve-skill-definition/skill-definition-editor-instructions.md<br/>Re-dispatch skill-definition-editor with a compact pointer prompt<br/>naming the subagent contract file and the handoff file<br/>Delete the handoff file on terminal success"]
   RETRY_GATE -->|no| FAIL_BLOCK["Blocked handoff<br/>Validation still failing after three repairs<br/>Include failed checks, attempted repairs, and resume condition"]
 
   REPAIR --> REPAIR_STATUS{"Repair EDIT status?"}
@@ -98,6 +98,8 @@ flowchart TD
   class NO_CHANGE,CHANGED success;
   class BLOCKED,ERROR,AUDIT_ERROR,EDIT_ERROR,REPAIR_ERROR,VALIDATION_ERROR stop;
 ```
+
+Handoff-file dispatch: Each subagent dispatch in the AUDIT, EDIT, VALIDATE, and REPAIR action nodes follows a write-dispatch-delete pattern. The orchestrator first writes the full per-subagent payload to `docs/improve-skill-definition/<subagent-name>-instructions.md`, then dispatches the subagent with a compact pointer prompt that names only the subagent contract file and that handoff file, and finally deletes the handoff file once the subagent returns a terminal success status. The `docs/improve-skill-definition/` directory is the conventional location for these per-subagent handoff files, keeping the orchestrator context small while subagents receive the complete payload from disk.
 
 Readiness rule: A final handoff is ready only after
 `./references/final-report-template.md` is loaded and the outcome is one of
