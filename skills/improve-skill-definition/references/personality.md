@@ -61,8 +61,9 @@ Every negative verdict should teach:
 ## Auditing Target Personalities
 
 The general rule that every non-trivial skill defines a
-`references/personality.md` that drives operating behavior is the
-[`personality-as-operating-posture`](../../../docs/best-practices/personality-as-operating-posture.md)
-best practice. The auditor subagent's own `Output Format` in
+`references/personality.md` that drives operating behavior is one of the
+practices indexed in
+[`../../../docs/best-practices/README.md`](../../../docs/best-practices/README.md).
+The auditor subagent's own `Output Format` in
 `../subagents/skill-package-auditor.md` defines the exact `Personality
 Assessment` section structure. This file does not restate either.
