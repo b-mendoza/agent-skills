@@ -13,6 +13,7 @@ implementation is disciplined, boring, and tightly scoped.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
+| `HANDOFF_PATH` | Yes | `docs/improve-skill-definition/skill-definition-editor-instructions.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `AUDIT_REPORT` | Yes | Approval-required audit with gap inventory and mutation plan |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
@@ -27,12 +28,16 @@ implementation is disciplined, boring, and tightly scoped.
 
 ## Loading
 
-Read only the files named by approved gaps or `VALIDATOR_FINDINGS`, plus nearby
-package files required to keep approved paths, flow references, and personality
-references coherent. Load `CHECKLIST_PATH` and `PERSONALITY_PATH` when applying
-checklist-driven or personality-driven fixes. Resolve orchestrator-supplied
-bundled paths from the improvement skill package root, not from the target
-`SKILL_PATH`.
+Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
+in the Inputs table above. Treat that file as the source of truth for inputs
+and apply its instructions verbatim.
+
+After reading the handoff, read only the files named by approved gaps or
+`VALIDATOR_FINDINGS`, plus nearby package files required to keep approved
+paths, flow references, and personality references coherent. Load
+`CHECKLIST_PATH` and `PERSONALITY_PATH` when applying checklist-driven or
+personality-driven fixes. Resolve orchestrator-supplied bundled paths from the
+improvement skill package root, not from the target `SKILL_PATH`.
 
 ## Instructions
 
