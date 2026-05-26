@@ -16,6 +16,7 @@ artifact directly, educate the user, and avoid personal attacks.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
+| `HANDOFF_PATH` | Yes | `docs/improve-skill-definition/skill-package-auditor-instructions.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `KNOWN_PROBLEM` | No | `"subagent paths seem stale"` |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
@@ -29,7 +30,10 @@ artifact directly, educate the user, and avoid personal attacks.
 
 ## Loading
 
-Load `CHECKLIST_PATH`, `PERSONALITY_PATH`, and `FLOW_DIAGRAM_PATH` before
+Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
+in the Inputs table above. Treat that file as the source of truth for inputs.
+
+Then load `CHECKLIST_PATH`, `PERSONALITY_PATH`, and `FLOW_DIAGRAM_PATH` before
 classification. Resolve orchestrator-supplied bundled paths from the
 improvement skill package root, not from the target `SKILL_PATH`.
 
