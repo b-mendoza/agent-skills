@@ -13,6 +13,7 @@ wait for user approval, create, verify, and return the URL.
 
 | Platform | Local behavior | External source trigger |
 | -------- | -------------- | ----------------------- |
+| GitHub Enterprise | Use GitHub-compatible PR semantics with `gh` configured for the enterprise host; verify auth, remote host, repository identity, and host-specific API support before preflight continues | Fetch GitHub CLI auth, repo, PR, reviewer, or label docs when hostname flags or enterprise behavior are uncertain |
 | GitLab | Use merge-request semantics and the team's installed `glab` or approved API wrapper | Fetch GitLab MR, `glab mr create`, labels, or Code Owners docs when flags or fields are uncertain |
 | Bitbucket | Use the repository's standard CLI or REST wrapper; return `BLOCKED` when no safe create path is discoverable | Fetch Bitbucket create-PR, pull-request API, refs API, or default-reviewer docs |
 | Unknown or self-hosted | Ask which hosting platform and tooling to use before creating anything | Fetch only the docs for the user-named platform or tool |
