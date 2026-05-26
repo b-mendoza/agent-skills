@@ -47,26 +47,31 @@ return the URL plus a one-line conclusion using
    included path or hunk stays inside `APPROVED_COMMIT_SCOPE`. Return `BLOCKED`
    when the group includes a path outside `CHANGE_PATHS` without matching
    approval in `APPROVED_COMMIT_SCOPE`.
-4. Record pre-existing staged entries before staging. The commit may include
-   only the approved group plus pre-existing staged content explicitly listed in
-   `GROUP_PLAN.Include`. If unrelated staged content exists, use an exact
-   non-destructive isolation strategy and verify those entries remain staged and
-   unchanged after the commit; when safe isolation is uncertain, return
-   `BLOCKED` before committing.
-5. Stage only files or non-interactive hunks in `GROUP_PLAN.Include`. Return
-   `BLOCKED` when safe separation requires unresolved interactive selection.
-6. Review the staged diff against `GROUP_PLAN.Intent`, `Include`, and `Exclude`.
-   If excluded content is staged for this commit, undo only this attempt's
-   staging changes and return `BLOCKED`.
-7. Run the planned verification, or `VERIFICATION_HINT` when more specific. If
+4. Record a concise pre-attempt staged baseline by path and hunk intent before
+   staging. The commit may include only the approved group plus pre-existing
+   staged content explicitly listed in `GROUP_PLAN.Include`.
+5. When pre-existing staged content should stay outside this commit, choose an
+   exact reversible isolation method and name it in the output. Acceptable
+   outcomes are: preserved staged entries match the pre-attempt baseline after
+   the commit, or the executor returns `BLOCKED` before committing because exact
+   preservation cannot be proven.
+6. Stage only files or non-interactive hunks in `GROUP_PLAN.Include`, tracking
+   this attempt's index changes separately from the baseline. Return `BLOCKED`
+   when safe separation requires unresolved interactive selection.
+7. Review the staged diff against `GROUP_PLAN.Intent`, `Include`, and `Exclude`.
+   If excluded content is staged for this commit, restore only this attempt's
+   index changes to the pre-attempt baseline and return `BLOCKED`.
+8. Run the planned verification, or `VERIFICATION_HINT` when more specific. If
    no meaningful check exists, record `not run` with the reason.
-8. If verification fails, keep the worktree safe and return `VERIFY_FAILED` with
-   the failing check and the smallest recovery decision. Classify recovery as
+9. If verification fails, keep the worktree safe, restore attempt-added staging
+   unless an immediate same-scope same-group retry safely depends on keeping it,
+   and return `VERIFY_FAILED` with the failing check, cleanup evidence, and the
+   smallest recovery decision. Classify recovery as
    `same-scope-same-group-retry`, `needs-user-decision`, or `terminal` when no
    safe recovery exists.
-9. Commit with `GROUP_PLAN.Message` using the chosen safe index strategy, verify
-   the commit exists, verify preserved staged entries remain intact, and return
-   the short SHA.
+10. Commit with `GROUP_PLAN.Message` using the chosen safe index strategy,
+    verify the commit exists, verify preserved staged entries match the
+    pre-attempt baseline, and return the short SHA.
 
 ## Output Format
 
@@ -81,7 +86,8 @@ Your job is to:
 - Review the staged diff against the approved plan.
 - Run or record verification.
 - Create and verify one commit.
-- Preserve unrelated pre-existing staged entries.
+- Preserve unrelated pre-existing staged entries with reported baseline,
+  isolation method, and preservation verification.
 - Return a compact execution report.
 
 Commit boundary changes, user clarification, and multi-commit sequencing belong
