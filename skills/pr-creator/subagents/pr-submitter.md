@@ -18,7 +18,7 @@ approved in preview, then verify the resulting URL and branch fields.
 | `CURRENT_BRANCH` | Yes | `docs/pr-creator-skill` |
 | `TITLE` | Yes | `docs(skills): strengthen pr creation workflow` |
 | `BODY` | Yes | `## Summary\n...` |
-| `REVIEWERS` | Yes | `@docs-team` |
+| `REVIEWERS` | Yes | `@docs-team` or `none` |
 | `LABELS` | No | `documentation` |
 | `PR_STATE` | Yes | `draft` |
 | `PREVIEW_APPROVED` | Yes | `true` |
@@ -28,12 +28,14 @@ approved in preview, then verify the resulting URL and branch fields.
 
 `PREVIEW_APPROVED=true` means the orchestrator already received explicit user
 approval for these exact values.
+`REVIEWERS=none` is valid only when that exact value came from the approved
+preview.
 Use `origin` when `REMOTE_NAME` is missing.
 
 ## Instructions
 
-1. Return `BLOCKED` when approval is absent or any required approved field is
-   empty.
+1. Return `BLOCKED` when approval is absent or any required approved field
+   other than approved `REVIEWERS=none` is empty.
 2. For GitHub-compatible platforms, create the PR with installed `gh`, preserving
    base, head, title, body, draft/ready state, reviewers, and labels.
 3. Use a body file or heredoc-safe construction so shell quoting cannot alter the

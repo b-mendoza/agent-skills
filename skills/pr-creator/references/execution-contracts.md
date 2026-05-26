@@ -17,7 +17,7 @@ Next step: <one clear action>
 
 | Source status | Envelope code |
 | ------------- | ------------- |
-| Missing `TARGET_BRANCH`, invalid `PR_STATE`, missing active-platform path, missing type/scope choice, missing reviewer, or unresolved label choice | `BLOCKED` |
+| Missing `TARGET_BRANCH`, invalid `PR_STATE`, missing active-platform path, missing type/scope choice, missing reviewer without explicit no-reviewer approval, or unresolved label choice | `BLOCKED` |
 | `PREFLIGHT: AUTH`, `PR_SUBMIT: AUTH`, `REVIEW_METADATA: AUTH` | `AUTH` |
 | `PREFLIGHT: BASE_BRANCH_MISSING` | `BASE_BRANCH_MISSING` |
 | `PREFLIGHT: HEAD_BRANCH_UNPUSHED`, unresolved `PREFLIGHT: PUSH_REQUIRED`, or declined push | `HEAD_BRANCH_UNPUSHED` |
@@ -52,7 +52,7 @@ PR Preview
 Title:      <title>
 Target:     <target_branch>
 Source:     <current_branch>
-Reviewers:  <reviewer list>
+Reviewers:  <reviewer list or "none" after explicit no-reviewer approval>
 Labels:     <label list or "none">
 Status:     <draft or ready>
 

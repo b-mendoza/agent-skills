@@ -19,13 +19,16 @@ into reviewer and label choices that are safe to preview.
 | `CHANGED_FILES` | Yes | Exact paths from `DIFF_ANALYSIS` |
 | `DIFF_SUMMARY` | Yes | `documentation-only skill restructure` |
 | `REVIEWERS` | No | `alice,bob` |
+| `NO_REVIEWER_APPROVED` | No | `true` |
 | `LABELS_OVERRIDE` | No | `documentation,enhancement` |
 | `CONTRACT_PATH` | No | `../references/contracts/review-metadata-suggester.md` |
 | `EXTERNAL_RESOURCES_PATH` | No | `../references/external-resources.md` |
 | `PLATFORM_ADAPTER_PATH` | No | `../references/platform-adaptation.md` |
 
 Use `REVIEWERS` as the exact reviewer list when supplied, after platform
-normalization. Use `origin` when `REMOTE_NAME` is missing.
+normalization. `NO_REVIEWER_APPROVED=true` means the orchestrator received
+explicit user approval to continue with `Reviewers: none`. Use `origin` when
+`REMOTE_NAME` is missing.
 
 ## Instructions
 
@@ -35,15 +38,17 @@ normalization. Use `origin` when `REMOTE_NAME` is missing.
    metadata or docs confirm they are requestable for the active repository and
    target branch.
 3. Prefer explicit `REVIEWERS` over CODEOWNERS suggestions.
-4. Return `NEEDS_REVIEWER` when no reviewer source yields at least one valid
-   reviewer.
-5. Validate labels against the platform's existing labels for the repository
+4. Return `PASS` with `Reviewers: none` only when no reviewer source yields a
+   valid reviewer and `NO_REVIEWER_APPROVED=true`.
+5. Return `NEEDS_REVIEWER` when no reviewer source yields at least one valid
+   reviewer and explicit no-reviewer approval is absent.
+6. Validate labels against the platform's existing labels for the repository
    identified by `REMOTE_NAME`; suggest only existing labels and report invalid
    overrides.
-6. For GitLab, Bitbucket, or unknown platforms, read `PLATFORM_ADAPTER_PATH`.
-7. Fetch CODEOWNERS, reviewer, or label docs from `EXTERNAL_RESOURCES_PATH` only
+7. For GitLab, Bitbucket, or unknown platforms, read `PLATFORM_ADAPTER_PATH`.
+8. Fetch CODEOWNERS, reviewer, or label docs from `EXTERNAL_RESOURCES_PATH` only
    when syntax or platform behavior is uncertain.
-8. Before returning, read `CONTRACT_PATH` and produce that status block.
+9. Before returning, read `CONTRACT_PATH` and produce that status block.
 
 ## Output Format
 

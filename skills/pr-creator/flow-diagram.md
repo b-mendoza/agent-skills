@@ -88,10 +88,12 @@ flowchart TD
   METADATA_STATUS -->|ERROR| FAIL_BLOCKED
 
   REVIEWER_CYCLE -->|no| FINAL_DECISION
-  REVIEWER_CYCLE -->|yes| REVIEWER_GATE["Human gate: ask for required reviewer<br/>one focused reviewer question"]
+  REVIEWER_CYCLE -->|yes| REVIEWER_GATE["Human gate: reviewer decision<br/>provide reviewer or explicitly approve Reviewers: none"]
   REVIEWER_GATE -->|provided| METADATA_RETRY["Redispatch review-metadata-suggester only<br/>with reviewer answer"]
-  REVIEWER_GATE -->|waiting| FAIL_REVIEWER([Failure envelope: BLOCKED<br/>waiting for reviewer])
+  REVIEWER_GATE -->|approved no reviewer| NO_REVIEWER_APPROVAL["Record explicit no-reviewer approval<br/>redispatch review-metadata-suggester only<br/>NO_REVIEWER_APPROVED=true"]
+  REVIEWER_GATE -->|waiting| FAIL_REVIEWER([Failure envelope: BLOCKED<br/>waiting for reviewer decision])
   METADATA_RETRY --> METADATA_STATUS
+  NO_REVIEWER_APPROVAL --> METADATA_STATUS
 
   LABEL_CYCLE -->|no| FINAL_DECISION
   LABEL_CYCLE -->|yes| LABEL_GATE["Human gate: label fix choice<br/>choose valid existing labels or remove labels"]
@@ -139,7 +141,7 @@ flowchart TD
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
   class TARGET_CHECK,REPO_STATUS,LOCAL_CHANGES,PLATFORM_ROUTE,PLATFORM_DOCS,PLATFORM_READY,PREFLIGHT_STATUS,PREFLIGHT_CYCLE,DIFF_STATUS,SCOPE_CYCLE,DRAFT_STATUS,DRAFT_CYCLE,METADATA_STATUS,REVIEWER_CYCLE,LABEL_CYCLE,PREVIEW_CHANGES,RECOVERY_PHASE,SUBMIT_STATUS,VERIFY_STATUS decision;
-  class REPO_STATE,PREFLIGHT,PREFLIGHT_PUSH,TRUSTED_DIFF,DIFF_ANALYSIS,DIFF_APPROVED,PR_DRAFT,DRAFT_RETRY,REVIEW_METADATA,METADATA_RETRY,LABEL_RETRY,SUBMIT,VERIFY_FINAL check;
+  class REPO_STATE,PREFLIGHT,PREFLIGHT_PUSH,TRUSTED_DIFF,DIFF_ANALYSIS,DIFF_APPROVED,PR_DRAFT,DRAFT_RETRY,REVIEW_METADATA,METADATA_RETRY,NO_REVIEWER_APPROVAL,LABEL_RETRY,SUBMIT,VERIFY_FINAL check;
   class INTAKE,BOUNDARY,RECORD_LOCAL,ADAPT_PLATFORM,FETCH_PLATFORM_DOCS,FREEZE guard;
   class ASK_TARGET,ASK_PLATFORM,PUSH_GATE,SCOPE_GATE,TYPE_SCOPE_GATE,REVIEWER_GATE,LABEL_GATE,PREVIEW_GATE,FINAL_DECISION human;
   class PREVIEW,FINAL output;
@@ -149,8 +151,10 @@ flowchart TD
 
 Readiness rule: dispatch `pr-submitter` only after `REPO_STATE: PASS`, platform
 routing is safe, `PREFLIGHT: PASS`, trusted diff analysis includes exact changed
-file paths, draft and metadata statuses are `PASS`, exact preview approval is
-recorded, and approved preview fields are frozen.
+file paths, `PR_DRAFT: PASS`, `REVIEW_METADATA: PASS`, exact preview approval is
+recorded, and approved preview fields are frozen. `REVIEW_METADATA: PASS` may
+include `Reviewer source: explicit-none` and `Reviewers: none` only after
+explicit no-reviewer approval was recorded and labels were validated.
 
 Failure envelope rule: every `AUTH`, `BASE_BRANCH_MISSING`,
 `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `BLOCKED`, `CANCELLED`, `CREATE_ERROR`, or

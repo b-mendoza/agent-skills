@@ -36,6 +36,7 @@ validation.
 | Need | Load |
 | ---- | ---- |
 | Phase routing, user gates, and subagent selection | This file only |
+| User-facing posture for gates, preview, failures, and final output | `./references/personality.md` |
 | Failure envelope, preview block, final output, body template | `./references/execution-contracts.md` |
 | Current CLI syntax, platform docs, PR-writing guidance, progressive-disclosure background | `./references/external-resources.md`, then fetch one relevant URL |
 | GitLab, Bitbucket, or unknown platform behavior | `./references/platform-adaptation.md` |
@@ -81,9 +82,13 @@ files, and external resources only at the phase that needs them.
    remote name and exact changed-file paths from `DIFF_ANALYSIS`. Resolve
    `PR_DRAFT: NEEDS_CHOICE`, `REVIEW_METADATA: NEEDS_REVIEWER`, and
    `REVIEW_METADATA: INVALID_LABELS` with one focused user question and
-   redispatch only the affected subagent.
-7. Load `./references/execution-contracts.md`, show the exact preview, and ask
-   for approval. Any edit to branch, state, title, body, reviewers, or labels
+   redispatch only the affected subagent. For `NEEDS_REVIEWER`, ask for a
+   reviewer or explicit approval to continue with `Reviewers: none`, then
+   redispatch `review-metadata-suggester` with either the reviewer answer or
+   `NO_REVIEWER_APPROVED=true`.
+7. Load `./references/personality.md` and
+   `./references/execution-contracts.md`, show the exact preview, and ask for
+   approval. Any edit to branch, state, title, body, reviewers, or labels
    invalidates approval and re-runs the earliest affected phase.
 8. Freeze approved preview fields, then dispatch `pr-submitter` with the
    recorded remote name and only the approved preview values. Verify URL, base,
@@ -104,7 +109,7 @@ stop.
 | `PREFLIGHT` | `PASS` | `PUSH_REQUIRED` -> push approval then `PUSH_APPROVED=true` | `AUTH` -> `AUTH`; `BASE_BRANCH_MISSING` -> `BASE_BRANCH_MISSING`; `HEAD_BRANCH_UNPUSHED` or unresolved `PUSH_REQUIRED` -> `HEAD_BRANCH_UNPUSHED`; `BLOCKED` or `ERROR` -> `BLOCKED` |
 | `DIFF_ANALYSIS` | `PASS` | `LARGE_PR_CONFIRMATION_REQUIRED` -> scope approval then `LARGE_PR_APPROVED=true` | declined large-PR gate -> `CANCELLED`; `EMPTY_DIFF` -> `EMPTY_DIFF`; `ERROR` -> `BLOCKED` |
 | `PR_DRAFT` | `PASS` | `NEEDS_CHOICE` -> one type or scope choice | unresolved `NEEDS_CHOICE` or `ERROR` -> `BLOCKED` |
-| `REVIEW_METADATA` | `PASS` | `NEEDS_REVIEWER`, `INVALID_LABELS` -> one metadata question | unresolved reviewer or label gate -> `BLOCKED`; `AUTH` -> `AUTH`; `ERROR` -> `BLOCKED` |
+| `REVIEW_METADATA` | `PASS` | `NEEDS_REVIEWER` -> reviewer or explicit no-reviewer approval; `INVALID_LABELS` -> one metadata question | unresolved reviewer or label gate -> `BLOCKED`; `AUTH` -> `AUTH`; `ERROR` -> `BLOCKED` |
 | `PR_SUBMIT` | `PASS` | none | `AUTH` -> `AUTH`; `CREATE_ERROR` -> `CREATE_ERROR`; `BLOCKED` or `ERROR` -> `BLOCKED` |
 
 ## Core Rules
@@ -114,8 +119,9 @@ stop.
 - Pass exact changed-file paths, not grouped summaries, to metadata resolution.
 - Ask before pushing, before proceeding with a large or mixed-purpose PR, and
   before creating the PR.
-- Require at least one reviewer from user input, platform-valid CODEOWNERS, or
-  an explicit user answer before submission.
+- Resolve reviewer intent before preview: require at least one reviewer from
+  user input or platform-valid CODEOWNERS, or explicit user approval to continue
+  with `Reviewers: none`.
 - Use only labels that the hosting platform reports as existing.
 - Preserve approved preview fields exactly during submission; any change to
   branch, state, title, body, reviewers, or labels requires a new preview

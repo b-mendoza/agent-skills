@@ -13,7 +13,7 @@ Base: <target_branch>
 Head: <current_branch>
 Title: <title>
 State: draft | ready
-Reviewers: <reviewer list or none>
+Reviewers: <reviewer list or none from approved preview>
 Labels: <label list or none>
 Verified fields: url, base, head, title, body, state, reviewers, labels | <partial list>
 Verification: pass | fail | not-run
