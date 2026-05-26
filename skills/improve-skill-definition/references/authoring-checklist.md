@@ -1,68 +1,65 @@
 # Authoring Checklist
 
 Read this file before audit and validation, or when applying a checklist-driven
-fix. It is an operational gate, not a rationale library. For source-backed
-background, current runtime docs, or longer explanations, load
-`./external-sources.md` and fetch only the one URL needed for the decision.
+fix. It is a routing overlay onto the canonical best-practices index, not a
+parallel rule set.
 
-## Material Issue Gate
+The source of truth for authoring rules is
+[`../../../docs/best-practices/`](../../../docs/best-practices/README.md). When
+the index lists a practice, that doc is the rule; this file does not restate
+it. The best-practices-compliance gate
+([`best-practices-compliance-gate`](../../../docs/best-practices/best-practices-compliance-gate.md))
+governs how audit and validation report per-practice verdicts.
 
-Make a change only when it fixes a concrete problem in reliability, portability,
-standalone packaging, context efficiency, maintainability, validation, or user
-comprehension. Leave the package unchanged when proposed edits would only rename,
-reshuffle, or polish content without changing behavior.
+## Audit and Validation Routing
 
-## Core Package Checks
+When an audit or validation needs to evaluate a target skill against an
+authoring concern, load the named best-practice file and apply its rule
+directly.
 
-| Area | Pass condition |
-| ---- | -------------- |
-| Frontmatter | `name` and `description` are portable; `name` matches the skill directory or subagent file basename |
-| Skill body | `SKILL.md` is under 500 lines and limited to identity, inputs, outputs, routing, workflow, validation, and a concise example |
-| Flow contract | `flow-diagram.md` is loaded as the source of truth when the skill has multi-phase, gated, or subagent-heavy behavior; semantic diagram changes are routed through `generate-flow-diagram` and accepted only after `REVIEW: PASS` |
-| Flow coherence | `SKILL.md`, subagents, references, scripts, and templates use the same phases, gates, statuses, artifact paths, and subagent names as the approved flow diagram |
-| Personality | Non-trivial skills either define `references/personality.md` or explicitly justify `NOT_APPLICABLE`; personality fits the skill purpose, audience, workflow, operating behavior, and artifact contracts |
-| Paths | Bundled paths are relative to the file that names them, exist on disk, and stay inside the skill package |
-| Mutation boundaries | Planned or completed edits stay inside user `SCOPE_LIMITS` and orchestrator `MUTATION_LIMITS`; broader sync or lockfile work is reported as blocked unless explicitly in scope |
-| Standalone package | Runtime behavior does not depend on repository-local docs, absolute paths, private config, sibling skills, or unavailable files |
-| Progressive disclosure | Detailed templates, long examples, source indexes, mode guides, and large checklists live in `references/` and load just in time |
-| Subagents | Each subagent has explicit inputs, instructions, output format, scope, and escalation behavior, and earns its complexity with a distinct non-overlapping contract |
-| Context protection | The orchestrator keeps verdicts, summaries, paths, and decisions; raw files, diffs, command output, and large pages stay in subagents |
-| Approval gate | Structural mutations, personality decisions, subagent removals/merges, and non-trivial rewrites require explicit user approval before edits |
-| Validation | Observable checks, approved-gap closure, targeted fix cycles, and retry limits exist when quality gates can fail |
-| External sources | URLs are optional background or current-doc sources; essential execution rules stay bundled |
+| Concern | Best-practice doc |
+| ------- | ----------------- |
+| Naming, frontmatter, directory conventions | [`naming-conventions`](../../../docs/best-practices/naming-conventions.md) |
+| Section ordering for `SKILL.md` and subagents | [`structural-conventions`](../../../docs/best-practices/structural-conventions.md) |
+| Package directory layout | [`quick-reference-skill-structure`](../../../docs/best-practices/quick-reference-skill-structure.md) |
+| `SKILL.md` size, three-level architecture, just-in-time loading | [`progressive-disclosure`](../../../docs/best-practices/progressive-disclosure.md) |
+| Identity statement and mental model | [`identity-and-mental-model`](../../../docs/best-practices/identity-and-mental-model.md) |
+| Inputs and outputs between pipeline stages | [`input-output-contracts`](../../../docs/best-practices/input-output-contracts.md) |
+| Failure categories and reporting | [`escalation-patterns`](../../../docs/best-practices/escalation-patterns.md) |
+| When to inline vs. dispatch a subagent | [`subagent-default-execution`](../../../docs/best-practices/subagent-default-execution.md) |
+| Keeping raw data out of the orchestrator | [`context-window-protection`](../../../docs/best-practices/context-window-protection.md) |
+| Large subagent payloads | [`handoff-file-dispatch`](../../../docs/best-practices/handoff-file-dispatch.md) |
+| Long templates and reference data | [`template-extraction`](../../../docs/best-practices/template-extraction.md) |
+| Positive vs. negative constraint wording | [`positive-constraint-framing`](../../../docs/best-practices/positive-constraint-framing.md) |
+| Mid-document constraint reminders | [`instruction-reinforcement`](../../../docs/best-practices/instruction-reinforcement.md) |
+| Concrete examples at every level | [`example-strategy`](../../../docs/best-practices/example-strategy.md) |
+| Phase boundaries, fix cycles, retry limits | [`validation-loops`](../../../docs/best-practices/validation-loops.md) |
+| Validating by behavior change, not self-report | [`empirical-validation`](../../../docs/best-practices/empirical-validation.md) |
+| What to commit, keep local, or delete | [`artifact-lifecycle`](../../../docs/best-practices/artifact-lifecycle.md) |
+| Running the per-practice compliance gate | [`best-practices-compliance-gate`](../../../docs/best-practices/best-practices-compliance-gate.md) |
 
-## Artifact Placement Rules
+When evaluating a concern not named above, consult the
+[best-practices index](../../../docs/best-practices/README.md) directly. If
+the concern is not covered there, it is workflow-specific — see the rest of
+this file or the relevant subagent contract.
 
-| Put content in | When |
-| -------------- | ---- |
-| `SKILL.md` | The orchestrator needs it for every run: identity, inputs, registry, routing, core workflow, and success criteria |
-| `flow-diagram.md` | The deterministic execution flow, phases, gates, statuses, authority changes, and terminal states |
-| `references/` | Content is static, detailed, template-like, example-heavy, source-backed, or needed only in one phase |
-| `references/personality.md` | The skill's identity, operating posture, decision habits, validation bias, escalation style, communication style, and tone boundaries |
-| `subagents/` | Work is self-contained and the orchestrator only needs a concise summary, verdict, path, or artifact |
-| `scripts/` | Deterministic parsing, validation, or transformation is safer as executable code than prose |
+## Material Issue Gate and Improvement Decision Tests
 
-## Improvement Decision Tests
+These rules are the
+[`earned-complexity`](../../../docs/best-practices/earned-complexity.md) best
+practice. Apply that doc directly when sizing a mutation, classifying an
+observation, or deciding between patch and rebuild. Two workflow-specific
+additions this skill applies on top of the canonical rule:
 
-- Would the change make the skill more reliable, portable, standalone, compact,
-  maintainable, verifiable, or understandable in a concrete way?
-- Would deleting the proposed change make future runs worse?
-- Does the current or proposed flow diagram actually govern execution, or is it
-  decorative documentation?
-- Does the personality change how the agent investigates, decides, validates,
-  and escalates for this skill's purpose, or is it just tone cosplay?
-- Does each subagent return something the orchestrator needs only as a bounded
-  verdict or summary?
-- Is the content being moved genuinely just-in-time, or is it only being moved
-  to make the package look more architected?
-- Can the package still run without fetching external URLs?
-- Does the edit fit within the user scope and mutation limits?
-- Is there an observable validation check for the claimed improvement?
-
-If any answer argues against the edit, prefer `NO_CHANGE` or a smaller fix.
+- Every audit and validation must record a best-practices-compliance verdict
+  per practice as part of the gate output.
+- A `NO_CHANGE` result must explicitly cite the compliance gate verdicts that
+  justify leaving the package unchanged.
 
 ## No-Change Report Checks
 
 A `NO_CHANGE` result should include files inspected, evidence that contracts,
-paths, mutation boundaries, standalone packaging, and disclosure boundaries are
-already adequate, optional improvements rejected, and validation limits.
+paths, mutation boundaries, standalone packaging, and disclosure boundaries
+are already adequate, the best-practices-compliance gate result with each
+applicable practice and verdict, optional improvements rejected, and
+validation limits.
