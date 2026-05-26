@@ -20,7 +20,7 @@ Flow diagram verdict:
 Personality assessment:
 - Summary: [current target personality or missing]
 - `PERSONALITY_VERDICT`: `FITS_PURPOSE` | `NEEDS_REFINEMENT` | `MISSING_BUT_RECOMMENDED` | `NOT_APPLICABLE` | `CONFLICTS_WITH_SKILL`
-- Checks run: [purpose fit, audience fit, tone safety, workflow fit, artifact consistency]
+- Checks run: [purpose fit, audience fit, tone safety, workflow fit, operating behavior fit, artifact consistency]
 - Recommendation: [keep, refine, replace, add, or skip]
 - Alternatives: [at least five target-specific options]
 
