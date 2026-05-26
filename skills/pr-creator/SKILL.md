@@ -70,7 +70,9 @@ files, and external resources only at the phase that needs them.
    `./references/platform-adaptation.md`; fetch external docs only for exact
    active-platform syntax. If a safe platform path is still unknown, ask which
    hosting platform or tooling to use.
-4. Dispatch `preflight-validator` with the recorded remote name. Route
+4. Load `./references/personality.md` before this first human gate and keep its
+   posture available for every later gate, failure, and final response.
+   Dispatch `preflight-validator` with the recorded remote name. Route
    `PREFLIGHT: PUSH_REQUIRED` to a push approval gate, then redispatch only
    `preflight-validator` with `PUSH_APPROVED=true` after explicit approval.
 5. Dispatch `diff-analyzer` with the recorded remote name only after
@@ -86,10 +88,10 @@ files, and external resources only at the phase that needs them.
    reviewer or explicit approval to continue with `Reviewers: none`, then
    redispatch `review-metadata-suggester` with either the reviewer answer or
    `NO_REVIEWER_APPROVED=true`.
-7. Load `./references/personality.md` and
-   `./references/execution-contracts.md`, show the exact preview, and ask for
-   approval. Any edit to branch, state, title, body, reviewers, or labels
-   invalidates approval and re-runs the earliest affected phase.
+7. Load `./references/execution-contracts.md`, show the exact preview, and ask
+   for approval while preserving the previously loaded personality posture.
+   Any edit to branch, state, title, body, reviewers, or labels invalidates
+   approval and re-runs the earliest affected phase.
 8. Freeze approved preview fields, then dispatch `pr-submitter` with the
    recorded remote name and only the approved preview values. Verify URL, base,
    head, title, body, state, reviewers, and labels before returning the final

@@ -81,7 +81,7 @@ flowchart TD
   DRAFT_RETRY --> DRAFT_STATUS
 
   REVIEW_METADATA --> METADATA_STATUS{REVIEW_METADATA status}
-  METADATA_STATUS -->|PASS| PREVIEW["Load execution-contracts.md<br/>show exact PR Preview fields"]
+  METADATA_STATUS -->|PASS| PREVIEW["Use loaded personality.md<br/>load execution-contracts.md<br/>show exact PR Preview fields"]
   METADATA_STATUS -->|NEEDS_REVIEWER| REVIEWER_CYCLE{Reviewer cycles &lt; 3?}
   METADATA_STATUS -->|INVALID_LABELS| LABEL_CYCLE{Label cycles &lt; 3?}
   METADATA_STATUS -->|AUTH| FAIL_AUTH
