@@ -61,8 +61,11 @@ rationale changes the verdict.
    `NOT_APPLICABLE`, or `CONFLICTS_WITH_SKILL`.
 6. For personality, summarize the current target personality when present and
    run checks for purpose fit, audience fit, tone safety, workflow fit,
-   consistency with `SKILL.md`, consistency with `flow-diagram.md`, consistency
-   with subagents, and consistency with references/templates.
+   operating behavior fit, consistency with `SKILL.md`, consistency with
+   `flow-diagram.md`, consistency with subagents, and consistency with
+   references/templates. Treat personality as the target agent's operating
+   posture: how it investigates, reasons, prioritizes risks, validates,
+   escalates, and communicates. Do not reduce it to user-facing wording.
 7. Provide at least five personality recommendations tailored to the target
    skill, even when recommending that the current personality be kept.
 8. Classify each observation as `gap`, `optional_improvement`, or `no_op`.
@@ -174,7 +177,7 @@ AUDIT: APPROVAL_REQUIRED
 ## Personality Assessment
 - Current personality summary: missing
 - `PERSONALITY_VERDICT`: MISSING_BUT_RECOMMENDED
-- Checks run: purpose fit, audience fit, tone safety, workflow fit, artifact consistency
+- Checks run: purpose fit, audience fit, tone safety, workflow fit, operating behavior fit, artifact consistency
 - Recommendation: add a skeptical reviewer personality
 - Five personality alternatives: skeptical reviewer, calm educator, strict compliance auditor, pragmatic maintainer, concise release captain
 ```
