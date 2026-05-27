@@ -112,10 +112,11 @@ unexpected subagent behavior.
    be left in place or removed when empty; do not remove sibling files the
    orchestrator did not create.
 
-9. **The handoff file is a Category A orchestration artifact.** It is a
-   working document scoped to one workflow session. Never stage it. Never
-   commit it. See `./artifact-lifecycle.md` for the full Category A vs B
-   rules.
+9. **The handoff file is a Category A2 orchestration artifact.** It is an
+   ephemeral dispatch payload scoped to one workflow session. Never stage it.
+   Never commit it. Delete it according to the dispatch cleanup rules above
+   unless the user asks to preserve it for debugging. See
+   `./artifact-lifecycle.md` for the full Category A1/A2/B lifecycle rules.
 
 10. **The dispatch prompt still names the contract.** Even though the payload
     moves to the file, the dispatch prompt should still name the contract
@@ -231,8 +232,8 @@ Use the handoff-file pattern when:
 - `./subagent-default-execution.md` — when to dispatch vs. inline at all.
 - `./input-output-contracts.md` — what the handoff file's `Inputs` and
   `Output Contract` sections must specify.
-- `./artifact-lifecycle.md` — handoff files are Category A artifacts; never
-  committed.
+- `./artifact-lifecycle.md` — handoff files are Category A2 artifacts; never
+  committed and normally deleted after terminal dispatch cleanup.
 - `./context-window-protection.md` — moving payloads to disk also keeps them
   off the orchestrator's tool-call wire, not just out of the subagent's
   inline context.
