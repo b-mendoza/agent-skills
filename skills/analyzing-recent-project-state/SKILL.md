@@ -75,6 +75,16 @@ Map non-success statuses to the `RECENT_STATE` escalation envelope. Treat
 `SNAPSHOT_VERIFY: FAIL` as targeted writer repair unless the verifier says a
 missing user decision blocks repair.
 
+## Critical Outputs
+
+| Output | Gate | Runner | Failure behavior |
+| ------ | ---- | ------ | ---------------- |
+| Verified developer-facing Markdown report shaped by `./references/project-state-snapshot-template.md` | `G_SNAPSHOT_VERIFY` | `snapshot-verifier` | On `SNAPSHOT_VERIFY: FAIL`, redispatch `state-snapshot-writer` with the required fixes per the two-cycle repair loop in Execution Steps 9–10. After the second failed cycle, return `RECENT_STATE: ERROR` with the remaining required fixes. |
+
+The verified report is the only critical output. Other downstream work
+(review, merge, handoff) depends on it being grounded, scoped, and bounded
+per the verification checklist.
+
 ## Subagent Registry
 
 | Subagent | Path | Purpose |
