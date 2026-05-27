@@ -12,7 +12,7 @@ or name corrections directly.
 
 ```mermaid
 flowchart TD
-  START([Start: improve existing skill package]) --> INTAKE["Emit banner Phase 1/7 - Intake<br/>Normalize inputs<br/>SKILL_PATH, KNOWN_PROBLEM, TARGET_RUNTIME,<br/>SCOPE_LIMITS, REFERENCE_NEED, APPROVED_GAPS<br/>Derive MUTATION_LIMITS"]
+  START([Start: improve existing skill package]) --> INTAKE["Emit banner Phase 1/7 - Intake<br/>Normalize inputs<br/>SKILL_PATH, KNOWN_PROBLEM, TARGET_RUNTIME,<br/>SCOPE_LIMITS, REFERENCE_NEED, APPROVED_GAPS<br/>Derive MUTATION_LIMITS and HANDOFF_DIR"]
   INTAKE --> PATH_OK{"SKILL_PATH present and locatable?"}
 
   PATH_OK -->|no| PATH_BLOCK["Blocked handoff<br/>Ask one SKILL_PATH question<br/>Stop until user supplies path"]
@@ -22,7 +22,7 @@ flowchart TD
   LOAD_PERSONALITY --> BOUNDARY["Set orchestration boundary<br/>Retain only verdicts, summaries, paths,<br/>approved gaps, fetched URLs, and user decisions<br/>Delegate raw inspection, editing, and validation"]
   BOUNDARY --> STATUS_CONTRACT["Status routing contract<br/>AUDIT: APPROVAL_REQUIRED, NO_CHANGE, BLOCKED, ERROR<br/>EDIT: PASS, BLOCKED, ERROR<br/>VALIDATION: PASS, FAIL, BLOCKED, ERROR"]
 
-  STATUS_CONTRACT --> AUDIT["Emit banner Phase 3/7 - Audit<br/>Write docs/improve-skill-definition/skill-package-auditor-instructions.md<br/>Dispatch skill-package-auditor with a compact pointer prompt<br/>naming the contract, handoff file, and Output Format<br/>Cleanup: routed success now; final handoff deletes handoff directory"]
+  STATUS_CONTRACT --> AUDIT["Emit banner Phase 3/7 - Audit<br/>Write HANDOFF_DIR/skill-package-auditor-instructions.md<br/>Dispatch skill-package-auditor with a compact pointer prompt<br/>naming the contract, handoff file, and Output Format<br/>Cleanup: routed success now; terminal cleanup removes handoff files"]
   AUDIT --> AUDIT_STATUS{"AUDIT status?"}
 
   AUDIT_STATUS -->|NO_CHANGE| FINAL_NO_CHANGE["Emit banner Phase 7/7 - Handoff<br/>Load final-report-template.md<br/>Return no-change handoff with evidence,<br/>personality assessment, rejected optional improvements,<br/>and validation limits"]
@@ -40,13 +40,13 @@ flowchart TD
   APPROVED_NONE -->|no| SCOPE_GATE{"Approved mutations inside SCOPE_LIMITS and MUTATION_LIMITS?"}
 
   SCOPE_GATE -->|no| SCOPE_BLOCK["Blocked handoff<br/>Ask one scope question<br/>Stop until user decides"]
-  SCOPE_GATE -->|yes| EDIT["Emit banner Phase 5/7 - Edit<br/>Write docs/improve-skill-definition/skill-definition-editor-instructions.md<br/>Dispatch skill-definition-editor with a compact pointer prompt<br/>naming the contract, handoff file, and Output Format<br/>Cleanup: routed success now; final handoff deletes handoff directory"]
+  SCOPE_GATE -->|yes| EDIT["Emit banner Phase 5/7 - Edit<br/>Write HANDOFF_DIR/skill-definition-editor-instructions.md<br/>Dispatch skill-definition-editor with a compact pointer prompt<br/>naming the contract, handoff file, and Output Format<br/>Cleanup: routed success now; terminal cleanup removes handoff files"]
 
   AUDIT_STATUS -->|BLOCKED| AUDIT_BLOCK["Blocked handoff<br/>Include blocker, completed checks,<br/>smallest recovery action"]
   AUDIT_STATUS -->|ERROR| AUDIT_ERROR["Retain audit error summary"]
 
   EDIT --> EDIT_STATUS{"EDIT status?"}
-  EDIT_STATUS -->|PASS| VALIDATE["Emit banner Phase 6/7 - Validate<br/>Write docs/improve-skill-definition/skill-package-validator-instructions.md<br/>Dispatch skill-package-validator with a compact pointer prompt<br/>naming the contract, handoff file, and Output Format<br/>Cleanup: routed success now; final handoff deletes handoff directory"]
+  EDIT_STATUS -->|PASS| VALIDATE["Emit banner Phase 6/7 - Validate<br/>Write HANDOFF_DIR/skill-package-validator-instructions.md<br/>Dispatch skill-package-validator with a compact pointer prompt<br/>naming the contract, handoff file, and Output Format<br/>Cleanup: routed success now; terminal cleanup removes handoff files"]
   EDIT_STATUS -->|BLOCKED| EDIT_BLOCK["Blocked handoff<br/>Include edit blocker and smallest user decision"]
   EDIT_STATUS -->|ERROR| EDIT_ERROR["Retain edit error summary"]
 
@@ -55,7 +55,7 @@ flowchart TD
   FINAL_CHANGED --> CHANGED([Decision: changed])
 
   VALIDATION_STATUS -->|FAIL| RETRY_GATE{"Targeted repair cycles used fewer than 3?"}
-  RETRY_GATE -->|yes| REPAIR["Emit banner Phase 5/7 - Edit<br/>Write docs/improve-skill-definition/skill-definition-editor-instructions.md<br/>Re-dispatch skill-definition-editor with a compact pointer prompt<br/>naming the contract, handoff file, and Output Format<br/>Cleanup: routed success now; final handoff deletes handoff directory"]
+  RETRY_GATE -->|yes| REPAIR["Emit banner Phase 5/7 - Edit<br/>Write HANDOFF_DIR/skill-definition-editor-instructions.md<br/>Re-dispatch skill-definition-editor with a compact pointer prompt<br/>naming the contract, handoff file, and Output Format<br/>Cleanup: routed success now; terminal cleanup removes handoff files"]
   RETRY_GATE -->|no| FAIL_BLOCK["Blocked handoff<br/>Validation still failing after three repairs<br/>Include failed checks, attempted repairs, and resume condition"]
 
   REPAIR --> REPAIR_STATUS{"Repair EDIT status?"}
@@ -99,7 +99,7 @@ flowchart TD
   class BLOCKED,ERROR,AUDIT_ERROR,EDIT_ERROR,REPAIR_ERROR,VALIDATION_ERROR stop;
 ```
 
-Handoff-file dispatch: Each subagent dispatch in the AUDIT, EDIT, VALIDATE, and REPAIR action nodes follows a write-dispatch-cleanup pattern. The orchestrator first writes the full per-subagent payload to `docs/improve-skill-definition/<subagent-name>-instructions.md`, then dispatches the subagent with a compact pointer prompt that names only the subagent contract file, that handoff file, and the expected Output Format. The orchestrator deletes the handoff file in the same dispatch step for routed-forward success statuses, leaves retryable failure payloads in place until the next dispatch overwrites them, and deletes the entire `docs/improve-skill-definition/` handoff directory before a terminal user-facing handoff. The `docs/improve-skill-definition/` directory is the conventional location for these per-subagent handoff files, keeping the orchestrator context small while subagents receive the complete payload from disk.
+Handoff-file dispatch: Each subagent dispatch in the AUDIT, EDIT, VALIDATE, and REPAIR action nodes follows a write-dispatch-cleanup pattern. During Intake, the orchestrator resolves `HANDOFF_DIR` to the repository-root anchored `.handoffs/improve-skill-definition/` directory. It first writes the full per-subagent payload to `HANDOFF_DIR/<subagent-name>-instructions.md`, then dispatches the subagent with a compact pointer prompt that names only the subagent contract file, that handoff file, and the expected Output Format. The orchestrator deletes the handoff file in the same dispatch step for routed-forward success statuses, leaves retryable failure payloads in place until the next dispatch overwrites them, and deletes workflow-created `*-instructions.md` files inside `HANDOFF_DIR` before a terminal user-facing handoff. `HANDOFF_DIR` may be removed only when empty, keeping the orchestrator context small while subagents receive the complete payload from disk.
 
 Phase transition banners: Every action node above instructs the orchestrator to emit the canonical forty-hyphen `Phase N/7 - <Name>` banner before its other actions, matching the format defined in `../../docs/best-practices/phase-transition-banner.md`. REPAIR re-emits the `Phase 5/7 - Edit` banner so each repair cycle is visible in the user output stream, and the subsequent re-validate re-emits `Phase 6/7 - Validate`. Banners are an orchestrator concern; subagents do not emit them.
 
