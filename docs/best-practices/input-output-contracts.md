@@ -48,9 +48,28 @@ Must contain:
 - Each task entry has: Title, Description, Acceptance Criteria
 ```
 
-## Design principle: Prefer URLs over derived keys as inputs
+## Design principle: Prefer canonical source identifiers over lossy fragments
 
-When a value carries multiple pieces of context (e.g., a URL contains
-workspace, project, and key), pass the full value rather than requiring the
-caller to pre-extract components. The receiving skill can derive what it needs.
-This reduces ambiguity and provides richer context to downstream operations.
+When a non-sensitive value carries multiple pieces of useful context (e.g., a
+canonical issue URL contains workspace, project, and key), pass the full value
+rather than requiring the caller to pre-extract components. The receiving skill
+can derive what it needs. This reduces ambiguity and provides richer context to
+downstream operations.
+
+Do not pass full URLs or raw identifiers by default when they contain secrets,
+access tokens, private user data, tracking parameters, or unnecessary context.
+In those cases, validate and pass the smallest structured fields needed by the
+receiver, plus a redacted source reference when provenance matters.
+
+## References
+
+- JSON Schema specification, accessed 2026-05-27:
+  <https://json-schema.org/specification>. Supports explicit validation
+  structures for machine-readable contracts.
+- OpenAI Structured Outputs documentation, accessed 2026-05-27:
+  <https://platform.openai.com/docs/guides/structured-outputs>. Supports using
+  schemas when a downstream consumer depends on machine-checkable output.
+- OpenAI, "Safety in building agents," accessed 2026-05-27:
+  <https://platform.openai.com/docs/guides/agent-builder-safety>. Supports
+  extracting and validating structured values from untrusted content before
+  they drive agent behavior.
