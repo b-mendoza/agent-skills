@@ -75,6 +75,21 @@ call graph you have to trace.
    (decision, evidence, next steps). The handoff is the rendered UI; the
    subagent outputs that fed it are the backend data.
 
+7. **Phase transitions are visible.** Multi-phase orchestrators make each
+   phase transition visible before the new phase starts. In this repo, the
+   preferred marker is:
+
+   ```text
+   ----------------------------------------
+   Phase <N>/<TOTAL> - <Phase name>
+   ----------------------------------------
+   ```
+
+   The forty-hyphen banner is a repo UI convention, not a cross-runtime
+   requirement. If the host UI has a native progress marker, use that while
+   preserving the same information: phase number, total phase count, phase
+   name, and scope when relevant. Subagents do not emit phase markers.
+
 ## Example
 
 `orchestrating-jira-workflow` follows this pattern explicitly. The
@@ -107,8 +122,6 @@ package contents stay inside each subagent.
   step should be inline vs. delegated.
 - [Input and Output Contracts](./input-output-contracts.md) — explicit data
   boundaries between pipeline stages.
-- [Context Window Protection](./context-window-protection.md) — keeping raw
-  data out of the orchestrator's context.
-- [Handoff-File Subagent Dispatch](./handoff-file-dispatch.md) — how large
-  payloads cross the orchestrator-subagent boundary without breaking the
-  dispatch tool.
+- [Context and Payload Management](./context-and-payload-management.md) —
+  keeping raw data out of the orchestrator's context and moving large payloads
+  across dispatch boundaries safely.
