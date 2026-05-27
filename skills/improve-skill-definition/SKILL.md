@@ -104,6 +104,10 @@ orchestrator.
 
 Gate verdicts and evidence are surfaced in the user-facing handoff per
 `references/final-report-template.md`, not retained as internal-only checks.
+`G_HANDOFF_COMPLETENESS` is an inline pre-emission gate for every handoff, so
+its verdict is always `pass` or `fail`. For any other named gate whose owning
+phase was not reached, record `not applicable - <reason: phase not reached>`
+in the handoff's `Gates run` block.
 
 ## Pipeline Overview
 
@@ -119,9 +123,9 @@ Gate verdicts and evidence are surfaced in the user-facing handoff per
 
 ## Phase Transition Banner
 
-This skill is an orchestrator with seven declared phases (well above the
-two-phase exemption) and therefore announces every phase transition per the
-`phase-transition-banner` practice indexed in
+This skill is an orchestrator with seven declared phases and therefore
+announces every phase transition per the `phase-transition-banner` practice
+indexed in
 [`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
 The canonical banner format is:
 
@@ -155,24 +159,27 @@ handoff-file-dispatch pattern indexed in
 The orchestrator never inlines the full payload into the dispatch prompt. For
 each dispatch:
 
-1. Write a handoff file to
-   `docs/improve-skill-definition/<subagent-name>-instructions.md` (resolved
-   from the orchestrator's current working directory). Create the
-   `docs/improve-skill-definition/` directory if it does not exist. The file
-   carries every input listed for that subagent in the Execution section
-   below.
-2. Dispatch the subagent with a compact pointer prompt that names only the
+1. During Intake, resolve `BEST_PRACTICES_INDEX_PATH` to an absolute path,
+   derive the repository root from its `docs/best-practices/README.md`
+   location, and set
+   `HANDOFF_DIR=<repo-root>/.handoffs/improve-skill-definition`.
+2. Write a handoff file to
+   `HANDOFF_DIR/<subagent-name>-instructions.md`. Create `HANDOFF_DIR` if it
+   does not exist. The file carries every input listed for that subagent in
+   the Execution section below.
+3. Dispatch the subagent with a compact pointer prompt that names only the
    subagent contract file and the handoff file path. The prompt instructs the
    subagent to read the handoff file as its first action, follow it strictly,
    and return the subagent's contracted Output Format.
-3. Delete the handoff file in the same dispatch step when the subagent returns
+4. Delete the handoff file in the same dispatch step when the subagent returns
    a routed-forward success status: `AUDIT: APPROVAL_REQUIRED`,
    `AUDIT: NO_CHANGE`, `EDIT: PASS`, or `VALIDATION: PASS`.
-4. Leave the handoff file in place for retryable failures that will be
+5. Leave the handoff file in place for retryable failures that will be
    re-dispatched in the same workflow cycle, such as `VALIDATION: FAIL`; the
    next dispatch overwrites the same path with the new payload.
-5. Before any terminal user-facing handoff, delete the entire
-   `docs/improve-skill-definition/` handoff directory.
+6. Before any terminal user-facing handoff, delete the workflow-created
+   `*-instructions.md` files inside `HANDOFF_DIR`; remove `HANDOFF_DIR` only
+   if it is empty.
 
 Re-dispatches during repair cycles reuse the same per-subagent path so each
 handoff file always holds the current cycle's payload only.
@@ -268,8 +275,9 @@ subagent. Unless the user explicitly expands scope, use these limits:
    directory, identify the target `SKILL.md`, normalize `KNOWN_PROBLEM`,
    `SCOPE_LIMITS`, `REFERENCE_NEED`, and `APPROVED_GAPS`, derive
    `MUTATION_LIMITS`, and default `TARGET_RUNTIME` to `portable Agent Skills`
-   when absent.
-2. If `SKILL_PATH` is missing or cannot be located, load
+   when absent. Resolve `HANDOFF_DIR` per the Subagent Dispatch Protocol.
+2. If `SKILL_PATH` is missing or cannot be located, emit banner
+   `Phase 7/7 - Handoff`, load
    `./references/final-report-template.md`, return a blocked handoff with the
    completed intake checks, one `SKILL_PATH` question, and a resume condition,
    then stop until the user supplies the path.
@@ -278,7 +286,7 @@ subagent. Unless the user explicitly expands scope, use these limits:
    source of truth and the personality file as this skill's critique posture.
 4. Emit banner `Phase 3/7 - Audit`. Dispatch `skill-package-auditor` via the Subagent Dispatch Protocol. The
    handoff file at
-   `docs/improve-skill-definition/skill-package-auditor-instructions.md` must
+   `HANDOFF_DIR/skill-package-auditor-instructions.md` must
    carry `SKILL_PATH`, `KNOWN_PROBLEM`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
    `REFERENCE_NEED`, `MUTATION_LIMITS`,
    `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`,
@@ -286,11 +294,12 @@ subagent. Unless the user explicitly expands scope, use these limits:
    `FLOW_DIAGRAM_PATH=./flow-diagram.md`, and
    `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed. Apply
    the Subagent Dispatch Protocol cleanup before routing the result.
-5. If the audit returns `NO_CHANGE`, load
+5. If the audit returns `NO_CHANGE`, emit banner `Phase 7/7 - Handoff`, load
    `./references/final-report-template.md` and return the no-change handoff
    with evidence, personality assessment, rejected optional improvements, and
    validation limits.
-6. If the audit returns `BLOCKED` or `ERROR`, load
+6. If the audit returns `BLOCKED` or `ERROR`, emit banner
+   `Phase 7/7 - Handoff`, load
    `./references/final-report-template.md` and return the blocked or error
    handoff with the smallest recovery action.
 7. Emit banner `Phase 4/7 - Approval`. If the audit returns
@@ -301,13 +310,14 @@ subagent. Unless the user explicitly expands scope, use these limits:
    user to approve the personality decision and `all`, `none`, or specific gap
    ids. Stop until the user replies explicitly.
 8. When the user replies, normalize `APPROVED_GAPS` and the personality
-   decision. If either is absent, return a blocked handoff with the missing
-   approval question.
+   decision. If either is absent, emit banner `Phase 7/7 - Handoff` and return
+   a blocked handoff with the missing approval question.
 9. Confirm every approved mutation is inside `SCOPE_LIMITS` and
-   `MUTATION_LIMITS`. If not, return a blocked handoff with one scope question.
+   `MUTATION_LIMITS`. If not, emit banner `Phase 7/7 - Handoff` and return a
+   blocked handoff with one scope question.
 10. Emit banner `Phase 5/7 - Edit`. Dispatch `skill-definition-editor` via
     the Subagent Dispatch Protocol. The handoff file at
-    `docs/improve-skill-definition/skill-definition-editor-instructions.md`
+    `HANDOFF_DIR/skill-definition-editor-instructions.md`
     must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
     `MUTATION_LIMITS`, `AUDIT_REPORT`, `APPROVED_GAPS`,
     `APPROVED_PERSONALITY_DECISION`,
@@ -315,13 +325,14 @@ subagent. Unless the user explicitly expands scope, use these limits:
     `PERSONALITY_PATH=./references/personality.md`, and
     `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed. Apply
     the Subagent Dispatch Protocol cleanup before routing the result.
-11. If the editor returns `BLOCKED` or `ERROR`, load
+11. If the editor returns `BLOCKED` or `ERROR`, emit banner
+    `Phase 7/7 - Handoff`, load
     `./references/final-report-template.md` and return the blocked or error
     handoff.
 12. Emit banner `Phase 6/7 - Validate`. If the editor returns `PASS`,
     dispatch `skill-package-validator` via the Subagent Dispatch Protocol.
     The handoff file at
-    `docs/improve-skill-definition/skill-package-validator-instructions.md`
+    `HANDOFF_DIR/skill-package-validator-instructions.md`
     must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
     `MUTATION_LIMITS`, `AUDIT_REPORT`, `EDITOR_REPORT`, `APPROVED_GAPS`,
     `APPROVED_PERSONALITY_DECISION`, changed paths from the editor report,
@@ -337,7 +348,7 @@ subagent. Unless the user explicitly expands scope, use these limits:
     action.
 15. On validation `FAIL`, re-dispatch the editor via the Subagent Dispatch
     Protocol. Overwrite
-    `docs/improve-skill-definition/skill-definition-editor-instructions.md`
+    `HANDOFF_DIR/skill-definition-editor-instructions.md`
     with the original editor payload plus `VALIDATOR_FINDINGS`, the repair
     cycle count, and a focused fix scope inside approved gaps and
     `MUTATION_LIMITS`. Re-run the validator after each repair using the same
@@ -345,8 +356,8 @@ subagent. Unless the user explicitly expands scope, use these limits:
     reprints `Phase 5/7 - Edit` and the subsequent re-validate reprints
     `Phase 6/7 - Validate`, so each cycle is visible in the output stream.
     Use at most three targeted fix cycles; after the third failed validation,
-    return a blocked handoff with failed checks, attempted repairs, remaining
-    risks, and a resume condition.
+    emit banner `Phase 7/7 - Handoff` and return a blocked handoff with failed
+    checks, attempted repairs, remaining risks, and a resume condition.
 
 ## Decision Rules
 
