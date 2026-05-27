@@ -30,6 +30,17 @@ dispatch. Once the dispatch succeeds, is abandoned, or reaches a terminal
 blocked/error state, stale payloads become misleading. Delete them as part of
 workflow cleanup unless the user asks to preserve them for debugging.
 
+## Sensitivity and retention
+
+Category A artifacts can contain user prose, copied web content, command
+output, diffs, ticket text, API responses, credentials accidentally exposed in
+logs, or prompt-injection payloads. Preserve only the orchestration records
+needed for resumability, store them in ignored workflow locations, and redact
+or exclude secrets and unnecessary personal data before writing them. Clean up
+Category A1 records when resumability is no longer needed or when the user
+approves cleanup; clean up Category A2 records at terminal dispatch cleanup
+unless they are intentionally retained for debugging.
+
 ## Key rule
 
 Never commit Category A artifacts to version control. They are working
@@ -37,3 +48,13 @@ documents that belong to the workflow session, not to the project's history.
 Preserve Category A1 while it is needed for resumability; clean up Category A2
 when its dispatch lifecycle ends. Only Category B artifacts (the actual output
 of the workflow) are staged and committed.
+
+## References
+
+- OWASP Top 10 for LLM Applications, accessed 2026-05-27:
+  <https://owasp.org/www-project-top-10-for-large-language-model-applications/>.
+  Supports treating sensitive information disclosure and prompt injection as
+  risks in agent workflows.
+- NIST AI Risk Management Framework, accessed 2026-05-27:
+  <https://www.nist.gov/itl/ai-risk-management-framework>. Supports
+  risk-based governance and lifecycle management for AI systems.
