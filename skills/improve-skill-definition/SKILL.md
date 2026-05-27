@@ -60,8 +60,8 @@ Load `./references/personality.md` before audit. It defines this skill's own
 operating posture.
 
 The canonical rule that every non-trivial target skill should define a
-`references/personality.md` lives in
-[`../../docs/best-practices/personality-as-operating-posture.md`](../../docs/best-practices/personality-as-operating-posture.md);
+`references/personality.md` is one of the practices indexed in
+[`../../docs/best-practices/README.md`](../../docs/best-practices/README.md);
 this skill does not restate it. Workflow specifics this skill adds on top of
 the canonical rule:
 
@@ -103,9 +103,10 @@ decision:
 
 Every subagent in this skill (`skill-package-auditor`,
 `skill-definition-editor`, `skill-package-validator`) is dispatched via the
-[`handoff-file-dispatch`](../../docs/best-practices/handoff-file-dispatch.md)
-pattern. The orchestrator never inlines the full payload into the dispatch
-prompt. For each dispatch:
+handoff-file-dispatch pattern indexed in
+[`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
+The orchestrator never inlines the full payload into the dispatch prompt. For
+each dispatch:
 
 1. Write a handoff file to
    `docs/improve-skill-definition/<subagent-name>-instructions.md` (resolved
@@ -182,11 +183,11 @@ rules; the relaxed-portability exception applies only to
 
 ## Improvement Philosophy
 
-The improvement philosophy is the
-[`earned-complexity`](../../docs/best-practices/earned-complexity.md) best
-practice. Apply it when classifying observations as `gap`,
-`optional_improvement`, or `no_op`; when sizing the mutation plan; and when
-deciding between patch and rebuild. This skill does not restate the rule.
+The improvement philosophy is the earned-complexity practice indexed in
+[`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
+Apply it when classifying observations as `gap`, `optional_improvement`, or
+`no_op`; when sizing the mutation plan; and when deciding between patch and
+rebuild. This skill does not restate the rule.
 
 ## Default Mutation Limits
 
