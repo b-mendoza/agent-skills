@@ -42,9 +42,13 @@ Treat orchestrator context as the most expensive resource in the system.
 
 Rules:
 
-1. **Dispatch, do not inspect inline.** The orchestrator coordinates, decides,
-   and synthesizes. Subagents do raw file reads, command-output parsing, API
-   payload inspection, and web-content extraction.
+1. **Keep raw inspection out of the orchestrator unless it needs it.** The
+   orchestrator coordinates, decides, and synthesizes. Subagents do raw file
+   reads, command-output parsing, API payload inspection, and web-content
+   extraction when the orchestrator only needs a bounded result. Inline
+   inspection is appropriate when raw, iterative, or conversational material is
+   necessary for the next routing decision; see
+   [Subagent-Default Execution](./subagent-default-execution.md).
 2. **Collect summaries, not raw output.** A subagent returns verdicts,
    statuses, paths, ids, and concise summaries. Raw data stays inside the
    producing subagent or on disk.
@@ -62,6 +66,10 @@ Rules:
 
 Move large, self-contained output templates and reference data into
 co-located files loaded only at the step that needs them.
+
+The line thresholds below are repo heuristics, not platform limits. Use them
+to trigger a closer earned-complexity check, then keep or extract based on
+whether the move improves context efficiency or maintainability.
 
 Extract:
 
@@ -156,6 +164,10 @@ Rules:
 9. **Prefer source tiers.** Official docs, standards bodies, and primary
    research outrank practitioner summaries. Label experience-based sources as
    such.
+10. **Map sources to local claims.** For every non-obvious external citation,
+    record the source URL, publication or revision date when available, access
+    date, the local claim it supports, and any limitation. This prevents a
+    citation from becoming decorative evidence.
 
 ## References
 
@@ -166,5 +178,14 @@ Rules:
   Category A2, and Category B artifacts are preserved, cleaned up, or committed.
 - [Input and Output Contracts](./input-output-contracts.md) — the structure of
   handoffs and report artifacts.
-- AGENTIF benchmark — arXiv:2505.16944.
+- [Subagent-Default Execution](./subagent-default-execution.md) — how to decide
+  when inline inspection is justified.
+- AGENTIF benchmark — arXiv:2505.16944. Supports treating long, complex agent
+  instructions as a reliability risk; it does not prove specific line-count
+  thresholds.
 - "Lost in the Middle" — TACL 2024: <https://aclanthology.org/2024.tacl-1.9/>
+  Supports caution about retrieval degradation in long contexts; it does not
+  prove repo-specific write-size limits.
+- OpenAI, "Understanding prompt injections," accessed 2026-05-27:
+  <https://openai.com/safety/prompt-injections/>. Supports treating third-party
+  content as untrusted and limiting agent access to needed data.
