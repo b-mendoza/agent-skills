@@ -41,7 +41,7 @@
       "source": "blader/humanizer",
       "sourceType": "github",
       "skillPath": "SKILL.md",
-      "computedHash": "b813857f183da05d08d5a80adac671df94c139f855809bd47ab8b7bb245546a2"
+      "computedHash": "0e456dd5eb31b1fa120b9a584d8661ef591d58d8e0dbe585a24cd2698becf9bb"
     },
     "improve-skill-definition": {
       "source": "b-mendoza/agent-skills",
