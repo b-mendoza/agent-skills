@@ -162,12 +162,18 @@ each dispatch:
    carries every input listed for that subagent in the Execution section
    below.
 2. Dispatch the subagent with a compact pointer prompt that names only the
-   subagent contract file and the handoff file path, and instructs the
-   subagent to read the handoff file as its first action.
-3. Delete the handoff file once the subagent returns a terminal status
-   (`PASS`, `APPROVAL_REQUIRED`, `NO_CHANGE`, `FAIL`, `BLOCKED`, or `ERROR`).
-   On re-dispatch (repair cycles), overwrite the same path with the new
-   payload before the next dispatch.
+   subagent contract file and the handoff file path. The prompt instructs the
+   subagent to read the handoff file as its first action, follow it strictly,
+   and return the subagent's contracted Output Format.
+3. Delete the handoff file in the same dispatch step when the subagent returns
+   a routed-forward success status: `AUDIT: APPROVAL_REQUIRED`,
+   `AUDIT: NO_CHANGE`, `EDIT: PASS`, or `VALIDATION: PASS`.
+4. Leave the handoff file in place for retryable failures that will be
+   re-dispatched in the same workflow cycle, such as `VALIDATION: FAIL`; the
+   next dispatch overwrites the same path with the new payload.
+5. Before any terminal user-facing handoff, remove remaining
+   `docs/improve-skill-definition/<subagent-name>-instructions.md` files that
+   this workflow created.
 
 Re-dispatches during repair cycles reuse the same per-subagent path so each
 handoff file always holds the current cycle's payload only.
@@ -279,8 +285,8 @@ subagent. Unless the user explicitly expands scope, use these limits:
    `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`,
    `PERSONALITY_PATH=./references/personality.md`,
    `FLOW_DIAGRAM_PATH=./flow-diagram.md`, and
-   `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed.
-   Delete the handoff file once the subagent returns a terminal status.
+   `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed. Apply
+   the Subagent Dispatch Protocol cleanup before routing the result.
 5. If the audit returns `NO_CHANGE`, load
    `./references/final-report-template.md` and return the no-change handoff
    with evidence, personality assessment, rejected optional improvements, and
@@ -308,8 +314,8 @@ subagent. Unless the user explicitly expands scope, use these limits:
     `APPROVED_PERSONALITY_DECISION`,
     `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`,
     `PERSONALITY_PATH=./references/personality.md`, and
-    `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed.
-    Delete the handoff file once the subagent returns a terminal status.
+    `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed. Apply
+    the Subagent Dispatch Protocol cleanup before routing the result.
 11. If the editor returns `BLOCKED` or `ERROR`, load
     `./references/final-report-template.md` and return the blocked or error
     handoff.
@@ -321,8 +327,8 @@ subagent. Unless the user explicitly expands scope, use these limits:
     `MUTATION_LIMITS`, `AUDIT_REPORT`, `EDITOR_REPORT`, `APPROVED_GAPS`,
     `APPROVED_PERSONALITY_DECISION`, changed paths from the editor report,
     `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`, and
-    `PERSONALITY_PATH=./references/personality.md`. Delete the handoff file
-    once the subagent returns a terminal status.
+    `PERSONALITY_PATH=./references/personality.md`. Apply the Subagent
+    Dispatch Protocol cleanup before routing the result.
 13. Emit banner `Phase 7/7 - Handoff`. If validation returns `PASS`, load
     `./references/final-report-template.md` and return the changed handoff
     with material issues, files changed, validation, resources, and risks.
@@ -336,7 +342,7 @@ subagent. Unless the user explicitly expands scope, use these limits:
     with the original editor payload plus `VALIDATOR_FINDINGS`, the repair
     cycle count, and a focused fix scope inside approved gaps and
     `MUTATION_LIMITS`. Re-run the validator after each repair using the same
-    write-dispatch-delete pattern. On each repair cycle, the EDIT re-dispatch
+    write-dispatch-cleanup lifecycle. On each repair cycle, the EDIT re-dispatch
     reprints `Phase 5/7 - Edit` and the subsequent re-validate reprints
     `Phase 6/7 - Validate`, so each cycle is visible in the output stream.
     Use at most three targeted fix cycles; after the third failed validation,
