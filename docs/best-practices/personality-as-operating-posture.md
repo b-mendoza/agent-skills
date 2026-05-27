@@ -72,7 +72,7 @@ short section:
 
 2. **It is workflow-specific.** A personality file does not generalize
    across skills. The personality for `committing-scoped-changes` is not
-   the personality for `improve-skill-definition`. Generic personalities
+   the personality for `improving-skill-definition`. Generic personalities
    are signs of a missing posture, not a successful one.
 
 3. **It changes runtime behavior, observably.** A personality is only
