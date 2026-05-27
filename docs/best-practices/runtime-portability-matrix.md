@@ -29,6 +29,29 @@ that hidden assumption into an authoring check.
 | External web access | Declare when a skill needs current external information | Map to available web/search tools in the active environment | Map to `webfetch` or `websearch` permission when present |
 | File mutation | Declare mutation boundaries in the skill contract | Restrict write/edit tools where possible | Restrict `edit` permission, which covers write/edit/patch operations |
 
+## Current runtime facts checked 2026-05-27
+
+These facts are volatile. Re-check official runtime docs before changing a
+portable contract, permission map, or subagent invocation rule.
+
+- Claude Code custom subagents are Markdown files with YAML frontmatter. Only
+  `name` and `description` are required, while fields such as `tools`,
+  `disallowedTools`, `model`, `permissionMode`, `maxTurns`, `skills`,
+  `mcpServers`, `memory`, `background`, `effort`, and `isolation` are
+  runtime-specific details that portable skills should not require unless they
+  declare a Claude-specific mapping.
+- Claude Code non-fork subagents start with a fresh, isolated context window,
+  but the context is not empty: runtime-provided environment details, the
+  delegation prompt, memory files, and other configured context may be present.
+  Pass every required input explicitly anyway.
+- Claude Code subagents cannot spawn other subagents. An agent running as the
+  main thread can spawn subagents only when the `Agent` tool is allowed.
+- OpenCode agents use Markdown definitions with runtime-specific frontmatter
+  such as `mode` and `permission`. OpenCode permission keys include `read`,
+  `edit`, `bash`, `task`, `webfetch`, `websearch`, and related tool-family
+  gates. Portable skills should describe capabilities first, then map them to
+  those keys for OpenCode.
+
 ## Rules
 
 1. **Author portable files in plain Markdown.** Do not require runtime-specific
@@ -81,9 +104,12 @@ Runtime mapping:
 ## References
 
 - Claude Code Docs, "Create custom subagents," accessed 2026-05-27:
-  <https://code.claude.com/docs/en/sub-agents>
+  <https://code.claude.com/docs/en/sub-agents>. Supports the current Claude
+  Code notes above, including frontmatter fields, isolated context, tool
+  restrictions, chaining, and the nested-subagent limit.
 - OpenCode Docs, "Agents," accessed 2026-05-27:
-  <https://opencode.ai/docs/agents/>
+  <https://opencode.ai/docs/agents/>. Supports the current OpenCode notes
+  above, including `mode: subagent` and permission-family mappings.
 - [Orchestrator as Routing UI](./orchestrator-as-routing-ui.md) — portable
   routing shape for multi-subagent workflows.
 - [Mutation Scope Boundaries](./mutation-scope-boundaries.md) — how edit
