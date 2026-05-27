@@ -87,6 +87,24 @@ decision:
 | `blocked` | reason, question, validation completed, resume condition |
 | `error` | failed condition, known context, recovery |
 
+## Critical Outputs
+
+This skill produces user-facing handoffs as its critical outputs and binds each
+handoff to a named gate per the `critical-output-quality-gates` practice
+indexed in
+[`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
+Every emitted handoff must pass the gates below before it leaves the
+orchestrator.
+
+| Gate | Critical Output Protected | Validator | Failure Behavior |
+| ---- | ------------------------- | --------- | ---------------- |
+| `G_HANDOFF_COMPLETENESS` | Every emitted handoff (`approval required`, `changed`, `no change`, `blocked`, `error`) carries every section listed in its Output Contract row | Inline check by the orchestrator immediately before emission, against `references/final-report-template.md` | Re-load `final-report-template.md`, re-compose the missing sections, and re-check before emission |
+| `G_GAP_CLOSURE` | For the `changed` decision, every approved gap is observably resolved in the target package | `skill-package-validator` (Validate phase) | Trigger the targeted repair loop per Execution step 15 (max three cycles) |
+| `G_BEST_PRACTICES_COMPLIANCE` | The target package passes every applicable practice in `BEST_PRACTICES_INDEX_PATH` per the `best-practices-compliance-gate` rule | `skill-package-auditor` (Audit phase) and `skill-package-validator` (Validate phase) | Auditor surfaces failing practices as material gaps; validator surfaces post-edit regressions and triggers repair |
+
+Gate verdicts and evidence are surfaced in the user-facing handoff per
+`references/final-report-template.md`, not retained as internal-only checks.
+
 ## Pipeline Overview
 
 | Phase | Mode | Result |
