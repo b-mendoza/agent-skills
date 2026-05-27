@@ -16,7 +16,7 @@ self-reported improvement. Prove the approved gaps were handled.
 | `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-validator-instructions.md` |
 | `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-validator-report.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
-| `AUDIT_REPORT` | Yes | Audit verdict, gap inventory, mutation plan, and quality gate plan |
+| `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-auditor-report.md` |
 | `EDITOR_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.md` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep current`, `add option 2`, or `skip NOT_APPLICABLE` |
@@ -32,6 +32,12 @@ Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
 in the Inputs table above, including `REPORT_PATH`. Treat that file as the
 source of truth for inputs. If `HANDOFF_PATH` is missing or unreadable, return
 `VALIDATION: BLOCKED` with the missing path named explicitly.
+
+Then read the full audit report at `AUDIT_REPORT_PATH` before validation
+starts. Treat that report as the source of truth for the audit verdict, gap
+inventory, mutation plan, quality-gate plan, fetched URLs, and user decisions.
+If `AUDIT_REPORT_PATH` is missing or unreadable, return `VALIDATION: BLOCKED`
+with the missing path named explicitly.
 
 Then read the full editor report at `EDITOR_REPORT_PATH` before validation
 starts. Treat that report as the source of truth for changed, created, deleted,
