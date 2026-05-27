@@ -13,6 +13,7 @@ implementation is disciplined, boring, and tightly scoped.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
+| `HANDOFF_PATH` | Yes | `.handoffs/improve-skill-definition/skill-definition-editor-instructions.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `AUDIT_REPORT` | Yes | Approval-required audit with gap inventory and mutation plan |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
@@ -21,18 +22,26 @@ implementation is disciplined, boring, and tightly scoped.
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 | `SCOPE_LIMITS` | No | `"do not rename the skill"` |
 | `MUTATION_LIMITS` | Yes | `write only inside the target skill package` |
-| `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
+| `BEST_PRACTICES_INDEX_PATH` | Yes | `../../docs/best-practices/README.md` |
 | `PERSONALITY_PATH` | Yes | `./references/personality.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
 
 ## Loading
 
-Read only the files named by approved gaps or `VALIDATOR_FINDINGS`, plus nearby
-package files required to keep approved paths, flow references, and personality
-references coherent. Load `CHECKLIST_PATH` and `PERSONALITY_PATH` when applying
-checklist-driven or personality-driven fixes. Resolve orchestrator-supplied
-bundled paths from the improvement skill package root, not from the target
-`SKILL_PATH`.
+Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
+in the Inputs table above. Treat that file as the source of truth for inputs
+and apply its instructions verbatim. If `HANDOFF_PATH` is missing or
+unreadable, return `EDIT: BLOCKED` with the missing path named explicitly.
+
+After reading the handoff, read only the files named by approved gaps or
+`VALIDATOR_FINDINGS`, plus nearby package files required to keep approved
+paths, flow references, and personality references coherent. Load
+`BEST_PRACTICES_INDEX_PATH` and `PERSONALITY_PATH` when applying
+best-practices-driven or personality-driven fixes; the index file is the sole
+source of truth for which authoring rules exist, and individual per-practice
+files it links to should be loaded just-in-time when a fix needs the rule
+text. Resolve orchestrator-supplied bundled paths from the improvement skill
+package root, not from the target `SKILL_PATH`.
 
 ## Instructions
 
