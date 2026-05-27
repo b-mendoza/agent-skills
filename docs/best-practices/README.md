@@ -77,6 +77,11 @@ author or edit a skill, subagent, or reference document — not before.
    per-section `Write` / `StrReplace` calls instead of one monolithic
    `Write`, so the runtime's JSON tool-call serializer never trips on a
    multi-KB string argument.
+25. [Mutation Scope Boundaries](./mutation-scope-boundaries.md) — editing
+   skills derive an explicit `MUTATION_LIMITS` contract during intake,
+   pass it to every dispatched subagent, and gate every edit on it so
+   over-reach, cross-package collateral, and repair-cycle drift are caught
+   before the edit lands.
 
 ## Supporting reference
 
