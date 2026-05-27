@@ -30,7 +30,8 @@ implementation is disciplined, boring, and tightly scoped.
 
 Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
 in the Inputs table above. Treat that file as the source of truth for inputs
-and apply its instructions verbatim.
+and apply its instructions verbatim. If `HANDOFF_PATH` is missing or
+unreadable, return `EDIT: BLOCKED` with the missing path named explicitly.
 
 After reading the handoff, read only the files named by approved gaps or
 `VALIDATOR_FINDINGS`, plus nearby package files required to keep approved

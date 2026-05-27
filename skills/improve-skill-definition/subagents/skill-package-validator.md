@@ -29,6 +29,8 @@ self-reported improvement. Prove the approved gaps were handled.
 
 Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
 in the Inputs table above. Treat that file as the source of truth for inputs.
+If `HANDOFF_PATH` is missing or unreadable, return `VALIDATION: BLOCKED` with
+the missing path named explicitly.
 
 Then load `BEST_PRACTICES_INDEX_PATH` and `PERSONALITY_PATH`, resolving
 orchestrator-supplied bundled paths from the improvement skill package root,
