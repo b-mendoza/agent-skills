@@ -171,9 +171,8 @@ each dispatch:
 4. Leave the handoff file in place for retryable failures that will be
    re-dispatched in the same workflow cycle, such as `VALIDATION: FAIL`; the
    next dispatch overwrites the same path with the new payload.
-5. Before any terminal user-facing handoff, remove remaining
-   `docs/improve-skill-definition/<subagent-name>-instructions.md` files that
-   this workflow created.
+5. Before any terminal user-facing handoff, delete the entire
+   `docs/improve-skill-definition/` handoff directory.
 
 Re-dispatches during repair cycles reuse the same per-subagent path so each
 handoff file always holds the current cycle's payload only.
