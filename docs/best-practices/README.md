@@ -56,6 +56,10 @@ author or edit a skill, subagent, or reference document — not before.
     — non-trivial skills define a dedicated `references/personality.md` that
     drives how the agent investigates, decides, validates, and escalates,
     not just how it sounds.
+20. [External Information Linking](./external-information-linking.md) — link
+    to external documentation rather than bundling its content; cached
+    snapshots are allowed only with provenance headers and a declaration in
+    `SKILL.md`.
 
 ## Supporting reference
 
