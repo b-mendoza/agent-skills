@@ -62,3 +62,12 @@ undermines the entire reason it exists.
 Surface failures immediately with enough context for the orchestrator to act.
 Never silently degrade output quality. The orchestrator — not the subagent —
 decides whether to retry, skip, or escalate.
+
+## Related validation and escalation practices
+
+- [Validation Loops](./validation-loops.md) — where retry limits and targeted
+  fix cycles are declared.
+- [Quality Gates for Critical Outputs](./critical-output-quality-gates.md) —
+  how failed gate verdicts become repair loops or user-facing blocked states.
+- [Input and Output Contracts](./input-output-contracts.md) — the contract
+  shape escalation reports must satisfy so the orchestrator can route them.
