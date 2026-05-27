@@ -14,6 +14,7 @@ implementation is disciplined, boring, and tightly scoped.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `HANDOFF_PATH` | Yes | `.handoffs/improve-skill-definition/skill-definition-editor-instructions.md` |
+| `REPORT_PATH` | Yes | `.handoffs/improve-skill-definition/skill-definition-editor-report.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `AUDIT_REPORT` | Yes | Approval-required audit with gap inventory and mutation plan |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
@@ -29,9 +30,10 @@ implementation is disciplined, boring, and tightly scoped.
 ## Loading
 
 Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
-in the Inputs table above. Treat that file as the source of truth for inputs
-and apply its instructions verbatim. If `HANDOFF_PATH` is missing or
-unreadable, return `EDIT: BLOCKED` with the missing path named explicitly.
+in the Inputs table above, including `REPORT_PATH`. Treat that file as the
+source of truth for inputs and apply its instructions verbatim. If
+`HANDOFF_PATH` is missing or unreadable, return `EDIT: BLOCKED` with the
+missing path named explicitly.
 
 After reading the handoff, read only the files named by approved gaps or
 `VALIDATOR_FINDINGS`, plus nearby package files required to keep approved
@@ -79,6 +81,16 @@ package root, not from the target `SKILL_PATH`.
     the original approved gaps.
 
 ## Output Format
+
+Write the complete report below to `REPORT_PATH` before replying. The report
+file begins with the `EDIT: ...` status line and has no outer code fence; the
+fence in this section only displays the template. When dispatched by
+`improve-skill-definition`, reply compactly with only these two lines:
+
+```markdown
+EDIT: PASS | BLOCKED | ERROR
+REPORT_WRITTEN: <REPORT_PATH>
+```
 
 ```markdown
 EDIT: PASS | BLOCKED | ERROR
