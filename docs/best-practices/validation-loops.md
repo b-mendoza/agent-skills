@@ -37,3 +37,16 @@ pipeline:
 Full pipeline reruns waste context and time on already-passing stages. Targeted
 fix cycles preserve momentum and focus on the actual issue. The retry limit
 prevents infinite loops when a fix introduces new problems.
+
+## Related validation and escalation practices
+
+- [Quality Gates for Critical Outputs](./critical-output-quality-gates.md) —
+  how to decide which outputs need named gates and independent checks.
+- [Best-Practices Compliance as a Quality Gate](./best-practices-compliance-gate.md)
+  — the repo-level gate that checks whether a skill follows the applicable
+  standards.
+- [Empirical Validation over Self-Report](./empirical-validation.md) — why
+  gate evidence must be observed behavior, not an agent's claim that it
+  checked itself.
+- [Escalation Patterns](./escalation-patterns.md) — how a workflow reports
+  blocked, failed, or error states after retry limits are exhausted.
