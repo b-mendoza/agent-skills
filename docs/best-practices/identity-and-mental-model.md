@@ -8,10 +8,18 @@ its role, authority, and boundaries.
 
 ## Why it matters
 
-Models respond better to reasoning than to commands (arXiv:2511.04694 — ~20%
-improvement when models explicitly reason about instruction relationships).
-An identity statement gives the agent a positive mental model of its role,
-which improves instruction-following throughout the execution.
+Anthropic's current prompting guidance recommends giving Claude a role in the
+system prompt; even a short role sentence can focus behavior and tone for a
+use case. That is direct support for opening a skill or subagent with a clear
+role.
+
+The instruction-hierarchy evidence supports a narrower, complementary claim.
+Reasoning Up the Instruction Ladder (arXiv:2511.04694) reports roughly 20%
+improvement on an instruction-hierarchy conflict setup when models reason over
+relationships between system and user instructions. That supports making
+authority, boundaries, and delegation relationships explicit. It is not direct
+proof that prose identity statements alone improve every kind of
+instruction-following.
 
 ## Calibrate depth to complexity
 
@@ -49,4 +57,9 @@ ambiguity), and **dispatch** (send work to a subagent via the Task tool).
 
 ## References
 
-- Reasoning Up the Instruction Ladder — arXiv:2511.04694
+- Anthropic Claude prompting best practices, "Give Claude a role," accessed
+  2026-05-27:
+  <https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices>
+- Reasoning Up the Instruction Ladder — arXiv:2511.04694, revised
+  2026-02-18:
+  <https://arxiv.org/abs/2511.04694>
