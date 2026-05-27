@@ -9,6 +9,18 @@ Read the relevant file when you are about to author or edit a skill, subagent,
 or reference document. The consolidated files below are the source of truth;
 older topic-specific files were merged to reduce checklist sprawl.
 
+## Practice Tiers
+
+Use these tiers when applying the
+[Best-practices compliance gate](./validation-and-escalation.md). A tier is
+about blocking power during review, not importance in the abstract.
+
+| Tier | Practices | Review effect |
+| --- | --- | --- |
+| `mandatory` | Runtime portability for portable skills; mutation scope for mutating skills; input/output contracts for multi-stage workflows; artifact lifecycle for generated files; critical-output gates; untrusted-content handling | A miss is a material gap unless the skill declares an intentional exception |
+| `recommended` | Progressive disclosure, orchestrator routing, subagent dispatch economics, behavioral prompt contracts, earned complexity, section ordering | Expected for non-trivial skills; may be intentionally scoped down |
+| `optional-style` | Repo naming conventions, phase-transition banner shape, quick-reference layout details | Improves consistency but should not block unless strict repo style is the task |
+
 ## Index
 
 1. [Context and Payload Management](./context-and-payload-management.md) —
