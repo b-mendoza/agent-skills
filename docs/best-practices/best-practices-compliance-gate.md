@@ -62,7 +62,7 @@ Treating the index as a gate eliminates all three.
 
 6. **A skill that deviates from a best practice must declare it.** If a skill
    deliberately deviates from a practice (for example,
-   `improve-skill-definition` deliberately deviates from the standalone-package
+   `improving-skill-definition` deliberately deviates from the standalone-package
    rule because it is the repo's single non-portable skill), the skill's
    `SKILL.md` must state the deviation and the reason. The gate then records
    the practice as `pass — declared exception: <reason>` rather than as
@@ -88,7 +88,7 @@ Treating the index as a gate eliminates all three.
 | -------- | ------- | -------- |
 | progressive-disclosure | pass | SKILL.md is 312 lines; ./references/ holds 4 JIT files referenced in Progressive Disclosure Map (SKILL.md lines 87-94) |
 | context-window-protection | pass | Orchestrator dispatches all raw inspection to subagents; SKILL.md line 22 "Raw target-package inspection ... happen in subagents" |
-| handoff-file-dispatch | fail | Editor dispatch passes audit report + approved gaps + personality decision inline; no handoff file at `.handoffs/improve-skill-definition/skill-definition-editor-instructions.md` |
+| handoff-file-dispatch | fail | Editor dispatch passes audit report + approved gaps + personality decision inline; no handoff file at `.handoffs/improving-skill-definition/skill-definition-editor-instructions.md` |
 | template-extraction | not applicable | No bundled template exceeds 80 lines |
 ```
 
