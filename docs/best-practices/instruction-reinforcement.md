@@ -7,18 +7,23 @@ rather than stating them only once at the beginning.
 
 ## Why it matters
 
-The "Lost in the Middle" effect (TACL 2024) demonstrates that instructions
-stated once early in context lose influence as more content is processed. This
-is especially problematic for orchestrating skills whose context includes
-SKILL.md + reference files + subagent outputs — a constraint stated once at the
-top faces maximum dilution by mid-execution.
+The "Lost in the Middle" effect (TACL 2024) shows that models can make weaker
+use of relevant information when it appears in the middle of long contexts.
+That study is about long-context retrieval, not skill instructions directly,
+but it supports the practical concern: a constraint stated once at the top of
+`SKILL.md` may be less available when the agent is operating deep inside
+reference files and subagent outputs.
 
 Related research on prompt repetition (arXiv:2512.14982) found that repeating
-input queries improved performance across 70 comparisons with 47 wins and
-0 losses across Claude, GPT, Gemini, and DeepSeek. That study tested
-input-level prompt duplication rather than mid-document reinforcement, but the
-underlying attention mechanism — tokens later in context attend to earlier
-repetitions — supports the same intuition.
+input prompts improved performance for non-reasoning LLMs without increasing
+generated-token length or latency. That study tested input-level duplication,
+not 1-3 line reminders inside reference files. Use it as indirect support for
+the intuition that repetition can matter, not as proof that every mid-document
+reminder improves agent behavior.
+
+This practice is therefore a risk-based heuristic. For safety-critical,
+permission-sensitive, or mutation-sensitive boundaries, validate the reminders
+with real workflow runs instead of assuming repetition solved the problem.
 
 ## How to apply
 
@@ -26,8 +31,10 @@ repetitions — supports the same intuition.
 2. Add brief (1-3 line) reminders at the top of long reference files that
    the agent reads mid-execution.
 3. Keep reminders short — a single blockquote line is sufficient.
-4. Do NOT repeat in every file. Target only the longest reference files
-   where instruction dilution is most likely.
+4. Do NOT repeat in every file. Target only the longest or riskiest reference
+   files where instruction dilution is most likely.
+5. For safety-critical boundaries, verify that the reminder changes behavior
+   or catches a real failure mode.
 
 ## Example: Brief reminder in a reference file
 
@@ -47,13 +54,13 @@ repetitions — supports the same intuition.
 - Content that downstream files already express implicitly through consistent
   "dispatch" language
 - Constraints in short files where the "Lost in the Middle" effect is minimal
+- Reminders added only to satisfy a checklist, without a plausible failure
+  mode or validation plan
 
 ## References
 
-- "Lost in the Middle" — TACL 2024, aclanthology.org/2024.tacl-1.9/
-- arXiv:2603.10123 (preprint, March 2026) — lost-in-the-middle as architectural
-  constraint
-- Anthropic "Effective Context Engineering for AI Agents" — engineering blog,
-  September 2025
-- Prompt repetition (related) — arXiv:2512.14982 (2025)
-- Palantir & ElevenLabs prompt engineering guides
+- "Lost in the Middle" — TACL 2024:
+  <https://aclanthology.org/2024.tacl-1.9/>
+- Prompt repetition for non-reasoning LLMs — arXiv:2512.14982, submitted
+  2025-12-17:
+  <https://arxiv.org/abs/2512.14982>
