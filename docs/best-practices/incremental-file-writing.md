@@ -2,28 +2,30 @@
 
 ## What it is
 
-When a skill, orchestrator, or subagent materializes a multi-section markdown
-file via tool calls, do not emit the entire file body in a single `Write`
-call. Initialize the file with one small `Write` containing only the header
-skeleton (a status line plus empty top-level `##` headings), then append each
-logical section with a separate `StrReplace` or `Edit` call. Every tool-call
-string argument stays well below the runtime's JSON serializer failure
-threshold.
+When a skill, orchestrator, or subagent materializes a large or
+serializer-sensitive multi-section markdown file via tool calls, avoid
+emitting the entire file body in a single `Write` call. Initialize the file
+with one small `Write` containing only the header skeleton (a status line plus
+empty top-level `##` headings), then append each logical section with a
+separate `StrReplace` or `Edit` call. This keeps tool-call string arguments
+well below runtimes where large JSON arguments have been observed to fail.
 
-This is the same payload-size rule that
+This is the same payload-size mitigation that
 [`./handoff-file-dispatch.md`](./handoff-file-dispatch.md) applies to
-orchestrator-to-subagent dispatch arguments, generalized to every tool-call
-boundary where a large string travels through a JSON serializer — including
+orchestrator-to-subagent dispatch arguments, generalized to tool-call
+boundaries where a large string travels through a JSON serializer — including
 the subagent-to-`Write`-tool boundary, the orchestrator-writing-handoff-files
-boundary, and any other agent emitting a multi-section artifact to disk.
+boundary, and any other agent emitting a large multi-section artifact to disk.
 
 ## Why it matters
 
-**Tool-call arguments are JSON, and JSON is a streaming-serialization
-hazard.** When a tool call carries a multi-KB markdown string as one of its
+**Tool-call arguments are JSON, and some runtimes have fragile large-string
+boundaries.** When a tool call carries a multi-KB markdown string as one of its
 argument values, the runtime serializes the entire string into a single JSON
-field. Three properties of markdown make that serialization fail
-disproportionately often:
+field. In this repo, failures have appeared around large Markdown artifacts,
+but this is not a universal API size limit. Treat the protocol as a pragmatic
+mitigation for known-fragile tool boundaries and growing structured artifacts.
+Three properties of markdown make those boundaries worth protecting:
 
 1. **Bulk size.** Once a single tool-call argument grows past roughly 10 KB,
    the failure rate climbs sharply. In this repo: editor reports (~5 KB)
@@ -64,16 +66,17 @@ same large-string-through-JSON-serializer hazard appears.
    adds exactly one logical section to the file (the body of one
    `## Heading`). Do not batch multiple sections into a single call.
 
-3. **Cap per-call string size around 2 KB.** This is the empirical safety
-   margin observed in this repo; below this size the JSON serializer is
-   reliable across observed runtimes. If a single section's body would
-   exceed the budget, split it further: emit the section's intro prose
-   first, then append a long table row-by-row or batch-by-batch via
-   additional `StrReplace` calls.
+3. **Use a conservative per-call string budget for known-fragile runtimes.**
+   Around 2 KB is the empirical safety margin observed in this repo, not a
+   universal platform limit. If a single section's body would exceed the
+   local budget, split it further: emit the section's intro prose first, then
+   append a long table row-by-row or batch-by-batch via additional
+   `StrReplace` calls.
 
-4. **Never emit the full file body in a single tool call.** Even when the
-   file is short enough today to fit, the contract should require
-   incremental writes so the failure mode never returns as the file grows.
+4. **Do not use monolithic writes for large or contractually growing
+   artifacts.** Even when the file is short enough today to fit, a subagent
+   report, audit summary, validator finding set, or handoff file that will
+   grow over time should use incremental writes from its first version.
 
 5. **Never re-emit the entire file in one call to "fix" formatting.**
    Correct issues with further targeted `StrReplace` / `Edit` calls. A
@@ -93,7 +96,7 @@ same large-string-through-JSON-serializer hazard appears.
 
 ## Applies to both orchestrators and subagents
 
-The rule is symmetric across the dispatch boundary:
+The mitigation is symmetric across the dispatch boundary:
 
 - **Subagents** writing their structured report to `REPORT_PATH`
   (audit reports, edit reports, validation findings, plan documents, etc.).
@@ -109,7 +112,7 @@ The header-then-append pattern is identical in each case.
 
 ## When the pattern is overkill
 
-Use a single `Write` only when ALL of the following are true:
+Use a single `Write` when ALL of the following are true:
 
 - The total file body is under ~5 KB.
 - The file contains no embedded code fences, pipe tables, or other
