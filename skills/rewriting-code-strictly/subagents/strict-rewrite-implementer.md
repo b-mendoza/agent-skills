@@ -24,6 +24,7 @@ Otherwise record missing or unapproved validation as warning evidence.
 | `USER_GOAL` | No | `"make this strict"` |
 | `VALIDATION_COMMAND` | No | `go test ./...` |
 | `SCOPE_LIMITS` | No | `"do not add dependencies"` |
+| `MUTATION_LIMITS` | Yes | `Write only inside TARGET_CODE and direct compilation consequences` |
 | `STRICT_BASELINE` | Yes | Output from `strict-baseline-mapper` |
 | `STRICT_STRATEGY` | Yes | Output from `strict-rewrite-strategist` |
 | `REVIEW_FIXES` | No | Required fixes from `strict-rewrite-reviewer` |
@@ -31,13 +32,14 @@ Otherwise record missing or unapproved validation as warning evidence.
 ## How to Implement
 
 1. Confirm `STRICT_STRATEGY: PASS`, or that `REVIEW_FIXES` supplies a targeted follow-up from the reviewer.
-2. Re-read the baseline, strategy, and scope limits before editing.
-3. Modify only files justified by the strategy or required by direct compilation consequences of that strategy.
+2. Re-read the baseline, strategy, scope limits, and `MUTATION_LIMITS` before editing.
+3. Modify only files justified by the strategy, inside `MUTATION_LIMITS`, or required by direct compilation consequences of that strategy.
 4. Preserve observable behavior, public contracts, existing dependency choices, and existing tests unless the user explicitly allowed changes.
 5. Apply the language-specific plan directly: replace unsafe escape hatches, tighten internal types, validate external boundaries, simplify control flow, or remove unnecessary type ceremony.
 6. Run `VALIDATION_COMMAND` when supplied. Otherwise run the smallest relevant existing check from the strategy only when project scripts, CI config, test config, or nearby documentation identifies it as an existing safe command for the target.
 7. If no validation command is supplied and no project-authorized check is safe to run, return `PASS_WITH_WARNINGS` after completing the edit and record the missing or unapproved validation evidence.
-8. If validation fails after edits, make one targeted fix only when the cause is inside the approved strategy, then rerun the same command. If it still fails, return `BLOCKED` with the failure summary and a recovery action.
+8. If any required edit falls outside `MUTATION_LIMITS`, return `BLOCKED` before making that edit and name the smallest scope expansion needed.
+9. If validation fails after edits, make one targeted fix only when the cause is inside the approved strategy and `MUTATION_LIMITS`, then rerun the same command. If it still fails, return `BLOCKED` with the failure summary and a recovery action.
 
 When `REVIEW_FIXES` is supplied, address only those findings. Do not perform broad follow-up cleanup.
 
@@ -67,6 +69,9 @@ Checks run:
 Deviations from strategy:
 - none | <deviation and reason>
 
+Mutation-boundary evidence:
+- <changed paths are inside MUTATION_LIMITS, or BLOCKED reason before out-of-scope edit>
+
 Reviewer focus:
 - <areas reviewer should inspect closely>
 ```
@@ -93,6 +98,9 @@ Checks run:
 Deviations from strategy:
 - none
 
+Mutation-boundary evidence:
+- Changed path is the target file named in the approved strategy.
+
 Reviewer focus:
 - Confirm unknown events remain non-fatal.
 </example>
@@ -103,6 +111,7 @@ Your job is to:
 
 - Apply the approved minimal strict rewrite
 - Preserve behavior, public API, dependencies, and unrelated worktree changes
+- Edit only inside `MUTATION_LIMITS`
 - Validate with existing checks when possible
 - Return a concise implementation handoff
 
