@@ -342,8 +342,8 @@ target skill package the orchestrator is auditing:
     the Subagent Dispatch Protocol. The handoff file at
     `HANDOFF_DIR/skill-definition-editor-instructions.md`
     must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
-    `MUTATION_LIMITS`, `AUDIT_REPORT`, `APPROVED_GAPS`,
-    `APPROVED_PERSONALITY_DECISION`,
+    `MUTATION_LIMITS`, `APPROVED_GAPS`, `APPROVED_PERSONALITY_DECISION`,
+    `AUDIT_REPORT_PATH=HANDOFF_DIR/skill-package-auditor-report.md`,
     `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`,
     `PERSONALITY_PATH=./references/personality.md`, and
     `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed, plus
@@ -358,8 +358,9 @@ target skill package the orchestrator is auditing:
     The handoff file at
     `HANDOFF_DIR/skill-package-validator-instructions.md`
     must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
-    `MUTATION_LIMITS`, `AUDIT_REPORT`, `APPROVED_GAPS`,
-    `APPROVED_PERSONALITY_DECISION`, changed paths from the editor report,
+    `MUTATION_LIMITS`, `APPROVED_GAPS`, `APPROVED_PERSONALITY_DECISION`,
+    `AUDIT_REPORT_PATH=HANDOFF_DIR/skill-package-auditor-report.md`,
+    changed paths from the editor report,
     `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`, and
     `PERSONALITY_PATH=./references/personality.md`, plus
     `EDITOR_REPORT_PATH=HANDOFF_DIR/skill-definition-editor-report.md` and

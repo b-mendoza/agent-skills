@@ -16,7 +16,7 @@ implementation is disciplined, boring, and tightly scoped.
 | `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-instructions.md` |
 | `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
-| `AUDIT_REPORT` | Yes | Approval-required audit with gap inventory and mutation plan |
+| `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-auditor-report.md` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep current`, `add option 2`, `refine as strict reviewer`, or `skip NOT_APPLICABLE` |
 | `VALIDATOR_FINDINGS` | No | Failed checks from a prior validation pass |
@@ -35,9 +35,15 @@ source of truth for inputs and apply its instructions verbatim. If
 `HANDOFF_PATH` is missing or unreadable, return `EDIT: BLOCKED` with the
 missing path named explicitly.
 
-After reading the handoff, read only the files named by approved gaps or
-`VALIDATOR_FINDINGS`, plus nearby package files required to keep approved
-paths, flow references, and personality references coherent. Load
+Then read the full audit report at `AUDIT_REPORT_PATH` before planning edits.
+Treat that report as the source of truth for the approval-required gap
+inventory, mutation plan, quality-gate plan, fetched URLs, and user decisions.
+If `AUDIT_REPORT_PATH` is missing or unreadable, return `EDIT: BLOCKED` with
+the missing path named explicitly.
+
+After reading the handoff and audit report, read only the files named by
+approved gaps or `VALIDATOR_FINDINGS`, plus nearby package files required to
+keep approved paths, flow references, and personality references coherent. Load
 `BEST_PRACTICES_INDEX_PATH` and `PERSONALITY_PATH` when applying
 best-practices-driven or personality-driven fixes; the index file is the sole
 source of truth for which authoring rules exist, and individual per-practice
@@ -47,8 +53,8 @@ package root, not from the target `SKILL_PATH`.
 
 ## Instructions
 
-1. Confirm `AUDIT_REPORT` contains an approval-required gap inventory or
-   validator findings.
+1. Confirm the audit report loaded from `AUDIT_REPORT_PATH` contains an
+   approval-required gap inventory or validator findings.
 2. Confirm `APPROVED_PERSONALITY_DECISION` is explicit. If it is missing, return
    `BLOCKED`.
 3. Normalize `APPROVED_GAPS`. If it is `none`, make no package mutation and
@@ -71,7 +77,7 @@ package root, not from the target `SKILL_PATH`.
    Sync `SKILL.md`, subagents, references, scripts, and templates to the
    approved flow vocabulary.
 10. Semantic edits to any `flow-diagram.md` require an approved
-    `generate-flow-diagram` `REVIEW: PASS` candidate in `AUDIT_REPORT` or
+    `generate-flow-diagram` `REVIEW: PASS` candidate in the audit report or
     `VALIDATOR_FINDINGS`. Direct edits are limited to non-semantic path or name
     corrections.
 11. Remove or merge subagents only when the approved gap explicitly calls for
