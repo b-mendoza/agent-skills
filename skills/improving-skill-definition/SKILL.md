@@ -186,13 +186,19 @@ each dispatch:
    subagent status line and no outer code fence, and reply compactly with only
    status plus report path.
 4. Read `HANDOFF_DIR/<subagent-name>-report.md` before making any routing
-   decision. Route only from the report file contents, not from a summarized
-   dispatch reply.
-5. Retain only the report verdict, summary, relevant paths, approved gaps,
+   decision. When the report is readable, route only from the report file
+   contents, not from a summarized dispatch reply.
+5. If the report is missing or unreadable, inspect the compact dispatch reply
+   only for an enumerated `BLOCKED` or `ERROR` status from the Status Routing
+   Contract below. Route that status to the matching blocked or error handoff
+   and name the missing report path. If neither the report nor a usable compact
+   terminal status is available, route to the workflow `error` handoff with the
+   unreadable report path as the recovery target.
+6. Retain only the report verdict, summary, relevant paths, approved gaps,
    fetched URLs, and user decisions in orchestrator context.
-6. Re-dispatches during repair cycles overwrite the same per-subagent
+7. Re-dispatches during repair cycles overwrite the same per-subagent
    instruction and report paths so each file holds the current cycle only.
-7. Before any terminal user-facing handoff, delete the workflow-created
+8. Before any terminal user-facing handoff, delete the workflow-created
    `*-instructions.md` and `*-report.md` files inside `HANDOFF_DIR`; remove
    `HANDOFF_DIR` only if it is empty.
 
