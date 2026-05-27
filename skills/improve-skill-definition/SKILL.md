@@ -179,21 +179,25 @@ each dispatch:
    does not exist. The file carries every input listed for that subagent in
    the Execution section below.
 3. Dispatch the subagent with a compact pointer prompt that names only the
-   subagent contract file and the handoff file path. The prompt instructs the
-   subagent to read the handoff file as its first action, follow it strictly,
-   and return the subagent's contracted Output Format.
-4. Delete the handoff file in the same dispatch step when the subagent returns
-   a routed-forward success status: `AUDIT: APPROVAL_REQUIRED`,
-   `AUDIT: NO_CHANGE`, `EDIT: PASS`, or `VALIDATION: PASS`.
-5. Leave the handoff file in place for retryable failures that will be
-   re-dispatched in the same workflow cycle, such as `VALIDATION: FAIL`; the
-   next dispatch overwrites the same path with the new payload.
-6. Before any terminal user-facing handoff, delete the workflow-created
-   `*-instructions.md` files inside `HANDOFF_DIR`; remove `HANDOFF_DIR` only
-   if it is empty.
+   subagent contract file, the instruction file path, and the report path
+   `HANDOFF_DIR/<subagent-name>-report.md`. The prompt instructs the subagent
+   to read the handoff file as its first action, follow it strictly, write the
+   complete contracted Output Format to the report path, beginning with the
+   subagent status line and no outer code fence, and reply compactly with only
+   status plus report path.
+4. Read `HANDOFF_DIR/<subagent-name>-report.md` before making any routing
+   decision. Route only from the report file contents, not from a summarized
+   dispatch reply.
+5. Retain only the report verdict, summary, relevant paths, approved gaps,
+   fetched URLs, and user decisions in orchestrator context.
+6. Re-dispatches during repair cycles overwrite the same per-subagent
+   instruction and report paths so each file holds the current cycle only.
+7. Before any terminal user-facing handoff, delete the workflow-created
+   `*-instructions.md` and `*-report.md` files inside `HANDOFF_DIR`; remove
+   `HANDOFF_DIR` only if it is empty.
 
-Re-dispatches during repair cycles reuse the same per-subagent path so each
-handoff file always holds the current cycle's payload only.
+The cleanup rule applies to workflow-created files only; do not remove sibling
+files the orchestrator did not create.
 
 ## Status Routing Contract
 
@@ -292,8 +296,9 @@ subagent. Unless the user explicitly expands scope, use these limits:
    `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`,
    `PERSONALITY_PATH=./references/personality.md`,
    `FLOW_DIAGRAM_PATH=./flow-diagram.md`, and
-   `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed. Apply
-   the Subagent Dispatch Protocol cleanup before routing the result.
+   `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed, plus
+   `REPORT_PATH=HANDOFF_DIR/skill-package-auditor-report.md`. Read the report
+   file before routing.
 5. If the audit returns `NO_CHANGE`, emit banner `Phase 7/7 - Handoff`, load
    `./references/final-report-template.md` and return the no-change handoff
    with evidence, personality assessment, rejected optional improvements, and
@@ -323,8 +328,9 @@ subagent. Unless the user explicitly expands scope, use these limits:
     `APPROVED_PERSONALITY_DECISION`,
     `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`,
     `PERSONALITY_PATH=./references/personality.md`, and
-    `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed. Apply
-    the Subagent Dispatch Protocol cleanup before routing the result.
+    `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed, plus
+    `REPORT_PATH=HANDOFF_DIR/skill-definition-editor-report.md`. Read the
+    report file before routing.
 11. If the editor returns `BLOCKED` or `ERROR`, emit banner
     `Phase 7/7 - Handoff`, load
     `./references/final-report-template.md` and return the blocked or error
@@ -334,11 +340,13 @@ subagent. Unless the user explicitly expands scope, use these limits:
     The handoff file at
     `HANDOFF_DIR/skill-package-validator-instructions.md`
     must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
-    `MUTATION_LIMITS`, `AUDIT_REPORT`, `EDITOR_REPORT`, `APPROVED_GAPS`,
+    `MUTATION_LIMITS`, `AUDIT_REPORT`, `APPROVED_GAPS`,
     `APPROVED_PERSONALITY_DECISION`, changed paths from the editor report,
     `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`, and
-    `PERSONALITY_PATH=./references/personality.md`. Apply the Subagent
-    Dispatch Protocol cleanup before routing the result.
+    `PERSONALITY_PATH=./references/personality.md`, plus
+    `EDITOR_REPORT=HANDOFF_DIR/skill-definition-editor-report.md` and
+    `REPORT_PATH=HANDOFF_DIR/skill-package-validator-report.md`. Read the
+    report file before routing.
 13. Emit banner `Phase 7/7 - Handoff`. If validation returns `PASS`, load
     `./references/final-report-template.md` and return the changed handoff
     with material issues, files changed, validation, resources, and risks.
@@ -351,9 +359,10 @@ subagent. Unless the user explicitly expands scope, use these limits:
     `HANDOFF_DIR/skill-definition-editor-instructions.md`
     with the original editor payload plus `VALIDATOR_FINDINGS`, the repair
     cycle count, and a focused fix scope inside approved gaps and
-    `MUTATION_LIMITS`. Re-run the validator after each repair using the same
-    write-dispatch-cleanup lifecycle. On each repair cycle, the EDIT re-dispatch
-    reprints `Phase 5/7 - Edit` and the subsequent re-validate reprints
+    `MUTATION_LIMITS`, plus the same editor `REPORT_PATH`. Re-run the
+    validator after each repair using the same bidirectional
+    write-dispatch-read-cleanup lifecycle. On each repair cycle, the EDIT
+    re-dispatch reprints `Phase 5/7 - Edit` and the subsequent re-validate reprints
     `Phase 6/7 - Validate`, so each cycle is visible in the output stream.
     Use at most three targeted fix cycles; after the third failed validation,
     emit banner `Phase 7/7 - Handoff` and return a blocked handoff with failed
