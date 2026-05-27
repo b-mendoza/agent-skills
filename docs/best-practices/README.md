@@ -1,9 +1,9 @@
 # Best Practices for Writing Skills and Subagent Definitions
 
 This directory holds detailed guidance for authoring and editing the skills in
-this repo. Every practice below is grounded in real-world testing, LLM
-research, and architectural review. They are format-agnostic and apply to any
-skill/subagent system regardless of platform.
+this repo. The practices below combine durable standards, repo conventions, and
+runtime mitigations. Apply them with the scope named in each file, especially
+when authoring portable skills for both OpenCode and Claude Code.
 
 The top-level [`CLAUDE.md`](../../CLAUDE.md) carries only one-line summaries
 and pointers to these files. Read the relevant file when you are about to
@@ -46,8 +46,8 @@ author or edit a skill, subagent, or reference document — not before.
     subagent payloads to per-run files to avoid tool-call serialization
     failures and lift inline prompt-size limits.
 17. [Best-Practices Compliance as a Quality Gate](./best-practices-compliance-gate.md)
-    — every skill audit and validation must check the target against this
-    index and report per-practice verdicts with observable evidence.
+    — every skill audit and validation checks the target against the applicable
+    tier of this index and reports verdicts with observable evidence.
 18. [Earned Complexity](./earned-complexity.md) — every instruction, file,
     subagent, and reference must earn its place by observably changing
     runtime behavior or maintainability. Includes the Material Issue Gate
@@ -67,16 +67,16 @@ author or edit a skill, subagent, or reference document — not before.
 22. [Orchestrator as Routing UI](./orchestrator-as-routing-ui.md) — the
     orchestrator is the routing layer that decides which subagent to
     dispatch; subagents are the backend that normalizes unstructured inputs
-    into structured outputs. Subagents may nest as sub-orchestrators.
+    into structured outputs. Nested delegation is runtime-dependent; portable
+    skills chain subagents from the orchestrator/main conversation.
 23. [Phase Transition Banner](./phase-transition-banner.md) — orchestrator
     skills announce every phase transition with the canonical
     forty-hyphen `Phase N/TOTAL - Name` banner so retry cycles, scoped
     iterations, and workflow progress are visible in the output stream.
 24. [Incremental File Writing](./incremental-file-writing.md) — orchestrators
-    and subagents materialize multi-section markdown artifacts via small
-    per-section `Write` / `StrReplace` calls instead of one monolithic
-    `Write`, so the runtime's JSON tool-call serializer never trips on a
-    multi-KB string argument.
+    and subagents materialize large or serializer-sensitive markdown artifacts
+    via small per-section `Write` / `StrReplace` calls instead of one
+    monolithic `Write`.
 25. [Mutation Scope Boundaries](./mutation-scope-boundaries.md) — editing
     skills derive an explicit `MUTATION_LIMITS` contract during intake,
     pass it to every dispatched subagent, and gate every edit on it so
