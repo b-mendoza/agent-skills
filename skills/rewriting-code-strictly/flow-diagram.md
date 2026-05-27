@@ -21,7 +21,7 @@ flowchart TD
   BOUNDARY --> BASELINE["Dispatch strict-baseline-mapper<br/>read-only map behavior, callers, tests, configs, dependencies, and weaknesses"]
   BASELINE --> BASELINE_STATUS{strict-baseline-mapper status?}
 
-  BASELINE_STATUS -->|PASS| STRATEGY["Dispatch strict-rewrite-strategist<br/>read-only choose static typing vs runtime validation plan<br/>handle REFERENCE_NEED and external-source authorization inside status contract"]
+  BASELINE_STATUS -->|PASS| STRATEGY["Dispatch strict-rewrite-strategist<br/>read-only choose static typing vs runtime validation plan<br/>include planned changed paths and gate evidence<br/>handle REFERENCE_NEED and external-source authorization inside status contract"]
   BASELINE_STATUS -->|NO_CHANGE_CANDIDATE| BASELINE_NO_CHANGE["Record no-change candidate and supporting evidence for strategist"]
   BASELINE_NO_CHANGE --> STRATEGY
   BASELINE_STATUS -->|NEEDS_CLARIFICATION| BASELINE_ASK["Ask one baseline question or request missing local evidence"]
@@ -30,7 +30,7 @@ flowchart TD
   BASELINE_ERROR --> ERROR(["ERROR"])
 
   STRATEGY --> STRATEGY_STATUS{strict-rewrite-strategist status?}
-  STRATEGY_STATUS -->|PASS| CHANGE_GATE{Plan requires dependency, public API, behavior, scope, fetch, or validation authority expansion?}
+  STRATEGY_STATUS -->|PASS| CHANGE_GATE{G_STRICT_STRATEGY_APPROVAL and G_MUTATION_SCOPE pass?<br/>Plan requires dependency, public API, behavior, scope, fetch, or validation authority expansion?}
   STRATEGY_STATUS -->|NO_CHANGE| NO_CHANGE(["NO_CHANGE"])
   STRATEGY_STATUS -->|NEEDS_CLARIFICATION| STRATEGY_ASK["Ask one strategy question<br/>missing decision, external fetch approval, local source, or declined/unavailable source disposition"]
   STRATEGY_ASK --> NEEDS_CLARIFICATION
