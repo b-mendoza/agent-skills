@@ -55,7 +55,7 @@ a diff.
 3. **State limits as positive obligations first.** Open the contract with
    the in-scope clause ("Write only inside …"). Reserve negation for the
    categorical exclusions list ("Out of scope: …"). This matches
-   [`./positive-constraint-framing.md`](./positive-constraint-framing.md)
+   [Behavioral Prompt Contract](./behavioral-prompt-contract.md)
    and gives a planner a fast in-bounds check before evaluating
    exclusions.
 
@@ -98,8 +98,8 @@ a diff.
    If a skill needs to write outside its package by design (cross-package
    refactors, repo-wide documentation passes, tooling-managed regen
    targets), the deviation must be declared in `SKILL.md` per
-   [`./best-practices-compliance-gate.md`](./best-practices-compliance-gate.md)
-   rule 6. The declared deviation names why the wider scope is necessary
+   [Validation and Escalation](./validation-and-escalation.md). The declared
+   deviation names why the wider scope is necessary
    and what the validator should check instead.
 
 ## What a `MUTATION_LIMITS` contract looks like
@@ -143,10 +143,10 @@ Some skills are not single-package editors. Examples in this repo:
 
 For those cases, declare the wider default scope explicitly in `SKILL.md`
 as a declared deviation per
-[`./best-practices-compliance-gate.md`](./best-practices-compliance-gate.md)
-rule 6. Name the categories the skill is permitted to write that this
-practice's defaults would block, and name the validator checks that
-replace the default boundary verification.
+[Validation and Escalation](./validation-and-escalation.md). Name the
+categories the skill is permitted to write that this practice's defaults would
+block, and name the validator checks that replace the default boundary
+verification.
 
 ## When the pattern is overkill
 
@@ -162,14 +162,14 @@ contract as part of that growth, not as a follow-up.
 
 ## References
 
-- [`./positive-constraint-framing.md`](./positive-constraint-framing.md) —
+- [Behavioral Prompt Contract](./behavioral-prompt-contract.md) —
   the in-scope-first ordering rule applied to mutation contracts.
-- [`./best-practices-compliance-gate.md`](./best-practices-compliance-gate.md)
+- [Validation and Escalation](./validation-and-escalation.md)
   — declared deviations from default mutation scope live in `SKILL.md`.
 - [`./input-output-contracts.md`](./input-output-contracts.md) —
   `MUTATION_LIMITS` is a contracted input that flows through the workflow.
 - [`./artifact-lifecycle.md`](./artifact-lifecycle.md) — what to do with
   the files mutation produced (commit / keep / delete) is the sibling
   practice; this one decides what may be written in the first place.
-- [`./empirical-validation.md`](./empirical-validation.md) — `git status`
+- [Validation and Escalation](./validation-and-escalation.md) — `git status`
   is the observable boundary check this practice prescribes.
