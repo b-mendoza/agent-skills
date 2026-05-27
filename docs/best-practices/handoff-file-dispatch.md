@@ -55,16 +55,20 @@ unexpected subagent behavior.
 
 ## Rules
 
-1. **Path is predictable, per-skill, per-subagent.** Write the file to
-   `docs/<skill-name>/<subagent-name>-instructions.md` relative to the
-   orchestrator's current working directory. The `<skill-name>` is the
+1. **Path is predictable, per-skill, per-subagent.** Resolve a workspace or
+   repository root once, set `HANDOFF_DIR` to
+   `.handoffs/<skill-name>/` under that root, and write each file to
+   `HANDOFF_DIR/<subagent-name>-instructions.md`. The `<skill-name>` is the
    orchestrator skill's frontmatter `name`. The `<subagent-name>` is the
    dispatched subagent's frontmatter `name`. This prevents collisions when
-   two skills run concurrently and makes the file self-identifying.
+   two skills run concurrently, keeps handoffs out of committed documentation
+   directories, and makes the file self-identifying.
 
-2. **Create the directory if missing.** If `docs/<skill-name>/` does not
-   exist when the orchestrator goes to write, create it. Treat the directory
-   the same way as the file: scoped to one orchestrator skill, per-run.
+2. **Create the handoff directory if missing.** If
+   `.handoffs/<skill-name>/` does not exist when the orchestrator goes to
+   write, create it. Treat the directory the same way as the file: scoped to
+   one orchestrator skill, per-run. Repositories that adopt this pattern should
+   ignore `.handoffs/` in version control.
 
 3. **One file per dispatch.** Do not reuse a single handoff file across
    multiple subagents. Each dispatched subagent gets its own
@@ -101,12 +105,12 @@ unexpected subagent behavior.
    the next payload. Only delete when the orchestrator either succeeds, hits
    a terminal blocked/error status, or abandons the subagent entirely.
 
-8. **Empty the directory at workflow end.** When the orchestrator reaches a
+8. **Empty the handoff directory at workflow end.** When the orchestrator reaches a
    terminal user-facing handoff (success, blocked, error, no-change), it
    removes any remaining `<subagent-name>-instructions.md` files inside its
-   `docs/<skill-name>/` directory as part of the final-cleanup phase. The
-   directory itself may be left in place or removed; do not remove sibling
-   files the orchestrator did not create.
+   `HANDOFF_DIR` as part of the final-cleanup phase. The directory itself may
+   be left in place or removed when empty; do not remove sibling files the
+   orchestrator did not create.
 
 9. **The handoff file is a Category A orchestration artifact.** It is a
    working document scoped to one workflow session. Never stage it. Never
@@ -124,8 +128,8 @@ unexpected subagent behavior.
 ## File-layout convention
 
 ```text
-<orchestrator-cwd>/
-├── docs/
+<repo-root>/
+├── .handoffs/
 │   └── <skill-name>/
 │       ├── <subagent-a>-instructions.md
 │       ├── <subagent-b>-instructions.md
@@ -134,7 +138,7 @@ unexpected subagent behavior.
 ```
 
 `<skill-name>` is the orchestrator skill's frontmatter `name`. `<subagent-*>`
-files share the directory because they all belong to the same orchestrator's
+files share `HANDOFF_DIR` because they all belong to the same orchestrator's
 current run.
 
 ## Handoff-file contents
@@ -189,11 +193,11 @@ Dispatch <subagent>:
 
 # Good — handoff file, compact dispatch
 
-Orchestrator writes docs/<skill-name>/<subagent>-instructions.md with the
+Orchestrator writes .handoffs/<skill-name>/<subagent>-instructions.md with the
 full payload, then dispatches:
   prompt: """You are dispatched as <subagent>. Read
                 ./subagents/<subagent>.md for your contract, then read
-                docs/<skill-name>/<subagent>-instructions.md as your
+                .handoffs/<skill-name>/<subagent>-instructions.md as your
                 handoff payload. Follow it strictly. Return the
                 contracted Output Format."""
 # Subagent reads the contract, then the handoff file, then executes.
