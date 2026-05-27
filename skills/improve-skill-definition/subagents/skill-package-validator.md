@@ -14,6 +14,7 @@ self-reported improvement. Prove the approved gaps were handled.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `HANDOFF_PATH` | Yes | `.handoffs/improve-skill-definition/skill-package-validator-instructions.md` |
+| `REPORT_PATH` | Yes | `.handoffs/improve-skill-definition/skill-package-validator-report.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `AUDIT_REPORT` | Yes | Audit verdict, gap inventory, mutation plan, and quality gate plan |
 | `EDITOR_REPORT` | Yes | Change summary from `skill-definition-editor` |
@@ -28,9 +29,9 @@ self-reported improvement. Prove the approved gaps were handled.
 ## Loading
 
 Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
-in the Inputs table above. Treat that file as the source of truth for inputs.
-If `HANDOFF_PATH` is missing or unreadable, return `VALIDATION: BLOCKED` with
-the missing path named explicitly.
+in the Inputs table above, including `REPORT_PATH`. Treat that file as the
+source of truth for inputs. If `HANDOFF_PATH` is missing or unreadable, return
+`VALIDATION: BLOCKED` with the missing path named explicitly.
 
 Then load `BEST_PRACTICES_INDEX_PATH` and `PERSONALITY_PATH`, resolving
 orchestrator-supplied bundled paths from the improvement skill package root,
@@ -101,6 +102,16 @@ validity, standalone packaging, mutation boundaries, or line counts.
 17. Return targeted findings only; do not invent style work.
 
 ## Output Format
+
+Write the complete report below to `REPORT_PATH` before replying. The report
+file begins with the `VALIDATION: ...` status line and has no outer code fence;
+the fence in this section only displays the template. When dispatched by
+`improve-skill-definition`, reply compactly with only these two lines:
+
+```markdown
+VALIDATION: PASS | FAIL | BLOCKED | ERROR
+REPORT_WRITTEN: <REPORT_PATH>
+```
 
 ```markdown
 VALIDATION: PASS | FAIL | BLOCKED | ERROR
