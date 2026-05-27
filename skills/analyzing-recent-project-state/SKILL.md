@@ -112,28 +112,41 @@ configuration, semantic versioning, and API compatibility.
 
 ## Execution Steps
 
-1. Normalize inputs inline.
+Before entering a new phase, emit a phase-transition banner so the user can
+see progress against the five-row Workflow Overview. Use the repo's
+forty-hyphen rule above and below `Phase N/5 — <Phase Name>` (matching the
+Workflow Overview names), or the host's native progress marker carrying the
+same phase number, total, and name. Repair re-entry reprints
+`Phase 3/5 — Snapshot writing` and then `Phase 4/5 — Verification` so each
+repair cycle is visible against the two-cycle cap.
+
+1. Emit `Phase 1/5 — Intake`, then normalize inputs inline.
 2. If the user also asks for mutation, keep the run read-only and carry that ask
    into the report as a risk, blocker, or recommended next action.
-3. Dispatch `git-evidence-collector` with the normalized inputs.
+3. Emit `Phase 2/5 — Git evidence`, then dispatch `git-evidence-collector`
+   with the normalized inputs.
 4. If `GIT_EVIDENCE` is not `PASS`, return the collector's reason and smallest
    next action in the escalation envelope below.
-5. Dispatch `state-snapshot-writer` with `GIT_EVIDENCE` and the normalized
-   inputs. The writer owns narrow local inspection and source fetching.
+5. Emit `Phase 3/5 — Snapshot writing`, then dispatch `state-snapshot-writer`
+   with `GIT_EVIDENCE` and the normalized inputs. The writer owns narrow
+   local inspection and source fetching.
 6. If `SNAPSHOT_WRITE` is `NEEDS_CONTEXT` or `ERROR`, return the writer's
    reason and smallest next action in the escalation envelope.
-7. Dispatch `snapshot-verifier` with the draft report from
-   `SNAPSHOT_WRITE: PASS`, `GIT_EVIDENCE`, and the normalized inputs.
+7. Emit `Phase 4/5 — Verification`, then dispatch `snapshot-verifier` with
+   the draft report from `SNAPSHOT_WRITE: PASS`, `GIT_EVIDENCE`, and the
+   normalized inputs.
 8. If verification returns `NEEDS_CONTEXT` or `ERROR`, return the verifier's
    reason and smallest next action in the escalation envelope.
-9. If verification returns `FAIL`, redispatch the writer with only the required
-   fixes and the original evidence handoff. Re-run verification. Use at most two
-   targeted fix cycles.
+9. If verification returns `FAIL`, reprint `Phase 3/5 — Snapshot writing`,
+   redispatch the writer with only the required fixes and the original
+   evidence handoff, then reprint `Phase 4/5 — Verification` and re-run
+   verification. Use at most two targeted fix cycles.
 10. If verification still returns `FAIL` after the second repair cycle, return
     `RECENT_STATE: ERROR` with the remaining required fixes and attempted
     repairs.
-11. Return only the verified Markdown report body. Include process notes only
-    when a phase could not complete or the user asks for them.
+11. Emit `Phase 5/5 — Final response`, then return only the verified Markdown
+    report body. Include process notes only when a phase could not complete
+    or the user asks for them.
 
 Escalation envelope:
 
