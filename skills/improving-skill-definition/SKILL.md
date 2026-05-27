@@ -284,7 +284,7 @@ target skill package the orchestrator is auditing:
 - Target-package bundled paths must stay relative to the file that names
   them and inside the target skill package. This is a constraint on
   *target* skills; this skill itself is the repo's single declared
-  non-portable skill (see the repo-internal exception block below) and may
+  non-portable skill (see the repo-internal exception block above) and may
   reference repo-level paths such as `../../docs/best-practices/`.
 - External URLs are optional background only; normal execution must succeed
   from bundled files plus `../../docs/best-practices/`.
