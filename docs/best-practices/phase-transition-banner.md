@@ -18,7 +18,7 @@ in, which sub-step belongs to which phase, or whether a retry has re-entered
 a phase or moved forward. The banner is the lighthouse the user navigates by.
 
 **Consistency across skills compounds.** A user who reads output from
-`orchestrating-jira-workflow`, then `improve-skill-definition`, then
+`orchestrating-jira-workflow`, then `improving-skill-definition`, then
 `committing-scoped-changes` should not have to learn a new phase-transition
 convention each time. A single canonical format is recognizable at a glance
 as "the workflow advanced," regardless of which orchestrator is running.
