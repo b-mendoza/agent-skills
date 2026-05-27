@@ -16,22 +16,32 @@ artifact directly, educate the user, and avoid personal attacks.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
+| `HANDOFF_PATH` | Yes | `.handoffs/improve-skill-definition/skill-package-auditor-instructions.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `KNOWN_PROBLEM` | No | `"subagent paths seem stale"` |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 | `SCOPE_LIMITS` | No | `"do not rename files"` |
 | `REFERENCE_NEED` | No | `"Claude Code subagent syntax"` |
 | `MUTATION_LIMITS` | Yes | `write only inside the target skill package` |
-| `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
+| `BEST_PRACTICES_INDEX_PATH` | Yes | `../../docs/best-practices/README.md` |
 | `PERSONALITY_PATH` | Yes | `./references/personality.md` |
 | `FLOW_DIAGRAM_PATH` | Yes | `./flow-diagram.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
 
 ## Loading
 
-Load `CHECKLIST_PATH`, `PERSONALITY_PATH`, and `FLOW_DIAGRAM_PATH` before
-classification. Resolve orchestrator-supplied bundled paths from the
-improvement skill package root, not from the target `SKILL_PATH`.
+Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
+in the Inputs table above. Treat that file as the source of truth for inputs.
+If `HANDOFF_PATH` is missing or unreadable, return `AUDIT: BLOCKED` with the
+missing path named explicitly.
+
+Then load `BEST_PRACTICES_INDEX_PATH`, `PERSONALITY_PATH`, and
+`FLOW_DIAGRAM_PATH` before classification. Resolve orchestrator-supplied
+bundled paths from the improvement skill package root, not from the target
+`SKILL_PATH`. The best-practices index file at `BEST_PRACTICES_INDEX_PATH` is
+the sole source of truth for which authoring rules exist; load individual
+per-practice files it links to just-in-time when a per-practice verdict needs
+the rule text. Do not maintain a parallel list of rules in this skill.
 
 Normalize `SKILL_PATH` to the target package directory and read the target
 `SKILL.md`. Read the target `flow-diagram.md` when present, target
@@ -69,19 +79,32 @@ rationale changes the verdict.
 7. Provide at least five personality recommendations tailored to the target
    skill, even when recommending that the current personality be kept.
 8. Classify each observation as `gap`, `optional_improvement`, or `no_op`.
-9. Treat a gap as material when it affects reliability, portability,
-   standalone packaging, context efficiency, maintainability, validation, user
-   comprehension, flow determinism, personality fit, or subagent necessity.
-10. For every material gap, name severity, type, affected files, evidence,
+9. Run the best-practices-compliance gate per
+   `../../../docs/best-practices/best-practices-compliance-gate.md`. Enumerate
+   every practice listed in `BEST_PRACTICES_INDEX_PATH`. For each, assign
+   `pass`, `fail`, or `not applicable` with observable evidence. Each `fail`
+   enters the gap inventory as a material gap unless the target `SKILL.md`
+   declares a deliberate exception with a reason, in which case record
+   `pass — declared exception: <reason>` and do not add a gap.
+10. Emit an aggregate `G_BEST_PRACTICES_COMPLIANCE` verdict: `pass` when every
+    applicable practice passes or has a declared exception, `fail` when any
+    practice fails, and `not applicable` only when the target package cannot be
+    inspected enough to run the gate.
+11. Treat a gap as material when it affects reliability, portability,
+    standalone packaging, context efficiency, maintainability, validation,
+    user comprehension, flow determinism, personality fit, subagent
+    necessity, or best-practices compliance.
+12. For every material gap, name severity, type, affected files, evidence,
     required fix, and whether semantic diagram work must be delegated to
     `generate-flow-diagram`.
-11. Build the smallest mutation plan that resolves the material gaps, including
+13. Build the smallest mutation plan that resolves the material gaps, including
     create/edit/delete/no-op actions by path. Recommend deletion, merge, phase
     collapse, or rebuild when evidence supports it.
-12. If any required fix falls outside `SCOPE_LIMITS` or `MUTATION_LIMITS`,
+14. If any required fix falls outside `SCOPE_LIMITS` or `MUTATION_LIMITS`,
     return `BLOCKED` with the smallest scope question.
-13. Return `NO_CHANGE` only when workflow, subagent architecture, flow
-    coherence, personality fit, and package hygiene are all adequate.
+15. Return `NO_CHANGE` only when workflow, subagent architecture, flow
+    coherence, personality fit, package hygiene, and best-practices compliance
+    are all adequate.
 
 ## Output Format
 
@@ -115,6 +138,17 @@ AUDIT: APPROVAL_REQUIRED | NO_CHANGE | BLOCKED | ERROR
 - Checks run:
 - Recommendation:
 - Five personality alternatives:
+
+## Best-Practices Compliance
+
+| Practice | Verdict | Evidence |
+| -------- | ------- | -------- |
+
+## Critical Output Gates
+
+| Gate | Verdict | Evidence |
+| ---- | ------- | -------- |
+| `G_BEST_PRACTICES_COMPLIANCE` | `pass` / `fail` / `not applicable` | [aggregate verdict derived from Best-Practices Compliance table] |
 
 ## Gap Inventory
 | id | severity | type | affected files | issue | evidence | required fix | diagram delegation |
