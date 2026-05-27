@@ -64,3 +64,24 @@ the top of the skill body, after the overview:
 
 The orchestrator uses this table to choose the right subagent without reading
 every definition file. Paths are relative to the skill folder.
+
+## Naming conventions
+
+This is a repo style convention, not an evidence-backed universal standard.
+Use it for first-party skills in this repository so file listings, registry
+tables, and dispatch prompts stay predictable.
+
+- **Skills use gerund form** because they describe ongoing activities:
+  `analyzing-data`, `deploying-service`, `creating-jira-subtasks`,
+  `orchestrating-jira-workflow`.
+- **Subagents use role nouns** because they describe specialists performing
+  work: `log-analyzer`, `code-reviewer`, `task-executor`,
+  `progress-tracker`.
+- **Frontmatter names use kebab-case** and match the directory or file name
+  exactly.
+
+```yaml
+---
+name: "orchestrating-jira-workflow"
+---
+```
