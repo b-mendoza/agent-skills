@@ -32,12 +32,12 @@ author or edit a skill, subagent, or reference document — not before.
    templates into separate co-located files.
 10. [Identity and Mental Model Statements](./identity-and-mental-model.md) —
     open every skill and subagent with what-it-is and why-it-exists.
-11. [Example Strategy](./example-strategy.md) — concrete examples at every
-    level.
+11. [Example Strategy](./example-strategy.md) — concrete examples where they
+    reduce ambiguity in outputs, handoffs, decisions, or failures.
 12. [Validation Loops](./validation-loops.md) — phase boundaries, fix cycles,
     retry limits.
-13. [Naming Conventions](./naming-conventions.md) — gerunds for skills, role
-    nouns for subagents.
+13. [Naming Conventions](./naming-conventions.md) — repo style convention:
+    gerunds for skills, role nouns for subagents.
 14. [Artifact Lifecycle Management](./artifact-lifecycle.md) — what to commit,
     what to preserve, what to delete.
 15. [Empirical Validation over Self-Report](./empirical-validation.md) —
@@ -53,9 +53,9 @@ author or edit a skill, subagent, or reference document — not before.
     runtime behavior or maintainability. Includes the Material Issue Gate
     and the Improvement Decision Tests.
 19. [Personality as Operating Posture](./personality-as-operating-posture.md)
-    — non-trivial skills define a dedicated `references/personality.md` that
-    drives how the agent investigates, decides, validates, and escalates,
-    not just how it sounds.
+    — non-trivial skills define an explicit operating posture; use a
+    dedicated `references/personality.md` when the posture earns a separate
+    artifact.
 20. [External Information Linking](./external-information-linking.md) — link
     to external documentation rather than bundling its content; cached
     snapshots are allowed only with provenance headers and a declaration in
@@ -70,9 +70,8 @@ author or edit a skill, subagent, or reference document — not before.
     into structured outputs. Nested delegation is runtime-dependent; portable
     skills chain subagents from the orchestrator/main conversation.
 23. [Phase Transition Banner](./phase-transition-banner.md) — orchestrator
-    skills announce every phase transition with the canonical
-    forty-hyphen `Phase N/TOTAL - Name` banner so retry cycles, scoped
-    iterations, and workflow progress are visible in the output stream.
+    skills make phase transitions visible; the forty-hyphen banner is this
+    repo's preferred UI convention when no host-native progress marker exists.
 24. [Incremental File Writing](./incremental-file-writing.md) — orchestrators
     and subagents materialize large or serializer-sensitive markdown artifacts
     via small per-section `Write` / `StrReplace` calls instead of one
