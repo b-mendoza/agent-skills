@@ -82,7 +82,7 @@ the failing phase." The orchestrator never reads the raw Jira API response;
 `fetching-jira-ticket` normalizes that response into a structured
 twelve-line fetch summary the orchestrator can route on.
 
-`improve-skill-definition` follows the same pattern: the orchestrator
+`improving-skill-definition` follows the same pattern: the orchestrator
 dispatches `skill-package-auditor`, retains only its verdict set and gap
 inventory, dispatches `skill-definition-editor` after explicit approval, and
 dispatches `skill-package-validator` to check the result. The raw target
