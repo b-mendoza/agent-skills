@@ -46,6 +46,21 @@ Input: JIRA_URL = https://workspace.atlassian.net/browse/PROJ-123
 </example>
 ```
 
+## Related behavioral prompt practices
+
+- [Identity and Mental Model Statements](./identity-and-mental-model.md) —
+  examples should reinforce the role and reasoning model declared at the top
+  of the skill or subagent.
+- [Positive Constraint Framing](./positive-constraint-framing.md) — examples
+  should show the preferred allowed behavior before edge cases show what to
+  avoid.
+- [Instruction Reinforcement](./instruction-reinforcement.md) — long examples
+  should not bury critical constraints without a local reminder when the
+  boundary is risky.
+- [Personality as Operating Posture](./personality-as-operating-posture.md) —
+  examples should match the skill's operating posture, not just its output
+  format.
+
 ## Example: Subagent output format
 
 ```markdown
