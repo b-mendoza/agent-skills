@@ -16,7 +16,7 @@ artifact directly, educate the user, and avoid personal attacks.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `HANDOFF_PATH` | Yes | `docs/improve-skill-definition/skill-package-auditor-instructions.md` |
+| `HANDOFF_PATH` | Yes | `.handoffs/improve-skill-definition/skill-package-auditor-instructions.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `KNOWN_PROBLEM` | No | `"subagent paths seem stale"` |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
@@ -86,19 +86,23 @@ rationale changes the verdict.
    enters the gap inventory as a material gap unless the target `SKILL.md`
    declares a deliberate exception with a reason, in which case record
    `pass — declared exception: <reason>` and do not add a gap.
-10. Treat a gap as material when it affects reliability, portability,
+10. Emit an aggregate `G_BEST_PRACTICES_COMPLIANCE` verdict: `pass` when every
+    applicable practice passes or has a declared exception, `fail` when any
+    practice fails, and `not applicable` only when the target package cannot be
+    inspected enough to run the gate.
+11. Treat a gap as material when it affects reliability, portability,
     standalone packaging, context efficiency, maintainability, validation,
     user comprehension, flow determinism, personality fit, subagent
     necessity, or best-practices compliance.
-11. For every material gap, name severity, type, affected files, evidence,
+12. For every material gap, name severity, type, affected files, evidence,
     required fix, and whether semantic diagram work must be delegated to
     `generate-flow-diagram`.
-12. Build the smallest mutation plan that resolves the material gaps, including
+13. Build the smallest mutation plan that resolves the material gaps, including
     create/edit/delete/no-op actions by path. Recommend deletion, merge, phase
     collapse, or rebuild when evidence supports it.
-13. If any required fix falls outside `SCOPE_LIMITS` or `MUTATION_LIMITS`,
+14. If any required fix falls outside `SCOPE_LIMITS` or `MUTATION_LIMITS`,
     return `BLOCKED` with the smallest scope question.
-14. Return `NO_CHANGE` only when workflow, subagent architecture, flow
+15. Return `NO_CHANGE` only when workflow, subagent architecture, flow
     coherence, personality fit, package hygiene, and best-practices compliance
     are all adequate.
 
@@ -139,6 +143,12 @@ AUDIT: APPROVAL_REQUIRED | NO_CHANGE | BLOCKED | ERROR
 
 | Practice | Verdict | Evidence |
 | -------- | ------- | -------- |
+
+## Critical Output Gates
+
+| Gate | Verdict | Evidence |
+| ---- | ------- | -------- |
+| `G_BEST_PRACTICES_COMPLIANCE` | `pass` / `fail` / `not applicable` | [aggregate verdict derived from Best-Practices Compliance table] |
 
 ## Gap Inventory
 | id | severity | type | affected files | issue | evidence | required fix | diagram delegation |
