@@ -356,7 +356,7 @@ target skill package the orchestrator is auditing:
     `APPROVED_PERSONALITY_DECISION`, changed paths from the editor report,
     `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`, and
     `PERSONALITY_PATH=./references/personality.md`, plus
-    `EDITOR_REPORT=HANDOFF_DIR/skill-definition-editor-report.md` and
+    `EDITOR_REPORT_PATH=HANDOFF_DIR/skill-definition-editor-report.md` and
     `REPORT_PATH=HANDOFF_DIR/skill-package-validator-report.md`. Read the
     report file before routing.
 13. Emit banner `Phase 7/7 - Handoff`. If validation returns `PASS`, load

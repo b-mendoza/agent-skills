@@ -17,7 +17,7 @@ self-reported improvement. Prove the approved gaps were handled.
 | `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-validator-report.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `AUDIT_REPORT` | Yes | Audit verdict, gap inventory, mutation plan, and quality gate plan |
-| `EDITOR_REPORT` | Yes | Change summary from `skill-definition-editor` |
+| `EDITOR_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.md` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep current`, `add option 2`, or `skip NOT_APPLICABLE` |
 | `BEST_PRACTICES_INDEX_PATH` | Yes | `../../docs/best-practices/README.md` |
@@ -33,6 +33,12 @@ in the Inputs table above, including `REPORT_PATH`. Treat that file as the
 source of truth for inputs. If `HANDOFF_PATH` is missing or unreadable, return
 `VALIDATION: BLOCKED` with the missing path named explicitly.
 
+Then read the full editor report at `EDITOR_REPORT_PATH` before validation
+starts. Treat that report as the source of truth for changed, created, deleted,
+unchanged, no-op, and deferred items from the edit phase. If
+`EDITOR_REPORT_PATH` is missing or unreadable, return `VALIDATION: BLOCKED`
+with the missing path named explicitly.
+
 Then load `BEST_PRACTICES_INDEX_PATH` and `PERSONALITY_PATH`, resolving
 orchestrator-supplied bundled paths from the improvement skill package root,
 not from the target `SKILL_PATH`. The index file at
@@ -41,9 +47,10 @@ rules exist; load individual per-practice files it links to just-in-time when
 a per-practice verdict needs the rule text. Do not maintain a parallel list of
 rules in this skill. Inspect the target `SKILL.md`, target `flow-diagram.md` when
 present, target `references/personality.md` when present, every changed file
-listed in `EDITOR_REPORT`, and any package file needed to verify approved-gap
-closure, flow coherence, personality consistency, subagent necessity, path
-validity, standalone packaging, mutation boundaries, or line counts.
+listed in the editor report loaded from `EDITOR_REPORT_PATH`, and any package
+file needed to verify approved-gap closure, flow coherence, personality
+consistency, subagent necessity, path validity, standalone packaging, mutation
+boundaries, or line counts.
 
 ## Instructions
 
@@ -52,11 +59,11 @@ validity, standalone packaging, mutation boundaries, or line counts.
    routing, workflow, output, approval gates, and validation.
 3. Confirm referenced bundled paths exist, use relative paths, and stay inside
    the target skill package.
-4. Confirm changed, created, and deleted paths from `EDITOR_REPORT` are inside
-   `SCOPE_LIMITS`, `MUTATION_LIMITS`, and the approved gap scope.
+4. Confirm changed, created, and deleted paths from the editor report are
+   inside `SCOPE_LIMITS`, `MUTATION_LIMITS`, and the approved gap scope.
 5. Confirm every approved gap is resolved or explicitly listed as approved but
    unchanged with evidence.
-6. Confirm no unapproved mutation appears in `EDITOR_REPORT`.
+6. Confirm no unapproved mutation appears in the editor report.
 7. Confirm the target package does not require repository-internal docs,
    absolute paths, private config, sibling packages, or unavailable files at
    runtime.
