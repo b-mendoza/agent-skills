@@ -31,6 +31,12 @@ When a quality gate fails, rerun only the failing gate and the producing work
 needed to repair it. Avoid full-pipeline reruns when prior stages already
 passed. Use an explicit retry cap, commonly three targeted fix cycles.
 
+Apply the full cycle where the risk earns it: mutating workflows, multi-phase
+orchestrators, external-effect actions, critical outputs, and workflows that
+consume untrusted content. Thin utility skills can use a smaller precondition
+and postcondition check when a full phase ceremony would fail
+[Earned Complexity](./earned-complexity.md).
+
 ## Critical-output gates
 
 A skill that produces outputs other components rely on must declare those
@@ -141,7 +147,15 @@ regurgitating stale training data.
 - [Runtime Portability Matrix](./runtime-portability-matrix.md) — runtime
   permissions and tool availability affect validation strategy.
 - Turpin et al., "Language Models Don't Always Say What They Think,"
-  arXiv:2305.04388.
+  arXiv:2305.04388: <https://arxiv.org/abs/2305.04388>. Supports caution
+  against relying on model explanations as faithful self-report; it does not
+  prescribe this repo's validation-loop structure.
 - Sharma et al., "Towards Understanding Sycophancy in Language Models,"
-  arXiv:2310.13548.
-- Agent-SafetyBench — arXiv:2412.14470.
+  arXiv:2310.13548: <https://arxiv.org/abs/2310.13548>. Supports treating
+  agreement and self-report as fallible signals.
+- Agent-SafetyBench — arXiv:2412.14470:
+  <https://arxiv.org/abs/2412.14470>. Supports the need for stronger checks
+  than prompt-only safety instructions in agent settings.
+- OpenAI, "Understanding prompt injections," accessed 2026-05-27:
+  <https://openai.com/safety/prompt-injections/>. Supports layered defenses and
+  limiting agent access when untrusted content enters context.
