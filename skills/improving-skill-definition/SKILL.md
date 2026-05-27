@@ -90,7 +90,7 @@ decision:
 ## Critical Outputs
 
 This skill produces user-facing handoffs as its critical outputs and binds each
-handoff to a named gate per the `critical-output-quality-gates` practice
+handoff to a named gate per the `validation-and-escalation` practice
 indexed in
 [`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
 Every emitted handoff must pass the gates below before it leaves the
@@ -100,7 +100,7 @@ orchestrator.
 | ---- | ------------------------- | --------- | ---------------- |
 | `G_HANDOFF_COMPLETENESS` | Every emitted handoff (`approval required`, `changed`, `no change`, `blocked`, `error`) carries every section listed in its Output Contract row | Inline check by the orchestrator immediately before emission, against `references/final-report-template.md` | Re-load `final-report-template.md`, re-compose the missing sections, and re-check before emission |
 | `G_GAP_CLOSURE` | For the `changed` decision, every approved gap is observably resolved in the target package | `skill-package-validator` (Validate phase) | Trigger the targeted repair loop per Execution step 15 (max three cycles) |
-| `G_BEST_PRACTICES_COMPLIANCE` | The target package passes every applicable practice in `BEST_PRACTICES_INDEX_PATH` per the `best-practices-compliance-gate` rule | `skill-package-auditor` (Audit phase) and `skill-package-validator` (Validate phase) | Auditor surfaces failing practices as material gaps; validator surfaces post-edit regressions and triggers repair |
+| `G_BEST_PRACTICES_COMPLIANCE` | The target package passes every applicable practice in `BEST_PRACTICES_INDEX_PATH` per the best-practices compliance gate in `validation-and-escalation` | `skill-package-auditor` (Audit phase) and `skill-package-validator` (Validate phase) | Auditor surfaces failing practices as material gaps; validator surfaces post-edit regressions and triggers repair |
 
 Gate verdicts and evidence are surfaced in the user-facing handoff per
 `references/final-report-template.md`, not retained as internal-only checks.
@@ -132,13 +132,13 @@ in the handoff's `Gates run` block.
 Read a subagent file only when dispatching that subagent. Retain only its status,
 findings, verdicts, gap ids, file paths, fetched URLs, and concise summaries.
 
-## Phase Transition Banner
+## Phase Transition Marker
 
 This skill is an orchestrator with seven declared phases and therefore
-announces every phase transition per the `phase-transition-banner` practice
+announces every phase transition per the phase-transition marker rule
 indexed in
 [`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
-The canonical banner format is:
+This repo's preferred banner format is:
 
 ```text
 ----------------------------------------
@@ -165,7 +165,7 @@ and composing the final response.
 
 Every subagent in this skill (`skill-package-auditor`,
 `skill-definition-editor`, `skill-package-validator`) is dispatched via the
-handoff-file-dispatch pattern indexed in
+handoff-file dispatch pattern indexed in
 [`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
 The orchestrator never inlines the full payload into the dispatch prompt. For
 each dispatch:
@@ -205,7 +205,8 @@ each dispatch:
 The cleanup rule applies to workflow-created files only; do not remove sibling
 files the orchestrator did not create.
 
-*Cleanup-timing exception (declared deviation from `handoff-file-dispatch.md` rule 6):*
+*Cleanup-timing exception (declared deviation from the handoff-file dispatch
+section of `context-and-payload-management.md`):*
 The canonical practice prescribes per-step cleanup as each subagent dispatch
 step closes on PASS. This skill instead defers cleanup to the terminal
 `Phase 7/7 - Handoff` sweep, which removes the workflow-created
@@ -236,7 +237,7 @@ Route only on these enumerated subagent statuses:
 | `APPROVAL_GATE` | Continue to edit only after explicit approval of `all`, `none`, or specific gap ids. |
 | `SCOPE_GATE` | Continue to edit only when every approved mutation is inside `SCOPE_LIMITS` and `MUTATION_LIMITS`. |
 | `EDIT_STATUS` | Route only on the editor status set in the status routing contract. |
-| `VALIDATION_STATUS` | Validation must prove approved-gap closure, flow coherence, personality consistency, package hygiene, and best-practices compliance per `../../docs/best-practices/best-practices-compliance-gate.md`. |
+| `VALIDATION_STATUS` | Validation must prove approved-gap closure, flow coherence, personality consistency, package hygiene, and best-practices compliance per `../../docs/best-practices/validation-and-escalation.md`. |
 | `RETRY_GATE` | Re-dispatch targeted repair only while fewer than three repair cycles have been used. |
 | `REPAIR_STATUS` | Route repair editor results as `EDIT: PASS`, `EDIT: BLOCKED`, or `EDIT: ERROR`. |
 
@@ -415,7 +416,7 @@ user that the workflow is badly designed.
   subagents are recommended for removal or merge.
 - Validation results are concrete, falsifiable, and tied to approved gaps.
 - Every audit and validation runs the best-practices-compliance gate per
-  `../../docs/best-practices/best-practices-compliance-gate.md` and reports
+  `../../docs/best-practices/validation-and-escalation.md` and reports
   per-practice verdicts with observable evidence.
 
 ## Example
