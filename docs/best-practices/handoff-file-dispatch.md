@@ -123,7 +123,7 @@ unexpected subagent behavior.
 
 ## File-layout convention
 
-```
+```text
 <orchestrator-cwd>/
 ├── docs/
 │   └── <skill-name>/
