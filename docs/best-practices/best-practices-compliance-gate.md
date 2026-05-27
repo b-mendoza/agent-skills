@@ -88,7 +88,7 @@ Treating the index as a gate eliminates all three.
 | -------- | ------- | -------- |
 | progressive-disclosure | pass | SKILL.md is 312 lines; ./references/ holds 4 JIT files referenced in Progressive Disclosure Map (SKILL.md lines 87-94) |
 | context-window-protection | pass | Orchestrator dispatches all raw inspection to subagents; SKILL.md line 22 "Raw target-package inspection ... happen in subagents" |
-| handoff-file-dispatch | fail | Editor dispatch passes audit report + approved gaps + personality decision inline; no handoff file at docs/improve-skill-definition/skill-definition-editor-instructions.md |
+| handoff-file-dispatch | fail | Editor dispatch passes audit report + approved gaps + personality decision inline; no handoff file at `.handoffs/improve-skill-definition/skill-definition-editor-instructions.md` |
 | template-extraction | not applicable | No bundled template exceeds 80 lines |
 ```
 
