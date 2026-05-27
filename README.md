@@ -128,7 +128,6 @@ touches those managed artifacts.
 | [`generate-handoff-document`](.agents/skills/generate-handoff-document/SKILL.md) | `b-mendoza/agent-skills` |
 | [`grill-me`](.agents/skills/grill-me/SKILL.md) | `mattpocock/skills` |
 | [`humanizer`](.agents/skills/humanizer/SKILL.md) | `blader/humanizer` |
-| [`improve-skill-definition`](.agents/skills/improve-skill-definition/SKILL.md) | `b-mendoza/agent-skills` |
 | [`pr-creator`](.agents/skills/pr-creator/SKILL.md) | `b-mendoza/agent-skills` |
 | [`prompt-structurer`](.agents/skills/prompt-structurer/SKILL.md) | `b-mendoza/agent-skills` |
 | [`receiving-code-review`](.agents/skills/receiving-code-review/SKILL.md) | `obra/superpowers` |
@@ -137,6 +136,7 @@ touches those managed artifacts.
 | [`review-pull-request`](.agents/skills/review-pull-request/SKILL.md) | `b-mendoza/agent-skills` |
 | [`subagent-driven-development`](.agents/skills/subagent-driven-development/SKILL.md) | `obra/superpowers` |
 | [`test-driven-development`](.agents/skills/test-driven-development/SKILL.md) | `obra/superpowers` |
+| [`workflow-skill-architect`](.agents/skills/workflow-skill-architect/SKILL.md) | `b-mendoza/agent-skills` |
 | [`writing-plans`](.agents/skills/writing-plans/SKILL.md) | `obra/superpowers` |
 
 ## Notes for editing
