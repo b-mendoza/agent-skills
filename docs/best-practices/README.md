@@ -82,6 +82,10 @@ author or edit a skill, subagent, or reference document — not before.
     pass it to every dispatched subagent, and gate every edit on it so
     over-reach, cross-package collateral, and repair-cycle drift are caught
     before the edit lands.
+26. [Runtime Portability Matrix](./runtime-portability-matrix.md) — portable
+    skills separate required capabilities from runtime-specific syntax,
+    permissions, tool names, and subagent behavior for OpenCode and Claude
+    Code.
 
 ## Supporting reference
 
