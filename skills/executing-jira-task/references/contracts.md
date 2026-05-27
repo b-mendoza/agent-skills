@@ -122,10 +122,10 @@ of inferring success from partial file changes.
 
 | Category | Contents | Git behavior | Lifecycle |
 | -------- | -------- | ------------ | --------- |
-| A | `docs/<TICKET_KEY>*.md`, briefs, plans, test specs, refactoring plans, critique, decisions | Keep out of git history | Never deleted |
+| A1 | `docs/<TICKET_KEY>*.md`, briefs, plans, test specs, refactoring plans, critique, decisions | Keep out of git history | Preserve for resumability unless the user approves cleanup |
 | B | Source, tests, config, in-code docs | Changed by this workflow | Normal project rules |
 
-`documentation-writer` may update Category A artifacts on disk so the workflow
+`documentation-writer` may update Category A1 artifacts on disk so the workflow
 can resume later; those files stay out of git history.
 
 ## Successful completion contract
