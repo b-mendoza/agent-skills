@@ -125,15 +125,16 @@ Use [`./references/data-contracts.md`](./references/data-contracts.md)
 for exact phase-boundary checks. Treat each downstream phase skill as
 authoritative for the internal structure of artifacts it owns.
 
-This workflow maintains Category A orchestration artifacts on disk:
+This workflow maintains Category A1 persistent orchestration records on disk:
 
 - `docs/<ISSUE_SLUG>-progress.md`
 - `docs/<ISSUE_SLUG>-task-<N>-progress.md`
 - The downstream phase artifacts listed in [Workflow Overview](#workflow-overview)
 
-Category A artifacts are preserved for resumability and are not committed
-by the orchestrator. Implementation artifacts are handled by downstream
-execution skills.
+Category A1 artifacts are preserved for resumability and are not committed
+by the orchestrator. Ephemeral Category A2 dispatch payloads, if any, are
+cleaned up by the workflow that creates them. Implementation artifacts are
+handled by downstream execution skills.
 
 ## Start Or Resume
 
