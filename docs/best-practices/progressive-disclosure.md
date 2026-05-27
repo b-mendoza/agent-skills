@@ -18,11 +18,11 @@ needed at that moment.
 
 ## Three-level architecture
 
-| Level | What loads                          | When                                | Size guidance      |
-| ----- | ----------------------------------- | ----------------------------------- | ------------------ |
-| 0     | SKILL.md body                       | When the skill triggers             | Under 500 lines    |
-| 1     | Reference files (`references/`)     | Just-in-time, per phase or mode     | Unlimited          |
-| 2     | Subagent definitions (`subagents/`) | Only when dispatching that subagent | Unlimited per file |
+| Level | What loads | When | Size guidance |
+| --- | --- | --- | --- |
+| 0 | SKILL.md body | When the skill triggers | Under 500 lines |
+| 1 | Reference files (`references/`) | Just-in-time, per phase or mode | Not always-loaded; keep budgeted to the phase or mode |
+| 2 | Subagent definitions (`subagents/`) | Only when dispatching that subagent | Not always-loaded; keep each contract focused |
 
 ## What belongs at each level
 
@@ -36,6 +36,10 @@ the agent enters that specific mode or phase.
 
 **Level 2 (on-dispatch):** Individual subagent definitions. Read only when the
 agent is about to dispatch that specific subagent. Never preloaded.
+
+Moving content out of `SKILL.md` does not make it free. Reference and subagent
+files still need a clear load condition, a focused purpose, and enough brevity
+that the agent can use them reliably in the phase where they apply.
 
 ## Example: Phase guide as a routing table
 
