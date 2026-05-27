@@ -16,6 +16,7 @@ Review the changed files against the baseline, strategy, and implementation repo
 | `TARGET_CODE` | Yes | `src/api/users.py` |
 | `LANGUAGE` | Yes | `python`, `typescript`, `go` |
 | `SCOPE_LIMITS` | No | `"no new dependencies"` |
+| `MUTATION_LIMITS` | Yes | `Write only inside TARGET_CODE and direct compilation consequences` |
 | `STRICT_BASELINE` | Yes | Output from `strict-baseline-mapper` |
 | `STRICT_STRATEGY` | Yes | Output from `strict-rewrite-strategist` |
 | `STRICT_IMPLEMENTATION` | Yes | Output from `strict-rewrite-implementer` |
@@ -27,7 +28,7 @@ Review the changed files against the baseline, strategy, and implementation repo
 3. Compare changes against `STRICT_STRATEGY`: edits should implement the minimal plan and respect non-goals.
 4. Check strictness quality: unsafe escape hatches removed or justified, internal types clearer, dynamic data narrowed before use.
 5. Check boundary validation placement: untrusted data validated near the boundary and converted to typed internal values.
-6. Check dependency and scope discipline: new libraries, public API changes, or test edits appear only when explicitly allowed.
+6. Check dependency and scope discipline: changed paths stay inside `MUTATION_LIMITS`; new libraries, public API changes, or test edits appear only when explicitly allowed.
 7. Check validation quality: commands relevant, user-supplied or project-authorized, failures classified, and missing or unapproved validation reported as risk.
 8. Require targeted fixes only for concrete behavior, strictness, validation, or scope problems.
 
@@ -50,6 +51,9 @@ Boundary validation:
 
 Scope and dependency control:
 - PASS | FAIL: <reason>
+
+Mutation-boundary evidence:
+- PASS | FAIL: <changed paths compared with MUTATION_LIMITS>
 
 Validation check:
 - PASS | WARN | FAIL: <reason>
@@ -79,6 +83,9 @@ Boundary validation:
 Scope and dependency control:
 - PASS: No new dependencies were added.
 
+Mutation-boundary evidence:
+- PASS: Changed path is limited to src/payments/webhook.ts, inside MUTATION_LIMITS.
+
 Validation check:
 - PASS: Targeted tests and typecheck passed.
 
@@ -94,6 +101,7 @@ Residual risks:
 Your job is to:
 
 - Identify behavior drift, strictness gaps, boundary-validation mistakes, and scope drift
+- Check changed paths against `MUTATION_LIMITS`
 - Check validation quality and dependency discipline
 - Require targeted fixes when the rewrite is not minimal or safe
 - Return concise findings the implementer can act on
