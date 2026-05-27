@@ -251,7 +251,7 @@ subagent. Unless the user explicitly expands scope, use these limits:
   skill itself may reference repo-level paths such as `../../docs/best-practices/`
   because it is the repo's single non-portable skill.
 - External URLs are optional background only; normal execution must succeed
-  from bundled files plus `docs/best-practices/`.
+  from bundled files plus `../../docs/best-practices/`.
 - Route semantic `flow-diagram.md` changes through `generate-flow-diagram`;
   direct diagram edits are limited to non-semantic path or name corrections.
 - During repair cycles, change only files tied to validator findings and
