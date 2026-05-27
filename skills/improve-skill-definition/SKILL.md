@@ -121,6 +121,17 @@ in the handoff's `Gates run` block.
 | Validate | Handoff-file dispatch `skill-package-validator` | Quality gate and targeted repair guidance |
 | Handoff | Inline | User-facing decision and validation summary |
 
+## Subagent Registry
+
+| Subagent | Path | Purpose |
+| -------- | ---- | ------- |
+| `skill-package-auditor` | `./subagents/skill-package-auditor.md` | Stress-tests a target skill package and returns adversarial verdicts, personality assessment, gap inventory, and mutation plan |
+| `skill-definition-editor` | `./subagents/skill-definition-editor.md` | Applies only user-approved package mutations and preserves the approved flow/personality contracts |
+| `skill-package-validator` | `./subagents/skill-package-validator.md` | Runs the quality gate after edits, including approved-gap closure, flow coherence, personality consistency, and package hygiene |
+
+Read a subagent file only when dispatching that subagent. Retain only its status,
+findings, verdicts, gap ids, file paths, fetched URLs, and concise summaries.
+
 ## Phase Transition Banner
 
 This skill is an orchestrator with seven declared phases and therefore
@@ -208,17 +219,6 @@ Route only on these enumerated subagent statuses:
 | `VALIDATION_STATUS` | Validation must prove approved-gap closure, flow coherence, personality consistency, package hygiene, and best-practices compliance per `../../docs/best-practices/best-practices-compliance-gate.md`. |
 | `RETRY_GATE` | Re-dispatch targeted repair only while fewer than three repair cycles have been used. |
 | `REPAIR_STATUS` | Route repair editor results as `EDIT: PASS`, `EDIT: BLOCKED`, or `EDIT: ERROR`. |
-
-## Subagent Registry
-
-| Subagent | Path | Purpose |
-| -------- | ---- | ------- |
-| `skill-package-auditor` | `./subagents/skill-package-auditor.md` | Stress-tests a target skill package and returns adversarial verdicts, personality assessment, gap inventory, and mutation plan |
-| `skill-definition-editor` | `./subagents/skill-definition-editor.md` | Applies only user-approved package mutations and preserves the approved flow/personality contracts |
-| `skill-package-validator` | `./subagents/skill-package-validator.md` | Runs the quality gate after edits, including approved-gap closure, flow coherence, personality consistency, and package hygiene |
-
-Read a subagent file only when dispatching that subagent. Retain only its status,
-findings, verdicts, gap ids, file paths, fetched URLs, and concise summaries.
 
 ## Progressive Disclosure Map
 
