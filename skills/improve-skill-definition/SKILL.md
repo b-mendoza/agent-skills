@@ -199,6 +199,16 @@ each dispatch:
 The cleanup rule applies to workflow-created files only; do not remove sibling
 files the orchestrator did not create.
 
+*Cleanup-timing exception (declared deviation from `handoff-file-dispatch.md` rule 6):*
+The canonical practice prescribes per-step cleanup as each subagent dispatch
+step closes on PASS. This skill instead defers cleanup to the terminal
+`Phase 7/7 - Handoff` sweep, which removes the workflow-created
+`*-instructions.md` and `*-report.md` files and then removes `HANDOFF_DIR`
+only when it is empty. Every phase's instruction and report files therefore
+remain on disk for the full lifetime of the run, so multi-phase runs can be
+debugged cross-phase and partially-completed runs can be inspected and resumed
+without re-dispatching upstream subagents.
+
 ## Status Routing Contract
 
 Route only on these enumerated subagent statuses:
