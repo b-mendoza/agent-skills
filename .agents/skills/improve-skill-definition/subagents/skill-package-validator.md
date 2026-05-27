@@ -13,12 +13,13 @@ self-reported improvement. Prove the approved gaps were handled.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
+| `HANDOFF_PATH` | Yes | `.handoffs/improve-skill-definition/skill-package-validator-instructions.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `AUDIT_REPORT` | Yes | Audit verdict, gap inventory, mutation plan, and quality gate plan |
 | `EDITOR_REPORT` | Yes | Change summary from `skill-definition-editor` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep current`, `add option 2`, or `skip NOT_APPLICABLE` |
-| `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
+| `BEST_PRACTICES_INDEX_PATH` | Yes | `../../docs/best-practices/README.md` |
 | `PERSONALITY_PATH` | Yes | `./references/personality.md` |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 | `SCOPE_LIMITS` | No | `"do not rename files"` |
@@ -26,14 +27,22 @@ self-reported improvement. Prove the approved gaps were handled.
 
 ## Loading
 
-Load `CHECKLIST_PATH` and `PERSONALITY_PATH` first, resolving
-orchestrator-supplied bundled paths from the improvement skill package root, not
-from the target `SKILL_PATH`. Inspect the target `SKILL.md`, target
-`flow-diagram.md` when present, target `references/personality.md` when present,
-every changed file listed in `EDITOR_REPORT`, and any package file needed to
-verify approved-gap closure, flow coherence, personality consistency, subagent
-necessity, path validity, standalone packaging, mutation boundaries, or line
-counts.
+Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
+in the Inputs table above. Treat that file as the source of truth for inputs.
+If `HANDOFF_PATH` is missing or unreadable, return `VALIDATION: BLOCKED` with
+the missing path named explicitly.
+
+Then load `BEST_PRACTICES_INDEX_PATH` and `PERSONALITY_PATH`, resolving
+orchestrator-supplied bundled paths from the improvement skill package root,
+not from the target `SKILL_PATH`. The index file at
+`BEST_PRACTICES_INDEX_PATH` is the sole source of truth for which authoring
+rules exist; load individual per-practice files it links to just-in-time when
+a per-practice verdict needs the rule text. Do not maintain a parallel list of
+rules in this skill. Inspect the target `SKILL.md`, target `flow-diagram.md` when
+present, target `references/personality.md` when present, every changed file
+listed in `EDITOR_REPORT`, and any package file needed to verify approved-gap
+closure, flow coherence, personality consistency, subagent necessity, path
+validity, standalone packaging, mutation boundaries, or line counts.
 
 ## Instructions
 
@@ -70,7 +79,26 @@ counts.
     workflow can fail quality checks.
 14. If scripts exist, report whether a consumer-facing invocation was run or why
     it was not run.
-15. Return targeted findings only; do not invent style work.
+15. Run the best-practices-compliance gate per
+    `../../../docs/best-practices/best-practices-compliance-gate.md`. Enumerate
+    every practice listed in `BEST_PRACTICES_INDEX_PATH`. For each one, return
+    one of `pass`, `fail`, or `not applicable` with observable
+    evidence: a file path plus line range, a quoted snippet, or a one-line
+    reason for `not applicable`. Treat declared deviations in the target
+    `SKILL.md` (for example "this skill is repo-internal and intentionally not
+    portable") as `pass — declared exception: <reason>`. Any `fail` verdict
+    enters the validator's `Findings` table as a material finding unless the
+    approved-gap scope explicitly covered skipping the practice.
+16. Emit a per-gate verdict for the two named critical-output gates this
+    validator owns: `G_GAP_CLOSURE` (every approved gap is observably resolved
+    in the target package; substantively covered by check 5 above) and
+    `G_BEST_PRACTICES_COMPLIANCE` (every applicable practice from
+    `BEST_PRACTICES_INDEX_PATH` passes; substantively covered by check 15
+    above). Each verdict is `pass`, `fail`, or `not applicable` with evidence
+    (file path plus line range, quoted snippet, or one-line reason).
+    `G_HANDOFF_COMPLETENESS` is owned by the orchestrator as an inline check
+    and is NOT emitted by this validator.
+17. Return targeted findings only; do not invent style work.
 
 ## Output Format
 
@@ -92,6 +120,24 @@ VALIDATION: PASS | FAIL | BLOCKED | ERROR
 - Subagent contracts and necessity:
 - Output, approval, and validation contracts:
 - Scripts:
+- Best-practices compliance gate: pass | fail (see Best-Practices Compliance section)
+- `G_GAP_CLOSURE`: pass | fail | not applicable (see Critical Output Gates section)
+- `G_BEST_PRACTICES_COMPLIANCE`: pass | fail | not applicable (see Critical Output Gates section)
+
+## Critical Output Gates
+
+| Gate | Verdict | Evidence |
+| ---- | ------- | -------- |
+| `G_GAP_CLOSURE` | `pass` / `fail` / `not applicable` | [file path plus line range, quoted snippet, or one-line reason] |
+| `G_BEST_PRACTICES_COMPLIANCE` | `pass` / `fail` / `not applicable` | [file path plus line range, quoted snippet, or one-line reason] |
+
+`G_HANDOFF_COMPLETENESS` is owned by the orchestrator's inline pre-emission
+check and is not produced here.
+
+## Best-Practices Compliance
+
+| Practice | Verdict | Evidence |
+| -------- | ------- | -------- |
 
 ## Findings
 | id | severity | file | issue | required fix |
