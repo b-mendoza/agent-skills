@@ -87,7 +87,16 @@ validity, standalone packaging, mutation boundaries, or line counts.
     portable") as `pass — declared exception: <reason>`. Any `fail` verdict
     enters the validator's `Findings` table as a material finding unless the
     approved-gap scope explicitly covered skipping the practice.
-16. Return targeted findings only; do not invent style work.
+16. Emit a per-gate verdict for the two named critical-output gates this
+    validator owns: `G_GAP_CLOSURE` (every approved gap is observably resolved
+    in the target package; substantively covered by check 5 above) and
+    `G_BEST_PRACTICES_COMPLIANCE` (every applicable practice from
+    `BEST_PRACTICES_INDEX_PATH` passes; substantively covered by check 15
+    above). Each verdict is `pass`, `fail`, or `not applicable` with evidence
+    (file path plus line range, quoted snippet, or one-line reason).
+    `G_HANDOFF_COMPLETENESS` is owned by the orchestrator as an inline check
+    and is NOT emitted by this validator.
+17. Return targeted findings only; do not invent style work.
 
 ## Output Format
 
@@ -110,6 +119,18 @@ VALIDATION: PASS | FAIL | BLOCKED | ERROR
 - Output, approval, and validation contracts:
 - Scripts:
 - Best-practices compliance gate: pass | fail (see Best-Practices Compliance section)
+- `G_GAP_CLOSURE`: pass | fail | not applicable (see Critical Output Gates section)
+- `G_BEST_PRACTICES_COMPLIANCE`: pass | fail | not applicable (see Critical Output Gates section)
+
+## Critical Output Gates
+
+| Gate | Verdict | Evidence |
+| ---- | ------- | -------- |
+| `G_GAP_CLOSURE` | `pass` / `fail` / `not applicable` | [file path plus line range, quoted snippet, or one-line reason] |
+| `G_BEST_PRACTICES_COMPLIANCE` | `pass` / `fail` / `not applicable` | [file path plus line range, quoted snippet, or one-line reason] |
+
+`G_HANDOFF_COMPLETENESS` is owned by the orchestrator's inline pre-emission
+check and is not produced here.
 
 ## Best-Practices Compliance
 
