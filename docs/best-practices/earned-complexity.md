@@ -97,10 +97,9 @@ reason. Earned complexity is the default; ornament is the failure mode.
 
 ## References
 
-- [Validation and Escalation](./validation-and-escalation.md)
-  — the gate that this rule reinforces.
-- [Validation and Escalation](./validation-and-escalation.md) — why observable
-  evidence is required to call a change an improvement.
+- [Validation and Escalation](./validation-and-escalation.md) — the gate this
+  rule reinforces and the reason observable evidence is required to call a
+  change an improvement.
 - [Context and Payload Management](./context-and-payload-management.md) — extraction is
   permitted, not required; this rule decides which extractions earn their
   place.
