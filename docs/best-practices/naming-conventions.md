@@ -1,5 +1,13 @@
 # Naming Conventions
 
+## Scope
+
+This is a repo style convention, not an evidence-backed universal standard.
+Use it for first-party skills in this repository so file listings, registry
+tables, and dispatch prompts stay predictable. External packages may choose
+different naming schemes when their runtime or organization already has a
+clear convention.
+
 ## Skills
 
 Use **gerund form** (present participle) — describes the ongoing activity:
@@ -27,8 +35,8 @@ dispatch instructions self-documenting.
 
 ## Frontmatter naming
 
-The `name` field in YAML frontmatter uses kebab-case and matches the directory
-or file name exactly:
+For this repository, the `name` field in YAML frontmatter uses kebab-case and
+matches the directory or file name exactly:
 
 ```yaml
 ---
