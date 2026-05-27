@@ -141,8 +141,10 @@ touches those managed artifacts.
 
 ## Notes for editing
 
-- Keep skills portable across OpenCode and Claude Code. Use simple frontmatter
-  and plain Markdown links.
+- Keep skills portable across OpenCode and Claude Code. Use simple frontmatter,
+  plain Markdown links, and the
+  [`runtime-portability-matrix`](docs/best-practices/runtime-portability-matrix.md)
+  when changing tool, permission, or subagent behavior.
 - Before editing a skill, subagent, or reference file, read the relevant guide in
   [`docs/best-practices/README.md`](docs/best-practices/README.md).
 - There is no formal validator or CI pipeline for skill authoring yet. Run the
