@@ -50,12 +50,12 @@ flowchart TD
   IMPLEMENT_ERROR --> ERROR
 
   REVIEW --> REVIEW_STATUS{strict-rewrite-reviewer status?}
-  REVIEW_STATUS -->|PASS| HANDOFF["Return final handoff<br/>original behavior, weaknesses, typing vs validation decisions, changed files or code, validation, references, assumptions, risks"]
+  REVIEW_STATUS -->|PASS| HANDOFF["Return final handoff with G_FINAL_HANDOFF_EVIDENCE<br/>original behavior, weaknesses, typing vs validation decisions,<br/>changed files or code, validation, references, assumptions, risks,<br/>and compact gate evidence"]
   HANDOFF --> PASS(["PASS"])
 
   REVIEW_STATUS -->|FAIL| REVIEW_FIXABLE{Reviewer supplied actionable targeted fixes?}
   REVIEW_FIXABLE -->|yes| FIX_CYCLES{Fewer than two reviewer fix cycles used?}
-  FIX_CYCLES -->|yes| REPAIR["Re-dispatch strict-rewrite-implementer<br/>only reviewer-named fixes; no new scope"]
+  FIX_CYCLES -->|yes| REPAIR["Re-dispatch strict-rewrite-implementer<br/>only reviewer-named fixes inside MUTATION_LIMITS;<br/>no new scope"]
   REPAIR --> IMPLEMENT_STATUS
   FIX_CYCLES -->|no| REVIEW_BLOCKED["Record unresolved findings, repair attempts, and safest next action"]
   REVIEW_FIXABLE -->|no| REVIEW_BLOCKED
