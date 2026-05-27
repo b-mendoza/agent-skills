@@ -88,11 +88,16 @@ a diff.
    had access to in the original cycle. This prevents repair cycles from
    widening the change set.
 
-8. **The validator verifies mutation boundaries with observable
-   evidence.** Use `git status --short` (or equivalent) after the edit
-   completes. Every changed path must appear in the original mutation
-   plan or be authorized by the run's `SCOPE_LIMITS`. Unapproved
-   mutations are validator findings, not silently-accepted edits.
+8. **The validator verifies mutation boundaries with baseline-aware observable
+   evidence.** Capture the pre-edit working-tree state with `git status --short`
+   (or equivalent) before any mutation, then compare it with the post-edit
+   state. Every newly changed path must appear in the original mutation plan or
+   be authorized by the run's `SCOPE_LIMITS`. In a dirty worktree, do not treat
+   post-edit `git status` alone as proof of what the workflow changed.
+   If an authorized file was already dirty, inspect the relevant diff hunks or
+   use an equivalent baseline comparison to confirm the workflow did not
+   overwrite unrelated user work. Unapproved mutations are validator findings,
+   not silently-accepted edits.
 
 9. **Declare deviations from these defaults in the skill's `SKILL.md`.**
    If a skill needs to write outside its package by design (cross-package
@@ -172,4 +177,11 @@ contract as part of that growth, not as a follow-up.
   the files mutation produced (commit / keep / delete) is the sibling
   practice; this one decides what may be written in the first place.
 - [Validation and Escalation](./validation-and-escalation.md) — `git status`
-  is the observable boundary check this practice prescribes.
+  baselines and post-edit evidence are the observable boundary checks this
+  practice prescribes.
+- OpenAI, "Understanding prompt injections," accessed 2026-05-27:
+  <https://openai.com/safety/prompt-injections/>. Supports limiting agent
+  access to only the data and actions needed for the task.
+- OWASP Top 10 for LLM Applications, accessed 2026-05-27:
+  <https://owasp.org/www-project-top-10-for-large-language-model-applications/>.
+  Supports least-privilege and excessive-agency concerns for tool-using agents.
