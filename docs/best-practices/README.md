@@ -64,6 +64,10 @@ author or edit a skill, subagent, or reference document — not before.
     — skills declare which outputs are critical and protect them with named
     gates checked by something other than the producer, with a bounded fix
     loop on failure.
+22. [Orchestrator as Routing UI](./orchestrator-as-routing-ui.md) — the
+    orchestrator is the routing layer that decides which subagent to
+    dispatch; subagents are the backend that normalizes unstructured inputs
+    into structured outputs. Subagents may nest as sub-orchestrators.
 
 ## Supporting reference
 
