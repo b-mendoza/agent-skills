@@ -13,7 +13,7 @@ implementation is disciplined, boring, and tightly scoped.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `HANDOFF_PATH` | Yes | `docs/improve-skill-definition/skill-definition-editor-instructions.md` |
+| `HANDOFF_PATH` | Yes | `.handoffs/improve-skill-definition/skill-definition-editor-instructions.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `AUDIT_REPORT` | Yes | Approval-required audit with gap inventory and mutation plan |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
