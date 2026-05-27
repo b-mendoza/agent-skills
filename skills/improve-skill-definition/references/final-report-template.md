@@ -36,6 +36,11 @@ Quality gate plan:
 
 Approval request:
 - Reply with a personality decision and `all`, `none`, or specific gap ids.
+
+Gates run:
+- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` | `not applicable` - [evidence: file path plus line range, quoted snippet, or one-line reason]
+- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
+- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
 ```
 
 ## Changed
@@ -57,6 +62,11 @@ External resources:
 
 Remaining risks or assumptions:
 - [Risk, or `none`]
+
+Gates run:
+- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` | `not applicable` - [evidence: file path plus line range, quoted snippet, or one-line reason]
+- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
+- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
 ```
 
 ## No Change
@@ -76,6 +86,11 @@ Optional improvements considered and rejected:
 
 Validation limits:
 - [Limit, or `none`]
+
+Gates run:
+- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` | `not applicable` - [evidence: file path plus line range, quoted snippet, or one-line reason]
+- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
+- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
 ```
 
 ## Blocked
@@ -94,6 +109,11 @@ Validation completed:
 
 Resume condition:
 - [Exact user response or external condition that lets the workflow continue]
+
+Gates run:
+- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` | `not applicable` - [evidence: file path plus line range, quoted snippet, or one-line reason]
+- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
+- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
 ```
 
 ## Error
@@ -109,4 +129,9 @@ Known context:
 
 Recovery:
 - [Smallest next step, or `none`]
+
+Gates run:
+- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` | `not applicable` - [evidence: file path plus line range, quoted snippet, or one-line reason]
+- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
+- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
 ```
