@@ -81,7 +81,7 @@ rationale changes the verdict.
    skill, even when recommending that the current personality be kept.
 8. Classify each observation as `gap`, `optional_improvement`, or `no_op`.
 9. Run the best-practices-compliance gate per
-   `../../../docs/best-practices/best-practices-compliance-gate.md`. Enumerate
+   `../../../docs/best-practices/validation-and-escalation.md`. Enumerate
    every practice listed in `BEST_PRACTICES_INDEX_PATH`. For each, assign
    `pass`, `fail`, or `not applicable` with observable evidence. Each `fail`
    enters the gap inventory as a material gap unless the target `SKILL.md`
@@ -121,11 +121,11 @@ REPORT_WRITTEN: <REPORT_PATH>
 
 ### Report Writing Protocol
 
-Materialize the report at `REPORT_PATH` per the `incremental-file-writing`
-practice indexed in
+Materialize the report at `REPORT_PATH` per the incremental file writing
+section of
 [`../../../docs/best-practices/README.md`](../../../docs/best-practices/README.md).
 This subagent does not restate the protocol; the rules, rationale, and
-prohibitions live in `incremental-file-writing.md`.
+prohibitions live in `context-and-payload-management.md`.
 
 Per-subagent specifics:
 

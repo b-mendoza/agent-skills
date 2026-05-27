@@ -94,7 +94,7 @@ boundaries, or line counts.
 14. If scripts exist, report whether a consumer-facing invocation was run or why
     it was not run.
 15. Run the best-practices-compliance gate per
-    `../../../docs/best-practices/best-practices-compliance-gate.md`. Enumerate
+    `../../../docs/best-practices/validation-and-escalation.md`. Enumerate
     every practice listed in `BEST_PRACTICES_INDEX_PATH`. For each one, return
     one of `pass`, `fail`, or `not applicable` with observable
     evidence: a file path plus line range, a quoted snippet, or a one-line
@@ -128,11 +128,11 @@ REPORT_WRITTEN: <REPORT_PATH>
 
 ### Report Writing Protocol
 
-Materialize the report at `REPORT_PATH` per the `incremental-file-writing`
-practice indexed in
+Materialize the report at `REPORT_PATH` per the incremental file writing
+section of
 [`../../../docs/best-practices/README.md`](../../../docs/best-practices/README.md).
 This subagent does not restate the protocol; the rules, rationale, and
-prohibitions live in `incremental-file-writing.md`.
+prohibitions live in `context-and-payload-management.md`.
 
 Per-subagent specifics:
 

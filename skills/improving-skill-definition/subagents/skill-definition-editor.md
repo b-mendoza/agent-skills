@@ -100,11 +100,11 @@ REPORT_WRITTEN: <REPORT_PATH>
 
 ### Report Writing Protocol
 
-Materialize the report at `REPORT_PATH` per the `incremental-file-writing`
-practice indexed in
+Materialize the report at `REPORT_PATH` per the incremental file writing
+section of
 [`../../../docs/best-practices/README.md`](../../../docs/best-practices/README.md).
 This subagent does not restate the protocol; the rules, rationale, and
-prohibitions live in `incremental-file-writing.md`.
+prohibitions live in `context-and-payload-management.md`.
 
 Per-subagent specifics:
 
