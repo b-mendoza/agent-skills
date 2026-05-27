@@ -121,34 +121,26 @@ REPORT_WRITTEN: <REPORT_PATH>
 
 ### Report Writing Protocol
 
-Materialize the report file incrementally. Emitting the full report body in a
-single `Write` call is prohibited: a monolithic write will trip the runtime's
-JSON tool-call serializer with `Expected ',' or '}' after property value` and
-the report will never land on disk. Use this protocol for every run:
+Materialize the report at `REPORT_PATH` per the `incremental-file-writing`
+practice indexed in
+[`../../../docs/best-practices/README.md`](../../../docs/best-practices/README.md).
+This subagent does not restate the protocol; the rules, rationale, and
+prohibitions live in `incremental-file-writing.md`.
 
-1. Initialize `REPORT_PATH` with one small `Write` containing ONLY the
-   `AUDIT: ...` status line followed by an empty top-level `##` header
-   skeleton — one heading per contracted section in the template below
-   (`## Package Summary`, `## Workflow Quality Assessment`,
-   `## Subagent Architecture Assessment`, `## Flow Diagram Assessment`,
-   `## Personality Assessment`, `## Best-Practices Compliance`,
-   `## Critical Output Gates`, `## Gap Inventory`,
-   `## Optional Improvements Considered`, `## Mutation Plan`,
-   `## Quality Gate Plan`, `## Scope And Mutation Fit`,
-   `## No-Change Evidence`, `## Resources Used`, `## Approval Question`,
-   `## Escalation Question`).
-2. Append each report section with a separate `StrReplace` / `Edit` call —
-   one section per call — by replacing the empty heading line with the
-   populated section body.
-3. Keep every tool-call string argument well under ~2 KB. Never materialize
-   the full report body in a single call. If a section body would exceed
-   the budget, split it across multiple `StrReplace` / `Edit` calls that
-   append rows or sub-bullets one batch at a time.
-4. Never re-emit the entire report in one call to "fix" formatting; correct
-   issues with further targeted `StrReplace` / `Edit` calls.
-5. Reply to the orchestrator with only the compact two-line response
-   (`AUDIT: ...` + `REPORT_WRITTEN: <REPORT_PATH>`) — unchanged from the
-   current contract.
+Per-subagent specifics:
+
+- Initial `Write` contains only the `AUDIT: ...` status line followed by an
+  empty top-level `##` skeleton enumerating this subagent's contracted
+  sections (`## Package Summary`, `## Workflow Quality Assessment`,
+  `## Subagent Architecture Assessment`, `## Flow Diagram Assessment`,
+  `## Personality Assessment`, `## Best-Practices Compliance`,
+  `## Critical Output Gates`, `## Gap Inventory`,
+  `## Optional Improvements Considered`, `## Mutation Plan`,
+  `## Quality Gate Plan`, `## Scope And Mutation Fit`,
+  `## No-Change Evidence`, `## Resources Used`, `## Approval Question`,
+  `## Escalation Question`).
+- Reply to the orchestrator with the compact two-line response: `AUDIT: ...`
+  plus `REPORT_WRITTEN: <REPORT_PATH>`.
 
 ```markdown
 AUDIT: APPROVAL_REQUIRED | NO_CHANGE | BLOCKED | ERROR
