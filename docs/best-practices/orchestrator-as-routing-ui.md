@@ -6,8 +6,11 @@ An orchestrator skill is the routing layer of a workflow: it decides which
 subagent to dispatch based on the inputs it received and the context it has
 accumulated. Subagents are the backend: they take structured inputs, normalize
 unstructured upstream data (file contents, API payloads, user prose) into
-structured outputs, and return to the orchestrator. The orchestrator does
-not do the unstructured work itself; it routes.
+structured outputs, and return to the orchestrator. The orchestrator generally
+keeps raw unstructured work out of its own context, but it may execute inline
+when the dispatch economics in
+[Subagent-Default Execution](./subagent-default-execution.md) say the raw,
+iterative, or conversational material is needed for routing.
 
 This is a conceptual analogy, not a literal restriction on how work is
 decomposed. However, nested subagent dispatch is runtime-dependent. Claude Code
@@ -17,13 +20,12 @@ burying dispatch inside a subagent.
 
 ## Why it matters
 
-**Orchestrators reason; subagents execute.** When an orchestrator does
-inspection, parsing, or transformation work inline, its context fills with raw
-artifacts — file contents, diffs, API responses, command output — and the
-orchestrator loses the headroom it needs to reason about what to do next. The
-routing decision becomes harder precisely as the data grows. Pushing the work
-into subagents keeps the orchestrator's context lean and its routing logic
-visible.
+**Orchestrators route on bounded state.** When an orchestrator carries raw
+artifacts it does not need — file contents, diffs, API responses, command
+output — it loses the headroom it needs to reason about what to do next. The
+routing decision becomes harder precisely as the data grows. Pushing bounded,
+self-contained work into subagents keeps the orchestrator's context lean and
+its routing logic visible.
 
 **Structured contracts make subagents reusable.** A subagent whose inputs and
 outputs are named, typed, and bounded is composable. A subagent whose contract
@@ -40,10 +42,11 @@ call graph you have to trace.
 
 ## Rules
 
-1. **Orchestrators route; subagents execute.** The orchestrator's `Execution`
+1. **Orchestrators route on bounded outputs.** The orchestrator's `Execution`
    section reads as a sequence of routing decisions keyed on enumerated
-   subagent statuses, not as a sequence of inline file reads, diff parses, or
-   API calls. Raw artifact processing belongs in a subagent.
+   subagent statuses. Inline reads, diff parses, or API calls are appropriate
+   only when the orchestrator needs the raw material for immediate coordination
+   or judgment; otherwise raw artifact processing belongs in a subagent.
 
 2. **Subagents have structured input and output contracts.** Each subagent
    declares every input (with a typed example) and every output field (with
@@ -125,3 +128,7 @@ package contents stay inside each subagent.
 - [Context and Payload Management](./context-and-payload-management.md) —
   keeping raw data out of the orchestrator's context and moving large payloads
   across dispatch boundaries safely.
+- Claude Code subagents documentation, accessed 2026-05-27:
+  <https://code.claude.com/docs/en/sub-agents>. Supports chaining subagents
+  from the main conversation and notes that subagents cannot spawn other
+  subagents.
