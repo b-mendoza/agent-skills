@@ -33,19 +33,20 @@ any new definition.
 
 ## Why this order matters
 
-The ordering reflects a natural reading flow:
+The ordering reflects a natural reading flow, not an absolute safety rule:
 
 - **Identity first** (frontmatter + title) — what is this and when does it
   trigger?
 - **Contracts next** (inputs, outputs, registry) — what does it consume and
   produce?
 - **Behavior then** (instructions, dispatch tables) — how does it work?
-- **Boundaries last** (scope, escalation) — where does it stop?
+- **Boundaries nearby and complete** (scope, escalation) — where does it stop?
 
-Placing scope and escalation at the end is deliberate: these sections provide
-guardrails after the agent understands its purpose and procedure. Moving them
-earlier risks the agent optimizing for boundary-avoidance rather than
-task-completion.
+Detailed scope and escalation sections often work best after the agent
+understands its purpose and procedure. For high-risk skills, also include a
+short boundary summary near the top, close to the identity or inputs, so the
+most important mutation, permission, safety, or runtime limits are visible
+before execution details begin.
 
 ## Subagent Registry format
 
