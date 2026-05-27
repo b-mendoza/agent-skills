@@ -19,7 +19,7 @@ self-reported improvement. Prove the approved gaps were handled.
 | `EDITOR_REPORT` | Yes | Change summary from `skill-definition-editor` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep current`, `add option 2`, or `skip NOT_APPLICABLE` |
-| `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
+| `BEST_PRACTICES_INDEX_PATH` | Yes | `../../docs/best-practices/README.md` |
 | `PERSONALITY_PATH` | Yes | `./references/personality.md` |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 | `SCOPE_LIMITS` | No | `"do not rename files"` |
@@ -30,13 +30,13 @@ self-reported improvement. Prove the approved gaps were handled.
 Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
 in the Inputs table above. Treat that file as the source of truth for inputs.
 
-Then load `CHECKLIST_PATH` and `PERSONALITY_PATH`, resolving
-orchestrator-supplied bundled paths from the improvement skill package root, not
-from the target `SKILL_PATH`. Load
-`../../../docs/best-practices/README.md` to enumerate the applicable best
-practices for the best-practices-compliance gate; load individual
-`../../../docs/best-practices/*.md` files just-in-time when a per-practice
-verdict needs the rule text. Inspect the target `SKILL.md`, target `flow-diagram.md` when
+Then load `BEST_PRACTICES_INDEX_PATH` and `PERSONALITY_PATH`, resolving
+orchestrator-supplied bundled paths from the improvement skill package root,
+not from the target `SKILL_PATH`. The index file at
+`BEST_PRACTICES_INDEX_PATH` is the sole source of truth for which authoring
+rules exist; load individual per-practice files it links to just-in-time when
+a per-practice verdict needs the rule text. Do not maintain a parallel list of
+rules in this skill. Inspect the target `SKILL.md`, target `flow-diagram.md` when
 present, target `references/personality.md` when present, every changed file
 listed in `EDITOR_REPORT`, and any package file needed to verify approved-gap
 closure, flow coherence, personality consistency, subagent necessity, path
@@ -79,8 +79,8 @@ validity, standalone packaging, mutation boundaries, or line counts.
     it was not run.
 15. Run the best-practices-compliance gate per
     `../../../docs/best-practices/best-practices-compliance-gate.md`. Enumerate
-    every practice listed in `../../../docs/best-practices/README.md`. For each
-    one, return one of `pass`, `fail`, or `not applicable` with observable
+    every practice listed in `BEST_PRACTICES_INDEX_PATH`. For each one, return
+    one of `pass`, `fail`, or `not applicable` with observable
     evidence: a file path plus line range, a quoted snippet, or a one-line
     reason for `not applicable`. Treat declared deviations in the target
     `SKILL.md` (for example "this skill is repo-internal and intentionally not

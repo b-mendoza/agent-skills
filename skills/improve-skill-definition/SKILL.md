@@ -167,7 +167,7 @@ findings, verdicts, gap ids, file paths, fetched URLs, and concise summaries.
 | ---- | ---- | ---- |
 | Core workflow and execution authority | `./flow-diagram.md` | Every run after intake succeeds |
 | This skill's personality and critique posture | `./references/personality.md` | Before audit |
-| Authoring rules and quality criteria | `./references/authoring-checklist.md` | Before audit and validation, or when a subagent needs criteria |
+| Authoring rules and quality criteria | `../../docs/best-practices/README.md` and the per-practice files it indexes | Before audit and validation, or when a subagent needs criteria |
 | Optional public docs and articles | `./references/external-sources.md` | Only when current platform syntax or source-backed rationale changes a decision |
 | Final response shape | `./references/final-report-template.md` | Immediately before final handoff |
 | Raw target files, diffs, and command output | Inside the responsible subagent | Summarized back as verdicts, gaps, paths, and risks |
@@ -228,7 +228,7 @@ subagent. Unless the user explicitly expands scope, use these limits:
    `docs/improve-skill-definition/skill-package-auditor-instructions.md` must
    carry `SKILL_PATH`, `KNOWN_PROBLEM`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
    `REFERENCE_NEED`, `MUTATION_LIMITS`,
-   `CHECKLIST_PATH=./references/authoring-checklist.md`,
+   `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`,
    `PERSONALITY_PATH=./references/personality.md`,
    `FLOW_DIAGRAM_PATH=./flow-diagram.md`, and
    `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed.
@@ -257,7 +257,7 @@ subagent. Unless the user explicitly expands scope, use these limits:
     must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
     `MUTATION_LIMITS`, `AUDIT_REPORT`, `APPROVED_GAPS`,
     `APPROVED_PERSONALITY_DECISION`,
-    `CHECKLIST_PATH=./references/authoring-checklist.md`,
+    `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`,
     `PERSONALITY_PATH=./references/personality.md`, and
     `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed.
     Delete the handoff file once the subagent returns a terminal status.
@@ -270,7 +270,7 @@ subagent. Unless the user explicitly expands scope, use these limits:
     must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
     `MUTATION_LIMITS`, `AUDIT_REPORT`, `EDITOR_REPORT`, `APPROVED_GAPS`,
     `APPROVED_PERSONALITY_DECISION`, changed paths from the editor report,
-    `CHECKLIST_PATH=./references/authoring-checklist.md`, and
+    `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`, and
     `PERSONALITY_PATH=./references/personality.md`. Delete the handoff file
     once the subagent returns a terminal status.
 13. If validation returns `PASS`, load

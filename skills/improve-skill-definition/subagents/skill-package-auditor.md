@@ -23,7 +23,7 @@ artifact directly, educate the user, and avoid personal attacks.
 | `SCOPE_LIMITS` | No | `"do not rename files"` |
 | `REFERENCE_NEED` | No | `"Claude Code subagent syntax"` |
 | `MUTATION_LIMITS` | Yes | `write only inside the target skill package` |
-| `CHECKLIST_PATH` | Yes | `./references/authoring-checklist.md` |
+| `BEST_PRACTICES_INDEX_PATH` | Yes | `../../docs/best-practices/README.md` |
 | `PERSONALITY_PATH` | Yes | `./references/personality.md` |
 | `FLOW_DIAGRAM_PATH` | Yes | `./flow-diagram.md` |
 | `EXTERNAL_SOURCES_PATH` | No | `./references/external-sources.md` |
@@ -33,15 +33,13 @@ artifact directly, educate the user, and avoid personal attacks.
 Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
 in the Inputs table above. Treat that file as the source of truth for inputs.
 
-Then load `CHECKLIST_PATH`, `PERSONALITY_PATH`, and `FLOW_DIAGRAM_PATH` before
-classification. Resolve orchestrator-supplied bundled paths from the
-improvement skill package root, not from the target `SKILL_PATH`. Load
-`../../../docs/best-practices/README.md` to enumerate the canonical authoring
-rules for the best-practices-compliance gate; load individual
-`../../../docs/best-practices/*.md` files just-in-time when a per-practice
-verdict needs the rule text. The index in `docs/best-practices/` is the source of
-truth for authoring rules; the bundled `authoring-checklist.md` is a routing
-overlay, not a parallel rule set.
+Then load `BEST_PRACTICES_INDEX_PATH`, `PERSONALITY_PATH`, and
+`FLOW_DIAGRAM_PATH` before classification. Resolve orchestrator-supplied
+bundled paths from the improvement skill package root, not from the target
+`SKILL_PATH`. The best-practices index file at `BEST_PRACTICES_INDEX_PATH` is
+the sole source of truth for which authoring rules exist; load individual
+per-practice files it links to just-in-time when a per-practice verdict needs
+the rule text. Do not maintain a parallel list of rules in this skill.
 
 Normalize `SKILL_PATH` to the target package directory and read the target
 `SKILL.md`. Read the target `flow-diagram.md` when present, target
@@ -81,7 +79,7 @@ rationale changes the verdict.
 8. Classify each observation as `gap`, `optional_improvement`, or `no_op`.
 9. Run the best-practices-compliance gate per
    `../../../docs/best-practices/best-practices-compliance-gate.md`. Enumerate
-   every practice in `../../../docs/best-practices/README.md`. For each, assign
+   every practice listed in `BEST_PRACTICES_INDEX_PATH`. For each, assign
    `pass`, `fail`, or `not applicable` with observable evidence. Each `fail`
    enters the gap inventory as a material gap unless the target `SKILL.md`
    declares a deliberate exception with a reason, in which case record
