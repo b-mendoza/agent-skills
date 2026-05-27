@@ -56,29 +56,22 @@ through `generate-flow-diagram` before syncing the rest of the package.
 
 ## Personality Contract
 
-Load `./references/personality.md` before audit. This file defines the
-personality and identity of this skill only.
+Load `./references/personality.md` before audit. It defines this skill's own
+operating posture.
 
-For every non-trivial target skill, audit personality as part of the operating
-contract. A target personality defines how the agent operates: what it notices,
-how it reasons about the work, what it treats as risky, how it validates, when
-it escalates, and how it communicates those decisions. It is not merely a
-user-facing tone layer.
+The canonical rule that every non-trivial target skill should define a
+`references/personality.md` is one of the practices indexed in
+[`../../docs/best-practices/README.md`](../../docs/best-practices/README.md);
+this skill does not restate it. Workflow specifics this skill adds on top of
+the canonical rule:
 
-- If `references/personality.md` exists in the target package, summarize it and
-  validate purpose fit, audience fit, tone safety, workflow fit, operating
-  behavior fit, and consistency with `SKILL.md`, `flow-diagram.md`, subagents,
-  and references.
-- If it is missing, decide whether personality is `NOT_APPLICABLE` or
-  `MISSING_BUT_RECOMMENDED`.
+- Personality is a hard gate. No package mutation begins until the user
+  explicitly approves keeping, refining, replacing, adding, or skipping the
+  target skill's personality contract.
 - Always provide at least five target-specific personality recommendations in
-  the approval handoff.
+  the approval handoff, tailored to the audited skill's purpose.
 - Ask whether the user wants to keep the current personality or choose a
   different one.
-
-Personality is a hard gate. No package mutation begins until the user explicitly
-approves keeping, refining, replacing, adding, or skipping the target skill's
-personality contract.
 
 ## Output Contract
 
@@ -94,17 +87,102 @@ decision:
 | `blocked` | reason, question, validation completed, resume condition |
 | `error` | failed condition, known context, recovery |
 
+## Critical Outputs
+
+This skill produces user-facing handoffs as its critical outputs and binds each
+handoff to a named gate per the `critical-output-quality-gates` practice
+indexed in
+[`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
+Every emitted handoff must pass the gates below before it leaves the
+orchestrator.
+
+| Gate | Critical Output Protected | Validator | Failure Behavior |
+| ---- | ------------------------- | --------- | ---------------- |
+| `G_HANDOFF_COMPLETENESS` | Every emitted handoff (`approval required`, `changed`, `no change`, `blocked`, `error`) carries every section listed in its Output Contract row | Inline check by the orchestrator immediately before emission, against `references/final-report-template.md` | Re-load `final-report-template.md`, re-compose the missing sections, and re-check before emission |
+| `G_GAP_CLOSURE` | For the `changed` decision, every approved gap is observably resolved in the target package | `skill-package-validator` (Validate phase) | Trigger the targeted repair loop per Execution step 15 (max three cycles) |
+| `G_BEST_PRACTICES_COMPLIANCE` | The target package passes every applicable practice in `BEST_PRACTICES_INDEX_PATH` per the `best-practices-compliance-gate` rule | `skill-package-auditor` (Audit phase) and `skill-package-validator` (Validate phase) | Auditor surfaces failing practices as material gaps; validator surfaces post-edit regressions and triggers repair |
+
+Gate verdicts and evidence are surfaced in the user-facing handoff per
+`references/final-report-template.md`, not retained as internal-only checks.
+`G_HANDOFF_COMPLETENESS` is an inline pre-emission gate for every handoff, so
+its verdict is always `pass` or `fail`. For any other named gate whose owning
+phase was not reached, record `not applicable - <reason: phase not reached>`
+in the handoff's `Gates run` block.
+
 ## Pipeline Overview
 
 | Phase | Mode | Result |
 | ----- | ---- | ------ |
 | Intake | Inline | Normalize path, runtime, scope, approval input, and mutation limits |
 | Flow Load | Inline | Load this skill's `flow-diagram.md` as execution source of truth |
-| Audit | Dispatch `skill-package-auditor` | Adversarial verdicts, personality assessment, gap inventory, and mutation plan |
+| Audit | Handoff-file dispatch `skill-package-auditor` | Adversarial verdicts, personality assessment, gap inventory, and mutation plan |
 | Approval | Inline hard gate | Stop until the user approves personality decision and gap ids |
-| Edit | Dispatch `skill-definition-editor` | Apply approved changes only |
-| Validate | Dispatch `skill-package-validator` | Quality gate and targeted repair guidance |
+| Edit | Handoff-file dispatch `skill-definition-editor` | Apply approved changes only |
+| Validate | Handoff-file dispatch `skill-package-validator` | Quality gate and targeted repair guidance |
 | Handoff | Inline | User-facing decision and validation summary |
+
+## Phase Transition Banner
+
+This skill is an orchestrator with seven declared phases and therefore
+announces every phase transition per the `phase-transition-banner` practice
+indexed in
+[`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
+The canonical banner format is:
+
+```text
+----------------------------------------
+Phase <N>/7 - <Phase name>
+----------------------------------------
+```
+
+| Phase # | Phase Name | Banner String |
+| ------- | ---------- | ------------- |
+| 1 | Intake | `Phase 1/7 - Intake` |
+| 2 | Flow Load | `Phase 2/7 - Flow Load` |
+| 3 | Audit | `Phase 3/7 - Audit` |
+| 4 | Approval | `Phase 4/7 - Approval` |
+| 5 | Edit | `Phase 5/7 - Edit` |
+| 6 | Validate | `Phase 6/7 - Validate` |
+| 7 | Handoff | `Phase 7/7 - Handoff` |
+
+On EDIT or VALIDATE re-entry during a repair cycle, the banner is reprinted so
+the user can count cycles toward the three-cycle cap. The Handoff phase emits
+its banner immediately before loading `references/final-report-template.md`
+and composing the final response.
+
+## Subagent Dispatch Protocol
+
+Every subagent in this skill (`skill-package-auditor`,
+`skill-definition-editor`, `skill-package-validator`) is dispatched via the
+handoff-file-dispatch pattern indexed in
+[`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
+The orchestrator never inlines the full payload into the dispatch prompt. For
+each dispatch:
+
+1. During Intake, resolve `BEST_PRACTICES_INDEX_PATH` to an absolute path,
+   derive the repository root from its `docs/best-practices/README.md`
+   location, and set
+   `HANDOFF_DIR=<repo-root>/.handoffs/improve-skill-definition`.
+2. Write a handoff file to
+   `HANDOFF_DIR/<subagent-name>-instructions.md`. Create `HANDOFF_DIR` if it
+   does not exist. The file carries every input listed for that subagent in
+   the Execution section below.
+3. Dispatch the subagent with a compact pointer prompt that names only the
+   subagent contract file and the handoff file path. The prompt instructs the
+   subagent to read the handoff file as its first action, follow it strictly,
+   and return the subagent's contracted Output Format.
+4. Delete the handoff file in the same dispatch step when the subagent returns
+   a routed-forward success status: `AUDIT: APPROVAL_REQUIRED`,
+   `AUDIT: NO_CHANGE`, `EDIT: PASS`, or `VALIDATION: PASS`.
+5. Leave the handoff file in place for retryable failures that will be
+   re-dispatched in the same workflow cycle, such as `VALIDATION: FAIL`; the
+   next dispatch overwrites the same path with the new payload.
+6. Before any terminal user-facing handoff, delete the workflow-created
+   `*-instructions.md` files inside `HANDOFF_DIR`; remove `HANDOFF_DIR` only
+   if it is empty.
+
+Re-dispatches during repair cycles reuse the same per-subagent path so each
+handoff file always holds the current cycle's payload only.
 
 ## Status Routing Contract
 
@@ -127,7 +205,7 @@ Route only on these enumerated subagent statuses:
 | `APPROVAL_GATE` | Continue to edit only after explicit approval of `all`, `none`, or specific gap ids. |
 | `SCOPE_GATE` | Continue to edit only when every approved mutation is inside `SCOPE_LIMITS` and `MUTATION_LIMITS`. |
 | `EDIT_STATUS` | Route only on the editor status set in the status routing contract. |
-| `QUALITY_GATE` | Validation must prove approved-gap closure, flow coherence, personality consistency, and package hygiene. |
+| `VALIDATION_STATUS` | Validation must prove approved-gap closure, flow coherence, personality consistency, package hygiene, and best-practices compliance per `../../docs/best-practices/best-practices-compliance-gate.md`. |
 | `RETRY_GATE` | Re-dispatch targeted repair only while fewer than three repair cycles have been used. |
 | `REPAIR_STATUS` | Route repair editor results as `EDIT: PASS`, `EDIT: BLOCKED`, or `EDIT: ERROR`. |
 
@@ -148,27 +226,27 @@ findings, verdicts, gap ids, file paths, fetched URLs, and concise summaries.
 | ---- | ---- | ---- |
 | Core workflow and execution authority | `./flow-diagram.md` | Every run after intake succeeds |
 | This skill's personality and critique posture | `./references/personality.md` | Before audit |
-| Authoring rules and quality criteria | `./references/authoring-checklist.md` | Before audit and validation, or when a subagent needs criteria |
+| Authoring rules and quality criteria | `../../docs/best-practices/README.md` and the per-practice files it indexes | Before audit and validation, or when a subagent needs criteria |
 | Optional public docs and articles | `./references/external-sources.md` | Only when current platform syntax or source-backed rationale changes a decision |
 | Final response shape | `./references/final-report-template.md` | Immediately before final handoff |
 | Raw target files, diffs, and command output | Inside the responsible subagent | Summarized back as verdicts, gaps, paths, and risks |
 
-This skill is standalone. Bundled paths stay inside this skill directory and are
-relative to the file that names them. External URLs are optional just-in-time
-background sources; the target skill must still run from its bundled files.
+This skill is repo-internal and intentionally not portable. It is the only
+skill in this repository that is expected to reference paths outside its own
+directory. The canonical authoring rules live in
+[`../../docs/best-practices/`](../../docs/best-practices/README.md); this skill
+loads them as just-in-time references rather than re-stating them. Target
+skills audited by this skill must still satisfy their own standalone-packaging
+rules; the relaxed-portability exception applies only to
+`improve-skill-definition` itself.
 
 ## Improvement Philosophy
 
-A good skill package earns every instruction, file, subagent, reference, script,
-and external URL by changing runtime behavior or maintainability in a concrete
-way. Progressive disclosure is a tool for reducing always-loaded context, not a
-mandate to hide complexity in another file.
-
-Prefer the smallest correct change when the structure is sound. Recommend
-rebuilds, subagent removals, merges, phase collapses, or diagram recreation when
-the evidence shows the current workflow is fundamentally flawed. Do not preserve
-bad architecture out of politeness, sunk cost, or fear of saying the package is
-badly designed.
+The improvement philosophy is the earned-complexity practice indexed in
+[`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
+Apply it when classifying observations as `gap`, `optional_improvement`, or
+`no_op`; when sizing the mutation plan; and when deciding between patch and
+rebuild. This skill does not restate the rule.
 
 ## Default Mutation Limits
 
@@ -180,10 +258,12 @@ subagent. Unless the user explicitly expands scope, use these limits:
   purpose unless an approved gap explicitly allows the change.
 - Treat sibling packages, runtime mirrors, lockfiles, repository-level docs, and
   private configuration as outside scope.
-- Keep bundled paths relative to the file that names them and inside the skill
-  package.
-- Use external URLs only as optional background; normal execution cannot depend
-  on fetching them.
+- Keep target-skill bundled paths relative to the file that names them and
+  inside the target skill package. This is a constraint on target skills; this
+  skill itself may reference repo-level paths such as `../../docs/best-practices/`
+  because it is the repo's single non-portable skill.
+- External URLs are optional background only; normal execution must succeed
+  from bundled files plus `../../docs/best-practices/`.
 - Route semantic `flow-diagram.md` changes through `generate-flow-diagram`;
   direct diagram edits are limited to non-semantic path or name corrections.
 - During repair cycles, change only files tied to validator findings and
@@ -191,68 +271,93 @@ subagent. Unless the user explicitly expands scope, use these limits:
 
 ## Execution
 
-1. Normalize `SKILL_PATH` to the package directory, identify the target
-   `SKILL.md`, normalize `KNOWN_PROBLEM`, `SCOPE_LIMITS`, `REFERENCE_NEED`, and
-   `APPROVED_GAPS`, derive `MUTATION_LIMITS`, and default `TARGET_RUNTIME` to
-   `portable Agent Skills` when absent.
-2. If `SKILL_PATH` is missing or cannot be located, load
+1. Emit banner `Phase 1/7 - Intake`. Normalize `SKILL_PATH` to the package
+   directory, identify the target `SKILL.md`, normalize `KNOWN_PROBLEM`,
+   `SCOPE_LIMITS`, `REFERENCE_NEED`, and `APPROVED_GAPS`, derive
+   `MUTATION_LIMITS`, and default `TARGET_RUNTIME` to `portable Agent Skills`
+   when absent. Resolve `HANDOFF_DIR` per the Subagent Dispatch Protocol.
+2. If `SKILL_PATH` is missing or cannot be located, emit banner
+   `Phase 7/7 - Handoff`, load
    `./references/final-report-template.md`, return a blocked handoff with the
    completed intake checks, one `SKILL_PATH` question, and a resume condition,
    then stop until the user supplies the path.
-3. Load `./flow-diagram.md` and `./references/personality.md`. Treat the diagram
-   as this skill's execution source of truth and the personality file as this
-   skill's critique posture.
-4. Dispatch `skill-package-auditor` with `SKILL_PATH`, `KNOWN_PROBLEM`,
-   `TARGET_RUNTIME`, `SCOPE_LIMITS`, `REFERENCE_NEED`, `MUTATION_LIMITS`,
-   `CHECKLIST_PATH=./references/authoring-checklist.md`,
+3. Emit banner `Phase 2/7 - Flow Load`. Load `./flow-diagram.md` and
+   `./references/personality.md`. Treat the diagram as this skill's execution
+   source of truth and the personality file as this skill's critique posture.
+4. Emit banner `Phase 3/7 - Audit`. Dispatch `skill-package-auditor` via the Subagent Dispatch Protocol. The
+   handoff file at
+   `HANDOFF_DIR/skill-package-auditor-instructions.md` must
+   carry `SKILL_PATH`, `KNOWN_PROBLEM`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
+   `REFERENCE_NEED`, `MUTATION_LIMITS`,
+   `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`,
    `PERSONALITY_PATH=./references/personality.md`,
    `FLOW_DIAGRAM_PATH=./flow-diagram.md`, and
-   `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed.
-5. If the audit returns `NO_CHANGE`, load
+   `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed. Apply
+   the Subagent Dispatch Protocol cleanup before routing the result.
+5. If the audit returns `NO_CHANGE`, emit banner `Phase 7/7 - Handoff`, load
    `./references/final-report-template.md` and return the no-change handoff
    with evidence, personality assessment, rejected optional improvements, and
    validation limits.
-6. If the audit returns `BLOCKED` or `ERROR`, load
+6. If the audit returns `BLOCKED` or `ERROR`, emit banner
+   `Phase 7/7 - Handoff`, load
    `./references/final-report-template.md` and return the blocked or error
    handoff with the smallest recovery action.
-7. If the audit returns `APPROVAL_REQUIRED`, load
-   `./references/final-report-template.md` and return the approval-required
-   handoff. It must include workflow, subagent, flow, and personality verdicts;
+7. Emit banner `Phase 4/7 - Approval`. If the audit returns
+   `APPROVAL_REQUIRED`, load `./references/final-report-template.md` and
+   return the approval-required handoff. It must include workflow, subagent,
+   flow, and personality verdicts;
    gap inventory; mutation plan; quality gate plan; and a question asking the
    user to approve the personality decision and `all`, `none`, or specific gap
    ids. Stop until the user replies explicitly.
 8. When the user replies, normalize `APPROVED_GAPS` and the personality
-   decision. If either is absent, return a blocked handoff with the missing
-   approval question.
+   decision. If either is absent, emit banner `Phase 7/7 - Handoff` and return
+   a blocked handoff with the missing approval question.
 9. Confirm every approved mutation is inside `SCOPE_LIMITS` and
-   `MUTATION_LIMITS`. If not, return a blocked handoff with one scope question.
-10. Dispatch `skill-definition-editor` with `SKILL_PATH`, `TARGET_RUNTIME`,
-    `SCOPE_LIMITS`, `MUTATION_LIMITS`, `AUDIT_REPORT`,
-    `APPROVED_GAPS`, `APPROVED_PERSONALITY_DECISION`,
-    `CHECKLIST_PATH=./references/authoring-checklist.md`,
+   `MUTATION_LIMITS`. If not, emit banner `Phase 7/7 - Handoff` and return a
+   blocked handoff with one scope question.
+10. Emit banner `Phase 5/7 - Edit`. Dispatch `skill-definition-editor` via
+    the Subagent Dispatch Protocol. The handoff file at
+    `HANDOFF_DIR/skill-definition-editor-instructions.md`
+    must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
+    `MUTATION_LIMITS`, `AUDIT_REPORT`, `APPROVED_GAPS`,
+    `APPROVED_PERSONALITY_DECISION`,
+    `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`,
     `PERSONALITY_PATH=./references/personality.md`, and
-    `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed.
-11. If the editor returns `BLOCKED` or `ERROR`, load
+    `EXTERNAL_SOURCES_PATH=./references/external-sources.md` when needed. Apply
+    the Subagent Dispatch Protocol cleanup before routing the result.
+11. If the editor returns `BLOCKED` or `ERROR`, emit banner
+    `Phase 7/7 - Handoff`, load
     `./references/final-report-template.md` and return the blocked or error
     handoff.
-12. If the editor returns `PASS`, dispatch `skill-package-validator` with
-    `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`, `MUTATION_LIMITS`,
-    `AUDIT_REPORT`, `EDITOR_REPORT`, `APPROVED_GAPS`,
+12. Emit banner `Phase 6/7 - Validate`. If the editor returns `PASS`,
+    dispatch `skill-package-validator` via the Subagent Dispatch Protocol.
+    The handoff file at
+    `HANDOFF_DIR/skill-package-validator-instructions.md`
+    must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
+    `MUTATION_LIMITS`, `AUDIT_REPORT`, `EDITOR_REPORT`, `APPROVED_GAPS`,
     `APPROVED_PERSONALITY_DECISION`, changed paths from the editor report,
-    `CHECKLIST_PATH=./references/authoring-checklist.md`, and
-    `PERSONALITY_PATH=./references/personality.md`.
-13. If validation returns `PASS`, load
-    `./references/final-report-template.md` and return the changed handoff with
-    material issues, files changed, validation, resources, and risks.
-14. If validation returns `BLOCKED` or `ERROR`, load
-    `./references/final-report-template.md` and return the blocked or error
-    handoff with completed validation checks and recovery action.
-15. On validation `FAIL`, re-dispatch the editor with the original editor
-    payload plus `VALIDATOR_FINDINGS`, repair cycle count, and focused fix scope
-    inside approved gaps and `MUTATION_LIMITS`. Re-run the validator after each
-    repair. Use at most three targeted fix cycles; after the third failed
-    validation, return a blocked handoff with failed checks, attempted repairs,
-    remaining risks, and a resume condition.
+    `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`, and
+    `PERSONALITY_PATH=./references/personality.md`. Apply the Subagent
+    Dispatch Protocol cleanup before routing the result.
+13. Emit banner `Phase 7/7 - Handoff`. If validation returns `PASS`, load
+    `./references/final-report-template.md` and return the changed handoff
+    with material issues, files changed, validation, resources, and risks.
+14. Emit banner `Phase 7/7 - Handoff`. If validation returns `BLOCKED` or
+    `ERROR`, load `./references/final-report-template.md` and return the
+    blocked or error handoff with completed validation checks and recovery
+    action.
+15. On validation `FAIL`, re-dispatch the editor via the Subagent Dispatch
+    Protocol. Overwrite
+    `HANDOFF_DIR/skill-definition-editor-instructions.md`
+    with the original editor payload plus `VALIDATOR_FINDINGS`, the repair
+    cycle count, and a focused fix scope inside approved gaps and
+    `MUTATION_LIMITS`. Re-run the validator after each repair using the same
+    write-dispatch-cleanup lifecycle. On each repair cycle, the EDIT re-dispatch
+    reprints `Phase 5/7 - Edit` and the subsequent re-validate reprints
+    `Phase 6/7 - Validate`, so each cycle is visible in the output stream.
+    Use at most three targeted fix cycles; after the third failed validation,
+    emit banner `Phase 7/7 - Handoff` and return a blocked handoff with failed
+    checks, attempted repairs, remaining risks, and a resume condition.
 
 ## Decision Rules
 
@@ -281,6 +386,9 @@ user that the workflow is badly designed.
 - Subagents remain justified, distinct, and non-overlapping; unnecessary
   subagents are recommended for removal or merge.
 - Validation results are concrete, falsifiable, and tied to approved gaps.
+- Every audit and validation runs the best-practices-compliance gate per
+  `../../docs/best-practices/best-practices-compliance-gate.md` and reports
+  per-practice verdicts with observable evidence.
 
 ## Example
 
