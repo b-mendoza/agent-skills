@@ -9,10 +9,11 @@ unstructured upstream data (file contents, API payloads, user prose) into
 structured outputs, and return to the orchestrator. The orchestrator does
 not do the unstructured work itself; it routes.
 
-This is a conceptual analogy, not a literal restriction. A subagent may itself
-dispatch other subagents when the cleanest decomposition is a nested workflow.
-The UI-vs-backend framing describes the dominant pattern, not the only legal
-shape.
+This is a conceptual analogy, not a literal restriction on how work is
+decomposed. However, nested subagent dispatch is runtime-dependent. Claude Code
+does not support subagents spawning other subagents, so portable skills should
+chain subagent calls from the orchestrator or main conversation rather than
+burying dispatch inside a subagent.
 
 ## Why it matters
 
@@ -55,11 +56,13 @@ call graph you have to trace.
    the structured output its contract names. The orchestrator never sees the
    raw form.
 
-4. **Subagents may dispatch other subagents.** When the cleanest decomposition
-   places a smaller workflow inside a larger one, a subagent is allowed to
-   act as a sub-orchestrator. Its contract still names structured inputs and
-   structured outputs; only its internal implementation involves further
-   dispatch. The UI-vs-backend framing is conceptual.
+4. **Nested delegation is runtime-dependent.** When the cleanest
+   decomposition places a smaller workflow inside a larger one, model the
+   smaller workflow as an orchestrator-visible phase unless the target runtime
+   explicitly supports nested dispatch. For portable OpenCode/Claude Code
+   skills, the orchestrator or main conversation chains subagent calls and
+   retains the routing table. A subagent may still return a structured
+   recommendation for which phase should run next.
 
 5. **Orchestrators retain only verdicts, paths, ids, and concise summaries.**
    Raw data (full file contents, full diffs, full API payloads) stays inside
