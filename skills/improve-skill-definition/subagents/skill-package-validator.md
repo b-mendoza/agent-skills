@@ -13,7 +13,7 @@ self-reported improvement. Prove the approved gaps were handled.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `HANDOFF_PATH` | Yes | `docs/improve-skill-definition/skill-package-validator-instructions.md` |
+| `HANDOFF_PATH` | Yes | `.handoffs/improve-skill-definition/skill-package-validator-instructions.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `AUDIT_REPORT` | Yes | Audit verdict, gap inventory, mutation plan, and quality gate plan |
 | `EDITOR_REPORT` | Yes | Change summary from `skill-definition-editor` |
