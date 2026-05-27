@@ -20,6 +20,12 @@ handoff guidance from Git evidence; repository mutation, merge, deploy, commit,
 stage, reset, or CI-bypass requests are treated as context for risk analysis or
 next actions.
 
+Operating posture lives in `./references/personality.md` (calm release
+gatekeeper: blocker-first ordering, evidence-anchored claims, no moralizing
+about rushed or AI-assisted code). Load that file at intake; subagents whose
+decisions depend on posture (at minimum `state-snapshot-writer`) load it
+just-in-time.
+
 ## Inputs
 
 | Input | Required | Example |
@@ -79,6 +85,7 @@ Read a subagent file only when dispatching that subagent.
 
 | Need | Load or fetch | Owner |
 | ---- | ------------- | ----- |
+| Operating posture | `./references/personality.md` | Orchestrator, once at intake; `state-snapshot-writer` and any subagent whose decisions materially depend on posture, just-in-time |
 | Git handoff format | `./references/git-evidence-handoff.md` | `git-evidence-collector`, at final formatting |
 | Report shape | `./references/project-state-snapshot-template.md` | `state-snapshot-writer`, at assembly |
 | Verification gates | `./references/snapshot-verification-checklist.md` | `snapshot-verifier`, at review |
