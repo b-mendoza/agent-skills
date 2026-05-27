@@ -139,7 +139,8 @@ Your job is to maintain progress artifacts and report state. Specifically:
 
 - Keep all timestamps in UTC.
 - Keep log entries to one line.
-- Preserve Category A artifacts on disk; never delete them.
+- Preserve Category A1 progress artifacts on disk; do not delete them during
+  progress tracking.
 - Preserve dependency, priority, and GitHub linkage metadata in the workflow task table when provided.
 - Return only the compact summary or explicit error format.
 
