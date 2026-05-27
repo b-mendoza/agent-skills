@@ -119,9 +119,19 @@ behavior before edge cases, and avoid burying critical constraints.
 - [Context and Payload Management](./context-and-payload-management.md) — long
   examples and posture files should load only when needed.
 - Anthropic Claude prompting best practices, accessed 2026-05-27:
-  <https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices>
+  <https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices>.
+  Supports role prompting, clear instructions, and examples as prompt-design
+  tools; it does not make prose role statements an enforcement boundary.
 - "Lost in the Middle" — TACL 2024:
-  <https://aclanthology.org/2024.tacl-1.9/>
-- Prompt repetition for non-reasoning LLMs — arXiv:2512.14982.
-- Reasoning Up the Instruction Ladder — arXiv:2511.04694.
-- Agent adherence to hierarchical safety principles — arXiv:2506.02357.
+  <https://aclanthology.org/2024.tacl-1.9/>. Supports caution about long-context
+  retrieval degradation; it is indirect evidence for strategic reminders.
+- Prompt repetition for non-reasoning LLMs — arXiv:2512.14982:
+  <https://arxiv.org/abs/2512.14982>. Indirect evidence only; the paper is not
+  a proof that every mid-document reminder improves reasoning-agent behavior.
+- Reasoning Up the Instruction Ladder — arXiv:2511.04694:
+  <https://arxiv.org/abs/2511.04694>. Supports instruction-hierarchy research;
+  it is not proof that prose identity alone enforces boundaries.
+- Agent adherence to hierarchical safety principles — arXiv:2506.02357:
+  <https://arxiv.org/abs/2506.02357>. Supports the importance of instruction
+  hierarchy in agents; hard boundaries still require permissions, scopes, and
+  validation.
