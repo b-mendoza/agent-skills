@@ -117,6 +117,35 @@ Gate verdicts and evidence are surfaced in the user-facing handoff per
 | Validate | Handoff-file dispatch `skill-package-validator` | Quality gate and targeted repair guidance |
 | Handoff | Inline | User-facing decision and validation summary |
 
+## Phase Transition Banner
+
+This skill is an orchestrator with seven declared phases (well above the
+two-phase exemption) and therefore announces every phase transition per the
+`phase-transition-banner` practice indexed in
+[`../../docs/best-practices/README.md`](../../docs/best-practices/README.md).
+The canonical banner format is:
+
+```text
+----------------------------------------
+Phase <N>/7 - <Phase name>
+----------------------------------------
+```
+
+| Phase # | Phase Name | Banner String |
+| ------- | ---------- | ------------- |
+| 1 | Intake | `Phase 1/7 - Intake` |
+| 2 | Flow Load | `Phase 2/7 - Flow Load` |
+| 3 | Audit | `Phase 3/7 - Audit` |
+| 4 | Approval | `Phase 4/7 - Approval` |
+| 5 | Edit | `Phase 5/7 - Edit` |
+| 6 | Validate | `Phase 6/7 - Validate` |
+| 7 | Handoff | `Phase 7/7 - Handoff` |
+
+On EDIT or VALIDATE re-entry during a repair cycle, the banner is reprinted so
+the user can count cycles toward the three-cycle cap. The Handoff phase emits
+its banner immediately before loading `references/final-report-template.md`
+and composing the final response.
+
 ## Subagent Dispatch Protocol
 
 Every subagent in this skill (`skill-package-auditor`,
