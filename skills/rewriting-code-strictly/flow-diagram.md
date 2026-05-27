@@ -39,7 +39,7 @@ flowchart TD
 
   CHANGE_GATE -->|yes| ASK_CHANGE["Ask one focused approval question<br/>target, reason, risk, reversibility, safer alternative"]
   ASK_CHANGE --> NEEDS_CLARIFICATION
-  CHANGE_GATE -->|no| IMPLEMENT["Dispatch strict-rewrite-implementer<br/>edit only strategy-approved files or direct compilation consequences<br/>run only user-supplied or project-authorized validation; otherwise record warning/risk evidence"]
+  CHANGE_GATE -->|no| IMPLEMENT["Dispatch strict-rewrite-implementer<br/>edit only strategy-approved files, direct compilation consequences,<br/>and paths inside MUTATION_LIMITS<br/>run only user-supplied or project-authorized validation;<br/>record G_IMPLEMENTATION_VALIDATION warning/risk evidence when needed"]
   IMPLEMENT --> IMPLEMENT_STATUS{strict-rewrite-implementer status?}
 
   IMPLEMENT_STATUS -->|PASS| REVIEW["Dispatch strict-rewrite-reviewer<br/>read-only assess behavior preservation, strictness, scope, changed paths, references, and validation quality"]
