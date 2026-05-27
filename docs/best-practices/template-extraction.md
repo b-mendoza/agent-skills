@@ -42,3 +42,13 @@ subagents/ticket-retriever-template.md (90 lines, loaded at assembly step)
 
 The template file is read by the subagent only when it reaches the document
 assembly step, not when it starts.
+
+## Related context and payload practices
+
+- [Progressive Disclosure](./progressive-disclosure.md) — the broader
+  layering rule that decides what is always loaded and what loads just in time.
+- [Context Window Protection](./context-window-protection.md) — why large
+  templates should not pollute orchestrator context.
+- [Incremental File Writing](./incremental-file-writing.md) — how large
+  templates are safely materialized when a runtime has fragile large-string
+  tool boundaries.
