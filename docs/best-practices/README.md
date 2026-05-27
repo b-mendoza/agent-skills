@@ -60,6 +60,10 @@ author or edit a skill, subagent, or reference document — not before.
     to external documentation rather than bundling its content; cached
     snapshots are allowed only with provenance headers and a declaration in
     `SKILL.md`.
+21. [Quality Gates for Critical Outputs](./critical-output-quality-gates.md)
+    — skills declare which outputs are critical and protect them with named
+    gates checked by something other than the producer, with a bounded fix
+    loop on failure.
 
 ## Supporting reference
 
