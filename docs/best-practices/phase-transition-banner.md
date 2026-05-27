@@ -2,26 +2,29 @@
 
 ## What it is
 
-When an orchestrator skill transitions from one workflow phase to the next,
-it prints a formatted banner in its user-visible output that names the new
-phase, its position in the workflow, and (when applicable) the scope of the
-phase iteration. The banner is the canonical visual marker that the workflow
-has advanced; it is the same format across every orchestrator skill in this
-repo.
+When an orchestrator skill transitions from one workflow phase to the next, it
+makes the transition visible in user-facing output. In this repo, the preferred
+style is a formatted banner that names the new phase, its position in the
+workflow, and (when applicable) the scope of the phase iteration. The durable
+practice is observable phase progress; the exact banner shape is a repo UI
+convention.
 
 ## Why it matters
 
 **Long orchestrations are hard to navigate.** A multi-phase workflow with
 subagent dispatches, validator gates, and fix loops produces a lot of output.
-Without phase markers, the user cannot tell which phase the orchestrator is
-in, which sub-step belongs to which phase, or whether a retry has re-entered
-a phase or moved forward. The banner is the lighthouse the user navigates by.
+Without phase markers, the user cannot tell which phase the orchestrator is in,
+which sub-step belongs to which phase, or whether a retry has re-entered a
+phase or moved forward. The phase marker becomes the workflow's visible
+execution trace.
 
-**Consistency across skills compounds.** A user who reads output from
+**Consistency across skills compounds inside a repo.** A user who reads output from
 `orchestrating-jira-workflow`, then `improving-skill-definition`, then
 `committing-scoped-changes` should not have to learn a new phase-transition
 convention each time. A single canonical format is recognizable at a glance
-as "the workflow advanced," regardless of which orchestrator is running.
+as "the workflow advanced," regardless of which orchestrator is running. In a
+different host UI, the same practice may be satisfied by status lines, progress
+events, or structured run logs instead of the exact banner below.
 
 **Banners make retry cycles observable.** When a phase re-enters itself for a
 fix loop, the user sees the banner re-printed. The trail of banners in the
@@ -30,13 +33,13 @@ collapsed sub-steps.
 
 ## Rules
 
-1. **Print the banner at the start of every phase transition.** Before any
-   action in the new phase — including dispatching a subagent, loading a
-   reference file, or reading a contract — the orchestrator emits the
-   banner. The banner appears in the orchestrator's user-visible output, not
-   only in internal logs.
+1. **Make every phase transition observable.** Before any action in the new
+   phase — including dispatching a subagent, loading a reference file, or
+   reading a contract — the orchestrator emits a user-visible phase marker.
+   The marker appears in user-facing output, not only in internal logs.
 
-2. **Use the canonical banner format.** The format is exactly:
+2. **Use the repo banner format unless the host UI supplies a better native
+   marker.** For skills in this repository, the preferred format is:
 
    ```text
    ----------------------------------------
@@ -49,11 +52,16 @@ collapsed sub-steps.
      overview.
    - `<Phase name>` is the human-readable name of the phase, taken verbatim
      from the orchestrator's pipeline or phase table.
-   - The horizontal rule is exactly forty hyphens (`-` × 40).
+   - The horizontal rule is forty hyphens (`-` x 40).
 
-3. **Scoped phases append the scope on a second header line.** When a phase
-   iterates over tasks, items, or sub-units (a per-task loop inside a single
-   phase, for example), the banner adds the scope:
+   This exact shape is a repo convention, not a cross-runtime requirement. If
+   a host UI has a first-class progress/status primitive, use the native
+   primitive and preserve the same information: phase number, total phase
+   count, phase name, and scope when relevant.
+
+3. **Scoped phases include the active scope.** When a phase iterates over
+   tasks, items, or sub-units (a per-task loop inside a single phase, for
+   example), the marker adds the scope:
 
    ```text
    ----------------------------------------
@@ -124,7 +132,8 @@ the output stream.
   its own banner.
 - Skills whose primary output is a structured artifact (a generated file, a
   parsed payload) rather than a streamed user-visible execution log; a
-  banner in a file is noise.
+  banner in a file is noise. Put phase/progress metadata in the artifact
+  schema only when it helps the reader.
 
 ## References
 
