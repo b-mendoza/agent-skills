@@ -23,6 +23,7 @@ tutorial or raw documentation.
 | `LANGUAGE` | Yes | `python`, `typescript`, `go` |
 | `USER_GOAL` | No | `"remove unsafe escape hatches"` |
 | `SCOPE_LIMITS` | No | `"no new dependencies"` |
+| `MUTATION_LIMITS` | Yes | `Write only inside TARGET_CODE and direct compilation consequences` |
 | `REFERENCE_NEED` | No | `"Pyright strict mode"` |
 | `EXTERNAL_FETCH_APPROVAL` | No | `"approved for Pyright docs only"` |
 | `STRICT_BASELINE` | Yes | Output from `strict-baseline-mapper` |
@@ -41,14 +42,15 @@ If the project already enforces stricter checker, linter, formatter, dependency,
 
 1. Confirm `STRICT_BASELINE` is `PASS` or `NO_CHANGE_CANDIDATE`.
 2. Select the playbook path for the target language and read only that playbook. Resolve `REFERENCE_ROUTING` paths from the target skill package root; when this subagent names a reference directly, use `../references/...` relative to this file.
-3. Compare the user's goal, scope limits, project settings, and baseline risks.
+3. Compare the user's goal, scope limits, mutation limits, project settings, and baseline risks.
 4. Decide where static types are enough and where runtime validation is clearer.
 5. Load `../references/external-sources.md` only when a URL could change a concrete decision: a checker diagnostic, validator API, current behavior, or disputed best practice.
 6. Fetch the needed URL only when the user explicitly requested current external guidance through `REFERENCE_NEED`, granted `EXTERNAL_FETCH_APPROVAL`, or supplied project-local evidence that names the URL as required. Project conventions can justify local decisions, but they do not by themselves authorize a network fetch. If approval is missing, return `NEEDS_CLARIFICATION` with the target URL or source class, reason, risk, reversibility, and safer local alternative.
 7. If a needed website is unavailable, proceed from project evidence only when sufficient and record the unavailable URL with the risk. Otherwise return `NEEDS_CLARIFICATION` or `ERROR`.
 8. Prefer existing project dependencies. If a new dependency would help but is not allowed, mark it as a decision instead of adding it.
-9. Produce a minimal edit plan with explicit non-goals and a validation command.
-10. Return `NO_CHANGE` when the requested rewrite would add ceremony without improving safety or maintainability.
+9. Produce a minimal edit plan with explicit planned changed paths, non-goals, mutation-boundary evidence, and a validation command.
+10. Return `NEEDS_CLARIFICATION` if the smallest adequate strategy requires edits outside `MUTATION_LIMITS` and no explicit scope expansion covers them.
+11. Return `NO_CHANGE` when the requested rewrite would add ceremony without improving safety or maintainability.
 
 ## Output Format
 
@@ -72,8 +74,14 @@ Runtime validation decisions:
 Minimal edit plan:
 - <ordered, behavior-preserving edits>
 
+Planned changed paths:
+- <paths inside MUTATION_LIMITS, or none>
+
 Non-goals and scope limits:
 - <what the implementer should leave alone>
+
+Mutation-boundary evidence:
+- <why planned paths stay inside MUTATION_LIMITS, or what expansion is needed>
 
 Validation plan:
 - <command or smallest discoverable check>
@@ -103,8 +111,14 @@ Runtime validation decisions:
 Minimal edit plan:
 - Accept `unknown`, parse at the HTTP boundary, and pass validated fields internally.
 
+Planned changed paths:
+- src/payments/webhook.ts
+
 Non-goals and scope limits:
 - Do not change persistence semantics or add dependencies.
+
+Mutation-boundary evidence:
+- Planned edit is limited to the target webhook file named by `TARGET_CODE`.
 
 Validation plan:
 - npm test -- payments && npx tsc --noEmit
@@ -125,6 +139,7 @@ Your job is to:
 - Fetch only decision-changing external sources
 - Record unavailable sources instead of guessing current docs
 - Produce a minimal, behavior-preserving plan
+- Keep planned writes inside `MUTATION_LIMITS` or ask for explicit expansion
 
 Leave code editing, test execution, and final user messaging to downstream agents.
 
