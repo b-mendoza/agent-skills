@@ -4,7 +4,7 @@ This workflow is run by a strict-rewrite orchestrator for behavior-preserving re
 
 ```mermaid
 flowchart TD
-  START([Start: strict code rewrite]) --> INTAKE["Normalize inputs<br/>TARGET_CODE, LANGUAGE, USER_GOAL, VALIDATION_COMMAND, SCOPE_LIMITS, REFERENCE_NEED, EXTERNAL_FETCH_APPROVAL"]
+  START([Start: strict code rewrite]) --> INTAKE["Normalize inputs and load personality<br/>TARGET_CODE, LANGUAGE, USER_GOAL, VALIDATION_COMMAND,<br/>SCOPE_LIMITS, REFERENCE_NEED, EXTERNAL_FETCH_APPROVAL<br/>Derive MUTATION_LIMITS"]
   INTAKE --> TARGET_OK{TARGET_CODE present?}
   TARGET_OK -->|no| ASK_TARGET["Ask one focused question for target code or path"]
   ASK_TARGET --> NEEDS_CLARIFICATION(["NEEDS_CLARIFICATION"])
@@ -17,7 +17,7 @@ flowchart TD
   SCOPE_OK -->|no| ASK_SCOPE["Ask one focused scope question"]
   ASK_SCOPE --> NEEDS_CLARIFICATION
 
-  SCOPE_OK -->|yes| BOUNDARY["Set authority and mutation boundary<br/>preserve observable behavior; project settings are authority<br/>record external fetch approval and validation authority"]
+  SCOPE_OK -->|yes| BOUNDARY["Set authority and MUTATION_LIMITS<br/>preserve observable behavior; project settings are authority<br/>record external fetch approval and validation authority"]
   BOUNDARY --> BASELINE["Dispatch strict-baseline-mapper<br/>read-only map behavior, callers, tests, configs, dependencies, and weaknesses"]
   BASELINE --> BASELINE_STATUS{strict-baseline-mapper status?}
 
