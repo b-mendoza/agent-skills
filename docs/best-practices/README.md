@@ -69,9 +69,14 @@ author or edit a skill, subagent, or reference document — not before.
     dispatch; subagents are the backend that normalizes unstructured inputs
     into structured outputs. Subagents may nest as sub-orchestrators.
 23. [Phase Transition Banner](./phase-transition-banner.md) — orchestrator
-    skills announce every phase transition with the canonical
-    forty-hyphen `Phase N/TOTAL - Name` banner so retry cycles, scoped
-    iterations, and workflow progress are visible in the output stream.
+   skills announce every phase transition with the canonical
+   forty-hyphen `Phase N/TOTAL - Name` banner so retry cycles, scoped
+   iterations, and workflow progress are visible in the output stream.
+24. [Incremental File Writing](./incremental-file-writing.md) — orchestrators
+   and subagents materialize multi-section markdown artifacts via small
+   per-section `Write` / `StrReplace` calls instead of one monolithic
+   `Write`, so the runtime's JSON tool-call serializer never trips on a
+   multi-KB string argument.
 
 ## Supporting reference
 
