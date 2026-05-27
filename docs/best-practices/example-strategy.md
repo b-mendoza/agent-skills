@@ -2,8 +2,10 @@
 
 ## What it is
 
-Include concrete examples at every level of the skill/subagent hierarchy to
-show expected quality, format, and edge cases.
+Include concrete examples where they reduce ambiguity: format-sensitive
+outputs, judgment-heavy decisions, edge cases, and cross-agent handoffs. Small
+deterministic utilities may need only one compact example or none when the
+contract is already unambiguous.
 
 ## Why it matters
 
@@ -14,7 +16,7 @@ handoff data).
 
 ## What to include
 
-Every improved skill or subagent should have:
+For format-sensitive or judgment-heavy skills and subagents, include:
 
 1. **Dispatch round-trip example** (in the skill) — shows the complete flow
    from input to subagent dispatch to output summary.
@@ -22,6 +24,10 @@ Every improved skill or subagent should have:
    structure with realistic data.
 3. **Edge case or failure example** — shows how partial failures or unexpected
    inputs are handled.
+
+For thin utility skills, use the smallest example set that removes real
+ambiguity. A single realistic input/output example is enough when there is no
+branching, no subjective judgment, and no special failure mode.
 
 ## Example: Dispatch round-trip
 
