@@ -3,16 +3,17 @@
 ## What it is
 
 Decide at each step whether to execute inline or dispatch to a subagent. The
-decision is based on whether the step's output serves the orchestrator's
-reasoning — not on step complexity or tool-call count.
+decision is based on whether the orchestrator needs the raw, iterative,
+conversational, or stateful material from the step — not on step complexity or
+tool-call count.
 
 **Important scope note:** This principle applies to **pre-authored skill
 definitions** — orchestration instructions that prescribe when and where to
-dispatch. It does not apply to ad-hoc, unconstrained model behavior. Anthropic's
-Claude 4 best-practices documentation (platform.claude.com) warns that Opus 4.6
-over-spawns subagents in open-ended coding tasks; that guidance addresses the
-model's autonomous behavior, not pre-authored workflows where dispatch decisions
-are made by the skill author.
+dispatch. It does not apply to ad-hoc, unconstrained model behavior. Current
+Claude Code documentation also warns through its own decision guidance that the
+main conversation is often better for quick targeted work, frequent
+back-and-forth, shared context, or latency-sensitive tasks. That guidance
+addresses dispatch economics, not a ban on authored subagent workflows.
 
 ## Why it matters
 
@@ -28,18 +29,20 @@ structured output.
 
 At each step in a skill's execution, ask:
 
-1. **Will executing this inline help the orchestrator perform its
-   coordination or decision-making better?** Does the orchestrator need to
-   see, react to, or build upon the step's output in real time?
-2. **Is the step's output information the orchestrator needs to retain for
-   future steps?** Will the orchestrator reference this context when making
-   later decisions?
+1. **Does the orchestrator need the raw material to coordinate the workflow?**
+   This includes iterative user conversation, subjective judgment over full
+   evidence, live troubleshooting, or intermediate details that change the next
+   route.
+2. **Will later routing need raw detail rather than a bounded result?** If the
+   orchestrator only needs a status enum, verdict, path, id, or concise
+   evidence summary, it does not need the raw output in its own context.
 
 If **either answer is yes** — execute inline. The step's output is working
 material for the orchestrator.
 
-If **both answers are no** — dispatch to a subagent. The orchestrator only
-needs a summary, not the raw details.
+If **both answers are no** — dispatch to a subagent when the cost model below
+also supports delegation. The orchestrator only needs a bounded result, not the
+raw details.
 
 ## Heuristics
 
@@ -50,7 +53,11 @@ These are shortcuts for applying the two-question test, not hard rules:
   a path or key.
 - Conversational turns where the orchestrator builds on prior exchanges
   (e.g., clarifying assumptions with the user) → inline.
-- Validation checks that return a pass/fail verdict → delegate.
+- Validation checks that return a pass/fail verdict with bounded evidence →
+  delegate.
+- Validation checks that require the orchestrator to inspect full evidence,
+  resolve subjective trade-offs, or continue a live repair conversation →
+  inline or split into a delegated evidence pass plus inline decision.
 
 ## Per-step, not per-skill
 
@@ -64,8 +71,8 @@ detail). Apply the two-question test at each step independently.
 
 | Choose...         | When...                                                            |
 | ----------------- | ------------------------------------------------------------------ |
-| **Inline**        | The step's output serves the orchestrator's reasoning or must be   |
-|                   | retained for future coordination decisions.                        |
+| **Inline**        | The orchestrator needs raw, iterative, conversational, or stateful |
+|                   | material to make the next routing decision.                        |
 | **Subagent**      | The step produces output the orchestrator doesn't need in detail — |
 |                   | a summary or verdict is sufficient.                                |
 | **Skill**         | The step is purely about loading context or decision-making        |
@@ -103,4 +110,8 @@ skill-name/
 
 ## References
 
-- Anthropic sub-agents documentation — code.claude.com/docs/en/sub-agents
+- Anthropic sub-agents documentation, accessed 2026-05-27:
+  <https://code.claude.com/docs/en/sub-agents>. Supports the dispatch tradeoff
+  that subagents isolate context and can restrict tools, while the main
+  conversation is often better for shared context, quick targeted work,
+  frequent back-and-forth, and latency-sensitive tasks.
