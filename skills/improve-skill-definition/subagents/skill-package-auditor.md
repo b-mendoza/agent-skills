@@ -17,6 +17,7 @@ artifact directly, educate the user, and avoid personal attacks.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `HANDOFF_PATH` | Yes | `.handoffs/improve-skill-definition/skill-package-auditor-instructions.md` |
+| `REPORT_PATH` | Yes | `.handoffs/improve-skill-definition/skill-package-auditor-report.md` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `KNOWN_PROBLEM` | No | `"subagent paths seem stale"` |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
@@ -31,9 +32,9 @@ artifact directly, educate the user, and avoid personal attacks.
 ## Loading
 
 Read `HANDOFF_PATH` first; it carries every orchestrator-supplied input listed
-in the Inputs table above. Treat that file as the source of truth for inputs.
-If `HANDOFF_PATH` is missing or unreadable, return `AUDIT: BLOCKED` with the
-missing path named explicitly.
+in the Inputs table above, including `REPORT_PATH`. Treat that file as the
+source of truth for inputs. If `HANDOFF_PATH` is missing or unreadable, return
+`AUDIT: BLOCKED` with the missing path named explicitly.
 
 Then load `BEST_PRACTICES_INDEX_PATH`, `PERSONALITY_PATH`, and
 `FLOW_DIAGRAM_PATH` before classification. Resolve orchestrator-supplied
@@ -107,6 +108,16 @@ rationale changes the verdict.
     are all adequate.
 
 ## Output Format
+
+Write the complete report below to `REPORT_PATH` before replying. The report
+file begins with the `AUDIT: ...` status line and has no outer code fence; the
+fence in this section only displays the template. When dispatched by
+`improve-skill-definition`, reply compactly with only these two lines:
+
+```markdown
+AUDIT: APPROVAL_REQUIRED | NO_CHANGE | BLOCKED | ERROR
+REPORT_WRITTEN: <REPORT_PATH>
+```
 
 ```markdown
 AUDIT: APPROVAL_REQUIRED | NO_CHANGE | BLOCKED | ERROR
