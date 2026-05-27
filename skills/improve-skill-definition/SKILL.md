@@ -259,18 +259,19 @@ subagent. Unless the user explicitly expands scope, use these limits:
 
 ## Execution
 
-1. Normalize `SKILL_PATH` to the package directory, identify the target
-   `SKILL.md`, normalize `KNOWN_PROBLEM`, `SCOPE_LIMITS`, `REFERENCE_NEED`, and
-   `APPROVED_GAPS`, derive `MUTATION_LIMITS`, and default `TARGET_RUNTIME` to
-   `portable Agent Skills` when absent.
+1. Emit banner `Phase 1/7 - Intake`. Normalize `SKILL_PATH` to the package
+   directory, identify the target `SKILL.md`, normalize `KNOWN_PROBLEM`,
+   `SCOPE_LIMITS`, `REFERENCE_NEED`, and `APPROVED_GAPS`, derive
+   `MUTATION_LIMITS`, and default `TARGET_RUNTIME` to `portable Agent Skills`
+   when absent.
 2. If `SKILL_PATH` is missing or cannot be located, load
    `./references/final-report-template.md`, return a blocked handoff with the
    completed intake checks, one `SKILL_PATH` question, and a resume condition,
    then stop until the user supplies the path.
-3. Load `./flow-diagram.md` and `./references/personality.md`. Treat the diagram
-   as this skill's execution source of truth and the personality file as this
-   skill's critique posture.
-4. Dispatch `skill-package-auditor` via the Subagent Dispatch Protocol. The
+3. Emit banner `Phase 2/7 - Flow Load`. Load `./flow-diagram.md` and
+   `./references/personality.md`. Treat the diagram as this skill's execution
+   source of truth and the personality file as this skill's critique posture.
+4. Emit banner `Phase 3/7 - Audit`. Dispatch `skill-package-auditor` via the Subagent Dispatch Protocol. The
    handoff file at
    `docs/improve-skill-definition/skill-package-auditor-instructions.md` must
    carry `SKILL_PATH`, `KNOWN_PROBLEM`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
@@ -287,9 +288,10 @@ subagent. Unless the user explicitly expands scope, use these limits:
 6. If the audit returns `BLOCKED` or `ERROR`, load
    `./references/final-report-template.md` and return the blocked or error
    handoff with the smallest recovery action.
-7. If the audit returns `APPROVAL_REQUIRED`, load
-   `./references/final-report-template.md` and return the approval-required
-   handoff. It must include workflow, subagent, flow, and personality verdicts;
+7. Emit banner `Phase 4/7 - Approval`. If the audit returns
+   `APPROVAL_REQUIRED`, load `./references/final-report-template.md` and
+   return the approval-required handoff. It must include workflow, subagent,
+   flow, and personality verdicts;
    gap inventory; mutation plan; quality gate plan; and a question asking the
    user to approve the personality decision and `all`, `none`, or specific gap
    ids. Stop until the user replies explicitly.
@@ -298,8 +300,8 @@ subagent. Unless the user explicitly expands scope, use these limits:
    approval question.
 9. Confirm every approved mutation is inside `SCOPE_LIMITS` and
    `MUTATION_LIMITS`. If not, return a blocked handoff with one scope question.
-10. Dispatch `skill-definition-editor` via the Subagent Dispatch Protocol.
-    The handoff file at
+10. Emit banner `Phase 5/7 - Edit`. Dispatch `skill-definition-editor` via
+    the Subagent Dispatch Protocol. The handoff file at
     `docs/improve-skill-definition/skill-definition-editor-instructions.md`
     must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
     `MUTATION_LIMITS`, `AUDIT_REPORT`, `APPROVED_GAPS`,
@@ -311,8 +313,9 @@ subagent. Unless the user explicitly expands scope, use these limits:
 11. If the editor returns `BLOCKED` or `ERROR`, load
     `./references/final-report-template.md` and return the blocked or error
     handoff.
-12. If the editor returns `PASS`, dispatch `skill-package-validator` via the
-    Subagent Dispatch Protocol. The handoff file at
+12. Emit banner `Phase 6/7 - Validate`. If the editor returns `PASS`,
+    dispatch `skill-package-validator` via the Subagent Dispatch Protocol.
+    The handoff file at
     `docs/improve-skill-definition/skill-package-validator-instructions.md`
     must carry `SKILL_PATH`, `TARGET_RUNTIME`, `SCOPE_LIMITS`,
     `MUTATION_LIMITS`, `AUDIT_REPORT`, `EDITOR_REPORT`, `APPROVED_GAPS`,
@@ -320,21 +323,25 @@ subagent. Unless the user explicitly expands scope, use these limits:
     `BEST_PRACTICES_INDEX_PATH=../../docs/best-practices/README.md`, and
     `PERSONALITY_PATH=./references/personality.md`. Delete the handoff file
     once the subagent returns a terminal status.
-13. If validation returns `PASS`, load
-    `./references/final-report-template.md` and return the changed handoff with
-    material issues, files changed, validation, resources, and risks.
-14. If validation returns `BLOCKED` or `ERROR`, load
-    `./references/final-report-template.md` and return the blocked or error
-    handoff with completed validation checks and recovery action.
+13. Emit banner `Phase 7/7 - Handoff`. If validation returns `PASS`, load
+    `./references/final-report-template.md` and return the changed handoff
+    with material issues, files changed, validation, resources, and risks.
+14. Emit banner `Phase 7/7 - Handoff`. If validation returns `BLOCKED` or
+    `ERROR`, load `./references/final-report-template.md` and return the
+    blocked or error handoff with completed validation checks and recovery
+    action.
 15. On validation `FAIL`, re-dispatch the editor via the Subagent Dispatch
     Protocol. Overwrite
     `docs/improve-skill-definition/skill-definition-editor-instructions.md`
     with the original editor payload plus `VALIDATOR_FINDINGS`, the repair
     cycle count, and a focused fix scope inside approved gaps and
     `MUTATION_LIMITS`. Re-run the validator after each repair using the same
-    write-dispatch-delete pattern. Use at most three targeted fix cycles;
-    after the third failed validation, return a blocked handoff with failed
-    checks, attempted repairs, remaining risks, and a resume condition.
+    write-dispatch-delete pattern. On each repair cycle, the EDIT re-dispatch
+    reprints `Phase 5/7 - Edit` and the subsequent re-validate reprints
+    `Phase 6/7 - Validate`, so each cycle is visible in the output stream.
+    Use at most three targeted fix cycles; after the third failed validation,
+    return a blocked handoff with failed checks, attempted repairs, remaining
+    risks, and a resume condition.
 
 ## Decision Rules
 
