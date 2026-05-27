@@ -264,24 +264,26 @@ rebuild. This skill does not restate the rule.
 
 ## Default Mutation Limits
 
-Derive `MUTATION_LIMITS` during intake and pass them to every dispatched
-subagent. Unless the user explicitly expands scope, use these limits:
+This skill declares its mutation scope per the `mutation-scope-boundaries`
+practice indexed in
+[`../../docs/best-practices/README.md`](../../docs/best-practices/README.md);
+the canonical rules (derive once at intake, pass to every subagent,
+positive-first framing, categorical exclusions, identity-preserving
+defaults, explicit scope-expansion path, tighter repair-cycle scope,
+`git status` boundary verification) live there and are not restated here.
 
-- Write only inside the target skill package directory.
-- Preserve directory names, frontmatter names, runtime target, and user-facing
-  purpose unless an approved gap explicitly allows the change.
-- Treat sibling packages, runtime mirrors, lockfiles, repository-level docs, and
-  private configuration as outside scope.
-- Keep target-skill bundled paths relative to the file that names them and
-  inside the target skill package. This is a constraint on target skills; this
-  skill itself may reference repo-level paths such as `../../docs/best-practices/`
-  because it is the repo's single non-portable skill.
+Skill-specific additions on top of the canonical defaults, applied to the
+target skill package the orchestrator is auditing:
+
+- Target-package bundled paths must stay relative to the file that names
+  them and inside the target skill package. This is a constraint on
+  *target* skills; this skill itself is the repo's single declared
+  non-portable skill (see the repo-internal exception block below) and may
+  reference repo-level paths such as `../../docs/best-practices/`.
 - External URLs are optional background only; normal execution must succeed
   from bundled files plus `../../docs/best-practices/`.
 - Route semantic `flow-diagram.md` changes through `generate-flow-diagram`;
   direct diagram edits are limited to non-semantic path or name corrections.
-- During repair cycles, change only files tied to validator findings and
-  approved gaps.
 
 ## Execution
 
