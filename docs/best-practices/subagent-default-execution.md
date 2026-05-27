@@ -16,11 +16,13 @@ are made by the skill author.
 
 ## Why it matters
 
-The cost of an unnecessary subagent is negligible (one extra dispatch). The cost
-of polluted orchestrator context compounds with every step. But over-delegation
-has its own cost: dispatch overhead, loss of conversational continuity, and
-unnecessary complexity for simple operations. The right default depends on the
-workflow.
+Polluted orchestrator context compounds with every step, but over-delegation
+also has real cost. A subagent starts with a fresh context, may need to reread
+inputs the orchestrator already knows, adds dispatch latency, can lose
+conversational continuity, and increases the number of contracts the author
+must maintain. Delegation earns its place when those costs are outweighed by
+context savings, permission isolation, clearer validation, or reusable
+structured output.
 
 ## The two-question test
 
@@ -69,6 +71,19 @@ detail). Apply the two-question test at each step independently.
 | **Skill**         | The step is purely about loading context or decision-making        |
 |                   | guidance. It does not execute work — it informs the agent.         |
 | **Slash command** | Quick, well-defined action the user invokes explicitly by name.    |
+
+## Cost model
+
+Before delegating a step, account for both sides of the tradeoff:
+
+| Factor | Favors inline | Favors subagent |
+| --- | --- | --- |
+| Raw context volume | Output is short and useful to retain | Output is large and only a summary/verdict matters |
+| Continuity | Step depends on ongoing user conversation or prior turns | Step can be described by a complete input contract |
+| Latency | User needs tight back-and-forth | Work can run as a bounded, self-contained pass |
+| Validation | Orchestrator must inspect details directly | Independent verdict or artifact path is enough |
+| Permissions/scope | Same authority is appropriate | Isolation or narrower mutation scope reduces risk |
+| Reuse | One-off local step | Contracted behavior will recur across workflows |
 
 ## Co-location
 
