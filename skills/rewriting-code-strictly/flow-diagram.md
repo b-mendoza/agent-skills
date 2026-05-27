@@ -42,7 +42,7 @@ flowchart TD
   CHANGE_GATE -->|no| IMPLEMENT["Dispatch strict-rewrite-implementer<br/>edit only strategy-approved files, direct compilation consequences,<br/>and paths inside MUTATION_LIMITS<br/>run only user-supplied or project-authorized validation;<br/>record G_IMPLEMENTATION_VALIDATION warning/risk evidence when needed"]
   IMPLEMENT --> IMPLEMENT_STATUS{strict-rewrite-implementer status?}
 
-  IMPLEMENT_STATUS -->|PASS| REVIEW["Dispatch strict-rewrite-reviewer<br/>read-only assess behavior preservation, strictness, scope, changed paths, references, and validation quality"]
+  IMPLEMENT_STATUS -->|PASS| REVIEW["Dispatch strict-rewrite-reviewer<br/>read-only assess behavior preservation, strictness,<br/>MUTATION_LIMITS compliance, boundary validation,<br/>references, and validation quality"]
   IMPLEMENT_STATUS -->|PASS_WITH_WARNINGS| REVIEW
   IMPLEMENT_STATUS -->|BLOCKED| IMPLEMENT_BLOCKED["Retain edit or validation blocker and smallest safe recovery"]
   IMPLEMENT_BLOCKED --> BLOCKED(["BLOCKED"])
