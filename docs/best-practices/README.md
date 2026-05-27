@@ -68,6 +68,10 @@ author or edit a skill, subagent, or reference document — not before.
     orchestrator is the routing layer that decides which subagent to
     dispatch; subagents are the backend that normalizes unstructured inputs
     into structured outputs. Subagents may nest as sub-orchestrators.
+23. [Phase Transition Banner](./phase-transition-banner.md) — orchestrator
+    skills announce every phase transition with the canonical
+    forty-hyphen `Phase N/TOTAL - Name` banner so retry cycles, scoped
+    iterations, and workflow progress are visible in the output stream.
 
 ## Supporting reference
 
