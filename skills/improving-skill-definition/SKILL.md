@@ -381,7 +381,10 @@ target skill package the orchestrator is auditing:
     cycle count, and a focused fix scope inside approved gaps and
     `MUTATION_LIMITS`, plus the same editor `REPORT_PATH`. Re-run the
     validator after each repair using the same bidirectional
-    write-dispatch-read-cleanup lifecycle. On each repair cycle, the EDIT
+    write-dispatch-read-cleanup lifecycle. The orchestrator owns the
+    repair-cycle counter, initializes it to 0 at first entry to
+    `Phase 5/7 - Edit`, and increments it immediately after each
+    `VALIDATION: FAIL` before re-dispatching the editor. On each repair cycle, the EDIT
     re-dispatch reprints `Phase 5/7 - Edit` and the subsequent re-validate reprints
     `Phase 6/7 - Validate`, so each cycle is visible in the output stream.
     Use at most three targeted fix cycles; after the third failed validation,
