@@ -40,8 +40,8 @@ Make a change only when it fixes a concrete problem in one of:
   silent failure mode.
 - **User comprehension** — a reader of the package can answer "what does this
   do and why" faster.
-- **Best-practices compliance** — a `fail` verdict from
-  [`best-practices-compliance-gate`](./best-practices-compliance-gate.md)
+- **Best-practices compliance** — a `fail` verdict from the
+  [Validation and Escalation](./validation-and-escalation.md) compliance gate
   becomes a `pass` or a documented declared exception.
 
 Leave the package unchanged when proposed edits would only rename, reshuffle,
@@ -97,11 +97,11 @@ reason. Earned complexity is the default; ornament is the failure mode.
 
 ## References
 
-- [`./best-practices-compliance-gate.md`](./best-practices-compliance-gate.md)
+- [Validation and Escalation](./validation-and-escalation.md)
   — the gate that this rule reinforces.
-- [`./empirical-validation.md`](./empirical-validation.md) — why observable
+- [Validation and Escalation](./validation-and-escalation.md) — why observable
   evidence is required to call a change an improvement.
-- [`./progressive-disclosure.md`](./progressive-disclosure.md) — extraction is
+- [Context and Payload Management](./context-and-payload-management.md) — extraction is
   permitted, not required; this rule decides which extractions earn their
   place.
 - [`./subagent-default-execution.md`](./subagent-default-execution.md) — the
