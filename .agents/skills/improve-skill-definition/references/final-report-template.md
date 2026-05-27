@@ -3,6 +3,11 @@
 Read this file immediately before the final handoff. Keep the report concise and
 lead with the decision.
 
+Gate rows use `not applicable` only when the phase that owns the gate was not
+reached; include `phase not reached` in the evidence. `G_HANDOFF_COMPLETENESS`
+is always checked inline before emission, so its verdict is only `pass` or
+`fail`.
+
 ## Approval Required
 
 ```markdown
@@ -36,6 +41,11 @@ Quality gate plan:
 
 Approval request:
 - Reply with a personality decision and `all`, `none`, or specific gap ids.
+
+Gates run:
+- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence: file path plus line range, quoted snippet, or one-line reason]
+- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
+- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
 ```
 
 ## Changed
@@ -57,6 +67,11 @@ External resources:
 
 Remaining risks or assumptions:
 - [Risk, or `none`]
+
+Gates run:
+- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence: file path plus line range, quoted snippet, or one-line reason]
+- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
+- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
 ```
 
 ## No Change
@@ -76,6 +91,11 @@ Optional improvements considered and rejected:
 
 Validation limits:
 - [Limit, or `none`]
+
+Gates run:
+- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence: file path plus line range, quoted snippet, or one-line reason]
+- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
+- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
 ```
 
 ## Blocked
@@ -94,6 +114,11 @@ Validation completed:
 
 Resume condition:
 - [Exact user response or external condition that lets the workflow continue]
+
+Gates run:
+- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence: file path plus line range, quoted snippet, or one-line reason]
+- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
+- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
 ```
 
 ## Error
@@ -109,4 +134,9 @@ Known context:
 
 Recovery:
 - [Smallest next step, or `none`]
+
+Gates run:
+- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence: file path plus line range, quoted snippet, or one-line reason]
+- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
+- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
 ```
