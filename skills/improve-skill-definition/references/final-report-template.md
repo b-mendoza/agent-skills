@@ -10,7 +10,6 @@ is always checked inline before emission, so its verdict is only `pass` or
 
 ## Approval Required
 
-```markdown
 Decision: approval required
 
 Workflow quality verdict:
@@ -46,11 +45,9 @@ Gates run:
 - `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence: file path plus line range, quoted snippet, or one-line reason]
 - `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
 - `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
-```
 
 ## Changed
 
-```markdown
 Decision: changed
 
 Material issues:
@@ -72,11 +69,9 @@ Gates run:
 - `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence: file path plus line range, quoted snippet, or one-line reason]
 - `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
 - `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
-```
 
 ## No Change
 
-```markdown
 Decision: no change
 
 Evidence:
@@ -96,11 +91,9 @@ Gates run:
 - `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence: file path plus line range, quoted snippet, or one-line reason]
 - `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
 - `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
-```
 
 ## Blocked
 
-```markdown
 Decision: blocked
 
 Reason:
@@ -119,11 +112,9 @@ Gates run:
 - `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence: file path plus line range, quoted snippet, or one-line reason]
 - `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
 - `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
-```
 
 ## Error
 
-```markdown
 Decision: error
 
 Failed condition:
@@ -139,4 +130,3 @@ Gates run:
 - `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence: file path plus line range, quoted snippet, or one-line reason]
 - `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
 - `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
-```
