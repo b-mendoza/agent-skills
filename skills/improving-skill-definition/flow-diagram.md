@@ -54,7 +54,7 @@ flowchart TD
   VALIDATION_STATUS -->|PASS| FINAL_CHANGED["Emit banner Phase 7/7 - Handoff<br/>Load final-report-template.md<br/>Return changed handoff with material issues,<br/>files changed, validation, resources, and risks"]
   FINAL_CHANGED --> CHANGED([Decision: changed])
 
-  VALIDATION_STATUS -->|FAIL| RETRY_GATE{"Targeted repair cycles used fewer than 3?"}
+  VALIDATION_STATUS -->|FAIL| RETRY_GATE{"Orchestrator owns the repair-cycle counter<br/>Initialized to 0 at first entry to Phase 5/7 - Edit<br/>Increments immediately after each VALIDATION: FAIL, before editor re-dispatch<br/>Repair cycles used so far &lt; 3?"}
   RETRY_GATE -->|yes| REPAIR["Emit banner Phase 5/7 - Edit<br/>Write HANDOFF_DIR/skill-definition-editor-instructions.md<br/>Re-dispatch skill-definition-editor with a compact pointer prompt<br/>Subagent writes HANDOFF_DIR/skill-definition-editor-report.md<br/>Read report before routing; terminal cleanup removes handoff files"]
   RETRY_GATE -->|no| FAIL_BLOCK["Blocked handoff<br/>Validation still failing after three repairs<br/>Include failed checks, attempted repairs, and resume condition"]
 
