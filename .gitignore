@@ -1,5 +1,6 @@
 # Local tool configs
 .claude/settings.*
 .codex/
+.handoffs/
 .mcp.json
 opencode.jsonc
