@@ -72,7 +72,7 @@ workflow. The remaining skills are standalone utilities.
   refines Markdown and Mermaid workflow diagrams.
 - [`generate-handoff-document`](skills/generate-handoff-document/SKILL.md)
   writes a handoff document for work that needs to be resumed later.
-- [`improve-skill-definition`](skills/improve-skill-definition/SKILL.md)
+- [`improving-skill-definition`](skills/improving-skill-definition/SKILL.md)
   improves an existing skill package when inspection finds a material issue.
 - [`improving-test-suites`](skills/improving-test-suites/SKILL.md) improves test
   files with focused, behavior-oriented test coverage.
