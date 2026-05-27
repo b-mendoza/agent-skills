@@ -9,6 +9,19 @@ The top-level [`CLAUDE.md`](../../CLAUDE.md) carries only one-line summaries
 and pointers to these files. Read the relevant file when you are about to
 author or edit a skill, subagent, or reference document — not before.
 
+## Practice families
+
+Use the index by family before applying individual practices as a checklist.
+Families preserve the distinct purpose of each file while making overlap
+explicit.
+
+| Family | Practices | Use when |
+| --- | --- | --- |
+| Context and payload management | [Progressive Disclosure](./progressive-disclosure.md), [Context Window Protection](./context-window-protection.md), [Template Extraction](./template-extraction.md), [Handoff-File Subagent Dispatch](./handoff-file-dispatch.md), [Incremental File Writing](./incremental-file-writing.md), [External Information Linking](./external-information-linking.md) | Deciding what stays in always-loaded context, what moves to files, what crosses dispatch boundaries, and what remains external |
+| Validation and escalation | [Validation Loops](./validation-loops.md), [Quality Gates for Critical Outputs](./critical-output-quality-gates.md), [Best-Practices Compliance as a Quality Gate](./best-practices-compliance-gate.md), [Empirical Validation over Self-Report](./empirical-validation.md), [Escalation Patterns](./escalation-patterns.md) | Defining phase gates, repair loops, evidence requirements, failure categories, and human escalation |
+| Behavioral prompt contract | [Identity and Mental Model Statements](./identity-and-mental-model.md), [Personality as Operating Posture](./personality-as-operating-posture.md), [Positive Constraint Framing](./positive-constraint-framing.md), [Instruction Reinforcement](./instruction-reinforcement.md), [Example Strategy](./example-strategy.md) | Shaping how a skill reasons, communicates, handles ambiguity, and follows boundaries |
+| Structure, portability, and governance | [Quick Reference: Skill File Structure](./quick-reference-skill-structure.md), [Structural Conventions](./structural-conventions.md), [Naming Conventions](./naming-conventions.md), [Runtime Portability Matrix](./runtime-portability-matrix.md), [Mutation Scope Boundaries](./mutation-scope-boundaries.md), [Artifact Lifecycle Management](./artifact-lifecycle.md), [Earned Complexity](./earned-complexity.md), [Orchestrator as Routing UI](./orchestrator-as-routing-ui.md), [Subagent-Default Execution](./subagent-default-execution.md), [Phase Transition Banner](./phase-transition-banner.md) | Designing the package shape, runtime compatibility, mutation authority, orchestration model, and repo style |
+
 ## Index
 
 1. [Progressive Disclosure](./progressive-disclosure.md) — layer skill content
