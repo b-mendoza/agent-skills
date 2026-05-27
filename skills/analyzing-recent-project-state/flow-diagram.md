@@ -37,12 +37,12 @@ flowchart TD
 
   SNAPSHOT --> VERIFIER[Dispatch snapshot-verifier]
   VERIFIER --> VERIFY[Check grounding, report shape, actionability, assumptions, and validation gaps]
-  VERIFY --> VERIFY_STATUS{Verifier decision}
-  VERIFY_STATUS -->|SNAPSHOT_VERIFY: PASS| FINAL[Return verified Markdown report body]
-  VERIFY_STATUS -->|SNAPSHOT_VERIFY: FAIL and cycles under 2| FEEDBACK[Retain targeted verifier feedback]
-  VERIFY_STATUS -->|repair cycles exhausted| REPAIR_EXHAUSTED([Escalate: ERROR])
-  VERIFY_STATUS -->|SNAPSHOT_VERIFY: NEEDS_CONTEXT| VERIFY_NEEDS([Escalate: NEEDS_CONTEXT])
-  VERIFY_STATUS -->|SNAPSHOT_VERIFY: ERROR| VERIFY_ERROR([Escalate: ERROR])
+  VERIFY --> G_SNAPSHOT_VERIFY{Verifier decision}
+  G_SNAPSHOT_VERIFY -->|SNAPSHOT_VERIFY: PASS| FINAL[Return verified Markdown report body]
+  G_SNAPSHOT_VERIFY -->|SNAPSHOT_VERIFY: FAIL and cycles under 2| FEEDBACK[Retain targeted verifier feedback]
+  G_SNAPSHOT_VERIFY -->|repair cycles exhausted| REPAIR_EXHAUSTED([Escalate: ERROR])
+  G_SNAPSHOT_VERIFY -->|SNAPSHOT_VERIFY: NEEDS_CONTEXT| VERIFY_NEEDS([Escalate: NEEDS_CONTEXT])
+  G_SNAPSHOT_VERIFY -->|SNAPSHOT_VERIFY: ERROR| VERIFY_ERROR([Escalate: ERROR])
 
   FEEDBACK --> REPAIR_WRITER[Dispatch state-snapshot-writer for targeted repair only]
   REPAIR_WRITER --> DRAFT
@@ -57,7 +57,7 @@ flowchart TD
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class PATH_READY,BASE_CHECK,SENSITIVE_CHECK,COLLECT_STATUS,WRITER_STATUS,VERIFY_STATUS decision;
+  class PATH_READY,BASE_CHECK,SENSITIVE_CHECK,COLLECT_STATUS,WRITER_STATUS,G_SNAPSHOT_VERIFY decision;
   class COLLECT,EVIDENCE,DRAFT,VERIFY check;
   class ASK_BASE,OUT_OF_SCOPE guard;
   class SNAPSHOT,FINAL output;
