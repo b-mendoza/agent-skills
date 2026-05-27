@@ -37,12 +37,13 @@ the full index for uncommon cases.
 
 | Task | Read before editing |
 | ---- | ------------------- |
-| Create a new skill | [`quick-reference-skill-structure`](./docs/best-practices/quick-reference-skill-structure.md), [`structural-conventions`](./docs/best-practices/structural-conventions.md), [`naming-conventions`](./docs/best-practices/naming-conventions.md), [`identity-and-mental-model`](./docs/best-practices/identity-and-mental-model.md), [`personality-as-operating-posture`](./docs/best-practices/personality-as-operating-posture.md), [`earned-complexity`](./docs/best-practices/earned-complexity.md), [`orchestrator-as-routing-ui`](./docs/best-practices/orchestrator-as-routing-ui.md), [`phase-transition-banner`](./docs/best-practices/phase-transition-banner.md) |
+| Create a new skill | [`quick-reference-skill-structure`](./docs/best-practices/quick-reference-skill-structure.md), [`structural-conventions`](./docs/best-practices/structural-conventions.md), [`naming-conventions`](./docs/best-practices/naming-conventions.md), [`runtime-portability-matrix`](./docs/best-practices/runtime-portability-matrix.md), [`identity-and-mental-model`](./docs/best-practices/identity-and-mental-model.md), [`personality-as-operating-posture`](./docs/best-practices/personality-as-operating-posture.md), [`earned-complexity`](./docs/best-practices/earned-complexity.md), [`orchestrator-as-routing-ui`](./docs/best-practices/orchestrator-as-routing-ui.md), [`phase-transition-banner`](./docs/best-practices/phase-transition-banner.md) |
 | Restructure a large `SKILL.md` or move content into supporting files | [`progressive-disclosure`](./docs/best-practices/progressive-disclosure.md), [`template-extraction`](./docs/best-practices/template-extraction.md) |
-| Add or edit a subagent | [`subagent-default-execution`](./docs/best-practices/subagent-default-execution.md), [`context-window-protection`](./docs/best-practices/context-window-protection.md), [`escalation-patterns`](./docs/best-practices/escalation-patterns.md), [`input-output-contracts`](./docs/best-practices/input-output-contracts.md), [`handoff-file-dispatch`](./docs/best-practices/handoff-file-dispatch.md), [`orchestrator-as-routing-ui`](./docs/best-practices/orchestrator-as-routing-ui.md), [`incremental-file-writing`](./docs/best-practices/incremental-file-writing.md) |
+| Add or edit a subagent | [`subagent-default-execution`](./docs/best-practices/subagent-default-execution.md), [`runtime-portability-matrix`](./docs/best-practices/runtime-portability-matrix.md), [`context-window-protection`](./docs/best-practices/context-window-protection.md), [`escalation-patterns`](./docs/best-practices/escalation-patterns.md), [`input-output-contracts`](./docs/best-practices/input-output-contracts.md), [`handoff-file-dispatch`](./docs/best-practices/handoff-file-dispatch.md), [`orchestrator-as-routing-ui`](./docs/best-practices/orchestrator-as-routing-ui.md), [`incremental-file-writing`](./docs/best-practices/incremental-file-writing.md) |
 | Write or revise instructions, constraints, examples, or long reference files | [`positive-constraint-framing`](./docs/best-practices/positive-constraint-framing.md), [`example-strategy`](./docs/best-practices/example-strategy.md), [`instruction-reinforcement`](./docs/best-practices/instruction-reinforcement.md), [`external-information-linking`](./docs/best-practices/external-information-linking.md) |
 | Add validation steps or fix loops | [`validation-loops`](./docs/best-practices/validation-loops.md), [`empirical-validation`](./docs/best-practices/empirical-validation.md), [`best-practices-compliance-gate`](./docs/best-practices/best-practices-compliance-gate.md), [`critical-output-quality-gates`](./docs/best-practices/critical-output-quality-gates.md) |
 | Decide what artifacts to commit, keep local, or delete | [`artifact-lifecycle`](./docs/best-practices/artifact-lifecycle.md), [`mutation-scope-boundaries`](./docs/best-practices/mutation-scope-boundaries.md) |
+| Change runtime, tool, permission, or subagent compatibility | [`runtime-portability-matrix`](./docs/best-practices/runtime-portability-matrix.md), [`orchestrator-as-routing-ui`](./docs/best-practices/orchestrator-as-routing-ui.md), [`mutation-scope-boundaries`](./docs/best-practices/mutation-scope-boundaries.md) |
 
 ## Verification
 
@@ -70,5 +71,8 @@ declaring success.
 ## Repo-Specific Notes
 
 - **Dual-runtime targets.** Skills must work for both OpenCode and Claude
-  Code. Avoid runtime-specific frontmatter fields and prefer plain markdown
-  links over `@path` imports.
+  Code. Use the
+  [runtime portability matrix](./docs/best-practices/runtime-portability-matrix.md)
+  before changing tool, permission, frontmatter, or subagent behavior. Avoid
+  runtime-specific frontmatter fields and prefer plain markdown links over
+  `@path` imports.
