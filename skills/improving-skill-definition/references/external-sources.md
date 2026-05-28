@@ -18,6 +18,16 @@ inputs, outputs, escalation behavior, and validation criteria stay bundled.
 | OpenCode docs | `https://opencode.ai/docs/` | Verifying current OpenCode runtime behavior |
 | OpenCode agents | `https://opencode.ai/docs/agents/` | Checking OpenCode agent packaging |
 
+## Rationale Source Index
+
+These sources support design rationale and examples. They do not override
+bundled package rules.
+
+| Need | URL | Use when |
+| ---- | --- | -------- |
+| Progressive disclosure background | `https://bmad-builder-docs.bmad-method.org/explanation/progressive-disclosure/` | Explaining just-in-time loading, small orchestrators, and reference extraction |
+| Anthropic context engineering | `https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents` | Explaining context-window protection, summarization, and just-in-time retrieval |
+
 ## Related-Skill Discovery Scope
 
 `related-skills-discoverer` may search only:
