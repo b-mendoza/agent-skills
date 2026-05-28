@@ -13,6 +13,7 @@ inputs, outputs, escalation behavior, and validation criteria stay bundled.
 | Need | URL | Use when |
 | ---- | --- | -------- |
 | Claude Code subagents | `https://docs.anthropic.com/en/docs/claude-code/sub-agents` | Verifying current Claude subagent syntax or limits |
+| Claude prompting XML guidance | `https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices#structure-prompts-with-xml-tags` | Verifying XML prompt-tag guidance for prompt-oriented skills |
 | Claude prompting best practices | `https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices` | Checking current prompt-structure guidance |
 | OpenCode docs | `https://opencode.ai/docs/` | Verifying current OpenCode runtime behavior |
 | OpenCode agents | `https://opencode.ai/docs/agents/` | Checking OpenCode agent packaging |
