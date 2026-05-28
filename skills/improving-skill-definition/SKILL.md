@@ -38,12 +38,16 @@ skill's phase order, gates, statuses, and handoff boundaries. For target
 packages, target `flow-diagram.md` wins over `SKILL.md`, subagents, and
 references for workflow structure. Semantic changes to any `flow-diagram.md`
 must go through `generate-flow-diagram` and require a `REVIEW: PASS` candidate.
+`generate-flow-diagram` is an external dependency, not a registry subagent; its
+candidate is written to `DIAGRAM_CANDIDATE_PATH` (`HANDOFF_DIR/flow-diagram-candidate.md`,
+derived during Intake), and only a `REVIEW: PASS` candidate may drive a semantic
+diagram change.
 
 ## Priorities
 
 | Tier | Optimize first when tradeoffs conflict |
 | ---- | -------------------------------------- |
-| High | Source-of-truth flow coherence, approval gates, mutation boundaries, routeable statuses, observable gap closure, mandatory best-practice failures, no unapproved edits |
+| High | Source-of-truth flow coherence, approval gates, mutation boundaries, routeable statuses, observable gap closure, mandatory best-practice failures, strict file-size failures, no unapproved edits |
 | Medium | Audit-slice completeness, related-skill evidence, parallel dispatch boundaries, context efficiency, maintainability |
 | Low | Prose polish, cosmetic diagram layout, non-blocking examples, optional external reading, style-only renames |
 
@@ -53,12 +57,12 @@ must go through `generate-flow-diagram` and require a `REVIEW: PASS` candidate.
 | ----- | ---- | ------ |
 | 1. Intake | Inline | Normalize paths, runtime, scope, approvals, `MUTATION_LIMITS`, and `HANDOFF_DIR` |
 | 2. Flow Load | Inline | Load this flow and personality contract |
-| 3. Related Skills Discovery | Handoff dispatch | GitHub/GitLab-only related-skill list and abstractable ideas |
+| 3. Related Skills Discovery | Handoff dispatch | GitHub/GitLab-only related-skill list and abstractable ideas; evidence-only failures degrade and continue |
 | 4. Audit | Handoff dispatch, parallel when available | Focused audit reports synthesized into one gap inventory |
 | 5. Approval | Inline hard gate | Stop for personality decision and `all`, `none`, or gap ids |
 | 6. Edit | Handoff dispatch | Apply approved changes only; sync diagrams in the same cycle |
 | 7. Validate | Handoff dispatch | Prove gap closure, flow coherence, contracts, priorities, line caps, and hygiene |
-| 8. Handoff | Inline | Return `changed`, `no change`, `blocked`, or `error` |
+| 8. Handoff | Inline | Return `approval required`, `changed`, `no change`, `blocked`, or `error` |
 
 ## Subagent Registry
 
@@ -73,6 +77,10 @@ must go through `generate-flow-diagram` and require a `REVIEW: PASS` candidate.
 | `prompt-sufficiency-auditor` | `./subagents/prompt-sufficiency-auditor.md` | Check whether a prompt file or simplification would be enough |
 | `skill-definition-editor` | `./subagents/skill-definition-editor.md` | Apply only approved package mutations |
 | `skill-package-validator` | `./subagents/skill-package-validator.md` | Run post-edit quality gates |
+
+Semantic `flow-diagram.md` work uses `generate-flow-diagram`, an external
+dependency invoked the same way (instructions in, `REVIEW: PASS` candidate at
+`DIAGRAM_CANDIDATE_PATH`); it is not listed above because it is not internal.
 
 Read a subagent file only when dispatching it. Use the handoff-file dispatch
 pattern from `docs/best-practices/context-and-payload-management.md`: write
@@ -90,7 +98,10 @@ only at terminal cleanup; never commit them.
 | `skill-definition-editor` | `EDIT: PASS`, `EDIT: BLOCKED`, `EDIT: ERROR` |
 | `skill-package-validator` | `VALIDATION: PASS`, `VALIDATION: FAIL`, `VALIDATION: BLOCKED`, `VALIDATION: ERROR` |
 
-Any `BLOCKED` or `ERROR` routes to the matching final handoff. Any audit
+Any `BLOCKED` or `ERROR` routes to the matching final handoff, except
+`related-skills-discoverer` `BLOCKED`/`ERROR`, which degrades and continues to
+audit with a recorded discovery-limitation note unless `REFERENCE_NEED` is set
+or `KNOWN_PROBLEM` requires related-skill evidence. Any audit
 `GAPS_FOUND` or unresolved personality decision routes to approval. `NO_CHANGE`
 is allowed only when every applicable audit slice passes, prompt-sufficiency
 does not recommend demotion, and personality is already acceptable.
@@ -103,19 +114,19 @@ does not recommend demotion, and personality is already acceptable.
 | `G_GAP_CLOSURE` | Every approved gap is observably resolved | Validator |
 | `G_BEST_PRACTICES_COMPLIANCE` | Applicable best-practices pass or have declared exceptions | Hygiene auditor and validator |
 | `G_FLOW_SYNC` | Diagram, `SKILL.md`, registry, statuses, phases, and subagent paths agree | Flow auditor and validator |
-| `G_MANDATE_COVERAGE` | Known problem and mandates M1-M8 are gap ids or evidenced `no_op` | Orchestrator synthesis |
+| `G_MANDATE_COVERAGE` | Every provided `KNOWN_PROBLEM` and every improvement mandate supplied for this run is a gap id or an evidenced `NO_OP_EVIDENCED` | Orchestrator synthesis |
 
 ## Execution
 
-1. Emit `Phase 1/8 - Intake`; normalize inputs and derive `MUTATION_LIMITS`.
+1. Emit `Phase 1/8 - Intake`; normalize inputs and derive `MUTATION_LIMITS`, `HANDOFF_DIR`, and `DIAGRAM_CANDIDATE_PATH` (`HANDOFF_DIR/flow-diagram-candidate.md`).
 2. Emit `Phase 2/8 - Flow Load`; load this diagram and personality.
-3. Emit `Phase 3/8 - Related Skills Discovery`; dispatch `related-skills-discoverer`. Sparse results continue with confidence notes; do not widen beyond GitHub/GitLab.
+3. Emit `Phase 3/8 - Related Skills Discovery`; dispatch `related-skills-discoverer`. Sparse results continue with confidence notes; do not widen beyond GitHub/GitLab. On `BLOCKED`/`ERROR`, degrade and continue to audit with a recorded limitation note unless `REFERENCE_NEED` is set or `KNOWN_PROBLEM` requires related-skill evidence.
 4. Emit `Phase 4/8 - Audit`; dispatch focused auditors. Run independent slices in parallel when the runtime supports it, otherwise sequentially with the same contracts.
-5. Synthesize reports into one approval handoff: workflow, subagent, flow, personality, priority, prompt-sufficiency, line-count, quality-axis verdicts, gap inventory, mutation plan, and gate plan.
+5. Synthesize reports into one approval handoff: workflow, subagent, flow, personality, priority, prompt-sufficiency, line-count, quality-axis verdicts, gap inventory, mutation plan, and gate plan. Write the synthesized gap inventory, mutation plan, and gate plan to `HANDOFF_DIR/audit-synthesis-report.md` (the `AUDIT_REPORT_PATH` consumed by the editor and validator).
 6. Emit `Phase 5/8 - Approval`; stop until the user approves a personality decision and `all`, `none`, or specific gap ids.
 7. If approved scope is `none`, emit `Phase 8/8 - Handoff` and return `no change`.
 8. Confirm approved writes fit `SCOPE_LIMITS` and `MUTATION_LIMITS`; otherwise return `blocked`.
-9. Emit `Phase 6/8 - Edit`; dispatch `skill-definition-editor`. Structural workflow edits must include same-cycle `flow-diagram.md` sync from a `generate-flow-diagram` `REVIEW: PASS` candidate.
+9. Emit `Phase 6/8 - Edit`; dispatch `skill-definition-editor`. Structural workflow edits must include same-cycle `flow-diagram.md` sync from a `generate-flow-diagram` `REVIEW: PASS` candidate at `DIAGRAM_CANDIDATE_PATH`.
 10. Emit `Phase 7/8 - Validate`; dispatch `skill-package-validator`.
 11. On `VALIDATION: FAIL`, re-enter Edit with only validator findings and approved gaps. Use at most three repair cycles.
 12. Emit `Phase 8/8 - Handoff`; load `references/final-report-template.md` and return the final decision.
