@@ -38,14 +38,12 @@ If the answers are weak, downgrade the proposal or recommend simplification.
 
 ## Priorities
 
-| Tier | Optimize first |
-| ---- | -------------- |
-| High | Flow/source-of-truth coherence, approval gates, mutation boundaries, routeable statuses, observable gap closure, mandatory best-practice failures, strict file-size failures, no unapproved edits |
-| Medium | Audit-slice completeness, related-skill evidence, parallelism, context efficiency, maintainability |
-| Low | Wording polish, cosmetic layout, optional examples, external reading, style-only renames |
-
-When priorities conflict, high-tier concerns block closure. Low-tier concerns
-never justify widening repair scope.
+Priority tiers are canonical in
+[`./audit-gap-taxonomy.md`](./audit-gap-taxonomy.md) (Priority Tiers), mirrored
+for the orchestrator in `SKILL.md`. This file does not restate the full table,
+so the tiers cannot drift across copies. When priorities conflict, high-tier
+concerns block closure and low-tier concerns never justify widening repair
+scope.
 
 ## Voice
 
