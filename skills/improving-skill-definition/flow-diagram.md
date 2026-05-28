@@ -59,7 +59,7 @@ flowchart TD
   SCOPE_GATE -->|yes| EDIT["Emit banner Phase 6/8 - Edit<br/>Write skill-definition-editor instructions<br/>Apply only approved gap mutations<br/>Write only inside target package unless scope expands<br/>For structural workflow changes, update package files<br/>and synchronize flow-diagram.md in the same cycle"]
 
   EDIT --> DIAGRAM_SYNC{"Structural flow or dispatch shape changed?"}
-  DIAGRAM_SYNC -->|yes| DIAGRAM_REVIEW["Request generate-flow-diagram candidate (external dependency)<br/>Write candidate to HANDOFF_DIR/flow-diagram-candidate.md (DIAGRAM_CANDIDATE_PATH)<br/>Require REVIEW: PASS before semantic flow-diagram.md change"]
+  DIAGRAM_SYNC -->|yes| DIAGRAM_REVIEW["Request generate-flow-diagram candidate (first-party sibling skill)<br/>Write candidate to HANDOFF_DIR/flow-diagram-candidate.md (DIAGRAM_CANDIDATE_PATH)<br/>Require REVIEW: PASS before semantic flow-diagram.md change"]
   DIAGRAM_REVIEW --> DIAGRAM_REVIEW_STATUS{"Diagram candidate REVIEW status?"}
   DIAGRAM_REVIEW_STATUS -->|PASS| EDIT_STATUS{"EDIT status?"}
   DIAGRAM_REVIEW_STATUS -->|needs input or fail| EDIT_BLOCK
@@ -163,8 +163,9 @@ prompt sufficiency. Each slice reports `PASS`, `GAPS_FOUND`, `BLOCKED`, or
 editor and validator); this synthesis artifact is complete only when it contains
 the gap inventory, the mutation plan, and the quality gate plan.
 
-Diagram-candidate rule: `generate-flow-diagram` is an EXTERNAL dependency, not an
-internal registry subagent. It returns one of `REVIEW: PASS`, needs-input, or
+Diagram-candidate rule: `generate-flow-diagram` is a first-party sibling skill
+(`skills/generate-flow-diagram`), not one of this skill's registry subagents. It
+returns one of `REVIEW: PASS`, needs-input, or
 `ERROR`. Its candidate is written to `HANDOFF_DIR/flow-diagram-candidate.md`
 (`DIAGRAM_CANDIDATE_PATH`), and only a `REVIEW: PASS` candidate may drive a
 semantic `flow-diagram.md` change. A `DIAGRAM_REVIEW` `ERROR` routes to the error
