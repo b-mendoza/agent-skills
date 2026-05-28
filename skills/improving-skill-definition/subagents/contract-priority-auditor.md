@@ -73,6 +73,10 @@ Reply compactly with status and report path only.
 
 Audit contracts, statuses, gates, and priorities only.
 
+Priority ownership: you own explicit high/medium/low tier definition and
+routeability under conflict. The `personality-auditor` owns behavioral-posture
+priority expression. Do not duplicate posture-priority gaps.
+
 ## Escalation
 
 | Status | When |

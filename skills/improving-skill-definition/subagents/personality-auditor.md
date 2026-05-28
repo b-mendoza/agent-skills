@@ -76,6 +76,11 @@ Reply compactly with status and report path only.
 
 Audit personality only. Do not rewrite target prose.
 
+Priority ownership: you own behavioral-posture priority expression (what the
+agent notices, optimizes, defers, refuses, or escalates). The
+`contract-priority-auditor` owns explicit high/medium/low tier definition and
+routeability under conflict. Do not duplicate tier-definition gaps.
+
 ## Escalation
 
 | Status | When |
