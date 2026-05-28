@@ -38,10 +38,11 @@ skill's phase order, gates, statuses, and handoff boundaries. For target
 packages, target `flow-diagram.md` wins over `SKILL.md`, subagents, and
 references for workflow structure. Semantic changes to any `flow-diagram.md`
 must go through `generate-flow-diagram` and require a `REVIEW: PASS` candidate.
-`generate-flow-diagram` is an external dependency, not a registry subagent; its
-candidate is written to `DIAGRAM_CANDIDATE_PATH` (`HANDOFF_DIR/flow-diagram-candidate.md`,
-derived during Intake), and only a `REVIEW: PASS` candidate may drive a semantic
-diagram change.
+`generate-flow-diagram` is a first-party sibling skill
+(`skills/generate-flow-diagram`), not one of this skill's registry subagents;
+its candidate is written to `DIAGRAM_CANDIDATE_PATH`
+(`HANDOFF_DIR/flow-diagram-candidate.md`, derived during Intake), and only a
+`REVIEW: PASS` candidate may drive a semantic diagram change.
 
 ## Priorities
 
@@ -78,9 +79,11 @@ diagram change.
 | `skill-definition-editor` | `./subagents/skill-definition-editor.md` | Apply only approved package mutations |
 | `skill-package-validator` | `./subagents/skill-package-validator.md` | Run post-edit quality gates |
 
-Semantic `flow-diagram.md` work uses `generate-flow-diagram`, an external
-dependency invoked the same way (instructions in, `REVIEW: PASS` candidate at
-`DIAGRAM_CANDIDATE_PATH`); it is not listed above because it is not internal.
+Semantic `flow-diagram.md` work uses `generate-flow-diagram`, a first-party
+sibling skill (`skills/generate-flow-diagram`) invoked the same way
+(instructions in, `REVIEW: PASS` candidate at `DIAGRAM_CANDIDATE_PATH`); it is
+not listed above because it is a separate skill, not one of this skill's
+subagents.
 
 Read a subagent file only when dispatching it. Use the handoff-file dispatch
 pattern from `docs/best-practices/context-and-payload-management.md`: write
