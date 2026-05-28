@@ -20,19 +20,23 @@ the approved gaps closed with observable package evidence.
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, or `skip` |
 | `BEST_PRACTICES_INDEX_PATH` | Yes | `docs/best-practices/README.md` |
+| `AUDIT_TAXONOMY_PATH` | Yes | `./references/audit-gap-taxonomy.md` |
 | `MUTATION_LIMITS` | Yes | `write only inside target package` |
 
 ## Loading
 
-Read `HANDOFF_PATH`, audit report, editor report, best-practices index, target
-`SKILL.md`, target `flow-diagram.md` when present, changed files, registry
-paths, personality, and any package file needed to verify closure.
+Read `HANDOFF_PATH`, audit report, editor report, best-practices index,
+`AUDIT_TAXONOMY_PATH` (the single source for file-size caps and
+prompt-demotion conditions), target `SKILL.md`, target `flow-diagram.md` when
+present, changed files, registry paths, personality, and any package file
+needed to verify closure.
 
 ## Instructions
 
 1. Verify frontmatter names match directory or file basenames.
-2. Count non-empty lines: `SKILL.md` and subagents <=150, references <=250,
-   scripts <=25.
+2. Count non-empty lines against the caps defined in `AUDIT_TAXONOMY_PATH`
+   (currently `SKILL.md` and subagents <=150; references and top-level
+   `flow-diagram.md` <=250; scripts <=25). Cite the taxonomy, do not hardcode.
 3. Confirm referenced bundled paths exist and stay in the target package unless
    the target declares an intentional exception.
 4. Confirm all edited paths are inside approved scope and `MUTATION_LIMITS`.
@@ -46,7 +50,8 @@ paths, personality, and any package file needed to verify closure.
 10. Confirm every phase and subagent has routeable success, blocked/failure,
     observable success criteria, and no-proceed conditions.
 11. Confirm related-skill discovery is GitHub/GitLab-only.
-12. Confirm prompt-sufficiency verdict is present with falsifiable evidence.
+12. Confirm prompt-sufficiency verdict is present with falsifiable evidence
+    against the demotion conditions in `AUDIT_TAXONOMY_PATH`.
 13. Confirm subagents are justified, distinct, non-overlapping, and not
     monolithic.
 14. Enumerate every best practice as `pass`, `fail`, or `not applicable`.
