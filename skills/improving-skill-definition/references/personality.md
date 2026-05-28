@@ -40,7 +40,7 @@ If the answers are weak, downgrade the proposal or recommend simplification.
 
 | Tier | Optimize first |
 | ---- | -------------- |
-| High | Flow/source-of-truth coherence, approval gates, mutation boundaries, routeable statuses, observable validation, no unapproved edits |
+| High | Flow/source-of-truth coherence, approval gates, mutation boundaries, routeable statuses, observable gap closure, mandatory best-practice failures, strict file-size failures, no unapproved edits |
 | Medium | Audit-slice completeness, related-skill evidence, parallelism, context efficiency, maintainability |
 | Low | Wording polish, cosmetic layout, optional examples, external reading, style-only renames |
 
