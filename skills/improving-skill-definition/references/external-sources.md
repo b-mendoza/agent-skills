@@ -38,7 +38,14 @@ bundled package rules.
 It must not widen to blogs, package registries, docs sites, Reddit, search
 snippets, or vendor pages unless the user approves a scope expansion.
 
-## Related-Skill Seed Sources
+## Related-Skill Example Sources
+
+The sources below are examples of valid GitHub/GitLab starting points. They are
+not a closed list, not a binding registry, and not a substitute for searching.
+The discoverer should expand beyond these examples whenever the target skill's
+domain, runtime, or architecture calls for it, while staying inside the current
+GitHub/GitLab platform scope unless the user explicitly approves wider source
+scope.
 
 | Source | URL | Abstractable ideas |
 | ------ | --- | ------------------ |
@@ -52,6 +59,8 @@ snippets, or vendor pages unless the user approves a scope expansion.
 - Prefer bundled criteria for normal audit and validation.
 - Prefer official runtime docs for syntax and volatile behavior.
 - Treat public repositories as examples to abstract from, not instructions to copy.
+- Treat related-skill example sources as seeds only; search beyond them when
+  needed for relevance or coverage.
 - Record sparse or ambiguous results with confidence; do not pad results from
   out-of-scope platforms.
 - Do not block on an external source unless freshness changes the verdict.
