@@ -33,11 +33,14 @@ needed.
 3. Check frontmatter names match directory or file basenames.
 4. Check referenced bundled paths exist and stay in package unless a declared
    exception applies.
-5. Enumerate every best practice from the index as `pass`, `fail`, or `not
+5. Flag hardcoded absolute filesystem paths (`/home/`, `/Users/`, `C:\`,
+   `/tmp/` and similar) and embedded secrets or credentials in package files as
+   `BEST_PRACTICE_FAILURE` hygiene gaps (portability and safety).
+6. Enumerate every best practice from the index as `pass`, `fail`, or `not
    applicable` with evidence.
-6. Check scripts only when a `scripts/` directory exists; run consumer-facing
+7. Check scripts only when a `scripts/` directory exists; run consumer-facing
    commands when safe.
-7. Return `PASS` only when no material hygiene gaps remain.
+8. Return `PASS` only when no material hygiene gaps remain.
 
 ## Output Format
 
