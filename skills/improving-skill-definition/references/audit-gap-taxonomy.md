@@ -30,7 +30,7 @@ If the answer is only "more organized," classify the idea as
 
 | Tier | Concerns |
 | ---- | -------- |
-| High | Flow/source-of-truth coherence, approval gates, mutation boundaries, routeable statuses, observable gap closure, mandatory best-practice failures, no unapproved edits |
+| High | Flow/source-of-truth coherence, approval gates, mutation boundaries, routeable statuses, observable gap closure, mandatory best-practice failures, strict file-size failures, no unapproved edits |
 | Medium | Audit-slice completeness, related-skill evidence, parallel dispatch, context efficiency, maintainability |
 | Low | Prose polish, cosmetic diagram layout, non-blocking examples, optional external reading, style-only renames |
 
@@ -74,6 +74,7 @@ Count non-empty lines during audit and validation.
 | `SKILL.md` | 150 | Split routing detail into references or focused subagents |
 | `subagents/*.md` | 150 | Split responsibilities or move shared criteria to references |
 | `references/*.md` | 250 | Split by topic or shorten just-in-time content |
+| `flow-diagram.md` (top-level and target) | 250 | Reference-class; split by subgraph or move rule prose into references |
 | `scripts/*` | 25 | Split helpers, use a deterministic tool, or remove unjustified script logic |
 
 ## Prompt Sufficiency
