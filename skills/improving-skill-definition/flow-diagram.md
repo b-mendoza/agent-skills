@@ -59,11 +59,12 @@ flowchart TD
   SCOPE_GATE -->|yes| EDIT["Emit banner Phase 6/8 - Edit<br/>Write skill-definition-editor instructions<br/>Apply only approved gap mutations<br/>Write only inside target package unless scope expands<br/>For structural workflow changes, update package files<br/>and synchronize flow-diagram.md in the same cycle"]
 
   EDIT --> DIAGRAM_SYNC{"Structural flow or dispatch shape changed?"}
-  DIAGRAM_SYNC -->|yes| DIAGRAM_REVIEW["Request generate-flow-diagram candidate (first-party sibling skill)<br/>Write candidate to HANDOFF_DIR/flow-diagram-candidate.md (DIAGRAM_CANDIDATE_PATH)<br/>Require REVIEW: PASS before semantic flow-diagram.md change"]
-  DIAGRAM_REVIEW --> DIAGRAM_REVIEW_STATUS{"Diagram candidate REVIEW status?"}
-  DIAGRAM_REVIEW_STATUS -->|PASS| EDIT_STATUS{"EDIT status?"}
-  DIAGRAM_REVIEW_STATUS -->|needs input or fail| EDIT_BLOCK
-  DIAGRAM_REVIEW_STATUS -->|ERROR| DIAGRAM_REVIEW_ERROR["Retain diagram-review error summary"]
+  DIAGRAM_SYNC -->|yes| DIAGRAM_REVIEW["Request generate-flow-diagram candidate (first-party sibling skill)<br/>Write candidate to HANDOFF_DIR/flow-diagram-candidate.md (DIAGRAM_CANDIDATE_PATH)<br/>Require a final passed candidate before semantic flow-diagram.md change"]
+  DIAGRAM_REVIEW --> DIAGRAM_REVIEW_STATUS{"Diagram candidate completion state?"}
+  DIAGRAM_REVIEW_STATUS -->|final passed| EDIT_STATUS{"EDIT status?"}
+  DIAGRAM_REVIEW_STATUS -->|needs confirmation or needs input| EDIT_BLOCK
+  DIAGRAM_REVIEW_STATUS -->|blocked| EDIT_BLOCK
+  DIAGRAM_REVIEW_STATUS -->|error or repair limit reached| DIAGRAM_REVIEW_ERROR["Retain diagram-review error summary"]
   DIAGRAM_SYNC -->|no| EDIT_STATUS
 
   EDIT_STATUS -->|PASS| VALIDATE["Emit banner Phase 7/8 - Validate (covers G_GAP_CLOSURE, G_FLOW_SYNC, G_BEST_PRACTICES_COMPLIANCE)<br/>Write skill-package-validator instructions<br/>Check approved-gap closure, diagram/SKILL/subagent coherence,<br/>priority and status contracts, strict file-size limits,<br/>related-discovery scope, prompt sufficiency,<br/>best-practices compliance, and mutation boundaries"]
