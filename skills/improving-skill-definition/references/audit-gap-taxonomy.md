@@ -62,11 +62,27 @@ Use stable ids in discovery order. Recommended type labels:
 - `FILE_SIZE_LIMIT_ENFORCEMENT`
 - `PROMPT_SUFFICIENCY_AUDIT`
 - `BEST_PRACTICE_FAILURE`
+- `DUPLICATE_CONTENT`
 - `RECREATE_WORKFLOW`
 - `SUBAGENT_REMOVE`
 - `SUBAGENT_MERGE`
 - `PROMPT_DEMOTION`
 - `NO_OP_EVIDENCED`
+
+## Duplication / DRY
+
+Scan all package files for repeated rules, status enums, gate or priority
+definitions, prose, and examples. For each cluster, record:
+
+- concept
+- locations (every file/section the content appears in)
+- drift risk: `identical`, `paraphrased`, or `contradictory`
+- canonical home (where the definition should live)
+- remediation: consolidate, link, extract-to-reference, hoist, or
+  document-intentional-repeat
+
+Allowed repetition is a documented intentional hoist that points to its
+canonical home. Undocumented duplication is a material `DUPLICATE_CONTENT` gap.
 
 ## Severity
 
