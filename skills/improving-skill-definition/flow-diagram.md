@@ -21,7 +21,7 @@ and `SKILL.md` defer to that definition.
 
 ```mermaid
 flowchart TD
-  START([Start: improve existing skill definition]) --> INTAKE["Emit banner Phase 1/8 - Intake<br/>Normalize SKILL_PATH, KNOWN_PROBLEM, TARGET_RUNTIME,<br/>SCOPE_LIMITS, REFERENCE_NEED, APPROVED_GAPS<br/>Derive MUTATION_LIMITS and HANDOFF_DIR<br/>Preserve target identity unless user expands scope"]
+  START([Start: improve existing skill definition]) --> INTAKE["Emit banner Phase 1/8 - Intake<br/>Normalize SKILL_PATH, KNOWN_PROBLEM, TARGET_RUNTIME,<br/>SCOPE_LIMITS, REFERENCE_NEED, APPROVED_GAPS<br/>Derive MUTATION_LIMITS, HANDOFF_DIR, and<br/>DIAGRAM_CANDIDATE_PATH (HANDOFF_DIR/flow-diagram-candidate.md)<br/>Initialize repair counter to 0<br/>Preserve target identity unless user expands scope"]
   INTAKE --> PATH_OK{"SKILL_PATH present and locatable?"}
 
   PATH_OK -->|no| PATH_BLOCK["Blocked handoff<br/>Ask one SKILL_PATH question<br/>Stop until user supplies path"]

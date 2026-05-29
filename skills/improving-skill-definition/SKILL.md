@@ -133,7 +133,7 @@ PASS` only when the verdict is `skill justified`.
 
 ## Execution
 
-1. Emit `Phase 1/8 - Intake`; normalize inputs and derive `MUTATION_LIMITS`, `HANDOFF_DIR`, and `DIAGRAM_CANDIDATE_PATH` (`HANDOFF_DIR/flow-diagram-candidate.md`).
+1. Emit `Phase 1/8 - Intake`; normalize inputs, initialize the repair counter to 0, and derive `MUTATION_LIMITS`, `HANDOFF_DIR`, and `DIAGRAM_CANDIDATE_PATH` (`HANDOFF_DIR/flow-diagram-candidate.md`).
 2. Emit `Phase 2/8 - Flow Load`; load this diagram and personality.
 3. Emit `Phase 3/8 - Related Skills Discovery`; dispatch `related-skills-discoverer`. Sparse results continue with confidence notes; do not widen beyond GitHub/GitLab. On `BLOCKED`/`ERROR`, degrade and continue to audit with a recorded limitation note unless `REFERENCE_NEED` is set or `KNOWN_PROBLEM` requires related-skill evidence.
 4. Emit `Phase 4/8 - Audit`; dispatch focused auditors. Run independent slices in parallel when the runtime supports it, otherwise sequentially with the same contracts.
