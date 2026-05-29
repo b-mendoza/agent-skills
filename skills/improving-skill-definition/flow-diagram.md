@@ -140,8 +140,9 @@ relevant paths, approved gaps, fetched URLs, and user decisions in context. If a
 report is missing or unreadable, the orchestrator may use only an enumerated
 compact `BLOCKED` or `ERROR` status from the dispatch reply; if neither exists,
 it routes to `error` with the missing report path named. Terminal cleanup
-deletes workflow-created `*-instructions.md` and `*-report.md` files inside
-`HANDOFF_DIR`; `HANDOFF_DIR` may be removed only when empty.
+deletes all workflow-created files inside `HANDOFF_DIR`, including
+`*-instructions.md`, `*-report.md`, `run-context.md`, and `*-candidate.md`;
+`HANDOFF_DIR` may be removed only when empty.
 
 Related-skills discovery rule: Discovery must search GitHub and GitLab only,
 before audit. Sparse or low-confidence results are reported with confidence and
