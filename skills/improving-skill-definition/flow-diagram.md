@@ -78,17 +78,13 @@ flowchart TD
 
   VALIDATE --> VALIDATION_STATUS{"VALIDATION status?"}
   VALIDATION_STATUS -->|PASS| FINAL_CHANGED["Emit banner Phase 8/8 - Handoff<br/>Load final-report-template.md<br/>Return changed handoff with material issues,<br/>approved gaps closed, files changed, validation,<br/>resources, and residual risks"]
-  VALIDATION_STATUS -->|FAIL| RETRY_GATE{"Repair cycles used &lt; 3?"}
+  VALIDATION_STATUS -->|FAIL| RETRY_GATE{"Repair counter &lt; 3?"}
   VALIDATION_STATUS -->|BLOCKED| VALIDATION_BLOCK["Blocked handoff<br/>Include validation blocker and recovery action"]
   VALIDATION_STATUS -->|ERROR| VALIDATION_ERROR["Retain validation error summary"]
 
-  RETRY_GATE -->|yes| REPAIR["Emit banner Phase 6/8 - Edit<br/>Increment repair counter before redispatch<br/>Send failed validation checks only<br/>Keep original personality and gap approvals"]
+  RETRY_GATE -->|yes| REPAIR_PREP["Emit banner Phase 6/8 - Edit<br/>Increment orchestrator-held repair counter<br/>Scope edit to failed validation checks only<br/>Keep original personality and gap approvals"]
   RETRY_GATE -->|no| FAIL_BLOCK["Blocked handoff<br/>Validation still failing after three repairs<br/>Include failed checks, attempted repairs, and resume condition"]
-
-  REPAIR --> REPAIR_STATUS{"Repair EDIT status?"}
-  REPAIR_STATUS -->|PASS| VALIDATE
-  REPAIR_STATUS -->|BLOCKED| REPAIR_BLOCK["Blocked handoff<br/>Include repair blocker and smallest user decision"]
-  REPAIR_STATUS -->|ERROR| REPAIR_ERROR["Retain repair error summary"]
+  REPAIR_PREP --> DIAGRAM_SYNC
 
   FINAL_APPROVAL_REQUIRED --> APPROVAL_REQUIRED([Decision: approval required])
   FINAL_NO_CHANGE --> NO_CHANGE([Decision: no change])
@@ -100,7 +96,6 @@ flowchart TD
   SCOPE_BLOCK --> FINAL_BLOCKED
   EDIT_BLOCK --> FINAL_BLOCKED
   FAIL_BLOCK --> FINAL_BLOCKED
-  REPAIR_BLOCK --> FINAL_BLOCKED
   VALIDATION_BLOCK --> FINAL_BLOCKED
   FINAL_BLOCKED["Emit banner Phase 8/8 - Handoff<br/>Load final-report-template.md<br/>Return blocked handoff with reason,<br/>question, completed checks, and resume condition"] --> BLOCKED([Decision: blocked])
 
@@ -108,7 +103,6 @@ flowchart TD
   AUDIT_ERROR --> FINAL_ERROR
   EDIT_ERROR --> FINAL_ERROR
   DIAGRAM_REVIEW_ERROR --> FINAL_ERROR
-  REPAIR_ERROR --> FINAL_ERROR
   VALIDATION_ERROR --> FINAL_ERROR
   FINAL_ERROR["Emit banner Phase 8/8 - Handoff<br/>Load final-report-template.md<br/>Return error handoff with failed condition,<br/>known context, and recovery"] --> ERROR([Decision: error])
 
@@ -121,13 +115,13 @@ flowchart TD
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
   class FLOW_LOAD,AUTHORITY,BOUNDARY,STATUS_CONTRACT,SENSITIVE_GATE guard;
-  class RELATED,RELATED_DEGRADE,AUDIT_SETUP,AUDIT_GROUP,AUDIT_SYNTH,EDIT,DIAGRAM_REVIEW,VALIDATE,REPAIR check;
-  class PATH_OK,FLOW_LOAD_OK,RELATED_STATUS,RELATED_EVIDENCE_GATE,AUDIT_STATUS,APPROVAL_READY,APPROVED_NONE,SCOPE_GATE,DIAGRAM_SYNC,DIAGRAM_REVIEW_STATUS,EDIT_STATUS,VALIDATION_STATUS,RETRY_GATE,REPAIR_STATUS decision;
-  class PATH_BLOCK,RELATED_BLOCK,AUDIT_BLOCK,APPROVAL_HANDOFF,FINAL_APPROVAL_REQUIRED,SCOPE_BLOCK,EDIT_BLOCK,FAIL_BLOCK,REPAIR_BLOCK,VALIDATION_BLOCK human;
+  class RELATED,RELATED_DEGRADE,AUDIT_SETUP,AUDIT_GROUP,AUDIT_SYNTH,EDIT_PREP,EDIT_APPLY,DIAGRAM_REVIEW,VALIDATE,REPAIR_PREP check;
+  class PATH_OK,FLOW_LOAD_OK,RELATED_STATUS,RELATED_EVIDENCE_GATE,AUDIT_STATUS,APPROVAL_READY,APPROVED_NONE,SCOPE_GATE,DIAGRAM_SYNC,DIAGRAM_REVIEW_STATUS,EDIT_STATUS,VALIDATION_STATUS,RETRY_GATE decision;
+  class PATH_BLOCK,RELATED_BLOCK,AUDIT_BLOCK,APPROVAL_HANDOFF,FINAL_APPROVAL_REQUIRED,SCOPE_BLOCK,EDIT_BLOCK,FAIL_BLOCK,VALIDATION_BLOCK human;
   class FINAL_NO_CHANGE,FINAL_CHANGED,FINAL_BLOCKED,FINAL_ERROR output;
   class NO_CHANGE,CHANGED success;
   class APPROVAL_REQUIRED human;
-  class BLOCKED,ERROR,FLOW_LOAD_ERROR,AUDIT_ERROR,EDIT_ERROR,DIAGRAM_REVIEW_ERROR,REPAIR_ERROR,VALIDATION_ERROR stop;
+  class BLOCKED,ERROR,FLOW_LOAD_ERROR,AUDIT_ERROR,EDIT_ERROR,DIAGRAM_REVIEW_ERROR,VALIDATION_ERROR stop;
 ```
 
 Handoff-file dispatch: Each RELATED_SKILLS, AUDIT, EDIT, VALIDATE, and REPAIR
