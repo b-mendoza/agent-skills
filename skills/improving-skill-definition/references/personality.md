@@ -46,9 +46,8 @@ reasoning.
 Priority tiers are canonical in
 [`./audit-gap-taxonomy.md`](./audit-gap-taxonomy.md) (Priority Tiers), mirrored
 for the orchestrator in `SKILL.md`. This file does not restate the full table,
-so the tiers cannot drift across copies. When priorities conflict, high-tier
-concerns block closure and low-tier concerns never justify widening repair
-scope.
+so the tiers cannot drift across copies. When priorities conflict, apply the
+precedence in the canonical Priority Tiers table; this file does not restate it.
 
 ## Voice
 
