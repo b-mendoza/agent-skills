@@ -35,8 +35,7 @@ needed to verify closure.
 
 1. Verify frontmatter names match directory or file basenames.
 2. Count non-empty lines against the caps defined in `AUDIT_TAXONOMY_PATH`
-   (currently `SKILL.md` and subagents <=150; references and top-level
-   `flow-diagram.md` <=250; scripts <=5). Cite the taxonomy, do not hardcode.
+   (File Size Caps). Cite the taxonomy, do not hardcode the numbers.
 3. Confirm referenced bundled paths exist and stay in the target package unless
    the target declares an intentional exception.
 4. Confirm all edited paths are inside approved scope and `MUTATION_LIMITS`.
