@@ -16,6 +16,17 @@ structure, artifact, phase, reference, or subagent, answer:
 If the answer is only "more organized," classify the idea as
 `optional_improvement`, not a material gap.
 
+## Diagram-Change Terminology
+
+- Structural / dispatch-shape change: an edit that alters phase order, gates,
+  statuses, the subagent registry, dispatch protocol, repair loops, or node and
+  edge topology. Structural changes are semantic and require a
+  `generate-flow-diagram` `final passed` candidate.
+- Semantic diagram change: any change to node meaning, routing, or rules; it
+  includes every structural change and is routed through `generate-flow-diagram`.
+- Non-semantic diagram change: a path or name correction that does not alter
+  routing or meaning. The skill may apply these directly.
+
 ## Quality Axes
 
 | Axis | A material gap exists when |
