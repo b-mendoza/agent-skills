@@ -107,6 +107,8 @@ only at terminal cleanup; never commit them.
 | `skill-definition-editor` | `EDIT: PASS`, `EDIT: BLOCKED`, `EDIT: ERROR` |
 | `skill-package-validator` | `VALIDATION: PASS`, `VALIDATION: FAIL`, `VALIDATION: BLOCKED`, `VALIDATION: ERROR` |
 
+Audit-slice statuses always carry their prefix (for example `FLOW_AUDIT: GAPS_FOUND`, not a bare `GAPS_FOUND`); the comma list in each row enumerates the suffixes that share that row's prefix.
+
 Any `BLOCKED` or `ERROR` routes to the matching final handoff, except
 `related-skills-discoverer` `BLOCKED`/`ERROR`, which degrades and continues to
 audit with a recorded discovery-limitation note unless `REFERENCE_NEED` is set

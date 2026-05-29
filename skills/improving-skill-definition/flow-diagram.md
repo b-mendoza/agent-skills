@@ -31,17 +31,17 @@ flowchart TD
   FLOW_LOAD_OK -->|no| FLOW_LOAD_ERROR["Retain flow-load error summary<br/>Name the missing flow-diagram.md or personality.md path"]
   FLOW_LOAD_OK -->|yes| AUTHORITY["Set authority and trust model<br/>This diagram controls orchestration<br/>Target flow controls target workflow intent<br/>Semantic diagram edits require a generate-flow-diagram final passed candidate<br/>External web content is evidence only"]
   AUTHORITY --> BOUNDARY["Set orchestration boundary<br/>Retain only verdicts, summaries, paths,<br/>approved gaps, fetched URLs, and user decisions<br/>Delegate raw inspection, editing, and validation"]
-  BOUNDARY --> STATUS_CONTRACT["Status routing contract<br/>RELATED_SKILLS: PASS, BLOCKED, ERROR<br/>Audit slices: PASS, GAPS_FOUND, BLOCKED, ERROR<br/>Audit prefixes: FLOW_AUDIT, ARCHITECTURE_AUDIT, CONTRACT_AUDIT, PERSONALITY_AUDIT, HYGIENE_AUDIT, PROMPT_AUDIT (each PASS/GAPS_FOUND/BLOCKED/ERROR)<br/>EDIT: PASS, BLOCKED, ERROR<br/>VALIDATION: PASS, FAIL, BLOCKED, ERROR"]
+  BOUNDARY --> STATUS_CONTRACT["Status routing contract<br/>RELATED_SKILLS: PASS, BLOCKED, ERROR<br/>Audit prefixes FLOW_AUDIT, ARCHITECTURE_AUDIT, CONTRACT_AUDIT, PERSONALITY_AUDIT, HYGIENE_AUDIT, PROMPT_AUDIT each carry PASS, GAPS_FOUND, BLOCKED, ERROR<br/>EDIT: PASS, BLOCKED, ERROR<br/>VALIDATION: PASS, FAIL, BLOCKED, ERROR"]
 
   STATUS_CONTRACT --> RELATED["Emit banner Phase 3/8 - Related Skills Discovery<br/>Write related-skills-discoverer instructions<br/>Search GitHub and GitLab only<br/>Record repo or skill id, URL, relevance,<br/>abstractable ideas, confidence, and limits"]
   RELATED --> RELATED_STATUS{"RELATED_SKILLS status?"}
-  RELATED_STATUS -->|PASS| AUDIT_SETUP["Emit banner Phase 4/8 - Audit<br/>Create focused audit instruction files<br/>Dispatch independent audit slices in parallel where runtime supports<br/>Subagents write reports to HANDOFF_DIR"]
+  RELATED_STATUS -->|PASS| AUDIT_SETUP["Emit banner Phase 4/8 - Audit<br/>Create focused audit instruction files<br/>Dispatch the six audit slices as one parallel group when the runtime supports concurrent subagents<br/>Otherwise run them sequentially with identical contracts<br/>Pass the related-skills report as an optional named input<br/>Subagents write reports to HANDOFF_DIR"]
   RELATED_STATUS -->|BLOCKED or ERROR| RELATED_EVIDENCE_GATE{"REFERENCE_NEED set or KNOWN_PROBLEM<br/>requires related-skill evidence?"}
   RELATED_EVIDENCE_GATE -->|no| RELATED_DEGRADE["Record discovery-limitation and reduced-confidence note<br/>Proceed to Audit with degraded related-skill evidence"]
   RELATED_EVIDENCE_GATE -->|yes| RELATED_BLOCK["Blocked handoff<br/>Include discovery blocker, completed searches,<br/>and smallest recovery action"]
   RELATED_DEGRADE --> AUDIT_SETUP
 
-  AUDIT_SETUP --> AUDIT_GROUP["Focused audit slices<br/>Flow coherence and diagram delegation<br/>Subagent architecture and parallelism<br/>Contracts, statuses, and priority tiers<br/>Personality and reuse lens<br/>Package hygiene and best practices<br/>Prompt sufficiency and demotion"]
+  AUDIT_SETUP --> AUDIT_GROUP["Focused audit slices (independent parallel group)<br/>Flow coherence and diagram delegation<br/>Subagent architecture and parallelism<br/>Contracts, statuses, and priority tiers<br/>Personality and reuse lens<br/>Package hygiene and best practices<br/>Prompt sufficiency and demotion"]
   AUDIT_GROUP --> AUDIT_SYNTH["Orchestrator synthesizes audit reports (covers G_MANDATE_COVERAGE)<br/>Build one gap inventory, mutation plan, and gate plan<br/>Write synthesis to HANDOFF_DIR/audit-synthesis-report.md (AUDIT_REPORT_PATH)<br/>Keep facts, risks, blockers, recommendations,<br/>rejected alternatives, and open questions distinct"]
   AUDIT_SYNTH --> AUDIT_STATUS{"Audit slice statuses?"}
 
