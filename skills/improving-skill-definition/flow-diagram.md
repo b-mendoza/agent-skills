@@ -185,14 +185,17 @@ every `FINAL_*` handoff node (`FINAL_NO_CHANGE`, `FINAL_APPROVAL_REQUIRED`,
 
 Priority rule: Priority tiers are canonical in
 `references/audit-gap-taxonomy.md` (Priority Tiers); this diagram and `SKILL.md`
-defer to it and must not restate the full table. High-tier closure outranks
-medium- and low-tier work, and low-tier items must not widen repair scope.
+defer to it and must not restate the tiers.
+
+Repair-counter rule: The repair counter is orchestrator-held run state,
+initialized to 0 during Intake and incremented at `REPAIR_PREP` before each
+re-dispatch. `RETRY_GATE` allows a repair only while the counter is below 3.
 
 Phase transition markers: Every action node above instructs the orchestrator to
 make the phase transition visible before its other actions, using this repo's
 forty-hyphen `Phase N/8 - <Name>` banner convention unless the host UI supplies
-a better native marker. REPAIR re-emits `Phase 6/8 - Edit`, and the subsequent
-re-validation re-emits `Phase 7/8 - Validate`. Phase markers are an
+a better native marker. `REPAIR_PREP` re-emits `Phase 6/8 - Edit`, and the
+subsequent re-validation re-emits `Phase 7/8 - Validate`. Phase markers are an
 orchestrator concern; subagents do not emit them.
 
 Readiness rule: A final handoff is ready only after
