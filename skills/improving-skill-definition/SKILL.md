@@ -81,7 +81,7 @@ and low-tier items must not widen repair scope.
 
 Semantic `flow-diagram.md` work uses `generate-flow-diagram`, a first-party
 sibling skill (`skills/generate-flow-diagram`) invoked the same way
-(instructions in, `REVIEW: PASS` candidate at `DIAGRAM_CANDIDATE_PATH`); it is
+(instructions in, `final passed` candidate at `DIAGRAM_CANDIDATE_PATH`); it is
 not listed above because it is a separate skill, not one of this skill's
 subagents.
 
@@ -138,7 +138,7 @@ PASS` only when the verdict is `skill justified`.
 6. Emit `Phase 5/8 - Approval`; stop until the user approves a personality decision and `all`, `none`, or specific gap ids.
 7. If approved scope is `none`, emit `Phase 8/8 - Handoff` and return `no change`.
 8. Confirm approved writes fit `SCOPE_LIMITS` and `MUTATION_LIMITS`; otherwise return `blocked`.
-9. Emit `Phase 6/8 - Edit`; dispatch `skill-definition-editor`. Structural workflow edits must include same-cycle `flow-diagram.md` sync from a `generate-flow-diagram` `REVIEW: PASS` candidate at `DIAGRAM_CANDIDATE_PATH`.
+9. Emit `Phase 6/8 - Edit`; dispatch `skill-definition-editor`. Structural workflow edits must include same-cycle `flow-diagram.md` sync from a `generate-flow-diagram` `final passed` candidate at `DIAGRAM_CANDIDATE_PATH`.
 10. Emit `Phase 7/8 - Validate`; dispatch `skill-package-validator`.
 11. On `VALIDATION: FAIL`, re-enter Edit with only validator findings and approved gaps. Use at most three repair cycles.
 12. Emit `Phase 8/8 - Handoff`; load `references/final-report-template.md` and return the final decision.

@@ -13,7 +13,7 @@ user expands scope, and the target skill identity is preserved unless
 explicitly approved.
 
 Semantic edits to this diagram are owned by `generate-flow-diagram` and must
-come from a `REVIEW: PASS` candidate. This skill may only make non-semantic path
+come from a `final passed` candidate. This skill may only make non-semantic path
 or name corrections directly.
 
 ```mermaid

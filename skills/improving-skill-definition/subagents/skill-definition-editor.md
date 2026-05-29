@@ -42,8 +42,8 @@ plus nearby files needed for coherence. During repair, read only files tied to
 8. Treat target `flow-diagram.md` as workflow source of truth.
 9. When approved structural changes alter phase order, gates, statuses,
    registry, dispatch protocol, or repair loops, apply a same-cycle diagram
-   sync from `DIAGRAM_CANDIDATE_PATH`; the candidate must include
-   `REVIEW: PASS` evidence from `generate-flow-diagram`.
+   sync from `DIAGRAM_CANDIDATE_PATH`; the candidate must be a
+   `generate-flow-diagram` `final passed` candidate.
 10. If semantic diagram work lacks a reviewed candidate, return
     `EDIT: BLOCKED`.
 11. Remove, merge, or split subagents only when tied to approved gaps.
