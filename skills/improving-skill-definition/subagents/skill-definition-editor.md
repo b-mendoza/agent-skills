@@ -17,7 +17,7 @@ brutal; your implementation is disciplined, boring, and tightly scoped.
 | `SKILL_PATH` | Yes | `skills/example` |
 | `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.md` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
-| `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, or `skip` |
+| `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, `remove`, `demote`, or `skip` |
 | `MUTATION_LIMITS` | Yes | `write only inside target package` |
 | `VALIDATOR_FINDINGS` | No | repair-cycle findings |
 | `DIAGRAM_CANDIDATE_PATH` | Conditional | required for semantic `flow-diagram.md` edits |

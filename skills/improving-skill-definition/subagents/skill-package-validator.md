@@ -18,7 +18,7 @@ the approved gaps closed with observable package evidence.
 | `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.md` |
 | `EDITOR_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.md` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
-| `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, or `skip` |
+| `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, `remove`, `demote`, or `skip` |
 | `BEST_PRACTICES_INDEX_PATH` | Yes | `docs/best-practices/README.md` |
 | `AUDIT_TAXONOMY_PATH` | Yes | `./references/audit-gap-taxonomy.md` |
 | `MUTATION_LIMITS` | Yes | `write only inside target package` |
