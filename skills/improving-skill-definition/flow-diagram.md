@@ -206,5 +206,6 @@ prompt-sufficiency coverage, personality consistency, subagent necessity,
 standalone packaging, path validity, mutation boundaries, and strict file-size
 limits: `SKILL.md` and subagents at or under 150 non-empty lines, references at
 or under 250 non-empty lines, this package's top-level `flow-diagram.md` treated
-as reference-class at or under 250 non-empty lines, and scripts at or under 25
-non-empty lines.
+as reference-class at or under 250 non-empty lines, and scripts at or under 5
+non-empty lines. Scripts must be simple, direct, and human-readable, with no
+minified, compressed, obfuscated, or obstructed logic.

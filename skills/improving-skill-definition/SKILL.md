@@ -143,7 +143,7 @@ and purpose unless approved. Exclude sibling skills, `.agents/skills/`,
 During repairs, change only files tied to validator findings and approved gaps.
 
 Audited packages must satisfy stricter caps: `SKILL.md` and subagent
-definitions <=150 non-empty lines each; reference files <=250; scripts <=25.
+definitions <=150 non-empty lines each; reference files <=250; scripts <=5 (simple, direct, human-readable; no minified, compressed, obfuscated, or obstructed logic).
 Validator failure is required for unapproved mutation, stale diagrams,
 over-limit files, missing priority/status contracts, prompt-sufficiency
 omission, broken paths, unresolved approved gaps, or best-practice failures.
