@@ -75,7 +75,7 @@ Count non-empty lines during audit and validation.
 | `subagents/*.md` | 150 | Split responsibilities or move shared criteria to references |
 | `references/*.md` | 250 | Split by topic or shorten just-in-time content |
 | `flow-diagram.md` (top-level and target) | 250 | Reference-class; split by subgraph or move rule prose into references |
-| `scripts/*` | 25 | Split helpers, use a deterministic tool, or remove unjustified script logic |
+| `scripts/*` | 5 | Simple, direct, human-readable code only; no minified, compressed, obfuscated, or obstructed logic; split helpers, use a deterministic tool, or remove unjustified script logic |
 
 ## Prompt Sufficiency
 
