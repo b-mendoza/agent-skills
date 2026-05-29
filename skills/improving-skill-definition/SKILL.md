@@ -136,14 +136,14 @@ PASS` only when the verdict is `skill justified`.
 1. Emit `Phase 1/8 - Intake`; normalize inputs, initialize the repair counter to 0, and derive `MUTATION_LIMITS`, `HANDOFF_DIR`, and `DIAGRAM_CANDIDATE_PATH` (`HANDOFF_DIR/flow-diagram-candidate.md`).
 2. Emit `Phase 2/8 - Flow Load`; load this diagram and personality.
 3. Emit `Phase 3/8 - Related Skills Discovery`; dispatch `related-skills-discoverer`. Sparse results continue with confidence notes; do not widen beyond GitHub/GitLab. On `BLOCKED`/`ERROR`, degrade and continue to audit with a recorded limitation note unless `REFERENCE_NEED` is set or `KNOWN_PROBLEM` requires related-skill evidence.
-4. Emit `Phase 4/8 - Audit`; dispatch focused auditors. Run independent slices in parallel when the runtime supports it, otherwise sequentially with the same contracts.
+4. Emit `Phase 4/8 - Audit`; dispatch the six focused auditors as one independent parallel group when the runtime supports concurrent subagents, otherwise sequentially with the same contracts. Pass the related-skills report as an optional named input to each slice.
 5. Synthesize reports into one approval handoff: workflow, subagent, flow, personality, priority, prompt-sufficiency, line-count, quality-axis verdicts, gap inventory, mutation plan, and gate plan. Write the synthesized gap inventory, mutation plan, and gate plan to `HANDOFF_DIR/audit-synthesis-report.md` (the `AUDIT_REPORT_PATH` consumed by the editor and validator).
 6. Emit `Phase 5/8 - Approval`; stop until the user approves a personality decision and `all`, `none`, or specific gap ids.
 7. If approved scope is `none`, emit `Phase 8/8 - Handoff` and return `no change`.
 8. Confirm approved writes fit `SCOPE_LIMITS` and `MUTATION_LIMITS`; otherwise return `blocked`.
-9. Emit `Phase 6/8 - Edit`; dispatch `skill-definition-editor`. Structural workflow edits must include same-cycle `flow-diagram.md` sync from a `generate-flow-diagram` `final passed` candidate at `DIAGRAM_CANDIDATE_PATH`.
+9. Emit `Phase 6/8 - Edit`. For approved structural changes, obtain a `generate-flow-diagram` `final passed` candidate at `DIAGRAM_CANDIDATE_PATH` first, then dispatch `skill-definition-editor`, which applies approved mutations and writes that candidate into `flow-diagram.md` in the same edit. The editor returns `EDIT: BLOCKED` if an approved structural gap has no available `final passed` candidate, so a structural edit can never report `EDIT: PASS` with a stale diagram.
 10. Emit `Phase 7/8 - Validate`; dispatch `skill-package-validator`.
-11. On `VALIDATION: FAIL`, re-enter Edit with only validator findings and approved gaps. Use at most three repair cycles.
+11. On `VALIDATION: FAIL`, re-enter Edit with only validator findings and approved gaps; increment the orchestrator-held repair counter and, when a repair changes flow structure, refresh the `final passed` diagram candidate before re-validation. Use at most three repair cycles.
 12. Emit `Phase 8/8 - Handoff`; load `references/final-report-template.md` and return the final decision.
 
 ## Mutation Limits And Validation
