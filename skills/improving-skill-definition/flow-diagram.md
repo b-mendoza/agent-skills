@@ -171,7 +171,9 @@ prompt sufficiency. Each slice reports `PASS`, `GAPS_FOUND`, `BLOCKED`, or
 editor and validator); this synthesis artifact is complete only when it contains
 the gap inventory, the mutation plan, and the quality gate plan.
 
-Diagram-sync rule: When approved or repair-cycle changes alter flow structure or
+Diagram-sync rule (canonical home; `SKILL.md` step 9 and
+`subagents/skill-definition-editor.md` instruction 9 are documented hoists that
+point here): When approved or repair-cycle changes alter flow structure or
 dispatch shape, the orchestrator obtains a `generate-flow-diagram` `final passed`
 candidate at `DIAGRAM_CANDIDATE_PATH` BEFORE the editor applies, and the editor
 writes that candidate into `flow-diagram.md` in the same edit cycle. The editor
