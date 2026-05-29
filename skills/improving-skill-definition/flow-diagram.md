@@ -171,6 +171,16 @@ prompt sufficiency. Each slice reports `PASS`, `GAPS_FOUND`, `BLOCKED`, or
 editor and validator); this synthesis artifact is complete only when it contains
 the gap inventory, the mutation plan, and the quality gate plan.
 
+Diagram-sync rule: When approved or repair-cycle changes alter flow structure or
+dispatch shape, the orchestrator obtains a `generate-flow-diagram` `final passed`
+candidate at `DIAGRAM_CANDIDATE_PATH` BEFORE the editor applies, and the editor
+writes that candidate into `flow-diagram.md` in the same edit cycle. The editor
+returns `EDIT: BLOCKED` if an approved structural gap has no available
+`final passed` candidate, so a structural edit can never report `EDIT: PASS`
+with a stale diagram. Repair cycles re-enter through the same `DIAGRAM_SYNC`
+decision, so a structural repair also refreshes the diagram before
+re-validation.
+
 Diagram-candidate rule: `generate-flow-diagram` is a first-party sibling skill
 (`skills/generate-flow-diagram`), not one of this skill's registry subagents. It
 returns one of the boundary completion states `final passed`, `needs confirmation`,
