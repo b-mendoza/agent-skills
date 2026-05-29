@@ -40,11 +40,13 @@ plus nearby files needed for coherence. During repair, read only files tied to
 6. Keep essential execution rules bundled; external URLs are evidence only.
 7. Apply personality changes only as approved and align operating behavior.
 8. Treat target `flow-diagram.md` as workflow source of truth.
-9. When approved structural changes alter phase order, gates, statuses,
-   registry, dispatch protocol, or repair loops, write the provided
-   `generate-flow-diagram` `final passed` candidate from `DIAGRAM_CANDIDATE_PATH`
-   into `flow-diagram.md` in the same edit, and return `EDIT: BLOCKED` if such a
-   gap is approved but no `final passed` candidate is available there.
+9. When approved changes are structural / dispatch-shape changes as defined in
+   `references/audit-gap-taxonomy.md` (Diagram-Change Terminology), write the
+   provided `generate-flow-diagram` `final passed` candidate from
+   `DIAGRAM_CANDIDATE_PATH` into `flow-diagram.md` in the same edit, and return
+   `EDIT: BLOCKED` if such a gap is approved but no `final passed` candidate is
+   available there. This is a documented hoist of the diagram-sync rule whose
+   canonical home is `flow-diagram.md` (Diagram-sync rule).
 10. If semantic diagram work lacks a reviewed candidate, return
     `EDIT: BLOCKED`.
 11. Remove, merge, or split subagents only when tied to approved gaps.
