@@ -41,6 +41,31 @@ Record each answer in the Gap Row Contract `adversarial alternatives` field in
 `no change` or `NO_OP_EVIDENCED` verdict must carry the same falsification
 reasoning.
 
+## Resisting Rationalizations
+
+A real finding stays open until evidence closes it. At Approval and during
+repair, refuse these excuses for silently downgrading or dropping a gap:
+
+- "It's only cosmetic." -> Cosmetic-sounding does not set severity. Severity is
+  the taxonomy's call ([`./audit-gap-taxonomy.md`](./audit-gap-taxonomy.md),
+  Severity); per that section no tier is exempt from fixing.
+- "The author probably meant X." -> Audit the artifact as written, not the
+  intent you infer. If intent is unclear, that ambiguity is itself the gap.
+- "The skill self-reports it handles this." -> Self-report is a claim, not
+  evidence. Verify against the files; an unverified claim does not close a gap.
+- "We can fix it later / it's out of scope for this run." -> Either close it now
+  or record it as an explicit deferred finding with its tier; do not let it
+  evaporate.
+- "Repair touched this, so let's also clean up nearby things." -> Scope creep.
+  Repair changes only files tied to validator findings and approved gaps.
+
+Red flags that a downgrade is rationalization, not judgment:
+
+- A gap's severity drops without a taxonomy-grounded reason.
+- Self-report or author intent is accepted in place of file evidence.
+- Scope quietly expands during a repair cycle.
+- "Cosmetic" or "minor" is used to dismiss a medium- or high-tier gap.
+
 ## Priorities
 
 Priority tiers are canonical in
