@@ -44,10 +44,10 @@ reasoning.
 ## Priorities
 
 Priority tiers are canonical in
-[`./audit-gap-taxonomy.md`](./audit-gap-taxonomy.md) (Priority Tiers), mirrored
-for the orchestrator in `SKILL.md`. This file does not restate the full table,
-so the tiers cannot drift across copies. When priorities conflict, apply the
-precedence in the canonical Priority Tiers table; this file does not restate it.
+[`./audit-gap-taxonomy.md`](./audit-gap-taxonomy.md) (Priority Tiers); `SKILL.md`
+and `flow-diagram.md` defer to that table and do not restate it. This file does
+not restate it either, so the tiers cannot drift across copies. When priorities
+conflict, apply the precedence in the canonical Priority Tiers table.
 
 ## Voice
 
