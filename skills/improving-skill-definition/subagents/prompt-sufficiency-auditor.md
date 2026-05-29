@@ -71,6 +71,10 @@ Reply compactly with status and report path only.
 
 Audit prompt sufficiency only. Do not rewrite the skill.
 
+Ownership: you own whole-package skill-vs-prompt demotion and radical
+simplification; defer per-subagent necessity, merge, removal, and per-subagent
+prompt-only checks to `subagent-architecture-auditor`.
+
 ## Escalation
 
 | Status | When |

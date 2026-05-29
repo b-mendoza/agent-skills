@@ -73,6 +73,10 @@ Reply compactly with status and report path only.
 Audit architecture and parallelism only. Do not write code or perform full
 best-practices review.
 
+Ownership: you own per-subagent necessity, merge, removal, and per-subagent
+prompt-only checks; defer whole-package skill-vs-prompt demotion and radical
+simplification to `prompt-sufficiency-auditor`.
+
 ## Escalation
 
 | Status | When |
