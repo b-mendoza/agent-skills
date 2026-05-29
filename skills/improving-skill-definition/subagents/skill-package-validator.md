@@ -89,7 +89,6 @@ VALIDATION: PASS | FAIL | BLOCKED | ERROR
 | `G_GAP_CLOSURE` | `pass` / `fail` / `not applicable` | |
 | `G_BEST_PRACTICES_COMPLIANCE` | `pass` / `fail` / `not applicable` | |
 | `G_FLOW_SYNC` | `pass` / `fail` / `not applicable` | |
-| `G_MANDATE_COVERAGE` | `pass` / `fail` / `not applicable` | |
 
 ## Findings
 | id | severity | file | issue | required fix |
