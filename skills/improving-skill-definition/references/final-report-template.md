@@ -21,7 +21,7 @@ Flow diagram verdict:
 
 Personality assessment:
 - Summary:
-- `PERSONALITY_VERDICT`: `FITS_PURPOSE` | `NEEDS_REFINEMENT` | `MISSING_BUT_RECOMMENDED` | `NOT_APPLICABLE` | `CONFLICTS_WITH_SKILL`
+- `PERSONALITY_VERDICT`: `FITS_PURPOSE` | `NEEDS_REFINEMENT` | `MISSING_BUT_RECOMMENDED` | `UNNECESSARY_OR_OVERBUILT` | `NOT_APPLICABLE` | `CONFLICTS_WITH_SKILL`
 - Checks run:
 - Recommendation:
 - Alternatives: [at least five target-specific options]
