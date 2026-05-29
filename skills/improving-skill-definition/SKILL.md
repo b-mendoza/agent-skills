@@ -94,6 +94,10 @@ only at terminal cleanup; never commit them.
 
 ## Status Routing Contract
 
+This table is the canonical home for subagent status enums; the
+`flow-diagram.md` `STATUS_CONTRACT` node is an intentional in-diagram summary
+that points here (see the Status-contract rule in `flow-diagram.md`).
+
 | Source | Statuses |
 | ------ | -------- |
 | `related-skills-discoverer` | `RELATED_SKILLS: PASS`, `RELATED_SKILLS: BLOCKED`, `RELATED_SKILLS: ERROR` |
@@ -109,9 +113,8 @@ only at terminal cleanup; never commit them.
 Audit-slice statuses always carry their prefix (for example `FLOW_AUDIT: GAPS_FOUND`, not a bare `GAPS_FOUND`); the comma list in each row enumerates the suffixes that share that row's prefix.
 
 Any `BLOCKED` or `ERROR` routes to the matching final handoff, except
-`related-skills-discoverer` `BLOCKED`/`ERROR`, which degrades and continues to
-audit with a recorded discovery-limitation note unless `REFERENCE_NEED` is set
-or `KNOWN_PROBLEM` requires related-skill evidence. Any audit
+`related-skills-discoverer` `BLOCKED`/`ERROR`, which degrades and continues per
+the canonical Related-skills discovery rule in `flow-diagram.md`. Any audit
 `GAPS_FOUND` or unresolved personality decision routes to approval. `NO_CHANGE`
 is allowed only when every applicable audit slice passes, prompt-sufficiency
 does not recommend demotion, and personality is already acceptable.
@@ -134,8 +137,8 @@ PASS` only when the verdict is `skill justified`.
 
 1. Emit `Phase 1/8 - Intake`; normalize inputs, initialize the repair counter to 0, and derive `MUTATION_LIMITS`, `HANDOFF_DIR`, and `DIAGRAM_CANDIDATE_PATH` (`HANDOFF_DIR/flow-diagram-candidate.md`).
 2. Emit `Phase 2/8 - Flow Load`; load this diagram and personality.
-3. Emit `Phase 3/8 - Related Skills Discovery`; dispatch `related-skills-discoverer`. Sparse results continue with confidence notes; do not widen beyond GitHub/GitLab. On `BLOCKED`/`ERROR`, degrade and continue to audit with a recorded limitation note unless `REFERENCE_NEED` is set or `KNOWN_PROBLEM` requires related-skill evidence.
-4. Emit `Phase 4/8 - Audit`; dispatch the six focused auditors as one independent parallel group when the runtime supports concurrent subagents, otherwise sequentially with the same contracts. Pass the related-skills report as an optional named input to each slice.
+3. Emit `Phase 3/8 - Related Skills Discovery`; dispatch `related-skills-discoverer` and apply the canonical Related-skills discovery rule in `flow-diagram.md` (GitHub/GitLab only; sparse results continue with confidence notes; evidence-only `BLOCKED`/`ERROR` degrades and continues).
+4. Emit `Phase 4/8 - Audit`; dispatch the six focused auditors per the canonical Audit parallelism rule in `flow-diagram.md` (one independent parallel group when the runtime supports concurrent subagents, otherwise sequential with identical contracts). Pass the related-skills report as an optional named input to each slice.
 5. Synthesize reports into one approval handoff: workflow, subagent, flow, personality, priority, prompt-sufficiency, line-count, quality-axis verdicts, gap inventory, mutation plan, and gate plan. Write the synthesized gap inventory, mutation plan, and gate plan to `HANDOFF_DIR/audit-synthesis-report.md` (the `AUDIT_REPORT_PATH` consumed by the editor and validator).
 6. Emit `Phase 5/8 - Approval`; stop until the user approves a personality decision and `all`, `none`, or specific gap ids.
 7. If approved scope is `none`, emit `Phase 8/8 - Handoff` and return `no change`.
