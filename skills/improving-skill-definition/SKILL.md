@@ -97,7 +97,12 @@ only at terminal cleanup; never commit them.
 | Source | Statuses |
 | ------ | -------- |
 | `related-skills-discoverer` | `RELATED_SKILLS: PASS`, `RELATED_SKILLS: BLOCKED`, `RELATED_SKILLS: ERROR` |
-| audit subagents | `<SLICE>_AUDIT: PASS`, `<SLICE>_AUDIT: GAPS_FOUND`, `<SLICE>_AUDIT: BLOCKED`, `<SLICE>_AUDIT: ERROR` |
+| `flow-coherence-auditor` | `FLOW_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
+| `subagent-architecture-auditor` | `ARCHITECTURE_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
+| `contract-priority-auditor` | `CONTRACT_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
+| `personality-auditor` | `PERSONALITY_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
+| `package-hygiene-auditor` | `HYGIENE_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
+| `prompt-sufficiency-auditor` | `PROMPT_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
 | `skill-definition-editor` | `EDIT: PASS`, `EDIT: BLOCKED`, `EDIT: ERROR` |
 | `skill-package-validator` | `VALIDATION: PASS`, `VALIDATION: FAIL`, `VALIDATION: BLOCKED`, `VALIDATION: ERROR` |
 
