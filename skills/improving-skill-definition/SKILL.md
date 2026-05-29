@@ -114,6 +114,10 @@ or `KNOWN_PROBLEM` requires related-skill evidence. Any audit
 is allowed only when every applicable audit slice passes, prompt-sufficiency
 does not recommend demotion, and personality is already acceptable.
 
+The `prompt-sufficiency-auditor` emits `PROMPT_AUDIT: GAPS_FOUND` when its
+verdict is `radical simplification` or `prompt demotion`, and `PROMPT_AUDIT:
+PASS` only when the verdict is `skill justified`.
+
 ## Critical Outputs
 
 | Gate | Protects | Checker |

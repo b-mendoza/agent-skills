@@ -30,7 +30,9 @@ complexity.
 2. Identify gates, durable artifacts, specialist roles, mutation boundaries,
    external effects, repair loops, and multi-step state.
 3. Return one verdict: `skill justified`, `radical simplification`, or
-   `prompt demotion`.
+   `prompt demotion`. Emit `PROMPT_AUDIT: GAPS_FOUND` when the verdict is
+   `radical simplification` or `prompt demotion`; emit `PROMPT_AUDIT: PASS` only
+   when the verdict is `skill justified`.
 4. If machinery is justified, document which conditions falsify prompt demotion.
 5. If simplification or demotion is warranted, propose the smallest shape and
    affected artifacts.
