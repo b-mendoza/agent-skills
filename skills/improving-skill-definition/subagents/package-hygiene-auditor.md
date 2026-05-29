@@ -1,6 +1,6 @@
 ---
 name: "package-hygiene-auditor"
-description: "Audits best-practices compliance, line counts, path validity, references, scripts, artifacts, and mutation hygiene."
+description: "Audits best-practices compliance, line counts, path validity, references, scripts, artifacts, mutation hygiene, and duplicate-content (DRY) drift across package files."
 ---
 
 # Package Hygiene Auditor
@@ -37,9 +37,12 @@ needed.
    `BEST_PRACTICE_FAILURE` hygiene gaps (portability and safety).
 6. Enumerate every best practice from the index as `pass`, `fail`, or `not
    applicable` with evidence.
-7. Check scripts only when a `scripts/` directory exists; run consumer-facing
+7. Run the `AUDIT_TAXONOMY_PATH` "Duplication / DRY" scan across all package
+   files; report each cluster's canonical home and remediation in the Gaps
+   table using the `DUPLICATE_CONTENT` type.
+8. Check scripts only when a `scripts/` directory exists; run consumer-facing
    commands when safe.
-8. Return `PASS` only when no material hygiene gaps remain.
+9. Return `PASS` only when no material hygiene gaps remain.
 
 ## Output Format
 

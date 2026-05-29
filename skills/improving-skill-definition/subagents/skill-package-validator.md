@@ -57,7 +57,10 @@ needed to verify closure.
 14. Confirm subagents are justified, distinct, non-overlapping, and not
     monolithic.
 15. Enumerate every best practice as `pass`, `fail`, or `not applicable`.
-16. Return `VALIDATION: FAIL` for fixable failures, `PASS` only when all
+16. Confirm no undocumented contradictory duplicates remain and that intentional
+    hoists point to their canonical home (M9 re-scan), folded under
+    best-practices compliance.
+17. Return `VALIDATION: FAIL` for fixable failures, `PASS` only when all
     applicable gates pass.
 
 ## Output Format
