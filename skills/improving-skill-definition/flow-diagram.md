@@ -143,18 +143,22 @@ deletes all workflow-created files inside `HANDOFF_DIR`, including
 `*-instructions.md`, `*-report.md`, `run-context.md`, and `*-candidate.md`;
 `HANDOFF_DIR` may be removed only when empty.
 
-Related-skills discovery rule: Discovery must search GitHub and GitLab only,
-before audit. Sparse or low-confidence results are reported with confidence and
-limits, not padded with other platforms. `RELATED_SKILLS: PASS` requires
-structured source records; `BLOCKED` requires the smallest recovery action;
-`ERROR` names the failed condition. Evidence-only discovery failures degrade and
-continue: on `BLOCKED` or `ERROR` the orchestrator proceeds to Audit carrying a
-recorded discovery-limitation and reduced-confidence note, unless `REFERENCE_NEED`
-is set or `KNOWN_PROBLEM` specifically requires related-skill evidence, in which
-case it routes to the blocked handoff instead.
+Related-skills discovery rule (canonical home; `SKILL.md` Status Routing
+Contract and Execution step 3 are documented pointers here): Discovery must
+search GitHub and GitLab only, before audit. Sparse or low-confidence results
+are reported with confidence and limits, not padded with other platforms.
+`RELATED_SKILLS: PASS` requires structured source records; `BLOCKED` requires
+the smallest recovery action; `ERROR` names the failed condition. Evidence-only
+discovery failures degrade and continue: on `BLOCKED` or `ERROR` the
+orchestrator proceeds to Audit carrying a recorded discovery-limitation and
+reduced-confidence note, unless `REFERENCE_NEED` is set or `KNOWN_PROBLEM`
+specifically requires related-skill evidence, in which case it routes to the
+blocked handoff instead.
 
-Audit parallelism rule: The six focused audit slices are an independent parallel
-group with separable inputs and reports and no ordering dependency among them.
+Audit parallelism rule (canonical home; `SKILL.md` Execution step 4 is a
+documented pointer here): The six focused audit slices are an independent
+parallel group with separable inputs and reports and no ordering dependency
+among them.
 The orchestrator dispatches them concurrently when the runtime supports parallel
 subagents and otherwise runs them sequentially with identical contracts; the
 result is the same gap inventory either way. The related-skills report is an
