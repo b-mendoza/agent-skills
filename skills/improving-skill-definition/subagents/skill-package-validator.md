@@ -37,7 +37,9 @@ needed to verify closure.
 2. Count non-empty lines against the caps defined in `AUDIT_TAXONOMY_PATH`
    (File Size Caps). Cite the taxonomy, do not hardcode the numbers.
 3. Confirm referenced bundled paths exist and stay in the target package unless
-   the target declares an intentional exception.
+   the target declares an intentional exception, and confirm no `references/` or
+   `subagents/` file is orphaned (unreferenced by `SKILL.md`, `flow-diagram.md`,
+   the registry, or sibling files).
 4. Confirm all edited paths are inside approved scope and `MUTATION_LIMITS`.
 5. Confirm every approved gap is resolved or explicitly approved as no-op.
 6. Confirm no unapproved mutation appears in the editor report.
