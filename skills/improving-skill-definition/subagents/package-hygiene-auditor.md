@@ -77,6 +77,11 @@ Reply compactly with status and report path only.
 
 Audit package hygiene only. Do not apply fixes.
 
+Path ownership: you own on-disk bundled-path existence and in-package
+containment. The `flow-coherence-auditor` owns path/name agreement across
+`flow-diagram.md`, `SKILL.md`, and the registry. Do not duplicate its
+flow-agreement gaps.
+
 ## Escalation
 
 | Status | When |

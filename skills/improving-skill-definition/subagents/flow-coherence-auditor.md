@@ -69,6 +69,10 @@ Reply compactly with status and report path only.
 Audit flow coherence only. Do not audit personality, package hygiene, or
 subagent necessity except where they affect flow references.
 
+Path ownership: you own path/name agreement across the diagram, `SKILL.md`
+registry, and statuses. The `package-hygiene-auditor` owns on-disk existence
+and in-package containment. Do not duplicate its existence gaps.
+
 ## Escalation
 
 | Status | When |
