@@ -206,6 +206,11 @@ Priority rule: Priority tiers are canonical in
 `references/audit-gap-taxonomy.md` (Priority Tiers); this diagram and `SKILL.md`
 defer to it and must not restate the tiers.
 
+Status-contract rule: The subagent status enums are canonical in the `SKILL.md`
+Status Routing Contract table. The `STATUS_CONTRACT` node in the diagram above is
+an intentional in-diagram summary that points to that table for at-a-glance
+routing; the table governs if the two ever disagree.
+
 Repair-counter rule: The repair counter is orchestrator-held run state,
 initialized to 0 during Intake and incremented at `REPAIR_PREP` before each
 re-dispatch. `RETRY_GATE` allows a repair only while the counter is below 3.
