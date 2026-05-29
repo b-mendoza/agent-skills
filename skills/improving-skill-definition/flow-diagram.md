@@ -14,7 +14,10 @@ explicitly approved.
 
 Semantic edits to this diagram are owned by `generate-flow-diagram` and must
 come from a `final passed` candidate. This skill may only make non-semantic path
-or name corrections directly.
+or name corrections directly. "Structural flow or dispatch shape change" and
+"semantic / non-semantic diagram change" are defined canonically in
+`references/audit-gap-taxonomy.md` (Diagram-Change Terminology); this diagram
+and `SKILL.md` defer to that definition.
 
 ```mermaid
 flowchart TD

@@ -37,7 +37,8 @@ Load [`./flow-diagram.md`](./flow-diagram.md) after intake. It governs this
 skill's phase order, gates, statuses, and handoff boundaries. For target
 packages, target `flow-diagram.md` wins over `SKILL.md`, subagents, and
 references for workflow structure. Semantic changes to any `flow-diagram.md`
-must go through `generate-flow-diagram` and require a `final passed` candidate.
+must go through `generate-flow-diagram` and require a `final passed` candidate;
+"structural / dispatch-shape change" and "semantic vs non-semantic diagram change" are defined canonically in [`./references/audit-gap-taxonomy.md`](./references/audit-gap-taxonomy.md) (Diagram-Change Terminology).
 `generate-flow-diagram` is a first-party sibling skill
 (`skills/generate-flow-diagram`), not one of this skill's registry subagents;
 its candidate is written to `DIAGRAM_CANDIDATE_PATH`
