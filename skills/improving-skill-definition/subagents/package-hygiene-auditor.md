@@ -29,7 +29,7 @@ needed.
 1. Count non-empty lines for every target file.
 2. Enforce the file-size caps defined in `AUDIT_TAXONOMY_PATH` (currently
    `SKILL.md` and subagents <=150; references and top-level `flow-diagram.md`
-   <=250; scripts <=25). Cite the taxonomy, do not hardcode.
+   <=250; scripts <=5). Cite the taxonomy, do not hardcode.
 3. Check frontmatter names match directory or file basenames.
 4. Check referenced bundled paths exist and stay in package unless a declared
    exception applies.
