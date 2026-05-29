@@ -50,8 +50,8 @@ Quality-axis verdicts:
 - Effectiveness:
 
 Gap inventory:
-| id | severity | type | affected files | issue | required fix | adversarial alternative | diagram delegation |
-| -- | -------- | ---- | -------------- | ----- | ------------ | ----------------------- | ------------------ |
+| id | severity | type | affected files | issue | required fix | quality axes | priority tier | adversarial alternative | diagram delegation |
+| -- | -------- | ---- | -------------- | ----- | ------------ | ------------ | ------------- | ----------------------- | ------------------ |
 
 Mutation plan:
 - [Exact create/edit/delete/no-op plan by path]

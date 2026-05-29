@@ -45,17 +45,20 @@ needed to verify closure.
 7. Confirm `flow-diagram.md`, `SKILL.md`, registry, phases, gates, statuses,
    report paths, and repair loops agree.
 8. Confirm semantic diagram edits came from a `generate-flow-diagram`
-   `REVIEW: PASS` candidate.
+   `final passed` candidate.
 9. Confirm personality, priority tiers, and operating posture are consistent.
-10. Confirm every phase and subagent has routeable success, blocked/failure,
+10. Confirm every gap row in the audit reports and gap templates carries a
+    priority tier and an adversarial-alternatives answer (chosen shape, simpler
+    alternative, reuse-or-extend) per the Gap Row Contract.
+11. Confirm every phase and subagent has routeable success, blocked/failure,
     observable success criteria, and no-proceed conditions.
-11. Confirm related-skill discovery is GitHub/GitLab-only.
-12. Confirm prompt-sufficiency verdict is present with falsifiable evidence
+12. Confirm related-skill discovery is GitHub/GitLab-only.
+13. Confirm prompt-sufficiency verdict is present with falsifiable evidence
     against the demotion conditions in `AUDIT_TAXONOMY_PATH`.
-13. Confirm subagents are justified, distinct, non-overlapping, and not
+14. Confirm subagents are justified, distinct, non-overlapping, and not
     monolithic.
-14. Enumerate every best practice as `pass`, `fail`, or `not applicable`.
-15. Return `VALIDATION: FAIL` for fixable failures, `PASS` only when all
+15. Enumerate every best practice as `pass`, `fail`, or `not applicable`.
+16. Return `VALIDATION: FAIL` for fixable failures, `PASS` only when all
     applicable gates pass.
 
 ## Output Format

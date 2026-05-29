@@ -48,8 +48,8 @@ FLOW_AUDIT: PASS | GAPS_FOUND | BLOCKED | ERROR
 - Source-of-truth finding:
 
 ## Gaps
-| id | severity | type | affected files | issue | evidence | required fix | diagram delegation |
-| -- | -------- | ---- | -------------- | ----- | -------- | ------------ | ------------------ |
+| id | severity | type | affected files | issue | evidence | required fix | quality axes | priority tier | adversarial alternative | diagram delegation |
+| -- | -------- | ---- | -------------- | ----- | -------- | ------------ | ------------ | ------------- | ----------------------- | ------------------ |
 
 ## No-Ops
 - [mandate or check with evidence, or `none`]

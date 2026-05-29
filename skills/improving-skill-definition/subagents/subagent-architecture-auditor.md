@@ -55,8 +55,8 @@ ARCHITECTURE_AUDIT: PASS | GAPS_FOUND | BLOCKED | ERROR
 | ----- | ------- | --------------------- | -------------- |
 
 ## Gaps
-| id | severity | type | affected files | issue | evidence | required fix | diagram delegation |
-| -- | -------- | ---- | -------------- | ----- | -------- | ------------ | ------------------ |
+| id | severity | type | affected files | issue | evidence | required fix | quality axes | priority tier | adversarial alternative | diagram delegation |
+| -- | -------- | ---- | -------------- | ----- | -------- | ------------ | ------------ | ------------- | ----------------------- | ------------------ |
 
 ## Resources Used
 - Local:
