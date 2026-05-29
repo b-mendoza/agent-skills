@@ -92,6 +92,12 @@ canonical home. Undocumented duplication is a material `DUPLICATE_CONTENT` gap.
 | medium | Weakens maintainability, context efficiency, audit completeness, or repeatability without immediate unsafe mutation |
 | low | Useful polish that should not block unless explicitly requested |
 
+Validation gating: any open finding triggers `VALIDATION: FAIL` regardless of
+severity tier — `high`, `medium`, and `low` are all fail-worthy. Severity orders
+the fix sequence within a repair cycle; per Priority Tiers, low-tier fixes must
+not expand scope beyond the findings already raised, but no severity is exempt
+from failing validation.
+
 ## File Size Caps
 
 Count non-empty lines during audit and validation.
