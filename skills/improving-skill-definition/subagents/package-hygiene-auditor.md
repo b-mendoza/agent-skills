@@ -31,7 +31,10 @@ needed.
    Cite the taxonomy; do not hardcode the numbers.
 3. Check frontmatter names match directory or file basenames.
 4. Check referenced bundled paths exist and stay in package unless a declared
-   exception applies.
+   exception applies. Reverse-check reachability: flag any `references/` or
+   `subagents/` file that nothing in `SKILL.md`, `flow-diagram.md`, the registry,
+   or sibling package files links to as an orphan `BEST_PRACTICE_FAILURE` (dead
+   weight and a drift indicator).
 5. Flag hardcoded absolute filesystem paths (`/home/`, `/Users/`, `C:\`,
    `/tmp/` and similar) and embedded secrets or credentials in package files as
    `BEST_PRACTICE_FAILURE` hygiene gaps (portability and safety).
