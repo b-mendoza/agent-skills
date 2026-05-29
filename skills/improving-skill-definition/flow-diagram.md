@@ -153,6 +153,13 @@ recorded discovery-limitation and reduced-confidence note, unless `REFERENCE_NEE
 is set or `KNOWN_PROBLEM` specifically requires related-skill evidence, in which
 case it routes to the blocked handoff instead.
 
+Audit parallelism rule: The six focused audit slices are an independent parallel
+group with separable inputs and reports and no ordering dependency among them.
+The orchestrator dispatches them concurrently when the runtime supports parallel
+subagents and otherwise runs them sequentially with identical contracts; the
+result is the same gap inventory either way. The related-skills report is an
+optional named input to each slice, not a blocking dependency.
+
 Audit synthesis rule: The orchestrator, not a super-auditor, synthesizes
 focused audit reports. Audit status precedence is `ERROR`, then `BLOCKED`,
 then `GAPS_FOUND`, then all-`PASS`. Focused audit slices must cover flow
