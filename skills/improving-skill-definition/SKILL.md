@@ -142,7 +142,7 @@ PASS` only when the verdict is `skill justified`.
 8. Confirm approved writes fit `SCOPE_LIMITS` and `MUTATION_LIMITS`; otherwise return `blocked`.
 9. Emit `Phase 6/8 - Edit`. For approved structural changes (defined in `references/audit-gap-taxonomy.md`, Diagram-Change Terminology), obtain a `generate-flow-diagram` `final passed` candidate at `DIAGRAM_CANDIDATE_PATH` first, then dispatch `skill-definition-editor`, which applies approved mutations and writes that candidate into `flow-diagram.md` in the same edit. The editor returns `EDIT: BLOCKED` if an approved structural gap has no available `final passed` candidate, so a structural edit can never report `EDIT: PASS` with a stale diagram. This step is a documented hoist of the canonical Diagram-sync rule in `flow-diagram.md`.
 10. Emit `Phase 7/8 - Validate`; dispatch `skill-package-validator`.
-11. On `VALIDATION: FAIL`, re-enter Edit with only validator findings and approved gaps; increment the orchestrator-held repair counter and, when a repair changes flow structure, refresh the `final passed` diagram candidate before re-validation. Use at most three repair cycles.
+11. On `VALIDATION: FAIL`, re-enter Edit with only validator findings and approved gaps; every open finding regardless of severity must be resolved before `PASS`, though per the taxonomy low-tier fixes must not expand scope beyond what was raised. Increment the orchestrator-held repair counter and, when a repair changes flow structure, refresh the `final passed` diagram candidate before re-validation. Use at most three repair cycles.
 12. Emit `Phase 8/8 - Handoff`; load `references/final-report-template.md` and return the final decision.
 
 ## Mutation Limits And Validation
