@@ -37,20 +37,20 @@ Load [`./flow-diagram.md`](./flow-diagram.md) after intake. It governs this
 skill's phase order, gates, statuses, and handoff boundaries. For target
 packages, target `flow-diagram.md` wins over `SKILL.md`, subagents, and
 references for workflow structure. Semantic changes to any `flow-diagram.md`
-must go through `generate-flow-diagram` and require a `REVIEW: PASS` candidate.
+must go through `generate-flow-diagram` and require a `final passed` candidate.
 `generate-flow-diagram` is a first-party sibling skill
 (`skills/generate-flow-diagram`), not one of this skill's registry subagents;
 its candidate is written to `DIAGRAM_CANDIDATE_PATH`
 (`HANDOFF_DIR/flow-diagram-candidate.md`, derived during Intake), and only a
-`REVIEW: PASS` candidate may drive a semantic diagram change.
+`final passed` candidate may drive a semantic diagram change.
 
 ## Priorities
 
-| Tier | Optimize first when tradeoffs conflict |
-| ---- | -------------------------------------- |
-| High | Source-of-truth flow coherence, approval gates, mutation boundaries, routeable statuses, observable gap closure, mandatory best-practice failures, strict file-size failures, no unapproved edits |
-| Medium | Audit-slice completeness, related-skill evidence, parallel dispatch boundaries, context efficiency, maintainability |
-| Low | Prose polish, cosmetic diagram layout, non-blocking examples, optional external reading, style-only renames |
+Priority tiers are canonical in
+[`./references/audit-gap-taxonomy.md`](./references/audit-gap-taxonomy.md)
+(Priority Tiers). This file and `flow-diagram.md` defer to that table and must
+not restate it. When tiers conflict, high-tier closure outranks medium and low,
+and low-tier items must not widen repair scope.
 
 ## Pipeline Overview
 

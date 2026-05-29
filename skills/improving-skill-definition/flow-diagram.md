@@ -165,24 +165,23 @@ the gap inventory, the mutation plan, and the quality gate plan.
 
 Diagram-candidate rule: `generate-flow-diagram` is a first-party sibling skill
 (`skills/generate-flow-diagram`), not one of this skill's registry subagents. It
-returns one of `REVIEW: PASS`, needs-input, or
-`ERROR`. Its candidate is written to `HANDOFF_DIR/flow-diagram-candidate.md`
-(`DIAGRAM_CANDIDATE_PATH`), and only a `REVIEW: PASS` candidate may drive a
-semantic `flow-diagram.md` change. A `DIAGRAM_REVIEW` `ERROR` routes to the error
-handoff; needs-input or fail routes to the edit blocked handoff.
+returns one of the boundary completion states `final passed`, `needs confirmation`,
+`needs input`, `blocked`, `error`, or `repair limit reached`. Its candidate is
+written to `HANDOFF_DIR/flow-diagram-candidate.md` (`DIAGRAM_CANDIDATE_PATH`),
+and only a `final passed` candidate may drive a semantic `flow-diagram.md`
+change. A `DIAGRAM_REVIEW` `error` or `repair limit reached` routes to the error
+handoff; `needs confirmation`, `needs input`, or `blocked` routes to the edit
+blocked handoff.
 
 Gate ID mapping: `VALIDATE` covers `G_GAP_CLOSURE`, `G_FLOW_SYNC`, and
 `G_BEST_PRACTICES_COMPLIANCE`; `AUDIT_SYNTH` covers `G_MANDATE_COVERAGE`; and
 every `FINAL_*` handoff node (`FINAL_NO_CHANGE`, `FINAL_APPROVAL_REQUIRED`,
 `FINAL_CHANGED`, `FINAL_BLOCKED`, `FINAL_ERROR`) covers `G_HANDOFF_COMPLETENESS`.
 
-Priority rule: High-priority findings are source-of-truth flow coherence,
-approval gates, mutation boundaries, routeable statuses, observable gap closure,
-mandatory best-practice failures, strict file-size failures, and no unapproved
-edits. Medium-priority findings are audit-slice completeness, related-skill
-evidence, parallel dispatch opportunities, context efficiency, and
-maintainability. Low-priority findings are prose polish, cosmetic diagram
-layout, optional examples, and style-only renames.
+Priority rule: Priority tiers are canonical in
+`references/audit-gap-taxonomy.md` (Priority Tiers); this diagram and `SKILL.md`
+defer to it and must not restate the full table. High-tier closure outranks
+medium- and low-tier work, and low-tier items must not widen repair scope.
 
 Phase transition markers: Every action node above instructs the orchestrator to
 make the phase transition visible before its other actions, using this repo's
