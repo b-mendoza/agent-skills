@@ -59,17 +59,19 @@ flowchart TD
   APPROVED_NONE -->|no| SCOPE_GATE{"Approved mutations inside SCOPE_LIMITS and MUTATION_LIMITS<br/>and target identity preserved?"}
 
   SCOPE_GATE -->|no| SCOPE_BLOCK["Blocked handoff<br/>Ask one scope or identity question<br/>Stop until user decides"]
-  SCOPE_GATE -->|yes| EDIT["Emit banner Phase 6/8 - Edit<br/>Write skill-definition-editor instructions<br/>Apply only approved gap mutations<br/>Write only inside target package unless scope expands<br/>For structural workflow changes, update package files<br/>and synchronize flow-diagram.md in the same cycle"]
+  SCOPE_GATE -->|yes| EDIT_PREP["Emit banner Phase 6/8 - Edit<br/>Determine whether approved gaps change flow structure or dispatch shape<br/>(structural change is defined in audit-gap-taxonomy.md)"]
 
-  EDIT --> DIAGRAM_SYNC{"Structural flow or dispatch shape changed?"}
-  DIAGRAM_SYNC -->|yes| DIAGRAM_REVIEW["Request generate-flow-diagram candidate (first-party sibling skill)<br/>Write candidate to HANDOFF_DIR/flow-diagram-candidate.md (DIAGRAM_CANDIDATE_PATH)<br/>Require a final passed candidate before semantic flow-diagram.md change"]
+  EDIT_PREP --> DIAGRAM_SYNC{"Approved or repair changes alter<br/>flow structure or dispatch shape?"}
+  DIAGRAM_SYNC -->|yes| DIAGRAM_REVIEW["Request generate-flow-diagram candidate (first-party sibling skill)<br/>Write candidate to HANDOFF_DIR/flow-diagram-candidate.md (DIAGRAM_CANDIDATE_PATH)<br/>Require a final passed candidate before the editor applies any semantic flow-diagram.md change"]
+  DIAGRAM_SYNC -->|no| EDIT_APPLY
   DIAGRAM_REVIEW --> DIAGRAM_REVIEW_STATUS{"Diagram candidate completion state?"}
-  DIAGRAM_REVIEW_STATUS -->|final passed| EDIT_STATUS{"EDIT status?"}
+  DIAGRAM_REVIEW_STATUS -->|final passed| EDIT_APPLY
   DIAGRAM_REVIEW_STATUS -->|needs confirmation or needs input| EDIT_BLOCK
   DIAGRAM_REVIEW_STATUS -->|blocked| EDIT_BLOCK
   DIAGRAM_REVIEW_STATUS -->|error or repair limit reached| DIAGRAM_REVIEW_ERROR["Retain diagram-review error summary"]
-  DIAGRAM_SYNC -->|no| EDIT_STATUS
 
+  EDIT_APPLY["Write skill-definition-editor instructions<br/>Apply only approved gap mutations inside the target package<br/>When a final passed candidate exists at DIAGRAM_CANDIDATE_PATH,<br/>the editor writes it into flow-diagram.md in the SAME edit<br/>Editor returns BLOCKED if a structural gap is approved without an available final passed candidate<br/>During repair, scope the edit to failed validation checks only"]
+  EDIT_APPLY --> EDIT_STATUS{"EDIT status?"}
   EDIT_STATUS -->|PASS| VALIDATE["Emit banner Phase 7/8 - Validate (covers G_GAP_CLOSURE, G_FLOW_SYNC, G_BEST_PRACTICES_COMPLIANCE)<br/>Write skill-package-validator instructions<br/>Check approved-gap closure, diagram/SKILL/subagent coherence,<br/>priority and status contracts, strict file-size limits,<br/>related-discovery scope, prompt sufficiency,<br/>best-practices compliance, and mutation boundaries"]
   EDIT_STATUS -->|BLOCKED| EDIT_BLOCK["Blocked handoff<br/>Include edit blocker and smallest user decision"]
   EDIT_STATUS -->|ERROR| EDIT_ERROR["Retain edit error summary"]
