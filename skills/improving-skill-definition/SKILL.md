@@ -50,8 +50,7 @@ its candidate is written to `DIAGRAM_CANDIDATE_PATH`
 Priority tiers are canonical in
 [`./references/audit-gap-taxonomy.md`](./references/audit-gap-taxonomy.md)
 (Priority Tiers). This file and `flow-diagram.md` defer to that table and must
-not restate it. When tiers conflict, high-tier closure outranks medium and low,
-and low-tier items must not widen repair scope.
+not restate them.
 
 ## Pipeline Overview
 
