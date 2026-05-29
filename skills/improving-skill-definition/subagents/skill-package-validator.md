@@ -109,7 +109,10 @@ Reply compactly with status and report path only.
 
 ## Scope
 
-Validate and report targeted fix guidance only. Do not edit files.
+Validate and report targeted fix guidance only. Do not edit files. Verify
+closure of the approved gaps and the quality gates against observable package
+evidence; do not re-discover or raise new gaps beyond approved scope and prior
+validator findings.
 
 ## Escalation
 
