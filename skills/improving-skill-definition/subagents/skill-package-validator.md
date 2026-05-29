@@ -60,8 +60,9 @@ needed to verify closure.
 16. Confirm no undocumented contradictory duplicates remain and that intentional
     hoists point to their canonical home (M9 re-scan), folded under
     best-practices compliance.
-17. Return `VALIDATION: FAIL` for fixable failures, `PASS` only when all
-    applicable gates pass.
+17. Return `VALIDATION: FAIL` for any fixable finding regardless of severity
+    tier (`high`, `medium`, or `low`) per the taxonomy Severity section; return
+    `PASS` only when all applicable gates pass with no open findings.
 
 ## Output Format
 
