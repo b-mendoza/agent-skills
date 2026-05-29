@@ -26,7 +26,7 @@ criteria in [`./references/audit-gap-taxonomy.md`](./references/audit-gap-taxono
 | `SCOPE_LIMITS` | No | `"do not rename the skill"` |
 | `REFERENCE_NEED` | No | `"current GitHub/GitLab skill examples"` |
 | `APPROVED_GAPS` | No | `all`, `none`, or `G1,G3` after approval |
-| `APPROVED_PERSONALITY_DECISION` | No | `keep`, `refine`, `replace`, `add`, or `skip` |
+| `APPROVED_PERSONALITY_DECISION` | No | `keep`, `refine`, `replace`, `add`, `remove`, `demote`, or `skip` |
 
 If `SKILL_PATH` is missing or unreadable, return `blocked` with one target-path
 question. Default `TARGET_RUNTIME` to `portable Agent Skills`.
