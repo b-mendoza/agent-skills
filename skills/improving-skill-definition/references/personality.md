@@ -36,6 +36,11 @@ For every proposed structure, artifact, phase, reference, or subagent, ask:
 
 If the answers are weak, downgrade the proposal or recommend simplification.
 
+Record each answer in the Gap Row Contract `adversarial alternatives` field in
+[`./audit-gap-taxonomy.md`](./audit-gap-taxonomy.md) (Gap Row Contract). A
+`no change` or `NO_OP_EVIDENCED` verdict must carry the same falsification
+reasoning.
+
 ## Priorities
 
 Priority tiers are canonical in
