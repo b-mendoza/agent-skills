@@ -100,13 +100,3 @@ training-data knowledge.
   Supports fail-loud handling when a missing capability defeats the
   agent's purpose.
 
-## Related practices
-
-- [Phase execution cycle](./phase-execution-cycle.md) — gate-check
-  routes failures to enumerated categories.
-- [Critical output gates](./critical-output-gates.md) — `FAIL` is the
-  category a gate verdict produces when an output is malformed.
-- [Empirical validation](./empirical-validation.md) — fail-loud is
-  the cure for silent self-reported success.
-- [Input and output contracts](./input-output-contracts.md) — the
-  contract every category violation is measured against.
