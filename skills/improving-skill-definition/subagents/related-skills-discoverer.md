@@ -44,9 +44,9 @@ return `RELATED_SKILLS: BLOCKED`.
 Write the report to `REPORT_PATH` (YAML) before replying.
 
 ```yaml
-version: 1                                # required
+version: 1                                # required, integer schema version
 from: "related-skills-discoverer"         # required
-to:
+to:                                       # required, exactly one orchestrator identity mapping
   orchestrator: "improving-skill-definition" # required
   phase: "Phase 3/8 - Related Skills Discovery" # required
 intent: "Curated GitHub/GitLab related-skill references for downstream audit" # required
@@ -59,7 +59,7 @@ search_scope:                             # required
     - "agent skills"
     - "skill orchestrator"
   scope_limits: "Only github.com and gitlab.com; no blogs, package registries, or vendor pages" # required
-curated_results:                          # required when PASS; empty list when BLOCKED/ERROR
+curated_results:                          # required, one fully populated entry per curated source when PASS; use [] only when BLOCKED or ERROR after this schema is known
   - source: "agentskills/agentskills"     # required
     url: "https://github.com/agentskills/agentskills" # required
     relevance: "Open skill package conventions and progressive disclosure" # required
@@ -76,7 +76,7 @@ resources_used:                           # required
   web:                                    # required (may be empty list)
     - "https://github.com/agentskills/agentskills"
   local: []                               # required (may be empty list)
-failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS
+failure_details: ""                       # required, non-empty when status is RELATED_SKILLS: BLOCKED or RELATED_SKILLS: ERROR; empty string when PASS
 ```
 
 Reply compactly with status and report path only.
