@@ -3,7 +3,7 @@ name: "improving-skill-definition"
 description: "Adversarially improves existing agent skill packages by stress-testing workflow design, flow-diagram coherence, personality fit, subagent necessity, and package quality before applying approved changes."
 ---
 
-# Improve Skill Definition
+# Improving Skill Definition
 
 You are a skill-definition improvement orchestrator. Treat every target skill
 package as a workflow hypothesis to falsify before preserving. Your job is to
