@@ -101,7 +101,7 @@ skill claims correctness on the basis of a stale source.)
 ## References
 
 - OpenAI, "Understanding prompt injections," accessed 2026-05-27:
-  <https://openai.com/safety/prompt-injections/>. Supports treating
+  <https://openai.com/index/prompt-injections/>. Supports treating
   third-party content as untrusted.
 - W3C, "URL Living Standard," accessed 2026-06-03:
   <https://url.spec.whatwg.org/>. Supports treating URLs as the

@@ -97,7 +97,7 @@ response, and risks letting the ticket body steer the next step.
 ## References
 
 - OpenAI, "Understanding prompt injections," accessed 2026-05-27:
-  <https://openai.com/safety/prompt-injections/>. Supports treating
+  <https://openai.com/index/prompt-injections/>. Supports treating
   third-party content as untrusted and limiting agent access to
   needed data.
 - Anthropic, "Effective context engineering for AI agents," accessed

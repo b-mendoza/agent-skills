@@ -157,7 +157,7 @@ noticing until the diff lands.)
 ## References
 
 - OpenAI, "Understanding prompt injections," accessed 2026-05-27:
-  <https://openai.com/safety/prompt-injections/>. Supports limiting
+  <https://openai.com/index/prompt-injections/>. Supports limiting
   agent access to only the data and actions needed for the task.
 - OWASP Top 10 for LLM Applications, accessed 2026-05-27:
   <https://owasp.org/www-project-top-10-for-large-language-model-applications/>.
