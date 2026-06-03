@@ -92,13 +92,3 @@ skills/
   Supports lowercase, hyphenated naming for predictable web and
   filesystem paths.
 
-## Related practices
-
-- [Skill section order](./skill-section-order.md) — the section the
-  frontmatter `name` lives in.
-- [Subagent registry format](./subagent-registry-format.md) —
-  registry entries reference role-noun subagent file names.
-- [Earned complexity](./earned-complexity.md) — naming is style;
-  do not block on it unless strict repo style is required.
-- [Runtime portability matrix](./runtime-portability-matrix.md) —
-  some runtimes look up skills by frontmatter name.
