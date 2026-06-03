@@ -13,8 +13,8 @@ run in parallel.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/subagent-architecture-auditor-instructions.md` |
-| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/subagent-architecture-auditor-report.md` |
+| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/subagent-architecture-auditor-instructions.yaml` |
+| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/subagent-architecture-auditor-report.yaml` |
 | `SKILL_PATH` | Yes | `skills/example` |
 | `AUDIT_TAXONOMY_PATH` | Yes | `./references/audit-gap-taxonomy.md` |
 
@@ -37,33 +37,59 @@ target subagent file. Read references only when needed to verify ownership.
 
 ## Output Format
 
-Write the report to `REPORT_PATH`.
+Write the report to `REPORT_PATH` (YAML).
 
-```markdown
-ARCHITECTURE_AUDIT: PASS | GAPS_FOUND | BLOCKED | ERROR
-
-## Verdict
-- Subagent architecture verdict:
-- Parallelism verdict:
-
-## Subagent Map
-| subagent | responsibility | downstream consumer | overlap risk |
-| -------- | -------------- | ------------------- | ------------ |
-
-## Parallelism Opportunities
-| group | members | independence evidence | diagram impact |
-| ----- | ------- | --------------------- | -------------- |
-
-## Gaps
-| id | severity | type | affected files | issue | evidence | required fix | quality axes | priority tier | adversarial alternative | diagram delegation |
-| -- | -------- | ---- | -------------- | ----- | -------- | ------------ | ------------ | ------------- | ----------------------- | ------------------ |
-
-## Resources Used
-- Local:
-- Web:
-
-## Failure Details
-- [required for BLOCKED or ERROR; otherwise `none`]
+```yaml
+version: 1                                # required
+from: "subagent-architecture-auditor"     # required
+to:
+  orchestrator: "improving-skill-definition" # required
+  phase: "Phase 4/8 - Audit"                 # required
+intent: "Audit subagent necessity, overlap, decomposition, parallelism" # required
+status: "ARCHITECTURE_AUDIT: GAPS_FOUND"  # required, one of: ARCHITECTURE_AUDIT: PASS, ARCHITECTURE_AUDIT: GAPS_FOUND, ARCHITECTURE_AUDIT: BLOCKED, ARCHITECTURE_AUDIT: ERROR
+verdict:                                  # required
+  subagent_architecture_verdict: "PARTIALLY_REDUNDANT" # required, one of: APPROPRIATE, PARTIALLY_REDUNDANT, UNNECESSARY_OR_OVERCOMPLICATED, NOT_APPLICABLE
+  parallelism_verdict: "audit slices independent; parallel dispatch supported by runtime" # required
+subagent_map:                             # required, one entry per registry row
+  - subagent: "flow-coherence-auditor"    # required
+    responsibility: "Diagram/SKILL/registry coherence" # required
+    downstream_consumer: "orchestrator audit synthesis" # required
+    overlap_risk: "none"                  # required, one of: none, low, medium, high
+  - subagent: "subagent-architecture-auditor"
+    responsibility: "Subagent necessity and parallelism"
+    downstream_consumer: "orchestrator audit synthesis"
+    overlap_risk: "none"
+parallelism_opportunities:                # required (may be empty list)
+  - group: "audit-slices"                 # required
+    members:                              # required, at least two
+      - "flow-coherence-auditor"
+      - "subagent-architecture-auditor"
+      - "contract-priority-auditor"
+      - "personality-auditor"
+      - "package-hygiene-auditor"
+      - "prompt-sufficiency-auditor"
+    independence_evidence: "Each slice writes to a separate REPORT_PATH; no ordering dependency" # required
+    diagram_impact: "none — already parallel in flow-diagram.md AUDIT_GROUP node" # required
+gaps:                                     # required when GAPS_FOUND; empty list when PASS
+  - id: "gap-002"                         # required, stable kebab id
+    severity: "medium"                    # required, one of: high, medium, low
+    type: "SPLIT_AUDIT_SUBAGENTS"         # required, one of the type labels in audit-gap-taxonomy.md
+    affected_files:                       # required, at least one path
+      - "skills/example/subagents/monolithic-auditor.md"
+    issue: "Single auditor handles three independent responsibilities" # required
+    evidence: "monolithic-auditor.md instructions enumerate three orthogonal checks" # required
+    required_fix: "Split into three role-noun subagents that can run in parallel" # required
+    quality_axes:                         # required, at least one of: routeability, mutation_safety, portability, traceability, robustness, determinism, reliability, repeatability, effectiveness
+      - "repeatability"
+    priority_tier: "medium"               # required, one of: high, medium, low
+    adversarial_alternative: "Keep monolithic for ergonomics; rejected because parallel dispatch would speed audit" # required
+    diagram_delegation: "yes"             # required, one of: yes, no, conditional
+resources_used:                           # required
+  local:                                  # required (may be empty list)
+    - "skills/example/SKILL.md"
+    - "skills/example/subagents/monolithic-auditor.md"
+  web: []                                 # required (may be empty list)
+failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS or GAPS_FOUND
 ```
 
 Reply compactly with status and report path only.
