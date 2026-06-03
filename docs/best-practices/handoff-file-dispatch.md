@@ -210,11 +210,11 @@ Failure modes this invalid shape introduces:
 - YAML 1.2.2 specification, accessed 2026-06-03:
   <https://yaml.org/spec/1.2.2/>. The authoritative grammar and
   semantics every handoff file is parsed against.
-- Martin Fowler, "Schemas should evolve, not break,"
-  accessed 2026-06-03:
-  <https://martinfowler.com/articles/evolutionary-database.html>.
-  Supports treating data-exchange formats as evolvable contracts,
-  versioned and parser-checked, rather than free-form prose between
+- Pramod Sadalage and Martin Fowler, "Evolutionary Database
+  Design," accessed 2026-06-03:
+  <https://martinfowler.com/articles/evodb.html>. Supports treating
+  data-exchange formats as evolvable, version-controlled, and
+  parser-checked contracts rather than free-form prose between
   cooperating components.
 - IBM, "What is a data contract?", accessed 2026-06-03:
   <https://www.ibm.com/think/topics/data-contract>. Practitioner
