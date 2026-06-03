@@ -140,15 +140,3 @@ decision against it. Routing logic gets buried under data.
   <https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents>.
   Supports separating orchestration context from raw payload context.
 
-## Related practices
-
-- [Subagent default execution](./subagent-default-execution.md) —
-  per-step inline-vs-dispatch decision.
-- [Input and output contracts](./input-output-contracts.md) —
-  explicit data boundaries between pipeline stages.
-- [Context window protection](./context-window-protection.md) —
-  keeping raw data out of the orchestrator's context.
-- [Phase transition banner](./phase-transition-banner.md) — the
-  visible marker for the visible-transitions rule.
-- [Handoff file dispatch](./handoff-file-dispatch.md) — how large
-  routing payloads cross dispatch boundaries.
