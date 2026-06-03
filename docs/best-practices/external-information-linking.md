@@ -73,12 +73,14 @@ freshness rules.
 
 ```markdown
 # In skill-name/references/external-sources.md
-| Need | URL | Use when |
-| ---- | --- | -------- |
-| Claude Code subagents | https://docs.anthropic.com/en/docs/claude-code/sub-agents | Verifying current Claude subagent syntax or limits |
+
+| Need                          | URL                                                                               | Use when                                                        |
+| ----------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Claude Code subagents         | https://docs.anthropic.com/en/docs/claude-code/sub-agents                         | Verifying current Claude subagent syntax or limits              |
 | Anthropic context engineering | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | Explaining context-window protection and just-in-time retrieval |
 
 ## Freshness Policy
+
 - Stable testing philosophy sources can be treated as background after one fetch.
 - Current framework behavior, SDK APIs, CLI syntax, and security advisories
   need current official documentation.
@@ -90,6 +92,7 @@ date, and no declaration in `SKILL.md`.
 
 ```markdown
 # In skill-name/references/anthropic-prompting.md
+
 (2,400 lines of pasted blog content with no provenance.
 When Anthropic updates the post, this copy silently rots and the
 skill claims correctness on the basis of a stale source.)
@@ -107,4 +110,3 @@ skill claims correctness on the basis of a stale source.)
   <https://datatracker.ietf.org/doc/html/rfc3986>. Supports the
   general principle that linking by canonical identifier is the
   default exchange shape for web-published content.
-
