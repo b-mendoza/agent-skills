@@ -58,13 +58,17 @@ phase that assembles the output.
 
 ```markdown
 # In skill-name/SKILL.md
+
 9. Emit Phase 8 - Handoff.
 10. Read [`./references/final-report-template.md`](./references/final-report-template.md)
     and emit the final report against it.
 
 # In skill-name/references/final-report-template.md (130 lines)
+
 # Final Report Template
+
 ## Approval Required
+
 ... (full 130-line template) ...
 ```
 
@@ -75,14 +79,18 @@ extra load without saving context.
 
 ```markdown
 # In skill-name/SKILL.md
+
 2. Before each dispatch, read
    [`./references/subagent-registry.md`](./references/subagent-registry.md)
    to confirm the path of the subagent.
 
 # In skill-name/references/subagent-registry.md (30 lines)
+
 ## Subagent Registry
+
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
+
 ... (30 lines of registry that just as well lived in SKILL.md) ...
 ```
 
@@ -96,4 +104,3 @@ extra load without saving context.
   <https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents>.
   Supports moving large reference content out of the always-loaded
   path.
-
