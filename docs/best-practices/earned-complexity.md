@@ -113,6 +113,7 @@ run anyway).
 Decision: NO_CHANGE on the subagent registry.
 
 Reasoning:
+
 - Extraction to `references/subagent-registry.md` would load the same
   ~50 lines on every run, just from a second file.
 - No improvement in context efficiency, maintainability, or
@@ -129,6 +130,7 @@ Recommendation: extract the subagent registry to
 `references/subagent-registry.md`.
 
 Reasoning:
+
 - Progressive disclosure is a best practice; we should apply it.
 - (No dimension cited; no observable improvement; the orchestrator
   now reads the same content from a second file.)
@@ -137,11 +139,10 @@ Reasoning:
 ## References
 
 - Don't Repeat Yourself / KISS / YAGNI — Andy Hunt and Dave Thomas,
-  *The Pragmatic Programmer*, accessed 2026-06-03:
+  _The Pragmatic Programmer_, accessed 2026-06-03:
   <https://pragprog.com/titles/tpp20/the-pragmatic-programmer-20th-anniversary-edition/>.
   Supports the general principle that unjustified complexity is the
   default failure mode.
 - Martin Fowler, "YAGNI," accessed 2026-06-03:
   <https://martinfowler.com/bliki/Yagni.html>. Supports refusing
   speculative complexity.
-
