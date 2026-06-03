@@ -65,18 +65,16 @@ They are part of the contract, not decoration.
 
 ## Rationale
 
-Three benefits over the prior Markdown approach:
+YAML handoffs provide three current benefits:
 
 1. **YAML is easier to parse and index.** Every consumer reads the
-   handoff with the same parser semantics. There is no "did the
-   subagent put its verdict under `## Verdict` or `## Outcome`?"
-   ambiguity, because every consumer reads `status` from a known
-   top-level key.
-2. **YAML is more structured than free-form Markdown.** Required
+   handoff with the same parser semantics. The consumer reads
+   `status` from a known top-level key instead of inferring routing
+   state from unstructured notes.
+2. **YAML is more structured than free-form prose.** Required
    fields cannot be silently omitted without parse failure or a
    visible missing-key error. Enum vocabularies live inline next to
-   the field they constrain, not in a separate prose section that
-   may drift.
+   the field they constrain, not in separate prose that may drift.
 3. **YAML provides a deterministic exchange format so orchestrators
    and subagents can communicate quickly and without ambiguity.**
    Two implementations of the same subagent reading the same handoff
@@ -84,10 +82,9 @@ Three benefits over the prior Markdown approach:
    Routing decisions are derived from named keys, not from regex
    matches on section headings.
 
-These benefits hold only when the YAML carries the same contract the
-Markdown carried. A YAML file that drops field names, omits enum
-inline comments, or hides required/optional markers is **worse** than
-the Markdown table it replaced.
+These benefits hold only when the YAML carries the full contract. A
+YAML file that drops field names, omits enum inline comments, or
+hides required/optional markers is not a valid handoff contract.
 
 ## Concrete examples
 
