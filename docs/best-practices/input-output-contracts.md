@@ -96,13 +96,14 @@ rules, output contract with file path and required sections.
 ```markdown
 ## Inputs
 
-| Input        | Required | Example                                               |
-| ------------ | -------- | ----------------------------------------------------- |
-| `JIRA_URL`   | Yes      | `https://workspace.atlassian.net/browse/PROJECT-1234` |
-| `MODE`       | No       | `upfront` (default) or `critique`                     |
-| `SKILL_PATH` | Conditional | `skills/example` (only for `critique` mode)        |
+| Input        | Required    | Example                                               |
+| ------------ | ----------- | ----------------------------------------------------- |
+| `JIRA_URL`   | Yes         | `https://workspace.atlassian.net/browse/PROJECT-1234` |
+| `MODE`       | No          | `upfront` (default) or `critique`                     |
+| `SKILL_PATH` | Conditional | `skills/example` (only for `critique` mode)           |
 
 Extract from JIRA_URL:
+
 - Workspace: subdomain before `.atlassian.net` → `workspace`
 - Ticket key: trailing path segment → `PROJECT-1234`
 
@@ -111,6 +112,7 @@ Extract from JIRA_URL:
 Path: `docs/PROJECT-1234-tasks.md`
 
 Must contain:
+
 - `## Ticket Summary` section
 - `## Tasks` section with at least 2 task entries
 - Each task: Title, Description, Acceptance Criteria
@@ -136,4 +138,3 @@ task plan in markdown.
   <https://platform.openai.com/docs/guides/agent-builder-safety>.
   Supports extracting and validating structured values from
   untrusted content before they drive agent behavior.
-
