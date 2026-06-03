@@ -8,17 +8,17 @@ runtimes are safe to write in one call.
 
 ## When it applies
 
-When a skill needs to produce a large, multi-section Markdown
-artifact — audit synthesis reports, plans, validator findings, final
-handoffs — or any artifact whose body is contractually expected to
-grow across phases.
+When a skill needs to produce a large, multi-section artifact: YAML
+`.handoffs/` payloads, audit synthesis reports, plans, validator
+findings, final handoffs, user-facing docs, or any artifact whose
+body is contractually expected to grow across phases.
 
 ## The practice
 
 Avoid a single monolithic `Write` call for large or
-serializer-sensitive multi-section Markdown artifacts. Initialize the
-file with a small skeleton, then append or replace one logical
-section at a time.
+serializer-sensitive multi-section artifacts, including YAML handoff
+payloads and Markdown reports. Initialize the file with a small
+skeleton, then append or replace one logical section at a time.
 
 Rules:
 
