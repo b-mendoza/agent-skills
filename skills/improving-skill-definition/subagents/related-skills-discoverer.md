@@ -13,8 +13,8 @@ GitHub and GitLab.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/related-skills-discoverer-instructions.md` |
-| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/related-skills-discoverer-report.md` |
+| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/related-skills-discoverer-instructions.yaml` |
+| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/related-skills-discoverer-report.yaml` |
 | `SKILL_PATH` | Yes | `skills/refactoring-code` |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 | `REFERENCE_NEED` | No | `current related agent skills` |
@@ -41,30 +41,42 @@ return `RELATED_SKILLS: BLOCKED`.
 
 ## Output Format
 
-Write the report to `REPORT_PATH` before replying.
+Write the report to `REPORT_PATH` (YAML) before replying.
 
-```markdown
-RELATED_SKILLS: PASS | BLOCKED | ERROR
-
-## Search Scope
-- Platforms searched: GitHub, GitLab
-- Terms used:
-- Scope limits:
-
-## Curated Results
-| source | url | relevance | abstractable ideas | confidence |
-| ------ | --- | --------- | ------------------ | ---------- |
-
-## Audit Inputs
-- Ideas the auditors should consider:
-- Ideas rejected as irrelevant:
-
-## Resources Used
-- Web:
-- Local:
-
-## Failure Details
-- [required for BLOCKED or ERROR; otherwise `none`]
+```yaml
+version: 1                                # required
+from: "related-skills-discoverer"         # required
+to:
+  orchestrator: "improving-skill-definition" # required
+  phase: "Phase 3/8 - Related Skills Discovery" # required
+intent: "Curated GitHub/GitLab related-skill references for downstream audit" # required
+status: "RELATED_SKILLS: PASS"            # required, one of: RELATED_SKILLS: PASS, RELATED_SKILLS: BLOCKED, RELATED_SKILLS: ERROR
+search_scope:                             # required
+  platforms_searched:                     # required, fixed enum: [GitHub, GitLab]
+    - "GitHub"
+    - "GitLab"
+  terms_used:                             # required, at least one
+    - "agent skills"
+    - "skill orchestrator"
+  scope_limits: "Only github.com and gitlab.com; no blogs, package registries, or vendor pages" # required
+curated_results:                          # required when PASS; empty list when BLOCKED/ERROR
+  - source: "agentskills/agentskills"     # required
+    url: "https://github.com/agentskills/agentskills" # required
+    relevance: "Open skill package conventions and progressive disclosure" # required
+    abstractable_ideas:                   # required, at least one
+      - "Skill package layout (SKILL.md + subagents/ + references/)"
+      - "Catalog generation conventions"
+    confidence: "medium"                  # required, one of: high, medium, low
+audit_inputs:                             # required
+  ideas_for_auditors:                     # required, at least one when PASS
+    - "Consider whether subagent count exceeds the related package's count for a similar workflow"
+  ideas_rejected:                         # required (may be empty list)
+    - "Catalog auto-generation: out of scope for an improvement orchestrator"
+resources_used:                           # required
+  web:                                    # required (may be empty list)
+    - "https://github.com/agentskills/agentskills"
+  local: []                               # required (may be empty list)
+failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS
 ```
 
 Reply compactly with status and report path only.
