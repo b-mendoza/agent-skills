@@ -12,11 +12,11 @@ the approved gaps closed with observable package evidence.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-validator-instructions.md` |
-| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-validator-report.md` |
+| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-validator-instructions.yaml` |
+| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-validator-report.yaml` |
 | `SKILL_PATH` | Yes | `skills/example` |
-| `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.md` |
-| `EDITOR_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.md` |
+| `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.yaml` |
+| `EDITOR_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.yaml` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, `remove`, `demote`, or `skip` |
 | `BEST_PRACTICES_INDEX_PATH` | Yes | `docs/best-practices/README.md` |
@@ -68,46 +68,82 @@ needed to verify closure.
 
 ## Output Format
 
-Write the report to `REPORT_PATH`.
+Write the report to `REPORT_PATH` (YAML).
 
-```markdown
-VALIDATION: PASS | FAIL | BLOCKED | ERROR
-
-## Checks
-- Frontmatter:
-- Line caps:
-- Referenced paths:
-- Mutation boundaries:
-- Approved-gap closure:
-- Flow coherence:
-- Diagram delegation:
-- Personality and priorities:
-- Status contracts:
-- Related discovery scope:
-- Prompt sufficiency:
-- Subagent necessity:
-- Best-practices compliance:
-
-## Critical Output Gates
-| Gate | Verdict | Evidence |
-| ---- | ------- | -------- |
-| `G_GAP_CLOSURE` | `pass` / `fail` / `not applicable` | |
-| `G_BEST_PRACTICES_COMPLIANCE` | `pass` / `fail` / `not applicable` | |
-| `G_FLOW_SYNC` | `pass` / `fail` / `not applicable` | |
-
-## Findings
-| id | severity | file | issue | required fix |
-| -- | -------- | ---- | ----- | ------------ |
-
-## Fix Guidance
-- [smallest fix per failure, or `none`]
-
-## Resources Used
-- Local:
-- Web:
-
-## Remaining Risks
-- [risk, or `none`]
+```yaml
+version: 1                                # required
+from: "skill-package-validator"           # required
+to:
+  orchestrator: "improving-skill-definition" # required
+  phase: "Phase 7/8 - Validate"              # required
+intent: "Post-edit quality gate: approved-gap closure, flow coherence, contracts, line caps, hygiene" # required
+status: "VALIDATION: FAIL"                # required, one of: VALIDATION: PASS, VALIDATION: FAIL, VALIDATION: BLOCKED, VALIDATION: ERROR
+checks:                                   # required, one entry per declared check; verdict per check
+  - check: "frontmatter"                  # required
+    verdict: "pass"                       # required, one of: pass, fail, not_applicable
+    evidence: "Frontmatter names match directory/file basenames" # required
+  - check: "line_caps"
+    verdict: "fail"
+    evidence: "subagents/task-executor.md 162 non-empty lines exceeds 150-line cap"
+  - check: "referenced_paths"
+    verdict: "pass"
+    evidence: "All bundled paths exist and stay in package"
+  - check: "mutation_boundaries"
+    verdict: "pass"
+    evidence: "All editor-touched paths inside MUTATION_LIMITS"
+  - check: "approved_gap_closure"
+    verdict: "pass"
+    evidence: "gap-001 and gap-003 observably closed"
+  - check: "flow_coherence"
+    verdict: "pass"
+    evidence: "SKILL.md and flow-diagram.md statuses agree post-edit"
+  - check: "diagram_delegation"
+    verdict: "pass"
+    evidence: "Semantic edit used generate-flow-diagram final passed candidate"
+  - check: "personality_and_priorities"
+    verdict: "pass"
+    evidence: "personality.md added per approved decision; priority tiers unchanged"
+  - check: "status_contracts"
+    verdict: "pass"
+    evidence: "EDIT: BLOCKED and EDIT: ERROR rows present"
+  - check: "related_discovery_scope"
+    verdict: "pass"
+    evidence: "Discoverer searched only github.com and gitlab.com"
+  - check: "prompt_sufficiency"
+    verdict: "pass"
+    evidence: "skill justified verdict from prompt-sufficiency-auditor"
+  - check: "subagent_necessity"
+    verdict: "pass"
+    evidence: "All registry subagents return distinct downstream-consumed reports"
+  - check: "best_practices_compliance"
+    verdict: "fail"
+    evidence: "handoff-file-dispatch fails because line cap violation triggers compliance fail"
+critical_output_gates:                    # required, one entry per declared gate
+  - gate: "G_GAP_CLOSURE"                 # required
+    verdict: "pass"                       # required, one of: pass, fail, not_applicable
+    evidence: "Approved gaps gap-001 and gap-003 closed and observable in edited files" # required
+  - gate: "G_BEST_PRACTICES_COMPLIANCE"
+    verdict: "fail"
+    evidence: "Line cap violation in task-executor.md"
+  - gate: "G_FLOW_SYNC"
+    verdict: "pass"
+    evidence: "SKILL.md, flow-diagram.md, registry agree after candidate write"
+findings:                                 # required when FAIL; empty list when PASS
+  - id: "finding-001"                     # required, stable id
+    severity: "high"                      # required, one of: high, medium, low
+    file: "skills/example/subagents/task-executor.md" # required
+    issue: "Non-empty line count 162 exceeds 150-line cap" # required
+    required_fix: "Split shared criteria into references/execution-policy.md" # required
+fix_guidance:                             # required (may be empty list when PASS)
+  - "Extract execution-policy.md from task-executor.md to drop file under 150 lines"
+resources_used:                           # required
+  local:                                  # required (may be empty list)
+    - "skills/example/SKILL.md"
+    - "skills/example/subagents/task-executor.md"
+    - "docs/best-practices/README.md"
+  web: []                                 # required (may be empty list)
+remaining_risks:                          # required (may be empty list)
+  - "If the extraction widens MUTATION_LIMITS, validator must re-check scope on next repair cycle"
 ```
 
 Reply compactly with status and report path only.
