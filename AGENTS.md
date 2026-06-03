@@ -54,7 +54,7 @@ declare work done without checks. After editing a `SKILL.md` or subagent
 definition:
 
 - Confirm the file is under the size guidance from
-  [context and payload management](./docs/best-practices/context-and-payload-management.md)
+  [progressive disclosure](./docs/best-practices/progressive-disclosure.md)
   (`SKILL.md` under 500 lines).
 - Confirm any subagent paths referenced in a registry table actually exist
   on disk.
