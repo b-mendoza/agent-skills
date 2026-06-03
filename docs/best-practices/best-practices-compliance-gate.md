@@ -94,13 +94,3 @@ evidence.
   Practitioner support for tiered review criteria over uniform
   weight.
 
-## Related practices
-
-- [Critical output gates](./critical-output-gates.md) — the meta-gate
-  this compliance gate enforces over.
-- [Earned complexity](./earned-complexity.md) — a `fail` verdict here
-  is one earned-complexity trigger.
-- [Phase execution cycle](./phase-execution-cycle.md) — the
-  compliance gate fires inside the gate-check step.
-- [Empirical validation](./empirical-validation.md) — every verdict
-  rests on observable evidence.
