@@ -86,14 +86,3 @@ You must escalate when blocked.
   <https://arxiv.org/abs/2512.14982>. Indirect evidence; not proof
   that every mid-document reminder improves reasoning-agent behavior.
 
-## Related practices
-
-- [Earned complexity](./earned-complexity.md) — every reminder must
-  earn its place against a real failure mode.
-- [Identity and mental model](./identity-and-mental-model.md) — the
-  primary constraint lives in the identity-bearing prose first.
-- [Progressive disclosure](./progressive-disclosure.md) — reminders
-  live at the top of just-in-time-loaded files where the agent
-  reads them at the decision point.
-- [Positive constraint framing](./positive-constraint-framing.md) —
-  reminders should restate the allowed path, not just the negation.
