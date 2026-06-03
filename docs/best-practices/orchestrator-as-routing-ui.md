@@ -106,6 +106,7 @@ material stays inside subagents.
 # In skills/orchestrating-jira-workflow/SKILL.md
 
 ## Execution
+
 1. Dispatch `fetching-jira-ticket` with TICKET_KEY.
 2. On `FETCH: PASS`, dispatch `artifact-validator`.
 3. On `VALIDATE: PASS`, dispatch `planning-jira-tasks`.
@@ -113,6 +114,7 @@ material stays inside subagents.
    subagent's reason and path.
 
 # The orchestrator retains:
+
 - TICKET_KEY=PROJ-123
 - FETCH_STATUS=FETCH: PASS, REPORT_PATH=...yaml
 - VALIDATE_STATUS=VALIDATE: PASS
@@ -139,4 +141,3 @@ decision against it. Routing logic gets buried under data.
   2026-05-27:
   <https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents>.
   Supports separating orchestration context from raw payload context.
-
