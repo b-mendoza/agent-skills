@@ -86,4 +86,3 @@ Bad: self-report only, no representative run, no observable check.
   <https://arxiv.org/abs/2412.14470>. Supports the need for
   framework-level enforcement over prompt-only safety in agent
   settings.
-
