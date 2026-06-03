@@ -40,9 +40,9 @@ and subagents or templates only when needed for consistency checks.
 Write the report to `REPORT_PATH` (YAML).
 
 ```yaml
-version: 1                                # required
+version: 1                                # required, integer schema version
 from: "personality-auditor"               # required
-to:
+to:                                       # required, exactly one orchestrator identity mapping
   orchestrator: "improving-skill-definition" # required
   phase: "Phase 4/8 - Audit"                 # required
 intent: "Audit personality fit, operating posture, safety, consistency, target-specific alternatives" # required
@@ -51,7 +51,7 @@ verdict:                                  # required
   current_personality_summary: "Target package opens with generic helpful-assistant prose; no operating posture defined" # required
   personality_verdict: "MISSING_BUT_RECOMMENDED" # required, one of: FITS_PURPOSE, NEEDS_REFINEMENT, MISSING_BUT_RECOMMENDED, UNNECESSARY_OR_OVERBUILT, NOT_APPLICABLE, CONFLICTS_WITH_SKILL
   recommendation: "add"                   # required, one of: keep, refine, replace, add, remove, demote, skip
-checks:                                   # required, at least one entry
+checks:                                   # required, one entry per personality check, ordered: purpose fit, audience fit, tone safety, workflow fit, operating behavior fit, artifact consistency, priority clarity
   - check: "purpose fit"                  # required
     verdict: "fail"                       # required, one of: pass, fail, not_applicable
     evidence: "Target is a code-rewriter skill; no posture for risk-bearing rewrites is named" # required
@@ -73,13 +73,13 @@ checks:                                   # required, at least one entry
   - check: "priority clarity"
     verdict: "partial"
     evidence: "References to audit-gap-taxonomy.md priority tiers exist but no posture-level prioritization"
-alternatives:                             # required, at least five target-specific options
+alternatives:                             # required, at least five target-specific options ordered by fit to target workflow
   - "Conservative rewriter — preserves behavior; refuses speculative refactors"
   - "Adversarial rewriter — falsifies the working assumption before preserving it"
   - "Educator rewriter — narrates the trade-offs in the diff"
   - "Strict-types-first rewriter — leads with type-system signal"
   - "Test-anchor rewriter — requires a passing test for every changed branch"
-gaps:                                     # required when GAPS_FOUND; empty list when PASS
+gaps:                                     # required, one fully populated entry per gap when GAPS_FOUND; use [] only when PASS, BLOCKED, or ERROR after this schema is known
   - id: "gap-004"                         # required, stable kebab id
     severity: "medium"                    # required, one of: high, medium, low
     type: "BEST_PRACTICE_FAILURE"         # required, one of the type labels in audit-gap-taxonomy.md
@@ -97,7 +97,7 @@ resources_used:                           # required
   local:                                  # required (may be empty list)
     - "skills/example/SKILL.md"
   web: []                                 # required (may be empty list)
-failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS or GAPS_FOUND
+failure_details: ""                       # required, non-empty when status is PERSONALITY_AUDIT: BLOCKED or PERSONALITY_AUDIT: ERROR; empty string when PASS or GAPS_FOUND
 ```
 
 Reply compactly with status and report path only.
