@@ -143,5 +143,5 @@ without knowing what inputs the skill requires.)
   Supports clear structural ordering as a prompt-design tool.
 - ISO/IEC/IEEE 26515:2018, "Developing user documentation in an
   agile environment," accessed 2026-06-03:
-  <https://www.iso.org/standard/70879.html>. Supports predictable
+  <https://www.iso.org/standard/70880.html>. Supports predictable
   ordering as a documentation primitive.
