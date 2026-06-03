@@ -56,6 +56,7 @@ gates with a bounded retry.
 
 ```markdown
 # In skill-name/SKILL.md
+
 9. Emit `Phase 6/8 - Edit`. (Announce)
 10. Confirm `APPROVED_GAPS` and `MUTATION_LIMITS` are set. (Validate preconditions)
 11. Dispatch `skill-definition-editor`. (Execute)
@@ -71,6 +72,7 @@ and either loops forever or silently passes.
 
 ```markdown
 # In skill-name/SKILL.md
+
 9. Dispatch the editor with whatever inputs are around.
 10. If the user pushes back, ask the editor to try again.
 11. If they push back again, try again. (No retry cap; no
@@ -88,4 +90,3 @@ and either loops forever or silently passes.
   <https://standards.ieee.org/ieee/982.1/2767/>. Supports the general
   principle of observable preconditions, postconditions, and bounded
   retry as reliability primitives.
-
