@@ -145,17 +145,3 @@ Reasoning:
   <https://martinfowler.com/bliki/Yagni.html>. Supports refusing
   speculative complexity.
 
-## Related practices
-
-- [Best practices compliance gate](./best-practices-compliance-gate.md)
-  — `fail` verdicts here are one earned-complexity trigger.
-- [Progressive disclosure](./progressive-disclosure.md) — extraction
-  is permitted, not required.
-- [Subagent default execution](./subagent-default-execution.md) —
-  the per-step two-question test is one application of earned
-  complexity.
-- [Template extraction](./template-extraction.md) — has explicit
-  "when NOT to extract" guidance for the same reason.
-- [Empirical validation](./empirical-validation.md) — observable
-  evidence is the only legitimate basis for calling a change an
-  improvement.
