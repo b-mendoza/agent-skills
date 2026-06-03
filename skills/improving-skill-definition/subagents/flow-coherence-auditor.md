@@ -13,8 +13,8 @@ statuses, and subagent paths agree.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/flow-coherence-auditor-instructions.md` |
-| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/flow-coherence-auditor-report.md` |
+| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/flow-coherence-auditor-instructions.yaml` |
+| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/flow-coherence-auditor-report.yaml` |
 | `SKILL_PATH` | Yes | `skills/example` |
 | `KNOWN_PROBLEM` | No | `flow diagram drift` |
 | `AUDIT_TAXONOMY_PATH` | Yes | `./references/audit-gap-taxonomy.md` |
@@ -38,28 +38,42 @@ BLOCKED`.
 
 ## Output Format
 
-Write the report to `REPORT_PATH`.
+Write the report to `REPORT_PATH` (YAML).
 
-```markdown
-FLOW_AUDIT: PASS | GAPS_FOUND | BLOCKED | ERROR
-
-## Verdict
-- Flow diagram verdict:
-- Source-of-truth finding:
-
-## Gaps
-| id | severity | type | affected files | issue | evidence | required fix | quality axes | priority tier | adversarial alternative | diagram delegation |
-| -- | -------- | ---- | -------------- | ----- | -------- | ------------ | ------------ | ------------- | ----------------------- | ------------------ |
-
-## No-Ops
-- [mandate or check with evidence, or `none`]
-
-## Resources Used
-- Local:
-- Web:
-
-## Failure Details
-- [required for BLOCKED or ERROR; otherwise `none`]
+```yaml
+version: 1                                # required
+from: "flow-coherence-auditor"            # required
+to:
+  orchestrator: "improving-skill-definition" # required
+  phase: "Phase 4/8 - Audit"                 # required
+intent: "Audit flow coherence across diagram, SKILL.md, registry, phases, gates, statuses, subagent paths" # required
+status: "FLOW_AUDIT: GAPS_FOUND"          # required, one of: FLOW_AUDIT: PASS, FLOW_AUDIT: GAPS_FOUND, FLOW_AUDIT: BLOCKED, FLOW_AUDIT: ERROR
+verdict:                                  # required
+  flow_diagram_verdict: "COHERENT"        # required, one of: COHERENT, MISSING, STALE, NEEDS_GENERATE_FLOW_DIAGRAM, FLOW_CONTRACT_FLAWED
+  source_of_truth_finding: "Target flow-diagram.md exists and is treated as source of truth; SKILL.md status table agrees" # required
+gaps:                                     # required when GAPS_FOUND; empty list when PASS
+  - id: "gap-001"                         # required, stable kebab id
+    severity: "high"                      # required, one of: high, medium, low
+    type: "FLOW_SYNC_GATE"                # required, one of: FLOW_SYNC_GATE, ADVERSARIAL_REUSE_LENS, SPLIT_AUDIT_SUBAGENTS, PARALLELISM_AUDIT, STATUS_AND_PRIORITY_CONTRACTS, FILE_SIZE_LIMIT_ENFORCEMENT, BEST_PRACTICE_FAILURE, DUPLICATE_CONTENT, RECREATE_WORKFLOW, SUBAGENT_REMOVE, SUBAGENT_MERGE, PROMPT_DEMOTION, NO_OP_EVIDENCED
+    affected_files:                       # required, at least one path
+      - "skills/example/flow-diagram.md"
+    issue: "Diagram missing diagram-sync rule for structural edits" # required
+    evidence: "SKILL.md step 9 references diagram-sync rule but flow-diagram.md does not encode it" # required
+    required_fix: "Add diagram-sync rule node referencing generate-flow-diagram final passed candidate" # required
+    quality_axes:                         # required, at least one of: routeability, mutation_safety, portability, traceability, robustness, determinism, reliability, repeatability, effectiveness
+      - "determinism"
+    priority_tier: "high"                 # required, one of: high, medium, low
+    adversarial_alternative: "Rely on prose hoist; rejected because semantic edits need explicit gate" # required
+    diagram_delegation: "yes"             # required, one of: yes, no, conditional
+no_ops:                                   # required (may be empty list)
+  - mandate_or_check: "KNOWN_PROBLEM about flow drift" # optional
+    evidence: "Drift not observed in current target; KNOWN_PROBLEM closed by status contract review" # optional
+resources_used:                           # required
+  local:                                  # required (may be empty list)
+    - "skills/example/SKILL.md"
+    - "skills/example/flow-diagram.md"
+  web: []                                 # required (may be empty list)
+failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS or GAPS_FOUND
 ```
 
 Reply compactly with status and report path only.
