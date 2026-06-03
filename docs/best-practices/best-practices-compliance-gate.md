@@ -89,8 +89,8 @@ evidence.
 - ISO/IEC 25010:2023, "Software product quality model," accessed
   2026-06-03: <https://www.iso.org/standard/78176.html>. Supports
   tier-based quality evaluation over flat checklists.
-- Martin Fowler, "Checklist Manifesto for software reviews,"
-  accessed 2026-06-03:
-  <https://martinfowler.com/articles/code-review-checklist.html>.
-  Practitioner support for tiered review criteria over uniform
-  weight.
+- Martin Fowler, "Refinement Code Review," accessed 2026-06-03:
+  <https://martinfowler.com/bliki/RefinementCodeReview.html>.
+  Practitioner support for matching review intensity to risk —
+  routine refinement for most code, focused targeted review for
+  safety- or security-critical areas.
