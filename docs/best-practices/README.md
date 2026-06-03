@@ -1,84 +1,87 @@
 # Best Practices for Writing Skills and Subagent Definitions
 
-This directory holds detailed guidance for authoring and editing the skills in
-this repo. The practices below combine durable standards, repo conventions, and
-runtime mitigations. Apply them with the scope named in each file, especially
-when authoring portable skills for both OpenCode and Claude Code.
+This README is the deterministic entry point for the skill-authoring
+best-practice library. Every best practice that lives in this
+directory appears in the master index below exactly once. There is no
+practice content in this file; the master index links to the file
+that owns each practice in full.
 
-Read the relevant file when you are about to author or edit a skill, subagent,
-or reference document. The consolidated files below are the source of truth;
-older topic-specific files were merged to reduce checklist sprawl.
+## How to use this index
 
-## Practice Tiers
+Load this README first. Identify which tier of practices is
+applicable to the task at hand (most authoring tasks need every
+`mandatory` practice; non-trivial skills additionally need most
+`recommended` practices; `optional-style` matters only when the
+repo's style is the explicit task). Then read only the linked files
+you actually need for the current decision. Each practice file uses
+the same eight-section layout, so the reader can scan to the section
+that answers the question without re-reading the whole file.
 
-Use these tiers when applying the
-[Best-practices compliance gate](./validation-and-escalation.md). A tier is
-about blocking power during review, not importance in the abstract.
+## Practice tiers
 
-| Tier | Practices | Review effect |
+| Tier | Review effect | Purpose |
 | --- | --- | --- |
-| `mandatory` | Runtime portability for portable skills; mutation scope for mutating skills; input/output contracts for multi-stage workflows; artifact lifecycle for generated files; critical-output gates; untrusted-content handling | A miss is a material gap unless the skill declares an intentional exception |
-| `recommended` | Progressive disclosure, orchestrator routing, subagent dispatch economics, behavioral prompt contracts, earned complexity, section ordering | Expected for non-trivial skills; may be intentionally scoped down |
-| `optional-style` | Repo naming conventions, phase-transition banner shape, quick-reference layout details | Improves consistency but should not block unless strict repo style is the task |
+| `mandatory` | A miss is a material gap unless the skill declares an intentional exception | Safety, portability, mutation scope, output contracts, lifecycle, and handoff contracts whose failure can cause agent misbehavior or data loss |
+| `recommended` | Expected for non-trivial skills; may be intentionally scoped down with a stated reason | Architecture, behavioral, and maintainability practices that materially shape decision behavior |
+| `optional-style` | Improves consistency but should not block unless strict repo style is the task | House conventions and UI affordances |
 
-## Index
+## Master index
 
-1. [Context and Payload Management](./context-and-payload-management.md) —
-   progressive disclosure, context-window protection, template extraction,
-   handoff-file dispatch, incremental file writing, and external links.
-2. [Validation and Escalation](./validation-and-escalation.md) — phase
-   validation loops, critical-output gates, best-practices compliance,
-   empirical validation, and escalation categories.
-3. [Behavioral Prompt Contract](./behavioral-prompt-contract.md) — identity,
-   operating posture, positive constraint framing, instruction reinforcement,
-   and examples.
-4. [Structural Conventions](./structural-conventions.md) — section ordering,
-   registry shape, boundary placement, and repo naming conventions.
-5. [Input and Output Contracts](./input-output-contracts.md) — explicit data
-   boundaries between pipeline stages.
-6. [Artifact Lifecycle Management](./artifact-lifecycle.md) — what to commit,
-   what to preserve, what to delete.
-7. [Earned Complexity](./earned-complexity.md) — every instruction, file,
-   subagent, and reference must earn its place by observably changing runtime
-   behavior or maintainability.
-8. [Orchestrator as Routing UI](./orchestrator-as-routing-ui.md) — the
-   orchestrator routes, subagents normalize raw inputs, nested delegation is
-   runtime-dependent, and phase transitions are visible.
-9. [Subagent-Default Execution](./subagent-default-execution.md) — when to
-   inline vs. delegate per step, including dispatch cost tradeoffs.
-10. [Runtime Portability Matrix](./runtime-portability-matrix.md) — portable
-    skills separate required capabilities from runtime-specific syntax,
-    permissions, tool names, and subagent behavior for OpenCode and Claude
-    Code.
-11. [Mutation Scope Boundaries](./mutation-scope-boundaries.md) — editing
-    skills derive explicit mutation limits and gate every edit on them.
+The index below is sorted by tier (`mandatory` → `recommended` →
+`optional-style`). Within each tier, rows are ordered by **severity
+of impact on agent behavior if the practice is missed**: practices
+that change more about how the agent decides, that gate more state
+transitions, that affect more files, or that block more workflows
+appear higher within their tier. A second pass over the same
+directory using the same criterion produces the same ordering.
 
-## Supporting Reference
+| Order | Tier | Best practice | One-line summary | Primary trigger |
+| --- | --- | --- | --- | --- |
+| 1 | `mandatory` | [runtime-portability-matrix](./runtime-portability-matrix.md) | Portable skills name common, mapped, and unsupported runtime features explicitly | Authoring or reviewing a skill that targets both OpenCode and Claude Code |
+| 2 | `mandatory` | [mutation-scope-boundaries](./mutation-scope-boundaries.md) | Mutating skills declare `MUTATION_LIMITS`, pass them to every subagent, and tighten scope during repair | Authoring or reviewing a skill that edits, creates, deletes, renames, or moves files |
+| 3 | `mandatory` | [critical-output-gates](./critical-output-gates.md) | Declared critical outputs are protected by named, independently checked gates with bounded repair | A skill produces an output other components rely on |
+| 4 | `mandatory` | [input-output-contracts](./input-output-contracts.md) | Explicit input and output contracts define every data boundary between pipeline stages | A skill or subagent takes structured inputs or produces structured outputs |
+| 5 | `mandatory` | [handoff-file-dispatch](./handoff-file-dispatch.md) | Inter-agent handoff files under `.handoffs/` are YAML with explicit keys, inline enums, and required/optional markers | An orchestrator dispatches a subagent with a payload too large for an inline prompt |
+| 6 | `mandatory` | [context-window-protection](./context-window-protection.md) | Keep raw inspection out of the orchestrator, collect summaries, treat retrieved content as untrusted data | A skill orchestrates more than one step or loads any external content |
+| 7 | `mandatory` | [artifact-lifecycle](./artifact-lifecycle.md) | Distinguish persistent (A1), ephemeral (A2), and implementation (B) artifacts and apply category-specific lifecycle rules | A skill produces files at all |
+| 8 | `mandatory` | [empirical-validation](./empirical-validation.md) | Validate by observed behavior on real tasks, not self-report; hard boundaries need framework enforcement | A skill claims to fix, validate, or guard a behavior |
+| 9 | `mandatory` | [escalation-categories](./escalation-categories.md) | Every subagent declares enumerated failure categories with routes; missing capabilities fail loudly | Every dispatched subagent and every routed orchestrator phase |
+| 10 | `recommended` | [orchestrator-as-routing-ui](./orchestrator-as-routing-ui.md) | Orchestrators route on bounded outputs; subagents normalize unstructured data; nested dispatch is runtime-dependent | A skill orchestrates two or more subagents |
+| 11 | `recommended` | [subagent-default-execution](./subagent-default-execution.md) | Apply the two-question test per step; mix inline and delegated steps in one skill | Every step in a skill's execution sequence |
+| 12 | `recommended` | [earned-complexity](./earned-complexity.md) | Every part of a package must earn its place against the Material Issue Gate | Before approving any addition to a skill package |
+| 13 | `recommended` | [progressive-disclosure](./progressive-disclosure.md) | Three load levels (`SKILL.md`, `references/`, `subagents/`) gate content to the smallest layer that still works | A skill whose total content does not fit comfortably in `SKILL.md` |
+| 14 | `recommended` | [phase-execution-cycle](./phase-execution-cycle.md) | Six-step announce/validate/execute/validate/update/gate-check cycle with bounded retries | A skill orchestrates two or more phases or carries real risk |
+| 15 | `recommended` | [best-practices-compliance-gate](./best-practices-compliance-gate.md) | Apply this index as a tier-aware quality gate with `pass` / `fail` / `not applicable` verdicts | Reviewing or auditing a skill package |
+| 16 | `recommended` | [identity-and-mental-model](./identity-and-mental-model.md) | Open every skill and subagent with a role, mental model, and (for judgment roles) the failure mode it counters | Authoring or reviewing any non-trivial skill or subagent file |
+| 17 | `recommended` | [operating-posture](./operating-posture.md) | Define identity, posture, trade-offs, voice, and boundaries; posture must change observable behavior | Non-trivial skills where decision behavior matters more than tone |
+| 18 | `recommended` | [positive-constraint-framing](./positive-constraint-framing.md) | Name allowed paths before forbidden ones; positive prose is not a hard boundary | Defining behavioral boundaries in skill or subagent prose |
+| 19 | `recommended` | [instruction-reinforcement](./instruction-reinforcement.md) | Brief reminders at the top of long, risky reference files; do not repeat in every file | Long or risky reference files inside a skill package |
+| 20 | `recommended` | [example-strategy](./example-strategy.md) | Use round-trip, output-format, and edge/failure examples for ambiguity-prone work | A skill produces format-sensitive output or judgment-heavy decisions |
+| 21 | `recommended` | [template-extraction](./template-extraction.md) | Extract large self-contained templates over ~80 lines; keep small templates inline | A `SKILL.md` contains a long, self-contained output template or reference table |
+| 22 | `recommended` | [external-information-linking](./external-information-linking.md) | Link to canonical URLs by default; bundle snapshots only with declared provenance | A skill references external docs, RFCs, or papers |
+| 23 | `recommended` | [incremental-file-writing](./incremental-file-writing.md) | Skeleton plus targeted section edits for large, fragile, or contractually growing artifacts | A skill produces a large multi-section artifact |
+| 24 | `recommended` | [skill-section-order](./skill-section-order.md) | Frontmatter, title, inputs, pipeline, registry, behavior, execution, example in that order | Authoring or editing a `SKILL.md` |
+| 25 | `recommended` | [subagent-section-order](./subagent-section-order.md) | Frontmatter, title, inputs, instructions, output format, scope, escalation in that order | Authoring or editing a subagent file |
+| 26 | `recommended` | [subagent-registry-format](./subagent-registry-format.md) | Three-column table (`Subagent` / `Path` / `Purpose`), one row per subagent, paths relative to skill folder | A skill dispatches to more than one subagent |
+| 27 | `optional-style` | [naming-conventions](./naming-conventions.md) | Skills use gerunds, subagents use role nouns, frontmatter names match kebab-case file/directory names | Naming a new first-party skill or subagent |
+| 28 | `optional-style` | [phase-transition-banner](./phase-transition-banner.md) | Forty-hyphen `Phase N/TOTAL - Name` banner before each phase; subagents do not emit phase markers | Multi-phase orchestrator wants to make phase transitions visible |
+
+## Supporting reference
 
 - [Quick Reference: Skill File Structure](./quick-reference-skill-structure.md)
   — folder layout for a typical skill.
 
-## Former Standalone Topics
+## Removed / renamed files
 
-These topics now live in consolidated files:
+The directory previously held a smaller number of multi-topic files;
+each multi-topic file has been split into one practice per file. Any
+caller that still links into an old filename should be updated to
+point at the new file in the row below.
 
-| Former topic | Current location |
+| Old file | New location |
 | --- | --- |
-| Progressive disclosure | [Context and Payload Management](./context-and-payload-management.md) |
-| Context-window protection | [Context and Payload Management](./context-and-payload-management.md) |
-| Template extraction | [Context and Payload Management](./context-and-payload-management.md) |
-| Handoff-file dispatch | [Context and Payload Management](./context-and-payload-management.md) |
-| Incremental file writing | [Context and Payload Management](./context-and-payload-management.md) |
-| External information linking | [Context and Payload Management](./context-and-payload-management.md) |
-| Validation loops | [Validation and Escalation](./validation-and-escalation.md) |
-| Quality gates for critical outputs | [Validation and Escalation](./validation-and-escalation.md) |
-| Best-practices compliance gate | [Validation and Escalation](./validation-and-escalation.md) |
-| Empirical validation over self-report | [Validation and Escalation](./validation-and-escalation.md) |
-| Escalation patterns | [Validation and Escalation](./validation-and-escalation.md) |
-| Identity and mental model statements | [Behavioral Prompt Contract](./behavioral-prompt-contract.md) |
-| Personality as operating posture | [Behavioral Prompt Contract](./behavioral-prompt-contract.md) |
-| Positive constraint framing | [Behavioral Prompt Contract](./behavioral-prompt-contract.md) |
-| Instruction reinforcement | [Behavioral Prompt Contract](./behavioral-prompt-contract.md) |
-| Example strategy | [Behavioral Prompt Contract](./behavioral-prompt-contract.md) |
-| Naming conventions | [Structural Conventions](./structural-conventions.md) |
-| Phase transition banner | [Orchestrator as Routing UI](./orchestrator-as-routing-ui.md) |
+| `context-and-payload-management.md` | Split into [progressive-disclosure](./progressive-disclosure.md), [context-window-protection](./context-window-protection.md), [template-extraction](./template-extraction.md), [handoff-file-dispatch](./handoff-file-dispatch.md), [incremental-file-writing](./incremental-file-writing.md), [external-information-linking](./external-information-linking.md) |
+| `validation-and-escalation.md` | Split into [phase-execution-cycle](./phase-execution-cycle.md), [critical-output-gates](./critical-output-gates.md), [best-practices-compliance-gate](./best-practices-compliance-gate.md), [empirical-validation](./empirical-validation.md), [escalation-categories](./escalation-categories.md) |
+| `behavioral-prompt-contract.md` | Split into [identity-and-mental-model](./identity-and-mental-model.md), [operating-posture](./operating-posture.md), [positive-constraint-framing](./positive-constraint-framing.md), [instruction-reinforcement](./instruction-reinforcement.md), [example-strategy](./example-strategy.md) |
+| `structural-conventions.md` | Split into [skill-section-order](./skill-section-order.md), [subagent-section-order](./subagent-section-order.md), [subagent-registry-format](./subagent-registry-format.md), [naming-conventions](./naming-conventions.md) |
+| `orchestrator-as-routing-ui.md` (phase-banner section) | Phase-banner content moved to [phase-transition-banner](./phase-transition-banner.md); the rest of the practice stays in [orchestrator-as-routing-ui](./orchestrator-as-routing-ui.md) |
