@@ -93,12 +93,3 @@ Write("docs/PROJ-123-audit-synthesis.md",
   Supports the general principle that smaller, well-scoped tool
   payloads are more reliable than monolithic ones.
 
-## Related practices
-
-- [Template extraction](./template-extraction.md) — large output
-  templates that get extracted are exactly the kind of artifact this
-  practice writes incrementally.
-- [Context window protection](./context-window-protection.md) — short
-  dispatcher replies (status plus path) keep the orchestrator clean.
-- [Handoff file dispatch](./handoff-file-dispatch.md) — handoff YAML
-  files are also written via this pattern when they grow large.
