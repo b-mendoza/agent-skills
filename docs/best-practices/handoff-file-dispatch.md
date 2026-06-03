@@ -47,13 +47,13 @@ debugging.
 
 Required top-level keys in every YAML handoff:
 
-| Key       | Required / Optional | Notes                                      |
-| --------- | ------------------- | ------------------------------------------ |
+| Key       | Required / Optional | Notes                                        |
+| --------- | ------------------- | -------------------------------------------- |
 | `version` | required            | Handoff schema version; bump on shape change |
-| `from`    | required            | Sender role and skill name                 |
-| `to`      | required            | Target role or orchestrator identity       |
-| `intent`  | required            | One sentence: what this handoff carries    |
-| `notes`   | optional            | Free-form notes that do not change routing |
+| `from`    | required            | Sender role and skill name                   |
+| `to`      | required            | Target role or orchestrator identity         |
+| `intent`  | required            | One sentence: what this handoff carries      |
+| `notes`   | optional            | Free-form notes that do not change routing   |
 
 Required top-level keys in every YAML instruction handoff:
 
