@@ -3,7 +3,6 @@
 ```
 skill-name/
 ├── SKILL.md                    # Under 500 lines; core identity + contracts + routing
-├── flow-diagram.md             # Required workflow diagram for runtime/execution branches
 ├── subagents/
 │   ├── specialist-a.md         # Full subagent definition with scope + escalation
 │   ├── specialist-b.md
@@ -13,8 +12,3 @@ skill-name/
 │   └── error-recovery.md       # Loaded only on error
 └── scripts/                    # Optional: deterministic tasks that don't need context
 ```
-
-`flow-diagram.md` is the required standard file for an orchestration workflow:
-it contains the flow diagram showing runtime and execution branches, including
-phase transitions, dispatch paths, gates, terminal outcomes, and recovery
-routes.
