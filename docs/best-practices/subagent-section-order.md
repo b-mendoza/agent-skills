@@ -15,7 +15,7 @@ When authoring or editing any subagent file under
 
 Follow this section order in every subagent definition:
 
-```
+```text
 1. YAML frontmatter (name, description)
 2. # Title + mental model paragraph
 3. ## Inputs (table or list)

@@ -16,7 +16,7 @@ phases.
 
 Follow this section order in every `SKILL.md`:
 
-```
+```text
 1. YAML frontmatter (name, description)
 2. # Title + purpose paragraph
 3. ## Inputs (table: name, required, example)
