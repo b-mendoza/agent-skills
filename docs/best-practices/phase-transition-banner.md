@@ -105,13 +105,3 @@ subagent-architecture-auditor: starting...
   Supports the principle that long-running multi-phase work needs
   explicit phase indicators.
 
-## Related practices
-
-- [Phase execution cycle](./phase-execution-cycle.md) — the
-  announce step of the cycle is what the banner makes visible.
-- [Orchestrator as routing UI](./orchestrator-as-routing-ui.md) —
-  the orchestrator is where phase markers belong.
-- [Earned complexity](./earned-complexity.md) — the specific banner
-  format is style, do not block on it.
-- [Skill section order](./skill-section-order.md) — execution
-  sections house the phase markers.
