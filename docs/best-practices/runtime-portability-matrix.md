@@ -153,13 +153,3 @@ default permissions.)
   notes above, including `mode: subagent` and permission-family
   mappings.
 
-## Related practices
-
-- [Orchestrator as routing UI](./orchestrator-as-routing-ui.md) —
-  portable routing shape for multi-subagent workflows.
-- [Mutation scope boundaries](./mutation-scope-boundaries.md) — how
-  edit authority is declared before runtime-specific enforcement.
-- [External information linking](./external-information-linking.md)
-  — runtime docs are the canonical example of volatile sources.
-- [Naming conventions](./naming-conventions.md) — frontmatter
-  `name` matching the directory is required for runtime lookup.
