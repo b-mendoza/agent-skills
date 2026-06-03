@@ -116,15 +116,3 @@ like documentation."
   <https://www.nist.gov/itl/ai-risk-management-framework>. Supports
   risk-based governance and lifecycle management for AI systems.
 
-## Related practices
-
-- [Handoff file dispatch](./handoff-file-dispatch.md) — handoff
-  YAML files are the canonical Category A2 example.
-- [Mutation scope boundaries](./mutation-scope-boundaries.md) —
-  Category A files live outside the default mutation scope of any
-  sibling skill.
-- [Context window protection](./context-window-protection.md) —
-  retrieved untrusted content is what makes Category A retention
-  dangerous.
-- [External information linking](./external-information-linking.md)
-  — bundled snapshots are Category B and need provenance.
