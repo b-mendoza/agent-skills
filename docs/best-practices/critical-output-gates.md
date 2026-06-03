@@ -100,13 +100,3 @@ Bad: no declared critical outputs, no gates, success defined as
   <https://arxiv.org/abs/2412.14470>. Supports the need for stronger
   checks than prompt-only safety instructions in agent settings.
 
-## Related practices
-
-- [Phase execution cycle](./phase-execution-cycle.md) — the gate-check
-  step where critical-output gates fire.
-- [Empirical validation](./empirical-validation.md) — gate verdicts
-  rest on observable evidence, not self-report.
-- [Best practices compliance gate](./best-practices-compliance-gate.md)
-  — a meta-gate over skill review.
-- [Input and output contracts](./input-output-contracts.md) — the
-  shape gates measure against.
