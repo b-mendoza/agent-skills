@@ -70,18 +70,3 @@ directory using the same criterion produces the same ordering.
 
 - [Quick Reference: Skill File Structure](./quick-reference-skill-structure.md)
   — folder layout for a typical skill.
-
-## Removed / renamed files
-
-The directory previously held a smaller number of multi-topic files;
-each multi-topic file has been split into one practice per file. Any
-caller that still links into an old filename should be updated to
-point at the new file in the row below.
-
-| Old file | New location |
-| --- | --- |
-| `context-and-payload-management.md` | Split into [progressive-disclosure](./progressive-disclosure.md), [context-window-protection](./context-window-protection.md), [template-extraction](./template-extraction.md), [handoff-file-dispatch](./handoff-file-dispatch.md), [incremental-file-writing](./incremental-file-writing.md), [external-information-linking](./external-information-linking.md) |
-| `validation-and-escalation.md` | Split into [phase-execution-cycle](./phase-execution-cycle.md), [critical-output-gates](./critical-output-gates.md), [best-practices-compliance-gate](./best-practices-compliance-gate.md), [empirical-validation](./empirical-validation.md), [escalation-categories](./escalation-categories.md) |
-| `behavioral-prompt-contract.md` | Split into [identity-and-mental-model](./identity-and-mental-model.md), [operating-posture](./operating-posture.md), [positive-constraint-framing](./positive-constraint-framing.md), [instruction-reinforcement](./instruction-reinforcement.md), [example-strategy](./example-strategy.md) |
-| `structural-conventions.md` | Split into [skill-section-order](./skill-section-order.md), [subagent-section-order](./subagent-section-order.md), [subagent-registry-format](./subagent-registry-format.md), [naming-conventions](./naming-conventions.md) |
-| `orchestrator-as-routing-ui.md` (phase-banner section) | Phase-banner content moved to [phase-transition-banner](./phase-transition-banner.md); the rest of the practice stays in [orchestrator-as-routing-ui](./orchestrator-as-routing-ui.md) |
