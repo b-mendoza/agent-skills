@@ -163,21 +163,3 @@ noticing until the diff lands.)
   Supports least-privilege and excessive-agency concerns for tool-
   using agents.
 
-## Related practices
-
-- [Positive constraint framing](./positive-constraint-framing.md) —
-  the in-scope-first ordering rule applied to mutation contracts.
-- [Best practices compliance gate](./best-practices-compliance-gate.md)
-  — declared deviations from default mutation scope live in
-  `SKILL.md`.
-- [Input and output contracts](./input-output-contracts.md) —
-  `MUTATION_LIMITS` is a contracted input that flows through the
-  workflow.
-- [Artifact lifecycle](./artifact-lifecycle.md) — what to do with
-  the files mutation produced is the sibling practice; this one
-  decides what may be written in the first place.
-- [Empirical validation](./empirical-validation.md) — `git status`
-  baselines and post-edit evidence are the observable boundary
-  checks this practice prescribes.
-- [Handoff file dispatch](./handoff-file-dispatch.md) — every
-  subagent receives `MUTATION_LIMITS` in its handoff YAML.
