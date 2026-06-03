@@ -89,14 +89,3 @@ and either loops forever or silently passes.
   principle of observable preconditions, postconditions, and bounded
   retry as reliability primitives.
 
-## Related practices
-
-- [Critical output gates](./critical-output-gates.md) — the gate-check
-  step uses named gates for declared critical outputs.
-- [Empirical validation](./empirical-validation.md) — validation is
-  observable, not self-reported.
-- [Escalation categories](./escalation-categories.md) — when the
-  retry cap is exhausted, the gate check routes to an enumerated
-  failure category.
-- [Earned complexity](./earned-complexity.md) — thin skills may use a
-  smaller cycle.
