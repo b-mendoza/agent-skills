@@ -104,4 +104,3 @@ subagent-architecture-auditor: starting...
   <https://www.bbc.co.uk/gel/guidelines/progress-indicator>.
   Supports the principle that long-running multi-phase work needs
   explicit phase indicators.
-
