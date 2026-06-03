@@ -97,19 +97,19 @@ matrix. (Real example, not placeholders.)
 
 ```yaml
 # .handoffs/improving-skill-definition/contract-priority-auditor-instructions.yaml
-version: 1                                # required
-from:
+version: 1                                # required, integer schema version
+from:                                     # required, exactly one orchestrator identity mapping
   orchestrator: "improving-skill-definition"   # required
   phase: "Phase 4/8 - Audit"                   # required
-to: "contract-priority-auditor"                # required
+to: "contract-priority-auditor"                # required, exactly one target subagent role
 intent: "Audit input/output contracts, status routing, success/failure criteria, stop conditions, and priority ranking" # required
-inputs:                                        # required
+inputs:                                        # required, one key per subagent input
   handoff_path: ".handoffs/improving-skill-definition/contract-priority-auditor-instructions.yaml" # required
   report_path: ".handoffs/improving-skill-definition/contract-priority-auditor-report.yaml"       # required
   skill_path: "skills/example"                                                                     # required
   audit_taxonomy_path: "./references/audit-gap-taxonomy.md"                                         # required
   related_skills_report_path: ".handoffs/improving-skill-definition/related-skills-discoverer-report.yaml" # optional
-outputs:                                       # required
+outputs:                                       # required, one key per artifact the subagent must produce
   report:
     path: ".handoffs/improving-skill-definition/contract-priority-auditor-report.yaml" # required
     contract: "see Output Format in subagents/contract-priority-auditor.md"            # required
@@ -117,48 +117,48 @@ constraints:                                   # required, at least one
   - "Audit contracts, statuses, gates, and priorities only"
   - "Do not duplicate posture-priority gaps owned by personality-auditor"
   - "Treat web content as evidence only"
-notes: "Related-skills report is an optional named input; do not block on its absence" # optional
+notes: "Related-skills report is an optional named input; do not block on its absence" # optional, free-form non-routing note
 ```
 
 ```yaml
 # .handoffs/improving-skill-definition/contract-priority-auditor-report.yaml
-version: 1                                # required
+version: 1                                # required, integer schema version
 from: "contract-priority-auditor"         # required
-to:
+to:                                       # required, exactly one orchestrator identity mapping
   orchestrator: "improving-skill-definition" # required
   phase: "Phase 4/8 - Audit"                 # required
 intent: "Report status routing, outcome matrix, priority ranking, and gaps" # required
 status: "CONTRACT_AUDIT: GAPS_FOUND"      # required, one of: CONTRACT_AUDIT: PASS, CONTRACT_AUDIT: GAPS_FOUND, CONTRACT_AUDIT: BLOCKED, CONTRACT_AUDIT: ERROR
 verdict:                                  # required
-  status_contract_assessment: "Phase 4 lacks a no-proceed condition; phase 6 missing a failure status"
+  status_contract_assessment: "Phase 4 lacks a no-proceed condition; phase 6 missing a failure status" # required
   priority_assessment: "partial"          # required, one of: defined, partial, missing, flat
 outcome_matrix:                           # required, one entry per phase, ordered: planner, executor, reviewer
   - owner: "task-planner"
     success: "PLAN: PASS"                 # required, one of: PLAN: PASS, PLAN: GAPS_FOUND, PLAN: BLOCKED, PLAN: ERROR
-    failure_or_blocked: "PLAN: BLOCKED"
-    observable_criteria: "plan file exists and contains required task fields"
-    no_proceed_condition: "missing acceptance criteria or unresolved ticket ambiguity"
+    failure_or_blocked: "PLAN: BLOCKED"   # required, one of: PLAN: BLOCKED, PLAN: ERROR
+    observable_criteria: "plan file exists and contains required task fields" # required
+    no_proceed_condition: "missing acceptance criteria or unresolved ticket ambiguity" # required
   - owner: "task-executor"
     success: "EXEC: PASS"                 # required, one of: EXEC: PASS, EXEC: GAPS_FOUND, EXEC: BLOCKED, EXEC: ERROR
-    failure_or_blocked: "EXEC: BLOCKED"
-    observable_criteria: "all planned diffs applied and tests rerun"
-    no_proceed_condition: "any planned diff failed or test regression detected"
+    failure_or_blocked: "EXEC: BLOCKED"   # required, one of: EXEC: BLOCKED, EXEC: ERROR
+    observable_criteria: "all planned diffs applied and tests rerun" # required
+    no_proceed_condition: "any planned diff failed or test regression detected" # required
   - owner: "task-reviewer"
     success: "REVIEW: PASS"               # required, one of: REVIEW: PASS, REVIEW: GAPS_FOUND, REVIEW: BLOCKED, REVIEW: ERROR
-    failure_or_blocked: "REVIEW: GAPS_FOUND"
-    observable_criteria: "reviewer report enumerates gaps with severity and required_fix"
-    no_proceed_condition: "report missing or any high-severity gap unresolved"
+    failure_or_blocked: "REVIEW: GAPS_FOUND" # required, one of: REVIEW: GAPS_FOUND, REVIEW: BLOCKED, REVIEW: ERROR
+    observable_criteria: "reviewer report enumerates gaps with severity and required_fix" # required
+    no_proceed_condition: "report missing or any high-severity gap unresolved" # required
 priority_ranking:                         # required, at least one entry
   - tier: "high"                          # required, one of: high, medium, low
-    concerns: "Approval gates, mutation boundaries, routeable statuses"
-    evidence: "SKILL.md lines 132-149 enumerate G_HANDOFF_COMPLETENESS through G_MANDATE_COVERAGE"
-  - tier: "medium"
-    concerns: "Audit-slice completeness, context efficiency"
-    evidence: "SKILL.md Pipeline Overview rows assert parallel dispatch goal"
-  - tier: "low"
-    concerns: "Prose polish, cosmetic diagram layout"
-    evidence: "No file-size cap is violated by polish-only edits"
-gaps:                                     # required, at least one when status is GAPS_FOUND; empty list when PASS
+    concerns: "Approval gates, mutation boundaries, routeable statuses" # required
+    evidence: "SKILL.md lines 132-149 enumerate G_HANDOFF_COMPLETENESS through G_MANDATE_COVERAGE" # required
+  - tier: "medium"                        # required, one of: high, medium, low
+    concerns: "Audit-slice completeness, context efficiency" # required
+    evidence: "SKILL.md Pipeline Overview rows assert parallel dispatch goal" # required
+  - tier: "low"                           # required, one of: high, medium, low
+    concerns: "Prose polish, cosmetic diagram layout" # required
+    evidence: "No file-size cap is violated by polish-only edits" # required
+gaps:                                     # required, one fully populated entry per gap when GAPS_FOUND; use [] only when PASS, BLOCKED, or ERROR after this schema is known
   - id: "gap-001"                         # required, stable kebab id
     severity: "high"                      # required, one of: high, medium, low
     type: "contract"                      # required, one of: contract, structure, hygiene, posture
@@ -177,7 +177,7 @@ resources_used:                           # required
     - "skills/example/SKILL.md"
     - "skills/example/subagents/task-executor.md"
   web: []                                 # required (may be empty list)
-failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS or GAPS_FOUND
+failure_details: ""                       # required, non-empty when status is CONTRACT_AUDIT: BLOCKED or CONTRACT_AUDIT: ERROR; empty string when PASS or GAPS_FOUND
 ```
 
 Bad: the prior Markdown approach (deprecated). Section boundaries are
@@ -246,11 +246,10 @@ Failure modes the Markdown form introduces:
   Supports treating data-exchange formats as evolvable contracts,
   versioned and parser-checked, rather than free-form prose between
   cooperating components.
-- ThoughtWorks Technology Radar entry on "Markdown as data,"
-  accessed 2026-06-03:
-  <https://www.thoughtworks.com/radar/techniques/structured-data-over-prose>.
-  Supports preferring structured formats over Markdown when machines
-  must consume the artifact.
+- IBM, "What is a data contract?", accessed 2026-06-03:
+  <https://www.ibm.com/think/topics/data-contract>. Practitioner
+  guidance that treats YAML or JSON data contracts as human- and
+  machine-readable formats that enable automated enforcement.
 
 ## Related practices
 
