@@ -13,8 +13,8 @@ job.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/prompt-sufficiency-auditor-instructions.md` |
-| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/prompt-sufficiency-auditor-report.md` |
+| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/prompt-sufficiency-auditor-instructions.yaml` |
+| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/prompt-sufficiency-auditor-report.yaml` |
 | `SKILL_PATH` | Yes | `skills/example` |
 | `AUDIT_TAXONOMY_PATH` | Yes | `./references/audit-gap-taxonomy.md` |
 
@@ -40,29 +40,43 @@ complexity.
 
 ## Output Format
 
-Write the report to `REPORT_PATH`.
+Write the report to `REPORT_PATH` (YAML).
 
-```markdown
-PROMPT_AUDIT: PASS | GAPS_FOUND | BLOCKED | ERROR
-
-## Verdict
-- Prompt-sufficiency verdict:
-- Falsification evidence:
-
-## Heuristic Table
-| heuristic | yes/no | evidence |
-| --------- | ------ | -------- |
-
-## Gaps
-| id | severity | type | affected files | issue | evidence | required fix | quality axes | priority tier | adversarial alternative | diagram delegation |
-| -- | -------- | ---- | -------------- | ----- | -------- | ------------ | ------------ | ------------- | ----------------------- | ------------------ |
-
-## Resources Used
-- Local:
-- Web:
-
-## Failure Details
-- [required for BLOCKED or ERROR; otherwise `none`]
+```yaml
+version: 1                                # required
+from: "prompt-sufficiency-auditor"        # required
+to:
+  orchestrator: "improving-skill-definition" # required
+  phase: "Phase 4/8 - Audit"                 # required
+intent: "Audit whether package is justified or should be radically simplified / demoted to a prompt" # required
+status: "PROMPT_AUDIT: PASS"              # required, one of: PROMPT_AUDIT: PASS, PROMPT_AUDIT: GAPS_FOUND, PROMPT_AUDIT: BLOCKED, PROMPT_AUDIT: ERROR
+verdict:                                  # required
+  prompt_sufficiency_verdict: "skill justified" # required, one of: skill justified, radical simplification, prompt demotion
+  falsification_evidence: "Workflow has approval gate, durable artifacts, multi-step state, mutation boundary; all four prompt-demotion conditions fail" # required
+heuristic_table:                          # required, one entry per prompt-demotion condition in audit-gap-taxonomy.md Prompt Sufficiency
+  - heuristic: "task is single-shot"      # required
+    answer: "no"                          # required, one of: yes, no
+    evidence: "Workflow runs 8 phases including audit, approval, edit, validate" # required
+  - heuristic: "no human approval gate needed"
+    answer: "no"
+    evidence: "Phase 5 stops for explicit user approval"
+  - heuristic: "no durable artifact or repair loop"
+    answer: "no"
+    evidence: "audit-synthesis-report.yaml is durable; validator repair loop up to 3 cycles"
+  - heuristic: "no specialist role returning bounded report"
+    answer: "no"
+    evidence: "Six focused auditors each return bounded reports"
+  - heuristic: "no mutation boundary or external-effect validation"
+    answer: "no"
+    evidence: "MUTATION_LIMITS derived at intake; validator checks boundaries"
+gaps: []                                  # required when GAPS_FOUND; empty list when PASS
+resources_used:                           # required
+  local:                                  # required (may be empty list)
+    - "skills/example/SKILL.md"
+    - "skills/example/flow-diagram.md"
+    - "skills/example/references/audit-gap-taxonomy.md"
+  web: []                                 # required (may be empty list)
+failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS or GAPS_FOUND
 ```
 
 Reply compactly with status and report path only.
