@@ -55,7 +55,7 @@ convenient."
 The `not applicable` verdict closes a related failure: forcing a
 verdict on practices that do not apply to a particular skill produces
 either dishonest passes or noisy fails. A one-line reason for `not
-applicable` keeps the practice honest without forcing irrelevant
+applicable` keeps the practice honest without forcing out-of-scope
 conformance.
 
 ## Concrete examples
