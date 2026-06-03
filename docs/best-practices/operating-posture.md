@@ -92,13 +92,3 @@ Always be helpful to the user.
   <https://arxiv.org/abs/2506.02357>. Supports the importance of
   explicit instruction hierarchy in agents.
 
-## Related practices
-
-- [Identity and mental model](./identity-and-mental-model.md) — the
-  role statement the posture sits inside.
-- [Positive constraint framing](./positive-constraint-framing.md) —
-  state what the posture allows before what it refuses.
-- [Earned complexity](./earned-complexity.md) — posture must change
-  behavior to keep its place.
-- [Progressive disclosure](./progressive-disclosure.md) — long
-  posture content lives in `references/`.
