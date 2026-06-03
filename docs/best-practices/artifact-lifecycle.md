@@ -22,11 +22,11 @@ orchestration records from ephemeral dispatch payloads.
 
 Two categories with three sub-categories:
 
-| Category | Contents | Committed to git | Deleted |
-| --- | --- | --- | --- |
-| A1 | Persistent orchestration records: progress files, plans, ticket snapshots, decision logs | Never | Preserve until the workflow no longer needs resumability or the user approves cleanup |
-| A2 | Ephemeral orchestration payloads: handoff files, temporary dispatch instructions, retry payloads | Never | Delete after terminal dispatch cleanup unless retained for debugging |
-| B | Implementation: source code, tests, configs, documentation | Yes | Normal rules |
+| Category | Contents                                                                                         | Committed to git | Deleted                                                                               |
+| -------- | ------------------------------------------------------------------------------------------------ | ---------------- | ------------------------------------------------------------------------------------- |
+| A1       | Persistent orchestration records: progress files, plans, ticket snapshots, decision logs         | Never            | Preserve until the workflow no longer needs resumability or the user approves cleanup |
+| A2       | Ephemeral orchestration payloads: handoff files, temporary dispatch instructions, retry payloads | Never            | Delete after terminal dispatch cleanup unless retained for debugging                  |
+| B        | Implementation: source code, tests, configs, documentation                                       | Yes              | Normal rules                                                                          |
 
 **Why preserve Category A1.** Persistent orchestration records
 enable resumability. If a workflow is interrupted by user choice,
@@ -115,4 +115,3 @@ like documentation."
 - NIST AI Risk Management Framework, accessed 2026-05-27:
   <https://www.nist.gov/itl/ai-risk-management-framework>. Supports
   risk-based governance and lifecycle management for AI systems.
-
