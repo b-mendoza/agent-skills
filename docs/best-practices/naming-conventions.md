@@ -91,4 +91,3 @@ skills/
   <https://learn.microsoft.com/en-us/style-guide/capitalization>.
   Supports lowercase, hyphenated naming for predictable web and
   filesystem paths.
-
