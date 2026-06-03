@@ -87,15 +87,3 @@ Bad: self-report only, no representative run, no observable check.
   framework-level enforcement over prompt-only safety in agent
   settings.
 
-## Related practices
-
-- [Critical output gates](./critical-output-gates.md) — gates supply
-  the observable check this practice insists on.
-- [Mutation scope boundaries](./mutation-scope-boundaries.md) — the
-  canonical example of a hard boundary that prompt text cannot
-  enforce alone.
-- [Phase execution cycle](./phase-execution-cycle.md) — the
-  postcondition step uses empirical evidence.
-- [Escalation categories](./escalation-categories.md) — when an
-  observed deviation recurs, escalate rather than self-report
-  closure.
