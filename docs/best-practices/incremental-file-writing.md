@@ -92,4 +92,3 @@ Write("docs/PROJ-123-audit-synthesis.md",
   <https://platform.openai.com/docs/guides/function-calling>.
   Supports the general principle that smaller, well-scoped tool
   payloads are more reliable than monolithic ones.
-
