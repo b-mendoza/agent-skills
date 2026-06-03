@@ -166,15 +166,3 @@ orchestrator with no useful continuity.
   Supports the principle that context-bounded steps are the unit of
   delegation.
 
-## Related practices
-
-- [Orchestrator as routing UI](./orchestrator-as-routing-ui.md) —
-  the workflow shape this practice applies inside.
-- [Context window protection](./context-window-protection.md) —
-  one of the major reasons to dispatch.
-- [Earned complexity](./earned-complexity.md) — dispatch is not free;
-  it has to earn its place.
-- [Handoff file dispatch](./handoff-file-dispatch.md) — large
-  dispatch payloads cross the boundary via YAML handoffs.
-- [Input and output contracts](./input-output-contracts.md) — the
-  shape every dispatched subagent must satisfy.
