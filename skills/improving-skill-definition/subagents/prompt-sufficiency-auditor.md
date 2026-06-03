@@ -43,40 +43,52 @@ complexity.
 Write the report to `REPORT_PATH` (YAML).
 
 ```yaml
-version: 1                                # required
+version: 1                                # required, integer schema version
 from: "prompt-sufficiency-auditor"        # required
-to:
+to:                                       # required, exactly one orchestrator identity mapping
   orchestrator: "improving-skill-definition" # required
   phase: "Phase 4/8 - Audit"                 # required
 intent: "Audit whether package is justified or should be radically simplified / demoted to a prompt" # required
-status: "PROMPT_AUDIT: PASS"              # required, one of: PROMPT_AUDIT: PASS, PROMPT_AUDIT: GAPS_FOUND, PROMPT_AUDIT: BLOCKED, PROMPT_AUDIT: ERROR
+status: "PROMPT_AUDIT: GAPS_FOUND"        # required, one of: PROMPT_AUDIT: PASS, PROMPT_AUDIT: GAPS_FOUND, PROMPT_AUDIT: BLOCKED, PROMPT_AUDIT: ERROR
 verdict:                                  # required
-  prompt_sufficiency_verdict: "skill justified" # required, one of: skill justified, radical simplification, prompt demotion
-  falsification_evidence: "Workflow has approval gate, durable artifacts, multi-step state, mutation boundary; all four prompt-demotion conditions fail" # required
+  prompt_sufficiency_verdict: "prompt demotion" # required, one of: skill justified, radical simplification, prompt demotion
+  falsification_evidence: "Target is a one-shot explanation prompt with no approval gate, no durable artifact, no repair loop, no specialist role, and no mutation boundary" # required
 heuristic_table:                          # required, one entry per prompt-demotion condition in audit-gap-taxonomy.md Prompt Sufficiency
   - heuristic: "task is single-shot"      # required
-    answer: "no"                          # required, one of: yes, no
-    evidence: "Workflow runs 8 phases including audit, approval, edit, validate" # required
+    answer: "yes"                         # required, one of: yes, no
+    evidence: "SKILL.md has one execution instruction: explain the provided error message" # required
   - heuristic: "no human approval gate needed"
-    answer: "no"
-    evidence: "Phase 5 stops for explicit user approval"
+    answer: "yes"                         # required, one of: yes, no
+    evidence: "No write, external effect, or irreversible decision is performed" # required
   - heuristic: "no durable artifact or repair loop"
-    answer: "no"
-    evidence: "audit-synthesis-report.yaml is durable; validator repair loop up to 3 cycles"
+    answer: "yes"                         # required, one of: yes, no
+    evidence: "No files are created and no validator retry loop exists" # required
   - heuristic: "no specialist role returning bounded report"
-    answer: "no"
-    evidence: "Six focused auditors each return bounded reports"
+    answer: "yes"                         # required, one of: yes, no
+    evidence: "No subagents or specialist reports are needed for one explanation" # required
   - heuristic: "no mutation boundary or external-effect validation"
-    answer: "no"
-    evidence: "MUTATION_LIMITS derived at intake; validator checks boundaries"
-gaps: []                                  # required when GAPS_FOUND; empty list when PASS
+    answer: "yes"                         # required, one of: yes, no
+    evidence: "The target should not edit files or call external systems" # required
+gaps:                                     # required, one fully populated entry per gap when GAPS_FOUND; use [] only when PASS, BLOCKED, or ERROR after this schema is known
+  - id: "gap-006"                         # required, stable kebab id
+    severity: "medium"                    # required, one of: high, medium, low
+    type: "PROMPT_DEMOTION"               # required, one of the type labels in audit-gap-taxonomy.md
+    affected_files:                       # required, at least one path
+      - "skills/example/SKILL.md"
+    issue: "Skill package machinery is unearned for a single-shot explanation task" # required
+    evidence: "No approval gate, durable artifact, repair loop, specialist report, mutation boundary, or external-effect validation is present" # required
+    required_fix: "Demote the package to a prompt file with the same input/output wording" # required
+    quality_axes:                         # required, at least one of: routeability, mutation_safety, portability, traceability, robustness, determinism, reliability, repeatability, effectiveness
+      - "effectiveness"
+    priority_tier: "medium"               # required, one of: high, medium, low
+    adversarial_alternative: "Keep the skill wrapper; rejected because no runtime behavior depends on skill machinery" # required
+    diagram_delegation: "no"              # required, one of: yes, no, conditional
 resources_used:                           # required
   local:                                  # required (may be empty list)
     - "skills/example/SKILL.md"
-    - "skills/example/flow-diagram.md"
     - "skills/example/references/audit-gap-taxonomy.md"
   web: []                                 # required (may be empty list)
-failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS or GAPS_FOUND
+failure_details: ""                       # required, non-empty when status is PROMPT_AUDIT: BLOCKED or PROMPT_AUDIT: ERROR; empty string when PASS or GAPS_FOUND
 ```
 
 Reply compactly with status and report path only.
