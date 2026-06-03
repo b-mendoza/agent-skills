@@ -1,0 +1,106 @@
+# best-practices-compliance-gate
+
+## Tier
+
+`recommended`. Tier-aware compliance is the right tool for skill
+review; flat-checklist auditing causes noise that hides genuine gaps.
+
+## When it applies
+
+When reviewing or auditing a skill package — either as part of
+authoring a new skill, refactoring an existing one, or running an
+adversarial audit such as `improving-skill-definition`.
+
+## The practice
+
+Treat the `docs/best-practices/` index as a quality gate for skill
+review, but apply it by tier instead of as a flat checklist. Each
+practice is evaluated against the package and assigned a verdict.
+
+Tiers:
+
+- `mandatory`: safety, portability, mutation scope, output contracts,
+  and lifecycle rules whose failure can cause agent misbehavior or
+  data loss.
+- `recommended`: architecture and maintainability rules that should
+  apply to most non-trivial skills but may be intentionally scoped
+  down.
+- `optional-style`: house conventions and UI affordances that improve
+  consistency but should not block a skill unless strict repo style
+  is required.
+
+Every checked practice gets a concrete verdict:
+
+- `pass`: observable evidence shows conformance.
+- `fail`: observable evidence shows deviation.
+- `not applicable`: the practice does not apply, with a one-line
+  reason.
+
+A declared exception can pass when the skill names the deviation and
+explains why it is intentional. Reporting a failure does not
+authorize mutation; the audit surfaces the gap, and the user approves
+the fix.
+
+## Rationale
+
+A flat checklist treats every practice as equally blocking. The
+result is review-thrash: an audit flags a missing
+`phase-transition-banner` (`optional-style`) at the same severity as
+a missing `mutation-scope-boundaries` declaration (`mandatory`). The
+user cannot tell which gap is real. Tiered evaluation makes the
+weight of each verdict observable; the `mandatory` row tells the user
+"do not ship this," the `optional-style` row tells the user "fix when
+convenient."
+
+The `not applicable` verdict closes a related failure: forcing a
+verdict on practices that do not apply to a particular skill produces
+either dishonest passes or noisy fails. A one-line reason for `not
+applicable` keeps the practice honest without forcing irrelevant
+conformance.
+
+## Concrete examples
+
+Good: a tiered compliance table with `pass`, `fail`, and `not
+applicable` verdicts and evidence.
+
+```markdown
+## Best-Practices Compliance
+
+| Practice | Tier | Verdict | Evidence |
+| --- | --- | --- | --- |
+| context-window-protection | mandatory | pass | Orchestrator keeps raw inspection in subagents and retains only verdicts/paths |
+| template-extraction | recommended | not applicable | No output template exceeds 80 lines |
+| naming-conventions | optional-style | fail | Subagent file uses verb phrase instead of role noun |
+```
+
+Bad: a flat pass/fail checklist that mixes tiers and provides no
+evidence.
+
+```markdown
+## Best-Practices Compliance
+- [x] context-window-protection
+- [ ] template-extraction
+- [ ] naming-conventions
+```
+
+## References
+
+- ISO/IEC 25010:2023, "Software product quality model," accessed
+  2026-06-03: <https://www.iso.org/standard/78176.html>. Supports
+  tier-based quality evaluation over flat checklists.
+- Martin Fowler, "Checklist Manifesto for software reviews,"
+  accessed 2026-06-03:
+  <https://martinfowler.com/articles/code-review-checklist.html>.
+  Practitioner support for tiered review criteria over uniform
+  weight.
+
+## Related practices
+
+- [Critical output gates](./critical-output-gates.md) — the meta-gate
+  this compliance gate enforces over.
+- [Earned complexity](./earned-complexity.md) — a `fail` verdict here
+  is one earned-complexity trigger.
+- [Phase execution cycle](./phase-execution-cycle.md) — the
+  compliance gate fires inside the gate-check step.
+- [Empirical validation](./empirical-validation.md) — every verdict
+  rests on observable evidence.
