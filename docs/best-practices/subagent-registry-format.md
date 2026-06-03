@@ -55,11 +55,11 @@ Good: clean three-column table; one row per subagent; paths exist.
 ```markdown
 ## Subagent Registry
 
-| Subagent                       | Path                                           | Purpose                                       |
-| ------------------------------ | ---------------------------------------------- | --------------------------------------------- |
-| `flow-coherence-auditor`       | `./subagents/flow-coherence-auditor.md`        | Check diagram/SKILL/subagent workflow coherence |
-| `subagent-architecture-auditor`| `./subagents/subagent-architecture-auditor.md` | Check subagent necessity and parallelism      |
-| `skill-definition-editor`      | `./subagents/skill-definition-editor.md`       | Apply approved mutations only                 |
+| Subagent                        | Path                                           | Purpose                                         |
+| ------------------------------- | ---------------------------------------------- | ----------------------------------------------- |
+| `flow-coherence-auditor`        | `./subagents/flow-coherence-auditor.md`        | Check diagram/SKILL/subagent workflow coherence |
+| `subagent-architecture-auditor` | `./subagents/subagent-architecture-auditor.md` | Check subagent necessity and parallelism        |
+| `skill-definition-editor`       | `./subagents/skill-definition-editor.md`       | Apply approved mutations only                   |
 ```
 
 Bad: missing rows, nested grouping, multi-purpose row.
@@ -67,10 +67,10 @@ Bad: missing rows, nested grouping, multi-purpose row.
 ```markdown
 ## Subagent Registry
 
-| Group | Subagents | Path | Notes |
-| ----- | --------- | ---- | ----- |
-| Auditors | flow, architecture, hygiene | (see folder) | various |
-| Editor | skill-definition-editor | ./subagents/skill-definition-editor.md | applies fixes; also validates |
+| Group    | Subagents                   | Path                                   | Notes                         |
+| -------- | --------------------------- | -------------------------------------- | ----------------------------- |
+| Auditors | flow, architecture, hygiene | (see folder)                           | various                       |
+| Editor   | skill-definition-editor     | ./subagents/skill-definition-editor.md | applies fixes; also validates |
 
 (The orchestrator cannot route on "flow"; the path "(see folder)"
 is not a path; "also validates" overlaps with skill-package-
@@ -87,4 +87,3 @@ validator silently.)
   <https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices>.
   Supports clear structural ordering and explicit references for
   prompts.
-
