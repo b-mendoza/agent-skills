@@ -14,7 +14,7 @@ applicable to the task at hand (most authoring tasks need every
 `recommended` practices; `optional-style` matters only when the
 repo's style is the explicit task). Then read only the linked files
 you actually need for the current decision. Each practice file uses
-the same eight-section layout, so the reader can scan to the section
+the same seven-section layout, so the reader can scan to the section
 that answers the question without re-reading the whole file.
 
 ## Practice tiers
