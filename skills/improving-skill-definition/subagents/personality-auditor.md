@@ -71,7 +71,7 @@ checks:                                   # required, one entry per personality 
     verdict: "fail"
     evidence: "SKILL.md prose and subagent prose disagree on conservatism"
   - check: "priority clarity"
-    verdict: "partial"
+    verdict: "fail"
     evidence: "References to audit-gap-taxonomy.md priority tiers exist but no posture-level prioritization"
 alternatives:                             # required, at least five target-specific options ordered by fit to target workflow
   - "Conservative rewriter — preserves behavior; refuses speculative refactors"
