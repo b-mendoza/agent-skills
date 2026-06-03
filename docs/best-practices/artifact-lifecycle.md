@@ -4,7 +4,8 @@
 
 `mandatory`. Mishandled artifacts leak sensitive content into git,
 strand resumability state, or commit ephemeral payloads into the
-project history; the rules close those failures explicitly.
+repository's version-control record; the rules close those failures
+explicitly.
 
 ## When it applies
 
@@ -54,10 +55,10 @@ intentionally retained for debugging.
 
 **Key rule.** Never commit Category A artifacts to version control.
 They are working documents that belong to the workflow session, not
-to the project's history. Preserve Category A1 while it is needed
-for resumability; clean up Category A2 when its dispatch lifecycle
-ends. Only Category B artifacts (the actual output of the workflow)
-are staged and committed.
+to the committed project artifact. Preserve Category A1 while it is
+needed for resumability; clean up Category A2 when its dispatch
+lifecycle ends. Only Category B artifacts (the actual output of the
+workflow) are staged and committed.
 
 ## Rationale
 
@@ -103,7 +104,7 @@ like documentation."
 .handoffs/improving-skill-definition/
 └── personality-auditor-instructions.yaml                 (got committed; now contains copied user prose
                                                             and pasted ticket text, forever in repo
-                                                            history)
+                                                            commits)
 ```
 
 ## References
