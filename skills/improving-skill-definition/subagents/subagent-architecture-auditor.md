@@ -40,9 +40,9 @@ target subagent file. Read references only when needed to verify ownership.
 Write the report to `REPORT_PATH` (YAML).
 
 ```yaml
-version: 1                                # required
+version: 1                                # required, integer schema version
 from: "subagent-architecture-auditor"     # required
-to:
+to:                                       # required, exactly one orchestrator identity mapping
   orchestrator: "improving-skill-definition" # required
   phase: "Phase 4/8 - Audit"                 # required
 intent: "Audit subagent necessity, overlap, decomposition, parallelism" # required
@@ -50,7 +50,7 @@ status: "ARCHITECTURE_AUDIT: GAPS_FOUND"  # required, one of: ARCHITECTURE_AUDIT
 verdict:                                  # required
   subagent_architecture_verdict: "PARTIALLY_REDUNDANT" # required, one of: APPROPRIATE, PARTIALLY_REDUNDANT, UNNECESSARY_OR_OVERCOMPLICATED, NOT_APPLICABLE
   parallelism_verdict: "audit slices independent; parallel dispatch supported by runtime" # required
-subagent_map:                             # required, one entry per registry row
+subagent_map:                             # required, one entry per registry row, ordered as registry appears
   - subagent: "flow-coherence-auditor"    # required
     responsibility: "Diagram/SKILL/registry coherence" # required
     downstream_consumer: "orchestrator audit synthesis" # required
@@ -59,7 +59,7 @@ subagent_map:                             # required, one entry per registry row
     responsibility: "Subagent necessity and parallelism"
     downstream_consumer: "orchestrator audit synthesis"
     overlap_risk: "none"
-parallelism_opportunities:                # required (may be empty list)
+parallelism_opportunities:                # required, zero or more independent groups ordered by execution phase
   - group: "audit-slices"                 # required
     members:                              # required, at least two
       - "flow-coherence-auditor"
@@ -70,7 +70,7 @@ parallelism_opportunities:                # required (may be empty list)
       - "prompt-sufficiency-auditor"
     independence_evidence: "Each slice writes to a separate REPORT_PATH; no ordering dependency" # required
     diagram_impact: "none — already parallel in flow-diagram.md AUDIT_GROUP node" # required
-gaps:                                     # required when GAPS_FOUND; empty list when PASS
+gaps:                                     # required, one fully populated entry per gap when GAPS_FOUND; use [] only when PASS, BLOCKED, or ERROR after this schema is known
   - id: "gap-002"                         # required, stable kebab id
     severity: "medium"                    # required, one of: high, medium, low
     type: "SPLIT_AUDIT_SUBAGENTS"         # required, one of the type labels in audit-gap-taxonomy.md
@@ -89,7 +89,7 @@ resources_used:                           # required
     - "skills/example/SKILL.md"
     - "skills/example/subagents/monolithic-auditor.md"
   web: []                                 # required (may be empty list)
-failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS or GAPS_FOUND
+failure_details: ""                       # required, non-empty when status is ARCHITECTURE_AUDIT: BLOCKED or ARCHITECTURE_AUDIT: ERROR; empty string when PASS or GAPS_FOUND
 ```
 
 Reply compactly with status and report path only.
