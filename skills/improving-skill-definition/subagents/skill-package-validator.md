@@ -71,14 +71,14 @@ needed to verify closure.
 Write the report to `REPORT_PATH` (YAML).
 
 ```yaml
-version: 1                                # required
+version: 1                                # required, integer schema version
 from: "skill-package-validator"           # required
-to:
+to:                                       # required, exactly one orchestrator identity mapping
   orchestrator: "improving-skill-definition" # required
   phase: "Phase 7/8 - Validate"              # required
 intent: "Post-edit quality gate: approved-gap closure, flow coherence, contracts, line caps, hygiene" # required
 status: "VALIDATION: FAIL"                # required, one of: VALIDATION: PASS, VALIDATION: FAIL, VALIDATION: BLOCKED, VALIDATION: ERROR
-checks:                                   # required, one entry per declared check; verdict per check
+checks:                                   # required, one entry per declared check, ordered as Instructions checks 1-17; verdict per check
   - check: "frontmatter"                  # required
     verdict: "pass"                       # required, one of: pass, fail, not_applicable
     evidence: "Frontmatter names match directory/file basenames" # required
@@ -118,7 +118,7 @@ checks:                                   # required, one entry per declared che
   - check: "best_practices_compliance"
     verdict: "fail"
     evidence: "handoff-file-dispatch fails because line cap violation triggers compliance fail"
-critical_output_gates:                    # required, one entry per declared gate
+critical_output_gates:                    # required, one entry per declared gate, ordered: G_GAP_CLOSURE, G_BEST_PRACTICES_COMPLIANCE, G_FLOW_SYNC
   - gate: "G_GAP_CLOSURE"                 # required
     verdict: "pass"                       # required, one of: pass, fail, not_applicable
     evidence: "Approved gaps gap-001 and gap-003 closed and observable in edited files" # required
@@ -128,7 +128,7 @@ critical_output_gates:                    # required, one entry per declared gat
   - gate: "G_FLOW_SYNC"
     verdict: "pass"
     evidence: "SKILL.md, flow-diagram.md, registry agree after candidate write"
-findings:                                 # required when FAIL; empty list when PASS
+findings:                                 # required, one fully populated entry per finding when FAIL; use [] only when PASS, BLOCKED, or ERROR after this schema is known
   - id: "finding-001"                     # required, stable id
     severity: "high"                      # required, one of: high, medium, low
     file: "skills/example/subagents/task-executor.md" # required
@@ -136,13 +136,14 @@ findings:                                 # required when FAIL; empty list when 
     required_fix: "Split shared criteria into references/execution-policy.md" # required
 fix_guidance:                             # required (may be empty list when PASS)
   - "Extract execution-policy.md from task-executor.md to drop file under 150 lines"
+failure_details: ""                       # required, non-empty when status is VALIDATION: BLOCKED or VALIDATION: ERROR; empty string when PASS or FAIL
 resources_used:                           # required
   local:                                  # required (may be empty list)
     - "skills/example/SKILL.md"
     - "skills/example/subagents/task-executor.md"
     - "docs/best-practices/README.md"
   web: []                                 # required (may be empty list)
-remaining_risks:                          # required (may be empty list)
+remaining_risks:                          # required, zero or more residual risk strings ordered by severity
   - "If the extraction widens MUTATION_LIMITS, validator must re-check scope on next repair cycle"
 ```
 
