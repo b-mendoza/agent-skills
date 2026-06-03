@@ -97,13 +97,3 @@ extra load without saving context.
   Supports moving large reference content out of the always-loaded
   path.
 
-## Related practices
-
-- [Progressive disclosure](./progressive-disclosure.md) — the
-  three-level loading model template extraction sits inside.
-- [Earned complexity](./earned-complexity.md) — every extraction must
-  earn its place.
-- [Context window protection](./context-window-protection.md) — the
-  outcome extraction is supposed to produce.
-- [Incremental file writing](./incremental-file-writing.md) — large
-  extracted templates are also expensive to write in one call.
