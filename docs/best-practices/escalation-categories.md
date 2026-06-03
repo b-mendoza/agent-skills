@@ -23,14 +23,14 @@ related skills so handoffs compose.
 
 Common categories:
 
-| Category | Meaning | Typical route |
-| --- | --- | --- |
-| `BLOCKED` | Cannot start because prerequisite input, permission, or user decision is missing | Ask user or stop |
-| `FAIL` | Completed but output violates a gate or contract | Repair loop or re-plan |
-| `ERROR` | Unexpected runtime/tool/filesystem failure | Retry if bounded, otherwise escalate |
-| `PARTIAL` | Some items succeeded and others failed | Route remaining scope explicitly |
-| `TOOLS_MISSING` | Required runtime capability is unavailable | Stop or ask user to enable/install |
-| `RATE_LIMIT` | External service throttled after retry | Wait, reschedule, or escalate |
+| Category        | Meaning                                                                          | Typical route                        |
+| --------------- | -------------------------------------------------------------------------------- | ------------------------------------ |
+| `BLOCKED`       | Cannot start because prerequisite input, permission, or user decision is missing | Ask user or stop                     |
+| `FAIL`          | Completed but output violates a gate or contract                                 | Repair loop or re-plan               |
+| `ERROR`         | Unexpected runtime/tool/filesystem failure                                       | Retry if bounded, otherwise escalate |
+| `PARTIAL`       | Some items succeeded and others failed                                           | Route remaining scope explicitly     |
+| `TOOLS_MISSING` | Required runtime capability is unavailable                                       | Stop or ask user to enable/install   |
+| `RATE_LIMIT`    | External service throttled after retry                                           | Wait, reschedule, or escalate        |
 
 Judgment-heavy subagents should fail loudly when a missing capability
 defeats their purpose. For example, a bias-correction subagent that
@@ -62,12 +62,14 @@ loudly" rule for missing capabilities.
 # In skill-name/subagents/related-skills-discoverer.md
 
 ## Escalation
-| Status | When |
-| ------ | ---- |
+
+| Status    | When                                                     |
+| --------- | -------------------------------------------------------- |
 | `BLOCKED` | Required inputs are missing or web access is unavailable |
-| `ERROR` | Tool or runtime failure prevents a safe report |
+| `ERROR`   | Tool or runtime failure prevents a safe report           |
 
 # In skill-name/SKILL.md
+
 3. Dispatch `related-skills-discoverer`.
 4. On `BLOCKED` or `ERROR`, degrade and continue when
    `REFERENCE_NEED` is unset; otherwise route to the blocked handoff.
@@ -78,10 +80,12 @@ fails.
 
 ```markdown
 # In skill-name/subagents/related-skills-discoverer.md
+
 If the web is unavailable, return a best-effort summary based on
 training-data knowledge.
 
 # In skill-name/SKILL.md
+
 3. Dispatch the discoverer.
 4. Use whatever it returns. (Orchestrator cannot tell that the report
    is a guess; downstream phases consume stale knowledge as fresh
@@ -99,4 +103,3 @@ training-data knowledge.
   <https://platform.openai.com/docs/guides/agent-builder-safety>.
   Supports fail-loud handling when a missing capability defeats the
   agent's purpose.
-
