@@ -122,13 +122,3 @@ name: "flow-coherence-auditor"
   <https://www.iso.org/standard/70879.html>. Supports predictable
   documentation ordering.
 
-## Related practices
-
-- [Skill section order](./skill-section-order.md) — the sibling
-  order for `SKILL.md`.
-- [Subagent registry format](./subagent-registry-format.md) —
-  registry rows that point at subagent files.
-- [Naming conventions](./naming-conventions.md) — subagent files
-  use role nouns.
-- [Input and output contracts](./input-output-contracts.md) — the
-  contract shape sections 3 and 5 carry.
