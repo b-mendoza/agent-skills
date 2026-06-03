@@ -55,7 +55,7 @@ Good: section order is consistent across every subagent in the
 package, so the orchestrator can dispatch without per-subagent
 adaptation.
 
-```markdown
+````markdown
 ---
 name: "flow-coherence-auditor"
 description: "Audits source-of-truth flow coherence..."
@@ -68,23 +68,28 @@ determine whether the target flow-diagram.md, SKILL.md, registry,
 phases, gates, statuses, and subagent paths agree.
 
 ## Inputs
+
 | Input | Required | Example |
 | ----- | -------- | ------- |
 
 ## Instructions
+
 1. Treat target `flow-diagram.md` as workflow source of truth.
 
 ## Output Format
+
 ```yaml
-status: "FLOW_AUDIT: PASS"   # required, one of: PASS, GAPS_FOUND, BLOCKED, ERROR
+status: "FLOW_AUDIT: PASS" # required, one of: PASS, GAPS_FOUND, BLOCKED, ERROR
 ```
 
 ## Scope
+
 Audit flow coherence only. Do not audit personality.
 
 ## Escalation
+
 | Status | When |
-```
+````
 
 Bad: every subagent uses a different section order; orchestrator
 cannot dispatch consistently.
@@ -97,18 +102,23 @@ name: "flow-coherence-auditor"
 # Flow Coherence Auditor
 
 ## Escalation
+
 | Status | When |
 
 ## Inputs
+
 | Input | Required | Example |
 
 ## Scope
+
 (Before Output Format.)
 
 ## Output Format
+
 (After scope.)
 
 ## Instructions
+
 (At the bottom.)
 ```
 
@@ -121,4 +131,3 @@ name: "flow-coherence-auditor"
   agile environment," accessed 2026-06-03:
   <https://www.iso.org/standard/70879.html>. Supports predictable
   documentation ordering.
-
