@@ -47,17 +47,31 @@ debugging.
 
 Required top-level keys in every YAML handoff:
 
-| Key           | Required / Optional    | Notes                                                                   |
-| ------------- | ---------------------- | ----------------------------------------------------------------------- |
-| `version`     | required               | Handoff schema version; bump on shape change                            |
-| `from`        | required               | Orchestrator role and skill name                                        |
-| `to`          | required               | Target subagent role                                                    |
-| `intent`      | required               | One sentence: what the subagent must produce                            |
-| `inputs`      | required               | Mapping of input name → value; mirror the subagent's Inputs table       |
-| `outputs`     | required               | Mapping naming each artifact the subagent must produce                  |
-| `constraints` | required               | List of contract constraints (mutation limits, scope limits, deadlines) |
-| `status`      | required (report only) | Enumerated outcome string with inline `# one of: …`                     |
-| `notes`       | optional               | Free-form notes that do not change routing                              |
+| Key       | Required / Optional | Notes                                      |
+| --------- | ------------------- | ------------------------------------------ |
+| `version` | required            | Handoff schema version; bump on shape change |
+| `from`    | required            | Sender role and skill name                 |
+| `to`      | required            | Target role or orchestrator identity       |
+| `intent`  | required            | One sentence: what this handoff carries    |
+| `notes`   | optional            | Free-form notes that do not change routing |
+
+Required top-level keys in every YAML instruction handoff:
+
+| Key           | Required / Optional | Notes                                                                   |
+| ------------- | ------------------- | ----------------------------------------------------------------------- |
+| `inputs`      | required            | Mapping of input name → value; mirror the subagent's Inputs table       |
+| `outputs`     | required            | Mapping naming each artifact the subagent must produce                  |
+| `constraints` | required            | List of contract constraints (mutation limits, scope limits, deadlines) |
+
+Required top-level keys in every YAML report handoff:
+
+| Key      | Required / Optional | Notes                                               |
+| -------- | ------------------- | --------------------------------------------------- |
+| `status` | required            | Enumerated outcome string with inline `# one of: …` |
+
+Each report contract may require additional top-level keys in the
+subagent's `## Output Format`; those report-specific keys do not
+become instruction-handoff requirements.
 
 YAML inline comments carry every enum, required/optional marker, and
 cardinality rule that prose alone cannot preserve deterministically.
