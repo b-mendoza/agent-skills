@@ -78,26 +78,31 @@ description: "Adversarially improves existing agent skill packages..."
 You are a skill-definition improvement orchestrator. ...
 
 ## Inputs
-| Input | Required | Example |
-| ----- | -------- | ------- |
-| `SKILL_PATH` | Yes | `skills/refactoring-code` |
+
+| Input        | Required | Example                   |
+| ------------ | -------- | ------------------------- |
+| `SKILL_PATH` | Yes      | `skills/refactoring-code` |
 
 ## Pipeline Overview
-| Phase | Mode | Result |
-| ----- | ---- | ------ |
-| 1. Intake | Inline | Normalize paths, runtime, scope |
-| 2. Flow Load | Inline | Load this flow and personality |
+
+| Phase        | Mode   | Result                          |
+| ------------ | ------ | ------------------------------- |
+| 1. Intake    | Inline | Normalize paths, runtime, scope |
+| 2. Flow Load | Inline | Load this flow and personality  |
 
 ## Subagent Registry
-| Subagent | Path | Purpose |
-| -------- | ---- | ------- |
+
+| Subagent                 | Path                                    | Purpose                                |
+| ------------------------ | --------------------------------------- | -------------------------------------- |
 | `flow-coherence-auditor` | `./subagents/flow-coherence-auditor.md` | Check diagram/SKILL/subagent coherence |
 
 ## Execution
+
 1. Emit `Phase 1/8 - Intake`; normalize inputs and derive limits.
-...
+   ...
 
 ## Example
+
 Input: `SKILL_PATH=skills/example`, `KNOWN_PROBLEM="validator misses stale flow"`.
 ```
 
@@ -112,17 +117,21 @@ name: "improving-skill-definition"
 # Improve Skill Definition
 
 ## Example
+
 Try running on skills/example.
 
 ## Execution
+
 1. Run the audit.
 2. (Mid-paragraph reference to `flow-coherence-auditor`; reader has
    not seen the registry yet.)
 
 ## Subagent Registry
+
 (Appears below execution; reader has already had to guess.)
 
 ## Inputs
+
 (Appears last; the consumer has already attempted to dispatch
 without knowing what inputs the skill requires.)
 ```
@@ -136,4 +145,3 @@ without knowing what inputs the skill requires.)
   agile environment," accessed 2026-06-03:
   <https://www.iso.org/standard/70879.html>. Supports predictable
   ordering as a documentation primitive.
-
