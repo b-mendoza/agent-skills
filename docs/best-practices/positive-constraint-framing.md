@@ -73,13 +73,3 @@ orchestrator must not skip phases. (Now what should it actually do?)
   Supports the principle that prompt guidance must be paired with
   framework-level controls for real boundaries.
 
-## Related practices
-
-- [Operating posture](./operating-posture.md) — the posture rules
-  use the same allowed-first ordering.
-- [Mutation scope boundaries](./mutation-scope-boundaries.md) —
-  positive in-scope clause precedes the categorical exclusions list.
-- [Empirical validation](./empirical-validation.md) — prompt
-  framing alone is not a hard boundary.
-- [Identity and mental model](./identity-and-mental-model.md) — the
-  positive frame fits inside the role description.
