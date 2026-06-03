@@ -96,7 +96,7 @@ training-data knowledge.
 
 - IEEE, "Reliability engineering of software systems," IEEE Standard
   982.1-2005, accessed 2026-06-03:
-  <https://standards.ieee.org/ieee/982.1/2767/>. Supports enumerated
+  <https://standards.ieee.org/ieee/982.1/1353/>. Supports enumerated
   failure modes and routed failure handling as reliability
   primitives.
 - OpenAI, "Safety in building agents," accessed 2026-05-27:

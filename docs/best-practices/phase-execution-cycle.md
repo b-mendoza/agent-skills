@@ -87,6 +87,6 @@ and either loops forever or silently passes.
   report.
 - IEEE, "Reliability engineering of software systems," IEEE Standard
   982.1-2005, accessed 2026-06-03:
-  <https://standards.ieee.org/ieee/982.1/2767/>. Supports the general
+  <https://standards.ieee.org/ieee/982.1/1353/>. Supports the general
   principle of observable preconditions, postconditions, and bounded
   retry as reliability primitives.
