@@ -46,7 +46,7 @@ Rules:
    and gives a planner a fast in-bounds check before evaluating
    exclusions.
 4. **Declare categorical exclusions explicitly.** Some paths are
-   *always* out of scope and must be named so subagents don't reason
+   _always_ out of scope and must be named so subagents don't reason
    about them as borderline cases. Typical exclusions: sibling skill
    packages, tooling-managed mirrors (`.agents/skills/`,
    `.claude/skills/`, `skills-lock.json`), repository-level docs
@@ -146,6 +146,7 @@ Bad: implicit scope, no `MUTATION_LIMITS`, no repair-cycle rule.
 
 ```markdown
 ## Mutation
+
 The editor fixes files related to the audit findings. Use good
 judgment; ask the user if something seems risky.
 (Now the editor is free to "fix nearby things," widen scope during
@@ -162,4 +163,3 @@ noticing until the diff lands.)
   <https://owasp.org/www-project-top-10-for-large-language-model-applications/>.
   Supports least-privilege and excessive-agency concerns for tool-
   using agents.
-
