@@ -96,13 +96,3 @@ follow the contract above.
   <https://platform.openai.com/docs/guides/prompt-engineering>.
   Supports few-shot examples for ambiguity-prone tasks.
 
-## Related practices
-
-- [Identity and mental model](./identity-and-mental-model.md) —
-  examples reinforce the role.
-- [Operating posture](./operating-posture.md) — examples reinforce
-  the posture's preferred behavior.
-- [Input and output contracts](./input-output-contracts.md) — the
-  output-format example demonstrates the contract.
-- [Earned complexity](./earned-complexity.md) — examples must earn
-  their place by removing real ambiguity.
