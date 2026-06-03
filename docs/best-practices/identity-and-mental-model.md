@@ -77,13 +77,3 @@ provide a summary of your findings.
   instruction-hierarchy research; not proof that prose identity
   alone enforces boundaries.
 
-## Related practices
-
-- [Operating posture](./operating-posture.md) — what the role
-  notices, optimizes, and refuses.
-- [Positive constraint framing](./positive-constraint-framing.md) —
-  state what the role may do before what it may not.
-- [Earned complexity](./earned-complexity.md) — identity blocks must
-  earn their place.
-- [Example strategy](./example-strategy.md) — examples should
-  reinforce the role.
