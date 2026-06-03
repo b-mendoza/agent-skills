@@ -86,9 +86,9 @@ not listed above because it is a separate skill, not one of this skill's
 subagents.
 
 Read a subagent file only when dispatching it. Use the handoff-file dispatch
-pattern from `docs/best-practices/context-and-payload-management.md`: write
-`HANDOFF_DIR/<subagent>-instructions.md`, dispatch a compact pointer prompt,
-read `HANDOFF_DIR/<subagent>-report.md`, retain only statuses, ids, paths,
+pattern from `docs/best-practices/handoff-file-dispatch.md`: write
+`HANDOFF_DIR/<subagent>-instructions.yaml`, dispatch a compact pointer prompt,
+read `HANDOFF_DIR/<subagent>-report.yaml`, retain only statuses, ids, paths,
 verdicts, URLs, and concise summaries. Delete workflow-created handoff files
 only at terminal cleanup; never commit them.
 
@@ -139,7 +139,7 @@ PASS` only when the verdict is `skill justified`.
 2. Emit `Phase 2/8 - Flow Load`; load this diagram and personality.
 3. Emit `Phase 3/8 - Related Skills Discovery`; dispatch `related-skills-discoverer` and apply the canonical Related-skills discovery rule in `flow-diagram.md` (GitHub/GitLab only; sparse results continue with confidence notes; evidence-only `BLOCKED`/`ERROR` degrades and continues).
 4. Emit `Phase 4/8 - Audit`; dispatch the six focused auditors per the canonical Audit parallelism rule in `flow-diagram.md` (one independent parallel group when the runtime supports concurrent subagents, otherwise sequential with identical contracts). Pass the related-skills report as an optional named input to each slice.
-5. Synthesize reports into one approval handoff: workflow, subagent, flow, personality, priority, prompt-sufficiency, line-count, quality-axis verdicts, gap inventory, mutation plan, and gate plan. Write the synthesized gap inventory, mutation plan, and gate plan to `HANDOFF_DIR/audit-synthesis-report.md` (the `AUDIT_REPORT_PATH` consumed by the editor and validator).
+5. Synthesize reports into one approval handoff: workflow, subagent, flow, personality, priority, prompt-sufficiency, line-count, quality-axis verdicts, gap inventory, mutation plan, and gate plan. Write the synthesized gap inventory, mutation plan, and gate plan to `HANDOFF_DIR/audit-synthesis-report.yaml` (the `AUDIT_REPORT_PATH` consumed by the editor and validator).
 6. Emit `Phase 5/8 - Approval`; stop until the user approves a personality decision and `all`, `none`, or specific gap ids.
 7. If approved scope is `none`, emit `Phase 8/8 - Handoff` and return `no change`.
 8. Confirm approved writes fit `SCOPE_LIMITS` and `MUTATION_LIMITS`; otherwise return `blocked`.

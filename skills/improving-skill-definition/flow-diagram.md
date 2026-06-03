@@ -42,7 +42,7 @@ flowchart TD
   RELATED_DEGRADE --> AUDIT_SETUP
 
   AUDIT_SETUP --> AUDIT_GROUP["Focused audit slices (independent parallel group)<br/>Flow coherence and diagram delegation<br/>Subagent architecture and parallelism<br/>Contracts, statuses, and priority tiers<br/>Personality and reuse lens<br/>Package hygiene and best practices<br/>Prompt sufficiency and demotion"]
-  AUDIT_GROUP --> AUDIT_SYNTH["Orchestrator synthesizes audit reports (covers G_MANDATE_COVERAGE)<br/>Build one gap inventory, mutation plan, and gate plan<br/>Write synthesis to HANDOFF_DIR/audit-synthesis-report.md (AUDIT_REPORT_PATH)<br/>Keep facts, risks, blockers, recommendations,<br/>rejected alternatives, and open questions distinct"]
+  AUDIT_GROUP --> AUDIT_SYNTH["Orchestrator synthesizes audit reports (covers G_MANDATE_COVERAGE)<br/>Build one gap inventory, mutation plan, and gate plan<br/>Write synthesis to HANDOFF_DIR/audit-synthesis-report.yaml (AUDIT_REPORT_PATH)<br/>Keep facts, risks, blockers, recommendations,<br/>rejected alternatives, and open questions distinct"]
   AUDIT_SYNTH --> AUDIT_STATUS{"Audit slice statuses?"}
 
   AUDIT_STATUS -->|all PASS no gaps| FINAL_NO_CHANGE["Emit banner Phase 8/8 - Handoff<br/>Load final-report-template.md<br/>Return no-change handoff with evidence,<br/>personality assessment, rejected optional improvements,<br/>related-skill limits, and validation limits"]
@@ -129,19 +129,23 @@ dispatch follows a bidirectional write-dispatch-read-cleanup pattern. During
 Intake, the orchestrator resolves `HANDOFF_DIR` to the repository-root anchored
 `.handoffs/improving-skill-definition/` directory. Before dispatch, the
 orchestrator writes the full per-subagent payload to
-`HANDOFF_DIR/<subagent-name>-instructions.md`. It then dispatches each subagent
-with a compact pointer prompt that names only the subagent contract file, that
-instruction file, the required report path, and the expected Output Format.
-Each subagent writes its contracted report to
-`HANDOFF_DIR/<subagent-name>-report.md`. The orchestrator reads every required
-report before status routing and retains only report verdicts, summaries,
-relevant paths, approved gaps, fetched URLs, and user decisions in context. If a
-report is missing or unreadable, the orchestrator may use only an enumerated
-compact `BLOCKED` or `ERROR` status from the dispatch reply; if neither exists,
-it routes to `error` with the missing report path named. Terminal cleanup
-deletes all workflow-created files inside `HANDOFF_DIR`, including
-`*-instructions.md`, `*-report.md`, `run-context.md`, and `*-candidate.md`;
-`HANDOFF_DIR` may be removed only when empty.
+`HANDOFF_DIR/<subagent-name>-instructions.yaml` per the YAML handoff contract
+in `docs/best-practices/handoff-file-dispatch.md`. It then dispatches each
+subagent with a compact pointer prompt that names only the subagent contract
+file, that instruction file, the required report path, and the expected YAML
+keys. Each subagent writes its contracted report to
+`HANDOFF_DIR/<subagent-name>-report.yaml`. The orchestrator parses every
+required YAML report before status routing and retains only report verdicts,
+summaries, relevant paths, approved gaps, fetched URLs, and user decisions in
+context. If a report is missing or unreadable, the orchestrator may use only
+an enumerated compact `BLOCKED` or `ERROR` status from the dispatch reply; if
+neither exists, it routes to `error` with the missing report path named.
+Terminal cleanup deletes all workflow-created files inside `HANDOFF_DIR`,
+including `*-instructions.yaml`, `*-report.yaml`, and any `run-context.yaml`,
+plus `*-candidate.md` (the flow-diagram candidate stays Markdown because it
+is the staged Mermaid diagram content the editor writes verbatim into
+`flow-diagram.md`, not an inter-agent message); `HANDOFF_DIR` may be removed
+only when empty.
 
 Related-skills discovery rule (canonical home; `SKILL.md` Status Routing
 Contract and Execution step 3 are documented pointers here): Discovery must
@@ -171,9 +175,9 @@ coherence, subagent architecture and parallelism, contracts/status/priority,
 personality and reuse-vs-add reasoning, package hygiene and best practices, and
 prompt sufficiency. Each slice reports `PASS`, `GAPS_FOUND`, `BLOCKED`, or
 `ERROR`. The orchestrator writes the synthesized result to
-`HANDOFF_DIR/audit-synthesis-report.md` (the `AUDIT_REPORT_PATH` consumed by the
-editor and validator); this synthesis artifact is complete only when it contains
-the gap inventory, the mutation plan, and the quality gate plan.
+`HANDOFF_DIR/audit-synthesis-report.yaml` (the `AUDIT_REPORT_PATH` consumed by
+the editor and validator); this synthesis artifact is complete only when it
+contains the gap inventory, the mutation plan, and the quality gate plan.
 
 Diagram-sync rule (canonical home; `SKILL.md` step 9 and
 `subagents/skill-definition-editor.md` instruction 9 are documented hoists that
