@@ -52,6 +52,7 @@ it counters, and how it should decide.
 
 ```markdown
 # skill-name/subagents/skill-package-validator.md
+
 You are the final quality gate. Do not accept self-reported
 improvement. Prove the approved gaps closed with observable package
 evidence.
@@ -62,6 +63,7 @@ statement, no failure mode named.
 
 ```markdown
 # skill-name/subagents/skill-package-validator.md
+
 You are a helpful AI assistant. Please validate the package and
 provide a summary of your findings.
 ```
@@ -76,4 +78,3 @@ provide a summary of your findings.
   <https://arxiv.org/abs/2511.04694>. Supports
   instruction-hierarchy research; not proof that prose identity
   alone enforces boundaries.
-
