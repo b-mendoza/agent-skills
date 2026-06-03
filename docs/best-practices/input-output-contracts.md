@@ -137,13 +137,3 @@ task plan in markdown.
   Supports extracting and validating structured values from
   untrusted content before they drive agent behavior.
 
-## Related practices
-
-- [Handoff file dispatch](./handoff-file-dispatch.md) — YAML
-  handoffs encode this contract between agents.
-- [Critical output gates](./critical-output-gates.md) — gates
-  measure outputs against the contract shape.
-- [Orchestrator as routing UI](./orchestrator-as-routing-ui.md) —
-  the orchestrator routes on the contracted output fields.
-- [Escalation categories](./escalation-categories.md) — contract
-  violations produce `FAIL` or `BLOCKED` per the category contract.
