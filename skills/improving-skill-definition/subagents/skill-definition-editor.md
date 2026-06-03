@@ -12,10 +12,10 @@ brutal; your implementation is disciplined, boring, and tightly scoped.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-instructions.md` |
-| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.md` |
+| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-instructions.yaml` |
+| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.yaml` |
 | `SKILL_PATH` | Yes | `skills/example` |
-| `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.md` |
+| `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.yaml` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, `remove`, `demote`, or `skip` |
 | `MUTATION_LIMITS` | Yes | `write only inside target package` |
@@ -54,40 +54,45 @@ plus nearby files needed for coherence. During repair, read only files tied to
 
 ## Output Format
 
-Write the report to `REPORT_PATH`.
+Write the report to `REPORT_PATH` (YAML).
 
-```markdown
-EDIT: PASS | BLOCKED | ERROR
-
-## Approval Scope Applied
-- Approved personality decision:
-- Approved gaps:
-
-## Changes Made
-| file | change | approved gap or finding |
-| ---- | ------ | ----------------------- |
-
-## Files Created
-- [path, or `none`]
-
-## Files Modified
-- [path, or `none`]
-
-## Files Deleted
-- [path, or `none`]
-
-## No-Op Items
-- [approved item requiring no mutation, or `none`]
-
-## Deferred Or Rejected Changes
-- [item and reason, or `none`]
-
-## Validation Notes
-- [checks validator should focus on]
-
-## Resources Used
-- Local:
-- Web:
+```yaml
+version: 1                                # required
+from: "skill-definition-editor"           # required
+to:
+  orchestrator: "improving-skill-definition" # required
+  phase: "Phase 6/8 - Edit"                  # required
+intent: "Report approved-gap-scoped package edits, files touched, no-op and deferred items" # required
+status: "EDIT: PASS"                      # required, one of: EDIT: PASS, EDIT: BLOCKED, EDIT: ERROR
+approval_scope_applied:                   # required
+  approved_personality_decision: "add"    # required, one of: keep, refine, replace, add, remove, demote, skip
+  approved_gaps:                          # required, list (or "all" / "none" sentinel as a single-element list)
+    - "gap-001"
+    - "gap-003"
+changes_made:                             # required, at least one entry when PASS unless approved_gaps is "none"
+  - file: "skills/example/SKILL.md"       # required
+    change: "Added EDIT: BLOCKED and EDIT: ERROR rows to Status Routing Contract" # required
+    approved_gap_or_finding: "gap-003"    # required, gap id or validator finding id
+  - file: "skills/example/flow-diagram.md"
+    change: "Wrote generate-flow-diagram final-passed candidate into diagram"
+    approved_gap_or_finding: "gap-001"
+files_created: []                         # required (may be empty list)
+files_modified:                           # required (may be empty list)
+  - "skills/example/SKILL.md"
+  - "skills/example/flow-diagram.md"
+files_deleted: []                         # required (may be empty list)
+no_op_items:                              # required (may be empty list)
+  - approved_item: "gap-004"              # optional structure per entry
+    reason: "Approved as NO_OP_EVIDENCED in approval handoff"
+deferred_or_rejected_changes: []          # required (may be empty list)
+validation_notes:                         # required, at least one
+  - "Validator should confirm STATUS_CONTRACT rows now include BLOCKED and ERROR for EDIT"
+  - "Validator should confirm flow-diagram.md candidate matches DIAGRAM_CANDIDATE_PATH content"
+resources_used:                           # required
+  local:                                  # required (may be empty list)
+    - "skills/example/SKILL.md"
+    - "skills/example/flow-diagram.md"
+  web: []                                 # required (may be empty list)
 ```
 
 Reply compactly with status and report path only.
