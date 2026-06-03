@@ -1,6 +1,6 @@
 # Best Practices for Writing Skills and Subagent Definitions
 
-This README is the deterministic entry point for the skill-authoring
+This README is the canonical entry point for the skill-authoring
 best-practice library. Every best practice that lives in this
 directory appears in the master index below exactly once. There is no
 practice content in this file; the master index links to the file
@@ -28,12 +28,18 @@ that answers the question without re-reading the whole file.
 ## Master index
 
 The index below is sorted by tier (`mandatory` → `recommended` →
-`optional-style`). Within each tier, rows are ordered by **severity
-of impact on agent behavior if the practice is missed**: practices
-that change more about how the agent decides, that gate more state
-transitions, that affect more files, or that block more workflows
-appear higher within their tier. A second pass over the same
-directory using the same criterion produces the same ordering.
+`optional-style`). Within each tier, rows use a maintained,
+hand-curated severity order: practices that change more about how the
+agent decides, that gate more state transitions, that affect more
+files, or that block more workflows appear higher within their tier.
+When severity is close, preserve the existing relative order unless a
+material impact difference makes a reorder useful.
+
+Maintenance rule: when a file is added, removed, renamed, or
+intentionally reordered under `docs/best-practices/`, update this
+master index in the same change. Auditors that consume this index
+should treat the table as the source of truth for practice
+membership and order.
 
 | Order | Tier             | Best practice                                                         | One-line summary                                                                                                          | Primary trigger                                                                      |
 | ----- | ---------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
