@@ -1,4 +1,4 @@
-# Improve Skill Definition Flow
+# Improving Skill Definition Flow
 
 This workflow is run by the skill-definition improvement orchestrator. The
 orchestrator loads this package's `flow-diagram.md` as the execution source of
