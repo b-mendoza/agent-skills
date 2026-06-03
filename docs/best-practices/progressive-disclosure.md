@@ -21,11 +21,11 @@ Level 1 (`references/`) loads just-in-time, per phase or mode. Level 2
 (`subagents/`) loads only when the orchestrator dispatches that
 subagent.
 
-| Level | What loads | When | Size guidance |
-| --- | --- | --- | --- |
-| 0 | `SKILL.md` body | When the skill triggers | Under 500 lines |
-| 1 | `references/` files | Just-in-time, per phase or mode | Not always-loaded; budgeted to the phase or mode |
-| 2 | `subagents/` definitions | Only when dispatching that subagent | Not always-loaded; keep each contract focused |
+| Level | What loads               | When                                | Size guidance                                    |
+| ----- | ------------------------ | ----------------------------------- | ------------------------------------------------ |
+| 0     | `SKILL.md` body          | When the skill triggers             | Under 500 lines                                  |
+| 1     | `references/` files      | Just-in-time, per phase or mode     | Not always-loaded; budgeted to the phase or mode |
+| 2     | `subagents/` definitions | Only when dispatching that subagent | Not always-loaded; keep each contract focused    |
 
 Level 0 contains core identity, input/output contracts, subagent
 registry, phase guide, and routing table. Level 1 contains detailed
@@ -57,12 +57,16 @@ mode.
 
 ```markdown
 # In skill-name/SKILL.md (Level 0, always loaded)
+
 ## Modes
+
 - `upfront`: see [`references/upfront-mode.md`](./references/upfront-mode.md)
 - `critique`: see [`references/critique-mode.md`](./references/critique-mode.md)
 
 # In skill-name/references/critique-mode.md (Level 1, loaded only in critique mode)
+
 # Critique Mode Playbook
+
 This guide is loaded by the orchestrator only when MODE=critique.
 ... (detailed step-by-step critique loop) ...
 ```
@@ -72,12 +76,19 @@ it to 1,200 lines that load on every trigger.
 
 ```markdown
 # In skill-name/SKILL.md (Level 0, always loaded)
+
 ## Modes
+
 ### Upfront Mode (350 lines of detail loaded every run)
+
 ...
+
 ### Critique Mode (400 lines of detail loaded every run)
+
 ...
+
 ### Decision Recording Mode (200 lines of detail loaded every run)
+
 ...
 ```
 
@@ -96,4 +107,3 @@ it to 1,200 lines that load on every trigger.
   <https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents>.
   Supports just-in-time retrieval and summarization patterns over
   always-loaded context.
-
