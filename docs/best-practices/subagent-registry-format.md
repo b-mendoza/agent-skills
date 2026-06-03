@@ -88,13 +88,3 @@ validator silently.)
   Supports clear structural ordering and explicit references for
   prompts.
 
-## Related practices
-
-- [Skill section order](./skill-section-order.md) — the registry
-  lives in section 5.
-- [Subagent section order](./subagent-section-order.md) — the
-  shape every row points at.
-- [Naming conventions](./naming-conventions.md) — registry entries
-  use role nouns.
-- [Orchestrator as routing UI](./orchestrator-as-routing-ui.md) —
-  the registry is the routing table the orchestrator routes on.
