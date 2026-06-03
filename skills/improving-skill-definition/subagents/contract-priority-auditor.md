@@ -12,8 +12,8 @@ agent can route every phase and subagent outcome without guessing.
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/contract-priority-auditor-instructions.md` |
-| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/contract-priority-auditor-report.md` |
+| `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/contract-priority-auditor-instructions.yaml` |
+| `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/contract-priority-auditor-report.yaml` |
 | `SKILL_PATH` | Yes | `skills/example` |
 | `AUDIT_TAXONOMY_PATH` | Yes | `./references/audit-gap-taxonomy.md` |
 
@@ -38,33 +38,65 @@ templates or references that define statuses, priorities, or gates.
 
 ## Output Format
 
-Write the report to `REPORT_PATH`.
+Write the report to `REPORT_PATH` (YAML).
 
-```markdown
-CONTRACT_AUDIT: PASS | GAPS_FOUND | BLOCKED | ERROR
-
-## Verdict
-- Status-contract assessment:
-- Priority assessment:
-
-## Outcome Matrix
-| owner | success | failure/blocked | observable criteria | no-proceed condition |
-| ----- | ------- | --------------- | ------------------- | -------------------- |
-
-## Priority Ranking
-| tier | concerns | evidence or proposed text |
-| ---- | -------- | ------------------------- |
-
-## Gaps
-| id | severity | type | affected files | issue | evidence | required fix | quality axes | priority tier | adversarial alternative | diagram delegation |
-| -- | -------- | ---- | -------------- | ----- | -------- | ------------ | ------------ | ------------- | ----------------------- | ------------------ |
-
-## Resources Used
-- Local:
-- Web:
-
-## Failure Details
-- [required for BLOCKED or ERROR; otherwise `none`]
+```yaml
+version: 1                                # required
+from: "contract-priority-auditor"         # required
+to:
+  orchestrator: "improving-skill-definition" # required
+  phase: "Phase 4/8 - Audit"                 # required
+intent: "Audit input/output contracts, status routing, success/failure criteria, stop conditions, priorities" # required
+status: "CONTRACT_AUDIT: GAPS_FOUND"      # required, one of: CONTRACT_AUDIT: PASS, CONTRACT_AUDIT: GAPS_FOUND, CONTRACT_AUDIT: BLOCKED, CONTRACT_AUDIT: ERROR
+verdict:                                  # required
+  status_contract_assessment: "Phase 6 missing failure status; downstream routing cannot recover" # required
+  priority_assessment: "partial"          # required, one of: defined, partial, missing, flat
+outcome_matrix:                           # required, one entry per orchestrator-visible owner (phase or subagent), ordered by execution
+  - owner: "task-planner"
+    success: "PLAN: PASS"                 # required, one of: PLAN: PASS, PLAN: GAPS_FOUND, PLAN: BLOCKED, PLAN: ERROR
+    failure_or_blocked: "PLAN: BLOCKED"
+    observable_criteria: "plan file exists and contains required task fields"
+    no_proceed_condition: "missing acceptance criteria or unresolved ticket ambiguity"
+  - owner: "task-executor"
+    success: "EXEC: PASS"                 # required, one of: EXEC: PASS, EXEC: GAPS_FOUND, EXEC: BLOCKED, EXEC: ERROR
+    failure_or_blocked: "EXEC: BLOCKED"
+    observable_criteria: "all planned diffs applied and tests rerun"
+    no_proceed_condition: "any planned diff failed or test regression detected"
+  - owner: "task-reviewer"
+    success: "REVIEW: PASS"               # required, one of: REVIEW: PASS, REVIEW: GAPS_FOUND, REVIEW: BLOCKED, REVIEW: ERROR
+    failure_or_blocked: "REVIEW: GAPS_FOUND"
+    observable_criteria: "reviewer report enumerates gaps with severity and required_fix"
+    no_proceed_condition: "report missing or any high-severity gap unresolved"
+priority_ranking:                         # required, at least one entry
+  - tier: "high"                          # required, one of: high, medium, low
+    concerns: "Approval gates, mutation boundaries, routeable statuses"
+    evidence: "SKILL.md Critical Outputs table enumerates the high-tier gates"
+  - tier: "medium"
+    concerns: "Audit-slice completeness, parallel dispatch, context efficiency"
+    evidence: "Pipeline Overview rows assert parallel dispatch goal"
+  - tier: "low"
+    concerns: "Prose polish, cosmetic diagram layout"
+    evidence: "No file-size cap violated by polish-only edits"
+gaps:                                     # required when GAPS_FOUND; empty list when PASS
+  - id: "gap-003"                         # required, stable kebab id
+    severity: "high"                      # required, one of: high, medium, low
+    type: "STATUS_AND_PRIORITY_CONTRACTS" # required, one of the type labels in audit-gap-taxonomy.md
+    affected_files:                       # required, at least one path
+      - "skills/example/SKILL.md"
+    issue: "Phase 6 missing EDIT: BLOCKED and EDIT: ERROR rows" # required
+    evidence: "Status Routing Contract table lists only EDIT: PASS" # required
+    required_fix: "Add EDIT: BLOCKED and EDIT: ERROR rows to Status Routing Contract" # required
+    quality_axes:                         # required, at least one of: routeability, mutation_safety, portability, traceability, robustness, determinism, reliability, repeatability, effectiveness
+      - "routeability"
+    priority_tier: "high"                 # required, one of: high, medium, low
+    adversarial_alternative: "Leave routing implicit; rejected because routing cannot recover" # required
+    diagram_delegation: "yes"             # required, one of: yes, no, conditional
+resources_used:                           # required
+  local:                                  # required (may be empty list)
+    - "skills/example/SKILL.md"
+    - "skills/example/subagents/task-executor.md"
+  web: []                                 # required (may be empty list)
+failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS or GAPS_FOUND
 ```
 
 Reply compactly with status and report path only.
