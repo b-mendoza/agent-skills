@@ -52,14 +52,14 @@ needed.
 Write the report to `REPORT_PATH` (YAML).
 
 ```yaml
-version: 1                                # required
+version: 1                                # required, integer schema version
 from: "package-hygiene-auditor"           # required
-to:
+to:                                       # required, exactly one orchestrator identity mapping
   orchestrator: "improving-skill-definition" # required
   phase: "Phase 4/8 - Audit"                 # required
 intent: "Audit best-practices compliance, line counts, paths, references, scripts, artifacts, hygiene, DRY drift" # required
 status: "HYGIENE_AUDIT: GAPS_FOUND"       # required, one of: HYGIENE_AUDIT: PASS, HYGIENE_AUDIT: GAPS_FOUND, HYGIENE_AUDIT: BLOCKED, HYGIENE_AUDIT: ERROR
-line_counts:                              # required, one entry per file inspected
+line_counts:                              # required, one entry per file inspected, ordered by package traversal
   - file: "skills/example/SKILL.md"       # required
     non_empty_lines: 132                  # required, integer
     limit: 150                            # required, integer, cited from audit-gap-taxonomy.md File Size Caps
@@ -68,7 +68,7 @@ line_counts:                              # required, one entry per file inspect
     non_empty_lines: 162
     limit: 150
     verdict: "fail"
-best_practices_compliance:                # required, one entry per practice in docs/best-practices/README.md master index
+best_practices_compliance:                # required, one entry per practice in docs/best-practices/README.md master index order
   - practice: "runtime-portability-matrix" # required
     tier: "mandatory"                     # required, one of: mandatory, recommended, optional-style
     verdict: "pass"                       # required, one of: pass, fail, not_applicable
@@ -81,7 +81,7 @@ best_practices_compliance:                # required, one entry per practice in 
     tier: "optional-style"
     verdict: "pass"
     evidence: "Skill directory uses gerund, subagent files use role nouns"
-gaps:                                     # required when GAPS_FOUND; empty list when PASS
+gaps:                                     # required, one fully populated entry per gap when GAPS_FOUND; use [] only when PASS, BLOCKED, or ERROR after this schema is known
   - id: "gap-005"                         # required, stable kebab id
     severity: "high"                      # required, one of: high, medium, low
     type: "FILE_SIZE_LIMIT_ENFORCEMENT"   # required, one of the type labels in audit-gap-taxonomy.md
@@ -101,7 +101,7 @@ resources_used:                           # required
     - "skills/example/subagents/task-executor.md"
     - "docs/best-practices/README.md"
   web: []                                 # required (may be empty list)
-failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS or GAPS_FOUND
+failure_details: ""                       # required, non-empty when status is HYGIENE_AUDIT: BLOCKED or HYGIENE_AUDIT: ERROR; empty string when PASS or GAPS_FOUND
 ```
 
 Reply compactly with status and report path only.
