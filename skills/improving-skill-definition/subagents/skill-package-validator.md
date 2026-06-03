@@ -78,46 +78,24 @@ to:                                       # required, exactly one orchestrator i
   phase: "Phase 7/8 - Validate"              # required
 intent: "Post-edit quality gate: approved-gap closure, flow coherence, contracts, line caps, hygiene" # required
 status: "VALIDATION: FAIL"                # required, one of: VALIDATION: PASS, VALIDATION: FAIL, VALIDATION: BLOCKED, VALIDATION: ERROR
-checks:                                   # required, one entry per declared check, ordered as Instructions checks 1-17; verdict per check
-  - check: "frontmatter"                  # required
-    verdict: "pass"                       # required, one of: pass, fail, not_applicable
-    evidence: "Frontmatter names match directory/file basenames" # required
-  - check: "line_caps"
-    verdict: "fail"
-    evidence: "subagents/task-executor.md 162 non-empty lines exceeds 150-line cap"
-  - check: "referenced_paths"
-    verdict: "pass"
-    evidence: "All bundled paths exist and stay in package"
-  - check: "mutation_boundaries"
-    verdict: "pass"
-    evidence: "All editor-touched paths inside MUTATION_LIMITS"
-  - check: "approved_gap_closure"
-    verdict: "pass"
-    evidence: "gap-001 and gap-003 observably closed"
-  - check: "flow_coherence"
-    verdict: "pass"
-    evidence: "SKILL.md and flow-diagram.md statuses agree post-edit"
-  - check: "diagram_delegation"
-    verdict: "pass"
-    evidence: "Semantic edit used generate-flow-diagram final passed candidate"
-  - check: "personality_and_priorities"
-    verdict: "pass"
-    evidence: "personality.md added per approved decision; priority tiers unchanged"
-  - check: "status_contracts"
-    verdict: "pass"
-    evidence: "EDIT: BLOCKED and EDIT: ERROR rows present"
-  - check: "related_discovery_scope"
-    verdict: "pass"
-    evidence: "Discoverer searched only github.com and gitlab.com"
-  - check: "prompt_sufficiency"
-    verdict: "pass"
-    evidence: "skill justified verdict from prompt-sufficiency-auditor"
-  - check: "subagent_necessity"
-    verdict: "pass"
-    evidence: "All registry subagents return distinct downstream-consumed reports"
-  - check: "best_practices_compliance"
-    verdict: "fail"
-    evidence: "handoff-file-dispatch fails because line cap violation triggers compliance fail"
+checks:                                   # required, one entry per declared check, ordered as Instructions checks 1-17; verdict one of: pass, fail, not_applicable
+  - {check: "frontmatter", verdict: "pass", evidence: "Frontmatter names match directory/file basenames"} # required fields: check, verdict, evidence
+  - {check: "line_caps", verdict: "fail", evidence: "subagents/task-executor.md 162 non-empty lines exceeds 150-line cap"}
+  - {check: "referenced_paths", verdict: "pass", evidence: "All bundled paths exist and stay in package"}
+  - {check: "mutation_boundaries", verdict: "pass", evidence: "All editor-touched paths inside MUTATION_LIMITS"}
+  - {check: "approved_gap_closure", verdict: "pass", evidence: "gap-001 and gap-003 observably closed"}
+  - {check: "editor_scope", verdict: "pass", evidence: "Editor report contains no mutation outside approved gaps or validator findings"}
+  - {check: "flow_coherence", verdict: "pass", evidence: "SKILL.md and flow-diagram.md statuses agree post-edit"}
+  - {check: "diagram_delegation", verdict: "pass", evidence: "Semantic edit used generate-flow-diagram final passed candidate"}
+  - {check: "personality_and_priorities", verdict: "pass", evidence: "personality.md added per approved decision; priority tiers unchanged"}
+  - {check: "gap_row_contracts", verdict: "pass", evidence: "Every gap row carries priority tier and adversarial-alternatives fields"}
+  - {check: "routeability_contracts", verdict: "pass", evidence: "Every phase and subagent has routeable success, blocked/failure, observable criteria, and no-proceed conditions"}
+  - {check: "related_discovery_scope", verdict: "pass", evidence: "Discoverer searched only github.com and gitlab.com"}
+  - {check: "prompt_sufficiency", verdict: "pass", evidence: "skill justified verdict from prompt-sufficiency-auditor"}
+  - {check: "subagent_necessity", verdict: "pass", evidence: "All registry subagents return distinct downstream-consumed reports"}
+  - {check: "best_practices_compliance", verdict: "fail", evidence: "handoff-file-dispatch fails because line cap violation triggers compliance fail"}
+  - {check: "contradictory_duplicates_and_hoists", verdict: "pass", evidence: "No undocumented contradictory duplicates remain; intentional hoists point to canonical homes"}
+  - {check: "fail_on_fixable_findings", verdict: "pass", evidence: "VALIDATION: FAIL is returned when any fixable high, medium, or low finding remains"}
 critical_output_gates:                    # required, one entry per declared gate, ordered: G_GAP_CLOSURE, G_BEST_PRACTICES_COMPLIANCE, G_FLOW_SYNC
   - gate: "G_GAP_CLOSURE"                 # required
     verdict: "pass"                       # required, one of: pass, fail, not_applicable
