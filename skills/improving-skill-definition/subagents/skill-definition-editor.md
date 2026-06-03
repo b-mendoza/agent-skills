@@ -57,9 +57,9 @@ plus nearby files needed for coherence. During repair, read only files tied to
 Write the report to `REPORT_PATH` (YAML).
 
 ```yaml
-version: 1                                # required
+version: 1                                # required, integer schema version
 from: "skill-definition-editor"           # required
-to:
+to:                                       # required, exactly one orchestrator identity mapping
   orchestrator: "improving-skill-definition" # required
   phase: "Phase 6/8 - Edit"                  # required
 intent: "Report approved-gap-scoped package edits, files touched, no-op and deferred items" # required
@@ -69,6 +69,8 @@ approval_scope_applied:                   # required
   approved_gaps:                          # required, list (or "all" / "none" sentinel as a single-element list)
     - "gap-001"
     - "gap-003"
+    - "gap-004"
+    - "gap-006"
 changes_made:                             # required, at least one entry when PASS unless approved_gaps is "none"
   - file: "skills/example/SKILL.md"       # required
     change: "Added EDIT: BLOCKED and EDIT: ERROR rows to Status Routing Contract" # required
@@ -76,18 +78,26 @@ changes_made:                             # required, at least one entry when PA
   - file: "skills/example/flow-diagram.md"
     change: "Wrote generate-flow-diagram final-passed candidate into diagram"
     approved_gap_or_finding: "gap-001"
-files_created: []                         # required (may be empty list)
+  - file: "skills/example/references/obsolete-style-guide.md"
+    change: "Deleted obsolete duplicated guidance after moving canonical posture into personality.md"
+    approved_gap_or_finding: "gap-004"
+files_created:                            # required, zero or more created paths ordered by edit application
+  - "skills/example/references/personality.md"
 files_modified:                           # required (may be empty list)
   - "skills/example/SKILL.md"
   - "skills/example/flow-diagram.md"
-files_deleted: []                         # required (may be empty list)
-no_op_items:                              # required (may be empty list)
-  - approved_item: "gap-004"              # optional structure per entry
+files_deleted:                            # required, zero or more deleted paths ordered by edit application
+  - "skills/example/references/obsolete-style-guide.md"
+no_op_items:                              # required, zero or more approved no-op items ordered by approval id
+  - approved_item: "gap-006"              # optional structure per entry
     reason: "Approved as NO_OP_EVIDENCED in approval handoff"
-deferred_or_rejected_changes: []          # required (may be empty list)
+deferred_or_rejected_changes:             # required, zero or more rejected/deferred items ordered by discovery
+  - proposed_change: "Rename the skill directory to example-improved" # optional
+    reason: "Rejected because directory identity preservation was outside APPROVED_GAPS" # optional
 validation_notes:                         # required, at least one
   - "Validator should confirm STATUS_CONTRACT rows now include BLOCKED and ERROR for EDIT"
   - "Validator should confirm flow-diagram.md candidate matches DIAGRAM_CANDIDATE_PATH content"
+failure_details: ""                       # required, non-empty when status is EDIT: BLOCKED or EDIT: ERROR; empty string when PASS
 resources_used:                           # required
   local:                                  # required (may be empty list)
     - "skills/example/SKILL.md"
