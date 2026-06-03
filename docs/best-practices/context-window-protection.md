@@ -103,13 +103,3 @@ response, and risks letting the ticket body steer the next step.
   <https://aclanthology.org/2024.tacl-1.9/>. Supports caution about
   retrieval degradation in long contexts.
 
-## Related practices
-
-- [Subagent default execution](./subagent-default-execution.md) —
-  decides which steps may stay inline.
-- [Handoff file dispatch](./handoff-file-dispatch.md) — moves large
-  payloads across dispatch boundaries via YAML files.
-- [External information linking](./external-information-linking.md) —
-  treats web content as untrusted evidence.
-- [Input and output contracts](./input-output-contracts.md) — the
-  bounded summary shape the orchestrator routes on.
