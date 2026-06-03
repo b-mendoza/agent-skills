@@ -22,16 +22,16 @@ explicitly declares a runtime-specific exception.
 
 **Portability matrix.**
 
-| Concern | Portable default | Claude Code notes | OpenCode notes |
-| --- | --- | --- | --- |
-| Skill and subagent files | Plain Markdown with minimal YAML frontmatter | Custom subagents use Markdown definitions with fields such as `name`, `description`, `tools`, and `disallowedTools` | Markdown agents can set fields such as `description`, `mode`, and `permission` |
-| Frontmatter | Use only fields both targets can ignore safely or understand by convention | `tools` and `disallowedTools` are Claude-specific permission controls | `permission` is OpenCode-specific and gates tool families |
-| Links and imports | Use plain relative Markdown links | Avoid assuming runtime-specific import syntax | Avoid assuming runtime-specific import syntax |
-| Subagent invocation | Orchestrator or main conversation owns the routing table | Subagents cannot spawn other subagents; nested workflows must chain from the main conversation or use skills | OpenCode uses `task` permission to gate subagent launches |
-| Tool permissions | Describe required capability in prose, then map to runtime-specific config | Restrict with `tools` or `disallowedTools`; `Agent(...)` restrictions apply only to agents running as the main thread | Restrict with `permission` keys such as `read`, `edit`, `bash`, `task`, `webfetch`, and `websearch` |
-| Context model | Assume delegated agents start without the full active conversation unless the runtime explicitly says otherwise | Non-fork subagents start with isolated context and receive a delegation message | Treat subagent context inheritance as runtime behavior; pass complete input contracts |
-| External web access | Declare when a skill needs current external information | Map to available web/search tools in the active environment | Map to `webfetch` or `websearch` permission when present |
-| File mutation | Declare mutation boundaries in the skill contract | Restrict write/edit tools where possible | Restrict `edit` permission, which covers write/edit/patch operations |
+| Concern                  | Portable default                                                                                                | Claude Code notes                                                                                                     | OpenCode notes                                                                                      |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Skill and subagent files | Plain Markdown with minimal YAML frontmatter                                                                    | Custom subagents use Markdown definitions with fields such as `name`, `description`, `tools`, and `disallowedTools`   | Markdown agents can set fields such as `description`, `mode`, and `permission`                      |
+| Frontmatter              | Use only fields both targets can ignore safely or understand by convention                                      | `tools` and `disallowedTools` are Claude-specific permission controls                                                 | `permission` is OpenCode-specific and gates tool families                                           |
+| Links and imports        | Use plain relative Markdown links                                                                               | Avoid assuming runtime-specific import syntax                                                                         | Avoid assuming runtime-specific import syntax                                                       |
+| Subagent invocation      | Orchestrator or main conversation owns the routing table                                                        | Subagents cannot spawn other subagents; nested workflows must chain from the main conversation or use skills          | OpenCode uses `task` permission to gate subagent launches                                           |
+| Tool permissions         | Describe required capability in prose, then map to runtime-specific config                                      | Restrict with `tools` or `disallowedTools`; `Agent(...)` restrictions apply only to agents running as the main thread | Restrict with `permission` keys such as `read`, `edit`, `bash`, `task`, `webfetch`, and `websearch` |
+| Context model            | Assume delegated agents start without the full active conversation unless the runtime explicitly says otherwise | Non-fork subagents start with isolated context and receive a delegation message                                       | Treat subagent context inheritance as runtime behavior; pass complete input contracts               |
+| External web access      | Declare when a skill needs current external information                                                         | Map to available web/search tools in the active environment                                                           | Map to `webfetch` or `websearch` permission when present                                            |
+| File mutation            | Declare mutation boundaries in the skill contract                                                               | Restrict write/edit tools where possible                                                                              | Restrict `edit` permission, which covers write/edit/patch operations                                |
 
 **Current runtime facts checked 2026-05-27.** These facts are
 volatile. Re-check official runtime docs before changing a portable
@@ -116,12 +116,14 @@ runtime's syntax in a clearly labeled block.
 Portable target: OpenCode and Claude Code.
 
 Required capabilities:
+
 - Read repository files.
 - Run bounded inspection commands.
 - Do not edit files.
 - Dispatch `security-reviewer` from the orchestrator only.
 
 Runtime mapping:
+
 - Claude Code: allow read/search/bash tools; deny write/edit tools;
   do not rely on subagents spawning subagents.
 - OpenCode: set `permission.edit: deny`, permit bounded `bash`, and
@@ -133,6 +135,7 @@ without naming the underlying capability.
 
 ```markdown
 ## Tools
+
 This skill uses `tools: [Read, Bash]` and `disallowedTools: [Write,
 Edit]`.
 
@@ -152,4 +155,3 @@ default permissions.)
   <https://opencode.ai/docs/agents/>. Supports the current OpenCode
   notes above, including `mode: subagent` and permission-family
   mappings.
-
