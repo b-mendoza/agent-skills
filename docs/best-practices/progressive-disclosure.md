@@ -97,13 +97,3 @@ it to 1,200 lines that load on every trigger.
   Supports just-in-time retrieval and summarization patterns over
   always-loaded context.
 
-## Related practices
-
-- [Template extraction](./template-extraction.md) — concrete extraction
-  criteria for output templates.
-- [Context window protection](./context-window-protection.md) —
-  protects the orchestrator's working context once content is loaded.
-- [Earned complexity](./earned-complexity.md) — extraction is permitted
-  only when it earns its place.
-- [Subagent default execution](./subagent-default-execution.md) — when
-  Level 2 subagent files should exist at all.
