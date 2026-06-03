@@ -52,7 +52,7 @@ expected shape of the unhappy paths.
 Good: a dispatch round-trip example, an output-format example, and
 an edge-case example, in that order.
 
-```markdown
+````markdown
 ## Example
 
 Input: `SKILL_PATH=skills/example`, `KNOWN_PROBLEM="validator misses
@@ -64,6 +64,7 @@ synchronizes `flow-diagram.md`, validates the result, and returns
 `changed` only after gates pass.
 
 ## Output Format Example
+
 ```yaml
 status: "CONTRACT_AUDIT: PASS"
 verdict:
@@ -72,16 +73,18 @@ verdict:
 ```
 
 ## Edge / Failure Example
+
 On a target package whose `flow-diagram.md` is missing, the workflow
 returns `CONTRACT_AUDIT: BLOCKED` with `failure_details: "flow-
 diagram.md path unreadable"` rather than guessing at coherence from
 SKILL.md alone.
-```
+````
 
 Bad: vague prose example with no realistic data and no edge case.
 
 ```markdown
 ## Example
+
 Run the skill on any package; it will audit and report. Outputs
 follow the contract above.
 ```
@@ -95,4 +98,3 @@ follow the contract above.
 - OpenAI Prompt Engineering Guide, accessed 2026-06-03:
   <https://platform.openai.com/docs/guides/prompt-engineering>.
   Supports few-shot examples for ambiguity-prone tasks.
-
