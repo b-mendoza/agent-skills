@@ -137,13 +137,3 @@ without knowing what inputs the skill requires.)
   <https://www.iso.org/standard/70879.html>. Supports predictable
   ordering as a documentation primitive.
 
-## Related practices
-
-- [Subagent section order](./subagent-section-order.md) — the
-  sibling order for subagent files.
-- [Subagent registry format](./subagent-registry-format.md) — the
-  registry table referenced in section 5.
-- [Naming conventions](./naming-conventions.md) — naming rules for
-  the items listed in each section.
-- [Identity and mental model](./identity-and-mental-model.md) —
-  what section 2 (title + purpose) is for.
