@@ -62,13 +62,15 @@ bounded repair.
 # In skill-name/SKILL.md
 
 ## Critical Outputs
-| Gate | Protects | Checker |
-| ---- | -------- | ------- |
-| `G_HANDOFF_COMPLETENESS` | Every user-facing handoff has required sections | Inline structural check |
-| `G_GAP_CLOSURE` | Every approved gap observably resolved | `skill-package-validator` |
-| `G_FLOW_SYNC` | Diagram, SKILL.md, registry agree | `skill-package-validator` |
+
+| Gate                     | Protects                                        | Checker                   |
+| ------------------------ | ----------------------------------------------- | ------------------------- |
+| `G_HANDOFF_COMPLETENESS` | Every user-facing handoff has required sections | Inline structural check   |
+| `G_GAP_CLOSURE`          | Every approved gap observably resolved          | `skill-package-validator` |
+| `G_FLOW_SYNC`            | Diagram, SKILL.md, registry agree               | `skill-package-validator` |
 
 ## Execution
+
 11. Dispatch `skill-package-validator`.
 12. On `VALIDATION: FAIL`, re-enter Edit with only validator findings;
     use at most three repair cycles.
@@ -82,6 +84,7 @@ Bad: no declared critical outputs, no gates, success defined as
 # In skill-name/SKILL.md
 
 ## Execution
+
 11. Dispatch the editor.
 12. If the editor says PASS, return success.
 13. If not, ask the editor to fix it. (No checker, no retry cap, no
@@ -99,4 +102,3 @@ Bad: no declared critical outputs, no gates, success defined as
 - Agent-SafetyBench — arXiv:2412.14470:
   <https://arxiv.org/abs/2412.14470>. Supports the need for stronger
   checks than prompt-only safety instructions in agent settings.
-
