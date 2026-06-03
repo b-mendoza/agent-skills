@@ -66,11 +66,11 @@ applicable` verdicts and evidence.
 ```markdown
 ## Best-Practices Compliance
 
-| Practice | Tier | Verdict | Evidence |
-| --- | --- | --- | --- |
-| context-window-protection | mandatory | pass | Orchestrator keeps raw inspection in subagents and retains only verdicts/paths |
-| template-extraction | recommended | not applicable | No output template exceeds 80 lines |
-| naming-conventions | optional-style | fail | Subagent file uses verb phrase instead of role noun |
+| Practice                  | Tier           | Verdict        | Evidence                                                                       |
+| ------------------------- | -------------- | -------------- | ------------------------------------------------------------------------------ |
+| context-window-protection | mandatory      | pass           | Orchestrator keeps raw inspection in subagents and retains only verdicts/paths |
+| template-extraction       | recommended    | not applicable | No output template exceeds 80 lines                                            |
+| naming-conventions        | optional-style | fail           | Subagent file uses verb phrase instead of role noun                            |
 ```
 
 Bad: a flat pass/fail checklist that mixes tiers and provides no
@@ -78,6 +78,7 @@ evidence.
 
 ```markdown
 ## Best-Practices Compliance
+
 - [x] context-window-protection
 - [ ] template-extraction
 - [ ] naming-conventions
@@ -93,4 +94,3 @@ evidence.
   <https://martinfowler.com/articles/code-review-checklist.html>.
   Practitioner support for tiered review criteria over uniform
   weight.
-
