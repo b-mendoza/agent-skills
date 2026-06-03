@@ -2,10 +2,10 @@
 
 ## Tier
 
-`mandatory`. Inter-agent communication is contract-shaped. A
-free-form Markdown handoff lets orchestrator and subagent drift on
-field names, enums, and required sections; a YAML handoff fixes the
-contract in a parseable, indexable form.
+`mandatory`. Inter-agent communication is contract-shaped. A YAML
+handoff fixes the contract in a parseable, indexable form so
+orchestrator and subagent cannot drift on field names, enums, or
+required sections.
 
 ## When it applies
 
