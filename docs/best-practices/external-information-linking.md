@@ -108,14 +108,3 @@ skill claims correctness on the basis of a stale source.)
   general principle that linking by canonical identifier is the
   default exchange shape for web-published content.
 
-## Related practices
-
-- [Context window protection](./context-window-protection.md) —
-  retrieved external content stays as evidence, not instructions.
-- [Earned complexity](./earned-complexity.md) — every bundled snapshot
-  must earn its place against the link-by-default rule.
-- [Artifact lifecycle](./artifact-lifecycle.md) — bundled snapshots
-  fall under Category B and need provenance metadata.
-- [Runtime portability matrix](./runtime-portability-matrix.md) —
-  volatile runtime docs are the canonical example of freshness-
-  sensitive sources.
