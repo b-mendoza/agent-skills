@@ -41,9 +41,9 @@ templates or references that define statuses, priorities, or gates.
 Write the report to `REPORT_PATH` (YAML).
 
 ```yaml
-version: 1                                # required
+version: 1                                # required, integer schema version
 from: "contract-priority-auditor"         # required
-to:
+to:                                       # required, exactly one orchestrator identity mapping
   orchestrator: "improving-skill-definition" # required
   phase: "Phase 4/8 - Audit"                 # required
 intent: "Audit input/output contracts, status routing, success/failure criteria, stop conditions, priorities" # required
@@ -54,30 +54,30 @@ verdict:                                  # required
 outcome_matrix:                           # required, one entry per orchestrator-visible owner (phase or subagent), ordered by execution
   - owner: "task-planner"
     success: "PLAN: PASS"                 # required, one of: PLAN: PASS, PLAN: GAPS_FOUND, PLAN: BLOCKED, PLAN: ERROR
-    failure_or_blocked: "PLAN: BLOCKED"
-    observable_criteria: "plan file exists and contains required task fields"
-    no_proceed_condition: "missing acceptance criteria or unresolved ticket ambiguity"
+    failure_or_blocked: "PLAN: BLOCKED"   # required, one of: PLAN: BLOCKED, PLAN: ERROR
+    observable_criteria: "plan file exists and contains required task fields" # required
+    no_proceed_condition: "missing acceptance criteria or unresolved ticket ambiguity" # required
   - owner: "task-executor"
     success: "EXEC: PASS"                 # required, one of: EXEC: PASS, EXEC: GAPS_FOUND, EXEC: BLOCKED, EXEC: ERROR
-    failure_or_blocked: "EXEC: BLOCKED"
-    observable_criteria: "all planned diffs applied and tests rerun"
-    no_proceed_condition: "any planned diff failed or test regression detected"
+    failure_or_blocked: "EXEC: BLOCKED"   # required, one of: EXEC: BLOCKED, EXEC: ERROR
+    observable_criteria: "all planned diffs applied and tests rerun" # required
+    no_proceed_condition: "any planned diff failed or test regression detected" # required
   - owner: "task-reviewer"
     success: "REVIEW: PASS"               # required, one of: REVIEW: PASS, REVIEW: GAPS_FOUND, REVIEW: BLOCKED, REVIEW: ERROR
-    failure_or_blocked: "REVIEW: GAPS_FOUND"
-    observable_criteria: "reviewer report enumerates gaps with severity and required_fix"
-    no_proceed_condition: "report missing or any high-severity gap unresolved"
+    failure_or_blocked: "REVIEW: GAPS_FOUND" # required, one of: REVIEW: GAPS_FOUND, REVIEW: BLOCKED, REVIEW: ERROR
+    observable_criteria: "reviewer report enumerates gaps with severity and required_fix" # required
+    no_proceed_condition: "report missing or any high-severity gap unresolved" # required
 priority_ranking:                         # required, at least one entry
   - tier: "high"                          # required, one of: high, medium, low
-    concerns: "Approval gates, mutation boundaries, routeable statuses"
-    evidence: "SKILL.md Critical Outputs table enumerates the high-tier gates"
-  - tier: "medium"
-    concerns: "Audit-slice completeness, parallel dispatch, context efficiency"
-    evidence: "Pipeline Overview rows assert parallel dispatch goal"
-  - tier: "low"
-    concerns: "Prose polish, cosmetic diagram layout"
-    evidence: "No file-size cap violated by polish-only edits"
-gaps:                                     # required when GAPS_FOUND; empty list when PASS
+    concerns: "Approval gates, mutation boundaries, routeable statuses" # required
+    evidence: "SKILL.md Critical Outputs table enumerates the high-tier gates" # required
+  - tier: "medium"                        # required, one of: high, medium, low
+    concerns: "Audit-slice completeness, parallel dispatch, context efficiency" # required
+    evidence: "Pipeline Overview rows assert parallel dispatch goal" # required
+  - tier: "low"                           # required, one of: high, medium, low
+    concerns: "Prose polish, cosmetic diagram layout" # required
+    evidence: "No file-size cap violated by polish-only edits" # required
+gaps:                                     # required, one fully populated entry per gap when GAPS_FOUND; use [] only when PASS, BLOCKED, or ERROR after this schema is known
   - id: "gap-003"                         # required, stable kebab id
     severity: "high"                      # required, one of: high, medium, low
     type: "STATUS_AND_PRIORITY_CONTRACTS" # required, one of the type labels in audit-gap-taxonomy.md
@@ -96,7 +96,7 @@ resources_used:                           # required
     - "skills/example/SKILL.md"
     - "skills/example/subagents/task-executor.md"
   web: []                                 # required (may be empty list)
-failure_details: ""                       # required for BLOCKED or ERROR; empty string when PASS or GAPS_FOUND
+failure_details: ""                       # required, non-empty when status is CONTRACT_AUDIT: BLOCKED or CONTRACT_AUDIT: ERROR; empty string when PASS or GAPS_FOUND
 ```
 
 Reply compactly with status and report path only.
