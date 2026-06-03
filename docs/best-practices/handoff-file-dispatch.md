@@ -177,66 +177,33 @@ resources_used: # required
 failure_details: "" # required, non-empty when status is CONTRACT_AUDIT: BLOCKED or CONTRACT_AUDIT: ERROR; empty string when PASS or GAPS_FOUND
 ```
 
-Bad: the prior Markdown approach (deprecated). Section boundaries are
-free-form, enum vocabularies live in prose, and two consumers can
-disagree about which section carries the verdict.
+Bad: YAML-shaped output that drops the contract. It parses, but the
+reader must infer required fields, enum values, cardinality, and
+routing semantics from free-form strings.
 
-```markdown
-# .handoffs/improving-skill-definition/contract-priority-auditor-report.md
-
-CONTRACT_AUDIT: GAPS_FOUND
-
-## Verdict
-
-- Status-contract assessment: Phase 4 missing no-proceed; phase 6 missing failure status.
-- Priority assessment: partial.
-
-## Outcome Matrix
-
-| owner        | success    | failure/blocked | observable criteria | no-proceed condition |
-| ------------ | ---------- | --------------- | ------------------- | -------------------- |
-| task-planner | PLAN: PASS | PLAN: BLOCKED   | plan file exists    | missing AC           |
-| ...          |
-
-## Priority Ranking
-
-| tier | concerns                            | evidence       |
-| ---- | ----------------------------------- | -------------- |
-| high | approval gates, mutation boundaries | SKILL.md gates |
-| ...  |
-
-## Gaps
-
-| id      | severity | type     | affected files          | issue                          | evidence           | required fix                 | quality axes | priority tier | adversarial alternative | diagram delegation |
-| ------- | -------- | -------- | ----------------------- | ------------------------------ | ------------------ | ---------------------------- | ------------ | ------------- | ----------------------- | ------------------ |
-| gap-001 | high     | contract | skills/example/SKILL.md | Phase 6 missing failure status | SKILL.md Execution | Add EDIT: BLOCKED/ERROR rows | routeability | high          | implicit routing        | yes                |
-
-## Resources Used
-
-- Local: SKILL.md, task-executor.md
-- Web: none
-
-## Failure Details
-
-- none
+```yaml
+# .handoffs/improving-skill-definition/contract-priority-auditor-report.yaml
+status: "GAPS_FOUND"
+summary: "Phase 6 has a contract problem."
+details: "Add blocked/error handling and update the diagram if needed."
+gaps:
+  - "Phase 6 missing failure status"
+resources: "SKILL.md and task-executor.md"
 ```
 
-Failure modes the Markdown form introduces:
+Failure modes this invalid shape introduces:
 
-- **Ambiguous section boundaries.** A future edit can split or
-  rename `## Outcome Matrix`; downstream consumers that grep
-  `## Outcome` silently break.
-- **Free-form prose.** "Status-contract assessment" is a sentence,
-  not a parseable value. Two consumers can disagree about how to
-  classify it.
-- **Parser fragility.** Markdown table parsers handle whitespace,
-  pipe escaping, and column-count drift inconsistently. A YAML
-  parser fails loudly on malformed input.
-- **Drift between orchestrator and subagent interpretations.** The
-  Markdown form lets the orchestrator read "verdict" from the
-  top-line `CONTRACT_AUDIT:` while a sibling skill reads it from the
-  `## Verdict` heading, and neither notices when one drifts away
-  from the other.
+- **Ambiguous status semantics.** `GAPS_FOUND` lacks the required
+  `CONTRACT_AUDIT:` prefix and no inline enum records allowed values.
+- **Lost field schema.** `gaps` collapses the full gap-row contract
+  into a string, so required fields such as `severity`, `type`,
+  `affected_files`, and `required_fix` disappear.
+- **Missing cardinality.** The shape does not say whether
+  `outcome_matrix` is required, how rows are ordered, or how many
+  entries each phase must provide.
+- **Parser success without contract success.** A YAML parser can load
+  this document, but the orchestrator still cannot route
+  deterministically from it.
 
 ## References
 
