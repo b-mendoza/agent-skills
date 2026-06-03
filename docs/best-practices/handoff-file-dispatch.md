@@ -251,13 +251,3 @@ Failure modes the Markdown form introduces:
   guidance that treats YAML or JSON data contracts as human- and
   machine-readable formats that enable automated enforcement.
 
-## Related practices
-
-- [Artifact lifecycle](./artifact-lifecycle.md) — Category A2 lifecycle
-  for `.handoffs/` files.
-- [Input and output contracts](./input-output-contracts.md) — the
-  contract shape every handoff key encodes.
-- [Context window protection](./context-window-protection.md) — handoff
-  files keep raw payloads out of the orchestrator's context.
-- [Mutation scope boundaries](./mutation-scope-boundaries.md) — the
-  `constraints` block in every YAML handoff carries `MUTATION_LIMITS`.
