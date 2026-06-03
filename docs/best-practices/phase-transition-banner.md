@@ -100,7 +100,8 @@ subagent-architecture-auditor: starting...
   Insufferable," accessed 2026-06-03:
   <https://www.nngroup.com/articles/progress-indicators/>. Supports
   visible progress markers as a UI primitive.
-- BBC GEL, "Progress disclosure pattern," accessed 2026-06-03:
-  <https://www.bbc.co.uk/gel/guidelines/progress-indicator>.
+- Apple Human Interface Guidelines, "Progress indicators,"
+  accessed 2026-06-03:
+  <https://developer.apple.com/design/human-interface-guidelines/progress-indicators>.
   Supports the principle that long-running multi-phase work needs
-  explicit phase indicators.
+  explicit phase indicators so users can track where the work is.
