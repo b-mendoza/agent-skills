@@ -80,14 +80,14 @@ delegated steps.
 **Cost model.** Before delegating a step, account for both sides of
 the tradeoff.
 
-| Factor | Favors inline | Favors subagent |
-| --- | --- | --- |
-| Raw context volume | Output is short and useful to retain | Output is large and only a summary/verdict matters |
-| Continuity | Step depends on ongoing user conversation or prior turns | Step can be described by a complete input contract |
-| Latency | User needs tight back-and-forth | Work can run as a bounded, self-contained pass |
-| Validation | Orchestrator must inspect details directly | Independent verdict or artifact path is enough |
-| Permissions/scope | Same authority is appropriate | Isolation or narrower mutation scope reduces risk |
-| Reuse | One-off local step | Contracted behavior will recur across workflows |
+| Factor             | Favors inline                                            | Favors subagent                                    |
+| ------------------ | -------------------------------------------------------- | -------------------------------------------------- |
+| Raw context volume | Output is short and useful to retain                     | Output is large and only a summary/verdict matters |
+| Continuity         | Step depends on ongoing user conversation or prior turns | Step can be described by a complete input contract |
+| Latency            | User needs tight back-and-forth                          | Work can run as a bounded, self-contained pass     |
+| Validation         | Orchestrator must inspect details directly               | Independent verdict or artifact path is enough     |
+| Permissions/scope  | Same authority is appropriate                            | Isolation or narrower mutation scope reduces risk  |
+| Reuse              | One-off local step                                       | Contracted behavior will recur across workflows    |
 
 **Co-location.** All subagent files live inside the skill folder,
 not in a global agents directory.
@@ -130,6 +130,7 @@ delegated (artifact-producing) steps.
 # In skills/clarifying-assumptions/SKILL.md
 
 ## Execution
+
 1. (Inline) Q&A turn with user: ask clarifying question about plan.
    Orchestrator needs prior turn context to decide what to ask next.
 2. (Inline) Q&A turn with user: refine based on response.
@@ -165,4 +166,3 @@ orchestrator with no useful continuity.
   <https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents>.
   Supports the principle that context-bounded steps are the unit of
   delegation.
-
