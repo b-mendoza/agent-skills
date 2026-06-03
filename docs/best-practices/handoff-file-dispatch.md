@@ -60,8 +60,8 @@ Required top-level keys in every YAML handoff:
 | `notes`       | optional               | Free-form notes that do not change routing                              |
 
 YAML inline comments carry every enum, required/optional marker, and
-cardinality rule the Markdown contract used to carry in prose. They
-are part of the contract, not decoration.
+cardinality rule that prose alone cannot preserve deterministically.
+They are part of the contract, not decoration.
 
 ## Rationale
 
