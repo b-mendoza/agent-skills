@@ -24,6 +24,9 @@ active playbook may accept additional platform-native aliases for these
 neutral names; consult the playbook's `Status-Check Contract` section for
 the accepted alias list.
 
+The active playbook's `Status-Check Contract` supplies the identifier line to
+include in outputs; use that line rather than inventing a neutral field name.
+
 The orchestrator may pass additional locator inputs the active playbook
 requires beyond the workflow key (the playbook's `Inputs and Identifier`
 section names them). Accept whatever the playbook lists; do not require
@@ -93,12 +96,12 @@ retrieved, return one of:
 
 ```text
 <PLAYBOOK_PREFIX>: ERROR
-Workflow: <KEY>
+<playbook-supplied identifier line>
 Reason: Platform transport is unavailable - <detail>
 ```
 
 ```text
 <PLAYBOOK_PREFIX>: ERROR
-Workflow: <KEY>
+<playbook-supplied identifier line>
 Reason: Work item not found - <detail>
 ```
