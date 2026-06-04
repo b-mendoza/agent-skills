@@ -28,8 +28,8 @@ flowchart TD
   PATH_OK -->|yes| BASELINE_SNAPSHOT["Copy confirmed SKILL_PATH into BASELINE_PATH<br/>(HANDOFF_DIR/baseline/) before any mutation<br/>so the validator can diff SKILL_PATH against<br/>BASELINE_PATH for new-vs-prior closure evidence"]
   BASELINE_SNAPSHOT --> SELF_REFERENCE_CHECK{"SKILL_PATH equals this orchestrator's own package?"}
 
-  SELF_REFERENCE_CHECK -->|no| FLOW_LOAD["Emit banner Phase 2/8 - Flow Load<br/>Load this skill's ./flow-diagram.md<br/>Load target skill flow-diagram.md when present<br/>Set source-of-truth execution contract"]
-  SELF_REFERENCE_CHECK -->|yes| SELF_REFERENCE_GUARD["Self-improvement run detected<br/>Apply same-run safety rule: defer any approved mutation that<br/>would change a contract the orchestrator currently has loaded<br/>(audit subagent contracts, status routing table, personality file,<br/>audit-gap-taxonomy, final-report template) in a way that breaks<br/>the current run's dispatch contracts<br/>Surface deferred mutations in the final handoff with a<br/>recommendation to re-run after terminal cleanup"]
+  SELF_REFERENCE_CHECK -->|no| FLOW_LOAD["Set SELF_IMPROVEMENT_RUN=false<br/>Emit banner Phase 2/8 - Flow Load<br/>Load this skill's ./flow-diagram.md<br/>Load target skill flow-diagram.md when present<br/>Set source-of-truth execution contract"]
+  SELF_REFERENCE_CHECK -->|yes| SELF_REFERENCE_GUARD["Self-improvement run detected<br/>Set SELF_IMPROVEMENT_RUN=true<br/>Apply same-run safety rule: defer any approved mutation that<br/>would change a contract the orchestrator currently has loaded<br/>(audit subagent contracts, status routing table, personality file,<br/>audit-gap-taxonomy, final-report template) in a way that breaks<br/>the current run's dispatch contracts<br/>Surface deferred mutations in the final handoff with a<br/>recommendation to re-run after terminal cleanup"]
   SELF_REFERENCE_GUARD --> FLOW_LOAD
 
   FLOW_LOAD --> FLOW_LOAD_OK{"This skill's flow-diagram.md and personality.md readable?"}
@@ -47,7 +47,7 @@ flowchart TD
   RELATED_DEGRADE --> AUDIT_SETUP
 
   AUDIT_SETUP --> AUDIT_GROUP["Focused audit slices (independent parallel group)<br/>Flow coherence and diagram delegation<br/>Subagent architecture and parallelism<br/>Contracts, statuses, and priority tiers<br/>Personality and reuse lens<br/>Package hygiene and best practices<br/>Prompt sufficiency and demotion"]
-  AUDIT_GROUP --> AUDIT_SYNTH["Orchestrator synthesizes audit reports (covers G_MANDATE_COVERAGE)<br/>Build one gap inventory, mutation plan, and gate plan<br/>Write synthesis to HANDOFF_DIR/audit-synthesis-report.yaml (AUDIT_REPORT_PATH)<br/>Keep facts, risks, blockers, recommendations,<br/>rejected alternatives, and open questions distinct"]
+  AUDIT_GROUP --> AUDIT_SYNTH["Orchestrator synthesizes audit reports (covers G_MANDATE_COVERAGE)<br/>Build one gap inventory, mutation plan, and gate plan<br/>Include architecture_advisory when SELF_IMPROVEMENT_RUN=true<br/>Write synthesis to HANDOFF_DIR/audit-synthesis-report.yaml (AUDIT_REPORT_PATH)<br/>Keep facts, risks, blockers, recommendations,<br/>rejected alternatives, and open questions distinct"]
   AUDIT_SYNTH --> AUDIT_STATUS{"Audit slice statuses?"}
 
   AUDIT_STATUS -->|all PASS no gaps| FINAL_NO_CHANGE["Emit banner Phase 8/8 - Handoff<br/>Load final-report-template.md<br/>Return no-change handoff with evidence,<br/>personality assessment, rejected optional improvements,<br/>related-skill limits, and validation limits"]
@@ -77,7 +77,7 @@ flowchart TD
 
   EDIT_APPLY["Write skill-definition-editor instructions<br/>Apply only approved gap mutations inside the target package<br/>When a final passed candidate exists at DIAGRAM_CANDIDATE_PATH,<br/>the editor writes it into flow-diagram.md in the SAME edit<br/>Editor returns BLOCKED if a structural gap is approved without an available final passed candidate<br/>During repair, scope the edit to failed validation checks only"]
   EDIT_APPLY --> EDIT_STATUS{"EDIT status?"}
-  EDIT_STATUS -->|PASS| VALIDATE["Emit banner Phase 7/8 - Validate (covers G_GAP_CLOSURE, G_FLOW_SYNC, G_BEST_PRACTICES_COMPLIANCE)<br/>Write skill-package-validator instructions<br/>Check approved-gap closure, diagram/SKILL/subagent coherence,<br/>priority and status contracts, strict file-size limits,<br/>related-discovery scope, prompt sufficiency,<br/>best-practices compliance, and mutation boundaries"]
+  EDIT_STATUS -->|PASS| VALIDATE["Emit banner Phase 7/8 - Validate (covers G_GAP_CLOSURE, G_FLOW_SYNC, G_BEST_PRACTICES_COMPLIANCE)<br/>Write skill-package-validator instructions<br/>Check approved-gap closure, diagram/SKILL/subagent coherence,<br/>audit-synthesis schema and advisory enforcement,<br/>priority and status contracts, strict file-size limits,<br/>related-discovery scope, prompt sufficiency,<br/>best-practices compliance, and mutation boundaries"]
   EDIT_STATUS -->|BLOCKED| EDIT_BLOCK["Blocked handoff<br/>Include edit blocker and smallest user decision"]
   EDIT_STATUS -->|ERROR| EDIT_ERROR["Retain edit error summary"]
 
@@ -182,7 +182,9 @@ prompt sufficiency. Each slice reports `PASS`, `GAPS_FOUND`, `BLOCKED`, or
 `ERROR`. The orchestrator writes the synthesized result to
 `HANDOFF_DIR/audit-synthesis-report.yaml` (the `AUDIT_REPORT_PATH` consumed by
 the editor and validator); this synthesis artifact is complete only when it
-contains the gap inventory, the mutation plan, and the quality gate plan.
+contains the gap inventory, the mutation plan, and the quality gate plan. When
+`SELF_IMPROVEMENT_RUN=true`, it must also contain `architecture_advisory` with a
+caveat and one `SAFE` or `DEFERRED` entry for every inventory gap.
 
 Diagram-sync rule (canonical home; `SKILL.md` step 9 and
 `subagents/skill-definition-editor.md` instruction 9 are documented hoists that
