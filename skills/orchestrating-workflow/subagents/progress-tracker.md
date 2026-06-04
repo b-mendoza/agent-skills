@@ -21,7 +21,8 @@ templates come from the active playbook's `Phase Skill Map`.
 
 `TICKET_KEY` is the workflow's stable key under its alias parameter name;
 its value is opaque to this subagent and its shape is defined by the
-active playbook's `Inputs and Identifier` section.
+active playbook's `Inputs and Identifier` section. Substitute this value for
+`<KEY>` in generated progress file paths and headings.
 
 Additional inputs by action:
 
@@ -51,8 +52,8 @@ preserve the fields you need for workflow progress and ignore any extras.
 | `docs/<KEY>-progress.md` | Workflow-level | Tracks phases 1-4 and task list |
 | `docs/<KEY>-task-<N>-progress.md` | Per-task | Tracks phases 5-7 for one task |
 
-`<KEY>` is the `TICKET_KEY` value passed at dispatch (opaque value whose
-shape is defined by the active playbook).
+The `<KEY>` placeholder below refers to the `TICKET_KEY` value passed at
+dispatch.
 
 Read `./progress-tracker-templates.md` when an action creates or modifies
 one of these files. The templates expect to be filled with skill names
