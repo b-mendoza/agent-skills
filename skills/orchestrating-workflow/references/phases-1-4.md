@@ -32,8 +32,9 @@ skill, validate postconditions, update progress, and run the gate.
 4. If retrieval failed before writing an artifact, route through
    `./error-handling.md` instead of running postcondition validation.
 5. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`,
-   `PHASE=1`, `DIRECTION=postcondition`. The validator loads the playbook
-   for the platform-specific snapshot section list.
+   `PLAYBOOK_PATH=<active playbook path>`, `PHASE=1`,
+   `DIRECTION=postcondition`. The validator loads the playbook for the
+   platform-specific snapshot section list.
 6. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`,
    `ACTION=update`, `PHASE=1`, `STATUS=complete`, and a one-line fetch
    summary.
@@ -46,13 +47,15 @@ skill, validate postconditions, update progress, and run the gate.
 
 1. Announce Phase 2.
 2. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`,
-   `PHASE=2`, `DIRECTION=precondition`.
+   `PLAYBOOK_PATH=<active playbook path>`, `PHASE=2`,
+   `DIRECTION=precondition`.
 3. Invoke the downstream skill with the inputs named in the playbook's
    Phase Skill Map row for Phase 2.
 4. When re-planning from Phase 3, also pass `RE_PLAN=true` and the accepted
    `DECISIONS` summary from critique.
 5. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`,
-   `PHASE=2`, `DIRECTION=postcondition`.
+   `PLAYBOOK_PATH=<active playbook path>`, `PHASE=2`,
+   `DIRECTION=postcondition`.
 6. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`,
    `ACTION=update`, `PHASE=2`, `STATUS=complete`, and a one-line planning
    summary.
@@ -66,7 +69,8 @@ skill, validate postconditions, update progress, and run the gate.
 
 1. Announce Phase 3.
 2. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`,
-   `PHASE=3`, `DIRECTION=precondition`.
+   `PLAYBOOK_PATH=<active playbook path>`, `PHASE=3`,
+   `DIRECTION=precondition`.
 3. Invoke `clarifying-assumptions` with `MODE=upfront`, `TICKET_KEY=<KEY>`,
    and `ITERATION=<N>`. (`clarifying-assumptions` accepts `TICKET_KEY` as
    the workflow-key alias for either platform's identifier.)
@@ -74,7 +78,8 @@ skill, validate postconditions, update progress, and run the gate.
 5. If the downstream summary has `RE_PLAN_NEEDED=true`, re-run Phase 2 with
    the accepted decisions, then run Phase 3 again. Maximum: 3 re-plan loops.
 6. After `RE_PLAN_NEEDED=false`, dispatch `artifact-validator` with the
-   workflow key under `TICKET_KEY`, `PHASE=3`, `DIRECTION=postcondition`.
+   workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`,
+   `PHASE=3`, `DIRECTION=postcondition`.
 7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`,
    `ACTION=update`, `PHASE=3`, `STATUS=complete`, and a one-line
    clarification summary.
@@ -99,7 +104,8 @@ skill.
 
 1. Announce Phase 4.
 2. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`,
-   `PHASE=4`, `DIRECTION=precondition`.
+   `PLAYBOOK_PATH=<active playbook path>`, `PHASE=4`,
+   `DIRECTION=precondition`.
 3. Confirm the playbook's required Phase 4 inputs (named in its
    `Inputs and Identifier` section) are available. If missing, stop and
    ask the user for the canonical work-item URL before platform writes.
@@ -108,7 +114,8 @@ skill.
 5. Retain only the structured `Created/Linked` summary the playbook's
    write-model section defines, plus warnings and failed-create notes.
 6. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`,
-   `PHASE=4`, `DIRECTION=postcondition`.
+   `PLAYBOOK_PATH=<active playbook path>`, `PHASE=4`,
+   `DIRECTION=postcondition`.
 7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`,
    `ACTION=update`, `PHASE=4`, `STATUS=complete`, `SUMMARY=<one-line
    result>`, and `TASKS=<rows from the downstream child-item table>`.
