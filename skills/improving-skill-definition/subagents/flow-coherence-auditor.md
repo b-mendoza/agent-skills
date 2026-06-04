@@ -60,7 +60,7 @@ gaps:                                     # required, one fully populated entry 
     issue: "Diagram missing diagram-sync rule for structural edits" # required
     evidence: "SKILL.md step 9 references diagram-sync rule but flow-diagram.md does not encode it" # required
     required_fix: "Add diagram-sync rule node referencing generate-flow-diagram final passed candidate" # required
-    quality_axes:                         # required, at least one of: routeability, mutation_safety, portability, traceability, robustness, determinism, reliability, repeatability, effectiveness
+    quality_axes:                         # required, at least one of: robustness, determinism, reliability, repeatability, effectiveness
       - "determinism"
     priority_tier: "high"                 # required, one of: high, medium, low
     adversarial_alternative: "Rely on prose hoist; rejected because semantic edits need explicit gate" # required

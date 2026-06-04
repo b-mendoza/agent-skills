@@ -88,7 +88,7 @@ gaps:                                     # required, one fully populated entry 
     issue: "No operating posture for a risk-bearing rewrite workflow" # required
     evidence: "SKILL.md identity paragraph is a generic assistant statement" # required
     required_fix: "Add references/personality.md with conservative rewriter posture" # required
-    quality_axes:                         # required, at least one of: routeability, mutation_safety, portability, traceability, robustness, determinism, reliability, repeatability, effectiveness
+    quality_axes:                         # required, at least one of: robustness, determinism, reliability, repeatability, effectiveness
       - "reliability"
     priority_tier: "medium"               # required, one of: high, medium, low
     adversarial_alternative: "Leave posture implicit; rejected because risk-bearing edits need posture" # required
