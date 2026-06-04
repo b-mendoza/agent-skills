@@ -31,11 +31,13 @@ value carries through unchanged.
 1. Read `../references/data-contracts.md` for the requested `PHASE` and
    `DIRECTION`.
 2. Use only the matching row or section for that boundary.
-3. For Phase 1 postcondition, also read the active playbook's
-   `Phase 1 Snapshot Sections` for the heading order to check. For Phase 4
-   postcondition, also read the playbook's `Phase 4 Child-Item Table and
-   Write Model` for the workflow-level table heading and accepted inline
-   reference value forms.
+3. For Phase 1 postcondition and Phase 2 precondition, also read the active
+   playbook's `Phase 1 Snapshot Sections` for the heading order to check.
+   For Phase 2 postcondition and Phase 3 precondition, read the active
+   playbook's `Phase 2 Task Plan Summary Heading` for the first task-plan
+   section heading. For Phase 4 postcondition and Phase 5 precondition, read
+   the playbook's `Phase 4 Child-Item Table and Write Model` for the
+   workflow-level table heading and accepted inline reference value forms.
 4. Check file existence first.
 5. When content validation is required, use targeted section and pattern
    checks rather than reading full files into context.
