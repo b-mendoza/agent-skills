@@ -21,11 +21,16 @@ and `SKILL.md` defer to that definition.
 
 ```mermaid
 flowchart TD
-  START([Start: improve existing skill definition]) --> INTAKE["Emit banner Phase 1/8 - Intake<br/>Normalize SKILL_PATH, KNOWN_PROBLEM, TARGET_RUNTIME,<br/>SCOPE_LIMITS, REFERENCE_NEED, APPROVED_GAPS<br/>Derive MUTATION_LIMITS, HANDOFF_DIR, and<br/>DIAGRAM_CANDIDATE_PATH (HANDOFF_DIR/flow-diagram-candidate.md)<br/>Initialize repair counter to 0<br/>Preserve target identity unless user expands scope"]
-  INTAKE --> PATH_OK{"SKILL_PATH present and locatable?"}
+  START([Start: improve existing skill definition]) --> INTAKE["Emit banner Phase 1/8 - Intake<br/>Normalize SKILL_PATH, KNOWN_PROBLEM, TARGET_RUNTIME,<br/>SCOPE_LIMITS, REFERENCE_NEED, APPROVED_GAPS<br/>Derive MUTATION_LIMITS, HANDOFF_DIR,<br/>BASELINE_PATH (HANDOFF_DIR/baseline/), and<br/>DIAGRAM_CANDIDATE_PATH (HANDOFF_DIR/flow-diagram-candidate.md)<br/>Initialize repair counter to 0<br/>Preserve target identity unless user expands scope"]
+  INTAKE --> BASELINE_SNAPSHOT["Copy SKILL_PATH into BASELINE_PATH<br/>(HANDOFF_DIR/baseline/) before any mutation<br/>so the validator can diff SKILL_PATH against<br/>BASELINE_PATH for new-vs-prior closure evidence"]
+  BASELINE_SNAPSHOT --> PATH_OK{"SKILL_PATH present and locatable?"}
 
   PATH_OK -->|no| PATH_BLOCK["Blocked handoff<br/>Ask one SKILL_PATH question<br/>Stop until user supplies path"]
-  PATH_OK -->|yes| FLOW_LOAD["Emit banner Phase 2/8 - Flow Load<br/>Load this skill's ./flow-diagram.md<br/>Load target skill flow-diagram.md when present<br/>Set source-of-truth execution contract"]
+  PATH_OK -->|yes| SELF_REFERENCE_CHECK{"SKILL_PATH equals this orchestrator's own package?"}
+
+  SELF_REFERENCE_CHECK -->|no| FLOW_LOAD["Emit banner Phase 2/8 - Flow Load<br/>Load this skill's ./flow-diagram.md<br/>Load target skill flow-diagram.md when present<br/>Set source-of-truth execution contract"]
+  SELF_REFERENCE_CHECK -->|yes| SELF_REFERENCE_GUARD["Self-improvement run detected<br/>Apply same-run safety rule: defer any approved mutation that<br/>would change a contract the orchestrator currently has loaded<br/>(audit subagent contracts, status routing table, personality file,<br/>audit-gap-taxonomy, final-report template) in a way that breaks<br/>the current run's dispatch contracts<br/>Surface deferred mutations in the final handoff with a<br/>recommendation to re-run after terminal cleanup"]
+  SELF_REFERENCE_GUARD --> FLOW_LOAD
 
   FLOW_LOAD --> FLOW_LOAD_OK{"This skill's flow-diagram.md and personality.md readable?"}
   FLOW_LOAD_OK -->|no| FLOW_LOAD_ERROR["Retain flow-load error summary<br/>Name the missing flow-diagram.md or personality.md path"]
@@ -114,9 +119,9 @@ flowchart TD
   classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class FLOW_LOAD,AUTHORITY,BOUNDARY,STATUS_CONTRACT,SENSITIVE_GATE guard;
-  class RELATED,RELATED_DEGRADE,AUDIT_SETUP,AUDIT_GROUP,AUDIT_SYNTH,EDIT_PREP,EDIT_APPLY,DIAGRAM_REVIEW,VALIDATE,REPAIR_PREP check;
-  class PATH_OK,FLOW_LOAD_OK,RELATED_STATUS,RELATED_EVIDENCE_GATE,AUDIT_STATUS,APPROVAL_READY,APPROVED_NONE,SCOPE_GATE,DIAGRAM_SYNC,DIAGRAM_REVIEW_STATUS,EDIT_STATUS,VALIDATION_STATUS,RETRY_GATE decision;
+  class FLOW_LOAD,AUTHORITY,BOUNDARY,STATUS_CONTRACT,SENSITIVE_GATE,SELF_REFERENCE_GUARD guard;
+  class BASELINE_SNAPSHOT,RELATED,RELATED_DEGRADE,AUDIT_SETUP,AUDIT_GROUP,AUDIT_SYNTH,EDIT_PREP,EDIT_APPLY,DIAGRAM_REVIEW,VALIDATE,REPAIR_PREP check;
+  class PATH_OK,SELF_REFERENCE_CHECK,FLOW_LOAD_OK,RELATED_STATUS,RELATED_EVIDENCE_GATE,AUDIT_STATUS,APPROVAL_READY,APPROVED_NONE,SCOPE_GATE,DIAGRAM_SYNC,DIAGRAM_REVIEW_STATUS,EDIT_STATUS,VALIDATION_STATUS,RETRY_GATE decision;
   class PATH_BLOCK,RELATED_BLOCK,AUDIT_BLOCK,APPROVAL_HANDOFF,FINAL_APPROVAL_REQUIRED,SCOPE_BLOCK,EDIT_BLOCK,FAIL_BLOCK,VALIDATION_BLOCK human;
   class FINAL_NO_CHANGE,FINAL_CHANGED,FINAL_BLOCKED,FINAL_ERROR output;
   class NO_CHANGE,CHANGED success;
@@ -142,10 +147,10 @@ an enumerated compact `BLOCKED` or `ERROR` status from the dispatch reply; if
 neither exists, it routes to `error` with the missing report path named.
 Terminal cleanup deletes all workflow-created files inside `HANDOFF_DIR`,
 including `*-instructions.yaml`, `*-report.yaml`, and any `run-context.yaml`,
-plus `*-candidate.md` (the flow-diagram candidate stays Markdown because it
-is the staged Mermaid diagram content the editor writes verbatim into
-`flow-diagram.md`, not an inter-agent message); `HANDOFF_DIR` may be removed
-only when empty.
+plus `*-candidate.md` and `baseline/` (the flow-diagram candidate stays
+Markdown because it is the staged Mermaid diagram content the editor writes
+verbatim into `flow-diagram.md`, not an inter-agent message); `HANDOFF_DIR`
+may be removed only when empty.
 
 Related-skills discovery rule (canonical home; `SKILL.md` Status Routing
 Contract and Execution step 3 are documented pointers here): Discovery must
@@ -200,6 +205,19 @@ and only a `final passed` candidate may drive a semantic `flow-diagram.md`
 change. A `DIAGRAM_REVIEW` `error` or `repair limit reached` routes to the error
 handoff; `needs confirmation`, `needs input`, or `blocked` routes to the edit
 blocked handoff.
+
+Baseline-snapshot rule (canonical home; `SKILL.md` step 1 and
+`subagents/skill-package-validator.md` are documented hoists that point here):
+`BASELINE_PATH` is `HANDOFF_DIR/baseline/`; the orchestrator copies `SKILL_PATH`
+into `BASELINE_PATH` at the end of Intake before any mutation; the validator
+may diff `SKILL_PATH` against `BASELINE_PATH` for new-vs-prior closure
+evidence; terminal cleanup removes `BASELINE_PATH` alongside other
+workflow-created files.
+
+Self-reference rule (canonical home; `SKILL.md` is a documented hoist that
+points here): `SELF_REFERENCE_CHECK` detects self-improvement runs (`SKILL_PATH`
+equals this orchestrator's package); on yes, the `SELF_REFERENCE_GUARD` applies
+the same-run safety rule above; on no, normal Phase 2 Flow Load proceeds.
 
 Gate ID mapping: `VALIDATE` covers `G_GAP_CLOSURE`, `G_FLOW_SYNC`, and
 `G_BEST_PRACTICES_COMPLIANCE`; `AUDIT_SYNTH` covers `G_MANDATE_COVERAGE`; and
