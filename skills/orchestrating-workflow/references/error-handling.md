@@ -89,7 +89,7 @@ Two levels of progress files maintain state:
 1. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY` and
    `ACTION=read`:
 
-   ```
+   ```yaml
    TICKET_KEY: <KEY>
    PLAYBOOK_PATH: <path>
    ACTION: read

@@ -62,6 +62,7 @@ Inputs:
   ITERATION: 1
 Retain: RE_PLAN_NEEDED, BLOCKERS_PRESENT, accepted decisions summary
 ```
+
 </example>
 
 <example>
@@ -76,4 +77,5 @@ Inputs:
   ITERATION: 1
 Retain: RE_PLAN_NEEDED, BLOCKERS_PRESENT, decisions file path
 ```
+
 </example>
