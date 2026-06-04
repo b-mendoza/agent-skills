@@ -36,8 +36,8 @@ skill, validate postconditions, update progress, and run the gate.
    `DIRECTION=postcondition`. The validator loads the playbook for the
    platform-specific snapshot section list.
 6. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`,
-   `ACTION=update`, `PHASE=1`, `STATUS=complete`, and a one-line fetch
-   summary.
+   `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=1`,
+   `STATUS=complete`, and a one-line fetch summary.
 
 **Gate:** Automatic. Proceed to Phase 2 when validation passes.
 
@@ -57,8 +57,8 @@ skill, validate postconditions, update progress, and run the gate.
    `PLAYBOOK_PATH=<active playbook path>`, `PHASE=2`,
    `DIRECTION=postcondition`.
 6. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`,
-   `ACTION=update`, `PHASE=2`, `STATUS=complete`, and a one-line planning
-   summary.
+   `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=2`,
+   `STATUS=complete`, and a one-line planning summary.
 
 **Gate:** Automatic. Proceed to Phase 3 when validation passes.
 
@@ -81,8 +81,8 @@ skill, validate postconditions, update progress, and run the gate.
    workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`,
    `PHASE=3`, `DIRECTION=postcondition`.
 7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`,
-   `ACTION=update`, `PHASE=3`, `STATUS=complete`, and a one-line
-   clarification summary.
+   `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=3`,
+   `STATUS=complete`, and a one-line clarification summary.
 
 **Gate:** First honor `BLOCKERS_PRESENT` from the clarification summary. If
 it is `true`, stop before platform writes and surface the unresolved
@@ -117,8 +117,9 @@ skill.
    `PLAYBOOK_PATH=<active playbook path>`, `PHASE=4`,
    `DIRECTION=postcondition`.
 7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`,
-   `ACTION=update`, `PHASE=4`, `STATUS=complete`, `SUMMARY=<one-line
-   result>`, and `TASKS=<rows from the downstream child-item table>`.
+   `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=4`,
+   `STATUS=complete`, `SUMMARY=<one-line result>`, and `TASKS=<rows from
+   the downstream child-item table>`.
 8. Surface any warnings or failed creates before task selection.
 9. Do not offer a task for Phase 5 when its inline child-item value is
    `Not Created`; require manual resolution or a successful Phase 4 rerun

@@ -16,7 +16,7 @@ templates come from the active playbook's `Phase Skill Map`.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `TICKET_KEY` | Yes | `<KEY>` (workflow key; value shape defined by the active playbook) |
-| `PLAYBOOK_PATH` | Required for `initialize` and `initialize_task` (template skill names) | `../references/<platform>-playbook.md` |
+| `PLAYBOOK_PATH` | Required for `initialize`, `update`, and `initialize_task` (template skill names) | `../references/<platform>-playbook.md` |
 | `ACTION` | Yes | `read` |
 
 `TICKET_KEY` is the workflow's stable key under its alias parameter name;
@@ -29,9 +29,9 @@ Additional inputs by action:
 | Action            | Required additional inputs                                            |
 | ----------------- | --------------------------------------------------------------------- |
 | `read`            | None                                                                  |
-| `initialize`      | None                                                                  |
-| `update`          | `PHASE`, `STATUS`, `SUMMARY`; add `TASKS` only for Phase 4 completion |
-| `initialize_task` | `TASK_NUMBER`, `TASK_TITLE`                                           |
+| `initialize`      | `PLAYBOOK_PATH`                                                       |
+| `update`          | `PLAYBOOK_PATH`, `PHASE`, `STATUS`, `SUMMARY`; add `TASKS` only for Phase 4 completion |
+| `initialize_task` | `PLAYBOOK_PATH`, `TASK_NUMBER`, `TASK_TITLE`                          |
 | `update_task`     | `TASK_NUMBER`, `PHASE`, `STATUS`, `SUMMARY`                           |
 
 Allowed status values: `complete`, `active`, `failed`, `skipped`

@@ -187,8 +187,7 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 
 1. Detect platform: `jira`. Load `./references/jira-playbook.md`.
 2. Derive `TICKET_KEY=PROJ-123` from the URL per the playbook.
-3. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`,
-   `PLAYBOOK_PATH=./references/jira-playbook.md`, `ACTION=read`.
+3. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`, `ACTION=read`.
 4. No progress found, so dispatch `preflight-checker` with
    `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=./references/jira-playbook.md`,
    `PHASES=1-7`.
@@ -197,7 +196,8 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 7. Dispatch `artifact-validator` with `TICKET_KEY=PROJ-123`,
    `PLAYBOOK_PATH=./references/jira-playbook.md`, `PHASE=1`,
    `DIRECTION=postcondition`.
-8. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`, `ACTION=update`,
+8. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`,
+   `PLAYBOOK_PATH=./references/jira-playbook.md`, `ACTION=update`,
    `PHASE=1`, `STATUS=complete`, `SUMMARY="Work item fetched"`.
 9. Tell the user: `Work item fetched. Moving to task planning.`
 
