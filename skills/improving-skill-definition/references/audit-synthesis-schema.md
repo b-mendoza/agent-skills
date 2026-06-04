@@ -12,7 +12,7 @@ paraphrasing it.
 | Key | Source | Purpose |
 | --- | ------ | ------- |
 | `version` | orchestrator | Integer schema version |
-| `from` | orchestrator | Identity mapping `{orchestrator, phase}` |
+| `from` | orchestrator | String sender identity, for example `improving-skill-definition` |
 | `to` | orchestrator | Next handoff target |
 | `intent` | orchestrator | One-line synthesis intent |
 | `audit_status_summary` | orchestrator | One row per dispatched slice in dispatch order |
