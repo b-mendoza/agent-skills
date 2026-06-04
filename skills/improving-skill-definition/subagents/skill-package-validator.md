@@ -19,6 +19,8 @@ the approved gaps closed with observable package evidence.
 | `BASELINE_PATH` | Yes | `.handoffs/improving-skill-definition/baseline/` |
 | `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.yaml` |
 | `AUDIT_SYNTHESIS_SCHEMA_PATH` | Yes | `./references/audit-synthesis-schema.md` |
+| `AUDIT_SYNTHESIS_VALIDATION_PATH` | Yes | `./references/audit-synthesis-validation.md` |
+| `AUDIT_SLICE_REPORT_PATHS` | Yes | `.handoffs/improving-skill-definition/flow-coherence-auditor-report.yaml`, `.handoffs/improving-skill-definition/contract-priority-auditor-report.yaml` |
 | `EDITOR_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.yaml` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, `remove`, `demote`, or `skip` |
@@ -28,12 +30,10 @@ the approved gaps closed with observable package evidence.
 
 ## Loading
 
-Read `HANDOFF_PATH`, `AUDIT_REPORT_PATH`, `BASELINE_PATH`,
-`AUDIT_SYNTHESIS_SCHEMA_PATH`, editor report, best-practices index,
-`AUDIT_TAXONOMY_PATH` (the single source for file-size caps and
-prompt-demotion conditions), target `SKILL.md`, target `flow-diagram.md` when
-present, changed files, registry paths, personality, and any package file
-needed to verify closure.
+Read `HANDOFF_PATH`, `AUDIT_REPORT_PATH`, `AUDIT_SLICE_REPORT_PATHS`,
+`BASELINE_PATH`, both audit-synthesis references, editor report,
+best-practices index, `AUDIT_TAXONOMY_PATH`, target files, changed files,
+registry paths, personality, and any package file needed to verify closure.
 
 ## Instructions
 
@@ -68,20 +68,11 @@ needed to verify closure.
     best-practices compliance.
 17. Diff `SKILL_PATH` against `BASELINE_PATH` per the Baseline-snapshot rule
     in `flow-diagram.md` to evidence new-vs-prior closure for each approved gap.
-18. Confirm `AUDIT_REPORT_PATH` carries every non-conditional required key and
-    every aggregated slice key defined in `AUDIT_SYNTHESIS_SCHEMA_PATH`. For
-    each aggregate, compare it against the corresponding source slice field
-    when that slice ran; the aggregate must be non-empty when its source slice
-    produced non-empty output, and empty aggregates with non-empty source fields
-    return `VALIDATION: FAIL`. Required aggregate keys include
-    `outcome_matrix_aggregate`, `priority_ranking_aggregate`,
-    `parallelism_opportunities_aggregate`, `subagent_map_aggregate`,
-    `heuristic_table_aggregate`, `no_ops_aggregate`, and
-    `alternatives_aggregate`.
-19. When `SELF_IMPROVEMENT_RUN=true`, confirm `AUDIT_REPORT_PATH` includes a
-    well-formed `architecture_advisory` block: a non-empty `caveat` string and
-    `applies_to_gaps_in_inventory` entries covering every `gap_inventory` gap id
-    exactly once, each marked `SAFE` or `DEFERRED`.
+18. Apply `AUDIT_SYNTHESIS_VALIDATION_PATH` to `AUDIT_REPORT_PATH`,
+    `AUDIT_SLICE_REPORT_PATHS`, and `EDITOR_REPORT_PATH`: schema keys,
+    aggregate/source comparisons for source slices that ran, advisory shape, and
+    no editor `changes_made` entry for a `DEFERRED` self-improvement gap.
+19. When `SELF_IMPROVEMENT_RUN=false`, mark advisory-only checks not applicable.
 20. Return `VALIDATION: FAIL` for any fixable finding regardless of severity
     tier (`high`, `medium`, or `low`) per the taxonomy Severity section; return
     `PASS` only when all applicable gates pass with no open findings.
@@ -116,8 +107,8 @@ checks:                                   # required, one entry per declared che
   - {check: "best_practices_compliance", verdict: "fail", evidence: "handoff-file-dispatch fails because line cap violation triggers compliance fail"}
   - {check: "contradictory_duplicates_and_hoists", verdict: "pass", evidence: "No undocumented contradictory duplicates remain; intentional hoists point to canonical homes"}
   - {check: "baseline_diff", verdict: "pass", evidence: "Diff between SKILL_PATH and BASELINE_PATH evidences observable new-vs-prior closure for each approved gap"}
-  - {check: "audit_synthesis_schema_compliance", verdict: "pass", evidence: "audit-synthesis-report.yaml contains every non-conditional required top-level key and every aggregate is non-empty when its source slice produced non-empty output; empty aggregates with non-empty source fields fail"}
-  - {check: "self_improvement_architecture_advisory", verdict: "pass", evidence: "SELF_IMPROVEMENT_RUN=true report contains architecture_advisory.caveat and SAFE/DEFERRED entries for every gap_inventory id"}
+  - {check: "audit_synthesis_schema_compliance", verdict: "pass", evidence: "audit-synthesis-report.yaml contains required metadata, domain keys, and source-backed aggregates per audit-synthesis-validation.md"}
+  - {check: "self_improvement_architecture_advisory", verdict: "pass", evidence: "SELF_IMPROVEMENT_RUN=true report contains architecture_advisory and no DEFERRED gap id appears in editor changes_made"}
   - {check: "fail_on_fixable_findings", verdict: "pass", evidence: "VALIDATION: FAIL is returned when any fixable high, medium, or low finding remains"}
 critical_output_gates:                    # required, one entry per declared gate, ordered: G_GAP_CLOSURE, G_BEST_PRACTICES_COMPLIANCE, G_FLOW_SYNC
   - gate: "G_GAP_CLOSURE"                 # required
@@ -153,9 +144,8 @@ Reply compactly with status and report path only.
 ## Scope
 
 Validate and report targeted fix guidance only. Do not edit files. Verify
-closure of the approved gaps and the quality gates against observable package
-evidence; do not re-discover or raise new gaps beyond approved scope and prior
-validator findings.
+approved-gap and quality-gate closure against observable package evidence; do
+not raise new gaps beyond approved scope and prior validator findings.
 
 ## Escalation
 
