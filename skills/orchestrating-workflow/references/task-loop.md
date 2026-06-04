@@ -34,9 +34,11 @@ Before entering the loop for a task:
 | Relevant docs or config | `documentation-finder` |
 
 For `status-checker`, pass the workflow key under `TICKET_KEY`, the active
-`PLAYBOOK_PATH`, and the narrowest useful `QUERY_TYPE` (`status` or
-`children` for task selection context). The playbook supplies transport and
-output template.
+`PLAYBOOK_PATH`, the narrowest useful `QUERY_TYPE` (`status` or `children`
+for task selection context), and any additional locator inputs required by
+the active playbook's `Inputs and Identifier` section. For GitHub, prefer
+`ISSUE_URL`; when it is unavailable, pass `OWNER`, `REPO`, and
+`ISSUE_NUMBER`. The playbook supplies transport and output template.
 
 Do not initialize task progress during selection. Initialize it only after
 the Phase 5 precondition passes and only if the task does not already have
