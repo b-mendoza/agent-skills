@@ -101,16 +101,14 @@ that points here (see the Status-contract rule in `flow-diagram.md`).
 | Source | Statuses |
 | ------ | -------- |
 | `related-skills-discoverer` | `RELATED_SKILLS: PASS`, `RELATED_SKILLS: BLOCKED`, `RELATED_SKILLS: ERROR` |
-| `flow-coherence-auditor` | `FLOW_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
-| `subagent-architecture-auditor` | `ARCHITECTURE_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
-| `contract-priority-auditor` | `CONTRACT_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
-| `personality-auditor` | `PERSONALITY_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
-| `package-hygiene-auditor` | `HYGIENE_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
-| `prompt-sufficiency-auditor` | `PROMPT_AUDIT: PASS`, `GAPS_FOUND`, `BLOCKED`, `ERROR` |
+| `flow-coherence-auditor` | `FLOW_AUDIT: PASS`, `FLOW_AUDIT: GAPS_FOUND`, `FLOW_AUDIT: BLOCKED`, `FLOW_AUDIT: ERROR` |
+| `subagent-architecture-auditor` | `ARCHITECTURE_AUDIT: PASS`, `ARCHITECTURE_AUDIT: GAPS_FOUND`, `ARCHITECTURE_AUDIT: BLOCKED`, `ARCHITECTURE_AUDIT: ERROR` |
+| `contract-priority-auditor` | `CONTRACT_AUDIT: PASS`, `CONTRACT_AUDIT: GAPS_FOUND`, `CONTRACT_AUDIT: BLOCKED`, `CONTRACT_AUDIT: ERROR` |
+| `personality-auditor` | `PERSONALITY_AUDIT: PASS`, `PERSONALITY_AUDIT: GAPS_FOUND`, `PERSONALITY_AUDIT: BLOCKED`, `PERSONALITY_AUDIT: ERROR` |
+| `package-hygiene-auditor` | `HYGIENE_AUDIT: PASS`, `HYGIENE_AUDIT: GAPS_FOUND`, `HYGIENE_AUDIT: BLOCKED`, `HYGIENE_AUDIT: ERROR` |
+| `prompt-sufficiency-auditor` | `PROMPT_AUDIT: PASS`, `PROMPT_AUDIT: GAPS_FOUND`, `PROMPT_AUDIT: BLOCKED`, `PROMPT_AUDIT: ERROR` |
 | `skill-definition-editor` | `EDIT: PASS`, `EDIT: BLOCKED`, `EDIT: ERROR` |
 | `skill-package-validator` | `VALIDATION: PASS`, `VALIDATION: FAIL`, `VALIDATION: BLOCKED`, `VALIDATION: ERROR` |
-
-Audit-slice statuses always carry their prefix (for example `FLOW_AUDIT: GAPS_FOUND`, not a bare `GAPS_FOUND`); the comma list in each row enumerates the suffixes that share that row's prefix.
 
 Any `BLOCKED` or `ERROR` routes to the matching final handoff, except
 `related-skills-discoverer` `BLOCKED`/`ERROR`, which degrades and continues per
