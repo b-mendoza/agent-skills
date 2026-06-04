@@ -69,8 +69,11 @@ needed to verify closure.
 17. Diff `SKILL_PATH` against `BASELINE_PATH` per the Baseline-snapshot rule
     in `flow-diagram.md` to evidence new-vs-prior closure for each approved gap.
 18. Confirm `AUDIT_REPORT_PATH` carries every non-conditional required key and
-    every aggregated slice key defined in `AUDIT_SYNTHESIS_SCHEMA_PATH`,
-    including
+    every aggregated slice key defined in `AUDIT_SYNTHESIS_SCHEMA_PATH`. For
+    each aggregate, compare it against the corresponding source slice field
+    when that slice ran; the aggregate must be non-empty when its source slice
+    produced non-empty output, and empty aggregates with non-empty source fields
+    return `VALIDATION: FAIL`. Required aggregate keys include
     `outcome_matrix_aggregate`, `priority_ranking_aggregate`,
     `parallelism_opportunities_aggregate`, `subagent_map_aggregate`,
     `heuristic_table_aggregate`, `no_ops_aggregate`, and
@@ -113,7 +116,7 @@ checks:                                   # required, one entry per declared che
   - {check: "best_practices_compliance", verdict: "fail", evidence: "handoff-file-dispatch fails because line cap violation triggers compliance fail"}
   - {check: "contradictory_duplicates_and_hoists", verdict: "pass", evidence: "No undocumented contradictory duplicates remain; intentional hoists point to canonical homes"}
   - {check: "baseline_diff", verdict: "pass", evidence: "Diff between SKILL_PATH and BASELINE_PATH evidences observable new-vs-prior closure for each approved gap"}
-  - {check: "audit_synthesis_schema_compliance", verdict: "pass", evidence: "audit-synthesis-report.yaml contains every non-conditional required top-level and aggregated-slice key defined in AUDIT_SYNTHESIS_SCHEMA_PATH"}
+  - {check: "audit_synthesis_schema_compliance", verdict: "pass", evidence: "audit-synthesis-report.yaml contains every non-conditional required top-level key and every aggregate is non-empty when its source slice produced non-empty output; empty aggregates with non-empty source fields fail"}
   - {check: "self_improvement_architecture_advisory", verdict: "pass", evidence: "SELF_IMPROVEMENT_RUN=true report contains architecture_advisory.caveat and SAFE/DEFERRED entries for every gap_inventory id"}
   - {check: "fail_on_fixable_findings", verdict: "pass", evidence: "VALIDATION: FAIL is returned when any fixable high, medium, or low finding remains"}
 critical_output_gates:                    # required, one entry per declared gate, ordered: G_GAP_CLOSURE, G_BEST_PRACTICES_COMPLIANCE, G_FLOW_SYNC
