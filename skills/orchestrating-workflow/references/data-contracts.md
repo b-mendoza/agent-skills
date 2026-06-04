@@ -88,9 +88,9 @@ validator contract.
 
 Every dispatch to `artifact-validator` uses these inputs:
 
-```
+```text
 TICKET_KEY: <KEY>                 (workflow key; shape defined by the active playbook)
-PLAYBOOK_PATH: <path>             (active playbook; required for Phase 1 postcondition)
+PLAYBOOK_PATH: <path>             (active playbook; pass for every validator dispatch)
 PHASE: <1-7>
 DIRECTION: <precondition | postcondition>
 TASK_NUMBER: <N>                  (task-specific boundaries only)
