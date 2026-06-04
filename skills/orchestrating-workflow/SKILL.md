@@ -28,12 +28,15 @@ matching playbook for every per-platform decision:
 
 | Signal | Platform | Playbook |
 | ------ | -------- | -------- |
-| `JIRA_URL` matching `https://<workspace>.atlassian.net/browse/<KEY>`, or `TICKET_KEY` matching `<PROJECT>-<N>` | `jira` | [`./references/jira-playbook.md`](./references/jira-playbook.md) |
-| `ISSUE_URL` matching `https://<host>/<owner>/<repo>/issues/<N>` (including GitHub Enterprise), or `OWNER`+`REPO`+`ISSUE_NUMBER`, or `ISSUE_SLUG` matching `<owner>-<repo>-<N>` | `github` | [`./references/github-playbook.md`](./references/github-playbook.md) |
+| `JIRA_URL` matching `https://<workspace>.atlassian.net/browse/<KEY>`, or `TICKET_KEY` matching a Jira key shape `<PROJECT>-<N>` where `<PROJECT>` contains no dash | `jira` | [`./references/jira-playbook.md`](./references/jira-playbook.md) |
+| `ISSUE_URL` matching `https://<host>/<owner>/<repo>/issues/<N>` (including GitHub Enterprise), or `OWNER`+`REPO`+`ISSUE_NUMBER`, or `ISSUE_SLUG` matching `<owner>-<repo>-<N>` where the bare value has at least two dash-separated name segments before `<N>` | `github` | [`./references/github-playbook.md`](./references/github-playbook.md) |
 
-If the input matches neither pattern, ask one targeted clarification question
-before dispatching any subagent. If the input matches both somehow (it should
-not), ask the user which platform to use.
+Prefer explicit URLs and structured fields over bare resume keys. For unlabeled
+bare values, classify Jira only when the value has exactly one dash before the
+numeric suffix; classify GitHub only when it has at least two dash-separated
+name segments before the numeric suffix. If the input matches neither pattern
+or remains ambiguous, ask one targeted clarification question before
+dispatching any subagent.
 
 ## Inputs
 
