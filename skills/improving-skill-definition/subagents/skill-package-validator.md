@@ -105,6 +105,8 @@ checks:                                   # required, one entry per declared che
   - {check: "subagent_necessity", verdict: "pass", evidence: "All registry subagents return distinct downstream-consumed reports"}
   - {check: "best_practices_compliance", verdict: "fail", evidence: "handoff-file-dispatch fails because line cap violation triggers compliance fail"}
   - {check: "contradictory_duplicates_and_hoists", verdict: "pass", evidence: "No undocumented contradictory duplicates remain; intentional hoists point to canonical homes"}
+  - {check: "baseline_diff", verdict: "pass", evidence: "Diff between SKILL_PATH and BASELINE_PATH evidences observable new-vs-prior closure for each approved gap"}
+  - {check: "audit_synthesis_schema_compliance", verdict: "pass", evidence: "audit-synthesis-report.yaml contains every required top-level and aggregated-slice key defined in AUDIT_SYNTHESIS_SCHEMA_PATH"}
   - {check: "fail_on_fixable_findings", verdict: "pass", evidence: "VALIDATION: FAIL is returned when any fixable high, medium, or low finding remains"}
 critical_output_gates:                    # required, one entry per declared gate, ordered: G_GAP_CLOSURE, G_BEST_PRACTICES_COMPLIANCE, G_FLOW_SYNC
   - gate: "G_GAP_CLOSURE"                 # required
