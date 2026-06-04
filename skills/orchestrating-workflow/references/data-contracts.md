@@ -41,6 +41,10 @@ the playbook's Phase 1 downstream skill. Treat that downstream skill as the
 authoritative definition of `docs/<KEY>.md`. The active playbook's
 `Phase 1 Snapshot Sections` section lists the per-platform heading order.
 
+For Phase 2, the summary section heading is also playbook-owned. The active
+playbook's `Phase 2 Task Plan Summary Heading` section supplies the exact
+heading that appears before `## Execution Order Summary`.
+
 For Phase 4 and the Phase 5 precondition, use the stronger handoff
 contract owned by the playbook's Phase 4 downstream skill. The active
 playbook's `Phase 4 Child-Item Table and Write Model` section defines the
@@ -50,16 +54,16 @@ table name, inline reference label, and accepted value forms.
 | ----- | --------- | ------------- | --------------- |
 | 1 | postcondition | `docs/<KEY>.md` | File exists and preserves the playbook's Phase 1 snapshot heading order (stable when empty) |
 | 2 | precondition | `docs/<KEY>.md` | Same as Phase 1 postcondition |
-| 2 | postcondition | `docs/<KEY>-tasks.md` + planning intermediates | `docs/<KEY>-stage-1-detailed.md` and `docs/<KEY>-stage-2-prioritized.md` exist; `docs/<KEY>-tasks.md` exists; final plan preserves this section order: `## Work Item Summary`, `## Execution Order Summary`, `## Problem Framing`, `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`, `## Tasks`, numbered `## Task N: <Title>` sections, `## Notes`, `## Dependency Graph`, `## Validation Report`; plan has ≥2 numbered task entries with the required task subsections unless the planning skill records its internal current-child-item exception for a smaller execution plan; branch names are present and satisfy the deterministic branch contract owned by the planning skill |
+| 2 | postcondition | `docs/<KEY>-tasks.md` + planning intermediates | `docs/<KEY>-stage-1-detailed.md` and `docs/<KEY>-stage-2-prioritized.md` exist; `docs/<KEY>-tasks.md` exists; final plan preserves this section order: active playbook's Phase 2 task plan summary heading (`## Ticket Summary` for Jira, `## Issue Summary` for GitHub), `## Execution Order Summary`, `## Problem Framing`, `## Assumptions and Constraints`, `## Cross-Cutting Open Questions`, `## Tasks`, numbered `## Task N: <Title>` sections, `## Notes`, `## Dependency Graph`, `## Validation Report`; plan has ≥2 numbered task entries with the required task subsections unless the planning skill records its internal current-child-item exception for a smaller execution plan; branch names are present and satisfy the deterministic branch contract owned by the planning skill |
 | 3 | precondition | `docs/<KEY>-tasks.md` + planning intermediates | Same as Phase 2 postcondition |
 | 3 | postcondition | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | `docs/<KEY>-upfront-critique.md` exists; `docs/<KEY>-tasks.md` contains `## Decisions Log` |
 | 4 | precondition | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition |
 | 4 | postcondition | `docs/<KEY>-tasks.md` | Contains the playbook's workflow-level child-item table heading with one row per numbered task; every numbered task section contains exactly one inline child-item reference whose value matches that task's table row (concrete identifier, `Not Created`, or playbook-defined degraded value) |
 | 5 | precondition | `docs/<KEY>-tasks.md` | Same as Phase 4 postcondition, and the selected task's inline child-item value is a concrete identifier or an accepted playbook-defined degraded value. `Not Created` requires manual resolution or a successful Phase 4 rerun before Phase 5 planning. |
 
-The "Work Item Summary" section heading is the neutral shared heading; the
-playbook's Phase 2 downstream skill may use a platform-native rendering of
-the same heading inside its own contract.
+The validator must use the active playbook's summary heading for the first
+Phase 2 section. Do not require a neutral `## Work Item Summary` heading in
+the generated task plan unless a future playbook explicitly declares it.
 
 ### Phases 5-7 (per task)
 
