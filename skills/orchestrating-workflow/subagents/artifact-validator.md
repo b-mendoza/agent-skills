@@ -37,7 +37,8 @@ value carries through unchanged.
    playbook's `Phase 2 Task Plan Summary Heading` for the first task-plan
    section heading. For Phase 4 postcondition and Phase 5 precondition, read
    the playbook's `Phase 4 Child-Item Table and Write Model` for the
-   workflow-level table heading and accepted inline reference value forms.
+   workflow-level table heading, required handoff metadata, and accepted
+   inline reference value forms.
 4. Check file existence first.
 5. When content validation is required, use targeted section and pattern
    checks rather than reading full files into context.

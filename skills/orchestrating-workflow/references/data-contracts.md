@@ -48,7 +48,8 @@ heading that appears before `## Execution Order Summary`.
 For Phase 4 and the Phase 5 precondition, use the stronger handoff
 contract owned by the playbook's Phase 4 downstream skill. The active
 playbook's `Phase 4 Child-Item Table and Write Model` section defines the
-table name, inline reference label, and accepted value forms.
+table name, required handoff metadata, inline reference label, and accepted
+value forms.
 
 | Phase | Direction | File to check | Expected checks |
 | ----- | --------- | ------------- | --------------- |
@@ -58,7 +59,7 @@ table name, inline reference label, and accepted value forms.
 | 3 | precondition | `docs/<KEY>-tasks.md` + planning intermediates | Same as Phase 2 postcondition |
 | 3 | postcondition | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | `docs/<KEY>-upfront-critique.md` exists; `docs/<KEY>-tasks.md` contains `## Decisions Log` |
 | 4 | precondition | `docs/<KEY>-upfront-critique.md` + `docs/<KEY>-tasks.md` | Same as Phase 3 postcondition |
-| 4 | postcondition | `docs/<KEY>-tasks.md` | Contains the playbook's workflow-level child-item table heading with one row per numbered task; every numbered task section contains exactly one inline child-item reference whose value matches that task's table row (concrete identifier, `Not Created`, or playbook-defined degraded value) |
+| 4 | postcondition | `docs/<KEY>-tasks.md` | Contains the playbook's workflow-level child-item table heading, any playbook-required handoff metadata, and one row per numbered task; every numbered task section contains exactly one inline child-item reference whose value matches that task's table row (concrete identifier, `Not Created`, or playbook-defined degraded value) |
 | 5 | precondition | `docs/<KEY>-tasks.md` | Same as Phase 4 postcondition, and the selected task's inline child-item value is a concrete identifier or an accepted playbook-defined degraded value. `Not Created` requires manual resolution or a successful Phase 4 rerun before Phase 5 planning. |
 
 The validator must use the active playbook's summary heading for the first
