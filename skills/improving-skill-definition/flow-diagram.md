@@ -21,15 +21,16 @@ and `SKILL.md` defer to that definition.
 
 ```mermaid
 flowchart TD
-  START([Start: improve existing skill definition]) --> INTAKE["Emit banner Phase 1/8 - Intake<br/>Normalize SKILL_PATH, KNOWN_PROBLEM, TARGET_RUNTIME,<br/>SCOPE_LIMITS, REFERENCE_NEED, APPROVED_GAPS<br/>Derive MUTATION_LIMITS, HANDOFF_DIR,<br/>BASELINE_PATH (HANDOFF_DIR/baseline/), and<br/>DIAGRAM_CANDIDATE_PATH (HANDOFF_DIR/flow-diagram-candidate.md)<br/>Initialize repair counter to 0<br/>Preserve target identity unless user expands scope"]
+  START([Start: improve existing skill definition]) --> INTAKE["Emit banner Phase 1/8 - Intake<br/>Load this ./flow-diagram.md before applying canonical rules<br/>Normalize SKILL_PATH, KNOWN_PROBLEM, TARGET_RUNTIME,<br/>SCOPE_LIMITS, REFERENCE_NEED, APPROVED_GAPS<br/>Derive MUTATION_LIMITS, HANDOFF_DIR,<br/>BASELINE_PATH (HANDOFF_DIR/baseline/), and<br/>DIAGRAM_CANDIDATE_PATH (HANDOFF_DIR/flow-diagram-candidate.md)<br/>Initialize repair counter to 0<br/>Preserve target identity unless user expands scope"]
   INTAKE --> PATH_OK{"SKILL_PATH present and locatable?"}
 
   PATH_OK -->|no| PATH_BLOCK["Blocked handoff<br/>Ask one SKILL_PATH question<br/>Stop until user supplies path"]
   PATH_OK -->|yes| BASELINE_SNAPSHOT["Copy confirmed SKILL_PATH into BASELINE_PATH<br/>(HANDOFF_DIR/baseline/) before any mutation<br/>so the validator can diff SKILL_PATH against<br/>BASELINE_PATH for new-vs-prior closure evidence"]
   BASELINE_SNAPSHOT --> SELF_REFERENCE_CHECK{"SKILL_PATH equals this orchestrator's own package?"}
 
-  SELF_REFERENCE_CHECK -->|no| FLOW_LOAD["Set SELF_IMPROVEMENT_RUN=false<br/>Emit banner Phase 2/8 - Flow Load<br/>Load this skill's ./flow-diagram.md<br/>Load target skill flow-diagram.md when present<br/>Set source-of-truth execution contract"]
+  SELF_REFERENCE_CHECK -->|no| NON_SELF_RUN["Set SELF_IMPROVEMENT_RUN=false"]
   SELF_REFERENCE_CHECK -->|yes| SELF_REFERENCE_GUARD["Self-improvement run detected<br/>Set SELF_IMPROVEMENT_RUN=true<br/>Apply same-run safety rule: defer any approved mutation that<br/>would change a contract the orchestrator currently has loaded<br/>(audit subagent contracts, status routing table, personality file,<br/>audit-gap-taxonomy, final-report template) in a way that breaks<br/>the current run's dispatch contracts<br/>Surface deferred mutations in the final handoff with a<br/>recommendation to re-run after terminal cleanup"]
+  NON_SELF_RUN --> FLOW_LOAD["Emit banner Phase 2/8 - Flow Load<br/>Load personality.md<br/>Load target skill flow-diagram.md when present<br/>Set source-of-truth execution contract"]
   SELF_REFERENCE_GUARD --> FLOW_LOAD
 
   FLOW_LOAD --> FLOW_LOAD_OK{"This skill's flow-diagram.md and personality.md readable?"}

@@ -33,8 +33,9 @@ question. Default `TARGET_RUNTIME` to `portable Agent Skills`.
 
 ## Source Of Truth
 
-Load [`./flow-diagram.md`](./flow-diagram.md) after intake. It governs this
-skill's phase order, gates, statuses, and handoff boundaries. For target
+Load [`./flow-diagram.md`](./flow-diagram.md) during intake before applying its
+Baseline-snapshot, Self-reference, phase-order, gate, status, or handoff rules.
+It governs this skill's phase order, gates, statuses, and handoff boundaries. For target
 packages, target `flow-diagram.md` wins over `SKILL.md`, subagents, and
 references for workflow structure. Semantic changes to any `flow-diagram.md`
 must go through `generate-flow-diagram` and require a `final passed` candidate;
@@ -57,7 +58,7 @@ not restate them.
 | Phase | Mode | Result |
 | ----- | ---- | ------ |
 | 1. Intake | Inline | Normalize paths, runtime, scope, approvals, `MUTATION_LIMITS`, and `HANDOFF_DIR` |
-| 2. Flow Load | Inline | Load this flow and personality contract |
+| 2. Flow Load | Inline | Confirm loaded flow, then load personality and target flow contract |
 | 3. Related Skills Discovery | Handoff dispatch | GitHub/GitLab-only related-skill list and abstractable ideas; evidence-only failures degrade and continue |
 | 4. Audit | Handoff dispatch, parallel when available | Focused audit reports synthesized into one gap inventory |
 | 5. Approval | Inline hard gate | Stop for personality decision and `all`, `none`, or gap ids |
@@ -133,8 +134,8 @@ PASS` only when the verdict is `skill justified`.
 
 ## Execution
 
-1. Emit `Phase 1/8 - Intake`; normalize inputs, initialize the repair counter to 0, derive `MUTATION_LIMITS`, `HANDOFF_DIR`, `BASELINE_PATH` (`HANDOFF_DIR/baseline/`), and `DIAGRAM_CANDIDATE_PATH` (`HANDOFF_DIR/flow-diagram-candidate.md`), then copy `SKILL_PATH` into `BASELINE_PATH` per the Baseline-snapshot rule in `flow-diagram.md` after confirming `SKILL_PATH` is present and locatable. Set `SELF_IMPROVEMENT_RUN=true` when `SKILL_PATH` resolves to this orchestrator's own package, otherwise set it to `false`; apply the Self-reference rule in `flow-diagram.md` for self-improvement runs.
-2. Emit `Phase 2/8 - Flow Load`; load this diagram and personality.
+1. Emit `Phase 1/8 - Intake`; load this skill's `./flow-diagram.md` before applying its canonical rules, normalize inputs, initialize the repair counter to 0, derive `MUTATION_LIMITS`, `HANDOFF_DIR`, `BASELINE_PATH` (`HANDOFF_DIR/baseline/`), and `DIAGRAM_CANDIDATE_PATH` (`HANDOFF_DIR/flow-diagram-candidate.md`), then copy `SKILL_PATH` into `BASELINE_PATH` per the Baseline-snapshot rule in `flow-diagram.md` after confirming `SKILL_PATH` is present and locatable. Set `SELF_IMPROVEMENT_RUN=true` when `SKILL_PATH` resolves to this orchestrator's own package, otherwise set it to `false`; apply the Self-reference rule in `flow-diagram.md` for self-improvement runs.
+2. Emit `Phase 2/8 - Flow Load`; load personality and target `flow-diagram.md` when present.
 3. Emit `Phase 3/8 - Related Skills Discovery`; dispatch `related-skills-discoverer` and apply the canonical Related-skills discovery rule in `flow-diagram.md` (GitHub/GitLab only; sparse results continue with confidence notes; evidence-only `BLOCKED`/`ERROR` degrades and continues).
 4. Emit `Phase 4/8 - Audit`; dispatch the six focused auditors per the canonical Audit parallelism rule in `flow-diagram.md` (one independent parallel group when the runtime supports concurrent subagents, otherwise sequential with identical contracts). Pass the related-skills report as an optional named input to each slice.
 5. Synthesize reports into one approval handoff: workflow, subagent, flow, personality, priority, prompt-sufficiency, line-count, quality-axis verdicts, gap inventory, mutation plan, and gate plan. Aggregate every audit slice's `no_ops` list into `no_ops_aggregate` for `G_MANDATE_COVERAGE` evidence. When `SELF_IMPROVEMENT_RUN=true`, include `architecture_advisory` with a caveat and a `SAFE` or `DEFERRED` entry for every inventory gap. Write the synthesized result to `HANDOFF_DIR/audit-synthesis-report.yaml` (the `AUDIT_REPORT_PATH` consumed by the editor and validator) following the schema in [`./references/audit-synthesis-schema.md`](./references/audit-synthesis-schema.md).
