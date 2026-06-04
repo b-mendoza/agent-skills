@@ -35,6 +35,22 @@ Priority and status assessment:
 - Status-contract assessment:
 - Proposed priority ranking:
 
+Outcome matrix:
+| owner | success | failure_or_blocked | observable_criteria | no_proceed_condition |
+| ----- | ------- | ------------------ | ------------------- | -------------------- |
+
+Parallelism opportunities:
+| group | members | independence_evidence | diagram_impact |
+| ----- | ------- | --------------------- | -------------- |
+
+Subagent map:
+| subagent | responsibility | downstream_consumer | overlap_risk |
+| -------- | -------------- | ------------------- | ------------ |
+
+Prompt-sufficiency heuristics:
+| heuristic | answer | evidence |
+| --------- | ------ | -------- |
+
 Prompt-sufficiency verdict:
 - `skill justified` | `radical simplification` | `prompt demotion`: [falsification evidence]
 
