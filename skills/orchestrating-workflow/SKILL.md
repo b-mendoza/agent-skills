@@ -138,10 +138,10 @@ handled by downstream execution skills.
 
 1. Detect the platform from the input (see [Platform Detection](#platform-detection))
    and load the matching playbook.
-2. Derive the workflow key (`TICKET_KEY` for Jira, `ISSUE_SLUG` for GitHub)
-   using the playbook's identifier-derivation rule.
-3. Dispatch `progress-tracker` with the workflow key under the parameter
-   name `TICKET_KEY` and `ACTION=read`.
+2. Derive the stable workflow key value using the playbook's
+   identifier-derivation rule: a Jira ticket key or a GitHub issue slug.
+3. Dispatch `progress-tracker` with that value under the parameter name
+   `TICKET_KEY` and `ACTION=read`.
 4. Decide the resume point from the compact progress summary.
 5. Dispatch `preflight-checker` with the workflow key under `TICKET_KEY`,
    `PLAYBOOK_PATH=<active playbook path>`, and `PHASES=<remaining phase
