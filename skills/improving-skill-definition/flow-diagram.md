@@ -48,7 +48,7 @@ flowchart TD
   RELATED_DEGRADE --> AUDIT_SETUP
 
   AUDIT_SETUP --> AUDIT_GROUP["Focused audit slices (independent parallel group)<br/>Flow coherence and diagram delegation<br/>Subagent architecture and parallelism<br/>Contracts, statuses, and priority tiers<br/>Personality and reuse lens<br/>Package hygiene and best practices<br/>Prompt sufficiency and demotion"]
-  AUDIT_GROUP --> AUDIT_SYNTH["Orchestrator synthesizes audit reports (covers G_MANDATE_COVERAGE)<br/>Build audit_status_summary, overall_verdict, gap_inventory,<br/>mutation_plan, quality_gate_plan, out_of_scope_findings,<br/>and required aggregate keys<br/>Include architecture_advisory when SELF_IMPROVEMENT_RUN=true<br/>Write synthesis to HANDOFF_DIR/audit-synthesis-report.yaml (AUDIT_REPORT_PATH)<br/>Keep facts, risks, blockers, recommendations,<br/>rejected alternatives, and open questions distinct"]
+  AUDIT_GROUP --> AUDIT_SYNTH["Orchestrator synthesizes audit reports (covers G_MANDATE_COVERAGE)<br/>Build version, from, to, intent, audit_status_summary,<br/>overall_verdict, gap_inventory, mutation_plan,<br/>quality_gate_plan, out_of_scope_findings,<br/>and required aggregate keys<br/>Include architecture_advisory when SELF_IMPROVEMENT_RUN=true<br/>Write synthesis to HANDOFF_DIR/audit-synthesis-report.yaml (AUDIT_REPORT_PATH)<br/>Keep facts, risks, blockers, recommendations,<br/>rejected alternatives, and open questions distinct"]
   AUDIT_SYNTH --> AUDIT_STATUS{"Audit slice statuses?"}
 
   AUDIT_STATUS -->|all audit prefixes PASS no gaps| FINAL_NO_CHANGE["Emit banner Phase 8/8 - Handoff<br/>Load final-report-template.md<br/>Return no-change handoff with evidence,<br/>personality assessment, rejected optional improvements,<br/>related-skill limits, and validation limits"]
@@ -76,7 +76,7 @@ flowchart TD
   DIAGRAM_REVIEW_STATUS -->|blocked| EDIT_BLOCK
   DIAGRAM_REVIEW_STATUS -->|error or repair limit reached| DIAGRAM_REVIEW_ERROR["Retain diagram-review error summary"]
 
-  EDIT_APPLY["Write skill-definition-editor instructions<br/>Apply only approved gap mutations inside the target package<br/>When a final passed candidate exists at DIAGRAM_CANDIDATE_PATH,<br/>the editor writes it into flow-diagram.md in the SAME edit<br/>Editor returns BLOCKED if a structural gap is approved without an available final passed candidate<br/>During repair, scope the edit to failed validation checks only"]
+  EDIT_APPLY["Write skill-definition-editor instructions<br/>Apply only approved gap mutations inside the target package<br/>For self-improvement, skip approved gaps marked DEFERRED in architecture_advisory<br/>When a final passed candidate exists at DIAGRAM_CANDIDATE_PATH,<br/>the editor writes it into flow-diagram.md in the SAME edit<br/>Editor returns BLOCKED if a structural gap is approved without an available final passed candidate<br/>During repair, scope the edit to failed validation checks only"]
   EDIT_APPLY --> EDIT_STATUS{"EDIT status?"}
   EDIT_STATUS -->|PASS| VALIDATE["Emit banner Phase 7/8 - Validate (covers G_GAP_CLOSURE, G_FLOW_SYNC, G_BEST_PRACTICES_COMPLIANCE)<br/>Write skill-package-validator instructions<br/>Check approved-gap closure, diagram/SKILL/subagent coherence,<br/>audit-synthesis schema and advisory enforcement,<br/>priority and status contracts, strict file-size limits,<br/>related-discovery scope, prompt sufficiency,<br/>best-practices compliance, and mutation boundaries"]
   EDIT_STATUS -->|BLOCKED| EDIT_BLOCK["Blocked handoff<br/>Include edit blocker and smallest user decision"]
@@ -187,7 +187,8 @@ aggregates suffixes only for precedence and branch labels. The orchestrator
 writes the synthesized result to
 `HANDOFF_DIR/audit-synthesis-report.yaml` (the `AUDIT_REPORT_PATH` consumed by
 the editor and validator); this synthesis artifact is complete only when it
-contains `audit_status_summary`, `overall_verdict`, `gap_inventory`,
+contains the non-conditional required top-level schema keys `version`, `from`,
+`to`, `intent`, `audit_status_summary`, `overall_verdict`, `gap_inventory`,
 `mutation_plan`, `quality_gate_plan`, `out_of_scope_findings`, and the required
 aggregate keys from `references/audit-synthesis-schema.md`. When
 `SELF_IMPROVEMENT_RUN=true`, it must also contain `architecture_advisory` with a
@@ -226,7 +227,9 @@ is present and locatable, the orchestrator copies the confirmed `SKILL_PATH` int
 Self-reference rule (canonical home; `SKILL.md` is a documented hoist that
 points here): `SELF_REFERENCE_CHECK` detects self-improvement runs (`SKILL_PATH`
 equals this orchestrator's package); on yes, the `SELF_REFERENCE_GUARD` applies
-the same-run safety rule above; on no, normal Phase 2 Flow Load proceeds.
+the same-run safety rule above, audit synthesis records `SAFE` or `DEFERRED`
+for every inventory gap, and the editor may mutate only approved gaps marked
+`SAFE`; on no, normal Phase 2 Flow Load proceeds.
 
 Gate ID mapping: `VALIDATE` covers `G_GAP_CLOSURE`, `G_FLOW_SYNC`, and
 `G_BEST_PRACTICES_COMPLIANCE`; `AUDIT_SYNTH` covers `G_MANDATE_COVERAGE`; and
