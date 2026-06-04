@@ -25,13 +25,16 @@ across OpenCode and Claude Code.
 
 ## First-party skills
 
-Most first-party skills belong to either the Jira workflow or the GitHub
-workflow. The remaining skills are standalone utilities.
+Most first-party skills belong to shared workflow orchestration, the Jira
+workflow, the GitHub workflow, or standalone utilities.
+
+### Shared workflow orchestration
+
+- [`orchestrating-workflow`](skills/orchestrating-workflow/SKILL.md) runs the
+  full Jira or GitHub workflow through the active platform playbook.
 
 ### Jira workflow
 
-- [`orchestrating-jira-workflow`](skills/orchestrating-jira-workflow/SKILL.md)
-  runs the full Jira ticket workflow.
 - [`fetching-jira-ticket`](skills/fetching-jira-ticket/SKILL.md) saves a ticket
   snapshot to `docs/<TICKET_KEY>.md`.
 - [`planning-jira-tasks`](skills/planning-jira-tasks/SKILL.md) turns the ticket
@@ -47,8 +50,6 @@ workflow. The remaining skills are standalone utilities.
 
 ### GitHub workflow
 
-- [`orchestrating-github-workflow`](skills/orchestrating-github-workflow/SKILL.md)
-  runs the full GitHub issue workflow.
 - [`fetching-github-issue`](skills/fetching-github-issue/SKILL.md) saves an
   issue snapshot to `docs/<ISSUE_SLUG>.md`.
 - [`planning-github-issue-tasks`](skills/planning-github-issue-tasks/SKILL.md)
