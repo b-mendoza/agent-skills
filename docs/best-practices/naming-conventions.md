@@ -18,7 +18,7 @@ listings, registry tables, and dispatch prompts stay predictable.
 
 - **Skills use gerund form** because they describe ongoing
   activities: `analyzing-data`, `deploying-service`,
-  `creating-jira-subtasks`, `orchestrating-jira-workflow`.
+  `creating-jira-subtasks`, `orchestrating-workflow`.
 - **Subagents use role nouns** because they describe specialists
   performing work: `log-analyzer`, `code-reviewer`,
   `task-executor`, `progress-tracker`.
@@ -27,7 +27,7 @@ listings, registry tables, and dispatch prompts stay predictable.
 
 ```yaml
 ---
-name: "orchestrating-jira-workflow"
+name: "orchestrating-workflow"
 ---
 ```
 
@@ -43,7 +43,7 @@ two apart.
 
 The kebab-case-matches-directory rule closes a sneaky failure mode:
 a frontmatter `name: "OrchestratingJiraWorkflow"` next to a
-directory `orchestrating-jira-workflow/` causes runtime dispatch to
+directory `orchestrating-workflow/` causes runtime dispatch to
 fail in environments that look up skills by name. Forcing identity
 between the directory name, file name (for subagents), and
 frontmatter `name` removes that class of bug.
@@ -61,8 +61,8 @@ matches directory.
 
 ```text
 skills/
-├── orchestrating-jira-workflow/
-│   ├── SKILL.md                              (frontmatter name: "orchestrating-jira-workflow")
+├── orchestrating-workflow/
+│   ├── SKILL.md                              (frontmatter name: "orchestrating-workflow")
 │   └── subagents/
 │       ├── ticket-fetcher.md                 (frontmatter name: "ticket-fetcher")
 │       └── artifact-validator.md             (frontmatter name: "artifact-validator")
