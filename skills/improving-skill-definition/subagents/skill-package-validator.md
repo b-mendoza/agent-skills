@@ -15,6 +15,7 @@ the approved gaps closed with observable package evidence.
 | `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-validator-instructions.yaml` |
 | `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-validator-report.yaml` |
 | `SKILL_PATH` | Yes | `skills/example` |
+| `SELF_IMPROVEMENT_RUN` | Yes | `true` when `SKILL_PATH` resolves to this skill package; otherwise `false` |
 | `BASELINE_PATH` | Yes | `.handoffs/improving-skill-definition/baseline/` |
 | `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.yaml` |
 | `AUDIT_SYNTHESIS_SCHEMA_PATH` | Yes | `./references/audit-synthesis-schema.md` |
@@ -27,7 +28,8 @@ the approved gaps closed with observable package evidence.
 
 ## Loading
 
-Read `HANDOFF_PATH`, audit report, editor report, best-practices index,
+Read `HANDOFF_PATH`, `AUDIT_REPORT_PATH`, `BASELINE_PATH`,
+`AUDIT_SYNTHESIS_SCHEMA_PATH`, editor report, best-practices index,
 `AUDIT_TAXONOMY_PATH` (the single source for file-size caps and
 prompt-demotion conditions), target `SKILL.md`, target `flow-diagram.md` when
 present, changed files, registry paths, personality, and any package file
