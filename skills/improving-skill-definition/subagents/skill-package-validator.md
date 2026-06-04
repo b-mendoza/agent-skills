@@ -15,6 +15,7 @@ the approved gaps closed with observable package evidence.
 | `HANDOFF_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-validator-instructions.yaml` |
 | `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-package-validator-report.yaml` |
 | `SKILL_PATH` | Yes | `skills/example` |
+| `BASELINE_PATH` | Yes | `.handoffs/improving-skill-definition/baseline/` |
 | `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.yaml` |
 | `EDITOR_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.yaml` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
@@ -62,7 +63,15 @@ needed to verify closure.
 16. Confirm no undocumented contradictory duplicates remain and that intentional
     hoists point to their canonical home (M9 re-scan), folded under
     best-practices compliance.
-17. Return `VALIDATION: FAIL` for any fixable finding regardless of severity
+17. Diff `SKILL_PATH` against `BASELINE_PATH` per the Baseline-snapshot rule
+    in `flow-diagram.md` to evidence new-vs-prior closure for each approved gap.
+18. Confirm `AUDIT_REPORT_PATH` carries every required key and every aggregated
+    slice key defined in `AUDIT_SYNTHESIS_SCHEMA_PATH`, including
+    `outcome_matrix_aggregate`, `priority_ranking_aggregate`,
+    `parallelism_opportunities_aggregate`, `subagent_map_aggregate`,
+    `heuristic_table_aggregate`, `no_ops_aggregate`, and
+    `alternatives_aggregate`.
+19. Return `VALIDATION: FAIL` for any fixable finding regardless of severity
     tier (`high`, `medium`, or `low`) per the taxonomy Severity section; return
     `PASS` only when all applicable gates pass with no open findings.
 
