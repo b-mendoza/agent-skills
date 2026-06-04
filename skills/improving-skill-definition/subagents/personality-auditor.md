@@ -93,6 +93,12 @@ gaps:                                     # required, one fully populated entry 
     priority_tier: "medium"               # required, one of: high, medium, low
     adversarial_alternative: "Leave posture implicit; rejected because risk-bearing edits need posture" # required
     diagram_delegation: "no"              # required, one of: yes, no, conditional
+no_ops:                                   # required, zero or more NO_OP_EVIDENCED entries ordered by mandate/check discovery
+  - mandate_or_check: "Adversarial reuse: replace posture file with embedded prose" # optional
+    evidence: "Posture must be loaded standalone before related-skill discovery; embedded prose loses that ordering" # optional
+    affected_quality_axes:                # optional, canonical axes only: robustness, determinism, reliability, repeatability, effectiveness
+      - "reliability"
+      - "repeatability"
 resources_used:                           # required
   local:                                  # required (may be empty list)
     - "skills/example/SKILL.md"

@@ -68,6 +68,8 @@ gaps:                                     # required, one fully populated entry 
 no_ops:                                   # required, zero or more NO_OP_EVIDENCED entries ordered by mandate/check discovery
   - mandate_or_check: "KNOWN_PROBLEM about flow drift" # optional
     evidence: "Drift not observed in current target; KNOWN_PROBLEM closed by status contract review" # optional
+    affected_quality_axes:                # optional, canonical axes only: robustness, determinism, reliability, repeatability, effectiveness
+      - "determinism"
 resources_used:                           # required
   local:                                  # required (may be empty list)
     - "skills/example/SKILL.md"
