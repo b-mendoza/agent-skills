@@ -48,7 +48,7 @@ flowchart TD
   RELATED_DEGRADE --> AUDIT_SETUP
 
   AUDIT_SETUP --> AUDIT_GROUP["Focused audit slices (independent parallel group)<br/>Flow coherence and diagram delegation<br/>Subagent architecture and parallelism<br/>Contracts, statuses, and priority tiers<br/>Personality and reuse lens<br/>Package hygiene and best practices<br/>Prompt sufficiency and demotion"]
-  AUDIT_GROUP --> AUDIT_SYNTH["Orchestrator synthesizes audit reports (covers G_MANDATE_COVERAGE)<br/>Build one gap inventory, mutation plan, and gate plan<br/>Include architecture_advisory when SELF_IMPROVEMENT_RUN=true<br/>Write synthesis to HANDOFF_DIR/audit-synthesis-report.yaml (AUDIT_REPORT_PATH)<br/>Keep facts, risks, blockers, recommendations,<br/>rejected alternatives, and open questions distinct"]
+  AUDIT_GROUP --> AUDIT_SYNTH["Orchestrator synthesizes audit reports (covers G_MANDATE_COVERAGE)<br/>Build audit_status_summary, overall_verdict, gap_inventory,<br/>mutation_plan, quality_gate_plan, out_of_scope_findings,<br/>and required aggregate keys<br/>Include architecture_advisory when SELF_IMPROVEMENT_RUN=true<br/>Write synthesis to HANDOFF_DIR/audit-synthesis-report.yaml (AUDIT_REPORT_PATH)<br/>Keep facts, risks, blockers, recommendations,<br/>rejected alternatives, and open questions distinct"]
   AUDIT_SYNTH --> AUDIT_STATUS{"Audit slice statuses?"}
 
   AUDIT_STATUS -->|all audit prefixes PASS no gaps| FINAL_NO_CHANGE["Emit banner Phase 8/8 - Handoff<br/>Load final-report-template.md<br/>Return no-change handoff with evidence,<br/>personality assessment, rejected optional improvements,<br/>related-skill limits, and validation limits"]
@@ -187,7 +187,9 @@ aggregates suffixes only for precedence and branch labels. The orchestrator
 writes the synthesized result to
 `HANDOFF_DIR/audit-synthesis-report.yaml` (the `AUDIT_REPORT_PATH` consumed by
 the editor and validator); this synthesis artifact is complete only when it
-contains the gap inventory, the mutation plan, and the quality gate plan. When
+contains `audit_status_summary`, `overall_verdict`, `gap_inventory`,
+`mutation_plan`, `quality_gate_plan`, `out_of_scope_findings`, and the required
+aggregate keys from `references/audit-synthesis-schema.md`. When
 `SELF_IMPROVEMENT_RUN=true`, it must also contain `architecture_advisory` with a
 caveat and one `SAFE` or `DEFERRED` entry for every inventory gap.
 
