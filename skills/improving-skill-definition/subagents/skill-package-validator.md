@@ -17,6 +17,7 @@ the approved gaps closed with observable package evidence.
 | `SKILL_PATH` | Yes | `skills/example` |
 | `BASELINE_PATH` | Yes | `.handoffs/improving-skill-definition/baseline/` |
 | `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.yaml` |
+| `AUDIT_SYNTHESIS_SCHEMA_PATH` | Yes | `./references/audit-synthesis-schema.md` |
 | `EDITOR_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.yaml` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, `remove`, `demote`, or `skip` |
