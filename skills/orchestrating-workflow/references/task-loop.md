@@ -54,7 +54,8 @@ a progress file.
    `DIRECTION=precondition`, `TASK_NUMBER=<N>`.
 3. If the precondition passes and the task progress file does not exist,
    dispatch `progress-tracker` with the workflow key under `TICKET_KEY`,
-   `ACTION=initialize_task`, `TASK_NUMBER=<N>`, and `TASK_TITLE=<title>`.
+   `PLAYBOOK_PATH=<active playbook path>`, `ACTION=initialize_task`,
+   `TASK_NUMBER=<N>`, and `TASK_TITLE=<title>`.
 4. Invoke the downstream skill with the inputs named in the playbook's
    Phase Skill Map row for Phase 5.
 5. Retain only the downstream completion summary: four artifact paths,
