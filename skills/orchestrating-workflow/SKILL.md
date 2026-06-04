@@ -140,9 +140,10 @@ handled by downstream execution skills.
 3. Dispatch `progress-tracker` with the workflow key under the parameter
    name `TICKET_KEY` and `ACTION=read`.
 4. Decide the resume point from the compact progress summary.
-5. Dispatch `preflight-checker` with the workflow key and only the remaining
-   phase range. The active playbook's `Preflight Transport Check` and
-   `Phase Skill Map` rows define what the manifest expects.
+5. Dispatch `preflight-checker` with the workflow key under `TICKET_KEY`,
+   `PLAYBOOK_PATH=<active playbook path>`, and `PHASES=<remaining phase
+   range>`. The active playbook's `Preflight Transport Check` and `Phase
+   Skill Map` rows define what the manifest expects.
 6. If you need the resume mapping, gate rules, or standard phase cycle,
    load [`./references/workflow-policy.md`](./references/workflow-policy.md).
    If you need the phase-to-skill map, load
