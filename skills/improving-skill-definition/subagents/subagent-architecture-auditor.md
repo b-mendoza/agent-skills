@@ -84,6 +84,12 @@ gaps:                                     # required, one fully populated entry 
     priority_tier: "medium"               # required, one of: high, medium, low
     adversarial_alternative: "Keep monolithic for ergonomics; rejected because parallel dispatch would speed audit" # required
     diagram_delegation: "yes"             # required, one of: yes, no, conditional
+no_ops:                                   # required, zero or more NO_OP_EVIDENCED entries ordered by mandate/check discovery
+  - mandate_or_check: "Adversarial reuse of an inline LLM-as-judge instead of dispatched auditors" # optional
+    evidence: "Inline judges lose per-slice status enums and the parallel dispatch the workflow requires" # optional
+    affected_quality_axes:                # optional, canonical axes only: robustness, determinism, reliability, repeatability, effectiveness
+      - "determinism"
+      - "repeatability"
 resources_used:                           # required
   local:                                  # required (may be empty list)
     - "skills/example/SKILL.md"

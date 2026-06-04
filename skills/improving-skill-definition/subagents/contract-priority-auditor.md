@@ -91,6 +91,11 @@ gaps:                                     # required, one fully populated entry 
     priority_tier: "high"                 # required, one of: high, medium, low
     adversarial_alternative: "Leave routing implicit; rejected because routing cannot recover" # required
     diagram_delegation: "yes"             # required, one of: yes, no, conditional
+no_ops:                                   # required, zero or more NO_OP_EVIDENCED entries ordered by mandate/check discovery
+  - mandate_or_check: "PRIOR_KNOWN_PROBLEMS_PATH registry verification" # optional
+    evidence: "known_problems.md not present at repo root; no historical drift signal to verify" # optional
+    affected_quality_axes:                # optional, canonical axes only: robustness, determinism, reliability, repeatability, effectiveness
+      - "reliability"
 resources_used:                           # required
   local:                                  # required (may be empty list)
     - "skills/example/SKILL.md"

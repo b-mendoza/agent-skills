@@ -95,6 +95,11 @@ gaps:                                     # required, one fully populated entry 
     priority_tier: "high"                 # required, one of: high, medium, low
     adversarial_alternative: "Leave over-cap; rejected because cap is a strict file-size failure per taxonomy" # required
     diagram_delegation: "no"              # required, one of: yes, no, conditional
+no_ops:                                   # required, zero or more NO_OP_EVIDENCED entries ordered by mandate/check discovery
+  - mandate_or_check: "scripts/ best-practice check" # optional
+    evidence: "Target package has no scripts/ directory; check not applicable" # optional
+    affected_quality_axes:                # optional, canonical axes only: robustness, determinism, reliability, repeatability, effectiveness
+      - "reliability"
 resources_used:                           # required
   local:                                  # required (may be empty list)
     - "skills/example/SKILL.md"
