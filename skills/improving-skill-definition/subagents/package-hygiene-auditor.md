@@ -90,8 +90,8 @@ gaps:                                     # required, one fully populated entry 
     issue: "task-executor.md exceeds 150-line cap" # required
     evidence: "162 non-empty lines counted; cap defined in references/audit-gap-taxonomy.md File Size Caps" # required
     required_fix: "Split shared criteria into references/execution-policy.md" # required
-    quality_axes:                         # required, at least one of: routeability, mutation_safety, portability, traceability, robustness, determinism, reliability, repeatability, effectiveness
-      - "traceability"
+    quality_axes:                         # required, at least one of: robustness, determinism, reliability, repeatability, effectiveness
+      - "repeatability"
     priority_tier: "high"                 # required, one of: high, medium, low
     adversarial_alternative: "Leave over-cap; rejected because cap is a strict file-size failure per taxonomy" # required
     diagram_delegation: "no"              # required, one of: yes, no, conditional

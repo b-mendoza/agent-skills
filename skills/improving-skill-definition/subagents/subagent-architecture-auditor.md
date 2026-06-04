@@ -79,7 +79,7 @@ gaps:                                     # required, one fully populated entry 
     issue: "Single auditor handles three independent responsibilities" # required
     evidence: "monolithic-auditor.md instructions enumerate three orthogonal checks" # required
     required_fix: "Split into three role-noun subagents that can run in parallel" # required
-    quality_axes:                         # required, at least one of: routeability, mutation_safety, portability, traceability, robustness, determinism, reliability, repeatability, effectiveness
+    quality_axes:                         # required, at least one of: robustness, determinism, reliability, repeatability, effectiveness
       - "repeatability"
     priority_tier: "medium"               # required, one of: high, medium, low
     adversarial_alternative: "Keep monolithic for ergonomics; rejected because parallel dispatch would speed audit" # required

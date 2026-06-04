@@ -78,7 +78,7 @@ gaps:                                     # required, one fully populated entry 
     issue: "Skill package machinery is unearned for a single-shot explanation task" # required
     evidence: "No approval gate, durable artifact, repair loop, specialist report, mutation boundary, or external-effect validation is present" # required
     required_fix: "Demote the package to a prompt file with the same input/output wording" # required
-    quality_axes:                         # required, at least one of: routeability, mutation_safety, portability, traceability, robustness, determinism, reliability, repeatability, effectiveness
+    quality_axes:                         # required, at least one of: robustness, determinism, reliability, repeatability, effectiveness
       - "effectiveness"
     priority_tier: "medium"               # required, one of: high, medium, low
     adversarial_alternative: "Keep the skill wrapper; rejected because no runtime behavior depends on skill machinery" # required

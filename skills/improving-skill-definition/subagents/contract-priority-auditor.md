@@ -86,8 +86,8 @@ gaps:                                     # required, one fully populated entry 
     issue: "Phase 6 missing EDIT: BLOCKED and EDIT: ERROR rows" # required
     evidence: "Status Routing Contract table lists only EDIT: PASS" # required
     required_fix: "Add EDIT: BLOCKED and EDIT: ERROR rows to Status Routing Contract" # required
-    quality_axes:                         # required, at least one of: routeability, mutation_safety, portability, traceability, robustness, determinism, reliability, repeatability, effectiveness
-      - "routeability"
+    quality_axes:                         # required, at least one of: robustness, determinism, reliability, repeatability, effectiveness
+      - "determinism"
     priority_tier: "high"                 # required, one of: high, medium, low
     adversarial_alternative: "Leave routing implicit; rejected because routing cannot recover" # required
     diagram_delegation: "yes"             # required, one of: yes, no, conditional
