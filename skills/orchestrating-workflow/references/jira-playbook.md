@@ -45,11 +45,15 @@ when empty): `## Metadata`, `## Description`, `## Acceptance Criteria`,
 
 Replace the platform placeholders in the shared 12-line contract with:
 
-```
+```text
 Ticket: <TICKET_KEY>: <Summary/Title | Unknown>
 Status: <status | Unknown> | Type: <type | Unknown>
 Subtasks: <retrieved>/<found | UNKNOWN | N/A>
 ```
+
+## Phase 2 Task Plan Summary Heading
+
+`## Ticket Summary`
 
 ## Phase 3 Approval Prompt
 

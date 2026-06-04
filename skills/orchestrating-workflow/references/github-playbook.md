@@ -45,11 +45,15 @@ the user to run `gh auth login` rather than failing.
 
 Replace the platform placeholders in the shared 12-line contract with:
 
-```
+```text
 Issue: <owner>/<repo>#<N>: <Title | Unknown>
 State: <OPEN | CLOSED | Unknown>
 Child issues: <retrieved>/<found | UNKNOWN | N/A>
 ```
+
+## Phase 2 Task Plan Summary Heading
+
+`## Issue Summary`
 
 ## Phase 3 Approval Prompt
 
