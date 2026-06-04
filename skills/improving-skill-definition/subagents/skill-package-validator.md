@@ -68,13 +68,18 @@ needed to verify closure.
     best-practices compliance.
 17. Diff `SKILL_PATH` against `BASELINE_PATH` per the Baseline-snapshot rule
     in `flow-diagram.md` to evidence new-vs-prior closure for each approved gap.
-18. Confirm `AUDIT_REPORT_PATH` carries every required key and every aggregated
-    slice key defined in `AUDIT_SYNTHESIS_SCHEMA_PATH`, including
+18. Confirm `AUDIT_REPORT_PATH` carries every non-conditional required key and
+    every aggregated slice key defined in `AUDIT_SYNTHESIS_SCHEMA_PATH`,
+    including
     `outcome_matrix_aggregate`, `priority_ranking_aggregate`,
     `parallelism_opportunities_aggregate`, `subagent_map_aggregate`,
     `heuristic_table_aggregate`, `no_ops_aggregate`, and
     `alternatives_aggregate`.
-19. Return `VALIDATION: FAIL` for any fixable finding regardless of severity
+19. When `SELF_IMPROVEMENT_RUN=true`, confirm `AUDIT_REPORT_PATH` includes a
+    well-formed `architecture_advisory` block: a non-empty `caveat` string and
+    `applies_to_gaps_in_inventory` entries covering every `gap_inventory` gap id
+    exactly once, each marked `SAFE` or `DEFERRED`.
+20. Return `VALIDATION: FAIL` for any fixable finding regardless of severity
     tier (`high`, `medium`, or `low`) per the taxonomy Severity section; return
     `PASS` only when all applicable gates pass with no open findings.
 
@@ -90,7 +95,7 @@ to:                                       # required, exactly one orchestrator i
   phase: "Phase 7/8 - Validate"              # required
 intent: "Post-edit quality gate: approved-gap closure, flow coherence, contracts, line caps, hygiene" # required
 status: "VALIDATION: FAIL"                # required, one of: VALIDATION: PASS, VALIDATION: FAIL, VALIDATION: BLOCKED, VALIDATION: ERROR
-checks:                                   # required, one entry per declared check, ordered as Instructions checks 1-17; verdict one of: pass, fail, not_applicable
+checks:                                   # required, one entry per declared check, ordered as Instructions checks 1-20; verdict one of: pass, fail, not_applicable
   - {check: "frontmatter", verdict: "pass", evidence: "Frontmatter names match directory/file basenames"} # required fields: check, verdict, evidence
   - {check: "line_caps", verdict: "fail", evidence: "subagents/task-executor.md 162 non-empty lines exceeds 150-line cap"}
   - {check: "referenced_paths", verdict: "pass", evidence: "All bundled paths exist and stay in package"}
@@ -108,7 +113,8 @@ checks:                                   # required, one entry per declared che
   - {check: "best_practices_compliance", verdict: "fail", evidence: "handoff-file-dispatch fails because line cap violation triggers compliance fail"}
   - {check: "contradictory_duplicates_and_hoists", verdict: "pass", evidence: "No undocumented contradictory duplicates remain; intentional hoists point to canonical homes"}
   - {check: "baseline_diff", verdict: "pass", evidence: "Diff between SKILL_PATH and BASELINE_PATH evidences observable new-vs-prior closure for each approved gap"}
-  - {check: "audit_synthesis_schema_compliance", verdict: "pass", evidence: "audit-synthesis-report.yaml contains every required top-level and aggregated-slice key defined in AUDIT_SYNTHESIS_SCHEMA_PATH"}
+  - {check: "audit_synthesis_schema_compliance", verdict: "pass", evidence: "audit-synthesis-report.yaml contains every non-conditional required top-level and aggregated-slice key defined in AUDIT_SYNTHESIS_SCHEMA_PATH"}
+  - {check: "self_improvement_architecture_advisory", verdict: "pass", evidence: "SELF_IMPROVEMENT_RUN=true report contains architecture_advisory.caveat and SAFE/DEFERRED entries for every gap_inventory id"}
   - {check: "fail_on_fixable_findings", verdict: "pass", evidence: "VALIDATION: FAIL is returned when any fixable high, medium, or low finding remains"}
 critical_output_gates:                    # required, one entry per declared gate, ordered: G_GAP_CLOSURE, G_BEST_PRACTICES_COMPLIANCE, G_FLOW_SYNC
   - gate: "G_GAP_CLOSURE"                 # required
