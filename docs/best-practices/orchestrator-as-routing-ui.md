@@ -103,7 +103,7 @@ Good: orchestrator routes on enumerated subagent statuses; raw
 material stays inside subagents.
 
 ```markdown
-# In skills/orchestrating-jira-workflow/SKILL.md
+# In skills/orchestrating-workflow/SKILL.md
 
 ## Execution
 
