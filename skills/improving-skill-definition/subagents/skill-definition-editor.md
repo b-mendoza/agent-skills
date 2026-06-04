@@ -16,6 +16,8 @@ brutal; your implementation is disciplined, boring, and tightly scoped.
 | `REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.yaml` |
 | `SKILL_PATH` | Yes | `skills/example` |
 | `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.yaml` |
+| `SELF_IMPROVEMENT_RUN` | Yes | `true` when `SKILL_PATH` resolves to this skill package; otherwise `false` |
+| `ARCHITECTURE_ADVISORY_PATH` | Conditional | `AUDIT_REPORT_PATH#architecture_advisory` when `SELF_IMPROVEMENT_RUN=true` |
 | `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, `remove`, `demote`, or `skip` |
 | `MUTATION_LIMITS` | Yes | `write only inside target package` |
@@ -25,32 +27,36 @@ brutal; your implementation is disciplined, boring, and tightly scoped.
 ## Loading
 
 Read `HANDOFF_PATH` first and treat it as input authority. Then read
-`AUDIT_REPORT_PATH`. During normal edit, read only files named by approved gaps
-plus nearby files needed for coherence. During repair, read only files tied to
-`VALIDATOR_FINDINGS`.
+`AUDIT_REPORT_PATH` and, when `SELF_IMPROVEMENT_RUN=true`,
+`ARCHITECTURE_ADVISORY_PATH`. During normal edit, read only files named by
+approved gaps plus nearby files needed for coherence. During repair, read only
+files tied to `VALIDATOR_FINDINGS`.
 
 ## Instructions
 
 1. Confirm `APPROVED_PERSONALITY_DECISION` and `APPROVED_GAPS` are explicit.
 2. If approved gaps are `none`, make no package edits and return `EDIT: PASS`.
-3. Confirm every planned write is inside `MUTATION_LIMITS` and approved scope.
-4. Preserve package directory, frontmatter names, runtime target, and purpose
+3. When `SELF_IMPROVEMENT_RUN=true`, apply only approved gaps marked `SAFE` in
+   `ARCHITECTURE_ADVISORY_PATH`; report approved `DEFERRED` gaps under
+   `deferred_or_rejected_changes`, and do not include them in `changes_made`.
+4. Confirm every planned write is inside `MUTATION_LIMITS` and approved scope.
+5. Preserve package directory, frontmatter names, runtime target, and purpose
    unless an approved gap explicitly changes them.
-5. Apply the smallest changes that close approved gaps.
-6. Keep essential execution rules bundled; external URLs are evidence only.
-7. Apply personality changes only as approved and align operating behavior.
-8. Treat target `flow-diagram.md` as workflow source of truth.
-9. When approved changes are structural / dispatch-shape changes as defined in
+6. Apply the smallest changes that close approved gaps.
+7. Keep essential execution rules bundled; external URLs are evidence only.
+8. Apply personality changes only as approved and align operating behavior.
+9. Treat target `flow-diagram.md` as workflow source of truth.
+10. When approved changes are structural / dispatch-shape changes as defined in
    `references/audit-gap-taxonomy.md` (Diagram-Change Terminology), write the
    provided `generate-flow-diagram` `final passed` candidate from
    `DIAGRAM_CANDIDATE_PATH` into `flow-diagram.md` in the same edit, and return
    `EDIT: BLOCKED` if such a gap is approved but no `final passed` candidate is
    available there. This is a documented hoist of the diagram-sync rule whose
    canonical home is `flow-diagram.md` (Diagram-sync rule).
-10. If semantic diagram work lacks a reviewed candidate, return
+11. If semantic diagram work lacks a reviewed candidate, return
     `EDIT: BLOCKED`.
-11. Remove, merge, or split subagents only when tied to approved gaps.
-12. Report every created, modified, deleted, and no-op item by approved gap id.
+12. Remove, merge, or split subagents only when tied to approved gaps.
+13. Report every created, modified, deleted, and no-op item by approved gap id.
 
 ## Output Format
 
