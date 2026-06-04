@@ -133,7 +133,7 @@ PASS` only when the verdict is `skill justified`.
 
 ## Execution
 
-1. Emit `Phase 1/8 - Intake`; normalize inputs, initialize the repair counter to 0, and derive `MUTATION_LIMITS`, `HANDOFF_DIR`, and `DIAGRAM_CANDIDATE_PATH` (`HANDOFF_DIR/flow-diagram-candidate.md`).
+1. Emit `Phase 1/8 - Intake`; normalize inputs, initialize the repair counter to 0, derive `MUTATION_LIMITS`, `HANDOFF_DIR`, `BASELINE_PATH` (`HANDOFF_DIR/baseline/`), and `DIAGRAM_CANDIDATE_PATH` (`HANDOFF_DIR/flow-diagram-candidate.md`), copy `SKILL_PATH` into `BASELINE_PATH` per the Baseline-snapshot rule in `flow-diagram.md`, and apply the Self-reference rule in `flow-diagram.md` when `SKILL_PATH` resolves to this orchestrator's own package.
 2. Emit `Phase 2/8 - Flow Load`; load this diagram and personality.
 3. Emit `Phase 3/8 - Related Skills Discovery`; dispatch `related-skills-discoverer` and apply the canonical Related-skills discovery rule in `flow-diagram.md` (GitHub/GitLab only; sparse results continue with confidence notes; evidence-only `BLOCKED`/`ERROR` degrades and continues).
 4. Emit `Phase 4/8 - Audit`; dispatch the six focused auditors per the canonical Audit parallelism rule in `flow-diagram.md` (one independent parallel group when the runtime supports concurrent subagents, otherwise sequential with identical contracts). Pass the related-skills report as an optional named input to each slice.
