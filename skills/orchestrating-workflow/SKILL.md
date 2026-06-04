@@ -55,8 +55,10 @@ Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-critique.md + decisions.md
 Phase 7: Kick off + execute  -> downstream execution summary + progress update
 ```
 
-`<KEY>` resolves to `TICKET_KEY` (Jira) or `ISSUE_SLUG` (GitHub). Phases 5-7
-repeat per task until all tasks complete or the user stops.
+`<KEY>` is the workflow key value passed under the parameter name
+`TICKET_KEY`: a Jira ticket key for Jira workflows or a GitHub issue slug for
+GitHub workflows. Phases 5-7 repeat per task until all tasks complete or the
+user stops.
 
 ## Progressive Loading Map
 
