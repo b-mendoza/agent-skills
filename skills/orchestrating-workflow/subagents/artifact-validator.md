@@ -16,7 +16,7 @@ from the active playbook supplied at dispatch time.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `TICKET_KEY` | Yes | `<KEY>` (workflow key; value shape defined by the active playbook) |
-| `PLAYBOOK_PATH` | Required for Phase 1 postcondition and Phase 4 postcondition | `../references/<platform>-playbook.md` |
+| `PLAYBOOK_PATH` | Yes | `../references/<platform>-playbook.md` |
 | `PHASE` | Yes | `2` |
 | `DIRECTION` | Yes | `postcondition` |
 | `TASK_NUMBER` | Required only for task-specific phases 5-7 | `3` |
