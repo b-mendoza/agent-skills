@@ -98,7 +98,7 @@ TASK_NUMBER: <N>                  (task-specific boundaries only)
 
 The subagent returns a structured verdict:
 
-```
+```text
 VALIDATION: <PASS | FAIL | ERROR>
 Phase: <N> | Direction: <precondition | postcondition>
 File: <path>
@@ -127,7 +127,7 @@ active playbook's `Phase 1 Fetch Summary Fields` section supplies the
 identifier-bearing lines (lines 5-9 vary per platform). Branch on the
 structured fields, not on a single status line.
 
-```
+```text
 FETCH: <PASS | PARTIAL | FAIL | ERROR>
 Validation: <PASS | FAIL | NOT_RUN>
 Failure category: <NONE | BAD_INPUT | NOT_FOUND | AUTH | TOOLS_MISSING | RATE_LIMIT | UNEXPECTED>
@@ -161,7 +161,7 @@ user-facing detail.
 When dispatching `progress-tracker`, read its subagent definition from the
 registry. Typical orchestrator inputs:
 
-```
+```text
 TICKET_KEY: <KEY>
 PLAYBOOK_PATH: <path>             (required when templates list phase skill names)
 ACTION: read | initialize | update | initialize_task | update_task
