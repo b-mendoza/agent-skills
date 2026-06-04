@@ -51,10 +51,10 @@ flowchart TD
   AUDIT_GROUP --> AUDIT_SYNTH["Orchestrator synthesizes audit reports (covers G_MANDATE_COVERAGE)<br/>Build one gap inventory, mutation plan, and gate plan<br/>Include architecture_advisory when SELF_IMPROVEMENT_RUN=true<br/>Write synthesis to HANDOFF_DIR/audit-synthesis-report.yaml (AUDIT_REPORT_PATH)<br/>Keep facts, risks, blockers, recommendations,<br/>rejected alternatives, and open questions distinct"]
   AUDIT_SYNTH --> AUDIT_STATUS{"Audit slice statuses?"}
 
-  AUDIT_STATUS -->|all PASS no gaps| FINAL_NO_CHANGE["Emit banner Phase 8/8 - Handoff<br/>Load final-report-template.md<br/>Return no-change handoff with evidence,<br/>personality assessment, rejected optional improvements,<br/>related-skill limits, and validation limits"]
-  AUDIT_STATUS -->|any GAPS_FOUND| APPROVAL_HANDOFF["Emit banner Phase 5/8 - Approval<br/>Load final-report-template.md<br/>Prepare approval-required handoff<br/>Include personality recommendation, gap IDs,<br/>priority, related-skill evidence, mutation plan,<br/>quality gate plan, and no-proceed conditions"]
-  AUDIT_STATUS -->|any BLOCKED| AUDIT_BLOCK["Blocked handoff<br/>Include blocked slice, completed checks,<br/>and smallest recovery action"]
-  AUDIT_STATUS -->|any ERROR| AUDIT_ERROR["Retain audit error summary"]
+  AUDIT_STATUS -->|all audit prefixes PASS no gaps| FINAL_NO_CHANGE["Emit banner Phase 8/8 - Handoff<br/>Load final-report-template.md<br/>Return no-change handoff with evidence,<br/>personality assessment, rejected optional improvements,<br/>related-skill limits, and validation limits"]
+  AUDIT_STATUS -->|any audit prefix GAPS_FOUND| APPROVAL_HANDOFF["Emit banner Phase 5/8 - Approval<br/>Load final-report-template.md<br/>Prepare approval-required handoff<br/>Include personality recommendation, gap IDs,<br/>priority, related-skill evidence, mutation plan,<br/>quality gate plan, and no-proceed conditions"]
+  AUDIT_STATUS -->|any audit prefix BLOCKED| AUDIT_BLOCK["Blocked handoff<br/>Include blocked slice, completed checks,<br/>and smallest recovery action"]
+  AUDIT_STATUS -->|any audit prefix ERROR| AUDIT_ERROR["Retain audit error summary"]
 
   APPROVAL_HANDOFF --> SENSITIVE_GATE["Human gate details<br/>Action: mutate target skill package<br/>Target: files inside SKILL_PATH<br/>Reason: close audited gaps<br/>Risk: workflow drift, scope creep, or identity change<br/>Safer alternative: approval-required handoff only"]
   SENSITIVE_GATE --> APPROVAL_READY{"User explicitly approved personality decision<br/>and approved all, none, or specific gap IDs?"}
@@ -175,12 +175,16 @@ result is the same gap inventory either way. The related-skills report is an
 optional named input to each slice, not a blocking dependency.
 
 Audit synthesis rule: The orchestrator, not a super-auditor, synthesizes
-focused audit reports. Audit status precedence is `ERROR`, then `BLOCKED`,
-then `GAPS_FOUND`, then all-`PASS`. Focused audit slices must cover flow
+focused audit reports. Audit status precedence is based on suffixes from
+prefix-qualified audit statuses: any audit prefix `ERROR`, then any audit
+prefix `BLOCKED`, then any audit prefix `GAPS_FOUND`, then all audit prefixes
+`PASS`. Focused audit slices must cover flow
 coherence, subagent architecture and parallelism, contracts/status/priority,
 personality and reuse-vs-add reasoning, package hygiene and best practices, and
-prompt sufficiency. Each slice reports `PASS`, `GAPS_FOUND`, `BLOCKED`, or
-`ERROR`. The orchestrator writes the synthesized result to
+prompt sufficiency. Each slice reports a prefix-qualified audit status
+(`FLOW_AUDIT: PASS`, `CONTRACT_AUDIT: GAPS_FOUND`, etc.); the orchestrator
+aggregates suffixes only for precedence and branch labels. The orchestrator
+writes the synthesized result to
 `HANDOFF_DIR/audit-synthesis-report.yaml` (the `AUDIT_REPORT_PATH` consumed by
 the editor and validator); this synthesis artifact is complete only when it
 contains the gap inventory, the mutation plan, and the quality gate plan. When
