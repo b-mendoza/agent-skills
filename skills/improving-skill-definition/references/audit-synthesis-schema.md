@@ -13,13 +13,13 @@ paraphrasing it.
 | --- | ------ | ------- |
 | `version` | orchestrator | Integer schema version |
 | `from` | orchestrator | String sender identity, for example `improving-skill-definition` |
-| `to` | orchestrator | Next handoff target |
+| `to` | orchestrator | Mapping with `orchestrator: "improving-skill-definition"` and `phase: "Phase 5/8 - Approval"` |
 | `intent` | orchestrator | One-line synthesis intent |
 | `audit_status_summary` | orchestrator | One row per dispatched slice in dispatch order |
 | `overall_verdict` | orchestrator | Audit precedence outcome and per-axis verdicts |
 | `gap_inventory` | orchestrator | Material gaps with stable ids `G1..Gn` |
 | `mutation_plan` | orchestrator | Per-gap concrete editor mutation outline |
-| `quality_gate_plan` | orchestrator | Validator checks for `G_GAP_CLOSURE`, `G_FLOW_SYNC`, `G_BEST_PRACTICES_COMPLIANCE`, `G_MANDATE_COVERAGE` |
+| `quality_gate_plan` | orchestrator | Validator check plan for `G_GAP_CLOSURE`, `G_FLOW_SYNC`, `G_BEST_PRACTICES_COMPLIANCE`, and evidence that `AUDIT_SYNTH` covered `G_MANDATE_COVERAGE` |
 | `out_of_scope_findings` | orchestrator | `OUT_OF_SCOPE_FINDING` entries deferred to other workflows |
 | `architecture_advisory` | orchestrator | Conditional self-improvement advisory; required when `SELF_IMPROVEMENT_RUN=true` |
 
@@ -39,6 +39,18 @@ slice produced one.
 | `heuristic_table_aggregate` | `heuristic_table` | `prompt-sufficiency-auditor` |
 | `no_ops_aggregate` | `no_ops` | every audit slice |
 | `alternatives_aggregate` | `alternatives` | `personality-auditor` |
+
+## Metadata Field Shapes
+
+The `to` field is a mapping, not a free-form string:
+
+```yaml
+to:
+  orchestrator: "improving-skill-definition"
+  phase: "Phase 5/8 - Approval"
+```
+
+Validators check this shape as `to.orchestrator` and `to.phase`.
 
 ## Architecture Advisory
 
