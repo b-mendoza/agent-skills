@@ -73,8 +73,8 @@ registry paths, personality, and any package file needed to verify closure.
 16. Confirm no undocumented contradictory duplicates remain and that intentional
     hoists point to their canonical home (M9 re-scan), folded under
     best-practices compliance.
-17. Diff `SKILL_PATH` against `BASELINE_PATH` per the Baseline-snapshot rule
-    in `flow-diagram.md` to evidence new-vs-prior closure for each approved gap.
+17. Diff `SKILL_PATH` against `BASELINE_PATH` per the Baseline-snapshot rule in `flow-diagram.md` for approved gaps requiring package edits; for approved no-op or self-improvement
+    `DEFERRED` gaps, cite approval/advisory/editor-report evidence instead of requiring a package diff.
 18. Apply `AUDIT_SYNTHESIS_VALIDATION_PATH` to `AUDIT_REPORT_PATH`,
     `AUDIT_SLICE_REPORT_PATHS`, and `EDITOR_REPORT_PATH`: schema keys, aggregate
     key presence plus aggregate/source comparisons for source slices that ran,
@@ -114,7 +114,7 @@ checks:                                   # required, one entry per declared che
   - {check: "subagent_necessity", verdict: "pass", evidence: "All registry subagents return distinct downstream-consumed reports"}
   - {check: "best_practices_compliance", verdict: "fail", evidence: "handoff-file-dispatch fails because line cap violation triggers compliance fail"}
   - {check: "contradictory_duplicates_and_hoists", verdict: "pass", evidence: "No undocumented contradictory duplicates remain; intentional hoists point to canonical homes"}
-  - {check: "baseline_diff", verdict: "pass", evidence: "Diff between SKILL_PATH and BASELINE_PATH evidences observable new-vs-prior closure for each approved gap"}
+  - {check: "baseline_diff", verdict: "pass", evidence: "Diff between SKILL_PATH and BASELINE_PATH evidences observable new-vs-prior closure for approved gaps requiring package edits; approved no-op and DEFERRED items are evidenced by approval/advisory/editor reports"}
   - {check: "audit_synthesis_schema_compliance", verdict: "pass", evidence: "audit-synthesis-report.yaml contains required metadata, domain keys, and source-backed aggregates per audit-synthesis-validation.md"}
   - {check: "self_improvement_architecture_advisory", verdict: "pass", evidence: "SELF_IMPROVEMENT_RUN=true report contains architecture_advisory; DEFERRED gap ids are absent from changes_made and present in deferred_or_rejected_changes with reasons"}
   - {check: "fail_on_fixable_findings", verdict: "pass", evidence: "VALIDATION: FAIL is returned when any fixable high, medium, or low finding remains"}
