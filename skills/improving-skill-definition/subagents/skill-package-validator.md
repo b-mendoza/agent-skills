@@ -22,7 +22,7 @@ the approved gaps closed with observable package evidence.
 | `AUDIT_SYNTHESIS_VALIDATION_PATH` | Yes | `./references/audit-synthesis-validation.md` |
 | `AUDIT_SLICE_REPORT_PATHS` | Yes | `[".handoffs/improving-skill-definition/flow-coherence-auditor-report.yaml", ".handoffs/improving-skill-definition/contract-priority-auditor-report.yaml"]` |
 | `EDITOR_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/skill-definition-editor-report.yaml` |
-| `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
+| `APPROVED_GAPS` | Yes | `all`, `none`, or `gap-001,gap-003` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, `remove`, `demote`, or `skip` |
 | `BEST_PRACTICES_INDEX_PATH` | Yes | `docs/best-practices/README.md` |
 | `AUDIT_TAXONOMY_PATH` | Yes | `./references/audit-gap-taxonomy.md` |
