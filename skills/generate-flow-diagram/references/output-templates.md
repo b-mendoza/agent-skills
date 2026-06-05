@@ -106,8 +106,12 @@ flowchart TD
   STATUS -->|NEEDS_INPUT| REPORT
 ```
 
-Orchestration context: [root diagram](../flow-diagram.md)
+Orchestration context: [root diagram](<ROOT_DIAGRAM_RELATIVE_LINK>)
 ````
+
+`ROOT_DIAGRAM_RELATIVE_LINK` is the relative path from the localized subagent
+diagram file to the planner-resolved `ROOT_DIAGRAM_PATH`; for the default root it
+is usually `../flow-diagram.md`.
 
 ## Load-Instruction Template
 
@@ -122,6 +126,10 @@ Flow diagram: [`flow-diagram.md`](./flow-diagram.md)
 
 When `ROOT_DIAGRAM_PATH` uses a non-default filename, replace `flow-diagram.md`
 with the root path relative to the package `SKILL.md`.
+
+For localized subagent templates, derive `ROOT_DIAGRAM_RELATIVE_LINK` from the
+localized diagram file to the planner-resolved `ROOT_DIAGRAM_PATH`; do not
+hardcode `../flow-diagram.md` when the root path is non-default.
 
 Localized subagent load line in the owning subagent file:
 
