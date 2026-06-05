@@ -60,11 +60,23 @@ non-empty `caveat` string and an `applies_to_gaps_in_inventory` list. The list
 must name every `gap_inventory` gap id exactly once and mark each as `SAFE` or
 `DEFERRED` per the live-contract self-improvement safety rule.
 
+Each advisory entry is a mapping with this required shape:
+
+```yaml
+architecture_advisory:
+  caveat: "Live-contract self-improvement requires same-run safety handling."
+  applies_to_gaps_in_inventory:
+    - gap_id: "gap-001"
+      decision: "SAFE"      # one of: SAFE, DEFERRED
+    - gap_id: "gap-002"
+      decision: "DEFERRED"  # one of: SAFE, DEFERRED
+```
+
 ## Validation Contract
 
 `skill-package-validator` checks every non-conditional required top-level key,
 every aggregated slice key whose source slice ran, and every
 `architecture_advisory` field on self-improvement runs. Missing required keys,
 missing aggregates, empty aggregates with non-empty source-slice fields, an
-absent advisory on a self-improvement run, or advisory entries that do not cover
-every inventory gap all return `VALIDATION: FAIL`.
+absent advisory on a self-improvement run, or advisory entries without `gap_id`
+and `decision` fields covering every inventory gap all return `VALIDATION: FAIL`.

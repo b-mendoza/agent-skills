@@ -18,7 +18,9 @@ schema, source-slice aggregates, and self-improvement advisory enforcement.
    non-empty, the aggregate must be non-empty.
 4. When `SELF_IMPROVEMENT_RUN=true`, confirm `architecture_advisory.caveat` is
    non-empty and `architecture_advisory.applies_to_gaps_in_inventory` covers
-   every `gap_inventory` gap id exactly once with `SAFE` or `DEFERRED`.
+   every `gap_inventory` gap id exactly once. Each advisory list entry must be a
+   mapping with `gap_id` matching a `gap_inventory` id and `decision` equal to
+   `SAFE` or `DEFERRED`.
 5. When `SELF_IMPROVEMENT_RUN=true`, load `EDITOR_REPORT_PATH` and confirm no
    `changes_made[].approved_gap_or_finding` entry names a gap marked
    `DEFERRED`. No `DEFERRED` gap may appear in `changes_made`; approved
