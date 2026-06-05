@@ -56,7 +56,8 @@ repair, read only files tied to `VALIDATOR_FINDINGS`.
 11. If semantic diagram work lacks a reviewed candidate, return
     `EDIT: BLOCKED`.
 12. Remove, merge, or split subagents only when tied to approved gaps.
-13. Report every created, modified, deleted, and no-op item by approved gap id.
+13. Report every created, modified, deleted, no-op, and deferred item by approved
+    gap id or validator finding id.
 
 ## Output Format
 
@@ -99,7 +100,8 @@ no_op_items:                              # required, zero or more approved no-o
     reason: "Approved as NO_OP_EVIDENCED in approval handoff"
 deferred_or_rejected_changes:             # required, zero or more rejected/deferred items ordered by discovery
   - proposed_change: "Rename the skill directory to example-improved" # optional
-    reason: "Rejected because directory identity preservation was outside APPROVED_GAPS" # optional
+    approved_gap_or_finding: "gap-002"    # required for approved DEFERRED gaps and validator findings
+    reason: "Rejected because directory identity preservation was outside APPROVED_GAPS" # required
 validation_notes:                         # required, at least one
   - "Validator should confirm STATUS_CONTRACT rows now include BLOCKED and ERROR for EDIT"
   - "Validator should confirm flow-diagram.md candidate matches DIAGRAM_CANDIDATE_PATH content"
