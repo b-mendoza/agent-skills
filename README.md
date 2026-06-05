@@ -33,7 +33,8 @@ workflow, the GitHub workflow, or standalone utilities.
 - [`orchestrating-workflow`](skills/orchestrating-workflow/SKILL.md) runs the
   full Jira or GitHub workflow through the active platform playbook.
 - [`fetching-work-item`](skills/fetching-work-item/SKILL.md) saves a Jira ticket
-  or GitHub issue snapshot to `docs/<TICKET_KEY>.md`.
+  or GitHub issue snapshot to `docs/<KEY>.md`, where `<KEY>` is `TICKET_KEY`
+  for Jira or `ISSUE_SLUG` for GitHub.
 
 ### Jira workflow
 
