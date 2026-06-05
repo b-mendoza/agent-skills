@@ -19,7 +19,10 @@ stop, and when a human must approve the next action.
 | `CANDIDATE_MARKDOWN` | No | Current candidate from the failed review cycle |
 | `APPROVED_REFINEMENT_GAPS` | No | Gap IDs, names, rows approved by the user, or `none` |
 | `REVIEW_FEEDBACK` | No | Failed checks from `diagram-quality-reviewer` |
-| `RUN_MODE` | Yes | `new`, `refinement`, or `repair` |
+| `RUN_MODE` | Yes | `new`, `refinement`, `repair`, or `decompose` |
+| `DIAGRAM_SCOPE` | No | `orchestrator`, `subagent`, or `whole` (default) |
+| `SCOPE_SUBAGENT_NAME` | Conditional | Required when `DIAGRAM_SCOPE=subagent`; names the single subagent the diagram covers |
+| `SCOPE_CONTEXT` | No | Bloat-map slice plus cross-link targets for scoped runs (which nodes this diagram owns, which siblings to cross-link) |
 
 `EXISTING_FLOW_OR_DIAGRAM` and `APPROVED_REFINEMENT_GAPS` are required when
 `RUN_MODE=refinement`; `none` is a valid explicit no-op approval. If the
@@ -30,6 +33,12 @@ When repairing a refinement, the original `EXISTING_FLOW_OR_DIAGRAM` and
 `APPROVED_REFINEMENT_GAPS` are also required so repairs stay inside the approved
 scope.
 
+`DIAGRAM_SCOPE` defaults to `whole`; when it is absent or `whole`, build exactly
+as before. When `DIAGRAM_SCOPE=subagent`, `SCOPE_SUBAGENT_NAME` is required;
+return `BUILD: NEEDS_INPUT` when it is missing. You return candidate content
+only; you never write files or edit load wiring — the orchestrator persists a
+candidate after it passes review.
+
 ## Instructions
 
 1. If `PROCESS_INPUTS` is incomplete, load `../references/input-contract.md` and return the missing field through `BUILD: NEEDS_INPUT`.
@@ -39,8 +48,9 @@ scope.
 5. Fetch `../references/external-sources.md` only when local guidance is insufficient or the user asks for source-backed rationale.
 6. For refinement runs, build from `EXISTING_FLOW_OR_DIAGRAM` and apply only the gaps approved by the user; when approvals are `none`, carry the baseline flow, diagram, file content, or process prose forward without adding gap fixes. Return `BUILD: NEEDS_INPUT` when the baseline or approved gap IDs are missing.
 7. For repair runs, change only the issues named in `REVIEW_FEEDBACK` unless a fix exposes a direct dependency, and preserve the original refinement baseline and approved gap scope when those inputs are present.
-8. Keep facts, assumptions, risks, blockers, recommendations, and unresolved questions distinct.
-9. Return a complete candidate; do not claim it is final until review passes.
+8. For `DIAGRAM_SCOPE=orchestrator` or `DIAGRAM_SCOPE=subagent`, load the "Scoped and Decomposed Diagrams" section of `../references/flow-design-playbook.md` and use the matching template in `../references/output-templates.md`. For `orchestrator`, build a slim root: drop every subagent-internal node and collapse each dispatch to a single node that names the subagent and cross-links its localized diagram. For `subagent`, build only `SCOPE_SUBAGENT_NAME`'s internal flow and cross-link the root for orchestration context. Use `SCOPE_CONTEXT` to decide which nodes you own and which siblings to cross-link, and never copy a node, step, check, or status that another diagram owns.
+9. Keep facts, assumptions, risks, blockers, recommendations, and unresolved questions distinct.
+10. Return a complete candidate; do not claim it is final until review passes.
 
 ## Output Format
 
@@ -55,7 +65,8 @@ BUILD: PASS | NEEDS_INPUT | ERROR
 ```
 
 ## Build Notes
-- Mode: new | refinement | repair
+- Mode: new | refinement | repair | decompose
+- Diagram scope: whole | orchestrator | subagent (name)
 - Approved refinement gaps used: ...
 - Assumptions: ...
 - External sources fetched: ...
