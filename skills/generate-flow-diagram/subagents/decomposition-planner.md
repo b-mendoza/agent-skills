@@ -23,12 +23,13 @@ earned-decision contract before classifying.
 
 ## Instructions
 
-1. Read the root diagram at `ROOT_DIAGRAM_PATH` (or the default convention) and read every subagent named in `SUBAGENT_REGISTRY`. If the root diagram or a registry path is missing or unreadable, return `PLAN: BLOCKED` naming the absent file.
-2. Build the bloat map: tag each root-diagram node `orchestration-keep` or `subagent-internal-extract` using the classification test (does a fresh orchestrator agent need this to decide what to dispatch next?). For each extract node, name the owning subagent. Record the current root node count.
-3. Assign each subagent `EARNED` or `NO_OP_EVIDENCED` per the earned-decision contract. Quote a specific instruction, status, or branch as evidence for every decision.
-4. Audit localized-diagram coverage for each subagent: `covered` when its file already loads a compliant localized diagram, `missing` when it has none, or `needs-rescope` when an existing localized diagram carries out-of-scope content (orchestration phases, gates, or other subagents' internals).
-5. Recommend a per-owner action: `create` (EARNED + missing), `re-scope` (EARNED + needs-rescope), `keep` (EARNED + covered), or `n/a` (NO_OP_EVIDENCED).
-6. Do not write, generate, or repair any diagram. Return the plan only.
+1. If the caller omitted `PACKAGE_PATH` or `SUBAGENT_REGISTRY`, return `PLAN: NEEDS_INPUT` naming the missing input. Otherwise resolve `PACKAGE_PATH` against the workspace; if it is unsafe, outside the allowed package boundary, a vendored mirror, or not a skill package directory, return `PLAN: BLOCKED` naming the blocked path.
+2. Resolve `ROOT_DIAGRAM_PATH` to the supplied path or default `<PACKAGE_PATH>/flow-diagram.md`, then read the root diagram and every subagent named in `SUBAGENT_REGISTRY`. If the resolved root diagram or a registry subagent file is missing or unreadable, return `PLAN: BLOCKED` naming the absent file.
+3. Build the bloat map: tag each root-diagram node `orchestration-keep` or `subagent-internal-extract` using the classification test (does a fresh orchestrator agent need this to decide what to dispatch next?). For each extract node, name the owning subagent. Record the current root node count.
+4. Assign each subagent `EARNED` or `NO_OP_EVIDENCED` per the earned-decision contract. Quote a specific instruction, status, or branch as evidence for every decision.
+5. Audit localized-diagram coverage for each subagent: `covered` when its file already loads a compliant localized diagram, `missing` when it has none, or `needs-rescope` when an existing localized diagram carries out-of-scope content (orchestration phases, gates, or other subagents' internals).
+6. Recommend a per-owner action: `create` (EARNED + missing), `re-scope` (EARNED + needs-rescope), `keep` (EARNED + covered), or `n/a` (NO_OP_EVIDENCED).
+7. Do not write, generate, or repair any diagram. Return the plan only.
 
 ## Output Format
 
@@ -38,7 +39,7 @@ The orchestrator consumes this status line as `PLAN_VERDICT`.
 PLAN: PASS | NEEDS_INPUT | BLOCKED | ERROR
 
 ## Bloat Map
-Root diagram: <ROOT_DIAGRAM_PATH> — current node count <N>
+Root diagram: <resolved ROOT_DIAGRAM_PATH> — current node count <N>
 
 | Root node | Classification | Owning subagent |
 | --------- | -------------- | --------------- |
@@ -101,8 +102,8 @@ orchestrator.
 
 | Status | When |
 | ------ | ---- |
-| `NEEDS_INPUT` | `PACKAGE_PATH`, `SUBAGENT_REGISTRY`, or a required path is absent |
-| `BLOCKED` | The root diagram or a registry subagent file is missing or unreadable |
+| `NEEDS_INPUT` | The caller omitted `PACKAGE_PATH` or `SUBAGENT_REGISTRY` |
+| `BLOCKED` | The resolved `PACKAGE_PATH` is unsafe/out of scope, or the resolved root diagram or a registry subagent file is missing or unreadable |
 | `ERROR` | An unexpected parsing failure prevents inspection |
 
 For non-pass statuses, include the exact missing input or unreadable path and
