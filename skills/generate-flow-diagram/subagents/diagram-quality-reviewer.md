@@ -15,11 +15,13 @@ return concise, targeted fixes.
 | ----- | -------- | ------- |
 | `CANDIDATE_MARKDOWN` | Yes | Candidate from `diagram-builder` |
 | `PROCESS_INPUTS` | Yes | Normalized bundle from `../references/input-contract.md` |
+| `MUTATION_LIMITS` | Conditional | Required for `RUN_MODE=decompose`; write boundary derived by the orchestrator |
 | `EXISTING_FLOW_OR_DIAGRAM` | No | Baseline Mermaid block, file content, or process prose for refinement runs |
 | `RUN_MODE` | Yes | `new`, `refinement`, `repair`, or `decompose` |
 | `APPROVED_REFINEMENT_GAPS` | No | User-approved gap list for refinement, or `none` |
 | `DIAGRAM_SCOPE` | No | `orchestrator`, `subagent`, or `whole` (default) |
 | `SCOPE_SUBAGENT_NAME` | Conditional | Required when `DIAGRAM_SCOPE=subagent`; the subagent the candidate must stay inside |
+| `SCOPE_CONTEXT` | Conditional | Ownership slice, cross-link targets, action, and baseline context for scoped or decompose review |
 | `OTHER_DIAGRAM_DIGEST` | Conditional | Node labels, step descriptions, and status lists already owned by the root or sibling diagrams of the package, for the no-duplication check |
 
 `EXISTING_FLOW_OR_DIAGRAM` and `APPROVED_REFINEMENT_GAPS` are required when
@@ -40,11 +42,18 @@ If the digest is missing, empty without an explicit `none`, or not scoped to the
 same package, return `REVIEW: BLOCKED` instead of passing the no-duplication
 check by assumption.
 
+For `RUN_MODE=decompose`, verify that `OTHER_DIAGRAM_DIGEST` is based on planned
+ownership. For a subagent candidate, the digest includes slim-root and sibling
+content but excludes the pre-slim root nodes being extracted into that same
+subagent. Otherwise a valid extraction can be rejected as duplication.
+Also verify decompose candidates and load-wiring assumptions stay inside
+`MUTATION_LIMITS`; missing mutation limits for decompose review are a blocker.
+
 ## Instructions
 
 1. Load `../references/quality-gate-checklist.md` before reviewing.
 2. Apply every applicable checklist category; load `../references/input-contract.md` only if missing process fields affect the verdict.
-3. For `DIAGRAM_SCOPE=orchestrator` or `DIAGRAM_SCOPE=subagent`, or a `RUN_MODE=decompose` run, first confirm the required `OTHER_DIAGRAM_DIGEST` is present or explicitly `none`, then apply the checklist Scope Checks: scope separation (no out-of-scope node for the declared scope), no duplication (no node label, step, check, or status shared with `OTHER_DIAGRAM_DIGEST`; contradictory or paraphrased copies are highest severity), and dispatch collapse (each dispatch in an orchestrator diagram is a single cross-linked node). Skip these three for `DIAGRAM_SCOPE=whole`.
+3. For `DIAGRAM_SCOPE=orchestrator` or `DIAGRAM_SCOPE=subagent`, or a `RUN_MODE=decompose` run, first confirm the required `SCOPE_CONTEXT` and `OTHER_DIAGRAM_DIGEST` are present or the digest is explicitly `none`; for decompose, also confirm `MUTATION_LIMITS` is present. Then apply the checklist Scope Checks: scope separation (no out-of-scope node for the declared scope), no duplication (no node label, step, check, or status shared with `OTHER_DIAGRAM_DIGEST`; contradictory or paraphrased copies are highest severity), and dispatch collapse (each dispatch in an orchestrator diagram is a single cross-linked node). For decompose subagent candidates, treat extracted nodes listed in `SCOPE_CONTEXT` as owned by the subagent, not as duplicate root content. Skip these three for `DIAGRAM_SCOPE=whole`.
 4. Return `REVIEW: PASS` only when every applicable check passes.
 5. For failures, report the smallest repair needed and reference the specific check. If `APPROVED_REFINEMENT_GAPS=none`, state that any candidate-changing repair needs user approval before the builder runs again.
 6. Fetch current Mermaid documentation through `../references/external-sources.md` only when syntax uncertainty affects the verdict.
@@ -122,7 +131,7 @@ diagram.
 
 | Status | When |
 | ------ | ---- |
-| `BLOCKED` | Candidate, required process inputs, or required `OTHER_DIAGRAM_DIGEST` are missing |
+| `BLOCKED` | Candidate, required process inputs, required `MUTATION_LIMITS`, required `SCOPE_CONTEXT`, or required `OTHER_DIAGRAM_DIGEST` are missing |
 | `ERROR` | An unexpected validation failure prevents review |
 
 For `BLOCKED` or `ERROR`, include the exact missing input or validation blocker.
