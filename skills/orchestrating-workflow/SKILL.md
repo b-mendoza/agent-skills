@@ -196,7 +196,7 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
    `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=./references/jira-playbook.md`,
    `PHASES=1-7`.
 5. Read `./references/phases-1-4.md` and enter Phase 1.
-6. Invoke the playbook's Phase 1 downstream skill (Jira: `fetching-jira-ticket`).
+6. Invoke the playbook's Phase 1 downstream skill (`fetching-work-item`).
 7. Dispatch `artifact-validator` with `TICKET_KEY=PROJ-123`,
    `PLAYBOOK_PATH=./references/jira-playbook.md`, `PHASE=1`,
    `DIRECTION=postcondition`.
