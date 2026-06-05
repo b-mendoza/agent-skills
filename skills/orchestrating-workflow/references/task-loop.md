@@ -74,18 +74,20 @@ a progress file.
 **Skill:** `clarifying-assumptions`
 **Mode:** `critique`
 
-1. Announce Phase 6 for Task `<N>`.
+1. Announce Phase 6 for Task `<N>` and critique iteration `<I>` (`1` on
+   the first Phase 6 pass for that task).
 2. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`,
    `PLAYBOOK_PATH=<active playbook path>`, `PHASE=6`,
    `DIRECTION=precondition`, `TASK_NUMBER=<N>`.
 3. Invoke `clarifying-assumptions` with `MODE=critique`, `TICKET_KEY=<KEY>`,
-   `TASK_NUMBER=<N>`, and `ITERATION=<N>`.
+   `TASK_NUMBER=<N>`, and `ITERATION=<I>`.
 4. Let the downstream skill critique the Phase 5 planning artifacts and
    walk the user through critique items.
-5. If `RE_PLAN_NEEDED=true`, re-dispatch Phase 5 with the workflow key,
-   `TASK_NUMBER=<N>`, `RE_PLAN=true`, and
-   `DECISIONS_FILE=docs/<KEY>-task-<N>-decisions.md`, then run Phase 6
-   again. Maximum: 3 iterations.
+5. If `RE_PLAN_NEEDED=true` and `<I>` is below 3, re-dispatch Phase 5 with
+   the workflow key, `TASK_NUMBER=<N>`, `RE_PLAN=true`, and
+   `DECISIONS_FILE=docs/<KEY>-task-<N>-decisions.md`, then increment `<I>`
+   and run Phase 6 again. If `<I>` is already 3, stop and surface the
+   unresolved critique items. Maximum: 3 critique iterations per task.
 6. After `RE_PLAN_NEEDED=false`, dispatch `artifact-validator` with the
    workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`,
    `PHASE=6`, `DIRECTION=postcondition`, `TASK_NUMBER=<N>`.
