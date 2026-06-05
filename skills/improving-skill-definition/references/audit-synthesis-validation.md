@@ -13,9 +13,11 @@ schema, source-slice aggregates, and self-improvement advisory enforcement.
 2. Confirm `to` is a mapping with `to.orchestrator` and `to.phase`.
 3. Load every source report in `AUDIT_SLICE_REPORT_PATHS`. For each aggregate
    whose source slice ran, first confirm the aggregate key is present in
-   `AUDIT_REPORT_PATH`, then compare the aggregate with the corresponding source
-   slice field named in `audit-synthesis-schema.md`; if the source field is
-   non-empty, the aggregate must be non-empty.
+   `AUDIT_REPORT_PATH`. For one-to-one aggregates, compare the aggregate with the
+   corresponding source slice field named in `audit-synthesis-schema.md`; if the
+   source field is non-empty, the aggregate must be non-empty. For
+   `no_ops_aggregate`, collect `no_ops` from every audit slice that ran and
+   confirm the aggregate includes every non-empty source `no_ops` contribution.
 4. When `SELF_IMPROVEMENT_RUN=true`, confirm `architecture_advisory.caveat` is
    non-empty and `architecture_advisory.applies_to_gaps_in_inventory` covers
    every `gap_inventory` gap id exactly once. Each advisory list entry must be a
