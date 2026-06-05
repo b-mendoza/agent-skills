@@ -20,13 +20,13 @@ flowchart TD
   DECOMPOSE_INPUTS -->|no| NEEDS_INPUT
   DECOMPOSE_INPUTS -->|yes| PLAN[Dispatch decomposition-planner for bloat map, earned decision, and coverage audit]
   PLAN --> PLAN_VERDICT{PLAN_VERDICT}
-  PLAN_VERDICT -->|PLAN: PASS| SCOPED_GEN[Generate EARNED localized diagrams and slim root via scoped diagram-builder and reviewer with bounded repair]
+  PLAN_VERDICT -->|PLAN: PASS| SCOPED_GEN[Generate EARNED localized diagrams and slim root with PROCESS_INPUTS, scoped context, digest, and bounded repair]
   PLAN_VERDICT -->|PLAN: NEEDS_INPUT| NEEDS_INPUT
   PLAN_VERDICT -->|PLAN: BLOCKED| BLOCKED
   PLAN_VERDICT -->|PLAN: ERROR| ERROR
   SCOPED_GEN --> SCOPE_GATE{All scoped diagrams pass review within repair budget?}
   SCOPE_GATE -->|no| REPAIR_LIMIT
-  SCOPE_GATE -->|yes| WRITE[Write localized diagrams and slim root; wire each owner to load only its own diagram]
+  SCOPE_GATE -->|yes| WRITE[Write localized diagrams and planner-resolved slim root; wire each owner to load only its own diagram]
   WRITE --> DECOMPOSE_DONE([decomposition complete])
 
   PREFLIGHT --> PREFLIGHT_VERDICT{PREFLIGHT_VERDICT}
@@ -82,6 +82,6 @@ flowchart TD
   class NEEDS_INPUT,BLOCKED,ERROR,REPAIR_LIMIT stop;
 ```
 
-Readiness rule: return a candidate only after `PREFLIGHT: PASS` when refinement applies, `BUILD: PASS`, and `REVIEW: PASS`; otherwise return the exact terminal state and its recovery details. For `RUN_MODE=decompose`, write into the package only after `PLAN: PASS` and a `REVIEW: PASS` for every generated diagram.
+Readiness rule: return a candidate only after `PREFLIGHT: PASS` when refinement applies, `BUILD: PASS`, and `REVIEW: PASS`; otherwise return the exact terminal state and its recovery details. For `RUN_MODE=decompose`, write into the package only after `PLAN: PASS`, path-boundary checks, and a `REVIEW: PASS` for every generated diagram.
 
 Completion states: final passed, decomposition complete, needs confirmation, blocked, error, needs input, or repair limit reached.
