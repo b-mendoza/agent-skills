@@ -54,3 +54,51 @@ Keep refinement controls outside `PROCESS_INPUTS`: send
 `APPROVED_REFINEMENT_GAPS` as a separate dispatch input so approval scope is
 visible to the builder and reviewer, and send `RUN_MODE` as its own dispatch
 input.
+
+## Diagram Scope
+
+`DIAGRAM_SCOPE` controls how much of a workflow a single generated diagram
+covers. It is a separate dispatch input, not a `PROCESS_INPUTS` field.
+
+| Value | Diagram covers | Also requires |
+| ----- | -------------- | ------------- |
+| `whole` (default) | The entire workflow in one diagram: orchestration plus every subagent's internals. Current behavior. | Nothing extra |
+| `orchestrator` | Orchestration only: phases, banners, human and self gates, dispatch points (one node per subagent, cross-linked to its localized diagram), orchestration-level status routing, handoffs, repair-loop control, and terminal states. | Nothing extra |
+| `subagent` | One named subagent's internal flow only: entry, internal decision branches, internal checks or clusters, repair or precondition self-gates, routeable status emission, and report write. | `SCOPE_SUBAGENT_NAME` |
+
+`DIAGRAM_SCOPE` defaults to `whole`. When `DIAGRAM_SCOPE` is absent or `whole`,
+the builder and reviewer behave exactly as they do today. When it is
+`orchestrator` or `subagent`, the scope-separation, no-duplication, and
+dispatch-collapse checks become active. A `subagent`-scoped run that omits
+`SCOPE_SUBAGENT_NAME` is a missing-field stop: return needs input naming the
+absent subagent.
+
+## Decompose Mode Inputs
+
+`RUN_MODE=decompose` is a package-level operation. It takes the inputs below
+instead of a single `PROCESS_SPEC`.
+
+| Input | Required | Purpose |
+| ----- | -------- | ------- |
+| `PACKAGE_PATH` | Yes | Root directory of the skill package to decompose |
+| `SUBAGENT_REGISTRY` | Yes | The package's subagent list (name plus file path), normally read from the target `SKILL.md` registry table |
+| `ROOT_DIAGRAM_PATH` | No | Path to the package's existing root diagram; default convention is `<PACKAGE_PATH>/flow-diagram.md` |
+
+Localized subagent diagrams follow the convention
+`<PACKAGE_PATH>/subagents/<subagent-name>-flow-diagram.md`. The coverage audit
+treats a subagent as already covered when its file loads a localized diagram
+through a relative link.
+
+**Mutation boundary.** `RUN_MODE=decompose` is the only mutating mode: after a
+candidate passes the quality gate, the orchestrator writes localized diagram
+files and edits load wiring inside `PACKAGE_PATH`. All other modes
+(`new`, `refinement`, `repair`) and all non-`decompose` scoped runs are
+read-only and only emit content. Declare this capability before execution and
+map it per runtime (Claude Code: Write and Edit tools; OpenCode: `edit`
+permission scoped to the target package).
+
+**Missing-field handling.** Stop at needs input when `PACKAGE_PATH` or
+`SUBAGENT_REGISTRY` is missing for a decompose run, when `SCOPE_SUBAGENT_NAME`
+is missing for a `subagent`-scoped run, or when the named subagent or root
+diagram cannot be located under `PACKAGE_PATH`. Name the absent input and the
+recovery action.
