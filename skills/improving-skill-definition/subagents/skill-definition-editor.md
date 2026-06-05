@@ -77,7 +77,7 @@ approval_scope_applied:                   # required
     - "gap-003"
     - "gap-004"
     - "gap-006"
-changes_made:                             # required, at least one entry when PASS unless approved_gaps is "none"
+changes_made:                             # required; zero allowed when approved_gaps is "none" or all approved items are no-op/deferred
   - file: "skills/example/SKILL.md"       # required
     change: "Added EDIT: BLOCKED and EDIT: ERROR rows to Status Routing Contract" # required
     approved_gap_or_finding: "gap-003"    # required, gap id or validator finding id
