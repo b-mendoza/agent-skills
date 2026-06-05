@@ -17,13 +17,15 @@ repair, or write diagrams, and you do not dispatch other subagents.
 | `PACKAGE_PATH` | Yes | `skills/example-skill` |
 | `SUBAGENT_REGISTRY` | Yes | Name plus path per subagent, from the target `SKILL.md` registry |
 | `ROOT_DIAGRAM_PATH` | No | Defaults to `<PACKAGE_PATH>/flow-diagram.md` |
+| `MUTATION_LIMITS` | Yes | Decompose write boundary derived by the orchestrator |
 
-Load `../references/flow-design-playbook.md` for the classification test and the
+Load `../references/input-contract.md` before path-boundary checks, then load
+`../references/flow-design-playbook.md` for the classification test and the
 earned-decision contract before classifying.
 
 ## Instructions
 
-1. If the caller omitted `PACKAGE_PATH` or `SUBAGENT_REGISTRY`, return `PLAN: NEEDS_INPUT` naming the missing input. Otherwise resolve `PACKAGE_PATH` against the workspace; if it is unsafe, outside the allowed package boundary, a vendored mirror, or not a skill package directory, return `PLAN: BLOCKED` naming the blocked path.
+1. If the caller omitted `PACKAGE_PATH`, `SUBAGENT_REGISTRY`, or `MUTATION_LIMITS`, return `PLAN: NEEDS_INPUT` naming the missing input. Otherwise resolve `PACKAGE_PATH` against the workspace and `MUTATION_LIMITS`; if it is unsafe, outside the allowed package boundary, a vendored mirror, or not a skill package directory, return `PLAN: BLOCKED` naming the blocked path.
 2. Resolve `ROOT_DIAGRAM_PATH` to the supplied path or default `<PACKAGE_PATH>/flow-diagram.md`, then read the root diagram and every subagent named in `SUBAGENT_REGISTRY`. If the resolved root diagram or a registry subagent file is missing or unreadable, return `PLAN: BLOCKED` naming the absent file.
 3. Build the bloat map: tag each root-diagram node `orchestration-keep` or `subagent-internal-extract` using the classification test (does a fresh orchestrator agent need this to decide what to dispatch next?). For each extract node, name the owning subagent. Record the current root node count.
 4. Assign each subagent `EARNED` or `NO_OP_EVIDENCED` per the earned-decision contract. Quote a specific instruction, status, or branch as evidence for every decision.
@@ -53,7 +55,7 @@ Root diagram: <resolved ROOT_DIAGRAM_PATH> — current node count <N>
 ## Coverage Audit
 | Subagent | Coverage | Recommended action | Localized diagram path |
 | -------- | -------- | ------------------ | ---------------------- |
-| ... | covered \| missing \| needs-rescope | create \| re-scope \| keep \| n/a | path or `none` |
+| ... | covered \| missing \| needs-rescope \| n/a | create \| re-scope \| keep \| n/a | path or `none` |
 
 ## Failure Details
 Required for `NEEDS_INPUT`, `BLOCKED`, or `ERROR`; omit for `PASS`.
@@ -102,7 +104,7 @@ orchestrator.
 
 | Status | When |
 | ------ | ---- |
-| `NEEDS_INPUT` | The caller omitted `PACKAGE_PATH` or `SUBAGENT_REGISTRY` |
+| `NEEDS_INPUT` | The caller omitted `PACKAGE_PATH`, `SUBAGENT_REGISTRY`, or `MUTATION_LIMITS` |
 | `BLOCKED` | The resolved `PACKAGE_PATH` is unsafe/out of scope, or the resolved root diagram or a registry subagent file is missing or unreadable |
 | `ERROR` | An unexpected parsing failure prevents inspection |
 
