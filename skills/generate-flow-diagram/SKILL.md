@@ -25,6 +25,8 @@ optional just-in-time sources for current Mermaid syntax or design rationale.
 | `SCOPE_SUBAGENT_NAME` | Conditional | Required when `DIAGRAM_SCOPE=subagent` |
 | `PACKAGE_PATH` | Yes for `RUN_MODE=decompose` | `skills/example-skill` |
 | `SUBAGENT_REGISTRY` | Yes for `RUN_MODE=decompose` | Name plus path per subagent |
+| `ROOT_DIAGRAM_PATH` | No | Optional root diagram path for `RUN_MODE=decompose`; defaults to `<PACKAGE_PATH>/flow-diagram.md` |
+| `SCOPE_LIMITS` | No | Explicit user-approved mutation expansion for `RUN_MODE=decompose`, such as `also update docs/foo.md` |
 
 `DIAGRAM_SCOPE` defaults to `whole` and reproduces current whole-diagram
 behavior; `orchestrator` and `subagent` constrain a generated diagram to one
@@ -32,19 +34,37 @@ scope and activate the scope checks. `RUN_MODE=decompose` is a package-level
 operation over `PACKAGE_PATH` and `SUBAGENT_REGISTRY`. Load
 `./references/input-contract.md` for the scope and decompose-mode field details.
 
-**Mutation boundary.** `RUN_MODE=decompose` is the only mutating mode: after a
-candidate passes the quality gate, the orchestrator writes localized diagram
-files and edits load wiring inside `PACKAGE_PATH` (Claude Code: Write and Edit
-tools; OpenCode: `edit` permission). All other modes are read-only and emit
-content only.
+## Default Mutation Limits
+
+`RUN_MODE=decompose` is the only mutating mode. During intake, derive a single
+`MUTATION_LIMITS` contract and pass it to every dispatched subagent. Unless the
+user explicitly expands scope with `SCOPE_LIMITS`, use these defaults:
+
+- Write only inside the resolved `PACKAGE_PATH` skill package after every diagram
+  candidate passes `REVIEW: PASS`.
+- Allowed write targets are the planner-resolved root diagram, localized
+  `subagents/<subagent-name>-flow-diagram.md` files, and the load-instruction
+  lines in the package `SKILL.md` and EARNED subagent files.
+- Preserve package directory name, frontmatter names, runtime targets, and
+  user-facing purpose unless the user explicitly approves changing them.
+- Out of scope: sibling packages, `.agents/skills/`, `.claude/skills/`,
+  `skills-lock.json`, repository-level docs, private configuration, `.git`, and
+  `.handoffs/` files this run did not create.
+- During repair cycles, intersect `MUTATION_LIMITS` with the failed review
+  findings: change only files tied to the specific `REVIEW_FEEDBACK`, original
+  plan, and approved scope.
+
+All other modes are read-only and emit content only. Runtime mapping: Claude Code
+uses Write and Edit tools only inside `MUTATION_LIMITS`; OpenCode uses `edit`
+permission scoped to the same target package.
 
 Every run produces `PROCESS_INPUTS` before `RUN_MODE` routing. For new diagrams,
 normalize `PROCESS_SPEC`. For refinements, derive `PROCESS_INPUTS` from
 `EXISTING_FLOW_OR_DIAGRAM`, `REFINEMENT_REQUEST`, any supplied `PROCESS_SPEC`,
 and explicit assumptions. For `RUN_MODE=decompose`, derive `PROCESS_INPUTS` from
 the package-level inputs and mutation boundary: `PACKAGE_PATH`,
-`SUBAGENT_REGISTRY`, the resolved `ROOT_DIAGRAM_PATH`, allowed write targets,
-and explicit assumptions. Load `./references/input-contract.md` only when
+`SUBAGENT_REGISTRY`, the resolved `ROOT_DIAGRAM_PATH`, `MUTATION_LIMITS`, allowed
+write targets, and explicit assumptions. Load `./references/input-contract.md` only when
 field-level checks, missing-field handling, or a clarification question are
 needed. Ask one concise question only when a missing value would change the
 diagram contract; otherwise mark safe assumptions explicitly.
@@ -53,9 +73,9 @@ diagram contract; otherwise mark safe assumptions explicitly.
 
 | Need | Load |
 | ---- | ---- |
-| Missing-field checks or clarification policy | `./references/input-contract.md` |
+| Missing-field checks, scoped input contract, mutation limits, or clarification policy | `./references/input-contract.md` |
 | Refinement gap inventory and confirmation gate | Dispatch `./subagents/refinement-analyst.md`; load `./references/output-templates.md` only to format the user-facing confirmation request |
-| Package decomposition plan (bloat map, earned decision, coverage audit) | Dispatch `./subagents/decomposition-planner.md`; it loads `./references/flow-design-playbook.md` for the classification test |
+| Package decomposition plan (bloat map, earned decision, coverage audit) | Dispatch `./subagents/decomposition-planner.md`; it loads `./references/input-contract.md` for path-boundary checks and `./references/flow-design-playbook.md` for classification |
 | Candidate diagram creation or repair | Dispatch `./subagents/diagram-builder.md`; it loads `./references/flow-design-playbook.md`, `./references/mermaid-style-guide.md`, and `./references/output-templates.md` only as needed, including the scoped templates for `orchestrator` and `subagent` scopes |
 | Quality gate and fix loop | Dispatch `./subagents/diagram-quality-reviewer.md`; it loads `./references/quality-gate-checklist.md`, including the scope checks for scoped or decompose runs |
 | Source-backed rationale or current Mermaid guidance | `./references/external-sources.md`, then fetch the smallest relevant URL |
@@ -75,7 +95,7 @@ candidate that must be returned to the user.
 
 ## Execution
 
-1. Capture all inputs, default `DIAGRAM_SCOPE` to `whole` when absent, and normalize the available source into `PROCESS_INPUTS` before `RUN_MODE` classification. Use `PROCESS_SPEC` for new diagrams; use `EXISTING_FLOW_OR_DIAGRAM`, `REFINEMENT_REQUEST`, any supplied `PROCESS_SPEC`, and explicit assumptions for refinements; use `PACKAGE_PATH`, `SUBAGENT_REGISTRY`, the resolved `ROOT_DIAGRAM_PATH`, allowed write targets, and mutation-boundary assumptions for decompose runs. Load `./references/input-contract.md` when the field checklist, path checks, or missing-field policy is needed.
+1. Capture all inputs, default `DIAGRAM_SCOPE` to `whole` when absent, derive `MUTATION_LIMITS` for `RUN_MODE=decompose`, and normalize the available source into `PROCESS_INPUTS` before `RUN_MODE` classification. Use `PROCESS_SPEC` for new diagrams; use `EXISTING_FLOW_OR_DIAGRAM`, `REFINEMENT_REQUEST`, any supplied `PROCESS_SPEC`, and explicit assumptions for refinements; use `PACKAGE_PATH`, `SUBAGENT_REGISTRY`, the resolved `ROOT_DIAGRAM_PATH`, `MUTATION_LIMITS`, allowed write targets, and mutation-boundary assumptions for decompose runs. Load `./references/input-contract.md` when the field checklist, path checks, scoped input contract, or missing-field policy is needed.
 2. Classify the current pass as `RUN_MODE=new`, `RUN_MODE=refinement`, `RUN_MODE=repair`, or `RUN_MODE=decompose`. For `RUN_MODE=decompose`, follow the Decompose Mode steps below; steps 3-9 cover `new`, `refinement`, and `repair` and are unchanged.
 3. For `RUN_MODE=refinement`, dispatch `refinement-analyst` before generating a revised diagram, including `EXISTING_FLOW_OR_DIAGRAM`, `PROCESS_INPUTS`, `REFINEMENT_REQUEST`, and `APPROVED_REFINEMENT_GAPS` when supplied. Consume its return as `PREFLIGHT_VERDICT`: continue only on `PREFLIGHT: PASS`; on `PREFLIGHT: NEEDS_CONFIRMATION`, ask the confirmation question and stop with `PREFLIGHT: NEEDS_CONFIRMATION`; on `PREFLIGHT: BLOCKED` or `PREFLIGHT: ERROR`, stop with that status and the reported recovery action. Treat `APPROVED_REFINEMENT_GAPS=none` as explicit approval to keep the candidate and refinement scope unchanged; when preflight passes because there are no meaningful gaps, use `none` as the downstream approval scope.
 4. Load orchestration-level references only when formatting a user-facing confirmation, normalizing inputs, or fetching external rationale. Design, Mermaid, template, and quality references are loaded by the dispatched subagent.
@@ -89,11 +109,11 @@ candidate that must be returned to the user.
 
 For `RUN_MODE=decompose`, route the package-level operation:
 
-1. Stop at needs input when `PACKAGE_PATH` or `SUBAGENT_REGISTRY` is missing.
-2. Dispatch `decomposition-planner` with `PACKAGE_PATH`, `SUBAGENT_REGISTRY`, and `ROOT_DIAGRAM_PATH` when supplied. Consume its return as `PLAN_VERDICT`: continue only on `PLAN: PASS`; on `PLAN: NEEDS_INPUT` stop at needs input; on `PLAN: BLOCKED` stop at blocked; on `PLAN: ERROR` stop at error with the recovery action. Keep the bloat map, earned decisions, coverage audit, planner-resolved `ROOT_DIAGRAM_PATH` (default `<PACKAGE_PATH>/flow-diagram.md`), and root before-size from the plan.
-3. For each subagent the plan marks EARNED with action `create` or `re-scope`, dispatch `diagram-builder` with `PROCESS_INPUTS`, `RUN_MODE=decompose`, `DIAGRAM_SCOPE=subagent`, `SCOPE_SUBAGENT_NAME`, and a `SCOPE_CONTEXT` slice naming the nodes that subagent owns and the root cross-link. Route each build through `BUILD_VERDICT`, then dispatch `diagram-quality-reviewer` with `CANDIDATE_MARKDOWN`, `PROCESS_INPUTS`, `RUN_MODE=decompose`, `DIAGRAM_SCOPE=subagent`, `SCOPE_SUBAGENT_NAME`, and `OTHER_DIAGRAM_DIGEST` (labels and statuses already owned by the root and sibling localized diagrams). Run the same bounded repair loop as steps 6-8 (at most three cycles), preserving `PROCESS_INPUTS`, `DIAGRAM_SCOPE`, `SCOPE_SUBAGENT_NAME`, `SCOPE_CONTEXT`, and `OTHER_DIAGRAM_DIGEST` on repair. EARNED subagents marked `keep` need no regeneration.
-4. Re-author the root: dispatch `diagram-builder` with `PROCESS_INPUTS`, `RUN_MODE=decompose`, `DIAGRAM_SCOPE=orchestrator`, and a `SCOPE_CONTEXT` that lists every dispatch and its localized-diagram cross-link. Route through `BUILD_VERDICT`, then `diagram-quality-reviewer` with `CANDIDATE_MARKDOWN`, `PROCESS_INPUTS`, `RUN_MODE=decompose`, `DIAGRAM_SCOPE=orchestrator`, and the `OTHER_DIAGRAM_DIGEST` of the localized diagrams. Apply the same bounded repair loop, preserving `PROCESS_INPUTS`, `DIAGRAM_SCOPE`, `SCOPE_CONTEXT`, and `OTHER_DIAGRAM_DIGEST` on repair.
-5. After each diagram passes `REVIEW: PASS`, enforce the `PACKAGE_PATH` mutation boundary from `./references/input-contract.md`, then write it into `PACKAGE_PATH`: localized diagrams at `subagents/<name>-flow-diagram.md`, the slim root at the planner-resolved `ROOT_DIAGRAM_PATH` (default `<PACKAGE_PATH>/flow-diagram.md`), and one load-instruction line per owner so `SKILL.md` loads only the root and each EARNED subagent loads only its own diagram. NO_OP_EVIDENCED subagents get no localized diagram and no load line.
+1. Stop with `PLAN: NEEDS_INPUT` when `PACKAGE_PATH` or `SUBAGENT_REGISTRY` is missing.
+2. Dispatch `decomposition-planner` with `PACKAGE_PATH`, `SUBAGENT_REGISTRY`, `ROOT_DIAGRAM_PATH` when supplied, and `MUTATION_LIMITS`. Consume its return as `PLAN_VERDICT`: continue only on `PLAN: PASS`; on `PLAN: NEEDS_INPUT` stop with `PLAN: NEEDS_INPUT`; on `PLAN: BLOCKED` stop with `PLAN: BLOCKED`; on `PLAN: ERROR` stop with `PLAN: ERROR` and the recovery action. Keep the bloat map, earned decisions, coverage audit, planner-resolved `ROOT_DIAGRAM_PATH` (default `<PACKAGE_PATH>/flow-diagram.md`), root before-size, planned ownership map, and any existing localized baseline paths from the plan.
+3. For each subagent the plan marks EARNED with action `create` or `re-scope`, dispatch `diagram-builder` with `PROCESS_INPUTS`, `MUTATION_LIMITS`, `RUN_MODE=decompose`, `DIAGRAM_SCOPE=subagent`, `SCOPE_SUBAGENT_NAME`, and a `SCOPE_CONTEXT` slice naming the nodes that subagent owns, the root cross-link, `ROOT_DIAGRAM_RELATIVE_LINK`, and the action. For `re-scope`, also pass the existing localized diagram as `EXISTING_FLOW_OR_DIAGRAM` so the builder preserves valid baseline content while removing out-of-scope nodes. Route each build through `BUILD_VERDICT`, then dispatch `diagram-quality-reviewer` with `CANDIDATE_MARKDOWN`, `PROCESS_INPUTS`, `MUTATION_LIMITS`, `RUN_MODE=decompose`, `DIAGRAM_SCOPE=subagent`, `SCOPE_SUBAGENT_NAME`, `SCOPE_CONTEXT`, and `OTHER_DIAGRAM_DIGEST`. For subagent decompose review, compute `OTHER_DIAGRAM_DIGEST` from planned ownership: include labels and statuses owned by the slim root and sibling localized diagrams, but exclude nodes being extracted from the pre-slim root into this subagent. Run the same bounded repair loop as steps 6-8 (at most three cycles), preserving `PROCESS_INPUTS`, `MUTATION_LIMITS`, `DIAGRAM_SCOPE`, `SCOPE_SUBAGENT_NAME`, `SCOPE_CONTEXT`, and `OTHER_DIAGRAM_DIGEST` on repair. EARNED subagents marked `keep` need no regeneration.
+4. Re-author the root: dispatch `diagram-builder` with `PROCESS_INPUTS`, `MUTATION_LIMITS`, `RUN_MODE=decompose`, `DIAGRAM_SCOPE=orchestrator`, and a `SCOPE_CONTEXT` that lists every dispatch, its localized-diagram cross-link, and `ROOT_DIAGRAM_RELATIVE_LINK` values for subagent back-links. Route through `BUILD_VERDICT`, then `diagram-quality-reviewer` with `CANDIDATE_MARKDOWN`, `PROCESS_INPUTS`, `MUTATION_LIMITS`, `RUN_MODE=decompose`, `DIAGRAM_SCOPE=orchestrator`, `SCOPE_CONTEXT`, and the `OTHER_DIAGRAM_DIGEST` of the localized diagrams. Apply the same bounded repair loop, preserving `PROCESS_INPUTS`, `MUTATION_LIMITS`, `DIAGRAM_SCOPE`, `SCOPE_CONTEXT`, and `OTHER_DIAGRAM_DIGEST` on repair.
+5. After each diagram passes `REVIEW: PASS`, enforce `MUTATION_LIMITS` and the `PACKAGE_PATH` boundary from `./references/input-contract.md`, then write it into `PACKAGE_PATH`: localized diagrams at `subagents/<name>-flow-diagram.md`, the slim root at the planner-resolved `ROOT_DIAGRAM_PATH` (default `<PACKAGE_PATH>/flow-diagram.md`), and one load-instruction line per owner so `SKILL.md` loads only the root and each EARNED subagent loads only its own diagram. NO_OP_EVIDENCED subagents get no localized diagram and no load line.
 6. Return the decompose result: per-owner decision and action, files written, the scope-separation and no-duplication outcomes, and the root before/after node count, using the decompose-result template.
 
 ## Output Contract
