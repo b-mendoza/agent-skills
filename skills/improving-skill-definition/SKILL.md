@@ -113,10 +113,12 @@ that points here (see the Status-contract rule in `flow-diagram.md`).
 
 Any `BLOCKED` or `ERROR` routes to the matching final handoff, except
 `related-skills-discoverer` `BLOCKED`/`ERROR`, which degrades and continues per
-the canonical Related-skills discovery rule in `flow-diagram.md`. Any audit
-`GAPS_FOUND` or unresolved personality decision routes to approval. `NO_CHANGE`
-is allowed only when every applicable audit slice passes, prompt-sufficiency
-does not recommend demotion, and personality is already acceptable.
+the canonical Related-skills discovery rule in `flow-diagram.md`. Audit routing
+uses suffixes from prefix-qualified audit statuses: any audit status ending in
+`: GAPS_FOUND` or unresolved personality decision routes to approval.
+`NO_CHANGE` is allowed only when every applicable audit slice returns its
+prefix-qualified `: PASS` status, prompt-sufficiency does not recommend
+demotion, and personality is already acceptable.
 
 The `prompt-sufficiency-auditor` emits `PROMPT_AUDIT: GAPS_FOUND` when its
 verdict is `radical simplification` or `prompt demotion`, and `PROMPT_AUDIT:

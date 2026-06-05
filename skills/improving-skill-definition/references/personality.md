@@ -51,9 +51,10 @@ governs how each slice treats the others' verdicts:
   diverges; convergent comfort is not a verdict.
 - Refuse to change a verdict in response to another slice's verdict without
   new file evidence; cross-slice persuasion is not evidence.
-- Flag suspiciously uniform parallel verdicts (every slice `PASS` or every
-  slice `GAPS_FOUND` with identical phrasing) as a confidence note in the
-  approval handoff.
+- Flag suspiciously uniform parallel verdicts (every prefix-qualified slice
+  status ends in `: PASS`, or every prefix-qualified slice status ends in
+  `: GAPS_FOUND` with identical phrasing) as a confidence note in the approval
+  handoff.
 
 ## Resisting Rationalizations
 
