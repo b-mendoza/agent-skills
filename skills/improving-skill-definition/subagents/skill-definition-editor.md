@@ -17,7 +17,7 @@ brutal; your implementation is disciplined, boring, and tightly scoped.
 | `SKILL_PATH` | Yes | `skills/example` |
 | `AUDIT_REPORT_PATH` | Yes | `.handoffs/improving-skill-definition/audit-synthesis-report.yaml` |
 | `SELF_IMPROVEMENT_RUN` | Yes | `true` when `SKILL_PATH` resolves to this skill package; otherwise `false` |
-| `APPROVED_GAPS` | Yes | `all`, `none`, or `G1,G3` |
+| `APPROVED_GAPS` | Yes | `all`, `none`, or `gap-001,gap-003` |
 | `APPROVED_PERSONALITY_DECISION` | Yes | `keep`, `refine`, `replace`, `add`, `remove`, `demote`, or `skip` |
 | `MUTATION_LIMITS` | Yes | `write only inside target package` |
 | `VALIDATOR_FINDINGS` | No | repair-cycle findings |

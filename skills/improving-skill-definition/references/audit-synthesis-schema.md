@@ -17,7 +17,7 @@ paraphrasing it.
 | `intent` | orchestrator | One-line synthesis intent |
 | `audit_status_summary` | orchestrator | One row per dispatched slice in dispatch order |
 | `overall_verdict` | orchestrator | Audit precedence outcome and per-axis verdicts |
-| `gap_inventory` | orchestrator | Material gaps with stable ids `G1..Gn` |
+| `gap_inventory` | orchestrator | Material gaps with stable kebab-case ids such as `gap-001` |
 | `mutation_plan` | orchestrator | Per-gap concrete editor mutation outline |
 | `quality_gate_plan` | orchestrator | Validator check plan for `G_GAP_CLOSURE`, `G_FLOW_SYNC`, `G_BEST_PRACTICES_COMPLIANCE`, and evidence that `AUDIT_SYNTH` covered `G_MANDATE_COVERAGE` |
 | `out_of_scope_findings` | orchestrator | `OUT_OF_SCOPE_FINDING` entries deferred to other workflows |
