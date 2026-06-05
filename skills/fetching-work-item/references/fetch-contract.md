@@ -18,6 +18,10 @@
 `<KEY>` below is the work-item identifier the active playbook derives
 (`TICKET_KEY` for Jira, `ISSUE_SLUG` for GitHub).
 
+For shared orchestration handoffs, pass the derived `<KEY>` value under the
+parameter name `TICKET_KEY`. In GitHub workflows, the value shape remains the
+GitHub `ISSUE_SLUG`; only the downstream alias changes.
+
 ## Orchestration Handoff Role
 
 This contract defines the complete Phase 1 handoff. The coordinator and any
