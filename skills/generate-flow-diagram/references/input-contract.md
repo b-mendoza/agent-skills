@@ -1,7 +1,8 @@
 # Input Contract
 
 > Load this file only when normalizing process source material, checking whether
-> required process details are missing, or drafting a clarification question.
+> required process details are missing, validating decompose path boundaries, or
+> drafting a clarification question.
 
 ## Source Policy
 
@@ -100,8 +101,18 @@ read-only and only emit content. Declare this capability before execution and
 map it per runtime (Claude Code: Write and Edit tools; OpenCode: `edit`
 permission scoped to the target package).
 
-**Missing-field handling.** Stop at needs input when `PACKAGE_PATH` or
-`SUBAGENT_REGISTRY` is missing for a decompose run, when `SCOPE_SUBAGENT_NAME`
-is missing for a `subagent`-scoped run, or when the named subagent or root
-diagram cannot be located under `PACKAGE_PATH`. Name the absent input and the
-recovery action.
+Before any read or write in decompose mode, resolve `PACKAGE_PATH` against the
+workspace and record the normalized package root. The resolved path must be an
+existing skill package directory, must not be the repository root, must not use
+path traversal, and must not escape through a symlink. Writes are allowed only
+inside that resolved package root. Exclude `.git`, vendored skill mirrors such as
+`.agents/skills` and `.claude/skills`, lockfiles, and paths outside the resolved
+package root. Treat an unsafe or out-of-scope `PACKAGE_PATH` as blocked rather
+than repairing around the boundary.
+
+**Missing-field handling.** Stop at needs input when the caller omitted
+`PACKAGE_PATH` or `SUBAGENT_REGISTRY` for a decompose run, or when
+`SCOPE_SUBAGENT_NAME` is missing for a `subagent`-scoped run. After path
+resolution, treat missing or unreadable files under the resolved package root as
+blocked: the caller supplied the inputs, but the package cannot be inspected or
+mutated safely. Name the absent input or blocked path and the recovery action.
