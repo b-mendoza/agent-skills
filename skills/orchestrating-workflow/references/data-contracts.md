@@ -91,7 +91,8 @@ Every dispatch to `artifact-validator` uses these inputs:
 
 ```text
 TICKET_KEY: <KEY>                 (workflow key; shape defined by the active playbook)
-PLAYBOOK_PATH: <path>             (active playbook; pass for every validator dispatch)
+PLAYBOOK_PATH: ./references/<platform>-playbook.md
+                                   (package-root-relative active playbook; pass for every validator dispatch)
 PHASE: <1-7>
 DIRECTION: <precondition | postcondition>
 TASK_NUMBER: <N>                  (task-specific boundaries only)
@@ -164,9 +165,12 @@ registry. Typical orchestrator inputs:
 
 ```text
 TICKET_KEY: <KEY>
-PLAYBOOK_PATH: <path>             (required when templates list phase skill names)
 ACTION: read | initialize | update | initialize_task | update_task
 ```
+
+Include `PLAYBOOK_PATH=./references/<platform>-playbook.md` only for actions
+that read progress templates or phase skill names: `initialize`, `update`,
+and `initialize_task`.
 
 - `update`: `PHASE` (1-4), `STATUS`, `SUMMARY`; for `PHASE=4` and
   `STATUS=complete`, include `TASKS` (metadata for the workflow task
