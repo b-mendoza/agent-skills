@@ -25,11 +25,12 @@ schema, source-slice aggregates, and self-improvement advisory enforcement.
    `SAFE` or `DEFERRED`.
 5. When `SELF_IMPROVEMENT_RUN=true`, load `EDITOR_REPORT_PATH` and confirm no
    `changes_made[].approved_gap_or_finding` entry names a gap marked
-   `DEFERRED`. No `DEFERRED` gap may appear in `changes_made`; approved
-   deferred gaps must appear in `deferred_or_rejected_changes` with a reason and
-   count as explicitly deferred for this run, not as unresolved same-run gaps.
+   `DEFERRED`. No `DEFERRED` gap may appear in `changes_made`; each approved
+   deferred gap must appear exactly once in `deferred_or_rejected_changes` with
+   `approved_gap_or_finding` matching that gap id and a reason, and count as
+   explicitly deferred for this run, not as an unresolved same-run gap.
 
 Missing required keys, malformed `to`, missing aggregate keys, missing source
 reports for slices that ran, empty aggregates with non-empty source fields,
-malformed advisory entries, missing required deferred entries, or editor
-mutation of a `DEFERRED` gap return `VALIDATION: FAIL`.
+malformed advisory entries, missing or untraceable required deferred entries, or
+editor mutation of a `DEFERRED` gap return `VALIDATION: FAIL`.
