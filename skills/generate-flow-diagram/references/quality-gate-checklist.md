@@ -28,7 +28,7 @@ These three checks apply only when `DIAGRAM_SCOPE` is `orchestrator` or
 | Check | Pass Condition |
 | ----- | -------------- |
 | Scope separation | A `DIAGRAM_SCOPE=orchestrator` diagram contains no subagent-internal step enumeration; a `DIAGRAM_SCOPE=subagent` diagram does not restate orchestration phases, gates, banners, or other subagents |
-| No duplication | No node label, step description, check enumeration, or status list appears in more than one diagram of the same package; cross-links replace copies. Requires `OTHER_DIAGRAM_DIGEST` to compare against sibling diagrams |
+| No duplication | No node label, step description, check enumeration, or status list appears in more than one diagram of the same package; cross-links replace copies. Requires `OTHER_DIAGRAM_DIGEST` to compare against the root and sibling diagrams; a missing digest blocks scoped/decompose review |
 | Dispatch collapse | In an orchestrator diagram, each subagent dispatch is a single node that cross-links the localized diagram, not a step-by-step expansion of the subagent's internals |
 
 Fetch current Mermaid documentation from `external-sources.md` only when a syntax

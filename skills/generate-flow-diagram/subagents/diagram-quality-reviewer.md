@@ -20,7 +20,7 @@ return concise, targeted fixes.
 | `APPROVED_REFINEMENT_GAPS` | No | User-approved gap list for refinement, or `none` |
 | `DIAGRAM_SCOPE` | No | `orchestrator`, `subagent`, or `whole` (default) |
 | `SCOPE_SUBAGENT_NAME` | Conditional | Required when `DIAGRAM_SCOPE=subagent`; the subagent the candidate must stay inside |
-| `OTHER_DIAGRAM_DIGEST` | No | Node labels, step descriptions, and status lists already owned by sibling diagrams of the package, for the no-duplication check |
+| `OTHER_DIAGRAM_DIGEST` | Conditional | Node labels, step descriptions, and status lists already owned by the root or sibling diagrams of the package, for the no-duplication check |
 
 `EXISTING_FLOW_OR_DIAGRAM` and `APPROVED_REFINEMENT_GAPS` are required when
 `RUN_MODE=refinement`; `none` is a valid explicit no-op approval and means the
@@ -34,11 +34,17 @@ dispatch-collapse checks apply only when `DIAGRAM_SCOPE` is `orchestrator` or
 `subagent`, or for a `RUN_MODE=decompose` run; they are inert for `whole`, so
 default whole-diagram verdicts are unchanged.
 
+`OTHER_DIAGRAM_DIGEST` is required whenever scope checks are active. Use an
+explicit `none` only when there is no root or sibling diagram content to compare.
+If the digest is missing, empty without an explicit `none`, or not scoped to the
+same package, return `REVIEW: BLOCKED` instead of passing the no-duplication
+check by assumption.
+
 ## Instructions
 
 1. Load `../references/quality-gate-checklist.md` before reviewing.
 2. Apply every applicable checklist category; load `../references/input-contract.md` only if missing process fields affect the verdict.
-3. For `DIAGRAM_SCOPE=orchestrator` or `DIAGRAM_SCOPE=subagent`, or a `RUN_MODE=decompose` run, also apply the checklist Scope Checks: scope separation (no out-of-scope node for the declared scope), no duplication (no node label, step, check, or status shared with `OTHER_DIAGRAM_DIGEST`; contradictory or paraphrased copies are highest severity), and dispatch collapse (each dispatch in an orchestrator diagram is a single cross-linked node). Skip these three for `DIAGRAM_SCOPE=whole`.
+3. For `DIAGRAM_SCOPE=orchestrator` or `DIAGRAM_SCOPE=subagent`, or a `RUN_MODE=decompose` run, first confirm the required `OTHER_DIAGRAM_DIGEST` is present or explicitly `none`, then apply the checklist Scope Checks: scope separation (no out-of-scope node for the declared scope), no duplication (no node label, step, check, or status shared with `OTHER_DIAGRAM_DIGEST`; contradictory or paraphrased copies are highest severity), and dispatch collapse (each dispatch in an orchestrator diagram is a single cross-linked node). Skip these three for `DIAGRAM_SCOPE=whole`.
 4. Return `REVIEW: PASS` only when every applicable check passes.
 5. For failures, report the smallest repair needed and reference the specific check. If `APPROVED_REFINEMENT_GAPS=none`, state that any candidate-changing repair needs user approval before the builder runs again.
 6. Fetch current Mermaid documentation through `../references/external-sources.md` only when syntax uncertainty affects the verdict.
@@ -116,7 +122,7 @@ diagram.
 
 | Status | When |
 | ------ | ---- |
-| `BLOCKED` | Candidate or required process inputs are missing |
+| `BLOCKED` | Candidate, required process inputs, or required `OTHER_DIAGRAM_DIGEST` are missing |
 | `ERROR` | An unexpected validation failure prevents review |
 
 For `BLOCKED` or `ERROR`, include the exact missing input or validation blocker.
