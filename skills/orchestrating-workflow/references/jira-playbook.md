@@ -87,8 +87,10 @@ prefix: `TICKET_STATUS:`.
 ## Preflight Transport Check
 
 Verify Jira-related MCP tools are available and responsive for phases that
-need Jira reads or writes (1 and 4). Treat unresponsive or disconnected MCP
-as `MISSING` for the Jira MCP dependency.
+need Jira reads or writes: Phase 1 ticket fetch, Phase 4 subtask creation,
+and Phase 7 Jira-side kickoff or completion updates when the execution skill
+is eligible to perform them. Treat unresponsive or disconnected MCP as
+`MISSING` for the Jira MCP dependency.
 
 ## External-Source Routing
 
