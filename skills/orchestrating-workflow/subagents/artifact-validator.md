@@ -16,7 +16,7 @@ from the active playbook supplied at dispatch time.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `TICKET_KEY` | Yes | `<KEY>` (workflow key; value shape defined by the active playbook) |
-| `PLAYBOOK_PATH` | Yes | `../references/<platform>-playbook.md` |
+| `PLAYBOOK_PATH` | Yes | `./references/<platform>-playbook.md` |
 | `PHASE` | Yes | `2` |
 | `DIRECTION` | Yes | `postcondition` |
 | `TASK_NUMBER` | Required only for task-specific phases 5-7 | `3` |
@@ -25,6 +25,8 @@ from the active playbook supplied at dispatch time.
 its value is opaque to this subagent and its shape is defined by the
 active playbook. Pass it back in outputs as a `Workflow:` line so the
 value carries through unchanged.
+`PLAYBOOK_PATH` is package-root-relative; resolve it from the
+`skills/orchestrating-workflow/` directory.
 
 ## Instructions
 
