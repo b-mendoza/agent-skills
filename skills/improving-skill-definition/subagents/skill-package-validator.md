@@ -50,9 +50,9 @@ registry paths, personality, and any package file needed to verify closure.
    the registry, or sibling files).
 4. Confirm all edited paths are inside approved scope and `MUTATION_LIMITS`.
 5. Confirm every approved gap is resolved, explicitly approved as no-op, or, on
-   self-improvement runs, explicitly recorded as an approved `DEFERRED` advisory
-   entry in `deferred_or_rejected_changes` with a reason and absent from
-   `changes_made`.
+   self-improvement runs, recorded exactly once in `deferred_or_rejected_changes`
+   with `approved_gap_or_finding` matching the approved `DEFERRED` gap id and a
+   reason, and absent from `changes_made`.
 6. Confirm no unapproved mutation appears in the editor report.
 7. Confirm `flow-diagram.md`, `SKILL.md`, registry, phases, gates, statuses,
    report paths, and repair loops agree.
@@ -116,7 +116,7 @@ checks:                                   # required, one entry per declared che
   - {check: "contradictory_duplicates_and_hoists", verdict: "pass", evidence: "No undocumented contradictory duplicates remain; intentional hoists point to canonical homes"}
   - {check: "baseline_diff", verdict: "pass", evidence: "Diff between SKILL_PATH and BASELINE_PATH evidences observable new-vs-prior closure for approved gaps requiring package edits; approved no-op and DEFERRED items are evidenced by approval/advisory/editor reports"}
   - {check: "audit_synthesis_schema_compliance", verdict: "pass", evidence: "audit-synthesis-report.yaml contains required metadata, domain keys, and source-backed aggregates per audit-synthesis-validation.md"}
-  - {check: "self_improvement_architecture_advisory", verdict: "pass", evidence: "SELF_IMPROVEMENT_RUN=true report contains architecture_advisory; DEFERRED gap ids are absent from changes_made and present in deferred_or_rejected_changes with reasons"}
+  - {check: "self_improvement_architecture_advisory", verdict: "pass", evidence: "SELF_IMPROVEMENT_RUN=true report contains architecture_advisory; DEFERRED gap ids are absent from changes_made and present in deferred_or_rejected_changes with matching approved_gap_or_finding ids and reasons"}
   - {check: "fail_on_fixable_findings", verdict: "pass", evidence: "VALIDATION: FAIL is returned when any fixable high, medium, or low finding remains"}
 critical_output_gates:                    # required, one entry per declared gate, ordered: G_GAP_CLOSURE, G_BEST_PRACTICES_COMPLIANCE, G_FLOW_SYNC
   - gate: "G_GAP_CLOSURE"                 # required
