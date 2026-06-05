@@ -13,6 +13,12 @@
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
       "computedHash": "94034afdd618f72de09ea10f81773700ed5d7fc7a034c26eebdf47a29e80f0f8"
     },
+    "council-of-advisors": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/council-of-advisors/SKILL.md",
+      "computedHash": "8a6d92d54187a4a8367785961c79f2fb32bf5e0ae2a2ae49c932b54ae58319ad"
+    },
     "executing-plans": {
       "source": "obra/superpowers",
       "sourceType": "github",
