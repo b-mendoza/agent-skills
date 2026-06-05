@@ -49,7 +49,10 @@ registry paths, personality, and any package file needed to verify closure.
    `subagents/` file is orphaned (unreferenced by `SKILL.md`, `flow-diagram.md`,
    the registry, or sibling files).
 4. Confirm all edited paths are inside approved scope and `MUTATION_LIMITS`.
-5. Confirm every approved gap is resolved or explicitly approved as no-op.
+5. Confirm every approved gap is resolved, explicitly approved as no-op, or, on
+   self-improvement runs, explicitly recorded as an approved `DEFERRED` advisory
+   entry in `deferred_or_rejected_changes` with a reason and absent from
+   `changes_made`.
 6. Confirm no unapproved mutation appears in the editor report.
 7. Confirm `flow-diagram.md`, `SKILL.md`, registry, phases, gates, statuses,
    report paths, and repair loops agree.
@@ -73,9 +76,10 @@ registry paths, personality, and any package file needed to verify closure.
 17. Diff `SKILL_PATH` against `BASELINE_PATH` per the Baseline-snapshot rule
     in `flow-diagram.md` to evidence new-vs-prior closure for each approved gap.
 18. Apply `AUDIT_SYNTHESIS_VALIDATION_PATH` to `AUDIT_REPORT_PATH`,
-    `AUDIT_SLICE_REPORT_PATHS`, and `EDITOR_REPORT_PATH`: schema keys,
-    aggregate/source comparisons for source slices that ran, advisory shape, and
-    no editor `changes_made` entry for a `DEFERRED` self-improvement gap.
+    `AUDIT_SLICE_REPORT_PATHS`, and `EDITOR_REPORT_PATH`: schema keys, aggregate
+    key presence plus aggregate/source comparisons for source slices that ran,
+    advisory shape, and editor treatment of approved `DEFERRED` self-improvement
+    gaps as deferred entries rather than `changes_made` entries.
 19. When `SELF_IMPROVEMENT_RUN=false`, mark advisory-only checks not applicable.
 20. Return `VALIDATION: FAIL` for any fixable finding regardless of severity
     tier (`high`, `medium`, or `low`) per the taxonomy Severity section; return
@@ -112,7 +116,7 @@ checks:                                   # required, one entry per declared che
   - {check: "contradictory_duplicates_and_hoists", verdict: "pass", evidence: "No undocumented contradictory duplicates remain; intentional hoists point to canonical homes"}
   - {check: "baseline_diff", verdict: "pass", evidence: "Diff between SKILL_PATH and BASELINE_PATH evidences observable new-vs-prior closure for each approved gap"}
   - {check: "audit_synthesis_schema_compliance", verdict: "pass", evidence: "audit-synthesis-report.yaml contains required metadata, domain keys, and source-backed aggregates per audit-synthesis-validation.md"}
-  - {check: "self_improvement_architecture_advisory", verdict: "pass", evidence: "SELF_IMPROVEMENT_RUN=true report contains architecture_advisory and no DEFERRED gap id appears in editor changes_made"}
+  - {check: "self_improvement_architecture_advisory", verdict: "pass", evidence: "SELF_IMPROVEMENT_RUN=true report contains architecture_advisory; DEFERRED gap ids are absent from changes_made and present in deferred_or_rejected_changes with reasons"}
   - {check: "fail_on_fixable_findings", verdict: "pass", evidence: "VALIDATION: FAIL is returned when any fixable high, medium, or low finding remains"}
 critical_output_gates:                    # required, one entry per declared gate, ordered: G_GAP_CLOSURE, G_BEST_PRACTICES_COMPLIANCE, G_FLOW_SYNC
   - gate: "G_GAP_CLOSURE"                 # required
