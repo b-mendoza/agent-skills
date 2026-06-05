@@ -27,7 +27,7 @@ the user to run `gh auth login` rather than failing.
 
 | Phase | Runtime skill | Inputs | Retain |
 | ----- | ------------- | ------ | ------ |
-| 1 | `fetching-github-issue` | `ISSUE_URL` or `OWNER`+`REPO`+`ISSUE_NUMBER` | 12-line summary, `ISSUE_SLUG`, file path |
+| 1 | `fetching-work-item` | `ISSUE_URL` or `OWNER`+`REPO`+`ISSUE_NUMBER` | 12-line summary, `TICKET_KEY=<ISSUE_SLUG>`, file path |
 | 2 | `planning-github-issue-tasks` | `ISSUE_SLUG` (+ `RE_PLAN`, `DECISIONS`) | summary, tasks file path, warnings |
 | 3 | `clarifying-assumptions` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=upfront`, `ITERATION` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions |
 | 4 | `creating-github-child-issues` | `ISSUE_URL` | write model, created/linked task-issue rows, warnings |
