@@ -91,7 +91,6 @@ Two levels of progress files maintain state:
 
    ```yaml
    TICKET_KEY: <KEY>
-   PLAYBOOK_PATH: <path>
    ACTION: read
    ```
 
