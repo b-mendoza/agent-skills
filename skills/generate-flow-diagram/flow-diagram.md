@@ -1,6 +1,6 @@
 # Generate Flow Diagram
 
-The Generate Flow Diagram workflow is a read-only orchestration contract for a skill orchestrator that turns normalized process inputs into Markdown with one Mermaid flowchart. It may inspect supplied process specs, existing flows or diagrams, approved refinement gaps, and optional external rationale; dispatches only `refinement-analyst`, `diagram-builder`, and `diagram-quality-reviewer`; and stops before file mutation, unapproved scope expansion, or unreviewed candidate release.
+The Generate Flow Diagram workflow is an orchestration contract for a skill orchestrator that turns normalized process inputs into Markdown with one Mermaid flowchart, optionally scoped to the orchestrator or a single subagent. It may inspect supplied process specs, existing flows or diagrams, approved refinement gaps, and optional external rationale; dispatches only `refinement-analyst`, `decomposition-planner`, `diagram-builder`, and `diagram-quality-reviewer`; and stops before unapproved scope expansion or unreviewed candidate release. Every mode except `RUN_MODE=decompose` is read-only and stops before file mutation; `RUN_MODE=decompose` writes localized diagrams and load wiring into the target package only after each candidate passes review.
 
 ```mermaid
 flowchart TD
@@ -15,6 +15,19 @@ flowchart TD
   CLASSIFY -->|new| BUILD_NEW[Dispatch diagram-builder with RUN_MODE=new]
   CLASSIFY -->|refinement| PREFLIGHT[Dispatch refinement-analyst with baseline, request, PROCESS_INPUTS, and approvals]
   CLASSIFY -->|repair| REPAIR_INPUTS{Candidate and REVIEW_FEEDBACK provided?}
+  CLASSIFY -->|decompose| DECOMPOSE_INPUTS{PACKAGE_PATH and SUBAGENT_REGISTRY provided?}
+
+  DECOMPOSE_INPUTS -->|no| NEEDS_INPUT
+  DECOMPOSE_INPUTS -->|yes| PLAN[Dispatch decomposition-planner for bloat map, earned decision, and coverage audit]
+  PLAN --> PLAN_VERDICT{PLAN_VERDICT}
+  PLAN_VERDICT -->|PLAN: PASS| SCOPED_GEN[Generate EARNED localized diagrams and slim root via scoped diagram-builder and reviewer with bounded repair]
+  PLAN_VERDICT -->|PLAN: NEEDS_INPUT| NEEDS_INPUT
+  PLAN_VERDICT -->|PLAN: BLOCKED| BLOCKED
+  PLAN_VERDICT -->|PLAN: ERROR| ERROR
+  SCOPED_GEN --> SCOPE_GATE{All scoped diagrams pass review within repair budget?}
+  SCOPE_GATE -->|no| REPAIR_LIMIT
+  SCOPE_GATE -->|yes| WRITE[Write localized diagrams and slim root; wire each owner to load only its own diagram]
+  WRITE --> DECOMPOSE_DONE([decomposition complete])
 
   PREFLIGHT --> PREFLIGHT_VERDICT{PREFLIGHT_VERDICT}
   PREFLIGHT_VERDICT -->|PREFLIGHT: PASS with approved IDs| BUILD_REFINED[Dispatch diagram-builder with RUN_MODE=refinement and approved gaps]
@@ -60,15 +73,15 @@ flowchart TD
   classDef refine fill:#fff3cd,stroke:#856404,color:#000;
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 
-  class MISSING,CLASSIFY,REPAIR_INPUTS,PREFLIGHT_VERDICT,BUILD_VERDICT,REVIEW_VERDICT,REPAIR_CAP,REPAIR_SCOPE decision;
-  class NORMALIZE,EVIDENCE,PREFLIGHT,REVIEW check;
-  class BUILD_NEW,BUILD_REFINED,BUILD_BASELINE,BUILD_REPAIR_MODE,REPAIR_FEEDBACK,BUILD_REPAIR_LOOP refine;
+  class MISSING,CLASSIFY,REPAIR_INPUTS,PREFLIGHT_VERDICT,BUILD_VERDICT,REVIEW_VERDICT,REPAIR_CAP,REPAIR_SCOPE,DECOMPOSE_INPUTS,PLAN_VERDICT,SCOPE_GATE decision;
+  class NORMALIZE,EVIDENCE,PREFLIGHT,REVIEW,PLAN check;
+  class BUILD_NEW,BUILD_REFINED,BUILD_BASELINE,BUILD_REPAIR_MODE,REPAIR_FEEDBACK,BUILD_REPAIR_LOOP,SCOPED_GEN refine;
   class NEEDS_CONFIRM human;
-  class FINAL_DOC output;
-  class FINAL_PASSED success;
+  class FINAL_DOC,WRITE output;
+  class FINAL_PASSED,DECOMPOSE_DONE success;
   class NEEDS_INPUT,BLOCKED,ERROR,REPAIR_LIMIT stop;
 ```
 
-Readiness rule: return a candidate only after `PREFLIGHT: PASS` when refinement applies, `BUILD: PASS`, and `REVIEW: PASS`; otherwise return the exact terminal state and its recovery details.
+Readiness rule: return a candidate only after `PREFLIGHT: PASS` when refinement applies, `BUILD: PASS`, and `REVIEW: PASS`; otherwise return the exact terminal state and its recovery details. For `RUN_MODE=decompose`, write into the package only after `PLAN: PASS` and a `REVIEW: PASS` for every generated diagram.
 
-Completion states: final passed, needs confirmation, blocked, error, needs input, or repair limit reached.
+Completion states: final passed, decomposition complete, needs confirmation, blocked, error, needs input, or repair limit reached.
