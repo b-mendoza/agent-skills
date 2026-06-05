@@ -26,7 +26,7 @@ MCP rather than failing.
 
 | Phase | Runtime skill | Inputs | Retain |
 | ----- | ------------- | ------ | ------ |
-| 1 | `fetching-jira-ticket` | `JIRA_URL` | 12-line summary, `TICKET_KEY`, file path |
+| 1 | `fetching-work-item` | `JIRA_URL` | 12-line summary, `TICKET_KEY`, file path |
 | 2 | `planning-jira-tasks` | `TICKET_KEY` (+ `RE_PLAN`, `DECISIONS`) | summary, tasks file path, warnings |
 | 3 | `clarifying-assumptions` | `TICKET_KEY`, `MODE=upfront`, `ITERATION` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions |
 | 4 | `creating-jira-subtasks` | `JIRA_URL` | created/linked subtask rows, warnings, failures |
