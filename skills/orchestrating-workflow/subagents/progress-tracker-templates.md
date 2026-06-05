@@ -116,7 +116,9 @@ _None_
 
 ### `update` procedure
 
-1. Read the current main progress file.
+1. Read the current main progress file. If it does not exist yet, first
+   create `docs/<KEY>-progress.md` from the main progress file template,
+   filling phase skill names from the active playbook's `Phase Skill Map`.
 2. Update the row for the given phase (1–4) with the new status and a UTC
    timestamp.
 3. If `PHASE=4` and `STATUS=complete`, populate the Task Execution table
