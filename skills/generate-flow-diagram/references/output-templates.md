@@ -83,8 +83,13 @@ flowchart TD
   ROUTE -->|BLOCKED| STOP
 ```
 
-Localized diagrams: [`<subagent>`](./subagents/<subagent>-flow-diagram.md)
+Localized diagrams: [`<subagent>`](<LOCALIZED_DIAGRAM_RELATIVE_LINK>)
 ````
+
+`LOCALIZED_DIAGRAM_RELATIVE_LINK` is the relative path from the
+planner-resolved `ROOT_DIAGRAM_PATH` file to the localized
+`subagents/<subagent>-flow-diagram.md` file; for the default root it is usually
+`./subagents/<subagent>-flow-diagram.md`.
 
 ## Localized Subagent Diagram Template
 
@@ -127,9 +132,13 @@ Flow diagram: [`flow-diagram.md`](./flow-diagram.md)
 When `ROOT_DIAGRAM_PATH` uses a non-default filename, replace `flow-diagram.md`
 with the root path relative to the package `SKILL.md`.
 
-For localized subagent templates, derive `ROOT_DIAGRAM_RELATIVE_LINK` from the
-localized diagram file to the planner-resolved `ROOT_DIAGRAM_PATH`; do not
-hardcode `../flow-diagram.md` when the root path is non-default.
+For slim root templates, derive `LOCALIZED_DIAGRAM_RELATIVE_LINK` from the
+planner-resolved `ROOT_DIAGRAM_PATH` file to each localized subagent diagram; do
+not hardcode `./subagents/<subagent>-flow-diagram.md` when the root path is
+non-default. For localized subagent templates, derive
+`ROOT_DIAGRAM_RELATIVE_LINK` from the localized diagram file to the
+planner-resolved `ROOT_DIAGRAM_PATH`; do not hardcode `../flow-diagram.md` when
+the root path is non-default.
 
 Localized subagent load line in the owning subagent file:
 
