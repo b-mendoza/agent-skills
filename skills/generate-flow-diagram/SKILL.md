@@ -38,9 +38,12 @@ files and edits load wiring inside `PACKAGE_PATH` (Claude Code: Write and Edit
 tools; OpenCode: `edit` permission). All other modes are read-only and emit
 content only.
 
-Every run produces `PROCESS_INPUTS`. For new diagrams, normalize
-`PROCESS_SPEC`. For refinements, derive `PROCESS_INPUTS` from
+Every run produces `PROCESS_INPUTS` before `RUN_MODE` routing. For new diagrams,
+normalize `PROCESS_SPEC`. For refinements, derive `PROCESS_INPUTS` from
 `EXISTING_FLOW_OR_DIAGRAM`, `REFINEMENT_REQUEST`, any supplied `PROCESS_SPEC`,
+and explicit assumptions. For `RUN_MODE=decompose`, derive `PROCESS_INPUTS` from
+the package-level inputs and mutation boundary: `PACKAGE_PATH`,
+`SUBAGENT_REGISTRY`, the resolved `ROOT_DIAGRAM_PATH`, allowed write targets,
 and explicit assumptions. Load `./references/input-contract.md` only when
 field-level checks, missing-field handling, or a clarification question are
 needed. Ask one concise question only when a missing value would change the
@@ -72,8 +75,8 @@ candidate that must be returned to the user.
 
 ## Execution
 
-1. Capture all inputs and classify the current pass as `RUN_MODE=new`, `RUN_MODE=refinement`, `RUN_MODE=repair`, or `RUN_MODE=decompose`. Default `DIAGRAM_SCOPE` to `whole` when absent. For `RUN_MODE=decompose`, follow the Decompose Mode steps below; steps 2-9 cover `new`, `refinement`, and `repair` and are unchanged.
-2. Normalize the available process source into `PROCESS_INPUTS`: use `PROCESS_SPEC` for new diagrams, and use `EXISTING_FLOW_OR_DIAGRAM`, `REFINEMENT_REQUEST`, any supplied `PROCESS_SPEC`, and explicit assumptions for refinements. Load `./references/input-contract.md` when the field checklist or missing-field policy is needed.
+1. Capture all inputs, default `DIAGRAM_SCOPE` to `whole` when absent, and normalize the available source into `PROCESS_INPUTS` before `RUN_MODE` classification. Use `PROCESS_SPEC` for new diagrams; use `EXISTING_FLOW_OR_DIAGRAM`, `REFINEMENT_REQUEST`, any supplied `PROCESS_SPEC`, and explicit assumptions for refinements; use `PACKAGE_PATH`, `SUBAGENT_REGISTRY`, the resolved `ROOT_DIAGRAM_PATH`, allowed write targets, and mutation-boundary assumptions for decompose runs. Load `./references/input-contract.md` when the field checklist or missing-field policy is needed.
+2. Classify the current pass as `RUN_MODE=new`, `RUN_MODE=refinement`, `RUN_MODE=repair`, or `RUN_MODE=decompose`. For `RUN_MODE=decompose`, follow the Decompose Mode steps below; steps 3-9 cover `new`, `refinement`, and `repair` and are unchanged.
 3. For `RUN_MODE=refinement`, dispatch `refinement-analyst` before generating a revised diagram, including `EXISTING_FLOW_OR_DIAGRAM`, `PROCESS_INPUTS`, `REFINEMENT_REQUEST`, and `APPROVED_REFINEMENT_GAPS` when supplied. Consume its return as `PREFLIGHT_VERDICT`: continue only on `PREFLIGHT: PASS`; on `PREFLIGHT: NEEDS_CONFIRMATION`, ask the confirmation question and stop at needs confirmation; on `PREFLIGHT: BLOCKED` or `PREFLIGHT: ERROR`, stop with the reported recovery action. Treat `APPROVED_REFINEMENT_GAPS=none` as explicit approval to keep the candidate and refinement scope unchanged; when preflight passes because there are no meaningful gaps, use `none` as the downstream approval scope.
 4. Load orchestration-level references only when formatting a user-facing confirmation, normalizing inputs, or fetching external rationale. Design, Mermaid, template, and quality references are loaded by the dispatched subagent.
 5. Dispatch `diagram-builder` with `PROCESS_INPUTS`, `RUN_MODE`, and the inputs required for that mode: `RUN_MODE=new` uses the normalized scope, `RUN_MODE=refinement` includes `EXISTING_FLOW_OR_DIAGRAM` and `APPROVED_REFINEMENT_GAPS`, and `RUN_MODE=repair` includes `CANDIDATE_MARKDOWN` plus targeted `REVIEW_FEEDBACK`. Pass `none` through unchanged when the approved refinement scope is an explicit no-op; if repair inputs are missing, stop at needs input.
@@ -117,7 +120,7 @@ A valid run satisfies these checks:
 
 - `SKILL.md` stays a routing layer; detailed templates, style guidance, quality checks, and external links live in `references/`.
 - Local paths referenced by this skill exist inside this package.
-- `PROCESS_INPUTS` is produced for every run from the available process source and follows the bundled input contract; load `./references/input-contract.md` only when field-level checks are needed.
+- `PROCESS_INPUTS` is produced for every run before `RUN_MODE` routing and follows the bundled input contract; load `./references/input-contract.md` only when field-level checks are needed.
 - Refinements include only user-approved gap fixes.
 - The final Mermaid candidate passes the quality gate after at most three builder repair cycles; each repair uses targeted `REVIEW_FEEDBACK`, preserves the original refinement approval scope, then the full reviewer gate reruns.
 - `DIAGRAM_SCOPE` defaults to `whole`; whole-diagram generation and refinement behavior is unchanged. Scoped (`orchestrator` or `subagent`) and `decompose` runs additionally pass the scope-separation, no-duplication, and dispatch-collapse checks.
@@ -130,9 +133,9 @@ A valid run satisfies these checks:
 Input: `Refine this Mermaid deployment-review diagram so the approval gates are
 clearer, but do not add new scope.`
 
-1. Classify the run as `RUN_MODE=refinement` and derive `PROCESS_INPUTS` from the supplied diagram plus the refinement request.
+1. Derive `PROCESS_INPUTS` from the supplied diagram plus the refinement request, then classify the run as `RUN_MODE=refinement`.
 2. Dispatch `refinement-analyst`; it returns `PREFLIGHT: NEEDS_CONFIRMATION` with gaps `G1` and `G2`.
 3. Ask which gap IDs are approved. If the user replies `G1`, dispatch `diagram-builder` with the baseline, `PROCESS_INPUTS`, and `APPROVED_REFINEMENT_GAPS=G1`.
-4. Dispatch `diagram-quality-reviewer` with the candidate and the original approval scope.
+4. Dispatch `diagram-quality-reviewer` with the candidate, `PROCESS_INPUTS`, and the original approval scope.
 5. If review fails, send only failed checks and the original approval scope back to `diagram-builder` for repair, then rerun the full review.
 6. Return the final Markdown only after `REVIEW: PASS`.

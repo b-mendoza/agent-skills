@@ -5,11 +5,14 @@
 
 ## Source Policy
 
-Every run must produce a `PROCESS_INPUTS` bundle. For new diagrams, derive it
-from `PROCESS_SPEC`. For refinements, derive it from
+Every run must produce a `PROCESS_INPUTS` bundle before `RUN_MODE` routing. For
+new diagrams, derive it from `PROCESS_SPEC`. For refinements, derive it from
 `EXISTING_FLOW_OR_DIAGRAM`, `REFINEMENT_REQUEST`, any supplied `PROCESS_SPEC`,
-and explicit assumptions. Do not require a separate `PROCESS_SPEC` when the
-baseline already provides enough process contract to review and preserve scope.
+and explicit assumptions. For decompose runs, derive it from `PACKAGE_PATH`,
+`SUBAGENT_REGISTRY`, the resolved `ROOT_DIAGRAM_PATH`, the allowed write targets,
+and the mutation-boundary assumptions. Do not require a separate `PROCESS_SPEC`
+when the baseline or package-level decompose inputs already provide enough
+process contract to review and preserve scope.
 
 ## Required Process Fields
 
