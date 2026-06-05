@@ -114,8 +114,19 @@ Orchestration context: [root diagram](../flow-diagram.md)
 One line wires each owner to exactly its own diagram. The package `SKILL.md`
 loads only the root; each EARNED subagent loads only its localized diagram.
 
+Root load line in package `SKILL.md`:
+
 ```markdown
-Flow diagram: [`<owner>-flow-diagram.md`](./<owner>-flow-diagram.md)
+Flow diagram: [`flow-diagram.md`](./flow-diagram.md)
+```
+
+When `ROOT_DIAGRAM_PATH` uses a non-default filename, replace `flow-diagram.md`
+with the root path relative to the package `SKILL.md`.
+
+Localized subagent load line in the owning subagent file:
+
+```markdown
+Flow diagram: [`<subagent-name>-flow-diagram.md`](./<subagent-name>-flow-diagram.md)
 ```
 
 ## Decompose Result Template
