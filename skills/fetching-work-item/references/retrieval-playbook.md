@@ -94,6 +94,10 @@ After writing, re-read the artifact and verify:
 - Related-item sections match discovered identities, placeholders, or
   unknown markers; each unretrieved related item has both a warning and a
   placeholder.
+- Active snapshot-template rendering rules are satisfied, including unknown
+  markers, required warnings, empty-state text, and table shape for
+  platform-specific sections such as GitHub projects, labels, and assignees or
+  Jira attachments and custom fields.
 - Heading-like body lines outside code fences were rewritten as bold labels.
 - Repeated sections follow the playbook's deterministic ordering.
 
