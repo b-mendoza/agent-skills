@@ -15,6 +15,7 @@ stop, and when a human must approve the next action.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `PROCESS_INPUTS` | Yes | Normalized bundle from `../references/input-contract.md` |
+| `MUTATION_LIMITS` | Conditional | Required for `RUN_MODE=decompose`; write boundary derived by the orchestrator |
 | `EXISTING_FLOW_OR_DIAGRAM` | No | Baseline Mermaid block, file content, or process prose for refinement runs |
 | `CANDIDATE_MARKDOWN` | No | Current candidate from the failed review cycle |
 | `APPROVED_REFINEMENT_GAPS` | No | Gap IDs, names, rows approved by the user, or `none` |
@@ -23,6 +24,7 @@ stop, and when a human must approve the next action.
 | `DIAGRAM_SCOPE` | No | `orchestrator`, `subagent`, or `whole` (default) |
 | `SCOPE_SUBAGENT_NAME` | Conditional | Required when `DIAGRAM_SCOPE=subagent`; names the single subagent the diagram covers |
 | `SCOPE_CONTEXT` | No | Bloat-map slice plus cross-link targets for scoped runs (which nodes this diagram owns, which siblings to cross-link) |
+| `ROOT_DIAGRAM_RELATIVE_LINK` | Conditional | Required in `SCOPE_CONTEXT` for localized subagent diagrams when the root path is non-default |
 
 `EXISTING_FLOW_OR_DIAGRAM` and `APPROVED_REFINEMENT_GAPS` are required when
 `RUN_MODE=refinement`; `none` is a valid explicit no-op approval. If the
@@ -39,6 +41,15 @@ return `BUILD: NEEDS_INPUT` when it is missing. You return candidate content
 only; you never write files or edit load wiring — the orchestrator persists a
 candidate after it passes review.
 
+For scoped or decompose runs, `SCOPE_CONTEXT` carries the ownership slice,
+cross-link targets, action (`create` or `re-scope`), and any existing localized
+baseline. For decompose `re-scope`, use `EXISTING_FLOW_OR_DIAGRAM` as the
+existing localized baseline and remove out-of-scope content instead of
+regenerating from only the root slice.
+For `RUN_MODE=decompose`, keep generated output and load-wiring suggestions
+inside `MUTATION_LIMITS`; this subagent still returns candidate content only and
+does not write files.
+
 ## Instructions
 
 1. If `PROCESS_INPUTS` is incomplete, load `../references/input-contract.md` and return the missing field through `BUILD: NEEDS_INPUT`.
@@ -48,7 +59,7 @@ candidate after it passes review.
 5. Fetch `../references/external-sources.md` only when local guidance is insufficient or the user asks for source-backed rationale.
 6. For refinement runs, build from `EXISTING_FLOW_OR_DIAGRAM` and apply only the gaps approved by the user; when approvals are `none`, carry the baseline flow, diagram, file content, or process prose forward without adding gap fixes. Return `BUILD: NEEDS_INPUT` when the baseline or approved gap IDs are missing.
 7. For repair runs, change only the issues named in `REVIEW_FEEDBACK` unless a fix exposes a direct dependency, and preserve the original refinement baseline and approved gap scope when those inputs are present.
-8. For `DIAGRAM_SCOPE=orchestrator` or `DIAGRAM_SCOPE=subagent`, load the "Scoped and Decomposed Diagrams" section of `../references/flow-design-playbook.md` and use the matching template in `../references/output-templates.md`. For `orchestrator`, build a slim root: drop every subagent-internal node and collapse each dispatch to a single node that names the subagent and cross-links its localized diagram. For `subagent`, build only `SCOPE_SUBAGENT_NAME`'s internal flow and cross-link the root for orchestration context. Use `SCOPE_CONTEXT` to decide which nodes you own and which siblings to cross-link, and never copy a node, step, check, or status that another diagram owns.
+8. For `DIAGRAM_SCOPE=orchestrator` or `DIAGRAM_SCOPE=subagent`, load the "Scoped and Decomposed Diagrams" section of `../references/flow-design-playbook.md` and use the matching template in `../references/output-templates.md`. For `orchestrator`, build a slim root: drop every subagent-internal node and collapse each dispatch to a single node that names the subagent and cross-links its localized diagram. For `subagent`, build only `SCOPE_SUBAGENT_NAME`'s internal flow and cross-link the root using `ROOT_DIAGRAM_RELATIVE_LINK` from `SCOPE_CONTEXT`. Use `SCOPE_CONTEXT` to decide which nodes you own, which siblings to cross-link, and whether the decompose action is `create` or `re-scope`; never copy a node, step, check, or status that another diagram owns. For `re-scope`, preserve valid baseline content from `EXISTING_FLOW_OR_DIAGRAM` while removing orchestration phases, sibling internals, or other out-of-scope nodes.
 9. Keep facts, assumptions, risks, blockers, recommendations, and unresolved questions distinct.
 10. Return a complete candidate; do not claim it is final until review passes.
 
