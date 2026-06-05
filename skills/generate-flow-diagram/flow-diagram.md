@@ -59,7 +59,7 @@ flowchart TD
   REPAIR_CAP -->|no| REPAIR_LIMIT([repair limit reached])
   REPAIR_CAP -->|yes| REPAIR_SCOPE{Repair exceeds approved refinement scope?}
   REPAIR_SCOPE -->|yes or scope none| NEEDS_CONFIRM
-  REPAIR_SCOPE -->|no| REPAIR_FEEDBACK[Package targeted REVIEW_FEEDBACK and original baseline/scope]
+  REPAIR_SCOPE -->|no| REPAIR_FEEDBACK[Package targeted REVIEW_FEEDBACK plus original baseline, approvals, and scoped payload]
   REPAIR_FEEDBACK --> BUILD_REPAIR_LOOP[Dispatch diagram-builder with RUN_MODE=repair]
 
   FINAL_DOC --> FINAL_PASSED([final passed])
