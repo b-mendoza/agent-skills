@@ -32,11 +32,11 @@ workflow, the GitHub workflow, or standalone utilities.
 
 - [`orchestrating-workflow`](skills/orchestrating-workflow/SKILL.md) runs the
   full Jira or GitHub workflow through the active platform playbook.
+- [`fetching-work-item`](skills/fetching-work-item/SKILL.md) saves a Jira ticket
+  or GitHub issue snapshot to `docs/<TICKET_KEY>.md`.
 
 ### Jira workflow
 
-- [`fetching-jira-ticket`](skills/fetching-jira-ticket/SKILL.md) saves a ticket
-  snapshot to `docs/<TICKET_KEY>.md`.
 - [`planning-jira-tasks`](skills/planning-jira-tasks/SKILL.md) turns the ticket
   snapshot into a task plan in `docs/<TICKET_KEY>-tasks.md`.
 - [`clarifying-assumptions`](skills/clarifying-assumptions/SKILL.md) handles
@@ -50,8 +50,6 @@ workflow, the GitHub workflow, or standalone utilities.
 
 ### GitHub workflow
 
-- [`fetching-github-issue`](skills/fetching-github-issue/SKILL.md) saves an
-  issue snapshot to `docs/<ISSUE_SLUG>.md`.
 - [`planning-github-issue-tasks`](skills/planning-github-issue-tasks/SKILL.md)
   turns the issue snapshot into a task plan in `docs/<ISSUE_SLUG>-tasks.md`.
 - [`clarifying-assumptions`](skills/clarifying-assumptions/SKILL.md) is reused
