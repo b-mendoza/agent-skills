@@ -35,10 +35,16 @@ path covers the required operations.
 Capture non-empty values among: key, summary; status, resolution, type,
 priority; assignee, reporter; labels, components, sprint, epic, fix/affects
 versions; created, updated, due; full description (formatting preserved);
-acceptance criteria (shared precedence); parent comments chronologically;
-attachment metadata; non-empty custom fields sorted by name. Serialize arrays
-as alphabetical comma-separated strings; structured custom-field values as
-compact JSON with sorted keys.
+acceptance criteria; parent comments chronologically; attachment metadata;
+non-empty custom fields sorted by name. Serialize arrays as alphabetical
+comma-separated strings; structured custom-field values as compact JSON with
+sorted keys.
+
+For acceptance criteria, use a dedicated Jira acceptance-criteria field first
+when Jira field metadata exposes one and it is non-empty. If no dedicated
+field is available, apply the shared precedence in `./retrieval-playbook.md`
+against the description. Do not duplicate a dedicated acceptance-criteria
+field under `## Custom Fields` after using it for `## Acceptance Criteria`.
 
 ## Relationships
 
