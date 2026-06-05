@@ -73,12 +73,15 @@ and fatal reasons.
 ## Dispatch Pattern
 
 ```text
-PLAYBOOK_PATH: ./references/<platform>-playbook.md
+PLAYBOOK_PATH: ../references/<platform>-playbook.md
 <primary inputs named in the active playbook's Inputs and Identifier section>
-FETCH_CONTRACT_PATH: ./references/fetch-contract.md
-RETRIEVAL_PLAYBOOK_PATH: ./references/retrieval-playbook.md
-EXTERNAL_SOURCES_PATH: ./references/external-sources.md
+FETCH_CONTRACT_PATH: ../references/fetch-contract.md
+RETRIEVAL_PLAYBOOK_PATH: ../references/retrieval-playbook.md
+EXTERNAL_SOURCES_PATH: ../references/external-sources.md
 ```
+
+These dispatch paths are relative to `./subagents/work-item-retriever.md`, the
+file that consumes them.
 
 The retriever reads the snapshot-template path from the active playbook's
 `Snapshot Sections` section at assembly time.
