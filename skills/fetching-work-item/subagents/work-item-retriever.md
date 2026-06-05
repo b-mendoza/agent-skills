@@ -65,8 +65,8 @@ identifier cannot be formed, return `FETCH: FAIL` with
    Repair only missing or mismatched portions and re-check; max 3 repair
    passes.
 8. Read `FETCH_CONTRACT_PATH` only for exact summary ordering and count
-   semantics, combine it with the playbook's `Summary Fields` for lines 5–8,
-   then return the locked 12-line summary with no prose.
+   semantics, combine it with the playbook's `Summary Fields` for lines 5, 6,
+   and 8, then return the locked 12-line summary with no prose.
 
 Apply the playbook's `Rate-Limit Specifics` for explicit platform retry
 timing, then the shared retry budget. Classify exhausted limits as

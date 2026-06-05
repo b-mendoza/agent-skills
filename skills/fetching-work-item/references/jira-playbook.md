@@ -57,7 +57,7 @@ assembly).
 
 ## Summary Fields
 
-Lines 5–8 of the shared 12-line summary:
+Lines 5, 6, and 8 of the shared 12-line summary:
 
 ```text
 Ticket: <TICKET_KEY>: <Summary/Title | Unknown>
