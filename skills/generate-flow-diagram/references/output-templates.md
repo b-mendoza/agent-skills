@@ -60,3 +60,79 @@ Recommendations:
 Unresolved questions:
 Human approvals required:
 ```
+
+## Slim Root Template
+
+Use this for a `DIAGRAM_SCOPE=orchestrator` root. Each subagent dispatch is one
+node; the cross-link line below it points at the localized diagram.
+
+````markdown
+# <PROCESS_NAME> — Orchestration
+
+<Short paragraph: orchestrator authority, dispatch-only role, mutation limits,
+and that subagent internals live in their own localized diagrams.>
+
+```mermaid
+flowchart TD
+  START([Start]) --> PHASE[Phase / banner]
+  PHASE --> GATE{Human or self gate?}
+  GATE -->|approved| DISPATCH[Dispatch <subagent>; route on its status]
+  GATE -->|declined| STOP([Terminal state])
+  DISPATCH --> ROUTE{Subagent status?}
+  ROUTE -->|PASS| NEXT[Next phase or terminal state]
+  ROUTE -->|BLOCKED| STOP
+```
+
+Localized diagrams: [`<subagent>`](./subagents/<subagent>-flow-diagram.md)
+````
+
+## Localized Subagent Diagram Template
+
+Use this for a `DIAGRAM_SCOPE=subagent` diagram. It covers one subagent only.
+
+````markdown
+# <SUBAGENT_NAME> — Internal Flow
+
+<Short paragraph: this subagent's role and routeable statuses. Orchestration
+context lives in the root diagram, linked below.>
+
+```mermaid
+flowchart TD
+  ENTRY([Subagent entry]) --> CHECK{Internal check or precondition?}
+  CHECK -->|pass| STEP[Internal step]
+  CHECK -->|fail| SELFGATE([Repair or precondition self-gate])
+  STEP --> STATUS{Routeable status?}
+  STATUS -->|PASS| REPORT[Write report]
+  STATUS -->|NEEDS_INPUT| REPORT
+```
+
+Orchestration context: [root diagram](../flow-diagram.md)
+````
+
+## Load-Instruction Template
+
+One line wires each owner to exactly its own diagram. The package `SKILL.md`
+loads only the root; each EARNED subagent loads only its localized diagram.
+
+```markdown
+Flow diagram: [`<owner>-flow-diagram.md`](./<owner>-flow-diagram.md)
+```
+
+## Decompose Result Template
+
+Return this after a `RUN_MODE=decompose` run.
+
+```markdown
+## Decomposition Result
+
+Root diagram: <ROOT_DIAGRAM_PATH> — before <N> nodes, after <M> nodes
+
+| Owner | Decision | Localized diagram | Action | Load wired |
+| ----- | -------- | ----------------- | ------ | ---------- |
+| <subagent> | EARNED \| NO_OP_EVIDENCED | path or `none` | created \| re-scoped \| kept \| n/a | yes/no |
+
+- Scope-separation check: pass/fail
+- No-duplication check: pass/fail
+- Files written: <paths>
+- Notes / evidence quotes: ...
+```
