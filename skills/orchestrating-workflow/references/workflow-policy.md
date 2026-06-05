@@ -82,8 +82,8 @@ gate can advance.
 
 After dispatching `progress-tracker` with the workflow key and
 `ACTION=read`, choose a resume point from this table, then dispatch
-`preflight-checker` with the workflow key for only the remaining phase
-range.
+`preflight-checker` with the workflow key, `PLAYBOOK_PATH=<active playbook
+path>`, and only the remaining phase range.
 
 | Progress indicates | Resume from | Preflight `PHASES` |
 | ------------------ | ----------- | ------------------ |
