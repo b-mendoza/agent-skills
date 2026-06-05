@@ -16,7 +16,7 @@ the output template, including the output prefix.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `TICKET_KEY` | Yes | `<KEY>` (workflow key; value shape defined by the active playbook) |
-| `PLAYBOOK_PATH` | Yes | `../references/<platform>-playbook.md` |
+| `PLAYBOOK_PATH` | Yes | `./references/<platform>-playbook.md` |
 | `QUERY_TYPE` | No; defaults to `status` | `status` |
 
 Supported neutral `QUERY_TYPE` values: `status`, `full`, `children`. The
@@ -26,6 +26,8 @@ the accepted alias list.
 
 The active playbook's `Status-Check Contract` supplies the identifier line to
 include in outputs; use that line rather than inventing a neutral field name.
+`PLAYBOOK_PATH` is package-root-relative; resolve it from the
+`skills/orchestrating-workflow/` directory.
 
 The orchestrator may pass additional locator inputs the active playbook
 requires beyond the workflow key (the playbook's `Inputs and Identifier`
