@@ -107,7 +107,8 @@ material stays inside subagents.
 
 ## Execution
 
-1. Dispatch `fetching-work-item` with TICKET_KEY.
+1. Dispatch `fetching-work-item` with the work-item URL or platform-specific
+   fetch inputs.
 2. On `FETCH: PASS`, dispatch `artifact-validator`.
 3. On `VALIDATE: PASS`, dispatch `planning-jira-tasks`.
 4. On any `BLOCKED`, return the blocked handoff with the failing
