@@ -107,8 +107,10 @@ even though they are not validator artifacts.
 
 - `RE_PLAN_NEEDED=true` in Phase 3: re-run Phase 2 with accepted decisions,
   then re-run Phase 2 postcondition and Phase 3.
-- `RE_PLAN_NEEDED=true` in Phase 6: re-run Phase 5 with the task decisions
-  file, then re-run Phase 6.
+- `RE_PLAN_NEEDED=true` in Phase 6: if the critique iteration is below 3,
+  re-run Phase 5 with the task decisions file, increment the critique
+  iteration, then re-run Phase 6. If the critique iteration is already 3,
+  stop and surface the unresolved critique items.
 - `BLOCKERS_PRESENT=true`: stop before platform writes or task execution.
   Surface the unresolved blockers and resume only after the user resolves
   or accepts them.
