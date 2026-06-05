@@ -166,6 +166,10 @@ For any subagent dispatch:
    only the explicit inputs that subagent needs. Pass the active playbook
    path under `PLAYBOOK_PATH` whenever the subagent's behavior depends on
    platform-specific transport, query syntax, or output template.
+   `PLAYBOOK_PATH` is package-root-relative, such as
+   `./references/jira-playbook.md` or `./references/github-playbook.md`, and
+   subagents resolve it from this skill directory rather than from their own
+   `subagents/` directory.
 3. Collect its structured summary.
 4. Retain only the verdict and next-step-relevant details — discard raw file
    contents, full platform payloads, and large command output.
