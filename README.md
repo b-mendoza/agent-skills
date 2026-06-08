@@ -68,6 +68,10 @@ workflow, the GitHub workflow, or standalone utilities.
   summarizes recent repository changes, risks, validation gaps, and next steps.
 - [`committing-scoped-changes`](skills/committing-scoped-changes/SKILL.md)
   creates reviewable commits from explicit file or folder paths.
+- [`diagnosing-root-causes`](skills/diagnosing-root-causes/SKILL.md) identifies
+  the root cause of runtime, CI/CD, and user-reported issues from provided
+  resources and explains it with evidence-based, traceable, educational
+  reporting.
 - [`generate-flow-diagram`](skills/generate-flow-diagram/SKILL.md) creates or
   refines Markdown and Mermaid workflow diagrams.
 - [`generate-handoff-document`](skills/generate-handoff-document/SKILL.md)
