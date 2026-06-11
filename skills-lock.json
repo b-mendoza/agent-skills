@@ -23,7 +23,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/diagnosing-root-causes/SKILL.md",
-      "computedHash": "fb28b48196ea1b99f181b7839c609932db3c6fcee090dc46fddf4d370eb6148d"
+      "computedHash": "bfc3cb4543eca4c4ef43abd843c9632eedee955b189d7ee60aa2164048db57af"
     },
     "executing-plans": {
       "source": "obra/superpowers",
