@@ -61,3 +61,63 @@ paths rather than being resolved silently.
 
 Keep facts, assumptions, risks, blockers, recommendations, and unresolved
 questions separate in the diagram or supporting text when they appear.
+
+## Scoped and Decomposed Diagrams
+
+Load this section when `DIAGRAM_SCOPE` is `orchestrator` or `subagent`, or for
+a `RUN_MODE=decompose` run. The goal of decomposition is measured by what the
+root no longer contains, not by how many files exist: a fresh orchestrator
+agent should read the root and see only what it needs to decide what to
+dispatch next.
+
+### Classification Test
+
+For every node in a whole-package root diagram, ask: *does a fresh orchestrator
+agent need this to decide what to dispatch next?*
+
+- **Yes → orchestration-keep.** Phases, banner emission, human and self gates,
+  dispatch points, orchestration-level status routing, handoffs, repair-loop
+  control, and terminal states stay in the root.
+- **No → subagent-internal-extract.** A subagent's internal steps, internal
+  checks, internal branches, clusters, or report-section enumeration belong in
+  that subagent's localized diagram, tagged with the owning subagent.
+
+### Earned-Decision Contract
+
+Each subagent earns its own localized diagram or is recorded as a no-op.
+
+- **EARNED** when it has at least one of: more than one inspection-dependent
+  routeable status; a decision branch that changes which instructions run; a
+  repair, retry, or re-dispatch loop; routing between multiple owned outputs;
+  or a precondition self-gate that can divert flow.
+- **NO_OP_EVIDENCED** when its instructions are a single linear sequence with
+  one routeable status, or a localized diagram would have fewer than about four
+  nodes. The record must quote a specific instruction, status, or branch as
+  evidence.
+
+Either way the root slims: an EARNED subagent's internals move into its
+localized diagram; a NO_OP_EVIDENCED subagent's root node is already a single
+dispatch reference with no step enumeration.
+
+### Slimming the Root
+
+When authoring a `DIAGRAM_SCOPE=orchestrator` root, drop every
+subagent-internal-extract node and collapse each subagent dispatch to a single
+node. The dispatch node names the subagent and the routeable statuses the
+orchestrator branches on; the surrounding Markdown carries a plain relative
+link to that subagent's localized diagram. Never expand a dispatch into the
+subagent's step-by-step internals.
+
+### Authoring a Localized Subagent Diagram
+
+A `DIAGRAM_SCOPE=subagent` diagram covers only the named subagent: its entry,
+internal decision branches, internal checks or clusters, repair or precondition
+self-gates, routeable status emission, and report write. It never restates
+orchestrator phases, banners, gates, or another subagent's internals; it
+references them only by cross-link.
+
+### No Duplication Across Diagrams
+
+A step, node, check, or status lives in exactly one diagram of a package. Other
+diagrams reference it by cross-link, never by copy. Use plain relative Markdown
+links for cross-links so they stay portable across runtimes and renderers.

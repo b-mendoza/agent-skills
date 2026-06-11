@@ -19,6 +19,18 @@
 | Refinement approval | Refinement output includes only user-approved gap fixes |
 | Output contract | Final Markdown has title, boundary paragraph, one Mermaid diagram, and optional templates/rules only when useful |
 
+## Scope Checks
+
+These three checks apply only when `DIAGRAM_SCOPE` is `orchestrator` or
+`subagent`, or for a `RUN_MODE=decompose` run. They are inert for
+`DIAGRAM_SCOPE=whole`, so default whole-diagram verdicts are unchanged.
+
+| Check | Pass Condition |
+| ----- | -------------- |
+| Scope separation | A `DIAGRAM_SCOPE=orchestrator` diagram contains no subagent-internal step enumeration; a `DIAGRAM_SCOPE=subagent` diagram does not restate orchestration phases, gates, banners, or other subagents |
+| No duplication | No node label, step description, check enumeration, or status list appears in more than one diagram of the same package; cross-links replace copies. Requires `OTHER_DIAGRAM_DIGEST` to compare against the root and sibling diagrams; a missing digest blocks scoped/decompose review |
+| Dispatch collapse | In an orchestrator diagram, each subagent dispatch is a single node that cross-links the localized diagram, not a step-by-step expansion of the subagent's internals |
+
 Fetch current Mermaid documentation from `external-sources.md` only when a syntax
 uncertainty affects the verdict.
 
@@ -34,6 +46,6 @@ uncertainty affects the verdict.
 
 ## Failure Severity
 
-- `high`: invalid Mermaid, missing human gate for sensitive action, unapproved refinement change, or missing terminal states.
-- `medium`: disconnected validation, unclear branch labels, unsupported assumptions, or missing output contract element.
+- `high`: invalid Mermaid, missing human gate for sensitive action, unapproved refinement change, missing terminal states, an out-of-scope node in a scoped diagram, or content duplicated across diagrams of the same package. Contradictory or paraphrased copies of the same step, check, or status across diagrams are the highest severity.
+- `medium`: disconnected validation, unclear branch labels, unsupported assumptions, missing output contract element, or a dispatch node expanded into subagent internals in an orchestrator diagram.
 - `low`: style inconsistency, verbose labels, or optional template mismatch.
