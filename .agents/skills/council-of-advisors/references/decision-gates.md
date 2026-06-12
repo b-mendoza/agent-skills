@@ -1,136 +1,150 @@
 # Decision Gates
 
-Read this file when implementing or troubleshooting a gate, or when
-explaining gate behavior to the user.
+This file is the single normative source for gate pass conditions, caps, and
+failure routes. `SKILL.md` indexes gates but does not redefine them.
 
-## Pipeline (Mermaid)
+## Shared Budgets
 
-```mermaid
-flowchart TD
-    A[Intake: decision packet] --> B{G_FRAMING_CONFIRMED}
-    B -- pass --> C[Reversibility seat]
-    C --> D{G_REVERSIBILITY}
-    D -- type_1 --> E[Deep council run]
-    D -- type_2 --> F[Standard council run]
-    E --> G[Parallel: 7 analysis seats]
-    F --> G
-    G --> H{G_REASONING_CHAINS_PRESENT}
-    H -- repair --> G
-    H -- pass --> I{G_ORIGINALITY}
-    I -- prior art, no differentiation --> J[Branch: Differentiate / Pivot / Abandon]
-    I -- pass-through --> K[Chair seat]
-    J --> K
-    K --> L{G_DISSENT_PRESERVED}
-    L -- pass --> M{Confidence gate}
-    M -- low --> G
-    M -- medium --> N[Require kill_criterion]
-    M -- high --> O[Educate-me loop]
-    N --> O
-    M -- type_1 + low after 3 cycles --> P[do_not_commit_yet]
-    P --> O
-    O --> Q{G_LESSON_CARDS_PRESENT}
-    Q -- pass --> R[Final handoff]
-```
+| Budget | Limit | Route When Exceeded |
+| ------ | ----- | ------------------- |
+| Per gate repair cycles | 3 targeted repair cycles, then the fourth failure stops | `status: blocked` with gate name and counter state |
+| Per analysis seat schema repair | 3 targeted redispatches per seat | `status: blocked` naming the seat and gate |
+| Seat `ERROR` retry | 1 retry | second `ERROR` returns `status: error` |
+| Global redispatch budget | 12 total redispatches | `status: blocked` with budget use in `run_log` |
+| Packet refinement after analysis `BLOCKED` | 1 consolidated packet-refinement round | second `BLOCKED` wave returns `status: needs_input` |
+
+Repair only the producing phase or seat named by the failing gate. Do not rerun
+unaffected seats unless packet version changed.
 
 ## G_FRAMING_CONFIRMED
 
-**Where:** Phase 1, before any seat runs.
+Protects: confirmed decision packet before any seat runs.
 
-**Pass condition:** The user explicitly confirms the orchestrator's
-paraphrased decision packet.
+Pass condition: the user explicitly confirms the paraphrased packet.
 
-**Failure handling:** Re-paraphrase and ask again. Do not begin analysis
-on an unconfirmed packet — misframed intake corrupts every downstream
-seat.
+Failure route: revise the paraphrase and ask again. After the third unconfirmed
+attempt, return `status: needs_input` with the packet draft and unresolved field.
 
 ## G_REVERSIBILITY
 
-**Where:** Phase 2, after the reversibility-seat returns.
+Protects: reversibility packet and downstream depth binding.
 
-**Pass condition:** The packet includes `decision_type` (`type_1` or
-`type_2`), `reversal_cost_estimate` for all six dimensions, `rationale`,
-`confidence`, and `depth_setting`. `depth_setting` is `deep` when
-`decision_type` is `type_1` and `standard` when it is `type_2`.
+Pass condition: all reversibility fields are present, `what_would_change_my_mind`
+is non-empty, and `depth_setting` matches `decision_type` (`type_1 -> deep`,
+`type_2 -> standard`).
 
-**Failure handling:** Redispatch the reversibility-seat with the missing
-field as the reason. A Type 1 classification is sticky — it may not be
-downgraded to Type 2 later without explicit new evidence about reversal
-cost.
+Failure route: redispatch `reversibility-seat` with the missing or inconsistent
+field reason, within the shared budgets.
+
+Low-confidence route: ask one targeted question about the dominant unknown
+reversal-cost dimension, append the answer as a packet addendum, and redispatch.
+If still `low`, default to `type_1` and `deep`, record
+`classification_basis: defaulted_low_confidence`, and continue.
+
+Sticky Type 1 rule: after `type_1` is set, downgrading to `type_2` requires new
+explicit user-stated evidence about reversal cost, recorded in `run_log`.
 
 ## G_REASONING_CHAINS_PRESENT
 
-**Where:** Phase 3, after the seven analysis seats return.
+Protects: valid analysis packets.
 
-**Pass condition:** Every packet contains `reasoning_chain`,
-`what_would_change_my_mind`, `mental_model_in_use`, `verdict`, and
-`confidence`. Each `reasoning_chain` entry is a labeled object with
-`premise`, `inference`, or `assumption`. No packet quotes or references
-a sibling seat.
+Pass condition: every analysis packet has the required schema fields, non-empty
+labeled `reasoning_chain`, tiered premise sources, non-empty
+`what_would_change_my_mind`, a valid confidence value, and the correct verdict
+for its `seat_class`.
 
-**Failure handling:** Redispatch only the seats that failed, with the
-missing field as the reason. Three cycles maximum.
+Failure route: redispatch the failing seat with the schema or reasoning defect,
+within the shared budgets. Seat-emitted `FAIL` uses this route.
+
+## G_INDEPENDENCE
+
+Protects: dispatch hygiene and no sibling-output contamination.
+
+Pass condition:
+
+- The run log holds one dispatch-hygiene assertion per dispatched seat: seat,
+  packet version, cycle, reason, and no sibling output included.
+- No packet explicitly attributes content to a named sibling seat's output from
+  this run.
+
+Legal phrasing: hypothetical language such as `an optimist might say` does not
+fail the gate unless it claims access to the sibling seat's actual output.
+
+Failure route: missing hygiene assertion reruns affected seats with clean
+payloads. Explicit sibling-output attribution redispatches the contaminated seat.
+
+## Analysis Seat Escalation
+
+| Return | Meaning | Route |
+| ------ | ------- | ----- |
+| `BLOCKED` | A required user fact or prerequisite is missing | Collect all `BLOCKED` returns from the wave, ask one consolidated clarification, append answers as packet vN+1, re-confirm framing, and rerun all seven analysis seats |
+| `FAIL` | Seat completed but violated schema or gate | Redispatch that seat with the failure reason |
+| `ERROR` | Runtime/tool failure prevented a safe packet | Retry that seat once; second error returns `status: error` |
+
+Mixed-version synthesis is forbidden. Any packet refinement invalidates all prior
+seven analysis packets, and all seven must rerun on the new packet version.
 
 ## G_ORIGINALITY
 
-**Where:** Phase 4, after the originality-seat packet is inspected.
+Protects: prior-art gate routing and branch provenance.
 
-**Pass condition:** Either (a) `prior_art_exists: false` with rationale,
-(b) `prior_art_exists: true` and `differentiation_named: true` with at
-least one named differentiation axis, or (c) a complete branch output
-(`differentiate` | `pivot` | `abandon`) with rationale.
+Pass condition: one of the following is true:
 
-**Failure handling:** If `prior_art_exists: true` and
-`differentiation_named: false`, the pipeline must produce a branch
-output before proceeding to synthesis. Do not let the chair seat
-synthesize over an open originality gap.
+- `prior_art_exists: false` with rationale.
+- `prior_art_exists: true` and `differentiation_named: true` with at least one
+  differentiation axis and validation evidence.
+- A complete branch-mode output exists from `originality-seat (branch mode)`.
+
+Failure route: redispatch `originality-seat` in branch mode. The orchestrator may
+choose the branch task from the packet state but does not author branch analysis.
 
 ## G_DISSENT_PRESERVED
 
-**Where:** Phase 5, after the chair-seat returns.
+Protects: chair minority-report integrity.
 
-**Pass condition:** Either `confidence: high` with an empty
-`minority_report` field, or `confidence: medium`/`low` with a non-empty
-`minority_report` containing the strongest dissenting view verbatim.
+Pass condition:
 
-**Failure handling:** Redispatch chair-seat with the missing minority
-report as the reason. A chair that fabricates consensus or erases
-dissent fails this gate.
+- When chair confidence is `high`, `minority_report` is exactly
+  `none — confidence is high`.
+- When chair confidence is `medium` or `low`, `minority_report` contains the
+  strongest dissenting seat's verdict or headline finding plus its reasoning
+  summary, bounded to the stated dissenting case.
 
-## Confidence gate
+Failure route: redispatch `chair-seat` with the exact dissent defect, within the
+shared budgets.
 
-**Where:** Phase 6, after the chair packet is validated.
+## G_KILL_CRITERION
 
-**Routes:**
+Protects: useful stop signal for the recommendation.
 
-- `high` → proceed to Phase 7.
-- `medium` → require an explicit `required_kill_criterion` in the chair
-  packet. If missing, redispatch chair-seat.
-- `low` → return to Phase 3 for the seats whose `confidence` was `low`
-  or whose `reasoning_chain` premises were marked `unverified`. Three
-  cycles maximum.
+Pass condition: `required_kill_criterion` is present, substantive, specific, and
+observable at every confidence level. At `medium` confidence, it must also be
+time-bound or event-bound.
+
+Failure route: redispatch `chair-seat` with the quality defect.
 
 ## G_TYPE_1_LOW_CONFIDENCE
 
-**Where:** Phase 6, only when `decision_type` is `type_1`.
+Protects: Type 1 low-confidence safety override.
 
-**Trigger:** Chair `confidence` is `low` after three repair cycles.
+Computed verdict:
 
-**Effect:** Override the chair's recommendation to `do_not_commit_yet`.
-The handoff still contains the chair's reasoning and minority report —
-the user sees the full analysis — but the headline recommendation is to
-wait. This gate exists because the cost of committing to an irreversible
-decision under low confidence is asymmetrically larger than the cost of
-waiting.
+- `not_applicable` iff `decision_type: type_2`.
+- `pass` iff `decision_type: type_1` and confidence is above `low`.
+- `pass` iff `decision_type: type_1`, confidence is `low`, and the orchestrator
+  set `final_recommendation: do_not_commit_yet` with `override_applied: true`.
+- `fail` iff `decision_type: type_1`, confidence is `low`, and the override did
+  not fire.
+
+Failure route: `fail` is a blocking defect. Return `status: blocked` with the
+run-log explanation.
 
 ## G_LESSON_CARDS_PRESENT
 
-**Where:** Phase 7, before the final handoff is assembled.
+Protects: educate-me transfer output.
 
-**Pass condition:** Nine lesson cards (one per seat: reversibility,
-adversary, optimistic, originality, second-order, paradox-of-skill,
-focus, power-questions, chair) plus the 9-question solo drill are
-present and conform to the template in
-`./educate-me-lesson-template.md`.
+Pass condition: nine lesson cards exist in roster order and match the template;
+the solo drill has nine subject-specific questions, one per seat.
 
-**Failure handling:** Generate the missing cards. This gate does not
-require a subagent redispatch — the lesson template is deterministic.
+Failure route: regenerate missing or malformed cards from
+`./references/educate-me-lesson-template.md`; no seat redispatch is needed.
