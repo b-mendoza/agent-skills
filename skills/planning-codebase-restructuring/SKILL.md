@@ -170,8 +170,9 @@ after repair, record the limitation and continue local-only.
 11. Synthesize the candidate report only from validated summaries,
     `CONTRACT_NOTE`s, the evidence precedence decision, and explicit user
     inputs. Include path evidence, proposal, migration plan, validation plan,
-    implementation handoff, risks, assumptions, open questions, and security
-    notes. Do not include raw dumps or unvalidated claims.
+    implementation handoff, document references consulted, risks, assumptions,
+    open questions, and security notes. Do not include raw dumps or unvalidated
+    claims.
 12. Dispatch `plan-reviewer` with the preflight summary, all validated
     summaries, all `CONTRACT_NOTE`s, evidence precedence decision, candidate
     report, success criteria, and `review_repair_count`.
@@ -204,7 +205,8 @@ The persisted final report contains these sections:
 8. Migration strategy in safe increments with stopping points and rollback notes.
 9. Validation plan.
 10. Implementation handoff listing every approval-gated action with action, exact targets, reason, benefit, risks and reversibility, validation, and a smaller or safer alternative.
-11. Risks, assumptions, blockers, open questions, and security notes.
+11. Document references consulted, or `none`.
+12. Risks, assumptions, blockers, open questions, and security notes.
 
 Every section states `no issue found` when its checklist surfaced nothing. For
 `NEEDS_INPUT`, `BLOCKED`, or `ERROR`, return the smallest stopping reason,
