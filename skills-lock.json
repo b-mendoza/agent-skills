@@ -65,7 +65,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/pr-creator/SKILL.md",
-      "computedHash": "b00b05924ccc2985da8ae7956a094ea16c76b20f0bc0f47f3543d2824f47a1be"
+      "computedHash": "3f650074d795dddd362ed758b2b560af747bb4a6d55e332e1be1d5f68ca22514"
     },
     "prompt-structurer": {
       "source": "b-mendoza/agent-skills",
