@@ -72,7 +72,7 @@ workflow, the GitHub workflow, or standalone utilities.
   the root cause of runtime, CI/CD, and user-reported issues from provided
   resources and explains it with evidence-based, traceable, educational
   reporting.
-- [`revised-generate-flow-diagram`](skills/revised-generate-flow-diagram/SKILL.md)
+- [`generate-flow-diagram`](skills/generate-flow-diagram/SKILL.md)
   creates, refines, repairs, or decomposes Markdown and Mermaid workflow
   diagrams with approval gates, staged writes, and Mermaid validation.
 - [`generate-handoff-document`](skills/generate-handoff-document/SKILL.md)
