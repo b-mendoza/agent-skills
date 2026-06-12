@@ -1,20 +1,19 @@
-# Skill Structure Guide
+# Skill Structure Reference
 
-Read this file when designing artifact boundaries, directory layout, input and
-output contracts, or portability rules.
+Load this reference when choosing artifact boundaries, package layout, names,
+frontmatter, or standalone contracts.
 
-## Loading Architecture
+## Loading Levels
 
-| Level | File type | Load timing | Contents |
-| ----- | --------- | ----------- | -------- |
-| 0 | `SKILL.md` | When the skill triggers | Identity, inputs, routing, subagent registry, short workflow, validation gates |
-| 1 | Reference files | Just in time | Detailed templates, examples, checklists, mode guides, external source links |
-| 2 | Subagent files | Only on dispatch | Specialist instructions, contracts, scope, escalation |
-| Script | Script files | Execute, not read, when deterministic work is needed | Validation, conversion, parsing, or other fragile logic |
+| Level | Files | Load When |
+| ----- | ----- | --------- |
+| 0 | `SKILL.md` | Always loaded; identity, inputs, registry, routing, gates |
+| 1 | `references/*.md` | Just in time for templates, checklists, source policy, examples |
+| 2 | `subagents/*.md` | Only when dispatching that subagent |
+| 3 | `scripts/*` | Only when deterministic executable behavior is required |
 
-Keep `SKILL.md` under 500 lines. Put static explanations, large examples, and
-templates in one-hop reference files. Avoid reference chains where a reference
-file requires another reference file before it is useful.
+Keep `SKILL.md` under 500 lines. Move detailed templates, examples, long
+checklists, source inventories, and phase-specific playbooks to `references/`.
 
 ## Portable Directory Shape
 
@@ -22,103 +21,63 @@ file requires another reference file before it is useful.
 skill-name/
 ├── SKILL.md
 ├── subagents/
-│   ├── role-noun.md
-│   └── reviewer.md
+│   └── specialist-name.md
 ├── references/
-│   ├── mode-guide.md
-│   └── templates.md
-├── scripts/
-└── assets/
+│   └── focused-reference.md
+└── scripts/
+    └── optional-deterministic-helper.sh
 ```
-
-Use only the directories the package needs. Paths in generated files are
-relative to the file that contains them and use forward slashes.
 
 ## Frontmatter
 
-Use the lowest common denominator unless a runtime-specific feature is required:
+Use lowest-common-denominator YAML frontmatter:
 
 ```yaml
 ---
 name: "skill-name"
-description: "Third-person description of what the skill does and when to use it."
+description: "Third-person trigger description with use cases."
 ---
 ```
 
-For subagents, `name` matches the subagent file basename and `description`
-states when the orchestrator should delegate to it. Add runtime-specific fields
-only when the target runtime requires them and the source docs have been checked.
-
-## Naming
-
-| Artifact | Convention | Example |
-| -------- | ---------- | ------- |
-| Skill | Gerund preferred; kebab-case; matches containing folder | `reviewing-pull-requests` |
-| Subagent | Role noun; kebab-case; matches file basename | `test-runner` |
-| Reference | Topic or phase name | `quality-checklist.md` |
-| Script | Verb-object name | `validate-contracts.py` |
-
-When improving an existing skill, preserve the existing directory and
-frontmatter name unless the user explicitly asks for a rename.
+The `name` must be lowercase kebab-case and match the containing directory for
+`SKILL.md` or the file basename for a subagent file. Avoid runtime-specific
+permission, tool, model, or import fields unless a target runtime explicitly
+requires them and the package declares the exception.
 
 ## Artifact Selection
 
-| Artifact | Use when |
-| -------- | -------- |
-| Skill | The user needs reusable orchestration, routing, or a domain workflow |
-| Subagent | Work is self-contained and can return a concise result to the orchestrator |
-| Slash command | The workflow is short, explicit, and invoked by name |
-| Reference | Content is static, detailed, example-heavy, or phase-specific |
-| Script | Deterministic validation or transformation is more reliable as code |
+| Choose | When |
+| ------ | ---- |
+| Skill | The workflow needs reusable orchestration, routing, gates, or domain guidance |
+| Subagent | A step can run independently and return a bounded verdict, path, or summary |
+| Slash command | The user needs a short, explicitly invoked workflow with low ambiguity |
+| Reference | Content is static, template-heavy, example-heavy, or phase-specific |
+| Script | Deterministic or fragile logic is safer as executable code than prose |
 
-## Subagent Registry
+Prefer the smallest artifact that changes reliability, portability,
+maintainability, context efficiency, validation, or user comprehension. Do not
+add subagents or references for decoration.
 
-Place the registry near the top of `SKILL.md` for any skill that delegates:
+## Contract Patterns
 
-```markdown
-## Subagent Registry
+Every non-trivial skill states inputs, output contracts, status routing, mutation
+limits if it writes files, and validation expectations. Every subagent states
+inputs, instructions, output format, scope, and escalation statuses.
 
-| Subagent | Path | Purpose |
-| -------- | ---- | ------- |
-| `<role-noun>` | `./subagents/<role-noun>.md` | Returns a concise verdict, summary, or artifact path |
-```
+Use path-based handoffs when artifacts may be large. The orchestrator should
+retain statuses, paths, ids, and concise summaries, not raw file bodies.
 
-The orchestrator uses the registry to choose a subagent without reading every
-subagent definition.
+## Standalone Packaging Rules
 
-## Contracts
+- All bundled links are relative and stay inside the package.
+- Do not link to private repository docs, local absolute paths, sibling package
+  files, or managed mirror locations.
+- External URLs are optional evidence, not required package dependencies.
+- A downloaded copy of the skill directory must be enough to run the workflow.
 
-Every skill and subagent defines explicit inputs and outputs. Prefer passing
-rich source values, such as URLs or file paths, over pre-extracted fragments
-when the receiving artifact can derive what it needs.
+## Runtime Portability
 
-Input table:
-
-```markdown
-| Input | Required | Example |
-| ----- | -------- | ------- |
-| `SOURCE_URL` | Yes | `https://example.com/item/123` |
-```
-
-Output contract:
-
-````markdown
-## Output Format
-
-```markdown
-STATUS: PASS | FAIL | BLOCKED
-Summary:
-Artifacts:
-Next action:
-```
-````
-
-## Standalone Packaging
-
-A downloaded skill cannot rely on source-repository docs, task files, local
-paths, or project-specific configuration. Include required behavior in the
-skill package, accept instance-specific values as inputs, and link external
-websites only as optional just-in-time source material.
-
-Bundled file paths must stay inside the skill package and be written relative
-to the file that contains the reference.
+Portable default: plain Markdown, minimal frontmatter, explicit subagent registry,
+and prose capability descriptions. For runtimes without a listed documentation
+source, use conservative portable syntax, record the assumption, and ask only if
+the user demanded runtime-exact syntax.
