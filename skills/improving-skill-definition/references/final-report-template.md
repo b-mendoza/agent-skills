@@ -1,183 +1,121 @@
 # Final Report Template
 
-Read this file immediately before any user-facing handoff. Lead with the
-decision and include every section for that decision type.
+Load this reference immediately before emitting an approval, changed, no-change,
+blocked, or error handoff.
 
-Gate rows use `not applicable` only when the owning phase was not reached.
-`G_HANDOFF_COMPLETENESS` is always checked inline before emission.
+## Shared Rules
+
+- Return exactly one decision: `approval required`, `changed`, `no change`,
+  `blocked`, or `error`.
+- Include `ignored_preapproval`, `stale_runs`, and `follow_up_findings` when
+  non-empty.
+- Externally-derived gaps are visibly marked with provenance.
+- End with `sections present`, listing each required heading emitted for the
+  chosen decision. This is a declared self-check exception because no later
+  agent exists to validate the final message.
 
 ## Approval Required
 
-Decision: approval required
+Required headings:
 
-Workflow quality verdict:
-- `SOUND` | `NEEDS_REFINEMENT` | `FUNDAMENTALLY_FLAWED`: [plain explanation]
+```markdown
+## Decision
+approval required
 
-Subagent architecture verdict:
-- `APPROPRIATE` | `PARTIALLY_REDUNDANT` | `UNNECESSARY_OR_OVERCOMPLICATED` | `NOT_APPLICABLE`: [affected subagents and recommendation]
+## Audit Summary
+Per-slice statuses, overall verdict, reduced-confidence notes.
 
-Flow diagram verdict:
-- `COHERENT` | `MISSING` | `STALE` | `NEEDS_GENERATE_FLOW_DIAGRAM` | `FLOW_CONTRACT_FLAWED`: [source-of-truth finding]
+## Gap Inventory
+Table: id, severity, provenance, summary, evidence, proposed mutation.
 
-Personality assessment:
-- Summary:
-- `PERSONALITY_VERDICT`: `FITS_PURPOSE` | `NEEDS_REFINEMENT` | `MISSING_BUT_RECOMMENDED` | `UNNECESSARY_OR_OVERBUILT` | `NOT_APPLICABLE` | `CONFLICTS_WITH_SKILL`
-- Checks run:
-- Recommendation:
-- Alternatives: [at least five target-specific options]
+## Personality Decision Needed
+Recommended decision and options: keep, refine, replace, add, remove, demote, skip.
 
-Related-skill references:
-| source | relevance | abstractable ideas | confidence |
-| ------ | --------- | ------------------ | ---------- |
+## Approval Request
+Reply with one personality decision and exactly one of all, none, or listed gap ids.
 
-Priority and status assessment:
-- Priority assessment: `defined` | `partial` | `missing` | `flat`
-- Status-contract assessment:
-- Proposed priority ranking:
+## Constraints And Disclosures
+DIAGRAM_DEPENDENCY, ignored_preapproval, stale_runs, self-improvement caveats.
 
-Outcome matrix:
+## Preserved Run Directory
+HANDOFF_DIR path preserved for resumption.
 
-| owner | success | failure_or_blocked | observable_criteria | no_proceed_condition |
-| ----- | ------- | ------------------ | ------------------- | -------------------- |
+## Sections Present
+```
 
-Parallelism opportunities:
-
-| group | members | independence_evidence | diagram_impact |
-| ----- | ------- | --------------------- | -------------- |
-
-Subagent map:
-
-| subagent | responsibility | downstream_consumer | overlap_risk |
-| -------- | -------------- | ------------------- | ------------ |
-
-Prompt-sufficiency heuristics:
-
-| heuristic | answer | evidence |
-| --------- | ------ | -------- |
-
-Prompt-sufficiency verdict:
-- `skill justified` | `radical simplification` | `prompt demotion`: [falsification evidence]
-
-File-size assessment:
-| file | non-empty lines | limit | verdict |
-| ---- | --------------- | ----- | ------- |
-
-Quality-axis verdicts:
-- Robustness:
-- Determinism:
-- Reliability:
-- Repeatability:
-- Effectiveness:
-
-Gap inventory:
-| id | severity | type | affected files | issue | required fix | quality axes | priority tier | adversarial alternative | diagram delegation |
-| -- | -------- | ---- | -------------- | ----- | ------------ | ------------ | ------------- | ----------------------- | ------------------ |
-
-Mutation plan:
-- [Exact create/edit/delete/no-op plan by path]
-
-Quality gate plan:
-- [Checks the validator must pass]
-
-Approval request:
-- Reply with a personality decision and `all`, `none`, or specific gap ids.
-
-Gates run:
-- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence]
-- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_FLOW_SYNC`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_MANDATE_COVERAGE`: `pass` | `fail` | `not applicable` - [evidence]
+For malformed replies, re-ask once with `Valid gap ids` and `Malformed part`.
 
 ## Changed
 
-Decision: changed
+Required headings:
 
-Material issues:
-- [Issue fixed and why it mattered]
+```markdown
+## Decision
+changed
 
-Files changed:
-- `path/to/file`: [change]
+## Approved Scope
+Personality decision, approved gap ids, repair cycles used.
 
-Validation:
-- [Concrete check and result]
+## Files Changed
+Created, modified, deleted, no-op, and deferred items by gap or finding id.
 
-External resources:
-- [URL fetched or added, or `none`]
+## Validation Evidence
+Lane A checks, baseline diff summary, gate results, `VALIDATION: PASS` path.
 
-Remaining risks or assumptions:
-- [Risk, or `none`]
+## Follow-Up Findings
+Lane B findings not repaired in this run, or `none`.
 
-Gates run:
-- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence]
-- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_FLOW_SYNC`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_MANDATE_COVERAGE`: `pass` | `fail` | `not applicable` - [evidence]
+## Cleanup
+Workflow-created files removed or remaining empty directory note.
+
+## Sections Present
+```
 
 ## No Change
 
-Decision: no change
+Use when all audit slices pass or approved scope is `none`.
 
-Evidence:
-- [Concrete reason the package is already good enough]
-
-Personality assessment:
-- Summary:
-- Verdict:
-
-Optional improvements considered and rejected:
-- [Idea and reason it was not worth changing]
-
-Validation limits:
-- [Limit, or `none`]
-
-Gates run:
-- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence]
-- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_FLOW_SYNC`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_MANDATE_COVERAGE`: `pass` | `fail` | `not applicable` - [evidence]
+Required headings: `Decision`, `Reason`, `Audit Evidence`, `Mandate Coverage`,
+`Ignored Preapproval`, `Cleanup`, `Sections Present`.
 
 ## Blocked
 
-Decision: blocked
+Required headings:
 
-Reason:
-- [Smallest blocker]
+```markdown
+## Decision
+blocked
 
-Question:
-- [Smallest user decision needed]
+## Blocking Reason
+Named phase, status, and smallest recovery action or question.
 
-Validation completed:
-- [Checks already performed]
+## Completed Checks
+What was already audited, edited, or validated.
 
-Resume condition:
-- [Exact user response or external condition]
+## Preserved Evidence
+If mutation_applied=true: baseline path, editor report, validator report, and:
+`diff -r BASELINE_PATH SKILL_PATH`
 
-Gates run:
-- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence]
-- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_FLOW_SYNC`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_MANDATE_COVERAGE`: `pass` | `fail` | `not applicable` - [evidence]
+## Commit Warning
+If evidence was preserved after mutation: do not commit preserved handoff files.
+
+## Follow-Up Findings
+Lane B findings when available.
+
+## Sections Present
+```
+
+If `mutation_applied=false`, state that workflow files were cleaned up.
 
 ## Error
 
-Decision: error
+Required headings: `Decision`, `Failed Condition`, `Known Context`,
+`Recovery Action`, `Preserved Evidence`, `Cleanup`, `Sections Present`.
 
-Failed condition:
-- [Smallest failed condition or tool/runtime error]
+## Personality Alternatives
 
-Known context:
-- [Inputs, status, or files involved]
-
-Recovery:
-- [Smallest next step, or `none`]
-
-Gates run:
-- `G_HANDOFF_COMPLETENESS`: `pass` | `fail` - [evidence]
-- `G_GAP_CLOSURE`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_BEST_PRACTICES_COMPLIANCE`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_FLOW_SYNC`: `pass` | `fail` | `not applicable` - [evidence]
-- `G_MANDATE_COVERAGE`: `pass` | `fail` | `not applicable` - [evidence]
+When personality verdict is negative (`NEEDS_REFINEMENT`,
+`MISSING_BUT_RECOMMENDED`, `UNNECESSARY_OR_OVERBUILT`, or
+`CONFLICTS_WITH_SKILL`), include at least five target-specific alternatives.
+When verdict is `FITS_PURPOSE` or `NOT_APPLICABLE`, include at least two
+considered-and-rejected alternatives with evidence; do not invent padding.
