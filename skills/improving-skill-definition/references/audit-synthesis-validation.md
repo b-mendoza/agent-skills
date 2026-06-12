@@ -1,36 +1,63 @@
 # Audit Synthesis Validation
 
-Load this reference during Phase 7 validation when checking
-`AUDIT_REPORT_PATH`. It defines the observable checks for the audit-synthesis
-schema, source-slice aggregates, and self-improvement advisory enforcement.
+Load this reference when checking the synthesis file before approval, edit, or
+post-edit validation.
 
-## Checks
+## Required Checks
 
-1. Confirm `AUDIT_REPORT_PATH` carries every non-conditional top-level key from
-   `audit-synthesis-schema.md`: `version`, `from`, `to`, `intent`,
-   `audit_status_summary`, `overall_verdict`, `gap_inventory`, `mutation_plan`,
-   `quality_gate_plan`, and `out_of_scope_findings`.
-2. Confirm `to` is a mapping with `to.orchestrator` and `to.phase`.
-3. Load every source report in `AUDIT_SLICE_REPORT_PATHS`. For each aggregate
-   whose source slice ran, first confirm the aggregate key is present in
-   `AUDIT_REPORT_PATH`. For one-to-one aggregates, compare the aggregate with the
-   corresponding source slice field named in `audit-synthesis-schema.md`; if the
-   source field is non-empty, the aggregate must be non-empty. For
-   `no_ops_aggregate`, collect `no_ops` from every audit slice that ran and
-   confirm the aggregate includes every non-empty source `no_ops` contribution.
-4. When `SELF_IMPROVEMENT_RUN=true`, confirm `architecture_advisory.caveat` is
-   non-empty and `architecture_advisory.applies_to_gaps_in_inventory` covers
-   every `gap_inventory` gap id exactly once. Each advisory list entry must be a
-   mapping with `gap_id` matching a `gap_inventory` id and `decision` equal to
-   `SAFE` or `DEFERRED`.
-5. When `SELF_IMPROVEMENT_RUN=true`, load `EDITOR_REPORT_PATH` and confirm no
-   `changes_made[].approved_gap_or_finding` entry names a gap marked
-   `DEFERRED`. No `DEFERRED` gap may appear in `changes_made`; each approved
-   deferred gap must appear exactly once in `deferred_or_rejected_changes` with
-   `approved_gap_or_finding` matching that gap id and a reason, and count as
-   explicitly deferred for this run, not as an unresolved same-run gap.
+| Check | Pass Condition |
+| ----- | -------------- |
+| `schema_keys` | Every required top-level key from `audit-synthesis-schema.md` is present |
+| `to_mapping` | `to.orchestrator` and `to.phase` are present and non-empty |
+| `status_summary` | Every dispatched slice has one status-summary row with report path |
+| `status_route` | Overall verdict follows suffix precedence: `ERROR`, `BLOCKED`, `GAPS_FOUND`, all `PASS` |
+| `gap_ids` | Gap ids are stable, unique, and referenced by mutation and gate rows |
+| `provenance` | Every gap row has `local`, `external`, or `mixed`; external ideas stay marked |
+| `mandate_coverage` | Each mandate is a gap id or evidenced no-op; empty mandates are recorded as vacuous |
+| `aggregates` | Aggregate entries cite their source slice or say `not_applicable` with evidence |
+| `scope` | Mutation plan rows stay inside `MUTATION_LIMITS` or are marked out-of-scope |
+| `diagram_candidate` | Semantic or structural diagram rows require `requires_diagram_candidate: true` |
+| `self_improvement` | When active, every gap is exactly `SAFE` or `DEFERRED` with a reason |
 
-Missing required keys, malformed `to`, missing aggregate keys, missing source
-reports for slices that ran, empty aggregates with non-empty source fields,
-malformed advisory entries, missing or untraceable required deferred entries, or
-editor mutation of a `DEFERRED` gap return `VALIDATION: FAIL`.
+## Slice-To-Synthesis Copy Rule
+
+The orchestrator may hold a full slice report only while copying its structured
+fields into the synthesis. After the synthesis file is written, retain only the
+slice status, path, verdict, gap ids, no-op ids, URLs, and concise summary.
+
+## Self-Improvement Advisory
+
+When the target package is this skill:
+
+```yaml
+architecture_advisory:
+  caveat: "Non-empty warning about same-run contract mutation risk"
+  gaps:
+    - gap_id: "gap-001"
+      safety: "SAFE | DEFERRED"
+      reason: "Why this can or cannot be changed safely now"
+```
+
+The editor may apply only approved `SAFE` gaps. The validator fails Lane A if a
+`DEFERRED` gap appears in the editor-applied change list.
+
+## Lane Assignment
+
+Before user approval, gaps may use `lane: undecided-before-approval`. After edit,
+validator Lane A includes only approved-gap closure, editor-touched files,
+mutation boundaries, diagram delegation, synthesis schema, and self-improvement
+advisory enforcement. Lane B is for pre-existing defects in untouched files and
+is reported as `follow_up_findings` only.
+
+## Failure Reporting
+
+For any failed check, report:
+
+```yaml
+check: "status_route"
+severity: "high|medium|low"
+lane: "A|B|schema-before-approval"
+evidence_path: ".handoffs/.../audit-synthesis-report.yaml"
+detail: "Observed mismatch"
+required_fix: "Smallest repair"
+```
