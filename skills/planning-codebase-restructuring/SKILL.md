@@ -61,6 +61,18 @@ delimited section and still require the same status-prefixed summary. Record
 `DISPATCH_MODE: subagent | inline` in preflight. Read a subagent file only when
 dispatching it.
 
+## Progressive Loading Map
+
+| Need | Load |
+| ---- | ---- |
+| Source-backed method context for DDD, bounded contexts, Screaming Architecture, incremental migration, prompt-injection risk, or architecture tradeoffs | [`./references/external-sources.md`](./references/external-sources.md), then fetch only the smallest relevant URL |
+| Flow-level audit or visual maintenance | [`./flow-diagram.md`](./flow-diagram.md) |
+
+The source index is optional methodology background, not project evidence and
+not the user's `REFERENCE_URL`. Do not pass fetched method pages to
+`architecture-cartographer` or `domain-analyst`; use them only to calibrate or
+cite an already-local decision.
+
 ## How This Skill Works
 
 This skill is unconditionally planning-only. The only permitted writes are the
