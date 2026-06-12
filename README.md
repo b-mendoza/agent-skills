@@ -68,6 +68,9 @@ workflow, the GitHub workflow, or standalone utilities.
   summarizes recent repository changes, risks, validation gaps, and next steps.
 - [`committing-scoped-changes`](skills/committing-scoped-changes/SKILL.md)
   creates reviewable commits from explicit file or folder paths.
+- [`council-of-advisors`](skills/council-of-advisors/SKILL.md) runs a
+  nine-seat decision council and writes a full decision handoff file with a
+  compact recommendation summary.
 - [`diagnosing-root-causes`](skills/diagnosing-root-causes/SKILL.md) identifies
   the root cause of runtime, CI/CD, and user-reported issues from provided
   resources and explains it with evidence-based, traceable, educational
