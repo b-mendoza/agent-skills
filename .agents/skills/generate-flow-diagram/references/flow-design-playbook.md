@@ -1,123 +1,91 @@
 # Flow Design Playbook
 
-> Load this file only when planning or building the diagram content. External
-> articles in `external-sources.md` can provide background, but this file is the
-> runnable local contract.
+Load this file only when planning or building diagram content. It is the local
+contract; external sources are optional background.
 
-## Local Contract
+## Core Rule
 
-Add a node, decision, gate, output, or terminal state whenever a step changes
-authority, evidence quality, risk, scope, completion status, or user control.
-
-For refinement runs, use the existing flow or diagram as the source of truth.
-Preserve current scope, terminology, and terminal states unless the user has
-approved a specific gap fix. When approved scope is `none`, carry the baseline
-forward without adding gap fixes; if a later quality check requires a
-candidate-changing repair, the reviewer escalates for approval.
+Add a node, decision, gate, output, or terminal state only when it changes
+authority, evidence quality, risk, scope, completion status, validation, or user
+control.
 
 ## Required Flow Coverage
 
-Represent these elements when relevant to the process:
-
-| Category | Include |
-| -------- | ------- |
-| Intake and boundary | Start, inputs, role, authority, trust model |
+| Category | Include When Relevant |
+| -------- | --------------------- |
+| Intake and boundary | Start, inputs, role, authority, trust model, mutation limits |
 | Evidence | Source availability, collection, validation, synthesis |
 | Decisions | Work type, risk, scope, readiness, contradictions, missing information |
-| Safety gates | Human confirmation for sensitive actions and mutation limits |
-| Output | Report, comment, artifact, recommendation, or handoff |
-| Terminal states | Ready, needs refinement, blocked, deferred, not actionable, escalated |
+| Safety gates | Human confirmation for sensitive actions and file mutation |
+| Validation | Independent gates, script/tool checks, reviewer verdicts, repair loop |
+| Output | Report, comment, artifact, recommendation, handoff, or written files |
+| Terminal states | Ready, blocked, needs input, needs confirmation, write error, repair limit |
 
 ## Human Gate Contract
 
-For every sensitive action, include:
+For every sensitive action, include the action, target, reason, risk and
+reversibility, safer alternative, explicit approve branch, explicit decline
+branch, and audit/handoff requirement after approval.
 
-- Exact action being considered.
-- Target of the action.
-- Reason for the action.
-- Risk and reversibility.
-- Safer alternative.
-- Explicit approve branch.
-- Explicit decline branch.
-- Audit, record, or handoff requirement after approval.
+In decompose mode, the decomposition plan approval is a mandatory human mutation
+gate unless the user explicitly supplied `DECOMPOSE_PLAN_APPROVAL=auto`. Even
+under `auto`, the plan summary reaches the user and the run report records the
+approval path.
 
 ## Boundary Rules
 
-Use positive framing in the diagram: show what the agent may do, where it must
-ask, and where it must stop. If a workflow is read-only or reviewer-only, route
-mutations to recommendations or to a separate approved workflow.
+Frame diagrams positively: show what the agent may do, where it asks, and where
+it stops. Read-only workflows route mutations to recommendations or separately
+approved workflows. Decompose writes are shown as a batch after all staged
+candidates pass review, never as per-diagram writes.
 
 ## Ambiguity Handling
 
-When a required detail is unknown, represent it as a question, assumption,
-blocker, or unresolved decision. If missing information prevents a meaningful
-diagram, route to a blocked terminal state.
+Represent unknown required details as questions, assumptions, blockers, or
+unresolved decisions. Contradictions, unsupported claims, missing dependencies,
+or out-of-scope actions route to blocker, refinement, research, or escalation
+paths; they are not resolved silently.
 
-Unexpected risks, contradictions, unsupported claims, missing dependencies, or
-out-of-scope actions should route to blocker, refinement, research, or escalation
-paths rather than being resolved silently.
+## Scoped And Decomposed Diagrams
 
-## Category Separation
-
-Keep facts, assumptions, risks, blockers, recommendations, and unresolved
-questions separate in the diagram or supporting text when they appear.
-
-## Scoped and Decomposed Diagrams
-
-Load this section when `DIAGRAM_SCOPE` is `orchestrator` or `subagent`, or for
-a `RUN_MODE=decompose` run. The goal of decomposition is measured by what the
-root no longer contains, not by how many files exist: a fresh orchestrator
-agent should read the root and see only what it needs to decide what to
-dispatch next.
+Load this section when `DIAGRAM_SCOPE` is `orchestrator` or `subagent`, or when
+`RUN_MODE=decompose`.
 
 ### Classification Test
 
-For every node in a whole-package root diagram, ask: *does a fresh orchestrator
-agent need this to decide what to dispatch next?*
+For every node in a whole-package root diagram, ask whether a fresh orchestrator
+agent needs this node to decide what to dispatch next.
 
-- **Yes → orchestration-keep.** Phases, banner emission, human and self gates,
-  dispatch points, orchestration-level status routing, handoffs, repair-loop
-  control, and terminal states stay in the root.
-- **No → subagent-internal-extract.** A subagent's internal steps, internal
-  checks, internal branches, clusters, or report-section enumeration belong in
-  that subagent's localized diagram, tagged with the owning subagent.
+- Yes: `orchestration-keep`. Keep phases, banners, human/self gates, dispatch
+  points, status routing, handoffs, repair-loop control, and terminal states.
+- No: `subagent-internal-extract`. Move subagent internal steps, checks,
+  branches, clusters, report sections, and self-gates into the owning subagent's
+  localized diagram.
 
-### Earned-Decision Contract
+### Earned Localized Diagram
 
-Each subagent earns its own localized diagram or is recorded as a no-op.
+`EARNED` means the subagent has at least one inspection-dependent routeable
+status, a decision branch that changes instructions, a repair or retry loop,
+multiple owned outputs, or a precondition self-gate. Quote evidence.
 
-- **EARNED** when it has at least one of: more than one inspection-dependent
-  routeable status; a decision branch that changes which instructions run; a
-  repair, retry, or re-dispatch loop; routing between multiple owned outputs;
-  or a precondition self-gate that can divert flow.
-- **NO_OP_EVIDENCED** when its instructions are a single linear sequence with
-  one routeable status, or a localized diagram would have fewer than about four
-  nodes. The record must quote a specific instruction, status, or branch as
-  evidence.
+`NO_OP_EVIDENCED` means the subagent is a single linear sequence with one
+routeable status, or a localized diagram would have fewer than about four nodes.
+Quote evidence and do not create a localized diagram.
 
-Either way the root slims: an EARNED subagent's internals move into its
-localized diagram; a NO_OP_EVIDENCED subagent's root node is already a single
-dispatch reference with no step enumeration.
+### Slim Root
 
-### Slimming the Root
+An orchestrator root shows only routing. Each subagent dispatch is one node that
+names the subagent, routeable statuses, and a plain relative link to the
+localized diagram when one exists. It never expands subagent internals.
 
-When authoring a `DIAGRAM_SCOPE=orchestrator` root, drop every
-subagent-internal-extract node and collapse each subagent dispatch to a single
-node. The dispatch node names the subagent and the routeable statuses the
-orchestrator branches on; the surrounding Markdown carries a plain relative
-link to that subagent's localized diagram. Never expand a dispatch into the
-subagent's step-by-step internals.
+### Localized Subagent
 
-### Authoring a Localized Subagent Diagram
+A subagent diagram covers one subagent's entry, internal branches, checks,
+self-gates, status emission, and report write. It references the root by plain
+relative link and does not restate root phases, gates, or sibling internals.
 
-A `DIAGRAM_SCOPE=subagent` diagram covers only the named subagent: its entry,
-internal decision branches, internal checks or clusters, repair or precondition
-self-gates, routeable status emission, and report write. It never restates
-orchestrator phases, banners, gates, or another subagent's internals; it
-references them only by cross-link.
-
-### No Duplication Across Diagrams
+### No Duplication
 
 A step, node, check, or status lives in exactly one diagram of a package. Other
-diagrams reference it by cross-link, never by copy. Use plain relative Markdown
-links for cross-links so they stay portable across runtimes and renderers.
+diagrams cross-link instead of copying. Contradictory or paraphrased copies are
+quality-gate failures.

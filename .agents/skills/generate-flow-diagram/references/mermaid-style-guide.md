@@ -1,29 +1,30 @@
 # Mermaid Style Guide
 
-> Load this file when writing or repairing Mermaid. If current syntax details are
-> uncertain, fetch the Mermaid source listed in `external-sources.md`.
+Load this file when writing or repairing Mermaid. If syntax details are
+uncertain, fetch the official Mermaid flowchart documentation listed in
+`external-sources.md`.
 
 ## Local Rules
 
 - Default to `flowchart TD`; use `LR` only when a horizontal lifecycle is clearer.
-- Prefer short uppercase node IDs and readable labels, such as `VERIFY_CLAIMS`.
-- Shape starts and terminals as rounded nodes, process steps as rectangles, and decisions as diamonds.
-- Label decision edges explicitly: `yes`, `no`, `approved`, `declined`, `blocked`, or `needs research`.
-- Prefer one edge per line when the flow is complex.
+- Prefer short uppercase node IDs and readable labels.
+- Shape starts and terminals as rounded nodes, process steps as rectangles, and
+  decisions as diamonds.
+- Label decision edges explicitly: `yes`, `no`, `approved`, `declined`,
+  `blocked`, or `needs input`.
+- Use one edge per line in complex flows.
 - Quote labels with punctuation that may confuse Mermaid parsing.
-- Avoid node IDs that accidentally start a special edge form, such as `o` or `x` immediately after an edge marker.
 - Avoid lowercase `end` as a node label.
-- Assign classes only to nodes that exist; avoid duplicate conflicting node definitions.
-- During repair or refinement, change the smallest Mermaid surface that satisfies the failed check and approved scope.
+- Avoid node IDs that accidentally create special edge markers after arrows.
+- Assign classes only to nodes that exist.
+- During repair or refinement, change the smallest Mermaid surface that fixes the
+  failed check and stays inside approved scope.
 
 ## Class Palette
 
-Use a compact palette like this when styling helps readability:
-
 ```mermaid
-classDef guard fill:#fff3cd,stroke:#856404,color:#000;
-classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
 classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
+classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
 classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;
 classDef output fill:#e8f5e9,stroke:#2e7d32,color:#000;
 classDef success fill:#e8f5e9,stroke:#2e7d32,color:#000;
@@ -48,6 +49,5 @@ flowchart TD
   class VALIDATE check;
   class REPORT output;
   class DONE success;
-  class REFINE refine;
-  class BLOCKED stop;
+  class REFINE,BLOCKED stop;
 ```

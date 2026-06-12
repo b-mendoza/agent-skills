@@ -1,51 +1,56 @@
 # Quality Gate Checklist
 
-> Load this file only when reviewing a candidate diagram or preparing targeted
-> repair feedback. Failed checks guide the builder repair; the full reviewer
-> gate runs again after each repaired candidate.
+Load this file only when reviewing a candidate diagram or preparing targeted
+repair feedback. The producer's self-report is not evidence; the reviewer gate
+must inspect the candidate.
 
 ## Review Checks
 
 | Check | Pass Condition |
 | ----- | -------------- |
-| Mermaid syntax | One fenced `mermaid` block; valid `flowchart` declaration; balanced brackets and quotes; no malformed arrows |
-| Classes | Class assignments target only existing nodes; `classDef` ordering does not determine validity |
-| Input normalization | Candidate reflects `PROCESS_INPUTS` derived from the supplied process spec or refinement baseline; unknowns are assumptions, questions, or blockers |
+| Mermaid syntax | `scripts/check-mermaid.sh` parsed every fenced Mermaid block when parser available; otherwise inspection records `inspected-only`; invalid parser output fails |
+| Classes | Class assignments target existing nodes only |
+| Input normalization | Candidate reflects `PROCESS_INPUTS`; unknowns are assumptions, questions, or blockers |
 | Flow coverage | Intake, boundary, validation, synthesis, decisions, outputs, and terminal states are represented when relevant |
-| Human gates | Every sensitive action has approve and decline paths plus audit or handoff handling |
-| Branch integrity | Every branch has a destination; every decision has named outcomes |
-| Validation flow | Validation checks feed synthesis, readiness, blocker, refinement, research, or escalation paths |
-| Grounding | Unsupported facts are not presented as confirmed; assumptions and unknowns are labeled |
-| Refinement approval | Refinement output includes only user-approved gap fixes |
-| Output contract | Final Markdown has title, boundary paragraph, one Mermaid diagram, and optional templates/rules only when useful |
+| Human gates | Sensitive actions and file mutations have approve and decline paths plus audit or handoff handling |
+| Branch integrity | Every branch has a destination and every decision has named outcomes |
+| Validation flow | Validation checks feed synthesis, readiness, blocker, refinement, research, escalation, or repair |
+| Terminal states | Completion and failure states match the workflow contract |
+| Grounding | Unsupported facts are not presented as confirmed |
+| Refinement approval | Refinement output includes only inventory-validated approved gap fixes; `none` preserves the baseline |
+| Output contract | Artifact has title, boundary paragraph, one Mermaid diagram unless explicitly expanded, and optional sections only when useful |
+| Run report | Completed runs include mode, assumptions, repair cycles, validation method, dispatch method, and sources fetched |
 
 ## Scope Checks
 
-These three checks apply only when `DIAGRAM_SCOPE` is `orchestrator` or
-`subagent`, or for a `RUN_MODE=decompose` run. They are inert for
-`DIAGRAM_SCOPE=whole`, so default whole-diagram verdicts are unchanged.
+Apply these when `DIAGRAM_SCOPE` is `orchestrator` or `subagent`, or when
+`RUN_MODE=decompose`.
 
 | Check | Pass Condition |
 | ----- | -------------- |
-| Scope separation | A `DIAGRAM_SCOPE=orchestrator` diagram contains no subagent-internal step enumeration; a `DIAGRAM_SCOPE=subagent` diagram does not restate orchestration phases, gates, banners, or other subagents |
-| No duplication | No node label, step description, check enumeration, or status list appears in more than one diagram of the same package; cross-links replace copies. Requires `OTHER_DIAGRAM_DIGEST` to compare against the root and sibling diagrams; a missing digest blocks scoped/decompose review |
-| Dispatch collapse | In an orchestrator diagram, each subagent dispatch is a single node that cross-links the localized diagram, not a step-by-step expansion of the subagent's internals |
-
-Fetch current Mermaid documentation from `external-sources.md` only when a syntax
-uncertainty affects the verdict.
+| Scope separation | Orchestrator diagrams contain no subagent internals; subagent diagrams do not restate root phases, gates, banners, or siblings |
+| No duplication | No node label, step, check, or status appears in more than one diagram of the package; `OTHER_DIAGRAM_DIGEST` is present or explicit `none` |
+| Dispatch collapse | Each orchestrator dispatch is one cross-linked node, not a step-by-step subagent expansion |
+| Mutation limits | Decompose write and load-wiring assumptions stay inside `MUTATION_LIMITS` |
+| Staged write gate | Decompose writes are planned as one batch after every candidate passes, not per-diagram writes |
 
 ## Fix Loop
 
 1. Return `REVIEW: FAIL` with specific failed checks.
-2. Send only those failed checks to the builder as `REVIEW_FEEDBACK`.
-3. Consume the repair builder return as `BUILD_VERDICT`.
-4. On `BUILD: PASS`, run the full `diagram-quality-reviewer` checklist again against the updated candidate.
-5. On `BUILD: NEEDS_INPUT` or `BUILD: ERROR`, stop with the builder's `Failure Details`.
-6. Stop after three fix cycles for the same candidate.
-7. Escalate to the user if missing information or approval blocks a valid diagram.
+2. Send only failed checks to `diagram-builder` as `REVIEW_FEEDBACK`.
+3. Consume `BUILD_VERDICT`.
+4. On `BUILD: PASS`, rerun the full checklist against the updated candidate.
+5. Stop after three repair cycles for the same candidate.
+6. Escalate when missing information or approval blocks a valid diagram.
 
 ## Failure Severity
 
-- `high`: invalid Mermaid, missing human gate for sensitive action, unapproved refinement change, missing terminal states, an out-of-scope node in a scoped diagram, or content duplicated across diagrams of the same package. Contradictory or paraphrased copies of the same step, check, or status across diagrams are the highest severity.
-- `medium`: disconnected validation, unclear branch labels, unsupported assumptions, missing output contract element, or a dispatch node expanded into subagent internals in an orchestrator diagram.
-- `low`: style inconsistency, verbose labels, or optional template mismatch.
+- `high`: invalid Mermaid, missing human gate for sensitive action or mutation,
+  unapproved refinement change, out-of-scope scoped content, duplicated content
+  across diagrams, per-diagram writes in decompose, or missing run-report method
+  for validity.
+- `medium`: disconnected validation, unclear branches, unsupported assumptions,
+  missing output-contract element, unauditable node counts, or dispatch expanded
+  into internals in an orchestrator diagram.
+- `low`: style inconsistency, verbose labels, optional template mismatch, or
+  incomplete follow-up wording that does not affect safety.
