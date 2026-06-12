@@ -1,12 +1,12 @@
 # Template Skeleton
 
-> Read this file only during final assembly. It is a checklist, not a command
-> to emit every tag. For tag rationale or vendor-specific XML guidance, load
-> `web-resource-index.md` and fetch at most one targeted URL when needed and
-> permitted.
+> Load this file only during final assembly. It is a checklist, not a command
+> to emit every tag. For external XML rationale, use `web-resource-index.md`;
+> subagents request rationale with `FETCH_REQUESTED`, and only the orchestrator
+> may fetch.
 
-Assemble the final XML from prior pass outputs. Include only sections that
-change behavior.
+Assemble the final XML from named pass outputs. Include only sections that
+change behavior and pass the removal test.
 
 ## Section Order
 
@@ -97,9 +97,10 @@ change behavior.
 - Preserve user terminology exactly unless the user requested renaming.
 - Use specific tag names when generic names would hide intent.
 - Use attributes for metadata instead of prose clutter.
-- Repeat the most important rule at the phase or step where violation is likely.
+- Repeat the most important rule where violation is likely.
 - Prefer separate prompt versions for substantially different modes.
-- Run the removal test before delivery.
+- Maintain a removal-test table and remove tags without a defensible behavior
+  change.
 
 ## Common Deviations
 
@@ -108,4 +109,4 @@ change behavior.
 | Short one-shot prompt | Use `<task>`, `<scope>`, `<output>`, and `<success_criteria>` only |
 | Interview-style prompt | Add `<gate>` tags for turn-taking |
 | Autonomous prompt | Add `<autonomy_guardrails>`, traceability, and defer handling |
-| Prompt suite | Keep shared philosophy and constraints consistent across prompts |
+| Prompt suite | Keep shared philosophy, terminology, constraints, and output conventions consistent |
