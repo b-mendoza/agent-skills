@@ -1,204 +1,266 @@
 # Output Templates
 
-Read this file only when assembling copy-ready files or formatting the final
-response. Replace every placeholder in generated output.
+Load this reference when assembling files, collection manifests, resume packets,
+zero-output reports, or final deliveries.
 
 ## Skill Template
 
-````markdown
+```markdown
 ---
-name: "<skill-name>"
-description: "<Third-person trigger description: what this skill does and when to use it.>"
+name: "skill-name"
+description: "Third-person trigger description."
 ---
 
-# <Skill Title>
+# Skill Title
 
-You are <identity>. <One short paragraph explaining what the skill does, how it
-reasons, and what it delegates.>
+Purpose paragraph and operating posture.
 
 ## Inputs
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `<INPUT_NAME>` | Yes | `<example>` |
 
-## Progressive Loading Map
+## Workflow Overview
 
-| Need | Load |
-| ---- | ---- |
-| <decision or phase> | `./references/<file>.md` |
+| Phase | Mode | Result |
+| ----- | ---- | ------ |
 
 ## Subagent Registry
 
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
-| `<subagent-name>` | `./subagents/<subagent-name>.md` | <purpose> |
 
-## Workflow
+## How This Skill Works
 
-1. <Clarify or derive inputs.>
-2. <Load only the reference needed for the current phase.>
-3. <Dispatch the right subagent with explicit inputs.>
-4. <Synthesize concise results.>
-5. <Validate, fix targeted failures, and deliver.>
+Core behavior, trust boundaries, and mutation boundaries.
+
+## Execution
+
+1. Step-by-step routing instructions.
 
 ## Output Contract
 
-```markdown
-STATUS: PASS | FAIL | BLOCKED
-Summary:
-Artifacts:
-Next action:
-```
-
-## Validation
-
-- <Gate 1>
-- <Gate 2>
-- <Gate 3>
+Returned shape and statuses.
 
 ## Example
 
-Input: <realistic input>
-
-1. <Dispatch or decision>
-2. <Subagent summary>
-3. <Orchestrator action>
-````
-
-Omit `Subagent Registry` only when the skill has no delegated execution.
+One short dispatch round trip.
+```
 
 ## Subagent Template
 
-````markdown
+```markdown
 ---
-name: "<role-noun>"
-description: "<What this subagent does and when the orchestrator should use it.>"
+name: "subagent-name"
+description: "Third-person role and dispatch trigger."
 ---
 
-# <Role Title>
+# Subagent Title
 
-You are a <role> subagent. Your job is to <specific work> and return <concise
-handoff> to the orchestrator.
+Mental model and bounded job.
 
 ## Inputs
 
 | Input | Required | Example |
 | ----- | -------- | ------- |
-| `<INPUT_NAME>` | Yes | `<example>` |
 
 ## Instructions
 
-1. <Step 1>
-2. <Step 2>
-3. <Validate output before returning.>
+1. Ordered work steps.
 
 ## Output Format
 
-```markdown
-STATUS: PASS | FAIL | BLOCKED | ERROR
-Summary:
-Artifacts:
-Findings:
-Next action:
-```
+Structured status and fields.
 
 ## Scope
 
-Your job is to <allowed work>. Return a concise result and avoid unrelated
-redesign.
+Allow-list of work the subagent may do.
 
 ## Escalation
 
-| Status | Meaning |
-| ------ | ------- |
-| `FAIL` | Completed with fixable issues |
-| `BLOCKED` | Missing input or unavailable dependency |
-| `ERROR` | Unexpected tool, parse, or environment failure |
-````
+| Status | Use When |
+| ------ | -------- |
+```
 
 ## Reference Template
 
 ```markdown
-# <Reference Title>
+# Reference Title
 
-Read this file when <specific trigger>. Keep this reference one hop from
-`SKILL.md`.
+Load this reference when <specific phase or decision>.
 
-## Contents
+## Section
 
-- <Section 1>
-- <Section 2>
-- <Section 3>
-
-## <Section 1>
-
-<Detailed static guidance, examples, or checklist.>
+Focused reusable guidance, template, checklist, or examples.
 ```
 
-## Per-Step Response Template
+## Slash Command Template
 
-````markdown
-## Analysis
+```markdown
+---
+name: "command-name"
+description: "Imperative command description and trigger."
+---
+
+# Command Name
+
+Run this command when the user explicitly asks to <action>.
+
+## Inputs
+
+- `INPUT_NAME`: required or optional; example.
+
+## Procedure
+
+1. Validate inputs.
+2. Run the bounded action.
+3. Return the defined output.
+
+## Output
+
+Copy-ready response or artifact path.
+```
+
+## Script Template
+
+```text
+scripts/script-name.sh
+```
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Parse arguments, validate paths, perform deterministic work, print results.
+```
+
+Script documentation template:
+
+```markdown
+## Script: `scripts/script-name.sh`
+
 - Purpose:
 - Inputs:
 - Outputs:
-- Artifact type:
-- Rationale:
 - Failure modes:
+- Consumer invocation:
+```
+
+## Per-Item Response
+
+```markdown
+ARCHITECTURE: PASS | NEEDS_INPUT | BLOCKED | ERROR
+
+## Staged Files
+| Path | Purpose | Summary |
+| ---- | ------- | ------- |
+
+## Contract Summary
+- Inputs:
+- Outputs:
+- Statuses:
+- Mutation boundary:
+```
+
+## Collection Manifest
+
+```yaml
+version: 1
+items:
+  - id: item-001
+    artifact_type: subagent
+    status: staged
+    paths:
+      - staging/package/subagents/example.md
+    registry_rows:
+      - subagent: example
+        path: ./subagents/example.md
+        purpose: Example bounded work
+    contract_summary:
+      inputs: []
+      outputs: []
+      statuses: []
+    validation_note: "Paths are package-relative."
+    handoff_summary: "Five lines maximum."
+repair_cycle: 0
+assumptions: []
+```
+
+## Resume Packet
+
+```yaml
+version: 1
+run_state:
+  classification: create
+  mode: generation
+  target_runtime: portable Agent Skills
+  output_scope: entire skill
+work_item_queue: []
+collection_manifest_path_or_summary: "paths and summaries only"
+completed_statuses: []
+repair_cycle: 0
+pending_questions:
+  - id: q1
+    question: "Which runtime requires exact syntax?"
+resume_from: "queue-loop"
+```
+
+## Zero-Output Report
+
+```markdown
+state: ready
+result: no-artifacts-required
+
+## Classification
+- Classification:
+- Mode:
+- Target runtime:
+
+## Scope Derivation
+- Requested scope:
+- Derived scope:
+- Assumption:
+
+## Why No Artifacts Are Needed
+- Reason:
+
+## Suggested Next Action
+- Next action:
+```
+
+## Final Delivery
+
+````markdown
+state: ready | blocked | error
+
+## Analysis
+- Purpose:
+- Classification:
+- Output scope:
+- Artifact choices:
 - Progressive disclosure plan:
 
 ## Files
-`<relative/path>`
+| Path | Purpose |
+| ---- | ------- |
+
 ```markdown
-<complete file content>
+<complete file content emitted once at final delivery>
 ```
 
 ## Integration Notes
-- <How this connects to the workflow>
-- <Which references load when>
-- <Subagent registry rows or command invocation>
+- How files fit together:
+- References loaded just in time:
+- Dispatch method:
+- External URLs fetched:
+- Assumptions:
+
+## Findings Resolution
+| Finding | File | Resolution | Notes |
+| ------- | ---- | ---------- | ----- |
 
 ## Validation
-- <Review verdict>
-- <Fix cycles used>
-- <Residual risks>
+- Final review verdict:
+- Repair cycles used:
+- Remaining risks:
 ````
-
-## Collection Manifest Template
-
-Use this when the orchestrator aggregates one or more `ARCHITECTURE: PASS`
-results before synthesis.
-
-```markdown
-## Collection Manifest
-
-| Item | Artifact type | Status | Files | Registry rows | Contract summary | Validation note |
-| ---- | ------------- | ------ | ----- | ------------- | ---------------- | --------------- |
-| <item name> | <skill/subagent/reference/script/asset> | ARCHITECTURE: PASS | `<path>` | <rows or none> | <inputs/outputs/handoff> | <self-check result> |
-
-## Handoff Summary
-- Generated files:
-- References loaded:
-- External docs fetched:
-- Assumptions:
-- Remaining risks:
-```
-
-## Review Report Template
-
-```markdown
-REVIEW: PASS | FAIL | BLOCKED | ERROR
-
-## Findings
-| Severity | File | Issue | Required Fix |
-| -------- | ---- | ----- | ------------ |
-
-## Summary
-- Verdict:
-- Files under review:
-- Runtime constraints:
-- Validation summary:
-- Fix cycles recommended:
-- Remaining risks:
-```
