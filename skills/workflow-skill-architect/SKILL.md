@@ -111,6 +111,8 @@ Load only references justified by the current phase, recording the reason for
 each load. Fetch external sources only when current runtime syntax or platform
 behavior changes a concrete decision.
 
+Flow diagram: [`flow-diagram.md`](./flow-diagram.md)
+
 ## Execution
 
 1. If `RESUME_PACKET` is present, restore `RUN_STATE`, `WORK_ITEM_QUEUE`,
