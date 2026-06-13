@@ -1,45 +1,42 @@
 # Test Value Review Template
 
+Fill this fenced block exactly enough for the orchestrator to route. Allowed statuses: `PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR`.
+
 ```markdown
-# Test Value Review
+## Test Value Review
 
-Status: <PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR>
+Status: PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR
 
-## Summary
-
-- Targets reviewed: <paths>
-- Goal fit: <summary>
-- Instruction-like content risk: <quoted risk or none>
-
-## High-Value Behaviors
-
-- <behavior | category | current coverage none/weak/good | current test or gap>
+## Empty Target Note
+- none, or evidence that resolved files contain zero test functions:
 
 ## Low-Value Candidates
+- shown N of M:
+- overflow file path or none:
+- `file::test_name | category | reason | suggested action`:
 
-- <file::test_name | category | reason | proposed action>
+## High-Value Behaviors
+- shown N of M:
+- overflow file path or none:
+- `behavior | category | current named test | coverage rating none/weak/good | notes`:
 
 ## Minimal Harness Proposal
-
-- Keep: <items>
-- Rewrite: <items>
-- Delete: <items>
-- Consolidate: <items>
-- Add: <items>
+- keep:
+- rewrite:
+- delete:
+- consolidate:
+- add:
 
 ## Review Routing
+- API/security route `required | optional | not needed` and reason:
+- Maintainability route `required | optional | not needed` and reason:
 
-- API/security review: <required | optional | not needed> because <reason>
-- Maintainability review: <required | optional | not needed> because <reason>
-
-## Sources
-
-- Fetched URLs: <urls or none>
-- Source gaps: <gaps or none>
+## Sources And Risks
+- fetched URLs and influenced decisions:
+- reachability gaps:
+- instruction-like content risk line or none:
 
 ## Non-PASS Detail
-
-- Reason: <required for non-PASS>
-- Decision needed: <question or none>
-- Overflow file: <path or none>
+- reason:
+- smallest decision needed or none:
 ```
