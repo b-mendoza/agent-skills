@@ -1,55 +1,29 @@
 # Repair Protocol
 
-Load only after changed-file validation fails or the conformance check reports a
-repairable mismatch.
+Load only after changed-file validation fails or conformance reports a repairable mismatch.
 
 ## Budget
 
-`REPAIR_TOTAL` counts every repair attempt in the run across all failure
-signatures: test edit redispatches, validation retries, and first-error retries.
-Maximum: three. Increment immediately before each attempt. Never reset for a new
-failure signature.
+`REPAIR_TOTAL` counts every repair attempt and every dispatch retry in the run. Maximum three. Increment immediately before each attempt. Never reset.
 
 ## Cause-First Routing
 
-| Likely cause | Route |
-| ------------ | ----- |
-| `test refactor regression` | If budget remains, repair through `test-refactorer`; re-enter conformance |
-| `production bug exposed` | Ask for dual authority if a production fix is in scope; declined or out of scope becomes `COMPLETE_PRODUCTION_BUG_EXPOSED` |
-| `pre-existing failure` | `VALIDATION_FAILED_AFTER_REPAIR` with raw-log path and risk summary |
-| `unknown` and retry plausible | If budget remains, retry validation once with same guarded command |
-| `unknown` and retry not plausible | `VALIDATION_FAILED_AFTER_REPAIR` |
-| Conformance mismatch | If budget remains, repair through `test-refactorer`; user-decision mismatches ask and resume at synthesis |
+Failure causes are assigned by baseline diff.
 
-Budget exhausted always routes to `VALIDATION_FAILED_AFTER_REPAIR` unless a
-production bug has been identified, in which case use
-`COMPLETE_PRODUCTION_BUG_EXPOSED`.
+| Cause | Route |
+| ----- | ----- |
+| `test refactor regression` | If budget remains, repair via `test-refactorer`, then re-enter conformance |
+| `production bug exposed` | Ask dual authority when in scope; declined or out of scope returns `COMPLETE_PRODUCTION_BUG_EXPOSED` |
+| `pre-existing failure` with changed files | Ask keep-or-revert when answer channel exists, then `VALIDATION_FAILED` with raw-log path, workspace state, and revert record |
+| `empty-selection` | Repair command selection once if budget remains, else `VALIDATION_FAILED` |
+| `unknown` retry plausible | One validation retry with the same guarded command if budget remains |
+| `unknown` not retry plausible | `VALIDATION_FAILED` |
+| Budget exhausted | `VALIDATION_FAILED`, or `COMPLETE_PRODUCTION_BUG_EXPOSED` when a production bug was identified |
 
-## Repair Packet Contract
+## Repair Packets
 
-Repair dispatch packets satisfy the receiving subagent's full required-input
-contract. Do not pass only a failure summary.
+Repair packets satisfy the receiving subagent's full input contract. Refactor repair packets include the approved plan, reports, authority records, `VALIDATION_FAILURE`, and `REPAIR_TOTAL`. Validator retry packets include validator inputs plus the confirmed guarded command.
 
-For `test-refactorer`, include:
+## Re-Entry
 
-| Input | Requirement |
-| ----- | ----------- |
-| `RESOLVED_TARGET_SET` | Required |
-| `MINIMAL_HARNESS_DECISION` | Required, approved or amended plan |
-| `TEST_VALUE_REVIEW` | Required |
-| `OTHER_REPORTS` | Optional compact API/security and maintainability reports |
-| `PRODUCTION_EDIT_APPROVAL` | Required, `none` or approved file list |
-| `SCOPE_LIMITS` | Optional |
-| `VALIDATION_FAILURE` | Required during repair |
-| `REPAIR_TOTAL` | Required during repair |
-| `REPORT_TEMPLATE_PATH` | Required |
-
-For `test-validator`, include resolved targets, changed files or `none`, command
-candidates, scope limits, template path, raw-log destination guidance, and the
-confirmed guarded command when retrying.
-
-## Re-entry Points
-
-Test-edit repairs re-enter the conformance check. Validation retries re-enter
-validation status routing. First-error retries return to the exact dispatch that
-errored.
+Test-edit repairs re-enter conformance. Validation retries and command-selection fixes re-enter validation routing. Dispatch retries re-enter the exact dispatch that errored per the universal dispatch-retry rule; there is no other error-retry mechanism.
