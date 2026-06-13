@@ -7,7 +7,7 @@ across OpenCode and Claude Code.
 
 ## What is in this repository
 
-- [`skills/`](skills/) contains 31 first-party skills. Each skill has its own
+- [`skills/`](skills/) contains 32 first-party skills. Each skill has its own
   `SKILL.md`, with `subagents/` and `references/` added where needed.
 - [`docs/`](docs/) contains workflow notes, design specs, and project-specific
   planning documents.
@@ -83,7 +83,8 @@ workflow, the GitHub workflow, or standalone utilities.
 - [`improving-skill-definition`](skills/improving-skill-definition/SKILL.md)
   improves an existing skill package when inspection finds a material issue.
 - [`improving-test-suites`](skills/improving-test-suites/SKILL.md) improves test
-  files with focused, behavior-oriented test coverage.
+  suites into minimal behavior-focused harnesses with baseline validation,
+  approval gates, independent conformance checks, and bounded repair.
 - [`planning-codebase-restructuring`](skills/planning-codebase-restructuring/SKILL.md)
   analyzes repository architecture and produces an evidence-backed
   restructuring plan aligned with Domain-Driven Design and Screaming
