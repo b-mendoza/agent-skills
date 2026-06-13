@@ -1,31 +1,34 @@
 # Test Maintainability Review Template
 
+Fill this fenced block exactly enough for the orchestrator to route. Allowed statuses: `PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR`.
+
 ```markdown
-# Test Maintainability Review
+## Test Maintainability Review
 
-Status: <PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR>
+Status: PASS | BLOCKED | NEEDS_CLARIFICATION | ERROR
 
-## Summary
+## Findings
+- shown N of M:
+- overflow file path or none:
+- `file::test_or_helper | issue | recommendation | behavior preserved`:
 
-- Route reason: <reason>
-- Instruction-like content risk: <quoted risk or none>
+## Helper Ownership
+- shown N of M:
+- overflow file path or none:
+- `helper | directly related/shared/unknown | repository-wide-search evidence | edit implication`:
 
-## Maintainability Findings
+## Harness Shape Recommendations
+- fixtures:
+- mocks/stubs:
+- duplication/parametrization:
+- readability/setup:
 
-- <file::test_name or helper | fixture/mock/duplication/readability/parametrization issue | behavior preserved | recommended action>
-
-## Helper Ownership Notes
-
-- <helper path | directly related/shared/unknown | evidence>
-
-## Sources
-
-- Fetched URLs: <urls or none>
-- Source gaps: <gaps or none>
+## Source Influence
+- fetched URLs and influenced decisions:
+- reachability gaps:
+- instruction-like content risk line or none:
 
 ## Non-PASS Detail
-
-- Reason: <required for non-PASS>
-- Decision needed: <question or none>
-- Overflow file: <path or none>
+- reason:
+- smallest decision needed or none:
 ```
