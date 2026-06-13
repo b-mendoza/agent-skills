@@ -1,74 +1,72 @@
-# Git Evidence Handoff Template
+# Git Evidence Handoff
 
-> Load this file only when `git-evidence-collector` formats its final result.
-> Return summaries and command names, not raw diffs or full command output.
-
-## Template
-
-```text
-GIT_EVIDENCE: PASS | NOT_GIT | PATH_ERROR | NEEDS_CONTEXT | ERROR
-Project path: <path>
-Branch: <branch and upstream/ahead/behind if known>
-Working tree: <clean or staged/unstaged/untracked summary>
-Base branch: <resolved base, not found, or not needed>
-Base comparison: <summary or not run with reason>
-Recent commits reviewed:
-- <sha/title and relevance>
-Changed-file groups:
-- <area>: <paths or counts>
-Diff stats:
-- Working tree: <summary>
-- Staged: <summary>
-- Base delta: <summary>
-Preliminary themes:
-- <theme and supporting paths>
-Risk signals:
-- <signal, evidence, why it may matter>
-Test signals:
-- <tests added/changed/removed/missing signals>
-Dependency/config/tooling signals:
-- <package, lockfile, env, CI, Docker, tooling, or none>
-Context limitations:
-- <limitation or none>
-Commands run:
-- <command names only>
-Reason: none | <why status is not PASS>
-Decision needed: none | <smallest orchestrator action>
-```
+The collector returns one compact `GIT_EVIDENCE` block. Raw command output,
+raw diffs, secrets, and large file bodies stay out of the handoff.
 
 ## Status Rules
 
-| Status | Use when |
-| ------ | -------- |
-| `PASS` | Enough Git evidence exists for snapshot writing. |
-| `NOT_GIT` | The target is outside a Git worktree. |
-| `PATH_ERROR` | `PROJECT_PATH` is missing or inaccessible. |
-| `NEEDS_CONTEXT` | One user decision is required before the evidence would be trustworthy. |
-| `ERROR` | An unexpected command or filesystem failure occurred. |
+| Status | Meaning |
+| ------ | ------- |
+| `GIT_EVIDENCE: PASS` | Evidence was collected or a quiet/abnormal repo state was summarized as fact |
+| `GIT_EVIDENCE: NOT_GIT` | Path exists but is not a Git worktree |
+| `GIT_EVIDENCE: PATH_ERROR` | Path missing or unreadable |
+| `GIT_EVIDENCE: NEEDS_CONTEXT` | Exactly one user decision is required |
+| `GIT_EVIDENCE: ERROR` | Unexpected Git or local inspection failure |
 
-For non-`PASS` statuses, keep every field terse and use `Decision needed` for
-the smallest concrete recovery action. Do not include raw command output.
+Repo states `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`,
+`shallow`, and `conflicted` are `PASS`-compatible unless a command failure
+prevents a truthful handoff.
 
-## Example
+## Handoff Fields
 
-```text
+```markdown
+GIT_EVIDENCE: <PASS | NOT_GIT | PATH_ERROR | NEEDS_CONTEXT | ERROR>
+Project path: <path>
+Branch/upstream: <current branch, detached HEAD, unborn branch, upstream>
+Repo state: <normal | unborn-branch | detached-HEAD | operation-in-progress(op) | shallow | conflicted>
+Evidence window: <working tree + BASE..HEAD, or working tree + last 15 first-parent commits; commit counts; truncations>
+Working tree: <clean, or staged/unstaged/untracked counts and groups>
+Base branch: <resolved ref or none; reason>
+Base comparison: <ahead/behind/diverged/unavailable summary>
+Recent commits reviewed: <up to 10 title hashes, plus +N more>
+Changed-file groups: <area groups with representative paths or counts>
+Diff stats: <compact files changed/insertions/deletions/renames/mode changes>
+Preliminary themes: <evidence-only themes; no final severity>
+Risk signals: <specific signal plus evidence pointer; no speculation>
+Test signals: <test files, CI changes, coverage signals, removed tests>
+Dependency/config/tooling signals: <manifests, lockfiles, env, build, CI>
+Context limitations: <truncation, shallow clone, no base, unreadable file, none>
+Commands run: <full sanitized command lines, no raw output>
+Reason: <one line>
+Decision needed: <one user decision or none>
+```
+
+## Evidence Window
+
+Recent means working tree state plus commits in `BASE..HEAD` when a base
+resolves; otherwise the last 15 first-parent commits of `HEAD`. Hard cap: 30
+commits. List at most 10 commits and state any remainder count.
+
+## Quiet-State Example
+
+```markdown
 GIT_EVIDENCE: PASS
 Project path: /repo/app
-Branch: feature/auth-refresh, ahead 3 of origin/main
-Working tree: 2 unstaged files, 1 untracked test file
-Base branch: origin/main
-Base comparison: 8 files changed, mostly auth middleware and tests
-Recent commits reviewed:
-- a1b2c3d Add token refresh middleware
-Changed-file groups:
-- Source: 2 auth files
-- Tests: 1 auth test
-Risk signals:
-- Security boundary touched: refresh-token behavior changed.
-Context limitations:
-- Full auth package not inspected.
-Commands run:
-- git status, git log, git diff, git show
-Reason: none
+Branch/upstream: main -> origin/main
+Repo state: normal
+Evidence window: working tree + origin/main..HEAD; 0 commits; no truncation
+Working tree: clean; staged 0, unstaged 0, untracked 0
+Base branch: origin/main; resolved from upstream
+Base comparison: no ahead/behind delta in reviewed window
+Recent commits reviewed: none
+Changed-file groups: none
+Diff stats: 0 files changed
+Preliminary themes: quiet state; no recent changes in window
+Risk signals: none from local evidence
+Test signals: no test changes in window
+Dependency/config/tooling signals: no changes in window
+Context limitations: none
+Commands run: git status --short --branch; git log --oneline --first-parent -n 15 origin/main..HEAD; git diff --stat origin/main...HEAD
+Reason: clean tree and empty evidence window
 Decision needed: none
 ```
