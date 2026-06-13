@@ -83,19 +83,19 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/recency-guard/SKILL.md",
-      "computedHash": "c1d6ba7d630503dc1c8115bebe95ec8523a7f4d7547d83e769893fc2d558fc76"
+      "computedHash": "e846a8b726c30d71331176bc9fcc592af67a2c953124e9a7846f3361d61bb8de"
     },
     "refactoring-code": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/refactoring-code/SKILL.md",
-      "computedHash": "ff0a6975a529344dc901a3f3d971f0d7a7bda20bb3621b582b576d20e07cfa34"
+      "computedHash": "ffb747d651aecfb71216037dd6943960546d22bcc9348affe73f30653d177b2c"
     },
     "responding-to-pr-review-comments": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/responding-to-pr-review-comments/SKILL.md",
-      "computedHash": "8fe10ef7c91187880f8fff09b22f6d8413662a6db465106bd7107e796e199e8a"
+      "computedHash": "a014c6d270606753f4a5a1a8c4addd454ef92176742f9da5d729fdfa67502383"
     },
     "review-pull-request": {
       "source": "b-mendoza/agent-skills",
