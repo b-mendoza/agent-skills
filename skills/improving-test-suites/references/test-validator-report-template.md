@@ -1,29 +1,52 @@
 # Test Validator Report Template
 
-```markdown
-# Test Validator Report
+Fill this fenced block exactly enough for the orchestrator to route. Allowed statuses: `PASS | FAIL | BLOCKED | ERROR`.
 
-Status: <PASS | FAIL | BLOCKED | ERROR>
+```markdown
+## Test Validator Report
+
+Status: PASS | FAIL | BLOCKED | ERROR
+
+## Mode And Scope
+- MODE: baseline | post-change
+- resolved targets:
+- changed files:
+- scope widening:
 
 ## Command
+- selected command:
+- guard result: allowlisted | user-confirmed verbatim | blocked
+- guard detail:
+- script-runner disclosure:
 
-- Selected command: <command>
-- Guard result: <known test runner | user-confirmed verbatim | blocked>
-- Scope widening: <reason or none>
+## Counts
+- collected:
+- executed:
+- passed:
+- failed:
+- skipped:
+- unavailable count evidence, quoted if any:
 
 ## Result
+- PASS requires executed count at least one:
+- post-change consistency with expected surviving count:
+- zero collected cause `empty-selection` if applicable:
 
-- Summary: <short result>
-- Changed files: <paths or none>
-- Likely cause: <test refactor regression | production bug exposed | pre-existing failure | unknown | none>
-- Raw log path on non-PASS: <local uncommitted path or none>
+## Baseline Diff
+- baseline status and counts:
+- identical baseline failures:
+- new touched-test failures:
+- new production-behavior evidence:
+- likely cause: test refactor regression | production bug exposed | pre-existing failure | empty-selection | unknown
 
-## Evidence
+## Raw Log
+- raw-log path on non-PASS:
 
-- <bounded failure or success evidence>
+## Risks
+- instruction-like content risk line or none:
+- script-runner residual risk line when applicable:
 
 ## Non-PASS Detail
-
-- Reason: <required for non-PASS>
-- Decision needed: <question or none>
+- reason:
+- smallest decision needed or none:
 ```
