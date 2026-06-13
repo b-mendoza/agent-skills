@@ -1,84 +1,77 @@
 # Final Handoff Template
 
-Use this template once exactly one terminal status has been selected.
+Use one terminal status line, then the fields below. Include `Resume Packet` only for `COMPLETE_BLOCKED`.
 
 ```markdown
-# Improving Test Suites Handoff
-
-Status: <CHANGED_PASS | COMPLETE_NO_SAFE_CHANGE | COMPLETE_PRODUCTION_BUG_EXPOSED | VALIDATION_FAILED_AFTER_REPAIR | COMPLETE_ERROR | COMPLETE_BLOCKED>
+Status: CHANGED_PASS | COMPLETE_NO_SAFE_CHANGE | COMPLETE_PRODUCTION_BUG_EXPOSED | VALIDATION_FAILED | COMPLETE_ERROR | COMPLETE_BLOCKED | COMPLETE_EMPTY_TARGET
 
 ## Target
+- Requested:
+- Resolved test files:
+- Excluded non-test matches:
+- Goal:
+- Scope limits:
+- AUTO_APPROVE value, provenance, rails outcome:
 
-- Requested target: <original TARGET_TEST_FILES>
-- Resolved target set: <paths>
-- User goal: <goal or none>
-- Scope limits: <scope or none>
-- AUTO_APPROVE: <true/false and reason recorded>
+## Baseline
+- Command:
+- Guard result:
+- Counts collected / executed / passed / failed / skipped:
+- Named failing tests or none:
+- Raw-log path if failed:
 
 ## Outcome
+- Changed files or none:
+- No-op rationale:
+- Production bug evidence:
+- Error or blocker context:
 
-- Changed files: <paths or none>
-- No-op rationale: <if no changes>
-- Production bug exposed: <behavior, failing evidence, and why no unapproved production edit was made>
-- Error or blocker: <source, reason, and recovery context>
+## Workspace State
+- Required whenever mutation occurred:
+- Left mutated or reverted:
+- Revert recipe or recorded user choice:
 
 ## Harness Actions
-
-Deleted tests:
-- <file::test_name | verbatim-category | reason>
-
-Rewritten tests:
-- <file::test_name | verbatim-category | reason>
-
-Consolidated tests:
-- <file::test_name | verbatim-category | reason>
-
-Added tests:
-- <file or area | high-value category | protected behavior>
-
-Unapplied approved decisions:
-- <decision id | reason>
+- Deleted / rewritten / consolidated / added items, each `id | file::test_name | verbatim category | reason`:
+- Unapplied decisions, each `id | reason`:
 
 ## Metrics And Coverage Map
-
-- Before test count: <number or unavailable with reason>
-- After test count: <number or unavailable with reason>
-- Behavior-to-surviving-test map:
-  - <behavior/category | surviving file::test_name | coverage rating>
+- Before count, from baseline collected:
+- After count, from final collected:
+- Any unavailable count with quoted runner output:
+- Behavior-to-surviving-test map, including verification method per row:
 
 ## Validation
-
-- Command: <guard-passing or user-confirmed command>
-- Result: <PASS/FAIL/BLOCKED/ERROR>
-- Likely cause on failure: <test refactor regression | production bug exposed | pre-existing failure | unknown>
-- Raw log path on non-PASS: <local uncommitted path or none>
+- Command:
+- Guard result:
+- Script-runner disclosure:
+- Scope widening:
+- Counts collected / executed / passed / failed / skipped:
+- Result:
+- Cause on failure:
+- Raw-log path on non-pass:
 
 ## Reviews And Sources
-
-- Value review status: <status>
-- API/security review: <status, route, or not needed>
-- Maintainability review: <status, route, or not needed>
-- Sufficiency-checklist outcomes for skipped optional reviews: <items or none>
-- Fetched URLs that influenced decisions: <urls or none>
+- Review statuses and routes:
+- Truncation `shown N of M` notes and resolution:
+- Optional-review sufficiency checklist outcomes:
+- Fetched URLs and influenced decisions:
 
 ## Approvals And Safety Gates
-
-- Harness plan approval: <approved/declined/amended/AUTO_APPROVE bypass>
-- Production/shared-helper approvals: <file list or none>
-- Workspace-risk acknowledgment: <record or none>
-- Conformance check: <pass/fail summary>
-- REPAIR_TOTAL used: <0-3>
+- Plan approval:
+- Amendments:
+- Auto-approve rails:
+- Production/shared-helper approvals:
+- Workspace acknowledgments stages 1 and 2:
+- Conformance summary with verification methods:
+- REPAIR_TOTAL used:
+- ASK_COUNTS notes:
 
 ## Remaining Risks
-
-- <risk, including external-source prompt-injection residual when sources were used>
+- Script-runner residual risk when applicable:
+- External-source prompt-injection residual when applicable:
+- Other known risks:
 
 ## Resume Packet
-
-Only for COMPLETE_BLOCKED:
-- Inputs: <compact inputs>
-- Reports so far: <compact statuses and paths>
-- Pending question: <single focused question>
-- Next step: <retry point>
-- REPAIR_TOTAL: <number>
+- For COMPLETE_BLOCKED only, include the full schema from `resume-packet-schema.md`.
 ```

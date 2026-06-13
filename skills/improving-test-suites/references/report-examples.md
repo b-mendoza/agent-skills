@@ -1,26 +1,24 @@
 # Report Examples
 
-Load only when a subagent report shape is ambiguous.
+Load only when a report shape is ambiguous.
 
-## Enumerated Harness Action
+## Id-Stamped Harness Action
 
 ```markdown
-- tests/test_billing.py::test_retries_private_client_call | implementation-detail-assertion | Asserts private retry helper call count; rewrite through public invoice submission result.
+D-03 | delete | tests/test_billing.py::test_retries_private_client_call | implementation-detail-assertion | asserts private retry call count; behavior covered by D-04 rewrite through public invoice result | target test
 ```
 
 ## Sufficiency Checklist
 
 ```markdown
-Sufficiency checklist for skipped optional maintainability review:
-- Value review status PASS: yes
+Optional-review sufficiency checklist: cannot downgrade; ask
+- VALUE_STATUS=PASS: yes
 - Every high-value behavior has coverage rating: yes
-- Routing reason does not concern blocker surface: no
-Decision: cannot downgrade; ask maintainability question.
+- Route reason does not mention blocked surface: no, value review mentions tenant-boundary behavior
 ```
 
-## Behavior Coverage Map
+## Behavior Coverage Map Row
 
 ```markdown
-- Rejects cross-tenant invoice access | security-sensitive-behavior | tests/api/test_invoices.py::test_rejects_cross_tenant_access | good
-- Rounds tax according to regional rule | critical-business-logic | tests/test_billing.py::test_tax_rounding_parametrized | good
+Rejects cross-tenant invoice access | security-sensitive-behavior | tests/api/test_invoices.py::test_rejects_cross_tenant_access | good | file-inspection
 ```
