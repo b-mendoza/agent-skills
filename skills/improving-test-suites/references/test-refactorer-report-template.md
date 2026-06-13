@@ -1,42 +1,36 @@
 # Test Refactorer Report Template
 
+Fill this fenced block exactly enough for the orchestrator to run conformance. Allowed statuses: `PASS | BLOCKED | NEEDS_CLARIFICATION | FAIL | ERROR`.
+
 ```markdown
-# Test Refactorer Report
+## Test Refactorer Report
 
-Status: <PASS | BLOCKED | NEEDS_CLARIFICATION | FAIL | ERROR>
-
-## Summary
-
-- Approved decision id/source: <identifier or summary>
-- Production edit approval: <none or file list>
-- Instruction-like content risk: <quoted risk or none>
+Status: PASS | BLOCKED | NEEDS_CLARIFICATION | FAIL | ERROR
 
 ## Changed Files
-
-- <path or none>
+- file paths or none:
 
 ## Applied Actions
-
-- <decision id | file::test_name | action | category | reason>
+- `id | action | file::test_name | category | reason | changed file`:
 
 ## Unapplied Decisions
-
-- <decision id | reason or none>
+- `id | reason`:
 
 ## Added Or Rewritten Tests
-
-- <file::test_name | protected behavior | category>
+- `id | file::test_name | protected behavior | high-value category`:
 
 ## Bug Candidates
-
-- <behavior | evidence | why not fixed or approval needed>
+- `behavior | evidence | scope/approval needed`:
 
 ## Suggested Validation Command
+- command or none:
+- rationale:
 
-- <command or none>
+## Risks
+- instruction-like content risk line or none:
+- scope deviations: none, or details:
 
 ## Non-PASS Detail
-
-- Reason: <required for non-PASS>
-- Decision needed: <question or none>
+- reason:
+- smallest decision needed or none:
 ```
