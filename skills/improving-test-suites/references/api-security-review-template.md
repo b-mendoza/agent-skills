@@ -1,31 +1,32 @@
 # API Security Review Template
 
+Fill this fenced block exactly enough for the orchestrator to route. Allowed statuses: `PASS | NOT_APPLICABLE | BLOCKED | NEEDS_CLARIFICATION | ERROR`.
+
 ```markdown
-# API Security Review
+## API Security Review
 
-Status: <PASS | NOT_APPLICABLE | BLOCKED | NEEDS_CLARIFICATION | ERROR>
+Status: PASS | NOT_APPLICABLE | BLOCKED | NEEDS_CLARIFICATION | ERROR
 
-## Summary
+## Applicability
+- surface exists or not:
+- reason:
 
-- Route reason: <reason>
-- Applicable surface: <contracts, schemas, auth, permissions, unsafe inputs, or none>
-- Instruction-like content risk: <quoted risk or none>
+## Protected Behaviors
+- shown N of M:
+- overflow file path or none:
+- `behavior | surface | current test | coverage rating none/weak/good | notes`:
 
-## Coverage Findings
+## Gaps And Recommendations
+- shown N of M:
+- overflow file path or none:
+- `gap | observable outcome | recommended action | local evidence`:
 
-- <behavior | category | current test/gap | recommended harness action>
-
-## Risks
-
-- <risk or none>
-
-## Sources
-
-- Fetched URLs: <urls or none>
-- Source gaps: <gaps or none>
+## Source Influence
+- fetched URLs and influenced decisions:
+- reachability gaps:
+- instruction-like content risk line or none:
 
 ## Non-PASS Detail
-
-- Reason: <required for non-PASS except NOT_APPLICABLE>
-- Decision needed: <question or none>
+- reason:
+- smallest decision needed or none:
 ```
