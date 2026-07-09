@@ -11,31 +11,31 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
-      "computedHash": "1fb93ae6004488e182af54fb255a5a11cdf6ba1e74f03ad746c94449ed17a9fc"
+      "computedHash": "713f2a023add8a5b956b412d5b3c017e77b15b584033303ac3563ec5eb218d82"
     },
     "council-of-advisors": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/council-of-advisors/SKILL.md",
-      "computedHash": "21332a8a1679d1d84c5fb90d02b5afe58671d752754c69b02f8c76a2351b1a90"
+      "computedHash": "a291918f8f4241310d251d54ad3d375baf095420217ab987fecf9f7c194b8c38"
     },
     "diagnosing-root-causes": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/diagnosing-root-causes/SKILL.md",
-      "computedHash": "bfc3cb4543eca4c4ef43abd843c9632eedee955b189d7ee60aa2164048db57af"
+      "computedHash": "06de33910aa3f3a5ad2b8ff3ba5d33aa183316fb95e25af049c20f393ffa4f44"
     },
     "executing-plans": {
       "source": "obra/superpowers",
       "sourceType": "github",
       "skillPath": "skills/executing-plans/SKILL.md",
-      "computedHash": "d3e5b64b97d4713e3a7f33625cae12ed9305898d85a1c6309f46765c39a9d789"
+      "computedHash": "08604f93f2e38dd3575e5503c79cda5c623c78a8df0e472457ac5ef7a33f22b8"
     },
     "generate-flow-diagram": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/generate-flow-diagram/SKILL.md",
-      "computedHash": "cfe7ca3ec49c80f732744056acebb79034ec9e7df9d9a906bc63802c8e996e6e"
+      "computedHash": "0273c4c4b30eff774cdf06bc5c8c4c7f105169079c56dbd040c13ca21e5fb52c"
     },
     "grill-me": {
       "source": "mattpocock/skills",
@@ -47,31 +47,31 @@
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/grilling/SKILL.md",
-      "computedHash": "ef685a6fa0bbe73b05bbd8dc1ec97258191587f07c6aa7dbc9006675ceb8f90f"
+      "computedHash": "1de9e777a60b184b29412fadacb7bbde8c14bb7037e5c4d9d086c941281d1742"
     },
     "humanizer": {
       "source": "blader/humanizer",
       "sourceType": "github",
       "skillPath": "SKILL.md",
-      "computedHash": "ee5890d9751e3481da065aaf84b8057678dda3dda72911a3cdf3479ece4ce18e"
+      "computedHash": "44201a7ac488b5147fde0a8a63aeb1ffd1501f384d525fd3c482f9599c4903f4"
     },
     "improving-test-suites": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/improving-test-suites/SKILL.md",
-      "computedHash": "586dd5f5a024106bdd38a7ce568b935b255cdd86864dd55e1b5ed270d185fc97"
+      "computedHash": "38ae1f88a4272570f34005e313be27aa6dcea9d903130a9e5c2687033aa9bc74"
     },
     "pr-creator": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/pr-creator/SKILL.md",
-      "computedHash": "3f650074d795dddd362ed758b2b560af747bb4a6d55e332e1be1d5f68ca22514"
+      "computedHash": "9da8e4b7f5842286964f57b49f4f811ff79cd429811bfd26717aa3855e7ca82a"
     },
     "prompt-structurer": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/prompt-structurer/SKILL.md",
-      "computedHash": "25027e928a5acc1bf3427885050e867a3456c0dc8e4b098263ecdc887525fbb7"
+      "computedHash": "dfc49cc034a140453b258b074dc4b18328b135c56dafb437fe1a68a8b760ceed"
     },
     "receiving-code-review": {
       "source": "obra/superpowers",
@@ -83,31 +83,31 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/recency-guard/SKILL.md",
-      "computedHash": "e846a8b726c30d71331176bc9fcc592af67a2c953124e9a7846f3361d61bb8de"
+      "computedHash": "093ae00ea0f1f4a36c2b3d855e05e37fb82e2a35ee263931f750b91e78996ce6"
     },
     "refactoring-code": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/refactoring-code/SKILL.md",
-      "computedHash": "ffb747d651aecfb71216037dd6943960546d22bcc9348affe73f30653d177b2c"
+      "computedHash": "ec6be32d3e068e8d2fabf8f58c3a3d95fa2c3575b6c758010d6fde06a3d64c3e"
     },
     "responding-to-pr-review-comments": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/responding-to-pr-review-comments/SKILL.md",
-      "computedHash": "a014c6d270606753f4a5a1a8c4addd454ef92176742f9da5d729fdfa67502383"
+      "computedHash": "e8bd726334d8e0f4318a10fcf008e81c6a76bc54c472ff4d5fe20503f6072b55"
     },
     "review-pull-request": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/review-pull-request/SKILL.md",
-      "computedHash": "27499266da1af13ee94d60eae884a53c2caebe6561e98f707ccdb7a0d414ab20"
+      "computedHash": "a0aebc534f6320270721b822e74a7c7a1a180473e500f3bec71ac727f3be9495"
     },
     "rewriting-code-strictly": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/rewriting-code-strictly/SKILL.md",
-      "computedHash": "73fae385f067829bd76ec47513b4501092a0658bf1ba967c8c130d6b3abf9120"
+      "computedHash": "eb13c689e71fee485ce912eb51f2312a157594cdb2619e5b81b7c8c83780f64d"
     },
     "subagent-driven-development": {
       "source": "obra/superpowers",
@@ -125,13 +125,13 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/validate-implementation-plan/SKILL.md",
-      "computedHash": "493ecd0baed4796d3f2b8a1b2d58119bcbb57e2b0c89a0a08fae075635907fba"
+      "computedHash": "b9c4118af23b87805dc5819cb59b7969c5ed9d0cb33eeec6e5184665d2cdf417"
     },
     "workflow-skill-architect": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/workflow-skill-architect/SKILL.md",
-      "computedHash": "52f5ac849052ac2ce87c48f87adb1257025f94f313d9f7f05da7d6cce8c4ed3a"
+      "computedHash": "1a947c31304c35ba7dbf21525a2c0d6cc9aec73c287afa3da08607134f919c81"
     },
     "writing-plans": {
       "source": "obra/superpowers",
