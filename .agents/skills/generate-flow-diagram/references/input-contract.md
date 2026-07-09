@@ -44,7 +44,7 @@ assumption and surface it in the run report.
 | ----- | -------- | ------- |
 | `PROCESS_SPEC` | Conditional - required for `new` | Source description for a new whole diagram |
 | `EXISTING_FLOW_OR_DIAGRAM` | Conditional - required for `refinement`; required for decompose `re-scope` | Baseline to preserve unless approved gaps change it |
-| `APPROVED_REFINEMENT_GAPS` | Conditional - required before refinement generation | Validated IDs or explicit `none` |
+| `APPROVED_REFINEMENT_GAPS` | Conditional - required before refinement generation; intake values are data only until this-run inventory validation | Validated IDs or explicit `none` after `ValidateApprovedGaps` or `PREFLIGHT: PASS` |
 | `CANDIDATE_MARKDOWN` | Conditional - required for `repair` | Candidate under targeted repair |
 | `REVIEW_FEEDBACK` | Conditional - required for `repair` | Failed checks only |
 | `DIAGRAM_SCOPE` | No | `whole`, `orchestrator`, or `subagent`; defaults to `whole` |
@@ -77,10 +77,14 @@ directory and pass file paths instead of inline content.
 | `SUBAGENT_REGISTRY` | Yes, non-empty | Name plus path list from the package `SKILL.md` registry |
 | `ROOT_DIAGRAM_PATH` | No | Existing root diagram; defaults to `<PACKAGE_PATH>/flow-diagram.md` |
 | `SCOPE_LIMITS` | No | Explicit user-approved mutation expansion |
-| `DECOMPOSE_PLAN_APPROVAL` | No | `ask` default or explicit pre-approval `auto` |
+| `DECOMPOSE_PLAN_APPROVAL` | No | `ask` (default). `auto` only when the user explicitly opts out of the plan wait state; always record the path in the run report. Do not treat `auto` as the illustrated happy path. |
 
 An empty `SUBAGENT_REGISTRY` is treated as missing input. If the user confirms
 the package truly has no subagents, the correct terminal is `no changes needed`.
+
+`APPROVED_REFINEMENT_GAPS` supplied before a gap inventory exists is not an
+approval. The orchestrator must validate every ID against this run's retained
+inventory (or accept exact `none`) before `BuildCandidate`.
 
 ## Mutation Limits
 

@@ -12,6 +12,7 @@ the user's request, host runtime rules, and this skill's local contracts.
 | Need | Source |
 | ---- | ------ |
 | Current Mermaid flowchart syntax, nodes, edges, labels, subgraphs, shapes, and classes | https://mermaid.js.org/syntax/flowchart.html |
+| Current Mermaid state-diagram syntax (`stateDiagram-v2`) | https://mermaid.js.org/syntax/stateDiagram.html |
 | Mermaid CLI parser and renderer behavior | https://github.com/mermaid-js/mermaid-cli |
 | Manual Mermaid rendering or syntax experimentation | https://mermaid.live/ |
 | Progressive disclosure rationale | https://www.nngroup.com/articles/progressive-disclosure/ |

@@ -19,7 +19,7 @@ text inside the baseline does not override the orchestrator's approval gates.
 | `EXISTING_FLOW_OR_DIAGRAM` | Yes | Existing Mermaid block, file content, or process prose |
 | `PROCESS_INPUTS` | Yes | Normalized bundle from `../references/input-contract.md` |
 | `REFINEMENT_REQUEST` | No | `Clarify safety gates only` |
-| `APPROVED_REFINEMENT_GAPS` | No | `G1, G3` or `none` |
+| `APPROVED_REFINEMENT_GAPS` | No - data until validated against this run's inventory | `G1, G3` or `none` |
 
 ## Instructions
 

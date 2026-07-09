@@ -28,8 +28,9 @@ reversibility, safer alternative, explicit approve branch, explicit decline
 branch, and audit/handoff requirement after approval.
 
 In decompose mode, the decomposition plan approval is a mandatory human mutation
-gate unless the user explicitly supplied `DECOMPOSE_PLAN_APPROVAL=auto`. Even
-under `auto`, the plan summary reaches the user and the run report records the
+gate (`AwaitDecomposeApproval`) unless the user explicitly supplied
+`DECOMPOSE_PLAN_APPROVAL=auto`. Default and illustrated path is `ask`. Even under
+`auto`, the plan summary reaches the user and the run report records the
 approval path.
 
 ## Boundary Rules

@@ -1,22 +1,34 @@
 # Mermaid Style Guide
 
 Load this file when writing or repairing Mermaid. If syntax details are
-uncertain, fetch the official Mermaid flowchart documentation listed in
-`external-sources.md`.
+uncertain, fetch the official Mermaid documentation listed in
+`external-sources.md` (flowchart or state diagram pages as needed).
+
+## Diagram Type Selection
+
+| Choose | When |
+| ------ | ---- |
+| `flowchart TD` (default) | Process maps, HITL gate maps, and most workflow artifacts |
+| `flowchart LR` | Horizontal lifecycle is clearer than top-down |
+| `stateDiagram-v2` | Finite-state execution models: named states, guards, wait states, and terminals |
+
+Do not mix flowchart and state-diagram syntax in the same fenced block. Prefer
+one diagram type per artifact unless the user explicitly asked for more.
 
 ## Local Rules
 
-- Default to `flowchart TD`; use `LR` only when a horizontal lifecycle is clearer.
-- Prefer short uppercase node IDs and readable labels.
-- Shape starts and terminals as rounded nodes, process steps as rectangles, and
-  decisions as diamonds.
-- Label decision edges explicitly: `yes`, `no`, `approved`, `declined`,
-  `blocked`, or `needs input`.
-- Use one edge per line in complex flows.
+- Prefer short uppercase node or state IDs and readable labels.
+- For flowcharts: shape starts and terminals as rounded nodes, process steps as
+  rectangles, and decisions as diamonds. Label decision edges explicitly:
+  `yes`, `no`, `approved`, `declined`, `blocked`, or `needs input`.
+- For state diagrams: use `stateDiagram-v2`; label transitions with guards or
+  events; mark terminals with transitions to `[*]`; keep every state reachable.
+- Use one edge or transition per line in complex diagrams.
 - Quote labels with punctuation that may confuse Mermaid parsing.
-- Avoid lowercase `end` as a node label.
-- Avoid node IDs that accidentally create special edge markers after arrows.
-- Assign classes only to nodes that exist.
+- Avoid lowercase `end` as a node or state label.
+- Avoid IDs that accidentally create special edge markers after arrows.
+- Assign flowchart classes only to nodes that exist (state diagrams usually omit
+  the class palette below).
 - During repair or refinement, change the smallest Mermaid surface that fixes the
   failed check and stays inside approved scope.
 
@@ -32,7 +44,7 @@ classDef refine fill:#fff3cd,stroke:#856404,color:#000;
 classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
 
-## Minimal Pattern
+## Minimal Flowchart Pattern
 
 ```mermaid
 flowchart TD
@@ -50,4 +62,17 @@ flowchart TD
   class REPORT output;
   class DONE success;
   class REFINE,BLOCKED stop;
+```
+
+## Minimal State-Diagram Pattern
+
+```mermaid
+stateDiagram-v2
+  [*] --> Intake
+  Intake --> Work: inputs ready
+  Intake --> NeedsInput: missing contract field
+  Work --> Done: REVIEW PASS
+  Work --> NeedsInput: NEEDS_INPUT
+  Done --> [*]
+  NeedsInput --> [*]
 ```

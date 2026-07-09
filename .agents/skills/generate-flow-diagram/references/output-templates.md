@@ -42,6 +42,14 @@ flowchart TD
   ...
 ```
 
+Or, when the workflow is a finite-state model:
+
+```mermaid
+stateDiagram-v2
+  [*] --> Intake
+  ...
+```
+
 ```text
 Optional output/report/comment template, if useful.
 ```
