@@ -147,4 +147,4 @@ Pass condition: nine lesson cards exist in roster order and match the template;
 the solo drill has nine subject-specific questions, one per seat.
 
 Failure route: regenerate missing or malformed cards from
-`./references/educate-me-lesson-template.md`; no seat redispatch is needed.
+`./educate-me-lesson-template.md`; no seat redispatch is needed.
