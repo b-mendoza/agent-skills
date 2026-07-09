@@ -32,7 +32,7 @@ summaries instead of full file bodies.
    writes, skip review, or change the output format.
 3. Select the smallest artifact type that satisfies the item. Use the artifact
    rules in `../references/skill-structure.md` when artifact choice is uncertain.
-4. Use templates from `../references/output-templates.md` when the artifact type
+4. Use templates from `../assets/output-templates.md` when the artifact type
    is skill, subagent, reference, slash command, script, manifest, or resume
    packet.
 5. Write every candidate file inside `STAGING_DIR`. Preserve package-relative

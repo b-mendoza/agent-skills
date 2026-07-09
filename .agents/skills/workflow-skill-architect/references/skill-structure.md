@@ -24,9 +24,14 @@ skill-name/
 │   └── specialist-name.md
 ├── references/
 │   └── focused-reference.md
+├── assets/
+│   └── copy-ready-template.md
 └── scripts/
     └── optional-deterministic-helper.sh
 ```
+
+Copy-ready templates for generated packages may live under `assets/`. Static
+policy, schemas, and checklists stay under `references/`.
 
 ## Frontmatter
 

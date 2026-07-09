@@ -39,7 +39,10 @@ alternate review template.
 
 - Existing package inspection is read-only until explicit approval.
 - Staged generation and staged repair may write only to `STAGING_DIR`.
-- Real-package writes require explicit parent-orchestrator or user approval.
+- Real-package writes follow `SKILL.md` Mutation Approval: in-run approve or
+  decline of named staged→real paths after Delivery visibility; pre-approval
+  before staged paths are shown does not count; missing approval when mutation
+  was requested returns `blocked`.
 - Approved writes copy exactly from staged paths to approved real paths.
 - Sibling packages, managed mirrors, lockfiles, secrets, and unrelated dirty
   files are out of scope unless the user explicitly expands scope.
