@@ -1,0 +1,51 @@
+# CV Review Quality Checklist
+
+Read this file only when validating a drafted CV review or rewrite.
+
+## Gates
+
+| Gate | Pass condition |
+| ---- | -------------- |
+| Inputs | Draft uses the provided job posting and CV, and labels missing or partial input |
+| Minimum evidence | Selected mode met the threshold in `cv-review-contract.md`; otherwise the draft asks for the smallest missing source detail |
+| Job specificity | Recommendations tie back to visible role requirements, priorities, or repeated terms |
+| Evidence labels | Every rewrite or recommended claim has one valid evidence label |
+| Candidate facts | Candidate claims are grounded in the CV/applicant context or framed as questions |
+| Claim resolution | Unsupported sensitive claims are supported, safely weakened, excluded, or carried as verification questions |
+| Limitations ledger | Partial, inaccessible, ambiguous, or thin sources are preserved for partial output |
+| Seniority realism | Wording matches the applicant's demonstrated scope and depth |
+| Technical defensibility | Tools, frameworks, architecture, scale, and metrics are supportable or explicitly unverified |
+| Human readability | Advice improves clarity for hiring managers, not only keyword overlap |
+| Mode compliance | Output includes only the sections requested by `OUTPUT_MODE` |
+| Actionability | The user can see exactly what to change, why, and what to verify |
+| Checklist | Full reviews end with a concise submission checklist |
+| Privacy boundary | No private candidate material, private job text, or draft content was submitted to external resume scanners, forms, or tools |
+
+## Review Procedure
+
+1. Check the draft against each gate.
+2. If all gates pass, return `CV_REVIEW: PASS`.
+3. If a gate fails and the editor can correct the draft, return
+   `CV_REVIEW: FAIL` with only targeted fixes.
+4. If required review inputs (`TAILORING_DRAFT`, `SOURCE_INTAKE`, `ROLE_FIT`)
+   are missing, malformed, or too incomplete to review, return
+   `CV_REVIEW: ERROR` with the smallest useful recovery action.
+5. Thin or partial sources that still meet the mode threshold are **not**
+   `ERROR`: preserve them via the limitations ledger / partial output, or use
+   `FAIL` when a targeted editor fix restores a gate.
+
+## Fix Guidance
+
+Ask the editor for the smallest change that resolves the failed gate:
+
+- Missing evidence label: add or correct the label.
+- Unsupported claim: convert to a question or safer wording.
+- Dropped limitation: restore it in the limitations ledger or mark the final
+  answer as partial.
+- Insufficient evidence for mode: ask for the smallest missing source detail
+  instead of producing unsupported advice.
+- Generic recommendation: tie it to a job requirement or remove it.
+- Overstated seniority: lower the claim to demonstrated contribution.
+- Mode mismatch: remove unrelated sections.
+
+Do not request a full rewrite when a targeted fix is enough.
