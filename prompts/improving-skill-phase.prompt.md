@@ -77,10 +77,11 @@
 </truth_preservation_contract>
 
 <best_practices_contract>
-  Load `docs/best-practices/README.md` as the canonical index. Apply every applicable `mandatory` practice; evaluate applicable `recommended` practices through the Material Issue Gate; treat `optional-style` practices as non-blocking unless the user explicitly requires strict style.
-  Give each checked practice a `pass`, `fail`, or `not applicable` verdict with evidence. A documented exception must state the deviation, reason, consequence, and user approval.
-  The rebuilt skill must use portable plain Markdown and lowest-common-denominator OpenCode and Claude Code contracts. Describe capabilities before runtime-specific syntax and re-check volatile runtime facts against official documentation when they affect the design.
-  The rebuilt skill's main agent must have an explicit identity, posture, trade-offs, voice, and boundaries. For each execution step, apply the two-question dispatch test: keep work inline only when the orchestrator needs raw, conversational, iterative, or stateful material for routing; otherwise delegate to a specialized agent with a bounded contract.
+  <index>Load `docs/best-practices/README.md` as the canonical membership and order index. Select linked practices by their documented triggers; do not preload the full library.</index>
+  <tiers>Evaluate every applicable practice as `pass`, `fail`, or `not applicable` with evidence. A `mandatory` failure blocks unless the practice itself permits a safe intentional exception that records deviation, reason, consequence, compensating check, and exact user approval. A `recommended` miss requires an evidence-backed disposition. `optional-style` is non-blocking unless strict style is explicitly requested.</tiers>
+  <two_passes>Run tiered compliance against the proposed rebuild before approval and the actual package after every build or repair.</two_passes>
+  <material_issue_gate>Every proposed role, artifact, state, field, gate, reference, script, external lookup, and validation layer must identify the concrete reliability, portability, standalone-packaging, context-efficiency, maintainability, validation, user-comprehension, or compliance problem it solves and its downstream consumer. Otherwise remove or merge it.</material_issue_gate>
+  <portability>Use plain Markdown, capability-first contracts, relative links, complete handoffs, main-agent-owned routing, and the lowest-common-denominator OpenCode/Claude Code design unless an approved exception declares otherwise.</portability>
 </best_practices_contract>
 
 <main_agent_context_budget>
