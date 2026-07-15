@@ -187,6 +187,35 @@
   <gate id="G_FINAL_HANDOFF_COMPLETE" producer="main agent using handoff candidate" checker="independent structural and hash check" consumer="user and resume" earned_by="terminal consistency">After A1 initialization, pass only when exactly ten A1 files exist with required sections or zero states, sibling and INDEX hashes reconcile, A2 and sandbox lifecycle plus enforcement cleanup results are recorded, gate and terminal states are coherent, and terminal `INDEX.md` is complete.</gate>
 </critical_gates>
 
+<repair_and_status_routing>
+  <counters>`audit_contract_repair_count`, `truth_repair_count`, `plan_repair_count`, `build_repair_count`, and `handoff_repair_count` each start at zero and cap at three; `approval_parse_attempts` caps at two; each role has at most one safe idempotent tool retry. Counters are independent and checkpointed.</counters>
+  <round>One repair round collects all current failures, sorts them by stable ID, dispatches the bounded repair set, increments the applicable counter once, then reruns every original checker affected by changed artifacts. Parallel failures do not increment per item.</round>
+  <audit_route>`ERROR` retries once when safe then returns `error`; `BLOCKED` stops on the named prerequisite; `PARTIAL` receives bounded contract repair and becomes checkpointed `blocked` after cap; `GAPS_FOUND` is successful audit output and advances; all `PASS` advances with explicit zero states.</audit_route>
+  <validator_route>`FAIL` repairs within scope and reruns all affected checkers; exhausted `FAIL` becomes checkpointed `blocked`. Any valid validator `BLOCKED` checkpoints the named prerequisite, target and sandbox states, and evidence; performs no repair or mutation; and routes to phase 9 for terminal `blocked` without incrementing a FAIL counter. `STATIC_ONLY|TOOLS_MISSING` from scenario validation also becomes `blocked` with preserved evidence. Unrecovered `ERROR` becomes `error`. `PASS` advances only when its gate accepts the payload.</validator_route>
+  <truth_route>Every synthesis repair requires a new independent dissent report before `G_TRUTH_PRESERVATION` can pass.</truth_route>
+  <pre_a1_terminal>Before A1 initialization, a failed identity, capability, target-state, producer, or collision gate cleans or intentionally retains only the registered provisional A2 exchange, reports `blocked` for known prerequisites or `error` after one unrecovered safe retry, and creates no phase-2 output root. `G_FINAL_HANDOFF_COMPLETE` and the ten-file requirement do not apply before A1 exists.</pre_a1_terminal>
+  <builder_route>`BUILD: PASS` checkpoints ledger-derived ownership and advances. `BUILD: BLOCKED` checkpoints the truthful ledger-derived state `ABSENT|RUN_OWNED_PARTIAL|RUN_OWNED_COMPLETE` and routes to phase 9 for terminal `blocked` without unapproved repair. `BUILD: ERROR` checkpoints the same truthful state, performs at most one safe idempotent retry against the ledger, then routes to phase 9 for `error`. Validator-driven `FAIL` alone enters build repair.</builder_route>
+  <handoff_route>`HANDOFF: FAIL` enters bounded handoff repair. `HANDOFF: BLOCKED` or an unrecovered `HANDOFF: ERROR` invokes the bounded INDEX fallback immediately after any one safe retry; it does not wait for repair-cap exhaustion.</handoff_route>
+  <handoff_fallback>After A1 exists, the main agent may write the smallest coherent terminal `INDEX.md` from already validated bounded run state with decision `blocked` for a known persistent contract failure or `error` for unrecovered operation failure, validate its sentinel hash, preserve evidence, and state that `G_FINAL_HANDOFF_COMPLETE` did not pass.</handoff_fallback>
+  <unknown_status>Any missing, malformed, unqualified, or out-of-contract status is a contract failure; do not guess its route.</unknown_status>
+  <terminals>Exactly one terminal response per invocation: `rebuilt`, `no_build`, `approval_required`, `blocked`, or `error`. `no_build` is a successful evidence-backed decision. `approval_required` is terminal for the current invocation and a resumable state for a later invocation.</terminals>
+  <no_dossier_repair>An invalid or incomplete scouting dossier is never repaired, supplemented, or bypassed by phase 2. Use the pre-A1 terminal protocol when applicable.</no_dossier_repair>
+</repair_and_status_routing>
+
+<approval_transition_table>
+  <route input="first malformed reply">Increment `approval_parse_attempts` and re-ask once with the exact reply schema.</route>
+  <route input="second malformed reply">Increment and checkpoint `approval_parse_attempts` to two, then return `blocked`.</route>
+  <route input="no reply">Checkpoint the packet and `next_route: await_user_approval`; return `approval_required`.</route>
+  <route input="approve build">Pass `G_USER_APPROVAL` and enter phase 7.</route>
+  <route input="approve non-build outcome">Record the disposition, skip Category B mutation, and enter phase 9 for `no_build`.</route>
+  <route input="reject">Preserve the truth ledger, record rejection, skip mutation, and enter phase 9 for `no_build`.</route>
+  <route input="defer or contest">Record the disposition, checkpoint the exact pending issues, forbid mutation, and return `approval_required`.</route>
+</approval_transition_table>
+
+<output_collision_and_resume>
+  Before the provisional exchange, any existing phase-2 output or handoff root is a collision unless a requested resume checkpoint proves ownership. After phase 1 creates the cleared provisional handoff root, phase 2 treats that root as current-run-owned only when it contains exactly the registered gatekeeper exchange and no extra entry. Later resume requires a matching safe A1 checkpoint. Replacement requires explicit approval and is allowed only when the real output directory contains no entries beyond the canonical ten A1 names and the real handoff root contains no entries beyond exact registered A2 YAML files plus the registered validation-sandbox tree; all regular files have link count one and every directory is real and contained. Otherwise require external cleanup or relocation. Never delete an unrelated entry, merge mismatched runs, invent a suffixed sibling, or overwrite tracked or staged A1/A2 files.
+</output_collision_and_resume>
+
 <phases>
   <phase id="1" name="intake-and-clean-room-gate" mode="routing-plus-user-dialogue">
     <purpose>Select a completed scouting dossier and establish a clean-room, mutation-safe run.</purpose>
@@ -290,10 +319,6 @@
   </phase>
 </phases>
 
-<status_routing>
-  `PASS` and `GAPS_FOUND` advance only when the phase gate accepts their contracted payload. `PARTIAL` requires explicit remaining-scope routing. `FAIL` routes to the producing phase's bounded repair. `BLOCKED` asks for the missing prerequisite or stops. `TOOLS_MISSING` stops when delegation, parsing, validation, or required research cannot be performed. `ERROR` retries once when the operation is safe and idempotent, then stops with preserved artifacts.
-</status_routing>
-
 <new_finding_rule>
   Record new findings with stable ids and evidence. Before approval, incorporate them into the audit and plan. After approval, findings inside approved intent but requiring new files, patterns, or scope pause for re-approval; findings outside approved scope become explicit follow-ups. Never silently fix, suppress, or use a new finding to widen mutation limits.
 </new_finding_rule>
@@ -301,10 +326,6 @@
 <ambiguity_handling>
   Select the target only by exact scouting directory identity confirmed by `INDEX.md`. Treat unclear scouting claims as uncertainty, not permission to inspect the deleted package. Preserve conflicting specialist interpretations with confidence and falsifying evidence. If documentation is insufficient for a material decision, return `insufficient_evidence` or `blocked`; do not guess a cleaner old design.
 </ambiguity_handling>
-
-<autonomy_guardrails>
-  The main agent interacts with the user only for target selection, optional mandates, approval, scope expansion, and genuine blockers. All other work proceeds through specialized agents and deterministic gates. The main agent may not inline a delegated phase merely because dispatch is inconvenient; missing delegation capability is `TOOLS_MISSING`.
-</autonomy_guardrails>
 
 <anti_patterns>
   Do NOT:
