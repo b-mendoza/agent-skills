@@ -155,17 +155,18 @@
 </approval_packet_contract>
 
 <output_contract>
-  Persistent run directory: `outputs/improving-skill-phase-{skill-name}/`.
-  - `INDEX.md` — terminal decision, clean-room declaration, run metadata, verdict, artifact registry, gate results, approved scope, created files, validation summary, unresolved risks, and reading order.
-  - `evidence-gate.md` — scouting contract validation, limitations, source inventory, and `G_SCOUTING_COMPLETE` evidence.
-  - `adversarial-audit.md` — every specialist finding, conflicts, overall viability verdict, and outcome options.
-  - `dissent-report.md` — independent comparison of specialist reports with the synthesis and all truth-preservation findings.
-  - `external-pattern-decisions.md` — every scouting pattern id with `adopt`, `adapt`, `reject`, or `defer`, evidence, target gap mapping, transfer risks, and rationale.
-  - `best-practices-compliance.md` — tier-aware `pass`, `fail`, or `not applicable` matrix for the proposed and final package.
-  - `rebuild-plan.md` — approved outcome, package tree, responsibilities, state model when earned, contracts, mutation plan, scenarios, validation plan, and traceability from gap and pattern ids.
-  - `approval-record.md` — exact presented scope and the user's accepted, rejected, deferred, and contested ids; no finding is deleted.
-  - `creation-manifest.md` — proof the target was absent, authorized file list, created-file hashes, and path-boundary comparison. Do not generate a diff against the old package or git history.
-  - `validation-report.md` — independent gate verdicts, scenario observations, repair cycles, remaining limitations, and final release recommendation.
+  <artifact_count>Exactly ten Category A1 files under `outputs/improving-skill-phase-{skill-name}/`; every required section exists with an explicit zero state when empty.</artifact_count>
+  <artifact name="INDEX.md" owner="main agent" consumer="resume and user">Run state, clean-room declaration, contract versions, dossier fingerprint, terminal decision, registry and hashes, gate results, approved scope, object ledger, validation summary, cleanup result, unresolved risks, and reading order.</artifact>
+  <artifact name="evidence-gate.md" owner="evidence-gatekeeper" consumer="all audits">Dossier shape, fixed-schema comparison, integrity, producer gates, identity, coverage, PAT/LIM metadata, limitations, and `G_SCOUTING_COMPLETE` evidence.</artifact>
+  <artifact name="adversarial-audit.md" owner="audit-synthesizer" consumer="dissent and plan">Complete truth ledger, specialist findings, transformations, conflicts, mandate audit, viability verdict, and outcome options.</artifact>
+  <artifact name="dissent-report.md" owner="dissent-reviewer" consumer="truth gate and approval">Independent challenge, omission and softening checks, counter-case, unresolved disagreements, and repair history.</artifact>
+  <artifact name="external-pattern-decisions.md" owner="external-pattern-evaluator" consumer="plan and approval">Exact PAT input/disposed sets and every adopt, adapt, reject, or defer decision with evidence and risks.</artifact>
+  <artifact name="best-practices-compliance.md" owner="package-compliance-auditor" consumer="plan and release">Prior-audit, canonically delimited immutable proposed, and final tier-aware matrices with expected/checked practice sets, trigger evidence, `pass|fail|not applicable`, exception states, and section hashes.</artifact>
+  <artifact name="rebuild-plan.md" owner="rebuild-architect" consumer="approval and build">Outcome, Material Issue decisions, object manifest, route table, state model when earned, contracts, PAT/LIM/MND/GAP traceability, scenarios, and validation plan.</artifact>
+  <artifact name="approval-record.md" owner="main agent" consumer="build and resume">Verified packet and hash, decision-source hashes, reply, separate truth and user dispositions, approved outcome, IDs, manifest, limits, exceptions, and pending state.</artifact>
+  <artifact name="creation-manifest.md" owner="package-builder initially; package-validator finally" consumer="mutation gate">Target-state evidence, approved object rows, created identities and hashes, write ledger, repairs, final ownership verification, and no historical diff.</artifact>
+  <artifact name="validation-report.md" owner="package-validator" consumer="release and user">Structural, compliance, scenario, source-hash, mutation, repair, remaining limitation, and release verdict evidence.</artifact>
+  <lifecycle>A1 remains unstaged and uncommitted and is preserved for resume. A2 YAML and approved validation-sandbox objects are ephemeral and deleted only after durable consumption and checkpointing, unless debugging retention is requested. Category B is the approved replacement package.</lifecycle>
 </output_contract>
 
 <critical_gates>
