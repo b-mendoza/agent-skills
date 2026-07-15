@@ -217,105 +217,107 @@
 </output_collision_and_resume>
 
 <phases>
-  <phase id="1" name="intake-and-clean-room-gate" mode="routing-plus-user-dialogue">
-    <purpose>Select a completed scouting dossier and establish a clean-room, mutation-safe run.</purpose>
+  <phase id="1" name="intake-and-preflight" mode="routing-plus-user-dialogue">
+    <purpose>Select a safe dossier identity, normalize inputs, and prove the candidate target cannot leak into context before any baseline or write.</purpose>
     <steps>
-      <step id="1.1" name="discover">Dispatch a bounded discovery check for `outputs/scouting-phase-*`; present exact eligible names and ask the user to select when `SCOUTING_DIR` is absent.</step>
-      <step id="1.2" name="derive">Derive `{skill-name}` from the selected directory and confirm it against scouting `INDEX.md` through `evidence-gatekeeper`.</step>
-      <step id="1.3" name="absence">Run `G_TARGET_ABSENT`. If `skills/{skill-name}/` exists, do not read or delete it; stop and ask the user to remove or relocate it outside this run.</step>
-      <step id="1.4" name="limits">Capture baseline worktree status without content diffs. Derive `MUTATION_LIMITS`: before approval, write only run outputs and handoffs; after approval, additionally create only approved paths under the absent target directory. Pass the same contract to every specialist.</step>
-      <step id="1.5" name="capabilities">Require isolated-agent dispatch, YAML parsing, filesystem reads, bounded writes, and validation-command capability. Missing dispatch capability returns `TOOLS_MISSING`; the main agent must not inline the full workflow.</step>
+      <step id="1.1">Select `SCOUTING_DIR`; require the exact real direct-child shape and safe suffix before deriving any path.</step>
+      <step id="1.2">If fresh, run the provisional no-follow target check and require `ABSENT` before baseline or A1/A2 mutation. If resuming, use the bounded checkpoint parser and require the checkpoint-expected target state to reconcile; `FOREIGN_OR_DRIFTED` blocks.</step>
+      <step id="1.3">Normalize absent mandates to the explicit empty set or allocate immutable `MND-*`; record ignored preapproval.</step>
+      <step id="1.4">Require fresh-context dispatch, YAML parsing, no-follow metadata, hashing, structural validation, and a runtime sandbox, permission layer, or allowlisted wrapper capable of enforcing and logging the exact write set. Missing mandatory orchestration or write-enforcement capability maps to pre-A1 `blocked`; scenario capability is recorded `available|partial|missing` for plan routing.</step>
+      <step id="1.5">Derive `MUTATION_LIMITS` and `WRITE_ALLOWLIST`, activate enforcement, and perform a no-follow collision check on the exact phase-2 output root and handoff root. On a fresh run require both absent; on resume require checkpoint reconciliation. After clearance, create only the exact provisional handoff root and registered gatekeeper exchange; do not initialize A1.</step>
     </steps>
-    <output>Selected dossier, `{skill-name}`, `{run-id}`, baseline status, `MUTATION_LIMITS`, and gate verdicts.</output>
-    <gate>Proceed only when `G_TARGET_ABSENT` passes and required capabilities exist.</gate>
   </phase>
 
-  <phase id="2" name="evidence-validation" mode="delegated-read-only">
-    <purpose>Prove the scouting dossier is sufficient before any audit treats it as a baseline.</purpose>
+  <phase id="2" name="evidence-and-identity-validation" mode="delegated-read-only-then-bounded-write">
+    <purpose>Prove the scouting dossier and exact identity tuple before establishing persistent run state.</purpose>
     <steps>
-      <step id="2.1" name="validate-dossier">Dispatch `evidence-gatekeeper` with the nine expected artifact paths. It reads the dossier; the main agent receives only status, identity, coverage counts, limitation ids, and `evidence-gate.md` path.</step>
-      <step id="2.2" name="route">On `PARTIAL`, distinguish explicitly bounded limitations from missing evidence that defeats the audit. On missing critical evidence, stop `BLOCKED`; do not recover the old package.</step>
-      <step id="2.3" name="mandates">Ask once for optional `IMPROVEMENT_MANDATES` if absent. No answer means proceed with adversarial evidence; mandates never narrow the audit.</step>
+      <step id="2.1">Dispatch `evidence-gatekeeper` with the exact nine paths, `prompts/scouting-phase.prompt.md` as schema-only normative input, and accepted versions. It writes only the registered A2 report initially.</step>
+      <step id="2.2">Require `G_SCOUTING_COMPLETE` and exact selected-path, `scouting_dir`, suffix, `skill_name`, and `target_path` equality. Any mismatch blocks.</step>
+      <step id="2.3">For a fresh pre-build run, repeat definitive `G_TARGET_ABSENT`. For resume, require the checkpoint-expected target state.</step>
+      <step id="2.4">Recheck the phase-2 output root and require it still absent or a matching resume root. Reconcile the already-created handoff root as current-run provisional state only when it contains exactly the registered gatekeeper exchange and no extra entry; do not classify it as a new collision. Then capture `improvement-boundary-v1`, initialize exactly ten A1 files, persist the provisional A2 registry, and dispatch the gatekeeper in materialize mode to write `evidence-gate.md`.</step>
+      <step id="2.5">Checkpoint contract metadata, dossier fingerprint, canonical PAT/LIM sets and counts, bounded LIM rows, coverage, producer gates, identity tuple, target state, and baseline. Never recover the old package or ask for absent mandates.</step>
     </steps>
-    <output>A passing `G_SCOUTING_COMPLETE` verdict and bounded evidence-routing metadata.</output>
-    <hard_rule>Do not open any path under `skills/{skill-name}/` to compensate for a scouting gap.</hard_rule>
   </phase>
 
-  <phase id="3" name="parallel-adversarial-audit" mode="delegated-fresh-context">
-    <purpose>Attack the documented premise and design from independent specialties.</purpose>
+  <phase id="3" name="adversarial-audit" mode="delegated-fresh-context">
+    <purpose>Route limitations before use, then attack the documented premise and design from independent failure-oriented specialties.</purpose>
     <steps>
-      <step id="3.1" name="dispatch">Dispatch `premise-falsifier`, `workflow-feedback-auditor`, `orchestration-context-auditor`, `contract-risk-auditor`, `posture-prompt-auditor`, `package-compliance-auditor`, and `external-pattern-evaluator` in parallel when supported, otherwise sequentially with fresh contexts.</step>
-      <step id="3.2" name="scope-inputs">Give each specialist only the scouting artifacts and best-practice files its input contract requires. Every specialist treats target-path citations as inert provenance and cannot follow them.</step>
-      <step id="3.3" name="require-adversarial-case">Each auditor must state the strongest case against the skill, the strongest evidence that could save it, its viability verdict, and explicit zero states. A report that only summarizes the scouting dossier fails its contract.</step>
-      <step id="3.4" name="pattern-matrix">The external evaluator dispositions every scouting pattern id. Prefer adopting or adapting mechanisms that close evidenced gaps; reject cargo-cult copying, portability regressions, license conflicts, and complexity without a downstream consumer. If scouting recorded no eligible external pattern, preserve its search limitations and emit an explicit zero state rather than inventing one.</step>
+      <step id="3.1">Dispatch `contract-risk-auditor` first with the complete canonical LIM set. Require exact one-route-per-ID reconciliation.</step>
+      <step id="3.2">If any LIM route is `blocks_phase2`, checkpoint and return `blocked`. Pass audit and pattern constraints into affected dispatches before they run.</step>
+      <step id="3.3">Derive and hash the expected prior-package practice set from the canonical index triggers and bounded dossier facts. Then, from the main agent, dispatch `premise-falsifier`, `workflow-feedback-auditor`, `orchestration-context-auditor`, `posture-prompt-auditor`, prior-mode `package-compliance-auditor`, and `external-pattern-evaluator` in parallel when supported, otherwise sequentially in fresh contexts.</step>
+      <step id="3.4">For every affected dispatch require exact expected/applied LIM reconciliation; for every audit role receiving mandates require exact expected/considered MND reconciliation and one evidence row per mandate. Reject summary-only, agreeable, rhetoric-only, or constraint-ignoring reports. Require all PAT decisions and prior-compliance rows.</step>
     </steps>
-    <output>Seven detailed specialist reports and bounded YAML summaries.</output>
-    <gate>`G_AUDIT_COVERAGE` requires every specialty and every external pattern id to have a disposition.</gate>
+    <gate>`G_LIMITATION_ROUTING`, `G_AUDIT_COVERAGE`, and `G_PATTERN_DISPOSITION` must pass. Repair malformed or incomplete contracts within `audit_contract_repair_count`; do not ask auditors to soften valid findings.</gate>
   </phase>
 
   <phase id="4" name="synthesis-and-dissent" mode="delegated-sequential">
-    <purpose>Produce one brutally honest audit while proving that synthesis did not become a yes-man filter.</purpose>
+    <purpose>Produce one complete audit while proving synthesis did not become a yes-man filter.</purpose>
     <steps>
-      <step id="4.1" name="synthesize">Dispatch `audit-synthesizer` with specialist report paths, mandates, and truth-preservation contract. Require a viability verdict: `sound`, `salvageable`, `fundamentally_flawed`, `not_a_skill`, or `insufficient_evidence`, plus outcome options.</step>
-      <step id="4.2" name="challenge">Dispatch `dissent-reviewer` independently with all specialist reports and the synthesis. It must identify suppressed severity, unsupported certainty, false consensus, and any recommendation that protects sunk cost.</step>
-      <step id="4.3" name="repair">If `G_TRUTH_PRESERVATION` fails, return the exact dissent findings to the synthesizer. Allow at most three targeted repairs; preserve unresolved disagreement rather than forcing consensus.</step>
+      <step id="4.1">Dispatch `audit-synthesizer` with every specialist A2 report, exact input finding sets, the canonical MND set and every role's mandate evidence rows, PAT/LIM decisions and applications, and the truth contract. Require exact MND input/disposed equality, one canonical audit disposition per mandate while preserving conflicts, viability `sound|salvageable|fundamentally_flawed|not_a_skill|insufficient_evidence`, and outcome options.</step>
+      <step id="4.2">Require exact input-to-covered finding reconciliation and durable truth materialization in `adversarial-audit.md`.</step>
+      <step id="4.3">Dispatch a fresh `dissent-reviewer` with every specialist report and synthesis. It tries to refute coverage, severity, evidence, consensus, and recommendation.</step>
+      <step id="4.4">On dissent `FAIL`, repair the synthesis with exact dissent IDs, then dispatch a new dissent review. Repeat within `truth_repair_count`; exhaustion is `blocked`.</step>
+      <step id="4.5">Checkpoint audit, dissent, pattern decisions, prior compliance, and A2 consumption before cleanup.</step>
     </steps>
-    <output>`adversarial-audit.md`, `dissent-report.md`, `external-pattern-decisions.md`, and a passing truth-preservation gate or terminal `blocked`.</output>
-    <hard_rule>The main agent reports the viability verdict and critical findings plainly before discussing implementation.</hard_rule>
+    <gate>`G_TRUTH_PRESERVATION` must pass before planning.</gate>
   </phase>
 
   <phase id="5" name="clean-room-rebuild-plan" mode="delegated-read-only">
-    <purpose>Design the best outcome from evidence rather than reconstructing the deleted package.</purpose>
+    <purpose>Design the smallest outcome that survives the audit rather than reconstructing the deleted package.</purpose>
     <steps>
-      <step id="5.1" name="architect">Dispatch `rebuild-architect` with approved evidence paths, not old skill files. Permit outcomes: build replacement, simplify, demote to prompt, merge recommendation, abandon, or no build.</step>
-      <step id="5.2" name="design">For a build outcome, define package tree, main-agent decision surface, specialized roles, contracts, statuses, gates, feedback loops, context budget, progressive loading, portability, safe scenarios, and exact creation manifest. Require a state machine only for genuinely branching or multi-phase behavior.</step>
-      <step id="5.3" name="validate-plan">Dispatch `plan-validator`. Mandatory best-practice failures, unearned complexity, missing scenario evidence, uncovered audit gaps, or target-history dependency fail `G_PLAN_QUALITY` and route to at most three targeted repairs.</step>
+      <step id="5.1">Dispatch `rebuild-architect` with validated A1 evidence only. Permit `build`, simplify, demote, merge recommendation, abandon, or `no_build`.</step>
+      <step id="5.2">For build, define the complete typed Category B object manifest and, when scenarios need filesystem effects, the ephemeral validation-sandbox manifest; also define the decision surface, orchestrator-owned route table, roles, contracts, statuses, gates, feedback, context budget, progressive loading, portability, scenarios, and validation.</step>
+      <step id="5.3">Apply the Material Issue Gate and exact LIM plan-application rows to every proposed part. Missing executable scenario isolation or write enforcement prevents a build plan from passing; route to a non-build outcome or `blocked`, never a static-only release fiction.</step>
+      <step id="5.4">Run the bounded applicability check to derive and hash the expected proposed practice set, then dispatch `package-compliance-auditor` in proposed mode as sole writer of the canonically delimited proposed section.</step>
+      <step id="5.5">Dispatch `plan-validator`; require unconditional `G_PLAN_QUALITY: PASS`. Proposed compliance may be `pass` or `pass_pending_user_exception_approval`; only fully eligible deviations may enter pending exception rows.</step>
+      <step id="5.6">Have the PLAN report contain the canonical `packet_candidate` subtree, then dispatch `approval-packet-checker`. Checkpoint packet bytes/hash, immutable decision-source projections including `proposed_compliance_sha256`, builder envelope, manifests, and proposed compliance state.</step>
     </steps>
-    <output>`rebuild-plan.md`, proposed creation manifest, compliance matrix, and plan-validator verdict.</output>
-    <gate>No approval request until `G_PLAN_QUALITY` passes or records an explicit user-decidable exception.</gate>
+    <gate>`G_PLAN_QUALITY` and `G_APPROVAL_PACKET_COMPLETE` must pass. Proposed compliance must be `pass` or `pass_pending_user_exception_approval`; the pending state permits presentation only and cannot authorize build.</gate>
   </phase>
 
   <phase id="6" name="approval" mode="main-agent-user-dialogue">
-    <purpose>Get informed authorization for the outcome and exact mutation scope.</purpose>
+    <purpose>Obtain informed current-run authorization for the outcome and exact Category B object scope.</purpose>
     <steps>
-      <step id="6.1" name="present">Present the blunt viability verdict, critical evidence, unresolved dissent, outcome recommendation, gap ids, pattern dispositions, exceptions, file manifest, validation plan, and consequences of rejecting the recommendation.</step>
-      <step id="6.2" name="record">Record the user's decision without deleting disagreements. Require explicit approval of outcome, ids, file manifest, `MUTATION_LIMITS`, and exceptions. Re-ask once for malformed or incomplete approval.</step>
+      <step id="6.1">Present only the verified bounded packet: blunt viability verdict, critical evidence, unresolved dissent, outcome recommendation and alternatives, GAP/PAT/LIM/MND decisions, eligible exceptions, exact object manifest, validation plan, and consequences.</step>
+      <step id="6.2">Apply the approval transition table and keep fact separate from user disposition. For `pass_pending_user_exception_approval`, require an explicit decision for every eligible exception; accepted rows make the effective proposed compliance gate pass through `approval-record.md` without rewriting the immutable proposed section, while any rejected or omitted row routes to plan repair or `no_build`.</step>
+      <step id="6.3">Write `approval-record.md` and checkpoint `INDEX.md` for every terminal or advancing route, including the effective compliance state and immutable `proposed_compliance_sha256`.</step>
     </steps>
-    <output>`approval-record.md` and either a passing `G_USER_APPROVAL`, `approval_required`, or `no_build`.</output>
-    <hard_rule>No target directory or target file may be created before `G_USER_APPROVAL` passes.</hard_rule>
+    <gate>No Category B object may be created or repaired before `G_USER_APPROVAL` passes for the exact verified packet and decision-source hashes.</gate>
   </phase>
 
   <phase id="7" name="build" mode="delegated-write-after-approval">
-    <purpose>Create the approved replacement package from an empty path.</purpose>
+    <purpose>Create only the approved replacement objects with exclusive ownership evidence.</purpose>
     <steps>
-      <step id="7.1" name="recheck-absence">Re-run `G_TARGET_ABSENT`. If the path appeared, stop without reading it.</step>
-      <step id="7.2" name="dispatch-builder">Dispatch `package-builder` with only the approved plan, creation manifest, relevant governing references, and `MUTATION_LIMITS`.</step>
-      <step id="7.3" name="create">Create only approved Category B files under `skills/{skill-name}/`. Implement adopted patterns as original mechanisms; do not copy third-party prose unless licensing and approval explicitly permit it.</step>
-      <step id="7.4" name="report">Return created paths, hashes, gap and pattern traceability, and a bounded summary. Builder self-report never advances directly to success.</step>
+      <step id="7.1">Re-run `G_APPROVAL_PACKET_COMPLETE` packet, immutable source-projection, activated compliance, and builder-envelope checks. Compare `proposed_compliance_sha256`, not the mutable whole-file compliance hash. Drift invalidates approval and returns checkpointed `approval_required` before mutation.</step>
+      <step id="7.2">For initial build, require `G_TARGET_ABSENT`; for resume or repair, require exact `RUN_OWNED_PARTIAL|RUN_OWNED_COMPLETE` reconciliation.</step>
+      <step id="7.3">Dispatch `package-builder` with only the verified packet, exact object manifest, governing references, and `MUTATION_LIMITS`.</step>
+      <step id="7.4">Create initial objects exclusively and no-follow in manifest order. Implement external patterns as original mechanisms; do not copy protected expression without explicit license evidence and approval.</step>
+      <step id="7.5">After every bounded batch and every return status, journal target state, object identities, modes, link counts, hashes, pending rows, event-ledger position, and traceability in `creation-manifest.md` and `INDEX.md`. Route `BUILD: PASS|BLOCKED|ERROR` exactly under the builder status contract; only `PASS` advances.</step>
     </steps>
-    <output>A newly created package plus builder report and initial `creation-manifest.md`.</output>
   </phase>
 
   <phase id="8" name="independent-validation" mode="delegated-read-only-with-targeted-repair">
-    <purpose>Prove the new package works and remains within approved boundaries.</purpose>
+    <purpose>Prove observed behavior, final compliance, static correctness, source binding, and mutation containment.</purpose>
     <steps>
-      <step id="8.1" name="validate-package">Dispatch `package-validator` with the new package, approved plan, audit ids, compliance index, and mutation limits.</step>
-      <step id="8.2" name="validate-behavior">Dispatch `scenario-validator` with safe representative scenarios derived from the scouting failure modes and approved plan. Observe behavior in an isolated fixture; do not rely on self-report or trigger unapproved external effects.</step>
-      <step id="8.3" name="validate-boundary">Compare created and changed paths with baseline status and the approved manifest without using old target content or history. Run structural parsers, reference checks, script consumer checks, and Mermaid validation when applicable.</step>
-      <step id="8.4" name="repair">On `FAIL`, dispatch a targeted repair to `package-builder` with only validator finding ids and intersected mutation scope. Re-run affected validators. Stop after three repair cycles.</step>
+      <step id="8.1">Create only the approved ephemeral validation-sandbox objects under runtime write enforcement, then dispatch `scenario-validator`. It must invoke the run-owned package for every planned scenario, reconcile expected/applied LIM sets, and write only approved sandbox effects, the event ledger, and its registered A2 report.</step>
+      <step id="8.2">Run the bounded applicability check for the built package, then dispatch `package-compliance-auditor` in final mode after every build or repair; it is sole writer of the final matrix section.</step>
+      <step id="8.3">Dispatch `package-validator` last with scenario report, final compliance, immutable approved-source projections, baseline, object ledger, sandbox ledger, and enforcement event ledger. It independently re-derives final applicable practices, writes `validation-report.md`, and owns the final verifier section of `creation-manifest.md`.</step>
+      <step id="8.4">`STATIC_ONLY|TOOLS_MISSING` is non-passing and returns checkpointed `blocked` with the run-owned package and evidence preserved. Static reasoning is never behavioral proof and cannot be approved into release.</step>
+      <step id="8.5">On `FAIL`, collect all current findings in stable order, recheck packet and source hashes, dispatch one scoped builder repair round, then rerun scenario validation when behavior may change, final compliance, package validation, and `G_MUTATION_BOUNDARY`. Exhaustion is `blocked`.</step>
+      <step id="8.6">Checkpoint final creation manifest, validation report, compliance matrix, target state, and gate evidence.</step>
     </steps>
-    <output>`validation-report.md`, final `creation-manifest.md`, final compliance matrix, and gate evidence.</output>
-    <gate>Return `rebuilt` only when `G_PACKAGE_VALID` and `G_MUTATION_BOUNDARY` pass. Otherwise return `blocked` with preserved evidence.</gate>
+    <gate>`G_STRUCTURAL_VALIDATION`, `G_SCENARIO_VALIDATION`, final `G_TIERED_COMPLIANCE`, `G_MUTATION_BOUNDARY`, and `G_PACKAGE_VALID` must all pass for `rebuilt`.</gate>
   </phase>
 
   <phase id="9" name="truthful-handoff-and-cleanup" mode="main-agent-routing">
-    <purpose>Deliver the decision without hiding limitations and clean up ephemeral state.</purpose>
+    <purpose>Deliver one unsugarcoated terminal result and finalize resumable evidence.</purpose>
     <steps>
-      <step id="9.1" name="index">Dispatch `handoff-writer` to write `INDEX.md` from bounded run state, then validate its required sections independently.</step>
-      <step id="9.2" name="report">Return exactly one terminal decision: `rebuilt`, `no_build`, `approval_required`, `blocked`, or `error`. State the viability verdict, what was created, what failed, remaining risks, and next action in plain language.</step>
-      <step id="9.3" name="cleanup">Delete successful terminal Category A2 handoffs; preserve Category A1 outputs for resumability; never stage either category.</step>
+      <step id="9.1">Dispatch `handoff-writer` with bounded run state and nine non-INDEX A1 paths and hashes. It returns only a registered A2 candidate.</step>
+      <step id="9.2">Validate candidate sections against bounded state, materialize non-INDEX A1 repairs if needed, and checkpoint all durable A1 content.</step>
+      <step id="9.3">Delete or intentionally retain exact registered A2 files and validation-sandbox objects, verify cleanup through the enforcement ledger, record every lifecycle result, and do not return yet.</step>
+      <step id="9.4">The main agent writes terminal `INDEX.md` last with cleanup result and sentinel self-hash, then independently verifies exactly ten A1 files, sibling hashes, index hash, gates, status, ledgers, and reading order.</step>
+      <step id="9.5">Repair handoff defects by deterministic rounds. On exhaustion use the bounded fallback. Only after the final read-only check return exactly one terminal response with viability verdict, what was or was not built, failed gates, remaining risks, and next action.</step>
     </steps>
-    <output>Complete persistent run artifacts and a concise, unsugarcoated user handoff.</output>
   </phase>
 </phases>
 
