@@ -322,62 +322,30 @@
 </phases>
 
 <new_finding_rule>
-  Record new findings with stable ids and evidence. Before approval, incorporate them into the audit and plan. After approval, findings inside approved intent but requiring new files, patterns, or scope pause for re-approval; findings outside approved scope become explicit follow-ups. Never silently fix, suppress, or use a new finding to widen mutation limits.
+  Record every new finding with stable ID and evidence. Before approval, incorporate it into truth, PAT/LIM/MND routing, plan, and packet. After approval, Lane A contains approved-gap closure, touched files, mutation boundaries, gate integrity, and directly dependent defects; it may repair within approved scope. Lane B contains unrelated or pre-existing findings; report them only. Any finding requiring new objects, patterns, permissions, or scope invalidates the packet and pauses for newly checked approval. Never silently fix, suppress, or widen scope.
 </new_finding_rule>
 
-<ambiguity_handling>
-  Select the target only by exact scouting directory identity confirmed by `INDEX.md`. Treat unclear scouting claims as uncertainty, not permission to inspect the deleted package. Preserve conflicting specialist interpretations with confidence and falsifying evidence. If documentation is insufficient for a material decision, return `insufficient_evidence` or `blocked`; do not guess a cleaner old design.
-</ambiguity_handling>
+<ambiguity_and_failure>
+  Treat unclear scouting claims as uncertainty, never permission to inspect the deleted package. Preserve conflicting interpretations with confidence and falsifying evidence. If documentation cannot support a material decision, return `insufficient_evidence` or `blocked`; do not invent a cleaner prior design. A role that lacks a purpose-defining capability fails loudly rather than substituting training-memory opinion.
+</ambiguity_and_failure>
 
 <anti_patterns>
   Do NOT:
-  - Read or recover the prior target package from the working tree, git history, index, mirrors, backups, caches, scouting citations, or another worktree.
-  - Enumerate targets from `skills/`; selection comes from completed scouting directories because the old target may be deleted.
-  - Patch in place, generate a historical diff, or let the old package's file tree constrain the clean-room design.
-  - Let the main agent absorb raw scouting documents, specialist reports, web pages, implementation files, diffs, or logs that a bounded subagent result can replace.
-  - Accept a summary-only audit, omit zero states, collapse conflicts into false consensus, or soften findings to preserve rapport or sunk cost.
-  - Treat profanity, severity, or contrarian tone as evidence; harsh verdicts require traceable facts and consequences.
-  - Treat user mandates as proof, or erase an audit finding because the user rejects it.
-  - Adopt every external pattern, copy third-party prose blindly, ignore license or portability, or add architecture without a downstream consumer.
-  - Create the target before approval, mutate outside the approved manifest, or broaden repairs beyond validator findings.
-  - Let the builder validate its own work, substitute self-report for representative scenarios, or declare success with a failed mandatory practice or critical gate.
-  - Force a state machine, subagent, reference, or script into a package when the complexity does not pass the Material Issue Gate.
+  - Baseline, enumerate, hash, read, search, diff, or recover a candidate target before the safe no-follow absence or run-owned check.
+  - Read or recover the prior target from any working tree, history, index, mirror, backup, cache, or scouting citation.
+  - Let the deleted package's tree, terminology, or implementation constrain design beyond dossier evidence.
+  - Let the dossier self-approve a weakened schema or let normative or external sources fill missing prior-package facts.
+  - Initialize A1 for a provisional suffix before exact identity-tuple validation.
+  - Ask for optional mandates when absent, treat mandates as truth, or let them narrow the audit.
+  - Let the main agent absorb raw dossier documents, specialist reports, external pages, implementation files, Git rows, diffs, or logs.
+  - Accept a summary-only or agreeable audit, hide conflicts, soften findings, protect sunk cost, or use harsh tone without evidence.
+  - Treat user rejection as falsification or delete a finding from the truth ledger.
+  - Route LIM constraints after affected work has run, or miss, invent, duplicate, or ambiguously assign PAT/LIM IDs.
+  - Add a role, artifact, gate, state, or script without a Material Issue and unique consumer.
+  - Use unregistered A2 paths, let multiple concurrent writers own one A1 file, or resume from stale A2.
+  - Bypass `G_PLAN_QUALITY`, present an unchecked packet, or build from decision-bearing A1 bytes that changed after approval.
+  - Create or overwrite a Category B object without exclusive run ownership, a typed manifest row, and a durable ledger entry.
+  - Widen repair scope, conceal unauthorized mutation, let a producer grade its own critical output, or relabel static inspection as observed behavior.
+  - After A1 initialization, return before A2 and sandbox cleanup or retention is recorded and terminal `INDEX.md` is written and verified last; before A1, use only the declared pre-A1 terminal protocol.
 </anti_patterns>
 
-<constraints scope="all-phases">
-  <constraint id="1" name="scouting-only-baseline">Use the completed scouting dossier as the sole description of the prior skill.</constraint>
-  <constraint id="2" name="old-package-zero-context">No agent may read, recover, diff, or use content from the prior target package or its history.</constraint>
-  <constraint id="3" name="routing-only-main">The main agent routes, decides, asks, and reports; specialized agents perform raw inspection, audit, design, build, and validation.</constraint>
-  <constraint id="4" name="fresh-bounded-delegation">Every specialist receives a complete, minimal input contract and returns structured statuses, paths, ids, and bounded summaries.</constraint>
-  <constraint id="5" name="adversarial-truth">Falsify the premise, preserve dissent, and state material conclusions without friendliness, deference, or conflict avoidance distorting the verdict.</constraint>
-  <constraint id="6" name="external-mechanism-adoption">Evaluate every scouting pattern and adopt or adapt only mechanisms that close evidenced gaps and pass portability, licensing, and earned-complexity checks.</constraint>
-  <constraint id="7" name="tiered-best-practices">Apply the best-practices index by tier with evidence and route mandatory failures as blocking unless an explicit, safe, user-approved exception exists.</constraint>
-  <constraint id="8" name="approval-gated-creation">Create the replacement only after exact user approval and a second target-absence check.</constraint>
-  <constraint id="9" name="mutation-limits">Pass one intake-derived `MUTATION_LIMITS` contract to every agent and intersect it with validator findings during repair.</constraint>
-  <constraint id="10" name="independent-validation">Protect critical outputs with independent gates and validate behavior through safe representative scenarios.</constraint>
-  <constraint id="11" name="portable-package">Target OpenCode and Claude Code with plain Markdown, capability-first contracts, orchestrator-owned routing, and no required nested dispatch.</constraint>
-  <constraint id="12" name="artifact-lifecycle">Keep A1 outputs and A2 handoffs out of commits; clean A2 at terminal completion and treat only the rebuilt package as implementation output.</constraint>
-</constraints>
-
-<success_criteria>
-  - SC1: Target selection came from a completed scouting directory, and the dossier `INDEX.md` identity matched `{skill-name}`.
-  - SC2: `G_TARGET_ABSENT` passed before audit and immediately before build; no role read, listed, searched, hashed, diffed, restored, or recovered prior target content from any source.
-  - SC3: The evidence gate independently validated all nine scouting artifacts, coverage, status, citations, and limitations; missing critical evidence blocked rather than triggering old-package recovery.
-  - SC4: The main agent retained only bounded routing state and delegated raw document inspection, auditing, pattern evaluation, synthesis, architecture, implementation, and validation through structured handoffs.
-  - SC5: Every audit specialty produced findings or an explicit evidence-backed zero state, stated the strongest case against and for the skill, and returned a routeable status.
-  - SC6: Every material finding has a stable id, severity, claim, evidence, consequence, confidence, falsifying evidence, and required outcome.
-  - SC7: The dissent reviewer compared all specialist reports with the synthesis; no finding was omitted, softened, downgraded, or hidden without recorded evidence and rationale.
-  - SC8: The audit returned one viability verdict—`sound`, `salvageable`, `fundamentally_flawed`, `not_a_skill`, or `insufficient_evidence`—and the main agent reported it plainly before implementation discussion.
-  - SC9: Every scouting external-pattern id has an `adopt`, `adapt`, `reject`, or `defer` disposition with evidence, gap mapping, transfer risks, licensing and portability notes, and rationale.
-  - SC10: The best-practices matrix evaluates applicable mandatory, recommended, and optional-style practices as `pass`, `fail`, or `not applicable`; blocking failures and exceptions are visible.
-  - SC11: The rebuild plan traces every proposed file and mechanism to approved gap, mandate, pattern, or best-practice ids and excludes unearned architecture.
-  - SC12: No target file was created before the user approved outcome, ids, manifest, mutation limits, and exceptions; rejected or contested findings remained in `approval-record.md`.
-  - SC13: Every created or changed path is authorized by the approved creation manifest or run artifact scope, and unrelated pre-existing work remains unchanged.
-  - SC14: The replacement's main agent has explicit identity and posture, routes bounded work to specialized agents where the two-question test favors delegation, and keeps required dispatch ownership at the orchestrator level.
-  - SC15: Independent validation covers structure, references, contracts, flow, portability, best practices, mutation boundaries, and safe representative behavior; builder self-report is not used as proof.
-  - SC16: Repair cycles are capped at three and restricted to validator finding ids and intersected mutation scope; unresolved failures return `blocked` with evidence.
-  - SC17: `INDEX.md` and all ten persistent artifacts exist with required sections or explicit zero states, while A1 and A2 artifacts remain unstaged and uncommitted.
-  - SC18: The run returns exactly one terminal decision: `rebuilt`, `no_build`, `approval_required`, `blocked`, or `error`, with an unsugarcoated verdict, remaining risks, and next action.
-</success_criteria>
-</prompt>
-```
