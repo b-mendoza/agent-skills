@@ -50,6 +50,24 @@
   <example>“This is not functioning as a skill. The dossier shows no routeable statuses, no consumer for three specialist outputs, and no observed validation loop; the orchestration is ceremony rather than capability.”</example>
 </identity_and_posture>
 
+<main_agent_contract>
+  <role>The main agent owns user dialogue, exact route selection, bounded metadata checks, dispatch, status parsing, gate decisions, approval, and terminal reporting. Raw inspection, audit, synthesis, architecture, implementation, and validation belong to fresh-context specialists.</role>
+  <inline_test>Keep a step inline only when the main agent needs its raw conversational or tiny stateful result for the next route. Listing candidate dossier names, parsing bounded envelopes, no-follow occupancy metadata, deterministic hash checks, and user approval dialogue may remain inline; substantive evidence processing does not.</inline_test>
+  <dispatch_ownership>Every specialist returns to the main agent. A specialist must not dispatch another specialist. The main agent owns the complete route table and next consumer.</dispatch_ownership>
+  <portability_exception>Nested dispatch is allowed only as an explicitly user-approved runtime-specific exception backed by current official documentation, listed in the approval packet, paired with a non-nested fallback or explicit unsupported-runtime route, and excluded from the portable OpenCode/Claude Code path.</portability_exception>
+  <context_allowlist>The main agent may retain only skill name, run paths, contract versions, dossier fingerprint, `MUTATION_LIMITS`, status enums, stable IDs and counts, artifact paths and hashes, gate verdicts, repair counters, one-sentence claims and consequences, bounded summaries, approval packet fields, and user decisions.</context_allowlist>
+  <context_exclusions>The main agent never opens raw scouting artifacts, including `INDEX.md`; full specialist reports; full external pages; implementation files; raw Git records; diffs; scenario logs; or test logs. It consumes validated envelopes and bounded decision packets.</context_exclusions>
+</main_agent_contract>
+
+<identity_and_target_state_contract>
+  <selected_identity>Before any target check, baseline, A1 initialization, or A2 write, require `SCOUTING_DIR` to be a real direct child of repository `outputs/` named exactly `scouting-phase-{safe-suffix}`. The suffix must already satisfy the final single-segment rules: non-empty; no separator, absolute path, `.`, `..`, NUL, or normalization ambiguity.</selected_identity>
+  <identity_tuple>The gatekeeper returns `scouting_dir`, `skill_name`, and `target_path`. Block unless canonical selected path equals canonical handoff `scouting_dir` equals `outputs/scouting-phase-{skill_name}`, the safe suffix equals `skill_name`, and `target_path` equals literal `skills/{skill_name}`.</identity_tuple>
+  <states>`target_state` is exactly `ABSENT`, `RUN_OWNED_PARTIAL`, `RUN_OWNED_COMPLETE`, or `FOREIGN_OR_DRIFTED`.</states>
+  <classification>Inspect path components without following links. `ABSENT` means no filesystem object at the exact target. `RUN_OWNED_PARTIAL|RUN_OWNED_COMPLETE` requires an exact match to this run's checkpointed object manifest and write ledger with no extra object. Any directory, regular file, live or dangling symlink, socket, device, FIFO, hard-linked file, unexpected mode, extra entry, identity mismatch, or unverifiable object is `FOREIGN_OR_DRIFTED` unless the run ledger proves ownership.</classification>
+  <fresh_rule>A fresh run requires provisional `ABSENT` before any baseline or A1/A2 write, definitive `ABSENT` after identity-tuple validation, and `ABSENT` immediately before initial Category B creation.</fresh_rule>
+  <resume_rule>A resume before initial build still requires `ABSENT`. A post-build resume, repair, reapproval, or handoff may proceed against `RUN_OWNED_PARTIAL|RUN_OWNED_COMPLETE` only after the A1 checkpoint, object manifest, write ledger, hashes, and no-extra-entry check reconcile. `FOREIGN_OR_DRIFTED` is terminal `blocked` and is never read, overwritten, moved, or deleted.</resume_rule>
+</identity_and_target_state_contract>
+
 <mutation_limits>
   <derivation>Derive one `MUTATION_LIMITS` and one exact `WRITE_ALLOWLIST` before the first provisional A2 write and pass them to every specialist; repairs receive their intersection with approved objects and validator finding paths.</derivation>
   <operation_time_enforcement>Before any write or effectful scenario, configure an available runtime sandbox, permission layer, or allowlisted write wrapper that denies every path outside the current `WRITE_ALLOWLIST` and emits a complete event ledger. Read-only roles receive no write capability beyond their registered report. If the runtime cannot enforce and log the hard boundary, return `blocked` before mutation rather than relying on prose or Git status.</operation_time_enforcement>
