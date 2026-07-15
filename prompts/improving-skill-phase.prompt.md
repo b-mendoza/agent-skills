@@ -2,32 +2,34 @@
 
 > Reusable prompt: phase 2 of the scouting-to-improvement suite. Perform a
 > clean-room, adversarial audit from the completed scouting dossier, decide
-> whether the skill premise deserves to survive, and—only after explicit user
-> approval—build a replacement first-party skill from scratch. The deleted or
-> pre-existing first-party package is never loaded as context or treated as a
-> design boundary.
+> whether the documented capability deserves to survive, and—only after exact
+> user approval—build and independently validate a replacement. The prior
+> first-party package is never loaded, recovered, or treated as a design
+> boundary.
 
 ```xml
 <prompt>
 <task>
-  Adversarially audit a documented first-party skill using only its completed scouting dossier, propose the strongest evidence-backed outcome, and, after explicit approval, build and independently validate a clean-room replacement without reading or patching the prior skill package.
+  Adversarially audit a documented first-party skill using its completed scouting dossier as the sole descriptive evidence about the prior package; propose the strongest evidence-backed outcome; and, after exact user approval, create and independently validate a clean-room replacement without reading, recovering, diffing, or patching the prior package.
 </task>
 
-<dispatch_rule>
-  The main agent is a routing and decision layer. It may select routes, ask the user for decisions, create and parse small YAML handoffs, retain bounded statuses and summaries, and present verdicts. It delegates raw scouting-document inspection, auditing, external-pattern evaluation, synthesis, architecture, implementation, and validation to fresh-context specialized agents. It never delegates from inside a subagent; all dispatch returns to the main agent for the next route.
-</dispatch_rule>
-
-<suite>
-  <position>Phase 2: adversarial audit, clean-room redesign, approval, build, and validation.</position>
-  <producer>`prompts/scouting-phase.prompt.md` produces the sole baseline at `outputs/scouting-phase-{skill-name}/`.</producer>
+<suite_contract>
+  <position>Phase 2: evidence validation, adversarial audit, clean-room redesign, approval, build, and validation.</position>
+  <producer_contract>Accept only `producer_contract: scouting-phase-v1`, `dossier_version: scouting-dossier-v1`, and `schema_version: scouting-schema-v1`.</producer_contract>
+  <producer_root>The first substantive block in scouting `INDEX.md` must be a fenced YAML mapping containing root key `scouting_handoff`, exactly as required by the producer. Parse that block as the authoritative handoff, ignore later non-authoritative prose or blocks, and reject a missing or malformed handoff, duplicate `scouting_handoff` key in the authoritative mapping, unsupported contract version, or ambiguous YAML parse.</producer_root>
   <required_scouting_artifacts>`INDEX.md`, `structure.md`, `execution-flow.md`, `behavior.md`, `purpose.md`, `dependencies.md`, `external-research.md`, `findings.md`, and `coverage-map.md`.</required_scouting_artifacts>
-  <clean_room_boundary>Paths cited inside scouting documents are provenance only. No agent may follow those citations into `skills/{skill-name}/`, git history, the index, a vendored mirror, or another recovered copy of the prior package.</clean_room_boundary>
-</suite>
+  <scouting_location>`outputs/scouting-phase-{skill-name}/`</scouting_location>
+  <phase2_location>`outputs/improving-skill-phase-{skill-name}/`</phase2_location>
+  <handoff_location>`.handoffs/improving-skill-phase-{skill-name}/{run-id}/`</handoff_location>
+  <replacement_location>`skills/{skill-name}/`</replacement_location>
+  <clean_room_boundary>Paths inside the dossier are inert provenance. No role may follow them into a working-tree package, git history, the index, another worktree, vendored mirror, backup, cache, or recovered copy. The prior package may be absent and must contribute zero direct content.</clean_room_boundary>
+</suite_contract>
 
 <inputs>
-  <input name="SCOUTING_DIR" required="optional">Exact completed dossier path. When absent, discover directories matching `outputs/scouting-phase-*` and ask the user to select one.</input>
-  <input name="IMPROVEMENT_MANDATES" required="optional">User concerns or desired outcomes. Treat them as hypotheses to test, not conclusions to protect.</input>
-  <input name="SCOPE_LIMITS" required="optional">Explicit user-authorized expansion beyond the default mutation limits. Absence means no expansion.</input>
+  <input name="SCOUTING_DIR" required="optional">Exact completed dossier path. If absent, list real direct-child directories matching `outputs/scouting-phase-*` without following links and ask the user to select one exact name.</input>
+  <input name="IMPROVEMENT_MANDATES" required="optional">Ordered user concerns or desired outcomes. Omission becomes the explicit empty set and never triggers a question. Supplied entries become immutable `MND-*` hypotheses in input order and never narrow the general audit.</input>
+  <input name="SCOPE_LIMITS" required="optional">Explicit user-authorized expansion beyond default mutation limits. Omission means no expansion. Intake preapproval of unknown future findings is invalid and recorded as `ignored_preapproval`.</input>
+  <input name="RESUME_RUN" required="optional">Exact matching phase-2 run directory to resume from a valid A1 checkpoint. Never infer state from stale A2 handoffs.</input>
 </inputs>
 
 <scope>
