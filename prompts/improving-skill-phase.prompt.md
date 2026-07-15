@@ -367,3 +367,28 @@
   - After A1 initialization, return before A2 and sandbox cleanup or retention is recorded and terminal `INDEX.md` is written and verified last; before A1, use only the declared pre-A1 terminal protocol.
 </anti_patterns>
 
+<success_criteria>
+  - SC1: The selected dossier path, safe suffix, handoff `scouting_dir`, `skill_name`, and `target_path` reconciled exactly before A1 initialization.
+  - SC2: A fresh target passed no-follow `ABSENT` before baseline or any write, after identity validation, and before initial build; resumed targets reconciled exactly as run-owned with no extras.
+  - SC3: `G_SCOUTING_COMPLETE` compared the dossier with the immutable producer v1 contract, not a self-authored relaxation, and independently validated shape, hashes, schema, evidence closure, gates, counts, anchors, and zero states.
+  - SC4: The dossier was the sole descriptive source for the prior package; schema, normative guidance, and external URLs stayed in their declared evidence roles.
+  - SC5: Runtime write enforcement denied every path outside the exact allowlist and produced a complete event ledger; `improvement-boundary-v1` exposed no target paths, blob IDs, or contents and supplied secondary non-target evidence.
+  - SC6: Omitted mandates became an explicit empty set without a question; every supplied `MND-*` received audit, plan, user, and terminal dispositions.
+  - SC7: The main agent retained bounded routing state only; every role used the exact versioned schema, registered A2 path, expected/applied LIM and MND projections where applicable, read/network/write limits, zero state, status, and consumer.
+  - SC8: `contract-risk-auditor` routed every LIM before affected work; every affected role proved exact expected/applied LIM equality; every PAT set reconciled; and synthesis reconciled every MND disposition, including empty sets.
+  - SC9: Every audit specialty produced evidence-backed findings or zero states and strongest cases for and against; valid harsh findings were never softened for rapport.
+  - SC10: Synthesis reconciled every input finding and every repair received a fresh dissent review; truth and user disposition remained separate.
+  - SC11: The run returned one viability verdict `sound|salvageable|fundamentally_flawed|not_a_skill|insufficient_evidence` and reported it plainly before implementation.
+  - SC12: Proposed and final compliance used independently derived exact applicable-practice sets; pending exceptions did not authorize build before acceptance; the immutable proposed-section hash survived final-section writes; `G_PLAN_QUALITY` passed without bypass.
+  - SC13: `G_APPROVAL_PACKET_COMPLETE` independently re-extracted the PLAN report's canonical packet subtree and reconciled its deterministic hash, IDs, dissent, manifests, scenarios, exceptions, immutable source projections, and builder envelope.
+  - SC14: Approval followed the exact transition table; no Category B mutation occurred before a current verified packet and source hashes were approved.
+  - SC15: Initial Category B creation was exclusive and no-follow; every root, directory, and regular file had an approved object row and durable ownership ledger; partial builds remained resumable without treating foreign objects as owned.
+  - SC16: Approved sandbox setup, actual package scenarios, final compliance, then package validation ran in deterministic single-writer order; sandbox effects and cleanup reconciled through enforcement, and static-only or missing-tool results never passed release gates.
+  - SC17: Repair counters were independent deterministic rounds, reran affected original checkers, and exhausted to `blocked` or `error` with preserved evidence.
+  - SC18: Every attempted and completed write in the enforcement ledger targeted a registered A1/A2, approved sandbox object, or approved run-owned Category B object; unrelated state remained unchanged and unauthorized mutation blocked without concealment.
+  - SC19: After A1 initialization, exactly ten A1 files exist with required sections or zero states; the main agent owned `INDEX.md`; A2 and sandbox cleanup was recorded before terminal write; sibling plus sentinel hashes passed. Pre-A1 failures created no A1 root and used the declared terminal protocol.
+  - SC20: Each invocation returned exactly one `rebuilt|no_build|approval_required|blocked|error` response with an unsugarcoated verdict, failed gates, remaining risks, unobserved behavior, and next action.
+</success_criteria>
+</prompt>
+```
+
