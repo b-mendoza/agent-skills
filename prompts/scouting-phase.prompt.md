@@ -64,20 +64,19 @@
 </definitions>
 
 <text_classification>
-  <detector>Use `utf8-strict-v1`. Read raw bytes without following symlinks. An optional UTF-8 BOM is allowed; the remaining bytes must contain no NUL and decode as strict UTF-8 with no replacement. Success is text.</detector>
+  <detector>Classify a regular file as text when it has a textual role below or its full contents read successfully as text. No byte-level decoding procedure is required.</detector>
   <textual_roles>
     Extensions: `.md`, `.mdx`, `.txt`, `.rst`, `.adoc`, `.json`, `.jsonc`, `.yaml`, `.yml`, `.toml`, `.xml`, `.html`, `.htm`, `.css`, `.scss`, `.js`, `.jsx`, `.mjs`, `.cjs`, `.ts`, `.tsx`, `.py`, `.sh`, `.bash`, `.zsh`, `.fish`, `.rb`, `.go`, `.rs`, `.java`, `.kt`, `.kts`, `.c`, `.h`, `.cc`, `.cpp`, `.hpp`, `.ini`, `.cfg`, `.conf`, `.env`, `.csv`, and `.tsv`.
     Names beginning `README`, `LICENSE`, or `Dockerfile`; exact names `SKILL.md`, `AGENTS.md`, `CLAUDE.md`, or `Makefile`; and files with a text shebang.
   </textual_roles>
-  <routing>Strict-decode failure is non-text `metadata_only` unless the path has a textual role. A textual-role failure or any incomplete read of classified text is `unreadable` and blocks completion.</routing>
-  <recording>Record detector version, textual-role basis, decoding result, byte coverage, and end-of-file proof per regular file and summarize the detector in `INDEX.md`.</recording>
+  <routing>A file that cannot be read as text is non-text `metadata_only` unless it has a textual role. A textual-role file that cannot be fully read is `unreadable` and blocks completion.</routing>
+  <recording>Record classification basis (textual role or successful read), read status, line count for text files, and SHA-256 per regular file.</recording>
 </text_classification>
 
 <source_snapshot>
-  <binding>For each regular target file, bind classification, SHA-256, line count, excerpts, semantic analysis, byte coverage, and end-of-file proof to one accepted byte stream.</binding>
-  <procedure>Capture a no-follow path stat, open without following links, capture descriptor stat, read from byte zero through end-of-file while hashing and analyzing those same bytes, then capture descriptor stat again. Reopen no-follow and rehash the full file before accepting the batch.</procedure>
-  <stability>Require unchanged device, inode, type, mode, size, nanosecond mtime and ctime across path and descriptor checks, the same path identity after the read, and identical first and verification hashes.</stability>
-  <failure_route>On mismatch, discard every row and excerpt derived from that attempt and retry once from a fresh snapshot; a second mismatch is `blocked: target_changed_during_read`. Record a snapshot token with accepted evidence and recheck the target manifest at the checkpoint.</failure_route>
+  <binding>For each regular target file, bind classification, SHA-256, line count, excerpts, and semantic analysis to one complete read of that file.</binding>
+  <procedure>Read each regular file completely and compute its SHA-256 once. Derive every excerpt, line count, and analysis row from that same read; do not re-derive claims from partial or remembered content.</procedure>
+  <change_detection>At the final mutation gate, rehash the target files once and compare against the recorded hashes. On mismatch, discard evidence derived from the changed file and re-read it once; a second mismatch is `blocked: target_changed_during_read`.</change_detection>
 </source_snapshot>
 
 <mutation_limits>
