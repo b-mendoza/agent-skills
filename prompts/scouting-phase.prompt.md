@@ -128,7 +128,7 @@
 <gate_contract>
   <gate id="G_INPUT">Exact real first-party target selected; `SKILL.md` is a regular file; required read, hash, Git-baseline, and output-write capabilities are available; at least one discovery/query path can run; and exact-file fetch is available for any candidate selected for inspection.</gate>
   <gate id="G_BASELINE">Canonical target and repository baselines captured; output collision resolved; real output path is contained and safe before any write.</gate>
-  <gate id="G_INVENTORY">Every entry and detected reference has a disposition; every regular file has SHA-256; every text file has encoding, line count, byte or chunk coverage, and end-of-file proof.</gate>
+  <gate id="G_INVENTORY">Every entry and detected reference has a disposition; every regular file has SHA-256; every text file has a line count and a complete-read status.</gate>
   <gate id="G_MAP">Every fixed facet is dispositioned and material claims use valid, correctly separated evidence.</gate>
   <gate id="G_RESEARCH">The accessible core query matrix, screening, source inspection, pattern extraction, and honest stop state satisfy the external-research contract.</gate>
   <gate id="G_DOSSIER">Exactly nine artifacts meet their schemas; ids, anchors, counts, hashes, limitations, and clean-room evidence reconcile; no prescriptive improvement language remains.</gate>
@@ -240,8 +240,8 @@
     <purpose>Prove complete source and reference coverage before synthesis.</purpose>
     <steps>
       <step id="2.1">Walk every target entry, including hidden files, directories, regular files, special entries, and symlinks without escape. Allocate `FILE-*` deterministically.</step>
-      <step id="2.2">Classify every regular file with `utf8-strict-v1` and the fixed textual-role rules. Record detector result, role basis, SHA-256 for every regular file, and line count for text.</step>
-      <step id="2.3">Read every text file fully in chunks when needed; record byte/chunk coverage and end-of-file proof. Persist normalized rows and evidence incrementally, not raw files.</step>
+      <step id="2.2">Classify every regular file as text or non-text using the textual-role rules and read success. Record classification basis, SHA-256 for every regular file, and line count for text.</step>
+      <step id="2.3">Read every text file fully, in chunks when needed; record its complete-read status. Persist normalized rows and evidence incrementally, not raw files.</step>
       <step id="2.4">For non-text files, record metadata, hash, safe preview state, and `metadata_only` limitation when content cannot be inspected. An unreadable text file is `unreadable` and blocks completion.</step>
       <step id="2.5">Run every declared reference detector, allocate `REF-*`, and classify each observed reference. Preserve indeterminate dynamic constructions rather than inventing resolution.</step>
     </steps>
