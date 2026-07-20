@@ -26,7 +26,7 @@
 </suite_contract>
 
 <inputs>
-  <input name="SCOUTING_DIR" required="optional">Exact completed dossier path. If absent, list real direct-child directories matching `outputs/scouting-phase-*` without following links and ask the user to select one exact name.</input>
+  <input name="SCOUTING_DIR" required="optional">Exact completed dossier path. If absent, list real direct-child directories matching `outputs/scouting-phase-*` without following links and ask the user to select one exact name. Scouting leaves `skills/{skill-name}/` in place; a fresh run requires the user to have removed or relocated that prior package outside this run before intake, because this phase requires `target_state: ABSENT` and never deletes an occupied target itself. When the target is still present, report that obligation and stop rather than treating it as an internal failure.</input>
   <input name="IMPROVEMENT_MANDATES" required="optional">Ordered user concerns or desired outcomes. Omission becomes the explicit empty set and never triggers a question. Supplied entries become immutable `MND-*` hypotheses in input order and never narrow the general audit.</input>
   <input name="SCOPE_LIMITS" required="optional">Explicit user-authorized expansion beyond default mutation limits. Omission means no expansion. Intake preapproval of unknown future findings is invalid and recorded as `ignored_preapproval`.</input>
   <input name="RESUME_RUN" required="optional">Exact matching phase-2 run directory to resume from a valid A1 checkpoint. Never infer state from stale A2 handoffs.</input>
