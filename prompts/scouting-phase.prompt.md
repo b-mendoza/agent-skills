@@ -331,12 +331,12 @@
 <success_criteria>
   - SC1: An exact real first-party target and regular `SKILL.md` passed `G_INPUT`; pre-dossier failures created no output and never fell back to vendored copies.
   - SC2: `G_BASELINE` captured deterministic target and Git-visible state, safely resolved output collision, and initialized only the exact nine files.
-  - SC3: Every target entry has `FILE-*`, every regular file has SHA-256, every text file was read through end-of-file, and every detected reference has `REF-*`; unreadable text prevented `complete`.
+  - SC3: Every target entry has `FILE-*`, every regular file has SHA-256, every text file was read fully, and every detected reference has `REF-*`; unreadable text prevented `complete`.
   - SC4: Every fixed facet is dispositioned as `EVIDENCED`, `ABSENT`, `UNKNOWN`, or `NOT_APPLICABLE`; absence is never inferred from incomplete inspection.
   - SC5: Material claims use valid `EVD-*` records with bounded dossier-resident evidence; paths alone are insufficient and the excerpt ledger shows no substantial source reconstruction.
   - SC6: Target facts, static inferences, conformance observations, external patterns, and unknowns remain distinguishable and obey their label-specific evidence rules.
   - SC7: `execution-flow.md`, `behavior.md`, `purpose.md`, and `dependencies.md` cover every declared current-state facet, including feedback, validation, context, concurrency, lifecycle, failure, and unresolved routes.
-  - SC8: External research completed the accessible eight-cell core matrix, recorded retries and fallbacks, screened sources within the effective budget, inspected exact skill definitions whenever plausible candidates existed and the inspection cap permitted, and otherwise recorded the corresponding evidence-backed `research_result`, `research_stop`, outage limitation, or cap state.
+  - SC8: External research completed the accessible four-cell core matrix plus any earned cells, used habitat-structured queries where available, recorded retries and fallbacks, screened sources within per-family quotas of the effective budget, inspected exact skill definitions whenever plausible candidates existed and the inspection cap permitted, and otherwise recorded the corresponding evidence-backed `research_result`, `research_stop`, outage limitation, or cap state.
   - SC9: Every `SRC-*` has provenance and eligibility evidence; every canonical `PAT-*` cites at least one eligible skill-definition source and contains neutral transfer considerations plus a phase-2 question.
   - SC10: Stable ids, aliases, anchors, artifact hashes, counts, limitation ids, pattern ids, and registry ownership reconcile across `INDEX.md` and `coverage-map.md`.
   - SC11: The exact nine artifacts satisfy their schemas or explicit zero states, and `INDEX.md` is self-describing enough for phase 2 to route without reading this prompt or reopening the target.
