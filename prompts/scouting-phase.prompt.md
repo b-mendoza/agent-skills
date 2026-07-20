@@ -21,6 +21,7 @@
   <contract_versions producer="scouting-phase-v1" dossier="scouting-dossier-v1" schema="scouting-schema-v1" />
   <clean_room_rule>Target paths and line locators are provenance only. Material claims must carry dossier-resident evidence because phase 2 may not reopen the target, its history, the index, a vendored mirror, a backup, or another recovered copy.</clean_room_rule>
   <phase_boundary>Scouting records current state, conformance observations, and transferable external mechanisms. Phase 2 alone decides whether to adopt, adapt, reject, or defer a pattern and whether or how the skill should change.</phase_boundary>
+  <inter_phase_transition>Scouting leaves `skills/{skill-name}/` in place and unchanged. A fresh phase-2 run requires that target path to be absent and cannot remove it itself. The user (or an external process) must remove or relocate the prior package between phases; the terminal `complete` report must state this obligation explicitly.</inter_phase_transition>
   <routing_handoff>`INDEX.md` exposes canonical `pattern_ids`, `pattern_count`, `limitation_ids`, `limitation_count`, and `dossier_schema_anchor` as bounded routing metadata. These fields are intended for the phase-2 evidence gatekeeper to return without loading raw dossier content into the main agent.</routing_handoff>
 </suite>
 
@@ -297,7 +298,7 @@
       <step id="6.6">Write the candidate terminal `INDEX.md` last with all gate verdicts and exactly one terminal status. After three failed documentation repairs, use `blocked`; after an unrecovered internal operation failure, use `error`.</step>
       <step id="6.7">Perform a final read-only check of the resulting terminal bytes: parse the YAML block; verify literal contract versions, sibling hashes, sentinel self-hash, artifact registry, ids, counts, schema anchor, gate verdicts, blocker fields, and status coherence; then rerun `G_DOSSIER` and `G_MUTATION`. Report `complete` only after this final check passes. If it fails, repair within the remaining cycle budget and repeat; when no repair remains, write and verify a coherent non-complete terminal index.</step>
     </steps>
-    <completion>Return `complete` only when all gates pass. Report status, dossier path, limitations, `research_result`, `research_stop`, validation mode, and recommended reading order to the user.</completion>
+    <completion>Return `complete` only when all gates pass. Report status, dossier path, limitations, `research_result`, `research_stop`, validation mode, and recommended reading order to the user. On `complete`, also state explicitly that a fresh phase-2 run requires `skills/{skill-name}/` to be absent, that phase 2 will not remove it, and that the user must remove or relocate it before running the improvement phase.</completion>
   </phase>
 </phases>
 
