@@ -225,14 +225,28 @@ hash, one LF. SHA-256 the exact concatenated row stream. Registry order and
 ### 7.4 Typed path digest
 
 A typed digest is the string `{tag}:{value}` where `{tag}` and `{value}` are
-determined by no-follow inspection of the path: `file:{sha256 of the file's
-bytes}`; `symlink:{sha256 of the link-target string's UTF-8 bytes}` (the
-link is never followed); `dir:` with empty value (a plain directory —
-contents are not descended into); `gitlink:{checked-out submodule commit
-id}` for a gitlink/submodule boundary; `missing:` with empty value (no
-filesystem object); `other:` with empty value (socket, fifo, device, or any
-other type). Two typed digests are equal only when tag and value are both
-equal, so a path changing type is always a mismatch.
+determined by no-follow inspection of the path plus the gitlink rule below:
+`file:{sha256 of the file's bytes}`; `symlink:{sha256 of the link-target's
+raw bytes, exactly as returned by readlink, no encoding assumption}` (the
+link is never followed); `gitlink:{value}` per the next paragraph; `dir:`
+with empty value (a plain directory — contents are not descended into);
+`missing:` with empty value (no filesystem object); `other:` with empty
+value (socket, fifo, device, or any other type). Every value is ASCII
+(lowercase hex or a fixed literal), so a typed digest never contains TAB,
+LF, or non-ASCII bytes. Two typed digests are equal only when tag and value
+are both equal, so a path changing type is always a mismatch.
+
+Gitlink rule: a directory entry is classified `gitlink` — taking precedence
+over `dir` — when the containing repository's Git metadata records mode
+`160000` at that path (index or `HEAD` tree), or the directory itself
+contains a `.git` entry. The value is the nested worktree's checked-out
+commit id obtained from Git metadata only (`git -C {path} rev-parse HEAD`);
+when that is unobtainable (e.g. an uninitialized submodule), fall back to
+the mode-160000 object id recorded in the containing repository's index or
+`HEAD` tree; when neither resolves, the literal `unresolved`. Strict string
+equality still applies, so `unresolved` never silently matches a commit. A
+gitlink is a traversal boundary: no walk descends into it, and its contents
+are represented solely by this digest.
 
 ### 7.5 Target manifest digest
 
