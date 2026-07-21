@@ -1,10 +1,10 @@
-# Scouting Handoff Contract (v2)
+# Scouting Handoff Contract (v3)
 
 > Single normative definition of the phase boundary between
 > `prompts/scouting-phase.prompt.md` (producer) and
 > `prompts/improving-skill-phase.prompt.md` (consumer). This file defines the
-> version literals `scouting-phase-v2`, `scouting-dossier-v2`, and
-> `scouting-schema-v2`. Both prompts cite this file instead of restating the
+> version literals `scouting-phase-v3`, `scouting-dossier-v3`, and
+> `scouting-schema-v3`. Both prompts cite this file instead of restating the
 > boundary; where prompt prose and this file disagree about a boundary rule,
 > this file wins. Any change to this file requires bumping all three version
 > literals here and in both prompts, because the producer records this file's
@@ -69,9 +69,9 @@ until the noted point; keys are never omitted. Types: `str`, `int`, `bool`,
 
 | Key | Type | Constraint |
 | --- | --- | --- |
-| `producer_contract` | str | literal `scouting-phase-v2` |
-| `dossier_version` | str | literal `scouting-dossier-v2` |
-| `schema_version` | str | literal `scouting-schema-v2` |
+| `producer_contract` | str | literal `scouting-phase-v3` |
+| `dossier_version` | str | literal `scouting-dossier-v3` |
+| `schema_version` | str | literal `scouting-schema-v3` |
 | `handoff_contract_sha256` | sha256 | SHA-256 of this file's exact bytes, recorded at baseline and immutable for the run |
 | `run_id` | str | safe segment (§2) |
 | `skill_name` | str | safe name (§2) |
@@ -109,7 +109,7 @@ until the noted point; keys are never omitted. Types: `str`, `int`, `bool`,
 | `limitation_rows` | list[map] | one complete record per `LIM-*` id, fields per §9.2 |
 | `mutation_proof` | map | keys exactly `head_unchanged`, `target_hashes_unchanged`, `snapshot_equivalent`, `dirty_digests_unchanged`, `output_root_clean`; each bool, nullable until closeout; all must be `true` when `terminal_status` is `complete` |
 | `write_ledger` | list[map] | one entry per artifact ever written: `{file: str, last_write_phase: int}` |
-| `dossier_schema_anchor` | str | anchor reference per §10, literal `coverage-map.md#scouting-schema-v2` |
+| `dossier_schema_anchor` | str | anchor reference per §10, literal `coverage-map.md#scouting-schema-v3` |
 | `reading_order` | list[str] | a permutation of the nine canonical filenames |
 
 ## 5. `artifact_registry` entry schema
@@ -323,7 +323,7 @@ the nine canonical filenames and `{anchor-id}` matches
 `^[a-z0-9][a-z0-9-]*$`. An anchor is realized in the artifact as an explicit
 `<a id="{anchor-id}"></a>` line immediately above the section heading it
 names, and each `anchor-id` is unique within its file. The schema anchor is
-the literal `coverage-map.md#scouting-schema-v2`.
+the literal `coverage-map.md#scouting-schema-v3`.
 
 ## 11. Zero states
 
