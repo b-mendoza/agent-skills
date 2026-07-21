@@ -84,6 +84,7 @@ until the noted point; keys are never omitted. Types: `str`, `int`, `bool`,
 | `baseline_algorithm` | str | literal `git-status-v3` |
 | `baseline_snapshot` | map | either `{inline: str}` (the verbatim filtered snapshot) or `{sha256: sha256, line_count: int >= 0}` |
 | `dirty_path_digests` | map | one entry per path named in the baseline filtered snapshot, holding its typed digest (§7.4); `{}` when the snapshot is empty |
+| `target_manifest_digest` | sha256, nullable until closeout | digest of the complete target subtree per §7.5, computed at closeout |
 | `dispatch_mode` | str | enum `inline \| delegated \| mixed` |
 | `validation_mode` | str | enum `self_check \| independent` |
 | `last_completed_phase` | int | 0–6 |
@@ -226,11 +227,25 @@ hash, one LF. SHA-256 the exact concatenated row stream. Registry order and
 A typed digest is the string `{tag}:{value}` where `{tag}` and `{value}` are
 determined by no-follow inspection of the path: `file:{sha256 of the file's
 bytes}`; `symlink:{sha256 of the link-target string's UTF-8 bytes}` (the
-link is never followed); `dir:` with empty value (a directory or gitlink /
-submodule boundary — contents are not descended into); `missing:` with
-empty value (no filesystem object); `other:` with empty value (socket,
-fifo, device, or any other type). Two typed digests are equal only when tag
-and value are both equal, so a path changing type is always a mismatch.
+link is never followed); `dir:` with empty value (a plain directory —
+contents are not descended into); `gitlink:{checked-out submodule commit
+id}` for a gitlink/submodule boundary; `missing:` with empty value (no
+filesystem object); `other:` with empty value (socket, fifo, device, or any
+other type). Two typed digests are equal only when tag and value are both
+equal, so a path changing type is always a mismatch.
+
+### 7.5 Target manifest digest
+
+`target_manifest_digest` summarizes the complete target subtree, including
+Git-ignored entries. Walk `target_path` exactly as the producer's target
+manifest does — no symlink following, every entry of every type, sorted by
+relative path — and compute each entry's typed digest (§7.4). Serialize one
+ASCII row per entry: relative path, one TAB, typed digest, one LF; SHA-256
+the exact row stream. An empty or absent target yields the digest of the
+empty stream. The producer records this at closeout from the same walk that
+produced the target manifest; the consumer recomputes it over an occupied
+target during preflight to prove the working tree is byte-identical to what
+was scouted.
 
 ## 8. `coverage_counts` schema
 
