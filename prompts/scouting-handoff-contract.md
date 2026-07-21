@@ -78,11 +78,12 @@ until the noted point; keys are never omitted. Types: `str`, `int`, `bool`,
 | `target_path` | str | exact literal `skills/{skill_name}`; repository-relative, no `./`, no trailing slash |
 | `scouting_dir` | str | exact literal `outputs/scouting-phase-{skill_name}`; same path rules |
 | `repository_revision` | str | 40-char lowercase hex commit id of `HEAD` at baseline |
-| `target_subtree_clean_at_closeout` | bool | true exactly when no row of the closeout filtered status snapshot names a path under `target_path` |
+| `target_subtree_clean_at_closeout` | bool, nullable until closeout | true exactly when no row of the closeout filtered status snapshot names a path under `target_path` |
 | `started_at` | str | ISO 8601 UTC timestamp `YYYY-MM-DDThh:mm:ssZ` |
 | `completed_at` | str, nullable until terminal | same format |
-| `baseline_algorithm` | str | literal `git-status-v2` |
+| `baseline_algorithm` | str | literal `git-status-v3` |
 | `baseline_snapshot` | map | either `{inline: str}` (the verbatim filtered snapshot) or `{sha256: sha256, line_count: int >= 0}` |
+| `dirty_path_digests` | map | one entry per path named in the baseline filtered snapshot: working-tree-bytes SHA-256, or literal `MISSING` for a deleted path; `{}` when the snapshot is empty |
 | `dispatch_mode` | str | enum `inline \| delegated \| mixed` |
 | `validation_mode` | str | enum `self_check \| independent` |
 | `last_completed_phase` | int | 0–6 |
@@ -105,7 +106,7 @@ until the noted point; keys are never omitted. Types: `str`, `int`, `bool`,
 | `id_family_counts` | map | keys exactly `FILE`, `REF`, `EVD`, `QRY`, `SRC`; each int >= 0 (counts only; full lists live in their owning artifacts) |
 | `gate_verdicts` | map | keys exactly the seven gates of §6.1; each `pass \| fail \| unknown` |
 | `limitation_rows` | list[map] | one complete record per `LIM-*` id, fields per §9.2 |
-| `mutation_proof` | map | keys exactly `head_unchanged`, `target_hashes_unchanged`, `snapshot_equivalent`, `output_root_clean`; each bool |
+| `mutation_proof` | map | keys exactly `head_unchanged`, `target_hashes_unchanged`, `snapshot_equivalent`, `dirty_digests_unchanged`, `output_root_clean`; each bool, nullable until closeout; all must be `true` when `terminal_status` is `complete` |
 | `write_ledger` | list[map] | one entry per artifact ever written: `{file: str, last_write_phase: int}` |
 | `dossier_schema_anchor` | str | anchor reference per §10, literal `coverage-map.md#scouting-schema-v2` |
 | `reading_order` | list[str] | a permutation of the nine canonical filenames |
@@ -178,11 +179,17 @@ matching a reserved value uses `GENERAL`; new codes require a version bump.
 
 ## 7. Algorithms
 
-### 7.1 Repository baseline (`git-status-v2`)
+### 7.1 Repository baseline (`git-status-v3`)
 Record `HEAD` from `git rev-parse HEAD`. Capture
 `git status --porcelain=v2 --untracked-files=all` verbatim, excluding only
 lines whose path is one of the nine dossier paths. Store the snapshot inline,
-or its SHA-256 plus line count when long.
+or its SHA-256 plus line count when long. Additionally record
+`dirty_path_digests`: for every path named in the filtered snapshot, the
+SHA-256 of its current working-tree bytes (literal `MISSING` for a path with
+no working-tree file). At closeout, `snapshot_equivalent` compares the
+filtered snapshots and `dirty_digests_unchanged` recomputes and compares the
+digests — this makes the proof content-sensitive for pre-existing dirty
+paths, which bare porcelain rows are not.
 
 ### 7.2 `index_payload_sha256` sentinel
 In the raw UTF-8 bytes of the terminal `INDEX.md`, replace exactly the one
