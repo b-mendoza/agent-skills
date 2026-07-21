@@ -33,10 +33,11 @@ first-party skill under `skills/`:
    Do **not** rename it to a sibling like `skills/{skill-name}-old/` or move
    it into a runtime discovery root — that leaves a stale, discoverable copy
    active and defeats the transition. You may also defer removal: phase 2
-   runs a readiness preflight first (its only write is one registered
-   exchange file under the ignored `.handoffs/` root — it never touches the
-   skill or creates outputs) and will tell you when it is safe to remove the
-   target.
+   runs a readiness preflight first (it writes only one registered exchange
+   file and its containing directories under the ignored `.handoffs/` root —
+   it never modifies the skill or creates outputs; it may hash the skill's
+   files to prove they still match the dossier, consuming only the hash
+   values) and will tell you when it is safe to remove the target.
 3. **Session B — improve.** Start a **new** session (the clean-room premise
    assumes no prior-skill content in context) and load
    `improving-skill-phase.prompt.md` with the dossier path and, ideally, your
