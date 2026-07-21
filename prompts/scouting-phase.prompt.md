@@ -89,7 +89,7 @@
 </mutation_limits>
 
 <baseline_contract>
-  <target_manifest>Walk the target without following symlinks, sorted by relative path. Record one row per entry: relative path, type (`file|dir|symlink|other`), byte size for regular files, lowercase SHA-256 for regular files, and symlink target when applicable. This table is the target baseline; store it in `structure.md` and its per-file hashes are the values rechecked at closeout.</target_manifest>
+  <target_manifest>Walk the target without following symlinks and without descending into gitlinks (contract §7.4 detection and boundary rule), sorted by ascending raw-bytes comparison of relative paths. Record one row per entry: relative path, type (`file|dir|symlink|gitlink|other`), byte size for regular files, lowercase SHA-256 for regular files, symlink target when applicable, and gitlink value per contract §7.4 when applicable. This table is the target baseline; store it in `structure.md` and its per-file hashes are the values rechecked at closeout.</target_manifest>
   <repository_baseline algorithm="git-status-v3">
     Record `HEAD` from `git rev-parse HEAD` and capture the output of `git status --porcelain=v2 --untracked-files=all` verbatim as a short text snapshot, excluding only lines whose path is one of the nine dossier paths. Additionally record `dirty_path_digests` per contract §§7.1 and 7.4: a typed digest for every path the filtered snapshot names. Store both (snapshot inline or as SHA-256 plus line count) in `INDEX.md`. At baseline, require each dossier file path to be untracked and unstaged; tracked or staged dossier paths block initialization or replacement.
   </repository_baseline>
@@ -242,7 +242,7 @@
   <phase id="2" name="exhaustive-inventory" mode="static-read-only-with-incremental-output">
     <purpose>Prove complete source and reference coverage before synthesis.</purpose>
     <steps>
-      <step id="2.1">Walk every target entry, including hidden files, directories, regular files, special entries, and symlinks without escape. Allocate `FILE-*` deterministically.</step>
+      <step id="2.1">Walk every target entry, including hidden files, directories, regular files, special entries, and symlinks without escape, treating gitlinks as boundary rows per the target-manifest rule. Allocate `FILE-*` deterministically.</step>
       <step id="2.2">Classify every regular file as text or non-text using the textual-role rules and read success. Record classification basis, SHA-256 for every regular file, and line count for text.</step>
       <step id="2.3">Read every text file fully, in chunks when needed; record its complete-read status. Persist normalized rows and evidence incrementally, not raw files.</step>
       <step id="2.4">For non-text files, record metadata, hash, safe preview state, and `metadata_only` limitation when content cannot be inspected. An unreadable text file is `unreadable` and blocks completion.</step>
