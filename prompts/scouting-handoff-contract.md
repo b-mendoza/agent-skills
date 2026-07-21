@@ -230,11 +230,14 @@ A mapping with exactly these keys, all int >= 0:
 - `facet_rows_evidenced`, `facet_rows_absent`, `facet_rows_unknown`,
   `facet_rows_not_applicable`: rows per coverage status; the four must sum to
   `facet_rows_total`.
-- `files_total`: number of `FILE-*` ids (rows, not unique paths — they are
-  identical by construction).
-- `files_read_complete`, `files_metadata_only`: `FILE-*` rows per read
-  status; `files_total - files_read_complete - files_metadata_only` must be 0
-  for a `complete` dossier (an `unreadable` row forbids `complete`).
+- `entries_total`: number of `FILE-*` ids (one per walked target entry of
+  any type — regular file, directory, symlink, or other).
+- `regular_files_total`: `FILE-*` rows whose type is regular file. Read
+  statuses apply only to these rows.
+- `files_read_complete`, `files_metadata_only`: regular-file rows per read
+  status; `regular_files_total - files_read_complete - files_metadata_only`
+  must be 0 for a `complete` dossier (an `unreadable` row forbids
+  `complete`).
 - `references_total`: number of `REF-*` ids.
 - `evidence_total`: number of `EVD-*` ids.
 
@@ -285,6 +288,34 @@ Family; supporting target evidence ids; exact query; host; interface; date;
 result count or `COUNT_UNAVAILABLE`; inspected depth; outcome;
 retry/fallback; new source or pattern ids.
 
+### 9.7 Finding record (`FND-*`)
+`id`; a one-sentence claim stating the unexpected fact, contradiction,
+conformance mismatch, failure mode, or unresolved question; supporting
+`EVD-*` ids (at least one, except that an unresolved-question finding may
+instead link the `LIM-*` that explains why evidence is missing); a
+confidence value `high | medium | low`; the effect on understanding (one
+sentence: what a consumer would misread without this finding); and linked
+`LIM-*` ids when they exist (`[]` otherwise). Findings never contain
+proposed fixes, severity rankings, or remediation language.
+
+### 9.8 Coverage row (facet matrix)
+One row per (facet, subject): facet slug (§6.4); subject id or the
+controlled subject `TARGET`; coverage status (§6.2); artifact anchor (§10)
+locating where the facet is mapped; supporting `EVD-*` ids (`[]` only for
+`NOT_APPLICABLE`); linked `FND-*` ids (`[]` when none); linked `LIM-*` id
+(required for `UNKNOWN`, null otherwise); and a short explanation. Every
+facet slug appears in at least one row.
+
+### 9.9 Registry ownership
+Each id family has exactly one owning artifact whose rows are the canonical
+registry, and every handoff id list must equal that registry's id set
+exactly: `FILE-*` → `structure.md`; `REF-*` → `dependencies.md`; `EVD-*` →
+`coverage-map.md`; `QRY-*`, `SRC-*`, `PAT-*` → `external-research.md`;
+`FND-*` → `findings.md`; `CAP-*` → `behavior.md`; `LIM-*` →
+`coverage-map.md` (with every row mirrored in the handoff
+`limitation_rows`). A handoff id with no owning-registry row, or an
+owning-registry row missing from its handoff list, fails validation.
+
 ## 10. Anchor grammar
 
 An anchor reference is `{filename}#{anchor-id}` where `{filename}` is one of
@@ -305,7 +336,42 @@ No required key or section is ever omitted for emptiness.
   population that is empty and the evidence or negative-observation basis
   (with `EVD-*` id when one exists).
 
-## 12. Consumer validation rule
+## 12. Required artifact content
+
+Each artifact must contain at least the following, as titled sections or
+labeled registries (zero states per §11 where a population is empty):
+
+- `INDEX.md` — the handoff block (§§3–4); the sentinel algorithm statement;
+  the artifact registry (§5).
+- `structure.md` — the `FILE-*` manifest: one row per walked entry with
+  relative path, type (`file|dir|symlink|other`), byte size and SHA-256 for
+  regular files, text/non-text classification basis, line count and read
+  status (§6.2) for text files, symlink target when applicable; plus
+  separately labeled conformance observations.
+- `execution-flow.md` — the target's phases/steps/states, branches and
+  gates, loops/retries/feedback, dispatch and concurrency, statuses and stop
+  conditions, escalation, critical outputs and handoffs, and contradictory
+  or unreachable routes, each mapped with evidence ids.
+- `behavior.md` — inputs/preconditions/modes; outputs and mutations;
+  permissions/tools/external effects; context loading and delegation;
+  validation; artifact lifecycle; error/empty/ambiguity/autonomy handling;
+  static-runtime unknowns; and the canonical `CAP-*` registry (§9.3).
+- `purpose.md` — stated purpose, audience, premise, value claims, identity,
+  mental model, priorities, posture, trade-offs, voice, boundaries,
+  non-goals; inferred rationale labeled `STATIC_INFERENCE`.
+- `dependencies.md` — the canonical `REF-*` registry: one row per detected
+  reference with source locator, reference kind, resolved target or
+  `indeterminate`, and status (§6.2); plus unreferenced-file observations.
+- `external-research.md` — effective budget; the `QRY-*` log (§9.6); the
+  `SRC-*` registry (§9.4); eligibility decisions; research limitations; stop
+  reason; and the `PAT-*` cards (§9.5).
+- `findings.md` — the canonical `FND-*` registry (§9.7).
+- `coverage-map.md` — the `dossier-schema` provenance stamp (§13); the facet
+  matrix (§9.8); the `EVD-*` registry (§9.1); the `LIM-*` registry (§9.2);
+  the per-source excerpt/reconstructability ledger; and cross-artifact
+  integrity checks.
+
+## 13. Consumer validation rule
 
 The consumer (phase 2) validates the dossier against this file, not against
 a transcription: it computes SHA-256 of the local
@@ -315,7 +381,7 @@ handoff's `handoff_contract_sha256` (mismatch is the blocker
 phases and the dossier must be regenerated or the consumer downgraded);
 verifies the version literals; then checks the handoff block, artifact set
 and order, registry, hashes, enums, counts, record completeness, anchors,
-and zero states directly against §§1–11. The `dossier-schema` section of
+and zero states directly against §§1–12. The `dossier-schema` section of
 `coverage-map.md` records the three version literals and
 `handoff_contract_sha256`; it is a provenance stamp, not an independent
 schema, and cannot relax anything defined here.
