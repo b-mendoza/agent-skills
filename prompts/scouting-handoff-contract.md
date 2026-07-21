@@ -251,15 +251,20 @@ are represented solely by this digest.
 ### 7.5 Target manifest digest
 
 `target_manifest_digest` summarizes the complete target subtree, including
-Git-ignored entries. Walk `target_path` exactly as the producer's target
-manifest does — no symlink following, every entry of every type, sorted by
-relative path — and compute each entry's typed digest (§7.4). Serialize one
-ASCII row per entry: relative path, one TAB, typed digest, one LF; SHA-256
-the exact row stream. An empty or absent target yields the digest of the
-empty stream. The producer records this at closeout from the same walk that
-produced the target manifest; the consumer recomputes it over an occupied
-target during preflight to prove the working tree is byte-identical to what
-was scouted.
+Git-ignored entries, with gitlinks as boundaries (§7.4) — "complete
+subtree" means every entry down to but not into any gitlink. Walk
+`target_path` exactly as the producer's target manifest does — no symlink
+following, every entry of every type, sorted by ascending raw-bytes
+comparison of relative paths — and compute each entry's typed digest
+(§7.4). Path names are arbitrary bytes; to keep the serialization total and
+collision-free, each row is: the ASCII decimal byte length of the raw
+relative path, one `:`, the raw path bytes exactly as returned by the
+filesystem (no encoding assumption or normalization), one `:`, the typed
+digest (always ASCII, §7.4), one LF. SHA-256 the exact row stream. An empty
+or absent target yields the digest of the empty stream. The producer
+records this at closeout from the same walk that produced the target
+manifest; the consumer recomputes it over an occupied target during
+preflight to prove the working tree is byte-identical to what was scouted.
 
 ## 8. `coverage_counts` schema
 
@@ -390,10 +395,11 @@ labeled registries (zero states per §11 where a population is empty):
 - `INDEX.md` — the handoff block (§§3–4); the sentinel algorithm statement;
   the artifact registry (§5).
 - `structure.md` — the `FILE-*` manifest: one row per walked entry with
-  relative path, type (`file|dir|symlink|other`), byte size and SHA-256 for
-  regular files, text/non-text classification basis, line count and read
-  status (§6.2) for text files, symlink target when applicable; plus
-  separately labeled conformance observations.
+  relative path, type (`file|dir|symlink|gitlink|other`), byte size and
+  SHA-256 for regular files, text/non-text classification basis, line count
+  and read status (§6.2) for text files, symlink target when applicable,
+  gitlink value (§7.4) when applicable; plus separately labeled conformance
+  observations.
 - `execution-flow.md` — the target's phases/steps/states, branches and
   gates, loops/retries/feedback, dispatch and concurrency, statuses and stop
   conditions, escalation, critical outputs and handoffs, and contradictory
