@@ -18,9 +18,14 @@ first-party skill under `skills/`:
 2. **Preserve the skill reversibly.** Phase 2 requires `skills/{skill-name}/`
    to be absent, never deletes it itself, and cannot restore it from the
    dossier. Before removing it, pick one route:
-   - `git_recoverable` — make sure the skill subtree is fully committed
-     (scouting reports whether it was clean at closeout), note the commit as
-     your restore handle, then delete the working-tree copy.
+   - `git_recoverable` — valid when scouting reported the skill subtree
+     clean at closeout: note the already-containing commit as your restore
+     handle, then delete the working-tree copy. If scouting reported it
+     dirty, committing now would change the target after scouting and phase
+     2 will stop as stale — either commit and re-run scouting, or use
+     external quarantine and accept that continuity is unverifiable. Editing
+     the skill after scouting has the same effect: phase 2 compares and will
+     send you back to re-scout.
    - `external_quarantine` — move the directory outside the repository, or to
      a Git-ignored path that is not under `skills/`, `.agents/skills/`,
      `.claude/skills/`, or any run root.
