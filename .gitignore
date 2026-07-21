@@ -6,3 +6,7 @@
 .handoffs/
 .mcp.json
 opencode.jsonc
+
+# Scouting-to-improvement suite artifacts (persistent local handoffs; never committed)
+outputs/scouting-phase-*/
+outputs/improving-skill-phase-*/
