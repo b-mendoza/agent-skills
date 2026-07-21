@@ -72,7 +72,7 @@ until the noted point; keys are never omitted. Types: `str`, `int`, `bool`,
 | `producer_contract` | str | literal `scouting-phase-v2` |
 | `dossier_version` | str | literal `scouting-dossier-v2` |
 | `schema_version` | str | literal `scouting-schema-v2` |
-| `handoff_contract_sha256` | sha256 | SHA-256 of this file's exact bytes at production time |
+| `handoff_contract_sha256` | sha256 | SHA-256 of this file's exact bytes, recorded at baseline and immutable for the run |
 | `run_id` | str | safe segment (§2) |
 | `skill_name` | str | safe name (§2) |
 | `target_path` | str | exact literal `skills/{skill_name}`; repository-relative, no `./`, no trailing slash |
@@ -89,10 +89,10 @@ until the noted point; keys are never omitted. Types: `str`, `int`, `bool`,
 | `last_completed_phase` | int | 0–6 |
 | `last_completed_gate` | str, nullable | enum §6.1 |
 | `terminal_status` | str, nullable while nonterminal | enum `complete \| blocked \| error` |
-| `blocker_code` | str, nullable | present exactly when `terminal_status` is `blocked` |
-| `research_budget` | map | the validated effective budget object (the five non-core keys, each int) |
-| `research_result` | str, nullable until phase 4 | enum §6.5 |
-| `research_stop` | str, nullable until phase 4 | enum §6.6 |
+| `blocker_code` | str, nullable | non-null exactly when `terminal_status` is `blocked`; null otherwise |
+| `research_budget` | map | exactly the keys `follow_up_queries` (0–20), `screened_candidates` (1–200), `deep_inspections` (1–50), `pattern_cards` (1–100), `literature_items` (0–20); each int in its range |
+| `research_result` | str, nullable until phase 4 | enum §6.5; non-null when `terminal_status` is `complete`; pairing per §6.10 |
+| `research_stop` | str, nullable until phase 4 | enum §6.6; non-null when `terminal_status` is `complete`; pairing per §6.10 |
 | `artifact_registry` | list[map] | exactly 9 entries per §5, in canonical order |
 | `coverage_counts` | map | per §8 |
 | `pattern_ids` | list[str] | zero-padded `PAT-*`, unique, ascending; `[]` when none |
@@ -104,6 +104,7 @@ until the noted point; keys are never omitted. Types: `str`, `int`, `bool`,
 | `capability_ids` | list[str] | `CAP-*`, unique, ascending; `[]` when none |
 | `capability_count` | int | equals `len(capability_ids)` |
 | `id_family_counts` | map | keys exactly `FILE`, `REF`, `EVD`, `QRY`, `SRC`; each int >= 0 (counts only; full lists live in their owning artifacts) |
+| `governing_source_paths` | list[str] | repository-relative paths of every repository-instruction file the dossier cites for conformance (the external specification URL is excluded); `[]` when none |
 | `gate_verdicts` | map | keys exactly the seven gates of §6.1; each `pass \| fail \| unknown` |
 | `limitation_rows` | list[map] | one complete record per `LIM-*` id, fields per §9.2 |
 | `mutation_proof` | map | keys exactly `head_unchanged`, `target_hashes_unchanged`, `snapshot_equivalent`, `dirty_digests_unchanged`, `output_root_clean`; each bool, nullable until closeout; all must be `true` when `terminal_status` is `complete` |
@@ -176,6 +177,22 @@ matching a reserved value uses `GENERAL`; new codes require a version bump.
 
 ### 6.9 External-source metadata states
 `KNOWN`, `NOT_EXPOSED`, `NOT_FOUND`, `AMBIGUOUS`.
+
+### 6.10 Result/stop compatibility matrix
+
+Exactly these `(research_result, research_stop)` pairs are legal:
+
+| `research_stop` | legal `research_result` values |
+| --- | --- |
+| `SATURATED_WITHIN_BUDGET` | `NO_RESULTS`, `RESULTS_NONE_ELIGIBLE`, `PATTERNS_FOUND` |
+| `CAP_REACHED_BEFORE_SATURATION` | `NO_RESULTS`, `RESULTS_NONE_ELIGIBLE`, `NO_ELIGIBLE_WITHIN_BUDGET`, `PATTERNS_FOUND` |
+| `PARTIAL_OUTAGE` | `NO_ELIGIBLE_AMONG_READABLE_SOURCES`, `PATTERNS_FOUND` |
+| `BLOCKED` | `UNDETERMINED_DUE_TO_OUTAGE` |
+
+Stop precedence when conditions overlap: `BLOCKED` > `PARTIAL_OUTAGE` >
+`CAP_REACHED_BEFORE_SATURATION` > `SATURATED_WITHIN_BUDGET`. A dossier with
+`terminal_status: complete` must carry non-null values forming a legal pair
+with `research_stop` ≠ `BLOCKED`. The consumer rejects any other combination.
 
 ## 7. Algorithms
 
