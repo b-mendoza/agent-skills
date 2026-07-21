@@ -59,8 +59,9 @@ first-party skill under `skills/`:
   `outputs/improving-skill-phase-*/`, and `.handoffs/` are Git-ignored and
   must never be committed. Dossiers persist for resume; handoffs are
   ephemeral.
-- **Repo integration is follow-up work.** The improvement run mutates only
-  `skills/{skill-name}/`. After `rebuilt` or a retirement decision, check the
+- **Repo integration is follow-up work.** Outside its Git-ignored run
+  artifacts (`outputs/improving-skill-phase-*/`, `.handoffs/`), the
+  improvement run mutates only `skills/{skill-name}/`. After `rebuilt` or a retirement decision, check the
   repo-level consumers yourself: the `README.md` skill catalog, cross-skill
   references, and (for vendored mirrors) the managing tool for
   `.agents/skills/` / `.claude/skills/` / `skills-lock.json`. The terminal
