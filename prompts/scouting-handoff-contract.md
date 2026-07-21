@@ -83,7 +83,7 @@ until the noted point; keys are never omitted. Types: `str`, `int`, `bool`,
 | `completed_at` | str, nullable until terminal | same format |
 | `baseline_algorithm` | str | literal `git-status-v3` |
 | `baseline_snapshot` | map | either `{inline: str}` (the verbatim filtered snapshot) or `{sha256: sha256, line_count: int >= 0}` |
-| `dirty_path_digests` | map | one entry per path named in the baseline filtered snapshot: working-tree-bytes SHA-256, or literal `MISSING` for a deleted path; `{}` when the snapshot is empty |
+| `dirty_path_digests` | map | one entry per path named in the baseline filtered snapshot, holding its typed digest (§7.4); `{}` when the snapshot is empty |
 | `dispatch_mode` | str | enum `inline \| delegated \| mixed` |
 | `validation_mode` | str | enum `self_check \| independent` |
 | `last_completed_phase` | int | 0–6 |
@@ -201,9 +201,8 @@ Record `HEAD` from `git rev-parse HEAD`. Capture
 `git status --porcelain=v2 --untracked-files=all` verbatim, excluding only
 lines whose path is one of the nine dossier paths. Store the snapshot inline,
 or its SHA-256 plus line count when long. Additionally record
-`dirty_path_digests`: for every path named in the filtered snapshot, the
-SHA-256 of its current working-tree bytes (literal `MISSING` for a path with
-no working-tree file). At closeout, `snapshot_equivalent` compares the
+`dirty_path_digests`: for every path named in the filtered snapshot, its
+typed digest per §7.4. At closeout, `snapshot_equivalent` compares the
 filtered snapshots and `dirty_digests_unchanged` recomputes and compares the
 digests — this makes the proof content-sensitive for pre-existing dirty
 paths, which bare porcelain rows are not.
@@ -221,6 +220,17 @@ SHA-256 (for `INDEX.md`, the actual bytes as written — not the sentinel
 form). Serialize one ASCII row per file: filename, one TAB, lowercase hex
 hash, one LF. SHA-256 the exact concatenated row stream. Registry order and
 `reading_order` are irrelevant to this computation.
+
+### 7.4 Typed path digest
+
+A typed digest is the string `{tag}:{value}` where `{tag}` and `{value}` are
+determined by no-follow inspection of the path: `file:{sha256 of the file's
+bytes}`; `symlink:{sha256 of the link-target string's UTF-8 bytes}` (the
+link is never followed); `dir:` with empty value (a directory or gitlink /
+submodule boundary — contents are not descended into); `missing:` with
+empty value (no filesystem object); `other:` with empty value (socket,
+fifo, device, or any other type). Two typed digests are equal only when tag
+and value are both equal, so a path changing type is always a mismatch.
 
 ## 8. `coverage_counts` schema
 
