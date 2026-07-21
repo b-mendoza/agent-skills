@@ -282,7 +282,7 @@
     <purpose>Normalize and finalize the incrementally written evidence into the exact nine-file phase-2 interface.</purpose>
     <steps>
       <step id="5.1">Complete every artifact schema and required zero state. Materialize the `dossier-schema` provenance stamp in `coverage-map.md` at anchor `scouting-schema-v3` and point `INDEX.md` to it. Do not create temporary or additional files.</step>
-      <step id="5.2">Reconcile ids, aliases, anchors, artifact ownership, coverage counts, source eligibility, pattern support, limitations, and reading order.</step>
+      <step id="5.2">Reconcile ids, anchors, artifact ownership, coverage counts, source eligibility, pattern support, limitations, and reading order.</step>
       <step id="5.3">Confirm every material local claim has dossier-resident evidence and every external claim has direct provenance-rich evidence.</step>
       <step id="5.4">Scan current-state and findings artifacts for ranking, severity, remediation, architecture, `should change`, or phase-2 pattern dispositions; neutralize any prescriptive language without erasing facts.</step>
       <step id="5.5">Update `INDEX.md` with provisional gates, hashes, counts, ids, limitations, mutation summary, and write-ledger rows; keep terminal status null.</step>
@@ -293,7 +293,7 @@
   <phase id="6" name="validate-and-close" mode="read-only-with-output-only-repair">
     <purpose>Validate schema, evidence, research, clean-room sufficiency, and mutation boundaries before final status.</purpose>
     <steps>
-      <step id="6.1">Check exact directory shape, non-empty artifacts, required sections, zero states, ids, aliases, anchors, references, counts, hashes, and `INDEX.md` self-hash canonicalization.</step>
+      <step id="6.1">Check exact directory shape, non-empty artifacts, required sections, zero states, ids, anchors, references, counts, hashes, and `INDEX.md` self-hash canonicalization.</step>
       <step id="6.2">Check file, reference, facet, limitation, and evidence coverage; excerpt sufficiency and reconstructability; evidence-label semantics; and separation of target, conformance, and external claims.</step>
       <step id="6.3">Check query accounting, source metadata states, eligibility, duplicate handling, pattern support, research budget, and stop reason.</step>
       <step id="6.4">Recompute target and Git-visible baselines. Any unexplained difference is terminal `blocked` when detected and is never repaired by this run.</step>
@@ -339,7 +339,7 @@
   - SC7: `execution-flow.md`, `behavior.md`, `purpose.md`, and `dependencies.md` cover every declared current-state facet, including feedback, validation, context, concurrency, lifecycle, failure, and unresolved routes; and the `CAP-*` registry records every evidenced positive capability with evidence, criticality, and facet linkage, with `capability_ids` and `finding_ids` mirrored exactly in the handoff.
   - SC8: External research completed the accessible four-cell core matrix plus any earned cells, used habitat-structured queries where available, recorded retries and fallbacks, screened sources within per-family quotas of the effective budget, inspected exact skill definitions whenever plausible candidates existed and the inspection cap permitted, and otherwise recorded the corresponding evidence-backed `research_result`, `research_stop`, outage limitation, or cap state.
   - SC9: Every `SRC-*` has provenance and eligibility evidence; every canonical `PAT-*` cites at least one eligible skill-definition source and contains neutral transfer considerations plus a phase-2 question.
-  - SC10: Stable ids, aliases, anchors, artifact hashes, counts, limitation ids, pattern ids, and registry ownership reconcile across `INDEX.md` and `coverage-map.md`.
+  - SC10: Stable ids, anchors, artifact hashes, counts, limitation ids, pattern ids, and registry ownership reconcile across `INDEX.md` and `coverage-map.md`.
   - SC11: The exact nine artifacts satisfy the handoff-contract schemas or explicit zero states, the recorded `handoff_contract_sha256` matches the contract file, and `INDEX.md` plus that contract file are sufficient for phase 2 to route without reading this prompt or reopening the target.
   - SC12: No scouting artifact ranks findings, prescribes changes, proposes replacement architecture, or assigns `adopt|adapt|reject|defer` dispositions.
   - SC13: Target scripts were not executed; no dependency, target, sibling, vendored skill, lockfile, instruction, configuration, private file, or unrelated output was changed.
