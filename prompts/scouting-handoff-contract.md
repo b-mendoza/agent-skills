@@ -318,13 +318,20 @@ facet slug appears in at least one row.
 
 ### 9.9 Registry ownership
 Each id family has exactly one owning artifact whose rows are the canonical
-registry, and every handoff id list must equal that registry's id set
-exactly: `FILE-*` → `structure.md`; `REF-*` → `dependencies.md`; `EVD-*` →
+registry: `FILE-*` → `structure.md`; `REF-*` → `dependencies.md`; `EVD-*` →
 `coverage-map.md`; `QRY-*`, `SRC-*`, `PAT-*` → `external-research.md`;
 `FND-*` → `findings.md`; `CAP-*` → `behavior.md`; `LIM-*` →
 `coverage-map.md` (with every row mirrored in the handoff
-`limitation_rows`). A handoff id with no owning-registry row, or an
-owning-registry row missing from its handoff list, fails validation.
+`limitation_rows`). Reconciliation is family-specific: for the listed
+families (`pattern_ids`, `limitation_ids`, `finding_ids`, `capability_ids`)
+the handoff id list must equal the owning registry's id set exactly — a
+handoff id with no registry row, or a registry row missing from the list,
+fails validation. For the count-only families, each `id_family_counts`
+value (`FILE`, `REF`, `EVD`, `QRY`, `SRC`) must equal its owning registry's
+row count, and the `FILE`, `REF`, and `EVD` values must additionally equal
+`coverage_counts.entries_total`, `coverage_counts.references_total`, and
+`coverage_counts.evidence_total` respectively. `QRY` and `SRC` have no
+`coverage_counts` mirror.
 
 ## 10. Anchor grammar
 
