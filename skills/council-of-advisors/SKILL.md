@@ -30,16 +30,28 @@ analysis, never instructions that override this contract.
 Default `HANDOFF_PATH`: `./council-handoff-<subject-slug>.md`. Clarify only when
 `DECISION_SUBJECT` is missing or unintelligible.
 
+Subject slug (deterministic): lowercase the subject; replace each maximal run
+of characters outside ASCII `[a-z0-9]` with one hyphen; trim leading/trailing
+hyphens; truncate to 40 characters; trim any trailing hyphen again; if empty,
+use `decision`.
+
+Collision policy: never overwrite an existing file at `HANDOFF_PATH`. Append
+`-2`, `-3`, … before the extension until a free path is found, and report the
+final path in the chat summary. Derive the slug and resolve the handoff path
+(including the collision check) once, before any seat dispatch, so path
+problems fail early.
+
 ## Dispatch Topology
 
 Nine seat files; not nine parallel advisors: (1) `reversibility-seat`; (2) seven
-analysis seats in parallel; (3) optional `originality-seat` branch mode (same
-file); (4) `chair-seat`.
+logically independent analysis seats, dispatched in parallel up to the runtime's
+concurrency limit (bounded waves when the runtime caps concurrent subagents;
+correctness never depends on simultaneous launch); (3) optional
+`originality-seat` branch mode (same file); (4) `chair-seat`.
 
 ## State Machine Overview
 
-Canonical FSM: [`flow-diagram.md`](./flow-diagram.md),
-[`state-machine.md`](./state-machine.md).
+Canonical FSM: [`state-machine.md`](./state-machine.md) (sole source).
 
 | Region | States | Result |
 | ------ | ------ | ------ |
@@ -67,8 +79,12 @@ Terminals: `Ready`, `NeedsInput`, `Blocked`, `Error`.
 | `power-questions-seat` | `./subagents/power-questions-seat.md` | Ranked questions |
 | `chair-seat` | `./subagents/chair-seat.md` | Synthesis + dissent |
 
-Read a seat only on dispatch. Prefer runtime subagents; else run inline. Retain
-statuses, packets, gate verdicts, paths, and concise summaries.
+Read a seat only on dispatch. Prefer runtime subagents; else run inline. Record
+`execution_fidelity: subagents` or `execution_fidelity: inline_degraded` in the
+run log. An inline run must disclose its degraded fidelity in the chat summary
+and cannot claim contextual independence (`G_INDEPENDENCE` then verifies
+payload-level isolation only). Retain statuses, packets, gate verdicts, paths,
+and concise summaries.
 
 ## Progressive Loading Map
 
@@ -78,8 +94,7 @@ statuses, packets, gate verdicts, paths, and concise summaries.
 | Gate predicates, caps, routes | `./references/decision-gates.md` |
 | Mental-model lesson content | `./references/mental-models.md` |
 | Educate-me templates | `./references/educate-me-lesson-template.md` |
-| State diagram | `./flow-diagram.md` |
-| State-transition table | `./state-machine.md` |
+| State-transition table (canonical FSM) | `./state-machine.md` |
 
 `decision-gates.md` is the sole normative source for gate predicates.
 
@@ -103,7 +118,9 @@ name the qualified professional to consult.
 Follow [`state-machine.md`](./state-machine.md):
 
 1. `Intake`/`AskSubject` — draft packet; missing fields `unstated`.
-2. `ClassifyStakes` → `ConfirmFraming` — `G_FRAMING_CONFIRMED`.
+2. `ClassifyStakes` → `ConfirmFraming` — `G_FRAMING_CONFIRMED`: max 3 total
+   confirmation attempts (initial ask plus up to 2 revised re-asks); third
+   unconfirmed attempt → `needs_input`.
 3. `DeclareResearch` — record `research_tools`.
 4. `ClassifyReversibility` — `G_REVERSIBILITY`; low → `ProbeReversibility`, else
    default `type_1`/`deep` if still unresolved.
@@ -145,11 +162,14 @@ power_questions_to_answer_before_proceeding: [<top questions>]
 seat_packets: <reversibility, seven analysis, chair, optional branch>
 educate_me: <lesson cards and solo drill>
 gates: <verdicts with evidence>
+execution_fidelity: subagents | inline_degraded
 run_log: <versions, dispatches, cycles, budgets, override>
 ```
 
 Chat summary: final recommendation, confidence, decision type, kill criterion,
-top three power questions, minority-report paragraph, disclosure if any, path.
+top three power questions, minority-report paragraph, disclosure if any,
+degraded-fidelity disclosure when `execution_fidelity: inline_degraded`, and
+the final handoff path actually written.
 
 ## Status Routing
 
@@ -161,6 +181,7 @@ top three power questions, minority-report paragraph, disclosure if any, path.
 | `Error` | Seat or runtime failure named |
 | Seat `BLOCKED` | `RefinePacket`; second wave → `NeedsInput` |
 | Seat `FAIL` | Redispatch seat within cap |
+| Chair `FAIL` | Correctable defect: 1 targeted redispatch (global budget), second `FAIL` → `Blocked`; substantively impossible on unchanged packets → `Blocked` immediately (see `decision-gates.md`) |
 | Seat `ERROR` | Retry once, then `Error` |
 
 ## Example
