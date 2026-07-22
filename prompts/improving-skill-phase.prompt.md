@@ -22,7 +22,8 @@ outcome. Evidence outranks familiarity and sunk cost.
 - `SCOUTING_DIR` (optional): exact `outputs/scouting-phase-{skill-name}/`
   directory. If omitted, list matching dossiers and ask the user to choose one.
 - `IMPROVEMENT_MANDATES` (optional): user concerns to evaluate as hypotheses,
-  not conclusions.
+  not conclusions. If omitted, ask once whether the user has specific problems,
+  desired outcomes, or behaviors they want improved. Accept `none` and continue.
 </inputs>
 
 <paths>
@@ -61,7 +62,15 @@ Do not stage or commit unless separately asked.
      entries beyond the four report filenames. Ask before replacing those files.
      Otherwise stop and ask the user to clear or relocate the collision.
 
-2. Assess the documented skill.
+2. Collect optional improvement feedback.
+   - If `IMPROVEMENT_MANDATES` was not supplied, ask once: "Are there specific
+     problems, desired outcomes, or behaviors you want improved? Reply `none` to
+     continue without additional direction."
+   - Record the answer verbatim in `assessment.md`.
+   - Treat each concern as a hypothesis to investigate. It may guide emphasis,
+     but it does not override contrary evidence or limit the general assessment.
+
+3. Assess the documented skill.
    Write `assessment.md` with:
    - the skill's useful core;
    - claims or mechanisms that are unsupported, contradictory, or ineffective;
@@ -79,7 +88,7 @@ Do not stage or commit unless separately asked.
    decision, write terminal `INDEX.md`, and return `no_build` without asking for
    approval.
 
-3. Design the replacement.
+4. Design the replacement.
    Write `proposal.md` with:
    - purpose, audience, and operating posture;
    - inputs, outputs, workflow, branches, errors, and validation;
@@ -95,7 +104,7 @@ Do not stage or commit unless separately asked.
    under 500 lines and use supporting files only when progressive disclosure
    materially improves clarity or context use.
 
-4. Ask for approval.
+5. Ask for approval.
    Present the verdict, major behavior changes, removed capabilities, adopted
    patterns, exact manifest, and validation plan. Then ask the user to reply with
    one decision:
@@ -114,7 +123,7 @@ Do not stage or commit unless separately asked.
    again. On `stop`, record an empty applied manifest in `validation.md`, write
    terminal `INDEX.md`, and return `no_build`.
 
-5. Rewrite after approval.
+6. Rewrite after approval.
    - Recheck Git status against the pre-report baseline; stop if unrelated state
      changed during the run.
    - Apply manifest operations in order.
@@ -123,7 +132,7 @@ Do not stage or commit unless separately asked.
      expression.
    - Record completed operations in `validation.md`.
 
-6. Validate independently from the proposal.
+7. Validate independently from the proposal.
    Check at minimum:
    - `SKILL.md` exists, stays under 500 lines, and its frontmatter `name` matches
      the directory;
@@ -139,7 +148,7 @@ Do not stage or commit unless separately asked.
      possible; otherwise mark behavioral validation `static_only`;
    - Git-visible changes are limited to the approved manifest and report files.
 
-7. Repair and finish.
+8. Repair and finish.
    - For failed checks, repair only approved files and rerun affected checks.
    - Allow at most two repair rounds. A needed scope expansion requires new
      proposal approval.
