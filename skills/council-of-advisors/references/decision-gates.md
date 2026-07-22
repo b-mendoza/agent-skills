@@ -13,8 +13,25 @@ failure routes. `SKILL.md` indexes gates but does not redefine them.
 | Global redispatch budget | 12 total redispatches | `status: blocked` with budget use in `run_log` |
 | Packet refinement after analysis `BLOCKED` | 1 consolidated packet-refinement round | second `BLOCKED` wave returns `status: needs_input` |
 
+Exception: `G_FRAMING_CONFIRMED` does not use the generic per-gate repair
+counter. It allows at most 3 total confirmation attempts and terminates in
+`status: needs_input`, not `blocked` (see its section below).
+
 Repair only the producing phase or seat named by the failing gate. Do not rerun
 unaffected seats unless packet version changed.
+
+Low-confidence repair accounting: the redispatch set is the analysis seats
+whose packets the chair explicitly names as the drivers of its low confidence
+(empty when the chair names none). `RepairLowConfidence` has no separate cap.
+Every seat redispatched for low confidence, and every chair rerun it triggers,
+counts individually against the global redispatch budget. The planned repair
+(weak seats plus chair rerun) must fit within the remaining budget; otherwise
+skip the repair. The per-seat schema cap applies only when the named repair
+reason is a schema defect. The `blocked` route in the table above applies when
+a required redispatch cannot run within budget; a low-confidence result whose
+repair is skipped for budget reasons is not blocked — it proceeds to
+`Type1Gate`, where the Type 1 low-confidence override still protects
+irreversible decisions.
 
 ## G_FRAMING_CONFIRMED
 
@@ -22,8 +39,12 @@ Protects: confirmed decision packet before any seat runs.
 
 Pass condition: the user explicitly confirms the paraphrased packet.
 
-Failure route: revise the paraphrase and ask again. After the third unconfirmed
-attempt, return `status: needs_input` with the packet draft and unresolved field.
+Failure route: revise the paraphrase and ask again, up to 3 total confirmation
+attempts (the initial ask plus up to 2 revised re-asks). If the third attempt
+remains unconfirmed, return `status: needs_input` with the packet draft and
+unresolved field. This gate is an exception to the Shared Budgets table: it
+does not use the generic "3 repair cycles" counter and terminates in
+`needs_input`, never `blocked`.
 
 ## G_REVERSIBILITY
 
@@ -66,6 +87,13 @@ Pass condition:
   packet version, cycle, reason, and no sibling output included.
 - No packet explicitly attributes content to a named sibling seat's output from
   this run.
+
+Scope by execution mode: with `execution_fidelity: subagents` (isolated seat
+contexts), a pass asserts contextual independence. With
+`execution_fidelity: inline_degraded` (all seats in one context), a pass
+asserts payload-level isolation only — clean dispatch payloads and no explicit
+sibling attribution. An inline run must not claim contextual independence in
+the run log or handoff.
 
 Legal phrasing: hypothetical language such as `an optimist might say` does not
 fail the gate unless it claims access to the sibling seat's actual output.
@@ -123,6 +151,21 @@ time-bound or event-bound.
 
 Failure route: redispatch `chair-seat` with the quality defect.
 
+## Chair `FAIL` Escalation
+
+Chair `FAIL` routes by stated cause:
+
+- Correctable synthesis or formatting defect: 1 targeted redispatch carrying
+  that exact defect, counted against the global redispatch budget. A second
+  `FAIL` returns `status: blocked` with the chair's stated reason surfaced to
+  the user.
+- The chair states that any recommendation would require fabricating consensus
+  or erasing material dissent from unchanged packets: return `status: blocked`
+  immediately with that reason — no blind redispatch.
+
+`G_DISSENT_PRESERVED` and `G_KILL_CRITERION` repairs keep the shared per-gate
+repair cap; this section governs only seat-emitted chair `FAIL`.
+
 ## G_TYPE_1_LOW_CONFIDENCE
 
 Protects: Type 1 low-confidence safety override.
@@ -147,4 +190,8 @@ Pass condition: nine lesson cards exist in roster order and match the template;
 the solo drill has nine subject-specific questions, one per seat.
 
 Failure route: regenerate missing or malformed cards from
-`./educate-me-lesson-template.md`; no seat redispatch is needed.
+`./references/educate-me-lesson-template.md` (operational package paths used by
+the orchestrator resolve from the skill root); no seat redispatch is needed.
+At most 3 regeneration cycles; if the gate still fails after the third, return
+`status: blocked` surfacing the remaining card defect. `status: error` remains
+reserved for actual runtime failures under the `ERROR` route.
