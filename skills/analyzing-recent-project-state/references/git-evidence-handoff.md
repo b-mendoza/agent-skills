@@ -10,7 +10,6 @@ raw diffs, secrets, and large file bodies stay out of the handoff.
 | `GIT_EVIDENCE: PASS` | Evidence was collected or a quiet/abnormal repo state was summarized as fact |
 | `GIT_EVIDENCE: NOT_GIT` | Path exists but is not a Git worktree |
 | `GIT_EVIDENCE: PATH_ERROR` | Path missing or unreadable |
-| `GIT_EVIDENCE: NEEDS_CONTEXT` | Exactly one user decision is required |
 | `GIT_EVIDENCE: ERROR` | Unexpected Git or local inspection failure |
 
 Repo states `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`,
@@ -20,7 +19,7 @@ prevents a truthful handoff.
 ## Handoff Fields
 
 ```markdown
-GIT_EVIDENCE: <PASS | NOT_GIT | PATH_ERROR | NEEDS_CONTEXT | ERROR>
+GIT_EVIDENCE: <PASS | NOT_GIT | PATH_ERROR | ERROR>
 Project path: <path>
 Branch/upstream: <current branch, detached HEAD, unborn branch, upstream>
 Repo state: <normal | unborn-branch | detached-HEAD | operation-in-progress(op) | shallow | conflicted>
@@ -38,7 +37,6 @@ Dependency/config/tooling signals: <manifests, lockfiles, env, build, CI>
 Context limitations: <truncation, shallow clone, no base, unreadable file, none>
 Commands run: <full sanitized command lines, no raw output>
 Reason: <one line>
-Decision needed: <one user decision or none>
 ```
 
 ## Evidence Window
@@ -68,5 +66,4 @@ Dependency/config/tooling signals: no changes in window
 Context limitations: none
 Commands run: git status --short --branch; git log --oneline --first-parent -n 15 origin/main..HEAD; git diff --stat origin/main...HEAD
 Reason: clean tree and empty evidence window
-Decision needed: none
 ```
