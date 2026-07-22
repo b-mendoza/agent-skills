@@ -3,9 +3,11 @@
 # Local tool configs
 .claude/settings.*
 .codex/
-.handoffs/
 .mcp.json
 opencode.jsonc
+
+# Artifacts
+.handoffs/
 
 # Scouting-to-improvement suite artifacts (persistent local handoffs; never committed)
 outputs/scouting-phase-*/
