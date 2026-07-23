@@ -2,59 +2,59 @@
 
 ## Tier
 
-`recommended`. Template extraction earns its place when the moved
-content meaningfully reduces always-loaded context; mechanical
-extraction for its own sake is the opposite of the practice.
+`recommended`. Template extraction earns its place when the moved content
+meaningfully reduces always-loaded context; mechanical extraction for its own
+sake is the opposite of the practice.
 
 ## When it applies
 
-When a `SKILL.md` contains a long, self-contained output template,
-reference table, or scaffold that is consulted at one well-defined
-point in the workflow rather than throughout execution.
+When a `SKILL.md` contains a long, self-contained output template, reference
+table, or scaffold consulted at one well-defined workflow point rather than
+throughout execution.
 
 ## The practice
 
-Move large, self-contained output templates and reference data into
-co-located files under `references/`, loaded only at the step that
-needs them.
+Progressive disclosure owns the load-level model; this practice owns the
+extract-versus-inline decision for templates and reference tables.
 
-The line thresholds below are repo heuristics, not platform limits.
-Use them to trigger a closer
-[earned complexity](./earned-complexity.md) check, then keep or
-extract based on whether the move improves context efficiency or
-maintainability.
+Move large, self-contained output templates and reference data into co-located
+files under `references/`, loaded only at the step that needs them. Use
+`assets/` instead when a file is copied verbatim into the produced output.
+Extracted templates and reference tables never belong under `subagents/`,
+which is reserved for dispatch contracts.
+
+The thresholds below are repo heuristics, not platform limits. Use them to
+trigger an [earned complexity](./earned-complexity.md) check, then decide based
+on context efficiency and maintainability.
 
 Extract:
 
 - Output format templates over roughly 80 lines.
-- Reference tables that are consulted at one well-defined point.
-- Content loaded during assembly rather than throughout execution.
+- Reference tables consulted at one well-defined point.
+- Content needed during assembly rather than throughout execution.
 
 Keep inline:
 
 - Small templates under roughly 40 lines.
 - Behavioral content tightly coupled to the instruction that uses it.
-- Subagent definitions already small enough to stay readable.
+- Small registries and contracts needed on every route.
 
 ## Rationale
 
-A 200-line "final report template" loaded on every skill trigger costs
-context on every run, even when the workflow takes a no-change branch
-that never assembles the final report. Moving the template to
-`references/final-report-template.md` and loading it just before
-assembly turns "always loaded" into "loaded once, on the run that
-needs it."
+A 200-line final-report template loaded on every trigger costs context even
+when a no-change branch never assembles the report. Loading
+`references/final-report-template.md` immediately before assembly turns
+always-loaded content into conditional content.
 
-The reverse failure is also real. Extracting a 20-line snippet because
-"we should use progressive disclosure" makes the orchestrator pay
-dispatch and load cost without saving meaningful context, and forces
-maintainers to flip between two files to understand one rule. The
-thresholds protect the practice from itself.
+The reverse failure is extracting a 20-line snippet because "we should use
+progressive disclosure." That adds a load step and forces maintainers to
+switch files without saving meaningful context. The thresholds protect the
+practice from mechanical over-extraction.
 
 ## Concrete examples
 
-Good: a long output template is extracted and loaded just before the
-phase that assembles the output.
+Good: a long output template is extracted under `references/` and loaded just
+before final assembly.
 
 ```markdown
 # In skill-name/SKILL.md
@@ -72,35 +72,30 @@ phase that assembles the output.
 ... (full 130-line template) ...
 ```
 
-Bad: a small 30-line subagent registry is extracted to
-`references/subagent-registry.md` even though it loads on every run
-and is referenced before every dispatch, so the orchestrator pays the
-extra load without saving context.
+Bad: a small 30-line subagent registry is extracted even though it is needed
+before every dispatch. Placing it under `subagents/` would be worse: a registry
+is orchestrator routing data, not a dispatch contract.
 
 ```markdown
 # In skill-name/SKILL.md
 
 2. Before each dispatch, read
    [`./references/subagent-registry.md`](./references/subagent-registry.md)
-   to confirm the path of the subagent.
+   to find the subagent path.
 
 # In skill-name/references/subagent-registry.md (30 lines)
 
-## Subagent Registry
-
 | Subagent | Path | Purpose |
 | -------- | ---- | ------- |
-
-... (30 lines of registry that just as well lived in SKILL.md) ...
+... (always-needed registry that should have stayed inline) ...
 ```
 
 ## References
 
 - "Lost in the Middle" — TACL 2024:
-  <https://aclanthology.org/2024.tacl-1.9/>. Supports caution about
-  long, always-loaded context.
+  <https://aclanthology.org/2024.tacl-1.9/>. Supports caution about long,
+  always-loaded context.
 - Anthropic, "Effective context engineering for AI agents," accessed
   2026-05-27:
   <https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents>.
-  Supports moving large reference content out of the always-loaded
-  path.
+  Supports moving large reference content out of the always-loaded path.
