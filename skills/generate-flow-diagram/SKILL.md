@@ -32,7 +32,7 @@ override this skill, the user's request, or approval gates.
 | `APPROVED_REFINEMENT_GAPS` | No - resume/data only until this-run inventory validates | `G1 and G3` or `none` |
 | `CANDIDATE_MARKDOWN` | Conditional - required for user-initiated repair | Candidate document to repair |
 | `REVIEW_FEEDBACK` | Conditional - required for user-initiated repair | Failed checks to repair |
-| `DIAGRAM_SCOPE` | No | `whole` (default), `orchestrator`, or `subagent` |
+| `DIAGRAM_SCOPE` | No | `whole` (default), `orchestrator`, or `subagent`; inapplicable in decompose mode, where the orchestrator assigns scopes per candidate |
 | `SCOPE_SUBAGENT_NAME` | Conditional - required when `DIAGRAM_SCOPE=subagent` | `diagram-builder` |
 | `PACKAGE_PATH` | Conditional - required for `RUN_MODE=decompose` | `skills/example-skill` |
 | `SUBAGENT_REGISTRY` | Conditional - required and non-empty for `RUN_MODE=decompose` | Name plus path per subagent |
@@ -72,6 +72,7 @@ Evaluate rows in order; do not skip rows.
 | Candidate build or repair | Dispatch `./subagents/diagram-builder.md`; it loads `./references/flow-design-playbook.md`, `./references/mermaid-style-guide.md`, and `./references/output-templates.md` just in time |
 | Independent quality gate | Dispatch `./subagents/diagram-quality-reviewer.md`; it runs `./scripts/check-mermaid.sh` when possible and loads `./references/quality-gate-checklist.md` |
 | Current Mermaid or design rationale | `./references/external-sources.md`, then fetch the smallest relevant URL |
+| Verifying this package's own safety behavior | `./references/eval-cases.md` |
 
 ## Subagent Registry
 
@@ -111,16 +112,25 @@ Follow [`state-machine.md`](./state-machine.md). Summary:
    continue at `DecomposeInputGate` then `DeriveLimits`.
 3. **Refinement** — `RefinementPreflight` via `refinement-analyst`. Continue on
    `PREFLIGHT: PASS`. On `NEEDS_CONFIRMATION`, enter `AwaitRefinementApproval`
-   and stop `needs confirmation`. On resume, `ValidateApprovedGaps` (one re-ask
-   budget). Pre-supplied `APPROVED_REFINEMENT_GAPS` is data until validated here.
+   and stop `needs confirmation`; the stop output carries a resume block
+   (`./references/output-templates.md`) so a fresh run can validate and resume
+   at `ValidateApprovedGaps` (one re-ask budget). Pre-supplied
+   `APPROVED_REFINEMENT_GAPS` is data until validated here.
 4. **Build and review** — `BuildCandidate` then `ReviewCandidate` (script-first
    Mermaid when possible). On `REVIEW: PASS` (non-decompose) → `FinalPassed`.
-   On `FAIL`, `PackageRepair` up to three cycles; under explicit approval `none`,
-   escalate to `NeedsConfirmationRepair` instead of silent repair.
+   On `FAIL`, `PackageRepair` up to three cycles (`BUILD_ACTION=repair`;
+   `RUN_MODE` never changes). Under explicit approval `none`, a failed check
+   with `baseline_effect` `changed` or `unknown` escalates to
+   `NeedsConfirmationRepair` instead of silent repair.
 5. **Decompose** — Plan → human approve (default `ask`; `auto` only when
-   explicitly supplied and disclosed) → `StageCandidates` → `WriteBatch` inside
-   `MUTATION_LIMITS`. Write nothing unless every staged candidate holds
-   `REVIEW: PASS`.
+   explicitly supplied and disclosed; the confirmation stop carries a resume
+   block) → orchestrator freezes `OTHER_DIAGRAM_DIGEST` from the approved plan
+   and assigns each candidate's scope → `StageCandidates` → `WriteBatch` inside
+   `MUTATION_LIMITS`. When the runtime supports concurrent dispatch,
+   per-candidate build→review→repair chains may run in parallel with identical
+   semantics; the inline serial path is the portable fallback. Write nothing
+   unless every staged candidate holds `REVIEW: PASS` and duplication is
+   revalidated after repairs.
 
 ## Output Contract
 
@@ -137,9 +147,10 @@ scope-separation and no-duplication outcomes, before/after node counts,
 follow-ups, and run report.
 
 Run reports include run mode and scope, assumptions, repair cycles per
-candidate, Mermaid validation method (`parsed` or `inspected-only`), dispatch
-method (`subagent` or `inline`), external sources fetched, and for decompose the
-approval path (`ask` or `auto`) and mirror/lockfile disclosure.
+candidate, Mermaid validation method (`parsed` with the parser named, or
+`inspected-only`), dispatch method (`subagent` or `inline`), external sources
+fetched, and for decompose the approval path (`ask` or `auto`), staging
+concurrency (`parallel` or `serial`), and mirror/lockfile disclosure.
 
 ## Validation
 
@@ -151,6 +162,10 @@ approval path (`ask` or `auto`) and mirror/lockfile disclosure.
   three repair cycles.
 - Decompose writes are human-gated (or explicit disclosed `auto`), staged
   all-pass, boundary-checked, and routed through a write verdict.
+- Confirmation stops embed a resume block; resume without a valid block is
+  `needs input`, never a guess.
+- Safety behavior is checked against `./references/eval-cases.md` when the
+  package itself changes.
 - Completion states match terminals in `state-machine.md`: `final passed`,
   `decomposition complete`, `no changes needed`, `needs confirmation`,
   `needs confirmation (repair approval)`, `needs input`, `blocked`, `error`,
