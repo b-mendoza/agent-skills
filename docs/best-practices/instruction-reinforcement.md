@@ -31,7 +31,9 @@ Rules:
 This is a risk-based heuristic. Long-context retrieval research and
 prompt repetition studies indirectly support the concern that
 repeated information can matter, but they do not prove that every
-mid-document reminder improves agent behavior.
+mid-document reminder improves agent behavior. Top-of-file reminders
+matter more in modern runtimes because compaction and persistence tend
+to retain early content preferentially.
 
 ## Rationale
 
