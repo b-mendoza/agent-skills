@@ -97,6 +97,10 @@ Warnings: 1
 Reason: Claims validation contains one unverified external claim; handoff remains usable.
 ```
 
+Orchestrator verification: first line matches the reviewer output grammar and
+all summary fields are present; a missing or malformed status would be treated
+as `REVIEW: ERROR` (fail closed). [F-04]
+
 The orchestrator returns `Completed: review pass with warnings` with paths to
 `TARGET_FILE`, transcript, context, insights, claims, and `.prev.md`, plus
 counts and the warning disclosed in the run report.
