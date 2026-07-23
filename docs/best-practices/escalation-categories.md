@@ -19,7 +19,10 @@ hope."
 Define failure categories and reporting formats for every subagent so
 the orchestrator can route failures without reading raw error
 details. Use a consistent vocabulary across the skill and across
-related skills so handoffs compose.
+related skills so handoffs compose. The category vocabulary is a
+closed enum contract: orchestrator routing tables handle every
+category a subagent can emit, and a subagent does not emit categories
+outside its declared set.
 
 Common categories:
 
@@ -31,6 +34,9 @@ Common categories:
 | `PARTIAL`       | Some items succeeded and others failed                                           | Route remaining scope explicitly     |
 | `TOOLS_MISSING` | Required runtime capability is unavailable                                       | Stop or ask user to enable/install   |
 | `RATE_LIMIT`    | External service throttled after retry                                           | Wait, reschedule, or escalate        |
+
+A `PARTIAL` report enumerates which items succeeded and which failed
+so the orchestrator can route the remaining scope explicitly.
 
 Judgment-heavy subagents should fail loudly when a missing capability
 defeats their purpose. For example, a bias-correction subagent that
