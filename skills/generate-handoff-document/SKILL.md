@@ -44,7 +44,7 @@ Canonical execution is the state machine in [`state-machine.md`](./state-machine
 | 2. Source materialization | `MaterializeSource`, `AskTranscript`, `ExternalDecide` | `TRANSCRIPT_FILE`, `CHUNKED`, `EXTERNAL` |
 | 3. Extract context | `ExtractContext` | `<stem>.context.json` |
 | 4. Document insights | `DocumentInsights`, `AskEmptySession` | `<stem>.insights.json`, empty-session decision |
-| 5. Validate claims | `ValidateClaims` or `SkipClaims` | `<stem>.claims.json` or intentional skip |
+| 5. Validate claims | `ValidateClaims` or `SkipClaims` | `<stem>.claims.json`, or routed skip when `TRACKING_FILES` is absent |
 | 6. Assemble handoff | `AssembleHandoff` | `TARGET_FILE` with five required sections |
 | 7. Review and repair | `ReviewHandoff`, `PlanRepair` | Success or blocked terminal |
 
@@ -67,19 +67,20 @@ targets, external status, repair count, and open-question count.
 
 | Need | Load |
 | ---- | ---- |
-| Path safety, schemas, status, repair, verification, terminals | `./references/data-contracts.md` |
+| Path safety, schemas, status, repair, verification | `./references/data-contracts.md` |
 | Final document section layout and zero-state rendering | `./references/handoff-template.md` |
 | Reviewer gates and continuation-readiness checks | `./references/quality-checklist.md` |
 | Example dispatch summaries | `./references/dispatch-example.md` |
 | Optional fetch policy (orchestrator-owned; not a producer input) | `./references/external-sources.md` |
-| Feature tag index `[F-01]`…`[F-16]` | `./references/feature-registry.md` |
+| Feature tag index `[F-01]`…`[F-18]` | `./references/feature-registry.md` |
 | State transition table | `./state-machine.md` |
 | State-machine Mermaid | `./flow-diagram.md` |
 
 `references/data-contracts.md` is the single source of truth for status
 semantics, repair limit, canonical rerun order, artifact verification, schemas,
-path-safety criteria, deterministic fallbacks, and exact terminal strings.
-Other files link to it rather than redefining those tables. [F-10][F-11][F-12]
+path-safety criteria, and deterministic fallbacks; `state-machine.md` is the
+single source of truth for states, transitions, and exact terminal strings.
+Other files link to them rather than redefining those tables. [F-10][F-11][F-12]
 
 `EXTERNAL_SOURCES_FILE` is resolved to an absolute path for the orchestrator's
 optional fetch policy only. Producer subagents do not take it as an input. [F-02]
@@ -92,7 +93,11 @@ The handoff template lives under `references/handoff-template.md` (not
 The orchestrator thinks, decides, dispatches, and verifies. It routes the state
 machine, asks only pause-and-resume questions that change a gate outcome,
 dispatches subagents with complete input contracts, and mechanically checks
-their artifacts before trusting claimed status lines. [F-04][F-08]
+every stage output — producer artifacts and the reviewer's summary alike —
+before trusting a claimed status line. [F-04][F-08]
+
+Secrets and personal data found in any input are rendered as `[REDACTED]` in
+every written artifact; the reviewer checks this as a gate. [F-17]
 
 Working data is disk-backed. The run may write only `TARGET_FILE`, sibling
 artifacts beside it, a transcript snapshot, and `<stem>.prev.md` when backing up
@@ -113,22 +118,29 @@ Follow [`state-machine.md`](./state-machine.md). Summary:
 4. **Derive contracts** — Sibling paths from extension-agnostic stem; resolve
    absolute `DATA_CONTRACTS_FILE`, `TEMPLATE_FILE`, `CHECKLIST_FILE`, and
    orchestrator-only `EXTERNAL_SOURCES_FILE`. [F-02][F-13]
-5. **Materialize source** — Readable file or faithful transcript snapshot;
-   `CHUNKED=yes` above 2,000 lines. [F-01][F-15]
+5. **Materialize source** — Readable file or faithful transcript snapshot
+   (faithfulness predicate in `data-contracts.md`); redact secrets and
+   personal data when writing the snapshot; `CHUNKED=yes` above 2,000 lines.
+   `AskTranscript` abandoned →
+   `Blocked: no usable source transcript`. [F-01][F-15][F-17]
 6. **External** — Prefer bundled contracts; at most one fetch when it changes a
    decision; record `EXTERNAL: SKIPPED|USED|UNAVAILABLE`. Required unreachable →
    `Blocked: required external dependency unavailable`.
 7. **Producers** — Dispatch-verify `context-extractor` → `insight-documenter` →
    conditional `claim-validator` → `document-assembler` per
-   `data-contracts.md`. Skip claims only when `TRACKING_FILES` is absent. [F-14]
+   `data-contracts.md`. The skip is a routing decision: claims are skipped
+   exactly when `TRACKING_FILES` is absent, and the recorded `CLAIMS: SKIPPED`
+   is a report line, not a reviewer warning. [F-14]
 8. **Empty session** — After insights, if `qa_log` and `insights` are empty and
-   the mandate is trivial, ask. Decline →
-   `Completed: handoff declined (empty session)`. [F-07]
-9. **Review and repair** — `handoff-reviewer`. `PASS` →
+   the mandate is trivial (predicates in `data-contracts.md`), ask. Decline or
+   abandonment → `Completed: handoff declined (empty session)`. [F-07]
+9. **Review and repair** — `handoff-reviewer`, verified against the reviewer
+   output grammar (missing/malformed status = `ERROR`, fail closed). `PASS` →
    `Completed: review pass`. `WARN` →
    `Completed: review pass with warnings`. `FAIL` → `PlanRepair` (max three
-   cycles, canonical order in `data-contracts.md`); exhaust →
-   `Blocked: repair limit exhausted`. [F-11][F-14]
+   cycles, canonical order in `data-contracts.md`; a repair invalidates
+   downstream verification and flows forward); exhaust →
+   `Blocked: repair limit exhausted`. [F-04][F-11][F-14]
 
 Dispatch-verify mechanics (retries, mechanical checks, upstream rerun) live in
 `data-contracts.md`; do not restate them here. [F-04]
@@ -140,11 +152,12 @@ Dispatch-verify mechanics (retries, mechanical checks, upstream rerun) live in
 | Review pass | `Completed: review pass` |
 | Review warn | `Completed: review pass with warnings` |
 | Empty decline | `Completed: handoff declined (empty session)` |
-| Stops | Exact `Blocked: …` strings in `state-machine.md` / `data-contracts.md` |
+| Stops | The seven exact `Blocked: …` strings tabulated in `state-machine.md` (unclear target, no usable source transcript, unsafe path, external, stage, artifact, repair exhausted) |
 
 Success reports include handoff path, sibling artifacts (transcript, `.prev.md`
-when present), external status, stage verdicts, counts, warnings including
-`CLAIMS: SKIPPED`, open-question count, and repair cycles used.
+when present), external status, stage verdicts, counts, warnings, the
+`CLAIMS: SKIPPED` report line when claims were skipped, open-question count,
+and repair cycles used.
 
 The final handoff document must include the working-artifacts manifest. [F-16]
 
@@ -152,9 +165,11 @@ The final handoff document must include the working-artifacts manifest. [F-16]
 
 - `SKILL.md` stays under 500 lines; schemas stay in references.
 - Every registry subagent path exists; frontmatter `name` values match paths.
-- Producer artifacts are mechanically verified before routing on claimed success.
-- Warning counts force `WARN`; `PASS` has zero warnings. [F-10]
-- Continuation-readiness gates remain operational. [F-06]
+- Every stage output — producer artifacts and the reviewer summary — is
+  mechanically verified before routing on a claimed status. [F-04]
+- Warning counts force `WARN`; `PASS` has zero warnings; the routed
+  `CLAIMS: SKIPPED` report line is not a warning. [F-10]
+- Continuation-readiness and redaction gates remain operational. [F-06][F-17]
 
 ## Example
 
