@@ -89,8 +89,14 @@ the tradeoff.
 | Permissions/scope  | Same authority is appropriate                            | Isolation or narrower mutation scope reduces risk  |
 | Reuse              | One-off local step                                       | Contracted behavior will recur across workflows    |
 
-**Co-location.** All subagent files live inside the skill folder,
-not in a global agents directory.
+**Co-location.** By repository convention, subagent dispatch-contract
+files live inside the skill folder, not in a global agents directory.
+This is a co-location convention for portable skill contracts, not a
+runtime agent registry. Runtimes do not auto-register these files; the
+orchestrator reads the relevant contract and dispatches with it
+explicitly. Keep runtime-specific agent discovery and configuration
+separate; see the
+[runtime portability matrix](./runtime-portability-matrix.md).
 
 ```
 skill-name/
@@ -105,13 +111,14 @@ skill-name/
 
 ## Rationale
 
-Polluted orchestrator context compounds with every step, but over-
-delegation also has real cost. A subagent starts with a fresh
-context, may need to reread inputs the orchestrator already knows,
-adds dispatch latency, can lose conversational continuity, and
-increases the number of contracts the author must maintain.
-Delegation earns its place when those costs are outweighed by
-context savings, permission isolation, clearer validation, or
+For the bounded-context rules and rationale governing unnecessary raw
+material in the orchestrator, see
+[context window protection](./context-window-protection.md).
+Delegation also has real cost: a subagent starts with a fresh context,
+may need to reread inputs the orchestrator already knows, adds dispatch
+latency, can lose conversational continuity, and increases the number
+of contracts the author must maintain. Delegation earns its place when
+those costs are outweighed by isolation, clearer validation, or
 reusable structured output.
 
 The two-question test resolves this by anchoring the decision on
