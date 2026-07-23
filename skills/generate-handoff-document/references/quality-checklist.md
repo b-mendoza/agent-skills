@@ -27,7 +27,8 @@ limit, canonical rerun order, schemas, and zero-state strings live in
 | Open questions | Open questions and next steps are concrete; zero-state text is used when none remain | `document-assembler` |
 | Placeholder cleanup | No `<placeholder>` text or source-only marker remains | `document-assembler` |
 | Vacuity | If Sections 2 through 4 are all zero-state, an advisory banner exists and verdict is at most warn | `document-assembler` |
-| Continuation readiness | All five sub-criteria below pass | Smallest affected producer then `document-assembler` |
+| Redaction | No credential, token, key, or personal-data value appears unredacted in the document, Session Metadata, or the supplied context/insights/claims artifacts (see Secret and PII Redaction in `data-contracts.md`) | Producer of the leaking artifact, then `document-assembler` |
+| Continuation readiness | All six sub-criteria below pass | Smallest affected producer then `document-assembler` |
 
 ## Continuation Readiness
 
@@ -40,6 +41,7 @@ Check each sub-criterion and name failures in the review summary. [F-06]
 | Actionable next steps | Every recommended next step uses an action verb and names a concrete target |
 | Artifact manifest | Working Artifacts list is present in Session Metadata |
 | Introduced names | Acronyms and project-specific names are introduced at first use |
+| Redaction | Secrets and personal data render as `[REDACTED]` throughout |
 
 ## Rerun Mapping
 
@@ -50,8 +52,11 @@ it and downstream consumers. [F-04]
 
 ## Reviewer Summary Requirements
 
-The summary must include `status`, `File`, `Failed gates`, `Rerun`, `Open
-questions`, `Warnings`, and `Reason`, matching the reviewer summary fields in
-[`data-contracts.md`](./data-contracts.md) (Final Response Fields and status
-semantics). `REVIEW: PASS` is valid only with zero failed gates and zero
-warnings; warnings require `REVIEW: WARN`. [F-10]
+The output follows the reviewer output grammar in
+[`data-contracts.md`](./data-contracts.md): a first line of exactly
+`REVIEW: PASS|WARN|FAIL|ERROR` followed by the fields `File`, `Failed gates`,
+`Rerun`, `Open questions`, `Warnings`, and `Reason`. The orchestrator verifies
+this grammar mechanically and treats any deviation as `REVIEW: ERROR`.
+`REVIEW: PASS` is valid only with zero failed gates and zero warnings;
+warnings require `REVIEW: WARN`. An orchestrator-recorded `CLAIMS: SKIPPED`
+report line is not a warning and does not block `REVIEW: PASS`. [F-10]
