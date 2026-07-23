@@ -23,6 +23,11 @@ still carry hard boundaries. Use explicit restrictions when safety,
 permission, or mutation boundaries need enforcement, but lead with
 the allowed path so the agent has a clear working model.
 
+**Ordering check.** In every section, each categorical exclusion
+list must be preceded by the allowed-path statement for that boundary
+in the same section. A reviewer should be able to verify this ordering
+mechanically.
+
 ## Rationale
 
 A pure negation list ("do not write outside scope, do not call
@@ -65,10 +70,7 @@ orchestrator must not skip phases. (Now what should it actually do?)
 
 ## References
 
-- Anthropic Claude prompting best practices, accessed 2026-05-27:
+- Anthropic Claude prompting best practices, accessed 2026-07-22:
   <https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices>.
-  Supports stating what to do rather than what to avoid.
-- OWASP Top 10 for LLM Applications, accessed 2026-05-27:
-  <https://owasp.org/www-project-top-10-for-large-language-model-applications/>.
-  Supports the principle that prompt guidance must be paired with
-  framework-level controls for real boundaries.
+  Explicitly recommends telling Claude what to do instead of what not
+  to do.
