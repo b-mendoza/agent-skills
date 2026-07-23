@@ -24,18 +24,18 @@ esac
 
 case "$cmd_trimmed" in
 pytest\ * | pytest | \
-python\ -m\ pytest\ * | python\ -m\ pytest | \
-go\ test\ * | go\ test | \
-npm\ test\ * | npm\ test | \
-yarn\ test\ * | yarn\ test | \
-pnpm\ test\ * | pnpm\ test | \
-npx\ vitest\ * | npx\ vitest | \
-npx\ jest\ * | npx\ jest | \
-cargo\ test\ * | cargo\ test | \
-mvn\ test\ * | mvn\ test | \
-./gradlew\ test\ * | ./gradlew\ test | \
-rspec\ * | rspec | \
-mix\ test\ * | mix\ test)
+  python\ -m\ pytest\ * | python\ -m\ pytest | \
+  go\ test\ * | go\ test | \
+  npm\ test\ * | npm\ test | \
+  yarn\ test\ * | yarn\ test | \
+  pnpm\ test\ * | pnpm\ test | \
+  npx\ vitest\ * | npx\ vitest | \
+  npx\ jest\ * | npx\ jest | \
+  cargo\ test\ * | cargo\ test | \
+  mvn\ test\ * | mvn\ test | \
+  ./gradlew\ test\ * | ./gradlew\ test | \
+  rspec\ * | rspec | \
+  mix\ test\ * | mix\ test)
   exit 0
   ;;
 *)
