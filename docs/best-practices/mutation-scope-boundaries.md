@@ -22,10 +22,12 @@ default scope, and how the scope tightens during repair cycles after
 a failed validation.
 
 `MUTATION_LIMITS` is derived once at intake and passed to every
-dispatched subagent in the same workflow run. Every edit is gated on
-the limits; a planned edit outside the limits is either blocked or
-escalated to the user for an explicit scope expansion before the edit
-lands.
+dispatched subagent in the same workflow run. It is the run's authority
+envelope: every later mutation plan must be a subset of it, plus any
+explicitly approved `SCOPE_LIMITS` expansion, never a replacement or
+widening reinterpretation. Every edit is gated on the limits; a planned
+edit outside them is either blocked or escalated to the user for an
+explicit scope expansion before the edit lands.
 
 Rules:
 
@@ -75,7 +77,8 @@ Rules:
 8. **The validator verifies mutation boundaries with baseline-aware
    observable evidence.** Capture the pre-edit working-tree state
    with `git status --short` (or equivalent) before any mutation,
-   then compare it with the post-edit state. Every newly changed
+   including mutations performed by dispatched subagents, then compare
+   it with the post-edit state. Every newly changed
    path must appear in the original mutation plan or be authorized
    by the run's `SCOPE_LIMITS`. In a dirty worktree, do not treat
    post-edit `git status` alone as proof of what the workflow
