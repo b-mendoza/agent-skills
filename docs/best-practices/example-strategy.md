@@ -32,6 +32,11 @@ Examples should reinforce the role and posture, show the preferred
 allowed behavior before edge cases, and avoid burying critical
 constraints.
 
+Keep examples synchronized with the contracts they illustrate. When
+an enum, path, or schema changes, update its examples in the same
+edit. A stale example is worse than none because agents copy examples
+over prose.
+
 ## Rationale
 
 Prose ambiguity tends to surface where the skill expects format-
