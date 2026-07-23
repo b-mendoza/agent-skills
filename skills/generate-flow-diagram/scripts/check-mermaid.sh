@@ -59,7 +59,6 @@ for ((i = 1; i <= count; i++)); do
   if "${parser_command[@]}" --input "$block_file" --output "$output_file" --quiet >"$error_file" 2>&1; then
     continue
   else
-    parser_status=$?
     if grep -qi 'could not find chrome\|failed to launch\|executable.*not found' "$error_file"; then
       parser_status=2
       printf '%s\n' "parser unavailable" >&2
