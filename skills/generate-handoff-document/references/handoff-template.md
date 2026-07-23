@@ -20,9 +20,9 @@ literal `<placeholder>` text may remain.
 - **Transcript lines:** <context.source_summary.line_count>
 - **Total Q&A exchanges:** <context.source_summary.qa_exchanges>
 - **Total insights documented:** <insights.summary.insights>
-- **Claims validated:** <claims.summary.checked or skipped>
+- **Claims validated:** <claims.summary.checked, or the exact report line `CLAIMS: SKIPPED` when routing skipped validation>
 - **Critical findings:** <insights.summary.critical>
-- **Open questions:** <computed open-question count>
+- **Open questions:** <count of Section 5 items; 0 when zero-state>
 - **Working artifacts:**
   - Transcript: `<TRANSCRIPT_FILE or none>`
   - Context: `<CONTEXT_FILE>`
@@ -52,8 +52,10 @@ render the Section 2 zero-state string from data-contracts.md.>
 context for a cold-start reader.
 
 <Render each insight from INSIGHTS_FILE with title, priority, claim, rationale,
-evidence, verification status, and verification notes. If empty, render the
-Section 3 zero-state string from data-contracts.md.>
+evidence, verification status, and verification notes. Surface failed_approach
+insights prominently — for example under a "What Didn't Work" subheading — so a
+fresh agent does not repeat them. [F-18] If empty, render the Section 3
+zero-state string from data-contracts.md.>
 
 ## 4. Unverified Claims & Validation Checklist
 
@@ -61,8 +63,10 @@ Section 3 zero-state string from data-contracts.md.>
 so the next agent does not inherit false certainty.
 
 <Render CLAIMS_FILE claims when available. If claim validation was skipped,
-render the Section 4 zero-state string from data-contracts.md and include the
-independent-verification warning.>
+render the skipped-validation Section 4 zero-state string from
+data-contracts.md; the skip is a report line in Session Metadata, not a
+reviewer warning. If validation ran but extracted zero claims, render the
+zero-claims Section 4 zero-state string instead.>
 
 ## 5. Open Questions & Recommended Next Steps
 
