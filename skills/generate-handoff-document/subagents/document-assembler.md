@@ -51,10 +51,15 @@ ERROR`; never reconstruct content from memory. [F-01]
 7. Ensure every recommended next step uses an action verb and names a concrete
    file, command, artifact, or question. Avoid deictic chat references such as
    `above` or `earlier` unless paired with a concrete referent. [F-06]
-8. Write `TARGET_FILE`. Return only the compact summary below.
-9. Return warn for quality caveats such as all-zero-state sections with advisory
-   banner, skipped claims validation, or unresolved source ambiguity. Return
-   pass only when warnings are zero. [F-10]
+8. Surface any `failed_approach` insights prominently within Section 3 so a
+   fresh agent sees what was already tried and did not work. [F-18]
+9. Render secrets and personal data as `[REDACTED]` throughout the document,
+   per the redaction contract in `DATA_CONTRACTS_FILE`. [F-17]
+10. Write `TARGET_FILE`. Return only the compact summary below.
+11. Return warn for quality caveats such as all-zero-state sections with
+    advisory banner or unresolved source ambiguity. A routing-recorded
+    `CLAIMS: SKIPPED` is a report line, not a warning. Return pass only when
+    warnings are zero. [F-10]
 
 ## Output Format
 
