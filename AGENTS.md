@@ -30,35 +30,46 @@ best-practice docs to read before editing.
 
 ## Skill-Authoring Guidance
 
-When authoring or editing a skill, subagent, or reference file, read only the
-docs named for your task before editing. The linked docs are the source of
-truth; [`docs/best-practices/README.md`](./docs/best-practices/README.md) is
-the full index for uncommon cases.
+When authoring or editing a skill, subagent, or reference file, read the docs
+named for your task before editing. The linked docs are the source of truth;
+[`docs/best-practices/README.md`](./docs/best-practices/README.md) is the
+full index. Mandatory-tier practices apply whenever their trigger condition
+holds, even when a task row below does not name them — the row lists the
+docs most tasks of that shape need, then conditional adds keyed on what the
+skill actually does.
 
-| Task | Read before editing |
-| ---- | ------------------- |
-| Create a new skill | [`quick-reference-skill-structure`](./docs/best-practices/quick-reference-skill-structure.md), [`skill-section-order`](./docs/best-practices/skill-section-order.md), [`subagent-section-order`](./docs/best-practices/subagent-section-order.md), [`subagent-registry-format`](./docs/best-practices/subagent-registry-format.md), [`runtime-portability-matrix`](./docs/best-practices/runtime-portability-matrix.md), [`identity-and-mental-model`](./docs/best-practices/identity-and-mental-model.md), [`operating-posture`](./docs/best-practices/operating-posture.md), [`earned-complexity`](./docs/best-practices/earned-complexity.md), [`orchestrator-as-routing-ui`](./docs/best-practices/orchestrator-as-routing-ui.md) |
-| Restructure a large `SKILL.md` or move content into supporting files | [`progressive-disclosure`](./docs/best-practices/progressive-disclosure.md), [`template-extraction`](./docs/best-practices/template-extraction.md), [`context-window-protection`](./docs/best-practices/context-window-protection.md), [`incremental-file-writing`](./docs/best-practices/incremental-file-writing.md) |
-| Add or edit a subagent | [`subagent-default-execution`](./docs/best-practices/subagent-default-execution.md), [`runtime-portability-matrix`](./docs/best-practices/runtime-portability-matrix.md), [`context-window-protection`](./docs/best-practices/context-window-protection.md), [`handoff-file-dispatch`](./docs/best-practices/handoff-file-dispatch.md), [`phase-execution-cycle`](./docs/best-practices/phase-execution-cycle.md), [`critical-output-gates`](./docs/best-practices/critical-output-gates.md), [`escalation-categories`](./docs/best-practices/escalation-categories.md), [`empirical-validation`](./docs/best-practices/empirical-validation.md), [`input-output-contracts`](./docs/best-practices/input-output-contracts.md), [`orchestrator-as-routing-ui`](./docs/best-practices/orchestrator-as-routing-ui.md) |
-| Write or revise instructions, constraints, examples, or long reference files | [`identity-and-mental-model`](./docs/best-practices/identity-and-mental-model.md), [`operating-posture`](./docs/best-practices/operating-posture.md), [`positive-constraint-framing`](./docs/best-practices/positive-constraint-framing.md), [`instruction-reinforcement`](./docs/best-practices/instruction-reinforcement.md), [`example-strategy`](./docs/best-practices/example-strategy.md), [`progressive-disclosure`](./docs/best-practices/progressive-disclosure.md), [`external-information-linking`](./docs/best-practices/external-information-linking.md) |
-| Add validation steps or fix loops | [`phase-execution-cycle`](./docs/best-practices/phase-execution-cycle.md), [`critical-output-gates`](./docs/best-practices/critical-output-gates.md), [`best-practices-compliance-gate`](./docs/best-practices/best-practices-compliance-gate.md), [`empirical-validation`](./docs/best-practices/empirical-validation.md), [`escalation-categories`](./docs/best-practices/escalation-categories.md) |
-| Decide what artifacts to commit, keep local, or delete | [`artifact-lifecycle`](./docs/best-practices/artifact-lifecycle.md), [`mutation-scope-boundaries`](./docs/best-practices/mutation-scope-boundaries.md) |
-| Change runtime, tool, permission, or subagent compatibility | [`runtime-portability-matrix`](./docs/best-practices/runtime-portability-matrix.md), [`orchestrator-as-routing-ui`](./docs/best-practices/orchestrator-as-routing-ui.md), [`mutation-scope-boundaries`](./docs/best-practices/mutation-scope-boundaries.md) |
+| Task | Read before editing | Also read when the skill… |
+| ---- | ------------------- | ------------------------- |
+| Create a new skill | [`quick-reference-skill-structure`](./docs/best-practices/quick-reference-skill-structure.md), [`frontmatter-contract`](./docs/best-practices/frontmatter-contract.md), [`trigger-and-description-authoring`](./docs/best-practices/trigger-and-description-authoring.md), [`skill-section-order`](./docs/best-practices/skill-section-order.md), [`input-output-contracts`](./docs/best-practices/input-output-contracts.md), [`earned-complexity`](./docs/best-practices/earned-complexity.md), [`runtime-portability-matrix`](./docs/best-practices/runtime-portability-matrix.md) | …mutates files: [`mutation-scope-boundaries`](./docs/best-practices/mutation-scope-boundaries.md); …produces files: [`artifact-lifecycle`](./docs/best-practices/artifact-lifecycle.md); …dispatches subagents: [`subagent-registry-format`](./docs/best-practices/subagent-registry-format.md), [`orchestrator-as-routing-ui`](./docs/best-practices/orchestrator-as-routing-ui.md), [`context-window-protection`](./docs/best-practices/context-window-protection.md); …needs approval gates: [`human-in-the-loop-checkpoints`](./docs/best-practices/human-in-the-loop-checkpoints.md) |
+| Restructure a large `SKILL.md` or move content into supporting files | [`progressive-disclosure`](./docs/best-practices/progressive-disclosure.md), [`template-extraction`](./docs/best-practices/template-extraction.md), [`skill-section-order`](./docs/best-practices/skill-section-order.md), [`earned-complexity`](./docs/best-practices/earned-complexity.md) | |
+| Add or edit a subagent | [`subagent-default-execution`](./docs/best-practices/subagent-default-execution.md), [`skill-section-order`](./docs/best-practices/skill-section-order.md), [`identity-and-mental-model`](./docs/best-practices/identity-and-mental-model.md), [`input-output-contracts`](./docs/best-practices/input-output-contracts.md), [`escalation-categories`](./docs/best-practices/escalation-categories.md), [`context-window-protection`](./docs/best-practices/context-window-protection.md) | …passes large payloads: [`handoff-file-dispatch`](./docs/best-practices/handoff-file-dispatch.md); …mutates files: [`mutation-scope-boundaries`](./docs/best-practices/mutation-scope-boundaries.md) |
+| Write or revise instructions, constraints, examples, or long reference files | [`identity-and-mental-model`](./docs/best-practices/identity-and-mental-model.md), [`operating-posture`](./docs/best-practices/operating-posture.md), [`positive-constraint-framing`](./docs/best-practices/positive-constraint-framing.md), [`instruction-reinforcement`](./docs/best-practices/instruction-reinforcement.md), [`example-strategy`](./docs/best-practices/example-strategy.md), [`progressive-disclosure`](./docs/best-practices/progressive-disclosure.md), [`external-information-linking`](./docs/best-practices/external-information-linking.md) | |
+| Add validation steps, gates, or fix loops | [`phase-execution-cycle`](./docs/best-practices/phase-execution-cycle.md), [`critical-output-gates`](./docs/best-practices/critical-output-gates.md), [`empirical-validation`](./docs/best-practices/empirical-validation.md), [`escalation-categories`](./docs/best-practices/escalation-categories.md), [`input-output-contracts`](./docs/best-practices/input-output-contracts.md) | …is being audited as a package: [`best-practices-compliance-gate`](./docs/best-practices/best-practices-compliance-gate.md) |
+| Design multi-phase control flow or a state machine | [`state-machine-artifacts`](./docs/best-practices/state-machine-artifacts.md), [`phase-execution-cycle`](./docs/best-practices/phase-execution-cycle.md), [`orchestrator-as-routing-ui`](./docs/best-practices/orchestrator-as-routing-ui.md) | |
+| Add user approval / confirmation checkpoints | [`human-in-the-loop-checkpoints`](./docs/best-practices/human-in-the-loop-checkpoints.md), [`escalation-categories`](./docs/best-practices/escalation-categories.md) | |
+| Make a skill deterministic or reproducible | [`deterministic-execution`](./docs/best-practices/deterministic-execution.md), [`empirical-validation`](./docs/best-practices/empirical-validation.md) | |
+| Decide what artifacts to commit, keep local, or delete | [`artifact-lifecycle`](./docs/best-practices/artifact-lifecycle.md), [`mutation-scope-boundaries`](./docs/best-practices/mutation-scope-boundaries.md) | |
+| Change runtime, tool, permission, or subagent compatibility | [`runtime-portability-matrix`](./docs/best-practices/runtime-portability-matrix.md), [`frontmatter-contract`](./docs/best-practices/frontmatter-contract.md), [`orchestrator-as-routing-ui`](./docs/best-practices/orchestrator-as-routing-ui.md), [`mutation-scope-boundaries`](./docs/best-practices/mutation-scope-boundaries.md) | |
 
 ## Verification
 
-This repo currently has no automated build, lint, or test pipeline for skill
-authoring. There is no skill-validator command, no formal frontmatter
-schema-check, and no CI. Treat this as a known gap, not as permission to
-declare work done without checks. After editing a `SKILL.md` or subagent
+This repo has no CI pipeline for skill authoring. The Agent Skills
+reference validator (`skills-ref validate <skill-dir>`, see the
+[runtime portability matrix](./docs/best-practices/runtime-portability-matrix.md))
+checks standard frontmatter and naming when available; everything else is
+manual. Treat the lack of CI as a known gap, not as permission to declare
+work done without checks. After editing a `SKILL.md` or subagent
 definition:
 
+- Run `skills-ref validate` on the skill directory when the tool is
+  available.
 - Confirm the file is under the size guidance from
   [progressive disclosure](./docs/best-practices/progressive-disclosure.md)
-  (`SKILL.md` under 500 lines).
+  (`SKILL.md` under 500 lines, instruction body under ~5,000 tokens).
 - Confirm any subagent paths referenced in a registry table actually exist
   on disk.
-- Confirm the YAML frontmatter `name` matches the directory or file name.
+- Confirm the YAML frontmatter `name` matches the directory or file name
+  per the [frontmatter contract](./docs/best-practices/frontmatter-contract.md).
 - If the skill ships a `scripts/` directory, run the script the way a
   consumer would invoke it.
 - If the change touches `skills-lock.json` or vendored skills under
