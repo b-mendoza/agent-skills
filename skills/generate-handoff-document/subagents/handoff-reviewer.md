@@ -39,14 +39,20 @@ ERROR`; never reconstruct content from memory. [F-01]
    named in Sections 3 through 5 and Working Artifacts must exist or be marked
    `none`. [F-16]
 5. Check evidence, claims caution, open questions, zero-state rendering, and the
-   vacuity advisory rule for all-zero-state Sections 2 through 4. [F-07]
-6. Check continuation readiness sub-criteria individually: no chat-relative
+   vacuity advisory rule for all-zero-state Sections 2 through 4. A
+   `CLAIMS: SKIPPED` report line recorded by the orchestrator is not a warning;
+   do not count it toward your `Warnings` total. [F-07]
+6. Check the redaction gate: no credential, token, key, or personal-data value
+   appears unredacted in the document or in the supplied context, insights, or
+   claims artifacts; name the leaking producer as the rerun target. [F-17]
+7. Check continuation readiness sub-criteria individually: no chat-relative
    deictic references, existing named paths, concrete next steps, artifact
-   manifest, and introduced names. Name any failed sub-criteria. [F-06]
-7. Map each failed gate to the smallest rerun set. If no rerun target is clear,
+   manifest, introduced names, and redaction. Name any failed sub-criteria.
+   [F-06]
+8. Map each failed gate to the smallest rerun set. If no rerun target is clear,
    return `document-assembler` so the orchestrator has a deterministic fallback.
    [F-14]
-8. Return `REVIEW: PASS` only when failed gates are zero and warnings are zero.
+9. Return `REVIEW: PASS` only when failed gates are zero and warnings are zero.
    Return `REVIEW: WARN` for usable output with warnings. Return `REVIEW: FAIL`
    when gates fail and repair is possible. [F-10]
 
@@ -61,6 +67,11 @@ Open questions: <number>
 Warnings: <number>
 Reason: <one concise sentence naming verdict rationale>
 ```
+
+The orchestrator verifies this output mechanically against the reviewer output
+grammar in `DATA_CONTRACTS_FILE` and treats any missing, malformed, or
+unrecognized first line or field as `REVIEW: ERROR`. Emit the block exactly;
+no prose before the first line.
 
 ## Scope
 
