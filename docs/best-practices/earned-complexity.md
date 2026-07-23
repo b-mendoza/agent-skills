@@ -25,6 +25,19 @@ because each part it has makes the next run more reliable, more
 portable, more compact, more maintainable, more verifiable, more
 understandable, or more compliant with a named best practice.
 
+**Is a skill the right artifact?** Before authoring a new skill,
+choose the smallest artifact that fits the behavior:
+
+- If the behavior does not recur, handle it directly instead of
+  creating a reusable package.
+- If the behavior is fully deterministic, prefer a script.
+- If the need is stable information without reusable judgment or
+  orchestration, prefer a reference document.
+- If an existing skill already owns the trigger or workflow, extend
+  that skill rather than creating an overlapping one.
+- Create a new skill when the behavior recurs and needs reusable
+  judgment, orchestration, or a distinct invocation contract.
+
 **Material Issue Gate.** Make a change only when it fixes a
 concrete problem in one of:
 
@@ -65,7 +78,9 @@ these tests. If any answer argues against the edit, prefer
 - Is the content being moved into a reference file genuinely just-
   in-time, or is it only being moved to make the package look more
   architected?
-- Can the package still run without fetching external URLs?
+- Is all content required for the base runtime path available offline,
+  with external URLs limited to provenance, background, or declared
+  freshness re-checks?
 - Is there an observable validation check for the claimed
   improvement, or does the improvement rest on self-report?
 - Does the change resolve a named gap or `fail` verdict, or is it
