@@ -1,7 +1,8 @@
 # Generate Handoff Document Flow Diagram
 
 Canonical execution model: finite state machine. Guards, variables, and
-terminals are tabulated in [`state-machine.md`](./state-machine.md).
+terminals are tabulated in [`state-machine.md`](./state-machine.md); this
+diagram is illustrative and defers to that table on any mismatch.
 
 ```mermaid
 stateDiagram-v2
@@ -27,7 +28,7 @@ stateDiagram-v2
   MaterializeSource --> AskTranscript: snapshot not faithful
 
   AskTranscript --> MaterializeSource: file supplied
-  AskTranscript --> BlockedUnclearTarget: abandoned
+  AskTranscript --> BlockedNoSource: abandoned
 
   ExternalDecide --> ExtractContext: SKIPPED or USED or optional UNAVAILABLE
   ExternalDecide --> BlockedExternal: required unreachable
@@ -44,10 +45,9 @@ stateDiagram-v2
 
   AskEmptySession --> ValidateClaims: continue with tracking
   AskEmptySession --> SkipClaims: continue without tracking
-  AskEmptySession --> CompletedDeclinedEmpty: decline hollow handoff
+  AskEmptySession --> CompletedDeclinedEmpty: decline or abandon
 
   ValidateClaims --> AssembleHandoff: verified PASS or WARN
-  ValidateClaims --> SkipClaims: intentional SKIPPED
   ValidateClaims --> BlockedStage: stage error after retry
   ValidateClaims --> BlockedArtifact: verify failed twice
 
@@ -60,7 +60,7 @@ stateDiagram-v2
   ReviewHandoff --> CompletedReviewPass: REVIEW PASS
   ReviewHandoff --> CompletedReviewWarn: REVIEW WARN
   ReviewHandoff --> PlanRepair: REVIEW FAIL and repair_cycles under 3
-  ReviewHandoff --> BlockedRepairExhausted: REVIEW FAIL and repair_cycles at 3
+  ReviewHandoff --> BlockedRepairExhausted: REVIEW FAIL and repair_cycles at least 3
   ReviewHandoff --> BlockedStage: REVIEW ERROR after retry
 
   PlanRepair --> ExtractContext: earliest context
@@ -74,6 +74,7 @@ stateDiagram-v2
   CompletedReviewWarn --> [*]
   CompletedDeclinedEmpty --> [*]
   BlockedUnclearTarget --> [*]
+  BlockedNoSource --> [*]
   BlockedUnsafePath --> [*]
   BlockedExternal --> [*]
   BlockedStage --> [*]
@@ -89,6 +90,7 @@ stateDiagram-v2
 | `CompletedReviewWarn` | `Completed: review pass with warnings` |
 | `CompletedDeclinedEmpty` | `Completed: handoff declined (empty session)` |
 | `BlockedUnclearTarget` | `Blocked: unclear target path` |
+| `BlockedNoSource` | `Blocked: no usable source transcript` |
 | `BlockedUnsafePath` | `Blocked: unsafe writes or missing readable/writable path` |
 | `BlockedExternal` | `Blocked: required external dependency unavailable` |
 | `BlockedStage` | `Blocked: subagent error, failure, or unexpected skip` |
