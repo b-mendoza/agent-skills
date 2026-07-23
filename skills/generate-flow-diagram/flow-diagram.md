@@ -8,8 +8,9 @@ stateDiagram-v2
   [*] --> Intake
 
   Intake --> Classify: PROCESS_INPUTS ready
-  Intake --> NeedsInput: missing contract-changing field
-  Intake --> ValidateApprovedGaps: refinement resume with gap reply
+  Intake --> NeedsInput: missing contract-changing field or invalid resume block
+  Intake --> ValidateApprovedGaps: refinement resume with gap reply and resume block
+  Intake --> StageCandidates: decompose resume with approval and resume block
 
   Classify --> BuildCandidate: RUN_MODE new or repair
   Classify --> RefinementPreflight: RUN_MODE refinement
@@ -34,11 +35,11 @@ stateDiagram-v2
   ReviewCandidate --> FinalPassed: REVIEW PASS and not decompose
   ReviewCandidate --> Blocked: REVIEW BLOCKED
   ReviewCandidate --> Error: REVIEW ERROR
-  ReviewCandidate --> AwaitRepairApproval: FAIL under approval none
+  ReviewCandidate --> AwaitRepairApproval: FAIL under approval none with baseline_effect changed or unknown
   ReviewCandidate --> PackageRepair: FAIL and repair_cycles under 3
   ReviewCandidate --> RepairLimitReached: FAIL and repair_cycles at 3
 
-  PackageRepair --> BuildCandidate: failed checks packaged
+  PackageRepair --> BuildCandidate: failed checks packaged as BUILD_ACTION repair
 
   AwaitRepairApproval --> NeedsConfirmationRepair: repair question presented
 
@@ -55,10 +56,9 @@ stateDiagram-v2
   PlanDecompose --> AwaitDecomposeApproval: PLAN PASS and ask
   PlanDecompose --> StageCandidates: PLAN PASS and auto
 
-  AwaitDecomposeApproval --> NeedsConfirmation: plan presented
-  AwaitDecomposeApproval --> StageCandidates: user approved
+  AwaitDecomposeApproval --> NeedsConfirmation: plan and resume block presented
 
-  StageCandidates --> WriteBatch: every candidate REVIEW PASS
+  StageCandidates --> WriteBatch: every candidate REVIEW PASS and digest revalidated
   StageCandidates --> RepairLimitReached: any candidate repair exhausted
 
   WriteBatch --> DecompositionComplete: WRITE PASS
@@ -83,14 +83,15 @@ stateDiagram-v2
 | Contract-missing gate | Missing field changes authority, sensitive actions, outputs, evidence, confirmation, or terminals | `Classify` | `NeedsInput` |
 | Classification gate | Precedence table row matches | Mode-specific state | `NeedsInput` |
 | Refinement preflight | `PREFLIGHT: PASS` | `BuildCandidate` | Await confirmation, `Blocked`, or `Error` |
+| Resume-block gate | Resume reply carries a valid, matching resume block | `ValidateApprovedGaps` or `StageCandidates` | `NeedsInput` |
 | Gap-ID validation | IDs ⊆ retained inventory or exact `none` | `BuildCandidate` | One re-ask then `NeedsConfirmation` |
 | Build gate | `BUILD: PASS` | `ReviewCandidate` | `NeedsInput` or `Error` |
 | Review gate | `REVIEW: PASS` | `FinalPassed` (non-decompose) | Repair, repair-under-`none`, `Blocked`, `Error`, or repair limit |
 | Repair budget | `repair_cycles` < 3 | `PackageRepair` → `BuildCandidate` | `RepairLimitReached` |
-| Repair-under-`none` | `approval_scope` is exact `none` and repair would change baseline | — | `NeedsConfirmationRepair` |
+| Repair-under-`none` | `approval_scope` is exact `none` and any failed check has `baseline_effect` `changed` or `unknown` | — | `NeedsConfirmationRepair` |
 | Decompose input gate | Package path + non-empty registry | `DeriveLimits` | `NeedsInput` or `NoChangesNeeded` |
 | Plan gate | `PLAN: PASS` and work remains | Await approval or `StageCandidates` if `auto` | No-op, `NeedsInput`, `Blocked`, `Error` |
-| All-pass staging | Every staged candidate `REVIEW: PASS` | `WriteBatch` | `RepairLimitReached` (no writes) |
+| All-pass staging | Every staged candidate `REVIEW: PASS` and digest revalidated after repairs | `WriteBatch` | `RepairLimitReached` (no writes) |
 | Write gate | `WRITE: PASS` inside `MUTATION_LIMITS` | `DecompositionComplete` | `WriteError` |
 
 ## Terminal States
