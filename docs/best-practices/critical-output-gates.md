@@ -15,18 +15,27 @@ handoffs, or any artifact whose correctness gates user action.
 ## The practice
 
 A skill that produces outputs other components rely on must declare
-those critical outputs and protect them with named gates.
+those critical outputs and protect them with named gates. Use this
+one-sentence test: an output is critical when a downstream consumer
+(another phase, another skill, or the user's decision) parses or acts
+on it without independent re-derivation.
 
 Rules:
 
 1. **Declare critical outputs in `SKILL.md`.** Outputs not declared
    critical do not require gates.
-2. **Give each critical output a named gate.** Use identifiers such
-   as `G_TICKET_FETCH`, `G_PLAN_COMPLETENESS`, or `G_ATOMIC_HISTORY`.
-3. **Use an independent checker where practical.** The producer's
-   self-report does not count as a gate verdict. A validator
-   subagent, inline structural check, external tool, or separate
-   phase should inspect the output.
+2. **Give each critical output a named gate and written predicate.**
+   Use identifiers such as `G_TICKET_FETCH`, `G_PLAN_COMPLETENESS`, or
+   `G_ATOMIC_HISTORY`. For each gate, state the observable condition
+   checked: the file exists and required sections are present; every
+   approved gap has a closing edit; statuses match the declared enum.
+   A gate with a name but no predicate is decoration.
+3. **Use an independent checker.** Something that did not produce the
+   output checks each gate; the producer's self-report does not count
+   as a gate verdict. The checker reads the artifact against its
+   declared shape or contract, and the gate verdict names the evidence
+   inspected. A validator subagent, inline structural check, external
+   tool, or separate phase can perform the check.
 4. **Repair through bounded loops.** Re-run the producing phase with
    validator findings as input; stop at the retry cap and return a
    blocked handoff if the gate still fails.
@@ -55,19 +64,19 @@ agent or check that reads the artifact against its declared shape.
 
 ## Concrete examples
 
-Good: declared critical outputs, named gates, independent validator,
-bounded repair.
+Good: declared critical outputs, named gates with written
+predicates, independent validator, bounded repair.
 
 ```markdown
 # In skill-name/SKILL.md
 
 ## Critical Outputs
 
-| Gate                     | Protects                                        | Checker                   |
-| ------------------------ | ----------------------------------------------- | ------------------------- |
-| `G_HANDOFF_COMPLETENESS` | Every user-facing handoff has required sections | Inline structural check   |
-| `G_GAP_CLOSURE`          | Every approved gap observably resolved          | `skill-package-validator` |
-| `G_FLOW_SYNC`            | Diagram, SKILL.md, registry agree               | `skill-package-validator` |
+| Gate                     | Predicate                                                        | Checker                   |
+| ------------------------ | ---------------------------------------------------------------- | ------------------------- |
+| `G_HANDOFF_COMPLETENESS` | Handoff exists and contains every required section               | Inline structural check   |
+| `G_GAP_CLOSURE`          | Every approved gap has a closing edit with file evidence         | `skill-package-validator` |
+| `G_FLOW_SYNC`            | Diagram, SKILL.md, and registry name the same phases and subagents | `skill-package-validator` |
 
 ## Execution
 
