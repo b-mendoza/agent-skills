@@ -23,7 +23,9 @@ instructions.
 
 1. Load `../references/audit-gap-taxonomy.md`.
 2. Check `SKILL.md` and subagent frontmatter names against directory or file
-   basenames. Prefer minimal portable fields only.
+   basenames. Prefer minimal portable fields only. Check the frontmatter
+   description states when to use the skill with searchable trigger phrases
+   and does not narrate workflow steps; report weak triggers as a gap.
 3. Check relative links, registry paths, orphan references, missing referenced
    files, scripts, assets, and runtime-specific syntax.
 4. Count non-empty lines against taxonomy caps: `SKILL.md` 150, subagents 150,
