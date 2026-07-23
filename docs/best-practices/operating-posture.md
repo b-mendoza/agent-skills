@@ -2,97 +2,87 @@
 
 ## Tier
 
-`recommended`. Required for non-trivial skills where decision
-behavior matters more than tone; thin utility skills do not need a
-posture.
+`recommended`. Non-trivial roles benefit when their decision policy
+is explicit; thin utility roles with no meaningful judgment do not need
+one.
 
 ## When it applies
 
-For every non-trivial skill, especially audit, validation, review,
-planning, refactoring, and orchestration skills whose decisions are
-shaped by which signals they notice and how they trade off competing
-goals.
+For non-trivial skills and subagents, especially audit, validation,
+review, planning, refactoring, and orchestration roles whose outcomes
+depend on attention order, competing goals, or refusal boundaries.
 
 ## The practice
 
-Every non-trivial skill defines its operating posture explicitly.
-This is not a tone layer; it is the contract for how the agent
-operates.
+This practice owns decision policy and trade-offs. The opening role
+statement itself is owned by
+[identity-and-mental-model](./identity-and-mental-model.md).
 
-An operating posture should define:
+Define the role's downstream operating policy:
 
-- **Identity:** whose interest the agent serves.
-- **Operating posture:** what it notices first, deprioritizes,
-  treats as risky, and how it reasons through decisions.
+- **Attention order:** what it notices or verifies first, and what it
+  deliberately deprioritizes.
 - **Trade-offs:** how it ranks legitimate goals when they conflict.
-- **Voice:** communication style for reports, questions, and
+- **Risk and refusals:** what it treats as unacceptable and what it
+  refuses to approve or do.
+- **Voice:** how it communicates questions, evidence, uncertainty, and
   verdicts.
-- **Boundaries:** what the posture refuses to do.
 
-Keep the posture in `SKILL.md` when it is short and always relevant.
-Move it to `references/personality.md` when it is multi-section,
-phase-specific, user-selectable, or large enough that always loading
-it would add noise. A posture earns its place only when it changes
-runtime behavior observably; if it only changes adjectives, it fails
-the [earned complexity](./earned-complexity.md) test.
+A posture earns its place only when it changes an observable decision:
+which signal is checked first, which trade-off wins under conflict, or
+what the role refuses. For every posture bullet, name the decision it
+changes. If a bullet changes only adjectives, delete it.
+
+Keep a short, always-relevant posture in `SKILL.md` or the subagent
+contract. Move a long, phase-specific, or selectable posture to a
+focused reference file with an explicit load condition.
 
 ## Rationale
 
-A skill without an explicit posture inherits whatever the runtime
-defaults to. The default tends toward agreeable, accommodating, and
-risk-averse — fine for a translator, hostile to the purpose of an
-adversarial auditor whose job is to falsify a workflow. The posture
-makes the contract visible: this role pushes back, this role refuses
-to widen scope, this role treats the producer's output as suspect.
+General-purpose runtime behavior tends toward agreeable,
+accommodating, and risk-averse choices. That is useful for many tasks
+but can defeat an adversarial auditor, validator, or reviewer whose job
+is to falsify claims, preserve scope, or withhold approval. An explicit
+posture makes those downstream choices inspectable instead of leaving
+them to generic defaults.
 
-The "earned by observable behavior" rule is the load-bearing one. A
-posture that says "be careful and thorough" without changing any
-concrete decision the agent makes is decoration. A posture earns its
-place when it changes which signal the agent notices first, which
-trade-off it picks under conflict, or what it refuses to do.
+The observable-decision rule is load-bearing. "Be careful and
+thorough" does not tell an agent whether to trust a producer's summary,
+inspect evidence first, preserve a flawed design, or block approval.
+Decision-bearing bullets do.
 
 ## Concrete examples
 
-Good: posture names identity, behavior, voice, and boundaries; each
-bullet is a behavior, not an adjective.
+Good: every bullet names a decision that changes behavior.
 
 ```markdown
-# In skills/improving-skill-definition/references/personality.md
-
-## Identity
-
-You are a harsh friend, skeptical investor, and educator for skill
-workflows. Your loyalty is to the user's improvement, not the
-existing design.
-
 ## Operating Posture
 
-1. Treat the current package as a baseline, not a boundary.
-2. Falsify the workflow before preserving it.
-3. Prefer the smallest correct fix for a salvageable design.
-
-## Voice
-
-Be direct, specific, and educational. Name the failure mode: fake
-subagent boundary, decorative gate, ambiguous phase.
+1. Check observable package evidence before reading the producer's
+   self-assessment.
+2. When preserving the current design conflicts with closing a
+   confirmed gap, close the gap; minimize edits only after correctness.
+3. Refuse approval when a required claim lacks observable evidence.
+4. State the verdict first, then the evidence and remaining uncertainty.
 ```
 
-Bad: posture restates tone adjectives without changing any
-observable behavior.
+The bullets change, respectively, the first signal, the conflict
+ranking, the refusal boundary, and the reporting voice.
+
+Bad: adjectives change tone without selecting any action or verdict.
 
 ```markdown
-## Personality
+## Operating Posture
 
-Be friendly, thorough, and detail-oriented. Care about quality.
-Always be helpful to the user.
+Be friendly, thorough, detail-oriented, and passionate about quality.
+Always be helpful and professional.
 ```
 
 ## References
 
-- Anthropic Claude prompting best practices, accessed 2026-05-27:
+- Anthropic Claude prompting best practices, accessed 2026-07-22:
   <https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices>.
-  Supports role and posture prompting as prompt-design tools.
-- Agent adherence to hierarchical safety principles —
-  arXiv:2506.02357:
-  <https://arxiv.org/abs/2506.02357>. Supports the importance of
-  explicit instruction hierarchy in agents.
+  Supports explicit behavioral instructions, motivation, communication
+  style, success criteria, and reversibility-based action boundaries.
+  It does not by itself prove a universal default posture for every
+  runtime.
