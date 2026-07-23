@@ -13,21 +13,13 @@ adversarial audit such as `improving-skill-definition`.
 
 ## The practice
 
-Treat the `docs/best-practices/` index as a quality gate for skill
-review, but apply it by tier instead of as a flat checklist. Each
-practice is evaluated against the package and assigned a verdict.
-
-Tiers:
-
-- `mandatory`: safety, portability, mutation scope, output contracts,
-  and lifecycle rules whose failure can cause agent misbehavior or
-  data loss.
-- `recommended`: architecture and maintainability rules that should
-  apply to most non-trivial skills but may be intentionally scoped
-  down.
-- `optional-style`: house conventions and UI affordances that improve
-  consistency but should not block a skill unless strict repo style
-  is required.
+Treat the [`docs/best-practices/` README](./README.md) as a
+quality gate for skill review, but apply it by the tier guidance in
+that index instead of as a flat checklist. The README is the source
+of truth for practice membership, order, and tier definitions; this
+gate consumes the index rather than maintaining its own list. Each
+applicable practice is evaluated against the package and assigned a
+verdict.
 
 Every checked practice gets a concrete verdict:
 
@@ -44,9 +36,9 @@ the fix.
 ## Rationale
 
 A flat checklist treats every practice as equally blocking. The
-result is review-thrash: an audit flags a missing
-`phase-transition-banner` (`optional-style`) at the same severity as
-a missing `mutation-scope-boundaries` declaration (`mandatory`). The
+result is review-thrash: an audit flags a gerund-form naming
+deviation (`optional-style`) at the same severity as a missing
+`mutation-scope-boundaries` declaration (`mandatory`). The
 user cannot tell which gap is real. Tiered evaluation makes the
 weight of each verdict observable; the `mandatory` row tells the user
 "do not ship this," the `optional-style` row tells the user "fix when
