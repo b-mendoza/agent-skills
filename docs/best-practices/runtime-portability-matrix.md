@@ -2,156 +2,163 @@
 
 ## Tier
 
-`mandatory`. A skill that silently depends on a single-runtime feature
-will fail when distributed across runtimes; portable skills must
-declare the boundary.
+`mandatory`. A skill that silently depends on one runtime will fail when
+it is distributed to both; portable skills must declare the boundary.
 
 ## When it applies
 
-For any skill that targets both OpenCode and Claude Code, any skill
-that consumes runtime-specific frontmatter or tool permissions, and
-any review that asks whether a portable skill is actually portable.
+For any skill that targets both OpenCode and Claude Code, consumes
+runtime-specific frontmatter or permissions, dispatches agents, or is
+reviewed for cross-runtime portability.
 
 ## The practice
 
-Portable skills must name which runtime features are common across
-OpenCode and Claude Code, which features require runtime-specific
-mapping, and which features are unsupported in one target. The skill
-contract should use the lowest-common-denominator form unless it
-explicitly declares a runtime-specific exception.
+Describe the required capability first, then map that capability to each
+runtime's syntax. The prose contract is the portable source of truth;
+runtime frontmatter, permissions, discovery paths, and dispatch controls
+are adapters.
 
 **Portability matrix.**
 
-| Concern                  | Portable default                                                                                                | Claude Code notes                                                                                                     | OpenCode notes                                                                                      |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Skill and subagent files | Plain Markdown with minimal YAML frontmatter                                                                    | Custom subagents use Markdown definitions with fields such as `name`, `description`, `tools`, and `disallowedTools`   | Markdown agents can set fields such as `description`, `mode`, and `permission`                      |
-| Frontmatter              | Use only fields both targets can ignore safely or understand by convention                                      | `tools` and `disallowedTools` are Claude-specific permission controls                                                 | `permission` is OpenCode-specific and gates tool families                                           |
-| Links and imports        | Use plain relative Markdown links                                                                               | Avoid assuming runtime-specific import syntax                                                                         | Avoid assuming runtime-specific import syntax                                                       |
-| Subagent invocation      | Orchestrator or main conversation owns the routing table                                                        | Subagents cannot spawn other subagents; nested workflows must chain from the main conversation or use skills          | OpenCode uses `task` permission to gate subagent launches                                           |
-| Tool permissions         | Describe required capability in prose, then map to runtime-specific config                                      | Restrict with `tools` or `disallowedTools`; `Agent(...)` restrictions apply only to agents running as the main thread | Restrict with `permission` keys such as `read`, `edit`, `bash`, `task`, `webfetch`, and `websearch` |
-| Context model            | Assume delegated agents start without the full active conversation unless the runtime explicitly says otherwise | Non-fork subagents start with isolated context and receive a delegation message                                       | Treat subagent context inheritance as runtime behavior; pass complete input contracts               |
-| External web access      | Declare when a skill needs current external information                                                         | Map to available web/search tools in the active environment                                                           | Map to `webfetch` or `websearch` permission when present                                            |
-| File mutation            | Declare mutation boundaries in the skill contract                                                               | Restrict write/edit tools where possible                                                                              | Restrict `edit` permission, which covers write/edit/patch operations                                |
+| Layer | Portable baseline | Claude Code mapping | OpenCode mapping |
+| --- | --- | --- | --- |
+| Standard Agent Skills frontmatter | Require `name` and `description`. Optionally use `license`, `compatibility`, and string-valued `metadata`. Keep `name` 1–64 characters, kebab-case, and equal to the directory name. Treat `allowed-tools` as experimental, not portable enforcement. | Claude Code accepts the standard fields and adds runtime behavior. | OpenCode recognizes the standard fields except experimental `allowed-tools`; unknown fields are ignored. |
+| Claude Code skill extensions | Put required behavior in prose and add these fields only in a labeled Claude adapter. | Extensions include `disable-model-invocation`, `user-invocable`, `paths`, `argument-hint`, `arguments`, `context: fork`, `agent`, and `hooks`. Skill bodies support `$ARGUMENTS`, indexed arguments, and named argument substitution. `Skill(name)` permission rules govern invocation. | Do not rely on Claude extensions. OpenCode ignores unknown skill frontmatter. |
+| Claude Code agent frontmatter | Define the role, capabilities, inputs, and outputs independently of agent-file syntax. | Custom agents require `name` and `description`; optional runtime fields include `tools`, `disallowedTools`, `model`, `permissionMode`, `maxTurns`, `skills`, `mcpServers`, `hooks`, `memory`, `background`, `effort`, `isolation`, `color`, and `initialPrompt`. | These keys do not configure an OpenCode agent. |
+| OpenCode skill behavior | Load skills on demand and keep permissions outside the portable instruction contract. | Claude Code uses its Skill tool, permission rules, and skill extensions. | OpenCode discovers standard skills, loads them through `skill`, gates names with `permission.skill`, and can disable the tool per agent with `tools.skill: false`. |
+| OpenCode agent frontmatter and permissions | Express the capability before the permission map. | Map capabilities to Claude tool allowlists, denylists, and settings permissions. | Markdown agents use fields such as `description`, `mode`, `model`, `tools`, and `permission`. `mode` is `primary`, `subagent`, or `all`; permission families include `read`, `edit`, `bash`, `task`, `webfetch`, `websearch`, and `skill`. |
 
-**Current runtime facts checked 2026-05-27.** These facts are
-volatile. Re-check official runtime docs before changing a portable
-contract, permission map, or subagent invocation rule.
+**Current runtime facts checked 2026-07-22.** These facts are volatile;
+re-check the official sources before changing a portable contract.
 
-- Claude Code custom subagents are Markdown files with YAML
-  frontmatter. Only `name` and `description` are required, while
-  fields such as `tools`, `disallowedTools`, `model`, `permissionMode`,
-  `maxTurns`, `skills`, `mcpServers`, `memory`, `background`,
-  `effort`, and `isolation` are runtime-specific details that
-  portable skills should not require unless they declare a Claude-
-  specific mapping.
-- Claude Code non-fork subagents start with a fresh, isolated context
-  window, but the context is not empty: runtime-provided environment
-  details, the delegation prompt, memory files, and other configured
-  context may be present. Pass every required input explicitly
-  anyway.
-- Claude Code subagents cannot spawn other subagents. An agent
-  running as the main thread can spawn subagents only when the
-  `Agent` tool is allowed.
-- OpenCode agents use Markdown definitions with runtime-specific
-  frontmatter such as `mode` and `permission`. OpenCode permission
-  keys include `read`, `edit`, `bash`, `task`, `webfetch`,
-  `websearch`, and related tool-family gates. Portable skills should
-  describe capabilities first, then map them to those keys for
-  OpenCode.
+- The Agent Skills specification recommends a `SKILL.md` instruction body
+  under 5,000 tokens and the broader file under 500 lines. It defines
+  `allowed-tools` as experimental. Run `skills-ref validate <skill-dir>`
+  for standard structural checks.
+- Claude Code discovers custom agents from managed settings, `--agents`,
+  project `.claude/agents/`, user `~/.claude/agents/`, and plugin-root
+  `agents/`, in that priority order. It does not document a skill-local
+  `subagents/` directory as an agent registry.
+- A repository's `skill-name/subagents/` directory is therefore a
+  co-location convention for dispatch prompts. A runtime uses those files
+  only when the orchestrator reads them or an installation adapter copies
+  or exposes them through a documented agent registry.
+- Claude Code supports nested subagents to five subagent levels. A depth-5
+  agent does not receive `Agent`; denying `Agent`, omitting it from a
+  `tools` allowlist, or applying settings permission rules can prevent
+  delegation. `Agent(type)` filters in an agent's `tools` field constrain
+  only a main-thread agent; nested-agent target filtering belongs in
+  settings permission rules.
+- OpenCode documents `subagent_depth`: the default `1` permits the main
+  session to launch one subagent level but prevents that subagent from
+  nesting. Higher values permit additional levels, and `0` disables
+  launches. `task` permission must also allow the target agent.
+- Top-level orchestrator chaining remains the portable default. Nested
+  delegation is a runtime-configured optimization because depth and
+  permission defaults differ.
+- In Claude Code, an invoked skill's rendered content remains in the
+  current session. During auto-compaction, the most recent invocation of
+  each skill is reattached, capped at 5,000 tokens per skill and 25,000
+  tokens across skills, with the newest skills filled first. This does not
+  promise persistence into an unrelated new session.
+- OpenCode discovers skills from `.opencode/skills/`, `.claude/skills/`,
+  and `.agents/skills/` project trees and their documented global
+  equivalents. Its skill `name` must match the containing directory.
 
 **Rules.**
 
-1. **Author portable files in plain Markdown.** Do not require
-   runtime-specific import syntax, mention expansion, or hidden
-   global agent registries in files that must work in both OpenCode
-   and Claude Code.
-2. **Separate capability from runtime syntax.** First state the
-   capability the skill needs, such as "read repository files but do
-   not edit them." Then, if needed, provide runtime-specific
-   mappings for Claude Code and OpenCode.
-3. **Keep routing in the orchestrator for portable workflows.** If a
-   workflow needs multiple subagents, the orchestrator or main
-   conversation chains them. Do not put required nested dispatch
-   inside a subagent unless the skill is explicitly single-runtime
-   and documents that exception.
-4. **Pass complete contracts across runtime boundaries.** A
-   dispatched agent receives the inputs, constraints, output format,
-   stop conditions, and source paths it needs. Do not rely on it
-   remembering conversation context or files already read by the
-   orchestrator.
-5. **Declare runtime-specific exceptions at the top level.** If a
-   skill uses a Claude-only field, an OpenCode-only permission map,
-   or a runtime-specific execution feature, the `SKILL.md` or index
-   entry must say so before the execution section.
-6. **Revalidate volatile runtime behavior.** When a practice depends
-   on current model, tool, permission, or subagent behavior, check
-   the official runtime documentation before changing the skill
-   contract.
+1. **Author the contract in plain Markdown.** Use plain relative links and
+   standard Agent Skills frontmatter for the shared artifact.
+2. **Describe capability before syntax.** State, for example, "read
+   repository files but do not edit them," then map that requirement to
+   Claude Code and OpenCode separately.
+3. **Treat registries as runtime adapters.** Keep skill-local dispatch
+   prompts co-located when useful, but do not claim that `subagents/`
+   auto-registers them.
+4. **Route through the orchestrator by default.** Use required nested
+   dispatch only in a declared runtime-specific path whose depth and
+   permissions are smoke-tested.
+5. **Pass complete handoff contracts.** Include inputs, constraints,
+   source paths, output format, stop conditions, and mutation boundaries;
+   do not rely on inherited conversation state.
+6. **Declare exceptions before execution instructions.** Name every
+   Claude-only field, OpenCode-only permission, discovery adapter, or
+   runtime-specific dispatch feature at the top level.
+7. **Validate structure and behavior.** Run `skills-ref validate` for the
+   standard package, then smoke-test discovery, invocation, permissions,
+   argument expansion, and any nested dispatch in both runtimes. The
+   validator cannot prove runtime-specific behavior.
 
 ## Rationale
 
-OpenCode and Claude Code both support agentic workflows, subagents,
-tools, and permissions, but they do not expose the same configuration
-surface. A skill can look portable in Markdown while depending on a
-tool name, frontmatter key, or delegation behavior that only one
-runtime understands. The matrix turns that hidden assumption into an
-authoring check: every entry has a portable default plus the runtime-
-specific mapping when one is needed.
+OpenCode and Claude Code both support skills, agents, tools, permissions,
+and delegation, but their configuration surfaces and defaults differ. A
+Markdown artifact can appear portable while depending on an ignored field,
+an undiscovered agent file, a temporary permission grant, or a nesting
+limit that exists only in one installation.
 
-The "describe capability first" rule is the load-bearing one. If
-the skill body says "use `tools: [Read]`" it has already committed
-to one runtime's syntax. If it says "needs the capability to read
-files but not edit them" it has stated the contract; the runtime
-mapping then sits in a separate block where it can be different per
-runtime without changing the contract.
+The load-bearing rule is to describe capability first. "Needs read access
+without mutation" is a stable contract. `tools: [Read]`,
+`disallowedTools: [Edit]`, and `permission.edit: deny` are runtime adapters
+that can change without rewriting the workflow's meaning.
 
 ## Concrete examples
 
-Good: skill states the capability in prose and maps it to each
-runtime's syntax in a clearly labeled block.
+Good: the shared contract states capabilities, then labels runtime maps.
 
 ```markdown
-## Runtime Compatibility
+## Runtime compatibility
 
-Portable target: OpenCode and Claude Code.
+Portable target: Claude Code and OpenCode.
 
 Required capabilities:
 
-- Read repository files.
-- Run bounded inspection commands.
+- Read repository files and run bounded inspection commands.
 - Do not edit files.
-- Dispatch `security-reviewer` from the orchestrator only.
+- Dispatch `security-reviewer` through the top-level orchestrator.
 
 Runtime mapping:
 
-- Claude Code: allow read/search/bash tools; deny write/edit tools;
-  do not rely on subagents spawning subagents.
-- OpenCode: set `permission.edit: deny`, permit bounded `bash`, and
-  allow `task` only for the named review subagent.
+- Claude Code: register the reviewer under `.claude/agents/`; allow read,
+  search, and bounded shell tools; deny mutation tools.
+- OpenCode: register the reviewer under `.opencode/agents/`; set
+  `permission.edit: deny`; allow `task` only for `security-reviewer`.
 ```
 
-Bad: the skill bakes runtime-specific syntax into the contract
-without naming the underlying capability.
+Bad: the shared contract assumes one runtime's registry and nesting model.
 
 ```markdown
-## Tools
-
-This skill uses `tools: [Read, Bash]` and `disallowedTools: [Write,
-Edit]`.
-
-(Now the skill works on Claude Code only; OpenCode receives a
-configuration block it cannot interpret and silently falls back to
-default permissions.)
+Place `reviewer.md` in this skill's `subagents/` directory. The runtime
+will register it automatically, and it will spawn the next reviewer.
 ```
 
 ## References
 
-- Claude Code Docs, "Create custom subagents," accessed 2026-05-27:
-  <https://code.claude.com/docs/en/sub-agents>. Supports the current
-  Claude Code notes above, including frontmatter fields, isolated
-  context, tool restrictions, chaining, and the nested-subagent
-  limit.
-- OpenCode Docs, "Agents," accessed 2026-05-27:
-  <https://opencode.ai/docs/agents/>. Supports the current OpenCode
-  notes above, including `mode: subagent` and permission-family
-  mappings.
+- Agent Skills specification, accessed 2026-07-22:
+  <https://agentskills.io/specification>. Supports the standard
+  frontmatter, naming constraints, progressive-disclosure guidance, and
+  `allowed-tools` status.
+- Agent Skills `skills-ref`, accessed 2026-07-22:
+  <https://github.com/agentskills/agentskills/tree/main/skills-ref>.
+  Supports `skills-ref validate path/to/skill`.
+- Claude Code Docs, "Extend Claude with skills," accessed 2026-07-22:
+  <https://code.claude.com/docs/en/skills>. Supports skill discovery,
+  extensions, substitutions, permissions, lifecycle, and compaction.
+- Claude Code Docs, "Create custom subagents," accessed 2026-07-22:
+  <https://code.claude.com/docs/en/sub-agents>. Supports agent discovery,
+  frontmatter, nested spawning, tool restrictions, and depth limits.
+- Claude Code Docs, "Plugins reference," accessed 2026-07-22:
+  <https://code.claude.com/docs/en/plugins-reference>. Supports plugin
+  `agents/` discovery and skills-directory plugin boundaries.
+- OpenCode Docs, "Skills," accessed 2026-07-22:
+  <https://opencode.ai/docs/skills/>. Supports discovery, frontmatter
+  validation, `permission.skill`, and `tools.skill` behavior.
+- OpenCode Docs, "Agents," accessed 2026-07-22:
+  <https://opencode.ai/docs/agents/>. Supports agent modes, frontmatter,
+  permissions, and task-based dispatch.
+- OpenCode Docs, "Config," accessed 2026-07-22:
+  <https://opencode.ai/docs/config/>. Supports configurable
+  `subagent_depth` and its default.
+- OpenCode Docs, "Permissions," accessed 2026-07-22:
+  <https://opencode.ai/docs/permissions/>. Supports `skill` and `task`
+  permission rules, wildcard matching, and agent-specific overrides.
