@@ -2,9 +2,9 @@
 
 ## Tier
 
-`recommended`. Bundled external content rots and bloats packages, but
-the rule has earned-complexity exceptions for offline reproducibility
-and unstable sources.
+`recommended`. Content required at runtime must remain available
+offline, while canonical URLs remain the default for provenance,
+background, and freshness re-checks.
 
 ## When it applies
 
@@ -14,18 +14,24 @@ content that originates and lives on the open web.
 
 ## The practice
 
-Link to canonical URLs rather than bundling external content into the
-skill package. Store the URLs in an indexed reference file such as
-`references/external-sources.md`. Bundle a snapshot only when a
-documented justification overrides the default.
+Make content required at runtime available offline, either distilled
+into local rules or bundled with provenance when exact source text is
+needed. Use canonical URLs by default for provenance, background, and
+freshness re-checks; link-only is fine for content the skill cites but
+does not need to function. Store those URLs in an indexed reference
+file such as `references/external-sources.md`.
 
 Rules:
 
-1. **Link by default.** Store canonical URLs in
-   `references/external-sources.md` or an equivalent index.
-2. **Bundle snapshots only when justified.** Offline reproducibility,
-   source instability, URL churn, paywalls, or air-gapped execution
-   can justify a cached snapshot.
+1. **Separate runtime needs from citations.** Runtime-required content
+   must be available locally. Link by default for provenance,
+   background, and freshness re-checks. If a mode requires current
+   external information, declare network availability as a capability
+   under the [runtime portability matrix](./runtime-portability-matrix.md).
+2. **Bundle snapshots only when exact source text is justified.**
+   Offline reproducibility, source instability, URL churn, paywalls,
+   or air-gapped execution can justify a cached snapshot; otherwise
+   distill the required behavior into local rules.
 3. **Every bundled snapshot carries provenance.** Include source URL,
    snapshot date, and reason for bundling.
 4. **Declare bundled snapshots in `SKILL.md`.** Hidden bundled content
@@ -52,50 +58,49 @@ Rules:
 
 ## Rationale
 
-Bundling external documentation looks like reliability ("we always
-have it") but it costs ongoing maintenance: every external revision
-silently drifts the bundled copy out of date. The skill ships a
-correct-looking artifact that has actually become wrong. Worse, when
-a user discovers the drift, they cannot easily tell what the source
-of truth is supposed to be.
+A link-only runtime dependency fails outright on agent surfaces with
+no network access. The skill's executable contract therefore needs a
+local form: distilled rules when local guidance is sufficient, or a
+provenanced snapshot when exact source text is necessary.
 
-Linking inverts the failure mode. The skill admits that it depends on
-external content; the link makes the dependency observable, and the
-freshness metadata makes the dependency auditable. The
-untrusted-content rule (item 7) closes the third failure mode:
+Bundling every external document creates the opposite failure. Each
+external revision silently drifts the bundled copy out of date, so the
+skill ships a correct-looking artifact that has actually become wrong.
+Canonical URLs preserve provenance and make freshness re-checks
+auditable without turning optional background into a runtime fetch.
+The untrusted-content rule (item 7) closes the third failure mode:
 external content can carry adversarial instructions, so the agent
 must reason about it as evidence, not obey it as authority.
 
 ## Concrete examples
 
-Good: an indexed `external-sources.md` with URLs, use guidance, and
-freshness rules.
+Good: runtime-required guidance is local, while an indexed
+`external-sources.md` preserves provenance and freshness rules.
 
 ```markdown
+# In skill-name/references/runtime-rules.md
+
+Portable subagent contracts use plain Markdown and pass complete
+inputs explicitly. These rules are available without network access.
+
 # In skill-name/references/external-sources.md
 
-| Need                          | URL                                                                               | Use when                                                        |
-| ----------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Claude Code subagents         | https://docs.anthropic.com/en/docs/claude-code/sub-agents                         | Verifying current Claude subagent syntax or limits              |
-| Anthropic context engineering | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | Explaining context-window protection and just-in-time retrieval |
+| Local claim                 | Canonical URL                                      | Runtime use                                  |
+| --------------------------- | -------------------------------------------------- | -------------------------------------------- |
+| Current subagent syntax     | https://code.claude.com/docs/en/sub-agents         | Provenance; re-check before changing syntax  |
+| OpenCode permission mapping | https://opencode.ai/docs/agents/                    | Provenance; re-check before changing mapping |
 
-## Freshness Policy
-
-- Stable testing philosophy sources can be treated as background after one fetch.
-- Current framework behavior, SDK APIs, CLI syntax, and security advisories
-  need current official documentation.
+If a freshness re-check is required, declare web access as a runtime
+capability. Otherwise, continue with the local rules.
 ```
 
-Bad: a `references/anthropic-prompting.md` file containing a verbatim
-copy of an Anthropic blog post, with no source URL, no snapshot
-date, and no declaration in `SKILL.md`.
+Bad: the skill requires a live fetch before every run, so an offline
+runtime cannot start.
 
 ```markdown
-# In skill-name/references/anthropic-prompting.md
-
-(2,400 lines of pasted blog content with no provenance.
-When Anthropic updates the post, this copy silently rots and the
-skill claims correctness on the basis of a stale source.)
+Before phase 1, fetch https://example.com/current-agent-rules and
+load it as the execution contract. If the URL is unavailable, stop;
+no local rules are provided.
 ```
 
 ## References
