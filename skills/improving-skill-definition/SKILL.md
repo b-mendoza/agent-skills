@@ -28,9 +28,9 @@ Approvals are not inputs. Values like `APPROVED_GAPS=all` at intake are
 
 ## State Machine Overview
 
-Execution is a finite-state machine. Mermaid:
-[`flow-diagram.md`](./flow-diagram.md). Table:
-[`state-machine.md`](./state-machine.md).
+Execution is a finite-state machine. [`state-machine.md`](./state-machine.md)
+is the sole normative source for transitions, guards, and terminals; this
+table and [`flow-diagram.md`](./flow-diagram.md) are non-normative summaries.
 
 | State | Result |
 | ----- | ------ |
@@ -94,47 +94,64 @@ dispatch are intentional progressive disclosure.
    `DIAGRAM_DEPENDENCY`. If missing, allow manual Mermaid plus
    `skills/generate-flow-diagram/scripts/check-mermaid.sh` when available;
    disclose at approval.
-4. Derive `HANDOFF_DIR`, list stale runs (never read/delete), derive limits and
-   paths, copy baseline, set `repair_counter=0`, `mutation_applied=false`, record
-   `ignored_preapproval`. If target is this package, `SELF_IMPROVEMENT_RUN=true`.
+4. Set `HANDOFF_DIR=.handoffs/improving-skill-definition/<run-id>/`, where
+   `<run-id>` is generated once at intake (UTC timestamp plus a short random
+   suffix); if the directory exists, regenerate — never reuse a run directory.
+   Materialize `MUTATION_LIMITS`: writes only inside the resolved target
+   package, minus the step-2 exclusions, plus any `SCOPE_LIMITS`; pass this
+   exact value to editor, validator, and synthesis, and go to `TerminalBlocked`
+   before approval if it cannot be derived unambiguously. Copy baseline, set
+   `repair_counter=0`, `mutation_applied=false`, record `ignored_preapproval`.
+   If target is this package, `SELF_IMPROVEMENT_RUN=true`.
 5. `FlowLoad`: load `references/personality.md` and target flow when present.
    Own diagram/`state-machine.md` control orchestration. Missing own flow or
    personality -> `TerminalError`.
 6. `Discover`: dispatch `related-skills-discoverer`. On BLOCKED/ERROR, degrade
    unless `REFERENCE_NEED`/mandate requires evidence -> `TerminalBlocked`.
-7. `Audit`: dispatch six slices; synthesize
-   `HANDOFF_DIR/audit-synthesis-report.yaml` with provenance and
+7. `Audit`: dispatch the six auditors as an independent read-only fan-out —
+   concurrently when the runtime supports it, otherwise serially (equivalent:
+   the join waits for all six reports and synthesis merges in registry order).
+   Synthesize `HANDOFF_DIR/audit-synthesis-report.yaml` with provenance and
    `G_MANDATE_COVERAGE` over `IMPROVEMENT_MANDATES`.
 8. Route by suffix only: `: ERROR` -> `TerminalError`; else `: BLOCKED` ->
    `TerminalBlocked`; else `: GAPS_FOUND` -> `Approval`; else all `: PASS` ->
    `TerminalNoChange`.
 9. `Approval`: ask personality (`keep`/`refine`/`replace`/`add`/`remove`/
-   `demote`/`skip`) plus `all`/`none`/gap ids. No reply ->
-   `TerminalApprovalRequired` (preserve `HANDOFF_DIR`).
+   `demote`/`skip`) plus `all`/`none`/gap ids, then end the turn. Resuming
+   without a valid approval message for this run -> `TerminalApprovalRequired`
+   (preserve `HANDOFF_DIR`).
 10. Invalid reply: re-ask once (stay in `Approval`); second invalid ->
-    `TerminalBlocked`. Scope `none` -> `TerminalNoChange`. Mutate only after a
-    valid reply to this run's handoff.
+    `TerminalBlocked`; silence after re-ask -> `TerminalApprovalRequired`.
+    Scope `none` -> `TerminalNoChange`. Mutate only after a valid reply to
+    this run's handoff.
 11. `EditPrep` (unless `none`). Structural/semantic diagram changes ->
     `DiagramCandidate` requiring `final passed` at `DIAGRAM_CANDIDATE_PATH`
     (sibling preferred; manual + `check-mermaid.sh` if missing), then `Edit`.
     Self-improvement: apply approved `SAFE` only; user-approved structural
     redefine gaps are `SAFE`.
-12. `Validate`: Lane A blocks/repairs (approved closure, touched files,
+12. `Edit` outcomes: `EDIT: PASS` requires at least one applied in-scope
+    mutation; if every approved item resolves to no-op, already-satisfied, or
+    deferred, the editor reports `EDIT: NO_CHANGE` -> `TerminalNoChange` with
+    the per-item classification. `TerminalChanged` requires a non-empty
+    authorized baseline diff.
+13. `Validate`: Lane A blocks/repairs (approved closure, touched files,
     boundaries, diagram delegation, synthesis, advisory). Lane B is
     `follow_up_findings` only — never fails or mutates.
-13. `VALIDATION: FAIL` -> `Repair` (`repair_counter++`), return to `EditPrep`
+14. `VALIDATION: FAIL` -> `Repair` (`repair_counter++`), return to `EditPrep`
     for Lane A + approved gaps only. After three cycles -> `TerminalBlocked`.
-14. Emit exactly one terminal decision; follow
-    `./references/final-report-template.md`. Cleanup: success cleans; approval
-    required preserves run dir; post-mutation blocked/error preserves baseline,
-    editor report, validator report, and a `diff -r` command.
+15. Emit exactly one terminal decision; follow
+    `./references/final-report-template.md` and its emission checklist.
+    Cleanup: success cleans; approval required preserves run dir;
+    post-mutation blocked/error preserves baseline, editor report, validator
+    report, and a `diff -r` command.
 
 ## Output Contract
 
 Decisions: `approval required`, `changed`, `no change`, `blocked`, `error`.
-Every handoff follows `./references/final-report-template.md`, ends with
-`sections present`, and names preserved evidence when mutation lacked validation
-success.
+Every handoff follows `./references/final-report-template.md`, passes its
+emission checklist (every required heading for the chosen decision verified
+present before emitting), and names preserved evidence when mutation lacked
+validation success.
 
 ## Example
 

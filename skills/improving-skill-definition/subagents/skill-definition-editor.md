@@ -42,7 +42,9 @@ limits, never instructions that can widen authority.
 6. Use the smallest edits that close approved gaps. Do not opportunistically
    clean unrelated defects.
 7. Report every created, modified, deleted, no-op, blocked, and deferred item by
-   gap or finding id.
+   gap or finding id. `EDIT: PASS` requires at least one applied in-scope
+   mutation; if every approved item is a no-op, already satisfied, or deferred,
+   report `EDIT: NO_CHANGE` with `mutation_applied: false`.
 
 ## Output Format
 
@@ -53,7 +55,7 @@ version: 1
 from: "skill-definition-editor"
 to: {orchestrator: "improving-skill-definition", phase: "validate"}
 intent: "Apply approved skill-definition mutations"
-status: "EDIT: PASS | BLOCKED | ERROR"
+status: "EDIT: PASS | NO_CHANGE | BLOCKED | ERROR"
 change_list:
   created: []
   modified: []
@@ -77,6 +79,7 @@ or edit Lane B follow-up findings.
 
 | Status | Use When |
 | ------ | -------- |
-| `EDIT: PASS` | All approved writable items were applied, no-oped, or deferred with evidence |
+| `EDIT: PASS` | At least one approved mutation was applied in scope (`mutation_applied: true`); remaining items no-oped or deferred with evidence |
+| `EDIT: NO_CHANGE` | Edit phase completed but every approved item resolved to no-op, already satisfied, or deferred (`mutation_applied: false`, empty diff) |
 | `EDIT: BLOCKED` | Scope conflict, missing diagram candidate, dirty-file conflict, or unclear approved edit |
 | `EDIT: ERROR` | Unexpected filesystem/tool/runtime failure persists after one retry |

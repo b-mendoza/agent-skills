@@ -1,12 +1,11 @@
 # Improving Skill Definition Flow
 
-This is the control-flow source of truth for the `improving-skill-definition`
-orchestrator. The high-level execution model is a finite-state machine
-(`stateDiagram-v2`). The companion transition table is
-[`state-machine.md`](./state-machine.md).
-
-`SKILL.md` must state the same audit-routing guards: any `: ERROR`, then any
-`: BLOCKED`, then any `: GAPS_FOUND`, then all `: PASS`.
+Illustrative rendering of the `improving-skill-definition` finite-state
+machine (`stateDiagram-v2`). The normative source for states, transitions,
+guards, and terminals is [`state-machine.md`](./state-machine.md); this
+diagram must not introduce behavior, and the state machine wins on any drift.
+Any FSM change updates this diagram and the `SKILL.md` overview in the same
+edit.
 
 ```mermaid
 stateDiagram-v2
@@ -29,6 +28,7 @@ stateDiagram-v2
   Approval --> TerminalApprovalRequired: no reply
   Approval --> Approval: invalid reply first time
   Approval --> TerminalBlocked: invalid reply second time
+  Approval --> TerminalApprovalRequired: silence after re-ask
   Approval --> TerminalNoChange: approved scope none
   Approval --> TerminalBlocked: scope or identity fail
   Approval --> EditPrep: valid approval and scope ok
@@ -42,10 +42,11 @@ stateDiagram-v2
   DiagramCandidate --> TerminalError: candidate error or repair limit
 
   Edit --> Validate: EDIT PASS
+  Edit --> TerminalNoChange: EDIT NO_CHANGE
   Edit --> TerminalBlocked: EDIT BLOCKED
   Edit --> TerminalError: EDIT ERROR
 
-  Validate --> TerminalChanged: VALIDATION PASS
+  Validate --> TerminalChanged: VALIDATION PASS and nonempty diff
   Validate --> Repair: VALIDATION FAIL and repair_counter under 3
   Validate --> TerminalBlocked: VALIDATION FAIL and repair_counter at 3
   Validate --> TerminalBlocked: VALIDATION BLOCKED
@@ -60,9 +61,12 @@ stateDiagram-v2
   TerminalError --> [*]
 ```
 
-## Canonical Rules
+## Rules Summary (normative text lives in `state-machine.md`)
 
 - Routing: `: ERROR`, then `: BLOCKED`, then `: GAPS_FOUND`, then all `: PASS`.
+- Audit dispatch: the six auditors are an independent read-only fan-out; the
+  join waits for all six reports and synthesis merges in registry order, so
+  concurrent and serial dispatch are equivalent.
 - Approval: only a valid reply to this run's handoff opens editing; preapproval
   values are ignored and reported.
 - Validation: Lane A findings can fail and repair; Lane B findings are follow-up
