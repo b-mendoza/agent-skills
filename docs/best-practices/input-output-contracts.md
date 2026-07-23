@@ -42,7 +42,9 @@ Extract these values from the URL:
 ```
 
 **Output contract format.** Specify the file path, required
-sections, and structural expectations.
+sections, and structural expectations. In `SKILL.md`, the Output
+Contract belongs in its own section immediately after Inputs; see
+[skill section order](./skill-section-order.md).
 
 ```markdown
 ## Output Contract
@@ -55,6 +57,10 @@ Must contain:
 - `## Tasks` section with at least 2 task entries
 - Each task entry has: Title, Description, Acceptance Criteria
 ```
+
+Status and verdict fields in an output contract are closed enums
+explicitly declared by the contract. The consumer routes every value
+in the enum; see [escalation categories](./escalation-categories.md).
 
 **Design principle: prefer canonical source identifiers over lossy
 fragments.** When a non-sensitive value carries multiple pieces of
