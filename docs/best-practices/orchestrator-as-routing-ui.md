@@ -8,137 +8,124 @@ skills with one execution path do not need this framing.
 ## When it applies
 
 When a skill orchestrates two or more subagents (or chains of work)
-and the orchestrator must decide which subagent to dispatch next
-based on previously accumulated state.
+and must decide which subagent to dispatch next from accumulated
+workflow state.
 
 ## The practice
 
-An orchestrator skill is the routing layer of a workflow: it decides
-which subagent to dispatch based on the inputs it received and the
-context it has accumulated. Subagents are the backend: they take
-structured inputs, normalize unstructured upstream data (file
-contents, API payloads, user prose) into structured outputs, and
-return to the orchestrator. The orchestrator generally keeps raw
-unstructured work out of its own context, but it may execute inline
-when the dispatch economics in
-[subagent default execution](./subagent-default-execution.md) say the
-raw, iterative, or conversational material is needed for routing.
-
-This is a conceptual analogy, not a literal restriction on how work
-is decomposed. However, nested subagent dispatch is runtime-
-dependent. Claude Code does not support subagents spawning other
-subagents, so portable skills should chain subagent calls from the
-orchestrator or main conversation rather than burying dispatch
-inside a subagent.
+An orchestrator skill is the workflow's routing layer. Subagents are
+its contracted backends: they accept structured inputs, normalize
+unstructured upstream data into structured outputs, and return control
+to the orchestrator. The orchestrator renders the final user-facing
+handoff from those outputs.
 
 Rules:
 
-1. **Orchestrators route on bounded outputs.** The orchestrator's
-   `Execution` section reads as a sequence of routing decisions keyed
-   on enumerated subagent statuses. Inline reads, diff parses, or API
-   calls are appropriate only when the orchestrator needs the raw
-   material for immediate coordination or judgment; otherwise raw
-   artifact processing belongs in a subagent.
-2. **Subagents have structured input and output contracts.** Each
-   subagent declares every input (with a typed example) and every
-   output field (with verdict enums and example payloads).
-   Unstructured-in or unstructured-out subagents indicate a missing
-   contract — see [input and output contracts](./input-output-contracts.md).
-3. **Subagents normalize unstructured data.** A subagent that
-   consumes a raw ticket, file, or web response is responsible for
-   normalizing that data into the structured output its contract
-   names. The orchestrator never sees the raw form.
-4. **Nested delegation is runtime-dependent.** When the cleanest
-   decomposition places a smaller workflow inside a larger one, model
-   the smaller workflow as an orchestrator-visible phase unless the
-   target runtime explicitly supports nested dispatch. For portable
-   OpenCode/Claude Code skills, the orchestrator or main conversation
-   chains subagent calls and retains the routing table. A subagent
-   may still return a structured recommendation for which phase
-   should run next.
-5. **Orchestrators retain only verdicts, paths, ids, and concise
-   summaries.** Raw data (full file contents, full diffs, full API
-   payloads) stays inside the producing subagent. The orchestrator's
-   accumulated context after each dispatch is a status enum, a set of
-   paths, a verdict, and a short summary — never the raw input.
-6. **The user-facing handoff is the orchestrator's UI output.** When
-   the orchestrator returns to the user, it returns a structured
-   handoff (decision, evidence, next steps). The handoff is the
-   rendered UI; the subagent outputs that fed it are the backend
-   data.
+1. **Make `Execution` a readable routing sequence.** Write it as a
+   sequence of dispatch decisions keyed on enumerated statuses: given
+   input X, dispatch subagent Y; on Y's status Z, dispatch W, retry,
+   stop, or render a handoff.
+2. **Give subagents structured input and output contracts.** Each
+   subagent declares every input with a typed example and every output
+   field with verdict enums and example payloads. Unstructured-in or
+   unstructured-out subagents indicate a missing contract; see
+   [input and output contracts](./input-output-contracts.md).
+3. **Use subagents as normalization boundaries.** A subagent that
+   consumes a raw ticket, file, API payload, or web response converts
+   it into the structured fields named by its output contract.
+4. **Keep the routing table in the orchestrator by default.** Nested
+   dispatch support varies by runtime and version. Portable skills
+   therefore keep routing decisions in the orchestrator or main
+   conversation as the conservative default, and defer current
+   runtime-specific support and syntax to the
+   [runtime portability matrix](./runtime-portability-matrix.md). A
+   subagent may return a structured recommendation for the next phase;
+   the orchestrator makes the dispatch decision.
+5. **Follow the bounded-context policy in
+   [context window protection](./context-window-protection.md) for raw
+   inspection, retained workflow state, and retrieved content.**
+6. **Treat the user-facing handoff as rendered output.** Return a
+   structured decision, evidence summary, artifact paths, and next
+   steps. The handoff is the UI; contracted subagent outputs are the
+   backend data from which it is rendered.
 7. **Phase transitions are visible.** Multi-phase orchestrators make
-   each phase transition visible before the new phase starts. The
-   specific banner shape is owned by
-   [phase transition banner](./phase-transition-banner.md). Subagents
+   each phase transition visible before the new phase starts; the
+   announce step and its rendering are owned by
+   [phase execution cycle](./phase-execution-cycle.md). Subagents
    do not emit phase markers.
 
 ## Rationale
 
-**Orchestrators route on bounded state.** When an orchestrator
-carries raw artifacts it does not need — file contents, diffs, API
-responses, command output — it loses the headroom it needs to reason
-about what to do next. The routing decision becomes harder precisely
-as the data grows. Pushing bounded, self-contained work into
-subagents keeps the orchestrator's context lean and its routing
-logic visible.
+**Readable routing makes the workflow auditable.** The orchestrator's
+`Execution` section should expose the state machine directly: which
+status triggers which dispatch, retry, stop, or handoff. When branching
+and re-dispatch are buried inside subagents, the workflow becomes a
+call graph that authors and reviewers must trace.
 
 **Structured contracts make subagents reusable.** A subagent whose
-inputs and outputs are named, typed, and bounded is composable. A
-subagent whose contract is "I take unstructured stuff and return
-unstructured stuff" cannot be reused without re-reading its source.
-The orchestrator-as-UI pattern presses each subagent toward a clean
-function signature.
+inputs and outputs are named, typed, and bounded behaves like a stable
+backend. The normalization boundary lets different upstream sources
+feed the same route without forcing the orchestrator to understand each
+source's native shape.
 
-**The pattern surfaces dispatch logic.** The orchestrator's
-`Execution` section reads as a sequence of routing decisions: "given
-input X, dispatch subagent Y; given Y's status Z, dispatch subagent
-W or return a handoff." When you read the orchestrator, you read the
-workflow. When dispatch logic is buried inside subagents that branch
-and re-dispatch, the workflow becomes a call graph you have to
-trace.
+**Central routing is the portable default.** Runtime and version
+capabilities change. Keeping the routing table at the top level avoids
+making the workflow's required control flow depend on nested dispatch,
+while still allowing runtime-specific implementations to optimize when
+they explicitly support it.
+
+**The handoff completes the UI analogy.** Users need the orchestrator's
+rendered decision and evidence, not a transcript of backend calls. A
+stable handoff shape also makes blocked, partial, and successful runs
+easy to compare.
 
 ## Concrete examples
 
-Good: orchestrator routes on enumerated subagent statuses; raw
-material stays inside subagents.
+Good: `Execution` exposes enumerated statuses, routing decisions, and
+the rendered user handoff.
 
 ```markdown
 # In skills/orchestrating-workflow/SKILL.md
 
 ## Execution
 
-1. Dispatch `fetching-work-item` with the work-item URL or platform-specific
-   fetch inputs.
-2. On `FETCH: PASS`, dispatch `artifact-validator`.
-3. On `VALIDATE: PASS`, dispatch `planning-jira-tasks`.
-4. On any `BLOCKED`, return the blocked handoff with the failing
-   subagent's reason and path.
-
-# The orchestrator retains:
-
-- TICKET_KEY=PROJ-123
-- FETCH_STATUS=FETCH: PASS, REPORT_PATH=...yaml
-- VALIDATE_STATUS=VALIDATE: PASS
-- (NEVER the raw Jira API response, NEVER the full ticket body.)
+1. Dispatch `fetching-work-item`.
+2. Route on `FETCH_STATUS`:
+   - `FETCH: PASS` -> dispatch `artifact-validator` with `REPORT_PATH`.
+   - `FETCH: NOT_FOUND` -> render a `BLOCKED` handoff.
+   - `FETCH: ERROR` -> retry once, then render a `BLOCKED` handoff.
+3. Route on `VALIDATE_STATUS`:
+   - `VALIDATE: PASS` -> dispatch `planning-jira-tasks`.
+   - `VALIDATE: FAIL` -> render the validation-failure handoff.
+4. Render the final handoff with `DECISION`, `EVIDENCE_SUMMARY`,
+   `ARTIFACT_PATHS`, and `NEXT_STEPS`.
 ```
 
-Bad: orchestrator reads the raw Jira response, then makes a routing
-decision against it. Routing logic gets buried under data.
+Bad: required routing is hidden inside a subagent and assumes nested
+dispatch without declaring runtime support.
 
 ```markdown
-1. Call the Jira API.
-2. Read the ~6,000-line raw JSON response inline.
-3. Decide what to do next from the JSON. (Routing logic now lives
-   in a wall of data the orchestrator must scan every step.)
+## Execution
+
+1. Dispatch `workflow-runner` with the work-item URL.
+2. `workflow-runner` decides which other subagents to launch, retries
+   them internally, and returns `done` when finished.
+3. Return whatever `workflow-runner` reports.
+
+(The top-level workflow no longer exposes status routes, retry rules,
+or the handoff contract, and its required control flow depends on
+runtime-specific nested dispatch.)
 ```
 
 ## References
 
 - Claude Code subagents documentation, accessed 2026-05-27:
-  <https://code.claude.com/docs/en/sub-agents>. Supports chaining
-  subagents from the main conversation and notes that subagents
-  cannot spawn other subagents.
+  <https://code.claude.com/docs/en/sub-agents>. Supports explicit
+  subagent contracts and orchestration; current runtime-specific
+  dispatch behavior should be revalidated before changing a portable
+  workflow.
 - Anthropic, "Effective context engineering for AI agents," accessed
   2026-05-27:
   <https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents>.
-  Supports separating orchestration context from raw payload context.
+  Supports separating orchestration state from backend processing and
+  using bounded handoffs between agentic steps.
