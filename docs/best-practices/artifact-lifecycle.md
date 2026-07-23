@@ -2,110 +2,151 @@
 
 ## Tier
 
-`mandatory`. Mishandled artifacts leak sensitive content into git,
-strand resumability state, or commit ephemeral payloads into the
-repository's version-control record; the rules close those failures
-explicitly.
+`mandatory`. Every file-producing workflow must classify artifacts by
+runtime role, prove that run-local state is ignored and owned by the
+current run, and keep version-control authority separate from lifecycle
+classification.
 
 ## When it applies
 
-Whenever a skill produces files — progress files, plans, ticket
-snapshots, handoff files, audit reports, validator findings, source-
-code changes, tests, or generated configs.
+Whenever a skill writes files: dispatch payloads, resume state, plans,
+reports, source code, tests, configs, documentation, snapshots, or
+generated output.
 
 ## The practice
 
-Distinguish between orchestration artifacts (working documents that
-track or carry workflow state) and implementation artifacts (source
-code, tests, configs that are the workflow's output). Apply
-different lifecycle rules to each, and separate persistent
-orchestration records from ephemeral dispatch payloads.
+Classify an artifact by the role it serves in this run, not by its file
+name or format. A plan, report, or YAML file can belong to different
+classes depending on who consumes it and why it persists.
 
-Two categories with three sub-categories:
+| Class | Role | Persistence | Version-control status |
+| ----- | ---- | ----------- | ---------------------- |
+| A2 | Run-local dispatch payload: instructions, report handoff, retry payload | Keep only through its dispatch lifecycle | Outside version control |
+| A1 | Internal resume/progress state needed beyond the current runtime session | Keep only while the stated persistence need exists | Outside version control |
+| B | Durable user/project deliverable: source, tests, config, documentation, requested plan or report | Keep according to the user/project contract | Eligible for version control |
+| P | Prohibited sensitive material: credentials, tokens, secret-bearing raw logs, unnecessary personal data | Do not write or persist | Never eligible |
 
-| Category | Contents                                                                                         | Committed to git | Deleted                                                                               |
-| -------- | ------------------------------------------------------------------------------------------------ | ---------------- | ------------------------------------------------------------------------------------- |
-| A1       | Persistent orchestration records: progress files, plans, ticket snapshots, decision logs         | Never            | Preserve until the workflow no longer needs resumability or the user approves cleanup |
-| A2       | Ephemeral orchestration payloads: handoff files, temporary dispatch instructions, retry payloads | Never            | Delete after terminal dispatch cleanup unless retained for debugging                  |
-| B        | Implementation: source code, tests, configs, documentation                                       | Yes              | Normal rules                                                                          |
+**Classification is not authority.** Class B means only that the artifact
+is eligible for version control. Keeping, staging, committing, and
+pushing are separate decisions, each requiring the applicable user and
+repository authority. Lifecycle classification never grants commit or
+push authority and never instructs a workflow to perform either action.
 
-**Why preserve Category A1.** Persistent orchestration records
-enable resumability. If a workflow is interrupted by user choice,
-error, or session timeout, progress files and planning artifacts
-allow the workflow to resume from exactly where it left off.
-Deleting them forces a restart.
+**Make A1 conditional.** Modern runtimes often provide native session
+resumability. Add skill-authored A1 state only when the skill states a
+persistence need that native retention does not satisfy, such as
+cross-runtime handoff, resumption beyond runtime retention, or production
+of a durable deliverable whose work must survive independently. Without
+that need, keep state in the runtime rather than creating another file.
 
-**Why delete Category A2.** Ephemeral orchestration payloads are
-point-in-time instructions for a specific dispatch. Once the
-dispatch succeeds, is abandoned, or reaches a terminal blocked/error
-state, stale payloads become misleading. Delete them as part of
-workflow cleanup unless the user asks to preserve them for
-debugging.
+**Use run-scoped ownership.** Put A1 and A2 files under a path owned by
+one workflow run, normally:
 
-**Sensitivity and retention.** Category A artifacts can contain user
-prose, copied web content, command output, diffs, ticket text, API
-responses, credentials accidentally exposed in logs, or prompt-
-injection payloads. Preserve only the orchestration records needed
-for resumability, store them in ignored workflow locations, and
-redact or exclude secrets and unnecessary personal data before
-writing them. Clean up Category A1 records when resumability is no
-longer needed or when the user approves cleanup; clean up Category
-A2 records at terminal dispatch cleanup unless they are
-intentionally retained for debugging.
+```text
+.handoffs/<skill>/<run-id>/
+```
 
-**Key rule.** Never commit Category A artifacts to version control.
-They are working documents that belong to the workflow session, not
-to the committed project artifact. Preserve Category A1 while it is
-needed for resumability; clean up Category A2 when its dispatch
-lifecycle ends. Only Category B artifacts (the actual output of the
-workflow) are staged and committed.
+Derive `run-id` once and record the exact files the run creates. Before
+writing A1 or A2 in a Git repository, verify the chosen path is ignored:
+
+```sh
+git check-ignore --quiet -- ".handoffs/<skill>/<run-id>/<file>"
+```
+
+Exit zero passes. A nonzero result means the path is not proven ignored:
+move it to an already ignored workflow location or reclassify it as a
+Class B deliverable. Do not rely on an intended ignore rule that was not
+observed.
+
+**Clean up only owned A2 files.** The detailed dispatch mechanics live in
+[handoff file dispatch](./handoff-file-dispatch.md). At minimum:
+
+1. Confirm the dispatch or workflow is in a terminal state (`success`,
+   `abandoned`, terminal `blocked`, or terminal `error`), not waiting for
+   resumption.
+2. Delete only paths recorded as created by this run. Never recursively
+   clean a shared skill directory.
+3. A run may list sibling run-directory names to detect stale work, but
+   it never reads or deletes foreign run contents.
+4. Retain A2 for debugging only through an explicit opt-in that names the
+   retained files and cleanup condition.
+
+`skills/improving-skill-definition/SKILL.md` is the in-repo pattern: it
+derives `HANDOFF_DIR`, lists stale runs without inspecting or deleting
+them, and applies outcome-dependent cleanup to its own run.
+
+**Apply a checkable persistence filter.** Before writing or retaining A1
+or A2, verify all of the following:
+
+- The file contains only minimal structured state needed for routing or
+  resumption.
+- It contains no credentials, tokens, raw logs, full diffs, unnecessary
+  personal data, or copied user/web/ticket/API payloads. Store a source
+  path, digest, identifier, redacted fact, or concise summary instead.
+- Debug retention was explicitly opted into for this run; otherwise the
+  normal cleanup rule still applies.
+- Class P content is excluded rather than merely labeled sensitive.
 
 ## Rationale
 
-Two failure modes drive every rule:
+Role-based classification avoids a common category error: the same
+"plan" can be internal resume state in one workflow and the requested
+project deliverable in another. The consumer and persistence purpose,
+not the noun, determine its lifecycle.
 
-- **Untrusted content in commit history.** A handoff file generated
-  during an audit can contain copied user prose, web content,
-  pasted command output, ticket text, or credentials accidentally
-  printed in logs. Committing it propagates that content into
-  every clone of the repository and into every CI run. Categorizing
-  the file as Category A2 and refusing to stage it closes the
-  channel.
-- **Stale ephemeral payloads.** A handoff file from a failed
-  dispatch left in `.handoffs/` looks valid to a future dispatch
-  that reads the same path. The future dispatch can route on stale
-  state, producing a fluent-looking failure with no obvious cause.
-  Deleting Category A2 at terminal cleanup closes that failure.
+Run-scoped ownership closes a concurrency failure. A shared
+`.handoffs/<skill>/` cleanup can delete another active session's payloads
+or interpret a stale report as current. A unique run directory plus an
+owned-file record makes deletion attributable and keeps foreign runs
+opaque.
 
-Resumability is the third concern, and Category A1 exists to serve
-it without conflating it with ephemeral dispatch state.
+The ignore check closes the gap between policy and repository state. A
+path described as "workflow-only" is still commit-visible unless the
+repository actually ignores it. The authority rule closes a separate
+gap: a durable deliverable may be commit-worthy, but that fact does not
+authorize changing version-control state.
 
 ## Concrete examples
 
-Good: a planning artifact is Category A1; the handoff payload that
-drove its production is Category A2; the source files it implies are
-Category B. `.gitignore` excludes Category A2; Category A1 lives in
-a path the repo intentionally keeps.
+Good: the workflow classifies by role, proves its run-local paths are
+ignored, and distinguishes an internal plan from a deliverable plan.
 
 ```text
-.handoffs/improving-skill-definition/                     (A2; .gitignored)
-├── flow-coherence-auditor-instructions.yaml              (delete on success)
-└── flow-coherence-auditor-report.yaml                    (delete on success)
+.handoffs/ticket-planner/run-20260722T153000Z/
+├── resume-plan.yaml                 (A1; internal cross-runtime resume state)
+├── task-planner-instructions.yaml   (A2; this run's dispatch payload)
+└── task-planner-report.yaml         (A2; this run's routeable report)
 
-docs/PROJ-123-tasks.md                                    (A1; committed=No, preserved while in progress)
-
-skills/improving-skill-definition/SKILL.md                (B; committed)
+docs/PROJ-123-tasks.md               (B; requested durable plan; eligible only)
 ```
 
-Bad: handoff payloads get staged and committed because "they look
-like documentation."
+On a terminal result, the run deletes only the two A2 paths it recorded.
+It preserves `resume-plan.yaml` only if the stated resumption need still
+exists. It neither inspects nor deletes another
+`.handoffs/ticket-planner/<run-id>/` directory. No lifecycle rule stages,
+commits, or pushes `docs/PROJ-123-tasks.md`.
+
+Bad: classification by noun and shared cleanup.
 
 ```text
-.handoffs/improving-skill-definition/
-└── personality-auditor-instructions.yaml                 (got committed; now contains copied user prose
-                                                            and pasted ticket text, forever in repo
-                                                            commits)
+docs/PROJ-123-tasks.md                (called "temporary" because it is a plan,
+                                       despite being the requested output)
+.handoffs/ticket-planner/report.yaml  (shared across all runs)
 ```
+
+The workflow runs `rm -rf .handoffs/ticket-planner/`, deleting an active
+parallel run, then treats the deliverable plan as forbidden internal
+state. It also assumes "deliverable" means "commit now." All three
+conclusions violate the lifecycle contract.
+
+**Pass/fail authoring checklist**
+
+- [ ] Every written artifact is classified by role as A2, A1, B, or P.
+- [ ] Every A1 file names a persistence need beyond native session state.
+- [ ] Every A1/A2 path has a passing observable ignore check.
+- [ ] Cleanup is terminal-state-gated and limited to this run's recorded files.
+- [ ] Persisted state passes the content filter; debug retention is opt-in.
+- [ ] Class B says "eligible" and grants no keep/stage/commit/push authority.
 
 ## References
 
