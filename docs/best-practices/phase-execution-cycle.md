@@ -35,6 +35,12 @@ and workflows that consume untrusted content. Thin utility skills can
 use a smaller precondition and postcondition check when a full phase
 ceremony would fail [earned complexity](./earned-complexity.md).
 
+The Announce step's rendering is style, not contract: any visible
+marker carrying the phase number, total count, and phase name is
+fine (a plain `Phase 4/8 - Audit` line, or the host UI's native
+progress marker). Only the orchestrator announces phases; subagents
+do not emit phase markers, or the markers collapse into noise.
+
 ## Rationale
 
 LLM outputs can be fluent and wrong. A subagent can produce a
