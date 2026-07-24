@@ -1,31 +1,32 @@
 # Task Planner Template
 
-Read this file only when assembling the stage 1 plan. Keep every heading even
-when content is sparse; explain gaps instead of removing sections.
+Read this file only when assembling Stage 1. Keep every heading even when
+content is sparse; explain gaps instead of removing sections. Resolve every
+angle-bracket platform token from `PLAYBOOK_PATH`.
 
 ```markdown
-# <TICKET_KEY> - Detailed Task Plan
+# <KEY> - Detailed Task Plan
 
-> Source: docs/<TICKET_KEY>.md
+> Source: docs/<KEY>.md
 > Generated on: <YYYY-MM-DD HH:MM UTC>
 
-## Ticket Summary
+<SUMMARY_HEADING>
 
-<3-5 sentence summary of the ticket goal, scope, and key constraints.>
+<3-5 sentence summary of the <WORK_ITEM_NOUN> goal, scope, and key constraints.>
 
 ## Problem Framing
 
 ### End User
 
-<Who the end user is. If the ticket does not state this, write: "Not stated in ticket - requires developer input.">
+<Who the end user is. If the <WORK_ITEM_NOUN> does not state this, write: "Not stated in <WORK_ITEM_NOUN> - requires developer input.">
 
 ### Underlying Need
 
-<The user problem or need this ticket addresses. Mark inferred content clearly.>
+<The user problem or need this <WORK_ITEM_NOUN> addresses. Mark inferred content clearly.>
 
 ### Proposed Solution
 
-<The solution the ticket prescribes.>
+<The solution the <WORK_ITEM_NOUN> prescribes.>
 
 ### Solution-Problem Fit
 
@@ -37,7 +38,7 @@ when content is sparse; explain gaps instead of removing sections.
 
 ### Evidence Basis
 
-<Evidence cited for the solution. If none, write: "Not stated in ticket - requires developer input.">
+<Evidence cited for the solution. If none, write: "Not stated in <WORK_ITEM_NOUN> - requires developer input.">
 
 ## Assumptions and Constraints
 
@@ -58,7 +59,7 @@ when content is sparse; explain gaps instead of removing sections.
 **Relevant requirements and context:**
 <Only the requirements, constraints, and background needed for this task.>
 
-- Traces to: <Specific description, acceptance criteria, comment, subtask, or linked issue source.>
+- Traces to: <Specific description, acceptance criteria, comment, <CHILD_ITEM_NOUN>, or linked issue source.>
 
 **Questions to answer before starting:**
 <Uncertainties, why they matter, and fallback if unanswered. If none, write `None`.>
@@ -78,5 +79,5 @@ when content is sparse; explain gaps instead of removing sections.
 
 ## Notes
 
-<Plan observations, ambiguity, task-count exceptions, existing subtask mapping, or current-subtask scope note.>
+<Plan observations, ambiguity, task-count exceptions, existing <CHILD_ITEM_NOUN> mapping, or current-item scope note.>
 ```
