@@ -19,7 +19,7 @@ to satisfy this preference.
 ## The practice
 
 - **Prefer gerund form for new skills** when it reads naturally:
-  `analyzing-data`, `deploying-service`, `creating-jira-subtasks`,
+  `analyzing-data`, `deploying-service`, `creating-work-item-children`,
   `orchestrating-workflow`. When a noun phrase is the clearer name
   (`council-of-advisors`, `pr-creator`, `recency-guard`), use it —
   clarity beats conformance.
