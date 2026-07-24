@@ -95,7 +95,7 @@ the rendered user handoff.
    - `FETCH: NOT_FOUND` -> render a `BLOCKED` handoff.
    - `FETCH: ERROR` -> retry once, then render a `BLOCKED` handoff.
 3. Route on `VALIDATE_STATUS`:
-   - `VALIDATE: PASS` -> dispatch `planning-jira-tasks`.
+   - `VALIDATE: PASS` -> dispatch `planning-work-item-tasks`.
    - `VALIDATE: FAIL` -> render the validation-failure handoff.
 4. Render the final handoff with `DECISION`, `EVIDENCE_SUMMARY`,
    `ARTIFACT_PATHS`, and `NEXT_STEPS`.
