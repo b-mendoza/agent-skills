@@ -27,12 +27,12 @@ MCP rather than failing.
 | Phase | Runtime skill | Inputs | Retain |
 | ----- | ------------- | ------ | ------ |
 | 1 | `fetching-work-item` | `JIRA_URL` | 12-line summary, `TICKET_KEY`, file path |
-| 2 | `planning-jira-tasks` | `TICKET_KEY` (+ `RE_PLAN`, `DECISIONS`) | summary, tasks file path, warnings |
+| 2 | `planning-work-item-tasks` | `TICKET_KEY` (+ `RE_PLAN`, `DECISIONS`) | summary, tasks file path, warnings |
 | 3 | `clarifying-assumptions` | `TICKET_KEY`, `MODE=upfront`, `ITERATION` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions |
-| 4 | `creating-jira-subtasks` | `JIRA_URL` | created/linked subtask rows, warnings, failures |
-| 5 | `planning-jira-task` | `TICKET_KEY`, `TASK_NUMBER` (+ `RE_PLAN`, `DECISIONS_FILE`) | four artifact paths, approach, test shape, refactoring verdict |
+| 4 | `creating-work-item-children` | `JIRA_URL` | created/linked subtask rows, warnings, failures |
+| 5 | `planning-task-execution` | `TICKET_KEY`, `TASK_NUMBER` (+ `RE_PLAN`, `DECISIONS_FILE`) | four artifact paths, approach, test shape, refactoring verdict |
 | 6 | `clarifying-assumptions` | `TICKET_KEY`, `MODE=critique`, `TASK_NUMBER`, `ITERATION` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions file |
-| 7 | `executing-jira-task` | `TICKET_KEY`, `TASK_NUMBER` | `FINAL_TASK_REPORT` status, verdict, gate summary, retry counts |
+| 7 | `executing-work-item-task` | `TICKET_KEY`, `TASK_NUMBER` | `FINAL_TASK_REPORT` status, verdict, gate summary, retry counts |
 
 ## Phase 1 Snapshot Sections
 

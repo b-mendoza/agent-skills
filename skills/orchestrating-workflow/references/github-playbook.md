@@ -28,12 +28,12 @@ the user to run `gh auth login` rather than failing.
 | Phase | Runtime skill | Inputs | Retain |
 | ----- | ------------- | ------ | ------ |
 | 1 | `fetching-work-item` | `ISSUE_URL` or `OWNER`+`REPO`+`ISSUE_NUMBER` | 12-line summary, `TICKET_KEY=<ISSUE_SLUG>`, file path |
-| 2 | `planning-github-issue-tasks` | `ISSUE_SLUG` (+ `RE_PLAN`, `DECISIONS`) | summary, tasks file path, warnings |
+| 2 | `planning-work-item-tasks` | `TICKET_KEY=<ISSUE_SLUG>` (+ `RE_PLAN`, `DECISIONS`) | summary, tasks file path, warnings |
 | 3 | `clarifying-assumptions` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=upfront`, `ITERATION` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions |
-| 4 | `creating-github-child-issues` | `ISSUE_URL` | write model, created/linked task-issue rows, warnings |
-| 5 | `planning-github-task` | `ISSUE_SLUG`, `TASK_NUMBER` (+ `RE_PLAN`, `DECISIONS_FILE`) | four artifact paths, approach, test shape, refactoring verdict |
+| 4 | `creating-work-item-children` | `ISSUE_URL` | write model, created/linked task-issue rows, warnings |
+| 5 | `planning-task-execution` | `TICKET_KEY=<ISSUE_SLUG>`, `TASK_NUMBER` (+ `RE_PLAN`, `DECISIONS_FILE`) | four artifact paths, approach, test shape, refactoring verdict |
 | 6 | `clarifying-assumptions` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=critique`, `TASK_NUMBER`, `ITERATION` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions file |
-| 7 | `executing-github-task` | `ISSUE_SLUG`, `TASK_NUMBER` | `FINAL_TASK_REPORT` status, verdict, gate summary, retry counts |
+| 7 | `executing-work-item-task` | `TICKET_KEY=<ISSUE_SLUG>`, `TASK_NUMBER` | `FINAL_TASK_REPORT` status, verdict, gate summary, retry counts |
 
 `clarifying-assumptions` accepts `TICKET_KEY` as the workflow-key alias; pass the `ISSUE_SLUG` value under that name.
 
@@ -68,7 +68,7 @@ Plan is ready. How would you like to proceed?
 ## Phase 4 Child-Item Table and Write Model
 
 Workflow-level: `## GitHub Task Issues` heading, the machine handoff comment
-from `creating-github-child-issues`, then a one-row-per-task table. Per-task:
+from `creating-work-item-children`, then a one-row-per-task table. Per-task:
 one inline `GitHub Task Issue:` line per numbered task section. Values:
 `owner/repo#number`, `Not Created`, or `task-list`. Write-model preference:
 native child issues → linked issues → task-list fallback. `task-list` is
