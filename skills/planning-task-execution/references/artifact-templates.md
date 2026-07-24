@@ -1,28 +1,24 @@
-# Planning Jira Task Artifact Templates
+# Task-Execution Planning Artifact Templates
 
-> Read this file only when assembling, repairing, or validating a planning
-> artifact. Keep full artifact contents out of the orchestrator summary.
+> Read this file only when assembling, repairing, or validating one planning
+> artifact. Keep full artifact contents out of the coordinator summary.
 
-Use these templates as the local artifact contract. External sources may inform
-wording or rationale, but they do not replace these headings.
+`<KEY>` is the work-item identifier derived by the active playbook. The
+orchestrator passes its value under the shared alias `TICKET_KEY`.
 
-## Contents
-
-- Execution Brief Template
-- Execution Plan Template
-- Test Specification Template
-- Refactoring Recommendation Template
+Use these templates as the local artifact contract. External sources may
+inform wording or rationale, but they do not replace these headings.
 
 ## Execution Brief Template
 
 ```markdown
-# Execution Brief - <TICKET_KEY> Task <TASK_NUMBER>: <Title>
+# Execution Brief - <KEY> Task <TASK_NUMBER>: <Title>
 
 ## Objective
 <Concise task objective from the task plan.>
 
 ## Relevant Requirements and Context
-<Only the requirements, decisions, and ticket context needed for this task.>
+<Only the requirements, decisions, and work-item context needed for this task.>
 
 ## Implementation Notes
 <Known implementation guidance, constraints, and assumptions.>
@@ -34,16 +30,16 @@ wording or rationale, but they do not replace these headings.
 <Likely files, modules, tests, docs, configs, or generated artifacts.>
 
 ## Resolved Questions and Decisions
-<Resolved questions, waived questions, decisions log entries, and re-plan decisions.>
+<Resolved questions, waived questions, decisions-log entries, and re-plan decisions.>
 
 ## Constraints
-<Scope boundaries for the eventual executor.>
+<Scope boundaries for the eventual executor, including the one-task boundary.>
 ```
 
 ## Execution Plan Template
 
 ```markdown
-# Execution Plan - <TICKET_KEY> Task <TASK_NUMBER>: <Title>
+# Execution Plan - <KEY> Task <TASK_NUMBER>: <Title>
 
 ## Codebase Summary
 <Relevant files, local patterns, framework/tooling observations, and test conventions.>
@@ -70,7 +66,7 @@ wording or rationale, but they do not replace these headings.
 ## Test Specification Template
 
 ```markdown
-# Test Specification - <TICKET_KEY> Task <TASK_NUMBER>: <Title>
+# Test Specification - <KEY> Task <TASK_NUMBER>: <Title>
 
 ## Test Framework and Conventions
 <Framework, file placement, helper, fixture, assertion, and mocking conventions observed.>
@@ -79,7 +75,7 @@ wording or rationale, but they do not replace these headings.
 <Behavior-oriented test groups with priorities and edge cases.>
 
 ## Definition of Done Coverage
-<Mapping from definition-of-done item to planned automated check or explicit blocker.>
+<Mapping from each definition-of-done item to a planned automated check or explicit blocker.>
 
 ## Notes for Task Executor
 <Setup notes, data fixtures, mocks, commands, and sequencing hints.>
@@ -91,7 +87,7 @@ wording or rationale, but they do not replace these headings.
 ## Refactoring Recommendation Template
 
 ```markdown
-# Refactoring Recommendation - <TICKET_KEY> Task <TASK_NUMBER>: <Title>
+# Refactoring Recommendation - <KEY> Task <TASK_NUMBER>: <Title>
 
 ## Verdict
 <Refactor before, Refactor during, or No refactoring needed.>
