@@ -30,7 +30,7 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2023",
-    "types": ["node"],
+    "types": ["node", "@total-typescript/ts-reset"],
     "verbatimModuleSyntax": true
   },
   "include": ["**/*.ts", "eslint.config.js"],
