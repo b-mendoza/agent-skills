@@ -966,18 +966,6 @@
       }
     },
     {
-      // Every file here runs in Node; there is no browser half to split off.
-      "files": ["**/*.ts", "eslint.config.js"],
-      "globals": {
-        "AsyncDisposableStack": "readonly",
-        "DisposableStack": "readonly",
-        "SuppressedError": "readonly"
-      },
-      "env": {
-        "node": true
-      }
-    },
-    {
       "files": ["**/*.test.ts"],
       "rules": {
         // Fixture payloads are literals by nature; naming them would bury the
