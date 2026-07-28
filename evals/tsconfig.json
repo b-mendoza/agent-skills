@@ -2,6 +2,7 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.tsbuildinfo",
 
+    "allowImportingTsExtensions": true,
     "allowJs": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
