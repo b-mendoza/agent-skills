@@ -115,7 +115,19 @@ For `MODE=critique`, append:
 ```
 
 If top-level inputs are invalid or a subagent blocks or fails, emit the
-same first four fields with `Files updated: -`, then include
-`Blocking verdict:` and `Reason:`. Include the mode-specific retained
-field only when it is available. Use `Critique artifact: -` when the run
-stops before a critique artifact is created.
+same first four fields with `Files updated: -`, then the blocking pair,
+then the mode-specific retained field when a value is available:
+
+```markdown
+- Critique artifact: <path or ->
+- Files updated: -
+- RE_PLAN_NEEDED: <true|false>
+- BLOCKERS_PRESENT: true
+- Blocking verdict: <verdict>
+- Reason: <reason>
+- <Accepted decisions summary | Decisions file>: <value>
+```
+
+The mode-specific field is always last. Use `Critique artifact: -` when
+the run stops before a critique artifact is created. `SKILL.md` holds the
+Flag Transitions table that determines both flag values.
