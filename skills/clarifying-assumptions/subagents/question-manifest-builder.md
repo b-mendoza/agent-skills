@@ -113,6 +113,12 @@ Before returning, confirm:
   Now`, `Deferred Questions`, or `Resolved Irrelevant`
 - no `Questions For Now` or `Deferred Questions` row has severity below
   `HIGH`
+- every `Questions For Now` row carries a `Model` of exactly `A` or `B`
+  and a `Skippable` of exactly `Yes` or `No`
+- each row's `Model` and `Skippable` match the Model and Skippable
+  Derivation table in `./question-manifest-builder-rules.md`: upfront
+  `HIGH` problem-framing rows are `A` and `No`; every other row,
+  including every `MODE=critique` row, is `B` and `Yes`
 - lower-severity critique items are left in the critique artifact and, if
   useful, summarized in `## Manifest Summary` instead of being marked
   deferred or irrelevant
