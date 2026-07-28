@@ -52,18 +52,9 @@ export default defineConfig(
       ],
       "@typescript-eslint/explicit-function-return-type": OFF,
       "@typescript-eslint/no-deprecated": ERROR,
-      /**
-       * `0` and `1` are exempt as accumulator seeds, length comparisons, and
-       * first-element access, where a name would obscure rather than explain.
-       * Every number that encodes a decision — exit codes, tiers, budgets,
-       * truncation limits, unit conversions — still has to be named.
-       */
       "@typescript-eslint/no-magic-numbers": [
         ERROR,
         {
-          ignore: [0, 1],
-          ignoreArrayIndexes: true,
-          ignoreNumericLiteralTypes: true,
           ignoreTypeIndexes: true,
         },
       ],
@@ -177,10 +168,6 @@ export default defineConfig(
       // Our addition: a `vi.mock` factory must import the module it replaces,
       // since Vitest hoists the factory above outer bindings.
       "vitest/prefer-import-in-mock": ERROR,
-
-      // Fixture payloads are literals by nature; naming them would bury the
-      // input a case is pinning.
-      "@typescript-eslint/no-magic-numbers": OFF,
     },
   },
   globalIgnores(["coverage/", "node_modules/"]),
