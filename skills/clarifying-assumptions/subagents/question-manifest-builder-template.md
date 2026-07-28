@@ -36,6 +36,11 @@ Then return:
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | PF1 | Problem framing | HIGH | A | No | All |
 
+`Model` is exactly `A` or `B`. `Skippable` is exactly `Yes` or `No`.
+Derive both from the Model and Skippable Derivation table in
+`./question-manifest-builder-rules.md`; the row above is an upfront hard
+gate, which is the only combination that yields `A` and `No`.
+
 ### Brief 1 — PF1
 
 - Original decision or question: <text>
