@@ -97,7 +97,7 @@ the conversational skill needs:
 - `Category`
 - `Severity`
 - `Model` (`A` or `B`)
-- `Skippable`
+- `Skippable` (`Yes` or `No`)
 - `Affected tasks`
 - `Original decision or question`
 - `Critique summary or context`
@@ -108,6 +108,27 @@ include the conflict in `Critique summary or context` so the
 conversation layer asks the developer to choose deliberately.
 
 Do not copy entire artifact sections into the manifest.
+
+## Model and Skippable Derivation
+
+`Model` and `Skippable` are closed-value fields the conversation layer
+routes on directly. Derive both for every surfaced row; never leave
+either blank and never emit a third value.
+
+A row is a **hard gate** when all three hold: `MODE=upfront`, the
+category is `Problem framing`, and the severity is `HIGH`.
+
+| Row | `Model` | `Skippable` |
+| --- | --- | --- |
+| Hard gate | `A` | `No` |
+| Any other surfaced upfront row | `B` | `Yes` |
+| Any critique-mode row | `B` | `Yes` |
+
+Every `MODE=critique` row uses `Model=B`. The Tier 3 staged-reveal flow
+runs only in upfront mode, so critique mode never emits `Model=A`.
+
+Because only `HIGH` items are surfaced, every upfront problem-framing row
+that reaches the manifest is a hard gate.
 
 ## Item IDs
 
