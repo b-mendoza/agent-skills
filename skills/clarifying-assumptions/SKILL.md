@@ -63,10 +63,15 @@ Read subagent definitions only when dispatching that specific subagent.
 Use the same stages for Jira tickets, GitHub issue slugs, and other
 workflow keys.
 
+At run entry, set `RE_PLAN_NEEDED=false` and `BLOCKERS_PRESENT=false`.
+Both flags carry a defined value on every path from this point forward;
+the Flag Transitions table in the Output Contract is the only source for
+how they change.
+
 Before Stage 1, validate that `MODE` is `upfront` or `critique` and
 that `TASK_NUMBER` is present for `MODE=critique`. On invalid inputs,
-skip subagent dispatch and emit the stable summary shape with
-`Critique artifact: -`, `Files updated: -`, `BLOCKERS_PRESENT=true`,
+skip subagent dispatch and emit the blocked summary in the canonical
+order with `Critique artifact: -`, `Files updated: -`,
 `Blocking verdict: INPUT: BLOCKED`, and `Reason:`.
 
 | Stage | Action | Routing |
@@ -149,10 +154,44 @@ For `MODE=upfront`, include `Accepted decisions summary:` after the four
 required fields. For `MODE=critique`, include `Decisions file:` after the
 four required fields.
 
+### Flag Transitions
+
+Both flags start `false` at run entry. Apply every transition that fires
+during the run; a flag already set to `true` stays `true`.
+
+| Event | `RE_PLAN_NEEDED` | `BLOCKERS_PRESENT` |
+| --- | --- | --- |
+| Run entry | `false` | `false` |
+| Invalid top-level inputs | unchanged | `true` |
+| Subagent `BLOCKED`, `FAIL`, or `ERROR` before Stage 4 | unchanged | `true` |
+| Developer response `revised` | `true` | unchanged |
+| Developer response `blocked` | `true` | `true` |
+| `decision-recorder` failure after Stage 4 | unchanged | `true` |
+| Normal completion | unchanged | unchanged |
+
+A blocked run that never reached the developer therefore reports
+`RE_PLAN_NEEDED: false` with `BLOCKERS_PRESENT: true`. That pair is
+correct: nothing in the plan has been revised.
+
+### Blocked Summary Order
+
 If clarification stops early because top-level inputs are invalid or a
-subagent returned `BLOCKED`, `FAIL`, or `ERROR`, still emit the same
-four fields in the same order with `Files updated: -`, then include
-`Blocking verdict:` and `Reason:`.
+subagent returned `BLOCKED`, `FAIL`, or `ERROR`, emit the same four
+fields in the same order with `Files updated: -`, then the blocking pair,
+then the mode-specific field when a value is available:
+
+```markdown
+- Critique artifact: <path or ->
+- Files updated: -
+- RE_PLAN_NEEDED: <true|false>
+- BLOCKERS_PRESENT: true
+- Blocking verdict: <verdict>
+- Reason: <reason>
+- <Accepted decisions summary | Decisions file>: <value>
+```
+
+The mode-specific field is always last, and the blocking label is
+`Reason:`. Every contract copy in this package uses this order.
 
 ## Example
 
