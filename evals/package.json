@@ -1,0 +1,45 @@
+{
+  "name": "agent-skills-evals",
+  "private": true,
+  "description": "Local eval suite for the skills in this repo. Not published; not part of any skill package.",
+  "type": "module",
+  "scripts": {
+    "eval": "node run.ts",
+    "fix": "run-s --continue-on-error \"fix:*\"",
+    "fix:eslint": "eslint --cache --cache-location node_modules/.cache/eslint --fix .",
+    "fix:oxfmt": "oxfmt --write",
+    "fix:oxlint": "oxlint --fix",
+    "lint": "run-p --continue-on-error \"lint:*\"",
+    "lint:eslint": "eslint --cache --cache-location node_modules/.cache/eslint .",
+    "lint:oxfmt": "oxfmt --check",
+    "lint:oxlint": "oxlint",
+    "lint:types": "tsc --build --pretty",
+    "test": "vitest run",
+    "test:watch": "vitest watch"
+  },
+  "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "4.7.2",
+    "@eslint/js": "9.39.5",
+    "@types/node": "25.9.5",
+    "@vitest/eslint-plugin": "1.6.24",
+    "eslint": "9.39.5",
+    "eslint-config-love": "154.1.0",
+    "eslint-plugin-oxlint": "1.75.0",
+    "eslint-plugin-simple-import-sort": "14.0.0",
+    "eslint-plugin-sonarjs": "4.2.0",
+    "eslint-plugin-zod": "4.8.0",
+    "globals": "17.7.0",
+    "npm-run-all2": "9.0.2",
+    "oxfmt": "0.60.0",
+    "oxlint": "1.75.0",
+    "oxlint-tsgolint": "7.0.2001",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.65.0",
+    "vitest": "4.1.10",
+    "zod": "4.4.3"
+  },
+  "engines": {
+    "node": "24.18.0"
+  },
+  "packageManager": "pnpm@11.17.0+sha512.cca3cea332ad254bb84145f966d19f4879615210346fc92c79a047f23a0d7b3cca3c3792f0076ba1f1831d277efbcf0a9119b31a9a60eca7fb3d6231f331ef72"
+}
