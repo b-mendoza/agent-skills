@@ -33,5 +33,5 @@
     "types": ["node", "@total-typescript/ts-reset"],
     "verbatimModuleSyntax": true
   },
-  "include": ["eslint.config.js", "vitest.config.ts"]
+  "include": ["**/*.ts", "eslint.config.js"]
 }
