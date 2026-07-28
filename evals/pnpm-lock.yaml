@@ -15,7 +15,7 @@ importers:
         specifier: 9.39.5
         version: 9.39.5
       '@total-typescript/ts-reset':
-        specifier: ^0.6.1
+        specifier: 0.6.1
         version: 0.6.1
       '@types/node':
         specifier: 25.9.5
