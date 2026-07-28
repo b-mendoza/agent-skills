@@ -43,6 +43,16 @@ worktree and the request names no other path; record that assumption.
 Unsupported `REVIEW_FOCUS` → `full`; unsupported `OUTPUT_DEPTH` → `standard`;
 both are labeled assumptions, never questions.
 
+## Output Contract
+
+The skill returns exactly one of two outcomes, as response text. It writes no
+file.
+
+| Outcome | Shape |
+| ------- | ----- |
+| Success | The verified `# Project State Snapshot` body conforming to [`references/project-state-snapshot-template.md`](./references/project-state-snapshot-template.md), including its quiet-state short form. No status wrapper, no `Inspected:` log. |
+| Failure | Exactly three lines: `RECENT_STATE: <NOT_GIT \| PATH_ERROR \| NEEDS_CONTEXT \| ERROR>`, `Reason: <one line>`, `Next step: <one clear action>`. |
+
 ## Subagent Registry
 
 | Subagent | Path | Purpose |
@@ -51,7 +61,8 @@ both are labeled assumptions, never questions.
 | `state-snapshot-writer` | `./subagents/state-snapshot-writer.md` | Draft or minimally repair the snapshot from compact evidence |
 | `snapshot-verifier` | `./subagents/snapshot-verifier.md` | Verify grounding, shape, focus, and actionability before final output |
 
-Read a subagent file only when dispatching it. Subagents never dispatch others.
+Read a subagent file only when dispatching it or executing its phase inline.
+Subagents never dispatch others.
 
 ## How This Skill Works
 
@@ -93,13 +104,18 @@ native progress marker.
    On repair, redispatch with `PRIOR_DRAFT` + `TARGETED_FIXES`. Writer `ERROR`
    always escalates; never ask.
 4. **Verify** — Dispatch `snapshot-verifier` with `DRAFT_REPORT`,
-   `INSPECTED_LOG`, and `GIT_EVIDENCE` as separate inputs. `PASS` → final
-   response. `FAIL` → repair and re-verify; cap 2 failed verify→repair loops,
-   then `RECENT_STATE: ERROR`.
+   `INSPECTED_LOG`, `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, and
+   `OUTPUT_DEPTH` as separate inputs. `PASS` → final response. `FAIL` → repair
+   under the `REPAIR_ATTEMPTS` bound below, then re-verify.
 5. **Final response** (inline) — Strip status wrappers and the `Inspected:`
-   log. Return only the verified report body, or the exact envelope:
-   `RECENT_STATE: <NOT_GIT | PATH_ERROR | NEEDS_CONTEXT | ERROR>`,
-   `Reason: <one line>`, `Next step: <one clear action>`.
+   log. Return exactly one outcome from the Output Contract.
+
+**Repair bound.** `REPAIR_ATTEMPTS` is owned by the orchestrator, counts writer
+redispatches caused by `SNAPSHOT_VERIFY: FAIL`, and starts at `0`. On `FAIL`:
+if `REPAIR_ATTEMPTS < 2`, increment it, redispatch the writer with
+`PRIOR_DRAFT` + `TARGETED_FIXES`, and re-verify; otherwise return
+`RECENT_STATE: ERROR`. This allows at most two repair redispatches and
+escalates on the third verifier failure.
 
 **Ask policy.** At most one user question per run. Asking is allowed only when
 the host can present a question to the current user and return the answer
@@ -108,10 +124,16 @@ not it is answered. A declined or unanswered ask, any later blocking decision,
 or a blocking decision on a host that cannot ask escalates as
 `RECENT_STATE: NEEDS_CONTEXT` naming the missing decision.
 
-**Malformed status.** If a subagent returns no recognizable status line, send
-one format-reminder redispatch; if still unroutable, return
-`RECENT_STATE: ERROR` with reason `unroutable subagent output in <phase>`.
-Never infer a status.
+When an ask is answered, append `User decision: <answer>` to `ASSUMPTIONS` for
+every remaining phase execution, then rerun only the phase that emitted
+`NEEDS_CONTEXT`: the writer for writer status, verification for verifier
+status. The question budget stays spent, so a later `NEEDS_CONTEXT` follows the
+exhausted-budget escalation above.
+
+**Malformed status.** If any phase returns no recognizable status line, retry
+that phase once with a format reminder using the same execution mode; if still
+unroutable, return `RECENT_STATE: ERROR` with reason `unroutable phase output
+in <phase>`. Never infer a status.
 
 ## Status Routing
 
@@ -123,7 +145,7 @@ Never infer a status.
 | Writer | `SNAPSHOT_WRITE: NEEDS_CONTEXT` | Ask if budget remains and host is interactive; else `RECENT_STATE: NEEDS_CONTEXT` |
 | Writer | `SNAPSHOT_WRITE: ERROR` | `RECENT_STATE: ERROR` only |
 | Verifier | `SNAPSHOT_VERIFY: PASS` | Final response |
-| Verifier | `SNAPSHOT_VERIFY: FAIL` | Repair if < 2 failed loops; else `RECENT_STATE: ERROR` |
+| Verifier | `SNAPSHOT_VERIFY: FAIL` | Repair if `REPAIR_ATTEMPTS < 2`; else `RECENT_STATE: ERROR` |
 | Verifier | `SNAPSHOT_VERIFY: NEEDS_CONTEXT` | Ask if budget remains and host is interactive; else `RECENT_STATE: NEEDS_CONTEXT` |
 | Verifier | `SNAPSHOT_VERIFY: ERROR` | `RECENT_STATE: ERROR` |
 
@@ -147,7 +169,6 @@ Never infer a status.
   downgraded, not asserted.
 - Verifier `FAIL` needs ≥1 required fix; `PASS` needs zero; user decisions are
   `NEEDS_CONTEXT`, never `FAIL`.
-- Success output has no status wrappers and no `Inspected:` log.
 
 ## Example
 

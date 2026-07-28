@@ -51,13 +51,7 @@ Return exactly one status line and the fields below.
 
 ```markdown
 SNAPSHOT_VERIFY: PASS
-Summary: <one line>
 Required fixes: none
-Optional improvements: <items or none>
-Grounding issues: none
-Format issues: none
-Focus issues: none
-Actionability issues: none
 Reason: <one line>
 Decision needed: none
 ```
@@ -93,8 +87,15 @@ network, or ask the user directly.
 | `SNAPSHOT_VERIFY: NEEDS_CONTEXT` | Exactly one user decision blocks a correct verdict |
 | `SNAPSHOT_VERIFY: ERROR` | Inputs are malformed or verification cannot execute |
 
-Verdict coherence: `PASS` requires `Required fixes: none`; `FAIL` requires at
-least one targeted required fix; a needed user decision is `NEEDS_CONTEXT`,
-never `FAIL`. If your own verdict would be incoherent, return
-`SNAPSHOT_VERIFY: ERROR` with a clear reason rather than emitting an invalid
-pass/fail combination.
+Verdict coherence, by status:
+
+- `PASS` — `Required fixes: none` and `Decision needed: none`.
+- `FAIL` — at least one section-targeted required fix, and
+  `Decision needed: none`.
+- `NEEDS_CONTEXT` — exactly one decision named, and `Required fixes: none`.
+- `ERROR` — a clear `Reason:`, with `Required fixes: none` and
+  `Decision needed: none`, since no verdict was reached.
+
+A needed user decision is `NEEDS_CONTEXT`, never `FAIL`. If your own verdict
+would be incoherent, return `SNAPSHOT_VERIFY: ERROR` with a clear reason rather
+than emitting an invalid combination.
