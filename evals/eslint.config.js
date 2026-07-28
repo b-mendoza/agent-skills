@@ -120,22 +120,6 @@ export default defineConfig(
     },
   },
   {
-    /**
-     * Rules a CLI test harness is expected to trip. Each one flags the very
-     * thing this package exists to do, so switching it off here is a statement
-     * of intent rather than a way to dodge a fix.
-     */
-    rules: {
-      // Cases run sequentially on purpose: parallelism multiplies token spend
-      // for no benefit on a suite this small.
-      "no-await-in-loop": OFF,
-      // The runner's progress output is its user interface.
-      "no-console": OFF,
-      // Spawning `git` and `claude` off PATH is the harness's entire job.
-      "sonarjs/no-os-command-from-path": OFF,
-    },
-  },
-  {
     files: ["**/*.test.ts"],
     ...vitest.configs.recommended,
     rules: {
