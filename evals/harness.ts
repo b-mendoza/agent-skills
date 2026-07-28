@@ -178,7 +178,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     "--model",
     opts.model,
     "--max-budget-usd",
-    String(opts.budgetUsd),
+    opts.budgetUsd.toString(),
   ];
 
   return new Promise<Observation>((resolve) => {
