@@ -89,7 +89,11 @@ Reason: docs/acme-app-42-task-3-test-spec.md is missing
 - Files updated: -
 - RE_PLAN_NEEDED: false
 - BLOCKERS_PRESENT: true
-- Decisions file: -
 - Blocking verdict: MANIFEST: BLOCKED
 - Reason: docs/acme-app-42-task-3-test-spec.md is missing
+- Decisions file: -
 ```
+
+`RE_PLAN_NEEDED` stays `false` here because the run blocked before the
+developer answered anything, so no plan revision was requested. See the
+Flag Transitions table in `../SKILL.md`.
