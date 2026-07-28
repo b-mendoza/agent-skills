@@ -16,6 +16,11 @@
     "builtin": true,
     "node": true
   },
+  "settings": {
+    "react": {
+      "version": "999.999.999"
+    }
+  },
   "ignorePatterns": ["coverage/", "node_modules/"],
   "rules": {
     "constructor-super": ["error"],
@@ -521,6 +526,10 @@
     "sonarjs/no-hardcoded-secrets": "error",
     "sonarjs/no-exclusive-tests": "error",
     "sonarjs/hardcoded-secret-signatures": "error",
+    "sonarjs/jsx-no-leaked-render": "error",
+    "sonarjs/no-hook-setter-in-body": "error",
+    "sonarjs/no-useless-react-setstate": "error",
+    "sonarjs/no-uniq-key": "error",
     "sonarjs/redundant-type-aliases": "error",
     "sonarjs/prefer-regexp-exec": "error",
     "sonarjs/no-internal-api-use": "error",
