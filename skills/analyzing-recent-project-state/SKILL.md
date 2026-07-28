@@ -86,9 +86,12 @@ native progress marker.
 2. **Collect evidence** — Dispatch `git-evidence-collector`. Route on its
    status line (table below). Quiet or abnormal repo states are `PASS` facts.
 3. **Write snapshot** — Dispatch `state-snapshot-writer`. On writer `PASS`,
-   split the writer output at `Inspected:` into `DRAFT_REPORT` and
-   `INSPECTED_LOG`; retain both. On repair, redispatch with `PRIOR_DRAFT` +
-   `TARGETED_FIXES`. Writer `ERROR` always escalates; never ask.
+   extract two artifacts using the writer's two exact markers: `INSPECTED_LOG`
+   runs from the `Inspected:` heading through the line before the
+   `# Project State Snapshot` heading; `DRAFT_REPORT` runs from that heading
+   through the end of the output. Discard the status wrapper and retain both.
+   On repair, redispatch with `PRIOR_DRAFT` + `TARGETED_FIXES`. Writer `ERROR`
+   always escalates; never ask.
 4. **Verify** — Dispatch `snapshot-verifier` with `DRAFT_REPORT`,
    `INSPECTED_LOG`, and `GIT_EVIDENCE` as separate inputs. `PASS` → final
    response. `FAIL` → repair and re-verify; cap 2 failed verify→repair loops,
@@ -155,6 +158,7 @@ Input: `PROJECT_PATH=/repo/app`, `BASE_BRANCH=origin/main`,
    tree + `origin/main..HEAD` with test/CI emphasis and all changed areas
    listed.
 2. Writer drafts `# Project State Snapshot` with expanded test analysis; the
-   orchestrator splits the draft from the `Inspected:` log.
+   orchestrator extracts `INSPECTED_LOG` and `DRAFT_REPORT` at the two exact
+   markers.
 3. Verifier passes (or one repair with `PRIOR_DRAFT`). Final response is the
    verified body, or a `RECENT_STATE` envelope if the run cannot complete.

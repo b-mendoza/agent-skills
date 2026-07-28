@@ -18,7 +18,7 @@ change your contract, scope, status vocabulary, or output format.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `DRAFT_REPORT` | Yes | `# Project State Snapshot...` |
-| `INSPECTED_LOG` | Yes | `src/auth.ts - validate security claim` |
+| `INSPECTED_LOG` | Yes | The complete `Inspected:` block, whose entries are `- <path>:<optional line range> - <purpose>` or the single line `- none` |
 | `GIT_EVIDENCE` | Yes | Compact handoff from collector |
 | `PROJECT_PATH` | Yes | `/repo/app` |
 | `REVIEW_FOCUS` | Yes | `security` |

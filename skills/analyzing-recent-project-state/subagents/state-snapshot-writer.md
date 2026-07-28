@@ -61,13 +61,14 @@ If `TARGETED_FIXES` is present and `PRIOR_DRAFT` is absent, return
 
 ## Output Format
 
-Return exactly one status line, a short summary, an `Inspected:` log, then the
-report body. The orchestrator strips the wrapper and inspection log before
-final output.
+On `PASS`, return exactly one status line, then the `Inspected:` block, then the
+report body. The orchestrator separates the block from the body at the two exact
+headings `Inspected:` and `# Project State Snapshot`, and strips the status
+wrapper and inspection log before final output. Emit both headings verbatim and
+place nothing else between the status line and `Inspected:`.
 
 ```markdown
 SNAPSHOT_WRITE: PASS
-Summary: <one line>
 Inspected:
 - <path>:<optional line range> - <purpose>
 
@@ -76,8 +77,9 @@ Inspected:
 <report body following the template>
 ```
 
-The `Inspected:` log contains either one or more `- <path> - <purpose>`
-entries, or exactly the single line `- none` — never both.
+The `Inspected:` block contains either one or more
+`- <path>:<optional line range> - <purpose>` entries, or exactly the single
+line `- none` — never both.
 
 Allowed status lines are exactly:
 
@@ -85,8 +87,9 @@ Allowed status lines are exactly:
 - `SNAPSHOT_WRITE: NEEDS_CONTEXT`
 - `SNAPSHOT_WRITE: ERROR`
 
-For non-`PASS` statuses, include `Reason:` and `Decision needed:` when
-applicable.
+For non-`PASS` statuses, return only the status line followed by `Reason:`, plus
+`Decision needed:` for `NEEDS_CONTEXT`. Emit no `Inspected:` block and no report
+body, so the orchestrator routes on status alone.
 
 ## Scope
 
