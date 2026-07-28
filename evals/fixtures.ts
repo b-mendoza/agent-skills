@@ -10,14 +10,17 @@ import { execFileSync } from "node:child_process";
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 
+// `missing-path` builds the same repo as `clean`; the two differ only in which
+// Fixture field the case consumes -- `missingPath` rather than `cwd`.
 export type FixtureKind = "clean" | "dirty" | "not-git" | "missing-path";
 
 export interface Fixture {
   /** Directory the CLI runs in. Always a real git repo except for `not-git`. */
   cwd: string;
-  /** Repo sampled for the git delta; equals `cwd` when one exists. */
-  gitRepo: string;
+  /** Repo sampled for the git delta; `undefined` when there is no worktree. */
+  gitRepo: string | undefined;
   /** A path guaranteed not to exist, for the PATH_ERROR case. */
   missingPath: string;
   /** A real directory that is not a worktree, for the NOT_GIT case. */
@@ -25,7 +28,7 @@ export interface Fixture {
   cleanup: () => void;
 }
 
-const SKILLS_DIR = new URL("../skills/", import.meta.url).pathname;
+const SKILLS_DIR = fileURLToPath(new URL("../skills/", import.meta.url));
 
 function git(cwd: string, ...args: string[]): void {
   execFileSync("git", args, { cwd, stdio: "ignore" });
@@ -78,7 +81,7 @@ export function makeFixture(kind: FixtureKind, skill: string): Fixture {
 
   return {
     cwd: repo,
-    gitRepo: kind === "not-git" ? "" : repo,
+    gitRepo: kind === "not-git" ? undefined : repo,
     missingPath: join(root, "definitely-does-not-exist"),
     notGitPath,
     cleanup: () => rmSync(root, { recursive: true, force: true }),
