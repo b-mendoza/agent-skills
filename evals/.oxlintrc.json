@@ -737,13 +737,8 @@
     "typescript/only-throw-error": [
       "error",
       {
-        "allow": [
-          {
-            "from": "package",
-            "name": "NotFoundError",
-            "package": "@tanstack/router-core"
-          }
-        ]
+        "allowThrowingAny": false,
+        "allowThrowingUnknown": false
       }
     ],
     "typescript/prefer-as-const": ["error"],
