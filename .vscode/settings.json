@@ -1,0 +1,5 @@
+{
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "oxc.configPath": "./frontend/.oxlintrc.json",
+  "oxc.path.tsgolint": "./frontend/node_modules/.bin/tsgolint"
+}
