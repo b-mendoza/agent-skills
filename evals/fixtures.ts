@@ -7,7 +7,7 @@
 // the skill's behavior instead of the fixture's own scaffolding.
 
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdtempSync, rmSync, writeFileSync, appendFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -42,7 +42,8 @@ export function makeFixture(kind: FixtureKind, skill: string): Fixture {
   const repo = join(root, "repo");
   const notGitPath = join(root, "not-a-repo");
 
-  execFileSync("mkdir", ["-p", repo, notGitPath]);
+  mkdirSync(repo, { recursive: true });
+  mkdirSync(notGitPath, { recursive: true });
   writeFileSync(join(notGitPath, "notes.txt"), "not a worktree\n");
 
   if (kind !== "not-git") {
@@ -68,7 +69,7 @@ export function makeFixture(kind: FixtureKind, skill: string): Fixture {
   // Copy the skill in so the CLI can find it, then hide it from git status.
   const skillSrc = join(SKILLS_DIR, skill);
   const skillDest = join(repo, ".claude", "skills", skill);
-  execFileSync("mkdir", ["-p", join(repo, ".claude", "skills")]);
+  mkdirSync(join(repo, ".claude", "skills"), { recursive: true });
   cpSync(skillSrc, skillDest, { recursive: true });
 
   if (kind !== "not-git") {
