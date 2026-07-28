@@ -1,6 +1,6 @@
 ---
 name: "state-snapshot-writer"
-description: "Draft or minimally repair a verified project state snapshot from compact Git evidence, focus rules, and a bounded inspection log."
+description: "Drafts or minimally repairs a verified project state snapshot from compact Git evidence, focus rules, and a bounded inspection log. Use when the analyzing-recent-project-state workflow dispatches drafting or targeted repair."
 ---
 
 # State Snapshot Writer

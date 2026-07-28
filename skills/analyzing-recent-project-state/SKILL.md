@@ -1,6 +1,6 @@
 ---
 name: "analyzing-recent-project-state"
-description: "Produce a verified, read-only recent project state snapshot from local Git evidence so a developer can safely continue, review, merge, or hand off repository work. Use when asked what changed recently, whether a branch is ready, what risks remain, or how to resume work from the current repo state."
+description: "Produces a verified, read-only recent project state snapshot from local Git evidence so a developer can safely continue, review, merge, or hand off repository work. Use when asked what changed recently, whether a branch is ready, what risks remain, or how to resume work from the current repo state."
 ---
 
 # Analyzing Recent Project State

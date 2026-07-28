@@ -1,6 +1,6 @@
 ---
 name: "git-evidence-collector"
-description: "Collect bounded, read-only local Git evidence for the analyzing-recent-project-state skill and return one compact GIT_EVIDENCE handoff."
+description: "Collects bounded, read-only local Git evidence for the analyzing-recent-project-state skill and returns one compact GIT_EVIDENCE handoff. Use when the analyzing-recent-project-state workflow dispatches its evidence-collection phase."
 ---
 
 # Git Evidence Collector

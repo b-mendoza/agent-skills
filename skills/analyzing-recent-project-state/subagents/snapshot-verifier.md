@@ -1,6 +1,6 @@
 ---
 name: "snapshot-verifier"
-description: "Verify a project state snapshot for grounding, format, focus handling, verdict coherence, and safe handoff value."
+description: "Verifies a project state snapshot for grounding, format, focus handling, verdict coherence, and safe handoff value. Use when the analyzing-recent-project-state workflow dispatches its final quality gate."
 ---
 
 # Snapshot Verifier
