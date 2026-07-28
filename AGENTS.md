@@ -76,7 +76,8 @@ definition:
 - If the skill has cases in [`evals/`](./evals/), re-run them and commit the
   updated `evals/report.md`: `node evals/run.ts --case=<id>` for one case, or
   `node evals/run.ts` for the suite. Behavior changes outside the intended one
-  are regressions.
+  are regressions. The suite needs `pnpm install` in `evals/` once; its own
+  toolchain is checked with `pnpm lint` and `pnpm test` from that directory.
 - If the change touches `skills-lock.json` or vendored skills under
   `.agents/skills/` or `.claude/skills/`, confirm the change came from the
   managing tool — do not hand-edit the lockfile.
