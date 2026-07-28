@@ -2,14 +2,10 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.cache/tsconfig.tsbuildinfo",
 
-    // Node resolves the real file, so imports carry a `.ts` extension.
-    "allowImportingTsExtensions": true,
     "allowJs": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "checkJs": true,
-    // Node runs these files directly via type stripping, so nothing here may
-    // rely on a transform: no enums, parameter properties, or decorators.
     "erasableSyntaxOnly": true,
     "esModuleInterop": true,
     "exactOptionalPropertyTypes": true,
@@ -36,6 +32,5 @@
     "types": ["node", "@total-typescript/ts-reset"],
     "verbatimModuleSyntax": true
   },
-  "include": ["**/*.ts", "eslint.config.js"],
-  "exclude": ["node_modules"]
+  "include": ["eslint.config.js", "vitest.config.ts"]
 }
