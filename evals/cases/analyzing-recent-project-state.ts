@@ -54,9 +54,10 @@ function assertEnvelope(o: Observation, status: string): string {
     3,
     `expected exactly 3 envelope lines, got ${lines.length}:\n${o.finalText}`,
   );
-  assert.match(lines[0].trim(), new RegExp(`^RECENT_STATE: ${status}$`));
-  assert.match(lines[1].trim(), /^Reason: \S+/);
-  assert.match(lines[2].trim(), /^Next step: \S+/);
+  const [first, second, third] = lines;
+  assert.match((first ?? "").trim(), new RegExp(`^RECENT_STATE: ${status}$`));
+  assert.match((second ?? "").trim(), /^Reason: \S+/);
+  assert.match((third ?? "").trim(), /^Next step: \S+/);
   return `${status}, 3-line envelope`;
 }
 
