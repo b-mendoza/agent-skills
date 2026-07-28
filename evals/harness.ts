@@ -5,8 +5,7 @@
 // Node's native TypeScript type stripping runs this directly: `node run.ts`.
 // Keep the syntax erasable (no enums, no parameter properties, no decorators).
 
-import { spawn } from "node:child_process";
-import { execFileSync } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 
 export interface ToolCall {
   name: string;
