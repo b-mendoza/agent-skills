@@ -220,6 +220,7 @@ export function runClaude(opts: RunOptions): Promise<Observation> {
     });
   });
 }
+
 // --- Observation helpers used by case assertions -------------------------
 
 /** Calls to the Skill tool naming `skill`. Empty when it never triggered. */
@@ -244,7 +245,16 @@ const MUTATING_GIT = [
   "clean",
   "rm",
   "tag",
-];
+] as const;
+
+/** Tool calls that write a file, for the same read-only assertion. */
+const MUTATING_TOOLS: readonly string[] = ["Write", "Edit", "NotebookEdit"];
+
+// Word-boundary match so `git log --stat` isn't read as `git stash`. No `g`
+// flag, so these carry no lastIndex state and are safe to share across calls.
+const MUTATING_GIT_PATTERNS = MUTATING_GIT.map(
+  (verb) => new RegExp(`\\bgit\\s+(-\\S+\\s+)*${verb}\\b`),
+);
 
 /**
  * Every observed way the run could have written to the repo. A case asserts
@@ -261,17 +271,19 @@ export function mutationEvidence(o: Observation): string[] {
   }
 
   for (const call of o.toolCalls) {
-    if (["Write", "Edit", "NotebookEdit"].includes(call.name)) {
+    if (MUTATING_TOOLS.includes(call.name)) {
       found.push(`${call.name} called on ${String(call.input.file_path ?? "?")}`);
     }
     if (call.name === "Bash") {
-      const cmd = String(call.input.command ?? "");
-      for (const verb of MUTATING_GIT) {
-        // Word-boundary match so `git log --stat` isn't read as `git stash`.
-        if (new RegExp(`\\bgit\\s+(-\\S+\\s+)*${verb}\\b`).test(cmd)) {
+      const raw = call.input.command;
+      if (raw === undefined || raw === null || typeof raw === "string") {
+        const cmd = typeof raw === "string" ? raw : String(raw ?? "");
+        if (MUTATING_GIT_PATTERNS.some((pattern) => pattern.test(cmd))) {
           found.push(`mutating git command: ${cmd}`);
-          break;
         }
+      } else {
+        // Unscannable rather than clean: coercing would hide a mutating verb.
+        found.push(`unverifiable Bash command (non-string): ${typeof raw}`);
       }
     }
   }
