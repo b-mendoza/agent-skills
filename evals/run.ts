@@ -34,21 +34,39 @@ interface Result {
   durationMs: number;
 }
 
-function parseArgs(argv: string[]): { tier?: number; only?: string } {
-  const out: { tier?: number; only?: string } = {};
+type ManualCase = { id: string; reason: string };
+
+function parseArgs(argv: string[]): { tier?: number; caseId?: string } {
+  const out: { tier?: number; caseId?: string } = {};
   for (const arg of argv) {
     const tier = arg.match(/^--tier=(\d+)$/);
     if (tier) out.tier = Number(tier[1]);
-    const only = arg.match(/^--case=(.+)$/);
-    if (only) out.only = only[1];
+    const caseId = arg.match(/^--case=(.+)$/);
+    if (caseId) out.caseId = caseId[1];
   }
   return out;
 }
 
+/** Runs a check, turning a thrown assertion into a FAIL row. */
+function evaluate(check: () => string): {
+  status: "PASS" | "FAIL";
+  observed: string;
+} {
+  let status: "PASS" | "FAIL" = "PASS";
+  let observed = "";
+  try {
+    observed = check();
+  } catch (err) {
+    status = "FAIL";
+    observed = (err as Error).message.split("\n")[0].slice(0, 160);
+  }
+  return { status, observed };
+}
+
 /** Case ids listed in the manual doc's tables, for the report's MANUAL rows. */
-function manualCases(): { id: string; reason: string }[] {
+function manualCases(): ManualCase[] {
   const md = readFileSync(MANUAL_PATH, "utf8");
-  const found: { id: string; reason: string }[] = [];
+  const found: ManualCase[] = [];
   let heading = "";
   for (const line of md.split("\n")) {
     const h = line.match(/^##\s+(.*)$/);
@@ -76,14 +94,7 @@ async function runCase(c: EvalCase): Promise<[Result, Observation]> {
       wallClockMs: c.wallClockMs,
     });
 
-    let status: "PASS" | "FAIL" = "PASS";
-    let observed = "";
-    try {
-      observed = c.check(observation);
-    } catch (err) {
-      status = "FAIL";
-      observed = (err as Error).message.split("\n")[0].slice(0, 160);
-    }
+    const { status, observed } = evaluate(() => c.check(observation));
 
     return [
       {
@@ -101,7 +112,7 @@ async function runCase(c: EvalCase): Promise<[Result, Observation]> {
   }
 }
 
-function renderReport(results: Result[], manual: { id: string; reason: string }[]): string {
+function renderReport(results: Result[], manual: ManualCase[]): string {
   const pass = results.filter((r) => r.status === "PASS").length;
   const fail = results.filter((r) => r.status === "FAIL").length;
   const cost = results.reduce((s, r) => s + r.costUsd, 0);
@@ -139,9 +150,10 @@ are listed so an unrun expectation is never mistaken for a passing one.
 }
 
 async function main(): Promise<void> {
-  const { tier, only } = parseArgs(process.argv.slice(2));
+  const { tier, caseId } = parseArgs(process.argv.slice(2));
   const selected = cases.filter(
-    (c) => (tier === undefined || c.tier === tier) && (!only || c.id === only),
+    (c) =>
+      (tier === undefined || c.tier === tier) && (!caseId || c.id === caseId),
   );
 
   if (selected.length === 0) {
@@ -165,14 +177,7 @@ async function main(): Promise<void> {
 
   // Derived from the tier-2 runs; costs no extra invocation.
   if (behavioral.length > 0) {
-    let status: "PASS" | "FAIL" = "PASS";
-    let observed = "";
-    try {
-      observed = checkMutationScope(behavioral);
-    } catch (err) {
-      status = "FAIL";
-      observed = (err as Error).message.split("\n")[0].slice(0, 160);
-    }
+    const { status, observed } = evaluate(() => checkMutationScope(behavioral));
     results.push({
       id: "mutation-scope",
       tier: "2*",
