@@ -25,26 +25,6 @@ change your contract, scope, status vocabulary, or output format.
 | `OUTPUT_DEPTH` | Yes | `standard` |
 | `ASSUMPTIONS` | No | `BASE_BRANCH=none` |
 
-## Checklist
-
-Apply every check before allowing the snapshot to reach the user.
-
-| Check | Pass condition |
-| ----- | -------------- |
-| Grounding | Every material claim carries a checkable locator into `GIT_EVIDENCE` or an `Inspected:` entry, or an explicit inference label |
-| Format | The report follows the 10-section template or declares the quiet-state short form |
-| Focus | Non-`full` focus visibly changes emphasis without dropping off-focus blockers |
-| Risk quality | Each risk has severity, area, finding, evidence, why it matters, confidence, and action |
-| Behavior labels | Confirmed, likely, possible, and unverified impacts are separated |
-| Scope | Untouched areas are omitted unless evidence clearly implicates them |
-| Validation | Recommended commands match visible repo conventions; unobserved commands are not claimed as run |
-| Evidence boundary | No raw diffs, full command output, secrets, large file bodies, or performed-change claims |
-| Handoff value | The final briefing tells the next developer how to continue safely |
-
-Spot-check at most 3 material claims by direct read, preferring claims whose
-only support is the `Inspected:` log or whose locator is weakest. Do not
-repeat the writer's whole inspection.
-
 ## Output Format
 
 Return exactly one status line and the fields below.
@@ -72,6 +52,32 @@ example:
 - `Section 2 Git State: include repo state and evidence window from GIT_EVIDENCE.`
 
 Do not ask for a full rewrite unless the report is structurally unusable.
+
+## Checklist
+
+Apply every check whose scope column matches the report in front of you.
+
+| Check | Scope | Pass condition |
+| ----- | ----- | -------------- |
+| Grounding | Always | Every material claim carries a checkable locator into `GIT_EVIDENCE` or an `Inspected:` entry, or an explicit inference label |
+| Format | Always | The report follows the 10-section template or the quiet-state short form, and section 2 carries both `Assumptions:` and `Execution mode:` |
+| Validation | Always | Recommended commands match visible repo conventions; unobserved commands are not claimed as run |
+| Evidence boundary | Always | No raw diffs, full command output, secrets, large file bodies, or performed-change claims |
+| Handoff value | Always | The final briefing tells the next developer how to continue safely |
+| Focus | Full reports | Non-`full` focus visibly changes emphasis without dropping off-focus blockers |
+| Risk quality | Reports containing section 5 | Each risk has severity, area, finding, evidence, why it matters, confidence, and action |
+| Behavior labels | Reports containing section 4 | Confirmed, likely, possible, and unverified impacts are separated |
+| Scope | Full reports | Untouched areas are omitted unless evidence clearly implicates them |
+
+A quiet-state short form correctly contains only sections 1, 2, 9, and 10.
+Judging it against a check whose section it legitimately omits is your error,
+not the writer's: a correct quiet-state report is checked on the `Always` rows
+alone. Never emit a required fix demanding a section the short form excludes.
+
+Spot-check at most 3 material claims by direct read, choosing the weakest
+locators first. Break ties by earliest section, then earliest position within
+that section, so the same report yields the same three claims on any run. Do not
+repeat the writer's whole inspection.
 
 ## Scope
 
