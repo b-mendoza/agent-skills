@@ -31,8 +31,7 @@ change shows up in `git diff`.
 | `run.ts` | Entry point: selects cases, runs them sequentially, writes the report |
 | `harness.ts` | Spawns the CLI, parses the NDJSON event stream, captures the git delta |
 | `fixtures.ts` | Builds throwaway git repos with the skill installed under `.claude/skills/` |
-| `cases/<skill>.ts` | Automated cases and their assertions |
-| `manual/<skill>.md` | Cases deliberately **not** automated, with the reason for each |
+| `cases/<skill>.ts` | Canonical source of truth: every eval case and its assertions |
 | `report.md` | Generated every run; committed |
 
 ## Tiers
@@ -53,18 +52,22 @@ Add it to `cases/<skill>.ts`. A case declares its fixture, prompt, budget, wall
 clock, and a `check` that throws to fail and returns a short observed-outcome
 string for the report.
 
+`cases/<skill>.ts` is the canonical source of truth. A case belongs here only if
+it runs and asserts something observable; there is no parallel list of aspirational
+cases, because a case nothing executes proves nothing.
+
 Two rules, both from the mandatory practice:
 
 - **Assert only observables** — tool calls, literal output text, git deltas.
   Never assert that the agent said it complied.
 - **Do not weaken an assertion to automate it.** If the only cheap check would
-  also pass on wrong output, put the case in `manual/` instead. An honest
-  `MANUAL` row beats a green check that means nothing.
+  also pass on wrong output, the case is not ready to add. Leave it out rather
+  than shipping a green check that means nothing.
 
 When adding an assertion, verify it fails on wrong input before trusting it
 green — a check that never fails is not a check.
 
 ## Coverage
 
-Skills with a suite: `analyzing-recent-project-state` (7 automated, 12 manual).
-The other skills have none yet.
+Skills with a suite: `analyzing-recent-project-state` (7 cases). The other
+skills have none yet.

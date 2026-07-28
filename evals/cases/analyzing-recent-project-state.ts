@@ -1,11 +1,9 @@
-// Automated eval cases for `analyzing-recent-project-state`.
+// Eval cases for `analyzing-recent-project-state`. This file is the source of
+// truth: every case here runs, and a case that does not run does not exist.
 //
-// Every assertion here is an observable fact: a tool call that appears in the
-// event stream, literal text in the final result, or a git status delta. None
-// of them ask the agent whether it complied.
-//
-// Cases that cannot be automated cheaply live in ../manual/ and are reported
-// as MANUAL rather than being faked into this file.
+// Every assertion is an observable fact: a tool call that appears in the event
+// stream, literal text in the final result, or a git status delta. None of them
+// ask the agent whether it complied.
 
 import assert from "node:assert/strict";
 import type { FixtureKind } from "../fixtures.ts";
