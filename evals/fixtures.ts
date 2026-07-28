@@ -7,9 +7,16 @@
 // the skill's behavior instead of the fixture's own scaffolding.
 
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, appendFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+  appendFileSync,
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // `missing-path` builds the same repo as `clean`; the two differ only in which
@@ -84,6 +91,8 @@ export function makeFixture(kind: FixtureKind, skill: string): Fixture {
     gitRepo: kind === "not-git" ? undefined : repo,
     missingPath: join(root, "definitely-does-not-exist"),
     notGitPath,
-    cleanup: () => rmSync(root, { recursive: true, force: true }),
+    cleanup: () => {
+      rmSync(root, { recursive: true, force: true });
+    },
   };
 }
