@@ -14,7 +14,8 @@ next action. You return content only; the orchestrator owns review and writes.
 | Input | Required | Example |
 | ----- | -------- | ------- |
 | `PROCESS_INPUTS` | Yes | Normalized bundle from `../references/input-contract.md` |
-| `RUN_MODE` | Yes | `new`, `refinement`, `repair`, or `decompose` |
+| `RUN_MODE` | Yes | `new`, `refinement`, `repair`, or `decompose`; immutable for the run |
+| `BUILD_ACTION` | No | `build` (default) or `repair` for an internal repair cycle; mode obligations still follow `RUN_MODE` |
 | `MUTATION_LIMITS` | Conditional - required when `RUN_MODE=decompose` | Package boundary and allowed write targets |
 | `EXISTING_FLOW_OR_DIAGRAM` | Conditional - required when `RUN_MODE=refinement`; required for decompose `re-scope` | Baseline Mermaid or prose |
 | `APPROVED_REFINEMENT_GAPS` | Conditional - required when `RUN_MODE=refinement` | `G1, G3` or `none` |
@@ -43,9 +44,13 @@ next action. You return content only; the orchestrator owns review and writes.
 7. For `RUN_MODE=refinement`, build from the baseline and apply only validated
    approved gaps. If approvals are `none`, preserve the baseline scope without
    adding gap fixes.
-8. For `RUN_MODE=repair`, change only `REVIEW_FEEDBACK` issues plus direct
-   dependencies. Preserve original baseline, approvals, scope payload, and
-   mutation limits.
+8. For `RUN_MODE=repair` or `BUILD_ACTION=repair`, change only
+   `REVIEW_FEEDBACK` issues plus direct dependencies. Preserve original
+   baseline, approvals, scope payload, and mutation limits. On an internal
+   repair, keep applying the obligations of the original `RUN_MODE`
+   (refinement rules, decompose limits). During parallel decompose staging you
+   build exactly one candidate; other candidates are represented only by the
+   digest projection you receive.
 9. For `DIAGRAM_SCOPE=orchestrator`, collapse each subagent dispatch to one
    cross-linked node and omit subagent internals.
 10. For `DIAGRAM_SCOPE=subagent`, cover only the named subagent's entry,

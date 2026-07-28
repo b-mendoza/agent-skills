@@ -47,8 +47,11 @@ nodes or earned localized diagrams.
    instruction, status, branch, precondition gate, or loop as evidence.
 7. Audit coverage as `covered`, `missing`, `needs-rescope`, or `n/a`. Recommend
    action `create`, `re-scope`, `keep`, or `n/a`.
-8. Return a plan only. The orchestrator performs the no-op check, plan approval,
-   candidate generation, review, and writes.
+8. Return a plan only. The orchestrator performs the no-op check, plan
+   approval, `OTHER_DIAGRAM_DIGEST` derivation from your ownership tables,
+   per-candidate scope assignment, candidate generation, review, and writes.
+   Your ownership and coverage tables must therefore name every owned node
+   and owning subagent unambiguously.
 
 ## Output Format
 

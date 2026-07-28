@@ -12,11 +12,10 @@ if [ ! -f "$input_file" ]; then
   exit 66
 fi
 
-parser_kind=""
 if command -v mmdc >/dev/null 2>&1; then
-  parser_kind="mmdc"
+  parser_command=(mmdc)
 elif command -v npx >/dev/null 2>&1; then
-  parser_kind="npx"
+  parser_command=(npx -y @mermaid-js/mermaid-cli)
 else
   printf '%s\n' "parser unavailable" >&2
   exit 2
@@ -57,28 +56,18 @@ for ((i = 1; i <= count; i++)); do
   output_file="$(printf '%s/block-%03d.svg' "$tmp_dir" "$i")"
   error_file="$(printf '%s/block-%03d.err' "$tmp_dir" "$i")"
 
-  if [ "$parser_kind" = "mmdc" ]; then
-    if ! mmdc --input "$block_file" --output "$output_file" --quiet >"$error_file" 2>&1; then
-      if grep -qi 'could not find chrome\|failed to launch\|executable.*not found' "$error_file"; then
-        printf '%s\n' "parser unavailable" >&2
-        cat "$error_file" >&2
-        exit 2
-      fi
-      printf 'mermaid parse failed in block %s:\n' "$i" >&2
-      cat "$error_file" >&2
-      exit 1
-    fi
+  if "${parser_command[@]}" --input "$block_file" --output "$output_file" --quiet >"$error_file" 2>&1; then
+    continue
   else
-    if ! npx -y @mermaid-js/mermaid-cli --input "$block_file" --output "$output_file" --quiet >"$error_file" 2>&1; then
-      if grep -qi 'could not find chrome\|failed to launch\|executable.*not found' "$error_file"; then
-        printf '%s\n' "parser unavailable" >&2
-        cat "$error_file" >&2
-        exit 2
-      fi
+    if grep -qi 'could not find chrome\|failed to launch\|executable.*not found' "$error_file"; then
+      parser_status=2
+      printf '%s\n' "parser unavailable" >&2
+    else
+      parser_status=1
       printf 'mermaid parse failed in block %s:\n' "$i" >&2
-      cat "$error_file" >&2
-      exit 1
     fi
+    cat "$error_file" >&2
+    exit "$parser_status"
   fi
 done
 

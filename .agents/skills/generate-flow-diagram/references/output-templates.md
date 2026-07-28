@@ -13,6 +13,14 @@ decompose result, or run report.
 
 Which gap IDs should I include in the revised flow? Reply with IDs like `G1, G3`,
 or `none`.
+
+### Resume Block
+- Baseline: <baseline title or first line> (<N> nodes)
+- Gaps: <G1: one-line summary; G2: ...>
+- Approval scope: pending
+- Re-asks remaining: <n>
+
+Include this block with your reply so a fresh run can validate and resume.
 ```
 
 ## Decomposition Plan Summary Template
@@ -27,6 +35,14 @@ Root diagram: <ROOT_DIAGRAM_PATH> - before <N> nodes
 
 Approve this decomposition plan before I generate or write diagrams? Reply
 `approve` to continue, or describe changes to the plan.
+
+### Resume Block
+- Package: <PACKAGE_PATH>
+- Root diagram: <ROOT_DIAGRAM_PATH> (<N> nodes)
+- Plan rows: <owner: decision; ...>
+- Re-asks remaining: <n>
+
+Include this block with your reply so a fresh run can validate and resume.
 ```
 
 ## Final Markdown Template
@@ -151,8 +167,9 @@ tool before expecting runtime discovery copies or pins to reflect this package.
 - Run mode and scope: ...
 - Assumptions: ...
 - Repair cycles used: ...
-- Mermaid validation method: parsed | inspected-only
+- Mermaid validation method: parsed (<parser and version>) | inspected-only
 - Dispatch method: subagent | inline
+- Staging concurrency: parallel | serial | n/a
 - External sources fetched: ...
 - Decompose approval path: asked | explicit auto | n/a
 - Mirror/lockfile follow-up disclosed: yes/no/n/a
