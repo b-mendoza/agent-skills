@@ -53,12 +53,75 @@ export function gitStatus(repo: string): string {
   }
 }
 
+/** Arrays satisfy this deliberately: a `tool_use` input array is recorded as-is. */
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
+/** The only two stream events the harness reads. Everything else is noise. */
+export type StreamEvent =
+  | { kind: "tool_calls"; calls: ToolCall[] }
+  | { kind: "result"; subtype: string; finalText: string; costUsd: number };
+
+/**
+ * Parses one NDJSON line from the CLI stream.
+ *
+ * Total and non-throwing by contract: malformed JSON, non-object lines,
+ * unknown event types, and missing or wrong-typed fields all yield `null` or
+ * empty defaults. A truncated stream must degrade to an empty observation,
+ * never to a crash that loses the whole run.
+ */
+export function parseStreamLine(line: string): StreamEvent | null {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("{")) return null;
+
+  let event: unknown;
+  try {
+    event = JSON.parse(trimmed);
+  } catch {
+    return null; // Partial or non-JSON noise; the result event is what matters.
+  }
+  if (!isRecord(event)) return null;
+
+  if (event.type === "assistant") {
+    const message = event.message;
+    const content = isRecord(message) ? message.content : undefined;
+    if (!Array.isArray(content)) return null;
+
+    const calls: ToolCall[] = [];
+    for (const block of content) {
+      if (isRecord(block) && block.type === "tool_use") {
+        calls.push({
+          name: String(block.name),
+          input: isRecord(block.input) ? block.input : {},
+        });
+      }
+    }
+    return { kind: "tool_calls", calls };
+  }
+
+  if (event.type === "result") {
+    const cost = Number(event.total_cost_usd ?? 0);
+    return {
+      kind: "result",
+      subtype: String(event.subtype ?? ""),
+      finalText: typeof event.result === "string" ? event.result : "",
+      costUsd: Number.isFinite(cost) ? cost : 0,
+    };
+  }
+
+  return null;
+}
+
 /**
  * One `claude -p` run in stream-json mode.
  *
  * stream-json is the only output format that exposes tool calls, which is what
  * makes "the skill triggered" and "no file was written" checkable rather than
  * a matter of trusting the model's narration.
+ *
+ * `error` and `close` can both fire, so the promise is resolve-once: whichever
+ * handler runs first produces the observation and the other is a no-op.
  */
 export function runClaude(opts: RunOptions): Promise<Observation> {
   const repo = opts.gitRepo ?? opts.cwd;
@@ -100,40 +163,20 @@ export function runClaude(opts: RunOptions): Promise<Observation> {
     }, opts.wallClockMs);
 
     const handleLine = (line: string): void => {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith("{")) return;
+      const event = parseStreamLine(line);
+      if (event === null) return;
 
-      let event: any;
-      try {
-        event = JSON.parse(trimmed);
-      } catch {
-        return; // Partial or non-JSON noise; the result event is what matters.
-      }
-
-      if (event.type === "assistant") {
-        const content = event.message?.content;
-        if (Array.isArray(content)) {
-          for (const block of content) {
-            if (block?.type === "tool_use") {
-              toolCalls.push({
-                name: String(block.name),
-                input:
-                  block.input && typeof block.input === "object"
-                    ? block.input
-                    : {},
-              });
-            }
-          }
-        }
-      } else if (event.type === "result") {
-        subtype = String(event.subtype ?? "");
-        finalText = typeof event.result === "string" ? event.result : "";
-        costUsd = Number(event.total_cost_usd ?? 0);
+      if (event.kind === "tool_calls") {
+        toolCalls.push(...event.calls);
+      } else {
+        subtype = event.subtype;
+        finalText = event.finalText;
+        costUsd = event.costUsd;
       }
     };
 
-    child.stdout.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
+    child.stdout?.setEncoding("utf8");
+    child.stdout?.on("data", (chunk: string) => {
       pending += chunk;
       const lines = pending.split("\n");
       // Last element may be an incomplete line; hold it for the next chunk.
@@ -142,7 +185,7 @@ export function runClaude(opts: RunOptions): Promise<Observation> {
     });
 
     // Drained so the process can't block on a full stderr pipe.
-    child.stderr.resume();
+    child.stderr?.resume();
 
     child.on("close", (code) => {
       clearTimeout(timer);
@@ -177,7 +220,6 @@ export function runClaude(opts: RunOptions): Promise<Observation> {
     });
   });
 }
-
 // --- Observation helpers used by case assertions -------------------------
 
 /** Calls to the Skill tool naming `skill`. Empty when it never triggered. */
