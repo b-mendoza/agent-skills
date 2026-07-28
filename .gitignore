@@ -9,3 +9,7 @@ opencode.jsonc
 # Artifacts
 .handoffs/
 outputs/
+
+# Eval suite toolchain
+node_modules/
+coverage/
