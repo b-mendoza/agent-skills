@@ -20,13 +20,25 @@ final output.
 ## Section Requirements
 
 Git state must include branch/upstream, base branch or `none`, repo state,
-evidence window, and context limitations. Change themes should name files or
-groups, evidence, fact-or-inference cause, risk level, and what to review.
+evidence window, context limitations, and these two required disclosure fields:
+
+- `Assumptions:` — every labeled assumption made this run (resolved
+  `PROJECT_PATH`, `BASE_BRANCH` ladder rung, input fallbacks, any
+  `User decision:`), or `none`.
+- `Execution mode:` — either `isolated`, or
+  `inline; subagent context isolation degraded`.
+
+Both fields are required in the full and quiet-state shapes, so a reader can
+always tell a fully isolated verified run from a weaker one.
+
+Change themes should name files or groups, evidence, fact-or-inference cause,
+risk level, and what to review.
 
 Risk rows should include severity, area, finding, evidence, why it matters,
-confidence, and action. Behavioral impact must separate confirmed, likely, and
-possible impacts. Validation review should distinguish observed validation from
-recommended validation.
+confidence, and action. Behavioral impact must separate confirmed, likely,
+possible, and unverified impacts, using the claim-discipline labels below.
+Validation review should distinguish observed validation from recommended
+validation.
 
 Ranked next actions use `must-do`, `should-do`, and `nice-to-have` ordering.
 The final briefing should state how a developer can continue safely.
@@ -37,7 +49,7 @@ The final briefing should state how a developer can continue safely.
 | ----- | -------------- |
 | `brief` | Concise summary, top risks, minimal tables, only obvious validation gaps |
 | `standard` | Complete sections with enough evidence for handoff and review |
-| `deep` | More surrounding context for changed high-risk areas, within inspection budget |
+| `deep` | More surrounding context for changed high-risk areas, within the hard inspection cap |
 
 ## Focus Emphasis Rules
 
@@ -56,6 +68,10 @@ Focus narrows emphasis, not evidence. Off-focus blockers still appear.
 When the working tree is clean and the evidence window is empty, use only
 sections 1, 2, 9, and 10. State explicitly that there are no recent changes in
 the defined window. Do not invent risks, themes, or validation work.
+
+This short form is complete and correct as-is. Omitting sections 3–8 is the
+contract, not a defect, and the verifier checks it only on the rows scoped
+`Always`. Section 2 still carries `Assumptions:` and `Execution mode:`.
 
 ## Claim Discipline
 
