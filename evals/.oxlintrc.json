@@ -931,30 +931,6 @@
       "jsPlugins": ["eslint-plugin-zod"]
     },
     {
-      // Rules a CLI test harness is expected to trip. Each one flags the very
-      // thing this package exists to do, so switching it off here is a
-      // statement of intent rather than a way to dodge a fix.
-      "files": ["**/*.ts"],
-      "rules": {
-        // Cases run sequentially on purpose: parallelism multiplies token
-        // spend for no benefit on a suite this small.
-        "no-await-in-loop": "off",
-        // The runner's progress output is its user interface.
-        "no-console": "off",
-        // Two catch blocks discard deliberately: one silences "not a git
-        // repository" for the not-git fixture, the other skips a partial line.
-        "preserve-caught-error": "off",
-        // `runClaude` wraps a child process, which is exactly the case the
-        // rule carves out: there is no promise to return and nothing to await.
-        "promise/avoid-new": "off",
-        // `error` and `close` can both fire; resolve-once is the documented
-        // invariant, not an oversight.
-        "promise/no-multiple-resolved": "off",
-        // Spawning `git` and `claude` off PATH is the harness's entire job.
-        "sonarjs/no-os-command-from-path": "off"
-      }
-    },
-    {
       "files": ["**/*.test.ts"],
       "rules": {
         "vitest/expect-expect": "error",
