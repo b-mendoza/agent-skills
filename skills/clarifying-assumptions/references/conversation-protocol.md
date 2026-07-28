@@ -147,9 +147,21 @@ Then add the parent-retained mode field:
 
 Use only the line for the active mode. If the run stops early because
 inputs are invalid or a subagent returns `BLOCKED`, `FAIL`, or `ERROR`,
-keep the first four fields in order with `Files updated: -`, then add
-`Blocking verdict:` and `Reason:`. Include the mode field only when it is
-available.
+keep the first four fields in order with `Files updated: -`, then the
+blocking pair, then the mode field when a value is available:
+
+```markdown
+- Critique artifact: <path or ->
+- Files updated: -
+- RE_PLAN_NEEDED: <true|false>
+- BLOCKERS_PRESENT: true
+- Blocking verdict: <verdict>
+- Reason: <reason>
+- <Accepted decisions summary | Decisions file>: <value>
+```
+
+The mode field is always last, after the blocking pair. `SKILL.md` holds
+the Flag Transitions table that determines both flag values.
 
 For upfront mode, add useful counts such as:
 
