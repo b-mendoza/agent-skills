@@ -5,7 +5,9 @@
 // Node's native TypeScript type stripping runs this directly: `node run.ts`.
 // Keep the syntax erasable (no enums, no parameter properties, no decorators).
 
-import { spawn, execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
+
+import * as z from "zod";
 
 export interface ToolCall {
   name: string;
@@ -53,9 +55,62 @@ export function gitStatus(repo: string): string {
   }
 }
 
-/** Arrays satisfy this deliberately: a `tool_use` input array is recorded as-is. */
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null;
+const NS_PER_MS = 1e6;
+/** A run with no reported cost books nothing rather than `NaN`. */
+const ZERO_COST = 0;
+
+/** Foreign scalars, rendered without `String()`'s `[object Object]`. */
+function toText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value === null || value === undefined) return "";
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return JSON.stringify(value);
+}
+
+/**
+ * The stream is a foreign contract, so these schemas describe only the fields
+ * the harness reads and coerce everything else to a usable default. Each
+ * optional field mirrors what the CLI omits in practice: a budget-capped run
+ * ends without a cost, a killed one without a result.
+ */
+const toolUseBlockSchema = z
+  .object({
+    type: z.literal("tool_use"),
+    name: z.unknown().optional().transform(toText),
+    input: z.record(z.string(), z.unknown()).catch({}),
+  })
+  .transform(({ name, input }): ToolCall => ({ name, input }));
+
+const assistantEventSchema = z.object({
+  type: z.literal("assistant"),
+  message: z.object({ content: z.array(z.unknown()) }),
+});
+
+const resultEventSchema = z.object({
+  type: z.literal("result"),
+  subtype: z.unknown().optional().transform(toText),
+  result: z
+    .unknown()
+    .optional()
+    .transform((value) => (typeof value === "string" ? value : "")),
+  total_cost_usd: z
+    .unknown()
+    .optional()
+    .transform((value) => {
+      const cost = Number(value ?? ZERO_COST);
+      return Number.isFinite(cost) ? cost : ZERO_COST;
+    }),
+});
+
+/** Partial or non-JSON noise; the result event is what matters. */
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return undefined;
+  }
 }
 
 /** The only two stream events the harness reads. Everything else is noise. */
@@ -75,39 +130,23 @@ export function parseStreamLine(line: string): StreamEvent | null {
   const trimmed = line.trim();
   if (!trimmed.startsWith("{")) return null;
 
-  let event: unknown;
-  try {
-    event = JSON.parse(trimmed);
-  } catch {
-    return null; // Partial or non-JSON noise; the result event is what matters.
-  }
-  if (!isRecord(event)) return null;
+  // JSON has no `undefined`, so it doubles as the "unparseable" sentinel.
+  const event = parseJson(trimmed);
+  if (event === undefined) return null;
 
-  if (event.type === "assistant") {
-    const message = event.message;
-    const content = isRecord(message) ? message.content : undefined;
-    if (!Array.isArray(content)) return null;
-
-    const calls: ToolCall[] = [];
-    for (const block of content) {
-      if (isRecord(block) && block.type === "tool_use") {
-        calls.push({
-          name: String(block.name),
-          input: isRecord(block.input) ? block.input : {},
-        });
-      }
-    }
+  const assistant = assistantEventSchema.safeParse(event);
+  if (assistant.success) {
+    const calls = assistant.data.message.content.flatMap((block) => {
+      const parsed = toolUseBlockSchema.safeParse(block);
+      return parsed.success ? [parsed.data] : [];
+    });
     return { kind: "tool_calls", calls };
   }
 
-  if (event.type === "result") {
-    const cost = Number(event.total_cost_usd ?? 0);
-    return {
-      kind: "result",
-      subtype: String(event.subtype ?? ""),
-      finalText: typeof event.result === "string" ? event.result : "",
-      costUsd: Number.isFinite(cost) ? cost : 0,
-    };
+  const result = resultEventSchema.safeParse(event);
+  if (result.success) {
+    const { subtype, result: finalText, total_cost_usd: costUsd } = result.data;
+    return { kind: "result", subtype, finalText, costUsd };
   }
 
   return null;
@@ -123,7 +162,7 @@ export function parseStreamLine(line: string): StreamEvent | null {
  * `error` and `close` can both fire, so the promise is resolve-once: whichever
  * handler runs first produces the observation and the other is a no-op.
  */
-export function runClaude(opts: RunOptions): Promise<Observation> {
+export async function runClaude(opts: RunOptions): Promise<Observation> {
   const repo = opts.gitRepo ?? opts.cwd;
   const gitStatusBefore = gitStatus(repo);
   const startedAt = process.hrtime.bigint();
@@ -153,7 +192,7 @@ export function runClaude(opts: RunOptions): Promise<Observation> {
     const toolCalls: ToolCall[] = [];
     let finalText = "";
     let subtype = "";
-    let costUsd = 0;
+    let costUsd = ZERO_COST;
     let timedOut = false;
     let pending = "";
 
@@ -169,14 +208,12 @@ export function runClaude(opts: RunOptions): Promise<Observation> {
       if (event.kind === "tool_calls") {
         toolCalls.push(...event.calls);
       } else {
-        subtype = event.subtype;
-        finalText = event.finalText;
-        costUsd = event.costUsd;
+        ({ subtype, finalText, costUsd } = event);
       }
     };
 
-    child.stdout?.setEncoding("utf8");
-    child.stdout?.on("data", (chunk: string) => {
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
       pending += chunk;
       const lines = pending.split("\n");
       // Last element may be an incomplete line; hold it for the next chunk.
@@ -185,11 +222,11 @@ export function runClaude(opts: RunOptions): Promise<Observation> {
     });
 
     // Drained so the process can't block on a full stderr pipe.
-    child.stderr?.resume();
+    child.stderr.resume();
 
     child.on("close", (code) => {
       clearTimeout(timer);
-      if (pending) handleLine(pending);
+      if (pending !== "") handleLine(pending);
 
       resolve({
         exitCode: code,
@@ -199,7 +236,7 @@ export function runClaude(opts: RunOptions): Promise<Observation> {
         gitStatusBefore,
         gitStatusAfter: gitStatus(repo),
         costUsd,
-        durationMs: Number(process.hrtime.bigint() - startedAt) / 1e6,
+        durationMs: Number(process.hrtime.bigint() - startedAt) / NS_PER_MS,
         timedOut,
       });
     });
@@ -213,8 +250,8 @@ export function runClaude(opts: RunOptions): Promise<Observation> {
         toolCalls,
         gitStatusBefore,
         gitStatusAfter: gitStatus(repo),
-        costUsd: 0,
-        durationMs: Number(process.hrtime.bigint() - startedAt) / 1e6,
+        costUsd: ZERO_COST,
+        durationMs: Number(process.hrtime.bigint() - startedAt) / NS_PER_MS,
         timedOut,
       });
     });
@@ -226,7 +263,7 @@ export function runClaude(opts: RunOptions): Promise<Observation> {
 /** Calls to the Skill tool naming `skill`. Empty when it never triggered. */
 export function skillInvocations(o: Observation, skill: string): ToolCall[] {
   return o.toolCalls.filter(
-    (c) => c.name === "Skill" && c.input.skill === skill,
+    (c) => c.name === "Skill" && c.input["skill"] === skill,
   );
 }
 
@@ -256,6 +293,27 @@ const MUTATING_GIT_PATTERNS = MUTATING_GIT.map(
   (verb) => new RegExp(`\\bgit\\s+(-\\S+\\s+)*${verb}\\b`),
 );
 
+function fileWriteEvidence(call: ToolCall): string | null {
+  if (!MUTATING_TOOLS.includes(call.name)) return null;
+  const filePath = toText(call.input["file_path"]);
+  return `${call.name} called on ${filePath === "" ? "?" : filePath}`;
+}
+
+function bashEvidence(call: ToolCall): string | null {
+  if (call.name !== "Bash") return null;
+
+  const raw = call.input["command"];
+  if (raw !== undefined && raw !== null && typeof raw !== "string") {
+    // Unscannable rather than clean: coercing would hide a mutating verb.
+    return `unverifiable Bash command (non-string): ${typeof raw}`;
+  }
+
+  const cmd = typeof raw === "string" ? raw : "";
+  return MUTATING_GIT_PATTERNS.some((pattern) => pattern.test(cmd))
+    ? `mutating git command: ${cmd}`
+    : null;
+}
+
 /**
  * Every observed way the run could have written to the repo. A case asserts
  * this is empty; the list is returned rather than a boolean so a failure
@@ -271,21 +329,11 @@ export function mutationEvidence(o: Observation): string[] {
   }
 
   for (const call of o.toolCalls) {
-    if (MUTATING_TOOLS.includes(call.name)) {
-      found.push(`${call.name} called on ${String(call.input.file_path ?? "?")}`);
-    }
-    if (call.name === "Bash") {
-      const raw = call.input.command;
-      if (raw === undefined || raw === null || typeof raw === "string") {
-        const cmd = typeof raw === "string" ? raw : String(raw ?? "");
-        if (MUTATING_GIT_PATTERNS.some((pattern) => pattern.test(cmd))) {
-          found.push(`mutating git command: ${cmd}`);
-        }
-      } else {
-        // Unscannable rather than clean: coercing would hide a mutating verb.
-        found.push(`unverifiable Bash command (non-string): ${typeof raw}`);
-      }
-    }
+    const write = fileWriteEvidence(call);
+    if (write !== null) found.push(write);
+
+    const bash = bashEvidence(call);
+    if (bash !== null) found.push(bash);
   }
 
   return found;

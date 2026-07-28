@@ -2,10 +2,10 @@
 // unrecognized line must be skipped, never thrown on. A crash here would lose
 // an entire paid run, so these cases exist to make that regression loud.
 //
-//   node --test evals/parse-stream-line.test.ts
+//   pnpm test
 
-import test from "node:test";
-import assert from "node:assert/strict";
+import { expect, test } from "vitest";
+
 import { parseStreamLine } from "./harness.ts";
 
 test("an assistant event yields its tool_use blocks", () => {
@@ -19,17 +19,15 @@ test("an assistant event yields its tool_use blocks", () => {
     },
   });
 
-  assert.deepEqual(parseStreamLine(line), {
+  expect(parseStreamLine(line)).toStrictEqual({
     kind: "tool_calls",
     calls: [{ name: "Bash", input: { command: "git log" } }],
   });
 });
 
-// Both halves of this table are load-bearing. Arrays are recorded as-is, so
-// tightening the object check to exclude them would silently drop an input;
-// every non-object collapses to `{}`, so falling back on `??` alone would let
-// strings, `0`, and `false` through as a `Record`.
-test("a tool_use input is recorded as-is only when it is an object", () => {
+// A `tool_use` input is only usable as a record, so anything else collapses to
+// an empty one rather than reaching a consumer that would index into it.
+test("a tool_use input is recorded as-is only when it is a record", () => {
   const inputOf = (input: unknown): Record<string, unknown> => {
     const event = parseStreamLine(
       JSON.stringify({
@@ -37,7 +35,7 @@ test("a tool_use input is recorded as-is only when it is an object", () => {
         message: { content: [{ type: "tool_use", name: "T", input }] },
       }),
     );
-    if (event === null || event.kind !== "tool_calls") {
+    if (event?.kind !== "tool_calls") {
       throw new Error(`expected tool_calls, got ${JSON.stringify(event)}`);
     }
     const call = event.calls.at(0);
@@ -45,13 +43,13 @@ test("a tool_use input is recorded as-is only when it is an object", () => {
     return call.input;
   };
 
-  assert.deepEqual(inputOf({ command: "git log" }), { command: "git log" });
-  assert.deepEqual(inputOf(["git", "log"]), ["git", "log"]);
-  assert.deepEqual(inputOf("git log"), {});
-  assert.deepEqual(inputOf(0), {});
-  assert.deepEqual(inputOf(false), {});
-  assert.deepEqual(inputOf(null), {});
-  assert.deepEqual(inputOf(undefined), {});
+  expect(inputOf({ command: "git log" })).toStrictEqual({ command: "git log" });
+  expect(inputOf(["git", "log"])).toStrictEqual({});
+  expect(inputOf("git log")).toStrictEqual({});
+  expect(inputOf(0)).toStrictEqual({});
+  expect(inputOf(false)).toStrictEqual({});
+  expect(inputOf(null)).toStrictEqual({});
+  expect(inputOf(undefined)).toStrictEqual({});
 });
 
 test("an assistant event with no tool calls records nothing", () => {
@@ -60,7 +58,10 @@ test("an assistant event with no tool calls records nothing", () => {
     message: { content: [{ type: "text", text: "hello" }] },
   });
 
-  assert.deepEqual(parseStreamLine(line), { kind: "tool_calls", calls: [] });
+  expect(parseStreamLine(line)).toStrictEqual({
+    kind: "tool_calls",
+    calls: [],
+  });
 });
 
 test("a result event yields the run totals", () => {
@@ -71,7 +72,7 @@ test("a result event yields the run totals", () => {
     total_cost_usd: 0.42,
   });
 
-  assert.deepEqual(parseStreamLine(line), {
+  expect(parseStreamLine(line)).toStrictEqual({
     kind: "result",
     subtype: "success",
     finalText: "# Project State Snapshot",
@@ -80,24 +81,24 @@ test("a result event yields the run totals", () => {
 });
 
 test("malformed JSON is skipped", () => {
-  assert.equal(parseStreamLine('{"type":"assistant"'), null);
+  expect(parseStreamLine('{"type":"assistant"')).toBeNull();
 });
 
 test("a line that is not JSON is skipped", () => {
-  assert.equal(parseStreamLine("not json"), null);
-  assert.equal(parseStreamLine(""), null);
-  assert.equal(parseStreamLine("[1,2,3]"), null);
+  expect(parseStreamLine("not json")).toBeNull();
+  expect(parseStreamLine("")).toBeNull();
+  expect(parseStreamLine("[1,2,3]")).toBeNull();
 });
 
 test("missing and wrong-typed fields fall back instead of throwing", () => {
-  assert.deepEqual(parseStreamLine(JSON.stringify({ type: "result" })), {
+  expect(parseStreamLine(JSON.stringify({ type: "result" }))).toStrictEqual({
     kind: "result",
     subtype: "",
     finalText: "",
     costUsd: 0,
   });
 
-  assert.deepEqual(
+  expect(
     parseStreamLine(
       JSON.stringify({
         type: "result",
@@ -106,22 +107,19 @@ test("missing and wrong-typed fields fall back instead of throwing", () => {
         total_cost_usd: "abc",
       }),
     ),
-    { kind: "result", subtype: "5", finalText: "", costUsd: 0 },
-  );
+  ).toStrictEqual({ kind: "result", subtype: "5", finalText: "", costUsd: 0 });
 
-  assert.deepEqual(
+  expect(
     parseStreamLine(
       JSON.stringify({
         type: "assistant",
         message: { content: [{ type: "tool_use", name: 7, input: null }] },
       }),
     ),
-    { kind: "tool_calls", calls: [{ name: "7", input: {} }] },
-  );
+  ).toStrictEqual({ kind: "tool_calls", calls: [{ name: "7", input: {} }] });
 
-  assert.equal(parseStreamLine(JSON.stringify({ type: "assistant" })), null);
-  assert.equal(
+  expect(parseStreamLine(JSON.stringify({ type: "assistant" }))).toBeNull();
+  expect(
     parseStreamLine(JSON.stringify({ type: "system", subtype: "init" })),
-    null,
-  );
+  ).toBeNull();
 });
