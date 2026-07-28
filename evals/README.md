@@ -12,27 +12,49 @@ belongs in a consumer's `node_modules`. See
 ## Running
 
 ```bash
+pnpm install                         # once, from this directory
+
 node evals/run.ts                    # everything (~5 min, ~$2)
 node evals/run.ts --tier=1           # routing only (~30s, ~$0.30)
 node evals/run.ts --case=path-error  # one case
 ```
 
-No install step, no `package.json`, no dependencies: Node 24 strips TypeScript
-types natively. Exits non-zero if any case fails. Set `EVAL_MODEL` to override
-the model (default `haiku`).
+Node 24 strips TypeScript types natively, so the suite runs from source with no
+build step. Keep the syntax erasable — `erasableSyntaxOnly` is on, so no enums,
+parameter properties, decorators, or namespaces.
+
+Exits `0` when every case passes, `1` when a case fails, `2` when no case
+matched the filter, and `3` on an infrastructure error. Set `EVAL_MODEL` to
+override the model (default `haiku`).
 
 Each run rewrites [`report.md`](./report.md), which is committed so a behavior
 change shows up in `git diff`.
 
+## Checks
+
+```bash
+pnpm lint    # tsc, eslint, oxlint, oxfmt --check, in parallel
+pnpm fix     # eslint --fix, oxlint --fix, oxfmt --write
+pnpm test    # vitest: unit tests for the pure functions, free and offline
+```
+
+`pnpm test` is not the eval suite. It covers the parts that can be checked
+without spending tokens — chiefly `parseStreamLine`, which turns the CLI's
+untrusted NDJSON stream into typed events. Run it before any paid run.
+
+The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
+the React-only pieces, so the rules here match the ones you already work under.
+
 ## Layout
 
-| Path | Contents |
-| ---- | -------- |
-| `run.ts` | Entry point: selects cases, runs them sequentially, writes the report |
-| `harness.ts` | Spawns the CLI, parses the NDJSON event stream, captures the git delta |
-| `fixtures.ts` | Builds throwaway git repos with the skill installed under `.claude/skills/` |
-| `cases/<skill>.ts` | Canonical source of truth: every eval case and its assertions |
-| `report.md` | Generated every run; committed |
+| Path                        | Contents                                                                    |
+| --------------------------- | --------------------------------------------------------------------------- |
+| `run.ts`                    | Entry point: selects cases, runs them sequentially, writes the report       |
+| `harness.ts`                | Spawns the CLI, parses the NDJSON event stream, captures the git delta      |
+| `fixtures.ts`               | Builds throwaway git repos with the skill installed under `.claude/skills/` |
+| `cases/<skill>.ts`          | Canonical source of truth: every eval case and its assertions               |
+| `parse-stream-line.test.ts` | Vitest unit tests pinning the stream parser's tolerance contract            |
+| `report.md`                 | Generated every run; committed                                              |
 
 ## Tiers
 
