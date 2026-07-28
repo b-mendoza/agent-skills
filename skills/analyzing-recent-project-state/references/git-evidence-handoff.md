@@ -39,6 +39,17 @@ Commands run: <full sanitized command lines, no raw output>
 Reason: <one line>
 ```
 
+For non-`PASS` statuses the block is exactly three lines — the status line,
+`Reason: <one line>`, and `Next step: <one clear action>`. The orchestrator
+builds its user-facing envelope from those two fields, so both are required and
+neither may be empty. Example:
+
+```markdown
+GIT_EVIDENCE: NOT_GIT
+Reason: /tmp/notes exists but is not a Git worktree.
+Next step: Rerun with PROJECT_PATH set to a Git worktree.
+```
+
 ## Evidence Window
 
 Recent means working tree state plus commits in `BASE..HEAD` when a base
