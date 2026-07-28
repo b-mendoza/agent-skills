@@ -6,11 +6,21 @@
 // ask the agent whether it complied.
 
 import assert from "node:assert/strict";
+
 import type { FixtureKind } from "../fixtures.ts";
-import type { Observation } from "../harness.ts";
+import type { Observation, ToolCall } from "../harness.ts";
 import { mutationEvidence, skillInvocations } from "../harness.ts";
 
 export const SKILL = "analyzing-recent-project-state";
+
+/** Status, reason, next step — the escalation envelope's fixed shape. */
+const ENVELOPE_LINES = 3;
+
+/** Names the tools a run actually called, for a failure message. */
+function formatToolNames(toolCalls: readonly ToolCall[]): string {
+  const names = toolCalls.map((c) => c.name).join(", ");
+  return names === "" ? "none" : names;
+}
 
 export interface CaseContext {
   missingPath: string;
@@ -48,17 +58,20 @@ function assertRoutingRunEndedEarly(o: Observation): void {
 /** The three-line escalation envelope shared by the PATH_ERROR/NOT_GIT routes. */
 function assertEnvelope(o: Observation, status: string): string {
   assert.ok(!o.timedOut, "run exceeded its wall clock");
-  const lines = o.finalText.trim().split("\n").filter((l) => l.trim() !== "");
+  const lines = o.finalText
+    .trim()
+    .split("\n")
+    .filter((l) => l.trim() !== "");
   assert.equal(
     lines.length,
-    3,
-    `expected exactly 3 envelope lines, got ${lines.length}:\n${o.finalText}`,
+    ENVELOPE_LINES,
+    `expected exactly ${ENVELOPE_LINES} envelope lines, got ${lines.length}:\n${o.finalText}`,
   );
   const [first, second, third] = lines;
   assert.match((first ?? "").trim(), new RegExp(`^RECENT_STATE: ${status}$`));
   assert.match((second ?? "").trim(), /^Reason: \S+/);
   assert.match((third ?? "").trim(), /^Next step: \S+/);
-  return `${status}, 3-line envelope`;
+  return `${status}, ${ENVELOPE_LINES}-line envelope`;
 }
 
 export const cases: EvalCase[] = [
@@ -77,7 +90,7 @@ export const cases: EvalCase[] = [
       const hits = skillInvocations(o, SKILL);
       assert.ok(
         hits.length >= 1,
-        `skill never triggered; tools called: ${o.toolCalls.map((c) => c.name).join(", ") || "none"}`,
+        `skill never triggered; tools called: ${formatToolNames(o.toolCalls)}`,
       );
       return "Skill invoked";
     },
@@ -117,7 +130,11 @@ export const cases: EvalCase[] = [
         "skill triggered on a mutate request",
       );
       const mutations = mutationEvidence(o);
-      assert.deepEqual(mutations, [], `repo was mutated:\n${mutations.join("\n")}`);
+      assert.deepEqual(
+        mutations,
+        [],
+        `repo was mutated:\n${mutations.join("\n")}`,
+      );
       return "no trigger; no mutation";
     },
   },
@@ -130,15 +147,15 @@ export const cases: EvalCase[] = [
     intent: "A nonexistent PROJECT_PATH yields the PATH_ERROR envelope",
     budgetUsd: 2.0,
     wallClockMs: 300_000,
-    prompt: (ctx) =>
-      `Use the ${SKILL} skill. PROJECT_PATH=${ctx.missingPath}`,
+    prompt: (ctx) => `Use the ${SKILL} skill. PROJECT_PATH=${ctx.missingPath}`,
     check: (o) => assertEnvelope(o, "PATH_ERROR"),
   },
   {
     id: "gate-envelope",
     tier: 2,
     fixture: "missing-path",
-    intent: "A real directory that is not a worktree yields the NOT_GIT envelope",
+    intent:
+      "A real directory that is not a worktree yields the NOT_GIT envelope",
     budgetUsd: 2.0,
     wallClockMs: 300_000,
     prompt: (ctx) => `Use the ${SKILL} skill. PROJECT_PATH=${ctx.notGitPath}`,
