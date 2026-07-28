@@ -7,8 +7,11 @@
 //
 // Cases run sequentially: they spend real tokens and the wall-clock cost of
 // parallelism is not worth the token burn on a suite this small.
+//
+// Exit codes: 0 all pass · 1 a case failed · 2 no cases matched · 3 suite error
 
 import { writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { makeFixture } from "./fixtures.ts";
 import { runClaude, type Observation } from "./harness.ts";
 import {
@@ -18,13 +21,18 @@ import {
   type EvalCase,
 } from "./cases/analyzing-recent-project-state.ts";
 
-const REPORT_PATH = new URL("./report.md", import.meta.url).pathname;
-const MODEL = process.env.EVAL_MODEL ?? "haiku";
+const REPORT_PATH = fileURLToPath(new URL("./report.md", import.meta.url));
+// An empty EVAL_MODEL is an unset EVAL_MODEL, not a request for a nameless model.
+const MODEL = process.env.EVAL_MODEL || "haiku";
+
+type Status = "PASS" | "FAIL";
+/** Case tiers as they appear in the report; `2*` is the derived row. */
+type Tier = "1" | "2" | "2*";
 
 interface Result {
   id: string;
-  tier: string;
-  status: "PASS" | "FAIL";
+  tier: Tier;
+  status: Status;
   observed: string;
   costUsd: number;
   durationMs: number;
@@ -33,26 +41,24 @@ interface Result {
 function parseArgs(argv: string[]): { tier?: number; caseId?: string } {
   const out: { tier?: number; caseId?: string } = {};
   for (const arg of argv) {
-    const tier = arg.match(/^--tier=(\d+)$/);
-    if (tier) out.tier = Number(tier[1]);
-    const caseId = arg.match(/^--case=(.+)$/);
-    if (caseId) out.caseId = caseId[1];
+    const tier = arg.match(/^--tier=(\d+)$/)?.[1];
+    if (tier !== undefined) out.tier = Number(tier);
+    const caseId = arg.match(/^--case=(.+)$/)?.[1];
+    if (caseId !== undefined) out.caseId = caseId;
   }
   return out;
 }
 
 /** Runs a check, turning a thrown assertion into a FAIL row. */
-function evaluate(check: () => string): {
-  status: "PASS" | "FAIL";
-  observed: string;
-} {
-  let status: "PASS" | "FAIL" = "PASS";
+function evaluate(check: () => string): { status: Status; observed: string } {
+  let status: Status = "PASS";
   let observed = "";
   try {
     observed = check();
   } catch (err) {
     status = "FAIL";
-    observed = (err as Error).message.split("\n")[0].slice(0, 160);
+    const message = err instanceof Error ? err.message : String(err);
+    observed = (message.split("\n")[0] ?? "").slice(0, 160);
   }
   return { status, observed };
 }
@@ -62,7 +68,7 @@ async function runCase(c: EvalCase): Promise<[Result, Observation]> {
   try {
     const observation = await runClaude({
       cwd: fx.cwd,
-      gitRepo: fx.gitRepo || fx.cwd,
+      gitRepo: fx.gitRepo ?? fx.cwd,
       prompt: c.prompt({
         missingPath: fx.missingPath,
         notGitPath: fx.notGitPath,
@@ -77,7 +83,7 @@ async function runCase(c: EvalCase): Promise<[Result, Observation]> {
     return [
       {
         id: c.id,
-        tier: String(c.tier),
+        tier: c.tier === 1 ? "1" : "2",
         status,
         observed,
         costUsd: observation.costUsd,
@@ -90,6 +96,11 @@ async function runCase(c: EvalCase): Promise<[Result, Observation]> {
   }
 }
 
+/** A `|` would split a table column and a newline would end the row. */
+function escapeCell(value: string): string {
+  return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
+}
+
 function renderReport(results: Result[]): string {
   const pass = results.filter((r) => r.status === "PASS").length;
   const fail = results.filter((r) => r.status === "FAIL").length;
@@ -100,7 +111,7 @@ function renderReport(results: Result[]): string {
   const rows = results
     .map(
       (r) =>
-        `| ${r.id} | ${r.tier} | ${r.status} | ${r.observed} |`,
+        `| ${r.id} | ${r.tier} | ${r.status} | ${escapeCell(r.observed)} |`,
     )
     .join("\n");
 
@@ -168,4 +179,11 @@ async function main(): Promise<void> {
   process.exit(failed > 0 ? 1 : 0);
 }
 
-await main();
+try {
+  await main();
+} catch (err) {
+  console.error(
+    `eval suite error: ${err instanceof Error ? err.message : String(err)}`,
+  );
+  process.exit(3);
+}
