@@ -587,20 +587,9 @@
         "max": 4
       }
     ],
-    // `0` and `1` are exempt as accumulator seeds, length comparisons, and
-    // first-element access, where a name would obscure rather than explain.
-    // Every number that encodes a decision — exit codes, tiers, budgets,
-    // truncation limits, unit conversions — still has to be named.
-    //
-    // `2` is here only because Oxc does not implement
-    // `ignoreNumericLiteralTypes`, so it flags the `tier: 1 | 2` annotation
-    // that ESLint correctly exempts. ESLint keeps `2` under the rule.
     "no-magic-numbers": [
       "error",
       {
-        "ignore": [0, 1, 2],
-        "ignoreArrayIndexes": true,
-        "ignoreNumericLiteralTypes": true,
         "ignoreTypeIndexes": true
       }
     ],
@@ -968,9 +957,6 @@
     {
       "files": ["**/*.test.ts"],
       "rules": {
-        // Fixture payloads are literals by nature; naming them would bury the
-        // input a case is pinning.
-        "no-magic-numbers": "off",
         "vitest/expect-expect": "off",
         "vitest/no-commented-out-tests": "error",
         "vitest/no-conditional-expect": "error",
