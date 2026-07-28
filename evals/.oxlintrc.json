@@ -957,7 +957,7 @@
     {
       "files": ["**/*.test.ts"],
       "rules": {
-        "vitest/expect-expect": "off",
+        "vitest/expect-expect": "error",
         "vitest/no-commented-out-tests": "error",
         "vitest/no-conditional-expect": "error",
         "vitest/no-disabled-tests": "warn",
