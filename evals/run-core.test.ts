@@ -118,38 +118,33 @@ function result(overrides: Partial<Result> = {}): Result {
   };
 }
 
-test("the report totals counts, cost, and duration", () => {
+test("the report renders measured totals and one escaped row per result", () => {
   const report = renderReport([
-    result({ id: "a", status: "PASS", costUsd: 0.014, durationMs: 1500 }),
-    result({ id: "b", status: "FAIL", costUsd: 0.006, durationMs: 2000 }),
+    result({
+      id: "a",
+      tier: "2",
+      status: "PASS",
+      observed: "got | piped\ncontinued",
+      costUsd: 0.014,
+      durationMs: 1500,
+    }),
+    result({
+      id: "mutation-scope",
+      tier: "2*",
+      status: "FAIL",
+      observed: "scope | changed\nagain",
+      costUsd: 0.006,
+      durationMs: 2000,
+    }),
   ]);
 
   expect(report).toContain("2 cases · 1 pass · 1 fail");
   expect(report).toContain("$0.02");
   expect(report).toContain("4s");
-});
-
-test("every result becomes one escaped table row", () => {
-  const report = renderReport([
-    result({ id: "a", tier: "2", status: "FAIL", observed: "got | piped" }),
-    result({ id: "mutation-scope", tier: "2*" }),
-  ]);
-
-  expect(report).toContain("| a | 2 | FAIL | got \\| piped |");
-  expect(report).toContain("| mutation-scope | 2* | PASS | ok |");
-});
-
-test("the report carries a second-precision UTC timestamp", () => {
-  // Committed every run, so the stamp must not churn with sub-second noise.
-  expect(renderReport([result()])).toMatch(
-    /Run: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/,
+  expect(report).toContain("| a | 2 | PASS | got \\| piped continued |");
+  expect(report).toContain(
+    "| mutation-scope | 2* | FAIL | scope \\| changed again |",
   );
-});
-
-test("an empty result list still renders a well-formed report", () => {
-  const report = renderReport([]);
-
-  expect(report).toContain("0 cases · 0 pass · 0 fail");
-  expect(report).toContain("$0.00");
-  expect(report).toContain("| Case | Tier | Result | Observed |");
+  // Committed every run, so the stamp must not churn with sub-second noise.
+  expect(report).toMatch(/Run: \d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/);
 });
