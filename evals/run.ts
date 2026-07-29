@@ -57,7 +57,7 @@ type Status = "PASS" | "FAIL";
 /** Case tiers as they appear in the report; `2*` is the derived row. */
 type Tier = "1" | "2" | "2*";
 
-interface Result {
+export interface Result {
   id: string;
   tier: Tier;
   status: Status;
@@ -66,7 +66,7 @@ interface Result {
   durationMs: number;
 }
 
-function parseArgs(argv: string[]): { tier?: number; caseId?: string } {
+export function parseArgs(argv: string[]): { tier?: number; caseId?: string } {
   const out: { tier?: number; caseId?: string } = {};
   for (const arg of argv) {
     const tier = /^--tier=(?<tier>\d+)$/.exec(arg)?.groups?.["tier"];
@@ -78,7 +78,10 @@ function parseArgs(argv: string[]): { tier?: number; caseId?: string } {
 }
 
 /** Runs a check, turning a thrown assertion into a FAIL row. */
-function evaluate(check: () => string): { status: Status; observed: string } {
+export function evaluate(check: () => string): {
+  status: Status;
+  observed: string;
+} {
   try {
     return { status: "PASS", observed: check() };
   } catch (error) {
@@ -122,11 +125,11 @@ async function runCase(c: EvalCase): Promise<[Result, Observation]> {
 }
 
 /** A `|` would split a table column and a newline would end the row. */
-function escapeCell(value: string): string {
+export function escapeCell(value: string): string {
   return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
 }
 
-function renderReport(results: Result[]): string {
+export function renderReport(results: Result[]): string {
   const pass = results.filter((r) => r.status === "PASS").length;
   const fail = results.filter((r) => r.status === "FAIL").length;
   const cost = results.reduce((s, r) => s + r.costUsd, 0);
@@ -211,11 +214,15 @@ async function main(): Promise<void> {
   process.exit(failed > 0 ? EXIT_CASE_FAILED : EXIT_ALL_PASSED);
 }
 
-try {
-  await main();
-} catch (error) {
-  console.error(
-    `eval suite error: ${error instanceof Error ? error.message : String(error)}`,
-  );
-  process.exit(EXIT_SUITE_ERROR);
+// Only a direct `node run.ts` spends money. Importing this module -- which the
+// offline tests do, to reach the pure helpers above -- must never start a run.
+if (import.meta.main) {
+  try {
+    await main();
+  } catch (error) {
+    console.error(
+      `eval suite error: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    process.exit(EXIT_SUITE_ERROR);
+  }
 }
