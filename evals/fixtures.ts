@@ -38,6 +38,7 @@ export interface Fixture {
 const SKILLS_DIR = fileURLToPath(new URL("../skills/", import.meta.url));
 
 function git(cwd: string, ...args: string[]): void {
+  // eslint-disable-next-line sonarjs/no-os-command-from-path -- Resolving `git` via PATH is intended: fixtures must be built by the same git the developer runs, and no absolute path is portable across macOS, Linux, and CI images. Arguments are literals from this file, never user input.
   execFileSync("git", args, { cwd, stdio: "ignore" });
 }
 
