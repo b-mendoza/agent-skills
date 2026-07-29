@@ -260,6 +260,18 @@ test.each([
   ).toHaveLength(1);
 });
 
+// Detection intentionally scans literal command text rather than requiring
+// `git` at the start, so common wrappers and prefixes cannot hide a mutation.
+test.each([
+  'sh -c "git commit"',
+  "cd x && git commit",
+  "GIT_DIR=/g git commit",
+])("`%s` still exposes the literal mutating git command", (command) => {
+  expect(
+    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+  ).toHaveLength(1);
+});
+
 // The same option handling must not start swallowing read-only commands.
 test.each([
   "git -C /repo log --stat",
