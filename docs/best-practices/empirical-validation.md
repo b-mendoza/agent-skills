@@ -23,7 +23,7 @@ Prompt text may guide behavior, but it does not enforce it.
 Apply these rules:
 
 1. **Keep the eval set outside the skill, keyed by skill name.** Store cases in
-   the repository's top-level `evals/` directory — `evals/cases/<skill>.*` — not
+   the repository's top-level `evals/` directory — `evals/src/cases/<skill>.*` — not
    inside the skill directory. A skill directory is a distributable unit:
    consumers install it the way they install a library, and eval infrastructure
    is no more part of that package than a library's test suite belongs in a
@@ -103,7 +103,7 @@ boundary that cannot be narrated away.
 Good: an executable case, outside the skill, asserting only observables.
 
 ```ts
-// evals/cases/review-pull-request.ts — repo-level, outside the skill
+// evals/src/cases/review-pull-request.ts — repo-level, outside the skill
 {
   id: "trigger-negative",
   tier: 1,
@@ -120,7 +120,7 @@ Good: an executable case, outside the skill, asserting only observables.
 ```
 
 The runner executes each case and records the observed result. This repo's suite
-is `evals/`, run with `node evals/run.ts`; `evals/cases/<skill>.ts` is its single
+is `evals/`, run with `node evals/src/orchestration/run.ts`; `evals/src/cases/<skill>.ts` is its single
 source of truth.
 
 For a routing improvement, run the trigger cases in fresh sessions against the
