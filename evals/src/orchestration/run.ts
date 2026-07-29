@@ -13,15 +13,15 @@
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import type { EvalCase } from "../cases/analyzing-recent-project-state.ts";
+import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
 import {
   cases,
   checkMutationScope,
   SKILL,
-} from "../cases/analyzing-recent-project-state.ts";
-import { makeFixture } from "../fixtures/fixtures.ts";
-import type { Observation } from "../observation/harness.ts";
-import { runClaude } from "../observation/harness.ts";
+} from "#/cases/analyzing-recent-project-state.ts";
+import { makeFixture } from "#/fixtures/fixtures.ts";
+import type { Observation } from "#/observation/harness.ts";
+import { runClaude } from "#/observation/harness.ts";
 
 const REPORT_PATH = fileURLToPath(new URL("../../report.md", import.meta.url));
 
