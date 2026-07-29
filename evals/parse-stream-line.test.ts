@@ -80,6 +80,37 @@ test("a result event yields the run totals", () => {
   });
 });
 
+// A cost is money in a committed report, so only a real JSON number counts.
+// `Number()` coercion used to accept anything convertible, which turned
+// `true` into $1.00 and `["4.2"]` into $4.20 -- a fabricated figure reported
+// with the same authority as a measured one.
+/** Parses a result event carrying `cost` as its `total_cost_usd`. */
+function costOf(cost: unknown): unknown {
+  const event = parseStreamLine(
+    JSON.stringify({ type: "result", subtype: "s", total_cost_usd: cost }),
+  );
+  return event?.kind === "result" ? event.costUsd : null;
+}
+
+test.each([
+  ["a boolean", true],
+  ["an array of one numeric string", ["4.2"]],
+  ["a numeric string", "12.5"],
+  ["a non-numeric string", "abc"],
+  ["an object", {}],
+  ["null", null],
+])("%s is not a cost", (_label, cost) => {
+  expect(costOf(cost)).toBe(0);
+});
+
+test("a genuine numeric cost still survives, including zero", () => {
+  const CENTS = 42;
+  const HUNDRED = 100;
+
+  expect(costOf(CENTS / HUNDRED)).toBeCloseTo(CENTS / HUNDRED);
+  expect(costOf(0)).toBe(0);
+});
+
 test("malformed JSON is skipped", () => {
   expect(parseStreamLine('{"type":"assistant"')).toBeNull();
 });

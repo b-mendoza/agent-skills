@@ -161,13 +161,11 @@ const resultEventSchema = z.object({
     .unknown()
     .optional()
     .transform((value) => (typeof value === "string" ? value : "")),
-  total_cost_usd: z
-    .unknown()
-    .optional()
-    .transform((value) => {
-      const cost = Number(value ?? ZERO_COST);
-      return Number.isFinite(cost) ? cost : ZERO_COST;
-    }),
+  // A JSON number and nothing else. Coercing instead would let `true` book
+  // $1.00 and `["4.2"]` book $4.20 into a committed report -- a fabricated
+  // figure indistinguishable from a measured one. An absent or malformed cost
+  // books nothing, which is the documented fallback.
+  total_cost_usd: z.number().catch(ZERO_COST).default(ZERO_COST),
 });
 
 /** Partial or non-JSON noise; the result event is what matters. */
