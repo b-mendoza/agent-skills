@@ -66,13 +66,28 @@ export interface Result {
   durationMs: number;
 }
 
-export function parseArgs(argv: string[]): { tier?: number; caseId?: string } {
-  const out: { tier?: number; caseId?: string } = {};
+export function parseArgs(argv: string[]): {
+  tier?: number;
+  caseId?: string;
+  errors: string[];
+} {
+  const out: { tier?: number; caseId?: string; errors: string[] } = {
+    errors: [],
+  };
   for (const arg of argv) {
     const tier = /^--tier=(?<tier>\d+)$/.exec(arg)?.groups?.["tier"];
-    if (tier !== undefined) out.tier = Number(tier);
+    if (tier !== undefined) {
+      out.tier = Number(tier);
+      continue;
+    }
+
     const caseId = /^--case=(?<caseId>.+)$/.exec(arg)?.groups?.["caseId"];
-    if (caseId !== undefined) out.caseId = caseId;
+    if (caseId !== undefined) {
+      out.caseId = caseId;
+      continue;
+    }
+
+    out.errors.push(`unrecognized or malformed argument: ${arg}`);
   }
   return out;
 }

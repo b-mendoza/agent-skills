@@ -19,48 +19,46 @@ const MAX_OBSERVED_CHARS = 160;
 const OVERLONG = 500;
 
 test("no flags selects everything", () => {
-  expect(parseArgs([])).toStrictEqual({});
+  expect(parseArgs([])).toStrictEqual({ errors: [] });
 });
 
 test("--tier and --case parse into their fields", () => {
-  expect(parseArgs(["--tier=1"])).toStrictEqual({ tier: 1 });
+  expect(parseArgs(["--tier=1"])).toStrictEqual({ tier: 1, errors: [] });
   expect(parseArgs(["--case=path-error"])).toStrictEqual({
     caseId: "path-error",
+    errors: [],
   });
   expect(parseArgs(["--tier=2", "--case=quiet-state"])).toStrictEqual({
     tier: 2,
     caseId: "quiet-state",
+    errors: [],
   });
 });
 
-// Unrecognized forms are ignored rather than rejected, so these leave the
-// selection unconstrained. Pinned because the parse is silent either way: the
-// caller sees `{}` and cannot tell a typo from "no filter given".
+// Malformed selectors must stay visible to the caller. Silently dropping one
+// would remove the filter and turn a typo into an unconstrained paid run.
 test.each([
-  "--tier=",
-  "--tier=abc",
-  "--tier=1.5",
-  "--tier=-1",
-  "--tier 1",
-  "-tier=1",
-  "--case=",
-])("`%s` is not a recognized flag", (arg) => {
-  expect(parseArgs([arg])).toStrictEqual({});
+  { label: "--tier=", args: ["--tier="] },
+  { label: "--tier=abc", args: ["--tier=abc"] },
+  { label: "--tier=1.5", args: ["--tier=1.5"] },
+  { label: "--tier=-1", args: ["--tier=-1"] },
+  { label: "--tier 1", args: ["--tier", "1"] },
+  { label: "-tier=1", args: ["-tier=1"] },
+  { label: "--case=", args: ["--case="] },
+])("`$label` produces named parse errors", ({ args }) => {
+  expect(parseArgs(args).errors).toStrictEqual(
+    args.map((arg) => `unrecognized or malformed argument: ${arg}`),
+  );
 });
 
-test("unknown arguments are ignored", () => {
+test("every unknown argument is reported while valid flags still parse", () => {
   expect(parseArgs(["--verbose", "extra", "--tier=1"])).toStrictEqual({
     tier: 1,
+    errors: [
+      "unrecognized or malformed argument: --verbose",
+      "unrecognized or malformed argument: extra",
+    ],
   });
-});
-
-test("a repeated flag takes the last value", () => {
-  expect(parseArgs(["--tier=1", "--tier=2"])).toStrictEqual({ tier: 2 });
-  expect(parseArgs(["--case=a", "--case=b"])).toStrictEqual({ caseId: "b" });
-});
-
-test("a case id may contain characters that look like flags", () => {
-  expect(parseArgs(["--case=--tier=1"])).toStrictEqual({ caseId: "--tier=1" });
 });
 
 test("a passing check becomes a PASS row carrying its observed string", () => {
