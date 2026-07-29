@@ -138,7 +138,8 @@ export default defineConfig(
       "no-await-in-loop": OFF,
       // The runner's progress output is its user interface.
       "no-console": OFF,
-      // Spawning `git` and `claude` off PATH is the harness's entire job.
+      // Spawning `git` off PATH is how the harness samples repo state; the
+      // agent itself now runs via the Agent SDK's bundled binary.
       "sonarjs/no-os-command-from-path": OFF,
     },
   },
