@@ -1,7 +1,10 @@
 # evals
 
-Local eval suite for the skills in this repo. It invokes the installed agent
-CLIs against throwaway fixture repositories and asserts on observable outcomes.
+Local eval suite for the skills in this repo. It runs the Claude Agent SDK
+(which bundles its own Claude Code binary) against throwaway fixture
+repositories and asserts on observable outcomes. No system `claude` executable
+is required, but ambient Claude credentials must be available — a `claude
+/login` session or an `ANTHROPIC_API_KEY`.
 
 Evals live here, **outside `skills/`**, on purpose. A skill directory is a
 distributable unit — consumers install it the way they install a library — and
@@ -25,7 +28,7 @@ parameter properties, decorators, or namespaces.
 
 Exits `0` when every case passes, `1` when a case fails, `2` when no case
 matched the filter, `3` on an infrastructure error, and `4` on invalid command
-line usage. Set `EVAL_MODEL` to override the model (default `haiku`).
+line usage. Set `EVAL_MODEL` to override the model (default `sonnet`).
 
 Each run rewrites [`report.md`](./report.md), which is committed so a behavior
 change shows up in `git diff`.
@@ -44,10 +47,9 @@ paid run:
 
 | Test file                   | Pins                                                          |
 | --------------------------- | ------------------------------------------------------------- |
-| `parse-stream-line.test.ts` | The NDJSON parser's tolerance contract                        |
 | `mutation-evidence.test.ts` | The read-only detector behind `mutation-scope`                |
 | `git-status.test.ts`        | Clean vs. not-a-repo vs. unreadable sample classification     |
-| `harness-lifecycle.test.ts` | Child-process lifecycle: spawn failure, late events, settle   |
+| `harness-lifecycle.test.ts` | Query lifecycle against a mocked SDK: results, errors, abort  |
 | `fixtures.test.ts`          | Fixture invariants: git state, skill copy, exclusion, cleanup |
 | `run-core.test.ts`          | Flag parsing, check normalization, report rendering           |
 | `cases.test.ts`             | The case assertions themselves, against synthetic runs        |
@@ -59,21 +61,22 @@ the React-only pieces, so the rules here match the ones you already work under.
 
 ## Layout
 
-| Path                         | Contents                                                                    |
-| ---------------------------- | --------------------------------------------------------------------------- |
-| `src/orchestration/run.ts`   | Entry point: selects cases, runs them sequentially, writes the report       |
-| `src/observation/harness.ts` | Spawns the CLI, parses the NDJSON event stream, captures the git delta      |
-| `src/fixtures/fixtures.ts`   | Builds throwaway git repos with the skill installed under `.claude/skills/` |
-| `src/cases/<skill>.ts`       | Canonical source of truth: every eval case and its assertions               |
-| `src/**/*.test.ts`           | Offline vitest suites, colocated with the code they pin                     |
-| `report.md`                  | Generated every run; committed                                              |
-| `AGENTS.md`, `docs/agents/`  | Agent guide and its short-lived current-state references                    |
+| Path                         | Contents                                                                     |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| `src/orchestration/run.ts`   | Entry point: selects cases, runs them sequentially, writes the report        |
+| `src/observation/harness.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta |
+| `src/fixtures/fixtures.ts`   | Builds throwaway git repos with the skill installed under `.claude/skills/`  |
+| `src/cases/<skill>.ts`       | Canonical source of truth: every eval case and its assertions                |
+| `src/**/*.test.ts`           | Offline vitest suites, colocated with the code they pin                      |
+| `report.md`                  | Generated every run; committed                                               |
+| `AGENTS.md`, `docs/agents/`  | Agent guide and its short-lived current-state references                     |
 
 ## Tiers
 
-**Tier 1** caps the run with `--max-budget-usd` so it stops right after the
-routing decision is visible. This makes "did the skill trigger" cost cents
-instead of dollars — the `Skill` tool call is emitted before the cap bites.
+**Tier 1** caps the run with the SDK's `maxBudgetUsd` option so it stops right
+after the routing decision is visible. This makes "did the skill trigger" cost
+cents instead of dollars — the `Skill` tool call appears in the message stream
+before the cap bites.
 
 **Tier 2** is a full behavioral run, asserting on the final output contract.
 
