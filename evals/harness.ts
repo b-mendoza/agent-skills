@@ -292,7 +292,7 @@ const MUTATING_GIT = [
 ] as const;
 
 /** Tool calls that write a file, for the same read-only assertion. */
-const MUTATING_TOOLS: readonly string[] = ["Write", "Edit", "NotebookEdit"];
+const MUTATING_TOOLS = new Set(["Write", "Edit", "NotebookEdit"] as const);
 
 // Word-boundary match so `git log --stat` isn't read as `git stash`. No `g`
 // flag, so these carry no lastIndex state and are safe to share across calls.
@@ -301,7 +301,7 @@ const MUTATING_GIT_PATTERNS = MUTATING_GIT.map(
 );
 
 function fileWriteEvidence(call: ToolCall): string | null {
-  if (!MUTATING_TOOLS.includes(call.name)) return null;
+  if (!MUTATING_TOOLS.has(call.name)) return null;
   const filePath = toText(call.input["file_path"]);
   return `${call.name} called on ${filePath === "" ? "?" : filePath}`;
 }
