@@ -1,6 +1,8 @@
 // Spawns an agent CLI, parses its NDJSON event stream, and captures the
 // repository delta around the run. Everything a case asserts on comes from
-// here, so this file only reports what was observed -- it never interprets.
+// here: this file observes a run, then classifies those observations into the
+// facts a case can assert on. It reads no intent from the agent's narration --
+// every fact traces to a tool call, a result envelope, or a git delta.
 //
 // Node's native TypeScript type stripping runs this directly: `node run.ts`.
 // Keep the syntax erasable (no enums, no parameter properties, no decorators).
@@ -292,10 +294,34 @@ const MUTATING_GIT = [
 /** Tool calls that write a file, for the same read-only assertion. */
 const MUTATING_TOOLS = new Set(["Write", "Edit", "NotebookEdit"] as const);
 
+/**
+ * Global git options that consume the NEXT token as their value, so the verb
+ * after them is still a verb. Enumerated rather than guessed: inferring arity
+ * from whether the following token starts with `-` misreads both
+ * `git --no-pager --no-optional-locks commit` (two valueless flags, read as
+ * one option plus a value) and `git -C --weird commit` (a dash-prefixed path,
+ * which git accepts).
+ */
+const GIT_OPTIONS_WITH_VALUE = [
+  "-C",
+  "-c",
+  "--git-dir",
+  "--work-tree",
+  "--namespace",
+  "--exec-path",
+  "--config-env",
+];
+
 // Word-boundary match so `git log --stat` isn't read as `git stash`. No `g`
 // flag, so these carry no lastIndex state and are safe to share across calls.
+//
+// An option is either one of the value-taking flags above plus its argument, or
+// any other `-`-prefixed token on its own (`--no-pager`, `--git-dir=/r/.git`).
+// Skipping them is what lets `git -C /repo commit` -- an agent acting on a repo
+// it is not sitting in -- still read as a mutation.
+const GIT_OPTION = String.raw`(?:(?:${GIT_OPTIONS_WITH_VALUE.join("|")})\s+\S+|-\S+)\s+`;
 const MUTATING_GIT_PATTERNS = MUTATING_GIT.map(
-  (verb) => new RegExp(`\\bgit\\s+(-\\S+\\s+)*${verb}\\b`),
+  (verb) => new RegExp(String.raw`\bgit\s+(?:${GIT_OPTION})*${verb}\b`),
 );
 
 function fileWriteEvidence(call: ToolCall): string | null {
