@@ -3,6 +3,9 @@
   "private": true,
   "description": "Local eval suite for the skills in this repo. Not published; not part of any skill package.",
   "type": "module",
+  "imports": {
+    "#/*": "./*"
+  },
   "scripts": {
     "eval": "node run.ts",
     "fix": "run-s --continue-on-error \"fix:*\"",
