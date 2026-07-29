@@ -357,7 +357,12 @@ export function skillInvocations(o: Observation, skill: string): ToolCall[] {
 const MUTATING_GIT = [
   "add",
   "commit",
-  "merge",
+  // `\b` treats a hyphen as a boundary, so bare `merge` would also match
+  // `git merge-base` -- a read-only command the skill under eval is documented
+  // to run, which failed a legitimate paid run. Only that one form is excepted:
+  // other hyphenated collisions (`merge-tree`, `checkout-index`,
+  // `prune-packed`) mutate and must stay flagged, so they keep matching.
+  String.raw`merge(?!-base\b)`,
   "push",
   "fetch",
   "pull",
