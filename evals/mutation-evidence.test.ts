@@ -1,0 +1,233 @@
+// Pins the read-only detector that the `mutation-scope` case depends on.
+//
+// This is the assertion that proves a skill under test wrote nothing, so a
+// false negative here would silently retire the guarantee: the suite would keep
+// reporting PASS while a skill mutated the repo. The word-boundary cases matter
+// most -- `git log --stat` must not read as `git stash`.
+//
+//   pnpm test
+
+import { expect, test } from "vitest";
+
+import type { Observation, ToolCall } from "#/harness.ts";
+import { mutationEvidence, skillInvocations } from "#/harness.ts";
+
+/** A clean observation: same status before and after, no tool calls. */
+function observe(overrides: Partial<Observation> = {}): Observation {
+  return {
+    exitCode: 0,
+    subtype: "success",
+    finalText: "",
+    toolCalls: [],
+    gitStatusBefore: "",
+    gitStatusAfter: "",
+    costUsd: 0,
+    durationMs: 0,
+    timedOut: false,
+    ...overrides,
+  };
+}
+
+function bash(command: unknown): ToolCall {
+  return { name: "Bash", input: { command } };
+}
+
+test("a clean run reports no evidence", () => {
+  expect(mutationEvidence(observe())).toStrictEqual([]);
+});
+
+test("a changed git status is evidence even with no tool calls", () => {
+  const found = mutationEvidence(
+    observe({ gitStatusBefore: "", gitStatusAfter: " M a.txt" }),
+  );
+
+  expect(found).toHaveLength(1);
+  expect(found[0]).toContain("git status changed");
+  // Both sides are quoted so an empty "before" is visible rather than blank.
+  expect(found[0]).toContain('""');
+  expect(found[0]).toContain('" M a.txt"');
+});
+
+test("an unchanged non-empty status is not evidence", () => {
+  // The dirty fixture starts with a dirty status; only a *delta* is a mutation.
+  const dirty = " M a.txt\n?? c.txt";
+
+  expect(
+    mutationEvidence(
+      observe({ gitStatusBefore: dirty, gitStatusAfter: dirty }),
+    ),
+  ).toStrictEqual([]);
+});
+
+test.each(["Write", "Edit", "NotebookEdit"])(
+  "%s is evidence and names the file",
+  (name) => {
+    const found = mutationEvidence(
+      observe({ toolCalls: [{ name, input: { file_path: "/work/x.ts" } }] }),
+    );
+
+    expect(found).toStrictEqual([`${name} called on /work/x.ts`]);
+  },
+);
+
+test("a write tool with no usable path still reports the call", () => {
+  // The call is the violation; a missing path must not make it disappear.
+  const found = mutationEvidence(
+    observe({
+      toolCalls: [
+        { name: "Write", input: {} },
+        { name: "Edit", input: { file_path: 42 } },
+      ],
+    }),
+  );
+
+  expect(found).toStrictEqual(["Write called on ?", "Edit called on 42"]);
+});
+
+test("read-only tools are not evidence", () => {
+  const found = mutationEvidence(
+    observe({
+      toolCalls: [
+        { name: "Read", input: { file_path: "/work/x.ts" } },
+        { name: "Grep", input: { pattern: "x" } },
+        { name: "Skill", input: { skill: "analyzing-recent-project-state" } },
+      ],
+    }),
+  );
+
+  expect(found).toStrictEqual([]);
+});
+
+const MUTATING_GIT = [
+  "add",
+  "commit",
+  "merge",
+  "push",
+  "fetch",
+  "pull",
+  "reset",
+  "checkout",
+  "rebase",
+  "stash",
+  "clean",
+  "rm",
+  "tag",
+];
+
+test.each(MUTATING_GIT)("`git %s` is evidence", (verb) => {
+  const found = mutationEvidence(observe({ toolCalls: [bash(`git ${verb}`)] }));
+
+  expect(found).toStrictEqual([`mutating git command: git ${verb}`]);
+});
+
+// Regression guard: the option group once matched only valueless flags, so
+// `git -C /repo commit` -- an agent acting on a repo it is not sitting in --
+// read as clean. Separate-argument options must not hide the verb.
+test.each([
+  "git -C /repo commit -m x",
+  "git -C /repo --no-pager commit",
+  "git --no-pager commit",
+  "git -c user.name=x commit",
+  "git --git-dir=/r/.git commit",
+  "git -C /repo push",
+  "git -C /repo add .",
+  // Consecutive valueless flags: inferring arity from a leading `-` used to
+  // read `--no-optional-locks` as the *value* of `--no-pager` and lose the verb.
+  "git --no-pager --no-optional-locks commit",
+  "git --no-pager -c k=v commit",
+  "git -c a=1 -c b=2 commit",
+  // git accepts a dash-prefixed argument here, so arity cannot be guessed.
+  "git -C --weird commit",
+  "git --work-tree=/w add .",
+  "git -C /repo --no-pager reset --hard",
+])("`%s` is evidence despite the leading options", (command) => {
+  expect(
+    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+  ).toHaveLength(1);
+});
+
+// The same option handling must not start swallowing read-only commands.
+test.each([
+  "git -C /repo log --stat",
+  "git -C /repo status",
+  "git --no-pager log",
+  // `commit` here is a revision argument to `log`, not the verb. Only the
+  // token in verb position counts.
+  "git --no-pager log commit",
+  "git log commit",
+])("`%s` stays clean despite the leading options", (command) => {
+  expect(
+    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+  ).toStrictEqual([]);
+});
+
+// The regexes are word-bounded precisely so read-only commands stay read-only.
+// `git log --stat` sharing a prefix with `stash` is the motivating example.
+test.each([
+  "git log --stat",
+  "git status --short",
+  "git diff HEAD",
+  "git show",
+  "ls add",
+  "npm add-something",
+])("`%s` is not evidence", (command) => {
+  expect(
+    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+  ).toStrictEqual([]);
+});
+
+test("a non-string Bash command is unverifiable rather than clean", () => {
+  // Coercing it would let a mutating verb hide inside a non-string payload.
+  const found = mutationEvidence(
+    observe({ toolCalls: [bash({ cmd: "git commit" })] }),
+  );
+
+  expect(found).toStrictEqual([
+    "unverifiable Bash command (non-string): object",
+  ]);
+});
+
+test("an absent Bash command is neither evidence nor unverifiable", () => {
+  expect(
+    mutationEvidence(observe({ toolCalls: [{ name: "Bash", input: {} }] })),
+  ).toStrictEqual([]);
+});
+
+test("every distinct violation is reported, not just the first", () => {
+  const found = mutationEvidence(
+    observe({
+      gitStatusBefore: "",
+      gitStatusAfter: "?? new.txt",
+      toolCalls: [
+        { name: "Write", input: { file_path: "/work/a" } },
+        bash("git commit -m x"),
+      ],
+    }),
+  );
+
+  // The status delta, the Write, and the git commit are three separate facts;
+  // naming each one is what lets a failure message point at the offender.
+  expect(found).toStrictEqual([
+    expect.stringContaining("git status changed"),
+    "Write called on /work/a",
+    "mutating git command: git commit -m x",
+  ]);
+});
+
+test("skillInvocations selects only Skill calls naming the skill", () => {
+  const o = observe({
+    toolCalls: [
+      { name: "Skill", input: { skill: "wanted" } },
+      { name: "Skill", input: { skill: "other" } },
+      { name: "Bash", input: { skill: "wanted" } },
+      { name: "Skill", input: {} },
+      { name: "Skill", input: { skill: "wanted" } },
+    ],
+  });
+
+  expect(skillInvocations(o, "wanted")).toStrictEqual([
+    { name: "Skill", input: { skill: "wanted" } },
+    { name: "Skill", input: { skill: "wanted" } },
+  ]);
+  expect(skillInvocations(o, "never-called")).toStrictEqual([]);
+});
