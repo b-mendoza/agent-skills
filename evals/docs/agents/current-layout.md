@@ -6,12 +6,12 @@
 Source lives under [`src/`](../../src/), one directory per capability, tests
 colocated with the code they pin:
 
-| Path                 | Capability               | Contents                                                                                                                                                                                                                  |
-| -------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/orchestration/` | Evaluation orchestration | `run.ts` (entry point: case selection, sequencing, budgets, exit codes, report generation) + `run-core.test.ts`, `run-entry.test.ts`                                                                                      |
-| `src/fixtures/`      | Fixture provisioning     | `fixtures.ts` (throwaway git repos with the skill installed under `.claude/skills/`) + `fixtures.test.ts`                                                                                                                 |
-| `src/observation/`   | Execution observation    | `harness.ts` (spawns the agent CLI, parses the NDJSON stream, samples git state, gathers mutation evidence) + `git-status.test.ts`, `harness-lifecycle.test.ts`, `mutation-evidence.test.ts`, `parse-stream-line.test.ts` |
-| `src/cases/`         | Behavioral specification | `<skill>.ts` case modules (canonical source of truth for eval cases) + `cases.test.ts`                                                                                                                                    |
+| Path                 | Capability               | Contents                                                                                                                                                                                                 |
+| -------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/orchestration/` | Evaluation orchestration | `run.ts` (entry point: case selection, sequencing, budgets, exit codes, report generation) + `run-core.test.ts`, `run-entry.test.ts`                                                                     |
+| `src/fixtures/`      | Fixture provisioning     | `fixtures.ts` (throwaway git repos with the skill installed under `.claude/skills/`) + `fixtures.test.ts`                                                                                                |
+| `src/observation/`   | Execution observation    | `harness.ts` (runs an Agent SDK query, observes its typed message stream, samples git state, gathers mutation evidence) + `git-status.test.ts`, `harness-lifecycle.test.ts`, `mutation-evidence.test.ts` |
+| `src/cases/`         | Behavioral specification | `<skill>.ts` case modules (canonical source of truth for eval cases) + `cases.test.ts`                                                                                                                   |
 
 Dependency direction: `orchestration → cases, fixtures, observation`;
 `cases → fixtures` (types only) and `observation`; `fixtures` and
