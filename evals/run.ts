@@ -10,6 +10,11 @@
 //
 // Exit codes: 0 all pass · 1 a case failed · 2 no cases matched · 3 suite error
 
+/* oxlint-disable no-console -- This file is the suite's CLI entry point, so the
+   console IS its user interface, not stray debug output. A run costs real money
+   and minutes, so per-case progress has to stream to the terminal as it happens
+   rather than being buffered behind a logger the suite does not otherwise need. */
+
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
