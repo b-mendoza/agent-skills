@@ -35,7 +35,11 @@ export interface EvalCase {
   id: string;
   tier: CaseTier;
   fixture: FixtureKind;
-  /** One line for the report, describing what the case pins down. */
+  /**
+   * What this case pins down, for whoever reads or changes it. Documentation
+   * only -- nothing reads it at runtime, so it is the one part of a case the
+   * suite cannot keep honest for you.
+   */
   intent: string;
   prompt: (ctx: CaseContext) => string;
   budgetUsd: number;
