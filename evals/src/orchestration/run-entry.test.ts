@@ -18,7 +18,7 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 
 const RUN = fileURLToPath(new URL("./run.ts", import.meta.url));
-const REPORT = fileURLToPath(new URL("./report.md", import.meta.url));
+const REPORT = fileURLToPath(new URL("../../report.md", import.meta.url));
 const EXIT_NO_CASES_MATCHED = 2;
 const EXIT_USAGE_ERROR = 4;
 
@@ -45,7 +45,7 @@ test("an invalid selector exits 4 before running or rewriting the report", () =>
   expect(result.stderr).toContain(
     "unrecognized or malformed argument: --tier=abc",
   );
-  expect(result.stderr).toContain("Usage: node evals/run.ts");
+  expect(result.stderr).toContain("Usage: node evals/src/orchestration/run.ts");
   expect(readFileSync(REPORT, "utf8")).toBe(reportBefore);
 });
 

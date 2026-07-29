@@ -35,7 +35,7 @@ export interface Fixture {
   cleanup: () => void;
 }
 
-const SKILLS_DIR = fileURLToPath(new URL("../skills/", import.meta.url));
+const SKILLS_DIR = fileURLToPath(new URL("../../../skills/", import.meta.url));
 
 function git(cwd: string, ...args: string[]): void {
   execFileSync("git", args, { cwd, stdio: "ignore" });

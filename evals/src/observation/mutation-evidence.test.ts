@@ -9,8 +9,12 @@
 
 import { expect, test } from "vitest";
 
-import type { GitStatus, Observation, ToolCall } from "#/harness.ts";
-import { mutationEvidence, skillInvocations } from "#/harness.ts";
+import type {
+  GitStatus,
+  Observation,
+  ToolCall,
+} from "#/observation/harness.ts";
+import { mutationEvidence, skillInvocations } from "#/observation/harness.ts";
 
 /** A sampled worktree; `entries` is `git status --short` output. */
 const worktree = (entries = ""): GitStatus => ({ kind: "worktree", entries });

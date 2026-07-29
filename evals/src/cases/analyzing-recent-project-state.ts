@@ -7,9 +7,9 @@
 
 import assert from "node:assert/strict";
 
-import type { FixtureKind } from "#/fixtures.ts";
-import type { Observation, ToolCall } from "#/harness.ts";
-import { mutationEvidence, skillInvocations } from "#/harness.ts";
+import type { FixtureKind } from "#/fixtures/fixtures.ts";
+import type { Observation, ToolCall } from "#/observation/harness.ts";
+import { mutationEvidence, skillInvocations } from "#/observation/harness.ts";
 
 export const SKILL = "analyzing-recent-project-state";
 

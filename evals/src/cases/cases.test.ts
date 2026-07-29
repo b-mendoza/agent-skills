@@ -16,7 +16,7 @@ import {
   checkMutationScope,
   SKILL,
 } from "#/cases/analyzing-recent-project-state.ts";
-import type { GitStatus, Observation } from "#/harness.ts";
+import type { GitStatus, Observation } from "#/observation/harness.ts";
 
 const worktree = (entries = ""): GitStatus => ({ kind: "worktree", entries });
 

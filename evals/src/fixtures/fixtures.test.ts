@@ -13,8 +13,8 @@ import { join } from "node:path";
 
 import { afterEach, expect, test } from "vitest";
 
-import type { Fixture, FixtureKind } from "#/fixtures.ts";
-import { makeFixture } from "#/fixtures.ts";
+import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
+import { makeFixture } from "#/fixtures/fixtures.ts";
 
 const SKILL = "analyzing-recent-project-state";
 

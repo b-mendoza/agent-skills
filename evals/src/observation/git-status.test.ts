@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 import { afterEach, expect, test } from "vitest";
 
-import { describeGitStatus, gitStatus } from "#/harness.ts";
+import { describeGitStatus, gitStatus } from "#/observation/harness.ts";
 
 const temps: string[] = [];
 const realPath = process.env["PATH"];

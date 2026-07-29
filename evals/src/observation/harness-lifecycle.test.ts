@@ -18,8 +18,8 @@ import { PassThrough } from "node:stream";
 
 import { afterEach, expect, test, vi } from "vitest";
 
-import type { Observation } from "#/harness.ts";
-import { runClaude } from "#/harness.ts";
+import type { Observation } from "#/observation/harness.ts";
+import { runClaude } from "#/observation/harness.ts";
 
 // `spawn` is faked only for the tests that install a child; everything else
 // delegates to the real one so the PATH-based cases stay end-to-end.

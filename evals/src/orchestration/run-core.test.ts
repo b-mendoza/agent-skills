@@ -10,8 +10,13 @@
 
 import { expect, test } from "vitest";
 
-import type { Result } from "#/run.ts";
-import { escapeCell, evaluate, parseArgs, renderReport } from "#/run.ts";
+import type { Result } from "#/orchestration/run.ts";
+import {
+  escapeCell,
+  evaluate,
+  parseArgs,
+  renderReport,
+} from "#/orchestration/run.ts";
 
 /** Mirrors MAX_OBSERVED_CHARS in run.ts: one report cell holds one line. */
 const MAX_OBSERVED_CHARS = 160;
