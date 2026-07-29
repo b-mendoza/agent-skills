@@ -20,6 +20,7 @@ function observe(overrides: Partial<Observation> = {}): Observation {
   return {
     exitCode: 0,
     subtype: "success",
+    isError: false,
     finalText: "",
     toolCalls: [],
     gitStatusBefore: worktree(),

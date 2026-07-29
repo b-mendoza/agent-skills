@@ -20,6 +20,14 @@ export interface Observation {
   exitCode: number | null;
   /** Result envelope subtype: "success", "error_max_budget_usd", ... */
   subtype: string;
+  /**
+   * The CLI's own verdict that the run failed.
+   *
+   * Separate from `subtype` because the two disagree: an expired login is
+   * reported as `subtype: "success"` with `is_error: true`, so the subtype
+   * alone cannot tell a real answer from a request that never reached a model.
+   */
+  isError: boolean;
   /** Final assistant text as returned in the result event. */
   finalText: string;
   toolCalls: ToolCall[];
@@ -157,6 +165,12 @@ const assistantEventSchema = z.object({
 const resultEventSchema = z.object({
   type: z.literal("result"),
   subtype: z.unknown().optional().transform(toText),
+  // Absent or malformed reads as "no failure reported" rather than as a
+  // failure: a CLI too old to emit the field, or a line mangled in transit,
+  // must not condemn a run that produced real observations. What the field
+  // guards against is the opposite case -- a run the CLI explicitly failed
+  // that still looks answerable -- and that one arrives well-formed.
+  is_error: z.boolean().catch(false).default(false),
   result: z
     .unknown()
     .optional()
@@ -181,7 +195,13 @@ function parseJson(text: string): unknown {
 /** The only two stream events the harness reads. Everything else is noise. */
 export type StreamEvent =
   | { kind: "tool_calls"; calls: ToolCall[] }
-  | { kind: "result"; subtype: string; finalText: string; costUsd: number };
+  | {
+      kind: "result";
+      subtype: string;
+      isError: boolean;
+      finalText: string;
+      costUsd: number;
+    };
 
 /**
  * Parses one NDJSON line from the CLI stream.
@@ -210,8 +230,13 @@ export function parseStreamLine(line: string): StreamEvent | null {
 
   const result = resultEventSchema.safeParse(event);
   if (result.success) {
-    const { subtype, result: finalText, total_cost_usd: costUsd } = result.data;
-    return { kind: "result", subtype, finalText, costUsd };
+    const {
+      subtype,
+      is_error: isError,
+      result: finalText,
+      total_cost_usd: costUsd,
+    } = result.data;
+    return { kind: "result", subtype, isError, finalText, costUsd };
   }
 
   return null;
@@ -258,6 +283,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     const toolCalls: ToolCall[] = [];
     let finalText = "";
     let subtype = "";
+    let isError = false;
     let costUsd = ZERO_COST;
     let timedOut = false;
     let pending = "";
@@ -274,7 +300,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
       if (event.kind === "tool_calls") {
         toolCalls.push(...event.calls);
       } else {
-        ({ subtype, finalText, costUsd } = event);
+        ({ subtype, isError, finalText, costUsd } = event);
       }
     };
 
@@ -307,6 +333,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
       // oxlint-disable-next-line promise/no-multiple-resolved -- False positive: there is exactly one `resolve` call in this function, and the rule points at the `clearTimeout` above it as the supposed earlier resolution.
       resolve({
         ...outcome,
+        isError,
         finalText,
         toolCalls,
         gitStatusBefore,
@@ -332,6 +359,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
       if (settled) return;
       finalText = "";
       costUsd = ZERO_COST;
+      isError = true;
       settle({ exitCode: null, subtype: "spawn_error" });
     });
   });

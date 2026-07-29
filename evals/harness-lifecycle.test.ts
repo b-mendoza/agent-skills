@@ -130,6 +130,7 @@ test("a normal stream yields the result and its tool calls", async () => {
 
   expect(o.exitCode).toBe(0);
   expect(o.subtype).toBe("success");
+  expect(o.isError).toBe(false);
   expect(o.finalText).toBe("done");
   expect(o.costUsd).toBe(COST_FULL);
   expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Skill"]);
@@ -168,8 +169,30 @@ test("a failed spawn reports no result and books no cost", async () => {
 
   expect(o.exitCode).toBeNull();
   expect(o.subtype).toBe("spawn_error");
+  expect(o.isError).toBe(true);
   expect(o.finalText).toBe("");
   expect(o.costUsd).toBe(0);
+});
+
+test("an authentication failure surfaces as a failed run", async () => {
+  // End to end through the real reader: what an expired login actually put on
+  // stdout, verbatim. The exit is clean and the subtype says success, so
+  // `isError` is the only field that carries the failure out of the harness.
+  const authFailure = JSON.stringify({
+    type: "result",
+    subtype: "success",
+    is_error: true,
+    result: "Failed to authenticate: OAuth session expired",
+    total_cost_usd: 0,
+  });
+  fakeClaude(`printf '%s\\n' '${authFailure}'`);
+
+  const o = await run();
+
+  expect(o.exitCode).toBe(0);
+  expect(o.subtype).toBe("success");
+  expect(o.isError).toBe(true);
+  expect(o.toolCalls).toStrictEqual([]);
 });
 
 test("a run that exceeds its wall clock is killed and settles", async () => {

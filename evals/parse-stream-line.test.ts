@@ -75,9 +75,50 @@ test("a result event yields the run totals", () => {
   expect(parseStreamLine(line)).toStrictEqual({
     kind: "result",
     subtype: "success",
+    isError: false,
     finalText: "# Project State Snapshot",
     costUsd: 0.42,
   });
+});
+
+// The shape an expired login produces: the subtype claims success and only
+// `is_error` disagrees, so the parser has to carry it through intact.
+test("a failed run is reported as such even under a success subtype", () => {
+  const line = JSON.stringify({
+    type: "result",
+    subtype: "success",
+    is_error: true,
+    result: "Failed to authenticate: OAuth session expired",
+    total_cost_usd: 0,
+  });
+
+  expect(parseStreamLine(line)).toStrictEqual({
+    kind: "result",
+    subtype: "success",
+    isError: true,
+    finalText: "Failed to authenticate: OAuth session expired",
+    costUsd: 0,
+  });
+});
+
+/** Parses a result event carrying `flag` as its `is_error`. */
+function isErrorOf(flag: unknown): unknown {
+  const event = parseStreamLine(
+    JSON.stringify({ type: "result", subtype: "s", is_error: flag }),
+  );
+  return event?.kind === "result" ? event.isError : null;
+}
+
+// Absent or malformed reads as "no failure reported": a CLI too old to emit
+// the field must not condemn every run it observes.
+test.each([
+  ["a string", "true"],
+  ["a number", 1],
+  ["an object", {}],
+  ["null", null],
+  ["undefined", undefined],
+])("%s is not a failure flag", (_label, flag) => {
+  expect(isErrorOf(flag)).toBe(false);
 });
 
 // A cost is money in a committed report, so only a real JSON number counts.
@@ -125,6 +166,7 @@ test("missing and wrong-typed fields fall back instead of throwing", () => {
   expect(parseStreamLine(JSON.stringify({ type: "result" }))).toStrictEqual({
     kind: "result",
     subtype: "",
+    isError: false,
     finalText: "",
     costUsd: 0,
   });
@@ -138,7 +180,13 @@ test("missing and wrong-typed fields fall back instead of throwing", () => {
         total_cost_usd: "abc",
       }),
     ),
-  ).toStrictEqual({ kind: "result", subtype: "5", finalText: "", costUsd: 0 });
+  ).toStrictEqual({
+    kind: "result",
+    subtype: "5",
+    isError: false,
+    finalText: "",
+    costUsd: 0,
+  });
 
   expect(
     parseStreamLine(

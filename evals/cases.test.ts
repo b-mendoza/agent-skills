@@ -24,6 +24,7 @@ function observe(overrides: Partial<Observation> = {}): Observation {
   return {
     exitCode: 0,
     subtype: "success",
+    isError: false,
     finalText: "",
     toolCalls: [],
     gitStatusBefore: worktree(),
@@ -45,6 +46,7 @@ function caseById(id: string): EvalCase {
 const SPAWN_FAILURE = observe({
   exitCode: null,
   subtype: "spawn_error",
+  isError: true,
   finalText: "",
   costUsd: 0,
 });
