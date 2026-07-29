@@ -23,8 +23,8 @@ export interface Observation {
   /** Final assistant text as returned in the result event. */
   finalText: string;
   toolCalls: ToolCall[];
-  gitStatusBefore: string;
-  gitStatusAfter: string;
+  gitStatusBefore: GitStatus;
+  gitStatusAfter: GitStatus;
   costUsd: number;
   durationMs: number;
   /** True when the harness killed the run for exceeding wallClockMs. */
@@ -43,18 +43,81 @@ export interface RunOptions {
   gitRepo?: string;
 }
 
-/** `git status --short` for the mutation-scope delta, or "" when not a repo. */
-export function gitStatus(repo: string): string {
+/**
+ * The outcome of sampling a repository's status.
+ *
+ * Three outcomes, not two, because "the worktree is clean" and "the sample
+ * failed" used to be the same empty string. Two failed samples then compared
+ * equal and the read-only assertion passed on evidence that was never
+ * collected -- the mutation-scope guarantee silently reduced to "nothing was
+ * observed", which is exactly what it must not mean.
+ */
+export type GitStatus =
+  | { kind: "worktree"; entries: string }
+  | { kind: "no-worktree" }
+  | { kind: "unreadable"; reason: string };
+
+/** A git exit status meaning "this is not a repository". */
+const GIT_NOT_A_REPOSITORY = 128;
+
+/** Whether two samples describe the same repository state. */
+function sameGitStatus(a: GitStatus, b: GitStatus): boolean {
+  if (a.kind === "worktree" && b.kind === "worktree") {
+    return a.entries === b.entries;
+  }
+  return a.kind === b.kind;
+}
+
+/** Renders a status for a failure message. */
+export function describeGitStatus(status: GitStatus): string {
+  if (status.kind === "worktree") return JSON.stringify(status.entries);
+  if (status.kind === "no-worktree") return "(not a worktree)";
+  return `(unreadable: ${status.reason})`;
+}
+
+/**
+ * Samples `git status --short`.
+ *
+ * The `not-git` fixture legitimately has no worktree, and that must stay
+ * distinct from a git binary that is missing, a directory that cannot be
+ * read, or an index that is corrupt. Only the first is an expected state.
+ */
+export function gitStatus(repo: string): GitStatus {
   try {
-    return execFileSync("git", ["status", "--short"], {
+    const entries = execFileSync("git", ["status", "--short"], {
       cwd: repo,
       encoding: "utf8",
-      // Silence "fatal: not a git repository" for the not-git fixture.
-      stdio: ["ignore", "pipe", "ignore"],
+      // stderr is captured, not silenced: exit 128 is git's generic fatal
+      // code, so the message is the only thing separating "not a repository"
+      // from a corrupt index. Discarding it would put both in the same bucket.
+      stdio: ["ignore", "pipe", "pipe"],
     }).trim();
-    // oxlint-disable-next-line preserve-caught-error -- Discarding the error is this function's contract: a missing worktree is an expected fixture state that must read as "no status", not as a failure worth reporting.
-  } catch {
-    return "";
+    return { kind: "worktree", entries };
+  } catch (error) {
+    const read = (key: string): unknown =>
+      error instanceof Error ? Reflect.get(error, key) : undefined;
+
+    // Exit 128 alone does not mean "not a repository" -- a corrupt index and
+    // an unreadable HEAD return it too. Only git's own wording separates the
+    // expected `not-git` fixture state from a repository that cannot be read,
+    // and everything unmatched falls through to `unreadable` so an unfamiliar
+    // failure fails closed rather than passing as clean.
+    const stderr = toText(read("stderr"));
+    if (
+      read("status") === GIT_NOT_A_REPOSITORY &&
+      /not a git repository/i.test(stderr)
+    ) {
+      return { kind: "no-worktree" };
+    }
+
+    // git's own message when there is one, else the syscall code (ENOENT for
+    // a missing directory or a missing git binary), else whatever was thrown.
+    const detail = stderr.trim().split("\n")[0] ?? "";
+    const fallback = error instanceof Error ? error.message : error;
+    return {
+      kind: "unreadable",
+      reason: detail === "" ? toText(read("code") ?? fallback) : detail,
+    };
   }
 }
 
@@ -232,6 +295,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     // Both `close` and `error` can fire, so settling funnels through one place.
     // `resolve` ignores every call after the first, which is what makes the
     // first handler to arrive the one that defines the observation.
+
     const settle = (
       outcome: Pick<Observation, "exitCode" | "subtype">,
     ): void => {
@@ -352,10 +416,27 @@ function bashEvidence(call: ToolCall): string | null {
  */
 export function mutationEvidence(o: Observation): string[] {
   const found: string[] = [];
+  const { gitStatusBefore: before, gitStatusAfter: after } = o;
 
-  if (o.gitStatusBefore !== o.gitStatusAfter) {
+  // Unreadable is not clean. A sample that failed proves nothing about what
+  // the run did, so it is reported rather than compared -- otherwise two
+  // failed samples match and the assertion passes on absent evidence.
+  for (const [label, status] of [
+    ["before", before],
+    ["after", after],
+  ] as const) {
+    if (status.kind === "unreadable") {
+      found.push(
+        `git status could not be sampled ${label} the run: ${status.reason}`,
+      );
+    }
+  }
+
+  const comparable =
+    before.kind !== "unreadable" && after.kind !== "unreadable";
+  if (comparable && !sameGitStatus(before, after)) {
     found.push(
-      `git status changed:\n  before: ${JSON.stringify(o.gitStatusBefore)}\n  after:  ${JSON.stringify(o.gitStatusAfter)}`,
+      `git status changed:\n  before: ${describeGitStatus(before)}\n  after:  ${describeGitStatus(after)}`,
     );
   }
 

@@ -9,8 +9,11 @@
 
 import { expect, test } from "vitest";
 
-import type { Observation, ToolCall } from "#/harness.ts";
+import type { GitStatus, Observation, ToolCall } from "#/harness.ts";
 import { mutationEvidence, skillInvocations } from "#/harness.ts";
+
+/** A sampled worktree; `entries` is `git status --short` output. */
+const worktree = (entries = ""): GitStatus => ({ kind: "worktree", entries });
 
 /** A clean observation: same status before and after, no tool calls. */
 function observe(overrides: Partial<Observation> = {}): Observation {
@@ -19,8 +22,8 @@ function observe(overrides: Partial<Observation> = {}): Observation {
     subtype: "success",
     finalText: "",
     toolCalls: [],
-    gitStatusBefore: "",
-    gitStatusAfter: "",
+    gitStatusBefore: worktree(),
+    gitStatusAfter: worktree(),
     costUsd: 0,
     durationMs: 0,
     timedOut: false,
@@ -38,7 +41,10 @@ test("a clean run reports no evidence", () => {
 
 test("a changed git status is evidence even with no tool calls", () => {
   const found = mutationEvidence(
-    observe({ gitStatusBefore: "", gitStatusAfter: " M a.txt" }),
+    observe({
+      gitStatusBefore: worktree(""),
+      gitStatusAfter: worktree(" M a.txt"),
+    }),
   );
 
   expect(found).toHaveLength(1);
@@ -50,13 +56,68 @@ test("a changed git status is evidence even with no tool calls", () => {
 
 test("an unchanged non-empty status is not evidence", () => {
   // The dirty fixture starts with a dirty status; only a *delta* is a mutation.
-  const dirty = " M a.txt\n?? c.txt";
+  const dirty = worktree(" M a.txt\n?? c.txt");
 
   expect(
     mutationEvidence(
       observe({ gitStatusBefore: dirty, gitStatusAfter: dirty }),
     ),
   ).toStrictEqual([]);
+});
+
+// An unreadable sample proves nothing about what the run did. It used to be
+// the same empty string a clean worktree yields, so two failed samples matched
+// and mutation-scope passed on evidence that was never collected.
+test("an unreadable status is evidence, not silence", () => {
+  const unreadable: GitStatus = { kind: "unreadable", reason: "ENOENT" };
+
+  expect(
+    mutationEvidence(
+      observe({ gitStatusBefore: unreadable, gitStatusAfter: unreadable }),
+    ),
+  ).toStrictEqual([
+    "git status could not be sampled before the run: ENOENT",
+    "git status could not be sampled after the run: ENOENT",
+  ]);
+});
+
+test("one unreadable sample is reported without a bogus delta", () => {
+  // Comparing a readable sample against an unreadable one would invent a
+  // "change" that says more about the failure than about the run.
+  const found = mutationEvidence(
+    observe({
+      gitStatusBefore: worktree(""),
+      gitStatusAfter: { kind: "unreadable", reason: "EACCES" },
+    }),
+  );
+
+  expect(found).toStrictEqual([
+    "git status could not be sampled after the run: EACCES",
+  ]);
+});
+
+test("a repo that is not a worktree is clean, not unreadable", () => {
+  // The `not-git` fixture is an expected state: it must keep passing.
+  const noWorktree: GitStatus = { kind: "no-worktree" };
+
+  expect(
+    mutationEvidence(
+      observe({ gitStatusBefore: noWorktree, gitStatusAfter: noWorktree }),
+    ),
+  ).toStrictEqual([]);
+});
+
+test("a worktree appearing where there was none is evidence", () => {
+  const found = mutationEvidence(
+    observe({
+      gitStatusBefore: { kind: "no-worktree" },
+      gitStatusAfter: worktree(""),
+    }),
+  );
+
+  expect(found).toHaveLength(1);
+  expect(found[0]).toContain("git status changed");
+  expect(found[0]).toContain("(not a worktree)");
 });
 
 test.each(["Write", "Edit", "NotebookEdit"])(
@@ -196,8 +257,8 @@ test("an absent Bash command is neither evidence nor unverifiable", () => {
 test("every distinct violation is reported, not just the first", () => {
   const found = mutationEvidence(
     observe({
-      gitStatusBefore: "",
-      gitStatusAfter: "?? new.txt",
+      gitStatusBefore: worktree(),
+      gitStatusAfter: worktree("?? new.txt"),
       toolCalls: [
         { name: "Write", input: { file_path: "/work/a" } },
         bash("git commit -m x"),

@@ -46,6 +46,7 @@ paid run:
 | --------------------------- | ------------------------------------------------------------- |
 | `parse-stream-line.test.ts` | The NDJSON parser's tolerance contract                        |
 | `mutation-evidence.test.ts` | The read-only detector behind `mutation-scope`                |
+| `git-status.test.ts`        | Clean vs. not-a-repo vs. unreadable sample classification     |
 | `fixtures.test.ts`          | Fixture invariants: git state, skill copy, exclusion, cleanup |
 | `run-core.test.ts`          | Flag parsing, check normalization, report rendering           |
 
@@ -74,8 +75,36 @@ instead of dollars — the `Skill` tool call is emitted before the cap bites.
 **Tier 2** is a full behavioral run, asserting on the final output contract.
 
 `mutation-scope` is derived from the tier-2 observations rather than paying for
-its own invocation: it asserts no run wrote a file, called `Write`/`Edit`, or ran
-a mutating git command.
+its own invocation: it asserts no run left a `git status` delta, called
+`Write`/`Edit`/`NotebookEdit`, or ran a mutating git command.
+
+### What mutation-scope does not catch
+
+The check combines three observations — a before/after `git status` delta, the
+tool names called, and the text of each `Bash` command. That leaves a real gap,
+recorded here rather than papered over:
+
+**Arbitrary shell writes are not detected.** `bashEvidence` only recognizes
+mutating _git_ commands. A run that writes through the shell — `echo x > f`,
+`sed -i`, `rm`, `cp`, `tee`, or any interpreter (`python -c "open(...,'w')"`) —
+reads as clean unless the write happens to show up in `git status`. Writes under
+`.claude/` never do, because fixtures exclude that directory precisely so the
+skill's own scaffolding stays invisible.
+
+This is not fixable with a longer regex: shell redirection, wrappers,
+subprocesses, and writes outside the worktree all escape any command-text
+pattern, and tokens like `rm` or `>` inside quoted arguments produce false
+positives that would fail legitimate read-only runs. Closing it properly needs
+a different mechanism — filesystem tracing, or a sandbox that denies writes and
+lets the OS report the violation. Until then, read `mutation-scope` as _"no
+observed write through git or the file-writing tools"_, not as proof that
+nothing was written.
+
+Two related properties the check _does_ now hold, both of which used to fail
+silently: a git command that mutates without changing `git status` (`git switch`
+moving HEAD between clean branches) is caught from the command text, and a
+`git status` sample that could not be taken at all is reported as evidence
+rather than compared as if it were clean.
 
 ## Adding a case
 
