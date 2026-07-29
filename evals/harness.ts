@@ -229,13 +229,16 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     // Drained so the process can't block on a full stderr pipe.
     child.stderr.resume();
 
-    child.on("close", (code) => {
+    // Both `close` and `error` can fire, so settling funnels through one place.
+    // `resolve` ignores every call after the first, which is what makes the
+    // first handler to arrive the one that defines the observation.
+    const settle = (
+      outcome: Pick<Observation, "exitCode" | "subtype">,
+    ): void => {
       clearTimeout(timer);
-      if (pending !== "") handleLine(pending);
-
+      // oxlint-disable-next-line promise/no-multiple-resolved -- False positive: there is exactly one `resolve` call in this function, and the rule points at the `clearTimeout` above it as the supposed earlier resolution.
       resolve({
-        exitCode: code,
-        subtype,
+        ...outcome,
         finalText,
         toolCalls,
         gitStatusBefore,
@@ -244,21 +247,20 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
         durationMs: Number(process.hrtime.bigint() - startedAt) / NS_PER_MS,
         timedOut,
       });
+    };
+
+    child.on("close", (code) => {
+      // A final line without a trailing newline is still a real event.
+      if (pending !== "") handleLine(pending);
+      settle({ exitCode: code, subtype });
     });
 
+    // Spawn never produced a usable stream, so the run reports no result and
+    // books no cost rather than whatever partial state happened to accumulate.
     child.on("error", () => {
-      clearTimeout(timer);
-      resolve({
-        exitCode: null,
-        subtype: "spawn_error",
-        finalText: "",
-        toolCalls,
-        gitStatusBefore,
-        gitStatusAfter: gitStatus(repo),
-        costUsd: ZERO_COST,
-        durationMs: Number(process.hrtime.bigint() - startedAt) / NS_PER_MS,
-        timedOut,
-      });
+      finalText = "";
+      costUsd = ZERO_COST;
+      settle({ exitCode: null, subtype: "spawn_error" });
     });
   });
 }
