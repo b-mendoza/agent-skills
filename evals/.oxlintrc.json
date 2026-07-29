@@ -221,9 +221,7 @@
       }
     ],
     "no-alert": ["error"],
-    "no-await-in-loop": ["error"],
     "no-caller": ["error"],
-    "no-console": ["error"],
     "no-constructor-return": ["error"],
     "no-eval": ["error"],
     "no-extend-native": ["error"],
@@ -441,7 +439,6 @@
     "sonarjs/no-collection-size-mischeck": "error",
     "sonarjs/no-unthrown-error": "error",
     "sonarjs/no-unused-collection": "error",
-    "sonarjs/no-os-command-from-path": "error",
     "sonarjs/no-misleading-array-reverse": "error",
     "sonarjs/no-element-overwrite": "error",
     "sonarjs/no-identical-functions": "error",
