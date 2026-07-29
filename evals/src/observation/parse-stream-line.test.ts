@@ -6,7 +6,7 @@
 
 import { expect, test } from "vitest";
 
-import { parseStreamLine } from "./harness.ts";
+import { parseStreamLine } from "#/observation/harness.ts";
 
 test("an assistant event yields its tool_use blocks", () => {
   const line = JSON.stringify({
