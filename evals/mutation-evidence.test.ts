@@ -159,6 +159,10 @@ test("read-only tools are not evidence", () => {
   expect(found).toStrictEqual([]);
 });
 
+// These verbs always mutate, including operations that can leave
+// `git status --short` identical before and after. `git switch` moving HEAD
+// between two clean branches is the motivating case: the command text is the
+// only evidence that survives.
 const MUTATING_GIT = [
   "add",
   "commit",
@@ -173,19 +177,6 @@ const MUTATING_GIT = [
   "clean",
   "rm",
   "tag",
-];
-
-test.each(MUTATING_GIT)("`git %s` is evidence", (verb) => {
-  const found = mutationEvidence(observe({ toolCalls: [bash(`git ${verb}`)] }));
-
-  expect(found).toStrictEqual([`mutating git command: git ${verb}`]);
-});
-
-// Verbs that mutate without necessarily touching the working tree, so
-// `git status --short` reads identical before and after. `git switch` moving
-// HEAD between two clean branches is the motivating case: the delta check sees
-// nothing, which left the command as the sole possible evidence.
-const MUTATING_GIT_QUIET = [
   "switch",
   "restore",
   "cherry-pick",
@@ -198,7 +189,7 @@ const MUTATING_GIT_QUIET = [
   "gc",
 ];
 
-test.each(MUTATING_GIT_QUIET)("`git %s` is evidence", (verb) => {
+test.each(MUTATING_GIT)("`git %s` is evidence", (verb) => {
   const found = mutationEvidence(observe({ toolCalls: [bash(`git ${verb}`)] }));
 
   expect(found).toStrictEqual([`mutating git command: git ${verb}`]);
