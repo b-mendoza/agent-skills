@@ -346,7 +346,14 @@ export function skillInvocations(o: Observation, skill: string): ToolCall[] {
   );
 }
 
-/** Git subcommands that would mutate a repo, for the read-only assertion. */
+/**
+ * Git subcommands that mutate no matter how they are invoked.
+ *
+ * Some of these leave `git status --short` identical before and after --
+ * `git switch` between two clean branches moves HEAD and shows no delta -- so
+ * the command text is the only evidence that survives. That is why the list
+ * matters beyond the obvious `commit`/`push` cases.
+ */
 const MUTATING_GIT = [
   "add",
   "commit",
@@ -357,10 +364,18 @@ const MUTATING_GIT = [
   "reset",
   "checkout",
   "rebase",
-  "stash",
   "clean",
   "rm",
-  "tag",
+  "switch",
+  "restore",
+  "cherry-pick",
+  "revert",
+  "update-ref",
+  "apply",
+  "am",
+  "mv",
+  "prune",
+  "gc",
 ] as const;
 
 /** Tool calls that write a file, for the same read-only assertion. */
@@ -395,6 +410,106 @@ const GIT_OPTION = String.raw`(?:(?:${GIT_OPTIONS_WITH_VALUE.join("|")})\s+\S+|-
 const MUTATING_GIT_PATTERNS = MUTATING_GIT.map(
   (verb) => new RegExp(String.raw`\bgit\s+(?:${GIT_OPTION})*${verb}\b`),
 );
+
+/**
+ * Verbs that mutate or read depending on their arguments, paired with the
+ * subcommands and flags that make them read-only.
+ *
+ * These cannot join `MUTATING_GIT`: `analyzing-recent-project-state` documents
+ * read-only `git branch` among the commands it is allowed to run, so matching
+ * the bare verb would fail runs behaving exactly as specified. They cannot be
+ * omitted either -- `git branch -D` and `git worktree add` are real mutations.
+ * So the verb is evidence unless its arguments put it in read-only form.
+ */
+const DUAL_MODE_GIT: ReadonlyArray<{
+  verb: string;
+  /** Subcommands and flags whose presence makes the verb read-only. */
+  readOnly: readonly string[];
+  /** Whether the verb with no arguments writes. `git stash` is `stash push`. */
+  bareWrites: boolean;
+}> = [
+  {
+    verb: "branch",
+    readOnly: [
+      "--list",
+      "-l",
+      "--show-current",
+      "-a",
+      "-r",
+      "-v",
+      "-vv",
+      "--all",
+      "--remotes",
+      "--contains",
+      "--merged",
+      "--no-merged",
+      "--points-at",
+      "--format",
+      "--sort",
+    ],
+    bareWrites: false,
+  },
+  {
+    verb: "tag",
+    readOnly: [
+      "--list",
+      "-l",
+      "-n",
+      "--contains",
+      "--points-at",
+      "--merged",
+      "--no-merged",
+      "--format",
+      "--sort",
+    ],
+    // Bare `git tag` lists, but it is not among the commands any skill here is
+    // allowed to run, so it stays evidence: an unexplained `git tag` in a
+    // read-only run is worth surfacing even when that particular form prints.
+    bareWrites: true,
+  },
+  { verb: "stash", readOnly: ["list", "show"], bareWrites: true },
+  { verb: "worktree", readOnly: ["list"], bareWrites: false },
+  {
+    verb: "submodule",
+    readOnly: ["status", "summary", "foreach"],
+    bareWrites: false,
+  },
+  { verb: "reflog", readOnly: ["show"], bareWrites: false },
+  { verb: "notes", readOnly: ["list", "show"], bareWrites: false },
+  { verb: "sparse-checkout", readOnly: ["list"], bareWrites: false },
+  { verb: "bisect", readOnly: ["log", "view", "visualize"], bareWrites: false },
+];
+
+/** Escapes a literal so it can sit inside a constructed pattern. */
+function escapeRegExp(literal: string): string {
+  return literal.replace(/[.*+?^${}()|[\]\\-]/g, String.raw`\$&`);
+}
+
+/**
+ * Whether a dual-mode verb appears in its mutating form.
+ *
+ * Mirrors git's own argument handling: `git branch` prints and `git branch x`
+ * writes, so the arguments -- not the verb -- decide. When a verb's read-only
+ * markers are absent, it reads as a mutation, which keeps an unrecognized new
+ * subcommand failing loudly rather than passing silently.
+ */
+function dualModeEvidence(cmd: string): boolean {
+  return DUAL_MODE_GIT.some(({ verb, readOnly, bareWrites }) => {
+    const match = new RegExp(
+      String.raw`\bgit\s+(?:${GIT_OPTION})*${verb}\b(?<rest>.*)`,
+    ).exec(cmd);
+    if (match === null) return false;
+
+    const rest = (match.groups?.["rest"] ?? "").trim();
+    if (rest === "") return bareWrites;
+
+    return !readOnly.some((marker) =>
+      new RegExp(String.raw`(?:^|\s)${escapeRegExp(marker)}(?:$|[\s=])`).test(
+        rest,
+      ),
+    );
+  });
+}
 
 function fileWriteEvidence(call: ToolCall): string | null {
   if (!MUTATING_TOOLS.has(call.name)) return null;

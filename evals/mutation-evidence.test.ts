@@ -181,6 +181,68 @@ test.each(MUTATING_GIT)("`git %s` is evidence", (verb) => {
   expect(found).toStrictEqual([`mutating git command: git ${verb}`]);
 });
 
+// Verbs that mutate without necessarily touching the working tree, so
+// `git status --short` reads identical before and after. `git switch` moving
+// HEAD between two clean branches is the motivating case: the delta check sees
+// nothing, which left the command as the sole possible evidence.
+const MUTATING_GIT_QUIET = [
+  "switch",
+  "restore",
+  "cherry-pick",
+  "revert",
+  "update-ref",
+  "apply",
+  "am",
+  "mv",
+  "prune",
+  "gc",
+];
+
+test.each(MUTATING_GIT_QUIET)("`git %s` is evidence", (verb) => {
+  const found = mutationEvidence(observe({ toolCalls: [bash(`git ${verb}`)] }));
+
+  expect(found).toStrictEqual([`mutating git command: git ${verb}`]);
+});
+
+// Dual-mode verbs: the same word mutates or reads depending on its arguments.
+// `analyzing-recent-project-state` documents read-only `git branch` as an
+// allowed command, so treating the bare verb as mutating would fail runs that
+// are behaving exactly as specified.
+test.each([
+  "git branch",
+  "git branch --show-current",
+  "git branch --list",
+  "git branch -a",
+  "git worktree list",
+  "git submodule status",
+  "git reflog show",
+  "git notes list",
+  "git stash list",
+  "git tag --list",
+  "git tag -l v1.*",
+])("`%s` is read-only and stays clean", (command) => {
+  expect(
+    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+  ).toStrictEqual([]);
+});
+
+test.each([
+  "git branch new-feature",
+  "git branch -d old",
+  "git branch -D old",
+  "git branch -m renamed",
+  "git worktree add /tmp/wt",
+  "git worktree remove /tmp/wt",
+  "git submodule update --init",
+  "git notes add -m x",
+  "git stash push",
+  "git tag v1.0.0",
+])("`%s` mutates and is evidence", (command) => {
+  expect(
+    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+  ).toHaveLength(1);
+});
+
 // Regression guard: the option group once matched only valueless flags, so
 // `git -C /repo commit` -- an agent acting on a repo it is not sitting in --
 // read as clean. Separate-argument options must not hide the verb.
@@ -257,7 +319,7 @@ test("an absent Bash command is neither evidence nor unverifiable", () => {
 test("every distinct violation is reported, not just the first", () => {
   const found = mutationEvidence(
     observe({
-      gitStatusBefore: worktree(),
+      gitStatusBefore: worktree(""),
       gitStatusAfter: worktree("?? new.txt"),
       toolCalls: [
         { name: "Write", input: { file_path: "/work/a" } },
