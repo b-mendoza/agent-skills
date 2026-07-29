@@ -42,8 +42,6 @@ const WALL_CLOCK_MS = 30_000;
 /** Short enough to exercise SIGKILL without slowing the offline suite. */
 const SHORT_WALL_CLOCK_MS = 25;
 const BUDGET_USD = 0.01;
-/** Long enough for any late `close` handler to have run. */
-const SETTLE_DRAIN_MS = 250;
 /** Executable by owner, readable and executable by everyone. */
 const EXECUTABLE_MODE = 0o755;
 /** Distinct costs, so a test names which event a value came from. */
@@ -52,14 +50,6 @@ const COST_PARTIAL = 0.25;
 const COST_CLOSE = 0.33;
 const COST_NONZERO_EXIT = 0.1;
 const EXIT_CODE = 7;
-
-/** Resolves after `ms`, for draining handlers that must not fire. */
-async function drain(ms: number): Promise<void> {
-  // oxlint-disable-next-line promise/avoid-new -- `setTimeout` is callback-based; a delay has no existing promise to return, and there is nothing to await until this one exists.
-  await new Promise<void>((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
 
 const temps: string[] = [];
 const realPath = process.env["PATH"];
@@ -216,8 +206,9 @@ test("a late close cannot grow an observation already returned", async () => {
   const o = await pendingRun;
   const snapshot = structuredClone(o);
 
+  // EventEmitter dispatch is synchronous, so any losing-handler mutation would
+  // already be visible when emit returns.
   child.emit("close", null);
-  await drain(SETTLE_DRAIN_MS);
 
   expect(o).toStrictEqual(snapshot);
   expect(o.toolCalls).toStrictEqual([]);
@@ -241,8 +232,9 @@ test("the first handler to arrive is the one that defines the run", async () => 
   child.emit("close", 0);
   const o = await pendingRun;
 
+  // EventEmitter dispatch is synchronous, so a losing handler would have
+  // blanked these fields before emit returns.
   child.emit("error", new Error("late failure"));
-  await drain(SETTLE_DRAIN_MS);
 
   expect(o.subtype).toBe("success");
   expect(o.finalText).toBe("real outcome");
