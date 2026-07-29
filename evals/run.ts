@@ -25,7 +25,7 @@ import { runClaude } from "./harness.ts";
 
 const REPORT_PATH = fileURLToPath(new URL("./report.md", import.meta.url));
 
-const DEFAULT_MODEL = "haiku";
+const DEFAULT_MODEL = "sonnet";
 const configuredModel = process.env["EVAL_MODEL"];
 // An empty EVAL_MODEL is an unset EVAL_MODEL, not a request for a nameless model.
 const MODEL =
