@@ -9,7 +9,11 @@ import assert from "node:assert/strict";
 
 import type { FixtureKind } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/harness.ts";
-import { mutationEvidence, skillInvocations } from "#/observation/harness.ts";
+import {
+  mutationEvidence,
+  QUERY_ERROR_SUBTYPE,
+  skillInvocations,
+} from "#/observation/harness.ts";
 
 export const SKILL = "analyzing-recent-project-state";
 
@@ -68,30 +72,32 @@ function firstLine(text: string): string {
 }
 
 /**
- * Fails when the CLI never actually ran.
+ * Fails when the agent never actually ran.
  *
  * A negative case passes by observing an absence -- no Skill call, no report --
  * and a run that never started produces exactly that absence. Without this,
- * a missing binary or a failed spawn reads as "the skill correctly declined",
- * which is a green check that means nothing. Every case calls this first.
+ * a query that failed before reaching a model reads as "the skill correctly
+ * declined", which is a green check that means nothing. Every case calls this
+ * first.
  */
 function assertRunHappened(o: Observation): void {
   assert.ok(!o.timedOut, "run exceeded its wall clock");
   assert.notEqual(
     o.subtype,
-    "spawn_error",
-    "the CLI never started, so this run observed nothing",
+    QUERY_ERROR_SUBTYPE,
+    `the query produced no result, so this run observed nothing: ${firstLine(o.finalText)}`,
   );
-  assert.ok(
-    o.exitCode !== null || o.finalText !== "" || o.toolCalls.length > 0,
-    "run produced no exit code, no output, and no tool calls",
-  );
-  // A spawn that succeeds is not a run that happened. An expired login returns
-  // in milliseconds with `is_error` set, a `success` subtype, and the auth
-  // message where the answer belongs -- so the CLI started, printed, and exited
-  // clean, satisfying every check above while reaching no model at all. What it
-  // leaves behind is silence, which is also what a passing negative case looks
-  // like, so an expired login turns those green on evidence never collected.
+  // Defensive: every real result message carries a subtype, and the harness's
+  // synthetic failure carries QUERY_ERROR_SUBTYPE. An empty subtype is a shape
+  // no run produces, so it must not pass as one.
+  assert.notEqual(o.subtype, "", "run carries no result verdict");
+  // A query that concludes is not a run that happened. An expired login
+  // returns in milliseconds with `is_error` set, a `success` subtype, and the
+  // auth message where the answer belongs -- so the SDK started, reported, and
+  // ended clean, satisfying the checks above while reaching no model at all.
+  // What it leaves behind is silence, which is also what a passing negative
+  // case looks like, so an expired login turns those green on evidence never
+  // collected.
   //
   // Tolerated in two cases, because neither is a run that failed to happen: a
   // stop the suite asked for by capping the budget, and an error that arrived
@@ -99,7 +105,7 @@ function assertRunHappened(o: Observation): void {
   // own assertions can judge what was observed.
   assert.ok(
     !o.isError || DELIBERATE_STOPS.has(o.subtype) || didWork(o),
-    `the CLI reported a failed run before it did anything (subtype: ${o.subtype === "" ? "none" : o.subtype}): ${firstLine(o.finalText)}`,
+    `the SDK reported a failed run before it did anything (subtype: ${o.subtype === "" ? "none" : o.subtype}): ${firstLine(o.finalText)}`,
   );
 }
 

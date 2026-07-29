@@ -22,7 +22,6 @@ const worktree = (entries = ""): GitStatus => ({ kind: "worktree", entries });
 /** A clean observation: same status before and after, no tool calls. */
 function observe(overrides: Partial<Observation> = {}): Observation {
   return {
-    exitCode: 0,
     subtype: "success",
     isError: false,
     finalText: "",

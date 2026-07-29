@@ -1,134 +1,131 @@
-// Pins `runClaude`'s child-process lifecycle: what a run observes when the
+// Pins `runClaude`'s query lifecycle: what a run observes when the Agent SDK
 // stream ends abnormally, and what it must still observe when the stream ends
 // normally but untidily.
 //
-// The rest of the offline suite tests pure functions. This file needs a real
-// child process, so it puts a fake `claude` on PATH -- `runClaude` spawns that
-// name unconditionally -- and drives the actual stdout reader, timeout timer,
-// and settle path. No token is spent: the fake is a shell script.
+// The rest of the offline suite tests pure functions. This file needs the SDK
+// boundary itself, so it replaces `query` with a fake async generator and
+// drives the actual message loop, timeout timer, and settlement path. No
+// token is spent: no subprocess ever starts.
 //
 //   pnpm test
 
-import type * as childProcess from "node:child_process";
-import { EventEmitter } from "node:events";
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { once } from "node:events";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { PassThrough } from "node:stream";
 
+import { query } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, expect, test, vi } from "vitest";
 
 import type { Observation } from "#/observation/harness.ts";
-import { runClaude } from "#/observation/harness.ts";
+import { QUERY_ERROR_SUBTYPE, runClaude } from "#/observation/harness.ts";
 
-// `spawn` is faked only for the tests that install a child; everything else
-// delegates to the real one so the PATH-based cases stay end-to-end.
-let nextChild: FakeChild | null = null;
+vi.mock(import("@anthropic-ai/claude-agent-sdk"), async (importOriginal) => {
+  const real = await importOriginal();
+  return { ...real, query: vi.fn() };
+});
 
-// oxlint-disable-next-line vitest/prefer-import-in-mock -- The dynamic-import form types the factory against `spawn`'s full overload set, and a stand-in returning one fake child satisfies none of those signatures; taking the suggestion would require an `as` cast, which is a worse trade than this one line.
-vi.mock("node:child_process", async (importOriginal) => {
-  const real = await importOriginal<typeof childProcess>();
-  return {
-    ...real,
-    spawn: (command: string, args: readonly string[], options: object) => {
-      const fake = nextChild;
-      nextChild = null;
-      return fake ?? real.spawn(command, args, options);
-    },
-  };
+const queryMock = vi.mocked(query);
+type QueryReturn = ReturnType<typeof query>;
+type QueryParams = Parameters<typeof query>[0];
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 const WALL_CLOCK_MS = 30_000;
-/** Short enough to exercise SIGKILL without slowing the offline suite. */
+/** Short enough to exercise the abort path without slowing the suite. */
 const SHORT_WALL_CLOCK_MS = 25;
+/** Well past the short deadline, for the cleared-timer test. */
+const PAST_THE_DEADLINE_MS = 50;
 const BUDGET_USD = 0.01;
-/** Executable by owner, readable and executable by everyone. */
-const EXECUTABLE_MODE = 0o755;
-/** Distinct costs, so a test names which event a value came from. */
+/** Distinct costs, so a test names which message a value came from. */
 const COST_FULL = 0.5;
-const COST_PARTIAL = 0.25;
-const COST_CLOSE = 0.33;
-const COST_NONZERO_EXIT = 0.1;
-const EXIT_CODE = 7;
-
-const temps: string[] = [];
-const realPath = process.env["PATH"];
-
-afterEach(() => {
-  process.env["PATH"] = realPath;
-  nextChild = null;
-  for (const dir of temps.splice(0)) {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
+const COST_BUDGET_STOP = 0.25;
 
 /**
- * A child process whose lifecycle events fire on command.
- *
- * The interleaving that matters -- stdout arrives, then `error` and `close`
- * both fire -- cannot be provoked from a real process on demand, so the two
- * ordering tests below drive the harness's own handlers directly.
+ * The messages these fakes yield carry only the fields `runClaude` reads.
+ * The SDK's full message types demand deeply nested usage records, session
+ * ids, and model bookkeeping that no assertion here consults; padding every
+ * fake with that dead data would bury the fields under test. The cast below
+ * is the single boundary where the narrow fakes meet the SDK signature.
  */
-class FakeChild extends EventEmitter {
-  stdout = new PassThrough();
-  stderr = new PassThrough();
-  /** The harness kills on timeout; these tests end the stream themselves. */
-  killed = false;
-  kill = (): boolean => {
-    this.killed = true;
-    return true;
-  };
+interface FakeContentBlock {
+  type: string;
+  name?: string;
+  input?: unknown;
 }
 
-function installChild(): FakeChild {
-  const child = new FakeChild();
-  nextChild = child;
-  return child;
+type FakeMessage =
+  | { type: "assistant"; message: { content: FakeContentBlock[] } }
+  | { type: "user"; message: { role: "user"; content: string } }
+  | {
+      type: "result";
+      subtype: string;
+      is_error: boolean;
+      result?: string;
+      errors?: string[];
+      total_cost_usd: number;
+    };
+
+function fakeQuery(
+  gen: () => Generator<FakeMessage, void> | AsyncGenerator<FakeMessage, void>,
+): QueryReturn {
+  const generator = gen();
+  // The harness only iterates the generator (`for await` accepts sync and
+  // async iterables alike); Query's control methods (interrupt,
+  // setPermissionMode, ...) are never called.
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- The single boundary where the narrow fakes meet the SDK signature; see the FakeMessage comment above.
+  return generator as unknown as QueryReturn;
 }
 
-/** Puts a `claude` on PATH whose stdout is `body`, and returns its directory. */
-function fakeClaude(body: string): string {
-  const dir = mkdtempSync(join(tmpdir(), "fake-claude-"));
-  temps.push(dir);
-  const bin = join(dir, "claude");
-  writeFileSync(bin, `#!/bin/sh\n${body}\n`);
-  chmodSync(bin, EXECUTABLE_MODE);
-  process.env["PATH"] = `${dir}:${realPath ?? ""}`;
-  return dir;
+/** A query that yields a fixed script of messages, then ends. */
+function scripted(...script: FakeMessage[]): QueryReturn {
+  return fakeQuery(function* () {
+    yield* script;
+  });
 }
+
+const toolUse = (name: string, input: unknown = {}): FakeContentBlock => ({
+  type: "tool_use",
+  name,
+  input,
+});
+
+const assistant = (...content: FakeContentBlock[]): FakeMessage => ({
+  type: "assistant",
+  message: { content },
+});
+
+const success = (text: string, cost: number): FakeMessage => ({
+  type: "result",
+  subtype: "success",
+  is_error: false,
+  result: text,
+  total_cost_usd: cost,
+});
 
 async function run(wallClockMs = WALL_CLOCK_MS): Promise<Observation> {
   return runClaude({
     cwd: tmpdir(),
-    prompt: "unused",
+    prompt: "observe the repo",
     budgetUsd: BUDGET_USD,
     model: "haiku",
     wallClockMs,
   });
 }
 
-const resultEvent = (text: string, cost: number): string =>
-  JSON.stringify({
-    type: "result",
-    subtype: "success",
-    result: text,
-    total_cost_usd: cost,
-  });
-
-const toolEvent = (name: string): string =>
-  JSON.stringify({
-    type: "assistant",
-    message: { content: [{ type: "tool_use", name, input: {} }] },
-  });
+function lastQueryParams(): QueryParams {
+  const call = queryMock.mock.lastCall;
+  if (call === undefined) throw new Error("query was never called");
+  return call[0];
+}
 
 test("a normal stream yields the result and its tool calls", async () => {
-  fakeClaude(
-    `printf '%s\\n' '${toolEvent("Skill")}'\nprintf '%s\\n' '${resultEvent("done", COST_FULL)}'`,
+  queryMock.mockReturnValue(
+    scripted(assistant(toolUse("Skill")), success("done", COST_FULL)),
   );
 
   const o = await run();
 
-  expect(o.exitCode).toBe(0);
   expect(o.subtype).toBe("success");
   expect(o.isError).toBe(false);
   expect(o.finalText).toBe("done");
@@ -137,140 +134,226 @@ test("a normal stream yields the result and its tool calls", async () => {
   expect(o.timedOut).toBe(false);
 });
 
-test("a final line with no trailing newline is still a real event", async () => {
-  // The settle guard must not cost us this: `printf` without `\n` is exactly
-  // what a CLI killed mid-flush produces, and that last line is often the
-  // result event carrying the whole run's outcome.
-  fakeClaude(`printf '%s' '${resultEvent("unterminated", COST_PARTIAL)}'`);
+test("run options map one-to-one onto the query options", async () => {
+  queryMock.mockReturnValue(scripted(success("done", COST_FULL)));
 
-  const o = await run();
+  await run();
 
-  expect(o.finalText).toBe("unterminated");
-  expect(o.costUsd).toBe(COST_PARTIAL);
-});
-
-test("a stream of pure noise degrades to an empty observation", async () => {
-  fakeClaude('printf \'not json\\n[1,2,3]\\n{"type":"other"}\\n\'');
-
-  const o = await run();
-
-  expect(o.exitCode).toBe(0);
-  expect(o.subtype).toBe("");
-  expect(o.finalText).toBe("");
-  expect(o.toolCalls).toStrictEqual([]);
-});
-
-test("a failed spawn reports no result and books no cost", async () => {
-  // No `claude` on PATH at all: the `error` handler is the one that settles.
-  process.env["PATH"] = mkdtempSync(join(tmpdir(), "empty-path-"));
-  temps.push(process.env["PATH"]);
-
-  const o = await run();
-
-  expect(o.exitCode).toBeNull();
-  expect(o.subtype).toBe("spawn_error");
-  expect(o.isError).toBe(true);
-  expect(o.finalText).toBe("");
-  expect(o.costUsd).toBe(0);
-});
-
-test("an authentication failure surfaces as a failed run", async () => {
-  // End to end through the real reader: what an expired login actually put on
-  // stdout, verbatim. The exit is clean and the subtype says success, so
-  // `isError` is the only field that carries the failure out of the harness.
-  const authFailure = JSON.stringify({
-    type: "result",
-    subtype: "success",
-    is_error: true,
-    result: "Failed to authenticate: OAuth session expired",
-    total_cost_usd: 0,
+  const params = lastQueryParams();
+  expect(params.prompt).toBe("observe the repo");
+  expect(params.options).toMatchObject({
+    cwd: tmpdir(),
+    model: "haiku",
+    maxBudgetUsd: BUDGET_USD,
+    permissionMode: "auto",
+    settingSources: ["project"],
+    systemPrompt: { type: "preset", preset: "claude_code" },
+    tools: { type: "preset", preset: "claude_code" },
   });
-  fakeClaude(`printf '%s\\n' '${authFailure}'`);
-
-  const o = await run();
-
-  expect(o.exitCode).toBe(0);
-  expect(o.subtype).toBe("success");
-  expect(o.isError).toBe(true);
-  expect(o.toolCalls).toStrictEqual([]);
+  expect(params.options?.abortController).toBeInstanceOf(AbortController);
+  // Omitted on purpose: setting `env` REPLACES the subprocess environment,
+  // and the run must inherit ambient credentials.
+  expect(params.options ?? {}).not.toHaveProperty("env");
 });
 
-test("a run that exceeds its wall clock is killed and settles", async () => {
-  fakeClaude("sleep 10");
-
-  const o = await run(SHORT_WALL_CLOCK_MS);
-
-  // A process closed by SIGKILL has no numeric exit code; the timeout flag is
-  // what distinguishes this from an ordinary null close status.
-  expect(o.exitCode).toBeNull();
-  expect(o.timedOut).toBe(true);
-});
-
-test("a late close cannot grow an observation already returned", async () => {
-  // The losing handler must not keep writing. `toolCalls` is handed out by
-  // reference, so parsing a buffered line after `error` won the settle would
-  // grow an array the caller is already holding: the same run reports one set
-  // of tool calls, then silently another. `resolve` ignoring the second call
-  // does not prevent this -- only refusing to do the work does.
-  const child = installChild();
-  const pendingRun = run();
-  await vi.waitFor(() => {
-    expect(child.listenerCount("close")).toBe(1);
-  });
-
-  // Buffered, deliberately unterminated: it stays in `pending` until a
-  // `close` handler flushes it.
-  child.stdout.write(toolEvent("Write"));
-  await vi.waitFor(() => {
-    expect(child.stdout.readableLength).toBe(0);
-  });
-
-  child.emit("error", new Error("stream died"));
-  const o = await pendingRun;
-  const snapshot = structuredClone(o);
-
-  // EventEmitter dispatch is synchronous, so any losing-handler mutation would
-  // already be visible when emit returns.
-  child.emit("close", null);
-
-  expect(o).toStrictEqual(snapshot);
-  expect(o.toolCalls).toStrictEqual([]);
-  expect(o.subtype).toBe("spawn_error");
-});
-
-test("the first handler to arrive is the one that defines the run", async () => {
-  // Mirror image: `close` wins, so a later `error` must not blank the result
-  // text and cost that the close path already reported.
-  const child = installChild();
-  const pendingRun = run();
-  await vi.waitFor(() => {
-    expect(child.listenerCount("close")).toBe(1);
-  });
-
-  child.stdout.write(`${resultEvent("real outcome", COST_CLOSE)}\n`);
-  await vi.waitFor(() => {
-    expect(child.stdout.readableLength).toBe(0);
-  });
-
-  child.emit("close", 0);
-  const o = await pendingRun;
-
-  // EventEmitter dispatch is synchronous, so a losing handler would have
-  // blanked these fields before emit returns.
-  child.emit("error", new Error("late failure"));
-
-  expect(o.subtype).toBe("success");
-  expect(o.finalText).toBe("real outcome");
-  expect(o.costUsd).toBeCloseTo(COST_CLOSE);
-});
-
-test("a nonzero exit is reported rather than masked", async () => {
-  fakeClaude(
-    `printf '%s\\n' '${resultEvent("partial", COST_NONZERO_EXIT)}'\nexit ${EXIT_CODE}`,
+test("tool calls accumulate across assistant messages in stream order", async () => {
+  queryMock.mockReturnValue(
+    scripted(
+      assistant({ type: "text" }, toolUse("Read")),
+      assistant(toolUse("Bash", { command: "git log" }), toolUse("Grep")),
+      success("done", COST_FULL),
+    ),
   );
 
   const o = await run();
 
-  expect(o.exitCode).toBe(EXIT_CODE);
-  expect(o.finalText).toBe("partial");
+  expect(o.toolCalls.map((c) => c.name)).toStrictEqual([
+    "Read",
+    "Bash",
+    "Grep",
+  ]);
+  expect(o.toolCalls[1]?.input).toStrictEqual({ command: "git log" });
+});
+
+test("a malformed tool input degrades to an empty record, not a lost call", async () => {
+  // The model, not the type system, decides what `input` is. An array or a
+  // scalar must keep the call -- its existence is the evidence -- while the
+  // unreadable input reads as empty rather than inventing fields.
+  queryMock.mockReturnValue(
+    scripted(
+      assistant(toolUse("Write", ["an", "array"]), toolUse("Edit", "scalar")),
+      success("done", COST_FULL),
+    ),
+  );
+
+  const o = await run();
+
+  expect(o.toolCalls).toStrictEqual([
+    { name: "Write", input: {} },
+    { name: "Edit", input: {} },
+  ]);
+});
+
+test("messages that are neither assistant nor result are ignored", async () => {
+  queryMock.mockReturnValue(
+    scripted(
+      { type: "user", message: { role: "user", content: "echoed prompt" } },
+      success("done", COST_FULL),
+    ),
+  );
+
+  const o = await run();
+
+  expect(o.subtype).toBe("success");
+  expect(o.toolCalls).toStrictEqual([]);
+  expect(o.finalText).toBe("done");
+});
+
+test("an authentication failure surfaces as a failed run", async () => {
+  // What an expired login actually produces: the result subtype says success,
+  // so `isError` is the only field that carries the failure out of the run.
+  queryMock.mockReturnValue(
+    scripted({
+      type: "result",
+      subtype: "success",
+      is_error: true,
+      result: "Failed to authenticate: OAuth session expired",
+      total_cost_usd: 0,
+    }),
+  );
+
+  const o = await run();
+
+  expect(o.subtype).toBe("success");
+  expect(o.isError).toBe(true);
+  expect(o.toolCalls).toStrictEqual([]);
+});
+
+test("an error result keeps its diagnostics, cost, and prior tool calls", async () => {
+  // The error variant of the result union carries `errors`, not `result`.
+  // Tier-1 cases depend on exactly this shape: the budget cap ends the run
+  // after the routing decision became observable, and the observation must
+  // keep both the decision and the money it cost.
+  queryMock.mockReturnValue(
+    scripted(assistant(toolUse("Skill")), {
+      type: "result",
+      subtype: "error_max_budget_usd",
+      is_error: true,
+      errors: ["max budget exceeded", "budget was $0.01"],
+      total_cost_usd: COST_BUDGET_STOP,
+    }),
+  );
+
+  const o = await run();
+
+  expect(o.subtype).toBe("error_max_budget_usd");
+  expect(o.isError).toBe(true);
+  expect(o.finalText).toBe("max budget exceeded\nbudget was $0.01");
+  expect(o.costUsd).toBe(COST_BUDGET_STOP);
+  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Skill"]);
+});
+
+test("a query that throws before yielding reports no result and books no cost", async () => {
+  queryMock.mockImplementation(() => {
+    throw new Error("bundled CLI failed to start");
+  });
+
+  const o = await run();
+
+  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(o.isError).toBe(true);
+  expect(o.finalText).toBe("bundled CLI failed to start");
+  expect(o.costUsd).toBe(0);
+  expect(o.timedOut).toBe(false);
+});
+
+test("a mid-stream failure keeps the observations already made", async () => {
+  // A run that died after doing real work is not a run that did nothing:
+  // the tool calls it made are exactly what the mutation-scope check needs
+  // to inspect, and blanking them would read as "no evidence" -- the one
+  // meaning an observation must never fabricate.
+  queryMock.mockReturnValue(
+    fakeQuery(function* () {
+      yield assistant(toolUse("Write", { file_path: "/repo/x" }));
+      throw new Error("stream died");
+    }),
+  );
+
+  const o = await run();
+
+  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(o.isError).toBe(true);
+  expect(o.finalText).toBe("stream died");
+  expect(o.costUsd).toBe(0);
+  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Write"]);
+});
+
+test("a stream that ends without a result fails closed", async () => {
+  // An exhausted generator with no result message must not read as a clean
+  // empty run: a negative case would pass on a query that never concluded.
+  queryMock.mockReturnValue(scripted(assistant(toolUse("Read"))));
+
+  const o = await run();
+
+  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(o.isError).toBe(true);
+  expect(o.finalText).toBe("query ended without a result message");
+  expect(o.costUsd).toBe(0);
+  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Read"]);
+});
+
+test("a run that exceeds its wall clock is aborted and settles", async () => {
+  // The generator hangs until the harness's own AbortController fires, which
+  // is exactly how a hung SDK query behaves from the caller's side.
+  queryMock.mockImplementation((params: QueryParams) => {
+    const signal = params.options?.abortController?.signal;
+    if (signal === undefined) throw new Error("no abort controller supplied");
+    return fakeQuery(async function* () {
+      yield assistant(toolUse("Read"));
+      await once(signal, "abort");
+      throw new Error("The operation was aborted");
+    });
+  });
+
+  const o = await run(SHORT_WALL_CLOCK_MS);
+
+  expect(o.timedOut).toBe(true);
+  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(o.isError).toBe(true);
+  // The abort must not cost us the evidence gathered before it.
+  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Read"]);
+});
+
+test("a completed run cannot be re-flagged by its own expired timer", async () => {
+  vi.useFakeTimers();
+  queryMock.mockReturnValue(scripted(success("done", COST_FULL)));
+
+  const o = await run(SHORT_WALL_CLOCK_MS);
+  const snapshot = structuredClone(o);
+
+  // The timer was cleared in the settle path; firing past the deadline must
+  // neither abort anything nor mutate the observation already returned.
+  vi.advanceTimersByTime(PAST_THE_DEADLINE_MS);
+
+  expect(o).toStrictEqual(snapshot);
+  expect(o.timedOut).toBe(false);
+});
+
+test("the returned tool-call array is a copy, not the accumulator", async () => {
+  // A fresh generator per call: a generator is single-use, and this test runs
+  // the harness twice.
+  queryMock.mockImplementation(() =>
+    scripted(assistant(toolUse("Read")), success("done", COST_FULL)),
+  );
+
+  const o = await run();
+  const before = o.toolCalls.length;
+
+  // Nothing external holds the accumulator, so the only way this could fail
+  // is if the harness handed out its internal array by reference and later
+  // code pushed into it. Mutating the returned copy must be a local act.
+  o.toolCalls.push({ name: "Injected", input: {} });
+
+  const again = await run();
+  expect(again.toolCalls).toHaveLength(before);
 });

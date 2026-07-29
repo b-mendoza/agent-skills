@@ -1,14 +1,19 @@
-// Spawns an agent CLI, parses its NDJSON event stream, and captures the
-// repository delta around the run. Everything a case asserts on comes from
+// Runs an Agent SDK query, observes its typed message stream, and captures
+// the repository delta around the run. Everything a case asserts on comes from
 // here: this file observes a run, then classifies those observations into the
 // facts a case can assert on. It reads no intent from the agent's narration --
-// every fact traces to a tool call, a result envelope, or a git delta.
+// every fact traces to a tool call, a result message, or a git delta.
 //
 // Node's native TypeScript type stripping runs this directly: `node run.ts`.
 // Keep the syntax erasable (no enums, no parameter properties, no decorators).
 
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync } from "node:child_process";
 
+import type {
+  SDKAssistantMessage,
+  SDKResultMessage,
+} from "@anthropic-ai/claude-agent-sdk";
+import { query } from "@anthropic-ai/claude-agent-sdk";
 import * as z from "zod";
 
 export interface ToolCall {
@@ -17,30 +22,29 @@ export interface ToolCall {
 }
 
 export interface Observation {
-  exitCode: number | null;
-  /** Result envelope subtype: "success", "error_max_budget_usd", ... */
+  /** Result message subtype: "success", "error_max_budget_usd", ... */
   subtype: string;
   /**
-   * The CLI's own verdict that the run failed.
+   * The SDK's own verdict that the run failed.
    *
    * Separate from `subtype` because the two disagree: an expired login is
    * reported as `subtype: "success"` with `is_error: true`, so the subtype
    * alone cannot tell a real answer from a request that never reached a model.
    */
   isError: boolean;
-  /** Final assistant text as returned in the result event. */
+  /** Final assistant text as returned in the result message. */
   finalText: string;
   toolCalls: ToolCall[];
   gitStatusBefore: GitStatus;
   gitStatusAfter: GitStatus;
   costUsd: number;
   durationMs: number;
-  /** True when the harness killed the run for exceeding wallClockMs. */
+  /** True when the harness aborted the run for exceeding wallClockMs. */
   timedOut: boolean;
 }
 
 export interface RunOptions {
-  /** Working directory the CLI is invoked in. Skills resolve relative to it. */
+  /** Working directory the agent runs in. Skills resolve relative to it. */
   cwd: string;
   prompt: string;
   budgetUsd: number;
@@ -144,225 +148,153 @@ function toText(value: unknown): string {
 }
 
 /**
- * The stream is a foreign contract, so these schemas describe only the fields
- * the harness reads and coerce everything else to a usable default. Each
- * optional field mirrors what the CLI omits in practice: a budget-capped run
- * ends without a cost, a killed one without a result.
+ * Tool inputs cross the SDK boundary as `unknown` -- their shape is decided
+ * by the model, not the type system. A malformed input degrades to `{}`
+ * rather than discarding the call: the call's existence is the fact cases
+ * assert on, and `mutationEvidence` already treats an unreadable input as
+ * unverifiable rather than clean.
  */
-const toolUseBlockSchema = z
-  .object({
-    type: z.literal("tool_use"),
-    name: z.unknown().optional().transform(toText),
-    input: z.record(z.string(), z.unknown()).catch({}),
-  })
-  .transform(({ name, input }): ToolCall => ({ name, input }));
-
-const assistantEventSchema = z.object({
-  type: z.literal("assistant"),
-  message: z.object({ content: z.array(z.unknown()) }),
-});
-
-const resultEventSchema = z.object({
-  type: z.literal("result"),
-  subtype: z.unknown().optional().transform(toText),
-  // Absent or malformed reads as "no failure reported" rather than as a
-  // failure: a CLI too old to emit the field, or a line mangled in transit,
-  // must not condemn a run that produced real observations. What the field
-  // guards against is the opposite case -- a run the CLI explicitly failed
-  // that still looks answerable -- and that one arrives well-formed.
-  is_error: z.boolean().catch(false).default(false),
-  result: z
-    .unknown()
-    .optional()
-    .transform((value) => (typeof value === "string" ? value : "")),
-  // A JSON number and nothing else. Coercing instead would let `true` book
-  // $1.00 and `["4.2"]` book $4.20 into a committed report -- a fabricated
-  // figure indistinguishable from a measured one. An absent or malformed cost
-  // books nothing, which is the documented fallback.
-  total_cost_usd: z.number().catch(ZERO_COST).default(ZERO_COST),
-});
-
-/** Partial or non-JSON noise; the result event is what matters. */
-function parseJson(text: string): unknown {
-  try {
-    return JSON.parse(text);
-    // oxlint-disable-next-line preserve-caught-error -- The thrown SyntaxError carries no information this function can use: the contract is that any unparseable line degrades to `undefined` so a truncated stream never loses a paid run.
-  } catch {
-    return undefined;
-  }
-}
-
-/** The only two stream events the harness reads. Everything else is noise. */
-export type StreamEvent =
-  | { kind: "tool_calls"; calls: ToolCall[] }
-  | {
-      kind: "result";
-      subtype: string;
-      isError: boolean;
-      finalText: string;
-      costUsd: number;
-    };
+const toolInputSchema = z.record(z.string(), z.unknown()).catch({});
 
 /**
- * Parses one NDJSON line from the CLI stream.
- *
- * Total and non-throwing by contract: malformed JSON, non-object lines,
- * unknown event types, and missing or wrong-typed fields all yield `null` or
- * empty defaults. A truncated stream must degrade to an empty observation,
- * never to a crash that loses the whole run.
+ * Subtype of the synthetic Observation produced when the query never yielded
+ * a result message: the SDK threw (option validation, bundled-CLI startup,
+ * transport, abort) or the stream ended early. There is no result to trust,
+ * so the run reports failure and books no cost. Exported so case assertions
+ * reject the same constant the harness emits instead of a drifting literal.
  */
-export function parseStreamLine(line: string): StreamEvent | null {
-  const trimmed = line.trim();
-  if (!trimmed.startsWith("{")) return null;
+export const QUERY_ERROR_SUBTYPE = "query_error";
 
-  // JSON has no `undefined`, so it doubles as the "unparseable" sentinel.
-  const event = parseJson(trimmed);
-  if (event === undefined) return null;
-
-  const assistant = assistantEventSchema.safeParse(event);
-  if (assistant.success) {
-    const calls = assistant.data.message.content.flatMap((block) => {
-      const parsed = toolUseBlockSchema.safeParse(block);
-      return parsed.success ? [parsed.data] : [];
-    });
-    return { kind: "tool_calls", calls };
+/** The `tool_use` blocks of one assistant message, normalized. */
+function toolCallsIn(
+  content: SDKAssistantMessage["message"]["content"],
+): ToolCall[] {
+  const calls: ToolCall[] = [];
+  for (const block of content) {
+    if (block.type === "tool_use") {
+      calls.push({
+        name: block.name,
+        input: toolInputSchema.parse(block.input),
+      });
+    }
   }
+  return calls;
+}
 
-  const result = resultEventSchema.safeParse(event);
-  if (result.success) {
-    const {
-      subtype,
-      is_error: isError,
-      result: finalText,
-      total_cost_usd: costUsd,
-    } = result.data;
-    return { kind: "result", subtype, isError, finalText, costUsd };
-  }
+/** What a run without a result message can still say about why. */
+function failureText(failure: unknown): string {
+  if (failure === undefined) return "query ended without a result message";
+  return failure instanceof Error ? failure.message : toText(failure);
+}
 
-  return null;
+/** The verdict fields of a result message, mapped onto the Observation. */
+function verdictOf(
+  result: SDKResultMessage,
+): Pick<Observation, "subtype" | "isError" | "finalText" | "costUsd"> {
+  return {
+    subtype: result.subtype,
+    isError: result.is_error,
+    // The error variant of the result union carries diagnostics instead of
+    // an answer; joining them keeps auth/execution failures readable in a
+    // case's failure message.
+    finalText:
+      result.subtype === "success" ? result.result : result.errors.join("\n"),
+    costUsd: result.total_cost_usd,
+  };
 }
 
 /**
- * One `claude -p` run in stream-json mode.
+ * One Agent SDK query, observed end to end.
  *
- * stream-json is the only output format that exposes tool calls, which is what
- * makes "the skill triggered" and "no file was written" checkable rather than
- * a matter of trusting the model's narration.
+ * The typed message stream is what makes "the skill triggered" and "no file
+ * was written" checkable rather than a matter of trusting the model's
+ * narration: every assistant message carries its `tool_use` blocks, and the
+ * terminal result message carries the SDK's own verdict and cost.
  *
- * `error` and `close` can both fire, so the promise is resolve-once: whichever
- * handler runs first produces the observation and the other is a no-op.
+ * Option parity with the previous `claude -p` invocation is deliberate:
+ * `permissionMode: "auto"`, `maxBudgetUsd`, and the fixture `cwd` map
+ * one-to-one to the old flags. Two options are new obligations the CLI met
+ * implicitly: the `claude_code` system-prompt and tool presets (the SDK
+ * default is a minimal prompt with no Skill tool), and `settingSources`
+ * pinned to `["project"]` so a run sees the fixture's `.claude/skills` but
+ * not this machine's user or local settings.
  */
 export async function runClaude(opts: RunOptions): Promise<Observation> {
   const repo = opts.gitRepo ?? opts.cwd;
   const gitStatusBefore = gitStatus(repo);
   const startedAt = process.hrtime.bigint();
 
-  const args = [
-    "-p",
-    opts.prompt,
-    "--output-format",
-    "stream-json",
-    "--verbose",
-    "--permission-mode",
-    "auto",
-    "--model",
-    opts.model,
-    "--max-budget-usd",
-    opts.budgetUsd.toString(),
-  ];
+  const abortController = new AbortController();
+  const toolCalls: ToolCall[] = [];
+  let result: SDKResultMessage | undefined = undefined;
+  let failure: unknown = undefined;
+  let timedOut = false;
 
-  // oxlint-disable-next-line promise/avoid-new -- `spawn` is callback-based: turning its `close`/`error` events into a value requires exactly this constructor, and `async`/`await` has nothing to await until it exists.
-  return new Promise<Observation>((resolve) => {
-    const child = spawn("claude", args, {
-      cwd: opts.cwd,
-      // Inherit auth from the ambient environment; no API key is set up here.
-      env: process.env,
-      stdio: ["ignore", "pipe", "pipe"],
+  const timer = setTimeout(() => {
+    timedOut = true;
+    abortController.abort();
+  }, opts.wallClockMs);
+
+  try {
+    const messages = query({
+      prompt: opts.prompt,
+      options: {
+        cwd: opts.cwd,
+        model: opts.model,
+        maxBudgetUsd: opts.budgetUsd,
+        permissionMode: "auto",
+        abortController,
+        // `env` is omitted on purpose: the subprocess then inherits
+        // `process.env`, including whatever credentials the ambient
+        // environment carries. Setting `env` would REPLACE the environment,
+        // not merge it.
+        settingSources: ["project"],
+        systemPrompt: { type: "preset", preset: "claude_code" },
+        tools: { type: "preset", preset: "claude_code" },
+      },
     });
 
-    const toolCalls: ToolCall[] = [];
-    let finalText = "";
-    let subtype = "";
-    let isError = false;
-    let costUsd = ZERO_COST;
-    let timedOut = false;
-    let pending = "";
-
-    const timer = setTimeout(() => {
-      timedOut = true;
-      child.kill("SIGKILL");
-    }, opts.wallClockMs);
-
-    const handleLine = (line: string): void => {
-      const event = parseStreamLine(line);
-      if (event === null) return;
-
-      if (event.kind === "tool_calls") {
-        toolCalls.push(...event.calls);
-      } else {
-        ({ subtype, isError, finalText, costUsd } = event);
+    for await (const message of messages) {
+      if (message.type === "assistant") {
+        toolCalls.push(...toolCallsIn(message.message.content));
+      } else if (message.type === "result") {
+        result = message;
+        // Breaking here runs the generator's cleanup, which ends the query.
+        break;
       }
+    }
+  } catch (error) {
+    // Includes the AbortError raised by the wall-clock timer; `timedOut`
+    // separates that from a genuine failure.
+    failure = error;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  // Sampled after settlement on every path -- a run that threw may still
+  // have mutated the repo, and that evidence must not be lost.
+  const settled = {
+    // Copied so nothing can grow an observation a caller already holds.
+    toolCalls: [...toolCalls],
+    gitStatusBefore,
+    gitStatusAfter: gitStatus(repo),
+    durationMs: Number(process.hrtime.bigint() - startedAt) / NS_PER_MS,
+    timedOut,
+  };
+
+  if (result === undefined) {
+    // No result message means no trustworthy verdict and no reported cost:
+    // the run failed as infrastructure, whatever partial state accumulated.
+    return {
+      ...settled,
+      subtype: QUERY_ERROR_SUBTYPE,
+      isError: true,
+      finalText: failureText(failure),
+      costUsd: ZERO_COST,
     };
+  }
 
-    child.stdout.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
-      pending += chunk;
-      const lines = pending.split("\n");
-      // Last element may be an incomplete line; hold it for the next chunk.
-      pending = lines.pop() ?? "";
-      for (const line of lines) handleLine(line);
-    });
-
-    // Drained so the process can't block on a full stderr pipe.
-    child.stderr.resume();
-
-    // Both `close` and `error` can fire, so settling funnels through one place.
-    // `resolve` alone is not enough to make the first handler the one that
-    // defines the observation: it ignores the second call, but the second
-    // handler's own work still runs, and `toolCalls` is handed out by
-    // reference. A late `handleLine` would then push into the array a caller
-    // is already holding, so the observation grows after it was returned.
-    // This flag is what stops the losing handler before it touches anything.
-    let settled = false;
-
-    const settle = (
-      outcome: Pick<Observation, "exitCode" | "subtype">,
-    ): void => {
-      settled = true;
-      clearTimeout(timer);
-      // oxlint-disable-next-line promise/no-multiple-resolved -- False positive: there is exactly one `resolve` call in this function, and the rule points at the `clearTimeout` above it as the supposed earlier resolution.
-      resolve({
-        ...outcome,
-        isError,
-        finalText,
-        toolCalls,
-        gitStatusBefore,
-        gitStatusAfter: gitStatus(repo),
-        costUsd,
-        durationMs: Number(process.hrtime.bigint() - startedAt) / NS_PER_MS,
-        timedOut,
-      });
-    };
-
-    child.on("close", (code) => {
-      // Checked before parsing, not just before resolving: `handleLine` is the
-      // side effect that would leak into an already-returned observation.
-      if (settled) return;
-      // A final line without a trailing newline is still a real event.
-      if (pending !== "") handleLine(pending);
-      settle({ exitCode: code, subtype });
-    });
-
-    // Spawn never produced a usable stream, so the run reports no result and
-    // books no cost rather than whatever partial state happened to accumulate.
-    child.on("error", () => {
-      if (settled) return;
-      finalText = "";
-      costUsd = ZERO_COST;
-      isError = true;
-      settle({ exitCode: null, subtype: "spawn_error" });
-    });
-  });
+  return { ...settled, ...verdictOf(result) };
 }
 
 // --- Observation helpers used by case assertions -------------------------

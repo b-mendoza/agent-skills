@@ -17,12 +17,12 @@ import {
   SKILL,
 } from "#/cases/analyzing-recent-project-state.ts";
 import type { GitStatus, Observation } from "#/observation/harness.ts";
+import { QUERY_ERROR_SUBTYPE } from "#/observation/harness.ts";
 
 const worktree = (entries = ""): GitStatus => ({ kind: "worktree", entries });
 
 function observe(overrides: Partial<Observation> = {}): Observation {
   return {
-    exitCode: 0,
     subtype: "success",
     isError: false,
     finalText: "",
@@ -42,22 +42,20 @@ function caseById(id: string): EvalCase {
   return found;
 }
 
-/** What `runClaude` returns when the CLI could not be started at all. */
-const SPAWN_FAILURE = observe({
-  exitCode: null,
-  subtype: "spawn_error",
+/** What `runClaude` returns when the query never produced a result message. */
+const QUERY_FAILURE = observe({
+  subtype: QUERY_ERROR_SUBTYPE,
   isError: true,
-  finalText: "",
+  finalText: "bundled CLI failed to start",
   costUsd: 0,
 });
 
 /**
- * What the CLI returns when the login has expired: a clean exit, a `success`
+ * What the SDK returns when the login has expired: a clean result, a `success`
  * subtype, and the auth message where the answer belongs. Nothing about this
  * shape says "no model was reached" except `is_error`.
  */
 const AUTH_FAILURE = observe({
-  exitCode: 1,
   subtype: "success",
   isError: true,
   finalText:
@@ -69,9 +67,9 @@ const AUTH_FAILURE = observe({
 // The whole suite is only as trustworthy as its ability to tell "the skill
 // declined" from "nothing ran". Every case must reject the latter.
 test.each(cases.map((c) => c.id))(
-  "`%s` fails when the CLI never started",
+  "`%s` fails when the query produced no result",
   (id) => {
-    expect(() => caseById(id).check(SPAWN_FAILURE)).toThrow();
+    expect(() => caseById(id).check(QUERY_FAILURE)).toThrow();
   },
 );
 
@@ -113,9 +111,10 @@ test("an error after the run did real work is left to the case to judge", () => 
 });
 
 test("a silent run is not a passing negative case", () => {
-  // No exit code, no output, no tool calls: the shape of a run that produced
-  // nothing to observe, distinct from spawn_error.
-  const silent = observe({ exitCode: null, finalText: "", toolCalls: [] });
+  // No verdict, no output, no tool calls: a shape no real query produces --
+  // every result message carries a subtype, and a query without a result maps
+  // to QUERY_ERROR_SUBTYPE -- so it must not pass as a run that happened.
+  const silent = observe({ subtype: "", finalText: "", toolCalls: [] });
 
   expect(() => caseById("trigger-negative-review").check(silent)).toThrow();
 });
@@ -123,10 +122,9 @@ test("a silent run is not a passing negative case", () => {
 test("a genuine decline still passes the negative routing cases", () => {
   // The run happened, ended on the budget cap, and did not route here. This is
   // the outcome the case exists to observe, so hardening must not reject it.
-  // `isError` is set: the CLI reports the budget cap as a failed run, so the
+  // `isError` is set: the SDK reports the budget cap as a failed run, so the
   // hardening above has to tolerate it or tier 1 could never pass.
   const declined = observe({
-    exitCode: 1,
     subtype: "error_max_budget_usd",
     isError: true,
     finalText: "I'll review the diff directly.",
@@ -143,7 +141,6 @@ test("a genuine decline still passes the negative routing cases", () => {
 
 test("a genuine trigger still passes the positive routing case", () => {
   const triggered = observe({
-    exitCode: 1,
     subtype: "error_max_budget_usd",
     isError: true,
     toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
@@ -153,11 +150,10 @@ test("a genuine trigger still passes the positive routing case", () => {
 });
 
 test("a budget stop is a real decline even when it books nothing", () => {
-  // The cap can bite before the CLI reports a cost or a tool call, which is
+  // The cap can bite before the SDK reports a cost or a tool call, which is
   // the one shape an auth failure and a deliberate stop share. The subtype is
   // all that separates them, so it has to be enough on its own.
   const stoppedEarly = observe({
-    exitCode: 1,
     subtype: "error_max_budget_usd",
     isError: true,
     finalText: "",
@@ -172,7 +168,6 @@ test("a budget stop is a real decline even when it books nothing", () => {
 
 test("the positive routing case fails when the skill never triggered", () => {
   const noTrigger = observe({
-    exitCode: 1,
     subtype: "error_max_budget_usd",
     toolCalls: [{ name: "Read", input: {} }],
   });
@@ -184,7 +179,6 @@ test("the positive routing case fails when the skill never triggered", () => {
 
 test("the mutate case fails when the run mutated the repo", () => {
   const mutated = observe({
-    exitCode: 1,
     subtype: "error_max_budget_usd",
     finalText: "done",
     toolCalls: [{ name: "Bash", input: { command: "git merge feature" } }],
