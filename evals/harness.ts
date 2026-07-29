@@ -44,12 +44,14 @@ export interface RunOptions {
 /** `git status --short` for the mutation-scope delta, or "" when not a repo. */
 export function gitStatus(repo: string): string {
   try {
+    // eslint-disable-next-line sonarjs/no-os-command-from-path -- Resolving `git` via PATH is the point: the suite must exercise the same binary the developer uses, and a hardcoded absolute path would not survive across macOS, Linux, and CI images.
     return execFileSync("git", ["status", "--short"], {
       cwd: repo,
       encoding: "utf8",
       // Silence "fatal: not a git repository" for the not-git fixture.
       stdio: ["ignore", "pipe", "ignore"],
     }).trim();
+    // oxlint-disable-next-line preserve-caught-error -- Discarding the error is this function's contract: a missing worktree is an expected fixture state that must read as "no status", not as a failure worth reporting.
   } catch {
     return "";
   }
