@@ -14,9 +14,9 @@ belongs in a consumer's `node_modules`. See
 ```bash
 pnpm install                         # once, from this directory
 
-node evals/run.ts                    # everything (~5 min, ~$2)
-node evals/run.ts --tier=1           # routing only (~30s, ~$0.30)
-node evals/run.ts --case=path-error  # one case
+node evals/src/orchestration/run.ts                    # everything (~5 min, ~$2)
+node evals/src/orchestration/run.ts --tier=1           # routing only (~30s, ~$0.30)
+node evals/src/orchestration/run.ts --case=path-error  # one case
 ```
 
 Node 24 strips TypeScript types natively, so the suite runs from source with no
@@ -59,14 +59,15 @@ the React-only pieces, so the rules here match the ones you already work under.
 
 ## Layout
 
-| Path               | Contents                                                                    |
-| ------------------ | --------------------------------------------------------------------------- |
-| `run.ts`           | Entry point: selects cases, runs them sequentially, writes the report       |
-| `harness.ts`       | Spawns the CLI, parses the NDJSON event stream, captures the git delta      |
-| `fixtures.ts`      | Builds throwaway git repos with the skill installed under `.claude/skills/` |
-| `cases/<skill>.ts` | Canonical source of truth: every eval case and its assertions               |
-| `*.test.ts`        | Offline vitest suites; see the Checks table above                           |
-| `report.md`        | Generated every run; committed                                              |
+| Path                         | Contents                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------- |
+| `src/orchestration/run.ts`   | Entry point: selects cases, runs them sequentially, writes the report       |
+| `src/observation/harness.ts` | Spawns the CLI, parses the NDJSON event stream, captures the git delta      |
+| `src/fixtures/fixtures.ts`   | Builds throwaway git repos with the skill installed under `.claude/skills/` |
+| `src/cases/<skill>.ts`       | Canonical source of truth: every eval case and its assertions               |
+| `src/**/*.test.ts`           | Offline vitest suites, colocated with the code they pin                     |
+| `report.md`                  | Generated every run; committed                                              |
+| `AGENTS.md`, `docs/agents/`  | Agent guide and its short-lived current-state references                    |
 
 ## Tiers
 
@@ -110,11 +111,11 @@ rather than compared as if it were clean.
 
 ## Adding a case
 
-Add it to `cases/<skill>.ts`. A case declares its fixture, prompt, budget, wall
+Add it to `src/cases/<skill>.ts`. A case declares its fixture, prompt, budget, wall
 clock, and a `check` that throws to fail and returns a short observed-outcome
 string for the report.
 
-`cases/<skill>.ts` is the canonical source of truth. A case belongs here only if
+`src/cases/<skill>.ts` is the canonical source of truth. A case belongs here only if
 it runs and asserts something observable; there is no parallel list of aspirational
 cases, because a case nothing executes proves nothing.
 
