@@ -49,6 +49,25 @@ export interface EvalCase {
 }
 
 /**
+ * Result subtypes that end a run on a ceiling the suite set for itself.
+ *
+ * Tier 1 caps the budget precisely so the run stops once the routing decision
+ * is visible, so hitting that cap is the intended ending, not a failed run.
+ */
+const DELIBERATE_STOPS = new Set(["error_max_budget_usd"]);
+
+/** Whether the run got far enough to do anything that costs money. */
+function didWork(o: Observation): boolean {
+  return o.toolCalls.length > 0 || o.costUsd > 0;
+}
+
+/** Keeps a failure message to the single line the report cell can hold. */
+function firstLine(text: string): string {
+  const [line = ""] = text.trim().split("\n");
+  return line === "" ? "(no output)" : line;
+}
+
+/**
  * Fails when the CLI never actually ran.
  *
  * A negative case passes by observing an absence -- no Skill call, no report --
@@ -66,6 +85,21 @@ function assertRunHappened(o: Observation): void {
   assert.ok(
     o.exitCode !== null || o.finalText !== "" || o.toolCalls.length > 0,
     "run produced no exit code, no output, and no tool calls",
+  );
+  // A spawn that succeeds is not a run that happened. An expired login returns
+  // in milliseconds with `is_error` set, a `success` subtype, and the auth
+  // message where the answer belongs -- so the CLI started, printed, and exited
+  // clean, satisfying every check above while reaching no model at all. What it
+  // leaves behind is silence, which is also what a passing negative case looks
+  // like, so an expired login turns those green on evidence never collected.
+  //
+  // Tolerated in two cases, because neither is a run that failed to happen: a
+  // stop the suite asked for by capping the budget, and an error that arrived
+  // after the run had already spent money or called a tool, where the case's
+  // own assertions can judge what was observed.
+  assert.ok(
+    !o.isError || DELIBERATE_STOPS.has(o.subtype) || didWork(o),
+    `the CLI reported a failed run before it did anything (subtype: ${o.subtype === "" ? "none" : o.subtype}): ${firstLine(o.finalText)}`,
   );
 }
 
@@ -231,6 +265,11 @@ export const cases: EvalCase[] = [
  * invocation: the skill is read-only, so no behavioral run may leave a trace.
  */
 export function checkMutationScope(observations: Observation[]): string {
+  // The guarantee is "these runs wrote nothing", which can only be read off
+  // runs that happened. A run that reached no model also leaves no trace, so
+  // without this the row reports a read-only contract it never tested.
+  for (const o of observations) assertRunHappened(o);
+
   const all = observations.flatMap((o) => mutationEvidence(o));
   assert.deepEqual(all, [], `read-only contract violated:\n${all.join("\n")}`);
   return `${observations.length} behavioral run(s) left no trace`;

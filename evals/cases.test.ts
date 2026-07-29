@@ -51,6 +51,21 @@ const SPAWN_FAILURE = observe({
   costUsd: 0,
 });
 
+/**
+ * What the CLI returns when the login has expired: a clean exit, a `success`
+ * subtype, and the auth message where the answer belongs. Nothing about this
+ * shape says "no model was reached" except `is_error`.
+ */
+const AUTH_FAILURE = observe({
+  exitCode: 1,
+  subtype: "success",
+  isError: true,
+  finalText:
+    "Failed to authenticate: OAuth session expired and could not be refreshed",
+  toolCalls: [],
+  costUsd: 0,
+});
+
 // The whole suite is only as trustworthy as its ability to tell "the skill
 // declined" from "nothing ran". Every case must reject the latter.
 test.each(cases.map((c) => c.id))(
@@ -64,6 +79,39 @@ test.each(cases.map((c) => c.id))("`%s` fails on a timed-out run", (id) => {
   expect(() => caseById(id).check(observe({ timedOut: true }))).toThrow();
 });
 
+// The regression this file exists for, in its most dangerous form: an expired
+// login once passed all three negative cases, because a run that reached no
+// model calls no skill and mutates nothing.
+test.each(cases.map((c) => c.id))(
+  "`%s` fails when authentication failed",
+  (id) => {
+    expect(() => caseById(id).check(AUTH_FAILURE)).toThrow(
+      /reported a failed run/,
+    );
+  },
+);
+
+test("mutation-scope fails when authentication failed", () => {
+  // Derived from the tier-2 observations, so it inherits the same blind spot:
+  // a run that never happened left no trace, and that must not read as proof
+  // the read-only contract held.
+  expect(() => checkMutationScope([AUTH_FAILURE])).toThrow();
+});
+
+test("an error after the run did real work is left to the case to judge", () => {
+  // Not every `is_error` means nothing happened. A run that already called
+  // tools produced observations, so the case's own assertions decide it --
+  // otherwise a late API hiccup would mask a genuine result.
+  const lateFailure = observe({
+    isError: true,
+    subtype: "error_during_execution",
+    finalText: "",
+    toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
+  });
+
+  expect(caseById("trigger-positive").check(lateFailure)).toBe("Skill invoked");
+});
+
 test("a silent run is not a passing negative case", () => {
   // No exit code, no output, no tool calls: the shape of a run that produced
   // nothing to observe, distinct from spawn_error.
@@ -75,9 +123,12 @@ test("a silent run is not a passing negative case", () => {
 test("a genuine decline still passes the negative routing cases", () => {
   // The run happened, ended on the budget cap, and did not route here. This is
   // the outcome the case exists to observe, so hardening must not reject it.
+  // `isError` is set: the CLI reports the budget cap as a failed run, so the
+  // hardening above has to tolerate it or tier 1 could never pass.
   const declined = observe({
     exitCode: 1,
     subtype: "error_max_budget_usd",
+    isError: true,
     finalText: "I'll review the diff directly.",
     toolCalls: [{ name: "Read", input: { file_path: "/repo/a.txt" } }],
   });
@@ -94,10 +145,29 @@ test("a genuine trigger still passes the positive routing case", () => {
   const triggered = observe({
     exitCode: 1,
     subtype: "error_max_budget_usd",
+    isError: true,
     toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
   });
 
   expect(caseById("trigger-positive").check(triggered)).toBe("Skill invoked");
+});
+
+test("a budget stop is a real decline even when it books nothing", () => {
+  // The cap can bite before the CLI reports a cost or a tool call, which is
+  // the one shape an auth failure and a deliberate stop share. The subtype is
+  // all that separates them, so it has to be enough on its own.
+  const stoppedEarly = observe({
+    exitCode: 1,
+    subtype: "error_max_budget_usd",
+    isError: true,
+    finalText: "",
+    toolCalls: [],
+    costUsd: 0,
+  });
+
+  expect(caseById("trigger-negative-review").check(stoppedEarly)).toBe(
+    "no trigger",
+  );
 });
 
 test("the positive routing case fails when the skill never triggered", () => {
