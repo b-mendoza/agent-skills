@@ -167,6 +167,9 @@ const MUTATING_GIT = [
   "add",
   "commit",
   "merge",
+  // Hyphenated collisions with `merge` must stay flagged even though
+  // `merge-base` alone is excepted as read-only.
+  "merge-tree",
   "push",
   "fetch",
   "pull",
@@ -319,6 +322,11 @@ test.each([
   "git status --short",
   "git diff HEAD",
   "git show",
+  // Read-only despite starting with `merge`: `\b` treats the hyphen as a word
+  // boundary, so without its explicit exception this documented command would
+  // read as `git merge`. It failed a legitimate paid run before being pinned.
+  "git merge-base HEAD origin/main",
+  "git merge-base --is-ancestor HEAD origin/main",
   "ls add",
   "npm add-something",
 ])("`%s` is not evidence", (command) => {
