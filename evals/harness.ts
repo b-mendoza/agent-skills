@@ -402,11 +402,12 @@ const GIT_OPTIONS_WITH_VALUE = [
 // Word-boundary match so `git log --stat` isn't read as `git stash`. No `g`
 // flag, so these carry no lastIndex state and are safe to share across calls.
 //
-// An option is either one of the value-taking flags above plus its argument, or
-// any other `-`-prefixed token on its own (`--no-pager`, `--git-dir=/r/.git`).
-// Skipping them is what lets `git -C /repo commit` -- an agent acting on a repo
-// it is not sitting in -- still read as a mutation.
-const GIT_OPTION = String.raw`(?:(?:${GIT_OPTIONS_WITH_VALUE.join("|")})\s+\S+|-\S+)\s+`;
+// An option is either one of the value-taking flags above plus its quoted or
+// unquoted argument, or any other `-`-prefixed token on its own (`--no-pager`,
+// `--git-dir=/r/.git`). Skipping them is what lets `git -C "/repo path" commit`
+// -- an agent acting on a repo it is not sitting in -- still read as a mutation.
+const GIT_OPTION_VALUE = String.raw`(?:"[^"]*"|'[^']*'|\S+)`;
+const GIT_OPTION = String.raw`(?:(?:${GIT_OPTIONS_WITH_VALUE.join("|")})\s+${GIT_OPTION_VALUE}|-\S+)\s+`;
 const MUTATING_GIT_PATTERNS = MUTATING_GIT.map(
   (verb) => new RegExp(String.raw`\bgit\s+(?:${GIT_OPTION})*${verb}\b`),
 );

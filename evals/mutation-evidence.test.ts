@@ -239,6 +239,10 @@ test.each([
 // read as clean. Separate-argument options must not hide the verb.
 test.each([
   "git -C /repo commit -m x",
+  'git -C "/repo path" commit',
+  "git -C '/repo path' push",
+  'git -c "user.name=x y" commit',
+  'git --git-dir="/r/.git" commit',
   "git -C /repo --no-pager commit",
   "git --no-pager commit",
   "git -c user.name=x commit",
@@ -275,6 +279,7 @@ test.each([
 // The same option handling must not start swallowing read-only commands.
 test.each([
   "git -C /repo log --stat",
+  'git -C "/repo path" log --stat',
   "git -C /repo status",
   "git --no-pager log",
   // `commit` here is a revision argument to `log`, not the verb. Only the
