@@ -291,12 +291,18 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     child.stderr.resume();
 
     // Both `close` and `error` can fire, so settling funnels through one place.
-    // `resolve` ignores every call after the first, which is what makes the
-    // first handler to arrive the one that defines the observation.
+    // `resolve` alone is not enough to make the first handler the one that
+    // defines the observation: it ignores the second call, but the second
+    // handler's own work still runs, and `toolCalls` is handed out by
+    // reference. A late `handleLine` would then push into the array a caller
+    // is already holding, so the observation grows after it was returned.
+    // This flag is what stops the losing handler before it touches anything.
+    let settled = false;
 
     const settle = (
       outcome: Pick<Observation, "exitCode" | "subtype">,
     ): void => {
+      settled = true;
       clearTimeout(timer);
       // oxlint-disable-next-line promise/no-multiple-resolved -- False positive: there is exactly one `resolve` call in this function, and the rule points at the `clearTimeout` above it as the supposed earlier resolution.
       resolve({
@@ -312,6 +318,9 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     };
 
     child.on("close", (code) => {
+      // Checked before parsing, not just before resolving: `handleLine` is the
+      // side effect that would leak into an already-returned observation.
+      if (settled) return;
       // A final line without a trailing newline is still a real event.
       if (pending !== "") handleLine(pending);
       settle({ exitCode: code, subtype });
@@ -320,6 +329,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     // Spawn never produced a usable stream, so the run reports no result and
     // books no cost rather than whatever partial state happened to accumulate.
     child.on("error", () => {
+      if (settled) return;
       finalText = "";
       costUsd = ZERO_COST;
       settle({ exitCode: null, subtype: "spawn_error" });

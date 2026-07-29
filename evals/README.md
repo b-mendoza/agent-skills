@@ -47,6 +47,7 @@ paid run:
 | `parse-stream-line.test.ts` | The NDJSON parser's tolerance contract                        |
 | `mutation-evidence.test.ts` | The read-only detector behind `mutation-scope`                |
 | `git-status.test.ts`        | Clean vs. not-a-repo vs. unreadable sample classification     |
+| `harness-lifecycle.test.ts` | Child-process lifecycle: spawn failure, late events, settle   |
 | `fixtures.test.ts`          | Fixture invariants: git state, skill copy, exclusion, cleanup |
 | `run-core.test.ts`          | Flag parsing, check normalization, report rendering           |
 
