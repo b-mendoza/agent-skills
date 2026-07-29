@@ -22,7 +22,7 @@ best-practice docs to read before editing.
 | [`skills/`](./skills/)                   | First-party skills authored in this repo. One directory per skill.      |
 | [`docs/`](./docs/)                       | Design notes, harmonization specs, and the best-practices reference.    |
 | [`docs/best-practices/`](./docs/best-practices/) | Per-topic skill-authoring guidance. See its [index](./docs/best-practices/README.md). |
-| [`evals/`](./evals/)                     | Local eval suite. Runs skills against fixture repos; `node evals/run.ts`. |
+| [`evals/`](./evals/)                     | Local eval suite. Runs skills against fixture repos; `node evals/src/orchestration/run.ts`. |
 | [`.agents/skills/`](./.agents/skills/)   | Vendored third-party skills. Source of truth for OpenCode discovery.    |
 | [`.claude/skills/`](./.claude/skills/)   | Mirror of vendored skills for Claude Code discovery.                    |
 | [`skills-lock.json`](./skills-lock.json) | Pin file for vendored third-party skills (managed by tooling).          |
@@ -74,8 +74,8 @@ definition:
 - If the skill ships a `scripts/` directory, run the script the way a
   consumer would invoke it.
 - If the skill has cases in [`evals/`](./evals/), re-run them and commit the
-  updated `evals/report.md`: `node evals/run.ts --case=<id>` for one case, or
-  `node evals/run.ts` for the suite. Behavior changes outside the intended one
+  updated `evals/report.md`: `node evals/src/orchestration/run.ts --case=<id>` for one case, or
+  `node evals/src/orchestration/run.ts` for the suite. Behavior changes outside the intended one
   are regressions. The suite needs `pnpm install` in `evals/` once; its own
   toolchain is checked with `pnpm lint` and `pnpm test` from that directory.
 - If the change touches `skills-lock.json` or vendored skills under
