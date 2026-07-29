@@ -239,7 +239,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     "stream-json",
     "--verbose",
     "--permission-mode",
-    "bypassPermissions",
+    "auto",
     "--model",
     opts.model,
     "--max-budget-usd",
