@@ -595,10 +595,16 @@
         "max": 4
       }
     ],
+    // `0` and `1` are ignored because they are structural rather than magic:
+    // `xs.length === 0`, `reduce(..., 0)`, `slice(0, n)`, and `1 | 2` unions say
+    // what they mean already, and naming them (`const EMPTY = 0`) adds a lookup
+    // without adding information. The rule still fires on opaque constants like
+    // a bare timeout or budget, which is what it exists to catch.
     "no-magic-numbers": [
       "error",
       {
-        "ignoreTypeIndexes": true
+        "ignoreTypeIndexes": true,
+        "ignore": [0, 1]
       }
     ],
     "no-use-before-define": [
