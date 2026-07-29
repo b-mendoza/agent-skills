@@ -140,9 +140,9 @@ const ZERO_COST = 0;
 /** Foreign scalars, rendered without `String()`'s `[object Object]`. */
 function toText(value: unknown): string {
   if (typeof value === "string") return value;
-  if (value === null || value === undefined) return "";
+  if (value == null) return "";
   if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
+    return value.toString();
   }
   return JSON.stringify(value);
 }
@@ -183,7 +183,7 @@ function toolCallsIn(
 
 /** What a run without a result message can still say about why. */
 function failureText(failure: unknown): string {
-  if (failure === undefined) return "query ended without a result message";
+  if (failure == null) return "query ended without a result message";
   return failure instanceof Error ? failure.message : toText(failure);
 }
 
@@ -226,8 +226,8 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
 
   const abortController = new AbortController();
   const toolCalls: ToolCall[] = [];
-  let result: SDKResultMessage | undefined = undefined;
-  let failure: unknown = undefined;
+  let result: SDKResultMessage | null = null;
+  let failure: unknown = null;
   let timedOut = false;
 
   const timer = setTimeout(() => {
@@ -282,7 +282,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     timedOut,
   };
 
-  if (result === undefined) {
+  if (result == null) {
     // No result message means no trustworthy verdict and no reported cost:
     // the run failed as infrastructure, whatever partial state accumulated.
     return {
@@ -499,7 +499,7 @@ function bashEvidence(call: ToolCall): string | null {
   if (call.name !== "Bash") return null;
 
   const raw = call.input["command"];
-  if (raw === undefined || raw === null) {
+  if (raw == null) {
     return "unverifiable Bash command (absent)";
   }
   if (typeof raw !== "string") {
