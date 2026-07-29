@@ -43,7 +43,7 @@ function status(repo: string): string {
 }
 
 test.each<FixtureKind>(["clean", "dirty", "not-git", "missing-path"])(
-  "%s: the skill is copied in where the CLI looks for it",
+  "%s: the skill is copied in where the agent looks for it",
   (kind) => {
     const fx = fixture(kind);
 

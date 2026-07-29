@@ -24,7 +24,7 @@ import { fileURLToPath } from "node:url";
 export type FixtureKind = "clean" | "dirty" | "not-git" | "missing-path";
 
 export interface Fixture {
-  /** Directory the CLI runs in. Always a real git repo except for `not-git`. */
+  /** Directory the agent runs in. Always a real git repo except for `not-git`. */
   cwd: string;
   /** Repo sampled for the git delta; `undefined` when there is no worktree. */
   gitRepo: string | undefined;
@@ -44,7 +44,7 @@ function git(cwd: string, ...args: string[]): void {
 /**
  * Creates a fixture in a fresh temp directory.
  *
- * `skill` is copied into `.claude/skills/` so the CLI can discover it. Each
+ * `skill` is copied into `.claude/skills/` so the agent can discover it. Each
  * call gets its own directory, which is what keeps cases in fresh context.
  */
 export function makeFixture(kind: FixtureKind, skill: string): Fixture {
@@ -76,7 +76,7 @@ export function makeFixture(kind: FixtureKind, skill: string): Fixture {
     }
   }
 
-  // Copy the skill in so the CLI can find it, then hide it from git status.
+  // Copy the skill in so the agent can find it, then hide it from git status.
   const skillSrc = join(SKILLS_DIR, skill);
   const skillDest = join(repo, ".claude", "skills", skill);
   mkdirSync(join(repo, ".claude", "skills"), { recursive: true });
