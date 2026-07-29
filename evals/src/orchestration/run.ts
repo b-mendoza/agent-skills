@@ -29,7 +29,7 @@ const DEFAULT_MODEL = "sonnet";
 const configuredModel = process.env["EVAL_MODEL"];
 // An empty EVAL_MODEL is an unset EVAL_MODEL, not a request for a nameless model.
 const MODEL =
-  configuredModel === undefined || configuredModel === ""
+  configuredModel == null || configuredModel === ""
     ? DEFAULT_MODEL
     : configuredModel;
 
@@ -77,13 +77,13 @@ export function parseArgs(argv: string[]): {
   };
   for (const arg of argv) {
     const tier = /^--tier=(?<tier>\d+)$/.exec(arg)?.groups?.["tier"];
-    if (tier !== undefined) {
+    if (tier != null) {
       out.tier = Number(tier);
       continue;
     }
 
     const caseId = /^--case=(?<caseId>.+)$/.exec(arg)?.groups?.["caseId"];
-    if (caseId !== undefined) {
+    if (caseId != null) {
       out.caseId = caseId;
       continue;
     }
