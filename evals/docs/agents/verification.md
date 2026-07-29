@@ -5,13 +5,13 @@
 
 ## Free checks (run these liberally)
 
-| Task                              | Check                                                                                                                                             |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Any TypeScript change             | `pnpm test` — vitest unit suites; offline, no tokens spent                                                                                        |
-| Any change, before completion     | `pnpm lint` — tsc, eslint, oxlint, oxfmt `--check` in parallel                                                                                    |
-| Auto-fixable lint/format findings | `pnpm fix`                                                                                                                                        |
-| Runner argument handling          | `node src/orchestration/run.ts --case=no-such-case` must exit `2`; `--tier=bogus` must exit `4`; neither may rewrite `report.md` or spawn a model |
-| Import safety                     | Importing `run.ts` as a module must stay inert — only direct `node` invocation runs cases                                                         |
+| Task                              | Check                                                                                                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Any TypeScript change             | `pnpm test` — vitest unit suites; offline, no tokens spent                                                                                             |
+| Any change, before completion     | `pnpm lint` — tsc, eslint, oxlint, oxfmt `--check` in parallel                                                                                         |
+| Auto-fixable lint/format findings | `pnpm fix`                                                                                                                                             |
+| Runner argument handling          | `node src/orchestration/run.ts --case=no-such-case` must exit `2`; `--tier=bogus` must exit `4`; neither may rewrite `report.md` or start an SDK query |
+| Import safety                     | Importing `run.ts` as a module must stay inert — only direct `node` invocation runs cases                                                              |
 
 ## Paid checks (require explicit user approval)
 
@@ -26,6 +26,13 @@ Exit codes: `0` all pass, `1` a case failed, `2` no case matched the filter,
 
 Every paid run rewrites the committed `report.md`; review the diff — a
 changed row outside your intended change is a regression.
+
+The suite runs through the Agent SDK, which bundles its own pinned Claude
+Code binary rather than using the system `claude`. After bumping the SDK
+version, expect report diffs that come from the runtime, not the skill —
+review them as behavior changes, and run `--case=trigger-positive` first: it
+exercises project-skill discovery, the Claude Code presets, tool observation,
+and the budget stop in one cheap case.
 
 ## Interpretation
 
