@@ -527,9 +527,10 @@ function bashEvidence(call: ToolCall): string | null {
   }
 
   const cmd = typeof raw === "string" ? raw : "";
-  return MUTATING_GIT_PATTERNS.some((pattern) => pattern.test(cmd))
-    ? `mutating git command: ${cmd}`
-    : null;
+  const mutates =
+    MUTATING_GIT_PATTERNS.some((pattern) => pattern.test(cmd)) ||
+    dualModeEvidence(cmd);
+  return mutates ? `mutating git command: ${cmd}` : null;
 }
 
 /**
