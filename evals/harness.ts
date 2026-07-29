@@ -109,7 +109,8 @@ const resultEventSchema = z.object({
 /** Partial or non-JSON noise; the result event is what matters. */
 function parseJson(text: string): unknown {
   try {
-    return JSON.parse(text) as unknown;
+    return JSON.parse(text);
+    // oxlint-disable-next-line preserve-caught-error -- The thrown SyntaxError carries no information this function can use: the contract is that any unparseable line degrades to `undefined` so a truncated stream never loses a paid run.
   } catch {
     return undefined;
   }
