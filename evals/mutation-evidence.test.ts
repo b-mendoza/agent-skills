@@ -234,6 +234,26 @@ test.each([
   ).toHaveLength(1);
 });
 
+// Every occurrence is classified within its own shell command. A read-only
+// command later in a chain cannot launder an earlier mutation, and a read-only
+// first occurrence cannot hide a later mutation.
+test.each([
+  "git branch new && git branch --list",
+  "git stash list && git stash push",
+])("`%s` is evidence when any dual-mode occurrence mutates", (command) => {
+  expect(
+    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+  ).toHaveLength(1);
+});
+
+test("a chain of read-only dual-mode commands stays clean", () => {
+  expect(
+    mutationEvidence(
+      observe({ toolCalls: [bash("git stash list && git stash show")] }),
+    ),
+  ).toStrictEqual([]);
+});
+
 // Regression guard: the option group once matched only valueless flags, so
 // `git -C /repo commit` -- an agent acting on a repo it is not sitting in --
 // read as clean. Separate-argument options must not hide the verb.

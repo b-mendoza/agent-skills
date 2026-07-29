@@ -496,19 +496,31 @@ function escapeRegExp(literal: string): string {
  */
 function dualModeEvidence(cmd: string): boolean {
   return DUAL_MODE_GIT.some(({ verb, readOnly, bareWrites }) => {
-    const match = new RegExp(
-      String.raw`\bgit\s+(?:${GIT_OPTION})*${verb}\b(?<rest>.*)`,
-    ).exec(cmd);
-    if (match === null) return false;
-
-    const rest = (match.groups?.["rest"] ?? "").trim();
-    if (rest === "") return bareWrites;
-
-    return !readOnly.some((marker) =>
-      new RegExp(String.raw`(?:^|\s)${escapeRegExp(marker)}(?:$|[\s=])`).test(
-        rest,
-      ),
+    const occurrences = cmd.matchAll(
+      new RegExp(String.raw`\bgit\s+(?:${GIT_OPTION})*${verb}\b`, "g"),
     );
+
+    for (const match of occurrences) {
+      // Arguments belong only to this shell command. A read-only marker after a
+      // separator cannot launder an earlier mutation in the same Bash payload.
+      const [segment = ""] = cmd
+        .slice(match.index + match[0].length)
+        .split(/&&|\|\||[;|\n]/, 1);
+      const rest = segment.trim();
+      if (rest === "") {
+        if (bareWrites) return true;
+        continue;
+      }
+
+      const isReadOnly = readOnly.some((marker) =>
+        new RegExp(String.raw`(?:^|\s)${escapeRegExp(marker)}(?:$|[\s=])`).test(
+          rest,
+        ),
+      );
+      if (!isReadOnly) return true;
+    }
+
+    return false;
   });
 }
 
