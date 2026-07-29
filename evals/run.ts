@@ -88,7 +88,7 @@ function evaluate(check: () => string): { status: Status; observed: string } {
     return { status: "PASS", observed: check() };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const firstLine = message.split("\n")[0] ?? "";
+    const [firstLine = ""] = message.split("\n");
     return { status: "FAIL", observed: firstLine.slice(0, MAX_OBSERVED_CHARS) };
   }
 }
