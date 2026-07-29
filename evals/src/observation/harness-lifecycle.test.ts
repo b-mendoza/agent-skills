@@ -115,7 +115,7 @@ async function run(wallClockMs = WALL_CLOCK_MS): Promise<Observation> {
 
 function lastQueryParams(): QueryParams {
   const call = queryMock.mock.lastCall;
-  if (call === undefined) throw new Error("query was never called");
+  if (call == null) throw new Error("query was never called");
   return call[0];
 }
 
@@ -307,7 +307,7 @@ test("a run that exceeds its wall clock is aborted and settles", async () => {
   // is exactly how a hung SDK query behaves from the caller's side.
   queryMock.mockImplementation((params: QueryParams) => {
     const signal = params.options?.abortController?.signal;
-    if (signal === undefined) throw new Error("no abort controller supplied");
+    if (signal == null) throw new Error("no abort controller supplied");
     return fakeQuery(async function* () {
       yield assistant(toolUse("Read"));
       await once(signal, "abort");

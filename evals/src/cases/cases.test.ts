@@ -38,7 +38,7 @@ function observe(overrides: Partial<Observation> = {}): Observation {
 
 function caseById(id: string): EvalCase {
   const found = cases.find((c) => c.id === id);
-  if (found === undefined) throw new Error(`no such case: ${id}`);
+  if (found == null) throw new Error(`no such case: ${id}`);
   return found;
 }
 
