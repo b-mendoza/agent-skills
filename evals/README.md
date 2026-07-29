@@ -39,22 +39,31 @@ pnpm test    # vitest: unit tests for the pure functions, free and offline
 ```
 
 `pnpm test` is not the eval suite. It covers the parts that can be checked
-without spending tokens — chiefly `parseStreamLine`, which turns the CLI's
-untrusted NDJSON stream into typed events. Run it before any paid run.
+without spending tokens, so a break shows up in seconds instead of after a
+paid run:
+
+| Test file                   | Pins                                                          |
+| --------------------------- | ------------------------------------------------------------- |
+| `parse-stream-line.test.ts` | The NDJSON parser's tolerance contract                        |
+| `mutation-evidence.test.ts` | The read-only detector behind `mutation-scope`                |
+| `fixtures.test.ts`          | Fixture invariants: git state, skill copy, exclusion, cleanup |
+| `run-core.test.ts`          | Flag parsing, check normalization, report rendering           |
+
+Run it before any paid run.
 
 The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 the React-only pieces, so the rules here match the ones you already work under.
 
 ## Layout
 
-| Path                        | Contents                                                                    |
-| --------------------------- | --------------------------------------------------------------------------- |
-| `run.ts`                    | Entry point: selects cases, runs them sequentially, writes the report       |
-| `harness.ts`                | Spawns the CLI, parses the NDJSON event stream, captures the git delta      |
-| `fixtures.ts`               | Builds throwaway git repos with the skill installed under `.claude/skills/` |
-| `cases/<skill>.ts`          | Canonical source of truth: every eval case and its assertions               |
-| `parse-stream-line.test.ts` | Vitest unit tests pinning the stream parser's tolerance contract            |
-| `report.md`                 | Generated every run; committed                                              |
+| Path               | Contents                                                                    |
+| ------------------ | --------------------------------------------------------------------------- |
+| `run.ts`           | Entry point: selects cases, runs them sequentially, writes the report       |
+| `harness.ts`       | Spawns the CLI, parses the NDJSON event stream, captures the git delta      |
+| `fixtures.ts`      | Builds throwaway git repos with the skill installed under `.claude/skills/` |
+| `cases/<skill>.ts` | Canonical source of truth: every eval case and its assertions               |
+| `*.test.ts`        | Offline vitest suites; see the Checks table above                           |
+| `report.md`        | Generated every run; committed                                              |
 
 ## Tiers
 
