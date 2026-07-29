@@ -39,6 +39,8 @@ vi.mock("node:child_process", async (importOriginal) => {
 });
 
 const WALL_CLOCK_MS = 30_000;
+/** Short enough to exercise SIGKILL without slowing the offline suite. */
+const SHORT_WALL_CLOCK_MS = 25;
 const BUDGET_USD = 0.01;
 /** Long enough for any late `close` handler to have run. */
 const SETTLE_DRAIN_MS = 250;
@@ -105,13 +107,13 @@ function fakeClaude(body: string): string {
   return dir;
 }
 
-async function run(): Promise<Observation> {
+async function run(wallClockMs = WALL_CLOCK_MS): Promise<Observation> {
   return runClaude({
     cwd: tmpdir(),
     prompt: "unused",
     budgetUsd: BUDGET_USD,
     model: "haiku",
-    wallClockMs: WALL_CLOCK_MS,
+    wallClockMs,
   });
 }
 
@@ -178,6 +180,17 @@ test("a failed spawn reports no result and books no cost", async () => {
   expect(o.subtype).toBe("spawn_error");
   expect(o.finalText).toBe("");
   expect(o.costUsd).toBe(0);
+});
+
+test("a run that exceeds its wall clock is killed and settles", async () => {
+  fakeClaude("sleep 10");
+
+  const o = await run(SHORT_WALL_CLOCK_MS);
+
+  // A process closed by SIGKILL has no numeric exit code; the timeout flag is
+  // what distinguishes this from an ordinary null close status.
+  expect(o.exitCode).toBeNull();
+  expect(o.timedOut).toBe(true);
 });
 
 test("a late close cannot grow an observation already returned", async () => {
