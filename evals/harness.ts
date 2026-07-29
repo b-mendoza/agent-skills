@@ -184,7 +184,9 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     opts.budgetUsd.toString(),
   ];
 
+  // oxlint-disable-next-line promise/avoid-new -- `spawn` is callback-based: turning its `close`/`error` events into a value requires exactly this constructor, and `async`/`await` has nothing to await until it exists.
   return new Promise<Observation>((resolve) => {
+    // eslint-disable-next-line sonarjs/no-os-command-from-path -- Resolving `claude` via PATH is intended: the suite must run whichever CLI the developer has installed, which is precisely what an absolute path would defeat.
     const child = spawn("claude", args, {
       cwd: opts.cwd,
       // Inherit auth from the ambient environment; no API key is set up here.
