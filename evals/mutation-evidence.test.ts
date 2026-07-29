@@ -338,10 +338,10 @@ test("a non-string Bash command is unverifiable rather than clean", () => {
   ]);
 });
 
-test("an absent Bash command is neither evidence nor unverifiable", () => {
+test("an absent Bash command is unverifiable rather than clean", () => {
   expect(
     mutationEvidence(observe({ toolCalls: [{ name: "Bash", input: {} }] })),
-  ).toStrictEqual([]);
+  ).toStrictEqual(["unverifiable Bash command (absent)"]);
 });
 
 test("every distinct violation is reported, not just the first", () => {

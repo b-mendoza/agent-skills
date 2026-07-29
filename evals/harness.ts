@@ -534,12 +534,15 @@ function bashEvidence(call: ToolCall): string | null {
   if (call.name !== "Bash") return null;
 
   const raw = call.input["command"];
-  if (raw !== undefined && raw !== null && typeof raw !== "string") {
+  if (raw === undefined || raw === null) {
+    return "unverifiable Bash command (absent)";
+  }
+  if (typeof raw !== "string") {
     // Unscannable rather than clean: coercing would hide a mutating verb.
     return `unverifiable Bash command (non-string): ${typeof raw}`;
   }
 
-  const cmd = typeof raw === "string" ? raw : "";
+  const cmd = raw;
   const mutates =
     MUTATING_GIT_PATTERNS.some((pattern) => pattern.test(cmd)) ||
     dualModeEvidence(cmd);
