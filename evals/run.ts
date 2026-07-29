@@ -8,7 +8,7 @@
 // Cases run sequentially: they spend real tokens and the wall-clock cost of
 // parallelism is not worth the token burn on a suite this small.
 //
-// Exit codes: 0 all pass · 1 a case failed · 2 no cases matched · 3 suite error
+// Exit codes: 0 all pass · 1 a case failed · 2 no cases matched · 3 suite error · 4 usage error
 
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -38,6 +38,7 @@ const EXIT_ALL_PASSED = 0;
 const EXIT_CASE_FAILED = 1;
 const EXIT_NO_CASES_MATCHED = 2;
 const EXIT_SUITE_ERROR = 3;
+const EXIT_USAGE_ERROR = 4;
 
 const MS_PER_SECOND = 1000;
 const COST_DECIMALS = 2;
@@ -178,7 +179,13 @@ records only observed results.
 }
 
 async function main(): Promise<void> {
-  const { tier, caseId } = parseArgs(process.argv.slice(ARGV_START));
+  const { tier, caseId, errors } = parseArgs(process.argv.slice(ARGV_START));
+  if (errors.length > 0) {
+    for (const error of errors) console.error(error);
+    console.error("Usage: node evals/run.ts [--tier=<integer>] [--case=<id>]");
+    process.exit(EXIT_USAGE_ERROR);
+  }
+
   const selected = cases.filter(
     (c) =>
       (tier === undefined || c.tier === tier) &&

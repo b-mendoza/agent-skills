@@ -24,8 +24,8 @@ build step. Keep the syntax erasable — `erasableSyntaxOnly` is on, so no enums
 parameter properties, decorators, or namespaces.
 
 Exits `0` when every case passes, `1` when a case fails, `2` when no case
-matched the filter, and `3` on an infrastructure error. Set `EVAL_MODEL` to
-override the model (default `haiku`).
+matched the filter, `3` on an infrastructure error, and `4` on invalid command
+line usage. Set `EVAL_MODEL` to override the model (default `haiku`).
 
 Each run rewrites [`report.md`](./report.md), which is committed so a behavior
 change shows up in `git diff`.
