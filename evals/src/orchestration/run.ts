@@ -205,7 +205,7 @@ async function main(): Promise<void> {
   for (const c of selected) {
     process.stdout.write(`· ${c.id} (tier ${c.tier}) ... `);
     // Sequential execution is the documented design (see the header): each case
-    // spawns a real agent CLI that spends tokens, so `Promise.all` here would
+    // starts a real Agent SDK query that spends tokens, so `Promise.all` here would
     // burn budget in parallel and interleave the progress lines this loop prints.
     // oxlint-disable-next-line no-await-in-loop -- Cases must run one at a time; see above.
     const [result, observation] = await runCase(c);

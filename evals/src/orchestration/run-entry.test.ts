@@ -7,7 +7,7 @@
 // passed". Every other test here would still be green.
 //
 // `--case=` with an id no case defines reaches the "no cases matched" branch,
-// which exits before the agent CLI is ever spawned, so this costs nothing.
+// which exits before an Agent SDK query is ever started, so this costs nothing.
 //
 //   pnpm test
 
@@ -56,7 +56,7 @@ test("importing run.ts does not start a run", () => {
     { encoding: "utf8" },
   );
 
-  // No case ran, so nothing was selected, spawned, or reported.
+  // No case ran, so nothing was selected, queried, or reported.
   expect(result.status).toBe(0);
   expect(result.stdout).toBe("");
 });
