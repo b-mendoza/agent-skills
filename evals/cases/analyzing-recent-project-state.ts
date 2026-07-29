@@ -49,12 +49,33 @@ export interface EvalCase {
 }
 
 /**
+ * Fails when the CLI never actually ran.
+ *
+ * A negative case passes by observing an absence -- no Skill call, no report --
+ * and a run that never started produces exactly that absence. Without this,
+ * a missing binary or a failed spawn reads as "the skill correctly declined",
+ * which is a green check that means nothing. Every case calls this first.
+ */
+function assertRunHappened(o: Observation): void {
+  assert.ok(!o.timedOut, "run exceeded its wall clock");
+  assert.notEqual(
+    o.subtype,
+    "spawn_error",
+    "the CLI never started, so this run observed nothing",
+  );
+  assert.ok(
+    o.exitCode !== null || o.finalText !== "" || o.toolCalls.length > 0,
+    "run produced no exit code, no output, and no tool calls",
+  );
+}
+
+/**
  * Tier 1 stops as soon as the routing decision is visible, so the budget abort
  * is the expected ending. A run that got far enough to produce a report would
  * mean the cap failed to bite.
  */
 function assertRoutingRunEndedEarly(o: Observation): void {
-  assert.ok(!o.timedOut, "run exceeded its wall clock");
+  assertRunHappened(o);
   assert.doesNotMatch(
     o.finalText,
     /^# Project State Snapshot/m,
@@ -62,9 +83,12 @@ function assertRoutingRunEndedEarly(o: Observation): void {
   );
 }
 
+/** The escalation statuses these cases can assert on. */
+type EnvelopeStatus = "PATH_ERROR" | "NOT_GIT";
+
 /** The three-line escalation envelope shared by the PATH_ERROR/NOT_GIT routes. */
-function assertEnvelope(o: Observation, status: string): string {
-  assert.ok(!o.timedOut, "run exceeded its wall clock");
+function assertEnvelope(o: Observation, status: EnvelopeStatus): string {
+  assertRunHappened(o);
   const lines = o.finalText
     .trim()
     .split("\n")
@@ -180,7 +204,7 @@ export const cases: EvalCase[] = [
     prompt: () =>
       "What changed recently in this repo and is it ready to hand off?",
     check: (o) => {
-      assert.ok(!o.timedOut, "run exceeded its wall clock");
+      assertRunHappened(o);
       assert.match(
         o.finalText,
         /^# Project State Snapshot/m,

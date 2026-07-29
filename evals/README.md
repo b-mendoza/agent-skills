@@ -50,6 +50,7 @@ paid run:
 | `harness-lifecycle.test.ts` | Child-process lifecycle: spawn failure, late events, settle   |
 | `fixtures.test.ts`          | Fixture invariants: git state, skill copy, exclusion, cleanup |
 | `run-core.test.ts`          | Flag parsing, check normalization, report rendering           |
+| `cases.test.ts`             | The case assertions themselves, against synthetic runs        |
 
 Run it before any paid run.
 
