@@ -20,7 +20,11 @@ const temps: string[] = [];
 const realPath = process.env["PATH"];
 
 afterEach(() => {
-  process.env["PATH"] = realPath;
+  if (realPath === undefined) {
+    delete process.env["PATH"];
+  } else {
+    process.env["PATH"] = realPath;
+  }
   for (const dir of temps.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
