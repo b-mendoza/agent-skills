@@ -25,20 +25,44 @@ export type FixtureKind = "clean" | "dirty" | "not-git" | "missing-path";
 
 export interface Fixture {
   /** Directory the agent runs in. Always a real git repo except for `not-git`. */
-  cwd: string;
+  readonly cwd: string;
   /** Repo sampled for the git delta; `undefined` when there is no worktree. */
-  gitRepo: string | undefined;
+  readonly gitRepo: string | undefined;
   /** A path guaranteed not to exist, for the PATH_ERROR case. */
-  missingPath: string;
+  readonly missingPath: string;
   /** A real directory that is not a worktree, for the NOT_GIT case. */
-  notGitPath: string;
-  cleanup: () => void;
+  readonly notGitPath: string;
+  readonly cleanup: () => void;
 }
 
-const SKILLS_DIR = fileURLToPath(new URL("../../../skills/", import.meta.url));
+interface FixtureConfiguration {
+  readonly usesGit: boolean;
+  readonly receivesDirtyState: boolean;
+}
 
-function git(cwd: string, ...args: string[]): void {
-  execFileSync("git", args, { cwd, stdio: "ignore" });
+const FIXTURE_CONFIGURATIONS = {
+  clean: { usesGit: true, receivesDirtyState: false },
+  dirty: { usesGit: true, receivesDirtyState: true },
+  "not-git": { usesGit: false, receivesDirtyState: false },
+  "missing-path": { usesGit: true, receivesDirtyState: false },
+} as const satisfies Record<FixtureKind, FixtureConfiguration>;
+
+const SKILLS_DIRECTORY_PATH = fileURLToPath(
+  new URL("../../../skills/", import.meta.url),
+);
+
+function isFixtureKind(value: string): value is FixtureKind {
+  return Object.hasOwn(FIXTURE_CONFIGURATIONS, value);
+}
+
+function resolveFixtureConfiguration(kind: string): FixtureConfiguration {
+  return isFixtureKind(kind)
+    ? FIXTURE_CONFIGURATIONS[kind]
+    : FIXTURE_CONFIGURATIONS.clean;
+}
+
+function runGit(repositoryPath: string, ...arguments_: string[]): void {
+  execFileSync("git", arguments_, { cwd: repositoryPath, stdio: "ignore" });
 }
 
 /**
@@ -48,51 +72,55 @@ function git(cwd: string, ...args: string[]): void {
  * call gets its own directory, which is what keeps cases in fresh context.
  */
 export function makeFixture(kind: FixtureKind, skill: string): Fixture {
-  const root = mkdtempSync(join(tmpdir(), "agent-skills-eval-"));
-  const repo = join(root, "repo");
-  const notGitPath = join(root, "not-a-repo");
+  const configuration = resolveFixtureConfiguration(kind);
+  const fixtureRoot = mkdtempSync(join(tmpdir(), "agent-skills-eval-"));
+  const repositoryPath = join(fixtureRoot, "repo");
+  const notGitPath = join(fixtureRoot, "not-a-repo");
 
-  mkdirSync(repo, { recursive: true });
+  mkdirSync(repositoryPath, { recursive: true });
   mkdirSync(notGitPath, { recursive: true });
   writeFileSync(join(notGitPath, "notes.txt"), "not a worktree\n");
 
-  if (kind !== "not-git") {
-    git(repo, "init", "-q");
+  if (configuration.usesGit) {
+    runGit(repositoryPath, "init", "-q");
     // Fixture-only identity; never reads the developer's git config.
-    git(repo, "config", "user.email", "evals@example.invalid");
-    git(repo, "config", "user.name", "Eval Fixture");
-    git(repo, "config", "commit.gpgsign", "false");
+    runGit(repositoryPath, "config", "user.email", "evals@example.invalid");
+    runGit(repositoryPath, "config", "user.name", "Eval Fixture");
+    runGit(repositoryPath, "config", "commit.gpgsign", "false");
 
-    writeFileSync(join(repo, "a.txt"), "hello\n");
-    git(repo, "add", "a.txt");
-    git(repo, "commit", "-qm", "initial commit");
+    writeFileSync(join(repositoryPath, "a.txt"), "hello\n");
+    runGit(repositoryPath, "add", "a.txt");
+    runGit(repositoryPath, "commit", "-qm", "initial commit");
 
-    if (kind === "dirty") {
-      writeFileSync(join(repo, "a.txt"), "hello\nmodified\n");
-      writeFileSync(join(repo, "b.txt"), "new file\n");
-      git(repo, "add", "b.txt");
-      git(repo, "commit", "-qm", "add b.txt");
-      writeFileSync(join(repo, "c.txt"), "untracked\n");
+    if (configuration.receivesDirtyState) {
+      writeFileSync(join(repositoryPath, "a.txt"), "hello\nmodified\n");
+      writeFileSync(join(repositoryPath, "b.txt"), "new file\n");
+      runGit(repositoryPath, "add", "b.txt");
+      runGit(repositoryPath, "commit", "-qm", "add b.txt");
+      writeFileSync(join(repositoryPath, "c.txt"), "untracked\n");
     }
   }
 
   // Copy the skill in so the agent can find it, then hide it from git status.
-  const skillSrc = join(SKILLS_DIR, skill);
-  const skillDest = join(repo, ".claude", "skills", skill);
-  mkdirSync(join(repo, ".claude", "skills"), { recursive: true });
-  cpSync(skillSrc, skillDest, { recursive: true });
+  const skillSourcePath = join(SKILLS_DIRECTORY_PATH, skill);
+  const skillDestinationPath = join(repositoryPath, ".claude", "skills", skill);
+  mkdirSync(join(repositoryPath, ".claude", "skills"), { recursive: true });
+  cpSync(skillSourcePath, skillDestinationPath, { recursive: true });
 
-  if (kind !== "not-git") {
-    appendFileSync(join(repo, ".git", "info", "exclude"), "\n.claude/\n");
+  if (configuration.usesGit) {
+    appendFileSync(
+      join(repositoryPath, ".git", "info", "exclude"),
+      "\n.claude/\n",
+    );
   }
 
   return {
-    cwd: repo,
-    gitRepo: kind === "not-git" ? undefined : repo,
-    missingPath: join(root, "definitely-does-not-exist"),
+    cwd: repositoryPath,
+    gitRepo: configuration.usesGit ? repositoryPath : undefined,
+    missingPath: join(fixtureRoot, "definitely-does-not-exist"),
     notGitPath,
     cleanup: () => {
-      rmSync(root, { recursive: true, force: true });
+      rmSync(fixtureRoot, { recursive: true, force: true });
     },
   };
 }
