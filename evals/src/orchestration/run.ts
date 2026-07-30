@@ -19,15 +19,7 @@ import type { Observation } from "#/observation/harness.ts";
 import type { CaseExecutionResult } from "#/orchestration/case-execution.ts";
 import { evaluate, executeCase } from "#/orchestration/case-execution.ts";
 import type { Result } from "#/orchestration/report.ts";
-import {
-  escapeCell,
-  renderReport,
-  REPORT_PATH,
-} from "#/orchestration/report.ts";
-import { resolveModel } from "#/orchestration/run-configuration.ts";
-
-export type { CaseExecutionResult, Result };
-export { escapeCell, evaluate, renderReport, resolveModel };
+import { renderReport, REPORT_PATH } from "#/orchestration/report.ts";
 
 /** Exit codes are the machine-readable contract; see the header comment. */
 export const EXIT_CODES = {
