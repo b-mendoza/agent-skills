@@ -224,15 +224,29 @@ test("an envelope case fails on a fourth line", () => {
   expect(() => caseById("path-error").check(chatty)).toThrow();
 });
 
+test("quiet-state passes on the short-form snapshot", () => {
+  const quietState = observe({ finalText: "# Project State Snapshot" });
+
+  expect(caseById("quiet-state").check(quietState)).toBe(
+    "short form; no section 4; no ERROR",
+  );
+});
+
+test("mutation-scope passes when behavioral runs left no trace", () => {
+  const clean = observe();
+
+  expect(checkMutationScope([])).toBe("0 behavioral run(s) left no trace");
+  expect(checkMutationScope([clean, clean])).toBe(
+    "2 behavioral run(s) left no trace",
+  );
+});
+
 test("mutation-scope fails when any behavioral run left a trace", () => {
   const clean = observe();
   const traced = observe({
     toolCalls: [{ name: "Write", input: { file_path: "/repo/x" } }],
   });
 
-  expect(checkMutationScope([clean, clean])).toBe(
-    "2 behavioral run(s) left no trace",
-  );
   expect(() => checkMutationScope([clean, traced])).toThrow(
     /read-only contract violated/,
   );
