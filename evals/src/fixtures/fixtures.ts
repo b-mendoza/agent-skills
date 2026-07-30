@@ -19,10 +19,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// `missing-path` builds the same repo as `clean`; the two differ only in which
-// Fixture field the case consumes -- `missingPath` rather than `cwd`.
-export type FixtureKind = "clean" | "dirty" | "not-git" | "missing-path";
-
 export interface Fixture {
   /** Directory the agent runs in. Always a real git repo except for `not-git`. */
   readonly cwd: string;
@@ -40,12 +36,16 @@ interface FixtureConfiguration {
   readonly receivesDirtyState: boolean;
 }
 
+// `missing-path` builds the same repo as `clean`; the two differ only in which
+// Fixture field the case consumes -- `missingPath` rather than `cwd`.
 const FIXTURE_CONFIGURATIONS = {
   clean: { usesGit: true, receivesDirtyState: false },
   dirty: { usesGit: true, receivesDirtyState: true },
   "not-git": { usesGit: false, receivesDirtyState: false },
   "missing-path": { usesGit: true, receivesDirtyState: false },
-} as const satisfies Record<FixtureKind, FixtureConfiguration>;
+} as const satisfies Record<string, FixtureConfiguration>;
+
+export type FixtureKind = keyof typeof FIXTURE_CONFIGURATIONS;
 
 const SKILLS_DIRECTORY_PATH = fileURLToPath(
   new URL("../../../skills/", import.meta.url),
