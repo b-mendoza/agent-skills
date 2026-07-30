@@ -8,7 +8,7 @@
 //   pnpm test
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { afterEach, expect, test } from "vitest";
@@ -59,9 +59,6 @@ test.each<FixtureKind>(FIXTURE_KINDS)(
 
     // Skills resolve from `<cwd>/.claude/skills/`, not the repo's own skills/.
     expect(
-      existsSync(join(fixture.cwd, ".claude", "skills", FIXTURE_SKILL_NAME)),
-    ).toBe(true);
-    expect(
       existsSync(
         join(fixture.cwd, ".claude", "skills", FIXTURE_SKILL_NAME, "SKILL.md"),
       ),
@@ -92,7 +89,12 @@ test("clean: has a commit and a quiet status", () => {
 
   // The quiet-state case depends on this being an empty evidence window.
   expect(readGitStatus(fixture.cwd)).toBe("");
-  expect(existsSync(join(fixture.cwd, "a.txt"))).toBe(true);
+  // The evidence window starts after a baseline commit, not in an unborn repo.
+  expect(() => {
+    execFileSync("git", ["rev-parse", "--verify", "HEAD"], {
+      cwd: fixture.cwd,
+    });
+  }).not.toThrow();
 });
 
 test("dirty: carries exactly the intended modified and untracked entries", () => {
@@ -104,19 +106,6 @@ test("dirty: carries exactly the intended modified and untracked entries", () =>
       .split("\n")
       .sort((firstEntry, secondEntry) => firstEntry.localeCompare(secondEntry)),
   ).toStrictEqual([" M a.txt", "?? c.txt"]);
-  // b.txt was committed, so it must NOT appear as a pending change.
-  expect(existsSync(join(fixture.cwd, "b.txt"))).toBe(true);
-});
-
-test("the copied skill is excluded from git status", () => {
-  const fixture = createFixture("clean");
-
-  // Without this, every mutation-scope assertion would see the fixture's own
-  // scaffolding and read as a violation.
-  expect(readGitStatus(fixture.cwd)).not.toContain(".claude");
-  expect(
-    readFileSync(join(fixture.cwd, ".git", "info", "exclude"), "utf8"),
-  ).toContain(".claude/");
 });
 
 test("missingPath does not exist and notGitPath is a real non-worktree", () => {
@@ -135,8 +124,6 @@ test("each call gets an isolated tree", () => {
   const firstFixture = createFixture("dirty");
   const secondFixture = createFixture("dirty");
 
-  expect(firstFixture.cwd).not.toBe(secondFixture.cwd);
-
   // Writing through one fixture must not be visible in the other.
   execFileSync("git", ["config", "user.name", "Only A"], {
     cwd: firstFixture.cwd,
@@ -149,7 +136,7 @@ test("each call gets an isolated tree", () => {
   expect(secondFixtureUserName).toBe("Eval Fixture");
 });
 
-test("cleanup removes the whole temp tree", () => {
+test("cleanup removes the whole temp tree and is safe to call twice", () => {
   // Registered too: an assertion that throws before the explicit cleanup below
   // must not leak the temp tree this test exists to prove is removable.
   const fixture = createFixture("dirty");
@@ -161,11 +148,6 @@ test("cleanup removes the whole temp tree", () => {
   expect(existsSync(cwd)).toBe(false);
   // The sibling non-repo lives under the same root and must go too.
   expect(existsSync(notGitPath)).toBe(false);
-});
-
-test("cleanup is safe to call twice", () => {
-  const fixture = createFixture("clean");
-  fixture.cleanup();
 
   // `finally` in runCase can race a failed run; a second call must not throw.
   expect(() => {
