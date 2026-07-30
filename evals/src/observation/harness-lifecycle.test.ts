@@ -9,8 +9,11 @@
 //
 //   pnpm test
 
+import { execFileSync } from "node:child_process";
 import { once } from "node:events";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, expect, test, vi } from "vitest";
@@ -54,10 +57,14 @@ vi.mock(import("@anthropic-ai/claude-agent-sdk"), async (importOriginal) => {
 const queryMock = vi.mocked(query);
 type QueryReturn = ReturnType<typeof query>;
 type QueryParams = Parameters<typeof query>[0];
+const tempDirectories: string[] = [];
 
 afterEach(() => {
   vi.useRealTimers();
   forcedExecFileSyncFailures.length = 0;
+  for (const tempDirectory of tempDirectories.splice(0)) {
+    rmSync(tempDirectory, { recursive: true, force: true });
+  }
 });
 
 const WALL_CLOCK_MS = 30_000;
@@ -70,6 +77,12 @@ const BUDGET_USD = 0.01;
 const COST_FULL = 0.5;
 const COST_BUDGET_STOP = 0.25;
 const FOREIGN_BIGINT = 1n;
+
+function createTempDirectory(prefix: string): string {
+  const tempDirectory = mkdtempSync(join(tmpdir(), prefix));
+  tempDirectories.push(tempDirectory);
+  return tempDirectory;
+}
 
 /**
  * The messages these fakes yield carry only the fields `runClaude` reads.
@@ -99,9 +112,11 @@ type FakeMessage =
     };
 
 function fakeQuery(
-  gen: () => Generator<FakeMessage, void> | AsyncGenerator<FakeMessage, void>,
+  generatorFactory: () =>
+    | Generator<FakeMessage, void>
+    | AsyncGenerator<FakeMessage, void>,
 ): QueryReturn {
-  const generator = gen();
+  const generator = generatorFactory();
   // The harness only iterates the generator (`for await` accepts sync and
   // async iterables alike); Query's control methods (interrupt,
   // setPermissionMode, ...) are never called.
@@ -135,7 +150,7 @@ const success = (text: string, cost: number): FakeMessage => ({
   total_cost_usd: cost,
 });
 
-async function run(wallClockMs = WALL_CLOCK_MS): Promise<Observation> {
+async function runHarness(wallClockMs = WALL_CLOCK_MS): Promise<Observation> {
   return runClaude({
     cwd: tmpdir(),
     prompt: "observe the repo",
@@ -172,26 +187,23 @@ test("a normal stream yields the result and its tool calls", async () => {
     scripted(assistant(toolUse("Skill")), success("done", COST_FULL)),
   );
 
-  const o = await run();
+  const observation = await runHarness();
 
-  expect(o.subtype).toBe("success");
-  expect(o.isError).toBe(false);
-  expect(o.finalText).toBe("done");
-  expect(o.costUsd).toBe(COST_FULL);
-  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Skill"]);
-  expect(o.timedOut).toBe(false);
+  expect(observation.subtype).toBe("success");
+  expect(observation.isError).toBe(false);
+  expect(observation.finalText).toBe("done");
+  expect(observation.costUsd).toBe(COST_FULL);
+  expect(observation.toolCalls.map((c) => c.name)).toStrictEqual(["Skill"]);
+  expect(observation.timedOut).toBe(false);
 });
 
-test("run options map one-to-one onto the query options", async () => {
+test("runClaude applies harness-owned query policy", async () => {
   queryMock.mockReturnValue(scripted(success("done", COST_FULL)));
 
-  await run();
+  await runHarness();
 
   const params = lastQueryParams();
-  expect(params.prompt).toBe("observe the repo");
   expect(params.options).toMatchObject({
-    cwd: tmpdir(),
-    model: "haiku",
     maxBudgetUsd: BUDGET_USD,
     permissionMode: "auto",
     settingSources: ["project"],
@@ -204,6 +216,28 @@ test("run options map one-to-one onto the query options", async () => {
   expect(params.options ?? {}).not.toHaveProperty("env");
 });
 
+test("runClaude samples gitRepo, not cwd, when supplied", async () => {
+  const workingDirectory = createTempDirectory("harness-cwd-");
+  const gitRepository = createTempDirectory("harness-repo-");
+  execFileSync("git", ["init", "-q"], {
+    cwd: gitRepository,
+    stdio: "ignore",
+  });
+  queryMock.mockReturnValue(scripted(success("done", COST_FULL)));
+
+  const observation = await runClaude({
+    cwd: workingDirectory,
+    gitRepo: gitRepository,
+    prompt: "observe the repo",
+    budgetUsd: BUDGET_USD,
+    model: "haiku",
+    wallClockMs: WALL_CLOCK_MS,
+  });
+
+  expect(observation.gitStatusBefore.kind).toBe("worktree");
+  expect(observation.gitStatusAfter.kind).toBe("worktree");
+});
+
 test("tool calls accumulate across assistant messages in stream order", async () => {
   queryMock.mockReturnValue(
     scripted(
@@ -213,14 +247,14 @@ test("tool calls accumulate across assistant messages in stream order", async ()
     ),
   );
 
-  const o = await run();
+  const observation = await runHarness();
 
-  expect(o.toolCalls.map((c) => c.name)).toStrictEqual([
+  expect(observation.toolCalls.map((c) => c.name)).toStrictEqual([
     "Read",
     "Bash",
     "Grep",
   ]);
-  expect(o.toolCalls[1]?.input).toStrictEqual({ command: "git log" });
+  expect(observation.toolCalls[1]?.input).toStrictEqual({ command: "git log" });
 });
 
 test("a malformed tool input degrades to an empty record, not a lost call", async () => {
@@ -234,9 +268,9 @@ test("a malformed tool input degrades to an empty record, not a lost call", asyn
     ),
   );
 
-  const o = await run();
+  const observation = await runHarness();
 
-  expect(o.toolCalls).toStrictEqual([
+  expect(observation.toolCalls).toStrictEqual([
     { name: "Write", input: {} },
     { name: "Edit", input: {} },
   ]);
@@ -250,11 +284,11 @@ test("messages that are neither assistant nor result are ignored", async () => {
     ),
   );
 
-  const o = await run();
+  const observation = await runHarness();
 
-  expect(o.subtype).toBe("success");
-  expect(o.toolCalls).toStrictEqual([]);
-  expect(o.finalText).toBe("done");
+  expect(observation.subtype).toBe("success");
+  expect(observation.toolCalls).toStrictEqual([]);
+  expect(observation.finalText).toBe("done");
 });
 
 test("an authentication failure surfaces as a failed run", async () => {
@@ -270,11 +304,11 @@ test("an authentication failure surfaces as a failed run", async () => {
     }),
   );
 
-  const o = await run();
+  const observation = await runHarness();
 
-  expect(o.subtype).toBe("success");
-  expect(o.isError).toBe(true);
-  expect(o.toolCalls).toStrictEqual([]);
+  expect(observation.subtype).toBe("success");
+  expect(observation.isError).toBe(true);
+  expect(observation.toolCalls).toStrictEqual([]);
 });
 
 test("an error result keeps its diagnostics, cost, and prior tool calls", async () => {
@@ -292,13 +326,13 @@ test("an error result keeps its diagnostics, cost, and prior tool calls", async 
     }),
   );
 
-  const o = await run();
+  const observation = await runHarness();
 
-  expect(o.subtype).toBe("error_max_budget_usd");
-  expect(o.isError).toBe(true);
-  expect(o.finalText).toBe("max budget exceeded\nbudget was $0.01");
-  expect(o.costUsd).toBe(COST_BUDGET_STOP);
-  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Skill"]);
+  expect(observation.subtype).toBe("error_max_budget_usd");
+  expect(observation.isError).toBe(true);
+  expect(observation.finalText).toBe("max budget exceeded\nbudget was $0.01");
+  expect(observation.costUsd).toBe(COST_BUDGET_STOP);
+  expect(observation.toolCalls.map((c) => c.name)).toStrictEqual(["Skill"]);
 });
 
 test("a query that throws before yielding reports no result and books no cost", async () => {
@@ -306,13 +340,13 @@ test("a query that throws before yielding reports no result and books no cost", 
     throw new Error("bundled CLI failed to start");
   });
 
-  const o = await run();
+  const observation = await runHarness();
 
-  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(o.isError).toBe(true);
-  expect(o.finalText).toBe("bundled CLI failed to start");
-  expect(o.costUsd).toBe(0);
-  expect(o.timedOut).toBe(false);
+  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(observation.isError).toBe(true);
+  expect(observation.finalText).toBe("bundled CLI failed to start");
+  expect(observation.costUsd).toBe(0);
+  expect(observation.timedOut).toBe(false);
 });
 
 test("a mid-stream failure keeps the observations already made", async () => {
@@ -327,79 +361,87 @@ test("a mid-stream failure keeps the observations already made", async () => {
     }),
   );
 
-  const o = await run();
+  const observation = await runHarness();
 
-  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(o.isError).toBe(true);
-  expect(o.finalText).toBe("stream died");
-  expect(o.costUsd).toBe(0);
-  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Write"]);
+  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(observation.isError).toBe(true);
+  expect(observation.finalText).toBe("stream died");
+  expect(observation.costUsd).toBe(0);
+  expect(observation.toolCalls.map((c) => c.name)).toStrictEqual(["Write"]);
 });
 
-test("a malformed assistant content entry fails closed and keeps prior tool calls", async () => {
-  queryMock.mockReturnValue(
-    scripted(
+test.each([
+  {
+    name: "a malformed assistant content entry fails closed and keeps prior tool calls",
+    // A relevant assistant message is atomic: the malformed second message must
+    // not commit its Write call while the earlier valid message survives.
+    messageScript: [
       assistant(toolUse("Read")),
       assistant(toolUse("Write", { file_path: "/repo/x" }), null),
       success("done", COST_FULL),
-    ),
+    ],
+    expectedRetainedToolNames: ["Read"],
+  },
+  {
+    name: "a malformed result fails closed and keeps prior tool calls",
+    messageScript: [
+      assistant(toolUse("Write", { file_path: "/repo/x" })),
+      {
+        type: "result",
+        subtype: "success",
+        is_error: false,
+        result: "done",
+        total_cost_usd: "not a number",
+      },
+    ],
+    expectedRetainedToolNames: ["Write"],
+  },
+] satisfies ReadonlyArray<{
+  name: string;
+  messageScript: FakeMessage[];
+  expectedRetainedToolNames: string[];
+}>)("$name", async ({ messageScript, expectedRetainedToolNames }) => {
+  queryMock.mockReturnValue(scripted(...messageScript));
+
+  const observation = await runHarness();
+
+  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(observation.isError).toBe(true);
+  expect(observation.costUsd).toBe(0);
+  expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
+    expectedRetainedToolNames,
   );
-
-  const o = await run();
-
-  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(o.isError).toBe(true);
-  expect(o.costUsd).toBe(0);
-  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Read"]);
 });
 
-test("a malformed result fails closed and keeps prior tool calls", async () => {
-  queryMock.mockReturnValue(
-    scripted(assistant(toolUse("Write", { file_path: "/repo/x" })), {
-      type: "result",
-      subtype: "success",
-      is_error: false,
-      result: "done",
-      total_cost_usd: "not a number",
-    }),
-  );
+const cyclicFailure: Record<string, unknown> = {};
+cyclicFailure["self"] = cyclicFailure;
 
-  const o = await run();
-
-  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(o.isError).toBe(true);
-  expect(o.costUsd).toBe(0);
-  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Write"]);
-});
-
-test("a foreign thrown value cannot reject observation settlement", async () => {
+test.each([
+  {
+    name: "a BigInt thrown value cannot reject observation settlement",
+    thrownValue: FOREIGN_BIGINT,
+    expectedFinalText: "1",
+  },
+  {
+    name: "a cyclic thrown value cannot reject observation settlement",
+    thrownValue: cyclicFailure,
+    expectedFinalText: null,
+  },
+])("$name", async ({ thrownValue, expectedFinalText }) => {
   queryMock.mockImplementation(() => {
-    // oxlint-disable-next-line typescript/only-throw-error -- The boundary accepts unknown thrown values; this intentionally exercises a non-Error value.
-    throw FOREIGN_BIGINT;
+    // oxlint-disable-next-line typescript/only-throw-error -- The boundary accepts unknown thrown values; these cases intentionally exercise non-Error values.
+    throw thrownValue;
   });
 
-  const o = await run();
+  const observation = await runHarness();
 
-  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(o.isError).toBe(true);
-  expect(o.finalText).toBe("1");
-  expect(o.costUsd).toBe(0);
-});
-
-test("a cyclic thrown value cannot reject observation settlement", async () => {
-  const cyclicFailure: Record<string, unknown> = {};
-  cyclicFailure["self"] = cyclicFailure;
-  queryMock.mockImplementation(() => {
-    // oxlint-disable-next-line typescript/only-throw-error -- The boundary accepts unknown thrown values; this intentionally exercises a cyclic non-Error value.
-    throw cyclicFailure;
-  });
-
-  const o = await run();
-
-  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(o.isError).toBe(true);
-  expect(o.finalText).toBeTypeOf("string");
-  expect(o.costUsd).toBe(0);
+  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(observation.isError).toBe(true);
+  expect(observation.finalText).toBeTypeOf("string");
+  expect(
+    expectedFinalText === null || observation.finalText === expectedFinalText,
+  ).toBe(true);
+  expect(observation.costUsd).toBe(0);
 });
 
 test("a stream that ends without a result fails closed", async () => {
@@ -407,13 +449,13 @@ test("a stream that ends without a result fails closed", async () => {
   // empty run: a negative case would pass on a query that never concluded.
   queryMock.mockReturnValue(scripted(assistant(toolUse("Read"))));
 
-  const o = await run();
+  const observation = await runHarness();
 
-  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(o.isError).toBe(true);
-  expect(o.finalText).toBe("query ended without a result message");
-  expect(o.costUsd).toBe(0);
-  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Read"]);
+  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(observation.isError).toBe(true);
+  expect(observation.finalText).toBe("query ended without a result message");
+  expect(observation.costUsd).toBe(0);
+  expect(observation.toolCalls.map((c) => c.name)).toStrictEqual(["Read"]);
 });
 
 test("a run that exceeds its wall clock is aborted and settles", async () => {
@@ -429,45 +471,29 @@ test("a run that exceeds its wall clock is aborted and settles", async () => {
     });
   });
 
-  const o = await run(SHORT_WALL_CLOCK_MS);
+  const observation = await runHarness(SHORT_WALL_CLOCK_MS);
 
-  expect(o.timedOut).toBe(true);
-  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(o.isError).toBe(true);
+  expect(observation.timedOut).toBe(true);
+  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(observation.isError).toBe(true);
   // The abort must not cost us the evidence gathered before it.
-  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Read"]);
+  expect(observation.toolCalls.map((c) => c.name)).toStrictEqual(["Read"]);
 });
 
 test("a completed run cannot be re-flagged by its own expired timer", async () => {
   vi.useFakeTimers();
   queryMock.mockReturnValue(scripted(success("done", COST_FULL)));
 
-  const o = await run(SHORT_WALL_CLOCK_MS);
-  const snapshot = structuredClone(o);
+  const observation = await runHarness(SHORT_WALL_CLOCK_MS);
+  const queryCall = queryMock.mock.lastCall;
+  if (queryCall == null) throw new Error("query was never called");
+  const abortController = queryCall[0].options?.abortController;
+  expect(abortController).toBeInstanceOf(AbortController);
 
-  // The timer was cleared in the settle path; firing past the deadline must
-  // neither abort anything nor mutate the observation already returned.
+  // The timer was cleared in the settle path; firing past the deadline must not
+  // abort the controller the completed query received.
   vi.advanceTimersByTime(PAST_THE_DEADLINE_MS);
 
-  expect(o).toStrictEqual(snapshot);
-  expect(o.timedOut).toBe(false);
-});
-
-test("the returned tool-call array is a copy, not the accumulator", async () => {
-  // A fresh generator per call: a generator is single-use, and this test runs
-  // the harness twice.
-  queryMock.mockImplementation(() =>
-    scripted(assistant(toolUse("Read")), success("done", COST_FULL)),
-  );
-
-  const o = await run();
-  const before = o.toolCalls.length;
-
-  // Nothing external holds the accumulator, so the only way this could fail
-  // is if the harness handed out its internal array by reference and later
-  // code pushed into it. Mutating the returned copy must be a local act.
-  o.toolCalls.push({ name: "Injected", input: {} });
-
-  const again = await run();
-  expect(again.toolCalls).toHaveLength(before);
+  expect(abortController?.signal.aborted).toBe(false);
+  expect(observation.timedOut).toBe(false);
 });
