@@ -12,23 +12,41 @@ import { expect, test } from "vitest";
 import type { GitStatus, ToolCall } from "#/observation/harness.ts";
 import { mutationEvidence, skillInvocations } from "#/observation/harness.ts";
 import {
-  createObservation as observe,
-  createWorktreeStatus as worktree,
+  createObservation,
+  createWorktreeStatus,
 } from "#/observation/observation-test-support.ts";
 
 function bash(command: unknown): ToolCall {
   return { name: "Bash", input: { command } };
 }
 
-test("a clean run reports no evidence", () => {
-  expect(mutationEvidence(observe())).toStrictEqual([]);
+test.each([
+  ["a clean run reports no evidence", createObservation()],
+  // The dirty fixture starts with a dirty status; only a *delta* is a mutation.
+  [
+    "an unchanged non-empty status is not evidence",
+    createObservation({
+      gitStatusBefore: createWorktreeStatus(" M a.txt\n?? c.txt"),
+      gitStatusAfter: createWorktreeStatus(" M a.txt\n?? c.txt"),
+    }),
+  ],
+  // The `not-git` fixture is an expected state: it must keep passing.
+  [
+    "a repo that is not a worktree is clean, not unreadable",
+    createObservation({
+      gitStatusBefore: { kind: "no-worktree" },
+      gitStatusAfter: { kind: "no-worktree" },
+    }),
+  ],
+])("%s", (_caseName, observation) => {
+  expect(mutationEvidence(observation)).toStrictEqual([]);
 });
 
 test("a changed git status is evidence even with no tool calls", () => {
   const found = mutationEvidence(
-    observe({
-      gitStatusBefore: worktree(""),
-      gitStatusAfter: worktree(" M a.txt"),
+    createObservation({
+      gitStatusBefore: createWorktreeStatus(""),
+      gitStatusAfter: createWorktreeStatus(" M a.txt"),
     }),
   );
 
@@ -39,17 +57,6 @@ test("a changed git status is evidence even with no tool calls", () => {
   expect(found[0]).toContain('" M a.txt"');
 });
 
-test("an unchanged non-empty status is not evidence", () => {
-  // The dirty fixture starts with a dirty status; only a *delta* is a mutation.
-  const dirty = worktree(" M a.txt\n?? c.txt");
-
-  expect(
-    mutationEvidence(
-      observe({ gitStatusBefore: dirty, gitStatusAfter: dirty }),
-    ),
-  ).toStrictEqual([]);
-});
-
 // An unreadable sample proves nothing about what the run did. It used to be
 // the same empty string a clean worktree yields, so two failed samples matched
 // and mutation-scope passed on evidence that was never collected.
@@ -58,7 +65,10 @@ test("an unreadable status is evidence, not silence", () => {
 
   expect(
     mutationEvidence(
-      observe({ gitStatusBefore: unreadable, gitStatusAfter: unreadable }),
+      createObservation({
+        gitStatusBefore: unreadable,
+        gitStatusAfter: unreadable,
+      }),
     ),
   ).toStrictEqual([
     "git status could not be sampled before the run: ENOENT",
@@ -70,8 +80,8 @@ test("one unreadable sample is reported without a bogus delta", () => {
   // Comparing a readable sample against an unreadable one would invent a
   // "change" that says more about the failure than about the run.
   const found = mutationEvidence(
-    observe({
-      gitStatusBefore: worktree(""),
+    createObservation({
+      gitStatusBefore: createWorktreeStatus(""),
       gitStatusAfter: { kind: "unreadable", reason: "EACCES" },
     }),
   );
@@ -81,22 +91,11 @@ test("one unreadable sample is reported without a bogus delta", () => {
   ]);
 });
 
-test("a repo that is not a worktree is clean, not unreadable", () => {
-  // The `not-git` fixture is an expected state: it must keep passing.
-  const noWorktree: GitStatus = { kind: "no-worktree" };
-
-  expect(
-    mutationEvidence(
-      observe({ gitStatusBefore: noWorktree, gitStatusAfter: noWorktree }),
-    ),
-  ).toStrictEqual([]);
-});
-
 test("a worktree appearing where there was none is evidence", () => {
   const found = mutationEvidence(
-    observe({
+    createObservation({
       gitStatusBefore: { kind: "no-worktree" },
-      gitStatusAfter: worktree(""),
+      gitStatusAfter: createWorktreeStatus(""),
     }),
   );
 
@@ -111,7 +110,9 @@ test.each([
   ["NotebookEdit", "notebook_path", "/work/notebook.ipynb"],
 ])("%s is evidence and names the file", (name, pathKey, filePath) => {
   const found = mutationEvidence(
-    observe({ toolCalls: [{ name, input: { [pathKey]: filePath } }] }),
+    createObservation({
+      toolCalls: [{ name, input: { [pathKey]: filePath } }],
+    }),
   );
 
   expect(found).toStrictEqual([`${name} called on ${filePath}`]);
@@ -121,7 +122,7 @@ test("a write tool with no usable mapped path still reports the call", () => {
   // The call is the violation; a missing or non-string path must not make it
   // disappear or render an untrusted value as if it were a usable path.
   const found = mutationEvidence(
-    observe({
+    createObservation({
       toolCalls: [
         { name: "Write", input: {} },
         { name: "Edit", input: { file_path: 42 } },
@@ -141,7 +142,7 @@ test("a write tool with no usable mapped path still reports the call", () => {
 
 test("read-only tools are not evidence", () => {
   const found = mutationEvidence(
-    observe({
+    createObservation({
       toolCalls: [
         { name: "Read", input: { file_path: "/work/x.ts" } },
         { name: "Grep", input: { pattern: "x" } },
@@ -157,7 +158,7 @@ test("read-only tools are not evidence", () => {
 // `git status --short` identical before and after. `git switch` moving HEAD
 // between two clean branches is the motivating case: the command text is the
 // only evidence that survives.
-const MUTATING_GIT = [
+const ALWAYS_MUTATING_GIT_VERB_FIXTURES = [
   "add",
   "commit",
   "merge",
@@ -186,8 +187,10 @@ const MUTATING_GIT = [
   "gc",
 ];
 
-test.each(MUTATING_GIT)("`git %s` is evidence", (verb) => {
-  const found = mutationEvidence(observe({ toolCalls: [bash(`git ${verb}`)] }));
+test.each(ALWAYS_MUTATING_GIT_VERB_FIXTURES)("`git %s` is evidence", (verb) => {
+  const found = mutationEvidence(
+    createObservation({ toolCalls: [bash(`git ${verb}`)] }),
+  );
 
   expect(found).toStrictEqual([`mutating git command: git ${verb}`]);
 });
@@ -201,6 +204,9 @@ test.each([
   "git branch --show-current",
   "git branch --list",
   "git branch -a",
+  "git config --get user.name",
+  "git config --list",
+  "git config -l",
   "git worktree list",
   "git submodule status",
   "git reflog show",
@@ -210,8 +216,20 @@ test.each([
   "git tag -l v1.*",
 ])("`%s` is read-only and stays clean", (command) => {
   expect(
-    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+    mutationEvidence(createObservation({ toolCalls: [bash(command)] })),
   ).toStrictEqual([]);
+});
+
+test.each([
+  "git config user.name x",
+  "git config --local user.name x",
+  "git -C /repo config user.name x",
+  "git config --unset user.name",
+  "git config --global core.editor vim",
+])("`%s` configures git and is evidence", (command) => {
+  expect(
+    mutationEvidence(createObservation({ toolCalls: [bash(command)] })),
+  ).toHaveLength(1);
 });
 
 test.each([
@@ -227,7 +245,7 @@ test.each([
   "git tag v1.0.0",
 ])("`%s` mutates and is evidence", (command) => {
   expect(
-    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+    mutationEvidence(createObservation({ toolCalls: [bash(command)] })),
   ).toHaveLength(1);
 });
 
@@ -236,17 +254,20 @@ test.each([
 // first occurrence cannot hide a later mutation.
 test.each([
   "git branch new && git branch --list",
+  "git config --list && git config user.name x",
   "git stash list && git stash push",
 ])("`%s` is evidence when any dual-mode occurrence mutates", (command) => {
   expect(
-    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+    mutationEvidence(createObservation({ toolCalls: [bash(command)] })),
   ).toHaveLength(1);
 });
 
 test("a chain of read-only dual-mode commands stays clean", () => {
   expect(
     mutationEvidence(
-      observe({ toolCalls: [bash("git stash list && git stash show")] }),
+      createObservation({
+        toolCalls: [bash("git stash list && git stash show")],
+      }),
     ),
   ).toStrictEqual([]);
 });
@@ -277,7 +298,7 @@ test.each([
   "git -C /repo --no-pager reset --hard",
 ])("`%s` is evidence despite the leading options", (command) => {
   expect(
-    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+    mutationEvidence(createObservation({ toolCalls: [bash(command)] })),
   ).toHaveLength(1);
 });
 
@@ -289,7 +310,7 @@ test.each([
   "GIT_DIR=/g git commit",
 ])("`%s` still exposes the literal mutating git command", (command) => {
   expect(
-    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+    mutationEvidence(createObservation({ toolCalls: [bash(command)] })),
   ).toHaveLength(1);
 });
 
@@ -305,7 +326,7 @@ test.each([
   "git log commit",
 ])("`%s` stays clean despite the leading options", (command) => {
   expect(
-    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+    mutationEvidence(createObservation({ toolCalls: [bash(command)] })),
   ).toStrictEqual([]);
 });
 
@@ -325,14 +346,14 @@ test.each([
   "npm add-something",
 ])("`%s` is not evidence", (command) => {
   expect(
-    mutationEvidence(observe({ toolCalls: [bash(command)] })),
+    mutationEvidence(createObservation({ toolCalls: [bash(command)] })),
   ).toStrictEqual([]);
 });
 
 test("a non-string Bash command is unverifiable rather than clean", () => {
   // Coercing it would let a mutating verb hide inside a non-string payload.
   const found = mutationEvidence(
-    observe({ toolCalls: [bash({ cmd: "git commit" })] }),
+    createObservation({ toolCalls: [bash({ cmd: "git commit" })] }),
   );
 
   expect(found).toStrictEqual([
@@ -342,15 +363,17 @@ test("a non-string Bash command is unverifiable rather than clean", () => {
 
 test("an absent Bash command is unverifiable rather than clean", () => {
   expect(
-    mutationEvidence(observe({ toolCalls: [{ name: "Bash", input: {} }] })),
+    mutationEvidence(
+      createObservation({ toolCalls: [{ name: "Bash", input: {} }] }),
+    ),
   ).toStrictEqual(["unverifiable Bash command (absent)"]);
 });
 
 test("every distinct violation is reported, not just the first", () => {
   const found = mutationEvidence(
-    observe({
-      gitStatusBefore: worktree(""),
-      gitStatusAfter: worktree("?? new.txt"),
+    createObservation({
+      gitStatusBefore: createWorktreeStatus(""),
+      gitStatusAfter: createWorktreeStatus("?? new.txt"),
       toolCalls: [
         { name: "Write", input: { file_path: "/work/a" } },
         bash("git commit -m x"),
@@ -368,7 +391,7 @@ test("every distinct violation is reported, not just the first", () => {
 });
 
 test("skillInvocations selects only Skill calls naming the skill", () => {
-  const o = observe({
+  const observation = createObservation({
     toolCalls: [
       { name: "Skill", input: { skill: "wanted" } },
       { name: "Skill", input: { skill: "other" } },
@@ -378,9 +401,9 @@ test("skillInvocations selects only Skill calls naming the skill", () => {
     ],
   });
 
-  expect(skillInvocations(o, "wanted")).toStrictEqual([
+  expect(skillInvocations(observation, "wanted")).toStrictEqual([
     { name: "Skill", input: { skill: "wanted" } },
     { name: "Skill", input: { skill: "wanted" } },
   ]);
-  expect(skillInvocations(o, "never-called")).toStrictEqual([]);
+  expect(skillInvocations(observation, "never-called")).toStrictEqual([]);
 });

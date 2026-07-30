@@ -519,6 +519,15 @@ const DUAL_MODE_GIT: ReadonlyArray<{
     bareWrites: false,
   },
   {
+    verb: "config",
+    readOnly: ["--get", "--get-all", "--get-regexp", "--list", "-l"],
+    // `git config user.name x` writes `.git/config` while leaving
+    // `git status --short` unchanged, so the command text is the only surviving
+    // evidence. Argument forms without a read-only marker, including plain
+    // `git config user.name`, deliberately read as mutations to fail loudly.
+    bareWrites: false,
+  },
+  {
     verb: "tag",
     readOnly: [
       "--list",
