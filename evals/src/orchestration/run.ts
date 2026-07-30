@@ -101,7 +101,7 @@ function selectCases(
   );
 }
 
-export const defaultRunnerServices: RunnerServices = {
+const defaultRunnerServices: RunnerServices = {
   evalCases: cases,
   executeCase,
   writeReport: (report) => {
