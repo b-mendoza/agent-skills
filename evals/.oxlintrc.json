@@ -21,7 +21,7 @@
       "version": "999.999.999"
     }
   },
-  "ignorePatterns": ["coverage/", "node_modules/"],
+  "ignorePatterns": ["node_modules/"],
   "rules": {
     "constructor-super": ["error"],
     "for-direction": ["error"],
