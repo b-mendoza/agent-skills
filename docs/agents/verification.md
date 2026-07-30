@@ -18,12 +18,10 @@ below manually before declaring the work done (see
 - If the skill ships a `scripts/` directory, run the script the way a
   consumer would invoke it.
 - If the skill has cases in [`evals/`](../../evals/), re-run them and commit
-  the updated `evals/report.md`:
-  `node evals/src/orchestration/run.ts --case=<id>` for one case, or
-  `node evals/src/orchestration/run.ts` for the suite. Confirm only the
-  intended behavior changed. The suite needs `pnpm install` in `evals/`
-  once; its own toolchain is checked with `pnpm lint` and `pnpm test` from
-  that directory.
+  the updated `evals/report.md`, confirming only the intended behavior
+  changed. Commands, approval rules, and check selection are owned by
+  [`evals/AGENTS.md`](../../evals/AGENTS.md) and its verification
+  reference.
 
 When unsure whether a change is correct, follow
 [escalation categories](../best-practices/escalation-categories.md) and
