@@ -9,31 +9,12 @@
 
 import { expect, test } from "vitest";
 
-import type {
-  GitStatus,
-  Observation,
-  ToolCall,
-} from "#/observation/harness.ts";
+import type { GitStatus, ToolCall } from "#/observation/harness.ts";
 import { mutationEvidence, skillInvocations } from "#/observation/harness.ts";
-
-/** A sampled worktree; `entries` is `git status --short` output. */
-const worktree = (entries = ""): GitStatus => ({ kind: "worktree", entries });
-
-/** A clean observation: same status before and after, no tool calls. */
-function observe(overrides: Partial<Observation> = {}): Observation {
-  return {
-    subtype: "success",
-    isError: false,
-    finalText: "",
-    toolCalls: [],
-    gitStatusBefore: worktree(),
-    gitStatusAfter: worktree(),
-    costUsd: 0,
-    durationMs: 0,
-    timedOut: false,
-    ...overrides,
-  };
-}
+import {
+  createObservation as observe,
+  createWorktreeStatus as worktree,
+} from "#/observation/observation-test-support.ts";
 
 function bash(command: unknown): ToolCall {
   return { name: "Bash", input: { command } };
