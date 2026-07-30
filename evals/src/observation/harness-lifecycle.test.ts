@@ -16,7 +16,35 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, expect, test, vi } from "vitest";
 
 import type { Observation } from "#/observation/harness.ts";
-import { QUERY_ERROR_SUBTYPE, runClaude } from "#/observation/harness.ts";
+import {
+  gitStatus,
+  QUERY_ERROR_SUBTYPE,
+  runClaude,
+} from "#/observation/harness.ts";
+
+/** Values the next `execFileSync` calls throw instead of running; a Proxy seam
+ * keeps Node's overloaded signature without a type assertion. */
+const forcedExecFileSyncFailures = vi.hoisted((): unknown[] => []);
+
+vi.mock(import("node:child_process"), async (importOriginal) => {
+  const real = await importOriginal();
+  const passthroughExecFileSync = new Proxy(real.execFileSync, {
+    apply: (
+      target,
+      thisArgument: unknown,
+      argumentList: readonly unknown[],
+    ) => {
+      const forcedFailure = forcedExecFileSyncFailures.shift();
+      if (forcedFailure !== undefined) {
+        // oxlint-disable-next-line typescript/only-throw-error -- Subprocess boundaries may throw plain objects; tests queue them verbatim.
+        throw forcedFailure;
+      }
+      const output: unknown = Reflect.apply(target, thisArgument, argumentList);
+      return output;
+    },
+  });
+  return { ...real, execFileSync: passthroughExecFileSync };
+});
 
 vi.mock(import("@anthropic-ai/claude-agent-sdk"), async (importOriginal) => {
   const real = await importOriginal();
@@ -29,6 +57,7 @@ type QueryParams = Parameters<typeof query>[0];
 
 afterEach(() => {
   vi.useRealTimers();
+  forcedExecFileSyncFailures.length = 0;
 });
 
 const WALL_CLOCK_MS = 30_000;
@@ -40,6 +69,7 @@ const BUDGET_USD = 0.01;
 /** Distinct costs, so a test names which message a value came from. */
 const COST_FULL = 0.5;
 const COST_BUDGET_STOP = 0.25;
+const FOREIGN_BIGINT = 1n;
 
 /**
  * The messages these fakes yield carry only the fields `runClaude` reads.
@@ -54,16 +84,18 @@ interface FakeContentBlock {
   input?: unknown;
 }
 
+type FakeContentEntry = FakeContentBlock | null;
+
 type FakeMessage =
-  | { type: "assistant"; message: { content: FakeContentBlock[] } }
+  | { type: "assistant"; message: { content: FakeContentEntry[] } }
   | { type: "user"; message: { role: "user"; content: string } }
   | {
       type: "result";
-      subtype: string;
-      is_error: boolean;
-      result?: string;
-      errors?: string[];
-      total_cost_usd: number;
+      subtype?: unknown;
+      is_error?: unknown;
+      result?: unknown;
+      errors?: unknown;
+      total_cost_usd?: unknown;
     };
 
 function fakeQuery(
@@ -90,7 +122,7 @@ const toolUse = (name: string, input: unknown = {}): FakeContentBlock => ({
   input,
 });
 
-const assistant = (...content: FakeContentBlock[]): FakeMessage => ({
+const assistant = (...content: FakeContentEntry[]): FakeMessage => ({
   type: "assistant",
   message: { content },
 });
@@ -118,6 +150,22 @@ function lastQueryParams(): QueryParams {
   if (call == null) throw new Error("query was never called");
   return call[0];
 }
+
+test("an invalid subprocess status preserves a valid stderr diagnostic", () => {
+  // Pins the projection's per-field resilience: a malformed status must not
+  // erase the sibling diagnostics.
+  forcedExecFileSyncFailures.push({
+    status: "not a number",
+    stderr: "projected stderr survives\nsecondary detail",
+    code: "IGNORED",
+    message: "ignored message",
+  });
+
+  expect(gitStatus(tmpdir())).toStrictEqual({
+    kind: "unreadable",
+    reason: "projected stderr survives",
+  });
+});
 
 test("a normal stream yields the result and its tool calls", async () => {
   queryMock.mockReturnValue(
@@ -286,6 +334,72 @@ test("a mid-stream failure keeps the observations already made", async () => {
   expect(o.finalText).toBe("stream died");
   expect(o.costUsd).toBe(0);
   expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Write"]);
+});
+
+test("a malformed assistant content entry fails closed and keeps prior tool calls", async () => {
+  queryMock.mockReturnValue(
+    scripted(
+      assistant(toolUse("Read")),
+      assistant(toolUse("Write", { file_path: "/repo/x" }), null),
+      success("done", COST_FULL),
+    ),
+  );
+
+  const o = await run();
+
+  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(o.isError).toBe(true);
+  expect(o.costUsd).toBe(0);
+  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Read"]);
+});
+
+test("a malformed result fails closed and keeps prior tool calls", async () => {
+  queryMock.mockReturnValue(
+    scripted(assistant(toolUse("Write", { file_path: "/repo/x" })), {
+      type: "result",
+      subtype: "success",
+      is_error: false,
+      result: "done",
+      total_cost_usd: "not a number",
+    }),
+  );
+
+  const o = await run();
+
+  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(o.isError).toBe(true);
+  expect(o.costUsd).toBe(0);
+  expect(o.toolCalls.map((c) => c.name)).toStrictEqual(["Write"]);
+});
+
+test("a foreign thrown value cannot reject observation settlement", async () => {
+  queryMock.mockImplementation(() => {
+    // oxlint-disable-next-line typescript/only-throw-error -- The boundary accepts unknown thrown values; this intentionally exercises a non-Error value.
+    throw FOREIGN_BIGINT;
+  });
+
+  const o = await run();
+
+  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(o.isError).toBe(true);
+  expect(o.finalText).toBe("1");
+  expect(o.costUsd).toBe(0);
+});
+
+test("a cyclic thrown value cannot reject observation settlement", async () => {
+  const cyclicFailure: Record<string, unknown> = {};
+  cyclicFailure["self"] = cyclicFailure;
+  queryMock.mockImplementation(() => {
+    // oxlint-disable-next-line typescript/only-throw-error -- The boundary accepts unknown thrown values; this intentionally exercises a cyclic non-Error value.
+    throw cyclicFailure;
+  });
+
+  const o = await run();
+
+  expect(o.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(o.isError).toBe(true);
+  expect(o.finalText).toBeTypeOf("string");
+  expect(o.costUsd).toBe(0);
 });
 
 test("a stream that ends without a result fails closed", async () => {

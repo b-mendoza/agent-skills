@@ -9,10 +9,6 @@
 
 import { execFileSync } from "node:child_process";
 
-import type {
-  SDKAssistantMessage,
-  SDKResultMessage,
-} from "@anthropic-ai/claude-agent-sdk";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import * as z from "zod";
 
@@ -72,6 +68,21 @@ export type GitStatus =
 /** A git exit status meaning "this is not a repository". */
 const GIT_NOT_A_REPOSITORY = 128;
 
+/** The subprocess-error fields consumed by git-status classification. */
+const subprocessErrorSchema = z
+  .object({
+    status: z.number().nullable().optional().catch(undefined),
+    stderr: z.unknown().optional().catch(undefined),
+    code: z.unknown().optional().catch(undefined),
+    message: z.unknown().optional().catch(undefined),
+  })
+  .catch({
+    status: undefined,
+    stderr: undefined,
+    code: undefined,
+    message: undefined,
+  });
+
 /** Whether two samples describe the same repository state. */
 function sameGitStatus(a: GitStatus, b: GitStatus): boolean {
   if (a.kind === "worktree" && b.kind === "worktree") {
@@ -106,17 +117,16 @@ export function gitStatus(repo: string): GitStatus {
     }).trim();
     return { kind: "worktree", entries };
   } catch (error) {
-    const read = (key: string): unknown =>
-      error instanceof Error ? Reflect.get(error, key) : undefined;
+    const subprocessError = subprocessErrorSchema.parse(error);
+    const stderr = toText(subprocessError.stderr);
 
     // Exit 128 alone does not mean "not a repository" -- a corrupt index and
     // an unreadable HEAD return it too. Only git's own wording separates the
     // expected `not-git` fixture state from a repository that cannot be read,
     // and everything unmatched falls through to `unreadable` so an unfamiliar
     // failure fails closed rather than passing as clean.
-    const stderr = toText(read("stderr"));
     if (
-      read("status") === GIT_NOT_A_REPOSITORY &&
+      subprocessError.status === GIT_NOT_A_REPOSITORY &&
       /not a git repository/i.test(stderr)
     ) {
       return { kind: "no-worktree" };
@@ -125,10 +135,10 @@ export function gitStatus(repo: string): GitStatus {
     // git's own message when there is one, else the syscall code (ENOENT for
     // a missing directory or a missing git binary), else whatever was thrown.
     const detail = stderr.trim().split("\n")[0] ?? "";
-    const fallback = error instanceof Error ? error.message : error;
+    const fallback = subprocessError.code ?? subprocessError.message ?? error;
     return {
       kind: "unreadable",
-      reason: detail === "" ? toText(read("code") ?? fallback) : detail,
+      reason: detail === "" ? toText(fallback) : detail,
     };
   }
 }
@@ -137,14 +147,28 @@ const NS_PER_MS = 1e6;
 /** A run with no reported cost books nothing rather than `NaN`. */
 const ZERO_COST = 0;
 
-/** Foreign scalars, rendered without `String()`'s `[object Object]`. */
+/** Foreign values, rendered without rejecting observation settlement. */
 function toText(value: unknown): string {
   if (typeof value === "string") return value;
   if (value == null) return "";
   if (typeof value === "number" || typeof value === "boolean") {
     return value.toString();
   }
-  return JSON.stringify(value);
+
+  try {
+    const json: unknown = JSON.stringify(value);
+    if (typeof json === "string") return json;
+    // eslint-disable-next-line sonarjs/no-ignored-exceptions -- Serialization failure is expected for values such as BigInt or cycles, which use the guarded fallback below.
+  } catch (jsonSerializationError) {
+    // Continue to the guarded string-conversion fallback.
+  }
+
+  try {
+    // oxlint-disable-next-line typescript/no-base-to-string -- Guarded last-resort rendering is required for foreign cyclic and BigInt values.
+    return String(value);
+  } catch (stringConversionError) {
+    return "(unprintable value)";
+  }
 }
 
 /**
@@ -154,7 +178,49 @@ function toText(value: unknown): string {
  * assert on, and `mutationEvidence` already treats an unreadable input as
  * unverifiable rather than clean.
  */
-const toolInputSchema = z.record(z.string(), z.unknown()).catch({});
+// eslint-disable-next-line zod/prefer-string-schema-with-trim -- SDK identifiers, answers, and diagnostics must be retained verbatim.
+const untrimmedStringSchema = z.string();
+const toolInputSchema = z.record(untrimmedStringSchema, z.unknown()).catch({});
+
+const streamMessageDiscriminatorSchema = z.object({
+  type: untrimmedStringSchema,
+});
+const assistantMessageSchema = z.object({
+  type: z.literal("assistant"),
+  message: z.object({ content: z.array(z.unknown()) }),
+});
+const contentBlockDiscriminatorSchema = z.object({
+  type: untrimmedStringSchema,
+});
+const toolUseBlockSchema = z.object({
+  type: z.literal("tool_use"),
+  name: untrimmedStringSchema,
+  input: z.unknown(),
+});
+const successfulResultMessageSchema = z.object({
+  type: z.literal("result"),
+  subtype: z.literal("success"),
+  is_error: z.boolean(),
+  result: untrimmedStringSchema,
+  total_cost_usd: z.number(),
+});
+const failedResultMessageSchema = z.object({
+  type: z.literal("result"),
+  subtype: untrimmedStringSchema,
+  is_error: z.boolean(),
+  errors: z.array(untrimmedStringSchema),
+  total_cost_usd: z.number(),
+});
+
+type ResultVerdict = Pick<
+  Observation,
+  "subtype" | "isError" | "finalText" | "costUsd"
+>;
+
+type NormalizedStreamMessage =
+  | { kind: "ignored" }
+  | { kind: "assistant" }
+  | { kind: "result"; verdict: ResultVerdict };
 
 /**
  * Subtype of the synthetic Observation produced when the query never yielded
@@ -165,42 +231,76 @@ const toolInputSchema = z.record(z.string(), z.unknown()).catch({});
  */
 export const QUERY_ERROR_SUBTYPE = "query_error";
 
-/** The `tool_use` blocks of one assistant message, normalized. */
-function toolCallsIn(
-  content: SDKAssistantMessage["message"]["content"],
-): ToolCall[] {
-  const calls: ToolCall[] = [];
-  for (const block of content) {
-    if (block.type === "tool_use") {
-      calls.push({
-        name: block.name,
-        input: toolInputSchema.parse(block.input),
-      });
+/** Relevant SDK messages, validated and reduced to the fields observed here. */
+function normalizeStreamMessage(
+  message: unknown,
+  observedToolCalls: ToolCall[],
+): NormalizedStreamMessage {
+  const parsedDiscriminator =
+    streamMessageDiscriminatorSchema.safeParse(message);
+  if (!parsedDiscriminator.success) return { kind: "ignored" };
+
+  if (parsedDiscriminator.data.type === "assistant") {
+    const assistantMessage = assistantMessageSchema.parse(message);
+    const messageToolCalls: ToolCall[] = [];
+
+    for (const contentBlock of assistantMessage.message.content) {
+      // A relevant assistant message fails closed when any content entry lacks
+      // the minimum SDK block shape. Its calls are committed only after every
+      // entry validates, preserving the message-level atomicity of the SDK.
+      const blockDiscriminator =
+        contentBlockDiscriminatorSchema.parse(contentBlock);
+      if (blockDiscriminator.type === "tool_use") {
+        const toolUseBlock = toolUseBlockSchema.parse(contentBlock);
+        messageToolCalls.push({
+          name: toolUseBlock.name,
+          input: toolInputSchema.parse(toolUseBlock.input),
+        });
+      }
     }
+
+    observedToolCalls.push(...messageToolCalls);
+    return { kind: "assistant" };
   }
-  return calls;
+
+  if (parsedDiscriminator.data.type === "result") {
+    const parsedSubtype = z
+      .object({ subtype: untrimmedStringSchema })
+      .parse(message);
+    if (parsedSubtype.subtype === "success") {
+      const resultMessage = successfulResultMessageSchema.parse(message);
+      return {
+        kind: "result",
+        verdict: {
+          subtype: resultMessage.subtype,
+          isError: resultMessage.is_error,
+          finalText: resultMessage.result,
+          costUsd: resultMessage.total_cost_usd,
+        },
+      };
+    }
+
+    const resultMessage = failedResultMessageSchema.parse(message);
+    return {
+      kind: "result",
+      verdict: {
+        subtype: resultMessage.subtype,
+        isError: resultMessage.is_error,
+        // Error results carry diagnostics instead of an answer. Joining them
+        // keeps auth and execution failures readable in a case failure.
+        finalText: resultMessage.errors.join("\n"),
+        costUsd: resultMessage.total_cost_usd,
+      },
+    };
+  }
+
+  return { kind: "ignored" };
 }
 
 /** What a run without a result message can still say about why. */
 function failureText(failure: unknown): string {
   if (failure == null) return "query ended without a result message";
   return failure instanceof Error ? failure.message : toText(failure);
-}
-
-/** The verdict fields of a result message, mapped onto the Observation. */
-function verdictOf(
-  result: SDKResultMessage,
-): Pick<Observation, "subtype" | "isError" | "finalText" | "costUsd"> {
-  return {
-    subtype: result.subtype,
-    isError: result.is_error,
-    // The error variant of the result union carries diagnostics instead of
-    // an answer; joining them keeps auth/execution failures readable in a
-    // case's failure message.
-    finalText:
-      result.subtype === "success" ? result.result : result.errors.join("\n"),
-    costUsd: result.total_cost_usd,
-  };
 }
 
 /**
@@ -226,7 +326,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
 
   const abortController = new AbortController();
   const toolCalls: ToolCall[] = [];
-  let result: SDKResultMessage | null = null;
+  let resultVerdict: ResultVerdict | null = null;
   let failure: unknown = null;
   let timedOut = false;
 
@@ -255,10 +355,9 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     });
 
     for await (const message of messages) {
-      if (message.type === "assistant") {
-        toolCalls.push(...toolCallsIn(message.message.content));
-      } else if (message.type === "result") {
-        result = message;
+      const normalizedMessage = normalizeStreamMessage(message, toolCalls);
+      if (normalizedMessage.kind === "result") {
+        resultVerdict = normalizedMessage.verdict;
         // Breaking here runs the generator's cleanup, which ends the query.
         break;
       }
@@ -282,7 +381,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     timedOut,
   };
 
-  if (result == null) {
+  if (resultVerdict == null) {
     // No result message means no trustworthy verdict and no reported cost:
     // the run failed as infrastructure, whatever partial state accumulated.
     return {
@@ -294,7 +393,7 @@ export async function runClaude(opts: RunOptions): Promise<Observation> {
     };
   }
 
-  return { ...settled, ...verdictOf(result) };
+  return { ...settled, ...resultVerdict };
 }
 
 // --- Observation helpers used by case assertions -------------------------
