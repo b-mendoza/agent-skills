@@ -21,6 +21,8 @@
 | Routing decisions only | `node src/orchestration/run.ts --tier=1` (budget-capped, cents) |
 | Full suite             | `node src/orchestration/run.ts` (~minutes, ~dollars)            |
 
+Paid runs execute cases sequentially by design; leave the sequencing as is.
+
 Exit codes: `0` all pass, `1` a case failed, `2` no case matched the filter,
 `3` infrastructure error, `4` invalid usage.
 
