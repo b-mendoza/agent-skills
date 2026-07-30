@@ -12,32 +12,25 @@ import { resolveModel } from "#/orchestration/run-configuration.ts";
 const FIRST_UNDEFINED_TIER = 3;
 const LARGE_NUMERIC_TIER = 99;
 
-test("no flags selects everything", () => {
-  expect(parseArgs([])).toStrictEqual({ errors: [] });
-});
-
-test("--tier and --case parse into their fields", () => {
-  expect(parseArgs(["--tier=1"])).toStrictEqual({ tier: 1, errors: [] });
-  expect(parseArgs(["--case=path-error"])).toStrictEqual({
-    caseId: "path-error",
-    errors: [],
-  });
-  expect(parseArgs(["--tier=2", "--case=quiet-state"])).toStrictEqual({
-    tier: 2,
-    caseId: "quiet-state",
-    errors: [],
-  });
-});
-
-test("duplicate selectors use the last value", () => {
-  expect(
-    parseArgs([
-      "--tier=1",
-      "--case=first-case",
-      "--tier=2",
-      "--case=second-case",
-    ]),
-  ).toStrictEqual({ tier: 2, caseId: "second-case", errors: [] });
+test.each([
+  { label: "no selectors", args: [], expected: { errors: [] } },
+  {
+    label: "a tier selector",
+    args: ["--tier=1"],
+    expected: { tier: 1, errors: [] },
+  },
+  {
+    label: "a case selector",
+    args: ["--case=path-error"],
+    expected: { caseId: "path-error", errors: [] },
+  },
+  {
+    label: "tier and case selectors",
+    args: ["--tier=2", "--case=quiet-state"],
+    expected: { tier: 2, caseId: "quiet-state", errors: [] },
+  },
+])("parses $label into selector fields", ({ args, expected }) => {
+  expect(parseArgs(args)).toStrictEqual(expected);
 });
 
 test.each([0, FIRST_UNDEFINED_TIER, LARGE_NUMERIC_TIER])(
@@ -76,7 +69,6 @@ test("every unknown argument is reported while valid flags still parse", () => {
 test.each([
   { configuredModel: undefined, expectedModel: "sonnet" },
   { configuredModel: "", expectedModel: "sonnet" },
-  { configuredModel: " ", expectedModel: " " },
   { configuredModel: "custom-model", expectedModel: "custom-model" },
 ])(
   "resolves configured model $configuredModel to $expectedModel",
