@@ -8,7 +8,8 @@ Give every subagent:
 - the guardrails from [`../../AGENTS.md`](../../AGENTS.md) — eval runs
   spend money and need explicit user approval, and `report.md` is rewritten
   only by the eval runner;
-- the reference files from the task-linked table that its task needs.
+- the long-lived guides and current-state references from
+  [`../../AGENTS.md`](../../AGENTS.md) that its task needs.
 
 When it is unclear whether delegation fits the task or which agent should
 own it, escalate to the user.
