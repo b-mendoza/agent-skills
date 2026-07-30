@@ -10,8 +10,13 @@
 
 import { expect, test } from "vitest";
 
-import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
+import type {
+  CaseId,
+  EnvelopeStatus,
+  EvalCase,
+} from "#/cases/analyzing-recent-project-state.ts";
 import {
+  BUDGET_STOP_SUBTYPE,
   cases,
   checkMutationScope,
   SKILL,
@@ -21,7 +26,7 @@ import { QUERY_ERROR_SUBTYPE } from "#/observation/harness.ts";
 
 const worktree = (entries = ""): GitStatus => ({ kind: "worktree", entries });
 
-function observe(overrides: Partial<Observation> = {}): Observation {
+function observe(overrides: Readonly<Partial<Observation>> = {}): Observation {
   return {
     subtype: "success",
     isError: false,
@@ -36,10 +41,10 @@ function observe(overrides: Partial<Observation> = {}): Observation {
   };
 }
 
-function caseById(id: string): EvalCase {
-  const found = cases.find((c) => c.id === id);
-  if (found == null) throw new Error(`no such case: ${id}`);
-  return found;
+function caseById(caseId: CaseId): EvalCase {
+  const matchingCase = cases.find((evalCase) => evalCase.id === caseId);
+  if (matchingCase == null) throw new Error(`no such case: ${caseId}`);
+  return matchingCase;
 }
 
 /** What `runClaude` returns when the query never produced a result message. */
@@ -66,24 +71,27 @@ const AUTH_FAILURE = observe({
 
 // The whole suite is only as trustworthy as its ability to tell "the skill
 // declined" from "nothing ran". Every case must reject the latter.
-test.each(cases.map((c) => c.id))(
+test.each(cases.map((evalCase) => evalCase.id))(
   "`%s` fails when the query produced no result",
-  (id) => {
-    expect(() => caseById(id).check(QUERY_FAILURE)).toThrow();
+  (caseId) => {
+    expect(() => caseById(caseId).check(QUERY_FAILURE)).toThrow();
   },
 );
 
-test.each(cases.map((c) => c.id))("`%s` fails on a timed-out run", (id) => {
-  expect(() => caseById(id).check(observe({ timedOut: true }))).toThrow();
-});
+test.each(cases.map((evalCase) => evalCase.id))(
+  "`%s` fails on a timed-out run",
+  (caseId) => {
+    expect(() => caseById(caseId).check(observe({ timedOut: true }))).toThrow();
+  },
+);
 
 // The regression this file exists for, in its most dangerous form: an expired
 // login once passed all three negative cases, because a run that reached no
 // model calls no skill and mutates nothing.
-test.each(cases.map((c) => c.id))(
+test.each(cases.map((evalCase) => evalCase.id))(
   "`%s` fails when authentication failed",
-  (id) => {
-    expect(() => caseById(id).check(AUTH_FAILURE)).toThrow(
+  (caseId) => {
+    expect(() => caseById(caseId).check(AUTH_FAILURE)).toThrow(
       /reported a failed run/,
     );
   },
@@ -125,7 +133,7 @@ test("a genuine decline still passes the negative routing cases", () => {
   // `isError` is set: the SDK reports the budget cap as a failed run, so the
   // hardening above has to tolerate it or tier 1 could never pass.
   const declined = observe({
-    subtype: "error_max_budget_usd",
+    subtype: BUDGET_STOP_SUBTYPE,
     isError: true,
     finalText: "I'll review the diff directly.",
     toolCalls: [{ name: "Read", input: { file_path: "/repo/a.txt" } }],
@@ -141,7 +149,7 @@ test("a genuine decline still passes the negative routing cases", () => {
 
 test("a genuine trigger still passes the positive routing case", () => {
   const triggered = observe({
-    subtype: "error_max_budget_usd",
+    subtype: BUDGET_STOP_SUBTYPE,
     isError: true,
     toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
   });
@@ -154,7 +162,7 @@ test("a budget stop is a real decline even when it books nothing", () => {
   // the one shape an auth failure and a deliberate stop share. The subtype is
   // all that separates them, so it has to be enough on its own.
   const stoppedEarly = observe({
-    subtype: "error_max_budget_usd",
+    subtype: BUDGET_STOP_SUBTYPE,
     isError: true,
     finalText: "",
     toolCalls: [],
@@ -168,7 +176,7 @@ test("a budget stop is a real decline even when it books nothing", () => {
 
 test("the positive routing case fails when the skill never triggered", () => {
   const noTrigger = observe({
-    subtype: "error_max_budget_usd",
+    subtype: BUDGET_STOP_SUBTYPE,
     toolCalls: [{ name: "Read", input: {} }],
   });
 
@@ -179,7 +187,7 @@ test("the positive routing case fails when the skill never triggered", () => {
 
 test("the mutate case fails when the run mutated the repo", () => {
   const mutated = observe({
-    subtype: "error_max_budget_usd",
+    subtype: BUDGET_STOP_SUBTYPE,
     finalText: "done",
     toolCalls: [{ name: "Bash", input: { command: "git merge feature" } }],
   });
@@ -189,7 +197,7 @@ test("the mutate case fails when the run mutated the repo", () => {
   );
 });
 
-const envelope = (status: string): Observation =>
+const envelope = (status: EnvelopeStatus): Observation =>
   observe({
     finalText: `RECENT_STATE: ${status}\nReason: path does not exist\nNext step: supply a real path`,
   });

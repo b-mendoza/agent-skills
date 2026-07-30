@@ -16,19 +16,21 @@ import {
 } from "#/observation/harness.ts";
 
 export const SKILL = "analyzing-recent-project-state";
+/** The result subtype for a run stopped by the suite's configured budget cap. */
+export const BUDGET_STOP_SUBTYPE = "error_max_budget_usd";
 
 /** Status, reason, next step — the escalation envelope's fixed shape. */
 const ENVELOPE_LINES = 3;
 
 /** Names the tools a run actually called, for a failure message. */
 function formatToolNames(toolCalls: readonly ToolCall[]): string {
-  const names = toolCalls.map((c) => c.name).join(", ");
+  const names = toolCalls.map((toolCall) => toolCall.name).join(", ");
   return names === "" ? "none" : names;
 }
 
 export interface CaseContext {
-  missingPath: string;
-  notGitPath: string;
+  readonly missingPath: string;
+  readonly notGitPath: string;
 }
 
 /** 1 = budget-capped routing check. 2 = full behavioral run. */
@@ -36,33 +38,25 @@ export interface CaseContext {
 export type CaseTier = 1 | 2;
 
 export interface EvalCase {
-  id: string;
-  tier: CaseTier;
-  fixture: FixtureKind;
+  readonly id: string;
+  readonly tier: CaseTier;
+  readonly fixture: FixtureKind;
   /**
    * What this case pins down, for whoever reads or changes it. Documentation
    * only -- nothing reads it at runtime, so it is the one part of a case the
    * suite cannot keep honest for you.
    */
-  intent: string;
-  prompt: (ctx: CaseContext) => string;
-  budgetUsd: number;
-  wallClockMs: number;
+  readonly intent: string;
+  readonly prompt: (caseContext: CaseContext) => string;
+  readonly budgetUsd: number;
+  readonly wallClockMs: number;
   /** Throws to fail. Returns a short observed-outcome string for the report. */
-  check: (o: Observation) => string;
+  readonly check: (observation: Observation) => string;
 }
 
-/**
- * Result subtypes that end a run on a ceiling the suite set for itself.
- *
- * Tier 1 caps the budget precisely so the run stops once the routing decision
- * is visible, so hitting that cap is the intended ending, not a failed run.
- */
-const DELIBERATE_STOPS = new Set(["error_max_budget_usd"]);
-
 /** Whether the run got far enough to do anything that costs money. */
-function didWork(o: Observation): boolean {
-  return o.toolCalls.length > 0 || o.costUsd > 0;
+function didWork(observation: Observation): boolean {
+  return observation.toolCalls.length > 0 || observation.costUsd > 0;
 }
 
 /** Keeps a failure message to the single line the report cell can hold. */
@@ -80,17 +74,17 @@ function firstLine(text: string): string {
  * declined", which is a green check that means nothing. Every case calls this
  * first.
  */
-function assertRunHappened(o: Observation): void {
-  assert.ok(!o.timedOut, "run exceeded its wall clock");
+function assertRunHappened(observation: Observation): void {
+  assert.ok(!observation.timedOut, "run exceeded its wall clock");
   assert.notEqual(
-    o.subtype,
+    observation.subtype,
     QUERY_ERROR_SUBTYPE,
-    `the query produced no result, so this run observed nothing: ${firstLine(o.finalText)}`,
+    `the query produced no result, so this run observed nothing: ${firstLine(observation.finalText)}`,
   );
   // Defensive: every real result message carries a subtype, and the harness's
   // synthetic failure carries QUERY_ERROR_SUBTYPE. An empty subtype is a shape
   // no run produces, so it must not pass as one.
-  assert.notEqual(o.subtype, "", "run carries no result verdict");
+  assert.notEqual(observation.subtype, "", "run carries no result verdict");
   // A query that concludes is not a run that happened. An expired login
   // returns in milliseconds with `is_error` set, a `success` subtype, and the
   // auth message where the answer belongs -- so the SDK started, reported, and
@@ -104,8 +98,10 @@ function assertRunHappened(o: Observation): void {
   // after the run had already spent money or called a tool, where the case's
   // own assertions can judge what was observed.
   assert.ok(
-    !o.isError || DELIBERATE_STOPS.has(o.subtype) || didWork(o),
-    `the SDK reported a failed run before it did anything (subtype: ${o.subtype === "" ? "none" : o.subtype}): ${firstLine(o.finalText)}`,
+    !observation.isError ||
+      observation.subtype === BUDGET_STOP_SUBTYPE ||
+      didWork(observation),
+    `the SDK reported a failed run before it did anything (subtype: ${observation.subtype === "" ? "none" : observation.subtype}): ${firstLine(observation.finalText)}`,
   );
 }
 
@@ -114,29 +110,32 @@ function assertRunHappened(o: Observation): void {
  * is the expected ending. A run that got far enough to produce a report would
  * mean the cap failed to bite.
  */
-function assertRoutingRunEndedEarly(o: Observation): void {
-  assertRunHappened(o);
+function assertRoutingRunEndedEarly(observation: Observation): void {
+  assertRunHappened(observation);
   assert.doesNotMatch(
-    o.finalText,
+    observation.finalText,
     /^# Project State Snapshot/m,
     "budget-capped routing run unexpectedly produced a full report",
   );
 }
 
 /** The escalation statuses these cases can assert on. */
-type EnvelopeStatus = "PATH_ERROR" | "NOT_GIT";
+export type EnvelopeStatus = "PATH_ERROR" | "NOT_GIT";
 
 /** The three-line escalation envelope shared by the PATH_ERROR/NOT_GIT routes. */
-function assertEnvelope(o: Observation, status: EnvelopeStatus): string {
-  assertRunHappened(o);
-  const lines = o.finalText
+function assertEnvelope(
+  observation: Observation,
+  status: EnvelopeStatus,
+): string {
+  assertRunHappened(observation);
+  const lines = observation.finalText
     .trim()
     .split("\n")
-    .filter((l) => l.trim() !== "");
+    .filter((line) => line.trim() !== "");
   assert.equal(
     lines.length,
     ENVELOPE_LINES,
-    `expected exactly ${ENVELOPE_LINES} envelope lines, got ${lines.length}:\n${o.finalText}`,
+    `expected exactly ${ENVELOPE_LINES} envelope lines, got ${lines.length}:\n${observation.finalText}`,
   );
   const [first, second, third] = lines;
   assert.match((first ?? "").trim(), new RegExp(`^RECENT_STATE: ${status}$`));
@@ -145,7 +144,7 @@ function assertEnvelope(o: Observation, status: EnvelopeStatus): string {
   return `${status}, ${ENVELOPE_LINES}-line envelope`;
 }
 
-export const cases: EvalCase[] = [
+export const cases = [
   // --- Tier 1: routing ---------------------------------------------------
   {
     id: "trigger-positive",
@@ -156,12 +155,12 @@ export const cases: EvalCase[] = [
     wallClockMs: 180_000,
     prompt: () =>
       "What changed recently in this repo and is it ready to hand off?",
-    check: (o) => {
-      assertRoutingRunEndedEarly(o);
-      const hits = skillInvocations(o, SKILL);
+    check: (observation) => {
+      assertRoutingRunEndedEarly(observation);
+      const matchingSkillInvocations = skillInvocations(observation, SKILL);
       assert.ok(
-        hits.length >= 1,
-        `skill never triggered; tools called: ${formatToolNames(o.toolCalls)}`,
+        matchingSkillInvocations.length >= 1,
+        `skill never triggered; tools called: ${formatToolNames(observation.toolCalls)}`,
       );
       return "Skill invoked";
     },
@@ -175,10 +174,10 @@ export const cases: EvalCase[] = [
     wallClockMs: 180_000,
     prompt: () =>
       "Review this diff line by line and tell me if the logic is correct.",
-    check: (o) => {
-      assertRoutingRunEndedEarly(o);
+    check: (observation) => {
+      assertRoutingRunEndedEarly(observation);
       assert.equal(
-        skillInvocations(o, SKILL).length,
+        skillInvocations(observation, SKILL).length,
         0,
         "skill triggered on a code-review request",
       );
@@ -193,18 +192,18 @@ export const cases: EvalCase[] = [
     budgetUsd: 0.05,
     wallClockMs: 180_000,
     prompt: () => "Run the tests and merge this branch if they pass.",
-    check: (o) => {
-      assertRoutingRunEndedEarly(o);
+    check: (observation) => {
+      assertRoutingRunEndedEarly(observation);
       assert.equal(
-        skillInvocations(o, SKILL).length,
+        skillInvocations(observation, SKILL).length,
         0,
         "skill triggered on a mutate request",
       );
-      const mutations = mutationEvidence(o);
+      const observedMutations = mutationEvidence(observation);
       assert.deepEqual(
-        mutations,
+        observedMutations,
         [],
-        `repo was mutated:\n${mutations.join("\n")}`,
+        `repo was mutated:\n${observedMutations.join("\n")}`,
       );
       return "no trigger; no mutation";
     },
@@ -218,8 +217,9 @@ export const cases: EvalCase[] = [
     intent: "A nonexistent PROJECT_PATH yields the PATH_ERROR envelope",
     budgetUsd: 2.0,
     wallClockMs: 300_000,
-    prompt: (ctx) => `Use the ${SKILL} skill. PROJECT_PATH=${ctx.missingPath}`,
-    check: (o) => assertEnvelope(o, "PATH_ERROR"),
+    prompt: (caseContext) =>
+      `Use the ${SKILL} skill. PROJECT_PATH=${caseContext.missingPath}`,
+    check: (observation) => assertEnvelope(observation, "PATH_ERROR"),
   },
   {
     id: "gate-envelope",
@@ -229,8 +229,9 @@ export const cases: EvalCase[] = [
       "A real directory that is not a worktree yields the NOT_GIT envelope",
     budgetUsd: 2.0,
     wallClockMs: 300_000,
-    prompt: (ctx) => `Use the ${SKILL} skill. PROJECT_PATH=${ctx.notGitPath}`,
-    check: (o) => assertEnvelope(o, "NOT_GIT"),
+    prompt: (caseContext) =>
+      `Use the ${SKILL} skill. PROJECT_PATH=${caseContext.notGitPath}`,
+    check: (observation) => assertEnvelope(observation, "NOT_GIT"),
   },
   {
     // Regression guard: this route previously could not pass its own verifier.
@@ -243,40 +244,50 @@ export const cases: EvalCase[] = [
     wallClockMs: 600_000,
     prompt: () =>
       "What changed recently in this repo and is it ready to hand off?",
-    check: (o) => {
-      assertRunHappened(o);
+    check: (observation) => {
+      assertRunHappened(observation);
       assert.match(
-        o.finalText,
+        observation.finalText,
         /^# Project State Snapshot/m,
         "no snapshot report was returned",
       );
       assert.doesNotMatch(
-        o.finalText,
+        observation.finalText,
         /RECENT_STATE: ERROR/,
         "quiet state escalated instead of returning the short form",
       );
       // Short form carries sections 1, 2, 9, 10 only; section 4 must be absent.
       assert.doesNotMatch(
-        o.finalText,
+        observation.finalText,
         /^## 4\./m,
         "short form included a section it should have omitted",
       );
       return "short form; no section 4; no ERROR";
     },
   },
-];
+] as const satisfies readonly EvalCase[];
+
+export type CaseId = (typeof cases)[number]["id"];
 
 /**
  * mutation-scope is derived from the tier-2 runs rather than paying for its own
  * invocation: the skill is read-only, so no behavioral run may leave a trace.
  */
-export function checkMutationScope(observations: Observation[]): string {
+export function checkMutationScope(
+  observations: readonly Observation[],
+): string {
   // The guarantee is "these runs wrote nothing", which can only be read off
   // runs that happened. A run that reached no model also leaves no trace, so
   // without this the row reports a read-only contract it never tested.
-  for (const o of observations) assertRunHappened(o);
+  for (const observation of observations) assertRunHappened(observation);
 
-  const all = observations.flatMap((o) => mutationEvidence(o));
-  assert.deepEqual(all, [], `read-only contract violated:\n${all.join("\n")}`);
+  const allMutationEvidence = observations.flatMap((observation) =>
+    mutationEvidence(observation),
+  );
+  assert.deepEqual(
+    allMutationEvidence,
+    [],
+    `read-only contract violated:\n${allMutationEvidence.join("\n")}`,
+  );
   return `${observations.length} behavioral run(s) left no trace`;
 }
