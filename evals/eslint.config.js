@@ -178,7 +178,7 @@ export default defineConfig(
       "vitest/prefer-import-in-mock": ERROR,
     },
   },
-  globalIgnores(["coverage/", "node_modules/"]),
+  globalIgnores(["node_modules/"]),
   oxlint.buildFromOxlintConfigFile("./.oxlintrc.json", {
     typeAware: true,
   }),
