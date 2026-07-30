@@ -6,8 +6,9 @@
 
 import { expect, test } from "vitest";
 
-import type { Result } from "#/orchestration/run.ts";
-import { escapeCell, evaluate, renderReport } from "#/orchestration/run.ts";
+import { evaluate } from "#/orchestration/case-execution.ts";
+import type { Result } from "#/orchestration/report.ts";
+import { escapeCell, renderReport } from "#/orchestration/report.ts";
 
 /** Mirrors MAX_OBSERVED_CHARS in case-execution.ts: one report cell holds one line. */
 const MAX_OBSERVED_CHARS = 160;

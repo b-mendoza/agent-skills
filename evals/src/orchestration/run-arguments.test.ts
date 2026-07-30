@@ -6,7 +6,8 @@
 
 import { expect, test } from "vitest";
 
-import { parseArgs, resolveModel } from "#/orchestration/run.ts";
+import { parseArgs } from "#/orchestration/run.ts";
+import { resolveModel } from "#/orchestration/run-configuration.ts";
 
 const FIRST_UNDEFINED_TIER = 3;
 const LARGE_NUMERIC_TIER = 99;

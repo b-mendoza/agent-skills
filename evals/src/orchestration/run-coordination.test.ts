@@ -12,11 +12,9 @@ import type {
   EvalCase,
 } from "#/cases/analyzing-recent-project-state.ts";
 import type { Observation } from "#/observation/harness.ts";
-import type {
-  CaseExecutionResult,
-  Result,
-  RunnerServices,
-} from "#/orchestration/run.ts";
+import type { CaseExecutionResult } from "#/orchestration/case-execution.ts";
+import type { Result } from "#/orchestration/report.ts";
+import type { RunnerServices } from "#/orchestration/run.ts";
 import { EXIT_CODES, runCli } from "#/orchestration/run.ts";
 
 const USAGE_ERROR_LINE_COUNT = 3;
