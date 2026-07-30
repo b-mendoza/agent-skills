@@ -111,7 +111,6 @@ async function executeSelectedCases(
     // Sequential execution is the documented design (see the header): each case
     // starts a real Agent SDK query that spends tokens, so `Promise.all` here would
     // burn budget in parallel and interleave the progress lines this loop prints.
-    // oxlint-disable-next-line no-await-in-loop -- Cases must run one at a time; see above.
     const { result, observation } = await services.executeCase(evalCase);
     if (evalCase.tier === BEHAVIORAL_TIER) {
       behavioralObservations.push(observation);
