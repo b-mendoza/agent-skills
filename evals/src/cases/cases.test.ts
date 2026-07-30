@@ -41,11 +41,7 @@ const QUERY_FAILURE = observe({
   costUsd: 0,
 });
 
-/**
- * What the SDK returns when the login has expired: a clean result, a `success`
- * subtype, and the auth message where the answer belongs. Nothing about this
- * shape says "no model was reached" except `is_error`.
- */
+/** Authentication can report a `success` subtype with `is_error` and no work. */
 const AUTH_FAILURE = observe({
   subtype: "success",
   isError: true,
@@ -55,33 +51,31 @@ const AUTH_FAILURE = observe({
   costUsd: 0,
 });
 
-// The whole suite is only as trustworthy as its ability to tell "the skill
-// declined" from "nothing ran". Every case must reject the latter.
-test.each(cases.map((evalCase) => evalCase.id))(
-  "`%s` fails when the query produced no result",
-  (caseId) => {
-    expect(() => caseById(caseId).check(QUERY_FAILURE)).toThrow();
+const invalidRunScenarios = [
+  { label: "when the query produced no result", observation: QUERY_FAILURE },
+  { label: "on a timed-out run", observation: observe({ timedOut: true }) },
+  // Expired login once passed all three negative cases because it did no work.
+  {
+    label: "when authentication failed",
+    observation: AUTH_FAILURE,
+    expectedError: /reported a failed run/,
   },
+] as const;
+
+// Every case must reject every invalid run shape.
+const invalidRunChecks = cases.flatMap((evalCase) =>
+  invalidRunScenarios.map((scenario) => ({ caseId: evalCase.id, ...scenario })),
 );
 
-test.each(cases.map((evalCase) => evalCase.id))(
-  "`%s` fails on a timed-out run",
-  (caseId) => {
-    expect(() => caseById(caseId).check(observe({ timedOut: true }))).toThrow();
-  },
-);
-
-// The regression this file exists for, in its most dangerous form: an expired
-// login once passed all three negative cases, because a run that reached no
-// model calls no skill and mutates nothing.
-test.each(cases.map((evalCase) => evalCase.id))(
-  "`%s` fails when authentication failed",
-  (caseId) => {
-    expect(() => caseById(caseId).check(AUTH_FAILURE)).toThrow(
-      /reported a failed run/,
-    );
-  },
-);
+test.each(invalidRunChecks)("`$caseId` fails $label", (invalidRunCheck) => {
+  const runCheck = () =>
+    caseById(invalidRunCheck.caseId).check(invalidRunCheck.observation);
+  const expectedError =
+    "expectedError" in invalidRunCheck
+      ? invalidRunCheck.expectedError
+      : undefined;
+  expect(runCheck).toThrow(expectedError);
+});
 
 test("mutation-scope fails when authentication failed", () => {
   // Derived from the tier-2 observations, so it inherits the same blind spot:
