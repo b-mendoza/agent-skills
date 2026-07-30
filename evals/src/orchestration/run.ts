@@ -11,33 +11,25 @@
 // Exit codes: 0 all pass · 1 a case failed · 2 no cases matched · 3 suite error · 4 usage error
 
 import { writeFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 
-import type {
-  CaseTier,
-  EvalCase,
-} from "#/cases/analyzing-recent-project-state.ts";
+import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
 import {
   cases,
   checkMutationScope,
-  SKILL,
 } from "#/cases/analyzing-recent-project-state.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/harness.ts";
-import { runClaude } from "#/observation/harness.ts";
+import type { CaseExecutionResult } from "#/orchestration/case-execution.ts";
+import { evaluate, executeCase } from "#/orchestration/case-execution.ts";
+import type { Result } from "#/orchestration/report.ts";
+import {
+  escapeCell,
+  renderReport,
+  REPORT_PATH,
+} from "#/orchestration/report.ts";
+import { resolveModel } from "#/orchestration/run-configuration.ts";
 
-const REPORT_PATH = fileURLToPath(new URL("../../report.md", import.meta.url));
-
-const DEFAULT_MODEL = "sonnet";
-
-export function resolveModel(configuredModel: string | undefined): string {
-  // An empty EVAL_MODEL is an unset EVAL_MODEL, not a request for a nameless model.
-  return configuredModel === undefined || configuredModel === ""
-    ? DEFAULT_MODEL
-    : configuredModel;
-}
-
-const MODEL = resolveModel(process.env["EVAL_MODEL"]);
+export type { CaseExecutionResult, Result };
+export { escapeCell, evaluate, renderReport, resolveModel };
 
 /** Exit codes are the machine-readable contract; see the header comment. */
 export const EXIT_CODES = {
@@ -53,9 +45,6 @@ export type ExitCode = (typeof EXIT_CODES)[keyof typeof EXIT_CODES];
 const MS_PER_SECOND = 1000;
 const COST_DECIMALS = 2;
 const WHOLE_SECONDS = 0;
-/** A report cell holds one line; a longer assertion message is truncated. */
-const MAX_OBSERVED_CHARS = 160;
-const ROUTING_TIER = 1;
 /** Only tier-2 runs are behavioral, so only they feed the derived scope check. */
 const BEHAVIORAL_TIER = 2;
 /** `process.argv` starts with the node binary and this script. */
@@ -64,33 +53,10 @@ const ARGV_START = 2;
 const NO_COST = 0;
 const NO_DURATION = 0;
 
-type Status = "PASS" | "FAIL";
-/** Case tiers as they appear in the report; `2*` is the derived row. */
-type Tier = "1" | "2" | "2*";
-
-const REPORT_TIER_BY_CASE_TIER = {
-  [ROUTING_TIER]: "1",
-  [BEHAVIORAL_TIER]: "2",
-} as const satisfies Record<CaseTier, Tier>;
-
-export interface Result {
-  id: string;
-  tier: Tier;
-  status: Status;
-  observed: string;
-  costUsd: number;
-  durationMs: number;
-}
-
 export interface ParsedArguments {
   tier?: number;
   caseId?: string;
   errors: string[];
-}
-
-export interface CaseExecutionResult {
-  result: Result;
-  observation: Observation;
 }
 
 export interface RunnerServices {
@@ -102,17 +68,18 @@ export interface RunnerServices {
 export function parseArgs(argv: string[]): ParsedArguments {
   const parsedArguments: ParsedArguments = { errors: [] };
   for (const argument of argv) {
-    const tierMatch = /^--tier=(?<tier>\d+)$/.exec(argument)?.groups?.["tier"];
-    if (tierMatch != null) {
-      parsedArguments.tier = Number(tierMatch);
+    const tierArgumentValue = /^--tier=(?<tier>\d+)$/.exec(argument)?.groups?.[
+      "tier"
+    ];
+    if (tierArgumentValue != null) {
+      parsedArguments.tier = Number(tierArgumentValue);
       continue;
     }
 
-    const caseIdMatch = /^--case=(?<caseId>.+)$/.exec(argument)?.groups?.[
-      "caseId"
-    ];
-    if (caseIdMatch != null) {
-      parsedArguments.caseId = caseIdMatch;
+    const caseIdArgumentValue = /^--case=(?<caseId>.+)$/.exec(argument)
+      ?.groups?.["caseId"];
+    if (caseIdArgumentValue != null) {
+      parsedArguments.caseId = caseIdArgumentValue;
       continue;
     }
 
@@ -134,122 +101,19 @@ function selectCases(
   );
 }
 
-/** Runs a check, turning a thrown assertion into a FAIL row. */
-export function evaluate(check: () => string): {
-  status: Status;
-  observed: string;
-} {
-  try {
-    return { status: "PASS", observed: check() };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const [firstLine = ""] = message.split("\n");
-    return { status: "FAIL", observed: firstLine.slice(0, MAX_OBSERVED_CHARS) };
-  }
-}
-
-function toReportTier(caseTier: CaseTier): Tier {
-  return REPORT_TIER_BY_CASE_TIER[caseTier];
-}
-
-async function runCase(evalCase: EvalCase): Promise<CaseExecutionResult> {
-  const fixture = makeFixture(evalCase.fixture, SKILL);
-  try {
-    const observation = await runClaude({
-      cwd: fixture.cwd,
-      gitRepo: fixture.gitRepo ?? fixture.cwd,
-      prompt: evalCase.prompt({
-        missingPath: fixture.missingPath,
-        notGitPath: fixture.notGitPath,
-      }),
-      budgetUsd: evalCase.budgetUsd,
-      model: MODEL,
-      wallClockMs: evalCase.wallClockMs,
-    });
-
-    const { status, observed } = evaluate(() => evalCase.check(observation));
-
-    return {
-      result: {
-        id: evalCase.id,
-        tier: toReportTier(evalCase.tier),
-        status,
-        observed,
-        costUsd: observation.costUsd,
-        durationMs: observation.durationMs,
-      },
-      observation,
-    };
-  } finally {
-    fixture.cleanup();
-  }
-}
-
-/** A `|` would split a table column and a newline would end the row. */
-export function escapeCell(value: string): string {
-  return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
-}
-
-export function renderReport(results: Result[]): string {
-  const passedCount = results.filter(
-    (result) => result.status === "PASS",
-  ).length;
-  const failedCount = results.filter(
-    (result) => result.status === "FAIL",
-  ).length;
-  const totalCostUsd = results.reduce(
-    (total, result) => total + result.costUsd,
-    0,
-  );
-  const totalDurationSeconds = Math.round(
-    results.reduce((total, result) => total + result.durationMs, 0) /
-      MS_PER_SECOND,
-  );
-  const generatedAt = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
-
-  const reportRows = results
-    .map(
-      (result) =>
-        `| ${result.id} | ${result.tier} | ${result.status} | ${escapeCell(result.observed)} |`,
-    )
-    .join("\n");
-
-  return `# Eval Report — ${SKILL}
-
-Generated by \`node evals/src/orchestration/run.ts\`. Rewritten every run and committed, so a
-behavior change shows up as a diff.
-
-Run: ${generatedAt} · ${results.length} cases · ${passedCount} pass · ${failedCount} fail · $${totalCostUsd.toFixed(COST_DECIMALS)} · ${totalDurationSeconds}s · model \`${MODEL}\`
-
-| Case | Tier | Result | Observed |
-| ---- | ---- | ------ | -------- |
-${reportRows}
-
-Tier 1 cases are budget-capped and assert only the routing decision. Tier 2
-cases are full behavioral runs. Every case listed here was executed; this report
-records only observed results.
-`;
-}
-
-function writeReport(report: string): void {
-  writeFileSync(REPORT_PATH, report);
-}
-
-const defaultRunnerServices: RunnerServices = {
+export const defaultRunnerServices: RunnerServices = {
   evalCases: cases,
-  executeCase: runCase,
-  writeReport,
+  executeCase,
+  writeReport: (report) => {
+    writeFileSync(REPORT_PATH, report);
+  },
 };
-
-function suiteErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 async function executeSelectedCases(
   selectedCases: readonly EvalCase[],
   services: RunnerServices,
 ): Promise<ExitCode> {
-  const results: Result[] = [];
+  const reportResults: Result[] = [];
   const behavioralObservations: Observation[] = [];
 
   for (const evalCase of selectedCases) {
@@ -262,7 +126,7 @@ async function executeSelectedCases(
     if (evalCase.tier === BEHAVIORAL_TIER) {
       behavioralObservations.push(observation);
     }
-    results.push(result);
+    reportResults.push(result);
     console.log(
       `${result.status} ${(result.durationMs / MS_PER_SECOND).toFixed(WHOLE_SECONDS)}s $${result.costUsd.toFixed(COST_DECIMALS)}`,
     );
@@ -274,7 +138,7 @@ async function executeSelectedCases(
     const { status, observed } = evaluate(() =>
       checkMutationScope(behavioralObservations),
     );
-    results.push({
+    reportResults.push({
       id: "mutation-scope",
       tier: "2*",
       status,
@@ -285,11 +149,13 @@ async function executeSelectedCases(
     console.log(`· mutation-scope (derived) ... ${status}`);
   }
 
-  services.writeReport(renderReport(results));
+  services.writeReport(renderReport(reportResults));
   console.log(`\nReport written to evals/report.md`);
 
-  const hasFailure = results.some((result) => result.status === "FAIL");
-  return hasFailure ? EXIT_CODES.CASE_FAILED : EXIT_CODES.ALL_PASSED;
+  const hasFailedResult = reportResults.some(
+    (result) => result.status === "FAIL",
+  );
+  return hasFailedResult ? EXIT_CODES.CASE_FAILED : EXIT_CODES.ALL_PASSED;
 }
 
 export async function runCli(
@@ -316,7 +182,9 @@ export async function runCli(
 
     return await executeSelectedCases(selectedCases, services);
   } catch (error) {
-    console.error(`eval suite error: ${suiteErrorMessage(error)}`);
+    console.error(
+      `eval suite error: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return EXIT_CODES.SUITE_ERROR;
   }
 }
