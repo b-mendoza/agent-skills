@@ -105,6 +105,10 @@ export function assertEnvelope(
 export function checkMutationScope(
   observations: readonly Observation[],
 ): string {
+  assert.ok(
+    observations.length > 0,
+    "mutation-scope requires at least one behavioral observation",
+  );
   // The guarantee is "these runs wrote nothing", which can only be read off
   // runs that happened. A run that reached no model also leaves no trace, so
   // without this the row reports a read-only contract it never tested.

@@ -157,6 +157,36 @@ export const cases = [
         /^# Project State Snapshot/m,
         "no snapshot report was returned",
       );
+      assert.match(
+        observation.finalText,
+        /^## 1\. Executive Summary$/m,
+        "short form omitted section 1",
+      );
+      assert.match(
+        observation.finalText,
+        /^## 2\. Git State$/m,
+        "short form omitted section 2",
+      );
+      assert.match(
+        observation.finalText,
+        /^Assumptions:/m,
+        "short form omitted assumptions",
+      );
+      assert.match(
+        observation.finalText,
+        /^Execution mode:/m,
+        "short form omitted execution mode",
+      );
+      assert.match(
+        observation.finalText,
+        /^## 9\. Ranked Next Actions$/m,
+        "short form omitted section 9",
+      );
+      assert.match(
+        observation.finalText,
+        /^## 10\. Final Developer Briefing$/m,
+        "short form omitted section 10",
+      );
       assert.doesNotMatch(
         observation.finalText,
         /RECENT_STATE: ERROR/,
