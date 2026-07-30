@@ -69,7 +69,8 @@ the React-only pieces, so the rules here match the ones you already work under.
 | `src/cases/<skill>.ts`       | Canonical source of truth: every eval case and its assertions                |
 | `src/**/*.test.ts`           | Offline vitest suites, colocated with the code they pin                      |
 | `report.md`                  | Generated every run; committed                                               |
-| `AGENTS.md`, `docs/agents/`  | Agent guide and its short-lived current-state references                     |
+| `AGENTS.md`, `docs/agents/`  | Agent guide and long-lived agent guidance                                    |
+| `docs/*.md`                  | Short-lived current-state references (layout, verification)                  |
 
 ## Tiers
 
