@@ -17,6 +17,16 @@ import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 
 const FIXTURE_SKILL_NAME = "analyzing-recent-project-state";
+const FIXTURE_KIND_SET = {
+  clean: true,
+  dirty: true,
+  "not-git": true,
+  "missing-path": true,
+} satisfies Record<FixtureKind, true>;
+const FIXTURE_KINDS = Object.keys(FIXTURE_KIND_SET).filter(
+  (kind): kind is FixtureKind => Object.hasOwn(FIXTURE_KIND_SET, kind),
+);
+const GIT_FIXTURE_KINDS = FIXTURE_KINDS.filter((kind) => kind !== "not-git");
 
 // Cleanup runs even when an assertion throws, so a failing test cannot leave a
 // temp tree behind.
@@ -42,7 +52,7 @@ function readGitStatus(repositoryPath: string): string {
   }).replace(/\n$/, "");
 }
 
-test.each<FixtureKind>(["clean", "dirty", "not-git", "missing-path"])(
+test.each<FixtureKind>(FIXTURE_KINDS)(
   "%s: the skill is copied in where the agent looks for it",
   (kind) => {
     const fixture = createFixture(kind);
@@ -59,7 +69,7 @@ test.each<FixtureKind>(["clean", "dirty", "not-git", "missing-path"])(
   },
 );
 
-test.each<FixtureKind>(["clean", "dirty", "missing-path"])(
+test.each<FixtureKind>(GIT_FIXTURE_KINDS)(
   "%s: is a real worktree and reports itself as the git repo",
   (kind) => {
     const fixture = createFixture(kind);
