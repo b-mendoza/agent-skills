@@ -32,8 +32,14 @@ export function evaluate(check: () => string): {
   try {
     return { status: "PASS", observed: check() };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    const [firstLine = ""] = message.split("\n");
+    const normalizedError =
+      error instanceof Error
+        ? error
+        : new Error("An unknown error occurred", {
+            cause: error,
+          });
+
+    const [firstLine = ""] = normalizedError.message.split("\n");
     return { status: "FAIL", observed: firstLine.slice(0, MAX_OBSERVED_CHARS) };
   }
 }
