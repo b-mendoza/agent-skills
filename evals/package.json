@@ -7,6 +7,7 @@
     "#/*": "./src/*"
   },
   "scripts": {
+    "clean:hard": "node scripts/hard-clean.ts",
     "clean:soft": "node scripts/soft-clean.ts",
     "eval": "node src/orchestration/run.ts",
     "fix": "run-s --continue-on-error \"fix:*\"",
