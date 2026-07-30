@@ -10,15 +10,14 @@ import { expect, test } from "vitest";
 
 import type {
   CaseId,
-  EnvelopeStatus,
   EvalCase,
 } from "#/cases/analyzing-recent-project-state.ts";
+import { cases, SKILL } from "#/cases/analyzing-recent-project-state.ts";
+import type { EnvelopeStatus } from "#/cases/analyzing-recent-project-state-checks.ts";
 import {
   BUDGET_STOP_SUBTYPE,
-  cases,
   checkMutationScope,
-  SKILL,
-} from "#/cases/analyzing-recent-project-state.ts";
+} from "#/cases/analyzing-recent-project-state-checks.ts";
 import type { Observation } from "#/observation/harness.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/harness.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
