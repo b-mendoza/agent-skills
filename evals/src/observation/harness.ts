@@ -442,8 +442,12 @@ const MUTATING_GIT = [
   "gc",
 ] as const;
 
-/** Tool calls that write a file, for the same read-only assertion. */
-const MUTATING_TOOLS = new Set(["Write", "Edit", "NotebookEdit"] as const);
+/** Path input read from each tool call that writes a file. */
+const MUTATING_TOOL_PATH_KEYS: Readonly<Record<string, string>> = {
+  Write: "file_path",
+  Edit: "file_path",
+  NotebookEdit: "notebook_path",
+};
 
 /**
  * Global git options that consume the NEXT token as their value, so the verb
@@ -589,9 +593,10 @@ function dualModeEvidence(cmd: string): boolean {
 }
 
 function fileWriteEvidence(call: ToolCall): string | null {
-  if (!MUTATING_TOOLS.has(call.name)) return null;
-  const filePath = toText(call.input["file_path"]);
-  return `${call.name} called on ${filePath === "" ? "?" : filePath}`;
+  const pathKey = MUTATING_TOOL_PATH_KEYS[call.name];
+  if (pathKey === undefined) return null;
+  const filePath = call.input[pathKey];
+  return `${call.name} called on ${typeof filePath === "string" && filePath !== "" ? filePath : "?"}`;
 }
 
 function bashEvidence(call: ToolCall): string | null {

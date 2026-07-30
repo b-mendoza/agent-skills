@@ -124,29 +124,38 @@ test("a worktree appearing where there was none is evidence", () => {
   expect(found[0]).toContain("(not a worktree)");
 });
 
-test.each(["Write", "Edit", "NotebookEdit"])(
-  "%s is evidence and names the file",
-  (name) => {
-    const found = mutationEvidence(
-      observe({ toolCalls: [{ name, input: { file_path: "/work/x.ts" } }] }),
-    );
+test.each([
+  ["Write", "file_path", "/work/x.ts"],
+  ["Edit", "file_path", "/work/x.ts"],
+  ["NotebookEdit", "notebook_path", "/work/notebook.ipynb"],
+])("%s is evidence and names the file", (name, pathKey, filePath) => {
+  const found = mutationEvidence(
+    observe({ toolCalls: [{ name, input: { [pathKey]: filePath } }] }),
+  );
 
-    expect(found).toStrictEqual([`${name} called on /work/x.ts`]);
-  },
-);
+  expect(found).toStrictEqual([`${name} called on ${filePath}`]);
+});
 
-test("a write tool with no usable path still reports the call", () => {
-  // The call is the violation; a missing path must not make it disappear.
+test("a write tool with no usable mapped path still reports the call", () => {
+  // The call is the violation; a missing or non-string path must not make it
+  // disappear or render an untrusted value as if it were a usable path.
   const found = mutationEvidence(
     observe({
       toolCalls: [
         { name: "Write", input: {} },
         { name: "Edit", input: { file_path: 42 } },
+        { name: "NotebookEdit", input: { file_path: "/work/old.ipynb" } },
+        { name: "NotebookEdit", input: { notebook_path: 42 } },
       ],
     }),
   );
 
-  expect(found).toStrictEqual(["Write called on ?", "Edit called on 42"]);
+  expect(found).toStrictEqual([
+    "Write called on ?",
+    "Edit called on ?",
+    "NotebookEdit called on ?",
+    "NotebookEdit called on ?",
+  ]);
 });
 
 test("read-only tools are not evidence", () => {
