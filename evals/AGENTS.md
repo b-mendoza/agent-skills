@@ -36,12 +36,12 @@ edit docs:
 
 ## Open when relevant (long-lived)
 
-| When you need                                    | Read                                                                       |
-| ------------------------------------------------ | -------------------------------------------------------------------------- |
-| TypeScript design and lint conventions           | [`docs/agents/conventions.md`](./docs/agents/conventions.md)               |
-| How to name variables, arguments, and functions  | [`docs/agents/naming-conventions.md`](./docs/agents/naming-conventions.md) |
-| What and how to test in the offline suites       | [`docs/agents/testing.md`](./docs/agents/testing.md)                       |
-| To delegate evals work to a subagent             | [`docs/agents/delegation.md`](./docs/agents/delegation.md)                 |
+| When you need                                   | Read                                                                       |
+| ----------------------------------------------- | -------------------------------------------------------------------------- |
+| TypeScript design and lint conventions          | [`docs/agents/conventions.md`](./docs/agents/conventions.md)               |
+| How to name variables, arguments, and functions | [`docs/agents/naming-conventions.md`](./docs/agents/naming-conventions.md) |
+| What and how to test in the offline suites      | [`docs/agents/testing.md`](./docs/agents/testing.md)                       |
+| To delegate evals work to a subagent            | [`docs/agents/delegation.md`](./docs/agents/delegation.md)                 |
 
 ## Current-state references (short-lived; verify against the code)
 
