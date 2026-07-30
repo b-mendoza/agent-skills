@@ -54,14 +54,14 @@ The pattern to internalize: a bad name describes a value's shape or generic
 role, while a good name describes what the value actually holds in this
 context.
 
-| Avoid | Prefer | Why |
-| --- | --- | --- |
-| `out` | `outputBytes` | "Out" of what, and holding what? Name the payload and, where useful, its type. |
-| `src` | `inputBytes` | Says where the data comes from and what form it takes. |
-| `properties` | `casePropertyList` | "Properties" of what? Anchor the noun to its subject. |
-| `err` (bare, far from its cause) | `runCaseError` | Names the operation that failed, so the reader does not have to trace it. |
-| `h` (argument) | `harness` | A single letter forces the reader to jump to the type to learn anything. |
-| `data`, `val`, `tmp`, `res` | the specific noun it holds | Placeholder names carry no information and tend to outlive their scope. |
+| Avoid                            | Prefer                     | Why                                                                            |
+| -------------------------------- | -------------------------- | ------------------------------------------------------------------------------ |
+| `out`                            | `outputBytes`              | "Out" of what, and holding what? Name the payload and, where useful, its type. |
+| `src`                            | `inputBytes`               | Says where the data comes from and what form it takes.                         |
+| `properties`                     | `casePropertyList`         | "Properties" of what? Anchor the noun to its subject.                          |
+| `err` (bare, far from its cause) | `runCaseError`             | Names the operation that failed, so the reader does not have to trace it.      |
+| `h` (argument)                   | `harness`                  | A single letter forces the reader to jump to the type to learn anything.       |
+| `data`, `val`, `tmp`, `res`      | the specific noun it holds | Placeholder names carry no information and tend to outlive their scope.        |
 
 A quick test: read the name out loud and ask "of what?" or "for what?". If
 the name does not already answer the question, it is too vague.
