@@ -16,12 +16,6 @@ import type { FixtureKind } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/harness.ts";
 import { mutationEvidence, skillInvocations } from "#/observation/harness.ts";
 
-export type { EnvelopeStatus } from "#/cases/analyzing-recent-project-state-checks.ts";
-export {
-  BUDGET_STOP_SUBTYPE,
-  checkMutationScope,
-} from "#/cases/analyzing-recent-project-state-checks.ts";
-
 export const SKILL = "analyzing-recent-project-state";
 
 /** Names the tools a run actually called, for a failure message. */
