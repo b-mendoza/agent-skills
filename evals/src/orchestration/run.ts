@@ -13,7 +13,10 @@
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
+import type {
+  CaseTier,
+  EvalCase,
+} from "#/cases/analyzing-recent-project-state.ts";
 import {
   cases,
   checkMutationScope,
@@ -26,19 +29,26 @@ import { runClaude } from "#/observation/harness.ts";
 const REPORT_PATH = fileURLToPath(new URL("../../report.md", import.meta.url));
 
 const DEFAULT_MODEL = "sonnet";
-const configuredModel = process.env["EVAL_MODEL"];
-// An empty EVAL_MODEL is an unset EVAL_MODEL, not a request for a nameless model.
-const MODEL =
-  configuredModel == null || configuredModel === ""
+
+export function resolveModel(configuredModel: string | undefined): string {
+  // An empty EVAL_MODEL is an unset EVAL_MODEL, not a request for a nameless model.
+  return configuredModel === undefined || configuredModel === ""
     ? DEFAULT_MODEL
     : configuredModel;
+}
+
+const MODEL = resolveModel(process.env["EVAL_MODEL"]);
 
 /** Exit codes are the machine-readable contract; see the header comment. */
-const EXIT_ALL_PASSED = 0;
-const EXIT_CASE_FAILED = 1;
-const EXIT_NO_CASES_MATCHED = 2;
-const EXIT_SUITE_ERROR = 3;
-const EXIT_USAGE_ERROR = 4;
+export const EXIT_CODES = {
+  ALL_PASSED: 0,
+  CASE_FAILED: 1,
+  NO_CASES_MATCHED: 2,
+  SUITE_ERROR: 3,
+  USAGE_ERROR: 4,
+} as const;
+
+export type ExitCode = (typeof EXIT_CODES)[keyof typeof EXIT_CODES];
 
 const MS_PER_SECOND = 1000;
 const COST_DECIMALS = 2;
@@ -58,6 +68,11 @@ type Status = "PASS" | "FAIL";
 /** Case tiers as they appear in the report; `2*` is the derived row. */
 type Tier = "1" | "2" | "2*";
 
+const REPORT_TIER_BY_CASE_TIER = {
+  [ROUTING_TIER]: "1",
+  [BEHAVIORAL_TIER]: "2",
+} as const satisfies Record<CaseTier, Tier>;
+
 export interface Result {
   id: string;
   tier: Tier;
@@ -67,30 +82,56 @@ export interface Result {
   durationMs: number;
 }
 
-export function parseArgs(argv: string[]): {
+export interface ParsedArguments {
   tier?: number;
   caseId?: string;
   errors: string[];
-} {
-  const out: { tier?: number; caseId?: string; errors: string[] } = {
-    errors: [],
-  };
-  for (const arg of argv) {
-    const tier = /^--tier=(?<tier>\d+)$/.exec(arg)?.groups?.["tier"];
-    if (tier != null) {
-      out.tier = Number(tier);
+}
+
+export interface CaseExecutionResult {
+  result: Result;
+  observation: Observation;
+}
+
+export interface RunnerServices {
+  evalCases: readonly EvalCase[];
+  executeCase: (evalCase: EvalCase) => Promise<CaseExecutionResult>;
+  writeReport: (report: string) => void;
+}
+
+export function parseArgs(argv: string[]): ParsedArguments {
+  const parsedArguments: ParsedArguments = { errors: [] };
+  for (const argument of argv) {
+    const tierMatch = /^--tier=(?<tier>\d+)$/.exec(argument)?.groups?.["tier"];
+    if (tierMatch != null) {
+      parsedArguments.tier = Number(tierMatch);
       continue;
     }
 
-    const caseId = /^--case=(?<caseId>.+)$/.exec(arg)?.groups?.["caseId"];
-    if (caseId != null) {
-      out.caseId = caseId;
+    const caseIdMatch = /^--case=(?<caseId>.+)$/.exec(argument)?.groups?.[
+      "caseId"
+    ];
+    if (caseIdMatch != null) {
+      parsedArguments.caseId = caseIdMatch;
       continue;
     }
 
-    out.errors.push(`unrecognized or malformed argument: ${arg}`);
+    parsedArguments.errors.push(
+      `unrecognized or malformed argument: ${argument}`,
+    );
   }
-  return out;
+  return parsedArguments;
+}
+
+function selectCases(
+  evalCases: readonly EvalCase[],
+  { tier, caseId }: ParsedArguments,
+): EvalCase[] {
+  return evalCases.filter(
+    (evalCase) =>
+      (tier == null || evalCase.tier === tier) &&
+      (caseId == null || evalCase.id === caseId),
+  );
 }
 
 /** Runs a check, turning a thrown assertion into a FAIL row. */
@@ -107,36 +148,40 @@ export function evaluate(check: () => string): {
   }
 }
 
-async function runCase(c: EvalCase): Promise<[Result, Observation]> {
-  const fx = makeFixture(c.fixture, SKILL);
+function toReportTier(caseTier: CaseTier): Tier {
+  return REPORT_TIER_BY_CASE_TIER[caseTier];
+}
+
+async function runCase(evalCase: EvalCase): Promise<CaseExecutionResult> {
+  const fixture = makeFixture(evalCase.fixture, SKILL);
   try {
     const observation = await runClaude({
-      cwd: fx.cwd,
-      gitRepo: fx.gitRepo ?? fx.cwd,
-      prompt: c.prompt({
-        missingPath: fx.missingPath,
-        notGitPath: fx.notGitPath,
+      cwd: fixture.cwd,
+      gitRepo: fixture.gitRepo ?? fixture.cwd,
+      prompt: evalCase.prompt({
+        missingPath: fixture.missingPath,
+        notGitPath: fixture.notGitPath,
       }),
-      budgetUsd: c.budgetUsd,
+      budgetUsd: evalCase.budgetUsd,
       model: MODEL,
-      wallClockMs: c.wallClockMs,
+      wallClockMs: evalCase.wallClockMs,
     });
 
-    const { status, observed } = evaluate(() => c.check(observation));
+    const { status, observed } = evaluate(() => evalCase.check(observation));
 
-    return [
-      {
-        id: c.id,
-        tier: c.tier === ROUTING_TIER ? "1" : "2",
+    return {
+      result: {
+        id: evalCase.id,
+        tier: toReportTier(evalCase.tier),
         status,
         observed,
         costUsd: observation.costUsd,
         durationMs: observation.durationMs,
       },
       observation,
-    ];
+    };
   } finally {
-    fx.cleanup();
+    fixture.cleanup();
   }
 }
 
@@ -146,18 +191,26 @@ export function escapeCell(value: string): string {
 }
 
 export function renderReport(results: Result[]): string {
-  const pass = results.filter((r) => r.status === "PASS").length;
-  const fail = results.filter((r) => r.status === "FAIL").length;
-  const cost = results.reduce((s, r) => s + r.costUsd, 0);
-  const secs = Math.round(
-    results.reduce((s, r) => s + r.durationMs, 0) / MS_PER_SECOND,
+  const passedCount = results.filter(
+    (result) => result.status === "PASS",
+  ).length;
+  const failedCount = results.filter(
+    (result) => result.status === "FAIL",
+  ).length;
+  const totalCostUsd = results.reduce(
+    (total, result) => total + result.costUsd,
+    0,
   );
-  const stamp = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+  const totalDurationSeconds = Math.round(
+    results.reduce((total, result) => total + result.durationMs, 0) /
+      MS_PER_SECOND,
+  );
+  const generatedAt = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 
-  const rows = results
+  const reportRows = results
     .map(
-      (r) =>
-        `| ${r.id} | ${r.tier} | ${r.status} | ${escapeCell(r.observed)} |`,
+      (result) =>
+        `| ${result.id} | ${result.tier} | ${result.status} | ${escapeCell(result.observed)} |`,
     )
     .join("\n");
 
@@ -166,11 +219,11 @@ export function renderReport(results: Result[]): string {
 Generated by \`node evals/src/orchestration/run.ts\`. Rewritten every run and committed, so a
 behavior change shows up as a diff.
 
-Run: ${stamp} · ${results.length} cases · ${pass} pass · ${fail} fail · $${cost.toFixed(COST_DECIMALS)} · ${secs}s · model \`${MODEL}\`
+Run: ${generatedAt} · ${results.length} cases · ${passedCount} pass · ${failedCount} fail · $${totalCostUsd.toFixed(COST_DECIMALS)} · ${totalDurationSeconds}s · model \`${MODEL}\`
 
 | Case | Tier | Result | Observed |
 | ---- | ---- | ------ | -------- |
-${rows}
+${reportRows}
 
 Tier 1 cases are budget-capped and assert only the routing decision. Tier 2
 cases are full behavioral runs. Every case listed here was executed; this report
@@ -178,37 +231,37 @@ records only observed results.
 `;
 }
 
-async function main(): Promise<void> {
-  const { tier, caseId, errors } = parseArgs(process.argv.slice(ARGV_START));
-  if (errors.length > 0) {
-    for (const error of errors) console.error(error);
-    console.error(
-      "Usage: node evals/src/orchestration/run.ts [--tier=<integer>] [--case=<id>]",
-    );
-    process.exit(EXIT_USAGE_ERROR);
-  }
+function writeReport(report: string): void {
+  writeFileSync(REPORT_PATH, report);
+}
 
-  const selected = cases.filter(
-    (c) =>
-      (tier == null || c.tier === tier) && (caseId == null || c.id === caseId),
-  );
+const defaultRunnerServices: RunnerServices = {
+  evalCases: cases,
+  executeCase: runCase,
+  writeReport,
+};
 
-  if (selected.length === 0) {
-    console.error("No cases matched.");
-    process.exit(EXIT_NO_CASES_MATCHED);
-  }
+function suiteErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
+async function executeSelectedCases(
+  selectedCases: readonly EvalCase[],
+  services: RunnerServices,
+): Promise<ExitCode> {
   const results: Result[] = [];
-  const behavioral: Observation[] = [];
+  const behavioralObservations: Observation[] = [];
 
-  for (const c of selected) {
-    process.stdout.write(`· ${c.id} (tier ${c.tier}) ... `);
+  for (const evalCase of selectedCases) {
+    process.stdout.write(`· ${evalCase.id} (tier ${evalCase.tier}) ... `);
     // Sequential execution is the documented design (see the header): each case
     // starts a real Agent SDK query that spends tokens, so `Promise.all` here would
     // burn budget in parallel and interleave the progress lines this loop prints.
     // oxlint-disable-next-line no-await-in-loop -- Cases must run one at a time; see above.
-    const [result, observation] = await runCase(c);
-    if (c.tier === BEHAVIORAL_TIER) behavioral.push(observation);
+    const { result, observation } = await services.executeCase(evalCase);
+    if (evalCase.tier === BEHAVIORAL_TIER) {
+      behavioralObservations.push(observation);
+    }
     results.push(result);
     console.log(
       `${result.status} ${(result.durationMs / MS_PER_SECOND).toFixed(WHOLE_SECONDS)}s $${result.costUsd.toFixed(COST_DECIMALS)}`,
@@ -217,8 +270,10 @@ async function main(): Promise<void> {
   }
 
   // Derived from the tier-2 runs; costs no extra invocation.
-  if (behavioral.length > 0) {
-    const { status, observed } = evaluate(() => checkMutationScope(behavioral));
+  if (behavioralObservations.length > 0) {
+    const { status, observed } = evaluate(() =>
+      checkMutationScope(behavioralObservations),
+    );
     results.push({
       id: "mutation-scope",
       tier: "2*",
@@ -230,22 +285,44 @@ async function main(): Promise<void> {
     console.log(`· mutation-scope (derived) ... ${status}`);
   }
 
-  writeFileSync(REPORT_PATH, renderReport(results));
+  services.writeReport(renderReport(results));
   console.log(`\nReport written to evals/report.md`);
 
-  const failed = results.filter((r) => r.status === "FAIL").length;
-  process.exit(failed > 0 ? EXIT_CASE_FAILED : EXIT_ALL_PASSED);
+  const hasFailure = results.some((result) => result.status === "FAIL");
+  return hasFailure ? EXIT_CODES.CASE_FAILED : EXIT_CODES.ALL_PASSED;
+}
+
+export async function runCli(
+  argv: string[],
+  services: RunnerServices = defaultRunnerServices,
+): Promise<ExitCode> {
+  try {
+    const parsedArguments = parseArgs(argv);
+    const { errors } = parsedArguments;
+    if (errors.length > 0) {
+      for (const error of errors) console.error(error);
+      console.error(
+        "Usage: node evals/src/orchestration/run.ts [--tier=<integer>] [--case=<id>]",
+      );
+      return EXIT_CODES.USAGE_ERROR;
+    }
+
+    const selectedCases = selectCases(services.evalCases, parsedArguments);
+
+    if (selectedCases.length === 0) {
+      console.error("No cases matched.");
+      return EXIT_CODES.NO_CASES_MATCHED;
+    }
+
+    return await executeSelectedCases(selectedCases, services);
+  } catch (error) {
+    console.error(`eval suite error: ${suiteErrorMessage(error)}`);
+    return EXIT_CODES.SUITE_ERROR;
+  }
 }
 
 // Only a direct `node run.ts` spends money. Importing this module -- which the
 // offline tests do, to reach the pure helpers above -- must never start a run.
 if (import.meta.main) {
-  try {
-    await main();
-  } catch (error) {
-    console.error(
-      `eval suite error: ${error instanceof Error ? error.message : String(error)}`,
-    );
-    process.exit(EXIT_SUITE_ERROR);
-  }
+  process.exit(await runCli(process.argv.slice(ARGV_START)));
 }

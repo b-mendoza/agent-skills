@@ -1,13 +1,13 @@
 // Proves the direct-entry guard still fires.
 //
-// `run.ts` wraps `main()` in `if (import.meta.main)` so the offline tests can
-// import its helpers without spawning a paid run. The failure mode that guard
-// introduces is silent: if it were ever false for a direct invocation, the
-// suite would do nothing and exit 0 -- indistinguishable from "everything
-// passed". Every other test here would still be green.
+// `run.ts` wraps the coordinator in `if (import.meta.main)` so the offline tests
+// can import its helpers without spawning a paid run. The failure mode that guard
+// introduces is silent: if it were ever false for a direct invocation, the suite
+// would do nothing and exit 0 -- indistinguishable from "everything passed".
+// Every other test here would still be green.
 //
-// `--case=` with an id no case defines reaches the "no cases matched" branch,
-// which exits before an Agent SDK query is ever started, so this costs nothing.
+// Unmatched selectors exit before an Agent SDK query is ever started, so these
+// direct-entry checks cost nothing.
 //
 //   pnpm test
 
@@ -17,46 +17,60 @@ import { fileURLToPath } from "node:url";
 
 import { expect, test } from "vitest";
 
-const RUN = fileURLToPath(new URL("./run.ts", import.meta.url));
-const REPORT = fileURLToPath(new URL("../../report.md", import.meta.url));
-const EXIT_NO_CASES_MATCHED = 2;
-const EXIT_USAGE_ERROR = 4;
+import { EXIT_CODES } from "#/orchestration/run.ts";
 
-test("running run.ts directly reaches main() and exits 2 on no match", () => {
-  const result = spawnSync(
+const RUN_PATH = fileURLToPath(new URL("./run.ts", import.meta.url));
+const REPORT_PATH = fileURLToPath(new URL("../../report.md", import.meta.url));
+
+test("running run.ts directly reaches the coordinator and exits 2 on no match", () => {
+  const processResult = spawnSync(
     process.execPath,
-    [RUN, "--case=no-such-case-exists"],
+    [RUN_PATH, "--case=no-such-case-exists"],
     { encoding: "utf8" },
   );
 
-  // Exit 2 proves main() ran: the guard is true for a direct invocation.
-  expect(result.status).toBe(EXIT_NO_CASES_MATCHED);
-  expect(result.stderr).toContain("No cases matched.");
+  // Exit 2 proves the coordinator ran: the guard is true for a direct invocation.
+  expect(processResult.status).toBe(EXIT_CODES.NO_CASES_MATCHED);
+  expect(processResult.stderr).toContain("No cases matched.");
 });
 
-test("an invalid selector exits 4 before running or rewriting the report", () => {
-  const reportBefore = readFileSync(REPORT, "utf8");
-  const result = spawnSync(process.execPath, [RUN, "--tier=abc"], {
+test("numeric tier 0 exits 2 without rewriting the report", () => {
+  const reportBefore = readFileSync(REPORT_PATH, "utf8");
+  const processResult = spawnSync(process.execPath, [RUN_PATH, "--tier=0"], {
     encoding: "utf8",
   });
 
-  expect(result.status).toBe(EXIT_USAGE_ERROR);
-  expect(result.stdout).toBe("");
-  expect(result.stderr).toContain(
+  expect(processResult.status).toBe(EXIT_CODES.NO_CASES_MATCHED);
+  expect(processResult.stdout).toBe("");
+  expect(processResult.stderr).toContain("No cases matched.");
+  expect(readFileSync(REPORT_PATH, "utf8")).toBe(reportBefore);
+});
+
+test("an invalid selector exits 4 before running or rewriting the report", () => {
+  const reportBefore = readFileSync(REPORT_PATH, "utf8");
+  const processResult = spawnSync(process.execPath, [RUN_PATH, "--tier=abc"], {
+    encoding: "utf8",
+  });
+
+  expect(processResult.status).toBe(EXIT_CODES.USAGE_ERROR);
+  expect(processResult.stdout).toBe("");
+  expect(processResult.stderr).toContain(
     "unrecognized or malformed argument: --tier=abc",
   );
-  expect(result.stderr).toContain("Usage: node evals/src/orchestration/run.ts");
-  expect(readFileSync(REPORT, "utf8")).toBe(reportBefore);
+  expect(processResult.stderr).toContain(
+    "Usage: node evals/src/orchestration/run.ts",
+  );
+  expect(readFileSync(REPORT_PATH, "utf8")).toBe(reportBefore);
 });
 
 test("importing run.ts does not start a run", () => {
-  const result = spawnSync(
+  const processResult = spawnSync(
     process.execPath,
-    ["--input-type=module", "-e", `await import(${JSON.stringify(RUN)});`],
+    ["--input-type=module", "-e", `await import(${JSON.stringify(RUN_PATH)});`],
     { encoding: "utf8" },
   );
 
   // No case ran, so nothing was selected, queried, or reported.
-  expect(result.status).toBe(0);
-  expect(result.stdout).toBe("");
+  expect(processResult.status).toBe(EXIT_CODES.ALL_PASSED);
+  expect(processResult.stdout).toBe("");
 });
