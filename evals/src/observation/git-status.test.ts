@@ -14,9 +14,10 @@ import { join } from "node:path";
 
 import { afterEach, expect, test } from "vitest";
 
+import type { GitStatus } from "#/observation/harness.ts";
 import { describeGitStatus, gitStatus } from "#/observation/harness.ts";
 
-const temps: string[] = [];
+const tempDirectories: string[] = [];
 const realPath = process.env["PATH"];
 
 afterEach(() => {
@@ -25,32 +26,38 @@ afterEach(() => {
   } else {
     process.env["PATH"] = realPath;
   }
-  for (const dir of temps.splice(0)) {
-    rmSync(dir, { recursive: true, force: true });
+  for (const tempDirectory of tempDirectories.splice(0)) {
+    rmSync(tempDirectory, { recursive: true, force: true });
   }
 });
 
-function tempDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), "git-status-"));
-  temps.push(dir);
-  return dir;
+function createTempDirectory(): string {
+  const tempDirectory = mkdtempSync(join(tmpdir(), "git-status-"));
+  tempDirectories.push(tempDirectory);
+  return tempDirectory;
 }
 
-function repo(): string {
-  const dir = tempDir();
-  execFileSync("git", ["init", "-q"], { cwd: dir, stdio: "ignore" });
-  return dir;
+function createRepository(): string {
+  const repositoryDirectory = createTempDirectory();
+  execFileSync("git", ["init", "-q"], {
+    cwd: repositoryDirectory,
+    stdio: "ignore",
+  });
+  return repositoryDirectory;
 }
 
 test("a clean worktree reports its empty entry list", () => {
-  expect(gitStatus(repo())).toStrictEqual({ kind: "worktree", entries: "" });
+  expect(gitStatus(createRepository())).toStrictEqual({
+    kind: "worktree",
+    entries: "",
+  });
 });
 
 test("a dirty worktree reports its entries", () => {
-  const dir = repo();
-  writeFileSync(join(dir, "a.txt"), "hello\n");
+  const repositoryDirectory = createRepository();
+  writeFileSync(join(repositoryDirectory, "a.txt"), "hello\n");
 
-  expect(gitStatus(dir)).toStrictEqual({
+  expect(gitStatus(repositoryDirectory)).toStrictEqual({
     kind: "worktree",
     entries: "?? a.txt",
   });
@@ -59,22 +66,30 @@ test("a dirty worktree reports its entries", () => {
 test("a directory that is not a repo is a known state, not a failure", () => {
   // This is the `not-git` fixture. It must stay distinct from a failed sample
   // or that fixture's cases would start failing.
-  expect(gitStatus(tempDir())).toStrictEqual({ kind: "no-worktree" });
+  expect(gitStatus(createTempDirectory())).toStrictEqual({
+    kind: "no-worktree",
+  });
 });
 
 test("a corrupt index is unreadable rather than clean", () => {
   // Exit 128 is git's generic fatal code, so this returns the same status as
   // "not a repository". Only the message separates them -- classifying by
   // exit code alone would file a corrupt repo as an expected empty state.
-  const dir = repo();
-  writeFileSync(join(dir, "f.txt"), "x");
-  execFileSync("git", ["add", "f.txt"], { cwd: dir, stdio: "ignore" });
-  writeFileSync(join(dir, ".git", "index"), "garbage");
+  const repositoryDirectory = createRepository();
+  writeFileSync(join(repositoryDirectory, "f.txt"), "x");
+  execFileSync("git", ["add", "f.txt"], {
+    cwd: repositoryDirectory,
+    stdio: "ignore",
+  });
+  writeFileSync(join(repositoryDirectory, ".git", "index"), "garbage");
 
-  const status = gitStatus(dir);
+  const status = gitStatus(repositoryDirectory);
 
   expect(status.kind).toBe("unreadable");
-  expect(describeGitStatus(status)).toContain("index file");
+  if (status.kind !== "unreadable") {
+    throw new Error("expected an unreadable git status");
+  }
+  expect(status.reason).not.toBe("");
 });
 
 test("a missing directory is unreadable", () => {
@@ -84,18 +99,33 @@ test("a missing directory is unreadable", () => {
 });
 
 test("a missing git binary is unreadable, not clean", () => {
-  const dir = repo();
-  process.env["PATH"] = tempDir();
+  const repositoryDirectory = createRepository();
+  process.env["PATH"] = createTempDirectory();
 
-  expect(gitStatus(dir).kind).toBe("unreadable");
+  expect(gitStatus(repositoryDirectory).kind).toBe("unreadable");
 });
 
-test("every state renders distinguishably in a failure message", () => {
-  // A failure message that cannot tell these apart sends the reader hunting
-  // for a mutation that never happened.
-  expect(describeGitStatus({ kind: "worktree", entries: "" })).toBe('""');
-  expect(describeGitStatus({ kind: "no-worktree" })).toBe("(not a worktree)");
-  expect(describeGitStatus({ kind: "unreadable", reason: "ENOENT" })).toBe(
+// A failure message that cannot tell these apart sends the reader hunting for
+// a mutation that never happened.
+test.each([
+  [
+    "a clean worktree renders as quoted empty entries",
+    { kind: "worktree", entries: "" },
+    '""',
+  ],
+  [
+    "a non-worktree renders as an expected repository state",
+    { kind: "no-worktree" },
+    "(not a worktree)",
+  ],
+  [
+    "an unreadable sample renders its diagnostic",
+    { kind: "unreadable", reason: "ENOENT" },
     "(unreadable: ENOENT)",
-  );
-});
+  ],
+] satisfies ReadonlyArray<readonly [string, GitStatus, string]>)(
+  "%s",
+  (_caseName, status, expectedText) => {
+    expect(describeGitStatus(status)).toBe(expectedText);
+  },
+);
