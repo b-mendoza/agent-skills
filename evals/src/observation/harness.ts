@@ -71,7 +71,7 @@ const GIT_NOT_A_REPOSITORY = 128;
 /** The subprocess-error fields consumed by git-status classification. */
 const subprocessErrorSchema = z
   .object({
-    status: z.number().nullable().optional().catch(undefined),
+    status: z.number().nullish().catch(undefined),
     stderr: z.unknown().optional().catch(undefined),
     code: z.unknown().optional().catch(undefined),
     message: z.unknown().optional().catch(undefined),
