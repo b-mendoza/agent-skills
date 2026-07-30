@@ -190,8 +190,7 @@ async function main(): Promise<void> {
 
   const selected = cases.filter(
     (c) =>
-      (tier === undefined || c.tier === tier) &&
-      (caseId === undefined || c.id === caseId),
+      (tier == null || c.tier === tier) && (caseId == null || c.id === caseId),
   );
 
   if (selected.length === 0) {
