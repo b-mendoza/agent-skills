@@ -5,8 +5,6 @@
 // cover the failure mode a case cannot catch about itself: passing by
 // observing an absence. A negative routing case asserts "no Skill call was
 // made", and a run that never started satisfies that perfectly.
-//
-//   pnpm test
 
 import { expect, test } from "vitest";
 
@@ -21,24 +19,12 @@ import {
   checkMutationScope,
   SKILL,
 } from "#/cases/analyzing-recent-project-state.ts";
-import type { GitStatus, Observation } from "#/observation/harness.ts";
+import type { Observation } from "#/observation/harness.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/harness.ts";
-
-const worktree = (entries = ""): GitStatus => ({ kind: "worktree", entries });
+import { createObservation } from "#/observation/observation-test-support.ts";
 
 function observe(overrides: Readonly<Partial<Observation>> = {}): Observation {
-  return {
-    subtype: "success",
-    isError: false,
-    finalText: "",
-    toolCalls: [],
-    gitStatusBefore: worktree(),
-    gitStatusAfter: worktree(),
-    costUsd: 0.01,
-    durationMs: 1000,
-    timedOut: false,
-    ...overrides,
-  };
+  return createObservation({ costUsd: 0.01, durationMs: 1000, ...overrides });
 }
 
 function caseById(caseId: CaseId): EvalCase {
