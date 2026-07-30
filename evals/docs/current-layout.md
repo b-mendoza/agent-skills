@@ -3,7 +3,7 @@
 > Short-lived current-state reference. Update this file in the same change
 > that moves, renames, or re-owns anything it describes.
 
-Source lives under [`src/`](../../src/), one directory per capability, tests
+Source lives under [`src/`](../src/), one directory per capability, tests
 colocated with the code they pin:
 
 | Path                 | Capability               | Contents                                                                                                                                                                                                 |
@@ -20,8 +20,8 @@ Dependency direction: `orchestration → cases, fixtures, observation`;
 
 At the `evals/` root: configs (`package.json`, `tsconfig.json`,
 `vitest.config.ts`, lint/format configs, `.nvmrc`, pnpm files), the
-human-facing [`README.md`](../../README.md), and the committed generated
-[`report.md`](../../report.md).
+human-facing [`README.md`](../README.md), and the committed generated
+[`report.md`](../report.md).
 
 Key paths:
 

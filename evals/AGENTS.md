@@ -19,17 +19,34 @@ skills against fixture repos through the Agent SDK. For work inside
   real eval run rewrites it.
 - Eval runs spend real money and require explicit user approval. Answer
   anything a free check can answer with a free check — see
-  [`docs/agents/verification.md`](./docs/agents/verification.md).
+  [`docs/verification.md`](./docs/verification.md).
 
-## Task-linked references
+## Documentation model
 
-Read the reference matching your task before editing. Update a reference in
-the same change that moves or renames what it describes.
+This suite keeps two tiers of agent documentation (the repo root
+[`AGENTS.md`](../AGENTS.md) defines the split). Maintain it when you add or
+edit docs:
 
-| When you need                                                   | Read                                                               |
-| --------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Where code lives, capability ownership, entry/report paths      | [`docs/agents/current-layout.md`](./docs/agents/current-layout.md) |
-| TypeScript and lint conventions                                 | [`docs/agents/conventions.md`](./docs/agents/conventions.md)       |
-| Which checks to run for which task, free vs. paid, exit codes   | [`docs/agents/verification.md`](./docs/agents/verification.md)     |
-| To delegate evals work to a subagent                            | [`docs/agents/delegation.md`](./docs/agents/delegation.md)         |
-| Eval-suite philosophy, tiers, mutation-scope gap, adding a case | [`README.md`](./README.md)                                         |
+- **Long-lived guidance** — this file and [`docs/agents/`](./docs/agents/).
+  Principles with general examples only, so they stay true as the code
+  changes.
+- **Short-lived references** — files directly under [`docs/`](./docs/).
+  Current-state descriptions carrying a banner; update them in the same
+  change that alters what they describe.
+
+## Open when relevant (long-lived)
+
+| When you need                                    | Read                                                                       |
+| ------------------------------------------------ | -------------------------------------------------------------------------- |
+| TypeScript design and lint conventions           | [`docs/agents/conventions.md`](./docs/agents/conventions.md)               |
+| How to name variables, arguments, and functions  | [`docs/agents/naming-conventions.md`](./docs/agents/naming-conventions.md) |
+| What and how to test in the offline suites       | [`docs/agents/testing.md`](./docs/agents/testing.md)                       |
+| To delegate evals work to a subagent             | [`docs/agents/delegation.md`](./docs/agents/delegation.md)                 |
+
+## Current-state references (short-lived; verify against the code)
+
+| When you need                                                   | Read                                                 |
+| --------------------------------------------------------------- | ---------------------------------------------------- |
+| Where code lives, capability ownership, entry/report paths      | [`docs/current-layout.md`](./docs/current-layout.md) |
+| Which checks to run for which task, free vs. paid, exit codes   | [`docs/verification.md`](./docs/verification.md)     |
+| Eval-suite philosophy, tiers, mutation-scope gap, adding a case | [`README.md`](./README.md)                           |

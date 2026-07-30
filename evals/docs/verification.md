@@ -42,6 +42,6 @@ and the budget stop in one cheap case.
   functions and lifecycle, not live model behavior.
 - `mutation-scope` means "no observed write through git or the file-writing
   tools", not "nothing was written" — see the gap analysis in
-  [`README.md`](../../README.md).
+  [`README.md`](../README.md).
 - When checks pass but correctness is uncertain, escalate instead of
   declaring success.
