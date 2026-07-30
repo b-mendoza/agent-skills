@@ -23,9 +23,9 @@ export interface Result {
   durationMs: number;
 }
 
-/** A `|` would split a table column and a newline would end the row. */
+/** A `|` would split a table column and a line ending would end the row. */
 export function escapeCell(value: string): string {
-  return value.replaceAll("|", "\\|").replaceAll("\n", " ");
+  return value.replaceAll("|", "\\|").replaceAll(/\r\n?|\n/g, " ");
 }
 
 export function renderReport(reportResults: Result[]): string {

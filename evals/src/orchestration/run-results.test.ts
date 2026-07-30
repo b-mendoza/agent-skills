@@ -8,7 +8,7 @@ import { expect, test } from "vitest";
 
 import { evaluate } from "#/orchestration/case-execution.ts";
 import type { Result } from "#/orchestration/report.ts";
-import { escapeCell, renderReport } from "#/orchestration/report.ts";
+import { renderReport } from "#/orchestration/report.ts";
 
 /** Mirrors MAX_OBSERVED_CHARS in case-execution.ts: one report cell holds one line. */
 const MAX_OBSERVED_CHARS = 160;
@@ -51,13 +51,6 @@ test("a thrown non-Error still produces a FAIL row", () => {
   ).toStrictEqual({ status: "FAIL", observed: "bare string" });
 });
 
-test("cell escaping protects the table structure", () => {
-  // An unescaped `|` would split a column; a newline would end the row.
-  expect(escapeCell("a | b")).toBe("a \\| b");
-  expect(escapeCell("line1\nline2")).toBe("line1 line2");
-  expect(escapeCell("plain")).toBe("plain");
-});
-
 function result(overrides: Partial<Result> = {}): Result {
   return {
     id: "some-case",
@@ -69,6 +62,17 @@ function result(overrides: Partial<Result> = {}): Result {
     ...overrides,
   };
 }
+
+test("carriage-return line endings render inside a single report cell", () => {
+  const report = renderReport([
+    result({ observed: "lone\rreturn and paired\r\nreturn" }),
+  ]);
+
+  expect(report).toContain(
+    "| some-case | 1 | PASS | lone return and paired return |",
+  );
+  expect(report).not.toContain("\r");
+});
 
 test("the report renders measured totals and one escaped row per result", () => {
   const report = renderReport([
