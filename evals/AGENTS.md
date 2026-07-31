@@ -10,11 +10,12 @@ skills against fixture repos through the Agent SDK. For work inside
 - Node `24.18.0` (see [`.nvmrc`](./.nvmrc)); TypeScript runs from source —
   there is no build step.
 - `pnpm` is the package manager (`pnpm install` once, from this directory).
-- Checks: `pnpm test` (offline vitest), `pnpm lint` (tsc, eslint, oxlint,
-  oxfmt `--check`), `pnpm fix` (auto-fixes).
 
-## Guardrails (apply to every task)
+## Always
 
+- Lint check (run after a substantive change): `pnpm lint` (tsc, eslint,
+  oxlint, oxfmt `--check`); `pnpm fix` applies the auto-fixes.
+- Test suite (run before committing): `pnpm test` (offline vitest).
 - [`report.md`](./report.md) is a committed, generated artifact; only a
   real eval run rewrites it.
 - Eval runs spend real money and require explicit user approval. Answer
@@ -23,22 +24,17 @@ skills against fixture repos through the Agent SDK. For work inside
 
 ## Documentation model
 
-This suite keeps two tiers of agent documentation (the repo root
-[`AGENTS.md`](../AGENTS.md) defines the split). Maintain it when you add or
-edit docs:
-
-- **Long-lived guidance** — this file and [`docs/agents/`](./docs/agents/).
-  Principles with general examples only, so they stay true as the code
-  changes.
-- **Short-lived references** — files directly under [`docs/`](./docs/).
-  Current-state descriptions carrying a banner; update them in the same
-  change that alters what they describe.
+The two-tier split is defined in the repo root
+[`AGENTS.md`](../AGENTS.md); maintain it when you add or edit docs here.
+In this suite, long-lived guidance is this file and
+[`docs/agents/`](./docs/agents/); short-lived references live directly
+under [`docs/`](./docs/).
 
 ## Open when relevant (long-lived)
 
 | When you need                                   | Read                                                                       |
 | ----------------------------------------------- | -------------------------------------------------------------------------- |
-| TypeScript design and lint conventions          | [`docs/agents/conventions.md`](./docs/agents/conventions.md)               |
+| TypeScript design and boundary conventions      | [`docs/agents/conventions.md`](./docs/agents/conventions.md)               |
 | How to name variables, arguments, and functions | [`docs/agents/naming-conventions.md`](./docs/agents/naming-conventions.md) |
 | What and how to test in the offline suites      | [`docs/agents/testing.md`](./docs/agents/testing.md)                       |
 | To delegate evals work to a subagent            | [`docs/agents/delegation.md`](./docs/agents/delegation.md)                 |
@@ -50,3 +46,7 @@ edit docs:
 | Where code lives, capability ownership, entry/report paths      | [`docs/current-layout.md`](./docs/current-layout.md) |
 | Which checks to run for which task, free vs. paid, exit codes   | [`docs/verification.md`](./docs/verification.md)     |
 | Eval-suite philosophy, tiers, mutation-scope gap, adding a case | [`README.md`](./README.md)                           |
+
+Cross-cutting long-lived guidance (workflow and task scoping, verification
+honesty, working with the maintainer) lives in the repo root
+[`AGENTS.md`](../AGENTS.md) and applies to this suite.
