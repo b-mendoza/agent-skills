@@ -26,9 +26,14 @@ import alias, and dependency direction live in the short-lived
   strings deeper in.
 - Prefer structured return types that make invalid states unrepresentable
   over primitive types a caller can misuse.
+- Fail loudly, never quietly. A contract violation is an error surfaced
+  immediately, with a message naming what failed to parse — never
+  coerced, defaulted, or silently dropped to keep a run limping along.
 
-## Lint
+## Comments
 
-- Lint configuration is authoritative: fix findings at the source. When a
-  suppression is genuinely required, add a written justification at the
-  suppression site.
+- Comment to explain _why_ — a constraint, a trade-off, a non-obvious
+  invariant the code cannot express — never to narrate _what_ the code
+  does or that it changed. Comments describing the change itself
+  ("removed X", "now uses Y instead") belong in the commit message, not
+  the source.
