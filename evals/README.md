@@ -1,5 +1,8 @@
 # evals
 
+> Short-lived current-state reference. Update this file in the same change
+> that alters what it describes (commands, layout, test files, coverage).
+
 Local eval suite for the skills in this repo. It runs the Claude Agent SDK
 (which bundles its own Claude Code binary) against throwaway fixture
 repositories and asserts on observable outcomes. No system `claude` executable
@@ -51,7 +54,11 @@ paid run:
 | `git-status.test.ts`        | Clean vs. not-a-repo vs. unreadable sample classification     |
 | `harness-lifecycle.test.ts` | Query lifecycle against a mocked SDK: results, errors, abort  |
 | `fixtures.test.ts`          | Fixture invariants: git state, skill copy, exclusion, cleanup |
-| `run-core.test.ts`          | Flag parsing, check normalization, report rendering           |
+| `run-arguments.test.ts`     | Flag parsing and model resolution                             |
+| `run-coordination.test.ts`  | Case selection, sequencing, report writes, exit codes         |
+| `run-results.test.ts`       | Check normalization, report escaping and rendering            |
+| `case-execution.test.ts`    | Case-execution boundary: limits reach the harness, cleanup always runs |
+| `run-entry.test.ts`         | The direct-entry guard on the runner                          |
 | `cases.test.ts`             | The case assertions themselves, against synthetic runs        |
 
 Run it before any paid run.
