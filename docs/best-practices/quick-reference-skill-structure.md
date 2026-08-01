@@ -17,13 +17,6 @@ skill-name/
 
 Notes:
 
-- Output templates and reference tables live under `references/`
-  (or `assets/` when they are copied into output verbatim), never
-  under `subagents/` — see
-  [template-extraction](./template-extraction.md).
-- `subagents/` is this repository's portable convention for
-  co-located dispatch contracts; the orchestrator reads a file from
-  it and dispatches with that content as the prompt. Do not expect
-  either runtime to auto-register these files as named agents.
-- Frontmatter `name` must exactly match the directory name — see
-  [frontmatter-contract](./frontmatter-contract.md).
+- Output templates and reference tables live under `references/` (or `assets/` when they are copied into output verbatim), never under `subagents/` — see [template-extraction](./template-extraction.md).
+- `subagents/` is this repository's portable convention for co-located dispatch contracts; the orchestrator reads a file from it and dispatches with that content as the prompt. Do not expect either runtime to auto-register these files as named agents.
+- Frontmatter `name` must exactly match the directory name — see [frontmatter-contract](./frontmatter-contract.md).
