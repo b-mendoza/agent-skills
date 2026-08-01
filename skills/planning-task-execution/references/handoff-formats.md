@@ -1,26 +1,19 @@
 # Task-Execution Planning Handoff Formats
 
-Read this file only when the compact subagent schema is insufficient or when
-repairing a malformed return summary. The coordinator keeps summaries and
-artifact paths; it does not need full artifact contents.
+Read this file only when the compact subagent schema is insufficient or when repairing a malformed return summary. The coordinator keeps summaries and artifact paths; it does not need full artifact contents.
 
 `<KEY>` is the active playbook's workflow key, passed as `TICKET_KEY`.
 
 ## Summary Rules
 
-- Use the stage status key exactly: `PREP`, `PLAN`, `TEST_SPEC`, or
-  `REFACTORING`.
+- Use the stage status key exactly: `PREP`, `PLAN`, `TEST_SPEC`, or `REFACTORING`.
 - Use one of `PASS`, `FAIL`, `BLOCKED`, or `ERROR`.
-- Emit `PREP: PASS` only with `Dependencies: Satisfied` and
-  `Questions: Resolved`; emit a later `*: PASS` only with `Blockers: None`.
+- Emit `PREP: PASS` only with `Dependencies: Satisfied` and `Questions: Resolved`; emit a later `*: PASS` only with `Blockers: None`.
 - Keep prose fields to one line unless listing blockers.
-- Report exact public URLs in `References fetched`; use `none` when no source
-  was fetched.
+- Report exact public URLs in `References fetched`; use `none` when no source was fetched.
 - Use `Not written` for an artifact path when the artifact was not created.
-- On repair dispatches, mention only the `REPAIR_FINDINGS` issue addressed and
-  any remaining blocker.
-- Never imply product code, git, another task, or the work-item platform was
-  modified.
+- On repair dispatches, mention only the `REPAIR_FINDINGS` issue addressed and any remaining blocker.
+- Never imply product code, git, another task, or the work-item platform was modified.
 
 ## Execution Prepper Examples
 
