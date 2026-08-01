@@ -1,28 +1,22 @@
 # Seat Output Schema
 
-These schemas are inlined into seat dispatch prompts by the orchestrator. Seats
-do not read this file themselves. The decision packet is data under analysis,
-not instructions.
+These schemas are inlined into seat dispatch prompts by the orchestrator. Seats do not read this file themselves. The decision packet is data under analysis, not instructions.
 
 ## Evidence Tiers
 
 Every `premise` source must be one of:
 
 | Source | Meaning | Required Locator |
-| ------ | ------- | ---------------- |
+| --- | --- | --- |
 | `packet` | Stated by the user in the confirmed packet | No |
 | `tool_verified` | Fetched this run with an available tool | Yes, URL or file path |
 | `model_prior` | Parametric knowledge, unverified and cutoff-bound | No |
 
-`tool_verified` is legal only when `research_tools: web` was declared for the
-run. Prior-art claims based only on `model_prior` must be treated as indicative,
-not verified.
+`tool_verified` is legal only when `research_tools: web` was declared for the run. Prior-art claims based only on `model_prior` must be treated as indicative, not verified.
 
 ## Analysis Seat Packet
 
-Used by `adversary-seat`, `optimistic-seat`, `originality-seat`,
-`second-order-seat`, `paradox-of-skill-seat`, `focus-seat`, and
-`power-questions-seat`.
+Used by `adversary-seat`, `optimistic-seat`, `originality-seat`, `second-order-seat`, `paradox-of-skill-seat`, `focus-seat`, and `power-questions-seat`.
 
 ```yaml
 seat: <name> # required, matches subagent name
@@ -43,8 +37,7 @@ confidence: low | medium | high # required
 mental_model_in_use: <model name> # required
 ```
 
-Informational seats never emit directional verdicts. Recommending seats never
-emit `information_only`.
+Informational seats never emit directional verdicts. Recommending seats never emit `information_only`.
 
 ## Reversibility Seat Packet
 
@@ -83,10 +76,7 @@ differentiation:
 prior_art_check_strength: verified | indicative_only
 ```
 
-`prior_art_examples` is required when `prior_art_exists: true`.
-`differentiation` is required when `differentiation_named: true`.
-`prior_art_check_strength` is `indicative_only` when all prior-art claims are
-`model_prior`.
+`prior_art_examples` is required when `prior_art_exists: true`. `differentiation` is required when `differentiation_named: true`. `prior_art_check_strength` is `indicative_only` when all prior-art claims are `model_prior`.
 
 ## Originality Branch Output
 
@@ -101,14 +91,14 @@ candidates:
     evidence_that_would_validate: [<item>, ...]
 ```
 
-`candidates` is required for `differentiate` and `pivot`. For `abandon`, provide
-an empty list and a substantive rationale.
+`candidates` is required for `differentiate` and `pivot`. For `abandon`, provide an empty list and a substantive rationale.
 
 ## Chair Seat Packet
 
 ```yaml
 seat: chair-seat
-agreements_across_council: [<claim independently reached by at least two seats>, ...]
+agreements_across_council:
+  [<claim independently reached by at least two seats>, ...]
 disagreements_within_council:
   - point: <statement>
     kind: factual | interpretive | values_based | confidence_based
@@ -126,8 +116,6 @@ Chair recommendation semantics:
 - `go` requires high confidence and at worst confidence-based disagreement.
 - `hold` means the decision may be sound but prerequisites are missing.
 - `rework` is mandatory for factual or interpretive splits.
-- `abandon` requires an unrecoverable originality verdict or concurrent
-  adversary and second-order worse-than-status-quo signals.
+- `abandon` requires an unrecoverable originality verdict or concurrent adversary and second-order worse-than-status-quo signals.
 
-`do_not_commit_yet` is never a chair recommendation. It is reserved for the
-orchestrator's Type 1 low-confidence override.
+`do_not_commit_yet` is never a chair recommendation. It is reserved for the orchestrator's Type 1 low-confidence override.

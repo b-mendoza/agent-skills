@@ -1,13 +1,11 @@
 # State Machine — council-of-advisors
 
-Finite-state execution model for this skill. This file is the sole canonical
-FSM source. Gate predicates, repair caps, and failure routes are normative
-only in [`references/decision-gates.md`](./references/decision-gates.md).
+Finite-state execution model for this skill. This file is the sole canonical FSM source. Gate predicates, repair caps, and failure routes are normative only in [`references/decision-gates.md`](./references/decision-gates.md).
 
 ## Run-scoped variables
 
 | Variable | Initial | Rules |
-| -------- | ------- | ----- |
+| --- | --- | --- |
 | `packet_version` | 1 | Increment on consolidated packet refinement; never mix versions in one chair synthesis |
 | `research_tools` | unset | Set in `DeclareResearch` to `none` or `web` |
 | `depth_setting` | unset | Bound in `BindDepth` from reversibility (`type_1`→`deep`, `type_2`→`standard`) |
@@ -22,47 +20,42 @@ only in [`references/decision-gates.md`](./references/decision-gates.md).
 Nine seat files; mechanical order is not nine parallel advisors:
 
 1. `reversibility-seat` (sequential)
-2. Seven analysis seats, logically independent, dispatched in parallel up to
-   the runtime's concurrency limit — in bounded waves when the runtime caps
-   concurrent subagents: adversary, optimistic, originality, second-order,
-   paradox-of-skill, focus, power-questions. Correctness never depends on
-   simultaneous launch; seat contracts and aggregation are identical
-   regardless of wave layout.
+2. Seven analysis seats, logically independent, dispatched in parallel up to the runtime's concurrency limit — in bounded waves when the runtime caps concurrent subagents: adversary, optimistic, originality, second-order, paradox-of-skill, focus, power-questions. Correctness never depends on simultaneous launch; seat contracts and aggregation are identical regardless of wave layout.
 3. Optional `originality-seat` branch mode (same seat file, not a tenth seat)
 4. `chair-seat` (synthesis)
 
 ## States
 
-| State | Kind | Actor |
-| ----- | ---- | ----- |
-| `Intake` | active | Orchestrator |
-| `AskSubject` | wait | Orchestrator → user |
-| `ClassifyStakes` | active | Orchestrator |
-| `ConfirmFraming` | wait | Orchestrator → user |
-| `DeclareResearch` | active | Orchestrator |
-| `ClassifyReversibility` | active | `reversibility-seat` |
-| `ProbeReversibility` | wait | Orchestrator → user |
-| `BindDepth` | active | Orchestrator |
-| `ParallelAnalysis` | active | Seven analysis seats |
-| `RouteAnalysis` | active | Orchestrator |
-| `RefinePacket` | wait | Orchestrator → user |
-| `OriginalityCheck` | active | Orchestrator |
-| `OriginalityBranch` | active | `originality-seat` (branch mode) |
-| `SynthesizeChair` | active | `chair-seat` |
-| `RouteConfidence` | active | Orchestrator |
-| `RepairLowConfidence` | active | Weak analysis seats → chair |
-| `Type1Gate` | active | Orchestrator |
-| `AssembleEducateMe` | active | Orchestrator |
-| `WriteHandoff` | active | Orchestrator |
-| `Ready` | terminal | — |
-| `NeedsInput` | terminal | — |
-| `Blocked` | terminal | — |
-| `Error` | terminal | — |
+| State                   | Kind     | Actor                            |
+| ----------------------- | -------- | -------------------------------- |
+| `Intake`                | active   | Orchestrator                     |
+| `AskSubject`            | wait     | Orchestrator → user              |
+| `ClassifyStakes`        | active   | Orchestrator                     |
+| `ConfirmFraming`        | wait     | Orchestrator → user              |
+| `DeclareResearch`       | active   | Orchestrator                     |
+| `ClassifyReversibility` | active   | `reversibility-seat`             |
+| `ProbeReversibility`    | wait     | Orchestrator → user              |
+| `BindDepth`             | active   | Orchestrator                     |
+| `ParallelAnalysis`      | active   | Seven analysis seats             |
+| `RouteAnalysis`         | active   | Orchestrator                     |
+| `RefinePacket`          | wait     | Orchestrator → user              |
+| `OriginalityCheck`      | active   | Orchestrator                     |
+| `OriginalityBranch`     | active   | `originality-seat` (branch mode) |
+| `SynthesizeChair`       | active   | `chair-seat`                     |
+| `RouteConfidence`       | active   | Orchestrator                     |
+| `RepairLowConfidence`   | active   | Weak analysis seats → chair      |
+| `Type1Gate`             | active   | Orchestrator                     |
+| `AssembleEducateMe`     | active   | Orchestrator                     |
+| `WriteHandoff`          | active   | Orchestrator                     |
+| `Ready`                 | terminal | —                                |
+| `NeedsInput`            | terminal | —                                |
+| `Blocked`               | terminal | —                                |
+| `Error`                 | terminal | —                                |
 
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `Intake` | Skill invoked |
 | `Intake` | `AskSubject` | `DECISION_SUBJECT` missing or unintelligible |
 | `Intake` | `ClassifyStakes` | Subject intelligible |
@@ -117,24 +110,20 @@ Nine seat files; mechanical order is not nine parallel advisors:
 
 ## Terminal states
 
-| Terminal | Run status | User-facing route |
-| -------- | ---------- | ----------------- |
-| `Ready` | `ready` | Compact summary + handoff path |
+| Terminal     | Run status    | User-facing route                         |
+| ------------ | ------------- | ----------------------------------------- |
+| `Ready`      | `ready`       | Compact summary + handoff path            |
 | `NeedsInput` | `needs_input` | One clarification; include draft or field |
-| `Blocked` | `blocked` | Stop with gate/budget evidence |
-| `Error` | `error` | Stop naming seat or runtime failure |
+| `Blocked`    | `blocked`     | Stop with gate/budget evidence            |
+| `Error`      | `error`       | Stop naming seat or runtime failure       |
 
 ## Reachability
 
-Every listed state is reachable from `Intake` via documented guards. Terminals
-each exit to `[*]`. No dead states: wait states resume or escalate; repair loops
-return to the producing state within budgets in `decision-gates.md`.
+Every listed state is reachable from `Intake` via documented guards. Terminals each exit to `[*]`. No dead states: wait states resume or escalate; repair loops return to the producing state within budgets in `decision-gates.md`.
 
 ## Notes
 
 - Orchestrator never authors substantive analysis; seats own claims.
 - Analysis-seat payloads contain no sibling seat output.
-- `do_not_commit_yet` is orchestrator-only at `Type1Gate`; preserve
-  `chair_recommendation` separately and set `override_applied`.
-- Medium confidence still requires `G_KILL_CRITERION` (time/event-bound quality
-  rules in `decision-gates.md`) before `Type1Gate`.
+- `do_not_commit_yet` is orchestrator-only at `Type1Gate`; preserve `chair_recommendation` separately and set `override_applied`.
+- Medium confidence still requires `G_KILL_CRITERION` (time/event-bound quality rules in `decision-gates.md`) before `Type1Gate`.
