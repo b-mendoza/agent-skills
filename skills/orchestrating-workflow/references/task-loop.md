@@ -159,7 +159,7 @@ When all tasks are complete or the user stops, dispatch `progress-tracker`
 with the workflow key under `TICKET_KEY`, `ACTION=read`, and present a
 compact workflow summary:
 
-```markdown
+```text
 ## Workflow Summary - <KEY>
 
 | Phase | Status | Key outcome |
