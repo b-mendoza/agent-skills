@@ -21,7 +21,7 @@ blocked, or error handoff.
 
 Required headings:
 
-```markdown
+```text
 ## Decision
 approval required
 
@@ -52,7 +52,7 @@ For malformed replies, re-ask once with `Valid gap ids` and `Malformed part`.
 
 Required headings:
 
-```markdown
+```text
 ## Decision
 changed
 
@@ -87,7 +87,7 @@ Required headings: `Decision`, `Reason`, `Audit Evidence`, `Mandate Coverage`,
 
 Required headings:
 
-```markdown
+```text
 ## Decision
 blocked
 
