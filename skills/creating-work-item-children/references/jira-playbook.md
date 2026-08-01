@@ -184,7 +184,7 @@ The inline value must equal that row's `Subtask Key`. Use `Not Created` in both
 
 Return exactly:
 
-```markdown
+```text
 SUBTASKS: PASS | WARN | FAIL | BLOCKED | ERROR
 Validation: PASS | FAIL | NOT_RUN
 Parent: <TICKET_KEY>

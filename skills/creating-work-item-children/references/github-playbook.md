@@ -225,7 +225,7 @@ model`, and `Status` only for intentional approved degraded traceability.
 
 Return exactly:
 
-```markdown
+```text
 TASK_ISSUES: PASS | WARN | FAIL | BLOCKED | ERROR
 Validation: PASS | FAIL | NOT_RUN
 Parent: <owner/repo#N>
