@@ -1,15 +1,11 @@
 # State Machine — improving-skill-definition
 
-Finite-state execution model for this skill. This file is the sole normative
-source for states, transitions, guards, guard precedence, and terminals.
-[`flow-diagram.md`](./flow-diagram.md) is an illustrative rendering and
-[`SKILL.md`](./SKILL.md) a compact overview; when either disagrees with this
-table, this table wins. Any change here updates both in the same edit.
+Finite-state execution model for this skill. This file is the sole normative source for states, transitions, guards, guard precedence, and terminals. [`flow-diagram.md`](./flow-diagram.md) is an illustrative rendering and [`SKILL.md`](./SKILL.md) a compact overview; when either disagrees with this table, this table wins. Any change here updates both in the same edit.
 
 ## States
 
 | State | Kind | Phase / role |
-| ----- | ---- | ------------ |
+| --- | --- | --- |
 | `Intake` | active | Normalize path, eligibility, dependency preflight, baseline, self-improvement flag |
 | `FlowLoad` | active | Load own personality and target flow; set trust model |
 | `Discover` | active | Dispatch `related-skills-discoverer` |
@@ -29,7 +25,7 @@ table, this table wins. Any change here updates both in the same edit.
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `Intake` | run start |
 | `Intake` | `FlowLoad` | `SKILL_PATH` eligible; baseline copied; limits derived |
 | `Intake` | `TerminalBlocked` | path missing, unreadable, or excluded |
@@ -72,32 +68,15 @@ table, this table wins. Any change here updates both in the same edit.
 
 ## Audit fan-out and join
 
-The six auditors are an independent, read-only fan-out: each reads the target
-and writes only its own named report file in `HANDOFF_DIR`. A runtime that
-supports concurrent subagent dispatch may dispatch them concurrently;
-otherwise dispatch them serially — the outcomes are equivalent because `Audit`
-joins only when all six contracted reports exist. A missing or malformed
-report after one re-request is treated as that slice returning `: ERROR`.
-Synthesis reads the reports in registry order and applies the suffix
-precedence (`: ERROR`, then `: BLOCKED`, then `: GAPS_FOUND`, else all
-`: PASS`), so report-arrival order never selects the route.
+The six auditors are an independent, read-only fan-out: each reads the target and writes only its own named report file in `HANDOFF_DIR`. A runtime that supports concurrent subagent dispatch may dispatch them concurrently; otherwise dispatch them serially — the outcomes are equivalent because `Audit` joins only when all six contracted reports exist. A missing or malformed report after one re-request is treated as that slice returning `: ERROR`. Synthesis reads the reports in registry order and applies the suffix precedence (`: ERROR`, then `: BLOCKED`, then `: GAPS_FOUND`, else all `: PASS`), so report-arrival order never selects the route.
 
 ## Approval wait contract
 
-"No reply" is an observable condition, not a timeout: the orchestrator
-presents the approval request and ends its turn. If the run resumes without a
-valid approval message for this run's handoff, that is "no user reply" →
-`TerminalApprovalRequired` with `HANDOFF_DIR` preserved. An invalid reply is
-re-asked once; a second invalid reply → `TerminalBlocked`; silence after the
-re-ask → `TerminalApprovalRequired`.
+"No reply" is an observable condition, not a timeout: the orchestrator presents the approval request and ends its turn. If the run resumes without a valid approval message for this run's handoff, that is "no user reply" → `TerminalApprovalRequired` with `HANDOFF_DIR` preserved. An invalid reply is re-asked once; a second invalid reply → `TerminalBlocked`; silence after the re-ask → `TerminalApprovalRequired`.
 
 ## Status-routing note
 
-Discovery is an optional evidence phase, so its `: BLOCKED`/`: ERROR`
-statuses degrade the run (or block it when `REFERENCE_NEED` or a mandate
-requires evidence) instead of terminating as runtime errors. This
-intentionally differs from audit-phase routing, where `: ERROR` outranks all
-other statuses and maps to `TerminalError`.
+Discovery is an optional evidence phase, so its `: BLOCKED`/`: ERROR` statuses degrade the run (or block it when `REFERENCE_NEED` or a mandate requires evidence) instead of terminating as runtime errors. This intentionally differs from audit-phase routing, where `: ERROR` outranks all other statuses and maps to `TerminalError`.
 
 ## Terminal decisions
 
@@ -106,7 +85,7 @@ Exactly one of: `changed`, `no change`, `approval required`, `blocked`, `error`.
 ## Reachability and dead-state checks
 
 | Property | Result |
-| -------- | ------ |
+| --- | --- |
 | Every active state reachable from `Intake` | yes (via eligibility → FlowLoad → Discover → Audit, then branches) |
 | Every terminal reachable | yes (see transition guards) |
 | Dead states (no outgoing, non-terminal) | none |
@@ -114,7 +93,4 @@ Exactly one of: `changed`, `no change`, `approval required`, `blocked`, `error`.
 
 ## Self-improvement note
 
-When the target is this package (`SELF_IMPROVEMENT_RUN=true`), synthesis marks
-gaps `SAFE` or `DEFERRED`. User-approved structural redefine gaps that rewrite
-the execution SoT (state machine / `flow-diagram.md` / aligned `SKILL.md`) are
-`SAFE` for same-run application. Other `DEFERRED` gaps remain deferred.
+When the target is this package (`SELF_IMPROVEMENT_RUN=true`), synthesis marks gaps `SAFE` or `DEFERRED`. User-approved structural redefine gaps that rewrite the execution SoT (state machine / `flow-diagram.md` / aligned `SKILL.md`) are `SAFE` for same-run application. Other `DEFERRED` gaps remain deferred.

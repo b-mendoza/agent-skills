@@ -1,12 +1,11 @@
 # Audit Synthesis Validation
 
-Load this reference when checking the synthesis file before approval, edit, or
-post-edit validation.
+Load this reference when checking the synthesis file before approval, edit, or post-edit validation.
 
 ## Required Checks
 
 | Check | Pass Condition |
-| ----- | -------------- |
+| --- | --- |
 | `schema_keys` | Every required top-level key from `audit-synthesis-schema.md` is present |
 | `to_mapping` | `to.orchestrator` and `to.phase` are present and non-empty |
 | `status_summary` | Every dispatched slice has one status-summary row with report path |
@@ -21,9 +20,7 @@ post-edit validation.
 
 ## Slice-To-Synthesis Copy Rule
 
-The orchestrator may hold a full slice report only while copying its structured
-fields into the synthesis. After the synthesis file is written, retain only the
-slice status, path, verdict, gap ids, no-op ids, URLs, and concise summary.
+The orchestrator may hold a full slice report only while copying its structured fields into the synthesis. After the synthesis file is written, retain only the slice status, path, verdict, gap ids, no-op ids, URLs, and concise summary.
 
 ## Self-Improvement Advisory
 
@@ -38,19 +35,11 @@ architecture_advisory:
       reason: "Why this can or cannot be changed safely now"
 ```
 
-The editor may apply only approved `SAFE` gaps. The validator fails Lane A if a
-`DEFERRED` gap appears in the editor-applied change list. When
-`SELF_IMPROVEMENT_RUN=true` and the user approved structural redefine gaps
-(execution SoT / state-machine rewrite), synthesis marks those gaps `SAFE` for
-same-run application; other gaps may remain `DEFERRED`.
+The editor may apply only approved `SAFE` gaps. The validator fails Lane A if a `DEFERRED` gap appears in the editor-applied change list. When `SELF_IMPROVEMENT_RUN=true` and the user approved structural redefine gaps (execution SoT / state-machine rewrite), synthesis marks those gaps `SAFE` for same-run application; other gaps may remain `DEFERRED`.
 
 ## Lane Assignment
 
-Before user approval, gaps may use `lane: undecided-before-approval`. After edit,
-validator Lane A includes only approved-gap closure, editor-touched files,
-mutation boundaries, diagram delegation, synthesis schema, and self-improvement
-advisory enforcement. Lane B is for pre-existing defects in untouched files and
-is reported as `follow_up_findings` only.
+Before user approval, gaps may use `lane: undecided-before-approval`. After edit, validator Lane A includes only approved-gap closure, editor-touched files, mutation boundaries, diagram delegation, synthesis schema, and self-improvement advisory enforcement. Lane B is for pre-existing defects in untouched files and is reported as `follow_up_findings` only.
 
 ## Failure Reporting
 

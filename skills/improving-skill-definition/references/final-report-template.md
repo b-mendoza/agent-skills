@@ -1,21 +1,13 @@
 # Final Report Template
 
-Load this reference immediately before emitting an approval, changed, no-change,
-blocked, or error handoff.
+Load this reference immediately before emitting an approval, changed, no-change, blocked, or error handoff.
 
 ## Shared Rules
 
-- Return exactly one decision: `approval required`, `changed`, `no change`,
-  `blocked`, or `error`.
+- Return exactly one decision: `approval required`, `changed`, `no change`, `blocked`, or `error`.
 - Include `ignored_preapproval` and `follow_up_findings` when non-empty.
 - Externally-derived gaps are visibly marked with provenance.
-- Emission checklist: before emitting, list every required heading for the
-  chosen decision (from this file) and mark each `present` or `absent`. An
-  absent required heading means the message is repaired before emission —
-  never emitted with the gap. End the message with `sections present` showing
-  the completed checklist. This deterministic check replaces free-form
-  self-attestation; no later agent validates the final message, so the
-  checklist is the emission gate.
+- Emission checklist: before emitting, list every required heading for the chosen decision (from this file) and mark each `present` or `absent`. An absent required heading means the message is repaired before emission — never emitted with the gap. End the message with `sections present` showing the completed checklist. This deterministic check replaces free-form self-attestation; no later agent validates the final message, so the checklist is the emission gate.
 
 ## Approval Required
 
@@ -76,12 +68,9 @@ Workflow-created files removed or remaining empty directory note.
 
 ## No Change
 
-Use when all audit slices pass, approved scope is `none`, or the editor
-reports `EDIT: NO_CHANGE` (every approved item no-op, already satisfied, or
-deferred — include the per-item classification under `Reason`).
+Use when all audit slices pass, approved scope is `none`, or the editor reports `EDIT: NO_CHANGE` (every approved item no-op, already satisfied, or deferred — include the per-item classification under `Reason`).
 
-Required headings: `Decision`, `Reason`, `Audit Evidence`, `Mandate Coverage`,
-`Ignored Preapproval`, `Cleanup`, `Sections Present`.
+Required headings: `Decision`, `Reason`, `Audit Evidence`, `Mandate Coverage`, `Ignored Preapproval`, `Cleanup`, `Sections Present`.
 
 ## Blocked
 
@@ -114,13 +103,8 @@ If `mutation_applied=false`, state that workflow files were cleaned up.
 
 ## Error
 
-Required headings: `Decision`, `Failed Condition`, `Known Context`,
-`Recovery Action`, `Preserved Evidence`, `Cleanup`, `Sections Present`.
+Required headings: `Decision`, `Failed Condition`, `Known Context`, `Recovery Action`, `Preserved Evidence`, `Cleanup`, `Sections Present`.
 
 ## Personality Alternatives
 
-When personality verdict is negative (`NEEDS_REFINEMENT`,
-`MISSING_BUT_RECOMMENDED`, `UNNECESSARY_OR_OVERBUILT`, or
-`CONFLICTS_WITH_SKILL`), include at least five target-specific alternatives.
-When verdict is `FITS_PURPOSE` or `NOT_APPLICABLE`, include at least two
-considered-and-rejected alternatives with evidence; do not invent padding.
+When personality verdict is negative (`NEEDS_REFINEMENT`, `MISSING_BUT_RECOMMENDED`, `UNNECESSARY_OR_OVERBUILT`, or `CONFLICTS_WITH_SKILL`), include at least five target-specific alternatives. When verdict is `FITS_PURPOSE` or `NOT_APPLICABLE`, include at least two considered-and-rejected alternatives with evidence; do not invent padding.

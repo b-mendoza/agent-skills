@@ -1,8 +1,6 @@
 # Audit Synthesis Schema
 
-Load this reference when writing or validating `audit-synthesis-report.yaml`.
-The synthesis is the canonical compact ledger used for approval, edit, and
-validation.
+Load this reference when writing or validating `audit-synthesis-report.yaml`. The synthesis is the canonical compact ledger used for approval, edit, and validation.
 
 ## Required Top-Level Keys
 
@@ -30,8 +28,7 @@ alternatives_aggregate: []
 no_ops_aggregate: []
 ```
 
-`to` is always a mapping with `orchestrator` and `phase`; do not collapse it to
-a string. All slice statuses are prefix-qualified.
+`to` is always a mapping with `orchestrator` and `phase`; do not collapse it to a string. All slice statuses are prefix-qualified.
 
 ## Status Summary Rows
 
@@ -46,9 +43,7 @@ a string. All slice statuses are prefix-qualified.
 
 ## Gap Inventory Rows
 
-Use the row contract in `audit-gap-taxonomy.md`. `provenance` is required and is
-one of `local`, `external`, or `mixed`. Externally-derived suggestions must stay
-marked through approval and final handoff.
+Use the row contract in `audit-gap-taxonomy.md`. `provenance` is required and is one of `local`, `external`, or `mixed`. Externally-derived suggestions must stay marked through approval and final handoff.
 
 For self-improvement runs, each gap also has:
 
@@ -80,7 +75,7 @@ self_improvement_reason: "Why this can or cannot be safely changed in this run"
 ## Aggregate Keys
 
 | Key | Source Slice | Contents |
-| --- | ------------ | -------- |
+| --- | --- | --- |
 | `outcome_matrix_aggregate` | contract-priority | Statuses, routes, outputs, and missing outcomes |
 | `priority_ranking_aggregate` | contract-priority, all slices | Ordered fixes by severity, lane, and dependency |
 | `parallelism_opportunities_aggregate` | subagent-architecture | Safe parallel groups and sequential dependencies |
@@ -91,15 +86,11 @@ self_improvement_reason: "Why this can or cannot be safely changed in this run"
 
 ## Out-Of-Scope Findings
 
-Use this for Lane B or explicitly forbidden scope. Include evidence, why the
-workflow must not edit it in this run, and the suggested future run.
+Use this for Lane B or explicitly forbidden scope. Include evidence, why the workflow must not edit it in this run, and the suggested future run.
 
 ## Completion Rules
 
 - `overall_verdict: PASS` only when every audit slice status ends `: PASS`.
-- `overall_verdict: GAPS_FOUND` when any slice ends `: GAPS_FOUND` and none are
-  `: BLOCKED` or `: ERROR`.
+- `overall_verdict: GAPS_FOUND` when any slice ends `: GAPS_FOUND` and none are `: BLOCKED` or `: ERROR`.
 - `BLOCKED` and `ERROR` preserve the failing slice path and recovery action.
-- Every `IMPROVEMENT_MANDATES` entry appears as a gap id or in
-  `no_ops_aggregate` as `NO_OP_EVIDENCED`; an empty list records
-  `mandate_coverage: vacuous`.
+- Every `IMPROVEMENT_MANDATES` entry appears as a gap id or in `no_ops_aggregate` as `NO_OP_EVIDENCED`; an empty list records `mandate_coverage: vacuous`.
