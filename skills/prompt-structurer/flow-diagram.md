@@ -1,13 +1,8 @@
 # Prompt Structurer Flow
 
-Finite-state execution model (`stateDiagram-v2`). Companion transition table:
-[`state-machine.md`](./state-machine.md). `SKILL.md` must use the same gates,
-status routes, and terminals.
+Finite-state execution model (`stateDiagram-v2`). Companion transition table: [`state-machine.md`](./state-machine.md). `SKILL.md` must use the same gates, status routes, and terminals.
 
-Validated: structural reachability check (every state reachable; no dead active
-states; five terminals). `check-mermaid.sh` reported `parser unavailable`
-(Chrome/puppeteer missing); Mermaid authored manually per improving-phase
-fallback.
+Validated: structural reachability check (every state reachable; no dead active states; five terminals). `check-mermaid.sh` reported `parser unavailable` (Chrome/puppeteer missing); Mermaid authored manually per improving-phase fallback.
 
 ```mermaid
 stateDiagram-v2
@@ -99,7 +94,7 @@ stateDiagram-v2
 ## Pass Sequences
 
 | Flow | Sequence |
-| ---- | -------- |
+| --- | --- |
 | `light` | pass 1 → pass 6 |
 | `full` | passes 1–5 → pass 6 |
 | `suite` | same as `full`, with suite blocks in every pass |
@@ -108,7 +103,7 @@ stateDiagram-v2
 ## Terminal States
 
 | Terminal | Status | Required payload |
-| -------- | ------ | ---------------- |
+| --- | --- | --- |
 | `TerminalPass` | `PASS` | Final XML, then assembly notes |
 | `TerminalBlocked` | `BLOCKED` | One unblocking question plus completed work |
 | `TerminalFail` | `FAIL` | Conflicting statements plus clarification |

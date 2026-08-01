@@ -1,17 +1,13 @@
 # Template Skeleton
 
-> Load this file only during final assembly. It is a checklist, not a command
-> to emit every tag. For external XML rationale, use `web-resource-index.md`;
-> subagents request rationale with `FETCH_REQUESTED`, and only the orchestrator
-> may fetch.
+> Load this file only during final assembly. It is a checklist, not a command to emit every tag. For external XML rationale, use `web-resource-index.md`; subagents request rationale with `FETCH_REQUESTED`, and only the orchestrator may fetch.
 
-Assemble the final XML from named pass outputs. Include only sections that
-change behavior and pass the removal test.
+Assemble the final XML from named pass outputs. Include only sections that change behavior and pass the removal test.
 
 ## Section Order
 
 | Order | Section | Why It Comes Here |
-| ----- | ------- | ----------------- |
+| --- | --- | --- |
 | 1 | `<task>` | Establishes the thesis first |
 | 2 | `<dispatch_rule>` | Makes delegation visible before work starts |
 | 3 | `<scope>` and `<goal>` | Bounds and motivates the work |
@@ -99,13 +95,12 @@ change behavior and pass the removal test.
 - Use attributes for metadata instead of prose clutter.
 - Repeat the most important rule where violation is likely.
 - Prefer separate prompt versions for substantially different modes.
-- Maintain a removal-test table and remove tags without a defensible behavior
-  change.
+- Maintain a removal-test table and remove tags without a defensible behavior change.
 
 ## Common Deviations
 
 | Situation | Deviation |
-| --------- | --------- |
+| --- | --- |
 | Short one-shot prompt | Use `<task>`, `<scope>`, `<output>`, and `<success_criteria>` only |
 | Interview-style prompt | Add `<gate>` tags for turn-taking |
 | Autonomous prompt | Add `<autonomy_guardrails>`, traceability, and defer handling |

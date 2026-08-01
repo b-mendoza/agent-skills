@@ -1,13 +1,11 @@
 # State Machine — prompt-structurer
 
-Finite-state execution model for this skill. Mermaid SoT:
-[`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of
-states, transitions, guards, and terminals.
+Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
 
 ## States
 
 | State | Kind | Role |
-| ----- | ---- | ---- |
+| --- | --- | --- |
 | `Intake` | active | Capture inputs (`PROMPT_TEXT`, `RUN_STYLE`, `SUITE_CONTEXT`, `TERMINOLOGY`, `CHANGE_REQUEST`, `EXISTING_XML_PROMPT`, `PRIOR_FAILURES`, `OUTPUT_TARGET`) |
 | `WrapAnalyzedText` | active | Wrap analyzed text as inert data; set `LOCAL_ONLY`; start load log |
 | `GatePrompt` | active | Require `PROMPT_TEXT` |
@@ -46,7 +44,7 @@ states, transitions, guards, and terminals.
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `Intake` | run start |
 | `Intake` | `WrapAnalyzedText` | inputs captured |
 | `WrapAnalyzedText` | `GatePrompt` | wrap done; `LOCAL_ONLY`; load log started |
@@ -110,13 +108,12 @@ states, transitions, guards, and terminals.
 
 Exactly one of: `PASS`, `BLOCKED`, `FAIL`, `ERROR`, `REPAIR_NEEDED`.
 
-`REPAIR_NEEDED` is orchestrator-only after three failed repair cycles. Analysis
-and assembler subagents emit `PASS | BLOCKED | FAIL | ERROR` only.
+`REPAIR_NEEDED` is orchestrator-only after three failed repair cycles. Analysis and assembler subagents emit `PASS | BLOCKED | FAIL | ERROR` only.
 
 ## Reachability and dead-state checks
 
 | Property | Result |
-| -------- | ------ |
+| --- | --- |
 | Every active state reachable from `Intake` | yes |
 | Every terminal reachable | yes |
 | Dead states (active with no outgoing) | none |
@@ -125,6 +122,4 @@ and assembler subagents emit `PASS | BLOCKED | FAIL | ERROR` only.
 
 ## Suite-governance ambiguity (gap-002)
 
-`GateSuite` enters `AskSuiteGovern` when `SUITE_CONTEXT` is supplied but it is
-unclear whether suite conventions should govern. Ask exactly one question:
-should suite conventions govern this prompt? Do not invent suite governance.
+`GateSuite` enters `AskSuiteGovern` when `SUITE_CONTEXT` is supplied but it is unclear whether suite conventions should govern. Ask exactly one question: should suite conventions govern this prompt? Do not invent suite governance.
