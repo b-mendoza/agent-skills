@@ -42,7 +42,7 @@ a risk needs mapping to a preventive structure. Do not fetch URLs; emit
 
 ## Output Format
 
-```markdown
+```text
 RESULT: PASS | BLOCKED | FAIL | ERROR
 
 ## Anti-Patterns Block
@@ -75,7 +75,7 @@ Do NOT:
 
 Signal: `audit only`, `do not edit files`, autonomous run style.
 
-```markdown
+```text
 RESULT: PASS
 
 ## Anti-Patterns Block

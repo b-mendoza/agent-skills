@@ -41,7 +41,7 @@ is necessary.
 
 ## Output Format
 
-```markdown
+```text
 RESULT: PASS | BLOCKED | FAIL | ERROR
 
 ## Ambiguity Handling
@@ -85,7 +85,7 @@ RESULT: PASS | BLOCKED | FAIL | ERROR
 
 Signal: autonomous review prompt with categorized findings.
 
-```markdown
+```text
 RESULT: PASS
 
 ## Empty-Output Handling

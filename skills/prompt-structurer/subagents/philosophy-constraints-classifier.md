@@ -40,7 +40,7 @@ not fetch URLs; emit `FETCH_REQUESTED: <specific need>` when needed.
 
 ## Output Format
 
-```markdown
+```text
 RESULT: PASS | BLOCKED | FAIL | ERROR
 
 ## Philosophy
@@ -76,7 +76,7 @@ RESULT: PASS | BLOCKED | FAIL | ERROR
 
 Source: `This is an audit, not an implementation task. Do not edit files.`
 
-```markdown
+```text
 RESULT: PASS
 
 ## Philosophy

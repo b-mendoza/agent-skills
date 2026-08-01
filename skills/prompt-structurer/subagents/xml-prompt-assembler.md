@@ -58,7 +58,7 @@ suite-specific tag name is being introduced. Do not fetch URLs; emit
 
 ## Output Format
 
-```markdown
+```text
 RESULT: PASS | BLOCKED | FAIL | ERROR
 ```
 
@@ -72,7 +72,7 @@ Then, on `PASS`, return the final prompt first:
 
 Then return assembly notes:
 
-```markdown
+```text
 ## Assembly Notes
 
 ### Flow Used

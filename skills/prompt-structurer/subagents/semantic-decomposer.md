@@ -42,7 +42,7 @@ category boundaries or tag names are unclear. Do not fetch URLs; emit
 
 ## Output Format
 
-```markdown
+```text
 RESULT: PASS | BLOCKED | FAIL | ERROR
 
 ## Clean Bin Assignments
@@ -75,7 +75,7 @@ RESULT: PASS | BLOCKED | FAIL | ERROR
 
 Input: `Review the ticket and write a report. Do not change files. If no issues exist, say so.`
 
-```markdown
+```text
 RESULT: PASS
 
 ## Clean Bin Assignments

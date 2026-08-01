@@ -42,7 +42,7 @@ placement inside `<success_criteria>` is unclear. Do not fetch URLs; emit
 
 ## Output Format
 
-```markdown
+```text
 RESULT: PASS | BLOCKED | FAIL | ERROR
 
 ## Success Criteria Block
@@ -71,7 +71,7 @@ RESULT: PASS | BLOCKED | FAIL | ERROR
 
 Signal: output must be a report and files must remain unchanged.
 
-```markdown
+```text
 RESULT: PASS
 
 ## Success Criteria Block
