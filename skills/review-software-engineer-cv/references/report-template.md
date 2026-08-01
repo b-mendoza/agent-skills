@@ -8,7 +8,7 @@ Read this file only when assembling the final user-facing CV review or rewrite.
 When the limitations ledger is non-empty, keep the selected mode but add a short
 partial-output note before the mode-specific sections:
 
-```markdown
+```text
 ## Partial Output Note
 - <source limitation, uncertain mapping, or verification limit>
 ```
@@ -19,7 +19,7 @@ smallest missing source detail instead of assembling the report.
 
 ## `review` Mode
 
-```markdown
+```text
 ## Executive Summary
 - <3-5 bullets on fit, strongest signals, and biggest gaps>
 
@@ -67,7 +67,7 @@ Why stronger: <short reason tied to the job posting>
 
 Return only the sections that contain rewritten text:
 
-```markdown
+```text
 ## Rewritten Summary
 Improved: <summary>
 Evidence: `<label>`
@@ -88,7 +88,7 @@ Evidence notes: <what is supported vs. needs verification>
 
 ## `checklist` Mode
 
-```markdown
+```text
 ## Submission Checklist
 | Priority | Action | Why it matters for this role | Evidence label | Risk |
 | --- | --- | --- | --- | --- |
@@ -96,7 +96,7 @@ Evidence notes: <what is supported vs. needs verification>
 
 ## `questions-only` Mode
 
-```markdown
+```text
 ## Questions To Strengthen This CV
 1. <targeted question>
    Unlocks: <specific CV improvement>
