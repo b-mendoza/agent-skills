@@ -1,13 +1,11 @@
 # State Machine — review-software-engineer-cv
 
-Finite-state execution model for this skill. Mermaid SoT:
-[`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of
-states, transitions, guards, and terminals.
+Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
 
 ## States
 
 | State | Kind | Role |
-| ----- | ---- | ---- |
+| --- | --- | --- |
 | `NormalizeMode` | active | Set `OUTPUT_MODE` to `review`, `rewrite`, `checklist`, or `questions-only`; default missing/unsupported to `review` |
 | `GateRequiredInputs` | active | Require readable `JOB_POSTING` and `CV` |
 | `AskRequiredSource` | active | Ask for the smallest missing required source |
@@ -39,20 +37,18 @@ states, transitions, guards, and terminals.
 ## Status vocabulary by phase (intentional asymmetry)
 
 | Phase handoff | Allowed statuses | Notes |
-| ------------- | ---------------- | ----- |
+| --- | --- | --- |
 | `SOURCE_INTAKE` | `PASS`, `PARTIAL`, `BLOCKED`, `ERROR` | Only intake uses `BLOCKED` |
 | `ROLE_FIT` | `PASS`, `PARTIAL`, `ERROR` | No `BLOCKED` |
 | `TAILORING_DRAFT` | `PASS`, `PARTIAL`, `ERROR` | No `BLOCKED` |
 | `CV_REVIEW` | `PASS`, `FAIL`, `ERROR` | Only review uses `FAIL` (fix loop) |
 
-Do not invent statuses absent from a phase. `ERROR` means inputs/tools are
-unusable for that phase — not “sources are thin but reviewable” (use `PARTIAL`
-/ limitations / `FAIL` fixes instead).
+Do not invent statuses absent from a phase. `ERROR` means inputs/tools are unusable for that phase — not “sources are thin but reviewable” (use `PARTIAL` / limitations / `FAIL` fixes instead).
 
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `NormalizeMode` | run start |
 | `NormalizeMode` | `GateRequiredInputs` | mode normalized |
 | `GateRequiredInputs` | `AskRequiredSource` | `CV` or `JOB_POSTING` missing/unreadable |
@@ -97,14 +93,12 @@ unusable for that phase — not “sources are thin but reviewable” (use `PART
 
 ### Continuous privacy transitions
 
-From any state that performed external I/O (`DispatchIntake`, `DispatchEditor`,
-`DispatchEditorFix`, `Assemble`, or any subagent fetch), if private candidate or
-draft material was submitted externally → `TerminalBlockedIntegrityRisk`.
+From any state that performed external I/O (`DispatchIntake`, `DispatchEditor`, `DispatchEditorFix`, `Assemble`, or any subagent fetch), if private candidate or draft material was submitted externally → `TerminalBlockedIntegrityRisk`.
 
 ## Terminal outcomes
 
 | Terminal | User-facing meaning |
-| -------- | ------------------- |
+| --- | --- |
 | `TerminalCompleteFull` | Full selected-mode report |
 | `TerminalCompletePartial` | Partial selected-mode report with labeled limitations |
 | `TerminalBlockedMissingSource` | Need readable `CV` and/or `JOB_POSTING` |
@@ -115,7 +109,7 @@ draft material was submitted externally → `TerminalBlockedIntegrityRisk`.
 ## Reachability and dead-state checks
 
 | Property | Result |
-| -------- | ------ |
+| --- | --- |
 | Every active state reachable from `NormalizeMode` | yes |
 | Every terminal reachable | yes |
 | Dead states (no outgoing, non-terminal) | none |

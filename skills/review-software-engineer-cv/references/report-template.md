@@ -2,20 +2,16 @@
 
 Read this file only when assembling the final user-facing CV review or rewrite.
 
-> Every recommendation and rewrite keeps an evidence label from
-> `cv-review-contract.md`.
+> Every recommendation and rewrite keeps an evidence label from `cv-review-contract.md`.
 
-When the limitations ledger is non-empty, keep the selected mode but add a short
-partial-output note before the mode-specific sections:
+When the limitations ledger is non-empty, keep the selected mode but add a short partial-output note before the mode-specific sections:
 
 ```text
 ## Partial Output Note
 - <source limitation, uncertain mapping, or verification limit>
 ```
 
-Use a partial-output note only after the selected mode meets the minimum
-evidence threshold in `cv-review-contract.md`. If it does not, ask for the
-smallest missing source detail instead of assembling the report.
+Use a partial-output note only after the selected mode meets the minimum evidence threshold in `cv-review-contract.md`. If it does not, ask for the smallest missing source detail instead of assembling the report.
 
 ## `review` Mode
 
@@ -107,10 +103,6 @@ Evidence notes: <what is supported vs. needs verification>
 
 - Keep the report specific to the target job posting.
 - Prefer fewer high-impact rewrites over exhaustive generic edits.
-- Do not include `TAILORING_DRAFT`, `CV_REVIEW`, or other subagent status
-  headers in the final user-facing output.
-- Preserve the applicant's apparent seniority unless applicant context supports
-  a stronger level.
-- Include a partial-output note at the top when the limitations ledger is
-  non-empty because missing, inaccessible, ambiguous, or unverified information
-  materially limits the selected-mode output.
+- Do not include `TAILORING_DRAFT`, `CV_REVIEW`, or other subagent status headers in the final user-facing output.
+- Preserve the applicant's apparent seniority unless applicant context supports a stronger level.
+- Include a partial-output note at the top when the limitations ledger is non-empty because missing, inaccessible, ambiguous, or unverified information materially limits the selected-mode output.
