@@ -1,17 +1,13 @@
 # Task Planning Guide
 
-Read this file when `task-planner` converts a work-item snapshot into the Stage 1
-detailed plan. The active playbook (`PLAYBOOK_PATH`) supplies every
-platform-specific detail, including exact nouns, required snapshot headings,
-child-coverage source, current-item detection, and required rendered wording.
+Read this file when `task-planner` converts a work-item snapshot into the Stage 1 detailed plan. The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail, including exact nouns, required snapshot headings, child-coverage source, current-item detection, and required rendered wording.
 
-> Apply the local operational rules first. External sources are optional
-> background and never override the snapshot, playbook, or output contract.
+> Apply the local operational rules first. External sources are optional background and never override the snapshot, playbook, or output contract.
 
 ## Optional Source Lookups
 
 | Need | Source key in `EXTERNAL_SOURCES_PATH` |
-| ---- | ------------------------------------- |
+| --- | --- |
 | Underlying-need analysis | `five-whys` |
 | Traceability expectations | `requirements-traceability` |
 | Concrete completion criteria | `definition-of-done` |
@@ -21,14 +17,12 @@ child-coverage source, current-item detection, and required rendered wording.
 
 ## Problem Framing
 
-Capture the problem the work item is trying to solve, not only the prescribed
-solution. Mark inferred content as inference; gaps become Phase 3 critique fuel.
-Render the active playbook's work-item noun in the artifact.
+Capture the problem the work item is trying to solve, not only the prescribed solution. Mark inferred content as inference; gaps become Phase 3 critique fuel. Render the active playbook's work-item noun in the artifact.
 
 Required subsections:
 
 | Subsection | What to capture |
-| ---------- | --------------- |
+| --- | --- |
 | `### End User` | Who directly experiences the outcome |
 | `### Underlying Need` | The problem in user terms |
 | `### Proposed Solution` | What the work item asks to build or change |
@@ -36,32 +30,21 @@ Required subsections:
 | `### Alternative Approaches Not Explored` | Plausible options not discussed |
 | `### Evidence Basis` | Evidence cited for why the solution is correct |
 
-Use the template's playbook-rendered `Not stated in <work-item noun>` wording
-when the snapshot does not answer a subsection.
+Use the template's playbook-rendered `Not stated in <work-item noun>` wording when the snapshot does not answer a subsection.
 
 ## Decomposition
 
-Split work into self-contained units with one clear objective, one likely owner,
-and a verifiable definition of done. Useful categories when relevant:
-requirements, infrastructure, data changes, core logic, integration, UI/UX,
-testing, documentation, and cleanup.
+Split work into self-contained units with one clear objective, one likely owner, and a verifiable definition of done. Useful categories when relevant: requirements, infrastructure, data changes, core logic, integration, UI/UX, testing, documentation, and cleanup.
 
-Target 4-15 tasks. When the work item justifies fewer or more, keep the plan
-accurate and explain the exception in `## Notes`.
+Target 4-15 tasks. When the work item justifies fewer or more, keep the plan accurate and explain the exception in `## Notes`.
 
-The current-item mode has one internal exception: one execution task is allowed
-when further splitting would invent child items of the current child item rather
-than clarify execution. Record that reasoning in `## Notes`; it is a workflow
-rule, not a platform capability claim.
+The current-item mode has one internal exception: one execution task is allowed when further splitting would invent child items of the current child item rather than clarify execution. Record that reasoning in `## Notes`; it is a workflow rule, not a platform capability claim.
 
 ## Existing Child Work and Linked Issues
 
-Read child work only from the active playbook's child-work section. Map each
-concrete child item to a task, explain consolidation, or mark it explicitly out
-of scope. Do not treat Jira subtasks as GitHub child issues or vice versa.
+Read child work only from the active playbook's child-work section. Map each concrete child item to a task, explain consolidation, or mark it explicitly out of scope. Do not treat Jira subtasks as GitHub child issues or vice versa.
 
-Use `## Linked Issues` for dependency and context. Reflect hard blocking or
-ordering only when the authoritative snapshot makes it clear.
+Use `## Linked Issues` for dependency and context. Reflect hard blocking or ordering only when the authoritative snapshot makes it clear.
 
 ## Current-Item Detection
 
@@ -72,8 +55,7 @@ Apply the active playbook's exact detection rule. When active:
 - keep the plan execution-oriented; and
 - avoid child-of-child planning.
 
-Stage 2 converts that note into one repeated branch and the playbook's exact
-execution-summary sentence.
+Stage 2 converts that note into one repeated branch and the playbook's exact execution-summary sentence.
 
 ## Per-Task Detail
 
@@ -85,11 +67,9 @@ Every lettered Stage 1 task contains:
 - `**Implementation notes:**`
 - `**Definition of done:**`
 - `**Likely files / artifacts affected:**`
-- a `Traces to` reference using the active platform's child-item noun when
-  applicable
+- a `Traces to` reference using the active platform's child-item noun when applicable
 
-Use `Task A`, `Task B`, `Task C`, and so on. Stage 2 assigns final numbers,
-dependencies, priorities, and branches.
+Use `Task A`, `Task B`, `Task C`, and so on. Stage 2 assigns final numbers, dependencies, priorities, and branches.
 
 ## Quality Self-Check
 

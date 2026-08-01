@@ -1,14 +1,11 @@
 # Task Planner Template
 
-Read this file only when assembling Stage 1. Keep every heading even when
-content is sparse; explain gaps instead of removing sections. Resolve every
-angle-bracket platform token from `PLAYBOOK_PATH`.
+Read this file only when assembling Stage 1. Keep every heading even when content is sparse; explain gaps instead of removing sections. Resolve every angle-bracket platform token from `PLAYBOOK_PATH`.
 
 ```markdown
 # <KEY> - Detailed Task Plan
 
-> Source: docs/<KEY>.md
-> Generated on: <YYYY-MM-DD HH:MM UTC>
+> Source: docs/<KEY>.md Generated on: <YYYY-MM-DD HH:MM UTC>
 
 <SUMMARY_HEADING>
 
@@ -53,25 +50,21 @@ angle-bracket platform token from `PLAYBOOK_PATH`.
 
 ### Task A: <Short descriptive title>
 
-**Objective:**
-<One to two sentences on what this task accomplishes.>
+**Objective:** <One to two sentences on what this task accomplishes.>
 
-**Relevant requirements and context:**
-<Only the requirements, constraints, and background needed for this task.>
+**Relevant requirements and context:** <Only the requirements, constraints, and background needed for this task.>
 
 - Traces to: <Specific description, acceptance criteria, comment, <CHILD_ITEM_NOUN>, or linked issue source.>
 
-**Questions to answer before starting:**
-<Uncertainties, why they matter, and fallback if unanswered. If none, write `None`.>
+**Questions to answer before starting:** <Uncertainties, why they matter, and fallback if unanswered. If none, write `None`.>
 
-**Implementation notes:**
-<Expected approach, boundaries, and technical considerations. If the codebase is unknown, describe what to look for.>
+**Implementation notes:** <Expected approach, boundaries, and technical considerations. If the codebase is unknown, describe what to look for.>
 
 **Definition of done:**
+
 - [ ] <Concrete verifiable outcome.>
 
-**Likely files / artifacts affected:**
-<Files, modules, or systems. If unknown, write `Unknown - requires codebase exploration`.>
+**Likely files / artifacts affected:** <Files, modules, or systems. If unknown, write `Unknown - requires codebase exploration`.>
 
 ### Task B: <Short descriptive title>
 

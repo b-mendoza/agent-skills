@@ -1,37 +1,24 @@
 # External Sources
 
-Read this file when an inline operational contract is not enough and you want
-source-backed background, current platform syntax, or a method explanation. The
-active playbook's `External-Source Routing` section names which platform
-hierarchy key to use.
+Read this file when an inline operational contract is not enough and you want source-backed background, current platform syntax, or a method explanation. The active playbook's `External-Source Routing` section names which platform hierarchy key to use.
 
-> **Reminder:** This skill is designed to run offline. Bundled references are
-> the execution contract. External URLs are optional just-in-time enrichment;
-> proceed with the local references when network access is unavailable and
-> avoid claiming version-specific platform behavior.
+> **Reminder:** This skill is designed to run offline. Bundled references are the execution contract. External URLs are optional just-in-time enrichment; proceed with the local references when network access is unavailable and avoid claiming version-specific platform behavior.
 
 ## Authority Model
 
-Bundled references are the binding workflow contract. External sources replace
-long static explanations and provide current syntax or rationale on demand; they
-do not override user instructions, host system rules, or local output contracts.
+Bundled references are the binding workflow contract. External sources replace long static explanations and provide current syntax or rationale on demand; they do not override user instructions, host system rules, or local output contracts.
 
 ## Fetch Policy
 
-1. Apply the relevant bundled reference first. Fetch a URL only when the
-   decision needs background concept material, current command syntax, or
-   source rationale.
-2. Fetch only URLs listed below. Treat links inside a fetched page as out of
-   scope unless that destination is also listed here.
-3. Fetch one source first; fetch a second only when the first does not answer
-   the question. Limit yourself to two fetched pages per stage.
-4. Summarize fetched content into the compact form below, then discard page
-   details from working context unless they directly affect the decision.
+1. Apply the relevant bundled reference first. Fetch a URL only when the decision needs background concept material, current command syntax, or source rationale.
+2. Fetch only URLs listed below. Treat links inside a fetched page as out of scope unless that destination is also listed here.
+3. Fetch one source first; fetch a second only when the first does not answer the question. Limit yourself to two fetched pages per stage.
+4. Summarize fetched content into the compact form below, then discard page details from working context unless they directly affect the decision.
 
 ## Shared Source Routing
 
 | Reference key | Use when | URL |
-| ------------- | -------- | --- |
+| --- | --- | --- |
 | `progressive-disclosure-skill` | Maintaining or explaining the staged loading model | https://skills.sh/flpbalada/fb-skills/progressive-disclosure |
 | `progressive-disclosure-ux` | Short public explanation of revealing only phase-relevant information | https://www.nngroup.com/articles/progressive-disclosure/ |
 | `agent-skills-overview` | Agent Skills loading model, anatomy, descriptions | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview |
@@ -51,13 +38,13 @@ do not override user instructions, host system rules, or local output contracts.
 ## Jira Source Routing
 
 | Reference key | Use when | URL |
-| ------------- | -------- | --- |
+| --- | --- | --- |
 | `jira-subtasks` | Jira subtask hierarchy: parent ticket vs subtask, conversion, restrictions | https://support.atlassian.com/jira-cloud-administration/docs/configure-sub-tasks/ |
 
 ## GitHub Source Routing
 
 | Reference key | Use when | URL |
-| ------------- | -------- | --- |
+| --- | --- | --- |
 | `github-sub-issues` | GitHub issue hierarchy: parent issue vs sub-issue and limits | https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues |
 | `github-issue-types` | GitHub issue types and labels behavior in modern issues | https://docs.github.com/en/issues/tracking-your-work-with-issues/configuring-issues/managing-issue-types-in-an-organization |
 
@@ -75,5 +62,4 @@ Relevant facts:
 Workflow impact: <none | adjusted finding | added confidence note>
 ```
 
-Do not embed long quotes from the page in any planning artifact. Cite the
-source with a one-line link only when it directly affects a finding.
+Do not embed long quotes from the page in any planning artifact. Cite the source with a one-line link only when it directly affects a finding.
