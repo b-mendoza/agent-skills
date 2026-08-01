@@ -1,8 +1,6 @@
 # Output Templates
 
-Load this asset when assembling files, collection manifests, resume packets,
-zero-output reports, or final deliveries. Path:
-`assets/output-templates.md` (templates live under `assets/`, not `references/`).
+Load this asset when assembling files, collection manifests, resume packets, zero-output reports, or final deliveries. Path: `assets/output-templates.md` (templates live under `assets/`, not `references/`).
 
 ## Skill Template
 
