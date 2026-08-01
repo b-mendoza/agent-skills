@@ -1,12 +1,6 @@
 # Creating Work Item Children
 
-This Phase 4 coordinator detects GitHub or Jira from the canonical parent URL,
-loads the active playbook, enforces approval for exact remote writes plus one
-local plan update, and dispatches one neutral creator. The creator observes
-remote and local state before mutating, reuses verified relationships, applies
-only the platform's supported write model, updates `docs/<KEY>-tasks.md`, and
-returns the preserved platform summary. Raw platform payloads remain inside the
-creator.
+This Phase 4 coordinator detects GitHub or Jira from the canonical parent URL, loads the active playbook, enforces approval for exact remote writes plus one local plan update, and dispatches one neutral creator. The creator observes remote and local state before mutating, reuses verified relationships, applies only the platform's supported write model, updates `docs/<KEY>-tasks.md`, and returns the preserved platform summary. Raw platform payloads remain inside the creator.
 
 ```mermaid
 flowchart TD
@@ -108,7 +102,4 @@ flowchart TD
   class BLOCK_INPUT,BLOCK_APPROVAL,C_BLOCK_PLAN,C_FAIL_TRANSPORT,C_FAIL_PARENT,C_BLOCK_REFS,C_BLOCK_PATH,C_FAIL_PATH,C_FAIL_ALL_CREATE,C_FAIL_BOUNDARY,C_FAIL_VALIDATE,C_ERROR,STOP_BLOCKED,STOP_FAIL,STOP_ERROR stop;
 ```
 
-Readiness rule: `PASS + PASS` is complete. For `WARN + PASS`, interpret usable,
-degraded, and unresolved child-reference values only through the active
-playbook's **Child-Reference Values and Downstream Readiness** section. Any other
-pairing stops.
+Readiness rule: `PASS + PASS` is complete. For `WARN + PASS`, interpret usable, degraded, and unresolved child-reference values only through the active playbook's **Child-Reference Values and Downstream Readiness** section. Any other pairing stops.
