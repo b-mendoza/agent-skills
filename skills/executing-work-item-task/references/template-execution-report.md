@@ -1,8 +1,6 @@
 # Execution Report Template
 
-Read this file only when `task-executor` is ready to return its report. Use
-the structure exactly and replace every placeholder. Use `None` for empty
-sections.
+Read this file only when `task-executor` is ready to return its report. Use the structure exactly and replace every placeholder. Use `None` for empty sections.
 
 ## Template
 
@@ -44,8 +42,7 @@ capability, permission, artifact, or decision gap here.
 - <observation or `None`>
 ```
 
-`COMPLETE` is the normal success outcome. Do not return `COMPLETE` when any
-Definition of Done item remains unfinished because execution was blocked.
+`COMPLETE` is the normal success outcome. Do not return `COMPLETE` when any Definition of Done item remains unfinished because execution was blocked.
 
 ## Example Success
 
@@ -85,7 +82,4 @@ COMPLETE
 
 ## Blocked Or Context Outcome
 
-For a `BLOCKED` or `NEEDS_CONTEXT` outcome, set `Status` accordingly, leave
-action sections as `None` where nothing changed, mark unfinished DoD items with
-reasons, and name the precise missing capability, permission, artifact, or
-decision under `Blockers or Context Needed`.
+For a `BLOCKED` or `NEEDS_CONTEXT` outcome, set `Status` accordingly, leave action sections as `None` where nothing changed, mark unfinished DoD items with reasons, and name the precise missing capability, permission, artifact, or decision under `Blockers or Context Needed`.

@@ -1,8 +1,6 @@
 # Final User Report Template
 
-Read only when the pipeline has stopped or completed. The outer schema is
-platform-neutral. Fill tracker reference and action values from the active
-playbook.
+Read only when the pipeline has stopped or completed. The outer schema is platform-neutral. Fill tracker reference and action values from the active playbook.
 
 ## Template
 
@@ -57,12 +55,6 @@ playbook.
 - <action or `None`>
 ```
 
-Use `COMPLETE` only after implementation, documentation/tracking, requirements,
-all quality gates, and final tracker completion or explicit optional skip have
-passed. Use `BLOCKED` for missing prerequisites or mandatory capabilities,
-`STOPPED_FOR_USER_INPUT` when a decision is the next safe step, and `ESCALATED`
-when a retry budget is exhausted or recovery is unsafe.
+Use `COMPLETE` only after implementation, documentation/tracking, requirements, all quality gates, and final tracker completion or explicit optional skip have passed. Use `BLOCKED` for missing prerequisites or mandatory capabilities, `STOPPED_FOR_USER_INPUT` when a decision is the next safe step, and `ESCALATED` when a retry budget is exhausted or recovery is unsafe.
 
-Always report all four counters, including `0` for a gate that never entered a
-fix cycle. Preserve passed-phase evidence and counters on stopped or escalated
-runs. Report only the selected task; do not continue to another task.
+Always report all four counters, including `0` for a gate that never entered a fix cycle. Preserve passed-phase evidence and counters on stopped or escalated runs. Report only the selected task; do not continue to another task.

@@ -1,8 +1,6 @@
 # Security Audit Template
 
-Read this file only when `security-auditor` is ready to return its audit. Use
-the structure exactly and replace every placeholder. Use `None` for empty
-sections.
+Read this file only when `security-auditor` is ready to return its audit. Use the structure exactly and replace every placeholder. Use `None` for empty sections.
 
 ## Template
 
@@ -50,8 +48,7 @@ sections.
 - <issue or `None`>
 ```
 
-`PASS`, `PASS WITH ADVISORIES`, and `NEEDS FIXES` are normal outcomes.
-`BLOCKED` and `ERROR` are escalations.
+`PASS`, `PASS WITH ADVISORIES`, and `NEEDS FIXES` are normal outcomes. `BLOCKED` and `ERROR` are escalations.
 
 ## Example Pass With Advisories
 
@@ -92,6 +89,4 @@ None
 
 ## Blocked Outcome
 
-For a `BLOCKED` outcome, set `Verdict` to `BLOCKED`, leave issue sections as
-`None`, set `Files scanned: 0`, and name the precise scope ambiguity under
-`Blockers or Ambiguities`.
+For a `BLOCKED` outcome, set `Verdict` to `BLOCKED`, leave issue sections as `None`, set `Files scanned: 0`, and name the precise scope ambiguity under `Blockers or Ambiguities`.

@@ -1,8 +1,6 @@
 # Execution Kickoff Report Template
 
-Read only when `execution-starter` is ready to return. Use the structure exactly,
-replace every placeholder, and fill tracker reference/action values from the
-active playbook. Use `None` for empty sections.
+Read only when `execution-starter` is ready to return. Use the structure exactly, replace every placeholder, and fill tracker reference/action values from the active playbook. Use `None` for empty sections.
 
 ## Template
 
@@ -44,10 +42,7 @@ active playbook. Use `None` for empty sections.
 - <issue or `None`>
 ```
 
-`READY` is the normal success outcome. An optional unavailable tracker action may
-be `skipped` while status remains `READY`. `BLOCKED` means the next safe action
-requires orchestrator or user judgment, including a mandatory unavailable
-tracker action. `ERROR` means an unexpected failure prevented reliable kickoff.
+`READY` is the normal success outcome. An optional unavailable tracker action may be `skipped` while status remains `READY`. `BLOCKED` means the next safe action requires orchestrator or user judgment, including a mandatory unavailable tracker action. `ERROR` means an unexpected failure prevented reliable kickoff.
 
 ## Example Success With Optional Skip
 
@@ -89,5 +84,4 @@ READY
 - None
 ```
 
-For `BLOCKED`, set affected readiness fields to `blocked` or `No` and name the
-precise prerequisite, branch, workspace, or mandatory tracker blocker.
+For `BLOCKED`, set affected readiness fields to `blocked` or `No` and name the precise prerequisite, branch, workspace, or mandatory tracker blocker.

@@ -1,8 +1,6 @@
 # Requirements Verification Template
 
-Read this file only when `requirements-verifier` is ready to return its
-verdict. Use the structure exactly and replace every placeholder. Use `None`
-for empty sections.
+Read this file only when `requirements-verifier` is ready to return its verdict. Use the structure exactly and replace every placeholder. Use `None` for empty sections.
 
 ## Template
 
@@ -31,8 +29,7 @@ for empty sections.
 <2-3 sentences>
 ```
 
-If the verdict is `BLOCKED`, the summary must name the blocked upstream step
-and the blocker reason.
+If the verdict is `BLOCKED`, the summary must name the blocked upstream step and the blocker reason.
 
 ## Example Fail
 
@@ -64,6 +61,4 @@ gates run.
 
 ## Blocked Outcome
 
-For a `BLOCKED` outcome, set `Verdict` to `BLOCKED`, mark blocked DoD items as
-`GAP`, leave `Gaps` as `None`, and name the blocked upstream step plus reason
-in the summary.
+For a `BLOCKED` outcome, set `Verdict` to `BLOCKED`, mark blocked DoD items as `GAP`, leave `Gaps` as `None`, and name the blocked upstream step plus reason in the summary.

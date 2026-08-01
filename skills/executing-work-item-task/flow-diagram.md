@@ -1,10 +1,6 @@
 # executing-work-item-task
 
-Platform-neutral Phase 7 state machine for exactly one planned work-item task.
-The active playbook supplies identifier derivation, tracker transport,
-relationship vocabulary, startup and completion actions, reference values, and
-report labels. `references/pipeline.md` and `references/retry-and-escalation.md`
-are authoritative when this illustrative diagram is ambiguous.
+Platform-neutral Phase 7 state machine for exactly one planned work-item task. The active playbook supplies identifier derivation, tracker transport, relationship vocabulary, startup and completion actions, reference values, and report labels. `references/pipeline.md` and `references/retry-and-escalation.md` are authoritative when this illustrative diagram is ambiguous.
 
 ```mermaid
 flowchart TD
@@ -116,17 +112,8 @@ flowchart TD
   classDef stop fill:#fdecea,stroke:#b02a37,color:#000;
 ```
 
-Readiness rule: valid Phase 1-6 handoff artifacts, explicit critique approval,
-resolved or consciously waived questions, a planner-generated branch, and no
-blocking contradiction are required before kickoff. Tracker capability is
-assessed explicitly; unavailable transport is a recorded skip for optional
-mutations and a blocker only for mandatory ones.
+Readiness rule: valid Phase 1-6 handoff artifacts, explicit critique approval, resolved or consciously waived questions, a planner-generated branch, and no blocking contradiction are required before kickoff. Tracker capability is assessed explicitly; unavailable transport is a recorded skip for optional mutations and a blocker only for mandatory ones.
 
-Retry rule: requirements, clean-code, architecture, and security counters are
-independent, capped at three targeted fix attempts each, and preserved with all
-passed-phase results across recovery. The task-executor context loop is also
-capped at three re-dispatches per blocker.
+Retry rule: requirements, clean-code, architecture, and security counters are independent, capped at three targeted fix attempts each, and preserved with all passed-phase results across recovery. The task-executor context loop is also capped at three re-dispatches per blocker.
 
-Finalization rule: no playbook-defined final completion action occurs during
-`UPDATE_TRACKING`; final tracker mutation is deferred until requirements and all
-three quality gates are non-blocking.
+Finalization rule: no playbook-defined final completion action occurs during `UPDATE_TRACKING`; final tracker mutation is deferred until requirements and all three quality gates are non-blocking.

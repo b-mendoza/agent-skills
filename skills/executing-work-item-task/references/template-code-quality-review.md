@@ -1,8 +1,6 @@
 # Code Quality Review Template
 
-Read this file only when `clean-code-reviewer` is ready to return its review.
-Use the structure exactly and replace every placeholder. Use `None` for empty
-sections.
+Read this file only when `clean-code-reviewer` is ready to return its review. Use the structure exactly and replace every placeholder. Use `None` for empty sections.
 
 ## Template
 
@@ -39,8 +37,7 @@ sections.
 - <issue or `None`>
 ```
 
-`PASS`, `PASS WITH SUGGESTIONS`, and `NEEDS FIXES` are normal outcomes.
-`BLOCKED` and `ERROR` are escalations.
+`PASS`, `PASS WITH SUGGESTIONS`, and `NEEDS FIXES` are normal outcomes. `BLOCKED` and `ERROR` are escalations.
 
 ## Example Needs Fixes
 
@@ -75,5 +72,4 @@ None
 
 ## Blocked Outcome
 
-For a `BLOCKED` outcome, set `Verdict` to `BLOCKED`, leave finding sections as
-`None`, and name the precise scope ambiguity under `Blockers or Ambiguities`.
+For a `BLOCKED` outcome, set `Verdict` to `BLOCKED`, leave finding sections as `None`, and name the precise scope ambiguity under `Blockers or Ambiguities`.

@@ -1,8 +1,6 @@
 # Documentation Report Template
 
-Read only when `documentation-writer` is ready to return. Use the structure
-exactly, replace every placeholder, and fill tracker actions from the active
-playbook. Use `None` for empty sections.
+Read only when `documentation-writer` is ready to return. Use the structure exactly, replace every placeholder, and fill tracker actions from the active playbook. Use `None` for empty sections.
 
 ## Template
 
@@ -61,8 +59,7 @@ playbook. Use `None` for empty sections.
 - `Files Documented` lists changed Category B files or `None`.
 - Final gate evidence is `Not applicable`.
 - Task status remains pending final verification/finalization.
-- `Tracker table row` is `updated` when the playbook-defined row exists and the
-  local row was changed; `skipped` only when the row is absent or not applicable.
+- `Tracker table row` is `updated` when the playbook-defined row exists and the local row was changed; `skipped` only when the row is absent or not applicable.
 - `Tracker completion actions` and `Tracker Detail -> Result` are `deferred`.
 - Do not perform any playbook-defined final completion action.
 
@@ -116,11 +113,6 @@ UPDATE_TRACKING
 
 ## FINALIZE_TRACKER Rules
 
-Set `Files Documented` to `None`, include all non-blocking gate verdicts, finalize
-the task status line, update the playbook-defined tracking row when present, and
-record completion actions as `updated` or `skipped`. Missing or failing gate
-summaries return `BLOCKED`; final tracker actions never run early.
+Set `Files Documented` to `None`, include all non-blocking gate verdicts, finalize the task status line, update the playbook-defined tracking row when present, and record completion actions as `updated` or `skipped`. Missing or failing gate summaries return `BLOCKED`; final tracker actions never run early.
 
-For `BLOCKED`, leave action sections as `None` or `failed` and name the upstream
-blocker, usually incomplete execution, missing tracking, or a missing/failing
-gate report.
+For `BLOCKED`, leave action sections as `None` or `failed` and name the upstream blocker, usually incomplete execution, missing tracking, or a missing/failing gate report.
