@@ -1,9 +1,6 @@
 # Refine Task Flow Diagram
 
-Finite-state execution model for `refine-task`. Companion transition table:
-[`state-machine.md`](./state-machine.md). Summary — normative text for
-definitions, gates, states, boundaries, and posting lives in
-[`./references/reviewer-policy.md`](./references/reviewer-policy.md).
+Finite-state execution model for `refine-task`. Companion transition table: [`state-machine.md`](./state-machine.md). Summary — normative text for definitions, gates, states, boundaries, and posting lives in [`./references/reviewer-policy.md`](./references/reviewer-policy.md).
 
 ```mermaid
 stateDiagram-v2
@@ -76,12 +73,7 @@ stateDiagram-v2
 
 ## Invariants
 
-- Every terminal output includes `Mode`, `Status`, `Comment`,
-  `Deferred actions`, and `Run notes`.
-- The reviewer is dispatched once, plus at most one re-dispatch for a named
-  malformed return.
-- No path posts without explicit posting intent, confirmed write tooling,
-  `REVIEW: PASS`, `POST_ALLOWED: yes`, preview or quoted pre-approval, and a
-  clean idempotency check.
-- `Status` is the reviewer `REVIEW_STATUS` verbatim after dispatch;
-  `Not reviewed` is used only before dispatch.
+- Every terminal output includes `Mode`, `Status`, `Comment`, `Deferred actions`, and `Run notes`.
+- The reviewer is dispatched once, plus at most one re-dispatch for a named malformed return.
+- No path posts without explicit posting intent, confirmed write tooling, `REVIEW: PASS`, `POST_ALLOWED: yes`, preview or quoted pre-approval, and a clean idempotency check.
+- `Status` is the reviewer `REVIEW_STATUS` verbatim after dispatch; `Not reviewed` is used only before dispatch.

@@ -1,14 +1,11 @@
 # State Machine — refine-task
 
-Finite-state execution model for this skill. Mermaid SoT:
-[`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of
-states, transitions, guards, and terminals. Normative gate wording lives in
-[`references/reviewer-policy.md`](./references/reviewer-policy.md).
+Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals. Normative gate wording lives in [`references/reviewer-policy.md`](./references/reviewer-policy.md).
 
 ## States
 
 | State | Kind | Role |
-| ----- | ---- | ---- |
+| --- | --- | --- |
 | `Intake` | active | Capture `ITEM_URL`, `ITEM_CONTEXT`, `WRITE_MODE`, `POSTING_APPROVAL`, `HUMAN_APPROVALS`; ambiguous write → draft path |
 | `GateSource` | active | Require `ITEM_URL` or non-empty `ITEM_CONTEXT` |
 | `AskSource` | active | One source question; interactive wait |
@@ -41,7 +38,7 @@ states, transitions, guards, and terminals. Normative gate wording lives in
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `Intake` | run start |
 | `Intake` | `GateSource` | inputs captured |
 | `GateSource` | `AskSource` | no source pointer |
@@ -97,15 +94,14 @@ states, transitions, guards, and terminals. Normative gate wording lives in
 
 ## Terminal decisions (output `Mode`)
 
-Exactly one of: `Blocked` (+ `Not reviewed` when pre-dispatch), `Deferred`,
-`Draft`, `Ready to post`, `Posted`, `Already posted`.
+Exactly one of: `Blocked` (+ `Not reviewed` when pre-dispatch), `Deferred`, `Draft`, `Ready to post`, `Posted`, `Already posted`.
 
 ## Reachability and dead-state checks
 
-| Property | Result |
-| -------- | ------ |
-| Every active state reachable from `Intake` | yes |
-| Every terminal reachable | yes |
-| Dead states (no outgoing, non-terminal) | none |
-| Reviewer re-dispatch bounded | yes — at most one `Redispatch` |
-| Post attempts bounded | yes — exactly one `AttemptPost` |
+| Property                                   | Result                          |
+| ------------------------------------------ | ------------------------------- |
+| Every active state reachable from `Intake` | yes                             |
+| Every terminal reachable                   | yes                             |
+| Dead states (no outgoing, non-terminal)    | none                            |
+| Reviewer re-dispatch bounded               | yes — at most one `Redispatch`  |
+| Post attempts bounded                      | yes — exactly one `AttemptPost` |

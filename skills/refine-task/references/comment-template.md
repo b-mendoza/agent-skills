@@ -1,8 +1,6 @@
 # Comment Template
 
-Use this template for the single tracker-facing refinement comment. Summary -
-normative status semantics, sensitive gates, and posting rules live in
-`reviewer-policy.md`.
+Use this template for the single tracker-facing refinement comment. Summary - normative status semantics, sensitive gates, and posting rules live in `reviewer-policy.md`.
 
 ## Required Shape
 
@@ -29,15 +27,12 @@ Non-blocking notes:
 - <risk, caveat, injection note, content discrepancy, or context note>
 ```
 
-Use `None` for an empty section when omitting it could hide that the category
-was checked. Keep the comment suitable for posting as-is: no private analysis,
-no hidden chain-of-thought, no unsupported claims, and no promises that a
-mutation was performed.
+Use `None` for an empty section when omitting it could hide that the category was checked. Keep the comment suitable for posting as-is: no private analysis, no hidden chain-of-thought, no unsupported claims, and no promises that a mutation was performed.
 
 ## Section Guidance
 
 | Section | Purpose | Rules |
-| ------- | ------- | ----- |
+| --- | --- | --- |
 | `Refinement status` | First-line marker for readers and idempotency checks. | Must match `REVIEW_STATUS`; never use `Not reviewed` in a reviewed comment. |
 | `Summary` | Explain the verdict and next action. | Mention the strongest readiness driver first. |
 | `Evidence reviewed` | Show what the review used. | Use compact source pointers; do not paste raw payloads. |
@@ -48,10 +43,7 @@ mutation was performed.
 
 ## Drafting Rules
 
-Prefer direct, specific language. Avoid generic coaching such as "add more
-details" when a concrete missing detail is known. Do not bury blocking findings
-inside non-blocking notes. Do not mark an item `Ready` while asking questions
-whose answers are required for implementation.
+Prefer direct, specific language. Avoid generic coaching such as "add more details" when a concrete missing detail is known. Do not bury blocking findings inside non-blocking notes. Do not mark an item `Ready` while asking questions whose answers are required for implementation.
 
 ## Example
 
