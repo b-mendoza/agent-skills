@@ -1,32 +1,25 @@
 # GitHub Workflow Playbook
 
-> Read this file only after detecting the GitHub platform from the input. It
-> is the per-platform contract. Shared orchestration policy lives in
-> `./workflow-policy.md`, `./phases-1-4.md`, `./task-loop.md`,
-> `./data-contracts.md`, and `./error-handling.md`.
+> Read this file only after detecting the GitHub platform from the input. It is the per-platform contract. Shared orchestration policy lives in `./workflow-policy.md`, `./phases-1-4.md`, `./task-loop.md`, `./data-contracts.md`, and `./error-handling.md`.
 
 ## Inputs and Identifier
 
 | Input | Required | Example |
-| ----- | -------- | ------- |
+| --- | --- | --- |
 | `ISSUE_URL` | Preferred | `https://github.com/acme/app/issues/42` |
 | `OWNER` / `REPO` / `ISSUE_NUMBER` | When URL absent | `acme` / `app` / `42` |
 | `ISSUE_SLUG` | Resume / progress fallback | `acme-app-42` |
 
-Parse `https://<host>/<owner>/<repo>/issues/<number>` (GitHub Enterprise
-included). Lowercase owner/repo. **`ISSUE_SLUG = <owner>-<repo>-<number>`** is
-the stable workflow key. Phase 4 child-issue creation requires `ISSUE_URL`.
+Parse `https://<host>/<owner>/<repo>/issues/<number>` (GitHub Enterprise included). Lowercase owner/repo. **`ISSUE_SLUG = <owner>-<repo>-<number>`** is the stable workflow key. Phase 4 child-issue creation requires `ISSUE_URL`.
 
 ## Transport
 
-GitHub reads and writes use the `gh` CLI (`gh api` for REST or GraphQL).
-Treat missing `gh`, auth, or scope as transport unavailable; pause and ask
-the user to run `gh auth login` rather than failing.
+GitHub reads and writes use the `gh` CLI (`gh api` for REST or GraphQL). Treat missing `gh`, auth, or scope as transport unavailable; pause and ask the user to run `gh auth login` rather than failing.
 
 ## Phase Skill Map
 
 | Phase | Runtime skill | Inputs | Retain |
-| ----- | ------------- | ------ | ------ |
+| --- | --- | --- | --- |
 | 1 | `fetching-work-item` | `ISSUE_URL` or `OWNER`+`REPO`+`ISSUE_NUMBER` | 12-line summary, `TICKET_KEY=<ISSUE_SLUG>`, file path |
 | 2 | `planning-work-item-tasks` | `TICKET_KEY=<ISSUE_SLUG>` (+ `RE_PLAN`, `DECISIONS`) | summary, tasks file path, warnings |
 | 3 | `clarifying-assumptions` | `TICKET_KEY=<ISSUE_SLUG>`, `MODE=upfront`, `ITERATION` | `RE_PLAN_NEEDED`, `BLOCKERS_PRESENT`, decisions |
@@ -67,20 +60,14 @@ Plan is ready. How would you like to proceed?
 
 ## Phase 4 Child-Item Table and Write Model
 
-Workflow-level: `## GitHub Task Issues` heading, the machine handoff comment
-from `creating-work-item-children`, then a one-row-per-task table. Per-task:
-one inline `GitHub Task Issue:` line per numbered task section. Values:
-`owner/repo#number`, `Not Created`, or `task-list`. Write-model preference:
-native child issues → linked issues → task-list fallback. `task-list` is
-degraded and the user must accept it before that task's Phase 5 may begin.
+Workflow-level: `## GitHub Task Issues` heading, the machine handoff comment from `creating-work-item-children`, then a one-row-per-task table. Per-task: one inline `GitHub Task Issue:` line per numbered task section. Values: `owner/repo#number`, `Not Created`, or `task-list`. Write-model preference: native child issues → linked issues → task-list fallback. `task-list` is degraded and the user must accept it before that task's Phase 5 may begin.
 
 ## Status-Check Contract
 
-Transport: `gh issue view` for direct lookups; `gh api` for REST or GraphQL.
-Output prefix: `ISSUE_STATUS:`.
+Transport: `gh issue view` for direct lookups; `gh api` for REST or GraphQL. Output prefix: `ISSUE_STATUS:`.
 
 | Query type (neutral) | GitHub aliases | Output body |
-| -------------------- | -------------- | ----------- |
+| --- | --- | --- |
 | `status` | `status` | State, Title, Assignees, Labels, Updated |
 | `full` | `full` | State+Labels, Title, Assignees, Updated, Body (≤200 chars), Recent comments (≤5, ≤80 chars) |
 | `children` | `task-issues`, `subtasks` (deprecated) | Task issues (≤20): `<owner>/<repo>#<n>: <title> [<state>] (<assignee>)` |
@@ -94,7 +81,7 @@ Run `gh --version` for any GitHub phase. For phases 1, 4, 7 also run `gh auth st
 ## External-Source Routing
 
 | Need | Section in `./external-sources.md` |
-| ---- | ---------------------------------- |
+| --- | --- |
 | Setup / install / auth help | `GitHub CLI setup` |
 | `gh` flag, JSON field, REST/GraphQL endpoint | `GitHub CLI / API syntax` |
 | Sub-issues, dependencies, projects v2 capabilities | `GitHub Issues capabilities` |
