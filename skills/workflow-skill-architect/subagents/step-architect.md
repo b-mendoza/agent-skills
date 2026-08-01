@@ -45,7 +45,7 @@ summaries instead of full file bodies.
 
 ## Output Format
 
-```markdown
+```text
 ARCHITECTURE: PASS | NEEDS_INPUT | BLOCKED | ERROR
 
 ## Item

@@ -6,13 +6,13 @@ review-report formats.
 
 ## Verdict Line
 
-```markdown
+```text
 REVIEW: PASS | FAIL | BLOCKED | ERROR
 ```
 
 ## Findings
 
-```markdown
+```text
 ## Findings
 | Severity | File | Issue | Required Fix |
 | -------- | ---- | ----- | ------------ |
@@ -22,7 +22,7 @@ Use `none` in the table body when no findings exist.
 
 ## Checks
 
-```markdown
+```text
 ## Checks
 - Frontmatter:
 - Referenced paths:
@@ -42,7 +42,7 @@ short evidence note.
 
 ## Summary
 
-```markdown
+```text
 ## Summary
 - Mode:
 - Files reviewed:

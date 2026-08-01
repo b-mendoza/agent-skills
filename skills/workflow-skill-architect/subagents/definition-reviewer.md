@@ -53,7 +53,7 @@ loop.
 
 Emit exactly the format defined in `../references/review-schema.md`:
 
-```markdown
+```text
 REVIEW: PASS | FAIL | BLOCKED | ERROR
 
 ## Findings

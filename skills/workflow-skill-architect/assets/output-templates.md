@@ -149,7 +149,7 @@ Script documentation template:
 
 ## Per-Item Response
 
-```markdown
+```text
 ARCHITECTURE: PASS | NEEDS_INPUT | BLOCKED | ERROR
 
 ## Staged Files
@@ -208,7 +208,7 @@ resume_from: "queue-loop"
 
 ## Zero-Output Report
 
-```markdown
+```text
 state: ready
 result: no-artifacts-required
 
@@ -231,7 +231,7 @@ result: no-artifacts-required
 
 ## Final Delivery
 
-````markdown
+````text
 state: ready | blocked | error
 
 ## Analysis
