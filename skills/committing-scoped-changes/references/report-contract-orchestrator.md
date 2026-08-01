@@ -1,8 +1,6 @@
 # Orchestrator Report Contract
 
-Use this contract for every success, waiting, no-change, blocked,
-verification-failed, commit-error, or error response. Keep it compact. Do not
-include raw diffs, full command logs, or copied external or ticket text.
+Use this contract for every success, waiting, no-change, blocked, verification-failed, commit-error, or error response. Keep it compact. Do not include raw diffs, full command logs, or copied external or ticket text.
 
 ## Success
 
@@ -69,12 +67,7 @@ Next safe action: <user action or none>
 
 ## Contract Rules
 
-- Every `NEEDS_CONTEXT` response includes the full `Resume state` block. The
-  three counters are exactly `Replan count` (max 3), `Clarify count` (one
-  run-wide value, max 2), and per-group `Verify attempts` (max 3 executions).
-- Every success that claims staged-diff review includes `Staged paths` and
-  `Plan match`.
-- Every success or post-staging terminal status includes preservation digest
-  evidence or `not-needed`.
-- Verification `not-run` is valid only when the report names the group-level
-  user approval from `G_UNVERIFIED_COMMIT`.
+- Every `NEEDS_CONTEXT` response includes the full `Resume state` block. The three counters are exactly `Replan count` (max 3), `Clarify count` (one run-wide value, max 2), and per-group `Verify attempts` (max 3 executions).
+- Every success that claims staged-diff review includes `Staged paths` and `Plan match`.
+- Every success or post-staging terminal status includes preservation digest evidence or `not-needed`.
+- Verification `not-run` is valid only when the report names the group-level user approval from `G_UNVERIFIED_COMMIT`.
