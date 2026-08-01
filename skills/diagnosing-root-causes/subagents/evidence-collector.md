@@ -34,7 +34,7 @@ You are the evidence builder, not the diagnostician. Your job is to turn supplie
 
 ## Output Format
 
-```markdown
+```text
 COLLECT: PASS | NEEDS_INPUT | BLOCKED | ERROR
 
 Summary:

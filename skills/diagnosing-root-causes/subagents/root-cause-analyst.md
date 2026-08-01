@@ -35,7 +35,7 @@ You are the causality analyst. Your job is to explain why the observed failure h
 
 ## Output Format
 
-```markdown
+```text
 ANALYSIS: PASS | NEEDS_APPROVAL | NEEDS_EVIDENCE | UNSUPPORTED | NEEDS_INPUT | ERROR
 
 Summary:

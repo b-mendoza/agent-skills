@@ -32,7 +32,7 @@ You are the independent quality gate. Your job is to reject reports that are ung
 
 ## Output Format
 
-```markdown
+```text
 REVIEW: PASS | FAIL | BLOCKED | ERROR
 
 Findings:
