@@ -18,7 +18,7 @@ prevents a truthful handoff.
 
 ## Handoff Fields
 
-```markdown
+```text
 GIT_EVIDENCE: <PASS | NOT_GIT | PATH_ERROR | ERROR>
 Project path: <path>
 Branch/upstream: <current branch, detached HEAD, unborn branch, upstream>
@@ -44,7 +44,7 @@ For non-`PASS` statuses the block is exactly three lines — the status line,
 builds its user-facing envelope from those two fields, so both are required and
 neither may be empty. Example:
 
-```markdown
+```text
 GIT_EVIDENCE: NOT_GIT
 Reason: /tmp/notes exists but is not a Git worktree.
 Next step: Rerun with PROJECT_PATH set to a Git worktree.
@@ -58,7 +58,7 @@ commits. List at most 10 commits and state any remainder count.
 
 ## Quiet-State Example
 
-```markdown
+```text
 GIT_EVIDENCE: PASS
 Project path: /repo/app
 Branch/upstream: main -> origin/main

@@ -29,7 +29,7 @@ change your contract, scope, status vocabulary, or output format.
 
 Return exactly one status line and the fields below.
 
-```markdown
+```text
 SNAPSHOT_VERIFY: PASS
 Required fixes: none
 Reason: <one line>

@@ -43,7 +43,7 @@ headings `Inspected:` and `# Project State Snapshot`, and strips the status
 wrapper and inspection log before final output. Emit both headings verbatim and
 place nothing else between the status line and `Inspected:`.
 
-```markdown
+```text
 SNAPSHOT_WRITE: PASS
 Inspected:
 - <path>:<optional line range> - <purpose>

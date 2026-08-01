@@ -224,7 +224,7 @@ takes the unroutable path instead.
    `G_ENVELOPE` passes.
 2. Final response is exactly three lines:
 
-```markdown
+```text
 RECENT_STATE: NOT_GIT
 Reason: /tmp/notes exists but is not a Git worktree.
 Next step: Rerun with PROJECT_PATH set to a Git worktree.

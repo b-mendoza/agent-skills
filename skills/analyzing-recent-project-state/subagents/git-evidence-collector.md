@@ -33,7 +33,7 @@ Return exactly one status line, then the fields below. Use
 [`../references/git-evidence-handoff.md`](../references/git-evidence-handoff.md)
 for the detailed field contract.
 
-```markdown
+```text
 GIT_EVIDENCE: PASS
 Project path: <path>
 Branch/upstream: <branch and upstream or unknown>
