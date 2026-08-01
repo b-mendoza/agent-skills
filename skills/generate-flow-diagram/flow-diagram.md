@@ -1,7 +1,6 @@
 # Flow Diagram
 
-Canonical execution model: finite state machine. Guards and terminals are
-tabulated in [`state-machine.md`](./state-machine.md).
+Canonical execution model: finite state machine. Guards and terminals are tabulated in [`state-machine.md`](./state-machine.md).
 
 ```mermaid
 stateDiagram-v2
@@ -79,7 +78,7 @@ stateDiagram-v2
 ## Gate And Branch Summary
 
 | Gate | Guard | Pass path | Stop / alternate |
-| ---- | ----- | --------- | ---------------- |
+| --- | --- | --- | --- |
 | Contract-missing gate | Missing field changes authority, sensitive actions, outputs, evidence, confirmation, or terminals | `Classify` | `NeedsInput` |
 | Classification gate | Precedence table row matches | Mode-specific state | `NeedsInput` |
 | Refinement preflight | `PREFLIGHT: PASS` | `BuildCandidate` | Await confirmation, `Blocked`, or `Error` |

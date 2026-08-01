@@ -1,12 +1,11 @@
 # State Machine — generate-flow-diagram
 
-Finite-state execution model for this skill. Mermaid rendering lives in
-[`flow-diagram.md`](./flow-diagram.md).
+Finite-state execution model for this skill. Mermaid rendering lives in [`flow-diagram.md`](./flow-diagram.md).
 
 ## Run-scoped variables
 
 | Variable | Initial | Rules |
-| -------- | ------- | ----- |
+| --- | --- | --- |
 | `RUN_MODE` | unset | Set once in `Classify` via precedence table in `SKILL.md`; immutable for the rest of the run. |
 | `BUILD_ACTION` | `build` | Set to `repair` on each `PackageRepair` → `BuildCandidate` transition; reset to `build` for a new candidate. Internal repair never changes `RUN_MODE`. |
 | `repair_cycles` | 0 per candidate | Increment on each entry to `PackageRepair`. Cap is 3 failed review→repair loops per candidate. |
@@ -18,7 +17,7 @@ Finite-state execution model for this skill. Mermaid rendering lives in
 ## States
 
 | State | Kind | Phase | Actor |
-| ----- | ---- | ----- | ----- |
+| --- | --- | --- | --- |
 | `Intake` | active | 1. Intake and normalize | Orchestrator |
 | `Classify` | active | 1. Intake and normalize | Orchestrator |
 | `RefinementPreflight` | active | 2. Refinement preflight | `refinement-analyst` |
@@ -48,7 +47,7 @@ Finite-state execution model for this skill. Mermaid rendering lives in
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `Intake` | Skill invoked |
 | `Intake` | `Classify` | `PROCESS_INPUTS` produced; missing fields that only affect wording recorded as assumptions |
 | `Intake` | `NeedsInput` | Missing value changes authority, sensitive actions, outputs, evidence, confirmation, or terminals |
@@ -110,14 +109,7 @@ Every listed state is reachable from `Intake` (including the resume routes `Inta
 
 ## Resume Blocks
 
-A confirmation stop is a terminal; the run's context is not assumed to
-survive it. Each `NeedsConfirmation`-family stop therefore embeds a compact
-resume block in its user-facing output (templates in
-`references/output-templates.md`): a baseline fingerprint (first line or
-title of the baseline, plus its node count), the inventory or plan IDs with
-one-line summaries, the approval scope, and the remaining re-ask budget.
-Resume requires the user's decision plus that block; `Intake` rejects a
-missing, stale, or mismatched block as `NeedsInput` rather than guessing.
+A confirmation stop is a terminal; the run's context is not assumed to survive it. Each `NeedsConfirmation`-family stop therefore embeds a compact resume block in its user-facing output (templates in `references/output-templates.md`): a baseline fingerprint (first line or title of the baseline, plus its node count), the inventory or plan IDs with one-line summaries, the approval scope, and the remaining re-ask budget. Resume requires the user's decision plus that block; `Intake` rejects a missing, stale, or mismatched block as `NeedsInput` rather than guessing.
 
 ## Notes
 

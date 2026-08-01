@@ -1,7 +1,6 @@
 # Output Templates
 
-Load this file only when assembling a user-facing confirmation, final artifact,
-decompose result, or run report.
+Load this file only when assembling a user-facing confirmation, final artifact, decompose result, or run report.
 
 ## Refinement Pre-Check Template
 
@@ -50,8 +49,7 @@ Include this block with your reply so a fresh run can validate and resume.
 ````markdown
 # <PROCESS_NAME>
 
-<Short paragraph describing workflow boundary, agent authority, trust model,
-allowed actions, boundaries, and mutation limits.>
+<Short paragraph describing workflow boundary, agent authority, trust model, allowed actions, boundaries, and mutation limits.>
 
 ```mermaid
 flowchart TD
@@ -80,8 +78,7 @@ Use this for `DIAGRAM_SCOPE=orchestrator`.
 ````markdown
 # <PROCESS_NAME> - Orchestration
 
-<Short paragraph: orchestrator authority, dispatch-only role, mutation limits,
-and subagent internals live in localized diagrams.>
+<Short paragraph: orchestrator authority, dispatch-only role, mutation limits, and subagent internals live in localized diagrams.>
 
 ```mermaid
 flowchart TD
@@ -93,7 +90,7 @@ flowchart TD
   ROUTE -->|BLOCKED| STOP
 ```
 
-Localized diagrams: [`<subagent>`](<LOCALIZED_DIAGRAM_RELATIVE_LINK>)
+Localized diagrams: [`<subagent>`](LOCALIZED_DIAGRAM_RELATIVE_LINK)
 ````
 
 ## Localized Subagent Diagram Template
@@ -103,8 +100,7 @@ Use this for `DIAGRAM_SCOPE=subagent`.
 ````markdown
 # <SUBAGENT_NAME> - Internal Flow
 
-<Short paragraph: this subagent's role and routeable statuses. Orchestration
-context lives in the root diagram linked below.>
+<Short paragraph: this subagent's role and routeable statuses. Orchestration context lives in the root diagram linked below.>
 
 ```mermaid
 flowchart TD
@@ -116,7 +112,7 @@ flowchart TD
   STATUS -->|NEEDS_INPUT| REPORT
 ```
 
-Orchestration context: [root diagram](<ROOT_DIAGRAM_RELATIVE_LINK>)
+Orchestration context: [root diagram](ROOT_DIAGRAM_RELATIVE_LINK)
 ````
 
 ## Load-Instruction Template
@@ -133,8 +129,7 @@ Localized subagent load line in the owning subagent file:
 Flow diagram: [`<subagent-name>-flow-diagram.md`](./<subagent-name>-flow-diagram.md)
 ```
 
-Derive links relative to the file containing the link. Do not hardcode default
-paths when `ROOT_DIAGRAM_PATH` is non-default.
+Derive links relative to the file containing the link. Do not hardcode default paths when `ROOT_DIAGRAM_PATH` is non-default.
 
 ## Decompose Result Template
 
