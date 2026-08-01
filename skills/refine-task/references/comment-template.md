@@ -6,7 +6,7 @@ normative status semantics, sensitive gates, and posting rules live in
 
 ## Required Shape
 
-```markdown
+```text
 Refinement status: <Ready | Needs refinement | Needs split | Needs spike | Blocked | Not actionable>
 
 Summary:
@@ -55,7 +55,7 @@ whose answers are required for implementation.
 
 ## Example
 
-```markdown
+```text
 Refinement status: Needs spike
 
 Summary:

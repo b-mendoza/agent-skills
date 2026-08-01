@@ -37,7 +37,7 @@ unless new evidence discovered during repair proves it was wrong.
 
 ## Validation Table Format
 
-```markdown
+```text
 | Check | Outcome | Notes |
 | ----- | ------- | ----- |
 | policy-loaded | pass | Loaded before other references. |
