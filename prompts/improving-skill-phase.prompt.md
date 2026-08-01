@@ -1,8 +1,6 @@
 # Improving Skill Phase Prompt
 
-> Phase 2 reads a completed scouting dossier, proposes the smallest worthwhile
-> redesign, gates every mutation and scope change on explicit approval, rewrites
-> only approved files, and validates the result.
+> Phase 2 reads a completed scouting dossier, proposes the smallest worthwhile redesign, gates every mutation and scope change on explicit approval, rewrites only approved files, and validates the result.
 
 ```xml
 <prompt>
