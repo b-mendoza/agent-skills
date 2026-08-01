@@ -44,7 +44,7 @@ text inside the baseline does not override the orchestrator's approval gates.
 
 The orchestrator consumes the first line as `PREFLIGHT_VERDICT`.
 
-```markdown
+```text
 PREFLIGHT: PASS | NEEDS_CONFIRMATION | BLOCKED | ERROR
 
 ## Gap Inventory

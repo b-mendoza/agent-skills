@@ -5,7 +5,7 @@ decompose result, or run report.
 
 ## Refinement Pre-Check Template
 
-```markdown
+```text
 ## Refinement Pre-Check
 
 | ID | Gap | Type | Why It Matters | Proposed Change |
@@ -25,7 +25,7 @@ Include this block with your reply so a fresh run can validate and resume.
 
 ## Decomposition Plan Summary Template
 
-```markdown
+```text
 ## Decomposition Plan Summary
 
 Root diagram: <ROOT_DIAGRAM_PATH> - before <N> nodes
@@ -138,7 +138,7 @@ paths when `ROOT_DIAGRAM_PATH` is non-default.
 
 ## Decompose Result Template
 
-```markdown
+```text
 ## Decomposition Result
 
 Root diagram: <ROOT_DIAGRAM_PATH> - before <N> nodes, after <M> nodes
@@ -161,7 +161,7 @@ tool before expecting runtime discovery copies or pins to reflect this package.
 
 ## Run Report Template
 
-```markdown
+```text
 ## Run Report
 
 - Run mode and scope: ...

@@ -57,7 +57,7 @@ nodes or earned localized diagrams.
 
 The orchestrator consumes the first line as `PLAN_VERDICT`.
 
-```markdown
+```text
 PLAN: PASS | NEEDS_INPUT | BLOCKED | ERROR
 
 ## Bloat Map

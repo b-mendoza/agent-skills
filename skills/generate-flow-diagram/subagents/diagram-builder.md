@@ -65,7 +65,7 @@ next action. You return content only; the orchestrator owns review and writes.
 
 The orchestrator consumes the first line as `BUILD_VERDICT`.
 
-````markdown
+````text
 BUILD: PASS | NEEDS_INPUT | ERROR
 
 ## Candidate
