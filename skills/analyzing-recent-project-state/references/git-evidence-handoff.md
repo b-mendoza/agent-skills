@@ -1,20 +1,17 @@
 # Git Evidence Handoff
 
-The collector returns one compact `GIT_EVIDENCE` block. Raw command output,
-raw diffs, secrets, and large file bodies stay out of the handoff.
+The collector returns one compact `GIT_EVIDENCE` block. Raw command output, raw diffs, secrets, and large file bodies stay out of the handoff.
 
 ## Status Rules
 
 | Status | Meaning |
-| ------ | ------- |
+| --- | --- |
 | `GIT_EVIDENCE: PASS` | Evidence was collected or a quiet/abnormal repo state was summarized as fact |
 | `GIT_EVIDENCE: NOT_GIT` | Path exists but is not a Git worktree |
 | `GIT_EVIDENCE: PATH_ERROR` | Path missing or unreadable |
 | `GIT_EVIDENCE: ERROR` | Unexpected Git or local inspection failure |
 
-Repo states `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`,
-`shallow`, and `conflicted` are `PASS`-compatible unless a command failure
-prevents a truthful handoff.
+Repo states `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`, `shallow`, and `conflicted` are `PASS`-compatible unless a command failure prevents a truthful handoff.
 
 ## Handoff Fields
 
@@ -39,10 +36,7 @@ Commands run: <full sanitized command lines, no raw output>
 Reason: <one line>
 ```
 
-For non-`PASS` statuses the block is exactly three lines — the status line,
-`Reason: <one line>`, and `Next step: <one clear action>`. The orchestrator
-builds its user-facing envelope from those two fields, so both are required and
-neither may be empty. Example:
+For non-`PASS` statuses the block is exactly three lines — the status line, `Reason: <one line>`, and `Next step: <one clear action>`. The orchestrator builds its user-facing envelope from those two fields, so both are required and neither may be empty. Example:
 
 ```text
 GIT_EVIDENCE: NOT_GIT
@@ -52,9 +46,7 @@ Next step: Rerun with PROJECT_PATH set to a Git worktree.
 
 ## Evidence Window
 
-Recent means working tree state plus commits in `BASE..HEAD` when a base
-resolves; otherwise the last 15 first-parent commits of `HEAD`. Hard cap: 30
-commits. List at most 10 commits and state any remainder count.
+Recent means working tree state plus commits in `BASE..HEAD` when a base resolves; otherwise the last 15 first-parent commits of `HEAD`. Hard cap: 30 commits. List at most 10 commits and state any remainder count.
 
 ## Quiet-State Example
 
