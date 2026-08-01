@@ -6,7 +6,7 @@ for empty sections.
 
 ## Template
 
-```markdown
+```text
 ## Architecture Review
 
 ### Verdict
@@ -61,7 +61,7 @@ for empty sections.
 
 ## Example Pass With Suggestions
 
-```markdown
+```text
 ## Architecture Review
 
 ### Verdict

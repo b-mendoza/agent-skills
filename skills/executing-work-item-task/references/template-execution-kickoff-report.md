@@ -6,7 +6,7 @@ active playbook. Use `None` for empty sections.
 
 ## Template
 
-```markdown
+```text
 ## Execution Kickoff Report
 
 ### Status
@@ -51,7 +51,7 @@ tracker action. `ERROR` means an unexpected failure prevented reliable kickoff.
 
 ## Example Success With Optional Skip
 
-```markdown
+```text
 ## Execution Kickoff Report
 
 ### Status

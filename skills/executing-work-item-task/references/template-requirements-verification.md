@@ -6,7 +6,7 @@ for empty sections.
 
 ## Template
 
-```markdown
+```text
 ## Requirements Verification
 
 ### Verdict
@@ -36,7 +36,7 @@ and the blocker reason.
 
 ## Example Fail
 
-```markdown
+```text
 ## Requirements Verification
 
 ### Verdict

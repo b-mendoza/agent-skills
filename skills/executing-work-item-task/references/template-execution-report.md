@@ -6,7 +6,7 @@ sections.
 
 ## Template
 
-```markdown
+```text
 ## Execution Report
 
 ### Status
@@ -49,7 +49,7 @@ Definition of Done item remains unfinished because execution was blocked.
 
 ## Example Success
 
-```markdown
+```text
 ## Execution Report
 
 ### Status

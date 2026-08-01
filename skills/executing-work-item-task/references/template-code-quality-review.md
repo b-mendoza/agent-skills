@@ -6,7 +6,7 @@ sections.
 
 ## Template
 
-```markdown
+```text
 ## Code Quality Review
 
 ### Verdict
@@ -44,7 +44,7 @@ sections.
 
 ## Example Needs Fixes
 
-```markdown
+```text
 ## Code Quality Review
 
 ### Verdict

@@ -6,7 +6,7 @@ playbook. Use `None` for empty sections.
 
 ## Template
 
-```markdown
+```text
 ## Documentation Report
 
 ### Status
@@ -68,7 +68,7 @@ playbook. Use `None` for empty sections.
 
 ## Example UPDATE_TRACKING Success
 
-```markdown
+```text
 ## Documentation Report
 
 ### Status

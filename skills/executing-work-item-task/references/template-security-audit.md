@@ -6,7 +6,7 @@ sections.
 
 ## Template
 
-```markdown
+```text
 ## Security Audit
 
 ### Verdict
@@ -55,7 +55,7 @@ sections.
 
 ## Example Pass With Advisories
 
-```markdown
+```text
 ## Security Audit
 
 ### Verdict

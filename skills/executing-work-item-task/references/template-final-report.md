@@ -6,7 +6,7 @@ playbook.
 
 ## Template
 
-```markdown
+```text
 ## Final Task Report
 
 ### Status
