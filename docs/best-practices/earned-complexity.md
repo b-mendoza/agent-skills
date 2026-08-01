@@ -124,7 +124,7 @@ Good: an audit decides not to extract a 50-line registry because
 extraction would not save context (the registry is consulted on every
 run anyway).
 
-```markdown
+```text
 Decision: NO_CHANGE on the subagent registry.
 
 Reasoning:
@@ -140,7 +140,7 @@ Reasoning:
 Bad: an audit recommends extracting the registry "for progressive
 disclosure" without showing any observable improvement.
 
-```markdown
+```text
 Recommendation: extract the subagent registry to
 `references/subagent-registry.md`.
 
