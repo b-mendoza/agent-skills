@@ -55,7 +55,7 @@ conformance.
 Good: a tiered compliance table with `pass`, `fail`, and `not
 applicable` verdicts and evidence.
 
-```markdown
+```text
 ## Best-Practices Compliance
 
 | Practice                  | Tier           | Verdict        | Evidence                                                                       |
@@ -68,7 +68,7 @@ applicable` verdicts and evidence.
 Bad: a flat pass/fail checklist that mixes tiers and provides no
 evidence.
 
-```markdown
+```text
 ## Best-Practices Compliance
 
 - [x] context-window-protection
