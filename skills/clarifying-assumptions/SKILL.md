@@ -143,7 +143,7 @@ fix cycles for the same issue and ask the user how to proceed.
 
 Every run ends with this stable minimum summary:
 
-```markdown
+```text
 - Critique artifact: <path>
 - Files updated: <path list or ->
 - RE_PLAN_NEEDED: <true|false>
@@ -180,7 +180,7 @@ subagent returned `BLOCKED`, `FAIL`, or `ERROR`, emit the same four
 fields in the same order with `Files updated: -`, then the blocking pair,
 then the mode-specific field when a value is available:
 
-```markdown
+```text
 - Critique artifact: <path or ->
 - Files updated: -
 - RE_PLAN_NEEDED: <true|false>

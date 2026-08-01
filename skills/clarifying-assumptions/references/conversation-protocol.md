@@ -26,7 +26,7 @@ If `critique-analyzer` or `question-manifest-builder` returned `WARN`,
 include a one-line warning summary before the preview table. Keep the raw
 subagent details out of the conversation layer.
 
-```markdown
+```text
 ## Question Manifest - <TICKET_KEY>[ / Task <TASK_NUMBER>]
 
 Questions now: <N> | Deferred: <M> | Irrelevant: <R>
@@ -131,7 +131,7 @@ only the final user-facing summary.
 
 Start every final summary with these four fields in this order:
 
-```markdown
+```text
 - Critique artifact: <path>
 - Files updated: <path list or ->
 - RE_PLAN_NEEDED: <true|false>
@@ -140,7 +140,7 @@ Start every final summary with these four fields in this order:
 
 Then add the parent-retained mode field:
 
-```markdown
+```text
 - Accepted decisions summary: <concise summary or ->
 - Decisions file: docs/<KEY>-task-<N>-decisions.md | -
 ```
@@ -150,7 +150,7 @@ inputs are invalid or a subagent returns `BLOCKED`, `FAIL`, or `ERROR`,
 keep the first four fields in order with `Files updated: -`, then the
 blocking pair, then the mode field when a value is available:
 
-```markdown
+```text
 - Critique artifact: <path or ->
 - Files updated: -
 - RE_PLAN_NEEDED: <true|false>
@@ -165,7 +165,7 @@ the Flag Transitions table that determines both flag values.
 
 For upfront mode, add useful counts such as:
 
-```markdown
+```text
 - Questions resolved: <N>
 - Questions skipped: <N>
 - Questions deferred: <N>
@@ -176,7 +176,7 @@ For upfront mode, add useful counts such as:
 
 For critique mode, add useful counts such as:
 
-```markdown
+```text
 - Critique items resolved: <N>
 - User-impact items resolved: <N>
 - Deferred questions resolved: <N>

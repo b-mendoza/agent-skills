@@ -23,7 +23,7 @@ Questions now: <N> | Deferred: <N> | Irrelevant: <N>
 
 Then return:
 
-```markdown
+```text
 ## Manifest Summary
 
 - Warning: <present only for WARN>

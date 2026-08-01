@@ -115,7 +115,7 @@ Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
 
 Then return:
 
-```markdown
+```text
 ## Recording Summary
 
 ### Files Updated

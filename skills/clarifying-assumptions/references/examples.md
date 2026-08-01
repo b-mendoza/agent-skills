@@ -47,7 +47,7 @@ Questions now: 3 | Deferred: 2 | Irrelevant: 1
 7. Receive `RECORDING: PASS` plus the file update counts.
 8. Present the final summary:
 
-```markdown
+```text
 - Critique artifact: docs/JNS-6065-upfront-critique.md
 - Files updated: docs/JNS-6065-tasks.md
 - RE_PLAN_NEEDED: true
@@ -84,7 +84,7 @@ Reason: docs/acme-app-42-task-3-test-spec.md is missing
 
 6. Stop clarification and present:
 
-```markdown
+```text
 - Critique artifact: docs/acme-app-42-task-3-critique.md
 - Files updated: -
 - RE_PLAN_NEEDED: false

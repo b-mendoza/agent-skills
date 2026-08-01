@@ -153,7 +153,7 @@ Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
 Artifact: <CRITIQUE_REPORT_FILE>
 ```
 
-```markdown
+```text
 ## Critique Summary
 
 - Problem-framing items: <N>

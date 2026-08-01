@@ -95,7 +95,7 @@ defines a different artifact lifecycle.
 
 Every successful run ends with these fields in this order:
 
-```markdown
+```text
 - Critique artifact: <path>
 - Files updated: <path list or ->
 - RE_PLAN_NEEDED: <true|false>
@@ -104,13 +104,13 @@ Every successful run ends with these fields in this order:
 
 For `MODE=upfront`, append:
 
-```markdown
+```text
 - Accepted decisions summary: <concise summary or ->
 ```
 
 For `MODE=critique`, append:
 
-```markdown
+```text
 - Decisions file: docs/<KEY>-task-<N>-decisions.md | -
 ```
 
@@ -118,7 +118,7 @@ If top-level inputs are invalid or a subagent blocks or fails, emit the
 same first four fields with `Files updated: -`, then the blocking pair,
 then the mode-specific retained field when a value is available:
 
-```markdown
+```text
 - Critique artifact: <path or ->
 - Files updated: -
 - RE_PLAN_NEEDED: <true|false>
