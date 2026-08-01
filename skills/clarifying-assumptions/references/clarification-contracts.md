@@ -1,10 +1,8 @@
 # Clarification Contracts
 
-> Read this file when validating inputs, deriving subagent handoffs, or
-> checking which orchestration artifacts this skill may update.
+> Read this file when validating inputs, deriving subagent handoffs, or checking which orchestration artifacts this skill may update.
 >
-> **Reminder:** This file is the operational contract. Conceptual
-> background lives behind URLs in `./external-sources.md`.
+> **Reminder:** This file is the operational contract. Conceptual background lives behind URLs in `./external-sources.md`.
 
 ## Input Preconditions
 
@@ -29,9 +27,7 @@ Additional upstream artifacts:
 | `upfront` | `docs/<KEY>-stage-1-detailed.md`, `docs/<KEY>-stage-2-prioritized.md` |
 | `critique` | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md` |
 
-If a required artifact is missing, let the relevant subagent return its
-parseable `BLOCKED`, `FAIL`, or `WARN` verdict instead of reading raw
-files inline.
+If a required artifact is missing, let the relevant subagent return its parseable `BLOCKED`, `FAIL`, or `WARN` verdict instead of reading raw files inline.
 
 ## Derived Subagent Inputs
 
@@ -67,13 +63,11 @@ Use these exact paths for `MODE=critique`:
 | `PRIOR_DECISIONS_FILE` | `docs/<KEY>-task-<N>-decisions.md` |
 | `PRIOR_DECISIONS_KIND` | `per-task` |
 
-If the critique-mode decisions file does not exist yet, `critique-analyzer`
-treats it as an empty prior-decisions source.
+If the critique-mode decisions file does not exist yet, `critique-analyzer` treats it as an empty prior-decisions source.
 
 ## Output Artifacts
 
-This skill updates orchestration artifacts only. It does not produce
-implementation code.
+This skill updates orchestration artifacts only. It does not produce implementation code.
 
 | Artifact | Required result |
 | --- | --- |
@@ -87,9 +81,7 @@ implementation code.
 | `Accepted decisions summary` in upfront-mode final summaries | Parent orchestrators pass accepted decisions back into plan rework |
 | `Decisions file` in critique-mode final summaries | Parent orchestrators pass the per-task decisions artifact into task rework |
 
-These are orchestration artifacts. Preserve them for resumability and
-keep them out of version control unless a parent workflow explicitly
-defines a different artifact lifecycle.
+These are orchestration artifacts. Preserve them for resumability and keep them out of version control unless a parent workflow explicitly defines a different artifact lifecycle.
 
 ## Final Summary Contract
 
@@ -114,9 +106,7 @@ For `MODE=critique`, append:
 - Decisions file: docs/<KEY>-task-<N>-decisions.md | -
 ```
 
-If top-level inputs are invalid or a subagent blocks or fails, emit the
-same first four fields with `Files updated: -`, then the blocking pair,
-then the mode-specific retained field when a value is available:
+If top-level inputs are invalid or a subagent blocks or fails, emit the same first four fields with `Files updated: -`, then the blocking pair, then the mode-specific retained field when a value is available:
 
 ```text
 - Critique artifact: <path or ->
@@ -128,6 +118,4 @@ then the mode-specific retained field when a value is available:
 - <Accepted decisions summary | Decisions file>: <value>
 ```
 
-The mode-specific field is always last. Use `Critique artifact: -` when
-the run stops before a critique artifact is created. `SKILL.md` holds the
-Flag Transitions table that determines both flag values.
+The mode-specific field is always last. Use `Critique artifact: -` when the run stops before a critique artifact is created. `SKILL.md` holds the Flag Transitions table that determines both flag values.

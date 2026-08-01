@@ -1,10 +1,8 @@
 # Critique Analyzer Rubric
 
-> Load this file before deciding what to critique. The rubric below is
-> the local execution contract.
+> Load this file before deciding what to critique. The rubric below is the local execution contract.
 >
-> **Reminder:** For method background or current technology-landscape
-> context, use `../references/external-sources.md` and fetch one URL.
+> **Reminder:** For method background or current technology-landscape context, use `../references/external-sources.md` and fetch one URL.
 
 ## Upfront Mode Dimensions
 
@@ -34,13 +32,11 @@ In `MODE=critique`, look for these categories:
 - **User impact**
   - Latency, data freshness, workflow friction
   - Accessibility or reliability consequences
-  - Trade-offs that conflict with the end user and need captured in the
-    plan's problem framing
+  - Trade-offs that conflict with the end user and need captured in the plan's problem framing
 
 ## Codebase Verification Checklist
 
-Inspect enough of the real project to anchor the critique in the current
-codebase rather than generic advice.
+Inspect enough of the real project to anchor the critique in the current codebase rather than generic advice.
 
 | Check | Look for |
 | --- | --- |
@@ -51,8 +47,7 @@ codebase rather than generic advice.
 
 ## Evidence Policy
 
-Use current evidence only for decisions that materially affect framework,
-library, architecture, testing, security, performance, or maintainability.
+Use current evidence only for decisions that materially affect framework, library, architecture, testing, security, performance, or maintainability.
 
 | Evidence need | Source |
 | --- | --- |
@@ -61,16 +56,9 @@ library, architecture, testing, security, performance, or maintainability.
 | Method rationale | `../references/external-sources.md` source map |
 | Alternative comparison | Current source that names concrete trade-offs relevant to this project |
 
-Keep evidence short in the artifact. Cite enough for downstream review,
-but do not paste raw search output or whole pages.
+Keep evidence short in the artifact. Cite enough for downstream review, but do not paste raw search output or whole pages.
 
-When sources disagree, first try to resolve the conflict by checking
-source authority, recency, version applicability, scope, and fit for this
-project. If credible current sources still materially contradict each
-other after that research, raise or retain the critique item, set
-`Severity` to `HIGH`, and state the contradiction in the item's web
-findings. The developer must see unresolved evidence conflicts because
-there is no single safe default for the agent to choose silently.
+When sources disagree, first try to resolve the conflict by checking source authority, recency, version applicability, scope, and fit for this project. If credible current sources still materially contradict each other after that research, raise or retain the critique item, set `Severity` to `HIGH`, and state the contradiction in the item's web findings. The developer must see unresolved evidence conflicts because there is no single safe default for the agent to choose silently.
 
 ## Severity Rubric
 
@@ -80,10 +68,7 @@ there is no single safe default for the agent to choose silently.
 | `MEDIUM` | Real alternatives or trade-offs exist and were not considered deeply enough |
 | `LOW` | Worth recording for awareness in the critique artifact, but not worth interrupting the developer |
 
-`HIGH` is the user-surfacing threshold. Treat `HIGH` and any future
-severity explicitly above `HIGH` as eligible for the clarification
-manifest. `MEDIUM` and `LOW` items remain in the critique artifact for
-auditability, but they are not user-facing questions.
+`HIGH` is the user-surfacing threshold. Treat `HIGH` and any future severity explicitly above `HIGH` as eligible for the clarification manifest. `MEDIUM` and `LOW` items remain in the critique artifact for auditability, but they are not user-facing questions.
 
 Problem-framing items also map to tiers:
 
@@ -94,10 +79,8 @@ Problem-framing items also map to tiers:
 
 Do not raise an item when:
 
-- The existing stack already constrains the decision and the plan
-  respects that constraint
-- The Decisions Log already records an answer to the same concern, even
-  if the wording, order, or item ID changed between iterations
+- The existing stack already constrains the decision and the plan respects that constraint
+- The Decisions Log already records an answer to the same concern, even if the wording, order, or item ID changed between iterations
 - The difference is purely stylistic and has no meaningful trade-off
 - You cannot name a concrete alternative or explain why it matters
 

@@ -1,7 +1,6 @@
 # Critique Analyzer — Output Template
 
-When writing `CRITIQUE_REPORT_FILE`, do not copy this title or the instruction
-lines into the artifact. The written file must start with:
+When writing `CRITIQUE_REPORT_FILE`, do not copy this title or the instruction lines into the artifact. The written file must start with:
 
 ```text
 CRITIQUE: <PASS|WARN>
@@ -23,22 +22,22 @@ Then continue with the body below.
 
 ### Codebase Verification
 
-| Check | Finding |
-| --- | --- |
-| Package manager | <npm/yarn/pnpm/bun> |
-| Runtime | <node/python/etc.> |
-| Framework | <actual framework in use> |
-| Test framework | <actual test framework in use> |
-| Key dependencies | <top relevant dependencies> |
+| Check             | Finding                         |
+| ----------------- | ------------------------------- |
+| Package manager   | <npm/yarn/pnpm/bun>             |
+| Runtime           | <node/python/etc.>              |
+| Framework         | <actual framework in use>       |
+| Test framework    | <actual test framework in use>  |
+| Key dependencies  | <top relevant dependencies>     |
 | Existing patterns | <patterns observed in the repo> |
 
 ### Problem Framing Critique
 
 Include this section only in `MODE=upfront`.
 
-| Item ID | Severity | Dimension | Finding | Why this matters | Tier |
-| --- | --- | --- | --- | --- | --- |
-| PF1 | HIGH | End user | <finding> | <impact> | Tier 3 |
+| Item ID | Severity | Dimension | Finding   | Why this matters | Tier   |
+| ------- | -------- | --------- | --------- | ---------------- | ------ |
+| PF1     | HIGH     | End user  | <finding> | <impact>         | Tier 3 |
 
 #### PF1: <short title>
 
@@ -58,18 +57,17 @@ Include this section only in `MODE=upfront`.
 - Decision: <planner's choice>
 - Why this looks questionable: <project-specific reasoning>
 
-| Option | Pros for this project | Cons for this project |
-| --- | --- | --- |
-| <chosen> | <pros> | <cons> |
-| <alternative> | <pros> | <cons> |
+| Option        | Pros for this project | Cons for this project |
+| ------------- | --------------------- | --------------------- |
+| <chosen>      | <pros>                | <cons>                |
+| <alternative> | <pros>                | <cons>                |
 
 - What would need to be true for the chosen option to be right: <conditions>
 - What would need to be true for the alternative to be better: <conditions>
 - Web findings:
   - <source or search result summary>
   - <source or search result summary>
-- Evidence conflict: <none, or summarize unresolved contradictory sources
-  that justify HIGH severity>
+- Evidence conflict: <none, or summarize unresolved contradictory sources that justify HIGH severity>
 
 ### User Impact Critique Items
 

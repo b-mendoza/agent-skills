@@ -2,14 +2,11 @@
 
 > Read this file before either mode-specific playbook.
 >
-> **Reminder:** Conceptual background lives behind URLs in
-> `./external-sources.md`. The rules below are the operational behaviors
-> that govern every clarification exchange.
+> **Reminder:** Conceptual background lives behind URLs in `./external-sources.md`. The rules below are the operational behaviors that govern every clarification exchange.
 
 ## Operational Rules
 
-These rules are the only thing required for execution. Apply them on every
-clarification turn.
+These rules are the only thing required for execution. Apply them on every clarification turn.
 
 | Rule | Behavior |
 | --- | --- |
@@ -22,6 +19,4 @@ clarification turn.
 
 ## When To Fetch Background
 
-For rationale, coaching, or source-backed framing, load
-`./external-sources.md` and fetch one matching row. If network access is
-unavailable, continue with the rules above.
+For rationale, coaching, or source-backed framing, load `./external-sources.md` and fetch one matching row. If network access is unavailable, continue with the rules above.

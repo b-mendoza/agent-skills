@@ -1,7 +1,6 @@
 # Question Manifest Builder Template
 
-Read this file only when formatting the final manifest response. Return the
-structure below without extra prose.
+Read this file only when formatting the final manifest response. Return the structure below without extra prose.
 
 ## Successful Headers
 
