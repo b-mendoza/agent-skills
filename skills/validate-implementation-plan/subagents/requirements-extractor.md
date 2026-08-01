@@ -39,7 +39,7 @@ baseline note. If traceability background is needed, read
 
 ## Output Format
 
-```markdown
+```text
 REQUIREMENTS: PASS
 
 ## Source Requirements
