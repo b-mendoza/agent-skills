@@ -1,13 +1,11 @@
 # Quality Checklist
 
-This checklist is consumed by `handoff-reviewer`. Status semantics, repair
-limit, canonical rerun order, schemas, and zero-state strings live in
-[`data-contracts.md`](./data-contracts.md); do not redefine them here.
+This checklist is consumed by `handoff-reviewer`. Status semantics, repair limit, canonical rerun order, schemas, and zero-state strings live in [`data-contracts.md`](./data-contracts.md); do not redefine them here.
 
 ## Review Inputs
 
 | Input | Required | Purpose |
-| ----- | -------- | ------- |
+| --- | --- | --- |
 | `TARGET_FILE` | Yes | Final handoff document to review |
 | `CONTEXT_FILE` | Yes | Trace source for scope and Q&A |
 | `INSIGHTS_FILE` | Yes | Trace source for insights |
@@ -17,7 +15,7 @@ limit, canonical rerun order, schemas, and zero-state strings live in
 ## Gates
 
 | Gate | Check | Rerun Target |
-| ---- | ----- | ------------ |
+| --- | --- | --- |
 | Required structure | Exactly five major `## N.` sections, each with `**Fulfills:**` | `document-assembler` |
 | Metadata and artifacts | Session Metadata includes counts and Working Artifacts; listed paths exist or are `none` | `document-assembler` |
 | Scope preservation | Mandate, original instructions, amendments, and update-mode carry-forward match `CONTEXT_FILE` | `context-extractor`, `document-assembler` |
@@ -35,7 +33,7 @@ limit, canonical rerun order, schemas, and zero-state strings live in
 Check each sub-criterion and name failures in the review summary. [F-06]
 
 | Sub-Criterion | Pass Condition |
-| ------------- | -------------- |
+| --- | --- |
 | No deictic references | No sentence relies on `above`, `earlier`, `as discussed`, or similar chat-relative wording without a concrete referent |
 | Named paths exist | Every path in Sections 3 through 5 and Session Metadata exists on disk or is explicitly `none` |
 | Actionable next steps | Every recommended next step uses an action verb and names a concrete target |
@@ -45,18 +43,8 @@ Check each sub-criterion and name failures in the review summary. [F-06]
 
 ## Rerun Mapping
 
-Return the smallest rerun set that can repair the failed gate. If no precise
-producer is identifiable, return `document-assembler`. If a source artifact is
-invalid or missing, name the source producer first so the orchestrator can rerun
-it and downstream consumers. [F-04]
+Return the smallest rerun set that can repair the failed gate. If no precise producer is identifiable, return `document-assembler`. If a source artifact is invalid or missing, name the source producer first so the orchestrator can rerun it and downstream consumers. [F-04]
 
 ## Reviewer Summary Requirements
 
-The output follows the reviewer output grammar in
-[`data-contracts.md`](./data-contracts.md): a first line of exactly
-`REVIEW: PASS|WARN|FAIL|ERROR` followed by the fields `File`, `Failed gates`,
-`Rerun`, `Open questions`, `Warnings`, and `Reason`. The orchestrator verifies
-this grammar mechanically and treats any deviation as `REVIEW: ERROR`.
-`REVIEW: PASS` is valid only with zero failed gates and zero warnings;
-warnings require `REVIEW: WARN`. An orchestrator-recorded `CLAIMS: SKIPPED`
-report line is not a warning and does not block `REVIEW: PASS`. [F-10]
+The output follows the reviewer output grammar in [`data-contracts.md`](./data-contracts.md): a first line of exactly `REVIEW: PASS|WARN|FAIL|ERROR` followed by the fields `File`, `Failed gates`, `Rerun`, `Open questions`, `Warnings`, and `Reason`. The orchestrator verifies this grammar mechanically and treats any deviation as `REVIEW: ERROR`. `REVIEW: PASS` is valid only with zero failed gates and zero warnings; warnings require `REVIEW: WARN`. An orchestrator-recorded `CLAIMS: SKIPPED` report line is not a warning and does not block `REVIEW: PASS`. [F-10]

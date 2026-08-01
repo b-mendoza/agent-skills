@@ -1,13 +1,11 @@
 # State Machine — generate-handoff-document
 
-Finite-state execution model for this skill. Mermaid rendering lives in
-[`flow-diagram.md`](./flow-diagram.md). Feature requirement tags are indexed in
-[`references/feature-registry.md`](./references/feature-registry.md).
+Finite-state execution model for this skill. Mermaid rendering lives in [`flow-diagram.md`](./flow-diagram.md). Feature requirement tags are indexed in [`references/feature-registry.md`](./references/feature-registry.md).
 
 ## Run-scoped variables
 
 | Variable | Initial | Rules |
-| -------- | ------- | ----- |
+| --- | --- | --- |
 | `repair_cycles` | 0 | Increments exactly once on each entry to `PlanRepair`, on every inbound edge; this row is the only increment rule. Cap is 3 total repair cycles per run. |
 | `TRANSCRIPT_FILE` | unset | Set in `MaterializeSource` from a readable file or written snapshot. |
 | `CHUNKED` | `no` | Set `yes` when transcript line count exceeds 2,000. |
@@ -18,7 +16,7 @@ Finite-state execution model for this skill. Mermaid rendering lives in
 ## States
 
 | State | Kind | Phase | Actor |
-| ----- | ---- | ----- | ----- |
+| --- | --- | --- | --- |
 | `Intake` | active | 1. Intake and safety | Orchestrator |
 | `AskTarget` | wait | 1 | Orchestrator → user |
 | `PathSafety` | active | 1 | Orchestrator |
@@ -46,20 +44,12 @@ Finite-state execution model for this skill. Mermaid rendering lives in
 | `BlockedArtifact` | terminal | — | — |
 | `BlockedRepairExhausted` | terminal | — | — |
 
-Producer states (`ExtractContext`, `DocumentInsights`, `ValidateClaims`,
-`AssembleHandoff`) embed the dispatch-verify protocol in
-[`references/data-contracts.md`](./references/data-contracts.md): one same-input
-`ERROR` retry, mechanical artifact checks, then route on verified outcome.
-`ReviewHandoff` embeds the same protocol against the reviewer summary contract:
-the orchestrator parses the reviewer's first line and required summary fields
-before routing, and treats a missing, malformed, or unrecognized status as
-`REVIEW: ERROR` (one same-input retry, then block). A claimed review status is
-never routed on unverified.
+Producer states (`ExtractContext`, `DocumentInsights`, `ValidateClaims`, `AssembleHandoff`) embed the dispatch-verify protocol in [`references/data-contracts.md`](./references/data-contracts.md): one same-input `ERROR` retry, mechanical artifact checks, then route on verified outcome. `ReviewHandoff` embeds the same protocol against the reviewer summary contract: the orchestrator parses the reviewer's first line and required summary fields before routing, and treats a missing, malformed, or unrecognized status as `REVIEW: ERROR` (one same-input retry, then block). A claimed review status is never routed on unverified.
 
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `Intake` | Skill invoked |
 | `Intake` | `AskTarget` | `TARGET_FILE` unclear |
 | `Intake` | `PathSafety` | `TARGET_FILE` clear |
@@ -121,7 +111,7 @@ never routed on unverified.
 ## Terminal states
 
 | Terminal state | Exact string | Kind |
-| -------------- | ------------ | ---- |
+| --- | --- | --- |
 | `CompletedReviewPass` | `Completed: review pass` | Success |
 | `CompletedReviewWarn` | `Completed: review pass with warnings` | Success |
 | `CompletedDeclinedEmpty` | `Completed: handoff declined (empty session)` | Success |
@@ -133,11 +123,8 @@ never routed on unverified.
 | `BlockedArtifact` | `Blocked: artifact contract violation` | Stop |
 | `BlockedRepairExhausted` | `Blocked: repair limit exhausted` | Stop |
 
-Readiness rule: the run is complete only at one of the three success terminals;
-every other exit uses the exact blocked string above.
+Readiness rule: the run is complete only at one of the three success terminals; every other exit uses the exact blocked string above.
 
 ## Reachability
 
-Every active and wait state is reachable from `Intake` under documented guards.
-Every terminal is reachable. There are no dead states: repair re-enters the
-producer chain; wait states either resume or block/decline.
+Every active and wait state is reachable from `Intake` under documented guards. Every terminal is reachable. There are no dead states: repair re-enters the producer chain; wait states either resume or block/decline.

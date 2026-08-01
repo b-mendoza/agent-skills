@@ -1,11 +1,6 @@
 # Handoff Template
 
-This template is consumed by `document-assembler` and is intentionally stored
-under `references/` (beside the contract SSOT), not under `assets/`. Placeholder
-names identify their source artifact or deterministic fallback. The assembler
-must render the defined zero-state strings from
-[`data-contracts.md`](./data-contracts.md) when source arrays are empty; no
-literal `<placeholder>` text may remain.
+This template is consumed by `document-assembler` and is intentionally stored under `references/` (beside the contract SSOT), not under `assets/`. Placeholder names identify their source artifact or deterministic fallback. The assembler must render the defined zero-state strings from [`data-contracts.md`](./data-contracts.md) when source arrays are empty; no literal `<placeholder>` text may remain.
 
 ```markdown
 # Handoff Document: <SUBJECT from input or fallback>
@@ -32,50 +27,33 @@ literal `<placeholder>` text may remain.
 
 ## 1. Original Instructions & Scope
 
-**Fulfills:** Preserve the mandate, scope, constraints, and amendments needed to
-continue the work.
+**Fulfills:** Preserve the mandate, scope, constraints, and amendments needed to continue the work.
 
-<Render active original instructions and mandate from CONTEXT_FILE. Mark
-superseded or unclear items explicitly. If none exist, render the Section 1
-zero-state string from data-contracts.md.>
+<Render active original instructions and mandate from CONTEXT_FILE. Mark superseded or unclear items explicitly. If none exist, render the Section 1 zero-state string from data-contracts.md.>
 
 ## 2. Q&A Log
 
 **Fulfills:** Preserve clarifications and user decisions in chronological order.
 
-<Render `qa_log` from CONTEXT_FILE with speaker attribution and order. If empty,
-render the Section 2 zero-state string from data-contracts.md.>
+<Render `qa_log` from CONTEXT_FILE with speaker attribution and order. If empty, render the Section 2 zero-state string from data-contracts.md.>
 
 ## 3. Observations & Insights
 
-**Fulfills:** Transfer evidence-backed findings, decisions, risks, and important
-context for a cold-start reader.
+**Fulfills:** Transfer evidence-backed findings, decisions, risks, and important context for a cold-start reader.
 
-<Render each insight from INSIGHTS_FILE with title, priority, claim, rationale,
-evidence, verification status, and verification notes. Surface failed_approach
-insights prominently — for example under a "What Didn't Work" subheading — so a
-fresh agent does not repeat them. [F-18] If empty, render the Section 3
-zero-state string from data-contracts.md.>
+<Render each insight from INSIGHTS_FILE with title, priority, claim, rationale, evidence, verification status, and verification notes. Surface failed_approach insights prominently — for example under a "What Didn't Work" subheading — so a fresh agent does not repeat them. [F-18] If empty, render the Section 3 zero-state string from data-contracts.md.>
 
 ## 4. Unverified Claims & Validation Checklist
 
-**Fulfills:** Separate verified facts from unverified, partial, or refuted claims
-so the next agent does not inherit false certainty.
+**Fulfills:** Separate verified facts from unverified, partial, or refuted claims so the next agent does not inherit false certainty.
 
-<Render CLAIMS_FILE claims when available. If claim validation was skipped,
-render the skipped-validation Section 4 zero-state string from
-data-contracts.md; the skip is a report line in Session Metadata, not a
-reviewer warning. If validation ran but extracted zero claims, render the
-zero-claims Section 4 zero-state string instead.>
+<Render CLAIMS_FILE claims when available. If claim validation was skipped, render the skipped-validation Section 4 zero-state string from data-contracts.md; the skip is a report line in Session Metadata, not a reviewer warning. If validation ran but extracted zero claims, render the zero-claims Section 4 zero-state string instead.>
 
 ## 5. Open Questions & Recommended Next Steps
 
 **Fulfills:** Give the next agent concrete actions and unresolved questions.
 
-<Render unresolved questions, verification follow-ups, and next steps. Every next
-step must use an action verb and name a concrete file, command, artifact, or
-question. If no open questions remain, render the Section 5 zero-state string
-from data-contracts.md.>
+<Render unresolved questions, verification follow-ups, and next steps. Every next step must use an action verb and name a concrete file, command, artifact, or question. If no open questions remain, render the Section 5 zero-state string from data-contracts.md.>
 
 ## Resolved Since Last Handoff
 
@@ -85,7 +63,4 @@ PRIOR_HANDOFF_FILE that should be preserved rather than silently deleted.>
 
 ## Update Mode
 
-When `PRIOR_HANDOFF_FILE` is supplied, merge still-relevant instructions,
-amendments, open questions, and history into the new handoff. Move resolved open
-questions to `Resolved Since Last Handoff`; do not silently drop them. The
-orchestrator creates `<stem>.prev.md` before overwrite. [F-03]
+When `PRIOR_HANDOFF_FILE` is supplied, merge still-relevant instructions, amendments, open questions, and history into the new handoff. Move resolved open questions to `Resolved Since Last Handoff`; do not silently drop them. The orchestrator creates `<stem>.prev.md` before overwrite. [F-03]

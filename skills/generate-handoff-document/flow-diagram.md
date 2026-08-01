@@ -1,8 +1,6 @@
 # Generate Handoff Document Flow Diagram
 
-Canonical execution model: finite state machine. Guards, variables, and
-terminals are tabulated in [`state-machine.md`](./state-machine.md); this
-diagram is illustrative and defers to that table on any mismatch.
+Canonical execution model: finite state machine. Guards, variables, and terminals are tabulated in [`state-machine.md`](./state-machine.md); this diagram is illustrative and defers to that table on any mismatch.
 
 ```mermaid
 stateDiagram-v2
@@ -85,7 +83,7 @@ stateDiagram-v2
 ## Terminal Strings
 
 | State | Exact string |
-| ----- | ------------ |
+| --- | --- |
 | `CompletedReviewPass` | `Completed: review pass` |
 | `CompletedReviewWarn` | `Completed: review pass with warnings` |
 | `CompletedDeclinedEmpty` | `Completed: handoff declined (empty session)` |

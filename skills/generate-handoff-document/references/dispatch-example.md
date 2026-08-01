@@ -1,7 +1,6 @@
 # Dispatch Example
 
-This example is illustrative. On any mismatch, the subagent contracts and
-[`data-contracts.md`](./data-contracts.md) win. [F-12]
+This example is illustrative. On any mismatch, the subagent contracts and [`data-contracts.md`](./data-contracts.md) win. [F-12]
 
 ## Scenario
 
@@ -13,10 +12,7 @@ Inputs:
 - `TRACKING_FILES=docs/auth-plan.md`
 - Existing target found; user chooses `update`
 
-The orchestrator copies `docs/auth-handoff.md` to `docs/auth-handoff.prev.md`,
-records `PRIOR_HANDOFF_FILE=docs/auth-handoff.md`, snapshots the conversation to
-`docs/auth-handoff.transcript.md`, resolves bundled reference paths to absolute
-paths, and dispatches stages.
+The orchestrator copies `docs/auth-handoff.md` to `docs/auth-handoff.prev.md`, records `PRIOR_HANDOFF_FILE=docs/auth-handoff.md`, snapshots the conversation to `docs/auth-handoff.transcript.md`, resolves bundled reference paths to absolute paths, and dispatches stages.
 
 ## Context Extractor Summary
 
@@ -29,8 +25,7 @@ Amendments: 2
 Reason: Extracted active mandate and carried forward one prior open question.
 ```
 
-Orchestrator verification: file exists, non-empty, JSON parses, required context
-keys are present.
+Orchestrator verification: file exists, non-empty, JSON parses, required context keys are present.
 
 ## Insights Summary With Verification Rerun
 
@@ -45,8 +40,7 @@ Unverified or partial: 2
 Reason: Extracted evidence-backed decisions and risks.
 ```
 
-Mechanical verification fails because `summary` is missing. The orchestrator
-reruns `insight-documenter` once and names the discrepancy.
+Mechanical verification fails because `summary` is missing. The orchestrator reruns `insight-documenter` once and names the discrepancy.
 
 Second response:
 
@@ -97,10 +91,6 @@ Warnings: 1
 Reason: Claims validation contains one unverified external claim; handoff remains usable.
 ```
 
-Orchestrator verification: first line matches the reviewer output grammar and
-all summary fields are present; a missing or malformed status would be treated
-as `REVIEW: ERROR` (fail closed). [F-04]
+Orchestrator verification: first line matches the reviewer output grammar and all summary fields are present; a missing or malformed status would be treated as `REVIEW: ERROR` (fail closed). [F-04]
 
-The orchestrator returns `Completed: review pass with warnings` with paths to
-`TARGET_FILE`, transcript, context, insights, claims, and `.prev.md`, plus
-counts and the warning disclosed in the run report.
+The orchestrator returns `Completed: review pass with warnings` with paths to `TARGET_FILE`, transcript, context, insights, claims, and `.prev.md`, plus counts and the warning disclosed in the run report.

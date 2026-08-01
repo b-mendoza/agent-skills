@@ -1,11 +1,9 @@
 # Feature Registry
 
-Inline tags such as `[F-01]` are cross-cutting requirement anchors used in
-`SKILL.md`, references, and subagents. This file is the package index for those
-ids. Tags do not change runtime behavior by themselves; the linked contracts do.
+Inline tags such as `[F-01]` are cross-cutting requirement anchors used in `SKILL.md`, references, and subagents. This file is the package index for those ids. Tags do not change runtime behavior by themselves; the linked contracts do.
 
 | Id | Requirement | Primary owners |
-| -- | ----------- | -------------- |
+| --- | --- | --- |
 | `F-01` | Transcript materialization before subagent read; never reconstruct from memory | Orchestrator, transcript-reading subagents |
 | `F-02` | Bundled reference paths passed as absolute paths | Orchestrator |
 | `F-03` | Update/overwrite preserves history via `<stem>.prev.md` and carry-forward | Orchestrator, `context-extractor`, template |
