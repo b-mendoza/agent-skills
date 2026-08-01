@@ -6,7 +6,7 @@ include raw diffs, full command logs, or copied external or ticket text.
 
 ## Success
 
-```markdown
+```text
 COMMIT_SCOPED_CHANGES: SUCCESS
 
 Commit authority: <COMMIT_REQUEST_QUOTE>
@@ -29,7 +29,7 @@ Post-commit refresh: <summary of final refresh>
 
 ## Waiting Status
 
-```markdown
+```text
 COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT
 
 Source phase: <authority|inspect|plan|gates|execute|refresh>
@@ -53,7 +53,7 @@ Resume state:
 
 ## Terminal Status
 
-```markdown
+```text
 COMMIT_SCOPED_CHANGES: BLOCKED | NO_SCOPED_CHANGES | VERIFY_FAILED | COMMIT_ERROR | ERROR
 
 Commit authority: <COMMIT_REQUEST_QUOTE or unavailable>

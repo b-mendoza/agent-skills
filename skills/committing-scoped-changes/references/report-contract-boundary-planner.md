@@ -3,7 +3,7 @@
 Return this exact structure. The plan accounts for every scoped change in a
 group include list or the omissions list.
 
-```markdown
+```text
 COMMIT_PLAN: PASS | NEEDS_DECISION | NO_COMMIT_WORTHY_CHANGES | BLOCKED | ERROR
 
 Plan digest: <stable group ids + messages>

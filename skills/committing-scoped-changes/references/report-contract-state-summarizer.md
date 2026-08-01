@@ -3,7 +3,7 @@
 Return this exact structure. Keep summaries bounded; do not paste raw diffs,
 full command output, copied ticket text, or copied web text.
 
-```markdown
+```text
 SCOPED_STATE: PASS | NEEDS_CONTEXT | NO_SCOPED_CHANGES | BLOCKED | ERROR
 
 Mode: initial | post-commit

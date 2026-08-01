@@ -3,7 +3,7 @@
 Return this exact structure for one approved group. Do not include raw diffs or
 full command logs.
 
-```markdown
+```text
 COMMIT_EXECUTE: PASS | VERIFY_FAILED | BLOCKED | COMMIT_ERROR | ERROR
 
 Group ID: <group-id>
