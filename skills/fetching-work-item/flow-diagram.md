@@ -1,19 +1,6 @@
 # Fetching Work Item
 
-The coordinator is the workflow's Phase 1 fetch-work-item step. It detects the
-platform from the combined platform input, loads the matching playbook, and
-derives the work-item identity per that playbook. Its authority is bounded: the
-coordinator reads this skill package and talks to the user, dispatches a single
-delegated `work-item-retriever`, interprets only the retriever's structured
-12-line summary, and reports handoff state — raw platform payloads stay out of
-coordinator context. The trust model treats the active playbook as authoritative
-for platform-specific transport, capture rules, snapshot sections, summary
-fields, and rate-limit header names; the fetch contract as authoritative for
-summary semantics and the locked 12-line shape; and the shared retrieval
-playbook as authoritative for the pipeline and validation gate. Mutation limits
-are strict: read-only platform queries only, exactly one unstaged
-`docs/<KEY>.md` written, no platform mutations, no later workflow phases, and
-no local staging or commits.
+The coordinator is the workflow's Phase 1 fetch-work-item step. It detects the platform from the combined platform input, loads the matching playbook, and derives the work-item identity per that playbook. Its authority is bounded: the coordinator reads this skill package and talks to the user, dispatches a single delegated `work-item-retriever`, interprets only the retriever's structured 12-line summary, and reports handoff state — raw platform payloads stay out of coordinator context. The trust model treats the active playbook as authoritative for platform-specific transport, capture rules, snapshot sections, summary fields, and rate-limit header names; the fetch contract as authoritative for summary semantics and the locked 12-line shape; and the shared retrieval playbook as authoritative for the pipeline and validation gate. Mutation limits are strict: read-only platform queries only, exactly one unstaged `docs/<KEY>.md` written, no platform mutations, no later workflow phases, and no local staging or commits.
 
 ```mermaid
 flowchart TD
@@ -96,9 +83,6 @@ flowchart TD
   class BAD_INPUT,AUTH_STOP,TOOLS_STOP,RATE_STOP,ERROR_STOP,NOT_FOUND,VALIDATION_FAIL,STOP stop;
 ```
 
-Readiness rule: continue only after `FETCH: PASS` with `Validation: PASS`, or
-after `FETCH: PARTIAL` with `Validation: PASS` when the next workflow phase
-explicitly tolerates partial context.
+Readiness rule: continue only after `FETCH: PASS` with `Validation: PASS`, or after `FETCH: PARTIAL` with `Validation: PASS` when the next workflow phase explicitly tolerates partial context.
 
-Boundary rule: platform mutations, local staging, and commits are out of scope;
-route them to a separate approved workflow.
+Boundary rule: platform mutations, local staging, and commits are out of scope; route them to a separate approved workflow.

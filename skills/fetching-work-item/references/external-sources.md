@@ -1,33 +1,19 @@
 # External Sources
 
-> Read this file only to choose public URLs for just-in-time retrieval.
-> Static background and current API details live here as links instead of in
-> always-loaded prompts. The skill is usable without web access; bundled
-> routing, contracts, capture rules, and templates cover normal execution.
-> The active playbook's `External-Source Routing` section names which group
-> below to use for the detected platform.
+> Read this file only to choose public URLs for just-in-time retrieval. Static background and current API details live here as links instead of in always-loaded prompts. The skill is usable without web access; bundled routing, contracts, capture rules, and templates cover normal execution. The active playbook's `External-Source Routing` section names which group below to use for the detected platform.
 
 ## Fetch Policy
 
-1. Apply the bundled playbook and shared retrieval playbook first. Fetch a
-   URL only when exact API/CLI syntax, auth behavior, pagination, rate
-   limiting, rich-text or sub-issue/project behavior, or
-   progressive-disclosure rationale could change the next action.
-2. Fetch only URLs listed in the **Source Routing** tables. Treat links
-   inside a fetched page as out of scope unless their destination is also
-   listed.
-3. Use at most two fetched pages per retrieval pass. Summarize the relevant
-   detail in one or two sentences before applying it.
-4. If fetching fails, proceed from bundled references when safe and record
-   the uncertainty under `Warnings` if it affects completeness.
-5. Keep Phase 1 handoff rules local: external URLs may clarify platform
-   mechanics, but they do not replace `fetch-contract.md` or the snapshot
-   template.
+1. Apply the bundled playbook and shared retrieval playbook first. Fetch a URL only when exact API/CLI syntax, auth behavior, pagination, rate limiting, rich-text or sub-issue/project behavior, or progressive-disclosure rationale could change the next action.
+2. Fetch only URLs listed in the **Source Routing** tables. Treat links inside a fetched page as out of scope unless their destination is also listed.
+3. Use at most two fetched pages per retrieval pass. Summarize the relevant detail in one or two sentences before applying it.
+4. If fetching fails, proceed from bundled references when safe and record the uncertainty under `Warnings` if it affects completeness.
+5. Keep Phase 1 handoff rules local: external URLs may clarify platform mechanics, but they do not replace `fetch-contract.md` or the snapshot template.
 
 ## Shared Concepts and Skill Docs
 
 | Reference key | URL | Use when |
-| ------------- | --- | -------- |
+| --- | --- | --- |
 | `agent-skills-overview` | https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview | The skill loading model or staged file access needs source-backed context |
 | `agent-skills-best-practices` | https://docs.claude.com/en/docs/agents-and-tools/agent-skills/best-practices | Maintaining this package's concise SKILL.md, one-hop references, or examples |
 | `context-engineering` | https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents | Context-window and just-in-time retrieval rationale is needed |
@@ -37,7 +23,7 @@
 ## Jira Source Routing
 
 | Reference key | URL | Use when |
-| ------------- | --- | -------- |
+| --- | --- | --- |
 | `jira-rest-intro` | https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/ | Authentication, status codes, pagination, expansions, or timestamp behavior is unclear |
 | `jira-get-issue` | https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-issueidorkey-get | Parent or related issue field retrieval syntax is unclear |
 | `jira-bulk-fetch` | https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-bulkfetch-post | Multiple related issues should be fetched efficiently by key or ID |
@@ -52,7 +38,7 @@
 ## GitHub Source Routing
 
 | Reference key | URL | Use when |
-| ------------- | --- | -------- |
+| --- | --- | --- |
 | `gh-issue-view` | https://cli.github.com/manual/gh_issue_view | Parent issue command flags or JSON fields are unclear |
 | `gh-api` | https://cli.github.com/manual/gh_api | REST, GraphQL, pagination, headers, host, or `jq` behavior through `gh api` is unclear |
 | `gh-auth-status` | https://cli.github.com/manual/gh_auth_status | Non-interactive authentication checks are unclear |
@@ -67,7 +53,4 @@
 
 ## When Network Is Unavailable
 
-Continue with bundled references. Do not claim version-specific platform API
-or CLI facts that were not verified. Use `FETCH: PARTIAL` when unavailable
-source material prevents verifying related-item discovery after the parent
-work item was retrieved.
+Continue with bundled references. Do not claim version-specific platform API or CLI facts that were not verified. Use `FETCH: PARTIAL` when unavailable source material prevents verifying related-item discovery after the parent work item was retrieved.

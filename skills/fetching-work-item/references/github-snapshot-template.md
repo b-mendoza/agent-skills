@@ -1,9 +1,6 @@
 # GitHub Snapshot Template
 
-> Read this file only during document assembly, and only when the active
-> platform is GitHub. Copy the fenced Markdown shape below into
-> `docs/<ISSUE_SLUG>.md`. Prose outside the fence is retriever instruction,
-> not output content.
+> Read this file only during document assembly, and only when the active platform is GitHub. Copy the fenced Markdown shape below into `docs/<ISSUE_SLUG>.md`. Prose outside the fence is retriever instruction, not output content.
 
 ## Contents
 
@@ -12,35 +9,26 @@
 - Missing child issue placeholder
 - Missing linked issue placeholder
 
-Every top-level heading in the fenced block is required. Repeated nested
-headings are shapes for items that exist or required `Not retrieved`
-placeholders. Write `_None_` for verified empty sections. Use the
-`_Unknown..._` markers from **Conditional Rules** when child-issue,
-linked-issue, or project discovery is unverified after the parent issue was
-retrieved.
-The rendered file is a Phase 1 workflow-state handoff for downstream
-orchestration phases and should remain unstaged.
+Every top-level heading in the fenced block is required. Repeated nested headings are shapes for items that exist or required `Not retrieved` placeholders. Write `_None_` for verified empty sections. Use the `_Unknown..._` markers from **Conditional Rules** when child-issue, linked-issue, or project discovery is unverified after the parent issue was retrieved. The rendered file is a Phase 1 workflow-state handoff for downstream orchestration phases and should remain unstaged.
 
 ```markdown
 # <ISSUE_SLUG>: <Issue title>
 
-> Retrieved on: <YYYY-MM-DD HH:MM UTC>
-> Source: <ISSUE_URL or owner/repo#N>
-> Repository: <owner>/<repo> | Issue: #<N>
+> Retrieved on: <YYYY-MM-DD HH:MM UTC> Source: <ISSUE_URL or owner/repo#N> Repository: <owner>/<repo> | Issue: #<N>
 
 ## Metadata
 
-| Field | Value |
-| ----- | ----- |
-| ISSUE_SLUG | ... |
-| Repository | ... |
-| Issue number | ... |
-| State | ... |
-| Author | ... |
-| Created | ... |
-| Updated | ... |
-| Closed | ... |
-| URL | ... |
+| Field        | Value |
+| ------------ | ----- |
+| ISSUE_SLUG   | ...   |
+| Repository   | ...   |
+| Issue number | ...   |
+| State        | ...   |
+| Author       | ...   |
+| Created      | ...   |
+| Updated      | ...   |
+| Closed       | ...   |
+| URL          | ...   |
 
 ## Description
 
@@ -126,22 +114,13 @@ _None_ or a short bullet list of explicitly linked upload or binary asset URLs f
 - `## Comments` with no parent comments: `_None_`.
 - `## Retrieval Warnings` with no warnings: `_None_`.
 - `## Child Issues` with no verified child issues: `_None_`.
-- `## Child Issues` with unverified discovery:
-  `_Unknown. Child issue discovery unavailable: <reason>_` plus a matching
-  warning under `## Retrieval Warnings`.
+- `## Child Issues` with unverified discovery: `_Unknown. Child issue discovery unavailable: <reason>_` plus a matching warning under `## Retrieval Warnings`.
 - `## Linked Issues` with no verified links: `_None_`.
-- `## Linked Issues` with unverified discovery:
-  `_Unknown. Linked issue discovery unavailable: <reason>_` plus a matching
-  warning under `## Retrieval Warnings`.
-- `## Projects` when membership cannot be determined:
-  `_Unknown. Project membership not determined: <reason>_` plus a matching
-  warning under `## Retrieval Warnings`.
-- A retrieved child or linked issue with no description:
-  `_None_` under its `#### Description`.
-- A retrieved child or linked issue with no comments:
-  `_None_` under its `#### Comments`.
-- `## Labels` and `## Assignees`: render the table only when at least one
-  row exists; otherwise write `_None_`.
+- `## Linked Issues` with unverified discovery: `_Unknown. Linked issue discovery unavailable: <reason>_` plus a matching warning under `## Retrieval Warnings`.
+- `## Projects` when membership cannot be determined: `_Unknown. Project membership not determined: <reason>_` plus a matching warning under `## Retrieval Warnings`.
+- A retrieved child or linked issue with no description: `_None_` under its `#### Description`.
+- A retrieved child or linked issue with no comments: `_None_` under its `#### Comments`.
+- `## Labels` and `## Assignees`: render the table only when at least one row exists; otherwise write `_None_`.
 
 ### Missing Child Issue Placeholder
 

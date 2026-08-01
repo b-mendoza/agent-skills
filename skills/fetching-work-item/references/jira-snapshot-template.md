@@ -1,9 +1,6 @@
 # Jira Snapshot Template
 
-> Read this file only during document assembly, and only when the active
-> platform is Jira. Copy the fenced Markdown shape below into
-> `docs/<TICKET_KEY>.md`. Prose outside the fence is retriever instruction,
-> not output content.
+> Read this file only during document assembly, and only when the active platform is Jira. Copy the fenced Markdown shape below into `docs/<TICKET_KEY>.md`. Prose outside the fence is retriever instruction, not output content.
 
 ## Contents
 
@@ -12,20 +9,12 @@
 - Missing subtask placeholder
 - Missing linked issue placeholder
 
-Every top-level heading in the fenced block is required. Repeated nested
-headings are shapes for items that exist or required `Not retrieved`
-placeholders. Write `_None_` for verified empty sections. Use the
-`_Unknown..._` markers from **Conditional Rules** when subtask or
-linked-issue discovery is unverified after the parent ticket was retrieved.
-The rendered file is a Phase 1 workflow-state handoff for downstream
-orchestration phases and should remain unstaged.
+Every top-level heading in the fenced block is required. Repeated nested headings are shapes for items that exist or required `Not retrieved` placeholders. Write `_None_` for verified empty sections. Use the `_Unknown..._` markers from **Conditional Rules** when subtask or linked-issue discovery is unverified after the parent ticket was retrieved. The rendered file is a Phase 1 workflow-state handoff for downstream orchestration phases and should remain unstaged.
 
 ```markdown
 # <TICKET_KEY>: <Summary>
 
-> Retrieved on: <YYYY-MM-DD HH:MM UTC>
-> Source: <JIRA_URL>
-> Workspace: <workspace> | Project: <project> | Ticket: <TICKET_KEY>
+> Retrieved on: <YYYY-MM-DD HH:MM UTC> Source: <JIRA_URL> Workspace: <workspace> | Project: <project> | Ticket: <TICKET_KEY>
 
 ## Metadata
 
@@ -125,19 +114,12 @@ orchestration phases and should remain unstaged.
 - `## Comments` with no parent comments: `_None_`.
 - `## Retrieval Warnings` with no warnings: `_None_`.
 - `## Subtasks` with no verified subtasks: `_None_`.
-- `## Subtasks` with unverified discovery:
-  `_Unknown. Subtask discovery unavailable: <reason>_` plus a matching
-  warning under `## Retrieval Warnings`.
+- `## Subtasks` with unverified discovery: `_Unknown. Subtask discovery unavailable: <reason>_` plus a matching warning under `## Retrieval Warnings`.
 - `## Linked Issues` with no verified links: `_None_`.
-- `## Linked Issues` with unverified discovery:
-  `_Unknown. Linked issue discovery unavailable: <reason>_` plus a matching
-  warning under `## Retrieval Warnings`.
-- A retrieved subtask or linked issue with no description:
-  `_None_` under its `#### Description`.
-- A retrieved subtask or linked issue with no comments:
-  `_None_` under its `#### Comments`.
-- `## Attachments` and `## Custom Fields`: render the table only when at
-  least one row exists; otherwise write `_None_`.
+- `## Linked Issues` with unverified discovery: `_Unknown. Linked issue discovery unavailable: <reason>_` plus a matching warning under `## Retrieval Warnings`.
+- A retrieved subtask or linked issue with no description: `_None_` under its `#### Description`.
+- A retrieved subtask or linked issue with no comments: `_None_` under its `#### Comments`.
+- `## Attachments` and `## Custom Fields`: render the table only when at least one row exists; otherwise write `_None_`.
 
 ### Missing Subtask Placeholder
 
