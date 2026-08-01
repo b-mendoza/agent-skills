@@ -102,7 +102,7 @@ failures.
 Good: exact verified artifact, scope and decline consequence are visible;
 approval is version-bound.
 
-```markdown
+```text
 HUMAN_GATE_FINAL_PREVIEW_APPROVAL
 Run: review-1020
 Artifact: verified-review-v3
@@ -125,7 +125,7 @@ show it in full, and ask again. Approval of v3 does not carry forward.
 Bad: pre-approval plus a summary is treated as authority, and changed
 content reuses stale approval.
 
-```markdown
+```text
 The user said at intake, "Go ahead with whatever you produce."
 I changed the review after verification and summarized it as "three
 important findings." Posting now under the earlier approval.
