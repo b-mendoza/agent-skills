@@ -1,7 +1,6 @@
 # Scouting Phase Prompt
 
-> Phase 1 cartographs one first-party skill as it exists and researches public
-> skills with useful mechanisms. It never modifies or executes the target.
+> Phase 1 cartographs one first-party skill as it exists and researches public skills with useful mechanisms. It never modifies or executes the target.
 
 ```xml
 <prompt>
