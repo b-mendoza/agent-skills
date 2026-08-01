@@ -62,7 +62,7 @@ when a required record is missing or the digest does not match their inputs.
 
 ## Body Template
 
-```markdown
+```text
 ## Summary
 
 - <one concise statement of the change>
