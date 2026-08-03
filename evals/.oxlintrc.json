@@ -213,6 +213,7 @@
       }
     ],
     "no-alert": ["error"],
+    "no-await-in-loop": ["error"],
     "no-caller": ["error"],
     "no-constructor-return": ["error"],
     "no-eval": ["error"],
