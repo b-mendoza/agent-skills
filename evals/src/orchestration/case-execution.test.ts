@@ -15,8 +15,8 @@ import {
   FixtureCleanupError,
   FixtureProvisioner,
 } from "#/fixtures/fixtures.ts";
-import type { Observation } from "#/observation/harness.ts";
-import { observeClaude } from "#/observation/harness.ts";
+import { observeClaude } from "#/observation/agent-query.ts";
+import type { Observation } from "#/observation/observation-types.ts";
 import {
   executeCase,
   ObservationRunnerLive,
@@ -26,7 +26,7 @@ import {
   evalModel,
 } from "#/orchestration/run-configuration.ts";
 
-vi.mock(import("#/observation/harness.ts"), async (importOriginal) => ({
+vi.mock(import("#/observation/agent-query.ts"), async (importOriginal) => ({
   ...(await importOriginal()),
   observeClaude: vi.fn(),
 }));

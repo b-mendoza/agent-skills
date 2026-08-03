@@ -14,12 +14,13 @@ import {
   FixtureProvisioner,
   FixtureProvisionerLive,
 } from "#/fixtures/fixtures.ts";
-import type { Observation, RunOptions } from "#/observation/harness.ts";
-import {
-  AgentQueryLive,
-  GitSamplerLive,
-  observeClaude,
-} from "#/observation/harness.ts";
+import { observeClaude } from "#/observation/agent-query.ts";
+import { AgentQueryLive } from "#/observation/agent-query-service.ts";
+import { GitSamplerLive } from "#/observation/git-status.ts";
+import type {
+  Observation,
+  RunOptions,
+} from "#/observation/observation-types.ts";
 import type { ReportTier, Result } from "#/orchestration/report.ts";
 import {
   EvalConfiguration,
