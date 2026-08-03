@@ -9,6 +9,7 @@ export const REPORT_PATH = fileURLToPath(
 
 const MS_PER_SECOND = 1000;
 const COST_DECIMALS = 2;
+const WHOLE_SECONDS = 0;
 
 type Status = "PASS" | "FAIL";
 /** Case tiers as they appear in the report; `2*` is the derived row. */
@@ -23,8 +24,13 @@ export interface Result {
   durationMs: number;
 }
 
+/** The runner's per-case stdout progress line. */
+export function formatResultLine(result: Result): string {
+  return `${result.status} ${(result.durationMs / MS_PER_SECOND).toFixed(WHOLE_SECONDS)}s $${result.costUsd.toFixed(COST_DECIMALS)}`;
+}
+
 /** A `|` would split a table column and a line ending would end the row. */
-export function escapeCell(value: string): string {
+function escapeCell(value: string): string {
   return value.replaceAll("|", "\\|").replaceAll(/\r\n?|\n/g, " ");
 }
 
