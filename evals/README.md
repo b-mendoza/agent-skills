@@ -54,7 +54,7 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 | Path | Contents |
 | --- | --- |
 | `src/orchestration/run.ts` | Entry point: selects cases, runs them sequentially, writes the report |
-| `src/observation/harness.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta |
+| `src/observation/agent-query.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta |
 | `src/fixtures/fixtures.ts` | Builds throwaway git repos with the skill installed under `.claude/skills/` |
 | `src/cases/<skill>.ts` | Canonical source of truth: every eval case and its assertions |
 | `src/**/*.test.ts` | Offline vitest suites, colocated with the code they pin |
