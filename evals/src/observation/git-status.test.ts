@@ -35,7 +35,6 @@ vi.mock(import("node:child_process"), async (importOriginal) => {
     ) => {
       const forcedFailure = forcedExecFileSyncFailures.shift();
       if (forcedFailure !== undefined) {
-        // oxlint-disable-next-line typescript/only-throw-error -- Subprocess boundaries may throw plain objects; tests queue them verbatim.
         throw forcedFailure;
       }
       const output: unknown = Reflect.apply(target, thisArgument, argumentList);
