@@ -1,11 +1,13 @@
 // Pins the runner's free CLI coordination: selection, sequencing, report writes,
-// and exit codes.
+// output channels, and exit codes.
 //
-// Cases are injected, so these tests spend no tokens and write no report file.
+// Cases and services are injected, so these tests spend no tokens and write no
+// report file.
 //
 //   pnpm test
 
-import { afterEach, expect, test, vi } from "vitest";
+import { Effect, Layer } from "effect";
+import { expect, test, vi } from "vitest";
 
 import type {
   CaseTier,
@@ -14,8 +16,15 @@ import type {
 import type { Observation } from "#/observation/harness.ts";
 import type { CaseExecutionResult } from "#/orchestration/case-execution.ts";
 import type { Result } from "#/orchestration/report.ts";
-import type { RunnerServices } from "#/orchestration/run.ts";
-import { EXIT_CODES, runCli } from "#/orchestration/run.ts";
+import {
+  EXIT_CODES,
+  runCli,
+  RunnerCaseExecutionError,
+  RunnerOutput,
+  RunnerOutputError,
+  RunnerReportWriteError,
+  RunnerServices,
+} from "#/orchestration/run.ts";
 
 const BEHAVIORAL_CASE_TIER = 2;
 
@@ -62,43 +71,88 @@ function executionResult(
   };
 }
 
+function successfulEffect<A>(operation: () => A) {
+  return Effect.try({
+    try: operation,
+    catch: (cause) => new RunnerCaseExecutionError({ cause }),
+  });
+}
+
 function createRunnerServices(
   overrides: Partial<RunnerServices> = {},
 ): RunnerServices {
   return {
     evalCases: overrides.evalCases ?? [],
     executeCase:
-      overrides.executeCase ?? vi.fn<RunnerServices["executeCase"]>(),
+      overrides.executeCase ??
+      vi.fn(() =>
+        Effect.fail(
+          new RunnerCaseExecutionError({
+            cause: new Error("unexpected case execution"),
+          }),
+        ),
+      ),
     writeReport:
-      overrides.writeReport ?? vi.fn<RunnerServices["writeReport"]>(),
+      overrides.writeReport ?? vi.fn(() => Effect.succeed(undefined)),
   };
 }
 
-function muteRunnerOutput(): void {
-  vi.spyOn(console, "error").mockImplementation(() => undefined);
-  vi.spyOn(console, "log").mockImplementation(() => undefined);
-  vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+interface CapturedOutput {
+  readonly stderr: string[];
+  readonly stdout: string[];
 }
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
+function outputLayer(capturedOutput: CapturedOutput) {
+  const capture = (messages: string[], text: string) =>
+    Effect.try({
+      try: () => {
+        messages.push(text);
+      },
+      catch: (cause) => new RunnerOutputError({ cause }),
+    });
+
+  return Layer.succeed(
+    RunnerOutput,
+    RunnerOutput.of({
+      writeStdout: (text) => capture(capturedOutput.stdout, text),
+      writeStdoutLine: (text) => capture(capturedOutput.stdout, `${text}\n`),
+      writeStderrLine: (text) => capture(capturedOutput.stderr, `${text}\n`),
+    }),
+  );
+}
+
+async function runInjectedCli(
+  args: string[],
+  services: RunnerServices,
+  capturedOutput: CapturedOutput = { stdout: [], stderr: [] },
+) {
+  return Effect.runPromise(
+    runCli(args).pipe(
+      Effect.provide(
+        Layer.succeed(RunnerServices, RunnerServices.of(services)),
+      ),
+      Effect.provide(outputLayer(capturedOutput)),
+    ),
+  );
+}
 
 test("usage errors execute no cases and write no report", async () => {
-  muteRunnerOutput();
   const services = createRunnerServices({
     evalCases: [evalCase("routing", 1)],
   });
+  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
 
-  const exitCode = await runCli(["--tier=abc", "--unknown"], services);
-  const capturedErrorOutput = vi
-    .mocked(console.error)
-    .mock.calls.flat()
-    .join("\n");
+  const exitCode = await runInjectedCli(
+    ["--tier=abc", "--unknown"],
+    services,
+    capturedOutput,
+  );
+  const capturedErrorOutput = capturedOutput.stderr.join("");
 
   expect(exitCode).toBe(EXIT_CODES.USAGE_ERROR);
   expect(services.executeCase).not.toHaveBeenCalled();
   expect(services.writeReport).not.toHaveBeenCalled();
+  expect(capturedOutput.stdout).toStrictEqual([]);
   expect(capturedErrorOutput).toContain(
     "unrecognized or malformed argument: --tier=abc",
   );
@@ -111,17 +165,18 @@ test("usage errors execute no cases and write no report", async () => {
 });
 
 test("a numeric tier with no matches executes no cases and writes no report", async () => {
-  muteRunnerOutput();
   const services = createRunnerServices({
     evalCases: [evalCase("routing", 1)],
   });
+  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
 
-  const exitCode = await runCli(["--tier=0"], services);
+  const exitCode = await runInjectedCli(["--tier=0"], services, capturedOutput);
 
   expect(exitCode).toBe(EXIT_CODES.NO_CASES_MATCHED);
   expect(services.executeCase).not.toHaveBeenCalled();
   expect(services.writeReport).not.toHaveBeenCalled();
-  expect(console.error).toHaveBeenCalledWith("No cases matched.");
+  expect(capturedOutput.stdout).toStrictEqual([]);
+  expect(capturedOutput.stderr).toStrictEqual(["No cases matched.\n"]);
 });
 
 test.each([
@@ -146,25 +201,21 @@ test.each([
     expectedCaseIds: ["tier-two-b"],
   },
 ])("selection executes $label", async ({ args, expectedCaseIds }) => {
-  muteRunnerOutput();
   const injectedCases = [
     evalCase("tier-one-a", 1),
     evalCase("tier-one-b", 1),
     evalCase("tier-two-a", BEHAVIORAL_CASE_TIER),
     evalCase("tier-two-b", BEHAVIORAL_CASE_TIER),
   ];
-  const executeCase = vi.fn<RunnerServices["executeCase"]>(
-    async (selectedCase) => {
-      await Promise.resolve();
-      return executionResult(selectedCase);
-    },
+  const executeCase = vi.fn<RunnerServices["executeCase"]>((selectedCase) =>
+    successfulEffect(() => executionResult(selectedCase)),
   );
   const services = createRunnerServices({
     evalCases: injectedCases,
     executeCase,
   });
 
-  const exitCode = await runCli(args, services);
+  const exitCode = await runInjectedCli(args, services);
 
   expect(exitCode).toBe(EXIT_CODES.ALL_PASSED);
   expect(
@@ -173,28 +224,35 @@ test.each([
 });
 
 test("cases execute sequentially and the report writes after completion", async () => {
-  muteRunnerOutput();
   const firstCase = evalCase("first", 1);
   const secondCase = evalCase("second", 1);
   const eventOrder: string[] = [];
-  const executeCase = vi.fn<RunnerServices["executeCase"]>(
-    async (selectedCase) => {
-      eventOrder.push(`start:${selectedCase.id}`);
-      await Promise.resolve();
-      eventOrder.push(`finish:${selectedCase.id}`);
-      return executionResult(selectedCase);
-    },
+  const executeCase = vi.fn<RunnerServices["executeCase"]>((selectedCase) =>
+    Effect.tryPromise({
+      try: async () => {
+        eventOrder.push(`start:${selectedCase.id}`);
+        await Promise.resolve();
+        eventOrder.push(`finish:${selectedCase.id}`);
+        return executionResult(selectedCase);
+      },
+      catch: (cause) => new RunnerCaseExecutionError({ cause }),
+    }),
   );
-  const writeReport = vi.fn<RunnerServices["writeReport"]>(() => {
-    eventOrder.push("write-report");
-  });
+  const writeReport = vi.fn<RunnerServices["writeReport"]>(() =>
+    Effect.try({
+      try: () => {
+        eventOrder.push("write-report");
+      },
+      catch: (cause) => new RunnerReportWriteError({ cause }),
+    }),
+  );
   const services = createRunnerServices({
     evalCases: [firstCase, secondCase],
     executeCase,
     writeReport,
   });
 
-  const exitCode = await runCli([], services);
+  const exitCode = await runInjectedCli([], services);
 
   expect(exitCode).toBe(EXIT_CODES.ALL_PASSED);
   expect(eventOrder).toStrictEqual([
@@ -208,70 +266,77 @@ test("cases execute sequentially and the report writes after completion", async 
 });
 
 test("tier-2 observations add a derived mutation-scope row without another execution", async () => {
-  muteRunnerOutput();
   const behavioralCase = evalCase("behavioral", BEHAVIORAL_CASE_TIER);
-  const executeCase = vi.fn<RunnerServices["executeCase"]>(
-    async (selectedCase) => {
-      await Promise.resolve();
-      return executionResult(selectedCase);
-    },
+  const executeCase = vi.fn<RunnerServices["executeCase"]>((selectedCase) =>
+    Effect.succeed(executionResult(selectedCase)),
   );
-  const writeReport = vi.fn<RunnerServices["writeReport"]>();
+  const writtenReports: string[] = [];
+  const writeReport = vi.fn<RunnerServices["writeReport"]>((report) =>
+    Effect.try({
+      try: () => {
+        writtenReports.push(report);
+      },
+      catch: (cause) => new RunnerReportWriteError({ cause }),
+    }),
+  );
   const services = createRunnerServices({
     evalCases: [behavioralCase],
     executeCase,
     writeReport,
   });
 
-  const exitCode = await runCli([], services);
+  const exitCode = await runInjectedCli([], services);
 
   expect(exitCode).toBe(EXIT_CODES.ALL_PASSED);
   expect(executeCase).toHaveBeenCalledOnce();
-  expect(writeReport).toHaveBeenCalledExactlyOnceWith(
-    expect.stringContaining(
-      "| mutation-scope | 2* | PASS | 1 behavioral run(s) left no trace |",
-    ),
+  expect(writtenReports[0]).toContain(
+    "| mutation-scope | 2* | PASS | 1 behavioral run(s) left no trace |",
   );
 });
 
 test("tier-2 mutation evidence fails the derived row without executing another case", async () => {
-  muteRunnerOutput();
   const routingCase = evalCase("routing", 1);
   const behavioralCase = evalCase("behavioral", BEHAVIORAL_CASE_TIER);
   const injectedCases = [routingCase, behavioralCase];
-  const executeCase = vi.fn<RunnerServices["executeCase"]>(
-    async (selectedCase) => {
-      await Promise.resolve();
-      if (selectedCase.tier === 1) {
-        // This would fail assertRunHappened if a tier-1 observation leaked into
-        // the derived check, making the expected mutation message a scope guard.
-        return executionResult(selectedCase, {}, { timedOut: true });
-      }
-      return executionResult(
+  const executeCase = vi.fn<RunnerServices["executeCase"]>((selectedCase) => {
+    if (selectedCase.tier === 1) {
+      // If tier 1 leaked into the derived check, this timeout would replace the
+      // expected mutation-specific failure text.
+      return Effect.succeed(
+        executionResult(selectedCase, {}, { timedOut: true }),
+      );
+    }
+    return Effect.succeed(
+      executionResult(
         selectedCase,
         {},
         {
           gitStatusAfter: { kind: "worktree", entries: "?? changed.txt" },
         },
-      );
-    },
-  );
-  const writeReport = vi.fn<RunnerServices["writeReport"]>();
+      ),
+    );
+  });
+  const writtenReports: string[] = [];
   const services = createRunnerServices({
     evalCases: injectedCases,
     executeCase,
-    writeReport,
+    writeReport: (report) =>
+      Effect.try({
+        try: () => {
+          writtenReports.push(report);
+        },
+        catch: (cause) => new RunnerReportWriteError({ cause }),
+      }),
   });
 
-  const exitCode = await runCli([], services);
-  const writtenReport = writeReport.mock.calls[0]?.[0] ?? "";
+  const exitCode = await runInjectedCli([], services);
+  const writtenReport = writtenReports[0] ?? "";
 
   expect(exitCode).toBe(EXIT_CODES.CASE_FAILED);
   expect(executeCase).toHaveBeenCalledTimes(injectedCases.length);
   expect(
     executeCase.mock.calls.map(([selectedCase]) => selectedCase.id),
   ).toStrictEqual(["routing", "behavioral"]);
-  expect(writeReport).toHaveBeenCalledOnce();
   expect(writtenReport).toContain(
     "| mutation-scope | 2* | FAIL | read-only contract violated: |",
   );
@@ -279,44 +344,99 @@ test("tier-2 mutation evidence fails the derived row without executing another c
 });
 
 test("a failed case returns the case-failed exit code after writing the report", async () => {
-  muteRunnerOutput();
   const failingCase = evalCase("failing", 1);
-  const writeReport = vi.fn<RunnerServices["writeReport"]>();
+  const writeReport = vi.fn<RunnerServices["writeReport"]>(() =>
+    Effect.succeed(undefined),
+  );
   const services = createRunnerServices({
     evalCases: [failingCase],
-    executeCase: async (selectedCase) => {
-      await Promise.resolve();
-      return executionResult(selectedCase, {
-        status: "FAIL",
-        observed: "assertion failed",
-      });
-    },
+    executeCase: (selectedCase) =>
+      Effect.succeed(
+        executionResult(selectedCase, {
+          status: "FAIL",
+          observed: "assertion failed",
+        }),
+      ),
     writeReport,
   });
 
-  const exitCode = await runCli([], services);
+  const exitCode = await runInjectedCli([], services);
 
   expect(exitCode).toBe(EXIT_CODES.CASE_FAILED);
   expect(writeReport).toHaveBeenCalledOnce();
 });
 
 test("an unexpected executor failure returns the suite-error exit code", async () => {
-  muteRunnerOutput();
-  const writeReport = vi.fn<RunnerServices["writeReport"]>();
+  const writeReport = vi.fn<RunnerServices["writeReport"]>(() =>
+    Effect.succeed(undefined),
+  );
   const services = createRunnerServices({
     evalCases: [evalCase("broken", 1)],
-    executeCase: async () => {
-      await Promise.resolve();
-      throw new Error("executor broke");
-    },
+    executeCase: () =>
+      Effect.fail(
+        new RunnerCaseExecutionError({ cause: new Error("executor broke") }),
+      ),
     writeReport,
   });
+  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
 
-  const exitCode = await runCli([], services);
+  const exitCode = await runInjectedCli([], services, capturedOutput);
 
   expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
   expect(writeReport).not.toHaveBeenCalled();
-  expect(console.error).toHaveBeenCalledWith(
-    "eval suite error: executor broke",
-  );
+  expect(capturedOutput.stderr).toStrictEqual([
+    "eval suite error: executor broke\n",
+  ]);
+});
+
+test("a report-writer failure overrides an otherwise successful run", async () => {
+  const services = createRunnerServices({
+    evalCases: [evalCase("passing", 1)],
+    executeCase: (selectedCase) =>
+      Effect.succeed(executionResult(selectedCase)),
+    writeReport: () =>
+      Effect.fail(
+        new RunnerReportWriteError({ cause: new Error("writer broke") }),
+      ),
+  });
+  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
+
+  const exitCode = await runInjectedCli([], services, capturedOutput);
+
+  expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
+  expect(capturedOutput.stderr).toStrictEqual([
+    "eval suite error: writer broke\n",
+  ]);
+  expect(capturedOutput.stdout.join("")).not.toContain("Report written");
+});
+
+test("a non-Error executor failure retains String conversion", async () => {
+  const services = createRunnerServices({
+    evalCases: [evalCase("broken", 1)],
+    executeCase: () =>
+      Effect.fail(new RunnerCaseExecutionError({ cause: "bare failure" })),
+  });
+  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
+
+  const exitCode = await runInjectedCli([], services, capturedOutput);
+
+  expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
+  expect(capturedOutput.stderr).toStrictEqual([
+    "eval suite error: bare failure\n",
+  ]);
+});
+
+test("a residual defect is contained by the suite-error exit", async () => {
+  const services = createRunnerServices({
+    evalCases: [evalCase("broken", 1)],
+    executeCase: () => Effect.die(new Error("executor defect")),
+  });
+  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
+
+  const exitCode = await runInjectedCli([], services, capturedOutput);
+
+  expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
+  expect(capturedOutput.stderr).toStrictEqual([
+    "eval suite error: executor defect\n",
+  ]);
 });
