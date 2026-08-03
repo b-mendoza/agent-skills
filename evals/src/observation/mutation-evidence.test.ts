@@ -9,12 +9,16 @@
 
 import { expect, test } from "vitest";
 
-import type { GitStatus, ToolCall } from "#/observation/harness.ts";
-import { mutationEvidence, skillInvocations } from "#/observation/harness.ts";
+import type { GitStatus } from "#/observation/git-status.ts";
+import {
+  mutationEvidence,
+  skillInvocations,
+} from "#/observation/mutation-evidence.ts";
 import {
   createObservation,
   createWorktreeStatus,
 } from "#/observation/observation-test-support.ts";
+import type { ToolCall } from "#/observation/observation-types.ts";
 
 function bash(command: unknown): ToolCall {
   return { name: "Bash", input: { command } };

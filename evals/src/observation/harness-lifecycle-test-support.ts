@@ -5,19 +5,21 @@ import { tmpdir } from "node:os";
 import { Effect } from "effect";
 import { afterEach, beforeEach, vi } from "vitest";
 
+import { observeClaude } from "#/observation/agent-query.ts";
 import type {
   AgentQuery as AgentQueryService,
   AgentQueryRequest,
-  GitStatus,
-  Observation,
-  RunOptions,
-} from "#/observation/harness.ts";
-import { observeClaude } from "#/observation/harness.ts";
+} from "#/observation/agent-query-service.ts";
+import type { GitStatus } from "#/observation/git-status.ts";
 import {
   createAgentQueryLayer,
   createGitSamplerLayer,
   createWorktreeStatus,
 } from "#/observation/observation-test-support.ts";
+import type {
+  Observation,
+  RunOptions,
+} from "#/observation/observation-types.ts";
 
 export const WALL_CLOCK_MS = 30_000;
 /** Short enough to exercise the abort path without slowing the suite. */

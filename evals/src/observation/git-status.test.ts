@@ -15,13 +15,13 @@ import { join } from "node:path";
 import { Effect } from "effect";
 import { afterEach, expect, test, vi } from "vitest";
 
-import type { GitStatus } from "#/observation/harness.ts";
+import type { GitStatus } from "#/observation/git-status.ts";
 import {
   describeGitStatus,
   GitSampler,
   GitSamplerLive,
   gitStatus,
-} from "#/observation/harness.ts";
+} from "#/observation/git-status.ts";
 
 const forcedExecFileSyncFailures = vi.hoisted((): unknown[] => []);
 

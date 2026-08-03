@@ -5,7 +5,8 @@ import { once } from "node:events";
 import { Effect } from "effect";
 import { expect, test, vi } from "vitest";
 
-import { QUERY_ERROR_SUBTYPE, QueryStartError } from "#/observation/harness.ts";
+import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
+import { QueryStartError } from "#/observation/agent-query-service.ts";
 import type { FakeMessage } from "#/observation/harness-lifecycle-test-support.ts";
 import {
   assistant,

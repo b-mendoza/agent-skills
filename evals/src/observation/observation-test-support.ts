@@ -1,12 +1,13 @@
 import { Layer } from "effect";
 
+import type { AgentQuery as AgentQueryService } from "#/observation/agent-query-service.ts";
+import { AgentQuery } from "#/observation/agent-query-service.ts";
 import type {
-  AgentQuery as AgentQueryService,
   GitSampler as GitSamplerService,
   GitStatus,
-  Observation,
-} from "#/observation/harness.ts";
-import { AgentQuery, GitSampler } from "#/observation/harness.ts";
+} from "#/observation/git-status.ts";
+import { GitSampler } from "#/observation/git-status.ts";
+import type { Observation } from "#/observation/observation-types.ts";
 
 /** A sampled worktree; `entries` is `git status --short` output. */
 export const createWorktreeStatus = (entries = ""): GitStatus => ({
