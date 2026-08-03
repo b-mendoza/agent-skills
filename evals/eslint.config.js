@@ -62,7 +62,6 @@ export default defineConfig(
         ERROR,
         {
           ignoreTypeIndexes: true,
-          ignore: [0, 1],
         },
       ],
       "@typescript-eslint/no-misused-promises": [
