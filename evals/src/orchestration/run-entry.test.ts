@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 
 import { expect, test } from "vitest";
 
-import { EXIT_CODES } from "#/orchestration/run.ts";
+import { EXIT_CODES } from "#/orchestration/run-coordination.ts";
 
 const RUN_PATH = fileURLToPath(new URL("./run.ts", import.meta.url));
 const REPORT_PATH = fileURLToPath(new URL("../../report.md", import.meta.url));
