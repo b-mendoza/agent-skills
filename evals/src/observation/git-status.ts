@@ -155,13 +155,11 @@ export function toText(value: unknown): string {
   try {
     const json: unknown = JSON.stringify(value);
     if (typeof json === "string") return json;
-    // eslint-disable-next-line sonarjs/no-ignored-exceptions -- Serialization failure is expected for values such as BigInt or cycles, which use the guarded fallback below.
   } catch (jsonSerializationError) {
     // Continue to the guarded string-conversion fallback.
   }
 
   try {
-    // oxlint-disable-next-line typescript/no-base-to-string -- Guarded last-resort rendering is required for foreign cyclic and BigInt values.
     return String(value);
   } catch (stringConversionError) {
     return "(unprintable value)";
