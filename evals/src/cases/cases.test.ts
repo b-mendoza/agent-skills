@@ -19,9 +19,9 @@ import {
   BUDGET_STOP_SUBTYPE,
   checkMutationScope,
 } from "#/cases/analyzing-recent-project-state-checks.ts";
-import type { Observation } from "#/observation/harness.ts";
-import { QUERY_ERROR_SUBTYPE } from "#/observation/harness.ts";
+import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
+import type { Observation } from "#/observation/observation-types.ts";
 
 function observe(overrides: Readonly<Partial<Observation>> = {}): Observation {
   return createObservation({ costUsd: 0.01, durationMs: 1000, ...overrides });

@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
 
-import type { Observation } from "#/observation/harness.ts";
-import {
-  mutationEvidence,
-  QUERY_ERROR_SUBTYPE,
-} from "#/observation/harness.ts";
+import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
+import { mutationEvidence } from "#/observation/mutation-evidence.ts";
+import type { Observation } from "#/observation/observation-types.ts";
 
 /** The result subtype for a run stopped by the suite's configured budget cap. */
 export const BUDGET_STOP_SUBTYPE = "error_max_budget_usd";

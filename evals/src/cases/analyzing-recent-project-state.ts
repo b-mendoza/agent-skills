@@ -13,8 +13,11 @@ import {
   assertRunHappened,
 } from "#/cases/analyzing-recent-project-state-checks.ts";
 import type { FixtureKind } from "#/fixtures/fixtures.ts";
-import type { Observation, ToolCall } from "#/observation/harness.ts";
-import { mutationEvidence, skillInvocations } from "#/observation/harness.ts";
+import {
+  mutationEvidence,
+  skillInvocations,
+} from "#/observation/mutation-evidence.ts";
+import type { Observation, ToolCall } from "#/observation/observation-types.ts";
 
 export const SKILL = "analyzing-recent-project-state";
 
