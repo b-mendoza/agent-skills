@@ -15,7 +15,11 @@ import {
   FixtureProvisionerLive,
 } from "#/fixtures/fixtures.ts";
 import type { Observation, RunOptions } from "#/observation/harness.ts";
-import { runClaude } from "#/observation/harness.ts";
+import {
+  AgentQueryLive,
+  GitSamplerLive,
+  observeClaude,
+} from "#/observation/harness.ts";
 import type { ReportTier, Result } from "#/orchestration/report.ts";
 import {
   EvalConfiguration,
@@ -87,10 +91,10 @@ export const ObservationRunnerLive = Layer.succeed(
   ObservationRunner,
   ObservationRunner.of({
     run: (options) =>
-      Effect.tryPromise({
-        try: async () => runClaude(options),
-        catch: (cause) => new ObservationRunError({ cause }),
-      }),
+      observeClaude(options).pipe(
+        Effect.provide(AgentQueryLive),
+        Effect.provide(GitSamplerLive),
+      ),
   }),
 );
 

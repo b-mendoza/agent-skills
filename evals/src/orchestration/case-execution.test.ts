@@ -16,7 +16,7 @@ import {
   FixtureProvisioner,
 } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/harness.ts";
-import { runClaude } from "#/observation/harness.ts";
+import { observeClaude } from "#/observation/harness.ts";
 import {
   executeCase,
   ObservationRunnerLive,
@@ -28,10 +28,10 @@ import {
 
 vi.mock(import("#/observation/harness.ts"), async (importOriginal) => ({
   ...(await importOriginal()),
-  runClaude: vi.fn(),
+  observeClaude: vi.fn(),
 }));
 
-const runClaudeMock = vi.mocked(runClaude);
+const observeClaudeMock = vi.mocked(observeClaude);
 
 const CASE_BUDGET_USD = 1.25;
 const CASE_WALL_CLOCK_MS = 42_000;
@@ -119,13 +119,13 @@ afterEach(() => {
   vi.resetAllMocks();
 });
 
-test("the selected case configuration and fixture context reach runClaude", async () => {
+test("the selected case configuration and fixture context reach observeClaude", async () => {
   const cleanup = vi.fn<Fixture["cleanup"]>();
-  runClaudeMock.mockResolvedValue(resolvedObservation());
+  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
 
   await runSelectedCase(selectedCase(), testFixture(cleanup));
 
-  expect(runClaudeMock).toHaveBeenCalledExactlyOnceWith(
+  expect(observeClaudeMock).toHaveBeenCalledExactlyOnceWith(
     expect.objectContaining({
       cwd: FIXTURE_CWD,
       gitRepo: FIXTURE_GIT_REPO,
@@ -138,39 +138,39 @@ test("the selected case configuration and fixture context reach runClaude", asyn
 });
 
 test("cwd is sampled when the fixture declares no git repository", async () => {
-  runClaudeMock.mockResolvedValue(resolvedObservation());
+  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
 
   await runSelectedCase(
     selectedCase(),
     testFixtureWithoutGit(vi.fn<Fixture["cleanup"]>(() => undefined)),
   );
 
-  expect(runClaudeMock).toHaveBeenCalledWith(
+  expect(observeClaudeMock).toHaveBeenCalledWith(
     expect.objectContaining({ gitRepo: FIXTURE_CWD }),
   );
 });
 
-test("fixture cleanup runs after runClaude resolves", async () => {
+test("fixture cleanup runs after observeClaude resolves", async () => {
   const cleanup = vi.fn<Fixture["cleanup"]>();
-  runClaudeMock.mockResolvedValue(resolvedObservation());
+  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
 
   await runSelectedCase(selectedCase(), testFixture(cleanup));
 
   expect(cleanup).toHaveBeenCalledOnce();
 });
 
-test("fixture cleanup runs and the rejection remains the observation error cause", async () => {
+test("fixture cleanup runs and the observation defect remains intact", async () => {
   const cleanup = vi.fn<Fixture["cleanup"]>();
-  const runFailure = new Error("runClaude rejected");
-  runClaudeMock.mockRejectedValue(runFailure);
+  const observationDefect = new Error("observeClaude defect");
+  observeClaudeMock.mockReturnValue(Effect.die(observationDefect));
 
   await expect(
     runSelectedCase(selectedCase(), testFixture(cleanup)),
-  ).rejects.toMatchObject({ cause: runFailure });
+  ).rejects.toBe(observationDefect);
   expect(cleanup).toHaveBeenCalledOnce();
 });
 
-test("prompt construction failure cleans the fixture and bypasses runClaude", async () => {
+test("prompt construction failure cleans the fixture and bypasses observeClaude", async () => {
   const cleanup = vi.fn<Fixture["cleanup"]>();
   const promptFailure = new Error("prompt broke");
   const evalCase = selectedCase({
@@ -183,12 +183,12 @@ test("prompt construction failure cleans the fixture and bypasses runClaude", as
     runSelectedCase(evalCase, testFixture(cleanup)),
   ).rejects.toMatchObject({ cause: promptFailure });
   expect(cleanup).toHaveBeenCalledOnce();
-  expect(runClaudeMock).not.toHaveBeenCalled();
+  expect(observeClaudeMock).not.toHaveBeenCalled();
 });
 
 test("a failed check becomes row data and retains measured cost and duration", async () => {
   const cleanup = vi.fn<Fixture["cleanup"]>();
-  runClaudeMock.mockResolvedValue(resolvedObservation());
+  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
 
   const execution = await runSelectedCase(
     selectedCase({
@@ -210,7 +210,7 @@ test("a failed check becomes row data and retains measured cost and duration", a
 
 test("cleanup failure replaces a successful case result", async () => {
   const cleanupFailure = new Error("cleanup broke");
-  runClaudeMock.mockResolvedValue(resolvedObservation());
+  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
 
   await expect(
     runSelectedCase(
@@ -222,10 +222,10 @@ test("cleanup failure replaces a successful case result", async () => {
   ).rejects.toMatchObject({ cause: cleanupFailure });
 });
 
-test("cleanup failure replaces an earlier observation rejection", async () => {
-  const runFailure = new Error("runClaude rejected");
+test("cleanup failure replaces an earlier observation defect", async () => {
+  const observationDefect = new Error("observeClaude defect");
   const cleanupFailure = new Error("cleanup broke");
-  runClaudeMock.mockRejectedValue(runFailure);
+  observeClaudeMock.mockReturnValue(Effect.die(observationDefect));
 
   await expect(
     runSelectedCase(
