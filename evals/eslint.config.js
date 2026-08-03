@@ -5,7 +5,6 @@ import love from "eslint-config-love";
 import oxlint from "eslint-plugin-oxlint";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import sonarjs from "eslint-plugin-sonarjs";
-import eslintPluginZod from "eslint-plugin-zod";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
@@ -31,7 +30,6 @@ export default defineConfig(
       "simple-import-sort/exports": ERROR,
     },
   },
-  eslintPluginZod.configs.recommended,
   {
     languageOptions: {
       globals: {
@@ -104,17 +102,6 @@ export default defineConfig(
         },
       ],
       "import/newline-after-import": ERROR,
-      "no-restricted-imports": [
-        ERROR,
-        {
-          patterns: [
-            {
-              regex: "^zod\\/.+$",
-              message: 'Please use "zod" instead.',
-            },
-          ],
-        },
-      ],
       /**
        * Disabled because the `v` flag requires es2024, but our project targets es2023.
        * Re-enable when the project upgrades to es2024.
