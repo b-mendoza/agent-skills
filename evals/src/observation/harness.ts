@@ -4,7 +4,6 @@
 export {
   observeClaude,
   QUERY_ERROR_SUBTYPE,
-  runClaude,
 } from "#/observation/agent-query.ts";
 export type { AgentQueryRequest } from "#/observation/agent-query-service.ts";
 export {

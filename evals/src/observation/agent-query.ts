@@ -4,13 +4,12 @@ import type {
   AgentQuery,
   AgentQueryRequest,
 } from "#/observation/agent-query-service.ts";
-import { AgentQueryLive } from "#/observation/agent-query-service.ts";
 import type {
   QueryAccumulator,
   ResultVerdict,
 } from "#/observation/agent-query-stream.ts";
 import { failureText, settleQuery } from "#/observation/agent-query-stream.ts";
-import { GitSampler, GitSamplerLive } from "#/observation/git-status.ts";
+import { GitSampler } from "#/observation/git-status.ts";
 import type {
   Observation,
   RunOptions,
@@ -128,14 +127,3 @@ export const observeClaude = (
 
     return { ...settled, ...querySettlement.resultVerdict };
   });
-
-/** Promise compatibility facade for non-Effect orchestration callers. */
-export async function runClaude(opts: RunOptions): Promise<Observation> {
-  const observation = await Effect.runPromise(
-    observeClaude(opts).pipe(
-      Effect.provide(AgentQueryLive),
-      Effect.provide(GitSamplerLive),
-    ),
-  );
-  return observation;
-}

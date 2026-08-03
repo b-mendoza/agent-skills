@@ -33,7 +33,7 @@ function caseById(caseId: CaseId): EvalCase {
   return matchingCase;
 }
 
-/** What `runClaude` returns when the query never produced a result message. */
+/** What `observeClaude` yields when the query never produced a result message. */
 const QUERY_FAILURE = observe({
   subtype: QUERY_ERROR_SUBTYPE,
   isError: true,
