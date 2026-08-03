@@ -17,10 +17,8 @@ import {
 } from "#/fixtures/fixtures.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
 import type { Observation } from "#/observation/observation-types.ts";
-import {
-  executeCase,
-  ObservationRunnerLive,
-} from "#/orchestration/case-execution.ts";
+import { executeCase } from "#/orchestration/case-execution.ts";
+import { ObservationRunnerLive } from "#/orchestration/observation-runner.ts";
 import {
   EvalConfiguration,
   evalModel,
