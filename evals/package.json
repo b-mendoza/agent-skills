@@ -29,6 +29,7 @@
     "@total-typescript/ts-reset": "0.6.1",
     "@types/node": "24.13.3",
     "@vitest/eslint-plugin": "1.6.24",
+    "effect": "4.0.0-beta.102",
     "eslint": "9.39.5",
     "eslint-config-love": "154.1.0",
     "eslint-plugin-oxlint": "1.76.0",
