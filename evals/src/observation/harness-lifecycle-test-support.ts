@@ -56,7 +56,6 @@ type FakeMessageSource =
   | Generator<unknown, void>
   | AsyncGenerator<unknown, void>;
 
-// oxlint-disable-next-line typescript/require-await -- AsyncGenerator adapts the legacy sync-generator test seam to Stream.fromAsyncIterable.
 async function* asAsyncMessages(
   messageSource: FakeMessageSource,
 ): AsyncGenerator<unknown, void> {
@@ -114,7 +113,6 @@ export function createTrackedMessages(
   let returnCallCount = 0;
   let scriptIndex = 0;
   const iterator: AsyncIterator<unknown> = {
-    // oxlint-disable-next-line typescript/require-await -- The AsyncIterator contract resolves immediately from in-memory state.
     next: async () => {
       nextCallCount += 1;
       const message = script[scriptIndex];
@@ -123,7 +121,6 @@ export function createTrackedMessages(
         ? { done: true, value: undefined }
         : { done: false, value: message };
     },
-    // oxlint-disable-next-line typescript/require-await -- The AsyncIterator cleanup contract resolves immediately unless the scripted cleanup fails.
     return: async () => {
       returnCallCount += 1;
       if (cleanupFailure !== null) throw cleanupFailure;
