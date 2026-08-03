@@ -577,8 +577,7 @@
     "no-magic-numbers": [
       "error",
       {
-        "ignoreTypeIndexes": true,
-        "ignore": [0, 1]
+        "ignoreTypeIndexes": true
       }
     ],
     "no-use-before-define": [
