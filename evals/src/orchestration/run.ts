@@ -14,7 +14,10 @@ import { writeFileSync } from "node:fs";
 
 import { Context, Data, Effect, Layer } from "effect";
 
-import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
+import type {
+  CaseTier,
+  EvalCase,
+} from "#/cases/analyzing-recent-project-state.ts";
 import { cases } from "#/cases/analyzing-recent-project-state.ts";
 import { checkMutationScope } from "#/cases/analyzing-recent-project-state-checks.ts";
 import type { Observation } from "#/observation/harness.ts";
@@ -44,6 +47,7 @@ export type ExitCode = (typeof EXIT_CODES)[keyof typeof EXIT_CODES];
 const MS_PER_SECOND = 1000;
 const COST_DECIMALS = 2;
 const WHOLE_SECONDS = 0;
+const ROUTING_TIER = 1;
 /** Only tier-2 runs are behavioral, so only they feed the derived scope check. */
 const BEHAVIORAL_TIER = 2;
 /** `process.argv` starts with the node binary and this script. */
@@ -160,10 +164,16 @@ export function parseArgs(argv: string[]): ParsedArguments {
   return parsedArguments;
 }
 
+function isCaseTier(value: number): value is CaseTier {
+  return value === ROUTING_TIER || value === BEHAVIORAL_TIER;
+}
+
 function selectCases(
   evalCases: readonly EvalCase[],
   { tier, caseId }: ParsedArguments,
 ): EvalCase[] {
+  if (tier != null && !isCaseTier(tier)) return [];
+
   return evalCases.filter(
     (evalCase) =>
       (tier == null || evalCase.tier === tier) &&
