@@ -28,6 +28,8 @@ import {
 
 /** A report cell holds one line; a longer assertion message is truncated. */
 const MAX_OBSERVED_CHARS = 160;
+const FIRST_CHARACTER_INDEX = 0;
+const UNKNOWN_ERROR_MESSAGE = "An unknown error occurred";
 const ROUTING_TIER = 1;
 const BEHAVIORAL_TIER = 2;
 
@@ -98,19 +100,29 @@ export const ObservationRunnerLive = Layer.succeed(
   }),
 );
 
+function describeNonErrorCheckFailure(cause: unknown): string {
+  try {
+    return String(cause);
+  } catch (stringConversionError) {
+    return new Error(UNKNOWN_ERROR_MESSAGE, {
+      cause: stringConversionError,
+    }).message;
+  }
+}
+
 function normalizeCheckFailure(cause: unknown): {
   status: Result["status"];
   observed: string;
 } {
-  const normalizedError =
+  const failureMessage =
     cause instanceof Error
-      ? cause
-      : new Error("An unknown error occurred", { cause });
-  const [firstLine = ""] = normalizedError.message.split("\n");
+      ? cause.message
+      : describeNonErrorCheckFailure(cause);
+  const [firstLine = ""] = failureMessage.split("\n");
 
   return {
     status: "FAIL",
-    observed: firstLine.slice(0, MAX_OBSERVED_CHARS),
+    observed: firstLine.slice(FIRST_CHARACTER_INDEX, MAX_OBSERVED_CHARS),
   };
 }
 
