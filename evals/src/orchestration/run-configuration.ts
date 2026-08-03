@@ -1,3 +1,5 @@
+import { Context, Layer } from "effect";
+
 const DEFAULT_MODEL = "sonnet";
 
 export function resolveModel(configuredModel: string | undefined): string {
@@ -8,3 +10,16 @@ export function resolveModel(configuredModel: string | undefined): string {
 }
 
 export const evalModel = resolveModel(process.env["EVAL_MODEL"]);
+
+export interface EvalConfiguration {
+  readonly model: string;
+}
+
+export const EvalConfiguration = Context.Service<EvalConfiguration>(
+  "evals/orchestration/EvalConfiguration",
+);
+
+export const EvalConfigurationLive = Layer.succeed(
+  EvalConfiguration,
+  EvalConfiguration.of({ model: evalModel }),
+);
