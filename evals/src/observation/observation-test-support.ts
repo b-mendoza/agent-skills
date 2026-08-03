@@ -1,10 +1,28 @@
-import type { GitStatus, Observation } from "#/observation/harness.ts";
+import { Layer } from "effect";
+
+import type {
+  AgentQuery as AgentQueryService,
+  GitSampler as GitSamplerService,
+  GitStatus,
+  Observation,
+} from "#/observation/harness.ts";
+import { AgentQuery, GitSampler } from "#/observation/harness.ts";
 
 /** A sampled worktree; `entries` is `git status --short` output. */
 export const createWorktreeStatus = (entries = ""): GitStatus => ({
   kind: "worktree",
   entries,
 });
+
+export const createAgentQueryLayer = (
+  start: AgentQueryService["start"],
+): Layer.Layer<AgentQueryService> =>
+  Layer.succeed(AgentQuery, AgentQuery.of({ start }));
+
+export const createGitSamplerLayer = (
+  sample: GitSamplerService["sample"],
+): Layer.Layer<GitSamplerService> =>
+  Layer.succeed(GitSampler, GitSampler.of({ sample }));
 
 /** A zero-cost clean observation with optional field overrides. */
 export function createObservation(

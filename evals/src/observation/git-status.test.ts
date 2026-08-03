@@ -12,10 +12,38 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterEach, expect, test } from "vitest";
+import { Effect } from "effect";
+import { afterEach, expect, test, vi } from "vitest";
 
 import type { GitStatus } from "#/observation/harness.ts";
-import { describeGitStatus, gitStatus } from "#/observation/harness.ts";
+import {
+  describeGitStatus,
+  GitSampler,
+  GitSamplerLive,
+  gitStatus,
+} from "#/observation/harness.ts";
+
+const forcedExecFileSyncFailures = vi.hoisted((): unknown[] => []);
+
+vi.mock(import("node:child_process"), async (importOriginal) => {
+  const real = await importOriginal();
+  const passthroughExecFileSync = new Proxy(real.execFileSync, {
+    apply: (
+      target,
+      thisArgument: unknown,
+      argumentList: readonly unknown[],
+    ) => {
+      const forcedFailure = forcedExecFileSyncFailures.shift();
+      if (forcedFailure !== undefined) {
+        // oxlint-disable-next-line typescript/only-throw-error -- Subprocess boundaries may throw plain objects; tests queue them verbatim.
+        throw forcedFailure;
+      }
+      const output: unknown = Reflect.apply(target, thisArgument, argumentList);
+      return output;
+    },
+  });
+  return { ...real, execFileSync: passthroughExecFileSync };
+});
 
 const tempDirectories: string[] = [];
 const realPath = process.env["PATH"];
@@ -26,10 +54,21 @@ afterEach(() => {
   } else {
     process.env["PATH"] = realPath;
   }
+  forcedExecFileSyncFailures.length = 0;
   for (const tempDirectory of tempDirectories.splice(0)) {
     rmSync(tempDirectory, { recursive: true, force: true });
   }
 });
+
+async function sampleGitStatus(repo: string): Promise<GitStatus> {
+  const status = await Effect.runPromise(
+    Effect.gen(function* () {
+      const gitSampler = yield* GitSampler;
+      return yield* gitSampler.sample(repo);
+    }).pipe(Effect.provide(GitSamplerLive)),
+  );
+  return status;
+}
 
 function createTempDirectory(): string {
   const tempDirectory = mkdtempSync(join(tmpdir(), "git-status-"));
@@ -46,32 +85,32 @@ function createRepository(): string {
   return repositoryDirectory;
 }
 
-test("a clean worktree reports its empty entry list", () => {
-  expect(gitStatus(createRepository())).toStrictEqual({
+test("a clean worktree reports its empty entry list", async () => {
+  await expect(sampleGitStatus(createRepository())).resolves.toStrictEqual({
     kind: "worktree",
     entries: "",
   });
 });
 
-test("a dirty worktree reports its entries", () => {
+test("a dirty worktree reports its entries", async () => {
   const repositoryDirectory = createRepository();
   writeFileSync(join(repositoryDirectory, "a.txt"), "hello\n");
 
-  expect(gitStatus(repositoryDirectory)).toStrictEqual({
+  await expect(sampleGitStatus(repositoryDirectory)).resolves.toStrictEqual({
     kind: "worktree",
     entries: "?? a.txt",
   });
 });
 
-test("a directory that is not a repo is a known state, not a failure", () => {
+test("a directory that is not a repo is a known state, not a failure", async () => {
   // This is the `not-git` fixture. It must stay distinct from a failed sample
   // or that fixture's cases would start failing.
-  expect(gitStatus(createTempDirectory())).toStrictEqual({
+  await expect(sampleGitStatus(createTempDirectory())).resolves.toStrictEqual({
     kind: "no-worktree",
   });
 });
 
-test("a corrupt index is unreadable rather than clean", () => {
+test("a corrupt index is unreadable rather than clean", async () => {
   // Exit 128 is git's generic fatal code, so this returns the same status as
   // "not a repository". Only the message separates them -- classifying by
   // exit code alone would file a corrupt repo as an expected empty state.
@@ -83,7 +122,7 @@ test("a corrupt index is unreadable rather than clean", () => {
   });
   writeFileSync(join(repositoryDirectory, ".git", "index"), "garbage");
 
-  const status = gitStatus(repositoryDirectory);
+  const status = await sampleGitStatus(repositoryDirectory);
 
   expect(status.kind).toBe("unreadable");
   if (status.kind !== "unreadable") {
@@ -92,17 +131,40 @@ test("a corrupt index is unreadable rather than clean", () => {
   expect(status.reason).not.toBe("");
 });
 
-test("a missing directory is unreadable", () => {
-  const status = gitStatus(join(tmpdir(), "definitely-does-not-exist-xyz"));
+test("a missing directory is unreadable", async () => {
+  const status = await sampleGitStatus(
+    join(tmpdir(), "definitely-does-not-exist-xyz"),
+  );
 
   expect(status).toStrictEqual({ kind: "unreadable", reason: "ENOENT" });
 });
 
-test("a missing git binary is unreadable, not clean", () => {
+test("a missing git binary is unreadable, not clean", async () => {
   const repositoryDirectory = createRepository();
   process.env["PATH"] = createTempDirectory();
 
-  expect(gitStatus(repositoryDirectory).kind).toBe("unreadable");
+  await expect(sampleGitStatus(repositoryDirectory)).resolves.toMatchObject({
+    kind: "unreadable",
+  });
+});
+
+test("a malformed subprocess status preserves sibling diagnostics", async () => {
+  const subprocessFailure = {
+    status: "not a number",
+    stderr: "projected stderr survives\nsecondary detail",
+    code: "IGNORED",
+    message: "ignored message",
+  };
+  forcedExecFileSyncFailures.push(subprocessFailure, subprocessFailure);
+
+  await expect(sampleGitStatus(tmpdir())).resolves.toStrictEqual({
+    kind: "unreadable",
+    reason: "projected stderr survives",
+  });
+  expect(gitStatus(tmpdir())).toStrictEqual({
+    kind: "unreadable",
+    reason: "projected stderr survives",
+  });
 });
 
 // A failure message that cannot tell these apart sends the reader hunting for
