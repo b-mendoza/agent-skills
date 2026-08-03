@@ -13,7 +13,7 @@ import type {
   CaseTier,
   EvalCase,
 } from "#/cases/analyzing-recent-project-state.ts";
-import type { Observation } from "#/observation/harness.ts";
+import type { Observation } from "#/observation/observation-types.ts";
 import type { CaseExecutionResult } from "#/orchestration/case-execution.ts";
 import type { Result } from "#/orchestration/report.ts";
 import {

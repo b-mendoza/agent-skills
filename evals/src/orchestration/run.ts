@@ -20,7 +20,7 @@ import type {
 } from "#/cases/analyzing-recent-project-state.ts";
 import { cases } from "#/cases/analyzing-recent-project-state.ts";
 import { checkMutationScope } from "#/cases/analyzing-recent-project-state-checks.ts";
-import type { Observation } from "#/observation/harness.ts";
+import type { Observation } from "#/observation/observation-types.ts";
 import type { CaseExecutionResult } from "#/orchestration/case-execution.ts";
 import {
   CaseFixtureAcquisitionError,
