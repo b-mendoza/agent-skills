@@ -30,7 +30,6 @@ export interface CaseContext {
 }
 
 /** 1 = budget-capped routing check. 2 = full behavioral run. */
-// oxlint-disable-next-line no-magic-numbers -- The literals ARE the tier names, and the report prints them verbatim; aliasing them to constants would hide the only values this type permits.
 export type CaseTier = 1 | 2;
 
 export interface EvalCase {
