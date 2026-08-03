@@ -38,9 +38,12 @@ pnpm test    # vitest: unit tests for the pure functions, free and offline
 | `git-status.test.ts` | Clean vs. not-a-repo vs. unreadable sample classification |
 | `harness-lifecycle.test.ts` | Query lifecycle against a mocked SDK: results, errors, abort |
 | `fixtures.test.ts` | Fixture invariants: git state, skill copy, exclusion, cleanup |
-| `run-arguments.test.ts` | Flag parsing and model resolution |
+| `run-arguments.test.ts` | Flag parsing and case selection |
+| `run-configuration.test.ts` | Model resolution behind `EVAL_MODEL` |
 | `run-coordination.test.ts` | Case selection, sequencing, report writes, exit codes |
-| `run-results.test.ts` | Check normalization, report escaping and rendering |
+| `run-failure-lifecycle.test.ts` | Suite-error exits and residual-defect stderr formatting |
+| `case-checks.test.ts` | Check normalization: PASS rows, first-line-only FAIL, cell truncation |
+| `report-rendering.test.ts` | Report escaping, rendering, and measured totals |
 | `case-execution.test.ts` | Case-execution boundary: limits reach the harness, cleanup always runs |
 | `run-entry.test.ts` | The direct-entry guard on the runner |
 | `cases.test.ts` | The case assertions themselves, against synthetic runs |
@@ -53,7 +56,8 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 
 | Path | Contents |
 | --- | --- |
-| `src/orchestration/run.ts` | Entry point: selects cases, runs them sequentially, writes the report |
+| `src/orchestration/run.ts` | Entry point: provides the live layers and guards against a run on import |
+| `src/orchestration/run-coordination.ts` | Selects cases, runs them sequentially, writes the report, maps outcomes to exit codes |
 | `src/observation/agent-query.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta |
 | `src/fixtures/fixtures.ts` | Builds throwaway git repos with the skill installed under `.claude/skills/` |
 | `src/cases/<skill>.ts` | Canonical source of truth: every eval case and its assertions |
