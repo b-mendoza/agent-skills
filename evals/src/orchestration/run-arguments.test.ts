@@ -1,4 +1,4 @@
-// Pins the runner's flag-parsing and model-resolution contracts.
+// Pins the runner's flag-parsing contract.
 //
 // These injected tests spend no tokens and write no report file.
 //
@@ -6,8 +6,7 @@
 
 import { expect, test } from "vitest";
 
-import { parseArgs } from "#/orchestration/run.ts";
-import { resolveModel } from "#/orchestration/run-configuration.ts";
+import { parseArgs } from "#/orchestration/run-arguments.ts";
 
 const FIRST_UNDEFINED_TIER = 3;
 const LARGE_NUMERIC_TIER = 99;
@@ -65,14 +64,3 @@ test("every unknown argument is reported while valid flags still parse", () => {
     ],
   });
 });
-
-test.each([
-  { configuredModel: undefined, expectedModel: "sonnet" },
-  { configuredModel: "", expectedModel: "sonnet" },
-  { configuredModel: "custom-model", expectedModel: "custom-model" },
-])(
-  "resolves configured model $configuredModel to $expectedModel",
-  ({ configuredModel, expectedModel }) => {
-    expect(resolveModel(configuredModel)).toBe(expectedModel);
-  },
-);
