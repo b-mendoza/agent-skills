@@ -45,7 +45,6 @@ test("a thrown non-Error still produces a FAIL row", () => {
   // value is an Error; a bare string must still become a row, not crash runCli().
   expect(
     evaluate(() => {
-      // oxlint-disable-next-line typescript/only-throw-error -- Throwing a non-Error is the condition under test: this pins the `String(error)` fallback in `evaluate`.
       throw "bare string";
     }),
   ).toStrictEqual({ status: "FAIL", observed: "bare string" });
