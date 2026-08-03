@@ -102,6 +102,10 @@ export default defineConfig(
         },
       ],
       "import/newline-after-import": ERROR,
+      // The runner's stdout progress lines and stderr suite errors are
+      // contracts pinned by the orchestration tests; `love` errors on
+      // console usage, but here console IS the product surface.
+      "no-console": OFF,
       /**
        * Disabled because the `v` flag requires es2024, but our project targets es2023.
        * Re-enable when the project upgrades to es2024.
