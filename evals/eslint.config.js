@@ -132,8 +132,6 @@ export default defineConfig(
      * of intent rather than a way to dodge a fix.
      */
     rules: {
-      // The runner's progress output is its user interface.
-      "no-console": OFF,
       // Spawning `git` off PATH is how the harness samples repo state; the
       // agent itself now runs via the Agent SDK's bundled binary.
       "sonarjs/no-os-command-from-path": OFF,
