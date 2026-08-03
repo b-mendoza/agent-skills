@@ -132,9 +132,6 @@ export default defineConfig(
      * of intent rather than a way to dodge a fix.
      */
     rules: {
-      // Cases run sequentially on purpose: parallelism multiplies token spend
-      // for no benefit on a suite this small.
-      "no-await-in-loop": OFF,
       // The runner's progress output is its user interface.
       "no-console": OFF,
       // Spawning `git` off PATH is how the harness samples repo state; the
