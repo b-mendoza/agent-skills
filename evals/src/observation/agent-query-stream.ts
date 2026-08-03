@@ -1,5 +1,4 @@
-import { Data, Effect, Stream } from "effect";
-import * as z from "zod";
+import { Data, Effect, Exit, Option, Schema, Stream } from "effect";
 
 import type {
   AgentQueryRequest,
@@ -20,39 +19,57 @@ import type { Observation, ToolCall } from "#/observation/observation-types.ts";
  * assert on, and `mutationEvidence` already treats an unreadable input as
  * unverifiable rather than clean.
  */
-// eslint-disable-next-line zod/prefer-string-schema-with-trim -- SDK identifiers, answers, and diagnostics must be retained verbatim.
-const untrimmedStringSchema = z.string();
-const toolInputSchema = z.record(untrimmedStringSchema, z.unknown()).catch({});
+const toolInputSchema = Schema.Record(Schema.String, Schema.Unknown).pipe(
+  Schema.catchDecoding(() => Effect.succeed(Option.some({}))),
+);
 
-const streamMessageDiscriminatorSchema = z.object({
-  type: untrimmedStringSchema,
+const streamMessageDiscriminatorSchema = Schema.Struct({
+  type: Schema.String,
 });
-const assistantMessageSchema = z.object({
-  type: z.literal("assistant"),
-  message: z.object({ content: z.array(z.unknown()) }),
+const assistantMessageSchema = Schema.Struct({
+  type: Schema.Literal("assistant"),
+  message: Schema.Struct({ content: Schema.Array(Schema.Unknown) }),
 });
-const contentBlockDiscriminatorSchema = z.object({
-  type: untrimmedStringSchema,
+const contentBlockDiscriminatorSchema = Schema.Struct({
+  type: Schema.String,
 });
-const toolUseBlockSchema = z.object({
-  type: z.literal("tool_use"),
-  name: untrimmedStringSchema,
-  input: z.unknown(),
+const toolUseBlockSchema = Schema.Struct({
+  type: Schema.Literal("tool_use"),
+  name: Schema.String,
+  input: Schema.Unknown,
 });
-const successfulResultMessageSchema = z.object({
-  type: z.literal("result"),
-  subtype: z.literal("success"),
-  is_error: z.boolean(),
-  result: untrimmedStringSchema,
-  total_cost_usd: z.number(),
+const successfulResultMessageSchema = Schema.Struct({
+  type: Schema.Literal("result"),
+  subtype: Schema.Literal("success"),
+  is_error: Schema.Boolean,
+  result: Schema.String,
+  total_cost_usd: Schema.Number,
 });
-const failedResultMessageSchema = z.object({
-  type: z.literal("result"),
-  subtype: untrimmedStringSchema,
-  is_error: z.boolean(),
-  errors: z.array(untrimmedStringSchema),
-  total_cost_usd: z.number(),
+const failedResultMessageSchema = Schema.Struct({
+  type: Schema.Literal("result"),
+  subtype: Schema.String,
+  is_error: Schema.Boolean,
+  errors: Schema.Array(Schema.String),
+  total_cost_usd: Schema.Number,
 });
+const resultSubtypeSchema = Schema.Struct({ subtype: Schema.String });
+
+const decodeToolInput = Schema.decodeUnknownSync(toolInputSchema);
+const decodeStreamMessageDiscriminator = Schema.decodeUnknownExit(
+  streamMessageDiscriminatorSchema,
+);
+const decodeAssistantMessage = Schema.decodeUnknownSync(assistantMessageSchema);
+const decodeContentBlockDiscriminator = Schema.decodeUnknownSync(
+  contentBlockDiscriminatorSchema,
+);
+const decodeToolUseBlock = Schema.decodeUnknownSync(toolUseBlockSchema);
+const decodeSuccessfulResultMessage = Schema.decodeUnknownSync(
+  successfulResultMessageSchema,
+);
+const decodeFailedResultMessage = Schema.decodeUnknownSync(
+  failedResultMessageSchema,
+);
+const decodeResultSubtype = Schema.decodeUnknownSync(resultSubtypeSchema);
 
 export type ResultVerdict = Pick<
   Observation,
@@ -79,30 +96,37 @@ type NormalizedStreamMessage =
   | { kind: "assistant" }
   | { kind: "result"; verdict: ResultVerdict };
 
+function requireFiniteCost(costUsd: number): number {
+  if (!Number.isFinite(costUsd)) {
+    throw new Error(
+      `Expected finite number, got ${String(costUsd)}\n  at ["total_cost_usd"]`,
+    );
+  }
+  return costUsd;
+}
+
 /** Relevant SDK messages, validated and reduced to the fields observed here. */
 function normalizeStreamMessage(
   message: unknown,
   observedToolCalls: ToolCall[],
 ): NormalizedStreamMessage {
-  const parsedDiscriminator =
-    streamMessageDiscriminatorSchema.safeParse(message);
-  if (!parsedDiscriminator.success) return { kind: "ignored" };
+  const parsedDiscriminator = decodeStreamMessageDiscriminator(message);
+  if (Exit.isFailure(parsedDiscriminator)) return { kind: "ignored" };
 
-  if (parsedDiscriminator.data.type === "assistant") {
-    const assistantMessage = assistantMessageSchema.parse(message);
+  if (parsedDiscriminator.value.type === "assistant") {
+    const assistantMessage = decodeAssistantMessage(message);
     const messageToolCalls: ToolCall[] = [];
 
     for (const contentBlock of assistantMessage.message.content) {
       // A relevant assistant message fails closed when any content entry lacks
       // the minimum SDK block shape. Its calls are committed only after every
       // entry validates, preserving the message-level atomicity of the SDK.
-      const blockDiscriminator =
-        contentBlockDiscriminatorSchema.parse(contentBlock);
+      const blockDiscriminator = decodeContentBlockDiscriminator(contentBlock);
       if (blockDiscriminator.type === "tool_use") {
-        const toolUseBlock = toolUseBlockSchema.parse(contentBlock);
+        const toolUseBlock = decodeToolUseBlock(contentBlock);
         messageToolCalls.push({
           name: toolUseBlock.name,
-          input: toolInputSchema.parse(toolUseBlock.input),
+          input: decodeToolInput(toolUseBlock.input),
         });
       }
     }
@@ -111,24 +135,22 @@ function normalizeStreamMessage(
     return { kind: "assistant" };
   }
 
-  if (parsedDiscriminator.data.type === "result") {
-    const parsedSubtype = z
-      .object({ subtype: untrimmedStringSchema })
-      .parse(message);
+  if (parsedDiscriminator.value.type === "result") {
+    const parsedSubtype = decodeResultSubtype(message);
     if (parsedSubtype.subtype === "success") {
-      const resultMessage = successfulResultMessageSchema.parse(message);
+      const resultMessage = decodeSuccessfulResultMessage(message);
       return {
         kind: "result",
         verdict: {
           subtype: resultMessage.subtype,
           isError: resultMessage.is_error,
           finalText: resultMessage.result,
-          costUsd: resultMessage.total_cost_usd,
+          costUsd: requireFiniteCost(resultMessage.total_cost_usd),
         },
       };
     }
 
-    const resultMessage = failedResultMessageSchema.parse(message);
+    const resultMessage = decodeFailedResultMessage(message);
     return {
       kind: "result",
       verdict: {
@@ -137,7 +159,7 @@ function normalizeStreamMessage(
         // Error results carry diagnostics instead of an answer. Joining them
         // keeps auth and execution failures readable in a case failure.
         finalText: resultMessage.errors.join("\n"),
-        costUsd: resultMessage.total_cost_usd,
+        costUsd: requireFiniteCost(resultMessage.total_cost_usd),
       },
     };
   }

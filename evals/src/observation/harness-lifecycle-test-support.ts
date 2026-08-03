@@ -53,13 +53,13 @@ export type FakeMessage =
     };
 
 type FakeMessageSource =
-  | Generator<FakeMessage, void>
-  | AsyncGenerator<FakeMessage, void>;
+  | Generator<unknown, void>
+  | AsyncGenerator<unknown, void>;
 
 // oxlint-disable-next-line typescript/require-await -- AsyncGenerator adapts the legacy sync-generator test seam to Stream.fromAsyncIterable.
 async function* asAsyncMessages(
   messageSource: FakeMessageSource,
-): AsyncGenerator<FakeMessage, void> {
+): AsyncGenerator<unknown, void> {
   yield* messageSource;
 }
 
@@ -69,14 +69,12 @@ export function fakeQuery(
   return asAsyncMessages(generatorFactory());
 }
 
-function* yieldScript(
-  script: readonly FakeMessage[],
-): Generator<FakeMessage, void> {
+function* yieldScript(script: readonly unknown[]): Generator<unknown, void> {
   yield* script;
 }
 
 /** A query that yields a fixed script of messages, then ends. */
-export function scripted(...script: FakeMessage[]): AsyncIterable<unknown> {
+export function scripted(...script: unknown[]): AsyncIterable<unknown> {
   return asAsyncMessages(yieldScript(script));
 }
 

@@ -74,6 +74,7 @@ test.each([
       assistant(toolUse("Write", { file_path: "/repo/x" }), null),
       success("done", COST_FULL),
     ],
+    expectedFinalText: "Expected object, got null",
     expectedRetainedToolNames: ["Read"],
   },
   {
@@ -88,24 +89,58 @@ test.each([
         total_cost_usd: "not a number",
       },
     ],
+    expectedFinalText:
+      'Expected number, got "not a number"\n  at ["total_cost_usd"]',
     expectedRetainedToolNames: ["Write"],
   },
 ] satisfies ReadonlyArray<{
   name: string;
   messageScript: FakeMessage[];
+  expectedFinalText: string;
   expectedRetainedToolNames: string[];
-}>)("$name", async ({ messageScript, expectedRetainedToolNames }) => {
-  setQueryStart(() => Effect.succeed(scripted(...messageScript)));
+}>)(
+  "$name",
+  async ({ messageScript, expectedFinalText, expectedRetainedToolNames }) => {
+    setQueryStart(() => Effect.succeed(scripted(...messageScript)));
 
-  const observation = await runHarness();
+    const observation = await runHarness();
 
-  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(observation.isError).toBe(true);
-  expect(observation.costUsd).toBe(0);
-  expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
-    expectedRetainedToolNames,
-  );
-});
+    expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
+    expect(observation.isError).toBe(true);
+    expect(observation.finalText).toBe(expectedFinalText);
+    expect(observation.costUsd).toBe(0);
+    expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
+      expectedRetainedToolNames,
+    );
+  },
+);
+
+test.each([
+  [NaN, 'Expected finite number, got NaN\n  at ["total_cost_usd"]'],
+  [Infinity, 'Expected finite number, got Infinity\n  at ["total_cost_usd"]'],
+  [-Infinity, 'Expected finite number, got -Infinity\n  at ["total_cost_usd"]'],
+] satisfies ReadonlyArray<readonly [number, string]>)(
+  "a non-finite result cost fails closed: %s",
+  async (totalCostUsd, expectedFinalText) => {
+    setQueryStart(() =>
+      Effect.succeed(
+        scripted({
+          type: "result",
+          subtype: "success",
+          is_error: false,
+          result: "done",
+          total_cost_usd: totalCostUsd,
+        }),
+      ),
+    );
+
+    const observation = await runHarness();
+
+    expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
+    expect(observation.finalText).toBe(expectedFinalText);
+    expect(observation.costUsd).toBe(0);
+  },
+);
 
 const cyclicFailure: Record<string, unknown> = {};
 cyclicFailure["self"] = cyclicFailure;

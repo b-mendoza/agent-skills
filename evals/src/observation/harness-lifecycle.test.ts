@@ -106,6 +106,73 @@ test("a malformed tool input degrades to an empty record", async () => {
   ]);
 });
 
+test("valid messages strip excess keys, retain whitespace, and project tool inputs", async () => {
+  const inheritedToolInput = { inherited: "discarded" };
+  const originalToolInput: Record<string, unknown> = {
+    command: "git status",
+  };
+  Object.setPrototypeOf(originalToolInput, inheritedToolInput);
+  setQueryStart(() =>
+    Effect.succeed(
+      scripted(
+        {
+          type: "assistant",
+          ignored: "message excess",
+          message: {
+            ignored: "payload excess",
+            content: [
+              {
+                type: "tool_use",
+                name: " Read ",
+                input: originalToolInput,
+                ignored: "block excess",
+              },
+            ],
+          },
+        },
+        {
+          type: "result",
+          subtype: "success",
+          is_error: false,
+          result: " done ",
+          total_cost_usd: COST_FULL,
+          ignored: "result excess",
+        },
+      ),
+    ),
+  );
+
+  const observation = await runHarness();
+
+  expect(observation.finalText).toBe(" done ");
+  expect(observation.toolCalls).toStrictEqual([
+    { name: " Read ", input: { command: "git status" } },
+  ]);
+  expect(observation.toolCalls[0]?.input).not.toBe(originalToolInput);
+  expect(observation.toolCalls[0]?.input).not.toHaveProperty("inherited");
+});
+
+test("messages without a string discriminator are ignored", async () => {
+  setQueryStart(() =>
+    Effect.succeed(
+      scripted(
+        null,
+        [],
+        {},
+        { type: 1 },
+        { type: "user", message: { content: "echoed prompt" } },
+        success("done", COST_FULL),
+      ),
+    ),
+  );
+
+  const observation = await runHarness();
+
+  expect(observation.subtype).toBe("success");
+  expect(observation.toolCalls).toStrictEqual([]);
+  expect(observation.finalText).toBe("done");
+});
+
 test("messages that are neither assistant nor result are ignored", async () => {
   setQueryStart(() =>
     Effect.succeed(
@@ -141,6 +208,25 @@ test("an authentication failure keeps subtype and isError independent", async ()
   expect(observation.subtype).toBe("success");
   expect(observation.isError).toBe(true);
   expect(observation.toolCalls).toStrictEqual([]);
+});
+
+test("an error result retains subtype and diagnostic whitespace", async () => {
+  setQueryStart(() =>
+    Effect.succeed(
+      scripted({
+        type: "result",
+        subtype: " error_custom ",
+        is_error: true,
+        errors: [" first diagnostic ", " second diagnostic "],
+        total_cost_usd: COST_BUDGET_STOP,
+      }),
+    ),
+  );
+
+  const observation = await runHarness();
+
+  expect(observation.subtype).toBe(" error_custom ");
+  expect(observation.finalText).toBe(" first diagnostic \n second diagnostic ");
 });
 
 test("an error result keeps diagnostics, cost, and prior calls", async () => {
