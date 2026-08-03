@@ -1,7 +1,6 @@
 import { execFileSync } from "node:child_process";
 
-import { Context, Data, Effect, Layer } from "effect";
-import * as z from "zod";
+import { Context, Data, Effect, Layer, Option, Schema } from "effect";
 
 export interface GitSampler {
   readonly sample: (repo: string) => Effect.Effect<GitStatus>;
@@ -28,20 +27,31 @@ export type GitStatus =
 /** A git exit status meaning "this is not a repository". */
 const GIT_NOT_A_REPOSITORY = 128;
 
+const undefinedOnDecodeFailure = <S extends Schema.Constraint>(schema: S) =>
+  Schema.optional(schema).pipe(
+    Schema.catchDecoding(() => Effect.succeed(Option.some(undefined))),
+  );
+
 /** The subprocess-error fields consumed by git-status classification. */
-const subprocessErrorSchema = z
-  .object({
-    status: z.number().nullish().catch(undefined),
-    stderr: z.unknown().optional().catch(undefined),
-    code: z.unknown().optional().catch(undefined),
-    message: z.unknown().optional().catch(undefined),
-  })
-  .catch({
-    status: undefined,
-    stderr: undefined,
-    code: undefined,
-    message: undefined,
-  });
+const subprocessErrorSchema = Schema.Struct({
+  status: undefinedOnDecodeFailure(Schema.NullOr(Schema.Number)),
+  stderr: undefinedOnDecodeFailure(Schema.Unknown),
+  code: undefinedOnDecodeFailure(Schema.Unknown),
+  message: undefinedOnDecodeFailure(Schema.Unknown),
+}).pipe(
+  Schema.catchDecoding(() =>
+    Effect.succeed(
+      Option.some({
+        status: undefined,
+        stderr: undefined,
+        code: undefined,
+        message: undefined,
+      }),
+    ),
+  ),
+);
+
+const decodeSubprocessError = Schema.decodeUnknownSync(subprocessErrorSchema);
 
 /** Whether two samples describe the same repository state. */
 export function sameGitStatus(a: GitStatus, b: GitStatus): boolean {
@@ -74,7 +84,12 @@ function executeGitStatus(repo: string): string {
 }
 
 function classifyGitFailure(error: unknown): GitStatus {
-  const subprocessError = subprocessErrorSchema.parse(error);
+  const decodedSubprocessError = decodeSubprocessError(error);
+  const subprocessError =
+    typeof decodedSubprocessError.status === "number" &&
+    !Number.isFinite(decodedSubprocessError.status)
+      ? { ...decodedSubprocessError, status: undefined }
+      : decodedSubprocessError;
   const stderr = toText(subprocessError.stderr);
 
   // Exit 128 alone does not mean "not a repository" -- a corrupt index and

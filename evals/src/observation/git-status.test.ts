@@ -148,22 +148,39 @@ test("a missing git binary is unreadable, not clean", async () => {
   });
 });
 
-test("a malformed subprocess status preserves sibling diagnostics", async () => {
-  const subprocessFailure = {
-    status: "not a number",
-    stderr: "projected stderr survives\nsecondary detail",
-    code: "IGNORED",
-    message: "ignored message",
-  };
+test.each(["not a number", NaN, Infinity, -Infinity])(
+  "a malformed subprocess status preserves sibling diagnostics: %s",
+  async (status) => {
+    const subprocessFailure = {
+      status,
+      stderr: "projected stderr survives\nsecondary detail",
+      code: "IGNORED",
+      message: "ignored message",
+    };
+    forcedExecFileSyncFailures.push(subprocessFailure, subprocessFailure);
+
+    await expect(sampleGitStatus(tmpdir())).resolves.toStrictEqual({
+      kind: "unreadable",
+      reason: "projected stderr survives",
+    });
+    expect(gitStatus(tmpdir())).toStrictEqual({
+      kind: "unreadable",
+      reason: "projected stderr survives",
+    });
+  },
+);
+
+test("a non-object subprocess error falls back to its rendered value", async () => {
+  const subprocessFailure = ["foreign", "error"];
   forcedExecFileSyncFailures.push(subprocessFailure, subprocessFailure);
 
   await expect(sampleGitStatus(tmpdir())).resolves.toStrictEqual({
     kind: "unreadable",
-    reason: "projected stderr survives",
+    reason: '["foreign","error"]',
   });
   expect(gitStatus(tmpdir())).toStrictEqual({
     kind: "unreadable",
-    reason: "projected stderr survives",
+    reason: '["foreign","error"]',
   });
 });
 
