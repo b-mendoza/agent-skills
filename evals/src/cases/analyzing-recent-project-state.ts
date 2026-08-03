@@ -35,6 +35,10 @@ export interface CaseContext {
 /** 1 = budget-capped routing check. 2 = full behavioral run. */
 export type CaseTier = 1 | 2;
 
+export const ROUTING_TIER = 1;
+/** Only tier-2 runs are behavioral, so only they feed the derived scope check. */
+export const BEHAVIORAL_TIER = 2;
+
 export interface EvalCase {
   readonly id: string;
   readonly tier: CaseTier;
