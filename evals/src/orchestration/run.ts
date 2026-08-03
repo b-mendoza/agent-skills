@@ -12,7 +12,7 @@
 
 import { writeFileSync } from "node:fs";
 
-import { Context, Data, Effect, Layer } from "effect";
+import { Cause, Context, Data, Effect, Formatter, Layer } from "effect";
 
 import type {
   CaseTier,
@@ -55,11 +55,11 @@ const ARGV_START = 2;
 /** The derived row is computed from runs already paid for, so it books neither. */
 const NO_COST = 0;
 const NO_DURATION = 0;
+const SINGLE_REASON_COUNT = 1;
 const USAGE =
   "Usage: node evals/src/orchestration/run.ts [--tier=<integer>] [--case=<id>]";
-const SINGLE_DIE_CAUSE_PREFIX = "Cause([Die(";
-const SINGLE_CAUSE_SUFFIX = ")])";
 const ERROR_NAME_PREFIX = /^[A-Za-z]*Error(?: \[[^\]]+\])?: /;
+const UNKNOWN_CAUSE_DESCRIPTION = "An unknown error occurred";
 
 export interface ParsedArguments {
   tier?: number;
@@ -429,36 +429,52 @@ function handleRunFailure(error: unknown) {
   });
 }
 
-function describeSerializedDefect(serializedDefect: string): string {
-  const errorMessage = serializedDefect.replace(ERROR_NAME_PREFIX, "");
-  if (errorMessage !== serializedDefect) return errorMessage;
+function safelyDescribeCause(cause: Cause.Cause<unknown>): string {
+  try {
+    return String(cause);
+  } catch (causeConversionError) {
+    return new Error(UNKNOWN_CAUSE_DESCRIPTION, {
+      cause: causeConversionError,
+    }).message;
+  }
+}
+
+function describeFormattedDefect(formattedDefect: string): string {
+  const errorMessage = formattedDefect.replace(ERROR_NAME_PREFIX, "");
+  if (errorMessage !== formattedDefect) return errorMessage;
 
   try {
-    const defectValue: unknown = JSON.parse(serializedDefect);
+    const defectValue: unknown = JSON.parse(formattedDefect);
     return String(defectValue);
   } catch (parseError) {
-    if (parseError instanceof SyntaxError) return serializedDefect;
-    return String(parseError);
+    return parseError instanceof SyntaxError
+      ? formattedDefect
+      : String(parseError);
   }
 }
 
-function describeResidualCause(cause: unknown): string {
-  const serializedCause = String(cause);
-  if (
-    !serializedCause.startsWith(SINGLE_DIE_CAUSE_PREFIX) ||
-    !serializedCause.endsWith(SINGLE_CAUSE_SUFFIX)
-  ) {
-    return serializedCause;
+function describeDefect(cause: Cause.Cause<unknown>, defect: unknown): string {
+  try {
+    return describeFormattedDefect(Formatter.format(defect));
+  } catch (defectFormattingError) {
+    return new Error(safelyDescribeCause(cause), {
+      cause: defectFormattingError,
+    }).message;
   }
-
-  const serializedDefect = serializedCause.slice(
-    SINGLE_DIE_CAUSE_PREFIX.length,
-    -SINGLE_CAUSE_SUFFIX.length,
-  );
-  return describeSerializedDefect(serializedDefect);
 }
 
-function handleResidualCause(cause: unknown) {
+function describeResidualCause(cause: Cause.Cause<unknown>): string {
+  const [reason] = cause.reasons;
+  if (cause.reasons.length !== SINGLE_REASON_COUNT || reason == null) {
+    return safelyDescribeCause(cause);
+  }
+
+  return Cause.isDieReason(reason)
+    ? describeDefect(cause, reason.defect)
+    : safelyDescribeCause(cause);
+}
+
+function handleResidualCause(cause: Cause.Cause<unknown>) {
   return Effect.gen(function* () {
     const output = yield* RunnerOutput;
     yield* output.writeStderrLine(

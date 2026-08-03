@@ -26,7 +26,10 @@ import {
   RunnerServices,
 } from "#/orchestration/run.ts";
 
+const ROUTING_CASE_TIER = 1;
 const BEHAVIORAL_CASE_TIER = 2;
+const BIGINT_DEFECT = 1n;
+const DATE_DEFECT_ISO = "2020-01-02T03:04:05.000Z";
 
 function evalCase(id: string, tier: CaseTier): EvalCase {
   return {
@@ -438,5 +441,68 @@ test("a residual defect is contained by the suite-error exit", async () => {
   expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
   expect(capturedOutput.stderr).toStrictEqual([
     "eval suite error: executor defect\n",
+  ]);
+});
+
+test("a residual non-Error defect retains String conversion", async () => {
+  const services = createRunnerServices({
+    evalCases: [evalCase("broken", ROUTING_CASE_TIER)],
+    executeCase: () => Effect.die("bare defect"),
+  });
+  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
+
+  const exitCode = await runInjectedCli([], services, capturedOutput);
+
+  expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
+  expect(capturedOutput.stderr).toStrictEqual([
+    "eval suite error: bare defect\n",
+  ]);
+});
+
+test("a residual bigint defect retains its formatted suffix", async () => {
+  const services = createRunnerServices({
+    evalCases: [evalCase("broken", ROUTING_CASE_TIER)],
+    executeCase: () => Effect.die(BIGINT_DEFECT),
+  });
+  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
+
+  const exitCode = await runInjectedCli([], services, capturedOutput);
+
+  expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
+  expect(capturedOutput.stderr).toStrictEqual(["eval suite error: 1n\n"]);
+});
+
+test("a residual Date defect retains ISO formatting", async () => {
+  const services = createRunnerServices({
+    evalCases: [evalCase("broken", ROUTING_CASE_TIER)],
+    executeCase: () => Effect.die(new Date(DATE_DEFECT_ISO)),
+  });
+  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
+
+  const exitCode = await runInjectedCli([], services, capturedOutput);
+
+  expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
+  expect(capturedOutput.stderr).toStrictEqual([
+    `eval suite error: ${DATE_DEFECT_ISO}\n`,
+  ]);
+});
+
+test("a residual defect with throwing coercion is safely formatted", async () => {
+  const throwingDefect = {
+    toString: () => {
+      throw new Error("coercion broke");
+    },
+  };
+  const services = createRunnerServices({
+    evalCases: [evalCase("broken", ROUTING_CASE_TIER)],
+    executeCase: () => Effect.die(throwingDefect),
+  });
+  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
+
+  const exitCode = await runInjectedCli([], services, capturedOutput);
+
+  expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
+  expect(capturedOutput.stderr).toStrictEqual([
+    "eval suite error: [toString threw]\n",
   ]);
 });
