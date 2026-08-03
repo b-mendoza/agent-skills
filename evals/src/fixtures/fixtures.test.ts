@@ -11,10 +11,16 @@ import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
+import { Effect } from "effect";
 import { afterEach, expect, test } from "vitest";
 
 import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
+import {
+  FixtureGitCommandError,
+  FixtureProvisioner,
+  FixtureProvisionerLive,
+  makeFixture,
+} from "#/fixtures/fixtures.ts";
 
 const FIXTURE_SKILL_NAME = "analyzing-recent-project-state";
 const FIXTURE_KIND_SET = {
@@ -153,4 +159,48 @@ test("cleanup removes the whole temp tree and is safe to call twice", () => {
   expect(() => {
     fixture.cleanup();
   }).not.toThrow();
+});
+
+test("the live provisioner preserves layout and releases the fixture", async () => {
+  const fixtureSnapshot = await Effect.runPromise(
+    Effect.gen(function* () {
+      const fixtureProvisioner = yield* FixtureProvisioner;
+      return yield* Effect.acquireUseRelease(
+        fixtureProvisioner.make("dirty", FIXTURE_SKILL_NAME),
+        (fixture) =>
+          Effect.try({
+            try: () => ({
+              cwd: fixture.cwd,
+              gitRepo: fixture.gitRepo,
+              skillExists: existsSync(
+                join(
+                  fixture.cwd,
+                  ".claude",
+                  "skills",
+                  FIXTURE_SKILL_NAME,
+                  "SKILL.md",
+                ),
+              ),
+              status: readGitStatus(fixture.cwd),
+            }),
+            catch: (cause) =>
+              new FixtureGitCommandError({
+                arguments: ["status", "--short"],
+                cause,
+                repositoryPath: fixture.cwd,
+              }),
+          }),
+        (fixture) => fixtureProvisioner.cleanup(fixture),
+      );
+    }).pipe(Effect.provide(FixtureProvisionerLive)),
+  );
+
+  expect(fixtureSnapshot.gitRepo).toBe(fixtureSnapshot.cwd);
+  expect(fixtureSnapshot.skillExists).toBe(true);
+  expect(
+    fixtureSnapshot.status
+      .split("\n")
+      .sort((left, right) => left.localeCompare(right)),
+  ).toStrictEqual([" M a.txt", "?? c.txt"]);
+  expect(existsSync(fixtureSnapshot.cwd)).toBe(false);
 });
