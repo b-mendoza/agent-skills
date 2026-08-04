@@ -4,14 +4,12 @@ import type {
   AgentQuery,
   AgentQueryRequest,
 } from "#/observation/agent-query-service.ts";
-import type {
-  QueryAccumulator,
-  ResultVerdict,
-} from "#/observation/agent-query-stream.ts";
+import type { QueryAccumulator } from "#/observation/agent-query-stream.ts";
 import { failureText, settleQuery } from "#/observation/agent-query-stream.ts";
 import { GitSampler } from "#/observation/git-status.ts";
 import type {
   Observation,
+  ResultVerdict,
   RunOptions,
 } from "#/observation/observation-types.ts";
 
@@ -42,15 +40,15 @@ function startWallClock(wallClockMs: number): WallClock {
 }
 
 function createQueryRequest(
-  opts: RunOptions,
+  runOptions: RunOptions,
   abortController: AbortController,
 ): AgentQueryRequest {
   return {
-    prompt: opts.prompt,
+    prompt: runOptions.prompt,
     options: {
-      cwd: opts.cwd,
-      model: opts.model,
-      maxBudgetUsd: opts.budgetUsd,
+      cwd: runOptions.cwd,
+      model: runOptions.model,
+      maxBudgetUsd: runOptions.budgetUsd,
       permissionMode: "auto",
       abortController,
       // `env` is omitted on purpose: the subprocess then inherits
@@ -81,14 +79,14 @@ export const QUERY_ERROR_SUBTYPE = "query_error";
  * Effect timeout APIs.
  */
 export const observeClaude = (
-  opts: RunOptions,
+  runOptions: RunOptions,
 ): Effect.Effect<Observation, never, AgentQuery | GitSampler> =>
   Effect.gen(function* () {
     const gitSampler = yield* GitSampler;
-    const repo = opts.gitRepo ?? opts.cwd;
+    const repo = runOptions.gitRepo ?? runOptions.cwd;
     const gitStatusBefore = yield* gitSampler.sample(repo);
     const startedAt = process.hrtime.bigint();
-    const wallClock = startWallClock(opts.wallClockMs);
+    const wallClock = startWallClock(runOptions.wallClockMs);
     let resultVerdict: ResultVerdict | null = null;
     const accumulator: QueryAccumulator = {
       getResultVerdict: () => resultVerdict,
@@ -97,7 +95,7 @@ export const observeClaude = (
       },
       toolCalls: [],
     };
-    const request = createQueryRequest(opts, wallClock.abortController);
+    const request = createQueryRequest(runOptions, wallClock.abortController);
     const querySettlement = yield* settleQuery(request, accumulator);
     wallClock.clear();
 

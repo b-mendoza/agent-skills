@@ -27,6 +27,12 @@ export interface Observation {
   timedOut: boolean;
 }
 
+/** The fields a result message settles, before run-level facts are attached. */
+export type ResultVerdict = Pick<
+  Observation,
+  "subtype" | "isError" | "finalText" | "costUsd"
+>;
+
 export interface RunOptions {
   /** Working directory the agent runs in. Skills resolve relative to it. */
   cwd: string;

@@ -1,5 +1,6 @@
-import { Data, Effect, Exit, Option, Schema, Stream } from "effect";
+import { Data, Effect, Stream } from "effect";
 
+import { normalizeStreamMessage } from "#/observation/agent-query-messages.ts";
 import type {
   AgentQueryRequest,
   QueryStartError,
@@ -10,75 +11,13 @@ import {
   SdkMessageValidationError,
 } from "#/observation/agent-query-service.ts";
 import { toText } from "#/observation/git-status.ts";
-import type { Observation, ToolCall } from "#/observation/observation-types.ts";
+import type {
+  ResultVerdict,
+  ToolCall,
+} from "#/observation/observation-types.ts";
 
-/**
- * Tool inputs cross the SDK boundary as `unknown` -- their shape is decided
- * by the model, not the type system. A malformed input degrades to `{}`
- * rather than discarding the call: the call's existence is the fact cases
- * assert on, and `mutationEvidence` already treats an unreadable input as
- * unverifiable rather than clean.
- */
-const toolInputSchema = Schema.Record(Schema.String, Schema.Unknown).pipe(
-  Schema.catchDecoding(() => Effect.succeed(Option.some({}))),
-);
-
-const streamMessageDiscriminatorSchema = Schema.Struct({
-  type: Schema.String,
-});
-const assistantMessageSchema = Schema.Struct({
-  type: Schema.Literal("assistant"),
-  message: Schema.Struct({ content: Schema.Array(Schema.Unknown) }),
-});
-const contentBlockDiscriminatorSchema = Schema.Struct({
-  type: Schema.String,
-});
-const toolUseBlockSchema = Schema.Struct({
-  type: Schema.Literal("tool_use"),
-  name: Schema.String,
-  input: Schema.Unknown,
-});
-const successfulResultMessageSchema = Schema.Struct({
-  type: Schema.Literal("result"),
-  subtype: Schema.Literal("success"),
-  is_error: Schema.Boolean,
-  result: Schema.String,
-  total_cost_usd: Schema.Number,
-});
-const failedResultMessageSchema = Schema.Struct({
-  type: Schema.Literal("result"),
-  subtype: Schema.String,
-  is_error: Schema.Boolean,
-  errors: Schema.Array(Schema.String),
-  total_cost_usd: Schema.Number,
-});
-const resultSubtypeSchema = Schema.Struct({ subtype: Schema.String });
-
-const decodeToolInput = Schema.decodeUnknownSync(toolInputSchema);
-const decodeStreamMessageDiscriminator = Schema.decodeUnknownExit(
-  streamMessageDiscriminatorSchema,
-);
-const decodeAssistantMessage = Schema.decodeUnknownSync(assistantMessageSchema);
-const decodeContentBlockDiscriminator = Schema.decodeUnknownSync(
-  contentBlockDiscriminatorSchema,
-);
-const decodeToolUseBlock = Schema.decodeUnknownSync(toolUseBlockSchema);
-const decodeSuccessfulResultMessage = Schema.decodeUnknownSync(
-  successfulResultMessageSchema,
-);
-const decodeFailedResultMessage = Schema.decodeUnknownSync(
-  failedResultMessageSchema,
-);
-const decodeResultSubtype = Schema.decodeUnknownSync(resultSubtypeSchema);
-
-export type ResultVerdict = Pick<
-  Observation,
-  "subtype" | "isError" | "finalText" | "costUsd"
->;
-
-class ResultObserved extends Data.TaggedError("ResultObserved")<{
-  readonly verdict: ResultVerdict;
-}> {}
+/** Signals that a result message settled the stream, so iteration stops. */
+class ResultObserved extends Data.TaggedError("ResultObserved") {}
 
 export interface QueryAccumulator {
   readonly getResultVerdict: () => ResultVerdict | null;
@@ -91,82 +30,6 @@ type QueryFailure =
   | QueryStreamError
   | SdkMessageValidationError;
 
-type NormalizedStreamMessage =
-  | { kind: "ignored" }
-  | { kind: "assistant" }
-  | { kind: "result"; verdict: ResultVerdict };
-
-function requireFiniteCost(costUsd: number): number {
-  if (!Number.isFinite(costUsd)) {
-    throw new Error(
-      `Expected finite number, got ${String(costUsd)}\n  at ["total_cost_usd"]`,
-    );
-  }
-  return costUsd;
-}
-
-/** Relevant SDK messages, validated and reduced to the fields observed here. */
-function normalizeStreamMessage(
-  message: unknown,
-  observedToolCalls: ToolCall[],
-): NormalizedStreamMessage {
-  const parsedDiscriminator = decodeStreamMessageDiscriminator(message);
-  if (Exit.isFailure(parsedDiscriminator)) return { kind: "ignored" };
-
-  if (parsedDiscriminator.value.type === "assistant") {
-    const assistantMessage = decodeAssistantMessage(message);
-    const messageToolCalls: ToolCall[] = [];
-
-    for (const contentBlock of assistantMessage.message.content) {
-      // A relevant assistant message fails closed when any content entry lacks
-      // the minimum SDK block shape. Its calls are committed only after every
-      // entry validates, preserving the message-level atomicity of the SDK.
-      const blockDiscriminator = decodeContentBlockDiscriminator(contentBlock);
-      if (blockDiscriminator.type === "tool_use") {
-        const toolUseBlock = decodeToolUseBlock(contentBlock);
-        messageToolCalls.push({
-          name: toolUseBlock.name,
-          input: decodeToolInput(toolUseBlock.input),
-        });
-      }
-    }
-
-    observedToolCalls.push(...messageToolCalls);
-    return { kind: "assistant" };
-  }
-
-  if (parsedDiscriminator.value.type === "result") {
-    const parsedSubtype = decodeResultSubtype(message);
-    if (parsedSubtype.subtype === "success") {
-      const resultMessage = decodeSuccessfulResultMessage(message);
-      return {
-        kind: "result",
-        verdict: {
-          subtype: resultMessage.subtype,
-          isError: resultMessage.is_error,
-          finalText: resultMessage.result,
-          costUsd: requireFiniteCost(resultMessage.total_cost_usd),
-        },
-      };
-    }
-
-    const resultMessage = decodeFailedResultMessage(message);
-    return {
-      kind: "result",
-      verdict: {
-        subtype: resultMessage.subtype,
-        isError: resultMessage.is_error,
-        // Error results carry diagnostics instead of an answer. Joining them
-        // keeps auth and execution failures readable in a case failure.
-        finalText: resultMessage.errors.join("\n"),
-        costUsd: requireFiniteCost(resultMessage.total_cost_usd),
-      },
-    };
-  }
-
-  return { kind: "ignored" };
-}
-
 /** What a run without a result message can still say about why. */
 export function failureText(failure: unknown): string {
   if (failure == null) return "query ended without a result message";
@@ -178,15 +41,13 @@ function observeSdkMessage(
   accumulator: QueryAccumulator,
 ): Effect.Effect<void, SdkMessageValidationError | ResultObserved> {
   return Effect.gen(function* () {
-    const normalizedMessage = yield* Effect.try({
+    const resultVerdict = yield* Effect.try({
       try: () => normalizeStreamMessage(message, accumulator.toolCalls),
       catch: (cause) => new SdkMessageValidationError({ cause }),
     });
-    if (normalizedMessage.kind === "result") {
-      accumulator.recordResultVerdict(normalizedMessage.verdict);
-      return yield* new ResultObserved({
-        verdict: normalizedMessage.verdict,
-      });
+    if (resultVerdict !== null) {
+      accumulator.recordResultVerdict(resultVerdict);
+      return yield* new ResultObserved();
     }
   });
 }
@@ -199,10 +60,7 @@ function preserveObservedResultDuringCleanup(
     [Symbol.asyncIterator]: () => {
       const iterator = messages[Symbol.asyncIterator]();
       return {
-        next: async () => {
-          const nextMessage = await iterator.next();
-          return nextMessage;
-        },
+        next: async () => iterator.next(),
         return: async () => {
           if (iterator.return === undefined) {
             return { done: true, value: undefined };
@@ -226,7 +84,7 @@ function preserveObservedResultDuringCleanup(
 function consumeQueryMessages(
   request: AgentQueryRequest,
   accumulator: QueryAccumulator,
-): Effect.Effect<ResultVerdict | undefined, QueryFailure, AgentQuery> {
+): Effect.Effect<void, QueryFailure, AgentQuery> {
   return Effect.gen(function* () {
     const agentQuery = yield* AgentQuery;
     const messages = yield* agentQuery.start(request);
@@ -235,10 +93,8 @@ function consumeQueryMessages(
       (cause) => new QueryStreamError({ cause }),
     ).pipe(
       Stream.runForEach((message) => observeSdkMessage(message, accumulator)),
-      Effect.as(undefined),
-      Effect.catchTag("ResultObserved", (error) =>
-        Effect.succeed(error.verdict),
-      ),
+      Effect.asVoid,
+      Effect.catchTag("ResultObserved", () => Effect.void),
     );
   });
 }
