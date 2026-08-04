@@ -15,23 +15,18 @@ import { evidenceFor } from "#/observation/observation-test-support.ts";
 // `git status --short` identical before and after. `git switch` moving HEAD
 // between two clean branches is the motivating case: the command text is the
 // only evidence that survives.
-const ALWAYS_MUTATING_GIT_VERB_FIXTURES = [
+const ALWAYS_MUTATING_GIT_VERBS = [
   "add",
   "commit",
   "merge",
-  // Hyphenated collisions with `merge` must stay flagged even though
-  // `merge-base` alone is excepted as read-only.
-  "merge-tree",
   "push",
   "fetch",
   "pull",
   "reset",
   "checkout",
   "rebase",
-  "stash",
   "clean",
   "rm",
-  "tag",
   "switch",
   "restore",
   "cherry-pick",
@@ -44,9 +39,24 @@ const ALWAYS_MUTATING_GIT_VERB_FIXTURES = [
   "gc",
 ];
 
-test.each(ALWAYS_MUTATING_GIT_VERB_FIXTURES)("`git %s` is evidence", (verb) => {
+test.each(ALWAYS_MUTATING_GIT_VERBS)("`git %s` is evidence", (verb) => {
   expect(evidenceFor(`git ${verb}`)).toStrictEqual([
     `mutating git command: git ${verb}`,
+  ]);
+});
+
+// The bare form of these reaches the same verdict by a different mechanism, so
+// they are pinned apart from the always-mutating list: `stash` and `tag` are
+// dual-mode verbs declared to write when invoked with no arguments, while
+// `merge-tree` is caught by the `merge` pattern's prefix match -- `\b` treats
+// the hyphen as a boundary, and only `merge-base` is excepted from it.
+test.each([
+  ["git stash", "a dual-mode verb whose bare form writes"],
+  ["git tag", "a dual-mode verb whose bare form writes"],
+  ["git merge-tree", "a hyphenated collision with the `merge` pattern"],
+])("`%s` is evidence as %s", (command) => {
+  expect(evidenceFor(command)).toStrictEqual([
+    `mutating git command: ${command}`,
   ]);
 });
 
