@@ -100,6 +100,9 @@ export default defineConfig(
       // contracts pinned by the orchestration tests; `love` errors on
       // console usage, but here console IS the product surface.
       "no-console": OFF,
+      // Spawning `git` off PATH is how the harness samples repo state; the
+      // agent itself now runs via the Agent SDK's bundled binary.
+      "sonarjs/no-os-command-from-path": OFF,
       /**
        * Disabled because the `v` flag requires es2024, but our project targets es2023.
        * Re-enable when the project upgrades to es2024.
@@ -108,18 +111,6 @@ export default defineConfig(
       "require-unicode-regexp": OFF,
       "sonarjs/no-commented-code": WARN,
       "sonarjs/todo-tag": WARN,
-    },
-  },
-  {
-    /**
-     * Rules a CLI test harness is expected to trip. Each one flags the very
-     * thing this package exists to do, so switching it off here is a statement
-     * of intent rather than a way to dodge a fix.
-     */
-    rules: {
-      // Spawning `git` off PATH is how the harness samples repo state; the
-      // agent itself now runs via the Agent SDK's bundled binary.
-      "sonarjs/no-os-command-from-path": OFF,
     },
   },
   {
