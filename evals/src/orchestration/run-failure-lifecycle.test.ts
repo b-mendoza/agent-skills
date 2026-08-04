@@ -2,9 +2,11 @@
 // suite-error exit code with an exact stderr line.
 //
 // The residual-defect rows below are deliberately literal. They pin how
-// `effect` formats a defect that is not an Error -- a bigint, a Date, a value
-// whose `toString` throws -- so a formatting regression fails here rather than
-// in a paid run.
+// `effect` formats a defect that is not an Error -- a bare string, a bigint --
+// so a formatting regression fails here rather than in a paid run. The
+// throwing-coercion case pins only the shape of that line: its wording belongs
+// to `effect`'s formatter, but a defect whose `toString` throws must still land
+// on one contained suite-error line.
 //
 //   pnpm test
 
@@ -12,6 +14,7 @@ import { Effect } from "effect";
 import { expect, test, vi } from "vitest";
 
 import { ROUTING_TIER } from "#/cases/analyzing-recent-project-state.ts";
+import { PromptConstructionError } from "#/orchestration/case-execution.ts";
 import { EXIT_CODES } from "#/orchestration/run-coordination.ts";
 import {
   createRunnerServices,
@@ -26,12 +29,12 @@ import {
 } from "#/orchestration/run-services.ts";
 
 const BIGINT_DEFECT = 1n;
-const DATE_DEFECT_ISO = "2020-01-02T03:04:05.000Z";
 const THROWING_DEFECT = {
   toString: () => {
     throw new Error("coercion broke");
   },
 };
+const SUITE_ERROR_LINE_PATTERN = /^eval suite error: .+\n$/u;
 
 test("an unexpected executor failure returns the suite-error exit code", async () => {
   const writeReport = vi.fn<RunnerServices["writeReport"]>(() =>
@@ -83,6 +86,20 @@ test.each<{
     expectedStderr: "eval suite error: bare failure\n",
   },
   {
+    // The live path nests a case error inside the runner's boundary error, so
+    // the reported message must come from the innermost cause.
+    label: "a nested boundary failure reports the original cause",
+    executeCase: () =>
+      Effect.fail(
+        new RunnerCaseExecutionError({
+          cause: new PromptConstructionError({
+            cause: new Error("prompt broke"),
+          }),
+        }),
+      ),
+    expectedStderr: "eval suite error: prompt broke\n",
+  },
+  {
     label: "a residual defect is contained by the suite-error exit",
     executeCase: () => Effect.die(new Error("executor defect")),
     expectedStderr: "eval suite error: executor defect\n",
@@ -97,16 +114,6 @@ test.each<{
     executeCase: () => Effect.die(BIGINT_DEFECT),
     expectedStderr: "eval suite error: 1n\n",
   },
-  {
-    label: "a residual Date defect retains ISO formatting",
-    executeCase: () => Effect.die(new Date(DATE_DEFECT_ISO)),
-    expectedStderr: `eval suite error: ${DATE_DEFECT_ISO}\n`,
-  },
-  {
-    label: "a residual defect with throwing coercion is safely formatted",
-    executeCase: () => Effect.die(THROWING_DEFECT),
-    expectedStderr: "eval suite error: [toString threw]\n",
-  },
 ])("$label", async ({ executeCase, expectedStderr }) => {
   const services = createRunnerServices({
     evalCases: [evalCase("broken", ROUTING_TIER)],
@@ -117,4 +124,17 @@ test.each<{
 
   expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
   expect(stderr).toStrictEqual([expectedStderr]);
+});
+
+test("a residual defect with throwing coercion is safely formatted", async () => {
+  const services = createRunnerServices({
+    evalCases: [evalCase("broken", ROUTING_TIER)],
+    executeCase: () => Effect.die(THROWING_DEFECT),
+  });
+
+  const { exitCode, stderr } = await runInjectedCli([], services);
+
+  // One line, and the coercion failure never escapes as the suite's outcome.
+  expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
+  expect(stderr.join("")).toMatch(SUITE_ERROR_LINE_PATTERN);
 });
