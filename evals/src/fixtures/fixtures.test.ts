@@ -9,12 +9,12 @@
 
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { basename, join } from "node:path";
 
-import { Effect } from "effect";
+import { Effect, Result } from "effect";
 import { afterEach, expect, test } from "vitest";
 
-import { FixtureGitCommandError } from "#/fixtures/fixture-errors.ts";
 import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
 import {
   FixtureProvisioner,
@@ -118,10 +118,22 @@ test("dirty: carries exactly the intended modified and untracked entries", async
   ).toStrictEqual([" M a.txt", "?? c.txt"]);
 });
 
-test("missingPath does not exist and notGitPath is a real non-worktree", async () => {
+test("dirty: hides .claude scaffolding from git status", async () => {
+  const fixture = await createFixture("dirty");
+
+  // Mutation-scope must measure the skill's own edits, so the copied-in skill
+  // has to stay out of the evidence window.
+  expect(readGitStatus(fixture.cwd)).not.toContain(".claude");
+});
+
+test("missing-path: exposes a path that does not exist", async () => {
   const fixture = await createFixture("missing-path");
 
   expect(existsSync(fixture.missingPath)).toBe(false);
+});
+
+test("missing-path: exposes a real non-worktree directory with content", async () => {
+  const fixture = await createFixture("missing-path");
 
   expect(existsSync(fixture.notGitPath)).toBe(true);
   expect(existsSync(join(fixture.notGitPath, ".git"))).toBe(false);
@@ -134,6 +146,8 @@ test("each call gets an isolated tree", async () => {
   const firstFixture = await createFixture("dirty");
   const secondFixture = await createFixture("dirty");
 
+  expect(firstFixture.cwd).not.toBe(secondFixture.cwd);
+
   // Writing through one fixture must not be visible in the other.
   execFileSync("git", ["config", "user.name", "Only A"], {
     cwd: firstFixture.cwd,
@@ -143,7 +157,7 @@ test("each call gets an isolated tree", async () => {
     encoding: "utf8",
   }).trim();
 
-  expect(secondFixtureUserName).toBe("Eval Fixture");
+  expect(secondFixtureUserName).not.toBe("Only A");
 });
 
 test("cleanup removes the whole temp tree and is safe to call twice", async () => {
@@ -153,6 +167,9 @@ test("cleanup removes the whole temp tree and is safe to call twice", async () =
   const { cwd, notGitPath } = fixture;
 
   expect(existsSync(cwd)).toBe(true);
+  // `cleanup` is an unconditional recursive force delete, so this is the only
+  // guard that its deletion root stays inside the OS temp directory.
+  expect(cwd.startsWith(tmpdir())).toBe(true);
   fixture.cleanup();
 
   expect(existsSync(cwd)).toBe(false);
@@ -165,46 +182,42 @@ test("cleanup removes the whole temp tree and is safe to call twice", async () =
   }).not.toThrow();
 });
 
-test("the live provisioner preserves layout and releases the fixture", async () => {
-  const fixtureSnapshot = await Effect.runPromise(
+test("the provisioner cleanup effect releases the whole fixture tree", async () => {
+  const releasedFixturePath = await Effect.runPromise(
     Effect.gen(function* () {
       const fixtureProvisioner = yield* FixtureProvisioner;
       return yield* Effect.acquireUseRelease(
         fixtureProvisioner.make("dirty", FIXTURE_SKILL_NAME),
-        (fixture) =>
-          Effect.try({
-            try: () => ({
-              cwd: fixture.cwd,
-              gitRepo: fixture.gitRepo,
-              skillExists: existsSync(
-                join(
-                  fixture.cwd,
-                  ".claude",
-                  "skills",
-                  FIXTURE_SKILL_NAME,
-                  "SKILL.md",
-                ),
-              ),
-              status: readGitStatus(fixture.cwd),
-            }),
-            catch: (cause) =>
-              new FixtureGitCommandError({
-                arguments: ["status", "--short"],
-                cause,
-                repositoryPath: fixture.cwd,
-              }),
-          }),
+        (fixture) => Effect.succeed(fixture.cwd),
         (fixture) => fixtureProvisioner.cleanup(fixture),
       );
     }).pipe(Effect.provide(FixtureProvisionerLive)),
   );
 
-  expect(fixtureSnapshot.gitRepo).toBe(fixtureSnapshot.cwd);
-  expect(fixtureSnapshot.skillExists).toBe(true);
-  expect(
-    fixtureSnapshot.status
-      .split("\n")
-      .sort((left, right) => left.localeCompare(right)),
-  ).toStrictEqual([" M a.txt", "?? c.txt"]);
-  expect(existsSync(fixtureSnapshot.cwd)).toBe(false);
+  expect(existsSync(releasedFixturePath)).toBe(false);
+});
+
+test("make fails with a tagged FixtureSkillCopyError when the skill does not exist", async () => {
+  const missingSkillName = "no-such-skill";
+  // Failed provisioning leaves its temp root behind; sweeping the OS temp
+  // directory here would race the fixture roots of parallel test files.
+  const provisioningResult = await Effect.runPromise(
+    Effect.gen(function* () {
+      const fixtureProvisioner = yield* FixtureProvisioner;
+      return yield* Effect.result(
+        fixtureProvisioner.make("clean", missingSkillName),
+      );
+    }).pipe(Effect.provide(FixtureProvisionerLive)),
+  );
+
+  const provisioningError = Result.isFailure(provisioningResult)
+    ? provisioningResult.failure
+    : undefined;
+  const attemptedSkillDirectoryName =
+    provisioningError?._tag === "FixtureSkillCopyError"
+      ? basename(provisioningError.sourcePath)
+      : undefined;
+
+  expect(provisioningError?._tag).toBe("FixtureSkillCopyError");
+  expect(attemptedSkillDirectoryName).toBe(missingSkillName);
 });
