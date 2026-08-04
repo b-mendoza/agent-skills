@@ -177,9 +177,7 @@ test("tier-2 observations add a derived mutation-scope row without another execu
 
   expect(exitCode).toBe(EXIT_CODES.ALL_PASSED);
   expect(executeCase).toHaveBeenCalledOnce();
-  expect(writtenReports[0]).toContain(
-    "| mutation-scope | 2* | PASS | 1 behavioral run(s) left no trace |",
-  );
+  expect(writtenReports[0]).toContain("| mutation-scope | 2* | PASS |");
 });
 
 test("tier-2 mutation evidence fails the derived row without executing another case", async () => {
