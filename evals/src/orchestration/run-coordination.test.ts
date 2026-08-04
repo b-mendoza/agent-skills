@@ -13,6 +13,7 @@ import {
   BEHAVIORAL_TIER,
   ROUTING_TIER,
 } from "#/cases/analyzing-recent-project-state.ts";
+import { formatResultLine } from "#/orchestration/report.ts";
 import { EXIT_CODES } from "#/orchestration/run-coordination.ts";
 import {
   capturingWriteReport,
@@ -26,6 +27,11 @@ import {
   RunnerCaseExecutionError,
   RunnerReportWriteError,
 } from "#/orchestration/run-services.ts";
+
+const PASSING_CASE_COST_USD = 0.25;
+const PASSING_CASE_DURATION_MS = 1500;
+const FAILING_CASE_COST_USD = 0.5;
+const FAILING_CASE_DURATION_MS = 3000;
 
 test("usage errors execute no cases and write no report", async () => {
   const services = createRunnerServices({
@@ -154,6 +160,44 @@ test("cases execute sequentially and the report writes after completion", async 
     "write-report",
   ]);
   expect(writeReport).toHaveBeenCalledOnce();
+});
+
+test("a mixed run prints every progress line, the failure detail, and the report confirmation", async () => {
+  const passingCase = evalCase("passing", ROUTING_TIER);
+  const failingCase = evalCase("failing", ROUTING_TIER);
+  const passingExecution = executionResult(passingCase, {
+    costUsd: PASSING_CASE_COST_USD,
+    durationMs: PASSING_CASE_DURATION_MS,
+  });
+  const failingExecution = executionResult(failingCase, {
+    status: "FAIL",
+    observed: "assertion failed",
+    costUsd: FAILING_CASE_COST_USD,
+    durationMs: FAILING_CASE_DURATION_MS,
+  });
+  const services = createRunnerServices({
+    evalCases: [passingCase, failingCase],
+    executeCase: (selectedCase) =>
+      Effect.succeed(
+        selectedCase.id === passingCase.id
+          ? passingExecution
+          : failingExecution,
+      ),
+  });
+
+  const { exitCode, stdout } = await runInjectedCli([], services);
+
+  expect(exitCode).toBe(EXIT_CODES.CASE_FAILED);
+  expect(stdout.join("")).toBe(
+    [
+      `· passing (tier ${ROUTING_TIER}) ... ${formatResultLine(passingExecution.result)}`,
+      `· failing (tier ${ROUTING_TIER}) ... ${formatResultLine(failingExecution.result)}`,
+      "    assertion failed",
+      "",
+      "Report written to evals/report.md",
+      "",
+    ].join("\n"),
+  );
 });
 
 test("tier-2 observations add a derived mutation-scope row without another execution", async () => {
