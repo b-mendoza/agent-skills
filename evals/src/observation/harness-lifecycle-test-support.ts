@@ -3,13 +3,13 @@
 import { tmpdir } from "node:os";
 
 import { Effect } from "effect";
-import { afterEach, beforeEach, vi } from "vitest";
 
 import { observeClaude } from "#/observation/agent-query.ts";
 import type {
   AgentQuery as AgentQueryService,
   AgentQueryRequest,
 } from "#/observation/agent-query-service.ts";
+import { QueryStartError } from "#/observation/agent-query-service.ts";
 import type { GitStatus } from "#/observation/git-status.ts";
 import {
   createAgentQueryLayer,
@@ -21,7 +21,7 @@ import type {
   RunOptions,
 } from "#/observation/observation-types.ts";
 
-export const WALL_CLOCK_MS = 30_000;
+const WALL_CLOCK_MS = 30_000;
 /** Short enough to exercise the abort path without slowing the suite. */
 export const SHORT_WALL_CLOCK_MS = 25;
 /** Well past the short deadline, for the cleared-timer test. */
@@ -31,7 +31,7 @@ export const BUDGET_USD = 0.01;
 export const COST_FULL = 0.5;
 export const COST_BUDGET_STOP = 0.25;
 export const FOREIGN_BIGINT = 1n;
-export const LAST_ITEM_OFFSET = -1;
+const LAST_ITEM_OFFSET = -1;
 export const EXPECTED_GIT_SAMPLE_COUNT = 2;
 
 interface FakeContentBlock {
@@ -54,7 +54,7 @@ export type FakeMessage =
       total_cost_usd?: unknown;
     };
 
-type FakeMessageSource =
+export type FakeMessageSource =
   | Generator<unknown, void>
   | AsyncGenerator<unknown, void>;
 
@@ -68,6 +68,27 @@ export function fakeQuery(
   generatorFactory: () => FakeMessageSource,
 ): AsyncIterable<unknown> {
   return asAsyncMessages(generatorFactory());
+}
+
+/**
+ * A query whose messages need the harness-owned abort signal. Failing when the
+ * signal is absent keeps a harness that stopped supplying one from reading as a
+ * run that simply never aborted.
+ */
+export function abortAwareQuery(
+  makeMessages: (signal: AbortSignal) => FakeMessageSource,
+): AgentQueryService["start"] {
+  return (request) => {
+    const signal = request.options?.abortController?.signal;
+    if (signal == null) {
+      return Effect.fail(
+        new QueryStartError({
+          cause: new Error("no abort controller supplied"),
+        }),
+      );
+    }
+    return Effect.succeed(fakeQuery(() => makeMessages(signal)));
+  };
 }
 
 function* yieldScript(script: readonly unknown[]): Generator<unknown, void> {
@@ -138,26 +159,28 @@ export function createTrackedMessages(
 
 let queryStart: AgentQueryService["start"] = (_request) =>
   Effect.succeed(scripted(success("done", COST_FULL)));
-let observedQueryRequests: AgentQueryRequest[] = [];
+const observedQueryRequests: AgentQueryRequest[] = [];
 
 export function setQueryStart(start: AgentQueryService["start"]): void {
   queryStart = start;
 }
 let gitSamples: GitStatus[] = [];
-export let sampledRepositories: string[] = [];
+/** Reset in place, so an importing suite keeps observing the same array. */
+export const sampledRepositories: string[] = [];
 
-beforeEach(() => {
+/**
+ * Restores the seam's default query and clears what the last test observed.
+ * Each importing suite registers this itself, so the reset is visible where it
+ * applies rather than being imposed by the import.
+ */
+export function resetHarness(): void {
   queryStart = (_request) => {
     return Effect.succeed(scripted(success("done", COST_FULL)));
   };
-  observedQueryRequests = [];
+  observedQueryRequests.length = 0;
   gitSamples = [createWorktreeStatus(), createWorktreeStatus()];
-  sampledRepositories = [];
-});
-
-afterEach(() => {
-  vi.useRealTimers();
-});
+  sampledRepositories.length = 0;
+}
 
 export async function runHarness(
   overrides: Readonly<Partial<RunOptions>> = {},

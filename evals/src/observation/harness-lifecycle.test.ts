@@ -3,7 +3,7 @@
 import { tmpdir } from "node:os";
 
 import { Effect } from "effect";
-import { expect, test } from "vitest";
+import { beforeEach, expect, test } from "vitest";
 
 import {
   assistant,
@@ -11,6 +11,7 @@ import {
   COST_BUDGET_STOP,
   COST_FULL,
   lastQueryRequest,
+  resetHarness,
   runHarness,
   sampledRepositories,
   scripted,
@@ -18,6 +19,8 @@ import {
   success,
   toolUse,
 } from "#/observation/harness-lifecycle-test-support.ts";
+
+beforeEach(resetHarness);
 
 test("a normal stream yields the result and its tool calls", async () => {
   setQueryStart(() =>
@@ -152,36 +155,27 @@ test("valid messages strip excess keys, retain whitespace, and project tool inpu
   expect(observation.toolCalls[0]?.input).not.toHaveProperty("inherited");
 });
 
-test("messages without a string discriminator are ignored", async () => {
-  setQueryStart(() =>
-    Effect.succeed(
-      scripted(
-        null,
-        [],
-        {},
-        { type: 1 },
-        { type: "user", message: { content: "echoed prompt" } },
-        success("done", COST_FULL),
-      ),
-    ),
-  );
-
-  const observation = await runHarness();
-
-  expect(observation.subtype).toBe("success");
-  expect(observation.toolCalls).toStrictEqual([]);
-  expect(observation.finalText).toBe("done");
-});
-
-test("messages that are neither assistant nor result are ignored", async () => {
-  setQueryStart(() =>
-    Effect.succeed(
-      scripted(
-        { type: "user", message: { role: "user", content: "echoed prompt" } },
-        success("done", COST_FULL),
-      ),
-    ),
-  );
+test.each([
+  {
+    name: "messages without a string discriminator are ignored",
+    messageScript: [
+      null,
+      [],
+      {},
+      { type: 1 },
+      { type: "user", message: { content: "echoed prompt" } },
+      success("done", COST_FULL),
+    ],
+  },
+  {
+    name: "messages that are neither assistant nor result are ignored",
+    messageScript: [
+      { type: "user", message: { role: "user", content: "echoed prompt" } },
+      success("done", COST_FULL),
+    ],
+  },
+])("$name", async ({ messageScript }) => {
+  setQueryStart(() => Effect.succeed(scripted(...messageScript)));
 
   const observation = await runHarness();
 

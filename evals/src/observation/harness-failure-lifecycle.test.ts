@@ -3,12 +3,13 @@
 import { once } from "node:events";
 
 import { Effect } from "effect";
-import { expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { QueryStartError } from "#/observation/agent-query-service.ts";
 import type { FakeMessage } from "#/observation/harness-lifecycle-test-support.ts";
 import {
+  abortAwareQuery,
   assistant,
   COST_BUDGET_STOP,
   COST_FULL,
@@ -18,6 +19,7 @@ import {
   FOREIGN_BIGINT,
   lastQueryRequest,
   PAST_THE_DEADLINE_MS,
+  resetHarness,
   runHarness,
   sampledRepositories,
   scripted,
@@ -26,6 +28,13 @@ import {
   success,
   toolUse,
 } from "#/observation/harness-lifecycle-test-support.ts";
+
+beforeEach(resetHarness);
+
+// This is the only suite that fakes timers, so it owns restoring them.
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 test("a query startup failure settles and books no cost", async () => {
   setQueryStart(() =>
@@ -229,23 +238,13 @@ test("a cleanup failure after a result cannot replace that result", async () => 
 });
 
 test("a run that exceeds its wall clock is aborted and settles", async () => {
-  setQueryStart((request) => {
-    const signal = request.options?.abortController?.signal;
-    if (signal == null) {
-      return Effect.fail(
-        new QueryStartError({
-          cause: new Error("no abort controller supplied"),
-        }),
-      );
-    }
-    return Effect.succeed(
-      fakeQuery(async function* () {
-        yield assistant(toolUse("Read"));
-        await once(signal, "abort");
-        throw new Error("The operation was aborted");
-      }),
-    );
-  });
+  setQueryStart(
+    abortAwareQuery(async function* (signal) {
+      yield assistant(toolUse("Read"));
+      await once(signal, "abort");
+      throw new Error("The operation was aborted");
+    }),
+  );
 
   const observation = await runHarness({
     wallClockMs: SHORT_WALL_CLOCK_MS,
@@ -261,22 +260,12 @@ test("a run that exceeds its wall clock is aborted and settles", async () => {
 });
 
 test("a result after abort retains both verdict and timeout evidence", async () => {
-  setQueryStart((request) => {
-    const signal = request.options?.abortController?.signal;
-    if (signal == null) {
-      return Effect.fail(
-        new QueryStartError({
-          cause: new Error("no abort controller supplied"),
-        }),
-      );
-    }
-    return Effect.succeed(
-      fakeQuery(async function* () {
-        await once(signal, "abort");
-        yield success("late result", COST_FULL);
-      }),
-    );
-  });
+  setQueryStart(
+    abortAwareQuery(async function* (signal) {
+      await once(signal, "abort");
+      yield success("late result", COST_FULL);
+    }),
+  );
 
   const observation = await runHarness({
     wallClockMs: SHORT_WALL_CLOCK_MS,
