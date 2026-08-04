@@ -22,19 +22,30 @@ import {
   GitSamplerLive,
 } from "#/observation/git-status.ts";
 
-const forcedExecFileSyncFailures = vi.hoisted((): unknown[] => []);
+const forcedGitStatusFailures = vi.hoisted((): unknown[] => []);
 
 vi.mock(import("node:child_process"), async (importOriginal) => {
   const real = await importOriginal();
+  // Gated on the intercepted argv so a forced failure can only stand in for the
+  // `git status` sample under test. Without the gate the repository fixtures'
+  // own `git init`/`git add` calls would consume the queued failure instead.
+  const isGitStatusSample = (argumentList: readonly unknown[]): boolean => {
+    const [executable, commandArguments] = argumentList;
+    if (executable !== "git" || !Array.isArray(commandArguments)) return false;
+    const [subcommand] = commandArguments as readonly unknown[];
+    return subcommand === "status";
+  };
   const passthroughExecFileSync = new Proxy(real.execFileSync, {
     apply: (
       target,
       thisArgument: unknown,
       argumentList: readonly unknown[],
     ) => {
-      const forcedFailure = forcedExecFileSyncFailures.shift();
-      if (forcedFailure !== undefined) {
-        throw forcedFailure;
+      if (isGitStatusSample(argumentList)) {
+        const forcedFailure = forcedGitStatusFailures.shift();
+        if (forcedFailure !== undefined) {
+          throw forcedFailure;
+        }
       }
       const output: unknown = Reflect.apply(target, thisArgument, argumentList);
       return output;
@@ -42,6 +53,11 @@ vi.mock(import("node:child_process"), async (importOriginal) => {
   });
   return { ...real, execFileSync: passthroughExecFileSync };
 });
+
+/** Makes the next `git status` sample fail with `failure`. */
+function forceNextStatusFailure(failure: unknown): void {
+  forcedGitStatusFailures.push(failure);
+}
 
 const tempDirectories: string[] = [];
 const realPath = process.env["PATH"];
@@ -52,7 +68,7 @@ afterEach(() => {
   } else {
     process.env["PATH"] = realPath;
   }
-  forcedExecFileSyncFailures.length = 0;
+  forcedGitStatusFailures.length = 0;
   for (const tempDirectory of tempDirectories.splice(0)) {
     rmSync(tempDirectory, { recursive: true, force: true });
   }
@@ -129,33 +145,51 @@ test("a corrupt index is unreadable rather than clean", async () => {
   expect(status.reason).not.toBe("");
 });
 
-test("a missing directory is unreadable", async () => {
-  const status = await sampleGitStatus(
-    join(tmpdir(), "definitely-does-not-exist-xyz"),
-  );
-
-  expect(status).toStrictEqual({ kind: "unreadable", reason: "ENOENT" });
-});
-
-test("a missing git binary is unreadable, not clean", async () => {
-  const repositoryDirectory = createRepository();
-  process.env["PATH"] = createTempDirectory();
-
-  await expect(sampleGitStatus(repositoryDirectory)).resolves.toMatchObject({
+// Both origins surface as the same ENOENT: the directory git was pointed at is
+// gone, or git itself is not on PATH. Neither may read as a clean worktree.
+test.each([
+  {
+    name: "a missing directory",
+    locateRepository: (): string =>
+      join(tmpdir(), "definitely-does-not-exist-xyz"),
+  },
+  {
+    name: "a missing git binary",
+    locateRepository: (): string => {
+      const repositoryDirectory = createRepository();
+      process.env["PATH"] = createTempDirectory();
+      return repositoryDirectory;
+    },
+  },
+])("$name is unreadable, not clean", async ({ locateRepository }) => {
+  await expect(sampleGitStatus(locateRepository())).resolves.toStrictEqual({
     kind: "unreadable",
+    reason: "ENOENT",
   });
 });
 
-test.each(["not a number", NaN, Infinity, -Infinity])(
+test("a fatal message merely containing the phrase stays unreadable", async () => {
+  // `no-worktree` is a known repository state, claimed only by git's own fatal
+  // line. A corrupt-object failure whose path happens to carry the phrase must
+  // not be promoted into that expected state and read as clean.
+  const stderr = "fatal: bad object HEAD in /tmp/not a git repository/x";
+  forceNextStatusFailure({ status: 128, stderr });
+
+  await expect(sampleGitStatus(tmpdir())).resolves.toStrictEqual({
+    kind: "unreadable",
+    reason: stderr,
+  });
+});
+
+test.each(["not a number", NaN])(
   "a malformed subprocess status preserves sibling diagnostics: %s",
   async (status) => {
-    const subprocessFailure = {
+    forceNextStatusFailure({
       status,
       stderr: "projected stderr survives\nsecondary detail",
       code: "IGNORED",
       message: "ignored message",
-    };
-    forcedExecFileSyncFailures.push(subprocessFailure);
+    });
 
     await expect(sampleGitStatus(tmpdir())).resolves.toStrictEqual({
       kind: "unreadable",
@@ -165,8 +199,7 @@ test.each(["not a number", NaN, Infinity, -Infinity])(
 );
 
 test("a non-object subprocess error falls back to its rendered value", async () => {
-  const subprocessFailure = ["foreign", "error"];
-  forcedExecFileSyncFailures.push(subprocessFailure);
+  forceNextStatusFailure(["foreign", "error"]);
 
   await expect(sampleGitStatus(tmpdir())).resolves.toStrictEqual({
     kind: "unreadable",
