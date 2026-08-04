@@ -95,7 +95,9 @@ test.each([
   "git config --unset user.name",
   "git config --global core.editor vim",
 ])("`%s` configures git and is evidence", (command) => {
-  expect(evidenceFor(command)).toHaveLength(1);
+  expect(evidenceFor(command)).toStrictEqual([
+    `mutating git command: ${command}`,
+  ]);
 });
 
 test.each([
@@ -129,7 +131,9 @@ test.each([
   "git config --list && git config user.name x",
   "git stash list && git stash push",
 ])("`%s` is evidence when any dual-mode occurrence mutates", (command) => {
-  expect(evidenceFor(command)).toHaveLength(1);
+  expect(evidenceFor(command)).toStrictEqual([
+    `mutating git command: ${command}`,
+  ]);
 });
 
 test("a chain of read-only dual-mode commands stays clean", () => {
@@ -161,7 +165,9 @@ test.each([
   "git --work-tree=/w add .",
   "git -C /repo --no-pager reset --hard",
 ])("`%s` is evidence despite the leading options", (command) => {
-  expect(evidenceFor(command)).toHaveLength(1);
+  expect(evidenceFor(command)).toStrictEqual([
+    `mutating git command: ${command}`,
+  ]);
 });
 
 // Detection intentionally scans literal command text rather than requiring
@@ -171,7 +177,9 @@ test.each([
   "cd x && git commit",
   "GIT_DIR=/g git commit",
 ])("`%s` still exposes the literal mutating git command", (command) => {
-  expect(evidenceFor(command)).toHaveLength(1);
+  expect(evidenceFor(command)).toStrictEqual([
+    `mutating git command: ${command}`,
+  ]);
 });
 
 // The same option handling must not start swallowing read-only commands.
