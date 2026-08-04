@@ -12,12 +12,13 @@ import { afterEach, expect, test, vi } from "vitest";
 
 import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
-import type { Fixture, FixtureProvisioningError } from "#/fixtures/fixtures.ts";
+import type { FixtureProvisioningError } from "#/fixtures/fixture-errors.ts";
 import {
   FixtureCleanupError,
-  FixtureProvisioner,
   FixtureTempDirectoryError,
-} from "#/fixtures/fixtures.ts";
+} from "#/fixtures/fixture-errors.ts";
+import type { Fixture } from "#/fixtures/fixtures.ts";
+import { FixtureProvisioner } from "#/fixtures/fixtures.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
 import type { Observation } from "#/observation/observation-types.ts";
 import {

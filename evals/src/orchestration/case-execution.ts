@@ -10,10 +10,10 @@ import {
   SKILL,
 } from "#/cases/analyzing-recent-project-state.ts";
 import type {
-  Fixture,
   FixtureCleanupError,
   FixtureProvisioningError,
-} from "#/fixtures/fixtures.ts";
+} from "#/fixtures/fixture-errors.ts";
+import type { Fixture } from "#/fixtures/fixtures.ts";
 import {
   FixtureProvisioner,
   FixtureProvisionerLive,

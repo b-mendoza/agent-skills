@@ -19,7 +19,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { Context, Data, Effect, Layer } from "effect";
+import { Context, Effect, Layer } from "effect";
+
+import type { FixtureProvisioningError } from "#/fixtures/fixture-errors.ts";
+import {
+  FixtureCleanupError,
+  FixtureDirectoryCreationError,
+  FixtureFileWriteError,
+  FixtureGitCommandError,
+  FixtureSkillCopyError,
+  FixtureTempDirectoryError,
+} from "#/fixtures/fixture-errors.ts";
 
 export interface Fixture {
   /** Directory the agent runs in. Always a real git repo except for `not-git`. */
@@ -54,55 +64,6 @@ const SKILLS_DIRECTORY_PATH = fileURLToPath(
 );
 const FIXTURE_ROOT_PREFIX = "agent-skills-eval-";
 const MISSING_PATH_NAME = "definitely-does-not-exist";
-
-export class FixtureTempDirectoryError extends Data.TaggedError(
-  "FixtureTempDirectoryError",
-)<{
-  readonly cause: unknown;
-}> {}
-
-export class FixtureDirectoryCreationError extends Data.TaggedError(
-  "FixtureDirectoryCreationError",
-)<{
-  readonly cause: unknown;
-  readonly path: string;
-}> {}
-
-export class FixtureFileWriteError extends Data.TaggedError(
-  "FixtureFileWriteError",
-)<{
-  readonly cause: unknown;
-  readonly path: string;
-}> {}
-
-export class FixtureGitCommandError extends Data.TaggedError(
-  "FixtureGitCommandError",
-)<{
-  readonly arguments: readonly string[];
-  readonly cause: unknown;
-  readonly repositoryPath: string;
-}> {}
-
-export class FixtureSkillCopyError extends Data.TaggedError(
-  "FixtureSkillCopyError",
-)<{
-  readonly cause: unknown;
-  readonly destinationPath: string;
-  readonly sourcePath: string;
-}> {}
-
-export class FixtureCleanupError extends Data.TaggedError(
-  "FixtureCleanupError",
-)<{
-  readonly cause: unknown;
-}> {}
-
-export type FixtureProvisioningError =
-  | FixtureTempDirectoryError
-  | FixtureDirectoryCreationError
-  | FixtureFileWriteError
-  | FixtureGitCommandError
-  | FixtureSkillCopyError;
 
 export interface FixtureProvisioner {
   readonly make: (

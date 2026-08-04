@@ -14,9 +14,9 @@ import { join } from "node:path";
 import { Effect } from "effect";
 import { afterEach, expect, test } from "vitest";
 
+import { FixtureGitCommandError } from "#/fixtures/fixture-errors.ts";
 import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
 import {
-  FixtureGitCommandError,
   FixtureProvisioner,
   FixtureProvisionerLive,
   makeFixture,
