@@ -8,4 +8,4 @@ Passing checks are a floor, not proof that the change is correct. After a substa
 - Generated and tooling-managed files (lockfiles, vendored-skill mirrors and pin files, generated reports among them) are owned by their tools: change the source or generator and regenerate, letting the tool produce the diff.
 - If the change alters a tree's layout, conventions, or commands, update the matching short-lived reference doc under that tree's `docs/` directory in the same change. Short-lived docs describe what exists on disk — never aspirations.
 
-Where a tree has no automated check for something, treat that as a known gap, not as permission to skip verification.
+Disclose what the checks cannot see. Where part of a change cannot be exercised, or a tree has no automated check for something, say so plainly and treat it as a known gap — not as permission to skip verification or to let green output imply coverage it lacks.
