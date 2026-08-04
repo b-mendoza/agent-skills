@@ -17,4 +17,4 @@ Mandatory-tier practices apply whenever their trigger condition holds, even when
 | Decide what artifacts to commit, keep local, or delete | [`artifact-lifecycle`](../best-practices/artifact-lifecycle.md), [`mutation-scope-boundaries`](../best-practices/mutation-scope-boundaries.md) |  |
 | Change runtime, tool, permission, or subagent compatibility | [`runtime-portability-matrix`](../best-practices/runtime-portability-matrix.md), [`frontmatter-contract`](../best-practices/frontmatter-contract.md), [`orchestrator-as-routing-ui`](../best-practices/orchestrator-as-routing-ui.md), [`mutation-scope-boundaries`](../best-practices/mutation-scope-boundaries.md) |  |
 
-After editing, run the checks in [`verification.md`](./verification.md).
+After editing, run the checks in [`skill-verification.md`](./skill-verification.md).
