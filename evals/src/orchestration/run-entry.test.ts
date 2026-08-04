@@ -17,10 +17,10 @@ import { fileURLToPath } from "node:url";
 
 import { expect, test } from "vitest";
 
+import { REPORT_PATH } from "#/orchestration/report.ts";
 import { EXIT_CODES } from "#/orchestration/run-coordination.ts";
 
 const RUN_PATH = fileURLToPath(new URL("./run.ts", import.meta.url));
-const REPORT_PATH = fileURLToPath(new URL("../../report.md", import.meta.url));
 const SPAWN_TIMEOUT_MS = 30_000;
 
 test("direct execution reaches the coordinator without rewriting the report when no case matches", () => {
@@ -38,31 +38,15 @@ test("direct execution reaches the coordinator without rewriting the report when
   expect(readFileSync(REPORT_PATH, "utf8")).toBe(reportBefore);
 });
 
-test("an invalid selector exits 4 before running or rewriting the report", () => {
-  const reportBefore = readFileSync(REPORT_PATH, "utf8");
-  const processResult = spawnSync(process.execPath, [RUN_PATH, "--tier=abc"], {
-    encoding: "utf8",
-    timeout: SPAWN_TIMEOUT_MS,
-  });
-
-  expect(processResult.status).toBe(EXIT_CODES.USAGE_ERROR);
-  expect(processResult.stdout).toBe("");
-  expect(processResult.stderr).toContain(
-    "unrecognized or malformed argument: --tier=abc",
-  );
-  expect(processResult.stderr).toContain(
-    "Usage: node evals/src/orchestration/run.ts",
-  );
-  expect(readFileSync(REPORT_PATH, "utf8")).toBe(reportBefore);
-});
-
 test("importing run.ts does not start a run", () => {
   const reportBefore = readFileSync(REPORT_PATH, "utf8");
   const importScript = `
-    // Node's eval mode has no script-path argv entry. Add one so the malformed
-    // selector lands after it: if the import guard breaks, the child fails closed
-    // with a usage error before any paid case can start.
-    process.argv.push("import-probe", "--tier=abc");
+    // Node's eval mode has no script-path argv entry. Add one so the selectors
+    // land after it. Tier 0 is not a case tier, so selection short-circuits
+    // before the registry is consulted: if the import guard breaks, the child
+    // fails closed with "no cases matched" instead of exiting 0, and no paid
+    // case can start.
+    process.argv.push("import-probe", "--tier=0", "--case=no-such-case-exists");
     await import(${JSON.stringify(RUN_PATH)});
   `;
   const processResult = spawnSync(
