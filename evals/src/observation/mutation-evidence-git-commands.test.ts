@@ -79,6 +79,11 @@ test.each([
   "git stash list",
   "git tag --list",
   "git tag -l v1.*",
+  "git sparse-checkout list",
+  "git bisect log",
+  // A marker terminated by `=` rather than whitespace or end of string: the
+  // read-only forms an agent actually types include attached option values.
+  "git branch --format=%(refname)",
 ])("`%s` is read-only and stays clean", (command) => {
   expect(evidenceFor(command)).toStrictEqual([]);
 });
