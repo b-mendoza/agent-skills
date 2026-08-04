@@ -91,10 +91,12 @@ function classifyGitFailure(error: unknown): GitStatus {
   // an unreadable HEAD return it too. Only git's own wording separates the
   // expected `not-git` fixture state from a repository that cannot be read,
   // and everything unmatched falls through to `unreadable` so an unfamiliar
-  // failure fails closed rather than passing as clean.
+  // failure fails closed rather than passing as clean. The match is anchored
+  // to git's own fatal line so an unrelated failure whose path happens to
+  // contain the phrase cannot be promoted into an expected state.
   if (
     subprocessError.status === GIT_NOT_A_REPOSITORY &&
-    /not a git repository/i.test(stderr)
+    /^fatal: not a git repository/im.test(stderr)
   ) {
     return { kind: "no-worktree" };
   }
