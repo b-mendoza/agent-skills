@@ -65,7 +65,6 @@ const SKILLS_DIRECTORY_PATH = fileURLToPath(
 const FIXTURE_ROOT_PREFIX = "agent-skills-eval-";
 const MISSING_PATH_NAME = "definitely-does-not-exist";
 
-
 export interface FixtureProvisioner {
   readonly make: (
     kind: FixtureKind,
@@ -79,20 +78,6 @@ export interface FixtureProvisioner {
 export const FixtureProvisioner = Context.Service<FixtureProvisioner>(
   "evals/fixtures/FixtureProvisioner",
 );
-
-function isFixtureKind(value: string): value is FixtureKind {
-  return Object.hasOwn(FIXTURE_CONFIGURATIONS, value);
-}
-
-function resolveFixtureConfiguration(kind: string): FixtureConfiguration {
-  return isFixtureKind(kind)
-    ? FIXTURE_CONFIGURATIONS[kind]
-    : FIXTURE_CONFIGURATIONS.clean;
-}
-
-function runGit(repositoryPath: string, ...arguments_: string[]): void {
-  execFileSync("git", arguments_, { cwd: repositoryPath, stdio: "ignore" });
-}
 
 function fixturePaths(fixtureRoot: string): {
   readonly repositoryPath: string;
@@ -156,7 +141,7 @@ function appendFixtureFile(path: string, contents: string) {
 function runGitEffect(repositoryPath: string, ...arguments_: string[]) {
   return Effect.try({
     try: () => {
-      runGit(repositoryPath, ...arguments_);
+      execFileSync("git", arguments_, { cwd: repositoryPath, stdio: "ignore" });
     },
     catch: (cause) =>
       new FixtureGitCommandError({
@@ -179,7 +164,7 @@ function copySkill(sourcePath: string, destinationPath: string) {
 
 function provisionFixture(kind: FixtureKind, skill: string) {
   return Effect.gen(function* () {
-    const configuration = resolveFixtureConfiguration(kind);
+    const configuration: FixtureConfiguration = FIXTURE_CONFIGURATIONS[kind];
     const fixtureRoot = yield* createFixtureRoot();
     const { repositoryPath, notGitPath } = fixturePaths(fixtureRoot);
 
