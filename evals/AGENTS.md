@@ -4,7 +4,7 @@ Nearest guide for the eval suite: a self-contained pnpm workspace that runs skil
 
 ## Toolchain
 
-- Node `24.18.1` (see [`.nvmrc`](./.nvmrc)); TypeScript runs from source — there is no build step.
+- Node `24.19.0` (see [`.nvmrc`](./.nvmrc)); TypeScript runs from source — there is no build step.
 - `pnpm` is the package manager (`pnpm install` once, from this directory).
 
 ## Always
