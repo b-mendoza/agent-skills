@@ -7,7 +7,8 @@ import type {
   GitStatus,
 } from "#/observation/git-status.ts";
 import { GitSampler } from "#/observation/git-status.ts";
-import type { Observation } from "#/observation/observation-types.ts";
+import { mutationEvidence } from "#/observation/mutation-evidence.ts";
+import type { Observation, ToolCall } from "#/observation/observation-types.ts";
 
 /** A sampled worktree; `entries` is `git status --short` output. */
 export const createWorktreeStatus = (entries = ""): GitStatus => ({
@@ -41,4 +42,14 @@ export function createObservation(
     timedOut: false,
     ...overrides,
   };
+}
+
+/** A Bash tool call carrying `command` exactly as the SDK reported it. */
+export function bash(command: unknown): ToolCall {
+  return { name: "Bash", input: { command } };
+}
+
+/** The mutation evidence a run produces from a single Bash command. */
+export function evidenceFor(command: unknown): string[] {
+  return mutationEvidence(createObservation({ toolCalls: [bash(command)] }));
 }
