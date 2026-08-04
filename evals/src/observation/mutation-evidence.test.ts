@@ -1,9 +1,11 @@
-// Pins the read-only detector that the `mutation-scope` case depends on.
+// Pins how observed facts become mutation evidence for the `mutation-scope`
+// case: status-delta classification, unreadable-sample reporting, write-tool
+// calls, and Bash payloads that cannot be scanned.
 //
 // This is the assertion that proves a skill under test wrote nothing, so a
 // false negative here would silently retire the guarantee: the suite would keep
-// reporting PASS while a skill mutated the repo. The word-boundary cases matter
-// most -- `git log --stat` must not read as `git stash`.
+// reporting PASS while a skill mutated the repo. Which git command texts count
+// as mutations is pinned separately, in `mutation-evidence-git-commands`.
 //
 //   pnpm test
 
