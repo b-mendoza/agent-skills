@@ -143,6 +143,18 @@ test("a write tool with no usable mapped path still reports the call", () => {
   ]);
 });
 
+test("a path containing a newline stays a single evidence entry", () => {
+  // Evidence is a list of facts, not of lines. A path carrying a newline must
+  // not read as two violations once a failure message joins the list.
+  const found = mutationEvidence(
+    createObservation({
+      toolCalls: [{ name: "Write", input: { file_path: "/work/a\nb.ts" } }],
+    }),
+  );
+
+  expect(found).toStrictEqual(["Write called on /work/a\nb.ts"]);
+});
+
 test("read-only tools are not evidence", () => {
   const found = mutationEvidence(
     createObservation({
