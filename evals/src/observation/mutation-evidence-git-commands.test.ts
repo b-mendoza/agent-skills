@@ -109,8 +109,16 @@ test.each([
   "git notes add -m x",
   "git stash push",
   "git tag v1.0.0",
+  // `sparse-checkout` rewrites the working tree and `bisect` moves HEAD, both
+  // of which can settle back to an identical `git status --short`.
+  "git sparse-checkout set src",
+  "git sparse-checkout init",
+  "git bisect start",
+  "git bisect reset",
 ])("`%s` mutates and is evidence", (command) => {
-  expect(evidenceFor(command)).toHaveLength(1);
+  expect(evidenceFor(command)).toStrictEqual([
+    `mutating git command: ${command}`,
+  ]);
 });
 
 // Every occurrence is classified within its own shell command. A read-only
