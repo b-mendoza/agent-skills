@@ -1,5 +1,6 @@
-// Pins the real case-execution boundary: fixture context and configured limits
-// reach the observation harness, and fixture cleanup survives every settlement.
+// Pins the real case-execution boundary: the fixture kind and skill reach the
+// provisioner, fixture context and configured limits reach the observation
+// harness, and fixture cleanup survives every settlement.
 //
 // The fixture and harness boundaries are replaced with local layers, so these
 // tests spend no tokens and write no report file.
@@ -10,19 +11,21 @@ import { Effect, Layer } from "effect";
 import { afterEach, expect, test, vi } from "vitest";
 
 import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
-import type { Fixture } from "#/fixtures/fixtures.ts";
+import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
+import type { Fixture, FixtureProvisioningError } from "#/fixtures/fixtures.ts";
 import {
   FixtureCleanupError,
   FixtureProvisioner,
+  FixtureTempDirectoryError,
 } from "#/fixtures/fixtures.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
 import type { Observation } from "#/observation/observation-types.ts";
-import { executeCase } from "#/orchestration/case-execution.ts";
-import { ObservationRunnerLive } from "#/orchestration/observation-runner.ts";
 import {
-  EvalConfiguration,
-  evalModel,
-} from "#/orchestration/run-configuration.ts";
+  CaseFixtureAcquisitionError,
+  executeCase,
+} from "#/orchestration/case-execution.ts";
+import { ObservationRunnerLive } from "#/orchestration/observation-runner.ts";
+import { EvalConfiguration } from "#/orchestration/run-configuration.ts";
 
 vi.mock(import("#/observation/agent-query.ts"), async (importOriginal) => ({
   ...(await importOriginal()),
@@ -31,6 +34,14 @@ vi.mock(import("#/observation/agent-query.ts"), async (importOriginal) => ({
 
 const observeClaudeMock = vi.mocked(observeClaude);
 
+/**
+ * A model no production path can produce. If `executeCase` ever stops reading
+ * the model from `EvalConfiguration`, the wiring assertion below fails instead
+ * of silently agreeing with whatever the environment resolved.
+ */
+const SENTINEL_MODEL = "sentinel-model-not-evalModel";
+const SELECTED_CASE_ID = "boundary-case";
+const SELECTED_CASE_FIXTURE_KIND = "dirty";
 const CASE_BUDGET_USD = 1.25;
 const CASE_WALL_CLOCK_MS = 42_000;
 const FIXTURE_CWD = "/fixture/repo";
@@ -38,11 +49,16 @@ const FIXTURE_GIT_REPO = "/fixture/git-repo";
 const FIXTURE_MISSING_PATH = "/fixture/missing";
 const FIXTURE_NOT_GIT_PATH = "/fixture/not-git";
 
+type FixtureProvisioning = Effect.Effect<Fixture, FixtureProvisioningError>;
+
+const provisionFixtureMock = vi.fn<FixtureProvisioner["make"]>();
+const releaseFixtureMock = vi.fn<FixtureProvisioner["cleanup"]>();
+
 function selectedCase(overrides: Partial<EvalCase> = {}): EvalCase {
   return {
-    id: "boundary-case",
+    id: SELECTED_CASE_ID,
     tier: 2,
-    fixture: "dirty",
+    fixture: SELECTED_CASE_FIXTURE_KIND,
     intent: "case execution boundary test",
     prompt: ({ missingPath, notGitPath }) =>
       `missing=${missingPath}; not-git=${notGitPath}`,
@@ -53,13 +69,10 @@ function selectedCase(overrides: Partial<EvalCase> = {}): EvalCase {
   };
 }
 
-function testFixture(
-  cleanup: Fixture["cleanup"],
-  gitRepo: string | undefined = FIXTURE_GIT_REPO,
-): Fixture {
+function testFixture(cleanup: Fixture["cleanup"]): Fixture {
   return {
     cwd: FIXTURE_CWD,
-    gitRepo,
+    gitRepo: FIXTURE_GIT_REPO,
     missingPath: FIXTURE_MISSING_PATH,
     notGitPath: FIXTURE_NOT_GIT_PATH,
     cleanup,
@@ -84,33 +97,45 @@ function resolvedObservation(): Observation {
   };
 }
 
-function fixtureLayer(fixture: Fixture) {
+/** Records what the case asked the provisioner for, and how it released it. */
+function fixtureLayer(fixtureProvisioning: FixtureProvisioning) {
+  provisionFixtureMock.mockReturnValue(fixtureProvisioning);
+  releaseFixtureMock.mockImplementation((fixtureToClean) =>
+    Effect.try({
+      try: fixtureToClean.cleanup,
+      catch: (cause) => new FixtureCleanupError({ cause }),
+    }),
+  );
+
   return Layer.succeed(
     FixtureProvisioner,
     FixtureProvisioner.of({
-      make: () => Effect.succeed(fixture),
-      cleanup: (fixtureToClean) =>
-        Effect.try({
-          try: fixtureToClean.cleanup,
-          catch: (cause) => new FixtureCleanupError({ cause }),
-        }),
+      make: provisionFixtureMock,
+      cleanup: releaseFixtureMock,
     }),
   );
 }
 
-async function runSelectedCase(evalCase: EvalCase, fixture: Fixture) {
+async function runCaseWithProvisioning(
+  evalCase: EvalCase,
+  fixtureProvisioning: FixtureProvisioning,
+) {
   return Effect.runPromise(
     executeCase(evalCase).pipe(
-      Effect.provide(fixtureLayer(fixture)),
+      Effect.provide(fixtureLayer(fixtureProvisioning)),
       Effect.provide(ObservationRunnerLive),
       Effect.provide(
         Layer.succeed(
           EvalConfiguration,
-          EvalConfiguration.of({ model: evalModel }),
+          EvalConfiguration.of({ model: SENTINEL_MODEL }),
         ),
       ),
     ),
   );
+}
+
+async function runSelectedCase(evalCase: EvalCase, fixture: Fixture) {
+  return runCaseWithProvisioning(evalCase, Effect.succeed(fixture));
 }
 
 afterEach(() => {
@@ -123,16 +148,21 @@ test("the selected case configuration and fixture context reach observeClaude", 
 
   await runSelectedCase(selectedCase(), testFixture(cleanup));
 
+  expect(provisionFixtureMock).toHaveBeenCalledExactlyOnceWith(
+    SELECTED_CASE_FIXTURE_KIND,
+    SKILL,
+  );
   expect(observeClaudeMock).toHaveBeenCalledExactlyOnceWith(
     expect.objectContaining({
       cwd: FIXTURE_CWD,
       gitRepo: FIXTURE_GIT_REPO,
       prompt: `missing=${FIXTURE_MISSING_PATH}; not-git=${FIXTURE_NOT_GIT_PATH}`,
       budgetUsd: CASE_BUDGET_USD,
-      model: evalModel,
+      model: SENTINEL_MODEL,
       wallClockMs: CASE_WALL_CLOCK_MS,
     }),
   );
+  expect(cleanup).toHaveBeenCalledOnce();
 });
 
 test("cwd is sampled when the fixture declares no git repository", async () => {
@@ -148,13 +178,26 @@ test("cwd is sampled when the fixture declares no git repository", async () => {
   );
 });
 
-test("fixture cleanup runs after observeClaude resolves", async () => {
-  const cleanup = vi.fn<Fixture["cleanup"]>();
-  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
+test("a fixture that never provisions fails the case and releases nothing", async () => {
+  const acquisitionCause = new Error("fixture root creation broke");
+  const fixtureError = new FixtureTempDirectoryError({
+    cause: acquisitionCause,
+  });
 
-  await runSelectedCase(selectedCase(), testFixture(cleanup));
+  const caseExecution = runCaseWithProvisioning(
+    selectedCase(),
+    Effect.fail(fixtureError),
+  );
 
-  expect(cleanup).toHaveBeenCalledOnce();
+  await expect(caseExecution).rejects.toBeInstanceOf(
+    CaseFixtureAcquisitionError,
+  );
+  await expect(caseExecution).rejects.toMatchObject({
+    cause: acquisitionCause,
+    fixtureError,
+  });
+  expect(observeClaudeMock).not.toHaveBeenCalled();
+  expect(releaseFixtureMock).not.toHaveBeenCalled();
 });
 
 test("fixture cleanup runs and the observation defect remains intact", async () => {
@@ -198,6 +241,9 @@ test("a failed check becomes row data and retains measured cost and duration", a
   );
 
   expect(execution.result).toMatchObject({
+    id: SELECTED_CASE_ID,
+    // The behavioral case tier reaches the report as the `2` column.
+    tier: "2",
     status: "FAIL",
     observed: "check failed",
     costUsd: resolvedObservation().costUsd,
@@ -206,24 +252,21 @@ test("a failed check becomes row data and retains measured cost and duration", a
   expect(cleanup).toHaveBeenCalledOnce();
 });
 
-test("cleanup failure replaces a successful case result", async () => {
+test.each<{
+  label: string;
+  observationOutcome: ReturnType<typeof observeClaude>;
+}>([
+  {
+    label: "a successful case result",
+    observationOutcome: Effect.succeed(resolvedObservation()),
+  },
+  {
+    label: "an earlier observation defect",
+    observationOutcome: Effect.die(new Error("observeClaude defect")),
+  },
+])("cleanup failure replaces $label", async ({ observationOutcome }) => {
   const cleanupFailure = new Error("cleanup broke");
-  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
-
-  await expect(
-    runSelectedCase(
-      selectedCase(),
-      testFixture(() => {
-        throw cleanupFailure;
-      }),
-    ),
-  ).rejects.toMatchObject({ cause: cleanupFailure });
-});
-
-test("cleanup failure replaces an earlier observation defect", async () => {
-  const observationDefect = new Error("observeClaude defect");
-  const cleanupFailure = new Error("cleanup broke");
-  observeClaudeMock.mockReturnValue(Effect.die(observationDefect));
+  observeClaudeMock.mockReturnValue(observationOutcome);
 
   await expect(
     runSelectedCase(
