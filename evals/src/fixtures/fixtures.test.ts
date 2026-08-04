@@ -19,7 +19,6 @@ import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
 import {
   FixtureProvisioner,
   FixtureProvisionerLive,
-  makeFixture,
 } from "#/fixtures/fixtures.ts";
 
 const FIXTURE_SKILL_NAME = "analyzing-recent-project-state";
@@ -38,8 +37,13 @@ const GIT_FIXTURE_KINDS = FIXTURE_KINDS.filter((kind) => kind !== "not-git");
 // temp tree behind.
 const openFixtures: Fixture[] = [];
 
-function createFixture(kind: FixtureKind): Fixture {
-  const fixture = makeFixture(kind, FIXTURE_SKILL_NAME);
+async function createFixture(kind: FixtureKind): Promise<Fixture> {
+  const fixture = await Effect.runPromise(
+    Effect.gen(function* () {
+      const fixtureProvisioner = yield* FixtureProvisioner;
+      return yield* fixtureProvisioner.make(kind, FIXTURE_SKILL_NAME);
+    }).pipe(Effect.provide(FixtureProvisionerLive)),
+  );
   openFixtures.push(fixture);
   return fixture;
 }
@@ -60,8 +64,8 @@ function readGitStatus(repositoryPath: string): string {
 
 test.each<FixtureKind>(FIXTURE_KINDS)(
   "%s: the skill is copied in where the agent looks for it",
-  (kind) => {
-    const fixture = createFixture(kind);
+  async (kind) => {
+    const fixture = await createFixture(kind);
 
     // Skills resolve from `<cwd>/.claude/skills/`, not the repo's own skills/.
     expect(
@@ -74,24 +78,24 @@ test.each<FixtureKind>(FIXTURE_KINDS)(
 
 test.each<FixtureKind>(GIT_FIXTURE_KINDS)(
   "%s: is a real worktree and reports itself as the git repo",
-  (kind) => {
-    const fixture = createFixture(kind);
+  async (kind) => {
+    const fixture = await createFixture(kind);
 
     expect(existsSync(join(fixture.cwd, ".git"))).toBe(true);
     expect(fixture.gitRepo).toBe(fixture.cwd);
   },
 );
 
-test("not-git: has no worktree and declares no git repo", () => {
-  const fixture = createFixture("not-git");
+test("not-git: has no worktree and declares no git repo", async () => {
+  const fixture = await createFixture("not-git");
 
   expect(existsSync(join(fixture.cwd, ".git"))).toBe(false);
   // `undefined` is what makes run.ts fall back to cwd for the status sample.
   expect(fixture.gitRepo).toBeUndefined();
 });
 
-test("clean: has a commit and a quiet status", () => {
-  const fixture = createFixture("clean");
+test("clean: has a commit and a quiet status", async () => {
+  const fixture = await createFixture("clean");
 
   // The quiet-state case depends on this being an empty evidence window.
   expect(readGitStatus(fixture.cwd)).toBe("");
@@ -103,8 +107,8 @@ test("clean: has a commit and a quiet status", () => {
   }).not.toThrow();
 });
 
-test("dirty: carries exactly the intended modified and untracked entries", () => {
-  const fixture = createFixture("dirty");
+test("dirty: carries exactly the intended modified and untracked entries", async () => {
+  const fixture = await createFixture("dirty");
 
   // Sorted so the assertion does not depend on git's output ordering.
   expect(
@@ -114,8 +118,8 @@ test("dirty: carries exactly the intended modified and untracked entries", () =>
   ).toStrictEqual([" M a.txt", "?? c.txt"]);
 });
 
-test("missingPath does not exist and notGitPath is a real non-worktree", () => {
-  const fixture = createFixture("missing-path");
+test("missingPath does not exist and notGitPath is a real non-worktree", async () => {
+  const fixture = await createFixture("missing-path");
 
   expect(existsSync(fixture.missingPath)).toBe(false);
 
@@ -126,9 +130,9 @@ test("missingPath does not exist and notGitPath is a real non-worktree", () => {
   expect(existsSync(join(fixture.notGitPath, "notes.txt"))).toBe(true);
 });
 
-test("each call gets an isolated tree", () => {
-  const firstFixture = createFixture("dirty");
-  const secondFixture = createFixture("dirty");
+test("each call gets an isolated tree", async () => {
+  const firstFixture = await createFixture("dirty");
+  const secondFixture = await createFixture("dirty");
 
   // Writing through one fixture must not be visible in the other.
   execFileSync("git", ["config", "user.name", "Only A"], {
@@ -142,10 +146,10 @@ test("each call gets an isolated tree", () => {
   expect(secondFixtureUserName).toBe("Eval Fixture");
 });
 
-test("cleanup removes the whole temp tree and is safe to call twice", () => {
+test("cleanup removes the whole temp tree and is safe to call twice", async () => {
   // Registered too: an assertion that throws before the explicit cleanup below
   // must not leak the temp tree this test exists to prove is removable.
-  const fixture = createFixture("dirty");
+  const fixture = await createFixture("dirty");
   const { cwd, notGitPath } = fixture;
 
   expect(existsSync(cwd)).toBe(true);

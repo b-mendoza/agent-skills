@@ -65,6 +65,7 @@ const SKILLS_DIRECTORY_PATH = fileURLToPath(
 const FIXTURE_ROOT_PREFIX = "agent-skills-eval-";
 const MISSING_PATH_NAME = "definitely-does-not-exist";
 
+
 export interface FixtureProvisioner {
   readonly make: (
     kind: FixtureKind,
@@ -254,55 +255,3 @@ export const FixtureProvisionerLive = Layer.succeed(
   }),
 );
 
-/**
- * Creates a fixture in a fresh temp directory.
- *
- * This compatibility facade preserves the synchronous boundary used by callers
- * outside the Effect orchestration path.
- */
-export function makeFixture(kind: FixtureKind, skill: string): Fixture {
-  const configuration = resolveFixtureConfiguration(kind);
-  const fixtureRoot = mkdtempSync(join(tmpdir(), FIXTURE_ROOT_PREFIX));
-  const { repositoryPath, notGitPath } = fixturePaths(fixtureRoot);
-
-  mkdirSync(repositoryPath, { recursive: true });
-  mkdirSync(notGitPath, { recursive: true });
-  writeFileSync(join(notGitPath, "notes.txt"), "not a worktree\n");
-
-  if (configuration.usesGit) {
-    runGit(repositoryPath, "init", "-q");
-    runGit(repositoryPath, "config", "user.email", "evals@example.invalid");
-    runGit(repositoryPath, "config", "user.name", "Eval Fixture");
-    runGit(repositoryPath, "config", "commit.gpgsign", "false");
-    writeFileSync(join(repositoryPath, "a.txt"), "hello\n");
-    runGit(repositoryPath, "add", "a.txt");
-    runGit(repositoryPath, "commit", "-qm", "initial commit");
-
-    if (configuration.receivesDirtyState) {
-      writeFileSync(join(repositoryPath, "a.txt"), "hello\nmodified\n");
-      writeFileSync(join(repositoryPath, "b.txt"), "new file\n");
-      runGit(repositoryPath, "add", "b.txt");
-      runGit(repositoryPath, "commit", "-qm", "add b.txt");
-      writeFileSync(join(repositoryPath, "c.txt"), "untracked\n");
-    }
-  }
-
-  const skillSourcePath = join(SKILLS_DIRECTORY_PATH, skill);
-  const skillDestinationPath = join(repositoryPath, ".claude", "skills", skill);
-  mkdirSync(join(repositoryPath, ".claude", "skills"), { recursive: true });
-  cpSync(skillSourcePath, skillDestinationPath, { recursive: true });
-
-  if (configuration.usesGit) {
-    appendFileSync(
-      join(repositoryPath, ".git", "info", "exclude"),
-      "\n.claude/\n",
-    );
-  }
-
-  return createFixtureValue(
-    fixtureRoot,
-    repositoryPath,
-    notGitPath,
-    configuration.usesGit,
-  );
-}
