@@ -50,12 +50,6 @@ export default defineConfig(
       ],
       "@typescript-eslint/explicit-function-return-type": OFF,
       "@typescript-eslint/no-deprecated": ERROR,
-      /**
-       * `0` and `1` are structural rather than magic: `xs.length === 0`,
-       * `reduce(..., 0)`, and `1 | 2` unions already say what they mean, and
-       * naming them adds a lookup without adding information. Kept in sync with
-       * the same rule in `.oxlintrc.json`.
-       */
       "@typescript-eslint/no-magic-numbers": [
         ERROR,
         {
