@@ -13,7 +13,6 @@ import { expect, test, vi } from "vitest";
 
 import { ROUTING_TIER } from "#/cases/analyzing-recent-project-state.ts";
 import { EXIT_CODES } from "#/orchestration/run-coordination.ts";
-import type { CapturedOutput } from "#/orchestration/run-coordination-test-support.ts";
 import {
   createRunnerServices,
   evalCase,
@@ -46,15 +45,12 @@ test("an unexpected executor failure returns the suite-error exit code", async (
       ),
     writeReport,
   });
-  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
 
-  const exitCode = await runInjectedCli([], services, capturedOutput);
+  const { exitCode, stderr } = await runInjectedCli([], services);
 
   expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
   expect(writeReport).not.toHaveBeenCalled();
-  expect(capturedOutput.stderr).toStrictEqual([
-    "eval suite error: executor broke\n",
-  ]);
+  expect(stderr).toStrictEqual(["eval suite error: executor broke\n"]);
 });
 
 test("a report-writer failure overrides an otherwise successful run", async () => {
@@ -67,15 +63,12 @@ test("a report-writer failure overrides an otherwise successful run", async () =
         new RunnerReportWriteError({ cause: new Error("writer broke") }),
       ),
   });
-  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
 
-  const exitCode = await runInjectedCli([], services, capturedOutput);
+  const { exitCode, stdout, stderr } = await runInjectedCli([], services);
 
   expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
-  expect(capturedOutput.stderr).toStrictEqual([
-    "eval suite error: writer broke\n",
-  ]);
-  expect(capturedOutput.stdout.join("")).not.toContain("Report written");
+  expect(stderr).toStrictEqual(["eval suite error: writer broke\n"]);
+  expect(stdout.join("")).not.toContain("Report written");
 });
 
 test.each<{
@@ -119,10 +112,9 @@ test.each<{
     evalCases: [evalCase("broken", ROUTING_TIER)],
     executeCase,
   });
-  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
 
-  const exitCode = await runInjectedCli([], services, capturedOutput);
+  const { exitCode, stderr } = await runInjectedCli([], services);
 
   expect(exitCode).toBe(EXIT_CODES.SUITE_ERROR);
-  expect(capturedOutput.stderr).toStrictEqual([expectedStderr]);
+  expect(stderr).toStrictEqual([expectedStderr]);
 });

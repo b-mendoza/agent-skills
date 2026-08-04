@@ -14,14 +14,12 @@ import {
   ROUTING_TIER,
 } from "#/cases/analyzing-recent-project-state.ts";
 import { EXIT_CODES } from "#/orchestration/run-coordination.ts";
-import type { CapturedOutput } from "#/orchestration/run-coordination-test-support.ts";
 import {
   capturingWriteReport,
   createRunnerServices,
   evalCase,
   executionResult,
   runInjectedCli,
-  successfulEffect,
 } from "#/orchestration/run-coordination-test-support.ts";
 import type { RunnerServices } from "#/orchestration/run-services.ts";
 import {
@@ -33,19 +31,17 @@ test("usage errors execute no cases and write no report", async () => {
   const services = createRunnerServices({
     evalCases: [evalCase("routing", ROUTING_TIER)],
   });
-  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
 
-  const exitCode = await runInjectedCli(
+  const { exitCode, stdout, stderr } = await runInjectedCli(
     ["--tier=abc", "--unknown"],
     services,
-    capturedOutput,
   );
-  const capturedErrorOutput = capturedOutput.stderr.join("");
+  const capturedErrorOutput = stderr.join("");
 
   expect(exitCode).toBe(EXIT_CODES.USAGE_ERROR);
   expect(services.executeCase).not.toHaveBeenCalled();
   expect(services.writeReport).not.toHaveBeenCalled();
-  expect(capturedOutput.stdout).toStrictEqual([]);
+  expect(stdout).toStrictEqual([]);
   expect(capturedErrorOutput).toContain(
     "unrecognized or malformed argument: --tier=abc",
   );
@@ -61,15 +57,17 @@ test("a numeric tier with no matches executes no cases and writes no report", as
   const services = createRunnerServices({
     evalCases: [evalCase("routing", ROUTING_TIER)],
   });
-  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
 
-  const exitCode = await runInjectedCli(["--tier=0"], services, capturedOutput);
+  const { exitCode, stdout, stderr } = await runInjectedCli(
+    ["--tier=0"],
+    services,
+  );
 
   expect(exitCode).toBe(EXIT_CODES.NO_CASES_MATCHED);
   expect(services.executeCase).not.toHaveBeenCalled();
   expect(services.writeReport).not.toHaveBeenCalled();
-  expect(capturedOutput.stdout).toStrictEqual([]);
-  expect(capturedOutput.stderr).toStrictEqual(["No cases matched.\n"]);
+  expect(stdout).toStrictEqual([]);
+  expect(stderr).toStrictEqual(["No cases matched.\n"]);
 });
 
 test.each([
@@ -101,14 +99,14 @@ test.each([
     evalCase("tier-two-b", BEHAVIORAL_TIER),
   ];
   const executeCase = vi.fn<RunnerServices["executeCase"]>((selectedCase) =>
-    successfulEffect(() => executionResult(selectedCase)),
+    Effect.succeed(executionResult(selectedCase)),
   );
   const services = createRunnerServices({
     evalCases: injectedCases,
     executeCase,
   });
 
-  const exitCode = await runInjectedCli(args, services);
+  const { exitCode } = await runInjectedCli(args, services);
 
   expect(exitCode).toBe(EXIT_CODES.ALL_PASSED);
   expect(
@@ -145,7 +143,7 @@ test("cases execute sequentially and the report writes after completion", async 
     writeReport,
   });
 
-  const exitCode = await runInjectedCli([], services);
+  const { exitCode } = await runInjectedCli([], services);
 
   expect(exitCode).toBe(EXIT_CODES.ALL_PASSED);
   expect(eventOrder).toStrictEqual([
@@ -173,7 +171,7 @@ test("tier-2 observations add a derived mutation-scope row without another execu
     writeReport,
   });
 
-  const exitCode = await runInjectedCli([], services);
+  const { exitCode } = await runInjectedCli([], services);
 
   expect(exitCode).toBe(EXIT_CODES.ALL_PASSED);
   expect(executeCase).toHaveBeenCalledOnce();
@@ -209,7 +207,7 @@ test("tier-2 mutation evidence fails the derived row without executing another c
     writeReport: capturingWriteReport(writtenReports),
   });
 
-  const exitCode = await runInjectedCli([], services);
+  const { exitCode } = await runInjectedCli([], services);
   const writtenReport = writtenReports[0] ?? "";
 
   expect(exitCode).toBe(EXIT_CODES.CASE_FAILED);
@@ -240,7 +238,7 @@ test("a failed case returns the case-failed exit code after writing the report",
     writeReport,
   });
 
-  const exitCode = await runInjectedCli([], services);
+  const { exitCode } = await runInjectedCli([], services);
 
   expect(exitCode).toBe(EXIT_CODES.CASE_FAILED);
   expect(writeReport).toHaveBeenCalledOnce();

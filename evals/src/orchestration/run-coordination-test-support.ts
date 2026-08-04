@@ -21,7 +21,7 @@ import {
   RunnerServices,
 } from "#/orchestration/run-services.ts";
 
-export interface CapturedOutput {
+interface CapturedOutput {
   readonly stderr: string[];
   readonly stdout: string[];
 }
@@ -47,7 +47,9 @@ export function executionResult(
   return {
     result: {
       id: selectedCase.id,
-      tier: selectedCase.tier === 1 ? "1" : "2",
+      // The stub echoes the case tier; the production CaseTier -> ReportTier
+      // mapping is pinned by the case-execution tests, not modelled here.
+      tier: `${selectedCase.tier}`,
       status: "PASS",
       observed: "ok",
       costUsd: 0,
@@ -67,13 +69,6 @@ export function executionResult(
       ...observationOverrides,
     },
   };
-}
-
-export function successfulEffect<A>(operation: () => A) {
-  return Effect.try({
-    try: operation,
-    catch: (cause) => new RunnerCaseExecutionError({ cause }),
-  });
 }
 
 /** Collects every rendered report so a test can assert on its rows. */
@@ -108,7 +103,7 @@ export function createRunnerServices(
   };
 }
 
-export function outputLayer(capturedOutput: CapturedOutput) {
+function outputLayer(capturedOutput: CapturedOutput) {
   const capture = (messages: string[], text: string) =>
     Effect.try({
       try: () => {
@@ -127,12 +122,10 @@ export function outputLayer(capturedOutput: CapturedOutput) {
   );
 }
 
-export async function runInjectedCli(
-  args: string[],
-  services: RunnerServices,
-  capturedOutput: CapturedOutput = { stdout: [], stderr: [] },
-) {
-  return Effect.runPromise(
+/** Runs one CLI invocation against injected services and returns its output. */
+export async function runInjectedCli(args: string[], services: RunnerServices) {
+  const capturedOutput: CapturedOutput = { stdout: [], stderr: [] };
+  const exitCode = await Effect.runPromise(
     runCli(args).pipe(
       Effect.provide(
         Layer.succeed(RunnerServices, RunnerServices.of(services)),
@@ -140,4 +133,10 @@ export async function runInjectedCli(
       Effect.provide(outputLayer(capturedOutput)),
     ),
   );
+
+  return {
+    exitCode,
+    stdout: capturedOutput.stdout,
+    stderr: capturedOutput.stderr,
+  };
 }
