@@ -169,19 +169,35 @@ test("read-only tools are not evidence", () => {
   expect(found).toStrictEqual([]);
 });
 
-test("a non-string Bash command is unverifiable rather than clean", () => {
-  // Coercing it would let a mutating verb hide inside a non-string payload.
-  expect(evidenceFor({ cmd: "git commit" })).toStrictEqual([
-    "unverifiable Bash command (non-string): object",
-  ]);
-});
+test.each([
+  {
+    name: "an absent Bash command",
+    bashInput: {},
+    expectedEvidence: "unverifiable Bash command (absent)",
+  },
+  {
+    name: "a non-string Bash command",
+    bashInput: { command: { cmd: "git commit" } },
+    expectedEvidence: "unverifiable Bash command (non-string): object",
+  },
+])(
+  "$name is unverifiable rather than clean",
+  ({ bashInput, expectedEvidence }) => {
+    // A payload that cannot be scanned is not clean: coercing it would let a
+    // mutating verb hide inside a shape the detector never reads.
+    const found = mutationEvidence(
+      createObservation({ toolCalls: [{ name: "Bash", input: bashInput }] }),
+    );
 
-test("an absent Bash command is unverifiable rather than clean", () => {
-  expect(
-    mutationEvidence(
-      createObservation({ toolCalls: [{ name: "Bash", input: {} }] }),
-    ),
-  ).toStrictEqual(["unverifiable Bash command (absent)"]);
+    expect(found).toStrictEqual([expectedEvidence]);
+  },
+);
+
+test("a non-git Bash write produces no command evidence", () => {
+  // A boundary, not an oversight: command scanning classifies git invocations
+  // only, so a plain shell write leaves no command-text evidence at all. The
+  // git-status delta is the sole detector for writes made this way.
+  expect(evidenceFor("rm -rf /repo/src")).toStrictEqual([]);
 });
 
 test("every distinct violation is reported, not just the first", () => {
