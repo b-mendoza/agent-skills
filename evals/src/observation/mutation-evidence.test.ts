@@ -126,6 +126,7 @@ test("a write tool with no usable mapped path still reports the call", () => {
     createObservation({
       toolCalls: [
         { name: "Write", input: {} },
+        { name: "Write", input: { file_path: "" } },
         { name: "Edit", input: { file_path: 42 } },
         { name: "NotebookEdit", input: { file_path: "/work/old.ipynb" } },
         { name: "NotebookEdit", input: { notebook_path: 42 } },
@@ -134,6 +135,7 @@ test("a write tool with no usable mapped path still reports the call", () => {
   );
 
   expect(found).toStrictEqual([
+    "Write called on ?",
     "Write called on ?",
     "Edit called on ?",
     "NotebookEdit called on ?",
