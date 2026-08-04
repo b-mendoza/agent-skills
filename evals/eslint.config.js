@@ -88,13 +88,6 @@ export default defineConfig(
       ],
       "@typescript-eslint/return-await": [ERROR, "in-try-catch"],
       "arrow-body-style": OFF,
-      eqeqeq: [
-        ERROR,
-        "always",
-        {
-          null: "ignore",
-        },
-      ],
       "import/newline-after-import": ERROR,
       // The runner's stdout progress lines and stderr suite errors are
       // contracts pinned by the orchestration tests; `love` errors on
@@ -111,6 +104,13 @@ export default defineConfig(
       // agent itself now runs via the Agent SDK's bundled binary.
       "sonarjs/no-os-command-from-path": OFF,
       "sonarjs/todo-tag": WARN,
+      eqeqeq: [
+        ERROR,
+        "always",
+        {
+          null: "ignore",
+        },
+      ],
     },
   },
   {
