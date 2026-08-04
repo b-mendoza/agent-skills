@@ -20,7 +20,6 @@ import {
   describeGitStatus,
   GitSampler,
   GitSamplerLive,
-  gitStatus,
 } from "#/observation/git-status.ts";
 
 const forcedExecFileSyncFailures = vi.hoisted((): unknown[] => []);
@@ -156,13 +155,9 @@ test.each(["not a number", NaN, Infinity, -Infinity])(
       code: "IGNORED",
       message: "ignored message",
     };
-    forcedExecFileSyncFailures.push(subprocessFailure, subprocessFailure);
+    forcedExecFileSyncFailures.push(subprocessFailure);
 
     await expect(sampleGitStatus(tmpdir())).resolves.toStrictEqual({
-      kind: "unreadable",
-      reason: "projected stderr survives",
-    });
-    expect(gitStatus(tmpdir())).toStrictEqual({
       kind: "unreadable",
       reason: "projected stderr survives",
     });
@@ -171,13 +166,9 @@ test.each(["not a number", NaN, Infinity, -Infinity])(
 
 test("a non-object subprocess error falls back to its rendered value", async () => {
   const subprocessFailure = ["foreign", "error"];
-  forcedExecFileSyncFailures.push(subprocessFailure, subprocessFailure);
+  forcedExecFileSyncFailures.push(subprocessFailure);
 
   await expect(sampleGitStatus(tmpdir())).resolves.toStrictEqual({
-    kind: "unreadable",
-    reason: '["foreign","error"]',
-  });
-  expect(gitStatus(tmpdir())).toStrictEqual({
     kind: "unreadable",
     reason: '["foreign","error"]',
   });

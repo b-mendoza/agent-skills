@@ -54,11 +54,11 @@ const subprocessErrorSchema = Schema.Struct({
 const decodeSubprocessError = Schema.decodeUnknownSync(subprocessErrorSchema);
 
 /** Whether two samples describe the same repository state. */
-export function sameGitStatus(a: GitStatus, b: GitStatus): boolean {
-  if (a.kind === "worktree" && b.kind === "worktree") {
-    return a.entries === b.entries;
+export function sameGitStatus(before: GitStatus, after: GitStatus): boolean {
+  if (before.kind === "worktree" && after.kind === "worktree") {
+    return before.entries === after.entries;
   }
-  return a.kind === b.kind;
+  return before.kind === after.kind;
 }
 
 /** Renders a status for a failure message. */
@@ -84,12 +84,7 @@ function executeGitStatus(repo: string): string {
 }
 
 function classifyGitFailure(error: unknown): GitStatus {
-  const decodedSubprocessError = decodeSubprocessError(error);
-  const subprocessError =
-    typeof decodedSubprocessError.status === "number" &&
-    !Number.isFinite(decodedSubprocessError.status)
-      ? { ...decodedSubprocessError, status: undefined }
-      : decodedSubprocessError;
+  const subprocessError = decodeSubprocessError(error);
   const stderr = toText(subprocessError.stderr);
 
   // Exit 128 alone does not mean "not a repository" -- a corrupt index and
@@ -112,20 +107,6 @@ function classifyGitFailure(error: unknown): GitStatus {
     kind: "unreadable",
     reason: detail === "" ? toText(fallback) : detail,
   };
-}
-
-/**
- * Samples `git status --short` synchronously for compatibility callers.
- *
- * The Effect-native harness uses `GitSampler`; this facade stays synchronous
- * because existing case helpers consume it directly.
- */
-export function gitStatus(repo: string): GitStatus {
-  try {
-    return { kind: "worktree", entries: executeGitStatus(repo).trim() };
-  } catch (error) {
-    return classifyGitFailure(error);
-  }
 }
 
 const sampleGitStatus = (repo: string): Effect.Effect<GitStatus> =>
