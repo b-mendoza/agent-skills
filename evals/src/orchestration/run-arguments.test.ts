@@ -8,6 +8,7 @@ import { expect, test } from "vitest";
 
 import { parseArgs } from "#/orchestration/run-arguments.ts";
 
+const BELOW_FIRST_TIER = 0;
 const FIRST_UNDEFINED_TIER = 3;
 const LARGE_NUMERIC_TIER = 99;
 
@@ -28,16 +29,26 @@ test.each([
     args: ["--tier=2", "--case=quiet-state"],
     expected: { tier: 2, caseId: "quiet-state", errors: [] },
   },
+  // Any non-negative integer parses: rejecting a tier no case uses is
+  // selection's job, so a numeric tier must never become a usage error.
+  {
+    label: "a tier below the defined tiers",
+    args: [`--tier=${BELOW_FIRST_TIER}`],
+    expected: { tier: BELOW_FIRST_TIER, errors: [] },
+  },
+  {
+    label: "a tier above the defined tiers",
+    args: [`--tier=${FIRST_UNDEFINED_TIER}`],
+    expected: { tier: FIRST_UNDEFINED_TIER, errors: [] },
+  },
+  {
+    label: "a large numeric tier",
+    args: [`--tier=${LARGE_NUMERIC_TIER}`],
+    expected: { tier: LARGE_NUMERIC_TIER, errors: [] },
+  },
 ])("parses $label into selector fields", ({ args, expected }) => {
   expect(parseArgs(args)).toStrictEqual(expected);
 });
-
-test.each([0, FIRST_UNDEFINED_TIER, LARGE_NUMERIC_TIER])(
-  "numeric tier %i parses without a usage error",
-  (tier) => {
-    expect(parseArgs([`--tier=${tier}`])).toStrictEqual({ tier, errors: [] });
-  },
-);
 
 // Malformed selectors must stay visible to the caller. Silently dropping one
 // would remove the filter and turn a typo into an unconstrained paid run.
