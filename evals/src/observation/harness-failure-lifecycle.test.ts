@@ -13,23 +13,23 @@ import {
   assistant,
   COST_BUDGET_STOP,
   COST_FULL,
+  createHarnessSeam,
   createTrackedMessages,
   EXPECTED_GIT_SAMPLE_COUNT,
   fakeQuery,
   FOREIGN_BIGINT,
-  lastQueryRequest,
   PAST_THE_DEADLINE_MS,
-  resetHarness,
-  runHarness,
-  sampledRepositories,
   scripted,
-  setQueryStart,
   SHORT_WALL_CLOCK_MS,
   success,
   toolUse,
 } from "#/observation/harness-lifecycle-test-support.ts";
 
-beforeEach(resetHarness);
+let harness = createHarnessSeam();
+
+beforeEach(() => {
+  harness = createHarnessSeam();
+});
 
 // This is the only suite that fakes timers, so it owns restoring them.
 afterEach(() => {
@@ -37,7 +37,7 @@ afterEach(() => {
 });
 
 test("a query startup failure settles and books no cost", async () => {
-  setQueryStart(() =>
+  harness.setQueryStart(() =>
     Effect.fail(
       new QueryStartError({
         cause: new Error("bundled CLI failed to start"),
@@ -45,18 +45,18 @@ test("a query startup failure settles and books no cost", async () => {
     ),
   );
 
-  const observation = await runHarness();
+  const observation = await harness.runHarness();
 
   expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
   expect(observation.isError).toBe(true);
   expect(observation.finalText).toBe("bundled CLI failed to start");
   expect(observation.costUsd).toBe(0);
   expect(observation.timedOut).toBe(false);
-  expect(sampledRepositories).toHaveLength(EXPECTED_GIT_SAMPLE_COUNT);
+  expect(harness.sampledRepositories()).toHaveLength(EXPECTED_GIT_SAMPLE_COUNT);
 });
 
 test("a mid-stream failure keeps observations already made", async () => {
-  setQueryStart(() =>
+  harness.setQueryStart(() =>
     Effect.succeed(
       fakeQuery(function* () {
         yield assistant(toolUse("Write", { file_path: "/repo/x" }));
@@ -65,7 +65,7 @@ test("a mid-stream failure keeps observations already made", async () => {
     ),
   );
 
-  const observation = await runHarness();
+  const observation = await harness.runHarness();
 
   expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
   expect(observation.isError).toBe(true);
@@ -84,7 +84,6 @@ test.each([
       assistant(toolUse("Write", { file_path: "/repo/x" }), null),
       success("done", COST_FULL),
     ],
-    expectedFinalText: "Expected object, got null",
     expectedRetainedToolNames: ["Read"],
   },
   {
@@ -99,31 +98,27 @@ test.each([
         total_cost_usd: "not a number",
       },
     ],
-    expectedFinalText:
-      'Expected number, got "not a number"\n  at ["total_cost_usd"]',
     expectedRetainedToolNames: ["Write"],
   },
 ] satisfies ReadonlyArray<{
   name: string;
   messageScript: FakeMessage[];
-  expectedFinalText: string;
   expectedRetainedToolNames: string[];
-}>)(
-  "$name",
-  async ({ messageScript, expectedFinalText, expectedRetainedToolNames }) => {
-    setQueryStart(() => Effect.succeed(scripted(...messageScript)));
+}>)("$name", async ({ messageScript, expectedRetainedToolNames }) => {
+  harness.setQueryStart(() => Effect.succeed(scripted(...messageScript)));
 
-    const observation = await runHarness();
+  const observation = await harness.runHarness();
 
-    expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
-    expect(observation.isError).toBe(true);
-    expect(observation.finalText).toBe(expectedFinalText);
-    expect(observation.costUsd).toBe(0);
-    expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
-      expectedRetainedToolNames,
-    );
-  },
-);
+  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(observation.isError).toBe(true);
+  // The wording belongs to Effect Schema, so only carrying a diagnostic at all
+  // is ours to pin: a silent empty text would leave the failure unexplained.
+  expect(observation.finalText).not.toBe("");
+  expect(observation.costUsd).toBe(0);
+  expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
+    expectedRetainedToolNames,
+  );
+});
 
 test.each([
   [NaN, 'Expected finite number, got NaN\n  at ["total_cost_usd"]'],
@@ -132,7 +127,7 @@ test.each([
 ] satisfies ReadonlyArray<readonly [number, string]>)(
   "a non-finite result cost fails closed: %s",
   async (totalCostUsd, expectedFinalText) => {
-    setQueryStart(() =>
+    harness.setQueryStart(() =>
       Effect.succeed(
         scripted({
           type: "result",
@@ -144,7 +139,7 @@ test.each([
       ),
     );
 
-    const observation = await runHarness();
+    const observation = await harness.runHarness();
 
     expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
     expect(observation.finalText).toBe(expectedFinalText);
@@ -152,49 +147,56 @@ test.each([
   },
 );
 
-const cyclicFailure: Record<string, unknown> = {};
-cyclicFailure["self"] = cyclicFailure;
+test("a BigInt thrown value cannot reject observation settlement", async () => {
+  harness.setQueryStart(() =>
+    Effect.fail(new QueryStartError({ cause: FOREIGN_BIGINT })),
+  );
 
-test.each([
-  {
-    name: "a BigInt thrown value cannot reject observation settlement",
-    thrownValue: FOREIGN_BIGINT,
-    expectedFinalText: "1",
-  },
-  {
-    name: "a cyclic thrown value cannot reject observation settlement",
-    thrownValue: cyclicFailure,
-    expectedFinalText: null,
-  },
-])("$name", async ({ thrownValue, expectedFinalText }) => {
-  setQueryStart(() => Effect.fail(new QueryStartError({ cause: thrownValue })));
+  const observation = await harness.runHarness();
 
-  const observation = await runHarness();
+  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
+  expect(observation.isError).toBe(true);
+  expect(observation.finalText).toBe("1");
+  expect(observation.costUsd).toBe(0);
+});
+
+test("a cyclic thrown value cannot reject observation settlement", async () => {
+  // `JSON.stringify` throws on a cycle. What the guarded fallback renders is
+  // not ours to pin; that settlement completes with *some* text is.
+  const cyclicFailure: Record<string, unknown> = {};
+  cyclicFailure["self"] = cyclicFailure;
+  harness.setQueryStart(() =>
+    Effect.fail(new QueryStartError({ cause: cyclicFailure })),
+  );
+
+  const observation = await harness.runHarness();
 
   expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
   expect(observation.isError).toBe(true);
   expect(observation.finalText).toBeTypeOf("string");
-  expect(
-    expectedFinalText === null || observation.finalText === expectedFinalText,
-  ).toBe(true);
+  expect(observation.finalText).not.toBe("");
   expect(observation.costUsd).toBe(0);
 });
 
 test.each([null, undefined])(
   "a nullish query failure uses the no-result diagnostic",
   async (failure) => {
-    setQueryStart(() => Effect.fail(new QueryStartError({ cause: failure })));
+    harness.setQueryStart(() =>
+      Effect.fail(new QueryStartError({ cause: failure })),
+    );
 
-    const observation = await runHarness();
+    const observation = await harness.runHarness();
 
     expect(observation.finalText).toBe("query ended without a result message");
   },
 );
 
 test("a stream that ends without a result fails closed", async () => {
-  setQueryStart(() => Effect.succeed(scripted(assistant(toolUse("Read")))));
+  harness.setQueryStart(() =>
+    Effect.succeed(scripted(assistant(toolUse("Read")))),
+  );
 
-  const observation = await runHarness();
+  const observation = await harness.runHarness();
 
   expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
   expect(observation.isError).toBe(true);
@@ -211,9 +213,9 @@ test("the first valid result stops iteration and cleans up once", async () => {
     assistant(toolUse("Write", { file_path: "/repo/late" })),
     success("second", COST_BUDGET_STOP),
   ]);
-  setQueryStart(() => Effect.succeed(messages.iterable));
+  harness.setQueryStart(() => Effect.succeed(messages.iterable));
 
-  const observation = await runHarness();
+  const observation = await harness.runHarness();
 
   expect(observation.finalText).toBe("first");
   expect(observation.costUsd).toBe(COST_FULL);
@@ -227,9 +229,9 @@ test("a cleanup failure after a result cannot replace that result", async () => 
     [success("recorded", COST_FULL)],
     new Error("cleanup failed"),
   );
-  setQueryStart(() => Effect.succeed(messages.iterable));
+  harness.setQueryStart(() => Effect.succeed(messages.iterable));
 
-  const observation = await runHarness();
+  const observation = await harness.runHarness();
 
   expect(observation.subtype).toBe("success");
   expect(observation.finalText).toBe("recorded");
@@ -238,7 +240,7 @@ test("a cleanup failure after a result cannot replace that result", async () => 
 });
 
 test("a run that exceeds its wall clock is aborted and settles", async () => {
-  setQueryStart(
+  harness.setQueryStart(
     abortAwareQuery(async function* (signal) {
       yield assistant(toolUse("Read"));
       await once(signal, "abort");
@@ -246,7 +248,7 @@ test("a run that exceeds its wall clock is aborted and settles", async () => {
     }),
   );
 
-  const observation = await runHarness({
+  const observation = await harness.runHarness({
     wallClockMs: SHORT_WALL_CLOCK_MS,
   });
 
@@ -260,14 +262,14 @@ test("a run that exceeds its wall clock is aborted and settles", async () => {
 });
 
 test("a result after abort retains both verdict and timeout evidence", async () => {
-  setQueryStart(
+  harness.setQueryStart(
     abortAwareQuery(async function* (signal) {
       await once(signal, "abort");
       yield success("late result", COST_FULL);
     }),
   );
 
-  const observation = await runHarness({
+  const observation = await harness.runHarness({
     wallClockMs: SHORT_WALL_CLOCK_MS,
   });
 
@@ -280,10 +282,10 @@ test("a result after abort retains both verdict and timeout evidence", async () 
 test("a completed run cannot be re-flagged by its expired timer", async () => {
   vi.useFakeTimers();
 
-  const observation = await runHarness({
+  const observation = await harness.runHarness({
     wallClockMs: SHORT_WALL_CLOCK_MS,
   });
-  const abortController = lastQueryRequest().options?.abortController;
+  const abortController = harness.lastQueryRequest().options?.abortController;
   expect(abortController).toBeInstanceOf(AbortController);
 
   vi.advanceTimersByTime(PAST_THE_DEADLINE_MS);

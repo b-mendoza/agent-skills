@@ -157,61 +157,67 @@ export function createTrackedMessages(
   };
 }
 
-let queryStart: AgentQueryService["start"] = (_request) =>
-  Effect.succeed(scripted(success("done", COST_FULL)));
-const observedQueryRequests: AgentQueryRequest[] = [];
-
-export function setQueryStart(start: AgentQueryService["start"]): void {
-  queryStart = start;
+/** One suite's isolated view of the synthetic harness. */
+export interface HarnessSeam {
+  /** Replaces the scripted query the next run observes. */
+  readonly setQueryStart: (start: AgentQueryService["start"]) => void;
+  readonly runHarness: (
+    overrides?: Readonly<Partial<RunOptions>>,
+  ) => Promise<Observation>;
+  readonly lastQueryRequest: () => AgentQueryRequest;
+  /** Repositories the harness sampled, in call order. */
+  readonly sampledRepositories: () => readonly string[];
 }
-let gitSamples: GitStatus[] = [];
-/** Reset in place, so an importing suite keeps observing the same array. */
-export const sampledRepositories: string[] = [];
 
 /**
- * Restores the seam's default query and clears what the last test observed.
- * Each importing suite registers this itself, so the reset is visible where it
- * applies rather than being imposed by the import.
+ * A seam over state closed over per construction, so building one in
+ * `beforeEach` *is* the reset -- no test can observe what a prior test left
+ * behind, and no suite has to remember to opt into clearing it.
  */
-export function resetHarness(): void {
-  queryStart = (_request) => {
-    return Effect.succeed(scripted(success("done", COST_FULL)));
-  };
-  observedQueryRequests.length = 0;
-  gitSamples = [createWorktreeStatus(), createWorktreeStatus()];
-  sampledRepositories.length = 0;
-}
+export function createHarnessSeam(): HarnessSeam {
+  let queryStart: AgentQueryService["start"] = (_request) =>
+    Effect.succeed(scripted(success("done", COST_FULL)));
+  const observedQueryRequests: AgentQueryRequest[] = [];
+  const gitSamples: GitStatus[] = [
+    createWorktreeStatus(),
+    createWorktreeStatus(),
+  ];
+  const sampledRepositories: string[] = [];
 
-export async function runHarness(
-  overrides: Readonly<Partial<RunOptions>> = {},
-): Promise<Observation> {
-  const options: RunOptions = {
-    cwd: tmpdir(),
-    prompt: "observe the repo",
-    budgetUsd: BUDGET_USD,
-    model: "haiku",
-    wallClockMs: WALL_CLOCK_MS,
-    ...overrides,
+  return {
+    setQueryStart: (start) => {
+      queryStart = start;
+    },
+    runHarness: async (overrides = {}) => {
+      const options: RunOptions = {
+        cwd: tmpdir(),
+        prompt: "observe the repo",
+        budgetUsd: BUDGET_USD,
+        model: "haiku",
+        wallClockMs: WALL_CLOCK_MS,
+        ...overrides,
+      };
+      const agentQueryLayer = createAgentQueryLayer((request) => {
+        observedQueryRequests.push(request);
+        return queryStart(request);
+      });
+      const gitSamplerLayer = createGitSamplerLayer((repo) => {
+        sampledRepositories.push(repo);
+        return Effect.succeed(gitSamples.shift() ?? createWorktreeStatus());
+      });
+      const observation = await Effect.runPromise(
+        observeClaude(options).pipe(
+          Effect.provide(agentQueryLayer),
+          Effect.provide(gitSamplerLayer),
+        ),
+      );
+      return observation;
+    },
+    lastQueryRequest: () => {
+      const request = observedQueryRequests.at(LAST_ITEM_OFFSET);
+      if (request === undefined) throw new Error("query was never started");
+      return request;
+    },
+    sampledRepositories: () => sampledRepositories,
   };
-  const agentQueryLayer = createAgentQueryLayer((request) => {
-    observedQueryRequests.push(request);
-    return queryStart(request);
-  });
-  const gitSamplerLayer = createGitSamplerLayer((repo) => {
-    sampledRepositories.push(repo);
-    return Effect.succeed(gitSamples.shift() ?? createWorktreeStatus());
-  });
-  const observation = await Effect.runPromise(
-    observeClaude(options).pipe(
-      Effect.provide(agentQueryLayer),
-      Effect.provide(gitSamplerLayer),
-    ),
-  );
-  return observation;
-}
-
-export function lastQueryRequest(): AgentQueryRequest {
-  const request = observedQueryRequests.at(LAST_ITEM_OFFSET);
-  if (request === undefined) throw new Error("query was never started");
-  return request;
 }
