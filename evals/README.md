@@ -11,16 +11,19 @@ Evals live here, **outside `skills/`**, on purpose. A skill directory is a distr
 ```bash
 pnpm install                         # once, from this directory
 
-node evals/src/orchestration/run.ts                    # everything (~5 min, ~$2)
-node evals/src/orchestration/run.ts --tier=1           # routing only (~30s, ~$0.30)
+node evals/src/orchestration/run.ts                    # everything, 5 attempts per case (~25 min, ~$10)
+node evals/src/orchestration/run.ts --tier=1           # routing only (~3 min, ~$1.50)
 node evals/src/orchestration/run.ts --case=path-error  # one case
+node evals/src/orchestration/run.ts --attempts=1       # one attempt per case (cheap, low-confidence smoke run)
 ```
 
 Node 24 strips TypeScript types natively, so the suite runs from source with no build step. Keep the syntax erasable — `erasableSyntaxOnly` is on, so no enums, parameter properties, decorators, or namespaces.
 
-Exits `0` when every case passes, `1` when a case fails, `2` when no case matched the filter, `3` on an infrastructure error, and `4` on invalid command line usage. Set `EVAL_MODEL` to override the model (default `sonnet`).
+Each selected case runs `--attempts` times (default 5 — one stochastic attempt proves little) and reports a **score**, the percent of attempts whose check passed, plus a **status** derived from the same counts: `PASS` (every attempt), `FAIL` (none), `DEGRADED` (a mix — flakiness), `NOT_RUN` (not executed by this run; score stays empty rather than reading as zero). Score and status derive from one pass count, so they cannot disagree; the status exists because a score alone cannot express "never ran" and CI needs a discrete gate.
 
-Each run rewrites [`report.md`](./report.md), which is committed so a behavior change shows up in `git diff`.
+Exits `0` when every executed case passes every attempt, `1` when a case fails or is degraded, `2` when no case matched the filter, `3` on an infrastructure error, and `4` on invalid command line usage. Set `EVAL_MODEL` to override the model (default `sonnet`).
+
+Each run rewrites [`report.md`](./report.md), which is committed so a behavior change shows up in `git diff`. The report lists every known case; ones a partial run skipped appear as `NOT_RUN` instead of vanishing.
 
 ## Checks
 
@@ -40,10 +43,10 @@ pnpm test    # vitest: unit tests for the pure functions, free and offline
 | `fixtures.test.ts` | Fixture invariants: git state, skill copy, exclusion, cleanup |
 | `invocation/arguments.test.ts` | Flag parsing and case selection |
 | `case-execution/configuration.test.ts` | Model resolution behind `EVAL_MODEL` |
-| `suite/coordination.test.ts` | Case selection, sequencing, report writes, exit codes |
+| `suite/coordination.test.ts` | Case selection, attempt sequencing, aggregation, report writes, exit codes |
 | `failure/failure-lifecycle.test.ts` | Suite-error exits and residual-defect stderr formatting |
-| `verdict.test.ts` | Check normalization: PASS rows, first-line-only FAIL, cell truncation |
-| `report-rendering.test.ts` | Report escaping, rendering, and measured totals |
+| `verdict.test.ts` | Check normalization and attempt aggregation: scores, statuses, NOT_RUN rows |
+| `report-rendering.test.ts` | Report escaping, rendering, status counts, mean score, measured totals |
 | `case-execution/execution.test.ts` | Case-execution boundary: limits reach the harness, cleanup always runs |
 | `suite/entry.test.ts` | The direct-entry guard on the runner |
 | `cases.test.ts` | The case assertions themselves, against synthetic runs |
