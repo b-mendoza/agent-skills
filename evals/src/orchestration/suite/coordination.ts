@@ -8,7 +8,7 @@ import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
 import { BEHAVIORAL_TIER } from "#/cases/analyzing-recent-project-state.ts";
 import { checkMutationScope } from "#/cases/analyzing-recent-project-state-checks.ts";
 import type { Observation } from "#/observation/observation-types.ts";
-import { evaluate } from "#/orchestration/case-checks.ts";
+import { evaluate } from "#/orchestration/verdict.ts";
 import { describeSuiteFailure } from "#/orchestration/failure/boundary-errors.ts";
 import { describeResidualCause } from "#/orchestration/failure/residual-cause.ts";
 import {

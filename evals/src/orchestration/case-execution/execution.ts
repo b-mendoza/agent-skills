@@ -19,7 +19,7 @@ import {
   FixtureProvisionerLive,
 } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/observation-types.ts";
-import { evaluate } from "#/orchestration/case-checks.ts";
+import { evaluate } from "#/orchestration/verdict.ts";
 import type { ObservationRunError } from "#/orchestration/case-execution/agent-observation.ts";
 import {
   ObservationRunner,

@@ -7,7 +7,7 @@
 
 import { expect, test } from "vitest";
 
-import { evaluate, MAX_OBSERVED_CHARS } from "#/orchestration/case-checks.ts";
+import { evaluate, MAX_OBSERVED_CHARS } from "#/orchestration/verdict.ts";
 
 /** Comfortably longer than the cell width, so truncation must engage. */
 const OVERLONG = 500;
