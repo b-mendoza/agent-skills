@@ -18,9 +18,9 @@ import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
 
 import { REPORT_PATH } from "#/orchestration/report.ts";
-import { EXIT_CODES } from "#/orchestration/run-coordination.ts";
+import { EXIT_CODES } from "#/orchestration/suite/coordination.ts";
 
-const RUN_PATH = fileURLToPath(new URL("./run.ts", import.meta.url));
+const RUN_PATH = fileURLToPath(new URL("../run.ts", import.meta.url));
 const SPAWN_TIMEOUT_MS = 30_000;
 
 test("direct execution reaches the coordinator without rewriting the report when no case matches", () => {

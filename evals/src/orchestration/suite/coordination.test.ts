@@ -14,19 +14,19 @@ import {
   ROUTING_TIER,
 } from "#/cases/analyzing-recent-project-state.ts";
 import { formatResultLine } from "#/orchestration/report.ts";
-import { EXIT_CODES } from "#/orchestration/run-coordination.ts";
+import { EXIT_CODES } from "#/orchestration/suite/coordination.ts";
+import type { RunnerServices } from "#/orchestration/suite/services.ts";
+import {
+  RunnerCaseExecutionError,
+  RunnerReportWriteError,
+} from "#/orchestration/suite/services.ts";
 import {
   capturingWriteReport,
   createRunnerServices,
   evalCase,
   executionResult,
   runInjectedCli,
-} from "#/orchestration/run-coordination-test-support.ts";
-import type { RunnerServices } from "#/orchestration/suite/services.ts";
-import {
-  RunnerCaseExecutionError,
-  RunnerReportWriteError,
-} from "#/orchestration/suite/services.ts";
+} from "#/orchestration/suite/test-support.ts";
 
 const PASSING_CASE_COST_USD = 0.25;
 const PASSING_CASE_DURATION_MS = 1500;

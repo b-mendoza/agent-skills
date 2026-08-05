@@ -13,7 +13,7 @@
 import { Effect } from "effect";
 
 import { ARGV_START } from "#/orchestration/invocation/arguments.ts";
-import { runCli } from "#/orchestration/run-coordination.ts";
+import { runCli } from "#/orchestration/suite/coordination.ts";
 import {
   RunnerOutputLive,
   RunnerServicesLive,

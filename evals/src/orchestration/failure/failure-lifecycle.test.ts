@@ -15,18 +15,18 @@ import { expect, test, vi } from "vitest";
 
 import { ROUTING_TIER } from "#/cases/analyzing-recent-project-state.ts";
 import { PromptConstructionError } from "#/orchestration/case-execution/execution.ts";
-import { EXIT_CODES } from "#/orchestration/run-coordination.ts";
-import {
-  createRunnerServices,
-  evalCase,
-  executionResult,
-  runInjectedCli,
-} from "#/orchestration/run-coordination-test-support.ts";
+import { EXIT_CODES } from "#/orchestration/suite/coordination.ts";
 import type { RunnerServices } from "#/orchestration/suite/services.ts";
 import {
   RunnerCaseExecutionError,
   RunnerReportWriteError,
 } from "#/orchestration/suite/services.ts";
+import {
+  createRunnerServices,
+  evalCase,
+  executionResult,
+  runInjectedCli,
+} from "#/orchestration/suite/test-support.ts";
 
 const BIGINT_DEFECT = 1n;
 const THROWING_DEFECT = {

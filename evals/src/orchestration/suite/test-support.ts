@@ -12,7 +12,7 @@ import type {
 import type { Observation } from "#/observation/observation-types.ts";
 import type { CaseExecutionResult } from "#/orchestration/case-execution/execution.ts";
 import type { Result } from "#/orchestration/report.ts";
-import { runCli } from "#/orchestration/run-coordination.ts";
+import { runCli } from "#/orchestration/suite/coordination.ts";
 import {
   RunnerCaseExecutionError,
   RunnerOutput,
