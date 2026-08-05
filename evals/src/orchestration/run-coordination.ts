@@ -9,28 +9,16 @@ import { BEHAVIORAL_TIER } from "#/cases/analyzing-recent-project-state.ts";
 import { checkMutationScope } from "#/cases/analyzing-recent-project-state-checks.ts";
 import type { Observation } from "#/observation/observation-types.ts";
 import { evaluate } from "#/orchestration/case-checks.ts";
-import type { CaseExecutionError } from "#/orchestration/case-execution.ts";
-import {
-  CaseFixtureAcquisitionError,
-  CaseFixtureCleanupError,
-  PromptConstructionError,
-} from "#/orchestration/case-execution.ts";
+import { describeSuiteFailure } from "#/orchestration/failure/boundary-errors.ts";
 import { describeResidualCause } from "#/orchestration/failure/residual-cause.ts";
 import {
   parseArgs,
   selectCases,
   USAGE,
 } from "#/orchestration/invocation/arguments.ts";
-import { ObservationRunError } from "#/orchestration/observation-runner.ts";
 import type { Result } from "#/orchestration/report.ts";
 import { formatResultLine, renderReport } from "#/orchestration/report.ts";
-import {
-  RunnerCaseExecutionError,
-  RunnerOutput,
-  RunnerOutputError,
-  RunnerReportWriteError,
-  RunnerServices,
-} from "#/orchestration/run-services.ts";
+import { RunnerOutput, RunnerServices } from "#/orchestration/run-services.ts";
 
 /** Exit codes are the machine-readable contract; see run.ts's header comment. */
 export const EXIT_CODES = {
@@ -133,40 +121,6 @@ function coordinateRun(argv: string[]) {
 
     return yield* executeSelectedCases(selectedCases);
   });
-}
-
-type RunnerBoundaryError =
-  | RunnerCaseExecutionError
-  | RunnerReportWriteError
-  | RunnerOutputError;
-
-function isWrappedBoundaryError(
-  error: unknown,
-): error is CaseExecutionError | RunnerBoundaryError {
-  return (
-    error instanceof RunnerCaseExecutionError ||
-    error instanceof RunnerReportWriteError ||
-    error instanceof RunnerOutputError ||
-    error instanceof CaseFixtureAcquisitionError ||
-    error instanceof CaseFixtureCleanupError ||
-    error instanceof PromptConstructionError ||
-    error instanceof ObservationRunError
-  );
-}
-
-// The live path nests a CaseExecutionError inside a RunnerCaseExecutionError,
-// so unwrapping has to recurse to reach the original failure.
-function unwrapBoundaryCause(error: unknown): unknown {
-  return isWrappedBoundaryError(error)
-    ? unwrapBoundaryCause(error.cause)
-    : error;
-}
-
-function describeSuiteFailure(error: unknown): string {
-  const originalCause = unwrapBoundaryCause(error);
-  return originalCause instanceof Error
-    ? originalCause.message
-    : String(originalCause);
 }
 
 function handleRunFailure(error: unknown) {
