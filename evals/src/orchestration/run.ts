@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 // Entry point for the local eval suite.
 //
-//   node evals/src/orchestration/run.ts                    every case
+//   node evals/src/orchestration/run.ts                    every case, 5 attempts each
 //   node evals/src/orchestration/run.ts --tier=1           routing cases only (fast, cents)
 //   node evals/src/orchestration/run.ts --case=path-error  one case
+//   node evals/src/orchestration/run.ts --attempts=1       one attempt per case (cheap smoke run)
 //
-// Cases run sequentially: they spend real tokens and the wall-clock cost of
-// parallelism is not worth the token burn on a suite this small.
+// Each case runs `--attempts` times (default 5); its score is the percent of
+// attempts that passed. Attempts run sequentially: they spend real tokens and
+// the wall-clock cost of parallelism is not worth the token burn on a suite
+// this small.
 //
-// Exit codes: 0 all pass · 1 a case failed · 2 no cases matched · 3 suite error · 4 usage error
+// Exit codes: 0 every executed case passed · 1 a case failed or was degraded · 2 no cases matched · 3 suite error · 4 usage error
 
 import { Effect } from "effect";
 
