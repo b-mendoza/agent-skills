@@ -6,7 +6,7 @@
 
 import { expect, test } from "vitest";
 
-import { parseArgs } from "#/orchestration/run-arguments.ts";
+import { parseArgs } from "#/orchestration/invocation/arguments.ts";
 
 const BELOW_FIRST_TIER = 0;
 const FIRST_UNDEFINED_TIER = 3;
