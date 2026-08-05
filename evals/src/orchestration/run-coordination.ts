@@ -15,6 +15,7 @@ import {
   CaseFixtureCleanupError,
   PromptConstructionError,
 } from "#/orchestration/case-execution.ts";
+import { describeResidualCause } from "#/orchestration/failure/residual-cause.ts";
 import {
   parseArgs,
   selectCases,
@@ -23,7 +24,6 @@ import {
 import { ObservationRunError } from "#/orchestration/observation-runner.ts";
 import type { Result } from "#/orchestration/report.ts";
 import { formatResultLine, renderReport } from "#/orchestration/report.ts";
-import { describeResidualCause } from "#/orchestration/run-failure-reporting.ts";
 import {
   RunnerCaseExecutionError,
   RunnerOutput,
