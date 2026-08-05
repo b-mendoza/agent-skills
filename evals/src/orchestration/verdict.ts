@@ -1,11 +1,29 @@
 // Turns the outcome of a case check -- a returned string or a thrown assertion
-// -- into the row data the report expects.
+// -- into attempt data, and folds a case's attempts into the row the report
+// expects.
 
-import type { Result } from "#/orchestration/report.ts";
+import type {
+  AttemptResult,
+  AttemptStatus,
+  ReportTier,
+  Result,
+  Status,
+} from "#/orchestration/report.ts";
 
 /** A report cell holds one line; a longer assertion message is truncated. */
 export const MAX_OBSERVED_CHARS = 160;
 const FIRST_CHARACTER_INDEX = 0;
+const LAST_ATTEMPT_INDEX = -1;
+const NONE_PASSED = 0;
+const INITIAL_TOTAL = 0;
+const PERCENT_SCALE = 100;
+/**
+ * A mixed outcome must never display the terminal score its status
+ * contradicts: with enough attempts, rounding alone would show 100 for
+ * 199/200 or 0 for 1/201.
+ */
+const DEGRADED_SCORE_FLOOR = 1;
+const DEGRADED_SCORE_CEILING = 99;
 const UNKNOWN_ERROR_MESSAGE = "An unknown error occurred";
 
 function describeNonErrorCheckFailure(cause: unknown): string {
@@ -19,7 +37,7 @@ function describeNonErrorCheckFailure(cause: unknown): string {
 }
 
 function normalizeCheckFailure(cause: unknown): {
-  status: Result["status"];
+  status: AttemptStatus;
   observed: string;
 } {
   const failureMessage =
@@ -34,9 +52,9 @@ function normalizeCheckFailure(cause: unknown): {
   };
 }
 
-/** Runs a check, turning a thrown assertion into a FAIL row. */
+/** Runs a check, turning a thrown assertion into a FAIL attempt. */
 export function evaluate(check: () => string): {
-  status: Result["status"];
+  status: AttemptStatus;
   observed: string;
 } {
   try {
@@ -44,4 +62,80 @@ export function evaluate(check: () => string): {
   } catch (cause) {
     return normalizeCheckFailure(cause);
   }
+}
+
+function aggregateStatus(passedCount: number, attemptCount: number): Status {
+  if (passedCount === attemptCount) return "PASS";
+  if (passedCount === NONE_PASSED) return "FAIL";
+  return "DEGRADED";
+}
+
+/**
+ * Folds every attempt at one case into its report row. The score is the
+ * percent of attempts that passed -- a pass rate over repetitions of one
+ * binary check, not a weighted rubric -- and the status derives from the same
+ * count, so the two can never disagree. A failing row shows the first
+ * failure's message: with a flaky case, the earliest observed defect is the
+ * one worth reading.
+ */
+export function aggregateAttempts(attempts: readonly AttemptResult[]): Result {
+  const [firstAttempt] = attempts;
+  if (firstAttempt === undefined) {
+    throw new Error("aggregateAttempts requires at least one attempt");
+  }
+
+  const passedCount = attempts.filter(
+    (attempt) => attempt.status === "PASS",
+  ).length;
+  const status = aggregateStatus(passedCount, attempts.length);
+  const roundedScore = Math.round(
+    (passedCount / attempts.length) * PERCENT_SCALE,
+  );
+  const score =
+    status === "DEGRADED"
+      ? Math.min(
+          DEGRADED_SCORE_CEILING,
+          Math.max(DEGRADED_SCORE_FLOOR, roundedScore),
+        )
+      : roundedScore;
+  const lastAttempt = attempts.at(LAST_ATTEMPT_INDEX) ?? firstAttempt;
+  const firstFailedAttempt =
+    attempts.find((attempt) => attempt.status === "FAIL") ?? firstAttempt;
+
+  return {
+    id: firstAttempt.id,
+    tier: firstAttempt.tier,
+    status,
+    score,
+    attemptsPassed: passedCount,
+    attemptsRun: attempts.length,
+    observed:
+      status === "PASS" ? lastAttempt.observed : firstFailedAttempt.observed,
+    costUsd: attempts.reduce(
+      (total, attempt) => total + attempt.costUsd,
+      INITIAL_TOTAL,
+    ),
+    durationMs: attempts.reduce(
+      (total, attempt) => total + attempt.durationMs,
+      INITIAL_TOTAL,
+    ),
+  };
+}
+
+/**
+ * The row for a case this run never executed. The score is null, not 0: an
+ * unexecuted case measured nothing, and 0 would read as "failed every attempt".
+ */
+export function notRunResult(id: string, tier: ReportTier): Result {
+  return {
+    id,
+    tier,
+    status: "NOT_RUN",
+    score: null,
+    attemptsPassed: 0,
+    attemptsRun: 0,
+    observed: "not executed by this run",
+    costUsd: 0,
+    durationMs: 0,
+  };
 }

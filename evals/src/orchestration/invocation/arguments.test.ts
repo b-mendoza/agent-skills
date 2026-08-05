@@ -46,8 +46,34 @@ test.each([
     args: [`--tier=${LARGE_NUMERIC_TIER}`],
     expected: { tier: LARGE_NUMERIC_TIER, errors: [] },
   },
+  {
+    label: "an attempts count",
+    args: ["--attempts=3"],
+    expected: { attempts: 3, errors: [] },
+  },
+  {
+    label: "attempts alongside selectors",
+    args: ["--tier=2", "--attempts=1"],
+    expected: { tier: 2, attempts: 1, errors: [] },
+  },
 ])("parses $label into selector fields", ({ args, expected }) => {
   expect(parseArgs(args)).toStrictEqual(expected);
+});
+
+// Zero attempts would select cases and then measure nothing; an unbounded
+// count would crash the attempt loop with a suite error (or allocate a huge
+// array) instead of failing as invalid usage. Both must refuse up front.
+test.each([
+  { label: "--attempts=0", args: ["--attempts=0"] },
+  { label: "--attempts=101", args: ["--attempts=101"] },
+  {
+    label: "an attempts count too large for an array length",
+    args: ["--attempts=999999999999999999999"],
+  },
+])("`$label` produces a bounds error", ({ args }) => {
+  expect(parseArgs(args).errors).toStrictEqual(
+    args.map((argument) => `--attempts must be between 1 and 100: ${argument}`),
+  );
 });
 
 // Malformed selectors must stay visible to the caller. Silently dropping one
@@ -60,6 +86,10 @@ test.each([
   { label: "--tier 1", args: ["--tier", "1"] },
   { label: "-tier=1", args: ["-tier=1"] },
   { label: "--case=", args: ["--case="] },
+  { label: "--attempts=", args: ["--attempts="] },
+  { label: "--attempts=abc", args: ["--attempts=abc"] },
+  { label: "--attempts=1.5", args: ["--attempts=1.5"] },
+  { label: "--attempts=-1", args: ["--attempts=-1"] },
 ])("`$label` produces named parse errors", ({ args }) => {
   expect(parseArgs(args).errors).toStrictEqual(
     args.map((argument) => `unrecognized or malformed argument: ${argument}`),

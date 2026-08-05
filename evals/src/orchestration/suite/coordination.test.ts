@@ -1,5 +1,5 @@
-// Pins the runner's free CLI coordination: selection, sequencing, report writes,
-// output channels, and exit codes.
+// Pins the runner's free CLI coordination: selection, attempt sequencing,
+// aggregation into scored rows, report writes, output channels, and exit codes.
 //
 // Cases and services are injected, so these tests spend no tokens and write no
 // report file.
@@ -14,7 +14,10 @@ import {
   ROUTING_TIER,
 } from "#/cases/analyzing-recent-project-state.ts";
 import { formatResultLine } from "#/orchestration/report.ts";
-import { EXIT_CODES } from "#/orchestration/suite/coordination.ts";
+import {
+  DEFAULT_ATTEMPTS_PER_CASE,
+  EXIT_CODES,
+} from "#/orchestration/suite/coordination.ts";
 import type { RunnerServices } from "#/orchestration/suite/services.ts";
 import {
   RunnerCaseExecutionError,
@@ -32,6 +35,9 @@ const PASSING_CASE_COST_USD = 0.25;
 const PASSING_CASE_DURATION_MS = 1500;
 const FAILING_CASE_COST_USD = 0.5;
 const FAILING_CASE_DURATION_MS = 3000;
+
+/** Most tests pin per-case behavior, where one attempt keeps assertions flat. */
+const SINGLE_ATTEMPT = "--attempts=1";
 
 test("usage errors execute no cases and write no report", async () => {
   const services = createRunnerServices({
@@ -79,22 +85,22 @@ test("a numeric tier with no matches executes no cases and writes no report", as
 test.each([
   {
     label: "all cases when no selectors are present",
-    args: [],
+    args: [SINGLE_ATTEMPT],
     expectedCaseIds: ["tier-one-a", "tier-one-b", "tier-two-a", "tier-two-b"],
   },
   {
     label: "only the selected tier",
-    args: ["--tier=1"],
+    args: ["--tier=1", SINGLE_ATTEMPT],
     expectedCaseIds: ["tier-one-a", "tier-one-b"],
   },
   {
     label: "only the selected case ID",
-    args: ["--case=tier-two-a"],
+    args: ["--case=tier-two-a", SINGLE_ATTEMPT],
     expectedCaseIds: ["tier-two-a"],
   },
   {
     label: "the intersection of tier and case selectors",
-    args: ["--tier=2", "--case=tier-two-b"],
+    args: ["--tier=2", "--case=tier-two-b", SINGLE_ATTEMPT],
     expectedCaseIds: ["tier-two-b"],
   },
 ])("selection executes $label", async ({ args, expectedCaseIds }) => {
@@ -120,7 +126,27 @@ test.each([
   ).toStrictEqual(expectedCaseIds);
 });
 
-test("cases execute sequentially and the report writes after completion", async () => {
+test("without --attempts every selected case executes five times", async () => {
+  const singleCase = evalCase("repeated", ROUTING_TIER);
+  const executeCase = vi.fn<RunnerServices["executeCase"]>((selectedCase) =>
+    Effect.succeed(executionResult(selectedCase)),
+  );
+  const writtenReports: string[] = [];
+  const services = createRunnerServices({
+    evalCases: [singleCase],
+    executeCase,
+    writeReport: capturingWriteReport(writtenReports),
+  });
+
+  const { exitCode } = await runInjectedCli([], services);
+  const [writtenReport = ""] = writtenReports;
+
+  expect(exitCode).toBe(EXIT_CODES.ALL_PASSED);
+  expect(executeCase).toHaveBeenCalledTimes(DEFAULT_ATTEMPTS_PER_CASE);
+  expect(writtenReport).toContain("| repeated | 1 | PASS | 100 | 5/5 |");
+});
+
+test("attempts execute sequentially and the report writes after completion", async () => {
   const firstCase = evalCase("first", ROUTING_TIER);
   const secondCase = evalCase("second", ROUTING_TIER);
   const eventOrder: string[] = [];
@@ -149,12 +175,16 @@ test("cases execute sequentially and the report writes after completion", async 
     writeReport,
   });
 
-  const { exitCode } = await runInjectedCli([], services);
+  const { exitCode } = await runInjectedCli(["--attempts=2"], services);
 
   expect(exitCode).toBe(EXIT_CODES.ALL_PASSED);
   expect(eventOrder).toStrictEqual([
     "start:first",
     "finish:first",
+    "start:first",
+    "finish:first",
+    "start:second",
+    "finish:second",
     "start:second",
     "finish:second",
     "write-report",
@@ -162,7 +192,7 @@ test("cases execute sequentially and the report writes after completion", async 
   expect(writeReport).toHaveBeenCalledOnce();
 });
 
-test("a mixed run prints every progress line, the failure detail, and the report confirmation", async () => {
+test("a mixed run prints attempt lines, failure detail, case summaries, and the report confirmation", async () => {
   const passingCase = evalCase("passing", ROUTING_TIER);
   const failingCase = evalCase("failing", ROUTING_TIER);
   const passingExecution = executionResult(passingCase, {
@@ -185,18 +215,77 @@ test("a mixed run prints every progress line, the failure detail, and the report
       ),
   });
 
-  const { exitCode, stdout } = await runInjectedCli([], services);
+  const { exitCode, stdout } = await runInjectedCli([SINGLE_ATTEMPT], services);
 
   expect(exitCode).toBe(EXIT_CODES.CASE_FAILED);
   expect(stdout.join("")).toBe(
     [
-      `· passing (tier ${ROUTING_TIER}) ... ${formatResultLine(passingExecution.result)}`,
-      `· failing (tier ${ROUTING_TIER}) ... ${formatResultLine(failingExecution.result)}`,
+      `· passing (tier ${ROUTING_TIER}) attempt 1/1 ... ${formatResultLine(passingExecution.result)}`,
+      `· passing (tier ${ROUTING_TIER}) ... PASS score 100 (1/1 passed) 2s $0.25`,
+      `· failing (tier ${ROUTING_TIER}) attempt 1/1 ... ${formatResultLine(failingExecution.result)}`,
       "    assertion failed",
+      `· failing (tier ${ROUTING_TIER}) ... FAIL score 0 (0/1 passed) 3s $0.50`,
+      // No behavioral attempt ran, so the derived row has nothing to measure.
+      "· mutation-scope (derived) ... NOT_RUN",
       "",
       "Report written to evals/report.md",
       "",
     ].join("\n"),
+  );
+});
+
+test("mixed attempt outcomes aggregate to DEGRADED and fail the run", async () => {
+  const flakyCase = evalCase("flaky", ROUTING_TIER);
+  const executeCase = vi
+    .fn<RunnerServices["executeCase"]>()
+    .mockReturnValueOnce(Effect.succeed(executionResult(flakyCase)))
+    .mockReturnValue(
+      Effect.succeed(
+        executionResult(flakyCase, { status: "FAIL", observed: "flaked" }),
+      ),
+    );
+  const writtenReports: string[] = [];
+  const services = createRunnerServices({
+    evalCases: [flakyCase],
+    executeCase,
+    writeReport: capturingWriteReport(writtenReports),
+  });
+
+  const { exitCode } = await runInjectedCli(["--attempts=2"], services);
+  const [writtenReport = ""] = writtenReports;
+
+  // A case that passes only sometimes is not one the run can vouch for.
+  expect(exitCode).toBe(EXIT_CODES.CASE_FAILED);
+  expect(writtenReport).toContain(
+    "| flaky | 1 | DEGRADED | 50 | 1/2 | flaked |",
+  );
+});
+
+test("an unselected case appears in the report as NOT_RUN without executing", async () => {
+  const selectedCase = evalCase("selected", ROUTING_TIER);
+  const unselectedCase = evalCase("unselected", BEHAVIORAL_TIER);
+  const executeCase = vi.fn<RunnerServices["executeCase"]>((chosenCase) =>
+    Effect.succeed(executionResult(chosenCase)),
+  );
+  const writtenReports: string[] = [];
+  const services = createRunnerServices({
+    evalCases: [selectedCase, unselectedCase],
+    executeCase,
+    writeReport: capturingWriteReport(writtenReports),
+  });
+
+  const { exitCode } = await runInjectedCli(
+    ["--case=selected", SINGLE_ATTEMPT],
+    services,
+  );
+  const [writtenReport = ""] = writtenReports;
+
+  // NOT_RUN records the gap without gating the exit code.
+  expect(exitCode).toBe(EXIT_CODES.ALL_PASSED);
+  expect(executeCase).toHaveBeenCalledOnce();
+  expect(writtenReport).toContain("| selected | 1 | PASS | 100 | 1/1 |");
+  expect(writtenReport).toContain(
+    "| unselected | 2 | NOT_RUN | — | — | not executed by this run |",
   );
 });
 
@@ -215,11 +304,46 @@ test("tier-2 observations add a derived mutation-scope row without another execu
     writeReport,
   });
 
-  const { exitCode } = await runInjectedCli([], services);
+  const { exitCode } = await runInjectedCli([SINGLE_ATTEMPT], services);
+  const [writtenReport = ""] = writtenReports;
 
   expect(exitCode).toBe(EXIT_CODES.ALL_PASSED);
   expect(executeCase).toHaveBeenCalledOnce();
-  expect(writtenReports[0]).toContain("| mutation-scope | 2* | PASS |");
+  expect(writtenReport).toContain("| mutation-scope | 2* | PASS | 100 | 1/1 |");
+});
+
+test("the derived row scores each attempt's behavioral runs as one repetition", async () => {
+  const behavioralCase = evalCase("behavioral", BEHAVIORAL_TIER);
+  // The second attempt mutates; the first stays clean. The derived row must
+  // degrade rather than let either attempt speak for both.
+  const executeCase = vi
+    .fn<RunnerServices["executeCase"]>()
+    .mockReturnValueOnce(Effect.succeed(executionResult(behavioralCase)))
+    .mockReturnValue(
+      Effect.succeed(
+        executionResult(
+          behavioralCase,
+          {},
+          {
+            gitStatusAfter: { kind: "worktree", entries: "?? changed.txt" },
+          },
+        ),
+      ),
+    );
+  const writtenReports: string[] = [];
+  const services = createRunnerServices({
+    evalCases: [behavioralCase],
+    executeCase,
+    writeReport: capturingWriteReport(writtenReports),
+  });
+
+  const { exitCode } = await runInjectedCli(["--attempts=2"], services);
+  const [writtenReport = ""] = writtenReports;
+
+  expect(exitCode).toBe(EXIT_CODES.CASE_FAILED);
+  expect(writtenReport).toContain(
+    "| mutation-scope | 2* | DEGRADED | 50 | 1/2 | read-only contract violated: |",
+  );
 });
 
 test("tier-2 mutation evidence fails the derived row without executing another case", async () => {
@@ -251,8 +375,8 @@ test("tier-2 mutation evidence fails the derived row without executing another c
     writeReport: capturingWriteReport(writtenReports),
   });
 
-  const { exitCode } = await runInjectedCli([], services);
-  const writtenReport = writtenReports[0] ?? "";
+  const { exitCode } = await runInjectedCli([SINGLE_ATTEMPT], services);
+  const [writtenReport = ""] = writtenReports;
 
   expect(exitCode).toBe(EXIT_CODES.CASE_FAILED);
   expect(executeCase).toHaveBeenCalledTimes(injectedCases.length);
@@ -260,7 +384,7 @@ test("tier-2 mutation evidence fails the derived row without executing another c
     executeCase.mock.calls.map(([selectedCase]) => selectedCase.id),
   ).toStrictEqual(["routing", "behavioral"]);
   expect(writtenReport).toContain(
-    "| mutation-scope | 2* | FAIL | read-only contract violated: |",
+    "| mutation-scope | 2* | FAIL | 0 | 0/1 | read-only contract violated: |",
   );
   expect(writtenReport).not.toContain("run exceeded its wall clock");
 });
@@ -282,7 +406,7 @@ test("a failed case returns the case-failed exit code after writing the report",
     writeReport,
   });
 
-  const { exitCode } = await runInjectedCli([], services);
+  const { exitCode } = await runInjectedCli([SINGLE_ATTEMPT], services);
 
   expect(exitCode).toBe(EXIT_CODES.CASE_FAILED);
   expect(writeReport).toHaveBeenCalledOnce();

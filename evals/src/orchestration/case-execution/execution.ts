@@ -19,7 +19,6 @@ import {
   FixtureProvisionerLive,
 } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/observation-types.ts";
-import { evaluate } from "#/orchestration/verdict.ts";
 import type { ObservationRunError } from "#/orchestration/case-execution/agent-observation.ts";
 import {
   ObservationRunner,
@@ -29,15 +28,17 @@ import {
   EvalConfiguration,
   EvalConfigurationLive,
 } from "#/orchestration/case-execution/model-configuration.ts";
-import type { ReportTier, Result } from "#/orchestration/report.ts";
+import type { AttemptResult, ReportTier } from "#/orchestration/report.ts";
+import { evaluate } from "#/orchestration/verdict.ts";
 
-const REPORT_TIER_BY_CASE_TIER = {
+export const REPORT_TIER_BY_CASE_TIER = {
   [ROUTING_TIER]: "1",
   [BEHAVIORAL_TIER]: "2",
 } as const satisfies Record<CaseTier, ReportTier>;
 
+/** One attempt at one case; the suite aggregates attempts into report rows. */
 export interface CaseExecutionResult {
-  result: Result;
+  result: AttemptResult;
   observation: Observation;
 }
 

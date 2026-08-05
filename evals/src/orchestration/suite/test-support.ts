@@ -11,7 +11,7 @@ import type {
 } from "#/cases/analyzing-recent-project-state.ts";
 import type { Observation } from "#/observation/observation-types.ts";
 import type { CaseExecutionResult } from "#/orchestration/case-execution/execution.ts";
-import type { Result } from "#/orchestration/report.ts";
+import type { AttemptResult } from "#/orchestration/report.ts";
 import { runCli } from "#/orchestration/suite/coordination.ts";
 import {
   RunnerCaseExecutionError,
@@ -41,7 +41,7 @@ export function evalCase(id: string, tier: CaseTier): EvalCase {
 
 export function executionResult(
   selectedCase: EvalCase,
-  resultOverrides: Partial<Result> = {},
+  resultOverrides: Partial<AttemptResult> = {},
   observationOverrides: Partial<Observation> = {},
 ): CaseExecutionResult {
   return {
