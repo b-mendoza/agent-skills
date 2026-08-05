@@ -17,7 +17,7 @@ import { runCli } from "#/orchestration/run-coordination.ts";
 import {
   RunnerOutputLive,
   RunnerServicesLive,
-} from "#/orchestration/run-services.ts";
+} from "#/orchestration/suite/services.ts";
 
 // Only a direct `node run.ts` spends money. Importing this module -- which the
 // offline tests do, to reach the pure helpers above -- must never start a run.

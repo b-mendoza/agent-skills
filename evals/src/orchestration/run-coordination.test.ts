@@ -22,11 +22,11 @@ import {
   executionResult,
   runInjectedCli,
 } from "#/orchestration/run-coordination-test-support.ts";
-import type { RunnerServices } from "#/orchestration/run-services.ts";
+import type { RunnerServices } from "#/orchestration/suite/services.ts";
 import {
   RunnerCaseExecutionError,
   RunnerReportWriteError,
-} from "#/orchestration/run-services.ts";
+} from "#/orchestration/suite/services.ts";
 
 const PASSING_CASE_COST_USD = 0.25;
 const PASSING_CASE_DURATION_MS = 1500;

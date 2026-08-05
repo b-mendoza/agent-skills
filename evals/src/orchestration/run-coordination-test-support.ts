@@ -19,7 +19,7 @@ import {
   RunnerOutputError,
   RunnerReportWriteError,
   RunnerServices,
-} from "#/orchestration/run-services.ts";
+} from "#/orchestration/suite/services.ts";
 
 interface CapturedOutput {
   readonly stderr: string[];

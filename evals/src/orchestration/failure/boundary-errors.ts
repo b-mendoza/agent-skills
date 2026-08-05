@@ -12,7 +12,7 @@ import {
   RunnerCaseExecutionError,
   RunnerOutputError,
   RunnerReportWriteError,
-} from "#/orchestration/run-services.ts";
+} from "#/orchestration/suite/services.ts";
 
 type RunnerBoundaryError =
   | RunnerCaseExecutionError

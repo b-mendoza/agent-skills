@@ -18,7 +18,7 @@ import {
 } from "#/orchestration/invocation/arguments.ts";
 import type { Result } from "#/orchestration/report.ts";
 import { formatResultLine, renderReport } from "#/orchestration/report.ts";
-import { RunnerOutput, RunnerServices } from "#/orchestration/run-services.ts";
+import { RunnerOutput, RunnerServices } from "#/orchestration/suite/services.ts";
 
 /** Exit codes are the machine-readable contract; see run.ts's header comment. */
 export const EXIT_CODES = {
