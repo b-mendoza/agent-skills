@@ -7,8 +7,8 @@ import { Context, Data, Effect, Layer } from "effect";
 
 import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
 import { cases } from "#/cases/analyzing-recent-project-state.ts";
-import type { CaseExecutionResult } from "#/orchestration/case-execution.ts";
-import { executeCaseLive } from "#/orchestration/case-execution.ts";
+import type { CaseExecutionResult } from "#/orchestration/case-execution/execution.ts";
+import { executeCaseLive } from "#/orchestration/case-execution/execution.ts";
 import { REPORT_PATH } from "#/orchestration/report.ts";
 
 export class RunnerCaseExecutionError extends Data.TaggedError(

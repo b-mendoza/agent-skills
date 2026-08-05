@@ -21,12 +21,12 @@ import type { Fixture } from "#/fixtures/fixtures.ts";
 import { FixtureProvisioner } from "#/fixtures/fixtures.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
 import type { Observation } from "#/observation/observation-types.ts";
+import { ObservationRunnerLive } from "#/orchestration/case-execution/agent-observation.ts";
 import {
   CaseFixtureAcquisitionError,
   executeCase,
-} from "#/orchestration/case-execution.ts";
+} from "#/orchestration/case-execution/execution.ts";
 import { EvalConfiguration } from "#/orchestration/case-execution/model-configuration.ts";
-import { ObservationRunnerLive } from "#/orchestration/observation-runner.ts";
 
 vi.mock(import("#/observation/agent-query.ts"), async (importOriginal) => ({
   ...(await importOriginal()),

@@ -1,13 +1,13 @@
 // Unwraps the tagged errors that the runner and case-execution boundaries nest
 // around an original failure, down to a printable message.
 
-import type { CaseExecutionError } from "#/orchestration/case-execution.ts";
+import { ObservationRunError } from "#/orchestration/case-execution/agent-observation.ts";
+import type { CaseExecutionError } from "#/orchestration/case-execution/execution.ts";
 import {
   CaseFixtureAcquisitionError,
   CaseFixtureCleanupError,
   PromptConstructionError,
-} from "#/orchestration/case-execution.ts";
-import { ObservationRunError } from "#/orchestration/observation-runner.ts";
+} from "#/orchestration/case-execution/execution.ts";
 import {
   RunnerCaseExecutionError,
   RunnerOutputError,

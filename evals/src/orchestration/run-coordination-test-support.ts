@@ -10,7 +10,7 @@ import type {
   EvalCase,
 } from "#/cases/analyzing-recent-project-state.ts";
 import type { Observation } from "#/observation/observation-types.ts";
-import type { CaseExecutionResult } from "#/orchestration/case-execution.ts";
+import type { CaseExecutionResult } from "#/orchestration/case-execution/execution.ts";
 import type { Result } from "#/orchestration/report.ts";
 import { runCli } from "#/orchestration/run-coordination.ts";
 import {

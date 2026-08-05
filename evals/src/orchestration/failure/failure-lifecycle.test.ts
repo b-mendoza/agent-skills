@@ -14,7 +14,7 @@ import { Effect } from "effect";
 import { expect, test, vi } from "vitest";
 
 import { ROUTING_TIER } from "#/cases/analyzing-recent-project-state.ts";
-import { PromptConstructionError } from "#/orchestration/case-execution.ts";
+import { PromptConstructionError } from "#/orchestration/case-execution/execution.ts";
 import { EXIT_CODES } from "#/orchestration/run-coordination.ts";
 import {
   createRunnerServices,
