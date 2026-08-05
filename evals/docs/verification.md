@@ -16,13 +16,13 @@
 
 | Task | Check |
 | --- | --- |
-| One case end-to-end | `node src/orchestration/run.ts --case=<id>` |
-| Routing decisions only | `node src/orchestration/run.ts --tier=1` (budget-capped, cents) |
+| One case end-to-end | `node src/orchestration/run.ts --case=<id> --attempts=1` |
+| Routing decisions only | `node src/orchestration/run.ts --tier=1` (budget-capped) |
 | Full suite | `node src/orchestration/run.ts` (~minutes, ~dollars) |
 
-Paid runs execute cases sequentially by design; leave the sequencing as is.
+Each case runs `--attempts` times (default 5), which multiplies a run's cost accordingly; use `--attempts=1` for a cheap, low-confidence smoke run. Paid runs execute attempts sequentially by design; leave the sequencing as is.
 
-Exit codes: `0` all pass, `1` a case failed, `2` no case matched the filter, `3` infrastructure error, `4` invalid usage.
+Exit codes: `0` every executed case passed every attempt (NOT_RUN rows do not gate), `1` a case failed or was degraded (some attempts passed, some failed), `2` no case matched the filter, `3` infrastructure error, `4` invalid usage.
 
 Every paid run rewrites the committed `report.md`; review the diff — a changed row outside your intended change is a regression.
 
