@@ -13,7 +13,7 @@ import {
   EvalConfigurationLive,
   evalModel,
   resolveModel,
-} from "#/orchestration/run-configuration.ts";
+} from "#/orchestration/case-execution/model-configuration.ts";
 
 test.each([
   { configuredModel: undefined, expectedModel: "sonnet" },

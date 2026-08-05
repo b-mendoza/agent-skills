@@ -25,8 +25,8 @@ import {
   CaseFixtureAcquisitionError,
   executeCase,
 } from "#/orchestration/case-execution.ts";
+import { EvalConfiguration } from "#/orchestration/case-execution/model-configuration.ts";
 import { ObservationRunnerLive } from "#/orchestration/observation-runner.ts";
-import { EvalConfiguration } from "#/orchestration/run-configuration.ts";
 
 vi.mock(import("#/observation/agent-query.ts"), async (importOriginal) => ({
   ...(await importOriginal()),

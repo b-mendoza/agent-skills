@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
-import { evalModel } from "#/orchestration/run-configuration.ts";
+import { evalModel } from "#/orchestration/case-execution/model-configuration.ts";
 
 export const REPORT_PATH = fileURLToPath(
   new URL("../../report.md", import.meta.url),

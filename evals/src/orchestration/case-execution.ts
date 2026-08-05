@@ -20,16 +20,16 @@ import {
 } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/observation-types.ts";
 import { evaluate } from "#/orchestration/case-checks.ts";
+import {
+  EvalConfiguration,
+  EvalConfigurationLive,
+} from "#/orchestration/case-execution/model-configuration.ts";
 import type { ObservationRunError } from "#/orchestration/observation-runner.ts";
 import {
   ObservationRunner,
   ObservationRunnerLive,
 } from "#/orchestration/observation-runner.ts";
 import type { ReportTier, Result } from "#/orchestration/report.ts";
-import {
-  EvalConfiguration,
-  EvalConfigurationLive,
-} from "#/orchestration/run-configuration.ts";
 
 const REPORT_TIER_BY_CASE_TIER = {
   [ROUTING_TIER]: "1",
