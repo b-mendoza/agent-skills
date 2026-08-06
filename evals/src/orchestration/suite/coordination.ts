@@ -76,6 +76,14 @@ interface BehavioralObservation {
   readonly observation: Observation;
 }
 
+interface ExecuteCaseAttemptsOptions {
+  readonly evalCase: EvalCase;
+  readonly attemptsPerCase: number;
+  readonly services: RunnerServices;
+  readonly output: RunnerOutput;
+  readonly behavioralObservations: BehavioralObservation[];
+}
+
 /**
  * The derived check judges each attempt's behavioral runs as one repetition,
  * so its score aggregates the same way a case's does. With no behavioral
@@ -121,6 +129,36 @@ function attemptNumbers(attemptsPerCase: number): number[] {
   );
 }
 
+function executeCaseAttempts({
+  evalCase,
+  attemptsPerCase,
+  services,
+  output,
+  behavioralObservations,
+}: ExecuteCaseAttemptsOptions) {
+  return Effect.gen(function* () {
+    const caseAttempts: AttemptResult[] = [];
+    for (const attemptNumber of attemptNumbers(attemptsPerCase)) {
+      yield* output.writeStdout(
+        `· ${evalCase.id} (tier ${evalCase.tier}) attempt ${attemptNumber}/${attemptsPerCase} ... `,
+      );
+      // Sequential execution is the documented design: each attempt starts a
+      // real Agent SDK query, so parallelism would change spend and output
+      // ordering.
+      const { result, observation } = yield* services.executeCase(evalCase);
+      if (evalCase.tier === BEHAVIORAL_TIER) {
+        behavioralObservations.push({ attemptNumber, observation });
+      }
+      caseAttempts.push(result);
+      yield* output.writeStdoutLine(formatResultLine(result));
+      if (result.status === "FAIL") {
+        yield* output.writeStdoutLine(`    ${result.observed}`);
+      }
+    }
+    return aggregateAttempts(caseAttempts);
+  });
+}
+
 function executeSelectedCases(
   selectedCases: readonly EvalCase[],
   attemptsPerCase: number,
@@ -132,25 +170,13 @@ function executeSelectedCases(
     const behavioralObservations: BehavioralObservation[] = [];
 
     for (const evalCase of selectedCases) {
-      const caseAttempts: AttemptResult[] = [];
-      for (const attemptNumber of attemptNumbers(attemptsPerCase)) {
-        yield* output.writeStdout(
-          `· ${evalCase.id} (tier ${evalCase.tier}) attempt ${attemptNumber}/${attemptsPerCase} ... `,
-        );
-        // Sequential execution is the documented design: each attempt starts a
-        // real Agent SDK query, so parallelism would change spend and output
-        // ordering.
-        const { result, observation } = yield* services.executeCase(evalCase);
-        if (evalCase.tier === BEHAVIORAL_TIER) {
-          behavioralObservations.push({ attemptNumber, observation });
-        }
-        caseAttempts.push(result);
-        yield* output.writeStdoutLine(formatResultLine(result));
-        if (result.status === "FAIL") {
-          yield* output.writeStdoutLine(`    ${result.observed}`);
-        }
-      }
-      const caseResult = aggregateAttempts(caseAttempts);
+      const caseResult = yield* executeCaseAttempts({
+        evalCase,
+        attemptsPerCase,
+        services,
+        output,
+        behavioralObservations,
+      });
       resultsByCaseId.set(evalCase.id, caseResult);
       yield* output.writeStdoutLine(
         `· ${evalCase.id} (tier ${evalCase.tier}) ... ${formatCaseResultLine(caseResult)}`,
