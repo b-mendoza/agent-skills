@@ -19,6 +19,14 @@ import {
 /** Comfortably longer than the cell width, so truncation must engage. */
 const OVERLONG = 500;
 
+function injectThrownValue(value: unknown): never {
+  const generator = (function* () {
+    yield undefined;
+  })();
+  generator.next();
+  while (true) generator.throw(value);
+}
+
 function attempt(overrides: Partial<AttemptResult> = {}): AttemptResult {
   return {
     id: "some-case",
@@ -59,12 +67,10 @@ test("a long failure message is truncated to the cell width", () => {
 test("a thrown non-Error still produces a FAIL attempt", () => {
   // A case check is arbitrary user code, so the runner cannot assume the thrown
   // value is an Error; a bare string must still become a row, not crash runCli().
-  expect(
-    evaluate(() => {
-      // oxlint-disable-next-line typescript/only-throw-error -- bare string throw is the input under test
-      throw "bare string";
-    }),
-  ).toStrictEqual({ status: "FAIL", observed: "bare string" });
+  expect(evaluate(() => injectThrownValue("bare string"))).toStrictEqual({
+    status: "FAIL",
+    observed: "bare string",
+  });
 });
 
 test("attempts that all pass aggregate to PASS with a full score", () => {
