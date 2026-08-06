@@ -104,6 +104,13 @@ export default defineConfig(
       // agent itself now runs via the Agent SDK's bundled binary.
       "sonarjs/no-os-command-from-path": OFF,
       "sonarjs/todo-tag": WARN,
+      complexity: [
+        ERROR,
+        {
+          variant: "modified",
+          max: 4,
+        },
+      ],
       eqeqeq: [
         ERROR,
         "always",
