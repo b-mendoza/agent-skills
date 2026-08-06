@@ -4,34 +4,20 @@
 // These run against synthetic observations, so they cost nothing, and they
 // cover the failure mode a case cannot catch about itself: passing by
 // observing an absence. A negative routing case asserts "no Skill call was
-// made", and a run that never started satisfies that perfectly.
+// made", and a run that never started produces exactly that absence. The
+// behavioral (tier-2) case assertions live in `cases-behavioral.test.ts`;
+// shared synthetic fixtures live in `case-test-support.ts`.
 
 import { describe, expect, test } from "vitest";
 
-import type {
-  CaseId,
-  EvalCase,
-} from "#/cases/analyzing-recent-project-state.ts";
 import { cases, SKILL } from "#/cases/analyzing-recent-project-state.ts";
-import type { EnvelopeStatus } from "#/cases/analyzing-recent-project-state-checks.ts";
 import {
   assertRunHappened,
   BUDGET_STOP_SUBTYPE,
   checkMutationScope,
 } from "#/cases/analyzing-recent-project-state-checks.ts";
+import { caseById, observe } from "#/cases/case-test-support.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
-import type { Observation } from "#/observation/observation-types.ts";
-
-function observe(overrides: Readonly<Partial<Observation>> = {}): Observation {
-  return createObservation({ costUsd: 0.01, durationMs: 1000, ...overrides });
-}
-
-function caseById(caseId: CaseId): EvalCase {
-  const matchingCase = cases.find((evalCase) => evalCase.id === caseId);
-  if (matchingCase == null) throw new Error(`no such case: ${caseId}`);
-  return matchingCase;
-}
 
 /** What `observeClaude` yields when the query never produced a result message. */
 const QUERY_FAILURE = observe({
@@ -66,32 +52,6 @@ const invalidRunScenarios = [
 const invalidRunChecks = cases.flatMap((evalCase) =>
   invalidRunScenarios.map((scenario) => ({ caseId: evalCase.id, ...scenario })),
 );
-
-const envelope = (status: EnvelopeStatus): Observation =>
-  observe({
-    finalText: `RECENT_STATE: ${status}\nReason: path does not exist\nNext step: supply a real path`,
-  });
-
-const QUIET_STATE_SNAPSHOT = `# Project State Snapshot
-
-## 1. Executive Summary
-
-No recent changes were found in the defined evidence window.
-
-## 2. Git State
-
-The working tree is clean and the evidence window contains no recent changes.
-
-Assumptions: none
-Execution mode: isolated
-
-## 9. Ranked Next Actions
-
-- nice-to-have: Continue normal development when new work is available.
-
-## 10. Final Developer Briefing
-
-There are no recent changes to review or hand off.`;
 
 describe("run validity", () => {
   test.each(invalidRunChecks)("`$caseId` fails $label", (invalidRunCheck) => {
@@ -158,6 +118,16 @@ describe("routing", () => {
       label: "a mutating request",
       caseId: "trigger-negative-mutate",
       expectedOutcome: "no trigger; no mutation",
+    },
+    {
+      label: "a session-handoff request",
+      caseId: "trigger-negative-handoff",
+      expectedOutcome: "no trigger",
+    },
+    {
+      label: "a PR-review request",
+      caseId: "trigger-negative-pr-review",
+      expectedOutcome: "no trigger",
     },
   ] as const)(
     "a genuine decline still passes for $label",
@@ -238,107 +208,6 @@ describe("routing", () => {
 
     expect(() => caseById("trigger-negative-review").check(fullReport)).toThrow(
       /unexpectedly produced a full report/,
-    );
-  });
-});
-
-describe("envelope", () => {
-  test.each([
-    {
-      caseId: "path-error",
-      status: "PATH_ERROR",
-      expectedOutcome: "PATH_ERROR, 3-line envelope",
-    },
-    {
-      caseId: "gate-envelope",
-      status: "NOT_GIT",
-      expectedOutcome: "NOT_GIT, 3-line envelope",
-    },
-  ] as const)(
-    "`$caseId` passes on its exact `$status` three-line envelope",
-    ({ caseId, status, expectedOutcome }) => {
-      expect(caseById(caseId).check(envelope(status))).toBe(expectedOutcome);
-    },
-  );
-
-  test("an envelope case fails on the wrong status", () => {
-    expect(() => caseById("path-error").check(envelope("NOT_GIT"))).toThrow();
-  });
-
-  test("an envelope case fails on a fourth line", () => {
-    const chatty = observe({
-      finalText:
-        "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it\nHope that helps!",
-    });
-
-    expect(() => caseById("path-error").check(chatty)).toThrow();
-  });
-
-  test.each([
-    {
-      label: "an empty Reason value",
-      finalText:
-        "RECENT_STATE: PATH_ERROR\nReason:\nNext step: supply a real path",
-      expectedError: /Reason: \\S\+/,
-    },
-    {
-      label: "the wrong first-line label",
-      finalText:
-        "STATE: PATH_ERROR\nReason: path does not exist\nNext step: supply a real path",
-      expectedError: /RECENT_STATE: PATH_ERROR/,
-    },
-    {
-      label: "swapped Reason and Next step lines",
-      finalText:
-        "RECENT_STATE: PATH_ERROR\nNext step: supply a real path\nReason: path does not exist",
-      expectedError: /Reason: \\S\+/,
-    },
-    {
-      label: "a missing Next step prefix",
-      finalText:
-        "RECENT_STATE: PATH_ERROR\nReason: path does not exist\nSupply a real path",
-      expectedError: /Next step: \\S\+/,
-    },
-  ])("path-error rejects $label", ({ finalText, expectedError }) => {
-    expect(() => caseById("path-error").check(observe({ finalText }))).toThrow(
-      expectedError,
-    );
-  });
-});
-
-describe("quiet state", () => {
-  test("quiet-state passes on the short-form snapshot", () => {
-    const quietState = observe({ finalText: QUIET_STATE_SNAPSHOT });
-
-    expect(caseById("quiet-state").check(quietState)).toBe(
-      "short form; no section 4; no ERROR",
-    );
-  });
-
-  test.each([
-    {
-      label: "an output missing the snapshot header",
-      finalText: QUIET_STATE_SNAPSHOT.replace("# Project State Snapshot\n", ""),
-      expectedError: /no snapshot report was returned/,
-    },
-    {
-      label: "an output containing RECENT_STATE: ERROR",
-      finalText: `${QUIET_STATE_SNAPSHOT}\n\nRECENT_STATE: ERROR`,
-      expectedError: /quiet state escalated/,
-    },
-    {
-      label: "a long-form section 4",
-      finalText: `${QUIET_STATE_SNAPSHOT}\n\n## 4. Behavioral Impact`,
-      expectedError: /short form included a section it should have omitted/,
-    },
-    {
-      label: "a heading-only output",
-      finalText: "# Project State Snapshot",
-      expectedError: /short form omitted section 1/,
-    },
-  ])("quiet-state rejects $label", ({ finalText, expectedError }) => {
-    expect(() => caseById("quiet-state").check(observe({ finalText }))).toThrow(
-      expectedError,
     );
   });
 });

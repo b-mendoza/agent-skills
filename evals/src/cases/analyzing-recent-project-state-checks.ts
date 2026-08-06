@@ -1,8 +1,63 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
+import type { JudgeOutcome } from "#/observation/judge.ts";
 import { mutationEvidence } from "#/observation/mutation-evidence.ts";
 import type { Observation } from "#/observation/observation-types.ts";
+
+// The skill's own deterministic validator is the normative shape definition;
+// reusing it here means test-time and runtime check the same thing.
+const OUTPUT_VALIDATOR_PATH = fileURLToPath(
+  new URL(
+    "../../../skills/analyzing-recent-project-state/scripts/validate-output.sh",
+    import.meta.url,
+  ),
+);
+
+export type ValidatorMode = "evidence" | "draft" | "verdict" | "envelope";
+
+/** Runs the skill's validator; returns its findings, empty when conformant. */
+export function runOutputValidator(
+  mode: ValidatorMode,
+  payload: string,
+): string {
+  try {
+    execFileSync("sh", [OUTPUT_VALIDATOR_PATH, mode], {
+      input: payload,
+      encoding: "utf8",
+    });
+    return "";
+  } catch (cause) {
+    if (
+      typeof cause === "object" &&
+      cause !== null &&
+      "stdout" in cause &&
+      typeof cause.stdout === "string" &&
+      cause.stdout !== ""
+    ) {
+      return cause.stdout.trim();
+    }
+    throw new Error(`output validator could not run: ${String(cause)}`, {
+      cause,
+    });
+  }
+}
+
+/** The run must have invoked the skill's deterministic validator. */
+export function assertValidatorInvoked(observation: Observation): void {
+  const invoked = observation.toolCalls.some(
+    (toolCall) =>
+      toolCall.name === "Bash" &&
+      typeof toolCall.input["command"] === "string" &&
+      toolCall.input["command"].includes("validate-output.sh"),
+  );
+  assert.ok(
+    invoked,
+    "the deterministic validator was never invoked during the run",
+  );
+}
 
 /** The result subtype for a run stopped by the suite's configured budget cap. */
 export const BUDGET_STOP_SUBTYPE = "error_max_budget_usd";
@@ -73,27 +128,165 @@ export function assertRoutingRunEndedEarly(observation: Observation): void {
 /** The escalation statuses these cases can assert on. */
 export type EnvelopeStatus = "PATH_ERROR" | "NOT_GIT";
 
-/** The three-line escalation envelope shared by the PATH_ERROR/NOT_GIT routes. */
+/**
+ * The three-line escalation envelope shared by the PATH_ERROR/NOT_GIT routes.
+ * Shape is graded by the skill's own validator; this adds only the expected
+ * status token and the validator-invocation observable.
+ */
 export function assertEnvelope(
   observation: Observation,
   status: EnvelopeStatus,
 ): string {
   assertRunHappened(observation);
-  const lines = observation.finalText
-    .trim()
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line !== "");
+  assertValidatorInvoked(observation);
+  const findings = runOutputValidator("envelope", observation.finalText);
   assert.equal(
-    lines.length,
-    ENVELOPE_LINES,
-    `expected exactly ${ENVELOPE_LINES} envelope lines, got ${lines.length}:\n${observation.finalText}`,
+    findings,
+    "",
+    `envelope shape invalid:\n${findings}\n---\n${observation.finalText}`,
   );
-  const [first = "", second = "", third = ""] = lines;
-  assert.match(first, new RegExp(`^RECENT_STATE: ${status}$`));
-  assert.match(second, /^Reason: \S+/);
-  assert.match(third, /^Next step: \S+/);
+  const [firstLine = ""] = observation.finalText.trim().split("\n");
+  assert.equal(
+    firstLine.trim(),
+    `RECENT_STATE: ${status}`,
+    `expected a ${status} envelope, got: ${firstLine.trim()}`,
+  );
   return `${status}, ${ENVELOPE_LINES}-line envelope`;
+}
+
+// --- Report-shape conformance --------------------------------------------
+//
+// The skill's contract makes section names canonical identifiers while order
+// and numbering are presentation, so these matchers accept any heading level
+// and any (or no) numbering but demand the canonical name verbatim. Exact-text
+// assertions are reserved for machine-parsed boundaries: the envelope, the
+// status lines, and the snapshot title.
+
+export const FULL_REPORT_SECTIONS = [
+  "Executive Summary",
+  "Git State",
+  "Change Themes",
+  "Behavioral Impact",
+  "Risks",
+  "Test And Validation Review",
+  "Dependency, Config, Tooling, And Security Notes",
+  "Questions Before Merging",
+  "Ranked Next Actions",
+  "Final Developer Briefing",
+] as const;
+
+export const SHORT_FORM_SECTIONS = [
+  "Executive Summary",
+  "Git State",
+  "Ranked Next Actions",
+  "Final Developer Briefing",
+] as const;
+
+/** Sections whose presence in a quiet-state report means invented content. */
+export const SHORT_FORM_OMITTED_SECTIONS = FULL_REPORT_SECTIONS.filter(
+  (sectionName) =>
+    !SHORT_FORM_SECTIONS.some((shortName) => shortName === sectionName),
+);
+
+function escapeForRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+}
+
+/** The section's canonical name as a heading: any level, numbered or not. */
+function sectionHeadingPattern(sectionName: string): RegExp {
+  return new RegExp(
+    `^#{1,6}\\s*(?:\\d+\\.\\s*)?${escapeForRegExp(sectionName)}\\s*$`,
+    "im",
+  );
+}
+
+export function assertSectionsPresent(
+  finalText: string,
+  sectionNames: readonly string[],
+  shapeLabel: string,
+): void {
+  for (const sectionName of sectionNames) {
+    assert.match(
+      finalText,
+      sectionHeadingPattern(sectionName),
+      `${shapeLabel} omitted ${sectionName}`,
+    );
+  }
+}
+
+export function assertSectionsAbsent(
+  finalText: string,
+  sectionNames: readonly string[],
+  shapeLabel: string,
+): void {
+  for (const sectionName of sectionNames) {
+    assert.doesNotMatch(
+      finalText,
+      sectionHeadingPattern(sectionName),
+      `${shapeLabel} included ${sectionName}, which it must omit`,
+    );
+  }
+}
+
+/** The disclosure contract's cardinality: each field appears exactly once. */
+const REQUIRED_DISCLOSURE_LINE_COUNT = 1;
+
+export function assertDisclosureLineOnce(
+  finalText: string,
+  linePrefix: string,
+): void {
+  const matchingLineCount = finalText
+    .split("\n")
+    .filter((line) => line.startsWith(linePrefix)).length;
+  assert.equal(
+    matchingLineCount,
+    REQUIRED_DISCLOSURE_LINE_COUNT,
+    `expected exactly one \`${linePrefix}\` line, found ${matchingLineCount}`,
+  );
+}
+
+/**
+ * The Output Contract strips every internal artifact from the final response;
+ * a leaked status wrapper or inspection log is mishandled subagent output.
+ */
+export function assertNoInternalLeak(finalText: string): void {
+  assert.doesNotMatch(
+    finalText,
+    /^(?:GIT_EVIDENCE|SNAPSHOT_WRITE|SNAPSHOT_VERIFY):/m,
+    "internal status wrapper leaked into the final response",
+  );
+  assert.doesNotMatch(
+    finalText,
+    /^Inspected:\s*$/m,
+    "the Inspected: log leaked into the final response",
+  );
+}
+
+// --- Judge outcome -> assertion ------------------------------------------
+
+/**
+ * Fails on any cited violation; uncited complaints are reported in the
+ * observed string but never fail, since their quotes did not survive
+ * verification against the artifact.
+ */
+const QUOTE_PREVIEW_START = 0;
+const QUOTE_PREVIEW_CHARS = 60;
+const NO_UNCITED_COMPLAINTS = 0;
+
+export function assertJudgeClean(outcome: JudgeOutcome): string {
+  const [firstViolation] = outcome.citedViolations;
+  if (firstViolation !== undefined) {
+    const quotePreview = firstViolation.quote.slice(
+      QUOTE_PREVIEW_START,
+      QUOTE_PREVIEW_CHARS,
+    );
+    assert.fail(
+      `judge: ${firstViolation.itemId} violated -- ${firstViolation.reason} (quote: ${quotePreview})`,
+    );
+  }
+  return outcome.uncitedComplaints.length === NO_UNCITED_COMPLAINTS
+    ? "judge: clean"
+    : `judge: clean (${outcome.uncitedComplaints.length} uncited note(s) ignored)`;
 }
 
 /**
