@@ -25,11 +25,15 @@ import {
   ObservationRunnerLive,
 } from "#/orchestration/case-execution/agent-observation.ts";
 import {
+  FailureArtifacts,
+  FailureArtifactsLive,
+} from "#/orchestration/case-execution/failure-artifacts.ts";
+import {
   EvalConfiguration,
   EvalConfigurationLive,
 } from "#/orchestration/case-execution/model-configuration.ts";
 import type { AttemptResult, ReportTier } from "#/orchestration/report.ts";
-import { evaluate } from "#/orchestration/verdict.ts";
+import { evaluate, evaluateWithJudge } from "#/orchestration/verdict.ts";
 
 export const REPORT_TIER_BY_CASE_TIER = {
   [ROUTING_TIER]: "1",
@@ -115,11 +119,16 @@ function constructPrompt(evalCase: EvalCase, fixture: Fixture) {
   });
 }
 
+interface CaseExecutionServices {
+  readonly observationRunner: ObservationRunner;
+  readonly failureArtifacts: FailureArtifacts;
+  readonly model: string;
+}
+
 function executeWithFixture(
   evalCase: EvalCase,
   fixture: Fixture,
-  observationRunner: ObservationRunner,
-  model: string,
+  { observationRunner, failureArtifacts, model }: CaseExecutionServices,
 ) {
   return Effect.gen(function* () {
     const prompt = yield* constructPrompt(evalCase, fixture);
@@ -131,7 +140,17 @@ function executeWithFixture(
       model,
       wallClockMs: evalCase.wallClockMs,
     });
-    const { status, observed } = evaluate(() => evalCase.check(observation));
+    const mechanical = evaluate(() => evalCase.check(observation));
+    const { judge } = evalCase;
+    const { status, observed } =
+      mechanical.status === "PASS" && judge !== undefined
+        ? yield* Effect.promise(async () =>
+            evaluateWithJudge(judge, observation, mechanical.observed),
+          )
+        : mechanical;
+    if (status === "FAIL") {
+      yield* failureArtifacts.persist(evalCase.id, observation.finalText);
+    }
 
     return {
       result: {
@@ -151,17 +170,17 @@ export function executeCase(evalCase: EvalCase) {
   return Effect.gen(function* () {
     const fixtureProvisioner = yield* FixtureProvisioner;
     const observationRunner = yield* ObservationRunner;
+    const failureArtifacts = yield* FailureArtifacts;
     const configuration = yield* EvalConfiguration;
 
     return yield* Effect.acquireUseRelease(
       acquireFixture(fixtureProvisioner, evalCase),
       (fixture) =>
-        executeWithFixture(
-          evalCase,
-          fixture,
+        executeWithFixture(evalCase, fixture, {
           observationRunner,
-          configuration.model,
-        ),
+          failureArtifacts,
+          model: configuration.model,
+        }),
       (fixture) => releaseFixture(fixtureProvisioner, fixture),
     );
   });
@@ -171,5 +190,6 @@ export const executeCaseLive = (evalCase: EvalCase) =>
   executeCase(evalCase).pipe(
     Effect.provide(FixtureProvisionerLive),
     Effect.provide(ObservationRunnerLive),
+    Effect.provide(FailureArtifactsLive),
     Effect.provide(EvalConfigurationLive),
   );

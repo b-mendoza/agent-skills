@@ -2,6 +2,7 @@
 // -- into attempt data, and folds a case's attempts into the row the report
 // expects.
 
+import type { Observation } from "#/observation/observation-types.ts";
 import type {
   AttemptResult,
   AttemptStatus,
@@ -59,6 +60,28 @@ export function evaluate(check: () => string): {
 } {
   try {
     return { status: "PASS", observed: check() };
+  } catch (cause) {
+    return normalizeCheckFailure(cause);
+  }
+}
+
+/**
+ * Runs a case's optional judge after its mechanical check passed, folding the
+ * verdict -- or the judge's own failure -- into the same attempt shape. Never
+ * rejects: a thrown judge error becomes a FAIL attempt whose message names
+ * the judge, so grading trouble is visible without failing the whole suite.
+ */
+export async function evaluateWithJudge(
+  judge: (observation: Observation) => Promise<string>,
+  observation: Observation,
+  mechanicalObserved: string,
+): Promise<{ status: AttemptStatus; observed: string }> {
+  try {
+    const judgeObserved = await judge(observation);
+    return {
+      status: "PASS",
+      observed: `${mechanicalObserved}; ${judgeObserved}`,
+    };
   } catch (cause) {
     return normalizeCheckFailure(cause);
   }

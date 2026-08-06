@@ -26,6 +26,10 @@ import {
   CaseFixtureAcquisitionError,
   executeCase,
 } from "#/orchestration/case-execution/execution.ts";
+import {
+  FailureArtifacts,
+  FailureArtifactsNoop,
+} from "#/orchestration/case-execution/failure-artifacts.ts";
 import { EvalConfiguration } from "#/orchestration/case-execution/model-configuration.ts";
 
 vi.mock(import("#/observation/agent-query.ts"), async (importOriginal) => ({
@@ -120,11 +124,13 @@ function fixtureLayer(fixtureProvisioning: FixtureProvisioning) {
 async function runCaseWithProvisioning(
   evalCase: EvalCase,
   fixtureProvisioning: FixtureProvisioning,
+  failureArtifactsLayer: Layer.Layer<FailureArtifacts> = FailureArtifactsNoop,
 ) {
   return Effect.runPromise(
     executeCase(evalCase).pipe(
       Effect.provide(fixtureLayer(fixtureProvisioning)),
       Effect.provide(ObservationRunnerLive),
+      Effect.provide(failureArtifactsLayer),
       Effect.provide(
         Layer.succeed(
           EvalConfiguration,
@@ -251,6 +257,110 @@ test("a failed check becomes row data and retains measured cost and duration", a
     durationMs: resolvedObservation().durationMs,
   });
   expect(cleanup).toHaveBeenCalledOnce();
+});
+
+test("a failing check persists the observed final text", async () => {
+  const persisted: string[] = [];
+  const recordingLayer = Layer.succeed(
+    FailureArtifacts,
+    FailureArtifacts.of({
+      persist: (caseId, finalText) => {
+        persisted.push(`${caseId}:${finalText}`);
+        return Effect.succeed("/recorded/path");
+      },
+    }),
+  );
+  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
+
+  await runCaseWithProvisioning(
+    selectedCase({
+      check: () => {
+        throw new Error("check failed");
+      },
+    }),
+    Effect.succeed(testFixture(vi.fn<Fixture["cleanup"]>())),
+    recordingLayer,
+  );
+
+  expect(persisted).toStrictEqual([`${SELECTED_CASE_ID}:observed`]);
+});
+
+test("a passing check persists nothing", async () => {
+  const persisted: string[] = [];
+  const recordingLayer = Layer.succeed(
+    FailureArtifacts,
+    FailureArtifacts.of({
+      persist: (caseId, finalText) => {
+        persisted.push(`${caseId}:${finalText}`);
+        return Effect.succeed("/recorded/path");
+      },
+    }),
+  );
+  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
+
+  await runCaseWithProvisioning(
+    selectedCase(),
+    Effect.succeed(testFixture(vi.fn<Fixture["cleanup"]>())),
+    recordingLayer,
+  );
+
+  expect(persisted).toStrictEqual([]);
+});
+
+test("a judge runs after a passing check and its verdict joins the row", async () => {
+  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
+
+  const execution = await runSelectedCase(
+    selectedCase({
+      judge: async () => {
+        await Promise.resolve();
+        return "judge: clean";
+      },
+    }),
+    testFixture(vi.fn<Fixture["cleanup"]>()),
+  );
+
+  expect(execution.result).toMatchObject({
+    status: "PASS",
+    observed: "check passed; judge: clean",
+  });
+});
+
+test("a judge failure becomes a FAIL attempt naming the judge", async () => {
+  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
+
+  const execution = await runSelectedCase(
+    selectedCase({
+      judge: async () => {
+        await Promise.resolve();
+        throw new Error("judge: grounding violated");
+      },
+    }),
+    testFixture(vi.fn<Fixture["cleanup"]>()),
+  );
+
+  expect(execution.result).toMatchObject({
+    status: "FAIL",
+    observed: "judge: grounding violated",
+  });
+});
+
+test("the judge is skipped when the mechanical check fails", async () => {
+  const judgeMock = vi.fn<NonNullable<EvalCase["judge"]>>();
+  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
+
+  const execution = await runSelectedCase(
+    selectedCase({
+      check: () => {
+        throw new Error("mechanical check failed");
+      },
+      judge: judgeMock,
+    }),
+    testFixture(vi.fn<Fixture["cleanup"]>()),
+  );
+
+  expect(execution.result).toMatchObject({ status: "FAIL" });
+  expect(judgeMock).not.toHaveBeenCalled();
 });
 
 test.each<{
