@@ -9,7 +9,7 @@ import type {
 } from "#/cases/analyzing-recent-project-state.ts";
 import { cases } from "#/cases/analyzing-recent-project-state.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
-import type { Observation } from "#/observation/observation-types.ts";
+import type { Observation, ToolCall } from "#/observation/observation-types.ts";
 
 export function observe(
   overrides: Readonly<Partial<Observation>> = {},
@@ -30,7 +30,7 @@ export const VALIDATOR_CALL = {
     command:
       "sh .claude/skills/analyzing-recent-project-state/scripts/validate-output.sh draft <<'EOF'\n...\nEOF",
   },
-};
+} as const satisfies ToolCall;
 
 export const QUIET_STATE_SNAPSHOT = `# Project State Snapshot
 

@@ -182,7 +182,9 @@ export const SHORT_FORM_SECTIONS = [
 ] as const;
 
 /** Sections whose presence in a quiet-state report means invented content. */
-export const SHORT_FORM_OMITTED_SECTIONS = FULL_REPORT_SECTIONS.filter(
+export const SHORT_FORM_OMITTED_SECTIONS: ReadonlyArray<
+  (typeof FULL_REPORT_SECTIONS)[number]
+> = FULL_REPORT_SECTIONS.filter(
   (sectionName) =>
     !SHORT_FORM_SECTIONS.some((shortName) => shortName === sectionName),
 );
