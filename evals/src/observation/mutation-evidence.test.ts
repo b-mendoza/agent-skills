@@ -23,6 +23,8 @@ import {
   evidenceFor,
 } from "#/observation/observation-test-support.ts";
 
+const SINGLE_EVIDENCE_COUNT = 1;
+
 test.each([
   ["a clean run reports no evidence", createObservation()],
   // The dirty fixture starts with a dirty status; only a *delta* is a mutation.
@@ -53,11 +55,12 @@ test("a changed git status is evidence even with no tool calls", () => {
     }),
   );
 
-  expect(found).toHaveLength(1);
-  expect(found[0]).toContain("git status changed");
+  const [statusChangeEvidence] = found;
+  expect(found).toHaveLength(SINGLE_EVIDENCE_COUNT);
+  expect(statusChangeEvidence).toContain("git status changed");
   // Both sides are quoted so an empty "before" is visible rather than blank.
-  expect(found[0]).toContain('""');
-  expect(found[0]).toContain('" M a.txt"');
+  expect(statusChangeEvidence).toContain('""');
+  expect(statusChangeEvidence).toContain('" M a.txt"');
 });
 
 // An unreadable sample proves nothing about what the run did. It used to be
@@ -102,9 +105,10 @@ test("a worktree appearing where there was none is evidence", () => {
     }),
   );
 
-  expect(found).toHaveLength(1);
-  expect(found[0]).toContain("git status changed");
-  expect(found[0]).toContain("(not a worktree)");
+  const [statusChangeEvidence] = found;
+  expect(found).toHaveLength(SINGLE_EVIDENCE_COUNT);
+  expect(statusChangeEvidence).toContain("git status changed");
+  expect(statusChangeEvidence).toContain("(not a worktree)");
 });
 
 test.each([
