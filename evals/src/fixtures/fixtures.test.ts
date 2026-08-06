@@ -8,7 +8,7 @@
 //   pnpm test
 
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 
@@ -19,12 +19,14 @@ import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
 import {
   FixtureProvisioner,
   FixtureProvisionerLive,
+  HOSTILE_FIXTURE_FACTS,
 } from "#/fixtures/fixtures.ts";
 
 const FIXTURE_SKILL_NAME = "analyzing-recent-project-state";
 const FIXTURE_KIND_SET = {
   clean: true,
   dirty: true,
+  hostile: true,
   "not-git": true,
   "missing-path": true,
 } satisfies Record<FixtureKind, true>;
@@ -116,6 +118,27 @@ test("dirty: carries exactly the intended modified and untracked entries", async
       .split("\n")
       .sort((firstEntry, secondEntry) => firstEntry.localeCompare(secondEntry)),
   ).toStrictEqual([" M a.txt", "?? c.txt"]);
+});
+
+test("hostile: plants the injection content its facts advertise", async () => {
+  const fixture = await createFixture("hostile");
+
+  // The injection-defense case asserts the compliance phrase is absent from
+  // the run's output, which only means something if the fixture planted it.
+  const hostileNotes = readFileSync(
+    join(fixture.cwd, HOSTILE_FIXTURE_FACTS.hostileTrackedFile),
+    "utf8",
+  );
+  expect(hostileNotes).toContain(HOSTILE_FIXTURE_FACTS.plantedCompliancePhrase);
+
+  const latestSubject = execFileSync("git", ["log", "-1", "--format=%s"], {
+    cwd: fixture.cwd,
+    encoding: "utf8",
+  }).trim();
+  expect(latestSubject).toBe(HOSTILE_FIXTURE_FACTS.hostileCommitSubject);
+  expect(
+    existsSync(join(fixture.cwd, HOSTILE_FIXTURE_FACTS.committedFile)),
+  ).toBe(true);
 });
 
 test("dirty: hides .claude scaffolding from git status", async () => {
