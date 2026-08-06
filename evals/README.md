@@ -11,7 +11,7 @@ Evals live here, **outside `skills/`**, on purpose. A skill directory is a distr
 ```bash
 pnpm install                         # once, from this directory
 
-node evals/src/orchestration/run.ts                    # everything, 5 attempts per case (~25 min, ~$10)
+node evals/src/orchestration/run.ts                    # everything, 5 attempts per case (~35 min, ~$9)
 node evals/src/orchestration/run.ts --tier=1           # routing only (~3 min, ~$1.50)
 node evals/src/orchestration/run.ts --case=path-error  # one case
 node evals/src/orchestration/run.ts --attempts=1       # one attempt per case (cheap, low-confidence smoke run)
@@ -38,6 +38,7 @@ pnpm test    # vitest: unit tests for the pure functions, free and offline
 | Test file | Pins |
 | --- | --- |
 | `mutation-evidence.test.ts` | The read-only detector behind `mutation-scope` |
+| `judge.test.ts` | Judge prompt/parse boundary: citation validation, unparseable-reply failure |
 | `git-status.test.ts` | Clean vs. not-a-repo vs. unreadable sample classification |
 | `harness-lifecycle.test.ts` | Query lifecycle against a mocked SDK: results, errors, abort |
 | `fixtures.test.ts` | Fixture invariants: git state, skill copy, exclusion, cleanup |
@@ -49,7 +50,9 @@ pnpm test    # vitest: unit tests for the pure functions, free and offline
 | `report-rendering.test.ts` | Report escaping, rendering, status counts, mean score, measured totals |
 | `case-execution/execution.test.ts` | Case-execution boundary: limits reach the harness, cleanup always runs |
 | `suite/entry.test.ts` | The direct-entry guard on the runner |
-| `cases.test.ts` | The case assertions themselves, against synthetic runs |
+| `cases.test.ts` | Run-validity and routing case assertions, against synthetic runs |
+| `cases-behavioral.test.ts` | Tier-2 case assertions: envelopes, report conformance, injection defense |
+| `validate-output-script.test.ts` | The skill's deterministic validator, per mode, good and bad payloads |
 
 Run it before any paid run.
 
@@ -73,7 +76,15 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 
 **Tier 1** caps the run with the SDK's `maxBudgetUsd` option so it stops right after the routing decision is visible. This makes "did the skill trigger" cost cents instead of dollars — the `Skill` tool call appears in the message stream before the cap bites.
 
-**Tier 2** is a full behavioral run, asserting on the final output contract.
+**Tier 2** is a full behavioral run. Assertion altitude follows the skill contract's own split: exact checks at machine-parsed boundaries (status lines, the three-line envelope, the snapshot title), conformance checks for report shape (canonical section names at any order, numbering, or heading level; disclosure lines exactly once; no leaked status wrapper or `Inspected:` log), and judge-based grading for semantic quality.
+
+**Deterministic runtime validation.** The skill ships its own shape validator (`skills/analyzing-recent-project-state/scripts/validate-output.sh`) that subagents run on their output before returning and the orchestrator runs at its payload gates. The eval checks reuse the same script (`runOutputValidator` in the checks module), so test-time and runtime grade shapes identically, and tier-2 cases assert the validator was actually invoked (a `Bash` call visible in the tool stream). Evals are test-time guarantees; the script is the one that persists at runtime — the suite's job is verifying that mechanism engages, plus everything a script cannot check (routing, semantic quality, injection resistance).
+
+Failing attempts persist their final text under `$TMPDIR/agent-skills-eval-failures/<caseId>-<n>.txt` so a FAIL can be diagnosed from evidence; the directory accumulates across runs and is cleared manually.
+
+**Judge-based checks** (`src/observation/judge.ts`) grade an artifact against a binary rubric with an independent small model. This is a deliberate extension of the assert-only-observables rule: the judged artifact is the observable and the judge is a measurement instrument reading it — what stays banned is asking the agent under test whether it complied. Two guards keep verdicts honest: a violation counts only when its quote is mechanically verified to appear verbatim in the artifact (uncited complaints are recorded, never failing), and an unparseable judge reply fails the attempt with a message naming the judge, so grading trouble is never mistaken for a verdict on the skill. Judges run only after a case's mechanical check passes.
+
+**Coverage gap, recorded on purpose:** fixtures install the skill but register no subagents in either runtime's agent registry, so every behavioral run exercises the skill's _inline_ route. The isolated (dispatched-subagent) route — and with it any "did the orchestrator pass the contracted inputs to the subagent" assertion — is currently untestable here; covering it needs fixtures that register the three subagent definitions and a harness that captures dispatch payloads.
 
 `mutation-scope` is derived from the tier-2 observations rather than paying for its own invocation: it asserts no run left a `git status` delta, called `Write`/`Edit`/`NotebookEdit`, or ran a mutating git command.
 
@@ -102,4 +113,4 @@ When adding an assertion, verify it fails on wrong input before trusting it gree
 
 ## Coverage
 
-Skills with a suite: `analyzing-recent-project-state` (7 cases). The other skills have none yet.
+Skills with a suite: `analyzing-recent-project-state` (10 cases plus the derived `mutation-scope` row: 5 routing, including two sibling-boundary negatives; 5 behavioral, including a judged full-report case and an injection-defense case). The other skills have none yet.

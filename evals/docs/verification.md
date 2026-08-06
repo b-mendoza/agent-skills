@@ -18,7 +18,9 @@
 | --- | --- |
 | One case end-to-end | `node src/orchestration/run.ts --case=<id> --attempts=1` |
 | Routing decisions only | `node src/orchestration/run.ts --tier=1` (budget-capped) |
-| Full suite | `node src/orchestration/run.ts` (~minutes, ~dollars) |
+| Full suite | `node src/orchestration/run.ts` (~35 min, ~$9 at 5 attempts) |
+
+Cases with a `judge` field additionally run one cheap judge-model query per attempt after the mechanical check passes. Judge cost is cents per attempt and is **not** folded into the report's cost column, which measures the observed run only.
 
 Each case runs `--attempts` times (default 5), which multiplies a run's cost accordingly; use `--attempts=1` for a cheap, low-confidence smoke run. Paid runs execute attempts sequentially by design; leave the sequencing as is.
 
