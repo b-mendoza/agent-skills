@@ -158,21 +158,28 @@ function createFixtureValue(
   };
 }
 
-function createFixtureRoot() {
+function createFixtureRoot(): Effect.Effect<string, FixtureTempDirectoryError> {
   return Effect.try({
     try: () => mkdtempSync(join(tmpdir(), FIXTURE_ROOT_PREFIX)),
     catch: (cause) => new FixtureTempDirectoryError({ cause }),
   });
 }
 
-function createDirectory(path: string) {
+function createDirectory(
+  path: string,
+): Effect.Effect<void, FixtureDirectoryCreationError> {
   return Effect.try({
-    try: () => mkdirSync(path, { recursive: true }),
+    try: () => {
+      mkdirSync(path, { recursive: true });
+    },
     catch: (cause) => new FixtureDirectoryCreationError({ cause, path }),
   });
 }
 
-function writeFixtureFile(path: string, contents: string) {
+function writeFixtureFile(
+  path: string,
+  contents: string,
+): Effect.Effect<void, FixtureFileWriteError> {
   return Effect.try({
     try: () => {
       writeFileSync(path, contents);
@@ -181,7 +188,10 @@ function writeFixtureFile(path: string, contents: string) {
   });
 }
 
-function appendFixtureFile(path: string, contents: string) {
+function appendFixtureFile(
+  path: string,
+  contents: string,
+): Effect.Effect<void, FixtureFileWriteError> {
   return Effect.try({
     try: () => {
       appendFileSync(path, contents);
@@ -190,7 +200,10 @@ function appendFixtureFile(path: string, contents: string) {
   });
 }
 
-function runGitEffect(repositoryPath: string, ...arguments_: string[]) {
+function runGitEffect(
+  repositoryPath: string,
+  ...arguments_: string[]
+): Effect.Effect<void, FixtureGitCommandError> {
   return Effect.try({
     try: () => {
       execFileSync("git", arguments_, { cwd: repositoryPath, stdio: "ignore" });
@@ -204,7 +217,10 @@ function runGitEffect(repositoryPath: string, ...arguments_: string[]) {
   });
 }
 
-function copySkill(sourcePath: string, destinationPath: string) {
+function copySkill(
+  sourcePath: string,
+  destinationPath: string,
+): Effect.Effect<void, FixtureSkillCopyError> {
   return Effect.try({
     try: () => {
       cpSync(sourcePath, destinationPath, { recursive: true });
@@ -214,7 +230,10 @@ function copySkill(sourcePath: string, destinationPath: string) {
   });
 }
 
-function provisionFixture(kind: FixtureKind, skill: string) {
+function provisionFixture(
+  kind: FixtureKind,
+  skill: string,
+): Effect.Effect<Fixture, FixtureProvisioningError> {
   return Effect.gen(function* () {
     const configuration: FixtureConfiguration = FIXTURE_CONFIGURATIONS[kind];
     const fixtureRoot = yield* createFixtureRoot();
@@ -318,7 +337,9 @@ function provisionFixture(kind: FixtureKind, skill: string) {
   });
 }
 
-function cleanupFixture(fixture: Fixture) {
+function cleanupFixture(
+  fixture: Fixture,
+): Effect.Effect<void, FixtureCleanupError> {
   return Effect.try({
     try: fixture.cleanup,
     catch: (cause) => new FixtureCleanupError({ cause }),
