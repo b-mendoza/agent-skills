@@ -71,6 +71,50 @@ function requireFiniteCost(costUsd: number): number {
   return costUsd;
 }
 
+function decodeAssistantToolCalls(message: unknown): ToolCall[] {
+  const assistantMessage = decodeAssistantMessage(message);
+  const messageToolCalls: ToolCall[] = [];
+
+  for (const contentBlock of assistantMessage.message.content) {
+    // A relevant assistant message fails closed when any content entry lacks
+    // the minimum SDK block shape. Its calls are committed only after every
+    // entry validates, preserving the message-level atomicity of the SDK.
+    const blockDiscriminator = decodeContentBlockDiscriminator(contentBlock);
+    if (blockDiscriminator.type === "tool_use") {
+      const toolUseBlock = decodeToolUseBlock(contentBlock);
+      messageToolCalls.push({
+        name: toolUseBlock.name,
+        input: decodeToolInput(toolUseBlock.input),
+      });
+    }
+  }
+
+  return messageToolCalls;
+}
+
+function normalizeResultMessage(message: unknown): ResultVerdict {
+  const parsedSubtype = decodeResultSubtype(message);
+  if (parsedSubtype.subtype === "success") {
+    const resultMessage = decodeSuccessfulResultMessage(message);
+    return {
+      subtype: resultMessage.subtype,
+      isError: resultMessage.is_error,
+      finalText: resultMessage.result,
+      costUsd: requireFiniteCost(resultMessage.total_cost_usd),
+    };
+  }
+
+  const resultMessage = decodeFailedResultMessage(message);
+  return {
+    subtype: resultMessage.subtype,
+    isError: resultMessage.is_error,
+    // Error results carry diagnostics instead of an answer. Joining them
+    // keeps auth and execution failures readable in a case failure.
+    finalText: resultMessage.errors.join("\n"),
+    costUsd: requireFiniteCost(resultMessage.total_cost_usd),
+  };
+}
+
 /**
  * Relevant SDK messages, validated and reduced to the fields observed here.
  * Returns `null` for anything that carries no verdict, tool calls included:
@@ -84,49 +128,11 @@ export function normalizeStreamMessage(
   if (Exit.isFailure(parsedDiscriminator)) return null;
 
   if (parsedDiscriminator.value.type === "assistant") {
-    const assistantMessage = decodeAssistantMessage(message);
-    const messageToolCalls: ToolCall[] = [];
-
-    for (const contentBlock of assistantMessage.message.content) {
-      // A relevant assistant message fails closed when any content entry lacks
-      // the minimum SDK block shape. Its calls are committed only after every
-      // entry validates, preserving the message-level atomicity of the SDK.
-      const blockDiscriminator = decodeContentBlockDiscriminator(contentBlock);
-      if (blockDiscriminator.type === "tool_use") {
-        const toolUseBlock = decodeToolUseBlock(contentBlock);
-        messageToolCalls.push({
-          name: toolUseBlock.name,
-          input: decodeToolInput(toolUseBlock.input),
-        });
-      }
-    }
-
-    observedToolCalls.push(...messageToolCalls);
+    observedToolCalls.push(...decodeAssistantToolCalls(message));
     return null;
   }
 
-  if (parsedDiscriminator.value.type === "result") {
-    const parsedSubtype = decodeResultSubtype(message);
-    if (parsedSubtype.subtype === "success") {
-      const resultMessage = decodeSuccessfulResultMessage(message);
-      return {
-        subtype: resultMessage.subtype,
-        isError: resultMessage.is_error,
-        finalText: resultMessage.result,
-        costUsd: requireFiniteCost(resultMessage.total_cost_usd),
-      };
-    }
+  if (parsedDiscriminator.value.type !== "result") return null;
 
-    const resultMessage = decodeFailedResultMessage(message);
-    return {
-      subtype: resultMessage.subtype,
-      isError: resultMessage.is_error,
-      // Error results carry diagnostics instead of an answer. Joining them
-      // keeps auth and execution failures readable in a case failure.
-      finalText: resultMessage.errors.join("\n"),
-      costUsd: requireFiniteCost(resultMessage.total_cost_usd),
-    };
-  }
-
-  return null;
+  return normalizeResultMessage(message);
 }
