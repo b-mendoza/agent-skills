@@ -5,7 +5,7 @@
       "source": "sickn33/antigravity-awesome-skills",
       "sourceType": "github",
       "skillPath": "skills/api-security-best-practices/SKILL.md",
-      "computedHash": "5b1d15e3795922ff0fcc6fbf9f9b4c9f58df3fadca5c1899019004e1700ec093"
+      "computedHash": "12f1913c0571728b672b912bca6895b5847664651e7b40fc7c6b483c8238b8ac"
     },
     "architecture-patterns": {
       "source": "wshobson/agents",
@@ -29,19 +29,19 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/committing-scoped-changes/SKILL.md",
-      "computedHash": "7daedc5fc3890fcec998eb32acb179b3e9331f88a518f39eecda73b86dc43051"
+      "computedHash": "c25a18ed2bec7a0af517fd5007f88bd241bccfbadd15ef601bd96d6724dde55d"
     },
     "council-of-advisors": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/council-of-advisors/SKILL.md",
-      "computedHash": "995917aea430f1b0dbc43d23766f27d89e01cc74271b46b7ed071f1deed2f9f9"
+      "computedHash": "ed4c33aa00756f445381df9c9e8f010798a17fdcb8cb72460319649333ef90ef"
     },
     "diagnosing-root-causes": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/diagnosing-root-causes/SKILL.md",
-      "computedHash": "2aef469e7f5ce0b813399585ab42c1a13f77e52b3d815acf22ba539238431874"
+      "computedHash": "9c62253ec7dc3648212bf8551dde73fa5ecd143101b69549ad79fb322930b753"
     },
     "executing-plans": {
       "source": "obra/superpowers",
@@ -53,7 +53,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/generate-flow-diagram/SKILL.md",
-      "computedHash": "a8a4536fe1d9342e08fe02de721c9d84bf2e2b1ec557da254d452f89a1506fef"
+      "computedHash": "1dbf49a1c25cfa2491de961acd16a838452f6ebcf6739d583e8c82fc4c0cca66"
     },
     "idea-refine": {
       "source": "addyosmani/agent-skills",
@@ -65,7 +65,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/improving-test-suites/SKILL.md",
-      "computedHash": "e617e1517ec7b03ca666b8a08311e7ab7619ecaba670fa44265f5b4a19acf1c0"
+      "computedHash": "75a9448569bb74f95aea4c778edac7e144ac159a41939b8c9d8374df8a785cb9"
     },
     "interview-me": {
       "source": "addyosmani/agent-skills",
@@ -77,19 +77,19 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/planning-codebase-restructuring/SKILL.md",
-      "computedHash": "a053f4793e3743ff0c8e819e5ceb113e0f8225fb6593ce3210b01f7cfc362050"
+      "computedHash": "569491162043372bc12f0f37a7559a6f1dfa50088c208a877c8881009cf74596"
     },
     "pr-creator": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/pr-creator/SKILL.md",
-      "computedHash": "9da8e4b7f5842286964f57b49f4f811ff79cd429811bfd26717aa3855e7ca82a"
+      "computedHash": "83c014a08d526036087d33009f0e97b47e9b48aa98ea8dd44870efa0813d78c2"
     },
     "prompt-structurer": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/prompt-structurer/SKILL.md",
-      "computedHash": "dfc49cc034a140453b258b074dc4b18328b135c56dafb437fe1a68a8b760ceed"
+      "computedHash": "7e5041c51152dc1c4719e1a8f133ff4713b131a5cdf29befaf8dc8e42364b2b1"
     },
     "receiving-code-review": {
       "source": "obra/superpowers",
@@ -101,31 +101,31 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/recency-guard/SKILL.md",
-      "computedHash": "093ae00ea0f1f4a36c2b3d855e05e37fb82e2a35ee263931f750b91e78996ce6"
+      "computedHash": "2b96aab7d8914ba25777c92d933d22f6c558523b9e97f5876f901cbb9513aae4"
     },
     "refactoring-code": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/refactoring-code/SKILL.md",
-      "computedHash": "bf5c86f84b1ca620498ef10c9ebd01ad3b0437e22d76ad431180b85e7eb4a3f3"
+      "computedHash": "bf518bc38cd35992147dae1dcd57cfa3cdf70dcea13e4cb434ec4378812115dd"
     },
     "responding-to-pr-review-comments": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/responding-to-pr-review-comments/SKILL.md",
-      "computedHash": "e8bd726334d8e0f4318a10fcf008e81c6a76bc54c472ff4d5fe20503f6072b55"
+      "computedHash": "c88dfa3a942d71b0830ea0c2b3956516d971f012393800ba564bfde8dd6432fb"
     },
     "review-pull-request": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/review-pull-request/SKILL.md",
-      "computedHash": "f7a7f5e2413f831b86cf9a18fa05129947aa81941da043b71cb44653bde9801a"
+      "computedHash": "1ad3b553018267608cc4e265119aa9d3d5d7434b90095e8049d95acf19b3b8e4"
     },
     "rewriting-code-strictly": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/rewriting-code-strictly/SKILL.md",
-      "computedHash": "eb13c689e71fee485ce912eb51f2312a157594cdb2619e5b81b7c8c83780f64d"
+      "computedHash": "08f362d635c7d8857434d90c661ffaec16b8dcea0078a1ef1abb4a922fe86a35"
     },
     "spec-driven-development": {
       "source": "addyosmani/agent-skills",
@@ -155,13 +155,19 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/validate-implementation-plan/SKILL.md",
-      "computedHash": "b9c4118af23b87805dc5819cb59b7969c5ed9d0cb33eeec6e5184665d2cdf417"
+      "computedHash": "a9358f80310fb6f3ed115342795b3bccda7ee6355d00f2987c66e2ad553a04fd"
+    },
+    "vitest": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vitest/SKILL.md",
+      "computedHash": "943d436114c677802426741980146c07560bf375297666b03062444f4b98a785"
     },
     "workflow-skill-architect": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/workflow-skill-architect/SKILL.md",
-      "computedHash": "1a947c31304c35ba7dbf21525a2c0d6cc9aec73c287afa3da08607134f919c81"
+      "computedHash": "d7c1638d51d24ed83388c4fc3b81025f3b9e8dd52fca879048eef9cc078069a0"
     },
     "writing-plans": {
       "source": "obra/superpowers",
