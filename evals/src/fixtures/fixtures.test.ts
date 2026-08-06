@@ -15,6 +15,7 @@ import { basename, join } from "node:path";
 import { Effect, Result } from "effect";
 import { afterEach, expect, test } from "vitest";
 
+import type { FixtureProvisioningError } from "#/fixtures/fixture-errors.ts";
 import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
 import {
   DIRTY_FIXTURE_FACTS,
@@ -52,7 +53,11 @@ async function createFixture(kind: FixtureKind): Promise<Fixture> {
 }
 
 afterEach(() => {
-  while (openFixtures.length > 0) openFixtures.pop()?.cleanup();
+  let fixture = openFixtures.pop();
+  while (fixture !== undefined) {
+    fixture.cleanup();
+    fixture = openFixtures.pop();
+  }
 });
 
 // Only the trailing newline is stripped: the leading column of `git status
@@ -63,6 +68,21 @@ function readGitStatus(repositoryPath: string): string {
     cwd: repositoryPath,
     encoding: "utf8",
   }).replace(/\n$/, "");
+}
+
+function getProvisioningError(
+  provisioningResult: Result.Result<Fixture, FixtureProvisioningError>,
+): FixtureProvisioningError | undefined {
+  return Result.isFailure(provisioningResult)
+    ? provisioningResult.failure
+    : undefined;
+}
+
+function getAttemptedSkillDirectoryName(
+  provisioningError: FixtureProvisioningError | undefined,
+): string | undefined {
+  if (provisioningError?._tag !== "FixtureSkillCopyError") return undefined;
+  return basename(provisioningError.sourcePath);
 }
 
 test.each<FixtureKind>(FIXTURE_KINDS)(
@@ -240,13 +260,9 @@ test("make fails with a tagged FixtureSkillCopyError when the skill does not exi
     }).pipe(Effect.provide(FixtureProvisionerLive)),
   );
 
-  const provisioningError = Result.isFailure(provisioningResult)
-    ? provisioningResult.failure
-    : undefined;
+  const provisioningError = getProvisioningError(provisioningResult);
   const attemptedSkillDirectoryName =
-    provisioningError?._tag === "FixtureSkillCopyError"
-      ? basename(provisioningError.sourcePath)
-      : undefined;
+    getAttemptedSkillDirectoryName(provisioningError);
 
   expect(provisioningError?._tag).toBe("FixtureSkillCopyError");
   expect(attemptedSkillDirectoryName).toBe(missingSkillName);
