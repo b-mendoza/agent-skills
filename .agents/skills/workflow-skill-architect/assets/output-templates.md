@@ -1,8 +1,6 @@
 # Output Templates
 
-Load this asset when assembling files, collection manifests, resume packets,
-zero-output reports, or final deliveries. Path:
-`assets/output-templates.md` (templates live under `assets/`, not `references/`).
+Load this asset when assembling files, collection manifests, resume packets, zero-output reports, or final deliveries. Path: `assets/output-templates.md` (templates live under `assets/`, not `references/`).
 
 ## Skill Template
 
@@ -149,7 +147,7 @@ Script documentation template:
 
 ## Per-Item Response
 
-```markdown
+```text
 ARCHITECTURE: PASS | NEEDS_INPUT | BLOCKED | ERROR
 
 ## Staged Files
@@ -208,7 +206,7 @@ resume_from: "queue-loop"
 
 ## Zero-Output Report
 
-```markdown
+```text
 state: ready
 result: no-artifacts-required
 
@@ -231,7 +229,7 @@ result: no-artifacts-required
 
 ## Final Delivery
 
-````markdown
+````text
 state: ready | blocked | error
 
 ## Analysis

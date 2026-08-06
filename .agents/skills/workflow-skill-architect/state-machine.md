@@ -1,13 +1,11 @@
 # State Machine — workflow-skill-architect
 
-Finite-state execution model for this skill. Mermaid SoT:
-[`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of
-states, transitions, guards, and terminals.
+Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
 
 ## States
 
 | State | Kind | Role |
-| ----- | ---- | ---- |
+| --- | --- | --- |
 | `ResumeGate` | active | Detect `RESUME_PACKET` |
 | `Restore` | active | Restore `RUN_STATE`, queue, manifest, `REPAIR_CYCLE` |
 | `ResumeRoute` | active | Choose pending queue item vs pending review step |
@@ -32,7 +30,7 @@ states, transitions, guards, and terminals.
 ## Transitions
 
 | From | To | Guard / event |
-| ---- | -- | ------------- |
+| --- | --- | --- |
 | `[*]` | `ResumeGate` | run start |
 | `ResumeGate` | `Restore` | `RESUME_PACKET` present |
 | `ResumeGate` | `Intake` | no packet |
@@ -78,7 +76,7 @@ Exactly one of: `ready`, `needs_input`, `blocked`, `error`.
 ## Reachability and dead-state checks
 
 | Property | Result |
-| -------- | ------ |
+| --- | --- |
 | Every active state reachable from `ResumeGate` | yes |
 | Every terminal reachable | yes |
 | Dead states (no outgoing, non-terminal) | none |
