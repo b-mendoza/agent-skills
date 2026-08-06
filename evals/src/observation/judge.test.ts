@@ -120,7 +120,7 @@ describe("createJudge", () => {
     const judge = createJudge({
       judgeQuery: async (prompt) => {
         seenPrompts.push(prompt);
-        return  Promise.resolve(reply([]));
+        return Promise.resolve(reply([]));
       },
     });
 
@@ -134,7 +134,7 @@ describe("createJudge", () => {
   test("propagates a judge query failure", async () => {
     const judge = createJudge({
       judgeQuery: async () =>
-         Promise.reject(new Error("judge model unavailable")),
+        Promise.reject(new Error("judge model unavailable")),
     });
 
     await expect(judge(REQUEST)).rejects.toThrow(/judge model unavailable/);
