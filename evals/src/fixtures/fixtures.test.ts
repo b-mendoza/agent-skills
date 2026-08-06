@@ -17,6 +17,7 @@ import { afterEach, expect, test } from "vitest";
 
 import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
 import {
+  DIRTY_FIXTURE_FACTS,
   FixtureProvisioner,
   FixtureProvisionerLive,
   HOSTILE_FIXTURE_FACTS,
@@ -118,6 +119,12 @@ test("dirty: carries exactly the intended modified and untracked entries", async
       .split("\n")
       .sort((firstEntry, secondEntry) => firstEntry.localeCompare(secondEntry)),
   ).toStrictEqual([" M a.txt", "?? c.txt"]);
+
+  const latestSubject = execFileSync("git", ["log", "-1", "--format=%s"], {
+    cwd: fixture.cwd,
+    encoding: "utf8",
+  }).trim();
+  expect(latestSubject).toBe(DIRTY_FIXTURE_FACTS.committedSubject);
 });
 
 test("hostile: plants the injection content its facts advertise", async () => {
