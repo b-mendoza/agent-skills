@@ -105,14 +105,7 @@ function isNotRepositoryFailure(
   );
 }
 
-function selectSubprocessFailureFallback(
-  code: unknown,
-  message: unknown,
-  error: unknown,
-): unknown {
-  return code ?? message ?? error;
-}
-
+// oxlint-disable-next-line complexity -- the approved deletion keeps the nullish subprocess fallback at its only call site
 function subprocessFailureReason(
   stderr: string,
   code: unknown,
@@ -123,7 +116,7 @@ function subprocessFailureReason(
   // a missing directory or a missing git binary), else whatever was thrown.
   const [detail = ""] = stderr.trim().split("\n");
   if (detail !== "") return detail;
-  return toText(selectSubprocessFailureFallback(code, message, error));
+  return toText(code ?? message ?? error);
 }
 
 function classifyGitFailure(error: unknown): GitStatus {
