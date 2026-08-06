@@ -15,14 +15,16 @@ The writer returns a Markdown report body titled `# Project State Snapshot`. The
 9. `## 9. Ranked Next Actions`
 10. `## 10. Final Developer Briefing`
 
+Section names are canonical identifiers: required fixes, fix dispositions, and repair targeting all address sections by these names, so each required section's name must appear verbatim in its heading. The order and numbering above are the recommended presentation, not a gate — a report that carries its required sections under their canonical names conforms.
+
 ## Section Requirements
 
 Git state must include branch/upstream, base branch or `none`, repo state, evidence window, context limitations, and these two required disclosure fields:
 
-- `Assumptions:` — every labeled assumption made this run (resolved `PROJECT_PATH`, `BASE_BRANCH` ladder rung, input fallbacks, any `User decision:`), or `none`.
-- `Execution mode:` — either `isolated`, or `inline; subagent context isolation degraded`.
+- `Assumptions:` — the `ASSUMPTIONS` input entries copied over (resolved `PROJECT_PATH`, base-ladder rung, input fallbacks, any `User decision:`), or `none` only when that input is `none`.
+- `Execution mode:` — the `EXECUTION_MODE` input value, copied verbatim; never inferred from observed context.
 
-Both fields are required in the full and quiet-state shapes, so a reader can always tell a fully isolated verified run from a weaker one.
+Both fields are required in the full and quiet-state shapes and each appears exactly once in the report — inside Git State by recommended placement — so a reader can always tell a fully isolated verified run from a weaker one.
 
 Change themes should name files or groups, evidence, fact-or-inference cause, risk level, and what to review.
 
@@ -52,9 +54,33 @@ Focus narrows emphasis, not evidence. Off-focus blockers still appear.
 
 ## Quiet-State Short Form
 
-When the working tree is clean and the evidence window is empty, use only sections 1, 2, 9, and 10. State explicitly that there are no recent changes in the defined window. Do not invent risks, themes, or validation work.
+When the working tree is clean and the evidence window is empty, use only Executive Summary, Git State, Ranked Next Actions, and Final Developer Briefing. State explicitly that there are no recent changes in the defined window. Do not invent risks, themes, or validation work.
 
-This short form is complete and correct as-is. Omitting sections 3–8 is the contract, not a defect, and the verifier checks it only on the rows scoped `Always`. Section 2 still carries `Assumptions:` and `Execution mode:`.
+This short form is complete and correct as-is. Omitting the other six sections is the contract, not a defect, and the verifier checks it only on the rows scoped `Always`. Git State still carries `Assumptions:` and `Execution mode:`.
+
+A filled short form looks exactly like this (values vary; shape does not):
+
+```markdown
+# Project State Snapshot
+
+## 1. Executive Summary
+
+No recent changes in the defined window: the working tree is clean and no commits exist between the base and HEAD.
+
+## 2. Git State
+
+Branch main tracking origin/main; repo state normal; base origin/main (upstream of HEAD); evidence window origin/main-to-HEAD, 0 commits; no context limitations.
+Assumptions: none
+Execution mode: isolated
+
+## 9. Ranked Next Actions
+
+- nice-to-have: nothing pending in this window; continue planned work.
+
+## 10. Final Developer Briefing
+
+The repository is quiet: clean tree, no unmerged recent work. Safe to start new work from main.
+```
 
 ## Claim Discipline
 
