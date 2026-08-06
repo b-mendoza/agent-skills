@@ -93,6 +93,31 @@ function aggregateStatus(passedCount: number, attemptCount: number): Status {
   return "DEGRADED";
 }
 
+function aggregateScore(
+  passedCount: number,
+  attemptCount: number,
+  status: Status,
+): number {
+  const roundedScore = Math.round((passedCount / attemptCount) * PERCENT_SCALE);
+  return status === "DEGRADED"
+    ? Math.min(
+        DEGRADED_SCORE_CEILING,
+        Math.max(DEGRADED_SCORE_FLOOR, roundedScore),
+      )
+    : roundedScore;
+}
+
+function aggregateObserved(
+  attempts: readonly AttemptResult[],
+  firstAttempt: AttemptResult,
+  status: Status,
+): string {
+  const lastAttempt = attempts.at(LAST_ATTEMPT_INDEX) ?? firstAttempt;
+  const firstFailedAttempt =
+    attempts.find((attempt) => attempt.status === "FAIL") ?? firstAttempt;
+  return status === "PASS" ? lastAttempt.observed : firstFailedAttempt.observed;
+}
+
 /**
  * Folds every attempt at one case into its report row. The score is the
  * percent of attempts that passed -- a pass rate over repetitions of one
@@ -111,19 +136,8 @@ export function aggregateAttempts(attempts: readonly AttemptResult[]): Result {
     (attempt) => attempt.status === "PASS",
   ).length;
   const status = aggregateStatus(passedCount, attempts.length);
-  const roundedScore = Math.round(
-    (passedCount / attempts.length) * PERCENT_SCALE,
-  );
-  const score =
-    status === "DEGRADED"
-      ? Math.min(
-          DEGRADED_SCORE_CEILING,
-          Math.max(DEGRADED_SCORE_FLOOR, roundedScore),
-        )
-      : roundedScore;
-  const lastAttempt = attempts.at(LAST_ATTEMPT_INDEX) ?? firstAttempt;
-  const firstFailedAttempt =
-    attempts.find((attempt) => attempt.status === "FAIL") ?? firstAttempt;
+  const score = aggregateScore(passedCount, attempts.length, status);
+  const observed = aggregateObserved(attempts, firstAttempt, status);
 
   return {
     id: firstAttempt.id,
@@ -132,8 +146,7 @@ export function aggregateAttempts(attempts: readonly AttemptResult[]): Result {
     score,
     attemptsPassed: passedCount,
     attemptsRun: attempts.length,
-    observed:
-      status === "PASS" ? lastAttempt.observed : firstFailedAttempt.observed,
+    observed,
     costUsd: attempts.reduce(
       (total, attempt) => total + attempt.costUsd,
       INITIAL_TOTAL,
