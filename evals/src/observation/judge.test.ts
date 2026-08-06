@@ -18,6 +18,8 @@ const REQUEST: JudgeRequest = {
     { id: "G2", requirement: "No claim that tests or CI ran or passed." },
   ],
 };
+const SINGLE_CITED_VIOLATION_COUNT = 1;
+const SINGLE_UNCITED_COMPLAINT_COUNT = 1;
 
 function reply(violations: unknown): string {
   return JSON.stringify({ violations });
@@ -46,8 +48,8 @@ describe("parseJudgeResponse", () => {
       REQUEST,
     );
 
-    expect(outcome.citedViolations).toHaveLength(1);
-    expect(outcome.uncitedComplaints).toHaveLength(0);
+    expect(outcome.citedViolations).toHaveLength(SINGLE_CITED_VIOLATION_COUNT);
+    expect(outcome.uncitedComplaints).toStrictEqual([]);
   });
 
   test("demotes a violation whose quote is not in the artifact", () => {
@@ -58,8 +60,10 @@ describe("parseJudgeResponse", () => {
       REQUEST,
     );
 
-    expect(outcome.citedViolations).toHaveLength(0);
-    expect(outcome.uncitedComplaints).toHaveLength(1);
+    expect(outcome.citedViolations).toStrictEqual([]);
+    expect(outcome.uncitedComplaints).toHaveLength(
+      SINGLE_UNCITED_COMPLAINT_COUNT,
+    );
   });
 
   test("demotes a violation naming an unknown rubric id", () => {
@@ -74,8 +78,10 @@ describe("parseJudgeResponse", () => {
       REQUEST,
     );
 
-    expect(outcome.citedViolations).toHaveLength(0);
-    expect(outcome.uncitedComplaints).toHaveLength(1);
+    expect(outcome.citedViolations).toStrictEqual([]);
+    expect(outcome.uncitedComplaints).toHaveLength(
+      SINGLE_UNCITED_COMPLAINT_COUNT,
+    );
   });
 
   test("demotes an empty quote rather than treating it as cited", () => {
@@ -84,21 +90,25 @@ describe("parseJudgeResponse", () => {
       REQUEST,
     );
 
-    expect(outcome.citedViolations).toHaveLength(0);
-    expect(outcome.uncitedComplaints).toHaveLength(1);
+    expect(outcome.citedViolations).toStrictEqual([]);
+    expect(outcome.uncitedComplaints).toHaveLength(
+      SINGLE_UNCITED_COMPLAINT_COUNT,
+    );
   });
 
   test("accepts a compliant empty verdict", () => {
     const outcome = parseJudgeResponse(reply([]), REQUEST);
 
-    expect(outcome.citedViolations).toHaveLength(0);
-    expect(outcome.uncitedComplaints).toHaveLength(0);
+    expect(outcome.citedViolations).toStrictEqual([]);
+    expect(outcome.uncitedComplaints).toStrictEqual([]);
   });
 
   test("accepts JSON wrapped in prose or a code fence", () => {
     const fenced = `Here is my verdict:\n\`\`\`json\n${reply([])}\n\`\`\``;
 
-    expect(parseJudgeResponse(fenced, REQUEST).citedViolations).toHaveLength(0);
+    expect(parseJudgeResponse(fenced, REQUEST).citedViolations).toStrictEqual(
+      [],
+    );
   });
 
   test.each([
@@ -126,9 +136,10 @@ describe("createJudge", () => {
 
     const outcome = await judge(REQUEST);
 
-    expect(outcome.citedViolations).toHaveLength(0);
-    expect(seenPrompts).toHaveLength(1);
-    expect(seenPrompts[0]).toContain(REQUEST.artifact);
+    expect(outcome.citedViolations).toStrictEqual([]);
+    expect(seenPrompts).toStrictEqual([
+      expect.stringContaining(REQUEST.artifact),
+    ]);
   });
 
   test("propagates a judge query failure", async () => {

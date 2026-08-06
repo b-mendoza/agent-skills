@@ -56,6 +56,7 @@ export const JUDGE_MODEL = "haiku";
 const PREVIEW_START = 0;
 const PREVIEW_CHARS = 120;
 const BLOCK_NOT_FOUND = -1;
+const JSON_BLOCK_END_OFFSET = 1;
 
 function preview(text: string): string {
   return text.slice(PREVIEW_START, PREVIEW_CHARS);
@@ -68,7 +69,7 @@ function extractJsonBlock(responseText: string): string | undefined {
   if (blockStart === BLOCK_NOT_FOUND || blockEnd <= blockStart) {
     return undefined;
   }
-  return responseText.slice(blockStart, blockEnd + 1);
+  return responseText.slice(blockStart, blockEnd + JSON_BLOCK_END_OFFSET);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -106,23 +107,103 @@ export function buildJudgePrompt(request: JudgeRequest): string {
   ].join("\n");
 }
 
-function parseViolationCandidate(candidate: unknown): {
+interface ParsedViolationCandidate {
+  readonly itemId: string;
+  readonly quote: string;
+  readonly reason: string;
+}
+
+interface ViolationBuckets {
+  readonly citedViolations: CitedViolation[];
+  readonly uncitedComplaints: string[];
+}
+
+function requiredCitationFields(candidate: Record<string, unknown>): {
   itemId: string;
   quote: string;
-  reason: string;
 } {
-  if (!isRecord(candidate)) {
-    throw new Error("judge violation entry is not an object");
-  }
-  const { itemId, quote, reason } = candidate;
+  const { itemId, quote } = candidate;
   if (typeof itemId !== "string" || typeof quote !== "string") {
     throw new Error("judge violation entry lacks string itemId/quote");
   }
+  return { itemId, quote };
+}
+
+function parseViolationCandidate(candidate: unknown): ParsedViolationCandidate {
+  if (!isRecord(candidate)) {
+    throw new Error("judge violation entry is not an object");
+  }
+  const { itemId, quote } = requiredCitationFields(candidate);
+  const { reason } = candidate;
   return {
     itemId,
     quote,
     reason: typeof reason === "string" ? reason : "",
   };
+}
+
+function parseJudgeJson(jsonBlock: string): unknown {
+  try {
+    return JSON.parse(jsonBlock);
+  } catch (cause) {
+    throw new Error(`judge reply was not valid JSON: ${preview(jsonBlock)}`, {
+      cause,
+    });
+  }
+}
+
+function parseJudgeReplyObject(responseText: string): Record<string, unknown> {
+  const jsonBlock = extractJsonBlock(responseText);
+  if (jsonBlock === undefined) {
+    throw new Error(
+      `judge reply contained no JSON object: ${preview(responseText)}`,
+    );
+  }
+
+  const parsed = parseJudgeJson(jsonBlock);
+  if (!isRecord(parsed)) {
+    throw new Error("judge reply JSON was not an object");
+  }
+  return parsed;
+}
+
+function parseViolationCandidates(responseText: string): readonly unknown[] {
+  const judgeReply = parseJudgeReplyObject(responseText);
+  const { violations } = judgeReply;
+  if (!Array.isArray(violations)) {
+    throw new Error("judge reply carried no violations array");
+  }
+  return violations;
+}
+
+function citationAppearsInArtifact(quote: string, artifact: string): boolean {
+  return quote !== "" && artifact.includes(quote);
+}
+
+function formatUncitedComplaint(
+  violation: ParsedViolationCandidate,
+  cited: boolean,
+  knownItem: boolean,
+): string {
+  return `${violation.itemId}: ${violation.reason} (quote ${cited ? "ok" : "not found in artifact"}${knownItem ? "" : "; unknown rubric id"})`;
+}
+
+function addViolationCandidate(
+  candidate: unknown,
+  request: JudgeRequest,
+  rubricIds: ReadonlySet<string>,
+  violationBuckets: ViolationBuckets,
+): void {
+  const violation = parseViolationCandidate(candidate);
+  const cited = citationAppearsInArtifact(violation.quote, request.artifact);
+  const knownItem = rubricIds.has(violation.itemId);
+  if (cited && knownItem) {
+    violationBuckets.citedViolations.push(violation);
+    return;
+  }
+  violationBuckets.uncitedComplaints.push(
+    formatUncitedComplaint(violation, cited, knownItem),
+  );
 }
 
 /**
@@ -134,45 +215,16 @@ export function parseJudgeResponse(
   responseText: string,
   request: JudgeRequest,
 ): JudgeOutcome {
-  const jsonBlock = extractJsonBlock(responseText);
-  if (jsonBlock === undefined) {
-    throw new Error(
-      `judge reply contained no JSON object: ${preview(responseText)}`,
-    );
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonBlock);
-  } catch {
-    throw new Error(`judge reply was not valid JSON: ${preview(jsonBlock)}`);
-  }
-  if (!isRecord(parsed)) {
-    throw new Error("judge reply JSON was not an object");
-  }
-  const { violations } = parsed;
-  if (!Array.isArray(violations)) {
-    throw new Error("judge reply carried no violations array");
-  }
-
+  const violationCandidates = parseViolationCandidates(responseText);
   const rubricIds = new Set(request.rubric.map((item) => item.id));
-  const citedViolations: CitedViolation[] = [];
-  const uncitedComplaints: string[] = [];
-  for (const candidate of violations) {
-    const violation = parseViolationCandidate(candidate);
-    const cited =
-      violation.quote !== "" && request.artifact.includes(violation.quote);
-    const knownItem = rubricIds.has(violation.itemId);
-    if (cited && knownItem) {
-      citedViolations.push(violation);
-      continue;
-    }
-    uncitedComplaints.push(
-      `${violation.itemId}: ${violation.reason} (quote ${cited ? "ok" : "not found in artifact"}${knownItem ? "" : "; unknown rubric id"})`,
-    );
+  const violationBuckets: ViolationBuckets = {
+    citedViolations: [],
+    uncitedComplaints: [],
+  };
+  for (const candidate of violationCandidates) {
+    addViolationCandidate(candidate, request, rubricIds, violationBuckets);
   }
-
-  return { citedViolations, uncitedComplaints };
+  return violationBuckets;
 }
 
 export function createJudge(options: {
