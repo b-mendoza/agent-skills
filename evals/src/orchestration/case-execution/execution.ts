@@ -32,7 +32,11 @@ import {
   EvalConfiguration,
   EvalConfigurationLive,
 } from "#/orchestration/case-execution/model-configuration.ts";
-import type { AttemptResult, ReportTier } from "#/orchestration/report.ts";
+import type {
+  AttemptResult,
+  AttemptStatus,
+  ReportTier,
+} from "#/orchestration/report.ts";
 import { evaluate, evaluateWithJudge } from "#/orchestration/verdict.ts";
 
 export const REPORT_TIER_BY_CASE_TIER = {
@@ -125,6 +129,13 @@ interface CaseExecutionServices {
   readonly model: string;
 }
 
+function shouldRunJudge(
+  mechanicalStatus: AttemptStatus,
+  judge: EvalCase["judge"],
+): judge is NonNullable<EvalCase["judge"]> {
+  return mechanicalStatus === "PASS" && judge !== undefined;
+}
+
 function executeWithFixture(
   evalCase: EvalCase,
   fixture: Fixture,
@@ -142,12 +153,11 @@ function executeWithFixture(
     });
     const mechanical = evaluate(() => evalCase.check(observation));
     const { judge } = evalCase;
-    const { status, observed } =
-      mechanical.status === "PASS" && judge !== undefined
-        ? yield* Effect.promise(async () =>
-            evaluateWithJudge(judge, observation, mechanical.observed),
-          )
-        : mechanical;
+    const { status, observed } = shouldRunJudge(mechanical.status, judge)
+      ? yield* Effect.promise(async () =>
+          evaluateWithJudge(judge, observation, mechanical.observed),
+        )
+      : mechanical;
     if (status === "FAIL") {
       yield* failureArtifacts.persist(evalCase.id, observation.finalText);
     }
