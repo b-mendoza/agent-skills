@@ -4,10 +4,12 @@
 
 import { describe, expect, test } from "vitest";
 
+import { scripted } from "#/observation/harness-lifecycle-test-support.ts";
 import type { JudgeRequest } from "#/observation/judge.ts";
 import {
   buildJudgePrompt,
   createJudge,
+  createLiveJudgeQuery,
   parseJudgeResponse,
 } from "#/observation/judge.ts";
 
@@ -23,6 +25,13 @@ const SINGLE_UNCITED_COMPLAINT_COUNT = 1;
 
 function reply(violations: unknown): string {
   return JSON.stringify({ violations });
+}
+
+function malformedResultStream(): AsyncIterable<unknown> {
+  return scripted(
+    { type: "assistant", message: { content: [] } },
+    { type: "result", result: 7 },
+  );
 }
 
 describe("buildJudgePrompt", () => {
@@ -50,6 +59,25 @@ describe("parseJudgeResponse", () => {
 
     expect(outcome.citedViolations).toHaveLength(SINGLE_CITED_VIOLATION_COUNT);
     expect(outcome.uncitedComplaints).toStrictEqual([]);
+  });
+
+  test("accepts valid JSON with extra fields", () => {
+    const outcome = parseJudgeResponse(
+      JSON.stringify({
+        verdict: "fail",
+        violations: [
+          {
+            itemId: "G2",
+            quote: "The tests passed on CI.",
+            reason: "asserts an unobserved test result",
+            confidence: 1,
+          },
+        ],
+      }),
+      REQUEST,
+    );
+
+    expect(outcome.citedViolations).toHaveLength(SINGLE_CITED_VIOLATION_COUNT);
   });
 
   test("demotes a violation whose quote is not in the artifact", () => {
@@ -96,6 +124,28 @@ describe("parseJudgeResponse", () => {
     );
   });
 
+  test.each([
+    {
+      label: "missing",
+      violation: {
+        itemId: "G2",
+        quote: "The tests passed on CI.",
+      },
+    },
+    {
+      label: "non-string",
+      violation: {
+        itemId: "G2",
+        quote: "The tests passed on CI.",
+        reason: 7,
+      },
+    },
+  ])("throws when a violation reason is $label", ({ violation }) => {
+    expect(() => parseJudgeResponse(reply([violation]), REQUEST)).toThrow(
+      /judge/,
+    );
+  });
+
   test("accepts a compliant empty verdict", () => {
     const outcome = parseJudgeResponse(reply([]), REQUEST);
 
@@ -121,6 +171,14 @@ describe("parseJudgeResponse", () => {
     },
   ])("throws on $label, naming the judge", ({ responseText }) => {
     expect(() => parseJudgeResponse(responseText, REQUEST)).toThrow(/judge/);
+  });
+});
+
+describe("liveJudgeQuery", () => {
+  test("fails closed on a malformed relevant result message", async () => {
+    const judgeQuery = createLiveJudgeQuery(malformedResultStream);
+
+    await expect(judgeQuery("grade this", "haiku")).rejects.toThrow(/judge/);
   });
 });
 

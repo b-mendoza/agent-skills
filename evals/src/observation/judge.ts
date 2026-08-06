@@ -15,6 +15,7 @@
 import { tmpdir } from "node:os";
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
+import { Exit, Schema } from "effect";
 
 /** One binary requirement. The judge reports violations, never scores. */
 export interface RubricItem {
@@ -58,6 +59,30 @@ const PREVIEW_CHARS = 120;
 const BLOCK_NOT_FOUND = -1;
 const JSON_BLOCK_END_OFFSET = 1;
 
+const violationCandidateSchema = Schema.Struct({
+  itemId: Schema.String,
+  quote: Schema.String,
+  reason: Schema.String,
+});
+const judgeReplySchema = Schema.Struct({
+  violations: Schema.Array(violationCandidateSchema),
+});
+const streamMessageDiscriminatorSchema = Schema.Struct({
+  type: Schema.String,
+});
+const judgeResultMessageSchema = Schema.Struct({
+  type: Schema.Literal("result"),
+  result: Schema.String,
+});
+
+const decodeJudgeReply = Schema.decodeUnknownSync(judgeReplySchema);
+const decodeStreamMessageDiscriminator = Schema.decodeUnknownExit(
+  streamMessageDiscriminatorSchema,
+);
+const decodeJudgeResultMessage = Schema.decodeUnknownSync(
+  judgeResultMessageSchema,
+);
+
 function preview(text: string): string {
   return text.slice(PREVIEW_START, PREVIEW_CHARS);
 }
@@ -70,10 +95,6 @@ function extractJsonBlock(responseText: string): string | undefined {
     return undefined;
   }
   return responseText.slice(blockStart, blockEnd + JSON_BLOCK_END_OFFSET);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 export function buildJudgePrompt(request: JudgeRequest): string {
@@ -130,12 +151,62 @@ function formatUncitedComplaint(
   return `${violation.itemId}: ${violation.reason} (quote ${cited ? "ok" : "not found in artifact"}${knownItem ? "" : "; unknown rubric id"})`;
 }
 
+function parseJudgeJson(jsonBlock: string): unknown {
+  try {
+    return JSON.parse(jsonBlock);
+  } catch (cause) {
+    throw new Error(`judge reply was not valid JSON: ${preview(jsonBlock)}`, {
+      cause,
+    });
+  }
+}
+
+function decodeJudgeReplyJson(judgeReply: unknown) {
+  try {
+    return decodeJudgeReply(judgeReply);
+  } catch (cause) {
+    throw new Error("judge reply JSON had an invalid shape", { cause });
+  }
+}
+
+function classifyViolation(
+  violation: ParsedViolationCandidate,
+  artifact: string,
+  rubricIds: ReadonlySet<string>,
+  violationBuckets: ViolationBuckets,
+): void {
+  const cited = citationAppearsInArtifact(violation.quote, artifact);
+  const knownItem = rubricIds.has(violation.itemId);
+  if (cited && knownItem) {
+    violationBuckets.citedViolations.push(violation);
+    return;
+  }
+
+  violationBuckets.uncitedComplaints.push(
+    formatUncitedComplaint(violation, cited, knownItem),
+  );
+}
+
+function bucketViolations(
+  violations: readonly ParsedViolationCandidate[],
+  request: JudgeRequest,
+): ViolationBuckets {
+  const rubricIds = new Set(request.rubric.map((item) => item.id));
+  const violationBuckets: ViolationBuckets = {
+    citedViolations: [],
+    uncitedComplaints: [],
+  };
+  for (const violation of violations) {
+    classifyViolation(violation, request.artifact, rubricIds, violationBuckets);
+  }
+  return violationBuckets;
+}
+
 /**
  * Parses the judge's reply and validates every citation against the artifact.
  * Throws on an unparseable reply; the failure names the judge, so a broken
  * grading run is never mistaken for a verdict on the artifact.
  */
-// oxlint-disable-next-line complexity -- the approved inlining keeps judge validation order visible in one boundary parser
 export function parseJudgeResponse(
   responseText: string,
   request: JudgeRequest,
@@ -147,52 +218,8 @@ export function parseJudgeResponse(
     );
   }
 
-  const judgeReply: unknown = (() => {
-    try {
-      return JSON.parse(jsonBlock);
-    } catch (cause) {
-      throw new Error(`judge reply was not valid JSON: ${preview(jsonBlock)}`, {
-        cause,
-      });
-    }
-  })();
-  if (!isRecord(judgeReply)) {
-    throw new Error("judge reply JSON was not an object");
-  }
-  const { violations } = judgeReply;
-  if (!Array.isArray(violations)) {
-    throw new Error("judge reply carried no violations array");
-  }
-
-  const rubricIds = new Set(request.rubric.map((item) => item.id));
-  const violationBuckets: ViolationBuckets = {
-    citedViolations: [],
-    uncitedComplaints: [],
-  };
-  for (const candidate of violations) {
-    if (!isRecord(candidate)) {
-      throw new Error("judge violation entry is not an object");
-    }
-    const { itemId, quote, reason } = candidate;
-    if (typeof itemId !== "string" || typeof quote !== "string") {
-      throw new Error("judge violation entry lacks string itemId/quote");
-    }
-    const violation: ParsedViolationCandidate = {
-      itemId,
-      quote,
-      reason: typeof reason === "string" ? reason : "",
-    };
-    const cited = citationAppearsInArtifact(quote, request.artifact);
-    const knownItem = rubricIds.has(itemId);
-    if (cited && knownItem) {
-      violationBuckets.citedViolations.push(violation);
-    } else {
-      violationBuckets.uncitedComplaints.push(
-        formatUncitedComplaint(violation, cited, knownItem),
-      );
-    }
-  }
-  return violationBuckets;
+  const judgeReply = decodeJudgeReplyJson(parseJudgeJson(jsonBlock));
+  return bucketViolations(judgeReply.violations, request);
 }
 
 export function createJudge(options: {
@@ -209,32 +236,49 @@ export function createJudge(options: {
   };
 }
 
-function extractResultText(message: unknown): string | undefined {
-  if (!isRecord(message)) return undefined;
-  if (message["type"] !== "result") return undefined;
-  const resultText = message["result"];
-  return typeof resultText === "string" ? resultText : "";
+function decodeRelevantResultMessage(message: unknown): string {
+  try {
+    return decodeJudgeResultMessage(message).result;
+  } catch (cause) {
+    throw new Error("judge result message had an invalid shape", { cause });
+  }
 }
+
+function extractResultText(message: unknown): string | undefined {
+  const discriminator = decodeStreamMessageDiscriminator(message);
+  if (Exit.isFailure(discriminator)) return undefined;
+  if (discriminator.value.type !== "result") return undefined;
+  return decodeRelevantResultMessage(message);
+}
+
+type JudgeStreamQuery = (
+  request: Parameters<typeof query>[0],
+) => AsyncIterable<unknown>;
 
 /**
  * SDK-backed query. Runs in the OS temp directory with no tools so the judge
  * discovers no project skills or settings and can only read the prompt.
  */
-export const liveJudgeQuery: JudgeQuery = async (prompt, model) => {
-  const stream = query({
-    prompt,
-    options: {
-      model,
-      maxTurns: 1,
-      allowedTools: [],
-      cwd: tmpdir(),
-    },
-  });
-  for await (const message of stream) {
-    const resultText = extractResultText(message);
-    if (resultText !== undefined) return resultText;
-  }
-  throw new Error("judge query produced no result message");
-};
+export function createLiveJudgeQuery(
+  startQuery: JudgeStreamQuery = query,
+): JudgeQuery {
+  return async (prompt, model) => {
+    const stream = startQuery({
+      prompt,
+      options: {
+        model,
+        maxTurns: 1,
+        allowedTools: [],
+        cwd: tmpdir(),
+      },
+    });
+    for await (const message of stream) {
+      const resultText = extractResultText(message);
+      if (resultText !== undefined) return resultText;
+    }
+    throw new Error("judge query produced no result message");
+  };
+}
 
+export const liveJudgeQuery: JudgeQuery = createLiveJudgeQuery();
 export const judgeLive: Judge = createJudge({ judgeQuery: liveJudgeQuery });
