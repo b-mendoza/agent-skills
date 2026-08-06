@@ -53,6 +53,18 @@ const subprocessErrorSchema = Schema.Struct({
 
 const decodeSubprocessError = Schema.decodeUnknownSync(subprocessErrorSchema);
 
+type Attempt<T> =
+  | { readonly kind: "success"; readonly value: T }
+  | { readonly kind: "failure"; readonly cause: unknown };
+
+function attempt<T>(operation: () => T): Attempt<T> {
+  try {
+    return { kind: "success", value: operation() };
+  } catch (cause) {
+    return { kind: "failure", cause };
+  }
+}
+
 /** Whether two samples describe the same repository state. */
 export function sameGitStatus(before: GitStatus, after: GitStatus): boolean {
   if (before.kind === "worktree" && after.kind === "worktree") {
@@ -83,6 +95,37 @@ function executeGitStatus(repo: string): string {
   });
 }
 
+function isNotRepositoryFailure(
+  status: number | null | undefined,
+  stderr: string,
+): boolean {
+  return (
+    status === GIT_NOT_A_REPOSITORY &&
+    /^fatal: not a git repository/im.test(stderr)
+  );
+}
+
+function selectSubprocessFailureFallback(
+  code: unknown,
+  message: unknown,
+  error: unknown,
+): unknown {
+  return code ?? message ?? error;
+}
+
+function subprocessFailureReason(
+  stderr: string,
+  code: unknown,
+  message: unknown,
+  error: unknown,
+): string {
+  // git's own message when there is one, else the syscall code (ENOENT for
+  // a missing directory or a missing git binary), else whatever was thrown.
+  const [detail = ""] = stderr.trim().split("\n");
+  if (detail !== "") return detail;
+  return toText(selectSubprocessFailureFallback(code, message, error));
+}
+
 function classifyGitFailure(error: unknown): GitStatus {
   const subprocessError = decodeSubprocessError(error);
   const stderr = toText(subprocessError.stderr);
@@ -94,20 +137,18 @@ function classifyGitFailure(error: unknown): GitStatus {
   // failure fails closed rather than passing as clean. The match is anchored
   // to git's own fatal line so an unrelated failure whose path happens to
   // contain the phrase cannot be promoted into an expected state.
-  if (
-    subprocessError.status === GIT_NOT_A_REPOSITORY &&
-    /^fatal: not a git repository/im.test(stderr)
-  ) {
+  if (isNotRepositoryFailure(subprocessError.status, stderr)) {
     return { kind: "no-worktree" };
   }
 
-  // git's own message when there is one, else the syscall code (ENOENT for
-  // a missing directory or a missing git binary), else whatever was thrown.
-  const detail = stderr.trim().split("\n")[0] ?? "";
-  const fallback = subprocessError.code ?? subprocessError.message ?? error;
   return {
     kind: "unreadable",
-    reason: detail === "" ? toText(fallback) : detail,
+    reason: subprocessFailureReason(
+      stderr,
+      subprocessError.code,
+      subprocessError.message,
+      error,
+    ),
   };
 }
 
@@ -127,24 +168,41 @@ export const GitSamplerLive = Layer.succeed(
   GitSampler.of({ sample: sampleGitStatus }),
 );
 
-/** Foreign values, rendered without rejecting observation settlement. */
-export function toText(value: unknown): string {
+function toPrimitiveText(value: unknown): string | undefined {
   if (typeof value === "string") return value;
   if (value == null) return "";
-  if (typeof value === "number" || typeof value === "boolean") {
-    return value.toString();
-  }
+  return toNumericOrBooleanText(value);
+}
 
-  try {
-    const json: unknown = JSON.stringify(value);
-    if (typeof json === "string") return json;
-  } catch (jsonSerializationError) {
-    // Continue to the guarded string-conversion fallback.
-  }
+function toNumericOrBooleanText(value: unknown): string | undefined {
+  if (typeof value === "number") return value.toString();
+  if (typeof value === "boolean") return value.toString();
+  return undefined;
+}
 
-  try {
-    return String(value);
-  } catch (stringConversionError) {
-    return "(unprintable value)";
-  }
+function toJsonText(value: unknown): string | undefined {
+  const serialization = attempt(() => JSON.stringify(value));
+  if (serialization.kind === "failure") return undefined;
+  return typeof serialization.value === "string"
+    ? serialization.value
+    : undefined;
+}
+
+function toStringCoercionText(value: unknown): string {
+  // oxlint-disable-next-line typescript/no-base-to-string -- best-effort rendering of an arbitrary foreign value, "[object Object]" included, is this last-resort fallback's contract
+  const conversion = attempt(() => String(value));
+  return conversion.kind === "success"
+    ? conversion.value
+    : "(unprintable value)";
+}
+
+/** Foreign values, rendered without rejecting observation settlement. */
+export function toText(value: unknown): string {
+  const primitiveText = toPrimitiveText(value);
+  if (primitiveText !== undefined) return primitiveText;
+
+  const jsonText = toJsonText(value);
+  if (jsonText !== undefined) return jsonText;
+
+  return toStringCoercionText(value);
 }

@@ -23,6 +23,7 @@ import {
 } from "#/observation/git-status.ts";
 
 const forcedGitStatusFailures = vi.hoisted((): unknown[] => []);
+const FIRST_TEMP_DIRECTORY_INDEX = 0;
 
 vi.mock(import("node:child_process"), async (importOriginal) => {
   const real = await importOriginal();
@@ -44,6 +45,7 @@ vi.mock(import("node:child_process"), async (importOriginal) => {
       if (isGitStatusSample(argumentList)) {
         const forcedFailure = forcedGitStatusFailures.shift();
         if (forcedFailure !== undefined) {
+          // oxlint-disable-next-line typescript/only-throw-error -- non-Error throw is the subprocess failure fixture under test
           throw forcedFailure;
         }
       }
@@ -69,7 +71,9 @@ afterEach(() => {
     process.env["PATH"] = realPath;
   }
   forcedGitStatusFailures.length = 0;
-  for (const tempDirectory of tempDirectories.splice(0)) {
+  for (const tempDirectory of tempDirectories.splice(
+    FIRST_TEMP_DIRECTORY_INDEX,
+  )) {
     rmSync(tempDirectory, { recursive: true, force: true });
   }
 });
