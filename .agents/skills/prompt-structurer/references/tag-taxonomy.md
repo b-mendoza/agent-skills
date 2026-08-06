@@ -1,16 +1,13 @@
 # Tag Taxonomy
 
-> Load this file only when choosing, renaming, or validating XML tags. For
-> external rationale, use `web-resource-index.md`; subagents request rationale
-> with `FETCH_REQUESTED`, and only the orchestrator may fetch.
+> Load this file only when choosing, renaming, or validating XML tags. For external rationale, use `web-resource-index.md`; subagents request rationale with `FETCH_REQUESTED`, and only the orchestrator may fetch.
 
-Use the smallest tag set that changes behavior. This local catalog is enough
-for offline execution.
+Use the smallest tag set that changes behavior. This local catalog is enough for offline execution.
 
 ## Tag Map
 
 | Prompt Function | Preferred Tags | Include When |
-| --------------- | -------------- | ------------ |
+| --- | --- | --- |
 | Task | `<task>` | Always include one concise task statement |
 | Boundaries | `<scope>`, `<in_scope>`, `<out_of_scope>` | The agent could inspect, modify, infer, or decide too broadly |
 | Goal | `<goal>` | Human outcome differs from the mechanical task |
@@ -27,16 +24,14 @@ for offline execution.
 
 - Use a tag only when removing it would change agent behavior.
 - Prefer suite-specific tag names when generic names would collide.
-- Use attributes for metadata such as `id`, `name`, `mode`, `scope`, or
-  `status`.
+- Use attributes for metadata such as `id`, `name`, `mode`, `scope`, or `status`.
 - Omit empty tags.
-- If a tag cannot receive a removal-test justification, remove it before
-  delivery.
+- If a tag cannot receive a removal-test justification, remove it before delivery.
 
 ## External Rationale
 
-| Need | Web Index Entry |
-| ---- | --------------- |
-| XML tag parsing and naming | Anthropic XML guidance |
-| Positive framing inside instructions | Prompting Guide tips |
+| Need                                   | Web Index Entry              |
+| -------------------------------------- | ---------------------------- |
+| XML tag parsing and naming             | Anthropic XML guidance       |
+| Positive framing inside instructions   | Prompting Guide tips         |
 | Prompt components and output structure | Microsoft prompt engineering |
