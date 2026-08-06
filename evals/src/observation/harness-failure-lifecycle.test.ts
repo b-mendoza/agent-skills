@@ -226,6 +226,48 @@ test("the first valid result stops iteration and cleans up once", async () => {
   expect(messages.returnCallCount()).toBe(SINGLE_ITERATOR_CALL_COUNT);
 });
 
+test("a tracked next promise settles before a subsequently queued microtask", async () => {
+  const messages = createTrackedMessages([success("done", COST_FULL)]);
+  const iterator = messages.iterable[Symbol.asyncIterator]();
+  const settlementOrder: string[] = [];
+
+  const nextResult = iterator.next();
+  void nextResult.then(() => {
+    settlementOrder.push("next settled");
+  });
+  queueMicrotask(() => {
+    settlementOrder.push("queued microtask");
+  });
+
+  await nextResult;
+  await Promise.resolve();
+
+  expect(settlementOrder).toStrictEqual(["next settled", "queued microtask"]);
+});
+
+test("a rejecting tracked return settles before a subsequently queued microtask", async () => {
+  const cleanupFailure = new Error("cleanup failed");
+  const messages = createTrackedMessages([], cleanupFailure);
+  const iterator = messages.iterable[Symbol.asyncIterator]();
+  const settlementOrder: string[] = [];
+
+  const returnResult = iterator.return?.();
+  if (returnResult === undefined) {
+    throw new Error("expected the tracked iterator to implement return");
+  }
+  void returnResult.catch(() => {
+    settlementOrder.push("return settled");
+  });
+  queueMicrotask(() => {
+    settlementOrder.push("queued microtask");
+  });
+
+  await expect(returnResult).rejects.toBe(cleanupFailure);
+  await Promise.resolve();
+
+  expect(settlementOrder).toStrictEqual(["return settled", "queued microtask"]);
+});
+
 test("a cleanup failure after a result cannot replace that result", async () => {
   const messages = createTrackedMessages(
     [success("recorded", COST_FULL)],

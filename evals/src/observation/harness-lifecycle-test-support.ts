@@ -139,20 +139,35 @@ export function createTrackedMessages(
   let returnCallCount = 0;
   let scriptIndex = 0;
   const iterator: AsyncIterator<unknown> = {
-    // oxlint-disable-next-line typescript/require-await -- promise-function-async requires async here, and this synchronous fake has nothing to await
     next: async () => {
       nextCallCount += SINGLE_ITERATOR_CALL_COUNT;
       const message = script[scriptIndex];
       scriptIndex += SCRIPT_INDEX_INCREMENT;
-      return message === undefined
-        ? { done: true, value: undefined }
-        : { done: false, value: message };
+      const result =
+        message === undefined
+          ? { done: true, value: undefined }
+          : { done: false, value: message };
+      try {
+        return result;
+      } catch (error) {
+        await Promise.resolve(error);
+        throw error instanceof Error
+          ? error
+          : new Error("iterator result construction failed", { cause: error });
+      }
     },
-    // oxlint-disable-next-line typescript/require-await -- promise-function-async requires async here, and this synchronous fake has nothing to await
     return: async () => {
       returnCallCount += SINGLE_ITERATOR_CALL_COUNT;
       if (cleanupFailure !== null) throw cleanupFailure;
-      return { done: true, value: undefined };
+      const result = { done: true, value: undefined };
+      try {
+        return result;
+      } catch (error) {
+        await Promise.resolve(error);
+        throw error instanceof Error
+          ? error
+          : new Error("iterator result construction failed", { cause: error });
+      }
     },
   };
   return {
