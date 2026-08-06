@@ -40,6 +40,7 @@ import type { Observation, ToolCall } from "#/observation/observation-types.ts";
 export const SKILL = "analyzing-recent-project-state";
 
 const NO_SKILL_INVOCATIONS = 0;
+const MINIMUM_SKILL_INVOCATIONS = 1;
 
 /** Names the tools a run actually called, for a failure message. */
 function formatToolNames(toolCalls: readonly ToolCall[]): string {
@@ -52,12 +53,12 @@ export interface CaseContext {
   readonly notGitPath: string;
 }
 
-/** 1 = budget-capped routing check. 2 = full behavioral run. */
-export type CaseTier = 1 | 2;
-
 export const ROUTING_TIER = 1;
 /** Only tier-2 runs are behavioral, so only they feed the derived scope check. */
 export const BEHAVIORAL_TIER = 2;
+
+/** Routing checks are budget-capped; behavioral runs exercise the full skill. */
+export type CaseTier = typeof ROUTING_TIER | typeof BEHAVIORAL_TIER;
 
 export interface EvalCase {
   readonly id: string;
@@ -149,7 +150,7 @@ export const cases = [
       assertRoutingRunEndedEarly(observation);
       const matchingSkillInvocations = skillInvocations(observation, SKILL);
       assert.ok(
-        matchingSkillInvocations.length >= 1,
+        matchingSkillInvocations.length >= MINIMUM_SKILL_INVOCATIONS,
         `skill never triggered; tools called: ${formatToolNames(observation.toolCalls)}`,
       );
       return "Skill invoked";
