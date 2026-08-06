@@ -118,64 +118,6 @@ interface ViolationBuckets {
   readonly uncitedComplaints: string[];
 }
 
-function requiredCitationFields(candidate: Record<string, unknown>): {
-  itemId: string;
-  quote: string;
-} {
-  const { itemId, quote } = candidate;
-  if (typeof itemId !== "string" || typeof quote !== "string") {
-    throw new Error("judge violation entry lacks string itemId/quote");
-  }
-  return { itemId, quote };
-}
-
-function parseViolationCandidate(candidate: unknown): ParsedViolationCandidate {
-  if (!isRecord(candidate)) {
-    throw new Error("judge violation entry is not an object");
-  }
-  const { itemId, quote } = requiredCitationFields(candidate);
-  const { reason } = candidate;
-  return {
-    itemId,
-    quote,
-    reason: typeof reason === "string" ? reason : "",
-  };
-}
-
-function parseJudgeJson(jsonBlock: string): unknown {
-  try {
-    return JSON.parse(jsonBlock);
-  } catch (cause) {
-    throw new Error(`judge reply was not valid JSON: ${preview(jsonBlock)}`, {
-      cause,
-    });
-  }
-}
-
-function parseJudgeReplyObject(responseText: string): Record<string, unknown> {
-  const jsonBlock = extractJsonBlock(responseText);
-  if (jsonBlock === undefined) {
-    throw new Error(
-      `judge reply contained no JSON object: ${preview(responseText)}`,
-    );
-  }
-
-  const parsed = parseJudgeJson(jsonBlock);
-  if (!isRecord(parsed)) {
-    throw new Error("judge reply JSON was not an object");
-  }
-  return parsed;
-}
-
-function parseViolationCandidates(responseText: string): readonly unknown[] {
-  const judgeReply = parseJudgeReplyObject(responseText);
-  const { violations } = judgeReply;
-  if (!Array.isArray(violations)) {
-    throw new Error("judge reply carried no violations array");
-  }
-  return violations;
-}
-
 function citationAppearsInArtifact(quote: string, artifact: string): boolean {
   return quote !== "" && artifact.includes(quote);
 }
@@ -188,41 +130,67 @@ function formatUncitedComplaint(
   return `${violation.itemId}: ${violation.reason} (quote ${cited ? "ok" : "not found in artifact"}${knownItem ? "" : "; unknown rubric id"})`;
 }
 
-function addViolationCandidate(
-  candidate: unknown,
-  request: JudgeRequest,
-  rubricIds: ReadonlySet<string>,
-  violationBuckets: ViolationBuckets,
-): void {
-  const violation = parseViolationCandidate(candidate);
-  const cited = citationAppearsInArtifact(violation.quote, request.artifact);
-  const knownItem = rubricIds.has(violation.itemId);
-  if (cited && knownItem) {
-    violationBuckets.citedViolations.push(violation);
-    return;
-  }
-  violationBuckets.uncitedComplaints.push(
-    formatUncitedComplaint(violation, cited, knownItem),
-  );
-}
-
 /**
  * Parses the judge's reply and validates every citation against the artifact.
  * Throws on an unparseable reply; the failure names the judge, so a broken
  * grading run is never mistaken for a verdict on the artifact.
  */
+// oxlint-disable-next-line complexity -- the approved inlining keeps judge validation order visible in one boundary parser
 export function parseJudgeResponse(
   responseText: string,
   request: JudgeRequest,
 ): JudgeOutcome {
-  const violationCandidates = parseViolationCandidates(responseText);
+  const jsonBlock = extractJsonBlock(responseText);
+  if (jsonBlock === undefined) {
+    throw new Error(
+      `judge reply contained no JSON object: ${preview(responseText)}`,
+    );
+  }
+
+  const judgeReply: unknown = (() => {
+    try {
+      return JSON.parse(jsonBlock);
+    } catch (cause) {
+      throw new Error(`judge reply was not valid JSON: ${preview(jsonBlock)}`, {
+        cause,
+      });
+    }
+  })();
+  if (!isRecord(judgeReply)) {
+    throw new Error("judge reply JSON was not an object");
+  }
+  const { violations } = judgeReply;
+  if (!Array.isArray(violations)) {
+    throw new Error("judge reply carried no violations array");
+  }
+
   const rubricIds = new Set(request.rubric.map((item) => item.id));
   const violationBuckets: ViolationBuckets = {
     citedViolations: [],
     uncitedComplaints: [],
   };
-  for (const candidate of violationCandidates) {
-    addViolationCandidate(candidate, request, rubricIds, violationBuckets);
+  for (const candidate of violations) {
+    if (!isRecord(candidate)) {
+      throw new Error("judge violation entry is not an object");
+    }
+    const { itemId, quote, reason } = candidate;
+    if (typeof itemId !== "string" || typeof quote !== "string") {
+      throw new Error("judge violation entry lacks string itemId/quote");
+    }
+    const violation: ParsedViolationCandidate = {
+      itemId,
+      quote,
+      reason: typeof reason === "string" ? reason : "",
+    };
+    const cited = citationAppearsInArtifact(quote, request.artifact);
+    const knownItem = rubricIds.has(itemId);
+    if (cited && knownItem) {
+      violationBuckets.citedViolations.push(violation);
+    } else {
+      violationBuckets.uncitedComplaints.push(
+        formatUncitedComplaint(violation, cited, knownItem),
+      );
+    }
   }
   return violationBuckets;
 }
