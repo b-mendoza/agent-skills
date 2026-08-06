@@ -70,18 +70,12 @@ class NoCasesMatchedError extends Data.TaggedError("NoCasesMatchedError")<{
   readonly message: "No cases matched.";
 }> {}
 
-/** A behavioral observation tagged with the attempt that produced it. */
-interface BehavioralObservation {
-  readonly attemptNumber: number;
-  readonly observation: Observation;
-}
-
 interface ExecuteCaseAttemptsOptions {
   readonly evalCase: EvalCase;
   readonly attemptsPerCase: number;
   readonly services: RunnerServices;
   readonly output: RunnerOutput;
-  readonly behavioralObservations: BehavioralObservation[];
+  readonly behavioralObservations: Map<number, Observation[]>;
 }
 
 /**
@@ -90,22 +84,14 @@ interface ExecuteCaseAttemptsOptions {
  * observation at all there is nothing to derive, and the row says so.
  */
 function deriveMutationScopeResult(
-  behavioralObservations: readonly BehavioralObservation[],
+  behavioralObservations: ReadonlyMap<number, Observation[]>,
 ): Result {
-  if (behavioralObservations.length === NO_OBSERVATIONS) {
+  if (behavioralObservations.size === NO_OBSERVATIONS) {
     return notRunResult(DERIVED_CASE_ID, DERIVED_TIER);
   }
 
-  const observationsByAttempt = new Map<number, Observation[]>();
-  for (const { attemptNumber, observation } of behavioralObservations) {
-    const observationsForAttempt =
-      observationsByAttempt.get(attemptNumber) ?? [];
-    observationsForAttempt.push(observation);
-    observationsByAttempt.set(attemptNumber, observationsForAttempt);
-  }
-
   const derivedAttempts: AttemptResult[] = [
-    ...observationsByAttempt.values(),
+    ...behavioralObservations.values(),
   ].map((observationsForAttempt) => {
     const { status, observed } = evaluate(() =>
       checkMutationScope(observationsForAttempt),
@@ -136,6 +122,7 @@ function executeCaseAttempts({
   output,
   behavioralObservations,
 }: ExecuteCaseAttemptsOptions) {
+  // oxlint-disable-next-line complexity -- direct attempt-map collection avoids the approved tagged-record regrouping pass
   return Effect.gen(function* () {
     const caseAttempts: AttemptResult[] = [];
     for (const attemptNumber of attemptNumbers(attemptsPerCase)) {
@@ -147,7 +134,10 @@ function executeCaseAttempts({
       // ordering.
       const { result, observation } = yield* services.executeCase(evalCase);
       if (evalCase.tier === BEHAVIORAL_TIER) {
-        behavioralObservations.push({ attemptNumber, observation });
+        const observationsForAttempt =
+          behavioralObservations.get(attemptNumber) ?? [];
+        observationsForAttempt.push(observation);
+        behavioralObservations.set(attemptNumber, observationsForAttempt);
       }
       caseAttempts.push(result);
       yield* output.writeStdoutLine(formatResultLine(result));
@@ -167,7 +157,7 @@ function executeSelectedCases(
     const services = yield* RunnerServices;
     const output = yield* RunnerOutput;
     const resultsByCaseId = new Map<string, Result>();
-    const behavioralObservations: BehavioralObservation[] = [];
+    const behavioralObservations = new Map<number, Observation[]>();
 
     for (const evalCase of selectedCases) {
       const caseResult = yield* executeCaseAttempts({
