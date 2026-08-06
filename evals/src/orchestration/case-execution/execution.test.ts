@@ -254,7 +254,24 @@ test("a failed check becomes row data and retains measured cost and duration", a
   expect(cleanup).toHaveBeenCalledOnce();
 });
 
-test("a failing check persists the observed final text", async () => {
+test.each<{
+  label: string;
+  check: EvalCase["check"];
+  expectedPersisted: readonly string[];
+}>([
+  {
+    label: "a failing check persists the observed final text",
+    check: () => {
+      throw new Error("check failed");
+    },
+    expectedPersisted: [`${SELECTED_CASE_ID}:observed`],
+  },
+  {
+    label: "a passing check persists nothing",
+    check: () => "check passed",
+    expectedPersisted: [],
+  },
+])("$label", async ({ check, expectedPersisted }) => {
   const persisted: string[] = [];
   const recordingLayer = Layer.succeed(
     FailureArtifacts,
@@ -268,38 +285,12 @@ test("a failing check persists the observed final text", async () => {
   observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
 
   await runCaseWithProvisioning(
-    selectedCase({
-      check: () => {
-        throw new Error("check failed");
-      },
-    }),
+    selectedCase({ check }),
     Effect.succeed(testFixture(vi.fn<Fixture["cleanup"]>())),
     recordingLayer,
   );
 
-  expect(persisted).toStrictEqual([`${SELECTED_CASE_ID}:observed`]);
-});
-
-test("a passing check persists nothing", async () => {
-  const persisted: string[] = [];
-  const recordingLayer = Layer.succeed(
-    FailureArtifacts,
-    FailureArtifacts.of({
-      persist: (caseId, finalText) => {
-        persisted.push(`${caseId}:${finalText}`);
-        return Effect.succeed("/recorded/path");
-      },
-    }),
-  );
-  observeClaudeMock.mockReturnValue(Effect.succeed(resolvedObservation()));
-
-  await runCaseWithProvisioning(
-    selectedCase(),
-    Effect.succeed(testFixture(vi.fn<Fixture["cleanup"]>())),
-    recordingLayer,
-  );
-
-  expect(persisted).toStrictEqual([]);
+  expect(persisted).toStrictEqual(expectedPersisted);
 });
 
 test("a judge runs after a passing check and its verdict joins the row", async () => {
