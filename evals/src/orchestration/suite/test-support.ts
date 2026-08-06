@@ -84,23 +84,24 @@ export function capturingWriteReport(
     });
 }
 
+function defaultRunnerServices(): RunnerServices {
+  return {
+    evalCases: [],
+    executeCase: vi.fn(() =>
+      Effect.fail(
+        new RunnerCaseExecutionError({
+          cause: new Error("unexpected case execution"),
+        }),
+      ),
+    ),
+    writeReport: vi.fn(() => Effect.succeed(undefined)),
+  };
+}
+
 export function createRunnerServices(
   overrides: Partial<RunnerServices> = {},
 ): RunnerServices {
-  return {
-    evalCases: overrides.evalCases ?? [],
-    executeCase:
-      overrides.executeCase ??
-      vi.fn(() =>
-        Effect.fail(
-          new RunnerCaseExecutionError({
-            cause: new Error("unexpected case execution"),
-          }),
-        ),
-      ),
-    writeReport:
-      overrides.writeReport ?? vi.fn(() => Effect.succeed(undefined)),
-  };
+  return { ...defaultRunnerServices(), ...overrides };
 }
 
 function outputLayer(capturedOutput: CapturedOutput) {
