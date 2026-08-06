@@ -31,6 +31,9 @@ export const BUDGET_USD = 0.01;
 export const COST_FULL = 0.5;
 export const COST_BUDGET_STOP = 0.25;
 export const FOREIGN_BIGINT = 1n;
+export const NO_COST_USD = 0;
+export const SINGLE_ITERATOR_CALL_COUNT = 1;
+const SCRIPT_INDEX_INCREMENT = 1;
 const LAST_ITEM_OFFSET = -1;
 export const EXPECTED_GIT_SAMPLE_COUNT = 2;
 
@@ -136,16 +139,18 @@ export function createTrackedMessages(
   let returnCallCount = 0;
   let scriptIndex = 0;
   const iterator: AsyncIterator<unknown> = {
+    // oxlint-disable-next-line typescript/require-await -- promise-function-async requires async here, and this synchronous fake has nothing to await
     next: async () => {
-      nextCallCount += 1;
+      nextCallCount += SINGLE_ITERATOR_CALL_COUNT;
       const message = script[scriptIndex];
-      scriptIndex += 1;
+      scriptIndex += SCRIPT_INDEX_INCREMENT;
       return message === undefined
         ? { done: true, value: undefined }
         : { done: false, value: message };
     },
+    // oxlint-disable-next-line typescript/require-await -- promise-function-async requires async here, and this synchronous fake has nothing to await
     return: async () => {
-      returnCallCount += 1;
+      returnCallCount += SINGLE_ITERATOR_CALL_COUNT;
       if (cleanupFailure !== null) throw cleanupFailure;
       return { done: true, value: undefined };
     },

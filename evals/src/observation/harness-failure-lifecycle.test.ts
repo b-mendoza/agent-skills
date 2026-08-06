@@ -18,9 +18,11 @@ import {
   EXPECTED_GIT_SAMPLE_COUNT,
   fakeQuery,
   FOREIGN_BIGINT,
+  NO_COST_USD,
   PAST_THE_DEADLINE_MS,
   scripted,
   SHORT_WALL_CLOCK_MS,
+  SINGLE_ITERATOR_CALL_COUNT,
   success,
   toolUse,
 } from "#/observation/harness-lifecycle-test-support.ts";
@@ -50,7 +52,7 @@ test("a query startup failure settles and books no cost", async () => {
   expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
   expect(observation.isError).toBe(true);
   expect(observation.finalText).toBe("bundled CLI failed to start");
-  expect(observation.costUsd).toBe(0);
+  expect(observation.costUsd).toBe(NO_COST_USD);
   expect(observation.timedOut).toBe(false);
   expect(harness.sampledRepositories()).toHaveLength(EXPECTED_GIT_SAMPLE_COUNT);
 });
@@ -70,7 +72,7 @@ test("a mid-stream failure keeps observations already made", async () => {
   expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
   expect(observation.isError).toBe(true);
   expect(observation.finalText).toBe("stream died");
-  expect(observation.costUsd).toBe(0);
+  expect(observation.costUsd).toBe(NO_COST_USD);
   expect(observation.toolCalls.map((call) => call.name)).toStrictEqual([
     "Write",
   ]);
@@ -114,7 +116,7 @@ test.each([
   // The wording belongs to Effect Schema, so only carrying a diagnostic at all
   // is ours to pin: a silent empty text would leave the failure unexplained.
   expect(observation.finalText).not.toBe("");
-  expect(observation.costUsd).toBe(0);
+  expect(observation.costUsd).toBe(NO_COST_USD);
   expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
     expectedRetainedToolNames,
   );
@@ -143,7 +145,7 @@ test.each([
 
     expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
     expect(observation.finalText).toBe(expectedFinalText);
-    expect(observation.costUsd).toBe(0);
+    expect(observation.costUsd).toBe(NO_COST_USD);
   },
 );
 
@@ -157,7 +159,7 @@ test("a BigInt thrown value cannot reject observation settlement", async () => {
   expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
   expect(observation.isError).toBe(true);
   expect(observation.finalText).toBe("1");
-  expect(observation.costUsd).toBe(0);
+  expect(observation.costUsd).toBe(NO_COST_USD);
 });
 
 test("a cyclic thrown value cannot reject observation settlement", async () => {
@@ -175,7 +177,7 @@ test("a cyclic thrown value cannot reject observation settlement", async () => {
   expect(observation.isError).toBe(true);
   expect(observation.finalText).toBeTypeOf("string");
   expect(observation.finalText).not.toBe("");
-  expect(observation.costUsd).toBe(0);
+  expect(observation.costUsd).toBe(NO_COST_USD);
 });
 
 test.each([null, undefined])(
@@ -201,7 +203,7 @@ test("a stream that ends without a result fails closed", async () => {
   expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
   expect(observation.isError).toBe(true);
   expect(observation.finalText).toBe("query ended without a result message");
-  expect(observation.costUsd).toBe(0);
+  expect(observation.costUsd).toBe(NO_COST_USD);
   expect(observation.toolCalls.map((call) => call.name)).toStrictEqual([
     "Read",
   ]);
@@ -220,8 +222,8 @@ test("the first valid result stops iteration and cleans up once", async () => {
   expect(observation.finalText).toBe("first");
   expect(observation.costUsd).toBe(COST_FULL);
   expect(observation.toolCalls).toStrictEqual([]);
-  expect(messages.nextCallCount()).toBe(1);
-  expect(messages.returnCallCount()).toBe(1);
+  expect(messages.nextCallCount()).toBe(SINGLE_ITERATOR_CALL_COUNT);
+  expect(messages.returnCallCount()).toBe(SINGLE_ITERATOR_CALL_COUNT);
 });
 
 test("a cleanup failure after a result cannot replace that result", async () => {
@@ -236,7 +238,7 @@ test("a cleanup failure after a result cannot replace that result", async () => 
   expect(observation.subtype).toBe("success");
   expect(observation.finalText).toBe("recorded");
   expect(observation.costUsd).toBe(COST_FULL);
-  expect(messages.returnCallCount()).toBe(1);
+  expect(messages.returnCallCount()).toBe(SINGLE_ITERATOR_CALL_COUNT);
 });
 
 test("a run that exceeds its wall clock is aborted and settles", async () => {
@@ -255,7 +257,7 @@ test("a run that exceeds its wall clock is aborted and settles", async () => {
   expect(observation.timedOut).toBe(true);
   expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
   expect(observation.isError).toBe(true);
-  expect(observation.costUsd).toBe(0);
+  expect(observation.costUsd).toBe(NO_COST_USD);
   expect(observation.toolCalls.map((call) => call.name)).toStrictEqual([
     "Read",
   ]);
