@@ -19,6 +19,9 @@ const OUTPUT_VALIDATOR_PATH = fileURLToPath(
 export type ValidatorMode = "evidence" | "draft" | "verdict" | "envelope";
 
 const SUCCESS_EXIT_STATUS = 0;
+const NO_TOOL_CALLS = 0;
+const NO_COST_USD = 0;
+const NO_BEHAVIORAL_OBSERVATIONS = 0;
 
 /** Runs the skill's validator; returns its findings, empty when conformant. */
 export function runOutputValidator(
@@ -105,7 +108,8 @@ export function assertRunHappened(observation: Observation): void {
   if (!observation.isError) return;
   if (observation.subtype === BUDGET_STOP_SUBTYPE) return;
   assert.ok(
-    observation.toolCalls.length > 0 || observation.costUsd > 0,
+    observation.toolCalls.length > NO_TOOL_CALLS ||
+      observation.costUsd > NO_COST_USD,
     `the SDK reported a failed run before it did anything (subtype: ${observation.subtype}): ${firstLine(observation.finalText)}`,
   );
 }
@@ -298,7 +302,7 @@ export function checkMutationScope(
   observations: readonly Observation[],
 ): string {
   assert.ok(
-    observations.length > 0,
+    observations.length > NO_BEHAVIORAL_OBSERVATIONS,
     "mutation-scope requires at least one behavioral observation",
   );
   // The guarantee is "these runs wrote nothing", which can only be read off
