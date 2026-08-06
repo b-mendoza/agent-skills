@@ -123,7 +123,10 @@ test("tool calls accumulate across assistant messages in stream order", async ()
     "Bash",
     "Grep",
   ]);
-  expect(observation.toolCalls[1]?.input).toStrictEqual({ command: "git log" });
+  const [, bashToolCall] = observation.toolCalls;
+  expect(bashToolCall?.input).toStrictEqual({
+    command: "git log",
+  });
 });
 
 test("a malformed tool input degrades to an empty record", async () => {
@@ -161,7 +164,8 @@ test("a tool call's input is an owned record, not the SDK's object", async () =>
   );
 
   const observation = await harness.runHarness();
-  const observedInput = observation.toolCalls[0]?.input;
+  const [firstToolCall] = observation.toolCalls;
+  const observedInput = firstToolCall?.input;
 
   expect(observedInput).toStrictEqual({ command: "git status" });
   expect(observedInput).not.toBe(sdkToolInput);
