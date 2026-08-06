@@ -99,11 +99,7 @@ export const RunnerServicesLive = Layer.succeed(
     evalCases: cases,
     executeCase: (evalCase) =>
       executeCaseLive(evalCase).pipe(
-        Effect.matchEffect({
-          onFailure: (cause) =>
-            Effect.fail(new RunnerCaseExecutionError({ cause })),
-          onSuccess: Effect.succeed,
-        }),
+        Effect.mapError((cause) => new RunnerCaseExecutionError({ cause })),
       ),
     writeReport: (report) =>
       Effect.try({
