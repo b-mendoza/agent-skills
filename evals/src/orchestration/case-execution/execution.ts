@@ -81,16 +81,13 @@ function acquireFixture(
   evalCase: EvalCase,
 ) {
   return fixtureProvisioner.make(evalCase.fixture, SKILL).pipe(
-    Effect.matchEffect({
-      onFailure: (fixtureError) =>
-        Effect.fail(
-          new CaseFixtureAcquisitionError({
-            cause: fixtureError.cause,
-            fixtureError,
-          }),
-        ),
-      onSuccess: Effect.succeed,
-    }),
+    Effect.mapError(
+      (fixtureError) =>
+        new CaseFixtureAcquisitionError({
+          cause: fixtureError.cause,
+          fixtureError,
+        }),
+    ),
   );
 }
 
@@ -99,16 +96,13 @@ function releaseFixture(
   fixture: Fixture,
 ) {
   return fixtureProvisioner.cleanup(fixture).pipe(
-    Effect.matchEffect({
-      onFailure: (fixtureError) =>
-        Effect.fail(
-          new CaseFixtureCleanupError({
-            cause: fixtureError.cause,
-            fixtureError,
-          }),
-        ),
-      onSuccess: Effect.succeed,
-    }),
+    Effect.mapError(
+      (fixtureError) =>
+        new CaseFixtureCleanupError({
+          cause: fixtureError.cause,
+          fixtureError,
+        }),
+    ),
   );
 }
 
