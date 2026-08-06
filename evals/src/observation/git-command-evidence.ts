@@ -158,6 +158,61 @@ function escapeRegExp(literal: string): string {
   return literal.replace(/[.*+?^${}()|[\]\\-]/g, String.raw`\$&`);
 }
 
+const FIRST_SHELL_COMMAND_SEGMENT_COUNT = 1;
+
+type DualModeGitCommand = (typeof DUAL_MODE_GIT)[number];
+
+function commandArgumentsAfterMatch(
+  command: string,
+  match: RegExpMatchArray,
+): string {
+  // Arguments belong only to this shell command. A read-only marker after a
+  // separator cannot launder an earlier mutation in the same Bash payload.
+  const [matchedInvocation = ""] = match;
+  const matchIndex = match.index ?? command.indexOf(matchedInvocation);
+  const [segment = ""] = command
+    .slice(matchIndex + matchedInvocation.length)
+    .split(/&&|\|\||[;|\n]/, FIRST_SHELL_COMMAND_SEGMENT_COUNT);
+  return segment.trim();
+}
+
+function hasReadOnlyMarker(
+  commandArguments: string,
+  readOnlyMarkers: readonly string[],
+): boolean {
+  return readOnlyMarkers.some((marker) =>
+    new RegExp(String.raw`(?:^|\s)${escapeRegExp(marker)}(?:$|[\s=])`).test(
+      commandArguments,
+    ),
+  );
+}
+
+function dualModeOccurrenceIsMutating(
+  command: string,
+  match: RegExpMatchArray,
+  { readOnly, bareWrites }: DualModeGitCommand,
+): boolean {
+  const commandArguments = commandArgumentsAfterMatch(command, match);
+  if (commandArguments === "") return bareWrites;
+
+  return !hasReadOnlyMarker(commandArguments, readOnly);
+}
+
+function hasMutatingDualModeOccurrence(
+  command: string,
+  dualModeGitCommand: DualModeGitCommand,
+): boolean {
+  const occurrences = command.matchAll(
+    gitVerbPattern(dualModeGitCommand.verb, "g"),
+  );
+  for (const match of occurrences) {
+    if (dualModeOccurrenceIsMutating(command, match, dualModeGitCommand)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Whether a dual-mode verb appears in its mutating form.
  *
@@ -167,31 +222,9 @@ function escapeRegExp(literal: string): string {
  * subcommand failing loudly rather than passing silently.
  */
 function dualModeEvidence(command: string): boolean {
-  return DUAL_MODE_GIT.some(({ verb, readOnly, bareWrites }) => {
-    const occurrences = command.matchAll(gitVerbPattern(verb, "g"));
-
-    for (const match of occurrences) {
-      // Arguments belong only to this shell command. A read-only marker after a
-      // separator cannot launder an earlier mutation in the same Bash payload.
-      const [segment = ""] = command
-        .slice(match.index + match[0].length)
-        .split(/&&|\|\||[;|\n]/, 1);
-      const rest = segment.trim();
-      if (rest === "") {
-        if (bareWrites) return true;
-        continue;
-      }
-
-      const isReadOnly = readOnly.some((marker) =>
-        new RegExp(String.raw`(?:^|\s)${escapeRegExp(marker)}(?:$|[\s=])`).test(
-          rest,
-        ),
-      );
-      if (!isReadOnly) return true;
-    }
-
-    return false;
-  });
+  return DUAL_MODE_GIT.some((dualModeGitCommand) =>
+    hasMutatingDualModeOccurrence(command, dualModeGitCommand),
+  );
 }
 
 /** Whether a literal shell command contains a repo-mutating git invocation. */
