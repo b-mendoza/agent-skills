@@ -20,6 +20,7 @@ import {
 import type { Fixture } from "#/fixtures/fixtures.ts";
 import { FixtureProvisioner } from "#/fixtures/fixtures.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
+import { createObservation } from "#/observation/observation-test-support.ts";
 import type { Observation } from "#/observation/observation-types.ts";
 import { ObservationRunnerLive } from "#/orchestration/case-execution/agent-observation.ts";
 import {
@@ -89,17 +90,11 @@ function testFixtureWithoutGit(cleanup: Fixture["cleanup"]): Fixture {
 }
 
 function resolvedObservation(): Observation {
-  return {
-    subtype: "success",
-    isError: false,
+  return createObservation({
     finalText: "observed",
-    toolCalls: [],
-    gitStatusBefore: { kind: "worktree", entries: "" },
-    gitStatusAfter: { kind: "worktree", entries: "" },
     costUsd: 0.2,
     durationMs: 125,
-    timedOut: false,
-  };
+  });
 }
 
 /** Records what the case asked the provisioner for, and how it released it. */

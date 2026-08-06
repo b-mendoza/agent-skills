@@ -9,6 +9,7 @@ import type {
   CaseTier,
   EvalCase,
 } from "#/cases/analyzing-recent-project-state.ts";
+import { createObservation } from "#/observation/observation-test-support.ts";
 import type { Observation } from "#/observation/observation-types.ts";
 import type { CaseExecutionResult } from "#/orchestration/case-execution/execution.ts";
 import type { AttemptResult } from "#/orchestration/report.ts";
@@ -56,18 +57,7 @@ export function executionResult(
       durationMs: 0,
       ...resultOverrides,
     },
-    observation: {
-      subtype: "success",
-      isError: false,
-      finalText: "",
-      toolCalls: [],
-      gitStatusBefore: { kind: "worktree", entries: "" },
-      gitStatusAfter: { kind: "worktree", entries: "" },
-      costUsd: 0,
-      durationMs: 0,
-      timedOut: false,
-      ...observationOverrides,
-    },
+    observation: createObservation(observationOverrides),
   };
 }
 
