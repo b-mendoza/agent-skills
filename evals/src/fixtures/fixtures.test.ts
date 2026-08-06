@@ -15,7 +15,6 @@ import { basename, join } from "node:path";
 import { Effect, Result } from "effect";
 import { afterEach, expect, test } from "vitest";
 
-import type { FixtureProvisioningError } from "#/fixtures/fixture-errors.ts";
 import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
 import {
   DIRTY_FIXTURE_FACTS,
@@ -68,21 +67,6 @@ function readGitStatus(repositoryPath: string): string {
     cwd: repositoryPath,
     encoding: "utf8",
   }).replace(/\n$/, "");
-}
-
-function getProvisioningError(
-  provisioningResult: Result.Result<Fixture, FixtureProvisioningError>,
-): FixtureProvisioningError | undefined {
-  return Result.isFailure(provisioningResult)
-    ? provisioningResult.failure
-    : undefined;
-}
-
-function getAttemptedSkillDirectoryName(
-  provisioningError: FixtureProvisioningError | undefined,
-): string | undefined {
-  if (provisioningError?._tag !== "FixtureSkillCopyError") return undefined;
-  return basename(provisioningError.sourcePath);
 }
 
 test.each<FixtureKind>(FIXTURE_KINDS)(
@@ -260,10 +244,15 @@ test("make fails with a tagged FixtureSkillCopyError when the skill does not exi
     }).pipe(Effect.provide(FixtureProvisionerLive)),
   );
 
-  const provisioningError = getProvisioningError(provisioningResult);
-  const attemptedSkillDirectoryName =
-    getAttemptedSkillDirectoryName(provisioningError);
+  if (!Result.isFailure(provisioningResult)) {
+    throw new Error("expected fixture provisioning to fail");
+  }
+  const provisioningError = provisioningResult.failure;
 
-  expect(provisioningError?._tag).toBe("FixtureSkillCopyError");
-  expect(attemptedSkillDirectoryName).toBe(missingSkillName);
+  expect(provisioningError._tag).toBe("FixtureSkillCopyError");
+  expect(
+    provisioningError._tag === "FixtureSkillCopyError"
+      ? basename(provisioningError.sourcePath)
+      : undefined,
+  ).toBe(missingSkillName);
 });
