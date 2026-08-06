@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
@@ -18,31 +18,30 @@ const OUTPUT_VALIDATOR_PATH = fileURLToPath(
 
 export type ValidatorMode = "evidence" | "draft" | "verdict" | "envelope";
 
+const SUCCESS_EXIT_STATUS = 0;
+
 /** Runs the skill's validator; returns its findings, empty when conformant. */
 export function runOutputValidator(
   mode: ValidatorMode,
   payload: string,
 ): string {
-  try {
-    execFileSync("sh", [OUTPUT_VALIDATOR_PATH, mode], {
-      input: payload,
-      encoding: "utf8",
-    });
-    return "";
-  } catch (cause) {
-    if (
-      typeof cause === "object" &&
-      cause !== null &&
-      "stdout" in cause &&
-      typeof cause.stdout === "string" &&
-      cause.stdout !== ""
-    ) {
-      return cause.stdout.trim();
-    }
-    throw new Error(`output validator could not run: ${String(cause)}`, {
-      cause,
+  const result = spawnSync("sh", [OUTPUT_VALIDATOR_PATH, mode], {
+    input: payload,
+    encoding: "utf8",
+  });
+  if (result.error !== undefined) {
+    throw new Error(`output validator could not run: ${String(result.error)}`, {
+      cause: result.error,
     });
   }
+  if (result.status === SUCCESS_EXIT_STATUS) return "";
+
+  const findings = result.stdout.trim();
+  if (findings !== "") return findings;
+
+  throw new Error(
+    `output validator could not run: validator exited with status ${String(result.status)} without findings`,
+  );
 }
 
 /** The run must have invoked the skill's deterministic validator. */
