@@ -257,14 +257,8 @@ function handleResidualCause(cause: Cause.Cause<unknown>) {
 
 export function runCli(argv: string[]) {
   return coordinateRun(argv).pipe(
-    Effect.matchEffect({
-      onFailure: handleRunFailure,
-      onSuccess: Effect.succeed,
-    }),
-    Effect.matchCauseEffect({
-      onFailure: handleResidualCause,
-      onSuccess: Effect.succeed,
-    }),
+    Effect.catch(handleRunFailure),
+    Effect.catchCause(handleResidualCause),
     Effect.matchCause({
       onFailure: () => EXIT_CODES.SUITE_ERROR,
       onSuccess: (exitCode) => exitCode,
