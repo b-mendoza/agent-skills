@@ -115,6 +115,29 @@ function attemptNumbers(attemptsPerCase: number): number[] {
   );
 }
 
+function recordBehavioralObservation(
+  evalCase: EvalCase,
+  attemptNumber: number,
+  observation: Observation,
+  behavioralObservations: Map<number, Observation[]>,
+): void {
+  if (evalCase.tier !== BEHAVIORAL_TIER) return;
+
+  const observationsForAttempt =
+    behavioralObservations.get(attemptNumber) ?? [];
+  observationsForAttempt.push(observation);
+  behavioralObservations.set(attemptNumber, observationsForAttempt);
+}
+
+function writeFailingAttemptDetail(
+  output: RunnerOutput,
+  result: AttemptResult,
+) {
+  return result.status === "FAIL"
+    ? output.writeStdoutLine(`    ${result.observed}`)
+    : Effect.void;
+}
+
 function executeCaseAttempts({
   evalCase,
   attemptsPerCase,
@@ -122,7 +145,6 @@ function executeCaseAttempts({
   output,
   behavioralObservations,
 }: ExecuteCaseAttemptsOptions) {
-  // oxlint-disable-next-line complexity -- direct attempt-map collection avoids the approved tagged-record regrouping pass
   return Effect.gen(function* () {
     const caseAttempts: AttemptResult[] = [];
     for (const attemptNumber of attemptNumbers(attemptsPerCase)) {
@@ -133,17 +155,15 @@ function executeCaseAttempts({
       // real Agent SDK query, so parallelism would change spend and output
       // ordering.
       const { result, observation } = yield* services.executeCase(evalCase);
-      if (evalCase.tier === BEHAVIORAL_TIER) {
-        const observationsForAttempt =
-          behavioralObservations.get(attemptNumber) ?? [];
-        observationsForAttempt.push(observation);
-        behavioralObservations.set(attemptNumber, observationsForAttempt);
-      }
+      recordBehavioralObservation(
+        evalCase,
+        attemptNumber,
+        observation,
+        behavioralObservations,
+      );
       caseAttempts.push(result);
       yield* output.writeStdoutLine(formatResultLine(result));
-      if (result.status === "FAIL") {
-        yield* output.writeStdoutLine(`    ${result.observed}`);
-      }
+      yield* writeFailingAttemptDetail(output, result);
     }
     return aggregateAttempts(caseAttempts);
   });
