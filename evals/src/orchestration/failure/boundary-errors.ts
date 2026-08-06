@@ -19,18 +19,27 @@ type RunnerBoundaryError =
   | RunnerReportWriteError
   | RunnerOutputError;
 
-function isWrappedBoundaryError(
-  error: unknown,
-): error is CaseExecutionError | RunnerBoundaryError {
+function isRunnerBoundaryError(error: unknown): error is RunnerBoundaryError {
   return (
     error instanceof RunnerCaseExecutionError ||
     error instanceof RunnerReportWriteError ||
-    error instanceof RunnerOutputError ||
+    error instanceof RunnerOutputError
+  );
+}
+
+function isCaseExecutionError(error: unknown): error is CaseExecutionError {
+  return (
     error instanceof CaseFixtureAcquisitionError ||
     error instanceof CaseFixtureCleanupError ||
     error instanceof PromptConstructionError ||
     error instanceof ObservationRunError
   );
+}
+
+function isWrappedBoundaryError(
+  error: unknown,
+): error is CaseExecutionError | RunnerBoundaryError {
+  return isRunnerBoundaryError(error) || isCaseExecutionError(error);
 }
 
 // The live path nests a CaseExecutionError inside a RunnerCaseExecutionError,
