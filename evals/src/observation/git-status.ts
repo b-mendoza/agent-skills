@@ -26,6 +26,7 @@ export type GitStatus =
 
 /** A git exit status meaning "this is not a repository". */
 const GIT_NOT_A_REPOSITORY = 128;
+const FIRST_LINE_INDEX = 0;
 
 const undefinedOnDecodeFailure = <S extends Schema.Constraint>(schema: S) =>
   Schema.optional(schema).pipe(
@@ -105,7 +106,18 @@ function isNotRepositoryFailure(
   );
 }
 
-// oxlint-disable-next-line complexity -- the approved deletion keeps the nullish subprocess fallback at its only call site
+function firstStderrLine(stderr: string): string {
+  return stderr.trim().split("\n").at(FIRST_LINE_INDEX) ?? "";
+}
+
+function subprocessFailureFallback(
+  code: unknown,
+  message: unknown,
+  error: unknown,
+): unknown {
+  return code ?? message ?? error;
+}
+
 function subprocessFailureReason(
   stderr: string,
   code: unknown,
@@ -114,9 +126,9 @@ function subprocessFailureReason(
 ): string {
   // git's own message when there is one, else the syscall code (ENOENT for
   // a missing directory or a missing git binary), else whatever was thrown.
-  const [detail = ""] = stderr.trim().split("\n");
+  const detail = firstStderrLine(stderr);
   if (detail !== "") return detail;
-  return toText(code ?? message ?? error);
+  return toText(subprocessFailureFallback(code, message, error));
 }
 
 function classifyGitFailure(error: unknown): GitStatus {
@@ -182,7 +194,6 @@ function toJsonText(value: unknown): string | undefined {
 }
 
 function toStringCoercionText(value: unknown): string {
-  // oxlint-disable-next-line typescript/no-base-to-string -- best-effort rendering of an arbitrary foreign value, "[object Object]" included, is this last-resort fallback's contract
   const conversion = attempt(() => String(value));
   return conversion.kind === "success"
     ? conversion.value

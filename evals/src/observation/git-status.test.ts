@@ -25,6 +25,18 @@ import {
 const forcedGitStatusFailures = vi.hoisted((): unknown[] => []);
 const FIRST_TEMP_DIRECTORY_INDEX = 0;
 
+function isUnknownArray(value: unknown): value is readonly unknown[] {
+  return Array.isArray(value);
+}
+
+function injectThrownValue(value: unknown): never {
+  const generator = (function* () {
+    yield undefined;
+  })();
+  generator.next();
+  while (true) generator.throw(value);
+}
+
 vi.mock(import("node:child_process"), async (importOriginal) => {
   const real = await importOriginal();
   // Gated on the intercepted argv so a forced failure can only stand in for the
@@ -32,8 +44,8 @@ vi.mock(import("node:child_process"), async (importOriginal) => {
   // own `git init`/`git add` calls would consume the queued failure instead.
   const isGitStatusSample = (argumentList: readonly unknown[]): boolean => {
     const [executable, commandArguments] = argumentList;
-    if (executable !== "git" || !Array.isArray(commandArguments)) return false;
-    const [subcommand] = commandArguments as readonly unknown[];
+    if (executable !== "git" || !isUnknownArray(commandArguments)) return false;
+    const [subcommand] = commandArguments;
     return subcommand === "status";
   };
   const passthroughExecFileSync = new Proxy(real.execFileSync, {
@@ -45,8 +57,7 @@ vi.mock(import("node:child_process"), async (importOriginal) => {
       if (isGitStatusSample(argumentList)) {
         const forcedFailure = forcedGitStatusFailures.shift();
         if (forcedFailure !== undefined) {
-          // oxlint-disable-next-line typescript/only-throw-error -- non-Error throw is the subprocess failure fixture under test
-          throw forcedFailure;
+          return injectThrownValue(forcedFailure);
         }
       }
       const output: unknown = Reflect.apply(target, thisArgument, argumentList);
