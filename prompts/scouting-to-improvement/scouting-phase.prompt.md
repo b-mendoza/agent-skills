@@ -8,7 +8,7 @@
     Cartograph how a selected skill works, record contradictions, deficiencies, and
     unknowns, rank improvement opportunities without designing solutions, find
     comparable public skills, and produce the three-file dossier defined by
-    `prompts/scouting-handoff-contract.md`.
+    `prompts/scouting-to-improvement/scouting-handoff-contract.md`.
   </task>
 
   <identity>

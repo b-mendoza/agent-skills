@@ -85,7 +85,7 @@
     Name` only on a real transition, never as ornamental narration.
 
     1. `Phase 1/6 - Validate`
-    - Apply `prompts/scouting-handoff-contract.md`.
+    - Apply `prompts/scouting-to-improvement/scouting-handoff-contract.md`.
     - Require the three fixed files and `status: complete`.
     - Confirm the selected path, skill name, and target path agree.
     - Compare the current target entry types, regular-file hashes, and symlink
