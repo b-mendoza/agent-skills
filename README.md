@@ -5,6 +5,7 @@
 ## What is in this repository
 
 - [`skills/`](skills/) contains 31 first-party skills. Each skill has its own `SKILL.md`, with `subagents/` and `references/` added where needed.
+- [`prompts/`](prompts/) contains reusable prompt families. Each family is a kebab-case directory that keeps related executable prompts together with any contracts and supporting docs. See [`prompts/README.md`](prompts/README.md) for the catalog and addition rules.
 - [`docs/`](docs/) contains workflow notes, design specs, and project-specific planning documents.
 - [`docs/best-practices/`](docs/best-practices/) is the best starting point for skill-authoring guidance.
 - [`.agents/skills/`](.agents/skills/) contains 17 pinned skill packages for OpenCode discovery. Some come from this repository, and some come from other repositories.
