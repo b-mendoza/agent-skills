@@ -10,6 +10,7 @@
 | --- | --- |
 | [`scouting-to-improvement/`](./scouting-to-improvement/) | Two-phase skill scouting and rewrite workflow. See the [family README](./scouting-to-improvement/README.md). |
 | [`semantic-decomposition/`](./semantic-decomposition/) | Single prompt that creates contract maps for the main SKILL.md and subagent files while inventorying references/scripts. |
+| [`best-practices-audit/`](./best-practices-audit/) | Single read-only prompt that audits `docs/best-practices/` as a corpus and writes a four-file dossier under a caller-supplied safe `OUTPUT_DIR` outside `prompts/` and other protected trees. |
 
 ### scouting-to-improvement
 
@@ -31,6 +32,14 @@ Phase 1 writes under `outputs/scouting-phase-{skill-name}/`. Phase 2 writes unde
 | [`semantic-decompose.prompt.md`](./semantic-decomposition/semantic-decompose.prompt.md) | Executable prompt. Creates contract maps for the main SKILL.md and subagent files while inventorying references/scripts. |
 
 The prompt writes only under the user-supplied `OUTPUT_DIR`, which must remain outside `prompts/`.
+
+### best-practices-audit
+
+| File | Role |
+| --- | --- |
+| [`audit.prompt.md`](./best-practices-audit/audit.prompt.md) | Executable prompt. Read-only adversarial audit of `docs/best-practices/` as a corpus. |
+
+The prompt writes only the four dossier files `INDEX.md`, `inventory.md`, `findings.md`, and `compliance.md` under the user-supplied `OUTPUT_DIR`, which must remain outside `prompts/` and other protected trees. Suggested location: `outputs/best-practices-audit-{date-or-run-id}/`.
 
 ## Rules for adding a prompt family
 
