@@ -8,7 +8,7 @@
 - [`prompts/`](prompts/) contains reusable prompt families. Each family is a kebab-case directory that keeps related executable prompts together with any contracts and supporting docs. See [`prompts/README.md`](prompts/README.md) for the catalog and addition rules.
 - [`docs/`](docs/) contains workflow notes, design specs, and project-specific planning documents.
 - [`docs/best-practices/`](docs/best-practices/) is the best starting point for skill-authoring guidance.
-- [`.agents/skills/`](.agents/skills/) contains 17 pinned skill packages for OpenCode discovery. Some come from this repository, and some come from other repositories.
+- [`.agents/skills/`](.agents/skills/) contains pinned skill packages for OpenCode discovery. Some come from this repository, and some come from other repositories.
 - [`.claude/skills/`](.claude/skills/) exists as the Claude Code mirror location, but it is empty in the current checkout.
 - [`skills-lock.json`](skills-lock.json) records the pinned skill set used for installed skill packages.
 - [`opencode.jsonc`](opencode.jsonc) stores OpenCode configuration. It currently enables the Context7 MCP server.
@@ -54,7 +54,7 @@ Phases run in order. `<KEY>` is `TICKET_KEY` for Jira or `ISSUE_SLUG` for GitHub
 
 ## Installed skill packages
 
-The repository currently has 17 pinned skill packages under [`.agents/skills/`](.agents/skills/). The lockfile records their source and hash.
+These skill packages live under [`.agents/skills/`](.agents/skills/). The lockfile records their source and hash.
 
 For first-party skill changes, pull requests should normally update the source package under [`skills/`](skills/) only. The vendored discovery copies under `.agents/skills/` and `.claude/skills/`, plus [`skills-lock.json`](skills-lock.json), are refreshed after the source PR merges by the managed [`skills` CLI](https://www.skills.sh/docs/cli) flow. Reviewers and agents should not request same-PR mirror or lockfile updates for ordinary first-party skill edits unless the PR explicitly claims to sync installed packages or already touches those managed artifacts.
 
@@ -64,9 +64,6 @@ For first-party skill changes, pull requests should normally update the source p
 | [`committing-scoped-changes`](.agents/skills/committing-scoped-changes/SKILL.md) | `b-mendoza/agent-skills` |
 | [`executing-plans`](.agents/skills/executing-plans/SKILL.md) | `obra/superpowers` |
 | [`generate-flow-diagram`](.agents/skills/generate-flow-diagram/SKILL.md) | `b-mendoza/agent-skills` |
-| [`generate-handoff-document`](.agents/skills/generate-handoff-document/SKILL.md) | `b-mendoza/agent-skills` |
-| [`grill-me`](.agents/skills/grill-me/SKILL.md) | `mattpocock/skills` |
-| [`humanizer`](.agents/skills/humanizer/SKILL.md) | `blader/humanizer` |
 | [`pr-creator`](.agents/skills/pr-creator/SKILL.md) | `b-mendoza/agent-skills` |
 | [`prompt-structurer`](.agents/skills/prompt-structurer/SKILL.md) | `b-mendoza/agent-skills` |
 | [`receiving-code-review`](.agents/skills/receiving-code-review/SKILL.md) | `obra/superpowers` |
