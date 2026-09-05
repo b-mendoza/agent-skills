@@ -18,13 +18,27 @@ A constructor that emits a payload from declared arguments may help a producer w
 
 Rules:
 
-1. **Ship a consumer-side validator.** Put the validator under `scripts/` as POSIX-portable `sh` or stdlib-only Python 3. Name the exact invocation in `SKILL.md` and every producing subagent. The validator encodes the exact-field contract; a model does not assemble it at runtime.
+1. **Ship a consumer-side validator.** Put the validator under `scripts/` as POSIX-portable `sh` or stdlib-only Python 3; choose using the language table below. Name the exact invocation in `SKILL.md` and every producing subagent. The validator encodes the exact-field contract; a model does not assemble it at runtime.
 2. **Keep declaration and acceptance aligned.** The human-readable contract names the fields, enums, and cardinality. The validator is what runtime acceptance checks. Prose, examples, producer narrative, and evals describe or exercise that shape; they do not grant acceptance. If the declared contract and the validator disagree, treat the mismatch as a defect and repair both until they name the same exact fields.
 3. **Producers run the validator while writing.** Before returning, the producing subagent pipes its complete output through the validator, fixes every reported defect, and re-runs it. A constructor may emit the envelope; the producer still validates the result. A producer `PASS` or "validated" sentence does not make the payload routable.
 4. **The consumer validates independently before routing.** On receipt, the main or orchestrating agent runs the same validator on the received payload and routes only after exit `0`. That re-check is the independent gate; see [critical-output-gates](./critical-output-gates.md).
 5. **Validate exact shape, not subjective quality.** Status enums, required keys, line counts, field order, closed vocabularies, and other machine-parsed tokens are in scope. Variable prose and semantic judgment stay out. The validator confirms that a `Reason:` line is present and non-empty; it does not grade whether the reason is good. Opinion, reasoning quality, and recommendation fitness belong to reviewers or evals, not this script.
 6. **Evals reuse the shipped validator for shape.** Shape checks invoke the same validator with the same command and exit contract the runtime uses. Evals also cover routing, semantic quality, and injection resistance the validator cannot prove. Evals do not replace the runtime validator; see [empirical-validation](./empirical-validation.md).
 7. **Give the consumer a permitted shell and escalate when that capability is missing.** The orchestrating consumer must be able to invoke the shipped validator through a permitted shell. The invocation is `sh "${SKILL_DIR}/scripts/validate-output.sh"` or `python3 "${SKILL_DIR}/scripts/validate_output.py"`, with the payload on stdin (`< "$payload"` or a pipe). Exit `0` accepts; non-zero rejects and prints findings. Map the capability to the host (Claude Code Bash and OpenCode shell permission are typical adapters); the contract is the capability, not adapter syntax. Do not depend on a runtime-native structured-output API, JSON-mode flag, or vendor schema endpoint; see [runtime-portability-matrix](./runtime-portability-matrix.md). If the host cannot execute the validator, including a missing `python3` interpreter when the skill ships a Python validator, stop the normal payload and routing path. Issue `TOOLS_MISSING` through the parent workflow's escalation contract ([escalation-categories](./escalation-categories.md)). That category is out-of-band: it is not a value in the payload's closed status enum and is not bytes sent through the validator. Do not parse or route on the payload fields.
+
+### Choosing sh or Python
+
+POSIX `sh` and stdlib-only Python 3 both satisfy this practice. They share one contract: payload on stdin, exit 0 accepts, non-zero rejects and prints one finding per defect. Keep the validator deterministic: no network, no clock, no randomness, no third-party dependencies.
+
+| Signal | Prefer POSIX `sh`/`awk` | Prefer Python 3 |
+|---|---|---|
+| Payload shape | Flat, line-oriented envelope with a handful of fields | Nested or structured payloads (JSON, indexed record blocks) |
+| Field logic | Literal prefixes, closed enums, line counts, non-empty checks | Cross-field constraints, numeric invariants, record cross-references |
+| Validator size | Fits in roughly one screen of `awk` | Staying correct would take hundreds of lines of `sh`/`awk` |
+| Error reporting | One finding line per defect suffices | Repair loops need precise per-field paths and messages |
+| Dependency floor | Only `sh` and `awk`, present on any POSIX host | Needs `python3` on PATH; escalate `TOOLS_MISSING` when absent |
+
+Language choice never fixes a bloated contract. A validator that grows past a few hundred lines is a signal the contract checks too much: semantic policy, producer business logic, or several unrelated payload types in one script. Shrink the contract first; switch languages only when the remaining exact-field checks are still a poor fit for `sh`/`awk`. When the skill ships Python, `python3` on PATH is part of the consumer's capability check in rule 7.
 
 Neighboring practices stay in their lanes: declare fields in [input-output-contracts](./input-output-contracts.md); use this validator as the [critical-output-gates](./critical-output-gates.md) checker; keep exact fields deterministic per [deterministic-execution](./deterministic-execution.md); use [handoff-file-dispatch](./handoff-file-dispatch.md) when the payload needs a file; lead skill prose with the allowed invocation path per [positive-constraint-framing](./positive-constraint-framing.md).
 
