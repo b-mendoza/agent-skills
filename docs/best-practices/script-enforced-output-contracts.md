@@ -2,7 +2,7 @@
 
 ## Tier
 
-`mandatory`. When a main or orchestrating agent parses or routes on subagent fields, a shipped POSIX validator must accept those fields at runtime; prose, examples, producer narrative, constructors, and evals cannot grant acceptance.
+`mandatory`. When a main or orchestrating agent parses or routes on subagent fields, a shipped deterministic validator (POSIX `sh` or stdlib-only Python 3) must accept those fields at runtime; prose, examples, producer narrative, constructors, and evals cannot grant acceptance.
 
 ## When it applies
 
@@ -12,19 +12,19 @@ When a main or orchestrating agent parses, routes on, or otherwise consumes mach
 
 ## The practice
 
-Ship a deterministic POSIX validator for every exact machine-readable field the main or orchestrating agent will parse or route on. Feed the payload on stdin. The consumer runs the validator and accepts or routes only after a passing exit.
+Ship a deterministic validator (POSIX `sh` or stdlib-only Python 3) for every exact machine-readable field the main or orchestrating agent will parse or route on. Feed the payload on stdin. The consumer runs the validator and accepts or routes only after a passing exit.
 
 A constructor that emits a payload from declared arguments may help a producer write. It never substitutes for the validator at the consumer gate.
 
 Rules:
 
-1. **Ship a consumer-side validator.** Put a POSIX-portable validator under `scripts/` and name the exact invocation in `SKILL.md` and every producing subagent. The validator encodes the exact-field contract; a model does not assemble it at runtime.
+1. **Ship a consumer-side validator.** Put the validator under `scripts/` as POSIX-portable `sh` or stdlib-only Python 3. Name the exact invocation in `SKILL.md` and every producing subagent. The validator encodes the exact-field contract; a model does not assemble it at runtime.
 2. **Keep declaration and acceptance aligned.** The human-readable contract names the fields, enums, and cardinality. The validator is what runtime acceptance checks. Prose, examples, producer narrative, and evals describe or exercise that shape; they do not grant acceptance. If the declared contract and the validator disagree, treat the mismatch as a defect and repair both until they name the same exact fields.
 3. **Producers run the validator while writing.** Before returning, the producing subagent pipes its complete output through the validator, fixes every reported defect, and re-runs it. A constructor may emit the envelope; the producer still validates the result. A producer `PASS` or "validated" sentence does not make the payload routable.
 4. **The consumer validates independently before routing.** On receipt, the main or orchestrating agent runs the same validator on the received payload and routes only after exit `0`. That re-check is the independent gate; see [critical-output-gates](./critical-output-gates.md).
 5. **Validate exact shape, not subjective quality.** Status enums, required keys, line counts, field order, closed vocabularies, and other machine-parsed tokens are in scope. Variable prose and semantic judgment stay out. The validator confirms that a `Reason:` line is present and non-empty; it does not grade whether the reason is good. Opinion, reasoning quality, and recommendation fitness belong to reviewers or evals, not this script.
 6. **Evals reuse the shipped validator for shape.** Shape checks invoke the same validator with the same command and exit contract the runtime uses. Evals also cover routing, semantic quality, and injection resistance the validator cannot prove. Evals do not replace the runtime validator; see [empirical-validation](./empirical-validation.md).
-7. **Give the consumer a permitted shell and escalate when that capability is missing.** The orchestrating consumer must be able to invoke the shipped POSIX script through a permitted shell. The portable invocation is `sh "${SKILL_DIR}/scripts/validate-output.sh"` with the payload on stdin (`< "$payload"` or a pipe). Exit `0` accepts; non-zero rejects and prints findings. Map the capability to the host (Claude Code Bash and OpenCode shell permission are typical adapters); the contract is the capability, not adapter syntax. Do not depend on a runtime-native structured-output API, JSON-mode flag, or vendor schema endpoint; see [runtime-portability-matrix](./runtime-portability-matrix.md). If the host cannot execute the validator, stop the normal payload and routing path. Issue `TOOLS_MISSING` through the parent workflow's escalation contract ([escalation-categories](./escalation-categories.md)). That category is out-of-band: it is not a value in the payload's closed status enum and is not bytes sent through the validator. Do not parse or route on the payload fields.
+7. **Give the consumer a permitted shell and escalate when that capability is missing.** The orchestrating consumer must be able to invoke the shipped validator through a permitted shell. The invocation is `sh "${SKILL_DIR}/scripts/validate-output.sh"` or `python3 "${SKILL_DIR}/scripts/validate_output.py"`, with the payload on stdin (`< "$payload"` or a pipe). Exit `0` accepts; non-zero rejects and prints findings. Map the capability to the host (Claude Code Bash and OpenCode shell permission are typical adapters); the contract is the capability, not adapter syntax. Do not depend on a runtime-native structured-output API, JSON-mode flag, or vendor schema endpoint; see [runtime-portability-matrix](./runtime-portability-matrix.md). If the host cannot execute the validator, including a missing `python3` interpreter when the skill ships a Python validator, stop the normal payload and routing path. Issue `TOOLS_MISSING` through the parent workflow's escalation contract ([escalation-categories](./escalation-categories.md)). That category is out-of-band: it is not a value in the payload's closed status enum and is not bytes sent through the validator. Do not parse or route on the payload fields.
 
 Neighboring practices stay in their lanes: declare fields in [input-output-contracts](./input-output-contracts.md); use this validator as the [critical-output-gates](./critical-output-gates.md) checker; keep exact fields deterministic per [deterministic-execution](./deterministic-execution.md); use [handoff-file-dispatch](./handoff-file-dispatch.md) when the payload needs a file; lead skill prose with the allowed invocation path per [positive-constraint-framing](./positive-constraint-framing.md).
 
@@ -40,7 +40,7 @@ Evals remain necessary and insufficient. Reusing the shipped validator proves sh
 
 ## Concrete examples
 
-Good: a POSIX validator owns runtime acceptance of the three-line envelope. The producer runs it while writing; the orchestrator runs it again before routing; evals invoke the same script for shape.
+Good: a shipped validator owns runtime acceptance of the three-line envelope (POSIX `sh` shown). The producer runs it while writing; the orchestrator runs it again before routing; evals invoke the same script for shape.
 
 ```markdown
 # In skill-name/SKILL.md and each producing subagent
