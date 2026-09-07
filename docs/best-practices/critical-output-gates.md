@@ -65,6 +65,6 @@ Bad: no declared critical outputs, no gates, success defined as "editor returned
 
 ## References
 
-- Turpin et al., "Language Models Don't Always Say What They Think," arXiv:2305.04388: <https://arxiv.org/abs/2305.04388>. Supports treating producer self-report as fallible.
-- Sharma et al., "Towards Understanding Sycophancy in Language Models," arXiv:2310.13548: <https://arxiv.org/abs/2310.13548>. Supports treating agreement and self-report as fallible signals.
-- Agent-SafetyBench — arXiv:2412.14470: <https://arxiv.org/abs/2412.14470>. Supports the need for stronger checks than prompt-only safety instructions in agent settings.
+- Turpin et al., "Language Models Don't Always Say What They Think," arXiv:2305.04388, accessed 2026-09-07: <https://arxiv.org/abs/2305.04388>. Supports treating producer self-report as fallible.
+- Sharma et al., "Towards Understanding Sycophancy in Language Models," arXiv:2310.13548, accessed 2026-09-07: <https://arxiv.org/abs/2310.13548>. Supports treating agreement and self-report as fallible signals.
+- Zhang et al., "Agent-SafetyBench: Evaluating the Safety of LLM Agents," arXiv:2412.14470 (v2, 2025-05-20), accessed 2026-09-07: <https://arxiv.org/abs/2412.14470>. Its abstract states that reliance on defense prompts alone may be insufficient; supports framework-level enforcement over prompt-only safety instructions.

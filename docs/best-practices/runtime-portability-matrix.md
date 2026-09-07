@@ -78,12 +78,12 @@ Place `reviewer.md` in this skill's `subagents/` directory. The runtime will reg
 
 ## References
 
-- Agent Skills specification, accessed 2026-07-22: <https://agentskills.io/specification>. Supports the standard frontmatter, naming constraints, progressive-disclosure guidance, and `allowed-tools` status.
-- Agent Skills `skills-ref`, accessed 2026-07-22: <https://github.com/agentskills/agentskills/tree/main/skills-ref>. Supports `skills-ref validate path/to/skill`.
-- Claude Code Docs, "Extend Claude with skills," accessed 2026-07-22: <https://code.claude.com/docs/en/skills>. Supports skill discovery, extensions, substitutions, permissions, lifecycle, and compaction.
-- Claude Code Docs, "Create custom subagents," accessed 2026-07-22: <https://code.claude.com/docs/en/sub-agents>. Supports agent discovery, frontmatter, nested spawning, tool restrictions, and depth limits.
+- Agent Skills specification, accessed 2026-09-07: <https://agentskills.io/specification>. Supports the standard frontmatter, naming constraints, progressive-disclosure guidance, and `allowed-tools` status.
+- Agent Skills `skills-ref`, accessed 2026-09-07: <https://github.com/agentskills/agentskills/tree/main/skills-ref>. Supports `skills-ref validate path/to/skill`.
+- Claude Code Docs, "Extend Claude with skills," accessed 2026-09-07: <https://code.claude.com/docs/en/skills>. Supports skill discovery, extensions, substitutions, permissions, lifecycle, and compaction.
+- Claude Code Docs, "Create custom subagents," accessed 2026-09-07: <https://code.claude.com/docs/en/sub-agents>. Supports agent discovery, frontmatter, nested spawning, tool restrictions, and depth limits.
 - Claude Code Docs, "Plugins reference," accessed 2026-07-22: <https://code.claude.com/docs/en/plugins-reference>. Supports plugin `agents/` discovery and skills-directory plugin boundaries.
-- OpenCode Docs, "Skills," accessed 2026-07-22: <https://opencode.ai/docs/skills/>. Supports discovery, frontmatter validation, `permission.skill`, and `tools.skill` behavior.
-- OpenCode Docs, "Agents," accessed 2026-07-22: <https://opencode.ai/docs/agents/>. Supports agent modes, frontmatter, permissions, and task-based dispatch.
-- OpenCode Docs, "Config," accessed 2026-07-22: <https://opencode.ai/docs/config/>. Supports configurable `subagent_depth` and its default.
-- OpenCode Docs, "Permissions," accessed 2026-07-22: <https://opencode.ai/docs/permissions/>. Supports `skill` and `task` permission rules, wildcard matching, and agent-specific overrides.
+- OpenCode Docs, "Skills," accessed 2026-09-07: <https://opencode.ai/docs/skills/>. Supports discovery, frontmatter validation, `permission.skill`, and `tools.skill` behavior.
+- OpenCode Docs, "Agents," accessed 2026-09-07: <https://opencode.ai/docs/agents/>. Supports agent modes, frontmatter, permissions, and task-based dispatch.
+- OpenCode Docs, "Config," accessed 2026-09-07: <https://opencode.ai/docs/config/>. Supports configurable `subagent_depth` and its default.
+- OpenCode Docs, "Permissions," accessed 2026-09-07: <https://opencode.ai/docs/permissions/>. Supports `skill` and `task` permission rules, wildcard matching, and agent-specific overrides.
