@@ -2,15 +2,15 @@
 
 ## Tier
 
-`recommended`. Every multi-subagent skill needs a routeable registry; the format is a load-bearing artifact for both the orchestrator and the reader.
+`recommended`. Every multi-subagent skill needs a routeable registry; the format is an expected artifact for both the orchestrator and the reader.
 
 ## When it applies
 
-A registry is required when authoring or editing a skill that dispatches two or more subagents. It is recommended for a skill with one subagent when growth or dynamic routing is expected.
+A registry is expected when authoring or editing a skill that dispatches two or more subagents. It is recommended for a skill with one subagent when growth or dynamic routing is expected.
 
 ## The practice
 
-A registry is required for every skill that dispatches two or more subagents. It is recommended for a one-subagent skill when growth or dynamic routing is expected. Place it near the top of the skill body, after the overview, and use this core column shape:
+A registry is expected for every skill that dispatches two or more subagents. It is recommended for a one-subagent skill when growth or dynamic routing is expected. Place it near the top of the skill body, after the overview, and use this core column shape:
 
 ```markdown
 ## Subagent Registry

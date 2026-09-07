@@ -2,7 +2,7 @@
 
 ## Tier
 
-`recommended`, and load-bearing wherever routing, naming, ordering, or structured outputs affect downstream behavior. A skill that cannot reproduce its route and contract fields cannot be validated reliably.
+`recommended`, and expected wherever routing, naming, ordering, or structured outputs affect downstream behavior. A skill that cannot reproduce its route and contract fields cannot be validated reliably.
 
 ## When it applies
 

@@ -2,7 +2,7 @@
 
 ## Tier
 
-`recommended`. External finite-state-machine artifacts are load-bearing when a workflow's branches and repair routes exceed what linear prose can express unambiguously; otherwise they are avoidable synchronization surface.
+`recommended`. External finite-state-machine artifacts are expected when a workflow's branches and repair routes exceed what linear prose can express unambiguously; otherwise they are avoidable synchronization surface.
 
 ## When it applies
 
