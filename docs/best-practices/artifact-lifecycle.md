@@ -21,6 +21,8 @@ Classify an artifact by the role it serves in this run, not by its file name or 
 
 **Classification is not authority.** Class B means only that the artifact is eligible for version control. Keeping, staging, committing, and pushing are separate decisions, each requiring the applicable user and repository authority. Lifecycle classification never grants commit or push authority and never instructs a workflow to perform either action.
 
+**This practice owns secret handling.** Class P defines what may never be written; [input and output contracts](./input-output-contracts.md) applies the same rule to values passed between steps, and [mutation scope boundaries](./mutation-scope-boundaries.md) excludes secret-bearing files from write scope. Both defer here.
+
 **Make A1 conditional.** Modern runtimes often provide native session resumability. Add skill-authored A1 state only when the skill states a persistence need that native retention does not satisfy, such as cross-runtime handoff, resumption beyond runtime retention, or production of a durable deliverable whose work must survive independently. Without that need, keep state in the runtime rather than creating another file.
 
 **Use run-scoped ownership.** Put A1 and A2 files under a path owned by one workflow run, normally:

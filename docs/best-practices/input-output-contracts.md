@@ -50,7 +50,7 @@ Status and verdict fields in an output contract are closed enums explicitly decl
 
 **Design principle: prefer canonical source identifiers over lossy fragments.** When a non-sensitive value carries multiple pieces of useful context (e.g., a canonical issue URL contains workspace, project, and key), pass the full value rather than requiring the caller to pre-extract components. The receiving skill can derive what it needs. This reduces ambiguity and provides richer context to downstream operations.
 
-Do not pass full URLs or raw identifiers by default when they contain secrets, access tokens, private user data, tracking parameters, or unnecessary context. In those cases, validate and pass the smallest structured fields needed by the receiver, plus a redacted source reference when provenance matters.
+Do not pass full URLs or raw identifiers by default when they contain secrets, access tokens, private user data, tracking parameters, or unnecessary context. In those cases, validate and pass the smallest structured fields needed by the receiver, plus a redacted source reference when provenance matters. Class P handling for secrets at rest is owned by [artifact lifecycle](./artifact-lifecycle.md).
 
 ## Rationale
 
