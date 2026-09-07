@@ -64,4 +64,4 @@ tools: [Read, Bash] # Claude-specific, no declared exception
 ## References
 
 - Agent Skills specification, accessed 2026-07-22: <https://agentskills.io/specification>. Source for the portable name shape and required-field minimum; re-check before changing the rules above.
-- Anthropic Agent Skills documentation, accessed 2026-07-22: <https://docs.claude.com/en/docs/agents-and-tools/agent-skills>. Supports description-as-trigger authoring.
+- Anthropic Agent Skills documentation, accessed 2026-09-07: <https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview>. Supports description-as-trigger authoring. Also sets the platform limits: `description` 1-1024 characters, no XML tags; `name` may not contain the reserved words "anthropic" or "claude".

@@ -24,7 +24,7 @@ Describe the required capability first, then map that capability to each runtime
 
 **Current runtime facts checked 2026-07-22.** These facts are volatile; re-check the official sources before changing a portable contract.
 
-- The Agent Skills specification recommends a `SKILL.md` instruction body under 5,000 tokens and the broader file under 500 lines. It defines `allowed-tools` as experimental. Run `skills-ref validate <skill-dir>` for standard structural checks.
+- The Agent Skills specification recommends a `SKILL.md` instruction body under 5,000 tokens and the broader file under 500 lines. It defines `allowed-tools` as experimental. Run `skills-ref validate <skill-dir>` for standard structural checks. The specification caps `description` at 1,024 characters.
 - Claude Code discovers custom agents from managed settings, `--agents`, project `.claude/agents/`, user `~/.claude/agents/`, and plugin-root `agents/`, in that priority order. It does not document a skill-local `subagents/` directory as an agent registry.
 - A repository's `skill-name/subagents/` directory is therefore a co-location convention for dispatch prompts. A runtime uses those files only when the orchestrator reads them or an installation adapter copies or exposes them through a documented agent registry.
 - Claude Code supports nested subagents to five subagent levels. A depth-5 agent does not receive `Agent`; denying `Agent`, omitting it from a `tools` allowlist, or applying settings permission rules can prevent delegation. `Agent(type)` filters in an agent's `tools` field constrain only a main-thread agent; nested-agent target filtering belongs in settings permission rules.
