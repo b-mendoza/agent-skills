@@ -70,10 +70,10 @@ Action-object phrasing gives the classifier a strong semantic center. Explicit u
 
 ## Concrete examples
 
-Good: [`review-pull-request`](../../skills/review-pull-request/SKILL.md) is the strongest repository model for action-object scope, realistic trigger vocabulary, and a one-PR boundary. This routing-focused form also makes its neighboring exclusions explicit.
+Good: [`review-pull-request`](../../skills/review-pull-request/SKILL.md) is the strongest repository model for action-object scope, realistic trigger vocabulary, and a one-PR boundary. It states the one-PR boundary; it does not yet name its neighboring exclusions, which rule 4 asks for.
 
 ```yaml
-description: "Reviews exactly one pull request. Use when the user asks to review a PR, audit a pull request, prepare GitHub review comments, draft request-changes feedback, or write a PR review file. Does not create or open PRs (use pr-creator) and does not respond to existing review comments (use responding-to-pr-review-comments)."
+description: "Review one pull request through a standalone, progressively disclosed workflow. Use when the user asks to review a PR, audit a pull request, prepare GitHub review comments, draft request-changes feedback, write a PR review file, or optionally post approved review comments. This skill handles exactly one PR; ask the user to choose one PR when multiple PR URLs are supplied."
 ```
 
 Bad: generic domain language has no action boundary, trigger vocabulary, or exclusions, so it collides with creation and response workflows.
