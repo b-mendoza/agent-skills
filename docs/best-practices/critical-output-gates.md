@@ -16,7 +16,7 @@ Rules:
 
 1. **Declare critical outputs in `SKILL.md`.** Outputs not declared critical do not require gates.
 2. **Give each critical output a named gate and written predicate.** Use identifiers such as `G_TICKET_FETCH`, `G_PLAN_COMPLETENESS`, or `G_ATOMIC_HISTORY`. For each gate, state the observable condition checked: the file exists and required sections are present; every approved gap has a closing edit; statuses match the declared enum. A gate with a name but no predicate is decoration.
-3. **Use an independent checker.** Something that did not produce the output checks each gate; the producer's self-report does not count as a gate verdict. The checker reads the artifact against its declared shape or contract, and the gate verdict names the evidence inspected. A validator subagent, inline structural check, external tool, or separate phase can perform the check.
+3. **Use an independent checker.** Something that did not produce the output checks each gate; the producer's self-report does not count as a gate verdict. The checker reads the artifact against its declared shape or contract, and the gate verdict names the evidence inspected. A validator subagent, inline structural check, external tool, or separate phase can perform the check. When the output carries machine-readable fields the orchestrator parses or routes on, the checker is the shipped validator required by [script-enforced-output-contracts](./script-enforced-output-contracts.md); a subagent or inline read does not replace it.
 4. **Repair through bounded loops.** Re-run the producing phase with validator findings as input; stop at the retry cap and return a blocked handoff if the gate still fails.
 5. **Surface gate evidence.** Final handoffs name which gates ran, which passed, which failed, and the evidence for each verdict.
 6. **Missing gates are material gaps.** A declared critical output without a gate is incomplete.
@@ -40,13 +40,13 @@ Good: declared critical outputs, named gates with written predicates, independen
 
 | Gate | Predicate | Checker |
 | --- | --- | --- |
-| `G_HANDOFF_COMPLETENESS` | Handoff exists and contains every required section | Inline structural check |
+| `G_HANDOFF_COMPLETENESS` | Handoff exists and contains every required section | `sh scripts/validate-handoff.sh` (shipped validator) |
 | `G_GAP_CLOSURE` | Every approved gap has a closing edit with file evidence | `skill-package-validator` |
 | `G_FLOW_SYNC` | Diagram, SKILL.md, and registry name the same phases and subagents | `skill-package-validator` |
 
 ## Execution
 
-11. Dispatch `skill-package-validator`.
+11. Run `sh "${SKILL_DIR}/scripts/validate-handoff.sh" < "$handoff"`; on non-zero exit re-enter Edit. Then dispatch `skill-package-validator` for `G_GAP_CLOSURE` and `G_FLOW_SYNC`.
 12. On `VALIDATION: FAIL`, re-enter Edit with only validator findings; use at most three repair cycles.
 13. Final handoff lists each gate, its verdict, and the evidence.
 ```
