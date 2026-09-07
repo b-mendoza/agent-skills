@@ -6,7 +6,7 @@ This README is the canonical entry point for the skill-authoring best-practice l
 
 ## How to use this index
 
-Load this README first. A `mandatory` practice applies whenever its trigger condition holds — check each mandatory row's trigger against the skill you are authoring, not against the task you were asked to do. `recommended` practices are expected for non-trivial skills and may be intentionally scoped down with a stated reason. `optional-style` matters only when strict repo style is the explicit task. Then read only the linked files you actually need for the current decision. Each practice file uses the same seven-section layout, so the reader can scan to the section that answers the question without re-reading the whole file.
+Load this README first. A `mandatory` practice applies whenever its trigger condition holds — check each mandatory row's trigger against the skill you are authoring, not against the task you were asked to do. `recommended` practices are expected for non-trivial skills and may be intentionally scoped down with a stated reason. `optional-style` matters only when strict repo style is the explicit task. Then read only the linked files you actually need for the current decision. Each practice file uses the same seven-section layout, so the reader can scan to the section that answers the question without re-reading the whole file. A skill declares an intentional exception to a `mandatory` practice by naming the practice and the reason in its `SKILL.md`; an undeclared miss is a material gap.
 
 ## Practice tiers
 
