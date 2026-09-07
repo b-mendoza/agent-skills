@@ -36,7 +36,7 @@ Good: a tiered compliance table with `pass`, `fail`, and `not applicable` verdic
 | Practice | Tier | Verdict | Evidence |
 | --- | --- | --- | --- |
 | context-window-protection | mandatory | pass | Orchestrator keeps raw inspection in subagents and retains only verdicts/paths |
-| template-extraction | recommended | not applicable | No output template exceeds 80 lines |
+| progressive-disclosure | recommended | not applicable | No conditionally loaded content; no template exceeds 80 lines |
 | naming-conventions | optional-style | fail | Subagent file uses verb phrase instead of role noun |
 ```
 
@@ -46,7 +46,7 @@ Bad: a flat pass/fail checklist that mixes tiers and provides no evidence.
 ## Best-Practices Compliance
 
 - [x] context-window-protection
-- [ ] template-extraction
+- [ ] progressive-disclosure
 - [ ] naming-conventions
 ```
 

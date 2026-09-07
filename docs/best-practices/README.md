@@ -51,12 +51,11 @@ Maintenance rule: when a file is added, removed, renamed, or intentionally reord
 | 25 | `recommended` | [positive-constraint-framing](./positive-constraint-framing.md) | Name allowed paths before forbidden ones; positive prose is not a hard boundary | Defining behavioral boundaries in skill or subagent prose |
 | 26 | `recommended` | [instruction-reinforcement](./instruction-reinforcement.md) | Brief reminders at the top of long, risky reference files; do not repeat in every file | Long or risky reference files inside a skill package |
 | 27 | `recommended` | [example-strategy](./example-strategy.md) | Use round-trip, output-format, and edge/failure examples kept synchronized with their contracts | A skill produces format-sensitive output or judgment-heavy decisions |
-| 28 | `recommended` | [template-extraction](./template-extraction.md) | Extract large self-contained templates over ~80 lines into `references/`; keep small templates inline | A `SKILL.md` contains a long, self-contained output template or reference table |
-| 29 | `recommended` | [external-information-linking](./external-information-linking.md) | Runtime-required content works offline; canonical URLs carry provenance and freshness | A skill references external docs, RFCs, or papers |
-| 30 | `recommended` | [incremental-file-writing](./incremental-file-writing.md) | Skeleton plus targeted section edits for large, fragile, or contractually growing artifacts | A skill produces a large multi-section artifact at runtime |
-| 31 | `recommended` | [skill-section-order](./skill-section-order.md) | Four invariant anchors (identity, contracts, boundaries, examples) with starter templates for skills and subagents | Authoring or editing a `SKILL.md` or subagent file |
-| 32 | `recommended` | [subagent-registry-format](./subagent-registry-format.md) | Core `Subagent` / `Path` / `Purpose` columns, one row per subagent, paths verified on disk | A skill dispatches to two or more subagents |
-| 33 | `optional-style` | [naming-conventions](./naming-conventions.md) | Prefer gerunds for new skills and role nouns for subagents; never rename established skills for style | Naming a new first-party skill or subagent |
+| 28 | `recommended` | [external-information-linking](./external-information-linking.md) | Runtime-required content works offline; canonical URLs carry provenance and freshness | A skill references external docs, RFCs, or papers |
+| 29 | `recommended` | [incremental-file-writing](./incremental-file-writing.md) | Skeleton plus targeted section edits for large, fragile, or contractually growing artifacts | A skill produces a large multi-section artifact at runtime |
+| 30 | `recommended` | [skill-section-order](./skill-section-order.md) | Four invariant anchors (identity, contracts, boundaries, examples) with starter templates for skills and subagents | Authoring or editing a `SKILL.md` or subagent file |
+| 31 | `recommended` | [subagent-registry-format](./subagent-registry-format.md) | Core `Subagent` / `Path` / `Purpose` columns, one row per subagent, paths verified on disk | A skill dispatches to two or more subagents |
+| 32 | `optional-style` | [naming-conventions](./naming-conventions.md) | Prefer gerunds for new skills and role nouns for subagents; never rename established skills for style | Naming a new first-party skill or subagent |
 
 ## Supporting reference
 

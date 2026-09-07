@@ -35,6 +35,10 @@ Use a small `Need | Load` table near the subagent registry as the de facto first
 | Final report assembly   | `./references/final-report-template.md` |
 ```
 
+### Extract or keep inline
+
+This practice also owns the extract-versus-inline decision. Move large, self-contained output templates and reference tables into `references/`, loaded only at the step that needs them; use `assets/` when a file is copied verbatim into output. Templates and tables never belong under `subagents/`. The thresholds are repo heuristics that trigger an [earned complexity](./earned-complexity.md) check, not platform limits: extract output templates over roughly 80 lines and tables consulted at one point; keep inline templates under roughly 40 lines, behavioral content coupled to its instruction, and small registries needed on every route. Extracting a 20-line snippet to look architected is the opposite of the practice.
+
 ## Rationale
 
 `SKILL.md` is always loaded when the skill triggers. Every line and token of always-loaded content competes with the orchestrator's working context. A skill that bundles every reference, template, and dispatch contract into one file taxes every run, including routes that never use that content.
