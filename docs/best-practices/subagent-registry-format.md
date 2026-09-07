@@ -29,7 +29,7 @@ Verify every `Path` exists on disk. In each referenced file, verify that the fro
 
 The registry is the dispatch routing table. The orchestrator routes its execution sequence on the names listed here, the validator checks that each row's path exists and its file's frontmatter name matches the basename, and the user reading the skill gets a one-glance index of what the skill can dispatch. When the table is missing, malformed, or stale, the orchestrator's "dispatch log-analyzer" instruction loses its referent: there is no authoritative way to look up where `log-analyzer.md` lives, and a typo silently routes to no file at all.
 
-The "one row per subagent" rule keeps the table parseable. A "shared utility" row that points at two files breaks the orchestrator contract: the orchestrator cannot tell which file to load. Multi- purpose rows are a hint that two subagents are masquerading as one.
+The "one row per subagent" rule keeps the table parseable. A "shared utility" row that points at two files breaks the orchestrator contract: the orchestrator cannot tell which file to load. Multi-purpose rows are a hint that two subagents are masquerading as one.
 
 ## Concrete examples
 
@@ -55,7 +55,7 @@ Bad: required core columns are replaced, rows are grouped, and one row carries m
 | Auditors | flow, architecture, hygiene | (see folder) | various |
 | Editor | skill-definition-editor | ./subagents/skill-definition-editor.md | applies fixes; also validates |
 
-(The orchestrator cannot route on "flow"; the path "(see folder)" is not a path; "also validates" overlaps with skill-package- validator silently.)
+(The orchestrator cannot route on "flow"; the path "(see folder)" is not a path; "also validates" overlaps with skill-package-validator silently.)
 ```
 
 ## References

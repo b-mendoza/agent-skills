@@ -26,7 +26,7 @@ Keep examples synchronized with the contracts they illustrate. When an enum, pat
 
 ## Rationale
 
-Prose ambiguity tends to surface where the skill expects format- sensitive output ("a YAML report with these fields") or judgment- heavy verdicts ("decide whether the workflow is incoherent"). A single realistic example anchors the prose: the agent stops guessing at the schema or the verdict vocabulary because the example gave both.
+Prose ambiguity tends to surface where the skill expects format-sensitive output ("a YAML report with these fields") or judgment-heavy verdicts ("decide whether the workflow is incoherent"). A single realistic example anchors the prose: the agent stops guessing at the schema or the verdict vocabulary because the example gave both.
 
 Edge-case examples close a second failure. A skill that shows only the happy path implicitly tells the agent "stretch the happy path to fit edge cases," which is how silent partial-success outputs happen. A `BLOCKED` example and a `PARTIAL` example tell the agent the expected shape of the unhappy paths.
 
@@ -52,7 +52,7 @@ verdict:
 
 ## Edge / Failure Example
 
-On a target package whose `flow-diagram.md` is missing, the workflow returns `CONTRACT_AUDIT: BLOCKED` with `failure_details: "flow- diagram.md path unreadable"` rather than guessing at coherence from SKILL.md alone.
+On a target package whose `flow-diagram.md` is missing, the workflow returns `CONTRACT_AUDIT: BLOCKED` with `failure_details: "flow-diagram.md path unreadable"` rather than guessing at coherence from SKILL.md alone.
 ````
 
 Bad: vague prose example with no realistic data and no edge case.

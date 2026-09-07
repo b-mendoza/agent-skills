@@ -2,7 +2,7 @@
 
 ## Tier
 
-`recommended`. Earned complexity is the meta-lens through which every other practice is applied; routinely violating it produces over- engineered packages, but it does not by itself cause unsafe runtime behavior.
+`recommended`. Earned complexity is the meta-lens through which every other practice is applied; routinely violating it produces over-engineered packages, but it does not by itself cause unsafe runtime behavior.
 
 ## When it applies
 
@@ -40,7 +40,7 @@ Leave the package unchanged when proposed edits would only rename, reshuffle, or
 - Would the change make the skill more reliable, portable, standalone, compact, maintainable, verifiable, understandable, or compliant with a named best practice in a concrete way?
 - Would deleting the proposed change make future runs worse?
 - Does each subagent return something the orchestrator needs only as a bounded verdict or summary, or could the work be inlined without harm?
-- Is the content being moved into a reference file genuinely just- in-time, or is it only being moved to make the package look more architected?
+- Is the content being moved into a reference file genuinely just-in-time, or is it only being moved to make the package look more architected?
 - Is all content required for the base runtime path available offline, with external URLs limited to provenance, background, or declared freshness re-checks?
 - Is there an observable validation check for the claimed improvement, or does the improvement rest on self-report?
 - Does the change resolve a named gap or `fail` verdict, or is it speculative?

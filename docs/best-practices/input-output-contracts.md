@@ -54,7 +54,7 @@ Do not pass full URLs or raw identifiers by default when they contain secrets, a
 
 ## Rationale
 
-Without explicit contracts, subagents make assumptions about input format and downstream consumers make assumptions about output format. Mismatches cause silent failures that surface steps later, far from the root cause. A subagent that "took whatever the orchestrator passed and returned something reasonable" cannot be re-used, cannot be validated, and cannot be repaired without re- reading its source.
+Without explicit contracts, subagents make assumptions about input format and downstream consumers make assumptions about output format. Mismatches cause silent failures that surface steps later, far from the root cause. A subagent that "took whatever the orchestrator passed and returned something reasonable" cannot be re-used, cannot be validated, and cannot be repaired without re-reading its source.
 
 The canonical-source-over-fragments rule closes a sneakier failure: when the caller pre-extracts the workspace and the ticket key from a Jira URL, the receiver has lost the ability to derive any other useful context from the URL (project metadata, custom subdomains, verification of the URL shape). Passing the canonical identifier preserves context for the receiver without forcing the caller to predict every future use.
 

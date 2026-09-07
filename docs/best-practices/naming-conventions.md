@@ -49,4 +49,4 @@ skills/
 
 ## References
 
-- Google Developer Documentation Style Guide, "Filenames," accessed 2026-06-03: <https://developers.google.com/style/filenames>. Supports kebab- case for filenames as a documentation convention.
+- Google Developer Documentation Style Guide, "Filenames," accessed 2026-06-03: <https://developers.google.com/style/filenames>. Supports kebab-case for filenames as a documentation convention.
