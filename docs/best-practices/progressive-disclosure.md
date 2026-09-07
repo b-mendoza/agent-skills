@@ -14,13 +14,13 @@ Structure skill content into three repo load levels and gate each piece to the s
 
 | Level | What loads | When | Size guidance |
 | --- | --- | --- | --- |
-| 0 | `SKILL.md` body | When the skill triggers | Under 500 lines and roughly 5,000 tokens |
+| 0 | `SKILL.md` body | When the skill triggers | Within the limits owned by the [runtime portability matrix](./runtime-portability-matrix.md) |
 | 1 | `references/` files | Just-in-time, per phase or mode | Budgeted to that phase or mode |
 | 2 | `subagents/` definitions | Only when the orchestrator dispatches that subagent | Keep each dispatch contract focused |
 
-Level 0 contains core identity, the minimal input/output and routing envelope, the subagent registry, critical standing instructions, and phase guidance. Level 1 contains detailed playbooks, templates, recovery instructions, and external-source indexes. Level 2 is this repo's convention for co-located subagent dispatch contracts; it is not a runtime agent registry. Runtime registration and discovery are separate portability concerns.
+Level 0 contains core identity, the minimal input/output and routing envelope, the subagent registry, critical standing instructions, and phase guidance. Level 1 contains detailed playbooks, templates, recovery instructions, and external-source indexes. Level 2 is this repo's convention for co-located subagent dispatch contracts; the [runtime portability matrix](./runtime-portability-matrix.md) owns the registry facts.
 
-**Treat line and token guidance together.** Official Agent Skills guidance recommends keeping the `SKILL.md` instruction body below roughly 5,000 tokens as well as 500 lines. As of 2026-07-22, Claude Code auto-compaction reattaches only the first roughly 5,000 tokens of each skill, within a combined 25,000- token skill budget. These are current-runtime behaviors, not timeless platform guarantees; re-verify them before relying on the exact numbers. Place standing, safety-critical, approval, routing, and terminal instructions early enough to remain inside the first roughly 5,000 tokens. Passing the 500-line check is necessary but not sufficient.
+**Treat line and token guidance together.** The line, token, and compaction limits are current runtime facts owned by the [runtime portability matrix](./runtime-portability-matrix.md). Place standing, safety-critical, approval, routing, and terminal instructions early enough to remain inside the per-skill compaction budget it records. Passing the line check is necessary but not sufficient.
 
 ### Progressive Loading Map
 
