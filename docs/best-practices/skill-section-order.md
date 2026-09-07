@@ -33,7 +33,7 @@ Order content so that four invariant anchors hold. These anchors are what review
 10. ## Example (dispatch round-trip)
 ```
 
-The Output Contract slot is required whenever a downstream consumer parses the skill's output — see [input and output contracts](./input-output-contracts.md). The Progressive Loading Map is the de facto repo standard for skills with `references/`: a small `Need | Load` table placed near the registry so the agent knows which file to load for which decision.
+The Output Contract slot is required whenever a downstream consumer parses the skill's output — see [input and output contracts](./input-output-contracts.md). The Progressive Loading Map slot follows [progressive disclosure](./progressive-disclosure.md), which owns that convention.
 
 ### Starter template: subagent files
 
