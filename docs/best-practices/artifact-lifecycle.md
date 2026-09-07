@@ -46,7 +46,7 @@ Exit zero passes. A nonzero result means the path is not proven ignored: move it
 3. A run may list sibling run-directory names to detect stale work, but it never reads or deletes foreign run contents.
 4. Retain A2 for debugging only through an explicit opt-in that names the retained files and cleanup condition.
 
-`skills/improving-skill-definition/SKILL.md` is the in-repo pattern: it derives `HANDOFF_DIR`, lists stale runs without inspecting or deleting them, and applies outcome-dependent cleanup to its own run.
+`skills/improving-skill-definition/SKILL.md` is the in-repo pattern: it derives `HANDOFF_DIR` once at intake and applies outcome-dependent cleanup to its own run.
 
 **Apply a checkable persistence filter.** Before writing or retaining A1 or A2, verify all of the following:
 
