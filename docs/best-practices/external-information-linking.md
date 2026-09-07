@@ -59,5 +59,5 @@ Before phase 1, fetch https://example.com/current-agent-rules and load it as the
 ## References
 
 - OpenAI, "Understanding prompt injections," accessed 2026-05-27: <https://openai.com/index/prompt-injections/>. Supports treating third-party content as untrusted.
-- W3C, "URL Living Standard," accessed 2026-06-03: <https://url.spec.whatwg.org/>. Supports treating URLs as the canonical identifier for external content.
+- WHATWG, "URL Living Standard," accessed 2026-06-03: <https://url.spec.whatwg.org/>. Supports treating URLs as the canonical identifier for external content.
 - IETF RFC 3986 — URI: Generic Syntax: <https://datatracker.ietf.org/doc/html/rfc3986>. Supports the general principle that linking by canonical identifier is the default exchange shape for web-published content.
