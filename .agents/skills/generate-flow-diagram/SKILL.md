@@ -57,7 +57,6 @@ Evaluate rows in order; do not skip rows.
 | Candidate build or repair | Dispatch `./subagents/diagram-builder.md`; it loads `./references/flow-design-playbook.md`, `./references/mermaid-style-guide.md`, and `./references/output-templates.md` just in time |
 | Independent quality gate | Dispatch `./subagents/diagram-quality-reviewer.md`; it runs `./scripts/check-mermaid.sh` when possible and loads `./references/quality-gate-checklist.md` |
 | Current Mermaid or design rationale | `./references/external-sources.md`, then fetch the smallest relevant URL |
-| Verifying this package's own safety behavior | `./references/eval-cases.md` |
 
 ## Subagent Registry
 
@@ -108,7 +107,6 @@ Run reports include run mode and scope, assumptions, repair cycles per candidate
 - Every returned or written candidate passes independent review after at most three repair cycles.
 - Decompose writes are human-gated (or explicit disclosed `auto`), staged all-pass, boundary-checked, and routed through a write verdict.
 - Confirmation stops embed a resume block; resume without a valid block is `needs input`, never a guess.
-- Safety behavior is checked against `./references/eval-cases.md` when the package itself changes.
 - Completion states match terminals in `state-machine.md`: `final passed`, `decomposition complete`, `no changes needed`, `needs confirmation`, `needs confirmation (repair approval)`, `needs input`, `blocked`, `error`, `write error`, and `repair limit reached`.
 
 ## Examples
