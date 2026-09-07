@@ -2,7 +2,7 @@
 
 Load this file after editing a `SKILL.md`, subagent definition, or reference file. This repo has no CI pipeline for skill authoring; run every check below manually before declaring the work done (see [empirical validation](../best-practices/empirical-validation.md)).
 
-- Run `skills-ref validate <skill-dir>` when the tool is available. It checks standard frontmatter and naming (see the [runtime portability matrix](../best-practices/runtime-portability-matrix.md)).
+- Run `skills-ref validate <skill-dir>`; it is required by the [runtime portability matrix](../best-practices/runtime-portability-matrix.md) and checks that the frontmatter parses, `name` matches the directory or basename in kebab-case, and only standard fields are present ([frontmatter contract](../best-practices/frontmatter-contract.md)).
 - Confirm `SKILL.md` stays within the line and token limits recorded in the [runtime portability matrix](../best-practices/runtime-portability-matrix.md).
 - Confirm any subagent paths referenced in a registry table actually exist on disk.
 - Confirm the YAML frontmatter `name` matches the directory or file name per the [frontmatter contract](../best-practices/frontmatter-contract.md).
