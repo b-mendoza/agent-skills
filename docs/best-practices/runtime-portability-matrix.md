@@ -39,7 +39,7 @@ Describe the required capability first, then map that capability to each runtime
 2. **Describe capability before syntax.** State, for example, "read repository files but do not edit them," then map that requirement to Claude Code and OpenCode separately.
 3. **Treat registries as runtime adapters.** Keep skill-local dispatch prompts co-located when useful, but do not claim that `subagents/` auto-registers them.
 4. **Route through the orchestrator by default.** Use required nested dispatch only in a declared runtime-specific path whose depth and permissions are smoke-tested.
-5. **Pass complete handoff contracts.** Include inputs, constraints, source paths, output format, stop conditions, and mutation boundaries; do not rely on inherited conversation state.
+5. **Pass complete handoff contracts.** Use the instruction and report keys owned by [handoff file dispatch](./handoff-file-dispatch.md) and carry source paths, stop conditions, and mutation boundaries inside `constraints`; do not rely on inherited conversation state.
 6. **Declare exceptions before execution instructions.** Name every Claude-only field, OpenCode-only permission, discovery adapter, or runtime-specific dispatch feature at the top level.
 7. **Validate structure and behavior.** Run `skills-ref validate` for the standard package, then smoke-test discovery, invocation, permissions, argument expansion, and any nested dispatch in both runtimes. The validator cannot prove runtime-specific behavior.
 
