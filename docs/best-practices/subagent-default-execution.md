@@ -41,9 +41,8 @@ If **both answers are no** — dispatch to a subagent when the cost model below 
 |  | material to make the next routing decision. |
 | **Subagent** | The step produces output the orchestrator doesn't need in detail — |
 |  | a summary or verdict is sufficient. |
-| **Skill** | The step is purely about loading context or decision-making |
+| **Skill** (runtime concept) | The step is purely about loading context or decision-making |
 |  | guidance. It does not execute work — it informs the agent. |
-| **Slash command** | Quick, well-defined action the user invokes explicitly by name. |
 
 **Cost model.** Before delegating a step, account for both sides of the tradeoff.
 
