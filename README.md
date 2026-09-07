@@ -9,7 +9,7 @@
 - [`docs/`](docs/) contains workflow notes, design specs, and project-specific planning documents.
 - [`docs/best-practices/`](docs/best-practices/) is the best starting point for skill-authoring guidance.
 - [`.agents/skills/`](.agents/skills/) contains pinned skill packages for OpenCode discovery. Some come from this repository, and some come from other repositories.
-- [`.claude/skills/`](.claude/skills/) exists as the Claude Code mirror location, but it is empty in the current checkout.
+- [`.claude/skills/`](.claude/skills/) mirrors the pinned skill packages for Claude Code discovery.
 - [`skills-lock.json`](skills-lock.json) records the pinned skill set used for installed skill packages.
 - [`opencode.jsonc`](opencode.jsonc) stores OpenCode configuration. It currently enables the Context7 MCP server.
 
