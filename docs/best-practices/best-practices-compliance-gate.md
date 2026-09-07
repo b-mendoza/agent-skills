@@ -6,7 +6,7 @@
 
 ## When it applies
 
-When reviewing or auditing a skill package — either as part of authoring a new skill, refactoring an existing one, or running an adversarial audit such as `improving-skill-definition`.
+When reviewing or auditing a skill package — either as part of authoring a new skill, refactoring an existing one, or running an adversarial audit.
 
 ## The practice
 
