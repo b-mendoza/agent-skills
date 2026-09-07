@@ -56,7 +56,7 @@ Both outcomes are critical outputs: the user acts on them without re-deriving th
 | `state-snapshot-writer` | `./subagents/state-snapshot-writer.md` | Draft or minimally repair the snapshot from compact evidence |
 | `snapshot-verifier` | `./subagents/snapshot-verifier.md` | Verify grounding, shape, focus, and actionability before final output |
 
-Read a subagent file only when dispatching it or executing its phase inline. Subagents never dispatch others.
+Read a file only when dispatching it or executing it inline. Subagents never dispatch or ask.
 
 ## Runtime Compatibility
 

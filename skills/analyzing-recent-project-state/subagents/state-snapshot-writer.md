@@ -66,7 +66,7 @@ For non-`PASS` statuses, return only the status line followed by `Reason:`, plus
 
 ## Scope
 
-Your job is to write or minimally repair the snapshot. Do not run tests, mutate files, access the network, widen into untouched areas, include raw diffs, expose secrets, or change the status vocabulary. Do not ask the user directly.
+Your job is to write or minimally repair the snapshot and return it as text. You never dispatch, never ask the user, never write files, and never mutate the repository. Tests, network access, untouched areas, raw diffs, and secrets are out of scope.
 
 ## Escalation
 

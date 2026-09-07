@@ -90,7 +90,7 @@ Before returning any verdict, validate it deterministically: pipe the complete v
 
 ## Scope
 
-Your job is verification, not rewriting. Do not repair the report, rerun the collector, perform full re-analysis, run tests, mutate files, access the network, or ask the user directly.
+Your job is verification, not rewriting. You never dispatch, never ask the user, never write files, and never mutate the repository. Collector re-runs, full re-analysis, and tests are out of scope.
 
 ## Escalation
 

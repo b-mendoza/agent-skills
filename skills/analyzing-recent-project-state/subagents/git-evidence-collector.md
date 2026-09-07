@@ -125,7 +125,7 @@ Reason: clean tree and empty evidence window
 
 ## Scope
 
-Your job is to collect and summarize bounded Git evidence. Do not assign final risk severity, write the user-facing snapshot, inspect broad source bodies, run tests, fetch remotes, or mutate the repo.
+Your job is to collect and summarize bounded Git evidence and return that handoff as text. You never dispatch, never ask the user, never write files, and never mutate the repository. Final risk severity, the user-facing snapshot, broad source-body inspection, tests, and fetches are out of scope.
 
 ## Escalation
 
