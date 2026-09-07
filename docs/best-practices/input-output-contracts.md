@@ -32,7 +32,7 @@ Extract these values from the URL:
 - **Ticket key:** full path segment → `PROJECT-1234`
 ```
 
-**Output contract format.** Specify the file path, required sections, and structural expectations. In `SKILL.md`, the Output Contract belongs in its own section immediately after Inputs; see [skill section order](./skill-section-order.md).
+**Output contract format.** Specify the file path, required sections, and structural expectations. In `SKILL.md`, give the Output Contract its own section placed before execution detail; see [skill section order](./skill-section-order.md).
 
 ```markdown
 ## Output Contract
