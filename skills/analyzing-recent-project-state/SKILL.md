@@ -15,15 +15,15 @@ Loyalty is to safe continuation by the next developer, not to the author, the re
 
 ## Inputs
 
-| Input | Required | Example |
+| Input | Required | Default |
 | --- | --- | --- |
-| `PROJECT_PATH` | Yes, unless active workspace is safely assumable | `/repo/app` |
-| `BASE_BRANCH` | No | `origin/main` |
-| `REVIEW_FOCUS` | No, default `full` | `security`, `tests`, `dependencies`, `config` |
-| `OUTPUT_DEPTH` | No, default `standard` | `brief`, `standard`, `deep` |
-| `HOST_INTERACTIVE` | No, default `false` | `true` — supplied by the caller only, and only when the caller can put one question to the user and return the answer within this run. The skill never infers it. |
+| `PROJECT_PATH` | Yes unless the active workspace is a Git worktree and the request names no other path | Recorded as an assumption when defaulted |
+| `BASE_BRANCH` | No | `unset`; the collector resolves it |
+| `REVIEW_FOCUS` | No | `full` (`security`, `tests`, `dependencies`, `config`); unsupported → `full`, labeled assumption |
+| `OUTPUT_DEPTH` | No | `standard` (`brief`, `standard`, `deep`); unsupported → `standard`, labeled assumption |
+| `HOST_INTERACTIVE` | No | `false`; caller-supplied only, never inferred |
 
-If `PROJECT_PATH` is missing, use the active workspace only when it is a Git worktree and the request names no other path; record that assumption. `BASE_BRANCH` is passed through as the caller's value or `unset`; the collector resolves it (see its ladder) and reports the resolution. Unsupported `REVIEW_FOCUS` → `full`; unsupported `OUTPUT_DEPTH` → `standard`; both are labeled assumptions, never questions.
+- `ASSUMPTIONS`: one `<label>: <value>` per line or the literal `none`; labels are `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `OUTPUT_DEPTH`, `User decision`.
 
 ## Output Contract
 
