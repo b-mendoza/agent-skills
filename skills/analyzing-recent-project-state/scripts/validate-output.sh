@@ -61,8 +61,8 @@ END {
   }
 
   if (mode == "evidence") {
-    if (lines[first] !~ /^GIT_EVIDENCE: (PASS|NOT_GIT|PATH_ERROR|ERROR)$/) {
-      fail(first, "line 1 must be GIT_EVIDENCE: <PASS|NOT_GIT|PATH_ERROR|ERROR>")
+    if (lines[first] !~ /^GIT_EVIDENCE: (PASS|ERROR)$/) {
+      fail(first, "line 1 must be GIT_EVIDENCE: <PASS|ERROR>")
       exit 1
     }
     if (lines[first] != "GIT_EVIDENCE: PASS") {

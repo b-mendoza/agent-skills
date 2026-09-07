@@ -41,8 +41,8 @@ Both outcomes are critical outputs: the user acts on them without re-deriving th
 
 | Status (exit origin) | Line 2 `Reason:` | Line 3 `Next step:` |
 | --- | --- | --- |
-| `NOT_GIT` (collector) | collector's `Reason:`, verbatim | `Re-run with PROJECT_PATH set to a Git worktree.` |
-| `PATH_ERROR` (collector) | collector's `Reason:`, verbatim | `Re-run with a readable PROJECT_PATH.` |
+| `NOT_GIT` (intake) | `<PROJECT_PATH> exists but is not a Git worktree.` | `Re-run with PROJECT_PATH set to a Git worktree.` |
+| `PATH_ERROR` (intake) | `<PROJECT_PATH> cannot be read or listed.` | `Re-run with a readable PROJECT_PATH.` |
 | `NEEDS_CONTEXT` (writer or verifier) | the payload's `Decision needed:` value, verbatim — this is what names the decision | `Re-run supplying the decision named above.` |
 | `TOOLS_MISSING` (intake) | `<capability> unavailable: <detail>` | `Enable the capability named above (a POSIX shell with sh and awk for the validator, or a resolvable skill directory), then re-run.` |
 | `NEEDS_CONTEXT` (intake) | `<blocking decision> requires a user decision; this host cannot ask` | `Re-run supplying the decision named above.` |
@@ -86,7 +86,7 @@ The `GIT_EVIDENCE` field contract lives with its producer in [`subagents/git-evi
 
 Five phases. Announce progress with a brief plain note per phase or the host's native progress marker. Dispatch only when every input listed for that phase has a value; the literal `none` (or `unset` for `BASE_BRANCH`) is a value, omission is not.
 
-1. **Intake** (inline) — Normalize inputs as labeled assumptions. Resolve `SKILL_DIR`; preflight the validator by running `envelope` mode on the three-line `NOT_GIT` example in this file and requiring exit 0, else `TOOLS_MISSING`. Resolve `PROJECT_PATH` (one ask permitted, per the ask policy below). Set `BASE_BRANCH` to the caller's value or `unset`; the collector owns base resolution. Set `EXECUTION_MODE` per the route-selection rule above. Carry any user mutation requests as report risks/next actions; never execute them.
+1. **Intake** (inline) — Normalize inputs as labeled assumptions. Resolve `SKILL_DIR`; preflight the validator by running `envelope` mode on the three-line `NOT_GIT` example in this file and requiring exit 0, else `TOOLS_MISSING`. Probe `PROJECT_PATH` with the host's read tool (fail → `PATH_ERROR`); run `git -C <PROJECT_PATH> rev-parse --is-inside-work-tree` and require exit 0 with stdout exactly `true` (else `NOT_GIT`; never classify on Git's error text). Resolve `PROJECT_PATH` (one ask permitted, per the ask policy below). Set `BASE_BRANCH` to the caller's value or `unset`; the collector owns base resolution. Set `EXECUTION_MODE` per the route-selection rule above. Carry any user mutation requests as report risks/next actions; never execute them.
 2. **Collect evidence** — Dispatch `git-evidence-collector` with `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `SKILL_DIR`. Route on its status line (table below). Quiet or abnormal repo states are `PASS` facts.
 3. **Write snapshot** — Dispatch `state-snapshot-writer` with `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `OUTPUT_DEPTH`, `ASSUMPTIONS`, `EXECUTION_MODE`, `SKILL_DIR`. On writer `PASS`, extract two artifacts using the writer's two exact markers: `INSPECTED_LOG` runs from the `Inspected:` heading through the line before the `# Project State Snapshot` heading; `DRAFT_REPORT` runs from that heading through the end of the output. Discard the status wrapper and retain both. On repair, redispatch with the same six inputs plus `PRIOR_DRAFT`, `PRIOR_INSPECTED_LOG`, and `TARGETED_FIXES`.
 4. **Verify** — Dispatch `snapshot-verifier` with `DRAFT_REPORT`, `INSPECTED_LOG`, `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `ASSUMPTIONS`, `EXECUTION_MODE` as separate inputs; on a verification that follows a repair redispatch, also pass `PRIOR_FIXES` — the verbatim `Required fixes:` list from the immediately preceding verifier `FAIL`. Only the most recent list is carried; earlier lists are never accumulated. `PASS` → final response. `FAIL` → repair under the `REPAIR_ATTEMPTS` bound below, then re-verify.
@@ -111,7 +111,7 @@ The orchestrator checks these; the producing subagent does not grade its own out
 | `G_VERDICT` | Verifier `PASS` | `verdict` mode passes; when `PRIOR_FIXES` was supplied, a disposition for every entry and all `addressed` |
 | `G_FIXES` | Verifier `FAIL` | `verdict` mode passes; when `PRIOR_FIXES` was supplied, a disposition for every entry |
 | `G_DECISION` | Any `NEEDS_CONTEXT` | The producing subagent's mode (`draft` or `verdict`) passes on the payload |
-| `G_ESCALATION` | Collector `NOT_GIT`/`PATH_ERROR`/`ERROR`, writer `ERROR`, verifier `ERROR` | The producing subagent's mode passes on the payload; no `Next step:` is expected from a subagent |
+| `G_ESCALATION` | Collector `ERROR`, writer `ERROR`, verifier `ERROR` | The producing subagent's mode passes on the payload; no `Next step:` is expected from a subagent |
 | `G_OUTPUT` | Final terminal escalation response | `envelope` mode passes. On failure, recompose once directly from the envelope table and emit the result; the table is deterministic, so no further retry exists |
 
 ## Status Routing
@@ -121,7 +121,7 @@ Every route below fires only after the status line's gate passes. A failed gate 
 | Source | Status | Gate | Route |
 | --- | --- | --- | --- |
 | Collector | `GIT_EVIDENCE: PASS` | `G_EVIDENCE` | Write snapshot |
-| Collector | `GIT_EVIDENCE: NOT_GIT \| PATH_ERROR \| ERROR` | `G_ESCALATION` | Compose the matching `RECENT_STATE` envelope |
+| Collector | `GIT_EVIDENCE: ERROR` | `G_ESCALATION` | Compose the matching `RECENT_STATE` envelope |
 | Writer | `SNAPSHOT_WRITE: PASS` | `G_DRAFT` | Split output; verify |
 | Writer | `SNAPSHOT_WRITE: NEEDS_CONTEXT` | `G_DECISION` | Compose the `RECENT_STATE: NEEDS_CONTEXT` envelope |
 | Writer | `SNAPSHOT_WRITE: ERROR` | `G_ESCALATION` | Compose the `RECENT_STATE: ERROR` envelope |
@@ -156,10 +156,7 @@ Reason: skill directory unavailable: SKILL_DIR unresolved
 Next step: Enable the capability named above (a POSIX shell with sh and awk for the validator, or a resolvable skill directory), then re-run.
 ```
 
-**Escalation (subagent-sourced).** Input: `PROJECT_PATH=/tmp/notes` (a directory, not a worktree).
-
-1. Collector returns two lines — `GIT_EVIDENCE: NOT_GIT` and `Reason: /tmp/notes exists but is not a Git worktree.`; `G_ESCALATION` passes.
-2. The orchestrator composes the envelope: line 2 verbatim from the collector, line 3 from the envelope table. Final response is exactly three lines:
+**`NOT_GIT` envelope** (also the intake preflight payload): Input: `PROJECT_PATH=/tmp/notes` (a directory, not a worktree).
 
 ```text
 RECENT_STATE: NOT_GIT

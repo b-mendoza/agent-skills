@@ -50,13 +50,11 @@ Status rules:
 | Status | Meaning |
 | --- | --- |
 | `GIT_EVIDENCE: PASS` | Evidence was collected or a quiet/abnormal repo state was summarized as fact |
-| `GIT_EVIDENCE: NOT_GIT` | Path readable but not a Git worktree |
-| `GIT_EVIDENCE: PATH_ERROR` | Path cannot be read or listed |
 | `GIT_EVIDENCE: ERROR` | `Repo state` or `Base comparison` cannot be determined at all, or a listed form fails unexpectedly |
 
 Repo states `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`, `shallow`, and `conflicted` are `PASS`-compatible facts.
 
-For non-`PASS` statuses, return exactly two lines: the status line and `Reason: <one line>`. Emit no other field. The orchestrator composes the user-facing envelope, including its `Next step:` line; you never emit one.
+For `ERROR` statuses, return exactly two lines: the status line and `Reason: <one line>`. Emit no other field. The orchestrator composes the user-facing envelope, including its `Next step:` line; you never emit one.
 
 ## Closed Command List
 
@@ -80,13 +78,12 @@ Comparisons always take two pinned commit arguments or the single `<MERGE_BASE>.
 
 ## Instructions
 
-1. Classify the path with two ordered probes. Step 1: list `PROJECT_PATH` with the host's read tool; if it cannot be read or listed, return `GIT_EVIDENCE: PATH_ERROR`. Step 2: run `rev-parse --is-inside-work-tree`; if the exit status is nonzero or stdout is not exactly `true`, return `GIT_EVIDENCE: NOT_GIT`. Otherwise continue. Never classify on Git's error text — those strings are localized and version-dependent.
-2. Detect repo state as one of `normal`, `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`, `shallow`, or `conflicted`, using the listed `rev-parse` forms, `status --porcelain=v1` conflict codes, and the presence of `.git` state files (`MERGE_HEAD`, `REBASE_HEAD`, `CHERRY_PICK_HEAD`, `BISECT_LOG`) via repository file reads.
-3. Resolve the base by this strictly first-match ladder, after the probes above: (1) the caller's `BASE_BRANCH` when set and verifiable; (2) the upstream of `HEAD`; (3) `origin/HEAD`; (4) local `main`, else local `master`; (5) `none`. Record the resolved ref and the matched rung (or the reason for `none`) in `Base branch:`. Then pin the comparison anchor once — `MERGE_BASE` from `merge-base <BASE_REF> HEAD` — and pass it to every later comparison; never re-derive it per command.
-4. Build the evidence window: working tree state plus commits in `<MERGE_BASE>..HEAD` when the base resolves; otherwise the last 15 first-parent commits of `HEAD`. Hard cap: 30 commits. List at most 10 commits and state the remaining count.
-5. If a signal cannot be gathered with the listed forms, write `none` in that field, add one `- <field>: <reason>` line to `Context limitations:`, and continue. Treat unparseable output (for example, color codes injected by local Git config) the same way. Return `GIT_EVIDENCE: ERROR` only when `Repo state` or `Base comparison` cannot be determined at all, or when a listed form fails unexpectedly — a single ungatherable sub-signal never aborts collection.
-6. Summarize staged, unstaged, untracked, and committed work separately. Group changed paths by area: source, tests, docs, dependencies, config, CI/CD, infrastructure, schema/migrations, generated, unknown.
-7. Apply focus emphasis while collecting signals. This table is the sole source of focus-emphasis rules for evidence collection; report content and section emphasis are owned by the focus table in the report template. A new `REVIEW_FOCUS` value must be added to both tables.
+1. Detect repo state as one of `normal`, `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`, `shallow`, or `conflicted`, using the listed `rev-parse` forms, `status --porcelain=v1` conflict codes, and the presence of `.git` state files (`MERGE_HEAD`, `REBASE_HEAD`, `CHERRY_PICK_HEAD`, `BISECT_LOG`) via repository file reads.
+2.  Resolve the base by this strictly first-match ladder: (1) the caller's `BASE_BRANCH` when set and verifiable; (2) the upstream of `HEAD`; (3) `origin/HEAD`; (4) local `main`, else local `master`; (5) `none`. Record the resolved ref and the matched rung (or the reason for `none`) in `Base branch:`. Then pin the comparison anchor once — `MERGE_BASE` from `merge-base <BASE_REF> HEAD` — and pass it to every later comparison; never re-derive it per command.
+3.  Build the evidence window: working tree state plus commits in `<MERGE_BASE>..HEAD` when the base resolves; otherwise the last 15 first-parent commits of `HEAD`. Hard cap: 30 commits. List at most 10 commits and state the remaining count.
+4.  If a signal cannot be gathered with the listed forms, write `none` in that field, add one `- <field>: <reason>` line to `Context limitations:`, and continue. Treat unparseable output (for example, color codes injected by local Git config) the same way. Return `GIT_EVIDENCE: ERROR` only when `Repo state` or `Base comparison` cannot be determined at all, or when a listed form fails unexpectedly — a single ungatherable sub-signal never aborts collection.
+5.  Summarize staged, unstaged, untracked, and committed work separately. Group changed paths by area: source, tests, docs, dependencies, config, CI/CD, infrastructure, schema/migrations, generated, unknown.
+6.  Apply focus emphasis while collecting signals. This table is the sole source of focus-emphasis rules for evidence collection; report content and section emphasis are owned by the focus table in the report template. A new `REVIEW_FOCUS` value must be added to both tables.
 
 | Focus | Collector emphasis |
 | --- | --- |
@@ -96,10 +93,10 @@ Comparisons always take two pinned commit arguments or the single `<MERGE_BASE>.
 | `dependencies` | Manifests, lockfiles, vendored code, version pins |
 | `config` | Env, CI, build, infra, container, deployment files |
 
-8. Record full command lines with arguments in `Commands run:`, sanitized to exclude secret-bearing values. Do not include raw command output.
-9. Keep the handoff under about 80 lines. On overflow, truncate the enumerable fields in this order — commit list to the 10-item cap first, then changed-file groups to per-area counts, then the `Diff stats:` per-path list to its 10 largest entries, equal totals by path ascending in byte order — and record each truncation as a `Context limitations:` line. Truncation is never `ERROR`. A quiet-state run has nothing to truncate and never emits a truncation line.
-10. If the working tree is clean and the evidence window is empty, return `GIT_EVIDENCE: PASS` with non-empty quiet-state field values and a quiet-state note, not an error.
-11. Before returning any output — `PASS` or non-`PASS` — validate it deterministically: pipe the complete output to `sh <this skill's directory>/scripts/validate-output.sh evidence` (via a quoted heredoc; write no file). The script is the normative shape definition for the handoff. Fix every reported line and re-validate. If it still fails after two fix cycles, return `GIT_EVIDENCE: ERROR` with `Reason:` quoting the first remaining finding. If the host cannot execute the script, check the field list above manually and add `- validator: unavailable` to `Context limitations:`.
+7.  Record full command lines with arguments in `Commands run:`, sanitized to exclude secret-bearing values. Do not include raw command output.
+8.  Keep the handoff under about 80 lines. On overflow, truncate the enumerable fields in this order — commit list to the 10-item cap first, then changed-file groups to per-area counts, then the `Diff stats:` per-path list to its 10 largest entries, equal totals by path ascending in byte order — and record each truncation as a `Context limitations:` line. Truncation is never `ERROR`. A quiet-state run has nothing to truncate and never emits a truncation line.
+9.  If the working tree is clean and the evidence window is empty, return `GIT_EVIDENCE: PASS` with non-empty quiet-state field values and a quiet-state note, not an error.
+10.  Before returning any output — `PASS` or non-`PASS` — validate it deterministically: pipe the complete output to `sh <this skill's directory>/scripts/validate-output.sh evidence` (via a quoted heredoc; write no file). The script is the normative shape definition for the handoff. Fix every reported line and re-validate. If it still fails after two fix cycles, return `GIT_EVIDENCE: ERROR` with `Reason:` quoting the first remaining finding. If the host cannot execute the script, check the field list above manually and add `- validator: unavailable` to `Context limitations:`.
 
 ## Quiet-State Example
 
@@ -132,8 +129,6 @@ Your job is to collect and summarize bounded Git evidence and return that handof
 
 | Status | When |
 | --- | --- |
-| `GIT_EVIDENCE: NOT_GIT` | `rev-parse --is-inside-work-tree` exits nonzero or prints anything but `true` on a readable path |
-| `GIT_EVIDENCE: PATH_ERROR` | `PROJECT_PATH` cannot be read or listed by the host's read tool |
-| `GIT_EVIDENCE: ERROR` | `Repo state` or `Base comparison` cannot be determined at all, or a listed form fails unexpectedly |
+| `GIT_EVIDENCE: ERROR` | `Repo state` or `Base comparison` cannot be determined at all, a listed form fails unexpectedly, or the validator cannot accept the output |
 
 Never ask the user directly. If evidence cannot be collected, return the matching status with the smallest actionable `Reason:` and return control to the orchestrator; the orchestrator owns the user-facing envelope and its `Next step:` line.
