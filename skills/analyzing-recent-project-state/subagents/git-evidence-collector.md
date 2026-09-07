@@ -34,7 +34,7 @@ Base branch: <resolved ref or none; ladder rung or reason>
 Base comparison: <ahead/behind/diverged/unavailable summary>
 Recent commits reviewed: <up to 10 title hashes, plus +N more>
 Changed-file groups: <area groups with representative paths or counts>
-Diff stats: <compact files changed/insertions/deletions/renames/mode changes; then the largest changed paths with their total changed lines, up to 25 entries>
+Diff stats: <compact files changed/insertions/deletions/renames/mode changes; then the largest changed paths with their total changed lines, up to 25 entries; equal totals ordered by path ascending in byte order>
 Preliminary themes: <evidence-only themes; no final severity>
 Risk signals: <specific signal plus evidence pointer; no speculation>
 Test signals: <test files, CI changes, coverage signals, removed tests>
@@ -96,7 +96,7 @@ Comparisons always take two pinned commit arguments or the single `<MERGE_BASE>.
 | `config` | Env, CI, build, infra, container, deployment files |
 
 8. Record full command lines with arguments in `Commands run:`, sanitized to exclude secret-bearing values. Do not include raw command output.
-9. Keep the handoff under about 80 lines. On overflow, truncate the enumerable fields in this order — commit list to the 10-item cap first, then changed-file groups to per-area counts, then the `Diff stats:` per-path list to its 10 largest entries — and record each truncation as a `Context limitations:` line. Truncation is never `ERROR`. A quiet-state run has nothing to truncate and never emits a truncation line.
+9. Keep the handoff under about 80 lines. On overflow, truncate the enumerable fields in this order — commit list to the 10-item cap first, then changed-file groups to per-area counts, then the `Diff stats:` per-path list to its 10 largest entries, equal totals by path ascending in byte order — and record each truncation as a `Context limitations:` line. Truncation is never `ERROR`. A quiet-state run has nothing to truncate and never emits a truncation line.
 10. If the working tree is clean and the evidence window is empty, return `GIT_EVIDENCE: PASS` with zeroed fields and a quiet-state note, not an error.
 11. Before returning any output — `PASS` or non-`PASS` — validate it deterministically: pipe the complete output to `sh <this skill's directory>/scripts/validate-output.sh evidence` (via a quoted heredoc; write no file). The script is the normative shape definition for the handoff. Fix every reported line and re-validate. If it still fails after two fix cycles, return `GIT_EVIDENCE: ERROR` with `Reason:` quoting the first remaining finding. If the host cannot execute the script, check the field list above manually and add `- validator: unavailable` to `Context limitations:`.
 
