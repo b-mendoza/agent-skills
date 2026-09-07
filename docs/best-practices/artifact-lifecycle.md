@@ -48,6 +48,8 @@ Exit zero passes. A nonzero result means the path is not proven ignored: move it
 
 `skills/improving-skill-definition/SKILL.md` is the in-repo pattern: it derives `HANDOFF_DIR` once at intake and applies outcome-dependent cleanup to its own run.
 
+**Grow contractual artifacts by section.** For a large artifact that must grow across phases (handoff payloads, audit reports, plans, validator findings), write a small skeleton first and add one logical section per targeted edit. Stable section diffs make repair cycles reviewable; a small, single-purpose file is still written in one operation.
+
 **Apply a checkable persistence filter.** Before writing or retaining A1 or A2, verify all of the following:
 
 - The file contains only minimal structured state needed for routing or resumption.

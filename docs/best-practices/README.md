@@ -51,10 +51,9 @@ Maintenance rule: when a file is added, removed, renamed, or intentionally reord
 | 25 | `recommended` | [positive-constraint-framing](./positive-constraint-framing.md) | Name allowed paths before forbidden ones; positive prose is not a hard boundary | Defining behavioral boundaries in skill or subagent prose |
 | 26 | `recommended` | [example-strategy](./example-strategy.md) | Use round-trip, output-format, and edge/failure examples kept synchronized with their contracts | A skill produces format-sensitive output or judgment-heavy decisions |
 | 27 | `recommended` | [external-information-linking](./external-information-linking.md) | Runtime-required content works offline; canonical URLs carry provenance and freshness | A skill references external docs, RFCs, or papers |
-| 28 | `recommended` | [incremental-file-writing](./incremental-file-writing.md) | Skeleton plus targeted section edits for large, fragile, or contractually growing artifacts | A skill produces a large multi-section artifact at runtime |
-| 29 | `recommended` | [skill-section-order](./skill-section-order.md) | Four invariant anchors (identity, contracts, boundaries, examples) with starter templates for skills and subagents | Authoring or editing a `SKILL.md` or subagent file |
-| 30 | `recommended` | [subagent-registry-format](./subagent-registry-format.md) | Core `Subagent` / `Path` / `Purpose` columns, one row per subagent, paths verified on disk | A skill dispatches to two or more subagents |
-| 31 | `optional-style` | [naming-conventions](./naming-conventions.md) | Prefer gerunds for new skills and role nouns for subagents; never rename established skills for style | Naming a new first-party skill or subagent |
+| 28 | `recommended` | [skill-section-order](./skill-section-order.md) | Four invariant anchors (identity, contracts, boundaries, examples) with starter templates for skills and subagents | Authoring or editing a `SKILL.md` or subagent file |
+| 29 | `recommended` | [subagent-registry-format](./subagent-registry-format.md) | Core `Subagent` / `Path` / `Purpose` columns, one row per subagent, paths verified on disk | A skill dispatches to two or more subagents |
+| 30 | `optional-style` | [naming-conventions](./naming-conventions.md) | Prefer gerunds for new skills and role nouns for subagents; never rename established skills for style | Naming a new first-party skill or subagent |
 
 ## Supporting reference
 
