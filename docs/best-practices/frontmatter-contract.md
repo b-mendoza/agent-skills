@@ -20,10 +20,7 @@ When creating or editing the YAML frontmatter of any `SKILL.md` or subagent file
 
 The `description` is the routing classifier: the runtime reads it to decide whether this skill matches the user's request. Author it as a contract, not a summary:
 
-4. **Third person, action-and-object first.** Open with what the skill does and to what: "Runs a structured nine-seat council deliberation on an idea, project, business…" — not "This skill helps with decisions."
-5. **Include explicit trigger clauses.** A "Use when…" sentence naming the user intents that should route here, with the words a user would actually use.
-6. **Name material exclusions** when a neighboring skill could be confused with this one, so near-miss requests route away.
-7. See [trigger-and-description-authoring](./trigger-and-description-authoring.md) for the full authoring and testing method, including should-trigger / should-not-trigger cases.
+4. **Author the description as a routing classifier.** The rules for that text (third person, action-and-object first, explicit `Use when` clauses, material exclusions, and should-trigger / should-not-trigger tests) are owned by [trigger-and-description-authoring](./trigger-and-description-authoring.md); a description that skips them fails this contract.
 
 ### Verification
 
