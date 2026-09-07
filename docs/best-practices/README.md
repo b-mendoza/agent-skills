@@ -1,5 +1,7 @@
 # Best Practices for Writing Skills and Subagent Definitions
 
+> **Short-lived reference.** This library describes current runtime facts and repository state and must be updated whenever they change. If a practice file and the code or the official runtime documentation disagree, fix the practice file.
+
 This README is the canonical entry point for the skill-authoring best-practice library. Every best practice that lives in this directory appears in the master index below exactly once. There is no practice content in this file; the master index links to the file that owns each practice in full.
 
 ## How to use this index

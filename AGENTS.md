@@ -42,8 +42,8 @@ Long-lived guides:
 - [Workflow and task scoping](docs/agent/workflow.md) — simplicity, scope discipline, issues, and decomposition.
 - [Verifying your work](docs/agent/verification.md) — what "done" requires beyond green tests.
 - [Working inside evals/](evals/AGENTS.md) — nearest guide; owns evals commands, conventions, and guardrails.
-- [Best-practice library](docs/best-practices/README.md) — master index, routed via the skill-authoring guide.
 
 Current-state references (short-lived; verify against the code):
 
 - [Repository architecture](docs/architecture.md) — layout of the repository and links to each tree's references.
+- [Best-practice library](docs/best-practices/README.md) — master index of skill-authoring practices, routed via the skill-authoring guide; carries current runtime facts and repository counts, so verify against the code and the runtime docs.
