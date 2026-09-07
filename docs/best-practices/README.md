@@ -53,7 +53,8 @@ Maintenance rule: when a file is added, removed, renamed, or intentionally reord
 | 27 | `recommended` | [external-information-linking](./external-information-linking.md) | Runtime-required content works offline; canonical URLs carry provenance and freshness | A skill references external docs, RFCs, or papers |
 | 28 | `recommended` | [skill-section-order](./skill-section-order.md) | Four invariant anchors (identity, contracts, boundaries, examples) with starter templates for skills and subagents | Authoring or editing a `SKILL.md` or subagent file |
 | 29 | `recommended` | [subagent-registry-format](./subagent-registry-format.md) | Core `Subagent` / `Path` / `Purpose` columns, one row per subagent, paths verified on disk | A skill dispatches to two or more subagents |
-| 30 | `optional-style` | [naming-conventions](./naming-conventions.md) | Prefer gerunds for new skills and role nouns for subagents; never rename established skills for style | Naming a new first-party skill or subagent |
+| 30 | `recommended` | [helper-script-contracts](./helper-script-contracts.md) | Helper scripts under `scripts/` declare their shell, usage, exit codes, and side effects, and ship one runnable check | A skill ships a file under `scripts/` that is not the output validator |
+| 31 | `optional-style` | [naming-conventions](./naming-conventions.md) | Prefer gerunds for new skills and role nouns for subagents; never rename established skills for style | Naming a new first-party skill or subagent |
 
 ## Supporting reference
 
