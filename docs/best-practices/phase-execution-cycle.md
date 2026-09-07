@@ -57,5 +57,4 @@ Bad: a phase that mutates without preconditions, never re-validates, and either 
 
 ## References
 
-- Turpin et al., "Language Models Don't Always Say What They Think," arXiv:2305.04388: <https://arxiv.org/abs/2305.04388>. Supports caution against relying on model explanations as faithful self- report.
-- IEEE, "Reliability engineering of software systems," IEEE Standard 982.1-2005, accessed 2026-06-03: <https://standards.ieee.org/ieee/982.1/1353/>. Supports the general principle of observable preconditions, postconditions, and bounded retry as reliability primitives.
+- Producer self-report is fallible; the research citations for this claim are owned by [critical-output-gates](./critical-output-gates.md).

@@ -124,5 +124,5 @@ The eval suite already checks format, so production runs can skip validation.
 - [Handoff-file dispatch](./handoff-file-dispatch.md) — when the payload belongs in a run-scoped file rather than an inline reply.
 - [Escalation categories](./escalation-categories.md) — `TOOLS_MISSING` is the out-of-band route when the host cannot execute the validator.
 - [Positive-constraint framing](./positive-constraint-framing.md) — name the allowed invocation path before restrictions.
-- Turpin et al., "Language Models Don't Always Say What They Think," arXiv:2305.04388: <https://arxiv.org/abs/2305.04388>. Supports treating producer self-report as fallible.
+- Producer self-report is fallible; the research citations for this claim are owned by [critical-output-gates](./critical-output-gates.md).
 - IBM, "What is a data contract?", accessed 2026-06-03: <https://www.ibm.com/think/topics/data-contract>. Practitioner guidance on machine-readable contracts with automated enforcement.

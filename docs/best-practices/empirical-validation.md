@@ -81,6 +81,4 @@ Bad: one smoke test whose only assertion is the producer's narrative.
 
 ## References
 
-- Turpin et al., "Language Models Don't Always Say What They Think," arXiv:2305.04388: <https://arxiv.org/abs/2305.04388>. Supports treating model explanations as fallible self-report.
-- Sharma et al., "Towards Understanding Sycophancy in Language Models," arXiv:2310.13548: <https://arxiv.org/abs/2310.13548>. Supports treating agreement and self-report as fallible signals.
-- Agent-SafetyBench — arXiv:2412.14470: <https://arxiv.org/abs/2412.14470>. Supports framework-level enforcement over prompt-only safety instructions in agent settings.
+- Producer self-report is fallible; the research citations for this claim are owned by [critical-output-gates](./critical-output-gates.md).
