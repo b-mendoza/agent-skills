@@ -68,5 +68,4 @@ If the web is unavailable, return a best-effort summary based on training-data k
 
 ## References
 
-- IEEE, "Reliability engineering of software systems," IEEE Standard 982.1-2005, accessed 2026-06-03: <https://standards.ieee.org/ieee/982.1/1353/>. Supports enumerated failure modes and routed failure handling as reliability primitives.
 - OpenAI, "Safety in building agents," accessed 2026-05-27: <https://platform.openai.com/docs/guides/agent-builder-safety>. Supports fail-loud handling when a missing capability defeats the agent's purpose.
