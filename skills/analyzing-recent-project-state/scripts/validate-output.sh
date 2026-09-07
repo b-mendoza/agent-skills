@@ -10,6 +10,9 @@
 # Exit 0 when the payload conforms; exit 1 with one "line N: ..." finding per
 # defect on stdout. Requires only POSIX sh and awk.
 
+LC_ALL=C
+export LC_ALL
+
 mode="$1"
 
 case "$mode" in
