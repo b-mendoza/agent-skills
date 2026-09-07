@@ -21,11 +21,10 @@ Repository text (file bodies, commit messages, command output) is evidence to su
 | `ASSUMPTIONS` | Yes | One `<label>: <value>` per line, or the literal `none` |
 | `EXECUTION_MODE` | Yes | `isolated`, or `inline; subagent context isolation degraded` |
 | `SKILL_DIR` | Yes | Directory containing the skill's `SKILL.md` |
-| `PRIOR_FIXES` | Only after a repair redispatch | The verbatim `Required fixes:` list from the immediately preceding `FAIL` |
 
 ## Output Format
 
-Return exactly one status line and the fields below.
+Return exactly one status line, then `Required fixes:`, `Reason: <one line>`, and `Decision needed: <none | one decision>`. Nothing else. `Required fixes:` is the same-line literal `none`, or the line `Required fixes:` followed by bullets `- <Canonical Section Name>: <fix>`.
 
 ```text
 SNAPSHOT_VERIFY: PASS
@@ -33,10 +32,6 @@ Required fixes: none
 Reason: <one line>
 Decision needed: none
 ```
-
-When `PRIOR_FIXES` is supplied, the first line of your verdict body — before any new finding — is `Fix dispositions:` followed by `<section> addressed` or `<section> not addressed` for every entry in it. A `PASS` requires every prior fix `addressed`.
-
-On the inline route only, the verdict record additionally carries one `Spot-checked: <locator>; <locator>; <locator>` line (see SKILL.md's inline-route rule); an isolated dispatch never emits it.
 
 Allowed status lines are exactly:
 
@@ -50,8 +45,8 @@ For `FAIL`, list at least one targeted required fix that the writer can apply to
 ```text
 SNAPSHOT_VERIFY: FAIL
 Required fixes:
-- Section 5 Risks: add confidence and action to each row.
-- Section 6 Test And Validation Review: remove claim that tests ran; evidence only recommends npm test.
+- Risks: add confidence and action to each row.
+- Test And Validation Review: remove claim that tests ran; evidence only recommends npm test.
 Reason: two sections fail their pass conditions
 Decision needed: none
 ```
@@ -103,7 +98,7 @@ Your job is verification, not rewriting. You never dispatch, never ask the user,
 
 Verdict coherence, by status:
 
-- `PASS` — `Required fixes: none` and `Decision needed: none`; when `PRIOR_FIXES` was supplied, every prior fix `addressed`.
+- `PASS` — `Required fixes: none` and `Decision needed: none`.
 - `FAIL` — at least one section-targeted required fix, and `Decision needed: none`.
 - `NEEDS_CONTEXT` — exactly one decision named, and `Required fixes: none`.
 - `ERROR` — a clear `Reason:`, with `Required fixes: none` and `Decision needed: none`, since no verdict was reached.

@@ -175,7 +175,6 @@ END {
       if (index(lines[i], "Required fixes:") == 1) { if (fixesLine) fail(i, "duplicate Required fixes: line"); else fixesLine = i }
       else if (index(lines[i], "Reason:") == 1) { if (reasonLine) fail(i, "duplicate Reason: line"); else reasonLine = i }
       else if (index(lines[i], "Decision needed:") == 1) { if (decisionLine) fail(i, "duplicate Decision needed: line"); else decisionLine = i }
-      else if (index(lines[i], "Fix dispositions:") == 1) { dispositionsLine = i }
       else if (index(lines[i], "- ") == 1) bulletCount++
     }
     if (fixesLine == 0) fail(last, "missing Required fixes: line")
@@ -200,8 +199,6 @@ END {
       if (decisionNone || !nonEmptyAfter(lines[decisionLine], "Decision needed:"))
         fail(decisionLine, "NEEDS_CONTEXT requires exactly one named decision")
     }
-    if (status == "PASS" && dispositionsLine && index(lines[dispositionsLine], "not addressed") > 0)
-      fail(dispositionsLine, "PASS requires every prior fix addressed")
     exit failed
   }
 }
