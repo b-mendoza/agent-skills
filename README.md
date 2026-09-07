@@ -60,18 +60,35 @@ For first-party skill changes, pull requests should normally update the source p
 
 | Skill | Source |
 | --- | --- |
+| [`api-security-best-practices`](.agents/skills/api-security-best-practices/SKILL.md) | `sickn33/antigravity-awesome-skills` |
+| [`architecture-patterns`](.agents/skills/architecture-patterns/SKILL.md) | `wshobson/agents` |
+| [`clean-code`](.agents/skills/clean-code/SKILL.md) | `sickn33/antigravity-awesome-skills` |
 | [`code-review-excellence`](.agents/skills/code-review-excellence/SKILL.md) | `wshobson/agents` |
 | [`committing-scoped-changes`](.agents/skills/committing-scoped-changes/SKILL.md) | `b-mendoza/agent-skills` |
+| [`council-of-advisors`](.agents/skills/council-of-advisors/SKILL.md) | `b-mendoza/agent-skills` |
+| [`diagnosing-root-causes`](.agents/skills/diagnosing-root-causes/SKILL.md) | `b-mendoza/agent-skills` |
 | [`executing-plans`](.agents/skills/executing-plans/SKILL.md) | `obra/superpowers` |
 | [`generate-flow-diagram`](.agents/skills/generate-flow-diagram/SKILL.md) | `b-mendoza/agent-skills` |
+| [`idea-refine`](.agents/skills/idea-refine/SKILL.md) | `addyosmani/agent-skills` |
+| [`improving-test-suites`](.agents/skills/improving-test-suites/SKILL.md) | `b-mendoza/agent-skills` |
+| [`interview-me`](.agents/skills/interview-me/SKILL.md) | `addyosmani/agent-skills` |
+| [`planning-codebase-restructuring`](.agents/skills/planning-codebase-restructuring/SKILL.md) | `b-mendoza/agent-skills` |
+| [`ponytail`](.agents/skills/ponytail/SKILL.md) | `DietrichGebert/ponytail` |
 | [`pr-creator`](.agents/skills/pr-creator/SKILL.md) | `b-mendoza/agent-skills` |
 | [`prompt-structurer`](.agents/skills/prompt-structurer/SKILL.md) | `b-mendoza/agent-skills` |
 | [`receiving-code-review`](.agents/skills/receiving-code-review/SKILL.md) | `obra/superpowers` |
 | [`recency-guard`](.agents/skills/recency-guard/SKILL.md) | `b-mendoza/agent-skills` |
+| [`refactoring-code`](.agents/skills/refactoring-code/SKILL.md) | `b-mendoza/agent-skills` |
 | [`responding-to-pr-review-comments`](.agents/skills/responding-to-pr-review-comments/SKILL.md) | `b-mendoza/agent-skills` |
 | [`review-pull-request`](.agents/skills/review-pull-request/SKILL.md) | `b-mendoza/agent-skills` |
+| [`rewriting-code-strictly`](.agents/skills/rewriting-code-strictly/SKILL.md) | `b-mendoza/agent-skills` |
+| [`spec-driven-development`](.agents/skills/spec-driven-development/SKILL.md) | `addyosmani/agent-skills` |
+| [`stop-slop`](.agents/skills/stop-slop/SKILL.md) | `hardikpandya/stop-slop` |
 | [`subagent-driven-development`](.agents/skills/subagent-driven-development/SKILL.md) | `obra/superpowers` |
 | [`test-driven-development`](.agents/skills/test-driven-development/SKILL.md) | `obra/superpowers` |
+| [`unslop`](.agents/skills/unslop/SKILL.md) | `cursor/plugins` |
+| [`validate-implementation-plan`](.agents/skills/validate-implementation-plan/SKILL.md) | `b-mendoza/agent-skills` |
+| [`vitest`](.agents/skills/vitest/SKILL.md) | `antfu/skills` |
 | [`workflow-skill-architect`](.agents/skills/workflow-skill-architect/SKILL.md) | `b-mendoza/agent-skills` |
 | [`writing-plans`](.agents/skills/writing-plans/SKILL.md) | `obra/superpowers` |
 
