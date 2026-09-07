@@ -20,7 +20,7 @@ Positive framing is prompt guidance, not enforcement. Tool permissions, mutation
 
 A pure negation list ("do not write outside scope, do not call external APIs, do not modify the vendored mirror") gives the agent a boundary without a behavior. The agent now knows what is forbidden but must infer what is allowed. The inference is unreliable: the agent may default to "do nothing" (a workflow stall), to "do the narrowest thing" (under-implementation), or to "do the same thing without the named forbidden tool" (boundary circumvention).
 
-A positive frame restores the working model. "The orchestrator may call Agent and Read; everything else is a dispatch" tells the agent both what to do and what not to do. The agent can act with confidence; the negation list becomes a backstop, not the primary contract.
+A positive frame restores the working model. "The orchestrator may read files and dispatch subagents; everything else is a dispatch" tells the agent both what to do and what not to do. The agent can act with confidence; the negation list becomes a backstop, not the primary contract.
 
 The "still need enforcement" rule closes the second failure. Positive prose is not a sandbox. Tool permissions, mutation scopes, and validators are the actual boundary; the prose helps the agent stay inside the boundary willingly.
 
@@ -29,7 +29,7 @@ The "still need enforcement" rule closes the second failure. Positive prose is n
 Good: allowed-first framing for an orchestrator's tool use.
 
 ```markdown
-The only tools the orchestrator calls directly are Agent and Read, limited to loading skill, subagent, and reference files. Every other operation is a dispatch to the appropriate subagent.
+The orchestrator itself only reads skill, subagent, and reference files and dispatches subagents. Every other operation is a dispatch to the appropriate subagent. (Map "read" and "dispatch" to the active runtime's tools per the runtime portability matrix.)
 ```
 
 Bad: pure negation gives the agent no working model and no prioritized allowed path.
