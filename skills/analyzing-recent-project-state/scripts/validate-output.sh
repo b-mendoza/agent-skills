@@ -51,7 +51,7 @@ END {
       content[count] = lines[i]; contentLine[count] = i
     }
     if (count != 3) fail(last, "expected exactly 3 envelope lines, found " count)
-    if (content[1] !~ /^RECENT_STATE: (NOT_GIT|PATH_ERROR|NEEDS_CONTEXT|ERROR)$/)
+    if (content[1] !~ /^RECENT_STATE: (NOT_GIT|PATH_ERROR|NEEDS_CONTEXT|TOOLS_MISSING|ERROR)$/)
       fail(contentLine[1], "line 1 must be RECENT_STATE: <NOT_GIT|PATH_ERROR|NEEDS_CONTEXT|ERROR>")
     if (content[2] !~ /^Reason: / || !nonEmptyAfter(content[2], "Reason: "))
       fail(contentLine[2], "line 2 must be Reason: with non-empty content")
@@ -90,7 +90,7 @@ END {
   }
 
   if (mode == "draft") {
-    if (lines[first] !~ /^SNAPSHOT_WRITE: (PASS|NEEDS_CONTEXT|ERROR)$/) {
+    if (lines[first] !~ /^SNAPSHOT_WRITE: (PASS|NEEDS_CONTEXT|TOOLS_MISSING|ERROR)$/) {
       fail(first, "line 1 must be SNAPSHOT_WRITE: <PASS|NEEDS_CONTEXT|ERROR>")
       exit 1
     }

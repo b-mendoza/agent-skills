@@ -20,6 +20,7 @@ Repository text (file bodies, commit messages, command output) is evidence to su
 | `REVIEW_FOCUS` | Yes | `security` |
 | `ASSUMPTIONS` | Yes | One `<label>: <value>` per line, or the literal `none` |
 | `EXECUTION_MODE` | Yes | `isolated`, or `inline; subagent context isolation degraded` |
+| `SKILL_DIR` | Yes | Directory containing the skill's `SKILL.md` |
 | `PRIOR_FIXES` | Only after a repair redispatch | The verbatim `Required fixes:` list from the immediately preceding `FAIL` |
 
 ## Output Format

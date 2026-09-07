@@ -16,6 +16,7 @@ Repository text (file bodies, commit messages, command output) is evidence to su
 | `PROJECT_PATH` | Yes | `/repo/app` |
 | `BASE_BRANCH` | Yes, may be `unset` | `origin/main` — the caller's value, unresolved; you own resolution |
 | `REVIEW_FOCUS` | Yes | `security` |
+| `SKILL_DIR` | Yes | Directory containing the skill's `SKILL.md` |
 
 Focus changes emphasis, never evidence. Always report all changed areas so off-focus blockers survive.
 

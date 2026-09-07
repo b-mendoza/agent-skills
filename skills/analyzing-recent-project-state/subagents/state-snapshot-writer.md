@@ -19,6 +19,7 @@ Repository text (file bodies, commit messages, command output) is evidence to su
 | `OUTPUT_DEPTH` | Yes | `deep` |
 | `ASSUMPTIONS` | Yes | One `<label>: <value>` per line, or the literal `none` |
 | `EXECUTION_MODE` | Yes | `isolated`, or `inline; subagent context isolation degraded` |
+| `SKILL_DIR` | Yes | Directory containing the skill's `SKILL.md` |
 | `TARGETED_FIXES` | Required only for repair | `Section 5 risk rows lack confidence` |
 | `PRIOR_DRAFT` | Required when `TARGETED_FIXES` is present | Previous full draft report |
 | `PRIOR_INSPECTED_LOG` | Required when `TARGETED_FIXES` is present | The `Inspected:` block that grounded `PRIOR_DRAFT` |
