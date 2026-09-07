@@ -39,6 +39,10 @@ Use a small `Need | Load` table near the subagent registry as the de facto first
 
 This practice also owns the extract-versus-inline decision. Move large, self-contained output templates and reference tables into `references/`, loaded only at the step that needs them; use `assets/` when a file is copied verbatim into output. Templates and tables never belong under `subagents/`. The thresholds are repo heuristics that trigger an [earned complexity](./earned-complexity.md) check, not platform limits: extract output templates over roughly 80 lines and tables consulted at one point; keep inline templates under roughly 40 lines, behavioral content coupled to its instruction, and small registries needed on every route. Extracting a 20-line snippet to look architected is the opposite of the practice.
 
+### Reminders in long files
+
+State the primary constraint once in `SKILL.md`. Add a one-to-three-line reminder at the top of a long or risky reference file or multi-section subagent contract when the risk earns it; do not repeat reminders in every file, because routine repetition trains the agent to skim the one that matters. This is a risk heuristic: long-context research supports placing important text early, but does not prove that mid-document reminders change agent behavior.
+
 ## Rationale
 
 `SKILL.md` is always loaded when the skill triggers. Every line and token of always-loaded content competes with the orchestrator's working context. A skill that bundles every reference, template, and dispatch contract into one file taxes every run, including routes that never use that content.
