@@ -16,7 +16,7 @@ When choosing a name for a new first-party skill directory or subagent file in t
 
 ## Rationale
 
-The gerund/role-noun split is small but informative: a reader glancing at a `skills/` listing can often tell a workflow (ongoing activity) from a specialist (bounded role) without opening files. But this repository's own history shows the split is a preference, not a rule — roughly a third of first-party skills use natural noun phrases, and they are among the most-used skills. The convention earns a nudge at naming time, never a rename after.
+The gerund/role-noun split is small but informative: a reader glancing at a `skills/` listing can often tell a workflow (ongoing activity) from a specialist (bounded role) without opening files. But this repository's own history shows the split is a preference, not a rule — 5 of 27 first-party skills use natural noun phrases and 6 use imperative verb phrases. The convention earns a nudge at naming time, never a rename after.
 
 ## Concrete examples
 

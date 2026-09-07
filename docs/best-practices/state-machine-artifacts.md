@@ -39,7 +39,7 @@ Run these correctness checks:
 
 An external FSM improves reliability only when it removes ambiguity. It becomes a reverse-drift hazard when prose, a table, and a diagram all claim authority: an editor updates one representation, a reviewer reads another, and the executing agent chooses whichever route is most salient in that run.
 
-The risk is common in this corpus: at the time of this audit, 16 of 31 first-party skills shipped `state-machine.md` and 25 of 31 shipped `flow-diagram.md`, but packages disagreed on which artifact was normative. A single transition source plus synchronized summaries preserves the compact routing value of `SKILL.md` and the visual value of a diagram without creating multiple executable contracts.
+The risk is common in this corpus: when this rule was written, 16 of 27 first-party skills shipped `state-machine.md` and 20 of 27 shipped `flow-diagram.md`, and packages disagreed on which artifact was normative. A single transition source plus synchronized summaries preserves the compact routing value of `SKILL.md` and the visual value of a diagram without creating multiple executable contracts.
 
 ## Concrete examples
 
