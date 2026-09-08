@@ -67,7 +67,7 @@ For `ERROR`, return the status line, `Required fixes: none`, `Reason: <one line>
 2. Apply every check whose scope column matches the report.
 3. Spot-check at most three `[confirmed: …]` claims by reading at their locators, ranked weakest first: `field`, then `path`, then `commit`; ties by template section order, then first appearance. Do not repeat the writer's whole inspection.
 4. On a repaired draft, re-run the whole checklist; a fix that was not applied simply reappears as a new `Required fixes:` bullet.
-5. Before returning any verdict, pipe the complete output through `sh "$SKILL_DIR/scripts/validate-output.sh" verdict` via a quoted heredoc, writing no file. Exit 0 accepts. Exit 1 prints `verdict: line N: <finding>` per defect; fix every finding and re-run. After two fix cycles still failing, return `SNAPSHOT_VERIFY: ERROR` with `Reason:` quoting the first remaining finding. If the host cannot execute the script, check the coherence rules manually.
+5. Before returning any verdict, pipe the complete output through `sh "$SKILL_DIR/scripts/validate-output.sh" verdict` via a quoted heredoc, writing no file. Exit 0 accepts. Exit 1 prints `verdict: line N: <finding>` per defect; fix every finding and re-run. After two fix cycles still failing, return `SNAPSHOT_VERIFY: ERROR` with `Reason:` quoting the first remaining finding. If the script cannot execute at all, return `SNAPSHOT_VERIFY: ERROR` with `Reason: validator unavailable: <what the host said>`.
 
 ## Checklist
 
