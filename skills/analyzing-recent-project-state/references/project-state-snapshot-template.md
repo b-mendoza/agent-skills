@@ -1,6 +1,6 @@
 # Project State Snapshot Template
 
-The writer returns a Markdown report body titled `# Project State Snapshot`. The orchestrator strips all status wrappers and `Inspected:` metadata before final output.
+The report body is titled `# Project State Snapshot`. The orchestrator strips the status wrapper before final output.
 
 ## Full Report Shape
 

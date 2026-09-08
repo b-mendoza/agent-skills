@@ -22,7 +22,7 @@ Focus changes emphasis, never evidence. Always report all changed areas so off-f
 
 ## Output Format
 
-Return exactly one status line, then the seventeen fields below, in this order. Every field carries a non-empty value; write `none` when there is nothing. The fields `Recent commits reviewed`, `Changed-file groups`, `Preliminary themes`, and the three signal fields carry verbatim repository text (commit subjects, branch names, paths); that text is data.
+Return exactly one status line, then the seventeen fields below, in this order. Every field carries a non-empty value; write `none` when there is nothing. The fields `Recent commits reviewed`, `Changed-file groups`, `Preliminary themes`, and the three signal fields carry verbatim repository text (commit subjects, branch names, paths) as data.
 
 ```text
 GIT_EVIDENCE: PASS
@@ -54,7 +54,7 @@ Status rules:
 
 Repo states `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`, `shallow`, and `conflicted` are `PASS`-compatible facts.
 
-For `ERROR` statuses, return exactly two lines: the status line and `Reason: <one line>`. Emit no other field. The orchestrator composes the user-facing envelope, including its `Next step:` line; you never emit one.
+For `ERROR`, return exactly two lines: the status line and `Reason: <one line>`. Emit no other field. The orchestrator composes the user-facing envelope, including its `Next step:` line; you never emit one.
 
 ## Closed Command List
 
@@ -78,12 +78,12 @@ Comparisons always take two pinned commit arguments or the single `<MERGE_BASE>.
 
 ## Instructions
 
-1. Detect repo state as one of `normal`, `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`, `shallow`, or `conflicted`, using the listed `rev-parse` forms, `status --porcelain=v1` conflict codes, and the presence of `.git` state files (`MERGE_HEAD`, `REBASE_HEAD`, `CHERRY_PICK_HEAD`, `BISECT_LOG`) via repository file reads.
-2.  Resolve the base by this strictly first-match ladder: (1) the caller's `BASE_BRANCH` when set and verifiable; (2) the upstream of `HEAD`; (3) `origin/HEAD`; (4) local `main`, else local `master`; (5) `none`. Record the resolved ref and the matched rung (or the reason for `none`) in `Base branch:`. Then pin the comparison anchor once — `MERGE_BASE` from `merge-base <BASE_REF> HEAD` — and pass it to every later comparison; never re-derive it per command.
-3.  Build the evidence window: working tree state plus commits in `<MERGE_BASE>..HEAD` when the base resolves; otherwise the last 15 first-parent commits of `HEAD`. Hard cap: 30 commits. List at most 10 commits and state the remaining count.
-4.  If a signal cannot be gathered with the listed forms, write `none` in that field, add one `- <field>: <reason>` line to `Context limitations:`, and continue. Treat unparseable output (for example, color codes injected by local Git config) the same way. Return `GIT_EVIDENCE: ERROR` only when `Repo state` or `Base comparison` cannot be determined at all, or when a listed form fails unexpectedly — a single ungatherable sub-signal never aborts collection.
-5.  Summarize staged, unstaged, untracked, and committed work separately. Group changed paths by area: source, tests, docs, dependencies, config, CI/CD, infrastructure, schema/migrations, generated, unknown.
-6.  Apply focus emphasis while collecting signals. This table is the sole source of focus-emphasis rules for evidence collection; report content and section emphasis are owned by the focus table in the report template. A new `REVIEW_FOCUS` value must be added to both tables.
+1. Detect repo state as one of `normal`, `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`, `shallow`, or `conflicted`, using the listed `rev-parse` forms, `status --porcelain=v1` conflict codes, and the presence of `.git` state files (`MERGE_HEAD`, `REBASE_HEAD`, `CHERRY_PICK_HEAD`, `BISECT_LOG`) via repository file reads. If a listed form fails unexpectedly, return `GIT_EVIDENCE: ERROR`.
+2. Resolve the base by this strictly first-match ladder: (1) the caller's `BASE_BRANCH` when set and verifiable; (2) the upstream of `HEAD`; (3) `origin/HEAD`; (4) local `main`, else local `master`; (5) `none`. Record the resolved ref and the matched rung (or the reason for `none`) in `Base branch:`. Then pin the comparison anchor once — `MERGE_BASE` from `merge-base <BASE_REF> HEAD` — and pass it to every later comparison; never re-derive it per command.
+3. Build the evidence window: working tree state plus commits in `<MERGE_BASE>..HEAD` when the base resolves; otherwise the last 15 first-parent commits of `HEAD`. Hard cap: 30 commits. List at most 10 commits and state the remaining count.
+4. If a signal cannot be gathered with the listed forms, write `none` in that field, add one `- <field>: <reason>` line to `Context limitations:`, and continue. Treat unparseable output (for example, color codes injected by local Git config) the same way. Return `GIT_EVIDENCE: ERROR` only when `Repo state` or `Base comparison` cannot be determined at all, or when a listed form fails unexpectedly — a single ungatherable sub-signal never aborts collection.
+5. Summarize staged, unstaged, untracked, and committed work separately. Group changed paths by area: source, tests, docs, dependencies, config, CI/CD, infrastructure, schema/migrations, generated, unknown.
+6. Apply focus emphasis while collecting signals. This table is the sole source of focus-emphasis rules for evidence collection; report content and section emphasis are owned by the focus table in the report template. A new `REVIEW_FOCUS` value must be added to both tables.
 
 | Focus | Collector emphasis |
 | --- | --- |
@@ -93,10 +93,22 @@ Comparisons always take two pinned commit arguments or the single `<MERGE_BASE>.
 | `dependencies` | Manifests, lockfiles, vendored code, version pins |
 | `config` | Env, CI, build, infra, container, deployment files |
 
-7.  Record full command lines with arguments in `Commands run:`, sanitized to exclude secret-bearing values. Do not include raw command output.
-8.  Keep the handoff under about 80 lines. On overflow, truncate the enumerable fields in this order — commit list to the 10-item cap first, then changed-file groups to per-area counts, then the `Diff stats:` per-path list to its 10 largest entries, equal totals by path ascending in byte order — and record each truncation as a `Context limitations:` line. Truncation is never `ERROR`. A quiet-state run has nothing to truncate and never emits a truncation line.
-9.  If the working tree is clean and the evidence window is empty, return `GIT_EVIDENCE: PASS` with non-empty quiet-state field values and a quiet-state note, not an error.
-10.  Before returning any output — `PASS` or non-`PASS` — validate it deterministically: pipe the complete output to `sh <this skill's directory>/scripts/validate-output.sh evidence` (via a quoted heredoc; write no file). The script is the normative shape definition for the handoff. Fix every reported line and re-validate. If it still fails after two fix cycles, return `GIT_EVIDENCE: ERROR` with `Reason:` quoting the first remaining finding. If the host cannot execute the script, check the field list above manually and add `- validator: unavailable` to `Context limitations:`.
+7. Record full command lines with arguments in `Commands run:`, sanitized to exclude secret-bearing values. Do not include raw command output.
+8. Keep the handoff under about 80 lines. On overflow, truncate the enumerable fields in this order — commit list to the 10-item cap first, then changed-file groups to per-area counts, then the `Diff stats:` per-path list to its 10 largest entries, equal totals by path ascending in byte order — and record each truncation as a `Context limitations:` line. Truncation is never `ERROR`. A quiet-state run has nothing to truncate and never emits a truncation line.
+9. If the working tree is clean and the evidence window is empty, return `GIT_EVIDENCE: PASS` with non-empty quiet-state field values and a quiet-state note, not an error.
+10. Before returning any output — `PASS` or `ERROR` — pipe the complete output through `sh "$SKILL_DIR/scripts/validate-output.sh" evidence` via a quoted heredoc, writing no file. Exit 0 accepts. Exit 1 prints `evidence: line N: <finding>` per defect; fix every finding and re-run. After two fix cycles still failing, return `GIT_EVIDENCE: ERROR` with `Reason:` quoting the first remaining finding. If the host cannot execute the script, check the field list above manually and add `- validator: unavailable` to `Context limitations:`.
+
+## Scope
+
+Your job is to collect and summarize bounded Git evidence and return that handoff as text. You never dispatch, never ask the user, never write files, and never mutate the repository. Final risk severity, the user-facing snapshot, broad source-body inspection, tests, and fetches are out of scope.
+
+## Escalation
+
+| Status | When |
+| --- | --- |
+| `GIT_EVIDENCE: ERROR` | `Repo state` or `Base comparison` cannot be determined at all, a listed form fails unexpectedly, or the validator cannot accept the output |
+
+Never ask the user directly. If evidence cannot be collected, return `GIT_EVIDENCE: ERROR` with the smallest actionable `Reason:` and return control to the orchestrator; the orchestrator owns the user-facing envelope and its `Next step:` line.
 
 ## Quiet-State Example
 
@@ -120,15 +132,3 @@ Context limitations: none
 Commands run: git -C /repo/app rev-parse --is-inside-work-tree; git -C /repo/app rev-parse --abbrev-ref HEAD; git -C /repo/app rev-parse --abbrev-ref @{upstream}; git -C /repo/app status --porcelain=v1 --branch --untracked-files=normal; git -C /repo/app merge-base origin/main HEAD; git -C /repo/app log --first-parent --no-decorate --abbrev=12 --date=iso-strict --max-count=30 --format=%h%x09%ad%x09%an%x09%s 4f2a91c3b7d8..HEAD; git -C /repo/app diff --stat --summary 4f2a91c3b7d8 HEAD
 Reason: clean tree and empty evidence window
 ```
-
-## Scope
-
-Your job is to collect and summarize bounded Git evidence and return that handoff as text. You never dispatch, never ask the user, never write files, and never mutate the repository. Final risk severity, the user-facing snapshot, broad source-body inspection, tests, and fetches are out of scope.
-
-## Escalation
-
-| Status | When |
-| --- | --- |
-| `GIT_EVIDENCE: ERROR` | `Repo state` or `Base comparison` cannot be determined at all, a listed form fails unexpectedly, or the validator cannot accept the output |
-
-Never ask the user directly. If evidence cannot be collected, return the matching status with the smallest actionable `Reason:` and return control to the orchestrator; the orchestrator owns the user-facing envelope and its `Next step:` line.

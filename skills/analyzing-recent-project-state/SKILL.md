@@ -25,44 +25,42 @@ Loyalty is to safe continuation by the next developer, not to the author, the re
 
 - `SKILL_DIR`: the directory containing this `SKILL.md`, as reported by the host when the skill loaded; if the host reported none, the directory of the first existing `<workspace>/.claude/skills/analyzing-recent-project-state/SKILL.md`, `<workspace>/.agents/skills/analyzing-recent-project-state/SKILL.md`, `<workspace>/.opencode/skills/analyzing-recent-project-state/SKILL.md`; if still unresolved, terminate `RECENT_STATE: TOOLS_MISSING`. Every dispatch carries it.
 - `ASSUMPTIONS`: one `<label>: <value>` per line or the literal `none`; labels are `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `OUTPUT_DEPTH`, `User decision`.
+- `EXECUTION_MODE`: `isolated` when the host offers a fresh-context subagent tool (Claude Code `Agent`; OpenCode `task` with its general subagent); otherwise `inline; subagent context isolation degraded`.
 - `REQUIRED_FIXES`: the verbatim `Required fixes:` bullet list from the most recent verifier `FAIL`; each bullet begins with a canonical section name and a colon. It travels with `PRIOR_DRAFT`, the draft the verifier just failed; both are present on a repair dispatch or neither is.
 - `REPAIR_ATTEMPTS` and `FORMAT_RETRIES`: orchestrator-owned counters starting at 0.
 
 ## Output Contract
 
-The skill returns exactly one of two outcomes, as response text. It writes no file.
+Exactly one of two outcomes, as response text; no file. Both are critical outputs: success gated by `G_OUTPUT`, failure by `G_ESCALATION`. The orchestrator composes lines 2 and 3 from the table; the script checks their shape, not their text; nothing else is emitted.
 
 | Outcome | Shape |
 | --- | --- |
-| Success | The verified `# Project State Snapshot` body (ten canonical sections, or the four-section quiet-state short form). Claims use the label grammar owned by [`references/project-state-snapshot-template.md`](./references/project-state-snapshot-template.md), : `[confirmed: <locator>]`, `[likely: <locator>]`, `[possible]`, `[unverified]`; locators `commit <hash>`, `path <path>[:<lines>]`, `field <GIT_EVIDENCE field name>`. |
-| Failure | Exactly three lines: `RECENT_STATE: <NOT_GIT \| PATH_ERROR \| NEEDS_CONTEXT \| TOOLS_MISSING \| ERROR>`, `Reason: <one line>`, `Next step: <one clear action>`. |
+| Success | The verified `# Project State Snapshot` body (ten canonical sections, or the four-section quiet-state short form). Claims use the label grammar owned by [`references/project-state-snapshot-template.md`](./references/project-state-snapshot-template.md): `[confirmed: <locator>]`, `[likely: <locator>]`, `[possible]`, `[unverified]`; locators `commit <hash>`, `path <path>[:<lines>]`, `field <GIT_EVIDENCE field name>`. |
+| Failure | Exactly three lines: `RECENT_STATE: <NOT_GIT \| PATH_ERROR \| NEEDS_CONTEXT \| TOOLS_MISSING \| ERROR>`, `Reason: <one line>`, `Next step: <one action>`. |
 
-Both outcomes are critical outputs: the user acts on them without re-deriving them. Each is protected by the payload gates below.
-
-**Envelope composition.** Terminal envelopes are composed by the orchestrator, never by a subagent. Line 1 is the status. Line 2 is `Reason:` — composed per the table row matching the status and exit origin; where a row says verbatim, copy the named payload field exactly. Line 3 is `Next step:` — the literal text from the table. The table is the sole source of lines 2 and 3. The escalation response contains nothing else: no preamble, no subagent status line, no code fence, no closing offer, no fourth line.
-
-| Status (exit origin) | Line 2 `Reason:` | Line 3 `Next step:` |
+| Status (origin) | Reason | Next step |
 | --- | --- | --- |
 | `NOT_GIT` (intake) | `<PROJECT_PATH> exists but is not a Git worktree.` | `Re-run with PROJECT_PATH set to a Git worktree.` |
 | `PATH_ERROR` (intake) | `<PROJECT_PATH> cannot be read or listed.` | `Re-run with a readable PROJECT_PATH.` |
-| `NEEDS_CONTEXT` (writer or verifier) | the payload's `Decision needed:` value, verbatim — this is what names the decision | `Re-run supplying the decision named above.` |
-| `TOOLS_MISSING` (intake) | `<capability> unavailable: <detail>` | `Enable the capability named above (a POSIX shell with sh and awk for the validator, or a resolvable skill directory), then re-run.` |
+| `NEEDS_CONTEXT` (writer or verifier) | the payload's `Decision needed:` value, verbatim | `Re-run supplying the decision named above.` |
 | `NEEDS_CONTEXT` (intake) | `<blocking decision> requires a user decision; this host cannot ask` | `Re-run supplying the decision named above.` |
-| `ERROR` (repair exhausted — orchestrator exit) | `verification did not converge within 2 repair attempts; unresolved sections: <the text before the first colon of each bullet in the last REQUIRED_FIXES, joined with "; ">` | `Re-run with OUTPUT_DEPTH=brief or a narrower REVIEW_FOCUS; if it recurs, review the named sections manually.` |
-| `ERROR` (subagent-sourced) | subagent's `Reason:`, verbatim | `Re-run; if it recurs, report the reason above.` |
-| `ERROR` (unroutable — orchestrator exit) | `unroutable <phase> output after one format retry` | `Re-run; if it recurs, report the reason above.` |
+| `TOOLS_MISSING` (intake) | `<capability> unavailable: <detail>` | `Enable the capability named above (a POSIX shell with sh and awk for the validator, or a resolvable skill directory), then re-run.` |
+| `ERROR` (repair exhausted) | `verification did not converge within 2 repair attempts; unresolved sections: <the text before the first colon of each bullet in the last REQUIRED_FIXES, joined with "; ">` | `Re-run with OUTPUT_DEPTH=brief or a narrower REVIEW_FOCUS; if it recurs, review the named sections manually.` |
+| `ERROR` (subagent-sourced) | the subagent's `Reason:` verbatim | `Re-run; if it recurs, report the reason above.` |
+| `ERROR` (unroutable) | `unroutable <phase> output after one format retry` | `Re-run; if it recurs, report the reason above.` |
 
 ## Subagent Registry
 
 | Subagent | Path | Purpose |
 | --- | --- | --- |
-| `git-evidence-collector` | `./subagents/git-evidence-collector.md` | Bounded reproducible local Git evidence; compact `GIT_EVIDENCE` |
-| `state-snapshot-writer` | `./subagents/state-snapshot-writer.md` | Draft or minimally repair the snapshot from compact evidence |
-| `snapshot-verifier` | `./subagents/snapshot-verifier.md` | Verify grounding, shape, focus, and actionability before final output |
+| `git-evidence-collector` | `./subagents/git-evidence-collector.md` | Bounded local Git evidence as compact `GIT_EVIDENCE` |
+| `state-snapshot-writer` | `./subagents/state-snapshot-writer.md` | Draft or minimally repair the snapshot |
+| `snapshot-verifier` | `./subagents/snapshot-verifier.md` | Verify grounding, shape, focus, and actionability |
 
 Read a file only when dispatching it or executing it inline. Subagents never dispatch or ask.
 
 ## Runtime Compatibility
+
 
 Portable target: OpenCode and Claude Code. Plain Markdown links; minimal frontmatter. Required capabilities: repository read/search, bounded read-only local Git, and either orchestrator-owned subagent dispatch (isolated route) or single-context execution (inline route). No edit/write access and no network access required or used.
 
@@ -88,66 +86,61 @@ The `GIT_EVIDENCE` field contract lives with its producer in [`subagents/git-evi
 
 Five phases. Announce progress with a brief plain note per phase or the host's native progress marker. Dispatch only when every input listed for that phase has a value; the literal `none` (or `unset` for `BASE_BRANCH`) is a value, omission is not.
 
-1. **Intake** (inline) — Normalize inputs as labeled assumptions. Resolve `SKILL_DIR`; preflight the validator by running `envelope` mode on the three-line `NOT_GIT` example in this file and requiring exit 0, else `TOOLS_MISSING`. Probe `PROJECT_PATH` with the host's read tool (fail → `PATH_ERROR`); run `git -C <PROJECT_PATH> rev-parse --is-inside-work-tree` and require exit 0 with stdout exactly `true` (else `NOT_GIT`; never classify on Git's error text). Resolve `PROJECT_PATH` (one ask permitted, per the ask policy below). Set `BASE_BRANCH` to the caller's value or `unset`; the collector owns base resolution. Set `EXECUTION_MODE` per the route-selection rule above. Carry any user mutation requests as report risks/next actions; never execute them.
-2. **Collect evidence** — Dispatch `git-evidence-collector` with `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `SKILL_DIR`. Route on its status line (table below). Quiet or abnormal repo states are `PASS` facts.
-3. **Write snapshot** — Dispatch `state-snapshot-writer` with `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `OUTPUT_DEPTH`, `ASSUMPTIONS`, `EXECUTION_MODE`, `SKILL_DIR`. On writer `PASS`, extract two artifacts using the writer's two exact markers: `INSPECTED_LOG` runs from the `Inspected:` heading through the line before the `# Project State Snapshot` heading; `DRAFT_REPORT` runs from that heading through the end of the output. Discard the status wrapper and retain both. On repair, redispatch with the same six inputs plus `PRIOR_DRAFT` and `REQUIRED_FIXES`.
-4. **Verify** — Dispatch `snapshot-verifier` with `DRAFT_REPORT`, `INSPECTED_LOG`, `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `ASSUMPTIONS`, `EXECUTION_MODE` as separate inputs. Only the most recent list is carried; earlier lists are never accumulated. `PASS` → final response. `FAIL` → repair under the `REPAIR_ATTEMPTS` bound below, then re-verify.
-5. **Final response** (inline) — On success run `report` mode on `DRAFT_REPORT` (`G_OUTPUT`); strip status wrappers and the `Inspected:` log. Return exactly one outcome from the Output Contract.
+1. **Intake** (inline): normalize inputs into `ASSUMPTIONS`; resolve `SKILL_DIR`; preflight the validator by running `envelope` mode on the three-line `NOT_GIT` example in this file and requiring exit 0, else `TOOLS_MISSING`; probe `PROJECT_PATH` with the host's read tool (fail → `PATH_ERROR`); run `git -C <PROJECT_PATH> rev-parse --is-inside-work-tree` and require exit 0 with stdout exactly `true` (else `NOT_GIT`; never classify on Git's error text); apply the ask policy; set `EXECUTION_MODE`; carry any user mutation request as a report risk, never execute it.
+2. **Collect**: dispatch the collector with `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `SKILL_DIR`. Statuses `PASS | ERROR`.
+3. **Write**: dispatch the writer with `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `OUTPUT_DEPTH`, `ASSUMPTIONS`, `EXECUTION_MODE`, `SKILL_DIR`; on repair add `PRIOR_DRAFT` and `REQUIRED_FIXES`. On `PASS`, `DRAFT_REPORT` is everything after the status line with leading blank lines removed.
+4. **Verify**: dispatch the verifier with `DRAFT_REPORT`, `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `ASSUMPTIONS`, `EXECUTION_MODE`, `SKILL_DIR`. `PASS` → Final; `FAIL` → repair bound.
+5. **Final** (inline): success → run `report` mode on `DRAFT_REPORT` (`G_OUTPUT`), on failure recompose once from the last passing draft then emit; escalation → compose the envelope and run `envelope` mode (`G_ESCALATION`), on failure recompose once from the table then emit.
 
-Intake and Final response are inline: they emit no status line and are bound to no gate. Intake exits by proceeding to phase 2 or terminating as `RECENT_STATE: NEEDS_CONTEXT` under the ask policy; Final response exits by emitting exactly one Output Contract outcome, with `G_OUTPUT` checked on the escalation path.
-
-**Repair bound.** `REPAIR_ATTEMPTS` is owned by the orchestrator, counts writer redispatches caused by `SNAPSHOT_VERIFY: FAIL`, and starts at `0`. On `FAIL`: if `REPAIR_ATTEMPTS < 2`, increment it, set `PRIOR_DRAFT` to the current draft and `REQUIRED_FIXES` to the verdict's list, redispatch the writer, and re-verify; otherwise compose the repair-exhausted `RECENT_STATE: ERROR` envelope. This allows at most two repair redispatches and escalates on the third verifier failure. Carry only the most recent draft and list.
-
-**Ask policy.** `HOST_INTERACTIVE` is a caller-supplied input (see Inputs) and the skill never infers it. At most one user question per run, at intake only, before any dispatch, and only for a blocking intake ambiguity — `PROJECT_PATH` unresolvable or genuinely ambiguous. An answer is appended to `ASSUMPTIONS` as `User decision: <answer>` before phase 2 begins, so every dispatch carries it. A declined or unanswered ask, or any blocking intake ambiguity while `HOST_INTERACTIVE=false`, terminates as `RECENT_STATE: NEEDS_CONTEXT` naming the missing decision. No phase after intake asks: writer or verifier `NEEDS_CONTEXT` always terminates with the envelope naming the decision, and the user re-runs with it supplied. Defaulting to `false` keeps unattended and delegated runs deterministic: they escalate rather than stall.
-
-**Routability.** A phase output is routable only when its status line is recognized _and_ its payload passes that status's gate in Status Payload Gates below. `FORMAT_RETRIES` is owned by the orchestrator, starts at `0` for each phase dispatch, and is incremented when that dispatch's output carries an unrecognized status or fails its gate; on increment, retry that phase once with a format reminder using the same execution mode. Cap `1` per dispatch; over the cap, compose the `RECENT_STATE: ERROR` envelope with reason `unroutable <phase> output after one format retry`. Never infer a status. Any status whose payload fails its gate is unroutable, never terminal.
+**Repair bound.** On verifier `FAIL`, if `REPAIR_ATTEMPTS < 2` increment, set `PRIOR_DRAFT` to the current draft and `REQUIRED_FIXES` to the verdict's list, redispatch the writer, re-verify; else the repair-exhausted envelope. Carry only the most recent draft and list. **Ask policy.** At most one question per run, at intake only, only for an unresolvable or ambiguous `PROJECT_PATH`, and only when `HOST_INTERACTIVE=true`. Append the answer as `User decision: <answer>`. Otherwise emit the intake `NEEDS_CONTEXT` envelope. No later phase asks. **Routability.** A phase output is routable only when its status is recognized and its gate passes. `FORMAT_RETRIES` cap 1 per dispatch with a format reminder in the same execution mode; over the cap → unroutable `ERROR`. Never infer a status.
 
 ## Status Payload Gates
 
-The orchestrator checks these; the producing subagent does not grade its own output. Shape predicates are owned by the deterministic validator `scripts/validate-output.sh` — the normative shape definition for every machine-parsed payload. Run it as `sh "$SKILL_DIR/scripts/validate-output.sh" <evidence | draft | verdict | envelope>` with the payload on stdin; exit `0` is a pass, and failures print one line-numbered finding per defect. Determinism substitutes for independence: each subagent also runs its own mode before returning (see its file), and the same script grades the payload identically at the gate, so no verdict can be sycophantic. If the host cannot execute the script, perform the equivalent checks manually per each file's shape summary and record `validator: unavailable` as a labeled assumption.
+The orchestrator runs the gate itself (payload on stdin; exit 0 passes); a producer's own validation does not substitute.
 
 | Gate | Applies to | Predicate |
 | --- | --- | --- |
-| `G_EVIDENCE` | Collector `PASS` | `evidence` mode passes on the payload |
-| `G_DRAFT` | Writer `PASS` | `draft` mode passes on the full writer output |
-| `G_VERDICT` | Verifier `PASS` | `verdict` mode passes |
-| `G_ESCALATION` | Collector `ERROR`, writer `ERROR`, verifier `ERROR` | The producing subagent's mode passes on the payload; no `Next step:` is expected from a subagent |
-| `G_OUTPUT` | the success body | `report` mode passes on `DRAFT_REPORT` |
-| `G_ESCALATION` | Final terminal escalation response | `envelope` mode passes. On failure, recompose once directly from the envelope table and emit the result; the table is deterministic, so no further retry exists |
+| `G_EVIDENCE` | any collector output | `sh "$SKILL_DIR/scripts/validate-output.sh" evidence` |
+| `G_DRAFT` | any writer output | `sh "$SKILL_DIR/scripts/validate-output.sh" draft "$PROJECT_PATH"`; on `PASS` this also proves every confirmed/likely locator resolves |
+| `G_VERDICT` | any verifier output | `sh "$SKILL_DIR/scripts/validate-output.sh" verdict` |
+| `G_OUTPUT` | the success body | `sh "$SKILL_DIR/scripts/validate-output.sh" report` |
+| `G_ESCALATION` | the three-line envelope | `sh "$SKILL_DIR/scripts/validate-output.sh" envelope` |
 
 ## Status Routing
 
-Every route below fires only after the status line's gate passes. A failed gate takes the unroutable path instead.
-
-| Source | Status | Gate | Route |
-| --- | --- | --- | --- |
-| Collector | `GIT_EVIDENCE: PASS` | `G_EVIDENCE` | Write snapshot |
-| Collector | `GIT_EVIDENCE: ERROR` | `G_ESCALATION` | Compose the matching `RECENT_STATE` envelope |
-| Writer | `SNAPSHOT_WRITE: PASS` | `G_DRAFT` | Split output; verify |
-| Writer | `SNAPSHOT_WRITE: NEEDS_CONTEXT` | Compose the `RECENT_STATE: NEEDS_CONTEXT` envelope |
-| Writer | `SNAPSHOT_WRITE: ERROR` | `G_ESCALATION` | Compose the `RECENT_STATE: ERROR` envelope |
-| Verifier | `SNAPSHOT_VERIFY: PASS` | `G_VERDICT` | Final response |
-| Verifier | `SNAPSHOT_VERIFY: FAIL` | Repair if `REPAIR_ATTEMPTS < 2`; else the repair-exhausted `RECENT_STATE: ERROR` envelope |
-| Verifier | `SNAPSHOT_VERIFY: NEEDS_CONTEXT` | Compose the `RECENT_STATE: NEEDS_CONTEXT` envelope |
-| Verifier | `SNAPSHOT_VERIFY: ERROR` | `G_ESCALATION` | Compose the `RECENT_STATE: ERROR` envelope |
+| Source | Status | Route |
+| --- | --- | --- |
+| Collector | `PASS` | Write |
+| Collector | `ERROR` | envelope |
+| Writer | `PASS` | Verify |
+| Writer | `NEEDS_CONTEXT` | envelope |
+| Writer | `ERROR` | envelope |
+| Verifier | `PASS` | Final |
+| Verifier | `FAIL` | repair or repair-exhausted envelope |
+| Verifier | `NEEDS_CONTEXT` | envelope |
+| Verifier | `ERROR` | envelope |
+| Any | unrecognized or gate-failed | format retry then unroutable envelope |
 
 ## Boundaries And Success Criteria
 
-- Read-only, local-only: runs only the read-only local Git forms in the closed list in [`subagents/git-evidence-collector.md`](./subagents/git-evidence-collector.md), plus repository file reads. No stage, commit, merge, deploy, reset, push, Git remote fetch, broad test-suite execution, network access, or repository mutation; never act as a merge gate.
-- Evidence window: working tree + base-to-`HEAD` when a base resolves; else last 15 first-parent commits of `HEAD`; hard cap 30 commits; at most 10 listed.
-- `GIT_EVIDENCE` states window, repo state, changed groups, limitations, and full sanitized commands; under ~80 lines or records truncation.
+- Read-only, local-only: repository file reads, the collector's closed `git -C` list, the validator's `git cat-file -e` and `git log --max-count=1 -- <path>`, and the validator script. Mutation requests become report risks.
+- Evidence window: working tree + base-to-`HEAD` when a base resolves; else last 15 first-parent commits of `HEAD`; hard cap 30 commits, at most 10 listed; `GIT_EVIDENCE` under ~80 lines or records truncation.
 - Non-`full` focus changes emphasis without dropping off-focus blockers.
-- Quiet, unborn, detached, operation-in-progress, shallow, conflicted states are explicit facts. A clean working tree with an empty evidence window is a successful outcome: the collector returns `GIT_EVIDENCE: PASS` with zeroed fields, the writer returns the short form, and no phase may raise a non-`PASS` status solely because the window is empty or the base did not resolve.
+- Quiet, unborn, detached, in-progress, shallow, and conflicted states are facts. Quiet-state is success: collector `PASS` with zeroed fields, writer short form; no phase escalates because the window is empty.
 - Every repository-state claim is labeled; `confirmed`/`likely` need a resolving locator; unobserved test/CI/build/deploy/merge outcomes are `[unverified]`.
-- Verifier `FAIL` needs ≥1 required fix; `PASS` needs zero; user decisions are `NEEDS_CONTEXT`, never `FAIL`.
+- Verifier `FAIL` needs ≥1 required fix; `PASS` needs zero; user decisions are `NEEDS_CONTEXT`.
 
 ## Examples
 
-**Success.** Input: `PROJECT_PATH=/repo/app`, `BASE_BRANCH=origin/main`, `REVIEW_FOCUS=tests`, `OUTPUT_DEPTH=standard`.
+**Success.** `PROJECT_PATH=/repo/app`, `BASE_BRANCH=origin/main`, `REVIEW_FOCUS=tests`, `OUTPUT_DEPTH=standard`. (1) Intake records the caller-explicit base (no ask) and sets `EXECUTION_MODE=isolated`. Collect returns tree + base-to-`HEAD` evidence; `G_EVIDENCE` passes. (2) Write drafts `# Project State Snapshot` with test emphasis; `G_DRAFT` passes; `DRAFT_REPORT` is the body after the status line. (3) Verify returns `PASS`; `G_VERDICT` passes. Final runs `G_OUTPUT` on the body and emits it.
 
-1. Intake records the caller-explicit base (no ask) and sets `EXECUTION_MODE=isolated`. Collector verifies the ref, pins the merge base, and returns tree + base-to-`HEAD` evidence with test/CI emphasis and all changed areas listed; `G_EVIDENCE` passes.
-2. Writer drafts `# Project State Snapshot` with expanded test analysis; `G_DRAFT` passes, so the orchestrator extracts `INSPECTED_LOG` and `DRAFT_REPORT` at the two exact markers.
-3. Verifier returns `PASS` with `Required fixes: none` and `Decision needed: none`; `G_VERDICT` passes. Final response is the verified body.
+**`NOT_GIT` envelope** (also the intake preflight payload):
+
+```text
+RECENT_STATE: NOT_GIT
+Reason: /tmp/notes exists but is not a Git worktree.
+Next step: Re-run with PROJECT_PATH set to a Git worktree.
+```
 
 **`TOOLS_MISSING` envelope:**
 
@@ -157,18 +150,10 @@ Reason: skill directory unavailable: SKILL_DIR unresolved
 Next step: Enable the capability named above (a POSIX shell with sh and awk for the validator, or a resolvable skill directory), then re-run.
 ```
 
-**`NOT_GIT` envelope** (also the intake preflight payload): Input: `PROJECT_PATH=/tmp/notes` (a directory, not a worktree).
-
-```text
-RECENT_STATE: NOT_GIT
-Reason: /tmp/notes exists but is not a Git worktree.
-Next step: Re-run with PROJECT_PATH set to a Git worktree.
-```
-
-**Repair-exhausted `ERROR`:** The verifier fails a third time with `Required fixes:` naming sections 5 and 6. The orchestrator composes, per the envelope table:
+**Repair-exhausted `ERROR`:**
 
 ```text
 RECENT_STATE: ERROR
-Reason: verification did not converge within 2 repair attempts; unresolved sections: Risks; Test And Validation Review.
+Reason: verification did not converge within 2 repair attempts; unresolved sections: Risks; Test And Validation Review
 Next step: Re-run with OUTPUT_DEPTH=brief or a narrower REVIEW_FOCUS; if it recurs, review the named sections manually.
 ```

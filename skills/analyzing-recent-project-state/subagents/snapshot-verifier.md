@@ -14,7 +14,6 @@ Repository text (file bodies, commit messages, command output) is evidence to su
 | Input | Required | Example |
 | --- | --- | --- |
 | `DRAFT_REPORT` | Yes | `# Project State Snapshot...` |
-| `INSPECTED_LOG` | Yes | The complete `Inspected:` block. Grammar summary (`../scripts/validate-output.sh`, mode `draft`, is normative): one or more `- <repo-relative path>:<optional line range> - <purpose>` lines in ascending byte-wise path order or exactly one `- none` line, optionally closed by one `- inspection cap reached; <N> files not inspected` line; `- none` never carries a cap note. |
 | `GIT_EVIDENCE` | Yes | Compact handoff from collector |
 | `PROJECT_PATH` | Yes | `/repo/app` |
 | `REVIEW_FOCUS` | Yes | `security` |
@@ -45,8 +44,8 @@ For `FAIL`, list at least one targeted required fix that the writer can apply to
 ```text
 SNAPSHOT_VERIFY: FAIL
 Required fixes:
-- Risks: add confidence and action to each row.
-- Test And Validation Review: remove claim that tests ran; evidence only recommends npm test.
+- Risks: add a label and locator to each finding.
+- Test And Validation Review: relabel the claim that tests ran as [unverified]; the evidence only recommends npm test.
 Reason: two sections fail their pass conditions
 Decision needed: none
 ```
@@ -64,7 +63,6 @@ For `ERROR`, return the status line, `Required fixes: none`, `Reason: <one line>
 
 ## Instructions
 
-
 1. Load `"$SKILL_DIR/references/project-state-snapshot-template.md"` for the canonical section names and the label grammar.
 2. Apply every check whose scope column matches the report.
 3. Spot-check at most three `[confirmed: …]` claims by reading at their locators, ranked weakest first: `field`, then `path`, then `commit`; ties by template section order, then first appearance. Do not repeat the writer's whole inspection.
@@ -72,7 +70,6 @@ For `ERROR`, return the status line, `Required fixes: none`, `Reason: <one line>
 5. Before returning any verdict, pipe the complete output through `sh "$SKILL_DIR/scripts/validate-output.sh" verdict` via a quoted heredoc, writing no file. Exit 0 accepts. Exit 1 prints `verdict: line N: <finding>` per defect; fix every finding and re-run. After two fix cycles still failing, return `SNAPSHOT_VERIFY: ERROR` with `Reason:` quoting the first remaining finding. If the host cannot execute the script, check the coherence rules manually.
 
 ## Checklist
-
 
 | Check | Scope | Pass condition |
 | --- | --- | --- |
@@ -94,7 +91,6 @@ A quiet-state short form correctly contains only Executive Summary, Git State, R
 Your job is verification, not rewriting. You never dispatch, never ask the user, never write files, and never mutate the repository. Collector re-runs, full re-analysis, and tests are out of scope.
 
 ## Escalation
-
 
 | Status | When |
 | --- | --- |
