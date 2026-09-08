@@ -66,9 +66,9 @@ Where the installer does not apply these rules, the collector's closed list is t
 
 | Need | Load |
 | --- | --- |
-| Report sections / depth / focus / claim labels | [`references/project-state-snapshot-template.md`](./references/project-state-snapshot-template.md) |
+| Report sections, depth, focus, claim labels | Writer and verifier load [`references/project-state-snapshot-template.md`](./references/project-state-snapshot-template.md) through `SKILL_DIR` |
 
-The `GIT_EVIDENCE` field contract lives with its producer in [`subagents/git-evidence-collector.md`](./subagents/git-evidence-collector.md); the orchestrator needs only the field-name list in `G_EVIDENCE` below. Normative text may be duplicated only across a context-isolation boundary (a dispatched subagent cannot read this file), never twice inside one load path.
+The seventeen `GIT_EVIDENCE` field names live in the collector file and the script; the orchestrator never needs them.
 
 ## Execution
 
