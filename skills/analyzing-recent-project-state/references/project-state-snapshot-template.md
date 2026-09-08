@@ -84,9 +84,10 @@ The repository is quiet: clean tree, no unmerged recent work. Safe to start new 
 
 ## Claim Discipline
 
-Use these labels when evidence is partial:
+Every repository-state claim in the report body carries exactly one token: `[confirmed: <locator>]`, `[likely: <locator>]`, `[possible]`, or `[unverified]`.
 
-- `confirmed`: directly supported by Git evidence, inspected code, or cited source.
-- `likely`: supported by local evidence but not fully validated.
-- `possible`: plausible from changed files or context, but unverified.
-- `unverified`: requires a command, test, owner decision, or external fact not observed.
+Locators: `commit <7-40 lowercase hex>`; `path <repo-relative path>` optionally `:<line>` or `:<start>-<end>` with `start <= end`; the path has no leading `/`, no `..` segment, and contains no `:` or `]`; `field <name>` where `<name>` is one of Project path, Branch/upstream, Repo state, Evidence window, Working tree, Base branch, Base comparison, Recent commits reviewed, Changed-file groups, Diff stats, Preliminary themes, Risk signals, Test signals, Dependency/config/tooling signals, Context limitations, Commands run, Reason. A `field` claim restates the value inside the sentence so a reader who receives only the report still has the fact. `possible` and `unverified` carry no locator. The script proves that a locator resolves (the commit exists, the path exists or existed, the line range is within the file); only the verifier judges whether the locator supports the claim.
+
+A test, CI, build, deploy, or merge outcome is always `[unverified]` in this report, because no `GIT_EVIDENCE` field can state one; recommending a command is fine, claiming its result is not.
+
+Examples: `Commit a1b2c3d adds the rate-limit middleware [confirmed: commit a1b2c3d].` `The handler at src/api.ts:40 likely skips the new check on error paths [likely: path src/api.ts:40].` `An untracked consumer may still call the old name [possible].` `Whether npm test passes is [unverified].`

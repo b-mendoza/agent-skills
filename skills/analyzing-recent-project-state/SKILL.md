@@ -34,7 +34,7 @@ The skill returns exactly one of two outcomes, as response text. It writes no fi
 
 | Outcome | Shape |
 | --- | --- |
-| Success | The verified `# Project State Snapshot` body conforming to [`references/project-state-snapshot-template.md`](./references/project-state-snapshot-template.md), including its quiet-state short form. No status wrapper, no `Inspected:` log. |
+| Success | The verified `# Project State Snapshot` body (ten canonical sections, or the four-section quiet-state short form). Claims use the label grammar owned by [`references/project-state-snapshot-template.md`](./references/project-state-snapshot-template.md), : `[confirmed: <locator>]`, `[likely: <locator>]`, `[possible]`, `[unverified]`; locators `commit <hash>`, `path <path>[:<lines>]`, `field <GIT_EVIDENCE field name>`. |
 | Failure | Exactly three lines: `RECENT_STATE: <NOT_GIT \| PATH_ERROR \| NEEDS_CONTEXT \| TOOLS_MISSING \| ERROR>`, `Reason: <one line>`, `Next step: <one clear action>`. |
 
 Both outcomes are critical outputs: the user acts on them without re-deriving them. Each is protected by the payload gates below.
@@ -137,7 +137,7 @@ Every route below fires only after the status line's gate passes. A failed gate 
 - `GIT_EVIDENCE` states window, repo state, changed groups, limitations, and full sanitized commands; under ~80 lines or records truncation.
 - Non-`full` focus changes emphasis without dropping off-focus blockers.
 - Quiet, unborn, detached, operation-in-progress, shallow, conflicted states are explicit facts. A clean working tree with an empty evidence window is a successful outcome: the collector returns `GIT_EVIDENCE: PASS` with zeroed fields, the writer returns the short form, and no phase may raise a non-`PASS` status solely because the window is empty or the base did not resolve.
-- Material claims carry a checkable locator or an explicit inference label; delivered locators must be resolvable by a reader who receives only the report (the writer owns the locator rules); claims that cannot are downgraded, not asserted.
+- Every repository-state claim is labeled; `confirmed`/`likely` need a resolving locator; unobserved test/CI/build/deploy/merge outcomes are `[unverified]`.
 - Verifier `FAIL` needs ≥1 required fix; `PASS` needs zero; user decisions are `NEEDS_CONTEXT`, never `FAIL`.
 
 ## Examples

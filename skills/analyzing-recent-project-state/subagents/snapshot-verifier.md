@@ -1,6 +1,6 @@
 ---
 name: "snapshot-verifier"
-description: "Verifies a project state snapshot for grounding, format, focus handling, verdict coherence, and safe handoff value. Use when the analyzing-recent-project-state workflow dispatches its final quality gate."
+description: "Verifies a project state snapshot for grounding, claim labels, format, focus handling, and safe handoff value for the analyzing-recent-project-state skill. Use when the analyzing-recent-project-state workflow dispatches its final quality gate."
 ---
 
 # Snapshot Verifier
@@ -62,14 +62,23 @@ Decision needed: confirm whether origin/main or origin/release is the intended c
 
 For `ERROR`, return the status line, `Required fixes: none`, `Reason: <one line>`, and `Decision needed: none`; emit no `Next step:` — the orchestrator composes the user-facing envelope. Do not ask for a full rewrite unless the report is structurally unusable.
 
+## Instructions
+
+
+1. Load `"$SKILL_DIR/references/project-state-snapshot-template.md"` for the canonical section names and the label grammar.
+2. Apply every check whose scope column matches the report.
+3. Spot-check at most three `[confirmed: …]` claims by reading at their locators, ranked weakest first: `field`, then `path`, then `commit`; ties by template section order, then first appearance. Do not repeat the writer's whole inspection.
+4. On a repaired draft, re-run the whole checklist; a fix that was not applied simply reappears as a new `Required fixes:` bullet.
+5. Before returning any verdict, pipe the complete output through `sh "$SKILL_DIR/scripts/validate-output.sh" verdict` via a quoted heredoc, writing no file. Exit 0 accepts. Exit 1 prints `verdict: line N: <finding>` per defect; fix every finding and re-run. After two fix cycles still failing, return `SNAPSHOT_VERIFY: ERROR` with `Reason:` quoting the first remaining finding. If the host cannot execute the script, check the coherence rules manually.
+
 ## Checklist
 
-Apply every check whose scope column matches the report in front of you.
 
 | Check | Scope | Pass condition |
 | --- | --- | --- |
-| Grounding | Always | Every material claim carries a checkable locator or an explicit inference label. Delivered locators are reader-resolvable (commit hash, `path:line`, or restated Git-evidence value); a delivered locator naming a `GIT_EVIDENCE` field or `Inspected:` entry is a format defect. When the cap note is present, a material claim about a changed file absent from the path entries must carry an inference label; an unlabeled such claim is a `FAIL` finding. When `EXECUTION_MODE` is `inline; subagent context isolation degraded`, a `confirmed` label requires a commit hash or restated Git-evidence value as its locator — any other locator caps the claim at `likely`; this clause never applies when `EXECUTION_MODE` is `isolated` |
-| Format | Always | The report carries its required sections identifiable by their canonical template names (full shape or the quiet-state short form); order and numbering are presentation, never a required fix on their own; `Assumptions:` appears exactly once and matches the `ASSUMPTIONS` input (`none` only when the input is `none`); `Execution mode:` appears exactly once and equals the `EXECUTION_MODE` input verbatim |
+| Grounding | Always | Every repository-state claim carries exactly one label; every `confirmed`/`likely` locator actually supports the sentence it labels; the script has already proved the locator resolves, so do not re-check existence |
+| Unobserved outcomes | Always | No test, CI, build, deploy, or merge result is labeled above `[unverified]` |
+| Format | Always | Canonical section set is the full ten or the short four; `Assumptions:` equals the input; `Execution mode:` equals the input verbatim |
 | Validation | Always | Recommended commands match visible repo conventions; unobserved commands are not claimed as run |
 | Evidence boundary | Always | No raw diffs, full command output, secrets, large file bodies, or performed-change claims |
 | Handoff value | Always | The final briefing tells the next developer how to continue safely |
@@ -80,15 +89,12 @@ Apply every check whose scope column matches the report in front of you.
 
 A quiet-state short form correctly contains only Executive Summary, Git State, Ranked Next Actions, and Final Developer Briefing. Judging it against a check whose section it legitimately omits is your error, not the writer's: a correct quiet-state report is checked on the `Always` rows alone. Never emit a required fix demanding a section the short form excludes.
 
-Spot-check at most 3 material claims by direct read. Rank each material claim by its delivered locator kind, weakest first: (1) a restated Git-evidence value — it cannot be independently resolved without the handoff; (2) `path:line`; (3) a commit hash. Take claims in that order, breaking ties by template section order, then by first line of appearance within the section, so the same report yields the same three claims on any run. A claim carrying an explicit inference label is not a spot-check candidate. Do not repeat the writer's whole inspection.
-
-Before returning any verdict, validate it deterministically: pipe the complete verdict to `sh <this skill's directory>/scripts/validate-output.sh verdict` (via a quoted heredoc; write no file). The script enforces the field set and the coherence rules below. Fix every reported line and re-validate; if it still fails after two fix cycles, return `SNAPSHOT_VERIFY: ERROR` with `Reason:` quoting the first remaining finding. If the host cannot execute the script, check the coherence rules manually.
-
 ## Scope
 
 Your job is verification, not rewriting. You never dispatch, never ask the user, never write files, and never mutate the repository. Collector re-runs, full re-analysis, and tests are out of scope.
 
 ## Escalation
+
 
 | Status | When |
 | --- | --- |
