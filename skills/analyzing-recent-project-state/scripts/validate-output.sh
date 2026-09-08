@@ -6,7 +6,7 @@
 # orchestrator runs it at the payload gates; the eval suite reuses it, so
 # test-time and runtime can never drift apart.
 #
-# Usage: sh validate-output.sh <evidence|draft|verdict|envelope>  < payload
+# Usage: sh validate-output.sh <evidence|draft|report|verdict|envelope>  < payload
 # Exit 0 when the payload conforms; exit 1 with one "line N: ..." finding per
 # defect on stdout. Requires only POSIX sh and awk.
 
@@ -16,9 +16,9 @@ export LC_ALL
 mode="$1"
 
 case "$mode" in
-  evidence|draft|verdict|envelope) ;;
+  evidence|draft|report|verdict|envelope) ;;
   *)
-    echo "usage: validate-output.sh <evidence|draft|verdict|envelope>" >&2
+    echo "usage: validate-output.sh <evidence|draft|report|verdict|envelope>" >&2
     exit 2
     ;;
 esac
@@ -28,10 +28,87 @@ function fail(lineNumber, message) {
   printf "%s: line %d: %s\n", mode, lineNumber, message
   failed = 1
 }
+
+function wellFormedLabel(token,    loc) {
+  if (token == "[possible]" || token == "[unverified]") return 1
+  if (token ~ /^\[(confirmed|likely): .+\]$/) {
+    loc = substr(token, index(token, ": ") + 2)
+    loc = substr(loc, 1, length(loc) - 1)
+    return loc != ""
+  }
+  return 0
+}
+function eachLabel(lineNumber, text,    rest, frag, token) {
+  rest = text
+  while (match(rest, /\[(confirmed|likely|possible|unverified)/)) {
+    frag = substr(rest, RSTART)
+    if (!match(frag, /^\[[^]]*\]/)) { fail(lineNumber, "unclosed claim label"); return }
+    token = substr(frag, 1, RLENGTH)
+    if (!wellFormedLabel(token)) fail(lineNumber, "malformed claim label: " token)
+    rest = substr(frag, RLENGTH + 1)
+  }
+}
+function canonicalHeading(text,    n) {
+  for (n = 1; n <= nFull; n++) {
+    if (text ~ ("^(######|#####|####|###|##|#)[[:space:]]*([0-9]+\\.[[:space:]]*)?" fullNames[n] "[[:space:]]*$"))
+      return fullNames[n]
+  }
+  return ""
+}
+function checkReport(bodyFirst, bodyLast,    i, firstNonBlank, name, seen, uniqueCount, fullCount, fullMissing, isFull, isShort, assumptionsCount, executionModeCount, inspectLeak) {
+  inspectLeak = "Inspec" "ted:"
+  firstNonBlank = 0
+  for (i = bodyFirst; i <= bodyLast; i++) {
+    if (lines[i] !~ /^[[:space:]]*$/) { firstNonBlank = i; break }
+  }
+  if (firstNonBlank == 0) { fail(bodyFirst, "report body is empty"); return }
+  if (lines[firstNonBlank] != "# Project State Snapshot")
+    fail(firstNonBlank, "first line must be exactly # Project State Snapshot")
+  uniqueCount = 0
+  for (i = bodyFirst; i <= bodyLast; i++) {
+    name = canonicalHeading(lines[i])
+    if (name != "") {
+      seen[name]++
+      if (seen[name] == 1) uniqueCount++
+      else if (seen[name] == 2) fail(i, "duplicate section: " name)
+    }
+  }
+  fullCount = 0; fullMissing = ""
+  for (i = 1; i <= nFull; i++) {
+    if (seen[fullNames[i]]) fullCount++
+    else fullMissing = fullMissing (fullMissing == "" ? "" : ", ") fullNames[i]
+  }
+  isFull = (fullCount == nFull)
+  isShort = (uniqueCount == nShort && seen[shortNames[1]] && seen[shortNames[2]] && seen[shortNames[3]] && seen[shortNames[4]])
+  if (!isFull && !isShort)
+    fail(firstNonBlank, "section set is neither the full form nor the quiet-state short form; missing: " fullMissing)
+  assumptionsCount = 0; executionModeCount = 0
+  for (i = bodyFirst; i <= bodyLast; i++) {
+    if (index(lines[i], "GIT_EVIDENCE:") == 1 || index(lines[i], "SNAPSHOT_WRITE:") == 1 || index(lines[i], "SNAPSHOT_VERIFY:") == 1 || lines[i] == inspectLeak)
+      fail(i, "leaked internal artifact")
+    if (index(lines[i], "Assumptions:") == 1) {
+      assumptionsCount++
+      if (!nonEmptyAfter(lines[i], "Assumptions:")) fail(i, "Assumptions: must carry non-empty content")
+    }
+    if (index(lines[i], "Execution mode:") == 1) {
+      executionModeCount++
+      if (lines[i] != "Execution mode: isolated" && lines[i] != "Execution mode: inline; subagent context isolation degraded")
+        fail(i, "Execution mode: value must be the isolated or inline enum literal, verbatim")
+    }
+    eachLabel(i, lines[i])
+  }
+  if (assumptionsCount != 1) fail(bodyLast, "expected exactly one Assumptions: line in the body, found " assumptionsCount)
+  if (executionModeCount != 1) fail(bodyLast, "expected exactly one Execution mode: line in the body, found " executionModeCount)
+}
+
 function nonEmptyAfter(text, prefix) {
   rest = substr(text, length(prefix) + 1)
   gsub(/[[:space:]]/, "", rest)
   return rest != ""
+}
+BEGIN {
+  nFull = split("Executive Summary|Git State|Change Themes|Behavioral Impact|Risks|Test And Validation Review|Dependency, Config, Tooling, And Security Notes|Questions Before Merging|Ranked Next Actions|Final Developer Briefing", fullNames, "|")
+  nShort = split("Executive Summary|Git State|Ranked Next Actions|Final Developer Briefing", shortNames, "|")
 }
 { lines[NR] = $0 }
 END {
@@ -42,6 +119,11 @@ END {
   while (first <= last && lines[first] ~ /^[[:space:]]*$/) first++
   while (last >= first && lines[last] ~ /^[[:space:]]*$/) last--
   if (last < first) { fail(1, "payload is empty"); exit 1 }
+
+  if (mode == "report") {
+    checkReport(first, last)
+    exit failed
+  }
 
   if (mode == "envelope") {
     count = 0

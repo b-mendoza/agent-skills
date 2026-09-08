@@ -92,7 +92,7 @@ Five phases. Announce progress with a brief plain note per phase or the host's n
 2. **Collect evidence** — Dispatch `git-evidence-collector` with `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `SKILL_DIR`. Route on its status line (table below). Quiet or abnormal repo states are `PASS` facts.
 3. **Write snapshot** — Dispatch `state-snapshot-writer` with `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `OUTPUT_DEPTH`, `ASSUMPTIONS`, `EXECUTION_MODE`, `SKILL_DIR`. On writer `PASS`, extract two artifacts using the writer's two exact markers: `INSPECTED_LOG` runs from the `Inspected:` heading through the line before the `# Project State Snapshot` heading; `DRAFT_REPORT` runs from that heading through the end of the output. Discard the status wrapper and retain both. On repair, redispatch with the same six inputs plus `PRIOR_DRAFT` and `REQUIRED_FIXES`.
 4. **Verify** — Dispatch `snapshot-verifier` with `DRAFT_REPORT`, `INSPECTED_LOG`, `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `ASSUMPTIONS`, `EXECUTION_MODE` as separate inputs. Only the most recent list is carried; earlier lists are never accumulated. `PASS` → final response. `FAIL` → repair under the `REPAIR_ATTEMPTS` bound below, then re-verify.
-5. **Final response** (inline) — Strip status wrappers and the `Inspected:` log. Return exactly one outcome from the Output Contract.
+5. **Final response** (inline) — On success run `report` mode on `DRAFT_REPORT` (`G_OUTPUT`); strip status wrappers and the `Inspected:` log. Return exactly one outcome from the Output Contract.
 
 Intake and Final response are inline: they emit no status line and are bound to no gate. Intake exits by proceeding to phase 2 or terminating as `RECENT_STATE: NEEDS_CONTEXT` under the ask policy; Final response exits by emitting exactly one Output Contract outcome, with `G_OUTPUT` checked on the escalation path.
 
@@ -112,7 +112,8 @@ The orchestrator checks these; the producing subagent does not grade its own out
 | `G_DRAFT` | Writer `PASS` | `draft` mode passes on the full writer output |
 | `G_VERDICT` | Verifier `PASS` | `verdict` mode passes |
 | `G_ESCALATION` | Collector `ERROR`, writer `ERROR`, verifier `ERROR` | The producing subagent's mode passes on the payload; no `Next step:` is expected from a subagent |
-| `G_OUTPUT` | Final terminal escalation response | `envelope` mode passes. On failure, recompose once directly from the envelope table and emit the result; the table is deterministic, so no further retry exists |
+| `G_OUTPUT` | the success body | `report` mode passes on `DRAFT_REPORT` |
+| `G_ESCALATION` | Final terminal escalation response | `envelope` mode passes. On failure, recompose once directly from the envelope table and emit the result; the table is deterministic, so no further retry exists |
 
 ## Status Routing
 

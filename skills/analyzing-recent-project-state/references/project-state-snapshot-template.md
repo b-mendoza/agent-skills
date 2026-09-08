@@ -15,7 +15,7 @@ The writer returns a Markdown report body titled `# Project State Snapshot`. The
 9. `## 9. Ranked Next Actions`
 10. `## 10. Final Developer Briefing`
 
-Section names are canonical identifiers: required fixes, fix dispositions, and repair targeting all address sections by these names, so each required section's name must appear verbatim in its heading. The order and numbering above are the recommended presentation, not a gate — a report that carries its required sections under their canonical names conforms.
+Section names are the identifiers the validator's `report` mode and the verifier's `Required fixes:` bullets use. Each required section's name must appear verbatim in its heading. Heading level and `N.` numbering are presentation; the name is the identifier. A report whose canonical-section set is neither exactly these ten nor the quiet-state four fails the script.
 
 ## Section Requirements
 
