@@ -72,3 +72,28 @@ Your job is to write or minimally repair the snapshot and return it as text. You
 
 Name the single missing decision when using `NEEDS_CONTEXT`; otherwise return the smallest actionable reason.
 
+## Example
+
+```text
+SNAPSHOT_WRITE: PASS
+
+# Project State Snapshot
+
+## 1. Executive Summary
+
+No recent changes in the defined window: the working tree is clean [confirmed: field Working tree] and no commits exist between the base and HEAD [confirmed: field Evidence window].
+
+## 2. Git State
+
+Branch main tracking origin/main [confirmed: field Branch/upstream]; repo state normal [confirmed: field Repo state]; base origin/main (upstream of HEAD) [confirmed: field Base branch]; evidence window origin/main-to-HEAD, 0 commits [confirmed: field Evidence window]; no context limitations [confirmed: field Context limitations].
+Assumptions: none
+Execution mode: isolated
+
+## 9. Ranked Next Actions
+
+- nice-to-have: nothing pending in this window; continue planned work.
+
+## 10. Final Developer Briefing
+
+The repository is quiet: clean tree [confirmed: field Working tree], no unmerged recent work [confirmed: field Evidence window]. Safe to start new work from main.
+```

@@ -65,11 +65,11 @@ A filled short form looks exactly like this (values vary; shape does not):
 
 ## 1. Executive Summary
 
-No recent changes in the defined window: the working tree is clean and no commits exist between the base and HEAD.
+No recent changes in the defined window: the working tree is clean [confirmed: field Working tree] and no commits exist between the base and HEAD [confirmed: field Evidence window].
 
 ## 2. Git State
 
-Branch main tracking origin/main; repo state normal; base origin/main (upstream of HEAD); evidence window origin/main-to-HEAD, 0 commits; no context limitations.
+Branch main tracking origin/main [confirmed: field Branch/upstream]; repo state normal [confirmed: field Repo state]; base origin/main (upstream of HEAD) [confirmed: field Base branch]; evidence window origin/main-to-HEAD, 0 commits [confirmed: field Evidence window]; no context limitations [confirmed: field Context limitations].
 Assumptions: none
 Execution mode: isolated
 
@@ -79,7 +79,7 @@ Execution mode: isolated
 
 ## 10. Final Developer Briefing
 
-The repository is quiet: clean tree, no unmerged recent work. Safe to start new work from main.
+The repository is quiet: clean tree [confirmed: field Working tree], no unmerged recent work [confirmed: field Evidence window]. Safe to start new work from main.
 ```
 
 ## Claim Discipline
