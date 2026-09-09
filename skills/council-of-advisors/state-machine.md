@@ -90,7 +90,7 @@ Competing transitions from one state use first-match order as listed.
 | `OriginalityCheck` | `OriginalityBranch` | `G_ORIGINALITY` fail (no pass condition in `decision-gates.md` holds) → redispatch `originality-seat` in branch mode |
 | `OriginalityCheck` | `SynthesizeChair` | `G_ORIGINALITY` pass |
 | `OriginalityBranch` | `SynthesizeChair` | Branch output authored with provenance |
-| `OriginalityBranch` | `OriginalityBranch` | Malformed branch output; redispatch under repair cap |
+| `OriginalityBranch` | `OriginalityBranch` | Malformed branch output or branch `FAIL`; redispatch under repair cap |
 | `OriginalityBranch` | `Blocked` | Branch repair cap hit |
 | `OriginalityBranch` | `Error` | Seat `ERROR` twice |
 | `SynthesizeChair` | `RouteConfidence` | `G_DISSENT_PRESERVED` ∧ `G_KILL_CRITERION` pass (both checked at every confidence level) |
