@@ -84,7 +84,7 @@ Mutation limits: derive `MUTATION_LIMITS` at intake and carry it in every dispat
 
 Evidence tiers (closed): `packet`, `tool_verified`, `model_prior`. `tool_verified` needs web tools + locator. Load-bearing model-prior prior art caps chair confidence at `medium`.
 
-High-stakes (medical, legal, financial-advice, safety-critical personal): attach `This is decision-structuring, not professional advice.` Power-questions must name the qualified professional to consult.
+High-stakes (medical, legal, financial-advice, safety-critical personal): attach `This is decision-structuring, not professional advice.` When a high-stakes disclosure applies, the power-questions seat includes one question naming the qualified professional role to consult (a role, not a person) and what to ask them.
 
 ## Execution
 
