@@ -78,7 +78,9 @@ Read a seat only on dispatch. Prefer runtime subagents; else run inline. Record 
 
 ## How This Skill Works
 
-Dispatch: read seat; inline schema from `./references/seat-output-schema.md`; wrap packet in `<decision_packet packet_version="N">...</decision_packet>`; add `depth_setting`, `research_tools`, version, repair reason, `MUTATION_LIMITS`; log hygiene (no sibling output). Seats never read package files.
+Dispatch: read seat; inline schema from `./references/seat-output-schema.md`; wrap packet in `<decision_packet packet_version="N">...</decision_packet>`; add `depth_setting`, `research_tools`, version, repair reason, `MUTATION_LIMITS`, and the validator invocation below; log hygiene (no sibling output). Seats never read package files.
+
+Validator: `python3 "${SKILL_DIR}/scripts/validate_packet.py" <kind> [web] < payload`, kinds `reversibility|analysis|branch|chair|handoff`, `web` appended for seat kinds when the run declared `research_tools: web`; exit `0` accepts, non-zero prints one finding per line. The orchestrator runs it on every received payload before routing and on the handoff before `Ready`. If `python3` is unavailable through a permitted shell, issue `TOOLS_MISSING` and terminate `Blocked` naming the capability; never apply the checks by hand. Declared exception to `script-enforced-output-contracts` rules 1 and 3: seats never read package files, so the invocation rides in the dispatch envelope rather than in each seat file.
 
 Mutation limits: derive `MUTATION_LIMITS` at intake and carry it in every dispatch envelope. Write only the resolved `HANDOFF_PATH`, never overwriting (collision policy above). Out of scope: every other path, `.agents/skills/`, `.claude/skills/`, `skills-lock.json`. Seats and the chair write nothing. No repair cycle widens the limits.
 
@@ -126,7 +128,7 @@ seat_packets: <reversibility, seven analysis, chair, optional branch>
 educate_me: <lesson cards and solo drill>
 gates: <verdicts with evidence>
 execution_fidelity: subagents | inline_degraded
-run_log: <versions, dispatches, cycles, budgets, override>
+run_log: <versions, dispatches, cycles, budgets, override, validator invocations and exit codes>
 ```
 
 Chat summary: final recommendation, confidence, decision type, kill criterion, top three power questions, minority-report paragraph, disclosure if any, degraded-fidelity disclosure when `execution_fidelity: inline_degraded`, and the final handoff path actually written.

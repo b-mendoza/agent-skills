@@ -125,5 +125,6 @@ Every listed state is reachable from `Intake` via documented guards. Terminals e
 
 - Orchestrator never authors substantive analysis; seats own claims.
 - Analysis-seat payloads contain no sibling seat output.
+- `TOOLS_MISSING` (the shipped validator cannot run) is out-of-band, not a seat status: from any state that would run the validator, terminate `Blocked` naming the capability.
 - `do_not_commit_yet` is orchestrator-only at `Type1Gate`; preserve `chair_recommendation` separately and set `override_applied`.
 - Medium confidence still requires `G_KILL_CRITERION` (time/event-bound quality rules in `decision-gates.md`) before `Type1Gate`.

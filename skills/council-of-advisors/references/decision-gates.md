@@ -16,6 +16,8 @@ Exception: `G_FRAMING_CONFIRMED` does not use the generic per-gate repair counte
 
 Repair only the producing phase or seat named by the failing gate. Do not rerun unaffected seats unless packet version changed.
 
+Validator: the orchestrator runs `python3 "${SKILL_DIR}/scripts/validate_packet.py" <kind> [web] < payload` (kinds `reversibility|analysis|branch|chair|handoff`; `web` appended for seat kinds when the run declared `research_tools: web`; exit `0` accepts, non-zero prints one finding per line) on every received seat and chair payload before routing on it. A rejection is a schema miss on that seat's `FAIL` route. If `python3` is unavailable through a permitted shell, issue `TOOLS_MISSING` and return `status: blocked` naming the capability; never apply the checks by hand.
+
 Low-confidence repair accounting: the redispatch set is the analysis seats whose packets the chair explicitly names as the drivers of its low confidence (empty when the chair names none). `RepairLowConfidence` has no separate cap. Every seat redispatched for low confidence, and every chair rerun it triggers, counts individually against the global redispatch budget. The planned repair (weak seats plus chair rerun) must fit within the remaining budget; otherwise skip the repair. The per-seat schema cap applies only when the named repair reason is a schema defect. The `blocked` route in the table above applies when a required redispatch cannot run within budget; a low-confidence result whose repair is skipped for budget reasons is not blocked — it proceeds to `Type1Gate`, where the Type 1 low-confidence override still protects irreversible decisions.
 
 ## G_FRAMING_CONFIRMED
