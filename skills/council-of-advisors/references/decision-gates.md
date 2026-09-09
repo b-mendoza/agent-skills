@@ -104,6 +104,20 @@ Pass condition: `required_kill_criterion` is present, substantive, specific, and
 
 Failure route: redispatch `chair-seat` with the quality defect.
 
+## G_RECOMMENDATION_CONSISTENCY
+
+Protects: chair recommendation matching its own schema semantics.
+
+Pass condition (from `seat-output-schema.md` chair semantics):
+
+- `go` only with `confidence: high` and no `disagreements_within_council` entry of kind other than `confidence_based`.
+- `rework` whenever any disagreement is `factual` or `interpretive`.
+- `abandon` only with an unrecoverable originality verdict or concurrent adversary and second-order worse-than-status-quo signals.
+
+Checker: the validator `chair` kind enforces the enum and the `go` → `confidence: high` rule; the orchestrator reads the chair packet for the disagreement-kind and `abandon` conditions.
+
+Failure route: redispatch `chair-seat` with the exact inconsistency, within the shared per-gate repair cap.
+
 ## Chair `FAIL` Escalation
 
 Chair `FAIL` routes by stated cause:
@@ -111,7 +125,7 @@ Chair `FAIL` routes by stated cause:
 - Correctable synthesis or formatting defect: 1 targeted redispatch carrying that exact defect, counted against the global redispatch budget. A second `FAIL` returns `status: blocked` with the chair's stated reason surfaced to the user.
 - The chair states that any recommendation would require fabricating consensus or erasing material dissent from unchanged packets: return `status: blocked` immediately with that reason — no blind redispatch.
 
-`G_DISSENT_PRESERVED` and `G_KILL_CRITERION` repairs keep the shared per-gate repair cap; this section governs only seat-emitted chair `FAIL`.
+`G_DISSENT_PRESERVED`, `G_KILL_CRITERION`, and `G_RECOMMENDATION_CONSISTENCY` repairs keep the shared per-gate repair cap; this section governs only seat-emitted chair `FAIL`.
 
 ## G_TYPE_1_LOW_CONFIDENCE
 

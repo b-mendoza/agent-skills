@@ -100,13 +100,13 @@ Follow [`state-machine.md`](./state-machine.md):
 4. `ClassifyReversibility` — `G_REVERSIBILITY`; low → `ProbeReversibility`, else default `type_1`/`deep` if still unresolved.
 5. `BindDepth` → `ParallelAnalysis` → `RouteAnalysis` — `G_REASONING_CHAINS_PRESENT` + `G_INDEPENDENCE`; never mix packet versions.
 6. `OriginalityCheck` / `OriginalityBranch` per `G_ORIGINALITY`.
-7. `SynthesizeChair` → `RouteConfidence` / `RepairLowConfidence` / `G_KILL_CRITERION` as tabulated.
+7. `SynthesizeChair` → `RouteConfidence` / `RepairLowConfidence` / `G_KILL_CRITERION` / `G_RECOMMENDATION_CONSISTENCY` as tabulated.
 8. `Type1Gate` — `do_not_commit_yet` is orchestrator-only; keep `chair_recommendation`; set `override_applied`.
 9. `AssembleEducateMe` → `WriteHandoff` → `Ready`.
 
 ## Critical Outputs And Gates
 
-Predicates only in [`./references/decision-gates.md`](./references/decision-gates.md): `G_FRAMING_CONFIRMED`, `G_REVERSIBILITY`, `G_REASONING_CHAINS_PRESENT`, `G_INDEPENDENCE`, `G_ORIGINALITY`, `G_DISSENT_PRESERVED`, `G_KILL_CRITERION`, `G_TYPE_1_LOW_CONFIDENCE`, `G_LESSON_CARDS_PRESENT`.
+Predicates only in [`./references/decision-gates.md`](./references/decision-gates.md): `G_FRAMING_CONFIRMED`, `G_REVERSIBILITY`, `G_REASONING_CHAINS_PRESENT`, `G_INDEPENDENCE`, `G_ORIGINALITY`, `G_DISSENT_PRESERVED`, `G_KILL_CRITERION`, `G_RECOMMENDATION_CONSISTENCY`, `G_TYPE_1_LOW_CONFIDENCE`, `G_LESSON_CARDS_PRESENT`.
 
 ## Output Contract
 
@@ -128,7 +128,7 @@ required_kill_criterion: <observable stop signal>
 power_questions_to_answer_before_proceeding: [<top questions>]
 seat_packets: <reversibility, seven analysis, chair, optional branch>
 educate_me: <lesson cards and solo drill>
-gates: <verdicts with evidence>
+gates: <verdicts with evidence, including G_RECOMMENDATION_CONSISTENCY>
 execution_fidelity: subagents | inline_degraded
 run_log: <versions, dispatches, cycles, budgets, override, validator invocations and exit codes>
 ```
