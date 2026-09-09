@@ -88,6 +88,8 @@ Evidence tiers (closed): `packet`, `tool_verified`, `model_prior`. `tool_verifie
 
 High-stakes (medical, legal, financial-advice, safety-critical personal): attach `This is decision-structuring, not professional advice.` When a high-stakes disclosure applies, the power-questions seat includes one question naming the qualified professional role to consult (a role, not a person) and what to ask them.
 
+Declared `empirical-validation` exception: this skill has no cases under `evals/`; shape checks reuse the shipped validator; adding cases is follow-up work.
+
 ## Execution
 
 Follow [`state-machine.md`](./state-machine.md):
