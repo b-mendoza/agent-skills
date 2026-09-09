@@ -125,7 +125,7 @@ Chair `FAIL` routes by stated cause:
 - Correctable synthesis or formatting defect: 1 targeted redispatch carrying that exact defect, counted against the global redispatch budget. A second `FAIL` returns `status: blocked` with the chair's stated reason surfaced to the user.
 - The chair states that any recommendation would require fabricating consensus or erasing material dissent from unchanged packets: return `status: blocked` immediately with that reason — no blind redispatch.
 
-`G_DISSENT_PRESERVED`, `G_KILL_CRITERION`, and `G_RECOMMENDATION_CONSISTENCY` repairs keep the shared per-gate repair cap; this section governs only seat-emitted chair `FAIL`.
+`G_DISSENT_PRESERVED`, `G_KILL_CRITERION`, and `G_RECOMMENDATION_CONSISTENCY` repairs keep the shared per-gate repair cap; this section governs only seat-emitted chair `FAIL`. Chair `BLOCKED` (missing, mixed-version, or unusable packets): the orchestrator repairs the packet set, then 1 targeted redispatch counted against the global budget; a second `BLOCKED` returns `status: blocked`.
 
 ## G_TYPE_1_LOW_CONFIDENCE
 

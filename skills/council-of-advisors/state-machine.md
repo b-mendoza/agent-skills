@@ -96,8 +96,8 @@ Competing transitions from one state use first-match order as listed.
 | `OriginalityBranch` | `Blocked` | Branch repair cap hit |
 | `OriginalityBranch` | `Error` | Seat `ERROR` twice |
 | `SynthesizeChair` | `RouteConfidence` | `G_DISSENT_PRESERVED` ∧ `G_KILL_CRITERION` ∧ `G_RECOMMENDATION_CONSISTENCY` pass (all checked at every confidence level) |
-| `SynthesizeChair` | `SynthesizeChair` | Dissent, kill, or recommendation-consistency fail under cap; or chair `FAIL` naming a correctable defect (1 targeted redispatch, counted against global budget) |
-| `SynthesizeChair` | `Blocked` | Chair repair cap hit; second chair `FAIL`; or chair `FAIL` stating synthesis is substantively impossible on unchanged packets (surface the chair's reason) |
+| `SynthesizeChair` | `SynthesizeChair` | Dissent, kill, or recommendation-consistency fail under cap; chair `FAIL` naming a correctable defect; or chair `BLOCKED` (missing, mixed-version, or unusable packets) after the orchestrator repairs the packet set (1 targeted redispatch, counted against global budget) |
+| `SynthesizeChair` | `Blocked` | Chair repair cap hit; second chair `FAIL` or `BLOCKED`; or chair `FAIL` stating synthesis is substantively impossible on unchanged packets (surface the chair's reason) |
 | `SynthesizeChair` | `Error` | Chair `ERROR` twice |
 | `RouteConfidence` | `Type1Gate` | Confidence high/medium (dissent and kill gates already passed in `SynthesizeChair`) |
 | `RouteConfidence` | `RepairLowConfidence` | Confidence low ∧ redispatch set non-empty ∧ planned repair (weak seats + chair rerun) fits within remaining global budget |
