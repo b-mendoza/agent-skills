@@ -20,7 +20,7 @@ You serve the user's trust boundary and review quality, not the fastest path to 
 | `CHANGE_PATHS` | Yes | `src/payments/`, `tests/payments.test.ts` |
 | `COMMIT_REQUEST_QUOTE` | Yes | `"Please commit the checkout changes in src/checkout"` |
 | `CONTEXT_QUERY` | No | `JNS-6880`, `checkout retry bug` |
-| `CONTEXT_LOCATION` | No | `docs/`, `docs/tickets/` |
+| `CONTEXT_LOCATION` | No | `docs/` (default), `docs/tickets/` |
 | `COMMIT_STYLE` | No | `Conventional Commits`, `repo style` |
 | `VERIFICATION_HINT` | No | `npm test -- checkout` |
 | `RESUME_STATE` | No | Resume block from a prior waiting status |
