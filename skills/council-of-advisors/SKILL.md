@@ -144,6 +144,7 @@ Chat summary: final recommendation, confidence, decision type, kill criterion, t
 | `Blocked` | Gate, counters, budget, recovery |
 | `Error` | Seat or runtime failure named |
 | Analysis seat `BLOCKED` | `RefinePacket`; second wave → `NeedsInput` |
+| Reversibility, chair, or branch `BLOCKED` | Per their region rows in `state-machine.md` |
 | Seat `FAIL` | Redispatch seat within cap |
 | Chair `FAIL` | Correctable defect: 1 targeted redispatch (global budget), second `FAIL` → `Blocked`; substantively impossible on unchanged packets → `Blocked` immediately (see `decision-gates.md`) |
 | Seat `ERROR` | Retry once, then `Error` |
