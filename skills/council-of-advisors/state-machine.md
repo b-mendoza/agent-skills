@@ -70,6 +70,7 @@ Competing transitions from one state use first-match order as listed.
 | `DeclareResearch` | `ClassifyReversibility` | `research_tools` recorded |
 | `ClassifyReversibility` | `ProbeReversibility` | `G_REVERSIBILITY` pass ∧ confidence `low` |
 | `ClassifyReversibility` | `BindDepth` | `G_REVERSIBILITY` pass ∧ confidence not `low` |
+| `ClassifyReversibility` | `ProbeReversibility` | Seat `BLOCKED` (cannot estimate a reversal-cost dimension); the `ProbeReversibility` default applies if still unresolved |
 | `ClassifyReversibility` | `ClassifyReversibility` | Fail under repair cap |
 | `ClassifyReversibility` | `Blocked` | Reversibility repair cap hit |
 | `ClassifyReversibility` | `Error` | Seat `ERROR` twice |
