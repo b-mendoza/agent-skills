@@ -91,6 +91,8 @@ Competing transitions from one state use first-match order as listed.
 | `OriginalityCheck` | `SynthesizeChair` | `G_ORIGINALITY` pass |
 | `OriginalityBranch` | `SynthesizeChair` | Branch output authored with provenance |
 | `OriginalityBranch` | `OriginalityBranch` | Malformed branch output or branch `FAIL`; redispatch under repair cap |
+| `OriginalityBranch` | `RefinePacket` | Branch `BLOCKED`, counted as an `analysis_blocked_waves` wave, first wave |
+| `OriginalityBranch` | `NeedsInput` | Branch `BLOCKED`, second wave |
 | `OriginalityBranch` | `Blocked` | Branch repair cap hit |
 | `OriginalityBranch` | `Error` | Seat `ERROR` twice |
 | `SynthesizeChair` | `RouteConfidence` | `G_DISSENT_PRESERVED` ∧ `G_KILL_CRITERION` pass (both checked at every confidence level) |
