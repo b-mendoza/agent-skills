@@ -140,6 +140,16 @@ Computed verdict:
 
 Failure route: `fail` is a blocking defect. Return `status: blocked` with the run-log explanation.
 
+## G_HANDOFF_COMPLETE
+
+Protects: handoff file completeness before `Ready`.
+
+Pass condition: every required top-level key from the `SKILL.md` Output Contract is present at column 0 in the written file and `status` is in its enum.
+
+Checker: validator `handoff` kind on the written file.
+
+Failure route: regenerate the handoff from retained packets and gate verdicts (orchestrator only, no seat redispatch) under the per-gate repair cap; on the fourth failure return `status: blocked` naming the missing key.
+
 ## G_LESSON_CARDS_PRESENT
 
 Protects: educate-me transfer output.

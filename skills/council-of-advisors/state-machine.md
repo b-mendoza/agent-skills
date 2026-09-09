@@ -108,7 +108,9 @@ Competing transitions from one state use first-match order as listed.
 | `AssembleEducateMe` | `AssembleEducateMe` | `G_LESSON_CARDS_PRESENT` fail → regenerate (no seat redispatch; max 3 regeneration cycles) |
 | `AssembleEducateMe` | `Blocked` | Still failing after third regeneration cycle; surface remaining card defect |
 | `AssembleEducateMe` | `WriteHandoff` | `G_LESSON_CARDS_PRESENT` pass |
-| `WriteHandoff` | `Ready` | Full handoff written to `HANDOFF_PATH` |
+| `WriteHandoff` | `WriteHandoff` | `G_HANDOFF_COMPLETE` fail → regenerate handoff (orchestrator only, no seat redispatch) under `gate_repair_cycles` |
+| `WriteHandoff` | `Blocked` | `G_HANDOFF_COMPLETE` repair cap hit |
+| `WriteHandoff` | `Ready` | Full handoff written to `HANDOFF_PATH` ∧ `G_HANDOFF_COMPLETE` pass |
 | `Ready` | `[*]` | Compact chat summary returned |
 | `NeedsInput` | `[*]` | One targeted question + packet draft / unresolved field |
 | `Blocked` | `[*]` | Failing gate, counters, budget, recovery action |
