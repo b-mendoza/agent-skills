@@ -54,6 +54,8 @@ Nine seat files; mechanical order is not nine parallel advisors:
 
 ## Transitions
 
+Competing transitions from one state use first-match order as listed.
+
 | From | To | Guard / event |
 | --- | --- | --- |
 | `[*]` | `Intake` | Skill invoked |
@@ -74,11 +76,12 @@ Nine seat files; mechanical order is not nine parallel advisors:
 | `ProbeReversibility` | `ClassifyReversibility` | Answer with new reversibility evidence appended; redispatch |
 | `ProbeReversibility` | `BindDepth` | Still low, user declines, or reply adds no new reversibility evidence → default `type_1`/`deep`, `classification_basis: defaulted_low_confidence` (no response at all: remain waiting) |
 | `BindDepth` | `ParallelAnalysis` | `depth_setting` bound |
-| `ParallelAnalysis` | `RouteAnalysis` | Seven seats returned |
-| `RouteAnalysis` | `ParallelAnalysis` | `FAIL` / schema miss under seat cap; or `G_INDEPENDENCE` defect (rerun affected seats with clean payloads per `decision-gates.md`) |
-| `RouteAnalysis` | `RefinePacket` | `BLOCKED` first wave |
-| `RouteAnalysis` | `NeedsInput` | `BLOCKED` second wave |
-| `RouteAnalysis` | `Error` | Seat `ERROR` twice |
+| `ParallelAnalysis` | `RouteAnalysis` | Every dispatched seat has returned a payload or been reported missing by the runtime; completion order never selects the route |
+| `RouteAnalysis` | `ParallelAnalysis` | First `ERROR` or missing result for a seat: retry that seat once |
+| `RouteAnalysis` | `Error` | Seat `ERROR` or missing result twice |
+| `RouteAnalysis` | `RefinePacket` | Any seat `BLOCKED`, first wave |
+| `RouteAnalysis` | `NeedsInput` | Any seat `BLOCKED`, second wave |
+| `RouteAnalysis` | `ParallelAnalysis` | Any `FAIL`, validator rejection, or unparseable payload under `seat_schema_repairs`; or `G_INDEPENDENCE` defect (rerun affected seats with clean payloads per `decision-gates.md`) |
 | `RouteAnalysis` | `Blocked` | Analysis gate or global budget cap hit |
 | `RouteAnalysis` | `OriginalityCheck` | `G_REASONING_CHAINS_PRESENT` ∧ `G_INDEPENDENCE` pass |
 | `RefinePacket` | `ParallelAnalysis` | Packet `vN+1` re-confirmed |
