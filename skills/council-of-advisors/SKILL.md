@@ -78,7 +78,9 @@ Read a seat only on dispatch. Prefer runtime subagents; else run inline. Record 
 
 ## How This Skill Works
 
-Dispatch: read seat; inline schema from `./references/seat-output-schema.md`; wrap packet in `<decision_packet packet_version="N">...</decision_packet>`; add `depth_setting`, `research_tools`, version, repair reason; log hygiene (no sibling output). Seats never read package files.
+Dispatch: read seat; inline schema from `./references/seat-output-schema.md`; wrap packet in `<decision_packet packet_version="N">...</decision_packet>`; add `depth_setting`, `research_tools`, version, repair reason, `MUTATION_LIMITS`; log hygiene (no sibling output). Seats never read package files.
+
+Mutation limits: derive `MUTATION_LIMITS` at intake and carry it in every dispatch envelope. Write only the resolved `HANDOFF_PATH`, never overwriting (collision policy above). Out of scope: every other path, `.agents/skills/`, `.claude/skills/`, `skills-lock.json`. Seats and the chair write nothing. No repair cycle widens the limits.
 
 Evidence tiers (closed): `packet`, `tool_verified`, `model_prior`. `tool_verified` needs web tools + locator. Load-bearing model-prior prior art caps chair confidence at `medium`.
 
