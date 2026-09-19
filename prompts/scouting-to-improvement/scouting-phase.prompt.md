@@ -141,7 +141,7 @@
     existing concurrency, deterministic mechanism, or state machine each
     require an explicit statement, the evidence inspected, and the stop reason.
     Silence is not a result.
-    - Confirm the dossier contains exactly the three required files.
+    - Confirm the output directory holds nothing beyond the three required filenames.
     - Confirm the target and unrelated repository files did not change.
     - Write `INDEX.md` last with the exact handoff block from the contract, a
     concise summary, limitations, sampled-file disclosure, and reading order.
