@@ -88,7 +88,8 @@
     1. `Phase 1/6 - Validate`
     - Apply `prompts/scouting-to-improvement/scouting-handoff-contract.md`.
     - Require the three fixed files and `status: complete`.
-    - Confirm the selected path, skill name, and target path agree.
+    - Confirm the selected path, skill name, and target path agree, and note in
+    `validation.md` whether `source_revision` still equals `HEAD`.
     - Compare the current target entry types, regular-file hashes, and symlink
     targets with the File Inventory. Any mismatch requires a new phase-1 run.
     - Capture Git status before any report write so pre-existing changes remain
