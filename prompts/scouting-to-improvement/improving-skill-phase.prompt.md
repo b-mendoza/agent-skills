@@ -68,8 +68,8 @@
     narrow, or outrank dossier work by source, and non-accepted mandates never empty
     the dossier-derived queue. Do not silently implement a weak or harmful
     suggestion, and do not reject one without a reasoned, actionable route to its
-    underlying goal. Do not create a separate clarification, negotiation, or repair
-    loop; the `revise` decision is the only pushback channel.
+    underlying goal. Do not create a separate clarification or negotiation loop;
+    the `revise` decision is the only pushback channel.
   </boundaries>
 
   <procedure>
