@@ -147,8 +147,7 @@
     Evaluate the corpus against all of the following. Use these ids (D1-D15)
     in findings and compliance. Each dimension receives `pass`, `fail`, or
     `not applicable` with a one-line reason, except D15 as noted. Do not use a
-    flat checklist that treats every miss as equally blocking. AUDIT_MANDATES
-    may change emphasis or order; they cannot skip a dimension.
+    flat checklist that treats every miss as equally blocking.
 
     D1. Index integrity — row↔file bijection between index rows and practice
         files; table-sequence order recorded consistently in the ledger; every
