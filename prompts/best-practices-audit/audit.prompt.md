@@ -114,10 +114,9 @@
        audit against the review effect the file actually exerts, not an
        unchallengeable fact. Missing or unreadable `TARGET_DIR/README.md` is
        `AUDIT: BLOCKED`.
-    2. Search the full corpus for membership and overlap. Inspect every indexed
-       practice file at decision-relevant depth. Read the index and each indexed
-       practice in full unless a file is so large that only sampled reading is
-       possible; record any sampling and the limitation.
+    2. Search the full corpus for membership and overlap. Read the index and
+       each indexed practice in full unless a file is so large that only
+       sampled reading is possible; record any sampling and the limitation.
     3. Classify every non-practice file under TARGET_DIR explicitly. The master
        README is `master-index`. Other files are `supporting-reference`,
        `orphan`, `duplicate`, or `mis-filed-practice`.
