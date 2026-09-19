@@ -158,7 +158,8 @@
     D3. Applicability and trigger precision — primary triggers are specific
         enough to load or skip the file correctly.
     D4. Single ownership, redundancy, and duplication — each rule has one owner;
-        overlap is classified as justified cross-reference or true duplication.
+        overlap is classified as justified cross-reference, true duplication,
+        or authority-split (D5).
     D5. Contradiction and authority splits — conflicting rules, or two files
         claiming to be canonical for the same decision.
     D6. Earned complexity and removal test — a file or section stays only if
