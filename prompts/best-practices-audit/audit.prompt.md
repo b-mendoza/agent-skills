@@ -618,8 +618,8 @@
       selection becomes final only after final filesystem validation passes.
 
       Slice results columns:
-      `Slice id | Mode (parallel | serial-inline | unavailable) | Status
-      (ok | retried | ERROR | unavailable) | Independence | Notes`
+      `Slice id | Mode (parallel | serial-inline) | Status (ok | retried |
+      ERROR) | Independence | Notes`
       Successful retry status is `retried`. Failed retry status is `ERROR`.
 
       Terminal status repeats the INDEX.md status and names the deciding
