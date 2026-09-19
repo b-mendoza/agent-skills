@@ -348,11 +348,6 @@
     Retry once only when the summary is missing or malformed. Successful retry
     status is `retried`. Failed retry status is `ERROR`. A required slice
     `ERROR` makes the run `AUDIT: ERROR`.
-
-    `unavailable` is valid only when the entire run became `AUDIT: BLOCKED`
-    before that slice started. After a started audit, a required slice left
-    `unavailable` is `ERROR`. Diminishing returns must not leave a slice
-    `unavailable`.
   </slices>
 
   <dossier>
