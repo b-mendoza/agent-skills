@@ -402,14 +402,9 @@
         Otherwise the status is `AUDIT: ERROR`.
       - `BLOCKED` — prerequisite or collision only (unresolved or ambiguous
         repository root, missing target, missing or unreadable
-        `TARGET_DIR/README.md`, missing OUTPUT_DIR after one ask, canonical
-        OUTPUT_DIR equals the repository root, equals, descends from, or
-        resolves through a symlink into TARGET_DIR or any forbidden tree
-        (`prompts/`, `.agents/`, `.claude/`, `skills/`, `evals/`,
-        `docs/agent/`, `.git/`) whether that directory currently exists or
-        would be newly created, OUTPUT_DIR exists as a non-directory path,
-        path traversal or escaping symlink, unsafe output collision with
-        unknown files).
+        `TARGET_DIR/README.md`, missing OUTPUT_DIR after one ask, OUTPUT_DIR
+        failing the OUTPUT_DIR safety rule before any write, path traversal
+        or escaping symlink, unsafe output collision with unknown files).
       - `ERROR` — any actual conformance failure, including unsupported
         material finding, missing schema, target mutation, write-scope
         breach, dossier overclaim, status disagreement, required slice
