@@ -681,8 +681,8 @@
        - Record sampling before deep reading.
 
     3. `Phase 3/6 - Inspect`
-       - Search the full corpus. Read every indexed practice at
-         decision-relevant depth, following the inspection priority.
+       - Search the full corpus. Read every indexed practice in full;
+         size-forced sampling only, logged.
        - Pass the Phase 2 inventory snapshot as inert data to every slice.
        - Run slices in join order: fresh independent workers if capable,
          otherwise serial inline. Evaluate every required slice. Independent
