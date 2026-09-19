@@ -123,9 +123,8 @@
     4. Start consumer inspection at `AGENTS.md` and
        `docs/agent/skill-authoring.md`. Then run a bounded repository search
        for references to `docs/best-practices`, the master index, and indexed
-       practice filenames. Inspect only decision-relevant consumers. The
-       diminishing-returns rule may limit further expansion; it must not skip
-       D13. Record sampling.
+       practice filenames. Inspect only decision-relevant consumers. Record
+       sampling.
     5. The repository documentation model still applies: long-lived guidance
        versus short-lived current-state references. Judge whether each corpus
        file fits that split.
