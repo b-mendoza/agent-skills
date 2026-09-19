@@ -89,8 +89,7 @@
        or SOTA model/runtime capability, up to MAX_EXTERNAL_CHECKS, spent only
        by the orchestrator.
     3. Write only the four named dossier files under a safe OUTPUT_DIR.
-       Overwrite those named files only. Create OUTPUT_DIR if it is absent
-       after safety checks.
+       Overwrite those named files only.
 
     Do not modify, stage, commit, install, move, or delete any file outside
     OUTPUT_DIR. Reject and return `AUDIT: BLOCKED` when canonical OUTPUT_DIR
