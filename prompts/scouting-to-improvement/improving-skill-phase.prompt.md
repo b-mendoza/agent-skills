@@ -74,9 +74,9 @@
 
   <procedure>
     Operating posture: prioritize decision-relevant evidence and the highest-impact
-    gaps, bound any supplementary research explicitly, and stop early at source
-    limits or diminishing returns. Record the stop reason in `validation.md`. There
-    is no wall-clock limit; take the time the evidence requires.
+    gaps, and stop early at diminishing returns. Record the stop reason in
+    `validation.md`. There is no wall-clock limit; take the time the evidence
+    requires.
 
     Use this lightweight phase flow:
     `Validate → Assess → Propose → AwaitApproval → Rewrite → Verify`, with terminal
