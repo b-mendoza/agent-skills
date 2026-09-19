@@ -323,8 +323,8 @@
 
     Compact slice output schema (required fields):
     - `slice_id`
-    - `mode` (`parallel` | `serial-inline` | `unavailable`)
-    - `status` (`ok` | `retried` | `ERROR` | `unavailable`)
+    - `mode` (`parallel` | `serial-inline`)
+    - `status` (`ok` | `retried` | `ERROR`)
     - `independence` (`full` | `degraded`)
     - `candidate_findings` (title, dimension ids, evidence pointers)
     - `claim_candidates` (kind, path, proposed status `unverified` or
