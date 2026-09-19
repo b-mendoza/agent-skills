@@ -80,7 +80,7 @@ Phase 2 accepts the dossier when:
 - the handoff block parses and its paths match;
 - every target entry appears in the file inventory;
 - each material current-state claim carries a `path:line` citation or excerpt;
-- each reusable pattern cites an inspected canonical source; and
+- each reusable pattern cites a source listed under Inspected Sources; and
 - the limitations section honestly records incomplete evidence.
 
 There are no registries, sentinel or tree-fingerprint algorithms, fixed IDs, resume schemas, custody protocols, or cross-file count reconciliations. The only hashes are ordinary per-file SHA-256 values used for drift detection. If a run is interrupted or invalid, rerun phase 1 cleanly.
