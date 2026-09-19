@@ -651,8 +651,7 @@
          or exists as a non-directory path. Apply the tree rule whether the
          forbidden directory currently exists or would be newly created. Ask
          once if OUTPUT_DIR is omitted. Create OUTPUT_DIR if absent after
-         those checks. If OUTPUT_DIR exists as a non-directory path, return
-         `AUDIT: BLOCKED` before any write.
+         those checks.
        - Require a readable master index file `TARGET_DIR/README.md`.
          Missing or unreadable is `AUDIT: BLOCKED`.
        - Capture Git HEAD when available, else record `git unavailable`.
