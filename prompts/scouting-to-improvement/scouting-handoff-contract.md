@@ -52,7 +52,7 @@ Required sections:
 1. **File Inventory** — every target entry, with type, SHA-256 for each regular file, and link target for each symlink. This small snapshot lets phase 2 detect target drift.
 2. **Purpose and Audience**
 3. **Inputs and Preconditions**
-4. **Workflow** — phases, branches, retries, stopping conditions, and handoffs.
+4. **Workflow** — phases, branches, retries, stopping conditions, handoffs, and whether any existing concurrency, deterministic scripts, or state-machine artifacts are justified by an evidenced problem.
 5. **Outputs and Effects** — files, commands, external calls, and mutations.
 6. **Dependencies** — references, scripts, subagents, and runtime assumptions.
 7. **Validation and Failure Handling**
