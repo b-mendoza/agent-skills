@@ -264,7 +264,9 @@
     `verified` is set only by the orchestrator after an actual current-source
     fetch that records the required provenance. After that fetch the
     orchestrator may also set `contradicted` or `unverifiable`.
-    `not-current-claim` is valid only for `citation-backed-evergreen`.
+    The orchestrator sets `not-current-claim` without a fetch, and only when
+    the kind is `citation-backed-evergreen`; unfetched candidates of other
+    kinds become `unverifiable`.
 
     A model prior can create an `unverifiable-candidate` and must never mark
     a claim `verified`. It may support a recommendation only when local
