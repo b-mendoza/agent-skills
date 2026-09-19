@@ -263,7 +263,8 @@
 
   <status>
     Return exactly one:
-    - `rebuilt` — approved rewrite completed and validation passed.
+    - `rebuilt` — approved rewrite completed and every check that could run passed,
+    with unavailable checks disclosed.
     - `no_build` — the best decision was no rewrite or the user stopped.
     - `approval_required` — proposal is ready and awaiting `approve`, `revise`, or
     `stop`.
