@@ -38,10 +38,11 @@
   </paths>
 
   <boundaries>
-    Before approval, read the dossier, current target snapshot metadata, `CLAUDE.md`,
-    and `docs/best-practices/README.md`, loading only the practice files whose
-    triggers the proposed edit actually fires; write only the four report files. The
-    dossier is the source of truth for what the skill did at scouting time.
+    Before approval, read the dossier, the handoff contract, current target snapshot
+    metadata, `CLAUDE.md`, and `docs/best-practices/README.md`, loading only the
+    practice files whose triggers the proposed edit actually fires; write only the
+    four report files. The dossier is the source of truth for what the skill did at
+    scouting time.
 
     The current target may be read only to verify that its file inventory and hashes
     still match `current-skill.md`. If it drifted, stop and require a new scouting
