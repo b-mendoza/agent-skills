@@ -140,7 +140,7 @@
        searches or sources reveal no new mechanism and no new ranked finding.
         Record that stop in INDEX.md `## Limitations and sampling`. It must not
         stop the audit, skip a required dimension (including D13), or leave a
-        required slice `unavailable`.
+        required slice unevaluated.
   </corpus_rules>
 
   <audit_dimensions>
