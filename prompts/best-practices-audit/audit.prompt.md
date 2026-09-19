@@ -128,7 +128,8 @@
     5. The repository documentation model still applies: long-lived guidance
        versus short-lived current-state references. Judge whether each corpus
        file fits that split.
-    6. Inspection priority, unless AUDIT_MANDATES reorders emphasis:
+    6. Emphasis priority (attention within slices; execution follows slice
+       join order):
        index/bijection and authority contradictions; then duplication/ownership;
        then tier/trigger honesty; then obsolete/SOTA guidance; then
        enforcement/coverage; then consumers. Required dimensions are still all
