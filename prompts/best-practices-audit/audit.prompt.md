@@ -622,8 +622,8 @@
       ERROR) | Independence | Notes`
       Successful retry status is `retried`. Failed retry status is `ERROR`.
 
-      Terminal status repeats the INDEX.md status and names the deciding
-      checks or findings.
+      Terminal status states the run status, which INDEX.md `## Status` must
+      match, and names the deciding checks or findings.
     </file>
   </dossier>
 
