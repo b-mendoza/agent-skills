@@ -629,9 +629,8 @@
 
   <procedure>
     Operating posture: thorough and adversarial, bounded by evidence. There is
-    no wall-clock limit. Stop early only for missing prerequisites, unsafe
-    output collision, or a required slice ERROR. Record the stop reason.
-    Diminishing returns must not stop the audit.
+    no wall-clock limit. Stop early only for a `BLOCKED` condition. Record the
+    stop reason. Diminishing returns must not stop the audit.
 
     Lightweight phase flow. Create no resume artifacts. Emit `Phase N/6 - Name`
     only on a real transition.
