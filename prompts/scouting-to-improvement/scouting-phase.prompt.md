@@ -68,7 +68,8 @@
     1. `Phase 1/5 - Validate`
     - Require a real direct-child directory and regular `SKILL.md`.
     - Require the safe-name grammar from the handoff contract.
-    - Record current Git `HEAD` when available.
+    - Record current Git `HEAD` when available, and capture Git status as the
+    baseline for the final no-change check.
     - If the output directory already exists, allow replacement only when it
     contains no entries beyond the three dossier filenames. Otherwise stop and
     ask the user to clear or relocate it. Do not merge runs or delete unknown
