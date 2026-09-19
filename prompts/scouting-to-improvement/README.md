@@ -19,7 +19,7 @@ Two prompts provide a small, repeatable workflow for understanding and rewriting
    - `public-patterns.md`
 5. Run the improving prompt with that dossier. Supply `IMPROVEMENT_MANDATES` if you have specific concerns, or reply `none` when asked.
 6. Phase 2 verifies that the target still matches the phase-1 file inventory and assesses the documented skill.
-7. If no rewrite is warranted, phase 2 records `no_build` and stops. Otherwise it writes a proposal.
+7. If no rewrite is warranted, phase 2 records `no_build` with an empty manifest and stops. Otherwise it proposes a rewrite.
 8. Review the verdict, capability changes, borrowed mechanisms, mandate dispositions, exact file operations, and validation plan.
 9. Reply `approve`, `revise`, or `stop`. `revise` is where you push back on any disposition; it produces a new manifest that needs its own approval.
 10. After approval, phase 2 changes only the displayed manifest and validates the replacement.
