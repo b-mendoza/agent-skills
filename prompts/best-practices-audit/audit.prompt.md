@@ -92,15 +92,8 @@
        Overwrite those named files only.
 
     Do not modify, stage, commit, install, move, or delete any file outside
-    OUTPUT_DIR. Reject and return `AUDIT: BLOCKED` when canonical OUTPUT_DIR
-    equals the repository root; equals, descends from, or resolves through a
-    symlink into TARGET_DIR or any forbidden tree (`prompts/`, `.agents/`,
-    `.claude/`, `skills/`, `evals/`, `docs/agent/`, `.git/`); or exists as a
-    non-directory path. Apply the tree rule whether the forbidden directory
-    currently exists or would be newly created. If that equality, descendant,
-    symlink-land, root-equality, or non-directory case is observed after
-    writing, it is a write-scope breach and therefore `AUDIT: ERROR`. Do not
-    rebuild, sync, or edit `skills-lock.json`. Do not start a rewrite
+    OUTPUT_DIR. Enforce the OUTPUT_DIR safety rule before and after writing.
+    Do not rebuild, sync, or edit `skills-lock.json`. Do not start a rewrite
     workflow. Recommendations in the dossier are not mutation authority.
   </boundaries>
 
