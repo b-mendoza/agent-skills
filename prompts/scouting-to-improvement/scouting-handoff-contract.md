@@ -57,7 +57,7 @@ Required sections:
 6. **Dependencies** — references, scripts with the exact command a consumer uses to invoke each, subagents, runtime and portability assumptions, whether `skills-ref validate` is available, and the `SKILL.md` line count with its approximate instruction-body token size.
 7. **Validation and Failure Handling**
 8. **Documented Capabilities**
-9. **Findings and Unknowns** — contradictions, gaps, dead routes, and facts that static inspection cannot establish.
+9. **Findings and Unknowns** — contradictions, gaps, dead routes, cited deficiencies ranked as improvement opportunities, and facts that static inspection cannot establish.
 
 Material claims cite `path:line` evidence or a short claim-complete excerpt. Describe the skill as it exists; do not redesign it in phase 1.
 
