@@ -54,7 +54,7 @@ Required sections:
 3. **Inputs and Preconditions**
 4. **Workflow** — phases, branches, retries, stopping conditions, handoffs, and whether any existing concurrency, deterministic scripts, or state-machine artifacts are justified by an evidenced problem.
 5. **Outputs and Effects** — files, commands, external calls, and mutations.
-6. **Dependencies** — references, scripts, subagents, and runtime assumptions.
+6. **Dependencies** — references, scripts with the exact command a consumer uses to invoke each, subagents, runtime and portability assumptions, whether `skills-ref validate` is available, and the `SKILL.md` line count with its approximate instruction-body token size.
 7. **Validation and Failure Handling**
 8. **Documented Capabilities**
 9. **Findings and Unknowns** — contradictions, gaps, dead routes, and facts that static inspection cannot establish.
