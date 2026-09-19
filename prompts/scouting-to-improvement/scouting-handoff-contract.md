@@ -83,4 +83,4 @@ Phase 2 accepts the dossier when:
 - each reusable pattern cites a source listed under Inspected Sources; and
 - the `limitations` list and the Research Limitations section honestly record incomplete evidence.
 
-There are no registries, sentinel or tree-fingerprint algorithms, fixed IDs, resume schemas, custody protocols, or cross-file count reconciliations. The only hashes are ordinary per-file SHA-256 values used for drift detection. If a run is interrupted or invalid, rerun phase 1 cleanly.
+There are no registries, sentinel or tree-fingerprint algorithms, fixed IDs, resume schemas, custody protocols, or cross-file count reconciliations. The only hashes are ordinary per-file SHA-256 values used for drift detection. If a scouting run is interrupted or invalid, rerun phase 1 cleanly.
