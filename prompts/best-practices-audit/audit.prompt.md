@@ -567,17 +567,12 @@
       4. TARGET_DIR is unchanged. Compare pre-write and current SHA-256
          inventories when hashes are available. Git unavailable is recorded,
          not an implied pass.
-      5. Writes occurred only under a safe OUTPUT_DIR. Canonical OUTPUT_DIR
-         must not equal the repository root; must not equal, descend from, or
-         resolve through a symlink into TARGET_DIR or any forbidden tree
-         (`prompts/`, `.agents/`, `.claude/`, `skills/`, `evals/`,
-         `docs/agent/`, `.git/`), whether that directory currently exists or
-         would be newly created; and must not exist as a non-directory path.
-         Any such equality, descendant, symlink-land, root-equality, or
-         non-directory case observed after writing is a write-scope breach and
-         therefore `AUDIT: ERROR`. Record the write-set of the files present
-         at this check (`inventory.md` and `findings.md`). Re-run write-set
-         validation after all four files exist.
+      5. Writes occurred only under a safe OUTPUT_DIR: canonical OUTPUT_DIR
+         still passes the OUTPUT_DIR safety rule (a failure after writing is
+         a write-scope breach and therefore `AUDIT: ERROR`). Record the
+         write-set of the files present at this check (`inventory.md` and
+         `findings.md`). Re-run write-set validation after all four files
+         exist.
       6. Current-fact, SOTA/capability, and citation-backed-evergreen
          handling in the final register: fail only when the final dossier
          asserts unsupported currentness, lacks required provenance or
