@@ -44,10 +44,10 @@
     four report files. The dossier is the source of truth for what the skill did at
     scouting time.
 
-    The current target may be read only to verify that its file inventory and hashes
-    still match `current-skill.md`. If it drifted, stop and require a new scouting
-    run. Do not use current target content to silently fill dossier gaps or change
-    the assessment.
+    Before approval, the current target may be read only to verify that its file
+    inventory and hashes still match `current-skill.md`. If it drifted, stop and
+    require a new scouting run. Do not use current target content to silently fill
+    dossier gaps or change the assessment.
 
     After approval, modify only the exact approved file-operation manifest plus the
     four report files. Never hand-edit `.agents/skills/`, `.claude/skills/`, or
