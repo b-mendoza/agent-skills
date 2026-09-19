@@ -709,15 +709,10 @@
          required files and headings present; INDEX status equals
          compliance terminal status; write-set validation again after all
          four files exist; snapshots recorded; canonical OUTPUT_DIR still
-         does not equal the repository root; still does not equal, descend
-         from, or resolve through a symlink into TARGET_DIR or any forbidden
-         tree (`prompts/`, `.agents/`, `.claude/`, `skills/`, `evals/`,
-         `docs/agent/`, `.git/`), whether that directory currently exists or
-         would be newly created; and is a directory, not a non-directory path.
-         Any such equality, descendant, symlink-land, root-equality, or
-         non-directory case observed after writing is a write-scope breach and
-         therefore `AUDIT: ERROR`. `PASS` or `GAPS_FOUND` remains only if this
-         validation passes; otherwise `AUDIT: ERROR`.
+         passes the OUTPUT_DIR safety rule (a failure after writing is a
+         write-scope breach and therefore `AUDIT: ERROR`). `PASS` or
+         `GAPS_FOUND` remains only if this validation passes; otherwise
+         `AUDIT: ERROR`.
        - If `compliance.md` or `INDEX.md` fail that validation, repair
          those generated files once and revalidate once. Repair may only
          fill missing headings, snapshots, or write-set rows, or copy the
