@@ -623,14 +623,9 @@
          forbidden trees canonically from that root. Default TARGET_DIR is
          `docs/best-practices/`. Reject path traversal and escaping
          symlinks.
-       - Reject and return `AUDIT: BLOCKED` when canonical OUTPUT_DIR equals
-         the repository root; equals, descends from, or resolves through a
-         symlink into TARGET_DIR or any forbidden tree (`prompts/`,
-         `.agents/`, `.claude/`, `skills/`, `evals/`, `docs/agent/`, `.git/`);
-         or exists as a non-directory path. Apply the tree rule whether the
-         forbidden directory currently exists or would be newly created. Ask
-         once if OUTPUT_DIR is omitted. Create OUTPUT_DIR if absent after
-         those checks.
+       - Apply the OUTPUT_DIR safety rule; an unsafe OUTPUT_DIR is
+         `AUDIT: BLOCKED`. Ask once if OUTPUT_DIR is omitted. Create
+         OUTPUT_DIR if absent after the rule passes.
        - Require a readable master index file `TARGET_DIR/README.md`.
          Missing or unreadable is `AUDIT: BLOCKED`.
        - Capture Git HEAD when available, else record `git unavailable`.
