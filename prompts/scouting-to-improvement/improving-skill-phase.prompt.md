@@ -293,7 +293,7 @@
     route to the underlying goal; conflicts preserve dossier findings rather than
     defects; dossier-silent mandates get one bounded check then defer unverified;
     out-of-scope goals get a concrete route; `none` keeps dossier work active; and
-    pushback uses the bounded `revise` loop.
+    pushback uses the `revise` loop.
     - Concurrency, deterministic scripts, and state-machine suitability are earned,
     with explicit empty results and stop reasons.
     - Real phase banners expose a lightweight state machine without resume
