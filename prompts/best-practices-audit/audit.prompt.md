@@ -63,13 +63,16 @@
     - Target: TARGET_DIR, default `docs/best-practices/`.
     - Master index: `TARGET_DIR/README.md` (default `docs/best-practices/README.md`).
       Missing or unreadable master index is `AUDIT: BLOCKED`.
-    - Output: OUTPUT_DIR, caller-supplied. Reject and return `AUDIT: BLOCKED`
-      when canonical OUTPUT_DIR equals the repository root; equals, descends
-      from, or resolves through a symlink into TARGET_DIR or any forbidden
-      tree (`prompts/`, `.agents/`, `.claude/`, `skills/`, `evals/`,
-      `docs/agent/`, `.git/`); or exists as a non-directory path. Apply the
-      tree rule whether the forbidden directory currently exists or would be
-      newly created. Create OUTPUT_DIR if absent after those checks.
+    - Output: OUTPUT_DIR, caller-supplied. OUTPUT_DIR safety rule (the single
+      definition; every other mention refers here): canonical OUTPUT_DIR is
+      unsafe when it equals the repository root; equals, descends from, or
+      resolves through a symlink into TARGET_DIR or any forbidden tree
+      (`prompts/`, `.agents/`, `.claude/`, `skills/`, `evals/`, `docs/agent/`,
+      `.git/`), whether that directory currently exists or would be newly
+      created; or exists as a non-directory path. An unsafe OUTPUT_DIR found
+      before any write is `AUDIT: BLOCKED`; found after writing, it is a
+      write-scope breach and `AUDIT: ERROR`. Create OUTPUT_DIR if absent after
+      the rule passes.
     - Output files (only these): `INDEX.md`, `inventory.md`, `findings.md`,
       `compliance.md`. Overwrite those named files only. Never delete unknown
       files.
