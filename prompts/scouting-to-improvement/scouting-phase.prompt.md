@@ -150,7 +150,7 @@
   <status>
     Return exactly one:
     - `complete` — the dossier passed every completion check.
-    - `blocked` — a known prerequisite or required source is unavailable.
+    - `blocked` — a known prerequisite is unavailable.
     - `error` — an operation failed after one safe retry.
 
     A blocked or error run is not phase-2 eligible. Fix the cause and rerun cleanly;
