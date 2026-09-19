@@ -10,7 +10,7 @@ Two prompts provide a small, repeatable workflow for understanding and rewriting
 
 ## Workflow
 
-1. Run the scouting prompt and select `skills/{skill-name}/`.
+1. Run the scouting prompt with a `SKILL_NAME` (a direct child of `skills/`).
 2. Phase 1 inventories the complete package without executing or modifying it, reading at decision-relevant depth and disclosing which files were sampled.
 3. Phase 1 researches exact public skill definitions using terms derived from the target's purpose, mechanisms, and failure modes.
 4. Review the three-file dossier under `outputs/scouting-phase-{skill-name}/`:
