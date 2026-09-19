@@ -268,8 +268,8 @@
     - `no_build` — the best decision was no rewrite or the user stopped.
     - `approval_required` — proposal is ready and awaiting `approve`, `revise`, or
     `stop`.
-    - `blocked` — a known prerequisite, drift, unresolved ambiguity, scope
-    expansion, or validation limitation prevents a trustworthy result.
+    - `blocked` — a known prerequisite, drift, unresolved ambiguity, or validation
+    limitation prevents a trustworthy result.
     - `error` — an operation failed after one safe retry.
 
     Interrupted runs restart from dossier validation. There is no checkpoint,
