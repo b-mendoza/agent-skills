@@ -592,9 +592,8 @@
          Any such equality, descendant, symlink-land, root-equality, or
          non-directory case observed after writing is a write-scope breach and
          therefore `AUDIT: ERROR`. Record the write-set of the files present
-         at this check (`inventory.md` and `findings.md`, then `compliance.md`
-         after it is written). Re-run write-set validation after all four
-         files exist.
+         at this check (`inventory.md` and `findings.md`). Re-run write-set
+         validation after all four files exist.
       6. Current-fact, SOTA/capability, and citation-backed-evergreen
          handling in the final register: fail only when the final dossier
          asserts unsupported currentness, lacks required provenance or
