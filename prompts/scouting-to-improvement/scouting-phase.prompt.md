@@ -76,7 +76,7 @@
     merge runs or delete unknown files.
 
     2. `Phase 2/5 - Inventory`
-    - Inspect every target entry without following escaping symlinks. The
+    - Inspect every target entry without following symlinks. The
     inventory stays complete; reading depth is what flexes.
     - Record every entry in the File Inventory, SHA-256 every regular file, and
     record each symlink target without following it. These per-file hashes are
