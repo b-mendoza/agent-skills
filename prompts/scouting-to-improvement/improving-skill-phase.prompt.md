@@ -252,8 +252,9 @@
 
     Then repair and finish:
     - For failed checks, repair only approved files and rerun affected checks.
-    - Allow at most two repair rounds. A material behavior or scope change
-    returns to `AwaitApproval` for new approval.
+    - Allow at most two repair rounds; if checks still fail, write the reports
+    below and return `blocked`. A material behavior or scope change returns to
+    `AwaitApproval` for new approval.
     - Write `validation.md` with checks, observed results, repairs, unavailable
     validation stated honestly, limitations, and follow-ups.
     - Write `INDEX.md` last with verdict, approval decision, applied operations,
