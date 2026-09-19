@@ -241,8 +241,6 @@
     - `SOTA/capability`
     - `citation-backed-evergreen`
 
-    Status `not-current-claim` is valid only for `citation-backed-evergreen`.
-
     Claims about current models, current runtimes, current docs, dates, or
     "latest" behavior require current external sources. Probe whether the
     runtime can reach those sources. If tools are unavailable, mark the claim
