@@ -220,7 +220,7 @@
     - Recheck Git status against the pre-report baseline; return `blocked` if
     unrelated state changed during the run.
     - Apply manifest operations in order.
-    - Match repository conventions and the best practices loaded in phase 2.
+    - Match repository conventions and the best practices loaded before approval.
     - Record completed operations in `validation.md`.
 
     6. `Phase 6/6 - Verify`
