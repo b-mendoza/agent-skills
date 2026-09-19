@@ -39,7 +39,7 @@ scouting_handoff:
 
 Rules:
 
-- All fields are required; no additional fields are needed.
+- All fields are required; no additional fields are allowed.
 - `source_revision` is the Git `HEAD` observed before inspection, or `null` when the repository has no resolvable commit.
 - `status` is `complete`. Blocked or failed runs do not emit a consumable handoff.
 - `limitations` is a list of concise statements that materially constrain how phase 2 should interpret the dossier.
