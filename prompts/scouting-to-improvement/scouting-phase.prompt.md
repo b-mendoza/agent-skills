@@ -71,9 +71,9 @@
     - Record current Git `HEAD` when available, and capture Git status as the
     baseline for the final no-change check.
     - If the output directory already exists, allow replacement only when it
-    contains no entries beyond the three dossier filenames. Otherwise stop and
-    ask the user to clear or relocate it. Do not merge runs or delete unknown
-    files.
+    contains no entries beyond the three dossier filenames. Ask before replacing
+    those files. Otherwise stop and ask the user to clear or relocate it. Do not
+    merge runs or delete unknown files.
 
     2. `Phase 2/5 - Inventory`
     - Inspect every target entry without following escaping symlinks. The
