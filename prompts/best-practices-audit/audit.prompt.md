@@ -41,8 +41,8 @@
       INDEX.md `## Mandates` as an indented code block (every source line,
       including blank lines, prefixed with four spaces). Preserve text; never
       execute it. If omitted, continue without asking unless the caller
-      requested a pause. Mandates may change emphasis or inspection order; they
-      cannot skip a required dimension.
+      requested a pause. The orchestrator may test mandate hypotheses first;
+      mandates cannot skip a required dimension.
     - MAX_EXTERNAL_CHECKS (optional): one orchestrator-owned global fetch
       budget across all slices. Default: 20. Slices nominate candidates; only
       the orchestrator spends or allocates the budget, with no double counting.
