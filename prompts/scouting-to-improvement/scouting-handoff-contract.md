@@ -81,6 +81,6 @@ Phase 2 accepts the dossier when:
 - every target entry appears in the file inventory;
 - each material current-state claim carries a `path:line` citation or excerpt;
 - each reusable pattern cites a source listed under Inspected Sources; and
-- the limitations section honestly records incomplete evidence.
+- the `limitations` list and the Research Limitations section honestly record incomplete evidence.
 
 There are no registries, sentinel or tree-fingerprint algorithms, fixed IDs, resume schemas, custody protocols, or cross-file count reconciliations. The only hashes are ordinary per-file SHA-256 values used for drift detection. If a run is interrupted or invalid, rerun phase 1 cleanly.
