@@ -280,8 +280,7 @@
     - The dossier, not memory or unverified target content, drives the assessment.
     - The assessment is evidence-based and adversarial without hostility, and no
     evidenced verdict is softened to be agreeable.
-    - Priorities, research bounds, and early stops are explicit and supersede
-    exhaustive work.
+    - Priorities and early stops are explicit and supersede exhaustive work.
     - Every documented capability and public pattern receives a clear disposition.
     - `IMPROVEMENT_MANDATES` still asks once when omitted, accepts `none`, and is
     recorded verbatim as hypotheses that cannot limit or override dossier-led
