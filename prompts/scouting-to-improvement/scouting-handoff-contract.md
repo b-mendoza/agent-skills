@@ -79,7 +79,7 @@ Phase 2 accepts the dossier when:
 - all three files exist as regular files;
 - the handoff block parses and its paths match;
 - every target entry appears in the file inventory;
-- each material current-state claim has local evidence;
+- each material current-state claim carries a `path:line` citation or excerpt;
 - each reusable pattern cites an inspected canonical source; and
 - the limitations section honestly records incomplete evidence.
 
