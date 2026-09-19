@@ -602,6 +602,8 @@
          corpus overclaim as a finding. Do not fail merely because final rows
          are correctly `verified` after an orchestrator current-source fetch.
       7. No mutation authorization was inferred from mandates or findings.
+      8. Every required slice status is `ok` or `retried`; a required slice
+         `ERROR` fails this check.
 
       Status mapping:
       - All conformance check failures are `AUDIT: ERROR`.
