@@ -570,7 +570,8 @@
       `AUDIT: ERROR`.
 
       Substantive checks, evaluated independently against `inventory.md` and
-      `findings.md` on disk after Phase 5:
+      `findings.md` on disk after Phase 5, the target hashes, and the
+      write-set so far:
       1. `inventory.md` and `findings.md` headings and schemas match this
          contract.
       2. Every material finding has local or external evidence. An
