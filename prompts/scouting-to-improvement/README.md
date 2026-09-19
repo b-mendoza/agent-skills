@@ -24,7 +24,7 @@ Two prompts provide a small, repeatable workflow for understanding and rewriting
 9. Reply `approve`, `revise`, or `stop`. `revise` is where you push back on any disposition; it produces a new manifest that needs its own approval.
 10. After approval, phase 2 changes only the displayed manifest and validates the replacement.
 
-Each phase announces real transitions as `Phase N/5` (scouting) or `Phase N/6` (improvement), and each records why it stopped researching.
+Each phase announces real transitions as `Phase N/5` (scouting) or `Phase N/6` (improvement), and phase 1 records why it stopped researching.
 
 ## Design Principles
 
