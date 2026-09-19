@@ -38,8 +38,8 @@
   <boundaries>
     Allowed actions:
     1. Read the selected skill, the handoff contract, `CLAUDE.md`,
-    `docs/best-practices/README.md` and the
-    practice files its triggers fire for this target, and public sources.
+    `docs/best-practices/README.md` and the practice files its triggers fire for
+    this target, and public sources.
     2. Query the public web or source hosts.
     3. Write only the three dossier files under the fixed output directory.
 
