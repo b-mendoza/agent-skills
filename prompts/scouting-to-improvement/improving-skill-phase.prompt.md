@@ -107,9 +107,9 @@
     - Treat each concern as a hypothesis to investigate. It may guide emphasis,
     but it does not override contrary evidence or limit the general assessment.
 
-    Merge dossier recommendations and gaps with mandates into one conceptual
-    assessment and proposal queue. This is a way of reasoning, not a new file:
-    create no queue artifact.
+    Merge dossier deficiencies and ranked opportunities with mandates into one
+    conceptual assessment and proposal queue. This is a way of reasoning, not a new
+    file: create no queue artifact.
     - Mark each item `dossier-derived`, `author-derived`, or `both`.
     - Prioritize by evidenced severity, evidence strength, dependency order, and
     workflow impact. Never prioritize by source. Use author emphasis only to
