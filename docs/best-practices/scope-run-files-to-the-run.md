@@ -1,6 +1,6 @@
 # scope-run-files-to-the-run
 
-📝 Reply inline by default; when a skill writes a run-local file, put it under a proven-ignored `.handoffs/<skill>/<run-id>/` path and delete only what this run created.
+📝 Write handoff files under a proven-ignored `.handoffs/<skill>/<run-id>/` when state must survive compaction, a later step, or a script; reply inline otherwise and delete only what this run created.
 
 🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
 
