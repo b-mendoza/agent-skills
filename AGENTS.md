@@ -21,7 +21,7 @@ The user's instructions are a baseline to build on, not a spec to execute verbat
 
 ## Always
 
-- Before editing a tree that has its own `AGENTS.md` (today: `evals/`), read that guide first. Before authoring or editing a skill, subagent, or reference file, read the [skill-authoring guide](./docs/agent/skill-authoring.md).
+- Before editing a tree that has its own `AGENTS.md` (today: `evals/`), read that guide first. When authoring or editing a skill, subagent, or reference file, use the [skill-authoring guide](./docs/agent/skill-authoring.md) to find the rule for the decision in front of you.
 - After a substantive change, run the checks the nearest guide names: the [manual verification checklist](./docs/agent/skill-verification.md) after skill or subagent edits (this repo has no CI), and inside `evals/` the lint check after a change plus the test suite before committing ([`evals/AGENTS.md`](./evals/AGENTS.md) names the exact commands). Passing checks are a floor, not proof — when unsure whether a change is correct, escalate rather than declare success.
 - Where a tree has a linter (`evals/`), its configuration is the enforced source of truth for style. Prefer fixing a finding over suppressing it; suppress inline only when the rule is genuinely wrong for the case, and say why.
 - Editing is not permission to publish. Do not commit, push, open a pull request, or create an issue unless explicitly asked; when committing, stage only the paths the task touched.
