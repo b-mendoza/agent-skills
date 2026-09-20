@@ -8,7 +8,7 @@
 | --- | --- |
 | [`skills/`](../skills/) | First-party skills. One directory per skill. |
 | [`prompts/`](../prompts/) | First-class prompt families. Executable prompts, contracts, and supporting docs grouped by kebab-case family. Catalog and addition rules live in [`prompts/README.md`](../prompts/README.md). |
-| [`docs/best-practices/`](./best-practices/) | Per-topic skill-authoring guidance ([index](./best-practices/README.md)). |
+| [`docs/best-practices/`](./best-practices/) | Self-contained best-practice rules for skills and subagents, each with ❌/✅ examples ([index](./best-practices/README.md)); runtime facts in [runtime-portability-matrix](./best-practices/runtime-portability-matrix.md). |
 | [`docs/agent/`](./agent/) | Long-lived task guides for agents working in this repo. |
 | [`evals/`](../evals/) | Local eval suite; runs skills against fixture repos. Has its own [agent guide](../evals/AGENTS.md). |
 | [`.agents/skills/`](../.agents/skills/) | Vendored third-party skills (OpenCode discovery). Managed by the [`skills` CLI](https://www.skills.sh/docs). |
