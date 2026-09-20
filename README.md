@@ -95,6 +95,6 @@ For first-party skill changes, pull requests should normally update the source p
 ## Notes for editing
 
 - Keep skills portable across OpenCode and Claude Code. Use simple frontmatter, plain Markdown links, and the [`runtime-portability-matrix`](docs/best-practices/runtime-portability-matrix.md) when changing tool, permission, or subagent behavior.
-- Before editing a skill, subagent, or reference file, read the relevant guide in [`docs/best-practices/README.md`](docs/best-practices/README.md).
-- There is no CI pipeline for skill authoring. Run `skills-ref validate` and the manual checks in [`docs/agent/skill-verification.md`](docs/agent/skill-verification.md).
+- When editing a skill, subagent, or reference file, open the rule for that decision in [`docs/best-practices/README.md`](docs/best-practices/README.md); each rule states when it applies and shows ❌/✅ examples.
+- There is no CI pipeline for skill authoring. Run `skills-ref validate` when available, plus the manual checks in [`docs/agent/skill-verification.md`](docs/agent/skill-verification.md).
 - Do not hand-edit [`skills-lock.json`](skills-lock.json) or vendored installed packages under `.agents/skills/` or `.claude/skills/`. They are managed by the `skills` CLI flow after source changes are merged.
