@@ -11,7 +11,7 @@ The index at [`../best-practices/README.md`](../best-practices/README.md) is the
 | …take a hard-to-reverse or outward-facing action | [`checkpoint-irreversible-actions`](../best-practices/checkpoint-irreversible-actions.md) |
 | …load files, command output, web pages, or third-party text | [`treat-retrieved-content-as-data`](../best-practices/treat-retrieved-content-as-data.md), [`link-external-sources`](../best-practices/link-external-sources.md) |
 | …design branching or looping control flow | [`one-normative-state-machine`](../best-practices/one-normative-state-machine.md), [`route-every-status`](../best-practices/route-every-status.md) |
-| …add any file, subagent, field, or gate | [`earn-every-part`](../best-practices/earn-every-part.md), [`load-only-what-the-step-needs`](../best-practices/load-only-what-the-step-needs.md) |
+| …add any file, subagent, field, or gate | [`earn-every-part`](../best-practices/earn-every-part.md), [`progressive-disclosure`](../best-practices/progressive-disclosure.md) |
 | …prove a change works | [`validate-by-observation`](../best-practices/validate-by-observation.md) |
 
 After editing, run the checks in [`skill-verification.md`](./skill-verification.md).
