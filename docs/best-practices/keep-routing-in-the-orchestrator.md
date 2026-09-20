@@ -42,6 +42,7 @@ When `state-machine.md` exists, it is the single normative transition source and
 
 ## Related rules
 
-- [dispatch-for-bounded-results](./dispatch-for-bounded-results.md)
+- [delegate-by-default](./delegate-by-default.md)
+- [list-subagents-in-a-registry](./list-subagents-in-a-registry.md)
 - [one-normative-state-machine](./one-normative-state-machine.md)
 - [route-every-status](./route-every-status.md)
