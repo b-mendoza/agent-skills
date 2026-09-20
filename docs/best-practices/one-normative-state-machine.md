@@ -1,6 +1,6 @@
 # one-normative-state-machine
 
-📝 Declare exactly one normative source of state transitions; when `state-machine.md` exists it is that source and `SKILL.md` carries only a compact overview that defers to it.
+📝 Architect a skill with branches, loops, wait states, or approval gates as a finite state machine with one normative transition source; when `state-machine.md` exists, `SKILL.md` only summarises it.
 
 ✅ This rule is `recommended`: expected for non-trivial skills; scope it down with a stated reason.
 
