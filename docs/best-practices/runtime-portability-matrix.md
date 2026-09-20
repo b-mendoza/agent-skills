@@ -2,7 +2,7 @@
 
 📍 Current-state reference: the runtime facts a portable skill depends on (frontmatter, limits, discovery, permissions, dispatch) and the portable baseline for each, re-checked on the date shown.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
+📍 This file is a `reference`: current-state runtime facts re-checked on the date shown; a runtime-specific field, permission, or dispatch assumption not declared here is a material gap.
 
 > Facts checked 2026-09-19 against the official docs linked at the end. If this file and the docs disagree, fix this file.
 
