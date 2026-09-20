@@ -45,7 +45,7 @@ Illustrative only. If this diagram disagrees with `state-machine.md`, the FSM wi
 
 ## When not to use it
 
-A skill whose `Execution` is a short linear sequence with at most one retry route keeps its routes in `Execution` and does not add `state-machine.md`.
+A skill whose `Execution` is a short linear sequence with at most one retry route keeps its routes in `Execution` and does not add `state-machine.md`: a separate file there adds synchronisation surface without removing any ambiguity ([earn-every-part](./earn-every-part.md)).
 
 ## Related rules
 
