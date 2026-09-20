@@ -34,7 +34,7 @@ contract; the subagent quotes it as evidence and cites the source path or URL.
 
 ## Related rules
 
-- [dispatch-for-bounded-results](./dispatch-for-bounded-results.md)
-- [link-offline-content](./link-offline-content.md)
+- [delegate-by-default](./delegate-by-default.md)
+- [link-external-sources](./link-external-sources.md)
 - [declare-mutation-limits](./declare-mutation-limits.md)
 - [checkpoint-irreversible-actions](./checkpoint-irreversible-actions.md)
