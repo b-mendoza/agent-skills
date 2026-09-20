@@ -33,8 +33,9 @@ Dimensions fired: context efficiency (six fewer contracts loaded), maintainabili
 
 ## Related rules
 
-- [dispatch-for-bounded-results](./dispatch-for-bounded-results.md)
-- [load-only-what-the-step-needs](./load-only-what-the-step-needs.md)
-- [link-offline-content](./link-offline-content.md)
+- [delegate-by-default](./delegate-by-default.md)
+- [subagent-roles](./subagent-roles.md)
+- [progressive-disclosure](./progressive-disclosure.md)
+- [link-external-sources](./link-external-sources.md)
 - [validate-by-observation](./validate-by-observation.md)
 - [one-normative-state-machine](./one-normative-state-machine.md)
