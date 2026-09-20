@@ -39,4 +39,4 @@ plan is a temporary artifact, so keep it there too. When finished, run
 - [declare-mutation-limits](./declare-mutation-limits.md)
 - [declare-input-output-contracts](./declare-input-output-contracts.md)
 - [route-every-status](./route-every-status.md)
-- [dispatch-for-bounded-results](./dispatch-for-bounded-results.md)
+- [delegate-by-default](./delegate-by-default.md)
