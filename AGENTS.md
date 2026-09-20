@@ -46,4 +46,4 @@ Long-lived guides:
 Current-state references (short-lived; verify against the code):
 
 - [Repository architecture](docs/architecture.md) — layout of the repository and links to each tree's references.
-- [Best-practice library](docs/best-practices/README.md) — master index of skill-authoring practices, routed via the skill-authoring guide; carries current runtime facts and repository counts, so verify against the code and the runtime docs.
+- [Best-practice library](docs/best-practices/README.md) — index of self-contained rules for skills and subagents, each with ❌/✅ examples; current runtime facts live in [runtime-portability-matrix](docs/best-practices/runtime-portability-matrix.md), dated — verify against the runtime docs.
