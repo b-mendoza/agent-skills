@@ -1,6 +1,6 @@
 # keep-routing-in-the-orchestrator
 
-📝 Keep dispatch decisions in the orchestrator's `Execution` as status-keyed routes over a registry of subagent, path, and purpose when a skill dispatches two or more subagents.
+📝 Keep dispatch decisions in the orchestrator's `Execution` as status-keyed routes (given X, dispatch Y; on status Z, do W) when a skill dispatches two or more subagents.
 
 ✅ This rule is `recommended`: expected for non-trivial skills; scope it down with a stated reason.
 
