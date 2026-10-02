@@ -33,6 +33,7 @@ Dimensions fired: context efficiency (six fewer contracts loaded), maintainabili
 
 ## Related rules
 
+- [keep-skills-self-contained](./keep-skills-self-contained.md)
 - [delegate-by-default](./delegate-by-default.md)
 - [subagent-roles](./subagent-roles.md)
 - [progressive-disclosure](./progressive-disclosure.md)
