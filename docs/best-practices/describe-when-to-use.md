@@ -1,6 +1,6 @@
 # describe-when-to-use
 
-📝 Write each skill's `description` as its routing classifier: third person, action and object first, explicit `Use when` triggers, and named exclusions for sibling skills.
+📝 Write each skill's `description` as its routing classifier: third person, action and object first, explicit `Use when` triggers, and exclusions naming out-of-scope requests.
 
 🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
 
