@@ -18,8 +18,8 @@ description: "Helps users with pull requests, reviews, and GitHub comments using
 ```
 
 ```yaml
-# ✅ action and object first, Use when in user words, dispatch-relevant boundary, siblings named
-description: "Creates reviewable atomic git commits from an explicit list of files or folders after the user asks, in words, to commit. Use when the user says commit these files, commit only src/x, split my changes into atomic commits, commit the ticket work, or keep unrelated work out of the commit. Shows the exact commit plan for approval before any commit and preserves unrelated staged and unstaged work. Does not push, amend, or rewrite history. Does not open pull requests (use pr-creator). Does not summarize recent project state (use analyzing-recent-project-state)."
+# ✅ action and object first, Use when in user words, dispatch-relevant boundary, out-of-scope requests named
+description: "Creates reviewable atomic git commits from an explicit list of files or folders after the user asks, in words, to commit. Use when the user says commit these files, commit only src/x, split my changes into atomic commits, commit the ticket work, or keep unrelated work out of the commit. Shows the exact commit plan for approval before any commit and preserves unrelated staged and unstaged work. Does not push, amend, or rewrite history. Does not open pull requests. Does not summarize recent project state."
 ```
 
 ```markdown
