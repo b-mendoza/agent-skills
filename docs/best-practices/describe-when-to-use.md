@@ -8,7 +8,7 @@ The description is the only signal the runtime has when it decides whether to lo
 
 Open with the observable operation and its target ("Reviews one pull request", "Creates reviewable atomic git commits"), then `Use when` clauses in the words users actually say, covering noun and verb variants. Keep only detail that changes dispatch: boundaries such as "exactly one PR" or "after the user asks, in words, to commit" stay; subagent counts, retry caps, phases, and output schemas go. Where a sibling shares nouns, name the out-of-scope request ("Does not open pull requests"), not the sibling ([keep-skills-self-contained](./keep-skills-self-contained.md)), so the two descriptions partition the territory. Make it as short as precision allows; the length cap is owned by [runtime-portability-matrix](./runtime-portability-matrix.md).
 
-Test both sides of the boundary with should-trigger phrasings and should-not-trigger near-misses, each near-miss naming the expected sibling or `no skill`. A table of phrasings records intent; observed routing through the runtime is evidence and is owned by [validate-by-observation](./validate-by-observation.md). The `name` field is owned by [name-matches-directory](./name-matches-directory.md).
+Test both sides of the boundary with should-trigger phrasings and should-not-trigger near-misses, each near-miss marked `not this skill` or `no skill`. A table of phrasings records intent; observed routing through the runtime is evidence and is owned by [validate-by-observation](./validate-by-observation.md). The `name` field is owned by [name-matches-directory](./name-matches-directory.md).
 
 ## Examples
 
