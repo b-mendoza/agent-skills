@@ -78,11 +78,17 @@ Read a seat only on dispatch. Prefer runtime subagents; else run inline. Record 
 
 ## How This Skill Works
 
-Dispatch: read seat; inline schema from `./references/seat-output-schema.md`; wrap packet in `<decision_packet packet_version="N">...</decision_packet>`; add `depth_setting`, `research_tools`, version, repair reason; log hygiene (no sibling output). Seats never read package files.
+Dispatch: read seat; inline schema from `./references/seat-output-schema.md`; wrap packet in `<decision_packet packet_version="N">...</decision_packet>`; add `depth_setting`, `research_tools`, version, repair reason, `MUTATION_LIMITS`, and the validator invocation below; log hygiene (no sibling output). Seats never read package files.
+
+Validator: `python3 "${SKILL_DIR}/scripts/validate_packet.py" <kind> [web] < payload`, kinds `reversibility|analysis|branch|chair|handoff`, `web` appended for seat kinds when the run declared `research_tools: web`; exit `0` accepts, non-zero prints one finding per line. The orchestrator runs it on every received payload before routing and on the handoff before `Ready`. If `python3` is unavailable through a permitted shell, issue `TOOLS_MISSING` and terminate `Blocked` naming the capability; never apply the checks by hand. Declared exception to `script-enforced-output-contracts` rules 1 and 3: seats never read package files, so the invocation rides in the dispatch envelope rather than in each seat file.
+
+Mutation limits: derive `MUTATION_LIMITS` at intake and carry it in every dispatch envelope. Write only the resolved `HANDOFF_PATH`, never overwriting (collision policy above). Out of scope: every other path, `.agents/skills/`, `.claude/skills/`, `skills-lock.json`. Seats and the chair write nothing. No repair cycle widens the limits.
 
 Evidence tiers (closed): `packet`, `tool_verified`, `model_prior`. `tool_verified` needs web tools + locator. Load-bearing model-prior prior art caps chair confidence at `medium`.
 
-High-stakes (medical, legal, financial-advice, safety-critical personal): attach `This is decision-structuring, not professional advice.` Power-questions must name the qualified professional to consult.
+High-stakes (medical, legal, financial-advice, safety-critical personal): attach `This is decision-structuring, not professional advice.` When a high-stakes disclosure applies, the power-questions seat includes one question naming the qualified professional role to consult (a role, not a person) and what to ask them.
+
+Declared `empirical-validation` exception: this skill has no cases under `evals/`; shape checks reuse the shipped validator; adding cases is follow-up work.
 
 ## Execution
 
@@ -94,13 +100,13 @@ Follow [`state-machine.md`](./state-machine.md):
 4. `ClassifyReversibility` — `G_REVERSIBILITY`; low → `ProbeReversibility`, else default `type_1`/`deep` if still unresolved.
 5. `BindDepth` → `ParallelAnalysis` → `RouteAnalysis` — `G_REASONING_CHAINS_PRESENT` + `G_INDEPENDENCE`; never mix packet versions.
 6. `OriginalityCheck` / `OriginalityBranch` per `G_ORIGINALITY`.
-7. `SynthesizeChair` → `RouteConfidence` / `RepairLowConfidence` / `G_KILL_CRITERION` as tabulated.
+7. `SynthesizeChair` → `RouteConfidence` / `RepairLowConfidence` / `G_KILL_CRITERION` / `G_RECOMMENDATION_CONSISTENCY` as tabulated.
 8. `Type1Gate` — `do_not_commit_yet` is orchestrator-only; keep `chair_recommendation`; set `override_applied`.
-9. `AssembleEducateMe` → `WriteHandoff` → `Ready`.
+9. `AssembleEducateMe` → `WriteHandoff` — `G_HANDOFF_COMPLETE` → `Ready`.
 
 ## Critical Outputs And Gates
 
-Predicates only in [`./references/decision-gates.md`](./references/decision-gates.md): `G_FRAMING_CONFIRMED`, `G_REVERSIBILITY`, `G_REASONING_CHAINS_PRESENT`, `G_INDEPENDENCE`, `G_ORIGINALITY`, `G_DISSENT_PRESERVED`, `G_KILL_CRITERION`, `G_TYPE_1_LOW_CONFIDENCE`, `G_LESSON_CARDS_PRESENT`.
+Predicates only in [`./references/decision-gates.md`](./references/decision-gates.md): `G_FRAMING_CONFIRMED`, `G_REVERSIBILITY`, `G_REASONING_CHAINS_PRESENT`, `G_INDEPENDENCE`, `G_ORIGINALITY`, `G_DISSENT_PRESERVED`, `G_KILL_CRITERION`, `G_RECOMMENDATION_CONSISTENCY`, `G_TYPE_1_LOW_CONFIDENCE`, `G_LESSON_CARDS_PRESENT`, `G_HANDOFF_COMPLETE`.
 
 ## Output Contract
 
@@ -122,9 +128,9 @@ required_kill_criterion: <observable stop signal>
 power_questions_to_answer_before_proceeding: [<top questions>]
 seat_packets: <reversibility, seven analysis, chair, optional branch>
 educate_me: <lesson cards and solo drill>
-gates: <verdicts with evidence>
+gates: <verdicts with evidence, including G_RECOMMENDATION_CONSISTENCY and G_HANDOFF_COMPLETE>
 execution_fidelity: subagents | inline_degraded
-run_log: <versions, dispatches, cycles, budgets, override>
+run_log: <versions, dispatches, cycles, budgets, override, validator invocations and exit codes>
 ```
 
 Chat summary: final recommendation, confidence, decision type, kill criterion, top three power questions, minority-report paragraph, disclosure if any, degraded-fidelity disclosure when `execution_fidelity: inline_degraded`, and the final handoff path actually written.
@@ -137,7 +143,8 @@ Chat summary: final recommendation, confidence, decision type, kill criterion, t
 | `NeedsInput` | One question + draft or field |
 | `Blocked` | Gate, counters, budget, recovery |
 | `Error` | Seat or runtime failure named |
-| Seat `BLOCKED` | `RefinePacket`; second wave → `NeedsInput` |
+| Analysis seat `BLOCKED` | `RefinePacket`; second wave → `NeedsInput` |
+| Reversibility, chair, or branch `BLOCKED` | Per their region rows in `state-machine.md` |
 | Seat `FAIL` | Redispatch seat within cap |
 | Chair `FAIL` | Correctable defect: 1 targeted redispatch (global budget), second `FAIL` → `Blocked`; substantively impossible on unchanged packets → `Blocked` immediately (see `decision-gates.md`) |
 | Seat `ERROR` | Retry once, then `Error` |
