@@ -28,7 +28,7 @@ description: "Creates reviewable atomic git commits from an explicit list of fil
 | --- | --- |
 | "Commit the checkout changes in src/checkout" | `committing-scoped-changes` |
 | "Commit only the JNS-6880 files and leave the rest unstaged" | `committing-scoped-changes` |
-| "Open a PR for this branch" | `pr-creator` |
+| "Open a PR for this branch" | `not this skill` |
 | "Amend the last commit with this fix" | no skill |
 ```
 
