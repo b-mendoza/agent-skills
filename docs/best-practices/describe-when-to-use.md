@@ -34,6 +34,7 @@ description: "Creates reviewable atomic git commits from an explicit list of fil
 
 ## Related rules
 
+- [keep-skills-self-contained](./keep-skills-self-contained.md)
 - [name-matches-directory](./name-matches-directory.md)
 - [runtime-portability-matrix](./runtime-portability-matrix.md)
 - [validate-by-observation](./validate-by-observation.md)
