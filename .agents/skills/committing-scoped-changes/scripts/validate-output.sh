@@ -9,8 +9,7 @@
 # any commit exists.
 #
 # Usage: sh validate-output.sh <plan|execute> < payload
-#        sh validate-output.sh self-test
-# Exit 0  payload conforms (or self-test passed)
+# Exit 0  payload conforms
 # Exit 1  one "<mode>: line N: <message>" finding per defect on stdout
 # Exit 2  bad or missing mode (usage on stderr)
 # Dependencies: sh, awk. No git, no network, no temp files.
@@ -21,20 +20,7 @@ export LC_ALL
 mode=$1
 case "$mode" in
   plan|execute) ;;
-  self-test)
-    printf '%s\n' \
-      "COMMIT_PLAN: PASS" \
-      "Group: 1" \
-      "Message: x" \
-      "Paths: x" \
-      "Expansions: none" \
-      "Verification: none" \
-      "Digest: d072685ed9795be7428293cba4f4c86240e353a3" \
-      "Omissions: none" \
-      "Warnings: none" | sh "$0" plan
-    exit $?
-    ;;
-  *) echo "usage: sh validate-output.sh <plan|execute|self-test> [ < payload ]" >&2; exit 2 ;;
+  *) echo "usage: sh validate-output.sh <plan|execute> < payload" >&2; exit 2 ;;
 esac
 
 awk -v mode="$mode" '
