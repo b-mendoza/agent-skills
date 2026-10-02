@@ -16,6 +16,8 @@ Exception: `G_FRAMING_CONFIRMED` does not use the generic per-gate repair counte
 
 Repair only the producing phase or seat named by the failing gate. Do not rerun unaffected seats unless packet version changed.
 
+Validator: the orchestrator runs `python3 "${SKILL_DIR}/scripts/validate_packet.py" <kind> [web] < payload` (kinds `reversibility|analysis|branch|chair|handoff`; `web` appended for seat kinds when the run declared `research_tools: web`; exit `0` accepts, non-zero prints one finding per line) on every received seat and chair payload before routing on it. A rejection is a schema miss on that seat's `FAIL` route. If `python3` is unavailable through a permitted shell, issue `TOOLS_MISSING` and return `status: blocked` naming the capability; never apply the checks by hand.
+
 Low-confidence repair accounting: the redispatch set is the analysis seats whose packets the chair explicitly names as the drivers of its low confidence (empty when the chair names none). `RepairLowConfidence` has no separate cap. Every seat redispatched for low confidence, and every chair rerun it triggers, counts individually against the global redispatch budget. The planned repair (weak seats plus chair rerun) must fit within the remaining budget; otherwise skip the repair. The per-seat schema cap applies only when the named repair reason is a schema defect. The `blocked` route in the table above applies when a required redispatch cannot run within budget; a low-confidence result whose repair is skipped for budget reasons is not blocked — it proceeds to `Type1Gate`, where the Type 1 low-confidence override still protects irreversible decisions.
 
 ## G_FRAMING_CONFIRMED
@@ -102,6 +104,20 @@ Pass condition: `required_kill_criterion` is present, substantive, specific, and
 
 Failure route: redispatch `chair-seat` with the quality defect.
 
+## G_RECOMMENDATION_CONSISTENCY
+
+Protects: chair recommendation matching its own schema semantics.
+
+Pass condition (from `seat-output-schema.md` chair semantics):
+
+- `go` only with `confidence: high` and no `disagreements_within_council` entry of kind other than `confidence_based`.
+- `rework` whenever any disagreement is `factual` or `interpretive`.
+- `abandon` only with an unrecoverable originality verdict or concurrent adversary and second-order worse-than-status-quo signals.
+
+Checker: the validator `chair` kind enforces the enum and the `go` → `confidence: high` rule; the orchestrator reads the chair packet for the disagreement-kind and `abandon` conditions.
+
+Failure route: redispatch `chair-seat` with the exact inconsistency, within the shared per-gate repair cap.
+
 ## Chair `FAIL` Escalation
 
 Chair `FAIL` routes by stated cause:
@@ -109,7 +125,7 @@ Chair `FAIL` routes by stated cause:
 - Correctable synthesis or formatting defect: 1 targeted redispatch carrying that exact defect, counted against the global redispatch budget. A second `FAIL` returns `status: blocked` with the chair's stated reason surfaced to the user.
 - The chair states that any recommendation would require fabricating consensus or erasing material dissent from unchanged packets: return `status: blocked` immediately with that reason — no blind redispatch.
 
-`G_DISSENT_PRESERVED` and `G_KILL_CRITERION` repairs keep the shared per-gate repair cap; this section governs only seat-emitted chair `FAIL`.
+`G_DISSENT_PRESERVED`, `G_KILL_CRITERION`, and `G_RECOMMENDATION_CONSISTENCY` repairs keep the shared per-gate repair cap; this section governs only seat-emitted chair `FAIL`. Chair `BLOCKED` (missing, mixed-version, or unusable packets): the orchestrator repairs the packet set, then 1 targeted redispatch counted against the global budget; a second `BLOCKED` returns `status: blocked`.
 
 ## G_TYPE_1_LOW_CONFIDENCE
 
@@ -123,6 +139,16 @@ Computed verdict:
 - `fail` iff `decision_type: type_1`, confidence is `low`, and the override did not fire.
 
 Failure route: `fail` is a blocking defect. Return `status: blocked` with the run-log explanation.
+
+## G_HANDOFF_COMPLETE
+
+Protects: handoff file completeness before `Ready`.
+
+Pass condition: every required top-level key from the `SKILL.md` Output Contract is present at column 0 in the written file and `status` is in its enum.
+
+Checker: validator `handoff` kind on the written file.
+
+Failure route: regenerate the handoff from retained packets and gate verdicts (orchestrator only, no seat redispatch) under the per-gate repair cap; on the fourth failure return `status: blocked` naming the missing key.
 
 ## G_LESSON_CARDS_PRESENT
 
