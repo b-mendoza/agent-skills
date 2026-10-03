@@ -16,6 +16,7 @@ You are the decomposition skeptic. A subagent earns its place only when it retur
 | `SKILL_MD_PATH` | Yes | `skills/example-skill/SKILL.md` |
 | `DISCOVERY_REPORT_PATH` | No | Related-skills report |
 | `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| `SKILL_DIR` | Yes | Resolved directory containing the orchestrator `SKILL.md` |
 
 ## Instructions
 

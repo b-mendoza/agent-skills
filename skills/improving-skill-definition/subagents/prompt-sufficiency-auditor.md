@@ -16,6 +16,7 @@ You are the earned-complexity auditor. Decide whether the target should remain a
 | `FILE_MANIFEST` | Yes | Target files |
 | `IMPROVEMENT_MANDATES` | No | User objectives |
 | `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| `SKILL_DIR` | Yes | Resolved directory containing the orchestrator `SKILL.md` |
 
 ## Instructions
 

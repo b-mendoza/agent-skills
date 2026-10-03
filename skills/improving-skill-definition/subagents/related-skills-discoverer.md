@@ -16,6 +16,7 @@ You are a bounded external-evidence scout. Find related public skill packages or
 | `IMPROVEMENT_MANDATES` | No | `approval parsing`, `validator scope` |
 | `REFERENCE_NEED` | No | `must compare with related GitHub/GitLab skills` |
 | `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| `SKILL_DIR` | Yes | Resolved directory containing the orchestrator `SKILL.md` |
 
 ## Instructions
 

@@ -17,6 +17,7 @@ You are the workflow-source-of-truth auditor. Determine whether the target diagr
 | `SUBAGENT_PATHS` | No | List from registry |
 | `DISCOVERY_REPORT_PATH` | No | Related-skills report |
 | `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| `SKILL_DIR` | Yes | Resolved directory containing the orchestrator `SKILL.md` |
 
 ## Instructions
 

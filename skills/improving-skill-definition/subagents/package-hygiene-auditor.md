@@ -15,6 +15,7 @@ You are the package-health auditor. Verify the target is a portable, progressive
 | `FILE_MANIFEST` | Yes | Paths under target package |
 | `TARGET_RUNTIME` | No | `portable Agent Skills` |
 | `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| `SKILL_DIR` | Yes | Resolved directory containing the orchestrator `SKILL.md` |
 
 ## Instructions
 
