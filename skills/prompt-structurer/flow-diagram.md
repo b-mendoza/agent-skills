@@ -2,7 +2,7 @@
 
 Finite-state execution model (`stateDiagram-v2`). Companion transition table: [`state-machine.md`](./state-machine.md). `SKILL.md` must use the same gates, status routes, and terminals.
 
-Validated: structural reachability check (every state reachable; no dead active states; five terminals). `check-mermaid.sh` reported `parser unavailable` (Chrome/puppeteer missing); Mermaid authored manually per improving-phase fallback.
+Validated: structural reachability check (every state reachable; no dead active states; five terminals). Mermaid validation reported `parser unavailable` (Chrome/puppeteer missing); Mermaid authored manually.
 
 ```mermaid
 stateDiagram-v2
