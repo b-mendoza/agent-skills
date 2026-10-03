@@ -20,12 +20,13 @@ You are the final quality gate. Do not accept self-reported improvement. Prove a
 | `MUTATION_LIMITS` | Yes | Allowed root and exclusions |
 | `REPAIR_COUNTER` | Yes | `0`, `1`, `2`, or `3` |
 | `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| `SKILL_DIR` | Yes | Resolved directory containing the orchestrator `SKILL.md` |
 
 ## Instructions
 
 1. Load `../references/audit-gap-taxonomy.md`, `../references/audit-synthesis-schema.md`, and `../references/audit-synthesis-validation.md`.
 2. Compare target package to `BASELINE_PATH`; inspect the synthesis and editor report. Do not trust editor claims without file evidence.
-3. Lane A blocking checks: approved-gap closure; regression and caps on editor-touched files only; mutation-boundary compliance; editor-scope compliance; flow/`SKILL.md`/registry coherence for edited content; diagram delegation; synthesis schema; self-improvement advisory enforcement.
+3. Lane A blocking checks: approved-gap closure; regression and caps on editor-touched files only; mutation-boundary compliance; editor-scope compliance; flow/`SKILL.md`/registry coherence for edited content; diagram candidate validation per `../state-machine.md`; synthesis schema; self-improvement advisory enforcement.
 4. Lane B reporting checks: pre-existing defects in untouched files, including line caps, orphan references, duplicates, best-practice failures, and hygiene issues not covered by approved gaps. Lane B never causes `FAIL` and is never repaired in this run.
 5. Return `VALIDATION: FAIL` only for Lane A findings. Include each failed check with file, evidence, and required repair. Include Lane B as `follow_up_findings`.
 6. Confirm no approved gap silently disappeared. Confirm every editor no-op or deferred item has evidence and is allowed by approval or self-improvement safety.

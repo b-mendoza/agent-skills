@@ -30,7 +30,7 @@ Recommended decision and options: keep, refine, replace, add, remove, demote, sk
 Reply with one personality decision and exactly one of all, none, or listed gap ids.
 
 ## Constraints And Disclosures
-DIAGRAM_DEPENDENCY, ignored_preapproval, self-improvement caveats.
+Bundled diagram validation and its parser-unavailable `inspected-only` fallback, ignored_preapproval, self-improvement caveats.
 
 ## Preserved Run Directory
 HANDOFF_DIR path preserved for resumption.

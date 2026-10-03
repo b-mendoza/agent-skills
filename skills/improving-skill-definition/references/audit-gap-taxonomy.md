@@ -8,7 +8,7 @@ Treat every target package as a workflow hypothesis. A gap must cite observable 
 
 ## Diagram-Change Terminology
 
-Prefer sibling `skills/generate-flow-diagram` for candidates. It supports `flowchart` and `stateDiagram-v2`. When the sibling is missing, author Mermaid manually and validate with `skills/generate-flow-diagram/scripts/check-mermaid.sh` when that script is available. Record the path used at approval.
+Author `flowchart` and `stateDiagram-v2` candidates manually and validate with the bundled helper: `bash "${SKILL_DIR}/scripts/check-mermaid.sh" "$DIAGRAM_CANDIDATE_PATH"`. At approval, disclose the `inspected-only` fallback for helper exit 2 (`parser unavailable`); after validation, record the candidate path and actual method. The `final passed` gate and helper failure routes are defined in `../state-machine.md`.
 
 | Term | Meaning | Requires diagram candidate |
 | --- | --- | --- |
@@ -39,7 +39,7 @@ Prefer sibling `skills/generate-flow-diagram` for candidates. It supports `flowc
 | `medium` | Routing drift, undefined term, stale state, weak gate, injection exposure, or late failure |
 | `low` | Padding pressure, confusing examples, minor hygiene issue, or maintainability drag |
 
-Priority tiers: `P0` must fix before mutation; `P1` should fix in this run if approved; `P2` may be follow-up. `P0` maps to Lane A only when it concerns an approved gap, touched file, boundary, diagram delegation, synthesis schema, or self-improvement advisory.
+Priority tiers: `P0` must fix before mutation; `P1` should fix in this run if approved; `P2` may be follow-up. `P0` maps to Lane A only when it concerns an approved gap, touched file, boundary, diagram candidate validation, synthesis schema, or self-improvement advisory.
 
 ## File Size Caps
 

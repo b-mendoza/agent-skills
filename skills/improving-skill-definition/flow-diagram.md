@@ -6,8 +6,8 @@ Illustrative rendering of the `improving-skill-definition` finite-state machine 
 stateDiagram-v2
   [*] --> Intake
 
-  Intake --> FlowLoad: eligible and baseline ready
-  Intake --> TerminalBlocked: path ineligible
+  Intake --> FlowLoad: eligible and package root resolved and baseline ready
+  Intake --> TerminalBlocked: path ineligible or package root unresolved
 
   FlowLoad --> Discover: own flow and personality readable
   FlowLoad --> TerminalError: own flow or personality missing
@@ -28,13 +28,13 @@ stateDiagram-v2
   Approval --> TerminalBlocked: scope or identity fail
   Approval --> EditPrep: valid approval and scope ok
 
-  EditPrep --> TerminalBlocked: structural and DIAGRAM_DEPENDENCY missing
-  EditPrep --> DiagramCandidate: structural and dependency present
-  EditPrep --> Edit: non-structural only
+  EditPrep --> DiagramCandidate: semantic or structural diagram change
+  EditPrep --> Edit: no diagram candidate required
 
   DiagramCandidate --> Edit: candidate final passed
-  DiagramCandidate --> TerminalBlocked: candidate needs input or blocked
-  DiagramCandidate --> TerminalError: candidate error or repair limit
+  DiagramCandidate --> DiagramCandidate: syntax or inspection failure and diagram_repair_counter under 3
+  DiagramCandidate --> TerminalBlocked: candidate or input missing or inspection blocked
+  DiagramCandidate --> TerminalError: unexpected helper or inspection error or diagram repair limit
 
   Edit --> Validate: EDIT PASS
   Edit --> TerminalNoChange: EDIT NO_CHANGE
@@ -63,6 +63,6 @@ stateDiagram-v2
 - Approval: only a valid reply to this run's handoff opens editing; preapproval values are ignored and reported.
 - Validation: Lane A findings can fail and repair; Lane B findings are follow-up only and never mutate in-run.
 - Cleanup: success cleans; approval-required preserves for resume; failed runs after mutation preserve baseline, editor report, and validator report.
-- Diagram edits: semantic or structural changes require a `final passed` candidate from sibling `skills/generate-flow-diagram` (supports `stateDiagram-v2`) written in the same edit; if the sibling is missing, author Mermaid manually and validate with `scripts/check-mermaid.sh` when available.
-- Repair: one orchestrator-owned counter, maximum three cycles, scoped to Lane A findings and approved gaps.
+- Diagram edits: semantic or structural changes require a manually authored `final passed` candidate, validated with the bundled helper and written in the same edit. `state-machine.md` defines the helper exit-code routes and bounded diagram repair.
+- Repair: orchestrator-owned `repair_counter`, maximum three cycles, scoped to Lane A findings and approved gaps; candidate validation separately bounds `diagram_repair_counter` at three.
 - Self-improvement: gaps are marked `SAFE` or `DEFERRED`; `DEFERRED` gaps are not applied during the same run. Exception: when `SELF_IMPROVEMENT_RUN=true` and the user approves structural redefine gaps (execution SoT / state-machine rewrite), those approved gaps are marked `SAFE` so they can land in the same run.

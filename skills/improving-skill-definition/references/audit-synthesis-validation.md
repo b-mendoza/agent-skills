@@ -39,7 +39,7 @@ The editor may apply only approved `SAFE` gaps. The validator fails Lane A if a 
 
 ## Lane Assignment
 
-Before user approval, gaps may use `lane: undecided-before-approval`. After edit, validator Lane A includes only approved-gap closure, editor-touched files, mutation boundaries, diagram delegation, synthesis schema, and self-improvement advisory enforcement. Lane B is for pre-existing defects in untouched files and is reported as `follow_up_findings` only.
+Before user approval, gaps may use `lane: undecided-before-approval`. After edit, validator Lane A includes only approved-gap closure, editor-touched files, mutation boundaries, diagram candidate validation, synthesis schema, and self-improvement advisory enforcement. Lane B is for pre-existing defects in untouched files and is reported as `follow_up_findings` only.
 
 ## Failure Reporting
 

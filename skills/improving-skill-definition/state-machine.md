@@ -6,7 +6,7 @@ Finite-state execution model for this skill. This file is the sole normative sou
 
 | State | Kind | Phase / role |
 | --- | --- | --- |
-| `Intake` | active | Normalize path, eligibility, dependency preflight, baseline, self-improvement flag |
+| `Intake` | active | Normalize path, eligibility, package root, baseline, self-improvement flag |
 | `FlowLoad` | active | Load own personality and target flow; set trust model |
 | `Discover` | active | Dispatch `related-skills-discoverer` |
 | `Audit` | active | Dispatch six auditors (independent read-only fan-out); join on all six reports; synthesize; route by status suffix |
@@ -27,8 +27,8 @@ Finite-state execution model for this skill. This file is the sole normative sou
 | From | To | Guard / event |
 | --- | --- | --- |
 | `[*]` | `Intake` | run start |
-| `Intake` | `FlowLoad` | `SKILL_PATH` eligible; baseline copied; limits derived |
-| `Intake` | `TerminalBlocked` | path missing, unreadable, or excluded |
+| `Intake` | `FlowLoad` | `SKILL_PATH` eligible; `SKILL_DIR` resolved; baseline copied; limits derived |
+| `Intake` | `TerminalBlocked` | path missing, unreadable, or excluded; or `SKILL_DIR` unresolved (`TOOLS_MISSING`) |
 | `FlowLoad` | `Discover` | own `flow-diagram.md` and `personality.md` readable |
 | `FlowLoad` | `TerminalError` | own flow or personality unreadable |
 | `Discover` | `Audit` | `RELATED_SKILLS: PASS`, or BLOCKED/ERROR with optional degrade |
@@ -44,12 +44,12 @@ Finite-state execution model for this skill. This file is the sole normative sou
 | `Approval` | `TerminalNoChange` | valid reply with approved scope `none` |
 | `Approval` | `TerminalBlocked` | valid reply but mutations violate limits or identity |
 | `Approval` | `EditPrep` | valid reply; scope not `none`; limits ok |
-| `EditPrep` | `TerminalBlocked` | structural/semantic diagram change and `DIAGRAM_DEPENDENCY=missing` with no manual-validation path |
-| `EditPrep` | `DiagramCandidate` | structural/semantic diagram change and dependency present (or manual candidate with script validation) |
-| `EditPrep` | `Edit` | approved gaps are non-structural only |
+| `EditPrep` | `DiagramCandidate` | approved structural/semantic diagram change |
+| `EditPrep` | `Edit` | no diagram candidate required |
 | `DiagramCandidate` | `Edit` | candidate completion state is `final passed` |
-| `DiagramCandidate` | `TerminalBlocked` | candidate needs input, confirmation, or blocked |
-| `DiagramCandidate` | `TerminalError` | candidate error or diagram repair limit |
+| `DiagramCandidate` | `DiagramCandidate` | helper exit 1, 3, or 4, or inspection failure, and `diagram_repair_counter < 3`; increment counter; repair only approved candidate |
+| `DiagramCandidate` | `TerminalBlocked` | candidate missing (helper exit 66), required input missing, or inspection blocked |
+| `DiagramCandidate` | `TerminalError` | helper exit other than 0, 1, 2, 3, 4, or 66; unexpected inspection error; or syntax/inspection failure at `diagram_repair_counter >= 3` |
 | `Edit` | `Validate` | `EDIT: PASS` (at least one applied in-scope mutation) |
 | `Edit` | `TerminalNoChange` | `EDIT: NO_CHANGE` (every approved item no-op, already satisfied, or deferred; empty baseline diff) |
 | `Edit` | `TerminalBlocked` | `EDIT: BLOCKED` |
@@ -65,6 +65,10 @@ Finite-state execution model for this skill. This file is the sole normative sou
 | `TerminalApprovalRequired` | `[*]` | emit handoff; preserve `HANDOFF_DIR` |
 | `TerminalBlocked` | `[*]` | emit handoff + outcome-dependent preserve |
 | `TerminalError` | `[*]` | emit handoff + outcome-dependent preserve |
+
+## Diagram candidate validation
+
+Author `flowchart` or `stateDiagram-v2` Mermaid manually at `DIAGRAM_CANDIDATE_PATH` within this run's approved scope. Run `bash "${SKILL_DIR}/scripts/check-mermaid.sh" "$DIAGRAM_CANDIDATE_PATH"`. Inspect the candidate against the approved gaps and target contracts: states, transitions, statuses, approval gates, retry bounds, cleanup, and related `SKILL.md`/registry entries must agree. `final passed` requires passing coherence inspection plus either helper exit 0 (`parsed`) or helper exit 2 (`parser unavailable`) with passing manual Mermaid syntax/structural inspection (`inspected-only`). Disclose the `inspected-only` fallback policy at approval, then record the actual method, helper exit code, and candidate path; never claim parsing for the fallback. Initialize `diagram_repair_counter=0` per candidate; exits 1, 3, and 4 or failed inspection permit at most three scoped repair-and-recheck cycles before `TerminalError`. A missing candidate (exit 66), missing required input, or blocked inspection routes to `TerminalBlocked`; other nonzero helper exits or unexpected inspection errors route to `TerminalError`. The editor still writes the passing diagram in the same edit as its related package changes, and Lane A still validates approved closure, scope, and flow coherence.
 
 ## Audit fan-out and join
 
