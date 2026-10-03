@@ -2,7 +2,7 @@
 
 > Current-state reference: this index and `runtime-portability-matrix.md` must be updated when a rule is added, removed, or renamed, and when runtime facts change.
 
-Each rule is self-contained: open the one for the decision in front of you; its 📝 sentence says when it applies. A 🔒 miss is a material gap unless `SKILL.md` names the rule and the reason for the exception, where the rule allows one. ✅ rules are expected for non-trivial skills and may be scoped down with a stated reason. Reviewers record `pass` / `fail` / `not applicable` per applicable rule.
+Each rule is self-contained: open the one for the decision in front of you; its 📝 sentence says when it applies. Reviewers record `pass` / `fail` / `not applicable` per applicable rule.
 
 🔒 Mandatory — a miss is a material gap unless `SKILL.md` names the rule and the reason for an exception the rule allows.\
 ✅ Recommended — expected for non-trivial skills; scope it down with a stated reason.\
