@@ -28,7 +28,7 @@ Finite-state execution model for this skill. This file is the sole normative sou
 | --- | --- | --- |
 | `[*]` | `Intake` | run start |
 | `Intake` | `FlowLoad` | `SKILL_PATH` eligible; `SKILL_DIR` resolved; baseline copied; limits derived |
-| `Intake` | `TerminalBlocked` | path missing, unreadable, or excluded; or `SKILL_DIR` unresolved (`TOOLS_MISSING`) |
+| `Intake` | `TerminalBlocked` | path missing, unreadable, or excluded; `SKILL_DIR` unresolved (`TOOLS_MISSING`); or `MUTATION_LIMITS` cannot be derived unambiguously |
 | `FlowLoad` | `Discover` | own `flow-diagram.md` and `personality.md` readable |
 | `FlowLoad` | `TerminalError` | own flow or personality unreadable |
 | `Discover` | `Audit` | `RELATED_SKILLS: PASS`, or BLOCKED/ERROR with optional degrade |

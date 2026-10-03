@@ -26,7 +26,7 @@ Execution is a finite-state machine. [`state-machine.md`](./state-machine.md) is
 
 | State | Result |
 | --- | --- |
-| Intake | Path, eligibility, package root, run state, baseline |
+| Intake | Path, eligibility, package root, mutation limits, run state, baseline |
 | FlowLoad | Own flow, personality, target flow, trust model |
 | Discover | Optional related-skill evidence with provenance |
 | Audit | Six slice reports plus `audit-synthesis-report.yaml` |

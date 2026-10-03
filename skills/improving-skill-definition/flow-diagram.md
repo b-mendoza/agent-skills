@@ -7,7 +7,7 @@ stateDiagram-v2
   [*] --> Intake
 
   Intake --> FlowLoad: eligible and package root resolved and baseline ready
-  Intake --> TerminalBlocked: path ineligible or package root unresolved
+  Intake --> TerminalBlocked: path ineligible, package root unresolved, or limits underivable
 
   FlowLoad --> Discover: own flow and personality readable
   FlowLoad --> TerminalError: own flow or personality missing
