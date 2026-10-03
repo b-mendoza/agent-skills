@@ -21,7 +21,7 @@ else
   exit 2
 fi
 
-tmp_dir="$(mktemp -d)"
+tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/check-mermaid.XXXXXX")" || exit 64
 trap 'rm -rf "$tmp_dir"' EXIT
 
 awk -v dir="$tmp_dir" '
@@ -48,9 +48,12 @@ awk -v dir="$tmp_dir" '
     }
     print count > sprintf("%s/count", dir)
   }
-' "$input_file"
+' "$input_file" || {
+  status=$?
+  case "$status" in 3|4) exit "$status" ;; *) exit 64 ;; esac
+}
 
-count="$(cat "$tmp_dir/count")"
+count="$(cat "$tmp_dir/count")" || exit 64
 for ((i = 1; i <= count; i++)); do
   block_file="$(printf '%s/block-%03d.mmd' "$tmp_dir" "$i")"
   output_file="$(printf '%s/block-%03d.svg' "$tmp_dir" "$i")"
