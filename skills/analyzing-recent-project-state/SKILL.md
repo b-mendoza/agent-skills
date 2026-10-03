@@ -1,6 +1,6 @@
 ---
 name: "analyzing-recent-project-state"
-description: "Produces a verified, read-only snapshot of a repository's recent state from local Git evidence: what changed, what is risky, and whether a branch is ready to continue, review, merge, or hand off. Use when asked what changed recently, what happened on this branch, where things stand, whether the branch is ready, or how to resume work from the current repo state. Does not review code line by line or draft PR feedback (use review-pull-request), and does not write a handoff file from conversation history (use generate-handoff-document). Runs no tests, merges, or repository mutation; writes no file and returns the snapshot as response text."
+description: "Produces a verified, read-only snapshot of a repository's recent state from local Git evidence: what changed, what is risky, and whether a branch is ready to continue, review, merge, or hand off. Use when asked what changed recently, what happened on this branch, where things stand, whether the branch is ready, or how to resume work from the current repo state. Does not review code line by line or draft PR feedback, and does not write a handoff file from conversation history. Runs no tests, merges, or repository mutation; writes no file and returns the snapshot as response text."
 ---
 
 # Analyzing Recent Project State
