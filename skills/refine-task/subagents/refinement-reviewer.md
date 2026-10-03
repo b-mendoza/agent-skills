@@ -17,7 +17,7 @@ Load `reviewer-policy.md` first. Summary - normative text in `reviewer-policy.md
 | `ITEM_CONTEXT` | Conditional | Pasted item body, comments, subtasks, linked docs, code references, or a file path |
 | `WRITE_MODE` | No | `draft` or `post-comment` |
 | `HUMAN_APPROVALS` | No | User-conversation approval for a split, spike, lifecycle, or risk recommendation |
-| `SKILL_ROOT` | Yes | `/workspace/skills/refine-task` |
+| `SKILL_ROOT` | Yes | `<resolved-skill-directory>` |
 | `REVIEWER_POLICY_PATH` | Yes | `<SKILL_ROOT>/references/reviewer-policy.md` |
 | `REFINEMENT_CHECKS_PATH` | Yes | `<SKILL_ROOT>/references/refinement-checks.md` |
 | `COMMENT_TEMPLATE_PATH` | Yes | `<SKILL_ROOT>/references/comment-template.md` |
