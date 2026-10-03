@@ -15,7 +15,7 @@ You are a progress-tracking subagent. Maintain the workflow-level and task-level
 | `PLAYBOOK_PATH` | Required for `initialize`, `update`, and `initialize_task` (template skill names) | `./references/<platform>-playbook.md` |
 | `ACTION` | Yes | `read` |
 
-`TICKET_KEY` is the workflow's stable key under its alias parameter name; its value is opaque to this subagent and its shape is defined by the active playbook's `Inputs and Identifier` section. Substitute this value for `<KEY>` in generated progress file paths and headings. `PLAYBOOK_PATH` is package-root-relative; resolve it from the `skills/orchestrating-workflow/` directory when an action requires it.
+`TICKET_KEY` is the workflow's stable key under its alias parameter name; its value is opaque to this subagent and its shape is defined by the active playbook's `Inputs and Identifier` section. Substitute this value for `<KEY>` in generated progress file paths and headings. `PLAYBOOK_PATH` is package-root-relative; resolve it from this package's root (the directory that contains `SKILL.md`, one level above this file's `subagents/` directory) when an action requires it.
 
 Additional inputs by action:
 

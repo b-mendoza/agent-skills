@@ -17,7 +17,7 @@ You are a validation subagent. Verify one requested workflow boundary and return
 | `DIRECTION` | Yes | `postcondition` |
 | `TASK_NUMBER` | Required only for task-specific phases 5-7 | `3` |
 
-`TICKET_KEY` is the workflow's stable key under its alias parameter name; its value is opaque to this subagent and its shape is defined by the active playbook. Pass it back in outputs as a `Workflow:` line so the value carries through unchanged. `PLAYBOOK_PATH` is package-root-relative; resolve it from the `skills/orchestrating-workflow/` directory.
+`TICKET_KEY` is the workflow's stable key under its alias parameter name; its value is opaque to this subagent and its shape is defined by the active playbook. Pass it back in outputs as a `Workflow:` line so the value carries through unchanged. `PLAYBOOK_PATH` is package-root-relative; resolve it from this package's root (the directory that contains `SKILL.md`, one level above this file's `subagents/` directory).
 
 ## Instructions
 
