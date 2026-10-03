@@ -1,6 +1,6 @@
 # Flow Diagram
 
-Canonical execution model: finite state machine. Guards and terminals are tabulated in [`state-machine.md`](./state-machine.md).
+Illustrative rendering only. [`state-machine.md`](./state-machine.md) is the sole normative source for states, guards, transitions and terminals; it wins on drift. Any FSM change updates this diagram and the `SKILL.md` overview in the same change.
 
 ```mermaid
 stateDiagram-v2
