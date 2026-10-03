@@ -68,4 +68,4 @@ stateDiagram-v2
 
 ## Mermaid validation note
 
-Validated structurally (reachability, no dead non-terminals). Sibling `skills/generate-flow-diagram/scripts/check-mermaid.sh` returned `parser unavailable` (Chrome/puppeteer missing); recorded as fallback evidence.
+Validated structurally (reachability, no dead non-terminals). Mermaid validation returned `parser unavailable` (Chrome/puppeteer missing); recorded as fallback evidence.
