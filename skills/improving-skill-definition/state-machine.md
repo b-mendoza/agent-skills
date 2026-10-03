@@ -13,6 +13,7 @@ Finite-state execution model for this skill. This file is the sole normative sou
 | `Approval` | active | Present gaps; parse personality + scope reply |
 | `EditPrep` | active | Classify approved gaps structural vs non-structural |
 | `DiagramCandidate` | active | Obtain `final passed` state/flow diagram candidate |
+| `ParserApproval` | wait | Ask once per run before npx fetch/execution |
 | `Edit` | active | Dispatch `skill-definition-editor` |
 | `Validate` | active | Dispatch `skill-package-validator` (Lane A / Lane B) |
 | `Repair` | active | Increment `repair_counter`; re-enter edit scope |
@@ -46,6 +47,13 @@ Finite-state execution model for this skill. This file is the sole normative sou
 | `Approval` | `EditPrep` | valid reply; scope not `none`; limits ok |
 | `EditPrep` | `DiagramCandidate` | approved structural/semantic diagram change |
 | `EditPrep` | `Edit` | no diagram candidate required |
+| `DiagramCandidate` | `ParserApproval` | no retained `APPROVED` or `ABORT` decision for this exact command; helper exit 2 with exact first line `parser unavailable: npx approval required` |
+| `ParserApproval` | `DiagramCandidate` | `APPROVED`; retain permission for this exact command; re-run with `--allow-npx` |
+| `ParserApproval` | `DiagramCandidate` | `ABORT`; retain denial for this exact command; use `inspected-only` without npx |
+| `ParserApproval` | `ParserApproval` | `REVISE`/malformed/unusable answer and `parser_reask_count < 1`; increment; say command has no revisable parameters and re-preview once |
+| `ParserApproval` | `TerminalBlocked` | no answer on resume, or `REVISE`/unusable at `parser_reask_count = 1` |
+| `ParserApproval` | `TerminalBlocked` | checkpoint preparation returns `BLOCKED`/`TOOLS_MISSING`, or its required context is missing/malformed |
+| `ParserApproval` | `TerminalError` | checkpoint preparation returns `ERROR`, or unexpected preparation/authorization failure |
 | `DiagramCandidate` | `Edit` | candidate completion state is `final passed` |
 | `DiagramCandidate` | `DiagramCandidate` | helper exit 1, 3, or 4, or inspection failure, and `diagram_repair_counter < 3`; increment counter; repair only approved candidate |
 | `DiagramCandidate` | `TerminalBlocked` | candidate missing (helper exit 66), required input missing, or inspection blocked |
@@ -69,6 +77,10 @@ Finite-state execution model for this skill. This file is the sole normative sou
 ## Diagram candidate validation
 
 Author `flowchart` or `stateDiagram-v2` Mermaid manually at `DIAGRAM_CANDIDATE_PATH` within this run's approved scope. Run `bash "${SKILL_DIR}/scripts/check-mermaid.sh" "$DIAGRAM_CANDIDATE_PATH"`. Inspect the candidate against the approved gaps and target contracts: states, transitions, statuses, approval gates, retry bounds, cleanup, and related `SKILL.md`/registry entries must agree. `final passed` requires passing coherence inspection plus either helper exit 0 (`parsed`) or helper exit 2 (`parser unavailable`) with passing manual Mermaid syntax/structural inspection (`inspected-only`). Disclose the `inspected-only` fallback policy at approval, then record the actual method, helper exit code, and candidate path; never claim parsing for the fallback. Initialize `diagram_repair_counter=0` per candidate. The editor still writes the passing diagram in the same edit as its related package changes, and Lane A still validates approved closure, scope, and flow coherence.
+
+## Parser approval
+
+Normally ask once per run: show the one literal resolved `bash <helper> --allow-npx <candidate-path>` command with actual paths and package `@mermaid-js/mermaid-cli`; disclose third-party fetch/execution and install scripts, npm cache writes and possible Puppeteer Chrome download; state completed local checks and remaining unpinned-code risk. `ABORT` skips npx and continues `inspected-only`. Initialize `parser_reask_count=0` once per run, retain it across re-previews, cap 1; `REVISE`/unusable under cap increments and re-previews once, explaining no parameters are revisable at this gate; no answer on resume or revise/unusable at cap -> `TerminalBlocked`. End the turn while waiting, without timeout. Approval binds only this run, the displayed exact command and package, not candidate contents: repairs/content edits retain it; a new/changed path or any command/package change requires a new preview before opt-in. Record APPROVED or ABORT before returning. A retained decision makes the entry guard false: APPROVED uses `--allow-npx`; ABORT skips the helper and goes straight to `inspected-only`. A new preview replaces the decision for the changed command; never reuse it for an added/changed command. Missing/malformed checkpoint context or preparation `BLOCKED`/`TOOLS_MISSING` -> `TerminalBlocked`; preparation `ERROR` or unexpected failure -> `TerminalError`. Other exit 2, including failed preflight, also uses inspection. Earlier-run/intake consent never counts. Record decision/method/exit under existing `Validation Evidence` when changed, `Reason` for no change, `Blocking Reason` when blocked, or `Known Context` on error.
 
 ## Audit fan-out and join
 

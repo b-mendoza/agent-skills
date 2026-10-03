@@ -31,6 +31,13 @@ stateDiagram-v2
   EditPrep --> DiagramCandidate: semantic or structural diagram change
   EditPrep --> Edit: no diagram candidate required
 
+  DiagramCandidate --> ParserApproval: exit 2 npx approval required and no retained APPROVED or ABORT for exact command
+  ParserApproval --> DiagramCandidate: APPROVED retain permission and run with allow-npx
+  ParserApproval --> DiagramCandidate: ABORT retain denial and inspect only
+  ParserApproval --> ParserApproval: REVISE or unusable and parser_reask_count under 1
+  ParserApproval --> TerminalBlocked: no answer or revise or unusable at cap
+  ParserApproval --> TerminalBlocked: checkpoint BLOCKED or TOOLS_MISSING or context missing or malformed
+  ParserApproval --> TerminalError: checkpoint ERROR or unexpected failure
   DiagramCandidate --> Edit: candidate final passed
   DiagramCandidate --> DiagramCandidate: syntax or inspection failure and diagram_repair_counter under 3
   DiagramCandidate --> TerminalBlocked: candidate or input missing or inspection blocked

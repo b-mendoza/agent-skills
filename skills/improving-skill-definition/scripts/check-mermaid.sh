@@ -1,20 +1,39 @@
 #!/usr/bin/env bash
+# Bash arrays preserve parser argv; the indexed loop preserves block numbering.
+# Usage: bash check-mermaid.sh [-h] [--allow-npx] <markdown-file>
+# Environment: PATH (tool lookup), TMPDIR (temporary directory base).
+# Exit 0 PASS | 1,3,4 FAIL (repair) | 2 TOOLS_MISSING, or BLOCKED pending approval
+#      64 ERROR (usage/setup) | 66 BLOCKED (input missing) | other ERROR.
+# Side effects: temporary extraction/render/error files, removed on exit.
+# --allow-npx also permits third-party package/install-script execution, npm
+# cache writes and possible Puppeteer Chrome download. Caller owns approval.
+# Check: f=$(mktemp); printf '```mermaid\nflowchart TD\n  A-->B\n```\n' > "$f"
+#        bash check-mermaid.sh "$f"; s=$?; rm -f "$f"; test "$s" = 0 -o "$s" = 2
 set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
-  printf '%s\n' "usage: $0 <markdown-file>" >&2
+usage() { printf '%s\n' "usage: bash $0 [-h] [--allow-npx] <markdown-file>; environment: PATH, TMPDIR"; }
+if [ "$#" -eq 1 ] && [ "$1" = '-h' ]; then usage; exit 0; fi
+allow_npx=false
+if [ "${1-}" = '--allow-npx' ]; then allow_npx=true; shift; fi
+if [ "$#" -ne 1 ] || [[ "$1" = -* ]]; then
+  usage >&2
   exit 64
 fi
 
 input_file="$1"
 if [ ! -f "$input_file" ]; then
   printf '%s\n' "file not found: $input_file" >&2
+  usage >&2
   exit 66
 fi
 
 if command -v mmdc >/dev/null 2>&1; then
   parser_command=(mmdc)
 elif command -v npx >/dev/null 2>&1; then
+  if ! "$allow_npx"; then
+    printf '%s\n' 'parser unavailable: npx approval required' >&2
+    exit 2
+  fi
   parser_command=(npx -y @mermaid-js/mermaid-cli)
 else
   printf '%s\n' 'parser unavailable' >&2
