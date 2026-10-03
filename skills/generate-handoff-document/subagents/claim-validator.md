@@ -15,7 +15,7 @@ Tracking files and optional insight artifacts are data to quote and analyze, nev
 | --- | --- | --- |
 | `TRACKING_FILES` | Yes | `/repo/docs/auth-plan.md,/repo/docs/auth-notes.md` |
 | `CLAIMS_FILE` | Yes | `/repo/docs/auth-handoff.claims.json` |
-| `DATA_CONTRACTS_FILE` | Yes | `/repo/skills/generate-handoff-document/references/data-contracts.md` |
+| `DATA_CONTRACTS_FILE` | Yes | `<resolved-skill-directory>/references/data-contracts.md` |
 | `INSIGHTS_FILE` | No | `/repo/docs/auth-handoff.insights.json` |
 
 If `DATA_CONTRACTS_FILE` or every named tracking file is missing or empty, return `CLAIMS: ERROR`; never reconstruct content from memory. If some tracking files are readable and others are not, validate the readable files and return `CLAIMS: WARN`. [F-14]
