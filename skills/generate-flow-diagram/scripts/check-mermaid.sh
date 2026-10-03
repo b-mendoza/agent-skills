@@ -53,6 +53,12 @@ awk -v dir="$tmp_dir" '
   case "$status" in 3|4) exit "$status" ;; *) exit 64 ;; esac
 }
 
+if ! "${parser_command[@]}" --version >"$tmp_dir/parser.err" 2>&1; then
+  printf '%s\n' 'parser unavailable' >&2
+  cat "$tmp_dir/parser.err" >&2
+  exit 2
+fi
+
 count="$(cat "$tmp_dir/count")" || exit 64
 for ((i = 1; i <= count; i++)); do
   block_file="$(printf '%s/block-%03d.mmd' "$tmp_dir" "$i")"
@@ -74,4 +80,6 @@ for ((i = 1; i <= count; i++)); do
   fi
 done
 
+printf 'parser: %s\n' "${parser_command[*]}"
+cat "$tmp_dir/parser.err" || exit 64
 printf 'parsed %s mermaid block(s)\n' "$count"
