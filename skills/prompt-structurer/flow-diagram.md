@@ -7,7 +7,7 @@ stateDiagram-v2
   [*] --> Intake
 
   Intake --> WrapAnalyzedText: inputs captured
-  WrapAnalyzedText --> GatePrompt: wrapped; LOCAL_ONLY; load log started
+  WrapAnalyzedText --> GatePrompt: wrapped, LOCAL_ONLY, load log started
 
   GatePrompt --> TerminalBlocked: PROMPT_TEXT missing
   GatePrompt --> GateContradiction: PROMPT_TEXT present
@@ -51,13 +51,13 @@ stateDiagram-v2
   RoutePass --> RetryPass: RESULT ERROR and retry unused
   RoutePass --> TerminalError: RESULT ERROR after one retry
 
-  AskUnblock --> DispatchPass: answered; re-enter blocked analysis pass
-  AskUnblock --> Assemble: answered; re-enter blocked assembler
+  AskUnblock --> DispatchPass: answered, re-enter blocked analysis pass
+  AskUnblock --> Assemble: answered, re-enter blocked assembler
   AskUnblock --> TerminalBlocked: no answer
 
   RetryPass --> DispatchPass: redispatch same analysis pass once
 
-  HarvestPass --> GateFetch: named sections kept; FETCH_REQUESTED inspected
+  HarvestPass --> GateFetch: named sections kept, FETCH_REQUESTED inspected
   GateFetch --> GateHandoffSize: one URL or RATIONALE_OMITTED or none
   GateHandoffSize --> MorePasses: handoff mode set
 
@@ -78,9 +78,9 @@ stateDiagram-v2
   ValidateCriteria --> MapRepair: criteria fail and repair_cycles under 3
   ValidateCriteria --> TerminalRepairNeeded: criteria fail and repair_cycles at 3
 
-  MapRepair --> DispatchPass: earliest affected pass; BLOCKED pauses counter
+  MapRepair --> DispatchPass: earliest affected pass, BLOCKED pauses counter
 
-  Deliver --> TerminalPass: XML first then notes; OUTPUT_TARGET under mutation boundary
+  Deliver --> TerminalPass: XML first then notes, OUTPUT_TARGET under mutation boundary
 
   TerminalPass --> [*]
   TerminalBlocked --> [*]
