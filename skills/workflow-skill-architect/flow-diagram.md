@@ -1,6 +1,6 @@
 # Workflow Skill Architect Flow
 
-Control-flow source of truth for `workflow-skill-architect`. High-level execution is a finite-state machine (`stateDiagram-v2`). Transition table: [`state-machine.md`](./state-machine.md).
+Illustrative control-flow diagram for `workflow-skill-architect`. High-level execution is a finite-state machine (`stateDiagram-v2`). Authoritative transition table: [`state-machine.md`](./state-machine.md).
 
 ```mermaid
 stateDiagram-v2
@@ -65,7 +65,3 @@ stateDiagram-v2
 - Generation repair: orchestrator-owned `REPAIR_CYCLE`, max 3, staged scope only, full re-review each cycle.
 - Mutation: real-package writes only after explicit in-run approval that follows visibility of staged paths (see `SKILL.md` Mutation Approval).
 - Every `needs_input` terminal includes a `RESUME_PACKET`.
-
-## Mermaid validation note
-
-Validated structurally (reachability, no dead non-terminals). Mermaid validation returned `parser unavailable` (Chrome/puppeteer missing); recorded as fallback evidence.
