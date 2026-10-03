@@ -13,7 +13,7 @@ Test both sides of the boundary with should-trigger phrasings and should-not-tri
 ## Examples
 
 ```yaml
-# ❌ no action boundary, no user vocabulary, no exclusions — collides with creation and reply workflows
+# ❌ no action boundary, no `Use when` triggers, no exclusions — collides with creation and reply workflows
 description: "Helps users with pull requests, reviews, and GitHub comments using a thorough multi-step workflow."
 ```
 
