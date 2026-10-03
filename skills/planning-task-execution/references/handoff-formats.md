@@ -42,7 +42,7 @@ Notes: Planning cannot begin until the dependency is complete.
 ```text
 PLAN: PASS
 Execution plan: docs/<KEY>-task-3-execution-plan.md
-Recommended skills: test-driven-development
+Recommended skills: <skill-name>
 References fetched: https://martinfowler.com/bliki/Yagni.html
 Approach: Add retry orchestration in the webhook service, then thread retry state through the existing worker and test helpers.
 Blockers: None
