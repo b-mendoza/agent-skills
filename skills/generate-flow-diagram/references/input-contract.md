@@ -54,6 +54,8 @@ Each question or re-ask budget is local to its decision boundary (intake clarifi
 
 For packages with more than about six subagents, or candidates that strain the orchestrator context, stage digests and candidates in a run-scoped handoff directory and pass file paths instead of inline content.
 
+Parser inputs are validation-only scratch allowed in every mode, using existing proven-ignored run-owned handoff or shell temporary storage, never source/destination files. The orchestrator assigns stable paths for the candidate set and materializes builder-returned content before each review; retain inputs and the exact command list while `ParserApproval` waits, and change only scratch content during repairs. Clean only this run's scratch at a terminal; if preparation is unavailable, use `inspected-only` without npx. Builders remain content-only, and destination writes remain exclusive to `WriteBatch` after all-pass review.
+
 ## Decompose Inputs
 
 | Input | Required | Purpose |
@@ -88,7 +90,7 @@ Out of scope: sibling packages, `.agents/skills/`, `.claude/skills/`, `skills-lo
 
 Before any decompose read or write, resolve `PACKAGE_PATH` against the workspace. It must be an existing skill package directory, not the repo root, not a vendored mirror, without traversal, and without symlink escape. Unsafe paths are blocked, not repaired around.
 
-All non-decompose modes are read-only and only emit content. Runtime mapping: Claude Code uses write/edit tools only inside `MUTATION_LIMITS`; OpenCode uses `edit` permission scoped to the same target package.
+Non-decompose modes do not edit source/destination files; their only write exception is the validation scratch above. Runtime mapping: Claude Code uses write/edit tools only inside `MUTATION_LIMITS`; OpenCode uses `edit` permission scoped to the same target package.
 
 ## Node Count Rule
 

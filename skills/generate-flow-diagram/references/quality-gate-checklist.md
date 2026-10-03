@@ -6,7 +6,7 @@ Load this file only when reviewing a candidate diagram or preparing targeted rep
 
 | ID | Check | Pass Condition |
 | --- | --- | --- |
-| C1 | Mermaid syntax | `scripts/check-mermaid.sh` parsed every fenced Mermaid block when parser available; otherwise inspection records `inspected-only`; invalid parser output fails |
+| C1 | Mermaid syntax | Helper exit 0 parsed all blocks; exit 2 or no execution capability requires recorded `inspected-only` checks; only `NPX_APPROVED: yes` permits npx; exits 1/3/4 fail, 66 blocks, 64/unexpected exit errors |
 | C2 | Classes | Class assignments target existing nodes only |
 | C3 | Input normalization | Candidate reflects `PROCESS_INPUTS`; unknowns are assumptions, questions, or blockers |
 | C4 | Flow coverage | Intake, boundary, validation, synthesis, decisions, outputs, and terminal states are represented when relevant |

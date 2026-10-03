@@ -25,6 +25,7 @@ Finite-state execution model for this skill. Mermaid rendering lives in [`flow-d
 | `ValidateApprovedGaps` | active | 2. Refinement preflight (resume) | Orchestrator |
 | `BuildCandidate` | active | 3. Build and review | `diagram-builder` |
 | `ReviewCandidate` | active | 3. Build and review | `diagram-quality-reviewer` |
+| `ParserApproval` | wait | Once-per-run parser permission before first reviewer | Orchestrator → user |
 | `PackageRepair` | active | 3. Build and review (repair) | Orchestrator → builder |
 | `AwaitRepairApproval` | wait | 3. Build and review | Orchestrator → user |
 | `DecomposeInputGate` | active | 4. Decompose plan and approve | Orchestrator |
@@ -66,6 +67,13 @@ Finite-state execution model for this skill. Mermaid rendering lives in [`flow-d
 | `ValidateApprovedGaps` | `BuildCandidate` | Every supplied ID exists in retained inventory, or value is exact `none` |
 | `ValidateApprovedGaps` | `AwaitRefinementApproval` | Unknown/ambiguous IDs and `gap_reask_budget` remaining (consume budget; re-ask once) |
 | `ValidateApprovedGaps` | `NeedsConfirmation` | Unknown/ambiguous IDs and `gap_reask_budget` exhausted |
+| `BuildCandidate` | `ParserApproval` | `BUILD: PASS`; first reviewer dispatch or a changed previously previewed command; no retained `APPROVED` or `ABORT` decision for this exact command; `command -v mmdc` fails and `command -v npx` succeeds |
+| `ParserApproval` | `ReviewCandidate` | non-decompose; record `APPROVED` -> `NPX_APPROVED: yes`, or `ABORT` -> `no`, before resuming the pending review |
+| `ParserApproval` | `StageCandidates` | decompose; record `APPROVED` -> `NPX_APPROVED: yes`, or `ABORT` -> `no`, before resuming the pending chain |
+| `ParserApproval` | `ParserApproval` | `REVISE`/malformed/unusable answer and `parser_reask_count < 1`; increment; say command has no revisable parameters and re-preview once |
+| `ParserApproval` | `Blocked` | no answer on resume, or `REVISE`/unusable at `parser_reask_count = 1` |
+| `ParserApproval` | `Blocked` | checkpoint preparation returns `BLOCKED`/`TOOLS_MISSING`, or its required context is missing/malformed |
+| `ParserApproval` | `Error` | checkpoint preparation returns `ERROR`, or unexpected preparation/authorization failure |
 | `BuildCandidate` | `ReviewCandidate` | `BUILD: PASS` |
 | `BuildCandidate` | `NeedsInput` | `BUILD: NEEDS_INPUT` |
 | `BuildCandidate` | `Error` | `BUILD: ERROR` |
@@ -88,6 +96,7 @@ Finite-state execution model for this skill. Mermaid rendering lives in [`flow-d
 | `PlanDecompose` | `AwaitDecomposeApproval` | `PLAN: PASS` ∧ work remains ∧ approval path is `ask` |
 | `PlanDecompose` | `StageCandidates` | `PLAN: PASS` ∧ work remains ∧ `DECOMPOSE_PLAN_APPROVAL=auto` (disclose in run report) |
 | `AwaitDecomposeApproval` | `NeedsConfirmation` | Plan summary and resume block presented; run stops for approve/revise; resume re-enters via `Intake` |
+| `StageCandidates` | `ParserApproval` | all parser-input command paths fixed and the pending candidate has `BUILD: PASS`; first reviewer dispatch or a changed previously previewed command list; no retained `APPROVED` or `ABORT` decision for this exact list; `command -v mmdc` fails and `command -v npx` succeeds |
 | `StageCandidates` | `WriteBatch` | Every staged candidate holds `REVIEW: PASS`, and cross-candidate duplication revalidated against `OTHER_DIAGRAM_DIGEST` after any repair |
 | `StageCandidates` | `RepairLimitReached` | Any candidate exhausts repair budget (write nothing) |
 | `WriteBatch` | `DecompositionComplete` | `WRITE: PASS` after `MUTATION_LIMITS` enforcement |
@@ -105,11 +114,15 @@ Finite-state execution model for this skill. Mermaid rendering lives in [`flow-d
 
 ## Reachability
 
-Every listed state is reachable from `Intake` (including the resume routes `Intake` → `ValidateApprovedGaps` and `Intake` → `StageCandidates`). Every terminal has an exit to `[*]`. Both wait states follow one convention: stop at a confirmation terminal whose output carries a resume block, then resume through `Intake` on the next invocation. `PackageRepair` always returns to `BuildCandidate`. There are no dead states.
+Every listed state is reachable from `Intake` (including the resume routes `Intake` → `ValidateApprovedGaps` and `Intake` → `StageCandidates`). Every terminal has an exit to `[*]`. `AwaitRefinementApproval`, `AwaitRepairApproval` and `AwaitDecomposeApproval` stop at their confirmation terminals and resume through `Intake` with the existing resume block. `ParserApproval` instead ends the turn in that wait state; a same-run reply follows its APPROVED/REVISE/ABORT rows, and missing approval on resume follows its `Blocked` row. `PackageRepair` always returns to `BuildCandidate`. There are no dead states.
 
 ## Resume Blocks
 
 A confirmation stop is a terminal; the run's context is not assumed to survive it. Each `NeedsConfirmation`-family stop therefore embeds a compact resume block in its user-facing output (templates in `references/output-templates.md`): a baseline fingerprint (first line or title of the baseline, plus its node count), the inventory or plan IDs with one-line summaries, the approval scope, and the remaining re-ask budget. Resume requires the user's decision plus that block; `Intake` rejects a missing, stale, or mismatched block as `NeedsInput` rather than guessing.
+
+## Parser approval
+
+`ParserApproval` entry guards take precedence over normal build/stage routing only when no APPROVED/ABORT decision is retained for the exact command list. Normally ask once before the first reviewer, only when `command -v mmdc` fails and `command -v npx` succeeds. Preview one literal resolved `bash <helper> --allow-npx <candidate-path>` line per assigned parser-input path, plus package `@mermaid-js/mermaid-cli`, third-party fetch/execution/install scripts, npm cache writes, possible Puppeteer Chrome download, and `ABORT` continuing `inspected-only`; state passed local checks and unpinned-code risk. The orchestrator fixes run-owned parser-input paths for the candidate set derived from the approved plan and prepares only the first pending candidate before asking; preserve per-candidate build→review→repair chains, not a build-all barrier. Initialize `parser_reask_count=0` once per run, retain it across re-previews, cap 1; REVISE/malformed/unusable under cap increments and re-previews once, explaining no parameters are revisable at this gate; no answer on resume or unusable/revise at cap -> `Blocked`. Preparation BLOCKED/TOOLS_MISSING or missing/malformed checkpoint context -> `Blocked`; ERROR/unexpected failure -> `Error`. End the turn while waiting, without timeout. Record APPROVED or ABORT for the displayed exact list before returning: the retained decision makes the entry guard false and resumes the pending review. Pass `NPX_APPROVED: yes` only for an approved listed command, `no` after ABORT or when the gate is unnecessary. Repairs at listed paths retain the decision; new/changed command/path/package needs a new full preview replacing the decision, never silent expansion. Earlier-run/intake/plan-auto/gap/repair consent never counts; reviewers cannot ask the user. Record the decision on the existing validation-method line.
 
 ## Notes
 
