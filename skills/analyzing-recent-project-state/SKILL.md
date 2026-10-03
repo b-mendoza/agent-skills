@@ -60,7 +60,7 @@ Portable target: OpenCode and Claude Code. Required capabilities: read repositor
 - Claude Code allow rules, one per form and nothing broader for git: `Bash(git -C * rev-parse *)`, `Bash(git -C * branch --list *)`, `Bash(git -C * merge-base *)`, `Bash(git -C * status --porcelain=v1 *)`, `Bash(git -C * log --first-parent *)`, `Bash(git -C * diff --stat *)`, `Bash(git -C * diff --name-status *)`, `Bash(git -C * show --stat *)`, `Bash(sh */scripts/validate-output.sh *)`; deny `Edit`, `Write`, `NotebookEdit`, `WebFetch`, `WebSearch`.
 - OpenCode `permission.bash` (last matching rule wins, so the allows follow the deny): `"*": "ask"`, `"git *": "deny"`, then `"git -C * rev-parse *": "allow"` and one allow per remaining form above, plus `"sh * validate-output.sh *": "allow"`; `permission.edit: deny`; `webfetch` and `websearch` deny; `task` allowed for the general subagent.
 
-Where the installer does not apply these rules, the collector's closed list is the floor and is prompt-enforced. This skill declares an intentional exception to `handoff-file-dispatch` because it writes no files; repair state (`PRIOR_DRAFT`, `REQUIRED_FIXES`) travels inline and is bounded by the roughly 80-line evidence handoff and the report size.
+Where the installer does not apply these rules, the collector's closed list is the floor and is prompt-enforced. This skill declares an intentional exception to `scope-run-files-to-the-run` because it writes no files; repair state (`PRIOR_DRAFT`, `REQUIRED_FIXES`) travels inline and is bounded by the roughly 80-line evidence handoff and the report size.
 
 ## Progressive Loading Map
 
