@@ -17,7 +17,7 @@ if command -v mmdc >/dev/null 2>&1; then
 elif command -v npx >/dev/null 2>&1; then
   parser_command=(npx -y @mermaid-js/mermaid-cli)
 else
-  printf '%s\n' "parser unavailable" >&2
+  printf '%s\n' 'parser unavailable' >&2
   exit 2
 fi
 
@@ -64,7 +64,7 @@ for ((i = 1; i <= count; i++)); do
   else
     if grep -qi 'could not find chrome\|failed to launch\|executable.*not found' "$error_file"; then
       parser_status=2
-      printf '%s\n' "parser unavailable" >&2
+      printf '%s\n' 'parser unavailable' >&2
     else
       parser_status=1
       printf 'mermaid parse failed in block %s:\n' "$i" >&2
