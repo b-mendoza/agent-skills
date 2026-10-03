@@ -1,6 +1,6 @@
 # Best practices for skills and subagents
 
-> Current-state reference: this index and `runtime-portability-matrix.md` must be updated when a rule is added, removed, or renamed, and when runtime facts change.
+> Current-state reference: this index must be updated when a rule is added, removed, or renamed, and `runtime-portability-matrix.md` must be updated when runtime facts change.
 
 Each rule is self-contained: open the one for the decision in front of you; its 📝 sentence says when it applies. Reviewers record `pass` / `fail` / `not applicable` per applicable rule.
 
