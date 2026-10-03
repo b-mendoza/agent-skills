@@ -80,7 +80,7 @@ Read a seat only on dispatch. Prefer runtime subagents; else run inline. Record 
 
 Dispatch: read seat; inline schema from `./references/seat-output-schema.md`; wrap packet in `<decision_packet packet_version="N">...</decision_packet>`; add `depth_setting`, `research_tools`, version, repair reason, `MUTATION_LIMITS`, and the validator invocation below; log hygiene (no sibling output). Seats never read package files.
 
-Validator: `python3 "${SKILL_DIR}/scripts/validate_packet.py" <kind> [web] < payload`, kinds `reversibility|analysis|branch|chair|handoff`, `web` appended for seat kinds when the run declared `research_tools: web`; exit `0` accepts, non-zero prints one finding per line. The orchestrator runs it on every received payload before routing and on the handoff before `Ready`. If `python3` is unavailable through a permitted shell, issue `TOOLS_MISSING` and terminate `Blocked` naming the capability; never apply the checks by hand. Declared exception to `script-enforced-output-contracts` rules 1 and 3: seats never read package files, so the invocation rides in the dispatch envelope rather than in each seat file.
+Validator: `python3 "${SKILL_DIR}/scripts/validate_packet.py" <kind> [web] < payload`, kinds `reversibility|analysis|branch|chair|handoff`, `web` appended for seat kinds when the run declared `research_tools: web`; exit `0` accepts, non-zero prints one finding per line. The orchestrator runs it on every received payload before routing and on the handoff before `Ready`. If `python3` is unavailable through a permitted shell, issue `TOOLS_MISSING` and terminate `Blocked` naming the capability; never apply the checks by hand. Declared exception to `validate-routed-fields-with-a-script`: seats never read package files, so the invocation rides in the dispatch envelope rather than in each seat file.
 
 Mutation limits: derive `MUTATION_LIMITS` at intake and carry it in every dispatch envelope. Write only the resolved `HANDOFF_PATH`, never overwriting (collision policy above). Out of scope: every other path, `.agents/skills/`, `.claude/skills/`, `skills-lock.json`. Seats and the chair write nothing. No repair cycle widens the limits.
 
@@ -88,7 +88,7 @@ Evidence tiers (closed): `packet`, `tool_verified`, `model_prior`. `tool_verifie
 
 High-stakes (medical, legal, financial-advice, safety-critical personal): attach `This is decision-structuring, not professional advice.` When a high-stakes disclosure applies, the power-questions seat includes one question naming the qualified professional role to consult (a role, not a person) and what to ask them.
 
-Declared `empirical-validation` exception: this skill has no automated cases yet; shape checks reuse the shipped validator; adding cases is follow-up work.
+Declared `validate-by-observation` exception: this skill has no automated cases yet; shape checks reuse the shipped validator; adding cases is follow-up work.
 
 ## Execution
 
