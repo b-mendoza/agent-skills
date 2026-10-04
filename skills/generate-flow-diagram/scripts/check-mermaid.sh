@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 # Bash arrays preserve parser argv; the indexed loop preserves block numbering.
-# Usage: bash check-mermaid.sh [-h] [--allow-npx] <markdown-file>
-# Environment: PATH (tool lookup), TMPDIR (temporary directory base).
 # Exit 0 PASS | 1,3,4 FAIL (repair) | 2 TOOLS_MISSING, or BLOCKED pending approval
 #      64 ERROR (usage/setup) | 66 BLOCKED (input missing) | other ERROR.
 # Side effects: temporary extraction/render/error files, removed on exit.
