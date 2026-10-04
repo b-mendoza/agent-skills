@@ -1,6 +1,6 @@
 # State Machine — workflow-skill-architect
 
-Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
+Finite-state execution model for this skill. Illustrative diagram: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
 
 ## States
 
