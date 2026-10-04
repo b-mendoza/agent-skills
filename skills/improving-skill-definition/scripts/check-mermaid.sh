@@ -91,26 +91,22 @@ fi
 
 count="$(cat "$tmp_dir/count")" || exit 64
 for ((i = 1; i <= count; i++)); do
-  block_file="$(printf '%s/block-%03d.mmd' "$tmp_dir" "$i")"
-  output_file="$(printf '%s/block-%03d.svg' "$tmp_dir" "$i")"
-  error_file="$(printf '%s/block-%03d.err' "$tmp_dir" "$i")"
+  block_path="$(printf '%s/block-%03d' "$tmp_dir" "$i")"
+  error_file="$block_path.err"
 
-  if "${parser_command[@]}" --input "$block_file" --output "$output_file" --quiet >"$error_file" 2>&1; then
-    continue
+  if "${parser_command[@]}" --input "$block_path.mmd" --output "$block_path.svg" --quiet >"$error_file" 2>&1; then continue; fi
+  if grep -qiE 'Error: (ENOSPC|EACCES|EROFS):' "$error_file"; then
+    parser_status=64
+    printf '%s\n' 'setup error: renderer filesystem failure' >&2
+  elif grep -qi 'could not find chrome\|failed to launch\|executable.*not found\|browser is already running\|browser was not found at the configured executablePath\|tried to find the browser at the configured path' "$error_file"; then
+    parser_status=2
+    printf '%s\n' 'parser unavailable' >&2
   else
-    if grep -qiE 'Error: (ENOSPC|EACCES|EROFS):' "$error_file"; then
-      parser_status=64
-      printf '%s\n' 'setup error: renderer filesystem failure' >&2
-    elif grep -qi 'could not find chrome\|failed to launch\|executable.*not found\|browser is already running\|browser was not found at the configured executablePath\|tried to find the browser at the configured path' "$error_file"; then
-      parser_status=2
-      printf '%s\n' 'parser unavailable' >&2
-    else
-      parser_status=1
-      printf 'mermaid parse failed in block %s:\n' "$i" >&2
-    fi
-    cat "$error_file" >&2
-    exit "$parser_status"
+    parser_status=1
+    printf 'mermaid parse failed in block %s:\n' "$i" >&2
   fi
+  cat "$error_file" >&2
+  exit "$parser_status"
 done
 
 printf 'parser: %s\n' "${parser_command[*]}"
