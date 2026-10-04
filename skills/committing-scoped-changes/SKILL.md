@@ -95,9 +95,7 @@ Every question (paths, planner decision, or `G_PLAN_APPROVAL`) emits `COMMIT_SCO
 
 Predicate: exit 0. On non-zero, redispatch once with the printed findings; a second non-zero → `COMMIT_SCOPED_CHANGES: ERROR` naming the phase. Route only after exit 0.
 
-Plan envelope: line 1 `COMMIT_PLAN: PASS | NEEDS_DECISION | NO_CHANGES | ERROR`. On `PASS`, one or more group blocks, each exactly `Group: <n from 1>`, `Message: <first line>`, `Paths: <space-separated, byte-sorted>`, `Expansions: none | <paths also listed in Paths>`, `Verification: none | <command>`, `Digest: <40 hex>`; then `Omissions: none | <paths>` and `Warnings: none | <text>`. On `NEEDS_DECISION`, exactly `Reason:` and `Decision needed:`. On `NO_CHANGES` or `ERROR`, exactly `Reason:`.
-
-Execute envelope: line 1 `COMMIT_EXECUTE: PASS | DIVERGED | VERIFY_FAILED | COMMIT_ERROR | HOOK_MUTATION | ERROR`. On `PASS`, exactly `Commit: <short sha> <message>`, `Paths: <space-separated, byte-sorted>`, `Preserved: <40 hex>=<40 hex>` with equal values. On `HOOK_MUTATION`, exactly `Reason:` and `Commit:`. On every other status, exactly `Reason:`.
+Envelope grammars are declared in each producer's `Output Format` section and enforced by the gates above before routing.
 
 ## G_PLAN_APPROVAL
 
