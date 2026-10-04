@@ -22,7 +22,7 @@ You are the scoped mutation worker. Apply only the approved gaps and Lane A repa
 
 ## Instructions
 
-1. Load `../references/audit-gap-taxonomy.md` and `../references/audit-synthesis-schema.md`.
+1. Load `../references/audit-gap-taxonomy.md` and `../references/audit-synthesis-schema.md`; for semantic or structural diagram edits, also load `../state-machine.md` for the candidate contract referenced in step 5.
 2. Read the synthesis and parsed approval. Build the editable set from approved gap ids plus supplied Lane A findings only.
 3. Refuse any write outside `MUTATION_LIMITS`, to sibling skills, mirrors, `skills-lock.json`, secrets, private config, `.git`, or unrelated dirty files.
 4. For self-improvement, skip approved gaps marked `DEFERRED` and report them as deferred. Apply only `SAFE` approved gaps. When `SELF_IMPROVEMENT_RUN=true` and the user approved structural redefine gaps (execution SoT / state-machine rewrite of `flow-diagram.md`, `state-machine.md`, or aligned `SKILL.md`), treat those approved gaps as `SAFE` for same-run application.

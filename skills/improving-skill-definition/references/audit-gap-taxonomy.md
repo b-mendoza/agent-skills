@@ -8,7 +8,7 @@ Treat every target package as a workflow hypothesis. A gap must cite observable 
 
 ## Diagram-Change Terminology
 
-Author `flowchart` and `stateDiagram-v2` candidates manually and validate with the bundled helper: `bash "${SKILL_DIR}/scripts/check-mermaid.sh" "$DIAGRAM_CANDIDATE_PATH"`. Exact exit-2 first line `parser unavailable: npx approval required` enters `ParserApproval` when the exact command lacks a retained decision; add `--allow-npx` only after `APPROVED`. `ABORT` and other parser-unavailable exit 2 use the disclosed `inspected-only` fallback. Retain the decision through content repairs, but re-preview a changed command/path and record candidate path, method, exit and decision. `../state-machine.md` owns the `final passed` gate and failure routes.
+`../state-machine.md` owns manual `flowchart`/`stateDiagram-v2` candidate validation, `ParserApproval`, and `final passed`; the terms below determine whether a candidate is required.
 
 | Term | Meaning | Requires diagram candidate |
 | --- | --- | --- |
