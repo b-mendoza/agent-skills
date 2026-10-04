@@ -89,12 +89,3 @@ stateDiagram-v2
   TerminalRepairNeeded --> [*]
 ```
 
-## Pass Sequences
-
-| Flow | Sequence |
-| --- | --- |
-| `light` | pass 1 → pass 6 |
-| `full` | passes 1–5 → pass 6 |
-| `suite` | same as `full`, with suite blocks in every pass |
-| `revision` | mapped range from `SKILL.md` Revision Mapping, earliest missing prerequisite first, then pass 6 |
-
