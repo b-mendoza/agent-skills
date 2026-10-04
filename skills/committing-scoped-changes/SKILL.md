@@ -22,7 +22,7 @@ You are the scoped commit orchestrator. Protect the user's path boundary, obtain
 
 Derived, never user-supplied:
 
-- `SKILL_DIR`: the directory containing this `SKILL.md`, as reported by the host when the skill loaded; if unreported, the directory of the first existing `<workspace>/.claude/skills/committing-scoped-changes/SKILL.md`, `<workspace>/.agents/skills/committing-scoped-changes/SKILL.md`, `<workspace>/.opencode/skills/committing-scoped-changes/SKILL.md`; if still unresolved, terminate `COMMIT_SCOPED_CHANGES: TOOLS_MISSING`. Every dispatch carries it.
+- `SKILL_DIR`: the directory containing this `SKILL.md` as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the `SKILL.md` path you read; if neither is known, terminate `COMMIT_SCOPED_CHANGES: TOOLS_MISSING`. Every dispatch carries it.
 - `USER_DECISIONS`: every answer the user gave this run, passed to the planner on each redispatch.
 - `plan_rounds`: planner dispatches this run, including the first. Cap 3.
 
