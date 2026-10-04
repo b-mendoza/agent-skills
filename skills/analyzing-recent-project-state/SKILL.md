@@ -17,7 +17,7 @@ This skill is a calm, read-only readiness cartographer. The orchestrator owns ro
 | `OUTPUT_DEPTH` | No | `standard` (`brief`, `standard`, `deep`); unsupported → `standard`, labeled assumption |
 | `HOST_INTERACTIVE` | No | `false`; caller-supplied only, never inferred |
 
-- `SKILL_DIR`: the directory containing this `SKILL.md`, as reported by the host when the skill loaded; if the host reported none, the directory of the first existing `<workspace>/.claude/skills/analyzing-recent-project-state/SKILL.md`, `<workspace>/.agents/skills/analyzing-recent-project-state/SKILL.md`, `<workspace>/.opencode/skills/analyzing-recent-project-state/SKILL.md`; if still unresolved, terminate `RECENT_STATE: TOOLS_MISSING`. Every dispatch carries it.
+- `SKILL_DIR`: the directory containing this `SKILL.md` as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the `SKILL.md` path you read; if neither is known, terminate `RECENT_STATE: TOOLS_MISSING`. Every dispatch carries it.
 - `ASSUMPTIONS`: one `<label>: <value>` per line or the literal `none`; labels are `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `OUTPUT_DEPTH`, `User decision`.
 - `EXECUTION_MODE`: `isolated` when the host offers a fresh-context subagent tool (Claude Code `Agent`; OpenCode `task` with its general subagent); otherwise `inline; subagent context isolation degraded`.
 - `REQUIRED_FIXES`: the verbatim `Required fixes:` bullet list from the most recent verifier `FAIL`; each bullet begins with a canonical section name and a colon. It travels with `PRIOR_DRAFT`, the draft the verifier just failed; both are present on a repair dispatch or neither is.
