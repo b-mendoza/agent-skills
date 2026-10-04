@@ -98,12 +98,3 @@ stateDiagram-v2
 | `suite` | same as `full`, with suite blocks in every pass |
 | `revision` | mapped range from `SKILL.md` Revision Mapping, earliest missing prerequisite first, then pass 6 |
 
-## Terminal States
-
-| Terminal | Status | Required payload |
-| --- | --- | --- |
-| `TerminalPass` | `PASS` | Final XML, then assembly notes |
-| `TerminalBlocked` | `BLOCKED` | One unblocking question plus completed work |
-| `TerminalFail` | `FAIL` | Conflicting statements plus clarification |
-| `TerminalError` | `ERROR` | Failing pass, retry record, completed outputs |
-| `TerminalRepairNeeded` | `REPAIR_NEEDED` | Unvalidated XML, failing criteria with owning pass, cycles used |

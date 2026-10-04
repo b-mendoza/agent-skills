@@ -82,7 +82,7 @@ Statuses are mutually exclusive and inherited by every pass.
 | `BLOCKED` | Missing/insufficient input | Resumable at blocked unit | One question + completed work |
 | `FAIL` | Contradiction only user can resolve | Terminal | Conflicting statements + clarification |
 | `ERROR` | Tool/runtime failure after one retry | Terminal | Failing pass, retry record, completed outputs |
-| `REPAIR_NEEDED` | Criteria fail after three repair cycles | Terminal (orchestrator-only) | Unvalidated XML, failing criteria, cycles |
+| `REPAIR_NEEDED` | Criteria fail after three repair cycles | Terminal (orchestrator-only) | Unvalidated XML, failing criteria with owning pass, cycles |
 
 Out-of-scope revision → `BLOCKED` if rescopable, else `FAIL`. Never discard completed work silently.
 
