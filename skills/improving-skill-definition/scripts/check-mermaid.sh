@@ -43,31 +43,28 @@ tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/check-mermaid.XXXXXX")" || exit 64
 trap 'rm -rf "$tmp_dir"' EXIT
 
 awk -v dir="$tmp_dir" '
-  {
-    sub(/\r$/, "")
-    if (fence != "") {
-      line = $0; sub(/^ ? ? ?/, "", line)
-      if (match(line, "^" fence fence fence "+") && RLENGTH >= width && substr(line, RLENGTH + 1) ~ /^[ \t]*$/) {
-        fence = ""
-        if (mermaid) close(file)
-      } else if (mermaid) {
-        for (j = 0; j < indent; j++) sub(/^ /, "")
-        print > file
-      }
-      next
+  { sub(/\r$/, "") }
+  fence != "" {
+    line = $0; sub(/^ ? ? ?/, "", line)
+    if (match(line, "^" fence fence fence "+") && RLENGTH >= width && substr(line, RLENGTH + 1) ~ /^[ \t]*$/) {
+      fence = ""
+      if (mermaid) close(file)
+    } else if (mermaid) {
+      for (j = 0; j < indent; j++) sub(/^ /, "")
+      print > file
     }
-    if (match($0, /^ ? ? ?(```+|~~~+)/)) {
-      marker = substr($0, 1, RLENGTH)
-      info = substr($0, RLENGTH + 1)
-      if (index(marker, "`") && index(info, "`")) next
-      indent = match(marker, /[^ ]/) - 1
-      sub(/^ */, "", marker)
-      fence = substr(marker, 1, 1); width = length(marker)
-      mermaid = (info ~ /^[ \t]*mermaid([ \t]|$)/)
-      if (mermaid) {
-        file = sprintf("%s/block-%03d.mmd", dir, ++count)
-        printf "%s", "" > file
-      }
+    next
+  }
+  match($0, /^ ? ? ?(```+|~~~+)/) {
+    marker = substr($0, 1, RLENGTH)
+    info = substr($0, RLENGTH + 1)
+    if (index(marker, "`") && index(info, "`")) next
+    indent = match(marker, /[^ ]/) - 1
+    fence = substr(marker, indent + 1, 1); width = length(marker) - indent
+    mermaid = (info ~ /^[ \t]*mermaid([ \t]|$)/)
+    if (mermaid) {
+      file = sprintf("%s/block-%03d.mmd", dir, ++count)
+      printf "%s", "" > file
     }
   }
   END {
