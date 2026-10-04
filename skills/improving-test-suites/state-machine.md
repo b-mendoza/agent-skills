@@ -201,7 +201,7 @@ stateDiagram-v2
   DualAuthority --> TerminalBug: declined bug driver
   DualAuthority --> Synthesis: declined (replan)
   DualAuthority --> TerminalBlocked: no answer
-  WorkspaceRisk --> PlanApproval: clean or resolved; baseline captured
+  WorkspaceRisk --> PlanApproval: clean or resolved, baseline captured
   WorkspaceRisk --> AskDirty: dirty targets
   WorkspaceRisk --> AskNoVcs: no VCS
   AskDirty --> WorkspaceRisk: commit or stash or approved
