@@ -27,14 +27,15 @@ stateDiagram-v2
   ValidateApprovedGaps --> AwaitRefinementApproval: unknown IDs and reask budget left
   ValidateApprovedGaps --> NeedsConfirmation: unknown IDs and reask exhausted
 
-  BuildCandidate --> ParserApproval: BUILD PASS and first-reviewer-or-changed-command and no retained decision and mmdc absent and npx present
-  ParserApproval --> ReviewCandidate: non-decompose record APPROVED yes or ABORT no then resume pending review
-  ParserApproval --> StageCandidates: decompose record APPROVED yes or ABORT no then resume pending chain
-  ParserApproval --> ParserApproval: REVISE or malformed or unusable and parser_reask_count under 1
-  ParserApproval --> Blocked: no answer or revise or unusable at cap
-  ParserApproval --> Blocked: checkpoint BLOCKED or TOOLS_MISSING or context missing or malformed
+  BuildCandidate --> ParserApproval: BUILD PASS and first-reviewer-or-changed-command and no retained decision and mmdc absent and npx present and parser scratch prepared
+  ParserApproval --> ReviewCandidate: non-decompose with retained run/command context, record APPROVED yes or ABORT no then resume pending review
+  ParserApproval --> StageCandidates: decompose with retained run/command context, record APPROVED yes or ABORT no then resume pending chain
+  ParserApproval --> ParserApproval: retained run/command context and REVISE or malformed or unusable and parser_reask_count under 1
+  ParserApproval --> NeedsInput: no answer on resume or lost or invalid run/command context, recover inputs and re-preview
+  ParserApproval --> Blocked: retained run/command context and revise or malformed or unusable at cap
+  ParserApproval --> Blocked: approval-checkpoint BLOCKED or TOOLS_MISSING, not unavailable parser scratch
   ParserApproval --> Error: checkpoint ERROR or unexpected failure
-  BuildCandidate --> ReviewCandidate: BUILD PASS
+  BuildCandidate --> ReviewCandidate: BUILD PASS and parser gate unnecessary, unavailable scratch means NPX_APPROVED no and inspected-only
   BuildCandidate --> NeedsInput: BUILD NEEDS_INPUT
   BuildCandidate --> Error: BUILD ERROR
 
@@ -64,7 +65,7 @@ stateDiagram-v2
 
   AwaitDecomposeApproval --> NeedsConfirmation: plan and resume block presented
 
-  StageCandidates --> ParserApproval: paths fixed and pending BUILD PASS and first-reviewer-or-changed-list and no retained decision and mmdc absent and npx present
+  StageCandidates --> ParserApproval: paths fixed and pending BUILD PASS and first-reviewer-or-changed-list and no retained decision and mmdc absent and npx present and parser scratch prepared
   StageCandidates --> WriteBatch: every candidate REVIEW PASS and digest revalidated
   StageCandidates --> RepairLimitReached: any candidate repair exhausted
   StageCandidates --> NeedsInput: any staged builder BUILD NEEDS_INPUT, write no destination files
@@ -96,7 +97,7 @@ stateDiagram-v2
 | Resume-block gate | Resume reply carries a valid, matching resume block | `ValidateApprovedGaps` or `StageCandidates` | `NeedsInput` |
 | Gap-ID validation | IDs ⊆ retained inventory or exact `none` | `BuildCandidate` | One re-ask then `NeedsConfirmation` |
 | Build gate | `BUILD: PASS` | `ReviewCandidate`, via `ParserApproval` when its guard applies | `NeedsInput` or `Error` |
-| Parser approval | First reviewer or changed preview; no retained decision for exact command/list; mmdc absent, npx present | `APPROVED` or `ABORT` records permission/denial then resumes pending review/staging | One REVISE/malformed/unusable re-ask; resumed silence/cap/preparation BLOCKED -> `Blocked`; preparation ERROR -> `Error` |
+| Parser approval | First reviewer or changed preview; no retained decision for exact command/list; mmdc absent, npx present, parser scratch prepared | Bound `APPROVED` or `ABORT` records permission/denial then resumes pending review/staging | Unavailable scratch skips gate with `NPX_APPROVED: no` and `inspected-only`; resumed silence/lost context -> `NeedsInput` and re-preview; one REVISE/malformed/unusable re-ask then `Blocked`; approval-checkpoint BLOCKED/TOOLS_MISSING -> `Blocked`; ERROR -> `Error` |
 | Review gate | `REVIEW: PASS` | `FinalPassed` (non-decompose) | Repair, repair-under-`none`, `Blocked`, `Error`, or repair limit |
 | Repair budget | `repair_cycles` < 3 | `PackageRepair` → `BuildCandidate` | `RepairLimitReached` |
 | Repair-under-`none` | `approval_scope` is exact `none` and any failed check has `baseline_effect` `changed` or `unknown` | — | `NeedsConfirmationRepair` |
