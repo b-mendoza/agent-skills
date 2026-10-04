@@ -6,11 +6,8 @@ Read this file only when the compact subagent schema is insufficient or when rep
 
 ## Summary Rules
 
-- Use the stage status key exactly: `PREP`, `PLAN`, `TEST_SPEC`, or `REFACTORING`.
-- Use one of `PASS`, `FAIL`, `BLOCKED`, or `ERROR`.
 - Emit `PREP: PASS` only with `Dependencies: Satisfied` and `Questions: Resolved`; emit a later `*: PASS` only with `Blockers: None`.
 - Keep prose fields to one line unless listing blockers.
-- Report exact public URLs in `References fetched`; use `none` when no source was fetched.
 - Use `Not written` for an artifact path when the artifact was not created.
 - On repair dispatches, mention only the `REPAIR_FINDINGS` issue addressed and any remaining blocker.
 - Never imply product code, git, another task, or the work-item platform was modified.
