@@ -45,20 +45,35 @@ tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/check-mermaid.XXXXXX")" || exit 64
 trap 'rm -rf "$tmp_dir"' EXIT
 
 awk -v dir="$tmp_dir" '
-  BEGIN { in_block = 0; count = 0 }
-  /^```[[:space:]]*mermaid[[:space:]]*$/ {
-    in_block = 1
-    count++
-    file = sprintf("%s/block-%03d.mmd", dir, count)
-    next
+  {
+    sub(/\r$/, "")
+    if (fence != "") {
+      line = $0; sub(/^ ? ? ?/, "", line)
+      if (match(line, "^" fence fence fence "+") && RLENGTH >= width && substr(line, RLENGTH + 1) ~ /^[ \t]*$/) {
+        fence = ""
+        if (mermaid) close(file)
+      } else if (mermaid) {
+        for (j = 0; j < indent; j++) sub(/^ /, "")
+        print > file
+      }
+      next
+    }
+    if (match($0, /^ ? ? ?(```+|~~~+)/)) {
+      marker = substr($0, 1, RLENGTH)
+      info = substr($0, RLENGTH + 1)
+      if (index(marker, "`") && index(info, "`")) next
+      indent = match(marker, /[^ ]/) - 1
+      sub(/^ */, "", marker)
+      fence = substr(marker, 1, 1); width = length(marker)
+      mermaid = (info ~ /^[ \t]*mermaid([ \t]|$)/)
+      if (mermaid) {
+        file = sprintf("%s/block-%03d.mmd", dir, ++count)
+        printf "%s", "" > file
+      }
+    }
   }
-  /^```[[:space:]]*$/ && in_block {
-    in_block = 0
-    next
-  }
-  in_block { print > file }
   END {
-    if (in_block) {
+    if (fence != "" && mermaid) {
       print "unterminated mermaid block" > "/dev/stderr"
       exit 3
     }
