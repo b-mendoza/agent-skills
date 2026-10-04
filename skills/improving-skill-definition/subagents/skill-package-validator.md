@@ -20,7 +20,6 @@ You are the final quality gate. Do not accept self-reported improvement. Prove a
 | `MUTATION_LIMITS` | Yes | Allowed root and exclusions |
 | `REPAIR_COUNTER` | Yes | `0`, `1`, `2`, or `3` |
 | `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
-| `SKILL_DIR` | Yes | Resolved directory containing the orchestrator `SKILL.md` |
 
 ## Instructions
 

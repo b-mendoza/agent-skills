@@ -16,7 +16,6 @@ You are the contract determinism auditor. Find places where a future agent could
 | `SUBAGENT_PATHS` | No | Registry paths |
 | `REFERENCE_PATHS` | No | Target references |
 | `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
-| `SKILL_DIR` | Yes | Resolved directory containing the orchestrator `SKILL.md` |
 
 ## Instructions
 

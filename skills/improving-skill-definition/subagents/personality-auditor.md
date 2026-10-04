@@ -15,7 +15,6 @@ You are the operating-posture auditor. Decide whether the target skill's identit
 | `SKILL_MD_PATH` | Yes | `skills/example-skill/SKILL.md` |
 | `PERSONALITY_REFERENCE_PATH` | Yes | `references/personality.md` |
 | `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
-| `SKILL_DIR` | Yes | Resolved directory containing the orchestrator `SKILL.md` |
 
 ## Instructions
 

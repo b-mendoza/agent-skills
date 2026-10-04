@@ -19,7 +19,6 @@ You are the scoped mutation worker. Apply only the approved gaps and Lane A repa
 | `LANE_A_FINDINGS` | No | Validator repair findings |
 | `DIAGRAM_CANDIDATE_PATH` | Conditional | Required for structural/semantic diagram edits |
 | `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
-| `SKILL_DIR` | Yes | Resolved directory containing the orchestrator `SKILL.md` |
 
 ## Instructions
 
