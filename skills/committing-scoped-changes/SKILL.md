@@ -59,6 +59,7 @@ Declared exceptions. `declare-mutation-limits`: the skill uses approved group pa
 ## Execution
 
 Emit `Phase N/4 - Name` only on a real transition. Route on the tables; evaluate rows top to bottom, first match wins; never infer a status.
+Every question (paths, planner decision, or `G_PLAN_APPROVAL`) emits `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT`. When every approved group has committed with `Preserved` equal, emit `COMMIT_SCOPED_CHANGES: SUCCESS`.
 
 1. `Phase 1/4 - Intake` (inline). Require the verbatim request, else `BLOCKED`. Check path grammar; each path must exist in the worktree or in `HEAD`; missing or ambiguous (file and directory collide, glob-like) → ask one question. Resolve `SKILL_DIR`; run `sh "$SKILL_DIR/scripts/validate-output.sh" plan` on the plan envelope in Example A and require exit 0, else `TOOLS_MISSING`. `git rev-parse --is-inside-work-tree` must print `true`, else `BLOCKED`. Any of `MERGE_HEAD`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `rebase-merge/`, `rebase-apply/`, `BISECT_LOG` under `git rev-parse --git-dir` → `BLOCKED`. `git symbolic-ref -q HEAD` non-zero → `DETACHED_HEAD=true` (warning, not a block). `git status --porcelain -- <CHANGE_PATHS>` empty → `NO_SCOPED_CHANGES`.
 2. `Phase 2/4 - Plan`. Dispatch the planner with `CHANGE_PATHS`, `COMMIT_STYLE`, `CONTEXT_QUERY`, `CONTEXT_LOCATION`, `VERIFICATION_HINT`, `DETACHED_HEAD`, `SKILL_DIR`, and `USER_DECISIONS` in the evidence block. `plan_rounds += 1`. Validate through `G_PLAN_ENVELOPE`.
@@ -80,7 +81,7 @@ Emit `Phase N/4 - Name` only on a real transition. Route on the tables; evaluate
    | `COMMIT_EXECUTE: DIVERGED` | `BLOCKED` naming the group |
    | `COMMIT_EXECUTE: HOOK_MUTATION` | `BLOCKED` naming the group and SHA |
    | `COMMIT_EXECUTE: VERIFY_FAILED` | `VERIFY_FAILED` |
-   | `COMMIT_EXECUTE: COMMIT_ERROR` | `COMMIT_ERROR` |
+   | `COMMIT_EXECUTE: COMMIT_ERROR` (including hook rejection) | `COMMIT_ERROR` |
    | `COMMIT_EXECUTE: ERROR` | `ERROR` |
 
    Any non-`PASS` stops the series; commits already created are listed in the final report.
@@ -110,19 +111,6 @@ Print the plan envelope verbatim. Warnings must name detached HEAD when set and 
 | Ambiguous | One targeted re-ask, then `BLOCKED` |
 
 Approval binds to the displayed plan and its per-group digests; the executor recomputes each digest and returns `DIVERGED` on mismatch. A changed plan requires a new preview. Earlier conversation never pre-approves a plan.
-
-## Status Routing
-
-| Source | Final status |
-| --- | --- |
-| Every approved group committed with `Preserved` equal | `COMMIT_SCOPED_CHANGES: SUCCESS` |
-| Any question: paths, planner decision, or `G_PLAN_APPROVAL` | `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT` |
-| Missing authority, not a worktree, operation in progress, `plan_rounds` cap, `stop`, ambiguous answer after re-ask, `DIVERGED`, `HOOK_MUTATION` | `COMMIT_SCOPED_CHANGES: BLOCKED` |
-| Empty scope at Intake, or `COMMIT_PLAN: NO_CHANGES` | `COMMIT_SCOPED_CHANGES: NO_SCOPED_CHANGES` |
-| `COMMIT_EXECUTE: VERIFY_FAILED` | `COMMIT_SCOPED_CHANGES: VERIFY_FAILED` |
-| `COMMIT_EXECUTE: COMMIT_ERROR` (including hook rejection) | `COMMIT_SCOPED_CHANGES: COMMIT_ERROR` |
-| `SKILL_DIR` unresolved or validator preflight fails | `COMMIT_SCOPED_CHANGES: TOOLS_MISSING` |
-| Specialist `ERROR`, or a payload twice rejected by the validator | `COMMIT_SCOPED_CHANGES: ERROR` |
 
 ## Trigger Tests
 
