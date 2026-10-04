@@ -103,7 +103,10 @@ for ((i = 1; i <= count; i++)); do
   if "${parser_command[@]}" --input "$block_file" --output "$output_file" --quiet >"$error_file" 2>&1; then
     continue
   else
-    if grep -qi 'could not find chrome\|failed to launch\|executable.*not found' "$error_file"; then
+    if grep -qiE 'Error: (ENOSPC|EACCES|EROFS):' "$error_file"; then
+      parser_status=64
+      printf '%s\n' 'setup error: renderer filesystem failure' >&2
+    elif grep -qi 'could not find chrome\|failed to launch\|executable.*not found' "$error_file"; then
       parser_status=2
       printf '%s\n' 'parser unavailable' >&2
     else
