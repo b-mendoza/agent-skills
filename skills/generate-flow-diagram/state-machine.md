@@ -99,6 +99,9 @@ Finite-state execution model for this skill. Mermaid rendering lives in [`flow-d
 | `StageCandidates` | `ParserApproval` | all parser-input command paths fixed and the pending candidate has `BUILD: PASS`; first reviewer dispatch or a changed previously previewed command list; no retained `APPROVED` or `ABORT` decision for this exact list; `command -v mmdc` fails and `command -v npx` succeeds |
 | `StageCandidates` | `WriteBatch` | Every staged candidate holds `REVIEW: PASS`, and cross-candidate duplication revalidated against `OTHER_DIAGRAM_DIGEST` after any repair |
 | `StageCandidates` | `RepairLimitReached` | Any candidate exhausts repair budget (write nothing) |
+| `StageCandidates` | `NeedsInput` | Any staged builder returns `BUILD: NEEDS_INPUT`; write no destination files |
+| `StageCandidates` | `Blocked` | Any staged reviewer returns `REVIEW: BLOCKED`; write no destination files |
+| `StageCandidates` | `Error` | Any staged builder returns `BUILD: ERROR`, any staged reviewer returns `REVIEW: ERROR`, or a staged result is missing/malformed/unknown; write no destination files |
 | `WriteBatch` | `DecompositionComplete` | `WRITE: PASS` after `MUTATION_LIMITS` enforcement |
 | `WriteBatch` | `WriteError` | `WRITE: ERROR` |
 | `FinalPassed` | `[*]` | Return artifact + run report |

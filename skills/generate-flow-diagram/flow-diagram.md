@@ -67,6 +67,9 @@ stateDiagram-v2
   StageCandidates --> ParserApproval: paths fixed and pending BUILD PASS and first-reviewer-or-changed-list and no retained decision and mmdc absent and npx present
   StageCandidates --> WriteBatch: every candidate REVIEW PASS and digest revalidated
   StageCandidates --> RepairLimitReached: any candidate repair exhausted
+  StageCandidates --> NeedsInput: any staged builder BUILD NEEDS_INPUT, write no destination files
+  StageCandidates --> Blocked: any staged reviewer REVIEW BLOCKED, write no destination files
+  StageCandidates --> Error: any staged builder BUILD ERROR or any staged reviewer REVIEW ERROR or staged result missing/malformed/unknown, write no destination files
 
   WriteBatch --> DecompositionComplete: WRITE PASS
   WriteBatch --> WriteError: WRITE ERROR
@@ -99,7 +102,7 @@ stateDiagram-v2
 | Repair-under-`none` | `approval_scope` is exact `none` and any failed check has `baseline_effect` `changed` or `unknown` | — | `NeedsConfirmationRepair` |
 | Decompose input gate | Package path + non-empty registry | `DeriveLimits` | `NeedsInput` or `NoChangesNeeded` |
 | Plan gate | `PLAN: PASS` and work remains | Await approval or `StageCandidates` if `auto` | No-op, `NeedsInput`, `Blocked`, `Error` |
-| All-pass staging | Every staged candidate `REVIEW: PASS` and digest revalidated after repairs | `WriteBatch` | `RepairLimitReached` (no writes) |
+| All-pass staging | Every staged candidate `REVIEW: PASS` and digest revalidated after repairs | `WriteBatch` | `RepairLimitReached`, `NeedsInput`, `Blocked`, or `Error` (no writes) |
 | Write gate | `WRITE: PASS` inside `MUTATION_LIMITS` | `DecompositionComplete` | `WriteError` |
 
 ## Terminal States
