@@ -5,8 +5,9 @@
 # Exit 0 PASS | 1,3,4 FAIL (repair) | 2 TOOLS_MISSING, or BLOCKED pending approval
 #      64 ERROR (usage/setup) | 66 BLOCKED (input missing) | other ERROR.
 # Side effects: temporary extraction/render/error files, removed on exit.
-# --allow-npx also permits third-party package/install-script execution, npm
-# cache writes and possible Puppeteer Chrome download. Caller owns approval.
+# --allow-npx uses @mermaid-js/mermaid-cli@12.0.0 (Node >=22.13.0) and permits
+# third-party package/install-script execution, npm cache writes and possible
+# Puppeteer Chrome download. Caller owns approval.
 # Check: f=$(mktemp); printf '```mermaid\nflowchart TD\n  A-->B\n```\n' > "$f"
 #        bash check-mermaid.sh "$f"; s=$?; rm -f "$f"; test "$s" = 0 -o "$s" = 2
 set -euo pipefail
@@ -34,7 +35,7 @@ elif command -v npx >/dev/null 2>&1; then
     printf '%s\n' 'parser unavailable: npx approval required' >&2
     exit 2
   fi
-  parser_command=(npx -y @mermaid-js/mermaid-cli)
+  parser_command=(npx -y @mermaid-js/mermaid-cli@12.0.0)
 else
   printf '%s\n' 'parser unavailable' >&2
   exit 2
