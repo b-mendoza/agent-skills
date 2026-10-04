@@ -34,9 +34,9 @@ stateDiagram-v2
   DiagramCandidate --> ParserApproval: exit 2 npx approval required and no retained APPROVED or ABORT for exact command
   ParserApproval --> DiagramCandidate: APPROVED retain permission and run with allow-npx
   ParserApproval --> DiagramCandidate: ABORT retain denial and inspect only
-  ParserApproval --> ParserApproval: REVISE or unusable and parser_reask_count under 1
-  ParserApproval --> TerminalBlocked: no answer or revise or unusable at cap
-  ParserApproval --> TerminalBlocked: checkpoint BLOCKED or TOOLS_MISSING or context missing or malformed
+  ParserApproval --> ParserApproval: valid retained run and command context and (REVISE or unusable) and parser_reask_count under 1
+  ParserApproval --> TerminalApprovalRequired: no answer or approval or command context missing or malformed or unbound
+  ParserApproval --> TerminalBlocked: (valid retained run and command context and (revise or unusable) at cap) or checkpoint BLOCKED or TOOLS_MISSING
   ParserApproval --> TerminalError: checkpoint ERROR or unexpected failure
   DiagramCandidate --> Edit: candidate final passed
   DiagramCandidate --> DiagramCandidate: syntax or inspection failure and diagram_repair_counter under 3

@@ -27,7 +27,7 @@ Table: id, severity, provenance, summary, evidence, proposed mutation.
 Recommended decision and options: keep, refine, replace, add, remove, demote, skip.
 
 ## Approval Request
-Reply with one personality decision and exactly one of all, none, or listed gap ids.
+For `Approval`, reply with one personality decision and exactly one of all, none, or listed gap ids. For `ParserApproval`, re-preview the exact parser command and request `APPROVED`, `REVISE`, or `ABORT`.
 
 ## Constraints And Disclosures
 Bundled diagram validation and its parser-unavailable `inspected-only` fallback, ignored_preapproval, self-improvement caveats.
