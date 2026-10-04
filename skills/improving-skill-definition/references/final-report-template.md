@@ -39,7 +39,7 @@ HANDOFF_DIR path preserved for resumption.
 ## Sections Present
 ```
 
-For malformed replies, re-ask once with `Valid gap ids` and `Malformed part`.
+For a malformed-reply re-ask, include `Valid gap ids` and `Malformed part`.
 
 ## Changed
 
@@ -69,7 +69,7 @@ Workflow-created files removed or remaining empty directory note.
 
 ## No Change
 
-Use when all audit slices pass, approved scope is `none`, or the editor reports `EDIT: NO_CHANGE` (every approved item no-op, already satisfied, or deferred — include the per-item classification under `Reason`).
+For `EDIT: NO_CHANGE`, include the editor's per-item classification under `Reason`.
 
 Required headings: `Decision`, `Reason`, `Audit Evidence`, `Mandate Coverage`, `Ignored Preapproval`, `Cleanup`, `Sections Present`.
 
