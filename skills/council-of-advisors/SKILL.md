@@ -36,7 +36,7 @@ Nine seat files; not nine parallel advisors: (1) `reversibility-seat`; (2) seven
 
 ## State Machine Overview
 
-Canonical FSM: [`state-machine.md`](./state-machine.md) (sole source).
+Non-normative overview. Canonical FSM: [`state-machine.md`](./state-machine.md) (sole source).
 
 | Region | States | Result |
 | --- | --- | --- |
@@ -94,17 +94,7 @@ Declared `validate-by-observation` exception: this skill has no automated cases 
 
 ## Execution
 
-Follow [`state-machine.md`](./state-machine.md):
-
-1. `Intake`/`AskSubject` — draft packet; missing fields `unstated`.
-2. `ClassifyStakes` → `ConfirmFraming` — `G_FRAMING_CONFIRMED`: max 3 total confirmation attempts (initial ask plus up to 2 revised re-asks); third unconfirmed attempt → `needs_input`.
-3. `DeclareResearch` — record `research_tools`.
-4. `ClassifyReversibility` — `G_REVERSIBILITY`; low → `ProbeReversibility`, else default `type_1`/`deep` if still unresolved.
-5. `BindDepth` → `ParallelAnalysis` → `RouteAnalysis` — `G_REASONING_CHAINS_PRESENT` + `G_INDEPENDENCE`; never mix packet versions.
-6. `OriginalityCheck` / `OriginalityBranch` per `G_ORIGINALITY`.
-7. `SynthesizeChair` → `RouteConfidence` / `RepairLowConfidence` / `G_KILL_CRITERION` / `G_RECOMMENDATION_CONSISTENCY` as tabulated.
-8. `Type1Gate` — `do_not_commit_yet` is orchestrator-only; keep `chair_recommendation`; set `override_applied`.
-9. `AssembleEducateMe` → `WriteHandoff` — `G_HANDOFF_COMPLETE` → `Ready`.
+At `Intake`/`AskSubject`, draft the packet; mark missing fields `unstated`. Follow [`state-machine.md`](./state-machine.md) for transitions and [`references/decision-gates.md`](./references/decision-gates.md) for gate predicates, caps, and failure routes.
 
 ## Critical Outputs And Gates
 
@@ -139,17 +129,14 @@ Chat summary: final recommendation, confidence, decision type, kill criterion, t
 
 ## Status Routing
 
+Non-normative terminal summary. Follow [`state-machine.md`](./state-machine.md) and [`references/decision-gates.md`](./references/decision-gates.md) for all seat-status routes, repair caps, and failure precedence.
+
 | Terminal / seat return | Route |
 | --- | --- |
 | `Ready` | Handoff written; compact summary |
 | `NeedsInput` | One question + draft or field |
 | `Blocked` | Gate, counters, budget, recovery |
 | `Error` | Seat or runtime failure named |
-| Analysis seat `BLOCKED` | `RefinePacket`; second wave → `NeedsInput` |
-| Reversibility, chair, or branch `BLOCKED` | Per their region rows in `state-machine.md` |
-| Seat `FAIL` | Redispatch seat within cap |
-| Chair `FAIL` | Correctable defect: 1 targeted redispatch (global budget), second `FAIL` → `Blocked`; substantively impossible on unchanged packets → `Blocked` immediately (see `decision-gates.md`) |
-| Seat `ERROR` | Retry once, then `Error` |
 
 ## Example
 
