@@ -91,7 +91,7 @@ Out-of-scope revision → `BLOCKED` if rescopable, else `FAIL`. Never discard co
 | Need | Load |
 | --- | --- |
 | States, transitions, guards, terminals | `./state-machine.md` |
-| Mermaid SoT | `./flow-diagram.md` |
+| Illustrative diagram | `./flow-diagram.md` |
 | Tag selection or naming | `./references/tag-taxonomy.md` |
 | Drift, autonomy, gates, wrong-path risks | `./references/failure-modes.md` |
 | XML section order and removal test | `./references/template-skeleton.md` |
