@@ -70,6 +70,8 @@ The orchestrator advances the state machine, writes handoff YAML, reads reports,
 
 `SKILL.md` links stay one level deep. Subagent loads of `../references/*` at dispatch are intentional progressive disclosure.
 
+Declared `validate-by-observation` exception: this skill has no automated cases yet; helper smoke checks do not verify approval, recovery, or staged-failure behavior; adding cases is follow-up work.
+
 ## Execution
 
 1. `Intake`: load `flow-diagram.md` and `state-machine.md`; normalize `SKILL_PATH`; build `IMPROVEMENT_MANDATES` (prepend `KNOWN_PROBLEM`).
