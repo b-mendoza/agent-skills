@@ -39,7 +39,7 @@ HANDOFF_DIR path preserved for resumption.
 ## Sections Present
 ```
 
-For a malformed-reply re-ask, include `Valid gap ids` and `Malformed part`.
+For a malformed `Approval` reply re-ask, include `Valid gap ids` and `Malformed part`. For `ParserApproval` re-asks, follow the exact-command re-preview contract in `../state-machine.md`.
 
 ## Changed
 
