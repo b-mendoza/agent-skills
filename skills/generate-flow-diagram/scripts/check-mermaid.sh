@@ -55,9 +55,13 @@ awk -v dir="$tmp_dir" '
     }
     next
   }
-  # indented literals also fail closed; use Markdown-aware extraction if support is needed.
-  /^[ \t]*(>[ \t]*|[-+*][ \t]+|[0-9]+[.)][ \t]+)+(```+|~~~+)[ \t]*mermaid([ \t]|$)/ || /^(    |\t)[ \t]*(```+|~~~+)[ \t]*mermaid([ \t]|$)/ {
+  # Container fences and indented literals fail closed; use Markdown-aware extraction if support is needed.
+  /^[ \t]*(>[ \t]*|[-+*][ \t]+|[0-9]+[.)][ \t]+)+(```+|~~~+)[ \t]*mermaid([ \t]|$)/ {
     print "unsupported mermaid fence in quote or list at line " NR > "/dev/stderr"
+    count++; exit 3
+  }
+  /^(    |\t)[ \t]*(```+|~~~+)[ \t]*mermaid([ \t]|$)/ {
+    print "unsupported indented mermaid literal at line " NR " (move the example out of the indented code block or remove it)" > "/dev/stderr"
     count++; exit 3
   }
   match($0, /^ ? ? ?(```+|~~~+)/) {
