@@ -103,7 +103,7 @@ for ((i = 1; i <= count; i++)); do
   if grep -qiE 'Error: (ENOSPC|EACCES|EROFS):' "$error_file"; then
     parser_status=64
     printf '%s\n' 'setup error: renderer filesystem failure' >&2
-  elif grep -qi 'could not find chrome\|failed to launch\|executable.*not found\|browser is already running\|browser was not found at the configured executablePath\|tried to find the browser at the configured path' "$error_file"; then
+  elif grep -qi 'could not find chrome\|failed to launch\|executable.*not found\|browser is already running\|browser was not found at the configured executablePath\|tried to find the browser at the configured path\|timed out after .* while waiting for the ws endpoint' "$error_file"; then
     parser_status=2
     printf '%s\n' 'parser unavailable' >&2
   else
