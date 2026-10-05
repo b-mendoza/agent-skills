@@ -55,8 +55,8 @@ awk -v dir="$tmp_dir" '
     }
     next
   }
-  # ponytail: indented literals also fail closed; use Markdown-aware extraction if support is needed.
-  /^[ \t]*(>[ \t]*|[-+*][ \t]+|[0-9]+[.)][ \t]+)+(```+|~~~+)[ \t]*mermaid([ \t]|$)/ {
+  # indented literals also fail closed; use Markdown-aware extraction if support is needed.
+  /^[ \t]*(>[ \t]*|[-+*][ \t]+|[0-9]+[.)][ \t]+)+(```+|~~~+)[ \t]*mermaid([ \t]|$)/ || /^(    |\t)[ \t]*(```+|~~~+)[ \t]*mermaid([ \t]|$)/ {
     print "unsupported mermaid fence in quote or list at line " NR > "/dev/stderr"
     count++; exit 3
   }
@@ -103,6 +103,9 @@ for ((i = 1; i <= count; i++)); do
   if grep -qiE 'Error: (ENOSPC|EACCES|EROFS):' "$error_file"; then
     parser_status=64
     printf '%s\n' 'setup error: renderer filesystem failure' >&2
+  elif grep -qE 'Parse error on line|Lexical error on line|UnknownDiagramError|No diagram type detected' "$error_file"; then
+    parser_status=1
+    printf 'mermaid parse failed in block %s:\n' "$i" >&2
   elif grep -qi 'could not find chrome\|failed to launch\|executable.*not found\|browser is already running\|browser was not found at the configured executablePath\|tried to find the browser at the configured path\|timed out after .* while waiting for the ws endpoint' "$error_file"; then
     parser_status=2
     printf '%s\n' 'parser unavailable' >&2
