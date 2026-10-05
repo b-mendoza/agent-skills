@@ -67,10 +67,10 @@ stateDiagram-v2
 
   StageCandidates --> ParserApproval: paths fixed and pending BUILD PASS and first-reviewer-or-changed-list and no retained decision and mmdc absent and npx present and parser scratch prepared
   StageCandidates --> WriteBatch: every candidate REVIEW PASS and digest revalidated
-  StageCandidates --> RepairLimitReached: any candidate repair exhausted
-  StageCandidates --> NeedsInput: any staged builder BUILD NEEDS_INPUT, write no destination files
-  StageCandidates --> Blocked: any staged reviewer REVIEW BLOCKED, write no destination files
-  StageCandidates --> Error: any staged builder BUILD ERROR or any staged reviewer REVIEW ERROR or staged result missing/malformed/unknown, write no destination files
+  StageCandidates --> RepairLimitReached: earliest failing candidate in approved-plan order repair exhausted, write no destination files
+  StageCandidates --> NeedsInput: earliest failing candidate in approved-plan order BUILD NEEDS_INPUT, write no destination files
+  StageCandidates --> Blocked: earliest failing candidate in approved-plan order REVIEW BLOCKED, write no destination files
+  StageCandidates --> Error: earliest failing candidate in approved-plan order BUILD ERROR or REVIEW ERROR or staged result missing/malformed/unknown, write no destination files
 
   WriteBatch --> DecompositionComplete: WRITE PASS
   WriteBatch --> WriteError: WRITE ERROR
