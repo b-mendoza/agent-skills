@@ -81,6 +81,8 @@ Execution is the state machine in [`state-machine.md`](./state-machine.md) (diag
 | 4. Decompose plan and approve | Read-only | `DecomposeInputGate` → `DeriveLimits` → `PlanDecompose` → `AwaitDecomposeApproval` | Approved plan, `no changes needed`, or terminal |
 | 5. Decompose stage then write | Write-after-gate | `StageCandidates` → optional once-per-run `ParserApproval` → `StageCandidates` → `WriteBatch` | Batch write only after every staged candidate passes review |
 
+Declared `validate-by-observation` exception: this skill has no automated cases yet; helper smoke checks do not verify approval, recovery, or staged-failure behavior; adding cases is follow-up work.
+
 ## Execution
 
 Follow [`state-machine.md`](./state-machine.md). Summary:
