@@ -86,7 +86,7 @@ Declared `validate-by-observation` exception: this skill has no automated cases 
 
 ## Output Contract
 
-Decisions: `approval required`, `changed`, `no change`, `blocked`, `error`. Every handoff follows `./references/final-report-template.md`, passes its emission checklist (every required heading for the chosen decision verified present before emitting), and names preserved evidence when mutation lacked validation success. Cleanup: success cleans; approval required preserves run dir; post-mutation blocked/error preserves baseline, editor report, validator report, and a `diff -r` command.
+Decisions: `approval required`, `changed`, `no change`, `blocked`, `error`. Every handoff follows `./references/final-report-template.md`, passes its emission checklist (every required heading for the chosen decision and approval origin verified present before emitting), and names preserved evidence when mutation lacked validation success. Cleanup: success cleans; approval required preserves run dir; post-mutation blocked/error preserves baseline, editor report, validator report, and a `diff -r` command.
 
 ## Example
 

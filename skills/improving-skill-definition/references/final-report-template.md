@@ -7,12 +7,12 @@ Load this reference immediately before emitting an approval, changed, no-change,
 - Return exactly one decision: `approval required`, `changed`, `no change`, `blocked`, or `error`.
 - Include `ignored_preapproval` and `follow_up_findings` when non-empty.
 - Externally-derived gaps are visibly marked with provenance.
-- Emission checklist: before emitting, list every required heading for the chosen decision (from this file) and mark each `present` or `absent`. An absent required heading means the message is repaired before emission — never emitted with the gap. End the message with `sections present` showing the completed checklist. This deterministic check replaces free-form self-attestation; no later agent validates the final message, so the checklist is the emission gate.
+- Emission checklist: before emitting, list every required heading for the chosen decision (from this file), selecting by origin (`Approval` or `ParserApproval`) for `approval required`, and mark each `present` or `absent`. An absent required heading means the message is repaired before emission — never emitted with the gap. End the message with `sections present` showing the completed checklist. This deterministic check replaces free-form self-attestation; no later agent validates the final message, so the checklist is the emission gate.
 - Record parser decision/method/exit under `Validation Evidence` when changed, `Reason` for no change, `Blocking Reason` when blocked, or `Known Context` on error.
 
 ## Approval Required
 
-Required headings:
+Required headings: for `Approval`, use the set below; for `ParserApproval`, replace `Personality Decision Needed` and its options with `Approved Scope` showing the already-approved personality decision and gap ids only when retained run context is valid; when missing, malformed, or unbound to this run, show `unavailable` and state that re-invocation repeats `Approval` before any parser preview. Never reconstruct scope from earlier messages or prior runs.
 
 ```text
 ## Decision
@@ -28,7 +28,7 @@ Table: id, severity, provenance, summary, evidence, proposed mutation.
 Recommended decision and options: keep, refine, replace, add, remove, demote, skip.
 
 ## Approval Request
-For `Approval`, reply with one personality decision and exactly one of all, none, or listed gap ids. For `ParserApproval`, re-preview the exact parser command and request `APPROVED`, `REVISE`, or `ABORT`.
+For `Approval`, reply with one personality decision and exactly one of all, none, or listed gap ids. For `ParserApproval`, re-preview the exact parser command and request only `APPROVED`, `REVISE`, or `ABORT`.
 
 ## Constraints And Disclosures
 Bundled diagram validation and its parser-unavailable `inspected-only` fallback, ignored_preapproval, self-improvement caveats.
