@@ -115,7 +115,7 @@ If resuming past Phase 1, tell the user what progress was found and confirm befo
 
 For any subagent dispatch:
 
-1. Read the subagent definition from the registry.
+1. Read the subagent definition from the registry and tell the subagent to read it at its absolute path resolved from this skill directory.
 2. Pass the stable workflow key under the parameter name `TICKET_KEY` plus only the explicit inputs that subagent needs. Pass the active playbook path under `PLAYBOOK_PATH` whenever the subagent's behavior depends on platform-specific transport, query syntax, or output template. `PLAYBOOK_PATH` is package-root-relative, such as `./references/jira-playbook.md` or `./references/github-playbook.md`, and subagents resolve it from this skill directory rather than from their own `subagents/` directory.
 3. Collect its structured summary.
 4. Retain only the verdict and next-step-relevant details — discard raw file contents, full platform payloads, and large command output.
