@@ -32,7 +32,7 @@
 2. Declare every Claude-only field, OpenCode-only permission, discovery adapter, or runtime-specific dispatch feature at the top level, before execution instructions.
 3. Treat agent registries as runtime adapters: co-locate dispatch prompts in `subagents/` when useful, and never claim the runtime registers them.
 4. Route dispatch through the orchestrator by default; use nested dispatch only inside a declared runtime-specific path whose depth and permissions were smoke-tested.
-5. Resolve `SKILL_DIR` with the baseline sentence above and pass it only to dispatches whose subagent runs or reads bundled files through `SKILL_DIR`.
+5. For every dispatch whose subagent reads or runs bundled files, pass `SKILL_DIR` resolved as above or tell the subagent to read its definition at its resolved path.
 6. When the host offers no subagent tool, execute the subagent file inline and report degraded isolation instead of stopping.
 7. Validate structure with `skills-ref validate` when available, then smoke-test discovery, invocation, permissions, and any nested dispatch in both runtimes.
 8. Re-check the linked docs and update the date line before changing any number or field list here; other rules link this file rather than restating facts.
