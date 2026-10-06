@@ -75,9 +75,9 @@ The seventeen `GIT_EVIDENCE` field names live in the collector file and the scri
 Five phases. Announce each real transition as `Phase N/5 - <Name>`. Dispatch only when every listed input has a value; `none` (or `unset` for `BASE_BRANCH`) is a value.
 
 1. `Phase 1/5 - Intake` (inline): normalize inputs into `ASSUMPTIONS`; resolve `SKILL_DIR`; preflight the validator by running `envelope` mode on the three-line `NOT_GIT` example in this file and requiring exit 0, else `TOOLS_MISSING`; probe `PROJECT_PATH` with the host's read tool (fail → `PATH_ERROR`); run `git -C <PROJECT_PATH> rev-parse --is-inside-work-tree` and require exit 0 with stdout exactly `true` (else `NOT_GIT`; never classify on Git's error text); apply the ask policy; set `EXECUTION_MODE`; carry any user mutation request as a report risk, never execute it.
-2. `Phase 2/5 - Collect`: dispatch the collector with `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `SKILL_DIR`. Statuses `PASS | ERROR`.
+2. `Phase 2/5 - Collect`: dispatch the collector with `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `SKILL_DIR`.
 3. `Phase 3/5 - Write`: dispatch the writer with `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `OUTPUT_DEPTH`, `ASSUMPTIONS`, `EXECUTION_MODE`, `SKILL_DIR`; on repair add `PRIOR_DRAFT` and `REQUIRED_FIXES`. On `PASS`, `DRAFT_REPORT` is everything after the status line with leading blank lines removed.
-4. `Phase 4/5 - Verify`: dispatch the verifier with `DRAFT_REPORT`, `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `ASSUMPTIONS`, `EXECUTION_MODE`, `SKILL_DIR`. `PASS` → Final; `FAIL` → repair bound.
+4. `Phase 4/5 - Verify`: dispatch the verifier with `DRAFT_REPORT`, `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `ASSUMPTIONS`, `EXECUTION_MODE`, `SKILL_DIR`.
 5. `Phase 5/5 - Final` (inline): success → run `report` mode on `DRAFT_REPORT` (`G_OUTPUT`), on failure recompose once from the last passing draft then emit; escalation → compose the envelope and run `envelope` mode (`G_ESCALATION`), on failure recompose once from the table then emit.
 
 **Repair bound.** On verifier `FAIL`, if `REPAIR_ATTEMPTS < 2` increment, set `PRIOR_DRAFT` to the current draft and `REQUIRED_FIXES` to the verdict's list, redispatch the writer, re-verify; else the repair-exhausted envelope. Carry only the most recent draft and list. **Ask policy.** At most one question per run, at intake only, only for an unresolvable or ambiguous `PROJECT_PATH`, and only when `HOST_INTERACTIVE=true`. Append the answer as `User decision: <answer>`. Otherwise emit the intake `NEEDS_CONTEXT` envelope. No later phase asks. **Routability.** A phase output is routable only when its status is recognized and its gate passes. `FORMAT_RETRIES` cap 1 per dispatch with a format reminder in the same execution mode; over the cap → unroutable `ERROR`. Never infer a status. A producer that returns `ERROR` with reason `validator unavailable: …` routes as a subagent-sourced `ERROR`.
@@ -111,11 +111,9 @@ The orchestrator runs the gate itself (payload on stdin; exit 0 passes); a produ
 
 ## Boundaries And Success Criteria
 
-- Read-only, local-only: repository file reads, the collector's closed `git -C` list, the validator's `git cat-file -e` and `git log --max-count=1 -- <path>`, and the validator script. Mutation requests become report risks.
 - Evidence window: working tree + base-to-`HEAD` when a base resolves; else last 15 first-parent commits of `HEAD`; hard cap 30 commits, at most 10 listed; `GIT_EVIDENCE` under ~80 lines or records truncation.
 - Non-`full` focus changes emphasis without dropping off-focus blockers.
-- Quiet, unborn, detached, in-progress, shallow, and conflicted states are facts. Quiet-state is success: collector `PASS` with zeroed fields, writer short form; no phase escalates because the window is empty.
-- Every repository-state claim is labeled; `confirmed`/`likely` need a resolving locator; unobserved test/CI/build/deploy/merge outcomes are `[unverified]`.
+- Quiet, unborn, detached, in-progress, shallow, and conflicted states are facts, not automatic failures.
 - Verifier `FAIL` needs ≥1 required fix; `PASS` needs zero; user decisions are `NEEDS_CONTEXT`.
 
 ## Examples
@@ -128,20 +126,4 @@ The orchestrator runs the gate itself (payload on stdin; exit 0 passes); a produ
 RECENT_STATE: NOT_GIT
 Reason: /tmp/notes exists but is not a Git worktree.
 Next step: Re-run with PROJECT_PATH set to a Git worktree.
-```
-
-**`TOOLS_MISSING` envelope:**
-
-```text
-RECENT_STATE: TOOLS_MISSING
-Reason: skill directory unavailable: SKILL_DIR unresolved
-Next step: Enable the capability named above (a POSIX shell with sh and awk for the validator, or a resolvable skill directory), then re-run.
-```
-
-**Repair-exhausted `ERROR`:**
-
-```text
-RECENT_STATE: ERROR
-Reason: verification did not converge within 2 repair attempts; unresolved sections: Risks; Test And Validation Review
-Next step: Re-run with OUTPUT_DEPTH=brief or a narrower REVIEW_FOCUS; if it recurs, review the named sections manually.
 ```
