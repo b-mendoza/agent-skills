@@ -6,7 +6,7 @@ Load this file only when reviewing a candidate diagram or preparing targeted rep
 
 | ID | Check | Pass Condition |
 | --- | --- | --- |
-| C1 | Mermaid syntax | Helper exit 0 parsed all blocks; exit 2 or no execution capability requires recorded `inspected-only` checks; only `NPX_APPROVED: yes` permits npx; exits 1/3/4 fail, 66 blocks, 64/unexpected exit errors |
+| C1 | Mermaid syntax | Parsed evidence or recorded manual syntax inspection per `../subagents/diagram-quality-reviewer.md`; producer self-report is insufficient. |
 | C2 | Classes | Class assignments target existing nodes only |
 | C3 | Input normalization | Candidate reflects `PROCESS_INPUTS`; unknowns are assumptions, questions, or blockers |
 | C4 | Flow coverage | Intake, boundary, validation, synthesis, decisions, outputs, and terminal states are represented when relevant |
@@ -16,8 +16,8 @@ Load this file only when reviewing a candidate diagram or preparing targeted rep
 | C8 | Terminal states | Completion and failure states match the workflow contract |
 | C9 | Grounding | Unsupported facts are not presented as confirmed |
 | C10 | Refinement approval | Refinement output includes only inventory-validated approved gap fixes; `none` preserves the baseline |
-| C11 | Output contract | Artifact has title, boundary paragraph, one Mermaid diagram unless explicitly expanded, and optional sections only when useful |
-| C12 | Run report | Completed runs include mode, assumptions, repair cycles, validation method, dispatch method, and sources fetched |
+| C11 | Output contract | Candidate satisfies the artifact requirements in `../SKILL.md` Output Contract. |
+| C12 | Run report | Completed run report includes the applicable fields in `output-templates.md` Run Report Template. |
 
 ## Scope Checks
 
@@ -38,17 +38,6 @@ Every failed check carries a `baseline_effect` value so the orchestrator can rou
 - `unchanged` — the required fix is syntax-only or presentation-only and preserves every node, edge, label, ownership assignment, gate, and terminal of the baseline. Examples: a Mermaid syntax error, a class targeting a missing node, a malformed link.
 - `changed` — the required fix adds, removes, renames, or rewires any node, edge, gate, terminal, scope, or process meaning relative to the baseline.
 - `unknown` — the reviewer cannot establish the fix's effect on the baseline.
-
-When `approval_scope` is exact `none`, the orchestrator repairs `unchanged` failures directly and routes any `changed` or `unknown` failure to `AwaitRepairApproval`. `unknown` is never treated as `unchanged`.
-
-## Fix Loop
-
-1. Return `REVIEW: FAIL` with specific failed checks, each carrying its check ID and `baseline_effect`.
-2. Send only failed checks to `diagram-builder` as `REVIEW_FEEDBACK`.
-3. Consume `BUILD_VERDICT`.
-4. On `BUILD: PASS`, rerun the full checklist against the updated candidate.
-5. Stop after three repair cycles for the same candidate.
-6. Escalate when missing information or approval blocks a valid diagram.
 
 ## Failure Severity
 
