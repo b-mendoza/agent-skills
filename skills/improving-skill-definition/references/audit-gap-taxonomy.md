@@ -8,7 +8,7 @@ Treat every target package as a workflow hypothesis. A gap must cite observable 
 
 ## Diagram-Change Terminology
 
-`../state-machine.md` owns manual `flowchart`/`stateDiagram-v2` candidate validation, `ParserApproval`, and `final passed`; the terms below determine whether a candidate is required.
+`../state-machine.md` owns manual `flowchart`/`stateDiagram-v2` candidate validation and `final passed`; the terms below determine whether a candidate is required.
 
 | Term | Meaning | Requires diagram candidate |
 | --- | --- | --- |
@@ -39,7 +39,7 @@ Treat every target package as a workflow hypothesis. A gap must cite observable 
 | `medium` | Routing drift, undefined term, stale state, weak gate, injection exposure, or late failure |
 | `low` | Padding pressure, confusing examples, minor hygiene issue, or maintainability drag |
 
-Priority tiers: `P0` must fix before mutation; `P1` should fix in this run if approved; `P2` may be follow-up. `P0` maps to Lane A only when it concerns an approved gap, touched file, boundary, diagram candidate validation, synthesis schema, or self-improvement advisory.
+Priority tiers: `P0` must fix before mutation; `P1` should fix in this run if approved; `P2` may be follow-up. Lane membership follows `audit-synthesis-validation.md`, independently of priority.
 
 ## File Size Caps
 

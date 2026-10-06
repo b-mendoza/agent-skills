@@ -20,21 +20,9 @@ Portable orchestrator that falsifies then repairs a first-party skill package: a
 
 Approvals are not inputs. Values like `APPROVED_GAPS=all` at intake are `ignored_preapproval`, surfaced in the handoff, and never honored.
 
-## State Machine Overview
+## Execution overview
 
-Execution is a finite-state machine. [`state-machine.md`](./state-machine.md) is the sole normative source for transitions, guards, and terminals; this table, the phase and dispatch summaries in Execution below, and [`flow-diagram.md`](./flow-diagram.md) are non-normative summaries. The concrete input and setup definitions in Execution remain binding.
-
-| State | Result |
-| --- | --- |
-| Intake | Path, eligibility, package root, mutation limits, run state, baseline |
-| FlowLoad | Own flow, personality, target flow, trust model |
-| Discover | Optional related-skill evidence with provenance |
-| Audit | Six slice reports plus `audit-synthesis-report.yaml` |
-| Approval | Valid approval, `approval required`, or `blocked` |
-| ParserApproval | Once-per-run npx permission; approve parsing or decline to `inspected-only` |
-| EditPrep / DiagramCandidate / Edit | Approved mutations; diagram candidate when required |
-| Validate / Repair | Two-lane validation; repair max 3 |
-| Terminals | `changed`, `no change`, `approval required`, `blocked`, `error` |
+Non-normative overview: audit the target, obtain approval, apply approved edits, and independently validate them. [`state-machine.md`](./state-machine.md) owns states, transitions, guards, counters, joins, and terminals. The input and setup definitions in Execution remain binding.
 
 ## Subagent Registry
 
@@ -74,19 +62,19 @@ Declared `validate-by-observation` exception: this skill has no automated cases 
 
 ## Execution
 
-1. `Intake`: load `flow-diagram.md` and `state-machine.md`; normalize `SKILL_PATH`; build `IMPROVEMENT_MANDATES` (prepend `KNOWN_PROBLEM`).
+1. `Intake`: load `state-machine.md`; normalize `SKILL_PATH`; build `IMPROVEMENT_MANDATES` (prepend `KNOWN_PROBLEM`).
 2. `TerminalBlocked` if path missing, unreadable, outside first-party `skills/`, or inside `.agents/skills/`, `.claude/skills/`, `skills-lock.json`, `.git`, secrets, private config, or unrelated scope.
 3. `SKILL_DIR` is the directory containing this `SKILL.md` as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the `SKILL.md` path you read; if neither is known, stop at `TerminalBlocked` with reason `TOOLS_MISSING`.
 4. Set `HANDOFF_DIR=.handoffs/improving-skill-definition/<run-id>/`, where `<run-id>` is generated once at intake (UTC timestamp plus a short random suffix); if the directory exists, regenerate — never reuse a run directory. Materialize `MUTATION_LIMITS`: writes only inside the resolved target package, minus the step-2 exclusions, plus any `SCOPE_LIMITS`; pass this exact value to editor, validator, and synthesis, and go to `TerminalBlocked` before approval if it cannot be derived unambiguously. Copy baseline, set `repair_counter=0`, `mutation_applied=false`, record `ignored_preapproval`. If target is this package, `SELF_IMPROVEMENT_RUN=true`.
 5. `FlowLoad`: load `references/personality.md` and the target flow when present.
 6. `Discover` / `Audit`: dispatch the registered contracts using `state-machine.md`. Write `HANDOFF_DIR/audit-synthesis-report.yaml` with provenance and `G_MANDATE_COVERAGE` over `IMPROVEMENT_MANDATES`; the FSM owns fan-out/join, status precedence, and wait routes.
 7. `Approval`: request one personality decision (`keep`/`refine`/`replace`/`add`/`remove`/`demote`/`skip`) plus `all`/`none`/current gap ids.
-8. `EditPrep`: classify approved diagram changes using `references/audit-gap-taxonomy.md`; prepare any required `DiagramCandidate` and parser consent under `state-machine.md`. Only a `final passed` candidate proceeds to `Edit`. Self-improvement: apply approved `SAFE` only; user-approved structural redefine gaps are `SAFE`.
+8. `EditPrep`: classify approved diagram changes using `references/audit-gap-taxonomy.md`; follow the candidate contract in `state-machine.md` and self-improvement policy in `references/audit-synthesis-validation.md`.
 9. `Edit` / `Validate`: dispatch the registered workers; follow the FSM through repair or a terminal, and emit per Output Contract.
 
 ## Output Contract
 
-Decisions: `approval required`, `changed`, `no change`, `blocked`, `error`. Every handoff follows `./references/final-report-template.md`, passes its emission checklist (every required heading for the chosen decision and approval origin verified present before emitting), and names preserved evidence when mutation lacked validation success. Cleanup: success cleans; approval required preserves run dir; post-mutation blocked/error preserves baseline, editor report, validator report, and a `diff -r` command.
+Return one FSM-selected decision using `./references/final-report-template.md` and its mandatory emission checklist. Cleanup: success cleans; approval required preserves `HANDOFF_DIR`; post-mutation blocked/error preserves baseline, editor report, validator report, and a `diff -r` command. Name preserved evidence whenever mutation lacks validation success.
 
 ## Example
 
