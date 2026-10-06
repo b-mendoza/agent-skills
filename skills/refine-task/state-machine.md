@@ -17,7 +17,7 @@ Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./
 | `AskRead` | active | One access question |
 | `GatePostingClarity` | active | If posting requested, confirm auth/write tooling |
 | `AskPosting` | active | One posting-clarity question |
-| `DispatchReviewer` | active | Dispatch `refinement-reviewer` with `SKILL_ROOT` paths |
+| `DispatchReviewer` | active | Dispatch refinement-reviewer with absolute SKILL_ROOT |
 | `ParseReturn` | active | Require known `REVIEW` syntax; retain compact fields only |
 | `Redispatch` | active | Exactly one re-dispatch with malformed-return note |
 | `RouteReview` | active | Route on `PASS` / `BLOCKED` / `FAIL` / `ERROR` |
