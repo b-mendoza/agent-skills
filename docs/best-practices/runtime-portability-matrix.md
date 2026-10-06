@@ -24,18 +24,14 @@
 | Permission model | — | Tool allow/deny lists, `Skill(name)`, settings permission rules | Families `read`, `edit`, `glob`, `grep`, `list`, `bash`, `task`, `external_directory`, `webfetch`, `websearch`, `lsp`, `skill`, `question`, `doom_loop`; `permission.task` selects launchable subagents; legacy `tools` booleans deprecated as of v1.1.1 | Describe the capability ("read, never edit"), then map it per runtime. |
 | `SKILL_DIR` resolution | — | `${CLAUDE_SKILL_DIR}` substituted in `SKILL.md` text and in `allowed-tools` Bash rules; not substituted inside subagent files; skill load reports its base directory | Skill tool reports `Base directory for this skill: <path>`; no variable exported | State: "`SKILL_DIR` is the directory containing this SKILL.md as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the SKILL.md path you read; if neither is known, stop with `<PACKAGE>: TOOLS_MISSING`." |
 | No subagent tool available | — | `Agent` tool may be denied or withheld at the depth limit | `task` permission may deny; `subagent_depth: 0` | The orchestrator executes the subagent file's instructions in its own context and reports degraded isolation. |
-| Structural validation | `skills-ref validate path/to/skill` checks that `SKILL.md` frontmatter is valid and follows all naming conventions (demonstration reference implementation) | Not provided | Validates `name` against directory at load | Run `skills-ref validate` when available; it does not observe runtime behavior, so smoke-test both runtimes. |
+| Structural validation | `skills-ref validate path/to/skill` checks that `SKILL.md` frontmatter is valid and follows all naming conventions (demonstration reference implementation) | Not provided | Validates `name` against directory at load | Run `skills-ref validate` when available; it does not observe runtime behavior, so smoke-test discovery, invocation, permissions, and any nested dispatch in both runtimes. |
 
 ## Rules
 
 1. Author the shared artifact in plain Markdown with standard frontmatter; describe each capability before mapping it to runtime syntax.
 2. Declare every Claude-only field, OpenCode-only permission, discovery adapter, or runtime-specific dispatch feature at the top level, before execution instructions.
-3. Treat agent registries as runtime adapters: co-locate dispatch prompts in `subagents/` when useful, and never claim the runtime registers them.
-4. Route dispatch through the orchestrator by default; use nested dispatch only inside a declared runtime-specific path whose depth and permissions were smoke-tested.
-5. For every dispatch whose subagent reads or runs bundled files, pass `SKILL_DIR` resolved as above or tell the subagent to read its definition at its resolved path.
-6. When the host offers no subagent tool, execute the subagent file inline and report degraded isolation instead of stopping.
-7. Validate structure with `skills-ref validate` when available, then smoke-test discovery, invocation, permissions, and any nested dispatch in both runtimes.
-8. Re-check the linked docs and update the date line before changing any number or field list here; other rules link this file rather than restating facts.
+3. For every dispatch whose subagent reads or runs bundled files, pass `SKILL_DIR` resolved as above or tell the subagent to read its definition at its resolved path.
+4. Re-check the linked docs and update the date line before changing any number or field list here; other rules link this file rather than restating facts.
 
 ## Examples
 
