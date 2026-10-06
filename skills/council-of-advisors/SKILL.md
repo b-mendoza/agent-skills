@@ -34,22 +34,6 @@ Collision policy: never overwrite an existing file at `HANDOFF_PATH`. Append `-2
 
 Nine seat files; not nine parallel advisors: (1) `reversibility-seat`; (2) seven logically independent analysis seats, dispatched in parallel up to the runtime's concurrency limit (bounded waves when the runtime caps concurrent subagents; correctness never depends on simultaneous launch); (3) optional `originality-seat` branch mode (same file); (4) `chair-seat`.
 
-## State Machine Overview
-
-Non-normative overview. Canonical FSM: [`state-machine.md`](./state-machine.md) (sole source).
-
-| Region | States | Result |
-| --- | --- | --- |
-| Framing | `Intake` → `ClassifyStakes` → `ConfirmFraming` | Confirmed packet |
-| Research | `DeclareResearch` | `research_tools: none\|web` |
-| Reversibility | `ClassifyReversibility` → (`ProbeReversibility`) → `BindDepth` | Type + depth |
-| Analysis | `ParallelAnalysis` → `RouteAnalysis` → (`RefinePacket`) | Seven packets |
-| Originality | `OriginalityCheck` → (`OriginalityBranch`) | Branch or pass |
-| Synthesis | `SynthesizeChair` → `RouteConfidence` → (`RepairLowConfidence`) → `Type1Gate` | Final + override |
-| Handoff | `AssembleEducateMe` → `WriteHandoff` → `Ready` | File + summary |
-
-Terminals: `Ready`, `NeedsInput`, `Blocked`, `Error`.
-
 ## Subagent Registry
 
 | Subagent | Path | Purpose |
@@ -94,11 +78,7 @@ Declared `validate-by-observation` exception: this skill has no automated cases 
 
 ## Execution
 
-At `Intake`/`AskSubject`, draft the packet; mark missing fields `unstated`. Follow [`state-machine.md`](./state-machine.md) for transitions and [`references/decision-gates.md`](./references/decision-gates.md) for gate predicates, caps, and failure routes.
-
-## Critical Outputs And Gates
-
-Predicates only in [`./references/decision-gates.md`](./references/decision-gates.md): `G_FRAMING_CONFIRMED`, `G_REVERSIBILITY`, `G_REASONING_CHAINS_PRESENT`, `G_INDEPENDENCE`, `G_ORIGINALITY`, `G_DISSENT_PRESERVED`, `G_KILL_CRITERION`, `G_RECOMMENDATION_CONSISTENCY`, `G_TYPE_1_LOW_CONFIDENCE`, `G_LESSON_CARDS_PRESENT`, `G_HANDOFF_COMPLETE`.
+At `Intake`/`AskSubject`, draft the packet; mark missing fields `unstated`. Follow [`state-machine.md`](./state-machine.md) for transitions and [`references/decision-gates.md`](./references/decision-gates.md) for gate predicates, caps, and failure routes. Workflow summaries in this file are non-normative.
 
 ## Output Contract
 
@@ -126,17 +106,6 @@ run_log: <versions, dispatches, cycles, budgets, override, validator invocations
 ```
 
 Chat summary: final recommendation, confidence, decision type, kill criterion, top three power questions, minority-report paragraph, disclosure if any, degraded-fidelity disclosure when `execution_fidelity: inline_degraded`, and the final handoff path actually written.
-
-## Status Routing
-
-Non-normative terminal summary. Follow [`state-machine.md`](./state-machine.md) and [`references/decision-gates.md`](./references/decision-gates.md) for all seat-status routes, repair caps, and failure precedence.
-
-| Terminal / seat return | Route |
-| --- | --- |
-| `Ready` | Handoff written; compact summary |
-| `NeedsInput` | One question + draft or field |
-| `Blocked` | Gate, counters, budget, recovery |
-| `Error` | Seat or runtime failure named |
 
 ## Example
 
