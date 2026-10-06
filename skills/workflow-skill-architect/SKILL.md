@@ -23,7 +23,7 @@ Portable orchestrator that classifies a request, stages generated files, routes 
 
 ## State Machine Overview
 
-Execution is a finite-state machine. Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./state-machine.md).
+Non-normative overview. Follow the canonical [`state-machine.md`](./state-machine.md) for states, transitions, guards, and terminals.
 
 | State | Result |
 | --- | --- |
