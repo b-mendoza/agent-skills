@@ -26,20 +26,9 @@ This checklist is consumed by `handoff-reviewer`. Status semantics, repair limit
 | Placeholder cleanup | No `<placeholder>` text or source-only marker remains | `document-assembler` |
 | Vacuity | If Sections 2 through 4 are all zero-state, an advisory banner exists and verdict is at most warn | `document-assembler` |
 | Redaction | No credential, token, key, or personal-data value appears unredacted in the document, Session Metadata, or the supplied context/insights/claims artifacts (see Secret and PII Redaction in `data-contracts.md`) | Producer of the leaking artifact, then `document-assembler` |
-| Continuation readiness | All six sub-criteria below pass | Smallest affected producer then `document-assembler` |
+| Continuation readiness | All six Continuation-Readiness Criteria in data-contracts.md pass | Smallest affected producer then `document-assembler` |
 
-## Continuation Readiness
-
-Check each sub-criterion and name failures in the review summary. [F-06]
-
-| Sub-Criterion | Pass Condition |
-| --- | --- |
-| No deictic references | No sentence relies on `above`, `earlier`, `as discussed`, or similar chat-relative wording without a concrete referent |
-| Named paths exist | Every path in Sections 3 through 5 and Session Metadata exists on disk or is explicitly `none` |
-| Actionable next steps | Every recommended next step uses an action verb and names a concrete target |
-| Artifact manifest | Working Artifacts list is present in Session Metadata |
-| Introduced names | Acronyms and project-specific names are introduced at first use |
-| Redaction | Secrets and personal data render as `[REDACTED]` throughout |
+For Continuation readiness, apply each Continuation-Readiness Criterion in data-contracts.md and name every failed criterion in the review summary. [F-06]
 
 ## Rerun Mapping
 
