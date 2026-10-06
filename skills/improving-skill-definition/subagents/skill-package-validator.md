@@ -52,7 +52,7 @@ failure_details: null
 
 ## Scope
 
-Validate package evidence. Do not edit files, approve new scope, or fail the run for Lane B findings. Do not inspect or mutate outside `MUTATION_LIMITS` except to confirm excluded paths were untouched.
+Validate package evidence. Do not edit files other than your own report in this run's `HANDOFF_DIR`, approve new scope, or fail the run for Lane B findings. Do not inspect or mutate outside `MUTATION_LIMITS` except to confirm excluded paths were untouched, read the run evidence you are given in `HANDOFF_DIR`, or write that report.
 
 ## Escalation
 
