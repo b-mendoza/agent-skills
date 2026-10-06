@@ -95,8 +95,6 @@ Every question (paths, planner decision, or `G_PLAN_APPROVAL`) emits `COMMIT_SCO
 
 Predicate: exit 0. On non-zero, redispatch once with the printed findings; a second non-zero → `COMMIT_SCOPED_CHANGES: ERROR` naming the phase. Route only after exit 0.
 
-Envelope grammars are declared in each producer's `Output Format` section and enforced by the gates above before routing.
-
 ## G_PLAN_APPROVAL
 
 Print the plan envelope verbatim. Warnings must name detached HEAD when set and every group path in `MM` state, because `git commit --only` commits the worktree version and discards the staged version of that path. Ask one question: `approve`, `revise: <what to change>`, or `stop`. Emit `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT` and end the turn.
