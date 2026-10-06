@@ -1,6 +1,6 @@
 # State Machine — workflow-skill-architect
 
-Finite-state execution model for this skill. Illustrative diagram: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
+This file is the sole normative source for states, transitions, guards, loops, and terminals.
 
 ## States
 
@@ -73,13 +73,3 @@ Finite-state execution model for this skill. Illustrative diagram: [`flow-diagra
 
 Exactly one of: `ready`, `needs_input`, `blocked`, `error`.
 
-## Reachability and dead-state checks
-
-| Property | Result |
-| --- | --- |
-| Every active state reachable from `ResumeGate` | yes |
-| Every terminal reachable | yes |
-| Dead states (no outgoing, non-terminal) | none |
-| Repair loop bounded | yes — max 3 via `REPAIR_CYCLE` before `TerminalBlocked` |
-| Resume review path | yes — `ResumeRoute → Review` |
-| Trust on create path | yes — `Classify → Trust` always |
