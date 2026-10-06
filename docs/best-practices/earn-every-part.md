@@ -6,7 +6,7 @@
 
 Every part of a skill package costs context to load, files to keep in sync, and boundaries to fail across, so each one must change runtime behaviour or maintainability in an observable way. First choose the smallest artifact that fits: handle non-recurring behaviour directly; write a script when the behaviour is fully deterministic; write a reference document when the need is stable information without judgment or orchestration; extend the skill that already owns the trigger; create a new skill only when the behaviour recurs and needs reusable judgment, orchestration, or its own invocation contract.
 
-Then pass every addition or edit through the Material Issue Gate: it must fix a concrete problem in reliability, portability, standalone packaging (no absolute paths, sibling packages, or private config), context efficiency, maintainability, validation (a new observable check for a previously silent failure), user comprehension, or best-practices compliance (a rule miss becomes a pass or a declared exception). A change that only renames, reshuffles, or polishes fires no dimension: leave the package unchanged. The questions that decide a part's shape live with their owners: dispatch or inline in [delegate-by-default](./delegate-by-default.md), extract or keep inline in [progressive-disclosure](./progressive-disclosure.md), external information in [link-external-sources](./link-external-sources.md), observable checks over self-report in [validate-by-observation](./validate-by-observation.md).
+Then pass every addition or edit through the Material Issue Gate: it must fix a concrete problem in reliability, portability, standalone packaging (per [keep-skills-self-contained](./keep-skills-self-contained.md); no private config), context efficiency, maintainability, validation (a new observable check for a previously silent failure), user comprehension, or best-practices compliance (a rule miss becomes a pass or a declared exception). A change that only renames, reshuffles, or polishes fires no dimension: leave the package unchanged. The questions that decide a part's shape live with their owners: dispatch or inline in [delegate-by-default](./delegate-by-default.md), extract or keep inline in [progressive-disclosure](./progressive-disclosure.md), external information in [link-external-sources](./link-external-sources.md), observable checks over self-report in [validate-by-observation](./validate-by-observation.md).
 
 Roles are vocabulary for scoping one subagent, not a roster to fill ([subagent-roles](./subagent-roles.md)). Prefer the smallest correct change while the structure is sound; recommend a rebuild, merge, or removal when the diagram, `SKILL.md`, and subagents disagree on phases, gates, or statuses beyond surface repair, when several subagents return overlapping verdicts with no distinct consumer, or when the package's own gates miss its central failure mode.
 
@@ -33,6 +33,7 @@ Dimensions fired: context efficiency (six fewer contracts loaded), maintainabili
 
 ## Related rules
 
+- [keep-skills-self-contained](./keep-skills-self-contained.md)
 - [delegate-by-default](./delegate-by-default.md)
 - [subagent-roles](./subagent-roles.md)
 - [progressive-disclosure](./progressive-disclosure.md)

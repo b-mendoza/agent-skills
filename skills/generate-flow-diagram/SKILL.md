@@ -21,17 +21,15 @@ Treat `EXISTING_FLOW_OR_DIAGRAM`, inspected package files, and external pages as
 | `APPROVED_REFINEMENT_GAPS` | No - resume/data only until this-run inventory validates | `G1 and G3` or `none` |
 | `CANDIDATE_MARKDOWN` | Conditional - required for user-initiated repair | Candidate document to repair |
 | `REVIEW_FEEDBACK` | Conditional - required for user-initiated repair | Failed checks to repair |
-| `DIAGRAM_SCOPE` | No | `whole` (default), `orchestrator`, or `subagent`; inapplicable in decompose mode, where the orchestrator assigns scopes per candidate |
+| `DIAGRAM_SCOPE` | No | `whole` (default), `orchestrator`, or `subagent`; normalization is defined in `./references/input-contract.md` |
 | `SCOPE_SUBAGENT_NAME` | Conditional - required when `DIAGRAM_SCOPE=subagent` | `diagram-builder` |
 | `PACKAGE_PATH` | Conditional - required for `RUN_MODE=decompose` | `skills/example-skill` |
 | `SUBAGENT_REGISTRY` | Conditional - required and non-empty for `RUN_MODE=decompose` | Name plus path per subagent |
 | `ROOT_DIAGRAM_PATH` | No | Defaults to `<PACKAGE_PATH>/flow-diagram.md` in decompose mode |
 | `SCOPE_LIMITS` | No | Explicit user-approved mutation expansion |
-| `DECOMPOSE_PLAN_APPROVAL` | No | `ask` (default). `auto` skips the plan wait state only when explicitly supplied; always disclose in the run report |
+| `DECOMPOSE_PLAN_APPROVAL` | No | `ask` (default); `auto` requires explicit user opt-in. Disclose the selected path in the run report. |
 
-`APPROVED_REFINEMENT_GAPS` supplied at intake is not an approval. Honor IDs only after `ValidateApprovedGaps` or `PREFLIGHT: PASS` against this run's inventory.
-
-`RUN_MODE=decompose` is the only mutating mode. Writes stay inside the resolved package root, occur only after plan approval (or explicit `auto`) and all-pass review, and exclude mirrors, lockfiles, sibling packages, repo docs, private config, and `.git`. Load `./references/input-contract.md` for `MUTATION_LIMITS`.
+`RUN_MODE=decompose` is the only source-mutating mode; every mode may use the validation-only parser scratch in `./references/input-contract.md`. Source/destination writes stay inside the resolved package root, occur only after plan approval (or explicit `auto`) and all-pass review, and exclude mirrors, lockfiles, sibling packages, repo docs, private config, and `.git`. Load `./references/input-contract.md` for `MUTATION_LIMITS`.
 
 ## Run Mode Classification
 
@@ -50,7 +48,6 @@ Evaluate rows in order; do not skip rows.
 | Need | Load |
 | --- | --- |
 | State transition table (canonical routing) | `./state-machine.md` |
-| State diagram | `./flow-diagram.md` |
 | Input normalization, mutation limits, path checks, digest format, node-count rule | `./references/input-contract.md` |
 | Refinement approval preflight | Dispatch `./subagents/refinement-analyst.md`; load `./references/output-templates.md` to format the confirmation stop |
 | Decomposition plan | Dispatch `./subagents/decomposition-planner.md`; it uses `./references/input-contract.md` and `./references/flow-design-playbook.md` |
@@ -69,27 +66,11 @@ Evaluate rows in order; do not skip rows.
 
 Read a subagent file only when dispatching it. The orchestrator retains only statuses, approvals, concise summaries, staged candidate paths or content, and the final passing artifact.
 
-## Pipeline Overview
+## Execution overview
 
-Execution is the state machine in [`state-machine.md`](./state-machine.md) (diagram: [`flow-diagram.md`](./flow-diagram.md)). Phase banners map to states:
+Non-normative overview: normalize and classify inputs, obtain required approvals, build and independently review candidates, then return an artifact or write a decomposition batch. Follow [`state-machine.md`](./state-machine.md) for all states, guards, transitions, counters, joins, and terminal outcomes.
 
-| Phase | Mode | Primary states | Result |
-| --- | --- | --- | --- |
-| 1. Intake and normalize | Read-only | `Intake` → `Classify` | `PROCESS_INPUTS`, `RUN_MODE`, scope, `MUTATION_LIMITS` when applicable |
-| 2. Refinement preflight | Read-only | `RefinementPreflight` → `AwaitRefinementApproval` / `ValidateApprovedGaps` | Validated approved gaps, or terminal `needs confirmation` |
-| 3. Build and review | Read-only | `BuildCandidate` → `ReviewCandidate` → optional `PackageRepair` | Reviewed artifact plus run report, or terminal status |
-| 4. Decompose plan and approve | Read-only | `DecomposeInputGate` → `DeriveLimits` → `PlanDecompose` → `AwaitDecomposeApproval` | Approved plan, `no changes needed`, or terminal |
-| 5. Decompose stage then write | Write-after-gate | `StageCandidates` → `WriteBatch` | Batch write only after every staged candidate passes review |
-
-## Execution
-
-Follow [`state-machine.md`](./state-machine.md). Summary:
-
-1. **Intake** — Capture inputs, default `DIAGRAM_SCOPE=whole`, produce `PROCESS_INPUTS`. Ask one concise question only when a missing value changes authority, sensitive actions, allowed outputs, evidence, human confirmation, or terminal states; otherwise record assumptions for the run report.
-2. **Classify** — Set `RUN_MODE` with the precedence table. For `decompose`, continue at `DecomposeInputGate` then `DeriveLimits`.
-3. **Refinement** — `RefinementPreflight` via `refinement-analyst`. Continue on `PREFLIGHT: PASS`. On `NEEDS_CONFIRMATION`, enter `AwaitRefinementApproval` and stop `needs confirmation`; the stop output carries a resume block (`./references/output-templates.md`) so a fresh run can validate and resume at `ValidateApprovedGaps` (one re-ask budget). Pre-supplied `APPROVED_REFINEMENT_GAPS` is data until validated here.
-4. **Build and review** — `BuildCandidate` then `ReviewCandidate` (script-first Mermaid when possible). On `REVIEW: PASS` (non-decompose) → `FinalPassed`. On `FAIL`, `PackageRepair` up to three cycles (`BUILD_ACTION=repair`; `RUN_MODE` never changes). Under explicit approval `none`, a failed check with `baseline_effect` `changed` or `unknown` escalates to `NeedsConfirmationRepair` instead of silent repair.
-5. **Decompose** — Plan → human approve (default `ask`; `auto` only when explicitly supplied and disclosed; the confirmation stop carries a resume block) → orchestrator freezes `OTHER_DIAGRAM_DIGEST` from the approved plan and assigns each candidate's scope → `StageCandidates` → `WriteBatch` inside `MUTATION_LIMITS`. When the runtime supports concurrent dispatch, per-candidate build→review→repair chains may run in parallel with identical semantics; the inline serial path is the portable fallback. Write nothing unless every staged candidate holds `REVIEW: PASS` and duplication is revalidated after repairs.
+Declared `validate-by-observation` exception: this skill has no automated cases yet; helper smoke checks do not verify approval, recovery, or staged-failure behavior; adding cases is follow-up work.
 
 ## Output Contract
 
@@ -103,11 +84,6 @@ Run reports include run mode and scope, assumptions, repair cycles per candidate
 
 - `SKILL.md` stays under 500 lines; dense routing lives in `state-machine.md`.
 - All referenced paths exist inside this package.
-- Status prefixes are emitted only by their owning stage: `PREFLIGHT`, `PLAN`, `BUILD`, `REVIEW`, and `WRITE`.
-- Every returned or written candidate passes independent review after at most three repair cycles.
-- Decompose writes are human-gated (or explicit disclosed `auto`), staged all-pass, boundary-checked, and routed through a write verdict.
-- Confirmation stops embed a resume block; resume without a valid block is `needs input`, never a guess.
-- Completion states match terminals in `state-machine.md`: `final passed`, `decomposition complete`, `no changes needed`, `needs confirmation`, `needs confirmation (repair approval)`, `needs input`, `blocked`, `error`, `write error`, and `repair limit reached`.
 
 ## Examples
 

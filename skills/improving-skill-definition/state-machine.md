@@ -1,12 +1,12 @@
 # State Machine — improving-skill-definition
 
-Finite-state execution model for this skill. This file is the sole normative source for states, transitions, guards, guard precedence, and terminals. [`flow-diagram.md`](./flow-diagram.md) is an illustrative rendering and [`SKILL.md`](./SKILL.md) a compact overview; when either disagrees with this table, this table wins. Any change here updates both in the same edit.
+This file is the sole normative source for states, transitions, guards, guard precedence, counters, joins, and terminals. SKILL.md is a non-normative overview; this file wins on drift.
 
 ## States
 
 | State | Kind | Phase / role |
 | --- | --- | --- |
-| `Intake` | active | Normalize path, eligibility, dependency preflight, baseline, self-improvement flag |
+| `Intake` | active | Normalize path, eligibility, package root, baseline, self-improvement flag |
 | `FlowLoad` | active | Load own personality and target flow; set trust model |
 | `Discover` | active | Dispatch `related-skills-discoverer` |
 | `Audit` | active | Dispatch six auditors (independent read-only fan-out); join on all six reports; synthesize; route by status suffix |
@@ -27,10 +27,10 @@ Finite-state execution model for this skill. This file is the sole normative sou
 | From | To | Guard / event |
 | --- | --- | --- |
 | `[*]` | `Intake` | run start |
-| `Intake` | `FlowLoad` | `SKILL_PATH` eligible; baseline copied; limits derived |
-| `Intake` | `TerminalBlocked` | path missing, unreadable, or excluded |
-| `FlowLoad` | `Discover` | own `flow-diagram.md` and `personality.md` readable |
-| `FlowLoad` | `TerminalError` | own flow or personality unreadable |
+| `Intake` | `FlowLoad` | `SKILL_PATH` eligible; `SKILL_DIR` resolved; baseline copied; limits derived |
+| `Intake` | `TerminalBlocked` | path missing, unreadable, or excluded; `SKILL_DIR` unresolved (`TOOLS_MISSING`); or `MUTATION_LIMITS` cannot be derived unambiguously |
+| `FlowLoad` | `Discover` | own `references/personality.md` readable |
+| `FlowLoad` | `TerminalError` | own `references/personality.md` unreadable |
 | `Discover` | `Audit` | `RELATED_SKILLS: PASS`, or BLOCKED/ERROR with optional degrade |
 | `Discover` | `TerminalBlocked` | discovery BLOCKED/ERROR and `REFERENCE_NEED` or mandate requires evidence |
 | `Audit` | `TerminalError` | any slice status ends with `: ERROR` |
@@ -44,12 +44,12 @@ Finite-state execution model for this skill. This file is the sole normative sou
 | `Approval` | `TerminalNoChange` | valid reply with approved scope `none` |
 | `Approval` | `TerminalBlocked` | valid reply but mutations violate limits or identity |
 | `Approval` | `EditPrep` | valid reply; scope not `none`; limits ok |
-| `EditPrep` | `TerminalBlocked` | structural/semantic diagram change and `DIAGRAM_DEPENDENCY=missing` with no manual-validation path |
-| `EditPrep` | `DiagramCandidate` | structural/semantic diagram change and dependency present (or manual candidate with script validation) |
-| `EditPrep` | `Edit` | approved gaps are non-structural only |
+| `EditPrep` | `DiagramCandidate` | approved structural/semantic diagram change |
+| `EditPrep` | `Edit` | no diagram candidate required |
 | `DiagramCandidate` | `Edit` | candidate completion state is `final passed` |
-| `DiagramCandidate` | `TerminalBlocked` | candidate needs input, confirmation, or blocked |
-| `DiagramCandidate` | `TerminalError` | candidate error or diagram repair limit |
+| `DiagramCandidate` | `DiagramCandidate` | helper exit 1, 3, or 4, or inspection failure, and `diagram_repair_counter < 3`; increment counter; repair only approved candidate |
+| `DiagramCandidate` | `TerminalBlocked` | candidate missing (helper exit 66), required input missing, or inspection blocked |
+| `DiagramCandidate` | `TerminalError` | helper exit other than 0, 1, 2, 3, 4, or 66; unexpected inspection error; or syntax/inspection failure at `diagram_repair_counter >= 3` |
 | `Edit` | `Validate` | `EDIT: PASS` (at least one applied in-scope mutation) |
 | `Edit` | `TerminalNoChange` | `EDIT: NO_CHANGE` (every approved item no-op, already satisfied, or deferred; empty baseline diff) |
 | `Edit` | `TerminalBlocked` | `EDIT: BLOCKED` |
@@ -66,9 +66,13 @@ Finite-state execution model for this skill. This file is the sole normative sou
 | `TerminalBlocked` | `[*]` | emit handoff + outcome-dependent preserve |
 | `TerminalError` | `[*]` | emit handoff + outcome-dependent preserve |
 
+## Diagram candidate validation
+
+Author `flowchart` or `stateDiagram-v2` Mermaid manually at `DIAGRAM_CANDIDATE_PATH`, a run-owned file under `HANDOFF_DIR`, never a source or destination path. Destination writes occur only in `Edit` after the candidate reaches `final passed`. Run `bash "${SKILL_DIR}/scripts/check-mermaid.sh" "$DIAGRAM_CANDIDATE_PATH"`. Inspect the candidate against the approved gaps and target contracts: states, transitions, statuses, approval gates, retry bounds, cleanup, and related `SKILL.md`/registry entries must agree. `final passed` requires passing coherence inspection plus either helper exit 0 (`parsed`) or helper exit 2 with passing manual Mermaid syntax/structural inspection (`inspected-only`). Every exit 2, including failed local version preflight or browser startup, uses inspection. Disclose the `inspected-only` fallback policy at approval, then record the actual method, helper exit code, and candidate path; never claim parsing for the fallback. Initialize `diagram_repair_counter=0` per candidate. Candidate application and Lane A checks follow the editor and validator contracts.
+
 ## Audit fan-out and join
 
-The six auditors are an independent, read-only fan-out: each reads the target and writes only its own named report file in `HANDOFF_DIR`. A runtime that supports concurrent subagent dispatch may dispatch them concurrently; otherwise dispatch them serially — the outcomes are equivalent because `Audit` joins only when all six contracted reports exist. A missing or malformed report after one re-request is treated as that slice returning `: ERROR`. Synthesis reads the reports in registry order and applies the suffix precedence (`: ERROR`, then `: BLOCKED`, then `: GAPS_FOUND`, else all `: PASS`), so report-arrival order never selects the route.
+The six auditors are an independent, read-only fan-out: each reads the target and writes only its own named report file in `HANDOFF_DIR`. A runtime that supports concurrent subagent dispatch may dispatch them concurrently; otherwise dispatch them serially — the outcomes are equivalent because `Audit` joins only when all six contracted reports exist. A missing or malformed report after one re-request is treated as that slice returning `: ERROR`. Synthesis reads the reports in registry order and applies the Audit guard order above, so report-arrival order never selects the route.
 
 ## Approval wait contract
 
@@ -76,11 +80,7 @@ The six auditors are an independent, read-only fan-out: each reads the target an
 
 ## Status-routing note
 
-Discovery is an optional evidence phase, so its `: BLOCKED`/`: ERROR` statuses degrade the run (or block it when `REFERENCE_NEED` or a mandate requires evidence) instead of terminating as runtime errors. This intentionally differs from audit-phase routing, where `: ERROR` outranks all other statuses and maps to `TerminalError`.
-
-## Terminal decisions
-
-Exactly one of: `changed`, `no change`, `approval required`, `blocked`, `error`.
+Discovery is an optional evidence phase, so its `: BLOCKED`/`: ERROR` statuses degrade the run (or block it when `REFERENCE_NEED` or a mandate requires evidence) instead of terminating as runtime errors. Audit statuses instead follow the Audit guards above.
 
 ## Reachability and dead-state checks
 
@@ -91,6 +91,3 @@ Exactly one of: `changed`, `no change`, `approval required`, `blocked`, `error`.
 | Dead states (no outgoing, non-terminal) | none |
 | Repair loop bounded | yes — max 3 via `repair_counter` before `TerminalBlocked` |
 
-## Self-improvement note
-
-When the target is this package (`SELF_IMPROVEMENT_RUN=true`), synthesis marks gaps `SAFE` or `DEFERRED`. User-approved structural redefine gaps that rewrite the execution SoT (state machine / `flow-diagram.md` / aligned `SKILL.md`) are `SAFE` for same-run application. Other `DEFERRED` gaps remain deferred.

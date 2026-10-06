@@ -9,7 +9,7 @@ Load this reference when checking the synthesis file before approval, edit, or p
 | `schema_keys` | Every required top-level key from `audit-synthesis-schema.md` is present |
 | `to_mapping` | `to.orchestrator` and `to.phase` are present and non-empty |
 | `status_summary` | Every dispatched slice has one status-summary row with report path |
-| `status_route` | Overall verdict follows suffix precedence: `ERROR`, `BLOCKED`, `GAPS_FOUND`, all `PASS` |
+| `status_route` | Overall verdict matches the Audit guard order in `../state-machine.md`. |
 | `gap_ids` | Gap ids are stable, unique, and referenced by mutation and gate rows |
 | `provenance` | Every gap row has `local`, `external`, or `mixed`; external ideas stay marked |
 | `mandate_coverage` | Each mandate is a gap id or evidenced no-op; empty mandates are recorded as vacuous |
@@ -39,7 +39,7 @@ The editor may apply only approved `SAFE` gaps. The validator fails Lane A if a 
 
 ## Lane Assignment
 
-Before user approval, gaps may use `lane: undecided-before-approval`. After edit, validator Lane A includes only approved-gap closure, editor-touched files, mutation boundaries, diagram delegation, synthesis schema, and self-improvement advisory enforcement. Lane B is for pre-existing defects in untouched files and is reported as `follow_up_findings` only.
+Before approval, gaps may use `lane: undecided-before-approval`. After edit, Lane A checks approved-gap closure; regressions and caps on editor-touched files; mutation-boundary and editor-scope compliance; edited flow/SKILL/registry coherence; diagram candidate validation per `../state-machine.md`; synthesis schema; and self-improvement advisory enforcement. Lane B contains pre-existing defects in untouched files, is reported only as `follow_up_findings`, never causes FAIL, and is never repaired in this run.
 
 ## Failure Reporting
 

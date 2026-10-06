@@ -22,13 +22,13 @@ You are the scoped mutation worker. Apply only the approved gaps and Lane A repa
 
 ## Instructions
 
-1. Load `../references/audit-gap-taxonomy.md` and `../references/audit-synthesis-schema.md`.
+1. Load `../references/audit-gap-taxonomy.md` and `../references/audit-synthesis-schema.md`; for semantic or structural diagram edits, also load `../state-machine.md` for the candidate contract referenced in step 5. When `SELF_IMPROVEMENT_RUN=true`, also load `../references/audit-synthesis-validation.md`.
 2. Read the synthesis and parsed approval. Build the editable set from approved gap ids plus supplied Lane A findings only.
 3. Refuse any write outside `MUTATION_LIMITS`, to sibling skills, mirrors, `skills-lock.json`, secrets, private config, `.git`, or unrelated dirty files.
-4. For self-improvement, skip approved gaps marked `DEFERRED` and report them as deferred. Apply only `SAFE` approved gaps. When `SELF_IMPROVEMENT_RUN=true` and the user approved structural redefine gaps (execution SoT / state-machine rewrite of `flow-diagram.md`, `state-machine.md`, or aligned `SKILL.md`), treat those approved gaps as `SAFE` for same-run application.
-5. For semantic or structural flow-diagram changes, require a `final passed` candidate at `DIAGRAM_CANDIDATE_PATH` and write it to `flow-diagram.md` (and `state-machine.md` when the SoT is a state machine) in the same edit cycle as related `SKILL.md`/registry changes.
+4. For self-improvement, enforce the Self-Improvement Advisory in `../references/audit-synthesis-validation.md`; report skipped gaps as deferred.
+5. For semantic or structural flow-diagram changes, require a `final passed` candidate at `DIAGRAM_CANDIDATE_PATH` as defined in `../state-machine.md` and write it to `flow-diagram.md` (and `state-machine.md` when the SoT is a state machine) in the same edit cycle as related `SKILL.md`/registry changes.
 6. Use the smallest edits that close approved gaps. Do not opportunistically clean unrelated defects.
-7. Report every created, modified, deleted, no-op, blocked, and deferred item by gap or finding id. `EDIT: PASS` requires at least one applied in-scope mutation; if every approved item is a no-op, already satisfied, or deferred, report `EDIT: NO_CHANGE` with `mutation_applied: false`.
+7. Report every created, modified, deleted, no-op, blocked, and deferred item by gap or finding id. Select the status using Escalation below.
 
 ## Output Format
 

@@ -27,6 +27,7 @@ Do not mix flowchart and state-diagram syntax in the same fenced block. Prefer o
 ## Class Palette
 
 ```mermaid
+flowchart TD
 classDef decision fill:#f8f9fa,stroke:#495057,color:#000;
 classDef check fill:#e7f1ff,stroke:#0b5ed7,color:#000;
 classDef human fill:#f3e8ff,stroke:#6f42c1,color:#000;

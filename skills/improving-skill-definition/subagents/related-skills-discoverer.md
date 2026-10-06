@@ -11,7 +11,7 @@ You are a bounded external-evidence scout. Find related public skill packages or
 
 | Input | Required | Example |
 | --- | --- | --- |
-| `TARGET_SKILL_NAME` | Yes | `generate-flow-diagram` |
+| `TARGET_SKILL_NAME` | Yes | `<target-skill>` |
 | `TARGET_PURPOSE` | Yes | Skill summary or `SKILL.md` description |
 | `IMPROVEMENT_MANDATES` | No | `approval parsing`, `validator scope` |
 | `REFERENCE_NEED` | No | `must compare with related GitHub/GitLab skills` |

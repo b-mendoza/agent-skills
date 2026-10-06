@@ -1,16 +1,16 @@
 # State Machine — generate-flow-diagram
 
-Finite-state execution model for this skill. Mermaid rendering lives in [`flow-diagram.md`](./flow-diagram.md).
+This file is the sole normative source for states, transitions, guards, counters, joins, and terminals. SKILL.md is a non-normative overview; this file wins on drift.
 
 ## Run-scoped variables
 
 | Variable | Initial | Rules |
 | --- | --- | --- |
 | `RUN_MODE` | unset | Set once in `Classify` via precedence table in `SKILL.md`; immutable for the rest of the run. |
-| `BUILD_ACTION` | `build` | Set to `repair` on each `PackageRepair` → `BuildCandidate` transition; reset to `build` for a new candidate. Internal repair never changes `RUN_MODE`. |
+| `BUILD_ACTION` | `build` | Set to `repair` on each `PackageRepair` → `BuildCandidate` transition; reset to `build` for a new candidate. All mode-conditional builder/reviewer obligations follow `RUN_MODE`. |
 | `repair_cycles` | 0 per candidate | Increment on each entry to `PackageRepair`. Cap is 3 failed review→repair loops per candidate. |
 | `gap_reask_budget` | 1 | Consumed on one re-ask from `ValidateApprovedGaps` when IDs are unknown. |
-| `approval_scope` | unset | Validated gap IDs or exact `none` after preflight/resume. |
+| `approval_scope` | unset | Validated gap IDs or exact `none` after preflight/resume. Intake `APPROVED_REFINEMENT_GAPS` is data, not approval, until `ValidateApprovedGaps` or `PREFLIGHT: PASS` validates it against this run’s inventory. |
 | `MUTATION_LIMITS` | unset | Derived once in `DeriveLimits` for `decompose` only. |
 | `OTHER_DIAGRAM_DIGEST` | unset | Derived once by the orchestrator from the approved ownership plan, immediately before `StageCandidates`; immutable during staging. Projections are passed to each builder/reviewer dispatch. |
 
@@ -66,7 +66,7 @@ Finite-state execution model for this skill. Mermaid rendering lives in [`flow-d
 | `ValidateApprovedGaps` | `BuildCandidate` | Every supplied ID exists in retained inventory, or value is exact `none` |
 | `ValidateApprovedGaps` | `AwaitRefinementApproval` | Unknown/ambiguous IDs and `gap_reask_budget` remaining (consume budget; re-ask once) |
 | `ValidateApprovedGaps` | `NeedsConfirmation` | Unknown/ambiguous IDs and `gap_reask_budget` exhausted |
-| `BuildCandidate` | `ReviewCandidate` | `BUILD: PASS` |
+| `BuildCandidate` | `ReviewCandidate` | `BUILD: PASS`; unavailable parser, execution, or parser-input scratch uses `inspected-only` review |
 | `BuildCandidate` | `NeedsInput` | `BUILD: NEEDS_INPUT` |
 | `BuildCandidate` | `Error` | `BUILD: ERROR` |
 | `ReviewCandidate` | `FinalPassed` | `REVIEW: PASS` and `RUN_MODE` ≠ `decompose` |
@@ -75,7 +75,7 @@ Finite-state execution model for this skill. Mermaid rendering lives in [`flow-d
 | `ReviewCandidate` | `AwaitRepairApproval` | `REVIEW: FAIL` ∧ `approval_scope` is exact `none` ∧ any failed check has `baseline_effect` `changed` or `unknown` |
 | `ReviewCandidate` | `PackageRepair` | `REVIEW: FAIL` ∧ `repair_cycles` < 3 ∧ not (`approval_scope` = `none` with a `changed`/`unknown` failed check) |
 | `ReviewCandidate` | `RepairLimitReached` | `REVIEW: FAIL` ∧ `repair_cycles` ≥ 3 |
-| `PackageRepair` | `BuildCandidate` | Failed checks packaged; `BUILD_ACTION=repair`; `RUN_MODE` unchanged; increment `repair_cycles` |
+| `PackageRepair` | `BuildCandidate` | Failed checks packaged; `BUILD_ACTION=repair`; increment `repair_cycles` |
 | `AwaitRepairApproval` | `NeedsConfirmationRepair` | Repair-under-`none` question presented; run stops |
 | `DecomposeInputGate` | `NeedsInput` | `PACKAGE_PATH` missing, or registry missing/empty and not confirmed empty |
 | `DecomposeInputGate` | `NoChangesNeeded` | Empty registry confirmed: package has no subagents |
@@ -89,7 +89,10 @@ Finite-state execution model for this skill. Mermaid rendering lives in [`flow-d
 | `PlanDecompose` | `StageCandidates` | `PLAN: PASS` ∧ work remains ∧ `DECOMPOSE_PLAN_APPROVAL=auto` (disclose in run report) |
 | `AwaitDecomposeApproval` | `NeedsConfirmation` | Plan summary and resume block presented; run stops for approve/revise; resume re-enters via `Intake` |
 | `StageCandidates` | `WriteBatch` | Every staged candidate holds `REVIEW: PASS`, and cross-candidate duplication revalidated against `OTHER_DIAGRAM_DIGEST` after any repair |
-| `StageCandidates` | `RepairLimitReached` | Any candidate exhausts repair budget (write nothing) |
+| `StageCandidates` | `RepairLimitReached` | Earliest failing candidate in approved-plan order exhausts repair budget; write no destination files |
+| `StageCandidates` | `NeedsInput` | Earliest failing candidate in approved-plan order returns `BUILD: NEEDS_INPUT`; write no destination files |
+| `StageCandidates` | `Blocked` | Earliest failing candidate in approved-plan order returns `REVIEW: BLOCKED`; write no destination files |
+| `StageCandidates` | `Error` | Earliest failing candidate in approved-plan order returns `BUILD: ERROR` or `REVIEW: ERROR`, or has a missing/malformed/unknown staged result; write no destination files |
 | `WriteBatch` | `DecompositionComplete` | `WRITE: PASS` after `MUTATION_LIMITS` enforcement |
 | `WriteBatch` | `WriteError` | `WRITE: ERROR` |
 | `FinalPassed` | `[*]` | Return artifact + run report |
@@ -105,7 +108,7 @@ Finite-state execution model for this skill. Mermaid rendering lives in [`flow-d
 
 ## Reachability
 
-Every listed state is reachable from `Intake` (including the resume routes `Intake` → `ValidateApprovedGaps` and `Intake` → `StageCandidates`). Every terminal has an exit to `[*]`. Both wait states follow one convention: stop at a confirmation terminal whose output carries a resume block, then resume through `Intake` on the next invocation. `PackageRepair` always returns to `BuildCandidate`. There are no dead states.
+Every listed state is reachable from `Intake` (including the resume routes `Intake` → `ValidateApprovedGaps` and `Intake` → `StageCandidates`). Every terminal has an exit to `[*]`. `AwaitRefinementApproval`, `AwaitRepairApproval` and `AwaitDecomposeApproval` stop at their confirmation terminals and resume through `Intake` with the existing resume block. `PackageRepair` always returns to `BuildCandidate`. There are no dead states.
 
 ## Resume Blocks
 
@@ -114,9 +117,5 @@ A confirmation stop is a terminal; the run's context is not assumed to survive i
 ## Notes
 
 - Status prefixes are stage-owned: `PREFLIGHT`, `PLAN`, `BUILD`, `REVIEW`, `WRITE`. Do not emit `PREFLIGHT:` from review.
-- `RUN_MODE` is immutable after `Classify`. Internal repair is expressed by `BUILD_ACTION=repair`; reviewer obligations (for example refinement checks) stay keyed to `RUN_MODE`.
-- `APPROVED_REFINEMENT_GAPS` supplied at intake is data only until `ValidateApprovedGaps` or a `PREFLIGHT: PASS` validation against this run's inventory.
-- `DECOMPOSE_PLAN_APPROVAL=auto` skips `AwaitDecomposeApproval` but must be recorded in the run report; illustrated default remains `ask`. On both the `auto` path and decompose resume, the orchestrator derives `OTHER_DIAGRAM_DIGEST` before entering `StageCandidates`.
-- `DIAGRAM_SCOPE` is inapplicable when `RUN_MODE=decompose`: the orchestrator assigns `orchestrator` scope to the root candidate and `subagent` scope (with `SCOPE_SUBAGENT_NAME`) to each localized candidate from the approved plan.
-- `StageCandidates` internally runs build→review→optional repair per localized diagram and slim root; the state machine treats that loop as one state with the all-pass / repair-limit guards above. When the runtime can dispatch subagents concurrently, per-candidate chains may run in parallel — each chain stays serial internally, the digest is frozen before staging, and `WriteBatch` still requires all-pass plus post-repair duplication revalidation. The inline serial path is the portable fallback with identical statuses and semantics; record parallel dispatch in the run report.
+- `StageCandidates` internally runs build→review→optional repair per localized diagram and slim root; the state machine treats that loop as one state with the all-pass / repair-limit guards above. When the runtime can dispatch subagents concurrently, per-candidate chains may run in parallel — each chain stays serial internally, the digest is frozen before staging, and `WriteBatch` still requires all-pass plus post-repair duplication revalidation. In parallel, finalize failure only after every earlier-ordered chain settles (finished or failed); cancel later-ordered chains or let them finish and ignore their results. The inline serial path is the portable fallback with identical statuses and semantics; it runs in approved-plan order and stops at the first failure; record parallel dispatch in the run report.
 - Question budgets are local to their decision boundary (intake clarification, classification, empty-registry confirmation, gap re-ask); at most one concise clarification is asked in any single turn.

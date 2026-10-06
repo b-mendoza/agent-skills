@@ -109,8 +109,8 @@
     3. Classify every non-practice file under TARGET_DIR explicitly. The master
        README is `master-index`. Other files are `supporting-reference`,
        `orphan`, `duplicate`, or `mis-filed-practice`.
-    4. Start consumer inspection at `AGENTS.md` and
-       `docs/agent/skill-authoring.md`. Then run a bounded repository search
+    4. Start consumer inspection at `AGENTS.md`.
+       Then run a bounded repository search
        for references to `docs/best-practices`, the master index, and indexed
        practice filenames. Inspect only decision-relevant consumers. Record
        sampling.
@@ -643,7 +643,7 @@
        - Classify every other file under TARGET_DIR, including
          `master-index` for `TARGET_DIR/README.md`.
        - Freeze that classification as the immutable inventory snapshot.
-       - Start consumers at `AGENTS.md` and `docs/agent/skill-authoring.md`.
+       - Start consumers at `AGENTS.md`.
          Then run a bounded repository search for references to
          `docs/best-practices`, the master index, and indexed practice
          filenames. Inspect only decision-relevant consumers. Do not skip D13.

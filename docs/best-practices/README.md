@@ -1,10 +1,10 @@
 # Best practices for skills and subagents
 
-> Current-state reference: this index and `runtime-portability-matrix.md` must be updated when a rule is added, removed, or renamed, and when runtime facts change.
+> Current-state reference: this index must be updated when a rule is added, removed, or renamed.
 
-Each rule is self-contained: open the one for the decision in front of you; its 📝 sentence says when it applies. A 🔒 miss is a material gap unless `SKILL.md` names the rule and the reason for the exception. ✅ rules are expected for non-trivial skills and may be scoped down with a stated reason. Reviewers record `pass` / `fail` / `not applicable` per applicable rule.
+Each rule is self-contained: open the one for the decision in front of you; its 📝 sentence says when it applies. Reviewers record `pass` / `fail` / `not applicable` per applicable rule.
 
-🔒 Mandatory — a miss is a material gap unless the skill declares an exception.\
+🔒 Mandatory — a miss is a material gap unless `SKILL.md` names the rule and the reason for an exception the rule allows.\
 ✅ Recommended — expected for non-trivial skills; scope it down with a stated reason.\
 📍 Reference — current-state runtime facts, dated.
 
@@ -14,9 +14,10 @@ Each rule is self-contained: open the one for the decision in front of you; its 
 | [declare-input-output-contracts](./declare-input-output-contracts.md) | Declare every input a skill or subagent consumes and every artifact or reply it produces, with exact fields, before any consumer parses them. | 🔒 |
 | [declare-mutation-limits](./declare-mutation-limits.md) | Declare `MUTATION_LIMITS` before a skill edits, creates, deletes, renames, or moves files, and pass the same value to every dispatched subagent. | 🔒 |
 | [delegate-by-default](./delegate-by-default.md) | Delegate steps to subagents by default, keeping only bounded results (statuses, paths, ids, summaries) in the orchestrator; run a step inline only when routing needs raw or conversational material. | 🔒 |
-| [describe-when-to-use](./describe-when-to-use.md) | Write each skill's `description` as its routing classifier: third person, action and object first, explicit `Use when` triggers, and named exclusions for sibling skills. | 🔒 |
+| [describe-when-to-use](./describe-when-to-use.md) | Write each skill's `description` as its routing classifier: third person, action and object first, explicit `Use when` triggers, and exclusions naming out-of-scope requests. | 🔒 |
 | [earn-every-part](./earn-every-part.md) | Add a skill, subagent, reference, script, contract field, or gate only when it fixes a concrete problem in a named Material Issue Gate dimension; otherwise make the smaller change or none. | ✅ |
 | [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md) | Keep dispatch decisions in the orchestrator's `Execution` as status-keyed routes (given X, dispatch Y; on status Z, do W) when a skill dispatches two or more subagents. | ✅ |
+| [keep-skills-self-contained](./keep-skills-self-contained.md) | Keep every skill package self-contained: never reference a file in this repository outside the skill's own directory, and never name or invoke another skill; only the seven work-item workflow phases may name and invoke each other. | 🔒 |
 | [link-external-sources](./link-external-sources.md) | Link external information by its canonical URL and fetch it when a step needs it; never copy external content into the skill package, and route `TOOLS_MISSING` when the network is unavailable. | ✅ |
 | [list-subagents-in-a-registry](./list-subagents-in-a-registry.md) | List every dispatched subagent in a registry table near the top of `SKILL.md` (Subagent, Path, Purpose; one row each) so the orchestrator sees what it can dispatch before reading any subagent file. | ✅ |
 | [name-matches-directory](./name-matches-directory.md) | Set a skill's frontmatter `name` to its directory name and a subagent's `name` to its file basename, in kebab-case, whenever you create or rename either file. | 🔒 |

@@ -4,10 +4,10 @@ Load this reference immediately before emitting an approval, changed, no-change,
 
 ## Shared Rules
 
-- Return exactly one decision: `approval required`, `changed`, `no change`, `blocked`, or `error`.
 - Include `ignored_preapproval` and `follow_up_findings` when non-empty.
 - Externally-derived gaps are visibly marked with provenance.
-- Emission checklist: before emitting, list every required heading for the chosen decision (from this file) and mark each `present` or `absent`. An absent required heading means the message is repaired before emission — never emitted with the gap. End the message with `sections present` showing the completed checklist. This deterministic check replaces free-form self-attestation; no later agent validates the final message, so the checklist is the emission gate.
+- Emission checklist: before emitting, list every required heading for the chosen decision (from this file), and mark each `present` or `absent`. An absent required heading means the message is repaired before emission — never emitted with the gap. End the message with `sections present` showing the completed checklist. This deterministic check replaces free-form self-attestation; no later agent validates the final message, so the checklist is the emission gate.
+- Record diagram-validation method and helper exit code under `Validation Evidence` when changed, `Reason` for no change, `Blocking Reason` when blocked, or `Known Context` on error.
 
 ## Approval Required
 
@@ -30,7 +30,7 @@ Recommended decision and options: keep, refine, replace, add, remove, demote, sk
 Reply with one personality decision and exactly one of all, none, or listed gap ids.
 
 ## Constraints And Disclosures
-DIAGRAM_DEPENDENCY, ignored_preapproval, self-improvement caveats.
+Bundled diagram validation and its parser-unavailable `inspected-only` fallback, ignored_preapproval, self-improvement caveats.
 
 ## Preserved Run Directory
 HANDOFF_DIR path preserved for resumption.
@@ -38,7 +38,7 @@ HANDOFF_DIR path preserved for resumption.
 ## Sections Present
 ```
 
-For malformed replies, re-ask once with `Valid gap ids` and `Malformed part`.
+For a malformed `Approval` reply re-ask, include `Valid gap ids` and `Malformed part`.
 
 ## Changed
 
@@ -68,7 +68,7 @@ Workflow-created files removed or remaining empty directory note.
 
 ## No Change
 
-Use when all audit slices pass, approved scope is `none`, or the editor reports `EDIT: NO_CHANGE` (every approved item no-op, already satisfied, or deferred — include the per-item classification under `Reason`).
+For `EDIT: NO_CHANGE`, include the editor's per-item classification under `Reason`.
 
 Required headings: `Decision`, `Reason`, `Audit Evidence`, `Mandate Coverage`, `Ignored Preapproval`, `Cleanup`, `Sections Present`.
 

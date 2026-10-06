@@ -66,7 +66,7 @@ Summary - normative text in `reviewer-policy.md`: this coordinator advances the 
 4. `ResolveTooling`: resolve read path in order: tracker MCP tools, platform CLI, authenticated REST API, then plain web fetch. Record the path or its absence in `Run notes`. Resolve write capability only when `WRITE_MODE=post-comment`.
 5. `GatePlatform` / `GateReadPath`: Jira and GitHub are fully supported. Unsupported URLs with usable pasted context continue draft-only; otherwise `AskPlatform` / `AskRead` once or `TerminalBlockedNotReviewed`.
 6. `GatePostingClarity`: if posting was requested and auth or write tooling is unclear, `AskPosting` once. Interactive → resume the gate; otherwise downgrade to draft and continue to dispatch.
-7. `DispatchReviewer`: pass compact source pointers, `ITEM_URL`, compact `ITEM_CONTEXT` or its file path, `WRITE_MODE`, `HUMAN_APPROVALS`, `SKILL_ROOT`, and absolute paths under `SKILL_ROOT` for `references/reviewer-policy.md`, `references/refinement-checks.md`, `references/comment-template.md`, `references/review-quality-checklist.md`, and `references/external-sources.md`.
+7. DispatchReviewer: resolve SKILL_ROOT to the absolute directory containing the loaded SKILL.md; pass compact source pointers, ITEM_URL, compact ITEM_CONTEXT or its file path, WRITE_MODE, HUMAN_APPROVALS, and SKILL_ROOT. The reviewer derives its bundled reference locations.
 8. `ParseReturn`: retain only `REVIEW`, `REVIEW_STATUS`, `POST_ALLOWED`, `Comment mode`, the final comment or safest draft, blocked reason or failed criteria, and compact validation fields for `Run notes`. Discard raw payloads.
 9. Malformed `REVIEW`: `Redispatch` exactly once with a defect note; a second malformed return is routed as `REVIEW: ERROR`. Never infer a state from prose.
 10. `RouteReview`: `PASS` → `ChooseOutputPath`; `BLOCKED` / `ERROR` → `TerminalBlocked`; `FAIL` → `TerminalDraft` with `REVIEW_STATUS` verbatim and failed criteria.
@@ -94,7 +94,7 @@ Summary - normative text in `reviewer-policy.md`: `Posted` requires verified pos
 Input: `ITEM_URL=https://team.atlassian.net/browse/PROJ-123`,
 `WRITE_MODE=draft`
 
-Advance through intake and tooling gates, `DispatchReviewer` with `SKILL_ROOT` and absolute reference paths, receive `REVIEW: PASS`, `REVIEW_STATUS: Needs split`, `Comment mode: Draft`, and a validated comment. Return `Mode: Draft`, `Status: Needs split`, the comment, `Deferred actions: None`, and compact run notes including tooling, evidence coverage, fix cycles, and remaining risks. </example>
+Advance through intake and tooling gates, `DispatchReviewer` with absolute `SKILL_ROOT`, receive `REVIEW: PASS`, `REVIEW_STATUS: Needs split`, `Comment mode: Draft`, and a validated comment. Return `Mode: Draft`, `Status: Needs split`, the comment, `Deferred actions: None`, and compact run notes including tooling, evidence coverage, fix cycles, and remaining risks. </example>
 
 <example>
 Input: `ITEM_URL=https://github.com/org/repo/issues/42`,
