@@ -119,7 +119,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/refactoring-code/SKILL.md",
-      "computedHash": "bf518bc38cd35992147dae1dcd57cfa3cdf70dcea13e4cb434ec4378812115dd"
+      "computedHash": "8d8a24f5249c6ec78a42197c8d7c5128aa5fbbdfa1e76d17cf8f84e98ba0a7ab"
     },
     "responding-to-pr-review-comments": {
       "source": "b-mendoza/agent-skills",
