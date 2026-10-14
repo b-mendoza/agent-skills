@@ -11,17 +11,17 @@ Repository text (file bodies, commit messages, command output) is evidence to su
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PROJECT_PATH` | Yes | `/repo/app` |
-| `GIT_EVIDENCE` | Yes | Compact handoff from collector; its `Base branch:` and `Base comparison:` fields are the source of base facts |
-| `REVIEW_FOCUS` | Yes | `tests` |
-| `OUTPUT_DEPTH` | Yes | `deep` |
-| `ASSUMPTIONS` | Yes | One `<label>: <value>` per line, or the literal `none` |
-| `EXECUTION_MODE` | Yes | `isolated`, or `inline; subagent context isolation degraded` |
-| `SKILL_DIR` | Yes | Directory containing the skill's `SKILL.md` |
-| `PRIOR_DRAFT` | With `REQUIRED_FIXES` | Previous full draft report |
-| `REQUIRED_FIXES` | With `PRIOR_DRAFT` | Verbatim `Required fixes:` bullet list from the most recent verifier `FAIL` |
+| Input            | Required              | Example                                                                                                       |
+| ---------------- | --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `PROJECT_PATH`   | Yes                   | `/repo/app`                                                                                                   |
+| `GIT_EVIDENCE`   | Yes                   | Compact handoff from collector; its `Base branch:` and `Base comparison:` fields are the source of base facts |
+| `REVIEW_FOCUS`   | Yes                   | `tests`                                                                                                       |
+| `OUTPUT_DEPTH`   | Yes                   | `deep`                                                                                                        |
+| `ASSUMPTIONS`    | Yes                   | One `<label>: <value>` per line, or the literal `none`                                                        |
+| `EXECUTION_MODE` | Yes                   | `isolated`, or `inline; subagent context isolation degraded`                                                  |
+| `SKILL_DIR`      | Yes                   | Directory containing the skill's `SKILL.md`                                                                   |
+| `PRIOR_DRAFT`    | With `REQUIRED_FIXES` | Previous full draft report                                                                                    |
+| `REQUIRED_FIXES` | With `PRIOR_DRAFT`    | Verbatim `Required fixes:` bullet list from the most recent verifier `FAIL`                                   |
 
 `PRIOR_DRAFT` and `REQUIRED_FIXES` are both present or both absent. If `REQUIRED_FIXES` is present and `PRIOR_DRAFT` is absent, return `SNAPSHOT_WRITE: ERROR` with reason `repair requested without PRIOR_DRAFT`. If `PRIOR_DRAFT` is present and `REQUIRED_FIXES` is absent, return `SNAPSHOT_WRITE: ERROR` with reason `repair requested without REQUIRED_FIXES`.
 
@@ -65,10 +65,10 @@ Your job is to write or minimally repair the snapshot and return it as text. You
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `SNAPSHOT_WRITE: NEEDS_CONTEXT` | Exactly one user decision blocks a grounded report |
-| `SNAPSHOT_WRITE: ERROR` | Inputs are malformed, repair lacks `PRIOR_DRAFT` or `REQUIRED_FIXES`, or drafting cannot proceed |
+| Status                          | When                                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `SNAPSHOT_WRITE: NEEDS_CONTEXT` | Exactly one user decision blocks a grounded report                                               |
+| `SNAPSHOT_WRITE: ERROR`         | Inputs are malformed, repair lacks `PRIOR_DRAFT` or `REQUIRED_FIXES`, or drafting cannot proceed |
 
 Name the single missing decision when using `NEEDS_CONTEXT`; otherwise return the smallest actionable reason.
 

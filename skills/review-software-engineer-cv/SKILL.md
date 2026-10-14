@@ -13,12 +13,12 @@ This package is standalone. Bundled references and subagents live inside this fo
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `JOB_POSTING` | Yes | URL, pasted text, screenshot, PDF, or document |
-| `CV` | Yes | Resume/CV text, screenshot, PDF, DOCX, or document |
-| `APPLICANT_CONTEXT` | No | Real projects, preferred stack, target seniority, constraints, or interview-defensible details |
-| `OUTPUT_MODE` | No | `review`, `rewrite`, `checklist`, or `questions-only` |
+| Input               | Required | Example                                                                                        |
+| ------------------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `JOB_POSTING`       | Yes      | URL, pasted text, screenshot, PDF, or document                                                 |
+| `CV`                | Yes      | Resume/CV text, screenshot, PDF, DOCX, or document                                             |
+| `APPLICANT_CONTEXT` | No       | Real projects, preferred stack, target seniority, constraints, or interview-defensible details |
+| `OUTPUT_MODE`       | No       | `review`, `rewrite`, `checklist`, or `questions-only`                                          |
 
 If `OUTPUT_MODE` is missing or unsupported, set it to `review`. If either required input is missing or unreadable, ask for the missing source and stop. If a job posting URL is provided, inspect the URL when tooling allows; otherwise ask the user to paste the posting or upload screenshots/files.
 
@@ -46,22 +46,22 @@ Only intake uses `BLOCKED`. Only review uses `FAIL`. Do not invent missing statu
 
 Use this registry as a lookup table. Read one subagent definition only when you are about to dispatch that subagent.
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `source-intake-analyst` | `./subagents/source-intake-analyst.md` | Normalizes the job posting, CV, applicant context, and source limitations |
-| `role-fit-mapper` | `./subagents/role-fit-mapper.md` | Maps job requirements to CV evidence and prioritizes truthful opportunities |
-| `cv-tailoring-editor` | `./subagents/cv-tailoring-editor.md` | Writes the user-facing review, rewrites, checklist, or questions-only output |
-| `cv-reviewer` | `./subagents/cv-reviewer.md` | Validates grounding, evidence labels, mode compliance, and interview defensibility |
+| Subagent                | Path                                   | Purpose                                                                            |
+| ----------------------- | -------------------------------------- | ---------------------------------------------------------------------------------- |
+| `source-intake-analyst` | `./subagents/source-intake-analyst.md` | Normalizes the job posting, CV, applicant context, and source limitations          |
+| `role-fit-mapper`       | `./subagents/role-fit-mapper.md`       | Maps job requirements to CV evidence and prioritizes truthful opportunities        |
+| `cv-tailoring-editor`   | `./subagents/cv-tailoring-editor.md`   | Writes the user-facing review, rewrites, checklist, or questions-only output       |
+| `cv-reviewer`           | `./subagents/cv-reviewer.md`           | Validates grounding, evidence labels, mode compliance, and interview defensibility |
 
 ## Progressive Loading Map
 
-| Need | Load or fetch | Owner |
-| --- | --- | --- |
-| States, guards, terminals | `./flow-diagram.md`, `./state-machine.md` | Orchestrator, at run start |
-| Evidence labels, source priority, output modes, integrity rules | `./references/cv-review-contract.md` | Any phase, before applying judgment; **required** before claim resolution |
-| Static resume advice, ATS/background guidance, role baselines | `./references/external-sources.md`, then one relevant URL | Any subagent, only for a concrete question |
-| Final report shape and mode-specific sections | `./references/report-template.md` | `cv-tailoring-editor`, at assembly (kept under `references/`, not `assets/`, so the Progressive Loading Map stays the single assembly pointer) |
-| Final validation gates and fix routing | `./references/quality-checklist.md` | `cv-reviewer`, at review |
+| Need                                                            | Load or fetch                                             | Owner                                                                                                                                          |
+| --------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| States, guards, terminals                                       | `./flow-diagram.md`, `./state-machine.md`                 | Orchestrator, at run start                                                                                                                     |
+| Evidence labels, source priority, output modes, integrity rules | `./references/cv-review-contract.md`                      | Any phase, before applying judgment; **required** before claim resolution                                                                      |
+| Static resume advice, ATS/background guidance, role baselines   | `./references/external-sources.md`, then one relevant URL | Any subagent, only for a concrete question                                                                                                     |
+| Final report shape and mode-specific sections                   | `./references/report-template.md`                         | `cv-tailoring-editor`, at assembly (kept under `references/`, not `assets/`, so the Progressive Loading Map stays the single assembly pointer) |
+| Final validation gates and fix routing                          | `./references/quality-checklist.md`                       | `cv-reviewer`, at review                                                                                                                       |
 
 Orchestrator links stay one level deep from `SKILL.md`. Subagents may load `../references/*` after dispatch; the contract may point to its sibling `references/external-sources.md`. Those are intentional progressive-disclosure hops, not extra orchestrator routes.
 

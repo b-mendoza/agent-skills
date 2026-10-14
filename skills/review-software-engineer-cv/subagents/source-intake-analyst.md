@@ -11,12 +11,12 @@ Keep raw postings, resumes, screenshots, and extracted text in your own working 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `JOB_POSTING` | Yes | URL, pasted text, screenshot, PDF, or document |
-| `CV` | Yes | Resume text, screenshot, PDF, DOCX, or document |
-| `APPLICANT_CONTEXT` | No | Real projects, constraints, target seniority, preferred stack |
-| `OUTPUT_MODE` | No | `review`, `rewrite`, `checklist`, or `questions-only` |
+| Input               | Required | Example                                                       |
+| ------------------- | -------- | ------------------------------------------------------------- |
+| `JOB_POSTING`       | Yes      | URL, pasted text, screenshot, PDF, or document                |
+| `CV`                | Yes      | Resume text, screenshot, PDF, DOCX, or document               |
+| `APPLICANT_CONTEXT` | No       | Real projects, constraints, target seniority, preferred stack |
+| `OUTPUT_MODE`       | No       | `review`, `rewrite`, `checklist`, or `questions-only`         |
 
 ## Instructions
 

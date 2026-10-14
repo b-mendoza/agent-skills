@@ -8,15 +8,15 @@ Read this file only when a concrete review step needs static resume guidance, cu
 
 ## Source Map
 
-| Need | Fetch |
-| --- | --- |
-| Software engineer resume structure, ATS-readable formatting, section order, technical content expectations | https://www.techinterviewhandbook.org/resume/ |
-| Developer-resume perspective, fair representation of engineering work, practical examples | https://blog.pragmaticengineer.com/resume/ |
-| Technical resume sample, ATS-safe formatting reminders, project/leadership section ideas | https://ocs.yale.edu/resources/stemconnect-technical-resume-sample/ |
-| Impact bullets, quantification prompts, action/project/result and X/Y/Z framing | https://ocs.yale.edu/resources/writing-impactful-resume-bullets/ |
-| Action-context-result accomplishment statement guidance | https://careerdevelopment.princeton.edu/resume-guide/action-oriented-accomplishment-statements |
-| Action verb alternatives by category | https://ocs.yale.edu/resume-action-verbs/ |
-| Generic software developer duties, work activities, skills, and task baselines when the job posting is vague | https://www.onetonline.org/link/summary/15-1252.00 |
+| Need                                                                                                         | Fetch                                                                                          |
+| ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| Software engineer resume structure, ATS-readable formatting, section order, technical content expectations   | https://www.techinterviewhandbook.org/resume/                                                  |
+| Developer-resume perspective, fair representation of engineering work, practical examples                    | https://blog.pragmaticengineer.com/resume/                                                     |
+| Technical resume sample, ATS-safe formatting reminders, project/leadership section ideas                     | https://ocs.yale.edu/resources/stemconnect-technical-resume-sample/                            |
+| Impact bullets, quantification prompts, action/project/result and X/Y/Z framing                              | https://ocs.yale.edu/resources/writing-impactful-resume-bullets/                               |
+| Action-context-result accomplishment statement guidance                                                      | https://careerdevelopment.princeton.edu/resume-guide/action-oriented-accomplishment-statements |
+| Action verb alternatives by category                                                                         | https://ocs.yale.edu/resume-action-verbs/                                                      |
+| Generic software developer duties, work activities, skills, and task baselines when the job posting is vague | https://www.onetonline.org/link/summary/15-1252.00                                             |
 
 ## Fetch Timing
 

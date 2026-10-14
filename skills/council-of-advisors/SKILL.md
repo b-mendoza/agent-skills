@@ -15,14 +15,14 @@ Resolve `SKILL_DIR` as the directory containing this `SKILL.md` as loaded: the b
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `DECISION_SUBJECT` | Yes | `Launch a paid migration service` |
-| `STATED_CLAIM` | No | `Small teams will pay to avoid downtime` |
-| `DESIRED_OUTCOME` | No | `Reach $20k MRR without core-team distraction` |
-| `CONSTRAINTS` | No | `Two engineers, 90 days` |
-| `CURRENT_LEAN` | No | `I am leaning go` |
-| `HANDOFF_PATH` | No | `./council-handoff-migration-service.md` |
+| Input              | Required | Example                                        |
+| ------------------ | -------- | ---------------------------------------------- |
+| `DECISION_SUBJECT` | Yes      | `Launch a paid migration service`              |
+| `STATED_CLAIM`     | No       | `Small teams will pay to avoid downtime`       |
+| `DESIRED_OUTCOME`  | No       | `Reach $20k MRR without core-team distraction` |
+| `CONSTRAINTS`      | No       | `Two engineers, 90 days`                       |
+| `CURRENT_LEAN`     | No       | `I am leaning go`                              |
+| `HANDOFF_PATH`     | No       | `./council-handoff-migration-service.md`       |
 
 Default `HANDOFF_PATH`: `./council-handoff-<subject-slug>.md`. Clarify only when `DECISION_SUBJECT` is missing or unintelligible.
 
@@ -36,29 +36,29 @@ Nine seat files; not nine parallel advisors: (1) `reversibility-seat`; (2) seven
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `reversibility-seat` | `./subagents/reversibility-seat.md` | Type 1/2 + depth |
-| `adversary-seat` | `./subagents/adversary-seat.md` | Inversion / pre-mortem |
-| `optimistic-seat` | `./subagents/optimistic-seat.md` | Asymmetric upside |
-| `originality-seat` | `./subagents/originality-seat.md` | Prior art + branch |
-| `second-order-seat` | `./subagents/second-order-seat.md` | Consequences (info) |
-| `paradox-of-skill-seat` | `./subagents/paradox-of-skill-seat.md` | Saturation / luck |
-| `focus-seat` | `./subagents/focus-seat.md` | Opportunity cost |
-| `power-questions-seat` | `./subagents/power-questions-seat.md` | Ranked questions |
-| `chair-seat` | `./subagents/chair-seat.md` | Synthesis + dissent |
+| Subagent                | Path                                   | Purpose                |
+| ----------------------- | -------------------------------------- | ---------------------- |
+| `reversibility-seat`    | `./subagents/reversibility-seat.md`    | Type 1/2 + depth       |
+| `adversary-seat`        | `./subagents/adversary-seat.md`        | Inversion / pre-mortem |
+| `optimistic-seat`       | `./subagents/optimistic-seat.md`       | Asymmetric upside      |
+| `originality-seat`      | `./subagents/originality-seat.md`      | Prior art + branch     |
+| `second-order-seat`     | `./subagents/second-order-seat.md`     | Consequences (info)    |
+| `paradox-of-skill-seat` | `./subagents/paradox-of-skill-seat.md` | Saturation / luck      |
+| `focus-seat`            | `./subagents/focus-seat.md`            | Opportunity cost       |
+| `power-questions-seat`  | `./subagents/power-questions-seat.md`  | Ranked questions       |
+| `chair-seat`            | `./subagents/chair-seat.md`            | Synthesis + dissent    |
 
 Read a seat only on dispatch. Prefer runtime subagents; else run inline. Record `execution_fidelity: subagents` or `execution_fidelity: inline_degraded` in the run log. An inline run must disclose its degraded fidelity in the chat summary and cannot claim contextual independence (`G_INDEPENDENCE` then verifies payload-level isolation only). Retain statuses, packets, gate verdicts, paths, and concise summaries.
 
 ## Progressive Loading Map
 
-| Need | Load |
-| --- | --- |
-| Packet schemas | `./references/seat-output-schema.md` |
-| Gate predicates, caps, routes | `./references/decision-gates.md` |
-| Mental-model lesson content | `./references/mental-models.md` |
-| Educate-me templates | `./references/educate-me-lesson-template.md` |
-| State-transition table (canonical FSM) | `./state-machine.md` |
+| Need                                   | Load                                         |
+| -------------------------------------- | -------------------------------------------- |
+| Packet schemas                         | `./references/seat-output-schema.md`         |
+| Gate predicates, caps, routes          | `./references/decision-gates.md`             |
+| Mental-model lesson content            | `./references/mental-models.md`              |
+| Educate-me templates                   | `./references/educate-me-lesson-template.md` |
+| State-transition table (canonical FSM) | `./state-machine.md`                         |
 
 `decision-gates.md` is the sole normative source for gate predicates.
 

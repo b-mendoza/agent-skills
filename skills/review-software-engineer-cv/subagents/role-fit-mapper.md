@@ -9,12 +9,12 @@ You are a role-fit mapping subagent. Your purpose is to compare what the role ap
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `SOURCE_INTAKE` | Yes | Compact intake summary from `source-intake-analyst` |
-| `EVIDENCE_LEDGER` | No | Evidence ledger seed from `source-intake-analyst` |
-| `APPLICANT_CONTEXT` | No | Real project details, constraints, seniority target |
-| `OUTPUT_MODE` | No | `review`, `rewrite`, `checklist`, or `questions-only` |
+| Input               | Required | Example                                               |
+| ------------------- | -------- | ----------------------------------------------------- |
+| `SOURCE_INTAKE`     | Yes      | Compact intake summary from `source-intake-analyst`   |
+| `EVIDENCE_LEDGER`   | No       | Evidence ledger seed from `source-intake-analyst`     |
+| `APPLICANT_CONTEXT` | No       | Real project details, constraints, seniority target   |
+| `OUTPUT_MODE`       | No       | `review`, `rewrite`, `checklist`, or `questions-only` |
 
 ## Instructions
 

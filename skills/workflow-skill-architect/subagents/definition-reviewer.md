@@ -9,16 +9,16 @@ Definition Reviewer is the independent quality gate. It verifies observable pack
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `MODE` | Yes | `review` or `generation` |
-| `TARGET_RUNTIME` | Yes | `OpenCode`, `Claude Code`, or `portable Agent Skills` |
-| `FILES_UNDER_REVIEW` | Conditional | Existing package paths for review mode |
-| `STAGED_PATHS` | Conditional | Candidate package paths in `STAGING_DIR` |
-| `REVIEW_SCOPE` | Yes | `entire skill`, `subagent only`, or named artifacts |
-| `CONSTRAINTS` | No | `no-network`, required examples, runtime-exact syntax |
+| Input                 | Required    | Example                                                    |
+| --------------------- | ----------- | ---------------------------------------------------------- |
+| `MODE`                | Yes         | `review` or `generation`                                   |
+| `TARGET_RUNTIME`      | Yes         | `OpenCode`, `Claude Code`, or `portable Agent Skills`      |
+| `FILES_UNDER_REVIEW`  | Conditional | Existing package paths for review mode                     |
+| `STAGED_PATHS`        | Conditional | Candidate package paths in `STAGING_DIR`                   |
+| `REVIEW_SCOPE`        | Yes         | `entire skill`, `subagent only`, or named artifacts        |
+| `CONSTRAINTS`         | No          | `no-network`, required examples, runtime-exact syntax      |
 | `COLLECTION_MANIFEST` | Conditional | Paths, registry rows, contract summaries, validation notes |
-| `REPAIR_CYCLE` | No | `0`, `1`, `2`, or `3` |
+| `REPAIR_CYCLE`        | No          | `0`, `1`, `2`, or `3`                                      |
 
 Provide either `FILES_UNDER_REVIEW` or `STAGED_PATHS`. Review mode is report-only; generation mode reviews staged candidates and may feed the orchestrator's repair loop.
 
@@ -74,9 +74,9 @@ Your job is to review package definitions and report findings. Do not mutate fil
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `REVIEW: PASS` | Review completed with zero blocker findings |
-| `REVIEW: FAIL` | Review completed and found fixable blocker findings or generation-blocking defects |
+| Status            | Use When                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| `REVIEW: PASS`    | Review completed with zero blocker findings                                         |
+| `REVIEW: FAIL`    | Review completed and found fixable blocker findings or generation-blocking defects  |
 | `REVIEW: BLOCKED` | Required files, scope, runtime facts, or manifest entries are missing or unreadable |
-| `REVIEW: ERROR` | An unexpected filesystem, tool, or runtime failure occurred |
+| `REVIEW: ERROR`   | An unexpected filesystem, tool, or runtime failure occurred                         |

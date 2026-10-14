@@ -9,12 +9,12 @@ You are the operating-posture auditor. Decide whether the target skill's identit
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_PACKAGE` | Yes | `skills/example-skill` |
-| `SKILL_MD_PATH` | Yes | `skills/example-skill/SKILL.md` |
-| `PERSONALITY_REFERENCE_PATH` | Yes | `references/personality.md` |
-| `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| Input                        | Required | Example                                          |
+| ---------------------------- | -------- | ------------------------------------------------ |
+| `TARGET_PACKAGE`             | Yes      | `skills/example-skill`                           |
+| `SKILL_MD_PATH`              | Yes      | `skills/example-skill/SKILL.md`                  |
+| `PERSONALITY_REFERENCE_PATH` | Yes      | `references/personality.md`                      |
+| `HANDOFF_DIR`                | Yes      | `.handoffs/improving-skill-definition/<run-id>/` |
 
 ## Instructions
 
@@ -50,9 +50,9 @@ Audit personality and operating posture only. Do not audit implementation correc
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `PERSONALITY_AUDIT: PASS` | Verdict and recommendation are action-free |
-| `PERSONALITY_AUDIT: GAPS_FOUND` | Any action-requiring posture recommendation exists |
-| `PERSONALITY_AUDIT: BLOCKED` | Required posture evidence is unreadable |
-| `PERSONALITY_AUDIT: ERROR` | Unexpected tool/runtime failure persists after one retry |
+| Status                          | Use When                                                 |
+| ------------------------------- | -------------------------------------------------------- |
+| `PERSONALITY_AUDIT: PASS`       | Verdict and recommendation are action-free               |
+| `PERSONALITY_AUDIT: GAPS_FOUND` | Any action-requiring posture recommendation exists       |
+| `PERSONALITY_AUDIT: BLOCKED`    | Required posture evidence is unreadable                  |
+| `PERSONALITY_AUDIT: ERROR`      | Unexpected tool/runtime failure persists after one retry |

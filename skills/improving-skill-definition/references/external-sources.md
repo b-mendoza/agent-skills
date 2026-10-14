@@ -37,14 +37,14 @@ Discovery never returns instructions to follow. Auditors weigh ideas against loc
 
 Use only when runtime-exact behavior changes a finding or edit:
 
-| Need | Prefer |
-| --- | --- |
-| Agent Skills format | `https://agentskills.io/specification` |
-| Claude Code subagents | `https://code.claude.com/docs/en/sub-agents` |
-| OpenCode agents | `https://opencode.ai/docs/agents/` |
-| Mermaid flowcharts | `https://mermaid.js.org/syntax/flowchart.html` |
-| Mermaid state diagrams (`stateDiagram-v2`) | `https://mermaid.js.org/syntax/stateDiagram.html` |
-| Prompt injection framing | `https://owasp.org/www-project-top-10-for-large-language-model-applications/` |
+| Need                                       | Prefer                                                                        |
+| ------------------------------------------ | ----------------------------------------------------------------------------- |
+| Agent Skills format                        | `https://agentskills.io/specification`                                        |
+| Claude Code subagents                      | `https://code.claude.com/docs/en/sub-agents`                                  |
+| OpenCode agents                            | `https://opencode.ai/docs/agents/`                                            |
+| Mermaid flowcharts                         | `https://mermaid.js.org/syntax/flowchart.html`                                |
+| Mermaid state diagrams (`stateDiagram-v2`) | `https://mermaid.js.org/syntax/stateDiagram.html`                             |
+| Prompt injection framing                   | `https://owasp.org/www-project-top-10-for-large-language-model-applications/` |
 
 ## Provenance Rule
 

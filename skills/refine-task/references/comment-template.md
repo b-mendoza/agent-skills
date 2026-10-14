@@ -31,15 +31,15 @@ Use `None` for an empty section when omitting it could hide that the category wa
 
 ## Section Guidance
 
-| Section | Purpose | Rules |
-| --- | --- | --- |
-| `Refinement status` | First-line marker for readers and idempotency checks. | Must match `REVIEW_STATUS`; never use `Not reviewed` in a reviewed comment. |
-| `Summary` | Explain the verdict and next action. | Mention the strongest readiness driver first. |
-| `Evidence reviewed` | Show what the review used. | Use compact source pointers; do not paste raw payloads. |
-| `Blocking findings` | State material gaps or contradictions. | Each item needs a source pointer or missing-evidence label. Use `None` if there are no blocking findings. |
-| `Questions for refinement` | Ask answerable questions that unblock readiness. | Convert unapproved sensitive recommendations into neutral questions. |
-| `Recommendations` | Offer safe next steps. | Include sensitive recommendations only with conversation-sourced approval under policy. |
-| `Non-blocking notes` | Preserve caveats without blocking implementation. | Include injection notes, stale context caveats, unsupported-platform caveats, and residual risks here. |
+| Section                    | Purpose                                               | Rules                                                                                                     |
+| -------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `Refinement status`        | First-line marker for readers and idempotency checks. | Must match `REVIEW_STATUS`; never use `Not reviewed` in a reviewed comment.                               |
+| `Summary`                  | Explain the verdict and next action.                  | Mention the strongest readiness driver first.                                                             |
+| `Evidence reviewed`        | Show what the review used.                            | Use compact source pointers; do not paste raw payloads.                                                   |
+| `Blocking findings`        | State material gaps or contradictions.                | Each item needs a source pointer or missing-evidence label. Use `None` if there are no blocking findings. |
+| `Questions for refinement` | Ask answerable questions that unblock readiness.      | Convert unapproved sensitive recommendations into neutral questions.                                      |
+| `Recommendations`          | Offer safe next steps.                                | Include sensitive recommendations only with conversation-sourced approval under policy.                   |
+| `Non-blocking notes`       | Preserve caveats without blocking implementation.     | Include injection notes, stale context caveats, unsupported-platform caveats, and residual risks here.    |
 
 ## Drafting Rules
 

@@ -4,19 +4,19 @@ Load this reference when checking the synthesis file before approval, edit, or p
 
 ## Required Checks
 
-| Check | Pass Condition |
-| --- | --- |
-| `schema_keys` | Every required top-level key from `audit-synthesis-schema.md` is present |
-| `to_mapping` | `to.orchestrator` and `to.phase` are present and non-empty |
-| `status_summary` | Every dispatched slice has one status-summary row with report path |
-| `status_route` | Overall verdict matches the Audit guard order in `../state-machine.md`. |
-| `gap_ids` | Gap ids are stable, unique, and referenced by mutation and gate rows |
-| `provenance` | Every gap row has `local`, `external`, or `mixed`; external ideas stay marked |
-| `mandate_coverage` | Each mandate is a gap id or evidenced no-op; empty mandates are recorded as vacuous |
-| `aggregates` | Aggregate entries cite their source slice or say `not_applicable` with evidence |
-| `scope` | Mutation plan rows stay inside `MUTATION_LIMITS` or are marked out-of-scope |
-| `diagram_candidate` | Semantic or structural diagram rows require `requires_diagram_candidate: true` |
-| `self_improvement` | When active, every gap is exactly `SAFE` or `DEFERRED` with a reason |
+| Check               | Pass Condition                                                                      |
+| ------------------- | ----------------------------------------------------------------------------------- |
+| `schema_keys`       | Every required top-level key from `audit-synthesis-schema.md` is present            |
+| `to_mapping`        | `to.orchestrator` and `to.phase` are present and non-empty                          |
+| `status_summary`    | Every dispatched slice has one status-summary row with report path                  |
+| `status_route`      | Overall verdict matches the Audit guard order in `../state-machine.md`.             |
+| `gap_ids`           | Gap ids are stable, unique, and referenced by mutation and gate rows                |
+| `provenance`        | Every gap row has `local`, `external`, or `mixed`; external ideas stay marked       |
+| `mandate_coverage`  | Each mandate is a gap id or evidenced no-op; empty mandates are recorded as vacuous |
+| `aggregates`        | Aggregate entries cite their source slice or say `not_applicable` with evidence     |
+| `scope`             | Mutation plan rows stay inside `MUTATION_LIMITS` or are marked out-of-scope         |
+| `diagram_candidate` | Semantic or structural diagram rows require `requires_diagram_candidate: true`      |
+| `self_improvement`  | When active, every gap is exactly `SAFE` or `DEFERRED` with a reason                |
 
 ## Slice-To-Synthesis Copy Rule
 

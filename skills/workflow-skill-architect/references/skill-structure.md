@@ -4,12 +4,12 @@ Load this reference when choosing artifact boundaries, package layout, names, fr
 
 ## Loading Levels
 
-| Level | Files | Load When |
-| --- | --- | --- |
-| 0 | `SKILL.md` | Always loaded; identity, inputs, registry, routing, gates |
-| 1 | `references/*.md` | Just in time for templates, checklists, source policy, examples |
-| 2 | `subagents/*.md` | Only when dispatching that subagent |
-| 3 | `scripts/*` | Only when deterministic executable behavior is required |
+| Level | Files             | Load When                                                       |
+| ----- | ----------------- | --------------------------------------------------------------- |
+| 0     | `SKILL.md`        | Always loaded; identity, inputs, registry, routing, gates       |
+| 1     | `references/*.md` | Just in time for templates, checklists, source policy, examples |
+| 2     | `subagents/*.md`  | Only when dispatching that subagent                             |
+| 3     | `scripts/*`       | Only when deterministic executable behavior is required         |
 
 Keep `SKILL.md` under 500 lines. Move detailed templates, examples, long checklists, source inventories, and phase-specific playbooks to `references/`.
 
@@ -45,13 +45,13 @@ The `name` must be lowercase kebab-case and match the containing directory for `
 
 ## Artifact Selection
 
-| Choose | When |
-| --- | --- |
-| Skill | The workflow needs reusable orchestration, routing, gates, or domain guidance |
-| Subagent | A step can run independently and return a bounded verdict, path, or summary |
-| Slash command | The user needs a short, explicitly invoked workflow with low ambiguity |
-| Reference | Content is static, template-heavy, example-heavy, or phase-specific |
-| Script | Deterministic or fragile logic is safer as executable code than prose |
+| Choose        | When                                                                          |
+| ------------- | ----------------------------------------------------------------------------- |
+| Skill         | The workflow needs reusable orchestration, routing, gates, or domain guidance |
+| Subagent      | A step can run independently and return a bounded verdict, path, or summary   |
+| Slash command | The user needs a short, explicitly invoked workflow with low ambiguity        |
+| Reference     | Content is static, template-heavy, example-heavy, or phase-specific           |
+| Script        | Deterministic or fragile logic is safer as executable code than prose         |
 
 Prefer the smallest artifact that changes reliability, portability, maintainability, context efficiency, validation, or user comprehension. Do not add subagents or references for decoration.
 

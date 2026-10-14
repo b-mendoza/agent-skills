@@ -9,20 +9,20 @@ You are the workflow diagram builder. Produce one candidate that exposes what an
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PROCESS_INPUTS` | Yes | Normalized bundle from `../references/input-contract.md` |
-| `RUN_MODE` | Yes | `new`, `refinement`, `repair`, or `decompose`; immutable for the run |
-| `BUILD_ACTION` | No | `build` (default) or `repair` for an internal repair cycle; mode obligations still follow `RUN_MODE` |
-| `MUTATION_LIMITS` | Conditional - required when `RUN_MODE=decompose` | Package boundary and allowed write targets |
-| `EXISTING_FLOW_OR_DIAGRAM` | Conditional - required when `RUN_MODE=refinement`; required for decompose `re-scope` | Baseline Mermaid or prose |
-| `APPROVED_REFINEMENT_GAPS` | Conditional - required when `RUN_MODE=refinement` | `G1, G3` or `none` |
-| `CANDIDATE_MARKDOWN` | Conditional - required when `RUN_MODE=repair` | Current failed candidate |
-| `REVIEW_FEEDBACK` | Conditional - required when `RUN_MODE=repair` | Targeted failed checks |
-| `DIAGRAM_SCOPE` | No | `whole`, `orchestrator`, or `subagent` |
-| `SCOPE_SUBAGENT_NAME` | Conditional - required when `DIAGRAM_SCOPE=subagent` | `refinement-analyst` |
-| `SCOPE_CONTEXT` | Conditional - required for scoped or decompose generation when ownership cannot be derived from the request alone | Owned nodes, cross-links, action |
-| `ROOT_DIAGRAM_RELATIVE_LINK` | Conditional - required for localized subagent diagrams when root path is non-default | `../flow-diagram.md` |
+| Input                        | Required                                                                                                          | Example                                                                                              |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `PROCESS_INPUTS`             | Yes                                                                                                               | Normalized bundle from `../references/input-contract.md`                                             |
+| `RUN_MODE`                   | Yes                                                                                                               | `new`, `refinement`, `repair`, or `decompose`; immutable for the run                                 |
+| `BUILD_ACTION`               | No                                                                                                                | `build` (default) or `repair` for an internal repair cycle; mode obligations still follow `RUN_MODE` |
+| `MUTATION_LIMITS`            | Conditional - required when `RUN_MODE=decompose`                                                                  | Package boundary and allowed write targets                                                           |
+| `EXISTING_FLOW_OR_DIAGRAM`   | Conditional - required when `RUN_MODE=refinement`; required for decompose `re-scope`                              | Baseline Mermaid or prose                                                                            |
+| `APPROVED_REFINEMENT_GAPS`   | Conditional - required when `RUN_MODE=refinement`                                                                 | `G1, G3` or `none`                                                                                   |
+| `CANDIDATE_MARKDOWN`         | Conditional - required when `RUN_MODE=repair`                                                                     | Current failed candidate                                                                             |
+| `REVIEW_FEEDBACK`            | Conditional - required when `RUN_MODE=repair`                                                                     | Targeted failed checks                                                                               |
+| `DIAGRAM_SCOPE`              | No                                                                                                                | `whole`, `orchestrator`, or `subagent`                                                               |
+| `SCOPE_SUBAGENT_NAME`        | Conditional - required when `DIAGRAM_SCOPE=subagent`                                                              | `refinement-analyst`                                                                                 |
+| `SCOPE_CONTEXT`              | Conditional - required for scoped or decompose generation when ownership cannot be derived from the request alone | Owned nodes, cross-links, action                                                                     |
+| `ROOT_DIAGRAM_RELATIVE_LINK` | Conditional - required for localized subagent diagrams when root path is non-default                              | `../flow-diagram.md`                                                                                 |
 
 ## Instructions
 
@@ -72,9 +72,9 @@ Your job is to build or repair one candidate. Do not review, write files, edit l
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `NEEDS_INPUT` | Required process, approval, scope, repair, or mutation inputs are missing |
-| `ERROR` | Unexpected generation, formatting, or source-fetch failure prevents a candidate |
+| Status        | When                                                                            |
+| ------------- | ------------------------------------------------------------------------------- |
+| `NEEDS_INPUT` | Required process, approval, scope, repair, or mutation inputs are missing       |
+| `ERROR`       | Unexpected generation, formatting, or source-fetch failure prevents a candidate |
 
 For non-pass statuses, include the smallest recovery action.

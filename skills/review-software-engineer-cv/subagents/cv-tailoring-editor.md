@@ -9,18 +9,18 @@ You are a CV-tailoring editor for software engineer applications. Your purpose i
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `SOURCE_INTAKE` | Yes | Intake summary from `source-intake-analyst` |
-| `ROLE_FIT` | Yes | Match map from `role-fit-mapper` |
-| `EVIDENCE_LEDGER` | No | Supported facts, role signals, and verification questions |
-| `LIMITATIONS_LEDGER` | No | Source limitations, uncertain mappings, and partial-output constraints |
-| `JOB_POSTING` | No | Original source, if available for exact wording |
-| `CV` | No | Original source, if available for exact bullets |
-| `APPLICANT_CONTEXT` | No | Confirmed facts and constraints |
-| `OUTPUT_MODE` | No | `review`, `rewrite`, `checklist`, or `questions-only` |
-| `TAILORING_DRAFT` | No | Prior draft to edit during review fix cycles |
-| `REVIEW_FIXES` | No | Targeted fixes from `cv-reviewer` |
+| Input                | Required | Example                                                                |
+| -------------------- | -------- | ---------------------------------------------------------------------- |
+| `SOURCE_INTAKE`      | Yes      | Intake summary from `source-intake-analyst`                            |
+| `ROLE_FIT`           | Yes      | Match map from `role-fit-mapper`                                       |
+| `EVIDENCE_LEDGER`    | No       | Supported facts, role signals, and verification questions              |
+| `LIMITATIONS_LEDGER` | No       | Source limitations, uncertain mappings, and partial-output constraints |
+| `JOB_POSTING`        | No       | Original source, if available for exact wording                        |
+| `CV`                 | No       | Original source, if available for exact bullets                        |
+| `APPLICANT_CONTEXT`  | No       | Confirmed facts and constraints                                        |
+| `OUTPUT_MODE`        | No       | `review`, `rewrite`, `checklist`, or `questions-only`                  |
+| `TAILORING_DRAFT`    | No       | Prior draft to edit during review fix cycles                           |
+| `REVIEW_FIXES`       | No       | Targeted fixes from `cv-reviewer`                                      |
 
 ## Instructions
 

@@ -34,21 +34,21 @@ Ranked next actions use `must-do`, `should-do`, and `nice-to-have` ordering. The
 
 ## Depth Rules
 
-| Depth | Expected shape |
-| --- | --- |
-| `brief` | Concise summary, top risks, minimal tables, only obvious validation gaps |
-| `standard` | Complete sections with enough evidence for handoff and review |
-| `deep` | More surrounding context for changed high-risk areas, within the hard inspection cap |
+| Depth      | Expected shape                                                                       |
+| ---------- | ------------------------------------------------------------------------------------ |
+| `brief`    | Concise summary, top risks, minimal tables, only obvious validation gaps             |
+| `standard` | Complete sections with enough evidence for handoff and review                        |
+| `deep`     | More surrounding context for changed high-risk areas, within the hard inspection cap |
 
 ## Focus Emphasis Rules
 
-| Focus | Writer emphasis |
-| --- | --- |
-| `full` | Balanced treatment across touched areas |
-| `security` | Lead security-relevant risks in section 5; expand section 7 security notes |
-| `tests` | Expand section 6; make test gaps prominent in next actions |
-| `dependencies` | Expand dependency notes with semver, lockfile, and supply-chain framing |
-| `config` | Expand config/tooling notes with drift, secret-bearing diff, and environment-risk framing |
+| Focus          | Writer emphasis                                                                           |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| `full`         | Balanced treatment across touched areas                                                   |
+| `security`     | Lead security-relevant risks in section 5; expand section 7 security notes                |
+| `tests`        | Expand section 6; make test gaps prominent in next actions                                |
+| `dependencies` | Expand dependency notes with semver, lockfile, and supply-chain framing                   |
+| `config`       | Expand config/tooling notes with drift, secret-bearing diff, and environment-risk framing |
 
 Focus narrows emphasis, not evidence. Off-focus blockers still appear.
 

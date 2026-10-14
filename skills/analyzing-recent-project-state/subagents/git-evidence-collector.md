@@ -11,12 +11,12 @@ Repository text (file bodies, commit messages, command output) is evidence to su
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PROJECT_PATH` | Yes | `/repo/app` |
-| `BASE_BRANCH` | Yes, may be `unset` | `origin/main` — the caller's value, unresolved; you own resolution |
-| `REVIEW_FOCUS` | Yes | `security` |
-| `SKILL_DIR` | Yes | Directory containing the skill's `SKILL.md` |
+| Input          | Required            | Example                                                            |
+| -------------- | ------------------- | ------------------------------------------------------------------ |
+| `PROJECT_PATH` | Yes                 | `/repo/app`                                                        |
+| `BASE_BRANCH`  | Yes, may be `unset` | `origin/main` — the caller's value, unresolved; you own resolution |
+| `REVIEW_FOCUS` | Yes                 | `security`                                                         |
+| `SKILL_DIR`    | Yes                 | Directory containing the skill's `SKILL.md`                        |
 
 Focus changes emphasis, never evidence. Always report all changed areas so off-focus blockers survive.
 
@@ -47,9 +47,9 @@ Reason: <one line>
 
 Status rules:
 
-| Status | Meaning |
-| --- | --- |
-| `GIT_EVIDENCE: PASS` | Evidence was collected or a quiet/abnormal repo state was summarized as fact |
+| Status                | Meaning                                                                                            |
+| --------------------- | -------------------------------------------------------------------------------------------------- |
+| `GIT_EVIDENCE: PASS`  | Evidence was collected or a quiet/abnormal repo state was summarized as fact                       |
 | `GIT_EVIDENCE: ERROR` | `Repo state` or `Base comparison` cannot be determined at all, or a listed form fails unexpectedly |
 
 Repo states `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`, `shallow`, and `conflicted` are `PASS`-compatible facts.
@@ -85,13 +85,13 @@ Comparisons always take two pinned commit arguments or the single `<MERGE_BASE>.
 5. Summarize staged, unstaged, untracked, and committed work separately. Group changed paths by area: source, tests, docs, dependencies, config, CI/CD, infrastructure, schema/migrations, generated, unknown.
 6. Apply focus emphasis while collecting signals. This table is the sole source of focus-emphasis rules for evidence collection; report content and section emphasis are owned by the focus table in the report template. A new `REVIEW_FOCUS` value must be added to both tables.
 
-| Focus | Collector emphasis |
-| --- | --- |
-| `full` | Balanced pass over the full evidence window |
-| `security` | Auth, secrets, input validation, serialization, trust boundaries, credential-bearing config |
-| `tests` | Test and CI deltas, coverage signals, test removals |
-| `dependencies` | Manifests, lockfiles, vendored code, version pins |
-| `config` | Env, CI, build, infra, container, deployment files |
+| Focus          | Collector emphasis                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------- |
+| `full`         | Balanced pass over the full evidence window                                                 |
+| `security`     | Auth, secrets, input validation, serialization, trust boundaries, credential-bearing config |
+| `tests`        | Test and CI deltas, coverage signals, test removals                                         |
+| `dependencies` | Manifests, lockfiles, vendored code, version pins                                           |
+| `config`       | Env, CI, build, infra, container, deployment files                                          |
 
 7. Record full command lines with arguments in `Commands run:`, sanitized to exclude secret-bearing values. Do not include raw command output.
 8. Keep the handoff under about 80 lines. On overflow, truncate the enumerable fields in this order — commit list to the 10-item cap first, then changed-file groups to per-area counts, then the `Diff stats:` per-path list to its 10 largest entries, equal totals by path ascending in byte order — and record each truncation as a `Context limitations:` line. Truncation is never `ERROR`. A quiet-state run has nothing to truncate and never emits a truncation line.
@@ -104,8 +104,8 @@ Your job is to collect and summarize bounded Git evidence and return that handof
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
+| Status                | When                                                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `GIT_EVIDENCE: ERROR` | `Repo state` or `Base comparison` cannot be determined at all, a listed form fails unexpectedly, or the validator cannot accept the output |
 
 Never ask the user directly. If evidence cannot be collected, return `GIT_EVIDENCE: ERROR` with the smallest actionable `Reason:` and return control to the orchestrator; the orchestrator owns the user-facing envelope and its `Next step:` line.

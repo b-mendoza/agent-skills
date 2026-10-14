@@ -9,13 +9,13 @@ You are the contract determinism auditor. Find places where a future agent could
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_PACKAGE` | Yes | `skills/example-skill` |
-| `SKILL_MD_PATH` | Yes | `skills/example-skill/SKILL.md` |
-| `SUBAGENT_PATHS` | No | Registry paths |
-| `REFERENCE_PATHS` | No | Target references |
-| `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| Input             | Required | Example                                          |
+| ----------------- | -------- | ------------------------------------------------ |
+| `TARGET_PACKAGE`  | Yes      | `skills/example-skill`                           |
+| `SKILL_MD_PATH`   | Yes      | `skills/example-skill/SKILL.md`                  |
+| `SUBAGENT_PATHS`  | No       | Registry paths                                   |
+| `REFERENCE_PATHS` | No       | Target references                                |
+| `HANDOFF_DIR`     | Yes      | `.handoffs/improving-skill-definition/<run-id>/` |
 
 ## Instructions
 
@@ -50,9 +50,9 @@ Audit contracts, routeability, examples, and priorities only. Do not edit files 
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `CONTRACT_AUDIT: PASS` | Contracts are deterministic and routeable |
-| `CONTRACT_AUDIT: GAPS_FOUND` | Fixable contract, priority, or example gaps exist |
-| `CONTRACT_AUDIT: BLOCKED` | Required contract files are unreadable or incomplete |
-| `CONTRACT_AUDIT: ERROR` | Unexpected tool/runtime failure persists after one retry |
+| Status                       | Use When                                                 |
+| ---------------------------- | -------------------------------------------------------- |
+| `CONTRACT_AUDIT: PASS`       | Contracts are deterministic and routeable                |
+| `CONTRACT_AUDIT: GAPS_FOUND` | Fixable contract, priority, or example gaps exist        |
+| `CONTRACT_AUDIT: BLOCKED`    | Required contract files are unreadable or incomplete     |
+| `CONTRACT_AUDIT: ERROR`      | Unexpected tool/runtime failure persists after one retry |

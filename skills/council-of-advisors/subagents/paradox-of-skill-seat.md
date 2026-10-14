@@ -37,11 +37,11 @@ Your job is edge and saturation. Do not turn uncertainty into fake precision or 
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
+| Status    | Use When                                                                       |
+| --------- | ------------------------------------------------------------------------------ |
 | `BLOCKED` | The packet lacks the field/domain or user edge information needed for analysis |
-| `FAIL` | The verdict would depend on invented base rates or unsupported statistics |
-| `ERROR` | A runtime or tool failure prevents a safe packet |
+| `FAIL`    | The verdict would depend on invented base rates or unsupported statistics      |
+| `ERROR`   | A runtime or tool failure prevents a safe packet                               |
 
 When escalating, return:
 

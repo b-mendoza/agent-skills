@@ -4,29 +4,29 @@ This checklist is consumed by `handoff-reviewer`. Status semantics, repair limit
 
 ## Review Inputs
 
-| Input | Required | Purpose |
-| --- | --- | --- |
-| `TARGET_FILE` | Yes | Final handoff document to review |
-| `CONTEXT_FILE` | Yes | Trace source for scope and Q&A |
-| `INSIGHTS_FILE` | Yes | Trace source for insights |
-| `CLAIMS_FILE` | Conditional | Trace source when claim validation ran |
-| `DATA_CONTRACTS_FILE` | Yes | Statuses, schemas, checks, and rerun order |
+| Input                 | Required    | Purpose                                    |
+| --------------------- | ----------- | ------------------------------------------ |
+| `TARGET_FILE`         | Yes         | Final handoff document to review           |
+| `CONTEXT_FILE`        | Yes         | Trace source for scope and Q&A             |
+| `INSIGHTS_FILE`       | Yes         | Trace source for insights                  |
+| `CLAIMS_FILE`         | Conditional | Trace source when claim validation ran     |
+| `DATA_CONTRACTS_FILE` | Yes         | Statuses, schemas, checks, and rerun order |
 
 ## Gates
 
-| Gate | Check | Rerun Target |
-| --- | --- | --- |
-| Required structure | Exactly five major `## N.` sections, each with `**Fulfills:**` | `document-assembler` |
-| Metadata and artifacts | Session Metadata includes counts and Working Artifacts; listed paths exist or are `none` | `document-assembler` |
-| Scope preservation | Mandate, original instructions, amendments, and update-mode carry-forward match `CONTEXT_FILE` | `context-extractor`, `document-assembler` |
-| Q&A traceability | Q&A items are ordered and attributed; zero-state text is used only when appropriate | `context-extractor`, `document-assembler` |
-| Evidence per insight | Each non-empty insight has rationale and concrete evidence; priority and verification status are rendered | `insight-documenter`, `document-assembler` |
-| Claims caution | Skipped, unverified, partial, and refuted claims are not presented as verified facts | `claim-validator`, `document-assembler` |
-| Open questions | Open questions and next steps are concrete; zero-state text is used when none remain | `document-assembler` |
-| Placeholder cleanup | No `<placeholder>` text or source-only marker remains | `document-assembler` |
-| Vacuity | If Sections 2 through 4 are all zero-state, an advisory banner exists and verdict is at most warn | `document-assembler` |
-| Redaction | No credential, token, key, or personal-data value appears unredacted in the document, Session Metadata, or the supplied context/insights/claims artifacts (see Secret and PII Redaction in `data-contracts.md`) | Producer of the leaking artifact, then `document-assembler` |
-| Continuation readiness | All six Continuation-Readiness Criteria in data-contracts.md pass | Smallest affected producer then `document-assembler` |
+| Gate                   | Check                                                                                                                                                                                                           | Rerun Target                                                |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Required structure     | Exactly five major `## N.` sections, each with `**Fulfills:**`                                                                                                                                                  | `document-assembler`                                        |
+| Metadata and artifacts | Session Metadata includes counts and Working Artifacts; listed paths exist or are `none`                                                                                                                        | `document-assembler`                                        |
+| Scope preservation     | Mandate, original instructions, amendments, and update-mode carry-forward match `CONTEXT_FILE`                                                                                                                  | `context-extractor`, `document-assembler`                   |
+| Q&A traceability       | Q&A items are ordered and attributed; zero-state text is used only when appropriate                                                                                                                             | `context-extractor`, `document-assembler`                   |
+| Evidence per insight   | Each non-empty insight has rationale and concrete evidence; priority and verification status are rendered                                                                                                       | `insight-documenter`, `document-assembler`                  |
+| Claims caution         | Skipped, unverified, partial, and refuted claims are not presented as verified facts                                                                                                                            | `claim-validator`, `document-assembler`                     |
+| Open questions         | Open questions and next steps are concrete; zero-state text is used when none remain                                                                                                                            | `document-assembler`                                        |
+| Placeholder cleanup    | No `<placeholder>` text or source-only marker remains                                                                                                                                                           | `document-assembler`                                        |
+| Vacuity                | If Sections 2 through 4 are all zero-state, an advisory banner exists and verdict is at most warn                                                                                                               | `document-assembler`                                        |
+| Redaction              | No credential, token, key, or personal-data value appears unredacted in the document, Session Metadata, or the supplied context/insights/claims artifacts (see Secret and PII Redaction in `data-contracts.md`) | Producer of the leaking artifact, then `document-assembler` |
+| Continuation readiness | All six Continuation-Readiness Criteria in data-contracts.md pass                                                                                                                                               | Smallest affected producer then `document-assembler`        |
 
 For Continuation readiness, apply each Continuation-Readiness Criterion in data-contracts.md and name every failed criterion in the review summary. [F-06]
 

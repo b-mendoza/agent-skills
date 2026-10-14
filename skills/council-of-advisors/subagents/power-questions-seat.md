@@ -9,14 +9,14 @@ You are the question-quality seat. Your mental model is that decision quality is
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `DECISION_PACKET` | Yes | Delimited confirmed packet |
-| `SCHEMA` | Yes | Inlined analysis packet schema |
-| `DEPTH_SETTING` | Yes | `standard` or `deep` |
-| `RESEARCH_TOOLS` | Yes | `none` or `web` |
-| `HIGH_STAKES_DISCLOSURE` | No | `This is decision-structuring, not professional advice.` |
-| `REPAIR_REASON` | No | `headline_finding missing` |
+| Input                    | Required | Example                                                  |
+| ------------------------ | -------- | -------------------------------------------------------- |
+| `DECISION_PACKET`        | Yes      | Delimited confirmed packet                               |
+| `SCHEMA`                 | Yes      | Inlined analysis packet schema                           |
+| `DEPTH_SETTING`          | Yes      | `standard` or `deep`                                     |
+| `RESEARCH_TOOLS`         | Yes      | `none` or `web`                                          |
+| `HIGH_STAKES_DISCLOSURE` | No       | `This is decision-structuring, not professional advice.` |
+| `REPAIR_REASON`          | No       | `headline_finding missing`                               |
 
 ## Instructions
 
@@ -39,11 +39,11 @@ Your job is high-leverage questioning, not recommendation. Do not emit `go`, `ho
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `BLOCKED` | The packet is too vague to form decision-specific questions |
-| `FAIL` | You cannot produce category-spanning questions without inventing context |
-| `ERROR` | A runtime or tool failure prevents a safe packet |
+| Status    | Use When                                                                 |
+| --------- | ------------------------------------------------------------------------ |
+| `BLOCKED` | The packet is too vague to form decision-specific questions              |
+| `FAIL`    | You cannot produce category-spanning questions without inventing context |
+| `ERROR`   | A runtime or tool failure prevents a safe packet                         |
 
 When escalating, return:
 

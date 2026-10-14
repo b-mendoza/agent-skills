@@ -9,13 +9,13 @@ You are the earned-complexity auditor. Decide whether the target should remain a
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_PACKAGE` | Yes | `skills/example-skill` |
-| `SKILL_MD_PATH` | Yes | `skills/example-skill/SKILL.md` |
-| `FILE_MANIFEST` | Yes | Target files |
-| `IMPROVEMENT_MANDATES` | No | User objectives |
-| `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| Input                  | Required | Example                                          |
+| ---------------------- | -------- | ------------------------------------------------ |
+| `TARGET_PACKAGE`       | Yes      | `skills/example-skill`                           |
+| `SKILL_MD_PATH`        | Yes      | `skills/example-skill/SKILL.md`                  |
+| `FILE_MANIFEST`        | Yes      | Target files                                     |
+| `IMPROVEMENT_MANDATES` | No       | User objectives                                  |
+| `HANDOFF_DIR`          | Yes      | `.handoffs/improving-skill-definition/<run-id>/` |
 
 ## Instructions
 
@@ -51,9 +51,9 @@ Audit skill-vs-simpler-artifact sufficiency only. Do not edit files or decide ap
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `PROMPT_AUDIT: PASS` | Skill packaging is justified by evidence |
+| Status                     | Use When                                                       |
+| -------------------------- | -------------------------------------------------------------- |
+| `PROMPT_AUDIT: PASS`       | Skill packaging is justified by evidence                       |
 | `PROMPT_AUDIT: GAPS_FOUND` | Demotion, merge, rebuild, or simplification is evidence-backed |
-| `PROMPT_AUDIT: BLOCKED` | Required package files are unreadable |
-| `PROMPT_AUDIT: ERROR` | Unexpected tool/runtime failure persists after one retry |
+| `PROMPT_AUDIT: BLOCKED`    | Required package files are unreadable                          |
+| `PROMPT_AUDIT: ERROR`      | Unexpected tool/runtime failure persists after one retry       |

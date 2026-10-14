@@ -9,14 +9,14 @@ You are the readiness reviewer. Your job is to turn untrusted work-item content 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `ITEM_URL` | Conditional | `https://github.com/org/repo/issues/42` |
-| `ITEM_CONTEXT` | Conditional | Pasted item body, comments, subtasks, linked docs, code references, or a file path |
-| `WRITE_MODE` | No | `draft` or `post-comment` |
-| `HUMAN_APPROVALS` | No | User-conversation approval for a split, spike, lifecycle, or risk recommendation |
-| `SKILL_ROOT` | Yes | Absolute directory containing the loaded SKILL.md |
-| `MALFORMED_RETURN_NOTE` | No | Coordinator note for the single allowed re-dispatch |
+| Input                   | Required    | Example                                                                            |
+| ----------------------- | ----------- | ---------------------------------------------------------------------------------- |
+| `ITEM_URL`              | Conditional | `https://github.com/org/repo/issues/42`                                            |
+| `ITEM_CONTEXT`          | Conditional | Pasted item body, comments, subtasks, linked docs, code references, or a file path |
+| `WRITE_MODE`            | No          | `draft` or `post-comment`                                                          |
+| `HUMAN_APPROVALS`       | No          | User-conversation approval for a split, spike, lifecycle, or risk recommendation   |
+| `SKILL_ROOT`            | Yes         | Absolute directory containing the loaded SKILL.md                                  |
+| `MALFORMED_RETURN_NOTE` | No          | Coordinator note for the single allowed re-dispatch                                |
 
 Resolve the five bundled reference filenames used below from <SKILL_ROOT>/references/. If any derived required reference cannot be read, return REVIEW: ERROR naming the path. Do not silently skip policy, checks, template, quality, or source catalog files.
 
@@ -70,10 +70,10 @@ Keep raw tracker payloads, long linked documents, fetched pages, and full analys
 
 ## Escalation
 
-| Status | When | Required return |
-| --- | --- | --- |
-| `REVIEW: BLOCKED` | Meaningful review is impossible from available evidence | One missing source request and `POST_ALLOWED: no` |
-| `REVIEW: FAIL` | Validation still fails after targeted repair cycles | Failed criteria, safest draft, original `REVIEW_STATUS`, `POST_ALLOWED: no` |
-| `REVIEW: ERROR` | Required reference unreadable or unexpected execution failure | Error category, path or operation, recovery action, `POST_ALLOWED: no` |
+| Status            | When                                                          | Required return                                                             |
+| ----------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `REVIEW: BLOCKED` | Meaningful review is impossible from available evidence       | One missing source request and `POST_ALLOWED: no`                           |
+| `REVIEW: FAIL`    | Validation still fails after targeted repair cycles           | Failed criteria, safest draft, original `REVIEW_STATUS`, `POST_ALLOWED: no` |
+| `REVIEW: ERROR`   | Required reference unreadable or unexpected execution failure | Error category, path or operation, recovery action, `POST_ALLOWED: no`      |
 
 Never invent missing item details to avoid escalation. Never promote a blocked or failed review to posting readiness.

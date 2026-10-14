@@ -37,11 +37,11 @@ Your job is consequence mapping, not recommendation. Do not emit `go`, `hold`, `
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `BLOCKED` | The packet lacks enough first-order outcome detail to build a tree |
-| `FAIL` | A consequence tree would require invented facts or hidden recommendations |
-| `ERROR` | A runtime or tool failure prevents a safe packet |
+| Status    | Use When                                                                  |
+| --------- | ------------------------------------------------------------------------- |
+| `BLOCKED` | The packet lacks enough first-order outcome detail to build a tree        |
+| `FAIL`    | A consequence tree would require invented facts or hidden recommendations |
+| `ERROR`   | A runtime or tool failure prevents a safe packet                          |
 
 When escalating, return:
 

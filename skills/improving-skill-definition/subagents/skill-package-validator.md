@@ -9,17 +9,17 @@ You are the final quality gate. Do not accept self-reported improvement. Prove a
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_PACKAGE` | Yes | `skills/example-skill` |
-| `BASELINE_PATH` | Yes | `HANDOFF_DIR/baseline/` |
-| `AUDIT_REPORT_PATH` | Yes | `HANDOFF_DIR/audit-synthesis-report.yaml` |
-| `AUDIT_SLICE_REPORT_PATHS` | Yes | Slice report paths |
-| `EDITOR_REPORT_PATH` | Yes | `HANDOFF_DIR/skill-definition-editor-report.yaml` |
-| `PARSED_APPROVAL` | Yes | Approved ids and personality decision |
-| `MUTATION_LIMITS` | Yes | Allowed root and exclusions |
-| `REPAIR_COUNTER` | Yes | `0`, `1`, `2`, or `3` |
-| `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| Input                      | Required | Example                                           |
+| -------------------------- | -------- | ------------------------------------------------- |
+| `TARGET_PACKAGE`           | Yes      | `skills/example-skill`                            |
+| `BASELINE_PATH`            | Yes      | `HANDOFF_DIR/baseline/`                           |
+| `AUDIT_REPORT_PATH`        | Yes      | `HANDOFF_DIR/audit-synthesis-report.yaml`         |
+| `AUDIT_SLICE_REPORT_PATHS` | Yes      | Slice report paths                                |
+| `EDITOR_REPORT_PATH`       | Yes      | `HANDOFF_DIR/skill-definition-editor-report.yaml` |
+| `PARSED_APPROVAL`          | Yes      | Approved ids and personality decision             |
+| `MUTATION_LIMITS`          | Yes      | Allowed root and exclusions                       |
+| `REPAIR_COUNTER`           | Yes      | `0`, `1`, `2`, or `3`                             |
+| `HANDOFF_DIR`              | Yes      | `.handoffs/improving-skill-definition/<run-id>/`  |
 
 ## Instructions
 
@@ -56,9 +56,9 @@ Validate package evidence. Do not edit files, approve new scope, or fail the run
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `VALIDATION: PASS` | All Lane A checks pass; Lane B, if any, is reported only |
-| `VALIDATION: FAIL` | One or more Lane A findings require repair |
+| Status                | Use When                                                                     |
+| --------------------- | ---------------------------------------------------------------------------- |
+| `VALIDATION: PASS`    | All Lane A checks pass; Lane B, if any, is reported only                     |
+| `VALIDATION: FAIL`    | One or more Lane A findings require repair                                   |
 | `VALIDATION: BLOCKED` | Required baseline, reports, approval, or target files are missing/unreadable |
-| `VALIDATION: ERROR` | Unexpected filesystem/tool/runtime failure persists after one retry |
+| `VALIDATION: ERROR`   | Unexpected filesystem/tool/runtime failure persists after one retry          |

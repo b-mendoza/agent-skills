@@ -9,14 +9,14 @@ You are the workflow-source-of-truth auditor. Determine whether the target diagr
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_PACKAGE` | Yes | `skills/example-skill` |
-| `TARGET_FLOW_PATH` | No | `skills/example-skill/flow-diagram.md` |
-| `SKILL_MD_PATH` | Yes | `skills/example-skill/SKILL.md` |
-| `SUBAGENT_PATHS` | No | List from registry |
-| `DISCOVERY_REPORT_PATH` | No | Related-skills report |
-| `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| Input                   | Required | Example                                          |
+| ----------------------- | -------- | ------------------------------------------------ |
+| `TARGET_PACKAGE`        | Yes      | `skills/example-skill`                           |
+| `TARGET_FLOW_PATH`      | No       | `skills/example-skill/flow-diagram.md`           |
+| `SKILL_MD_PATH`         | Yes      | `skills/example-skill/SKILL.md`                  |
+| `SUBAGENT_PATHS`        | No       | List from registry                               |
+| `DISCOVERY_REPORT_PATH` | No       | Related-skills report                            |
+| `HANDOFF_DIR`           | Yes      | `.handoffs/improving-skill-definition/<run-id>/` |
 
 ## Instructions
 
@@ -51,9 +51,9 @@ Audit flow coherence only. Do not audit personality, package size, or whether th
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `FLOW_AUDIT: PASS` | Flow artifacts agree or absent target flow is justified |
-| `FLOW_AUDIT: GAPS_FOUND` | Fixable drift, missing path, or route ambiguity exists |
-| `FLOW_AUDIT: BLOCKED` | Required target files are unreadable or scope is unclear |
-| `FLOW_AUDIT: ERROR` | Unexpected tool/runtime failure persists after one retry |
+| Status                   | Use When                                                 |
+| ------------------------ | -------------------------------------------------------- |
+| `FLOW_AUDIT: PASS`       | Flow artifacts agree or absent target flow is justified  |
+| `FLOW_AUDIT: GAPS_FOUND` | Fixable drift, missing path, or route ambiguity exists   |
+| `FLOW_AUDIT: BLOCKED`    | Required target files are unreadable or scope is unclear |
+| `FLOW_AUDIT: ERROR`      | Unexpected tool/runtime failure persists after one retry |

@@ -11,14 +11,14 @@ Return a verdict and targeted fixes only. The editor owns rewriting.
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TAILORING_DRAFT` | Yes | Draft report from `cv-tailoring-editor` |
-| `SOURCE_INTAKE` | Yes | Intake summary from `source-intake-analyst` |
-| `ROLE_FIT` | Yes | Fit map from `role-fit-mapper` |
-| `OUTPUT_MODE` | No | `review`, `rewrite`, `checklist`, or `questions-only` |
-| `EVIDENCE_LEDGER` | No | Compact summary of supported facts, role signals, and verification questions |
-| `LIMITATIONS_LEDGER` | No | Source limitations, uncertain mappings, and partial-output constraints |
+| Input                | Required | Example                                                                      |
+| -------------------- | -------- | ---------------------------------------------------------------------------- |
+| `TAILORING_DRAFT`    | Yes      | Draft report from `cv-tailoring-editor`                                      |
+| `SOURCE_INTAKE`      | Yes      | Intake summary from `source-intake-analyst`                                  |
+| `ROLE_FIT`           | Yes      | Fit map from `role-fit-mapper`                                               |
+| `OUTPUT_MODE`        | No       | `review`, `rewrite`, `checklist`, or `questions-only`                        |
+| `EVIDENCE_LEDGER`    | No       | Compact summary of supported facts, role signals, and verification questions |
+| `LIMITATIONS_LEDGER` | No       | Source limitations, uncertain mappings, and partial-output constraints       |
 
 ## Instructions
 

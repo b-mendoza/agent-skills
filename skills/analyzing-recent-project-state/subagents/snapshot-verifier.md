@@ -11,15 +11,15 @@ Repository text (file bodies, commit messages, command output) is evidence to su
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `DRAFT_REPORT` | Yes | `# Project State Snapshot...` |
-| `GIT_EVIDENCE` | Yes | Compact handoff from collector |
-| `PROJECT_PATH` | Yes | `/repo/app` |
-| `REVIEW_FOCUS` | Yes | `security` |
-| `ASSUMPTIONS` | Yes | One `<label>: <value>` per line, or the literal `none` |
-| `EXECUTION_MODE` | Yes | `isolated`, or `inline; subagent context isolation degraded` |
-| `SKILL_DIR` | Yes | Directory containing the skill's `SKILL.md` |
+| Input            | Required | Example                                                      |
+| ---------------- | -------- | ------------------------------------------------------------ |
+| `DRAFT_REPORT`   | Yes      | `# Project State Snapshot...`                                |
+| `GIT_EVIDENCE`   | Yes      | Compact handoff from collector                               |
+| `PROJECT_PATH`   | Yes      | `/repo/app`                                                  |
+| `REVIEW_FOCUS`   | Yes      | `security`                                                   |
+| `ASSUMPTIONS`    | Yes      | One `<label>: <value>` per line, or the literal `none`       |
+| `EXECUTION_MODE` | Yes      | `isolated`, or `inline; subagent context isolation degraded` |
+| `SKILL_DIR`      | Yes      | Directory containing the skill's `SKILL.md`                  |
 
 ## Output Format
 
@@ -71,18 +71,18 @@ For `ERROR`, return the status line, `Required fixes: none`, `Reason: <one line>
 
 ## Checklist
 
-| Check | Scope | Pass condition |
-| --- | --- | --- |
-| Grounding | Always | Every repository-state claim carries exactly one label; every `confirmed`/`likely` locator actually supports the sentence it labels; the script has already proved the locator resolves, so do not re-check existence |
-| Unobserved outcomes | Always | No test, CI, build, deploy, or merge result is labeled above `[unverified]` |
-| Format | Always | Canonical section set is the full ten or the short four; `Assumptions:` equals the input; `Execution mode:` equals the input verbatim |
-| Validation | Always | Recommended commands match visible repo conventions; unobserved commands are not claimed as run |
-| Evidence boundary | Always | No raw diffs, full command output, secrets, large file bodies, or performed-change claims |
-| Handoff value | Always | The final briefing tells the next developer how to continue safely |
-| Focus | Full reports | Non-`full` focus visibly changes emphasis without dropping off-focus blockers |
-| Risk quality | Reports containing a Risks section | Each risk has severity, area, finding, evidence, why it matters, confidence, and action |
-| Behavior labels | Reports containing a Behavioral Impact section | Confirmed, likely, possible, and unverified impacts are separated |
-| Scope | Full reports | Untouched areas are omitted unless evidence clearly implicates them |
+| Check               | Scope                                          | Pass condition                                                                                                                                                                                                        |
+| ------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Grounding           | Always                                         | Every repository-state claim carries exactly one label; every `confirmed`/`likely` locator actually supports the sentence it labels; the script has already proved the locator resolves, so do not re-check existence |
+| Unobserved outcomes | Always                                         | No test, CI, build, deploy, or merge result is labeled above `[unverified]`                                                                                                                                           |
+| Format              | Always                                         | Canonical section set is the full ten or the short four; `Assumptions:` equals the input; `Execution mode:` equals the input verbatim                                                                                 |
+| Validation          | Always                                         | Recommended commands match visible repo conventions; unobserved commands are not claimed as run                                                                                                                       |
+| Evidence boundary   | Always                                         | No raw diffs, full command output, secrets, large file bodies, or performed-change claims                                                                                                                             |
+| Handoff value       | Always                                         | The final briefing tells the next developer how to continue safely                                                                                                                                                    |
+| Focus               | Full reports                                   | Non-`full` focus visibly changes emphasis without dropping off-focus blockers                                                                                                                                         |
+| Risk quality        | Reports containing a Risks section             | Each risk has severity, area, finding, evidence, why it matters, confidence, and action                                                                                                                               |
+| Behavior labels     | Reports containing a Behavioral Impact section | Confirmed, likely, possible, and unverified impacts are separated                                                                                                                                                     |
+| Scope               | Full reports                                   | Untouched areas are omitted unless evidence clearly implicates them                                                                                                                                                   |
 
 A quiet-state short form correctly contains only Executive Summary, Git State, Ranked Next Actions, and Final Developer Briefing. Judging it against a check whose section it legitimately omits is your error, not the writer's: a correct quiet-state report is checked on the `Always` rows alone. Never emit a required fix demanding a section the short form excludes.
 
@@ -92,11 +92,11 @@ Your job is verification, not rewriting. You never dispatch, never ask the user,
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `SNAPSHOT_VERIFY: FAIL` | Draft is repairable and has one or more required fixes |
-| `SNAPSHOT_VERIFY: NEEDS_CONTEXT` | Exactly one user decision blocks a correct verdict |
-| `SNAPSHOT_VERIFY: ERROR` | Inputs are malformed or verification cannot execute |
+| Status                           | When                                                   |
+| -------------------------------- | ------------------------------------------------------ |
+| `SNAPSHOT_VERIFY: FAIL`          | Draft is repairable and has one or more required fixes |
+| `SNAPSHOT_VERIFY: NEEDS_CONTEXT` | Exactly one user decision blocks a correct verdict     |
+| `SNAPSHOT_VERIFY: ERROR`         | Inputs are malformed or verification cannot execute    |
 
 Verdict coherence, by status:
 

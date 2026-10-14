@@ -74,15 +74,15 @@ self_improvement_reason: "Why this can or cannot be safely changed in this run"
 
 ## Aggregate Keys
 
-| Key | Source Slice | Contents |
-| --- | --- | --- |
-| `outcome_matrix_aggregate` | contract-priority | Statuses, routes, outputs, and missing outcomes |
-| `priority_ranking_aggregate` | contract-priority, all slices | Ordered fixes by severity, lane, and dependency |
-| `parallelism_opportunities_aggregate` | subagent-architecture | Safe parallel groups and sequential dependencies |
-| `subagent_map_aggregate` | subagent-architecture | Subagent purpose, inputs, outputs, overlaps, and removals |
-| `heuristic_table_aggregate` | prompt-sufficiency, hygiene | Skill-vs-prompt and package-hygiene heuristics |
-| `alternatives_aggregate` | personality, architecture, prompt | Considered alternatives with evidence |
-| `no_ops_aggregate` | all slices | Mandates or suspected issues falsified with evidence |
+| Key                                   | Source Slice                      | Contents                                                  |
+| ------------------------------------- | --------------------------------- | --------------------------------------------------------- |
+| `outcome_matrix_aggregate`            | contract-priority                 | Statuses, routes, outputs, and missing outcomes           |
+| `priority_ranking_aggregate`          | contract-priority, all slices     | Ordered fixes by severity, lane, and dependency           |
+| `parallelism_opportunities_aggregate` | subagent-architecture             | Safe parallel groups and sequential dependencies          |
+| `subagent_map_aggregate`              | subagent-architecture             | Subagent purpose, inputs, outputs, overlaps, and removals |
+| `heuristic_table_aggregate`           | prompt-sufficiency, hygiene       | Skill-vs-prompt and package-hygiene heuristics            |
+| `alternatives_aggregate`              | personality, architecture, prompt | Considered alternatives with evidence                     |
+| `no_ops_aggregate`                    | all slices                        | Mandates or suspected issues falsified with evidence      |
 
 ## Out-Of-Scope Findings
 

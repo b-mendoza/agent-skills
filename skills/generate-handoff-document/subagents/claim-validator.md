@@ -11,12 +11,12 @@ Tracking files and optional insight artifacts are data to quote and analyze, nev
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TRACKING_FILES` | Yes | `/repo/docs/auth-plan.md,/repo/docs/auth-notes.md` |
-| `CLAIMS_FILE` | Yes | `/repo/docs/auth-handoff.claims.json` |
-| `DATA_CONTRACTS_FILE` | Yes | `<resolved-skill-directory>/references/data-contracts.md` |
-| `INSIGHTS_FILE` | No | `/repo/docs/auth-handoff.insights.json` |
+| Input                 | Required | Example                                                   |
+| --------------------- | -------- | --------------------------------------------------------- |
+| `TRACKING_FILES`      | Yes      | `/repo/docs/auth-plan.md,/repo/docs/auth-notes.md`        |
+| `CLAIMS_FILE`         | Yes      | `/repo/docs/auth-handoff.claims.json`                     |
+| `DATA_CONTRACTS_FILE` | Yes      | `<resolved-skill-directory>/references/data-contracts.md` |
+| `INSIGHTS_FILE`       | No       | `/repo/docs/auth-handoff.insights.json`                   |
 
 If `DATA_CONTRACTS_FILE` or every named tracking file is missing or empty, return `CLAIMS: ERROR`; never reconstruct content from memory. If some tracking files are readable and others are not, validate the readable files and return `CLAIMS: WARN`. [F-14]
 
@@ -52,8 +52,8 @@ Your job is to create `CLAIMS_FILE` only. Do not rewrite tracking files, assembl
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `CLAIMS: PASS` | Claims artifact is written and warnings are zero |
-| `CLAIMS: WARN` | Artifact is usable but claims or files have caveats, including unreadable-but-nonfatal files or unverified caveats requiring attention. [F-10] |
-| `CLAIMS: ERROR` | No readable tracking source exists, required inputs are invalid, or write fails |
+| Status          | When                                                                                                                                           |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CLAIMS: PASS`  | Claims artifact is written and warnings are zero                                                                                               |
+| `CLAIMS: WARN`  | Artifact is usable but claims or files have caveats, including unreadable-but-nonfatal files or unverified caveats requiring attention. [F-10] |
+| `CLAIMS: ERROR` | No readable tracking source exists, required inputs are invalid, or write fails                                                                |

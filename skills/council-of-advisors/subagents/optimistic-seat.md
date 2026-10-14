@@ -36,11 +36,11 @@ Your job is the strongest honest case for upside. Do not erase constraints, inve
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
+| Status    | Use When                                                                         |
+| --------- | -------------------------------------------------------------------------------- |
 | `BLOCKED` | The packet lacks desired outcome or constraints needed to reason about asymmetry |
-| `FAIL` | The schema cannot be satisfied without unsupported upside claims |
-| `ERROR` | A runtime or tool failure prevents a safe packet |
+| `FAIL`    | The schema cannot be satisfied without unsupported upside claims                 |
+| `ERROR`   | A runtime or tool failure prevents a safe packet                                 |
 
 When escalating, return:
 

@@ -9,14 +9,14 @@ Portable orchestrator that falsifies then repairs a first-party skill package: a
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `SKILL_PATH` | Yes | `skills/<target-skill>` or `.../SKILL.md` |
-| `KNOWN_PROBLEM` | No | `flow diagram drift` |
-| `IMPROVEMENT_MANDATES` | No | YAML list of user objectives |
-| `TARGET_RUNTIME` | No | `portable Agent Skills`, `OpenCode`, `Claude Code` |
-| `SCOPE_LIMITS` | No | `do not rename subagents` |
-| `REFERENCE_NEED` | No | `must compare with related skills` |
+| Input                  | Required | Example                                            |
+| ---------------------- | -------- | -------------------------------------------------- |
+| `SKILL_PATH`           | Yes      | `skills/<target-skill>` or `.../SKILL.md`          |
+| `KNOWN_PROBLEM`        | No       | `flow diagram drift`                               |
+| `IMPROVEMENT_MANDATES` | No       | YAML list of user objectives                       |
+| `TARGET_RUNTIME`       | No       | `portable Agent Skills`, `OpenCode`, `Claude Code` |
+| `SCOPE_LIMITS`         | No       | `do not rename subagents`                          |
+| `REFERENCE_NEED`       | No       | `must compare with related skills`                 |
 
 Approvals are not inputs. Values like `APPROVED_GAPS=all` at intake are `ignored_preapproval`, surfaced in the handoff, and never honored.
 
@@ -26,17 +26,17 @@ Non-normative overview: audit the target, obtain approval, apply approved edits,
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `related-skills-discoverer` | `./subagents/related-skills-discoverer.md` | Related-skill evidence |
-| `flow-coherence-auditor` | `./subagents/flow-coherence-auditor.md` | Flow, registry, gates, statuses |
+| Subagent                        | Path                                           | Purpose                         |
+| ------------------------------- | ---------------------------------------------- | ------------------------------- |
+| `related-skills-discoverer`     | `./subagents/related-skills-discoverer.md`     | Related-skill evidence          |
+| `flow-coherence-auditor`        | `./subagents/flow-coherence-auditor.md`        | Flow, registry, gates, statuses |
 | `subagent-architecture-auditor` | `./subagents/subagent-architecture-auditor.md` | Necessity, overlap, parallelism |
-| `contract-priority-auditor` | `./subagents/contract-priority-auditor.md` | Contracts, routing, examples |
-| `personality-auditor` | `./subagents/personality-auditor.md` | Posture fit; non-keep as gaps |
-| `package-hygiene-auditor` | `./subagents/package-hygiene-auditor.md` | Layout, caps, references, DRY |
-| `prompt-sufficiency-auditor` | `./subagents/prompt-sufficiency-auditor.md` | Skill vs demotion |
-| `skill-definition-editor` | `./subagents/skill-definition-editor.md` | Approved mutations + Lane A |
-| `skill-package-validator` | `./subagents/skill-package-validator.md` | Lane A block / Lane B follow-up |
+| `contract-priority-auditor`     | `./subagents/contract-priority-auditor.md`     | Contracts, routing, examples    |
+| `personality-auditor`           | `./subagents/personality-auditor.md`           | Posture fit; non-keep as gaps   |
+| `package-hygiene-auditor`       | `./subagents/package-hygiene-auditor.md`       | Layout, caps, references, DRY   |
+| `prompt-sufficiency-auditor`    | `./subagents/prompt-sufficiency-auditor.md`    | Skill vs demotion               |
+| `skill-definition-editor`       | `./subagents/skill-definition-editor.md`       | Approved mutations + Lane A     |
+| `skill-package-validator`       | `./subagents/skill-package-validator.md`       | Lane A block / Lane B follow-up |
 
 Six auditors stay separate (one status prefix and YAML report each). Read a subagent only when dispatching it. Prefer the runtime subagent mechanism; otherwise run the contract inline. Subagents never spawn subagents.
 
@@ -46,15 +46,15 @@ The orchestrator advances the state machine, writes handoff YAML, reads reports,
 
 ## Progressive Loading Map
 
-| Need | Load |
-| --- | --- |
-| Posture and audit lens | `./references/personality.md` |
-| Gap types, severity, caps, diagram terms | `./references/audit-gap-taxonomy.md` |
-| Synthesis keys and aggregates | `./references/audit-synthesis-schema.md` |
-| Synthesis validation / self-improvement | `./references/audit-synthesis-validation.md` |
-| External source policy | `./references/external-sources.md` |
-| Handoff templates | `./references/final-report-template.md` |
-| State-transition table | `./state-machine.md` |
+| Need                                     | Load                                         |
+| ---------------------------------------- | -------------------------------------------- |
+| Posture and audit lens                   | `./references/personality.md`                |
+| Gap types, severity, caps, diagram terms | `./references/audit-gap-taxonomy.md`         |
+| Synthesis keys and aggregates            | `./references/audit-synthesis-schema.md`     |
+| Synthesis validation / self-improvement  | `./references/audit-synthesis-validation.md` |
+| External source policy                   | `./references/external-sources.md`           |
+| Handoff templates                        | `./references/final-report-template.md`      |
+| State-transition table                   | `./state-machine.md`                         |
 
 `SKILL.md` links stay one level deep. Subagent loads of `../references/*` at dispatch are intentional progressive disclosure.
 

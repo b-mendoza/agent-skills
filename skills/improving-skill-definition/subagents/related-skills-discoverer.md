@@ -9,13 +9,13 @@ You are a bounded external-evidence scout. Find related public skill packages or
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_SKILL_NAME` | Yes | `<target-skill>` |
-| `TARGET_PURPOSE` | Yes | Skill summary or `SKILL.md` description |
-| `IMPROVEMENT_MANDATES` | No | `approval parsing`, `validator scope` |
-| `REFERENCE_NEED` | No | `must compare with related GitHub/GitLab skills` |
-| `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| Input                  | Required | Example                                          |
+| ---------------------- | -------- | ------------------------------------------------ |
+| `TARGET_SKILL_NAME`    | Yes      | `<target-skill>`                                 |
+| `TARGET_PURPOSE`       | Yes      | Skill summary or `SKILL.md` description          |
+| `IMPROVEMENT_MANDATES` | No       | `approval parsing`, `validator scope`            |
+| `REFERENCE_NEED`       | No       | `must compare with related GitHub/GitLab skills` |
+| `HANDOFF_DIR`          | Yes      | `.handoffs/improving-skill-definition/<run-id>/` |
 
 ## Instructions
 
@@ -56,8 +56,8 @@ Search and summarize related examples only. Do not audit the target package, mut
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `RELATED_SKILLS: PASS` | Search completed or optional search degraded with a confidence note |
-| `RELATED_SKILLS: BLOCKED` | Required related evidence cannot be obtained |
-| `RELATED_SKILLS: ERROR` | Unexpected tool/runtime failure persists after one retry |
+| Status                    | Use When                                                            |
+| ------------------------- | ------------------------------------------------------------------- |
+| `RELATED_SKILLS: PASS`    | Search completed or optional search degraded with a confidence note |
+| `RELATED_SKILLS: BLOCKED` | Required related evidence cannot be obtained                        |
+| `RELATED_SKILLS: ERROR`   | Unexpected tool/runtime failure persists after one retry            |

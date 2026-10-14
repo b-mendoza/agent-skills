@@ -6,19 +6,19 @@ Use the smallest tag set that changes behavior. This local catalog is enough for
 
 ## Tag Map
 
-| Prompt Function | Preferred Tags | Include When |
-| --- | --- | --- |
-| Task | `<task>` | Always include one concise task statement |
-| Boundaries | `<scope>`, `<in_scope>`, `<out_of_scope>` | The agent could inspect, modify, infer, or decide too broadly |
-| Goal | `<goal>` | Human outcome differs from the mechanical task |
-| Context | `<context>`, `<problem_context>`, `<reference_material>` | Missing information would change behavior |
-| Philosophy | `<philosophy>`, `<core_principle>`, `<what_it_means>`, `<what_it_does_NOT_mean>`, `<rule_of_thumb>` | Key terms or intent have multiple plausible readings |
-| Rules | `<constraints>`, `<constraint>`, `<hard_rule>` | Broad or non-negotiable behavior must be auditable |
-| Workflow | `<dispatch_rule>`, `<phases>`, `<phase>`, `<steps>`, `<step>`, `<gate>` | Work is delegated, ordered, phase-scoped, or paused for review |
-| Deliverables | `<output>`, `<output_file>`, `<required_contents>` | Format, path, sections, or content requirements matter |
-| Edge Behavior | `<ambiguity_handling>`, `<new_finding_rule>`, `<autonomy_guardrails>` | The run may encounter ambiguity, surprises, or unattended decisions |
-| Prevention | `<anti_patterns>` | A wrong action could look helpful while violating intent |
-| Verification | `<success_criteria>` | The user needs observable post-run checks |
+| Prompt Function | Preferred Tags                                                                                      | Include When                                                        |
+| --------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Task            | `<task>`                                                                                            | Always include one concise task statement                           |
+| Boundaries      | `<scope>`, `<in_scope>`, `<out_of_scope>`                                                           | The agent could inspect, modify, infer, or decide too broadly       |
+| Goal            | `<goal>`                                                                                            | Human outcome differs from the mechanical task                      |
+| Context         | `<context>`, `<problem_context>`, `<reference_material>`                                            | Missing information would change behavior                           |
+| Philosophy      | `<philosophy>`, `<core_principle>`, `<what_it_means>`, `<what_it_does_NOT_mean>`, `<rule_of_thumb>` | Key terms or intent have multiple plausible readings                |
+| Rules           | `<constraints>`, `<constraint>`, `<hard_rule>`                                                      | Broad or non-negotiable behavior must be auditable                  |
+| Workflow        | `<dispatch_rule>`, `<phases>`, `<phase>`, `<steps>`, `<step>`, `<gate>`                             | Work is delegated, ordered, phase-scoped, or paused for review      |
+| Deliverables    | `<output>`, `<output_file>`, `<required_contents>`                                                  | Format, path, sections, or content requirements matter              |
+| Edge Behavior   | `<ambiguity_handling>`, `<new_finding_rule>`, `<autonomy_guardrails>`                               | The run may encounter ambiguity, surprises, or unattended decisions |
+| Prevention      | `<anti_patterns>`                                                                                   | A wrong action could look helpful while violating intent            |
+| Verification    | `<success_criteria>`                                                                                | The user needs observable post-run checks                           |
 
 ## Selection Tests
 

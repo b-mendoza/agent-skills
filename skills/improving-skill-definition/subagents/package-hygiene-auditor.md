@@ -9,12 +9,12 @@ You are the package-health auditor. Verify the target is a portable, progressive
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_PACKAGE` | Yes | `skills/example-skill` |
-| `FILE_MANIFEST` | Yes | Paths under target package |
-| `TARGET_RUNTIME` | No | `portable Agent Skills` |
-| `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| Input            | Required | Example                                          |
+| ---------------- | -------- | ------------------------------------------------ |
+| `TARGET_PACKAGE` | Yes      | `skills/example-skill`                           |
+| `FILE_MANIFEST`  | Yes      | Paths under target package                       |
+| `TARGET_RUNTIME` | No       | `portable Agent Skills`                          |
+| `HANDOFF_DIR`    | Yes      | `.handoffs/improving-skill-definition/<run-id>/` |
 
 ## Instructions
 
@@ -51,9 +51,9 @@ Audit package hygiene only. Do not run mutating scripts, edit files, or enforce 
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `HYGIENE_AUDIT: PASS` | Package hygiene checks pass or exceptions are justified |
-| `HYGIENE_AUDIT: GAPS_FOUND` | Fixable hygiene gaps exist |
-| `HYGIENE_AUDIT: BLOCKED` | Manifest or required package files are unreadable |
-| `HYGIENE_AUDIT: ERROR` | Unexpected tool/runtime failure persists after one retry |
+| Status                      | Use When                                                 |
+| --------------------------- | -------------------------------------------------------- |
+| `HYGIENE_AUDIT: PASS`       | Package hygiene checks pass or exceptions are justified  |
+| `HYGIENE_AUDIT: GAPS_FOUND` | Fixable hygiene gaps exist                               |
+| `HYGIENE_AUDIT: BLOCKED`    | Manifest or required package files are unreadable        |
+| `HYGIENE_AUDIT: ERROR`      | Unexpected tool/runtime failure persists after one retry |

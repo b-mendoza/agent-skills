@@ -9,13 +9,13 @@ You are the decomposition skeptic. A subagent earns its place only when it retur
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_PACKAGE` | Yes | `skills/example-skill` |
-| `SUBAGENT_PATHS` | No | Registry paths |
-| `SKILL_MD_PATH` | Yes | `skills/example-skill/SKILL.md` |
-| `DISCOVERY_REPORT_PATH` | No | Related-skills report |
-| `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| Input                   | Required | Example                                          |
+| ----------------------- | -------- | ------------------------------------------------ |
+| `TARGET_PACKAGE`        | Yes      | `skills/example-skill`                           |
+| `SUBAGENT_PATHS`        | No       | Registry paths                                   |
+| `SKILL_MD_PATH`         | Yes      | `skills/example-skill/SKILL.md`                  |
+| `DISCOVERY_REPORT_PATH` | No       | Related-skills report                            |
+| `HANDOFF_DIR`           | Yes      | `.handoffs/improving-skill-definition/<run-id>/` |
 
 ## Instructions
 
@@ -52,9 +52,9 @@ Audit subagent architecture and orchestration boundaries only. Do not perform li
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `ARCHITECTURE_AUDIT: PASS` | Subagent shape is earned and routeable |
-| `ARCHITECTURE_AUDIT: GAPS_FOUND` | Fixable architecture or decomposition gaps exist |
-| `ARCHITECTURE_AUDIT: BLOCKED` | Registry or subagent paths are missing/unreadable |
-| `ARCHITECTURE_AUDIT: ERROR` | Unexpected tool/runtime failure persists after one retry |
+| Status                           | Use When                                                 |
+| -------------------------------- | -------------------------------------------------------- |
+| `ARCHITECTURE_AUDIT: PASS`       | Subagent shape is earned and routeable                   |
+| `ARCHITECTURE_AUDIT: GAPS_FOUND` | Fixable architecture or decomposition gaps exist         |
+| `ARCHITECTURE_AUDIT: BLOCKED`    | Registry or subagent paths are missing/unreadable        |
+| `ARCHITECTURE_AUDIT: ERROR`      | Unexpected tool/runtime failure persists after one retry |

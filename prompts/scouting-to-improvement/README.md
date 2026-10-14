@@ -2,11 +2,11 @@
 
 Two prompts provide a small, repeatable workflow for understanding and rewriting a first-party skill.
 
-| File | Purpose |
-| --- | --- |
-| [`scouting-phase.prompt.md`](./scouting-phase.prompt.md) | Document one skill and research comparable public skills. |
+| File                                                                   | Purpose                                                                         |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [`scouting-phase.prompt.md`](./scouting-phase.prompt.md)               | Document one skill and research comparable public skills.                       |
 | [`improving-skill-phase.prompt.md`](./improving-skill-phase.prompt.md) | Assess the dossier, propose a redesign, obtain approval, rewrite, and validate. |
-| [`scouting-handoff-contract.md`](./scouting-handoff-contract.md) | Defines the small three-file interface between the phases. |
+| [`scouting-handoff-contract.md`](./scouting-handoff-contract.md)       | Defines the small three-file interface between the phases.                      |
 
 ## Workflow
 

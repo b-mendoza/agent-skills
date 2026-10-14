@@ -43,12 +43,12 @@ All modes require a readable role source from `JOB_POSTING` and a readable candi
 
 Use these thresholds when deciding whether a `PARTIAL` source can continue:
 
-| Mode | Minimum primary evidence |
-| --- | --- |
-| `review` | Enough job requirements to identify priorities and enough CV/applicant facts to name strengths, gaps, and safe recommendations |
-| `rewrite` | Exact or sufficiently extracted CV text for each section being rewritten, plus role requirements that justify the rewrite |
-| `checklist` | Visible job priorities and visible CV/applicant facts sufficient to rank concrete actions |
-| `questions-only` | Enough role or candidate context to ask targeted questions tied to a specific missing fact, requirement, or claim |
+| Mode             | Minimum primary evidence                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `review`         | Enough job requirements to identify priorities and enough CV/applicant facts to name strengths, gaps, and safe recommendations |
+| `rewrite`        | Exact or sufficiently extracted CV text for each section being rewritten, plus role requirements that justify the rewrite      |
+| `checklist`      | Visible job priorities and visible CV/applicant facts sufficient to rank concrete actions                                      |
+| `questions-only` | Enough role or candidate context to ask targeted questions tied to a specific missing fact, requirement, or claim              |
 
 When the selected mode does not meet its threshold, ask for the smallest missing source detail. Do not silently switch modes unless the user asks for a different output.
 
@@ -56,23 +56,23 @@ When the selected mode does not meet its threshold, ask for the smallest missing
 
 Use exactly one label for each rewrite or recommended claim:
 
-| Label | Meaning | Safe use |
-| --- | --- | --- |
-| `Supported` | Directly stated in the CV or applicant context | Can appear in final CV wording |
-| `Likely but unconfirmed` | Plausible from the sources but missing proof | Present as a candidate rewrite and ask the applicant to verify |
-| `Unsupported until verified` | Would require new facts from the applicant | Keep out of final CV wording; ask a question or offer safer wording |
+| Label                        | Meaning                                        | Safe use                                                            |
+| ---------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- |
+| `Supported`                  | Directly stated in the CV or applicant context | Can appear in final CV wording                                      |
+| `Likely but unconfirmed`     | Plausible from the sources but missing proof   | Present as a candidate rewrite and ask the applicant to verify      |
+| `Unsupported until verified` | Would require new facts from the applicant     | Keep out of final CV wording; ask a question or offer safer wording |
 
 ## Match Strength
 
 Use these requirement-match labels:
 
-| Label | Meaning |
-| --- | --- |
-| `Strong` | Clear evidence maps to the requirement |
+| Label     | Meaning                                                                       |
+| --------- | ----------------------------------------------------------------------------- |
+| `Strong`  | Clear evidence maps to the requirement                                        |
 | `Partial` | Some evidence exists, but depth, recency, scale, or exact tool fit is unclear |
-| `Weak` | Only adjacent or indirect evidence exists |
-| `Missing` | No visible evidence in the CV/applicant context |
-| `Unclear` | Source quality prevents a confident judgment |
+| `Weak`    | Only adjacent or indirect evidence exists                                     |
+| `Missing` | No visible evidence in the CV/applicant context                               |
+| `Unclear` | Source quality prevents a confident judgment                                  |
 
 ## Integrity Rules
 
@@ -99,12 +99,12 @@ Block only when the selected `OUTPUT_MODE` cannot produce a safe deliverable aft
 
 ## Output Modes
 
-| Mode | Produce |
-| --- | --- |
-| `review` | Full role-fit analysis, priorities, rewrites, risks, questions, and checklist |
-| `rewrite` | Rewritten summary, skills, selected bullets, and verification notes |
-| `checklist` | Prioritized actions with evidence labels and risk flags |
-| `questions-only` | Targeted questions that would unlock stronger truthful tailoring |
+| Mode             | Produce                                                                       |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `review`         | Full role-fit analysis, priorities, rewrites, risks, questions, and checklist |
+| `rewrite`        | Rewritten summary, skills, selected bullets, and verification notes           |
+| `checklist`      | Prioritized actions with evidence labels and risk flags                       |
+| `questions-only` | Targeted questions that would unlock stronger truthful tailoring              |
 
 For narrower modes, keep the same evidence labels and integrity rules, then return only the requested sections.
 

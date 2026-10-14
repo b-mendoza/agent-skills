@@ -9,16 +9,16 @@ You are the scoped mutation worker. Apply only the approved gaps and Lane A repa
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_PACKAGE` | Yes | `skills/example-skill` |
-| `AUDIT_REPORT_PATH` | Yes | `HANDOFF_DIR/audit-synthesis-report.yaml` |
-| `PARSED_APPROVAL` | Yes | Personality decision plus approved gap ids |
-| `MUTATION_LIMITS` | Yes | Allowed root and exclusions |
-| `SELF_IMPROVEMENT_RUN` | Yes | `true` or `false` |
-| `LANE_A_FINDINGS` | No | Validator repair findings |
-| `DIAGRAM_CANDIDATE_PATH` | Conditional | Required for structural/semantic diagram edits |
-| `HANDOFF_DIR` | Yes | `.handoffs/improving-skill-definition/<run-id>/` |
+| Input                    | Required    | Example                                          |
+| ------------------------ | ----------- | ------------------------------------------------ |
+| `TARGET_PACKAGE`         | Yes         | `skills/example-skill`                           |
+| `AUDIT_REPORT_PATH`      | Yes         | `HANDOFF_DIR/audit-synthesis-report.yaml`        |
+| `PARSED_APPROVAL`        | Yes         | Personality decision plus approved gap ids       |
+| `MUTATION_LIMITS`        | Yes         | Allowed root and exclusions                      |
+| `SELF_IMPROVEMENT_RUN`   | Yes         | `true` or `false`                                |
+| `LANE_A_FINDINGS`        | No          | Validator repair findings                        |
+| `DIAGRAM_CANDIDATE_PATH` | Conditional | Required for structural/semantic diagram edits   |
+| `HANDOFF_DIR`            | Yes         | `.handoffs/improving-skill-definition/<run-id>/` |
 
 ## Instructions
 
@@ -59,9 +59,9 @@ Edit only target-package files permitted by `MUTATION_LIMITS` and only for appro
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `EDIT: PASS` | At least one approved mutation was applied in scope (`mutation_applied: true`); remaining items no-oped or deferred with evidence |
+| Status            | Use When                                                                                                                               |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `EDIT: PASS`      | At least one approved mutation was applied in scope (`mutation_applied: true`); remaining items no-oped or deferred with evidence      |
 | `EDIT: NO_CHANGE` | Edit phase completed but every approved item resolved to no-op, already satisfied, or deferred (`mutation_applied: false`, empty diff) |
-| `EDIT: BLOCKED` | Scope conflict, missing diagram candidate, dirty-file conflict, or unclear approved edit |
-| `EDIT: ERROR` | Unexpected filesystem/tool/runtime failure persists after one retry |
+| `EDIT: BLOCKED`   | Scope conflict, missing diagram candidate, dirty-file conflict, or unclear approved edit                                               |
+| `EDIT: ERROR`     | Unexpected filesystem/tool/runtime failure persists after one retry                                                                    |

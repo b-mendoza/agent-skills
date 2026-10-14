@@ -8,15 +8,15 @@ Add a node, decision, gate, output, or terminal state only when it changes autho
 
 ## Required Flow Coverage
 
-| Category | Include When Relevant |
-| --- | --- |
-| Intake and boundary | Start, inputs, role, authority, trust model, mutation limits |
-| Evidence | Source availability, collection, validation, synthesis |
-| Decisions | Work type, risk, scope, readiness, contradictions, missing information |
-| Safety gates | Human confirmation for sensitive actions and file mutation |
-| Validation | Independent gates, script/tool checks, reviewer verdicts, repair loop |
-| Output | Report, comment, artifact, recommendation, handoff, or written files |
-| Terminal states | Ready, blocked, needs input, needs confirmation, write error, repair limit |
+| Category            | Include When Relevant                                                      |
+| ------------------- | -------------------------------------------------------------------------- |
+| Intake and boundary | Start, inputs, role, authority, trust model, mutation limits               |
+| Evidence            | Source availability, collection, validation, synthesis                     |
+| Decisions           | Work type, risk, scope, readiness, contradictions, missing information     |
+| Safety gates        | Human confirmation for sensitive actions and file mutation                 |
+| Validation          | Independent gates, script/tool checks, reviewer verdicts, repair loop      |
+| Output              | Report, comment, artifact, recommendation, handoff, or written files       |
+| Terminal states     | Ready, blocked, needs input, needs confirmation, write error, repair limit |
 
 ## Human Gate Contract
 

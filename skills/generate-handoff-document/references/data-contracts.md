@@ -14,13 +14,13 @@ Credentials, tokens, API keys, private keys, connection strings with embedded se
 
 All criteria are pass/fail and must be named when they fail. [F-05]
 
-| Criterion | Pass Condition |
-| --- | --- |
-| Working-tree boundary | `TARGET_FILE` normalizes to a path inside the project working tree |
-| Traversal | No `..` segments remain after normalization |
-| Existing file type | `TARGET_FILE` is not an existing source-code, lockfile, or configuration file |
-| Directory | Target directory exists or can be created with one `mkdir -p` |
-| Sibling collisions | Derived sibling artifact paths collide with no unrelated existing files |
+| Criterion             | Pass Condition                                                                |
+| --------------------- | ----------------------------------------------------------------------------- |
+| Working-tree boundary | `TARGET_FILE` normalizes to a path inside the project working tree            |
+| Traversal             | No `..` segments remain after normalization                                   |
+| Existing file type    | `TARGET_FILE` is not an existing source-code, lockfile, or configuration file |
+| Directory             | Target directory exists or can be created with one `mkdir -p`                 |
+| Sibling collisions    | Derived sibling artifact paths collide with no unrelated existing files       |
 
 Allowed writes are `TARGET_FILE`, sibling artifacts, a transcript snapshot, and `<stem>.prev.md` backup. Do not write product code, lockfiles, configuration, mirrors, private config, or unrelated paths. [F-03]
 
@@ -38,26 +38,26 @@ Derive `stem` from the target filename minus its final extension, whatever that 
 
 Sibling artifacts are written beside `TARGET_FILE`:
 
-| Artifact | Path |
-| --- | --- |
+| Artifact            | Path                                                             |
+| ------------------- | ---------------------------------------------------------------- |
 | Transcript snapshot | `<stem>.transcript.md`, when the source is the live conversation |
-| Prior backup | `<stem>.prev.md`, before overwriting an existing target |
-| Context | `<stem>.context.json` |
-| Insights | `<stem>.insights.json` |
-| Claims | `<stem>.claims.json`, only when `TRACKING_FILES` is supplied |
+| Prior backup        | `<stem>.prev.md`, before overwriting an existing target          |
+| Context             | `<stem>.context.json`                                            |
+| Insights            | `<stem>.insights.json`                                           |
+| Claims              | `<stem>.claims.json`, only when `TRACKING_FILES` is supplied     |
 
 ## Status Semantics
 
 Status prefixes and semantics are defined only here. Other files may show examples, but this table wins on any mismatch. [F-10][F-11][F-12]
 
-| Prefix | Allowed Statuses | Owner |
-| --- | --- | --- |
-| `CONTEXT` | `PASS`, `WARN`, `ERROR` | `context-extractor` |
-| `INSIGHTS` | `PASS`, `WARN`, `ERROR` | `insight-documenter` |
-| `CLAIMS` | `PASS`, `WARN`, `SKIPPED`, `ERROR` | `claim-validator` or orchestrator skip |
-| `HANDOFF` | `PASS`, `WARN`, `ERROR` | `document-assembler` |
-| `REVIEW` | `PASS`, `WARN`, `FAIL`, `ERROR` | `handoff-reviewer` |
-| `EXTERNAL` | `SKIPPED`, `USED`, `UNAVAILABLE` | Orchestrator |
+| Prefix     | Allowed Statuses                   | Owner                                  |
+| ---------- | ---------------------------------- | -------------------------------------- |
+| `CONTEXT`  | `PASS`, `WARN`, `ERROR`            | `context-extractor`                    |
+| `INSIGHTS` | `PASS`, `WARN`, `ERROR`            | `insight-documenter`                   |
+| `CLAIMS`   | `PASS`, `WARN`, `SKIPPED`, `ERROR` | `claim-validator` or orchestrator skip |
+| `HANDOFF`  | `PASS`, `WARN`, `ERROR`            | `document-assembler`                   |
+| `REVIEW`   | `PASS`, `WARN`, `FAIL`, `ERROR`    | `handoff-reviewer`                     |
+| `EXTERNAL` | `SKIPPED`, `USED`, `UNAVAILABLE`   | Orchestrator                           |
 
 `PASS` means all owned gates passed and `Warnings: 0`. Any advisory caveat or nonzero warning count forces `WARN`; do not emit pass with warnings. `ERROR` means the stage could not complete; the orchestrator retries once before blocking. `FAIL` is review-only and enters repair. `SKIPPED` is valid only for claims, is set by orchestrator routing when `TRACKING_FILES` is absent, and is never emitted by a dispatched validator. `CLAIMS: SKIPPED` is a report line: it appears in Session Metadata and the final report but is not a reviewer warning and does not count against `Warnings: 0`, so `REVIEW: PASS` remains reachable for runs without tracking files. [F-14]
 
@@ -67,13 +67,13 @@ Repair limit: at most three repair cycles total per run, regardless of which gat
 
 The orchestrator verifies every stage output before routing on a claimed status — producers and reviewer alike. [F-04]
 
-| Stage | Mechanical Checks |
-| --- | --- |
-| Context | File exists, non-empty, valid JSON, required keys present: `subject`, `mandate`, `original_instructions`, `qa_log`, `amendments`, `source_summary` |
-| Insights | File exists, non-empty, valid JSON, required keys present: `subject`, `insights`, `summary` |
-| Claims | File exists, non-empty, valid JSON, required keys present: `directive`, `claims`, `summary` (never dispatched when routing already skipped claims) |
-| Handoff | File exists, non-empty, exactly five major `## N.` sections, no unresolved `<placeholder>` text |
-| Review | First line matches `REVIEW: PASS | WARN | FAIL | ERROR`exactly; summary block contains every field named under Final Response Fields; a missing, malformed, or unrecognized status is treated as`REVIEW: ERROR` (fail closed, never trust a claimed verdict) |
+| Stage    | Mechanical Checks                                                                                                                                  |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Context  | File exists, non-empty, valid JSON, required keys present: `subject`, `mandate`, `original_instructions`, `qa_log`, `amendments`, `source_summary` |
+| Insights | File exists, non-empty, valid JSON, required keys present: `subject`, `insights`, `summary`                                                        |
+| Claims   | File exists, non-empty, valid JSON, required keys present: `directive`, `claims`, `summary` (never dispatched when routing already skipped claims) |
+| Handoff  | File exists, non-empty, exactly five major `## N.` sections, no unresolved `<placeholder>` text                                                    |
+| Review   | First line matches `REVIEW: PASS                                                                                                                   | WARN | FAIL | ERROR`exactly; summary block contains every field named under Final Response Fields; a missing, malformed, or unrecognized status is treated as`REVIEW: ERROR` (fail closed, never trust a claimed verdict) |
 
 On first verification failure, rerun the producer once naming the discrepancy. On second failure, stop with `Blocked: artifact contract violation`. For the reviewer, the `ERROR` route applies: one same-input retry, then `Blocked: subagent error, failure, or unexpected skip`.
 
@@ -195,14 +195,14 @@ Session Metadata includes subject, generated timestamp, status, counts, and a Wo
 
 Zero-state strings are required when a section has no items. [F-07]
 
-| Section | Zero-State String |
-| --- | --- |
-| Original Instructions & Scope | `No explicit original instructions were recoverable from the supplied transcript.` |
-| Q&A Log | `No clarifying Q&A exchanges occurred in the supplied transcript.` |
-| Observations & Insights | `No insights met the evidence bar for inclusion in this handoff.` |
-| Unverified Claims & Validation Checklist (validation skipped) | `No tracking files were supplied; independent claim validation was skipped.` |
-| Unverified Claims & Validation Checklist (validation ran, zero claims) | `Claim validation ran against the supplied tracking files and extracted no checkable claims.` |
-| Open Questions & Recommended Next Steps | `No open questions remain. Recommended next step: review the working artifacts listed in Session Metadata before continuing.` |
+| Section                                                                | Zero-State String                                                                                                             |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Original Instructions & Scope                                          | `No explicit original instructions were recoverable from the supplied transcript.`                                            |
+| Q&A Log                                                                | `No clarifying Q&A exchanges occurred in the supplied transcript.`                                                            |
+| Observations & Insights                                                | `No insights met the evidence bar for inclusion in this handoff.`                                                             |
+| Unverified Claims & Validation Checklist (validation skipped)          | `No tracking files were supplied; independent claim validation was skipped.`                                                  |
+| Unverified Claims & Validation Checklist (validation ran, zero claims) | `Claim validation ran against the supplied tracking files and extracted no checkable claims.`                                 |
+| Open Questions & Recommended Next Steps                                | `No open questions remain. Recommended next step: review the working artifacts listed in Session Metadata before continuing.` |
 
 If Sections 2 through 4 are all zero-state, the document must include a prominent advisory banner and review is capped at `REVIEW: WARN`. [F-07]
 
@@ -214,14 +214,14 @@ If Sections 2 through 4 are all zero-state, the document must include a prominen
 
 The reviewer checks these operational criteria individually. [F-06]
 
-| Criterion | Pass Condition |
-| --- | --- |
-| No deictic chat references | The document does not rely on phrases such as `above`, `earlier`, or `as discussed` without concrete referents |
-| Paths exist | Every file path named in Sections 3 through 5 and Session Metadata exists on disk or is explicitly marked `none` |
-| Concrete next steps | Every recommended next step uses an action verb and names a file, command, artifact, or question |
-| Artifact manifest | Session Metadata names the sibling artifacts |
-| Introduced names | Acronyms and project-specific names are introduced at first use |
-| Redaction | No credential, token, key, or personal-data value appears unredacted in the document (see Secret and PII Redaction) |
+| Criterion                  | Pass Condition                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| No deictic chat references | The document does not rely on phrases such as `above`, `earlier`, or `as discussed` without concrete referents      |
+| Paths exist                | Every file path named in Sections 3 through 5 and Session Metadata exists on disk or is explicitly marked `none`    |
+| Concrete next steps        | Every recommended next step uses an action verb and names a file, command, artifact, or question                    |
+| Artifact manifest          | Session Metadata names the sibling artifacts                                                                        |
+| Introduced names           | Acronyms and project-specific names are introduced at first use                                                     |
+| Redaction                  | No credential, token, key, or personal-data value appears unredacted in the document (see Secret and PII Redaction) |
 
 ## Terminal Strings
 

@@ -6,20 +6,20 @@
 
 ## Current families
 
-| Family | Contents |
-| --- | --- |
-| [`scouting-to-improvement/`](./scouting-to-improvement/) | Two-phase skill scouting and rewrite workflow. See the [family README](./scouting-to-improvement/README.md). |
-| [`semantic-decomposition/`](./semantic-decomposition/) | Single prompt that creates contract maps for the main SKILL.md and subagent files while inventorying references/scripts. |
-| [`best-practices-audit/`](./best-practices-audit/) | Single read-only prompt that audits `docs/best-practices/` as a corpus and writes a four-file dossier under a caller-supplied safe `OUTPUT_DIR` outside `prompts/` and other protected trees. |
+| Family                                                   | Contents                                                                                                                                                                                      |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`scouting-to-improvement/`](./scouting-to-improvement/) | Two-phase skill scouting and rewrite workflow. See the [family README](./scouting-to-improvement/README.md).                                                                                  |
+| [`semantic-decomposition/`](./semantic-decomposition/)   | Single prompt that creates contract maps for the main SKILL.md and subagent files while inventorying references/scripts.                                                                      |
+| [`best-practices-audit/`](./best-practices-audit/)       | Single read-only prompt that audits `docs/best-practices/` as a corpus and writes a four-file dossier under a caller-supplied safe `OUTPUT_DIR` outside `prompts/` and other protected trees. |
 
 ### scouting-to-improvement
 
-| File | Role |
-| --- | --- |
-| [`scouting-phase.prompt.md`](./scouting-to-improvement/scouting-phase.prompt.md) | Executable prompt. Cartograph one first-party skill and research public skills. |
+| File                                                                                           | Role                                                                                             |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| [`scouting-phase.prompt.md`](./scouting-to-improvement/scouting-phase.prompt.md)               | Executable prompt. Cartograph one first-party skill and research public skills.                  |
 | [`improving-skill-phase.prompt.md`](./scouting-to-improvement/improving-skill-phase.prompt.md) | Executable prompt. Assess a scouting dossier, propose a rewrite, and apply an approved manifest. |
-| [`scouting-handoff-contract.md`](./scouting-to-improvement/scouting-handoff-contract.md) | Supporting contract. Three-file dossier interface between the phases. |
-| [`README.md`](./scouting-to-improvement/README.md) | Family workflow notes. |
+| [`scouting-handoff-contract.md`](./scouting-to-improvement/scouting-handoff-contract.md)       | Supporting contract. Three-file dossier interface between the phases.                            |
+| [`README.md`](./scouting-to-improvement/README.md)                                             | Family workflow notes.                                                                           |
 
 Hardcoded contract path used by both executable prompts: `prompts/scouting-to-improvement/scouting-handoff-contract.md`.
 
@@ -27,16 +27,16 @@ Phase 1 writes under `outputs/scouting-phase-{skill-name}/`. Phase 2 writes unde
 
 ### semantic-decomposition
 
-| File | Role |
-| --- | --- |
+| File                                                                                    | Role                                                                                                                     |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | [`semantic-decompose.prompt.md`](./semantic-decomposition/semantic-decompose.prompt.md) | Executable prompt. Creates contract maps for the main SKILL.md and subagent files while inventorying references/scripts. |
 
 The prompt writes only under the user-supplied `OUTPUT_DIR`, which must remain outside `prompts/`.
 
 ### best-practices-audit
 
-| File | Role |
-| --- | --- |
+| File                                                        | Role                                                                                  |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | [`audit.prompt.md`](./best-practices-audit/audit.prompt.md) | Executable prompt. Read-only adversarial audit of `docs/best-practices/` as a corpus. |
 
 The prompt writes only the four dossier files `INDEX.md`, `inventory.md`, `findings.md`, and `compliance.md` under the user-supplied `OUTPUT_DIR`, which must remain outside `prompts/` and other protected trees. Suggested location: `outputs/best-practices-audit-{date-or-run-id}/`.

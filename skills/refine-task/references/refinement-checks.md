@@ -6,19 +6,19 @@ For every check, record one outcome: `pass`, `gap`, `risk`, `contradiction`, `in
 
 ## Core Checks
 
-| Check | What To Look For | Common Non-Ready Signal |
-| --- | --- | --- |
-| Goal | The work item states the change or problem in implementable terms. | Vague intent such as "improve flow" without target behavior. |
-| Outcome | Acceptance criteria or expected observable behavior are testable. | No done condition, only implementation hints. |
-| Persona | Affected user, operator, system, or stakeholder is named or inferable from evidence. | No actor, customer, tenant, role, or system owner. |
-| Journey | Before state, trigger, main path, edge cases, and end state are coherent. | Missing trigger, ambiguous happy path, or no failure behavior. |
-| Scope cohesion | The item is one coherent unit of value. | Multiple unrelated outcomes or surfaces. |
-| Risk | Security, data, privacy, migration, rollout, operational, or customer-impact risks are named or clearly absent. | Risky area touched with no mitigation or question. |
-| Dependencies | Blocking teams, APIs, designs, migrations, flags, or upstream work are known. | External prerequisite implied but not identified. |
-| Technical claims | Concrete library, SDK, API, config, version, CLI, or platform claims are verified or marked uncertain. | Claim appears stale, impossible, unsupported, or uncited. |
-| Subtasks | Child work is coherent, ordered, and sufficient when the item is an epic or parent. | Children missing, overlapping, or not independently implementable. |
-| Rationale | The item explains why the work matters or links to evidence. | Priority exists without reason or context. |
-| Priority | Priority, severity, deadline, or ordering signal is present when it affects delivery. | Urgency implied but not supported. |
+| Check            | What To Look For                                                                                                | Common Non-Ready Signal                                            |
+| ---------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Goal             | The work item states the change or problem in implementable terms.                                              | Vague intent such as "improve flow" without target behavior.       |
+| Outcome          | Acceptance criteria or expected observable behavior are testable.                                               | No done condition, only implementation hints.                      |
+| Persona          | Affected user, operator, system, or stakeholder is named or inferable from evidence.                            | No actor, customer, tenant, role, or system owner.                 |
+| Journey          | Before state, trigger, main path, edge cases, and end state are coherent.                                       | Missing trigger, ambiguous happy path, or no failure behavior.     |
+| Scope cohesion   | The item is one coherent unit of value.                                                                         | Multiple unrelated outcomes or surfaces.                           |
+| Risk             | Security, data, privacy, migration, rollout, operational, or customer-impact risks are named or clearly absent. | Risky area touched with no mitigation or question.                 |
+| Dependencies     | Blocking teams, APIs, designs, migrations, flags, or upstream work are known.                                   | External prerequisite implied but not identified.                  |
+| Technical claims | Concrete library, SDK, API, config, version, CLI, or platform claims are verified or marked uncertain.          | Claim appears stale, impossible, unsupported, or uncited.          |
+| Subtasks         | Child work is coherent, ordered, and sufficient when the item is an epic or parent.                             | Children missing, overlapping, or not independently implementable. |
+| Rationale        | The item explains why the work matters or links to evidence.                                                    | Priority exists without reason or context.                         |
+| Priority         | Priority, severity, deadline, or ordering signal is present when it affects delivery.                           | Urgency implied but not supported.                                 |
 
 ## Item-Type Focus
 
@@ -42,14 +42,14 @@ Run only the core checks that can be evaluated from supplied context. Mark platf
 
 Select the most specific readiness status supported by evidence:
 
-| Signal | Likely Status |
-| --- | --- |
-| Core checks pass and no material gaps remain | `Ready` |
-| One or more details need clarification but the item is one coherent unit | `Needs refinement` |
-| Scope cohesion fails or independent outcomes are bundled | `Needs split` |
-| Feasibility, external behavior, technical approach, migration, security, or data impact needs research before planning | `Needs spike` |
-| Implementation depends on missing access, owner decision, prerequisite work, or unavailable evidence | `Blocked` |
-| The item is duplicate, obsolete, superseded, invalid, or no longer suitable work | `Not actionable` |
+| Signal                                                                                                                 | Likely Status      |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| Core checks pass and no material gaps remain                                                                           | `Ready`            |
+| One or more details need clarification but the item is one coherent unit                                               | `Needs refinement` |
+| Scope cohesion fails or independent outcomes are bundled                                                               | `Needs split`      |
+| Feasibility, external behavior, technical approach, migration, security, or data impact needs research before planning | `Needs spike`      |
+| Implementation depends on missing access, owner decision, prerequisite work, or unavailable evidence                   | `Blocked`          |
+| The item is duplicate, obsolete, superseded, invalid, or no longer suitable work                                       | `Not actionable`   |
 
 When multiple non-ready signals exist, pick the status that best describes the next action needed. Example: choose `Needs spike` over `Needs refinement` when a clarification cannot be answered until research is done.
 

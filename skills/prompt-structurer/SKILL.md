@@ -13,16 +13,16 @@ You are a routing composer, not a free-form rewriter. Preserve source intent; ch
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PROMPT_TEXT` | Yes | Prose prompt or suite entry to structure |
-| `RUN_STYLE` | No | `interactive`, `autonomous`, or unknown |
-| `SUITE_CONTEXT` | No | Shared suite conventions or sibling prompts |
-| `TERMINOLOGY` | No | Terms to preserve exactly |
-| `CHANGE_REQUEST` | No | Revision request for existing XML |
-| `EXISTING_XML_PROMPT` | Required for `revision` | Baseline XML; never substitute `PROMPT_TEXT` |
-| `PRIOR_FAILURES` | No | Past misbehavior of the prompt |
-| `OUTPUT_TARGET` | No | Path for final XML; absent → conversational only |
+| Input                 | Required                | Example                                          |
+| --------------------- | ----------------------- | ------------------------------------------------ |
+| `PROMPT_TEXT`         | Yes                     | Prose prompt or suite entry to structure         |
+| `RUN_STYLE`           | No                      | `interactive`, `autonomous`, or unknown          |
+| `SUITE_CONTEXT`       | No                      | Shared suite conventions or sibling prompts      |
+| `TERMINOLOGY`         | No                      | Terms to preserve exactly                        |
+| `CHANGE_REQUEST`      | No                      | Revision request for existing XML                |
+| `EXISTING_XML_PROMPT` | Required for `revision` | Baseline XML; never substitute `PROMPT_TEXT`     |
+| `PRIOR_FAILURES`      | No                      | Past misbehavior of the prompt                   |
+| `OUTPUT_TARGET`       | No                      | Path for final XML; absent → conversational only |
 
 Ask one targeted question only when the answer would change the final contract. If `CHANGE_REQUEST` is present but `EXISTING_XML_PROMPT` is absent and not recoverable verbatim, return `BLOCKED` asking for the existing structured prompt.
 
@@ -30,14 +30,14 @@ Execution follows the canonical [`state-machine.md`](./state-machine.md). Any wo
 
 ## Subagent Registry
 
-| Pass # | Subagent | Path | Purpose |
-| --- | --- | --- | --- |
-| 1 | `semantic-decomposer` | `./subagents/semantic-decomposer.md` | Source map; double-duty, orphan, terminology, suite notes |
-| 2 | `philosophy-constraints-classifier` | `./subagents/philosophy-constraints-classifier.md` | Philosophy, constraints, hard rules, ambiguity, suite conventions |
-| 3 | `implicit-behavior-surfacer` | `./subagents/implicit-behavior-surfacer.md` | Ambiguity, gates, empty-output, autonomy gaps |
-| 4 | `anti-pattern-synthesizer` | `./subagents/anti-pattern-synthesizer.md` | Wrong paths and `PRIOR_FAILURES` → anti-patterns |
-| 5 | `success-criteria-builder` | `./subagents/success-criteria-builder.md` | Observable criteria and coverage gaps |
-| 6 | `xml-prompt-assembler` | `./subagents/xml-prompt-assembler.md` | Final XML, removal-test table, assembly notes |
+| Pass # | Subagent                            | Path                                               | Purpose                                                           |
+| ------ | ----------------------------------- | -------------------------------------------------- | ----------------------------------------------------------------- |
+| 1      | `semantic-decomposer`               | `./subagents/semantic-decomposer.md`               | Source map; double-duty, orphan, terminology, suite notes         |
+| 2      | `philosophy-constraints-classifier` | `./subagents/philosophy-constraints-classifier.md` | Philosophy, constraints, hard rules, ambiguity, suite conventions |
+| 3      | `implicit-behavior-surfacer`        | `./subagents/implicit-behavior-surfacer.md`        | Ambiguity, gates, empty-output, autonomy gaps                     |
+| 4      | `anti-pattern-synthesizer`          | `./subagents/anti-pattern-synthesizer.md`          | Wrong paths and `PRIOR_FAILURES` → anti-patterns                  |
+| 5      | `success-criteria-builder`          | `./subagents/success-criteria-builder.md`          | Observable criteria and coverage gaps                             |
+| 6      | `xml-prompt-assembler`              | `./subagents/xml-prompt-assembler.md`              | Final XML, removal-test table, assembly notes                     |
 
 Read a subagent only when dispatching that pass. Prefer runtime subagent/task with fresh context; else load the file inline and follow it verbatim. Disclose dispatch method in assembly notes. Subagents never spawn subagents.
 
@@ -53,24 +53,24 @@ Handoff: forward named sections only; retain them through run-level validation (
 
 This table owns required payloads. Status routes and emitter scope are in [`state-machine.md`](./state-machine.md). Named outputs must be safe downstream. Never discard completed work silently.
 
-| Status | Required payload |
-| --- | --- |
-| `PASS` | Final XML + notes at run level |
-| `BLOCKED` | One question + completed work |
-| `FAIL` | Conflicting statements + clarification |
-| `ERROR` | Failing pass, retry record, completed outputs |
+| Status          | Required payload                                           |
+| --------------- | ---------------------------------------------------------- |
+| `PASS`          | Final XML + notes at run level                             |
+| `BLOCKED`       | One question + completed work                              |
+| `FAIL`          | Conflicting statements + clarification                     |
+| `ERROR`         | Failing pass, retry record, completed outputs              |
 | `REPAIR_NEEDED` | Unvalidated XML, failing criteria with owning pass, cycles |
 
 ## Progressive Loading Map
 
-| Need | Load |
-| --- | --- |
-| States, transitions, guards, terminals | `./state-machine.md` |
-| Tag selection or naming | `./references/tag-taxonomy.md` |
-| Drift, autonomy, gates, wrong-path risks | `./references/failure-modes.md` |
-| XML section order and removal test | `./references/template-skeleton.md` |
-| External rationale index | `./references/web-resource-index.md` |
-| A specific pass contract | matching `./subagents/<name>.md` |
+| Need                                     | Load                                 |
+| ---------------------------------------- | ------------------------------------ |
+| States, transitions, guards, terminals   | `./state-machine.md`                 |
+| Tag selection or naming                  | `./references/tag-taxonomy.md`       |
+| Drift, autonomy, gates, wrong-path risks | `./references/failure-modes.md`      |
+| XML section order and removal test       | `./references/template-skeleton.md`  |
+| External rationale index                 | `./references/web-resource-index.md` |
+| A specific pass contract                 | matching `./subagents/<name>.md`     |
 
 `SKILL.md` links stay one level deep. Subagents may load `../references/*` only at their documented decision points (intentional JIT; not a preload). Web: at most one URL fetch per run, orchestrator-owned; subagents emit `FETCH_REQUESTED` only. Keep an ordered load log.
 
@@ -78,15 +78,15 @@ This table owns required payloads. Status routes and emitter scope are in [`stat
 
 Always end with pass 6. Preserve unaffected `EXISTING_XML_PROMPT` sections. If a required upstream output is missing, rerun the earliest missing prerequisite first.
 
-| Change type | Passes | "Affected" means |
-| --- | --- | --- |
-| Terminology or wording only | 6, with pass 1 output as reference | Wording/terms only; no task/rule/behavior change |
+| Change type                 | Passes                                                                   | "Affected" means                                                               |
+| --------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Terminology or wording only | 6, with pass 1 output as reference                                       | Wording/terms only; no task/rule/behavior change                               |
 | Task, scope, or deliverable | 1, then each of 2–5 whose inputs or prior named sections changed, then 6 | A pass is affected if its required inputs or the sections it owns would differ |
-| Rules or constraints | 2, 4, 5, 6 | Constraint/philosophy/hard-rule text changed |
-| Edge behavior or autonomy | 3, 4, 5, 6 | Gates, empty-output, autonomy, or run-style behavior changed |
-| Anti-patterns only | 4, 5, 6 | Prevention/wrong-path text changed |
-| Success criteria only | 5, 6 | Verification checklist changed |
-| No matching row | Escalate to `full` and disclose reason | — |
+| Rules or constraints        | 2, 4, 5, 6                                                               | Constraint/philosophy/hard-rule text changed                                   |
+| Edge behavior or autonomy   | 3, 4, 5, 6                                                               | Gates, empty-output, autonomy, or run-style behavior changed                   |
+| Anti-patterns only          | 4, 5, 6                                                                  | Prevention/wrong-path text changed                                             |
+| Success criteria only       | 5, 6                                                                     | Verification checklist changed                                                 |
+| No matching row             | Escalate to `full` and disclose reason                                   | —                                                                              |
 
 When unsure whether pass N is affected, include it (prefer over-run to silent omit) and note the assumption.
 

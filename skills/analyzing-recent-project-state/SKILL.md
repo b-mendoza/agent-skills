@@ -9,13 +9,13 @@ This skill is a calm, read-only readiness cartographer. The orchestrator owns ro
 
 ## Inputs
 
-| Input | Required | Default |
-| --- | --- | --- |
-| `PROJECT_PATH` | Yes unless the active workspace is a Git worktree and the request names no other path | Recorded as an assumption when defaulted |
-| `BASE_BRANCH` | No | `unset`; the collector resolves it |
-| `REVIEW_FOCUS` | No | `full` (`security`, `tests`, `dependencies`, `config`); unsupported → `full`, labeled assumption |
-| `OUTPUT_DEPTH` | No | `standard` (`brief`, `standard`, `deep`); unsupported → `standard`, labeled assumption |
-| `HOST_INTERACTIVE` | No | `false`; caller-supplied only, never inferred |
+| Input              | Required                                                                              | Default                                                                                          |
+| ------------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `PROJECT_PATH`     | Yes unless the active workspace is a Git worktree and the request names no other path | Recorded as an assumption when defaulted                                                         |
+| `BASE_BRANCH`      | No                                                                                    | `unset`; the collector resolves it                                                               |
+| `REVIEW_FOCUS`     | No                                                                                    | `full` (`security`, `tests`, `dependencies`, `config`); unsupported → `full`, labeled assumption |
+| `OUTPUT_DEPTH`     | No                                                                                    | `standard` (`brief`, `standard`, `deep`); unsupported → `standard`, labeled assumption           |
+| `HOST_INTERACTIVE` | No                                                                                    | `false`; caller-supplied only, never inferred                                                    |
 
 - `SKILL_DIR`: the directory containing this `SKILL.md` as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the `SKILL.md` path you read; if neither is known, terminate `RECENT_STATE: TOOLS_MISSING`. Every dispatch carries it.
 - `ASSUMPTIONS`: one `<label>: <value>` per line or the literal `none`; labels are `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `OUTPUT_DEPTH`, `User decision`.
@@ -27,29 +27,29 @@ This skill is a calm, read-only readiness cartographer. The orchestrator owns ro
 
 Exactly one of two outcomes, as response text; no file. Both are critical outputs: success gated by `G_OUTPUT`, failure by `G_ESCALATION`. The orchestrator composes lines 2 and 3 from the table; the script checks their shape, not their text; nothing else is emitted.
 
-| Outcome | Shape |
-| --- | --- |
+| Outcome | Shape                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Success | The verified `# Project State Snapshot` body (ten canonical sections, or the four-section quiet-state short form). Claims use the label grammar owned by [`references/project-state-snapshot-template.md`](./references/project-state-snapshot-template.md): `[confirmed: <locator>]`, `[likely: <locator>]`, `[possible]`, `[unverified]`; locators `commit <hash>`, `path <path>[:<lines>]`, `field <GIT_EVIDENCE field name>`. |
-| Failure | Exactly three lines: `RECENT_STATE: <NOT_GIT \| PATH_ERROR \| NEEDS_CONTEXT \| TOOLS_MISSING \| ERROR>`, `Reason: <one line>`, `Next step: <one action>`. |
+| Failure | Exactly three lines: `RECENT_STATE: <NOT_GIT \| PATH_ERROR \| NEEDS_CONTEXT \| TOOLS_MISSING \| ERROR>`, `Reason: <one line>`, `Next step: <one action>`.                                                                                                                                                                                                                                                                         |
 
-| Status (origin) | Reason | Next step |
-| --- | --- | --- |
-| `NOT_GIT` (intake) | `<PROJECT_PATH> exists but is not a Git worktree.` | `Re-run with PROJECT_PATH set to a Git worktree.` |
-| `PATH_ERROR` (intake) | `<PROJECT_PATH> cannot be read or listed.` | `Re-run with a readable PROJECT_PATH.` |
-| `NEEDS_CONTEXT` (writer or verifier) | the payload's `Decision needed:` value, verbatim | `Re-run supplying the decision named above.` |
-| `NEEDS_CONTEXT` (intake) | `<blocking decision> requires a user decision; this host cannot ask` | `Re-run supplying the decision named above.` |
-| `TOOLS_MISSING` (intake) | `<capability> unavailable: <detail>` | `Enable the capability named above (a POSIX shell with sh and awk for the validator, or a resolvable skill directory), then re-run.` |
-| `ERROR` (repair exhausted) | `verification did not converge within 2 repair attempts; unresolved sections: <the text before the first colon of each bullet in the last REQUIRED_FIXES, joined with "; ">` | `Re-run with OUTPUT_DEPTH=brief or a narrower REVIEW_FOCUS; if it recurs, review the named sections manually.` |
-| `ERROR` (subagent-sourced) | the subagent's `Reason:` verbatim | `Re-run; if it recurs, report the reason above.` |
-| `ERROR` (unroutable) | `unroutable <phase> output after one format retry` | `Re-run; if it recurs, report the reason above.` |
+| Status (origin)                      | Reason                                                                                                                                                                       | Next step                                                                                                                            |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `NOT_GIT` (intake)                   | `<PROJECT_PATH> exists but is not a Git worktree.`                                                                                                                           | `Re-run with PROJECT_PATH set to a Git worktree.`                                                                                    |
+| `PATH_ERROR` (intake)                | `<PROJECT_PATH> cannot be read or listed.`                                                                                                                                   | `Re-run with a readable PROJECT_PATH.`                                                                                               |
+| `NEEDS_CONTEXT` (writer or verifier) | the payload's `Decision needed:` value, verbatim                                                                                                                             | `Re-run supplying the decision named above.`                                                                                         |
+| `NEEDS_CONTEXT` (intake)             | `<blocking decision> requires a user decision; this host cannot ask`                                                                                                         | `Re-run supplying the decision named above.`                                                                                         |
+| `TOOLS_MISSING` (intake)             | `<capability> unavailable: <detail>`                                                                                                                                         | `Enable the capability named above (a POSIX shell with sh and awk for the validator, or a resolvable skill directory), then re-run.` |
+| `ERROR` (repair exhausted)           | `verification did not converge within 2 repair attempts; unresolved sections: <the text before the first colon of each bullet in the last REQUIRED_FIXES, joined with "; ">` | `Re-run with OUTPUT_DEPTH=brief or a narrower REVIEW_FOCUS; if it recurs, review the named sections manually.`                       |
+| `ERROR` (subagent-sourced)           | the subagent's `Reason:` verbatim                                                                                                                                            | `Re-run; if it recurs, report the reason above.`                                                                                     |
+| `ERROR` (unroutable)                 | `unroutable <phase> output after one format retry`                                                                                                                           | `Re-run; if it recurs, report the reason above.`                                                                                     |
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
+| Subagent                 | Path                                    | Purpose                                              |
+| ------------------------ | --------------------------------------- | ---------------------------------------------------- |
 | `git-evidence-collector` | `./subagents/git-evidence-collector.md` | Bounded local Git evidence as compact `GIT_EVIDENCE` |
-| `state-snapshot-writer` | `./subagents/state-snapshot-writer.md` | Draft or minimally repair the snapshot |
-| `snapshot-verifier` | `./subagents/snapshot-verifier.md` | Verify grounding, shape, focus, and actionability |
+| `state-snapshot-writer`  | `./subagents/state-snapshot-writer.md`  | Draft or minimally repair the snapshot               |
+| `snapshot-verifier`      | `./subagents/snapshot-verifier.md`      | Verify grounding, shape, focus, and actionability    |
 
 Read a file only when dispatching it or executing it inline. Subagents never dispatch or ask.
 
@@ -64,8 +64,8 @@ Where the installer does not apply these rules, the collector's closed list is t
 
 ## Progressive Loading Map
 
-| Need | Load |
-| --- | --- |
+| Need                                        | Load                                                                                                                                            |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Report sections, depth, focus, claim labels | Writer and verifier load [`references/project-state-snapshot-template.md`](./references/project-state-snapshot-template.md) through `SKILL_DIR` |
 
 The seventeen `GIT_EVIDENCE` field names live in the collector file and the script; the orchestrator never needs them.
@@ -86,28 +86,28 @@ Five phases. Announce each real transition as `Phase N/5 - <Name>`. Dispatch onl
 
 The orchestrator runs the gate itself (payload on stdin; exit 0 passes); a producer's own validation does not substitute.
 
-| Gate | Applies to | Predicate |
-| --- | --- | --- |
-| `G_EVIDENCE` | any collector output | `sh "$SKILL_DIR/scripts/validate-output.sh" evidence` |
-| `G_DRAFT` | any writer output | `sh "$SKILL_DIR/scripts/validate-output.sh" draft "$PROJECT_PATH"`; on `PASS` this also proves every confirmed/likely locator resolves |
-| `G_VERDICT` | any verifier output | `sh "$SKILL_DIR/scripts/validate-output.sh" verdict` |
-| `G_OUTPUT` | the success body | `sh "$SKILL_DIR/scripts/validate-output.sh" report` |
-| `G_ESCALATION` | the three-line envelope | `sh "$SKILL_DIR/scripts/validate-output.sh" envelope` |
+| Gate           | Applies to              | Predicate                                                                                                                              |
+| -------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `G_EVIDENCE`   | any collector output    | `sh "$SKILL_DIR/scripts/validate-output.sh" evidence`                                                                                  |
+| `G_DRAFT`      | any writer output       | `sh "$SKILL_DIR/scripts/validate-output.sh" draft "$PROJECT_PATH"`; on `PASS` this also proves every confirmed/likely locator resolves |
+| `G_VERDICT`    | any verifier output     | `sh "$SKILL_DIR/scripts/validate-output.sh" verdict`                                                                                   |
+| `G_OUTPUT`     | the success body        | `sh "$SKILL_DIR/scripts/validate-output.sh" report`                                                                                    |
+| `G_ESCALATION` | the three-line envelope | `sh "$SKILL_DIR/scripts/validate-output.sh" envelope`                                                                                  |
 
 ## Status Routing
 
-| Source | Status | Route |
-| --- | --- | --- |
-| Collector | `PASS` | Write |
-| Collector | `ERROR` | envelope |
-| Writer | `PASS` | Verify |
-| Writer | `NEEDS_CONTEXT` | envelope |
-| Writer | `ERROR` | envelope |
-| Verifier | `PASS` | Final |
-| Verifier | `FAIL` | repair or repair-exhausted envelope |
-| Verifier | `NEEDS_CONTEXT` | envelope |
-| Verifier | `ERROR` | envelope |
-| Any | unrecognized or gate-failed | format retry then unroutable envelope |
+| Source    | Status                      | Route                                 |
+| --------- | --------------------------- | ------------------------------------- |
+| Collector | `PASS`                      | Write                                 |
+| Collector | `ERROR`                     | envelope                              |
+| Writer    | `PASS`                      | Verify                                |
+| Writer    | `NEEDS_CONTEXT`             | envelope                              |
+| Writer    | `ERROR`                     | envelope                              |
+| Verifier  | `PASS`                      | Final                                 |
+| Verifier  | `FAIL`                      | repair or repair-exhausted envelope   |
+| Verifier  | `NEEDS_CONTEXT`             | envelope                              |
+| Verifier  | `ERROR`                     | envelope                              |
+| Any       | unrecognized or gate-failed | format retry then unroutable envelope |
 
 ## Boundaries And Success Criteria
 
