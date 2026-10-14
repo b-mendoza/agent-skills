@@ -108,7 +108,7 @@ Finite-state execution model for this skill. Mermaid rendering lives in [`flow-d
 
 ## Reachability
 
-Every listed state is reachable from `Intake` (including the resume routes `Intake` → `ValidateApprovedGaps` and `Intake` → `StageCandidates`). Every terminal has an exit to `[*]`. Both wait states follow one convention: stop at a confirmation terminal whose output carries a resume block, then resume through `Intake` on the next invocation. `PackageRepair` always returns to `BuildCandidate`. There are no dead states.
+Every listed state is reachable from `Intake` (including the resume routes `Intake` → `ValidateApprovedGaps` and `Intake` → `StageCandidates`). Every terminal has an exit to `[*]`. `AwaitRefinementApproval`, `AwaitRepairApproval` and `AwaitDecomposeApproval` stop at their confirmation terminals and resume through `Intake` with the existing resume block. `PackageRepair` always returns to `BuildCandidate`. There are no dead states.
 
 ## Resume Blocks
 
