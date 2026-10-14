@@ -74,17 +74,15 @@ Handoff: forward named sections only; retain them through run-level validation (
 
 ## Status Taxonomy
 
-Statuses are mutually exclusive and inherited by every pass.
+This table owns required payloads. Status routes and emitter scope are in [`state-machine.md`](./state-machine.md). Named outputs must be safe downstream. Never discard completed work silently.
 
-| Status | Condition | Continuation | Required payload |
-| --- | --- | --- | --- |
-| `PASS` | Named outputs safe downstream | Continue or deliver | Final XML + notes at run level |
-| `BLOCKED` | Missing/insufficient input | Resumable at blocked unit | One question + completed work |
-| `FAIL` | Contradiction only user can resolve | Terminal | Conflicting statements + clarification |
-| `ERROR` | Tool/runtime failure after one retry | Terminal | Failing pass, retry record, completed outputs |
-| `REPAIR_NEEDED` | Criteria fail after three repair cycles | Terminal (orchestrator-only) | Unvalidated XML, failing criteria, cycles |
-
-Out-of-scope revision → `BLOCKED` if rescopable, else `FAIL`. Never discard completed work silently.
+| Status | Required payload |
+| --- | --- |
+| `PASS` | Final XML + notes at run level |
+| `BLOCKED` | One question + completed work |
+| `FAIL` | Conflicting statements + clarification |
+| `ERROR` | Failing pass, retry record, completed outputs |
+| `REPAIR_NEEDED` | Unvalidated XML, failing criteria with owning pass, cycles |
 
 ## Progressive Loading Map
 
