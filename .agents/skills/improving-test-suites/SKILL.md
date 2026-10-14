@@ -27,7 +27,7 @@ Portable target: OpenCode and Claude Code. Plain Markdown links and minimal fron
 
 ## State Machine Overview
 
-Execution is a finite-state machine. The single normative source for states, transitions, guards, and terminals is [`state-machine.md`](./state-machine.md) (its Mermaid diagram is illustrative). Subagent status tables: [`references/orchestration-protocol.md`](./references/orchestration-protocol.md).
+Non-normative overview. The sole normative source for states, transitions, guards, loops, and terminals is [`state-machine.md`](./state-machine.md). Subagent status tables: [`references/orchestration-protocol.md`](./references/orchestration-protocol.md).
 
 | State group | Result |
 | --- | --- |
