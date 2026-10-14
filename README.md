@@ -4,7 +4,7 @@
 
 ## What is in this repository
 
-- [`skills/`](skills/) contains 27 first-party skills. Each skill has its own `SKILL.md`, with `subagents/` and `references/` added where needed.
+- [`skills/`](skills/) contains 28 first-party skills. Each skill has its own `SKILL.md`, with `subagents/` and `references/` added where needed.
 - [`prompts/`](prompts/) contains reusable prompt families. Each family is a kebab-case directory that keeps related executable prompts together with any contracts and supporting docs. See [`prompts/README.md`](prompts/README.md) for the catalog and addition rules.
 - [`docs/`](docs/) contains workflow notes, design specs, and project-specific planning documents.
 - [`docs/best-practices/`](docs/best-practices/) is the best starting point for skill-authoring guidance.
@@ -45,6 +45,7 @@ Phases run in order. `<KEY>` is `TICKET_KEY` for Jira or `ISSUE_SLUG` for GitHub
 - [`recency-guard`](skills/recency-guard/SKILL.md) checks answers that depend on current external facts.
 - [`refactoring-code`](skills/refactoring-code/SKILL.md) refactors existing code while preserving observable behavior.
 - [`refine-task`](skills/refine-task/SKILL.md) reviews Jira tickets, Jira epics, GitHub issues, and GitHub parent issues for readiness.
+- [`reporting-skill-issues`](skills/reporting-skill-issues/SKILL.md) opens a new GitHub issue in this repository with traceable evidence when an agent hits a problem while running one of its skills.
 - [`responding-to-pr-review-comments`](skills/responding-to-pr-review-comments/SKILL.md) assesses received PR review comments and drafts responses.
 - [`review-pull-request`](skills/review-pull-request/SKILL.md) reviews one pull request through a confirmation-gated workflow.
 - [`review-software-engineer-cv`](skills/review-software-engineer-cv/SKILL.md) reviews and tailors a software engineer CV against job postings.
