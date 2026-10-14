@@ -14,6 +14,7 @@ The seven work-item workflow phases run as one sequential workflow and are meant
 
 ```markdown
 <!-- ❌ skills/summarize-diagram/SKILL.md: repository and sibling dependencies -->
+
 description: "Summarizes diagrams. Use when asked to explain a diagram. Does not open pull requests (use pr-creator)."
 Load `../../docs/best-practices/checkpoint-irreversible-actions.md` before publishing.
 Run `../diagram-tools/scripts/render.sh`.
@@ -24,6 +25,7 @@ because automated cases are not yet available.
 
 ```markdown
 <!-- ✅ same skill: own rules, bundled helper, request-based exclusion -->
+
 description: "Summarizes diagrams. Use when asked to explain a diagram. Does not open pull requests."
 Before publishing, show the exact summary and destination; wait for explicit approval.
 With `SKILL_DIR` resolved, run the bundled helper: `sh "${SKILL_DIR}/scripts/render.sh"`.

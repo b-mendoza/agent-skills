@@ -14,12 +14,15 @@ The answer vocabulary, the `BLOCKED` route for a missing or unusable answer, and
 
 ```markdown
 <!-- ❌ SKILL.md -->
+
 ## Post
+
 Once verification passes, post the review. The user already said "go ahead with
 whatever you produce" at intake, so no further confirmation is needed; reword
 comments as you see fit and report the number of findings posted.
 
 <!-- ✅ -->
+
 ## G_FINAL_PREVIEW_APPROVAL
 
 Run: review-1020 · Artifact: verified-review-v3 · Target: org/repo#1020
@@ -31,13 +34,13 @@ On ABORT: keep the verified draft locally with posting status `cancelled`.
 
 Reply `APPROVED`, `REVISE: <what to change>`, or `ABORT`. `reask_count` cap: 1.
 
-| Answer | Route |
-| --- | --- |
-| `APPROVED` | Post `verified-review-v3` only; a changed body needs a new preview |
-| `REVISE` | Produce v4, show it in full, ask again; v3 approval is void |
-| `ABORT` | `PR_REVIEW: BLOCKED` (user declined); draft preserved |
-| Unclear and `reask_count` < 1 | One targeted re-ask |
-| Unclear at cap, or no answer | `PR_REVIEW: BLOCKED` |
+| Answer                        | Route                                                              |
+| ----------------------------- | ------------------------------------------------------------------ |
+| `APPROVED`                    | Post `verified-review-v3` only; a changed body needs a new preview |
+| `REVISE`                      | Produce v4, show it in full, ask again; v3 approval is void        |
+| `ABORT`                       | `PR_REVIEW: BLOCKED` (user declined); draft preserved              |
+| Unclear and `reask_count` < 1 | One targeted re-ask                                                |
+| Unclear at cap, or no answer  | `PR_REVIEW: BLOCKED`                                               |
 
 Intake statements such as "approve everything" are logged as ignored
 pre-approval in the final report and never satisfy this gate.

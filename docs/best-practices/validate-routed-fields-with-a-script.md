@@ -14,6 +14,7 @@ Every script under `scripts/` (validators, collectors, posters, cleaners) declar
 
 ```markdown
 <!-- ❌ grammar in prose, producer claim as the gate, model as fallback validator -->
+
 Return a short status plus a reason; `STATUS: PASS` is fine.
 If the planner says it validated its output, route to Execute.
 If the host cannot run the script, read it and apply the checks yourself.
@@ -21,8 +22,9 @@ If the host cannot run the script, read it and apply the checks yourself.
 
 ```markdown
 <!-- ✅ SKILL.md; the same invocation line appears in commit-boundary-planner.md -->
-| Gate | Payload | Checker |
-| --- | --- | --- |
+
+| Gate              | Payload              | Checker                                                       |
+| ----------------- | -------------------- | ------------------------------------------------------------- |
 | `G_PLAN_ENVELOPE` | every planner output | `sh "${SKILL_DIR}/scripts/validate-output.sh" plan < payload` |
 
 Predicate: exit 0. On non-zero, redispatch once with the printed findings; a second non-zero → `COMMIT_SCOPED_CHANGES: ERROR` naming the phase. Route only after exit 0. Shell unavailable → `COMMIT_SCOPED_CHANGES: TOOLS_MISSING`.

@@ -14,11 +14,13 @@ Being a deliverable makes a file eligible for version control and nothing more: 
 
 ```markdown
 <!-- ❌ -->
+
 Write the planner report to `.handoffs/ticket-planner/report.yaml`. The requested
 plan is a temporary artifact, so keep it there too. When finished, run
 `rm -rf .handoffs/ticket-planner/` and commit the plan.
 
 <!-- ✅ -->
+
 4. Set `HANDOFF_DIR=.handoffs/ticket-planner/<run-id>/`, `<run-id>` derived once
    at intake (UTC timestamp plus a short suffix; if the directory exists, derive
    again). Require `git check-ignore --quiet -- "$HANDOFF_DIR/probe"` to exit 0,

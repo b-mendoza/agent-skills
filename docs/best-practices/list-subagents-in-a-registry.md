@@ -14,21 +14,23 @@ This rule does not decide whether a step is dispatched ([delegate-by-default](./
 
 ```markdown
 <!-- ❌ core columns replaced, rows grouped, one row with two purposes; nothing here can be dispatched -->
+
 ## Subagent Registry
 
-| Group | Subagents | Path | Notes |
-| --- | --- | --- | --- |
-| Auditors | flow, architecture, hygiene | (see folder) | various |
-| Editor | skill-definition-editor | ./subagents/skill-definition-editor.md | applies fixes; also validates |
+| Group    | Subagents                   | Path                                   | Notes                         |
+| -------- | --------------------------- | -------------------------------------- | ----------------------------- |
+| Auditors | flow, architecture, hygiene | (see folder)                           | various                       |
+| Editor   | skill-definition-editor     | ./subagents/skill-definition-editor.md | applies fixes; also validates |
 
 <!-- ✅ one subagent per row; every path exists and its file declares the matching `name` -->
+
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
+| Subagent                 | Path                                    | Purpose                                              |
+| ------------------------ | --------------------------------------- | ---------------------------------------------------- |
 | `git-evidence-collector` | `./subagents/git-evidence-collector.md` | Bounded local Git evidence as compact `GIT_EVIDENCE` |
-| `state-snapshot-writer` | `./subagents/state-snapshot-writer.md` | Draft or minimally repair the snapshot |
-| `snapshot-verifier` | `./subagents/snapshot-verifier.md` | Verify grounding, focus, and actionability |
+| `state-snapshot-writer`  | `./subagents/state-snapshot-writer.md`  | Draft or minimally repair the snapshot               |
+| `snapshot-verifier`      | `./subagents/snapshot-verifier.md`      | Verify grounding, focus, and actionability           |
 
 Read a subagent file only when dispatching that phase.
 ```

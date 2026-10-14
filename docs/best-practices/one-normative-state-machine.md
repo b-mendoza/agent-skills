@@ -12,34 +12,41 @@ The failure this prevents is two executable contracts for one status: an editor 
 
 ```markdown
 <!-- ❌ two normative sources for the same status -->
+
 # SKILL.md
+
 Both the Execution section and `./state-machine.md` are normative and must match.
 10. On `REVIEW: FAIL`, re-dispatch the analyst until the reviewer passes.
 
 # state-machine.md
+
 This table is normative. `REVIEW: FAIL` with `repair_cycles >= 3` → `TermBlocked`.
 (One run loops without bound; another stops at the cap.)
 
 <!-- ✅ one source; overview and diagram defer to it -->
+
 # SKILL.md
+
 Execution is a finite state machine. Canonical transitions: [`state-machine.md`](./state-machine.md);
 the steps below are a non-normative overview.
 
 # state-machine.md
+
 Competing guards use first-match order as listed. `repair_cycles` starts at 0, increments on entry to `Repair`, cap 3.
 
-| From | To | Guard / event |
-| --- | --- | --- |
-| Join | Analyze | every branch returned `COLLECT: PASS` |
-| Join | TermBlocked | any branch returned `COLLECT: BLOCKED` or returned nothing |
-| Review | TermReady | `REVIEW: PASS` |
-| Review | Repair | `REVIEW: FAIL` and `repair_cycles < 3` |
-| Review | TermBlocked | `REVIEW: FAIL` and `repair_cycles >= 3` |
-| Review | TermError | `REVIEW: ERROR`, malformed, or unknown status |
+| From   | To          | Guard / event                                              |
+| ------ | ----------- | ---------------------------------------------------------- |
+| Join   | Analyze     | every branch returned `COLLECT: PASS`                      |
+| Join   | TermBlocked | any branch returned `COLLECT: BLOCKED` or returned nothing |
+| Review | TermReady   | `REVIEW: PASS`                                             |
+| Review | Repair      | `REVIEW: FAIL` and `repair_cycles < 3`                     |
+| Review | TermBlocked | `REVIEW: FAIL` and `repair_cycles >= 3`                    |
+| Review | TermError   | `REVIEW: ERROR`, malformed, or unknown status              |
 
 Terminals: `TermReady`, `TermBlocked`, `TermError`; each is reachable from `Start` under a listed guard.
 
 # flow-diagram.md
+
 Illustrative only. If this diagram disagrees with `state-machine.md`, the FSM wins; repair the diagram in the same change.
 ```
 

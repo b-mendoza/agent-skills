@@ -36,9 +36,11 @@ description: "Review one assigned dimension of the PR for evidence-backed findin
 
 ```markdown
 <!-- ❌ new names that fight the filesystem -->
+
 skills/do_jira_work/subagents/ValidatingArtifacts.md
 
 <!-- ✅ new skill as a gerund, subagent as a role noun, established noun phrase kept -->
+
 skills/orchestrating-workflow/subagents/ticket-fetcher.md
 skills/pr-creator/SKILL.md
 ```

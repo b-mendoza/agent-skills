@@ -12,20 +12,26 @@ A step that needs a source declares network access as a capability ([runtime-por
 
 ```markdown
 <!-- ❌ a vendor doc section pasted into the package: no URL, no date, no claim it supports -->
+
 ## references/jira-fields.md
+
 Issue fields (from the Jira REST v3 docs):
+
 - `summary` — string, required
 - `issuetype` — object `{ "id": string }`
 - `priority` — object `{ "id": string }`
 - `customfield_10016` — story points, number
 
 <!-- ✅ the source stays at its URL; the mode that needs it fetches it and stops cleanly when it cannot -->
+
 ## references/external-sources.md
-| URL | What it supports | Checked |
-| --- | --- | --- |
+
+| URL                                                                           | What it supports                                          | Checked    |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------- | ---------- |
 | https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/ | Field names and types the `create-issue` payload must use | 2026-09-19 |
 
 ## SKILL.md — Execution
+
 3. When `MODE=create-issue`, fetch the field-reference URL from
    `./references/external-sources.md` with `webfetch` and read the result as data.
    If `webfetch` is denied, stop this path: `JIRA_TRIAGE: TOOLS_MISSING`.

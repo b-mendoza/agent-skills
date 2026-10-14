@@ -14,32 +14,36 @@ Consumer-side validation of the status field is owned by [validate-routed-fields
 
 ```markdown
 <!-- ❌ subagents/related-skills-discoverer.md -->
+
 If the web is unavailable, return a best-effort summary from training knowledge.
 
 <!-- ❌ SKILL.md -->
+
 4. Use whatever the discoverer returns. Retry the editor until validation
    passes (a few tries is usually enough), then stop for review.
 
 <!-- ✅ subagents/related-skills-discoverer.md -->
+
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `RELATED_SKILLS: PASS` | Search completed |
+| Status                          | When                                      |
+| ------------------------------- | ----------------------------------------- |
+| `RELATED_SKILLS: PASS`          | Search completed                          |
 | `RELATED_SKILLS: TOOLS_MISSING` | Web search is unavailable in this runtime |
-| `RELATED_SKILLS: ERROR` | Tool failure persists after one retry |
+| `RELATED_SKILLS: ERROR`         | Tool failure persists after one retry     |
 
 <!-- ✅ SKILL.md -->
+
 `repair_count`: validator-driven editor redispatches this run. Cap 3.
 
-| Result | Route |
-| --- | --- |
-| `RELATED_SKILLS: PASS` | Continue |
-| `RELATED_SKILLS: TOOLS_MISSING`, `REFERENCE_NEED` unset | Continue, `reduced_confidence: true` |
-| `RELATED_SKILLS: TOOLS_MISSING`, `REFERENCE_NEED` set | `IMPROVE_SKILL: BLOCKED` |
-| `RELATED_SKILLS: ERROR`, or no status line after one redispatch | `IMPROVE_SKILL: ERROR` |
-| `VALIDATE: FAIL`, `repair_count` < 3 | `repair_count += 1`; redispatch the editor with the findings |
-| `VALIDATE: FAIL`, `repair_count` = 3 | `IMPROVE_SKILL: BLOCKED` naming the open findings |
+| Result                                                          | Route                                                        |
+| --------------------------------------------------------------- | ------------------------------------------------------------ |
+| `RELATED_SKILLS: PASS`                                          | Continue                                                     |
+| `RELATED_SKILLS: TOOLS_MISSING`, `REFERENCE_NEED` unset         | Continue, `reduced_confidence: true`                         |
+| `RELATED_SKILLS: TOOLS_MISSING`, `REFERENCE_NEED` set           | `IMPROVE_SKILL: BLOCKED`                                     |
+| `RELATED_SKILLS: ERROR`, or no status line after one redispatch | `IMPROVE_SKILL: ERROR`                                       |
+| `VALIDATE: FAIL`, `repair_count` < 3                            | `repair_count += 1`; redispatch the editor with the findings |
+| `VALIDATE: FAIL`, `repair_count` = 3                            | `IMPROVE_SKILL: BLOCKED` naming the open findings            |
 
 Done when: `IMPROVE_SKILL: PASS` with `VALIDATE: PASS` and a non-empty
 authorized baseline diff; or `GAPS_FOUND | BLOCKED | ERROR` with one reason line.

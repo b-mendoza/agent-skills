@@ -14,6 +14,7 @@ Roles are vocabulary for scoping one subagent, not a roster to fill ([subagent-r
 
 ```markdown
 <!-- ❌ additions justified by appearance, not by a dimension -->
+
 Recommendation: extract the 12-row subagent registry to `references/subagent-registry.md`
 because progressive disclosure is a best practice.
 
@@ -22,6 +23,7 @@ skills/summarize-repo/subagents/
   repo-writer.md  repo-validator.md  repo-reviewer.md  repo-adjudicator.md   # one writer; nothing to cross-judge
 
 <!-- ✅ each decision names the dimension it fires, or fires none and stops -->
+
 Decision: leave the subagent registry inline. It is consulted on every run, so extraction
 would load the same 12 rows from a second file: no context-efficiency, maintainability,
 or reliability gain.

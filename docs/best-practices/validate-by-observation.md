@@ -14,6 +14,7 @@ Eval mechanics, commands, and case locations for this repository are owned by [`
 
 ```markdown
 <!-- ❌ narrative as evidence, and semantics left to the clock and the scheduler -->
+
 1. Add "never write outside scope" to the prompt.
 2. Run one familiar task in the current conversation.
 3. Ask the editor whether it respected scope; it says yes, so the safeguard is validated.
@@ -23,6 +24,7 @@ append when it finishes, and use the resulting order to pick the top finding.
 
 ```markdown
 <!-- ✅ case notes: fresh session, baseline first, observables only -->
+
 Case: trigger-negative. Prompt: "Summarize this PR description." Fixture: `dirty`.
 Baseline: `git status --porcelain` captured before the run.
 Assert: no Skill invocation for `review-pull-request` in the event stream;
@@ -32,6 +34,7 @@ Repeat the judgment-heavy cases; `PASS` vs `BLOCKED` across identical runs fails
 
 ```markdown
 <!-- ✅ SKILL.md: contract fields derived exactly -->
+
 1. Capture `RUN_STAMP` once (UTC, seconds) into run state; every path reuses it.
 2. Slug: lowercase; replace each run outside `[a-z0-9]` with `-`; trim hyphens; truncate to 40.
    If the path exists, try `-2`, `-3`, and so on. Resolve once, before dispatch.

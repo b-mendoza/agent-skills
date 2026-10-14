@@ -12,18 +12,20 @@ Contract fields (statuses, routes, ids, paths, ordering, counters) are exact acr
 
 ```markdown
 <!-- ❌ receiver has to guess the shape of both ends -->
+
 The skill takes a Jira URL or maybe a ticket key, and produces a task plan in markdown.
 The planner returns something like PASS or a reason.
 ```
 
 ```markdown
 <!-- ✅ SKILL.md -->
+
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `JIRA_URL` | Yes | `https://workspace.atlassian.net/browse/PROJECT-1234` |
-| `MODE` | No | `upfront` (default) or `critique` |
+| Input      | Required | Example                                               |
+| ---------- | -------- | ----------------------------------------------------- |
+| `JIRA_URL` | Yes      | `https://workspace.atlassian.net/browse/PROJECT-1234` |
+| `MODE`     | No       | `upfront` (default) or `critique`                     |
 
 From `JIRA_URL`: workspace = subdomain before `.atlassian.net`; ticket key = trailing path segment.
 

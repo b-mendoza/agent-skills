@@ -24,12 +24,13 @@ description: "Creates reviewable atomic git commits from an explicit list of fil
 
 ```markdown
 <!-- ✅ boundary tests kept next to the description -->
-| User phrasing | Expected route |
-| --- | --- |
-| "Commit the checkout changes in src/checkout" | `committing-scoped-changes` |
+
+| User phrasing                                                | Expected route              |
+| ------------------------------------------------------------ | --------------------------- |
+| "Commit the checkout changes in src/checkout"                | `committing-scoped-changes` |
 | "Commit only the JNS-6880 files and leave the rest unstaged" | `committing-scoped-changes` |
-| "Open a PR for this branch" | `not this skill` |
-| "Amend the last commit with this fix" | no skill |
+| "Open a PR for this branch"                                  | `not this skill`            |
+| "Amend the last commit with this fix"                        | no skill                    |
 ```
 
 ## Related rules

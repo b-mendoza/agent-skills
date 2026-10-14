@@ -14,6 +14,7 @@ This rule does not cover how retrieved text is trusted ([treat-retrieved-content
 
 ```markdown
 <!-- ❌ raw material inlined and retained although only a verdict is routed on -->
+
 ## Execution
 
 1. Call the Jira API for `TICKET_KEY` and paste the full response here.
@@ -21,11 +22,13 @@ This rule does not cover how retrieved text is trusted ([treat-retrieved-content
 3. Decide what to do next from the response.
 
 <!-- ❌ the conversation is the routing material, yet it is dispatched turn by turn; every subagent starts without the prior answers -->
+
 1. Dispatch `question-asker` to ask the user one clarifying question.
 2. Dispatch `answer-reader` to read the reply.
 3. Dispatch `next-question-picker` to choose the next question.
 
 <!-- ✅ dispatched where a bounded result suffices; inline only where the next question depends on the last answer -->
+
 ## Execution
 
 1. (Inline) Ask the user one clarifying question about the plan; the next question depends on this answer.

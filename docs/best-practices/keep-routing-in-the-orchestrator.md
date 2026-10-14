@@ -12,10 +12,11 @@ When `state-machine.md` exists, it is the single normative transition source and
 
 ```markdown
 <!-- ❌ routing hidden inside a subagent; registry rows with no referent -->
+
 ## Subagent Registry
 
-| Group | Subagents | Path |
-| --- | --- | --- |
+| Group    | Subagents                   | Path         |
+| -------- | --------------------------- | ------------ |
 | Pipeline | fetcher, validator, planner | (see folder) |
 
 ## Execution
@@ -24,12 +25,13 @@ When `state-machine.md` exists, it is the single normative transition source and
 2. Return whatever `workflow-runner` reports.
 
 <!-- ✅ one row per subagent; Execution routes on enumerated statuses and renders the handoff -->
+
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
+| Subagent            | Path                               | Purpose                                                                                                                                  |
+| ------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | `work-item-fetcher` | `./subagents/work-item-fetcher.md` | Normalises a Jira or GitHub item into `REPORT_PATH`; returns `FETCH: PASS \| BLOCKED \| ERROR` (`BLOCKED`: item not found or unreadable) |
-| `plan-validator` | `./subagents/plan-validator.md` | Checks the report against the plan contract; returns `VALIDATE: PASS \| FAIL \| ERROR` |
+| `plan-validator`    | `./subagents/plan-validator.md`    | Checks the report against the plan contract; returns `VALIDATE: PASS \| FAIL \| ERROR`                                                   |
 
 ## Execution
 

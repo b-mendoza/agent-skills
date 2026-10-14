@@ -14,12 +14,14 @@ This rule does not decide which run-local paths a skill may create or when to as
 
 ```markdown
 <!-- ❌ -->
+
 ## Edit
 
 The editor fixes the files related to the audit findings. Use good judgment
 about nearby files and ask the user if something seems risky.
 
 <!-- ✅ -->
+
 ## Mutation Limits
 
 Derive `MUTATION_LIMITS` at intake and pass the same value to
