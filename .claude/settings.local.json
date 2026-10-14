@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "autoMemoryEnabled": false,
+  "disableBundledSkills": true,
+  "enabledMcpjsonServers": [
+    "chrome-devtools",
+    "cloudflare",
+    "context7",
+    "notion",
+    "vercel"
+  ],
+  "workflowSizeGuideline": "medium"
+}
