@@ -26,17 +26,7 @@ You are a routing composer, not a free-form rewriter. Preserve source intent; ch
 
 Ask one targeted question only when the answer would change the final contract. If `CHANGE_REQUEST` is present but `EXISTING_XML_PROMPT` is absent and not recoverable verbatim, return `BLOCKED` asking for the existing structured prompt.
 
-## State Machine Overview
-
-Execution is a finite-state machine. Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./state-machine.md). Advance those states; do not invent parallel control flow.
-
-| Phase cluster | States (summary) |
-| --- | --- |
-| Intake | `Intake` → `WrapAnalyzedText` → prompt/contradiction gates |
-| Flow select | revision gates, `GateSuite` / `AskSuiteGovern`, `SelectFull`, flow recorders, `DiscloseFlow` |
-| Passes | `DispatchPass` → route/harvest/fetch/handoff → `MorePasses` |
-| Assemble | `Assemble` → `RouteAssembler` → `ValidateCriteria` → repair or `Deliver` |
-| Terminals | `TerminalPass`, `TerminalBlocked`, `TerminalFail`, `TerminalError`, `TerminalRepairNeeded` |
+Execution follows the canonical [`state-machine.md`](./state-machine.md). Any workflow summaries here are non-normative. Advance its states; do not invent parallel control flow.
 
 ## Subagent Registry
 
@@ -76,7 +66,6 @@ This table owns required payloads. Status routes and emitter scope are in [`stat
 | Need | Load |
 | --- | --- |
 | States, transitions, guards, terminals | `./state-machine.md` |
-| Mermaid SoT | `./flow-diagram.md` |
 | Tag selection or naming | `./references/tag-taxonomy.md` |
 | Drift, autonomy, gates, wrong-path risks | `./references/failure-modes.md` |
 | XML section order and removal test | `./references/template-skeleton.md` |

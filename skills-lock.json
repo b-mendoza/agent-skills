@@ -101,7 +101,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/prompt-structurer/SKILL.md",
-      "computedHash": "7e5041c51152dc1c4719e1a8f133ff4713b131a5cdf29befaf8dc8e42364b2b1"
+      "computedHash": "ac786ede6ddf83df6ef5c734e9a0f3a23af25ba802dea3ef1f56170fe4f02447"
     },
     "receiving-code-review": {
       "source": "obra/superpowers",
