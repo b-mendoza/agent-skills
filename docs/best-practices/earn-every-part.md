@@ -12,7 +12,7 @@ Roles are vocabulary for scoping one subagent, not a roster to fill ([subagent-r
 
 ## Examples
 
-```markdown
+```text
 <!-- ❌ additions justified by appearance, not by a dimension -->
 
 Recommendation: extract the 12-row subagent registry to `references/subagent-registry.md`

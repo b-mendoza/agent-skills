@@ -10,7 +10,7 @@ Extract a piece to a reference only when most runs would otherwise load it for n
 
 ## Examples
 
-```markdown
+```text
 <!-- ❌ every mode inlined; the terminal rules land after ~1,100 lines -->
 
 # Refining Ideas

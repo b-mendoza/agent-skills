@@ -10,7 +10,7 @@ The failure this prevents is two executable contracts for one status: an editor 
 
 ## Examples
 
-```markdown
+```text
 <!-- ❌ two normative sources for the same status -->
 
 # SKILL.md

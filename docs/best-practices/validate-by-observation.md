@@ -12,7 +12,7 @@ Eval mechanics, commands, and case locations for this repository are owned by [`
 
 ## Examples
 
-```markdown
+```text
 <!-- ❌ narrative as evidence, and semantics left to the clock and the scheduler -->
 
 1. Add "never write outside scope" to the prompt.
@@ -22,7 +22,7 @@ Name the report `report-<current timestamp>.md`. Launch all reviewers in paralle
 append when it finishes, and use the resulting order to pick the top finding.
 ```
 
-```markdown
+```text
 <!-- ✅ case notes: fresh session, baseline first, observables only -->
 
 Case: trigger-negative. Prompt: "Summarize this PR description." Fixture: `dirty`.

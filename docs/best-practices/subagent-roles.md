@@ -20,7 +20,7 @@ Whether to dispatch at all is decided per step by [delegate-by-default](./delega
 
 ## Examples
 
-```markdown
+```text
 <!-- ❌ roles filled from the palette; a shape check dispatched; an adjudicator with a single producer -->
 
 skills/summarize-repo/subagents/
