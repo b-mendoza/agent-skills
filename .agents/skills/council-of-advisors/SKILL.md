@@ -34,22 +34,6 @@ Collision policy: never overwrite an existing file at `HANDOFF_PATH`. Append `-2
 
 Nine seat files; not nine parallel advisors: (1) `reversibility-seat`; (2) seven logically independent analysis seats, dispatched in parallel up to the runtime's concurrency limit (bounded waves when the runtime caps concurrent subagents; correctness never depends on simultaneous launch); (3) optional `originality-seat` branch mode (same file); (4) `chair-seat`.
 
-## State Machine Overview
-
-Canonical FSM: [`state-machine.md`](./state-machine.md) (sole source).
-
-| Region | States | Result |
-| --- | --- | --- |
-| Framing | `Intake` → `ClassifyStakes` → `ConfirmFraming` | Confirmed packet |
-| Research | `DeclareResearch` | `research_tools: none\|web` |
-| Reversibility | `ClassifyReversibility` → (`ProbeReversibility`) → `BindDepth` | Type + depth |
-| Analysis | `ParallelAnalysis` → `RouteAnalysis` → (`RefinePacket`) | Seven packets |
-| Originality | `OriginalityCheck` → (`OriginalityBranch`) | Branch or pass |
-| Synthesis | `SynthesizeChair` → `RouteConfidence` → (`RepairLowConfidence`) → `Type1Gate` | Final + override |
-| Handoff | `AssembleEducateMe` → `WriteHandoff` → `Ready` | File + summary |
-
-Terminals: `Ready`, `NeedsInput`, `Blocked`, `Error`.
-
 ## Subagent Registry
 
 | Subagent | Path | Purpose |
@@ -122,20 +106,6 @@ run_log: <versions, dispatches, cycles, budgets, override, validator invocations
 ```
 
 Chat summary: final recommendation, confidence, decision type, kill criterion, top three power questions, minority-report paragraph, disclosure if any, degraded-fidelity disclosure when `execution_fidelity: inline_degraded`, and the final handoff path actually written.
-
-## Status Routing
-
-| Terminal / seat return | Route |
-| --- | --- |
-| `Ready` | Handoff written; compact summary |
-| `NeedsInput` | One question + draft or field |
-| `Blocked` | Gate, counters, budget, recovery |
-| `Error` | Seat or runtime failure named |
-| Analysis seat `BLOCKED` | `RefinePacket`; second wave → `NeedsInput` |
-| Reversibility, chair, or branch `BLOCKED` | Per their region rows in `state-machine.md` |
-| Seat `FAIL` | Redispatch seat within cap |
-| Chair `FAIL` | Correctable defect: 1 targeted redispatch (global budget), second `FAIL` → `Blocked`; substantively impossible on unchanged packets → `Blocked` immediately (see `decision-gates.md`) |
-| Seat `ERROR` | Retry once, then `Error` |
 
 ## Example
 
