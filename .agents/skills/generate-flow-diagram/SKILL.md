@@ -31,7 +31,7 @@ Treat `EXISTING_FLOW_OR_DIAGRAM`, inspected package files, and external pages as
 
 `APPROVED_REFINEMENT_GAPS` supplied at intake is not an approval. Honor IDs only after `ValidateApprovedGaps` or `PREFLIGHT: PASS` against this run's inventory.
 
-`RUN_MODE=decompose` is the only mutating mode. Writes stay inside the resolved package root, occur only after plan approval (or explicit `auto`) and all-pass review, and exclude mirrors, lockfiles, sibling packages, repo docs, private config, and `.git`. Load `./references/input-contract.md` for `MUTATION_LIMITS`.
+`RUN_MODE=decompose` is the only source-mutating mode; every mode may use the validation-only parser scratch in `./references/input-contract.md`. Source/destination writes stay inside the resolved package root, occur only after plan approval (or explicit `auto`) and all-pass review, and exclude mirrors, lockfiles, sibling packages, repo docs, private config, and `.git`. Load `./references/input-contract.md` for `MUTATION_LIMITS`.
 
 ## Run Mode Classification
 

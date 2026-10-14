@@ -66,7 +66,7 @@ Finite-state execution model for this skill. Mermaid rendering lives in [`flow-d
 | `ValidateApprovedGaps` | `BuildCandidate` | Every supplied ID exists in retained inventory, or value is exact `none` |
 | `ValidateApprovedGaps` | `AwaitRefinementApproval` | Unknown/ambiguous IDs and `gap_reask_budget` remaining (consume budget; re-ask once) |
 | `ValidateApprovedGaps` | `NeedsConfirmation` | Unknown/ambiguous IDs and `gap_reask_budget` exhausted |
-| `BuildCandidate` | `ReviewCandidate` | `BUILD: PASS` |
+| `BuildCandidate` | `ReviewCandidate` | `BUILD: PASS`; unavailable parser, execution, or parser-input scratch uses `inspected-only` review |
 | `BuildCandidate` | `NeedsInput` | `BUILD: NEEDS_INPUT` |
 | `BuildCandidate` | `Error` | `BUILD: ERROR` |
 | `ReviewCandidate` | `FinalPassed` | `REVIEW: PASS` and `RUN_MODE` ≠ `decompose` |
