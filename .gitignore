@@ -3,7 +3,6 @@
 # Local tool configs
 .claude/settings.*
 .codex/
-.mcp.json
 opencode.jsonc
 
 # Artifacts
