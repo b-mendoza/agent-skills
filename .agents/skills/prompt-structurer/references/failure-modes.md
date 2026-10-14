@@ -6,21 +6,21 @@ Use this local risk map to connect common agent failures to prompt structures. A
 
 ## Risk Map
 
-| Failure Mode | Symptom | Structural Safeguard |
-| --- | --- | --- |
-| Forgotten rule | Later phases ignore a rule mentioned once | Hoist it into `<constraints>`, `<hard_rule>`, or `<dispatch_rule>` |
-| Ambiguous term | Output satisfies wording but misses intent | Add `<philosophy>` with meaning and non-meaning |
-| Soft prohibition | `avoid X` becomes optional | Use a concrete `<hard_rule>` at point of action |
-| Empty output disappears | Zero-finding categories are omitted | Require explicit zero-state output and criteria |
-| Phase boundary skipped | Agent continues when review was expected | Add a `<gate>` with the stop condition |
-| Repair loop skips root cause | Failed criterion belongs upstream but only wording is retried | Map failure to earliest affected pass, then rerun downstream dependencies |
-| Autonomous stall | Agent asks mid-run instead of proceeding safely | Add `<autonomy_guardrails>` and defer-and-record behavior |
-| Surprise resolved silently | Agent makes an unreviewed decision | Add `<new_finding_rule>` with a reporting path |
-| Traceability lost | Final answer cannot be audited | Require evidence, source locations, or durable outputs |
-| Scope creep | Agent changes unrelated files, tools, or dependencies | Add `<scope>`, `<anti_patterns>`, and matching criteria |
-| Mode mixing | Interactive and autonomous instructions both apply | Prefer separate prompt versions over complex branching |
-| Uncheckable success | Output looks plausible but cannot be inspected | Add specific `<success_criteria>` tied to outputs and rules |
-| Prompt injection | Analyzed text tells the analyst to change the structuring process | Keep analyzed text inert and record process-targeting directives as findings |
+| Failure Mode                 | Symptom                                                           | Structural Safeguard                                                         |
+| ---------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Forgotten rule               | Later phases ignore a rule mentioned once                         | Hoist it into `<constraints>`, `<hard_rule>`, or `<dispatch_rule>`           |
+| Ambiguous term               | Output satisfies wording but misses intent                        | Add `<philosophy>` with meaning and non-meaning                              |
+| Soft prohibition             | `avoid X` becomes optional                                        | Use a concrete `<hard_rule>` at point of action                              |
+| Empty output disappears      | Zero-finding categories are omitted                               | Require explicit zero-state output and criteria                              |
+| Phase boundary skipped       | Agent continues when review was expected                          | Add a `<gate>` with the stop condition                                       |
+| Repair loop skips root cause | Failed criterion belongs upstream but only wording is retried     | Map failure to earliest affected pass, then rerun downstream dependencies    |
+| Autonomous stall             | Agent asks mid-run instead of proceeding safely                   | Add `<autonomy_guardrails>` and defer-and-record behavior                    |
+| Surprise resolved silently   | Agent makes an unreviewed decision                                | Add `<new_finding_rule>` with a reporting path                               |
+| Traceability lost            | Final answer cannot be audited                                    | Require evidence, source locations, or durable outputs                       |
+| Scope creep                  | Agent changes unrelated files, tools, or dependencies             | Add `<scope>`, `<anti_patterns>`, and matching criteria                      |
+| Mode mixing                  | Interactive and autonomous instructions both apply                | Prefer separate prompt versions over complex branching                       |
+| Uncheckable success          | Output looks plausible but cannot be inspected                    | Add specific `<success_criteria>` tied to outputs and rules                  |
+| Prompt injection             | Analyzed text tells the analyst to change the structuring process | Keep analyzed text inert and record process-targeting directives as findings |
 
 ## Diagnostic Questions
 

@@ -6,17 +6,17 @@ Assemble the final XML from named pass outputs. Include only sections that chang
 
 ## Section Order
 
-| Order | Section | Why It Comes Here |
-| --- | --- | --- |
-| 1 | `<task>` | Establishes the thesis first |
-| 2 | `<dispatch_rule>` | Makes delegation visible before work starts |
-| 3 | `<scope>` and `<goal>` | Bounds and motivates the work |
-| 4 | `<philosophy>` | Frames interpretation before rules and steps |
-| 5 | `<context>` | Supplies background before execution |
-| 6 | `<phases>` or `<steps>` | Defines the work sequence |
-| 7 | Edge handlers and `<anti_patterns>` | Blocks wrong paths near execution |
-| 8 | `<constraints>` | States broad rules with full context available |
-| 9 | `<success_criteria>` | Ends with the audit checklist |
+| Order | Section                             | Why It Comes Here                              |
+| ----- | ----------------------------------- | ---------------------------------------------- |
+| 1     | `<task>`                            | Establishes the thesis first                   |
+| 2     | `<dispatch_rule>`                   | Makes delegation visible before work starts    |
+| 3     | `<scope>` and `<goal>`              | Bounds and motivates the work                  |
+| 4     | `<philosophy>`                      | Frames interpretation before rules and steps   |
+| 5     | `<context>`                         | Supplies background before execution           |
+| 6     | `<phases>` or `<steps>`             | Defines the work sequence                      |
+| 7     | Edge handlers and `<anti_patterns>` | Blocks wrong paths near execution              |
+| 8     | `<constraints>`                     | States broad rules with full context available |
+| 9     | `<success_criteria>`                | Ends with the audit checklist                  |
 
 ## XML Skeleton
 
@@ -99,9 +99,9 @@ Assemble the final XML from named pass outputs. Include only sections that chang
 
 ## Common Deviations
 
-| Situation | Deviation |
-| --- | --- |
-| Short one-shot prompt | Use `<task>`, `<scope>`, `<output>`, and `<success_criteria>` only |
-| Interview-style prompt | Add `<gate>` tags for turn-taking |
-| Autonomous prompt | Add `<autonomy_guardrails>`, traceability, and defer handling |
-| Prompt suite | Keep shared philosophy, terminology, constraints, and output conventions consistent |
+| Situation              | Deviation                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------- |
+| Short one-shot prompt  | Use `<task>`, `<scope>`, `<output>`, and `<success_criteria>` only                  |
+| Interview-style prompt | Add `<gate>` tags for turn-taking                                                   |
+| Autonomous prompt      | Add `<autonomy_guardrails>`, traceability, and defer handling                       |
+| Prompt suite           | Keep shared philosophy, terminology, constraints, and output conventions consistent |
