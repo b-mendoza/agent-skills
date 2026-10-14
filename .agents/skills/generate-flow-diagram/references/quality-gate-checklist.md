@@ -4,32 +4,32 @@ Load this file only when reviewing a candidate diagram or preparing targeted rep
 
 ## Review Checks
 
-| ID | Check | Pass Condition |
-| --- | --- | --- |
-| C1 | Mermaid syntax | Parsed evidence or recorded manual syntax inspection per `../subagents/diagram-quality-reviewer.md`; producer self-report is insufficient. |
-| C2 | Classes | Class assignments target existing nodes only |
-| C3 | Input normalization | Candidate reflects `PROCESS_INPUTS`; unknowns are assumptions, questions, or blockers |
-| C4 | Flow coverage | Intake, boundary, validation, synthesis, decisions, outputs, and terminal states are represented when relevant |
-| C5 | Human gates | Sensitive actions and file mutations have approve and decline paths plus audit or handoff handling |
-| C6 | Branch integrity | Every branch has a destination and every decision has named outcomes |
-| C7 | Validation flow | Validation checks feed synthesis, readiness, blocker, refinement, research, escalation, or repair |
-| C8 | Terminal states | Completion and failure states match the workflow contract |
-| C9 | Grounding | Unsupported facts are not presented as confirmed |
-| C10 | Refinement approval | Refinement output includes only inventory-validated approved gap fixes; `none` preserves the baseline |
-| C11 | Output contract | Candidate satisfies the artifact requirements in `../SKILL.md` Output Contract. |
-| C12 | Run report | Completed run report includes the applicable fields in `output-templates.md` Run Report Template. |
+| ID  | Check               | Pass Condition                                                                                                                             |
+| --- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| C1  | Mermaid syntax      | Parsed evidence or recorded manual syntax inspection per `../subagents/diagram-quality-reviewer.md`; producer self-report is insufficient. |
+| C2  | Classes             | Class assignments target existing nodes only                                                                                               |
+| C3  | Input normalization | Candidate reflects `PROCESS_INPUTS`; unknowns are assumptions, questions, or blockers                                                      |
+| C4  | Flow coverage       | Intake, boundary, validation, synthesis, decisions, outputs, and terminal states are represented when relevant                             |
+| C5  | Human gates         | Sensitive actions and file mutations have approve and decline paths plus audit or handoff handling                                         |
+| C6  | Branch integrity    | Every branch has a destination and every decision has named outcomes                                                                       |
+| C7  | Validation flow     | Validation checks feed synthesis, readiness, blocker, refinement, research, escalation, or repair                                          |
+| C8  | Terminal states     | Completion and failure states match the workflow contract                                                                                  |
+| C9  | Grounding           | Unsupported facts are not presented as confirmed                                                                                           |
+| C10 | Refinement approval | Refinement output includes only inventory-validated approved gap fixes; `none` preserves the baseline                                      |
+| C11 | Output contract     | Candidate satisfies the artifact requirements in `../SKILL.md` Output Contract.                                                            |
+| C12 | Run report          | Completed run report includes the applicable fields in `output-templates.md` Run Report Template.                                          |
 
 ## Scope Checks
 
 Apply these when `DIAGRAM_SCOPE` is `orchestrator` or `subagent`, or when `RUN_MODE=decompose`.
 
-| ID | Check | Pass Condition |
-| --- | --- | --- |
-| S1 | Scope separation | Orchestrator diagrams contain no subagent internals; subagent diagrams do not restate root phases, gates, banners, or siblings |
-| S2 | No duplication | No node label, step, check, or status appears in more than one diagram of the package; `OTHER_DIAGRAM_DIGEST` is present or explicit `none` |
-| S3 | Dispatch collapse | Each orchestrator dispatch is one cross-linked node, not a step-by-step subagent expansion |
-| S4 | Mutation limits | Decompose write and load-wiring assumptions stay inside `MUTATION_LIMITS` |
-| S5 | Staged write gate | Decompose writes are planned as one batch after every candidate passes, not per-diagram writes |
+| ID  | Check             | Pass Condition                                                                                                                              |
+| --- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1  | Scope separation  | Orchestrator diagrams contain no subagent internals; subagent diagrams do not restate root phases, gates, banners, or siblings              |
+| S2  | No duplication    | No node label, step, check, or status appears in more than one diagram of the package; `OTHER_DIAGRAM_DIGEST` is present or explicit `none` |
+| S3  | Dispatch collapse | Each orchestrator dispatch is one cross-linked node, not a step-by-step subagent expansion                                                  |
+| S4  | Mutation limits   | Decompose write and load-wiring assumptions stay inside `MUTATION_LIMITS`                                                                   |
+| S5  | Staged write gate | Decompose writes are planned as one batch after every candidate passes, not per-diagram writes                                              |
 
 ## Baseline Effect
 

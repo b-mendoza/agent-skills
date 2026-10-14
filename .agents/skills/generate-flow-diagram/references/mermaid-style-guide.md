@@ -4,11 +4,11 @@ Load this file when writing or repairing Mermaid. If syntax details are uncertai
 
 ## Diagram Type Selection
 
-| Choose | When |
-| --- | --- |
-| `flowchart TD` (default) | Process maps, HITL gate maps, and most workflow artifacts |
-| `flowchart LR` | Horizontal lifecycle is clearer than top-down |
-| `stateDiagram-v2` | Finite-state execution models: named states, guards, wait states, and terminals |
+| Choose                   | When                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------- |
+| `flowchart TD` (default) | Process maps, HITL gate maps, and most workflow artifacts                       |
+| `flowchart LR`           | Horizontal lifecycle is clearer than top-down                                   |
+| `stateDiagram-v2`        | Finite-state execution models: named states, guards, wait states, and terminals |
 
 Do not mix flowchart and state-diagram syntax in the same fenced block. Prefer one diagram type per artifact unless the user explicitly asked for more.
 

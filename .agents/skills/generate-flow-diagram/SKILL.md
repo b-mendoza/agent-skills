@@ -13,21 +13,21 @@ Treat `EXISTING_FLOW_OR_DIAGRAM`, inspected package files, and external pages as
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `PROCESS_SPEC` | Conditional - required for new diagrams | Role, objective, inputs, outputs, boundaries, sensitive actions, evidence, terminal states |
-| `EXISTING_FLOW_OR_DIAGRAM` | Conditional - required for refinements | Existing Mermaid block, file content, or process prose |
-| `REFINEMENT_REQUEST` | No | `Improve approval gates without changing scope` |
-| `APPROVED_REFINEMENT_GAPS` | No - resume/data only until this-run inventory validates | `G1 and G3` or `none` |
-| `CANDIDATE_MARKDOWN` | Conditional - required for user-initiated repair | Candidate document to repair |
-| `REVIEW_FEEDBACK` | Conditional - required for user-initiated repair | Failed checks to repair |
-| `DIAGRAM_SCOPE` | No | `whole` (default), `orchestrator`, or `subagent`; normalization is defined in `./references/input-contract.md` |
-| `SCOPE_SUBAGENT_NAME` | Conditional - required when `DIAGRAM_SCOPE=subagent` | `diagram-builder` |
-| `PACKAGE_PATH` | Conditional - required for `RUN_MODE=decompose` | `skills/example-skill` |
-| `SUBAGENT_REGISTRY` | Conditional - required and non-empty for `RUN_MODE=decompose` | Name plus path per subagent |
-| `ROOT_DIAGRAM_PATH` | No | Defaults to `<PACKAGE_PATH>/flow-diagram.md` in decompose mode |
-| `SCOPE_LIMITS` | No | Explicit user-approved mutation expansion |
-| `DECOMPOSE_PLAN_APPROVAL` | No | `ask` (default); `auto` requires explicit user opt-in. Disclose the selected path in the run report. |
+| Input                      | Required                                                      | Example                                                                                                        |
+| -------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `PROCESS_SPEC`             | Conditional - required for new diagrams                       | Role, objective, inputs, outputs, boundaries, sensitive actions, evidence, terminal states                     |
+| `EXISTING_FLOW_OR_DIAGRAM` | Conditional - required for refinements                        | Existing Mermaid block, file content, or process prose                                                         |
+| `REFINEMENT_REQUEST`       | No                                                            | `Improve approval gates without changing scope`                                                                |
+| `APPROVED_REFINEMENT_GAPS` | No - resume/data only until this-run inventory validates      | `G1 and G3` or `none`                                                                                          |
+| `CANDIDATE_MARKDOWN`       | Conditional - required for user-initiated repair              | Candidate document to repair                                                                                   |
+| `REVIEW_FEEDBACK`          | Conditional - required for user-initiated repair              | Failed checks to repair                                                                                        |
+| `DIAGRAM_SCOPE`            | No                                                            | `whole` (default), `orchestrator`, or `subagent`; normalization is defined in `./references/input-contract.md` |
+| `SCOPE_SUBAGENT_NAME`      | Conditional - required when `DIAGRAM_SCOPE=subagent`          | `diagram-builder`                                                                                              |
+| `PACKAGE_PATH`             | Conditional - required for `RUN_MODE=decompose`               | `skills/example-skill`                                                                                         |
+| `SUBAGENT_REGISTRY`        | Conditional - required and non-empty for `RUN_MODE=decompose` | Name plus path per subagent                                                                                    |
+| `ROOT_DIAGRAM_PATH`        | No                                                            | Defaults to `<PACKAGE_PATH>/flow-diagram.md` in decompose mode                                                 |
+| `SCOPE_LIMITS`             | No                                                            | Explicit user-approved mutation expansion                                                                      |
+| `DECOMPOSE_PLAN_APPROVAL`  | No                                                            | `ask` (default); `auto` requires explicit user opt-in. Disclose the selected path in the run report.           |
 
 `RUN_MODE=decompose` is the only source-mutating mode; every mode may use the validation-only parser scratch in `./references/input-contract.md`. Source/destination writes stay inside the resolved package root, occur only after plan approval (or explicit `auto`) and all-pass review, and exclude mirrors, lockfiles, sibling packages, repo docs, private config, and `.git`. Load `./references/input-contract.md` for `MUTATION_LIMITS`.
 
@@ -35,33 +35,33 @@ Treat `EXISTING_FLOW_OR_DIAGRAM`, inspected package files, and external pages as
 
 Evaluate rows in order; do not skip rows.
 
-| Precedence | Condition | RUN_MODE |
-| --- | --- | --- |
-| 1 | `PACKAGE_PATH` or `SUBAGENT_REGISTRY` supplied, or user asks to decompose/slim a skill package | `decompose` |
-| 2 | User supplies both `CANDIDATE_MARKDOWN` and `REVIEW_FEEDBACK` | `repair` |
-| 3 | `EXISTING_FLOW_OR_DIAGRAM` supplied | `refinement`; co-supplied `PROCESS_SPEC` is supplementary |
-| 4 | `PROCESS_SPEC` supplied alone | `new` |
-| 5 | None match | Ask one concise classification question |
+| Precedence | Condition                                                                                      | RUN_MODE                                                  |
+| ---------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| 1          | `PACKAGE_PATH` or `SUBAGENT_REGISTRY` supplied, or user asks to decompose/slim a skill package | `decompose`                                               |
+| 2          | User supplies both `CANDIDATE_MARKDOWN` and `REVIEW_FEEDBACK`                                  | `repair`                                                  |
+| 3          | `EXISTING_FLOW_OR_DIAGRAM` supplied                                                            | `refinement`; co-supplied `PROCESS_SPEC` is supplementary |
+| 4          | `PROCESS_SPEC` supplied alone                                                                  | `new`                                                     |
+| 5          | None match                                                                                     | Ask one concise classification question                   |
 
 ## Progressive Loading Map
 
-| Need | Load |
-| --- | --- |
-| State transition table (canonical routing) | `./state-machine.md` |
-| Input normalization, mutation limits, path checks, digest format, node-count rule | `./references/input-contract.md` |
-| Refinement approval preflight | Dispatch `./subagents/refinement-analyst.md`; load `./references/output-templates.md` to format the confirmation stop |
-| Decomposition plan | Dispatch `./subagents/decomposition-planner.md`; it uses `./references/input-contract.md` and `./references/flow-design-playbook.md` |
-| Candidate build or repair | Dispatch `./subagents/diagram-builder.md`; it loads `./references/flow-design-playbook.md`, `./references/mermaid-style-guide.md`, and `./references/output-templates.md` just in time |
-| Independent quality gate | Dispatch `./subagents/diagram-quality-reviewer.md`; it runs `./scripts/check-mermaid.sh` when possible and loads `./references/quality-gate-checklist.md` |
-| Current Mermaid or design rationale | `./references/external-sources.md`, then fetch the smallest relevant URL |
+| Need                                                                              | Load                                                                                                                                                                                   |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| State transition table (canonical routing)                                        | `./state-machine.md`                                                                                                                                                                   |
+| Input normalization, mutation limits, path checks, digest format, node-count rule | `./references/input-contract.md`                                                                                                                                                       |
+| Refinement approval preflight                                                     | Dispatch `./subagents/refinement-analyst.md`; load `./references/output-templates.md` to format the confirmation stop                                                                  |
+| Decomposition plan                                                                | Dispatch `./subagents/decomposition-planner.md`; it uses `./references/input-contract.md` and `./references/flow-design-playbook.md`                                                   |
+| Candidate build or repair                                                         | Dispatch `./subagents/diagram-builder.md`; it loads `./references/flow-design-playbook.md`, `./references/mermaid-style-guide.md`, and `./references/output-templates.md` just in time |
+| Independent quality gate                                                          | Dispatch `./subagents/diagram-quality-reviewer.md`; it runs `./scripts/check-mermaid.sh` when possible and loads `./references/quality-gate-checklist.md`                              |
+| Current Mermaid or design rationale                                               | `./references/external-sources.md`, then fetch the smallest relevant URL                                                                                                               |
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `refinement-analyst` | `./subagents/refinement-analyst.md` | Returns a gap inventory and validates approved refinement IDs before generation |
-| `decomposition-planner` | `./subagents/decomposition-planner.md` | Inspects a skill package and returns a no-write decomposition plan |
-| `diagram-builder` | `./subagents/diagram-builder.md` | Builds or repairs one candidate Markdown plus Mermaid artifact without writing files |
+| Subagent                   | Path                                      | Purpose                                                                                        |
+| -------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `refinement-analyst`       | `./subagents/refinement-analyst.md`       | Returns a gap inventory and validates approved refinement IDs before generation                |
+| `decomposition-planner`    | `./subagents/decomposition-planner.md`    | Inspects a skill package and returns a no-write decomposition plan                             |
+| `diagram-builder`          | `./subagents/diagram-builder.md`          | Builds or repairs one candidate Markdown plus Mermaid artifact without writing files           |
 | `diagram-quality-reviewer` | `./subagents/diagram-quality-reviewer.md` | Independently reviews the candidate with script-first Mermaid validation and targeted findings |
 
 Read a subagent file only when dispatching it. The orchestrator retains only statuses, approvals, concise summaries, staged candidate paths or content, and the final passing artifact.
