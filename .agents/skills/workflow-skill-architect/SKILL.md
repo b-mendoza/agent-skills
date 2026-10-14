@@ -9,15 +9,15 @@ Portable orchestrator that classifies a request, stages generated files, routes 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `WORKFLOW_OR_STEP` | Conditional | `Review a PR, run tests, then write a release note` |
-| `TARGET_RUNTIME` | No | `portable Agent Skills` (default) |
-| `EXISTING_PROMPT` | No | Prose to convert or improve |
-| `OUTPUT_SCOPE` | No | `entire skill`, `subagent only`, `reference only` |
-| `CONSTRAINTS` | No | `no-network execution` |
-| `EXISTING_SKILL_DIR` | Conditional | Package to review, extend, or refactor |
-| `RESUME_PACKET` | Conditional | Packet from a prior `needs_input` stop |
+| Input                | Required    | Example                                             |
+| -------------------- | ----------- | --------------------------------------------------- |
+| `WORKFLOW_OR_STEP`   | Conditional | `Review a PR, run tests, then write a release note` |
+| `TARGET_RUNTIME`     | No          | `portable Agent Skills` (default)                   |
+| `EXISTING_PROMPT`    | No          | Prose to convert or improve                         |
+| `OUTPUT_SCOPE`       | No          | `entire skill`, `subagent only`, `reference only`   |
+| `CONSTRAINTS`        | No          | `no-network execution`                              |
+| `EXISTING_SKILL_DIR` | Conditional | Package to review, extend, or refactor              |
+| `RESUME_PACKET`      | Conditional | Packet from a prior `needs_input` stop              |
 
 `WORKFLOW_OR_STEP` or `EXISTING_SKILL_DIR` is required unless a valid `RESUME_PACKET` is supplied. Ask one concise question only when the missing answer changes classification, scope, runtime syntax, or mutation authority.
 
@@ -25,22 +25,22 @@ Portable orchestrator that classifies a request, stages generated files, routes 
 
 Non-normative overview. Follow the canonical [`state-machine.md`](./state-machine.md) for states, transitions, guards, and terminals.
 
-| State | Result |
-| --- | --- |
-| ResumeGate / Restore / ResumeRoute | Resume pending queue item or pending review |
-| Intake / Classify / Trust | Mode, scope, trust notes (trust always runs) |
-| ResolveSources / ModeFork | Local-only or fetched evidence; review vs generation |
-| BuildReviewPacket / PlanQueue | `FILES_UNDER_REVIEW` or `WORK_ITEM_QUEUE` + `STAGING_DIR` |
-| ArchitectureLoop / Synthesize | Staged paths in `COLLECTION_MANIFEST` |
-| Review / Repair | Canonical report; generation repair max 3 |
-| Delivery / MutationGate | Report or copy-ready package; gated real writes |
-| Terminals | `ready`, `needs_input`, `blocked`, `error` |
+| State                              | Result                                                    |
+| ---------------------------------- | --------------------------------------------------------- |
+| ResumeGate / Restore / ResumeRoute | Resume pending queue item or pending review               |
+| Intake / Classify / Trust          | Mode, scope, trust notes (trust always runs)              |
+| ResolveSources / ModeFork          | Local-only or fetched evidence; review vs generation      |
+| BuildReviewPacket / PlanQueue      | `FILES_UNDER_REVIEW` or `WORK_ITEM_QUEUE` + `STAGING_DIR` |
+| ArchitectureLoop / Synthesize      | Staged paths in `COLLECTION_MANIFEST`                     |
+| Review / Repair                    | Canonical report; generation repair max 3                 |
+| Delivery / MutationGate            | Report or copy-ready package; gated real writes           |
+| Terminals                          | `ready`, `needs_input`, `blocked`, `error`                |
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `step-architect` | `./subagents/step-architect.md` | One work item → staged files + path summaries |
+| Subagent              | Path                                 | Purpose                                             |
+| --------------------- | ------------------------------------ | --------------------------------------------------- |
+| `step-architect`      | `./subagents/step-architect.md`      | One work item → staged files + path summaries       |
 | `definition-reviewer` | `./subagents/definition-reviewer.md` | Canonical schema review of staged or existing files |
 
 Read a subagent only when dispatching. Prefer the runtime subagent mechanism; otherwise execute the contract inline. Retain statuses, paths, verdicts, and concise summaries only.
@@ -51,50 +51,50 @@ Serve the user's desired artifact, not the existing design. Prefer the smallest 
 
 ## Mode And Scope Classification
 
-| User Intent | Classification | Mode | Default Scope |
-| --- | --- | --- | --- |
-| Findings, audit, verdict, no content changes | `review` | review | Supplied files only |
-| New workflow with no existing package | `create` | generation | `entire skill` |
-| Add capability to an existing package | `extend` | generation | Smallest affected artifacts |
-| Restructure without behavior change | `refactor` | generation | Smallest affected artifacts |
+| User Intent                                  | Classification | Mode       | Default Scope               |
+| -------------------------------------------- | -------------- | ---------- | --------------------------- |
+| Findings, audit, verdict, no content changes | `review`       | review     | Supplied files only         |
+| New workflow with no existing package        | `create`       | generation | `entire skill`              |
+| Add capability to an existing package        | `extend`       | generation | Smallest affected artifacts |
+| Restructure without behavior change          | `refactor`     | generation | Smallest affected artifacts |
 
 "Improve" requests classify as `extend` or `refactor`, not `review`. When `OUTPUT_SCOPE` is absent, derive it from the table and record the assumption.
 
 ## State Objects
 
-| Object | Contents |
-| --- | --- |
-| `RUN_STATE` | Classification, mode, runtime, scope, constraints, assumptions, trust notes |
-| `STAGING_DIR` | Only write target for generated or repaired files |
-| `WORK_ITEM_QUEUE` | Generation items for `step-architect` |
-| `COLLECTION_MANIFEST` | Paths and summaries only (never full bodies) |
-| `REPAIR_CYCLE` | Orchestrator integer, max 3 per generation run |
-| `REPAIR_SCOPE` | Files named in current findings plus failed checks |
-| `RESUME_PACKET` | Queue, manifest, statuses, repair count, pending questions |
+| Object                | Contents                                                                    |
+| --------------------- | --------------------------------------------------------------------------- |
+| `RUN_STATE`           | Classification, mode, runtime, scope, constraints, assumptions, trust notes |
+| `STAGING_DIR`         | Only write target for generated or repaired files                           |
+| `WORK_ITEM_QUEUE`     | Generation items for `step-architect`                                       |
+| `COLLECTION_MANIFEST` | Paths and summaries only (never full bodies)                                |
+| `REPAIR_CYCLE`        | Orchestrator integer, max 3 per generation run                              |
+| `REPAIR_SCOPE`        | Files named in current findings plus failed checks                          |
+| `RESUME_PACKET`       | Queue, manifest, statuses, repair count, pending questions                  |
 
 ## Mutation Approval
 
 Real-package writes require **explicit in-run approval** after the user (or parent orchestrator) has seen staged paths from Delivery:
 
-| Signal | Counts as approval? | Route |
-| --- | --- | --- |
-| Clear approve of named staged→real paths after Delivery visibility | yes | apply exact copies; `ready` |
-| Clear decline | yes (negative) | return copy-ready staged content; `ready` |
-| Pre-approval before staged paths were shown | no | treat as missing |
-| Ambiguous or absent when mutation was requested | no | `blocked` |
+| Signal                                                             | Counts as approval? | Route                                     |
+| ------------------------------------------------------------------ | ------------------- | ----------------------------------------- |
+| Clear approve of named staged→real paths after Delivery visibility | yes                 | apply exact copies; `ready`               |
+| Clear decline                                                      | yes (negative)      | return copy-ready staged content; `ready` |
+| Pre-approval before staged paths were shown                        | no                  | treat as missing                          |
+| Ambiguous or absent when mutation was requested                    | no                  | `blocked`                                 |
 
 Parent-orchestrator approval must name the approved paths in the current run's handoff. Staging writes never need this gate.
 
 ## Progressive Loading Map
 
-| Need | Load |
-| --- | --- |
-| Layout, naming, artifact choice | `./references/skill-structure.md` |
-| Copy-ready templates, manifest, resume, delivery | `./assets/output-templates.md` |
-| Review schema and severity | `./references/review-schema.md` |
-| Validation gates and repair protocol | `./references/quality-checklist.md` |
-| Runtime docs and source authority | `./references/external-sources.md` |
-| State-transition table | `./state-machine.md` |
+| Need                                             | Load                                |
+| ------------------------------------------------ | ----------------------------------- |
+| Layout, naming, artifact choice                  | `./references/skill-structure.md`   |
+| Copy-ready templates, manifest, resume, delivery | `./assets/output-templates.md`      |
+| Review schema and severity                       | `./references/review-schema.md`     |
+| Validation gates and repair protocol             | `./references/quality-checklist.md` |
+| Runtime docs and source authority                | `./references/external-sources.md`  |
+| State-transition table                           | `./state-machine.md`                |
 
 ## Execution
 
@@ -114,16 +114,16 @@ Zero-output and generation delivery: templates in [`./assets/output-templates.md
 
 ## Status Routing
 
-| Status | Route |
-| --- | --- |
-| `ARCHITECTURE: PASS` | Append paths/summaries to manifest |
-| `ARCHITECTURE: NEEDS_INPUT` | `needs_input` + `RESUME_PACKET` |
-| `ARCHITECTURE: BLOCKED` | `blocked` |
-| `ARCHITECTURE: ERROR` | `error` |
-| `REVIEW: PASS` | Review → `ready`; generation → Delivery |
-| `REVIEW: FAIL` | Review → `ready`; generation → Repair or cap `blocked` |
-| `REVIEW: BLOCKED` | `blocked` |
-| `REVIEW: ERROR` | `error` |
+| Status                      | Route                                                  |
+| --------------------------- | ------------------------------------------------------ |
+| `ARCHITECTURE: PASS`        | Append paths/summaries to manifest                     |
+| `ARCHITECTURE: NEEDS_INPUT` | `needs_input` + `RESUME_PACKET`                        |
+| `ARCHITECTURE: BLOCKED`     | `blocked`                                              |
+| `ARCHITECTURE: ERROR`       | `error`                                                |
+| `REVIEW: PASS`              | Review → `ready`; generation → Delivery                |
+| `REVIEW: FAIL`              | Review → `ready`; generation → Repair or cap `blocked` |
+| `REVIEW: BLOCKED`           | `blocked`                                              |
+| `REVIEW: ERROR`             | `error`                                                |
 
 Completion states: `ready`, `needs_input`, `blocked`, `error`. Every `needs_input` includes a `RESUME_PACKET`.
 
