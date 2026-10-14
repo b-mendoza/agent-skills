@@ -6,12 +6,6 @@
   },
   "autoMemoryEnabled": false,
   "disableBundledSkills": true,
-  "enabledMcpjsonServers": [
-    "chrome-devtools",
-    "cloudflare",
-    "context7",
-    "notion",
-    "vercel"
-  ],
+  "enabledMcpjsonServers": ["context7"],
   "workflowSizeGuideline": "medium"
 }
