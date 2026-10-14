@@ -38,8 +38,5 @@ Read this file only when source-backed method context could change a planning de
 
 ## Offline Rules
 
-- Prefer capability and domain-language boundaries over framework or storage boundaries when local evidence supports them.
-- Keep reference-derived ideas quarantined until local code evidence confirms fit through the evidence precedence gate.
-- Prefer incremental, reversible migrations with explicit validation and stopping points over broad tree rewrites.
 - Treat broad shared abstractions as suspect unless they reduce a current, observed duplication or dependency problem.
 - Record `Document references consulted: none` when no external method source was fetched.
