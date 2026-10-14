@@ -37,11 +37,11 @@ Your job is adversarial analysis. Do not synthesize other seats, invent external
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
+| Status    | Use When                                                                                      |
+| --------- | --------------------------------------------------------------------------------------------- |
 | `BLOCKED` | The packet lacks the core subject, desired outcome, or constraints needed to evaluate failure |
-| `FAIL` | You cannot satisfy the schema without inventing facts |
-| `ERROR` | A runtime or tool failure prevents a safe packet |
+| `FAIL`    | You cannot satisfy the schema without inventing facts                                         |
+| `ERROR`   | A runtime or tool failure prevents a safe packet                                              |
 
 When escalating, return:
 

@@ -9,12 +9,12 @@ You are the reversibility classifier. Your mental model is the Type 1 / Type 2 d
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `DECISION_PACKET` | Yes | Delimited `<decision_packet packet_version="1">...` |
-| `SCHEMA` | Yes | Inlined reversibility packet schema |
-| `RESEARCH_TOOLS` | Yes | `none` or `web` |
-| `REPAIR_REASON` | No | `depth_setting mismatched decision_type` |
+| Input             | Required | Example                                             |
+| ----------------- | -------- | --------------------------------------------------- |
+| `DECISION_PACKET` | Yes      | Delimited `<decision_packet packet_version="1">...` |
+| `SCHEMA`          | Yes      | Inlined reversibility packet schema                 |
+| `RESEARCH_TOOLS`  | Yes      | `none` or `web`                                     |
+| `REPAIR_REASON`   | No       | `depth_setting mismatched decision_type`            |
 
 ## Instructions
 
@@ -53,11 +53,11 @@ Your job is to classify reversibility and depth only. Do not recommend `go`, `ho
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `BLOCKED` | The packet lacks enough information to estimate any reversal-cost dimension |
-| `FAIL` | You can complete the work but the requested repair conflicts with the schema |
-| `ERROR` | A runtime or tool failure prevents a safe packet |
+| Status    | Use When                                                                     |
+| --------- | ---------------------------------------------------------------------------- |
+| `BLOCKED` | The packet lacks enough information to estimate any reversal-cost dimension  |
+| `FAIL`    | You can complete the work but the requested repair conflicts with the schema |
+| `ERROR`   | A runtime or tool failure prevents a safe packet                             |
 
 When escalating, return:
 

@@ -9,15 +9,15 @@ You are the prior-art and differentiation seat. Your role is to prevent the user
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `DECISION_PACKET` | Yes | Delimited confirmed packet |
-| `SCHEMA` | Yes | Inlined analysis or branch schema |
-| `DEPTH_SETTING` | Yes | `standard` or `deep` |
-| `RESEARCH_TOOLS` | Yes | `none` or `web` |
-| `BRANCH_MODE` | No | `differentiate`, `pivot`, or `abandon` |
-| `PRIOR_PACKET` | Conditional | Prior originality packet when in branch mode |
-| `REPAIR_REASON` | No | `prior_art_check_strength missing` |
+| Input             | Required    | Example                                      |
+| ----------------- | ----------- | -------------------------------------------- |
+| `DECISION_PACKET` | Yes         | Delimited confirmed packet                   |
+| `SCHEMA`          | Yes         | Inlined analysis or branch schema            |
+| `DEPTH_SETTING`   | Yes         | `standard` or `deep`                         |
+| `RESEARCH_TOOLS`  | Yes         | `none` or `web`                              |
+| `BRANCH_MODE`     | No          | `differentiate`, `pivot`, or `abandon`       |
+| `PRIOR_PACKET`    | Conditional | Prior originality packet when in branch mode |
+| `REPAIR_REASON`   | No          | `prior_art_check_strength missing`           |
 
 ## Instructions
 
@@ -41,11 +41,11 @@ Your job is prior art, differentiation, and branch options. Do not invent incumb
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
+| Status    | Use When                                                            |
+| --------- | ------------------------------------------------------------------- |
 | `BLOCKED` | The problem statement is too vague to identify prior-art categories |
-| `FAIL` | The requested branch cannot be supported without inventing options |
-| `ERROR` | A runtime or tool failure prevents a safe packet |
+| `FAIL`    | The requested branch cannot be supported without inventing options  |
+| `ERROR`   | A runtime or tool failure prevents a safe packet                    |
 
 When escalating, return:
 

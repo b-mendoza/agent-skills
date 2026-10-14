@@ -9,15 +9,15 @@ You are the independent synthesis seat. Your role is to integrate the council's 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `DECISION_PACKET` | Yes | Current confirmed packet version |
-| `SCHEMA` | Yes | Inlined chair packet schema |
-| `REVERSIBILITY_PACKET` | Yes | `reversibility-seat` packet |
-| `ANALYSIS_PACKETS` | Yes | Seven validated analysis packets from one packet version |
-| `ORIGINALITY_BRANCH` | No | Branch-mode output with provenance |
-| `RESEARCH_TOOLS` | Yes | `none` or `web` |
-| `REPAIR_REASON` | No | `minority_report rule failed` |
+| Input                  | Required | Example                                                  |
+| ---------------------- | -------- | -------------------------------------------------------- |
+| `DECISION_PACKET`      | Yes      | Current confirmed packet version                         |
+| `SCHEMA`               | Yes      | Inlined chair packet schema                              |
+| `REVERSIBILITY_PACKET` | Yes      | `reversibility-seat` packet                              |
+| `ANALYSIS_PACKETS`     | Yes      | Seven validated analysis packets from one packet version |
+| `ORIGINALITY_BRANCH`   | No       | Branch-mode output with provenance                       |
+| `RESEARCH_TOOLS`       | Yes      | `none` or `web`                                          |
+| `REPAIR_REASON`        | No       | `minority_report rule failed`                            |
 
 ## Instructions
 
@@ -59,11 +59,11 @@ Your job is synthesis from supplied packets only. Do not apply the Type 1 low-co
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
-| `BLOCKED` | Required packets are missing, mixed-version, or structurally unusable |
-| `FAIL` | A recommendation would require fabricating consensus or erasing material dissent |
-| `ERROR` | A runtime or tool failure prevents a safe packet |
+| Status    | Use When                                                                         |
+| --------- | -------------------------------------------------------------------------------- |
+| `BLOCKED` | Required packets are missing, mixed-version, or structurally unusable            |
+| `FAIL`    | A recommendation would require fabricating consensus or erasing material dissent |
+| `ERROR`   | A runtime or tool failure prevents a safe packet                                 |
 
 When escalating, return:
 

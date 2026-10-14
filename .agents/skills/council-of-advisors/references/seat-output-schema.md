@@ -6,11 +6,11 @@ These schemas are inlined into seat dispatch prompts by the orchestrator. Seats 
 
 Every `premise` source must be one of:
 
-| Source | Meaning | Required Locator |
-| --- | --- | --- |
-| `packet` | Stated by the user in the confirmed packet | No |
-| `tool_verified` | Fetched this run with an available tool | Yes, URL or file path |
-| `model_prior` | Parametric knowledge, unverified and cutoff-bound | No |
+| Source          | Meaning                                           | Required Locator      |
+| --------------- | ------------------------------------------------- | --------------------- |
+| `packet`        | Stated by the user in the confirmed packet        | No                    |
+| `tool_verified` | Fetched this run with an available tool           | Yes, URL or file path |
+| `model_prior`   | Parametric knowledge, unverified and cutoff-bound | No                    |
 
 `tool_verified` is legal only when `research_tools: web` was declared for the run. Prior-art claims based only on `model_prior` must be treated as indicative, not verified.
 

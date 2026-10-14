@@ -37,11 +37,11 @@ Your job is focus and opportunity cost. Do not decide from popularity, novelty, 
 
 ## Escalation
 
-| Status | Use When |
-| --- | --- |
+| Status    | Use When                                                                               |
+| --------- | -------------------------------------------------------------------------------------- |
 | `BLOCKED` | Current commitments, resource limits, or alternatives are too unstated to infer safely |
-| `FAIL` | A verdict would require fabricating the user's commitments |
-| `ERROR` | A runtime or tool failure prevents a safe packet |
+| `FAIL`    | A verdict would require fabricating the user's commitments                             |
+| `ERROR`   | A runtime or tool failure prevents a safe packet                                       |
 
 When escalating, return:
 

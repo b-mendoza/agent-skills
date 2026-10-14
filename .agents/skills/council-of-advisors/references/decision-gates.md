@@ -4,13 +4,13 @@ This file is the single normative source for gate pass conditions, caps, and fai
 
 ## Shared Budgets
 
-| Budget | Limit | Route When Exceeded |
-| --- | --- | --- |
-| Per gate repair cycles | 3 targeted repair cycles, then the fourth failure stops | `status: blocked` with gate name and counter state |
-| Per analysis seat schema repair | 3 targeted redispatches per seat | `status: blocked` naming the seat and gate |
-| Seat `ERROR` retry | 1 retry | second `ERROR` returns `status: error` |
-| Global redispatch budget | 12 total redispatches | `status: blocked` with budget use in `run_log` |
-| Packet refinement after analysis `BLOCKED` | 1 consolidated packet-refinement round | second `BLOCKED` wave returns `status: needs_input` |
+| Budget                                     | Limit                                                   | Route When Exceeded                                 |
+| ------------------------------------------ | ------------------------------------------------------- | --------------------------------------------------- |
+| Per gate repair cycles                     | 3 targeted repair cycles, then the fourth failure stops | `status: blocked` with gate name and counter state  |
+| Per analysis seat schema repair            | 3 targeted redispatches per seat                        | `status: blocked` naming the seat and gate          |
+| Seat `ERROR` retry                         | 1 retry                                                 | second `ERROR` returns `status: error`              |
+| Global redispatch budget                   | 12 total redispatches                                   | `status: blocked` with budget use in `run_log`      |
+| Packet refinement after analysis `BLOCKED` | 1 consolidated packet-refinement round                  | second `BLOCKED` wave returns `status: needs_input` |
 
 Exception: `G_FRAMING_CONFIRMED` does not use the generic per-gate repair counter. It allows at most 3 total confirmation attempts and terminates in `status: needs_input`, not `blocked` (see its section below).
 
@@ -65,11 +65,11 @@ Failure route: missing hygiene assertion reruns affected seats with clean payloa
 
 ## Analysis Seat Escalation
 
-| Return | Meaning | Route |
-| --- | --- | --- |
+| Return    | Meaning                                         | Route                                                                                                                                                                  |
+| --------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `BLOCKED` | A required user fact or prerequisite is missing | Collect all `BLOCKED` returns from the wave, ask one consolidated clarification, append answers as packet vN+1, re-confirm framing, and rerun all seven analysis seats |
-| `FAIL` | Seat completed but violated schema or gate | Redispatch that seat with the failure reason |
-| `ERROR` | Runtime/tool failure prevented a safe packet | Retry that seat once; second error returns `status: error` |
+| `FAIL`    | Seat completed but violated schema or gate      | Redispatch that seat with the failure reason                                                                                                                           |
+| `ERROR`   | Runtime/tool failure prevented a safe packet    | Retry that seat once; second error returns `status: error`                                                                                                             |
 
 Mixed-version synthesis is forbidden. Any packet refinement invalidates all prior seven analysis packets, and all seven must rerun on the new packet version.
 
