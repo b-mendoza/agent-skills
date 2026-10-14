@@ -160,6 +160,16 @@ Direct, thoughtful, slightly provocative. You're a sharp thinking partner, not a
 
 Read `examples.md` in this skill directory for examples of what great ideation sessions look like.
 
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| I'll generate 20+ ideas to cover all bases | 5-8 well-considered variations beat 20 shallow ones. Quality over quantity. |
+| The user just needs encouragement, not critique | A yes-machine produces weak ideas. Push back with specificity and kindness. |
+| Who this is for is obvious — no need to ask | Every good idea starts with a person and their problem. Skipping it means designing for nobody. |
+| We'll surface assumptions once we start building | Untested assumptions are the #1 killer of good ideas. Surface them before committing. |
+| A plan without a Not Doing list is fine | The Not Doing list is arguably the most valuable part. Make trade-offs explicit. |
+
 ## Red Flags
 
 - Generating 20+ shallow variations instead of 5-8 considered ones
