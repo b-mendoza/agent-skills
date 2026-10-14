@@ -1,6 +1,6 @@
 # State Machine — generate-flow-diagram
 
-Finite-state execution model for this skill. Mermaid rendering lives in [`flow-diagram.md`](./flow-diagram.md).
+This file is the sole normative source for states, transitions, guards, counters, joins, and terminals. SKILL.md is a non-normative overview; this file wins on drift.
 
 ## Run-scoped variables
 

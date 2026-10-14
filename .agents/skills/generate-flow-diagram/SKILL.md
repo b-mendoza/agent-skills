@@ -48,7 +48,6 @@ Evaluate rows in order; do not skip rows.
 | Need | Load |
 | --- | --- |
 | State transition table (canonical routing) | `./state-machine.md` |
-| State diagram | `./flow-diagram.md` |
 | Input normalization, mutation limits, path checks, digest format, node-count rule | `./references/input-contract.md` |
 | Refinement approval preflight | Dispatch `./subagents/refinement-analyst.md`; load `./references/output-templates.md` to format the confirmation stop |
 | Decomposition plan | Dispatch `./subagents/decomposition-planner.md`; it uses `./references/input-contract.md` and `./references/flow-design-playbook.md` |

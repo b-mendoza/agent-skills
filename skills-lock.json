@@ -59,7 +59,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/generate-flow-diagram/SKILL.md",
-      "computedHash": "36389531e02418d33784bc97598bd2c171b864542d52b6b51e53a0fc27762ddf"
+      "computedHash": "5513a315f310f0f6705319dc31ccbdf48d3bf17f176f214b18586235954d7e99"
     },
     "idea-refine": {
       "source": "addyosmani/agent-skills",
