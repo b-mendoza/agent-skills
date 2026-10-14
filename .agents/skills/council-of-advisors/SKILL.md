@@ -94,21 +94,7 @@ Declared `validate-by-observation` exception: this skill has no automated cases 
 
 ## Execution
 
-Follow [`state-machine.md`](./state-machine.md):
-
-1. `Intake`/`AskSubject` — draft packet; missing fields `unstated`.
-2. `ClassifyStakes` → `ConfirmFraming` — `G_FRAMING_CONFIRMED`: max 3 total confirmation attempts (initial ask plus up to 2 revised re-asks); third unconfirmed attempt → `needs_input`.
-3. `DeclareResearch` — record `research_tools`.
-4. `ClassifyReversibility` — `G_REVERSIBILITY`; low → `ProbeReversibility`, else default `type_1`/`deep` if still unresolved.
-5. `BindDepth` → `ParallelAnalysis` → `RouteAnalysis` — `G_REASONING_CHAINS_PRESENT` + `G_INDEPENDENCE`; never mix packet versions.
-6. `OriginalityCheck` / `OriginalityBranch` per `G_ORIGINALITY`.
-7. `SynthesizeChair` → `RouteConfidence` / `RepairLowConfidence` / `G_KILL_CRITERION` / `G_RECOMMENDATION_CONSISTENCY` as tabulated.
-8. `Type1Gate` — `do_not_commit_yet` is orchestrator-only; keep `chair_recommendation`; set `override_applied`.
-9. `AssembleEducateMe` → `WriteHandoff` — `G_HANDOFF_COMPLETE` → `Ready`.
-
-## Critical Outputs And Gates
-
-Predicates only in [`./references/decision-gates.md`](./references/decision-gates.md): `G_FRAMING_CONFIRMED`, `G_REVERSIBILITY`, `G_REASONING_CHAINS_PRESENT`, `G_INDEPENDENCE`, `G_ORIGINALITY`, `G_DISSENT_PRESERVED`, `G_KILL_CRITERION`, `G_RECOMMENDATION_CONSISTENCY`, `G_TYPE_1_LOW_CONFIDENCE`, `G_LESSON_CARDS_PRESENT`, `G_HANDOFF_COMPLETE`.
+At `Intake`/`AskSubject`, draft the packet; mark missing fields `unstated`. Follow [`state-machine.md`](./state-machine.md) for transitions and [`references/decision-gates.md`](./references/decision-gates.md) for gate predicates, caps, and failure routes. Workflow summaries in this file are non-normative.
 
 ## Output Contract
 
