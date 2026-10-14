@@ -38,19 +38,6 @@ Execution is a finite-state machine. Mermaid: [`flow-diagram.md`](./flow-diagram
 | Assemble | `Assemble` → `RouteAssembler` → `ValidateCriteria` → repair or `Deliver` |
 | Terminals | `TerminalPass`, `TerminalBlocked`, `TerminalFail`, `TerminalError`, `TerminalRepairNeeded` |
 
-## Pipeline Selection
-
-Evaluate in order; first match wins.
-
-| Flow | Selection test | Analysis sequence |
-| --- | --- | --- |
-| `revision` | `CHANGE_REQUEST` present and baseline supplied or recoverable | Mapped pass range + prerequisites, then assembler |
-| `suite` | Suite conventions govern (see suite gate) | Passes 1–5, then assembler with suite blocks |
-| `full` | 2+ ordered phases/delegation; `RUN_STYLE=autonomous`; mutates files/systems/external state; credentials/payments/deletion/messaging; or non-empty `PRIOR_FAILURES` | Passes 1–5, then assembler |
-| `light` | All higher tests false | Pass 1, then assembler |
-
-**Suite gate:** If `SUITE_CONTEXT` is present and it is ambiguous whether suite conventions should govern, enter `AskSuiteGovern` — ask one question, then re-enter `GateSuite`. Do not assume governance. For `light` and `revision`, emit user-facing `OMITTED_PASS_REASON` for every skipped pass. Record borderline `light`/`full` choices as assumptions and offer a fuller flow.
-
 ## Subagent Registry
 
 | Pass # | Subagent | Path | Purpose |
@@ -114,22 +101,9 @@ Always end with pass 6. Preserve unaffected `EXISTING_XML_PROMPT` sections. If a
 
 When unsure whether pass N is affected, include it (prefer over-run to silent omit) and note the assumption.
 
-## Execution
-
-Advance [`state-machine.md`](./state-machine.md). Compact checklist:
-
-1. `Intake` / `WrapAnalyzedText` — capture and wrap; start load log.
-2. Gates — `PROMPT_TEXT`, contradictions, revision baseline/scope, suite governance (`AskSuiteGovern` when ambiguous), then select flow.
-3. `DiscloseFlow` — record trigger, skipped-pass reasons, dispatch/handoff mode.
-4. For each selected analysis pass: `DispatchPass` → route on first `RESULT:` (`PASS` harvest; `BLOCKED` ask once; `FAIL` stop; `ERROR` retry once).
-5. Honor fetch budget and handoff-size switch between passes.
-6. `Assemble` with completed outputs and metadata; same status routing.
-7. `ValidateCriteria` — on failure, `MapRepair` to earliest affected pass (max three cycles; `BLOCKED` pauses the counter) or `REPAIR_NEEDED`.
-8. `Deliver` — XML first (status stripped), then notes; write `OUTPUT_TARGET` only under the mutation boundary.
-
 ## Output Contract
 
-Success: final XML first, then assembly notes (flow + trigger; skipped passes; omissions; assumptions; suite alignment or `none`; `Resources Used`; fetch status; dispatch method; handoff mode; removal-test summary; follow-ups).
+Success: final XML first, then assembly notes (flow + trigger; user-facing `OMITTED_PASS_REASON` for every skipped pass in `light` and `revision`; omissions; assumptions, including any borderline `light`/`full` choice; offer of a fuller flow for a borderline choice; suite alignment or `none`; `Resources Used`; fetch status; dispatch method; handoff mode; removal-test summary; follow-ups).
 
 Non-success: status taxonomy payload for `BLOCKED`, `FAIL`, `ERROR`, or `REPAIR_NEEDED`.
 
@@ -139,7 +113,7 @@ Non-success: status taxonomy payload for `BLOCKED`, `FAIL`, `ERROR`, or `REPAIR_
 - Every emitted tag has removal-test justification; others removed.
 - Constraints, anti-patterns, and success criteria audit the same behaviors.
 - Status/gate/retry/escalation in source expressed as routeable contract language.
-- Notes disclose flow, skipped passes, dispatch method, handoff mode, resources.
+- Notes satisfy the Output Contract.
 - Load log shows no load before its decision point.
 - Exactly one terminal status: `PASS`, `BLOCKED`, `FAIL`, `ERROR`, `REPAIR_NEEDED`.
 
