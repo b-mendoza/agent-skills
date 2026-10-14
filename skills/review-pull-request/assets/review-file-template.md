@@ -1,83 +1,61 @@
-# Review File Template
+# Review file template
 
-> Read this file only from `review-writer` while assembling `OUTPUT_FILE`. Preserve verified findings, comments, metadata, sources, and suggestion blocks exactly.
+Load only for comment-drafter MATERIALIZE. Render the verified package, never reconstruct publication content from this file. Preserve exact summary and bodies, including trailing newlines and embedded suggestions; use a surrounding fence longer than any fence in the enclosed text when quoting them.
+There is one structural `Posting status:` field outside quoted bodies/fences. Its values are `DRAFT | CANCELLED | POSTED | FAILED | PARTIAL | UNCERTAIN`. UPDATE_STATUS changes only that value; initial materialization uses DRAFT.
+Use this layout for both findings and no findings. Repeat the finding block in package order, or replace it with `No findings`. Keep every later section on either path. Omit drafting instructions and placeholders from the rendered output.
 
-The review file must stand alone without chat context. It is findings first, concise, and explicit about dimensions reviewed, residual risks, and posting status. The posting-status vocabulary is exactly `draft`, `posted`, `cancelled`, `failed`; `review-writer` update mode rewrites that value after the posting decision.
+`````markdown
+# PR <number> review
 
-## With Findings
-
-````markdown
-# PR <number> Review
-
-PR: <PR_URL> Dimensions reviewed: <comma-separated dimension names>
-
-## Findings
-
-### 1. [<severity>] <finding title>
-
-- Finding ID: `<id>`
-- File/line: `<path>:<line-or-range>`
-- Evidence: <specific evidence with path:line>
-- Impact: <why this matters>
-- Fix: <minimal fix>
-- External sources: <URL(s) backing external-fact claims, or none>
-- Dedup: <new | follow-up (thread <comment id>, <resolved | unresolved | unknown>)>
-- Line metadata: `path=<path>`, `line=<line>`, `side=<RIGHT|LEFT>`, `start_line=<line-or-none>`, `start_side=<side-or-none>`
-
-Draft PR comment:
-
-<self-contained comment body>
-
-Suggestion:
-
-```suggestion
-<suggested patch, only when verified safe>
-```
-
-Or: `Suggestion: none`
-
-## Review Decision
-
-<comment | request changes | approve> because <short rationale>.
-
-## Verification Notes
-
-- Residual risks: <risks or none>
-- Posting status: <draft | posted | cancelled | failed>
-````
-
-## No Findings
-
-Use `approve` when residual risks do not block approval; otherwise use `comment` so the review can report residual risks without approving the pull request.
-
-```markdown
-# PR <number> Review
-
-PR: <PR_URL> Dimensions reviewed: <comma-separated dimension names>
+PR: <pr_url>
+Reviewed base SHA: <base_sha>
+Reviewed head SHA: <head_sha>
+Package revision: <revision>
 
 ## Findings
 
-No findings.
+### <id>. [<severity>] <title>
 
-## Review Decision
+- Confidence: <confidence>
+- Location: <location>
+- Evidence: <evidence, bound to the reviewed revisions>
+- Failure scenario: <failure_scenario>
+- Impact: <impact>
+- Minimal fix: <minimal_fix>
+- Sources: <sources, or none>
+- Classification: <NEW | FOLLOW_UP | UNCLASSIFIED>
+- Anchor: <path, line, side, paired start_line/start_side if present, or none>
+- Thread: <comment_id, root_id, OPEN | RESOLVED | UNKNOWN, or none>
 
-<approve | comment> because <short rationale>.
+Exact comment body, including any verified suggestion:
+<quote the exact body without rewording or duplicating its suggestion>
 
-## Residual Risks
+## Review decision
 
-- <risk, testing gap, unavailable context, or none>
+<decision: APPROVE | REQUEST_CHANGES | COMMENT>
+Review event planned: <create_review>
 
-## Verification Notes
+## Exact review summary
 
-- Sources checked: <diff, files, CI, issue, docs, URLs>
-- Posting status: <draft | posted | cancelled | failed>
-```
+<quote the required exact summary, including for no findings or replies only>
 
-## Required Post-Write Check
+## Dispositions
 
-After writing the file, confirm these sections exist:
+<each dropped record's id, CONFIRM | ADJUST | DROP, and reason; or none>
 
-- `## Findings`
-- `## Review Decision`
-- `## Verification Notes`
-- `## Residual Risks` when there are no findings
+## Residual risks and limitations
+
+History: <history.state; history.limitation when incomplete>
+<each residual_risks description with blocks_approval and blocks_posting>
+<include the package's coverage, testing and source limitations; or none recorded>
+
+## Verification notes
+
+Verified package revision: <revision, matching the verified package>
+Sources and checks: <source_checks, including unavailable checks>
+
+Posting status: DRAFT
+`````
+
+A no-findings review still includes decision, exact summary, revisions, risks, source checks and status. Incomplete history or material unresolved evidence cannot become an unqualified APPROVE.
+Reread the rendered file and compare every required value with the verified package, not just the headings. Preserve separate comment/root IDs and UNKNOWN resolution. Status-only edits must leave all other bytes unchanged; a later failed package revision leaves the previous verified output intact.
