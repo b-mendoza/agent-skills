@@ -4,21 +4,21 @@
 
 ## Free checks (run these liberally)
 
-| Task | Check |
-| --- | --- |
-| Any TypeScript change | `pnpm test` — vitest unit suites; offline, no tokens spent |
-| Any change, before completion | `pnpm lint` — tsc, eslint, oxlint, oxfmt `--check` in parallel |
-| Auto-fixable lint/format findings | `pnpm fix` |
-| Runner argument handling | `node src/orchestration/run.ts --case=no-such-case` must exit `2`; `--tier=bogus` must exit `4`; neither may rewrite `report.md` or start an SDK query |
-| Import safety | Importing `run.ts` as a module must stay inert — only direct `node` invocation runs cases |
+| Task                              | Check                                                                                                                                                  |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Any TypeScript change             | `pnpm test` — vitest unit suites; offline, no tokens spent                                                                                             |
+| Any change, before completion     | `pnpm lint` — tsc, eslint, oxlint, oxfmt `--check` in parallel                                                                                         |
+| Auto-fixable lint/format findings | `pnpm fix`                                                                                                                                             |
+| Runner argument handling          | `node src/orchestration/run.ts --case=no-such-case` must exit `2`; `--tier=bogus` must exit `4`; neither may rewrite `report.md` or start an SDK query |
+| Import safety                     | Importing `run.ts` as a module must stay inert — only direct `node` invocation runs cases                                                              |
 
 ## Paid checks (require explicit user approval)
 
-| Task | Check |
-| --- | --- |
-| One case end-to-end | `node src/orchestration/run.ts --case=<id> --attempts=1` |
-| Routing decisions only | `node src/orchestration/run.ts --tier=1` (budget-capped) |
-| Full suite | `node src/orchestration/run.ts` (~35 min, ~$9 at 5 attempts) |
+| Task                   | Check                                                        |
+| ---------------------- | ------------------------------------------------------------ |
+| One case end-to-end    | `node src/orchestration/run.ts --case=<id> --attempts=1`     |
+| Routing decisions only | `node src/orchestration/run.ts --tier=1` (budget-capped)     |
+| Full suite             | `node src/orchestration/run.ts` (~35 min, ~$9 at 5 attempts) |
 
 Cases with a `judge` field additionally run one cheap judge-model query per attempt after the mechanical check passes. Judge cost is cents per attempt and is **not** folded into the report's cost column, which measures the observed run only.
 
