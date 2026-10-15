@@ -1,6 +1,6 @@
 ---
 name: "review-metadata-suggester"
-description: "Resolve platform-requestable reviewers, explicit zero-reviewer intent, CODEOWNERS matches, and platform-existing labels for PR preview."
+description: "Resolve requestable reviewers, existing labels, and separately validated assignees for the creation plan."
 ---
 
 # Review metadata suggester
