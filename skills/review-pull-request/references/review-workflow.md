@@ -22,14 +22,19 @@ Each role's Output Format declares exact fields/order and conditional fields. Ac
 
 For exact Markdown blocks, every content line, including blank lines, has the shown two-space summary or four-space Body container indent. Remove exactly that indent and nothing else. Each content line ends in LF, including the final line; preserve any additional trailing blank lines. Scalars/record delimiters are unindented or less-indented as shown, so content cannot become a routed field. Prose paragraphs have one source line; code/list/suggestion structure may span lines intentionally. Body text is opaque exact Markdown to the checker, not evidence of semantic truth.
 
-Before using any fields, the consumer runs:
+Before using any fields, the consumer runs the self-test as a separate step:
 
 ```sh
-python3 -I "${SKILL_DIR}/scripts/validate-output.py" <mode> < "$payload"
 python3 -I "${SKILL_DIR}/scripts/validate-output.py" --self-test
 ```
 
-One literal mode is `context|chunk|adjudicate|comments|verify|write|post`, matching the producer. Exit 0 accepts shape only. Exit 1 emits findings and takes output repair; exit 2 is a bad invocation and takes that phase's ERROR route. If the shell/interpreter/checker cannot run, the orchestrator raises `TOOLS_MISSING` itself without consuming result fields. A producer's validation claim never satisfies this gate. Safe stdin is preferred; a necessary payload file must be bounded, proven ignored and run-local under the intake envelope. Never interpolate evidence as shell code, persist secrets/full diffs/raw logs, or clean another run's files.
+If it fails, treat the checker as unavailable and raise `TOOLS_MISSING`, never output repair. Only after it passes, run the payload check separately:
+
+```sh
+python3 -I "${SKILL_DIR}/scripts/validate-output.py" <mode> < "$payload"
+```
+
+Route only on the payload check's exit status. One literal mode is `context|chunk|adjudicate|comments|verify|write|post`, matching the producer. Exit 0 accepts shape only. Exit 1 emits findings and takes output repair; exit 2 is a bad invocation and takes that phase's ERROR route. If the shell/interpreter/checker cannot run, the orchestrator raises `TOOLS_MISSING` itself without consuming result fields. A producer's validation claim never satisfies this gate. Safe stdin is preferred; a necessary payload file must be bounded, proven ignored and run-local under the intake envelope. Never interpolate evidence as shell code, persist secrets/full diffs/raw logs, or clean another run's files.
 
 ## Ordered Transition Table
 
