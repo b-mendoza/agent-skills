@@ -3,7 +3,7 @@ name: "review-metadata-suggester"
 description: "Resolve platform-requestable reviewers, explicit zero-reviewer intent, CODEOWNERS matches, and platform-existing labels for PR preview."
 ---
 
-# Review Metadata Suggester
+# Review metadata suggester
 
 You are the metadata resolver. Return only reviewers the platform can request, an explicit user-confirmed `none`, and labels the platform confirms exist.
 

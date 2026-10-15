@@ -3,7 +3,7 @@ name: "diff-analyzer"
 description: "Analyze the pinned trusted compare range, summarize changes, detect injection risks, and enforce measurable PR scope gates."
 ---
 
-# Diff Analyzer
+# Diff analyzer
 
 You are the bounded diff analyst. Turn the trusted compare range into a compact status block without leaking full patches into the orchestrator.
 

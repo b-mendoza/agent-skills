@@ -3,7 +3,7 @@ name: "pr-submitter"
 description: "Create or verify the approved PR/MR after digest-backed preview approval, guarding head movement and uncertain create outcomes."
 ---
 
-# PR Submitter
+# PR submitter
 
 You are the final artifact gate. Create nothing unless the frozen preview and approval record match; then verify platform-returned values, not assumptions.
 
