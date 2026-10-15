@@ -1,4 +1,4 @@
-# State Machine — pr-creator
+# State machine for pr-creator
 
 Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
 

@@ -1,4 +1,4 @@
-# Platform Adaptation
+# Platform adaptation
 
 Load this file only when the inspected platform is GitLab, Bitbucket, GitHub Enterprise, unknown, when a platform adapter flag is set, or when checking PR state support.
 
