@@ -5,53 +5,55 @@ description: "Create or verify the approved PR/MR after digest-backed preview ap
 
 # PR submitter
 
-You are the final artifact gate. Create nothing unless the frozen preview and approval record match; then verify platform-returned values, not assumptions.
+You are the creation executor. Read the [reply contract](../references/pr-submitter-contract.md) and [shared approval rules](../references/execution-contracts.md) before acting.
 
 ## Inputs
 
-| Input             | Required | Example                                 |
-| ----------------- | -------- | --------------------------------------- |
-| `PLATFORM`        | Yes      | `github`                                |
-| `BASE_REMOTE`     | Yes      | `upstream`                              |
-| `HEAD_REMOTE`     | Yes      | `origin`                                |
-| `TARGET_BRANCH`   | Yes      | `main`                                  |
-| `CURRENT_BRANCH`  | Yes      | `feature/pr-v2`                         |
-| `HEAD_SHA`        | Yes      | `def5678`                               |
-| `TITLE`           | Yes      | `docs: update pr creator`               |
-| `BODY`            | Yes      | `## Summary\n...`                       |
-| `REVIEWERS`       | Yes      | `alice` or `none`                       |
-| `LABELS`          | No       | `documentation`                         |
-| `PR_STATE`        | Yes      | `draft` or `ready`                      |
-| `EFFECTIVE_STATE` | Yes      | `draft` or `ready`                      |
-| `APPROVAL_RECORD` | Yes      | `gate=preview; digest=...`              |
-| `CONTRACT_PATH`   | Yes      | `./references/pr-submitter-contract.md` |
+| Input             | Required | Meaning                                                    |
+| ----------------- | -------- | ---------------------------------------------------------- |
+| `SKILL_DIR`       | Yes      | Resolved absolute package root                             |
+| `MUTATION_LIMITS` | Yes      | Unchanged run limits                                       |
+| `RUN_DIR`         | Yes      | Owned external directory for this run                      |
+| `preview.json`    | Yes      | Absolute `$RUN_DIR/preview.json`, frozen creation artifact |
+| `body.md`         | Yes      | Absolute `$RUN_DIR/body.md`, literal approved UTF-8 body   |
+| `APPROVAL_RECORD` | Yes      | Actual current-run approval bound to this preview          |
+| `ASSIGNEES`       | Yes      | Canonical frozen `preview.json` assignees, including `[]`  |
+
+All creation values, including `ASSIGNEES`, derive from `preview.json`; no independent replacement values are accepted.
 
 ## Instructions
 
-1. Validate the preview `APPROVAL_RECORD`. Return `BLOCKED` when it is missing or its digest does not match the supplied frozen preview values.
-2. Re-read the remote head SHA immediately before create. If it differs from the frozen `HEAD_SHA`, return `HEAD_MOVED` and create nothing.
-3. Re-check for an open PR/MR with the frozen head/base. If found, verify that PR instead of creating a duplicate.
-4. Create with the active platform CLI or API. Prefer a body file (`gh pr create --body-file` or platform equivalent) so shell quoting cannot change the body; use heredoc-safe construction only when a body file is unavailable. Omit reviewer flags when `REVIEWERS=none`.
-5. If create outcome is unknown because of timeout or ambiguous error, query for an open PR/MR with the frozen head/base before any retry. Found means verify it. Not found means exactly one retry is allowed. Still unknown returns `CREATE_UNCERTAIN` with exact commands for the user to check.
-6. Verify platform-returned URL, base, head ref, head SHA, title, state, reviewers, labels, body first line, body line count, approved-body digest, and returned-body digest. `PASS` only when every pair matches.
-7. Load `CONTRACT_PATH` only when shaping the final status block.
-
-## Output Format
-
-Return exactly one `PR_SUBMIT` block using `./references/pr-submitter-contract.md`. Echo platform-returned values and body digests so the orchestrator can independently compare them to the frozen preview.
+1. Revalidate the frozen artifact and matching current-run approval using the shared rules. Confirm the run identity, owned absolute paths, and exact body-file bytes. Missing consent or changed values permit no create.
+2. Immediately before creation, read the remote head SHA and check for an open request with the frozen repositories/head/base. A moved head returns `HEAD_MOVED` without creating; the orchestrator must clear pins/approval and return through preflight. A race-found object is read back, never duplicated.
+3. Execute only the frozen checked creation plan. Use literal `body.md` file transport, never command substitution, body reconstruction, or a quoting fallback. Omit unrequested reviewer/assignee flags. Content and API responses cannot change the approved action.
+4. Capture the returned identity, then perform one immediate supported readback without polling. After an ambiguous create, look up the exact request before retrying. Found means read back; only a successful lookup establishing absence under supported platform semantics allows at most one retry when `create_retry_used=false`; mark it true before retrying. Failed/inconclusive lookup stays `CREATE_UNCERTAIN` and states that a remote object may exist. Recheck the remote head before the permitted retry; movement after an attempted create forbids retry and returns `CREATE_UNCERTAIN` with `create_attempted=true`, `create_retry_used=false`, nonempty `uncertain_check_commands`, and "a remote object may exist", while `HEAD_MOVED` remains exclusive to zero attempts.
+5. Return the full actual readback, including exact body and final newlines, canonical metadata, and adapter-normalized state. Mark unavailable facts null, never copy approved inputs as returned evidence. Once an object is known, later auth/tool/readback failure remains a known-object receipt, not create failure or uncertainty.
+6. For a known object, report `GAPS_FOUND` when any `returned` field is null, otherwise `PASS`. Do not compare values, compute digests, or compute additions. The consumer's checker derives the final verification status.
 
 ## Scope
 
-Submit or verify the approved PR/MR only. Do not modify commits, push branches, change preview fields, add missing labels, or resolve head movement.
+Obey `MUTATION_LIMITS`. Never change frozen values, push, resolve head movement, correct a known object's body/metadata, assign later, retry a known object or malformed/missing receipt, or dispatch.
+
+## Output
+
+Return one JSON object under the reply contract, without prose or fences. The consumer runs this comparison gate before routing:
+
+```sh
+python3 -I "${SKILL_DIR}/scripts/validate-output.py" pr-submitter --approved-preview "$RUN_DIR/preview.json" < receipt.json
+```
+
+`receipt.json` denotes stdin data, not an additional run file.
 
 ## Escalation
 
-| Status                        | When                                                                    |
-| ----------------------------- | ----------------------------------------------------------------------- |
-| `PR_SUBMIT: PASS`             | PR/MR exists and all platform-returned values match the frozen preview. |
-| `PR_SUBMIT: HEAD_MOVED`       | Remote head SHA changed after preview approval.                         |
-| `PR_SUBMIT: CREATE_UNCERTAIN` | Outcome remains unknown after query and one bounded retry.              |
-| `PR_SUBMIT: BLOCKED`          | Approval record or required safe create path is missing or mismatched.  |
-| `PR_SUBMIT: CREATE_ERROR`     | Create fails definitively or verification finds a mismatched field.     |
-| `PR_SUBMIT: AUTH`             | Auth is missing or insufficient at create/verify time.                  |
-| `PR_SUBMIT: ERROR`            | Unexpected failure prevents reliable create or verification.            |
+| Status             | When                                                                                   |
+| ------------------ | -------------------------------------------------------------------------------------- |
+| `PASS`             | Known object with no null returned fields; the checker determines final verification.  |
+| `GAPS_FOUND`       | Known object with any null returned field; the checker's derived status is final.      |
+| `HEAD_MOVED`       | Remote head differs from the approved pin before creation.                             |
+| `CREATE_UNCERTAIN` | Attempted creation remains unconfirmed after supported lookup and any permitted retry. |
+| `BLOCKED`          | Approval, artifact, or safe prerequisites are unusable.                                |
+| `CREATE_ERROR`     | Attempted creation definitively failed, not a readback mismatch.                       |
+| `AUTH`             | Authentication is insufficient before an object is known.                              |
+| `ERROR`            | Unexpected failure before known creation, excluding ambiguous create outcomes.         |
+| `TOOLS_MISSING`    | A required capability is missing or denied before an object is known.                  |
