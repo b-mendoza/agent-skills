@@ -1,10 +1,12 @@
 #!/bin/sh
 # Read-only Git evidence. Dependencies: POSIX sh, awk, git, readlink.
-# Usage: sh collect-state.sh <group|preserve> -- <sorted-file-paths...>
+# Usage: sh collect-state.sh <group|preserve|changed> -- <sorted-file-paths...>
 #        sh collect-state.sh <-h|--self-test>
+# changed: paths whose commit --only worktree presence/mode/OID differs from HEAD.
 # Environment: normal Git repository configuration; no required custom variables.
-# Exit 0: one 40-hex digest (or help/self-test); 1: unsupported input;
-#      2: usage, missing capability, or collection failure; never a partial digest.
+# Exit 0: one 40-hex digest, or changed paths (possibly empty), or help/self-test;
+#      1: unsupported input; 2: usage, missing capability, or collection failure;
+#      never partial output.
 # Side effects: no files, index entries, objects, network or temporary files written; git diff may refresh the index stat cache.
 # Git attributes/filters are inherited, not sandboxed. Check: --self-test.
 
@@ -17,7 +19,7 @@ IFS='
 '
 
 usage() {
-  printf '%s\n' 'usage: sh collect-state.sh <group|preserve> -- <sorted-file-paths...>' \
+  printf '%s\n' 'usage: sh collect-state.sh <group|preserve|changed> -- <sorted-file-paths...>' \
     '       sh collect-state.sh <-h|--self-test>'
 }
 fail() { printf 'collect-state: %s\n' "$2" >&2; exit "$1"; }
@@ -26,6 +28,17 @@ valid_path() {
     ''|/*|*/|.|..|./*|../*|*/./*|*/../*|*/.|*/..|*//*|*[!\ -~]*|*' '*|*'"'*|*\\*) return 1 ;;
     *) return 0 ;;
   esac
+}
+changed_paths() {
+  awk -v filemode="$1" '
+    NF == 4 { modes[$4] = $1; oids[$4] = $3; next }
+    NF == 3 {
+      if ($1 == "000000") { if ($3 in modes) print $3; next }
+      mode = $1
+      if (filemode == "false" && mode ~ /^100/ && modes[$3] ~ /^100/) mode = modes[$3]
+      if (mode != modes[$3] || "x" $2 != "x" oids[$3]) print $3
+    }
+  '
 }
 self_test() {
   for p in 'src/routes/[id]/+page.svelte' 'app/(group)/@slot/page.tsx' '.dot' 'a*?;b' "a'b"; do
@@ -42,12 +55,26 @@ self_test() {
   a=$(printf 'a\000b\000' | git hash-object --stdin) || fail 2 'self-test hash failed'
   b=$(printf 'a\000b\000' | git hash-object --stdin) || fail 2 'self-test hash failed'
   [ "$a" = "$b" ] || fail 2 'self-test framing is unstable'
+  fixture='100644 blob same a
+100644 blob same b
+100644 blob same c
+100644 blob same d
+100755 same a
+100644 new b
+000000 absent c
+100644 same d
+000000 absent e
+100644 new f'
+  changed=$(printf '%s\n' "$fixture" | changed_paths true) || fail 2 'self-test comparison failed'
+  [ "$changed" = "$(printf 'a\nb\nc\nf')" ] || fail 2 'self-test changed paths mismatch'
+  changed=$(printf '%s\n' "$fixture" | changed_paths false) || fail 2 'self-test comparison failed'
+  [ "$changed" = "$(printf 'b\nc\nf')" ] || fail 2 'self-test ignored executable bit mismatch'
   printf '%s\n' 'collect-state: self-test PASS'
 }
 case "${1-}" in
   -h|--help) [ "$#" -eq 1 ] || { usage >&2; exit 2; }; usage; exit 0 ;;
   --self-test) [ "$#" -eq 1 ] || { usage >&2; exit 2; }; self_test; exit 0 ;;
-  group|preserve) mode=$1 ;;
+  group|preserve|changed) mode=$1 ;;
   *) usage >&2; exit 2 ;;
 esac
 [ "$#" -ge 3 ] && [ "$2" = -- ] || { usage >&2; exit 2; }
@@ -80,17 +107,19 @@ done
 # Inputs have no whitespace and globbing is disabled; Git receives literal specs.
 set --
 for p in $paths; do
-  if [ "$mode" = group ]; then set -- "$@" ":(literal)$p"
+  if [ "$mode" != preserve ]; then set -- "$@" ":(literal)$p"
   else set -- "$@" ":(exclude,literal)$p"; fi
 done
 index=$(g ls-files --stage -- "$@") || fail 2 'cannot collect index'
 status=
-if [ "$mode" = group ]; then
+if [ "$mode" != preserve ]; then
   head=$(g ls-tree -r HEAD -- "$@") || fail 2 'cannot collect HEAD entries'
   printf '%s\n%s\n' "$head" "$index" | awk '$1 == "160000" { exit 1 }' || fail 1 'scoped gitlinks are unsupported'
   printf '%s\n' "$index" | awk 'NF && $3 != "0" { exit 1 }' || fail 1 'unmerged scoped index entries'
-  status=$(g status --porcelain=v1 --untracked-files=all --no-renames --ignore-submodules=none -- "$@") || fail 2 'cannot collect status'
-  diff=$(g diff --binary --no-ext-diff --no-textconv --no-renames --ignore-submodules=none --submodule=short HEAD -- "$@") || fail 2 'cannot collect group diff'
+  if [ "$mode" = group ]; then
+    status=$(g status --porcelain=v1 --untracked-files=all --no-renames --ignore-submodules=none -- "$@") || fail 2 'cannot collect status'
+    diff=$(g diff --binary --no-ext-diff --no-textconv --no-renames --ignore-submodules=none --submodule=short HEAD -- "$@") || fail 2 'cannot collect group diff'
+  fi
   objects=$paths
 else
   diff=$(g diff --binary --no-ext-diff --no-textconv --no-renames --ignore-submodules=none --submodule=short -- "$@") || fail 2 'cannot collect preservation diff'
@@ -117,7 +146,7 @@ records=$(
         oid=$(g hash-object --path="$p" -- "$root/$p") || fail 2 "cannot hash file: $p"
       fi
       if [ -x "$root/$p" ]; then file_mode=100755; else file_mode=100644; fi
-    elif [ ! -e "$root/$p" ] && [ "$mode" = group ]; then
+    elif [ ! -e "$root/$p" ] && [ "$mode" != preserve ]; then
       file_mode=000000
       oid=absent
     else
@@ -126,6 +155,15 @@ records=$(
     printf '%s %s %s\n' "$file_mode" "$oid" "$p" || fail 2 'cannot frame object'
   done
 ) || exit $?
+if [ "$mode" = changed ]; then
+  if filemode=$(g config --bool --get core.filemode); then :
+  else
+    case $? in 1) filemode=true ;; *) fail 2 'cannot read core.filemode' ;; esac
+  fi
+  changed=$(printf '%s\n%s\n' "$head" "$records" | changed_paths "$filemode") || fail 2 'cannot compare objects'
+  [ -z "$changed" ] || printf '%s\n' "$changed"
+  exit 0
+fi
 # All fallible collection finished before this pipeline; NUL separates sections.
 digest=$(printf 'index\000%s\000status\000%s\000diff\000%s\000objects\000%s\000' \
   "$index" "$status" "$diff" "$records" | g hash-object --stdin) || fail 2 'cannot hash evidence'
