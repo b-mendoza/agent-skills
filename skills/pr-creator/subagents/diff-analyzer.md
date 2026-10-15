@@ -1,6 +1,6 @@
 ---
 name: "diff-analyzer"
-description: "Analyze the pinned trusted compare range, summarize changes, detect injection risks, and enforce measurable PR scope gates."
+description: "Analyze current preflight pins, report grounded change facts, and identify large or mixed scope."
 ---
 
 # Diff analyzer
