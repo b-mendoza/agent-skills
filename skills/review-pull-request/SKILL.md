@@ -97,7 +97,7 @@ Fetch external websites only from `external-review-resources.md` or from current
 
 ## Runtime Note: Concurrent Chunk Dispatch
 
-Chunk reviewers are independent and may run concurrently when the host runtime supports dispatching multiple subagents at once (for example, Claude Code accepts several dispatches in one message). On runtimes without concurrent dispatch, run the chunk reviewers serially in dimension order. Results are identical either way; only wall-clock time differs. Never let one chunk reviewer dispatch another subagent — all routing stays in the orchestrator.
+Chunk reviewers are independent and may run concurrently when the host runtime supports it. Otherwise run serially in the collector's declared dimension order. Aggregate in that order, never completion order. The same supplied structured results yield the same join route; model judgments are not promised identical across executions. All dispatch stays in the orchestrator.
 
 ## How This Skill Works
 
