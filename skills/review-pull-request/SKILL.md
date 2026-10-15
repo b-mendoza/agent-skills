@@ -1,6 +1,6 @@
 ---
 name: "review-pull-request"
-description: "Review one pull request through a standalone, progressively disclosed workflow. Use when the user asks to review a PR, audit a pull request, prepare GitHub review comments, draft request-changes feedback, write a PR review file, or optionally post approved review comments. This skill handles exactly one PR; ask the user to choose one PR when multiple PR URLs are supplied."
+description: "Reviews one GitHub pull request and prepares a verified local review or posts its exact approved contents. Use when the user asks to review a PR, audit a pull request, draft review comments or request-changes feedback, write a PR review file, or revise or post a saved review. Handles exactly one PR. Does not open pull requests, fix reviewed code, or implement incoming review feedback."
 ---
 
 # Review Pull Request
