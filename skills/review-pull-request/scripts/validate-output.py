@@ -373,6 +373,7 @@ class Validator:
     def comments(self, record):
         findings = {value(f, "ID"): f for f in data(record, "Confirmed findings")}
         comments = data(record, "Comments")
+        reopens = []
         self.equal(record, "Findings count", len(findings))
         for key, kind in (("New comments", "new"), ("Follow-up replies", "follow-up")):
             self.equal(record, key, sum(value(c, "Kind") == kind for c in comments))
@@ -389,6 +390,7 @@ class Validator:
                 self.require(kind == value(finding, "Dedup"), comment["Kind"], "comment Kind must match finding Dedup")
                 if kind == "follow-up" and value(comment, "Reopen") == "yes":
                     target = data(finding, "Target", {})
+                    reopens.append(value(target, "thread_id"))
                     self.require(value(target, "is_resolved") == "true" and value(target, "viewer_can_unresolve") == "true",
                                  comment["Reopen"], "Reopen yes requires a resolved target and unresolve capability")
             if kind == "new":
@@ -406,6 +408,7 @@ class Validator:
                     fence = opening[1]
                     closing = re.search(r"(?m)^ {4} {0,3}" + re.escape(fence[0]) + "{" + str(len(fence)) + r",}[ \t]*\n", body[opening.end():])
                 self.require(bool(closing), comment["Body"], "Suggestion included yes requires a suggestion fence in Body")
+        self.unique(reopens, record["Comments"], "reopen thread_id")
 
     def verify(self, record, status):
         checks = data(record, "Checks")
@@ -454,6 +457,8 @@ class Validator:
                 allowed = DECISION.split("|") if confirmed else ["uncertain" if value(action, "State") == "uncertain" else "none"]
                 self.require(decision in allowed, record["Review decision posted"], "posted decision must match review action state")
         self.unique(creations, record["Actions"], "comment creation finding ID")
+        self.unique([value(a, "thread_id") for a in actions if value(a, "Kind") == "reopen"],
+                    record["Actions"], "reopen thread_id")
         for key, kind in (("New comments posted", "inline"), ("Follow-up replies posted", "reply")):
             self.equal(record, key, sum(value(a, "Kind") == kind and value(a, "State") == "confirmed" for a in actions))
         confirmed_count = sum(value(a, "State") == "confirmed" for a in actions)
@@ -711,6 +716,27 @@ def self_test():
             ("all confirmed read-back " + readback + " is not PASS", "post", incomplete, False),
             ("all confirmed read-back " + readback + " is not ERROR", "post", confirmed_partial.replace("POST: PARTIAL", "POST: ERROR"), False),
         ]
+    second_finding = c.split("Confirmed findings:\n", 1)[1].split("- ID: security-2", 1)[0].replace("security-1", "security-4")
+    second_comment = c.split("Comments:\n", 1)[1].split("Metadata gaps:", 1)[0].replace("security-1", "security-4")
+    two_followups = c.replace("Findings count: 2", "Findings count: 3").replace(
+        "Follow-up replies: 1", "Follow-up replies: 2").replace("- ID: security-2", second_finding + "- ID: security-2").replace(
+        "Metadata gaps:", second_comment + "Metadata gaps:")
+    second_actions = ("- Action ID: reopen:security-1" + good["post"].split("- Action ID: reopen:security-1", 1)[1].split(
+        "Skipped or failed comments:", 1)[0]).replace("security-1", "security-4").replace("789", "790")
+    second_reply = "- Action ID: reply:security-4" + second_actions.split("- Action ID: reply:security-4", 1)[1]
+    two_post_followups = good["post"].replace("Follow-up replies posted: 1", "Follow-up replies posted: 2").replace(
+        "Skipped or failed comments:", second_actions + "Skipped or failed comments:")
+    cases += [
+        ("comments duplicate reopen same thread", "comments", two_followups, False),
+        ("comments one reopen then reply same thread", "comments", two_followups.replace(
+            second_comment, second_comment.replace("Reopen: yes", "Reopen: no")), True),
+        ("comments reopens on distinct threads", "comments", two_followups.replace(
+            second_finding, second_finding.replace("PRRT_example", "PRRT_other")), True),
+        ("post duplicate reopen same thread", "post", two_post_followups, False),
+        ("post one reopen then replies same thread", "post", two_post_followups.replace(second_actions, second_reply), True),
+        ("post reopens on distinct threads", "post", two_post_followups.replace(
+            second_actions, second_actions.replace("PRRT_example", "PRRT_other")), True),
+    ]
     mutations = {
         "context": [
             ("dimension outside changed set", "  - billing.py", "  - missing.py", False),
