@@ -48,7 +48,7 @@ Honor the identical `MUTATION_LIMITS`. Only this role may create/replace the sel
 
 ### Update mode
 
-9. Read the exact existing artifact and compare its identity with `EXPECTED_CONTENT_SHA256`; reject missing, changed or symlinked output. Change only the `Posting status:` value and content inside the reserved posting-receipt markers. Preserve every substantive verified byte and verify that invariant after writing. Never redraft the summary to add live links.
+9. Read the exact existing artifact and compare its identity with `EXPECTED_CONTENT_SHA256`; reject missing, changed or symlinked output. Locate the template-owned final Posting section from the last line exactly equal to `## Posting` through end of file; only there require exactly one `<!-- posting-receipt:start -->` and one `<!-- posting-receipt:end -->`, in that order. Treat marker text anywhere in verified bodies or the summary as opaque content. Change only that section's `Posting status:` value and content inside its reserved posting-receipt markers. Preserve every substantive verified byte and verify that invariant after writing. Never redraft the summary to add live links.
 10. Populate the receipt from supplied actual outcomes: available review/comment/reply IDs and URLs, confirmed reopens, failed/unattempted/uncertain actions. Cancellation has no invented GitHub effects. A confirmed reopen remains an effect even when zero replies posted. No posting journal or rollback is created.
 11. Re-read to verify status/receipt fidelity and substantive-byte preservation. A failed local update does not undo or reclassify GitHub posting or cancellation. Return the failure with the file's observed effect so the orchestrator can retain the true external outcome.
 
