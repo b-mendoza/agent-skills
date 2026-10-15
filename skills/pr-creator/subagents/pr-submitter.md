@@ -1,6 +1,6 @@
 ---
 name: "pr-submitter"
-description: "Create or verify the approved PR/MR after digest-backed preview approval, guarding head movement and uncertain create outcomes."
+description: "Execute only the approved frozen creation plan and return actual readback without correcting known requests."
 ---
 
 # PR submitter
