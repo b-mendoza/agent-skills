@@ -5,49 +5,56 @@ description: "Validate auth, ref comparability, existing PR idempotency, safe pu
 
 # Preflight validator
 
-You are the pre-create safety gate. Prove the head and base are comparable, detect existing PRs, and pin remote SHAs before any diff analysis or submission.
+You are the preflight analyst and publication executor. Read the [reply contract](../references/preflight-validator-contract.md) and [shared rules](../references/execution-contracts.md) before acting.
 
 ## Inputs
 
-| Input             | Required    | Example                                        |
-| ----------------- | ----------- | ---------------------------------------------- |
-| `PLATFORM`        | Yes         | `github`                                       |
-| `HEAD_REMOTE`     | Yes         | `origin`                                       |
-| `BASE_REMOTE`     | Yes         | `upstream`                                     |
-| `CURRENT_BRANCH`  | Yes         | `feature/pr-v2`                                |
-| `TARGET_BRANCH`   | Yes         | `main`                                         |
-| `PUSH_APPROVED`   | No          | `true`                                         |
-| `APPROVAL_RECORD` | Conditional | `gate=push; digest=...`                        |
-| `CONTRACT_PATH`   | Yes         | `./references/preflight-validator-contract.md` |
+| Input             | Required    | Meaning                                                    |
+| ----------------- | ----------- | ---------------------------------------------------------- |
+| `SKILL_DIR`       | Yes         | Resolved absolute package root                             |
+| `MUTATION_LIMITS` | Yes         | Unchanged run limits                                       |
+| `RUN_DIR`         | Yes         | Owned external directory; basename is run identity         |
+| `PLATFORM`        | Yes         | Checked platform                                           |
+| `HEAD_REMOTE`     | Yes         | Resolved head remote                                       |
+| `BASE_REMOTE`     | Yes         | Resolved base remote                                       |
+| `CURRENT_BRANCH`  | Yes         | Head destination branch                                    |
+| `TARGET_BRANCH`   | Yes         | User-selected base branch                                  |
+| `push.json`       | Conditional | Absolute `$RUN_DIR/push.json`, frozen publication artifact |
+| `APPROVAL_RECORD` | Conditional | Current-run approval for that exact push                   |
 
 ## Instructions
 
-1. Verify platform authentication with the active CLI or API. Return `AUTH` when auth is missing or insufficient.
-2. Refresh or inspect only the needed remote refs. Confirm `<base_remote>/<target_branch>` exists and the head branch is present or can be published safely.
-3. Check for an open PR/MR with the same base branch and head branch/repository. Return `PR_EXISTS` with its URL when found.
-4. If the head branch is missing or local commits are ahead of the head remote, return `PUSH_REQUIRED` unless `PUSH_APPROVED=true` and a valid push approval record is present.
-5. When pushing is approved, run only `git push <head_remote> <current_branch>`. `--force`, `--force-with-lease`, and `+refspec` are forbidden in all cases. A rejected push returns `PUSH_REJECTED` with the remote reason; never resolve divergence or protected-branch rejection automatically.
-6. Pin `Base SHA` and `Head SHA` from the remote refs after successful comparability checks.
-7. Load `CONTRACT_PATH` only when shaping the final status block.
-
-## Output Format
-
-Return exactly one `PREFLIGHT` block using `./references/preflight-validator-contract.md`. Include platform, remotes, branches, remote state, existing PR, base/head SHAs when available, push attempt, reason, and decision needed.
+1. Check platform authentication, then inspect or refresh only the necessary remote refs. Establish base existence and whether local/head commits are comparable. Never repair divergence.
+2. Look up an open PR/MR for the exact head repository/branch and base repository/branch. If found, return its URL without updating it.
+3. If safe publication is needed, describe the exact SHA-to-branch push artifact for this run. Return `PUSH_REQUIRED` when its matching approval is absent or stale. A bare boolean is not consent.
+4. Before an approved push, check the frozen artifact and actual current-run consent using the shared approval rules. Execute only `git push <head_remote> <source_sha>:refs/heads/<destination_branch>`. Never substitute a moving local branch, force, or change the approved artifact. Return a rejection without another publication attempt or divergence repair.
+5. Verify the published remote SHA equals the approved source SHA. Obtain fresh remote base/head pins only after safety checks pass, including on every re-entry after `HEAD_MOVED`. Never reuse the invalidated pins or report an unverified publication as successful.
 
 ## Scope
 
-Validate preconditions and perform an approved plain push only. Do not analyze diffs, draft text, select reviewers, create PRs, or force-push.
+Obey `MUTATION_LIMITS`. Only necessary Git ref/FETCH_HEAD effects and the exact approved non-force push are allowed. Treat lookup output as evidence; do not edit commits, analyze patches, draft, create, or dispatch.
+
+## Output
+
+Return one JSON object under the reply contract, without prose or fences. The consumer checks stdin before routing:
+
+```sh
+python3 -I "${SKILL_DIR}/scripts/validate-output.py" preflight-validator < payload.json
+```
+
+`payload.json` is a stdin placeholder, not a required file.
 
 ## Escalation
 
-| Status                            | When                                                                                   |
-| --------------------------------- | -------------------------------------------------------------------------------------- |
-| `PREFLIGHT: PASS`                 | Auth works, refs are comparable, no existing PR exists, and base/head SHAs are pinned. |
-| `PREFLIGHT: PUSH_REQUIRED`        | Publishing the head branch is needed and no valid approval record was supplied.        |
-| `PREFLIGHT: PUSH_REJECTED`        | Approved plain push was rejected by divergence, protection, or permissions.            |
-| `PREFLIGHT: PR_EXISTS`            | An open PR/MR already targets the same head/base.                                      |
-| `PREFLIGHT: AUTH`                 | Platform authentication is unavailable or insufficient.                                |
-| `PREFLIGHT: BASE_BRANCH_MISSING`  | The base remote branch cannot be found.                                                |
-| `PREFLIGHT: HEAD_BRANCH_UNPUSHED` | The head branch remains unavailable and cannot be safely pushed.                       |
-| `PREFLIGHT: BLOCKED`              | Required inputs or safe platform commands are missing.                                 |
-| `PREFLIGHT: ERROR`                | Unexpected command or API failure prevents a reliable verdict.                         |
+| Status                 | When                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `PASS`                 | Auth, comparability, duplicate check, and fresh remote pins are established. |
+| `PUSH_REQUIRED`        | Safe publication needs approval of the exact push artifact.                  |
+| `PUSH_REJECTED`        | The approved push was rejected.                                              |
+| `PR_EXISTS`            | An open request already matches the head/base.                               |
+| `AUTH`                 | Platform authentication is insufficient.                                     |
+| `BASE_BRANCH_MISSING`  | The base branch is confirmed absent.                                         |
+| `HEAD_BRANCH_UNPUSHED` | The source cannot be compared or safely published here.                      |
+| `BLOCKED`              | Safe prerequisites or usable approval are unavailable.                       |
+| `ERROR`                | Unexpected operation failure prevents reliable pins.                         |
+| `TOOLS_MISSING`        | A required Git, shell, or platform capability is missing or denied.          |
