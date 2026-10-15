@@ -76,7 +76,7 @@ projection='
 
 if "$dry_run"; then
   printf 'gh api graphql --hostname github.com --paginate -f owner=%s -f repo=%s -F number=%s \\\n' "$owner" "$repo" "$number"
-  printf "  -f query='%s' \\\n  --jq '%s'\n" "$query" "$projection"
+  printf '  -f query=%s \\\n  --jq %s\n' "'$query'" "'$projection'"
   exit 0
 fi
 if ! command -v gh >/dev/null 2>&1; then
