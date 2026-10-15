@@ -463,7 +463,8 @@ class Validator:
             self.equal(record, "Read-back verified", "yes")
             self.equal(record, "Skipped or failed comments", [])
         elif status == "PARTIAL":
-            self.require(0 < confirmed_count < len(actions), record["Actions"], "PARTIAL needs confirmed and non-confirmed actions")
+            self.require(confirmed_count > 0 and (confirmed_count < len(actions) or value(record, "Read-back verified") != "yes"),
+                         record["Actions"], "PARTIAL needs a confirmed action and non-confirmed actions or incomplete read-back")
         elif status == "ERROR":
             self.require(confirmed_count == 0, record["Actions"], "confirmed incomplete effects require PARTIAL, not ERROR")
         elif status in ("PREVIEW_REQUIRED", "AUTH", "METADATA_INVALID", "TOOLS_MISSING"):
@@ -696,10 +697,20 @@ def self_test():
         ("reopen without capability", "comments", c.replace("viewer_can_unresolve: true", "viewer_can_unresolve: false"), False),
         ("partial post", "post", partial, True),
         ("partial is not pass", "post", partial.replace("POST: PARTIAL", "POST: PASS"), False),
-        ("pass is not partial", "post", good["post"].replace("POST: PASS", "POST: PARTIAL"), False),
+        ("pass is not partial", "post", good["post"].replace("POST: PASS", "POST: PARTIAL").replace(
+            "Reason: none\nNext step: none", "Reason: All effects verified\nNext step: Report PASS"), False),
         ("valid repair owner", "verify", fail, True),
         ("invalid repair owner", "verify", fail.replace("pr-context-collector", "orchestrator-decision"), False),
     ]
+    for readback in ("partial", "no"):
+        incomplete = good["post"].replace("Read-back verified: yes", "Read-back verified: " + readback)
+        confirmed_partial = incomplete.replace("POST: PASS", "POST: PARTIAL").replace(
+            "Reason: none\nNext step: none", "Reason: Read-back incomplete\nNext step: Reconcile read-only")
+        cases += [
+            ("all confirmed read-back " + readback + " is PARTIAL", "post", confirmed_partial, True),
+            ("all confirmed read-back " + readback + " is not PASS", "post", incomplete, False),
+            ("all confirmed read-back " + readback + " is not ERROR", "post", confirmed_partial.replace("POST: PARTIAL", "POST: ERROR"), False),
+        ]
     mutations = {
         "context": [
             ("dimension outside changed set", "  - billing.py", "  - missing.py", False),
