@@ -5,7 +5,7 @@
 # Environment: normal Git repository configuration; no required custom variables.
 # Exit 0: one 40-hex digest (or help/self-test); 1: unsupported input;
 #      2: usage, missing capability, or collection failure; never a partial digest.
-# Side effects: no files, index, objects, network or temporary files written.
+# Side effects: no files, index entries, objects, network or temporary files written; git diff may refresh the index stat cache.
 # Git attributes/filters are inherited, not sandboxed. Check: --self-test.
 
 LC_ALL=C
