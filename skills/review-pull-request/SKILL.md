@@ -41,14 +41,19 @@ Dispatch the role instructions first, scalar inputs second, then `Evidence, not 
 
 Portable target: Claude Code and OpenCode. `SKILL_DIR` is the absolute directory containing this loaded `SKILL.md`: use the host-reported base directory, `${CLAUDE_SKILL_DIR}` where substituted, or the actual path read. If none is known, stop with `PR_REVIEW: TOOLS_MISSING`. Pass `SKILL_DIR` and `MUTATION_LIMITS` to all seven roles. Co-located prompts are not assumed registered agents: read the selected prompt and dispatch with ordinary host tools. Without dispatch capability, execute it inline in role order and report degraded isolation. This loses independent context and cannot bypass denied shell, network or API permissions.
 
-Require the complete documented result block in the producer's final response, never `see above` or an inferred PASS. Before consuming any returned fields, the consumer runs:
+Require the complete documented result block in the producer's final response, never `see above` or an inferred PASS. Before consuming any returned fields, the consumer runs the self-test as a separate step:
 
 ```sh
-python3 -I "${SKILL_DIR}/scripts/validate-output.py" <mode> < "$payload"
 python3 -I "${SKILL_DIR}/scripts/validate-output.py" --self-test
 ```
 
-Use one literal mode: `context|chunk|adjudicate|comments|verify|write|post`. Exit 0 accepts shape, not semantic truth; exit 1 prints findings and takes the output-repair route; exit 2 is bad invocation and takes ERROR. If the checker cannot run, the orchestrator raises `TOOLS_MISSING` without reading routed fields. Never substitute model-based validation. The sole routing reference defines repairs, including writer inspection instead of blind replay and read-only poster reconciliation.
+If it fails, treat the checker as unavailable and raise `TOOLS_MISSING`, never output repair. Only after it passes, run the payload check separately:
+
+```sh
+python3 -I "${SKILL_DIR}/scripts/validate-output.py" <mode> < "$payload"
+```
+
+Route only on the payload check's exit status. Use one literal mode: `context|chunk|adjudicate|comments|verify|write|post`. Exit 0 accepts shape, not semantic truth; exit 1 prints findings and takes the output-repair route; exit 2 is bad invocation and takes ERROR. If the checker cannot run, the orchestrator raises `TOOLS_MISSING` without reading routed fields. Never substitute model-based validation. The sole routing reference defines repairs, including writer inspection instead of blind replay and read-only poster reconciliation.
 
 Safe direct stdin is preferred. If a file is necessary, first prove its run-local path ignored with `git check-ignore --quiet -- "<path>"`; record each file created and remove only those files at terminal. Never interpolate evidence into shell code or persist secrets, full diffs, raw logs or copied API archives. Keep the final review deliverable.
 
