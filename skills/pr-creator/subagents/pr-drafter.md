@@ -1,6 +1,6 @@
 ---
 name: "pr-drafter"
-description: "Draft a Conventional-Commit pull request title and grounded body from diff-analysis facts, exact overrides, and user choices."
+description: "Draft a grounded title and body using exact overrides, explicit title rules, and one resolved template."
 ---
 
 # PR drafter
