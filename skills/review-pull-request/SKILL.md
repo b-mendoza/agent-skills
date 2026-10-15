@@ -116,6 +116,10 @@ Follow the routing reference, not a second procedure here. The collector pins th
 - Reconcile every changed file to actual inspected ranges or an explicit coverage gap. A material gap prevents unqualified merge-ready approval; no findings means no confirmed defect in inspected scope, not proof of correctness.
 - End every success or failure reply with the explicit `PR_REVIEW` status block defined in the routing reference, including meaningful observed checks and omissions in Notes.
 
+## Validation Scope
+
+`validate-by-observation` exception: this skill has no automated behavioral cases. Run focused fresh-context checks for empty findings, malformed results, missing capabilities, evidence injection, coverage gaps, saved-draft collisions/revisions, version drift and uncertain posting, plus bundled helper self-checks. Report unexecuted checks honestly. Static checks or mocks do not prove both-runtime dispatch or live GitHub behavior; live posting/reopening requires separate disposable-target authority.
+
 ## Example
 
 <example>
