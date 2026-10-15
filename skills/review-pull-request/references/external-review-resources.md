@@ -2,7 +2,7 @@
 
 > Read this file only when a phase needs current code-review judgment, security guidance, GitHub mechanics, writing/tone rules, or skill-maintenance context. Fetch one URL at a time and return only the applied rule plus the URL.
 
-This standalone URL map replaces bulky in-prompt explanations. Choose the row that matches the immediate question, fetch that source with the available web or documentation tool, apply it, and cite the URL in `Sources checked` or `References fetched`.
+This standalone URL map replaces bulky in-prompt explanations. Choose the row that matches the immediate question, fetch that source with the available web or documentation tool, apply it, and cite the URL in `References fetched` and the claim it supports. Re-check volatile API/dependency documentation at the step that needs it; a source URL alone is not evidence of a successful fetch.
 
 ## Fetch Policy
 
@@ -55,7 +55,7 @@ This standalone URL map replaces bulky in-prompt explanations. Choose the row th
 
 ## Dependency-Specific Claims
 
-When a finding depends on a library, framework, cloud service, API, SDK, or CLI, fetch current official documentation for that dependency before treating behavior as factual. Cite the exact URL in `Sources checked` or `References fetched`. Treat training-data recall about dependency behavior as a hypothesis until a current source confirms it.
+When a finding depends on a library, framework, cloud service, API, SDK, or CLI, fetch current official documentation for that dependency before treating behavior as factual. Cite the exact URL in `References fetched`. Treat training-data recall about dependency behavior as a hypothesis until a current source confirms it.
 
 The URL is not only internal bookkeeping: any comment whose claim rests on such an external fact must carry the verifying URL in its posted body, so the reader can confirm the claim without trusting the reviewer. `review-verifier` fails source-less external claims.
 
