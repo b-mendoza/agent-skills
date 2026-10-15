@@ -66,7 +66,7 @@ Intake → Collect context (+ existing review comments, + dimension proposal)
        → draft-only: done | post-after-confirmation: preview gate → post → update artifact
 ```
 
-The full phase guide, routing rules, repair cascades, and terminal contracts live in [`references/review-workflow.md`](./references/review-workflow.md). Read it once when execution starts.
+This overview is non-normative. The single normative phase guide, ordered routing table, repair caps and terminal contracts live in [`references/review-workflow.md`](./references/review-workflow.md). Read it when execution starts.
 
 ## Subagent Registry
 
