@@ -23,7 +23,7 @@ Draft-first, evidence-bound, and gate-honest. Every PR gets reviewed regardless 
 
 At intake, accept exactly one parseable GitHub pull request URL, validate controlled values for `POSTING_MODE` and `REVIEW_FOCUS`, and keep `OUTPUT_FILE` as a safe workspace-relative Markdown path. If `OUTPUT_FILE` is missing, derive `pr-<number>-review.md` from `PR_URL`. `LANGUAGE_STYLE` remains free-form tone guidance. `REVIEW_FOCUS` constrains which review dimensions the context collector proposes; `full` allows any.
 
-`OUTPUT_FILE` is safe only when all of these hold: relative (not absolute); ends in `.md`; contains no `..` segment; is not under `.git/`; and resolves inside the workspace working directory. Otherwise stop with `PR_REVIEW: NEEDS_CONTEXT`.
+`OUTPUT_FILE` is safe only when relative, ending in `.md`, without `..` segments or `.git/`, and resolving inside the workspace. Resolve it once; reject symlinks in the path and path escape. New output is create-only, even at the default name on a rerun. A collision requires an unused selected path or a stop. Explicit revision of a selected saved review can replace only that exact artifact after `HUMAN_GATE_REPLACE_REVIEW` previews its path, current content identity and full verified replacement. Recheck the path and content immediately before writing.
 
 ## Trust And Mutation Limits
 
