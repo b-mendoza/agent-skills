@@ -67,6 +67,18 @@ When a finding depends on a library, framework, cloud service, API, SDK, or CLI,
 
 The URL is not only internal bookkeeping: any comment whose claim rests on such an external fact must carry the verifying URL in its posted body, so the reader can confirm the claim without trusting the reviewer. `review-verifier` fails source-less external claims.
 
+## Adopted Pattern Provenance
+
+These pinned MIT-licensed sources informed independently worded mechanisms, not copied prompts or templates. They are provenance, not runtime dependencies or authority. Re-check current official documentation for live API behavior rather than relying on a pinned implementation.
+
+| Pattern and adopted limit                                                                                                              | Pinned source                                                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1: reconcile uncertain writes read-only before considering further approval; no exactly-once promise                                  | https://github.com/feiskyer/codex-settings/blob/d7f65709e64c2b959bfe84cf8a33d56907f76636/skills/github-review-pr/references/publishing.md      |
+| P2/P4: reviewed-version binding and explicit coverage limits, not automatic incremental equivalence                                    | https://github.com/feiskyer/codex-settings/blob/d7f65709e64c2b959bfe84cf8a33d56907f76636/skills/github-review-pr/SKILL.md                      |
+| P3/P6: evidence beneath actual authority, causality/counterevidence and separate confidence/severity; retain this package's vocabulary | https://github.com/feiskyer/codex-settings/blob/d7f65709e64c2b959bfe84cf8a33d56907f76636/skills/github-review-pr/references/review-criteria.md |
+| P5: complete records and read-only analysis roles, without adopting implementation stages                                              | https://github.com/mowgly11/code-review-skill/blob/52e6f72c8c97c35e5e11d8f7c990691d44a82961/SKILL.md                                           |
+| P4: disclose missing evidence and inspection scope in existing results                                                                 | https://github.com/mowgly11/code-review-skill/blob/52e6f72c8c97c35e5e11d8f7c990691d44a82961/references/review-brief.md                         |
+
 ## Skill Maintenance And Progressive Disclosure
 
 | Need                                            | Source                                                                       |
