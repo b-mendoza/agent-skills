@@ -1,6 +1,6 @@
 ---
 name: "repo-state-inspector"
-description: "Inspect git repository state, remote topology, platform, current branch, target-branch candidate, and local-change boundaries for PR creation."
+description: "Inspect repository topology, branch candidates, safe creation capabilities, and requested-state support."
 ---
 
 # Repo state inspector
