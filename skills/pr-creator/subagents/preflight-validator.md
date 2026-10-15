@@ -1,6 +1,6 @@
 ---
 name: "preflight-validator"
-description: "Validate auth, ref comparability, existing PR idempotency, safe push state, and pinned base/head SHAs before PR creation."
+description: "Check authentication, remote refs, duplicates, approved publication, and fresh base/head pins."
 ---
 
 # Preflight validator
