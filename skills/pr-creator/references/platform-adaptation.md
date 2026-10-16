@@ -30,15 +30,19 @@ requestability is not assignment support.
 | Unknown                    | Resolve host/tooling through one bounded authoritative lookup or a user choice. No creation until the required fields, state, transport, and query semantics are checked.                                                                                                                 | Unknown is unsupported for a requested assignment until checked.                                                                                                                                                        | Unknown discovery is not confirmed absence.                                                                                                                                                                                    |
 
 All template paths here are paths in the user's target repository, not bundled
-package dependencies. GitHub's documented single-template candidates are
-`pull_request_template.md`, `docs/pull_request_template.md`, and
-`.github/pull_request_template.md`. Multiple candidates may live under
+package dependencies. GitHub single-template discovery matches
+`pull_request_template.md` or `pull_request_template.txt` case-insensitively in
+the root, `docs/`, and `.github/`. Multiple candidates may live under
 `PULL_REQUEST_TEMPLATE/`, `docs/PULL_REQUEST_TEMPLATE/`, or
-`.github/PULL_REQUEST_TEMPLATE/`. Use [D1 and D2](./external-resources.md#template-facts)
-for current facts. Do not invent case-insensitive discovery or precedence among
-coexisting GitHub locations. GitLab documents case-insensitive `Default.md`
-selection and a project-settings default taking priority over that file. Its
-issue-template inheritance list is not an MR inheritance algorithm.
+`.github/PULL_REQUEST_TEMPLATE/`. Use [D1, D2, and D3](./external-resources.md#template-facts)
+for current facts. Do not extend filename case-insensitivity to directory names
+or invent precedence among coexisting GitHub locations. GitLab documents
+case-insensitive `Default.md` selection and a Premium/Ultimate project-settings
+default taking priority over that file. Read that value from the Projects API's
+`merge_requests_template` response field; identify its canonical base project
+and setting, not a repository path/SHA. A missing/unreadable field alone does not
+establish absence. Its issue-template inheritance list is not an MR inheritance
+algorithm.
 
 ## Source and capability decisions
 

@@ -28,15 +28,16 @@ contracts define those boundaries; visible additions are not asserted harmless.
 
 ## Template facts
 
-D1/D2 are mutable primary documentation, inspected on 2026-10-15. Re-check when
-template discovery/default selection affects a run and the relevant behavior is
-not established for that host, version, or offering. Do not infer missing facts
-from a public skill's search order.
+D1/D2/D3 are mutable primary documentation. D1/D3 were inspected on 2026-10-16;
+D2 was inspected on 2026-10-15. Re-check when template discovery/default selection
+affects a run and the relevant behavior is not established for that host, version,
+or offering. Do not infer missing facts from a public skill's search order.
 
-| Source | Canonical URL                                                                                                                                              | Facts used and limits                                                                                                                                                                                                                                             |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| D1     | <https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/creating-a-pull-request-template-for-your-repository> | GitHub default-branch availability; root, docs, and .github single-template locations; corresponding multiple-template directories and explicit selection. Does not establish general casing or location precedence.                                              |
-| D2     | <https://docs.gitlab.com/user/project/description_templates/>                                                                                              | GitLab default-branch MR template directory, `Default.md` behavior, applicable settings defaults, and first-save variable substitution. Do not treat the issue-template inheritance list as complete MR precedence or substitution as approval to alter the body. |
+| Source | Canonical URL                                                                                                                                              | Facts used and limits                                                                                                                                                                                                   |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1     | <https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/creating-a-pull-request-template-for-your-repository> | GitHub default-branch availability; root, docs, and .github single-template locations; corresponding multiple-template directories and explicit selection. Does not establish directory casing or location precedence.  |
+| D2     | <https://docs.gitlab.com/user/project/description_templates/>                                                                                              | GitLab default-branch MR templates, case-insensitive `Default.md`, Premium/Ultimate settings priority, and first-save substitution. Issue inheritance is not MR precedence; substitution does not authorize body edits. |
+| D3     | <https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/about-issue-and-pull-request-templates>               | GitHub single-template filenames are case-insensitive and may use `.md` or `.txt`. Does not establish directory casing or location precedence.                                                                          |
 
 See [platform-adaptation.md](./platform-adaptation.md) for how these facts affect
 selection. Repository template paths are runtime inputs, not package files.
