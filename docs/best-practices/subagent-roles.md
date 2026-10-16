@@ -34,11 +34,10 @@ skills/summarize-repo/subagents/
 <!-- ✅ each file named for the job it does; the adjudicator exists because chunk reviewers run in parallel -->
 
 skills/review-pull-request/subagents/
-  pr-context-collector.md   # scout: compact PR facts, no verdict
+  pr-context-collector.md   # scout: compact PR facts and existing threads, no verdict
   chunk-reviewer.md         # reviewer: one dimension, findings with evidence; several run in parallel
-  finding-adjudicator.md    # adjudicator: confirm, adjust, or drop across chunks; merges duplicates
-  comment-drafter.md        # writer: the canonical review package, shape-checked by a script before routing
-  review-poster.md          # executor: posts the exact package only after `APPROVED`
+  review-author.md          # adjudicator+writer: reconciles chunks, maps threads, writes the canonical package
+  review-verifier.md        # reviewer: independently checks the package against evidence before it is saved
 
 <!-- ✅ adjacent roles combined while the job is small -->
 
