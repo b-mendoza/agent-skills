@@ -94,10 +94,11 @@ SCHEMAS = {
         "title": ("nonempty", None), "body": ("nonempty", None),
         "title_source": {"override", "title-rules", "repository-rule", "fallback"},
         "title_rule": ("text", None), "title_rule_source": ("text", None),
-        "body_source": {"override", "repository-template", "local-template", "fallback"},
-        "template_source": (TEMPLATE, None), "type_choice": ("text", None),
+        "body_source": {"override", "repository-template", "local-template", "settings-template", "fallback"},
+        "template_source": ("source", None), "type_choice": ("text", None),
         "scope_choice": ("text", None), "traceability_notes": TEXTS,
         "choices": [{"type", "scope", "title-rule", "template"}],
+        "source_candidates": [{"choice": {"title-rule", "template"}, "source": "source"}],
     },
     "review-metadata-suggester": {
         "reviewers": (TEXTS, None), "labels": (TEXTS, None), "assignees": (TEXTS, None),
@@ -144,7 +145,7 @@ REQUIRED = {
     "diff-analyzer": dict.fromkeys(
         ("PASS", "LARGE_PR_CONFIRMATION_REQUIRED", "EMPTY_DIFF"), tuple(SCHEMAS["diff-analyzer"])
     ),
-    "pr-drafter": {"PASS": tuple(SCHEMAS["pr-drafter"]), "NEEDS_CHOICE": ("choices",)},
+    "pr-drafter": {"PASS": tuple(SCHEMAS["pr-drafter"]), "NEEDS_CHOICE": ("choices", "source_candidates")},
     "review-metadata-suggester": {
         "PASS": tuple(SCHEMAS["review-metadata-suggester"]),
         "INVALID_LABELS": ("invalid_labels", "suggested_valid_labels"),
@@ -161,6 +162,20 @@ REQUIRED = {
 
 
 def check(value, spec, path, findings, required=None):
+    if spec == "source":
+        if isinstance(value, dict) and value.get("kind") == "settings":
+            check(value, {"kind": {"settings"}, "project": "text", "setting": "text"}, path, findings)
+        else:
+            count = len(findings)
+            check(value, TEMPLATE, path, findings)
+            if len(findings) == count:
+                if value["kind"] == "repository":
+                    for key in ("repository", "revision"):
+                        if value[key] is None:
+                            findings.append(f"{path}.{key}: required for repository source")
+                elif value["repository"] is not None or value["revision"] is not None:
+                    findings.append(f"{path}: local source requires null repository/revision")
+        return
     if isinstance(spec, tuple):
         if value is not None:
             check(value, spec[0], path, findings)
@@ -341,17 +356,19 @@ def role_findings(mode, value, preview=None):
             need("decision_needed")
     elif mode == "pr-drafter":
         source = value.get("template_source")
-        if source is not None:
-            if source["kind"] == "repository":
-                for key in ("repository", "revision"):
-                    if source[key] is None:
-                        findings.append(f"{mode}.template_source.{key}: required for repository template")
-            elif source["repository"] is not None or source["revision"] is not None:
-                findings.append(f"{mode}.template_source: local source requires null repository/revision")
+        candidates = value.get("source_candidates", [])
+        if len(candidates) > 10:
+            findings.append(f"{mode}.source_candidates: at most 10 identities")
+        for candidate in candidates:
+            if candidate["choice"] not in value.get("choices", []):
+                findings.append(f"{mode}.source_candidates: choice must appear in choices")
+            if candidate["choice"] == "title-rule" and candidate["source"]["kind"] != "repository":
+                findings.append(f"{mode}.source_candidates: title rules require a repository source")
         if status == "PASS":
             need("title")
             need("body")
             equal("choices", [])
+            equal("source_candidates", [])
             equal("decision_needed", None)
             if value["title_source"] == "override":
                 equal("title_rule", None)
@@ -361,7 +378,7 @@ def role_findings(mode, value, preview=None):
                 if value["title_source"] == "repository-rule":
                     need("title_rule_source")
             body_source = value["body_source"]
-            if body_source in {"repository-template", "local-template"}:
+            if body_source in {"repository-template", "local-template", "settings-template"}:
                 need("template_source")
                 if source is not None and source["kind"] != body_source.split("-")[0]:
                     findings.append(f"{mode}.template_source.kind: differs from body_source")
@@ -535,7 +552,7 @@ def examples():
             "title": preview["title"], "body": preview["body"], "title_source": "fallback",
             "title_rule": "Conventional Commit", "title_rule_source": None, "body_source": "fallback",
             "template_source": None, "type_choice": "fix", "scope_choice": "none",
-            "traceability_notes": ["body follows diff facts"], "choices": [],
+            "traceability_notes": ["body follows diff facts"], "choices": [], "source_candidates": [],
         },
         "review-metadata-suggester": common | {
             "reviewers": [], "reviewer_source": "none-confirmed", "solo_repository": None,
@@ -624,6 +641,26 @@ def self_test():
     assert not role_findings("preflight-validator", pushed)
     assert role_findings("preflight-validator", pushed | {"approval_record": None})
     pending = {"reason": "decision required", "decision_needed": "Choose next action"}
+    settings_source = {"kind": "settings", "project": "gitlab.com/org/repo", "setting": "merge_requests_template"}
+    settings_draft = reports["pr-drafter"] | {
+        "body_source": "settings-template", "template_source": settings_source,
+    }
+    source_choice = pending | {
+        "status": "NEEDS_CHOICE", "choices": ["template"], "source_candidates": [
+            {"choice": "template", "source": settings_source},
+            {"choice": "template", "source": {"kind": "repository", "repository": settings_source["project"], "revision": preview["base_sha"], "path": ".gitlab/merge_request_templates/Default.md"}},
+        ],
+    }
+    for changes in ({"project": ""}, {"setting": None}, {"revision": preview["base_sha"]}, {"body": "raw template"}):
+        assert role_findings("pr-drafter", settings_draft | {"template_source": settings_source | changes}), changes
+    assert role_findings("pr-drafter", settings_draft | {"body_source": "repository-template"})
+    assert role_findings("pr-drafter", source_choice | {"source_candidates": [{"choice": "template", "source": settings_source | {"body": "raw template"}}]})
+    assert role_findings("pr-drafter", source_choice | {"source_candidates": source_choice["source_candidates"] * 6})
+    assert role_findings("pr-drafter", source_choice | {"choices": ["title-rule"], "source_candidates": [{"choice": "title-rule", "source": settings_source}]})
+    assert role_findings("pr-drafter", source_choice | {"choices": ["type"]})
+    repository_source = source_choice["source_candidates"][1]["source"]
+    assert role_findings("pr-drafter", source_choice | {"source_candidates": [{"choice": "template", "source": repository_source | {"revision": None}}]})
+    assert role_findings("pr-drafter", {k: v for k, v in source_choice.items() if k != "source_candidates"})
     positives = [
         ("repo-state-inspector", reports["repo-state-inspector"] | pending | {
             "topology": "ambiguous", "topology_candidates": [{"head_remote": "origin", "base_remote": "origin"}],
@@ -638,7 +675,10 @@ def self_test():
             "status": "EMPTY_DIFF", "changed_files": 0, "changed_paths": [], "adjusted_changed_lines": 0,
             "shortstat": {"files": 0, "insertions": 0, "deletions": 0}, "grouped_areas": [], "diff_summary": [], "type_candidates": [],
         }),
-        ("pr-drafter", pending | {"status": "NEEDS_CHOICE", "choices": ["template"]}),
+        ("pr-drafter", source_choice),
+        ("pr-drafter", source_choice | {"choices": ["title-rule"], "source_candidates": [{"choice": "title-rule", "source": repository_source}]}),
+        ("pr-drafter", pending | {"status": "NEEDS_CHOICE", "choices": ["type"], "source_candidates": []}),
+        ("pr-drafter", settings_draft),
         ("pr-drafter", reports["pr-drafter"] | {
             "title_source": "repository-rule", "title_rule_source": "base rule at pinned revision",
             "body_source": "repository-template", "template_source": {"kind": "repository", "repository": preview["base_repository"], "revision": preview["base_sha"], "path": ".github/PULL_REQUEST_TEMPLATE.md"},
