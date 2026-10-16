@@ -50,33 +50,7 @@ Check every command's exit. A failed observation is ERROR, never an accepted has
 2. If VERIFICATION is not none, run that exact approved command. It must be read-only except ignored build output. Nonzero returns VERIFY_FAILED, with the first failure line; no intent-to-add has occurred. Never fix source to make it pass. Verification sees the shared worktree, not an isolated SHA.
 3. Repeat both parent/ref observations and the same group collector call after verification. Any group/ref drift returns DIVERGED before mutation. Do not replace the approved digest with the newly observed one. Outside-group verification writes are detected by the orchestrator only after this executor returns, possibly after a commit exists.
 4. Capture `git -c core.quotePath=true ls-files --others --exclude-standard -- "$@"`. These already validated group paths were not indexed. Register only them with `git add -N -- <their literal pathspecs>`. Remember exactly that list for failure cleanup. If registration or a subsequent pre-commit observation fails, remove only these introduced entries with `git restore --staged -- <their literal pathspecs>`, report cleanup failure if any, and return ERROR.
-5. Record the expected tree after registration, without writing objects/files. This shell block uses the same literal argv from step 1. Its successful stdout is EXPECTED_TREE; on any nonzero, perform step 4 cleanup and return ERROR. Git's raw diff supplies effective modes, including core.filemode behavior; deleted paths produce no tree entry.
-
-   ```sh
-   expected_tree=$(
-     raw=$(git -c core.quotePath=true diff --raw --no-abbrev --no-renames --no-ext-diff --no-textconv HEAD -- "$@") || exit 2
-     base=$(git -c core.quotePath=true ls-tree -r HEAD -- "$@") || exit 2
-     for p in $PATHS; do
-       if [ -L "./$p" ]; then
-         target=$(readlink -n "./$p" && printf x) || exit 2
-         target=${target%x}
-         oid=$(printf '%s' "$target" | git hash-object --stdin) || exit 2
-       elif [ -f "./$p" ]; then
-         oid=$(git hash-object --path="$p" -- "./$p") || exit 2
-       elif [ ! -e "./$p" ]; then
-         continue
-       else
-         exit 2
-       fi
-       mode=$(printf '%s\n' "$raw" | awk -v p="$p" '"x" $6 == "x" p { print $2 }') || exit 2
-       if [ -z "$mode" ]; then
-         mode=$(printf '%s\n' "$base" | awk -v p="$p" '"x" $4 == "x" p { print $1 }') || exit 2
-       fi
-       [ "$mode" = 100644 ] || [ "$mode" = 100755 ] || [ "$mode" = 120000 ] || exit 2
-       printf '%s blob %s\t%s\n' "$mode" "$oid" "$p" || exit 2
-     done
-   )
-   ```
+5. Record EXPECTED_TREE after registration with `sh "$SKILL_DIR/scripts/collect-state.sh" tree -- <each raw sorted path>`, each path a separate quoted argument, not a literal pathspec. Its successful stdout predicts commit --only modes and blob OIDs from HEAD and the worktree, including core.filemode/core.symlinks behavior; deleted paths produce no entry. No objects/files are written. On any nonzero, perform step 4 cleanup and return ERROR.
 
 6. Attempt `git commit --only -m "$MESSAGE" -- "$@"` once. Hooks run. On nonzero, clean up only step 4 entries and return COMMIT_ERROR with the first error line. Do not retry the commit, even if a receipt fails validation.
 7. Observe full HEAD/ref and `git rev-parse HEAD^`; require the same ref and EXPECTED_PARENT. Compare `git diff-tree -r --no-renames --no-commit-id --name-only HEAD` with the entire approved PATHS list, one byte-sorted path per line, for exact equality. Compare `git -c core.quotePath=true ls-tree -r HEAD -- "$@"` with EXPECTED_TREE, including modes and OIDs. A mismatch after a commit exists is HOOK_MUTATION; include `Commit:` from `git log -1 --format='%H %s'`. Leave the commit intact. An unreadable/uncertain result is ERROR; the orchestrator inspects actual history independently.

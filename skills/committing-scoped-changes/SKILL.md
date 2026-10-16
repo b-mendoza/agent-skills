@@ -66,6 +66,7 @@ Portable target: Claude Code and OpenCode. Require POSIX sh/awk/git, readlink wi
 | Planner, executor and orchestrator | `sh "$SKILL_DIR/scripts/collect-state.sh" group -- <sorted raw file arguments>`          | Checked group digest, no writes; index/status/HEAD-relative binary diff and regular/link objects |
 | Orchestrator only                  | `sh "$SKILL_DIR/scripts/collect-state.sh" preserve -- <active group raw file arguments>` | Outside-group index/unstaged diff plus nonignored untracked file/link objects; no writes         |
 | Planner and orchestrator           | `sh "$SKILL_DIR/scripts/collect-state.sh" changed -- <sorted raw file arguments>`        | Paths whose commit --only result differs from HEAD; no writes                                    |
+| Executor                           | `sh "$SKILL_DIR/scripts/collect-state.sh" tree -- <sorted raw file arguments>`           | Predicted present commit --only modes/blobs in ls-tree format; no writes                         |
 | Producer and consumer              | `sh "$SKILL_DIR/scripts/validate-output.sh" plan < payload`                              | Complete planner envelope shape, not truth/coverage; no writes                                   |
 | Producer and consumer              | `sh "$SKILL_DIR/scripts/validate-output.sh" execute < payload`                           | Complete executor shape, PASS has Commit/Paths only; no writes                                   |
 
