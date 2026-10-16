@@ -112,7 +112,7 @@ stateDiagram-v2
   SubmitPr --> TerminalGaps: independently checked GAPS_FOUND
   SubmitPr --> RunPreflight: HEAD_MOVED and preview edit ledger available
   SubmitPr --> TerminalBlocked: AUTH or BLOCKED before known object
-  SubmitPr --> TerminalBlocked: TOOLS_MISSING before any create attempt
+  SubmitPr --> TerminalBlocked: TOOLS_MISSING with no create attempt and no known object
   SubmitPr --> TerminalBlocked: CREATE_UNCERTAIN or head movement recovery cap
   SubmitPr --> TerminalGaps: later auth or tool or readback unavailable on valid known receipt
   SubmitPr --> TerminalError: CREATE_ERROR or ERROR or invalid reply
