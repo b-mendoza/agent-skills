@@ -29,13 +29,20 @@ valid_path() {
     *) return 0 ;;
   esac
 }
+git_bool() {
+  if value=$(g config --bool --get "$1"); then printf '%s\n' "$value"
+  else
+    case $? in 1) printf '%s\n' true ;; *) fail 2 "cannot read $1" ;; esac
+  fi
+}
 changed_paths() {
-  awk -v filemode="$1" '
+  awk -v filemode="$1" -v symlinks="$2" '
     NF == 4 { modes[$4] = $1; oids[$4] = $3; next }
     NF == 3 {
       if ($1 == "000000") { if ($3 in modes) print $3; next }
       mode = $1
-      if (filemode == "false" && mode ~ /^100/ && modes[$3] ~ /^100/) mode = modes[$3]
+      if (symlinks == "false" && mode != "120000" && modes[$3] == "120000") mode = "120000"
+      else if (filemode == "false" && mode ~ /^100/ && modes[$3] ~ /^100/) mode = modes[$3]
       if (mode != modes[$3] || "x" $2 != "x" oids[$3]) print $3
     }
   '
@@ -59,16 +66,26 @@ self_test() {
 100644 blob same b
 100644 blob same c
 100644 blob same d
+120000 blob same g
+120000 blob same h
+100755 blob same i
 100755 same a
 100644 new b
 000000 absent c
 100644 same d
 000000 absent e
-100644 new f'
-  changed=$(printf '%s\n' "$fixture" | changed_paths true) || fail 2 'self-test comparison failed'
-  [ "$changed" = "$(printf 'a\nb\nc\nf')" ] || fail 2 'self-test changed paths mismatch'
-  changed=$(printf '%s\n' "$fixture" | changed_paths false) || fail 2 'self-test comparison failed'
-  [ "$changed" = "$(printf 'b\nc\nf')" ] || fail 2 'self-test ignored executable bit mismatch'
+100644 new f
+100644 same g
+100755 new h
+100644 same i
+100755 new j
+120000 new k'
+  changed=$(printf '%s\n' "$fixture" | changed_paths true true) || fail 2 'self-test comparison failed'
+  [ "$changed" = "$(printf 'a\nb\nc\nf\ng\nh\ni\nj\nk')" ] || fail 2 'self-test changed paths mismatch'
+  changed=$(printf '%s\n' "$fixture" | changed_paths false true) || fail 2 'self-test comparison failed'
+  [ "$changed" = "$(printf 'b\nc\nf\ng\nh\nj\nk')" ] || fail 2 'self-test ignored executable bit mismatch'
+  changed=$(printf '%s\n' "$fixture" | changed_paths false false) || fail 2 'self-test comparison failed'
+  [ "$changed" = "$(printf 'b\nc\nf\nh\nj\nk')" ] || fail 2 'self-test symlink stub mismatch'
   printf '%s\n' 'collect-state: self-test PASS'
 }
 case "${1-}" in
@@ -156,11 +173,9 @@ records=$(
   done
 ) || exit $?
 if [ "$mode" = changed ]; then
-  if filemode=$(g config --bool --get core.filemode); then :
-  else
-    case $? in 1) filemode=true ;; *) fail 2 'cannot read core.filemode' ;; esac
-  fi
-  changed=$(printf '%s\n%s\n' "$head" "$records" | changed_paths "$filemode") || fail 2 'cannot compare objects'
+  filemode=$(git_bool core.filemode) || exit $?
+  symlinks=$(git_bool core.symlinks) || exit $?
+  changed=$(printf '%s\n%s\n' "$head" "$records" | changed_paths "$filemode" "$symlinks") || fail 2 'cannot compare objects'
   [ -z "$changed" ] || printf '%s\n' "$changed"
   exit 0
 fi
