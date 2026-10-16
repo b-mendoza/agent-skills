@@ -58,8 +58,8 @@ These are co-located prompts, not a runtime registry. Load each only at dispatch
 
 Portable target: Claude Code and OpenCode. Require POSIX sh/awk/git, readlink with -n, and repository reads. Allowed Git forms are local rev-parse, symbolic-ref, config --bool --get core.filemode, status --porcelain, diff, diff-tree, ls-files, ls-tree, hash-object without -w, log, add -N, restore --staged for introduced entries, and commit --only; plus one exact approved verification command. No network or source-writing tools.
 
-- Claude Code: narrow Bash allow rules for those forms/readlink, plus `Bash(sh *scripts/*.sh*)`; deny Edit, Write, NotebookEdit, WebFetch and WebSearch.
-- OpenCode permission.bash: default ask, deny `git *`, then allow only the forms above and `readlink *`; `"sh *scripts/*.sh*": "allow"`. Deny edit/webfetch/websearch; allow the general task adapter. Advisory syntax does not sandbox inherited hooks/filters or replace approval.
+- Claude Code: narrow Bash allow rules for those forms/readlink, plus `Bash(sh "<SKILL_DIR>/scripts/collect-state.sh" *)` and `Bash(sh "<SKILL_DIR>/scripts/validate-output.sh" *)` with `<SKILL_DIR>` replaced by its resolved absolute path; deny Edit, Write, NotebookEdit, WebFetch and WebSearch.
+- OpenCode permission.bash: default ask, deny `git *`, then allow only the forms above and `readlink *`; `"sh \"<SKILL_DIR>/scripts/collect-state.sh\" *": "allow"` and `"sh \"<SKILL_DIR>/scripts/validate-output.sh\" *": "allow"` with `<SKILL_DIR>` replaced by its resolved absolute path. Deny edit/webfetch/websearch; allow the general task adapter. Advisory syntax does not sandbox inherited hooks/filters or replace approval.
 
 | Consumer                           | Invocation                                                                               | Meaning / effects                                                                                |
 | ---------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
