@@ -359,6 +359,11 @@ def role_findings(mode, value, preview=None):
         candidates = value.get("source_candidates", [])
         if len(candidates) > 10:
             findings.append(f"{mode}.source_candidates: at most 10 identities")
+        if candidates != sorted(candidates, key=lambda candidate: (
+            candidate["choice"], candidate["source"].get("repository") or candidate["source"].get("project", ""),
+            candidate["source"].get("revision") or "", candidate["source"].get("path", candidate["source"].get("setting", "")),
+        )):
+            findings.append(f"{mode}.source_candidates: must be sorted by choice, identity, revision, path or setting")
         for candidate in candidates:
             if candidate["choice"] not in value.get("choices", []):
                 findings.append(f"{mode}.source_candidates: choice must appear in choices")
@@ -659,6 +664,12 @@ def self_test():
     assert role_findings("pr-drafter", source_choice | {"choices": ["title-rule"], "source_candidates": [{"choice": "title-rule", "source": settings_source}]})
     assert role_findings("pr-drafter", source_choice | {"choices": ["type"]})
     repository_source = source_choice["source_candidates"][1]["source"]
+    ordered_candidates = [
+        {"choice": "template", "source": repository_source | {"path": path}}
+        for path in ("a.md", "z.md")
+    ]
+    assert not role_findings("pr-drafter", source_choice | {"source_candidates": ordered_candidates})
+    assert role_findings("pr-drafter", source_choice | {"source_candidates": ordered_candidates[::-1]})
     assert role_findings("pr-drafter", source_choice | {"source_candidates": [{"choice": "template", "source": repository_source | {"revision": None}}]})
     assert role_findings("pr-drafter", {k: v for k, v in source_choice.items() if k != "source_candidates"})
     positives = [
