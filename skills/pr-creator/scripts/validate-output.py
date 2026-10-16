@@ -9,8 +9,9 @@
 #       review-metadata-suggester; pr-submitter always requires the preview path.
 # Exit 0 conforms (including domain GAPS_FOUND); 1 shape findings, one per line;
 #      2 bad invocation or checker failure. Missing Python 3.9+ is caller TOOLS_MISSING.
-# Side effects: none. Reads stdin and only the explicit approved-preview file.
-# No environment-variable configuration, network, Git, clock, randomness, or writes.
+# Side effects: validation only reads stdin and the explicit approved-preview file.
+# --self-test creates/removes a temporary preview directory and runs child checkers.
+# No environment-variable configuration, network, Git, or clock.
 
 import argparse
 import hashlib
@@ -577,6 +578,9 @@ def examples():
 
 
 def self_test():
+    import subprocess
+    import tempfile
+
     preview, push, reports = examples()
     for mode, report in reports.items():
         assert not role_findings(mode, report, preview), mode
@@ -656,6 +660,7 @@ def self_test():
             {"choice": "template", "source": {"kind": "repository", "repository": settings_source["project"], "revision": preview["base_sha"], "path": ".gitlab/merge_request_templates/Default.md"}},
         ],
     }
+    malformed_settings = settings_draft | {"template_source": settings_source | {"project": ""}}
     for changes in ({"project": ""}, {"setting": None}, {"revision": preview["base_sha"]}, {"body": "raw template"}):
         assert role_findings("pr-drafter", settings_draft | {"template_source": settings_source | changes}), changes
     assert role_findings("pr-drafter", settings_draft | {"body_source": "repository-template"})
@@ -709,17 +714,47 @@ def self_test():
     for mode, payload in reports.items():
         for key in REQUIRED[mode]["PASS"]:
             assert role_findings(mode, {k: v for k, v in payload.items() if k != key}, preview), (mode, key)
-    print("self-test: PASS (six roles, approvals, JSON, digests, preservation comparisons)")
+    with tempfile.TemporaryDirectory() as directory:
+        preview_path = directory + "/preview.json"
+        with open(preview_path, "w", encoding="utf-8") as target:
+            json.dump(preview, target)
+        cli_cases = [
+            (["pr-drafter"], json.dumps(reports["pr-drafter"]), 0, "PASS"),
+            (["pr-drafter"], json.dumps(settings_draft), 0, "PASS"),
+            (["pr-drafter"], json.dumps(malformed_settings), 1, None),
+            (["pr-drafter"], json.dumps(source_choice), 0, "NEEDS_CHOICE"),
+            (["pr-drafter"], "{", 1, None),
+            (["pr-drafter"], '{"status":"PASS"}', 1, None),
+            (["unknown-role"], "{}", 2, None),
+            (["pr-submitter"], json.dumps(receipt), 2, None),
+            (["pr-submitter", "--approved-preview", preview_path], json.dumps(receipt | {
+                "status": "GAPS_FOUND", "returned": returned | {"labels": []},
+            }), 0, "GAPS_FOUND"),
+        ]
+        for args, payload, code, status in cli_cases:
+            result = subprocess.run(
+                [sys.executable, "-I", __file__, *args], input=payload,
+                text=True, capture_output=True,
+            )
+            assert result.returncode == code, (args, result.returncode, result.stdout, result.stderr)
+            if code == 0:
+                assert json.loads(result.stdout)["status"] == status, (args, result.stdout)
+                assert not result.stderr, (args, result.stderr)
+            elif code == 1:
+                assert result.stdout and not result.stderr, (args, result.stdout, result.stderr)
+            else:
+                assert result.stderr and not result.stdout, (args, result.stdout, result.stderr)
+    print("self-test: PASS (six roles, approvals, JSON, digests, preservation comparisons, CLI exits/stdin/stdout/stderr)")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Validate one JSON object from stdin; no environment-variable configuration or side effects.",
-        epilog="Exit 0: conforms (domain GAPS_FOUND is valid); 1: shape findings, one per line; 2: bad invocation/checker failure. No Git/network/clock/randomness/writes.",
+        description="Validate one JSON object from stdin with Python 3.9+; no environment-variable configuration or validation side effects.",
+        epilog="Exit 0: conforms (domain GAPS_FOUND is valid); 1: shape findings, one per line; 2: bad invocation/checker failure. No Git/network/clock; only --self-test writes temporary fixtures.",
     )
     parser.add_argument("mode", nargs="?", choices=tuple(SCHEMAS) + ("preview-approval", "push-approval"))
     parser.add_argument("--approved-preview", metavar="PATH", help="read frozen preview; required only for pr-submitter")
-    parser.add_argument("--self-test", action="store_true", help="run embedded fixed positive/negative checks")
+    parser.add_argument("--self-test", action="store_true", help="run embedded fixed checks, including child checkers with a temporary preview")
     args = parser.parse_args()
     if args.self_test:
         if args.mode or args.approved_preview:
