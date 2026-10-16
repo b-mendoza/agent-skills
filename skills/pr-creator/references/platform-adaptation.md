@@ -42,13 +42,17 @@ issue-template inheritance list is not an MR inheritance algorithm.
 
 ## Source and capability decisions
 
-Automatic template discovery uses base-repository default-branch content at a
-recorded revision. An explicitly user-selected local template is allowed and
-identified as local in the preview. Use an authoritative default or one
-unambiguous candidate. Multiple candidates require a selection, not a merge.
-Unreadable sources or unknown relevant settings require disclosure and a choice
-between a visible candidate and fallback. Confirmed absence after a successful
-check uses fallback without another gate. Exact body overrides bypass discovery.
+`pr-drafter` owns title-rule/template discovery and reads. Automatic repository
+files use base-repository default-branch content at a recorded full revision;
+settings defaults use canonical project/setting identity without a SHA.
+An explicitly user-selected local template is allowed and identified as local
+in the preview. Use an authoritative default or one unambiguous candidate.
+Multiple candidates require a selection, not a merge. Unreadable sources or
+unknown relevant settings return `NEEDS_CHOICE` with bounded source identities
+and an explicit fallback option, never source contents. Re-read selected
+identities on redispatch; repository files must match their recorded revision.
+Confirmed absence after a successful check uses fallback without another gate.
+Exact overrides bypass their source discovery.
 
 If draft is confirmed unsupported but a safe ready path is checked, ask whether
 to proceed as ready or stop. Show requested and effective states separately.

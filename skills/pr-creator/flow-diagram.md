@@ -62,23 +62,18 @@ stateDiagram-v2
   GatePushRejected --> RunPreflight: manual resolution confirmed and push ledger available
   GatePushRejected --> TerminalBlocked: abort or wait or cap
 
-  AnalyzeDiff --> ResolveSources: checked PASS
+  AnalyzeDiff --> DraftPr: checked PASS
   AnalyzeDiff --> GateScope: LARGE_PR_CONFIRMATION_REQUIRED and scope ledger available
   AnalyzeDiff --> TerminalBlocked: EMPTY_DIFF or TOOLS_MISSING or cap
   AnalyzeDiff --> TerminalError: ERROR or invalid reply
   GateScope --> AnalyzeDiff: APPROVED current pins and scope ledger available
   GateScope --> RunPreflight: REVISE external scope and scope ledger available
   GateScope --> TerminalBlocked: abort or wait or cap
-  ResolveSources --> DraftPr: source contract resolved
-  ResolveSources --> GateDraftChoice: selection uncertain and choice ledger available
-  ResolveSources --> TerminalBlocked: missing capability or choice cap
-  ResolveSources --> TerminalError: unrecoverable source failure
   DraftPr --> SuggestMetadata: checked PASS
-  DraftPr --> GateDraftChoice: NEEDS_CHOICE and choice ledger available
+  DraftPr --> GateDraftChoice: NEEDS_CHOICE with identities and choice ledger available
   DraftPr --> TerminalBlocked: TOOLS_MISSING or choice cap
   DraftPr --> TerminalError: ERROR or invalid reply
-  GateDraftChoice --> ResolveSources: source choice and choice ledger available
-  GateDraftChoice --> DraftPr: type or scope choice and choice ledger available
+  GateDraftChoice --> DraftPr: chosen identity or fallback or type or scope and choice ledger available
   GateDraftChoice --> TerminalBlocked: abort or wait or cap
 
   SuggestMetadata --> ShowPreview: checked PASS
@@ -99,7 +94,7 @@ stateDiagram-v2
   RouteRevision --> InspectRepo: target or platform or state or plan changed
   RouteRevision --> RunPreflight: head or publication or pins changed
   RouteRevision --> AnalyzeDiff: diff interpretation changed with valid pins
-  RouteRevision --> ResolveSources: title or body or source changed
+  RouteRevision --> DraftPr: title or body or source changed
   RouteRevision --> SuggestMetadata: reviewer or label or assignee changed
   RouteRevision --> TerminalBlocked: out of scope or no safe phase
   FreezeApproval --> SubmitPr: unchanged artifact and actual consent bound
