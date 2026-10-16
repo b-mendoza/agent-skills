@@ -131,6 +131,17 @@ cleanup; do not require an in-tree ignored-location check or modify ignore rules
 
 ## Consumer checker gates
 
+Before the first specialist dispatch or checker invocation, check the interpreter
+prerequisite:
+
+```sh
+python3 -I -c 'import sys; sys.exit(0 if sys.version_info >= (3, 9) else "TOOLS_MISSING: Python 3.9+ required; found " + sys.version.split()[0])'
+```
+
+Treat failure or inability to run this prerequisite check as unavailable checker
+execution. End with final `BLOCKED`, reason `TOOLS_MISSING`, and the observed
+version or execution error. Do not invoke the checker or parse specialist fields.
+
 Run the bundled checker on each received reply before using any specialist
 field. Exit 0 permits routing; exit 1 or 2 means final `ERROR`, with no repair
 loop or mutating retry. Missing output also means `ERROR`. Unavailable checker

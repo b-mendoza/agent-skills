@@ -8,7 +8,7 @@
 # ROLE: repo-state-inspector, preflight-validator, diff-analyzer, pr-drafter,
 #       review-metadata-suggester; pr-submitter always requires the preview path.
 # Exit 0 conforms (including domain GAPS_FOUND); 1 shape findings, one per line;
-#      2 bad invocation or checker failure. Missing Python is caller TOOLS_MISSING.
+#      2 bad invocation or checker failure. Missing Python 3.9+ is caller TOOLS_MISSING.
 # Side effects: none. Reads stdin and only the explicit approved-preview file.
 # No environment-variable configuration, network, Git, clock, randomness, or writes.
 
