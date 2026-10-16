@@ -161,11 +161,12 @@ files. Pipe inline JSON through a safely quoted literal-data mechanism.
 | Publication artifact, if needed               | `python3 -I "${SKILL_DIR}/scripts/validate-output.py" push-approval < "$RUN_DIR/push.json"`                                   |
 | Helper self-check when verifying this package | `python3 -I "${SKILL_DIR}/scripts/validate-output.py" --self-test`                                                            |
 
-Python 3 standard library only, no environment configuration or side effects.
-`-h` describes arguments and exit meanings. The helper owns digest derivation
-and independent readback comparison. It proves shape/artifact identity and the
-specified comparison, not fact truth, title-rule quality, assignability, or real
-consent. Use its output, not a producer's success claim.
+Python 3.9+ standard library only; validation has no environment configuration or
+side effects. `--self-test` creates/removes a temporary preview directory and runs
+child checkers. `-h` describes arguments and exit meanings. The helper owns digest
+derivation and independent readback comparison. It proves shape/artifact identity
+and the specified comparison, not fact truth, title-rule quality, assignability,
+or real consent. Use its output, not a producer's success claim.
 
 ## Execution overview
 
