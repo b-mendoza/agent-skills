@@ -69,6 +69,7 @@ override/fallback has `template_source=null`.
 `template`, present in `choices`) and `source` (identity object above).
 Title-rule candidates use repository sources. Return source identities only;
 keep raw source contents out of candidates, questions, reasons, summaries, and notes.
+Sort candidates lexicographically by (choice, repository or project or "", revision or "", path or setting).
 If more than ten exist, disclose that the list is partial and ask for a listed
 identity or explicit fallback; never infer precedence from truncation.
 Use `source_candidates=[]` for type/scope-only choices or no readable candidates;
