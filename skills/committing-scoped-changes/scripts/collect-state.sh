@@ -1,10 +1,11 @@
 #!/bin/sh
 # Read-only Git evidence. Dependencies: POSIX sh, awk, git, readlink.
-# Usage: sh collect-state.sh <group|preserve|changed> -- <sorted-file-paths...>
+# Usage: sh collect-state.sh <group|preserve|changed|tree> -- <sorted-file-paths...>
 #        sh collect-state.sh <-h|--self-test>
 # changed: paths whose commit --only worktree presence/mode/OID differs from HEAD.
+# tree: present commit --only entries, in input order: <mode> blob <oid><TAB><path>.
 # Environment: normal Git repository configuration; no required custom variables.
-# Exit 0: one 40-hex digest, or changed paths (possibly empty), or help/self-test;
+# Exit 0: one 40-hex digest, changed paths/tree entries (possibly empty), or help/self-test;
 #      1: unsupported input; 2: usage, missing capability, or collection failure;
 #      never partial output.
 # Side effects: no files, index entries, objects, network or temporary files written; git diff may refresh the index stat cache.
@@ -19,7 +20,7 @@ IFS='
 '
 
 usage() {
-  printf '%s\n' 'usage: sh collect-state.sh <group|preserve|changed> -- <sorted-file-paths...>' \
+  printf '%s\n' 'usage: sh collect-state.sh <group|preserve|changed|tree> -- <sorted-file-paths...>' \
     '       sh collect-state.sh <-h|--self-test>'
 }
 fail() { printf 'collect-state: %s\n' "$2" >&2; exit "$1"; }
@@ -35,15 +36,19 @@ git_bool() {
     case $? in 1) printf '%s\n' true ;; *) fail 2 "cannot read $1" ;; esac
   fi
 }
-changed_paths() {
-  awk -v filemode="$1" -v symlinks="$2" '
+predict_entries() {
+  awk -v output="$1" -v filemode="$2" -v symlinks="$3" '
     NF == 4 { modes[$4] = $1; oids[$4] = $3; next }
     NF == 3 {
-      if ($1 == "000000") { if ($3 in modes) print $3; next }
+      if ($1 == "000000") { if (output == "changed" && $3 in modes) print $3; next }
       mode = $1
-      if (symlinks == "false" && mode != "120000" && modes[$3] == "120000") mode = "120000"
-      else if (filemode == "false" && mode ~ /^100/ && modes[$3] ~ /^100/) mode = modes[$3]
-      if (mode != modes[$3] || "x" $2 != "x" oids[$3]) print $3
+      # commit --only builds its temporary index from HEAD, not the real index.
+      if (mode != "120000") {
+        if (symlinks == "false" && modes[$3] == "120000") mode = "120000"
+        else if (filemode == "false") mode = (modes[$3] ~ /^100(644|755)$/ ? modes[$3] : "100644")
+      }
+      if (output == "tree") printf "%s blob %s\t%s\n", mode, $2, $3
+      else if (mode != modes[$3] || "x" $2 != "x" oids[$3]) print $3
     }
   '
 }
@@ -80,18 +85,29 @@ self_test() {
 100644 same i
 100755 new j
 120000 new k'
-  changed=$(printf '%s\n' "$fixture" | changed_paths true true) || fail 2 'self-test comparison failed'
+  changed=$(printf '%s\n' "$fixture" | predict_entries changed true true) || fail 2 'self-test comparison failed'
   [ "$changed" = "$(printf 'a\nb\nc\nf\ng\nh\ni\nj\nk')" ] || fail 2 'self-test changed paths mismatch'
-  changed=$(printf '%s\n' "$fixture" | changed_paths false true) || fail 2 'self-test comparison failed'
+  changed=$(printf '%s\n' "$fixture" | predict_entries changed false true) || fail 2 'self-test comparison failed'
   [ "$changed" = "$(printf 'b\nc\nf\ng\nh\nj\nk')" ] || fail 2 'self-test ignored executable bit mismatch'
-  changed=$(printf '%s\n' "$fixture" | changed_paths false false) || fail 2 'self-test comparison failed'
+  changed=$(printf '%s\n' "$fixture" | predict_entries changed false false) || fail 2 'self-test comparison failed'
   [ "$changed" = "$(printf 'b\nc\nf\nh\nj\nk')" ] || fail 2 'self-test symlink stub mismatch'
+  tree=$(printf '%s\n' "$fixture" | predict_entries tree false false) || fail 2 'self-test prediction failed'
+  expected_tree='100644 blob same	a
+100644 blob new	b
+100644 blob same	d
+100644 blob new	f
+120000 blob same	g
+120000 blob new	h
+100755 blob same	i
+100644 blob new	j
+120000 blob new	k'
+  [ "$tree" = "$expected_tree" ] || fail 2 'self-test predicted tree mismatch'
   printf '%s\n' 'collect-state: self-test PASS'
 }
 case "${1-}" in
   -h|--help) [ "$#" -eq 1 ] || { usage >&2; exit 2; }; usage; exit 0 ;;
   --self-test) [ "$#" -eq 1 ] || { usage >&2; exit 2; }; self_test; exit 0 ;;
-  group|preserve|changed) mode=$1 ;;
+  group|preserve|changed|tree) mode=$1 ;;
   *) usage >&2; exit 2 ;;
 esac
 [ "$#" -ge 3 ] && [ "$2" = -- ] || { usage >&2; exit 2; }
@@ -172,11 +188,11 @@ records=$(
     printf '%s %s %s\n' "$file_mode" "$oid" "$p" || fail 2 'cannot frame object'
   done
 ) || exit $?
-if [ "$mode" = changed ]; then
+if [ "$mode" = changed ] || [ "$mode" = tree ]; then
   filemode=$(git_bool core.filemode) || exit $?
   symlinks=$(git_bool core.symlinks) || exit $?
-  changed=$(printf '%s\n%s\n' "$head" "$records" | changed_paths "$filemode" "$symlinks") || fail 2 'cannot compare objects'
-  [ -z "$changed" ] || printf '%s\n' "$changed"
+  result=$(printf '%s\n%s\n' "$head" "$records" | predict_entries "$mode" "$filemode" "$symlinks") || fail 2 'cannot predict commit entries'
+  [ -z "$result" ] || printf '%s\n' "$result"
   exit 0
 fi
 # All fallible collection finished before this pipeline; NUL separates sections.
