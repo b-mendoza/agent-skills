@@ -58,7 +58,7 @@ Replies are one JSON object, without prose or fences, matching the role's checke
 Declare `MUTATION_LIMITS` before any write and pass it unchanged to every dispatch, including inline execution:
 
 - Write only `preview-<N>.json` and `body-<N>.md` in `RUN_DIR`, by exclusive create; never overwrite.
-- Permit git fetch effects only in remote-tracking refs and `FETCH_HEAD`, the one approved push, and the one approved create.
+- Permit git fetch effects only in objects and `FETCH_HEAD`; permit one approved push and one approved create.
 - Never force-push or edit tracked files, the index, commits, config, or an existing PR/MR.
 
 Capture `git status --porcelain` first. Resolve canonical `TEMP_BASE` from `${TMPDIR:-/tmp}` and the canonical worktree root. Require `TEMP_BASE` outside the worktree, then create the private run directory:
