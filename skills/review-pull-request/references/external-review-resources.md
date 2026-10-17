@@ -19,6 +19,7 @@ Findings about library, framework, SDK, API, CLI or cloud-service behavior may d
 | Author: useful, specific, collegial comments | [Google review comments](https://google.github.io/eng-practices/review/reviewer/comments.html) |
 | Author/verifier: review events and merge-readiness meaning | [GitHub pull request reviews](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews) |
 | Collector/verifier: PR head, base and state | [Get a pull request](https://docs.github.com/en/rest/pulls/pulls#get-a-pull-request) |
+| Poster: live merge-base comparison pin | [Compare two commits](https://docs.github.com/en/rest/commits/commits#compare-two-commits) |
 | Collector: thread identity, state and root-comment metadata | [PullRequest reviewThreads](https://docs.github.com/en/graphql/reference/objects#pullrequest), [PullRequestReviewThread](https://docs.github.com/en/graphql/reference/objects#pullrequestreviewthread), [PullRequestReviewComment](https://docs.github.com/en/graphql/reference/objects#pullrequestreviewcomment) |
 | Collector: review summaries, distinct from thread targets | [List pull request reviews](https://docs.github.com/en/rest/pulls/reviews#list-reviews-for-a-pull-request) |
 | Collector: ordinary discussion, never a reply root | [List issue comments](https://docs.github.com/en/rest/issues/comments#list-issue-comments) |

@@ -18,7 +18,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 shared = runpy.run_path(str(Path(__file__).with_name("render-review.py")))
 load, fixture = shared["load"], shared["fixture"]
@@ -52,6 +52,7 @@ def plan_for(run):
             replies.append(dict(root_comment_id=root, body=finding["body"]))
     owner, repo, _, number = context["pr"].removeprefix("https://github.com/").split("/")
     plan = dict(repo=owner + "/" + repo, number=int(number),
+                base=context["base"], base_sha=context["base_sha"],
                 review=dict(commit_id=context["head_sha"], event=author["decision"],
                             body=author["summary"], comments=comments), replies=replies)
     sha = hashlib.sha256(canonical(plan).encode()).hexdigest()
@@ -59,7 +60,8 @@ def plan_for(run):
 
 def preview(context, plan, sha):
     review = plan["review"]
-    parts = [f"POST review to {plan['repo']}#{plan['number']}", "commit_id: " + review["commit_id"],
+    parts = [f"POST review to {plan['repo']}#{plan['number']}", "base: " + plan["base"],
+             "merge-base: " + plan["base_sha"], "commit_id: " + review["commit_id"],
              "event: " + review["event"], "Summary body:", review["body"]]
     for comment in review["comments"]:
         location = {key: value for key, value in comment.items() if key != "body"}
@@ -121,8 +123,12 @@ def execute(args, runner=gh, available=lambda: shutil.which("gh")):
         endpoint = f"repos/{plan['repo']}/pulls/{plan['number']}"
         live = runner([*api, endpoint])
         if (live.get("state") != "open" or live.get("head", {}).get("sha") != context["head_sha"] or
-                live.get("merged_at")):
-            raise ValueError("live PR state/head changed; approval invalid")
+                live.get("base", {}).get("ref") != context["base"] or live.get("merged_at")):
+            raise ValueError("live PR state/head/base changed; approval invalid")
+        comparison = runner([*api, f"repos/{plan['repo']}/compare/"
+                             f"{quote(context['base'], safe='')}...{context['head_sha']}"])
+        if comparison.get("merge_base_commit", {}).get("sha") != context["base_sha"]:
+            raise ValueError("live merge-base changed; approval invalid")
         receipts = dict(review=None, replies=[], failed=[])
         save_receipts(path, receipts, create=True)
         current = dict(review="review")
@@ -176,6 +182,13 @@ def self_test():
             assert first[0] == 0 and first == invoke(dry) and body in first[1]
             tests += 1
             sha = first[1].split("approval-sha256: ")[-1].strip()
+            for key, value in [("base", "release"), ("base_sha", "c" * 40)]:
+                put("context", dict(context, **{key: value}))
+                assert plan_for(run)[3] != sha
+                tests += 1
+            put("context", context)
+            assert "base: main" in first[1] and "merge-base: " + "a" * 40 in first[1]
+            tests += 1
             author["findings"] += [dict(author["findings"][0], id="R", placement="reply", root_comment_id=7)]
             put("author", author)
             for target, key in [(author, "summary"), (author["findings"][0], "body"),
@@ -204,10 +217,30 @@ def self_test():
                 assert invoke(dry)[0] == 3
                 tests += 1
             context, author, body = fixture(run)
-            for runner in [lambda *a: dict(state="open", head=dict(sha="c" * 40)),
-                           lambda *a: dict(state="closed", head=dict(sha=context["head_sha"])),
+            for runner in [lambda *a: dict(state="open", head=dict(sha="c" * 40), base=dict(ref="main")),
+                           lambda *a: dict(state="closed", head=dict(sha=context["head_sha"]),
+                                          base=dict(ref="main")),
                            lambda *a: (_ for _ in ()).throw(ValueError("gh exit 4: auth required"))]:
                 assert invoke(approved, runner)[0] == 3
+                tests += 1
+            for base, merge_base in [("release", "a" * 40), ("main", "c" * 40), ("main", None)]:
+                calls = []
+                def preflight(args, data=None):
+                    calls.append((args, data))
+                    if len(calls) == 1:
+                        return dict(state="open", head=dict(sha=context["head_sha"]),
+                                    base=dict(ref=base, sha="c" * 40))
+                    if "/compare/" in args[-1]:
+                        if merge_base is None:
+                            raise ValueError("simulated compare read failure")
+                        return dict(merge_base_commit=dict(sha=merge_base))
+                    return dict(id=1, html_url="https://github.com/receipt/1")
+                assert invoke(approved, preflight)[0] == 3
+                assert not (run / "receipts.json").exists()
+                assert all("--method" not in args and data is None for args, data in calls)
+                assert len(calls) == (1 if base == "release" else 2)
+                if base == "main":
+                    assert calls[1][0][-1] == "repos/cli/cli/compare/main..." + "b" * 40
                 tests += 1
             for failure in (False, True):
                 author["findings"] = [finding, dict(finding, id="R1", placement="reply", root_comment_id=7)]
@@ -220,25 +253,30 @@ def self_test():
                 def stub(args, data=None):
                     calls.append((args, data))
                     if len(calls) == 1:
-                        return dict(state="open", head=dict(sha=context["head_sha"]))
+                        return dict(state="open", head=dict(sha=context["head_sha"]),
+                                    base=dict(ref=context["base"], sha="c" * 40))
                     if len(calls) == 2:
+                        assert args[-1] == "repos/cli/cli/compare/main..." + "b" * 40
+                        assert data is None and not (run / "receipts.json").exists()
+                        return dict(merge_base_commit=dict(sha=context["base_sha"]))
+                    if len(calls) == 3:
                         assert json.loads((run / "receipts.json").read_bytes()) == dict(
                             review=None, replies=[], failed=[])
-                    if failure and len(calls) == 3:
+                    if failure and len(calls) == 4:
                         raise ValueError("simulated reply failure")
                     return dict(id=len(calls), html_url="https://github.com/receipt/" + str(len(calls)))
                 current_sha = invoke(dry)[1].split("approval-sha256: ")[-1].strip()
                 assert invoke(["--approved", current_sha, "."], stub)[0] == (1 if failure else 0)
                 receipts = json.loads((run / "receipts.json").read_bytes())
-                assert receipts["review"]["id"] == 2 and calls[1][0][-2:] == ["--input", "-"]
-                assert json.loads(calls[1][1])["body"] == body and json.loads(calls[2][1])["body"] == body
-                assert json.loads(calls[1][1])["comments"][0] == dict(finding["anchor"], body=body,
+                assert receipts["review"]["id"] == 3 and calls[2][0][-2:] == ["--input", "-"]
+                assert json.loads(calls[2][1])["body"] == body and json.loads(calls[3][1])["body"] == body
+                assert json.loads(calls[2][1])["comments"][0] == dict(finding["anchor"], body=body,
                                                                  start_side="RIGHT")
                 assert (len(receipts["replies"]) == (0 if failure else 2) and
                         bool(receipts["failed"]) == failure)
                 assert not (run / "render.tmp").exists()
-                assert len(calls) == (3 if failure else 4) and calls[2][0][-3].endswith("/comments/7/replies")
-                assert failure or calls[3][0][-3].endswith("/comments/8/replies")
+                assert len(calls) == (4 if failure else 5) and calls[3][0][-3].endswith("/comments/7/replies")
+                assert failure or calls[4][0][-3].endswith("/comments/8/replies")
                 assert invoke(["--approved", current_sha, "."])[0] == 3
                 (run / "receipts.json").unlink()
                 context, author, body = fixture(run)
