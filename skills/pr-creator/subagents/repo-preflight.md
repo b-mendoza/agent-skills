@@ -29,7 +29,7 @@ description: "Resolve repository topology, pin the base and published head, reje
 6. Read publication with `git ls-remote <head_remote> refs/heads/<head_branch>`. Equal to local `HEAD` needs no push. A missing branch or a remote SHA that is an ancestor of local `HEAD` needs publication. If necessary, fetch that head ref with `git fetch <head_remote> <head_branch>` to establish ancestry using `git merge-base --is-ancestor <remote_sha> <source_sha>`. A non-ancestor returns `BLOCKED`; an inspection failure returns `ERROR` unless a required capability is missing.
 7. Without `APPROVED_PUSH`, return `PUSH_REQUIRED` with `push.head_repository`, `push.head_remote`, `push.source_sha` equal to local `HEAD`, and `push.destination_branch` equal to the current branch. The checker renders the argv below with `shlex.join`; approval is for that exact line.
    ```text
-   git push <head_remote> <source_sha>:refs/heads/<destination_branch>
+   git push --no-follow-tags <head_remote> <source_sha>:refs/heads/<destination_branch>
    ```
 8. When publication is needed and `APPROVED_PUSH` is present, require that it matches the currently needed rendered line; otherwise return `BLOCKED`. Run exactly `APPROVED_PUSH` once, unmodified. Re-read the remote SHA with `git ls-remote <head_remote> refs/heads/<head_branch>`; it must equal `source_sha`. Rejection or a missing/mismatched SHA returns `BLOCKED`. Never force or retry a push.
 9. Return `PASS` with the nine-key `context` below. `head_sha` is the verified remote SHA, not an assumed local value. Use canonical `[HOST/]OWNER/REPO` identities, including nested GitLab groups and the host for nondefault hosts. Shell-quote substituted read-command arguments; URL-encode API project paths and query values.
