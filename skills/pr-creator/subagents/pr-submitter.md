@@ -5,14 +5,14 @@ description: "Execute one exact approved create command, avoid duplicate request
 
 ## Inputs
 
-| Input | Required | Meaning |
-| --- | --- | --- |
-| `SKILL_DIR` | Yes | Absolute package directory. |
-| `MUTATION_LIMITS` | Yes | Run limits, obeyed unchanged. |
-| `RUN_DIR` | Yes | Absolute private run directory; this role writes no files. |
-| `PREVIEW` | Yes | Absolute path of the approved `preview-<N>.json`. |
-| `CREATE_COMMAND` | Yes | Exact approved text after the checker's `Command:   ` prefix, passed verbatim. |
-| `ANSWERS` | Yes | Ordered `{question, answer}` history; revisions use question `REVISE`; never substitutes approved preview values. |
+| Input | Required | Example | Meaning |
+| --- | --- | --- | --- |
+| `SKILL_DIR` | Yes | `/opt/skills/pr-creator` | Absolute package directory. |
+| `MUTATION_LIMITS` | Yes | `Run files only; bounded fetch; one approved push/create` | Run limits, obeyed unchanged. |
+| `RUN_DIR` | Yes | `/tmp/pr-creator.abcdefgh` | Absolute private run directory; this role writes no files. |
+| `PREVIEW` | Yes | `/tmp/pr-creator.abcdefgh/preview-1.json` | Absolute path of the approved `preview-<N>.json`. |
+| `CREATE_COMMAND` | Yes | `gh pr create --repo example/project --base main --head change --title 'Clarify output validation' --body-file /tmp/pr-creator.abcdefgh/body-1.md --draft` | Exact approved text after the checker's `Command:   ` prefix, passed verbatim. |
+| `ANSWERS` | Yes | `[]` | Ordered `{question, answer}` history; revisions use question `REVISE`; never substitutes approved preview values. |
 
 ## Instructions
 

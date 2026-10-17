@@ -159,5 +159,6 @@ For a known object also print the comparison gaps, `Platform additions after cre
 
 ## Exceptions
 
+- `declare-mutation-limits`: the write envelope is fixed to two run files per draft, bounded fetch effects, one approved push, and one approved create. No `SCOPE_LIMITS` widening input; widening could create or publish something the user did not preview.
 - `validate-by-observation`: no runtime eval cases exist for this skill. The checker self-test proves shape and comparison only, not approvals, permissions, or live platform behaviour.
 - `scope-run-files-to-the-run`: use a private system-temp directory outside the worktree so target repositories need no ignore rule. Keep run ownership and terminal cleanup.
