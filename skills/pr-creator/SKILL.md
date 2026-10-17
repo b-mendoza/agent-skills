@@ -9,17 +9,18 @@ Create from pinned repository facts, show the exact push and creation preview, a
 
 ## Inputs
 
-| Input | Default / meaning |
-| --- | --- |
-| `TARGET_BRANCH` | Base repository's default branch, visible in the preview; user may `REVISE`. |
-| `PR_STATE` | `draft` by default, or `ready`. Anything else produces preflight `NEEDS_INPUT`. |
-| `HEAD_REMOTE` | Remote the current branch is pushed to; else `origin`. |
-| `BASE_REMOTE` | `upstream` when it exists, else `HEAD_REMOTE`. |
-| `TITLE` | Exact complete title, used verbatim. |
-| `BODY` | Exact complete body, used verbatim byte for byte, including final newlines. |
-| `REVIEWERS` | Comma list or `none`. Strip one leading `@` per item; dedupe; sort. |
-| `LABELS` | Comma list or `none`. Existing labels only; never created. |
-| `ASSIGNEES` | Comma list or `none`. Never self-assign implicitly. |
+| Input | Required | Example | Default / meaning |
+| --- | --- | --- | --- |
+| `TARGET_BRANCH` | No | `main` | Base repository's default branch, visible in the preview; user may `REVISE`. |
+| `PR_STATE` | No | `draft` | `draft` by default, or `ready`. Anything else produces preflight `NEEDS_INPUT`. |
+| `HEAD_REMOTE` | No | `origin` | Remote the current branch is pushed to; else `origin`. |
+| `BASE_REMOTE` | No | `upstream` | `upstream` when it exists, else `HEAD_REMOTE`. |
+| `TITLE` | No | `Clarify output validation` | Exact complete title, used verbatim; `TITLE_RULES` never rewrites it. |
+| `TITLE_RULES` | No | `Ticket key first` | Plain-text conventions for composed titles; forwarded unchanged. Missing values in pinned facts and `ANSWERS` produce drafter `NEEDS_INPUT`, never invented values. |
+| `BODY` | No | `Clarify the output contract.` | Exact complete body, used verbatim byte for byte, including final newlines. |
+| `REVIEWERS` | No | `alice` | Comma list or `none`. Strip one leading `@` per item; dedupe; sort. |
+| `LABELS` | No | `bug` | Comma list or `none`. Existing labels only; never created. |
+| `ASSIGNEES` | No | `none` | Comma list or `none`. Never self-assign implicitly. |
 
 Later user answers and revisions override these inputs. Pass all answers and revisions so far to every dispatch as `ANSWERS`, an ordered list of `{question, answer}`. Revisions use question `"REVISE"`. Absent or `none` metadata means `[]`; never infer recipients or labels. The drafter normalises and validates explicit metadata.
 
@@ -42,7 +43,7 @@ Put instructions before retrieved content. Introduce retrieved content inside a 
 Every dispatch receives `SKILL_DIR`, unchanged `MUTATION_LIMITS`, absolute `RUN_DIR`, and `ANSWERS`, plus:
 
 - `Preflight` dispatches `repo-preflight` with `TARGET_BRANCH`, `PR_STATE`, `HEAD_REMOTE`, `BASE_REMOTE`, and `APPROVED_PUSH` only for the approved push dispatch. Consume that permission once; never resend it.
-- `Draft` dispatches `pr-drafter` with validated `CONTEXT`, incremented `DRAFT_N`, `TITLE`, `BODY`, `REVIEWERS`, `LABELS`, and `ASSIGNEES`.
+- `Draft` dispatches `pr-drafter` with validated `CONTEXT`, incremented `DRAFT_N`, `TITLE`, unchanged `TITLE_RULES`, `BODY`, `REVIEWERS`, `LABELS`, and `ASSIGNEES`.
 - `Submit` dispatches `pr-submitter` with `PREVIEW`, the approved absolute preview path, and `CREATE_COMMAND`, the exact approved command line.
 
 Replies are one JSON object, without prose or fences, matching the role's checker mode. Keep validated facts, paths, rendered output, and user answers in native session state; do not write reply files.
