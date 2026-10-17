@@ -73,7 +73,7 @@ def push(obj):
         require(ident(obj[key]), key + ": expected IDENT")
     require(len(obj["head_repository"].split("/")) >= 2 and all(obj["head_repository"].split("/")), "head_repository: expected [HOST/]OWNER/REPO")
     require(sha(obj["source_sha"]), "source_sha: expected SHA")
-    return shlex.join(["git", "push", obj["head_remote"], obj["source_sha"] + ":refs/heads/" + obj["destination_branch"]]) + "\n"
+    return shlex.join(["git", "push", "--no-follow-tags", obj["head_remote"], obj["source_sha"] + ":refs/heads/" + obj["destination_branch"]]) + "\n"
 
 def preview(path):
     require(isinstance(path, str) and os.path.isabs(path), "preview: expected absolute path")
@@ -198,7 +198,7 @@ def self_test():
         Path(path).write_bytes(json.dumps(draft).encode("utf-8"))
         assert run("repo-preflight", dict(status="PASS", context=ctx)) == "", 'preflight PASS'
         publication = dict(head_repository="fork/repo", head_remote="origin", source_sha="a" * 40, destination_branch="feature")
-        assert run("repo-preflight", dict(status="PUSH_REQUIRED", reason="publish", push=publication)) == "git push origin " + "a" * 40 + ":refs/heads/feature\n", 'push command rendering'
+        assert run("repo-preflight", dict(status="PUSH_REQUIRED", reason="publish", push=publication)) == "git push --no-follow-tags origin " + "a" * 40 + ":refs/heads/feature\n", 'push command rendering'
         command = "gh pr create --repo up/repo --base main --head fork:feature --title 'A fix' --body-file " + body + " --draft --reviewer alice"
         expected = ("Platform:  github\nBase:      up/repo main @ {base_sha}\nHead:      host/fork/repo feature @ {head_sha} (remote origin)\nState:     draft\nTitle:     A fix\nReviewers: alice\nLabels:    none\nAssignees: none\nCommand:   ").format(**ctx) + command + "\nBody (" + body + "):\nhé\n\n"
         assert run("pr-drafter", dict(status="PASS", preview=path)) == expected, 'exact GitHub preview layout'
