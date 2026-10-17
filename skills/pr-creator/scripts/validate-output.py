@@ -99,9 +99,7 @@ def render(obj):
         argv = ["gh", "pr", "create", "--repo", obj["base_repository"], "--base", obj["base_branch"],
                 "--head", head, "--title", obj["title"], "--body-file", obj["body_file"]]
     else:
-        argv = ["glab", "mr", "create", "--repo", obj["base_repository"]]
-        if not same:
-            argv += ["--head", obj["head_repository"]]
+        argv = ["glab", "mr", "create", "--repo", obj["base_repository"], "--head", obj["head_repository"]]
         argv += ["--source-branch", obj["head_branch"], "--target-branch", obj["base_branch"],
                  "--title", obj["title"], "--description-file", obj["body_file"]]
     argv += ["--draft"] if obj["state"] == "draft" else []
@@ -208,6 +206,10 @@ def self_test():
         draft["platform"] = "gitlab"
         Path(path).write_bytes(json.dumps(draft).encode("utf-8"))
         assert "Command:   glab mr create --repo up/repo --head host/fork/repo --source-branch feature --target-branch main --title 'A fix' --description-file " + body + " --draft --reviewer alice --yes\n" in run("pr-drafter", dict(status="PASS", preview=path)), 'GitLab --head/--yes placement'
+        draft["head_repository"] = draft["base_repository"]
+        Path(path).write_bytes(json.dumps(draft).encode("utf-8"))
+        same_command = "Command:   glab mr create --repo up/repo --head up/repo --source-branch feature --target-branch main --title 'A fix' --description-file " + body + " --draft --reviewer alice --yes\n"
+        assert same_command in run("pr-drafter", dict(status="PASS", preview=path)), 'GitLab same-repository --head'
         returned.update(title="Draft: A fix", body=draft["body"] + "suffix", labels=["z", "a", "z"])
         assert json.loads(run("pr-submitter", receipt)) == dict(status="PASS", gaps=[], additions=dict(reviewers=[], labels=["a", "z"], assignees=[], body_suffix="suffix")), "GitLab draft title and additions"
         returned.update(reviewers=[], state=None, body="wrong")
