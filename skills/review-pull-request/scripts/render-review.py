@@ -133,6 +133,9 @@ def render(run):
         parts += ["Reply: " + json.dumps(reply, ensure_ascii=False) for reply in receipts["replies"]]
         parts += ["Failed/uncertain: " + json.dumps(failure, ensure_ascii=False)
                   for failure in receipts["failed"]]
+        if receipts.get("complete") is not True:
+            parts.append("Posting is incomplete. An action without a receipt may still have taken effect "
+                         "on GitHub. Check the PR before any manual follow-up; never re-run the poster.")
     else:
         parts.append("Not posted.")
     return ("\n\n".join(parts) + "\n").encode("utf-8")
@@ -178,6 +181,7 @@ def self_test():
             context, author, body = fixture(run)
             data = render(run)
             assert body.encode() in data and b"file.py:1-2 RIGHT" in data
+            assert data.rsplit(b"## Posting\n", 1)[1] == b"\nNot posted.\n"
             tests += 1
             output = run / "review.md"
             sha = write_file(run, output, data)
@@ -206,10 +210,21 @@ def self_test():
             assert not temporary.exists()
             tests += 1
             receipts = dict(review=dict(id=9, url="https://github.com/cli/cli/pull/1#pullrequestreview-9"),
-                            replies=[], failed=[])
+                            replies=[], failed=[], complete=True)
             (run / "receipts.json").write_text(json.dumps(receipts))
-            assert b"pullrequestreview-9" in render(run).rsplit(b"## Posting\n", 1)[1]
+            posting = render(run).rsplit(b"## Posting\n", 1)[1]
+            assert b"pullrequestreview-9" in posting and b"Posting is incomplete." not in posting
             tests += 1
+            warning = (b"Posting is incomplete. An action without a receipt may still have taken effect on GitHub. "
+                       b"Check the PR before any manual follow-up; never re-run the poster.")
+            for complete in (False, None):
+                receipts["complete"] = complete
+                if complete is None:
+                    del receipts["complete"]
+                (run / "receipts.json").write_text(json.dumps(receipts))
+                posting = render(run).rsplit(b"## Posting\n", 1)[1]
+                assert warning in posting.splitlines() and b"pullrequestreview-9" in posting
+                tests += 1
             (run / "chunk-correctness.txt").unlink()
             refused(lambda: render(run))
             tests += 1
