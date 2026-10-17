@@ -4,7 +4,8 @@
 # Environment: PATH locates gh; GH_TOKEN/GITHUB_TOKEN or gh saved login (github.com).
 # Exit: 0 posted/preview/help/test; 1 possible effect (POST_ERROR, never retry);
 # 2 usage (REVIEW_ERROR); 3 refused before effects (POST_ERROR, draft kept).
-# Side effects: approved posts review/replies and writes receipts.json; dry-run reads only. Never retry.
+# Side effects: approved posts review/replies and saves receipts.json via run-local render.tmp.
+# Dry-run reads only. Never retry.
 import contextlib
 import hashlib
 import io
@@ -86,9 +87,9 @@ def receipt_for(result):
 def save_receipts(path, receipts, create=False):
     if path.is_symlink() or (not create and not path.is_file()):
         raise ValueError("receipts path changed; refusing replacement")
-    with path.open("x" if create else "w", encoding="utf-8") as stream:
-        json.dump(receipts, stream, ensure_ascii=False, indent=2)
-        stream.write("\n")
+    data = (json.dumps(receipts, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    expected = None if create else shared["digest"](shared["read_bytes"](path))
+    shared["write_file"](path.parent, path, data, expected)
 
 def execute(args, runner=gh, available=lambda: shutil.which("gh")):
     if args == ["-h"]:
@@ -235,6 +236,7 @@ def self_test():
                                                                  start_side="RIGHT")
                 assert (len(receipts["replies"]) == (0 if failure else 2) and
                         bool(receipts["failed"]) == failure)
+                assert not (run / "render.tmp").exists()
                 assert len(calls) == (3 if failure else 4) and calls[2][0][-3].endswith("/comments/7/replies")
                 assert failure or calls[3][0][-3].endswith("/comments/8/replies")
                 assert invoke(["--approved", current_sha, "."])[0] == 3
