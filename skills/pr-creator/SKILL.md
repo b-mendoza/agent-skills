@@ -21,6 +21,11 @@ Create from pinned repository facts, show the exact push and creation preview, a
 | `REVIEWERS` | No | `alice` | Comma list or `none`. Strip one leading `@` per item; dedupe; sort. |
 | `LABELS` | No | `bug` | Comma list or `none`. Existing labels only; never created. |
 | `ASSIGNEES` | No | `none` | Comma list or `none`. Never self-assign implicitly. |
+| `TITLE_OVERRIDE` | No | `Clarify output validation` | Alias of `TITLE`. |
+| `BODY_OVERRIDE` | No | `Clarify the output contract.` | Alias of `BODY`. |
+| `LABELS_OVERRIDE` | No | `bug` | Alias of `LABELS`. |
+
+At `Init`, before any dispatch, normalize `TITLE_OVERRIDE` to `TITLE`, `BODY_OVERRIDE` to `BODY`, and `LABELS_OVERRIDE` to `LABELS`. If an alias and its canonical input have different supplied values, go to `TermBlocked`, naming both inputs; equal values are valid.
 
 Later user answers and revisions override these inputs. Pass all answers and revisions so far to every dispatch as `ANSWERS`, an ordered list of `{question, answer}`. Revisions use question `"REVISE"`. Absent or `none` metadata means `[]`; never infer recipients or labels. The drafter normalises and validates explicit metadata.
 
@@ -103,7 +108,8 @@ Counters start at 0:
 
 | State | Event / guard | Next |
 | --- | --- | --- |
-| Init | `SKILL_DIR` resolved, baseline captured, `RUN_DIR` ok | Preflight |
+| Init | Alias and canonical input supplied with different values | TermBlocked, reason names both inputs |
+| Init | Aliases normalized, `SKILL_DIR` resolved, baseline captured, `RUN_DIR` ok | Preflight |
 | Init | otherwise | TermBlocked |
 | Preflight | `PASS` | Draft, store `context` |
 | Preflight | `NEEDS_INPUT`, answers < 3 | Ask → Preflight |
