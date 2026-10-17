@@ -1,6 +1,8 @@
 ---
 name: "committing-scoped-changes"
-description: "Plans or creates reviewable whole-file git commits from explicit files or folders. Use when the user says commit these files, commit only src/x, split my changes into atomic commits, keep unrelated work out, or show me the commit plan. Shows the exact plan for approval before mutation. Does not split one file across commits, push, amend, rewrite history, open pull requests, or summarize recent project state."
+description: >-
+  Plans or creates whole-file Git commits from explicit files or folders. Use when asked to commit these paths, split changes into atomic commits, keep unrelated work out, or show a commit plan.
+  Does not split hunks, push, amend, rewrite history, open pull requests, or summarize project history.
 ---
 
 # Committing scoped changes
