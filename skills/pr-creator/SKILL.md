@@ -49,7 +49,7 @@ Every dispatch receives `SKILL_DIR`, unchanged `MUTATION_LIMITS`, absolute `RUN_
 
 - `Preflight` dispatches `repo-preflight` with `TARGET_BRANCH`, `PR_STATE`, `HEAD_REMOTE`, `BASE_REMOTE`, and `APPROVED_PUSH` only for the approved push dispatch. Consume that permission once; never resend it.
 - `Draft` dispatches `pr-drafter` with validated `CONTEXT`, incremented `DRAFT_N`, `TITLE`, unchanged `TITLE_RULES`, `BODY`, `REVIEWERS`, `LABELS`, and `ASSIGNEES`.
-- `Submit` dispatches `pr-submitter` with `PREVIEW`, the approved absolute preview path, and `CREATE_COMMAND`, the exact approved command line.
+- `Submit` dispatches `pr-submitter` with `PREVIEW`, the approved absolute preview path, `PREVIEW_SHA256`, the approved digest, and `CREATE_COMMAND`, the exact approved command line.
 
 Replies are one JSON object, without prose or fences, matching the role's checker mode. Keep validated facts, paths, rendered output, and user answers in native session state; do not write reply files.
 
@@ -79,11 +79,11 @@ Run the checker on every reply before reading any field. `reply.json` denotes st
 | --- | --- |
 | `repo-preflight` | `python3 -I "${SKILL_DIR}/scripts/validate-output.py" repo-preflight < reply.json` |
 | `pr-drafter` | `python3 -I "${SKILL_DIR}/scripts/validate-output.py" pr-drafter < reply.json` |
-| `pr-submitter` | `python3 -I "${SKILL_DIR}/scripts/validate-output.py" pr-submitter --preview "$PREVIEW" < reply.json` |
+| `pr-submitter` | `python3 -I "${SKILL_DIR}/scripts/validate-output.py" pr-submitter --preview "$PREVIEW" --sha256 "$PREVIEW_SHA256" < reply.json` |
 
 Exit 0 permits routing. Exit 1 reports findings on stdout; exit 2 reports usage errors on stderr. Either, malformed output, or no reply means final `ERROR`, with no repair loop. If `python3` is unavailable or the checker cannot run, final `BLOCKED`, reason `TOOLS_MISSING`, without parsing the reply. The checker requires Python 3.8+; do not add a separate version prerequisite command.
 
-Preserve checker stdout exactly. For `PUSH_REQUIRED` it is the push line; for drafter `PASS` it is the full preview. For `KNOWN_OBJECT` it is comparison JSON with `status`, `gaps`, and `additions`. Other conforming replies produce no stdout. The checker validates preview/body-file byte equality and compares readback independently; producer claims do not replace it.
+Preserve checker stdout exactly. For `PUSH_REQUIRED` it is the push line; for drafter `PASS` it is the full preview, with `SHA-256:   <64 lowercase hex>` immediately before `Command:   `. For `KNOWN_OBJECT` it is comparison JSON with `status`, `gaps`, and `additions`. Other conforming replies produce no stdout. The checker validates preview/body-file byte equality and compares readback independently; producer claims do not replace it. For submitter replies, it validates the envelope first and loads the preview and checks `PREVIEW_SHA256` only for `HEAD_MOVED` and `KNOWN_OBJECT`; other statuses conform even if the preview is missing or changed.
 
 Package verification commands, not extra runtime gates:
 
@@ -125,7 +125,7 @@ Counters start at 0:
 | Draft | `NEEDS_INPUT`, answers < 3 | Ask → Draft |
 | Draft | `NEEDS_INPUT` over cap, `BLOCKED`, `TOOLS_MISSING` | TermBlocked |
 | Draft | `ERROR` | TermError |
-| ApproveCreate | `APPROVED` | Submit |
+| ApproveCreate | `APPROVED` | Submit, store `PREVIEW`, `CREATE_COMMAND`, `PREVIEW_SHA256` |
 | ApproveCreate | `REVISE`, revisions < 3, changes branch/remote/state | Preflight, drop `context` |
 | ApproveCreate | `REVISE`, revisions < 3 | Draft |
 | ApproveCreate | `ABORT`, or `REVISE` over cap | TermBlocked |
@@ -137,9 +137,9 @@ Counters start at 0:
 
 In `Ask`, show the validated `question` with its reason/notes. Store the usable answer with that question in `ANSWERS`. Store every revision as `{"question": "REVISE", "answer": <requested change>}` and apply it to subsequent inputs. Dropping `context` also invalidates the preview and its approval.
 
-Checkpoints `ApprovePush` and `ApproveCreate` show the checker's rendered output verbatim plus the reply's `reason`/`notes`. Accept only `APPROVED`, `REVISE` with the requested change, or `ABORT`. Approval binds to that exact push line or preview file. Earlier conversational consent and approvals of earlier previews never count; a new preview always needs a new approval. `ABORT` creates or pushes nothing further and runs terminal cleanup.
+Checkpoints `ApprovePush` and `ApproveCreate` show the checker's rendered output verbatim plus the reply's `reason`/`notes`. Accept only `APPROVED`, `REVISE` with the requested change, or `ABORT`. Approval binds to that exact push line or the SHA-256 digest of the preview file's exact bytes. Earlier conversational consent and approvals of earlier previews never count; a new preview always needs a new approval. `ABORT` creates or pushes nothing further and runs terminal cleanup.
 
-For `ApprovePush`, pass the approved checker line verbatim as `APPROVED_PUSH`. For `ApproveCreate`, store the drafter's validated preview path as `PREVIEW` and pass the text after `Command:   ` verbatim as `CREATE_COMMAND`. Never reconstruct either command. Body transport uses only the preview's body-file flag, not shell interpolation.
+For `ApprovePush`, pass the approved checker line verbatim as `APPROVED_PUSH`. On `ApproveCreate` → `APPROVED`, store the drafter's validated preview path as `PREVIEW`, the text after `Command:   ` as `CREATE_COMMAND`, and the text after `SHA-256:   ` as `PREVIEW_SHA256` from the approved checker output. Preserve all three verbatim and pass them to `Submit`. Never reconstruct either command or recompute the approved digest. Body transport uses only the preview's body-file flag, not shell interpolation.
 
 Terminals: `TermPass` → `PR_CREATE: PASS`; `TermGaps` → `PR_CREATE: GAPS_FOUND`; `TermBlocked` → `PR_CREATE: BLOCKED`; `TermError` → `PR_CREATE: ERROR`. Every terminal runs cleanup.
 

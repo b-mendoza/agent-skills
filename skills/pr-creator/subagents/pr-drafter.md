@@ -44,7 +44,7 @@ Return one UTF-8 JSON object, no duplicate keys, NaN/Infinity, prose, or fences.
 python3 -I "${SKILL_DIR}/scripts/validate-output.py" pr-drafter < reply.json
 ```
 
-`reply.json` denotes stdin, not a file to write. Exit 0 conforms; exit 1 reports findings; exit 2 is a usage error. For `PASS`, stdout is the rendered preview, including the exact `Command:   ` line; the consumer passes its command text verbatim as `CREATE_COMMAND` after approval.
+`reply.json` denotes stdin, not a file to write. Exit 0 conforms; exit 1 reports findings; exit 2 is a usage error. For `PASS`, stdout is the rendered preview, including `SHA-256:   <64 lowercase hex>` of the preview file's exact bytes immediately before the exact `Command:   ` line; the consumer passes the digest as `PREVIEW_SHA256` and command text as `CREATE_COMMAND`, both verbatim after approval.
 
 Example `PASS`, with an illustrative absolute run path; use the actual `RUN_DIR` and existing matching files:
 
