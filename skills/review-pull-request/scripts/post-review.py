@@ -18,6 +18,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from unittest.mock import patch
 from urllib.parse import quote, urlsplit
 
 shared = runpy.run_path(str(Path(__file__).with_name("render-review.py")))
@@ -129,7 +130,7 @@ def execute(args, runner=gh, available=lambda: shutil.which("gh")):
                              f"{quote(context['base'], safe='')}...{context['head_sha']}"])
         if comparison.get("merge_base_commit", {}).get("sha") != context["base_sha"]:
             raise ValueError("live merge-base changed; approval invalid")
-        receipts = dict(review=None, replies=[], failed=[])
+        receipts = dict(review=None, replies=[], failed=[], complete=False)
         save_receipts(path, receipts, create=True)
         current = dict(review="review")
         attempted = True
@@ -145,6 +146,15 @@ def execute(args, runner=gh, available=lambda: shutil.which("gh")):
                             canonical(dict(body=reply["body"])))
             receipts["replies"].append(dict(finding=finding["id"], **receipt_for(result)))
             save_receipts(path, receipts)
+        receipts["complete"] = True
+        try:
+            save_receipts(path, receipts)
+        except (OSError, ValueError) as error:
+            receipts["complete"] = False
+            print("All GitHub actions posted; local completion receipt write failed: " +
+                  str(error) + "; stop, never retry", file=sys.stderr)
+            print(json.dumps(receipts, ensure_ascii=False), file=sys.stderr)
+            return 1
         print(json.dumps(receipts, ensure_ascii=False))
         return 0
     except (ValueError, OSError, KeyError, TypeError, AttributeError) as error:
@@ -161,11 +171,11 @@ def execute(args, runner=gh, available=lambda: shutil.which("gh")):
 def self_test():
     tests = 0
     def invoke(args, runner=None, present=True):
-        with contextlib.redirect_stdout(io.StringIO()) as output, contextlib.redirect_stderr(io.StringIO()):
+        with contextlib.redirect_stdout(io.StringIO()) as output, contextlib.redirect_stderr(io.StringIO()) as error:
             code = execute(
                 args, runner or (lambda *a: (_ for _ in ()).throw(AssertionError("unexpected gh"))),
                 lambda: present)
-        return code, output.getvalue()
+        return code, output.getvalue(), error.getvalue()
     cwd = Path.cwd()
     with tempfile.TemporaryDirectory() as directory:
         try:
@@ -242,7 +252,7 @@ def self_test():
                 if base == "main":
                     assert calls[1][0][-1] == "repos/cli/cli/compare/main..." + "b" * 40
                 tests += 1
-            for failure in (False, True):
+            for failure in (None, "reply", "receipt", "receipt-write"):
                 author["findings"] = [finding, dict(finding, id="R1", placement="reply", root_comment_id=7)]
                 context["threads"].append(dict(context["threads"][0], thread_id="thread2", root_comment_id=8,
                                               root_url="https://github.com/cli/cli/pull/1#discussion_r8"))
@@ -261,22 +271,40 @@ def self_test():
                         return dict(merge_base_commit=dict(sha=context["base_sha"]))
                     if len(calls) == 3:
                         assert json.loads((run / "receipts.json").read_bytes()) == dict(
-                            review=None, replies=[], failed=[])
-                    if failure and len(calls) == 4:
+                            review=None, replies=[], failed=[], complete=False)
+                    if failure == "reply" and len(calls) == 4:
                         raise ValueError("simulated reply failure")
                     return dict(id=len(calls), html_url="https://github.com/receipt/" + str(len(calls)))
+                replace, fsync = os.replace, os.fsync
+                def replace_stub(source, target):
+                    if failure == "receipt" and json.loads(Path(source).read_bytes())["complete"]:
+                        raise OSError("simulated final receipt replacement failure")
+                    return replace(source, target)
+                def fsync_stub(fd):
+                    temporary = run / "render.tmp"
+                    if (failure == "receipt-write" and temporary.is_file() and
+                            json.loads(temporary.read_bytes())["complete"]):
+                        raise OSError("simulated final receipt flush failure")
+                    return fsync(fd)
                 current_sha = invoke(dry)[1].split("approval-sha256: ")[-1].strip()
-                assert invoke(["--approved", current_sha, "."], stub)[0] == (1 if failure else 0)
+                with patch.object(os, "replace", replace_stub), patch.object(os, "fsync", fsync_stub):
+                    result = invoke(["--approved", current_sha, "."], stub)
+                assert result[0] == (1 if failure else 0)
                 receipts = json.loads((run / "receipts.json").read_bytes())
                 assert receipts["review"]["id"] == 3 and calls[2][0][-2:] == ["--input", "-"]
                 assert json.loads(calls[2][1])["body"] == body and json.loads(calls[3][1])["body"] == body
                 assert json.loads(calls[2][1])["comments"][0] == dict(finding["anchor"], body=body,
                                                                  start_side="RIGHT")
-                assert (len(receipts["replies"]) == (0 if failure else 2) and
-                        bool(receipts["failed"]) == failure)
+                assert (len(receipts["replies"]) == (0 if failure == "reply" else 2) and
+                        bool(receipts["failed"]) == (failure == "reply"))
+                assert receipts["complete"] is (not failure)
                 assert not (run / "render.tmp").exists()
-                assert len(calls) == (4 if failure else 5) and calls[3][0][-3].endswith("/comments/7/replies")
-                assert failure or calls[4][0][-3].endswith("/comments/8/replies")
+                if failure in ("receipt", "receipt-write"):
+                    assert "All GitHub actions posted; local completion receipt write failed" in result[2]
+                    assert "never retry" in result[2]
+                assert len(calls) == (4 if failure == "reply" else 5)
+                assert calls[3][0][-3].endswith("/comments/7/replies")
+                assert failure == "reply" or calls[4][0][-3].endswith("/comments/8/replies")
                 assert invoke(["--approved", current_sha, "."])[0] == 3
                 (run / "receipts.json").unlink()
                 context, author, body = fixture(run)
