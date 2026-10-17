@@ -16,7 +16,7 @@ import argparse, json, os, re, shlex
 from pathlib import Path
 
 METADATA = "reviewers labels assignees".split()
-CONTEXT = "platform base_repository head_repository head_remote base_branch head_branch base_sha head_sha state".split()
+CONTEXT = "platform base_repository head_repository head_remote base_branch head_branch base_sha head_sha template_sha state".split()
 STATUSES = {
     "repo-preflight": "PASS NEEDS_INPUT PUSH_REQUIRED BLOCKED ERROR TOOLS_MISSING".split(),
     "pr-drafter": "PASS NEEDS_INPUT BLOCKED ERROR TOOLS_MISSING".split(),
@@ -62,7 +62,7 @@ def context(obj):
         require(ident(obj[key]), key + ": expected IDENT")
     for key in ("base_repository", "head_repository"):
         require(len(obj[key].split("/")) >= 2 and all(obj[key].split("/")), key + ": expected [HOST/]OWNER/REPO")
-    for key in ("base_sha", "head_sha"):
+    for key in ("base_sha", "head_sha", "template_sha"):
         require(sha(obj[key]), key + ": expected SHA")
     require(obj["platform"] in ("github", "gitlab"), "platform: expected github or gitlab")
     require(obj["state"] in ("draft", "ready"), "state: expected draft or ready")
@@ -182,7 +182,7 @@ def self_test():
     with tempfile.TemporaryDirectory() as directory:
         path, body = os.path.join(directory, "preview.json"), os.path.join(directory, "body.md")
         ctx = dict(platform="github", base_repository="up/repo", head_repository="host/fork/repo", head_remote="origin",
-                   base_branch="main", head_branch="feature", base_sha="a" * 40, head_sha="b" * 64, state="draft")
+                   base_branch="main", head_branch="feature", base_sha="a" * 40, head_sha="b" * 64, template_sha="c" * 40, state="draft")
         draft = dict(ctx, title="A fix", body="hé\n\n", body_file=body, reviewers=["alice"], labels=[], assignees=[])
         def run(mode, payload):
             return check(mode, payload if isinstance(payload, bytes) else json.dumps(payload).encode("utf-8"), path)
@@ -220,6 +220,8 @@ def self_test():
             bad(mode, dict(status="ERROR", reason="failed", question="forbidden"))
             for raw in (b'[]', b'{"x":1,"x":2}', b'{"x":NaN}', b'{"x":Infinity}', b'\xff', b'{} {}'):
                 bad(mode, raw)
+        bad("repo-preflight", dict(status="PASS", context={key: value for key, value in ctx.items() if key != "template_sha"}))
+        bad("repo-preflight", dict(status="PASS", context=dict(ctx, template_sha="BAD")))
         bad("repo-preflight", dict(status="PASS", context=dict(ctx, head_sha="BAD")))
         bad("pr-submitter", dict(status="HEAD_MOVED", reason="moved", remote_head_sha=ctx["head_sha"]))
         Path(body).write_bytes(b"different")
