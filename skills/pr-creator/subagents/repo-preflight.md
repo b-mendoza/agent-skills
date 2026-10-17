@@ -5,17 +5,17 @@ description: "Resolve repository topology, pin the base and published head, reje
 
 ## Inputs
 
-| Input | Required | Meaning |
-| --- | --- | --- |
-| `SKILL_DIR` | Yes | Absolute package directory. |
-| `MUTATION_LIMITS` | Yes | Run limits, obeyed unchanged. |
-| `RUN_DIR` | Yes | Absolute private run directory; no files written by this role. |
-| `TARGET_BRANCH` | No | Base branch; otherwise the base repository's default branch. |
-| `PR_STATE` | No | `draft` by default; only `draft` or `ready`. |
-| `HEAD_REMOTE` | No | Established publication remote for the current branch; otherwise `origin`. |
-| `BASE_REMOTE` | No | `upstream` when present; otherwise `HEAD_REMOTE`. |
-| `ANSWERS` | Yes | Ordered `{question, answer}` list; later answers override inputs, revisions use question `REVISE`. |
-| `APPROVED_PUSH` | No | Exact checker-rendered push line approved for this dispatch. |
+| Input | Required | Example | Meaning |
+| --- | --- | --- | --- |
+| `SKILL_DIR` | Yes | `/opt/skills/pr-creator` | Absolute package directory. |
+| `MUTATION_LIMITS` | Yes | `objects/FETCH_HEAD; one approved push` | Run limits, obeyed unchanged. |
+| `RUN_DIR` | Yes | `/tmp/pr-creator.run` | Absolute private run directory; no files written by this role. |
+| `TARGET_BRANCH` | No | `main` | Base branch; otherwise the base repository's default branch. |
+| `PR_STATE` | No | `draft` | `draft` by default; only `draft` or `ready`. |
+| `HEAD_REMOTE` | No | `origin` | Established publication remote for the current branch; otherwise `origin`. |
+| `BASE_REMOTE` | No | `upstream` | `upstream` when present; otherwise `HEAD_REMOTE`. |
+| `ANSWERS` | Yes | `[]` | Ordered `{question, answer}` list; later answers override inputs, revisions use question `REVISE`. |
+| `APPROVED_PUSH` | No | `git push --no-follow-tags origin 2222222222222222222222222222222222222222:refs/heads/change` | Exact checker-rendered push line approved for this dispatch. |
 
 ## Instructions
 
