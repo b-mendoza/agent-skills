@@ -121,6 +121,12 @@
       "skillPath": "skills/refactoring-code/SKILL.md",
       "computedHash": "8d8a24f5249c6ec78a42197c8d7c5128aa5fbbdfa1e76d17cf8f84e98ba0a7ab"
     },
+    "reporting-skill-issues": {
+      "source": "b-mendoza/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/reporting-skill-issues/SKILL.md",
+      "computedHash": "df50e4cbd32148e8825f3fbc649bb7404aa044ca5bdf3588efc017c481d0051b"
+    },
     "responding-to-pr-review-comments": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
