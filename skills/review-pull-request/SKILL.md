@@ -23,7 +23,7 @@ Keep `OUTPUT_FILE` workspace-relative. Require `.md`, no `..` or `.git` componen
 
 Derive `MUTATION_LIMITS` once and pass the identical value to every role:
 
-- Write only the selected `OUTPUT_FILE` through the renderer and recorded files inside this run's `RUN_DIR`. Each role writes only its assigned `PAYLOAD_FILE`; all evidence inspection is read-only.
+- Write only the selected `OUTPUT_FILE` through the renderer and recorded files inside this run's `RUN_DIR`, plus the disposable directories the bundled helpers' `--self-test` runs create and automatically remove under the host temporary directory. Each role writes only its assigned `PAYLOAD_FILE`; all evidence inspection is read-only.
 - Only `post-review.py --approved` may perform GitHub writes, limited to the exact approved review and existing-thread replies. Never retry a mutation after failure or uncertainty.
 - No source edits, PR fixes, Git mutations, environment changes, installed-copy edits, sibling-run reads or cleanup. Additional mutations require explicit user authority naming them; repair never widens scope.
 
