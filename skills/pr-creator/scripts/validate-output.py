@@ -88,7 +88,7 @@ def preview(path, digest=None):
     require(os.path.dirname(os.path.realpath(obj["body_file"])) == os.path.dirname(os.path.realpath(path)), "body_file: must be in the preview directory")
     for key in METADATA:
         values = obj[key]
-        require(isinstance(values, list) and all(clean(v) and not v.startswith("@") and "," not in v for v in values),
+        require(isinstance(values, list) and all(clean(v) and (key == "labels" or not v.startswith("@")) and "," not in v for v in values),
                 key + ": expected NAMES")
         require(values == sorted(set(values)), key + ": must be unique and ascending-sorted")
     require(Path(obj["body_file"]).read_bytes() == obj["body"].encode("utf-8"), "body_file: bytes differ from body")
@@ -215,6 +215,10 @@ def self_test():
         returned = dict(title="A fix", base="main", head_ref="feature", head_sha=ctx["head_sha"], state="draft", body=draft["body"], reviewers=["alice"], labels=[], assignees=[])
         receipt = dict(status="KNOWN_OBJECT", outcome="created", url="https://host/pr/1", returned=returned)
         assert json.loads(run("pr-submitter", receipt)) == dict(status="PASS", gaps=[], additions=dict(reviewers=[], labels=[], assignees=[], body_suffix="")), 'matching readback comparison'
+        Path(path).write_bytes(json.dumps(dict(draft, labels=["@aws-cdk/assertions"])).encode("utf-8"))
+        assert "--label @aws-cdk/assertions\n" in run("pr-drafter", dict(status="PASS", preview=path)), 'literal @-prefixed label'
+        Path(path).write_bytes(json.dumps(dict(draft, reviewers=["@alice"])).encode("utf-8"))
+        bad("pr-drafter", dict(status="PASS", preview=path))
         draft["platform"] = "gitlab"
         Path(path).write_bytes(json.dumps(draft).encode("utf-8"))
         assert "Command:   glab mr create --repo up/repo --head host/fork/repo --source-branch feature --target-branch main --title 'A fix' --description-file " + body + " --draft --reviewer alice --yes\n" in run("pr-drafter", dict(status="PASS", preview=path)), 'GitLab --head/--yes placement'
