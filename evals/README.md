@@ -9,21 +9,22 @@ Evals live here, **outside `skills/`**, on purpose. A skill directory is a distr
 ## Running
 
 ```bash
-pnpm install                         # once, from this directory
-
-node evals/src/orchestration/run.ts                    # everything, 5 attempts per case (~35 min, ~$9)
-node evals/src/orchestration/run.ts --tier=1           # routing only (~3 min, ~$1.50)
-node evals/src/orchestration/run.ts --case=path-error  # one case
-node evals/src/orchestration/run.ts --attempts=1       # one attempt per case (cheap, low-confidence smoke run)
+# Run these commands from evals/.
+pnpm install                                      # once
+pnpm eval                                         # everything, 5 attempts per case
+pnpm eval --filter-metadata tier=1                 # routing only
+pnpm eval --filter-pattern '^snapshot-dirty$'      # one case
+pnpm eval --repeat 1                               # cheap, low-confidence smoke run
+pnpm eval -j 3                                     # up to 3 concurrent attempts
 ```
 
 Node 24 strips TypeScript types natively, so the suite runs from source with no build step. Keep the syntax erasable — `erasableSyntaxOnly` is on, so no enums, parameter properties, decorators, or namespaces.
 
-Each selected case runs `--attempts` times (default 5 — one stochastic attempt proves little) and reports a **score**, the percent of attempts whose check passed, plus a **status** derived from the same counts: `PASS` (every attempt), `FAIL` (none), `DEGRADED` (a mix — flakiness), `NOT_RUN` (not executed by this run; score stays empty rather than reading as zero). Score and status derive from one pass count, so they cannot disagree; the status exists because a score alone cannot express "never ran" and CI needs a discrete gate.
+Each selected case runs `--repeat` times, default 5, and reports a **score**, the percent of attempts whose check passed, plus a **status** derived from the same counts: `PASS` for every attempt, `FAIL` for none, `DEGRADED` for a mix, and `NOT_RUN` for cases not executed by this run. A `NOT_RUN` score stays empty rather than reading as zero. The default concurrency is 1; `-j` overrides it. Extra arguments go to promptfoo.
 
-Exits `0` when every executed case passes every attempt, `1` when a case fails or is degraded, `2` when no case matched the filter, `3` on an infrastructure error, and `4` on invalid command line usage. Set `EVAL_MODEL` to override the model (default `sonnet`).
+Exits `0` when every executed case passes every attempt, `1` when a case fails or is degraded, `2` when no case matched the filter, and `3` on an infrastructure error. Missing or malformed results, any provider error row, subprocess failure, and report-write failure are infrastructure errors. Set `EVAL_MODEL` to override the model, default `sonnet`.
 
-Each run rewrites [`report.md`](./report.md), which is committed so a behavior change shows up in `git diff`. The report lists every known case; ones a partial run skipped appear as `NOT_RUN` instead of vanishing.
+A run with matched cases and valid results rewrites [`report.md`](./report.md), which is committed so a behavior change shows up in `git diff`. No-match runs preserve it. The report lists every known case; ones a partial run skipped appear as `NOT_RUN` instead of vanishing.
 
 ## Checks
 
@@ -80,7 +81,7 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 
 **Deterministic runtime validation.** The skill ships its own shape validator (`skills/analyzing-recent-project-state/scripts/validate-output.sh`) that subagents run on their output before returning and the orchestrator runs at its payload gates. The eval checks reuse the same script (`runOutputValidator` in the checks module), so test-time and runtime grade shapes identically, and tier-2 cases assert the validator was actually invoked (a `Bash` call visible in the tool stream). Evals are test-time guarantees; the script is the one that persists at runtime — the suite's job is verifying that mechanism engages, plus everything a script cannot check (routing, semantic quality, injection resistance).
 
-Failing attempts persist their final text under `$TMPDIR/agent-skills-eval-failures/<caseId>-<n>.txt` so a FAIL can be diagnosed from evidence; the directory accumulates across runs and is cleared manually.
+Read the JSON path printed by the runner to diagnose failures. Each invocation creates its own `$TMPDIR/agent-skills-eval-*/results.json`, holding every attempt's output and observation metadata, not just failures. Later runs do not overwrite it. The wrapper uses `--no-write`, so results are not stored in promptfoo's database and `npx promptfoo view` cannot display these runs. It also disables caching, sharing, and telemetry.
 
 **Judge-based checks** (`src/observation/judge.ts`) grade an artifact against a binary rubric with an independent small model. This is a deliberate extension of the assert-only-observables rule: the judged artifact is the observable and the judge is a measurement instrument reading it — what stays banned is asking the agent under test whether it complied. Two guards keep verdicts honest: a violation counts only when its quote is mechanically verified to appear verbatim in the artifact (uncited complaints are recorded, never failing), and an unparseable judge reply fails the attempt with a message naming the judge, so grading trouble is never mistaken for a verdict on the skill. Judges run only after a case's mechanical check passes.
 
