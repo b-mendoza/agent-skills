@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 
 import { observe } from "#/cases/case-test-support.ts";
 
-import { readResults } from "./results.ts";
+import { readResults, resultExitCode } from "./results.ts";
 
 const FIRST = 0;
 const SECOND = 1;
@@ -60,6 +60,21 @@ test("groups attempts, retains canonical observed text and fills every skipped c
   );
 });
 
+test.each([
+  { successes: [true, true], code: 0 },
+  { successes: [false, false], code: 1 },
+  { successes: [true, false], code: 1 },
+  { successes: [], code: 2 },
+])("maps executed attempts $successes to exit $code", ({ successes, code }) => {
+  expect(
+    resultExitCode(
+      report(
+        successes.map((pass, index) => row("trigger-positive", index, pass)),
+      ),
+    ),
+  ).toBe(code);
+});
+
 test("derives mutation scope by repeat index despite out-of-order completion", () => {
   const dirty = row("snapshot-dirty", FIRST);
   dirty.response.metadata.observation.toolCalls = [
@@ -87,6 +102,7 @@ test("derives mutation scope by repeat index despite out-of-order completion", (
     durationMs: 0,
     observed: "read-only contract violated:",
   });
+  expect(resultExitCode(rows)).toBe(FAIL_CODE);
 });
 
 test("provider errors abort report processing instead of becoming case failures", () => {

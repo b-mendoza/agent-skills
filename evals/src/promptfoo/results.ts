@@ -16,6 +16,7 @@ import {
 import { decodeMetadata, getCase } from "./observation.ts";
 
 const FAILURE = { NONE: 0, ASSERT: 1, ERROR: 2 } as const;
+const EXIT = { PASS: 0, FAIL: 1, EMPTY: 2 } as const;
 const REPORT_TIERS = { 1: "1", 2: "2" } as const;
 const EMPTY = 0;
 const rowSchema = Schema.Struct({
@@ -111,4 +112,13 @@ export function readResults(input: unknown): Result[] {
       : aggregateAttempts(group);
   });
   return [...results, deriveMutationScope(observations)];
+}
+
+export function resultExitCode(results: readonly Result[]): number {
+  if (results.every((result) => result.status === "NOT_RUN")) return EXIT.EMPTY;
+  return results.some(
+    (result) => result.status === "FAIL" || result.status === "DEGRADED",
+  )
+    ? EXIT.FAIL
+    : EXIT.PASS;
 }
