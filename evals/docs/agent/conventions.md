@@ -10,4 +10,4 @@ Long-lived guidance for TypeScript code in this suite. Current file layout, impo
 
 ## Validate at the boundary
 
-- Parse external data where it enters the system — CLI arguments in the runner, SDK messages in the observation harness — rather than passing raw strings deeper in; surface a parse failure with a message naming what failed to parse.
+- Parse external data where it enters the system, such as result exports and SDK messages, rather than passing raw strings deeper in. Report parse failures with a message naming what failed to parse.
