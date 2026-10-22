@@ -6,11 +6,12 @@ Source lives under [`src/`](../src/), grouped by capability. Tests sit beside th
 
 ## Orchestration
 
+`src/orchestration/` contains four production modules:
+
 | Module             | Responsibility                                                                                                                                        |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `run.ts`           | Direct Node entry point with an inert-import guard. Spawns promptfoo, forwards arguments, reads JSON results, writes the report, and maps exit codes. |
-| `execution.ts`     | One attempt: acquire a real fixture, observe the agent, check the result, optionally judge, persist FAIL text, and clean up.                          |
-| `verdict.ts`       | Attempt/result types, check-failure normalization, scores, aggregation, and NOT_RUN results.                                                          |
+| `verdict.ts`       | Attempt/result types, check-failure normalization, judge execution, scores, aggregation, and NOT_RUN results.                                         |
 | `report.ts`        | Markdown rendering, progress-line formatting, and the fixed production report path.                                                                   |
 | `configuration.ts` | Import-time `EVAL_MODEL` capture, defaulting to `sonnet` for absent or empty values.                                                                  |
 

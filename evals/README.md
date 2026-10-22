@@ -36,21 +36,29 @@ pnpm test    # vitest: unit tests for the pure functions, free and offline
 
 `pnpm test` is not the eval suite. It covers the parts that can be checked without spending tokens, so a break shows up in seconds instead of after a paid run:
 
-| Test file                        | Pins                                                                        |
-| -------------------------------- | --------------------------------------------------------------------------- |
-| `mutation-evidence.test.ts`      | The read-only detector behind `mutation-scope`                              |
-| `judge.test.ts`                  | Judge prompt/parse boundary: citation validation, unparseable-reply failure |
-| `git-status.test.ts`             | Clean vs. not-a-repo vs. unreadable sample classification                   |
-| `harness-lifecycle.test.ts`      | Query lifecycle against a mocked SDK: results, errors, abort                |
-| `fixtures.test.ts`               | Fixture invariants: git state, skill copy, exclusion, cleanup               |
-| `execution-judge.test.ts`        | Judge ordering, cost exclusion, and import-time `EVAL_MODEL` capture        |
-| `verdict.test.ts`                | Check normalization and attempt aggregation: scores, statuses, NOT_RUN rows |
-| `report-rendering.test.ts`       | Report escaping, rendering, status counts, mean score, measured totals      |
-| `execution.test.ts`              | Case-execution boundary: limits reach the harness, cleanup always runs      |
-| `entry.test.ts`                  | The direct-entry guard on the runner                                        |
-| `cases.test.ts`                  | Run-validity and routing case assertions, against synthetic runs            |
-| `cases-behavioral.test.ts`       | Tier-2 case assertions: envelopes, report conformance, injection defense    |
-| `validate-output-script.test.ts` | The skill's deterministic validator, per mode, good and bad payloads        |
+Paths below are relative to `src/`, from `find src -name '*.test.ts'`.
+
+| Test file                                            | Pins                                                                                     |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `cases/cases-behavioral.test.ts`                     | Tier-2 assertions: envelopes, report conformance, injection defense                      |
+| `cases/cases.test.ts`                                | Run-validity and routing assertions against synthetic runs                               |
+| `cases/validate-output-script.test.ts`               | The skill's deterministic validator, per mode, good and bad payloads                     |
+| `fixtures/fixtures.test.ts`                          | Fixture git state, skill copy, exclusion, cleanup                                        |
+| `observation/git-status.test.ts`                     | Clean, not-a-repo, and unreadable sample classification                                  |
+| `observation/harness-failure-lifecycle.test.ts`      | Query, iterator, and cleanup failure handling                                            |
+| `observation/harness-lifecycle.test.ts`              | Mocked SDK lifecycle: results, errors, abort                                             |
+| `observation/harness-timeout.test.ts`                | Deadline and abort behavior                                                              |
+| `observation/judge.test.ts`                          | Judge citation validation and unparseable-reply failure                                  |
+| `observation/mutation-evidence-git-commands.test.ts` | Mutating git commands and read-only lookalikes                                           |
+| `observation/mutation-evidence.test.ts`              | The read-only detector behind `mutation-scope`                                           |
+| `orchestration/entry.test.ts`                        | The direct-entry guard on the runner                                                     |
+| `orchestration/report-rendering.test.ts`             | Report escaping, counts, mean score, measured totals                                     |
+| `orchestration/run.test.ts`                          | Argument forwarding, fixed flags, report writes, exit codes, infrastructure failures     |
+| `orchestration/verdict.test.ts`                      | Check normalization, scores, statuses, NOT_RUN rows                                      |
+| `promptfoo/integration.test.ts`                      | Real promptfoo CLI with an offline provider: filters, repeat overrides, assertion output |
+| `promptfoo/provider.test.ts`                         | Runner limits, fixture isolation and cleanup, check-before-judge ordering                |
+| `promptfoo/results.test.ts`                          | Result grouping, skipped cases, derived mutation scope, provider errors                  |
+| `promptfoo/tests.test.ts`                            | Case registry generation with filterable IDs and tiers                                   |
 
 Run it before any paid run.
 
@@ -58,16 +66,21 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 
 ## Layout
 
-| Path                             | Contents                                                                     |
-| -------------------------------- | ---------------------------------------------------------------------------- |
-| `src/orchestration/run.ts`       | Entry point with an inert-import guard                                       |
-| `src/observation/agent-query.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta |
-| `src/fixtures/fixtures.ts`       | Builds throwaway git repos with the skill installed under `.claude/skills/`  |
-| `src/cases/<skill>.ts`           | Canonical source of truth: every eval case and its assertions                |
-| `src/**/*.test.ts`               | Offline vitest suites, colocated with the code they pin                      |
-| `report.md`                      | Generated every run; committed                                               |
-| `AGENTS.md`, `docs/agent/`       | Agent guide and long-lived agent guidance                                    |
-| `docs/*.md`                      | Short-lived current-state references (layout, verification)                  |
+| Path                             | Contents                                                                                      |
+| -------------------------------- | --------------------------------------------------------------------------------------------- |
+| `promptfooconfig.ts`             | Provider, assertion, generated tests, default repeats and concurrency                         |
+| `src/orchestration/run.ts`       | Inert-on-import entry point; spawns promptfoo, reads JSON, writes the report, maps exit codes |
+| `src/orchestration/`             | Shared verdicts, report rendering, model configuration                                        |
+| `src/promptfoo/`                 | Custom provider, assertion, test generation, observation validation, result aggregation       |
+| `src/observation/agent-query.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta                  |
+| `src/fixtures/fixtures.ts`       | Builds throwaway git repos with the skill installed under `.claude/skills/`                   |
+| `src/cases/<skill>.ts`           | Canonical source of truth: every eval case and its assertions                                 |
+| `src/**/*.test.ts`               | Offline vitest suites, colocated with the code they pin                                       |
+| `report.md`                      | Generated from matched results; committed                                                     |
+| `AGENTS.md`, `docs/agent/`       | Agent guide and long-lived agent guidance                                                     |
+| `docs/*.md`                      | Short-lived references and dated historical plans                                             |
+
+See [current layout](docs/current-layout.md) for module responsibilities and why the provider keeps our SDK runner.
 
 ## Tiers
 
