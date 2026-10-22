@@ -36,24 +36,21 @@ pnpm test    # vitest: unit tests for the pure functions, free and offline
 
 `pnpm test` is not the eval suite. It covers the parts that can be checked without spending tokens, so a break shows up in seconds instead of after a paid run:
 
-| Test file                                               | Pins                                                                        |
-| ------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `mutation-evidence.test.ts`                             | The read-only detector behind `mutation-scope`                              |
-| `judge.test.ts`                                         | Judge prompt/parse boundary: citation validation, unparseable-reply failure |
-| `git-status.test.ts`                                    | Clean vs. not-a-repo vs. unreadable sample classification                   |
-| `harness-lifecycle.test.ts`                             | Query lifecycle against a mocked SDK: results, errors, abort                |
-| `fixtures.test.ts`                                      | Fixture invariants: git state, skill copy, exclusion, cleanup               |
-| `arguments.test.ts`                                     | Flag parsing and case selection                                             |
-| `execution-judge.test.ts`                               | Judge ordering, cost exclusion, and import-time `EVAL_MODEL` capture        |
-| `cli.test.ts`, `suite.test.ts`, `suite-derived.test.ts` | Case selection, attempt sequencing, aggregation, report writes, exit codes  |
-| `failure-lifecycle.test.ts`                             | Suite-error exits, printable diagnostics, and output failures               |
-| `verdict.test.ts`                                       | Check normalization and attempt aggregation: scores, statuses, NOT_RUN rows |
-| `report-rendering.test.ts`                              | Report escaping, rendering, status counts, mean score, measured totals      |
-| `execution.test.ts`                                     | Case-execution boundary: limits reach the harness, cleanup always runs      |
-| `entry.test.ts`                                         | The direct-entry guard on the runner                                        |
-| `cases.test.ts`                                         | Run-validity and routing case assertions, against synthetic runs            |
-| `cases-behavioral.test.ts`                              | Tier-2 case assertions: envelopes, report conformance, injection defense    |
-| `validate-output-script.test.ts`                        | The skill's deterministic validator, per mode, good and bad payloads        |
+| Test file                        | Pins                                                                        |
+| -------------------------------- | --------------------------------------------------------------------------- |
+| `mutation-evidence.test.ts`      | The read-only detector behind `mutation-scope`                              |
+| `judge.test.ts`                  | Judge prompt/parse boundary: citation validation, unparseable-reply failure |
+| `git-status.test.ts`             | Clean vs. not-a-repo vs. unreadable sample classification                   |
+| `harness-lifecycle.test.ts`      | Query lifecycle against a mocked SDK: results, errors, abort                |
+| `fixtures.test.ts`               | Fixture invariants: git state, skill copy, exclusion, cleanup               |
+| `execution-judge.test.ts`        | Judge ordering, cost exclusion, and import-time `EVAL_MODEL` capture        |
+| `verdict.test.ts`                | Check normalization and attempt aggregation: scores, statuses, NOT_RUN rows |
+| `report-rendering.test.ts`       | Report escaping, rendering, status counts, mean score, measured totals      |
+| `execution.test.ts`              | Case-execution boundary: limits reach the harness, cleanup always runs      |
+| `entry.test.ts`                  | The direct-entry guard on the runner                                        |
+| `cases.test.ts`                  | Run-validity and routing case assertions, against synthetic runs            |
+| `cases-behavioral.test.ts`       | Tier-2 case assertions: envelopes, report conformance, injection defense    |
+| `validate-output-script.test.ts` | The skill's deterministic validator, per mode, good and bad payloads        |
 
 Run it before any paid run.
 
@@ -61,17 +58,16 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 
 ## Layout
 
-| Path                                                     | Contents                                                                              |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `src/orchestration/run.ts`                               | Entry point with an inert-import guard                                                |
-| `src/orchestration/cli.ts`, `src/orchestration/suite.ts` | Selects cases, runs them sequentially, writes the report, maps outcomes to exit codes |
-| `src/observation/agent-query.ts`                         | Runs an Agent SDK query, observes its typed messages, captures the git delta          |
-| `src/fixtures/fixtures.ts`                               | Builds throwaway git repos with the skill installed under `.claude/skills/`           |
-| `src/cases/<skill>.ts`                                   | Canonical source of truth: every eval case and its assertions                         |
-| `src/**/*.test.ts`                                       | Offline vitest suites, colocated with the code they pin                               |
-| `report.md`                                              | Generated every run; committed                                                        |
-| `AGENTS.md`, `docs/agent/`                               | Agent guide and long-lived agent guidance                                             |
-| `docs/*.md`                                              | Short-lived current-state references (layout, verification)                           |
+| Path                             | Contents                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------- |
+| `src/orchestration/run.ts`       | Entry point with an inert-import guard                                       |
+| `src/observation/agent-query.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta |
+| `src/fixtures/fixtures.ts`       | Builds throwaway git repos with the skill installed under `.claude/skills/`  |
+| `src/cases/<skill>.ts`           | Canonical source of truth: every eval case and its assertions                |
+| `src/**/*.test.ts`               | Offline vitest suites, colocated with the code they pin                      |
+| `report.md`                      | Generated every run; committed                                               |
+| `AGENTS.md`, `docs/agent/`       | Agent guide and long-lived agent guidance                                    |
+| `docs/*.md`                      | Short-lived current-state references (layout, verification)                  |
 
 ## Tiers
 

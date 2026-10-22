@@ -16,7 +16,6 @@ import type {
   EvalCase,
 } from "#/cases/analyzing-recent-project-state.ts";
 import { scripted, success } from "#/observation/observation-test-support.ts";
-import { parseArgs, selectCases } from "#/orchestration/cli.ts";
 import { FAILURE_ARTIFACT_DIRECTORY } from "#/orchestration/execution.ts";
 import { executeSuite } from "#/orchestration/suite.ts";
 
@@ -80,36 +79,6 @@ afterEach(() => {
     }
   }
 });
-
-test.each([
-  { args: [], ids: ["one-a", "one-b", "two-a", "two-b"] },
-  { args: ["--tier=1"], ids: ["one-a", "one-b"] },
-  { args: ["--case=two-a"], ids: ["two-a"] },
-  { args: ["--tier=2", "--case=two-b"], ids: ["two-b"] },
-])(
-  "selection executes the requested cases in registry order: $args",
-  async ({ args, ids }) => {
-    const cases = [
-      evalCase("one-a", ROUTING),
-      evalCase("one-b", ROUTING),
-      evalCase("two-a", BEHAVIORAL),
-      evalCase("two-b", BEHAVIORAL),
-    ];
-    const selected = selectCases(cases, parseArgs(args));
-    const results = await executeSuite(
-      cases,
-      selected,
-      ONE_ATTEMPT,
-      reportPath,
-    );
-    expect(
-      sdk.query.mock.calls.map(([request]) => request.prompt),
-    ).toStrictEqual(ids);
-    expect(results.filter((result) => result.status === "FAIL")).toStrictEqual(
-      [],
-    );
-  },
-);
 
 test("cases and attempts finish sequentially before the report is written", async () => {
   const order: string[] = [];
