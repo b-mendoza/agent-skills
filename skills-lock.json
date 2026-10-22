@@ -61,12 +61,6 @@
       "skillPath": "skills/generate-flow-diagram/SKILL.md",
       "computedHash": "3968a782486dbdf0fbc8023df821b719ce9a82d71197951b3a6f473fe794e56e"
     },
-    "idea-refine": {
-      "source": "addyosmani/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/idea-refine/SKILL.md",
-      "computedHash": "77739c4f6a29c0fad465a30bab9e862445a3f1b0f92808ffcd541fa02ed0637b"
-    },
     "improving-test-suites": {
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
