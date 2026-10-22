@@ -2,7 +2,7 @@
 
 📝 Show the exact artifact and wait for `APPROVED`, `REVISE`, or `ABORT` before any hard-to-reverse, outward-facing, destructive, or costly action.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
+🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
 
 A checkpoint is a named authorization boundary over one concrete action, placed after preparation and verification are finished and immediately before the action executes: posting a review, creating a commit, sending a message, calling a write API, rotating a credential, deleting or force-updating, spending money or quota, or adding paths, targets, or recipients beyond the approved scope. The preview is the thing itself — final text, exact file list or path mapping, exact command and arguments, targets — plus the checks that passed, unresolved risk, and what happens on `ABORT`. A summary of intent is not a preview; approval over a paraphrase hides changed wording, an extra file, or a different flag.
 

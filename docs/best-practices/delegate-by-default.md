@@ -2,7 +2,7 @@
 
 📝 Delegate steps to subagents by default, keeping only bounded results (statuses, paths, ids, summaries) in the orchestrator; run a step inline only when routing needs raw or conversational material.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
+🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
 
 The orchestrator analyses, decides, routes, and evaluates; it does not execute. A step that reads files, parses command output, inspects an API payload, extracts web content, or produces an artifact is dispatched, and the subagent returns verdicts, statuses, paths, ids, and concise summaries while the raw material stays inside that subagent or on disk. Steps hand each other file paths, ticket keys, and status enums, never contents, and nothing is retained "just in case": when a later step needs a detail, dispatch a retrieval then. Raw material the orchestrator never routes on crowds out the headroom its later decisions need and puts untrusted text where instructions belong.
 

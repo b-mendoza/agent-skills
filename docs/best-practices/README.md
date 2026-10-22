@@ -4,7 +4,7 @@
 
 Each rule is self-contained: open the one for the decision in front of you; its 📝 sentence says when it applies. Reviewers record `pass` / `fail` / `not applicable` per applicable rule.
 
-🔒 Mandatory — a miss is a material gap unless `SKILL.md` names the rule and the reason for an exception the rule allows.\
+🔒 Mandatory — a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.\
 ✅ Recommended — expected for non-trivial skills; scope it down with a stated reason.\
 📍 Reference — current-state runtime facts, dated.
 

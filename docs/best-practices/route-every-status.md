@@ -2,7 +2,7 @@
 
 📝 Declare a closed status set for every subagent and skill, route every value in the orchestrator, and give every loop a named counter, a cap, and an over-cap route.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
+🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
 
 Every subagent declares its statuses as a closed set: its success value plus whichever of `BLOCKED | FAIL | ERROR | PARTIAL | TOOLS_MISSING | RATE_LIMIT` it can actually reach, each with the condition that produces it. The orchestrator's routing table handles every declared value, the subagent emits nothing outside the set, and a missing or unparseable status is itself routed (for example one redispatch, then `ERROR`), never inferred from prose. A `PARTIAL` report lists what succeeded and what did not so the remainder can be routed explicitly. A capability the subagent needs but cannot get (no network, no shell, no validator script) is `TOOLS_MISSING`, reported loudly; a fluent best-effort answer from stale knowledge is a contract violation dressed as a verdict, and the orchestrator would route it as if it were true.
 

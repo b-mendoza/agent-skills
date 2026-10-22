@@ -2,7 +2,7 @@
 
 📝 Architect a skill with branches, loops, wait states, or approval gates as a finite state machine with one normative transition source; when `state-machine.md` exists, `SKILL.md` only summarises it.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
+🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
 
 A skill with branching routes, loops, wait states, parallel joins, or approval gates is a state machine whether or not it is written as one; write it as one, with exactly one normative source of transitions, and when `state-machine.md` exists that file is the source. It owns every state; every transition with its guard or event; the guard precedence (first-match order or explicit priority, stated once and visible in the table); every terminal with its user-facing outcome; every loop's named counter, cap, and over-cap route; and every parallel join, named, with all-success, partial, blocked, error, and missing-result behaviour that does not depend on completion order. Every active or wait state advances, waits on a named event, or terminates; silence is not a route. Every status a subagent can return, including malformed and unknown output, has a transition. `SKILL.md` states that its overview is non-normative and links the file; `flow-diagram.md`, when present, states that it is illustrative.
 

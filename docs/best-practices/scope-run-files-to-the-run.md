@@ -2,7 +2,7 @@
 
 📝 Write handoff files under a proven-ignored `.handoffs/<skill>/<run-id>/` when state must survive compaction, a later step, or a script; reply inline otherwise and delete only what this run created.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
+🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
 
 A subagent result travels inline as a bounded structured reply (a status, paths, a concise summary) unless the payload exceeds the prompt or reply budget, must survive the turn because a later step, session, or repair cycle reads it, or is consumed by a script. Only then does it become a file, and the file's role, not its name or format, decides its lifecycle. Handoff files exist so that when the orchestrator's or a subagent's context is compacted, decisions, paths, and evidence are re-read from disk instead of being summarised away. A dispatch payload (instructions and reports exchanged with a subagent) lives only through its dispatch. Resume state lives only while the stated persistence need exists, and is created only when the runtime's native session retention does not already cover that need. A deliverable (source, tests, docs, a requested plan or report) is kept under the user's contract. Secrets, tokens, raw logs, full diffs, and copied third-party payloads are never-write, in any of these: store a path, digest, or redacted fact instead.
 

@@ -2,7 +2,7 @@
 
 📝 Declare every input a skill or subagent consumes and every artifact or reply it produces, with exact fields, before any consumer parses them.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
+🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
 
 Contracts are the data boundaries between stages. Without them a subagent guesses at its input shape and the orchestrator guesses at the output, and the mismatch surfaces steps later, far from its cause. Declare inputs as a table of `Input | Required | Example`, with a derivation rule whenever one value carries several pieces of information. Pass the canonical identifier (a full issue URL) and let the receiver derive what it needs, except when the value carries secrets, tokens, or private data: then pass the smallest structured fields plus a redacted source reference. Declare outputs as a path or reply shape with its required sections or fields. A dispatch instruction carries `inputs`, `outputs`, and `constraints`; a report carries `status`; add only fields a consumer validates or uses.
 

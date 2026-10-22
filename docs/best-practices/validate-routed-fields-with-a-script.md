@@ -2,7 +2,7 @@
 
 📝 Ship a deterministic validator under `scripts/` for every subagent field an orchestrator parses or routes on, and route only after the consumer runs it and it exits 0.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
+🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
 
 An orchestrator that branches on a status line is a parser. When its grammar lives only in Markdown, producers drift and a fluent `PASS` routes the next phase against a malformed payload. The validator is POSIX `sh`/`awk` or stdlib-only Python 3, takes the payload on stdin, exits 0 to accept, and prints one finding per defect otherwise; no network, clock, randomness, or third-party dependency. Name its invocation in `SKILL.md` and in every producing subagent. The consumer runs it on the payload it received and routes only after exit 0; a producer's "validated" sentence, a constructor's output, and a passing eval are not the gate. A payload is complete when the validator exits 0. Repair on non-zero runs under a named counter with a cap and an over-cap route ([route-every-status](./route-every-status.md)).
 

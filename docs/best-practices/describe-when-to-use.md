@@ -2,7 +2,7 @@
 
 📝 Write each skill's `description` as its routing classifier: third person, action and object first, explicit `Use when` triggers, and exclusions naming out-of-scope requests.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
+🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
 
 The description is the only signal the runtime has when it decides whether to load a skill; every line of the body loads after that decision, so nothing inside the file compensates for a description that undersells or oversells its scope. A false negative hides the capability; a false positive loads irrelevant instructions and can route a mutating request into the wrong workflow.
 

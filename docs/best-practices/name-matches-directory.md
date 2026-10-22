@@ -2,7 +2,7 @@
 
 📝 Set a skill's frontmatter `name` to its directory name and a subagent's `name` to its file basename, in kebab-case, whenever you create or rename either file.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
+🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
 
 Runtimes look a skill up by `name`. When `skills/orchestrating-workflow/SKILL.md` declares `name: "OrchestratingJiraWorkflow"`, dispatch fails on the runtime that enforces identity and silently degrades on the one that does not, so the package works where it was authored and breaks on the other target. Identity between directory, basename, and frontmatter removes the whole class of bug. Names are kebab-case: lowercase letters, digits, and single hyphens, none leading, trailing, or doubled. Length caps, reserved words, the portable field set, and `skills-ref validate` (run it when available) are owned by [runtime-portability-matrix](./runtime-portability-matrix.md).
 

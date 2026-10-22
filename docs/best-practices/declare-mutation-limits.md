@@ -2,7 +2,7 @@
 
 📝 Declare `MUTATION_LIMITS` before a skill edits, creates, deletes, renames, or moves files, and pass the same value to every dispatched subagent.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the skill names the rule and the reason for the exception in its `SKILL.md`.
+🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
 
 `MUTATION_LIMITS` is the run's write envelope. Derive it once at intake, before any audit, plan, or edit, and hand the identical value to every subagent that plans, edits, or validates; no subagent re-derives its own scope. State the allowed paths first ("Write only inside …"), then the categorical exclusions, then how the user widens scope: a `SCOPE_LIMITS` input that names the specific extra mutation in plain words. Every planned edit must fall inside the limits plus approved expansions; anything else is blocked or escalated before it lands. Repair cycles only tighten: intersect the limits with the validator's findings so a targeted fix cannot grow into a re-edit of everything the editor once had access to.
 
