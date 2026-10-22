@@ -22,6 +22,22 @@ Tests cover parsing in `arguments.test.ts`, CLI behavior in `cli.test.ts`, seque
 
 Execution calls ordinary functions directly. Tests mock the Agent SDK query and use real temporary fixtures. The optional report-path argument exists for tests; the CLI has no output-path flag.
 
+## Promptfoo integration
+
+[`promptfooconfig.ts`](../promptfooconfig.ts) configures promptfoo 0.124.1 with five repeats and concurrency one. Promptfoo owns case filtering, repetitions, scheduling, and JSON export.
+
+| Module in `src/promptfoo/` | Responsibility                                                                                                                                                                     |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `provider.ts`              | Builds a fixture, calls `observeClaude` with the case's prompt and limits, returns output plus observation metadata and repeat index, and cleans up.                               |
+| `assertion.ts`             | Runs the mechanical case check, then an optional judge through the shared verdict functions.                                                                                       |
+| `tests.ts`                 | Generates promptfoo tests from the exported `cases`, with case IDs as descriptions and tier metadata for filtering.                                                                |
+| `observation.ts`           | Validates observation metadata and resolves case IDs.                                                                                                                              |
+| `results.ts`               | Parses promptfoo JSON, rejects provider errors, aggregates attempts into per-case results, fills NOT_RUN rows, derives mutation scope by repeat index, and maps result exit codes. |
+
+We keep our own SDK runner because promptfoo's built-in Claude provider loses tool-call metadata when the SDK throws at a budget stop. Tier-1 routing checks need those tool calls even when the budget ends the run.
+
+`provider.test.ts` covers fixtures, runner limits, cleanup, concurrency isolation, and check-before-judge ordering. `tests.test.ts` checks generated cases; `results.test.ts` checks parsing and aggregation. `integration.test.ts` runs the real promptfoo CLI with a local offline provider to verify filtering, repetitions, and assertion output without model calls.
+
 ## Fixtures
 
 `src/fixtures/fixtures.ts` owns synchronous `makeFixture`, fixture types, and planted facts. It builds isolated git/non-git directories, copies the skill under `.claude/skills/`, and returns a cleanup function that removes the entire temporary root. Filesystem and git errors propagate without wrappers. `fixtures.test.ts` checks the real filesystem and git state.
