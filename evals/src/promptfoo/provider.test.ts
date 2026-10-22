@@ -3,16 +3,27 @@ import { existsSync } from "node:fs";
 import type { CallApiContextParams } from "promptfoo";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import { observe } from "#/cases/case-test-support.ts";
+import {
+  FULL_REPORT_SNAPSHOT,
+  observe,
+  VALIDATOR_CALL,
+} from "#/cases/case-test-support.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
+import { judgeLive } from "#/observation/judge.ts";
 import { evalModel } from "#/orchestration/configuration.ts";
 
+import grade from "./assertion.ts";
 import EvalProvider from "./provider.ts";
 
 vi.mock(import("#/observation/agent-query.ts"), async (importOriginal) => ({
   ...(await importOriginal()),
   observeClaude: vi.fn(),
 }));
+vi.mock(import("#/observation/judge.ts"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  judgeLive: vi.fn(),
+}));
+
 const FIRST_REPEAT = 0;
 const SECOND_REPEAT = 1;
 const REPEATS = [FIRST_REPEAT, SECOND_REPEAT];
@@ -45,6 +56,9 @@ beforeEach(() => {
       fixturePath = options.cwd;
       return Promise.resolve(observation);
     });
+  vi.mocked(judgeLive)
+    .mockReset()
+    .mockResolvedValue({ citedViolations: [], uncitedComplaints: [] });
 });
 
 describe("eval provider", () => {
@@ -68,6 +82,70 @@ describe("eval provider", () => {
     expect(existsSync(fixturePath)).toBe(false);
   });
 
+  test.each([
+    { toolCalls: [skillCall], pass: true, reason: "Skill invoked" },
+    { toolCalls: [], pass: false, reason: "skill never triggered" },
+  ])("grades a budget stop with toolCalls=$toolCalls", async (scenario) => {
+    observation.toolCalls = scenario.toolCalls;
+    const result = await new EvalProvider().callApi("", context);
+    expect(result.error).toBeUndefined();
+    const graded = await grade(result.output, {
+      vars: context.vars,
+      metadata: result.metadata,
+    });
+    expect(graded.pass).toBe(scenario.pass);
+    expect(graded.reason).toContain(scenario.reason);
+  });
+
+  test.each([
+    {
+      overrides: { subtype: "query_error" },
+      reason: "the query produced no result",
+    },
+    {
+      overrides: { timedOut: true },
+      reason: "run exceeded its wall clock",
+    },
+    {
+      overrides: {
+        subtype: "success",
+        isError: true,
+        costUsd: 0,
+        toolCalls: [],
+        finalText: "login expired",
+      },
+      reason: "the SDK reported a failed run before it did anything",
+    },
+  ])("lets the canonical check fail $reason", async ({ overrides, reason }) => {
+    observation = { ...observation, ...overrides };
+    const result = await new EvalProvider().callApi("", context);
+    expect(result.error).toBeUndefined();
+    const graded = await grade(result.output, {
+      vars: context.vars,
+      metadata: result.metadata,
+    });
+    expect(graded.pass).toBe(false);
+    expect(graded.reason).toContain(reason);
+    expect(existsSync(fixturePath)).toBe(false);
+  });
+
+  test("lets the canonical check judge an SDK error after tool activity", async () => {
+    observation = {
+      ...observation,
+      subtype: "error_max_turns",
+      costUsd: 0,
+      finalText: "too many turns",
+    };
+    const result = await new EvalProvider().callApi("", context);
+    expect(result.error).toBeUndefined();
+    expect(
+      await grade(result.output, {
+        vars: context.vars,
+        metadata: result.metadata,
+      }),
+    ).toMatchObject({ pass: true });
+  });
+
   test("cleans up after the runner throws", async () => {
     vi.mocked(observeClaude).mockImplementationOnce(async (options) => {
       fixturePath = options.cwd;
@@ -87,6 +165,58 @@ describe("eval provider", () => {
     });
     expect(result.error).toContain("Unknown caseId");
     expect(observeClaude).not.toHaveBeenCalled();
+  });
+});
+
+describe("eval assertion", () => {
+  test("fails closed on missing observation metadata", async () => {
+    await expect(grade("", { vars: context.vars })).rejects.toThrow();
+  });
+
+  test("runs the real snapshot check before its judge through the provider", async () => {
+    const snapshotContext = { ...context, vars: { caseId: "snapshot-dirty" } };
+    observation = observe({
+      finalText: "bad",
+      toolCalls: [VALIDATOR_CALL],
+    });
+    const invalid = await new EvalProvider().callApi("", snapshotContext);
+    expect(
+      await grade(invalid.output, {
+        vars: snapshotContext.vars,
+        metadata: invalid.metadata,
+      }),
+    ).toMatchObject({ pass: false });
+    expect(judgeLive).not.toHaveBeenCalled();
+
+    observation.finalText = FULL_REPORT_SNAPSHOT;
+    const result = await new EvalProvider().callApi("", snapshotContext);
+    expect(result.error).toBeUndefined();
+    expect(vi.mocked(observeClaude).mock.lastCall).toEqual([
+      expect.objectContaining({
+        budgetUsd: 2,
+        wallClockMs: 600_000,
+        prompt:
+          "Use the analyzing-recent-project-state skill to report what changed recently and whether this repo is ready to hand off.",
+      }),
+    ]);
+    expect(
+      await grade(result.output, {
+        vars: snapshotContext.vars,
+        metadata: result.metadata,
+      }),
+    ).toMatchObject({ pass: true, score: 1 });
+    expect(judgeLive).toHaveBeenCalledWith(
+      expect.objectContaining({ artifact: FULL_REPORT_SNAPSHOT }),
+    );
+    expect(existsSync(fixturePath)).toBe(false);
+
+    vi.mocked(judgeLive).mockRejectedValue(new Error("judge unavailable"));
+    expect(
+      await grade(result.output, {
+        vars: snapshotContext.vars,
+        metadata: result.metadata,
+      }),
+    ).toEqual({ pass: false, score: 0, reason: "judge unavailable" });
   });
 });
 
