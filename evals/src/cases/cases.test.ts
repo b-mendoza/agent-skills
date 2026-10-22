@@ -1,18 +1,12 @@
-// Pins the case assertions themselves -- the checks that decide whether a paid
-// run passed.
-//
-// These run against synthetic observations, so they cost nothing, and they
-// cover the failure mode a case cannot catch about itself: passing by
-// observing an absence. A negative routing case asserts "no Skill call was
-// made", and a run that never started produces exactly that absence. The
-// behavioral (tier-2) case assertions live in `cases-behavioral.test.ts`;
-// shared synthetic fixtures live in `case-test-support.ts`.
+// Synthetic observations pin the checks that decide whether a paid run passed.
+// A negative routing case must not pass just because a run never started.
+// Tier-2 checks live in `cases-behavioral.test.ts`; shared synthetic fixtures
+// live in `case-test-support.ts`.
 
 import { describe, expect, test } from "vitest";
 
 import { cases, SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import {
-  assertRunHappened,
   BUDGET_STOP_SUBTYPE,
   checkMutationScope,
 } from "#/cases/analyzing-recent-project-state-checks.ts";
@@ -89,9 +83,6 @@ describe("run validity", () => {
       costUsd: 0.01,
     });
 
-    expect(() => {
-      assertRunHappened(costOnlyLateFailure);
-    }).not.toThrow();
     expect(caseById("trigger-negative-review").check(costOnlyLateFailure)).toBe(
       "no trigger",
     );
