@@ -70,8 +70,6 @@ Read a subagent file only when dispatching it. The orchestrator retains only sta
 
 Non-normative overview: normalize and classify inputs, obtain required approvals, build and independently review candidates, then return an artifact or write a decomposition batch. Follow [`state-machine.md`](./state-machine.md) for all states, guards, transitions, counters, joins, and terminal outcomes.
 
-Declared `validate-by-observation` exception: this skill has no automated cases yet; helper smoke checks do not verify approval, recovery, or staged-failure behavior; adding cases is follow-up work.
-
 ## Output Contract
 
 Non-decompose success returns a Markdown artifact with title, boundary paragraph, exactly one fenced `mermaid` block unless the user asked for more, optional output/report template, and optional readiness rule, followed by a compact run report. Default diagram type is `flowchart TD`; use `stateDiagram-v2` when the workflow is a finite-state model (see `./references/mermaid-style-guide.md`).
