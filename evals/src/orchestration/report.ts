@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import { evalModel } from "#/orchestration/configuration.ts";
-import type { AttemptResult, Result, Status } from "#/orchestration/verdict.ts";
+import type { Result, Status } from "#/orchestration/verdict.ts";
 
 export const REPORT_PATH = fileURLToPath(
   new URL("../../report.md", import.meta.url),
@@ -10,24 +10,12 @@ export const REPORT_PATH = fileURLToPath(
 
 const MS_PER_SECOND = 1000;
 const COST_DECIMALS = 2;
-const WHOLE_SECONDS = 0;
 const INITIAL_TOTAL = 0;
 const NO_SCORED_RESULTS = 0;
 const NO_ATTEMPTS_RUN = 0;
 
 /** A cell with nothing to measure: the score and runs of a NOT_RUN row. */
 const EMPTY_CELL = "—";
-
-/** The runner's per-attempt stdout progress line. */
-export function formatResultLine(attemptResult: AttemptResult): string {
-  return `${attemptResult.status} ${(attemptResult.durationMs / MS_PER_SECOND).toFixed(WHOLE_SECONDS)}s $${attemptResult.costUsd.toFixed(COST_DECIMALS)}`;
-}
-
-/** The runner's per-case summary line, printed after the last attempt. */
-export function formatCaseResultLine(result: Result): string {
-  if (result.score === null) return result.status;
-  return `${result.status} score ${result.score} (${result.attemptsPassed}/${result.attemptsRun} passed) ${(result.durationMs / MS_PER_SECOND).toFixed(WHOLE_SECONDS)}s $${result.costUsd.toFixed(COST_DECIMALS)}`;
-}
 
 /** A `|` would split a table column and a line ending would end the row. */
 function escapeCell(value: string): string {

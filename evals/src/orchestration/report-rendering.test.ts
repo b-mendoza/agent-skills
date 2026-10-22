@@ -8,7 +8,7 @@
 
 import { expect, test } from "vitest";
 
-import { formatCaseResultLine, renderReport } from "#/orchestration/report.ts";
+import { renderReport } from "#/orchestration/report.ts";
 import type { Result } from "#/orchestration/verdict.ts";
 import { notRunResult } from "#/orchestration/verdict.ts";
 
@@ -118,25 +118,4 @@ test("a run with no scored rows renders an empty mean score", () => {
   const report = renderReport([notRunResult("skipped-case", "1")]);
 
   expect(report).toContain("mean score —");
-});
-
-test("the per-case summary line carries status, score, counts, and totals", () => {
-  const summaryLine = formatCaseResultLine(
-    result({
-      status: "DEGRADED",
-      score: 80,
-      attemptsPassed: 4,
-      attemptsRun: 5,
-      costUsd: 1.25,
-      durationMs: 10_000,
-    }),
-  );
-
-  expect(summaryLine).toBe("DEGRADED score 80 (4/5 passed) 10s $1.25");
-});
-
-test("the summary line for a NOT_RUN row is its status alone", () => {
-  expect(formatCaseResultLine(notRunResult("mutation-scope", "2*"))).toBe(
-    "NOT_RUN",
-  );
 });

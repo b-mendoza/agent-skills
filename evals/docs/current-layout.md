@@ -12,7 +12,7 @@ Source lives under [`src/`](../src/), grouped by capability. Tests sit beside th
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `run.ts`           | Direct Node entry point with an inert-import guard. Spawns promptfoo, forwards arguments, reads JSON results, writes the report, and maps exit codes. |
 | `verdict.ts`       | Attempt/result types, check-failure normalization, judge execution, scores, aggregation, and NOT_RUN results.                                         |
-| `report.ts`        | Markdown rendering, progress-line formatting, and the fixed production report path.                                                                   |
+| `report.ts`        | Markdown rendering and the fixed production report path.                                                                                              |
 | `configuration.ts` | Import-time `EVAL_MODEL` capture, defaulting to `sonnet` for absent or empty values.                                                                  |
 
 `run.test.ts` covers argument forwarding, fixed subprocess flags, report writing, and infrastructure failures with a mocked subprocess. `entry.test.ts` runs safe subprocess probes. `verdict.test.ts` and `report-rendering.test.ts` cover result policies and formatting. Optional report and JSON paths on `runCli` keep tests away from production artifacts.
