@@ -1,17 +1,3 @@
-// Rubric-based grading of a run artifact by an independent model.
-//
-// This extends the suite's "assert only observables" rule deliberately: the
-// judged artifact is the observable, and the judge is a measurement instrument
-// reading it -- what stays banned is asking the agent under test whether it
-// complied. Two properties keep judge verdicts from becoming vibes:
-//
-// 1. A violation counts only when it cites a verbatim quote from the artifact.
-//    The citation is validated mechanically here, not trusted; an uncited
-//    complaint is reported but never fails a check.
-// 2. A judge response that cannot be parsed throws, naming the judge -- an
-//    unreadable verdict must fail loudly as judge infrastructure, not read as
-//    the artifact passing or failing.
-
 import { tmpdir } from "node:os";
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
@@ -128,23 +114,12 @@ export function buildJudgePrompt(request: JudgeRequest): string {
   ].join("\n");
 }
 
-interface ParsedViolationCandidate {
-  readonly itemId: string;
-  readonly quote: string;
-  readonly reason: string;
-}
-
-interface ViolationBuckets {
-  readonly citedViolations: CitedViolation[];
-  readonly uncitedComplaints: string[];
-}
-
 function citationAppearsInArtifact(quote: string, artifact: string): boolean {
   return quote !== "" && artifact.includes(quote);
 }
 
 function formatUncitedComplaint(
-  violation: ParsedViolationCandidate,
+  violation: CitedViolation,
   cited: boolean,
   knownItem: boolean,
 ): string {
@@ -169,39 +144,6 @@ function decodeJudgeReplyJson(judgeReply: unknown) {
   }
 }
 
-function classifyViolation(
-  violation: ParsedViolationCandidate,
-  artifact: string,
-  rubricIds: ReadonlySet<string>,
-  violationBuckets: ViolationBuckets,
-): void {
-  const cited = citationAppearsInArtifact(violation.quote, artifact);
-  const knownItem = rubricIds.has(violation.itemId);
-  if (cited && knownItem) {
-    violationBuckets.citedViolations.push(violation);
-    return;
-  }
-
-  violationBuckets.uncitedComplaints.push(
-    formatUncitedComplaint(violation, cited, knownItem),
-  );
-}
-
-function bucketViolations(
-  violations: readonly ParsedViolationCandidate[],
-  request: JudgeRequest,
-): ViolationBuckets {
-  const rubricIds = new Set(request.rubric.map((item) => item.id));
-  const violationBuckets: ViolationBuckets = {
-    citedViolations: [],
-    uncitedComplaints: [],
-  };
-  for (const violation of violations) {
-    classifyViolation(violation, request.artifact, rubricIds, violationBuckets);
-  }
-  return violationBuckets;
-}
-
 /**
  * Parses the judge's reply and validates every citation against the artifact.
  * Throws on an unparseable reply; the failure names the judge, so a broken
@@ -219,7 +161,20 @@ export function parseJudgeResponse(
   }
 
   const judgeReply = decodeJudgeReplyJson(parseJudgeJson(jsonBlock));
-  return bucketViolations(judgeReply.violations, request);
+  const rubricIds = new Set(request.rubric.map((item) => item.id));
+  const citedViolations: CitedViolation[] = [];
+  const uncitedComplaints: string[] = [];
+  judgeReply.violations.forEach((violation) => {
+    const cited = citationAppearsInArtifact(violation.quote, request.artifact);
+    const knownItem = rubricIds.has(violation.itemId);
+    if (cited && knownItem) citedViolations.push(violation);
+    else {
+      uncitedComplaints.push(
+        formatUncitedComplaint(violation, cited, knownItem),
+      );
+    }
+  });
+  return { citedViolations, uncitedComplaints };
 }
 
 export function createJudge(options: {
@@ -251,34 +206,17 @@ function extractResultText(message: unknown): string | undefined {
   return decodeRelevantResultMessage(message);
 }
 
-type JudgeStreamQuery = (
-  request: Parameters<typeof query>[0],
-) => AsyncIterable<unknown>;
+/** The judge has its own no-tools query and propagates iterator cleanup errors. */
+export const liveJudgeQuery: JudgeQuery = async (prompt, model) => {
+  const stream = query({
+    prompt,
+    options: { model, maxTurns: 1, allowedTools: [], cwd: tmpdir() },
+  });
+  for await (const message of stream) {
+    const resultText = extractResultText(message);
+    if (resultText !== undefined) return resultText;
+  }
+  throw new Error("judge query produced no result message");
+};
 
-/**
- * SDK-backed query. Runs in the OS temp directory with no tools so the judge
- * discovers no project skills or settings and can only read the prompt.
- */
-export function createLiveJudgeQuery(
-  startQuery: JudgeStreamQuery = query,
-): JudgeQuery {
-  return async (prompt, model) => {
-    const stream = startQuery({
-      prompt,
-      options: {
-        model,
-        maxTurns: 1,
-        allowedTools: [],
-        cwd: tmpdir(),
-      },
-    });
-    for await (const message of stream) {
-      const resultText = extractResultText(message);
-      if (resultText !== undefined) return resultText;
-    }
-    throw new Error("judge query produced no result message");
-  };
-}
-
-export const liveJudgeQuery: JudgeQuery = createLiveJudgeQuery();
 export const judgeLive: Judge = createJudge({ judgeQuery: liveJudgeQuery });

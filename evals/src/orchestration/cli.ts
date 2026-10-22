@@ -1,14 +1,9 @@
-// Parses the runner's CLI flags and selects the cases they name. Pure decision
-// logic: nothing here reads the environment, spends tokens, or writes output.
+// Parse selectors, run the selected suite, and contain infrastructure failures.
 
-import type {
-  CaseTier,
-  EvalCase,
-} from "#/cases/analyzing-recent-project-state.ts";
-import {
-  BEHAVIORAL_TIER,
-  ROUTING_TIER,
-} from "#/cases/analyzing-recent-project-state.ts";
+import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
+import { cases } from "#/cases/analyzing-recent-project-state.ts";
+import { executeSuite } from "#/orchestration/suite.ts";
+import type { Result } from "#/orchestration/verdict.ts";
 
 /** `process.argv` starts with the node binary and this script. */
 export const ARGV_START = 2;
@@ -80,19 +75,79 @@ export function parseArgs(argv: string[]): ParsedArguments {
   return parsedArguments;
 }
 
-function isCaseTier(value: number): value is CaseTier {
-  return value === ROUTING_TIER || value === BEHAVIORAL_TIER;
-}
-
 export function selectCases(
   evalCases: readonly EvalCase[],
   { tier, caseId }: ParsedArguments,
 ): EvalCase[] {
-  if (tier != null && !isCaseTier(tier)) return [];
-
   return evalCases.filter(
     (evalCase) =>
       (tier == null || evalCase.tier === tier) &&
       (caseId == null || evalCase.id === caseId),
   );
+}
+
+const EMPTY = 0;
+
+export const EXIT_CODES = {
+  ALL_PASSED: 0,
+  CASE_FAILED: 1,
+  NO_CASES_MATCHED: 2,
+  SUITE_ERROR: 3,
+  USAGE_ERROR: 4,
+} as const;
+
+function describeFailure(cause: unknown): string {
+  try {
+    return cause instanceof Error ? cause.message : String(cause);
+  } catch (cause) {
+    return new Error("An unknown error occurred", { cause }).message;
+  }
+}
+
+function reportFailure(cause: unknown): void {
+  try {
+    console.error(`eval suite error: ${describeFailure(cause)}`);
+  } catch (outputFailure) {
+    // A broken output channel must not replace the infrastructure exit code.
+  }
+}
+
+function resultExitCode(results: Result[]): number {
+  return results.some(
+    (result) => result.status === "FAIL" || result.status === "DEGRADED",
+  )
+    ? EXIT_CODES.CASE_FAILED
+    : EXIT_CODES.ALL_PASSED;
+}
+
+// The optional path is private test plumbing, never a CLI flag.
+export async function runCli(
+  argv: string[],
+  reportPath?: string,
+): Promise<number> {
+  try {
+    const parsed = parseArgs(argv);
+    if (parsed.errors.length !== EMPTY) {
+      parsed.errors.forEach((message) => {
+        console.error(message);
+      });
+      console.error(USAGE);
+      return EXIT_CODES.USAGE_ERROR;
+    }
+    const selected = selectCases(cases, parsed);
+    if (selected.length === EMPTY) {
+      console.error("No cases matched.");
+      return EXIT_CODES.NO_CASES_MATCHED;
+    }
+    const results = await executeSuite(
+      cases,
+      selected,
+      parsed.attempts,
+      reportPath,
+    );
+    return resultExitCode(results);
+  } catch (cause) {
+    reportFailure(cause);
+    return EXIT_CODES.SUITE_ERROR;
+  }
 }

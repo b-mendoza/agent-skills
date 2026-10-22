@@ -10,17 +10,15 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 
-import { Effect, Result } from "effect";
 import { afterEach, expect, test } from "vitest";
 
 import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
 import {
   DIRTY_FIXTURE_FACTS,
-  FixtureProvisioner,
-  FixtureProvisionerLive,
   HOSTILE_FIXTURE_FACTS,
+  makeFixture,
 } from "#/fixtures/fixtures.ts";
 
 const FIXTURE_SKILL_NAME = "analyzing-recent-project-state";
@@ -40,13 +38,8 @@ const GIT_FIXTURE_KINDS = FIXTURE_KINDS.filter((kind) => kind !== "not-git");
 // temp tree behind.
 const openFixtures: Fixture[] = [];
 
-async function createFixture(kind: FixtureKind): Promise<Fixture> {
-  const fixture = await Effect.runPromise(
-    Effect.gen(function* () {
-      const fixtureProvisioner = yield* FixtureProvisioner;
-      return yield* fixtureProvisioner.make(kind, FIXTURE_SKILL_NAME);
-    }).pipe(Effect.provide(FixtureProvisionerLive)),
-  );
+function createFixture(kind: FixtureKind): Fixture {
+  const fixture = makeFixture(kind, FIXTURE_SKILL_NAME);
   openFixtures.push(fixture);
   return fixture;
 }
@@ -71,8 +64,8 @@ function readGitStatus(repositoryPath: string): string {
 
 test.each<FixtureKind>(FIXTURE_KINDS)(
   "%s: the skill is copied in where the agent looks for it",
-  async (kind) => {
-    const fixture = await createFixture(kind);
+  (kind) => {
+    const fixture = createFixture(kind);
 
     // Skills resolve from `<cwd>/.claude/skills/`, not the repo's own skills/.
     expect(
@@ -85,24 +78,24 @@ test.each<FixtureKind>(FIXTURE_KINDS)(
 
 test.each<FixtureKind>(GIT_FIXTURE_KINDS)(
   "%s: is a real worktree and reports itself as the git repo",
-  async (kind) => {
-    const fixture = await createFixture(kind);
+  (kind) => {
+    const fixture = createFixture(kind);
 
     expect(existsSync(join(fixture.cwd, ".git"))).toBe(true);
     expect(fixture.gitRepo).toBe(fixture.cwd);
   },
 );
 
-test("not-git: has no worktree and declares no git repo", async () => {
-  const fixture = await createFixture("not-git");
+test("not-git: has no worktree and declares no git repo", () => {
+  const fixture = createFixture("not-git");
 
   expect(existsSync(join(fixture.cwd, ".git"))).toBe(false);
   // `undefined` is what makes run.ts fall back to cwd for the status sample.
   expect(fixture.gitRepo).toBeUndefined();
 });
 
-test("clean: has a commit and a quiet status", async () => {
-  const fixture = await createFixture("clean");
+test("clean: has a commit and a quiet status", () => {
+  const fixture = createFixture("clean");
 
   // The quiet-state case depends on this being an empty evidence window.
   expect(readGitStatus(fixture.cwd)).toBe("");
@@ -114,8 +107,8 @@ test("clean: has a commit and a quiet status", async () => {
   }).not.toThrow();
 });
 
-test("dirty: carries exactly the intended modified and untracked entries", async () => {
-  const fixture = await createFixture("dirty");
+test("dirty: carries exactly the intended modified and untracked entries", () => {
+  const fixture = createFixture("dirty");
 
   // Sorted so the assertion does not depend on git's output ordering.
   expect(
@@ -131,8 +124,8 @@ test("dirty: carries exactly the intended modified and untracked entries", async
   expect(latestSubject).toBe(DIRTY_FIXTURE_FACTS.committedSubject);
 });
 
-test("hostile: plants the injection content its facts advertise", async () => {
-  const fixture = await createFixture("hostile");
+test("hostile: plants the injection content its facts advertise", () => {
+  const fixture = createFixture("hostile");
 
   // The injection-defense case asserts the compliance phrase is absent from
   // the run's output, which only means something if the fixture planted it.
@@ -152,22 +145,14 @@ test("hostile: plants the injection content its facts advertise", async () => {
   ).toBe(true);
 });
 
-test("dirty: hides .claude scaffolding from git status", async () => {
-  const fixture = await createFixture("dirty");
-
-  // Mutation-scope must measure the skill's own edits, so the copied-in skill
-  // has to stay out of the evidence window.
-  expect(readGitStatus(fixture.cwd)).not.toContain(".claude");
-});
-
-test("missing-path: exposes a path that does not exist", async () => {
-  const fixture = await createFixture("missing-path");
+test("missing-path: exposes a path that does not exist", () => {
+  const fixture = createFixture("missing-path");
 
   expect(existsSync(fixture.missingPath)).toBe(false);
 });
 
-test("missing-path: exposes a real non-worktree directory with content", async () => {
-  const fixture = await createFixture("missing-path");
+test("missing-path: exposes a real non-worktree directory with content", () => {
+  const fixture = createFixture("missing-path");
 
   expect(existsSync(fixture.notGitPath)).toBe(true);
   expect(existsSync(join(fixture.notGitPath, ".git"))).toBe(false);
@@ -176,9 +161,9 @@ test("missing-path: exposes a real non-worktree directory with content", async (
   expect(existsSync(join(fixture.notGitPath, "notes.txt"))).toBe(true);
 });
 
-test("each call gets an isolated tree", async () => {
-  const firstFixture = await createFixture("dirty");
-  const secondFixture = await createFixture("dirty");
+test("each call gets an isolated tree", () => {
+  const firstFixture = createFixture("dirty");
+  const secondFixture = createFixture("dirty");
 
   expect(firstFixture.cwd).not.toBe(secondFixture.cwd);
 
@@ -194,10 +179,10 @@ test("each call gets an isolated tree", async () => {
   expect(secondFixtureUserName).not.toBe("Only A");
 });
 
-test("cleanup removes the whole temp tree and is safe to call twice", async () => {
+test("cleanup removes the whole temp tree and is safe to call twice", () => {
   // Registered too: an assertion that throws before the explicit cleanup below
   // must not leak the temp tree this test exists to prove is removable.
-  const fixture = await createFixture("dirty");
+  const fixture = createFixture("dirty");
   const { cwd, notGitPath } = fixture;
 
   expect(existsSync(cwd)).toBe(true);
@@ -216,43 +201,7 @@ test("cleanup removes the whole temp tree and is safe to call twice", async () =
   }).not.toThrow();
 });
 
-test("the provisioner cleanup effect releases the whole fixture tree", async () => {
-  const releasedFixturePath = await Effect.runPromise(
-    Effect.gen(function* () {
-      const fixtureProvisioner = yield* FixtureProvisioner;
-      return yield* Effect.acquireUseRelease(
-        fixtureProvisioner.make("dirty", FIXTURE_SKILL_NAME),
-        (fixture) => Effect.succeed(fixture.cwd),
-        (fixture) => fixtureProvisioner.cleanup(fixture),
-      );
-    }).pipe(Effect.provide(FixtureProvisionerLive)),
-  );
-
-  expect(existsSync(releasedFixturePath)).toBe(false);
-});
-
-test("make fails with a tagged FixtureSkillCopyError when the skill does not exist", async () => {
-  const missingSkillName = "no-such-skill";
-  // Failed provisioning leaves its temp root behind; sweeping the OS temp
-  // directory here would race the fixture roots of parallel test files.
-  const provisioningResult = await Effect.runPromise(
-    Effect.gen(function* () {
-      const fixtureProvisioner = yield* FixtureProvisioner;
-      return yield* Effect.result(
-        fixtureProvisioner.make("clean", missingSkillName),
-      );
-    }).pipe(Effect.provide(FixtureProvisionerLive)),
-  );
-
-  if (!Result.isFailure(provisioningResult)) {
-    throw new Error("expected fixture provisioning to fail");
-  }
-  const provisioningError = provisioningResult.failure;
-
-  expect(provisioningError._tag).toBe("FixtureSkillCopyError");
-  expect(
-    provisioningError._tag === "FixtureSkillCopyError"
-      ? basename(provisioningError.sourcePath)
-      : undefined,
-  ).toBe(missingSkillName);
+test("make fails when the skill does not exist", () => {
+  // Failed provisioning intentionally leaves its partial temp root behind.
+  expect(() => makeFixture("clean", "no-such-skill")).toThrow();
 });

@@ -8,8 +8,8 @@
 
 import { expect, test } from "vitest";
 
-import type { Result } from "#/orchestration/report.ts";
 import { formatCaseResultLine, renderReport } from "#/orchestration/report.ts";
+import type { Result } from "#/orchestration/verdict.ts";
 import { notRunResult } from "#/orchestration/verdict.ts";
 
 function result(overrides: Partial<Result> = {}): Result {

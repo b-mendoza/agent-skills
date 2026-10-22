@@ -1,12 +1,4 @@
-import { Layer } from "effect";
-
-import type { AgentQuery as AgentQueryService } from "#/observation/agent-query-service.ts";
-import { AgentQuery } from "#/observation/agent-query-service.ts";
-import type {
-  GitSampler as GitSamplerService,
-  GitStatus,
-} from "#/observation/git-status.ts";
-import { GitSampler } from "#/observation/git-status.ts";
+import type { GitStatus } from "#/observation/git-status.ts";
 import { mutationEvidence } from "#/observation/mutation-evidence.ts";
 import type { Observation, ToolCall } from "#/observation/observation-types.ts";
 
@@ -15,16 +7,6 @@ export const createWorktreeStatus = (entries = ""): GitStatus => ({
   kind: "worktree",
   entries,
 });
-
-export const createAgentQueryLayer = (
-  start: AgentQueryService["start"],
-): Layer.Layer<AgentQueryService> =>
-  Layer.succeed(AgentQuery, AgentQuery.of({ start }));
-
-export const createGitSamplerLayer = (
-  sample: GitSamplerService["sample"],
-): Layer.Layer<GitSamplerService> =>
-  Layer.succeed(GitSampler, GitSampler.of({ sample }));
 
 /** A zero-cost clean observation with optional field overrides. */
 export function createObservation(
@@ -42,6 +24,27 @@ export function createObservation(
     timedOut: false,
     ...overrides,
   };
+}
+
+export const toolUse = (name: string, input: unknown = {}) => ({
+  type: "tool_use",
+  name,
+  input,
+});
+export const assistant = (...content: unknown[]) => ({
+  type: "assistant",
+  message: { content },
+});
+const DEFAULT_COST = 0.5;
+export const success = (result: string, totalCostUsd = DEFAULT_COST) => ({
+  type: "result",
+  subtype: "success",
+  is_error: false,
+  result,
+  total_cost_usd: totalCostUsd,
+});
+export async function* scripted(...messages: unknown[]) {
+  yield* await Promise.all(messages);
 }
 
 /** A Bash tool call carrying `command` exactly as the SDK reported it. */

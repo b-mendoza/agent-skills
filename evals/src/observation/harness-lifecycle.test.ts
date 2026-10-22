@@ -1,268 +1,226 @@
-// Pins successful result handling and query policy without starting an SDK subprocess.
-
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import { Effect } from "effect";
-import { beforeEach, expect, test } from "vitest";
+import type { query } from "@anthropic-ai/claude-agent-sdk";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
+import { observeClaude } from "#/observation/agent-query.ts";
 import {
   assistant,
-  BUDGET_USD,
-  COST_BUDGET_STOP,
-  COST_FULL,
-  createHarnessSeam,
   scripted,
   success,
   toolUse,
-} from "#/observation/harness-lifecycle-test-support.ts";
+} from "#/observation/observation-test-support.ts";
+import type { RunOptions } from "#/observation/observation-types.ts";
 
-/**
- * Every option the harness owns. Pinned as an exact set rather than a subset so
- * an option added upstream -- `env` above all -- cannot reach the subprocess
- * without a deliberate change here.
- */
-const HARNESS_OWNED_QUERY_OPTION_KEYS = [
-  "abortController",
-  "cwd",
-  "maxBudgetUsd",
-  "model",
-  "permissionMode",
-  "settingSources",
-  "systemPrompt",
-  "tools",
-];
-
-let harness = createHarnessSeam();
-
+const sdk = vi.hoisted(() => ({
+  query:
+    vi.fn<(request: Parameters<typeof query>[0]) => AsyncIterable<unknown>>(),
+}));
+vi.mock(
+  import("@anthropic-ai/claude-agent-sdk"),
+  async (original): Promise<Record<string, unknown>> => ({
+    ...(await original()),
+    query: sdk.query,
+  }),
+);
+const COST = 0.5;
+const ZERO_COST = 0;
+const BUDGET = 0.01;
+const WALL_CLOCK = 30_000;
+let cwd = "";
+let options: RunOptions = {
+  cwd: "",
+  prompt: "observe",
+  budgetUsd: 0,
+  model: "haiku",
+  wallClockMs: 0,
+};
 beforeEach(() => {
-  harness = createHarnessSeam();
+  cwd = mkdtempSync(join(tmpdir(), "observation-"));
+  execFileSync("git", ["init", "-q"], { cwd });
+  options = {
+    cwd,
+    prompt: "observe the repo",
+    budgetUsd: BUDGET,
+    model: "haiku",
+    wallClockMs: WALL_CLOCK,
+  };
+  sdk.query
+    .mockReset()
+    .mockImplementation(() => scripted(success("done", COST)));
+});
+afterEach(() => {
+  rmSync(cwd, { recursive: true, force: true });
 });
 
 test("a normal stream yields the result and its tool calls", async () => {
-  harness.setQueryStart(() =>
-    Effect.succeed(
-      scripted(assistant(toolUse("Skill")), success("done", COST_FULL)),
-    ),
+  sdk.query.mockImplementation(() =>
+    scripted(assistant(toolUse("Skill")), success("done", COST)),
   );
-
-  const observation = await harness.runHarness();
-
-  expect(observation.subtype).toBe("success");
-  expect(observation.isError).toBe(false);
-  expect(observation.finalText).toBe("done");
-  expect(observation.costUsd).toBe(COST_FULL);
-  expect(observation.toolCalls.map((call) => call.name)).toStrictEqual([
-    "Skill",
-  ]);
-  expect(observation.timedOut).toBe(false);
+  expect(await observeClaude(options)).toMatchObject({
+    subtype: "success",
+    isError: false,
+    finalText: "done",
+    costUsd: COST,
+    toolCalls: [{ name: "Skill", input: {} }],
+    timedOut: false,
+    gitStatusBefore: { kind: "worktree", entries: "" },
+    gitStatusAfter: { kind: "worktree", entries: "" },
+  });
 });
 
-test("observeClaude applies harness-owned query policy", async () => {
-  await harness.runHarness();
-
-  const request = harness.lastQueryRequest();
-  const { options } = request;
-  if (options === undefined) {
-    throw new Error("expected the harness to supply query options");
-  }
-
-  expect(
-    Object.keys(options).toSorted((left, right) => left.localeCompare(right)),
-  ).toStrictEqual(HARNESS_OWNED_QUERY_OPTION_KEYS);
-  expect(request.prompt).toBe("observe the repo");
-  expect(options.cwd).toBe(tmpdir());
-  expect(options.model).toBe("haiku");
-  expect(options.maxBudgetUsd).toBe(BUDGET_USD);
-  expect(options.permissionMode).toBe("auto");
-  expect(options.settingSources).toStrictEqual(["project"]);
-  expect(options.systemPrompt).toStrictEqual({
-    type: "preset",
-    preset: "claude_code",
+test("the query owns its policy and inherits ambient credentials", async () => {
+  await observeClaude(options);
+  const abortController: unknown = expect.any(AbortController);
+  const expectedOptions: unknown = expect.objectContaining({
+    cwd,
+    model: "haiku",
+    maxBudgetUsd: BUDGET,
+    permissionMode: "auto",
+    settingSources: ["project"],
+    systemPrompt: { type: "preset", preset: "claude_code" },
+    tools: { type: "preset", preset: "claude_code" },
+    abortController,
   });
-  expect(options.tools).toStrictEqual({
-    type: "preset",
-    preset: "claude_code",
-  });
-  expect(options.abortController).toBeInstanceOf(AbortController);
-});
-
-test("the query inherits ambient credentials by omitting env", async () => {
-  // Setting `env` REPLACES the subprocess environment rather than merging into
-  // it, so supplying one would strip whatever credentials the ambient
-  // environment carries and the run would fail to authenticate.
-  await harness.runHarness();
-
-  expect(harness.lastQueryRequest().options ?? {}).not.toHaveProperty("env");
+  expect(sdk.query).toHaveBeenCalledWith(
+    expect.objectContaining({
+      prompt: options.prompt,
+      options: expectedOptions,
+    }),
+  );
+  const [request] = sdk.query.mock.lastCall ?? [];
+  expect(request?.options).not.toHaveProperty("env");
 });
 
 test("gitRepo overrides cwd only for git sampling", async () => {
-  await harness.runHarness({ cwd: "/fixture", gitRepo: "/repository" });
-
-  expect(harness.sampledRepositories()).toStrictEqual([
-    "/repository",
-    "/repository",
-  ]);
-  expect(harness.lastQueryRequest().options?.cwd).toBe("/fixture");
+  const repo = join(cwd, "repository");
+  execFileSync("git", ["init", "-q", repo]);
+  sdk.query.mockImplementation(() => {
+    writeFileSync(join(repo, "new.txt"), "new");
+    return scripted(success("done"));
+  });
+  const observation = await observeClaude({ ...options, gitRepo: repo });
+  expect(observation.gitStatusBefore).toStrictEqual({
+    kind: "worktree",
+    entries: "",
+  });
+  expect(observation.gitStatusAfter).toStrictEqual({
+    kind: "worktree",
+    entries: "?? new.txt",
+  });
+  const [request] = sdk.query.mock.lastCall ?? [];
+  expect(request?.options?.cwd).toBe(cwd);
 });
 
 test("tool calls accumulate across assistant messages in stream order", async () => {
-  harness.setQueryStart(() =>
-    Effect.succeed(
-      scripted(
-        assistant({ type: "text" }, toolUse("Read")),
-        assistant(toolUse("Bash", { command: "git log" }), toolUse("Grep")),
-        success("done", COST_FULL),
-      ),
+  sdk.query.mockImplementation(() =>
+    scripted(
+      assistant({ type: "text" }, toolUse("Read")),
+      assistant(toolUse("Bash", { command: "git log" }), toolUse("Grep")),
+      success("done"),
     ),
   );
-
-  const observation = await harness.runHarness();
-
-  expect(observation.toolCalls.map((call) => call.name)).toStrictEqual([
-    "Read",
-    "Bash",
-    "Grep",
+  expect((await observeClaude(options)).toolCalls).toStrictEqual([
+    { name: "Read", input: {} },
+    { name: "Bash", input: { command: "git log" } },
+    { name: "Grep", input: {} },
   ]);
-  const [, bashToolCall] = observation.toolCalls;
-  expect(bashToolCall?.input).toStrictEqual({
-    command: "git log",
-  });
 });
 
-test("a malformed tool input degrades to an empty record", async () => {
-  harness.setQueryStart(() =>
-    Effect.succeed(
-      scripted(
-        assistant(toolUse("Write", ["an", "array"]), toolUse("Edit", "scalar")),
-        success("done", COST_FULL),
-      ),
+test("malformed inputs degrade to empty records", async () => {
+  sdk.query.mockImplementation(() =>
+    scripted(
+      assistant(toolUse("Write", ["an", "array"]), toolUse("Edit", "scalar")),
+      success("done"),
     ),
   );
-
-  const observation = await harness.runHarness();
-
-  expect(observation.toolCalls).toStrictEqual([
+  expect((await observeClaude(options)).toolCalls).toStrictEqual([
     { name: "Write", input: {} },
     { name: "Edit", input: {} },
   ]);
 });
 
-test("a tool call's input is an owned record, not the SDK's object", async () => {
-  // The observation outlives the stream and is asserted on long after it ends,
-  // so a shared reference -- or a property inherited from the SDK's prototype
-  // chain -- would let the SDK decide what a case sees.
-  const inheritedToolInput = { inherited: "not owned" };
-  const sdkToolInput: Record<string, unknown> = { command: "git status" };
-  Object.setPrototypeOf(sdkToolInput, inheritedToolInput);
-  harness.setQueryStart(() =>
-    Effect.succeed(
-      scripted(
-        assistant(toolUse("Read", sdkToolInput)),
-        success("done", COST_FULL),
-      ),
-    ),
+test("tool input is an owned record without inherited properties", async () => {
+  const input = { command: "git status" };
+  Object.setPrototypeOf(input, { inherited: "not owned" });
+  sdk.query.mockImplementation(() =>
+    scripted(assistant(toolUse("Read", input)), success("done")),
   );
-
-  const observation = await harness.runHarness();
-  const [firstToolCall] = observation.toolCalls;
-  const observedInput = firstToolCall?.input;
-
-  expect(observedInput).toStrictEqual({ command: "git status" });
-  expect(observedInput).not.toBe(sdkToolInput);
-  expect(observedInput).not.toHaveProperty("inherited");
+  const [call] = (await observeClaude(options)).toolCalls;
+  expect(call?.input).toStrictEqual({ command: "git status" });
+  expect(call?.input).not.toBe(input);
+  expect(call?.input).not.toHaveProperty("inherited");
 });
 
-test("messages that carry no verdict are ignored", async () => {
-  harness.setQueryStart(() =>
-    Effect.succeed(
-      scripted(
-        null,
-        [],
-        {},
-        { type: 1 },
-        { type: "user", message: { content: "echoed prompt" } },
-        success("done", COST_FULL),
-      ),
+test("messages carrying no verdict are ignored", async () => {
+  sdk.query.mockImplementation(() =>
+    scripted(
+      null,
+      [],
+      {},
+      { type: 1 },
+      { type: "user", message: { content: "prompt" } },
+      success("done"),
     ),
   );
-
-  const observation = await harness.runHarness();
-
-  expect(observation.subtype).toBe("success");
-  expect(observation.toolCalls).toStrictEqual([]);
-  expect(observation.finalText).toBe("done");
+  expect(await observeClaude(options)).toMatchObject({
+    subtype: "success",
+    toolCalls: [],
+    finalText: "done",
+  });
 });
 
-test("an authentication failure keeps subtype and isError independent", async () => {
-  harness.setQueryStart(() =>
-    Effect.succeed(
-      scripted({
-        type: "result",
-        subtype: "success",
-        is_error: true,
-        result: "Failed to authenticate: OAuth session expired",
-        total_cost_usd: 0,
-      }),
-    ),
+test("authentication failure keeps subtype and isError independent", async () => {
+  sdk.query.mockImplementation(() =>
+    scripted({
+      ...success("Failed to authenticate: OAuth session expired", ZERO_COST),
+      is_error: true,
+    }),
   );
-
-  const observation = await harness.runHarness();
-
-  expect(observation.subtype).toBe("success");
-  expect(observation.isError).toBe(true);
-  expect(observation.toolCalls).toStrictEqual([]);
+  expect(await observeClaude(options)).toMatchObject({
+    subtype: "success",
+    isError: true,
+    toolCalls: [],
+  });
 });
 
 test.each([
   {
-    name: "an error result retains subtype and diagnostic whitespace",
-    messageScript: [
-      {
-        type: "result",
-        subtype: " error_custom ",
-        is_error: true,
-        errors: [" first diagnostic ", " second diagnostic "],
-        total_cost_usd: COST_BUDGET_STOP,
-      },
-    ],
-    expectedSubtype: " error_custom ",
-    expectedFinalText: " first diagnostic \n second diagnostic ",
-    expectedToolNames: [],
+    subtype: " error_custom ",
+    errors: [" first diagnostic ", " second diagnostic "],
+    calls: [],
+    expected: " first diagnostic \n second diagnostic ",
   },
   {
-    name: "an error result keeps diagnostics, cost, and prior calls",
-    messageScript: [
-      assistant(toolUse("Skill")),
-      {
-        type: "result",
-        subtype: "error_max_budget_usd",
-        is_error: true,
-        errors: ["max budget exceeded", "budget was $0.01"],
-        total_cost_usd: COST_BUDGET_STOP,
-      },
-    ],
-    expectedSubtype: "error_max_budget_usd",
-    expectedFinalText: "max budget exceeded\nbudget was $0.01",
-    expectedToolNames: ["Skill"],
+    subtype: "error_max_budget_usd",
+    errors: ["max budget exceeded", "budget was $0.01"],
+    calls: [toolUse("Skill")],
+    expected: "max budget exceeded\nbudget was $0.01",
   },
 ])(
-  "$name",
-  async ({
-    messageScript,
-    expectedSubtype,
-    expectedFinalText,
-    expectedToolNames,
-  }) => {
-    harness.setQueryStart(() => Effect.succeed(scripted(...messageScript)));
-
-    const observation = await harness.runHarness();
-
-    expect(observation.subtype).toBe(expectedSubtype);
-    expect(observation.isError).toBe(true);
-    expect(observation.finalText).toBe(expectedFinalText);
-    expect(observation.costUsd).toBe(COST_BUDGET_STOP);
+  "error result $subtype preserves diagnostics, cost, and calls",
+  async ({ subtype, errors, calls, expected }) => {
+    sdk.query.mockImplementation(() =>
+      scripted(assistant(...calls), {
+        type: "result",
+        subtype,
+        is_error: true,
+        errors,
+        total_cost_usd: COST,
+      }),
+    );
+    const observation = await observeClaude(options);
+    expect(observation).toMatchObject({
+      subtype,
+      isError: true,
+      finalText: expected,
+      costUsd: COST,
+    });
     expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
-      expectedToolNames,
+      calls.map((call) => call.name),
     );
   },
 );

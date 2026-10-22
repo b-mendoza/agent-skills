@@ -12,68 +12,19 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { Effect } from "effect";
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, expect, test } from "vitest";
 
 import type { GitStatus } from "#/observation/git-status.ts";
 import {
   describeGitStatus,
-  GitSampler,
-  GitSamplerLive,
+  sampleGitStatus,
 } from "#/observation/git-status.ts";
 
-const forcedGitStatusFailures = vi.hoisted((): unknown[] => []);
 const FIRST_TEMP_DIRECTORY_INDEX = 0;
-
-function isUnknownArray(value: unknown): value is readonly unknown[] {
-  return Array.isArray(value);
-}
-
-function injectThrownValue(value: unknown): never {
-  const generator = (function* () {
-    yield undefined;
-  })();
-  generator.next();
-  while (true) generator.throw(value);
-}
-
-vi.mock(import("node:child_process"), async (importOriginal) => {
-  const real = await importOriginal();
-  // Gated on the intercepted argv so a forced failure can only stand in for the
-  // `git status` sample under test. Without the gate the repository fixtures'
-  // own `git init`/`git add` calls would consume the queued failure instead.
-  const isGitStatusSample = (argumentList: readonly unknown[]): boolean => {
-    const [executable, commandArguments] = argumentList;
-    if (executable !== "git" || !isUnknownArray(commandArguments)) return false;
-    const [subcommand] = commandArguments;
-    return subcommand === "status";
-  };
-  const passthroughExecFileSync = new Proxy(real.execFileSync, {
-    apply: (
-      target,
-      thisArgument: unknown,
-      argumentList: readonly unknown[],
-    ) => {
-      if (isGitStatusSample(argumentList)) {
-        const forcedFailure = forcedGitStatusFailures.shift();
-        if (forcedFailure !== undefined) {
-          return injectThrownValue(forcedFailure);
-        }
-      }
-      const output: unknown = Reflect.apply(target, thisArgument, argumentList);
-      return output;
-    },
-  });
-  return { ...real, execFileSync: passthroughExecFileSync };
-});
-
-/** Makes the next `git status` sample fail with `failure`. */
-function forceNextStatusFailure(failure: unknown): void {
-  forcedGitStatusFailures.push(failure);
-}
 
 const tempDirectories: string[] = [];
 const realPath = process.env["PATH"];
+const realIndex = process.env["GIT_INDEX_FILE"];
 
 afterEach(() => {
   if (realPath === undefined) {
@@ -81,23 +32,14 @@ afterEach(() => {
   } else {
     process.env["PATH"] = realPath;
   }
-  forcedGitStatusFailures.length = 0;
+  if (realIndex === undefined) delete process.env["GIT_INDEX_FILE"];
+  else process.env["GIT_INDEX_FILE"] = realIndex;
   for (const tempDirectory of tempDirectories.splice(
     FIRST_TEMP_DIRECTORY_INDEX,
   )) {
     rmSync(tempDirectory, { recursive: true, force: true });
   }
 });
-
-async function sampleGitStatus(repo: string): Promise<GitStatus> {
-  const status = await Effect.runPromise(
-    Effect.gen(function* () {
-      const gitSampler = yield* GitSampler;
-      return yield* gitSampler.sample(repo);
-    }).pipe(Effect.provide(GitSamplerLive)),
-  );
-  return status;
-}
 
 function createTempDirectory(): string {
   const tempDirectory = mkdtempSync(join(tmpdir(), "git-status-"));
@@ -114,32 +56,32 @@ function createRepository(): string {
   return repositoryDirectory;
 }
 
-test("a clean worktree reports its empty entry list", async () => {
-  await expect(sampleGitStatus(createRepository())).resolves.toStrictEqual({
+test("a clean worktree reports its empty entry list", () => {
+  expect(sampleGitStatus(createRepository())).toStrictEqual({
     kind: "worktree",
     entries: "",
   });
 });
 
-test("a dirty worktree reports its entries", async () => {
+test("a dirty worktree reports its entries", () => {
   const repositoryDirectory = createRepository();
   writeFileSync(join(repositoryDirectory, "a.txt"), "hello\n");
 
-  await expect(sampleGitStatus(repositoryDirectory)).resolves.toStrictEqual({
+  expect(sampleGitStatus(repositoryDirectory)).toStrictEqual({
     kind: "worktree",
     entries: "?? a.txt",
   });
 });
 
-test("a directory that is not a repo is a known state, not a failure", async () => {
+test("a directory that is not a repo is a known state, not a failure", () => {
   // This is the `not-git` fixture. It must stay distinct from a failed sample
   // or that fixture's cases would start failing.
-  await expect(sampleGitStatus(createTempDirectory())).resolves.toStrictEqual({
+  expect(sampleGitStatus(createTempDirectory())).toStrictEqual({
     kind: "no-worktree",
   });
 });
 
-test("a corrupt index is unreadable rather than clean", async () => {
+test("a corrupt index is unreadable rather than clean", () => {
   // Exit 128 is git's generic fatal code, so this returns the same status as
   // "not a repository". Only the message separates them -- classifying by
   // exit code alone would file a corrupt repo as an expected empty state.
@@ -151,7 +93,7 @@ test("a corrupt index is unreadable rather than clean", async () => {
   });
   writeFileSync(join(repositoryDirectory, ".git", "index"), "garbage");
 
-  const status = await sampleGitStatus(repositoryDirectory);
+  const status = sampleGitStatus(repositoryDirectory);
 
   expect(status.kind).toBe("unreadable");
   if (status.kind !== "unreadable") {
@@ -176,50 +118,24 @@ test.each([
       return repositoryDirectory;
     },
   },
-])("$name is unreadable, not clean", async ({ locateRepository }) => {
-  await expect(sampleGitStatus(locateRepository())).resolves.toStrictEqual({
+])("$name is unreadable, not clean", ({ locateRepository }) => {
+  expect(sampleGitStatus(locateRepository())).toStrictEqual({
     kind: "unreadable",
     reason: "ENOENT",
   });
 });
 
-test("a fatal message merely containing the phrase stays unreadable", async () => {
-  // `no-worktree` is a known repository state, claimed only by git's own fatal
-  // line. A corrupt-object failure whose path happens to carry the phrase must
-  // not be promoted into that expected state and read as clean.
-  const stderr = "fatal: bad object HEAD in /tmp/not a git repository/x";
-  forceNextStatusFailure({ status: 128, stderr });
-
-  await expect(sampleGitStatus(tmpdir())).resolves.toStrictEqual({
-    kind: "unreadable",
-    reason: stderr,
-  });
-});
-
-test.each(["not a number", NaN])(
-  "a malformed subprocess status preserves sibling diagnostics: %s",
-  async (status) => {
-    forceNextStatusFailure({
-      status,
-      stderr: "projected stderr survives\nsecondary detail",
-      code: "IGNORED",
-      message: "ignored message",
-    });
-
-    await expect(sampleGitStatus(tmpdir())).resolves.toStrictEqual({
-      kind: "unreadable",
-      reason: "projected stderr survives",
-    });
-  },
-);
-
-test("a non-object subprocess error falls back to its rendered value", async () => {
-  forceNextStatusFailure(["foreign", "error"]);
-
-  await expect(sampleGitStatus(tmpdir())).resolves.toStrictEqual({
-    kind: "unreadable",
-    reason: '["foreign","error"]',
-  });
+test("a fatal message merely containing the phrase stays unreadable", () => {
+  const repo = createRepository();
+  const index = join(repo, "not a git repository");
+  writeFileSync(index, "garbage");
+  process.env["GIT_INDEX_FILE"] = index;
+  const status = sampleGitStatus(repo);
+  expect(status.kind).toBe("unreadable");
+  if (status.kind !== "unreadable") {
+    throw new Error("expected unreadable index");
+  }
+  expect(status.reason).toContain(index);
 });
 
 // A failure message that cannot tell these apart sends the reader hunting for

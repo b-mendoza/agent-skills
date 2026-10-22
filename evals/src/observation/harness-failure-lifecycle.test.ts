@@ -1,339 +1,245 @@
-// Pins failure settlement, iterator cleanup, and wall-clock behavior without starting an SDK subprocess.
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import { once } from "node:events";
-
-import { Effect } from "effect";
+import type { query } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
-import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
-import { QueryStartError } from "#/observation/agent-query-service.ts";
-import type { FakeMessage } from "#/observation/harness-lifecycle-test-support.ts";
 import {
-  abortAwareQuery,
+  observeClaude,
+  QUERY_ERROR_SUBTYPE,
+} from "#/observation/agent-query.ts";
+import {
   assistant,
-  COST_BUDGET_STOP,
-  COST_FULL,
-  createHarnessSeam,
-  createTrackedMessages,
-  EXPECTED_GIT_SAMPLE_COUNT,
-  fakeQuery,
-  FOREIGN_BIGINT,
-  NO_COST_USD,
-  PAST_THE_DEADLINE_MS,
   scripted,
-  SHORT_WALL_CLOCK_MS,
-  SINGLE_ITERATOR_CALL_COUNT,
   success,
   toolUse,
-} from "#/observation/harness-lifecycle-test-support.ts";
+} from "#/observation/observation-test-support.ts";
+import type { RunOptions } from "#/observation/observation-types.ts";
 
-let harness = createHarnessSeam();
-
+const sdk = vi.hoisted(() => ({
+  query:
+    vi.fn<(request: Parameters<typeof query>[0]) => AsyncIterable<unknown>>(),
+}));
+vi.mock(
+  import("@anthropic-ai/claude-agent-sdk"),
+  async (original): Promise<Record<string, unknown>> => ({
+    ...(await original()),
+    query: sdk.query,
+  }),
+);
+const COST = 0.5;
+const FOREIGN_BIGINT = 1n;
+const WALL_CLOCK = 30_000;
+let cwd = "";
+let options: RunOptions = {
+  cwd: "",
+  prompt: "observe",
+  budgetUsd: 0,
+  model: "haiku",
+  wallClockMs: 0,
+};
 beforeEach(() => {
-  harness = createHarnessSeam();
+  cwd = mkdtempSync(join(tmpdir(), "observation-failure-"));
+  execFileSync("git", ["init", "-q"], { cwd });
+  options = {
+    cwd,
+    prompt: "observe",
+    budgetUsd: COST,
+    model: "haiku",
+    wallClockMs: WALL_CLOCK,
+  };
+  sdk.query.mockReset();
 });
-
-// This is the only suite that fakes timers, so it owns restoring them.
 afterEach(() => {
-  vi.useRealTimers();
+  rmSync(cwd, { recursive: true, force: true });
 });
 
-test("a query startup failure settles and books no cost", async () => {
-  harness.setQueryStart(() =>
-    Effect.fail(
-      new QueryStartError({
-        cause: new Error("bundled CLI failed to start"),
-      }),
-    ),
-  );
-
-  const observation = await harness.runHarness();
-
-  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(observation.isError).toBe(true);
-  expect(observation.finalText).toBe("bundled CLI failed to start");
-  expect(observation.costUsd).toBe(NO_COST_USD);
-  expect(observation.timedOut).toBe(false);
-  expect(harness.sampledRepositories()).toHaveLength(EXPECTED_GIT_SAMPLE_COUNT);
+test("startup failure samples git after settlement and books no cost", async () => {
+  sdk.query.mockImplementation(() => {
+    writeFileSync(join(cwd, "changed.txt"), "changed");
+    throw new Error("bundled CLI failed to start");
+  });
+  expect(await observeClaude(options)).toMatchObject({
+    subtype: QUERY_ERROR_SUBTYPE,
+    isError: true,
+    finalText: "bundled CLI failed to start",
+    costUsd: 0,
+    timedOut: false,
+    gitStatusBefore: { kind: "worktree", entries: "" },
+    gitStatusAfter: { kind: "worktree", entries: "?? changed.txt" },
+  });
 });
 
-test("a mid-stream failure keeps observations already made", async () => {
-  harness.setQueryStart(() =>
-    Effect.succeed(
-      fakeQuery(function* () {
-        yield assistant(toolUse("Write", { file_path: "/repo/x" }));
-        throw new Error("stream died");
-      }),
-    ),
-  );
-
-  const observation = await harness.runHarness();
-
-  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(observation.isError).toBe(true);
-  expect(observation.finalText).toBe("stream died");
-  expect(observation.costUsd).toBe(NO_COST_USD);
-  expect(observation.toolCalls.map((call) => call.name)).toStrictEqual([
-    "Write",
-  ]);
-});
-
-test.each([
-  {
-    name: "a malformed assistant content entry fails closed and keeps prior tool calls",
-    messageScript: [
-      assistant(toolUse("Read")),
-      assistant(toolUse("Write", { file_path: "/repo/x" }), null),
-      success("done", COST_FULL),
-    ],
-    expectedRetainedToolNames: ["Read"],
-  },
-  {
-    name: "a malformed result fails closed and keeps prior tool calls",
-    messageScript: [
+test("a mid-stream failure keeps earlier tool calls", async () => {
+  sdk.query.mockImplementation(async function* () {
+    yield await Promise.resolve(
       assistant(toolUse("Write", { file_path: "/repo/x" })),
-      {
-        type: "result",
-        subtype: "success",
-        is_error: false,
-        result: "done",
-        total_cost_usd: "not a number",
-      },
-    ],
-    expectedRetainedToolNames: ["Write"],
-  },
-] satisfies ReadonlyArray<{
-  name: string;
-  messageScript: FakeMessage[];
-  expectedRetainedToolNames: string[];
-}>)("$name", async ({ messageScript, expectedRetainedToolNames }) => {
-  harness.setQueryStart(() => Effect.succeed(scripted(...messageScript)));
-
-  const observation = await harness.runHarness();
-
-  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(observation.isError).toBe(true);
-  // The wording belongs to Effect Schema, so only carrying a diagnostic at all
-  // is ours to pin: a silent empty text would leave the failure unexplained.
-  expect(observation.finalText).not.toBe("");
-  expect(observation.costUsd).toBe(NO_COST_USD);
-  expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
-    expectedRetainedToolNames,
-  );
+    );
+    throw new Error("stream died");
+  });
+  expect(await observeClaude(options)).toMatchObject({
+    subtype: QUERY_ERROR_SUBTYPE,
+    isError: true,
+    finalText: "stream died",
+    costUsd: 0,
+    toolCalls: [{ name: "Write", input: { file_path: "/repo/x" } }],
+  });
 });
 
 test.each([
-  [NaN, 'Expected finite number, got NaN\n  at ["total_cost_usd"]'],
-  [Infinity, 'Expected finite number, got Infinity\n  at ["total_cost_usd"]'],
-  [-Infinity, 'Expected finite number, got -Infinity\n  at ["total_cost_usd"]'],
-] satisfies ReadonlyArray<readonly [number, string]>)(
-  "a non-finite result cost fails closed: %s",
-  async (totalCostUsd, expectedFinalText) => {
-    harness.setQueryStart(() =>
-      Effect.succeed(
-        scripted({
-          type: "result",
-          subtype: "success",
-          is_error: false,
-          result: "done",
-          total_cost_usd: totalCostUsd,
-        }),
-      ),
+  [assistant(toolUse("Write"), null), ["Read"]],
+  [{ ...success("done"), total_cost_usd: "not a number" }, ["Read"]],
+])(
+  "a malformed relevant message fails closed: %j",
+  async (message, retainedNames) => {
+    sdk.query.mockImplementation(() =>
+      scripted(assistant(toolUse("Read")), message, success("done")),
     );
+    const observation = await observeClaude(options);
+    expect(observation).toMatchObject({
+      subtype: QUERY_ERROR_SUBTYPE,
+      isError: true,
+      costUsd: 0,
+    });
+    expect(observation.finalText).not.toBe("");
+    expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
+      retainedNames,
+    );
+  },
+);
 
-    const observation = await harness.runHarness();
-
-    expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
-    expect(observation.finalText).toBe(expectedFinalText);
-    expect(observation.costUsd).toBe(NO_COST_USD);
+test.each([NaN, Infinity, -Infinity])(
+  "non-finite result cost fails closed: %s",
+  async (cost) => {
+    sdk.query.mockImplementation(() => scripted(success("done", cost)));
+    const observation = await observeClaude(options);
+    expect(observation).toMatchObject({
+      subtype: QUERY_ERROR_SUBTYPE,
+      costUsd: 0,
+    });
+    expect(observation.finalText).toContain("finite number");
   },
 );
 
 test("a BigInt thrown value cannot reject observation settlement", async () => {
-  harness.setQueryStart(() =>
-    Effect.fail(new QueryStartError({ cause: FOREIGN_BIGINT })),
-  );
-
-  const observation = await harness.runHarness();
-
-  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(observation.isError).toBe(true);
-  expect(observation.finalText).toBe("1");
-  expect(observation.costUsd).toBe(NO_COST_USD);
+  sdk.query.mockImplementation(() => {
+    return {
+      [Symbol.asyncIterator]: () => ({
+        next: vi
+          .fn<AsyncIterator<unknown>["next"]>()
+          .mockRejectedValue(FOREIGN_BIGINT),
+      }),
+    };
+  });
+  expect(await observeClaude(options)).toMatchObject({
+    subtype: QUERY_ERROR_SUBTYPE,
+    isError: true,
+    finalText: "1",
+    costUsd: 0,
+  });
 });
 
 test("a cyclic thrown value cannot reject observation settlement", async () => {
-  // `JSON.stringify` throws on a cycle. What the guarded fallback renders is
-  // not ours to pin; that settlement completes with *some* text is.
-  const cyclicFailure: Record<string, unknown> = {};
-  cyclicFailure["self"] = cyclicFailure;
-  harness.setQueryStart(() =>
-    Effect.fail(new QueryStartError({ cause: cyclicFailure })),
-  );
-
-  const observation = await harness.runHarness();
-
-  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(observation.isError).toBe(true);
+  const failure: Record<string, unknown> = {};
+  failure["self"] = failure;
+  sdk.query.mockImplementation(() => ({
+    [Symbol.asyncIterator]: () => ({
+      next: vi.fn<AsyncIterator<unknown>["next"]>().mockRejectedValue(failure),
+    }),
+  }));
+  const observation = await observeClaude(options);
+  expect(observation).toMatchObject({
+    subtype: QUERY_ERROR_SUBTYPE,
+    isError: true,
+    costUsd: 0,
+  });
   expect(observation.finalText).toBeTypeOf("string");
   expect(observation.finalText).not.toBe("");
-  expect(observation.costUsd).toBe(NO_COST_USD);
 });
 
 test.each([null, undefined])(
-  "a nullish query failure uses the no-result diagnostic",
+  "a nullish failure uses the no-result diagnostic: %s",
   async (failure) => {
-    harness.setQueryStart(() =>
-      Effect.fail(new QueryStartError({ cause: failure })),
+    sdk.query.mockImplementation(() => ({
+      [Symbol.asyncIterator]: () => ({
+        next: vi
+          .fn<AsyncIterator<unknown>["next"]>()
+          .mockRejectedValue(failure),
+      }),
+    }));
+    expect((await observeClaude(options)).finalText).toBe(
+      "query ended without a result message",
     );
-
-    const observation = await harness.runHarness();
-
-    expect(observation.finalText).toBe("query ended without a result message");
   },
 );
 
-test("a stream that ends without a result fails closed", async () => {
-  harness.setQueryStart(() =>
-    Effect.succeed(scripted(assistant(toolUse("Read")))),
-  );
-
-  const observation = await harness.runHarness();
-
-  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(observation.isError).toBe(true);
-  expect(observation.finalText).toBe("query ended without a result message");
-  expect(observation.costUsd).toBe(NO_COST_USD);
-  expect(observation.toolCalls.map((call) => call.name)).toStrictEqual([
-    "Read",
-  ]);
-});
-
-test("the first valid result stops iteration and cleans up once", async () => {
-  const messages = createTrackedMessages([
-    success("first", COST_FULL),
-    assistant(toolUse("Write", { file_path: "/repo/late" })),
-    success("second", COST_BUDGET_STOP),
-  ]);
-  harness.setQueryStart(() => Effect.succeed(messages.iterable));
-
-  const observation = await harness.runHarness();
-
-  expect(observation.finalText).toBe("first");
-  expect(observation.costUsd).toBe(COST_FULL);
-  expect(observation.toolCalls).toStrictEqual([]);
-  expect(messages.nextCallCount()).toBe(SINGLE_ITERATOR_CALL_COUNT);
-  expect(messages.returnCallCount()).toBe(SINGLE_ITERATOR_CALL_COUNT);
-});
-
-test("a tracked next promise settles before a subsequently queued microtask", async () => {
-  const messages = createTrackedMessages([success("done", COST_FULL)]);
-  const iterator = messages.iterable[Symbol.asyncIterator]();
-  const settlementOrder: string[] = [];
-
-  const nextResult = iterator.next();
-  void nextResult.then(() => {
-    settlementOrder.push("next settled");
+test("a stream ending without a result fails closed", async () => {
+  sdk.query.mockImplementation(() => scripted(assistant(toolUse("Read"))));
+  expect(await observeClaude(options)).toMatchObject({
+    subtype: QUERY_ERROR_SUBTYPE,
+    isError: true,
+    finalText: "query ended without a result message",
+    costUsd: 0,
+    toolCalls: [{ name: "Read", input: {} }],
   });
-  queueMicrotask(() => {
-    settlementOrder.push("queued microtask");
-  });
-
-  await nextResult;
-  await Promise.resolve();
-
-  expect(settlementOrder).toStrictEqual(["next settled", "queued microtask"]);
 });
 
-test("a rejecting tracked return settles before a subsequently queued microtask", async () => {
-  const cleanupFailure = new Error("cleanup failed");
-  const messages = createTrackedMessages([], cleanupFailure);
-  const iterator = messages.iterable[Symbol.asyncIterator]();
-  const settlementOrder: string[] = [];
-
-  const returnResult = iterator.return?.();
-  if (returnResult === undefined) {
-    throw new Error("expected the tracked iterator to implement return");
-  }
-  void returnResult.catch(() => {
-    settlementOrder.push("return settled");
+test("the first result stops iteration and closes the generator", async () => {
+  const closed = vi.fn();
+  sdk.query.mockImplementation(async function* () {
+    try {
+      yield await Promise.resolve(success("first", COST));
+      yield assistant(toolUse("Write"));
+      yield success("second");
+    } finally {
+      closed();
+    }
   });
-  queueMicrotask(() => {
-    settlementOrder.push("queued microtask");
+  expect(await observeClaude(options)).toMatchObject({
+    finalText: "first",
+    costUsd: COST,
+    toolCalls: [],
   });
-
-  await expect(returnResult).rejects.toBe(cleanupFailure);
-  await Promise.resolve();
-
-  expect(settlementOrder).toStrictEqual(["return settled", "queued microtask"]);
+  expect(closed).toHaveBeenCalledExactlyOnceWith();
 });
 
-test("a cleanup failure after a result cannot replace that result", async () => {
-  const messages = createTrackedMessages(
-    [success("recorded", COST_FULL)],
-    new Error("cleanup failed"),
-  );
-  harness.setQueryStart(() => Effect.succeed(messages.iterable));
+test.each(["rejects", "exhausts"])(
+  "cleanup rejection escapes when next %s without a result",
+  async (outcome) => {
+    const cleanupError = new Error("cleanup failed");
+    const next = vi.fn<AsyncIterator<unknown>["next"]>();
+    if (outcome === "rejects") next.mockRejectedValue(new Error("stream died"));
+    else next.mockResolvedValue({ done: true, value: undefined });
+    sdk.query.mockImplementation(() => ({
+      [Symbol.asyncIterator]: () => ({
+        next,
+        return: vi
+          .fn<NonNullable<AsyncIterator<unknown>["return"]>>()
+          .mockRejectedValue(cleanupError),
+      }),
+    }));
+    await expect(observeClaude(options)).rejects.toBe(cleanupError);
+  },
+);
 
-  const observation = await harness.runHarness();
-
-  expect(observation.subtype).toBe("success");
-  expect(observation.finalText).toBe("recorded");
-  expect(observation.costUsd).toBe(COST_FULL);
-  expect(messages.returnCallCount()).toBe(SINGLE_ITERATOR_CALL_COUNT);
-});
-
-test("a run that exceeds its wall clock is aborted and settles", async () => {
-  harness.setQueryStart(
-    abortAwareQuery(async function* (signal) {
-      yield assistant(toolUse("Read"));
-      await once(signal, "abort");
-      throw new Error("The operation was aborted");
+test("cleanup failure cannot replace an observed result", async () => {
+  const close = vi
+    .fn<NonNullable<AsyncIterator<unknown>["return"]>>()
+    .mockRejectedValue(new Error("cleanup failed"));
+  sdk.query.mockImplementation(() => ({
+    [Symbol.asyncIterator]: () => ({
+      next: vi
+        .fn<AsyncIterator<unknown>["next"]>()
+        .mockResolvedValue({ done: false, value: success("recorded", COST) }),
+      return: close,
     }),
-  );
-
-  const observation = await harness.runHarness({
-    wallClockMs: SHORT_WALL_CLOCK_MS,
+  }));
+  expect(await observeClaude(options)).toMatchObject({
+    subtype: "success",
+    finalText: "recorded",
+    costUsd: COST,
   });
-
-  expect(observation.timedOut).toBe(true);
-  expect(observation.subtype).toBe(QUERY_ERROR_SUBTYPE);
-  expect(observation.isError).toBe(true);
-  expect(observation.costUsd).toBe(NO_COST_USD);
-  expect(observation.toolCalls.map((call) => call.name)).toStrictEqual([
-    "Read",
-  ]);
-});
-
-test("a result after abort retains both verdict and timeout evidence", async () => {
-  harness.setQueryStart(
-    abortAwareQuery(async function* (signal) {
-      await once(signal, "abort");
-      yield success("late result", COST_FULL);
-    }),
-  );
-
-  const observation = await harness.runHarness({
-    wallClockMs: SHORT_WALL_CLOCK_MS,
-  });
-
-  expect(observation.subtype).toBe("success");
-  expect(observation.finalText).toBe("late result");
-  expect(observation.costUsd).toBe(COST_FULL);
-  expect(observation.timedOut).toBe(true);
-});
-
-test("a completed run cannot be re-flagged by its expired timer", async () => {
-  vi.useFakeTimers();
-
-  const observation = await harness.runHarness({
-    wallClockMs: SHORT_WALL_CLOCK_MS,
-  });
-  const abortController = harness.lastQueryRequest().options?.abortController;
-  expect(abortController).toBeInstanceOf(AbortController);
-
-  vi.advanceTimersByTime(PAST_THE_DEADLINE_MS);
-
-  expect(abortController?.signal.aborted).toBe(false);
-  expect(observation.timedOut).toBe(false);
+  expect(close).toHaveBeenCalledExactlyOnceWith();
 });

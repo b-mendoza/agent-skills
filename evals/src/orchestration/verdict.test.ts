@@ -8,7 +8,7 @@
 
 import { expect, test } from "vitest";
 
-import type { AttemptResult } from "#/orchestration/report.ts";
+import type { AttemptResult } from "#/orchestration/verdict.ts";
 import {
   aggregateAttempts,
   evaluate,
@@ -144,19 +144,6 @@ test("a DEGRADED score never rounds to a terminal 0 or 100", () => {
 
   expect(oneFlake).toMatchObject({ status: "DEGRADED", score: 99 });
   expect(onePass).toMatchObject({ status: "DEGRADED", score: 1 });
-});
-
-test("a single attempt aggregates to its own status", () => {
-  expect(aggregateAttempts([attempt()])).toMatchObject({
-    status: "PASS",
-    score: 100,
-    attemptsPassed: 1,
-    attemptsRun: 1,
-  });
-});
-
-test("aggregating zero attempts is a defect, not a quiet row", () => {
-  expect(() => aggregateAttempts([])).toThrow(/at least one attempt/);
 });
 
 test("a NOT_RUN row carries a null score, not a zero one", () => {

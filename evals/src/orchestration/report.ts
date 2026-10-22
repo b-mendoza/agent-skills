@@ -1,7 +1,8 @@
 import { fileURLToPath } from "node:url";
 
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
-import { evalModel } from "#/orchestration/case-execution/model-configuration.ts";
+import { evalModel } from "#/orchestration/configuration.ts";
+import type { AttemptResult, Result, Status } from "#/orchestration/verdict.ts";
 
 export const REPORT_PATH = fileURLToPath(
   new URL("../../report.md", import.meta.url),
@@ -16,45 +17,6 @@ const NO_ATTEMPTS_RUN = 0;
 
 /** A cell with nothing to measure: the score and runs of a NOT_RUN row. */
 const EMPTY_CELL = "—";
-
-/** One paid execution of a case's check: binary by construction. */
-export type AttemptStatus = "PASS" | "FAIL";
-/**
- * Aggregate statuses. PASS means every attempt passed, FAIL none, DEGRADED a
- * mix (the flakiness signal), NOT_RUN that this run executed no attempt.
- */
-export type Status = AttemptStatus | "DEGRADED" | "NOT_RUN";
-/** Case tiers as they appear in the report; `2*` is the derived row. */
-export type ReportTier = "1" | "2" | "2*";
-
-/** The outcome of a single attempt at one case. */
-export interface AttemptResult {
-  id: string;
-  tier: ReportTier;
-  status: AttemptStatus;
-  observed: string;
-  costUsd: number;
-  durationMs: number;
-}
-
-/**
- * One report row: a case's attempts folded into a score and a status. Both
- * derive from the same pass count, so they cannot disagree. `score` is null
- * only for NOT_RUN -- an unexecuted case measured nothing, and recording it
- * as 0 would read as "ran and failed every attempt".
- */
-export interface Result {
-  id: string;
-  tier: ReportTier;
-  status: Status;
-  /** Percent of attempts whose check passed (0-100); null when none ran. */
-  score: number | null;
-  attemptsPassed: number;
-  attemptsRun: number;
-  observed: string;
-  costUsd: number;
-  durationMs: number;
-}
 
 /** The runner's per-attempt stdout progress line. */
 export function formatResultLine(attemptResult: AttemptResult): string {

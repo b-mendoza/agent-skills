@@ -2,16 +2,29 @@
 // artifact rather than trusted, and an unreadable judge reply fails loudly as
 // judge infrastructure instead of counting for or against the artifact.
 
-import { describe, expect, test } from "vitest";
+import type { query } from "@anthropic-ai/claude-agent-sdk";
+import { describe, expect, test, vi } from "vitest";
 
-import { scripted } from "#/observation/harness-lifecycle-test-support.ts";
 import type { JudgeRequest } from "#/observation/judge.ts";
 import {
   buildJudgePrompt,
-  createJudge,
-  createLiveJudgeQuery,
+  judgeLive,
+  liveJudgeQuery,
   parseJudgeResponse,
 } from "#/observation/judge.ts";
+import { scripted } from "#/observation/observation-test-support.ts";
+
+const sdk = vi.hoisted(() => ({
+  query:
+    vi.fn<(request: Parameters<typeof query>[0]) => AsyncIterable<unknown>>(),
+}));
+vi.mock(
+  import("@anthropic-ai/claude-agent-sdk"),
+  async (original): Promise<Record<string, unknown>> => ({
+    ...(await original()),
+    query: sdk.query,
+  }),
+);
 
 const REQUEST: JudgeRequest = {
   artifact: "The tests passed on CI.\nRisk: none identified.",
@@ -174,38 +187,28 @@ describe("parseJudgeResponse", () => {
   });
 });
 
-describe("liveJudgeQuery", () => {
+describe("SDK judge", () => {
   test("fails closed on a malformed relevant result message", async () => {
-    const judgeQuery = createLiveJudgeQuery(malformedResultStream);
-
-    await expect(judgeQuery("grade this", "haiku")).rejects.toThrow(/judge/);
+    sdk.query.mockImplementation(malformedResultStream);
+    await expect(liveJudgeQuery("grade this", "haiku")).rejects.toThrow(
+      /judge/,
+    );
   });
-});
 
-describe("createJudge", () => {
   test("sends the built prompt and parses the reply", async () => {
-    const seenPrompts: string[] = [];
-    const judge = createJudge({
-      judgeQuery: async (prompt) => {
-        seenPrompts.push(prompt);
-        return Promise.resolve(reply([]));
-      },
-    });
-
-    const outcome = await judge(REQUEST);
-
-    expect(outcome.citedViolations).toStrictEqual([]);
-    expect(seenPrompts).toStrictEqual([
-      expect.stringContaining(REQUEST.artifact),
-    ]);
+    sdk.query.mockImplementation(() =>
+      scripted({ type: "result", result: reply([]) }),
+    );
+    expect((await judgeLive(REQUEST)).citedViolations).toStrictEqual([]);
+    expect(sdk.query).toHaveBeenLastCalledWith(
+      expect.objectContaining({ prompt: buildJudgePrompt(REQUEST) }),
+    );
   });
 
   test("propagates a judge query failure", async () => {
-    const judge = createJudge({
-      judgeQuery: async () =>
-        Promise.reject(new Error("judge model unavailable")),
+    sdk.query.mockImplementation(() => {
+      throw new Error("judge model unavailable");
     });
-
-    await expect(judge(REQUEST)).rejects.toThrow(/judge model unavailable/);
+    await expect(judgeLive(REQUEST)).rejects.toThrow(/judge model unavailable/);
   });
 });

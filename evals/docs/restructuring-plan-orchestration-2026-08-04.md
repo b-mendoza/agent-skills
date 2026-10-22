@@ -1,5 +1,7 @@
 # Restructuring Plan — `evals/src/orchestration/` — 2026-08-04
 
+> Historical plan, superseded by the October 2026 simplification. Module names, layers, and proposed paths below describe the August design, not the current source. See [current layout](current-layout.md) for the implemented structure.
+
 > Point-in-time planning artifact produced by the `planning-codebase-restructuring` skill. It describes the tree as of 2026-08-04 and must be re-verified against the code before implementation. No files were moved; every implementation action is approval-gated in section 10.
 
 ## 1. Preflight summary

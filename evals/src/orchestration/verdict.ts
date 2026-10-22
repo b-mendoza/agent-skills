@@ -3,13 +3,44 @@
 // expects.
 
 import type { Observation } from "#/observation/observation-types.ts";
-import type {
-  AttemptResult,
-  AttemptStatus,
-  ReportTier,
-  Result,
-  Status,
-} from "#/orchestration/report.ts";
+/** One paid execution of a case's check: binary by construction. */
+export type AttemptStatus = "PASS" | "FAIL";
+/**
+ * Aggregate statuses. PASS means every attempt passed, FAIL none, DEGRADED a
+ * mix (the flakiness signal), NOT_RUN that this run executed no attempt.
+ */
+export type Status = AttemptStatus | "DEGRADED" | "NOT_RUN";
+/** Case tiers as they appear in the report; `2*` is the derived row. */
+export type ReportTier = "1" | "2" | "2*";
+
+/** The outcome of a single attempt at one case. */
+export interface AttemptResult {
+  id: string;
+  tier: ReportTier;
+  status: AttemptStatus;
+  observed: string;
+  costUsd: number;
+  durationMs: number;
+}
+
+/**
+ * One report row: a case's attempts folded into a score and a status. Both
+ * derive from the same pass count, so they cannot disagree. `score` is null
+ * only for NOT_RUN -- an unexecuted case measured nothing, and recording it
+ * as 0 would read as "ran and failed every attempt".
+ */
+export interface Result {
+  id: string;
+  tier: ReportTier;
+  status: Status;
+  /** Percent of attempts whose check passed (0-100); null when none ran. */
+  score: number | null;
+  attemptsPassed: number;
+  attemptsRun: number;
+  observed: string;
+  costUsd: number;
+  durationMs: number;
+}
 
 /** A report cell holds one line; a longer assertion message is truncated. */
 export const MAX_OBSERVED_CHARS = 160;

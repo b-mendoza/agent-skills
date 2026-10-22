@@ -1,127 +1,95 @@
-import { Effect } from "effect";
+import { query } from "@anthropic-ai/claude-agent-sdk";
 
-import type {
-  AgentQuery,
-  AgentQueryRequest,
-} from "#/observation/agent-query-service.ts";
-import type { QueryAccumulator } from "#/observation/agent-query-stream.ts";
-import { failureText, settleQuery } from "#/observation/agent-query-stream.ts";
-import { GitSampler } from "#/observation/git-status.ts";
+import { normalizeStreamMessage } from "#/observation/agent-query-messages.ts";
+import { sampleGitStatus, toText } from "#/observation/git-status.ts";
 import type {
   Observation,
   ResultVerdict,
   RunOptions,
+  ToolCall,
 } from "#/observation/observation-types.ts";
 
 const NS_PER_MS = 1e6;
-/** A run with no reported cost books nothing rather than `NaN`. */
-const ZERO_COST = 0;
+export const QUERY_ERROR_SUBTYPE = "query_error";
 
-interface WallClock {
-  readonly abortController: AbortController;
-  readonly clear: () => void;
-  readonly timedOut: () => boolean;
+function failureText(failure: unknown): string {
+  if (failure == null) return "query ended without a result message";
+  return failure instanceof Error ? failure.message : toText(failure);
 }
 
-function startWallClock(wallClockMs: number): WallClock {
+async function readResult(
+  iterator: AsyncIterator<unknown>,
+  toolCalls: ToolCall[],
+): Promise<ResultVerdict | null> {
+  const message = await iterator.next();
+  if (message.done === true) return null;
+  const result = normalizeStreamMessage(message.value, toolCalls);
+  return result ?? readResult(iterator, toolCalls);
+}
+
+async function closeIterator(
+  iterator: AsyncIterator<unknown> | undefined,
+  timer: ReturnType<typeof setTimeout>,
+): Promise<void> {
+  try {
+    if (iterator?.return !== undefined) await iterator.return();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Observe one query; a recorded result takes precedence over cleanup errors. */
+export async function observeClaude(
+  runOptions: RunOptions,
+): Promise<Observation> {
+  const repo = runOptions.gitRepo ?? runOptions.cwd;
+  const gitStatusBefore = sampleGitStatus(repo);
+  const startedAt = process.hrtime.bigint();
   const abortController = new AbortController();
   let timedOut = false;
   const timer = setTimeout(() => {
     timedOut = true;
     abortController.abort();
-  }, wallClockMs);
-  return {
-    abortController,
-    clear: () => {
-      clearTimeout(timer);
-    },
-    timedOut: () => timedOut,
-  };
-}
-
-function createQueryRequest(
-  runOptions: RunOptions,
-  abortController: AbortController,
-): AgentQueryRequest {
-  return {
-    prompt: runOptions.prompt,
-    options: {
-      cwd: runOptions.cwd,
-      model: runOptions.model,
-      maxBudgetUsd: runOptions.budgetUsd,
-      permissionMode: "auto",
-      abortController,
-      // `env` is omitted on purpose: the subprocess then inherits
-      // `process.env`, including whatever credentials the ambient
-      // environment carries. Setting `env` would REPLACE the environment,
-      // not merge it.
-      settingSources: ["project"],
-      systemPrompt: { type: "preset", preset: "claude_code" },
-      tools: { type: "preset", preset: "claude_code" },
-    },
-  };
-}
-
-/**
- * Subtype of the synthetic Observation produced when the query never yielded
- * a result message: the SDK threw (option validation, bundled-CLI startup,
- * transport, abort) or the stream ended early. There is no result to trust,
- * so the run reports failure and books no cost. Exported so case assertions
- * reject the same constant the harness emits instead of a drifting literal.
- */
-export const QUERY_ERROR_SUBTYPE = "query_error";
-
-/**
- * One Agent SDK query, observed end to end as an Effect program.
- *
- * The native timer stays at the SDK boundary because its cooperative abort
- * semantics and ordering are observable contracts not covered by the pinned
- * Effect timeout APIs.
- */
-export const observeClaude = (
-  runOptions: RunOptions,
-): Effect.Effect<Observation, never, AgentQuery | GitSampler> =>
-  Effect.gen(function* () {
-    const gitSampler = yield* GitSampler;
-    const repo = runOptions.gitRepo ?? runOptions.cwd;
-    const gitStatusBefore = yield* gitSampler.sample(repo);
-    const startedAt = process.hrtime.bigint();
-    const wallClock = startWallClock(runOptions.wallClockMs);
-    let resultVerdict: ResultVerdict | null = null;
-    const accumulator: QueryAccumulator = {
-      getResultVerdict: () => resultVerdict,
-      recordResultVerdict: (verdict) => {
-        resultVerdict = verdict;
+  }, runOptions.wallClockMs);
+  const toolCalls: ToolCall[] = [];
+  let result: ResultVerdict | null = null;
+  let failure: unknown = undefined;
+  let iterator: AsyncIterator<unknown> | undefined = undefined;
+  try {
+    iterator = query({
+      prompt: runOptions.prompt,
+      options: {
+        cwd: runOptions.cwd,
+        model: runOptions.model,
+        maxBudgetUsd: runOptions.budgetUsd,
+        permissionMode: "auto",
+        abortController,
+        // Omit env so the subprocess inherits ambient credentials.
+        settingSources: ["project"],
+        systemPrompt: { type: "preset", preset: "claude_code" },
+        tools: { type: "preset", preset: "claude_code" },
       },
-      toolCalls: [],
-    };
-    const request = createQueryRequest(runOptions, wallClock.abortController);
-    const querySettlement = yield* settleQuery(request, accumulator);
-    wallClock.clear();
-
-    // Sampled after settlement on every path -- a run that threw may still
-    // have mutated the repo, and that evidence must not be lost.
-    const gitStatusAfter = yield* gitSampler.sample(repo);
-    const settled = {
-      // Copied so nothing can grow an observation a caller already holds.
-      toolCalls: [...accumulator.toolCalls],
-      gitStatusBefore,
-      gitStatusAfter,
-      durationMs: Number(process.hrtime.bigint() - startedAt) / NS_PER_MS,
-      timedOut: wallClock.timedOut(),
-    };
-
-    if (querySettlement.resultVerdict === null) {
-      // No result message means no trustworthy verdict and no reported cost:
-      // the run failed as infrastructure, whatever partial state accumulated.
-      return {
-        ...settled,
-        subtype: QUERY_ERROR_SUBTYPE,
-        isError: true,
-        finalText: failureText(querySettlement.failure),
-        costUsd: ZERO_COST,
-      };
-    }
-
-    return { ...settled, ...querySettlement.resultVerdict };
-  });
+    })[Symbol.asyncIterator]();
+    result = await readResult(iterator, toolCalls);
+  } catch (error) {
+    failure = error;
+  } finally {
+    await closeIterator(iterator, timer).catch((error: unknown) => {
+      if (result === null) throw error;
+    });
+  }
+  const gitStatusAfter = sampleGitStatus(repo);
+  return {
+    toolCalls: [...toolCalls],
+    gitStatusBefore,
+    gitStatusAfter,
+    durationMs: Number(process.hrtime.bigint() - startedAt) / NS_PER_MS,
+    timedOut,
+    ...(result ?? {
+      subtype: QUERY_ERROR_SUBTYPE,
+      isError: true,
+      finalText: failureText(failure),
+      costUsd: 0,
+    }),
+  };
+}
