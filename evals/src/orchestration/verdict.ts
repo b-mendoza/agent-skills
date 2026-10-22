@@ -114,7 +114,14 @@ export async function evaluateWithJudge(
       observed: `${mechanicalObserved}; ${judgeObserved}`,
     };
   } catch (cause) {
-    return normalizeCheckFailure(cause);
+    const failure = normalizeCheckFailure(cause);
+    if (!/^judge\b/i.test(failure.observed)) {
+      failure.observed = `judge: ${failure.observed}`.slice(
+        FIRST_CHARACTER_INDEX,
+        MAX_OBSERVED_CHARS,
+      );
+    }
+    return failure;
   }
 }
 

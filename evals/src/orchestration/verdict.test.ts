@@ -8,10 +8,12 @@
 
 import { expect, test } from "vitest";
 
+import { observe } from "#/cases/case-test-support.ts";
 import type { AttemptResult } from "#/orchestration/verdict.ts";
 import {
   aggregateAttempts,
   evaluate,
+  evaluateWithJudge,
   MAX_OBSERVED_CHARS,
   notRunResult,
 } from "#/orchestration/verdict.ts";
@@ -72,6 +74,31 @@ test("a thrown non-Error still produces a FAIL attempt", () => {
     observed: "bare string",
   });
 });
+
+test.each([
+  { message: "ECONNRESET", observed: "judge: ECONNRESET" },
+  {
+    message: "judge: planted-facts violated -- missing fact",
+    observed: "judge: planted-facts violated -- missing fact",
+  },
+  {
+    message: "judge reply JSON had an invalid shape",
+    observed: "judge reply JSON had an invalid shape",
+  },
+])(
+  "judge failures name the judge without duplicate prefixes: $message",
+  async ({ message, observed }) => {
+    const outcome = await evaluateWithJudge(
+      async () => {
+        await Promise.resolve();
+        throw new Error(message);
+      },
+      observe(),
+      "mechanical check passed",
+    );
+    expect(outcome).toStrictEqual({ status: "FAIL", observed });
+  },
+);
 
 test("attempts that all pass aggregate to PASS with a full score", () => {
   const aggregated = aggregateAttempts([
