@@ -308,12 +308,9 @@ needed.
   loop. If the prompt you are writing contains "do not flag," "don't treat X
   as a defect," "at most Minor," or "the plan chose" — stop: you are
   pre-judging, usually to spare yourself a review loop.
-The task reviewer may report "⚠️ Cannot verify from diff" items — requirements
-that live in unchanged code or span tasks. These do not block the rest of the
-review, but you must resolve each one yourself before marking the task
-complete: you hold the plan and cross-task context the reviewer
-lacks. If you confirm an item is a real gap, treat it as a failed spec
-review — it enters the fix loop with the other findings.
+If the reviewer reports "⚠️ Cannot verify from diff" items, read
+[references/cannot-verify.md](references/cannot-verify.md) before you mark
+the task complete.
 
 Template: [task-reviewer-prompt.md](task-reviewer-prompt.md)
 
