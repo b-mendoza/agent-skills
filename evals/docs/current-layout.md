@@ -9,7 +9,6 @@ Source lives under [`src/`](../src/), grouped by capability. Tests sit beside th
 | Module             | Responsibility                                                                                                                                        |
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `run.ts`           | Direct Node entry point with an inert-import guard. Spawns promptfoo, forwards arguments, reads JSON results, writes the report, and maps exit codes. |
-| `suite.ts`         | Sequential cases and attempts, attempt-grouped derived mutation checks, NOT_RUN rows, and report writing.                                             |
 | `execution.ts`     | One attempt: acquire a real fixture, observe the agent, check the result, optionally judge, persist FAIL text, and clean up.                          |
 | `verdict.ts`       | Attempt/result types, check-failure normalization, scores, aggregation, and NOT_RUN results.                                                          |
 | `report.ts`        | Markdown rendering, progress-line formatting, and the fixed production report path.                                                                   |
