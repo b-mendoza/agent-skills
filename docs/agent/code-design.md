@@ -1,15 +1,13 @@
 # Code design
 
-Principles that apply across trees and languages. Framework-specific mechanisms (how a given tree implements them) are documented in that tree's own guides.
-
 ## Contracts at the boundaries
 
-Every entry point into the system — an HTTP endpoint, a server function, a CLI command — has a contract: the shape of data it accepts and the shape it promises to return. Make that contract explicit in code and enforce it at the boundary, so the system itself is the first thing to detect a violation. If a client, a dashboard, or someone poking the API with a manual tool notices a broken contract before the system does, that is a defect in the system, not just in the data.
+Make every entry point's accepted input and promised output explicit and enforce them at the boundary.
 
-- **Parse, don't assume.** Any data crossing into the system — request input, a third-party response, an SDK message consumed by the harness — is validated against an explicit schema or typed model at the crossing point, before any logic runs. A type annotation on incoming data is a claim, not a guarantee; reject what fails to parse with a clear error message rather than passing it deeper.
-- **Declare outputs as explicit response models.** Every entry point returns a declared DTO or schema-backed type, never an ad-hoc blob assembled inline. Static types are enforced wherever they apply; add runtime validation only where they cannot be enforced — dynamically assembled data or pass-throughs from a database or third party.
-- **Fail loudly, never quietly.** A contract violation is an error surfaced immediately — error response, error-level log — never coerced, defaulted, or silently dropped to keep a request limping along. Loud failure at the boundary is what makes a broken contract visible without external tooling or client reports.
-- **Types carry the guarantee inward.** Prefer structured types that make invalid states unrepresentable — a parsed URL value over a raw string. Validate once at the boundary and pass the parsed values on; internal code relies on the invariants established there rather than rechecking the same data at every layer.
+- Parse incoming requests, third-party responses, and SDK messages against a schema or typed model before running logic. Type annotations are not validation; reject invalid data with a clear error.
+- Return declared response models or schema-backed types, not ad-hoc objects. Enforce static types where possible; add runtime output validation only where static guarantees cannot hold, such as dynamically assembled data or third-party pass-throughs.
+- Surface contract violations immediately as errors, never coerce, default, or silently drop invalid data.
+- Prefer structured types that make invalid states unrepresentable. Parse once at the boundary and pass validated values inward rather than checking the same data in each layer.
 
 ## Names
 
@@ -19,4 +17,4 @@ Keep established short-scope idioms consistently across a file or module: loop i
 
 ## Comments
 
-- Comment to explain **why** — a constraint, a trade-off, a non-obvious invariant the code cannot express — never to narrate **what** the code does or that it changed. Comments describing the change itself ("removed X", "now uses Y instead") belong in the commit message, not the source.
+Explain constraints, trade-offs, and non-obvious invariants, not what code does or how it changed. Change history belongs in the commit message.
