@@ -80,32 +80,36 @@ describe("run validity", () => {
       getCase(entry.caseId).check({ ...observation, timedOut: true }),
     ).toThrow(/run exceeded its wall clock/);
   });
-  test("an error after the run did real work is left to the case to judge", () => {
-    const lateFailure = createObservation({
-      isError: true,
-      subtype: "error_during_execution",
-      finalText: "",
+  test.each([
+    {
+      label: "tool work",
+      caseId: "trigger-positive",
       toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-    });
-
-    expect(getCase("trigger-positive").check(lateFailure)).toBe(
-      "Skill invoked",
-    );
-  });
-
-  test("a cost-only late error is left to the case to judge", () => {
-    const costOnlyLateFailure = createObservation({
-      isError: true,
-      subtype: "error_during_execution",
-      finalText: "",
+      costUsd: 0,
+      expected: "Skill invoked",
+    },
+    {
+      label: "cost only",
+      caseId: "trigger-negative-review",
       toolCalls: [],
       costUsd: 0.01,
-    });
-
-    expect(getCase("trigger-negative-review").check(costOnlyLateFailure)).toBe(
-      "no trigger",
-    );
-  });
+      expected: "no trigger",
+    },
+  ])(
+    "a late error after $label is left to the case to judge",
+    ({ caseId, toolCalls, costUsd, expected }) => {
+      expect(
+        getCase(caseId).check(
+          createObservation({
+            isError: true,
+            subtype: "error_during_execution",
+            toolCalls,
+            costUsd,
+          }),
+        ),
+      ).toBe(expected);
+    },
+  );
 });
 
 describe("routing", () => {
@@ -200,30 +204,32 @@ describe("routing", () => {
     ).toThrow(/skill never triggered/);
   });
 
-  test("the mutate case fails when the run mutated the repo", () => {
-    const mutated = createObservation({
-      subtype: BUDGET_STOP_SUBTYPE,
+  test.each([
+    {
+      label: "a repository mutation",
+      caseId: "trigger-negative-mutate",
       finalText: "done",
       toolCalls: [{ name: "Bash", input: { command: "git merge feature" } }],
-    });
-
-    expect(() => getCase("trigger-negative-mutate").check(mutated)).toThrow(
-      /repo was mutated/,
-    );
-  });
-
-  test("a routing-tier case rejects a full report", () => {
-    const fullReport = createObservation({
-      subtype: BUDGET_STOP_SUBTYPE,
-      isError: true,
+      expected: /repo was mutated/,
+    },
+    {
+      label: "a full report",
+      caseId: "trigger-negative-review",
       finalText: "# Project State Snapshot\n\n## 1. Executive Summary",
       toolCalls: [],
-      costUsd: 0,
-    });
-
-    expect(() => getCase("trigger-negative-review").check(fullReport)).toThrow(
-      /unexpectedly produced a full report/,
-    );
+      expected: /unexpectedly produced a full report/,
+    },
+  ])("routing rejects $label", ({ caseId, finalText, toolCalls, expected }) => {
+    expect(() =>
+      getCase(caseId).check(
+        createObservation({
+          subtype: BUDGET_STOP_SUBTYPE,
+          isError: true,
+          finalText,
+          toolCalls,
+        }),
+      ),
+    ).toThrow(expected);
   });
 });
 
@@ -241,26 +247,26 @@ describe("envelope", () => {
     );
   });
 
-  test("an envelope case fails on the wrong status", () => {
-    const observation = createObservation({
+  test.each([
+    {
+      label: "wrong status",
       finalText:
         "RECENT_STATE: NOT_GIT\nReason: unavailable\nNext step: use a repo",
-      toolCalls: [VALIDATOR_CALL],
-    });
-    expect(() => getCase("path-error").check(observation)).toThrow(
-      /expected a PATH_ERROR envelope/,
-    );
-  });
-
-  test("delegates malformed envelope rejection to the real validator", () => {
-    const observation = createObservation({
+      expected: /expected a PATH_ERROR envelope/,
+    },
+    {
+      label: "invalid shape",
       finalText:
         "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it\nExtra line",
-      toolCalls: [VALIDATOR_CALL],
-    });
-    expect(() => getCase("path-error").check(observation)).toThrow(
-      /envelope shape invalid:[\s\S]*expected exactly 3 envelope lines/,
-    );
+      expected:
+        /envelope shape invalid:[\s\S]*expected exactly 3 envelope lines/,
+    },
+  ])("envelope rejects $label", ({ finalText, expected }) => {
+    expect(() =>
+      getCase("path-error").check(
+        createObservation({ finalText, toolCalls: [VALIDATOR_CALL] }),
+      ),
+    ).toThrow(expected);
   });
 });
 
@@ -315,25 +321,24 @@ describe("quiet state", () => {
   const QUIET_OUTCOME =
     "short form; disclosures present; no invented sections; no ERROR";
 
-  test("quiet-state passes on the short-form snapshot", () => {
-    const quietState = createObservation({
+  test.each([
+    {
+      label: "numbered headings",
       finalText: QUIET_STATE_SNAPSHOT.replace(
         "## Executive Summary",
         "## 1. Executive Summary",
       ),
-      toolCalls: [VALIDATOR_CALL],
-    });
-
-    expect(getCase("quiet-state").check(quietState)).toBe(QUIET_OUTCOME);
-  });
-
-  test("quiet-state accepts unnumbered, reordered canonical headings", () => {
-    const reordered = createObservation({
+    },
+    {
+      label: "unnumbered, reordered canonical headings",
       finalText: QUIET_STATE_SNAPSHOT,
-      toolCalls: [VALIDATOR_CALL],
-    });
-
-    expect(getCase("quiet-state").check(reordered)).toBe(QUIET_OUTCOME);
+    },
+  ])("quiet-state accepts $label", ({ finalText }) => {
+    expect(
+      getCase("quiet-state").check(
+        createObservation({ finalText, toolCalls: [VALIDATOR_CALL] }),
+      ),
+    ).toBe(QUIET_OUTCOME);
   });
 
   test.each([
