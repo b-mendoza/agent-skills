@@ -1,7 +1,7 @@
 import { tmpdir } from "node:os";
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import { Exit, Schema } from "effect";
+import { Predicate, Result, Schema } from "effect";
 
 /** One binary requirement. The judge reports violations, never scores. */
 export interface RubricItem {
@@ -53,25 +53,10 @@ const violationCandidateSchema = Schema.Struct({
 const judgeReplySchema = Schema.Struct({
   violations: Schema.Array(violationCandidateSchema),
 });
-const streamMessageDiscriminatorSchema = Schema.Struct({
-  type: Schema.String,
-});
-const judgeResultMessageSchema = Schema.Struct({
-  type: Schema.Literal("result"),
-  result: Schema.String,
-});
-
-const decodeJudgeReply = Schema.decodeUnknownSync(judgeReplySchema);
-const decodeStreamMessageDiscriminator = Schema.decodeUnknownExit(
-  streamMessageDiscriminatorSchema,
+const decodeJudgeReply = Schema.decodeUnknownResult(judgeReplySchema);
+const decodeJudgeResultMessage = Schema.decodeUnknownResult(
+  Schema.Struct({ result: Schema.String }),
 );
-const decodeJudgeResultMessage = Schema.decodeUnknownSync(
-  judgeResultMessageSchema,
-);
-
-function preview(text: string): string {
-  return text.slice(PREVIEW_START, PREVIEW_CHARS);
-}
 
 /** The outermost brace-delimited span, without regex backtracking. */
 function extractJsonBlock(responseText: string): string | undefined {
@@ -114,36 +99,6 @@ export function buildJudgePrompt(request: JudgeRequest): string {
   ].join("\n");
 }
 
-function citationAppearsInArtifact(quote: string, artifact: string): boolean {
-  return quote !== "" && artifact.includes(quote);
-}
-
-function formatUncitedComplaint(
-  violation: CitedViolation,
-  cited: boolean,
-  knownItem: boolean,
-): string {
-  return `${violation.itemId}: ${violation.reason} (quote ${cited ? "ok" : "not found in artifact"}${knownItem ? "" : "; unknown rubric id"})`;
-}
-
-function parseJudgeJson(jsonBlock: string): unknown {
-  try {
-    return JSON.parse(jsonBlock);
-  } catch (cause) {
-    throw new Error(`judge reply was not valid JSON: ${preview(jsonBlock)}`, {
-      cause,
-    });
-  }
-}
-
-function decodeJudgeReplyJson(judgeReply: unknown) {
-  try {
-    return decodeJudgeReply(judgeReply);
-  } catch (cause) {
-    throw new Error("judge reply JSON had an invalid shape", { cause });
-  }
-}
-
 /**
  * Parses the judge's reply and validates every citation against the artifact.
  * Throws on an unparseable reply; the failure names the judge, so a broken
@@ -156,24 +111,41 @@ export function parseJudgeResponse(
   const jsonBlock = extractJsonBlock(responseText);
   if (jsonBlock === undefined) {
     throw new Error(
-      `judge reply contained no JSON object: ${preview(responseText)}`,
+      `judge reply contained no JSON object: ${responseText.slice(PREVIEW_START, PREVIEW_CHARS)}`,
     );
   }
 
-  const judgeReply = decodeJudgeReplyJson(parseJudgeJson(jsonBlock));
+  const json = Result.getOrThrow(
+    Result.try({
+      try: (): unknown => JSON.parse(jsonBlock),
+      catch: (cause) =>
+        new Error(
+          `judge reply was not valid JSON: ${jsonBlock.slice(PREVIEW_START, PREVIEW_CHARS)}`,
+          { cause },
+        ),
+    }),
+  );
+  const judgeReply = Result.getOrThrowWith(
+    decodeJudgeReply(json),
+    (cause) => new Error("judge reply JSON had an invalid shape", { cause }),
+  );
   const rubricIds = new Set(request.rubric.map((item) => item.id));
   const citedViolations: CitedViolation[] = [];
-  const uncitedComplaints: string[] = [];
-  judgeReply.violations.forEach((violation) => {
-    const cited = citationAppearsInArtifact(violation.quote, request.artifact);
-    const knownItem = rubricIds.has(violation.itemId);
-    if (cited && knownItem) citedViolations.push(violation);
-    else {
-      uncitedComplaints.push(
-        formatUncitedComplaint(violation, cited, knownItem),
-      );
-    }
-  });
+  const uncitedComplaints = judgeReply.violations
+    .flatMap((violation) => {
+      const cited =
+        violation.quote !== "" && request.artifact.includes(violation.quote);
+      const knownItem = rubricIds.has(violation.itemId);
+      if (cited && knownItem) {
+        citedViolations.push(violation);
+        return [];
+      }
+      return [{ violation, cited, knownItem }];
+    })
+    .map(
+      ({ violation, cited, knownItem }) =>
+        `${violation.itemId}: ${violation.reason} (quote ${cited ? "ok" : "not found in artifact"}${knownItem ? "" : "; unknown rubric id"})`,
+    );
   return { citedViolations, uncitedComplaints };
 }
 
@@ -191,21 +163,6 @@ export function createJudge(options: {
   };
 }
 
-function decodeRelevantResultMessage(message: unknown): string {
-  try {
-    return decodeJudgeResultMessage(message).result;
-  } catch (cause) {
-    throw new Error("judge result message had an invalid shape", { cause });
-  }
-}
-
-function extractResultText(message: unknown): string | undefined {
-  const discriminator = decodeStreamMessageDiscriminator(message);
-  if (Exit.isFailure(discriminator)) return undefined;
-  if (discriminator.value.type !== "result") return undefined;
-  return decodeRelevantResultMessage(message);
-}
-
 /** The judge has its own no-tools query and propagates iterator cleanup errors. */
 export const liveJudgeQuery: JudgeQuery = async (prompt, model) => {
   const stream = query({
@@ -213,8 +170,12 @@ export const liveJudgeQuery: JudgeQuery = async (prompt, model) => {
     options: { model, maxTurns: 1, allowedTools: [], cwd: tmpdir() },
   });
   for await (const message of stream) {
-    const resultText = extractResultText(message);
-    if (resultText !== undefined) return resultText;
+    if (!Predicate.isObject(message) || message.type !== "result") continue;
+    return Result.getOrThrowWith(
+      decodeJudgeResultMessage(message),
+      (cause) =>
+        new Error("judge result message had an invalid shape", { cause }),
+    ).result;
   }
   throw new Error("judge query produced no result message");
 };

@@ -1,13 +1,10 @@
-// Pins the judge's two safety properties: citations are validated against the
-// artifact rather than trusted, and an unreadable judge reply fails loudly as
-// judge infrastructure instead of counting for or against the artifact.
-
 import type { query } from "@anthropic-ai/claude-agent-sdk";
 import { describe, expect, test, vi } from "vitest";
 
 import type { JudgeRequest } from "#/observation/judge.ts";
 import {
   buildJudgePrompt,
+  JUDGE_MODEL,
   judgeLive,
   liveJudgeQuery,
   parseJudgeResponse,
@@ -33,18 +30,10 @@ const REQUEST: JudgeRequest = {
     { id: "G2", requirement: "No claim that tests or CI ran or passed." },
   ],
 };
-const SINGLE_CITED_VIOLATION_COUNT = 1;
-const SINGLE_UNCITED_COMPLAINT_COUNT = 1;
+const SINGLE_ITEM = 1;
 
 function reply(violations: unknown): string {
   return JSON.stringify({ violations });
-}
-
-function malformedResultStream(): AsyncIterable<unknown> {
-  return scripted(
-    { type: "assistant", message: { content: [] } },
-    { type: "result", result: 7 },
-  );
 }
 
 describe("buildJudgePrompt", () => {
@@ -70,7 +59,7 @@ describe("parseJudgeResponse", () => {
       REQUEST,
     );
 
-    expect(outcome.citedViolations).toHaveLength(SINGLE_CITED_VIOLATION_COUNT);
+    expect(outcome.citedViolations).toHaveLength(SINGLE_ITEM);
     expect(outcome.uncitedComplaints).toStrictEqual([]);
   });
 
@@ -90,7 +79,7 @@ describe("parseJudgeResponse", () => {
       REQUEST,
     );
 
-    expect(outcome.citedViolations).toHaveLength(SINGLE_CITED_VIOLATION_COUNT);
+    expect(outcome.citedViolations).toHaveLength(SINGLE_ITEM);
   });
 
   test("demotes a violation whose quote is not in the artifact", () => {
@@ -102,9 +91,7 @@ describe("parseJudgeResponse", () => {
     );
 
     expect(outcome.citedViolations).toStrictEqual([]);
-    expect(outcome.uncitedComplaints).toHaveLength(
-      SINGLE_UNCITED_COMPLAINT_COUNT,
-    );
+    expect(outcome.uncitedComplaints).toHaveLength(SINGLE_ITEM);
   });
 
   test("demotes a violation naming an unknown rubric id", () => {
@@ -120,9 +107,7 @@ describe("parseJudgeResponse", () => {
     );
 
     expect(outcome.citedViolations).toStrictEqual([]);
-    expect(outcome.uncitedComplaints).toHaveLength(
-      SINGLE_UNCITED_COMPLAINT_COUNT,
-    );
+    expect(outcome.uncitedComplaints).toHaveLength(SINGLE_ITEM);
   });
 
   test("demotes an empty quote rather than treating it as cited", () => {
@@ -132,9 +117,7 @@ describe("parseJudgeResponse", () => {
     );
 
     expect(outcome.citedViolations).toStrictEqual([]);
-    expect(outcome.uncitedComplaints).toHaveLength(
-      SINGLE_UNCITED_COMPLAINT_COUNT,
-    );
+    expect(outcome.uncitedComplaints).toHaveLength(SINGLE_ITEM);
   });
 
   test.each([
@@ -189,10 +172,8 @@ describe("parseJudgeResponse", () => {
 
 describe("SDK judge", () => {
   test("fails closed on a malformed relevant result message", async () => {
-    sdk.query.mockImplementation(malformedResultStream);
-    await expect(liveJudgeQuery("grade this", "haiku")).rejects.toThrow(
-      /judge/,
-    );
+    sdk.query.mockImplementation(() => scripted({ type: "result", result: 7 }));
+    await expect(liveJudgeQuery("", JUDGE_MODEL)).rejects.toThrow(/judge/);
   });
 
   test("sends the built prompt and parses the reply", async () => {
