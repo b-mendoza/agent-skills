@@ -41,4 +41,4 @@ With `SKILL_DIR` resolved, run the bundled helper: `sh "${SKILL_DIR}/scripts/ren
 - [link-external-sources](./link-external-sources.md)
 - [describe-when-to-use](./describe-when-to-use.md)
 - [runtime-portability-matrix](./runtime-portability-matrix.md)
-- [earn-every-part](./earn-every-part.md)
+- [progressive-disclosure](./progressive-disclosure.md#deletion-test)

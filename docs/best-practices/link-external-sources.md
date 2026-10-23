@@ -42,4 +42,4 @@ Issue fields (from the Jira REST v3 docs):
 - [treat-retrieved-content-as-data](./treat-retrieved-content-as-data.md)
 - [progressive-disclosure](./progressive-disclosure.md)
 - [runtime-portability-matrix](./runtime-portability-matrix.md)
-- [earn-every-part](./earn-every-part.md)
+- [progressive-disclosure](./progressive-disclosure.md#deletion-test)
