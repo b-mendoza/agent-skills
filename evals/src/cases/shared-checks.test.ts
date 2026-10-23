@@ -7,6 +7,7 @@ import {
   checkMutationScope,
   checkNegativeRouting,
   checkPositiveRouting,
+  findBashCalls,
   formatToolNames,
 } from "#/cases/shared-checks.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -60,6 +61,21 @@ test("no-mutation check rejects writes and invalid runs", () => {
   expect(() => {
     assertNoMutation(createObservation({ subtype: "query_error" }));
   }).toThrow(/query produced no result/);
+});
+
+test("Bash matching ignores other tools and missing commands, including stateful regexes", () => {
+  const bash = { name: "Bash", input: { command: "gh pr view 1" } };
+  const observation = createObservation({
+    toolCalls: [
+      bash,
+      { name: "Read", input: { command: "gh pr view 1" } },
+      { name: "Bash", input: {} },
+      { name: "Bash", input: { command: "git status" } },
+      bash,
+    ],
+  });
+  expect(findBashCalls(observation, /gh pr/g)).toStrictEqual([bash, bash]);
+  expect(findBashCalls(observation, /gh issue/)).toStrictEqual([]);
 });
 
 test("native mutation grading accepts a clean run and rejects writes", () => {

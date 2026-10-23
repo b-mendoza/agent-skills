@@ -114,3 +114,16 @@ export function checkMutationScope(observation: Observation): string {
   assertNoMutation(observation);
   return "1 behavioral run(s) left no trace";
 }
+
+/** Lexical command matches only; this does not prove successful execution. */
+export function findBashCalls(
+  observation: Observation,
+  pattern: RegExp,
+): ToolCall[] {
+  return observation.toolCalls.filter(
+    (toolCall) =>
+      toolCall.name === "Bash" &&
+      typeof toolCall.input["command"] === "string" &&
+      new RegExp(pattern).test(toolCall.input["command"]),
+  );
+}
