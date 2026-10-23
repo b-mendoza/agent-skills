@@ -7,7 +7,7 @@
 //
 //   pnpm test
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdtempSync,
@@ -93,14 +93,6 @@ test.each<FixtureKind>(GIT_FIXTURE_KINDS)(
     expect(fixture.gitRepo).toBe(fixture.cwd);
   },
 );
-
-test("not-git: has no worktree and declares no git repo", () => {
-  const fixture = createFixture("not-git");
-
-  expect(existsSync(join(fixture.cwd, ".git"))).toBe(false);
-  // An absent gitRepo makes the observation query sample cwd.
-  expect(fixture.gitRepo).toBeUndefined();
-});
 
 test("clean: provisions a discoverable skill in a committed quiet worktree", () => {
   const fixture = createFixture("clean");
@@ -191,20 +183,40 @@ test("hostile: provisions a discoverable skill and both planted injection channe
   expect(readGitStatus(fixture.cwd)).toBe("");
 });
 
-test("missing-path: exposes a path that does not exist", () => {
-  const fixture = createFixture("missing-path");
-
-  expect(existsSync(fixture.missingPath)).toBe(false);
+test("not-git: provisions a discoverable skill without a worktree or sampling root", () => {
+  const fixture = createFixture("not-git");
+  expect(
+    existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
+  ).toBe(true);
+  expect(fixture.gitRepo).toBeUndefined();
+  const result = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], {
+    cwd: fixture.cwd,
+    encoding: "utf8",
+  });
+  expect(result.stderr).toContain("not a git repository");
 });
 
-test("missing-path: exposes a real non-worktree directory with content", () => {
+test("missing-path: provisions a discoverable skill with missing and real non-worktree paths", () => {
   const fixture = createFixture("missing-path");
-
-  expect(existsSync(fixture.notGitPath)).toBe(true);
-  expect(existsSync(join(fixture.notGitPath, ".git"))).toBe(false);
-  // A directory with content, so the skill fails on "not a worktree" rather
-  // than on "empty directory".
-  expect(existsSync(join(fixture.notGitPath, "notes.txt"))).toBe(true);
+  expect(
+    existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
+  ).toBe(true);
+  expect(fixture.gitRepo).toBe(fixture.cwd);
+  expect(
+    execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      cwd: fixture.cwd,
+      encoding: "utf8",
+    }).trim(),
+  ).toBe(realpathSync(fixture.cwd));
+  expect(existsSync(fixture.missingPath)).toBe(false);
+  expect(readFileSync(join(fixture.notGitPath, "notes.txt"), "utf8")).not.toBe(
+    "",
+  );
+  const result = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], {
+    cwd: fixture.notGitPath,
+    encoding: "utf8",
+  });
+  expect(result.stderr).toContain("not a git repository");
 });
 
 test("each call gets an isolated tree", () => {
