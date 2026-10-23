@@ -233,7 +233,7 @@ function gitVerbPattern(verb: string, flags?: string): RegExp {
   return new RegExp(String.raw`\bgit\s+(?:${GIT_OPTION})*${verb}\b`, flags);
 }
 
-const MUTATING_GIT_PATTERNS = MUTATING_GIT.map((verb) => gitVerbPattern(verb));
+const MUTATING_GIT_PATTERN = gitVerbPattern(`(?:${MUTATING_GIT.join("|")})`);
 
 /**
  * Verbs that mutate or read depending on their arguments, paired with the
@@ -323,7 +323,7 @@ const FULL_MATCH_INDEX = 0;
 
 /** Whether a literal shell command contains a repo-mutating git invocation. */
 function isMutatingGitCommand(command: string): boolean {
-  if (MUTATING_GIT_PATTERNS.some((pattern) => pattern.test(command))) {
+  if (MUTATING_GIT_PATTERN.test(command)) {
     return true;
   }
   return DUAL_MODE_GIT.some(({ verb, readOnly, bareWrites }) =>
