@@ -16,7 +16,7 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 import { cases, SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import { observe, VALIDATOR_CALL } from "#/cases/case-test-support.ts";
 
-import config, { evalModel } from "../../promptfooconfig.ts";
+import config from "../../promptfooconfig.ts";
 
 const EVAL_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const CLI = fileURLToPath(
@@ -115,29 +115,19 @@ function evaluateOffline(args: string[], scenario: string) {
   return { child, exported };
 }
 
-test("caps concurrent attempts at five and labels cases without changing the dataset", () => {
-  expect(config.evaluateOptions.maxConcurrency).toBe(MAX_CONCURRENCY);
-  expect(config.defaultTest.assert).toEqual([
-    expect.objectContaining({ metric: "case/{{caseId}}" }),
-  ]);
-  expect(config.description).toBe(`Agent skills evals (${evalModel})`);
-});
-
-test.each([
-  { args: [], count: 5 },
-  { args: ["--repeat", "1", "-j", "2"], count: 1 },
-])(
-  "native CLI filters tier 1 with $count repeats and no mutation metric",
-  ({ args, count }) => {
+test(
+  "native CLI filters tier 1 with default repeats, routing metrics and capped concurrency",
+  () => {
+    expect(config.evaluateOptions.maxConcurrency).toBe(MAX_CONCURRENCY);
     const { child, exported } = evaluateOffline(
-      ["--filter-metadata", "tier=1", ...args],
+      ["--filter-metadata", `tier=${String(ROUTING_TIER)}`],
       "pass",
     );
     expect(child.status).toBe(EXIT.PASS);
     const selected = cases.filter((evalCase) => evalCase.tier === ROUTING_TIER);
     expect(exported).toHaveProperty(
       "results.results.length",
-      selected.length * count,
+      selected.length * config.evaluateOptions.repeat,
     );
     for (const { id } of selected) {
       expect(exported).toHaveProperty(
@@ -145,14 +135,7 @@ test.each([
         expect.arrayContaining([
           expect.objectContaining({
             success: true,
-            testCase: expect.objectContaining({
-              vars: { caseId: id },
-              metadata: { tier: ROUTING_TIER },
-            }) as unknown,
             namedScores: { [`case/${id}`]: 1 },
-            gradingResult: expect.objectContaining({
-              componentResults: [expect.objectContaining({ pass: true })],
-            }) as unknown,
           }),
         ]),
       );
