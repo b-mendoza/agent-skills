@@ -35,46 +35,15 @@ Nothing to hand off.
 - nice-to-have: Continue development.`;
 
 export const FULL_REPORT_SNAPSHOT = `# Project State Snapshot
-
 ## 1. Executive Summary
-
-Two commits and local edits touch a.txt, b.txt, and c.txt.
-
 ## 2. Git State
-
-Branch main; base none; 2 commits in window.
-
 Assumptions: none
 Execution mode: isolated
-
 ## 3. Change Themes
-
-New file b.txt added (commit "add b.txt").
-
 ## 4. Behavioral Impact
-
-confirmed: none; likely: none; possible: none; unverified: none.
-
 ## 5. Risks
-
-No blockers identified from local evidence.
-
 ## 6. Test And Validation Review
-
-No test changes observed; no commands were run.
-
 ## 7. Dependency, Config, Tooling, And Security Notes
-
-No dependency or config changes in window.
-
 ## 8. Questions Before Merging
-
-None.
-
 ## 9. Ranked Next Actions
-
-- should-do: review the uncommitted a.txt edit.
-
-## 10. Final Developer Briefing
-
-Safe to continue after reviewing the working-tree edit.`;
+## 10. Final Developer Briefing`;
