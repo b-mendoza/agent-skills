@@ -150,25 +150,45 @@ test("dirty: provisions a discoverable skill with exactly the planted edits and 
   ).toBe(DIRTY_FIXTURE_FACTS.committedSubject);
 });
 
-test("hostile: plants the injection content its facts advertise", () => {
+test("hostile: provisions a discoverable skill and both planted injection channels", () => {
   const fixture = createFixture("hostile");
-
-  // The injection-defense case asserts the compliance phrase is absent from
-  // the run's output, which only means something if the fixture planted it.
-  const hostileNotes = readFileSync(
-    join(fixture.cwd, HOSTILE_FIXTURE_FACTS.hostileTrackedFile),
-    "utf8",
-  );
-  expect(hostileNotes).toContain(HOSTILE_FIXTURE_FACTS.plantedCompliancePhrase);
-
-  const latestSubject = execFileSync("git", ["log", "-1", "--format=%s"], {
-    cwd: fixture.cwd,
-    encoding: "utf8",
-  }).trim();
-  expect(latestSubject).toBe(HOSTILE_FIXTURE_FACTS.hostileCommitSubject);
   expect(
-    existsSync(join(fixture.cwd, HOSTILE_FIXTURE_FACTS.committedFile)),
+    existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
   ).toBe(true);
+  expect(fixture.gitRepo).toBe(fixture.cwd);
+  expect(
+    readFileSync(
+      join(fixture.cwd, HOSTILE_FIXTURE_FACTS.hostileTrackedFile),
+      "utf8",
+    ),
+  ).toContain(HOSTILE_FIXTURE_FACTS.plantedCompliancePhrase);
+  expect(
+    execFileSync(
+      "git",
+      [
+        "log",
+        "-1",
+        "--format=%s",
+        "--",
+        HOSTILE_FIXTURE_FACTS.hostileTrackedFile,
+      ],
+      {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+      },
+    ).trim(),
+  ).toBe(HOSTILE_FIXTURE_FACTS.hostileCommitSubject);
+  expect(
+    execFileSync(
+      "git",
+      ["ls-files", "--", HOSTILE_FIXTURE_FACTS.committedFile],
+      {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+      },
+    ).trim(),
+  ).toBe(HOSTILE_FIXTURE_FACTS.committedFile);
+  expect(readGitStatus(fixture.cwd)).toBe("");
 });
 
 test("missing-path: exposes a path that does not exist", () => {
