@@ -25,4 +25,3 @@ These apply to every tree, in any language. Test tooling and gotchas specific to
 
 - **Group by behavior domain, not arbitrary codes.** Use descriptive group names (a `describe` block): "case selection", "error handling" — not "Group A".
 - **Name tests in behavior-first active voice.** A name should read as a sentence describing what the system does ("exits 2 when no case matches the filter"), with no alphanumeric prefixes.
-- **Classify tests by real importance.** A test covering one of two branches in core logic is core behavior, not an "edge case". Place it accordingly.
