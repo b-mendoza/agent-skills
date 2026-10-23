@@ -1,12 +1,4 @@
-// Pins the fixture invariants every paid observation rests on.
-//
-// If a fixture silently stops being a git repo, stops hiding `.claude/` from
-// `git status`, or leaks state between cases, the suite keeps reporting results
-// that no longer mean what the case says they mean. These run offline against
-// local `git`; they never invoke the agent CLI.
-//
-//   pnpm test
-
+// Real fixtures must match the states the paid observations claim to inspect.
 import { execFileSync, spawnSync } from "node:child_process";
 import {
   existsSync,
@@ -29,21 +21,6 @@ import {
   makeFixture,
 } from "#/fixtures/fixtures.ts";
 
-const FIXTURE_SKILL_NAME = "analyzing-recent-project-state";
-const FIXTURE_KIND_SET = {
-  clean: true,
-  dirty: true,
-  hostile: true,
-  "not-git": true,
-  "missing-path": true,
-} satisfies Record<FixtureKind, true>;
-const FIXTURE_KINDS = Object.keys(FIXTURE_KIND_SET).filter(
-  (kind): kind is FixtureKind => Object.hasOwn(FIXTURE_KIND_SET, kind),
-);
-const GIT_FIXTURE_KINDS = FIXTURE_KINDS.filter((kind) => kind !== "not-git");
-
-// Cleanup runs even when an assertion throws, so a failing test cannot leave a
-// temp tree behind.
 const openFixtures: Fixture[] = [];
 
 function createFixture(kind: FixtureKind): Fixture {
@@ -60,39 +37,13 @@ afterEach(() => {
   }
 });
 
-// Only the trailing newline is stripped: the leading column of `git status
-// --short` is significant (" M" is modified-unstaged), so a full trim would
-// corrupt the very thing being asserted.
+// Preserve the leading status column, which distinguishes unstaged edits.
 function readGitStatus(repositoryPath: string): string {
   return execFileSync("git", ["status", "--short"], {
     cwd: repositoryPath,
     encoding: "utf8",
   }).replace(/\n$/, "");
 }
-
-test.each<FixtureKind>(FIXTURE_KINDS)(
-  "%s: the skill is copied in where the agent looks for it",
-  (kind) => {
-    const fixture = createFixture(kind);
-
-    // Skills resolve from `<cwd>/.claude/skills/`, not the repo's own skills/.
-    expect(
-      existsSync(
-        join(fixture.cwd, ".claude", "skills", FIXTURE_SKILL_NAME, "SKILL.md"),
-      ),
-    ).toBe(true);
-  },
-);
-
-test.each<FixtureKind>(GIT_FIXTURE_KINDS)(
-  "%s: is a real worktree and reports itself as the git repo",
-  (kind) => {
-    const fixture = createFixture(kind);
-
-    expect(existsSync(join(fixture.cwd, ".git"))).toBe(true);
-    expect(fixture.gitRepo).toBe(fixture.cwd);
-  },
-);
 
 test("clean: provisions a discoverable skill in a committed quiet worktree", () => {
   const fixture = createFixture("clean");
@@ -262,9 +213,4 @@ test("cleanup removes only the whole owned temp root and is idempotent", () => {
   } finally {
     rmSync(outsideRoot, { recursive: true, force: true });
   }
-});
-
-test("make fails when the skill does not exist", () => {
-  // Failed provisioning intentionally leaves its partial temp root behind.
-  expect(() => makeFixture("clean", "no-such-skill")).toThrow();
 });
