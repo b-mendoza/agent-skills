@@ -19,6 +19,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+export interface SeedContext {
+  readonly repoPath: string;
+  readonly binPath: string;
+}
+
 export interface Fixture {
   /** Directory the agent runs in. Always a real git repo except for `not-git`. */
   readonly cwd: string;
