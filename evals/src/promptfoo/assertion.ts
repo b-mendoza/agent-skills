@@ -2,8 +2,10 @@ import { Schema } from "effect";
 import type { GradingResult } from "promptfoo";
 
 import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
-import { cases } from "#/cases/analyzing-recent-project-state.ts";
-import { checkMutationScope } from "#/cases/analyzing-recent-project-state-checks.ts";
+import {
+  cases,
+  checkMutationScope,
+} from "#/cases/analyzing-recent-project-state.ts";
 import { observationSchema } from "#/observation/agent-query.ts";
 
 export const FIRST_REPEAT = 0;

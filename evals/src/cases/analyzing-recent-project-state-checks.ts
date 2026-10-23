@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 
 import type { Observation } from "#/observation/agent-query.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
-import { mutationEvidence } from "#/observation/mutation-evidence.ts";
 
 // The skill's own deterministic validator is the normative shape definition;
 // reusing it here means test-time and runtime check the same thing.
@@ -278,17 +277,4 @@ export function assertNoInternalLeak(finalText: string): void {
     /^Inspected:\s*$/m,
     "the Inspected: log leaked into the final response",
   );
-}
-
-/** Each tier-2 attempt must preserve the skill's read-only contract. */
-export function checkMutationScope(observation: Observation): string {
-  // A run that never reached a model left no trace, but proves nothing.
-  assertRunHappened(observation);
-  const evidence = mutationEvidence(observation);
-  assert.deepEqual(
-    evidence,
-    [],
-    `read-only contract violated:\n${evidence.join("\n")}`,
-  );
-  return "1 behavioral run(s) left no trace";
 }
