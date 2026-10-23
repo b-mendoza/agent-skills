@@ -4,7 +4,8 @@ These apply to every tree, in any language. Test tooling and gotchas specific to
 
 ## What to test
 
-- **Test the system's behavior: the decisions our code makes.** Assert on branching logic, routing, wiring, and the transformations our code performs, in proportion to risk — core logic deserves thorough coverage; pass-throughs, getters, and guarantees the type system already enforces need little or none.
+- **Test the system's behavior: the decisions our code makes.** Assert on branching logic, routing, wiring, and the transformations our code performs, in proportion to risk — core logic deserves thorough coverage; pass-throughs and getters need little or none.
+- Do not write tests whose only purpose is re-proving what static type annotations already enforce.
 - **Test what exists today.** Assert on current behavior, not hypothetical future logic. If code passes a value through unchanged, add the test when the transformation is added.
 - **What we don't own proves itself elsewhere.** A dependency's contracts and internals are its maintainers' responsibility; a mock's return value asserted back is a test of `return input`; test infrastructure mirroring a library's internal shape breaks when internals change though behavior did not; and a configuration file consumed by an external tool is proven by that tool's own validator (a lint, check, or dry-run command) or by the behavior it produces — never by a test transcribing its contents.
 
