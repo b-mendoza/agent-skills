@@ -7,6 +7,7 @@ const suites = await Promise.all([
   import("#/cases/committing-scoped-changes.ts"),
   import("#/cases/council-of-advisors.ts"),
   import("#/cases/creating-work-item-children.ts"),
+  import("#/cases/diagnosing-root-causes.ts"),
   import("#/cases/executing-work-item-task.ts"),
   import("#/cases/fetching-work-item.ts"),
 ]);
