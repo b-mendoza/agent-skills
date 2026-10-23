@@ -39,4 +39,4 @@ contract; the subagent quotes it as evidence and cites the source path or URL.
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)
 - [link-external-sources](./link-external-sources.md)
 - [declare-mutation-limits](./declare-mutation-limits.md)
-- [checkpoint-irreversible-actions](./checkpoint-irreversible-actions.md)
+- [declare-mutation-limits](./declare-mutation-limits.md#approval)

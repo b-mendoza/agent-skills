@@ -8,7 +8,7 @@ An orchestrator that branches on a status line is a parser. When its grammar liv
 
 The validator proves shape (enums, required keys, order, counts, non-empty values), never quality: it checks that `Reason:` is present, not that the reason is good. The invocation is `sh "${SKILL_DIR}/scripts/validate-output.sh" < "$payload"`; `SKILL_DIR` resolution and shell-permission syntax per runtime are owned by [runtime-portability-matrix](./runtime-portability-matrix.md). When the host cannot execute it (no shell, or no `python3` for a Python validator), the orchestrator raises `TOOLS_MISSING` itself and never parses the payload's fields; a subagent that lacks a capability still reports `TOOLS_MISSING` as its own status, per [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions). Which fields exist is declared per [declare-input-output-contracts](./declare-input-output-contracts.md).
 
-Every script under `scripts/` (validators, collectors, posters, cleaners) declares its interpreter (POSIX `sh` by default; `bash` only with a one-line reason), a usage line naming every argument and environment variable (printed on `-h` and on bad arguments), exit codes mapped to escalation categories, and its side effects, and ships one runnable check (a smoke invocation with fixed input or a `--dry-run` path). Side effects are also named at the call site in `SKILL.md` so [checkpoint-irreversible-actions](./checkpoint-irreversible-actions.md) can gate them.
+Every script under `scripts/` (validators, collectors, posters, cleaners) declares its interpreter (POSIX `sh` by default; `bash` only with a one-line reason), a usage line naming every argument and environment variable (printed on `-h` and on bad arguments), exit codes mapped to escalation categories, and its side effects, and ships one runnable check (a smoke invocation with fixed input or a `--dry-run` path). Side effects are also named at the call site in `SKILL.md` so [declare-mutation-limits](./declare-mutation-limits.md#approval) can gate them.
 
 ## Examples
 
@@ -46,6 +46,6 @@ Predicate: exit 0. On non-zero, redispatch once with the printed findings; a sec
 
 - [declare-input-output-contracts](./declare-input-output-contracts.md)
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
-- [checkpoint-irreversible-actions](./checkpoint-irreversible-actions.md)
+- [declare-mutation-limits](./declare-mutation-limits.md#approval)
 - [runtime-portability-matrix](./runtime-portability-matrix.md)
 - [validate-by-observation](./validate-by-observation.md)
