@@ -8,7 +8,7 @@ Every part of a skill package costs context to load, files to keep in sync, and 
 
 Then pass every addition or edit through the Material Issue Gate: it must fix a concrete problem in reliability, portability, standalone packaging (per [keep-skills-self-contained](./keep-skills-self-contained.md); no private config), context efficiency, maintainability, validation (a new observable check for a previously silent failure), user comprehension, or best-practices compliance (a rule miss becomes a pass or an allowed exception recorded in the change's report or handoff outside the skill package). A change that only renames, reshuffles, or polishes fires no dimension: leave the package unchanged. The questions that decide a part's shape live with their owners: dispatch or inline in [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch), extract or keep inline in [progressive-disclosure](./progressive-disclosure.md), external information in [link-external-sources](./link-external-sources.md), observable checks over self-report in [validate-by-observation](./validate-by-observation.md).
 
-Roles are vocabulary for scoping one subagent, not a roster to fill ([subagent-roles](./subagent-roles.md)). Prefer the smallest correct change while the structure is sound; recommend a rebuild, merge, or removal when the diagram, `SKILL.md`, and subagents disagree on phases, gates, or statuses beyond surface repair, when several subagents return overlapping verdicts with no distinct consumer, or when the package's own gates miss its central failure mode.
+Roles are vocabulary for scoping one subagent, not a roster to fill ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)). Prefer the smallest correct change while the structure is sound; recommend a rebuild, merge, or removal when the diagram, `SKILL.md`, and subagents disagree on phases, gates, or statuses beyond surface repair, when several subagents return overlapping verdicts with no distinct consumer, or when the package's own gates miss its central failure mode.
 
 ## Examples
 
@@ -37,7 +37,7 @@ Dimensions fired: context efficiency (six fewer contracts loaded), maintainabili
 
 - [keep-skills-self-contained](./keep-skills-self-contained.md)
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)
-- [subagent-roles](./subagent-roles.md)
+- [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)
 - [progressive-disclosure](./progressive-disclosure.md)
 - [link-external-sources](./link-external-sources.md)
 - [validate-by-observation](./validate-by-observation.md)

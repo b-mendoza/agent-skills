@@ -8,7 +8,7 @@ The registry is the dispatch routing table. Place it after the overview, before 
 
 Without it, an `Execution` line such as "dispatch `log-analyzer`" has no referent: a typo routes to no file, a row pointing at two files cannot be loaded, and a multi-purpose row usually hides two subagents masquerading as one. With it, the orchestrator picks a subagent from the table and opens that one file only when dispatching it ([progressive-disclosure](./progressive-disclosure.md)).
 
-This rule does not decide whether a step is dispatched ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)), how `Execution` routes on what a subagent returns ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md)), or how each row's job is scoped ([subagent-roles](./subagent-roles.md)).
+This rule does not decide whether a step is dispatched ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)), how `Execution` routes on what a subagent returns ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md)), or how each row's job is scoped ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)).
 
 ## Examples
 
@@ -45,5 +45,5 @@ description: "Verifies a project state snapshot for grounding, format, and hando
 
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md)
 - [describe-when-to-use](./describe-when-to-use.md#name)
-- [subagent-roles](./subagent-roles.md)
+- [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)
