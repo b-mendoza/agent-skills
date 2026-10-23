@@ -13,6 +13,7 @@ const suites = await Promise.all([
   import("#/cases/generate-flow-diagram.ts"),
   import("#/cases/generate-handoff-document.ts"),
   import("#/cases/improving-skill-definition.ts"),
+  import("#/cases/improving-test-suites.ts"),
 ]);
 
 export const cases: readonly EvalCase[] = suites.flatMap<EvalCase>(
