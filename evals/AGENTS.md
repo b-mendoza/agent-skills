@@ -1,29 +1,33 @@
-# Agent Guide — evals
+# Agent guide for evals
 
-Nearest guide for the eval suite: a self-contained pnpm workspace that runs skills against fixture repos through the Agent SDK.
+Nearest guide for the self-contained pnpm eval workspace. The [root guide](../AGENTS.md) supplies cross-cutting design, testing, workflow, and delegation rules.
 
-## Toolchain
+## Commands and approval
 
-- Node `24.19.0` (see [`.nvmrc`](./.nvmrc)); TypeScript runs from source — there is no build step.
-- `pnpm` is the package manager (`pnpm install` once, from this directory).
+Run these commands from this directory. Paid evals require explicit user approval; answer anything a free check can answer without spending tokens.
 
-## Always
+| Command                                                      | Purpose                                               |
+| ------------------------------------------------------------ | ----------------------------------------------------- |
+| `pnpm install`                                               | Install dependencies once                             |
+| `pnpm lint`                                                  | Run tsc, eslint, oxlint, and oxfmt checks in parallel |
+| `pnpm fix`                                                   | Apply eslint, oxlint, and oxfmt auto-fixes            |
+| `pnpm test`                                                  | Run offline Vitest checks                             |
+| `pnpm eval`                                                  | Run the full paid suite                               |
+| `pnpm eval --filter-metadata tier=1`                         | Check routing only                                    |
+| `pnpm eval --filter-pattern '^snapshot-dirty$'`              | Run one case                                          |
+| `pnpm eval --repeat 1`                                       | Low-confidence smoke run                              |
+| `pnpm eval -j 3`                                             | Limit this process to three concurrent attempts       |
+| `pnpm eval --filter-pattern '^trigger-positive$' --repeat 1` | First approved smoke run after an SDK upgrade         |
+| `pnpm eval:view`                                             | Browse and compare saved runs                         |
 
-- Lint check (run after a substantive change): `pnpm lint` (tsc, eslint, oxlint, oxfmt `--check`); `pnpm fix` applies the auto-fixes.
-- Test suite (run before committing): `pnpm test` (offline vitest).
-- Run artifacts and promptfoo history live under ignored `outputs/`. Compare saved runs with `pnpm eval:view`.
-- Eval runs spend real money and require explicit user approval. Answer anything a free check can answer with a free check — see [`docs/verification.md`](./docs/verification.md).
+Run lint after substantive changes and before completion. Run tests after TypeScript changes, before committing, and before paid evaluation.
 
-## Open when relevant (long-lived)
+## Stack-specific rules
 
-- [TypeScript design conventions](docs/agent/conventions.md) — design guidance such as erasable syntax, factory functions, and boundary parsing.
-- [Testing — evals specifics](docs/agent/testing-principles.md) — Vitest assertion practices and Agent SDK test boundaries.
-- [Delegating evals work](docs/agent/delegation.md) — what to give every subagent dispatched into this suite.
+- Write erasable TypeScript. Prefer factories over classes when either fits, and use function-property interface methods.
+- Use Vitest partial-object matching for the call fields our code controls.
+- Isolate output and history directories for offline CLI checks, including work delegated to subagents.
 
-## Current-state references (short-lived; verify against the code)
+## Reference
 
-- [Current layout](docs/current-layout.md) — where code lives, capability ownership, entry and artifact paths.
-- [Verification](docs/verification.md) — which checks to run for which task, free vs. paid, exit codes.
-- [Eval-suite README](README.md) — philosophy, tiers, mutation-scope gap, adding a case.
-
-Cross-cutting long-lived guidance (naming, code design, testing, workflow, verification) lives in the [root Agent Guide](../AGENTS.md) and applies to this suite.
+[Verification](docs/verification.md) owns current runtime settings, results, coverage limits, and case authoring details.
