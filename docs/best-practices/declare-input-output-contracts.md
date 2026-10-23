@@ -6,7 +6,17 @@
 
 Contracts are the data boundaries between stages. Without them a subagent guesses at its input shape and the orchestrator guesses at the output, and the mismatch surfaces steps later, far from its cause. Declare inputs as a table of `Input | Required | Example`, with a derivation rule whenever one value carries several pieces of information. Pass the canonical identifier (a full issue URL) and let the receiver derive what it needs, except when the value carries secrets, tokens, or private data: then pass the smallest structured fields plus a redacted source reference. Declare outputs as a path or reply shape with its required sections or fields. A dispatch instruction carries `inputs`, `outputs`, and `constraints`; a report carries `status`; add only fields a consumer validates or uses.
 
-Contract fields (statuses, routes, ids, paths, ordering, counters) are exact across runs; only prose may vary. Every status field is a closed enum whose values are all routed ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)). An example that shows a contract changes in the same edit as the contract: agents copy examples over prose, so a stale example is worse than none. Machine-checking the fields is owned by [validate-routed-fields-with-a-script](./validate-routed-fields-with-a-script.md); file-versus-inline transport and the run directory by [declare-mutation-limits](./declare-mutation-limits.md#run-files).
+Contract fields (statuses, routes, ids, paths, ordering, counters) are exact across runs; only prose may vary. Every status field is a closed enum whose values are all routed ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)). An example that shows a contract changes in the same edit as the contract: agents copy examples over prose, so a stale example is worse than none. Machine-checking the fields is owned by [declare-input-output-contracts](./declare-input-output-contracts.md#validate); file-versus-inline transport and the run directory by [declare-mutation-limits](./declare-mutation-limits.md#run-files).
+
+## Validate
+
+Ship a deterministic validator under `scripts/` for every subagent field the orchestrator parses or routes on. Use POSIX `sh`/`awk` or stdlib-only Python 3, read the payload from stdin, exit zero to accept, and print one finding per defect otherwise. No network, clock, randomness, or third-party dependency. Name the invocation in `SKILL.md` and every producing subagent.
+
+The consumer runs the validator on the received payload and routes only after exit zero. Producer self-attestation, constructor output, and passing evals do not satisfy this gate. A payload is complete only after acceptance; nonzero results enter a [bounded repair route](./keep-routing-in-the-orchestrator.md#transitions). The validator proves shape, such as enums, keys, order, counts, and nonempty values, not semantic quality.
+
+If the host cannot execute the validator, the orchestrator raises `TOOLS_MISSING` and does not parse the payload fields. Never substitute a model's reading of the script. Resolve `SKILL_DIR` and shell permissions using the [runtime matrix](./runtime-portability-matrix.md).
+
+Every script, not only validators, declares its interpreter, POSIX `sh` by default or `bash` with a one-line reason; usage naming all arguments and environment variables, printed on `-h` and bad arguments; exit codes mapped to escalation categories; side effects; and one runnable fixed-input smoke check or `--dry-run`. Name side effects at the `SKILL.md` call site too, so the [approval rule](./declare-mutation-limits.md#approval) can gate them.
 
 ## Examples
 
@@ -48,7 +58,7 @@ constraints:
 
 ## Related rules
 
-- [validate-routed-fields-with-a-script](./validate-routed-fields-with-a-script.md)
+- [declare-input-output-contracts](./declare-input-output-contracts.md#validate)
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
 - [declare-mutation-limits](./declare-mutation-limits.md#run-files)
 - [validate-by-observation](./validate-by-observation.md)
