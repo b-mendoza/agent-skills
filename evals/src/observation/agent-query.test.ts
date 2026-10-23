@@ -7,7 +7,7 @@ import { join } from "node:path";
 import type { query } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
-import type { RunOptions } from "#/observation/agent-query.ts";
+import type { Observation, RunOptions } from "#/observation/agent-query.ts";
 import {
   observeClaude,
   QUERY_ERROR_SUBTYPE,
@@ -389,6 +389,56 @@ test("a result after abort retains verdict and timeout evidence", async () => {
   });
   expect(vi.getTimerCount()).toBeFalsy();
 });
+
+test.each(["next", "return"])(
+  "a hung %s settles after abort grace",
+  async (hung) => {
+    vi.useFakeTimers();
+    const stalled = once(new EventTarget(), "never");
+    sdk.query.mockImplementation(() => {
+      writeFileSync(join(cwd, "changed.txt"), "changed");
+      return {
+        [Symbol.asyncIterator]: () => ({
+          next: vi
+            .fn<AsyncIterator<unknown>["next"]>()
+            .mockResolvedValueOnce({
+              done: false,
+              value: assistant(toolUse("Read")),
+            })
+            .mockImplementation(async () => {
+              if (hung === "next") await stalled;
+              return { done: false, value: success("recorded") };
+            }),
+          return: async () => {
+            await stalled;
+            return { done: true, value: undefined };
+          },
+        }),
+      };
+    });
+    let observation: Observation | undefined = undefined;
+    void observeClaude({ ...options, wallClockMs: WALL_CLOCK_LIMIT }).then(
+      (value) => {
+        observation = value;
+      },
+    );
+    await vi.advanceTimersByTimeAsync(WALL_CLOCK_LIMIT);
+    expect(observation).toBeUndefined();
+    await vi.runAllTimersAsync();
+    const diagnostic = "query did not settle after abort";
+    expect(observation).toMatchObject({
+      timedOut: true,
+      subtype: hung === "next" ? QUERY_ERROR_SUBTYPE : "success",
+      isError: hung === "next",
+      costUsd: hung === "next" ? ZERO_COST : COST,
+      finalText: hung === "next" ? diagnostic : "recorded",
+      toolCalls: [{ name: "Read", input: {} }],
+      gitStatusBefore: { kind: "worktree", entries: "" },
+      gitStatusAfter: { kind: "worktree", entries: "?? changed.txt" },
+    });
+    expect(vi.getTimerCount()).toBeFalsy();
+  },
+);
 
 test("a completed run cannot be re-flagged by an expired timer", async () => {
   vi.useFakeTimers();

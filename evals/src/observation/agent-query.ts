@@ -1,3 +1,5 @@
+import { promisify } from "node:util";
+
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { Schema } from "effect";
 
@@ -40,13 +42,15 @@ export interface RunOptions {
   prompt: string;
   budgetUsd: number;
   model: string;
-  /** Hard wall-clock ceiling. A hung run must fail the case, not the suite. */
+  /** Abort deadline; reads and cleanup get a fixed grace period before forced settlement. */
   wallClockMs: number;
   /** Repo whose `git status` is sampled before and after. Usually `cwd`. */
   gitRepo?: string;
 }
 
 const NS_PER_MS = 1e6;
+// Three seconds allows subprocess shutdown without letting a stuck iterator hang the suite.
+const ABORT_GRACE_MS = 3_000;
 export const QUERY_ERROR_SUBTYPE = "query_error";
 const decodeAssistant = Schema.decodeUnknownSync(
   Schema.Struct({
@@ -142,12 +146,10 @@ async function readResult(
 
 async function closeIterator(
   iterator: AsyncIterator<unknown> | undefined,
-  timer: ReturnType<typeof setTimeout>,
+  settleBy: Promise<null>,
 ): Promise<void> {
-  try {
-    if (iterator?.return !== undefined) await iterator.return();
-  } finally {
-    clearTimeout(timer);
+  if (iterator?.return !== undefined) {
+    await Promise.race([settleBy, iterator.return()]);
   }
 }
 
@@ -164,6 +166,15 @@ export async function observeClaude(
     timedOut = true;
     abortController.abort();
   }, runOptions.wallClockMs);
+  const deadlineError = new Error("query did not settle after abort");
+  let settleTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+  const settleBy = promisify((callback: (error: Error) => void) => {
+    settleTimer = setTimeout(
+      callback,
+      runOptions.wallClockMs + ABORT_GRACE_MS,
+      deadlineError,
+    );
+  })().then(() => null);
   const toolCalls: ToolCall[] = [];
   let result: ResultVerdict | null = null;
   let failure: unknown = undefined;
@@ -183,13 +194,20 @@ export async function observeClaude(
         tools: { type: "preset", preset: "claude_code" },
       },
     })[Symbol.asyncIterator]();
-    result = await readResult(iterator, toolCalls);
+    result = await Promise.race([readResult(iterator, toolCalls), settleBy]);
   } catch (error) {
     failure = error;
   } finally {
-    await closeIterator(iterator, timer).catch((error: unknown) => {
-      if (result === null) throw error;
-    });
+    try {
+      await closeIterator(iterator, settleBy).catch((error: unknown) => {
+        if (result !== null) return;
+        if (error === deadlineError) failure = error;
+        if (failure !== deadlineError) throw error;
+      });
+    } finally {
+      clearTimeout(timer);
+      clearTimeout(settleTimer);
+    }
   }
   const gitStatusAfter = sampleGitStatus(repo);
   return {
