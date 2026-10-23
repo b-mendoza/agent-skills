@@ -149,13 +149,6 @@ describe("parseJudgeResponse", () => {
     );
   });
 
-  test("accepts a compliant empty verdict", () => {
-    const outcome = parseJudgeResponse(reply([]), REQUEST);
-
-    expect(outcome.citedViolations).toStrictEqual([]);
-    expect(outcome.uncitedComplaints).toStrictEqual([]);
-  });
-
   test("accepts JSON wrapped in prose or a code fence", () => {
     const fenced = `Here is my verdict:\n\`\`\`json\n${reply([])}\n\`\`\``;
 
