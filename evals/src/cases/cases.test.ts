@@ -4,6 +4,7 @@ import { describe, expect, test } from "vitest";
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import {
   assertRunHappened,
+  assertValidatorInvoked,
   BUDGET_STOP_SUBTYPE,
   checkMutationScope,
 } from "#/cases/analyzing-recent-project-state-checks.ts";
@@ -296,6 +297,23 @@ describe("validator invocation", () => {
       ).toThrow(/the deterministic validator was never invoked/);
     },
   );
+
+  test.each([
+    VALIDATOR_CALL.input.command,
+    `cd x && sh "/abs/skills/analyzing-recent-project-state/scripts/validate-output.sh" draft /repo <<'EOF'\nreport\nEOF`,
+    "printf payload | bash '$SKILL_DIR/scripts/validate-output.sh' evidence",
+    "cd x\nsh scripts/validate-output.sh verdict",
+    "sh scripts/validate-output.sh report",
+    "sh scripts/validate-output.sh envelope",
+  ])("accepts a validator invocation in %s", (command) => {
+    expect(() => {
+      assertValidatorInvoked(
+        createObservation({
+          toolCalls: [{ name: "Bash", input: { command } }],
+        }),
+      );
+    }).not.toThrow();
+  });
 });
 
 describe("quiet state", () => {
