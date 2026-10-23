@@ -9,7 +9,6 @@ import type { GitStatus } from "#/observation/mutation-evidence.ts";
 import {
   mutationEvidence,
   sampleGitStatus,
-  skillInvocations,
 } from "#/observation/mutation-evidence.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
@@ -173,23 +172,6 @@ test("every distinct violation is reported, not just the first", () => {
       "mutating git command: git commit -m x",
     ]),
   );
-});
-
-test("skillInvocations selects only Skill calls naming the skill", () => {
-  const observation = createObservation({
-    toolCalls: [
-      { name: "Skill", input: { skill: "wanted" } },
-      { name: "Skill", input: { skill: "other" } },
-      { name: "Bash", input: { skill: "wanted" } },
-      { name: "Skill", input: {} },
-      { name: "Skill", input: { skill: "wanted" } },
-    ],
-  });
-  expect(skillInvocations(observation, "wanted")).toStrictEqual([
-    { name: "Skill", input: { skill: "wanted" } },
-    { name: "Skill", input: { skill: "wanted" } },
-  ]);
-  expect(skillInvocations(observation, "never-called")).toStrictEqual([]);
 });
 
 // These can mutate HEAD or git metadata without changing worktree status.

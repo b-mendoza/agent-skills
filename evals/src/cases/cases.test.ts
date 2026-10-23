@@ -145,62 +145,67 @@ describe("routing", () => {
 
   test.each([
     {
-      label: "a line-by-line review request",
+      label: "a review decline",
       caseId: "trigger-negative-review",
-      expectedOutcome: "no trigger",
+      toolCalls: [{ name: "Read", input: { file_path: "/repo/a.txt" } }],
+      expected: "no trigger",
     },
     {
-      label: "a mutating request",
+      label: "a mutating-request decline",
       caseId: "trigger-negative-mutate",
-      expectedOutcome: "no trigger; no mutation",
+      toolCalls: [{ name: "Read", input: { file_path: "/repo/a.txt" } }],
+      expected: "no trigger; no mutation",
     },
-  ] as const)(
-    "a genuine decline still passes for $label",
-    ({ caseId, expectedOutcome }) => {
-      const declined = createObservation({
-        subtype: BUDGET_STOP_SUBTYPE,
-        isError: true,
-        finalText: "I'll review the diff directly.",
-        toolCalls: [{ name: "Read", input: { file_path: "/repo/a.txt" } }],
-      });
-
-      expect(getCase(caseId).check(declined)).toBe(expectedOutcome);
-    },
-  );
-
-  test("a genuine trigger still passes the positive routing case", () => {
-    const triggered = createObservation({
-      subtype: BUDGET_STOP_SUBTYPE,
-      isError: true,
+    {
+      label: "a genuine trigger",
+      caseId: "trigger-positive",
       toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-    });
-
-    expect(getCase("trigger-positive").check(triggered)).toBe("Skill invoked");
-  });
-
-  test("a budget stop is a real decline even when it books nothing", () => {
-    const stoppedEarly = createObservation({
-      subtype: BUDGET_STOP_SUBTYPE,
-      isError: true,
-      finalText: "",
+      expected: "Skill invoked",
+    },
+    {
+      label: "a zero-work budget stop",
+      caseId: "trigger-negative-review",
       toolCalls: [],
-      costUsd: 0,
-    });
-
-    expect(getCase("trigger-negative-review").check(stoppedEarly)).toBe(
-      "no trigger",
-    );
+      expected: "no trigger",
+    },
+    {
+      label: "repeated matching calls",
+      caseId: "trigger-positive",
+      toolCalls: [
+        { name: "Skill", input: { skill: SKILL } },
+        { name: "Skill", input: { skill: SKILL } },
+      ],
+      expected: "Skill invoked",
+    },
+  ])("routing accepts $label", ({ caseId, toolCalls, expected }) => {
+    expect(
+      getCase(caseId).check(
+        createObservation({
+          subtype: BUDGET_STOP_SUBTYPE,
+          isError: true,
+          toolCalls,
+        }),
+      ),
+    ).toBe(expected);
   });
 
-  test("the positive routing case fails when the skill never triggered", () => {
-    const noTrigger = createObservation({
-      subtype: BUDGET_STOP_SUBTYPE,
-      toolCalls: [{ name: "Read", input: {} }],
-    });
-
-    expect(() => getCase("trigger-positive").check(noTrigger)).toThrow(
-      /skill never triggered/,
-    );
+  test.each([
+    { label: "no matching skill", toolCalls: [{ name: "Read", input: {} }] },
+    {
+      label: "another skill",
+      toolCalls: [{ name: "Skill", input: { skill: "other" } }],
+    },
+    {
+      label: "a non-Skill tool carrying the target",
+      toolCalls: [{ name: "Bash", input: { skill: SKILL } }],
+    },
+    { label: "missing skill input", toolCalls: [{ name: "Skill", input: {} }] },
+  ])("positive routing rejects $label", ({ toolCalls }) => {
+    expect(() =>
+      getCase("trigger-positive").check(
+        createObservation({ subtype: BUDGET_STOP_SUBTYPE, toolCalls }),
+      ),
+    ).toThrow(/skill never triggered/);
   });
 
   test("the mutate case fails when the run mutated the repo", () => {
