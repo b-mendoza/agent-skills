@@ -39,9 +39,7 @@ function describeNonErrorCheckFailure(cause: unknown): string {
   try {
     return String(cause);
   } catch (stringConversionError) {
-    return new Error(UNKNOWN_ERROR_MESSAGE, {
-      cause: stringConversionError,
-    }).message;
+    return UNKNOWN_ERROR_MESSAGE;
   }
 }
 
