@@ -11,6 +11,7 @@ const suites = await Promise.all([
   import("#/cases/executing-work-item-task.ts"),
   import("#/cases/fetching-work-item.ts"),
   import("#/cases/generate-flow-diagram.ts"),
+  import("#/cases/generate-handoff-document.ts"),
 ]);
 
 export const cases: readonly EvalCase[] = suites.flatMap<EvalCase>(
