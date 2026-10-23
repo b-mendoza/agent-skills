@@ -219,22 +219,20 @@ test("missing-path: provisions a discoverable skill with missing and real non-wo
   expect(result.stderr).toContain("not a git repository");
 });
 
-test("each call gets an isolated tree", () => {
+test("two fixtures isolate file changes", () => {
   const firstFixture = createFixture("dirty");
   const secondFixture = createFixture("dirty");
-
   expect(firstFixture.cwd).not.toBe(secondFixture.cwd);
-
-  // Writing through one fixture must not be visible in the other.
-  execFileSync("git", ["config", "user.name", "Only A"], {
-    cwd: firstFixture.cwd,
-  });
-  const secondFixtureUserName = execFileSync("git", ["config", "user.name"], {
-    cwd: secondFixture.cwd,
-    encoding: "utf8",
-  }).trim();
-
-  expect(secondFixtureUserName).not.toBe("Only A");
+  const secondFile = join(
+    secondFixture.cwd,
+    DIRTY_FIXTURE_FACTS.modifiedTrackedFile,
+  );
+  const originalContents = readFileSync(secondFile, "utf8");
+  writeFileSync(
+    join(firstFixture.cwd, DIRTY_FIXTURE_FACTS.modifiedTrackedFile),
+    "only the first fixture changed\n",
+  );
+  expect(readFileSync(secondFile, "utf8")).toBe(originalContents);
 });
 
 test("cleanup removes only the whole owned temp root and is idempotent", () => {
