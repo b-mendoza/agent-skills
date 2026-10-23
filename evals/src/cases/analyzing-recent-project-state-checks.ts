@@ -20,6 +20,9 @@ export type ValidatorMode = "evidence" | "draft" | "verdict" | "envelope";
 const SUCCESS_EXIT_STATUS = 0;
 const NO_TOOL_CALLS = 0;
 const NO_COST_USD = 0;
+const HEREDOC_BODY =
+  /(?<opening><<-?[ \t]*(?<quote>["']?)(?<delimiter>[^\s"'<>]+)\k<quote>(?:[ \t][^\n]*)?\n)(?:[^\n]*\n)*?\t*\k<delimiter>(?:\n|$)/g;
+const COMMAND_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;&|\n"'])+/g;
 
 /** Runs the skill's validator; returns its findings, empty when conformant. */
 export function runOutputValidator(
@@ -52,11 +55,26 @@ export function runOutputValidator(
 
 /** The run must have invoked the skill's deterministic validator. */
 export function assertValidatorInvoked(observation: Observation): void {
+  // Lexical: ignores quoted text and heredoc bodies; does not prove the script succeeded.
   const invoked = observation.toolCalls.some(
     (toolCall) =>
       toolCall.name === "Bash" &&
       typeof toolCall.input["command"] === "string" &&
-      toolCall.input["command"].includes("validate-output.sh"),
+      (
+        toolCall.input["command"]
+          .replace(HEREDOC_BODY, "$<opening>")
+          .match(COMMAND_SEGMENT) ?? []
+      ).some((command) => {
+        const { script, mode } =
+          /^[ \t]*(?:ba)?sh[ \t]+(?<script>"[^"\r\n]+"|'[^'\r\n]+'|[^\s"'<>]+)[ \t]+(?<mode>[^\s<>]+)/.exec(
+            command,
+          )?.groups ?? {};
+        return (
+          /^(?<quote>["']?)(?:[^"']*\/)?scripts\/validate-output\.sh\k<quote>$/.test(
+            String(script),
+          ) && /^(?:evidence|draft|verdict|report|envelope)$/.test(String(mode))
+        );
+      }),
   );
   assert.ok(
     invoked,

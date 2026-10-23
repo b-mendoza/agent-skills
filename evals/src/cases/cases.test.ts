@@ -299,6 +299,23 @@ describe("validator invocation", () => {
   );
 
   test.each([
+    "echo validate-output.sh",
+    'echo "sh /skill/scripts/validate-output.sh draft"',
+    "printf '%s\\n' 'ignored; sh /missing/scripts/validate-output.sh draft '",
+    "cat <<'EOF'\nsh /missing/scripts/validate-output.sh draft\nEOF",
+    "sh /skill/scripts/validate-output.sh draft-spoof",
+    "sh /skill/scripts/validate-output.sh",
+  ])("rejects a spoofed validator invocation in %s", (command) => {
+    expect(() => {
+      assertValidatorInvoked(
+        createObservation({
+          toolCalls: [{ name: "Bash", input: { command } }],
+        }),
+      );
+    }).toThrow(/the deterministic validator was never invoked/);
+  });
+
+  test.each([
     VALIDATOR_CALL.input.command,
     `cd x && sh "/abs/skills/analyzing-recent-project-state/scripts/validate-output.sh" draft /repo <<'EOF'\nreport\nEOF`,
     "printf payload | bash '$SKILL_DIR/scripts/validate-output.sh' evidence",
