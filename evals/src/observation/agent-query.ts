@@ -44,8 +44,6 @@ export interface RunOptions {
   model: string;
   /** Abort deadline; reads and cleanup get a fixed grace period before forced settlement. */
   wallClockMs: number;
-  /** Repo whose `git status` is sampled before and after. Usually `cwd`. */
-  gitRepo?: string;
 }
 
 const NS_PER_MS = 1e6;
@@ -157,8 +155,7 @@ async function closeIterator(
 export async function observeClaude(
   runOptions: RunOptions,
 ): Promise<Observation> {
-  const repo = runOptions.gitRepo ?? runOptions.cwd;
-  const gitStatusBefore = sampleGitStatus(repo);
+  const gitStatusBefore = sampleGitStatus(runOptions.cwd);
   const startedAt = process.hrtime.bigint();
   const abortController = new AbortController();
   let timedOut = false;
@@ -209,7 +206,7 @@ export async function observeClaude(
       clearTimeout(settleTimer);
     }
   }
-  const gitStatusAfter = sampleGitStatus(repo);
+  const gitStatusAfter = sampleGitStatus(runOptions.cwd);
   return {
     toolCalls: [...toolCalls],
     gitStatusBefore,

@@ -22,7 +22,6 @@ async function runCase(
   try {
     const observation = await observeClaude({
       cwd: fixture.cwd,
-      gitRepo: fixture.gitRepo ?? fixture.cwd,
       prompt: evalCase.prompt({
         missingPath: fixture.missingPath,
         notGitPath: fixture.notGitPath,

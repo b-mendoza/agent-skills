@@ -89,26 +89,6 @@ test("the query owns its policy and inherits ambient credentials", async () => {
   expect(request?.options).not.toHaveProperty("env");
 });
 
-test("gitRepo overrides cwd only for git sampling", async () => {
-  const repo = join(cwd, "repository");
-  execFileSync("git", ["init", "-q", repo]);
-  sdk.query.mockImplementation(() => {
-    writeFileSync(join(repo, "new.txt"), "new");
-    return scripted(success("done"));
-  });
-  const observation = await observeClaude({ ...options, gitRepo: repo });
-  expect(observation.gitStatusBefore).toStrictEqual({
-    kind: "worktree",
-    entries: "",
-  });
-  expect(observation.gitStatusAfter).toStrictEqual({
-    kind: "worktree",
-    entries: "?? new.txt",
-  });
-  const [request] = sdk.query.mock.lastCall ?? [];
-  expect(request?.options?.cwd).toBe(cwd);
-});
-
 test("tool calls accumulate across assistant messages in stream order", async () => {
   sdk.query.mockImplementation(() =>
     scripted(

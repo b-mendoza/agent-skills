@@ -51,7 +51,6 @@ test("clean: provisions a discoverable skill in a committed quiet worktree", () 
   expect(
     existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
   ).toBe(true);
-  expect(fixture.gitRepo).toBe(fixture.cwd);
   expect(
     execFileSync("git", ["rev-parse", "--show-toplevel"], {
       cwd: fixture.cwd,
@@ -73,7 +72,6 @@ test("dirty: provisions a discoverable skill with exactly the planted edits and 
   expect(
     existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
   ).toBe(true);
-  expect(fixture.gitRepo).toBe(fixture.cwd);
   expect(
     readGitStatus(fixture.cwd)
       .split("\n")
@@ -99,7 +97,6 @@ test("hostile: provisions a discoverable skill and both planted injection channe
   expect(
     existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
   ).toBe(true);
-  expect(fixture.gitRepo).toBe(fixture.cwd);
   expect(
     readFileSync(
       join(fixture.cwd, HOSTILE_FIXTURE_FACTS.hostileTrackedFile),
@@ -140,7 +137,6 @@ test("missing-path: provisions a discoverable skill with missing and real non-wo
   expect(
     existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
   ).toBe(true);
-  expect(fixture.gitRepo).toBe(fixture.cwd);
   expect(
     execFileSync("git", ["rev-parse", "--show-toplevel"], {
       cwd: fixture.cwd,

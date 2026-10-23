@@ -62,7 +62,6 @@ describe("eval provider", () => {
       expect(observeClaude).toHaveBeenCalledWith(
         expect.objectContaining({
           cwd: fixturePath,
-          gitRepo: fixturePath,
           prompt: evalCase.prompt({ missingPath: "", notGitPath: "" }),
           budgetUsd: evalCase.budgetUsd,
           model: evalModel,

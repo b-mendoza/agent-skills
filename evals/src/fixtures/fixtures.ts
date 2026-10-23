@@ -22,8 +22,6 @@ import { fileURLToPath } from "node:url";
 export interface Fixture {
   /** Directory the agent runs in. Always a real git repo. */
   readonly cwd: string;
-  /** Repo sampled for the git delta; `undefined` when there is no worktree. */
-  readonly gitRepo: string | undefined;
   /** A path guaranteed not to exist, for the PATH_ERROR case. */
   readonly missingPath: string;
   /** A real directory that is not a worktree, for the NOT_GIT case. */
@@ -159,7 +157,6 @@ export function makeFixture(kind: FixtureKind, skill: string): Fixture {
 
     return {
       cwd: repositoryPath,
-      gitRepo: repositoryPath,
       missingPath: join(fixtureRoot, MISSING_PATH_NAME),
       notGitPath,
       cleanup: () => {
