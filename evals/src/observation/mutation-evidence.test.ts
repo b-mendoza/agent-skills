@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 
+import { isMutatingGitCommand } from "#/observation/git-command-evidence.ts";
 import type { GitStatus } from "#/observation/mutation-evidence.ts";
 import {
   mutationEvidence,
@@ -177,4 +178,127 @@ test("skillInvocations selects only Skill calls naming the skill", () => {
     { name: "Skill", input: { skill: "wanted" } },
   ]);
   expect(skillInvocations(observation, "never-called")).toStrictEqual([]);
+});
+
+// These can mutate HEAD or git metadata without changing worktree status.
+const ALWAYS_MUTATING_GIT_VERBS = [
+  "add",
+  "commit",
+  "merge",
+  "push",
+  "fetch",
+  "pull",
+  "reset",
+  "checkout",
+  "rebase",
+  "clean",
+  "rm",
+  "switch",
+  "restore",
+  "cherry-pick",
+  "revert",
+  "update-ref",
+  "apply",
+  "am",
+  "mv",
+  "prune",
+  "gc",
+];
+
+test.each(ALWAYS_MUTATING_GIT_VERBS)("`git %s` is mutating", (verb) => {
+  expect(isMutatingGitCommand(`git ${verb}`)).toBe(true);
+});
+
+test.each([
+  ["git stash", "a bare form that writes"],
+  ["git tag", "conservative policy even though bare tag lists"],
+  ["git merge-tree", "the documented merge-prefix collision policy"],
+])("`%s` is flagged by %s", (command) => {
+  expect(isMutatingGitCommand(command)).toBe(true);
+});
+
+test.each([
+  "git branch",
+  "git branch --list",
+  "git config --get user.name",
+  "git worktree list",
+  "git submodule status",
+  "git reflog show",
+  "git notes list",
+  "git stash list",
+  "git tag --list",
+  "git tag -l v1.*",
+  "git sparse-checkout list",
+  "git bisect log",
+  "git branch --format=%(refname)",
+])("`%s` is read-only", (command) => {
+  expect(isMutatingGitCommand(command)).toBe(false);
+});
+
+test.each([
+  "git config user.name x",
+  "git config --unset user.name",
+  "git config --global core.editor vim",
+])("`%s` configures git", (command) => {
+  expect(isMutatingGitCommand(command)).toBe(true);
+});
+
+test.each([
+  "git branch new-feature",
+  "git branch -D old",
+  "git worktree add /tmp/wt",
+  "git submodule update --init",
+  "git notes add -m x",
+  "git stash push",
+  "git tag v1.0.0",
+  "git sparse-checkout set src",
+  "git bisect start",
+])("`%s` mutates", (command) => {
+  expect(isMutatingGitCommand(command)).toBe(true);
+});
+
+// Read-only markers cannot excuse a different command in the same chain.
+test.each([
+  "git branch new && git branch --list",
+  "git config --list && git config user.name x",
+])("`%s` is flagged when any occurrence mutates", (command) => {
+  expect(isMutatingGitCommand(command)).toBe(true);
+});
+
+test("a chain of read-only dual-mode commands stays clean", () => {
+  expect(isMutatingGitCommand("git stash list && git stash show")).toBe(false);
+});
+
+// Option arity, quoting, and repetition must not hide the verb.
+test.each([
+  "git -C /repo commit -m x",
+  'git -C "/repo path" commit',
+  "git -C '/repo path' push",
+  'git -c "user.name=x y" commit',
+  'git --git-dir="/r/.git" commit',
+  "git -C /repo --no-pager commit",
+  "git --no-pager --no-optional-locks commit",
+  "git --no-pager -c k=v commit",
+  "git -c a=1 -c b=2 commit",
+  "git -C --weird commit",
+])("`%s` mutates despite the leading options", (command) => {
+  expect(isMutatingGitCommand(command)).toBe(true);
+});
+
+test.each(['sh -c "git commit"', "GIT_DIR=/g git commit"])(
+  "`%s` still exposes the literal mutating git command",
+  (command) => {
+    expect(isMutatingGitCommand(command)).toBe(true);
+  },
+);
+
+test.each(["git -C /repo log --stat", "git --no-pager log commit"])(
+  "`%s` stays clean despite the leading options",
+  (command) => {
+    expect(isMutatingGitCommand(command)).toBe(false);
+  },
+);
+
+test("`git merge-base HEAD origin/main` is read-only despite the merge prefix", () => {
+  expect(isMutatingGitCommand("git merge-base HEAD origin/main")).toBe(false);
 });
