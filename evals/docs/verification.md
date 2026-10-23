@@ -24,11 +24,11 @@ These require explicit user approval.
 | One case end-to-end    | `pnpm eval --filter-pattern '^snapshot-dirty$' --repeat 1` |
 | Routing decisions only | `pnpm eval --filter-metadata tier=1`                       |
 | Full suite             | `pnpm eval`                                                |
-| Concurrent run         | `pnpm eval -j 3`                                           |
+| Override concurrency   | `pnpm eval -j 3`                                           |
 
 Cases with a `judge` field additionally run one cheap judge-model query per attempt after the mechanical check passes. Judge cost is cents per attempt and is not folded into the report's cost column, which measures the observed run only.
 
-Each case runs five times by default. Use `--repeat 1` for a cheap, low-confidence smoke run. Default concurrency is one; `-j 3` allows up to three concurrent attempts. Both repeat count and the selected cases affect total cost; concurrency can increase the rate of spending.
+Each case runs five times by default. Use `--repeat 1` for a cheap, low-confidence smoke run. Default concurrency is the machine's available parallelism; `-j` overrides it, so `-j 3` allows up to three concurrent attempts. Both repeat count and the selected cases affect total cost; concurrency can increase the rate of spending.
 
 Exit codes:
 

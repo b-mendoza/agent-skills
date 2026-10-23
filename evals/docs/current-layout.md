@@ -19,7 +19,7 @@ Source lives under [`src/`](../src/), grouped by capability. Tests sit beside th
 
 ## Promptfoo integration
 
-[`promptfooconfig.ts`](../promptfooconfig.ts) configures promptfoo 0.124.1 with five repeats and concurrency one. Promptfoo owns case filtering, repetitions, scheduling, and JSON export. The wrapper fixes the config and output path and disables caching, database writes, sharing, and telemetry.
+[`promptfooconfig.ts`](../promptfooconfig.ts) configures promptfoo 0.124.1 with five repeats and default concurrency set to the machine's available parallelism; `-j` overrides it. Promptfoo owns case filtering, repetitions, scheduling, and JSON export. The wrapper fixes the config and output path and disables caching, database writes, sharing, and telemetry.
 
 | Module in `src/promptfoo/` | Responsibility                                                                                                                                                                     |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

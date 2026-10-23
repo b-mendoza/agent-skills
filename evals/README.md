@@ -15,12 +15,12 @@ pnpm eval                                         # everything, 5 attempts per c
 pnpm eval --filter-metadata tier=1                 # routing only
 pnpm eval --filter-pattern '^snapshot-dirty$'      # one case
 pnpm eval --repeat 1                               # cheap, low-confidence smoke run
-pnpm eval -j 3                                     # up to 3 concurrent attempts
+pnpm eval -j 3                                     # override default: up to 3 concurrent attempts
 ```
 
 Node 24 strips TypeScript types natively, so the suite runs from source with no build step. Keep the syntax erasable — `erasableSyntaxOnly` is on, so no enums, parameter properties, decorators, or namespaces.
 
-Each selected case runs `--repeat` times, default 5, and reports a **score**, the percent of attempts whose check passed, plus a **status** derived from the same counts: `PASS` for every attempt, `FAIL` for none, `DEGRADED` for a mix, and `NOT_RUN` for cases not executed by this run. A `NOT_RUN` score stays empty rather than reading as zero. The default concurrency is 1; `-j` overrides it. Extra arguments go to promptfoo.
+Each selected case runs `--repeat` times, default 5, and reports a **score**, the percent of attempts whose check passed, plus a **status** derived from the same counts: `PASS` for every attempt, `FAIL` for none, `DEGRADED` for a mix, and `NOT_RUN` for cases not executed by this run. A `NOT_RUN` score stays empty rather than reading as zero. The default concurrency is the machine's available parallelism; `-j` overrides it. Extra arguments go to promptfoo.
 
 Exits `0` when every executed case passes every attempt, `1` when a case fails or is degraded, `2` when no case matched the filter, and `3` on an infrastructure error. Missing or malformed results, any provider error row, subprocess failure, and report-write failure are infrastructure errors. Set `EVAL_MODEL` to override the model, default `sonnet`.
 

@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { availableParallelism, tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,6 +19,10 @@ const CLI = fileURLToPath(
 const TIMEOUT_MS = 30_000;
 const SUCCESS = 0;
 const FIRST = 0;
+
+test("default concurrency uses the machine's available parallelism", () => {
+  expect(config.evaluateOptions.maxConcurrency).toBe(availableParallelism());
+});
 
 test.each([
   { args: [], count: 5 },

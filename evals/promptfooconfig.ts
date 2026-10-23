@@ -1,3 +1,5 @@
+import { availableParallelism } from "node:os";
+
 import type { UnifiedConfig } from "promptfoo";
 
 export default {
@@ -7,7 +9,7 @@ export default {
   providers: ["file://src/promptfoo/provider.ts"],
   evaluateOptions: {
     cache: false,
-    maxConcurrency: 1,
+    maxConcurrency: availableParallelism(),
     repeat: 5,
   },
   defaultTest: {
