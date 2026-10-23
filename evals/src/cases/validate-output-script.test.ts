@@ -95,11 +95,11 @@ describe("validate-output.sh", () => {
       finding: /NEEDS_CONTEXT requires Required fixes: none/,
     },
     {
-      label: "a PASS verdict with an unaddressed prior fix",
+      label: "a PASS verdict carrying required fixes",
       mode: "verdict",
       payload:
-        "SNAPSHOT_VERIFY: PASS\nFix dispositions: Section 5 not addressed\nRequired fixes: none\nReason: x\nDecision needed: none",
-      finding: /PASS requires every prior fix addressed/,
+        "SNAPSHOT_VERIFY: PASS\nRequired fixes:\n- Risks: address the finding.\nReason: x\nDecision needed: none",
+      finding: /PASS requires Required fixes: none/,
     },
     {
       label: "an evidence payload missing a field",
