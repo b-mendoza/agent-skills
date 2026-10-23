@@ -1,27 +1,25 @@
 # Testing principles
 
-These apply to every tree, in any language. Test tooling and gotchas specific to one tree live in that tree's own guides.
-
 ## What to test
 
-- **Test the system's behavior: the decisions our code makes.** Assert on branching logic, routing, wiring, and the transformations our code performs, in proportion to risk — core logic deserves thorough coverage; pass-throughs and getters need little or none.
+- Test decisions the code makes: branching, routing, wiring, and transformations. Match coverage to risk; core logic needs thorough coverage, while pass-throughs and getters need little or none.
 - Do not write tests whose only purpose is re-proving what static type annotations already enforce.
-- **Test what exists today.** Assert on current behavior, not hypothetical future logic. If code passes a value through unchanged, add the test when the transformation is added.
-- **What we don't own proves itself elsewhere.** A dependency's contracts and internals are its maintainers' responsibility; a mock's return value asserted back is a test of `return input`; test infrastructure mirroring a library's internal shape breaks when internals change though behavior did not; and a configuration file consumed by an external tool is proven by that tool's own validator (a lint, check, or dry-run command) or by the behavior it produces — never by a test transcribing its contents.
+- Test current behavior, not hypothetical future logic. Add a transformation test when the transformation exists.
+- Leave dependency internals to their maintainers. Do not assert a mock's return value back or mirror a library's internal structure. Validate externally consumed configuration through the tool's own lint, check, dry-run, or observable behavior, not by transcribing its contents into a test.
 
 ## How to assert
 
-- **Assert only on the fields our code controls.** Avoid pinning the full structure of a call's arguments.
-- **Import production constants instead of duplicating them.** When a test must verify a specific constant is used, import it from the production module. This avoids string-duplication drift and intentionally causes the test to break when the constant changes.
-- **Give outsized-risk constants intentionally brittle tests.** When a single constant can silently change cost, behavior, or a contract (a model ID, a budget cap, an exit code), assert its exact wiring via the imported constant. The brittleness is the point: the suite may be the only line of defense against that regression.
-- **Use inline literals for simple test data.** Reach for builders or factories only when several tests share non-trivial setup; otherwise they add indirection without value.
+- Assert only fields the code controls, not the full structure of call arguments.
+- Import production constants instead of duplicating them when checking that a specific constant is used; a changed constant should break that test.
+- Give high-risk constants intentionally brittle wiring tests using the imported constant when a change could silently affect cost, behavior, or a contract.
+- Use inline literals for simple fixtures. Use builders only when several tests share non-trivial setup.
 
 ## When tests fail
 
-- **Earn green by fixing the cause.** Deleting, skipping, or loosening a failing test, sleeping or blindly retrying a flaky one, and skipping on a missing prerequisite all convert a signal into silence. Fix the code or the synchronization; fail with an actionable error when the environment lacks a prerequisite; and when the test itself is wrong, change it as its own explicit, explained step.
-- **A bug-fix test must fail without the fix.** Confirm the regression test fails against the unfixed code; a test that passes both with and without the change proves nothing about the bug.
+- Fix the cause rather than deleting, skipping, loosening, sleeping, or blindly retrying. Fix synchronization for flakes; fail with an actionable error for missing prerequisites. Correct a wrong test in its own explicit, explained step.
+- Confirm a bug-fix test fails without the fix. Passing in both versions proves nothing about the regression.
 
 ## How to organize
 
-- **Group by behavior domain, not arbitrary codes.** Use descriptive group names (a `describe` block): "case selection", "error handling" — not "Group A".
-- **Name tests in behavior-first active voice.** A name should read as a sentence describing what the system does ("exits 2 when no case matches the filter"), with no alphanumeric prefixes.
+- Group by behavior domain, with descriptive names rather than arbitrary codes.
+- Name tests in behavior-first active voice, without alphanumeric prefixes.
