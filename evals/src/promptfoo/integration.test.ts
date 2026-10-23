@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 
 import { afterAll, beforeAll, expect, test } from "vitest";
 
+import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import { BEHAVIORAL_TIER, ROUTING_TIER } from "#/cases/case-contract.ts";
 import { VALIDATOR_CALL } from "#/cases/case-test-support.ts";
 import { cases } from "#/cases/registry.ts";
@@ -198,6 +199,26 @@ test(
         }),
       ]),
     );
+  },
+  TIMEOUT_MS,
+);
+
+test(
+  "native CLI filters by skill metadata",
+  () => {
+    const { child, exported } = evaluateOffline(
+      [
+        "--filter-metadata",
+        `skill=${SKILL}`,
+        "--filter-pattern",
+        `^${SKILL}/trigger-positive$`,
+        "--repeat",
+        "1",
+      ],
+      "pass",
+    );
+    expect(child.status).toBe(EXIT.PASS);
+    expect(exported).toHaveProperty("results.results.length", ONE_RUN);
   },
   TIMEOUT_MS,
 );
