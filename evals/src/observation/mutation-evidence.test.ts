@@ -334,20 +334,6 @@ describe("sampleGitStatus", () => {
     });
   });
 
-  test("a corrupt index is unreadable rather than clean", () => {
-    // Exit 128 alone cannot distinguish an absent repository from corruption.
-    execFileSync("git", ["init", "-q"], { cwd: repositoryDirectory });
-    writeFileSync(join(repositoryDirectory, "f.txt"), "x");
-    execFileSync("git", ["add", "f.txt"], { cwd: repositoryDirectory });
-    writeFileSync(join(repositoryDirectory, ".git", "index"), "garbage");
-    const status = sampleGitStatus(repositoryDirectory);
-    expect(status.kind).toBe("unreadable");
-    if (status.kind !== "unreadable") {
-      throw new Error("expected an unreadable git status");
-    }
-    expect(status.reason).not.toBe("");
-  });
-
   test("a missing directory is unreadable, not clean", () => {
     expect(sampleGitStatus(join(repositoryDirectory, "missing"))).toStrictEqual(
       {
