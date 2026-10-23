@@ -6,7 +6,7 @@
 
 Contracts are the data boundaries between stages. Without them a subagent guesses at its input shape and the orchestrator guesses at the output, and the mismatch surfaces steps later, far from its cause. Declare inputs as a table of `Input | Required | Example`, with a derivation rule whenever one value carries several pieces of information. Pass the canonical identifier (a full issue URL) and let the receiver derive what it needs, except when the value carries secrets, tokens, or private data: then pass the smallest structured fields plus a redacted source reference. Declare outputs as a path or reply shape with its required sections or fields. A dispatch instruction carries `inputs`, `outputs`, and `constraints`; a report carries `status`; add only fields a consumer validates or uses.
 
-Contract fields (statuses, routes, ids, paths, ordering, counters) are exact across runs; only prose may vary. Every status field is a closed enum whose values are all routed ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)). An example that shows a contract changes in the same edit as the contract: agents copy examples over prose, so a stale example is worse than none. Machine-checking the fields is owned by [validate-routed-fields-with-a-script](./validate-routed-fields-with-a-script.md); file-versus-inline transport and the run directory by [scope-run-files-to-the-run](./scope-run-files-to-the-run.md).
+Contract fields (statuses, routes, ids, paths, ordering, counters) are exact across runs; only prose may vary. Every status field is a closed enum whose values are all routed ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)). An example that shows a contract changes in the same edit as the contract: agents copy examples over prose, so a stale example is worse than none. Machine-checking the fields is owned by [validate-routed-fields-with-a-script](./validate-routed-fields-with-a-script.md); file-versus-inline transport and the run directory by [declare-mutation-limits](./declare-mutation-limits.md#run-files).
 
 ## Examples
 
@@ -50,6 +50,6 @@ constraints:
 
 - [validate-routed-fields-with-a-script](./validate-routed-fields-with-a-script.md)
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
-- [scope-run-files-to-the-run](./scope-run-files-to-the-run.md)
+- [declare-mutation-limits](./declare-mutation-limits.md#run-files)
 - [validate-by-observation](./validate-by-observation.md)
 - [treat-retrieved-content-as-data](./treat-retrieved-content-as-data.md)

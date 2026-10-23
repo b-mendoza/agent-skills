@@ -8,7 +8,7 @@
 
 Verification is observed, not asserted. Capture `git status --porcelain` before the first mutation, compare it with the post-edit state, and treat every newly changed path outside the plan as a validator finding. In a dirty worktree the status list alone proves nothing about a file that was already modified; inspect the diff hunks of any authorized-but-dirty path to confirm the run did not overwrite unrelated user work. This closes the three ways implicit scope loses data: a subagent "fixing" a nearby file nobody approved, a change leaking into a sibling package or a tooling-managed mirror, and a repair cycle re-widening the change set.
 
-This rule does not decide which run-local paths a skill may create or when to ask the user before a hard-to-reverse action; see [scope-run-files-to-the-run](./scope-run-files-to-the-run.md) and [declare-mutation-limits](./declare-mutation-limits.md#approval). An out-of-plan path surfaces as a routed validator status per [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions).
+This rule does not decide which run-local paths a skill may create or when to ask the user before a hard-to-reverse action; see [declare-mutation-limits](./declare-mutation-limits.md#run-files) and [declare-mutation-limits](./declare-mutation-limits.md#approval). An out-of-plan path surfaces as a routed validator status per [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions).
 
 ## Approval
 
@@ -25,6 +25,14 @@ Consent binds to this run, action, and artifact version. Changes to text, paths,
 | Missing or unusable answer | `BLOCKED`, never inferred consent. |
 
 Define all revision/re-ask counters and routes using the [transition rules](./keep-routing-in-the-orchestrator.md#transitions). Ambiguity needs a checkpoint only when interpretations lead to different irreversible or outward actions. If all interpretations are reversible and in scope, choose one, record it, and continue. Reading, read-only checks, in-scope edits, and this run's handoff writes need no ritual checkpoint.
+
+## Run files
+
+Return bounded results inline unless size exceeds the prompt/reply budget, a later step/session/repair or context compaction needs persistence, or a script consumes the payload. Distinguish lifetimes: dispatch payloads last through their dispatch; resume state lasts only for its stated need and exists only when native session retention is insufficient; deliverables remain under the user's contract. Never persist secrets, tokens, raw logs, full diffs, or copied third-party payloads in any of them; use paths, digests, or redacted facts.
+
+Derive one run id at intake. Put dispatch payloads and resume state under `.handoffs/<skill>/<run-id>/` and record every created file. Before writing, require `git check-ignore --quiet -- "<path>"` to exit zero; otherwise use an already-ignored location or classify the file as a deliverable. An intended ignore rule is not evidence.
+
+A run may list sibling run names but never inspect or delete their contents. Cleanup occurs only at a terminal status and deletes only recorded, owned paths. Debug retention requires explicit per-run opt-in naming files and the cleanup condition. A deliverable's eligibility for version control grants no permission to stage, commit, or push; each requires user and repository authority.
 
 ## Examples
 
@@ -59,7 +67,7 @@ at baseline it compares diff hunks, not status.
 
 ## Related rules
 
-- [scope-run-files-to-the-run](./scope-run-files-to-the-run.md)
+- [declare-mutation-limits](./declare-mutation-limits.md#run-files)
 - [declare-mutation-limits](./declare-mutation-limits.md#approval)
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
 - [validate-by-observation](./validate-by-observation.md)
