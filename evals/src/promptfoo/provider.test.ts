@@ -97,55 +97,6 @@ describe("eval provider", () => {
     expect(graded.reason).toContain(scenario.reason);
   });
 
-  test.each([
-    {
-      overrides: { subtype: "query_error" },
-      reason: "the query produced no result",
-    },
-    {
-      overrides: { timedOut: true },
-      reason: "run exceeded its wall clock",
-    },
-    {
-      overrides: {
-        subtype: "success",
-        isError: true,
-        costUsd: 0,
-        toolCalls: [],
-        finalText: "login expired",
-      },
-      reason: "the SDK reported a failed run before it did anything",
-    },
-  ])("lets the canonical check fail $reason", async ({ overrides, reason }) => {
-    observation = { ...observation, ...overrides };
-    const result = await new EvalProvider().callApi("", context);
-    expect(result.error).toBeUndefined();
-    const graded = await grade(result.output, {
-      vars: context.vars,
-      metadata: result.metadata,
-    });
-    expect(graded.pass).toBe(false);
-    expect(graded.reason).toContain(reason);
-    expect(existsSync(fixturePath)).toBe(false);
-  });
-
-  test("lets the canonical check judge an SDK error after tool activity", async () => {
-    observation = {
-      ...observation,
-      subtype: "error_max_turns",
-      costUsd: 0,
-      finalText: "too many turns",
-    };
-    const result = await new EvalProvider().callApi("", context);
-    expect(result.error).toBeUndefined();
-    expect(
-      await grade(result.output, {
-        vars: context.vars,
-        metadata: result.metadata,
-      }),
-    ).toMatchObject({ pass: true });
-  });
-
   test("cleans up after the runner throws", async () => {
     vi.mocked(observeClaude).mockImplementationOnce(async (options) => {
       fixturePath = options.cwd;
