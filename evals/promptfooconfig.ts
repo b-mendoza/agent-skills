@@ -4,10 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import type { UnifiedConfig } from "promptfoo";
 
-import {
-  BEHAVIORAL_TIER,
-  cases,
-} from "#/cases/analyzing-recent-project-state.ts";
+import { BEHAVIORAL_TIER } from "#/cases/case-contract.ts";
+import { cases } from "#/cases/registry.ts";
 
 const configuredModel = process.env["EVAL_MODEL"];
 // Capture once: later environment changes must not change an ongoing run.

@@ -23,7 +23,7 @@ vi.mock(import("#/observation/agent-query.ts"), async (importOriginal) => ({
 }));
 
 const context: CallApiContextParams = {
-  vars: { caseId: "trigger-positive" },
+  vars: { caseId: "analyzing-recent-project-state/trigger-positive" },
   prompt: { raw: "{{caseId}}", label: "pilot" },
 };
 
@@ -32,7 +32,10 @@ beforeEach(() => {
 });
 
 describe("eval provider", () => {
-  test.each(["trigger-positive", "snapshot-dirty"])(
+  test.each([
+    "analyzing-recent-project-state/trigger-positive",
+    "analyzing-recent-project-state/snapshot-dirty",
+  ])(
     "runs %s with its canonical prompt, model and limits, then removes its fixture",
     async (caseId) => {
       const evalCase = getCase(caseId);
@@ -147,7 +150,10 @@ describe("eval assertion", () => {
   );
 
   test("reports only the bounded first line of a check failure", async () => {
-    vi.spyOn(getCase("trigger-positive"), "check").mockImplementation(() => {
+    vi.spyOn(
+      getCase("analyzing-recent-project-state/trigger-positive"),
+      "check",
+    ).mockImplementation(() => {
       throw new Error(`${"x".repeat(MAX_OBSERVED_CHARS)}x\nsecond line`);
     });
     expect(
@@ -175,10 +181,13 @@ describe("eval assertion", () => {
   ])(
     "normalizes foreign judge failures: $reason",
     async ({ value, reason }) => {
-      vi.spyOn(getCase("snapshot-dirty"), "judge").mockRejectedValue(value);
+      vi.spyOn(
+        getCase("analyzing-recent-project-state/snapshot-dirty"),
+        "judge",
+      ).mockRejectedValue(value);
       expect(
         await grade("", {
-          vars: { caseId: "snapshot-dirty" },
+          vars: { caseId: "analyzing-recent-project-state/snapshot-dirty" },
           metadata: {
             observation: createObservation({
               finalText: FULL_REPORT_SNAPSHOT,
@@ -193,14 +202,14 @@ describe("eval assertion", () => {
 
   test("calls the judge only after the real mechanical check passes and appends its verdict", async () => {
     const judge = vi
-      .spyOn(getCase("snapshot-dirty"), "judge")
+      .spyOn(getCase("analyzing-recent-project-state/snapshot-dirty"), "judge")
       .mockResolvedValue("judge accepted");
     const observation = createObservation({
       finalText: "bad",
       toolCalls: [VALIDATOR_CALL],
     });
     const assertionContext = {
-      vars: { caseId: "snapshot-dirty" },
+      vars: { caseId: "analyzing-recent-project-state/snapshot-dirty" },
       metadata: { observation, repeatIndex: 0 },
     };
     expect(await grade("", assertionContext)).toMatchObject({ pass: false });
@@ -224,12 +233,13 @@ describe("eval assertion", () => {
   ])(
     "judge failures name the judge without duplicate prefixes: $message",
     async ({ message, reason }) => {
-      vi.spyOn(getCase("snapshot-dirty"), "judge").mockRejectedValue(
-        new Error(message),
-      );
+      vi.spyOn(
+        getCase("analyzing-recent-project-state/snapshot-dirty"),
+        "judge",
+      ).mockRejectedValue(new Error(message));
       expect(
         await grade("", {
-          vars: { caseId: "snapshot-dirty" },
+          vars: { caseId: "analyzing-recent-project-state/snapshot-dirty" },
           metadata: {
             observation: createObservation({
               finalText: FULL_REPORT_SNAPSHOT,
