@@ -122,10 +122,7 @@ describe("validate-output.sh", () => {
     {
       label: "a draft missing a canonical section",
       mode: "draft",
-      payload: GOOD_DRAFT.replace(
-        "## 9. Ranked Next Actions",
-        "## Next Actions",
-      ),
+      payload: GOOD_DRAFT.replace("## Ranked Next Actions", "## Next Actions"),
       finding:
         /section set is neither the full form nor the quiet-state short form/,
     },
