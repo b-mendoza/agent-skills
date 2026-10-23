@@ -3,6 +3,8 @@
 // and the eval checks. These run the real script through the same wrapper the
 // checks use, offline and token-free.
 
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "vitest";
@@ -42,6 +44,21 @@ describe("validate-output.sh", () => {
       /output validator could not run: validator exited with status 2 without findings/,
     );
   });
+
+  test.each(["../evals/package.json", "src/../package.json"])(
+    "lexically rejects parent traversal in locator %s even when its target exists",
+    (locator) => {
+      expect(existsSync(join(PROJECT_PATH, locator))).toBe(true);
+      const findings = runOutputValidator(
+        "draft",
+        GOOD_DRAFT.replace("path package.json", `path ${locator}`),
+        PROJECT_PATH,
+      );
+      expect(findings).toContain(
+        `malformed claim label: [confirmed: path ${locator}]`,
+      );
+    },
+  );
 
   test.each([
     {
