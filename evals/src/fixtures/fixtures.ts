@@ -25,6 +25,8 @@ export interface SeedContext {
 }
 
 export interface Fixture {
+  /** Private executable directory, outside the repository. */
+  readonly binPath: string;
   /** Directory the agent runs in. Always a real git repo except for `not-git`. */
   readonly cwd: string;
   /** Repo sampled for the git delta; `undefined` when there is no worktree. */
@@ -145,12 +147,33 @@ function initializeGitFixtureRepository(
   }
 }
 
-export function makeFixture(kind: FixtureKind, skill: string): Fixture {
+function prepareCaseFiles(
+  seedContext: SeedContext,
+  skills: readonly string[],
+  seed: ((seedContext: SeedContext) => void) | undefined,
+): void {
+  const skillsPath = join(seedContext.repoPath, ".claude", "skills");
+  mkdirSync(skillsPath, { recursive: true });
+  for (const skill of skills) {
+    const skillSourcePath = join(SKILLS_DIRECTORY_PATH, skill);
+    const skillDestinationPath = join(skillsPath, skill);
+    cpSync(skillSourcePath, skillDestinationPath, { recursive: true });
+  }
+  seed?.(seedContext);
+}
+
+export function makeFixture(
+  kind: FixtureKind,
+  skills: readonly string[],
+  seed?: (seedContext: SeedContext) => void,
+): Fixture {
   const usesGit = kind !== "not-git";
   const fixtureRoot = mkdtempSync(join(tmpdir(), FIXTURE_ROOT_PREFIX));
   try {
     const repositoryPath = join(fixtureRoot, "repo");
     const notGitPath = join(fixtureRoot, "not-a-repo");
+    const binPath = join(fixtureRoot, "bin");
+    mkdirSync(binPath);
 
     mkdirSync(repositoryPath, { recursive: true });
     mkdirSync(notGitPath, { recursive: true });
@@ -164,13 +187,10 @@ export function makeFixture(kind: FixtureKind, skill: string): Fixture {
       );
     }
 
-    const skillsPath = join(repositoryPath, ".claude", "skills");
-    const skillSourcePath = join(SKILLS_DIRECTORY_PATH, skill);
-    const skillDestinationPath = join(skillsPath, skill);
-    mkdirSync(skillsPath, { recursive: true });
-    cpSync(skillSourcePath, skillDestinationPath, { recursive: true });
+    prepareCaseFiles({ repoPath: repositoryPath, binPath }, skills, seed);
 
     return {
+      binPath,
       cwd: repositoryPath,
       gitRepo: usesGit ? repositoryPath : undefined,
       missingPath: join(fixtureRoot, MISSING_PATH_NAME),
