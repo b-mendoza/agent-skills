@@ -13,8 +13,12 @@ import { observeClaude } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 import { evalModel } from "../../promptfooconfig.ts";
-import { grade, MAX_OBSERVED_CHARS, mutationScope } from "./assertion.ts";
-import { getCase } from "./observation.ts";
+import {
+  getCase,
+  grade,
+  MAX_OBSERVED_CHARS,
+  mutationScope,
+} from "./assertion.ts";
 import EvalProvider from "./provider.ts";
 
 vi.mock(import("#/observation/agent-query.ts"), async (importOriginal) => ({

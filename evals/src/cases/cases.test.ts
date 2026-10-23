@@ -16,7 +16,7 @@ import {
 import { HOSTILE_FIXTURE_FACTS } from "#/fixtures/fixtures.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
-import { getCase } from "#/promptfoo/observation.ts";
+import { getCase } from "#/promptfoo/assertion.ts";
 
 const AUTH_FAILURE = createObservation({
   isError: true,

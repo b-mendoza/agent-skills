@@ -10,9 +10,7 @@ import { observeClaude } from "#/observation/agent-query.ts";
 import { toText } from "#/observation/mutation-evidence.ts";
 
 import { evalModel } from "../../promptfooconfig.ts";
-import { getCase } from "./observation.ts";
-
-const FIRST_REPEAT = 0;
+import { FIRST_REPEAT, getCase } from "./assertion.ts";
 
 async function runCase(
   context: CallApiContextParams,
