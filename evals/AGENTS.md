@@ -11,7 +11,7 @@ Nearest guide for the eval suite: a self-contained pnpm workspace that runs skil
 
 - Lint check (run after a substantive change): `pnpm lint` (tsc, eslint, oxlint, oxfmt `--check`); `pnpm fix` applies the auto-fixes.
 - Test suite (run before committing): `pnpm test` (offline vitest).
-- [`report.md`](./report.md) is a committed, generated artifact; only a real eval run rewrites it.
+- Run artifacts and promptfoo history live under ignored `outputs/`. Compare saved runs with `pnpm eval:view`.
 - Eval runs spend real money and require explicit user approval. Answer anything a free check can answer with a free check — see [`docs/verification.md`](./docs/verification.md).
 
 ## Open when relevant (long-lived)
@@ -22,7 +22,7 @@ Nearest guide for the eval suite: a self-contained pnpm workspace that runs skil
 
 ## Current-state references (short-lived; verify against the code)
 
-- [Current layout](docs/current-layout.md) — where code lives, capability ownership, entry and report paths.
+- [Current layout](docs/current-layout.md) — where code lives, capability ownership, entry and artifact paths.
 - [Verification](docs/verification.md) — which checks to run for which task, free vs. paid, exit codes.
 - [Eval-suite README](README.md) — philosophy, tiers, mutation-scope gap, adding a case.
 

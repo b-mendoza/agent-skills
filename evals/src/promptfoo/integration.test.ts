@@ -1,6 +1,12 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { availableParallelism, tmpdir } from "node:os";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,6 +14,7 @@ import { expect, test } from "vitest";
 
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import { observe } from "#/cases/case-test-support.ts";
+import { evalModel } from "#/orchestration/configuration.ts";
 
 import config from "../../promptfooconfig.ts";
 import { readResults } from "./results.ts";
@@ -19,9 +26,14 @@ const CLI = fileURLToPath(
 const TIMEOUT_MS = 30_000;
 const SUCCESS = 0;
 const FIRST = 0;
+const MAX_CONCURRENCY = 5;
 
-test("default concurrency uses the machine's available parallelism", () => {
-  expect(config.evaluateOptions.maxConcurrency).toBe(availableParallelism());
+test("caps concurrent attempts at five and labels cases without changing the dataset", () => {
+  expect(config.evaluateOptions.maxConcurrency).toBe(MAX_CONCURRENCY);
+  expect(config.defaultTest.assert).toEqual([
+    expect.objectContaining({ metric: "case/{{caseId}}" }),
+  ]);
+  expect(config.description).toBe(`Agent skills evals (${evalModel})`);
 });
 
 test.each([
@@ -62,7 +74,7 @@ test.each([
           defaultTest: {
             assert: [
               {
-                type: "javascript",
+                ...config.defaultTest.assert[FIRST],
                 value: `file://${join(EVAL_ROOT, "src/promptfoo/assertion.ts")}`,
               },
             ],
@@ -77,7 +89,6 @@ test.each([
           "-c",
           configPath,
           "--no-cache",
-          "--no-write",
           "--no-share",
           "--filter-metadata",
           "tier=1",
@@ -85,6 +96,8 @@ test.each([
           "^trigger-positive$",
           "-o",
           output,
+          "-o",
+          join(root, "results.html"),
           ...args,
         ],
         {
@@ -93,13 +106,16 @@ test.each([
           timeout: TIMEOUT_MS,
           env: {
             ...process.env,
-            IS_TESTING: "true",
+            IS_TESTING: "false",
             PROMPTFOO_DISABLE_TELEMETRY: "1",
+            PROMPTFOO_CONFIG_DIR: join(root, "state"),
           },
         },
       );
       expect(child.stderr).toBe("");
       expect(child.status).toBe(SUCCESS);
+      expect(existsSync(join(root, "results.html"))).toBe(true);
+      expect(existsSync(join(root, "state", "promptfoo.db"))).toBe(true);
       const exported: unknown = JSON.parse(readFileSync(output, "utf8"));
       expect(readResults(exported)[FIRST]).toMatchObject({
         id: "trigger-positive",

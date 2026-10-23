@@ -16,15 +16,16 @@ pnpm eval --filter-metadata tier=1                 # routing only
 pnpm eval --filter-pattern '^snapshot-dirty$'      # one case
 pnpm eval --repeat 1                               # cheap, low-confidence smoke run
 pnpm eval -j 3                                     # override default: up to 3 concurrent attempts
+pnpm eval:view                                    # browse and compare saved runs
 ```
 
 Node 24 strips TypeScript types natively, so the suite runs from source with no build step. Keep the syntax erasable — `erasableSyntaxOnly` is on, so no enums, parameter properties, decorators, or namespaces.
 
-Each selected case runs `--repeat` times, default 5, and reports a **score**, the percent of attempts whose check passed, plus a **status** derived from the same counts: `PASS` for every attempt, `FAIL` for none, `DEGRADED` for a mix, and `NOT_RUN` for cases not executed by this run. A `NOT_RUN` score stays empty rather than reading as zero. The default concurrency is the machine's available parallelism; `-j` overrides it. Extra arguments go to promptfoo.
+Each selected case runs `--repeat` times, default 5, and reports a **score**, the percent of attempts whose check passed, plus a **status** derived from the same counts: `PASS` for every attempt, `FAIL` for none, `DEGRADED` for a mix, and `NOT_RUN` for cases not executed by this run. A `NOT_RUN` score stays empty rather than reading as zero. The default concurrency cap is 5 attempts across the whole queue, including repeats; `-j` overrides it. Each process has its own cap, so two concurrent default runs can have 10 attempts in flight. Extra arguments go to promptfoo.
 
-Exits `0` when every executed case passes every attempt, `1` when a case fails or is degraded, `2` when no case matched the filter, and `3` on an infrastructure error. Missing or malformed results, any provider error row, subprocess failure, and report-write failure are infrastructure errors. Set `EVAL_MODEL` to override the model, default `sonnet`.
+Exits `0` when every executed case passes every attempt, `1` when a case fails or is degraded, `2` when no case matched the filter, and `3` on an infrastructure error. Missing or malformed results, any provider error row, subprocess failure, and output-directory failure are infrastructure errors. Set `EVAL_MODEL` to override the model, default `sonnet`.
 
-A run with matched cases and valid results rewrites [`report.md`](./report.md), which is committed so a behavior change shows up in `git diff`. No-match runs preserve it. The report lists every known case; ones a partial run skipped appear as `NOT_RUN` instead of vanishing.
+Each invocation creates `outputs/runs/<UTC timestamp>-<random>/` with `results.json` and a self-contained `results.html`, one row per attempt. Runs also persist in promptfoo's SQLite database under `outputs/promptfoo-state`. These outputs are ignored by git. Use `pnpm eval:view` to browse history and compare runs side by side. Per-case metrics show pass rates across repeats; the eval description records the model without changing the test dataset. The terminal lists each non-PASS case, including skipped `NOT_RUN` cases and the derived `mutation-scope` result. The derived result is not a promptfoo row and does not appear in the HTML or viewer.
 
 ## Checks
 
@@ -38,27 +39,26 @@ pnpm test    # vitest: unit tests for the pure functions, free and offline
 
 Paths below are relative to `src/`, from `find src -name '*.test.ts'`.
 
-| Test file                                            | Pins                                                                                     |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `cases/cases-behavioral.test.ts`                     | Tier-2 assertions: envelopes, report conformance, injection defense                      |
-| `cases/cases.test.ts`                                | Run-validity and routing assertions against synthetic runs                               |
-| `cases/validate-output-script.test.ts`               | The skill's deterministic validator, per mode, good and bad payloads                     |
-| `fixtures/fixtures.test.ts`                          | Fixture git state, skill copy, exclusion, cleanup                                        |
-| `observation/git-status.test.ts`                     | Clean, not-a-repo, and unreadable sample classification                                  |
-| `observation/harness-failure-lifecycle.test.ts`      | Query, iterator, and cleanup failure handling                                            |
-| `observation/harness-lifecycle.test.ts`              | Mocked SDK lifecycle: results, errors, abort                                             |
-| `observation/harness-timeout.test.ts`                | Deadline and abort behavior                                                              |
-| `observation/judge.test.ts`                          | Judge citation validation and unparseable-reply failure                                  |
-| `observation/mutation-evidence-git-commands.test.ts` | Mutating git commands and read-only lookalikes                                           |
-| `observation/mutation-evidence.test.ts`              | The read-only detector behind `mutation-scope`                                           |
-| `orchestration/entry.test.ts`                        | The direct-entry guard on the runner                                                     |
-| `orchestration/report-rendering.test.ts`             | Report escaping, counts, mean score, measured totals                                     |
-| `orchestration/run.test.ts`                          | Argument forwarding, fixed flags, report writes, exit codes, infrastructure failures     |
-| `orchestration/verdict.test.ts`                      | Check normalization, scores, statuses, NOT_RUN rows                                      |
-| `promptfoo/integration.test.ts`                      | Real promptfoo CLI with an offline provider: filters, repeat overrides, assertion output |
-| `promptfoo/provider.test.ts`                         | Runner limits, fixture isolation and cleanup, check-before-judge ordering                |
-| `promptfoo/results.test.ts`                          | Result grouping, skipped cases, derived mutation scope, provider errors                  |
-| `promptfoo/tests.test.ts`                            | Case registry generation with filterable IDs and tiers                                   |
+| Test file                                            | Pins                                                                                                            |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `cases/cases-behavioral.test.ts`                     | Tier-2 assertions: envelopes, report conformance, injection defense                                             |
+| `cases/cases.test.ts`                                | Run-validity and routing assertions against synthetic runs                                                      |
+| `cases/validate-output-script.test.ts`               | The skill's deterministic validator, per mode, good and bad payloads                                            |
+| `fixtures/fixtures.test.ts`                          | Fixture git state, skill copy, exclusion, cleanup                                                               |
+| `observation/git-status.test.ts`                     | Clean, not-a-repo, and unreadable sample classification                                                         |
+| `observation/harness-failure-lifecycle.test.ts`      | Query, iterator, and cleanup failure handling                                                                   |
+| `observation/harness-lifecycle.test.ts`              | Mocked SDK lifecycle: results, errors, abort                                                                    |
+| `observation/harness-timeout.test.ts`                | Deadline and abort behavior                                                                                     |
+| `observation/judge.test.ts`                          | Judge citation validation and unparseable-reply failure                                                         |
+| `observation/mutation-evidence-git-commands.test.ts` | Mutating git commands and read-only lookalikes                                                                  |
+| `observation/mutation-evidence.test.ts`              | The read-only detector behind `mutation-scope`                                                                  |
+| `orchestration/entry.test.ts`                        | The direct-entry guard on the runner                                                                            |
+| `orchestration/run.test.ts`                          | Argument forwarding, unique artifacts, history state, summaries, exit codes, infrastructure failures            |
+| `orchestration/verdict.test.ts`                      | Check normalization, scores, statuses, NOT_RUN rows                                                             |
+| `promptfoo/integration.test.ts`                      | Real promptfoo CLI with an offline provider: filters, repeat overrides, assertion output, JSON/HTML and history |
+| `promptfoo/provider.test.ts`                         | Runner limits, fixture isolation and cleanup, check-before-judge ordering                                       |
+| `promptfoo/results.test.ts`                          | Result grouping, skipped cases, derived mutation scope, provider errors                                         |
+| `promptfoo/tests.test.ts`                            | Case registry generation with filterable IDs and tiers                                                          |
 
 Run it before any paid run.
 
@@ -66,19 +66,19 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 
 ## Layout
 
-| Path                             | Contents                                                                                      |
-| -------------------------------- | --------------------------------------------------------------------------------------------- |
-| `promptfooconfig.ts`             | Provider, assertion, generated tests, default repeats and concurrency                         |
-| `src/orchestration/run.ts`       | Inert-on-import entry point; spawns promptfoo, reads JSON, writes the report, maps exit codes |
-| `src/orchestration/`             | Shared verdicts, report rendering, model configuration                                        |
-| `src/promptfoo/`                 | Custom provider, assertion, test generation, observation validation, result aggregation       |
-| `src/observation/agent-query.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta                  |
-| `src/fixtures/fixtures.ts`       | Builds throwaway git repos with the skill installed under `.claude/skills/`                   |
-| `src/cases/<skill>.ts`           | Canonical source of truth: every eval case and its assertions                                 |
-| `src/**/*.test.ts`               | Offline vitest suites, colocated with the code they pin                                       |
-| `report.md`                      | Generated from matched results; committed                                                     |
-| `AGENTS.md`, `docs/agent/`       | Agent guide and long-lived agent guidance                                                     |
-| `docs/*.md`                      | Short-lived references and dated historical plans                                             |
+| Path                             | Contents                                                                                                        |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `promptfooconfig.ts`             | Provider, assertion, generated tests, default repeats and concurrency                                           |
+| `src/orchestration/run.ts`       | Inert-on-import entry point; spawns promptfoo, reads JSON, prints summaries and artifact paths, maps exit codes |
+| `src/orchestration/`             | Shared verdicts, run coordination, model configuration                                                          |
+| `src/promptfoo/`                 | Custom provider, assertion, test generation, observation validation, result aggregation                         |
+| `src/observation/agent-query.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta                                    |
+| `src/fixtures/fixtures.ts`       | Builds throwaway git repos with the skill installed under `.claude/skills/`                                     |
+| `src/cases/<skill>.ts`           | Canonical source of truth: every eval case and its assertions                                                   |
+| `src/**/*.test.ts`               | Offline vitest suites, colocated with the code they pin                                                         |
+| `outputs/`                       | Ignored per-run JSON/HTML artifacts and shared promptfoo history                                                |
+| `AGENTS.md`, `docs/agent/`       | Agent guide and long-lived agent guidance                                                                       |
+| `docs/*.md`                      | Short-lived references and dated historical plans                                                               |
 
 See [current layout](docs/current-layout.md) for module responsibilities and why the provider keeps our SDK runner.
 
@@ -90,7 +90,7 @@ See [current layout](docs/current-layout.md) for module responsibilities and why
 
 **Deterministic runtime validation.** The skill ships its own shape validator (`skills/analyzing-recent-project-state/scripts/validate-output.sh`) that subagents run on their output before returning and the orchestrator runs at its payload gates. The eval checks reuse the same script (`runOutputValidator` in the checks module), so test-time and runtime grade shapes identically, and tier-2 cases assert the validator was actually invoked (a `Bash` call visible in the tool stream). Evals are test-time guarantees; the script is the one that persists at runtime — the suite's job is verifying that mechanism engages, plus everything a script cannot check (routing, semantic quality, injection resistance).
 
-Read the JSON path printed by the runner to diagnose failures. Each invocation creates its own `$TMPDIR/agent-skills-eval-*/results.json`, holding every attempt's output and observation metadata, not just failures. Later runs do not overwrite it. The wrapper uses `--no-write`, so results are not stored in promptfoo's database and `npx promptfoo view` cannot display these runs. It also disables caching, sharing, and telemetry.
+Read the JSON path printed by the runner to diagnose failures. It holds every attempt's output and observation metadata, not just failures. Later runs cannot overwrite it. The runner resolves artifact and history paths relative to the suite, independent of the working directory. It disables caching, sharing, and telemetry, but keeps database writes enabled for the viewer.
 
 **Judge-based checks** (`src/observation/judge.ts`) grade an artifact against a binary rubric with an independent small model. This is a deliberate extension of the assert-only-observables rule: the judged artifact is the observable and the judge is a measurement instrument reading it — what stays banned is asking the agent under test whether it complied. Two guards keep verdicts honest: a violation counts only when its quote is mechanically verified to appear verbatim in the artifact (uncited complaints are recorded, never failing), and an unparseable judge reply fails the attempt with a message naming the judge, so grading trouble is never mistaken for a verdict on the skill. Judges run only after a case's mechanical check passes.
 
@@ -110,7 +110,7 @@ Two related properties the check _does_ now hold, both of which used to fail sil
 
 ## Adding a case
 
-Add it to `src/cases/<skill>.ts`. A case declares its fixture, prompt, budget, wall clock, and a `check` that throws to fail and returns a short observed-outcome string for the report.
+Add it to `src/cases/<skill>.ts`. A case declares its fixture, prompt, budget, wall clock, and a `check` that throws to fail and returns a short observed-outcome string for the results.
 
 `src/cases/<skill>.ts` is the canonical source of truth. A case belongs here only if it runs and asserts something observable; there is no parallel list of aspirational cases, because a case nothing executes proves nothing.
 
