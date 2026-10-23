@@ -186,7 +186,7 @@ export function createJudge(options: {
 export const liveJudgeQuery: JudgeQuery = async (prompt, model) => {
   const stream = query({
     prompt,
-    options: { model, maxTurns: 1, allowedTools: [], cwd: tmpdir() },
+    options: { model, maxTurns: 1, tools: [], cwd: tmpdir() },
   });
   for await (const message of stream) {
     if (!Predicate.isObject(message) || message.type !== "result") continue;

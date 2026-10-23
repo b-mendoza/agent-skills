@@ -176,7 +176,7 @@ describe("SDK judge", () => {
     await expect(liveJudgeQuery("", JUDGE_MODEL)).rejects.toThrow(/judge/);
   });
 
-  test("ignores irrelevant messages and grades clean with the judge model in one turn", async () => {
+  test("ignores irrelevant messages and grades clean with the judge model in one turn without tools", async () => {
     sdk.query.mockImplementation(() =>
       scripted(
         null,
@@ -192,7 +192,7 @@ describe("SDK judge", () => {
     expect(call?.options).toMatchObject({
       model: JUDGE_MODEL,
       maxTurns: 1,
-      allowedTools: [],
+      tools: [],
     });
   });
 
