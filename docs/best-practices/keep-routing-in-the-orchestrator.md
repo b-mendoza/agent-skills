@@ -6,7 +6,7 @@ Tier: mandatory transitions; recommended routing layout.
 
 The orchestrator is the workflow's routing layer; subagents are its contracted backends. Write `Execution` so each step reads "given X, dispatch Y; on Y's status Z, do W": check the step's preconditions before a dispatch, its postconditions after, and route on the returned status. A subagent that consumes a raw ticket, file, payload, or page normalises it into the fields of its output contract; the orchestrator routes on those bounded fields and renders the user-facing handoff (decision, evidence summary, artifact paths, next steps) from them. A subagent may return a recommendation for the next step; the orchestrator makes the dispatch decision. Central routing is the portable default — whether a runtime supports nested dispatch is a fact recorded in [runtime-portability-matrix](./runtime-portability-matrix.md), not a workflow assumption. Every name a route dispatches has its referent in the skill's registry table ([list-subagents-in-a-registry](./list-subagents-in-a-registry.md)).
 
-When `state-machine.md` exists, it is the single normative transition source and `Execution` is a compact overview that defers to it ([one-normative-state-machine](./one-normative-state-machine.md)). Status vocabulary, loop caps, and terminal statuses are owned by [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions); each contract's shape by [declare-input-output-contracts](./declare-input-output-contracts.md); checking routed fields by [validate-routed-fields-with-a-script](./validate-routed-fields-with-a-script.md).
+When `state-machine.md` exists, it is the single normative transition source and `Execution` is a compact overview that defers to it ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)). Status vocabulary, loop caps, and terminal statuses are owned by [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions); each contract's shape by [declare-input-output-contracts](./declare-input-output-contracts.md); checking routed fields by [validate-routed-fields-with-a-script](./validate-routed-fields-with-a-script.md).
 
 ## Transitions
 
@@ -15,6 +15,8 @@ Every skill and subagent declares a closed UPPER_SNAKE status set and the condit
 Route every declared value and missing, malformed, or unknown output explicitly; never infer a status from prose. A `PARTIAL` result lists successes and failures so the remainder can be routed. A needed but unavailable capability returns `TOOLS_MISSING`, never a remembered substitute. [Validate received fields before routing](./validate-routed-fields-with-a-script.md). Approval answers are `APPROVED | REVISE | ABORT`; missing or unusable answers route to `BLOCKED` under the [approval rule](./checkpoint-irreversible-actions.md).
 
 Every repair, retry, and re-ask loop has a named counter, a cap, and an at-cap route. State its initialization and increment. Every active or wait state advances, waits for a named event, or terminates. Declare competing-guard precedence once, as first-match order or explicit priority. Name each parallel join and its all-success, partial, blocked, error, and missing-result routes; outcomes must not depend on completion order.
+
+Keep one normative transition source. Use `Execution` for a small linear flow with at most one retry; separate `state-machine.md` only when it removes ambiguity. When present, that file owns states, guards, events, joins, loops, and terminal outcomes. `Execution` links it as a non-normative overview; `flow-diagram.md` is illustrative. Update both with transition changes; neither overrides the normative source.
 
 ## Examples
 
@@ -54,5 +56,5 @@ Every repair, retry, and re-ask loop has a named counter, a cap, and an at-cap r
 
 - [delegate-by-default](./delegate-by-default.md)
 - [list-subagents-in-a-registry](./list-subagents-in-a-registry.md)
-- [one-normative-state-machine](./one-normative-state-machine.md)
+- [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)

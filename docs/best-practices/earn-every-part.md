@@ -41,4 +41,4 @@ Dimensions fired: context efficiency (six fewer contracts loaded), maintainabili
 - [progressive-disclosure](./progressive-disclosure.md)
 - [link-external-sources](./link-external-sources.md)
 - [validate-by-observation](./validate-by-observation.md)
-- [one-normative-state-machine](./one-normative-state-machine.md)
+- [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
