@@ -368,6 +368,7 @@ test("a run exceeding its wall clock is aborted and settles", async () => {
     costUsd: 0,
     toolCalls: [{ name: "Read", input: {} }],
   });
+  expect(vi.getTimerCount()).toBeFalsy();
 });
 
 test("a result after abort retains verdict and timeout evidence", async () => {
@@ -386,6 +387,7 @@ test("a result after abort retains verdict and timeout evidence", async () => {
     costUsd: 0.5,
     timedOut: true,
   });
+  expect(vi.getTimerCount()).toBeFalsy();
 });
 
 test("a completed run cannot be re-flagged by an expired timer", async () => {
@@ -407,4 +409,5 @@ test("a completed run cannot be re-flagged by an expired timer", async () => {
   vi.advanceTimersByTime(PAST_WALL_CLOCK_LIMIT);
   expect(abortController.signal.aborted).toBe(false);
   expect(observation.timedOut).toBe(false);
+  expect(vi.getTimerCount()).toBeFalsy();
 });
