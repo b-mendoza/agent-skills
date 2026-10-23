@@ -14,7 +14,7 @@ import {
   UNNUMBERED_QUIET_STATE_SNAPSHOT,
   VALIDATOR_CALL,
 } from "#/cases/case-test-support.ts";
-import type { Observation } from "#/observation/observation-types.ts";
+import type { Observation } from "#/observation/agent-query.ts";
 import { getCase } from "#/promptfoo/observation.ts";
 
 const envelope = (status: EnvelopeStatus): Observation =>

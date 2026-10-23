@@ -14,11 +14,7 @@ import { join } from "node:path";
 
 import { afterEach, expect, test } from "vitest";
 
-import type { GitStatus } from "#/observation/git-status.ts";
-import {
-  describeGitStatus,
-  sampleGitStatus,
-} from "#/observation/git-status.ts";
+import { sampleGitStatus } from "#/observation/mutation-evidence.ts";
 
 const FIRST_TEMP_DIRECTORY_INDEX = 0;
 
@@ -137,28 +133,3 @@ test("a fatal message merely containing the phrase stays unreadable", () => {
   }
   expect(status.reason).toContain(index);
 });
-
-// A failure message that cannot tell these apart sends the reader hunting for
-// a mutation that never happened.
-test.each([
-  [
-    "a clean worktree renders as quoted empty entries",
-    { kind: "worktree", entries: "" },
-    '""',
-  ],
-  [
-    "a non-worktree renders as an expected repository state",
-    { kind: "no-worktree" },
-    "(not a worktree)",
-  ],
-  [
-    "an unreadable sample renders its diagnostic",
-    { kind: "unreadable", reason: "ENOENT" },
-    "(unreadable: ENOENT)",
-  ],
-] satisfies ReadonlyArray<readonly [string, GitStatus, string]>)(
-  "%s",
-  (_caseName, status, expectedText) => {
-    expect(describeGitStatus(status)).toBe(expectedText);
-  },
-);

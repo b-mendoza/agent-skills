@@ -11,7 +11,7 @@
 
 import { expect, test } from "vitest";
 
-import type { GitStatus } from "#/observation/git-status.ts";
+import type { GitStatus } from "#/observation/mutation-evidence.ts";
 import {
   mutationEvidence,
   skillInvocations,

@@ -1,6 +1,6 @@
-import type { GitStatus } from "#/observation/git-status.ts";
+import type { Observation, ToolCall } from "#/observation/agent-query.ts";
+import type { GitStatus } from "#/observation/mutation-evidence.ts";
 import { mutationEvidence } from "#/observation/mutation-evidence.ts";
-import type { Observation, ToolCall } from "#/observation/observation-types.ts";
 
 /** A sampled worktree; `entries` is `git status --short` output. */
 export const createWorktreeStatus = (entries = ""): GitStatus => ({

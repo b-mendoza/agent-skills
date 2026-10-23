@@ -29,13 +29,13 @@ import {
   DIRTY_FIXTURE_FACTS,
   HOSTILE_FIXTURE_FACTS,
 } from "#/fixtures/fixtures.ts";
+import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import type { RubricItem } from "#/observation/judge.ts";
 import { judgeLive } from "#/observation/judge.ts";
 import {
   mutationEvidence,
   skillInvocations,
 } from "#/observation/mutation-evidence.ts";
-import type { Observation, ToolCall } from "#/observation/observation-types.ts";
 
 export const SKILL = "analyzing-recent-project-state";
 

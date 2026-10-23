@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import type { Observation } from "#/observation/agent-query.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import type { JudgeOutcome } from "#/observation/judge.ts";
 import { mutationEvidence } from "#/observation/mutation-evidence.ts";
-import type { Observation } from "#/observation/observation-types.ts";
 
 // The skill's own deterministic validator is the normative shape definition;
 // reusing it here means test-time and runtime check the same thing.

@@ -14,7 +14,7 @@ Each case has a `case/{{caseId}}` metric. Every tier-2 attempt also has a native
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `provider.ts`              | Builds a fixture, calls `observeClaude` with the case's prompt and limits, returns output plus observation metadata and repeat index, and cleans up. |
 | `assertion.ts`             | Normalizes check failures, runs the mechanical check before an optional judge, and grades per-attempt mutation evidence.                             |
-| `observation.ts`           | Validates observation metadata and resolves case IDs.                                                                                                |
+| `observation.ts`           | Validates observation metadata using the shared observation schema and resolves case IDs.                                                            |
 
 We keep our own SDK runner because promptfoo's built-in Claude provider loses tool-call metadata when the SDK throws at a budget stop. Tier-1 routing checks need those tool calls even when the budget ends the run.
 
@@ -26,18 +26,15 @@ We keep our own SDK runner because promptfoo's built-in Claude provider loses to
 
 ## Observation
 
-| Module in `src/observation/`  | Responsibility                                                                                       |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `observation-types.ts`        | Run options, normalized observations, tool calls, and result verdicts.                               |
-| `agent-query.ts`              | SDK query, deadline/abort, first-result settlement, iterator cleanup, and before/after git sampling. |
-| `agent-query-messages.ts`     | SDK message validation and normalization.                                                            |
-| `git-status.ts`               | Synchronous git sampling and worktree/no-worktree/unreadable classification.                         |
-| `git-command-evidence.ts`     | Git command and option classification.                                                               |
-| `mutation-evidence.ts`        | Mutation evidence and skill-invocation extraction.                                                   |
-| `judge.ts`                    | Independent SDK judge query, prompt construction, response parsing, and citation validation.         |
-| `observation-test-support.ts` | Plain observation/message builders and scripted async message streams for tests.                     |
+| Module in `src/observation/`  | Responsibility                                                                                                                                                 |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agent-query.ts`              | Run options, message schemas and derived types, SDK query, normalization, deadlines, first-result settlement, iterator cleanup, and before/after git sampling. |
+| `mutation-evidence.ts`        | Git sampling and status schema, mutation evidence, and skill-invocation extraction.                                                                            |
+| `git-command-evidence.ts`     | Git command and option classification.                                                                                                                         |
+| `judge.ts`                    | Independent SDK judge query, prompt construction, response parsing, and citation validation.                                                                   |
+| `observation-test-support.ts` | Observation/message builders and scripted async streams for tests.                                                                                             |
 
-Tests are `git-status.test.ts`, `harness-lifecycle.test.ts`, `harness-failure-lifecycle.test.ts`, `harness-timeout.test.ts`, `mutation-evidence.test.ts`, `mutation-evidence-git-commands.test.ts`, and `judge.test.ts`.
+`agent-query.test.ts` covers stream content and query policy; `agent-query-lifecycle.test.ts` covers failures, cleanup, and deadlines. Git sampling, mutation evidence, git command classification, and judging have their own suites.
 
 ## Cases
 

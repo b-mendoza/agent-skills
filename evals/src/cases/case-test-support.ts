@@ -3,8 +3,8 @@
 // snapshot texts that both `cases.test.ts` and `cases-behavioral.test.ts` pin
 // against.
 
+import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
-import type { Observation, ToolCall } from "#/observation/observation-types.ts";
 
 export function observe(
   overrides: Readonly<Partial<Observation>> = {},

@@ -45,10 +45,9 @@ Paths below are relative to `src/`, from `find src -name '*.test.ts'`.
 | `cases/cases.test.ts`                                | Run validity, routing, and per-attempt mutation scope                        |
 | `cases/validate-output-script.test.ts`               | The skill's deterministic validator, per mode, good and bad payloads         |
 | `fixtures/fixtures.test.ts`                          | Fixture git state, skill copy, exclusion, cleanup                            |
+| `observation/agent-query-lifecycle.test.ts`          | Query failures, iterator cleanup, deadlines, and abort behavior              |
+| `observation/agent-query.test.ts`                    | SDK policy, stream validation, tool calls, results, and git sampling         |
 | `observation/git-status.test.ts`                     | Clean, not-a-repo, and unreadable sample classification                      |
-| `observation/harness-failure-lifecycle.test.ts`      | Query, iterator, and cleanup failure handling                                |
-| `observation/harness-lifecycle.test.ts`              | Mocked SDK lifecycle: results, errors, abort                                 |
-| `observation/harness-timeout.test.ts`                | Deadline and abort behavior                                                  |
 | `observation/judge.test.ts`                          | Judge citation validation and unparseable-reply failure                      |
 | `observation/mutation-evidence-git-commands.test.ts` | Mutating git commands and read-only lookalikes                               |
 | `observation/mutation-evidence.test.ts`              | The read-only detector behind `mutation-scope`                               |
@@ -66,7 +65,7 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 | -------------------------------- | ----------------------------------------------------------------------------------- |
 | `promptfooconfig.ts`             | Model, provider, native assertions, cases, output paths, repeats and concurrency    |
 | `src/promptfoo/`                 | Custom provider, assertion grading, observation metadata validation and case lookup |
-| `src/observation/agent-query.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta        |
+| `src/observation/agent-query.ts` | SDK query, message schemas and types, tool observation and git sampling             |
 | `src/fixtures/fixtures.ts`       | Throwaway git repos with the skill installed under `.claude/skills/`                |
 | `src/cases/<skill>.ts`           | Canonical case registry and assertions                                              |
 | `src/**/*.test.ts`               | Offline Vitest suites beside the code they exercise                                 |

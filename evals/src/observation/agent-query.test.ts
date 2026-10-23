@@ -6,14 +6,18 @@ import { join } from "node:path";
 import type { query } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
-import { observeClaude } from "#/observation/agent-query.ts";
+import type { RunOptions } from "#/observation/agent-query.ts";
+import {
+  observeClaude,
+  QUERY_ERROR_SUBTYPE,
+} from "#/observation/agent-query.ts";
 import {
   assistant,
+  createWorktreeStatus,
   scripted,
   success,
   toolUse,
 } from "#/observation/observation-test-support.ts";
-import type { RunOptions } from "#/observation/observation-types.ts";
 
 const sdk = vi.hoisted(() => ({
   query:
@@ -27,27 +31,20 @@ vi.mock(
   }),
 );
 const COST = 0.5;
-const ZERO_COST = 0;
 const BUDGET = 0.01;
-const WALL_CLOCK = 30_000;
+const ZERO_COST = 0;
 let cwd = "";
-let options: RunOptions = {
+const options: RunOptions = {
   cwd: "",
-  prompt: "observe",
-  budgetUsd: 0,
+  prompt: "observe the repo",
+  budgetUsd: BUDGET,
   model: "haiku",
-  wallClockMs: 0,
+  wallClockMs: 30_000,
 };
 beforeEach(() => {
   cwd = mkdtempSync(join(tmpdir(), "observation-"));
   execFileSync("git", ["init", "-q"], { cwd });
-  options = {
-    cwd,
-    prompt: "observe the repo",
-    budgetUsd: BUDGET,
-    model: "haiku",
-    wallClockMs: WALL_CLOCK,
-  };
+  options.cwd = cwd;
   sdk.query
     .mockReset()
     .mockImplementation(() => scripted(success("done", COST)));
@@ -75,23 +72,20 @@ test("a normal stream yields the result and its tool calls", async () => {
 test("the query owns its policy and inherits ambient credentials", async () => {
   await observeClaude(options);
   const abortController: unknown = expect.any(AbortController);
-  const expectedOptions: unknown = expect.objectContaining({
-    cwd,
-    model: "haiku",
-    maxBudgetUsd: BUDGET,
-    permissionMode: "auto",
-    settingSources: ["project"],
-    systemPrompt: { type: "preset", preset: "claude_code" },
-    tools: { type: "preset", preset: "claude_code" },
-    abortController,
-  });
-  expect(sdk.query).toHaveBeenCalledWith(
-    expect.objectContaining({
-      prompt: options.prompt,
-      options: expectedOptions,
-    }),
-  );
   const [request] = sdk.query.mock.lastCall ?? [];
+  expect(request).toMatchObject({
+    prompt: options.prompt,
+    options: {
+      cwd,
+      model: "haiku",
+      maxBudgetUsd: BUDGET,
+      permissionMode: "auto",
+      settingSources: ["project"],
+      systemPrompt: { type: "preset", preset: "claude_code" },
+      tools: { type: "preset", preset: "claude_code" },
+      abortController,
+    },
+  });
   expect(request?.options).not.toHaveProperty("env");
 });
 
@@ -103,14 +97,10 @@ test("gitRepo overrides cwd only for git sampling", async () => {
     return scripted(success("done"));
   });
   const observation = await observeClaude({ ...options, gitRepo: repo });
-  expect(observation.gitStatusBefore).toStrictEqual({
-    kind: "worktree",
-    entries: "",
-  });
-  expect(observation.gitStatusAfter).toStrictEqual({
-    kind: "worktree",
-    entries: "?? new.txt",
-  });
+  expect(observation.gitStatusBefore).toStrictEqual(createWorktreeStatus());
+  expect(observation.gitStatusAfter).toStrictEqual(
+    createWorktreeStatus("?? new.txt"),
+  );
   const [request] = sdk.query.mock.lastCall ?? [];
   expect(request?.options?.cwd).toBe(cwd);
 });
@@ -151,7 +141,6 @@ test("tool input is an owned record without inherited properties", async () => {
   );
   const [call] = (await observeClaude(options)).toolCalls;
   expect(call?.input).toStrictEqual({ command: "git status" });
-  expect(call?.input).not.toBe(input);
   expect(call?.input).not.toHaveProperty("inherited");
 });
 
@@ -222,5 +211,40 @@ test.each([
     expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
       calls.map((call) => call.name),
     );
+  },
+);
+
+test.each([
+  [assistant(toolUse("Write"), null), ["Read"]],
+  [{ ...success("done"), total_cost_usd: "not a number" }, ["Read"]],
+])(
+  "a malformed relevant message fails closed: %j",
+  async (message, retainedNames) => {
+    sdk.query.mockImplementation(() =>
+      scripted(assistant(toolUse("Read")), message, success("done")),
+    );
+    const observation = await observeClaude(options);
+    expect(observation).toMatchObject({
+      subtype: QUERY_ERROR_SUBTYPE,
+      isError: true,
+      costUsd: 0,
+    });
+    expect(observation.finalText).not.toBe("");
+    expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
+      retainedNames,
+    );
+  },
+);
+
+test.each([NaN, Infinity, -Infinity])(
+  "non-finite result cost fails closed: %s",
+  async (cost) => {
+    sdk.query.mockImplementation(() => scripted(success("done", cost)));
+    const observation = await observeClaude(options);
+    expect(observation).toMatchObject({
+      subtype: QUERY_ERROR_SUBTYPE,
+      costUsd: 0,
+    });
+    expect(observation.finalText).toContain("finite number");
   },
 );

@@ -1,16 +1,129 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
+import { Schema } from "effect";
 
-import { normalizeStreamMessage } from "#/observation/agent-query-messages.ts";
-import { sampleGitStatus, toText } from "#/observation/git-status.ts";
-import type {
+import {
+  gitStatusSchema,
+  sampleGitStatus,
+  toText,
+} from "#/observation/mutation-evidence.ts";
+
+const toolCallSchema = Schema.Struct({
+  name: Schema.String,
+  input: Schema.Record(Schema.String, Schema.Unknown),
+});
+export type ToolCall = {
+  -readonly [Key in keyof typeof toolCallSchema.Type]: (typeof toolCallSchema.Type)[Key];
+};
+export const observationSchema = Schema.Struct({
+  subtype: Schema.String,
+  // Expired credentials can yield subtype "success" with isError true.
+  isError: Schema.Boolean,
+  finalText: Schema.String,
+  toolCalls: Schema.mutable(Schema.Array(toolCallSchema)),
+  gitStatusBefore: gitStatusSchema,
+  gitStatusAfter: gitStatusSchema,
+  costUsd: Schema.Number,
+  durationMs: Schema.Number,
+  timedOut: Schema.Boolean,
+});
+export type Observation = {
+  -readonly [Key in keyof typeof observationSchema.Type]: (typeof observationSchema.Type)[Key];
+};
+/** The fields a result message settles, before run-level facts are attached. */
+export type ResultVerdict = Pick<
   Observation,
-  ResultVerdict,
-  RunOptions,
-  ToolCall,
-} from "#/observation/observation-types.ts";
+  "subtype" | "isError" | "finalText" | "costUsd"
+>;
+export interface RunOptions {
+  /** Working directory the agent runs in. Skills resolve relative to it. */
+  cwd: string;
+  prompt: string;
+  budgetUsd: number;
+  model: string;
+  /** Hard wall-clock ceiling. A hung run must fail the case, not the suite. */
+  wallClockMs: number;
+  /** Repo whose `git status` is sampled before and after. Usually `cwd`. */
+  gitRepo?: string;
+}
 
 const NS_PER_MS = 1e6;
 export const QUERY_ERROR_SUBTYPE = "query_error";
+const decodeAssistant = Schema.decodeUnknownSync(
+  Schema.Struct({
+    message: Schema.Struct({ content: Schema.Array(Schema.Unknown) }),
+  }),
+);
+const decodeBlock = Schema.decodeUnknownSync(
+  Schema.Struct({ type: Schema.String }),
+);
+const decodeTool = Schema.decodeUnknownSync(
+  Schema.Struct({ name: Schema.String, input: Schema.Unknown }),
+);
+const decodeResult = Schema.decodeUnknownSync(
+  Schema.Struct({
+    subtype: Schema.String,
+    is_error: Schema.Boolean,
+    total_cost_usd: Schema.Number,
+  }),
+);
+const decodeSuccess = Schema.decodeUnknownSync(
+  Schema.Struct({ result: Schema.String }),
+);
+const decodeFailure = Schema.decodeUnknownSync(
+  Schema.Struct({ errors: Schema.Array(Schema.String) }),
+);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function assistantToolCalls(message: unknown): ToolCall[] {
+  const calls: ToolCall[] = [];
+  for (const block of decodeAssistant(message).message.content) {
+    if (decodeBlock(block).type !== "tool_use") continue;
+    const tool = decodeTool(block);
+    calls.push({
+      name: tool.name,
+      input: isRecord(tool.input) ? { ...tool.input } : {},
+    });
+  }
+  return calls;
+}
+
+function normalizeResult(message: unknown): ResultVerdict {
+  const result = decodeResult(message);
+  if (!Number.isFinite(result.total_cost_usd)) {
+    throw new Error(
+      `Expected finite number, got ${String(result.total_cost_usd)}\n  at ["total_cost_usd"]`,
+    );
+  }
+  return {
+    subtype: result.subtype,
+    isError: result.is_error,
+    finalText:
+      result.subtype === "success"
+        ? decodeSuccess(message).result
+        : decodeFailure(message).errors.join("\n"),
+    costUsd: result.total_cost_usd,
+  };
+}
+
+/** Commit assistant calls only after every content block has validated. */
+function normalizeStreamMessage(
+  message: unknown,
+  observedToolCalls: ToolCall[],
+): ResultVerdict | null {
+  if (!isRecord(message)) return null;
+  switch (message["type"]) {
+    case "assistant":
+      observedToolCalls.push(...assistantToolCalls(message));
+      return null;
+    case "result":
+      return normalizeResult(message);
+    default:
+      return null;
+  }
+}
 
 function failureText(failure: unknown): string {
   if (failure == null) return "query ended without a result message";

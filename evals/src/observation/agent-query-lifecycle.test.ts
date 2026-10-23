@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { once } from "node:events";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -6,6 +7,7 @@ import { join } from "node:path";
 import type { query } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
+import type { RunOptions } from "#/observation/agent-query.ts";
 import {
   observeClaude,
   QUERY_ERROR_SUBTYPE,
@@ -16,7 +18,6 @@ import {
   success,
   toolUse,
 } from "#/observation/observation-test-support.ts";
-import type { RunOptions } from "#/observation/observation-types.ts";
 
 const sdk = vi.hoisted(() => ({
   query:
@@ -32,27 +33,24 @@ vi.mock(
 const COST = 0.5;
 const FOREIGN_BIGINT = 1n;
 const WALL_CLOCK = 30_000;
+const DEADLINE = 25;
+const PAST_DEADLINE = 50;
 let cwd = "";
-let options: RunOptions = {
+const options: RunOptions = {
   cwd: "",
   prompt: "observe",
-  budgetUsd: 0,
+  budgetUsd: COST,
   model: "haiku",
-  wallClockMs: 0,
+  wallClockMs: WALL_CLOCK,
 };
 beforeEach(() => {
   cwd = mkdtempSync(join(tmpdir(), "observation-failure-"));
   execFileSync("git", ["init", "-q"], { cwd });
-  options = {
-    cwd,
-    prompt: "observe",
-    budgetUsd: COST,
-    model: "haiku",
-    wallClockMs: WALL_CLOCK,
-  };
+  options.cwd = cwd;
   sdk.query.mockReset();
 });
 afterEach(() => {
+  vi.useRealTimers();
   rmSync(cwd, { recursive: true, force: true });
 });
 
@@ -88,92 +86,42 @@ test("a mid-stream failure keeps earlier tool calls", async () => {
   });
 });
 
+const cyclicFailure: Record<string, unknown> = {};
+cyclicFailure["self"] = cyclicFailure;
 test.each([
-  [assistant(toolUse("Write"), null), ["Read"]],
-  [{ ...success("done"), total_cost_usd: "not a number" }, ["Read"]],
-])(
-  "a malformed relevant message fails closed: %j",
-  async (message, retainedNames) => {
-    sdk.query.mockImplementation(() =>
-      scripted(assistant(toolUse("Read")), message, success("done")),
-    );
-    const observation = await observeClaude(options);
-    expect(observation).toMatchObject({
-      subtype: QUERY_ERROR_SUBTYPE,
-      isError: true,
-      costUsd: 0,
-    });
-    expect(observation.finalText).not.toBe("");
-    expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
-      retainedNames,
-    );
-  },
-);
-
-test.each([NaN, Infinity, -Infinity])(
-  "non-finite result cost fails closed: %s",
-  async (cost) => {
-    sdk.query.mockImplementation(() => scripted(success("done", cost)));
-    const observation = await observeClaude(options);
-    expect(observation).toMatchObject({
-      subtype: QUERY_ERROR_SUBTYPE,
-      costUsd: 0,
-    });
-    expect(observation.finalText).toContain("finite number");
-  },
-);
-
-test("a BigInt thrown value cannot reject observation settlement", async () => {
-  sdk.query.mockImplementation(() => {
-    return {
-      [Symbol.asyncIterator]: () => ({
-        next: vi
-          .fn<AsyncIterator<unknown>["next"]>()
-          .mockRejectedValue(FOREIGN_BIGINT),
-      }),
-    };
-  });
-  expect(await observeClaude(options)).toMatchObject({
-    subtype: QUERY_ERROR_SUBTYPE,
-    isError: true,
-    finalText: "1",
-    costUsd: 0,
-  });
-});
-
-test("a cyclic thrown value cannot reject observation settlement", async () => {
-  const failure: Record<string, unknown> = {};
-  failure["self"] = failure;
+  [
+    "a BigInt thrown value cannot reject observation settlement",
+    FOREIGN_BIGINT,
+    "1",
+  ],
+  [
+    "a cyclic thrown value cannot reject observation settlement",
+    cyclicFailure,
+    "[object Object]",
+  ],
+  [
+    "a nullish failure uses the no-result diagnostic: null",
+    null,
+    "query ended without a result message",
+  ],
+  [
+    "a nullish failure uses the no-result diagnostic: undefined",
+    undefined,
+    "query ended without a result message",
+  ],
+])("%s", async (_name, failure, finalText) => {
   sdk.query.mockImplementation(() => ({
     [Symbol.asyncIterator]: () => ({
       next: vi.fn<AsyncIterator<unknown>["next"]>().mockRejectedValue(failure),
     }),
   }));
-  const observation = await observeClaude(options);
-  expect(observation).toMatchObject({
+  expect(await observeClaude(options)).toMatchObject({
     subtype: QUERY_ERROR_SUBTYPE,
     isError: true,
+    finalText,
     costUsd: 0,
   });
-  expect(observation.finalText).toBeTypeOf("string");
-  expect(observation.finalText).not.toBe("");
 });
-
-test.each([null, undefined])(
-  "a nullish failure uses the no-result diagnostic: %s",
-  async (failure) => {
-    sdk.query.mockImplementation(() => ({
-      [Symbol.asyncIterator]: () => ({
-        next: vi
-          .fn<AsyncIterator<unknown>["next"]>()
-          .mockRejectedValue(failure),
-      }),
-    }));
-    expect((await observeClaude(options)).finalText).toBe(
-      "query ended without a result message",
-    );
-  },
-);
 
 test("a stream ending without a result fails closed", async () => {
   sdk.query.mockImplementation(() => scripted(assistant(toolUse("Read"))));
@@ -242,4 +190,61 @@ test("cleanup failure cannot replace an observed result", async () => {
     costUsd: COST,
   });
   expect(close).toHaveBeenCalledExactlyOnceWith();
+});
+
+test("a run exceeding its wall clock is aborted and settles", async () => {
+  sdk.query.mockImplementation(async function* ({ options: requestOptions }) {
+    const signal = requestOptions?.abortController?.signal;
+    if (signal === undefined) throw new Error("no abort signal");
+    yield assistant(toolUse("Read"));
+    await once(signal, "abort");
+    throw new Error("The operation was aborted");
+  });
+  expect(
+    await observeClaude({ ...options, wallClockMs: DEADLINE }),
+  ).toMatchObject({
+    timedOut: true,
+    subtype: QUERY_ERROR_SUBTYPE,
+    isError: true,
+    costUsd: 0,
+    toolCalls: [{ name: "Read", input: {} }],
+  });
+});
+
+test("a result after abort retains verdict and timeout evidence", async () => {
+  sdk.query.mockImplementation(async function* ({ options: requestOptions }) {
+    const signal = requestOptions?.abortController?.signal;
+    if (signal === undefined) throw new Error("no abort signal");
+    await once(signal, "abort");
+    yield success("late result");
+  });
+  expect(
+    await observeClaude({ ...options, wallClockMs: DEADLINE }),
+  ).toMatchObject({
+    subtype: "success",
+    finalText: "late result",
+    costUsd: 0.5,
+    timedOut: true,
+  });
+});
+
+test("a completed run cannot be re-flagged by an expired timer", async () => {
+  vi.useFakeTimers();
+  const captured: { request?: Parameters<typeof query>[0] } = {};
+  sdk.query.mockImplementation((request) => {
+    captured.request = request;
+    return scripted(success("done"));
+  });
+  const observation = await observeClaude({
+    ...options,
+    wallClockMs: DEADLINE,
+  });
+  const abortController = captured.request?.options?.abortController;
+  expect(abortController).toBeInstanceOf(AbortController);
+  if (abortController === undefined) {
+    throw new Error("missing abort controller");
+  }
+  vi.advanceTimersByTime(PAST_DEADLINE);
+  expect(abortController.signal.aborted).toBe(false);
+  expect(observation.timedOut).toBe(false);
 });
