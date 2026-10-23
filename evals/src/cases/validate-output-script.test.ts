@@ -83,6 +83,12 @@ describe("validate-output.sh", () => {
       finding: /line 2 must be Reason:/,
     },
     {
+      label: "an envelope with a missing Next step prefix",
+      mode: "envelope",
+      payload: "RECENT_STATE: PATH_ERROR\nReason: missing\nSupply a real path",
+      finding: /line 3 must be Next step:/,
+    },
+    {
       label: "an envelope with a fourth line",
       mode: "envelope",
       payload: `${GOOD_ENVELOPE}\nHope that helps!`,
