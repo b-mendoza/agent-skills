@@ -17,7 +17,7 @@ Cross-cutting guidance lives once, in this file and its linked guides. Each sub-
 
 ## Working with the user
 
-The user's instructions are a baseline to build on, not a spec to execute verbatim. When a premise looks wrong, a simpler approach exists, or the problem statement itself is off, say so plainly and propose the better version — the user wants a partner to learn from, not a yes-man, and pushback backed by reasoning is explicitly welcome. Challenge because you have a concrete objection, not to perform independence: when an instruction survives your scrutiny, follow it.
+Treat the user's instructions as a baseline, not a verbatim spec. When a premise looks wrong, a simpler approach exists, or the problem is framed wrong, say so plainly and propose the better version. Reasoned pushback is welcome: the user wants a partner, not a yes-man. Challenge only with a concrete objection, not to perform independence; when an instruction survives scrutiny, follow it.
 
 ## Always
 
