@@ -141,45 +141,55 @@ test("tool input is an owned record without inherited properties", async () => {
   expect(call?.input).not.toHaveProperty("inherited");
 });
 
-test("authentication failure keeps subtype and isError independent", async () => {
-  sdk.query.mockImplementation(() =>
-    scripted({
-      ...success("Failed to authenticate: OAuth session expired", ZERO_COST),
-      is_error: true,
-    }),
-  );
-  expect(await observeClaude(options)).toMatchObject({
-    subtype: "success",
-    isError: true,
-    toolCalls: [],
-  });
-});
-
-test("error_max_budget_usd preserves diagnostics, cost, and calls", async () => {
-  sdk.query.mockImplementation(() =>
-    scripted(assistant(toolUse("Skill")), {
-      type: "result",
+test.each([
+  {
+    label: "authentication failure keeps subtype and isError independent",
+    messages: [
+      {
+        ...success("Failed to authenticate: OAuth session expired", ZERO_COST),
+        is_error: true,
+      },
+    ],
+    expected: {
+      subtype: "success",
+      isError: true,
+      finalText: "Failed to authenticate: OAuth session expired",
+      costUsd: ZERO_COST,
+      toolCalls: [],
+    },
+  },
+  {
+    label: "error_max_budget_usd preserves diagnostics, cost, and calls",
+    messages: [
+      assistant(toolUse("Skill")),
+      {
+        type: "result",
+        subtype: "error_max_budget_usd",
+        is_error: true,
+        errors: ["max budget exceeded", "budget was $0.01"],
+        total_cost_usd: COST,
+      },
+    ],
+    expected: {
       subtype: "error_max_budget_usd",
-      is_error: true,
-      errors: ["max budget exceeded", "budget was $0.01"],
-      total_cost_usd: COST,
-    }),
-  );
-  expect(await observeClaude(options)).toMatchObject({
-    subtype: "error_max_budget_usd",
-    isError: true,
-    finalText: "max budget exceeded\nbudget was $0.01",
-    costUsd: COST,
-    toolCalls: [{ name: "Skill", input: {} }],
-  });
+      isError: true,
+      finalText: "max budget exceeded\nbudget was $0.01",
+      costUsd: COST,
+      toolCalls: [{ name: "Skill", input: {} }],
+    },
+  },
+])("$label", async ({ messages, expected }) => {
+  sdk.query.mockImplementation(() => scripted(...messages));
+  expect(await observeClaude(options)).toMatchObject(expected);
 });
 
 test.each([
-  [assistant(toolUse("Write"), null), ["Read"]],
-  [{ ...success("done"), total_cost_usd: "not a number" }, ["Read"]],
+  [assistant(toolUse("Write"), null), ["Read"], ""],
+  [{ ...success("done"), total_cost_usd: "not a number" }, ["Read"], ""],
+  [success("done", NaN), ["Read"], "finite number"],
 ])(
   "a malformed relevant message fails closed: %j",
-  async (message, retainedNames) => {
+  async (message, retainedNames, diagnostic) => {
     sdk.query.mockImplementation(() =>
       scripted(assistant(toolUse("Read")), message, success("done")),
     );
@@ -190,21 +200,12 @@ test.each([
       costUsd: 0,
     });
     expect(observation.finalText).not.toBe("");
+    expect(observation.finalText).toContain(diagnostic);
     expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
       retainedNames,
     );
   },
 );
-
-test("non-finite result cost fails closed: NaN", async () => {
-  sdk.query.mockImplementation(() => scripted(success("done", NaN)));
-  const observation = await observeClaude(options);
-  expect(observation).toMatchObject({
-    subtype: QUERY_ERROR_SUBTYPE,
-    costUsd: 0,
-  });
-  expect(observation.finalText).toContain("finite number");
-});
 
 test("startup failure samples git after settlement and books no cost", async () => {
   sdk.query.mockImplementation(() => {
