@@ -35,7 +35,7 @@
       "source": "b-mendoza/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/council-of-advisors/SKILL.md",
-      "computedHash": "fdc9cacdd2110de18b955a6ede6a1a85b80d9cc533b31d627d7e30b4651a3df8"
+      "computedHash": "a255138dc5233b5ed1057b7c7415d35997029819321455d448b28a98040ea76a"
     },
     "diagnosing-root-causes": {
       "source": "b-mendoza/agent-skills",
