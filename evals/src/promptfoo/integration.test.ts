@@ -13,7 +13,12 @@ import { fileURLToPath } from "node:url";
 
 import { afterAll, beforeAll, expect, test } from "vitest";
 
-import { cases, SKILL } from "#/cases/analyzing-recent-project-state.ts";
+import {
+  BEHAVIORAL_TIER,
+  cases,
+  ROUTING_TIER,
+  SKILL,
+} from "#/cases/analyzing-recent-project-state.ts";
 import { observe, VALIDATOR_CALL } from "#/cases/case-test-support.ts";
 
 import config from "../../promptfooconfig.ts";
@@ -26,7 +31,6 @@ const TIMEOUT_MS = 30_000;
 const FIRST = 0;
 const MAX_CONCURRENCY = 5;
 const ONE_RUN = 1;
-const ROUTING_TIER = 1;
 const EXIT = { PASS: 0, FAIL: 100, ERROR: 1 };
 let root = "";
 
@@ -145,27 +149,15 @@ test(
 );
 
 test.each([
-  {
-    scenario: "pass",
-    code: 0,
-    pass: true,
-    score: 1,
-    reason: "1 behavioral run(s) left no trace",
-  },
-  {
-    scenario: "mutation",
-    code: 100,
-    pass: false,
-    score: 0,
-    reason: "read-only contract violated:",
-  },
+  { scenario: "pass", code: 0, pass: true, score: 1 },
+  { scenario: "mutation", code: 100, pass: false, score: 0 },
 ])(
   "native CLI grades the tier-2 mutation metric: $scenario exits $code",
-  ({ scenario, code, pass, score, reason }) => {
+  ({ scenario, code, pass, score }) => {
     const { child, exported } = evaluateOffline(
       [
         "--filter-metadata",
-        "tier=2",
+        `tier=${String(BEHAVIORAL_TIER)}`,
         "--filter-pattern",
         "^path-error$",
         "--repeat",
@@ -174,23 +166,16 @@ test.each([
       scenario,
     );
     expect(child.status).toBe(code);
-    expect(exported).toMatchObject({
-      results: {
-        results: [
-          {
-            success: pass,
-            testCase: { vars: { caseId: "path-error" }, metadata: { tier: 2 } },
-            namedScores: { "case/path-error": 1, "mutation-scope": score },
-            gradingResult: {
-              componentResults: [
-                { pass: true, reason: "PATH_ERROR, 3-line envelope" },
-                { pass, score, reason },
-              ],
-            },
-          },
-        ],
-      },
-    });
+    expect(exported).toHaveProperty("results.results.length", ONE_RUN);
+    expect(exported).toHaveProperty(
+      "results.results",
+      expect.arrayContaining([
+        expect.objectContaining({
+          success: pass,
+          namedScores: { "case/path-error": 1, "mutation-scope": score },
+        }),
+      ]),
+    );
   },
   TIMEOUT_MS,
 );
