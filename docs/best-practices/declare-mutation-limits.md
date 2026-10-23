@@ -8,7 +8,7 @@
 
 Verification is observed, not asserted. Capture `git status --porcelain` before the first mutation, compare it with the post-edit state, and treat every newly changed path outside the plan as a validator finding. In a dirty worktree the status list alone proves nothing about a file that was already modified; inspect the diff hunks of any authorized-but-dirty path to confirm the run did not overwrite unrelated user work. This closes the three ways implicit scope loses data: a subagent "fixing" a nearby file nobody approved, a change leaking into a sibling package or a tooling-managed mirror, and a repair cycle re-widening the change set.
 
-This rule does not decide which run-local paths a skill may create or when to ask the user before a hard-to-reverse action; see [scope-run-files-to-the-run](./scope-run-files-to-the-run.md) and [checkpoint-irreversible-actions](./checkpoint-irreversible-actions.md). An out-of-plan path surfaces as a routed validator status per [route-every-status](./route-every-status.md).
+This rule does not decide which run-local paths a skill may create or when to ask the user before a hard-to-reverse action; see [scope-run-files-to-the-run](./scope-run-files-to-the-run.md) and [checkpoint-irreversible-actions](./checkpoint-irreversible-actions.md). An out-of-plan path surfaces as a routed validator status per [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions).
 
 ## Examples
 
@@ -45,5 +45,5 @@ at baseline it compares diff hunks, not status.
 
 - [scope-run-files-to-the-run](./scope-run-files-to-the-run.md)
 - [checkpoint-irreversible-actions](./checkpoint-irreversible-actions.md)
-- [route-every-status](./route-every-status.md)
+- [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
 - [validate-by-observation](./validate-by-observation.md)

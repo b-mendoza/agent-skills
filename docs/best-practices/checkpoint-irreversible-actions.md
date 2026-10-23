@@ -8,7 +8,7 @@ A checkpoint is a named authorization boundary over one concrete action, placed 
 
 Approval binds to this run and this artifact version. Any change to the approved text, paths, command, or target voids it and requires a new preview. Earlier conversational consent ("go ahead with whatever you produce") is recorded as ignored pre-approval and never consumed; approval from a prior run or an earlier version is stale. Ambiguity about intent triggers a checkpoint only when the competing interpretations lead to different irreversible or outward actions; when every reading ends in reversible, in-scope work, pick one, record it, and continue. Over-asking trains the user to rubber-stamp and destroys the signal of the gates that matter.
 
-The answer vocabulary, the `BLOCKED` route for a missing or unusable answer, and the named re-ask counter with its cap and over-cap route are owned by [route-every-status](./route-every-status.md); this rule requires only that the checkpoint declare them. Which paths a run may write at all is owned by [declare-mutation-limits](./declare-mutation-limits.md).
+The answer vocabulary, the `BLOCKED` route for a missing or unusable answer, and the named re-ask counter with its cap and over-cap route are owned by [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions); this rule requires only that the checkpoint declare them. Which paths a run may write at all is owned by [declare-mutation-limits](./declare-mutation-limits.md).
 
 ## Examples
 
@@ -52,6 +52,6 @@ Reversible, in-scope, expected work — reading, read-only checks, edits inside 
 
 ## Related rules
 
-- [route-every-status](./route-every-status.md)
+- [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
 - [declare-mutation-limits](./declare-mutation-limits.md)
 - [scope-run-files-to-the-run](./scope-run-files-to-the-run.md)

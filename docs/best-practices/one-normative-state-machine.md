@@ -6,7 +6,7 @@
 
 A skill with branching routes, loops, wait states, parallel joins, or approval gates is a state machine whether or not it is written as one; write it as one, with exactly one normative source of transitions, and when `state-machine.md` exists that file is the source. It owns every state; every transition with its guard or event; the guard precedence (first-match order or explicit priority, stated once and visible in the table); every terminal with its user-facing outcome; every loop's named counter, cap, and over-cap route; and every parallel join, named, with all-success, partial, blocked, error, and missing-result behaviour that does not depend on completion order. Every active or wait state advances, waits on a named event, or terminates; silence is not a route. Every status a subagent can return, including malformed and unknown output, has a transition. `SKILL.md` states that its overview is non-normative and links the file; `flow-diagram.md`, when present, states that it is illustrative.
 
-The failure this prevents is two executable contracts for one status: an editor updates one representation, a reviewer reads another, and the run follows whichever is most salient. Any transition change therefore updates the overview and diagram in the same change, and neither overrides the FSM when drift is found. Status vocabulary and the loop-cap shape are owned by [route-every-status](./route-every-status.md); how `Execution` reads as routes by [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md).
+The failure this prevents is two executable contracts for one status: an editor updates one representation, a reviewer reads another, and the run follows whichever is most salient. Any transition change therefore updates the overview and diagram in the same change, and neither overrides the FSM when drift is found. Status vocabulary and the loop-cap shape are owned by [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions); how `Execution` reads as routes by [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md).
 
 ## Examples
 
@@ -56,6 +56,6 @@ A skill whose `Execution` is a short linear sequence with at most one retry rout
 
 ## Related rules
 
-- [route-every-status](./route-every-status.md)
+- [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md)
 - [earn-every-part](./earn-every-part.md)

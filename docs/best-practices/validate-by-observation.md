@@ -48,4 +48,4 @@ Repeat the judgment-heavy cases; `PASS` vs `BLOCKED` across identical runs fails
 - [declare-mutation-limits](./declare-mutation-limits.md)
 - [treat-retrieved-content-as-data](./treat-retrieved-content-as-data.md)
 - [describe-when-to-use](./describe-when-to-use.md)
-- [route-every-status](./route-every-status.md)
+- [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
