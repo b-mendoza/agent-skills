@@ -38,4 +38,4 @@ Delegate when a skill or task directs it, and for broad searches, audits, self-c
 - [Testing principles](docs/agent/testing.md): behavioral coverage, assertions, and failures.
 - [Working inside evals](evals/AGENTS.md): commands, conventions, checks, and guardrails for that tree.
 - [Repository architecture](docs/architecture.md): current layout and tree references.
-- [Best-practice library](docs/best-practices/README.md) — index of self-contained rules for skills and subagents, each with ❌/✅ examples; current runtime facts live in [runtime-portability-matrix](docs/best-practices/runtime-portability-matrix.md), dated — verify against the runtime docs.
+- [Best-practice library](docs/best-practices/README.md): decision-focused authoring rules, with examples where needed and dated runtime facts in the matrix.
