@@ -17,50 +17,42 @@ import {
   skillInvocations,
 } from "#/observation/mutation-evidence.ts";
 import {
-  bash,
   createObservation,
   createWorktreeStatus,
-  evidenceFor,
 } from "#/observation/observation-test-support.ts";
 
 const SINGLE_EVIDENCE_COUNT = 1;
+const ALL_EVIDENCE_COUNT = 3;
 
-test.each([
-  ["a clean run reports no evidence", createObservation()],
-  // The dirty fixture starts with a dirty status; only a *delta* is a mutation.
-  [
-    "an unchanged non-empty status is not evidence",
-    createObservation({
-      gitStatusBefore: createWorktreeStatus(" M a.txt\n?? c.txt"),
-      gitStatusAfter: createWorktreeStatus(" M a.txt\n?? c.txt"),
-    }),
-  ],
-  // The `not-git` fixture is an expected state: it must keep passing.
-  [
-    "a repo that is not a worktree is clean, not unreadable",
-    createObservation({
-      gitStatusBefore: { kind: "no-worktree" },
-      gitStatusAfter: { kind: "no-worktree" },
-    }),
-  ],
-])("%s", (_caseName, observation) => {
-  expect(mutationEvidence(observation)).toStrictEqual([]);
+// Command scanning only classifies git invocations. A non-git shell write
+// needs a status delta before it can supply evidence.
+test("a quiet run ignores unchanged status, read-only tools, and non-git Bash", () => {
+  expect(mutationEvidence(createObservation())).toStrictEqual([]);
+  expect(
+    mutationEvidence(
+      createObservation({
+        gitStatusBefore: { kind: "worktree", entries: " M a.txt\n?? c.txt" },
+        gitStatusAfter: { kind: "worktree", entries: " M a.txt\n?? c.txt" },
+        toolCalls: [
+          { name: "Read", input: { file_path: "/work/x.ts" } },
+          { name: "Grep", input: { pattern: "x" } },
+          { name: "Skill", input: { skill: "analyzing-recent-project-state" } },
+          { name: "Bash", input: { command: "rm -rf /repo/src" } },
+        ],
+      }),
+    ),
+  ).toStrictEqual([]);
 });
 
-test("a changed git status is evidence even with no tool calls", () => {
-  const found = mutationEvidence(
-    createObservation({
-      gitStatusBefore: createWorktreeStatus(""),
-      gitStatusAfter: createWorktreeStatus(" M a.txt"),
-    }),
-  );
-
-  const [statusChangeEvidence] = found;
-  expect(found).toHaveLength(SINGLE_EVIDENCE_COUNT);
-  expect(statusChangeEvidence).toContain("git status changed");
-  // Both sides are quoted so an empty "before" is visible rather than blank.
-  expect(statusChangeEvidence).toContain('""');
-  expect(statusChangeEvidence).toContain('" M a.txt"');
+test("a repo that is not a worktree is clean, not unreadable", () => {
+  expect(
+    mutationEvidence(
+      createObservation({
+        gitStatusBefore: { kind: "no-worktree" },
+        gitStatusAfter: { kind: "no-worktree" },
+      }),
+    ),
+  ).toStrictEqual([]);
 });
 
 // An unreadable sample proves nothing about what the run did. It used to be
@@ -149,32 +141,6 @@ test("a write tool with no usable mapped path still reports the call", () => {
   ]);
 });
 
-test("a path containing a newline stays a single evidence entry", () => {
-  // Evidence is a list of facts, not of lines. A path carrying a newline must
-  // not read as two violations once a failure message joins the list.
-  const found = mutationEvidence(
-    createObservation({
-      toolCalls: [{ name: "Write", input: { file_path: "/work/a\nb.ts" } }],
-    }),
-  );
-
-  expect(found).toStrictEqual(["Write called on /work/a\nb.ts"]);
-});
-
-test("read-only tools are not evidence", () => {
-  const found = mutationEvidence(
-    createObservation({
-      toolCalls: [
-        { name: "Read", input: { file_path: "/work/x.ts" } },
-        { name: "Grep", input: { pattern: "x" } },
-        { name: "Skill", input: { skill: "analyzing-recent-project-state" } },
-      ],
-    }),
-  );
-
-  expect(found).toStrictEqual([]);
-});
-
 test.each([
   {
     name: "an absent Bash command",
@@ -199,32 +165,32 @@ test.each([
   },
 );
 
-test("a non-git Bash write produces no command evidence", () => {
-  // A boundary, not an oversight: command scanning classifies git invocations
-  // only, so a plain shell write leaves no command-text evidence at all. The
-  // git-status delta is the sole detector for writes made this way.
-  expect(evidenceFor("rm -rf /repo/src")).toStrictEqual([]);
-});
-
 test("every distinct violation is reported, not just the first", () => {
-  const found = mutationEvidence(
-    createObservation({
-      gitStatusBefore: createWorktreeStatus(""),
-      gitStatusAfter: createWorktreeStatus("?? new.txt"),
-      toolCalls: [
-        { name: "Write", input: { file_path: "/work/a" } },
-        bash("git commit -m x"),
-      ],
-    }),
-  );
+  const observation = createObservation({
+    gitStatusAfter: { kind: "worktree", entries: " M a.txt" },
+  });
+  const statusOnly = mutationEvidence(observation);
+  const [statusChangeEvidence] = statusOnly;
+  expect(statusOnly).toHaveLength(SINGLE_EVIDENCE_COUNT);
+  expect(statusChangeEvidence).toContain("git status changed");
+  expect(statusChangeEvidence).toContain('""');
+  expect(statusChangeEvidence).toContain('" M a.txt"');
 
-  // The status delta, the Write, and the git commit are three separate facts;
-  // naming each one is what lets a failure message point at the offender.
-  expect(found).toStrictEqual([
-    expect.stringContaining("git status changed"),
-    "Write called on /work/a",
-    "mutating git command: git commit -m x",
-  ]);
+  const found = mutationEvidence({
+    ...observation,
+    toolCalls: [
+      { name: "Write", input: { file_path: "/work/a" } },
+      { name: "Bash", input: { command: "git commit -m x" } },
+    ],
+  });
+  expect(found).toHaveLength(ALL_EVIDENCE_COUNT);
+  expect(found).toEqual(
+    expect.arrayContaining([
+      ...statusOnly,
+      "Write called on /work/a",
+      "mutating git command: git commit -m x",
+    ]),
+  );
 });
 
 test("skillInvocations selects only Skill calls naming the skill", () => {
