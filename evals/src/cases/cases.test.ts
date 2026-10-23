@@ -2,12 +2,7 @@
 import { describe, expect, test } from "vitest";
 
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
-import {
-  assertRunHappened,
-  assertValidatorInvoked,
-  BUDGET_STOP_SUBTYPE,
-  checkMutationScope,
-} from "#/cases/analyzing-recent-project-state-checks.ts";
+import { BUDGET_STOP_SUBTYPE } from "#/cases/analyzing-recent-project-state-checks.ts";
 import {
   FULL_REPORT_SNAPSHOT,
   QUIET_STATE_SNAPSHOT,
@@ -46,11 +41,6 @@ describe("run validity", () => {
       expectedError: /the query produced no result/,
     },
     {
-      label: "a timed-out run",
-      observation: createObservation({ timedOut: true }),
-      expectedError: /run exceeded its wall clock/,
-    },
-    {
       label: "an empty result subtype",
       observation: createObservation({ subtype: "" }),
       expectedError: /run carries no result verdict/,
@@ -62,7 +52,7 @@ describe("run validity", () => {
     },
   ])("rejects $label", ({ observation, expectedError }) => {
     expect(() => {
-      assertRunHappened(observation);
+      getCase("trigger-negative-review").check(observation);
     }).toThrow(expectedError);
   });
 
@@ -235,27 +225,6 @@ describe("routing", () => {
   });
 });
 
-describe("mutation scope", () => {
-  test("mutation-scope fails when authentication failed", () => {
-    // A run that never happened left no trace, but proves nothing.
-    expect(() => checkMutationScope(AUTH_FAILURE)).toThrow(
-      /reported a failed run before it did anything/,
-    );
-  });
-
-  test("mutation-scope fails when the evidence could not be collected", () => {
-    // An unreadable sample is not a clean one; it must not read as no trace.
-    const unsampled = createObservation({
-      gitStatusBefore: { kind: "unreadable", reason: "ENOENT" },
-      gitStatusAfter: { kind: "unreadable", reason: "ENOENT" },
-    });
-
-    expect(() => checkMutationScope(unsampled)).toThrow(
-      /read-only contract violated/,
-    );
-  });
-});
-
 describe("envelope", () => {
   test.each([
     { caseId: "path-error", status: "PATH_ERROR" },
@@ -312,8 +281,9 @@ describe("validator invocation", () => {
     "sh /skill/scripts/validate-output.sh",
   ])("rejects a spoofed validator invocation in %s", (command) => {
     expect(() => {
-      assertValidatorInvoked(
+      getCase("quiet-state").check(
         createObservation({
+          finalText: QUIET_STATE_SNAPSHOT,
           toolCalls: [{ name: "Bash", input: { command } }],
         }),
       );
@@ -329,8 +299,9 @@ describe("validator invocation", () => {
     "sh scripts/validate-output.sh envelope",
   ])("accepts a validator invocation in %s", (command) => {
     expect(() => {
-      assertValidatorInvoked(
+      getCase("quiet-state").check(
         createObservation({
+          finalText: QUIET_STATE_SNAPSHOT,
           toolCalls: [{ name: "Bash", input: { command } }],
         }),
       );

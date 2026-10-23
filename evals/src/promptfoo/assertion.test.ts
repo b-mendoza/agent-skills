@@ -248,4 +248,30 @@ describe("eval assertion", () => {
       ).toThrow();
     },
   );
+
+  test.each([
+    {
+      name: "authentication failed",
+      observation: createObservation({
+        isError: true,
+        finalText: "Failed to authenticate: OAuth session expired",
+      }),
+      reason: "reported a failed run before it did anything",
+    },
+    {
+      name: "evidence could not be collected",
+      observation: createObservation({
+        gitStatusBefore: { kind: "unreadable", reason: "ENOENT" },
+        gitStatusAfter: { kind: "unreadable", reason: "ENOENT" },
+      }),
+      reason: "read-only contract violated",
+    },
+  ])("mutation-scope fails when $name", ({ observation, reason }) => {
+    const result = mutationScope("", {
+      vars: context.vars,
+      metadata: { observation, repeatIndex: 0 },
+    });
+    expect(result).toMatchObject({ pass: false, score: 0 });
+    expect(result.reason).toContain(reason);
+  });
 });
