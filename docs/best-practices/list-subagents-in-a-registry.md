@@ -4,7 +4,7 @@
 
 ✅ This rule is `recommended`: expected for non-trivial skills; scope it down with a stated reason.
 
-The registry is the dispatch routing table. Place it after the overview, before `Execution`, with the columns `Subagent`, `Path`, and `Purpose` exactly once; add a single-valued column such as `Contract` or `Pass #` only when it changes a routing decision. Every `Path` is relative to the skill folder and present on disk, and the file's frontmatter `name` equals its basename ([name-matches-directory](./name-matches-directory.md)). Each row is exactly one subagent: no grouped rows, no "(see folder)" paths, no row that carries two purposes. A registry is expected once a skill dispatches two or more subagents and worth writing for one when growth or dynamic routing is expected.
+The registry is the dispatch routing table. Place it after the overview, before `Execution`, with the columns `Subagent`, `Path`, and `Purpose` exactly once; add a single-valued column such as `Contract` or `Pass #` only when it changes a routing decision. Every `Path` is relative to the skill folder and present on disk, and the file's frontmatter `name` equals its basename ([describe-when-to-use](./describe-when-to-use.md#name)). Each row is exactly one subagent: no grouped rows, no "(see folder)" paths, no row that carries two purposes. A registry is expected once a skill dispatches two or more subagents and worth writing for one when growth or dynamic routing is expected.
 
 Without it, an `Execution` line such as "dispatch `log-analyzer`" has no referent: a typo routes to no file, a row pointing at two files cannot be loaded, and a multi-purpose row usually hides two subagents masquerading as one. With it, the orchestrator picks a subagent from the table and opens that one file only when dispatching it ([progressive-disclosure](./progressive-disclosure.md)).
 
@@ -44,6 +44,6 @@ description: "Verifies a project state snapshot for grounding, format, and hando
 ## Related rules
 
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md)
-- [name-matches-directory](./name-matches-directory.md)
+- [describe-when-to-use](./describe-when-to-use.md#name)
 - [subagent-roles](./subagent-roles.md)
 - [delegate-by-default](./delegate-by-default.md)

@@ -12,7 +12,13 @@ Do not add exclusion clauses such as "Does not…", "Runs no…", or "Not for…
 
 The [Agent Skills description guide](https://agentskills.io/skill-creation/optimizing-descriptions) recommends user-intent framing and explicit applicable contexts; it suggests boundary clarification in the optimization loop when should-not-trigger queries false-trigger (checked 2026-10-22). For Claude Code, [Anthropic's skill-authoring guide](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) requires third person because descriptions are injected into the system prompt and inconsistent point of view can hurt discovery, checked 2026-10-22. Combine these by writing the capability clause in third person to name what the skill does, such as "Creates" or "Reviews", never "I" or "you"; the following `Use when` clause instructs the agent when to act, satisfying the Agent Skills guide's imperative framing.
 
-Test both sides of the boundary with should-trigger phrasings and should-not-trigger near-misses, each near-miss marked `not this skill` or `no skill`. A table of phrasings records intent; observed routing through the runtime is evidence and is owned by [validate-by-observation](./validate-by-observation.md). The `name` field is owned by [name-matches-directory](./name-matches-directory.md).
+Test both sides of the boundary with should-trigger phrasings and should-not-trigger near-misses, each near-miss marked `not this skill` or `no skill`. A table of phrasings records intent; observed routing through the runtime is evidence and is owned by [validate-by-observation](./validate-by-observation.md). The `name` field is owned by [describe-when-to-use](./describe-when-to-use.md#name).
+
+## Name
+
+A skill's frontmatter `name` equals its directory name; a subagent's equals its file basename. Use kebab-case: lowercase letters, digits, and single hyphens, none leading, trailing, or doubled. Limits, reserved words, and portable fields live in the [runtime matrix](./runtime-portability-matrix.md).
+
+For new names, prefer a gerund for a skill and a role noun for a subagent when natural; use a noun phrase when clearer. Never rename an established name for style alone.
 
 ## Examples
 
@@ -40,6 +46,6 @@ description: "Creates reviewable atomic git commits from an explicit list of fil
 ## Related rules
 
 - [keep-skills-self-contained](./keep-skills-self-contained.md)
-- [name-matches-directory](./name-matches-directory.md)
+- [describe-when-to-use](./describe-when-to-use.md#name)
 - [runtime-portability-matrix](./runtime-portability-matrix.md)
 - [validate-by-observation](./validate-by-observation.md)
