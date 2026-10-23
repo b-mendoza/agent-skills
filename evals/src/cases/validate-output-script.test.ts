@@ -91,7 +91,7 @@ describe("validate-output.sh", () => {
       label: "a NEEDS_CONTEXT verdict carrying fixes",
       mode: "verdict",
       payload:
-        "SNAPSHOT_VERIFY: NEEDS_CONTEXT\nRequired fixes:\n- Section 2: fix.\nReason: x\nDecision needed: pick a base",
+        "SNAPSHOT_VERIFY: NEEDS_CONTEXT\nRequired fixes:\n- Git State: fix.\nReason: x\nDecision needed: pick a base",
       finding: /NEEDS_CONTEXT requires Required fixes: none/,
     },
     {
