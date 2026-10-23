@@ -13,8 +13,9 @@ Evals live here, **outside `skills/`**, on purpose. A skill directory is a distr
 pnpm install                                      # once
 pnpm eval                                         # everything, 5 attempts per case
 pnpm eval --filter-metadata tier=1                 # routing only
-pnpm eval --filter-pattern '^snapshot-dirty$'      # one case
-pnpm eval --repeat 1                               # cheap, low-confidence smoke run
+pnpm eval --filter-metadata skill=analyzing-recent-project-state # one skill
+pnpm eval --filter-pattern '^analyzing-recent-project-state/snapshot-dirty$'      # one case
+pnpm eval --repeat 1                               # one attempt per case, still paid
 pnpm eval -j 3                                     # override default: up to 3 concurrent attempts
 pnpm eval:view                                    # browse and compare saved runs
 ```
@@ -25,7 +26,7 @@ Node 24 strips TypeScript types natively, so the suite runs from source with no 
 
 Native exit codes observed offline: `0` for passing attempts or an empty selection, `100` for any failed attempt, including provider errors, and `1` for an invalid CLI option.
 
-Each invocation configures a unique `outputs/runs/<UTC timestamp>-<random>/` with `results.json` and a self-contained `results.html`. Runs also persist in promptfoo's SQLite database under `outputs/promptfoo-state`. These outputs are ignored by git. Use `pnpm eval:view` to browse history and compare runs. Per-case metrics show pass rates across repeats; tier-2 attempts also carry the `mutation-scope` metric. The eval description records the model without changing the test dataset.
+Each invocation configures a unique `outputs/runs/<UTC timestamp>-<random>/` with `results.json` and a self-contained `results.html`. Runs also persist in promptfoo's SQLite database under `outputs/promptfoo-state`. These outputs are ignored by git. Use `pnpm eval:view` to browse history and compare runs. Per-case metrics show pass rates across repeats; read-only tier-2 attempts also carry the `mutation-scope` metric. The eval description records the model without changing the test dataset.
 
 ## Checks
 
@@ -37,23 +38,51 @@ pnpm test    # vitest: unit tests for the pure functions, free and offline
 
 `pnpm test` is not the eval suite. It covers the parts that can be checked without spending tokens, so a break shows up in seconds instead of after a paid run:
 
-Paths below are relative to `src/`, from `find src -name '*.test.ts'`.
+Test paths below are relative to `src/`.
 
-| Test file                                            | Pins                                                                         |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `cases/cases-behavioral.test.ts`                     | Tier-2 assertions: envelopes, report conformance, injection defense          |
-| `cases/cases.test.ts`                                | Run validity, routing, and per-attempt mutation scope                        |
-| `cases/validate-output-script.test.ts`               | The skill's deterministic validator, per mode, good and bad payloads         |
-| `fixtures/fixtures.test.ts`                          | Fixture git state, skill copy, exclusion, cleanup                            |
-| `observation/agent-query-lifecycle.test.ts`          | Query failures, iterator cleanup, deadlines, and abort behavior              |
-| `observation/agent-query.test.ts`                    | SDK policy, stream validation, tool calls, results, and git sampling         |
-| `observation/git-status.test.ts`                     | Clean, not-a-repo, and unreadable sample classification                      |
-| `observation/judge.test.ts`                          | Citation validation, live pass/fail outcomes, query policy and failures      |
-| `observation/mutation-evidence-git-commands.test.ts` | Mutating git commands and read-only lookalikes                               |
-| `observation/mutation-evidence.test.ts`              | The read-only detector behind `mutation-scope`                               |
-| `promptfoo/assertion.test.ts`                        | Check normalization, judge failures, and native mutation assertion           |
-| `promptfoo/integration.test.ts`                      | Offline native CLI: filters, repeats, metrics, exits, JSON/HTML, and history |
-| `promptfoo/provider.test.ts`                         | Runner limits, fixture isolation and cleanup, live judge wiring and ordering |
+| Test file                                        | Pins                                                                         |
+| ------------------------------------------------ | ---------------------------------------------------------------------------- |
+| `../promptfooconfig.test.ts`                     | Skill metadata filters and conditional mutation assertions                   |
+| `cases/cases.test.ts`                            | Snapshot routing, envelopes, report shape, injection defense                 |
+| `cases/clarifying-assumptions.test.ts`           | Preview approval, missing task number, fixture inputs                        |
+| `cases/committing-scoped-changes.test.ts`        | Scoped preview, verbal consent, unchanged git state                          |
+| `cases/council-of-advisors.test.ts`              | Routing, confirmation gate, missing subject                                  |
+| `cases/creating-work-item-children.test.ts`      | Child reconciliation, approval gate, plan fixtures                           |
+| `cases/diagnosing-root-causes.test.ts`           | Evidence-backed RCA, injected logs, missing input                            |
+| `cases/executing-work-item-task.test.ts`         | Kickoff approval, missing handoff decisions, fixtures                        |
+| `cases/fetching-work-item.test.ts`               | Snapshot artifacts, 404 envelope, fake tracker                               |
+| `cases/generate-flow-diagram.test.ts`            | Routing, diagram approval, output path guards                                |
+| `cases/generate-handoff-document.test.ts`        | Handoff package, existing-target gate, seeds                                 |
+| `cases/improving-skill-definition.test.ts`       | Audit evidence, approval, excluded targets                                   |
+| `cases/improving-test-suites.test.ts`            | Approval before edits, dirty-target guard, invalid runs                      |
+| `cases/orchestrating-workflow.test.ts`           | Resume gate, ambiguous identifier, fixture isolation                         |
+| `cases/planning-codebase-restructuring.test.ts`  | Persisted report, mutation boundary, missing inputs                          |
+| `cases/planning-task-execution.test.ts`          | Selected-task artifacts, dependency blocker, seeds                           |
+| `cases/planning-work-item-tasks.test.ts`         | Staged plan, invalid snapshot, boundary and seed checks                      |
+| `cases/pr-creator.test.ts`                       | Preview approval, existing-PR guard, fake GitHub                             |
+| `cases/prompt-structurer.test.ts`                | Routing, XML contract, blocked request                                       |
+| `cases/recency-guard.test.ts`                    | Current LTS verification, action-only scope guard                            |
+| `cases/refactoring-code.test.ts`                 | Plan approval, dirty scope, protected files and git state                    |
+| `cases/refine-task.test.ts`                      | Draft comment, preview approval, injection defense                           |
+| `cases/registry.test.ts`                         | Unique IDs, skill directories, per-skill tier coverage, mutation policies    |
+| `cases/reporting-skill-issues.test.ts`           | Draft approval, missing evidence, fake GitHub                                |
+| `cases/responding-to-pr-review-comments.test.ts` | Response preview, local report, no-comments exit                             |
+| `cases/review-pull-request.test.ts`              | Review preview, create-only output, collector fixture                        |
+| `cases/review-software-engineer-cv.test.ts`      | CV review artifacts, evidence boundaries, field labels                       |
+| `cases/rewriting-code-strictly.test.ts`          | Scope-expansion gate, unsafe command guard, unchanged targets                |
+| `cases/shared-checks.test.ts`                    | Routing, mutation, tool-call, file and directory snapshot assertions         |
+| `cases/validate-implementation-plan.test.ts`     | Audit artifacts, mutation boundaries, routing                                |
+| `cases/validate-output-script.test.ts`           | The snapshot skill's deterministic validator                                 |
+| `cases/workflow-skill-architect.test.ts`         | Review findings, injection defense, staged-extension approval                |
+| `fixtures/fixtures.test.ts`                      | Git state, multi-skill installation, seeds, fake CLI, cleanup                |
+| `observation/agent-query-env.test.ts`            | PATH prefix with inherited credentials and environment                       |
+| `observation/agent-query.test.ts`                | SDK policy, stream validation, deadlines, cleanup, git sampling              |
+| `observation/judge.test.ts`                      | Citation validation, judge policy, verdicts, failures                        |
+| `observation/mutation-evidence.test.ts`          | Git sampling, mutation detection, skill invocations                          |
+| `observation/repo-files.test.ts`                 | File and directory snapshots, bounds, unsafe path rejection                  |
+| `promptfoo/assertion.test.ts`                    | Provider lifecycle, grading, judge ordering, mutation assertion              |
+| `promptfoo/integration.test.ts`                  | Offline CLI filters across skills, repeats, metrics, exits, exports, history |
+| `promptfoo/provider.test.ts`                     | Per-case skills, seed/PATH wiring, file grading after cleanup                |
 
 Run it before any paid run.
 
@@ -66,8 +95,12 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 | `promptfooconfig.ts`             | Model, provider, native assertions, cases, output paths, repeats and concurrency    |
 | `src/promptfoo/`                 | Custom provider, assertion grading, observation metadata validation and case lookup |
 | `src/observation/agent-query.ts` | SDK query, message schemas and types, tool observation and git sampling             |
-| `src/fixtures/fixtures.ts`       | Throwaway git repos with the skill installed under `.claude/skills/`                |
-| `src/cases/<skill>.ts`           | Canonical case registry and assertions                                              |
+| `src/fixtures/fixtures.ts`       | Throwaway git repos with the requested skills installed under `.claude/skills/`     |
+| `src/cases/<skill>.ts`           | A skill's cases and behavioral checks                                               |
+| `src/cases/case-contract.ts`     | Shared case types, seed context, and routing defaults                               |
+| `src/cases/registry.ts`          | Explicit suite imports and the combined case list                                   |
+| `src/cases/shared-checks.ts`     | Reusable observable assertions                                                      |
+| `src/observation/repo-files.ts`  | Requested post-run file snapshots before cleanup                                    |
 | `src/**/*.test.ts`               | Offline Vitest suites beside the code they exercise                                 |
 | `outputs/`                       | Ignored per-run JSON/HTML artifacts and shared promptfoo history                    |
 | `AGENTS.md`, `docs/agent/`       | Agent guide and long-lived guidance                                                 |
@@ -79,17 +112,21 @@ See [current layout](docs/current-layout.md) for module responsibilities and why
 
 **Tier 1** caps the run with the SDK's `maxBudgetUsd` option so it stops right after the routing decision is visible. This makes "did the skill trigger" cost cents instead of dollars — the `Skill` tool call appears in the message stream before the cap bites.
 
-**Tier 2** is a full behavioral run. Assertion altitude follows the skill contract's own split: exact checks at machine-parsed boundaries (status lines, the three-line envelope, the snapshot title), conformance checks for report shape (canonical section names at any order, numbering, or heading level; disclosure lines exactly once; no leaked status wrapper or `Inspected:` log), and judge-based grading for semantic quality.
+**Tier 2** is a full behavioral run with an explicit `mutationPolicy`. In the snapshot suite, assertion altitude follows the skill contract's own split: exact checks at machine-parsed boundaries (status lines, the three-line envelope, the snapshot title), conformance checks for report shape (canonical section names at any order, numbering, or heading level; disclosure lines exactly once; no leaked status wrapper or `Inspected:` log), and judge-based grading for semantic quality.
 
-**Deterministic runtime validation.** The skill ships a shape validator (`skills/analyzing-recent-project-state/scripts/validate-output.sh`) for subagent outputs and payload gates. The eval runs it for escalation envelopes. Report checks use host-side assertions; tier-2 cases also require a `Bash` call mentioning the validator. That call alone does not prove the final report was validated.
+**Deterministic runtime validation.** The snapshot skill ships a shape validator (`skills/analyzing-recent-project-state/scripts/validate-output.sh`) for subagent outputs and payload gates. The eval runs it for escalation envelopes. Report checks use host-side assertions; its tier-2 cases also require a `Bash` call mentioning the validator. That call alone does not prove the final report was validated.
 
 Read the per-run JSON to diagnose failures. It holds every attempt's output and observation metadata, not just failures. The config resolves unique artifact paths relative to its own directory, independent of the working directory. The package scripts select shared history relative to `evals/` and disable telemetry; the config disables caching and sharing. Database writes remain enabled for the viewer.
 
 **Judge-based checks** (`src/observation/judge.ts`) grade an artifact against a binary rubric with an independent small model. This is a deliberate extension of the assert-only-observables rule: the judged artifact is the observable and the judge is a measurement instrument reading it — what stays banned is asking the agent under test whether it complied. Two guards keep verdicts honest: a violation counts only when its quote is mechanically verified to appear verbatim in the artifact (uncited complaints are recorded, never failing), and an unparseable judge reply fails the attempt with a message naming the judge, so grading trouble is never mistaken for a verdict on the skill. Judges run only after a case's mechanical check passes.
 
-**Coverage gap, recorded on purpose:** fixtures install the skill but register no subagents in either runtime's agent registry, so every behavioral run exercises the skill's _inline_ route. The isolated (dispatched-subagent) route — and with it any "did the orchestrator pass the contracted inputs to the subagent" assertion — is currently untestable here; covering it needs fixtures that register the three subagent definitions and a harness that captures dispatch payloads.
+**Coverage gap, recorded on purpose:** fixtures register no skill-specific subagents in either runtime's agent registry, so current snapshot cases exercise the skill's _inline_ route. The isolated (dispatched-subagent) route — and with it any "did the orchestrator pass the contracted inputs to the subagent" assertion — is currently untestable here; covering it needs fixtures that register the three subagent definitions and a harness that captures dispatch payloads.
 
-`mutation-scope` is a native per-attempt assertion on every tier-2 case, with no extra model invocation. It rejects invalid runs, `git status` deltas, `Write`/`Edit`/`NotebookEdit` calls, and mutating git commands. Its metric appears in native results, HTML, and history.
+**Approval-gate coverage gap:** runs are single-turn with no human reply. Approval-gated skills are tested only up to the preview or approval request, with no gated target mutation. Some cases allow local reports or staged artifacts. Post-approval execution, including actual commits, PR creation, posting, and applied edits, needs a multi-turn harness that does not exist yet.
+
+**Tracker coverage gap:** external trackers are faked through executables on PATH, currently GitHub's `gh`. These cases do not exercise live services. Jira routes are untested.
+
+`mutation-scope` is a native per-attempt assertion on tier-2 cases declaring `mutationPolicy: "read-only"`, with no extra model invocation. It rejects invalid runs, `git status` deltas, `Write`/`Edit`/`NotebookEdit` calls, and mutating git commands. Its metric appears in native results, HTML, and history.
 
 ### What mutation-scope does not catch
 
@@ -103,9 +140,19 @@ Two related properties the check _does_ now hold, both of which used to fail sil
 
 ## Adding a case
 
-Add it to `src/cases/<skill>.ts`. A case declares its fixture, prompt, budget, wall clock, and a `check` that throws to fail and returns a short observed-outcome string for the results.
+Create `src/cases/<skill>.ts` exporting `cases`, a `readonly EvalCase[]` from `case-contract.ts`, and a neighboring `<skill>.test.ts`. Add one `import("#/cases/<skill>.ts"),` line in alphabetical order in `registry.ts`. IDs must be globally unique and start with `<skill>/`. For every directory under `skills/` containing `SKILL.md`, the registry test requires `<skill>/trigger-positive` at tier 1, another tier-1 case, and a tier-2 case.
 
-`src/cases/<skill>.ts` is the canonical source of truth. A case belongs here only if it runs and asserts something observable; there is no parallel list of aspirational cases, because a case nothing executes proves nothing.
+A case declares `skill`, `tier`, `fixture`, `intent`, `prompt`, `budgetUsd`, `wallClockMs`, and `check`. Routing cases can spread `routingDefaults`; use `checkPositiveRouting(observation, skill)` or `checkNegativeRouting(observation, skill)` from `shared-checks.ts`. Keep any skill-specific completed-output rejection in the suite. A behavioral case must declare `mutationPolicy: "read-only"` or `"allowed"`. The latter skips `mutation-scope`, so its `check` must verify the expected writes. `judge` remains optional and runs only after `check` passes.
+
+Optional setup and file checks:
+
+- `extraSkills: ["sibling-skill"]` installs additional first-party skills alongside `skill`.
+- `seed: ({ repoPath, binPath }) => { ... }` runs synchronously after the base repo and skills exist, before observation starts. Plant files or commits in `repoPath`. Put executable fake CLIs in `binPath`; the provider prepends it to the agent's PATH while inheriting ambient credentials. The bin directory is outside the repo and is removed with the fixture.
+- `snapshotPaths: ["reports/result.md", "deleted.txt"]` captures those repo-relative text files before cleanup into schema-validated `observation.repoFiles`. Values are UTF-8 strings or `null` for absent paths. Absolute/traversal paths, symlinks, and non-files fail the attempt. The file helpers `assertFileExists`, `assertFileAbsent`, and `assertFileMatches` require a captured path; an unrequested path cannot pass as absent.
+- A trailing slash requests a recursive directory snapshot, for example `snapshotPaths: ["reports/"]`. Each regular descendant is stored under its repo-relative path. The `"reports/"` key is `""` when the directory exists, or `null` when absent. `capturedFilesUnder(observation, "reports/")` requires that marker and returns descendant contents, or `{}` for an absent or empty directory. Directory captures reject symlinks and non-regular entries and stop above 200 files or 1 MiB per file.
+- `findBashCalls(observation, pattern)` finds lexical command matches, not successful execution. `assertNoMutation` wraps the existing mutation evidence detector.
+
+The case list is executable coverage, not a list of aspirational cases.
 
 Two rules, both from the mandatory practice:
 
@@ -116,4 +163,38 @@ When adding an assertion, verify it fails on wrong input before trusting it gree
 
 ## Coverage
 
-Skills with a suite: `analyzing-recent-project-state` (10 cases, with a `mutation-scope` assertion on each tier-2 attempt: 5 routing, including two sibling-boundary negatives; 5 behavioral, including a judged full-report case and an injection-defense case). The other skills have none yet.
+All 28 skills have registered suites. Counts describe available cases, not live-run pass rates.
+
+| Skill                              | Routing, tier 1 | Behavioral, tier 2 |
+| ---------------------------------- | --------------: | -----------------: |
+| `analyzing-recent-project-state`   |               5 |                  5 |
+| `clarifying-assumptions`           |               2 |                  2 |
+| `committing-scoped-changes`        |               2 |                  3 |
+| `council-of-advisors`              |               2 |                  2 |
+| `creating-work-item-children`      |               2 |                  2 |
+| `diagnosing-root-causes`           |               2 |                  3 |
+| `executing-work-item-task`         |               2 |                  2 |
+| `fetching-work-item`               |               2 |                  2 |
+| `generate-flow-diagram`            |               2 |                  2 |
+| `generate-handoff-document`        |               2 |                  2 |
+| `improving-skill-definition`       |               2 |                  2 |
+| `improving-test-suites`            |               2 |                  2 |
+| `orchestrating-workflow`           |               2 |                  2 |
+| `planning-codebase-restructuring`  |               2 |                  2 |
+| `planning-task-execution`          |               2 |                  2 |
+| `planning-work-item-tasks`         |               2 |                  2 |
+| `pr-creator`                       |               2 |                  2 |
+| `prompt-structurer`                |               2 |                  2 |
+| `recency-guard`                    |               2 |                  2 |
+| `refactoring-code`                 |               2 |                  2 |
+| `refine-task`                      |               2 |                  2 |
+| `reporting-skill-issues`           |               2 |                  2 |
+| `responding-to-pr-review-comments` |               2 |                  2 |
+| `review-pull-request`              |               2 |                  2 |
+| `review-software-engineer-cv`      |               2 |                  2 |
+| `rewriting-code-strictly`          |               2 |                  2 |
+| `validate-implementation-plan`     |               2 |                  2 |
+| `workflow-skill-architect`         |               2 |                  3 |
+| **Total**                          |          **59** |             **62** |
+
+One attempt per case sums to $2.95 in tier-1 `budgetUsd` and $116.10 in tier-2 `budgetUsd`, or $119.05 combined. These are configured SDK budget caps, not observed costs; judge calls are additional. The default five repeats multiply these totals by five.
