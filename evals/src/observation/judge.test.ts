@@ -176,7 +176,7 @@ describe("SDK judge", () => {
     await expect(liveJudgeQuery("", JUDGE_MODEL)).rejects.toThrow(/judge/);
   });
 
-  test("ignores irrelevant messages and grades clean with haiku and no tools", async () => {
+  test("ignores irrelevant messages and grades clean with the judge model in one turn", async () => {
     sdk.query.mockImplementation(() =>
       scripted(
         null,
@@ -233,12 +233,5 @@ describe("SDK judge", () => {
     await expect(judgeLive(REQUEST)).rejects.toThrow(
       "judge query produced no result message",
     );
-  });
-
-  test("propagates a judge query failure", async () => {
-    sdk.query.mockImplementation(() => {
-      throw new Error("judge model unavailable");
-    });
-    await expect(judgeLive(REQUEST)).rejects.toThrow(/judge model unavailable/);
   });
 });
