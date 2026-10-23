@@ -56,7 +56,7 @@ function normalizeCheckFailure(cause: unknown): GradingResult {
   };
 }
 
-export function evaluate(check: () => string): GradingResult {
+function evaluate(check: () => string): GradingResult {
   try {
     return { pass: true, score: PASS_SCORE, reason: check() };
   } catch (cause) {
