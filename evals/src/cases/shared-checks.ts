@@ -140,6 +140,33 @@ function capturedFile(observation: Observation, path: string): string | null {
   return content;
 }
 
+/** Returns captured regular descendants of an explicitly requested trailing-slash directory. Absent and empty directories return {}. */
+export function capturedFilesUnder(
+  observation: Observation,
+  directoryPrefix: string,
+): Readonly<Record<string, string>> {
+  assert.ok(directoryPrefix.endsWith("/"), "directory prefix must end with /");
+  const marker = capturedFile(observation, directoryPrefix);
+  if (marker === null) return {};
+  assert.equal(
+    marker,
+    "",
+    `invalid directory capture marker: ${directoryPrefix}`,
+  );
+  return Object.fromEntries(
+    Object.entries(observation.repoFiles ?? {}).filter(
+      (entry): entry is [string, string] => {
+        const [path, content] = entry;
+        return (
+          path.startsWith(directoryPrefix) &&
+          !path.endsWith("/") &&
+          content !== null
+        );
+      },
+    ),
+  );
+}
+
 /** Requires a captured regular file, including an empty file. */
 export function assertFileExists(observation: Observation, path: string): void {
   assert.notEqual(

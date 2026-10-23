@@ -7,6 +7,7 @@ import {
   assertNoMutation,
   assertRoutingRunEndedEarly,
   assertRunHappened,
+  capturedFilesUnder,
   checkMutationScope,
   checkNegativeRouting,
   checkPositiveRouting,
@@ -120,6 +121,65 @@ describe("file snapshots", () => {
     expect(() => {
       assertFileMatches(observation, "absent.txt", /./);
     }).toThrow(/absent/);
+  });
+});
+
+describe("captured directory files", () => {
+  test("returns only regular captured descendants, preserving repo-relative keys", () => {
+    expect(
+      capturedFilesUnder(
+        createObservation({
+          repoFiles: {
+            "reports/": "",
+            "reports/a.md": "a",
+            "reports/nested/b.yaml": "b",
+            "reports/nested/": "",
+            "reports/absent": null,
+            "reports-other/c": "unrelated",
+          },
+        }),
+        "reports/",
+      ),
+    ).toEqual({ "reports/a.md": "a", "reports/nested/b.yaml": "b" });
+  });
+
+  test.each([null, ""])(
+    "returns no files for a requested absent or empty directory: %s",
+    (marker) => {
+      expect(
+        capturedFilesUnder(
+          createObservation({ repoFiles: { "reports/": marker } }),
+          "reports/",
+        ),
+      ).toEqual({});
+    },
+  );
+
+  test("rejects unrequested prefixes even when exact descendants were captured", () => {
+    expect(() =>
+      capturedFilesUnder(
+        createObservation({ repoFiles: { "reports/a.md": "a" } }),
+        "reports/",
+      ),
+    ).toThrow(/not captured/);
+    expect(() => capturedFilesUnder(createObservation(), "reports/")).toThrow(
+      /not captured/,
+    );
+  });
+
+  test("requires a directory prefix and a valid run", () => {
+    expect(() =>
+      capturedFilesUnder(
+        createObservation({ repoFiles: { reports: "text" } }),
+        "reports",
+      ),
+    ).toThrow(/end.*\//);
+    expect(() =>
+      capturedFilesUnder(
+        createObservation({ timedOut: true, repoFiles: { "reports/": "" } }),
+        "reports/",
+      ),
+    ).toThrow(/wall clock/);
   });
 });
 
