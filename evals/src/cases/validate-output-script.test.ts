@@ -28,7 +28,7 @@ const GOOD_VERDICT =
   "SNAPSHOT_VERIFY: PASS\nRequired fixes: none\nReason: all checks passed\nDecision needed: none";
 
 const GOOD_NON_PASS_EVIDENCE =
-  "GIT_EVIDENCE: NOT_GIT\nReason: /tmp/notes is not a worktree.";
+  "GIT_EVIDENCE: ERROR\nReason: Could not determine the repository state.";
 
 describe("validate-output.sh", () => {
   test.each([
