@@ -14,6 +14,7 @@ import { join } from "node:path";
 
 import { afterEach, expect, test } from "vitest";
 
+import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
 import {
   DIRTY_FIXTURE_FACTS,
@@ -39,7 +40,7 @@ const GIT_FIXTURE_KINDS = FIXTURE_KINDS.filter((kind) => kind !== "not-git");
 const openFixtures: Fixture[] = [];
 
 function createFixture(kind: FixtureKind): Fixture {
-  const fixture = makeFixture(kind, FIXTURE_SKILL_NAME);
+  const fixture = makeFixture(kind, SKILL);
   openFixtures.push(fixture);
   return fixture;
 }
