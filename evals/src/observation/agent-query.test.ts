@@ -11,13 +11,7 @@ import {
   observeClaude,
   QUERY_ERROR_SUBTYPE,
 } from "#/observation/agent-query.ts";
-import {
-  assistant,
-  createWorktreeStatus,
-  scripted,
-  success,
-  toolUse,
-} from "#/observation/observation-test-support.ts";
+import { scripted } from "#/observation/observation-test-support.ts";
 
 const sdk = vi.hoisted(() => ({
   query:
@@ -33,6 +27,23 @@ vi.mock(
 const COST = 0.5;
 const BUDGET = 0.01;
 const ZERO_COST = 0;
+
+const toolUse = (name: string, input: unknown = {}) => ({
+  type: "tool_use",
+  name,
+  input,
+});
+const assistant = (...content: unknown[]) => ({
+  type: "assistant",
+  message: { content },
+});
+const success = (result: string, totalCostUsd = COST) => ({
+  type: "result",
+  subtype: "success",
+  is_error: false,
+  result,
+  total_cost_usd: totalCostUsd,
+});
 let cwd = "";
 const options: RunOptions = {
   cwd: "",
@@ -97,10 +108,14 @@ test("gitRepo overrides cwd only for git sampling", async () => {
     return scripted(success("done"));
   });
   const observation = await observeClaude({ ...options, gitRepo: repo });
-  expect(observation.gitStatusBefore).toStrictEqual(createWorktreeStatus());
-  expect(observation.gitStatusAfter).toStrictEqual(
-    createWorktreeStatus("?? new.txt"),
-  );
+  expect(observation.gitStatusBefore).toStrictEqual({
+    kind: "worktree",
+    entries: "",
+  });
+  expect(observation.gitStatusAfter).toStrictEqual({
+    kind: "worktree",
+    entries: "?? new.txt",
+  });
   const [request] = sdk.query.mock.lastCall ?? [];
   expect(request?.options?.cwd).toBe(cwd);
 });
