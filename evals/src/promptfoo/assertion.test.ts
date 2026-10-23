@@ -48,6 +48,7 @@ describe("eval provider", () => {
         return Promise.resolve(observation);
       });
       const provider = new EvalProvider();
+      expect(provider.handlesOwnRetries).toBe(true);
       const result = await provider.callApi("ignored", {
         ...context,
         vars: { caseId },
