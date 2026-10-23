@@ -53,7 +53,7 @@ Tests are `git-status.test.ts`, `harness-lifecycle.test.ts`, `harness-failure-li
 
 ## Cases
 
-`src/cases/analyzing-recent-project-state.ts` defines the ordered registry, case contracts, and rubrics. `analyzing-recent-project-state-checks.ts` owns shared assertions. `case-test-support.ts` supplies valid report data and case lookup for `cases.test.ts` and `cases-behavioral.test.ts`. `validate-output-script.test.ts` exercises the skill's own shell validator.
+`src/cases/analyzing-recent-project-state.ts` defines the ordered registry, case contracts, and rubrics. `analyzing-recent-project-state-checks.ts` owns shared assertions. `case-test-support.ts` supplies synthetic observations and report fixtures for `cases.test.ts` and `cases-behavioral.test.ts`. `validate-output-script.test.ts` exercises the skill's own shell validator.
 
 ## Dependencies and paths
 

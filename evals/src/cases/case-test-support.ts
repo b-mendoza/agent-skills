@@ -1,13 +1,8 @@
 // Shared synthetic fixtures for the case-assertion test files. Not a test
-// file itself: it holds the observation builder, case lookup, and canonical
+// file itself: it holds the observation builder and canonical
 // snapshot texts that both `cases.test.ts` and `cases-behavioral.test.ts` pin
 // against.
 
-import type {
-  CaseId,
-  EvalCase,
-} from "#/cases/analyzing-recent-project-state.ts";
-import { cases } from "#/cases/analyzing-recent-project-state.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import type { Observation, ToolCall } from "#/observation/observation-types.ts";
 
@@ -15,12 +10,6 @@ export function observe(
   overrides: Readonly<Partial<Observation>> = {},
 ): Observation {
   return createObservation({ costUsd: 0.01, durationMs: 1000, ...overrides });
-}
-
-export function caseById(caseId: CaseId): EvalCase {
-  const matchingCase = cases.find((evalCase) => evalCase.id === caseId);
-  if (matchingCase == null) throw new Error(`no such case: ${caseId}`);
-  return matchingCase;
 }
 
 /** Behavioral runs must show the deterministic validator in the tool stream. */

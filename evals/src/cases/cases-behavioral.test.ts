@@ -8,7 +8,6 @@ import { describe, expect, test } from "vitest";
 
 import type { EnvelopeStatus } from "#/cases/analyzing-recent-project-state-checks.ts";
 import {
-  caseById,
   FULL_REPORT_SNAPSHOT,
   observe,
   QUIET_STATE_SNAPSHOT,
@@ -16,6 +15,7 @@ import {
   VALIDATOR_CALL,
 } from "#/cases/case-test-support.ts";
 import type { Observation } from "#/observation/observation-types.ts";
+import { getCase } from "#/promptfoo/observation.ts";
 
 const envelope = (status: EnvelopeStatus): Observation =>
   observe({
@@ -38,12 +38,12 @@ describe("envelope", () => {
   ] as const)(
     "`$caseId` passes on its exact `$status` three-line envelope",
     ({ caseId, status, expectedOutcome }) => {
-      expect(caseById(caseId).check(envelope(status))).toBe(expectedOutcome);
+      expect(getCase(caseId).check(envelope(status))).toBe(expectedOutcome);
     },
   );
 
   test("an envelope case fails on the wrong status", () => {
-    expect(() => caseById("path-error").check(envelope("NOT_GIT"))).toThrow(
+    expect(() => getCase("path-error").check(envelope("NOT_GIT"))).toThrow(
       /expected a PATH_ERROR envelope/,
     );
   });
@@ -53,7 +53,7 @@ describe("envelope", () => {
       finalText: "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it",
     });
 
-    expect(() => caseById("path-error").check(unvalidated)).toThrow(
+    expect(() => getCase("path-error").check(unvalidated)).toThrow(
       /validator was never invoked/,
     );
   });
@@ -91,7 +91,7 @@ describe("envelope", () => {
     },
   ])("path-error rejects $label", ({ finalText, expectedError }) => {
     expect(() =>
-      caseById("path-error").check(
+      getCase("path-error").check(
         observe({ finalText, toolCalls: [VALIDATOR_CALL] }),
       ),
     ).toThrow(expectedError);
@@ -108,7 +108,7 @@ describe("quiet state", () => {
       toolCalls: [VALIDATOR_CALL],
     });
 
-    expect(caseById("quiet-state").check(quietState)).toBe(QUIET_OUTCOME);
+    expect(getCase("quiet-state").check(quietState)).toBe(QUIET_OUTCOME);
   });
 
   test("quiet-state accepts unnumbered, reordered canonical headings", () => {
@@ -117,13 +117,13 @@ describe("quiet state", () => {
       toolCalls: [VALIDATOR_CALL],
     });
 
-    expect(caseById("quiet-state").check(reordered)).toBe(QUIET_OUTCOME);
+    expect(getCase("quiet-state").check(reordered)).toBe(QUIET_OUTCOME);
   });
 
   test("quiet-state fails when the validator was never invoked", () => {
     const unvalidated = observe({ finalText: QUIET_STATE_SNAPSHOT });
 
-    expect(() => caseById("quiet-state").check(unvalidated)).toThrow(
+    expect(() => getCase("quiet-state").check(unvalidated)).toThrow(
       /validator was never invoked/,
     );
   });
@@ -166,7 +166,7 @@ describe("quiet state", () => {
     },
   ])("quiet-state rejects $label", ({ finalText, expectedError }) => {
     expect(() =>
-      caseById("quiet-state").check(
+      getCase("quiet-state").check(
         observe({ finalText, toolCalls: [VALIDATOR_CALL] }),
       ),
     ).toThrow(expectedError);
@@ -180,7 +180,7 @@ describe("snapshot-dirty", () => {
       toolCalls: [VALIDATOR_CALL],
     });
 
-    expect(caseById("snapshot-dirty").check(fullReport)).toBe(
+    expect(getCase("snapshot-dirty").check(fullReport)).toBe(
       "full report; disclosures present",
     );
   });
@@ -191,7 +191,7 @@ describe("snapshot-dirty", () => {
       toolCalls: [VALIDATOR_CALL],
     });
 
-    expect(() => caseById("snapshot-dirty").check(missingRisks)).toThrow(
+    expect(() => getCase("snapshot-dirty").check(missingRisks)).toThrow(
       /full report omitted Risks/,
     );
   });
@@ -202,7 +202,7 @@ describe("snapshot-dirty", () => {
       toolCalls: [VALIDATOR_CALL],
     });
 
-    expect(() => caseById("snapshot-dirty").check(leaked)).toThrow(
+    expect(() => getCase("snapshot-dirty").check(leaked)).toThrow(
       /Inspected: log leaked/,
     );
   });
@@ -215,7 +215,7 @@ describe("injection-defense", () => {
       toolCalls: [VALIDATOR_CALL],
     });
 
-    expect(caseById("injection-defense").check(defended)).toBe(
+    expect(getCase("injection-defense").check(defended)).toBe(
       "snapshot returned; injection not followed; no mutation",
     );
   });
@@ -226,7 +226,7 @@ describe("injection-defense", () => {
       toolCalls: [VALIDATOR_CALL],
     });
 
-    expect(() => caseById("injection-defense").check(complied)).toThrow(
+    expect(() => getCase("injection-defense").check(complied)).toThrow(
       /injected compliance phrase appeared/,
     );
   });
@@ -240,7 +240,7 @@ describe("injection-defense", () => {
       ],
     });
 
-    expect(() => caseById("injection-defense").check(pushed)).toThrow(
+    expect(() => getCase("injection-defense").check(pushed)).toThrow(
       /repo was mutated/,
     );
   });

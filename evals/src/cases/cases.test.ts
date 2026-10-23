@@ -10,8 +10,9 @@ import {
   BUDGET_STOP_SUBTYPE,
   checkMutationScope,
 } from "#/cases/analyzing-recent-project-state-checks.ts";
-import { caseById, observe } from "#/cases/case-test-support.ts";
+import { observe } from "#/cases/case-test-support.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
+import { getCase } from "#/promptfoo/observation.ts";
 
 /** What `observeClaude` yields when the query never produced a result message. */
 const QUERY_FAILURE = observe({
@@ -50,7 +51,7 @@ const invalidRunChecks = cases.flatMap((evalCase) =>
 describe("run validity", () => {
   test.each(invalidRunChecks)("`$caseId` fails $label", (invalidRunCheck) => {
     const runCheck = () =>
-      caseById(invalidRunCheck.caseId).check(invalidRunCheck.observation);
+      getCase(invalidRunCheck.caseId).check(invalidRunCheck.observation);
     const expectedError =
       "expectedError" in invalidRunCheck
         ? invalidRunCheck.expectedError
@@ -69,7 +70,7 @@ describe("run validity", () => {
       toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
     });
 
-    expect(caseById("trigger-positive").check(lateFailure)).toBe(
+    expect(getCase("trigger-positive").check(lateFailure)).toBe(
       "Skill invoked",
     );
   });
@@ -83,7 +84,7 @@ describe("run validity", () => {
       costUsd: 0.01,
     });
 
-    expect(caseById("trigger-negative-review").check(costOnlyLateFailure)).toBe(
+    expect(getCase("trigger-negative-review").check(costOnlyLateFailure)).toBe(
       "no trigger",
     );
   });
@@ -94,7 +95,7 @@ describe("run validity", () => {
     // to QUERY_ERROR_SUBTYPE -- so it must not pass as a run that happened.
     const silent = observe({ subtype: "", finalText: "", toolCalls: [] });
 
-    expect(() => caseById("trigger-negative-review").check(silent)).toThrow();
+    expect(() => getCase("trigger-negative-review").check(silent)).toThrow();
   });
 });
 
@@ -134,7 +135,7 @@ describe("routing", () => {
         toolCalls: [{ name: "Read", input: { file_path: "/repo/a.txt" } }],
       });
 
-      expect(caseById(caseId).check(declined)).toBe(expectedOutcome);
+      expect(getCase(caseId).check(declined)).toBe(expectedOutcome);
     },
   );
 
@@ -145,7 +146,7 @@ describe("routing", () => {
       toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
     });
 
-    expect(caseById("trigger-positive").check(triggered)).toBe("Skill invoked");
+    expect(getCase("trigger-positive").check(triggered)).toBe("Skill invoked");
   });
 
   test("a budget stop is a real decline even when it books nothing", () => {
@@ -160,7 +161,7 @@ describe("routing", () => {
       costUsd: 0,
     });
 
-    expect(caseById("trigger-negative-review").check(stoppedEarly)).toBe(
+    expect(getCase("trigger-negative-review").check(stoppedEarly)).toBe(
       "no trigger",
     );
   });
@@ -171,7 +172,7 @@ describe("routing", () => {
       toolCalls: [{ name: "Read", input: {} }],
     });
 
-    expect(() => caseById("trigger-positive").check(noTrigger)).toThrow(
+    expect(() => getCase("trigger-positive").check(noTrigger)).toThrow(
       /skill never triggered/,
     );
   });
@@ -183,7 +184,7 @@ describe("routing", () => {
       toolCalls: [{ name: "Bash", input: { command: "git merge feature" } }],
     });
 
-    expect(() => caseById("trigger-negative-mutate").check(mutated)).toThrow(
+    expect(() => getCase("trigger-negative-mutate").check(mutated)).toThrow(
       /repo was mutated/,
     );
   });
@@ -197,7 +198,7 @@ describe("routing", () => {
       costUsd: 0,
     });
 
-    expect(() => caseById("trigger-negative-review").check(fullReport)).toThrow(
+    expect(() => getCase("trigger-negative-review").check(fullReport)).toThrow(
       /unexpectedly produced a full report/,
     );
   });
