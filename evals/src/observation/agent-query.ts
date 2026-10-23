@@ -46,6 +46,8 @@ export interface RunOptions {
   wallClockMs: number;
   /** Repo whose `git status` is sampled before and after. Usually `cwd`. */
   gitRepo?: string;
+  /** Executable directory prepended to the inherited PATH. */
+  pathPrefix?: string;
 }
 
 const NS_PER_MS = 1e6;
@@ -153,6 +155,19 @@ async function closeIterator(
   }
 }
 
+function queryEnvironment(pathPrefix: string | undefined): {
+  env?: NodeJS.ProcessEnv;
+} {
+  return pathPrefix === undefined
+    ? {}
+    : {
+        env: {
+          ...process.env,
+          PATH: `${pathPrefix}:${process.env["PATH"] ?? ""}`,
+        },
+      };
+}
+
 /** Observe one query; a recorded result takes precedence over cleanup errors. */
 export async function observeClaude(
   runOptions: RunOptions,
@@ -188,7 +203,8 @@ export async function observeClaude(
         maxBudgetUsd: runOptions.budgetUsd,
         permissionMode: "auto",
         abortController,
-        // Omit env so the subprocess inherits ambient credentials.
+        // Without a prefix, omit env and inherit the subprocess environment.
+        ...queryEnvironment(runOptions.pathPrefix),
         settingSources: ["project"],
         systemPrompt: { type: "preset", preset: "claude_code" },
         tools: { type: "preset", preset: "claude_code" },
