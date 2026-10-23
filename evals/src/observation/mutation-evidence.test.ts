@@ -1,9 +1,15 @@
-import { expect, test } from "vitest";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import { isMutatingGitCommand } from "#/observation/git-command-evidence.ts";
 import type { GitStatus } from "#/observation/mutation-evidence.ts";
 import {
   mutationEvidence,
+  sampleGitStatus,
   skillInvocations,
 } from "#/observation/mutation-evidence.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -301,4 +307,59 @@ test.each(["git -C /repo log --stat", "git --no-pager log commit"])(
 
 test("`git merge-base HEAD origin/main` is read-only despite the merge prefix", () => {
   expect(isMutatingGitCommand("git merge-base HEAD origin/main")).toBe(false);
+});
+
+describe("sampleGitStatus", () => {
+  let repositoryDirectory = "";
+  const realIndex = process.env["GIT_INDEX_FILE"];
+  beforeEach(() => {
+    repositoryDirectory = mkdtempSync(join(tmpdir(), "git-status-"));
+  });
+  afterEach(() => {
+    if (realIndex === undefined) delete process.env["GIT_INDEX_FILE"];
+    else process.env["GIT_INDEX_FILE"] = realIndex;
+    rmSync(repositoryDirectory, { recursive: true, force: true });
+  });
+
+  test("a directory that is not a repo is a known state, not a failure", () => {
+    expect(sampleGitStatus(repositoryDirectory)).toStrictEqual({
+      kind: "no-worktree",
+    });
+  });
+
+  test("a corrupt index is unreadable rather than clean", () => {
+    // Exit 128 alone cannot distinguish an absent repository from corruption.
+    execFileSync("git", ["init", "-q"], { cwd: repositoryDirectory });
+    writeFileSync(join(repositoryDirectory, "f.txt"), "x");
+    execFileSync("git", ["add", "f.txt"], { cwd: repositoryDirectory });
+    writeFileSync(join(repositoryDirectory, ".git", "index"), "garbage");
+    const status = sampleGitStatus(repositoryDirectory);
+    expect(status.kind).toBe("unreadable");
+    if (status.kind !== "unreadable") {
+      throw new Error("expected an unreadable git status");
+    }
+    expect(status.reason).not.toBe("");
+  });
+
+  test("a missing directory is unreadable, not clean", () => {
+    expect(sampleGitStatus(join(repositoryDirectory, "missing"))).toStrictEqual(
+      {
+        kind: "unreadable",
+        reason: "ENOENT",
+      },
+    );
+  });
+
+  test("a fatal message merely containing the phrase stays unreadable", () => {
+    execFileSync("git", ["init", "-q"], { cwd: repositoryDirectory });
+    const index = join(repositoryDirectory, "not a git repository");
+    writeFileSync(index, "garbage");
+    process.env["GIT_INDEX_FILE"] = index;
+    const status = sampleGitStatus(repositoryDirectory);
+    expect(status.kind).toBe("unreadable");
+    if (status.kind !== "unreadable") {
+      throw new Error("expected unreadable index");
+    }
+    expect(status.reason).toContain(index);
+  });
 });
