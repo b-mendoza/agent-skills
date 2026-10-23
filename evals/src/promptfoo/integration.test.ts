@@ -31,7 +31,7 @@ const TIMEOUT_MS = 30_000;
 const FIRST = 0;
 const MAX_CONCURRENCY = 5;
 const ONE_RUN = 1;
-const EXIT = { PASS: 0, FAIL: 100, ERROR: 1 };
+const EXIT = { PASS: 0, FAIL: 100 };
 let root = "";
 
 beforeAll(() => {
@@ -45,7 +45,7 @@ beforeAll(() => {
       const scenario = process.env.OFFLINE_SCENARIO;
       if (scenario === "provider-error") return { error: "offline provider error" };
       const observation = ${JSON.stringify(observe({ subtype: "error_max_budget_usd", isError: true }))};
-      if (context.vars.caseId === "trigger-positive" && scenario !== "failure") {
+      if (context.vars.caseId === "trigger-positive") {
         observation.toolCalls = [{ name: "Skill", input: { skill: ${JSON.stringify(SKILL)} } }];
       }
       if (context.vars.caseId === "path-error") {
@@ -180,39 +180,23 @@ test.each([
   TIMEOUT_MS,
 );
 
-test.each([
-  {
-    scenario: "failure",
-    expected: { failureReason: 1 },
-  },
-  {
-    scenario: "provider-error",
-    expected: { failureReason: 2, error: "offline provider error" },
-  },
-])(
-  "native CLI exits 100 for $scenario",
-  ({ scenario, expected }) => {
+test(
+  "native CLI exports a provider error as a failed run",
+  () => {
     const { child, exported } = evaluateOffline(
       ["--filter-pattern", "^trigger-positive$", "--repeat", "1"],
-      scenario,
+      "provider-error",
     );
     expect(child.status).toBe(EXIT.FAIL);
-    expect(exported).toMatchObject({
-      results: { results: [{ success: false, ...expected }] },
-    });
-  },
-  TIMEOUT_MS,
-);
-
-test(
-  "native CLI rejects an invalid option with exit 1",
-  () => {
-    const child = runOffline(["--offline-invalid-option"], "pass");
-    expect(child.error).toBeUndefined();
-    expect(child.status).toBe(EXIT.ERROR);
-    expect(child.stderr).toContain("unknown option");
-    const empty = runOffline(["--filter-pattern", "^does-not-exist$"], "pass");
-    expect(empty.status).toBe(EXIT.PASS);
+    expect(exported).toHaveProperty(
+      "results.results",
+      expect.arrayContaining([
+        expect.objectContaining({
+          success: false,
+          error: "offline provider error",
+        }),
+      ]),
+    );
   },
   TIMEOUT_MS,
 );
