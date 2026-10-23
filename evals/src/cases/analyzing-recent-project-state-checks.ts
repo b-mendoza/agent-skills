@@ -21,7 +21,6 @@ export type ValidatorMode = "evidence" | "draft" | "verdict" | "envelope";
 const SUCCESS_EXIT_STATUS = 0;
 const NO_TOOL_CALLS = 0;
 const NO_COST_USD = 0;
-const NO_BEHAVIORAL_OBSERVATIONS = 0;
 
 /** Runs the skill's validator; returns its findings, empty when conformant. */
 export function runOutputValidator(
@@ -299,29 +298,15 @@ export function assertJudgeClean(outcome: JudgeOutcome): string {
     : `judge: clean (${outcome.uncitedComplaints.length} uncited note(s) ignored)`;
 }
 
-/**
- * mutation-scope is derived from the tier-2 runs rather than paying for its own
- * invocation: the skill is read-only, so no behavioral run may leave a trace.
- */
-export function checkMutationScope(
-  observations: readonly Observation[],
-): string {
-  assert.ok(
-    observations.length > NO_BEHAVIORAL_OBSERVATIONS,
-    "mutation-scope requires at least one behavioral observation",
-  );
-  // The guarantee is "these runs wrote nothing", which can only be read off
-  // runs that happened. A run that reached no model also leaves no trace, so
-  // without this the row reports a read-only contract it never tested.
-  for (const observation of observations) assertRunHappened(observation);
-
-  const allMutationEvidence = observations.flatMap((observation) =>
-    mutationEvidence(observation),
-  );
+/** Each tier-2 attempt must preserve the skill's read-only contract. */
+export function checkMutationScope(observation: Observation): string {
+  // A run that never reached a model left no trace, but proves nothing.
+  assertRunHappened(observation);
+  const evidence = mutationEvidence(observation);
   assert.deepEqual(
-    allMutationEvidence,
+    evidence,
     [],
-    `read-only contract violated:\n${allMutationEvidence.join("\n")}`,
+    `read-only contract violated:\n${evidence.join("\n")}`,
   );
-  return `${observations.length} behavioral run(s) left no trace`;
+  return "1 behavioral run(s) left no trace";
 }

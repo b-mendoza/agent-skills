@@ -9,7 +9,7 @@
   "scripts": {
     "clean:hard": "node scripts/hard-clean.ts",
     "clean:soft": "node scripts/soft-clean.ts",
-    "eval": "node src/orchestration/run.ts",
+    "eval": "PROMPTFOO_CONFIG_DIR=outputs/promptfoo-state PROMPTFOO_DISABLE_TELEMETRY=1 promptfoo eval -c promptfooconfig.ts",
     "eval:view": "PROMPTFOO_CONFIG_DIR=outputs/promptfoo-state PROMPTFOO_DISABLE_TELEMETRY=1 promptfoo view",
     "fix": "run-s --continue-on-error \"fix:*\"",
     "fix:eslint": "eslint --cache --cache-location node_modules/.cache/eslint --fix .",

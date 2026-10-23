@@ -54,7 +54,7 @@ export interface CaseContext {
 }
 
 export const ROUTING_TIER = 1;
-/** Only tier-2 runs are behavioral, so only they feed the derived scope check. */
+/** Only tier-2 attempts receive the native mutation-scope assertion. */
 export const BEHAVIORAL_TIER = 2;
 
 /** Routing checks are budget-capped; behavioral runs exercise the full skill. */

@@ -21,11 +21,11 @@ pnpm eval:view                                    # browse and compare saved run
 
 Node 24 strips TypeScript types natively, so the suite runs from source with no build step. Keep the syntax erasable — `erasableSyntaxOnly` is on, so no enums, parameter properties, decorators, or namespaces.
 
-Each selected case runs `--repeat` times, default 5, and reports a **score**, the percent of attempts whose check passed, plus a **status** derived from the same counts: `PASS` for every attempt, `FAIL` for none, `DEGRADED` for a mix, and `NOT_RUN` for cases not executed by this run. A `NOT_RUN` score stays empty rather than reading as zero. The default concurrency cap is 5 attempts across the whole queue, including repeats; `-j` overrides it. Each process has its own cap, so two concurrent default runs can have 10 attempts in flight. Extra arguments go to promptfoo.
+`pnpm eval` invokes promptfoo directly and uses its native terminal output. Each selected case runs `--repeat` times, default 5. The default concurrency cap is 5 attempts across the whole queue, including repeats; `-j` overrides it. Each process has its own cap, so two concurrent default runs can have 10 attempts in flight. Extra arguments go to promptfoo. Set `EVAL_MODEL` to override the model, default `sonnet`.
 
-Exits `0` when every executed case passes every attempt, `1` when a case fails or is degraded, `2` when no case matched the filter, and `3` on an infrastructure error. Missing or malformed results, any provider error row, subprocess failure, and output-directory failure are infrastructure errors. Set `EVAL_MODEL` to override the model, default `sonnet`.
+Native exit codes observed offline: `0` for passing attempts or an empty selection, `100` for any failed attempt, including provider errors, and `1` for an invalid CLI option.
 
-Each invocation creates `outputs/runs/<UTC timestamp>-<random>/` with `results.json` and a self-contained `results.html`, one row per attempt. Runs also persist in promptfoo's SQLite database under `outputs/promptfoo-state`. These outputs are ignored by git. Use `pnpm eval:view` to browse history and compare runs side by side. Per-case metrics show pass rates across repeats; the eval description records the model without changing the test dataset. The terminal lists each non-PASS case, including skipped `NOT_RUN` cases and the derived `mutation-scope` result. The derived result is not a promptfoo row and does not appear in the HTML or viewer.
+Each invocation configures a unique `outputs/runs/<UTC timestamp>-<random>/` with `results.json` and a self-contained `results.html`. Runs also persist in promptfoo's SQLite database under `outputs/promptfoo-state`. These outputs are ignored by git. Use `pnpm eval:view` to browse history and compare runs. Per-case metrics show pass rates across repeats; tier-2 attempts also carry the `mutation-scope` metric. The eval description records the model without changing the test dataset.
 
 ## Checks
 
@@ -39,25 +39,22 @@ pnpm test    # vitest: unit tests for the pure functions, free and offline
 
 Paths below are relative to `src/`, from `find src -name '*.test.ts'`.
 
-| Test file                                            | Pins                                                                                                            |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `cases/cases-behavioral.test.ts`                     | Tier-2 assertions: envelopes, report conformance, injection defense                                             |
-| `cases/cases.test.ts`                                | Run-validity and routing assertions against synthetic runs                                                      |
-| `cases/validate-output-script.test.ts`               | The skill's deterministic validator, per mode, good and bad payloads                                            |
-| `fixtures/fixtures.test.ts`                          | Fixture git state, skill copy, exclusion, cleanup                                                               |
-| `observation/git-status.test.ts`                     | Clean, not-a-repo, and unreadable sample classification                                                         |
-| `observation/harness-failure-lifecycle.test.ts`      | Query, iterator, and cleanup failure handling                                                                   |
-| `observation/harness-lifecycle.test.ts`              | Mocked SDK lifecycle: results, errors, abort                                                                    |
-| `observation/harness-timeout.test.ts`                | Deadline and abort behavior                                                                                     |
-| `observation/judge.test.ts`                          | Judge citation validation and unparseable-reply failure                                                         |
-| `observation/mutation-evidence-git-commands.test.ts` | Mutating git commands and read-only lookalikes                                                                  |
-| `observation/mutation-evidence.test.ts`              | The read-only detector behind `mutation-scope`                                                                  |
-| `orchestration/entry.test.ts`                        | The direct-entry guard on the runner                                                                            |
-| `orchestration/run.test.ts`                          | Argument forwarding, unique artifacts, history state, summaries, exit codes, infrastructure failures            |
-| `orchestration/verdict.test.ts`                      | Check normalization, scores, statuses, NOT_RUN rows                                                             |
-| `promptfoo/integration.test.ts`                      | Real promptfoo CLI with an offline provider: filters, repeat overrides, assertion output, JSON/HTML and history |
-| `promptfoo/provider.test.ts`                         | Runner limits, fixture isolation and cleanup, check-before-judge ordering                                       |
-| `promptfoo/results.test.ts`                          | Result grouping, skipped cases, derived mutation scope, provider errors                                         |
+| Test file                                            | Pins                                                                         |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `cases/cases-behavioral.test.ts`                     | Tier-2 assertions: envelopes, report conformance, injection defense          |
+| `cases/cases.test.ts`                                | Run validity, routing, and per-attempt mutation scope                        |
+| `cases/validate-output-script.test.ts`               | The skill's deterministic validator, per mode, good and bad payloads         |
+| `fixtures/fixtures.test.ts`                          | Fixture git state, skill copy, exclusion, cleanup                            |
+| `observation/git-status.test.ts`                     | Clean, not-a-repo, and unreadable sample classification                      |
+| `observation/harness-failure-lifecycle.test.ts`      | Query, iterator, and cleanup failure handling                                |
+| `observation/harness-lifecycle.test.ts`              | Mocked SDK lifecycle: results, errors, abort                                 |
+| `observation/harness-timeout.test.ts`                | Deadline and abort behavior                                                  |
+| `observation/judge.test.ts`                          | Judge citation validation and unparseable-reply failure                      |
+| `observation/mutation-evidence-git-commands.test.ts` | Mutating git commands and read-only lookalikes                               |
+| `observation/mutation-evidence.test.ts`              | The read-only detector behind `mutation-scope`                               |
+| `promptfoo/assertion.test.ts`                        | Check normalization, judge failures, and native mutation assertion           |
+| `promptfoo/integration.test.ts`                      | Offline native CLI: filters, repeats, metrics, exits, JSON/HTML, and history |
+| `promptfoo/provider.test.ts`                         | Runner limits, fixture isolation and cleanup, check-before-judge ordering    |
 
 Run it before any paid run.
 
@@ -65,19 +62,17 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 
 ## Layout
 
-| Path                             | Contents                                                                                                        |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `promptfooconfig.ts`             | Provider, assertion, inline cases, default repeats and concurrency                                              |
-| `src/orchestration/run.ts`       | Inert-on-import entry point; spawns promptfoo, reads JSON, prints summaries and artifact paths, maps exit codes |
-| `src/orchestration/`             | Shared verdicts, run coordination, model configuration                                                          |
-| `src/promptfoo/`                 | Custom provider, assertion, observation validation, result aggregation                                          |
-| `src/observation/agent-query.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta                                    |
-| `src/fixtures/fixtures.ts`       | Builds throwaway git repos with the skill installed under `.claude/skills/`                                     |
-| `src/cases/<skill>.ts`           | Canonical source of truth: every eval case and its assertions                                                   |
-| `src/**/*.test.ts`               | Offline vitest suites, colocated with the code they pin                                                         |
-| `outputs/`                       | Ignored per-run JSON/HTML artifacts and shared promptfoo history                                                |
-| `AGENTS.md`, `docs/agent/`       | Agent guide and long-lived agent guidance                                                                       |
-| `docs/*.md`                      | Short-lived references and dated historical plans                                                               |
+| Path                             | Contents                                                                            |
+| -------------------------------- | ----------------------------------------------------------------------------------- |
+| `promptfooconfig.ts`             | Model, provider, native assertions, cases, output paths, repeats and concurrency    |
+| `src/promptfoo/`                 | Custom provider, assertion grading, observation metadata validation and case lookup |
+| `src/observation/agent-query.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta        |
+| `src/fixtures/fixtures.ts`       | Throwaway git repos with the skill installed under `.claude/skills/`                |
+| `src/cases/<skill>.ts`           | Canonical case registry and assertions                                              |
+| `src/**/*.test.ts`               | Offline Vitest suites beside the code they exercise                                 |
+| `outputs/`                       | Ignored per-run JSON/HTML artifacts and shared promptfoo history                    |
+| `AGENTS.md`, `docs/agent/`       | Agent guide and long-lived guidance                                                 |
+| `docs/*.md`                      | Short-lived references and dated historical plans                                   |
 
 See [current layout](docs/current-layout.md) for module responsibilities and why the provider keeps our SDK runner.
 
@@ -89,13 +84,13 @@ See [current layout](docs/current-layout.md) for module responsibilities and why
 
 **Deterministic runtime validation.** The skill ships a shape validator (`skills/analyzing-recent-project-state/scripts/validate-output.sh`) for subagent outputs and payload gates. The eval runs it for escalation envelopes. Report checks use host-side assertions; tier-2 cases also require a `Bash` call mentioning the validator. That call alone does not prove the final report was validated.
 
-Read the JSON path printed by the runner to diagnose failures. It holds every attempt's output and observation metadata, not just failures. Later runs cannot overwrite it. The runner resolves artifact and history paths relative to the suite, independent of the working directory. It disables caching, sharing, and telemetry, but keeps database writes enabled for the viewer.
+Read the per-run JSON to diagnose failures. It holds every attempt's output and observation metadata, not just failures. The config resolves unique artifact paths relative to its own directory, independent of the working directory. The package scripts select shared history relative to `evals/` and disable telemetry; the config disables caching and sharing. Database writes remain enabled for the viewer.
 
 **Judge-based checks** (`src/observation/judge.ts`) grade an artifact against a binary rubric with an independent small model. This is a deliberate extension of the assert-only-observables rule: the judged artifact is the observable and the judge is a measurement instrument reading it — what stays banned is asking the agent under test whether it complied. Two guards keep verdicts honest: a violation counts only when its quote is mechanically verified to appear verbatim in the artifact (uncited complaints are recorded, never failing), and an unparseable judge reply fails the attempt with a message naming the judge, so grading trouble is never mistaken for a verdict on the skill. Judges run only after a case's mechanical check passes.
 
 **Coverage gap, recorded on purpose:** fixtures install the skill but register no subagents in either runtime's agent registry, so every behavioral run exercises the skill's _inline_ route. The isolated (dispatched-subagent) route — and with it any "did the orchestrator pass the contracted inputs to the subagent" assertion — is currently untestable here; covering it needs fixtures that register the three subagent definitions and a harness that captures dispatch payloads.
 
-`mutation-scope` is derived from the tier-2 observations rather than paying for its own invocation: it asserts no run left a `git status` delta, called `Write`/`Edit`/`NotebookEdit`, or ran a mutating git command.
+`mutation-scope` is a native per-attempt assertion on every tier-2 case, with no extra model invocation. It rejects invalid runs, `git status` deltas, `Write`/`Edit`/`NotebookEdit` calls, and mutating git commands. Its metric appears in native results, HTML, and history.
 
 ### What mutation-scope does not catch
 
@@ -122,4 +117,4 @@ When adding an assertion, verify it fails on wrong input before trusting it gree
 
 ## Coverage
 
-Skills with a suite: `analyzing-recent-project-state` (10 cases plus the derived `mutation-scope` row: 5 routing, including two sibling-boundary negatives; 5 behavioral, including a judged full-report case and an injection-defense case). The other skills have none yet.
+Skills with a suite: `analyzing-recent-project-state` (10 cases, with a `mutation-scope` assertion on each tier-2 attempt: 5 routing, including two sibling-boundary negatives; 5 behavioral, including a judged full-report case and an injection-defense case). The other skills have none yet.

@@ -206,33 +206,22 @@ describe("routing", () => {
 
 describe("mutation scope", () => {
   test("mutation-scope fails when authentication failed", () => {
-    // Derived from the tier-2 observations, so it inherits the same blind spot:
-    // a run that never happened left no trace, and that must not read as proof
-    // the read-only contract held.
-    expect(() => checkMutationScope([AUTH_FAILURE])).toThrow();
+    // A run that never happened left no trace, but proves nothing.
+    expect(() => checkMutationScope(AUTH_FAILURE)).toThrow();
   });
 
-  test("mutation-scope passes when behavioral runs left no trace", () => {
+  test("mutation-scope passes when the behavioral run left no trace", () => {
     const clean = observe();
 
-    expect(checkMutationScope([clean, clean])).toBe(
-      "2 behavioral run(s) left no trace",
-    );
+    expect(checkMutationScope(clean)).toBe("1 behavioral run(s) left no trace");
   });
 
-  test("mutation-scope rejects an empty observation list", () => {
-    expect(() => checkMutationScope([])).toThrow(
-      /requires at least one behavioral observation/,
-    );
-  });
-
-  test("mutation-scope fails when any behavioral run left a trace", () => {
-    const clean = observe();
+  test("mutation-scope fails when the behavioral run left a trace", () => {
     const traced = observe({
       toolCalls: [{ name: "Write", input: { file_path: "/repo/x" } }],
     });
 
-    expect(() => checkMutationScope([clean, traced])).toThrow(
+    expect(() => checkMutationScope(traced)).toThrow(
       /read-only contract violated/,
     );
   });
@@ -244,7 +233,7 @@ describe("mutation scope", () => {
       gitStatusAfter: { kind: "unreadable", reason: "ENOENT" },
     });
 
-    expect(() => checkMutationScope([unsampled])).toThrow(
+    expect(() => checkMutationScope(unsampled)).toThrow(
       /read-only contract violated/,
     );
   });
