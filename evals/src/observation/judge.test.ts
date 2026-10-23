@@ -28,6 +28,10 @@ const REQUEST: JudgeRequest = {
   knownFacts: "No test or CI run was observed.",
   rubric: [
     { id: "G2", requirement: "No claim that tests or CI ran or passed." },
+    {
+      id: "R1",
+      requirement: "No claim that risk was ruled out without evidence.",
+    },
   ],
 };
 const SINGLE_ITEM = 1;
@@ -43,55 +47,58 @@ describe("buildJudgePrompt", () => {
     expect(prompt).toContain(REQUEST.artifact);
     expect(prompt).toContain(REQUEST.knownFacts);
     expect(prompt).toContain("G2: No claim that tests or CI ran or passed.");
+    expect(prompt).toContain(
+      "R1: No claim that risk was ruled out without evidence.",
+    );
   });
 });
 
 describe("parseJudgeResponse", () => {
-  test("keeps a violation whose quote appears verbatim in the artifact", () => {
-    const outcome = parseJudgeResponse(
-      reply([
-        {
-          itemId: "G2",
-          quote: "The tests passed on CI.",
-          reason: "asserts an unobserved test result",
-        },
-      ]),
-      REQUEST,
-    );
-
-    expect(outcome.citedViolations).toHaveLength(SINGLE_ITEM);
-    expect(outcome.uncitedComplaints).toStrictEqual([]);
-  });
-
-  test("accepts valid JSON with extra fields", () => {
+  test("keeps verified citations and demotes unknown or paraphrased entries in a mixed reply", () => {
     const outcome = parseJudgeResponse(
       JSON.stringify({
         verdict: "fail",
         violations: [
+          {
+            itemId: "NOPE",
+            quote: "The tests passed on CI.",
+            reason: "unknown item",
+          },
           {
             itemId: "G2",
             quote: "The tests passed on CI.",
             reason: "asserts an unobserved test result",
             confidence: 1,
           },
+          { itemId: "G2", quote: "tests were green", reason: "paraphrased" },
+          {
+            itemId: "R1",
+            quote: "Risk: none identified.",
+            reason: "rules out risk without evidence",
+          },
         ],
       }),
       REQUEST,
     );
 
-    expect(outcome.citedViolations).toHaveLength(SINGLE_ITEM);
-  });
-
-  test("demotes a violation whose quote is not in the artifact", () => {
-    const outcome = parseJudgeResponse(
-      reply([
-        { itemId: "G2", quote: "tests were green", reason: "paraphrased" },
-      ]),
-      REQUEST,
-    );
-
-    expect(outcome.citedViolations).toStrictEqual([]);
-    expect(outcome.uncitedComplaints).toHaveLength(SINGLE_ITEM);
+    expect(outcome).toStrictEqual({
+      citedViolations: [
+        {
+          itemId: "G2",
+          quote: "The tests passed on CI.",
+          reason: "asserts an unobserved test result",
+        },
+        {
+          itemId: "R1",
+          quote: "Risk: none identified.",
+          reason: "rules out risk without evidence",
+        },
+      ],
+      uncitedComplaints: [
+        "NOPE: unknown item (quote ok; unknown rubric id)",
+        "G2: paraphrased (quote not found in artifact)",
+      ],
+    });
   });
 
   test("demotes a violation naming an unknown rubric id", () => {
