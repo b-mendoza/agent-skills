@@ -9,7 +9,7 @@
 This repo keeps two tiers of agent documentation. Maintain the split when you add or edit docs:
 
 - **Long-lived guidance** — `AGENTS.md` files and `docs/agent/` directories. Principles and guidelines with general examples only; no source-code paths or code snippets, so they stay true as the code changes. Scoped `AGENTS.md` maps are the one exception: they name the exact commands for their tree and are updated when those commands change.
-- **Short-lived references** — Markdown files under a `docs/` directory (root or sub-project), outside `docs/agent/`; related references may be grouped in a subdirectory. Current-state descriptions: architecture, file structure and conventions, command references. Each carries a banner saying it must be updated when the code changes.
+- Short-lived references under `docs/`, outside `docs/agent/`: current architecture, layout, conventions, and commands, with an update banner. Update the matching reference in the same change when those facts change.
 
 Guidance earns its place through observed failures: add a rule when a mistake happens, and remove rules that no longer affect behavior. These files load into every agent's context, so every line must pay rent. State what to do rather than enumerating what to avoid; keep a standalone prohibition only when it marks a specific failure that keeps happening.
 
@@ -22,10 +22,11 @@ The user's instructions are a baseline to build on, not a spec to execute verbat
 ## Always
 
 - Before editing a tree that has its own `AGENTS.md` (today: `evals/`), read that guide first. When authoring or editing a skill, subagent, or reference file, use the [best-practice index](./docs/best-practices/README.md) to find the rule for the decision in front of you.
-- After a substantive change, run the checks the nearest guide names: the [manual verification checklist](./docs/agent/skill-verification.md) after skill or subagent edits (this repo has no CI), and inside `evals/` the lint check after a change plus the test suite before committing ([`evals/AGENTS.md`](./evals/AGENTS.md) names the exact commands). Passing checks are a floor, not proof — when unsure whether a change is correct, escalate rather than declare success.
+- After substantive changes, run the nearest guide's documented checks, including the [manual verification checklist](./docs/agent/skill-verification.md) after skill or subagent edits. Do not invent substitute commands. Report only checks run on the current change, including failures, warnings, and coverage gaps; verify referenced files, paths, and symbols. Passing checks are a floor, not proof; escalate uncertainty.
 - Where a tree has a linter (`evals/`), its configuration is the enforced source of truth for style. Prefer fixing a finding over suppressing it; suppress inline only when the rule is genuinely wrong for the case, and say why.
 - Map every hunk to the task. Extend canonical files when sufficient, report unrelated findings rather than fixing them, and build compatibility only for real consumer contracts; otherwise delete the old path.
 - Split large tasks into independently mergeable, testable, reviewable units with clear done-conditions and minimal blocking dependencies.
+- Change generators or sources and regenerate tooling-managed outputs; do not hand-edit those outputs.
 - Propose a GitHub issue for any multi-step or non-trivial task; creating one still requires an explicit ask.
 - Editing is not permission to publish. Do not commit, push, open a pull request, or create an issue unless explicitly asked; when committing, stage only the paths the task touched.
 
@@ -40,7 +41,6 @@ Long-lived guides:
 - [Skill verification checklist](docs/agent/skill-verification.md) — manual checks after skill or subagent edits; this repo has no CI.
 - [Code design](docs/agent/code-design.md) — contracts at the boundaries, naming, failing loudly, and comments.
 - [Testing principles](docs/agent/testing.md) — what and how to test.
-- [Verifying your work](docs/agent/verification.md) — what "done" requires beyond green tests.
 - [Working inside evals/](evals/AGENTS.md) — nearest guide; owns evals commands, conventions, and guardrails.
 
 Current-state references (short-lived; verify against the code):
