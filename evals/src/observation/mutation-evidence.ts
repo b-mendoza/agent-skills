@@ -117,18 +117,6 @@ function readablePath(path: unknown): string {
   return typeof path === "string" && path !== "" ? path : "?";
 }
 
-function collectToolEvidence(call: ToolCall, evidence: string[]): void {
-  const pathKey = MUTATING_TOOL_PATH_KEYS[call.name];
-  if (pathKey !== undefined) {
-    const path = call.input[pathKey];
-    const target = readablePath(path);
-    evidence.push(`${call.name} called on ${target}`);
-  }
-  if (call.name === "Bash") {
-    collectBashEvidence(call.input["command"], evidence);
-  }
-}
-
 function collectBashEvidence(command: unknown, evidence: string[]): void {
   if (command == null) {
     evidence.push("unverifiable Bash command (absent)");
@@ -139,34 +127,34 @@ function collectBashEvidence(command: unknown, evidence: string[]): void {
   }
 }
 
-function collectStatusEvidence(
-  observation: Observation,
-  evidence: string[],
-): void {
+/** Ordered evidence, including unreadable samples rather than false clean results. */
+export function mutationEvidence(observation: Observation): string[] {
   const { gitStatusBefore: before, gitStatusAfter: after } = observation;
-  if (before.kind === "unreadable" || after.kind === "unreadable") return;
-  if (!sameGitStatus(before, after)) {
+  const evidence = Object.entries({ before, after }).flatMap(
+    ([label, status]) =>
+      status.kind === "unreadable"
+        ? [`git status could not be sampled ${label} the run: ${status.reason}`]
+        : [],
+  );
+  if (
+    before.kind !== "unreadable" &&
+    after.kind !== "unreadable" &&
+    !sameGitStatus(before, after)
+  ) {
     evidence.push(
       `git status changed:\n  before: ${describeGitStatus(before)}\n  after:  ${describeGitStatus(after)}`,
     );
   }
-}
-
-/** Ordered evidence, including unreadable samples rather than false clean results. */
-export function mutationEvidence(observation: Observation): string[] {
-  const evidence: string[] = [];
-  const samples = {
-    before: observation.gitStatusBefore,
-    after: observation.gitStatusAfter,
-  };
-  for (const [label, status] of Object.entries(samples)) {
-    if (status.kind === "unreadable") {
+  observation.toolCalls.forEach((call) => {
+    const pathKey = MUTATING_TOOL_PATH_KEYS[call.name];
+    if (pathKey !== undefined) {
       evidence.push(
-        `git status could not be sampled ${label} the run: ${status.reason}`,
+        `${call.name} called on ${readablePath(call.input[pathKey])}`,
       );
     }
-  }
-  collectStatusEvidence(observation, evidence);
-  for (const call of observation.toolCalls) collectToolEvidence(call, evidence);
+    if (call.name === "Bash") {
+      collectBashEvidence(call.input["command"], evidence);
+    }
+  });
   return evidence;
 }
