@@ -16,7 +16,11 @@ import {
 import { HOSTILE_FIXTURE_FACTS } from "#/fixtures/fixtures.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
-import { getCase } from "#/promptfoo/observation.ts";
+import { getCase as getRegisteredCase } from "#/promptfoo/observation.ts";
+
+function getCase(id: string) {
+  return getRegisteredCase(`${SKILL}/${id}`);
+}
 
 const AUTH_FAILURE = createObservation({
   isError: true,
