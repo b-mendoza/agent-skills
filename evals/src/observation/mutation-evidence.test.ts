@@ -1,14 +1,3 @@
-// Pins how observed facts become mutation evidence for the `mutation-scope`
-// case: status-delta classification, unreadable-sample reporting, write-tool
-// calls, and Bash payloads that cannot be scanned.
-//
-// This is the assertion that proves a skill under test wrote nothing, so a
-// false negative here would silently retire the guarantee: the suite would keep
-// reporting PASS while a skill mutated the repo. Which git command texts count
-// as mutations is pinned separately, in `mutation-evidence-git-commands`.
-//
-//   pnpm test
-
 import { expect, test } from "vitest";
 
 import type { GitStatus } from "#/observation/mutation-evidence.ts";
@@ -16,10 +5,7 @@ import {
   mutationEvidence,
   skillInvocations,
 } from "#/observation/mutation-evidence.ts";
-import {
-  createObservation,
-  createWorktreeStatus,
-} from "#/observation/observation-test-support.ts";
+import { createObservation } from "#/observation/observation-test-support.ts";
 
 const SINGLE_EVIDENCE_COUNT = 1;
 const ALL_EVIDENCE_COUNT = 3;
@@ -55,12 +41,9 @@ test("a repo that is not a worktree is clean, not unreadable", () => {
   ).toStrictEqual([]);
 });
 
-// An unreadable sample proves nothing about what the run did. It used to be
-// the same empty string a clean worktree yields, so two failed samples matched
-// and mutation-scope passed on evidence that was never collected.
+// Failed samples once compared equal to clean worktrees, hiding mutations.
 test("an unreadable status is evidence, not silence", () => {
   const unreadable: GitStatus = { kind: "unreadable", reason: "ENOENT" };
-
   expect(
     mutationEvidence(
       createObservation({
@@ -75,28 +58,19 @@ test("an unreadable status is evidence, not silence", () => {
 });
 
 test("one unreadable sample is reported without a bogus delta", () => {
-  // Comparing a readable sample against an unreadable one would invent a
-  // "change" that says more about the failure than about the run.
-  const found = mutationEvidence(
-    createObservation({
-      gitStatusBefore: createWorktreeStatus(""),
-      gitStatusAfter: { kind: "unreadable", reason: "EACCES" },
-    }),
-  );
-
-  expect(found).toStrictEqual([
-    "git status could not be sampled after the run: EACCES",
-  ]);
+  expect(
+    mutationEvidence(
+      createObservation({
+        gitStatusAfter: { kind: "unreadable", reason: "EACCES" },
+      }),
+    ),
+  ).toStrictEqual(["git status could not be sampled after the run: EACCES"]);
 });
 
 test("a worktree appearing where there was none is evidence", () => {
   const found = mutationEvidence(
-    createObservation({
-      gitStatusBefore: { kind: "no-worktree" },
-      gitStatusAfter: createWorktreeStatus(""),
-    }),
+    createObservation({ gitStatusBefore: { kind: "no-worktree" } }),
   );
-
   const [statusChangeEvidence] = found;
   expect(found).toHaveLength(SINGLE_EVIDENCE_COUNT);
   expect(statusChangeEvidence).toContain("git status changed");
@@ -108,18 +82,16 @@ test.each([
   ["Edit", "file_path", "/work/x.ts"],
   ["NotebookEdit", "notebook_path", "/work/notebook.ipynb"],
 ])("%s is evidence and names the file", (name, pathKey, filePath) => {
-  const found = mutationEvidence(
-    createObservation({
-      toolCalls: [{ name, input: { [pathKey]: filePath } }],
-    }),
-  );
-
-  expect(found).toStrictEqual([`${name} called on ${filePath}`]);
+  expect(
+    mutationEvidence(
+      createObservation({
+        toolCalls: [{ name, input: { [pathKey]: filePath } }],
+      }),
+    ),
+  ).toStrictEqual([`${name} called on ${filePath}`]);
 });
 
 test("a write tool with no usable mapped path still reports the call", () => {
-  // The call is the violation; a missing or non-string path must not make it
-  // disappear or render an untrusted value as if it were a usable path.
   const found = mutationEvidence(
     createObservation({
       toolCalls: [
@@ -131,7 +103,6 @@ test("a write tool with no usable mapped path still reports the call", () => {
       ],
     }),
   );
-
   expect(found).toStrictEqual([
     "Write called on ?",
     "Write called on ?",
@@ -155,13 +126,11 @@ test.each([
 ])(
   "$name is unverifiable rather than clean",
   ({ bashInput, expectedEvidence }) => {
-    // A payload that cannot be scanned is not clean: coercing it would let a
-    // mutating verb hide inside a shape the detector never reads.
-    const found = mutationEvidence(
-      createObservation({ toolCalls: [{ name: "Bash", input: bashInput }] }),
-    );
-
-    expect(found).toStrictEqual([expectedEvidence]);
+    expect(
+      mutationEvidence(
+        createObservation({ toolCalls: [{ name: "Bash", input: bashInput }] }),
+      ),
+    ).toStrictEqual([expectedEvidence]);
   },
 );
 
@@ -203,7 +172,6 @@ test("skillInvocations selects only Skill calls naming the skill", () => {
       { name: "Skill", input: { skill: "wanted" } },
     ],
   });
-
   expect(skillInvocations(observation, "wanted")).toStrictEqual([
     { name: "Skill", input: { skill: "wanted" } },
     { name: "Skill", input: { skill: "wanted" } },
