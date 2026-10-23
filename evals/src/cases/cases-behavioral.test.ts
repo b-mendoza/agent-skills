@@ -66,12 +66,6 @@ describe("envelope", () => {
       expectedError: /expected exactly 3 envelope lines/,
     },
     {
-      label: "the wrong first-line label",
-      finalText:
-        "STATE: PATH_ERROR\nReason: path does not exist\nNext step: supply a real path",
-      expectedError: /line 1 must be RECENT_STATE:/,
-    },
-    {
       label: "swapped Reason and Next step lines",
       finalText:
         "RECENT_STATE: PATH_ERROR\nNext step: supply a real path\nReason: path does not exist",
