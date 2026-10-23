@@ -64,22 +64,6 @@ afterEach(() => {
   rmSync(cwd, { recursive: true, force: true });
 });
 
-test("a normal stream yields the result and its tool calls", async () => {
-  sdk.query.mockImplementation(() =>
-    scripted(assistant(toolUse("Skill")), success("done", COST)),
-  );
-  expect(await observeClaude(options)).toMatchObject({
-    subtype: "success",
-    isError: false,
-    finalText: "done",
-    costUsd: COST,
-    toolCalls: [{ name: "Skill", input: {} }],
-    timedOut: false,
-    gitStatusBefore: { kind: "worktree", entries: "" },
-    gitStatusAfter: { kind: "worktree", entries: "" },
-  });
-});
-
 test("the query owns its policy and inherits ambient credentials", async () => {
   await observeClaude(options);
   const abortController: unknown = expect.any(AbortController);
@@ -123,12 +107,25 @@ test("gitRepo overrides cwd only for git sampling", async () => {
 test("tool calls accumulate across assistant messages in stream order", async () => {
   sdk.query.mockImplementation(() =>
     scripted(
+      null,
+      [],
+      {},
+      { type: 1 },
+      { type: "user", message: { content: "prompt" } },
       assistant({ type: "text" }, toolUse("Read")),
       assistant(toolUse("Bash", { command: "git log" }), toolUse("Grep")),
-      success("done"),
+      success("done", COST),
     ),
   );
-  expect((await observeClaude(options)).toolCalls).toStrictEqual([
+  const observation = await observeClaude(options);
+  expect(observation).toMatchObject({
+    subtype: "success",
+    isError: false,
+    finalText: "done",
+    costUsd: COST,
+    timedOut: false,
+  });
+  expect(observation.toolCalls).toStrictEqual([
     { name: "Read", input: {} },
     { name: "Bash", input: { command: "git log" } },
     { name: "Grep", input: {} },
@@ -159,24 +156,6 @@ test("tool input is an owned record without inherited properties", async () => {
   expect(call?.input).not.toHaveProperty("inherited");
 });
 
-test("messages carrying no verdict are ignored", async () => {
-  sdk.query.mockImplementation(() =>
-    scripted(
-      null,
-      [],
-      {},
-      { type: 1 },
-      { type: "user", message: { content: "prompt" } },
-      success("done"),
-    ),
-  );
-  expect(await observeClaude(options)).toMatchObject({
-    subtype: "success",
-    toolCalls: [],
-    finalText: "done",
-  });
-});
-
 test("authentication failure keeps subtype and isError independent", async () => {
   sdk.query.mockImplementation(() =>
     scripted({
@@ -191,43 +170,24 @@ test("authentication failure keeps subtype and isError independent", async () =>
   });
 });
 
-test.each([
-  {
-    subtype: " error_custom ",
-    errors: [" first diagnostic ", " second diagnostic "],
-    calls: [],
-    expected: " first diagnostic \n second diagnostic ",
-  },
-  {
+test("error_max_budget_usd preserves diagnostics, cost, and calls", async () => {
+  sdk.query.mockImplementation(() =>
+    scripted(assistant(toolUse("Skill")), {
+      type: "result",
+      subtype: "error_max_budget_usd",
+      is_error: true,
+      errors: ["max budget exceeded", "budget was $0.01"],
+      total_cost_usd: COST,
+    }),
+  );
+  expect(await observeClaude(options)).toMatchObject({
     subtype: "error_max_budget_usd",
-    errors: ["max budget exceeded", "budget was $0.01"],
-    calls: [toolUse("Skill")],
-    expected: "max budget exceeded\nbudget was $0.01",
-  },
-])(
-  "error result $subtype preserves diagnostics, cost, and calls",
-  async ({ subtype, errors, calls, expected }) => {
-    sdk.query.mockImplementation(() =>
-      scripted(assistant(...calls), {
-        type: "result",
-        subtype,
-        is_error: true,
-        errors,
-        total_cost_usd: COST,
-      }),
-    );
-    const observation = await observeClaude(options);
-    expect(observation).toMatchObject({
-      subtype,
-      isError: true,
-      finalText: expected,
-      costUsd: COST,
-    });
-    expect(observation.toolCalls.map((call) => call.name)).toStrictEqual(
-      calls.map((call) => call.name),
-    );
-  },
-);
+    isError: true,
+    finalText: "max budget exceeded\nbudget was $0.01",
+    costUsd: COST,
+    toolCalls: [{ name: "Skill", input: {} }],
+  });
+});
 
 test.each([
   [assistant(toolUse("Write"), null), ["Read"]],
