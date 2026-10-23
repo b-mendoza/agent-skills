@@ -14,8 +14,6 @@ import {
   assertDisclosureLineOnce,
   assertEnvelope,
   assertNoInternalLeak,
-  assertRoutingRunEndedEarly,
-  assertRunHappened,
   assertSectionsAbsent,
   assertSectionsPresent,
   assertValidatorInvoked,
@@ -23,29 +21,23 @@ import {
   SHORT_FORM_OMITTED_SECTIONS,
   SHORT_FORM_SECTIONS,
 } from "#/cases/analyzing-recent-project-state-checks.ts";
+import {
+  assertRoutingRunEndedEarly,
+  assertRunHappened,
+  checkNegativeRouting as checkSharedNegativeRouting,
+  checkPositiveRouting,
+} from "#/cases/shared-checks.ts";
 import type { FixtureKind } from "#/fixtures/fixtures.ts";
 import {
   DIRTY_FIXTURE_FACTS,
   HOSTILE_FIXTURE_FACTS,
 } from "#/fixtures/fixtures.ts";
-import type { Observation, ToolCall } from "#/observation/agent-query.ts";
+import type { Observation } from "#/observation/agent-query.ts";
 import type { RubricItem } from "#/observation/judge.ts";
 import { judgeLive } from "#/observation/judge.ts";
-import {
-  mutationEvidence,
-  skillInvocations,
-} from "#/observation/mutation-evidence.ts";
+import { mutationEvidence } from "#/observation/mutation-evidence.ts";
 
 export const SKILL = "analyzing-recent-project-state";
-
-const NO_SKILL_INVOCATIONS = 0;
-const MINIMUM_SKILL_INVOCATIONS = 1;
-
-/** Names the tools a run actually called, for a failure message. */
-function formatToolNames(toolCalls: readonly ToolCall[]): string {
-  const names = toolCalls.map((toolCall) => toolCall.name).join(", ");
-  return names === "" ? "none" : names;
-}
 
 export interface CaseContext {
   readonly missingPath: string;
@@ -147,17 +139,21 @@ const behavioralDefaults = {
   wallClockMs: 600_000,
 } as const;
 
+function assertSnapshotRoutingRunEndedEarly(observation: Observation): void {
+  assertRoutingRunEndedEarly(observation);
+  assert.doesNotMatch(
+    observation.finalText,
+    /^# Project State Snapshot/m,
+    "budget-capped routing run unexpectedly produced a full report",
+  );
+}
+
 function checkNegativeRouting(
   observation: Observation,
   failureMessage: string,
 ): string {
-  assertRoutingRunEndedEarly(observation);
-  assert.equal(
-    skillInvocations(observation, SKILL).length,
-    NO_SKILL_INVOCATIONS,
-    failureMessage,
-  );
-  return "no trigger";
+  assertSnapshotRoutingRunEndedEarly(observation);
+  return checkSharedNegativeRouting(observation, SKILL, failureMessage);
 }
 
 export const cases = [
@@ -169,13 +165,8 @@ export const cases = [
     prompt: () =>
       "What changed recently in this repo and is it ready to hand off?",
     check: (observation) => {
-      assertRoutingRunEndedEarly(observation);
-      const matchingSkillInvocations = skillInvocations(observation, SKILL);
-      assert.ok(
-        matchingSkillInvocations.length >= MINIMUM_SKILL_INVOCATIONS,
-        `skill never triggered; tools called: ${formatToolNames(observation.toolCalls)}`,
-      );
-      return "Skill invoked";
+      assertSnapshotRoutingRunEndedEarly(observation);
+      return checkPositiveRouting(observation, SKILL);
     },
   },
   {

@@ -2,9 +2,8 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { assertRunHappened } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
-import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
-import { mutationEvidence } from "#/observation/mutation-evidence.ts";
 
 // The skill's own deterministic validator is the normative shape definition;
 // reusing it here means test-time and runtime check the same thing.
@@ -18,8 +17,7 @@ const OUTPUT_VALIDATOR_PATH = fileURLToPath(
 export type ValidatorMode = "evidence" | "draft" | "verdict" | "envelope";
 
 const SUCCESS_EXIT_STATUS = 0;
-const NO_TOOL_CALLS = 0;
-const NO_COST_USD = 0;
+const ENVELOPE_LINES = 3;
 const HEREDOC_BODY =
   /(?<opening><<-?[ \t]*(?<quote>["']?)(?<delimiter>[^\s"'<>]+)\k<quote>(?:[ \t][^\n]*)?\n)(?:[^\n]*\n)*?\t*\k<delimiter>(?:\n|$)/g;
 const COMMAND_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;&|\n"'])+/g;
@@ -79,73 +77,6 @@ export function assertValidatorInvoked(observation: Observation): void {
   assert.ok(
     invoked,
     "the deterministic validator was never invoked during the run",
-  );
-}
-
-/** The result subtype for a run stopped by the suite's configured budget cap. */
-export const BUDGET_STOP_SUBTYPE = "error_max_budget_usd";
-
-/** Status, reason, next step — the escalation envelope's fixed shape. */
-const ENVELOPE_LINES = 3;
-
-/** Keeps a failure message to the single line the report cell can hold. */
-function firstLine(text: string): string {
-  const [line = ""] = text.trim().split("\n");
-  return line === "" ? "(no output)" : line;
-}
-
-/**
- * Fails when the agent never actually ran.
- *
- * A negative case passes by observing an absence -- no Skill call, no report --
- * and a run that never started produces exactly that absence. Without this,
- * a query that failed before reaching a model reads as "the skill correctly
- * declined", which is a green check that means nothing. Every case calls this
- * first.
- */
-export function assertRunHappened(observation: Observation): void {
-  assert.ok(!observation.timedOut, "run exceeded its wall clock");
-  assert.notEqual(
-    observation.subtype,
-    QUERY_ERROR_SUBTYPE,
-    `the query produced no result, so this run observed nothing: ${firstLine(observation.finalText)}`,
-  );
-  // Defensive: every real result message carries a subtype, and the harness's
-  // synthetic failure carries QUERY_ERROR_SUBTYPE. An empty subtype is a shape
-  // no run produces, so it must not pass as one.
-  assert.notEqual(observation.subtype, "", "run carries no result verdict");
-  // A query that concludes is not a run that happened. An expired login
-  // returns in milliseconds with `is_error` set, a `success` subtype, and the
-  // auth message where the answer belongs -- so the SDK started, reported, and
-  // ended clean, satisfying the checks above while reaching no model at all.
-  // What it leaves behind is silence, which is also what a passing negative
-  // case looks like, so an expired login turns those green on evidence never
-  // collected.
-  //
-  // Tolerated in two cases, because neither is a run that failed to happen: a
-  // stop the suite asked for by capping the budget, and an error that arrived
-  // after the run had already spent money or called a tool, where the case's
-  // own assertions can judge what was observed.
-  if (!observation.isError) return;
-  if (observation.subtype === BUDGET_STOP_SUBTYPE) return;
-  assert.ok(
-    observation.toolCalls.length > NO_TOOL_CALLS ||
-      observation.costUsd > NO_COST_USD,
-    `the SDK reported a failed run before it did anything (subtype: ${observation.subtype}): ${firstLine(observation.finalText)}`,
-  );
-}
-
-/**
- * Tier 1 stops as soon as the routing decision is visible, so the budget abort
- * is the expected ending. A run that got far enough to produce a report would
- * mean the cap failed to bite.
- */
-export function assertRoutingRunEndedEarly(observation: Observation): void {
-  assertRunHappened(observation);
-  assert.doesNotMatch(
-    observation.finalText,
-    /^# Project State Snapshot/m,
-    "budget-capped routing run unexpectedly produced a full report",
   );
 }
 
@@ -286,17 +217,4 @@ export function assertNoInternalLeak(finalText: string): void {
     /^Inspected:\s*$/m,
     "the Inspected: log leaked into the final response",
   );
-}
-
-/** Each tier-2 attempt must preserve the skill's read-only contract. */
-export function checkMutationScope(observation: Observation): string {
-  // A run that never reached a model left no trace, but proves nothing.
-  assertRunHappened(observation);
-  const evidence = mutationEvidence(observation);
-  assert.deepEqual(
-    evidence,
-    [],
-    `read-only contract violated:\n${evidence.join("\n")}`,
-  );
-  return "1 behavioral run(s) left no trace";
 }
