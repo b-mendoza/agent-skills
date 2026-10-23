@@ -1,0 +1,340 @@
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+
+import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
+import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import {
+  assertFileAbsent,
+  assertFileExists,
+  assertNoMutation,
+  assertRunHappened,
+  checkNegativeRouting,
+  checkPositiveRouting,
+} from "#/cases/shared-checks.ts";
+import type { Observation, ToolCall } from "#/observation/agent-query.ts";
+import { judgeLive } from "#/observation/judge.ts";
+import { mutationEvidence } from "#/observation/mutation-evidence.ts";
+
+export const SKILL = "planning-codebase-restructuring";
+export const ARTIFACT_PATH = "restructuring-plan.md";
+export const FIXTURE_ROOT_PATH = ".git/eval-fixture-root";
+export const STRUCTURE_FILES = {
+  "package.json": `${JSON.stringify({ name: "orders-monolith", private: true, type: "module", scripts: { test: "node --test tests/order.test.mjs" } })}\n`,
+  "src/controllers/order.mjs": `import { placeOrder } from "../services/order.mjs";
+export const checkout = (request) => placeOrder(request.sku, request.price);
+`,
+  "src/services/order.mjs": `import { saveOrder } from "../repositories/store.mjs";
+import { scheduleShipment } from "./shipping.mjs";
+export function placeOrder(sku, price) {
+  const order = saveOrder({ sku, total: price + 5, shipment: "pending" });
+  scheduleShipment(order.id);
+  return order;
+}
+`,
+  "src/services/shipping.mjs": `import { findOrder } from "../repositories/store.mjs";
+export function scheduleShipment(id) { findOrder(id).shipment = "scheduled"; }
+`,
+  "src/repositories/store.mjs": `const orders = [];
+export function saveOrder(order) { order.id = orders.length + 1; orders.push(order); return order; }
+export function findOrder(id) { return orders.find((order) => order.id === id); }
+`,
+  "tests/order.test.mjs": `import assert from "node:assert/strict";
+import test from "node:test";
+import { checkout } from "../src/controllers/order.mjs";
+test("checkout persists a total and schedules shipment", () => {
+  const order = checkout({ sku: "book", price: 20 });
+  assert.equal(order.total, 25);
+  assert.equal(order.shipment, "scheduled");
+});
+`,
+} as const;
+
+export function seedLayeredProject({ repoPath }: SeedContext): void {
+  // Bind absolute write-tool paths to this fixture, not any same-named file.
+  writeFileSync(
+    join(repoPath, FIXTURE_ROOT_PATH),
+    `${repoPath}\n${realpathSync(repoPath)}`,
+  );
+  for (const [path, content] of Object.entries(STRUCTURE_FILES)) {
+    mkdirSync(dirname(join(repoPath, path)), { recursive: true });
+    writeFileSync(join(repoPath, path), content);
+  }
+  execFileSync("git", ["add", "--", ...Object.keys(STRUCTURE_FILES)], {
+    cwd: repoPath,
+  });
+  execFileSync(
+    "git",
+    ["commit", "-qm", "seed layered order and shipping project"],
+    { cwd: repoPath },
+  );
+}
+
+export const REPORT_SECTIONS = [
+  "Preflight summary",
+  "Current architecture map",
+  "Domain model observations",
+  "DDD alignment gaps",
+  "Screaming Architecture folder proposal",
+  "Complexity reduction opportunities",
+  "Reference assessment or limitation",
+  "Migration strategy",
+  "Validation plan",
+  "Implementation handoff",
+  "Document references consulted",
+  "Risks, assumptions, blockers, open questions, and security notes",
+] as const;
+
+function reportWrite(call: ToolCall, repoPaths: readonly string[]): boolean {
+  if (!["Write", "Edit"].includes(call.name)) return false;
+  const path = call.input["file_path"];
+  return (
+    typeof path === "string" &&
+    repoPaths.some(
+      (repoPath) => resolve(repoPath, path) === join(repoPath, ARTIFACT_PATH),
+    )
+  );
+}
+
+const EXECUTION_PATTERNS = [
+  /^(?:npm|pnpm|yarn)\s+(?:test|install|add|build)\b/,
+  /^(?:npm|pnpm|yarn)\s+run\s+(?:test|build|lint)\b/,
+  /^npx\s+(?:vitest|jest|prettier|eslint)\b/,
+  /^node\s+--test\b/,
+];
+
+function forbiddenExecution(call: ToolCall): boolean {
+  if (call.name !== "Bash") return false;
+  const { command } = call.input;
+  if (typeof command !== "string") return false;
+  return command
+    .split(/&&|\|\||[;\n]/)
+    .some((part) =>
+      EXECUTION_PATTERNS.some((pattern) => pattern.test(part.trimStart())),
+    );
+}
+
+function checkPlanningOnly(observation: Observation): void {
+  assertRunHappened(observation);
+  assert.deepEqual(
+    observation.gitStatusBefore,
+    { kind: "worktree", entries: "" },
+    "planning fixture must start clean",
+  );
+  assert.deepEqual(
+    observation.gitStatusAfter,
+    { kind: "worktree", entries: `?? ${ARTIFACT_PATH}` },
+    "only the requested report may change git status",
+  );
+  for (const [path, content] of Object.entries(STRUCTURE_FILES)) {
+    assertFileExists(observation, path);
+    assert.equal(
+      observation.repoFiles?.[path],
+      content,
+      `codebase was changed: ${path}`,
+    );
+  }
+  assertFileExists(observation, FIXTURE_ROOT_PATH);
+  const roots = observation.repoFiles?.[FIXTURE_ROOT_PATH];
+  assert.ok(typeof roots === "string", "missing fixture root binding");
+  const repoPaths = roots.split("\n");
+  const unexpected = mutationEvidence({
+    ...observation,
+    gitStatusAfter: observation.gitStatusBefore,
+    toolCalls: observation.toolCalls.filter(
+      (call) => !reportWrite(call, repoPaths),
+    ),
+  });
+  assert.deepEqual(
+    unexpected,
+    [],
+    "observed write outside the report or mutating git command",
+  );
+  // Lexical evidence only; filesystem snapshots and git checks cover code changes separately.
+  assert.deepEqual(
+    observation.toolCalls.filter(forbiddenExecution),
+    [],
+    "planning must not execute tests, builds, installs, or formatters",
+  );
+}
+
+const behavioralDefaults = {
+  skill: SKILL,
+  tier: BEHAVIORAL_TIER,
+  fixture: "clean",
+  seed: seedLayeredProject,
+  snapshotPaths: [
+    ...Object.keys(STRUCTURE_FILES),
+    ARTIFACT_PATH,
+    FIXTURE_ROOT_PATH,
+  ],
+  budgetUsd: 2.0,
+  wallClockMs: 600_000,
+} as const;
+
+export const cases = [
+  {
+    ...routingDefaults,
+    id: `${SKILL}/trigger-positive`,
+    skill: SKILL,
+    intent: "Evidence-backed restructuring planning invokes this skill",
+    prompt: () =>
+      "Plan how to reorganize this repo so orders and shipping ownership are clear instead of hiding under controllers, services, and repositories. Inspect the current architecture, but do not move or refactor files.",
+    check: (observation) => checkPositiveRouting(observation, SKILL),
+  },
+  {
+    ...routingDefaults,
+    id: `${SKILL}/trigger-negative-refactor`,
+    skill: SKILL,
+    extraSkills: ["refactoring-code"],
+    // Sibling boundary: refactoring-code owns approved behavior-preserving implementation.
+    intent:
+      "An approved, bounded implementation request does not invoke planning",
+    prompt: () =>
+      "Refactor the duplicated calculation in src/services/order.mjs into a private helper now. The exact scope is approved; preserve behavior and public exports. I need the implementation, not an architecture plan.",
+    check: (observation) => checkNegativeRouting(observation, SKILL),
+  },
+  {
+    ...behavioralDefaults,
+    id: `${SKILL}/persist-local-plan`,
+    mutationPolicy: "allowed",
+    intent:
+      "A local-only plan is persisted at the requested path while source and tests remain untouched",
+    prompt: () =>
+      `Use ${SKILL}. CODEBASE_PATH_OR_REPOSITORY_URL=.; TARGET_SCOPE=whole repo; BUSINESS_GOALS_AND_PAIN_POINTS=make order placement and shipment scheduling ownership visible, replacing technical-layer navigation; KNOWN_DOMAIN_LANGUAGE=Order, Shipment, Checkout; CONSTRAINTS=one small process, no public API changes, no new dependencies, at most two migration PRs; SUCCESS_CRITERIA=capability ownership and safe incremental migration are explicit; ARTIFACT_PATH=${ARTIFACT_PATH}. No external reference is supplied or required. Do not run tests or implement the plan.`,
+    check: (observation) => {
+      checkPlanningOnly(observation);
+      assertFileExists(observation, ARTIFACT_PATH);
+      const report = observation.repoFiles?.[ARTIFACT_PATH];
+      assert.ok(typeof report === "string");
+      let previousSection = -1;
+      for (const section of REPORT_SECTIONS) {
+        const position = report.toLowerCase().indexOf(section.toLowerCase());
+        assert.ok(
+          position > previousSection,
+          `missing or out-of-order report section: ${section}`,
+        );
+        previousSection = position;
+      }
+      const statuses = [
+        ...observation.finalText.matchAll(/^Status:\s*(?<status>\S+)\s*$/gm),
+      ];
+      assert.deepEqual(
+        statuses.map((match) => match.groups?.["status"]),
+        ["READY"],
+        "missing single READY terminal",
+      );
+      assert.ok(
+        observation.finalText.includes(ARTIFACT_PATH),
+        "handoff omits artifact path",
+      );
+      const combined = `${observation.finalText}\n${report}`;
+      assert.match(
+        combined,
+        /REFERENCE_ASSESSMENT:\s*SKIPPED\b/,
+        "no-reference route not recorded",
+      );
+      assert.match(
+        combined,
+        /EVIDENCE_PRECEDENCE_DECISION:\s*not-applicable\b/,
+        "missing local-evidence precedence",
+      );
+      for (const phase of [
+        "Architecture[ _-]?Map",
+        "Domain[ _-]?Analysis",
+        "Restructuring[ _-]?Plan",
+      ]) {
+        assert.match(
+          combined,
+          new RegExp(`CONTRACT_NOTE:\\s*${phase}\\s*\\|\\s*pass\\s*\\|`, "i"),
+          `missing validated ${phase} note`,
+        );
+      }
+      assert.match(combined, /PLAN_REVIEW:\s*PASS\b/, "no passed plan review");
+      return "READY; report persisted; source unchanged; local-only reviewed plan";
+    },
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.repoFiles?.[ARTIFACT_PATH] ?? "",
+        knownFacts:
+          "This is a single-process ES module app. src/controllers/order.mjs delegates to services/order.mjs. placeOrder calculates price+5, saves an order in the in-memory store, then calls scheduleShipment; services/shipping.mjs imports findOrder from the same store and mutates shipment. Existing tests verify total=25 for price=20 and shipment='scheduled'. Technical folders hide Order and Shipment capabilities. No external reference was provided. Constraints: no public API changes, no dependencies, at most two migration PRs. No code change or test execution was authorized.",
+        rubric: [
+          {
+            id: "local-grounding",
+            requirement:
+              "Architecture and domain findings trace to the actual order/shipping workflow and paths, without inventing databases, queues, microservices, or observed runtime test results.",
+          },
+          {
+            id: "bounded-migration",
+            requirement:
+              "The proposal makes domain ownership visible and gives small migration increments within two PRs, validation, stopping points and rollback, preserving public APIs and avoiding new dependencies.",
+          },
+          {
+            id: "handoff-gates",
+            requirement:
+              "Implementation actions have exact targets, rationale, benefit, risk/reversibility, validation, and a smaller or safer alternative, and are proposed rather than reported as already done.",
+          },
+        ],
+      }),
+  },
+  {
+    ...behavioralDefaults,
+    id: `${SKILL}/missing-goal`,
+    mutationPolicy: "read-only",
+    intent:
+      "Missing non-inferable scope and business goals return a resumable input request without a report",
+    prompt: () =>
+      `Use ${SKILL}. CODEBASE_PATH_OR_REPOSITORY_URL=.; ARTIFACT_PATH=${ARTIFACT_PATH}. I have not decided which scope or business problem to address. Do not infer those choices from the toy codebase. This is a headless run with no follow-up answer.`,
+    check: (observation) => {
+      assertNoMutation(observation);
+      assertFileAbsent(observation, ARTIFACT_PATH);
+      for (const [path, content] of Object.entries(STRUCTURE_FILES)) {
+        assertFileExists(observation, path);
+        assert.equal(
+          observation.repoFiles?.[path],
+          content,
+          `source changed: ${path}`,
+        );
+      }
+      const statuses = [
+        ...observation.finalText.matchAll(/^Status:\s*(?<status>\S+)\s*$/gm),
+      ];
+      assert.deepEqual(
+        statuses.map((match) => match.groups?.["status"]),
+        ["NEEDS_INPUT"],
+        "missing required input must stop with NEEDS_INPUT",
+      );
+      assert.match(
+        observation.finalText,
+        /RESUME_PACKET/,
+        "missing resumable stop packet",
+      );
+      for (const field of [
+        "phase_reached:",
+        "pending_question:",
+        "validated_summaries:",
+        "contract_notes:",
+        "counters:",
+        "review_repair_count:",
+        "per_phase_repair_flags:",
+        "decisions:",
+        "evidence_precedence_decision:",
+        "artifact_path:",
+        "clone_path:",
+        "dispatch_mode:",
+      ]) {
+        assert.ok(
+          observation.finalText.includes(field),
+          `resume packet omits ${field}`,
+        );
+      }
+      assert.match(
+        observation.finalText,
+        /\b(?:scope|goals?|pain points?)\b/i,
+        "no question about missing inputs",
+      );
+      return "NEEDS_INPUT; resume packet; no report or source mutations";
+    },
+  },
+] as const satisfies readonly EvalCase[];
