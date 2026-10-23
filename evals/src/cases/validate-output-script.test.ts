@@ -62,6 +62,13 @@ describe("validate-output.sh", () => {
 
   test.each([
     {
+      label: "an envelope with an empty Reason value",
+      mode: "envelope",
+      payload:
+        "RECENT_STATE: PATH_ERROR\nReason:\nNext step: supply a real path",
+      finding: /line 2 must be Reason:/,
+    },
+    {
       label: "an envelope with a fourth line",
       mode: "envelope",
       payload: `${GOOD_ENVELOPE}\nHope that helps!`,
