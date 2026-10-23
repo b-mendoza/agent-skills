@@ -1,16 +1,4 @@
-// Shared synthetic fixtures for the case-assertion test files. Not a test
-// file itself: it holds the observation builder and canonical
-// snapshot texts that both `cases.test.ts` and `cases-behavioral.test.ts` pin
-// against.
-
-import type { Observation, ToolCall } from "#/observation/agent-query.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
-
-export function observe(
-  overrides: Readonly<Partial<Observation>> = {},
-): Observation {
-  return createObservation({ costUsd: 0.01, durationMs: 1000, ...overrides });
-}
+import type { ToolCall } from "#/observation/agent-query.ts";
 
 /** Behavioral runs must show the deterministic validator in the tool stream. */
 export const VALIDATOR_CALL = {
