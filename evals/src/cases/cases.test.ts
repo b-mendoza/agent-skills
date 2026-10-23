@@ -1,8 +1,10 @@
 // Synthetic observations pin the checks that decide whether a paid run passed.
 import { describe, expect, test } from "vitest";
 
-import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
-import { BUDGET_STOP_SUBTYPE } from "#/cases/analyzing-recent-project-state-checks.ts";
+import {
+  BUDGET_STOP_SUBTYPE,
+  SKILL,
+} from "#/cases/analyzing-recent-project-state.ts";
 import {
   FULL_REPORT_SNAPSHOT,
   QUIET_STATE_SNAPSHOT,

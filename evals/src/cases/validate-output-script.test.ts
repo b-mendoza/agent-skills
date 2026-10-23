@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "vitest";
 
-import { runOutputValidator } from "#/cases/analyzing-recent-project-state-checks.ts";
+import { runOutputValidator } from "#/cases/analyzing-recent-project-state.ts";
 import { QUIET_STATE_SNAPSHOT } from "#/cases/case-test-support.ts";
 
 const PROJECT_PATH = fileURLToPath(new URL("../../", import.meta.url));
