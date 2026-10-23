@@ -251,6 +251,13 @@ test.each([
   "git -C --weird commit",
   'sh -c "git commit"',
   "GIT_DIR=/g git commit",
+  // Independent per-verb scans must see the invocation inside an option value.
+  'git -C "git commit" branch --list',
+  "git checkout-index",
+  "git prune-packed",
+  ...["&&", "||", ";", "|", "\n"].map(
+    (separator) => `git branch new ${separator} git branch --list`,
+  ),
 ])("`%s` supplies mutation evidence", (command) => {
   expect(
     mutationEvidence(
@@ -277,7 +284,78 @@ test.each([
   "git -C /repo log --stat",
   "git --no-pager log commit",
   "git merge-base HEAD origin/main",
+  "git merge-base-extra",
+  "git committing",
+  "git branch new --list",
+  "git config --list user.name x",
+  "git branch new & git branch --list",
+  "git branch new\rgit branch --list",
 ])("`%s` supplies no mutation evidence", (command) => {
+  expect(
+    mutationEvidence(
+      createObservation({ toolCalls: [{ name: "Bash", input: { command } }] }),
+    ),
+  ).toStrictEqual([]);
+});
+
+// Every fixed marker remains read-only at positional and equals boundaries,
+// even alongside write-looking arguments. This is lexical policy, not shell parsing.
+test.each(
+  [
+    {
+      verb: "branch",
+      markers: [
+        "--list",
+        "-l",
+        "--show-current",
+        "-a",
+        "-r",
+        "-v",
+        "-vv",
+        "--all",
+        "--remotes",
+        "--contains",
+        "--merged",
+        "--no-merged",
+        "--points-at",
+        "--format",
+        "--sort",
+      ],
+    },
+    {
+      verb: "config",
+      markers: ["--get", "--get-all", "--get-regexp", "--list", "-l"],
+    },
+    {
+      verb: "tag",
+      markers: [
+        "--list",
+        "-l",
+        "-n",
+        "--contains",
+        "--points-at",
+        "--merged",
+        "--no-merged",
+        "--format",
+        "--sort",
+      ],
+    },
+    { verb: "stash", markers: ["list", "show"] },
+    { verb: "worktree", markers: ["list"] },
+    { verb: "submodule", markers: ["status", "summary", "foreach"] },
+    { verb: "reflog", markers: ["show"] },
+    { verb: "notes", markers: ["list", "show"] },
+    { verb: "sparse-checkout", markers: ["list"] },
+    { verb: "bisect", markers: ["log", "view", "visualize"] },
+  ].flatMap(({ verb, markers }) =>
+    markers.flatMap((marker) => [
+      `git ${verb} ${marker}`,
+      `git ${verb} ${marker} value`,
+      `git ${verb} ${marker}=value`,
+      `git ${verb} new ${marker}`,
+    ]),
+  ),
+)("marker policy remains read-only for `%s`", (command) => {
   expect(
     mutationEvidence(
       createObservation({ toolCalls: [{ name: "Bash", input: { command } }] }),
