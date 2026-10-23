@@ -43,12 +43,12 @@ export default {
       },
     ],
   },
-  tests: cases.map(({ id, tier }) => ({
+  tests: cases.map(({ id, skill, tier, mutationPolicy }) => ({
     description: id,
     vars: { caseId: id },
-    metadata: { tier },
+    metadata: { tier, skill },
     assert:
-      tier === BEHAVIORAL_TIER
+      tier === BEHAVIORAL_TIER && mutationPolicy === "read-only"
         ? [
             {
               type: "javascript" as const,
