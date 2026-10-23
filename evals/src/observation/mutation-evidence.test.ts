@@ -49,30 +49,37 @@ test("a repo that is not a worktree is clean, not unreadable", () => {
 });
 
 // Failed samples once compared equal to clean worktrees, hiding mutations.
-test("an unreadable status is evidence, not silence", () => {
-  const unreadable: GitStatus = { kind: "unreadable", reason: "ENOENT" };
-  expect(
-    mutationEvidence(
-      createObservation({
-        gitStatusBefore: unreadable,
-        gitStatusAfter: unreadable,
-      }),
-    ),
-  ).toStrictEqual([
-    "git status could not be sampled before the run: ENOENT",
-    "git status could not be sampled after the run: ENOENT",
-  ]);
-});
-
-test("one unreadable sample is reported without a bogus delta", () => {
-  expect(
-    mutationEvidence(
-      createObservation({
-        gitStatusAfter: { kind: "unreadable", reason: "EACCES" },
-      }),
-    ),
-  ).toStrictEqual(["git status could not be sampled after the run: EACCES"]);
-});
+test.each([
+  {
+    label: "both unreadable samples",
+    before: { kind: "unreadable", reason: "ENOENT" },
+    after: { kind: "unreadable", reason: "ENOENT" },
+    expected: [
+      "git status could not be sampled before the run: ENOENT",
+      "git status could not be sampled after the run: ENOENT",
+    ],
+  },
+  {
+    label: "one unreadable sample",
+    before: { kind: "worktree", entries: "" },
+    after: { kind: "unreadable", reason: "EACCES" },
+    expected: ["git status could not be sampled after the run: EACCES"],
+  },
+] satisfies Array<{
+  label: string;
+  before: GitStatus;
+  after: GitStatus;
+  expected: string[];
+}>)(
+  "$label is reported without a bogus delta",
+  ({ before, after, expected }) => {
+    expect(
+      mutationEvidence(
+        createObservation({ gitStatusBefore: before, gitStatusAfter: after }),
+      ),
+    ).toStrictEqual(expected);
+  },
+);
 
 test("a worktree appearing where there was none is evidence", () => {
   const found = mutationEvidence(
