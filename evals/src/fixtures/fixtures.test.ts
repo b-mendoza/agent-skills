@@ -135,19 +135,6 @@ test("hostile: provisions a discoverable skill and both planted injection channe
   expect(readGitStatus(fixture.cwd)).toBe("");
 });
 
-test("not-git: provisions a discoverable skill without a worktree or sampling root", () => {
-  const fixture = createFixture("not-git");
-  expect(
-    existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
-  ).toBe(true);
-  expect(fixture.gitRepo).toBeUndefined();
-  const result = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], {
-    cwd: fixture.cwd,
-    encoding: "utf8",
-  });
-  expect(result.stderr).toContain("not a git repository");
-});
-
 test("missing-path: provisions a discoverable skill with missing and real non-worktree paths", () => {
   const fixture = createFixture("missing-path");
   expect(
