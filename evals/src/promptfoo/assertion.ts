@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 import type { GradingResult } from "promptfoo";
 
-import { checkMutationScope } from "#/cases/analyzing-recent-project-state-checks.ts";
+import { checkMutationScope } from "#/cases/shared-checks.ts";
 
 import { getCase, metadataSchema } from "./observation.ts";
 
