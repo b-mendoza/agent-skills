@@ -27,6 +27,9 @@ export const observationSchema = Schema.Struct({
   costUsd: Schema.Number,
   durationMs: Schema.Number,
   timedOut: Schema.Boolean,
+  repoFiles: Schema.optional(
+    Schema.Record(Schema.String, Schema.NullOr(Schema.String)),
+  ),
 });
 export type Observation = {
   -readonly [Key in keyof typeof observationSchema.Type]: (typeof observationSchema.Type)[Key];
