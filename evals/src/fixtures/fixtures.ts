@@ -143,37 +143,39 @@ function initializeGitFixtureRepository(
 export function makeFixture(kind: FixtureKind, skill: string): Fixture {
   const usesGit = kind !== "not-git";
   const fixtureRoot = mkdtempSync(join(tmpdir(), FIXTURE_ROOT_PREFIX));
-  const repositoryPath = join(fixtureRoot, "repo");
-  const notGitPath = join(fixtureRoot, "not-a-repo");
+  try {
+    const repositoryPath = join(fixtureRoot, "repo");
+    const notGitPath = join(fixtureRoot, "not-a-repo");
 
-  mkdirSync(repositoryPath, { recursive: true });
-  mkdirSync(notGitPath, { recursive: true });
-  writeFileSync(join(notGitPath, "notes.txt"), "not a worktree\n");
+    mkdirSync(repositoryPath, { recursive: true });
+    mkdirSync(notGitPath, { recursive: true });
+    writeFileSync(join(notGitPath, "notes.txt"), "not a worktree\n");
 
-  if (usesGit) {
-    initializeGitFixtureRepository(repositoryPath, kind);
+    if (usesGit) {
+      initializeGitFixtureRepository(repositoryPath, kind);
+      appendFileSync(
+        join(repositoryPath, ".git", "info", "exclude"),
+        "\n.claude/\n",
+      );
+    }
+
+    const skillsPath = join(repositoryPath, ".claude", "skills");
+    const skillSourcePath = join(SKILLS_DIRECTORY_PATH, skill);
+    const skillDestinationPath = join(skillsPath, skill);
+    mkdirSync(skillsPath, { recursive: true });
+    cpSync(skillSourcePath, skillDestinationPath, { recursive: true });
+
+    return {
+      cwd: repositoryPath,
+      gitRepo: usesGit ? repositoryPath : undefined,
+      missingPath: join(fixtureRoot, MISSING_PATH_NAME),
+      notGitPath,
+      cleanup: () => {
+        rmSync(fixtureRoot, { recursive: true, force: true });
+      },
+    };
+  } catch (error) {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+    throw error;
   }
-
-  const skillsPath = join(repositoryPath, ".claude", "skills");
-  const skillSourcePath = join(SKILLS_DIRECTORY_PATH, skill);
-  const skillDestinationPath = join(skillsPath, skill);
-  mkdirSync(skillsPath, { recursive: true });
-  cpSync(skillSourcePath, skillDestinationPath, { recursive: true });
-
-  if (usesGit) {
-    appendFileSync(
-      join(repositoryPath, ".git", "info", "exclude"),
-      "\n.claude/\n",
-    );
-  }
-
-  return {
-    cwd: repositoryPath,
-    gitRepo: usesGit ? repositoryPath : undefined,
-    missingPath: join(fixtureRoot, MISSING_PATH_NAME),
-    notGitPath,
-    cleanup: () => {
-      rmSync(fixtureRoot, { recursive: true, force: true });
-    },
-  };
 }

@@ -3,6 +3,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   realpathSync,
   rmSync,
@@ -11,7 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, sep } from "node:path";
 
-import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import type { Fixture, FixtureKind } from "#/fixtures/fixtures.ts";
@@ -184,6 +185,18 @@ test("two fixtures isolate file changes", () => {
     "only the first fixture changed\n",
   );
   expect(readFileSync(secondFile, "utf8")).toBe(originalContents);
+});
+
+test("failed provisioning of a nonexistent skill removes its temp root", () => {
+  const temporaryDirectory = mkdtempSync(join(tmpdir(), "fixture-failure-"));
+  try {
+    vi.stubEnv("TMPDIR", temporaryDirectory);
+    expect(() => makeFixture("clean", "nonexistent-skill")).toThrow(/ENOENT/);
+    expect(readdirSync(temporaryDirectory)).toStrictEqual([]);
+  } finally {
+    vi.unstubAllEnvs();
+    rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
 });
 
 test("cleanup removes only the whole owned temp root and is idempotent", () => {
