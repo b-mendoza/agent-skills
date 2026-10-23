@@ -76,6 +76,13 @@ describe("validate-output.sh", () => {
       finding: /line 1 must be RECENT_STATE:/,
     },
     {
+      label: "an envelope with swapped Reason and Next step lines",
+      mode: "envelope",
+      payload:
+        "RECENT_STATE: PATH_ERROR\nNext step: supply a real path\nReason: missing",
+      finding: /line 2 must be Reason:/,
+    },
+    {
       label: "an envelope with a fourth line",
       mode: "envelope",
       payload: `${GOOD_ENVELOPE}\nHope that helps!`,
