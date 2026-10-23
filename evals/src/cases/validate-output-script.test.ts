@@ -37,6 +37,12 @@ describe("validate-output.sh", () => {
     expect(runOutputValidator(mode, payload, PROJECT_PATH)).toBe("");
   });
 
+  test("throws an operational error when draft validation lacks a project path", () => {
+    expect(() => runOutputValidator("draft", GOOD_DRAFT)).toThrow(
+      /output validator could not run: validator exited with status 2 without findings/,
+    );
+  });
+
   test.each([
     {
       label: "an envelope with a fourth line",
