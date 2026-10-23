@@ -17,19 +17,18 @@ Source lives under [`src/`](../src/), grouped by capability. Tests sit beside th
 
 ## Promptfoo integration
 
-[`promptfooconfig.ts`](../promptfooconfig.ts) configures promptfoo 0.124.1 with five repeats and a default concurrency cap of 5 attempts across the queue, repeats included; `-j` overrides it. Each process has its own cap, so two default runs can have 10 attempts in flight. Promptfoo owns case filtering, repetitions, scheduling, JSON/HTML export, and saved history. The wrapper fixes the config and output paths and disables caching, sharing, and telemetry, but allows database writes. A templated `case/{{caseId}}` assertion metric gives the viewer per-case pass rates. The model appears only in the eval-level description, keeping the test dataset stable for comparisons.
+[`promptfooconfig.ts`](../promptfooconfig.ts) generates tests inline from the exported `cases`, with case IDs as descriptions and tier metadata for filtering. It configures promptfoo 0.124.1 with five repeats and a default concurrency cap of 5 attempts across the queue, repeats included; `-j` overrides it. Each process has its own cap, so two default runs can have 10 attempts in flight. Promptfoo owns case filtering, repetitions, scheduling, JSON/HTML export, and saved history. The wrapper fixes the config and output paths and disables caching, sharing, and telemetry, but allows database writes. A templated `case/{{caseId}}` assertion metric gives the viewer per-case pass rates. The model appears only in the eval-level description, keeping the test dataset stable for comparisons.
 
 | Module in `src/promptfoo/` | Responsibility                                                                                                                                                                     |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `provider.ts`              | Builds a fixture, calls `observeClaude` with the case's prompt and limits, returns output plus observation metadata and repeat index, and cleans up.                               |
 | `assertion.ts`             | Runs the mechanical case check, then an optional judge through the shared verdict functions.                                                                                       |
-| `tests.ts`                 | Generates promptfoo tests from the exported `cases`, with case IDs as descriptions and tier metadata for filtering.                                                                |
 | `observation.ts`           | Validates observation metadata and resolves case IDs.                                                                                                                              |
 | `results.ts`               | Parses promptfoo JSON, rejects provider errors, aggregates attempts into per-case results, fills NOT_RUN rows, derives mutation scope by repeat index, and maps result exit codes. |
 
 We keep our own SDK runner because promptfoo's built-in Claude provider loses tool-call metadata when the SDK throws at a budget stop. Tier-1 routing checks need those tool calls even when the budget ends the run.
 
-`provider.test.ts` covers fixtures, runner limits, cleanup, concurrency isolation, and check-before-judge ordering. `tests.test.ts` checks generated cases; `results.test.ts` checks parsing and aggregation. `integration.test.ts` runs the real promptfoo CLI with a local offline provider to verify filtering, repetitions, assertion output, JSON/HTML artifacts, and saved history without model calls.
+`provider.test.ts` covers fixtures, runner limits, cleanup, concurrency isolation, and check-before-judge ordering. `results.test.ts` checks parsing and aggregation. `integration.test.ts` runs the real promptfoo CLI with a local offline provider to verify filtering, repetitions, assertion output, JSON/HTML artifacts, and saved history without model calls.
 
 ## Fixtures
 

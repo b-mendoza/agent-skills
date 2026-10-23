@@ -69,7 +69,7 @@ test.each([
           prompts: config.prompts,
           evaluateOptions: config.evaluateOptions,
           providers: [`file://${provider}`],
-          tests: `file://${join(EVAL_ROOT, "src/promptfoo/tests.ts")}`,
+          tests: config.tests,
           defaultTest: {
             assert: [
               {

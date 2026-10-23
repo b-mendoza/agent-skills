@@ -58,7 +58,6 @@ Paths below are relative to `src/`, from `find src -name '*.test.ts'`.
 | `promptfoo/integration.test.ts`                      | Real promptfoo CLI with an offline provider: filters, repeat overrides, assertion output, JSON/HTML and history |
 | `promptfoo/provider.test.ts`                         | Runner limits, fixture isolation and cleanup, check-before-judge ordering                                       |
 | `promptfoo/results.test.ts`                          | Result grouping, skipped cases, derived mutation scope, provider errors                                         |
-| `promptfoo/tests.test.ts`                            | Case registry generation with filterable IDs and tiers                                                          |
 
 Run it before any paid run.
 
@@ -68,10 +67,10 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 
 | Path                             | Contents                                                                                                        |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `promptfooconfig.ts`             | Provider, assertion, generated tests, default repeats and concurrency                                           |
+| `promptfooconfig.ts`             | Provider, assertion, inline cases, default repeats and concurrency                                              |
 | `src/orchestration/run.ts`       | Inert-on-import entry point; spawns promptfoo, reads JSON, prints summaries and artifact paths, maps exit codes |
 | `src/orchestration/`             | Shared verdicts, run coordination, model configuration                                                          |
-| `src/promptfoo/`                 | Custom provider, assertion, test generation, observation validation, result aggregation                         |
+| `src/promptfoo/`                 | Custom provider, assertion, observation validation, result aggregation                                          |
 | `src/observation/agent-query.ts` | Runs an Agent SDK query, observes its typed messages, captures the git delta                                    |
 | `src/fixtures/fixtures.ts`       | Builds throwaway git repos with the skill installed under `.claude/skills/`                                     |
 | `src/cases/<skill>.ts`           | Canonical source of truth: every eval case and its assertions                                                   |

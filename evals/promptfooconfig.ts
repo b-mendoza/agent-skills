@@ -1,5 +1,7 @@
 import type { UnifiedConfig } from "promptfoo";
 
+import { cases } from "#/cases/analyzing-recent-project-state.ts";
+
 const configuredModel = process.env["EVAL_MODEL"];
 // Capture once: later environment changes must not change an ongoing run.
 export const evalModel =
@@ -28,5 +30,9 @@ export default {
       },
     ],
   },
-  tests: "file://src/promptfoo/tests.ts",
+  tests: cases.map(({ id, tier }) => ({
+    description: id,
+    vars: { caseId: id },
+    metadata: { tier },
+  })),
 } satisfies Partial<UnifiedConfig>;
