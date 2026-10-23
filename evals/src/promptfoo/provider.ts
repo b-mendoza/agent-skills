@@ -4,10 +4,11 @@ import type {
   ProviderResponse,
 } from "promptfoo";
 
-import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
+import type { Observation } from "#/observation/agent-query.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
 import { toText } from "#/observation/mutation-evidence.ts";
+import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 import { evalModel } from "../../promptfooconfig.ts";
 import { getCase } from "./observation.ts";
@@ -18,7 +19,11 @@ async function runCase(
   context: CallApiContextParams,
 ): Promise<ProviderResponse> {
   const evalCase = getCase(context.vars["caseId"]);
-  const fixture = makeFixture(evalCase.fixture, SKILL);
+  const fixture = makeFixture(
+    evalCase.fixture,
+    [evalCase.skill, ...(evalCase.extraSkills ?? [])],
+    evalCase.seed,
+  );
   try {
     const observation = await observeClaude({
       cwd: fixture.cwd,
@@ -30,18 +35,36 @@ async function runCase(
       budgetUsd: evalCase.budgetUsd,
       model: evalModel,
       wallClockMs: evalCase.wallClockMs,
+      pathPrefix: fixture.binPath,
     });
     return {
       output: observation.finalText,
       cost: observation.costUsd,
       metadata: {
-        observation,
+        observation: snapshotObservation(
+          observation,
+          fixture.cwd,
+          evalCase.snapshotPaths,
+        ),
         repeatIndex: context.repeatIndex ?? FIRST_REPEAT,
       },
     };
   } finally {
     fixture.cleanup();
   }
+}
+
+function snapshotObservation(
+  observation: Observation,
+  repoPath: string,
+  paths: readonly string[] | undefined,
+): Observation {
+  return paths === undefined
+    ? observation
+    : {
+        ...observation,
+        repoFiles: snapshotRepoFiles(repoPath, paths),
+      };
 }
 
 function errorResponse(error: unknown): ProviderResponse {
