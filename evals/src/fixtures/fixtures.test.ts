@@ -102,17 +102,26 @@ test("not-git: has no worktree and declares no git repo", () => {
   expect(fixture.gitRepo).toBeUndefined();
 });
 
-test("clean: has a commit and a quiet status", () => {
+test("clean: provisions a discoverable skill in a committed quiet worktree", () => {
   const fixture = createFixture("clean");
-
-  // The quiet-state case depends on this being an empty evidence window.
-  expect(readGitStatus(fixture.cwd)).toBe("");
-  // The evidence window starts after a baseline commit, not in an unborn repo.
-  expect(() => {
+  expect(
+    existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
+  ).toBe(true);
+  expect(fixture.gitRepo).toBe(fixture.cwd);
+  expect(
+    execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      cwd: fixture.cwd,
+      encoding: "utf8",
+    }).trim(),
+  ).toBe(realpathSync(fixture.cwd));
+  expect(
     execFileSync("git", ["rev-parse", "--verify", "HEAD"], {
       cwd: fixture.cwd,
-    });
-  }).not.toThrow();
+      encoding: "utf8",
+    }).trim(),
+  ).toMatch(/^[\da-f]{40}$/);
+  // The copied skill must not appear as untracked fixture noise.
+  expect(readGitStatus(fixture.cwd)).toBe("");
 });
 
 test("dirty: carries exactly the intended modified and untracked entries", () => {
