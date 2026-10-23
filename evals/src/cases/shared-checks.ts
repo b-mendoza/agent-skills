@@ -127,3 +127,39 @@ export function findBashCalls(
       new RegExp(pattern).test(toolCall.input["command"]),
   );
 }
+
+function capturedFile(observation: Observation, path: string): string | null {
+  assertRunHappened(observation);
+  const files = observation.repoFiles;
+  assert.ok(
+    files !== undefined && Object.hasOwn(files, path),
+    `file was not captured: ${path}`,
+  );
+  const content = files[path];
+  assert.ok(content !== undefined, `file was not captured: ${path}`);
+  return content;
+}
+
+/** Requires a captured regular file, including an empty file. */
+export function assertFileExists(observation: Observation, path: string): void {
+  assert.notEqual(
+    capturedFile(observation, path),
+    null,
+    `file is absent: ${path}`,
+  );
+}
+
+/** Requires a captured missing path, not an unrequested path. */
+export function assertFileAbsent(observation: Observation, path: string): void {
+  assert.equal(capturedFile(observation, path), null, `file exists: ${path}`);
+}
+
+export function assertFileMatches(
+  observation: Observation,
+  path: string,
+  pattern: RegExp,
+): void {
+  const content = capturedFile(observation, path);
+  assert.ok(content !== null, `file is absent: ${path}`);
+  assert.match(content, pattern, `file content did not match: ${path}`);
+}

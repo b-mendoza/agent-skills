@@ -1,6 +1,9 @@
-import { expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 
 import {
+  assertFileAbsent,
+  assertFileExists,
+  assertFileMatches,
   assertNoMutation,
   assertRoutingRunEndedEarly,
   assertRunHappened,
@@ -76,6 +79,48 @@ test("Bash matching ignores other tools and missing commands, including stateful
   });
   expect(findBashCalls(observation, /gh pr/g)).toStrictEqual([bash, bash]);
   expect(findBashCalls(observation, /gh issue/)).toStrictEqual([]);
+});
+
+describe("file snapshots", () => {
+  const observation = createObservation({
+    repoFiles: { "report.md": "# Result\npassed\n", "absent.txt": null },
+  });
+
+  test("existence distinguishes files, missing paths, and unrequested paths", () => {
+    expect(() => {
+      assertFileExists(observation, "report.md");
+    }).not.toThrow();
+    expect(() => {
+      assertFileExists(observation, "absent.txt");
+    }).toThrow(/absent/);
+    expect(() => {
+      assertFileExists(observation, "unrequested");
+    }).toThrow(/not captured/);
+  });
+
+  test("absence requires a captured missing path", () => {
+    expect(() => {
+      assertFileAbsent(observation, "absent.txt");
+    }).not.toThrow();
+    expect(() => {
+      assertFileAbsent(observation, "report.md");
+    }).toThrow(/exists/);
+    expect(() => {
+      assertFileAbsent(createObservation(), "absent.txt");
+    }).toThrow(/not captured/);
+  });
+
+  test("content matching rejects wrong content and absent files", () => {
+    expect(() => {
+      assertFileMatches(observation, "report.md", /^# Result/m);
+    }).not.toThrow();
+    expect(() => {
+      assertFileMatches(observation, "report.md", /failed/);
+    }).toThrow();
+    expect(() => {
+      assertFileMatches(observation, "absent.txt", /./);
+    }).toThrow(/absent/);
+  });
 });
 
 test("native mutation grading accepts a clean run and rejects writes", () => {
