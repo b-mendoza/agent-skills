@@ -245,13 +245,7 @@ const MUTATING_GIT_PATTERN = gitVerbPattern(`(?:${MUTATING_GIT.join("|")})`);
  * omitted either -- `git branch -D` and `git worktree add` are real mutations.
  * So the verb is evidence unless its arguments put it in read-only form.
  */
-const DUAL_MODE_GIT: ReadonlyArray<{
-  verb: string;
-  /** Subcommands and flags whose presence makes the verb read-only. */
-  readOnly: readonly string[];
-  /** Whether the verb with no arguments writes. `git stash` is `stash push`. */
-  bareWrites: boolean;
-}> = [
+const DUAL_MODE_GIT = [
   {
     verb: "branch",
     readOnly: [
@@ -311,12 +305,12 @@ const DUAL_MODE_GIT: ReadonlyArray<{
   { verb: "notes", readOnly: ["list", "show"], bareWrites: false },
   { verb: "sparse-checkout", readOnly: ["list"], bareWrites: false },
   { verb: "bisect", readOnly: ["log", "view", "visualize"], bareWrites: false },
-];
-
-/** Escapes a literal so it can sit inside a constructed pattern. */
-function escapeRegExp(literal: string): string {
-  return literal.replace(/[.*+?^${}()|[\]\\-]/g, String.raw`\$&`);
-}
+].map(({ readOnly, ...rule }) => ({
+  ...rule,
+  readOnly: new RegExp(
+    String.raw`(?:^|\s)(?:${readOnly.join("|")})(?:$|[\s=])`,
+  ),
+}));
 
 const FIRST_SHELL_COMMAND_SEGMENT_COUNT = 1;
 const FULL_MATCH_INDEX = 0;
@@ -334,11 +328,7 @@ function isMutatingGitCommand(command: string): boolean {
         .split(/&&|\|\||[;|\n]/, FIRST_SHELL_COMMAND_SEGMENT_COUNT);
       const args = segment.trim();
       if (args === "") return bareWrites;
-      return !readOnly.some((marker) =>
-        new RegExp(String.raw`(?:^|\s)${escapeRegExp(marker)}(?:$|[\s=])`).test(
-          args,
-        ),
-      );
+      return !readOnly.test(args);
     }),
   );
 }
