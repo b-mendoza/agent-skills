@@ -1,7 +1,7 @@
 import { promisify } from "node:util";
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import { Schema } from "effect";
+import { Predicate, Schema } from "effect";
 
 import {
   gitStatusSchema,
@@ -75,10 +75,6 @@ const decodeFailure = Schema.decodeUnknownSync(
   Schema.Struct({ errors: Schema.Array(Schema.String) }),
 );
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function assistantToolCalls(message: unknown): ToolCall[] {
   const calls: ToolCall[] = [];
   for (const block of decodeAssistant(message).message.content) {
@@ -86,7 +82,7 @@ function assistantToolCalls(message: unknown): ToolCall[] {
     const tool = decodeTool(block);
     calls.push({
       name: tool.name,
-      input: isRecord(tool.input) ? { ...tool.input } : {},
+      input: Predicate.isObject(tool.input) ? { ...tool.input } : {},
     });
   }
   return calls;
@@ -115,7 +111,7 @@ function normalizeStreamMessage(
   message: unknown,
   observedToolCalls: ToolCall[],
 ): ResultVerdict | null {
-  if (!isRecord(message)) return null;
+  if (!Predicate.isObject(message)) return null;
   switch (message["type"]) {
     case "assistant":
       observedToolCalls.push(...assistantToolCalls(message));

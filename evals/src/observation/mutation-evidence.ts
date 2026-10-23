@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 
-import { Schema } from "effect";
+import { Predicate, Schema } from "effect";
 
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { isMutatingGitCommand } from "#/observation/git-command-evidence.ts";
@@ -28,10 +28,6 @@ function describeGitStatus(
   return status.kind === "worktree"
     ? JSON.stringify(status.entries)
     : "(not a worktree)";
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function describeGitFailure(
@@ -71,7 +67,7 @@ export function sampleGitStatus(repo: string): GitStatus {
     });
     return { kind: "worktree", entries: output.trim() };
   } catch (error) {
-    return describeGitFailure(error, isRecord(error) ? error : {});
+    return describeGitFailure(error, Predicate.isObject(error) ? error : {});
   }
 }
 
