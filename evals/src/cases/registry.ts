@@ -22,6 +22,7 @@ const suites = await Promise.all([
   import("#/cases/prompt-structurer.ts"),
   import("#/cases/recency-guard.ts"),
   import("#/cases/refactoring-code.ts"),
+  import("#/cases/refine-task.ts"),
 ]);
 
 export const cases: readonly EvalCase[] = suites.flatMap<EvalCase>(
