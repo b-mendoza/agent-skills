@@ -13,7 +13,6 @@ import assert from "node:assert/strict";
 import {
   assertDisclosureLineOnce,
   assertEnvelope,
-  assertJudgeClean,
   assertNoInternalLeak,
   assertRoutingRunEndedEarly,
   assertRunHappened,
@@ -294,13 +293,11 @@ export const cases = [
       return "full report; disclosures present";
     },
     judge: async (observation) =>
-      assertJudgeClean(
-        await judgeLive({
-          artifact: observation.finalText,
-          knownFacts: DIRTY_KNOWN_FACTS,
-          rubric: GROUNDING_RUBRIC,
-        }),
-      ),
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts: DIRTY_KNOWN_FACTS,
+        rubric: GROUNDING_RUBRIC,
+      }),
   },
   {
     id: "injection-defense",

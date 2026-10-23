@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 
 import type { Observation } from "#/observation/agent-query.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
-import type { JudgeOutcome } from "#/observation/judge.ts";
 import { mutationEvidence } from "#/observation/mutation-evidence.ts";
 
 // The skill's own deterministic validator is the normative shape definition;
@@ -269,33 +268,6 @@ export function assertNoInternalLeak(finalText: string): void {
     /^Inspected:\s*$/m,
     "the Inspected: log leaked into the final response",
   );
-}
-
-// --- Judge outcome -> assertion ------------------------------------------
-
-/**
- * Fails on any cited violation; uncited complaints are reported in the
- * observed string but never fail, since their quotes did not survive
- * verification against the artifact.
- */
-const QUOTE_PREVIEW_START = 0;
-const QUOTE_PREVIEW_CHARS = 60;
-const NO_UNCITED_COMPLAINTS = 0;
-
-export function assertJudgeClean(outcome: JudgeOutcome): string {
-  const [firstViolation] = outcome.citedViolations;
-  if (firstViolation !== undefined) {
-    const quotePreview = firstViolation.quote.slice(
-      QUOTE_PREVIEW_START,
-      QUOTE_PREVIEW_CHARS,
-    );
-    assert.fail(
-      `judge: ${firstViolation.itemId} violated -- ${firstViolation.reason} (quote: ${quotePreview})`,
-    );
-  }
-  return outcome.uncitedComplaints.length === NO_UNCITED_COMPLAINTS
-    ? "judge: clean"
-    : `judge: clean (${outcome.uncitedComplaints.length} uncited note(s) ignored)`;
 }
 
 /** Each tier-2 attempt must preserve the skill's read-only contract. */

@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 
+import type { query } from "@anthropic-ai/claude-agent-sdk";
 import type { CallApiContextParams } from "promptfoo";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
@@ -9,7 +10,7 @@ import {
   VALIDATOR_CALL,
 } from "#/cases/case-test-support.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
-import { judgeLive } from "#/observation/judge.ts";
+import { scripted } from "#/observation/observation-test-support.ts";
 
 import { evalModel } from "../../promptfooconfig.ts";
 import { grade } from "./assertion.ts";
@@ -19,10 +20,17 @@ vi.mock(import("#/observation/agent-query.ts"), async (importOriginal) => ({
   ...(await importOriginal()),
   observeClaude: vi.fn(),
 }));
-vi.mock(import("#/observation/judge.ts"), async (importOriginal) => ({
-  ...(await importOriginal()),
-  judgeLive: vi.fn(),
+const sdk = vi.hoisted(() => ({
+  query:
+    vi.fn<(request: Parameters<typeof query>[0]) => AsyncIterable<unknown>>(),
 }));
+vi.mock(
+  import("@anthropic-ai/claude-agent-sdk"),
+  async (importOriginal): Promise<Record<string, unknown>> => ({
+    ...(await importOriginal()),
+    query: sdk.query,
+  }),
+);
 
 const FIRST_REPEAT = 0;
 const SECOND_REPEAT = 1;
@@ -56,9 +64,11 @@ beforeEach(() => {
       fixturePath = options.cwd;
       return Promise.resolve(observation);
     });
-  vi.mocked(judgeLive)
+  sdk.query
     .mockReset()
-    .mockResolvedValue({ citedViolations: [], uncitedComplaints: [] });
+    .mockImplementation(() =>
+      scripted({ type: "result", result: '{"violations": []}' }),
+    );
 });
 
 describe("eval provider", () => {
@@ -67,6 +77,7 @@ describe("eval provider", () => {
     expect(result.error).toBeUndefined();
     expect(result.output).toBe("budget reached");
     expect(result.cost).toBeCloseTo(BUDGET_COST);
+    expect(sdk.query).not.toHaveBeenCalled();
     expect(vi.mocked(observeClaude).mock.lastCall).toEqual([
       expect.objectContaining({
         cwd: fixturePath,
@@ -137,7 +148,7 @@ describe("eval assertion", () => {
         metadata: invalid.metadata,
       }),
     ).toMatchObject({ pass: false });
-    expect(judgeLive).not.toHaveBeenCalled();
+    expect(sdk.query).not.toHaveBeenCalled();
 
     observation.finalText = FULL_REPORT_SNAPSHOT;
     const result = await new EvalProvider().callApi("", snapshotContext);
@@ -156,18 +167,47 @@ describe("eval assertion", () => {
         metadata: result.metadata,
       }),
     ).toMatchObject({ pass: true, score: 1 });
-    expect(judgeLive).toHaveBeenCalledWith(
-      expect.objectContaining({ artifact: FULL_REPORT_SNAPSHOT }),
-    );
+    const [judgeCall] = sdk.query.mock.lastCall ?? [];
+    expect(judgeCall?.prompt).toContain(FULL_REPORT_SNAPSHOT);
     expect(existsSync(fixturePath)).toBe(false);
 
-    vi.mocked(judgeLive).mockRejectedValue(new Error("judge unavailable"));
+    sdk.query.mockImplementation(() => {
+      throw new Error("judge unavailable");
+    });
     expect(
       await grade(result.output, {
         vars: snapshotContext.vars,
         metadata: result.metadata,
       }),
     ).toEqual({ pass: false, score: 0, reason: "judge unavailable" });
+  });
+  test.each([
+    { quote: "Two commits", pass: false, reason: "judge: grounding violated" },
+    { quote: "absent text", pass: true, reason: "1 uncited note(s) ignored" },
+  ])("grades a live judge citation: $pass", async ({ quote, pass, reason }) => {
+    observation = observe({
+      finalText: FULL_REPORT_SNAPSHOT,
+      toolCalls: [VALIDATOR_CALL],
+    });
+    sdk.query.mockImplementation(() =>
+      scripted({
+        type: "result",
+        result: JSON.stringify({
+          violations: [
+            { itemId: "grounding", quote, reason: "unverified claim" },
+          ],
+        }),
+      }),
+    );
+    const snapshotContext = { ...context, vars: { caseId: "snapshot-dirty" } };
+    const result = await new EvalProvider().callApi("", snapshotContext);
+    const graded = await grade(result.output, {
+      vars: snapshotContext.vars,
+      metadata: result.metadata,
+    });
+    expect(graded.pass).toBe(pass);
+    expect(graded.reason).toContain(reason);
+    expect(result.cost).toBe(observation.costUsd);
   });
 });
 

@@ -48,12 +48,12 @@ Paths below are relative to `src/`, from `find src -name '*.test.ts'`.
 | `observation/agent-query-lifecycle.test.ts`          | Query failures, iterator cleanup, deadlines, and abort behavior              |
 | `observation/agent-query.test.ts`                    | SDK policy, stream validation, tool calls, results, and git sampling         |
 | `observation/git-status.test.ts`                     | Clean, not-a-repo, and unreadable sample classification                      |
-| `observation/judge.test.ts`                          | Judge citation validation and unparseable-reply failure                      |
+| `observation/judge.test.ts`                          | Citation validation, live pass/fail outcomes, query policy and failures      |
 | `observation/mutation-evidence-git-commands.test.ts` | Mutating git commands and read-only lookalikes                               |
 | `observation/mutation-evidence.test.ts`              | The read-only detector behind `mutation-scope`                               |
 | `promptfoo/assertion.test.ts`                        | Check normalization, judge failures, and native mutation assertion           |
 | `promptfoo/integration.test.ts`                      | Offline native CLI: filters, repeats, metrics, exits, JSON/HTML, and history |
-| `promptfoo/provider.test.ts`                         | Runner limits, fixture isolation and cleanup, check-before-judge ordering    |
+| `promptfoo/provider.test.ts`                         | Runner limits, fixture isolation and cleanup, live judge wiring and ordering |
 
 Run it before any paid run.
 

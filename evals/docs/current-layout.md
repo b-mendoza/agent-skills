@@ -18,7 +18,7 @@ Each case has a `case/{{caseId}}` metric. Every tier-2 attempt also has a native
 
 We keep our own SDK runner because promptfoo's built-in Claude provider loses tool-call metadata when the SDK throws at a budget stop. Tier-1 routing checks need those tool calls even when the budget ends the run.
 
-`provider.test.ts` covers fixtures, runner limits, cleanup, concurrency isolation, and check-before-judge ordering. `assertion.test.ts` covers grading and failure normalization. `integration.test.ts` uses the real promptfoo CLI with a local offline provider for filters, repeats, metrics, native exit codes, JSON/HTML artifacts, and shared history.
+`provider.test.ts` covers runner limits, fixture cleanup and isolation, and live judge wiring after mechanical checks. `assertion.test.ts` covers grading and failure normalization. `integration.test.ts` uses the real promptfoo CLI with a local offline provider for filters, repeats, metrics, native exit codes, JSON/HTML artifacts, and shared history.
 
 ## Fixtures
 
@@ -31,14 +31,14 @@ We keep our own SDK runner because promptfoo's built-in Claude provider loses to
 | `agent-query.ts`              | Run options, message schemas and derived types, SDK query, normalization, deadlines, first-result settlement, iterator cleanup, and before/after git sampling. |
 | `mutation-evidence.ts`        | Git sampling and status schema, mutation evidence, and skill-invocation extraction.                                                                            |
 | `git-command-evidence.ts`     | Git command and option classification.                                                                                                                         |
-| `judge.ts`                    | Independent SDK judge query, prompt construction, response parsing, and citation validation.                                                                   |
+| `judge.ts`                    | Independent no-tools SDK query, prompt construction, reply parsing, citation validation, and live summary or cited-violation failure.                          |
 | `observation-test-support.ts` | Observation/message builders and scripted async streams for tests.                                                                                             |
 
 `agent-query.test.ts` covers stream content and query policy; `agent-query-lifecycle.test.ts` covers failures, cleanup, and deadlines. Git sampling, mutation evidence, git command classification, and judging have their own suites.
 
 ## Cases
 
-`src/cases/analyzing-recent-project-state.ts` defines the ordered registry, case contracts, and rubrics. `analyzing-recent-project-state-checks.ts` owns shared assertions. `case-test-support.ts` supplies synthetic observations and report fixtures for `cases.test.ts` and `cases-behavioral.test.ts`. `validate-output-script.test.ts` exercises the skill's shell validator.
+`src/cases/analyzing-recent-project-state.ts` defines the ordered registry, case contracts, and rubrics. `analyzing-recent-project-state-checks.ts` owns shared mechanical assertions. `case-test-support.ts` supplies synthetic observations and report fixtures for `cases.test.ts` and `cases-behavioral.test.ts`. `validate-output-script.test.ts` exercises the skill's shell validator.
 
 ## Dependencies and paths
 

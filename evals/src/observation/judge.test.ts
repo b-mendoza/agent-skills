@@ -176,13 +176,62 @@ describe("SDK judge", () => {
     await expect(liveJudgeQuery("", JUDGE_MODEL)).rejects.toThrow(/judge/);
   });
 
-  test("sends the built prompt and parses the reply", async () => {
+  test("ignores irrelevant messages and grades clean with haiku and no tools", async () => {
     sdk.query.mockImplementation(() =>
-      scripted({ type: "result", result: reply([]) }),
+      scripted(
+        null,
+        "ignored",
+        {},
+        { type: "assistant" },
+        { type: "result", result: reply([]) },
+      ),
     );
-    expect((await judgeLive(REQUEST)).citedViolations).toStrictEqual([]);
-    expect(sdk.query).toHaveBeenLastCalledWith(
-      expect.objectContaining({ prompt: buildJudgePrompt(REQUEST) }),
+    await expect(judgeLive(REQUEST)).resolves.toBe("judge: clean");
+    const [call] = sdk.query.mock.lastCall ?? [];
+    expect(call?.prompt).toBe(buildJudgePrompt(REQUEST));
+    expect(call?.options).toMatchObject({
+      model: JUDGE_MODEL,
+      maxTurns: 1,
+      allowedTools: [],
+    });
+  });
+
+  test("fails a cited violation through the live entry", async () => {
+    sdk.query.mockImplementation(() =>
+      scripted({
+        type: "result",
+        result: reply([
+          {
+            itemId: "G2",
+            quote: "The tests passed on CI.",
+            reason: "unobserved",
+          },
+        ]),
+      }),
+    );
+    await expect(judgeLive(REQUEST)).rejects.toThrow(
+      "judge: G2 violated -- unobserved (quote: The tests passed on CI.)",
+    );
+  });
+
+  test("records an uncited note without failing the live entry", async () => {
+    sdk.query.mockImplementation(() =>
+      scripted({
+        type: "result",
+        result: reply([
+          { itemId: "G2", quote: "tests were green", reason: "paraphrased" },
+        ]),
+      }),
+    );
+    await expect(judgeLive(REQUEST)).resolves.toBe(
+      "judge: clean (1 uncited note(s) ignored)",
+    );
+  });
+
+  test("fails when the query produces no result", async () => {
+    sdk.query.mockImplementation(() => scripted({ type: "assistant" }));
+    await expect(judgeLive(REQUEST)).rejects.toThrow(
+      "judge query produced no result message",
     );
   });
 

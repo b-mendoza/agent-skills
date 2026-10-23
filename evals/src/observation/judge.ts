@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { tmpdir } from "node:os";
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
@@ -180,4 +181,24 @@ export const liveJudgeQuery: JudgeQuery = async (prompt, model) => {
   throw new Error("judge query produced no result message");
 };
 
-export const judgeLive: Judge = createJudge({ judgeQuery: liveJudgeQuery });
+const QUOTE_PREVIEW_START = 0;
+const QUOTE_PREVIEW_CHARS = 60;
+const NO_UNCITED_COMPLAINTS = 0;
+
+/** Fails only on verified citations; uncited complaints remain nonfailing notes. */
+export async function judgeLive(request: JudgeRequest): Promise<string> {
+  const outcome = await createJudge({ judgeQuery: liveJudgeQuery })(request);
+  const [firstViolation] = outcome.citedViolations;
+  if (firstViolation !== undefined) {
+    const quotePreview = firstViolation.quote.slice(
+      QUOTE_PREVIEW_START,
+      QUOTE_PREVIEW_CHARS,
+    );
+    assert.fail(
+      `judge: ${firstViolation.itemId} violated -- ${firstViolation.reason} (quote: ${quotePreview})`,
+    );
+  }
+  return outcome.uncitedComplaints.length === NO_UNCITED_COMPLAINTS
+    ? "judge: clean"
+    : `judge: clean (${outcome.uncitedComplaints.length} uncited note(s) ignored)`;
+}
