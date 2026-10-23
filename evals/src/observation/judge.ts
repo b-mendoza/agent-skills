@@ -100,6 +100,24 @@ export function buildJudgePrompt(request: JudgeRequest): string {
   ].join("\n");
 }
 
+function checkViolationCitation(
+  violation: CitedViolation,
+  artifact: string,
+  rubricIds: ReadonlySet<string>,
+): { cited: boolean; knownItem: boolean; verified: boolean } {
+  const cited = violation.quote !== "" && artifact.includes(violation.quote);
+  const knownItem = rubricIds.has(violation.itemId);
+  return { cited, knownItem, verified: cited && knownItem };
+}
+
+function formatUncitedComplaint(
+  violation: CitedViolation,
+  cited: boolean,
+  knownItem: boolean,
+): string {
+  return `${violation.itemId}: ${violation.reason} (quote ${cited ? "ok" : "not found in artifact"}${knownItem ? "" : "; unknown rubric id"})`;
+}
+
 /**
  * Parses the judge's reply and validates every citation against the artifact.
  * Throws on an unparseable reply; the failure names the judge, so a broken
@@ -132,21 +150,21 @@ export function parseJudgeResponse(
   );
   const rubricIds = new Set(request.rubric.map((item) => item.id));
   const citedViolations: CitedViolation[] = [];
-  const uncitedComplaints = judgeReply.violations
-    .flatMap((violation) => {
-      const cited =
-        violation.quote !== "" && request.artifact.includes(violation.quote);
-      const knownItem = rubricIds.has(violation.itemId);
-      if (cited && knownItem) {
-        citedViolations.push(violation);
-        return [];
-      }
-      return [{ violation, cited, knownItem }];
-    })
-    .map(
-      ({ violation, cited, knownItem }) =>
-        `${violation.itemId}: ${violation.reason} (quote ${cited ? "ok" : "not found in artifact"}${knownItem ? "" : "; unknown rubric id"})`,
+  const uncitedComplaints: string[] = [];
+  for (const violation of judgeReply.violations) {
+    const { cited, knownItem, verified } = checkViolationCitation(
+      violation,
+      request.artifact,
+      rubricIds,
     );
+    if (verified) {
+      citedViolations.push(violation);
+    } else {
+      uncitedComplaints.push(
+        formatUncitedComplaint(violation, cited, knownItem),
+      );
+    }
+  }
   return { citedViolations, uncitedComplaints };
 }
 
