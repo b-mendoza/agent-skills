@@ -261,6 +261,15 @@ describe("eval assertion", () => {
   ];
 
   test.each(malformedMetadata)(
+    "grade rejects $name with a decoding error",
+    async ({ metadata }) => {
+      await expect(grade("", { vars: context.vars, metadata })).rejects.toThrow(
+        Schema.SchemaError,
+      );
+    },
+  );
+
+  test.each(malformedMetadata)(
     "mutationScope rejects $name with a decoding error",
     ({ metadata }) => {
       expect(() => mutationScope("", { vars: context.vars, metadata })).toThrow(
