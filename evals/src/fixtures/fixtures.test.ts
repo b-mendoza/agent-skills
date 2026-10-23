@@ -124,21 +124,30 @@ test("clean: provisions a discoverable skill in a committed quiet worktree", () 
   expect(readGitStatus(fixture.cwd)).toBe("");
 });
 
-test("dirty: carries exactly the intended modified and untracked entries", () => {
+test("dirty: provisions a discoverable skill with exactly the planted edits and commit", () => {
   const fixture = createFixture("dirty");
-
-  // Sorted so the assertion does not depend on git's output ordering.
+  expect(
+    existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
+  ).toBe(true);
+  expect(fixture.gitRepo).toBe(fixture.cwd);
   expect(
     readGitStatus(fixture.cwd)
       .split("\n")
       .sort((firstEntry, secondEntry) => firstEntry.localeCompare(secondEntry)),
-  ).toStrictEqual([" M a.txt", "?? c.txt"]);
-
-  const latestSubject = execFileSync("git", ["log", "-1", "--format=%s"], {
-    cwd: fixture.cwd,
-    encoding: "utf8",
-  }).trim();
-  expect(latestSubject).toBe(DIRTY_FIXTURE_FACTS.committedSubject);
+  ).toStrictEqual([
+    ` M ${DIRTY_FIXTURE_FACTS.modifiedTrackedFile}`,
+    `?? ${DIRTY_FIXTURE_FACTS.untrackedFile}`,
+  ]);
+  expect(
+    execFileSync(
+      "git",
+      ["log", "-1", "--format=%s", "--", DIRTY_FIXTURE_FACTS.committedFile],
+      {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+      },
+    ).trim(),
+  ).toBe(DIRTY_FIXTURE_FACTS.committedSubject);
 });
 
 test("hostile: plants the injection content its facts advertise", () => {
