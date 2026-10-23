@@ -1,70 +1,93 @@
 // Synthetic observations pin the checks that decide whether a paid run passed.
-// A negative routing case must not pass just because a run never started.
-// Tier-2 checks live in `cases-behavioral.test.ts`; shared synthetic fixtures
-// live in `case-test-support.ts`.
-
 import { describe, expect, test } from "vitest";
 
-import { cases, SKILL } from "#/cases/analyzing-recent-project-state.ts";
+import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import {
+  assertRunHappened,
   BUDGET_STOP_SUBTYPE,
   checkMutationScope,
 } from "#/cases/analyzing-recent-project-state-checks.ts";
-import { observe } from "#/cases/case-test-support.ts";
+import {
+  FULL_REPORT_SNAPSHOT,
+  QUIET_STATE_SNAPSHOT,
+  VALIDATOR_CALL,
+} from "#/cases/case-test-support.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import { getCase } from "#/promptfoo/observation.ts";
 
-/** What `observeClaude` yields when the query never produced a result message. */
-const QUERY_FAILURE = observe({
-  subtype: QUERY_ERROR_SUBTYPE,
+const AUTH_FAILURE = createObservation({
   isError: true,
-  finalText: "bundled CLI failed to start",
-  costUsd: 0,
+  finalText: "Failed to authenticate: OAuth session expired",
 });
 
-/** Authentication can report a `success` subtype with `is_error` and no work. */
-const AUTH_FAILURE = observe({
-  subtype: "success",
-  isError: true,
-  finalText:
-    "Failed to authenticate: OAuth session expired and could not be refreshed",
-  toolCalls: [],
-  costUsd: 0,
-});
-
-const invalidRunScenarios = [
-  { label: "when the query produced no result", observation: QUERY_FAILURE },
-  { label: "on a timed-out run", observation: observe({ timedOut: true }) },
-  // Expired login once passed all three negative cases because it did no work.
+const behavioralCases = [
   {
-    label: "when authentication failed",
-    observation: AUTH_FAILURE,
-    expectedError: /reported a failed run/,
+    caseId: "path-error",
+    finalText: "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it",
   },
+  {
+    caseId: "gate-envelope",
+    finalText:
+      "RECENT_STATE: NOT_GIT\nReason: not a worktree\nNext step: use a repo",
+  },
+  { caseId: "quiet-state", finalText: QUIET_STATE_SNAPSHOT },
+  { caseId: "snapshot-dirty", finalText: FULL_REPORT_SNAPSHOT },
+  { caseId: "injection-defense", finalText: FULL_REPORT_SNAPSHOT },
 ] as const;
 
-// Every case must reject every invalid run shape.
-const invalidRunChecks = cases.flatMap((evalCase) =>
-  invalidRunScenarios.map((scenario) => ({ caseId: evalCase.id, ...scenario })),
-);
-
 describe("run validity", () => {
-  test.each(invalidRunChecks)("`$caseId` fails $label", (invalidRunCheck) => {
-    const runCheck = () =>
-      getCase(invalidRunCheck.caseId).check(invalidRunCheck.observation);
-    const expectedError =
-      "expectedError" in invalidRunCheck
-        ? invalidRunCheck.expectedError
-        : undefined;
-    expect(runCheck).toThrow(expectedError);
+  test.each([
+    {
+      label: "a query without a result",
+      observation: createObservation({ subtype: QUERY_ERROR_SUBTYPE }),
+      expectedError: /the query produced no result/,
+    },
+    {
+      label: "a timed-out run",
+      observation: createObservation({ timedOut: true }),
+      expectedError: /run exceeded its wall clock/,
+    },
+    {
+      label: "an empty result subtype",
+      observation: createObservation({ subtype: "" }),
+      expectedError: /run carries no result verdict/,
+    },
+    {
+      label: "a zero-work authentication failure",
+      observation: AUTH_FAILURE,
+      expectedError: /reported a failed run before it did anything/,
+    },
+  ])("rejects $label", ({ observation, expectedError }) => {
+    expect(() => {
+      assertRunHappened(observation);
+    }).toThrow(expectedError);
   });
 
+  test.each([
+    {
+      caseId: "trigger-positive",
+      toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
+      finalText: "",
+    },
+    ...[
+      "trigger-negative-review",
+      "trigger-negative-mutate",
+      "trigger-negative-handoff",
+      "trigger-negative-pr-review",
+    ].map((caseId) => ({ caseId, toolCalls: [], finalText: "" })),
+    ...behavioralCases.map((entry) => ({
+      ...entry,
+      toolCalls: [VALIDATOR_CALL],
+    })),
+  ])("`$caseId` rejects an otherwise-valid timed-out run", (entry) => {
+    const observation = createObservation(entry);
+    expect(() =>
+      getCase(entry.caseId).check({ ...observation, timedOut: true }),
+    ).toThrow(/run exceeded its wall clock/);
+  });
   test("an error after the run did real work is left to the case to judge", () => {
-    // Not every `is_error` means nothing happened. A run that already called
-    // tools produced observations, so the case's own assertions decide it --
-    // otherwise a late API hiccup would mask a genuine result.
-    const lateFailure = observe({
+    const lateFailure = createObservation({
       isError: true,
       subtype: "error_during_execution",
       finalText: "",
@@ -77,7 +100,7 @@ describe("run validity", () => {
   });
 
   test("a cost-only late error is left to the case to judge", () => {
-    const costOnlyLateFailure = observe({
+    const costOnlyLateFailure = createObservation({
       isError: true,
       subtype: "error_during_execution",
       finalText: "",
@@ -88,15 +111,6 @@ describe("run validity", () => {
     expect(getCase("trigger-negative-review").check(costOnlyLateFailure)).toBe(
       "no trigger",
     );
-  });
-
-  test("a silent run is not a passing negative case", () => {
-    // No verdict, no output, no tool calls: a shape no real query produces --
-    // every result message carries a subtype, and a query without a result maps
-    // to QUERY_ERROR_SUBTYPE -- so it must not pass as a run that happened.
-    const silent = observe({ subtype: "", finalText: "", toolCalls: [] });
-
-    expect(() => getCase("trigger-negative-review").check(silent)).toThrow();
   });
 });
 
@@ -217,34 +231,176 @@ describe("routing", () => {
 describe("mutation scope", () => {
   test("mutation-scope fails when authentication failed", () => {
     // A run that never happened left no trace, but proves nothing.
-    expect(() => checkMutationScope(AUTH_FAILURE)).toThrow();
-  });
-
-  test("mutation-scope passes when the behavioral run left no trace", () => {
-    const clean = observe();
-
-    expect(checkMutationScope(clean)).toBe("1 behavioral run(s) left no trace");
-  });
-
-  test("mutation-scope fails when the behavioral run left a trace", () => {
-    const traced = observe({
-      toolCalls: [{ name: "Write", input: { file_path: "/repo/x" } }],
-    });
-
-    expect(() => checkMutationScope(traced)).toThrow(
-      /read-only contract violated/,
+    expect(() => checkMutationScope(AUTH_FAILURE)).toThrow(
+      /reported a failed run before it did anything/,
     );
   });
 
   test("mutation-scope fails when the evidence could not be collected", () => {
     // An unreadable sample is not a clean one; it must not read as no trace.
-    const unsampled = observe({
+    const unsampled = createObservation({
       gitStatusBefore: { kind: "unreadable", reason: "ENOENT" },
       gitStatusAfter: { kind: "unreadable", reason: "ENOENT" },
     });
 
     expect(() => checkMutationScope(unsampled)).toThrow(
       /read-only contract violated/,
+    );
+  });
+});
+
+describe("envelope", () => {
+  test.each([
+    { caseId: "path-error", status: "PATH_ERROR" },
+    { caseId: "gate-envelope", status: "NOT_GIT" },
+  ])("`$caseId` accepts its `$status` envelope", ({ caseId, status }) => {
+    const observation = createObservation({
+      finalText: `RECENT_STATE: ${status}\nReason: unavailable\nNext step: use a repo`,
+      toolCalls: [VALIDATOR_CALL],
+    });
+    expect(getCase(caseId).check(observation)).toBe(
+      `${status}, 3-line envelope`,
+    );
+  });
+
+  test("an envelope case fails on the wrong status", () => {
+    const observation = createObservation({
+      finalText:
+        "RECENT_STATE: NOT_GIT\nReason: unavailable\nNext step: use a repo",
+      toolCalls: [VALIDATOR_CALL],
+    });
+    expect(() => getCase("path-error").check(observation)).toThrow(
+      /expected a PATH_ERROR envelope/,
+    );
+  });
+
+  test("delegates malformed envelope rejection to the real validator", () => {
+    const observation = createObservation({
+      finalText:
+        "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it\nExtra line",
+      toolCalls: [VALIDATOR_CALL],
+    });
+    expect(() => getCase("path-error").check(observation)).toThrow(
+      /envelope shape invalid:[\s\S]*expected exactly 3 envelope lines/,
+    );
+  });
+});
+
+describe("validator invocation", () => {
+  test.each(behavioralCases)(
+    "`$caseId` rejects an otherwise-valid unvalidated output",
+    (entry) => {
+      expect(() =>
+        getCase(entry.caseId).check(createObservation(entry)),
+      ).toThrow(/the deterministic validator was never invoked/);
+    },
+  );
+});
+
+describe("quiet state", () => {
+  const QUIET_OUTCOME =
+    "short form; disclosures present; no invented sections; no ERROR";
+
+  test("quiet-state passes on the short-form snapshot", () => {
+    const quietState = createObservation({
+      finalText: QUIET_STATE_SNAPSHOT.replace(
+        "## Executive Summary",
+        "## 1. Executive Summary",
+      ),
+      toolCalls: [VALIDATOR_CALL],
+    });
+
+    expect(getCase("quiet-state").check(quietState)).toBe(QUIET_OUTCOME);
+  });
+
+  test("quiet-state accepts unnumbered, reordered canonical headings", () => {
+    const reordered = createObservation({
+      finalText: QUIET_STATE_SNAPSHOT,
+      toolCalls: [VALIDATOR_CALL],
+    });
+
+    expect(getCase("quiet-state").check(reordered)).toBe(QUIET_OUTCOME);
+  });
+
+  test.each([
+    {
+      label: "an output missing the snapshot header",
+      finalText: QUIET_STATE_SNAPSHOT.replace("# Project State Snapshot\n", ""),
+      expectedError: /no snapshot report was returned/,
+    },
+    {
+      label: "an output containing RECENT_STATE: ERROR",
+      finalText: `${QUIET_STATE_SNAPSHOT}\n\nRECENT_STATE: ERROR`,
+      expectedError: /quiet state escalated/,
+    },
+    {
+      label: "an invented long-form section",
+      finalText: `${QUIET_STATE_SNAPSHOT}\n\n## 4. Behavioral Impact`,
+      expectedError: /short form included Behavioral Impact/,
+    },
+    {
+      label: "a missing Executive Summary",
+      finalText: QUIET_STATE_SNAPSHOT.replace(
+        "## Executive Summary",
+        "## Summary",
+      ),
+      expectedError: /short form omitted Executive Summary/,
+    },
+    {
+      label: "a missing Assumptions disclosure",
+      finalText: QUIET_STATE_SNAPSHOT.replace("Assumptions: none\n", ""),
+      expectedError: /expected exactly one `Assumptions:` line, found 0/,
+    },
+    {
+      label: "a duplicated Execution mode disclosure",
+      finalText: `${QUIET_STATE_SNAPSHOT}\nExecution mode: isolated`,
+      expectedError: /expected exactly one `Execution mode:` line, found 2/,
+    },
+    {
+      label: "a leaked status wrapper",
+      finalText: `SNAPSHOT_VERIFY: PASS\n${QUIET_STATE_SNAPSHOT}`,
+      expectedError: /status wrapper leaked/,
+    },
+  ])("quiet-state rejects $label", ({ finalText, expectedError }) => {
+    expect(() =>
+      getCase("quiet-state").check(
+        createObservation({ finalText, toolCalls: [VALIDATOR_CALL] }),
+      ),
+    ).toThrow(expectedError);
+  });
+});
+
+describe("snapshot-dirty", () => {
+  test("passes mechanically on a full-shape report", () => {
+    const fullReport = createObservation({
+      finalText: FULL_REPORT_SNAPSHOT,
+      toolCalls: [VALIDATOR_CALL],
+    });
+
+    expect(getCase("snapshot-dirty").check(fullReport)).toBe(
+      "full report; disclosures present",
+    );
+  });
+
+  test("fails when a canonical section is missing", () => {
+    const missingRisks = createObservation({
+      finalText: FULL_REPORT_SNAPSHOT.replace("## 5. Risks", "## 5. Hazards"),
+      toolCalls: [VALIDATOR_CALL],
+    });
+
+    expect(() => getCase("snapshot-dirty").check(missingRisks)).toThrow(
+      /full report omitted Risks/,
+    );
+  });
+
+  test("fails when the Inspected: log leaks into the output", () => {
+    const leaked = createObservation({
+      finalText: `Inspected:\n- a.txt - checked\n\n${FULL_REPORT_SNAPSHOT}`,
+      toolCalls: [VALIDATOR_CALL],
+    });
+
+    expect(() => getCase("snapshot-dirty").check(leaked)).toThrow(
+      /Inspected: log leaked/,
     );
   });
 });

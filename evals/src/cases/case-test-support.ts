@@ -21,49 +21,18 @@ export const VALIDATOR_CALL = {
   },
 } as const satisfies ToolCall;
 
+// Canonical names matter; heading order and numbering are presentation.
 export const QUIET_STATE_SNAPSHOT = `# Project State Snapshot
-
-## 1. Executive Summary
-
-No recent changes were found in the defined evidence window.
-
-## 2. Git State
-
-The working tree is clean and the evidence window contains no recent changes.
-
-Assumptions: none
-Execution mode: isolated
-
-## 9. Ranked Next Actions
-
-- nice-to-have: Continue normal development when new work is available.
-
-## 10. Final Developer Briefing
-
-There are no recent changes to review or hand off.`;
-
-// Unnumbered, reordered headings on purpose: canonical names are the contract,
-// order and numbering are presentation.
-export const UNNUMBERED_QUIET_STATE_SNAPSHOT = `# Project State Snapshot
-
 ## Executive Summary
-
-No recent changes were found in the defined evidence window.
-
+No recent changes.
 ## Git State
-
 Clean tree, empty window.
-
 Assumptions: none
 Execution mode: isolated
-
 ## Final Developer Briefing
-
 Nothing to hand off.
-
 ## Ranked Next Actions
-
-- nice-to-have: Continue normal development.`;
+- nice-to-have: Continue development.`;
 
 export const FULL_REPORT_SNAPSHOT = `# Project State Snapshot
 
