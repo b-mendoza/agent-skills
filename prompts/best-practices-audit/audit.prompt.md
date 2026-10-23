@@ -165,7 +165,7 @@
     D10. Citation-to-claim mapping — every non-obvious external citation maps to
          a local claim with provenance.
     D11. Prose versus enforcement alignment — what the corpus requires versus
-         what skill-verification, evals, or other gates actually check.
+         what the manual checks in validate-by-observation, evals, or other gates actually check.
     D12. Portability — no runtime-specific syntax or hidden adapter presented as
          the portable contract.
     D13. Consumer drift — AGENTS.md, docs/agent, prompts, and skills that restate
@@ -508,6 +508,7 @@
       `Gap id (E#) | Claim id (C# or n/a) | Finding ids (F#) | Prose
       requirement | Enforcement (none | docs-only | skill-verification |
       evals | other) | Gap | Recommendation`
+      `skill-verification` denotes the merged manual checklist in validate-by-observation.
 
       Consumer drift appendix columns:
       `Consumer path | Assumption | Corpus state | Drift | Recommendation`

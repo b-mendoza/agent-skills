@@ -10,6 +10,18 @@ Test the [contract's determinism](./declare-input-output-contracts.md#declare) a
 
 Eval mechanics, commands, and case locations for this repository are owned by [`evals/AGENTS.md`](../../evals/AGENTS.md); read it before adding or running a case. For a skill with no cases, record the exception to this rule and the reason in the change's report or handoff outside the skill package.
 
+## Manual checks
+
+There is no CI pipeline for skill authoring. Run these applicable checks after editing a skill, subagent, or reference:
+
+- Run `skills-ref validate <skill-dir>` when available; review frontmatter and `SKILL.md` size against the [runtime matrix](./runtime-portability-matrix.md), including both runtime paths for discovery, invocation, permissions, and any nested dispatch.
+- Check skill-directory and subagent-basename identity under the [name and description rule](./describe-when-to-use.md).
+- Search all package text, including plain-text paths and code spans, for dependencies on repository files outside the package and other skills named or invoked; apply the [packaging boundary and its allowance](./keep-skills-self-contained.md).
+- Check real registry paths and exhaustive closed-status routes under the [routing rule](./keep-routing-in-the-orchestrator.md), including missing, malformed, and unknown results.
+- Confirm file-mutating skills declare and propagate limits, action gates preview exact artifacts, and run-local paths are run-scoped with observed `git check-ignore --quiet` success under the [mutation rule](./declare-mutation-limits.md).
+- For parsed/routed fields or declared critical outputs, confirm `scripts/validate*` exists, its invocation appears in `SKILL.md` and each producer, and run good and bad payloads under the [contract rule](./declare-input-output-contracts.md). Run every other shipped script as a consumer would, checking help, exit codes, and its smoke or dry-run path.
+- Check that additions and extracted files satisfy the [deletion and loading test](./progressive-disclosure.md); run applicable behavioral cases above, or record the no-case exception.
+
 ## Examples
 
 ```text

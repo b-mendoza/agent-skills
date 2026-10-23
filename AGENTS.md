@@ -22,7 +22,7 @@ The user's instructions are a baseline to build on, not a spec to execute verbat
 ## Always
 
 - Before editing a tree that has its own `AGENTS.md` (today: `evals/`), read that guide first. When authoring or editing a skill, subagent, or reference file, use the [best-practice index](./docs/best-practices/README.md) to find the rule for the decision in front of you.
-- After substantive changes, run the nearest guide's documented checks, including the [manual verification checklist](./docs/agent/skill-verification.md) after skill or subagent edits. Do not invent substitute commands. Report only checks run on the current change, including failures, warnings, and coverage gaps; verify referenced files, paths, and symbols. Passing checks are a floor, not proof; escalate uncertainty.
+- After substantive changes, run the nearest guide's documented checks, including the [manual verification checklist](./docs/best-practices/validate-by-observation.md#manual-checks) after skill or subagent edits. Do not invent substitute commands. Report only checks run on the current change, including failures, warnings, and coverage gaps; verify referenced files, paths, and symbols. Passing checks are a floor, not proof; escalate uncertainty.
 - Where a tree has a linter (`evals/`), its configuration is the enforced source of truth for style. Prefer fixing a finding over suppressing it; suppress inline only when the rule is genuinely wrong for the case, and say why.
 - Map every hunk to the task. Extend canonical files when sufficient, report unrelated findings rather than fixing them, and build compatibility only for real consumer contracts; otherwise delete the old path.
 - Split large tasks into independently mergeable, testable, reviewable units with clear done-conditions and minimal blocking dependencies.
@@ -38,7 +38,6 @@ Subagents keep the main thread's context focused while allowing independent work
 
 Long-lived guides:
 
-- [Skill verification checklist](docs/agent/skill-verification.md) — manual checks after skill or subagent edits; this repo has no CI.
 - [Code design](docs/agent/code-design.md) — contracts at the boundaries, naming, failing loudly, and comments.
 - [Testing principles](docs/agent/testing.md) — what and how to test.
 - [Working inside evals/](evals/AGENTS.md) — nearest guide; owns evals commands, conventions, and guardrails.
