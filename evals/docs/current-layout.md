@@ -6,13 +6,12 @@ Source lives under [`src/`](../src/), grouped by capability. Tests sit beside th
 
 ## Orchestration
 
-`src/orchestration/` contains three production modules:
+`src/orchestration/` contains:
 
-| Module             | Responsibility                                                                                                                                                          |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `run.ts`           | Direct Node entry point with an inert-import guard. Spawns promptfoo, forwards arguments, reads JSON results, prints summaries and artifact paths, and maps exit codes. |
-| `verdict.ts`       | Attempt/result types, check-failure normalization, judge execution, scores, aggregation, and NOT_RUN results.                                                           |
-| `configuration.ts` | Import-time `EVAL_MODEL` capture, defaulting to `sonnet` for absent or empty values.                                                                                    |
+| Module       | Responsibility                                                                                                                                                          |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `run.ts`     | Direct Node entry point with an inert-import guard. Spawns promptfoo, forwards arguments, reads JSON results, prints summaries and artifact paths, and maps exit codes. |
+| `verdict.ts` | Attempt/result types, check-failure normalization, judge execution, scores, aggregation, and NOT_RUN results.                                                           |
 
 `run.test.ts` covers argument forwarding, fixed subprocess flags, unique output directories, history state, terminal summaries, and infrastructure failures with a mocked subprocess. `entry.test.ts` probes the entry guard with writes and subprocess launches blocked. `verdict.test.ts` covers result policies. An optional outputs root on `runCli` keeps tests away from production artifacts.
 

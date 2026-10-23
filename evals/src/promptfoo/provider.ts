@@ -8,8 +8,8 @@ import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
 import { toText } from "#/observation/git-status.ts";
-import { evalModel } from "#/orchestration/configuration.ts";
 
+import { evalModel } from "../../promptfooconfig.ts";
 import { getCase } from "./observation.ts";
 
 const FIRST_REPEAT = 0;

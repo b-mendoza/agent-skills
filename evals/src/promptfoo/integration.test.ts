@@ -14,9 +14,8 @@ import { expect, test } from "vitest";
 
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import { observe } from "#/cases/case-test-support.ts";
-import { evalModel } from "#/orchestration/configuration.ts";
 
-import config from "../../promptfooconfig.ts";
+import config, { evalModel } from "../../promptfooconfig.ts";
 import { readResults } from "./results.ts";
 
 const EVAL_ROOT = fileURLToPath(new URL("../../", import.meta.url));

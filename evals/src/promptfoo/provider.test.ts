@@ -10,8 +10,8 @@ import {
 } from "#/cases/case-test-support.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
-import { evalModel } from "#/orchestration/configuration.ts";
 
+import { evalModel } from "../../promptfooconfig.ts";
 import grade from "./assertion.ts";
 import EvalProvider from "./provider.ts";
 
