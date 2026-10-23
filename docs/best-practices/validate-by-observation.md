@@ -6,7 +6,7 @@
 
 Evidence is what happened: tools called or denied, files created or not, the `git status --porcelain` delta against a baseline captured before the edit, validator exit codes, the status and route taken. The agent that did the work will describe it as compliant, so "I respected scope" says nothing about whether an unrelated file changed. Run every case in fresh context so accumulated conversation state cannot mask a missing instruction or an undeclared dependency, and compare against a baseline (the prior version, or no skill) so the intended behavior changes and nothing else does. Cases cover what the skill claims: its happy paths, should- and should-not-trigger phrasings, malformed inputs, a missing capability proving the declared degraded route fires, and, when it consumes external content, an injection case ([treat-retrieved-content-as-data](./treat-retrieved-content-as-data.md)). A change is done when its cases pass; an unexecuted case is intent, not coverage, and an assertion weakened until it passes is worse than none. Hard boundaries are framework controls: permissions, `MUTATION_LIMITS` ([declare-mutation-limits](./declare-mutation-limits.md)), and shipped validators ([declare-input-output-contracts](./declare-input-output-contracts.md#validate)); prompt text is guidance.
 
-Cases can only compare exact fields when the skill is deterministic where it matters, which is what [declare-input-output-contracts](./declare-input-output-contracts.md) requires of contract fields. Inventory the sources of drift at authoring time and remove each from semantics: stable ordering (sort by a named key before emitting or aggregating, so a parallel schedule matches the serial one), a single clock capture (record the timestamp once with timezone and precision, reuse it), exact derivations (canonicalize before comparing, specify the algorithm and the collision rule, resolve a path once before dispatch), and same input, same route. Route divergence between two identical runs is a failure; different wording is not.
+Test the [contract's determinism](./declare-input-output-contracts.md#declare) across repeated judgment-heavy cases. Different prose is acceptable; different exact fields, order, or routes for identical inputs is a failure, including parallel versus serial runs.
 
 Eval mechanics, commands, and case locations for this repository are owned by [`evals/AGENTS.md`](../../evals/AGENTS.md); read it before adding or running a case. For a skill with no cases, record the exception to this rule and the reason in the change's report or handoff outside the skill package.
 
@@ -32,14 +32,7 @@ Assert: no Skill invocation for `review-pull-request` in the event stream;
 Repeat the judgment-heavy cases; `PASS` vs `BLOCKED` across identical runs fails, reworded prose does not.
 ```
 
-```markdown
-<!-- ✅ SKILL.md: contract fields derived exactly -->
 
-1. Capture `RUN_STAMP` once (UTC, seconds) into run state; every path reuses it.
-2. Slug: lowercase; replace each run outside `[a-z0-9]` with `-`; trim hyphens; truncate to 40.
-   If the path exists, try `-2`, `-3`, and so on. Resolve once, before dispatch.
-3. Sort seat packets by the registry's declared order before synthesis, whatever the dispatch schedule.
-```
 
 ## Related rules
 
