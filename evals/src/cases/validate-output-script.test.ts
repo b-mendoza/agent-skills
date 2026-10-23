@@ -3,26 +3,23 @@
 // and the eval checks. These run the real script through the same wrapper the
 // checks use, offline and token-free.
 
+import { fileURLToPath } from "node:url";
+
 import { describe, expect, test } from "vitest";
 
 import { runOutputValidator } from "#/cases/analyzing-recent-project-state-checks.ts";
+import { QUIET_STATE_SNAPSHOT } from "#/cases/case-test-support.ts";
+
+const PROJECT_PATH = fileURLToPath(new URL("../../", import.meta.url));
 
 const GOOD_ENVELOPE =
   "RECENT_STATE: NOT_GIT\nReason: not a worktree.\nNext step: Re-run with PROJECT_PATH set to a Git worktree.";
 
-const GOOD_DRAFT = [
-  "SNAPSHOT_WRITE: PASS",
-  "Inspected:",
-  "- a.txt:1-5 - checked the change",
-  "- b.txt - new file",
-  "",
-  "# Project State Snapshot",
-  "",
-  "Body.",
-  "",
-  "Assumptions: none",
-  "Execution mode: isolated",
-].join("\n");
+const GOOD_DRAFT = `SNAPSHOT_WRITE: PASS
+
+${QUIET_STATE_SNAPSHOT}
+
+The project has a manifest [confirmed: path package.json].`;
 
 const GOOD_VERDICT =
   "SNAPSHOT_VERIFY: PASS\nRequired fixes: none\nReason: all checks passed\nDecision needed: none";
@@ -37,7 +34,7 @@ describe("validate-output.sh", () => {
     { mode: "verdict", payload: GOOD_VERDICT },
     { mode: "evidence", payload: GOOD_NON_PASS_EVIDENCE },
   ] as const)("$mode accepts a conformant payload", ({ mode, payload }) => {
-    expect(runOutputValidator(mode, payload)).toBe("");
+    expect(runOutputValidator(mode, payload, PROJECT_PATH)).toBe("");
   });
 
   test.each([
@@ -48,13 +45,14 @@ describe("validate-output.sh", () => {
       finding: /expected exactly 3 envelope lines/,
     },
     {
-      label: "a draft whose paths are out of byte order",
+      label: "a draft with an unresolved path locator",
       mode: "draft",
       payload: GOOD_DRAFT.replace(
-        "- a.txt:1-5 - checked the change\n- b.txt - new file",
-        "- b.txt - new file\n- a.txt:1-5 - checked the change",
+        "path package.json",
+        "path missing-output-validator-fixture.txt",
       ),
-      finding: /ascending byte-wise order/,
+      finding:
+        /locator does not resolve: path missing-output-validator-fixture.txt/,
     },
     {
       label: "a draft missing its Assumptions: line",
@@ -72,13 +70,14 @@ describe("validate-output.sh", () => {
       finding: /isolated or inline enum literal/,
     },
     {
-      label: "a - none entry carrying a cap note",
+      label: "a draft missing a canonical section",
       mode: "draft",
       payload: GOOD_DRAFT.replace(
-        "- a.txt:1-5 - checked the change\n- b.txt - new file",
-        "- none\n- inspection cap reached; 3 files not inspected",
+        "## 9. Ranked Next Actions",
+        "## Next Actions",
       ),
-      finding: /- none never carries a cap note/,
+      finding:
+        /section set is neither the full form nor the quiet-state short form/,
     },
     {
       label: "an incoherent FAIL verdict with no fixes",
@@ -114,6 +113,6 @@ describe("validate-output.sh", () => {
       finding: /non-PASS payload must be exactly 2 lines/,
     },
   ] as const)("rejects $label", ({ mode, payload, finding }) => {
-    expect(runOutputValidator(mode, payload)).toMatch(finding);
+    expect(runOutputValidator(mode, payload, PROJECT_PATH)).toMatch(finding);
   });
 });

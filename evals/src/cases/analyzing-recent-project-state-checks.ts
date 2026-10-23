@@ -27,11 +27,16 @@ const NO_BEHAVIORAL_OBSERVATIONS = 0;
 export function runOutputValidator(
   mode: ValidatorMode,
   payload: string,
+  ...projectPath: [] | [string]
 ): string {
-  const result = spawnSync("sh", [OUTPUT_VALIDATOR_PATH, mode], {
-    input: payload,
-    encoding: "utf8",
-  });
+  const result = spawnSync(
+    "sh",
+    [OUTPUT_VALIDATOR_PATH, mode, ...projectPath],
+    {
+      input: payload,
+      encoding: "utf8",
+    },
+  );
   if (result.error !== undefined) {
     throw new Error(`output validator could not run: ${String(result.error)}`, {
       cause: result.error,
