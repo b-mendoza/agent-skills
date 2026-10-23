@@ -16,7 +16,7 @@ A role names a responsibility, not a process step. Use the table to say what a s
 | Reviewer (optional) | Judges the semantic quality of one artifact.                              | Code, plan, or report → findings with evidence and severity                           | The artifact is too large or too numerous for the orchestrator to judge in its own context; shape belongs to the script |
 | Adjudicator         | Cross-judges sibling outputs: confirm, adjust, or drop.                   | Two or more parallel payloads → one reconciled set with dispositions                  | Parallel producers returned overlapping or conflicting work; one producer leaves nothing to adjudicate                  |
 
-Whether to dispatch at all is decided per step by [delegate-by-default](./delegate-by-default.md); whether a new subagent earns its place by [earn-every-part](./earn-every-part.md). The orchestrator routes on what these roles return ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md)); it is not itself one of them.
+Whether to dispatch at all is decided per step by [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch); whether a new subagent earns its place by [earn-every-part](./earn-every-part.md). The orchestrator routes on what these roles return ([keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md)); it is not itself one of them.
 
 ## Examples
 
@@ -47,7 +47,7 @@ skills/clarifying-assumptions/subagents/
 
 ## Related rules
 
-- [delegate-by-default](./delegate-by-default.md)
+- [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)
 - [earn-every-part](./earn-every-part.md)
 - [list-subagents-in-a-registry](./list-subagents-in-a-registry.md)
 - [validate-routed-fields-with-a-script](./validate-routed-fields-with-a-script.md)

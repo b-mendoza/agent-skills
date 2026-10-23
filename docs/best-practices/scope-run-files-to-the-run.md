@@ -41,4 +41,4 @@ plan is a temporary artifact, so keep it there too. When finished, run
 - [declare-mutation-limits](./declare-mutation-limits.md)
 - [declare-input-output-contracts](./declare-input-output-contracts.md)
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
-- [delegate-by-default](./delegate-by-default.md)
+- [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)

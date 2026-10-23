@@ -2,7 +2,11 @@
 
 📝 Keep dispatch decisions in the orchestrator's `Execution` as status-keyed routes (given X, dispatch Y; on status Z, do W) when a skill dispatches two or more subagents.
 
-Tier: mandatory transitions; recommended routing layout.
+Tier: mandatory delegation and transitions; recommended routing layout.
+
+## Dispatch
+
+Delegate evidence work by default: reading files, parsing command output or API payloads, extracting web content, and producing artifacts. Return bounded statuses, paths, ids, and summaries; pass paths between steps, not raw contents. Retrieve later details only when needed. Run a step inline only when the orchestrator needs raw or conversational material for coordination or a later routing decision; split mixed steps into dispatched evidence and inline decisions. Dispatch cost shapes the job, not whether to delegate. Nesting and the no-subagent-tool fallback follow the [runtime matrix](./runtime-portability-matrix.md).
 
 The orchestrator is the workflow's routing layer; subagents are its contracted backends. Write `Execution` so each step reads "given X, dispatch Y; on Y's status Z, do W": check the step's preconditions before a dispatch, its postconditions after, and route on the returned status. A subagent that consumes a raw ticket, file, payload, or page normalises it into the fields of its output contract; the orchestrator routes on those bounded fields and renders the user-facing handoff (decision, evidence summary, artifact paths, next steps) from them. A subagent may return a recommendation for the next step; the orchestrator makes the dispatch decision. Central routing is the portable default — whether a runtime supports nested dispatch is a fact recorded in [runtime-portability-matrix](./runtime-portability-matrix.md), not a workflow assumption. Every name a route dispatches has its referent in the skill's registry table ([list-subagents-in-a-registry](./list-subagents-in-a-registry.md)).
 
@@ -54,7 +58,7 @@ Keep one normative transition source. Use `Execution` for a small linear flow wi
 
 ## Related rules
 
-- [delegate-by-default](./delegate-by-default.md)
+- [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#dispatch)
 - [list-subagents-in-a-registry](./list-subagents-in-a-registry.md)
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
 - [keep-routing-in-the-orchestrator](./keep-routing-in-the-orchestrator.md#transitions)
