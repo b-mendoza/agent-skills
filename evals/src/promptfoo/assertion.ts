@@ -1,9 +1,29 @@
 import { Schema } from "effect";
 import type { GradingResult } from "promptfoo";
 
-import { checkMutationScope } from "#/cases/analyzing-recent-project-state-checks.ts";
+import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
+import {
+  cases,
+  checkMutationScope,
+} from "#/cases/analyzing-recent-project-state.ts";
+import { observationSchema } from "#/observation/agent-query.ts";
 
-import { getCase, metadataSchema } from "./observation.ts";
+export const FIRST_REPEAT = 0;
+const metadataSchema = Schema.Struct({
+  observation: observationSchema,
+  repeatIndex: Schema.Number.check(
+    Schema.isInt(),
+    Schema.isGreaterThanOrEqualTo(FIRST_REPEAT),
+  ),
+});
+
+export function getCase(caseId: unknown): EvalCase {
+  const evalCase = cases.find((candidate) => candidate.id === caseId);
+  if (evalCase === undefined) {
+    throw new Error(`Unknown caseId: ${String(caseId)}`);
+  }
+  return evalCase;
+}
 
 const PASS_SCORE = 1;
 const FAIL_SCORE = 0;
@@ -21,9 +41,7 @@ function describeNonErrorCheckFailure(cause: unknown): string {
   try {
     return String(cause);
   } catch (stringConversionError) {
-    return new Error(UNKNOWN_ERROR_MESSAGE, {
-      cause: stringConversionError,
-    }).message;
+    return UNKNOWN_ERROR_MESSAGE;
   }
 }
 
@@ -40,7 +58,7 @@ function normalizeCheckFailure(cause: unknown): GradingResult {
   };
 }
 
-export function evaluate(check: () => string): GradingResult {
+function evaluate(check: () => string): GradingResult {
   try {
     return { pass: true, score: PASS_SCORE, reason: check() };
   } catch (cause) {

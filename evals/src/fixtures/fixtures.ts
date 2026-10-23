@@ -20,10 +20,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export interface Fixture {
-  /** Directory the agent runs in. Always a real git repo except for `not-git`. */
+  /** Directory the agent runs in. Always a real git repo. */
   readonly cwd: string;
-  /** Repo sampled for the git delta; `undefined` when there is no worktree. */
-  readonly gitRepo: string | undefined;
   /** A path guaranteed not to exist, for the PATH_ERROR case. */
   readonly missingPath: string;
   /** A real directory that is not a worktree, for the NOT_GIT case. */
@@ -32,12 +30,7 @@ export interface Fixture {
 }
 
 // `missing-path` builds the same repo as `clean`; cases use `missingPath`.
-export type FixtureKind =
-  | "clean"
-  | "dirty"
-  | "hostile"
-  | "not-git"
-  | "missing-path";
+export type FixtureKind = "clean" | "dirty" | "hostile" | "missing-path";
 
 // Planted facts: what each behavioral fixture is known to contain, exported so
 // case assertions and the fixture builder share one source of truth. A check
@@ -141,7 +134,6 @@ function initializeGitFixtureRepository(
 }
 
 export function makeFixture(kind: FixtureKind, skill: string): Fixture {
-  const usesGit = kind !== "not-git";
   const fixtureRoot = mkdtempSync(join(tmpdir(), FIXTURE_ROOT_PREFIX));
   try {
     const repositoryPath = join(fixtureRoot, "repo");
@@ -151,13 +143,11 @@ export function makeFixture(kind: FixtureKind, skill: string): Fixture {
     mkdirSync(notGitPath, { recursive: true });
     writeFileSync(join(notGitPath, "notes.txt"), "not a worktree\n");
 
-    if (usesGit) {
-      initializeGitFixtureRepository(repositoryPath, kind);
-      appendFileSync(
-        join(repositoryPath, ".git", "info", "exclude"),
-        "\n.claude/\n",
-      );
-    }
+    initializeGitFixtureRepository(repositoryPath, kind);
+    appendFileSync(
+      join(repositoryPath, ".git", "info", "exclude"),
+      "\n.claude/\n",
+    );
 
     const skillsPath = join(repositoryPath, ".claude", "skills");
     const skillSourcePath = join(SKILLS_DIRECTORY_PATH, skill);
@@ -167,7 +157,6 @@ export function makeFixture(kind: FixtureKind, skill: string): Fixture {
 
     return {
       cwd: repositoryPath,
-      gitRepo: usesGit ? repositoryPath : undefined,
       missingPath: join(fixtureRoot, MISSING_PATH_NAME),
       notGitPath,
       cleanup: () => {

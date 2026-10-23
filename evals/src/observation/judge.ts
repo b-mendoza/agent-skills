@@ -31,11 +31,6 @@ export interface JudgeRequest {
   readonly rubric: readonly RubricItem[];
 }
 
-/** Sends a prompt to a model and resolves with its final text. */
-export type JudgeQuery = (prompt: string, model: string) => Promise<string>;
-
-export type Judge = (request: JudgeRequest) => Promise<JudgeOutcome>;
-
 // Grading is cheap classification over a bounded artifact; the small model is
 // deliberate and independent of EVAL_MODEL so the judge never grades with the
 // same configuration that produced the artifact.
@@ -69,7 +64,7 @@ function extractJsonBlock(responseText: string): string | undefined {
   return responseText.slice(blockStart, blockEnd + JSON_BLOCK_END_OFFSET);
 }
 
-export function buildJudgePrompt(request: JudgeRequest): string {
+function buildJudgePrompt(request: JudgeRequest): string {
   const rubricLines = request.rubric
     .map((item) => `- ${item.id}: ${item.requirement}`)
     .join("\n");
@@ -123,7 +118,7 @@ function formatUncitedComplaint(
  * Throws on an unparseable reply; the failure names the judge, so a broken
  * grading run is never mistaken for a verdict on the artifact.
  */
-export function parseJudgeResponse(
+function parseJudgeResponse(
   responseText: string,
   request: JudgeRequest,
 ): JudgeOutcome {
@@ -168,25 +163,11 @@ export function parseJudgeResponse(
   return { citedViolations, uncitedComplaints };
 }
 
-export function createJudge(options: {
-  judgeQuery: JudgeQuery;
-  model?: string;
-}): Judge {
-  const model = options.model ?? JUDGE_MODEL;
-  return async (request) => {
-    const responseText = await options.judgeQuery(
-      buildJudgePrompt(request),
-      model,
-    );
-    return parseJudgeResponse(responseText, request);
-  };
-}
-
 /** The judge has its own no-tools query and propagates iterator cleanup errors. */
-export const liveJudgeQuery: JudgeQuery = async (prompt, model) => {
+async function liveJudgeQuery(prompt: string): Promise<string> {
   const stream = query({
     prompt,
-    options: { model, maxTurns: 1, tools: [], cwd: tmpdir() },
+    options: { model: JUDGE_MODEL, maxTurns: 1, tools: [], cwd: tmpdir() },
   });
   for await (const message of stream) {
     if (!Predicate.isObject(message) || message.type !== "result") continue;
@@ -197,7 +178,7 @@ export const liveJudgeQuery: JudgeQuery = async (prompt, model) => {
     ).result;
   }
   throw new Error("judge query produced no result message");
-};
+}
 
 const QUOTE_PREVIEW_START = 0;
 const QUOTE_PREVIEW_CHARS = 60;
@@ -205,7 +186,10 @@ const NO_UNCITED_COMPLAINTS = 0;
 
 /** Fails only on verified citations; uncited complaints remain nonfailing notes. */
 export async function judgeLive(request: JudgeRequest): Promise<string> {
-  const outcome = await createJudge({ judgeQuery: liveJudgeQuery })(request);
+  const outcome = parseJudgeResponse(
+    await liveJudgeQuery(buildJudgePrompt(request)),
+    request,
+  );
   const [firstViolation] = outcome.citedViolations;
   if (firstViolation !== undefined) {
     const quotePreview = firstViolation.quote.slice(

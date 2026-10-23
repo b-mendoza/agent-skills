@@ -1,48 +1,41 @@
-# Agent Guide — agent-skills
+# Agent guide for agent-skills
 
-`agent-skills` is a skill library for coding agents: each skill is a self-contained directory with a `SKILL.md`, optional `subagents/` and `references/` directories, and supporting scripts. The repo is the artifact — most edits here are skill or subagent authoring tasks.
+`agent-skills` is a library of self-contained skills for coding agents. Most changes here author skills, subagents, or their supporting references and scripts.
 
-**Dual-runtime constraint (applies to every skill file):** skills must work on both OpenCode and Claude Code. Follow the [runtime portability matrix](./docs/best-practices/runtime-portability-matrix.md) for frontmatter, markdown, tool, permission, and subagent choices.
+Every skill file must work on OpenCode and Claude Code. Follow the [runtime portability matrix](./docs/best-practices/runtime-portability-matrix.md) for frontmatter, Markdown, tools, permissions, and subagents.
 
 ## Documentation model
 
-This repo keeps two tiers of agent documentation. Maintain the split when you add or edit docs:
+Keep two tiers:
 
-- **Long-lived guidance** — `AGENTS.md` files and `docs/agent/` directories. Principles and guidelines with general examples only; no source-code paths or code snippets, so they stay true as the code changes. Scoped `AGENTS.md` maps are the one exception: they name the exact commands for their tree and are updated when those commands change.
-- **Short-lived references** — Markdown files under a `docs/` directory (root or sub-project), outside `docs/agent/`; related references may be grouped in a subdirectory. Current-state descriptions: architecture, file structure and conventions, command references. Each carries a banner saying it must be updated when the code changes.
+- Long-lived guidance in `AGENTS.md` and `docs/agent/`: principles with general examples, no source-code paths or code snippets. Scoped `AGENTS.md` maps are the exception; they own exact commands for their tree and change with them.
+- Short-lived references under `docs/`, outside `docs/agent/`: current architecture, layout, conventions, and commands, with an update banner. Update the matching reference in the same change when those facts change.
 
-Guidance earns its place through observed failures: add a rule when a mistake happens, and remove rules that no longer affect behavior. These files load into every agent's context, so every line must pay rent. State what to do rather than enumerating what to avoid; keep a standalone prohibition only when it marks a specific failure that keeps happening.
-
-Cross-cutting guidance lives once, in this file and its linked guides. Each sub-project's `AGENTS.md` (today: [`evals/AGENTS.md`](./evals/AGENTS.md)) is the nearest guide for its tree: it owns the exact commands for that tree and may override anything here.
+Add guidance for observed failures and remove rules that no longer affect behavior. State what to do; keep standalone prohibitions only for recurring failures. Cross-cutting guidance lives here or in one linked owner. The nearest sub-project guide owns its tree's commands and may override this guide.
 
 ## Working with the user
 
-The user's instructions are a baseline to build on, not a spec to execute verbatim. When a premise looks wrong, a simpler approach exists, or the problem statement itself is off, say so plainly and propose the better version — the user wants a partner to learn from, not a yes-man, and pushback backed by reasoning is explicitly welcome. Challenge because you have a concrete objection, not to perform independence: when an instruction survives your scrutiny, follow it.
+Treat the user's instructions as a baseline, not a verbatim spec. When a premise looks wrong, a simpler approach exists, or the problem is framed wrong, say so plainly and propose the better version. Reasoned pushback is welcome: the user wants a partner, not a yes-man. Challenge only with a concrete objection, not to perform independence; when an instruction survives scrutiny, follow it.
 
 ## Always
 
-- Before editing a tree that has its own `AGENTS.md` (today: `evals/`), read that guide first. When authoring or editing a skill, subagent, or reference file, use the [best-practice index](./docs/best-practices/README.md) to find the rule for the decision in front of you.
-- After a substantive change, run the checks the nearest guide names: the [manual verification checklist](./docs/agent/skill-verification.md) after skill or subagent edits (this repo has no CI), and inside `evals/` the lint check after a change plus the test suite before committing ([`evals/AGENTS.md`](./evals/AGENTS.md) names the exact commands). Passing checks are a floor, not proof — when unsure whether a change is correct, escalate rather than declare success.
-- Where a tree has a linter (`evals/`), its configuration is the enforced source of truth for style. Prefer fixing a finding over suppressing it; suppress inline only when the rule is genuinely wrong for the case, and say why.
-- Editing is not permission to publish. Do not commit, push, open a pull request, or create an issue unless explicitly asked; when committing, stage only the paths the task touched.
+- Read the nearest `AGENTS.md` before editing its tree. Use the [best-practice index](./docs/best-practices/README.md) for skill, subagent, and reference decisions.
+- After substantive changes, run the nearest guide's documented checks, including the [manual checks](./docs/best-practices/validate-by-observation.md#manual-checks) after skill or subagent edits. Do not invent substitute commands. Report only checks run on the current change, including failures, warnings, and coverage gaps; verify referenced files, paths, and symbols. Passing checks are a floor, not proof; escalate uncertainty.
+- Where a tree has a linter, its configuration governs style. Fix findings; suppress inline only when the rule is wrong for the case, and explain why.
+- Map every hunk to the task. Extend canonical files when sufficient, report unrelated findings rather than fixing them, and build compatibility only for real consumer contracts; otherwise delete the old path.
+- Split large tasks into independently mergeable, testable, reviewable units with clear done-conditions and minimal blocking dependencies.
+- Change generators or sources and regenerate tooling-managed outputs; do not hand-edit those outputs.
+- Propose a GitHub issue for any multi-step or non-trivial task; creating one still requires an explicit ask.
+- Editing is not permission to publish. Do not commit, push, open a pull request, or create an issue unless explicitly asked; when committing, stage only paths the task touched.
 
 ## Subagents
 
-Subagents keep the main thread's context focused while allowing independent work to run in parallel. Delegate when a skill or task directs it, and for work that fits one — broad searches or audits across many files, self-contained investigations, subtasks that can run concurrently — keeping the conclusion, not the intermediate file dumps. Give each subagent a bounded objective, a definition of done, and the constraints that scope its work; when unsure whether (or to which subagent) to delegate, ask before dispatching.
+Delegate when a skill or task directs it, and for broad searches, audits, self-contained investigations, or parallel subtasks that fit a subagent. Keep conclusions, not file dumps. Give a bounded objective, done-conditions, and constraints; when unsure whether or to whom to delegate, ask before dispatching.
 
 ## Open when relevant
 
-Long-lived guides:
-
-- [Skill verification checklist](docs/agent/skill-verification.md) — manual checks after skill or subagent edits; this repo has no CI.
-- [Naming conventions](docs/agent/naming-conventions.md) — how to name variables, arguments, and functions, with good/bad examples.
-- [Code design](docs/agent/code-design.md) — contracts at the boundaries, failing loudly, and comments.
-- [Testing principles](docs/agent/testing.md) — what and how to test.
-- [Workflow and task scoping](docs/agent/workflow.md) — simplicity, scope discipline, issues, and decomposition.
-- [Verifying your work](docs/agent/verification.md) — what "done" requires beyond green tests.
-- [Working inside evals/](evals/AGENTS.md) — nearest guide; owns evals commands, conventions, and guardrails.
-
-Current-state references (short-lived; verify against the code):
-
-- [Repository architecture](docs/architecture.md) — layout of the repository and links to each tree's references.
-- [Best-practice library](docs/best-practices/README.md) — index of self-contained rules for skills and subagents, each with ❌/✅ examples; current runtime facts live in [runtime-portability-matrix](docs/best-practices/runtime-portability-matrix.md), dated — verify against the runtime docs.
+- [Code design](docs/agent/code-design.md): boundary contracts, naming, loud failures, and comments.
+- [Testing principles](docs/agent/testing.md): behavioral coverage, assertions, and failures.
+- [Working inside evals](evals/AGENTS.md): commands, conventions, checks, and guardrails for that tree.
+- [Repository architecture](docs/architecture.md): current layout and tree references.
+- [Best-practice library](docs/best-practices/README.md): decision-focused authoring rules, with examples where needed and dated runtime facts in the matrix.

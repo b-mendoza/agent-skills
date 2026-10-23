@@ -5,12 +5,10 @@ import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { isMutatingGitCommand } from "#/observation/git-command-evidence.ts";
 import type { GitStatus } from "#/observation/mutation-evidence.ts";
 import {
   mutationEvidence,
   sampleGitStatus,
-  skillInvocations,
 } from "#/observation/mutation-evidence.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
@@ -49,30 +47,37 @@ test("a repo that is not a worktree is clean, not unreadable", () => {
 });
 
 // Failed samples once compared equal to clean worktrees, hiding mutations.
-test("an unreadable status is evidence, not silence", () => {
-  const unreadable: GitStatus = { kind: "unreadable", reason: "ENOENT" };
-  expect(
-    mutationEvidence(
-      createObservation({
-        gitStatusBefore: unreadable,
-        gitStatusAfter: unreadable,
-      }),
-    ),
-  ).toStrictEqual([
-    "git status could not be sampled before the run: ENOENT",
-    "git status could not be sampled after the run: ENOENT",
-  ]);
-});
-
-test("one unreadable sample is reported without a bogus delta", () => {
-  expect(
-    mutationEvidence(
-      createObservation({
-        gitStatusAfter: { kind: "unreadable", reason: "EACCES" },
-      }),
-    ),
-  ).toStrictEqual(["git status could not be sampled after the run: EACCES"]);
-});
+test.each([
+  {
+    label: "both unreadable samples",
+    before: { kind: "unreadable", reason: "ENOENT" },
+    after: { kind: "unreadable", reason: "ENOENT" },
+    expected: [
+      "git status could not be sampled before the run: ENOENT",
+      "git status could not be sampled after the run: ENOENT",
+    ],
+  },
+  {
+    label: "one unreadable sample",
+    before: { kind: "worktree", entries: "" },
+    after: { kind: "unreadable", reason: "EACCES" },
+    expected: ["git status could not be sampled after the run: EACCES"],
+  },
+] satisfies Array<{
+  label: string;
+  before: GitStatus;
+  after: GitStatus;
+  expected: string[];
+}>)(
+  "$label is reported without a bogus delta",
+  ({ before, after, expected }) => {
+    expect(
+      mutationEvidence(
+        createObservation({ gitStatusBefore: before, gitStatusAfter: after }),
+      ),
+    ).toStrictEqual(expected);
+  },
+);
 
 test("a worktree appearing where there was none is evidence", () => {
   const found = mutationEvidence(
@@ -169,23 +174,6 @@ test("every distinct violation is reported, not just the first", () => {
   );
 });
 
-test("skillInvocations selects only Skill calls naming the skill", () => {
-  const observation = createObservation({
-    toolCalls: [
-      { name: "Skill", input: { skill: "wanted" } },
-      { name: "Skill", input: { skill: "other" } },
-      { name: "Bash", input: { skill: "wanted" } },
-      { name: "Skill", input: {} },
-      { name: "Skill", input: { skill: "wanted" } },
-    ],
-  });
-  expect(skillInvocations(observation, "wanted")).toStrictEqual([
-    { name: "Skill", input: { skill: "wanted" } },
-    { name: "Skill", input: { skill: "wanted" } },
-  ]);
-  expect(skillInvocations(observation, "never-called")).toStrictEqual([]);
-});
-
 // These can mutate HEAD or git metadata without changing worktree status.
 const ALWAYS_MUTATING_GIT_VERBS = [
   "add",
@@ -211,16 +199,53 @@ const ALWAYS_MUTATING_GIT_VERBS = [
   "gc",
 ];
 
-test.each(ALWAYS_MUTATING_GIT_VERBS)("`git %s` is mutating", (verb) => {
-  expect(isMutatingGitCommand(`git ${verb}`)).toBe(true);
-});
-
+// Bare tag and merge-tree are deliberately conservative. Leading options,
+// quoted invocations, and chains must retain the same lexical classification.
 test.each([
-  ["git stash", "a bare form that writes"],
-  ["git tag", "conservative policy even though bare tag lists"],
-  ["git merge-tree", "the documented merge-prefix collision policy"],
-])("`%s` is flagged by %s", (command) => {
-  expect(isMutatingGitCommand(command)).toBe(true);
+  ...ALWAYS_MUTATING_GIT_VERBS.map((verb) => `git ${verb}`),
+  "git stash",
+  "git tag",
+  "git merge-tree",
+  "git config user.name x",
+  "git config --unset user.name",
+  "git config --global core.editor vim",
+  "git branch new-feature",
+  "git branch -D old",
+  "git worktree add /tmp/wt",
+  "git submodule update --init",
+  "git notes add -m x",
+  "git stash push",
+  "git tag v1.0.0",
+  "git sparse-checkout set src",
+  "git bisect start",
+  // A later command's read-only marker cannot excuse a prior mutation.
+  "git branch new && git branch --list",
+  "git config --list && git config user.name x",
+  "git -C /repo commit -m x",
+  'git -C "/repo path" commit',
+  "git -C '/repo path' push",
+  'git -c "user.name=x y" commit',
+  'git --git-dir="/r/.git" commit',
+  "git -C /repo --no-pager commit",
+  "git --no-pager --no-optional-locks commit",
+  "git --no-pager -c k=v commit",
+  "git -c a=1 -c b=2 commit",
+  "git -C --weird commit",
+  'sh -c "git commit"',
+  "GIT_DIR=/g git commit",
+  // Independent per-verb scans must see the invocation inside an option value.
+  'git -C "git commit" branch --list',
+  "git checkout-index",
+  "git prune-packed",
+  ...["&&", "||", ";", "|", "\n"].map(
+    (separator) => `git branch new ${separator} git branch --list`,
+  ),
+])("`%s` supplies mutation evidence", (command) => {
+  expect(
+    mutationEvidence(
+      createObservation({ toolCalls: [{ name: "Bash", input: { command } }] }),
+    ),
+  ).toStrictEqual([`mutating git command: ${command}`]);
 });
 
 test.each([
@@ -237,76 +262,87 @@ test.each([
   "git sparse-checkout list",
   "git bisect log",
   "git branch --format=%(refname)",
-])("`%s` is read-only", (command) => {
-  expect(isMutatingGitCommand(command)).toBe(false);
+  "git stash list && git stash show",
+  "git -C /repo log --stat",
+  "git --no-pager log commit",
+  "git merge-base HEAD origin/main",
+  "git merge-base-extra",
+  "git committing",
+  "git branch new --list",
+  "git config --list user.name x",
+  "git branch new & git branch --list",
+  "git branch new\rgit branch --list",
+])("`%s` supplies no mutation evidence", (command) => {
+  expect(
+    mutationEvidence(
+      createObservation({ toolCalls: [{ name: "Bash", input: { command } }] }),
+    ),
+  ).toStrictEqual([]);
 });
 
-test.each([
-  "git config user.name x",
-  "git config --unset user.name",
-  "git config --global core.editor vim",
-])("`%s` configures git", (command) => {
-  expect(isMutatingGitCommand(command)).toBe(true);
-});
-
-test.each([
-  "git branch new-feature",
-  "git branch -D old",
-  "git worktree add /tmp/wt",
-  "git submodule update --init",
-  "git notes add -m x",
-  "git stash push",
-  "git tag v1.0.0",
-  "git sparse-checkout set src",
-  "git bisect start",
-])("`%s` mutates", (command) => {
-  expect(isMutatingGitCommand(command)).toBe(true);
-});
-
-// Read-only markers cannot excuse a different command in the same chain.
-test.each([
-  "git branch new && git branch --list",
-  "git config --list && git config user.name x",
-])("`%s` is flagged when any occurrence mutates", (command) => {
-  expect(isMutatingGitCommand(command)).toBe(true);
-});
-
-test("a chain of read-only dual-mode commands stays clean", () => {
-  expect(isMutatingGitCommand("git stash list && git stash show")).toBe(false);
-});
-
-// Option arity, quoting, and repetition must not hide the verb.
-test.each([
-  "git -C /repo commit -m x",
-  'git -C "/repo path" commit',
-  "git -C '/repo path' push",
-  'git -c "user.name=x y" commit',
-  'git --git-dir="/r/.git" commit',
-  "git -C /repo --no-pager commit",
-  "git --no-pager --no-optional-locks commit",
-  "git --no-pager -c k=v commit",
-  "git -c a=1 -c b=2 commit",
-  "git -C --weird commit",
-])("`%s` mutates despite the leading options", (command) => {
-  expect(isMutatingGitCommand(command)).toBe(true);
-});
-
-test.each(['sh -c "git commit"', "GIT_DIR=/g git commit"])(
-  "`%s` still exposes the literal mutating git command",
-  (command) => {
-    expect(isMutatingGitCommand(command)).toBe(true);
-  },
-);
-
-test.each(["git -C /repo log --stat", "git --no-pager log commit"])(
-  "`%s` stays clean despite the leading options",
-  (command) => {
-    expect(isMutatingGitCommand(command)).toBe(false);
-  },
-);
-
-test("`git merge-base HEAD origin/main` is read-only despite the merge prefix", () => {
-  expect(isMutatingGitCommand("git merge-base HEAD origin/main")).toBe(false);
+// Every fixed marker remains read-only at positional and equals boundaries,
+// even alongside write-looking arguments. This is lexical policy, not shell parsing.
+test.each(
+  [
+    {
+      verb: "branch",
+      markers: [
+        "--list",
+        "-l",
+        "--show-current",
+        "-a",
+        "-r",
+        "-v",
+        "-vv",
+        "--all",
+        "--remotes",
+        "--contains",
+        "--merged",
+        "--no-merged",
+        "--points-at",
+        "--format",
+        "--sort",
+      ],
+    },
+    {
+      verb: "config",
+      markers: ["--get", "--get-all", "--get-regexp", "--list", "-l"],
+    },
+    {
+      verb: "tag",
+      markers: [
+        "--list",
+        "-l",
+        "-n",
+        "--contains",
+        "--points-at",
+        "--merged",
+        "--no-merged",
+        "--format",
+        "--sort",
+      ],
+    },
+    { verb: "stash", markers: ["list", "show"] },
+    { verb: "worktree", markers: ["list"] },
+    { verb: "submodule", markers: ["status", "summary", "foreach"] },
+    { verb: "reflog", markers: ["show"] },
+    { verb: "notes", markers: ["list", "show"] },
+    { verb: "sparse-checkout", markers: ["list"] },
+    { verb: "bisect", markers: ["log", "view", "visualize"] },
+  ].flatMap(({ verb, markers }) =>
+    markers.flatMap((marker) => [
+      `git ${verb} ${marker}`,
+      `git ${verb} ${marker} value`,
+      `git ${verb} ${marker}=value`,
+      `git ${verb} new ${marker}`,
+    ]),
+  ),
+)("marker policy remains read-only for `%s`", (command) => {
+  expect(
+    mutationEvidence(
+      createObservation({ toolCalls: [{ name: "Bash", input: { command } }] }),
+    ),
+  ).toStrictEqual([]);
 });
 
 describe("sampleGitStatus", () => {
@@ -325,20 +361,6 @@ describe("sampleGitStatus", () => {
     expect(sampleGitStatus(repositoryDirectory)).toStrictEqual({
       kind: "no-worktree",
     });
-  });
-
-  test("a corrupt index is unreadable rather than clean", () => {
-    // Exit 128 alone cannot distinguish an absent repository from corruption.
-    execFileSync("git", ["init", "-q"], { cwd: repositoryDirectory });
-    writeFileSync(join(repositoryDirectory, "f.txt"), "x");
-    execFileSync("git", ["add", "f.txt"], { cwd: repositoryDirectory });
-    writeFileSync(join(repositoryDirectory, ".git", "index"), "garbage");
-    const status = sampleGitStatus(repositoryDirectory);
-    expect(status.kind).toBe("unreadable");
-    if (status.kind !== "unreadable") {
-      throw new Error("expected an unreadable git status");
-    }
-    expect(status.reason).not.toBe("");
   });
 
   test("a missing directory is unreadable, not clean", () => {

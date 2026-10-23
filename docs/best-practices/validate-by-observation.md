@@ -1,51 +1,41 @@
 # validate-by-observation
 
-📝 Prove a skill change with observed behavior in fresh context — tool calls, files, `git status` deltas, exit codes — never with the producing agent's narrative.
+> Current-state authoring reference; update when these package conventions change.
 
-🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
+Tier: mandatory, with a recorded no-case exception as described below.
 
-Evidence is what happened: tools called or denied, files created or not, the `git status --porcelain` delta against a baseline captured before the edit, validator exit codes, the status and route taken. The agent that did the work will describe it as compliant, so "I respected scope" says nothing about whether an unrelated file changed. Run every case in fresh context so accumulated conversation state cannot mask a missing instruction or an undeclared dependency, and compare against a baseline (the prior version, or no skill) so the intended behavior changes and nothing else does. Cases cover what the skill claims: its happy paths, should- and should-not-trigger phrasings, malformed inputs, a missing capability proving the declared degraded route fires, and, when it consumes external content, an injection case ([treat-retrieved-content-as-data](./treat-retrieved-content-as-data.md)). A change is done when its cases pass; an unexecuted case is intent, not coverage, and an assertion weakened until it passes is worse than none. Hard boundaries are framework controls: permissions, `MUTATION_LIMITS` ([declare-mutation-limits](./declare-mutation-limits.md)), and shipped validators ([validate-routed-fields-with-a-script](./validate-routed-fields-with-a-script.md)); prompt text is guidance.
+Use after a skill, subagent, or reference change. Prove behavior with observed evidence, not the producing agent's narrative.
 
-Cases can only compare exact fields when the skill is deterministic where it matters, which is what [declare-input-output-contracts](./declare-input-output-contracts.md) requires of contract fields. Inventory the sources of drift at authoring time and remove each from semantics: stable ordering (sort by a named key before emitting or aggregating, so a parallel schedule matches the serial one), a single clock capture (record the timestamp once with timezone and precision, reuse it), exact derivations (canonicalize before comparing, specify the algorithm and the collision rule, resolve a path once before dispatch), and same input, same route. Route divergence between two identical runs is a failure; different wording is not.
+## Behavioral evidence
 
-Eval mechanics, commands, and case locations for this repository are owned by [`evals/AGENTS.md`](../../evals/AGENTS.md); read it before adding or running a case. For a skill with no cases, record the exception to this rule and the reason in the change's report or handoff outside the skill package.
+Observe tools called or denied, created files, baseline-to-final `git status --porcelain` changes, validator exit codes, and statuses and routes taken. Run each case in fresh context and compare with the prior version or no-skill baseline. Cover happy paths, should-trigger and near-miss phrasings, malformed inputs, missing capabilities and their degraded routes, and injection when external content is consumed under the [trust rule](./treat-retrieved-content-as-data.md).
 
-## Examples
+A change is done when its cases pass. Unexecuted cases are not coverage; weakening an assertion to pass is not verification. Hard boundaries come from permissions, [mutation limits](./declare-mutation-limits.md), and [shipped validators](./declare-input-output-contracts.md); prompt text is guidance.
+
+Test the [contract's determinism](./declare-input-output-contracts.md#declare) across repeated judgment-heavy cases. Different prose is acceptable; different exact fields, order, or routes for identical inputs is a failure, including parallel versus serial runs.
+
+Read [`evals/AGENTS.md`](../../evals/AGENTS.md) for case locations, commands, approvals, and check selection before adding or running cases. If a skill has no cases, record the exception and reason in the change's report or handoff outside the package.
+
+## Manual checks
+
+There is no CI pipeline for skill authoring. Run these applicable checks after editing a skill, subagent, or reference:
+
+- Run `skills-ref validate <skill-dir>` when available; review frontmatter and `SKILL.md` size against the [runtime matrix](./runtime-portability-matrix.md), including both runtime paths for discovery, invocation, permissions, and any nested dispatch.
+- Check skill-directory and subagent-basename identity under the [name and description rule](./describe-when-to-use.md).
+- Search all package text, including plain-text paths and code spans, for dependencies on repository files outside the package and other skills named or invoked; apply the [packaging boundary and its allowance](./keep-skills-self-contained.md).
+- Check real registry paths and exhaustive closed-status routes under the [routing rule](./keep-routing-in-the-orchestrator.md), including missing, malformed, and unknown results.
+- Confirm file-mutating skills declare and propagate limits, action gates preview exact artifacts, and run-local paths are run-scoped with observed `git check-ignore --quiet` success under the [mutation rule](./declare-mutation-limits.md).
+- For parsed/routed fields or declared critical outputs, confirm `scripts/validate*` exists, its invocation appears in `SKILL.md` and each producer, and run good and bad payloads under the [contract rule](./declare-input-output-contracts.md). Run every other shipped script as a consumer would, checking help, exit codes, and its smoke or dry-run path.
+- Check that additions and extracted files satisfy the [deletion and loading test](./progressive-disclosure.md); run applicable behavioral cases above, or record the no-case exception.
+
+## Example
+
+Bad: ask the editor whether it respected scope and accept "yes" as proof.
 
 ```text
-<!-- ❌ narrative as evidence, and semantics left to the clock and the scheduler -->
-
-1. Add "never write outside scope" to the prompt.
-2. Run one familiar task in the current conversation.
-3. Ask the editor whether it respected scope; it says yes, so the safeguard is validated.
-Name the report `report-<current timestamp>.md`. Launch all reviewers in parallel, let each
-append when it finishes, and use the resulting order to pick the top finding.
+Case: trigger-negative. Prompt: "Summarize this PR description."
+Fixture: dirty checkout; capture git status --porcelain before the run.
+Assert: no review-pull-request Skill invocation in the event stream;
+        final status equals baseline; no review artifact created.
+Repeat: PASS versus BLOCKED on identical input fails; reworded prose does not.
 ```
-
-```text
-<!-- ✅ case notes: fresh session, baseline first, observables only -->
-
-Case: trigger-negative. Prompt: "Summarize this PR description." Fixture: `dirty`.
-Baseline: `git status --porcelain` captured before the run.
-Assert: no Skill invocation for `review-pull-request` in the event stream;
-        `git status --porcelain` equals the baseline; no `pr-*-review.md` exists.
-Repeat the judgment-heavy cases; `PASS` vs `BLOCKED` across identical runs fails, reworded prose does not.
-```
-
-```markdown
-<!-- ✅ SKILL.md: contract fields derived exactly -->
-
-1. Capture `RUN_STAMP` once (UTC, seconds) into run state; every path reuses it.
-2. Slug: lowercase; replace each run outside `[a-z0-9]` with `-`; trim hyphens; truncate to 40.
-   If the path exists, try `-2`, `-3`, and so on. Resolve once, before dispatch.
-3. Sort seat packets by the registry's declared order before synthesis, whatever the dispatch schedule.
-```
-
-## Related rules
-
-- [declare-input-output-contracts](./declare-input-output-contracts.md)
-- [validate-routed-fields-with-a-script](./validate-routed-fields-with-a-script.md)
-- [declare-mutation-limits](./declare-mutation-limits.md)
-- [treat-retrieved-content-as-data](./treat-retrieved-content-as-data.md)
-- [describe-when-to-use](./describe-when-to-use.md)
-- [route-every-status](./route-every-status.md)

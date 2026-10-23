@@ -1,8 +1,6 @@
 # runtime-portability-matrix
 
-📍 Current-state reference: the runtime facts a portable skill depends on (frontmatter, limits, discovery, permissions, dispatch) and the portable baseline for each, re-checked on the date shown.
-
-📍 This file is a `reference`: current-state runtime facts re-checked on the date shown; a runtime-specific field, permission, or dispatch assumption not declared here is a material gap.
+A runtime-specific field, permission, or dispatch assumption not declared here is a material gap.
 
 > Facts checked 2026-09-19 against the official docs linked at the end; `SKILL_DIR` resolution re-checked 2026-10-04. Update this reference when runtime facts change. If this file and the docs disagree, fix this file.
 

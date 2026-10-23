@@ -77,8 +77,10 @@ afterAll(() => {
   rmSync(root, { recursive: true, force: true });
 });
 
-function runOffline(args: string[], scenario: string) {
-  return spawnSync(
+function evaluateOffline(args: string[], scenario: string) {
+  const runs = join(root, "runs");
+  const previous = existsSync(runs) ? readdirSync(runs) : [];
+  const child = spawnSync(
     process.execPath,
     [CLI, "eval", "-c", join(root, "promptfooconfig.mjs"), ...args],
     {
@@ -97,12 +99,6 @@ function runOffline(args: string[], scenario: string) {
       },
     },
   );
-}
-
-function evaluateOffline(args: string[], scenario: string) {
-  const runs = join(root, "runs");
-  const previous = existsSync(runs) ? readdirSync(runs) : [];
-  const child = runOffline(args, scenario);
   expect(child.error).toBeUndefined();
   const added = readdirSync(runs).filter((path) => !previous.includes(path));
   expect(added).toHaveLength(ONE_RUN);
