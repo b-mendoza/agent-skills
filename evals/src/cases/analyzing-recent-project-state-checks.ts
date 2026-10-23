@@ -15,8 +15,6 @@ const OUTPUT_VALIDATOR_PATH = fileURLToPath(
   ),
 );
 
-export type ValidatorMode = "evidence" | "draft" | "verdict" | "envelope";
-
 const SUCCESS_EXIT_STATUS = 0;
 const NO_TOOL_CALLS = 0;
 const NO_COST_USD = 0;
@@ -26,7 +24,7 @@ const COMMAND_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;&|\n"'])+/g;
 
 /** Runs the skill's validator; returns its findings, empty when conformant. */
 export function runOutputValidator(
-  mode: ValidatorMode,
+  mode: "evidence" | "draft" | "verdict" | "envelope",
   payload: string,
   ...projectPath: [] | [string]
 ): string {
@@ -84,9 +82,6 @@ export function assertValidatorInvoked(observation: Observation): void {
 
 /** The result subtype for a run stopped by the suite's configured budget cap. */
 export const BUDGET_STOP_SUBTYPE = "error_max_budget_usd";
-
-/** Status, reason, next step — the escalation envelope's fixed shape. */
-const ENVELOPE_LINES = 3;
 
 /** Keeps a failure message to the single line the report cell can hold. */
 function firstLine(text: string): string {
@@ -149,9 +144,6 @@ export function assertRoutingRunEndedEarly(observation: Observation): void {
   );
 }
 
-/** The escalation statuses these cases can assert on. */
-export type EnvelopeStatus = "PATH_ERROR" | "NOT_GIT";
-
 /**
  * The three-line escalation envelope shared by the PATH_ERROR/NOT_GIT routes.
  * Shape is graded by the skill's own validator; this adds only the expected
@@ -159,7 +151,7 @@ export type EnvelopeStatus = "PATH_ERROR" | "NOT_GIT";
  */
 export function assertEnvelope(
   observation: Observation,
-  status: EnvelopeStatus,
+  status: "PATH_ERROR" | "NOT_GIT",
 ): string {
   assertRunHappened(observation);
   assertValidatorInvoked(observation);
@@ -175,7 +167,7 @@ export function assertEnvelope(
     `RECENT_STATE: ${status}`,
     `expected a ${status} envelope, got: ${firstLine.trim()}`,
   );
-  return `${status}, ${ENVELOPE_LINES}-line envelope`;
+  return `${status}, 3-line envelope`;
 }
 
 // --- Report-shape conformance --------------------------------------------

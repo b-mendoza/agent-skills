@@ -47,23 +47,20 @@ function formatToolNames(toolCalls: readonly ToolCall[]): string {
   return names === "" ? "none" : names;
 }
 
-export interface CaseContext {
-  readonly missingPath: string;
-  readonly notGitPath: string;
-}
-
 export const ROUTING_TIER = 1;
 /** Only tier-2 attempts receive the native mutation-scope assertion. */
 export const BEHAVIORAL_TIER = 2;
 
 /** Routing checks are budget-capped; behavioral runs exercise the full skill. */
-export type CaseTier = typeof ROUTING_TIER | typeof BEHAVIORAL_TIER;
 
 export interface EvalCase {
   readonly id: string;
-  readonly tier: CaseTier;
+  readonly tier: typeof ROUTING_TIER | typeof BEHAVIORAL_TIER;
   readonly fixture: FixtureKind;
-  readonly prompt: (caseContext: CaseContext) => string;
+  readonly prompt: (caseContext: {
+    missingPath: string;
+    notGitPath: string;
+  }) => string;
   readonly budgetUsd: number;
   readonly wallClockMs: number;
   /** Throws to fail. Returns a short observed-outcome string for the report. */
@@ -313,5 +310,3 @@ export const cases = [
     },
   },
 ] as const satisfies readonly EvalCase[];
-
-export type CaseId = (typeof cases)[number]["id"];
