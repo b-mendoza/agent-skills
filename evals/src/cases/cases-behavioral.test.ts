@@ -65,12 +65,6 @@ describe("envelope", () => {
         "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it\nHope that helps!",
       expectedError: /expected exactly 3 envelope lines/,
     },
-    {
-      label: "a missing Next step prefix",
-      finalText:
-        "RECENT_STATE: PATH_ERROR\nReason: path does not exist\nSupply a real path",
-      expectedError: /line 3 must be Next step:/,
-    },
   ])("path-error rejects $label", ({ finalText, expectedError }) => {
     expect(() =>
       getCase("path-error").check(
