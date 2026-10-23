@@ -105,7 +105,7 @@ describe("validate-output.sh", () => {
       label: "an evidence payload missing a field",
       mode: "evidence",
       payload: "GIT_EVIDENCE: PASS\nProject path: /repo/app\nReason: partial",
-      finding: /missing field: Repo state:/,
+      finding: /missing field: Repo state/,
     },
     {
       label: "a non-PASS evidence payload with an extra line",
