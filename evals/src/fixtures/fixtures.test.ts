@@ -8,9 +8,16 @@
 //   pnpm test
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, isAbsolute, join, relative, sep } from "node:path";
 
 import { afterEach, expect, test } from "vitest";
 
@@ -180,26 +187,33 @@ test("each call gets an isolated tree", () => {
   expect(secondFixtureUserName).not.toBe("Only A");
 });
 
-test("cleanup removes the whole temp tree and is safe to call twice", () => {
-  // Registered too: an assertion that throws before the explicit cleanup below
-  // must not leak the temp tree this test exists to prove is removable.
+test("cleanup removes only the whole owned temp root and is idempotent", () => {
   const fixture = createFixture("dirty");
-  const { cwd, notGitPath } = fixture;
+  const root = dirname(fixture.cwd);
+  const relativeRoot = relative(realpathSync(tmpdir()), realpathSync(root));
+  expect(relativeRoot).not.toBe("");
+  expect(relativeRoot).not.toBe("..");
+  expect(relativeRoot.startsWith(`..${sep}`)).toBe(false);
+  expect(isAbsolute(relativeRoot)).toBe(false);
+  expect(dirname(fixture.notGitPath)).toBe(root);
 
-  expect(existsSync(cwd)).toBe(true);
-  // `cleanup` is an unconditional recursive force delete, so this is the only
-  // guard that its deletion root stays inside the OS temp directory.
-  expect(cwd.startsWith(tmpdir())).toBe(true);
-  fixture.cleanup();
-
-  expect(existsSync(cwd)).toBe(false);
-  // The sibling non-repo lives under the same root and must go too.
-  expect(existsSync(notGitPath)).toBe(false);
-
-  // `finally` in runCase can race a failed run; a second call must not throw.
-  expect(() => {
+  const outsideRoot = mkdtempSync(join(tmpdir(), "fixture-cleanup-sentinel-"));
+  const sentinel = join(outsideRoot, "keep.txt");
+  try {
+    writeFileSync(sentinel, "keep");
+    expect(existsSync(fixture.cwd)).toBe(true);
+    expect(existsSync(fixture.notGitPath)).toBe(true);
     fixture.cleanup();
-  }).not.toThrow();
+    expect(existsSync(root)).toBe(false);
+    expect(existsSync(fixture.cwd)).toBe(false);
+    expect(existsSync(fixture.notGitPath)).toBe(false);
+    expect(() => {
+      fixture.cleanup();
+    }).not.toThrow();
+    expect(readFileSync(sentinel, "utf8")).toBe("keep");
+  } finally {
+    rmSync(outsideRoot, { recursive: true, force: true });
+  }
 });
 
 test("make fails when the skill does not exist", () => {
