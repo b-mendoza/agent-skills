@@ -90,7 +90,7 @@ test("not-git: has no worktree and declares no git repo", () => {
   const fixture = createFixture("not-git");
 
   expect(existsSync(join(fixture.cwd, ".git"))).toBe(false);
-  // `undefined` is what makes run.ts fall back to cwd for the status sample.
+  // An absent gitRepo makes the observation query sample cwd.
   expect(fixture.gitRepo).toBeUndefined();
 });
 

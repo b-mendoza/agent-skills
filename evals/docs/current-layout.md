@@ -34,7 +34,7 @@ We keep our own SDK runner because promptfoo's built-in Claude provider loses to
 
 ## Fixtures
 
-`src/fixtures/fixtures.ts` owns synchronous `makeFixture`, fixture types, and planted facts. It builds isolated git/non-git directories, copies the skill under `.claude/skills/`, and returns a cleanup function that removes the entire temporary root. Filesystem and git errors propagate without wrappers. `fixtures.test.ts` checks the real filesystem and git state.
+`src/fixtures/fixtures.ts` owns synchronous `makeFixture`, fixture types, and planted facts. It builds isolated git/non-git directories, copies the skill under `.claude/skills/`, and returns a cleanup function that removes the temporary root. `fixtures.test.ts` checks real filesystem and git state.
 
 ## Observation
 
