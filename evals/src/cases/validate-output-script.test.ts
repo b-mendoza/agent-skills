@@ -69,6 +69,13 @@ describe("validate-output.sh", () => {
       finding: /line 2 must be Reason:/,
     },
     {
+      label: "an envelope with the wrong first-line label",
+      mode: "envelope",
+      payload:
+        "STATE: PATH_ERROR\nReason: missing\nNext step: supply a real path",
+      finding: /line 1 must be RECENT_STATE:/,
+    },
+    {
       label: "an envelope with a fourth line",
       mode: "envelope",
       payload: `${GOOD_ENVELOPE}\nHope that helps!`,
