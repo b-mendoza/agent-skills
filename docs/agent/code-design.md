@@ -11,6 +11,12 @@ Every entry point into the system — an HTTP endpoint, a server function, a CLI
 - **Fail loudly, never quietly.** A contract violation is an error surfaced immediately — error response, error-level log — never coerced, defaulted, or silently dropped to keep a request limping along. Loud failure at the boundary is what makes a broken contract visible without external tooling or client reports.
 - **Types carry the guarantee inward.** Prefer structured types that make invalid states unrepresentable — a parsed URL value over a raw string. Validate once at the boundary and pass the parsed values on; internal code relies on the invariants established there rather than rechecking the same data at every layer.
 
+## Names
+
+Use human-readable names that state what a value holds or a function does, not its generic shape or role. Ask "of what?" or "for what?"; the name should answer. Prefer `outputBytes` to `out`.
+
+Keep established short-scope idioms consistently across a file or module: loop indices, small generic type parameters, or errors handled immediately. Use specific domain nouns for values that outlive that scope or sit far from their origin.
+
 ## Comments
 
 - Comment to explain **why** — a constraint, a trade-off, a non-obvious invariant the code cannot express — never to narrate **what** the code does or that it changed. Comments describing the change itself ("removed X", "now uses Y instead") belong in the commit message, not the source.

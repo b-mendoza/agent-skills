@@ -35,8 +35,7 @@ Subagents keep the main thread's context focused while allowing independent work
 Long-lived guides:
 
 - [Skill verification checklist](docs/agent/skill-verification.md) — manual checks after skill or subagent edits; this repo has no CI.
-- [Naming conventions](docs/agent/naming-conventions.md) — how to name variables, arguments, and functions, with good/bad examples.
-- [Code design](docs/agent/code-design.md) — contracts at the boundaries, failing loudly, and comments.
+- [Code design](docs/agent/code-design.md) — contracts at the boundaries, naming, failing loudly, and comments.
 - [Testing principles](docs/agent/testing.md) — what and how to test.
 - [Workflow and task scoping](docs/agent/workflow.md) — simplicity, scope discipline, issues, and decomposition.
 - [Verifying your work](docs/agent/verification.md) — what "done" requires beyond green tests.
