@@ -12,6 +12,7 @@ import {
 } from "#/cases/analyzing-recent-project-state-checks.ts";
 import { observe } from "#/cases/case-test-support.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
+import { createObservation } from "#/observation/observation-test-support.ts";
 import { getCase } from "#/promptfoo/observation.ts";
 
 /** What `observeClaude` yields when the query never produced a result message. */
@@ -102,6 +103,32 @@ describe("run validity", () => {
 describe("routing", () => {
   test.each([
     {
+      caseId: "trigger-negative-review",
+      failure: "skill triggered on a code-review request",
+    },
+    {
+      caseId: "trigger-negative-mutate",
+      failure: "skill triggered on a mutate request",
+    },
+    {
+      caseId: "trigger-negative-handoff",
+      failure: "skill triggered on a session-handoff request",
+    },
+    {
+      caseId: "trigger-negative-pr-review",
+      failure: "skill triggered on a PR-review request",
+    },
+  ])("`$caseId` rejects a target Skill invocation", ({ caseId, failure }) => {
+    const triggered = createObservation({
+      subtype: BUDGET_STOP_SUBTYPE,
+      isError: true,
+      toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
+    });
+    expect(() => getCase(caseId).check(triggered)).toThrow(failure);
+  });
+
+  test.each([
+    {
       label: "a line-by-line review request",
       caseId: "trigger-negative-review",
       expectedOutcome: "no trigger",
@@ -111,24 +138,10 @@ describe("routing", () => {
       caseId: "trigger-negative-mutate",
       expectedOutcome: "no trigger; no mutation",
     },
-    {
-      label: "a session-handoff request",
-      caseId: "trigger-negative-handoff",
-      expectedOutcome: "no trigger",
-    },
-    {
-      label: "a PR-review request",
-      caseId: "trigger-negative-pr-review",
-      expectedOutcome: "no trigger",
-    },
   ] as const)(
     "a genuine decline still passes for $label",
     ({ caseId, expectedOutcome }) => {
-      // The run happened, ended on the budget cap, and did not route here. This is
-      // the outcome the case exists to observe, so hardening must not reject it.
-      // `isError` is set: the SDK reports the budget cap as a failed run, so the
-      // hardening above has to tolerate it or tier 1 could never pass.
-      const declined = observe({
+      const declined = createObservation({
         subtype: BUDGET_STOP_SUBTYPE,
         isError: true,
         finalText: "I'll review the diff directly.",
@@ -140,7 +153,7 @@ describe("routing", () => {
   );
 
   test("a genuine trigger still passes the positive routing case", () => {
-    const triggered = observe({
+    const triggered = createObservation({
       subtype: BUDGET_STOP_SUBTYPE,
       isError: true,
       toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
@@ -150,10 +163,7 @@ describe("routing", () => {
   });
 
   test("a budget stop is a real decline even when it books nothing", () => {
-    // The cap can bite before the SDK reports a cost or a tool call, which is
-    // the one shape an auth failure and a deliberate stop share. The subtype is
-    // all that separates them, so it has to be enough on its own.
-    const stoppedEarly = observe({
+    const stoppedEarly = createObservation({
       subtype: BUDGET_STOP_SUBTYPE,
       isError: true,
       finalText: "",
@@ -167,7 +177,7 @@ describe("routing", () => {
   });
 
   test("the positive routing case fails when the skill never triggered", () => {
-    const noTrigger = observe({
+    const noTrigger = createObservation({
       subtype: BUDGET_STOP_SUBTYPE,
       toolCalls: [{ name: "Read", input: {} }],
     });
@@ -178,7 +188,7 @@ describe("routing", () => {
   });
 
   test("the mutate case fails when the run mutated the repo", () => {
-    const mutated = observe({
+    const mutated = createObservation({
       subtype: BUDGET_STOP_SUBTYPE,
       finalText: "done",
       toolCalls: [{ name: "Bash", input: { command: "git merge feature" } }],
@@ -190,7 +200,7 @@ describe("routing", () => {
   });
 
   test("a routing-tier case rejects a full report", () => {
-    const fullReport = observe({
+    const fullReport = createObservation({
       subtype: BUDGET_STOP_SUBTYPE,
       isError: true,
       finalText: "# Project State Snapshot\n\n## 1. Executive Summary",
