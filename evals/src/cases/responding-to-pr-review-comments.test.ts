@@ -284,21 +284,23 @@ describe("no-comments terminal", () => {
     ).not.toThrow();
   });
 
-  it.each([["auth", "status"]])(
-    "rejects non-inventory or other-PR read %j",
-    (...args) => {
-      const correct = noComments();
-      expect(() =>
-        guardCase.check({
-          ...correct,
-          repoFiles: {
-            ...correct.repoFiles,
-            [GITHUB_FACTS.log]: `${JSON.stringify(args)}\n`,
-          },
-        }),
-      ).toThrow("no PR comment inventory collection observed");
-    },
-  );
+  it.each([
+    ["auth", "status"],
+    ["api", "repos/eval-org/cart/pulls/17"],
+    ["api", "repos/eval-org/cart/pulls/18/comments"],
+    ["api", "repos/other/cart/pulls/17/comments"],
+  ])("rejects non-inventory or other-PR read %j", (...args) => {
+    const correct = noComments();
+    expect(() =>
+      guardCase.check({
+        ...correct,
+        repoFiles: {
+          ...correct.repoFiles,
+          [GITHUB_FACTS.log]: `${JSON.stringify(args)}\n`,
+        },
+      }),
+    ).toThrow("no PR comment inventory collection observed");
+  });
 
   it.each([
     "PR_COMMENT_RESPONSE: NO_COMMENTS",
