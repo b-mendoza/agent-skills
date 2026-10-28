@@ -12,6 +12,14 @@ import {
 const toolCallSchema = Schema.Struct({
   name: Schema.String,
   input: Schema.Record(Schema.String, Schema.Unknown),
+  id: Schema.optional(Schema.String),
+  result: Schema.optional(
+    Schema.Struct({
+      content: Schema.String,
+      isError: Schema.Boolean,
+      truncated: Schema.Boolean,
+    }),
+  ),
 });
 export type ToolCall = {
   -readonly [Key in keyof typeof toolCallSchema.Type]: (typeof toolCallSchema.Type)[Key];
@@ -66,8 +74,32 @@ const decodeBlock = Schema.decodeUnknownSync(
   Schema.Struct({ type: Schema.String }),
 );
 const decodeTool = Schema.decodeUnknownSync(
-  Schema.Struct({ name: Schema.String, input: Schema.Unknown }),
+  Schema.Struct({
+    name: Schema.String,
+    input: Schema.Unknown,
+    id: Schema.optional(Schema.String),
+  }),
 );
+const decodeUser = Schema.decodeUnknownSync(
+  Schema.Struct({
+    message: Schema.Struct({
+      content: Schema.Union([Schema.String, Schema.Array(Schema.Unknown)]),
+    }),
+  }),
+);
+const decodeToolResult = Schema.decodeUnknownSync(
+  Schema.Struct({
+    tool_use_id: Schema.String,
+    content: Schema.optional(
+      Schema.Union([Schema.String, Schema.Array(Schema.Unknown)]),
+    ),
+    is_error: Schema.optional(Schema.Boolean),
+  }),
+);
+const WEB_TOOLS = new Set(["WebSearch", "WebFetch"]);
+const WEB_RESULT_CHARS = 8_000;
+const WEB_RESULTS_TOTAL_CHARS = 32_000;
+const ZERO_CHARS = 0;
 const decodeResult = Schema.decodeUnknownSync(
   Schema.Struct({
     subtype: Schema.String,
@@ -92,11 +124,45 @@ function assistantToolCalls(message: unknown): ToolCall[] {
     if (decodeBlock(block).type !== "tool_use") continue;
     const tool = decodeTool(block);
     calls.push({
-      name: tool.name,
+      ...tool,
       input: isRecord(tool.input) ? { ...tool.input } : {},
     });
   }
   return calls;
+}
+
+function recordWebResult(block: unknown, toolCalls: ToolCall[]): void {
+  const result = decodeToolResult(block);
+  const call = toolCalls.find(
+    (candidate) =>
+      candidate.id === result.tool_use_id && WEB_TOOLS.has(candidate.name),
+  );
+  if (call === undefined) return;
+  const content = toText(result.content);
+  const capturedChars = toolCalls.reduce(
+    (total, candidate) =>
+      total + (candidate.result?.content.length ?? ZERO_CHARS),
+    ZERO_CHARS,
+  );
+  const limit = Math.min(
+    WEB_RESULT_CHARS,
+    WEB_RESULTS_TOTAL_CHARS - capturedChars,
+  );
+  call.result = {
+    content: content.slice(ZERO_CHARS, limit),
+    isError: result.is_error ?? false,
+    truncated: content.length > limit,
+  };
+}
+
+function userToolResults(message: unknown, toolCalls: ToolCall[]): void {
+  const { content } = decodeUser(message).message;
+  if (typeof content === "string") return;
+  for (const block of content) {
+    if (decodeBlock(block).type === "tool_result") {
+      recordWebResult(block, toolCalls);
+    }
+  }
 }
 
 function normalizeResult(message: unknown): ResultVerdict {
@@ -126,6 +192,9 @@ function normalizeStreamMessage(
   switch (message["type"]) {
     case "assistant":
       observedToolCalls.push(...assistantToolCalls(message));
+      return null;
+    case "user":
+      userToolResults(message, observedToolCalls);
       return null;
     case "result":
       return normalizeResult(message);
