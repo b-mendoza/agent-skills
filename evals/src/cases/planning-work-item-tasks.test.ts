@@ -112,6 +112,7 @@ function completedObservation(): Observation {
       entries: OUTPUT_PATHS.map((path) => `?? ${path}`).join("\n"),
     },
     repoFiles: {
+      ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
       [SOURCE_PATH]: SNAPSHOT,
       [HEAD_LOG]: `commit: ${SEED_COMMIT}\n`,
       [DETAILED_PATH]: STAGE_ONE,
