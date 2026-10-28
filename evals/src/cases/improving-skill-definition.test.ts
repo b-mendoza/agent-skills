@@ -384,3 +384,41 @@ test("seed creates a first-party package with its reference absent", () => {
     fixture.cleanup();
   }
 });
+
+test.each(["/outside", "../outside", "/repo-other"])(
+  "audit rejects foreign-root same-suffix write from %s",
+  (root) => {
+    const good = goodAudit();
+    expect(() =>
+      getCase("audit-approval").check({
+        ...good,
+        repoFiles: {
+          ...good.repoFiles,
+          ".git/eval-fixture-root": "/repo\n/canonical/repo",
+        },
+        toolCalls: [
+          ...good.toolCalls,
+          { name: "Edit", input: { file_path: `${root}/${SYNTHESIS_PATH}` } },
+        ],
+      }),
+    ).toThrow();
+  },
+);
+
+test.each(["", "/repo/", "/canonical/repo/"])(
+  "accepts artifact writes relative to or within fixture root %s",
+  (prefix) => {
+    const good = goodAudit();
+    expect(() =>
+      getCase("audit-approval").check({
+        ...good,
+        toolCalls: [
+          ...good.toolCalls.filter(
+            (call) => !["Write", "Edit"].includes(call.name),
+          ),
+          { name: "Write", input: { file_path: `${prefix}${SYNTHESIS_PATH}` } },
+        ],
+      }),
+    ).not.toThrow();
+  },
+);
