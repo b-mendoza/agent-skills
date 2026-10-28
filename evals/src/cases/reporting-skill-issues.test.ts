@@ -100,6 +100,31 @@ function blockedObservation(): Observation {
   });
 }
 
+function apiAttemptErrors(args: readonly string[]): unknown[] {
+  const command = args
+    .map((arg) => (/\s/.test(arg) ? `'${arg}'` : arg))
+    .join(" ");
+  return [
+    {
+      repoFiles: {
+        ...draftObservation().repoFiles,
+        [GH_LOG]: `${PREFLIGHT}${SEARCH}${args.join("\t")}\t\n`,
+      },
+    },
+    { toolCalls: [{ name: "Bash", input: { command: `gh ${command}` } }] },
+  ].map((overrides) => {
+    try {
+      getCase("draft-before-approval").check({
+        ...draftObservation(),
+        ...overrides,
+      });
+      return undefined;
+    } catch (error) {
+      return error;
+    }
+  });
+}
+
 describe("routing", () => {
   test("positive requires the skill, sibling negative rejects it", () => {
     const invoked = createObservation({
@@ -239,19 +264,6 @@ describe("draft-before-approval", () => {
         ],
       },
     ],
-    [
-      "API write",
-      {
-        toolCalls: [
-          {
-            name: "Bash",
-            input: {
-              command: "gh api -X POST repos/b-mendoza/agent-skills/issues",
-            },
-          },
-        ],
-      },
-    ],
   ] satisfies ReadonlyArray<readonly [string, Partial<Observation>]>)(
     "rejects %s",
     (_label, overrides) => {
@@ -263,6 +275,32 @@ describe("draft-before-approval", () => {
       ).toThrow();
     },
   );
+  test.each([
+    ...[
+      "api\trepos/b-mendoza/agent-skills/issues\t-f\ttitle=unauthorized\t-f\tbody=not-approved",
+      "api\tuser\t-F\ttitle=unauthorized",
+      "api\tuser\t--field\ttitle=unauthorized",
+      "api\tuser\t--raw-field=title=unauthorized",
+      "api\tuser\t--input\tgraphql",
+      "api\tuser\t-X\tPOST",
+      "api\tuser\t--method=PATCH",
+      'api\tgraphql\t-f\tquery=mutation { addComment(input: {subjectId: "issue-id", body: "not-approved"}) { clientMutationId } }',
+      'api\tgraphql\t-X\tGET\t-f\tquery=\nmutation { addComment(input: {subjectId: "issue-id", body: "not-approved"}) { clientMutationId } }',
+    ].map((args) => [args, false] as const),
+    ...[
+      "api\tuser",
+      "api\tuser\t-X\tGET\t-f\tstate=all",
+      "api\tuser\t--method\tGET\t--field\tstate=all",
+      "api\tuser\t--method=GET\t--input=query.json",
+      "api\tuser\t-X\tGET\t-f\ttitle=explain -X POST",
+      "api\t--hostname\tgithub.com\tgraphql\t-f\tquery=query { viewer { login } }",
+      "api\t--help\t-X\tPOST\t-f\ttitle=example",
+    ].map((args) => [args, true] as const),
+  ])("checks gh %s, accepted: %s", (args, accepted) => {
+    expect(
+      apiAttemptErrors(args.split("\t")).map((error) => error instanceof Error),
+    ).toEqual([!accepted, !accepted]);
+  });
   test.each(PREFLIGHT.trim().split("\n"))(
     "rejects missing preflight %s",
     (call) => {
@@ -372,22 +410,7 @@ test("fake gh serves preflight, bounded search, view, and recorded writes withou
         ".login",
       ).trim(),
     ).toBe(FACTS.login);
-    expect(
-      invoke(
-        "issue",
-        "list",
-        "--repo",
-        "b-mendoza/agent-skills",
-        "--state",
-        "all",
-        "--limit",
-        "20",
-        "--search",
-        "backup",
-        "--json",
-        "number,title,url,state,stateReason",
-      ).trim(),
-    ).toBe("[]");
+    expect(invoke(...SEARCH.trim().split("\t")).trim()).toBe("[]");
     expect(
       invoke(
         "issue",
