@@ -350,3 +350,44 @@ test("every case rejects a timed-out query", () => {
     expect(() => entry.check(createObservation({ timedOut: true }))).toThrow();
   }
 });
+
+test.each(["/outside", "../outside", "/repo-other"])(
+  "staging rejects foreign-root same-suffix write from %s",
+  (root) => {
+    const good = goodStagedExtension();
+    expect(() =>
+      getCase("staged-extension-approval").check({
+        ...good,
+        repoFiles: {
+          ...good.repoFiles,
+          ".git/eval-fixture-root": "/repo\n/canonical/repo",
+        },
+        toolCalls: [
+          ...good.toolCalls,
+          { name: "Edit", input: { file_path: `${root}/${STAGED_REFERENCE}` } },
+        ],
+      }),
+    ).toThrow();
+  },
+);
+
+test.each(["", "/repo/", "/canonical/repo/"])(
+  "accepts artifact writes relative to or within fixture root %s",
+  (prefix) => {
+    const good = goodStagedExtension();
+    expect(() =>
+      getCase("staged-extension-approval").check({
+        ...good,
+        toolCalls: [
+          ...good.toolCalls.filter(
+            (call) => !["Write", "Edit"].includes(call.name),
+          ),
+          {
+            name: "Write",
+            input: { file_path: `${prefix}${STAGED_REFERENCE}` },
+          },
+        ],
+      }),
+    ).not.toThrow();
+  },
+);
