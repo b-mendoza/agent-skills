@@ -194,3 +194,52 @@ describe("refactoring-code checks", () => {
     }
   });
 });
+
+test.each(["/outside", "../outside", "/fixture-other"])(
+  "refactor plan rejects foreign-root same-suffix write from %s",
+  (root) => {
+    const good = correctObservation(planCase);
+    expect(() =>
+      planCase.check({
+        ...good,
+        repoFiles: {
+          ...good.repoFiles,
+          ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
+        },
+        gitStatusAfter: { kind: "worktree", entries: "?? .handoffs/" },
+        toolCalls: [
+          ...good.toolCalls,
+          {
+            name: "Write",
+            input: { file_path: `/fixture/${REFACTOR_PLAN_PATH}` },
+          },
+          {
+            name: "Edit",
+            input: { file_path: `${root}/${REFACTOR_PLAN_PATH}` },
+          },
+        ],
+      }),
+    ).toThrow();
+  },
+);
+
+test.each(["", "/fixture/", "/canonical/fixture/"])(
+  "accepts artifact writes relative to or within fixture root %s",
+  (prefix) => {
+    const good = correctObservation(planCase);
+    expect(() =>
+      planCase.check({
+        ...good,
+        toolCalls: [
+          ...good.toolCalls.filter(
+            (call) => !["Write", "Edit"].includes(call.name),
+          ),
+          {
+            name: "Write",
+            input: { file_path: `${prefix}${REFACTOR_PLAN_PATH}` },
+          },
+        ],
+      }),
+    ).not.toThrow();
+  },
+);
