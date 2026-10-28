@@ -14,6 +14,7 @@ import {
   assertNoMutation,
   checkNegativeRouting,
   checkPositiveRouting,
+  FIXTURE_ROOT_PATH,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -313,7 +314,7 @@ export const cases = [
     seed: (context) => {
       seedPlanningFiles(context, { [SOURCE_PATH]: SNAPSHOT });
     },
-    snapshotPaths: [...OUTPUT_PATHS, SOURCE_PATH, HEAD_LOG],
+    snapshotPaths: [FIXTURE_ROOT_PATH, ...OUTPUT_PATHS, SOURCE_PATH, HEAD_LOG],
     prompt: () =>
       `Use ${SKILL} with TICKET_KEY=${KEY}. The Phase 1 snapshot is ready. Complete Phase 2 only.`,
     check: checkCompletedPlan,
@@ -355,7 +356,7 @@ export const cases = [
     seed: (context) => {
       seedPlanningFiles(context, { [SOURCE_PATH]: INVALID_SNAPSHOT });
     },
-    snapshotPaths: [...OUTPUT_PATHS, SOURCE_PATH, HEAD_LOG],
+    snapshotPaths: [FIXTURE_ROOT_PATH, ...OUTPUT_PATHS, SOURCE_PATH, HEAD_LOG],
     prompt: () =>
       `Use ${SKILL} with TICKET_KEY=${KEY}. Plan the work item from its snapshot.`,
     check: (observation) => {
