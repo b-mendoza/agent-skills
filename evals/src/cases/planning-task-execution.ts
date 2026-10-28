@@ -14,6 +14,7 @@ import {
   assertNoMutation,
   checkNegativeRouting,
   checkPositiveRouting,
+  FIXTURE_ROOT_PATH,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -185,6 +186,7 @@ export const cases = [
       seedPlanningFiles(context, INPUT_FILES);
     },
     snapshotPaths: [
+      FIXTURE_ROOT_PATH,
       ...OUTPUT_PATHS,
       ...Object.keys(INPUT_FILES),
       OTHER_TASK_PATH,
@@ -234,7 +236,12 @@ export const cases = [
         [INPUT_PATH]: BLOCKED_PLAN,
       });
     },
-    snapshotPaths: [...OUTPUT_PATHS, INPUT_PATH, OTHER_TASK_PATH],
+    snapshotPaths: [
+      FIXTURE_ROOT_PATH,
+      ...OUTPUT_PATHS,
+      INPUT_PATH,
+      OTHER_TASK_PATH,
+    ],
     prompt: () =>
       `Use ${SKILL}. Direct standalone invocation: TICKET_KEY=${KEY}, TASK_NUMBER=2. Prepare this task for execution.`,
     check: (observation) => {
