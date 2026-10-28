@@ -200,8 +200,14 @@ describe("planning-only mutation boundary", () => {
   });
   test.each([
     "npm test",
+    "CI=1 npm test",
+    "CI=1 FOO=bar npm test",
+    "env CI=1 FOO='two words' npm test",
+    "cd /fixture && CI=1 pnpm run build",
     "cd /fixture && npm install",
     "node --test tests/order.test.mjs",
+    "node --no-warnings --test tests/order.test.mjs",
+    "env CI=1 node --no-warnings --test-reporter=spec --test tests/order.test.mjs",
     "git status\npnpm run build",
     "npx prettier .",
     "yarn test",
@@ -213,15 +219,20 @@ describe("planning-only mutation boundary", () => {
       }),
     ).toThrow(/must not execute/);
   });
-  test("allows read-only inspection commands and report writes", () => {
+  test.each([
+    "cat package.json && git status --short",
+    "node --version",
+    "CI=1 node --version",
+    "env CI=1 FOO='two words' node --version",
+    "node --test-reporter=spec --version",
+    "cat tests/order.test.mjs",
+    "git log --oneline",
+  ])("allows read-only inspection %s and report writes", (command) => {
     expect(
       plan.check({
         ...readyObservation,
         toolCalls: [
-          {
-            name: "Bash",
-            input: { command: "cat package.json && git status --short" },
-          },
+          { name: "Bash", input: { command } },
           { name: "Write", input: { file_path: ARTIFACT_PATH } },
         ],
       }),
