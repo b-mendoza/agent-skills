@@ -289,6 +289,9 @@ describe("no-comments terminal", () => {
     ["api", "repos/eval-org/cart/pulls/17"],
     ["api", "repos/eval-org/cart/pulls/18/comments"],
     ["api", "repos/other/cart/pulls/17/comments"],
+    ["pr", "view", GITHUB_FACTS.url, "--json", "title,body"],
+    ["pr", "view", "18", "--json", "comments,reviews"],
+    ["pr", "view", "17", "--repo", "other/cart", "--json", "comments"],
   ])("rejects non-inventory or other-PR read %j", (...args) => {
     const correct = noComments();
     expect(() =>
