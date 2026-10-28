@@ -90,7 +90,6 @@ const FINAL_PLAN = `${STAGE_TWO}## Validation Report
 | FAIL | 0 |
 ### Check Results
 ${Array.from({ length: VALIDATION_COUNT }, (_, index) => `| ${index + FIRST_CHECK_NUMBER} | Check | PASS | Evidence |`).join("\n")}
-TASK_VALIDATION: PASS
 `;
 const HANDOFF = `PLANNING: PASS
 ISSUE_SLUG: ${KEY}
