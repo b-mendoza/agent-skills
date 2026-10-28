@@ -1,9 +1,14 @@
+import { spawnSync } from "node:child_process";
+import { join } from "node:path";
+
 import { expect, test } from "vitest";
 
 import {
   assertOnlySnapshotWritten,
+  seedGitHub,
   SNAPSHOT,
 } from "#/cases/fetching-work-item-fixtures.ts";
+import { makeFixture } from "#/fixtures/fixtures.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 const observation = createObservation({
@@ -38,3 +43,28 @@ test.each([SNAPSHOT, `/fixture/${SNAPSHOT}`, `/canonical/fixture/${SNAPSHOT}`])(
     }).not.toThrow();
   },
 );
+
+const MISSING_ISSUE_EXIT_CODE = 1;
+
+test("missing issue remains missing through GraphQL", () => {
+  const fixture = makeFixture("clean", [], (context) => {
+    seedGitHub(context, "missing");
+  });
+  try {
+    const result = spawnSync(
+      join(fixture.binPath, "gh"),
+      [
+        "api",
+        "graphql",
+        "-f",
+        'query=query { repository(owner: "acme", name: "app") { issue(number: 42) { title } } }',
+      ],
+      { encoding: "utf8" },
+    );
+    expect(result.status).toBe(MISSING_ISSUE_EXIT_CODE);
+    expect(result.stderr).toMatch(/Not Found|Could not resolve/);
+    expect(result.stdout).toBe("");
+  } finally {
+    fixture.cleanup();
+  }
+});
