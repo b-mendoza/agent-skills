@@ -300,7 +300,7 @@ describe("conversation handoff package", () => {
   it.each([
     {
       name: "Write",
-      input: { file_path: "/outside/unrelated.txt", content: "x" },
+      input: { file_path: `/outside/${HANDOFF_PATHS.target}`, content: "x" },
     },
     {
       name: "Edit",
