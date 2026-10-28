@@ -247,6 +247,24 @@ describe("verified review preview", () => {
     ).not.toThrow();
   });
 
+  it.each([
+    ["pricing.py:999 RIGHT", '{"line":999,"path":"pricing.py","side":"RIGHT"}'],
+    ["pricing.py:999 LEFT", '{"line":999,"path":"pricing.py","side":"LEFT"}'],
+  ])(
+    "rejects matching targets outside the pinned fixture: %s",
+    (anchor, target) => {
+      expect(() =>
+        previewCase.check({
+          ...observation(REPORT.replace("pricing.py:3 RIGHT", anchor)),
+          finalText: FINAL.replace(
+            '{"line":3,"path":"pricing.py","side":"RIGHT"}',
+            target,
+          ),
+        }),
+      ).toThrow();
+    },
+  );
+
   it.each(REQUIRED_HELPERS)(
     "rejects an omitted required helper invocation $input.command",
     (tool) => {

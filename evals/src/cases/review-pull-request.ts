@@ -43,6 +43,12 @@ function checkInlineTarget(report: string, preview: string): void {
   assert.ok(anchor.groups !== undefined, "missing saved inline anchor fields");
   const { startLine, endLine, side } = anchor.groups;
   const line = Number(endLine ?? startLine);
+  const source =
+    side === "RIGHT" ? GITHUB_FACTS.headSource : GITHUB_FACTS.baseSource;
+  assert.ok(
+    line <= source.trimEnd().split("\n").length,
+    "saved inline anchor is outside the pinned fixture",
+  );
   assert.deepEqual(
     [...preview.matchAll(/^Inline: .+\r?$/gm)].map(([location]) =>
       JSON.parse(location.slice("Inline: ".length)),
