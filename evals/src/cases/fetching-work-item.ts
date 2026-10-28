@@ -16,6 +16,7 @@ import {
   assertNoMutation,
   checkNegativeRouting,
   checkPositiveRouting,
+  FIXTURE_ROOT_PATH,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -190,7 +191,7 @@ export const cases = [
     seed: (context) => {
       seedGitHub(context);
     },
-    snapshotPaths: [SNAPSHOT, GH_LOG],
+    snapshotPaths: [FIXTURE_ROOT_PATH, SNAPSHOT, GH_LOG],
     intent:
       "Fetch and validate an issue snapshot without changing the tracker or unrelated files",
     prompt: () =>
@@ -220,7 +221,7 @@ export const cases = [
     seed: (context) => {
       seedGitHub(context, "missing");
     },
-    snapshotPaths: [SNAPSHOT, GH_LOG],
+    snapshotPaths: [FIXTURE_ROOT_PATH, SNAPSHOT, GH_LOG],
     intent: "A 404 is reported without a fabricated snapshot or tracker writes",
     prompt: () =>
       `Use ${SKILL}. ISSUE_URL=${ISSUE.url}. Return the structured failure summary if retrieval fails.`,
