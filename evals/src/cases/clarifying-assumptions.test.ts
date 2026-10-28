@@ -90,6 +90,7 @@ function behavioralObservation(isPreview: boolean): Observation {
     ],
     repoFiles: {
       ...CLARIFICATION_INPUTS,
+      ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
       [CLARIFICATION_FACTS.critiquePath]: critique,
       [CLARIFICATION_FACTS.decisionsPath]: null,
       "a.txt": "hello\n",
