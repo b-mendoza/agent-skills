@@ -288,3 +288,49 @@ describe("clarifying-assumptions", () => {
     }
   });
 });
+
+test.each(["/outside", "../outside", "/fixture-other"])(
+  "critique rejects foreign-root same-suffix write from %s",
+  (root) => {
+    const good = behavioralObservation(true);
+    expect(() =>
+      getCase("upfront-preview-gate").check({
+        ...good,
+        repoFiles: {
+          ...good.repoFiles,
+          ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
+        },
+        toolCalls: [
+          ...good.toolCalls,
+          {
+            name: "Edit",
+            input: { file_path: `${root}/${CLARIFICATION_FACTS.critiquePath}` },
+          },
+        ],
+      }),
+    ).toThrow();
+  },
+);
+
+test.each(["", "/fixture/", "/canonical/fixture/"])(
+  "accepts artifact writes relative to or within fixture root %s",
+  (prefix) => {
+    const good = behavioralObservation(true);
+    expect(() =>
+      getCase("upfront-preview-gate").check({
+        ...good,
+        toolCalls: [
+          ...good.toolCalls.filter(
+            (call) => !["Write", "Edit"].includes(call.name),
+          ),
+          {
+            name: "Write",
+            input: {
+              file_path: `${prefix}${CLARIFICATION_FACTS.critiquePath}`,
+            },
+          },
+        ],
+      }),
+    ).not.toThrow();
+  },
+);
