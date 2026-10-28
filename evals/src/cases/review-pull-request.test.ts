@@ -226,6 +226,27 @@ describe("verified review preview", () => {
     ).toThrow();
   });
 
+  it.each([
+    [
+      "pricing.py:2-3 RIGHT",
+      '{"line":3,"path":"pricing.py","side":"RIGHT","start_line":2,"start_side":"RIGHT"}',
+    ],
+    [
+      "pricing.py:3-4 LEFT",
+      '{"line":4,"path":"pricing.py","side":"LEFT","start_line":3,"start_side":"LEFT"}',
+    ],
+  ])("accepts matching range metadata for %s", (anchor, target) => {
+    expect(() =>
+      previewCase.check({
+        ...observation(REPORT.replace("pricing.py:3 RIGHT", anchor)),
+        finalText: FINAL.replace(
+          'Inline: {"line":3,"path":"pricing.py","side":"RIGHT"}',
+          `\nInline: ${target}\n`,
+        ),
+      }),
+    ).not.toThrow();
+  });
+
   it.each(REQUIRED_HELPERS)(
     "rejects an omitted required helper invocation $input.command",
     (tool) => {
