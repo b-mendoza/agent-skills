@@ -1,3 +1,13 @@
+import {
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { describe, expect, test } from "vitest";
 
 import {
@@ -12,6 +22,8 @@ import {
   checkNegativeRouting,
   checkPositiveRouting,
   findBashCalls,
+  FIXTURE_ROOT_PATH,
+  fixtureRelativePath,
   formatToolNames,
 } from "#/cases/shared-checks.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -196,4 +208,53 @@ test("native mutation grading accepts a clean run and rejects writes", () => {
       }),
     ),
   ).toThrow(/read-only contract violated/);
+});
+
+describe("fixture-relative artifact paths", () => {
+  const observation = createObservation({
+    repoFiles: { [FIXTURE_ROOT_PATH]: "/fixture\n/canonical/fixture" },
+  });
+
+  test.each([
+    "docs/report.md",
+    "./docs/report.md",
+    "/fixture/docs/report.md",
+    "/canonical/fixture/docs/report.md",
+  ])("resolves an in-root path %s", (path) => {
+    expect(fixtureRelativePath(observation, path)).toBe("docs/report.md");
+  });
+
+  test.each([
+    "/outside/docs/report.md",
+    "/fixture-other/docs/report.md",
+    "../outside/docs/report.md",
+    "/fixture/../outside/docs/report.md",
+  ])("rejects a foreign or traversing path %s", (path) => {
+    expect(fixtureRelativePath(observation, path)).toBeUndefined();
+  });
+
+  test("does not infer an absolute fixture root from tool paths", () => {
+    expect(() =>
+      fixtureRelativePath(createObservation(), "/fixture/docs/report.md"),
+    ).toThrow(/not captured/);
+  });
+
+  test("resolves both names of a symlinked fixture after cleanup", () => {
+    const directory = mkdtempSync(join(tmpdir(), "artifact-roots-"));
+    const lexical = join(directory, "fixture-link");
+    const target = join(directory, "fixture");
+    mkdirSync(target);
+    symlinkSync(target, lexical);
+    const canonical = realpathSync(lexical);
+    const captured = createObservation({
+      repoFiles: { [FIXTURE_ROOT_PATH]: `${lexical}\n${canonical}` },
+    });
+    rmSync(directory, { recursive: true, force: true });
+    expect(fixtureRelativePath(captured, join(lexical, "docs/report.md"))).toBe(
+      "docs/report.md",
+    );
+    expect(
+      fixtureRelativePath(captured, join(canonical, "docs/report.md")),
+    ).toBe("docs/report.md");
+  });
 });
