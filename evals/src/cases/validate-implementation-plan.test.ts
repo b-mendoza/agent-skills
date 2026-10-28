@@ -13,6 +13,34 @@ import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 const skill = "validate-implementation-plan";
+const snapshot = `## Source Metadata
+- Source path: implementation-plan.md
+- Artifact action: create
+- Redactions applied: no
+- Sensitive categories: none
+## Section Inventory
+1. Data selection
+2. Implementation
+3. Delivery
+4. Verification
+## Sanitized Section Summaries
+### Data selection
+- Read the existing local JSON file.
+- Select every task for every user, including archived tasks.
+### Implementation
+- Introduce a Kafka cluster.
+- Generate the CSV asynchronously with a worker service.
+### Delivery
+- Return the generated CSV as a download.
+- Deliver it to the signed-in user.
+### Verification
+- Check that the CSV includes every row from the JSON file.
+- Compare the export against the source rows.
+## Technical Claims
+- plan_section: Implementation claim: Kafka and a worker service generate the CSV asynchronously. confidence: explicit
+## Sensitive Content Handling
+- No sensitive literals detected.
+`;
 const report = `## Audit Scope
 Audit the supplied plan against the user's baseline.
 ## Source Requirements
@@ -55,11 +83,8 @@ function behavioralObservation(suffix: string): Observation {
   try {
     const files = snapshotRepoFiles(fixture.cwd, evalCase.snapshotPaths ?? []);
     if (suffix === "audit-planted-defects") {
-      files["implementation-plan.audit-input.md"] =
-        "# Sanitized plan\nExport every user's tasks and add Kafka.\n";
+      files["implementation-plan.audit-input.md"] = snapshot;
       files["implementation-plan.audit.md"] = report;
-    }
-    if (suffix === "audit-planted-defects") {
       return createObservation({
         finalText,
         repoFiles: files,
@@ -74,6 +99,15 @@ function behavioralObservation(suffix: string): Observation {
   } finally {
     fixture.cleanup();
   }
+}
+
+function checkAudit(overrides: Partial<Observation> = {}): string {
+  const observation = behavioralObservation("audit-planted-defects");
+  return getCase("audit-planted-defects").check({
+    ...observation,
+    ...overrides,
+    repoFiles: { ...observation.repoFiles, ...overrides.repoFiles },
+  });
 }
 
 describe("validate-implementation-plan routing", () => {
@@ -132,6 +166,15 @@ describe("validate-implementation-plan artifacts", () => {
   });
 
   test.each([
+    ["empty sanitized snapshot", "implementation-plan.audit-input.md", "  \n"],
+    ["uncaptured source", "implementation-plan.md", null],
+    ["missing HEAD evidence", ".git/logs/HEAD", null],
+    ["missing cwd evidence", ".git/eval-plan-root", null],
+    [
+      "repeated report section",
+      "implementation-plan.audit.md",
+      `${report}\n## Audit Summary\nNone.`,
+    ],
     ["missing snapshot", "implementation-plan.audit-input.md", null],
     ["missing report", "implementation-plan.audit.md", null],
     ["overwritten source", "implementation-plan.md", "rewritten plan"],
@@ -148,13 +191,7 @@ describe("validate-implementation-plan artifacts", () => {
         .replace("## Open Questions\nNone.", "## Audit Scope\nNone."),
     ],
   ])("rejects %s", (_label, path, content) => {
-    const observation = behavioralObservation("audit-planted-defects");
-    expect(() =>
-      getCase("audit-planted-defects").check({
-        ...observation,
-        repoFiles: { ...observation.repoFiles, [path]: content },
-      }),
-    ).toThrow();
+    expect(() => checkAudit({ repoFiles: { [path]: content } })).toThrow();
   });
 
   test.each([
@@ -328,7 +365,7 @@ describe("audit mutation boundaries", () => {
             name: "Write",
             input: {
               file_path: "./implementation-plan.audit-input.md",
-              content: "snapshot",
+              content: snapshot,
             },
           },
           { name: "Bash", input: { command: "git status --short" } },
@@ -350,7 +387,7 @@ describe("audit mutation boundaries", () => {
         fixture.cwd,
         evalCase.snapshotPaths ?? [],
       );
-      files["implementation-plan.audit-input.md"] = "snapshot";
+      files["implementation-plan.audit-input.md"] = snapshot;
       files["implementation-plan.audit.md"] = report;
       const observation = createObservation({
         finalText,
@@ -372,26 +409,6 @@ describe("audit mutation boundaries", () => {
     } finally {
       fixture.cleanup();
     }
-  });
-
-  test.each([
-    ["empty sanitized snapshot", "implementation-plan.audit-input.md", "  \n"],
-    ["uncaptured source", "implementation-plan.md", null],
-    ["missing HEAD evidence", ".git/logs/HEAD", null],
-    ["missing cwd evidence", ".git/eval-plan-root", null],
-    [
-      "repeated report section",
-      "implementation-plan.audit.md",
-      `${report}\n## Audit Summary\nNone.`,
-    ],
-  ])("rejects %s", (_label, path, content) => {
-    const observation = behavioralObservation("audit-planted-defects");
-    expect(() =>
-      getCase("audit-planted-defects").check({
-        ...observation,
-        repoFiles: { ...observation.repoFiles, [path]: content },
-      }),
-    ).toThrow();
   });
 
   test.each([
@@ -418,27 +435,12 @@ describe("audit mutation boundaries", () => {
     ).toThrow();
   });
 
-  test("requires a readable clean baseline and a readable final git sample", () => {
-    const observation = behavioralObservation("audit-planted-defects");
-    const evalCase = getCase("audit-planted-defects");
-    expect(() =>
-      evalCase.check({
-        ...observation,
-        gitStatusBefore: { kind: "worktree", entries: "?? unrelated.txt" },
-      }),
-    ).toThrow();
-    expect(() =>
-      evalCase.check({
-        ...observation,
-        gitStatusBefore: { kind: "unreadable", reason: "failed" },
-      }),
-    ).toThrow();
-    expect(() =>
-      evalCase.check({
-        ...observation,
-        gitStatusAfter: { kind: "unreadable", reason: "failed" },
-      }),
-    ).toThrow();
+  test.each([
+    { gitStatusBefore: { kind: "worktree", entries: "?? unrelated.txt" } },
+    { gitStatusBefore: { kind: "unreadable", reason: "failed" } },
+    { gitStatusAfter: { kind: "unreadable", reason: "failed" } },
+  ] as const)("rejects unreadable or dirty git evidence: %j", (overrides) => {
+    expect(() => checkAudit(overrides)).toThrow();
   });
 
   test("a gate still rejects source edits, file writes, and git deltas", () => {
