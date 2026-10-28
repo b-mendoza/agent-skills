@@ -52,6 +52,7 @@ const SYNTHESIS = SYNTHESIS_KEYS.map(
   (key) => `${key}: ${key === "overall_verdict" ? "GAPS_FOUND" : "[]"}`,
 ).join("\n");
 const SOURCE_FILES = {
+  ".git/eval-fixture-root": "/repo\n/canonical/repo",
   [AUDIT_FACTS.sourcePath]: AUDIT_FACTS.content,
   [AUDIT_FACTS.missingPath]: null,
 };
