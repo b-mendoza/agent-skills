@@ -140,12 +140,12 @@ describe("validate-implementation-plan artifacts", () => {
       getCase("audit-planted-defects").seed,
     );
     try {
-      expect(
-        readFileSync(join(fixture.cwd, "implementation-plan.md"), "utf8"),
-      ).toContain("Kafka");
-      expect(
-        readFileSync(join(fixture.cwd, "implementation-plan.md"), "utf8"),
-      ).toContain("every user");
+      const plan = readFileSync(
+        join(fixture.cwd, "implementation-plan.md"),
+        "utf8",
+      );
+      expect(plan).toContain("Kafka");
+      expect(plan).toContain("every user");
       expect(
         execFileSync("git", ["status", "--porcelain"], {
           cwd: fixture.cwd,
@@ -158,11 +158,33 @@ describe("validate-implementation-plan artifacts", () => {
   });
 
   test("accepts the standalone report and sanitized snapshot without source changes", () => {
+    expect(() => checkAudit()).not.toThrow();
+  });
+
+  test.each([
+    ["placeholder", "snapshot"],
+    ["sectionless plan", snapshot.replaceAll("##", "")],
+    ...[
+      "JSON",
+      "every user",
+      "archived",
+      "Kafka",
+      "worker service",
+      "## Source Metadata",
+      "## Section Inventory",
+      "## Sanitized Section Summaries",
+      "## Technical Claims",
+      "## Sensitive Content Handling",
+    ].map((required) => [
+      `missing ${required}`,
+      snapshot.replaceAll(required, "omitted"),
+    ]),
+  ])("rejects a snapshot with %s", (_label, invalidSnapshot) => {
     expect(() =>
-      getCase("audit-planted-defects").check(
-        behavioralObservation("audit-planted-defects"),
-      ),
-    ).not.toThrow();
+      checkAudit({
+        repoFiles: { "implementation-plan.audit-input.md": invalidSnapshot },
+      }),
+    ).toThrow();
   });
 
   test.each([
@@ -220,61 +242,45 @@ describe("validate-implementation-plan artifacts", () => {
       ),
     ],
   ])("rejects %s", (_label, invalidText) => {
-    expect(() =>
-      getCase("audit-planted-defects").check({
-        ...behavioralObservation("audit-planted-defects"),
-        finalText: invalidText,
-      }),
-    ).toThrow();
+    expect(() => checkAudit({ finalText: invalidText })).toThrow();
   });
 
   test("rejects unexpected tracked or untracked changes and git mutations", () => {
     const observation = behavioralObservation("audit-planted-defects");
-    const evalCase = getCase("audit-planted-defects");
-    expect(() =>
-      evalCase.check({
-        ...observation,
+    for (const overrides of [
+      {
         gitStatusAfter: {
           kind: "worktree",
-          entries: `${observation.gitStatusAfter.kind === "worktree" ? observation.gitStatusAfter.entries : ""}\n?? surprise.txt`,
+          entries:
+            "?? implementation-plan.audit-input.md\n?? implementation-plan.audit.md\n?? surprise.txt",
         },
-      }),
-    ).toThrow();
-    expect(() =>
-      evalCase.check({
-        ...observation,
+      },
+      {
         toolCalls: [
           {
             name: "Bash",
             input: { command: "git commit --allow-empty -m surprise" },
           },
         ],
-      }),
-    ).toThrow();
-    expect(() =>
-      evalCase.check({
-        ...observation,
+      },
+      {
         toolCalls: [
           { name: "Write", input: { file_path: "surprise.txt", content: "x" } },
         ],
-      }),
-    ).toThrow();
-    expect(() =>
-      evalCase.check({
-        ...observation,
+      },
+      {
         repoFiles: {
-          ...observation.repoFiles,
           ".git/logs/HEAD": `${observation.repoFiles?.[".git/logs/HEAD"] ?? ""}another commit\n`,
         },
-      }),
-    ).toThrow();
+      },
+    ] satisfies Array<Partial<Observation>>) {
+      expect(() => checkAudit(overrides)).toThrow();
+    }
   });
 
   test("rejects a same-named report written outside the fixture", () => {
-    const observation = behavioralObservation("audit-planted-defects");
     expect(() =>
-      getCase("audit-planted-defects").check({
-        ...observation,
+      checkAudit({
         toolCalls: [
           {
             name: "Write",
@@ -426,13 +432,7 @@ describe("audit mutation boundaries", () => {
       },
     },
   ])("rejects unauthorized $name", (call) => {
-    const observation = behavioralObservation("audit-planted-defects");
-    expect(() =>
-      getCase("audit-planted-defects").check({
-        ...observation,
-        toolCalls: [call],
-      }),
-    ).toThrow();
+    expect(() => checkAudit({ toolCalls: [call] })).toThrow();
   });
 
   test.each([
