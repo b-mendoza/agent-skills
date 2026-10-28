@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import type { EvalCase } from "#/cases/case-contract.ts";
 import {
   cases,
+  FIXTURE_ROOT_PATH,
   HANDOFF_FACTS,
   HANDOFF_PATHS,
 } from "#/cases/generate-handoff-document.ts";
@@ -450,6 +451,9 @@ describe("handoff seeds", () => {
           ? readFileSync(targetPath, "utf8")
           : null;
         expect(targetText).toBe(expectedTarget);
+        expect(readFileSync(join(fixture.cwd, FIXTURE_ROOT_PATH), "utf8")).toBe(
+          `${fixture.cwd}\n${realpathSync(fixture.cwd)}`,
+        );
         writeFileSync(join(fixture.cwd, HANDOFF_PATHS.context), "{}");
         expect(
           execFileSync("git", ["status", "--short"], {
