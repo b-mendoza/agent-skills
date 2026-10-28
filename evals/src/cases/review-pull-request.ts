@@ -34,6 +34,33 @@ function exactSection(report: string, start: string, end: string): string {
   return text;
 }
 
+function checkInlineTarget(report: string, preview: string): void {
+  const anchor =
+    /^Anchor: pricing\.py:(?<startLine>[1-9]\d*)(?:-(?<endLine>[1-9]\d*))? (?<side>RIGHT|LEFT)\r?$/m.exec(
+      report,
+    );
+  assert.ok(anchor !== null, "missing saved inline anchor");
+  assert.ok(anchor.groups !== undefined, "missing saved inline anchor fields");
+  const { startLine, endLine, side } = anchor.groups;
+  const line = Number(endLine ?? startLine);
+  assert.deepEqual(
+    [...preview.matchAll(/^Inline: .+\r?$/gm)].map(([location]) =>
+      JSON.parse(location.slice("Inline: ".length)),
+    ),
+    [
+      {
+        path: GITHUB_FACTS.source,
+        line,
+        side,
+        ...(endLine === undefined
+          ? {}
+          : { start_line: Number(startLine), start_side: side }),
+      },
+    ],
+    "preview inline target differs from saved review",
+  );
+}
+
 function checkReviewPreview(observation: Observation): string {
   assertOnlyReportWritten(observation, true);
   const report = capturedText(observation, GITHUB_FACTS.report);
@@ -66,10 +93,7 @@ function checkReviewPreview(observation: Observation): string {
     observation.finalText,
     new RegExp(`^commit_id: ${pins.head}\\r?$`, "m"),
   );
-  assert.match(
-    report,
-    /^Anchor: pricing\.py:[1-9]\d*(?:-[1-9]\d*)? (?:RIGHT|LEFT)\r?$/m,
-  );
+  checkInlineTarget(report, observation.finalText);
   assert.match(report, /^## Review decision\r?\n\s*REQUEST_CHANGES\r?$/m);
   const summary = exactSection(
     report,
