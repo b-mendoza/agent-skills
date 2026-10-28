@@ -322,6 +322,7 @@ export const cases = [
     ...behavioralDefaults,
     mutationPolicy: "allowed",
     seed: seedDirectory,
+    snapshotPaths: [...snapshotPaths, FIXTURE_ROOT_PATH],
     intent:
       "Materialize supplied conversation facts into a redacted, reviewed cold-start package",
     prompt: () =>

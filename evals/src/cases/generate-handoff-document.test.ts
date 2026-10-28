@@ -22,6 +22,8 @@ function getCase(suffix: string): EvalCase {
   return found;
 }
 
+const fixtureRoots = ["/fixture", "/private/fixture"];
+
 const skillCall = {
   name: "Skill",
   input: { skill: "generate-handoff-document" },
@@ -125,6 +127,7 @@ function writtenObservation(): Observation {
       entries: writtenPaths.map((path) => `?? ${path}`).join("\n"),
     },
     repoFiles: {
+      [FIXTURE_ROOT_PATH]: fixtureRoots.join("\n"),
       [HANDOFF_PATHS.target]: document,
       [HANDOFF_PATHS.transcript]: `${HANDOFF_FACTS.mandate}\n${HANDOFF_FACTS.failedApproach}\n${HANDOFF_FACTS.proposal}\n${HANDOFF_FACTS.openQuestion}\nAPI_KEY=[REDACTED]`,
       [HANDOFF_PATHS.context]: JSON.stringify(context),
