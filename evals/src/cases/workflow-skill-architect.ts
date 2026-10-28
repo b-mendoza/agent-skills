@@ -11,6 +11,9 @@ import {
   assertNoMutation,
   checkNegativeRouting,
   checkPositiveRouting,
+  FIXTURE_ROOT_PATH,
+  fixtureRelativePath,
+  seedFixtureRoot,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -56,6 +59,7 @@ export const REVIEW_SUMMARY_FIELDS = [
 ] as const;
 
 function seedPackage(seedContext: SeedContext, content: string): void {
+  seedFixtureRoot(seedContext.repoPath);
   mkdirSync(join(seedContext.repoPath, REVIEW_FACTS.packagePath), {
     recursive: true,
   });
@@ -102,15 +106,16 @@ function assertReviewShape(finalText: string): void {
   assert.match(finalText, /\|\s*blocker\s*\|/i);
 }
 
-function isStagedPath(path: string): boolean {
-  if (path.split("/").includes("..")) return false;
-  return path === STAGED_REFERENCE || path.endsWith(`/${STAGED_REFERENCE}`);
-}
-
-function isStagedReferenceWrite(call: ToolCall): boolean {
+function isStagedReferenceWrite(
+  call: ToolCall,
+  observation: Observation,
+): boolean {
   if (!["Write", "Edit"].includes(call.name)) return false;
   const path = call.input["file_path"];
-  return typeof path === "string" && isStagedPath(path);
+  return (
+    typeof path === "string" &&
+    fixtureRelativePath(observation, path) === STAGED_REFERENCE
+  );
 }
 
 function assertOnlyStagedReferenceWrites(observation: Observation): void {
@@ -126,7 +131,7 @@ function assertOnlyStagedReferenceWrites(observation: Observation): void {
     ...observation,
     gitStatusAfter: observation.gitStatusBefore,
     toolCalls: observation.toolCalls.filter(
-      (call) => !isStagedReferenceWrite(call),
+      (call) => !isStagedReferenceWrite(call, observation),
     ),
   });
 }
@@ -161,6 +166,7 @@ const behavioralDefaults = {
   budgetUsd: 2.0,
   wallClockMs: 600_000,
   snapshotPaths: [
+    FIXTURE_ROOT_PATH,
     REVIEW_FACTS.sourcePath,
     REVIEW_FACTS.missingPath,
     REVIEW_FACTS.markerPath,
