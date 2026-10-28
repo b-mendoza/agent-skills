@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
@@ -335,6 +335,43 @@ describe("audit mutation boundaries", () => {
         ],
       }),
     ).not.toThrow();
+  });
+
+  test("accepts canonical absolute writes to both audit artifacts", () => {
+    const evalCase = getCase("audit-planted-defects");
+    const fixture = makeFixture("clean", [], (context) => {
+      const repoPath = join(context.binPath, "repo-link");
+      symlinkSync(context.repoPath, repoPath, "dir");
+      evalCase.seed?.({ ...context, repoPath });
+    });
+    try {
+      const root = realpathSync(fixture.cwd);
+      const files = snapshotRepoFiles(
+        fixture.cwd,
+        evalCase.snapshotPaths ?? [],
+      );
+      files["implementation-plan.audit-input.md"] = "snapshot";
+      files["implementation-plan.audit.md"] = report;
+      const observation = createObservation({
+        finalText,
+        repoFiles: files,
+        gitStatusAfter: {
+          kind: "worktree",
+          entries:
+            "?? implementation-plan.audit-input.md\n?? implementation-plan.audit.md",
+        },
+        toolCalls: [
+          "implementation-plan.audit-input.md",
+          "implementation-plan.audit.md",
+        ].map((path) => ({
+          name: "Write",
+          input: { file_path: join(root, path) },
+        })),
+      });
+      expect(() => evalCase.check(observation)).not.toThrow();
+    } finally {
+      fixture.cleanup();
+    }
   });
 
   test.each([
