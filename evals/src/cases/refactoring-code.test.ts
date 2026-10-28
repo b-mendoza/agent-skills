@@ -30,6 +30,7 @@ function correctObservation(evalCase: EvalCase): Observation {
     toolCalls: [{ name: "Skill", input: { skill: evalCase.skill } }],
     repoFiles: {
       ...REFACTOR_FILES,
+      ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
       [REFACTOR_PLAN_PATH]: PLAN,
       ".git/logs/HEAD": REFLOG,
       ".git/eval-baseline-reflog": REFLOG,
