@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { Schema } from "effect";
@@ -19,6 +19,7 @@ import { isMutatingGitCommand } from "#/observation/git-command-evidence.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
 const SKILL = "generate-handoff-document";
+export const FIXTURE_ROOT_PATH = ".git/eval-fixture-root";
 
 export const HANDOFF_PATHS = {
   target: "docs/cache-handoff.md",
@@ -121,6 +122,10 @@ const decodeInsights = Schema.decodeUnknownSync(
 );
 
 function seedDirectory({ repoPath }: SeedContext): void {
+  writeFileSync(
+    join(repoPath, FIXTURE_ROOT_PATH),
+    `${repoPath}\n${realpathSync(repoPath)}`,
+  );
   // Track one sentinel so git status expands new docs files rather than collapsing to "?? docs/".
   mkdirSync(join(repoPath, "docs"));
   writeFileSync(join(repoPath, "docs/.gitkeep"), "");
