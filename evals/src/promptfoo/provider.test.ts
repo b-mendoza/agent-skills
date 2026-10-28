@@ -81,7 +81,7 @@ test("provider installs the case's skills, seeds its repo, prefixes PATH, and ca
   });
 });
 
-test("a snapshot failure still removes the fixture", async () => {
+test("a snapshot failure retains the completed observation and cost, then removes the fixture", async () => {
   const existingCase = caseLookup.getCase(
     "analyzing-recent-project-state/trigger-positive",
   );
@@ -89,16 +89,30 @@ test("a snapshot failure still removes the fixture", async () => {
     ...existingCase,
     snapshotPaths: ["../outside"],
   });
+  const observation = createObservation({
+    finalText: "Report complete",
+    toolCalls: [{ name: "Write", input: { file_path: "report.md" } }],
+    gitStatusBefore: { kind: "worktree", entries: "" },
+    gitStatusAfter: { kind: "worktree", entries: "?? report.md\n" },
+    costUsd: 0.06,
+    durationMs: 1250,
+  });
   let repoPath = "";
   vi.mocked(observeClaude).mockImplementation(async (options) => {
     repoPath = options.cwd;
-    return Promise.resolve(createObservation());
+    return Promise.resolve(observation);
   });
   const result = await new EvalProvider().callApi("", {
     vars: { caseId: existingCase.id },
     prompt: { raw: "", label: "offline" },
+    repeatIndex: 2,
   });
   expect(result.error).toContain("repo-relative");
   expect(repoPath).not.toBe("");
   expect(existsSync(repoPath)).toBe(false);
+  expect(result).toMatchObject({ output: "Report complete", cost: 0.06 });
+  expect(decodeMetadata(result.metadata)).toStrictEqual({
+    observation,
+    repeatIndex: 2,
+  });
 });
