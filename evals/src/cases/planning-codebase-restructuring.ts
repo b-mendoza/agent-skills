@@ -101,18 +101,22 @@ const EXECUTION_PATTERNS = [
   /^(?:npm|pnpm|yarn)\s+(?:test|install|add|build)\b/,
   /^(?:npm|pnpm|yarn)\s+run\s+(?:test|build|lint)\b/,
   /^npx\s+(?:vitest|jest|prettier|eslint)\b/,
-  /^node\s+--test\b/,
+  /^node(?:\s+--?[\w-]+(?:=\S+)?)*\s+--test(?:\s|$)/,
 ];
 
 function forbiddenExecution(call: ToolCall): boolean {
   if (call.name !== "Bash") return false;
   const { command } = call.input;
   if (typeof command !== "string") return false;
-  return command
-    .split(/&&|\|\||[;\n]/)
-    .some((part) =>
-      EXECUTION_PATTERNS.some((pattern) => pattern.test(part.trimStart())),
+  return command.split(/&&|\|\||[;\n]/).some((part) => {
+    const withoutEnvironment = part
+      .trimStart()
+      .replace(/^env\s+/, "")
+      .replace(/^(?:[A-Za-z_]\w*=(?:"[^"]*"|'[^']*'|\S*)\s+)*/, "");
+    return EXECUTION_PATTERNS.some((pattern) =>
+      pattern.test(withoutEnvironment),
     );
+  });
 }
 
 function checkPlanningOnly(observation: Observation): void {
