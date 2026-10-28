@@ -250,6 +250,10 @@ describe("verified review preview", () => {
   it.each([
     ["pricing.py:999 RIGHT", '{"line":999,"path":"pricing.py","side":"RIGHT"}'],
     ["pricing.py:999 LEFT", '{"line":999,"path":"pricing.py","side":"LEFT"}'],
+    [
+      "pricing.py:3-2 RIGHT",
+      '{"line":2,"path":"pricing.py","side":"RIGHT","start_line":3,"start_side":"RIGHT"}',
+    ],
   ])(
     "rejects matching targets outside the pinned fixture: %s",
     (anchor, target) => {

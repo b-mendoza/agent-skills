@@ -45,6 +45,7 @@ function checkInlineTarget(report: string, preview: string): void {
   const line = Number(endLine ?? startLine);
   const source =
     side === "RIGHT" ? GITHUB_FACTS.headSource : GITHUB_FACTS.baseSource;
+  assert.ok(Number(startLine) <= line, "saved inline range is reversed");
   assert.ok(
     line <= source.trimEnd().split("\n").length,
     "saved inline anchor is outside the pinned fixture",
