@@ -3,6 +3,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { SeedContext } from "#/cases/case-contract.ts";
+import { seedFixtureRoot } from "#/cases/shared-checks.ts";
 
 export const CLARIFICATION_FACTS = {
   key: "acme-app-42",
@@ -61,6 +62,7 @@ The unresolved export audience is a hard gate before implementation.
 };
 
 export function seedClarificationArtifacts({ repoPath }: SeedContext): void {
+  seedFixtureRoot(repoPath);
   mkdirSync(join(repoPath, "docs"), { recursive: true });
   for (const [path, content] of Object.entries(CLARIFICATION_INPUTS)) {
     writeFileSync(join(repoPath, path), content);
