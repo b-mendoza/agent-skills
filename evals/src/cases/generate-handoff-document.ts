@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import { Schema } from "effect";
 
@@ -187,7 +187,10 @@ function checkDocumentShape(document: string): void {
   );
 }
 
-function assertPermittedToolWrite(call: ToolCall): void {
+function assertPermittedToolWrite(
+  call: ToolCall,
+  repoPaths: readonly string[],
+): void {
   assert.notEqual(
     call.name,
     "NotebookEdit",
@@ -201,8 +204,10 @@ function assertPermittedToolWrite(call: ToolCall): void {
     "write path contains traversal",
   );
   assert.ok(
-    writtenPaths.some(
-      (path) => filePath === path || filePath.endsWith(`/${path}`),
+    repoPaths.some((repoPath) =>
+      writtenPaths.some(
+        (path) => resolve(repoPath, filePath) === join(repoPath, path),
+      ),
     ),
     `unexpected write path: ${filePath}`,
   );
@@ -223,8 +228,9 @@ function checkWriteScope(observation: Observation): void {
       .sort((first, second) => first.localeCompare(second)),
     "unexpected writes or missing artifacts",
   );
+  const repoPaths = readCaptured(observation, FIXTURE_ROOT_PATH).split("\n");
   for (const call of observation.toolCalls) {
-    assertPermittedToolWrite(call);
+    assertPermittedToolWrite(call, repoPaths);
     if (call.name !== "Bash") continue;
     const { command } = call.input;
     assert.ok(
