@@ -5,6 +5,7 @@ import {
   assertFileExists,
   assertNoMutation,
   assertRunHappened,
+  fixtureRelativePath,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 
@@ -107,15 +108,17 @@ export function assertPlantedStatePreserved(observation: Observation): void {
 
 function assertAllowedWritePath(
   path: string,
+  observation: Observation,
   allowReviewRunFiles: boolean,
 ): void {
   assert.doesNotMatch(path, /(?:^|\/)\.\.(?:\/|$)/);
-  const isReport =
-    path === GITHUB_FACTS.report || path.endsWith(`/${GITHUB_FACTS.report}`);
+  const relativePath = fixtureRelativePath(observation, path);
+  assert.ok(relativePath !== undefined, `unexpected file mutation: ${path}`);
+  const isReport = relativePath === GITHUB_FACTS.report;
   const isRunFile =
     allowReviewRunFiles &&
-    /(?:^|\/)\.handoffs\/review-pull-request\/[^/]+\/(?:context|chunk-[a-z-]+|author|verify)\.txt$/.test(
-      path,
+    /^\.handoffs\/review-pull-request\/[^/]+\/(?:context|chunk-[a-z-]+|author|verify)\.txt$/.test(
+      relativePath,
     );
   assert.ok(isReport || isRunFile, `unexpected file mutation: ${path}`);
 }
@@ -140,7 +143,7 @@ export function assertOnlyReportWritten(
     const path = call.input["file_path"];
     assert.equal(typeof path, "string", "unexpected file mutation tool");
     assert.ok(typeof path === "string");
-    assertAllowedWritePath(path, allowReviewRunFiles);
+    assertAllowedWritePath(path, observation, allowReviewRunFiles);
     return false;
   });
   assertNoMutation({
