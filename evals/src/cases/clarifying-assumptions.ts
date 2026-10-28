@@ -14,6 +14,8 @@ import {
   assertNoMutation,
   checkNegativeRouting,
   checkPositiveRouting,
+  FIXTURE_ROOT_PATH,
+  fixtureRelativePath,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -21,6 +23,7 @@ import { judgeLive } from "#/observation/judge.ts";
 export const SKILL = "clarifying-assumptions";
 const headPath = ".git/logs/HEAD";
 const snapshotPaths = [
+  FIXTURE_ROOT_PATH,
   ...Object.keys(CLARIFICATION_INPUTS),
   CLARIFICATION_FACTS.critiquePath,
   CLARIFICATION_FACTS.decisionsPath,
@@ -46,13 +49,12 @@ function checkInputsUnchanged(observation: Observation): void {
   assertFileAbsent(observation, CLARIFICATION_FACTS.decisionsPath);
 }
 
-function isCritiqueWrite(call: ToolCall): boolean {
+function isCritiqueWrite(call: ToolCall, observation: Observation): boolean {
   if (!["Write", "Edit"].includes(call.name)) return false;
   const path = call.input["file_path"];
   return (
     typeof path === "string" &&
-    (path === CLARIFICATION_FACTS.critiquePath ||
-      path.endsWith(`/${CLARIFICATION_FACTS.critiquePath}`))
+    fixtureRelativePath(observation, path) === CLARIFICATION_FACTS.critiquePath
   );
 }
 
@@ -76,7 +78,9 @@ function checkOnlyCritiqueChanged(observation: Observation): void {
   assertNoMutation({
     ...observation,
     gitStatusAfter: before,
-    toolCalls: observation.toolCalls.filter((call) => !isCritiqueWrite(call)),
+    toolCalls: observation.toolCalls.filter(
+      (call) => !isCritiqueWrite(call, observation),
+    ),
   });
 }
 
