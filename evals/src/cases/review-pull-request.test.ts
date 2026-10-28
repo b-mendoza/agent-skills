@@ -207,6 +207,21 @@ describe("verified review preview", () => {
     ).toThrow();
   });
 
+  it.each(["", "not-json"])(
+    "rejects a preview-only inline target mismatch: %s",
+    (target) => {
+      expect(() =>
+        previewCase.check({
+          ...observation(),
+          finalText: FINAL.replace(
+            '{"line":3,"path":"pricing.py","side":"RIGHT"}',
+            target,
+          ),
+        }),
+      ).toThrow();
+    },
+  );
+
   it.each(REQUIRED_HELPERS)(
     "rejects an omitted required helper invocation $input.command",
     (tool) => {
