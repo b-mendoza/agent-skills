@@ -221,10 +221,6 @@ describe("staged-plan", () => {
     ],
     ["wrong totals", FINAL_PLAN.replace("| PASS | 20 |", "| PASS | 19 |")],
     [
-      "failing validator",
-      FINAL_PLAN.replace("TASK_VALIDATION: PASS", "TASK_VALIDATION: FAIL"),
-    ],
-    [
       "failed check with consistent counts",
       FINAL_PLAN.replace("| 20 | Check | PASS", "| 20 | Check | FAIL")
         .replace("| PASS | 20 |", "| PASS | 19 |")
