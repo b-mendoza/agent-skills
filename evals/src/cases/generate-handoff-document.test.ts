@@ -193,6 +193,7 @@ describe("conversation handoff package", () => {
     HANDOFF_PATHS.transcript,
     HANDOFF_PATHS.context,
     HANDOFF_PATHS.insights,
+    FIXTURE_ROOT_PATH,
   ])("rejects missing %s", (path) => {
     expect(() =>
       getCase("conversation-package").check(replaceCaptured(path, null)),
