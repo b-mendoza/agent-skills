@@ -1,16 +1,46 @@
 import assert from "node:assert/strict";
 
-import { describe, expect, it } from "vitest";
+import type { query } from "@anthropic-ai/claude-agent-sdk";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { cases } from "#/cases/recency-guard.ts";
 import type { Observation } from "#/observation/agent-query.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import {
+  createObservation,
+  scripted,
+} from "#/observation/observation-test-support.ts";
+
+const sdk = vi.hoisted(() => ({
+  query:
+    vi.fn<(request: Parameters<typeof query>[0]) => AsyncIterable<unknown>>(),
+}));
+vi.mock(
+  import("@anthropic-ai/claude-agent-sdk"),
+  async (original): Promise<Record<string, unknown>> => ({
+    ...(await original()),
+    query: sdk.query,
+  }),
+);
+beforeEach(() => {
+  sdk.query
+    .mockReset()
+    .mockImplementation(() =>
+      scripted({ type: "result", result: '{"violations":[]}' }),
+    );
+});
 
 function getCase(suffix: string): EvalCase {
   const found = cases.find((evalCase) => evalCase.id.endsWith(`/${suffix}`));
   assert.ok(found !== undefined, `missing case: ${suffix}`);
   return found;
+}
+
+function judgeRequest() {
+  const [request] = sdk.query.mock.lastCall ?? [];
+  assert.ok(request !== undefined);
+  assert.equal(typeof request.prompt, "string");
+  return request;
 }
 
 const skillCall = { name: "Skill", input: { skill: "recency-guard" } };
@@ -95,6 +125,92 @@ describe("current LTS verification", () => {
         toolCalls: [skillCall],
       }),
     ).toThrow();
+  });
+});
+
+describe("retrieved evidence in recency grading", () => {
+  it.each([
+    {
+      content: "HTTP 503 Service Unavailable",
+      isError: true,
+      truncated: false,
+    },
+    {
+      content:
+        "Official page about the Node.js logo; no release or lifecycle facts.",
+      isError: false,
+      truncated: false,
+    },
+  ])("passes the actual result to the judge: %j", async (result) => {
+    const evalCase = getCase("verify-current-lts");
+    assert.ok(evalCase.judge !== undefined);
+    await evalCase.judge(
+      createObservation({
+        finalText: sourcedAnswer,
+        toolCalls: [skillCall, { ...sourceCall, id: "fetch-1", result }],
+      }),
+    );
+    const request = judgeRequest();
+    expect(request.prompt).toContain(
+      JSON.stringify({ ...sourceCall, id: "fetch-1", result }),
+    );
+    expect(request.prompt).toContain(sourcedAnswer);
+    expect(request.options?.tools).toStrictEqual([]);
+  });
+
+  it("presents a failed fetch separately from an unsupported success claim", async () => {
+    const finalText =
+      "Checked 2026-10-23. I verified Node.js 24 is active LTS and security support ends 2028-04-30 at https://nodejs.org/en/about/previous-releases.";
+    const evalCase = getCase("verify-current-lts");
+    assert.ok(evalCase.judge !== undefined);
+    const observation = createObservation({
+      finalText,
+      toolCalls: [
+        skillCall,
+        {
+          ...sourceCall,
+          id: "failed-fetch",
+          result: {
+            content: "HTTP 503 Service Unavailable",
+            isError: true,
+            truncated: false,
+          },
+        },
+      ],
+    });
+    expect(() => evalCase.check(observation)).not.toThrow();
+    sdk.query.mockImplementation(() =>
+      scripted({
+        type: "result",
+        result: JSON.stringify({
+          violations: [
+            {
+              itemId: "support",
+              quote: finalText,
+              reason:
+                "Successful verification is claimed despite a failed retrieval.",
+            },
+          ],
+        }),
+      }),
+    );
+    await expect(evalCase.judge(observation)).rejects.toThrow(
+      "support violated",
+    );
+    const request = judgeRequest();
+    expect(request.prompt).toContain('"isError":true');
+    expect(request.prompt).toContain("HTTP 503 Service Unavailable");
+    expect(request.prompt).toContain("Fail claimed verification");
+  });
+
+  it("labels missing legacy evidence instead of inventing a successful retrieval", async () => {
+    const evalCase = getCase("verify-current-lts");
+    assert.ok(evalCase.judge !== undefined);
+    await evalCase.judge(observationFor("verify-current-lts"));
+    const request = judgeRequest();
+    expect(request.prompt).toContain(
+      "Missing results are not evidence of success",
+    );
   });
 });
 
