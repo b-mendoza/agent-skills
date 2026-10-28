@@ -266,6 +266,25 @@ describe("no-comments terminal", () => {
   });
 
   it.each([
+    ["api", "--paginate", "repos/eval-org/cart/pulls/17/comments?per_page=100"],
+    ["api", "repos/eval-org/cart/pulls/17/reviews"],
+    ["api", "repos/eval-org/cart/issues/17/comments"],
+    ["pr", "view", GITHUB_FACTS.url, "--json", "comments,reviews"],
+    ["pr", "view", "17", "--repo", GITHUB_FACTS.repository, "--json=reviews"],
+  ])("accepts fixture-PR inventory read %j", (...args) => {
+    const correct = noComments();
+    expect(() =>
+      guardCase.check({
+        ...correct,
+        repoFiles: {
+          ...correct.repoFiles,
+          [GITHUB_FACTS.log]: `${JSON.stringify(args)}\n`,
+        },
+      }),
+    ).not.toThrow();
+  });
+
+  it.each([
     "PR_COMMENT_RESPONSE: NO_COMMENTS",
     "Posting: not-posted",
     "Reason:",
