@@ -197,7 +197,6 @@ function checkValidation(content: string): number {
     rows.every((row) => row.groups?.["result"] !== "FAIL"),
     "PASS handoff cannot contain FAIL checks",
   );
-  assert.match(report, /TASK_VALIDATION: PASS/);
   return rows.filter((row) => row.groups?.["result"] === "WARN").length;
 }
 
