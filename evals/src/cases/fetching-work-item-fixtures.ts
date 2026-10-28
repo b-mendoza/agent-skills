@@ -123,6 +123,7 @@ const methodIndex = args.findIndex(arg => arg === '--method' || arg === '-X');
 const method = methodIndex < 0 ? 'GET' : args[methodIndex + 1];
 if (endpoint === 'graphql') {
   if (args.join(' ').includes('mutation')) fail('Remote writes are not permitted');
+  if (mode === 'missing') fail('gh: Could not resolve to an Issue with the number of 42');
   emit({ data: { repository: { issue: { ...issue, comments: { nodes: issue.comments, totalCount: 1 }, subIssues: { nodes: mode === 'linked' ? [child] : [], totalCount: mode === 'linked' ? 1 : 0 }, timelineItems: { nodes: [], totalCount: 0 }, projectItems: { nodes: [], totalCount: 0 } } } } }); process.exit(0);
 }
 if (method !== 'GET' || (methodIndex < 0 && args.some(arg => ['-f', '-F', '--field', '--raw-field', '--input'].includes(arg)))) fail('Remote writes are not permitted');
