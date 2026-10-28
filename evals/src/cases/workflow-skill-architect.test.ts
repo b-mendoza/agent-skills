@@ -229,7 +229,11 @@ function goodStagedExtension(): Observation {
   return {
     ...base,
     finalText: DELIVERY,
-    repoFiles: { ...base.repoFiles, [STAGED_REFERENCE]: STAGED_CONTENT },
+    repoFiles: {
+      ...base.repoFiles,
+      ".git/eval-fixture-root": "/repo\n/canonical/repo",
+      [STAGED_REFERENCE]: STAGED_CONTENT,
+    },
     gitStatusAfter: { kind: "worktree", entries: "?? .handoffs/" },
     toolCalls: [
       { name: "Write", input: { file_path: `/repo/${STAGED_REFERENCE}` } },
