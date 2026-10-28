@@ -37,34 +37,39 @@ async function runCase(
       wallClockMs: evalCase.wallClockMs,
       pathPrefix: fixture.binPath,
     });
-    return {
-      output: observation.finalText,
-      cost: observation.costUsd,
-      metadata: {
-        observation: snapshotObservation(
-          observation,
-          fixture.cwd,
-          evalCase.snapshotPaths,
-        ),
-        repeatIndex: context.repeatIndex ?? FIRST_REPEAT,
-      },
-    };
+    return snapshotResponse(
+      observation,
+      fixture.cwd,
+      evalCase.snapshotPaths,
+      context.repeatIndex ?? FIRST_REPEAT,
+    );
   } finally {
     fixture.cleanup();
   }
 }
 
-function snapshotObservation(
+function snapshotResponse(
   observation: Observation,
   repoPath: string,
   paths: readonly string[] | undefined,
-): Observation {
-  return paths === undefined
-    ? observation
-    : {
+  repeatIndex: number,
+): ProviderResponse {
+  const response = {
+    output: observation.finalText,
+    cost: observation.costUsd,
+    metadata: { observation, repeatIndex },
+  };
+  try {
+    if (paths !== undefined) {
+      response.metadata.observation = {
         ...observation,
         repoFiles: snapshotRepoFiles(repoPath, paths),
       };
+    }
+  } catch (error) {
+    return { ...response, ...errorResponse(error) };
+  }
+  return response;
 }
 
 function errorResponse(error: unknown): ProviderResponse {
