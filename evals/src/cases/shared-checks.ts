@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { realpathSync, writeFileSync } from "node:fs";
+import { isAbsolute, join, normalize, relative, resolve } from "node:path";
 
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
@@ -6,6 +8,34 @@ import {
   mutationEvidence,
   skillInvocations,
 } from "#/observation/mutation-evidence.ts";
+
+export const FIXTURE_ROOT_PATH = ".git/eval-fixture-root";
+
+export function seedFixtureRoot(repoPath: string): void {
+  writeFileSync(
+    join(repoPath, FIXTURE_ROOT_PATH),
+    `${repoPath}\n${realpathSync(repoPath)}`,
+  );
+}
+
+/** Resolves tool paths only within the recorded lexical or canonical fixture root. */
+export function fixtureRelativePath(
+  observation: Observation,
+  path: string,
+): string | undefined {
+  if (path.split("/").includes("..")) return undefined;
+  if (!isAbsolute(path)) return normalize(path);
+  const roots = capturedFile(observation, FIXTURE_ROOT_PATH);
+  assert.ok(roots !== null, "fixture roots are absent");
+  return roots
+    .split("\n")
+    .filter(isAbsolute)
+    .map((root) => relative(root, resolve(root, path)))
+    .find(
+      (relativePath) =>
+        !isAbsolute(relativePath) && !relativePath.split("/").includes(".."),
+    );
+}
 
 const NO_TOOL_CALLS = 0;
 const NO_SKILL_INVOCATIONS = 0;
