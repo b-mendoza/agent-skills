@@ -327,7 +327,7 @@ describe("conversation handoff package", () => {
     ).toThrow();
   });
 
-  it("accepts writes to declared artifact paths", () => {
+  it.each(["", ...fixtureRoots])("accepts writes under '%s'", (repoPath) => {
     expect(() =>
       getCase("conversation-package").check({
         ...writtenObservation(),
@@ -336,7 +336,7 @@ describe("conversation handoff package", () => {
           {
             name: "Write",
             input: {
-              file_path: `/fixture/${HANDOFF_PATHS.target}`,
+              file_path: join(repoPath, HANDOFF_PATHS.target),
               content: document,
             },
           },
