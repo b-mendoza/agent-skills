@@ -8,6 +8,7 @@ import {
 import { join } from "node:path";
 
 import type { SeedContext } from "#/cases/case-contract.ts";
+import { FIXTURE_ROOT_PATH, seedFixtureRoot } from "#/cases/shared-checks.ts";
 
 export const GITHUB_FACTS = {
   repository: "eval-org/cart",
@@ -30,6 +31,7 @@ export const GITHUB_FACTS = {
 } as const;
 
 export const GITHUB_SNAPSHOTS = [
+  FIXTURE_ROOT_PATH,
   GITHUB_FACTS.log,
   ".git/logs/HEAD",
   GITHUB_FACTS.baselineLog,
@@ -164,6 +166,7 @@ export function seedGithubFixture(
   } = {},
 ): void {
   const { repoPath, binPath } = context;
+  seedFixtureRoot(repoPath);
   git(repoPath, "branch", "-M", "main");
   writeFileSync(join(repoPath, GITHUB_FACTS.source), GITHUB_FACTS.baseSource);
   git(repoPath, "add", GITHUB_FACTS.source);
