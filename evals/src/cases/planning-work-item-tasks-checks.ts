@@ -7,6 +7,8 @@ import {
   assertFileExists,
   assertFileMatches,
   assertRunHappened,
+  fixtureRelativePath,
+  seedFixtureRoot,
 } from "#/cases/shared-checks.ts";
 import type { SeedContext } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
@@ -19,6 +21,7 @@ export function seedPlanningFiles(
   { repoPath }: SeedContext,
   files: Readonly<Record<string, string>>,
 ): void {
+  seedFixtureRoot(repoPath);
   for (const [path, content] of Object.entries(files)) {
     mkdirSync(dirname(join(repoPath, path)), { recursive: true });
     writeFileSync(join(repoPath, path), content);
@@ -69,7 +72,7 @@ export function assertPlanningWrites(
     return !paths.some(
       (allowed) =>
         typeof path === "string" &&
-        (path === allowed || path.endsWith(`/${allowed}`)),
+        fixtureRelativePath(observation, path) === allowed,
     );
   });
   assert.deepEqual(
