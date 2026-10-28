@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join, posix } from "node:path";
+import { join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
 import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
@@ -11,6 +11,9 @@ import {
   assertNoMutation,
   checkNegativeRouting,
   checkPositiveRouting,
+  FIXTURE_ROOT_PATH,
+  fixtureRelativePath,
+  seedFixtureRoot,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -49,6 +52,7 @@ test('quote preserves discount and rounding boundaries', () => {
 } as const;
 export const REFACTOR_PLAN_PATH = ".handoffs/refactoring-code/plan.md";
 const snapshotPaths = [
+  FIXTURE_ROOT_PATH,
   ...Object.keys(REFACTOR_FILES),
   REFACTOR_PLAN_PATH,
   ".git/logs/HEAD",
@@ -56,6 +60,7 @@ const snapshotPaths = [
 ];
 
 function seedRefactor({ repoPath }: SeedContext): void {
+  seedFixtureRoot(repoPath);
   mkdirSync(join(repoPath, "src"));
   for (const [path, content] of Object.entries(REFACTOR_FILES)) {
     writeFileSync(join(repoPath, path), content);
@@ -73,12 +78,18 @@ function seedRefactor({ repoPath }: SeedContext): void {
   );
 }
 
-function isReportWrite(observation: Observation["toolCalls"][number]): boolean {
-  if (!["Write", "Edit"].includes(observation.name)) return false;
-  const filePath = observation.input["file_path"];
-  if (typeof filePath !== "string") return false;
-  const normalized = posix.normalize(filePath);
-  return /(?:^|\/)\.handoffs\/refactoring-code\//.test(normalized);
+function isReportWrite(
+  call: Observation["toolCalls"][number],
+  observation: Observation,
+): boolean {
+  if (!["Write", "Edit"].includes(call.name)) return false;
+  const filePath = call.input["file_path"];
+  return (
+    typeof filePath === "string" &&
+    fixtureRelativePath(observation, filePath)?.startsWith(
+      ".handoffs/refactoring-code/",
+    ) === true
+  );
 }
 
 function checkPlan(observation: Observation): string {
@@ -117,7 +128,9 @@ function checkPlan(observation: Observation): string {
     mutationEvidence({
       ...observation,
       gitStatusAfter: before,
-      toolCalls: observation.toolCalls.filter((call) => !isReportWrite(call)),
+      toolCalls: observation.toolCalls.filter(
+        (call) => !isReportWrite(call, observation),
+      ),
     }),
     [],
     "observed mutation outside the report boundary",
