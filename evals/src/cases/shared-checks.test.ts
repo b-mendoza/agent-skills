@@ -6,10 +6,20 @@ import {
   symlinkSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
+import type { EvalCase } from "#/cases/case-contract.ts";
+import { cases as clarificationCases } from "#/cases/clarifying-assumptions.ts";
+import { cases as fetchingCases } from "#/cases/fetching-work-item.ts";
+import { cases as auditCases } from "#/cases/improving-skill-definition.ts";
+import { cases as executionPlanningCases } from "#/cases/planning-task-execution.ts";
+import { cases as workItemPlanningCases } from "#/cases/planning-work-item-tasks.ts";
+import { cases as prCreatorCases } from "#/cases/pr-creator.ts";
+import { cases as refactorCases } from "#/cases/refactoring-code.ts";
+import { cases as replyCases } from "#/cases/responding-to-pr-review-comments.ts";
+import { cases as reviewCases } from "#/cases/review-pull-request.ts";
 import {
   assertFileAbsent,
   assertFileExists,
@@ -26,7 +36,10 @@ import {
   fixtureRelativePath,
   formatToolNames,
 } from "#/cases/shared-checks.ts";
+import { cases as architectCases } from "#/cases/workflow-skill-architect.ts";
+import { makeFixture } from "#/fixtures/fixtures.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
+import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 const skill = "some-skill";
 const invoked = createObservation({
@@ -258,3 +271,39 @@ describe("fixture-relative artifact paths", () => {
     ).toBe("docs/report.md");
   });
 });
+
+const artifactFixtureCases: readonly EvalCase[] = [
+  ...clarificationCases,
+  ...fetchingCases,
+  ...auditCases,
+  ...executionPlanningCases,
+  ...workItemPlanningCases,
+  ...prCreatorCases,
+  ...refactorCases,
+  ...replyCases,
+  ...reviewCases,
+  ...architectCases,
+].filter((entry) => "seed" in entry);
+
+test.each(artifactFixtureCases)(
+  "$id seeds and captures lexical and canonical fixture roots",
+  (entry) => {
+    const { seed, snapshotPaths } = entry;
+    if (seed === undefined || snapshotPaths === undefined) {
+      throw new Error("missing case seed or snapshot paths");
+    }
+    const fixture = makeFixture(entry.fixture, [], (context) => {
+      const lexical = join(dirname(context.repoPath), "linked-repo");
+      symlinkSync(context.repoPath, lexical);
+      seed({ ...context, repoPath: lexical });
+    });
+    try {
+      const lexical = join(dirname(fixture.cwd), "linked-repo");
+      expect(snapshotRepoFiles(lexical, snapshotPaths)[FIXTURE_ROOT_PATH]).toBe(
+        `${lexical}\n${realpathSync(lexical)}`,
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  },
+);
