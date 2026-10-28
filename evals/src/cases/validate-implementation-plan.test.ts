@@ -310,7 +310,8 @@ describe("validate-implementation-plan artifacts", () => {
 describe("audit mutation boundaries", () => {
   test("accepts the two authorized file writes, including an absolute fixture path", () => {
     const observation = behavioralObservation("audit-planted-defects");
-    const root = observation.repoFiles?.[".git/eval-plan-root"]?.trim();
+    const [root] =
+      observation.repoFiles?.[".git/eval-plan-root"]?.split("\n") ?? [];
     assert.ok(root !== undefined);
     expect(() =>
       getCase("audit-planted-defects").check({
