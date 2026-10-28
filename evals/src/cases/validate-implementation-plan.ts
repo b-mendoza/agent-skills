@@ -235,7 +235,28 @@ function checkAudit(observation: Observation): string {
   assertFileExists(observation, PLAN_FACTS.snapshotPath);
   const snapshot = observation.repoFiles?.[PLAN_FACTS.snapshotPath];
   assert.ok(typeof snapshot === "string");
-  assert.notEqual(snapshot.trim(), "", "sanitized snapshot is empty");
+  for (const heading of [
+    "Source Metadata",
+    "Section Inventory",
+    "Sanitized Section Summaries",
+    "Technical Claims",
+    "Sensitive Content Handling",
+  ]) {
+    assert.match(
+      snapshot,
+      new RegExp(`^## ${heading}\\s*$`, "m"),
+      `sanitized snapshot is missing ${heading}`,
+    );
+  }
+  for (const [detail, pattern] of [
+    ["JSON source", /\bJSON\b/i],
+    ["cross-user selection", /\b(?:all|every)\s+users?\b/i],
+    ["archived tasks", /\barchived\b/i],
+    ["Kafka", /\bKafka\b/i],
+    ["worker service", /\bworker[\s-]+services?\b/i],
+  ] as const) {
+    assert.match(snapshot, pattern, `sanitized snapshot lost ${detail}`);
+  }
   assertReportSections(auditReport(observation));
   assertFailedHandoff(observation.finalText);
   return "standalone nine-section failed audit; only snapshot and report created";
