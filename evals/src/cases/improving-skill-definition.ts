@@ -12,6 +12,9 @@ import {
   capturedFilesUnder,
   checkNegativeRouting,
   checkPositiveRouting,
+  FIXTURE_ROOT_PATH,
+  fixtureRelativePath,
+  seedFixtureRoot,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -76,6 +79,7 @@ const ISO_RUN_ID =
 const SINGLE_RUN = 1;
 
 function seedPackage({ repoPath }: SeedContext): void {
+  seedFixtureRoot(repoPath);
   mkdirSync(join(repoPath, AUDIT_FACTS.packagePath), { recursive: true });
   writeFileSync(join(repoPath, AUDIT_FACTS.sourcePath), AUDIT_FACTS.content);
   execFileSync("git", ["add", AUDIT_FACTS.sourcePath], { cwd: repoPath });
@@ -106,18 +110,28 @@ function auditHandoffDirectory(observation: Observation): string {
   return `${HANDOFF_PREFIX}${run}`;
 }
 
-function isExpectedHandoffPath(path: string, handoff: string): boolean {
-  if (path.split("/").includes("..")) return false;
+function isExpectedHandoffPath(
+  path: string,
+  handoff: string,
+  observation: Observation,
+): boolean {
+  const relativePath = fixtureRelativePath(observation, path);
   return EXPECTED_RUN_FILES.some(
-    (file) =>
-      path === `${handoff}/${file}` || path.endsWith(`/${handoff}/${file}`),
+    (file) => relativePath === `${handoff}/${file}`,
   );
 }
 
-function isHandoffWrite(call: ToolCall, handoff: string): boolean {
+function isHandoffWrite(
+  call: ToolCall,
+  handoff: string,
+  observation: Observation,
+): boolean {
   if (!["Write", "Edit"].includes(call.name)) return false;
   const path = call.input["file_path"];
-  return typeof path === "string" && isExpectedHandoffPath(path, handoff);
+  return (
+    typeof path === "string" &&
+    isExpectedHandoffPath(path, handoff, observation)
+  );
 }
 
 function assertOnlyHandoffWrites(
@@ -137,7 +151,7 @@ function assertOnlyHandoffWrites(
     ...observation,
     gitStatusAfter: gitStatusBefore,
     toolCalls: observation.toolCalls.filter(
-      (call) => !isHandoffWrite(call, handoff),
+      (call) => !isHandoffWrite(call, handoff, observation),
     ),
   });
 }
@@ -201,7 +215,11 @@ const behavioralDefaults = {
   budgetUsd: 2.0,
   wallClockMs: 600_000,
   seed: seedPackage,
-  snapshotPaths: [AUDIT_FACTS.sourcePath, AUDIT_FACTS.missingPath],
+  snapshotPaths: [
+    FIXTURE_ROOT_PATH,
+    AUDIT_FACTS.sourcePath,
+    AUDIT_FACTS.missingPath,
+  ],
 } as const;
 
 export const cases = [
