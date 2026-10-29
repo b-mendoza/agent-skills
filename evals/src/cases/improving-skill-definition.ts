@@ -3,6 +3,9 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { Predicate } from "effect";
+import { parse as parseYaml } from "yaml";
+
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
 import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
 import {
@@ -77,6 +80,7 @@ const COMPACT_RUN_ID = /^\d{8}[T-]\d{6}Z?-[A-Za-z0-9_-]{1,16}$/;
 const ISO_RUN_ID =
   /^\d{4}-\d{2}-\d{2}T\d{2}[:-]\d{2}[:-]\d{2}(?:[.-]\d{1,9})?Z-[A-Za-z0-9_-]{1,16}$/;
 const SINGLE_RUN = 1;
+const SYNTHESIS_VERSION = 1;
 
 function seedPackage({ repoPath }: SeedContext): void {
   seedFixtureRoot(repoPath);
@@ -156,6 +160,39 @@ function assertOnlyHandoffWrites(
   });
 }
 
+function parseSynthesis(text: string): Record<string, unknown> {
+  try {
+    const synthesis: unknown = parseYaml(text);
+    assert.ok(Predicate.isObject(synthesis), "synthesis must be a mapping");
+    return synthesis;
+  } catch (cause) {
+    throw new Error("failed to parse audit synthesis YAML", { cause });
+  }
+}
+
+function assertSynthesis(text: string): void {
+  const synthesis = parseSynthesis(text);
+  for (const key of SYNTHESIS_KEYS) {
+    assert.ok(Object.hasOwn(synthesis, key), `synthesis field ${key} missing`);
+  }
+  assert.equal(
+    synthesis["version"],
+    SYNTHESIS_VERSION,
+    "synthesis version must be 1",
+  );
+  assert.ok(Predicate.isObject(synthesis["from"]), "from must be a mapping");
+  const { to } = synthesis;
+  assert.ok(Predicate.isObject(to), "to must be a mapping");
+  for (const key of ["orchestrator", "phase"]) {
+    const value = to[key];
+    assert.ok(
+      typeof value === "string" && value.trim() !== "",
+      `to.${key} must be a nonempty string`,
+    );
+  }
+  assert.equal(synthesis["overall_verdict"], "GAPS_FOUND");
+}
+
 function assertAuditFiles(observation: Observation, handoff: string): void {
   assert.equal(
     observation.repoFiles?.[AUDIT_FACTS.sourcePath],
@@ -182,18 +219,9 @@ function assertAuditFiles(observation: Observation, handoff: string): void {
       ),
     );
   }
-  for (const key of SYNTHESIS_KEYS) {
-    assertFileMatches(
-      observation,
-      `${handoff}/${SYNTHESIS_FILE}`,
-      new RegExp(`^${key}:`, "m"),
-    );
-  }
-  assertFileMatches(
-    observation,
-    `${handoff}/${SYNTHESIS_FILE}`,
-    /^overall_verdict:[ \t]*(?<quote>["']?)GAPS_FOUND\k<quote>[ \t]*$/m,
-  );
+  const synthesisText = observation.repoFiles[`${handoff}/${SYNTHESIS_FILE}`];
+  assert.ok(typeof synthesisText === "string", "synthesis file missing");
+  assertSynthesis(synthesisText);
 }
 
 function assertApprovalReply(finalText: string, handoff: string): void {
