@@ -281,6 +281,8 @@ describe("draft-before-approval", () => {
       "api\tuser\t--field\ttitle=unauthorized",
       "api\tuser\t--raw-field=title=unauthorized",
       "api\tuser\t--input\tgraphql",
+      "api\tgraphql\t--input\t-",
+      "api\tgraphql\t-F\tquery=@/tmp/request.graphql",
       "api\tuser\t-X\tPOST",
       "api\tuser\t--method=PATCH",
       'api\tgraphql\t-f\tquery=mutation { addComment(input: {subjectId: "issue-id", body: "not-approved"}) { clientMutationId } }',
@@ -292,7 +294,7 @@ describe("draft-before-approval", () => {
       "api\tuser\t--method\tGET\t--field\tstate=all",
       "api\tuser\t--method=GET\t--input=query.json",
       "api\tuser\t-X\tGET\t-f\ttitle=explain -X POST",
-      "api\t--hostname\tgithub.com\tgraphql\t-f\tquery=query { viewer { login } }",
+      "api\t--hostname\tgithub.com\tgraphql\t-X\tPOST\t-f\tquery=query { viewer { login } }",
       "api\t--help\t-X\tPOST\t-f\ttitle=example",
     ].map((args) => [args, true] as const),
   ])("checks gh %s, accepted: %s", (args, accepted) => {
