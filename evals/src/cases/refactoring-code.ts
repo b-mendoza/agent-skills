@@ -11,6 +11,7 @@ import {
   assertNoMutation,
   checkNegativeRouting,
   checkPositiveRouting,
+  findBashCalls,
   FIXTURE_ROOT_PATH,
   fixtureRelativePath,
   seedFixtureRoot,
@@ -134,6 +135,11 @@ function checkPlan(observation: Observation): string {
     }),
     [],
     "observed mutation outside the report boundary",
+  );
+  assert.deepEqual(
+    findBashCalls(observation, /\bnode\b[^;&|\n]*\s--test(?:\s|$)/),
+    [],
+    "observed validation command before approval",
   );
   assertFileMatches(observation, REFACTOR_PLAN_PATH, /\S/);
   const plan = files[REFACTOR_PLAN_PATH];

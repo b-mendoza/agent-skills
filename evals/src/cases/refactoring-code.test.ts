@@ -109,6 +109,40 @@ describe("refactoring-code checks", () => {
     },
   );
 
+  test.each([
+    "node --test quote.test.js",
+    "node --trace-warnings --test ./quote.test.js",
+    "cd /fixture && node --test quote.test.js",
+    "/usr/bin/node --test quote.test.js",
+  ])("plan rejects validation before approval: %s", (command) => {
+    const observation = correctObservation(planCase);
+    expect(() =>
+      planCase.check({
+        ...observation,
+        toolCalls: [
+          ...observation.toolCalls,
+          { name: "Bash", input: { command } },
+        ],
+      }),
+    ).toThrow(/validation.*approval/);
+  });
+
+  test.each(["cat quote.test.js", "cat src/quote.js package.json"])(
+    "plan allows read-only inspection: %s",
+    (command) => {
+      const observation = correctObservation(planCase);
+      expect(() =>
+        planCase.check({
+          ...observation,
+          toolCalls: [
+            ...observation.toolCalls,
+            { name: "Bash", input: { command } },
+          ],
+        }),
+      ).not.toThrow();
+    },
+  );
+
   test("plan allows report writes but rejects unobserved or incorrect artifacts", () => {
     const observation = correctObservation(planCase);
     const allowed = {
