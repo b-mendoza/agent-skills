@@ -96,9 +96,44 @@ describe("prompt-structurer behavior", () => {
   });
 
   test.each([
+    [
+      "an XML fence",
+      structuredPrompt
+        .replace(/^/, "```xml\n")
+        .replace("\n\n##", "\n```\n\n##"),
+    ],
+    [
+      "nested and self-closing elements, comments, CDATA, and instructions",
+      structuredPrompt.replace(
+        "<output>",
+        '<output format="a > b"><rule /><rule>Keep names.</rule><!-- <ignored> --><![CDATA[<literal>]]><?hint <ignored>?>',
+      ),
+    ],
+    ["XML-like prose in notes", `${structuredPrompt}\nDiscuss <output> here.`],
+  ])("accepts %s", (_label, finalText) => {
+    expect(() =>
+      getCase("structure-prose").check(
+        behavioralObservation("structure-prose", finalText),
+      ),
+    ).not.toThrow();
+  });
+
+  test.each([
     ["plain prose instead of XML", "Here is your improved prompt."],
     ["prose before XML", `Here is the contract:\n${structuredPrompt}`],
     ["an unclosed task", structuredPrompt.replace("</task>", "")],
+    ["an unclosed output", structuredPrompt.replace("</output>", "")],
+    [
+      "a mismatched output tag",
+      structuredPrompt.replace("</output>", "</format>"),
+    ],
+    [
+      "an unclosed output inside an XML fence",
+      structuredPrompt
+        .replace(/^/, "```xml\n")
+        .replace("</output>", "")
+        .replace("\n\n##", "\n```\n\n##"),
+    ],
     [
       "no assembly notes",
       structuredPrompt.replace(/## Assembly Notes[^]*/, ""),

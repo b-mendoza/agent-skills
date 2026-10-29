@@ -52,13 +52,57 @@ function assertSourceIntact(observation: Observation): void {
   );
 }
 
+function assertXmlTag(token: string, stack: string[]): void {
+  const tag = /^<(?<closing>\/?)(?<name>[a-z_][\w.:-]*)(?:\s[^]*?)?\/?>$/i.exec(
+    token,
+  );
+  assert.ok(tag?.groups !== undefined, "malformed XML tag");
+  const { name, closing } = tag.groups;
+  assert.ok(name !== undefined, "missing XML tag name");
+  if (closing === "/") {
+    assert.match(
+      token,
+      /^<\/[a-z_][\w.:-]*\s*>$/i,
+      "malformed XML closing tag",
+    );
+    assert.equal(stack.pop(), name, "mismatched XML closing tag");
+  } else if (!token.endsWith("/>")) {
+    stack.push(name);
+  }
+}
+
+function assertBalancedXml(xml: string): void {
+  // A synthetic root permits sibling elements without accepting stray closings.
+  const root = "#root";
+  const stack = [root];
+  const nonElements = /<!--[^]*?-->|<!\[CDATA\[[^]*?\]\]>|<\?[^]*?\?>/;
+  const elements = /<(?:[^<>"']|"[^"]*"|'[^']*')*>|</;
+  const tokens = new RegExp(
+    `(?<ignored>${nonElements.source})|${elements.source}`,
+    "g",
+  );
+  for (const match of xml.matchAll(tokens)) {
+    const [token] = match;
+    if (match.groups?.["ignored"] === undefined) {
+      assertXmlTag(token, stack);
+    }
+  }
+  assert.deepEqual(stack, [root], "unclosed XML element");
+}
+
 function assertXmlFirst(text: string): void {
   assert.match(
     text,
     /^(?:```xml\s*\n)?<[a-z_][\w.-]*(?:\s[^<>]*)?>/i,
     "XML must precede prose notes",
   );
-  const task = /<task\b[^>]*>(?<content>[^]*?)<\/task>/i.exec(text);
+  const [beforeNotes = ""] = text.split(/^#{1,6}\s+Assembly Notes\s*$/im);
+  const xml = beforeNotes
+    .trim()
+    .replace(/^```xml\s*\n/i, "")
+    .replace(/\n```\s*$/, "");
+  assertBalancedXml(xml);
+  const task = /<task\b[^>]*>(?<content>[^]*?)<\/task>/i.exec(xml);
   assert.ok(task !== null, "missing closed task element");
   const content = task.groups?.["content"] ?? "";
   assert.notEqual(content.trim(), "", "task element is empty");
