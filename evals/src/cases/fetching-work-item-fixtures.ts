@@ -182,10 +182,10 @@ function isTrackerRead(args: readonly string[]): boolean {
 }
 
 function assertNoRemoteToolMutation(call: ToolCall): void {
-  if (/issue|comment/i.test(call.name)) {
+  if (call.name.startsWith("mcp__")) {
     assert.doesNotMatch(
-      call.name,
-      /create|update|delete|post|edit|close/i,
+      call.name.replace(/(?<=[a-z])(?=[A-Z])/g, "_"),
+      /(?:^|_)(?:add|create|update|delete|post|edit|close|merge|push|reply|reopen|remove|submit)(?:_|$)/i,
       "remote mutation tool called",
     );
   }

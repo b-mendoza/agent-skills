@@ -90,6 +90,41 @@ test.each([
   }).not.toThrow();
 });
 
+test.each([
+  "mcp__github__add_issue_comment",
+  "mcp__github__create_pull_request",
+  "mcp__github__merge_pull_request",
+  "mcp__github__push_files",
+  "mcp__github__reply_to_review",
+  "mcp__github__updateIssue",
+  "mcp__github__createPullRequest",
+])("fetching rejects remote write tool %s", (name) => {
+  expect(() => {
+    assertReadOnlyGitHub(
+      createObservation({
+        repoFiles: { [GH_LOG]: '["issue","view","42"]\n' },
+        toolCalls: [{ name, input: {} }],
+      }),
+    );
+  }).toThrow(/remote mutation tool/);
+});
+
+test.each([
+  "mcp__github__get_issue",
+  "mcp__github__list_issue_comments",
+  "mcp__github__search_pull_requests",
+  "mcp__github__get_commit",
+])("fetching accepts remote read tool %s", (name) => {
+  expect(() => {
+    assertReadOnlyGitHub(
+      createObservation({
+        repoFiles: { [GH_LOG]: '["issue","view","42"]\n' },
+        toolCalls: [{ name, input: {} }],
+      }),
+    );
+  }).not.toThrow();
+});
+
 const MISSING_ISSUE_EXIT_CODE = 1;
 
 test("missing issue remains missing through GraphQL", () => {
