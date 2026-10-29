@@ -48,9 +48,19 @@ None.
 None.
 ## Sections Present
 All present.`;
-const SYNTHESIS = SYNTHESIS_KEYS.map(
-  (key) => `${key}: ${key === "overall_verdict" ? "GAPS_FOUND" : "[]"}`,
-).join("\n");
+const SYNTHESIS = `version: 1
+from:
+  orchestrator: improving-skill-definition
+  phase: audit
+to:
+  orchestrator: improving-skill-definition
+  phase: approval
+intent: Synthesize focused audit slice reports into one approval and edit ledger
+${SYNTHESIS_KEYS.filter(
+  (key) => !["version", "from", "to", "intent"].includes(key),
+)
+  .map((key) => `${key}: ${key === "overall_verdict" ? "GAPS_FOUND" : "[]"}`)
+  .join("\n")}`;
 const SOURCE_FILES = {
   ".git/eval-fixture-root": "/repo\n/canonical/repo",
   [AUDIT_FACTS.sourcePath]: AUDIT_FACTS.content,
