@@ -114,11 +114,10 @@ function apiAttemptErrors(args: readonly string[]): unknown[] {
     { toolCalls: [{ name: "Bash", input: { command: `gh ${command}` } }] },
   ].map((overrides) => {
     try {
-      getCase("draft-before-approval").check({
+      return getCase("draft-before-approval").check({
         ...draftObservation(),
         ...overrides,
       });
-      return undefined;
     } catch (error) {
       return error;
     }
