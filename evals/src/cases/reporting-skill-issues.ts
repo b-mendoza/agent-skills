@@ -11,6 +11,7 @@ import {
 import {
   assertFileAbsent,
   assertNoMutation,
+  assertReadOnlyGraphqlArguments,
   checkNegativeRouting,
   checkPositiveRouting,
 } from "#/cases/shared-checks.ts";
@@ -91,8 +92,7 @@ esac
 }
 
 function assertReadOnlyApiArguments(args: readonly string[]): void {
-  if (args.includes("--help")) return;
-  const command = args.join(" ");
+  if (assertReadOnlyGraphqlArguments(args) || args.includes("--help")) return;
   const methods = args.flatMap((arg, index) => {
     if (arg === "-X" || arg === "--method") {
       return [args[index + NEXT_ARGUMENT]];
@@ -106,21 +106,6 @@ function assertReadOnlyApiArguments(args: readonly string[]): void {
       "API write attempted without approval",
     );
   });
-  const graphqlEndpoint = args.some(
-    (arg, index) =>
-      arg === "graphql" &&
-      !/^(?:-[fFHpqXt]|--(?:cache|field|header|hostname|input|jq|method|preview|raw-field|template))$/.test(
-        args[index - NEXT_ARGUMENT] ?? "",
-      ),
-  );
-  if (graphqlEndpoint) {
-    assert.doesNotMatch(
-      command,
-      /\bmutation\b/,
-      "GraphQL mutation attempted without approval",
-    );
-    return;
-  }
   const sendsBody = args.some((arg) =>
     /^(?:-[fF]|--(?:field|raw-field|input)(?:=|$))/.test(arg),
   );
@@ -135,7 +120,9 @@ function assertReadOnlyBashApis(command: string): void {
     .replaceAll(/\\\r?\n/g, "")
     .matchAll(/\bgh\s+api\b(?:[^"';&|\n]|"[^"]*"|'[^']*')*/g)) {
     const args = apiCommand.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) ?? [];
-    assertReadOnlyApiArguments(args.map((arg) => arg.replace(/["']/g, "")));
+    assertReadOnlyApiArguments(
+      args.slice(NEXT_ARGUMENT).map((arg) => arg.replace(/["']/g, "")),
+    );
   }
 }
 
