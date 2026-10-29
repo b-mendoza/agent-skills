@@ -5,6 +5,8 @@ import { expect, test } from "vitest";
 
 import {
   assertOnlySnapshotWritten,
+  assertReadOnlyGitHub,
+  GH_LOG,
   seedGitHub,
   SNAPSHOT,
 } from "#/cases/fetching-work-item-fixtures.ts";
@@ -43,6 +45,50 @@ test.each([SNAPSHOT, `/fixture/${SNAPSHOT}`, `/canonical/fixture/${SNAPSHOT}`])(
     }).not.toThrow();
   },
 );
+
+test.each([
+  ["api", "graphql", "--input", "-"],
+  ["api", "graphql", "--input=/tmp/request.json"],
+  ["api", "graphql", "-F", "query=@/tmp/request.graphql"],
+  ["api", "graphql", "--raw-field=query=@/tmp/request.graphql"],
+  ["api", "graphql", "-f", "query=mutation { addComment { id } }"],
+  ["api", "user", "graphql", "-f", "title=unauthorized"],
+  ["api", "user", "--jq", "graphql", "-f", "title=unauthorized"],
+])("fetching rejects unapproved API write %j", (...args) => {
+  expect(() => {
+    assertReadOnlyGitHub(
+      createObservation({
+        repoFiles: { [GH_LOG]: `${JSON.stringify(args)}\n` },
+      }),
+    );
+  }).toThrow();
+});
+
+test.each([
+  ["api", "graphql", "-X", "POST", "-f", "query=query { viewer { login } }"],
+  [
+    "api",
+    "--method=POST",
+    "graphql",
+    "--field=query=query { viewer { login } }",
+  ],
+  [
+    "api",
+    "--hostname",
+    "github.com",
+    "graphql",
+    "-f",
+    "query={ viewer { login } }",
+  ],
+])("fetching accepts inline GraphQL read %j", (...args) => {
+  expect(() => {
+    assertReadOnlyGitHub(
+      createObservation({
+        repoFiles: { [GH_LOG]: `${JSON.stringify(args)}\n` },
+      }),
+    );
+  }).not.toThrow();
+});
 
 const MISSING_ISSUE_EXIT_CODE = 1;
 

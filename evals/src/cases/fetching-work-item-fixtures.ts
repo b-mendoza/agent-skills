@@ -6,6 +6,7 @@ import { join } from "node:path";
 import type { SeedContext } from "#/cases/case-contract.ts";
 import {
   assertFileMatches,
+  assertReadOnlyGraphqlArguments,
   assertRunHappened,
   fixtureRelativePath,
   seedFixtureRoot,
@@ -156,6 +157,7 @@ function parseGitHubLog(log: string): string[][] {
 }
 
 function assertReadOnlyArguments(args: readonly string[]): void {
+  if (assertReadOnlyGraphqlArguments(args)) return;
   const command = args.join(" ");
   assert.doesNotMatch(
     command,
@@ -163,7 +165,7 @@ function assertReadOnlyArguments(args: readonly string[]): void {
     "remote write attempted",
   );
   const [tool] = args;
-  if (tool === "api" && !args.includes("graphql")) {
+  if (tool === "api") {
     if (/(?:--method|-X) GET(?: |$)/.test(args.join(" "))) return;
     assert.ok(
       !args.some((argument) =>
