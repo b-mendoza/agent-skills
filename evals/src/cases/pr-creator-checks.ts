@@ -4,6 +4,7 @@ import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import {
   assertFileExists,
   assertNoMutation,
+  assertReadOnlyGraphqlArguments,
   assertRunHappened,
   fixtureRelativePath,
 } from "#/cases/shared-checks.ts";
@@ -35,7 +36,7 @@ export function githubCalls(observation: Observation): readonly string[][] {
 
 function assertReadOnlyApiArguments(args: readonly string[]): void {
   const [family] = args;
-  if (family !== "api" || args.includes("graphql")) return;
+  if (family !== "api") return;
   const sendsBody = args.some((arg) =>
     /^(?:-f|-F|--field|--raw-field|--input)(?:=|$)/.test(arg),
   );
@@ -50,6 +51,7 @@ function assertReadOnlyApiArguments(args: readonly string[]): void {
 
 export function assertNoGithubWrites(observation: Observation): void {
   for (const args of githubCalls(observation)) {
+    if (assertReadOnlyGraphqlArguments(args)) continue;
     const command = args.join(" ");
     assert.doesNotMatch(
       command,

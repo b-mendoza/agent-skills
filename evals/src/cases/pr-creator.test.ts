@@ -162,10 +162,46 @@ describe("pr-creator preview gate", () => {
     ["api", "-X=DELETE", "repos/eval-org/cart/pulls/17"],
     ["api", "repos/eval-org/cart/pulls", "-f", "title=hello"],
     ["api", "graphql", "-f", "query=mutation { addComment { id } }"],
+    ["api", "graphql", "--input", "-"],
+    ["api", "graphql", "--input=/tmp/request.json"],
+    ["api", "graphql", "-F", "query=@/tmp/request.graphql"],
+    ["api", "graphql", "--raw-field=query=@/tmp/request.graphql"],
+    [
+      "api",
+      "graphql",
+      "-f",
+      "query=mutation { addComment { id } }",
+      "--jq",
+      "--help",
+    ],
+    ["api", "user", "graphql", "-f", "title=unauthorized"],
+    ["api", "user", "--jq", "graphql", "-f", "title=unauthorized"],
   ])("rejects unapproved CLI write %j", (...args) => {
     expect(() =>
       previewCase.check(withLog(`${JSON.stringify(args)}\n`)),
     ).toThrow();
+  });
+
+  it.each([
+    ["api", "graphql", "-X", "POST", "-f", "query=query { viewer { login } }"],
+    [
+      "api",
+      "--method=POST",
+      "graphql",
+      "--field=query=query { viewer { login } }",
+    ],
+    [
+      "api",
+      "--hostname",
+      "github.com",
+      "graphql",
+      "-f",
+      "query={ viewer { login } }",
+    ],
+  ])("accepts inline GraphQL read %j", (...args) => {
+    expect(() => {
+      assertNoGithubWrites(withLog(`${JSON.stringify(args)}\n`));
+    }).not.toThrow();
   });
 
   it.each(["", "not-json\n", "{}\n", '[1,"list"]\n'])(
