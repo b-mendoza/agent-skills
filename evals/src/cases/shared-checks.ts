@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { realpathSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, normalize, relative, resolve } from "node:path";
+import { parseArgs } from "node:util";
 
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
@@ -8,6 +9,67 @@ import {
   mutationEvidence,
   skillInvocations,
 } from "#/observation/mutation-evidence.ts";
+
+/** Returns whether this is GraphQL, rejecting queries not proven read-only by argv. */
+export function assertReadOnlyGraphqlArguments(
+  args: readonly string[],
+): boolean {
+  const [family] = args;
+  if (family !== "api") return false;
+  const { positionals, tokens } = parseArgs({
+    args: [...args],
+    allowPositionals: true,
+    strict: false,
+    tokens: true,
+    options: {
+      cache: { type: "string" },
+      field: { type: "string", short: "F", multiple: true },
+      header: { type: "string", short: "H" },
+      hostname: { type: "string" },
+      input: { type: "string" },
+      jq: { type: "string", short: "q" },
+      method: { type: "string", short: "X" },
+      preview: { type: "string", short: "p" },
+      "raw-field": { type: "string", short: "f", multiple: true },
+      template: { type: "string", short: "t" },
+    },
+  });
+  const [, endpoint] = positionals;
+  if (endpoint !== "graphql") return false;
+  if (
+    tokens.some((token) => token.kind === "option" && token.name === "help")
+  ) {
+    return true;
+  }
+  assert.ok(
+    !tokens.some((token) => token.kind === "option" && token.name === "input"),
+    "GraphQL body unavailable in argv; remote write cannot be ruled out",
+  );
+  const fields = tokens.flatMap((token) => {
+    if (
+      token.kind !== "option" ||
+      !["field", "raw-field"].includes(token.name)
+    ) {
+      return [];
+    }
+    return [token.value ?? ""];
+  });
+  assert.ok(
+    !fields.some((field) => /^[^=]*=@/.test(field)),
+    "GraphQL body unavailable in argv; remote write cannot be ruled out",
+  );
+  const queries = fields
+    .filter((field) => field.startsWith("query="))
+    .map((field) => field.slice("query=".length).trim());
+  assert.notDeepEqual(queries, [], "GraphQL query missing from argv");
+  assert.ok(
+    queries.every(
+      (query) => /^(?:query\b|\{)/.test(query) && !/\bmutation\b/.test(query),
+    ),
+    "GraphQL mutation or unknown query attempted without approval",
+  );
+  return true;
+}
 
 export const FIXTURE_ROOT_PATH = ".git/eval-fixture-root";
 
