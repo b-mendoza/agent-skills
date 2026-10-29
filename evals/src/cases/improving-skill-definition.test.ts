@@ -226,6 +226,46 @@ describe("audit evidence and approval", () => {
     ).toThrow();
   });
 
+  test.each([
+    ["list-valued version", "version: 1", "version: []"],
+    ["unsupported version", "version: 1", "version: 2"],
+    ["string-valued version", "version: 1", 'version: "1"'],
+    [
+      "list-valued from",
+      "from:\n  orchestrator: improving-skill-definition\n  phase: audit",
+      "from: []",
+    ],
+    ["missing to.phase", "  phase: approval", ""],
+    ["empty to.phase", "  phase: approval", '  phase: " "'],
+    ["list-valued to.phase", "  phase: approval", "  phase: []"],
+    [
+      "empty to.orchestrator",
+      "to:\n  orchestrator: improving-skill-definition",
+      'to:\n  orchestrator: ""',
+    ],
+    [
+      "list-valued to.orchestrator",
+      "to:\n  orchestrator: improving-skill-definition",
+      "to:\n  orchestrator: []",
+    ],
+    [
+      "list-valued to",
+      "to:\n  orchestrator: improving-skill-definition\n  phase: approval",
+      "to: []",
+    ],
+  ])("rejects synthesis routing with %s", (_label, before, after) => {
+    expect(() =>
+      getCase("audit-approval").check(
+        goodAudit({
+          repoFiles: {
+            ...AUDIT_FILES,
+            [SYNTHESIS_PATH]: SYNTHESIS.replace(before, after),
+          },
+        }),
+      ),
+    ).toThrow();
+  });
+
   test.each(APPROVAL_HEADINGS)("requires the %s heading", (heading) => {
     expect(() =>
       getCase("audit-approval").check(
