@@ -101,8 +101,39 @@ const EXECUTION_PATTERNS = [
   /^(?:npm|pnpm|yarn)\s+(?:test|install|add|build)\b/,
   /^(?:npm|pnpm|yarn)\s+run\s+(?:test|build|lint)\b/,
   /^npx\s+(?:vitest|jest|prettier|eslint)\b/,
-  /^node(?:\s+--?[\w-]+(?:=\S+)?)*\s+--test(?:\s|$)/,
 ];
+const NODE_VALUE_OPTIONS = new Set([
+  "--require",
+  "-r",
+  "--import",
+  "--loader",
+  "--experimental-loader",
+  "--test-reporter",
+  "--test-reporter-destination",
+  "--conditions",
+  "-C",
+  "--env-file",
+  "--test-name-pattern",
+  "--test-concurrency",
+]);
+
+function consumeNodeOption(argument: string, args: string[]): boolean {
+  if (!/^--?\w/.test(argument)) return false;
+  if (NODE_VALUE_OPTIONS.has(argument)) args.shift();
+  return true;
+}
+
+function hasNodeTestOption(args: string[]): boolean {
+  for (
+    let argument = args.shift();
+    argument !== undefined;
+    argument = args.shift()
+  ) {
+    if (argument === "--test") return true;
+    if (!consumeNodeOption(argument, args)) return false;
+  }
+  return false;
+}
 
 function forbiddenExecution(call: ToolCall): boolean {
   if (call.name !== "Bash") return false;
@@ -113,8 +144,11 @@ function forbiddenExecution(call: ToolCall): boolean {
       .trimStart()
       .replace(/^env\s+/, "")
       .replace(/^(?:[A-Za-z_]\w*=(?:"[^"]*"|'[^']*'|\S*)\s+)*/, "");
-    return EXECUTION_PATTERNS.some((pattern) =>
-      pattern.test(withoutEnvironment),
+    const [executable, ...args] =
+      withoutEnvironment.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) ?? [];
+    return (
+      EXECUTION_PATTERNS.some((pattern) => pattern.test(withoutEnvironment)) ||
+      (executable === "node" && hasNodeTestOption(args))
     );
   });
 }
