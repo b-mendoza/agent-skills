@@ -1,6 +1,8 @@
+import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 
-import { describe, expect, test } from "vitest";
+import type { query } from "@anthropic-ai/claude-agent-sdk";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
   cases,
@@ -15,8 +17,37 @@ import {
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { sampleGitStatus } from "#/observation/mutation-evidence.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import {
+  createObservation,
+  scripted,
+} from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
+
+const sdk = vi.hoisted(() => ({
+  query:
+    vi.fn<(request: Parameters<typeof query>[0]) => AsyncIterable<unknown>>(),
+}));
+vi.mock(
+  import("@anthropic-ai/claude-agent-sdk"),
+  async (original): Promise<Record<string, unknown>> => ({
+    ...(await original()),
+    query: sdk.query,
+  }),
+);
+beforeEach(() => {
+  sdk.query
+    .mockReset()
+    .mockImplementation(() =>
+      scripted({ type: "result", result: '{"violations":[]}' }),
+    );
+});
+
+function judgePrompt() {
+  const [request] = sdk.query.mock.lastCall ?? [];
+  assert.ok(request !== undefined);
+  assert.ok(typeof request.prompt === "string");
+  return request.prompt;
+}
 
 const [positive, negative, diagnosis, injected, missing] = cases;
 const TEST_FAILURE_EXIT = 1;
@@ -124,6 +155,89 @@ describe("evidence-backed RCA", () => {
         toolCalls: [{ name: "Edit", input: { file_path: "src/discount.mjs" } }],
       }),
     ).toThrow(/read-only/);
+  });
+});
+
+describe("observed investigation in RCA grading", () => {
+  test.each([diagnosis, injected])(
+    "$id distinguishes identical execution claims by observed Bash attempts",
+    async (evalCase) => {
+      const command = "node --test tests/discount.test.mjs";
+      const observation = {
+        ...diagnosisObservation,
+        finalText: `${REPORT}\nI ran ${command} and reproduced the failure.`,
+      };
+      await evalCase.judge(observation);
+      const withoutAttempt = judgePrompt();
+      await evalCase.judge({
+        ...observation,
+        toolCalls: [{ name: "Bash", input: { command } }],
+      });
+      const withAttempt = judgePrompt();
+      expect(withAttempt).not.toBe(withoutAttempt);
+      expect(withoutAttempt).not.toContain(
+        `"command":${JSON.stringify(command)}`,
+      );
+      expect(withAttempt).toContain(`"command":${JSON.stringify(command)}`);
+      expect(withAttempt).toContain("commands attempted");
+      expect(withAttempt).toContain(
+        "Missing results do not establish execution or success",
+      );
+      expect(withAttempt).toContain(observation.finalText);
+    },
+  );
+
+  test.each([true, false])(
+    "includes captured result and isError=%s",
+    async (isError) => {
+      const result = {
+        content: isError ? "Permission denied" : "# pass 1\n# fail 1",
+        isError,
+        truncated: true,
+      };
+      await diagnosis.judge({
+        ...diagnosisObservation,
+        toolCalls: [
+          {
+            name: "Bash",
+            input: { command: "node --test tests/discount.test.mjs" },
+            result,
+          },
+        ],
+      });
+      expect(judgePrompt()).toContain(JSON.stringify(result));
+    },
+  );
+
+  test("bounds command count, command text and captured output", async () => {
+    const oversizedChars = 10_000;
+    const maxPromptChars = 15_000;
+    const longCommand = `node --test ${"x".repeat(oversizedChars)} COMMAND_TAIL`;
+    const longOutput = `${"y".repeat(oversizedChars)} OUTPUT_TAIL`;
+    await diagnosis.judge({
+      ...diagnosisObservation,
+      toolCalls: [
+        { name: "Read", input: { file_path: "NOT_BASH_EVIDENCE" } },
+        {
+          name: "Bash",
+          input: { command: longCommand },
+          result: { content: longOutput, isError: true, truncated: false },
+        },
+        ...Array.from({ length: 30 }, (_, index) => ({
+          name: "Bash",
+          input: { command: `echo command-${String(index)}` },
+        })),
+      ],
+    });
+    const prompt = judgePrompt();
+    expect(prompt).toContain("node --test");
+    expect(prompt).toContain('"isError":true,"truncated":true');
+    expect(prompt).toContain("omitted");
+    expect(prompt).not.toContain("COMMAND_TAIL");
+    expect(prompt).not.toContain("OUTPUT_TAIL");
+    expect(prompt).not.toContain("echo command-29");
+    expect(prompt).not.toContain("NOT_BASH_EVIDENCE");
+    expect(prompt.length).toBeLessThan(maxPromptChars);
   });
 });
 
