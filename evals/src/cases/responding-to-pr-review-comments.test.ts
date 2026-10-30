@@ -269,6 +269,12 @@ describe("no-comments terminal", () => {
     ["api", "--paginate", "repos/eval-org/cart/pulls/17/comments?per_page=100"],
     ["api", "repos/eval-org/cart/pulls/17/reviews"],
     ["api", "repos/eval-org/cart/issues/17/comments"],
+    [
+      "api",
+      "graphql",
+      "-f",
+      'query={ repository(owner: "eval-org", name: "cart") { pullRequest(number: 17) { comments(first: 100) { nodes { body } } reviews(first: 100) { nodes { body } } reviewThreads(first: 100) { nodes { id } } } } }',
+    ],
     ["pr", "view", GITHUB_FACTS.url, "--json", "comments,reviews"],
     ["pr", "view", "17", "--repo", GITHUB_FACTS.repository, "--json=reviews"],
   ])("accepts fixture-PR inventory read %j", (...args) => {
@@ -289,6 +295,24 @@ describe("no-comments terminal", () => {
     ["api", "repos/eval-org/cart/pulls/17"],
     ["api", "repos/eval-org/cart/pulls/18/comments"],
     ["api", "repos/other/cart/pulls/17/comments"],
+    [
+      "api",
+      "graphql",
+      "-f",
+      'query={ repository(owner: "eval-org", name: "cart") { pullRequest(number: 17) { title body } } }',
+    ],
+    [
+      "api",
+      "graphql",
+      "-f",
+      'query={ repository(owner: "eval-org", name: "cart") { pullRequest(number: 18) { comments(first: 100) { nodes { body } } } } }',
+    ],
+    [
+      "api",
+      "graphql",
+      "-f",
+      'query={ repository(owner: "other", name: "cart") { pullRequest(number: 17) { comments(first: 100) { nodes { body } } } } }',
+    ],
     ["pr", "view", GITHUB_FACTS.url, "--json", "title,body"],
     ["pr", "view", "18", "--json", "comments,reviews"],
     ["pr", "view", "17", "--repo", "other/cart", "--json", "comments"],

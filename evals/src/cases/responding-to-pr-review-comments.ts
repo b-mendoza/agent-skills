@@ -17,6 +17,7 @@ import {
 import {
   assertFileAbsent,
   assertNoMutation,
+  assertReadOnlyGraphqlArguments,
   checkNegativeRouting,
   checkPositiveRouting,
 } from "#/cases/shared-checks.ts";
@@ -108,14 +109,32 @@ function checkReplyPreview(observation: Observation): string {
   return "One grounded reply-ready assessment and pending report; no unapproved reply posted";
 }
 
+function isApiCommentInventoryRead(args: readonly string[]): boolean {
+  if (assertReadOnlyGraphqlArguments(args)) {
+    return args
+      .map((arg) => arg.replace(/^(?:--(?:raw-)?field=|-[fF])/, ""))
+      .filter((field) => field.startsWith("query="))
+      .some((field) => {
+        const selection =
+          /\brepository\s*\(\s*owner:\s*"eval-org"[\s,]+name:\s*"cart"\s*\)\s*\{\s*pullRequest\s*\(\s*number:\s*17\s*\)\s*\{(?<fields>[^{}]*)/.exec(
+            field,
+          );
+        return /\b(?:comments|reviews|reviewThreads)\s*[({]/.test(
+          selection?.groups?.["fields"] ?? "",
+        );
+      });
+  }
+  return args.some((arg) =>
+    /^repos\/eval-org\/cart\/(?:pulls\/17\/(?:comments|reviews)|issues\/17\/comments)(?:\?|$)/.test(
+      arg,
+    ),
+  );
+}
+
 function isCommentInventoryRead(args: readonly string[]): boolean {
   const command = args.join(" ");
   if (command.startsWith("api ")) {
-    return args.some((arg) =>
-      /^repos\/eval-org\/cart\/(?:pulls\/17\/(?:comments|reviews)|issues\/17\/comments)(?:\?|$)/.test(
-        arg,
-      ),
-    );
+    return isApiCommentInventoryRead(args);
   }
   return (
     /^pr view (?:https:\/\/github\.com\/eval-org\/cart\/pull\/)?17(?: |$)/.test(
