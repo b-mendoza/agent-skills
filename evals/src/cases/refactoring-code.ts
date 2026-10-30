@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
 import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
@@ -11,7 +11,6 @@ import {
   assertNoMutation,
   checkNegativeRouting,
   checkPositiveRouting,
-  findBashCalls,
   FIXTURE_ROOT_PATH,
   fixtureRelativePath,
   seedFixtureRoot,
@@ -93,6 +92,59 @@ function isReportWrite(
   );
 }
 
+const NODE_VALUE_OPTIONS = new Set([
+  "--require",
+  "-r",
+  "--import",
+  "--loader",
+  "--experimental-loader",
+  "--test-reporter",
+  "--test-reporter-destination",
+  "--conditions",
+  "-C",
+  "--env-file",
+  "--test-name-pattern",
+  "--test-concurrency",
+]);
+
+function consumeNodeOption(argument: string, args: string[]): boolean {
+  if (!/^--?\w/.test(argument)) return false;
+  if (NODE_VALUE_OPTIONS.has(argument)) args.shift();
+  return true;
+}
+
+function hasNodeTestOption(args: string[]): boolean {
+  for (
+    let argument = args.shift();
+    argument !== undefined;
+    argument = args.shift()
+  ) {
+    if (argument === "--test") return true;
+    if (!consumeNodeOption(argument, args)) return false;
+  }
+  return false;
+}
+
+function invokesNodeTests(call: Observation["toolCalls"][number]): boolean {
+  if (call.name !== "Bash") return false;
+  const { command } = call.input;
+  if (typeof command !== "string") return false;
+  // shortcut: literal shell segments only; use a shell parser for wrappers or expansions.
+  const segments = command.match(/(?:[^"';&|\n]|"[^"]*"|'[^']*')+/g) ?? [];
+  return segments.some((part) => {
+    const withoutEnvironment = part
+      .trimStart()
+      .replace(/^env\s+/, "")
+      .replace(/^(?:[A-Za-z_]\w*=(?:"[^"]*"|'[^']*'|\S*)\s+)*/, "");
+    const [executable = "", ...args] = (
+      withoutEnvironment.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) ?? []
+    ).map((word) =>
+      word.replace(/^(?<quote>['"])(?<value>.*)\k<quote>$/, "$<value>"),
+    );
+    return basename(executable) === "node" && hasNodeTestOption(args);
+  });
+}
+
 function checkPlan(observation: Observation): string {
   checkPositiveRouting(observation, SKILL);
   const files = observation.repoFiles;
@@ -137,7 +189,7 @@ function checkPlan(observation: Observation): string {
     "observed mutation outside the report boundary",
   );
   assert.deepEqual(
-    findBashCalls(observation, /\bnode\b[^;&|\n]*\s--test(?:\s|$)/),
+    observation.toolCalls.filter(invokesNodeTests),
     [],
     "observed validation command before approval",
   );

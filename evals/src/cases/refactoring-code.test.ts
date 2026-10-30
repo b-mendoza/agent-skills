@@ -114,6 +114,12 @@ describe("refactoring-code checks", () => {
     "node --trace-warnings --test ./quote.test.js",
     "cd /fixture && node --test quote.test.js",
     "/usr/bin/node --test quote.test.js",
+    '"/usr/bin/node" --test quote.test.js',
+    "env CI=1 node --require node:assert --test quote.test.js",
+    "cat package.json | node --test quote.test.js",
+    "cat package.json; node --test quote.test.js",
+    "cat package.json\nnode --test quote.test.js",
+    'rg "node --test quote.test.js" package.json && node --test quote.test.js',
   ])("plan rejects validation before approval: %s", (command) => {
     const observation = correctObservation(planCase);
     expect(() =>
@@ -127,21 +133,27 @@ describe("refactoring-code checks", () => {
     ).toThrow(/validation.*approval/);
   });
 
-  test.each(["cat quote.test.js", "cat src/quote.js package.json"])(
-    "plan allows read-only inspection: %s",
-    (command) => {
-      const observation = correctObservation(planCase);
-      expect(() =>
-        planCase.check({
-          ...observation,
-          toolCalls: [
-            ...observation.toolCalls,
-            { name: "Bash", input: { command } },
-          ],
-        }),
-      ).not.toThrow();
-    },
-  );
+  test.each([
+    "cat quote.test.js",
+    "cat src/quote.js package.json",
+    "rg 'node --test quote.test.js' package.json",
+    'grep "node --test quote.test.js" package.json',
+    "rg 'example; node --test quote.test.js' package.json",
+    "node scripts/inspect.js --test",
+    "node -- quote.test.js --test",
+    "node --require '--test' scripts/inspect.js",
+  ])("plan allows read-only inspection: %s", (command) => {
+    const observation = correctObservation(planCase);
+    expect(() =>
+      planCase.check({
+        ...observation,
+        toolCalls: [
+          ...observation.toolCalls,
+          { name: "Bash", input: { command } },
+        ],
+      }),
+    ).not.toThrow();
+  });
 
   test("plan allows report writes but rejects unobserved or incorrect artifacts", () => {
     const observation = correctObservation(planCase);
