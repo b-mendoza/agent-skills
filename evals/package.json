@@ -38,7 +38,7 @@
     "eslint-plugin-sonarjs": "4.2.0",
     "globals": "17.9.0",
     "npm-run-all2": "9.0.3",
-    "oxfmt": "0.62.0",
+    "oxfmt": "0.75.0",
     "oxlint": "1.77.0",
     "oxlint-tsgolint": "7.0.2001",
     "promptfoo": "0.124.1",
