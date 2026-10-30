@@ -52,13 +52,58 @@ function assertSourceIntact(observation: Observation): void {
   );
 }
 
-function assertXmlTag(token: string, stack: string[]): void {
-  const tag = /^<(?<closing>\/?)(?<name>[a-z_][\w.:-]*)(?:\s[^]*?)?\/?>$/i.exec(
-    token,
+function assertXmlCharacter(reference: string): void {
+  const codePoint = Number(reference.replace(/^#x/, "0x").replace(/^#/, ""));
+  assert.match(
+    String.fromCodePoint(codePoint),
+    /^[\t\n\r\x20-\u{D7FF}\u{E000}-\u{FFFD}\u{10000}-\u{10FFFF}]$/u,
+    "invalid XML character reference",
   );
+}
+
+function assertXmlReferences(text: string): void {
+  const references =
+    /&(?:amp|lt|gt|quot|apos|(?<character>#(?:\d+|x[\da-fA-F]+)));|&/g;
+  for (const match of text.matchAll(references)) {
+    const [reference] = match;
+    assert.notEqual(
+      reference,
+      "&",
+      "invalid XML entity or character reference",
+    );
+    const character = match.groups?.["character"];
+    if (character !== undefined) {
+      assertXmlCharacter(character);
+    }
+  }
+}
+
+function assertXmlAttributes(text: string): void {
+  const attribute =
+    /^[ \t\r\n]+(?<name>[a-z_][\w.:-]*)[ \t\r\n]*=[ \t\r\n]*(?:"[^"<]*"|'[^'<]*')/i;
+  const names = new Set<string>();
+  let remaining = text;
+  while (!/^[ \t\r\n]*$/.test(remaining)) {
+    const match = attribute.exec(remaining);
+    assert.ok(match?.groups !== undefined, "malformed XML attribute");
+    const { name } = match.groups;
+    assert.ok(name !== undefined, "missing XML attribute name");
+    assert.ok(!names.has(name), "duplicate XML attribute");
+    names.add(name);
+    const [token] = match;
+    remaining = remaining.slice(token.length);
+  }
+}
+
+function assertXmlTag(token: string, stack: string[]): void {
+  const tag =
+    /^<(?<closing>\/?)(?<name>[a-z_][\w.:-]*)(?<attributes>(?:[ \t\r\n/][^]*)?)>$/i.exec(
+      token,
+    );
   assert.ok(tag?.groups !== undefined, "malformed XML tag");
-  const { name, closing } = tag.groups;
+  const { name, closing, attributes } = tag.groups;
   assert.ok(name !== undefined, "missing XML tag name");
+  assert.ok(attributes !== undefined, "missing XML attributes");
   if (closing === "/") {
     assert.match(
       token,
@@ -66,8 +111,11 @@ function assertXmlTag(token: string, stack: string[]): void {
       "malformed XML closing tag",
     );
     assert.equal(stack.pop(), name, "mismatched XML closing tag");
-  } else if (!token.endsWith("/>")) {
-    stack.push(name);
+  } else {
+    assertXmlAttributes(attributes.replace(/\/$/, ""));
+    if (!token.endsWith("/>")) {
+      stack.push(name);
+    }
   }
 }
 
@@ -78,12 +126,18 @@ function assertBalancedXml(xml: string): void {
   const nonElements = /<!--[^]*?-->|<!\[CDATA\[[^]*?\]\]>|<\?[^]*?\?>/;
   const elements = /<(?:[^<>"']|"[^"]*"|'[^']*')*>|</;
   const tokens = new RegExp(
-    `(?<ignored>${nonElements.source})|${elements.source}`,
+    `(?<ignored>${nonElements.source})|(?<element>${elements.source})|[^<]+`,
     "g",
   );
   for (const match of xml.matchAll(tokens)) {
     const [token] = match;
-    if (match.groups?.["ignored"] === undefined) {
+    assert.ok(match.groups !== undefined, "missing XML token groups");
+    const { ignored, element } = match.groups;
+    if (ignored !== undefined) {
+      continue;
+    }
+    assertXmlReferences(token);
+    if (element !== undefined) {
       assertXmlTag(token, stack);
     }
   }

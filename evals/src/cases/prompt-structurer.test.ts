@@ -109,6 +109,27 @@ describe("prompt-structurer behavior", () => {
         '<output format="a > b"><rule /><rule>Keep names.</rule><!-- <ignored> --><![CDATA[<literal>]]><?hint <ignored>?>',
       ),
     ],
+    [
+      "quoted attributes with whitespace and case-sensitive names",
+      structuredPrompt.replace(
+        "<task>",
+        "<task priority = \"high\" Priority='' >",
+      ),
+    ],
+    [
+      "entity and character references in text and attributes",
+      structuredPrompt.replace(
+        "<task>",
+        '<task label="&amp; &#38; &#x26;">&lt; &gt; &quot; &apos; &#9; &#x1F600; ',
+      ),
+    ],
+    [
+      "raw ampersands inside comments, CDATA, and instructions",
+      structuredPrompt.replace(
+        "<output>",
+        "<output><!-- A & B --><![CDATA[A & B]]><?hint A & B?>",
+      ),
+    ],
     ["XML-like prose in notes", `${structuredPrompt}\nDiscuss <output> here.`],
   ])("accepts %s", (_label, finalText) => {
     expect(() =>
@@ -151,6 +172,33 @@ describe("prompt-structurer behavior", () => {
     expect(() =>
       getCase("structure-prose").check(
         behavioralObservation("structure-prose", finalText),
+      ),
+    ).toThrow();
+  });
+
+  test.each([
+    ["a valueless attribute", "<task priority>"],
+    ["an unquoted attribute value", "<task priority=high>"],
+    ["an attribute missing its value", "<task priority=>"],
+    ["duplicate attributes", "<task priority=\"high\" priority='low'>"],
+    ["attributes without separating whitespace", '<task a="1"b="2">'],
+    ["a valueless attribute on a self-closing tag", "<task><rule priority />"],
+    ["a bare ampersand in text", "<task>A & B "],
+    ["a bare ampersand in an attribute", '<task label="A & B">'],
+    ["an unknown entity", "<task>&unknown; "],
+    ["an entity missing its semicolon", "<task>&amp "],
+    ["an invalid decimal reference", "<task>&#NN; "],
+    ["an invalid hexadecimal reference", "<task>&#xHH; "],
+    ["a reference to a null character", "<task>&#0; "],
+    ["a reference to a surrogate", "<task>&#xD800; "],
+    ["a reference beyond Unicode", "<task>&#x110000; "],
+  ])("rejects XML with %s", (_label, opening) => {
+    expect(() =>
+      getCase("structure-prose").check(
+        behavioralObservation(
+          "structure-prose",
+          structuredPrompt.replace("<task>", opening),
+        ),
       ),
     ).toThrow();
   });
