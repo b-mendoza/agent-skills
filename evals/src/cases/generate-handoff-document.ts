@@ -272,6 +272,12 @@ function checkPackage(observation: Observation): string {
       `unredacted secret in ${path}`,
     );
   }
+  for (const artifact of [contextJson, insightsJson]) {
+    assert.ok(
+      !JSON.stringify(artifact).includes(HANDOFF_FACTS.secret),
+      "unredacted secret in parsed JSON artifact",
+    );
+  }
   const transcript = readCaptured(
     observation,
     HANDOFF_PATHS.transcript,

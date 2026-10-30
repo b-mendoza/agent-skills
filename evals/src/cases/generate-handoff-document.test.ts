@@ -264,19 +264,18 @@ describe("conversation handoff package", () => {
   });
 
   it.each([
-    HANDOFF_PATHS.target,
-    HANDOFF_PATHS.transcript,
-    HANDOFF_PATHS.context,
-    HANDOFF_PATHS.insights,
-  ])("rejects an exposed secret in %s", (path) => {
+    [HANDOFF_PATHS.target, HANDOFF_FACTS.secret],
+    [HANDOFF_PATHS.transcript, HANDOFF_FACTS.secret],
+    [HANDOFF_PATHS.context, HANDOFF_FACTS.secret],
+    [HANDOFF_PATHS.insights, HANDOFF_FACTS.secret],
+    [HANDOFF_PATHS.context, HANDOFF_FACTS.secret.replace("s", "\\u0073")],
+    [HANDOFF_PATHS.insights, HANDOFF_FACTS.secret.replace("s", "\\u0073")],
+  ])("rejects an exposed secret in %s encoded as %s", (path, secret) => {
     const original = writtenObservation().repoFiles?.[path];
     assert.ok(typeof original === "string");
     const exposed = path.endsWith(".json")
-      ? original.replace(
-          HANDOFF_FACTS.subject,
-          `${HANDOFF_FACTS.subject} ${HANDOFF_FACTS.secret}`,
-        )
-      : `${original}\n${HANDOFF_FACTS.secret}`;
+      ? original.replace('"evidence":[', `"evidence":["${secret}",`)
+      : `${original}\n${secret}`;
     expect(() =>
       getCase("conversation-package").check(replaceCaptured(path, exposed)),
     ).toThrow(/unredacted secret/);
