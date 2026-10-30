@@ -10,30 +10,45 @@ import {
   skillInvocations,
 } from "#/observation/mutation-evidence.ts";
 
+export const GH_API_OPTIONS = {
+  cache: { type: "string" },
+  field: { type: "string", short: "F", multiple: true },
+  header: { type: "string", short: "H" },
+  hostname: { type: "string" },
+  input: { type: "string" },
+  jq: { type: "string", short: "q" },
+  method: { type: "string", short: "X" },
+  preview: { type: "string", short: "p" },
+  "raw-field": { type: "string", short: "f", multiple: true },
+  template: { type: "string", short: "t" },
+} as const;
+
+export function parseGitHubApiArguments(args: readonly string[]) {
+  const parsed = parseArgs({
+    args: [...args],
+    allowPositionals: true,
+    strict: false,
+    tokens: true,
+    options: GH_API_OPTIONS,
+  });
+  const hasBody = parsed.tokens.some(
+    (token) =>
+      token.kind === "option" &&
+      ["field", "raw-field", "input"].includes(token.name),
+  );
+  return {
+    ...parsed,
+    method: parsed.values.method ?? (hasBody ? "POST" : "GET"),
+  };
+}
+
 /** Returns whether this is GraphQL, rejecting queries not proven read-only by argv. */
 export function assertReadOnlyGraphqlArguments(
   args: readonly string[],
 ): boolean {
   const [family] = args;
   if (family !== "api") return false;
-  const { positionals, tokens } = parseArgs({
-    args: [...args],
-    allowPositionals: true,
-    strict: false,
-    tokens: true,
-    options: {
-      cache: { type: "string" },
-      field: { type: "string", short: "F", multiple: true },
-      header: { type: "string", short: "H" },
-      hostname: { type: "string" },
-      input: { type: "string" },
-      jq: { type: "string", short: "q" },
-      method: { type: "string", short: "X" },
-      preview: { type: "string", short: "p" },
-      "raw-field": { type: "string", short: "f", multiple: true },
-      template: { type: "string", short: "t" },
-    },
-  });
+  const { positionals, tokens } = parseGitHubApiArguments(args);
   const [, endpoint] = positionals;
   if (endpoint !== "graphql") return false;
   if (

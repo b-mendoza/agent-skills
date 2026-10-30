@@ -9,6 +9,8 @@ import {
   assertReadOnlyGraphqlArguments,
   assertRunHappened,
   fixtureRelativePath,
+  GH_API_OPTIONS,
+  parseGitHubApiArguments,
   seedFixtureRoot,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
@@ -119,15 +121,17 @@ if (args[0] === 'issue' && args[1] === 'view') {
 }
 if (args[0] === 'issue' && args[1] === 'list') { emit(mode === 'linked' ? [child] : []); process.exit(0); }
 if (args[0] !== 'api') fail('Unsupported or mutating fixture command');
-const endpoint = args.find(arg => arg === 'graphql' || arg.startsWith('repos/') || arg.startsWith('/repos/')) || '';
-const methodIndex = args.findIndex(arg => arg === '--method' || arg === '-X');
-const method = methodIndex < 0 ? 'GET' : args[methodIndex + 1];
+const { parseArgs } = require('node:util');
+const parsed = parseArgs({ args, allowPositionals: true, strict: false, tokens: true, options: ${JSON.stringify(GH_API_OPTIONS)} });
+const [, endpoint = ''] = parsed.positionals;
+const hasBody = parsed.tokens.some(token => token.kind === 'option' && ['field', 'raw-field', 'input'].includes(token.name));
+const method = parsed.values.method ?? (hasBody ? 'POST' : 'GET');
 if (endpoint === 'graphql') {
   if (args.join(' ').includes('mutation')) fail('Remote writes are not permitted');
   if (mode === 'missing') fail('gh: Could not resolve to an Issue with the number of 42');
   emit({ data: { repository: { issue: { ...issue, comments: { nodes: issue.comments, totalCount: 1 }, subIssues: { nodes: mode === 'linked' ? [child] : [], totalCount: mode === 'linked' ? 1 : 0 }, timelineItems: { nodes: [], totalCount: 0 }, projectItems: { nodes: [], totalCount: 0 } } } } }); process.exit(0);
 }
-if (method !== 'GET' || (methodIndex < 0 && args.some(arg => ['-f', '-F', '--field', '--raw-field', '--input'].includes(arg)))) fail('Remote writes are not permitted');
+if (method !== 'GET') fail('Remote writes are not permitted');
 if (mode === 'missing') fail('gh: Not Found (HTTP 404)');
 const path = endpoint.replace(/^\\//, '').split('?')[0];
 if (path === 'repos/acme/app/issues/42/comments') emit(issue.comments);
@@ -158,22 +162,20 @@ function parseGitHubLog(log: string): string[][] {
 
 function assertReadOnlyArguments(args: readonly string[]): void {
   if (assertReadOnlyGraphqlArguments(args)) return;
-  const command = args.join(" ");
-  assert.doesNotMatch(
-    command,
-    /\b(?:create|edit|comment|close|reopen|delete|mutation)\b|(?:--method|-X)\s+(?:POST|PATCH|PUT|DELETE)\b/,
-    "remote write attempted",
-  );
   const [tool] = args;
   if (tool === "api") {
-    if (/(?:--method|-X) GET(?: |$)/.test(args.join(" "))) return;
-    assert.ok(
-      !args.some((argument) =>
-        ["-f", "-F", "--field", "--raw-field", "--input"].includes(argument),
-      ),
-      "implicit API POST attempted",
+    assert.equal(
+      parseGitHubApiArguments(args).method,
+      "GET",
+      "remote write attempted",
     );
+    return;
   }
+  assert.doesNotMatch(
+    args.join(" "),
+    /\b(?:create|edit|comment|close|reopen|delete|mutation)\b/,
+    "remote write attempted",
+  );
 }
 
 function isTrackerRead(args: readonly string[]): boolean {

@@ -125,7 +125,99 @@ test.each([
   }).not.toThrow();
 });
 
+const apiMethodCases = [
+  { options: ["--method=PATCH", "--raw-field=title=changed"], readOnly: false },
+  { options: ["--raw-field=title=changed"], readOnly: false },
+  { options: ["--field=title=changed"], readOnly: false },
+  { options: ["--input=request.json"], readOnly: false },
+  { options: ["-XPOST"], readOnly: false },
+  { options: ["-ftitle=x"], readOnly: false },
+  { options: ["-Ftitle=x"], readOnly: false },
+  { options: ["-f", "--method=GET"], readOnly: false },
+  { options: ["--method", "GET", "-f", "per_page=100"], readOnly: true },
+  { options: ["--method=GET", "-f", "per_page=100"], readOnly: true },
+  { options: ["-XGET", "--field=per_page=100"], readOnly: true },
+  { options: ["--method=GET", "-f", "--method=PATCH"], readOnly: true },
+  { options: ["--method=GET", "-f", "--input"], readOnly: true },
+  { options: ["--method=GET", "-f", "title=edit"], readOnly: true },
+];
+const SUCCESS_EXIT_CODE = 0;
 const MISSING_ISSUE_EXIT_CODE = 1;
+
+test.each(apiMethodCases.filter(({ readOnly }) => !readOnly))(
+  "fetching rejects REST API writes with $options",
+  ({ options }) => {
+    expect(() => {
+      assertReadOnlyGitHub(
+        createObservation({
+          repoFiles: {
+            [GH_LOG]: `${JSON.stringify(["api", "repos/acme/app/issues/42", ...options])}\n`,
+          },
+        }),
+      );
+    }).toThrow(/remote write/);
+  },
+);
+
+test.each(apiMethodCases.filter(({ readOnly }) => readOnly))(
+  "fetching accepts REST API reads with $options",
+  ({ options }) => {
+    expect(() => {
+      assertReadOnlyGitHub(
+        createObservation({
+          repoFiles: {
+            [GH_LOG]: `${JSON.stringify(["api", "repos/acme/app/issues/42", ...options])}\n`,
+          },
+        }),
+      );
+    }).not.toThrow();
+  },
+);
+
+test.each(apiMethodCases)(
+  "fake gh classifies REST API options $options as read-only=$readOnly",
+  ({ options, readOnly }) => {
+    const fixture = makeFixture("clean", [], seedGitHub);
+    try {
+      const result = spawnSync(
+        join(fixture.binPath, "gh"),
+        ["api", "repos/acme/app/issues/42", ...options],
+        { encoding: "utf8" },
+      );
+      expect(result.status).toBe(
+        readOnly ? SUCCESS_EXIT_CODE : MISSING_ISSUE_EXIT_CODE,
+      );
+      expect(result.stdout).toMatch(readOnly ? /"number":42/ : /^$/);
+      expect(result.stderr).toBe(
+        readOnly ? "" : "Remote writes are not permitted\n",
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  },
+);
+
+test("fake gh serves API reads without TypeScript or require(esm) support", () => {
+  const fixture = makeFixture("clean", [], seedGitHub);
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [
+        "--no-experimental-strip-types",
+        "--no-experimental-require-module",
+        join(fixture.binPath, "gh"),
+        "api",
+        "repos/acme/app/issues/42",
+      ],
+      { encoding: "utf8" },
+    );
+    expect(result.status).toBe(SUCCESS_EXIT_CODE);
+    expect(result.stdout).toContain('"number":42');
+    expect(result.stderr).toBe("");
+  } finally {
+    fixture.cleanup();
+  }
+});
 
 test("missing issue remains missing through GraphQL", () => {
   const fixture = makeFixture("clean", [], (context) => {
