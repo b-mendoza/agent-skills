@@ -24,7 +24,7 @@
     "test:watch": "vitest watch"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-agent-sdk": "0.3.304",
+    "@anthropic-ai/claude-agent-sdk": "0.3.312",
     "@eslint-community/eslint-plugin-eslint-comments": "4.7.2",
     "@eslint/js": "9.39.5",
     "@total-typescript/ts-reset": "0.6.1",
