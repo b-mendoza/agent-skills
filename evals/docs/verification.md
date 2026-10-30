@@ -18,12 +18,12 @@ Run all commands below from `evals/`.
 
 These require explicit user approval.
 
-| Task                   | Check                                                      |
-| ---------------------- | ---------------------------------------------------------- |
-| One case end-to-end    | `pnpm eval --filter-pattern '^snapshot-dirty$' --repeat 1` |
-| Routing decisions only | `pnpm eval --filter-metadata tier=1`                       |
-| Full suite             | `pnpm eval`                                                |
-| Override concurrency   | `pnpm eval -j 3`                                           |
+| Task                   | Check                                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| One case end-to-end    | `pnpm eval --filter-pattern '^analyzing-recent-project-state/snapshot-dirty$' --repeat 1` |
+| Routing decisions only | `pnpm eval --filter-metadata tier=1`                                                      |
+| Full suite             | `pnpm eval`                                                                               |
+| Override concurrency   | `pnpm eval -j 3`                                                                          |
 
 Cases with a `judge` field additionally run one cheap judge-model query per attempt after the mechanical check passes. Judge cost is cents per attempt and is not included in the observed run cost.
 
@@ -37,7 +37,7 @@ Each case runs five times by default. Use `--repeat 1` for a cheap, low-confiden
 
 Each invocation configures a unique `outputs/runs/<UTC timestamp>-<random>/` with `results.json` and a self-contained `results.html`. The config resolves artifact paths relative to its own directory. JSON contains every attempt's output and observation metadata. Package scripts select shared SQLite history through `PROMPTFOO_CONFIG_DIR=outputs/promptfoo-state`, relative to `evals/`. These outputs are ignored by git. Use `pnpm eval:view` to compare runs. Per-case metrics show pass rates across repeats; each tier-2 attempt also has a native `mutation-scope` assertion and metric in the results, HTML, and history. The eval description identifies the model without changing the test dataset.
 
-The suite runs through the Agent SDK, which bundles its own pinned Claude Code binary rather than using the system `claude`. After bumping the SDK version, expect result changes from the runtime as well as the skill. Run `pnpm eval --filter-pattern '^trigger-positive$' --repeat 1` first, with approval. It exercises project-skill discovery, the Claude Code presets, tool observation, and the budget stop in one cheap case.
+The suite runs through the Agent SDK, which bundles its own pinned Claude Code binary rather than using the system `claude`. After bumping the SDK version, expect result changes from the runtime as well as the skill. Run `pnpm eval --filter-pattern '^analyzing-recent-project-state/trigger-positive$' --repeat 1` first, with approval. It exercises project-skill discovery, the Claude Code presets, tool observation, and the budget stop in one cheap case.
 
 ## Interpretation
 
