@@ -206,6 +206,9 @@ describe("planning-only mutation boundary", () => {
     "cd /fixture && CI=1 pnpm run build",
     "cd /fixture && npm install",
     "node --test tests/order.test.mjs",
+    "/usr/local/bin/node --test tests/order.test.mjs",
+    '"/usr/local/bin/node" --test tests/order.test.mjs',
+    "'/usr/local/bin/node' --test tests/order.test.mjs",
     "node --no-warnings --test tests/order.test.mjs",
     "node --require node:assert --test tests/order.test.mjs",
     "node -r node:assert --test tests/order.test.mjs",
@@ -243,6 +246,8 @@ describe("planning-only mutation boundary", () => {
     "node scripts/inspect.mjs --test",
     "node --require node:assert scripts/inspect.mjs --test",
     "node -- --test",
+    "/usr/local/bin/node scripts/inspect.mjs --test",
+    '"/usr/local/bin/node" -- --test',
     "cat tests/order.test.mjs",
     "git log --oneline",
   ])("allows read-only inspection %s and report writes", (command) => {

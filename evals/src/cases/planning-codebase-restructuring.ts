@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
 import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
@@ -135,6 +135,10 @@ function hasNodeTestOption(args: string[]): boolean {
   return false;
 }
 
+function executableBasename(executable = ""): string {
+  return basename(executable.replace(/^["']|["']$/g, ""));
+}
+
 function forbiddenExecution(call: ToolCall): boolean {
   if (call.name !== "Bash") return false;
   const { command } = call.input;
@@ -148,7 +152,7 @@ function forbiddenExecution(call: ToolCall): boolean {
       withoutEnvironment.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) ?? [];
     return (
       EXECUTION_PATTERNS.some((pattern) => pattern.test(withoutEnvironment)) ||
-      (executable === "node" && hasNodeTestOption(args))
+      (executableBasename(executable) === "node" && hasNodeTestOption(args))
     );
   });
 }
