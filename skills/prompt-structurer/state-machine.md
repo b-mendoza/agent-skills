@@ -85,4 +85,4 @@ On DiscloseFlow: record FLOW, trigger/escalation, DISPATCH_METHOD and HANDOFF_MO
 
 ## Terminals
 
-Exactly one of: PASS, BLOCKED, FAIL, ERROR, REPAIR_NEEDED. Required payloads are defined in [SKILL.md](./SKILL.md#status-taxonomy). REPAIR_NEEDED is orchestrator-only; every subagent emits PASS | BLOCKED | FAIL | ERROR only.
+Select exactly one internal outcome from PASS, BLOCKED, FAIL, ERROR, REPAIR_NEEDED. Public replies omit these labels and all `RESULT:` lines, including formatted variants, and retain the required content in prose or XML. Required payloads are defined in [SKILL.md](./SKILL.md#status-taxonomy). REPAIR_NEEDED is orchestrator-only; every subagent emits PASS | BLOCKED | FAIL | ERROR only.
