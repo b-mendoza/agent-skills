@@ -92,7 +92,7 @@ Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./
 | `TerminalPosted`             | `[*]`                        | emit output contract                             |
 | `TerminalAlreadyPosted`      | `[*]`                        | emit output contract                             |
 
-## Terminal decisions (output `Mode`)
+## Terminal decisions (internal modes)
 
 Exactly one of: `Blocked` (+ `Not reviewed` when pre-dispatch), `Deferred`, `Draft`, `Ready to post`, `Posted`, `Already posted`.
 
