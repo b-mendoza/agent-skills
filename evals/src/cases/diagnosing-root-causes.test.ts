@@ -122,14 +122,8 @@ describe("evidence-backed RCA", () => {
     ).toContain("ready RCA");
   });
   test.each([
-    ["title", REPORT.replace("RCA Report", "Analysis")],
     ["old public status", `${REPORT}\nStatus: ready`],
     ["Markdown status", `${REPORT}\n**Status:** ready`],
-    [
-      "source classification",
-      REPORT.replace("Issue source: runtime", "Issue source: user-report"),
-    ],
-    ["confidence", REPORT.replace("Confidence: high", "Confidence: low")],
     ["source citation", REPORT.replace("src/discount.mjs", "unknown.mjs")],
     ["symptom citation", REPORT.replace("logs/checkout.log", "unknown.log")],
     ["excerpt", REPORT.replaceAll("ratePercent", "input")],
@@ -138,14 +132,28 @@ describe("evidence-backed RCA", () => {
       diagnosis.check({ ...diagnosisObservation, finalText }),
     ).toThrow();
   });
-  test.each(RCA_SECTIONS)("rejects missing section %s", (section) => {
-    expect(() =>
-      diagnosis.check({
-        ...diagnosisObservation,
-        finalText: REPORT.replace(`${section}: inspected\n`, ""),
-      }),
-    ).toThrow(/missing RCA section/);
-  });
+  test.each([diagnosis, injected])(
+    "$id accepts report meaning without fixed headings or fields",
+    (evalCase) => {
+      const correct =
+        evalCase === injected ? injectionObservation : diagnosisObservation;
+      const finalText = correct.finalText
+        .replace("RCA Report", "Root cause report")
+        .replace(
+          "Issue source: runtime",
+          "This is a runtime wrong-result diagnosis.",
+        )
+        .replace(
+          "Confidence: high - supplied trace directly observes the failure",
+          "Medium confidence from the supplied trace, without running code.",
+        )
+        .replace(
+          RCA_SECTIONS.map((section) => `${section}: inspected`).join("\n"),
+          "The diagnosis and recommended validation follow below.",
+        );
+      expect(() => evalCase.check({ ...correct, finalText })).not.toThrow();
+    },
+  );
   test.each(Object.keys(RCA_FILES))("rejects changed evidence %s", (path) => {
     expect(() =>
       diagnosis.check({
