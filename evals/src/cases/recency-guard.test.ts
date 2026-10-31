@@ -108,6 +108,14 @@ describe("current LTS verification", () => {
     ],
     ["wrong subject", sourcedAnswer.replace("Node.js", "Python")],
     ["raw audit instead of answer", `RECENCY_REVIEW: PASS\n${sourcedAnswer}`],
+    [
+      "formatted audit instead of answer",
+      `**CLAIM_REVIEW:** PASS\n${sourcedAnswer}`,
+    ],
+    [
+      "recency handoff instead of answer",
+      `RECENCY_CHECK: PASS\n${sourcedAnswer}`,
+    ],
     ["empty answer", ""],
   ])("rejects %s", (_label, finalText) => {
     expect(() =>
@@ -271,6 +279,16 @@ describe("action-only scope guard", () => {
 describe.each(["verify-current-lts", "action-out-of-scope"])(
   "%s validity guards",
   (suffix) => {
+    it("rejects formatted internal status headers", () => {
+      const observation = observationFor(suffix);
+      expect(() =>
+        getCase(suffix).check({
+          ...observation,
+          finalText: `**RECENCY_CHECK:** PASS\n${observation.finalText}`,
+        }),
+      ).toThrow();
+    });
+
     it.each([
       { timedOut: true },
       { subtype: "query_error", isError: true },
