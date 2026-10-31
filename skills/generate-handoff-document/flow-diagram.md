@@ -80,17 +80,17 @@ stateDiagram-v2
   BlockedRepairExhausted --> [*]
 ```
 
-## Terminal Strings
+## Terminal outcomes
 
-| State                    | Exact string                                               |
+| State                    | Outcome in prose                                               |
 | ------------------------ | ---------------------------------------------------------- |
-| `CompletedReviewPass`    | `Completed: review pass`                                   |
-| `CompletedReviewWarn`    | `Completed: review pass with warnings`                     |
-| `CompletedDeclinedEmpty` | `Completed: handoff declined (empty session)`              |
-| `BlockedUnclearTarget`   | `Blocked: unclear target path`                             |
-| `BlockedNoSource`        | `Blocked: no usable source transcript`                     |
-| `BlockedUnsafePath`      | `Blocked: unsafe writes or missing readable/writable path` |
-| `BlockedExternal`        | `Blocked: required external dependency unavailable`        |
-| `BlockedStage`           | `Blocked: subagent error, failure, or unexpected skip`     |
-| `BlockedArtifact`        | `Blocked: artifact contract violation`                     |
-| `BlockedRepairExhausted` | `Blocked: repair limit exhausted`                          |
+| `CompletedReviewPass`    | `The handoff passed review.`                                   |
+| `CompletedReviewWarn`    | `The handoff passed review with warnings.`                     |
+| `CompletedDeclinedEmpty` | `No handoff was written because the empty-session handoff was declined.`              |
+| `BlockedUnclearTarget`   | `A clear target path is needed before writing the handoff.`                             |
+| `BlockedNoSource`        | `A usable source transcript is needed before writing the handoff.`                     |
+| `BlockedUnsafePath`      | `The handoff was not written because the path is unsafe or inaccessible.` |
+| `BlockedExternal`        | `The handoff cannot proceed because a required external dependency is unavailable.`        |
+| `BlockedStage`           | `The handoff cannot proceed because a stage failed or was unexpectedly skipped.`     |
+| `BlockedArtifact`        | `The handoff cannot proceed because an artifact failed its contract.`                     |
+| `BlockedRepairExhausted` | `The handoff still fails review after the repair limit.`                          |

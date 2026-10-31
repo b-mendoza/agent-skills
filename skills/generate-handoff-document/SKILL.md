@@ -80,28 +80,28 @@ Working data is disk-backed. The run may write only `TARGET_FILE`, sibling artif
 
 Follow [`state-machine.md`](./state-machine.md). Summary:
 
-1. **Intake** — Capture inputs. Unclear `TARGET_FILE` → `AskTarget`; unresolved → `Blocked: unclear target path`. [F-08]
-2. **Path safety** — Load `data-contracts.md` checklist. Failure → `Blocked: unsafe writes or missing readable/writable path`. [F-05]
+1. **Intake** — Capture inputs. Unclear `TARGET_FILE` → `AskTarget`; unresolved → `A clear target path is needed before writing the handoff.` [F-08]
+2. **Path safety** — Load `data-contracts.md` checklist. Failure → `The handoff was not written because the path is unsafe or inaccessible.` [F-05]
 3. **Update mode** — Existing target without `UPDATE_MODE` → `AskUpdateMode`. Backup to `<stem>.prev.md` before overwrite/update; set `PRIOR_HANDOFF_FILE` in update mode. [F-03]
 4. **Derive contracts** — Sibling paths from extension-agnostic stem; resolve absolute `DATA_CONTRACTS_FILE`, `TEMPLATE_FILE`, `CHECKLIST_FILE`, and orchestrator-only `EXTERNAL_SOURCES_FILE`. [F-02][F-13]
-5. **Materialize source** — Readable file or faithful transcript snapshot (faithfulness predicate in `data-contracts.md`); redact secrets and personal data when writing the snapshot; `CHUNKED=yes` above 2,000 lines. `AskTranscript` abandoned → `Blocked: no usable source transcript`. [F-01][F-15][F-17]
-6. **External** — Prefer bundled contracts; at most one fetch when it changes a decision; record `EXTERNAL: SKIPPED|USED|UNAVAILABLE`. Required unreachable → `Blocked: required external dependency unavailable`.
-7. **Producers** — Dispatch-verify `context-extractor` → `insight-documenter` → conditional `claim-validator` → `document-assembler` per `data-contracts.md`. The skip is a routing decision: claims are skipped exactly when `TRACKING_FILES` is absent, and the recorded `CLAIMS: SKIPPED` is a report line, not a reviewer warning. [F-14]
-8. **Empty session** — After insights, if `qa_log` and `insights` are empty and the mandate is trivial (predicates in `data-contracts.md`), ask. Decline or abandonment → `Completed: handoff declined (empty session)`. [F-07]
-9. **Review and repair** — `handoff-reviewer`, verified against the reviewer output grammar (missing/malformed status = `ERROR`, fail closed). `PASS` → `Completed: review pass`. `WARN` → `Completed: review pass with warnings`. `FAIL` → `PlanRepair` (max three cycles, canonical order in `data-contracts.md`; a repair invalidates downstream verification and flows forward); exhaust → `Blocked: repair limit exhausted`. [F-04][F-11][F-14]
+5. **Materialize source** — Readable file or faithful transcript snapshot (faithfulness predicate in `data-contracts.md`); redact secrets and personal data when writing the snapshot; `CHUNKED=yes` above 2,000 lines. `AskTranscript` abandoned → `A usable source transcript is needed before writing the handoff.` [F-01][F-15][F-17]
+6. **External** — Prefer bundled contracts; at most one fetch when it changes a decision; record `EXTERNAL: SKIPPED|USED|UNAVAILABLE`. Required unreachable → `The handoff cannot proceed because a required external dependency is unavailable.`.
+7. **Producers** — Dispatch-verify `context-extractor` → `insight-documenter` → conditional `claim-validator` → `document-assembler` per `data-contracts.md`. The skip is a routing decision: claims are skipped exactly when `TRACKING_FILES` is absent, and the recorded `CLAIMS: SKIPPED` is an internal report line, not a reviewer warning. [F-14]
+8. **Empty session** — After insights, if `qa_log` and `insights` are empty and the mandate is trivial (predicates in `data-contracts.md`), ask. Decline or abandonment → `No handoff was written because the empty-session handoff was declined.` [F-07]
+9. **Review and repair** — `handoff-reviewer`, verified against the reviewer output grammar (missing/malformed status = `ERROR`, fail closed). `PASS` → `The handoff passed review.` `WARN` → `The handoff passed review with warnings.` `FAIL` → `PlanRepair` (max three cycles, canonical order in `data-contracts.md`; a repair invalidates downstream verification and flows forward); exhaust → `The handoff still fails review after the repair limit.` [F-04][F-11][F-14]
 
 Dispatch-verify mechanics (retries, mechanical checks, upstream rerun) live in `data-contracts.md`; do not restate them here. [F-04]
 
 ## Output Contract
 
-| Terminal      | Exact string                                                                                                                                                                 |
+| Terminal      | Outcome in prose                                                                                                                                                                 |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Review pass   | `Completed: review pass`                                                                                                                                                     |
-| Review warn   | `Completed: review pass with warnings`                                                                                                                                       |
-| Empty decline | `Completed: handoff declined (empty session)`                                                                                                                                |
-| Stops         | The seven exact `Blocked: …` strings tabulated in `state-machine.md` (unclear target, no usable source transcript, unsafe path, external, stage, artifact, repair exhausted) |
+| Review pass   | `The handoff passed review.`                                                                                                                                                     |
+| Review warn   | `The handoff passed review with warnings.`                                                                                                                                       |
+| Empty decline | `No handoff was written because the empty-session handoff was declined.`                                                                                                                                |
+| Stops         | The seven blocked outcomes tabulated in `state-machine.md` (unclear target, no usable source transcript, unsafe path, external, stage, artifact, repair exhausted) |
 
-Success reports include handoff path, sibling artifacts (transcript, `.prev.md` when present), external status, stage verdicts, counts, warnings, the `CLAIMS: SKIPPED` report line when claims were skipped, open-question count, and repair cycles used.
+Public replies use plain prose, not `Completed:`, `Blocked:`, stage verdict lines, or a routing envelope. Internal producer/reviewer handoffs and written-document fields stay unchanged. Success reports include handoff path, sibling artifacts (transcript, `.prev.md` when present), external status, stage verdicts, counts, warnings, whether claims validation was skipped, open-question count, and repair cycles used.
 
 The final handoff document must include the working-artifacts manifest. [F-16]
 
@@ -119,5 +119,5 @@ Input: `TARGET_FILE=docs/auth-handoff.md`, `SUBJECT=Auth review`, `CONTEXT_SOURC
 
 1. Path-safe intake derives `docs/auth-handoff.*` siblings and snapshots the conversation to `docs/auth-handoff.transcript.md`.
 2. Dispatch-verify context, insights, claims, then assembly.
-3. On `REVIEW: WARN`, return `Completed: review pass with warnings` with paths, counts, and the warning disclosed in the run report.
+3. On `REVIEW: WARN`, return `The handoff passed review with warnings.` with paths, counts, and the warning disclosed in the run report.
 4. On `REVIEW: FAIL` naming `document-assembler`, `PlanRepair` re-enters assembly then review (one of three repair cycles).

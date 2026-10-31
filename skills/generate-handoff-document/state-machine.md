@@ -97,33 +97,33 @@ Producer states (`ExtractContext`, `DocumentInsights`, `ValidateClaims`, `Assemb
 | `PlanRepair`             | `SkipClaims`             | Earliest rerun target is claims ∧ tracking absent                                                          |
 | `PlanRepair`             | `AssembleHandoff`        | Earliest is assembly, or no parseable target (default)                                                     |
 | `PlanRepair`             | `ReviewHandoff`          | Earliest rerun target is review only                                                                       |
-| `CompletedReviewPass`    | `[*]`                    | Emit `Completed: review pass`                                                                              |
-| `CompletedReviewWarn`    | `[*]`                    | Emit `Completed: review pass with warnings`                                                                |
-| `CompletedDeclinedEmpty` | `[*]`                    | Emit `Completed: handoff declined (empty session)`                                                         |
-| `BlockedUnclearTarget`   | `[*]`                    | Emit `Blocked: unclear target path`                                                                        |
-| `BlockedNoSource`        | `[*]`                    | Emit `Blocked: no usable source transcript`                                                                |
-| `BlockedUnsafePath`      | `[*]`                    | Emit `Blocked: unsafe writes or missing readable/writable path`                                            |
-| `BlockedExternal`        | `[*]`                    | Emit `Blocked: required external dependency unavailable`                                                   |
-| `BlockedStage`           | `[*]`                    | Emit `Blocked: subagent error, failure, or unexpected skip`                                                |
-| `BlockedArtifact`        | `[*]`                    | Emit `Blocked: artifact contract violation`                                                                |
-| `BlockedRepairExhausted` | `[*]`                    | Emit `Blocked: repair limit exhausted`                                                                     |
+| `CompletedReviewPass`    | `[*]`                    | Emit `The handoff passed review.`                                                                              |
+| `CompletedReviewWarn`    | `[*]`                    | Emit `The handoff passed review with warnings.`                                                                |
+| `CompletedDeclinedEmpty` | `[*]`                    | Emit `No handoff was written because the empty-session handoff was declined.`                                                         |
+| `BlockedUnclearTarget`   | `[*]`                    | Emit `A clear target path is needed before writing the handoff.`                                                                        |
+| `BlockedNoSource`        | `[*]`                    | Emit `A usable source transcript is needed before writing the handoff.`                                                                |
+| `BlockedUnsafePath`      | `[*]`                    | Emit `The handoff was not written because the path is unsafe or inaccessible.`                                            |
+| `BlockedExternal`        | `[*]`                    | Emit `The handoff cannot proceed because a required external dependency is unavailable.`                                                   |
+| `BlockedStage`           | `[*]`                    | Emit `The handoff cannot proceed because a stage failed or was unexpectedly skipped.`                                                |
+| `BlockedArtifact`        | `[*]`                    | Emit `The handoff cannot proceed because an artifact failed its contract.`                                                                |
+| `BlockedRepairExhausted` | `[*]`                    | Emit `The handoff still fails review after the repair limit.`                                                                     |
 
 ## Terminal states
 
-| Terminal state           | Exact string                                               | Kind    |
+| Terminal state           | Outcome in prose                                               | Kind    |
 | ------------------------ | ---------------------------------------------------------- | ------- |
-| `CompletedReviewPass`    | `Completed: review pass`                                   | Success |
-| `CompletedReviewWarn`    | `Completed: review pass with warnings`                     | Success |
-| `CompletedDeclinedEmpty` | `Completed: handoff declined (empty session)`              | Success |
-| `BlockedUnclearTarget`   | `Blocked: unclear target path`                             | Stop    |
-| `BlockedNoSource`        | `Blocked: no usable source transcript`                     | Stop    |
-| `BlockedUnsafePath`      | `Blocked: unsafe writes or missing readable/writable path` | Stop    |
-| `BlockedExternal`        | `Blocked: required external dependency unavailable`        | Stop    |
-| `BlockedStage`           | `Blocked: subagent error, failure, or unexpected skip`     | Stop    |
-| `BlockedArtifact`        | `Blocked: artifact contract violation`                     | Stop    |
-| `BlockedRepairExhausted` | `Blocked: repair limit exhausted`                          | Stop    |
+| `CompletedReviewPass`    | `The handoff passed review.`                                   | Success |
+| `CompletedReviewWarn`    | `The handoff passed review with warnings.`                     | Success |
+| `CompletedDeclinedEmpty` | `No handoff was written because the empty-session handoff was declined.`              | Success |
+| `BlockedUnclearTarget`   | `A clear target path is needed before writing the handoff.`                             | Stop    |
+| `BlockedNoSource`        | `A usable source transcript is needed before writing the handoff.`                     | Stop    |
+| `BlockedUnsafePath`      | `The handoff was not written because the path is unsafe or inaccessible.` | Stop    |
+| `BlockedExternal`        | `The handoff cannot proceed because a required external dependency is unavailable.`        | Stop    |
+| `BlockedStage`           | `The handoff cannot proceed because a stage failed or was unexpectedly skipped.`     | Stop    |
+| `BlockedArtifact`        | `The handoff cannot proceed because an artifact failed its contract.`                     | Stop    |
+| `BlockedRepairExhausted` | `The handoff still fails review after the repair limit.`                          | Stop    |
 
-Readiness rule: the run is complete only at one of the three success terminals; every other exit uses the exact blocked string above.
+Readiness rule: the run is complete only at one of the three success terminals; every other exit uses the corresponding blocked outcome in prose above.
 
 ## Reachability
 
