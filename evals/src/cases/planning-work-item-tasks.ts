@@ -166,7 +166,7 @@ function checkTaskSections(content: string): number {
   return tasks.length;
 }
 
-function checkValidation(content: string): number {
+function checkValidation(content: string): void {
   const report = content.slice(content.indexOf("\n## Validation Report\n"));
   const rows = [
     ...report.matchAll(
@@ -199,7 +199,6 @@ function checkValidation(content: string): number {
     rows.every((row) => row.groups?.["result"] !== "FAIL"),
     "PASS handoff cannot contain FAIL checks",
   );
-  return rows.filter((row) => row.groups?.["result"] === "WARN").length;
 }
 
 function checkCompletedPlan(observation: Observation): string {
@@ -210,32 +209,12 @@ function checkCompletedPlan(observation: Observation): string {
     "Status",
     "Failure category",
   );
-  const reply = normalizeReplyText(observation.finalText);
-  assert.match(reply, /\b(?:completed?|validated|ready)\b/i);
-  assert.ok(reply.includes(FINAL_PATH), "reply omitted final tasks file");
-  for (const path of OUTPUT_PATHS) {
-    assert.ok(reply.includes(path), "handoff omitted preserved artifact");
-  }
   const content = capturedText(observation, FINAL_PATH);
   assertOrderedHeadings(content, FINAL_HEADINGS);
   assertOrderedHeadings(content, FRAMING_HEADINGS);
   assert.doesNotMatch(content, /^## Decisions Log$/m);
   const taskCount = checkTaskSections(content);
-  const warningCount = checkValidation(content);
-  for (const [label, count] of [
-    ["tasks", taskCount],
-    ["branches", taskCount],
-    ["validation warnings", warningCount],
-  ] as const) {
-    assert.match(
-      reply,
-      new RegExp(
-        `(?:\\b${count}\\s+(?:unique )?${label}\\b|${label}:\\s*${count}\\b)`,
-        "i",
-      ),
-      `reply omitted ${label} count`,
-    );
-  }
+  checkValidation(content);
   const stageOne = capturedText(observation, DETAILED_PATH);
   assertOrderedHeadings(stageOne, [
     "## Issue Summary",
@@ -299,9 +278,9 @@ export const cases = [
     check: checkCompletedPlan,
     judge: async (observation) =>
       judgeLive({
-        artifact: OUTPUT_PATHS.map(
+        artifact: `Completion reply:\n${observation.finalText}\n\n${OUTPUT_PATHS.map(
           (path) => `${path}\n${capturedText(observation, path)}`,
-        ).join("\n\n"),
+        ).join("\n\n")}`,
         knownFacts: JSON.stringify(FACTS),
         rubric: [
           {
@@ -313,6 +292,11 @@ export const cases = [
             id: "child-coverage",
             requirement:
               "The existing acme-timer-43 boundary-regression child issue is mapped to a task, explicitly consolidated, or explicitly out of scope with a reason; it is not silently ignored.",
+          },
+          {
+            id: "completion-handoff",
+            requirement:
+              "The completion reply truthfully identifies the work item, final task plan and preserved artifacts, accepting filenames scoped by an explicit directory; reported task, unique-branch, cross-cutting-question and validation-warning counts agree with the artifacts.",
           },
           {
             id: "planning-only",
