@@ -40,9 +40,9 @@ For every phase, use the standard cycle from `./workflow-policy.md`: announce, v
 
 1. Announce Phase 3.
 2. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=3`, `DIRECTION=precondition`.
-3. Invoke `clarifying-assumptions` with `MODE=upfront`, `TICKET_KEY=<KEY>`, and `ITERATION=<N>`. (`clarifying-assumptions` accepts `TICKET_KEY` as the workflow-key alias for either platform's identifier.)
+3. Invoke `clarifying-assumptions` with `MODE=upfront`, `TICKET_KEY=<KEY>`, `ITERATION=<N>`, and `RESULT_FORMAT=handoff`. (`clarifying-assumptions` accepts `TICKET_KEY` as the workflow-key alias for either platform's identifier.)
 4. Let the downstream skill handle user-facing clarification and critique.
-5. If the downstream summary has `RE_PLAN_NEEDED=true`, re-run Phase 2 with the accepted decisions, then run Phase 3 again. Maximum: 3 re-plan loops.
+5. Read the returned handoff flags; if either flag is missing or invalid, stop as a contract error. If `BLOCKERS_PRESENT=true`, stop before platform writes and surface blockers. If the downstream handoff has `RE_PLAN_NEEDED=true`, re-run Phase 2 with the accepted decisions, then run Phase 3 again. Maximum: 3 re-plan loops.
 6. After `RE_PLAN_NEEDED=false`, dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=3`, `DIRECTION=postcondition`.
 7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=3`, `STATUS=complete`, and a one-line clarification summary.
 
