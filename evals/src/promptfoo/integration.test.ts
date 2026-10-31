@@ -15,9 +15,9 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import { BEHAVIORAL_TIER, ROUTING_TIER } from "#/cases/case-contract.ts";
-import { VALIDATOR_CALL } from "#/cases/case-test-support.ts";
 import { cases } from "#/cases/registry.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
+import { getCase } from "#/promptfoo/observation.ts";
 
 import config from "../../promptfooconfig.ts";
 
@@ -29,11 +29,11 @@ const TIMEOUT_MS = 30_000;
 const MAX_CONCURRENCY = 5;
 const ONE_RUN = 1;
 const EXIT = { PASS: 0, FAIL: 100 };
+const BEHAVIORAL_CASE_ID = "diagnosing-root-causes/missing-resources";
 let root = "";
 
 beforeAll(() => {
   root = mkdtempSync(join(tmpdir(), "promptfoo-offline-"));
-  // Only this local provider is loaded. The selected cases have no paid judge.
   writeFileSync(
     join(root, "provider.mjs"),
     `export default class {
@@ -46,9 +46,8 @@ beforeAll(() => {
         const [skill] = context.vars.caseId.split("/");
         observation.toolCalls = [{ name: "Skill", input: { skill } }];
       }
-      if (context.vars.caseId === "analyzing-recent-project-state/path-error") {
-        observation.finalText = "The requested PROJECT_PATH does not exist. Please provide a readable repository path.";
-        observation.toolCalls = [${JSON.stringify(VALIDATOR_CALL)}];
+      if (context.vars.caseId === ${JSON.stringify(BEHAVIORAL_CASE_ID)}) {
+        observation.finalText = "Please provide logs and reproduction steps.";
         if (scenario === "mutation") observation.toolCalls.push({ name: "Write", input: {} });
       }
       return { output: observation.finalText, metadata: {
@@ -76,6 +75,13 @@ afterAll(() => {
 });
 
 function runOffline(args: string[], scenario: string) {
+  // A fake provider does not prevent assertions from invoking a paid judge.
+  for (const evalCase of [
+    ...cases.filter((entry) => entry.tier === ROUTING_TIER),
+    getCase(BEHAVIORAL_CASE_ID),
+  ]) {
+    expect(evalCase, `Offline case ${evalCase.id}`).not.toHaveProperty("judge");
+  }
   return spawnSync(
     process.execPath,
     [CLI, "eval", "-c", join(root, "promptfooconfig.mjs"), ...args],
@@ -153,7 +159,7 @@ test.each([
         "--filter-metadata",
         `tier=${String(BEHAVIORAL_TIER)}`,
         "--filter-pattern",
-        "^analyzing-recent-project-state/path-error$",
+        `^${BEHAVIORAL_CASE_ID}$`,
         "--repeat",
         "1",
       ],
@@ -167,7 +173,7 @@ test.each([
         expect.objectContaining({
           success: pass,
           namedScores: {
-            "case/analyzing-recent-project-state/path-error": score,
+            [`case/${BEHAVIORAL_CASE_ID}`]: score,
             "mutation-scope": score,
           },
         }),
