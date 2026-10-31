@@ -17,7 +17,7 @@ This skill is a calm, read-only readiness cartographer. The orchestrator owns ro
 | `OUTPUT_DEPTH`     | No                                                                                    | `standard` (`brief`, `standard`, `deep`); unsupported → `standard`, labeled assumption           |
 | `HOST_INTERACTIVE` | No                                                                                    | `false`; caller-supplied only, never inferred                                                    |
 
-- `SKILL_DIR`: the directory containing this `SKILL.md` as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the `SKILL.md` path you read; if neither is known, terminate `RECENT_STATE: TOOLS_MISSING`. Every dispatch carries it.
+- `SKILL_DIR`: the directory containing this `SKILL.md` as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the `SKILL.md` path you read; if neither is known, stop and explain that the skill directory could not be resolved. Every dispatch carries it.
 - `ASSUMPTIONS`: one `<label>: <value>` per line or the literal `none`; labels are `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `OUTPUT_DEPTH`, `User decision`.
 - `EXECUTION_MODE`: `isolated` when the host offers a fresh-context subagent tool (Claude Code `Agent`; OpenCode `task` with its general subagent); otherwise `inline; subagent context isolation degraded`.
 - `REQUIRED_FIXES`: the verbatim `Required fixes:` bullet list from the most recent verifier `FAIL`; each bullet begins with a canonical section name and a colon. It travels with `PRIOR_DRAFT`, the draft the verifier just failed; both are present on a repair dispatch or neither is.
@@ -25,12 +25,12 @@ This skill is a calm, read-only readiness cartographer. The orchestrator owns ro
 
 ## Output Contract
 
-Exactly one of two outcomes, as response text; no file. Both are critical outputs: success gated by `G_OUTPUT`, failure by `G_ESCALATION`. The orchestrator composes lines 2 and 3 from the table; the script checks their shape, not their text; nothing else is emitted.
+Exactly one of two outcomes, as response text; no file. Success is gated by `G_OUTPUT`. On failure, explain the cause and recovery action from the table in plain prose. Never print a `RECENT_STATE` status line or a routing envelope.
 
 | Outcome | Shape                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Success | The verified `# Project State Snapshot` body (ten canonical sections, or the four-section quiet-state short form). Claims use the label grammar owned by [`references/project-state-snapshot-template.md`](./references/project-state-snapshot-template.md): `[confirmed: <locator>]`, `[likely: <locator>]`, `[possible]`, `[unverified]`; locators `commit <hash>`, `path <path>[:<lines>]`, `field <GIT_EVIDENCE field name>`. |
-| Failure | Exactly three lines: `RECENT_STATE: <NOT_GIT \| PATH_ERROR \| NEEDS_CONTEXT \| TOOLS_MISSING \| ERROR>`, `Reason: <one line>`, `Next step: <one action>`.                                                                                                                                                                                                                                                                         |
+| Failure | A concise explanation of why no snapshot was produced and one safe next action, without status fields.                                                                                                                                                                                                                                                                         |
 
 | Status (origin)                      | Reason                                                                                                                                                                       | Next step                                                                                                                            |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -70,15 +70,17 @@ The seventeen `GIT_EVIDENCE` field names live in the collector file and the scri
 
 ## Execution
 
+All five phases are required on the success path. A collector PASS must proceed through Write, Verify, and G_OUTPUT before returning the snapshot; never replace these with an informal summary or offer them as optional follow-up work.
+
 Five phases. Announce each real transition as `Phase N/5 - <Name>`. Dispatch only when every listed input has a value; `none` (or `unset` for `BASE_BRANCH`) is a value.
 
-1. `Phase 1/5 - Intake` (inline): normalize inputs into `ASSUMPTIONS`; resolve `SKILL_DIR`; preflight the validator by running `envelope` mode on the three-line `NOT_GIT` example in this file and requiring exit 0, else `TOOLS_MISSING`; probe `PROJECT_PATH` with the host's read tool (fail → `PATH_ERROR`); run `git -C <PROJECT_PATH> rev-parse --is-inside-work-tree` and require exit 0 with stdout exactly `true` (else `NOT_GIT`; never classify on Git's error text); apply the ask policy; set `EXECUTION_MODE`; carry any user mutation request as a report risk, never execute it.
+1. `Phase 1/5 - Intake` (inline): normalize inputs into `ASSUMPTIONS`; resolve `SKILL_DIR`; preflight the validator by running `evidence` mode on `GIT_EVIDENCE: ERROR` followed by `Reason: preflight check` and requiring exit 0, else `TOOLS_MISSING`; probe `PROJECT_PATH` with the host's read tool (fail → `PATH_ERROR`); run `git -C <PROJECT_PATH> rev-parse --is-inside-work-tree` and require exit 0 with stdout exactly `true` (else `NOT_GIT`; never classify on Git's error text); apply the ask policy; set `EXECUTION_MODE`; carry any user mutation request as a report risk, never execute it.
 2. `Phase 2/5 - Collect`: dispatch the collector with `PROJECT_PATH`, `BASE_BRANCH`, `REVIEW_FOCUS`, `SKILL_DIR`.
 3. `Phase 3/5 - Write`: dispatch the writer with `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `OUTPUT_DEPTH`, `ASSUMPTIONS`, `EXECUTION_MODE`, `SKILL_DIR`; on repair add `PRIOR_DRAFT` and `REQUIRED_FIXES`. On `PASS`, `DRAFT_REPORT` is everything after the status line with leading blank lines removed.
 4. `Phase 4/5 - Verify`: dispatch the verifier with `DRAFT_REPORT`, `GIT_EVIDENCE`, `PROJECT_PATH`, `REVIEW_FOCUS`, `ASSUMPTIONS`, `EXECUTION_MODE`, `SKILL_DIR`.
-5. `Phase 5/5 - Final` (inline): success → run `report` mode on `DRAFT_REPORT` (`G_OUTPUT`), on failure recompose once from the last passing draft then emit; escalation → compose the envelope and run `envelope` mode (`G_ESCALATION`), on failure recompose once from the table then emit.
+5. `Phase 5/5 - Final` (inline): success → run `report` mode on `DRAFT_REPORT` (`G_OUTPUT`), on failure recompose once from the last passing draft then emit; escalation → explain the cause and recovery action from the table in prose, without an envelope.
 
-**Repair bound.** On verifier `FAIL`, if `REPAIR_ATTEMPTS < 2` increment, set `PRIOR_DRAFT` to the current draft and `REQUIRED_FIXES` to the verdict's list, redispatch the writer, re-verify; else the repair-exhausted envelope. Carry only the most recent draft and list. **Ask policy.** At most one question per run, at intake only, only for an unresolvable or ambiguous `PROJECT_PATH`, and only when `HOST_INTERACTIVE=true`. Append the answer as `User decision: <answer>`. Otherwise emit the intake `NEEDS_CONTEXT` envelope. No later phase asks. **Routability.** A phase output is routable only when its status is recognized and its gate passes. `FORMAT_RETRIES` cap 1 per dispatch with a format reminder in the same execution mode; over the cap → unroutable `ERROR`. Never infer a status. A producer that returns `ERROR` with reason `validator unavailable: …` routes as a subagent-sourced `ERROR`.
+**Repair bound.** On verifier `FAIL`, if `REPAIR_ATTEMPTS < 2` increment, set `PRIOR_DRAFT` to the current draft and `REQUIRED_FIXES` to the verdict's list, redispatch the writer, re-verify; else the repair-exhausted explanation. Carry only the most recent draft and list. **Ask policy.** At most one question per run, at intake only, only for an unresolvable or ambiguous `PROJECT_PATH`, and only when `HOST_INTERACTIVE=true`. Append the answer as `User decision: <answer>`. Otherwise explain the missing intake decision in prose. No later phase asks. **Routability.** A phase output is routable only when its status is recognized and its gate passes. `FORMAT_RETRIES` cap 1 per dispatch with a format reminder in the same execution mode; over the cap → unroutable `ERROR`. Never infer a status. A producer that returns `ERROR` with reason `validator unavailable: …` routes as a subagent-sourced `ERROR`.
 
 ## Status Payload Gates
 
@@ -90,22 +92,21 @@ The orchestrator runs the gate itself (payload on stdin; exit 0 passes); a produ
 | `G_DRAFT`      | any writer output       | `sh "$SKILL_DIR/scripts/validate-output.sh" draft "$PROJECT_PATH"`; on `PASS` this also proves every confirmed/likely locator resolves |
 | `G_VERDICT`    | any verifier output     | `sh "$SKILL_DIR/scripts/validate-output.sh" verdict`                                                                                   |
 | `G_OUTPUT`     | the success body        | `sh "$SKILL_DIR/scripts/validate-output.sh" report`                                                                                    |
-| `G_ESCALATION` | the three-line envelope | `sh "$SKILL_DIR/scripts/validate-output.sh" envelope`                                                                                  |
 
 ## Status Routing
 
 | Source    | Status                      | Route                                 |
 | --------- | --------------------------- | ------------------------------------- |
 | Collector | `PASS`                      | Write                                 |
-| Collector | `ERROR`                     | envelope                              |
+| Collector | `ERROR`                     | explain the stop in prose                              |
 | Writer    | `PASS`                      | Verify                                |
-| Writer    | `NEEDS_CONTEXT`             | envelope                              |
-| Writer    | `ERROR`                     | envelope                              |
+| Writer    | `NEEDS_CONTEXT`             | explain the stop in prose                              |
+| Writer    | `ERROR`                     | explain the stop in prose                              |
 | Verifier  | `PASS`                      | Final                                 |
-| Verifier  | `FAIL`                      | repair or repair-exhausted envelope   |
-| Verifier  | `NEEDS_CONTEXT`             | envelope                              |
-| Verifier  | `ERROR`                     | envelope                              |
-| Any       | unrecognized or gate-failed | format retry then unroutable envelope |
+| Verifier  | `FAIL`                      | repair or repair-exhausted explanation   |
+| Verifier  | `NEEDS_CONTEXT`             | explain the stop in prose                              |
+| Verifier  | `ERROR`                     | explain the stop in prose                              |
+| Any       | unrecognized or gate-failed | format retry then unroutable explanation |
 
 ## Boundaries And Success Criteria
 
@@ -118,10 +119,4 @@ The orchestrator runs the gate itself (payload on stdin; exit 0 passes); a produ
 
 **Success.** `PROJECT_PATH=/repo/app`, `BASE_BRANCH=origin/main`, `REVIEW_FOCUS=tests`, `OUTPUT_DEPTH=standard`. (1) Intake records the caller-explicit base (no ask) and sets `EXECUTION_MODE=isolated`. Collect returns tree + base-to-`HEAD` evidence; `G_EVIDENCE` passes. (2) Write drafts `# Project State Snapshot` with test emphasis; `G_DRAFT` passes; `DRAFT_REPORT` is the body after the status line. (3) Verify returns `PASS`; `G_VERDICT` passes. Final runs `G_OUTPUT` on the body and emits it.
 
-**`NOT_GIT` envelope** (also the intake preflight payload):
-
-```text
-RECENT_STATE: NOT_GIT
-Reason: /tmp/notes exists but is not a Git worktree.
-Next step: Re-run with PROJECT_PATH set to a Git worktree.
-```
+**Not a Git worktree.** `/tmp/notes` exists but is not a Git worktree, so I could not produce a snapshot. Re-run with `PROJECT_PATH` set to a Git worktree.

@@ -59,7 +59,7 @@ Reason: verdict depends on one unresolved decision
 Decision needed: confirm whether origin/main or origin/release is the intended comparison base
 ```
 
-For `ERROR`, return the status line, `Required fixes: none`, `Reason: <one line>`, and `Decision needed: none`; emit no `Next step:` — the orchestrator composes the user-facing envelope. Do not ask for a full rewrite unless the report is structurally unusable.
+For `ERROR`, return the status line, `Required fixes: none`, `Reason: <one line>`, and `Decision needed: none`; emit no `Next step:` — the orchestrator composes the user-facing prose reply. Do not ask for a full rewrite unless the report is structurally unusable.
 
 ## Instructions
 

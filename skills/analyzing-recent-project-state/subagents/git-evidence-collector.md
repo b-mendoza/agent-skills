@@ -54,7 +54,7 @@ Status rules:
 
 Repo states `unborn-branch`, `detached-HEAD`, `operation-in-progress(<op>)`, `shallow`, and `conflicted` are `PASS`-compatible facts.
 
-For `ERROR`, return exactly two lines: the status line and `Reason: <one line>`. Emit no other field. The orchestrator composes the user-facing envelope, including its `Next step:` line; you never emit one.
+For `ERROR`, return exactly two lines: the status line and `Reason: <one line>`. Emit no other field. The orchestrator composes the user-facing explanation and recovery action; you never emit one.
 
 ## Closed Command List
 
@@ -108,7 +108,7 @@ Your job is to collect and summarize bounded Git evidence and return that handof
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `GIT_EVIDENCE: ERROR` | `Repo state` or `Base comparison` cannot be determined at all, a listed form fails unexpectedly, or the validator cannot accept the output |
 
-Never ask the user directly. If evidence cannot be collected, return `GIT_EVIDENCE: ERROR` with the smallest actionable `Reason:` and return control to the orchestrator; the orchestrator owns the user-facing envelope and its `Next step:` line.
+Never ask the user directly. If evidence cannot be collected, return `GIT_EVIDENCE: ERROR` with the smallest actionable `Reason:` and return control to the orchestrator; the orchestrator owns the user-facing explanation and recovery action.
 
 ## Quiet-State Example
 

@@ -6,7 +6,7 @@
 # (draft mode) that every [confirmed:] / [likely:] locator resolves against
 # PROJECT_PATH. Does not prove claim truth, unlabeled claims, or prose quality.
 #
-# Usage: sh validate-output.sh <evidence|draft|report|verdict|envelope> [PROJECT_PATH] < payload
+# Usage: sh validate-output.sh <evidence|draft|report|verdict> [PROJECT_PATH] < payload
 #   draft requires PROJECT_PATH as the second argument.
 # Exit 0  payload conforms
 # Exit 1  one "<mode>: line N: <message>" finding per defect on stdout
@@ -24,15 +24,15 @@ mode=$1
 projectPath=$2
 
 case "$mode" in
-  evidence|report|verdict|envelope) ;;
+  evidence|report|verdict) ;;
   draft)
     if [ -z "$projectPath" ]; then
-      echo "usage: validate-output.sh <evidence|draft|report|verdict|envelope> [PROJECT_PATH]" >&2
+      echo "usage: validate-output.sh <evidence|draft|report|verdict> [PROJECT_PATH]" >&2
       exit 2
     fi
     ;;
   *)
-    echo "usage: validate-output.sh <evidence|draft|report|verdict|envelope> [PROJECT_PATH]" >&2
+    echo "usage: validate-output.sh <evidence|draft|report|verdict> [PROJECT_PATH]" >&2
     exit 2
     ;;
 esac
@@ -202,22 +202,6 @@ function checkReport(bodyFirst, bodyLast,    i, firstNonBlank, name, seen, uniqu
   if (assumptionsCount != 1) fail(bodyLast, "expected exactly one Assumptions: line in the body, found " assumptionsCount)
   if (executionModeCount != 1) fail(bodyLast, "expected exactly one Execution mode: line in the body, found " executionModeCount)
 }
-function checkEnvelope(    count, i) {
-  count = 0
-  for (i = first; i <= last; i++) {
-    if (lines[i] ~ /^[[:space:]]*$/) { fail(i, "blank line inside the envelope"); continue }
-    count++
-    content[count] = lines[i]
-    contentLine[count] = i
-  }
-  if (count != 3) fail(last, "expected exactly 3 envelope lines, found " count)
-  if (content[1] !~ /^RECENT_STATE: (NOT_GIT|PATH_ERROR|NEEDS_CONTEXT|TOOLS_MISSING|ERROR)$/)
-    fail(contentLine[1], "line 1 must be RECENT_STATE: <NOT_GIT|PATH_ERROR|NEEDS_CONTEXT|TOOLS_MISSING|ERROR>")
-  if (content[2] !~ /^Reason: / || !nonEmptyAfter(content[2], "Reason: "))
-    fail(contentLine[2], "line 2 must be Reason: with non-empty content")
-  if (content[3] !~ /^Next step: / || !nonEmptyAfter(content[3], "Next step: "))
-    fail(contentLine[3], "line 3 must be Next step: with non-empty content")
-}
 function checkEvidence(    f, i, found, foundLine, count) {
   if (lines[first] !~ /^GIT_EVIDENCE: (PASS|ERROR)$/) {
     fail(first, "line 1 must be GIT_EVIDENCE: <PASS|ERROR>")
@@ -343,8 +327,7 @@ END {
     exit 0
   }
 
-  if (mode == "envelope") checkEnvelope()
-  else if (mode == "evidence") checkEvidence()
+  if (mode == "evidence") checkEvidence()
   else if (mode == "draft") checkDraft()
   else if (mode == "report") checkReport(first, last)
   else if (mode == "verdict") checkVerdict()
