@@ -25,6 +25,7 @@ import {
   assertFileExists,
   assertFileMatches,
   assertNoMutation,
+  assertNoPublicStatusLine,
   assertRoutingRunEndedEarly,
   assertRunHappened,
   capturedFilesUnder,
@@ -35,11 +36,140 @@ import {
   FIXTURE_ROOT_PATH,
   fixtureRelativePath,
   formatToolNames,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import { cases as architectCases } from "#/cases/workflow-skill-architect.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
+
+describe("reply text normalization", () => {
+  test("makes emphasized labels match plain-text patterns", () => {
+    expect(normalizeReplyText("**References fetched:** none")).toMatch(
+      /References fetched:\s*none/,
+    );
+  });
+
+  test.each([
+    ["**bold** __bold__ *italic* _italic_", "bold bold italic italic"],
+    ["**bold with _italic_**", "bold with italic"],
+    ["`PR_CREATE` and ``my_file_name.ts``", "PR_CREATE and my_file_name.ts"],
+    ["PR_CREATE my_file_name.ts a__b__c", "PR_CREATE my_file_name.ts a__b__c"],
+    ["_PR_CREATE_ and __my_file_name.ts__", "PR_CREATE and my_file_name.ts"],
+    [
+      "## Heading\n> Quoted\n- First\n+ Second\n* Third\n1. Fourth\n2) Fifth\n\nLast",
+      "Heading\nQuoted\nFirst\nSecond\nThird\nFourth\nFifth\n\nLast",
+    ],
+    ["> - ### **Nested**\n  > Reply", "Nested\nReply"],
+    ["first\r\n\r\nlast", "first\r\n\r\nlast"],
+    ["left > right; C#; 2 * 3; a - b", "left > right; C#; 2 * 3; a - b"],
+  ])(
+    "normalizes %s without losing content or line breaks",
+    (reply, plainText) => {
+      expect(normalizeReplyText(reply)).toBe(plainText);
+    },
+  );
+});
+
+describe("public status lines", () => {
+  test.each([
+    "PR_CREATE: PR_EXISTS",
+    "**PR_CREATE:** PR_EXISTS",
+    "__PR_CREATE:__ PR_EXISTS",
+    "`PR_CREATE: PR_EXISTS`",
+    "  PR_CREATE: PR_EXISTS  ",
+    "## PR_CREATE: PR_EXISTS",
+    "> - PR_CREATE: PR_EXISTS",
+    "1. PR_CREATE: PR_EXISTS",
+  ])("rejects a status line in %s and quotes the line", (reply) => {
+    expect(() => {
+      assertNoPublicStatusLine(reply, "PR_CREATE");
+    }).toThrow(/public status line.*"[^"\n]*PR_CREATE: PR_EXISTS/);
+  });
+
+  test("checks every supplied prefix on every line", () => {
+    expect(() => {
+      assertNoPublicStatusLine(
+        "I need context.\nCOMMIT_SCOPED_CHANGES: NEEDS_CONTEXT",
+        "PR_CREATE",
+        "COMMIT_SCOPED_CHANGES",
+      );
+    }).toThrow(/COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT/);
+  });
+
+  test.each([
+    "no PR_CREATE call was made",
+    "I did not emit PR_CREATE: PR_EXISTS.",
+    "OTHER_PREFIX: DONE",
+    "NOT_PR_CREATE: PR_EXISTS",
+    "PR_CREATE_EXTRA: PR_EXISTS",
+    "",
+  ])("accepts a reply without the requested status prefix: %s", (reply) => {
+    expect(() => {
+      assertNoPublicStatusLine(reply, "PR_CREATE");
+    }).not.toThrow();
+  });
+
+  test("treats prefixes as literal text", () => {
+    expect(() => {
+      assertNoPublicStatusLine("PRxCREATE: DONE", "PR.CREATE");
+    }).not.toThrow();
+    expect(() => {
+      assertNoPublicStatusLine("PR.CREATE: DONE", "PR.CREATE");
+    }).toThrow(/public status line/);
+  });
+});
+
+describe("requests about a topic", () => {
+  test.each([
+    "Send the job posting and I'll run the review.",
+    "Which job posting should I use?",
+    "**Share** the job posting.",
+    "Provide the job posting.",
+    "Paste the job posting.",
+    "Reply with the job posting.",
+    "Tell me which job posting to use.",
+    "Let me know which job posting to use.",
+    "Please include the job posting.",
+    "Confirm the job posting.",
+    "Choose the job posting.",
+    "Approve the job posting.",
+    "I need the job posting before I can start.",
+    "What I need: the backend job posting.",
+    "The job posting is the input we need from you.",
+    "You haven't given me the job posting.",
+    "You haven't supplied the job posting.",
+    "You haven't provided the job posting.",
+    "The job posting is missing.",
+    "The job posting is absent. Please send it as a URL or pasted text.",
+    "The job posting is absent. Please send:\n1. The job posting\n2. Your CV",
+  ])("accepts a question or request about the posting: %s", (reply) => {
+    expect(replyAsksFor(reply, /job posting/i)).toBe(true);
+  });
+
+  test.each([
+    "I reviewed the job posting.",
+    "Send the resume.",
+    "Which resume should I use?\n\nI reviewed the job posting.",
+    "Please send the resume.\n \nI reviewed the job posting.",
+    "I reviewed the job posting.\r\n\r\nPlease send the resume.",
+    "The job posting provides the requirements.",
+    "The job posting was approved.",
+    "",
+  ])("rejects statements or requests about another topic: %s", (reply) => {
+    expect(replyAsksFor(reply, /job posting/i)).toBe(false);
+  });
+
+  test("does not consume a stateful topic regex across paragraphs or calls", () => {
+    const topic = /job posting/gi;
+    topic.lastIndex = "I reviewed the job posting.".length;
+    const reply = "I reviewed the job posting. Send the job posting.";
+    expect(replyAsksFor(reply, topic)).toBe(true);
+    expect(replyAsksFor(reply, topic)).toBe(true);
+    expect(topic.lastIndex).toBe("I reviewed the job posting.".length);
+  });
+});
 
 const skill = "some-skill";
 const invoked = createObservation({
