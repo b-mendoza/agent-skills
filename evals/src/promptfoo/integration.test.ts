@@ -47,7 +47,7 @@ beforeAll(() => {
         observation.toolCalls = [{ name: "Skill", input: { skill } }];
       }
       if (context.vars.caseId === "analyzing-recent-project-state/path-error") {
-        observation.finalText = "RECENT_STATE: PATH_ERROR\\nReason: missing\\nNext step: fix it";
+        observation.finalText = "The requested PROJECT_PATH does not exist. Please provide a readable repository path.";
         observation.toolCalls = [${JSON.stringify(VALIDATOR_CALL)}];
         if (scenario === "mutation") observation.toolCalls.push({ name: "Write", input: {} });
       }
@@ -167,7 +167,7 @@ test.each([
         expect.objectContaining({
           success: pass,
           namedScores: {
-            "case/analyzing-recent-project-state/path-error": 1,
+            "case/analyzing-recent-project-state/path-error": score,
             "mutation-scope": score,
           },
         }),

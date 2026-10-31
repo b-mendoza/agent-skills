@@ -30,12 +30,13 @@ const AUTH_FAILURE = createObservation({
 const behavioralCases = [
   {
     caseId: "path-error",
-    finalText: "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it",
+    finalText:
+      "The requested PROJECT_PATH does not exist. Please provide a readable repository path.",
   },
   {
     caseId: "gate-envelope",
     finalText:
-      "RECENT_STATE: NOT_GIT\nReason: not a worktree\nNext step: use a repo",
+      "That directory is not a Git worktree. Re-run with PROJECT_PATH set to a Git worktree.",
   },
   { caseId: "quiet-state", finalText: QUIET_STATE_SNAPSHOT },
   { caseId: "snapshot-dirty", finalText: FULL_REPORT_SNAPSHOT },
@@ -255,43 +256,6 @@ describe("mutation scope", () => {
   });
 });
 
-describe("envelope", () => {
-  test.each([
-    { caseId: "path-error", status: "PATH_ERROR" },
-    { caseId: "gate-envelope", status: "NOT_GIT" },
-  ])("`$caseId` accepts its `$status` envelope", ({ caseId, status }) => {
-    const observation = createObservation({
-      finalText: `RECENT_STATE: ${status}\nReason: unavailable\nNext step: use a repo`,
-      toolCalls: [VALIDATOR_CALL],
-    });
-    expect(getCase(caseId).check(observation)).toBe(
-      `${status}, 3-line envelope`,
-    );
-  });
-
-  test("an envelope case fails on the wrong status", () => {
-    const observation = createObservation({
-      finalText:
-        "RECENT_STATE: NOT_GIT\nReason: unavailable\nNext step: use a repo",
-      toolCalls: [VALIDATOR_CALL],
-    });
-    expect(() => getCase("path-error").check(observation)).toThrow(
-      /expected a PATH_ERROR envelope/,
-    );
-  });
-
-  test("delegates malformed envelope rejection to the real validator", () => {
-    const observation = createObservation({
-      finalText:
-        "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it\nExtra line",
-      toolCalls: [VALIDATOR_CALL],
-    });
-    expect(() => getCase("path-error").check(observation)).toThrow(
-      /envelope shape invalid:[\s\S]*expected exactly 3 envelope lines/,
-    );
-  });
-});
-
 describe("validator invocation", () => {
   test.each(behavioralCases)(
     "`$caseId` rejects an otherwise-valid unvalidated output",
@@ -309,15 +273,19 @@ describe("validator invocation", () => {
     "cat <<'EOF'\nsh /missing/scripts/validate-output.sh draft\nEOF",
     "sh /skill/scripts/validate-output.sh draft-spoof",
     "sh /skill/scripts/validate-output.sh",
-  ])("rejects a spoofed validator invocation in %s", (command) => {
-    expect(() => {
-      assertValidatorInvoked(
-        createObservation({
-          toolCalls: [{ name: "Bash", input: { command } }],
-        }),
-      );
-    }).toThrow(/the deterministic validator was never invoked/);
-  });
+    "sh scripts/validate-output.sh envelope",
+  ])(
+    "rejects a spoofed or unsupported validator invocation in %s",
+    (command) => {
+      expect(() => {
+        assertValidatorInvoked(
+          createObservation({
+            toolCalls: [{ name: "Bash", input: { command } }],
+          }),
+        );
+      }).toThrow(/the deterministic validator was never invoked/);
+    },
+  );
 
   test.each([
     VALIDATOR_CALL.input.command,
@@ -325,7 +293,6 @@ describe("validator invocation", () => {
     "printf payload | bash '$SKILL_DIR/scripts/validate-output.sh' evidence",
     "cd x\nsh scripts/validate-output.sh verdict",
     "sh scripts/validate-output.sh report",
-    "sh scripts/validate-output.sh envelope",
   ])("accepts a validator invocation in %s", (command) => {
     expect(() => {
       assertValidatorInvoked(
@@ -371,7 +338,7 @@ describe("quiet state", () => {
     {
       label: "an output containing RECENT_STATE: ERROR",
       finalText: `${QUIET_STATE_SNAPSHOT}\n\nRECENT_STATE: ERROR`,
-      expectedError: /quiet state escalated/,
+      expectedError: /public status line/,
     },
     {
       label: "an invented long-form section",

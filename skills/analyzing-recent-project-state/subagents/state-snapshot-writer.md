@@ -43,7 +43,7 @@ Allowed status lines are exactly:
 - `SNAPSHOT_WRITE: NEEDS_CONTEXT`
 - `SNAPSHOT_WRITE: ERROR`
 
-`NEEDS_CONTEXT` is three lines: the status line, `Reason: <one line>`, `Decision needed: <one decision>`. `ERROR` is two lines: the status line and `Reason: <one line>`. Emit no `Next step:` — the orchestrator composes the user-facing envelope.
+`NEEDS_CONTEXT` is three lines: the status line, `Reason: <one line>`, `Decision needed: <one decision>`. `ERROR` is two lines: the status line and `Reason: <one line>`. Emit no `Next step:` — the orchestrator composes the user-facing prose reply.
 
 ## Instructions
 
