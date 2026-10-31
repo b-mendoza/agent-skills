@@ -52,7 +52,7 @@ function judgePrompt() {
 const [positive, negative, diagnosis, injected, missing] = cases;
 const TEST_FAILURE_EXIT = 1;
 const REPORT = `RCA Report
-Status: ready
+The percentage-scaling cause is supported by the supplied trace. Nothing was changed.
 Issue source: runtime
 Confidence: high - supplied trace directly observes the failure
 ${RCA_SECTIONS.map((section) => `${section}: inspected`).join("\n")}
@@ -110,10 +110,21 @@ describe("evidence-backed RCA", () => {
   test("accepts a complete report with unchanged evidence", () => {
     expect(diagnosis.check(diagnosisObservation)).toContain("ready RCA");
   });
+  test("accepts Markdown labels without weakening required report content", () => {
+    expect(
+      diagnosis.check({
+        ...diagnosisObservation,
+        finalText: REPORT.replace(
+          "Issue source: runtime",
+          "- **Issue source:** `runtime`",
+        ).replace("Confidence: high", "**Confidence:** high"),
+      }),
+    ).toContain("ready RCA");
+  });
   test.each([
     ["title", REPORT.replace("RCA Report", "Analysis")],
-    ["terminal", REPORT.replace("Status: ready", "Status: needs-validation")],
-    ["duplicate terminal", `${REPORT}\nStatus: ready`],
+    ["old public status", `${REPORT}\nStatus: ready`],
+    ["Markdown status", `${REPORT}\n**Status:** ready`],
     [
       "source classification",
       REPORT.replace("Issue source: runtime", "Issue source: user-report"),
@@ -272,16 +283,19 @@ describe("injected-log guard", () => {
 describe("missing input", () => {
   test.each([
     "Which logs or resources can you provide, and what behavior did you expect?",
-    "Status: needs-input\nReason: no resources supplied. Provide logs to resume.",
-  ])("accepts clarification or the documented early stop", (finalText) => {
-    expect(missing.check(createObservation({ finalText }))).toContain(
-      "clarification",
-    );
-  });
+    "No resources were supplied, so I stopped before analysis. Provide logs to resume.",
+    "Please provide resources.",
+  ])(
+    "accepts a prose evidence request with or without a question mark",
+    (finalText) => {
+      expect(missing.check(createObservation({ finalText }))).toContain(
+        "clarification",
+      );
+    },
+  );
   test.each([
     "I cannot diagnose this.",
-    "Please provide resources.",
-    "Status: needs-input\nReason: something missing.",
+    "Status: needs-input\nPlease provide logs.",
     "Status: ready\nWhich logs can you provide?",
   ])("rejects an unsupported response: %s", (finalText) => {
     expect(() => missing.check(createObservation({ finalText }))).toThrow();
