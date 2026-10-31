@@ -2,6 +2,8 @@
 
 This file is the sole normative source for states, transitions, guards, guard precedence, counters, joins, and terminals. SKILL.md is a non-normative overview; this file wins on drift.
 
+Internal terminal decisions below select the outcome; public replies use prose and the package output templates, never a machine-readable status line.
+
 ## States
 
 | State                      | Kind     | Phase / role                                                                                                       |
@@ -72,7 +74,7 @@ Author `flowchart` or `stateDiagram-v2` Mermaid manually at `DIAGRAM_CANDIDATE_P
 
 ## Audit fan-out and join
 
-The six auditors are an independent, read-only fan-out: each reads the target and writes only its own named report file in `HANDOFF_DIR`. A runtime that supports concurrent subagent dispatch may dispatch them concurrently; otherwise dispatch them serially — the outcomes are equivalent because `Audit` joins only when all six contracted reports exist. A missing or malformed report after one re-request is treated as that slice returning `: ERROR`. Synthesis reads the reports in registry order and applies the Audit guard order above, so report-arrival order never selects the route.
+The six auditors are an independent, read-only fan-out: each reads the target and writes only its own named report file in `HANDOFF_DIR`. A runtime that supports concurrent subagent dispatch may dispatch them concurrently; otherwise dispatch them serially — the outcomes are equivalent because `Audit` joins only when all six contracted YAML reports exist on disk, including inline fallback. Before synthesis or approval, verify each report path and required fields, then write every required synthesis key; a combined summary cannot replace individual reports. A missing or malformed report after one re-request is treated as that slice returning `: ERROR`. Synthesis reads the reports in registry order and applies the Audit guard order above, so report-arrival order never selects the route.
 
 ## Approval wait contract
 

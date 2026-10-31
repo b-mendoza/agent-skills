@@ -38,7 +38,7 @@ Non-normative overview: audit the target, obtain approval, apply approved edits,
 | `skill-definition-editor`       | `./subagents/skill-definition-editor.md`       | Approved mutations + Lane A     |
 | `skill-package-validator`       | `./subagents/skill-package-validator.md`       | Lane A block / Lane B follow-up |
 
-Six auditors stay separate (one status prefix and YAML report each). Read a subagent only when dispatching it. Prefer the runtime subagent mechanism; otherwise run the contract inline. Subagents never spawn subagents.
+Six auditors stay separate (one status prefix and YAML report each). Read a subagent only when dispatching it. Prefer the runtime subagent mechanism; otherwise run each contract inline and write its separate YAML report. Inline fallback never waives the six-report join or the synthesis schema. Subagents never spawn subagents.
 
 ## How This Skill Works
 
@@ -61,7 +61,7 @@ The orchestrator advances the state machine, writes handoff YAML, reads reports,
 ## Execution
 
 1. `Intake`: load `state-machine.md`; normalize `SKILL_PATH`; build `IMPROVEMENT_MANDATES` (prepend `KNOWN_PROBLEM`).
-2. `TerminalBlocked` if path missing, unreadable, outside first-party `skills/`, or inside `.agents/skills/`, `.claude/skills/`, `skills-lock.json`, `.git`, secrets, private config, or unrelated scope.
+2. `TerminalBlocked` if path missing, unreadable, outside first-party `skills/`, or inside `.agents/skills/`, `.claude/skills/`, `skills-lock.json`, `.git`, secrets, private config, or unrelated scope. Even at intake, load the blocked template and include every required heading. Ask for an eligible first-party target; these exclusions have no waiver route.
 3. `SKILL_DIR` is the directory containing this `SKILL.md` as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the `SKILL.md` path you read; if neither is known, stop at `TerminalBlocked` with reason `TOOLS_MISSING`.
 4. Set `HANDOFF_DIR=.handoffs/improving-skill-definition/<run-id>/`, where `<run-id>` is generated once at intake (UTC timestamp plus a short random suffix); if the directory exists, regenerate — never reuse a run directory. Materialize `MUTATION_LIMITS`: writes only inside the resolved target package, minus the step-2 exclusions, plus any `SCOPE_LIMITS`; pass this exact value to editor, validator, and synthesis, and go to `TerminalBlocked` before approval if it cannot be derived unambiguously. Copy baseline, set `repair_counter=0`, `mutation_applied=false`, record `ignored_preapproval`. If target is this package, `SELF_IMPROVEMENT_RUN=true`.
 5. `FlowLoad`: load `references/personality.md` and the target flow when present.
@@ -72,7 +72,7 @@ The orchestrator advances the state machine, writes handoff YAML, reads reports,
 
 ## Output Contract
 
-Return one FSM-selected decision using `./references/final-report-template.md` and its mandatory emission checklist. Cleanup: success cleans; approval required preserves `HANDOFF_DIR`; post-mutation blocked/error preserves baseline, editor report, validator report, and a `diff -r` command. Name preserved evidence whenever mutation lacks validation success.
+State the FSM-selected outcome in plain prose, never as a standalone status value or routing envelope. Retain the structured report content using `./references/final-report-template.md` and its mandatory emission checklist. Cleanup: success cleans; approval required preserves `HANDOFF_DIR`; post-mutation blocked/error preserves baseline, editor report, validator report, and a `diff -r` command. Name preserved evidence whenever mutation lacks validation success.
 
 ## Example
 
