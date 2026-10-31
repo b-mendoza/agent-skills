@@ -23,8 +23,7 @@ Omissions: no unrelated sections. Assumptions: none. Suite alignment: none.
 Resources Used: LOCAL_ONLY; semantic-decomposer, xml-prompt-assembler, template-skeleton.
 Dispatch: inline fallback. Handoff: inline named sections.
 Removal-test summary: task establishes work, output states formatting, success_criteria verifies it.
-Follow-ups: none.
-PASS`;
+Follow-ups: none.`;
 
 function getCase(suffix: string): EvalCase {
   const evalCase = cases.find(
@@ -48,7 +47,7 @@ function behavioralObservation(suffix: string, finalText: string): Observation {
 }
 
 const blockedText =
-  "BLOCKED\nPlease provide the existing structured XML prompt so I can apply the change request?";
+  "I cannot revise the prompt without its baseline. Please provide the existing structured XML prompt so I can apply the change request.";
 
 describe("prompt-structurer routing", () => {
   test("invocation is required for a positive trigger", () => {
@@ -131,6 +130,24 @@ describe("prompt-structurer behavior", () => {
       ),
     ],
     ["XML-like prose in notes", `${structuredPrompt}\nDiscuss <output> here.`],
+    [
+      "fenced XML with bold notes and tag mentions",
+      `${structuredPrompt.replace(/^/, "```xml\n").replace("\n\n## Assembly Notes", "\n```\n\n**Assembly notes**")}\nDiscuss <task> here.`,
+    ],
+    [
+      "a shared skipped-pass reason heading",
+      structuredPrompt.replace(
+        "OMITTED_PASS_REASON: passes 2, 3, 4, 5 add no needed behavior.",
+        "Skipped passes (OMITTED_PASS_REASON):\nPass 2: no philosophy.\nPass 3: empty input is explicit.\nPass 4: no prior failures.\nPass 5: source criteria are explicit.",
+      ),
+    ],
+    [
+      "pass numbers before omitted reason",
+      structuredPrompt.replace(
+        "OMITTED_PASS_REASON: passes 2, 3, 4, 5 add no needed behavior.",
+        "Passes 2, 3, 4, 5, OMITTED_PASS_REASON: add no needed behavior.",
+      ),
+    ],
   ])("accepts %s", (_label, finalText) => {
     expect(() =>
       getCase("structure-prose").check(
@@ -168,6 +185,12 @@ describe("prompt-structurer behavior", () => {
       structuredPrompt.replace("OMITTED_PASS_REASON:", "Skipped:"),
     ],
     ["internal pass status leaked", `${structuredPrompt}\nRESULT: PASS`],
+    [
+      "formatted internal status leaked",
+      `${structuredPrompt}\n**RESULT: PASS**`,
+    ],
+    ["standalone pass status", `${structuredPrompt}\nPASS`],
+    ["title-case result envelope", `${structuredPrompt}\n**Result:** PASS.`],
   ])("rejects %s", (_label, finalText) => {
     expect(() =>
       getCase("structure-prose").check(
@@ -212,7 +235,7 @@ describe("prompt-structurer behavior", () => {
   });
 
   test.each([
-    ["no blocked status", "Please provide the existing XML prompt?"],
+    ["old blocked status", `BLOCKED\n${blockedText}`],
     ["no baseline question", "BLOCKED\nI cannot continue."],
     [
       "fabricated replacement",
