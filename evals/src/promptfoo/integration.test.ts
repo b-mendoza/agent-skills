@@ -47,7 +47,7 @@ beforeAll(() => {
         observation.toolCalls = [{ name: "Skill", input: { skill } }];
       }
       if (context.vars.caseId === "analyzing-recent-project-state/path-error") {
-        observation.finalText = "RECENT_STATE: PATH_ERROR\\nReason: missing\\nNext step: fix it";
+        observation.finalText = "The requested path does not exist on disk, so I cannot inspect this repo.";
         observation.toolCalls = [${JSON.stringify(VALIDATOR_CALL)}];
         if (scenario === "mutation") observation.toolCalls.push({ name: "Write", input: {} });
       }
