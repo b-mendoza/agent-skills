@@ -135,63 +135,22 @@ describe("committing-scoped-changes checks", () => {
     },
   );
 
-  test.each(
-    behavioralCases.filter(
-      (evalCase) => !evalCase.id.endsWith("/plan-approval"),
-    ),
-  )(
-    "$id rejects a stop that omits the reason or no-commit outcome",
+  test.each(behavioralCases)(
+    "$id delegates preview and stop wording to its judge",
     (evalCase) => {
       const observation = correctObservation(evalCase);
-      for (const finalText of ["Nothing happened.", "No commits were made."]) {
-        expect(() => evalCase.check({ ...observation, finalText })).toThrow();
+      let finalText =
+        "a.txt matches HEAD. I left it alone and created no commit.";
+      if (evalCase.id.endsWith("/plan-approval")) {
+        finalText = `Planned commit (1 group)\n| Message | Paths | Expansions | Verification | Omissions | Warnings |\n| --- | --- | --- | --- | --- | --- |\n| update greeting | a.txt | none | none | none | none |\nThe staged unrelated.txt stays excluded. Reply approve, revise: changes, or stop.`;
+      } else if (evalCase.id.endsWith("/no-verbal-consent")) {
+        finalText =
+          "I haven't made any commits or inspected the repository. Invocation doesn't count as permission. Please ask me to commit a.txt.";
       }
+      expect(() => evalCase.check({ ...observation, finalText })).not.toThrow();
+      expect(evalCase).toHaveProperty("judge", expect.any(Function));
     },
   );
-
-  test("accepts the recorded approval preview without a redundant no-commit sentence", () => {
-    const evalCase = cases.find((candidate) =>
-      candidate.id.endsWith("/plan-approval"),
-    );
-    if (evalCase === undefined) throw new Error("missing plan case");
-    const finalText = `Phase 3/4 - Gate
-
-Group: 1
-Message: update greeting text
-Paths: a.txt
-Expansions: none
-Verification: none
-Digest: 31940b5b453873fb4720262f02a00a3d2ebb744c
-Omissions: none
-Warnings: none
-
-The staged unrelated.txt is outside scope. It stays staged and won't be touched.
-
-Reply approve to commit this 1 group, revise: <what to change>, or stop.`;
-    expect(() =>
-      evalCase.check({ ...correctObservation(evalCase), finalText }),
-    ).not.toThrow();
-  });
-
-  test("approval requires the readable scoped plan and all decision choices", () => {
-    const evalCase = cases.find((candidate) =>
-      candidate.id.endsWith("/plan-approval"),
-    );
-    expect(evalCase).toBeDefined();
-    if (evalCase === undefined) throw new Error("missing plan case");
-    const observation = correctObservation(evalCase);
-    for (const finalText of [
-      `COMMIT_PLAN: PASS\n${PLAN}`,
-      PLAN.replace("**Message:** fix: update greeting", ""),
-      PLAN.replace("**Paths:** `a.txt`", "**Paths:** a.txt unrelated.txt"),
-      PLAN.replace("Omissions: none", "Omissions: a.txt"),
-      PLAN.replace("Expansions: none", "Expansions: a.txt"),
-      PLAN.replace("Warnings: none", ""),
-      PLAN.replace("approve, revise: <what to change>, or stop", "approve"),
-    ]) {
-      expect(() => evalCase.check({ ...observation, finalText })).toThrow();
-    }
-  });
 
   test.each(behavioralCases)(
     "$id seed snapshots match real git evidence",
