@@ -20,6 +20,7 @@ import {
   normalizeReplyText,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
+import { judgeLive } from "#/observation/judge.ts";
 
 const SKILL = "creating-work-item-children";
 export const PLAN_PATH = `docs/${ISSUE.slug}-tasks.md`;
@@ -97,15 +98,11 @@ function checkSummary(observation: Observation, reconciled: boolean): string {
     "Status",
   );
   const reply = normalizeReplyText(observation.finalText);
-  assert.ok(reply.includes(ISSUE.reference), "reply omitted parent");
-  assert.ok(reply.includes(PLAN_PATH), "reply omitted plan path");
   assert.ok(
-    [
-      /(?:unchanged|not (?:updated|changed|modified)|no (?:files?|local|plan).*chang)/i,
-      /no local (?:edits|writes)/i,
-    ].some((pattern) => pattern.test(reply)),
-    "missing unchanged-plan outcome",
+    reply.includes(ISSUE.reference) || reply.includes(ISSUE.url),
+    "reply omitted parent",
   );
+  assert.ok(reply.includes(PLAN_PATH), "reply omitted plan path");
   return reply;
 }
 
@@ -147,25 +144,7 @@ export const cases = [
     check: (observation) => {
       const reply = checkSummary(observation, true);
       assertFileMatches(observation, GH_LOG, /(?:\/issues\/43|"43")/);
-      assert.match(reply, /(?:\b(?:1|one)\s+task\b|Tasks in plan:\s*1\b)/i);
-      assert.match(
-        reply,
-        /(?:\b(?:1|one)\s+(?:task,?\s+(?:which was )?)?already linked\b|Already linked:\s*1\b)/i,
-      );
-      const noCreates = [
-        /\b(?:0|zero)\s+(?:created now|issues? (?:were )?created)\b|Created now:\s*0\b/i,
-        /nothing (?:was )?created|no (?:new |additional )?issues? (?:were )?created/i,
-      ];
-      assert.ok(
-        noCreates.some((pattern) => pattern.test(reply)),
-        "reply did not account for zero creates",
-      );
-      assert.match(
-        reply,
-        /(?:\b(?:0|zero)\s+(?:failed creates|creates? failed)\b|Failed creates:\s*0\b|no (?:create |creation )?failures)/i,
-      );
       assert.match(reply, /linked-issue/);
-      assert.match(reply, /(?:traceability|capability|relationship)/i);
       const rows = reply
         .split("\n")
         .filter((line) => line.trim().startsWith("|"))
@@ -186,15 +165,8 @@ export const cases = [
         "Priority",
         "Outcome",
       ]);
-      const [
-        task,
-        reference,
-        title,
-        writeModel,
-        dependencies,
-        priority,
-        outcome,
-      ] = row ?? [];
+      const [task, reference, title, writeModel, dependencies, priority] =
+        row ?? [];
       assert.deepEqual(
         [task, reference, title, writeModel, dependencies, priority],
         [
@@ -206,9 +178,20 @@ export const cases = [
           "High",
         ],
       );
-      assert.match(outcome ?? "", /already linked|reused/i);
       return "verified existing child; zero duplicates; unchanged plan and handoff timestamp";
     },
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts: `The approved ${PLAN_PATH} contains one task already linked to acme/app#43. The child was verified read-only, with parent/task traceability in its body. No issues were created, no creates failed, and the plan and handoff timestamp remain byte-identical.`,
+        rubric: [
+          {
+            id: "reconciliation-summary",
+            requirement:
+              "Reports one planned task, one verified reused child, zero new creates, zero failed creates, the linked-issue write model and its body-traceability capability, and the unchanged-plan outcome; the table outcome identifies the child as already linked or reused.",
+          },
+        ],
+      }),
   },
   {
     id: "creating-work-item-children/approval-declined",
