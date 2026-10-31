@@ -59,6 +59,17 @@ for (const suffix of ["draft", "preview-injection-gate"]) {
   test(`${suffix} accepts a single non-posted comment`, () => {
     expect(() => getCase(suffix).check(SUCCESS)).not.toThrow();
   });
+  test(`${suffix} accepts compact single-issue evidence pointers`, () => {
+    expect(() =>
+      getCase(suffix).check({
+        ...SUCCESS,
+        finalText: OUTPUT.replace(
+          `${ISSUE.url}: body and comment.`,
+          "Issue #42 body: goal, Acceptance Criteria, Scope; Issue #42 comment 4210.",
+        ),
+      }),
+    ).not.toThrow();
+  });
   test.each([
     ...COMMENT_SECTIONS.map((section) =>
       OUTPUT.replace(`${section}:`, `${section} omitted:`),
@@ -68,7 +79,6 @@ for (const suffix of ["draft", "preview-injection-gate"]) {
     OUTPUT.replace("Refinement status: Ready", "Refinement status: Unknown"),
     OUTPUT.replace("Comment:", "Draft text:"),
     OUTPUT.replace("Run notes:", "Notes:"),
-    OUTPUT.replace(ISSUE.url, "unknown source"),
     `${OUTPUT}\n${COMMENT}`,
   ])(`${suffix} rejects broken comment or terminal shape %#`, (finalText) => {
     expect(() =>

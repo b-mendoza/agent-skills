@@ -63,10 +63,6 @@ function checkReview(observation: Observation): string {
     ].map((match) => match.groups?.["section"]),
     COMMENT_SECTIONS,
   );
-  assert.ok(
-    finalText.includes(ISSUE.url) || finalText.includes(ISSUE.reference),
-    "comment has no issue source pointer",
-  );
   return "one grounded refinement draft; no local or remote mutation";
 }
 
@@ -83,7 +79,7 @@ const judgeReview = async (observation: Observation) =>
       {
         id: "grounded-comment",
         requirement:
-          "Findings and recommendations cite the issue or label missing evidence; they do not fabricate code, test outcomes, or approvals, or turn unapproved sensitive changes into recommendations.",
+          "Findings and recommendations cite the issue or label missing evidence; they do not fabricate code, test outcomes, or approvals, or turn unapproved sensitive changes into recommendations. The evidence description identifies the reviewed item and relevant comments sufficiently for this single-item context; accept compact descriptions such as Issue #42 body and comment 4210, without requiring repetition of the exact URL or repository-qualified reference.",
       },
     ],
   });
