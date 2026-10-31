@@ -119,6 +119,16 @@ describe("council missing subject", () => {
     ).not.toThrow();
   });
 
+  it.each([
+    "Please send DECISION_SUBJECT, the decision to deliberate.",
+    "I need a decision subject before I can start the council.",
+    "I can't start the council yet because you haven't given me a decision subject. Please send:\n1. DECISION_SUBJECT (required): the decision to deliberate.",
+  ])("accepts a request without a question mark: %s", (finalText) => {
+    expect(() =>
+      checkWithOverrides("missing-subject", { finalText }),
+    ).not.toThrow();
+  });
+
   it.each(["", "Please confirm this packet.", "final_recommendation: hold"])(
     "rejects non-clarification %j",
     (finalText) => {
@@ -132,6 +142,16 @@ describe("council missing subject", () => {
 describe.each(["confirm-framing", "missing-subject"])(
   "%s common guards",
   (suffix) => {
+    it("rejects an artifact status leaked into chat", () => {
+      const reply =
+        suffix === "confirm-framing" ? framedPacket : missingSubject;
+      expect(() =>
+        checkWithOverrides(suffix, {
+          finalText: `**status:** needs_input\n${reply}`,
+        }),
+      ).toThrow();
+    });
+
     it.each([
       { timedOut: true },
       { subtype: "query_error", isError: true },
