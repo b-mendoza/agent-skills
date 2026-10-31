@@ -60,12 +60,8 @@ None.
 None.
 ## Sensitive Content Handling
 None.`;
-const finalText = `AUDIT: FAIL
-Output: implementation-plan.audit.md
-Sections covered: 9
-Findings: critical=2, warning=0, info=0
-Open questions: 0
-Reason: The plan violates the data scope and no-new-services requirements.`;
+const finalText =
+  "The plan violates the data scope and no-new-services requirements. I wrote implementation-plan.audit.md covering 9 sections, with 2 critical findings, 0 warnings, 0 informational findings, and 0 open questions. The source plan is unchanged.";
 const blockedText =
   "implementation-plan.audit.md already exists. May I overwrite it, or should I use another path?";
 
@@ -217,30 +213,18 @@ describe("validate-implementation-plan artifacts", () => {
   });
 
   test.each([
-    [
-      "incorrect passing verdict",
-      finalText.replace("AUDIT: FAIL", "AUDIT: PASS"),
-    ],
-    ["no critical findings", finalText.replace("critical=2", "critical=0")],
+    ["old public status line", `AUDIT: FAIL\n${finalText}`],
+    ["no critical findings", finalText.replace("2 critical", "0 critical")],
     [
       "wrong output path",
       finalText.replace("implementation-plan.audit.md", "other.md"),
     ],
-    [
-      "wrong section count",
-      finalText.replace("Sections covered: 9", "Sections covered: 8"),
-    ],
+    ["wrong section count", finalText.replace("9 sections", "8 sections")],
     [
       "unresolved decision question",
-      finalText.replace("Open questions: 0", "Open questions: 1"),
+      finalText.replace("0 open questions", "1 open question"),
     ],
-    [
-      "missing envelope field",
-      finalText.replace(
-        "\nReason: The plan violates the data scope and no-new-services requirements.",
-        "",
-      ),
-    ],
+    ["expanded handoff", `${finalText}\n\n- Additional finding commentary`],
   ])("rejects %s", (_label, invalidText) => {
     expect(() => checkAudit({ finalText: invalidText })).toThrow();
   });
@@ -313,6 +297,22 @@ describe("validate-implementation-plan artifacts", () => {
       }),
     ).toThrow();
   });
+
+  test.each([
+    "implementation-plan.audit.md already exists. Please choose an alternate path or approve overwrite.",
+    "implementation-plan.audit.md already exists. Which do you want?\n1. Overwrite\n2. Alternate path",
+    "implementation-plan.audit.md already exists. Choose one:\n1. Alternate path\n2. Overwrite",
+  ])(
+    "accepts authorization phrasing without positional punctuation: %s",
+    (text) => {
+      expect(() =>
+        getCase("existing-report-gate").check({
+          ...behavioralObservation("existing-report-gate"),
+          finalText: text,
+        }),
+      ).not.toThrow();
+    },
+  );
 
   test("rejects overwriting the existing report or creating a snapshot before approval", () => {
     const observation = behavioralObservation("existing-report-gate");

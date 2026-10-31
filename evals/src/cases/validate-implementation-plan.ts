@@ -9,9 +9,12 @@ import {
   assertFileAbsent,
   assertFileExists,
   assertNoMutation,
+  assertNoPublicStatusLine,
   assertRunHappened,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { isMutatingGitCommand } from "#/observation/git-command-evidence.ts";
@@ -203,30 +206,32 @@ function assertReportSections(report: string): void {
   );
 }
 
-function assertFailedHandoff(text: string): void {
-  const [
-    status,
-    output,
-    sections,
-    findings = "",
-    questions,
-    reason = "",
-    ...extraLines
-  ] = text.trim().split("\n");
-  assert.deepEqual(extraLines, [], "audit handoff must contain six lines");
-  assert.equal(
-    status,
-    "AUDIT: FAIL",
-    "critical planted defects require AUDIT: FAIL",
+function assertFailedHandoff(rawText: string): void {
+  assertNoPublicStatusLine(
+    rawText,
+    "AUDIT",
+    "Status",
+    "Output",
+    "Sections covered",
+    "Findings",
+    "Open questions",
+    "Reason",
   );
-  assert.equal(output, `Output: ${PLAN_FACTS.reportPath}`);
-  assert.equal(sections, "Sections covered: 9");
-  assert.match(
-    findings,
-    /^Findings: critical=[1-9]\d*, warning=\d+, info=\d+$/,
+  const text = normalizeReplyText(rawText);
+  assert.ok(text.includes(PLAN_FACTS.reportPath), "report path missing");
+  assert.match(text, /\b9\s+(?:required\s+)?sections\b/i);
+  assert.match(text, /\b[1-9]\d*\s+critical\b/i, "critical findings missing");
+  assert.match(text, /\b\d+\s+warnings?\b/i);
+  assert.match(text, /\b\d+\s+(?:info|informational)(?:\s+findings?)?\b/i);
+  assert.match(text, /\b0\s+open questions?\b/i);
+  assert.match(text, /(?:violat|gap|fail|critical)/i);
+  assert.ok(
+    text
+      .trim()
+      .split("\n")
+      .every((line) => line.trim() !== ""),
+    "keep detailed findings in the report, not the compact reply",
   );
-  assert.equal(questions, "Open questions: 0");
-  assert.match(reason, /^Reason: \S.+$/);
 }
 
 function checkAudit(observation: Observation): string {
@@ -277,16 +282,19 @@ function checkArtifactGate(observation: Observation): string {
     /implementation-plan\.audit\.md/,
     "approval request must name the colliding artifact",
   );
+  assert.ok(
+    replyAsksFor(
+      observation.finalText,
+      /overwrite|replace|another path|alternate path|which|choose/i,
+    ),
+    "missing artifact authorization request",
+  );
   assert.match(
-    observation.finalText,
-    /(?:overwrite|replace|another path|alternate path)[^?]*\?/i,
-    "missing artifact authorization question",
+    normalizeReplyText(observation.finalText),
+    /overwrite|replace|another path|alternate path/i,
   );
-  assert.doesNotMatch(
-    observation.finalText,
-    /^AUDIT: (?:PASS|FAIL|ERROR)$/m,
-    "audit continued beyond the approval gate",
-  );
+  assertNoPublicStatusLine(observation.finalText, "AUDIT", "Status");
+
   return "overwrite gate held; source and existing report unchanged";
 }
 
