@@ -8,7 +8,7 @@ Load this reference immediately before emitting an approval, changed, no-change,
 
 - Include `ignored_preapproval` and `follow_up_findings` when non-empty.
 - Externally-derived gaps are visibly marked with provenance.
-- Emission checklist: before emitting, list every required heading for the chosen decision (from this file), and mark each `present` or `absent`. An absent required heading means the message is repaired before emission — never emitted with the gap. End the message with `sections present` showing the completed checklist. This deterministic check replaces free-form self-attestation; no later agent validates the final message, so the checklist is the emission gate.
+- Emission checklist: privately verify every required heading for the chosen decision and repair omissions before emitting. Under `Sections Present`, confirm coverage in one prose sentence; do not emit `Heading: present` or `Heading: absent` checklist lines.
 - Record diagram-validation method and helper exit code under `Validation Evidence` when changed, `Reason` for no change, `Blocking Reason` when blocked, or `Known Context` on error.
 
 ## Approval Required
