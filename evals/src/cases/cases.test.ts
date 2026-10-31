@@ -335,7 +335,7 @@ describe("quiet state", () => {
     {
       label: "an output containing RECENT_STATE: ERROR",
       finalText: `${QUIET_STATE_SNAPSHOT}\n\nRECENT_STATE: ERROR`,
-      expectedError: /quiet state escalated/,
+      expectedError: /public status line/,
     },
     {
       label: "an invented long-form section",
