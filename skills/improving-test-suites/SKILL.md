@@ -1,13 +1,13 @@
 ---
 name: "improving-test-suites"
-description: "Improve existing test suites into minimal, high-signal behavior-focused harnesses with approval-before-mutation, conformance checks, guarded validation, bounded repair, and auditable handoff statuses. Use when asked to improve, trim, rewrite, delete, review, or harden tests around public contracts, business logic, schemas, security behavior, failures, edge cases, readability, or maintainability."
+description: "Improve existing test suites into minimal, high-signal behavior-focused harnesses with approval-before-mutation, conformance checks, guarded validation, bounded repair, and auditable handoffs. Use when asked to improve, trim, rewrite, delete, review, or harden tests around public contracts, business logic, schemas, security behavior, failures, edge cases, readability, or maintainability."
 ---
 
 # Improving Test Suites
 
 Portable orchestrator that turns a named test suite into the smallest useful behavior-focused harness. Tests are executable contracts: a test earns its place when it would fail for a real break in public behavior, validation, security, meaningful failure handling, or a production-relevant edge case.
 
-The orchestrator serves confidence and safety, not test count. It delegates raw work to subagents, keeps compact reports, gates destructive changes, verifies approved behavior coverage survived, and returns exactly one handoff status.
+The orchestrator serves confidence and safety, not test count. It delegates raw work to subagents, keeps compact reports, gates destructive changes, verifies approved behavior coverage survived, and selects one internal terminal decision and explains the outcome to the user in prose, without a machine-readable status line.
 
 Portable target: OpenCode and Claude Code. Plain Markdown links and minimal frontmatter only. If the runtime cannot spawn subagents, execute each named definition inline as a strictly scoped pass, then retain only its report.
 
