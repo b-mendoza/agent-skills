@@ -9,10 +9,13 @@ import {
   assertFileExists,
   assertFileMatches,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
   fixtureRelativePath,
+  normalizeReplyText,
+  replyAsksFor,
   seedFixtureRoot,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
@@ -146,6 +149,7 @@ function invokesNodeTests(call: Observation["toolCalls"][number]): boolean {
 }
 
 function checkPlan(observation: Observation): string {
+  assertNoPublicStatusLine(observation.finalText, "Status", "REFACTOR");
   checkPositiveRouting(observation, SKILL);
   const files = observation.repoFiles;
   assert.ok(files !== undefined, "missing file snapshots");
@@ -278,9 +282,21 @@ export const cases = [
     check: (observation) => {
       checkPositiveRouting(observation, SKILL);
       assertNoMutation(observation);
-      assert.match(observation.finalText, /NEEDS_CLARIFICATION/);
-      assert.match(observation.finalText, /\?/);
-      return "NEEDS_CLARIFICATION; no mutation";
+      assertNoPublicStatusLine(
+        observation.finalText,
+        "Status",
+        "NEEDS_CLARIFICATION",
+        "REFACTOR",
+      );
+      assert.doesNotMatch(
+        normalizeReplyText(observation.finalText),
+        /^NEEDS_CLARIFICATION\b/m,
+      );
+      assert.ok(
+        replyAsksFor(observation.finalText, /target|file|path|code/i),
+        "missing target request",
+      );
+      return "target requested; no mutation";
     },
     judge: async (observation) =>
       judgeLive({

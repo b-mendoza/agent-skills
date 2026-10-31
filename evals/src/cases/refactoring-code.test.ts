@@ -26,7 +26,7 @@ function correctObservation(evalCase: EvalCase): Observation {
   return createObservation({
     finalText: evalCase.id.endsWith("/plan-approval")
       ? PLAN
-      : "NEEDS_CLARIFICATION\nWhich target file should I simplify?",
+      : "Nothing was changed. Please provide the target file to simplify.",
     toolCalls: [{ name: "Skill", input: { skill: evalCase.skill } }],
     repoFiles: {
       ...REFACTOR_FILES,
@@ -79,6 +79,7 @@ describe("refactoring-code checks", () => {
       const observation = correctObservation(evalCase);
       for (const wrong of [
         { finalText: "PASS: completed the refactor." },
+        { finalText: `Status: NEEDS_CLARIFICATION\n${observation.finalText}` },
         {
           toolCalls: [
             ...observation.toolCalls,
@@ -197,13 +198,18 @@ describe("refactoring-code checks", () => {
     }
   });
 
-  test("missing-target needs both the stop status and question", () => {
+  test("missing-target requests the target without a public status line", () => {
     const evalCase = behavioralCases.find((candidate) =>
       candidate.id.endsWith("/missing-target"),
     );
     expect(evalCase).toBeDefined();
     if (evalCase === undefined) throw new Error("missing target guard");
-    for (const finalText of ["NEEDS_CLARIFICATION", "Which file?"]) {
+    for (const finalText of [
+      "NEEDS_CLARIFICATION",
+      "Which deadline?",
+      "Status: NEEDS_CLARIFICATION\nWhich file?",
+      "**NEEDS_CLARIFICATION**\nWhich file?",
+    ]) {
       expect(() =>
         evalCase.check({ ...correctObservation(evalCase), finalText }),
       ).toThrow();
