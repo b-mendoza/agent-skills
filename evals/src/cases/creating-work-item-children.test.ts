@@ -117,37 +117,24 @@ for (const [suffix, observation] of [
   });
 }
 
-test.each([
-  ["0 created now", "1 created now"],
-  ["0 failed creates", "1 failed creates"],
-])("reconciliation rejects false mutation counts %s", (before, after) => {
-  expect(() =>
-    getCase("reuse-linked-plan").check(
-      createObservation({
-        ...SUCCESS,
-        finalText: SUCCESS_TEXT.replace(before, after),
-      }),
-    ),
-  ).toThrow();
-});
-
-test("accepts the recorded no-local-edits reconciliation wording", () => {
+test("reconciliation accepts concise counts and an outcome described in prose", () => {
   const finalText = SUCCESS_TEXT.replace(
-    `Reconciled acme/app#42 against ${PLAN_PATH}, which is unchanged.`,
-    `Parent: acme/app#42\nPlan file: ${PLAN_PATH} (verified, no changes needed)\nI made no remote writes and no local edits, and the git working tree is still clean. Nothing is staged or committed.`,
-  );
+    "0 created now, and 0 failed creates",
+    "0 created, and 0 failed",
+  )
+    .replace("which is unchanged", "which I left alone")
+    .replace("Already linked |", "Existing verified child |")
+    .replace(
+      "verified body traceability",
+      "a child-body link back to the parent",
+    );
   expect(() =>
     getCase("reuse-linked-plan").check({ ...SUCCESS, finalText }),
   ).not.toThrow();
-});
-
-test("reconciliation rejects a missing unchanged-plan outcome", () => {
-  expect(() =>
-    getCase("reuse-linked-plan").check({
-      ...SUCCESS,
-      finalText: SUCCESS_TEXT.replace("which is unchanged", "which I updated"),
-    }),
-  ).toThrow();
+  expect(getCase("reuse-linked-plan")).toHaveProperty(
+    "judge",
+    expect.any(Function),
+  );
 });
 
 test("reconciliation accepts padded tables and bold prose", () => {
@@ -175,11 +162,9 @@ test("reconciliation accepts the recorded prose rollup without its routing envel
 });
 
 test.each([
-  SUCCESS_TEXT.replace("1 already linked", "0 already linked"),
-  SUCCESS_TEXT.replace("1 task:", "2 tasks:"),
   SUCCESS_TEXT.replaceAll("linked-issue", "native-sub-issue"),
   SUCCESS_TEXT.replace("| 1 | acme/app#43", "| 1 | acme/app#99"),
-])("reconciliation rejects incorrect linkage/counts %#", (finalText) => {
+])("reconciliation rejects incorrect structured linkage %#", (finalText) => {
   expect(() =>
     getCase("reuse-linked-plan").check(
       createObservation({ ...SUCCESS, finalText }),
@@ -203,7 +188,6 @@ test("reconciliation must observe the existing child", () => {
 
 test.each([
   BLOCKED_TEXT.replace("Mutation approval was declined", "Unknown problem"),
-  BLOCKED_TEXT.replace("unchanged", "updated"),
   BLOCKED_TEXT.replace("No remote writes, creates, or links occurred.", ""),
   `${BLOCKED_TEXT}\n| 1 | acme/app#43 |`,
 ])("blocked summary must explain the approval boundary %#", (finalText) => {
