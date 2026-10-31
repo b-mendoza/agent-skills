@@ -48,7 +48,7 @@ stateDiagram-v2
 
   GatePostPreconditions --> TerminalReadyToPost: preconditions fail and comment ready
   GatePostPreconditions --> TerminalDraft: preconditions fail and comment draft
-  GatePostPreconditions --> PreviewGate: all six posting preconditions true
+  GatePostPreconditions --> PreviewGate: posting preconditions 1 through 4 true
 
   PreviewGate --> TerminalDraft: preview declined
   PreviewGate --> TerminalReadyToPost: preview unattended
@@ -73,7 +73,7 @@ stateDiagram-v2
 
 ## Invariants
 
-- Every terminal output includes `Mode`, `Status`, `Comment`, `Deferred actions`, and `Run notes`.
+- Every terminal reply explains the outcome and deferred actions in prose, includes the exact available comment under `Comment:`, and provides `Run notes:`. Public mode and status routing lines are omitted.
 - The reviewer is dispatched once, plus at most one re-dispatch for a named malformed return.
 - No path posts without explicit posting intent, confirmed write tooling, `REVIEW: PASS`, `POST_ALLOWED: yes`, preview or quoted pre-approval, and a clean idempotency check.
-- `Status` is the reviewer `REVIEW_STATUS` verbatim after dispatch; `Not reviewed` is used only before dispatch.
+- The comment's `Refinement status:` verdict preserves the reviewer `REVIEW_STATUS` verbatim after dispatch. Before dispatch, explain that no review occurred and omit the comment.
