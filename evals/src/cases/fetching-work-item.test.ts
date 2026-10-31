@@ -58,7 +58,7 @@ const SUCCESS = createObservation({
 });
 const FAILURE = createObservation({
   finalText:
-    "FETCH: FAIL\nValidation: NOT_RUN\nFailure category: NOT_FOUND\nFile written: None\nIssue: acme/app#42: Unknown\nState: Unknown\nComments: N/A\nChild issues: N/A\nLinked issues: N/A\nAttachments: N/A\nWarnings: None\nReason: GitHub issue not found (404)",
+    "GitHub issue acme/app#42 was not found (404). No snapshot was written and the tracker was not changed. Please check the issue URL and access.",
   repoFiles: { [SNAPSHOT]: null, [GH_LOG]: READ_LOG },
 });
 
@@ -200,17 +200,27 @@ describe("snapshot checks", () => {
   );
 });
 
-test("404 requires the failure envelope and absence of an artifact", () => {
+test("accepts the recorded 404 nothing-written disclosure without its routing envelope", () => {
+  const finalText =
+    "The fetch failed: GitHub returned 404 for the issue, so nothing was written to docs/. Nothing on the platform was modified. To retry, check that acme/app is the right repository and issue number.";
+  expect(() =>
+    getCase("not-found").check({ ...FAILURE, finalText }),
+  ).not.toThrow();
+});
+
+test("404 requires the missing-issue outcome and absence of an artifact", () => {
   const evalCase = getCase("not-found");
   expect(() => evalCase.check(FAILURE)).not.toThrow();
   for (const finalText of [
     "",
-    FAILURE.finalText.replace("NOT_FOUND", "AUTH"),
-    FAILURE.finalText.replace("NOT_RUN", "PASS"),
+    "Authentication is missing. No snapshot was written. Please log in.",
+    "GitHub returned an unknown error. No snapshot was written.",
+    "GitHub returned 404. A snapshot was written to docs/.",
     FAILURE.finalText.replace(
-      "Reason: GitHub issue not found (404)",
-      "Reason: Unknown",
+      "No snapshot was written",
+      "Snapshot was written",
     ),
+    `${FAILURE.finalText}\nFETCH: FAIL`,
   ]) {
     expect(() =>
       evalCase.check(createObservation({ ...FAILURE, finalText })),
@@ -231,6 +241,15 @@ test("404 requires the failure envelope and absence of an artifact", () => {
         toolCalls: [{ name: "Edit", input: { file_path: "a.txt" } }],
       }),
     ),
+  ).toThrow();
+});
+
+test("snapshot success rejects a leaked public fetch status", () => {
+  expect(() =>
+    getCase("github-snapshot").check({
+      ...SUCCESS,
+      finalText: `${SUCCESS.finalText}\n**FETCH:** PASS`,
+    }),
   ).toThrow();
 });
 
