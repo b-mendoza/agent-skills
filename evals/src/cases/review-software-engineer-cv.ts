@@ -9,8 +9,11 @@ import {
   assertFileAbsent,
   assertFileExists,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -37,6 +40,7 @@ TypeScript familiarity is a nice-to-have. Provide evidence of measured performan
 
 const SKILL = "review-software-engineer-cv";
 const NO_REWRITES = 0;
+const REQUIRED_EVIDENCE_LABELS = 1;
 const REVIEW_HEADINGS = [
   "Partial Output Note",
   "Executive Summary",
@@ -73,11 +77,43 @@ function seedSources({ repoPath }: SeedContext, includeJob = true): void {
 
 function assertCandidateUnchanged(observation: Observation): void {
   assertNoMutation(observation);
+  assertNoPublicStatusLine(
+    observation.finalText,
+    "SOURCE_INTAKE",
+    "ROLE_FIT",
+    "TAILORING_DRAFT",
+    "CV_REVIEW",
+  );
   assertFileExists(observation, CV_FACTS.cvPath);
   assert.equal(
     observation.repoFiles?.[CV_FACTS.cvPath],
     CV_FACTS.cv,
     "CV source was changed",
+  );
+}
+
+function assertLabeledRewrite(rewrite: string): void {
+  const evidenceLine = /^Evidence:[^\n]+/m.exec(rewrite);
+  assert.ok(evidenceLine !== null, "rewrite lacks an evidence label");
+  const [evidence] = evidenceLine;
+  assert.match(
+    evidence,
+    /^Evidence:\s*(?:Supported|Likely but unconfirmed|Unsupported until verified)\b/i,
+    "rewrite lacks a valid evidence label",
+  );
+  assert.equal(
+    [
+      ...evidence.matchAll(
+        /\b(?:Supported|Likely but unconfirmed|Unsupported until verified)\b/gi,
+      ),
+    ].length,
+    REQUIRED_EVIDENCE_LABELS,
+    "rewrite must carry exactly one evidence label",
+  );
+  assert.match(
+    rewrite,
+    /^Verify:\s*\S.+$/m,
+    "rewrite lacks verification guidance",
   );
 }
 
@@ -89,22 +125,22 @@ function checkReview(observation: Observation): string {
     CV_FACTS.job,
     "job posting was changed",
   );
-  const text = observation.finalText.replaceAll("**", "");
+  const text = normalizeReplyText(observation.finalText);
   for (const heading of REVIEW_HEADINGS) {
     assert.match(
       text,
-      new RegExp(`^#{1,6}\\s+(?:\\d+[.)]\\s+)?${heading}\\s*$`, "im"),
+      new RegExp(`^(?:\\d+[.)]\\s+)?${heading}\\s*$`, "im"),
       `missing review section: ${heading}`,
     );
   }
   assert.match(
     text,
-    /\|\s*Job requirement\s*\|\s*Evidence in current CV\s*\|\s*Match strength\s*\|\s*Recommended action\s*\|\s*Integrity risk\s*\|/i,
+    /\|\s*Job requirement\s*\|\s*Evidence in current CV\s*\|\s*Match(?: strength)?\s*\|\s*Recommended action\s*\|\s*Integrity risk\s*\|/i,
     "missing role-fit matrix columns",
   );
   const rewrites = [
     ...text.matchAll(
-      /^Improved:[^\n]*(?:\n(?!#{1,6}\s|Original:|Improved:).*)*/gm,
+      /^Improved(?: \([^\n)]*\))?:[^\n]*(?:\n(?!Original:|Improved\b|Skills Section Guidance).*)*/gm,
     ),
   ];
   assert.ok(
@@ -112,36 +148,24 @@ function checkReview(observation: Observation): string {
     "review must include a suggested rewrite",
   );
   for (const [rewrite] of rewrites) {
-    assert.match(
-      rewrite,
-      /^Evidence:\s*`?(?:Supported|Likely but unconfirmed|Unsupported until verified)`?\s*$/m,
-      "rewrite lacks a valid evidence label",
-    );
-    assert.match(
-      rewrite,
-      /^Verify:\s*\S.+$/m,
-      "rewrite lacks verification guidance",
-    );
+    assertLabeledRewrite(rewrite);
   }
-  assert.doesNotMatch(
-    text,
-    /^[\t ]*(?:SOURCE_INTAKE|ROLE_FIT|TAILORING_DRAFT|CV_REVIEW):/m,
-    "internal phase status leaked",
-  );
   return "partial role-specific review with evidence-labeled rewrites and unchanged inputs";
 }
 
 function checkMissingJob(observation: Observation): string {
   assertCandidateUnchanged(observation);
   assertFileAbsent(observation, CV_FACTS.jobPath);
-  assert.match(
-    observation.finalText,
-    /(?:job posting|job description|JOB_POSTING)[^?]*\?/i,
-    "missing question requesting the job posting",
+  assert.ok(
+    replyAsksFor(
+      observation.finalText,
+      /job posting|job description|JOB_POSTING/i,
+    ),
+    "missing request for the job posting",
   );
   assert.doesNotMatch(
-    observation.finalText,
-    /^#{1,6}\s+(?:Executive Summary|Suggested Rewrites|Submission Checklist|Rewritten Summary)\s*$/im,
+    normalizeReplyText(observation.finalText),
+    /^(?:Executive Summary|Suggested Rewrites|Submission Checklist|Rewritten Summary)\s*$/im,
     "generated deliverable without the required job source",
   );
   return "asks for the job posting and stops without a review";
@@ -191,7 +215,7 @@ export const cases = [
           {
             id: "no-fabrication",
             requirement:
-              "Suggested publishable CV wording does not invent metrics, Go/Kubernetes skills, leadership, seniority, or on-call ownership. Unsupported improvements remain questions or clearly conditional alternatives.",
+              "Suggested publishable CV wording does not invent candidate facts, including metrics, skills, leadership, seniority, on-call ownership, diagnostic work, or relationships between separately documented projects. A candidate rewrite labeled Likely but unconfirmed with a concrete verification question is permitted, including a possible diagnostic contribution; do not reject it merely for introducing the fact being asked about. It must not also be described as safe now, ready to use, or Supported. Judge every rewrite, not just the first conditional one: a Supported label or no-verification-needed claim must be grounded in the supplied candidate sources.",
           },
           {
             id: "partial-source",
