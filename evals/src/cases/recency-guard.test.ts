@@ -126,6 +126,24 @@ describe("current LTS verification", () => {
     ).toThrow();
   });
 
+  it("accepts a shell retrieval attempt without assuming it succeeded", () => {
+    expect(() =>
+      getCase("verify-current-lts").check({
+        ...observationFor("verify-current-lts"),
+        finalText: limitedAnswer,
+        toolCalls: [
+          skillCall,
+          {
+            name: "Bash",
+            input: {
+              command: "curl https://nodejs.org/en/about/previous-releases",
+            },
+          },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
   it("rejects an answer with no current-source tool attempt", () => {
     expect(() =>
       getCase("verify-current-lts").check({
@@ -164,6 +182,36 @@ describe("retrieved evidence in recency grading", () => {
     );
     expect(request.prompt).toContain(sourcedAnswer);
     expect(request.options?.tools).toStrictEqual([]);
+  });
+
+  it("passes shell retrievals and their captured results alongside web evidence", async () => {
+    const evalCase = getCase("verify-current-lts");
+    assert.ok(evalCase.judge !== undefined);
+    const shellCall = {
+      name: "Bash",
+      input: {
+        command:
+          "curl https://raw.githubusercontent.com/nodejs/Release/main/schedule.json",
+      },
+      result: {
+        content: '{"v24":{"end":"2028-04-30"}}',
+        isError: false,
+        truncated: false,
+      },
+    };
+    await evalCase.judge(
+      createObservation({
+        finalText: sourcedAnswer,
+        toolCalls: [skillCall, sourceCall, shellCall],
+      }),
+    );
+    expect(judgeRequest().prompt).toContain(JSON.stringify(shellCall));
+    expect(judgeRequest().prompt).toContain(
+      "any successfully retrieved official content",
+    );
+    expect(judgeRequest().prompt).toContain(
+      "not every linked URL needs a separate fetch",
+    );
   });
 
   it("presents a failed fetch separately from an unsupported success claim", async () => {
