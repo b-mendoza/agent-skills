@@ -333,10 +333,6 @@ export const cases = [
       const reply = normalizeReplyText(observation.finalText);
       assert.match(reply, /preflight/i);
       assert.match(reply, /Acceptance Criteria/);
-      assert.match(
-        reply,
-        /(?:no (?:plan )?artifacts? (?:were )?written|(?:plan|file) (?:was )?not written)/i,
-      );
       assert.ok(
         observation.toolCalls.some(
           (call) =>
@@ -350,5 +346,17 @@ export const cases = [
       for (const path of OUTPUT_PATHS) assertFileAbsent(observation, path);
       return "preflight failure; canonical missing heading identified; no plans written";
     },
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts: `The snapshot at ${SOURCE_PATH} lacks the canonical Acceptance Criteria heading. Planning must stop at preflight, without repairing the snapshot or writing any of ${OUTPUT_PATHS.join(", ")}.`,
+        rubric: [
+          {
+            id: "preflight-handoff",
+            requirement:
+              "The reply explains that preflight stopped planning because the canonical Acceptance Criteria heading is missing, clearly states that no planning artifacts were written, and gives a recovery action without claiming the snapshot was repaired.",
+          },
+        ],
+      }),
   },
 ] as const satisfies readonly EvalCase[];
