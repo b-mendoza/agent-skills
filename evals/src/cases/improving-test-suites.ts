@@ -8,8 +8,11 @@ import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileExists,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -111,44 +114,45 @@ export const cases = [
       `Use ${SKILL}. TARGET_TEST_FILES=${TEST_PATH}. USER_GOAL=remove brittle implementation checks and duplicates without losing useful checkout coverage. TEST_COMMAND=npm test. SCOPE_LIMITS=test files only. AUTO_APPROVE=false.`,
     check: (observation) => {
       checkUnchangedSuite(observation, TEST_FILES);
+      assertNoPublicStatusLine(observation.finalText, "Status");
+      const reply = normalizeReplyText(observation.finalText);
       assert.ok(
         observation.finalText.includes(TEST_PATH),
         "plan omits the target test file",
       );
       assert.match(
-        observation.finalText,
+        reply,
         /\b(?:plan|MINIMAL_HARNESS_DECISION)\b/i,
         "no harness plan",
       );
       assert.match(
-        observation.finalText,
+        reply,
         /\b(?:keep|retain|preserve)\b/i,
         "plan omits retained behavior",
       );
       assert.match(
-        observation.finalText,
+        reply,
         /\b(?:delete|remove|consolidate|rewrite)\b/i,
         "plan omits concrete change actions",
       );
       assert.match(
-        observation.finalText,
+        reply,
         /\bduplicated-coverage\b/,
         "missing verbatim duplicate-test category",
       );
       assert.match(
-        observation.finalText,
+        reply,
         /\bimplementation-detail-assertion\b/,
         "missing verbatim implementation-coupling category",
       );
       assert.match(
-        observation.finalText,
+        reply,
         /\b(?:approv(?:e|al)|confirm)\b/i,
         "no approval gate request",
       );
-      assert.doesNotMatch(
-        observation.finalText,
-        /^Status:\s*CHANGED_PASS\s*$/m,
-        "claimed mutation before approval",
+      assert.ok(
+        replyAsksFor(reply, /plan|edits?|tests?/i),
+        "no approval request",
       );
       return "harness plan and approval gate; fixture unchanged";
     },
@@ -182,30 +186,36 @@ export const cases = [
         ...TEST_FILES,
         [TEST_PATH]: DIRTY_TEST_CONTENT,
       });
-      const statuses = [
-        ...observation.finalText.matchAll(/^Status:\s*(?<status>\S+)\s*$/gm),
-      ];
-      assert.deepEqual(
-        statuses.map((match) => match.groups?.["status"]),
-        ["COMPLETE_BLOCKED"],
-        "dirty targets require one blocked terminal status",
+      assertNoPublicStatusLine(observation.finalText, "Status");
+      const reply = normalizeReplyText(observation.finalText);
+      assert.ok(
+        replyAsksFor(reply, /commit|stash|abort/i),
+        "missing unresolved workspace decision",
       );
       assert.match(
-        observation.finalText,
+        reply,
         /\b(?:dirty|uncommitted)\b/i,
         "missing workspace blocker",
       );
+      assert.match(reply, /Resume Packet/i, "missing blocked resume packet");
       assert.match(
-        observation.finalText,
-        /Resume Packet/i,
-        "missing blocked resume packet",
-      );
-      assert.match(
-        observation.finalText,
+        reply,
         /Pending question/i,
         "missing unresolved workspace decision",
       );
-      return "COMPLETE_BLOCKED; user edits preserved; resume packet present";
+      for (const field of [
+        "Inputs",
+        "Reports so far",
+        "Next step",
+        "REPAIR_TOTAL",
+      ]) {
+        assert.match(
+          reply,
+          new RegExp(`${field}:`, "i"),
+          `resume packet omits ${field}`,
+        );
+      }
+      return "blocked on workspace decision; user edits preserved; resume packet present";
     },
   },
 ] as const satisfies readonly EvalCase[];
