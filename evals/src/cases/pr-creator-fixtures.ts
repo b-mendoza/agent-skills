@@ -183,18 +183,20 @@ export function seedGithubFixture(
   });
   const remote = join(repoPath, ".git", "fixture-origin.git");
   git(repoPath, "clone", "--bare", "--quiet", repoPath, remote);
+  // Preserve GitHub identity in URL inspection while all SSH transport stays local.
   git(
     repoPath,
     "config",
-    `url.${remote}.insteadOf`,
-    `https://github.com/${GITHUB_FACTS.repository}.git`,
+    "core.sshCommand",
+    `sh -c 'exec git-upload-pack "$1"' fixture-ssh ${JSON.stringify(remote)}`,
   );
+  git(repoPath, "config", "ssh.variant", "ssh");
   git(
     repoPath,
     "remote",
     "add",
     "origin",
-    `https://github.com/${GITHUB_FACTS.repository}.git`,
+    `git@github.com:${GITHUB_FACTS.repository}.git`,
   );
   git(repoPath, "fetch", "-q", "origin");
   git(
