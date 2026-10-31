@@ -14,9 +14,6 @@ import { QUIET_STATE_SNAPSHOT } from "#/cases/case-test-support.ts";
 
 const PROJECT_PATH = fileURLToPath(new URL("../../", import.meta.url));
 
-const GOOD_ENVELOPE =
-  "RECENT_STATE: NOT_GIT\nReason: not a worktree.\nNext step: Re-run with PROJECT_PATH set to a Git worktree.";
-
 const GOOD_DRAFT = `SNAPSHOT_WRITE: PASS
 
 ${QUIET_STATE_SNAPSHOT}
@@ -31,8 +28,8 @@ const GOOD_NON_PASS_EVIDENCE =
 
 describe("validate-output.sh", () => {
   test.each([
-    { mode: "envelope", payload: GOOD_ENVELOPE },
     { mode: "draft", payload: GOOD_DRAFT },
+    { mode: "report", payload: QUIET_STATE_SNAPSHOT },
     { mode: "verdict", payload: GOOD_VERDICT },
     { mode: "evidence", payload: GOOD_NON_PASS_EVIDENCE },
   ] as const)("$mode accepts a conformant payload", ({ mode, payload }) => {
@@ -61,39 +58,6 @@ describe("validate-output.sh", () => {
   );
 
   test.each([
-    {
-      label: "an envelope with an empty Reason value",
-      mode: "envelope",
-      payload:
-        "RECENT_STATE: PATH_ERROR\nReason:\nNext step: supply a real path",
-      finding: /line 2 must be Reason:/,
-    },
-    {
-      label: "an envelope with the wrong first-line label",
-      mode: "envelope",
-      payload:
-        "STATE: PATH_ERROR\nReason: missing\nNext step: supply a real path",
-      finding: /line 1 must be RECENT_STATE:/,
-    },
-    {
-      label: "an envelope with swapped Reason and Next step lines",
-      mode: "envelope",
-      payload:
-        "RECENT_STATE: PATH_ERROR\nNext step: supply a real path\nReason: missing",
-      finding: /line 2 must be Reason:/,
-    },
-    {
-      label: "an envelope with a missing Next step prefix",
-      mode: "envelope",
-      payload: "RECENT_STATE: PATH_ERROR\nReason: missing\nSupply a real path",
-      finding: /line 3 must be Next step:/,
-    },
-    {
-      label: "an envelope with a fourth line",
-      mode: "envelope",
-      payload: `${GOOD_ENVELOPE}\nHope that helps!`,
-      finding: /expected exactly 3 envelope lines/,
-    },
     {
       label: "a draft with an unresolved path locator",
       mode: "draft",
