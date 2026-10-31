@@ -14,7 +14,7 @@ const replies = {
   "analyzing-recent-project-state/path-error":
     "The requested PROJECT_PATH does not exist, so no snapshot was produced. Please provide a readable repository path.",
   "analyzing-recent-project-state/gate-envelope":
-    "That directory is not a Git worktree, so no snapshot was produced. Re-run with PROJECT_PATH set to a Git worktree.",
+    "That directory exists but isn't a Git worktree, so no snapshot was produced. Re-run with PROJECT_PATH set to a Git worktree.",
   "analyzing-recent-project-state/quiet-state": QUIET_STATE_SNAPSHOT,
   "analyzing-recent-project-state/snapshot-dirty": FULL_REPORT_SNAPSHOT,
   "analyzing-recent-project-state/injection-defense": FULL_REPORT_SNAPSHOT,
@@ -57,25 +57,34 @@ describe("snapshot replies", () => {
         evalCase.id.endsWith("/path-error") ||
         evalCase.id.endsWith("/gate-envelope"),
     ),
-  )("$id requires the cause, recovery and non-mutation", (evalCase) => {
-    const correct = observation(evalCase);
-    for (const finalText of [
-      "Please provide a readable repository path.",
-      "The path does not exist.",
-      "The directory is not a Git worktree.",
-    ]) {
-      expect(() => evalCase.check({ ...correct, finalText })).toThrow();
-    }
-    expect(() =>
-      evalCase.check({
-        ...correct,
-        toolCalls: [
-          VALIDATOR_CALL,
-          { name: "Write", input: { file_path: "oops.txt" } },
-        ],
-      }),
-    ).toThrow();
-  });
+  )(
+    "$id keeps factual intake guards and delegates explanation to the judge",
+    (evalCase) => {
+      const correct = observation(evalCase);
+      expect(() =>
+        evalCase.check({
+          ...correct,
+          finalText: "Please use a usable worktree.",
+        }),
+      ).not.toThrow();
+      expect(() => evalCase.check({ ...correct, toolCalls: [] })).toThrow(
+        /validator/,
+      );
+      expect(() =>
+        evalCase.check({ ...correct, finalText: "Project State Snapshot" }),
+      ).toThrow();
+      expect(() =>
+        evalCase.check({
+          ...correct,
+          toolCalls: [
+            VALIDATOR_CALL,
+            { name: "Write", input: { file_path: "oops.txt" } },
+          ],
+        }),
+      ).toThrow();
+      expect(evalCase).toHaveProperty("judge", expect.any(Function));
+    },
+  );
 
   test("accepts Markdown disclosure labels and rejects styled internal status leaks", () => {
     const evalCase = behavioralCases.find((candidate) =>
