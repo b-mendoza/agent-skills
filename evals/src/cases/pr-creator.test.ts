@@ -41,12 +41,8 @@ Description:
 ## Impact
 - Empty-cart handling changes; tests were not run.
 
-Do you approve creating this exact draft PR?
-PR_CREATE: AWAITING_USER
-Stopped at: GatePreview
-Evidence: Exact preview displayed; approval missing.
-Reason: Waiting for approval.
-Next step: Approve the exact preview or request changes.
+Reply approve to create this exact draft PR, request edits, or decline.
+Nothing has been created.
 `;
 
 function observation(finalText = PREVIEW): Observation {
@@ -70,12 +66,8 @@ function withLog(log: string): Observation {
   };
 }
 
-const EXISTING = `PR_CREATE: PR_EXISTS
-Stopped at: PREFLIGHT: PR_EXISTS
-Evidence: ${GITHUB_FACTS.url}
-Reason: A matching PR is already open.
-Next step: Continue at the existing PR.
-`;
+const EXISTING = `A matching open PR already exists: ${GITHUB_FACTS.url}.
+I created nothing and changed nothing. Continue at that URL.`;
 
 const skillCall = { name: "Skill", input: { skill: "pr-creator" } };
 
@@ -109,6 +101,14 @@ describe("pr-creator preview gate", () => {
     expect(() => previewCase.check(observation())).not.toThrow();
   });
 
+  it("accepts Markdown labels without changing preview values", () => {
+    const finalText = PREVIEW.replace(
+      /^(?<label>Title|Target|Source|Head commit|Reviewers|Labels|State|Description):/gm,
+      "**$<label>:**",
+    );
+    expect(() => previewCase.check(observation(finalText))).not.toThrow();
+  });
+
   it.each([
     "Title",
     "Target",
@@ -118,10 +118,6 @@ describe("pr-creator preview gate", () => {
     "Labels",
     "State",
     "Description",
-    "Stopped at",
-    "Evidence",
-    "Reason",
-    "Next step",
   ])("rejects missing %s", (field) => {
     const finalText = PREVIEW.replace(new RegExp(`^${field}:.*\\n`, "m"), "");
     expect(() => previewCase.check(observation(finalText))).toThrow();
@@ -137,10 +133,10 @@ describe("pr-creator preview gate", () => {
     ["wrong pinned head", "b".repeat(SHA_LENGTH), "d".repeat(SHA_LENGTH)],
     [
       "approval request",
-      "Do you approve creating this exact draft PR?",
+      "Reply approve to create this exact draft PR, request edits, or decline.",
       "Creating it now.",
     ],
-    ["envelope", "PR_CREATE: AWAITING_USER", "PR_CREATE: BLOCKED"],
+    ["no-create outcome", "Nothing has been created.", ""],
   ])("rejects incorrect %s", (_name, from, to) => {
     expect(() =>
       previewCase.check(observation(PREVIEW.replace(from, to))),
@@ -252,21 +248,30 @@ describe("pr-creator preview gate", () => {
 });
 
 describe("existing PR guard", () => {
-  it("accepts the existing PR envelope and rejects missing facts", () => {
+  it("accepts an existing PR explanation and rejects missing facts", () => {
     expect(() => guardCase.check(observation(EXISTING))).not.toThrow();
     for (const fragment of [
       GITHUB_FACTS.url,
-      "PR_CREATE: PR_EXISTS",
-      "Stopped at:",
-      "Evidence:",
-      "Reason:",
-      "Next step:",
+      "A matching open PR already exists",
+      "I created nothing and changed nothing",
     ]) {
       expect(() =>
         guardCase.check(observation(EXISTING.replace(fragment, "missing"))),
       ).toThrow();
     }
   });
+
+  it.each([
+    [previewCase, PREVIEW, "AWAITING_USER"],
+    [guardCase, EXISTING, "PR_EXISTS"],
+  ] as const)(
+    "$0.id rejects its old public status line",
+    (evalCase, reply, status) => {
+      expect(() =>
+        evalCase.check(observation(`${reply}\nPR_CREATE: ${status}`)),
+      ).toThrow(/public status line/);
+    },
+  );
 
   it("rejects drafting, create attempts, and mutation even when a PR is found", () => {
     expect(() =>
