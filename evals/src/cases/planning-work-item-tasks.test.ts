@@ -347,23 +347,33 @@ describe("invalid-snapshot", () => {
       getCase("invalid-snapshot").check(failedObservation()),
     ).not.toThrow();
   });
+  test("accepts the recorded artifact-absence wording", () => {
+    expect(() =>
+      getCase("invalid-snapshot").check({
+        ...failedObservation(),
+        finalText: `Preflight stopped: the canonical Acceptance Criteria heading is missing. Artifacts: None written. Restore the heading in ${SOURCE_PATH} and rerun.`,
+      }),
+    ).not.toThrow();
+  });
   test.each([
     [
-      "wrong gate",
+      "wrong validator gate",
       {
-        finalText: failedObservation().finalText.replace(
-          "Preflight",
-          "Stage 1",
-        ),
+        toolCalls: [
+          {
+            name: "Agent",
+            input: { prompt: "Run stage-validator with STAGE=1" },
+          },
+        ],
       },
     ],
     [
-      "missing reason",
+      "changed snapshot",
       {
-        finalText: failedObservation().finalText.replace(
-          "Acceptance Criteria",
-          "Metadata",
-        ),
+        repoFiles: {
+          ...failedObservation().repoFiles,
+          [SOURCE_PATH]: SNAPSHOT,
+        },
       },
     ],
     [
