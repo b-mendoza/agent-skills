@@ -13,8 +13,8 @@ For every phase, use the standard cycle from `./workflow-policy.md`: announce, v
 **Skill:** Named in the active playbook's Phase Skill Map row for Phase 1.
 
 1. Announce Phase 1.
-2. Invoke the downstream skill with the inputs named in the playbook's Phase Skill Map row for Phase 1.
-3. Interpret the downstream 12-line fetch summary using `./data-contracts.md`. The playbook supplies the platform-specific field labels for the identifier-bearing lines.
+2. Invoke the downstream skill with the inputs named in the playbook's Phase Skill Map row for Phase 1, including `RESULT_FORMAT=handoff`.
+3. Interpret the internal downstream 12-line fetch handoff using `./data-contracts.md`. The playbook supplies the platform-specific field labels for the identifier-bearing lines.
 4. If retrieval failed before writing an artifact, route through `./error-handling.md` instead of running postcondition validation.
 5. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=1`, `DIRECTION=postcondition`. The validator loads the playbook for the platform-specific snapshot section list.
 6. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=1`, `STATUS=complete`, and a one-line fetch summary.
@@ -28,7 +28,7 @@ For every phase, use the standard cycle from `./workflow-policy.md`: announce, v
 1. Announce Phase 2.
 2. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=2`, `DIRECTION=precondition`.
 3. Invoke the downstream skill with the inputs named in the playbook's Phase Skill Map row for Phase 2.
-4. When re-planning from Phase 3, also pass `RE_PLAN=true` and the accepted `DECISIONS` summary from critique.
+4. Retain the task-plan path, warnings, and prose outcome; do not expect a `PLANNING` status line. When re-planning from Phase 3, also pass `RE_PLAN=true` and the accepted `DECISIONS` summary from critique.
 5. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=2`, `DIRECTION=postcondition`.
 6. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=2`, `STATUS=complete`, and a one-line planning summary.
 
@@ -62,7 +62,7 @@ Write-model rules differ by platform; see the active playbook's `Phase 4 Child-I
 2. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=4`, `DIRECTION=precondition`.
 3. Confirm the playbook's required Phase 4 inputs (named in its `Inputs and Identifier` section) are available. If missing, stop and ask the user for the canonical work-item URL before platform writes.
 4. Invoke the downstream skill with the inputs named in the playbook's Phase Skill Map row for Phase 4.
-5. Retain only the structured `Created/Linked` summary the playbook's write-model section defines, plus warnings and failed-create notes.
+5. Retain the created/linked task identities, write model, warnings, and failed-create notes from the downstream prose summary and child-item table. Use the artifact/table contract for validation; do not expect a `TASK_ISSUES` or `SUBTASKS` status line.
 6. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=4`, `DIRECTION=postcondition`.
 7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=4`, `STATUS=complete`, `SUMMARY=<one-line result>`, and `TASKS=<rows from the downstream child-item table>`.
 8. Surface any warnings or failed creates before task selection.
