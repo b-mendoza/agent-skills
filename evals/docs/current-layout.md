@@ -26,16 +26,18 @@ We keep our own SDK runner because promptfoo's built-in Claude provider loses to
 
 ## Observation
 
-| Module in `src/observation/`  | Responsibility                                                                                                                                                 |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `agent-query.ts`              | Run options, message schemas and derived types, SDK query, normalization, deadlines, first-result settlement, iterator cleanup, and before/after git sampling. |
-| `repo-files.ts`               | Captures requested files and trailing-slash directory trees before cleanup; enforces directory bounds and rejects unsafe paths and entries.                    |
-| `mutation-evidence.ts`        | Git sampling and status schema, mutation evidence, and skill-invocation extraction.                                                                            |
-| `git-command-evidence.ts`     | Git command and option classification.                                                                                                                         |
-| `judge.ts`                    | Independent no-tools SDK query, prompt construction, reply parsing, citation validation, and live summary or cited-violation failure.                          |
-| `observation-test-support.ts` | Observation/message builders and scripted async streams for tests.                                                                                             |
+| Module in `src/observation/`  | Responsibility                                                                                                                                                       |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agent-query.ts`              | Run options, message schemas and derived types, streaming SDK query, normalization, deadlines, background-task settlement, input/iterator cleanup, and git sampling. |
+| `repo-files.ts`               | Captures requested files and trailing-slash directory trees before cleanup; enforces directory bounds and rejects unsafe paths and entries.                          |
+| `mutation-evidence.ts`        | Git sampling and status schema, mutation evidence, and skill-invocation extraction.                                                                                  |
+| `git-command-evidence.ts`     | Git command and option classification.                                                                                                                               |
+| `judge.ts`                    | Independent no-tools SDK query, prompt construction, reply parsing, citation validation, and live summary or cited-violation failure.                                |
+| `observation-test-support.ts` | Observation/message builders and scripted async streams for tests.                                                                                                   |
 
-`agent-query.test.ts` covers stream content, query policy, failures, cleanup, and deadlines. `agent-query-env.test.ts` covers PATH and ambient environment inheritance. File snapshots and judging have their own suites; `mutation-evidence.test.ts` covers git sampling and mutation detection.
+`observeClaude` sends one user message through an async input stream and keeps input open while it reads SDK output. It replaces background-task membership with each `system/background_tasks_changed` snapshot, initially empty for the fresh CLI process. Task-start/update/notification edges do not change that membership because their ordering relative to snapshots is unspecified. A result with live background tasks is provisional; grading waits for a later result with an empty live set, after the CLI handles task completion notifications. An empty snapshot alone never settles the run. The selected result supplies the final text, error/subtype, and cumulative session cost; result costs are not summed. Input closes on every exit, followed by bounded iterator cleanup. The original wall-clock abort and three-second grace period bound background waits too. A stream that ends without an eligible final result fails closed rather than grading an earlier provisional reply.
+
+`agent-query.test.ts` covers stream content, query policy, failures, cleanup, and deadlines. `agent-query-background.test.ts` covers open input, background-task snapshots, follow-up results and tool calls, cumulative costs, and background timeouts. `agent-query-env.test.ts` covers PATH and ambient environment inheritance. File snapshots and judging have their own suites; `mutation-evidence.test.ts` covers git sampling and mutation detection.
 
 ## Cases
 
