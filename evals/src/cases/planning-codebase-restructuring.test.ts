@@ -20,20 +20,17 @@ import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 const [positive, negative, plan, missing] = cases;
-const REPORT = REPORT_SECTIONS.map(
+const REPORT = `${REPORT_SECTIONS.map(
   (section) => `## ${section}\nLocal evidence or no issue found.\n`,
-).join("\n");
-const READY = `Status: READY
-Artifact: ${ARTIFACT_PATH}
+).join("\n")}
 REFERENCE_ASSESSMENT: SKIPPED
 EVIDENCE_PRECEDENCE_DECISION: not-applicable
 CONTRACT_NOTE: ARCHITECTURE_MAP | pass | checked
 CONTRACT_NOTE: DOMAIN_ANALYSIS | pass | checked
 CONTRACT_NOTE: RESTRUCTURING_PLAN | pass | checked
 PLAN_REVIEW: PASS`;
-const INPUT_REQUEST = `Status: NEEDS_INPUT
-Which scope and business goals should the plan address?
-RESUME_PACKET:
+const READY = `I saved the reviewed plan to ${ARTIFACT_PATH}. Source and tests are unchanged; implementation and test execution remain unapproved.`;
+const INPUT_REQUEST = `I stopped before inspection or report creation. Please choose the scope and business goals for the plan.
 \`\`\`yaml
 phase_reached: Preflight
 pending_question: Choose the scope and goals.
@@ -99,6 +96,15 @@ describe("routing", () => {
 describe("persisted decision report", () => {
   test("accepts the reviewed report as the only write", () => {
     expect(plan.check(readyObservation)).toContain("report persisted");
+    expect(() =>
+      plan.check({
+        ...readyObservation,
+        repoFiles: {
+          ...readyObservation.repoFiles,
+          [ARTIFACT_PATH]: `${REPORT}\nStatus: READY`,
+        },
+      }),
+    ).not.toThrow();
   });
   test.each(REPORT_SECTIONS)(
     "rejects a missing report section: %s",
@@ -124,30 +130,85 @@ describe("persisted decision report", () => {
     ).toThrow(/out-of-order/);
   });
   test.each([
-    ["wrong terminal", READY.replace("Status: READY", "Status: BLOCKED")],
-    ["multiple terminals", `${READY}\nStatus: READY`],
+    ["old status", `${READY}\nStatus: READY`],
+    ["Markdown status", `${READY}\n**Status:** READY`],
     ["artifact path", READY.replace(ARTIFACT_PATH, "elsewhere.md")],
+    ["routing envelope", `${READY}\nPLAN_REVIEW: PASS`],
+  ])("rejects wrong public %s", (_label, finalText) => {
+    expect(() => plan.check({ ...readyObservation, finalText })).toThrow();
+  });
+  test.each([
     [
       "skip marker",
-      READY.replace("REFERENCE_ASSESSMENT: SKIPPED", "reference absent"),
+      REPORT.replace("REFERENCE_ASSESSMENT: SKIPPED", "reference absent"),
     ],
-    ["precedence", READY.replace("not-applicable", "reference-authorized")],
+    ["precedence", REPORT.replace("not-applicable", "reference-authorized")],
     [
       "map contract",
-      READY.replace("CONTRACT_NOTE: ARCHITECTURE_MAP", "unvalidated map"),
+      REPORT.replace("CONTRACT_NOTE: ARCHITECTURE_MAP", "unvalidated map"),
     ],
     [
       "domain contract",
-      READY.replace("CONTRACT_NOTE: DOMAIN_ANALYSIS", "unvalidated domain"),
+      REPORT.replace("CONTRACT_NOTE: DOMAIN_ANALYSIS", "unvalidated domain"),
     ],
     [
       "plan contract",
-      READY.replace("CONTRACT_NOTE: RESTRUCTURING_PLAN", "unvalidated plan"),
+      REPORT.replace("CONTRACT_NOTE: RESTRUCTURING_PLAN", "unvalidated plan"),
     ],
-    ["review", READY.replace("PLAN_REVIEW: PASS", "PLAN_REVIEW: FAIL")],
-  ])("rejects wrong %s", (_label, finalText) => {
-    expect(() => plan.check({ ...readyObservation, finalText })).toThrow();
+    ["review", REPORT.replace("PLAN_REVIEW: PASS", "PLAN_REVIEW: FAIL")],
+  ])("rejects wrong persisted %s", (_label, report) => {
+    expect(() =>
+      plan.check({
+        ...readyObservation,
+        repoFiles: { ...readyObservation.repoFiles, [ARTIFACT_PATH]: report },
+      }),
+    ).toThrow();
   });
+  test("accepts equivalent reference and risk headings", () => {
+    expect(() =>
+      plan.check({
+        ...readyObservation,
+        repoFiles: {
+          ...readyObservation.repoFiles,
+          [ARTIFACT_PATH]: REPORT.replace(
+            "Reference assessment or limitation",
+            "Reference assessment",
+          ).replace(
+            "open questions, and security notes",
+            "open questions, security notes",
+          ),
+        },
+      }),
+    ).not.toThrow();
+  });
+  test("accepts the recorded preflight reference mention before the actual reference section", () => {
+    const report = REPORT.replace(
+      "## Preflight summary\n",
+      "## 1. Preflight summary\nReference assessment: SKIPPED (set by orchestrator).\n",
+    ).replace(
+      "open questions, and security notes",
+      "open questions, security notes",
+    );
+    expect(() =>
+      plan.check({
+        ...readyObservation,
+        repoFiles: { ...readyObservation.repoFiles, [ARTIFACT_PATH]: report },
+      }),
+    ).not.toThrow();
+  });
+
+  test("rejects report section names mentioned only in body text", () => {
+    expect(() =>
+      plan.check({
+        ...readyObservation,
+        repoFiles: {
+          ...readyObservation.repoFiles,
+          [ARTIFACT_PATH]: REPORT.replaceAll("## ", "Topics: "),
+        },
+      }),
+    ).toThrow(/section/);
+  });
+
   test("rejects a claimed report with no saved file", () => {
     expect(() =>
       plan.check({
@@ -268,8 +329,6 @@ describe("missing required inputs", () => {
     expect(missing.check(inputObservation)).toContain("NEEDS_INPUT");
   });
   test.each([
-    "Status: NEEDS_INPUT",
-    "RESUME_PACKET",
     "phase_reached:",
     "pending_question:",
     "validated_summaries:",
@@ -289,6 +348,14 @@ describe("missing required inputs", () => {
         finalText: INPUT_REQUEST.replace(field, "missing"),
       }),
     ).toThrow();
+  });
+  test.each([
+    `Status: NEEDS_INPUT\n${INPUT_REQUEST}`,
+    `**Status:** NEEDS_INPUT\n${INPUT_REQUEST}`,
+    INPUT_REQUEST.replaceAll("```", ""),
+    INPUT_REQUEST.replace(/\n```$/, ""),
+  ])("rejects public status framing or an unfenced packet", (finalText) => {
+    expect(() => missing.check({ ...inputObservation, finalText })).toThrow();
   });
   test("rejects a premature report", () => {
     expect(() =>
