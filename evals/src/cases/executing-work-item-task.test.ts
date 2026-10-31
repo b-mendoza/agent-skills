@@ -26,8 +26,6 @@ function getCase(name: string) {
 
 function finalReport(missingDecisions: boolean): string {
   return `## Final Task Report
-### Status
-${missingDecisions ? "BLOCKED" : "STOPPED_FOR_USER_INPUT"}
 ### Task
 - Work item: \`${EXECUTION_FACTS.key}\`
 - Platform: github
@@ -123,10 +121,8 @@ describe("executing-work-item-task", () => {
     (name) => {
       const observation = validObservation(name);
       for (const replacement of [
-        observation.finalText.replace(
-          /^### Status\n[^\n]+/m,
-          "### Status\nCOMPLETE",
-        ),
+        `${observation.finalText}\n### Status\nSTOPPED_FOR_USER_INPUT`,
+        `${observation.finalText}\nFINAL_TASK_REPORT: BLOCKED`,
         observation.finalText.replace("### Evidence Checked", "### Evidence"),
         observation.finalText.replace("- Task: `1`", "- Task: `2`"),
         observation.finalText.replace("acme-app-42", "other-app-9"),
@@ -168,6 +164,39 @@ describe("executing-work-item-task", () => {
     }
   });
 
+  test.each([
+    "Re-run the post-critique decision-confirmation step",
+    "Re-run the critique and decisions step",
+    "Re-run the critique/decisions step",
+  ])(
+    "missing decisions accepts equivalent recovery wording: %s",
+    (recovery) => {
+      const observation = validObservation("missing-decisions");
+      expect(() =>
+        getCase("missing-decisions").check({
+          ...observation,
+          finalText: observation.finalText.replace(
+            "Run clarifying-assumptions Phase 6 to create the missing decisions artifact.",
+            `${recovery} to produce ${DECISIONS_PATH}.`,
+          ),
+        }),
+      ).not.toThrow();
+    },
+  );
+
+  test("approval request can omit question punctuation and use Markdown", () => {
+    const observation = validObservation("approval-before-kickoff");
+    expect(() =>
+      getCase("approval-before-kickoff").check({
+        ...observation,
+        finalText: observation.finalText.replace(
+          "Work item:",
+          "**Work item:**",
+        ),
+      }),
+    ).not.toThrow();
+  });
+
   test.each(["approval-before-kickoff", "missing-decisions"])(
     "%s rejects mutations and uncaptured evidence",
     (name) => {
@@ -184,6 +213,7 @@ describe("executing-work-item-task", () => {
             { name: "Bash", input: { command: "git switch new-task" } },
           ],
         },
+        { toolCalls: [{ name: "Agent", input: { prompt: "Start kickoff" } }] },
         { repoFiles: undefined },
         {
           repoFiles: {

@@ -14,15 +14,17 @@ import {
   assertFileExists,
   assertFileMatches,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
 export const SKILL = "executing-work-item-task";
 const FINAL_HEADINGS = [
-  "Status",
   "Task",
   "Summary",
   "Evidence Checked",
@@ -80,30 +82,47 @@ const SINGLE_REPORT = 1;
 
 function checkReportShape(text: string): void {
   assert.equal(
-    text.match(/^## Final Task Report\s*$/gm)?.length,
+    text.match(/^Final Task Report\s*$/gm)?.length,
     SINGLE_REPORT,
     "expected one final task report",
   );
   for (const heading of FINAL_HEADINGS) {
-    assert.match(text, new RegExp(`^### ${heading}\\s*$`, "m"));
+    assert.match(text, new RegExp(`^${heading}\\s*$`, "m"));
   }
   for (const label of RETRY_LABELS) {
-    assert.match(text, new RegExp(`^- ${label}: 0\\s*$`, "m"));
+    assert.match(text, new RegExp(`^${label}: 0\\s*$`, "m"));
   }
 }
 
 function checkReadinessStop(
   observation: Observation,
-  expectedStatus: "BLOCKED" | "STOPPED_FOR_USER_INPUT",
   missingDecisions: boolean,
 ): string {
   assertNoMutation(observation);
   checkUnchangedFiles(observation, missingDecisions);
-  const text = observation.finalText;
+  assert.ok(
+    !observation.toolCalls.some((call) =>
+      ["Agent", "Task"].includes(call.name),
+    ),
+    "dispatched before readiness passed",
+  );
+  assertNoPublicStatusLine(
+    observation.finalText,
+    "FINAL_TASK_REPORT",
+    "Status",
+    "Readiness",
+  );
+  const text = normalizeReplyText(observation.finalText);
+  assert.doesNotMatch(
+    text,
+    /^(?:Status|COMPLETE|BLOCKED|STOPPED_FOR_USER_INPUT|ESCALATED)\s*$/m,
+    "leaked internal report status",
+  );
   checkReportShape(text);
   assert.match(
     text,
-    new RegExp(`^### Status\\s*\\n+${expectedStatus}\\s*$`, "m"),
+    /stopp|before kickoff|not (?:started|attempted)|did not (?:start|run)/i,
+    "missing readiness-stop explanation",
   );
   assert.match(text, /Work item:.*acme-app-42/);
   assert.match(text, /Platform:.*github/);
@@ -115,13 +134,16 @@ function checkReadinessStop(
     );
     assert.match(
       text,
-      /clarifying-assumptions|Phase 6/i,
+      /clarifying-assumptions|Phase 6|(?:post[- ]?)?critique[^.\n]*(?:decision|confirmation)|decision[- ](?:recording|confirmation)/i,
       "missing upstream recovery route",
     );
   } else {
-    assert.match(text, /approv|confirm/i, "missing execution approval gate");
+    assert.ok(
+      replyAsksFor(text, /approv|confirm/i),
+      "missing execution approval request",
+    );
   }
-  return `${expectedStatus}; one task report; no kickoff, artifact, or tracker mutation`;
+  return "readiness stop; one task report; no kickoff, artifact, or tracker mutation";
 }
 
 const behavioralDefaults = {
@@ -163,8 +185,7 @@ export const cases = [
       "A complete Phase 1-6 handoff without explicit execution approval stops before kickoff",
     prompt: () =>
       `Use ${SKILL}. TICKET_KEY=${EXECUTION_FACTS.key} TASK_NUMBER=1 ISSUE_URL=${EXECUTION_FACTS.issueUrl}. Check readiness for this planned task.`,
-    check: (observation) =>
-      checkReadinessStop(observation, "STOPPED_FOR_USER_INPUT", false),
+    check: (observation) => checkReadinessStop(observation, false),
     judge: async (observation) =>
       judgeLive({
         artifact: observation.finalText,
@@ -190,7 +211,7 @@ export const cases = [
       "A missing required Phase 6 decisions artifact blocks before any execution mutation",
     prompt: () =>
       `Use ${SKILL}. TICKET_KEY=${EXECUTION_FACTS.key} TASK_NUMBER=1 ISSUE_URL=${EXECUTION_FACTS.issueUrl}. I approve executing the planned task once readiness is validated.`,
-    check: (observation) => checkReadinessStop(observation, "BLOCKED", true),
+    check: (observation) => checkReadinessStop(observation, true),
     judge: async (observation) =>
       judgeLive({
         artifact: observation.finalText,
@@ -199,7 +220,7 @@ export const cases = [
           {
             id: "missing-handoff",
             requirement:
-              "The blocker identifies the absent decisions artifact, directs recovery to Phase 6 or clarifying-assumptions, and does not claim kickoff, implementation, tests, or review gates ran.",
+              "The blocker identifies the absent decisions artifact, directs recovery to Phase 6, clarifying-assumptions, or the upstream critique/decision-recording step, and does not claim kickoff, implementation, tests, or review gates ran.",
           },
         ],
       }),
