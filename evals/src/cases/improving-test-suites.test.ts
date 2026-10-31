@@ -23,9 +23,10 @@ Keep adds shipping and rejects negative amounts to preserve behavior.
 Delete the duplicate shipping example (duplicated-coverage) and rewrite the function spelling check (implementation-detail-assertion).
 Do you approve this plan before I edit any tests?`;
 const BLOCKED = `# Improving Test Suites Handoff
-Status: COMPLETE_BLOCKED
-Uncommitted target edits require a workspace decision.
+I stopped before editing because uncommitted target edits require a workspace decision.
 ## Resume Packet
+Inputs: TARGET_TEST_FILES=${TEST_PATH}, AUTO_APPROVE=true
+Reports so far: none
 Pending question: Commit, stash, or abort your uncommitted edits?
 Next step: WorkspaceRisk
 REPAIR_TOTAL: 0`;
@@ -74,6 +75,15 @@ describe("routing", () => {
 describe("approval-before-mutation", () => {
   test("accepts an actionable plan paused for approval", () => {
     expect(approval.check(cleanObservation)).toContain("approval gate");
+    expect(
+      approval.check({
+        ...cleanObservation,
+        finalText: PLAN.replace(
+          "Do you approve this plan before I edit any tests?",
+          "Please approve this plan before I edit any tests.",
+        ),
+      }),
+    ).toContain("approval gate");
   });
   test.each([
     ["target", PLAN.replace(TEST_PATH, "other.test.mjs")],
@@ -142,11 +152,13 @@ describe("approval-before-mutation", () => {
 
 describe("dirty-target guard", () => {
   test("AUTO_APPROVE stops without disturbing user edits", () => {
-    expect(dirty.check(dirtyObservation)).toContain("COMPLETE_BLOCKED");
+    expect(dirty.check(dirtyObservation)).toContain(
+      "blocked on workspace decision",
+    );
   });
   test.each([
-    ["wrong status", BLOCKED.replace("COMPLETE_BLOCKED", "CHANGED_PASS")],
-    ["duplicate terminal", `${BLOCKED}\nStatus: COMPLETE_BLOCKED`],
+    ["old status", `${BLOCKED}\nStatus: COMPLETE_BLOCKED`],
+    ["Markdown status", `${BLOCKED}\n**Status:** COMPLETE_BLOCKED`],
     [
       "missing workspace blocker",
       BLOCKED.replaceAll("Uncommitted", "Local").replaceAll(
@@ -155,6 +167,9 @@ describe("dirty-target guard", () => {
       ),
     ],
     ["missing resume", BLOCKED.replace("Resume Packet", "Summary")],
+    ["missing repair count", BLOCKED.replace("REPAIR_TOTAL", "repair count")],
+    ["missing inputs", BLOCKED.replace("Inputs:", "Setup:")],
+    ["missing reports", BLOCKED.replace("Reports so far:", "Reviews:")],
     [
       "missing question",
       BLOCKED.replace("Pending question", "Pending decision"),
