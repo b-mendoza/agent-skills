@@ -12,10 +12,13 @@ import {
   assertFileExists,
   assertFileMatches,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
   fixtureRelativePath,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -151,8 +154,14 @@ export const cases = [
         CLARIFICATION_FACTS.critiquePath,
         /\|\s*PF\d+\s*\|\s*HIGH\s*\|/,
       );
-      const text = observation.finalText;
-      assert.match(text, /^## Question Manifest - acme-app-42\s*$/m);
+      const text = normalizeReplyText(observation.finalText);
+      assertNoPublicStatusLine(
+        observation.finalText,
+        "RE_PLAN_NEEDED",
+        "BLOCKERS_PRESENT",
+        "Blocking verdict",
+      );
+      assert.match(text, /^Question Manifest - acme-app-42\s*$/m);
       assert.match(
         text,
         /Questions now: [1-9]\d* \| Deferred: \d+ \| Irrelevant: \d+/,
@@ -165,10 +174,13 @@ export const cases = [
         text,
         /\|\s*\d+\s*\|\s*PF\d+\s*\|\s*Problem framing\s*\|\s*HIGH\s*\|\s*A\s*\|\s*No\s*\|/,
       );
-      assert.match(text, /Ready to start\?/);
+      assert.ok(
+        replyAsksFor(text, /ready|start/i),
+        "missing readiness request",
+      );
       assert.doesNotMatch(
         text,
-        /### Brief \d|Accepted decisions summary:|RE_PLAN_NEEDED:/,
+        /^(?:Brief \d|Accepted decisions summary:|RE_PLAN_NEEDED:)/m,
         "revealed a Model A brief or recorded unanswered decisions",
       );
       return "critique written; hard-gate manifest preview; only critique changed";
@@ -191,18 +203,34 @@ export const cases = [
     id: `${SKILL}/critique-missing-task-number`,
     mutationPolicy: "read-only",
     intent:
-      "Critique mode without TASK_NUMBER returns the canonical input-blocked summary and writes nothing",
+      "Critique mode without TASK_NUMBER asks for the task number and writes nothing",
     prompt: () =>
       `Use ${SKILL}. TICKET_KEY=${CLARIFICATION_FACTS.key} MODE=critique.`,
     check: (observation) => {
       assertNoMutation(observation);
       checkInputsUnchanged(observation);
       assertFileAbsent(observation, CLARIFICATION_FACTS.critiquePath);
-      assert.match(
-        observation.finalText,
-        /^- Critique artifact: -\n- Files updated: -\n- RE_PLAN_NEEDED: false\n- BLOCKERS_PRESENT: true\n- Blocking verdict: INPUT: BLOCKED\n- Reason: [^\n]*TASK_NUMBER[^\n]*/m,
+      assert.ok(
+        !observation.toolCalls.some((call) =>
+          ["Agent", "Task"].includes(call.name),
+        ),
+        "dispatched before task selection",
       );
-      return "INPUT: BLOCKED; canonical flags and order; no writes";
+      assertNoPublicStatusLine(
+        observation.finalText,
+        "RE_PLAN_NEEDED",
+        "BLOCKERS_PRESENT",
+        "Blocking verdict",
+        "INPUT",
+      );
+      assert.ok(
+        replyAsksFor(
+          observation.finalText,
+          /TASK_NUMBER|task number|which task/i,
+        ),
+        "missing task-number request",
+      );
+      return "missing task number requested; no writes or critique dispatch";
     },
   },
 ] as const satisfies readonly EvalCase[];
