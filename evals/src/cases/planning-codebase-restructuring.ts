@@ -9,9 +9,12 @@ import {
   assertFileAbsent,
   assertFileExists,
   assertNoMutation,
+  assertNoPublicStatusLine,
   assertRunHappened,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -356,19 +359,14 @@ export const cases = [
           `source changed: ${path}`,
         );
       }
-      const statuses = [
-        ...observation.finalText.matchAll(/^Status:\s*(?<status>\S+)\s*$/gm),
-      ];
-      assert.deepEqual(
-        statuses.map((match) => match.groups?.["status"]),
-        ["NEEDS_INPUT"],
-        "missing required input must stop with NEEDS_INPUT",
+      assertNoPublicStatusLine(observation.finalText, "Status");
+      const reply = normalizeReplyText(observation.finalText);
+      assert.ok(
+        replyAsksFor(reply, /scope|goals?|pain points?/i),
+        "no request for missing scope or goals",
       );
-      assert.match(
-        observation.finalText,
-        /RESUME_PACKET/,
-        "missing resumable stop packet",
-      );
+      const packet = fencedResumePacket(observation.finalText);
+      assert.ok(typeof packet === "string", "missing fenced resume packet");
       for (const field of [
         "phase_reached:",
         "pending_question:",
@@ -383,13 +381,10 @@ export const cases = [
         "clone_path:",
         "dispatch_mode:",
       ]) {
-        assert.ok(
-          observation.finalText.includes(field),
-          `resume packet omits ${field}`,
-        );
+        assert.ok(packet.includes(field), `resume packet omits ${field}`);
       }
       assert.match(
-        observation.finalText,
+        reply,
         /\b(?:scope|goals?|pain points?)\b/i,
         "no question about missing inputs",
       );

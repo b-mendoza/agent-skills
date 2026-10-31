@@ -301,8 +301,6 @@ describe("missing required inputs", () => {
     expect(missing.check(inputObservation)).toContain("NEEDS_INPUT");
   });
   test.each([
-    "Status: NEEDS_INPUT",
-    "RESUME_PACKET",
     "phase_reached:",
     "pending_question:",
     "validated_summaries:",
@@ -322,6 +320,14 @@ describe("missing required inputs", () => {
         finalText: INPUT_REQUEST.replace(field, "missing"),
       }),
     ).toThrow();
+  });
+  test.each([
+    `Status: NEEDS_INPUT\n${INPUT_REQUEST}`,
+    `**Status:** NEEDS_INPUT\n${INPUT_REQUEST}`,
+    INPUT_REQUEST.replaceAll("```", ""),
+    INPUT_REQUEST.replace(/\n```$/, ""),
+  ])("rejects public status framing or an unfenced packet", (finalText) => {
+    expect(() => missing.check({ ...inputObservation, finalText })).toThrow();
   });
   test("rejects a premature report", () => {
     expect(() =>
