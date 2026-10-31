@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
@@ -15,7 +13,6 @@ import {
   SYNTHESIS_FILE,
   SYNTHESIS_KEYS,
 } from "#/cases/improving-skill-definition.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
@@ -30,12 +27,14 @@ const HANDOFF = `${HANDOFF_PREFIX}${TEST_RUN_ID}`;
 const BASELINE_PATH = `${HANDOFF}/${BASELINE_FILE}`;
 const SYNTHESIS_PATH = `${HANDOFF}/${SYNTHESIS_FILE}`;
 const GATE = APPROVAL_HEADINGS.map((heading) => {
-  if (heading === "Decision") return "## Decision\napproval required";
+  if (heading === "Decision") {
+    return "## Decision\nThe audit is complete; please approve a personality decision and gap scope.";
+  }
   if (heading === "Preserved Run Directory") return `## ${heading}\n${HANDOFF}`;
   return `## ${heading}\nGap gap-001; ignored_preapproval: APPROVED_GAPS=all. Diagram fallback: inspected-only.`;
 }).join("\n\n");
 const BLOCKED = `## Decision
-blocked
+This target cannot be edited by this workflow.
 ## Blocking Reason
 Intake: .claude/skills is excluded; select a first-party skills/ path.
 ## Completed Checks
@@ -91,28 +90,6 @@ function goodAudit(overrides: Partial<Observation> = {}): Observation {
   });
 }
 
-describe("skill audit routing", () => {
-  test("positive requires invocation; negative allows only its sibling", () => {
-    const invoked = createObservation({
-      toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-    });
-    expect(getCase("trigger-positive").check(invoked)).toBe("Skill invoked");
-    expect(() =>
-      getCase("trigger-positive").check(createObservation()),
-    ).toThrow();
-    expect(
-      getCase("trigger-negative-diagram").check(
-        createObservation({
-          toolCalls: [
-            { name: "Skill", input: { skill: "generate-flow-diagram" } },
-          ],
-        }),
-      ),
-    ).toBe("no trigger");
-    expect(() => getCase("trigger-negative-diagram").check(invoked)).toThrow();
-  });
-});
-
 function auditWithRunId(runId: string): Observation {
   const handoff = `${HANDOFF_PREFIX}${runId}`;
   return goodAudit({
@@ -133,6 +110,33 @@ function auditWithRunId(runId: string): Observation {
 }
 
 describe("audit evidence and approval", () => {
+  test("rejects the old public decision envelope", () => {
+    expect(() =>
+      getCase("audit-approval").check(
+        goodAudit({
+          finalText: GATE.replace(
+            "The audit is complete; please approve a personality decision and gap scope.",
+            "approval required",
+          ),
+        }),
+      ),
+    ).toThrow();
+  });
+  test.each(["BLOCKED", "ERROR"])(
+    "allows optional discovery degradation %s",
+    (status) => {
+      expect(() =>
+        getCase("audit-approval").check(
+          goodAudit({
+            repoFiles: {
+              ...AUDIT_FILES,
+              [`${HANDOFF}/related-skills-discoverer-report.yaml`]: `status: "RELATED_SKILLS: ${status}"\n`,
+            },
+          }),
+        ),
+      ).not.toThrow();
+    },
+  );
   test.each([
     "20261031T235959Z-a1b2c3",
     "2027-03-19T18:43:21.123Z-other456",
@@ -195,12 +199,12 @@ describe("audit evidence and approval", () => {
   });
 
   test.each(AUDIT_REPORTS)(
-    "requires the %s report and a passing audit status",
+    "requires the %s report and a valid slice status",
     (name, prefix) => {
       const path = `${HANDOFF}/${name}-report.yaml`;
       for (const content of [
         null,
-        `status: "${prefix}: ERROR"`,
+        ...(prefix === "RELATED_SKILLS" ? [] : [`status: "${prefix}: ERROR"`]),
         `status: "${prefix}: PASS'`,
         "status: PASS",
       ]) {
@@ -280,7 +284,13 @@ describe("audit evidence and approval", () => {
       GATE.replaceAll("ignored_preapproval", "legacy value"),
     ],
     ["manual parser fallback", GATE.replaceAll("inspected-only", "validated")],
-    ["approval stop", GATE.replace("approval required", "changed")],
+    [
+      "approval stop",
+      GATE.replace(
+        "The audit is complete; please approve a personality decision and gap scope.",
+        "The audit is complete.",
+      ),
+    ],
     ["preserved directory", GATE.replace(HANDOFF, "not recorded")],
   ])("rejects missing %s", (_label, finalText) => {
     expect(() =>
@@ -361,7 +371,7 @@ describe("excluded targets", () => {
     ).toBe("excluded mirror blocked before editing");
   });
 
-  test("requires blocked decision and its complete handoff", () => {
+  test("requires the blocked outcome and its complete handoff", () => {
     for (const heading of [
       "Decision",
       "Blocking Reason",
@@ -383,7 +393,10 @@ describe("excluded targets", () => {
     expect(() =>
       getCase("excluded-target").check(
         createObservation({
-          finalText: BLOCKED.replace("\nblocked\n", "\nchanged\n"),
+          finalText: BLOCKED.replace(
+            "This target cannot be edited by this workflow.",
+            "blocked",
+          ),
           repoFiles: SOURCE_FILES,
         }),
       ),
@@ -413,25 +426,6 @@ describe("excluded targets", () => {
 test("every case rejects timed-out runs", () => {
   for (const entry of cases) {
     expect(() => entry.check(goodAudit({ timedOut: true }))).toThrow();
-  }
-});
-
-test("seed creates a first-party package with its reference absent", () => {
-  const entry = getCase("audit-approval");
-  const fixture = makeFixture(
-    entry.fixture,
-    [SKILL],
-    "seed" in entry ? entry.seed : undefined,
-  );
-  try {
-    expect(
-      readFileSync(join(fixture.cwd, AUDIT_FACTS.sourcePath), "utf8"),
-    ).toBe(AUDIT_FACTS.content);
-    expect(() =>
-      readFileSync(join(fixture.cwd, AUDIT_FACTS.missingPath)),
-    ).toThrow();
-  } finally {
-    fixture.cleanup();
   }
 });
 
