@@ -24,7 +24,7 @@ Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./
 | `GateFixBudget`                       | active   | Allow editor redispatch only while `fix_cycles < 3`                                                                 |
 | `DispatchEditorFix`                   | active   | Redispatch **only** `cv-tailoring-editor` with prior draft + `REVIEW_FIXES`                                         |
 | `RouteEditorFix`                      | active   | Route fix-cycle `TAILORING_DRAFT` status                                                                            |
-| `Assemble`                            | active   | Build selected-mode user output; strip internal status headers on success paths                                     |
+| `Assemble`                            | active   | Build selected-mode user output; strip internal status headers                                     |
 | `EmitFull`                            | active   | Return full selected-mode output                                                                                    |
 | `EmitPartial`                         | active   | Return partial selected-mode output with labeled limitations                                                        |
 | `TerminalBlockedMissingSource`        | terminal | Missing/unreadable required source                                                                                  |
@@ -105,6 +105,8 @@ From any state that performed external I/O (`DispatchIntake`, `DispatchEditor`, 
 | `TerminalBlockedInsufficientEvidence` | Need smallest missing detail for the mode                 |
 | `TerminalBlockedIntegrityRisk`        | Unsafe claims, three failed fix cycles, or privacy breach |
 | `TerminalPhaseError`                  | Unexpected phase failure + recovery hint                  |
+
+Terminal names and phase statuses above are internal routing values. On blocked/error outcomes, tell the user what prevented the review and what input or recovery action is needed in prose; never print a machine-readable status line.
 
 ## Reachability and dead-state checks
 

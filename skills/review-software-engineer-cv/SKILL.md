@@ -71,7 +71,9 @@ Private candidate material stays local to the conversation and available files. 
 
 ## Execution Steps
 
-Advance the state machine in [`state-machine.md`](./state-machine.md). Compact orchestrator checklist:
+Advance the state machine in [`state-machine.md`](./state-machine.md). Source size does not waive any phase or the reviewer gate. Use subagents when dispatch is available; otherwise read and execute every subagent's instructions inline in order and disclose the reduced review independence. Assemble only after `CV_REVIEW: PASS`.
+
+Compact orchestrator checklist:
 
 1. `NormalizeMode` → `GateRequiredInputs` (ask/stop if sources missing).
 2. `DispatchIntake` → route `SOURCE_INTAKE`. On `PASS`/`PARTIAL`, open ledgers; enforce mode evidence threshold before continuing.
@@ -79,7 +81,7 @@ Advance the state machine in [`state-machine.md`](./state-machine.md). Compact o
 4. `DispatchEditor` → route `TAILORING_DRAFT`; record labeled draft.
 5. `ClaimResolve` (load `./references/cv-review-contract.md`): support, weaken, exclude, or question unsupported sensitive claims. Stop if no safe selected-mode deliverable remains.
 6. `DispatchReviewer` → route `CV_REVIEW`. On `FAIL`, if `fix_cycles < 3`, redispatch **only** `cv-tailoring-editor` with prior draft + `REVIEW_FIXES`, then return to `ClaimResolve` before review again. After three failures, stop with unresolved integrity risk. On `ERROR`, stop with recovery hint.
-7. `Assemble`: full output if limitations ledger empty; otherwise partial with labeled limitations. Omit subagent status headers unless reporting blocked/error. If a privacy breach is detected, stop as integrity risk.
+7. `Assemble`: full output if limitations ledger empty; otherwise partial with labeled limitations. Never include internal status headers in a user reply, including blocked/error outcomes. Explain a stop in prose, naming the missing source, unresolved risk, or failed phase and the smallest recovery action. If a privacy breach is detected, stop as integrity risk.
 
 ## Output Contract
 
