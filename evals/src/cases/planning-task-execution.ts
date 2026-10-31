@@ -12,9 +12,11 @@ import {
 import {
   assertFileAbsent,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
+  normalizeReplyText,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -113,9 +115,28 @@ export const INPUT_FILES = {
   "package.json": '{"type":"module","scripts":{"test":"node --test"}}\n',
 } as const;
 
+function groupedArtifactFilenames(reply: string): string[] {
+  const listing =
+    /Artifacts[^\n]*\b(?:in|under) docs\/[^\n]*\n(?<files>[\s\S]*)/i.exec(reply)
+      ?.groups?.["files"] ?? "";
+  return listing.split("\n").map((line) => line.trim());
+}
+
 function checkPlanningCompleted(observation: Observation): string {
   assertPlanningWrites(observation, OUTPUT_PATHS, INPUT_FILES);
   assertFileAbsent(observation, OTHER_TASK_PATH);
+  assertNoPublicStatusLine(
+    observation.finalText,
+    "PREP",
+    "PLAN",
+    "TEST_SPEC",
+    "REFACTORING",
+    "Completion",
+    "Completion state",
+    "Status",
+  );
+  const reply = normalizeReplyText(observation.finalText);
+  const groupedFiles = groupedArtifactFilenames(reply);
   for (const artifact of ARTIFACTS) {
     const content = capturedText(observation, artifact.path);
     const [titleLine] = content.split("\n");
@@ -128,7 +149,8 @@ function checkPlanningCompleted(observation: Observation): string {
       artifact.headings.map((heading) => `## ${heading}`),
     );
     assert.ok(
-      observation.finalText.includes(artifact.path),
+      reply.includes(artifact.path) ||
+        groupedFiles.includes(artifact.path.slice("docs/".length)),
       "handoff omitted an artifact",
     );
   }
@@ -137,16 +159,13 @@ function checkPlanningCompleted(observation: Observation): string {
     refactoring,
     /(?:Refactor before|Refactor during|No refactoring needed)/,
   );
-  assert.match(observation.finalText, /\b(?:completed?|PASS)\b/i);
+  assert.match(reply, /\b(?:completed?|ready|produced|written)\b/i);
   assert.doesNotMatch(
-    observation.finalText,
+    reply,
     /(?:not complete|incomplete|Completion(?: state)?:\s*(?:FAIL|BLOCKED|ERROR))/i,
   );
-  assert.match(
-    observation.finalText,
-    /References fetched:\s*(?:none|https?:\/\/\S+)/i,
-  );
-  assert.ok(observation.finalText.includes(TITLE));
+  assert.match(reply, /References fetched:\s*(?:none|https?:\/\/\S+)/i);
+  assert.ok(reply.includes(TITLE));
   return "four template-conforming Task 2 artifacts; original code and plan unchanged; no Task 3 artifact";
 }
 
@@ -246,10 +265,24 @@ export const cases = [
       `Use ${SKILL}. Direct standalone invocation: TICKET_KEY=${KEY}, TASK_NUMBER=2. Prepare this task for execution.`,
     check: (observation) => {
       assertNoMutation(observation);
-      assert.match(observation.finalText, /\bFAIL\b/);
-      assert.match(observation.finalText, /Task 1/i);
-      assert.match(
+      assertNoPublicStatusLine(
         observation.finalText,
+        "PREP",
+        "PLAN",
+        "TEST_SPEC",
+        "REFACTORING",
+        "Completion",
+        "Completion state",
+        "Status",
+      );
+      const reply = normalizeReplyText(observation.finalText);
+      assert.match(reply, /Task 1/i);
+      assert.match(
+        reply,
+        /(?:cannot|could not|not ready|stopped|blocked|not (?:written|created)|no artifacts)/i,
+      );
+      assert.match(
+        reply,
         /(?:unsatisfied|not (?:started|complete)|incomplete|unfinished|dependency)/i,
       );
       assert.equal(capturedText(observation, INPUT_PATH), BLOCKED_PLAN);
