@@ -201,6 +201,19 @@ export const cases = [
     prompt: (caseContext) =>
       `Use the ${SKILL} skill. PROJECT_PATH=${caseContext.missingPath}`,
     check: (observation) => assertIntakeStop(observation, "PATH_ERROR"),
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts:
+          "The supplied PROJECT_PATH does not exist. No snapshot can be produced.",
+        rubric: [
+          {
+            id: "intake-recovery",
+            requirement:
+              "Explains that the supplied PROJECT_PATH does not exist or cannot be read, does not fabricate a snapshot, and tells the user to rerun with a readable PROJECT_PATH.",
+          },
+        ],
+      }),
   },
   {
     id: "analyzing-recent-project-state/gate-envelope",
@@ -214,6 +227,19 @@ export const cases = [
     prompt: (caseContext) =>
       `Use the ${SKILL} skill. PROJECT_PATH=${caseContext.notGitPath}`,
     check: (observation) => assertIntakeStop(observation, "NOT_GIT"),
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts:
+          "The supplied PROJECT_PATH is an existing readable directory, but it is not a Git worktree.",
+        rubric: [
+          {
+            id: "intake-recovery",
+            requirement:
+              "Explains that the supplied existing directory is not a Git worktree, does not fabricate a snapshot, and tells the user to rerun with a Git-worktree PROJECT_PATH.",
+          },
+        ],
+      }),
   },
   {
     // Regression guard: this route previously could not pass its own verifier.
