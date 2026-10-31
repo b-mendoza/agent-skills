@@ -39,7 +39,7 @@ Only intake uses `BLOCKED`. Only review uses `FAIL` (triggers the editor fix loo
 
 ## Minimum Evidence To Proceed
 
-All modes require a readable role source from `JOB_POSTING` and a readable candidate source from `CV`. `APPLICANT_CONTEXT` can clarify or supplement the CV, but it does not replace a missing required CV. If either required source is absent or unreadable, return the relevant blocked status instead of a partial output.
+All modes require a readable role source from `JOB_POSTING` and a readable candidate source from `CV`. `APPLICANT_CONTEXT` can clarify or supplement the CV, but it does not replace a missing required CV. If either required source is absent or unreadable, route to the relevant blocked terminal instead of producing a partial review. Ask the user for the missing source in prose, without an internal status header.
 
 Use these thresholds when deciding whether a `PARTIAL` source can continue:
 
@@ -61,6 +61,10 @@ Use exactly one label for each rewrite or recommended claim:
 | `Supported`                  | Directly stated in the CV or applicant context | Can appear in final CV wording                                      |
 | `Likely but unconfirmed`     | Plausible from the sources but missing proof   | Present as a candidate rewrite and ask the applicant to verify      |
 | `Unsupported until verified` | Would require new facts from the applicant     | Keep out of final CV wording; ask a question or offer safer wording |
+
+Apply the label to the entire rewrite, including verbs and relationships between projects. Separate mentions of dashboard work and billing-service query fixes do not establish that the dashboard consumed that service; "fixed" does not establish "diagnosed". A `Supported` rewrite needs evidence for every candidate fact, not a verification question that contradicts its label.
+
+Only `Supported` wording may be called "safe now", "ready to use", or "No verification needed". For an unconfirmed candidate, say "candidate, verify before use", keep exactly one evidence label, and ask a concrete question. Do not mix a supported base and an unconfirmed addition under multiple labels on the same rewrite; split the alternatives or weaken the wording.
 
 ## Match Strength
 
