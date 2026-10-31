@@ -10,6 +10,49 @@ import {
   skillInvocations,
 } from "#/observation/mutation-evidence.ts";
 
+/** Normalizes reply formatting for lexical checks without joining lines. */
+export function normalizeReplyText(finalText: string): string {
+  return finalText
+    .replace(/^[\t ]*(?:>[\t ]*)+/gm, "")
+    .replace(/^[\t ]*(?:[-+*]|\d+[.)])[\t ]+/gm, "")
+    .replace(/^[\t ]*#{1,6}[\t ]+/gm, "")
+    .replace(
+      /(?<!\w)(?<marker>\*\*|__)(?=\S)(?<text>[^\r\n]*?\S)\k<marker>(?!\w)/g,
+      "$<text>",
+    )
+    .replace(
+      /(?<!\w)(?<marker>[*_])(?=\S)(?<text>[^\r\n]*?\S)\k<marker>(?!\w)/g,
+      "$<text>",
+    )
+    .replace(/`+/g, "");
+}
+
+export function assertNoPublicStatusLine(
+  finalText: string,
+  ...prefixes: [string, ...string[]]
+): void {
+  for (const line of normalizeReplyText(finalText).split("\n")) {
+    assert.ok(
+      !prefixes.some((prefix) => line.trim().startsWith(`${prefix}:`)),
+      `reply contains public status line: ${JSON.stringify(line.trim())}`,
+    );
+  }
+}
+
+/** Accepts a topic with a question, request, or need statement in one blank-line-separated paragraph, including list lines. */
+// shortcut: lexical matching only; use a semantic judge if negation or quoted examples matter.
+export function replyAsksFor(finalText: string, topic: RegExp): boolean {
+  const paragraphs = normalizeReplyText(finalText).split(/\r?\n[\t ]*\r?\n/);
+  return paragraphs.some(
+    (paragraph) =>
+      new RegExp(topic).test(paragraph) &&
+      (paragraph.includes("?") ||
+        /\b(?:send|provide|share|paste|reply|tell me|let me know|please|confirm|choose|approve|i need|need\b[\s\S]*?\bfrom you|haven't (?:given|supplied|provided)|missing)\b/i.test(
+          paragraph,
+        )),
+  );
+}
+
 export const GH_API_OPTIONS = {
   cache: { type: "string" },
   field: { type: "string", short: "F", multiple: true },
