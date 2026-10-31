@@ -2,6 +2,8 @@
 
 This file is the sole normative source for states, transitions, guards, loops, and terminals.
 
+Internal terminal decisions below select the outcome; public replies use prose and the package output templates, never a machine-readable status line.
+
 ## States
 
 | State                | Kind     | Role                                                      |
