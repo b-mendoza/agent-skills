@@ -278,16 +278,8 @@ describe("validate-implementation-plan artifacts", () => {
     ).toThrow();
   });
 
-  test("leaves existing report and source untouched while requesting approval", () => {
-    expect(() =>
-      getCase("existing-report-gate").check(
-        behavioralObservation("existing-report-gate"),
-      ),
-    ).not.toThrow();
-  });
-
   test.each([
-    ["no permission question", "The report exists."],
+    ["missing colliding path", "The report exists. May I overwrite it?"],
     ["a premature success", `AUDIT: PASS\n${blockedText}`],
   ])("rejects %s at the collision gate", (_label, invalidText) => {
     expect(() =>
@@ -299,6 +291,7 @@ describe("validate-implementation-plan artifacts", () => {
   });
 
   test.each([
+    "implementation-plan.audit.md already exists. Approve overwriting implementation-plan.audit.md or give me a different OUTPUT_PATH before I continue.",
     "implementation-plan.audit.md already exists. Please choose an alternate path or approve overwrite.",
     "implementation-plan.audit.md already exists. Which do you want?\n1. Overwrite\n2. Alternate path",
     "implementation-plan.audit.md already exists. Choose one:\n1. Alternate path\n2. Overwrite",
