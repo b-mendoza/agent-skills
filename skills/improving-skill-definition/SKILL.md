@@ -38,7 +38,7 @@ Non-normative overview: audit the target, obtain approval, apply approved edits,
 | `skill-definition-editor`       | `./subagents/skill-definition-editor.md`       | Approved mutations + Lane A     |
 | `skill-package-validator`       | `./subagents/skill-package-validator.md`       | Lane A block / Lane B follow-up |
 
-Six auditors stay separate (one status prefix and YAML report each). Read a subagent only when dispatching it. Prefer the runtime subagent mechanism; otherwise run each contract inline and write its separate YAML report. Inline fallback never waives the six-report join or the synthesis schema. Subagents never spawn subagents.
+Six auditors stay separate (one status prefix and YAML report each). Read each subagent's full contract immediately before dispatching it or executing it inline; use that contract's exact status prefix and output schema. Prefer the runtime subagent mechanism; otherwise run each contract inline and write its separate YAML report. Inline fallback never waives the six-report join or the synthesis schema. Subagents never spawn subagents.
 
 ## How This Skill Works
 
