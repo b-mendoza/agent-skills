@@ -14,9 +14,11 @@ import {
   assertFileAbsent,
   assertFileExists,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
+  normalizeReplyText,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -132,6 +134,12 @@ function checkSnapshotContent(artifact: string): void {
 }
 
 function checkSnapshot(observation: Observation): string {
+  assertNoPublicStatusLine(
+    observation.finalText,
+    "FETCH",
+    "Validation",
+    "Failure category",
+  );
   assertReadOnlyGitHub(observation);
   assertOnlySnapshotWritten(observation);
   assertFileExists(observation, SNAPSHOT);
@@ -195,7 +203,7 @@ export const cases = [
     intent:
       "Fetch and validate an issue snapshot without changing the tracker or unrelated files",
     prompt: () =>
-      `Use ${SKILL}. ISSUE_URL=${ISSUE.url}. Retrieve the work item and return the normal handoff.`,
+      `Use ${SKILL}. ISSUE_URL=${ISSUE.url}. Retrieve the work item and summarize the outcome.`,
     check: checkSnapshot,
     judge: async (observation) =>
       judgeLive({
@@ -224,18 +232,28 @@ export const cases = [
     snapshotPaths: [FIXTURE_ROOT_PATH, SNAPSHOT, GH_LOG],
     intent: "A 404 is reported without a fabricated snapshot or tracker writes",
     prompt: () =>
-      `Use ${SKILL}. ISSUE_URL=${ISSUE.url}. Return the structured failure summary if retrieval fails.`,
+      `Use ${SKILL}. ISSUE_URL=${ISSUE.url}. Explain the failure if retrieval fails.`,
     check: (observation) => {
       assertNoMutation(observation);
       assertReadOnlyGitHub(observation);
       assertFileAbsent(observation, SNAPSHOT);
-      assert.match(
+      assertNoPublicStatusLine(
         observation.finalText,
-        /^FETCH: FAIL\nValidation: NOT_RUN\nFailure category: NOT_FOUND\nFile written: None/m,
+        "FETCH",
+        "Validation",
+        "Failure category",
+        "File written",
+      );
+      const text = normalizeReplyText(observation.finalText);
+      assert.match(
+        text,
+        /404|not found|could not find|couldn't find/i,
+        "missing not-found explanation",
       );
       assert.match(
-        observation.finalText,
-        /^Issue: acme\/app#42: Unknown\nState: Unknown\nComments: N\/A\nChild issues: N\/A\nLinked issues: N\/A\nAttachments: N\/A\nWarnings: None\nReason: .*(?:404|not found)/im,
+        text,
+        /(?:no snapshot|snapshot (?:was |is )?not (?:written|created)|did not (?:write|create)|didn't (?:write|create))/i,
+        "missing no-snapshot disclosure",
       );
       return "NOT_FOUND with no artifact or mutation";
     },
