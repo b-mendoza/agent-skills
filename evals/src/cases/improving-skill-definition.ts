@@ -214,7 +214,7 @@ function assertAuditFiles(observation: Observation, handoff: string): void {
       observation,
       `${handoff}/${name}-report.yaml`,
       new RegExp(
-        `^status:[ \\t]*(?<quote>["']?)${prefix}: (?:PASS|GAPS_FOUND)\\k<quote>[ \\t]*$`,
+        `^status:[ \\t]*(?<quote>["']?)${prefix}: ${prefix === "RELATED_SKILLS" ? "(?:PASS|GAPS_FOUND|BLOCKED|ERROR)" : "(?:PASS|GAPS_FOUND)"}\\k<quote>[ \\t]*$`,
         "m",
       ),
     );

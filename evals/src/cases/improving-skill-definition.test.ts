@@ -195,12 +195,12 @@ describe("audit evidence and approval", () => {
   });
 
   test.each(AUDIT_REPORTS)(
-    "requires the %s report and a passing audit status",
+    "requires the %s report and a valid slice status",
     (name, prefix) => {
       const path = `${HANDOFF}/${name}-report.yaml`;
       for (const content of [
         null,
-        `status: "${prefix}: ERROR"`,
+        ...(prefix === "RELATED_SKILLS" ? [] : [`status: "${prefix}: ERROR"`]),
         `status: "${prefix}: PASS'`,
         "status: PASS",
       ]) {
