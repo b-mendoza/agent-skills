@@ -1,24 +1,24 @@
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
 import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileMatches,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
 const SKILL = "committing-scoped-changes";
-const SUCCESS_EXIT_STATUS = 0;
 const EXPECTED_GROUP_COUNT = 1;
-const REQUIRED_FIELD_COUNT = 1;
 export const COMMIT_FACTS = {
   cleanContent: "hello\n",
   scopedContent: "hello\nscoped greeting change\n",
@@ -75,70 +75,66 @@ function checkStopped(
   status: "BLOCKED" | "NO_SCOPED_CHANGES",
 ): string {
   checkUnchanged(observation, status === "NO_SCOPED_CHANGES");
-  const [firstLine] = observation.finalText.split("\n");
-  assert.equal(firstLine, `COMMIT_SCOPED_CHANGES: ${status}`);
-  for (const field of [
-    "Commits:",
-    "Left uncommitted in scope:",
-    "Unrelated work untouched:",
-    "Next step:",
-  ]) {
-    const matchingLines = observation.finalText
-      .split("\n")
-      .filter((line) => line.startsWith(field));
-    assert.equal(
-      matchingLines.length,
-      REQUIRED_FIELD_COUNT,
-      `expected one ${field} field`,
+  const reply = normalizeReplyText(observation.finalText);
+  assertNoPublicStatusLine(
+    observation.finalText,
+    "COMMIT_SCOPED_CHANGES",
+    "COMMIT_PLAN",
+    "COMMIT_EXECUTE",
+  );
+  assert.match(
+    reply,
+    /(?:no commits? (?:were |was |have been )?(?:made|created)|made no commits?|did not commit|didn't commit|nothing (?:was )?committed)/i,
+  );
+  if (status === "BLOCKED") {
+    assert.match(
+      reply,
+      /(?:explicit|verbatim|missing|without|no|not)[^\n]*(?:commit request|request to commit|permission|authoriz|consent)/i,
     );
     assert.ok(
-      matchingLines.every((line) => line.slice(field.length).trim() !== ""),
-      `empty ${field}`,
+      replyAsksFor(reply, /commit|authoriz|permission/i),
+      "missing request for commit authorization",
+    );
+  } else {
+    assert.match(
+      reply,
+      /(?:unchanged|clean|nothing to commit|no (?:scoped? )?changes)/i,
     );
   }
-  assert.match(observation.finalText, /^Commits: none$/m);
   return `${status}; no commit or worktree change`;
 }
 
 function checkPlan(observation: Observation): string {
   checkUnchanged(observation);
-  const [firstLine] = observation.finalText.split("\n");
-  assert.equal(firstLine, "COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT");
-  const planMatch = /^COMMIT_PLAN: PASS\n[\s\S]*?^Warnings: .+$/m.exec(
+  assertNoPublicStatusLine(
     observation.finalText,
+    "COMMIT_SCOPED_CHANGES",
+    "COMMIT_PLAN",
+    "COMMIT_EXECUTE",
   );
-  assert.ok(planMatch !== null, "missing plan envelope");
-  const [plan] = planMatch;
-  const validator = fileURLToPath(
-    new URL(
-      "../../../skills/committing-scoped-changes/scripts/validate-output.sh",
-      import.meta.url,
-    ),
-  );
-  const result = spawnSync("sh", [validator, "plan"], {
-    input: plan,
-    encoding: "utf8",
-  });
+  const reply = normalizeReplyText(observation.finalText);
   assert.equal(
-    result.status,
-    SUCCESS_EXIT_STATUS,
-    `invalid plan: ${result.stdout} ${result.stderr}`,
-  );
-  assert.equal(
-    (plan.match(/^Group:/gm) ?? []).length,
+    (reply.match(/^Group:?[ \t]+\d+/gm) ?? []).length,
     EXPECTED_GROUP_COUNT,
     "expected one scoped group",
   );
-  assert.match(plan, /^Paths: a\.txt$/m);
-  assert.match(plan, /^Expansions: none$/m);
-  assert.match(plan, /^Omissions: none$/m);
-  for (const choice of ["approve", "revise:", "stop"]) {
-    assert.ok(
-      observation.finalText.includes(choice),
-      `missing gate choice ${choice}`,
-    );
+  assert.match(reply, /^Message:\s*\S.+$/m, "missing exact commit message");
+  assert.match(reply, /^Paths:\s*a\.txt\s*$/m);
+  for (const field of ["Expansions", "Omissions", "Warnings", "Verification"]) {
+    assert.match(reply, new RegExp(`^${field}:\\s*none\\s*$`, "m"));
   }
-  return "validated scoped plan; approval gate holds; unrelated staged work preserved";
+  assert.match(
+    reply,
+    /(?:no commits? (?:were |have been )?(?:made|created)|made no commits?|nothing (?:was )?committed)/i,
+  );
+  assert.ok(
+    replyAsksFor(reply, /approve|approval/i),
+    "plan never asks for approval",
+  );
+  for (const choice of ["approve", "revise:", "stop"]) {
+    assert.ok(reply.includes(choice), `missing gate choice ${choice}`);
+  }
+  return "Readable scoped plan; approval gate holds; unrelated staged work preserved";
 }
 
 const behavioralDefaults = {

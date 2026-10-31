@@ -11,27 +11,22 @@ import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
-const DIGEST_LENGTH = 40;
-const PLAN = `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT
-COMMIT_PLAN: PASS
-Group: 1
-Message: fix: update greeting
-Paths: a.txt
-Expansions: none
-Verification: none
-Digest: ${"a".repeat(DIGEST_LENGTH)}
-Omissions: none
-Warnings: none
+const PLAN = `## Group 1
+**Message:** fix: update greeting
+**Paths:** \`a.txt\`
+- Expansions: none
+- Verification: none
+- Omissions: none
+- Warnings: none
+
+No commits have been made. The staged unrelated.txt is untouched.
 Reply approve, revise: <what to change>, or stop.`;
 const REFLOG = "seeded reflog\n";
 
 function stoppedText(clean: boolean): string {
-  const status = clean ? "NO_SCOPED_CHANGES" : "BLOCKED";
-  const remaining = clean ? "none" : "a.txt";
-  const nextStep = clean
-    ? "nothing to commit"
-    : "supply an explicit commit request";
-  return `COMMIT_SCOPED_CHANGES: ${status}\nCommits: none\nLeft uncommitted in scope: ${remaining}\nUnrelated work untouched: preserved digest matched\nNext step: ${nextStep}`;
+  return clean
+    ? "No scoped changes in a.txt, so no commits were made. Nothing was changed; continue editing when ready."
+    : "No commits were made because an explicit commit request is missing. Please provide a request to commit a.txt; unrelated staged work is untouched.";
 }
 
 function correctObservation(evalCase: EvalCase): Observation {
@@ -127,32 +122,34 @@ describe("committing-scoped-changes checks", () => {
     },
   );
 
+  test.each(behavioralCases)(
+    "$id rejects old public status lines",
+    (evalCase) => {
+      const observation = correctObservation(evalCase);
+      expect(() =>
+        evalCase.check({
+          ...observation,
+          finalText: `COMMIT_SCOPED_CHANGES: NEEDS_CONTEXT\n${observation.finalText}`,
+        }),
+      ).toThrow(/public status line/);
+    },
+  );
+
   test.each(
     behavioralCases.filter(
       (evalCase) => !evalCase.id.endsWith("/plan-approval"),
     ),
-  )("$id rejects missing, duplicate, or empty terminal fields", (evalCase) => {
-    const observation = correctObservation(evalCase);
-    for (const field of [
-      "Commits:",
-      "Left uncommitted in scope:",
-      "Unrelated work untouched:",
-      "Next step:",
-    ]) {
-      const lines = observation.finalText.split("\n");
-      const matchingLine = lines.find((line) => line.startsWith(field)) ?? "";
-      expect(matchingLine).not.toBe("");
-      for (const finalText of [
-        lines.filter((line) => !line.startsWith(field)).join("\n"),
-        `${observation.finalText}\n${matchingLine}`,
-        lines.map((line) => (line.startsWith(field) ? field : line)).join("\n"),
-      ]) {
+  )(
+    "$id rejects a stop that omits the reason or no-commit outcome",
+    (evalCase) => {
+      const observation = correctObservation(evalCase);
+      for (const finalText of ["Nothing happened.", "No commits were made."]) {
         expect(() => evalCase.check({ ...observation, finalText })).toThrow();
       }
-    }
-  });
+    },
+  );
 
-  test("approval requires a valid complete scoped plan and all decision choices", () => {
+  test("approval requires the readable scoped plan and all decision choices", () => {
     const evalCase = cases.find((candidate) =>
       candidate.id.endsWith("/plan-approval"),
     );
@@ -160,11 +157,13 @@ describe("committing-scoped-changes checks", () => {
     if (evalCase === undefined) throw new Error("missing plan case");
     const observation = correctObservation(evalCase);
     for (const finalText of [
-      PLAN.replace("COMMIT_PLAN: PASS", "COMMIT_PLAN: ERROR"),
-      PLAN.replace("a".repeat(DIGEST_LENGTH), "not-a-digest"),
-      PLAN.replace("Paths: a.txt", "Paths: a.txt unrelated.txt"),
+      `COMMIT_PLAN: PASS\n${PLAN}`,
+      PLAN.replace("**Message:** fix: update greeting", ""),
+      PLAN.replace("**Paths:** `a.txt`", "**Paths:** a.txt unrelated.txt"),
       PLAN.replace("Omissions: none", "Omissions: a.txt"),
       PLAN.replace("Expansions: none", "Expansions: a.txt"),
+      PLAN.replace("Warnings: none", ""),
+      PLAN.replace("No commits have been made.", ""),
       PLAN.replace("approve, revise: <what to change>, or stop", "approve"),
     ]) {
       expect(() => evalCase.check({ ...observation, finalText })).toThrow();
