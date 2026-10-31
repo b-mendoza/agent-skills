@@ -7,7 +7,6 @@ import {
   assertNoPublicStatusLine,
   assertRunHappened,
   normalizeReplyText,
-  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 
@@ -85,7 +84,7 @@ export function assertValidatorInvoked(observation: Observation): void {
   );
 }
 
-/** Intake stops explain the observed problem and request a usable path. */
+/** Intake stops retain factual guards; the case judge grades the explanation. */
 export function assertIntakeStop(
   observation: Observation,
   cause: "PATH_ERROR" | "NOT_GIT",
@@ -95,23 +94,8 @@ export function assertIntakeStop(
   assertValidatorInvoked(observation);
   assertNoPublicStatusLine(observation.finalText, "RECENT_STATE");
   const reply = normalizeReplyText(observation.finalText);
-  assert.match(
-    reply,
-    cause === "PATH_ERROR"
-      ? /(?:does not exist|doesn't exist|nonexistent|not found|missing|cannot (?:read|access|list)|unreadable)/i
-      : /(?:not (?:a |inside a )?(?:Git (?:worktree|work tree|repo(?:sitory)?)|worktree)|no Git repo(?:sitory)?)/i,
-    "stop omitted the path failure cause",
-  );
-  assert.ok(
-    replyAsksFor(
-      reply,
-      /PROJECT_PATH|(?:readable|Git|worktree|repo(?:sitory)?) (?:path|directory)|Git worktree/i,
-    ) ||
-      /(?:re-?run|retry)[^\n]*(?:PROJECT_PATH|path|worktree|repo)/i.test(reply),
-    "stop omitted a usable-path recovery action",
-  );
   assert.doesNotMatch(reply, /^Project State Snapshot/m);
-  return `${cause}; cause and recovery explained; no mutation`;
+  return `${cause}; no snapshot; no mutation`;
 }
 
 // --- Report-shape conformance --------------------------------------------
