@@ -97,11 +97,11 @@ Posting may be attempted only when all preconditions are true:
 5. The exact final comment was previewed to the user and explicitly confirmed, or the user explicitly stated in conversation that posting may occur without preview and that statement is quoted in `Run notes`.
 6. Recent item comments were checked and no matching refinement comment already exists.
 
-Default `POSTING_APPROVAL` is `preview`. In preview mode, unattended runs never post unseen content and return `Mode: Ready to post`. Declined preview returns `Mode: Draft`. `POSTING_APPROVAL=pre-approved` is valid only when the user made the pre-approval statement in conversation.
+Default `POSTING_APPROVAL` is `preview`. Only after posting preconditions 1–4 pass does the preview gate apply. At that gate, unattended runs never post unseen content and explain that the exact comment awaits approval. Failed earlier preconditions retain the safe draft or blocked route, even in preview mode. Declined preview leaves an unposted draft. `POSTING_APPROVAL=pre-approved` is valid only when the user made the pre-approval statement in conversation.
 
-Before posting, list recent comments on the item. If an identical comment, or a comment with matching first line `Refinement status: ...` and matching summary, already exists, do not post. Return `Mode: Already posted` with a pointer to the existing comment.
+Before posting, list recent comments on the item. If an identical comment, or a comment with matching first line `Refinement status: ...` and matching summary, already exists, do not post. Explain that the comment already exists and provide its pointer.
 
-Attempt exactly one post of the exact reviewer comment, unedited. On verified success, return `Mode: Posted`. On definite permission, API, or runtime failure, do not retry; return `Mode: Ready to post` if the comment remains safe for manual posting, otherwise `Mode: Blocked`. On timeout or ambiguous result, read back item comments exactly once: found means `Mode: Posted`, absent means `Mode: Ready to post`, unverifiable means `Mode: Blocked` with reason `post outcome indeterminate - check the tracker before posting manually`.
+Attempt exactly one post of the exact reviewer comment, unedited. On verified success, explain that the exact comment was posted. On definite permission, API, or runtime failure, do not retry; explain that the comment remains available for manual posting if safe, otherwise explain why posting is blocked. On timeout or ambiguous result, read back item comments exactly once: found means confirmed posting, absent means safe manual-posting handoff, unverifiable means blocked posting with reason `post outcome indeterminate - check the tracker before posting manually`.
 
 ## Final Output Modes
 

@@ -22,18 +22,18 @@ Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./
 | `Redispatch`                 | active   | Exactly one re-dispatch with malformed-return note                                                                    |
 | `RouteReview`                | active   | Route on `PASS` / `BLOCKED` / `FAIL` / `ERROR`                                                                        |
 | `ChooseOutputPath`           | active   | Draft/unknown vs `post-comment` after `REVIEW: PASS`                                                                  |
-| `GatePostPreconditions`      | active   | Enforce six posting preconditions                                                                                     |
+| `GatePostPreconditions`      | active   | Check posting preconditions 1–4; preview and idempotency follow                                                                                     |
 | `PreviewGate`                | active   | Preview confirm, decline, unattended, or quoted pre-approval                                                          |
 | `IdempotencyCheck`           | active   | Detect matching existing refinement comment                                                                           |
 | `AttemptPost`                | active   | Exactly one post of the exact comment                                                                                 |
 | `VerifyPost`                 | active   | Verify success, safe failure, or indeterminate readback                                                               |
-| `TerminalBlockedNotReviewed` | terminal | `Mode: Blocked`, `Status: Not reviewed`                                                                               |
-| `TerminalDeferred`           | terminal | `Mode: Deferred`, `Status: Not reviewed`                                                                              |
-| `TerminalBlocked`            | terminal | `Mode: Blocked` after dispatch or unsafe post                                                                         |
-| `TerminalDraft`              | terminal | `Mode: Draft`                                                                                                         |
-| `TerminalReadyToPost`        | terminal | `Mode: Ready to post`                                                                                                 |
-| `TerminalPosted`             | terminal | `Mode: Posted`                                                                                                        |
-| `TerminalAlreadyPosted`      | terminal | `Mode: Already posted`                                                                                                |
+| `TerminalBlockedNotReviewed` | terminal | Review blocked before dispatch; explain why in prose                                                                               |
+| `TerminalDeferred`           | terminal | Mutation deferred without review; explain in prose                                                                              |
+| `TerminalBlocked`            | terminal | Blocked after dispatch or unsafe post; explain in prose                                                                         |
+| `TerminalDraft`              | terminal | Unposted draft with prose outcome                                                                                                         |
+| `TerminalReadyToPost`        | terminal | Comment available pending approval; prose outcome                                                                                                 |
+| `TerminalPosted`             | terminal | Verified posting; prose outcome                                                                                                        |
+| `TerminalAlreadyPosted`      | terminal | Existing matching comment; prose outcome                                                                                                |
 
 ## Transitions
 
@@ -74,7 +74,7 @@ Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./
 | `ChooseOutputPath`           | `GatePostPreconditions`      | `WRITE_MODE=post-comment`                        |
 | `GatePostPreconditions`      | `TerminalReadyToPost`        | preconditions fail; comment ready                |
 | `GatePostPreconditions`      | `TerminalDraft`              | preconditions fail; comment draft                |
-| `GatePostPreconditions`      | `PreviewGate`                | all six posting preconditions true               |
+| `GatePostPreconditions`      | `PreviewGate`                | posting preconditions 1–4 true               |
 | `PreviewGate`                | `TerminalDraft`              | preview declined                                 |
 | `PreviewGate`                | `TerminalReadyToPost`        | preview unattended                               |
 | `PreviewGate`                | `IdempotencyCheck`           | preview confirmed or pre-approved quoted         |
