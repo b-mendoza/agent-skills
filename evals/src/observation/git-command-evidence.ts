@@ -161,9 +161,122 @@ function escapeRegExp(literal: string): string {
 const FIRST_SHELL_COMMAND_SEGMENT_COUNT = 1;
 const FULL_MATCH_INDEX = 0;
 
+const FIRST_HEREDOC_INDEX = 0;
+const SHELL_TOKENS = [
+  /\\[\s\S]/,
+  /'[^']*'/,
+  /"(?:\\[\s\S]|[^"\\])*"/,
+  /`(?:\\[\s\S]|[^`\\])*`/,
+  /#[^\n]*/,
+  /<<(?<tabs>-?)[ \t]*(?<quote>['"])(?<delimiter>[A-Za-z_]\w*)\k<quote>(?=[ \t;|&<>\n]|$)/,
+  /(?<uncertain><<|['"`\\])/,
+  /[\s\S]/,
+]
+  .map((pattern) => pattern.source)
+  .join("|");
+interface QuotedHeredoc {
+  delimiter: string;
+  tabs: boolean;
+}
+
+const AFTER_NEWLINE_OFFSET = 1;
+const FIRST_CHARACTER_INDEX = 0;
+
+function targetIsOnlyValidated(otherText: string, target: string): boolean {
+  // Even stdin can execute a script; exempt only the known report-validator read.
+  const validatorRead = new RegExp(
+    String.raw`^sh \$SKILL_DIR/scripts/validate-output\.sh report < ${escapeRegExp(target)}(?=[ \t]*(?:;|$))`,
+    "gm",
+  );
+  return !otherText.replace(validatorRead, "").includes(target);
+}
+
+function isPlainFileSink(command: string, token: RegExpExecArray): boolean {
+  const lineStart =
+    command.lastIndexOf("\n", token.index) + AFTER_NEWLINE_OFFSET;
+  const prefix = command.slice(lineStart, token.index);
+  const suffix = command.slice(token.index + token[FULL_MATCH_INDEX].length);
+  const sink = /^[ \t]*cat[ \t]+>[ \t]*(?<target>[.\w/-]+)[ \t]+$/.exec(prefix);
+  if (sink === null) return false;
+  const target = String(sink.groups?.["target"]);
+  const otherText =
+    command.slice(FIRST_CHARACTER_INDEX, lineStart) +
+    command.slice(token.index);
+  return (
+    /^[ \t]*(?:\n|$)/.test(suffix) && targetIsOnlyValidated(otherText, target)
+  );
+}
+
+function queueQuotedHeredoc(
+  command: string,
+  token: RegExpExecArray,
+  pending: QuotedHeredoc[],
+): boolean {
+  const { uncertain, delimiter, tabs } = token.groups ?? {};
+  if (delimiter === undefined) return uncertain === undefined;
+  if (!isPlainFileSink(command, token)) return false;
+  pending.push({ delimiter, tabs: tabs === "-" });
+  return true;
+}
+
+function afterHeredocBodies(
+  command: string,
+  start: number,
+  pending: QuotedHeredoc[],
+): number | undefined {
+  let end = start;
+  for (const heredoc of pending.splice(FIRST_HEREDOC_INDEX)) {
+    const closing = new RegExp(
+      `^${heredoc.tabs ? "\\t*" : ""}${heredoc.delimiter}(?:\\n|$)`,
+      "gm",
+    );
+    closing.lastIndex = end;
+    if (closing.exec(command) === null) return undefined;
+    end = closing.lastIndex;
+  }
+  return end;
+}
+
+function nextExecutableOffset(
+  command: string,
+  token: RegExpExecArray,
+  pending: QuotedHeredoc[],
+): number | undefined {
+  if (!queueQuotedHeredoc(command, token, pending)) return undefined;
+  const end = token.index + token[FULL_MATCH_INDEX].length;
+  return token[FULL_MATCH_INDEX] === "\n"
+    ? afterHeredocBodies(command, end, pending)
+    : end;
+}
+
+/** Excludes quoted heredocs only for standalone cat-to-file sinks; executable input stays visible. */
+function withoutQuotedHeredocData(command: string): string {
+  const tokens = new RegExp(SHELL_TOKENS, "g");
+  const pending: QuotedHeredoc[] = [];
+  const parts: string[] = [];
+  let copiedThrough = 0;
+  for (
+    let token = tokens.exec(command);
+    token !== null;
+    token = tokens.exec(command)
+  ) {
+    const end = nextExecutableOffset(command, token, pending);
+    if (end === undefined) return command;
+    parts.push(command.slice(copiedThrough, tokens.lastIndex));
+    copiedThrough = end;
+    tokens.lastIndex = end;
+  }
+  return parts.join("") + command.slice(copiedThrough);
+}
+
 /** Whether a literal shell command contains a repo-mutating git invocation. */
-export function isMutatingGitCommand(command: string): boolean {
-  if (MUTATING_GIT_PATTERNS.some((pattern) => pattern.test(command))) {
+export function isMutatingGitCommand(shellCommand: string): boolean {
+  const command = withoutQuotedHeredocData(shellCommand);
+  // xargs can take git's verb from stdin, so no literal `git push` need appear.
+  if (
+    MUTATING_GIT_PATTERNS.some((pattern) => pattern.test(command)) ||
+    /\bxargs\b[^\n]*\bgit\b[^\n]*<</.test(command)
+  ) {
     return true;
   }
   return DUAL_MODE_GIT.some(({ verb, readOnly, bareWrites }) =>
