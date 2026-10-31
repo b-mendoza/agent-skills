@@ -75,7 +75,7 @@ The orchestrator verifies every stage output before routing on a claimed status 
 | Handoff  | File exists, non-empty, exactly five major `## N.` sections, no unresolved `<placeholder>` text                                                    |
 | Review   | First line matches `REVIEW: PASS                                                                                                                   | WARN | FAIL | ERROR`exactly; summary block contains every field named under Final Response Fields; a missing, malformed, or unrecognized status is treated as`REVIEW: ERROR` (fail closed, never trust a claimed verdict) |
 
-On first verification failure, rerun the producer once naming the discrepancy. On second failure, stop with `Blocked: artifact contract violation`. For the reviewer, the `ERROR` route applies: one same-input retry, then `Blocked: subagent error, failure, or unexpected skip`.
+On first verification failure, rerun the producer once naming the discrepancy. On second failure, stop with `The handoff cannot proceed because an artifact failed its contract.` For the reviewer, the `ERROR` route applies: one same-input retry, then `The handoff cannot proceed because a stage failed or was unexpectedly skipped.`.
 
 ## Context Schema
 
@@ -223,12 +223,12 @@ The reviewer checks these operational criteria individually. [F-06]
 | Introduced names           | Acronyms and project-specific names are introduced at first use                                                     |
 | Redaction                  | No credential, token, key, or personal-data value appears unredacted in the document (see Secret and PII Redaction) |
 
-## Terminal Strings
+## Terminal outcomes
 
-Exact orchestrator terminals are tabulated in the package root file `state-machine.md` (linked from `SKILL.md`). `REVIEW: PASS` maps to `Completed: review pass`. `REVIEW: WARN` maps to `Completed: review pass with warnings`. Do not label a warn review as a plain pass terminal.
+Internal orchestrator terminals are tabulated in the package root file `state-machine.md` (linked from `SKILL.md`). `REVIEW: PASS` maps to `The handoff passed review.` `REVIEW: WARN` maps to `The handoff passed review with warnings.` Do not label a warn review as a plain pass terminal.
 
 ## Final Response Fields
 
-On success, report handoff path, sibling artifact paths, backup path when created, external status, stage verdicts, counts, warnings, open-question count, repair cycles used, and whether claims validation was skipped.
+Use prose sentences or readable bullets, without public status lines or routing envelopes. Keep exact reviewer grammar below internal. On success, report handoff path, sibling artifact paths, backup path when created, external status, stage verdicts, counts, warnings, open-question count, repair cycles used, and whether claims validation was skipped.
 
 Reviewer output grammar (the orchestrator verifies this mechanically before routing): first line is exactly `REVIEW: PASS`, `REVIEW: WARN`, `REVIEW: FAIL`, or `REVIEW: ERROR`, followed by a summary block with the fields `File`, `Failed gates`, `Rerun`, `Open questions`, `Warnings`, and `Reason`.
