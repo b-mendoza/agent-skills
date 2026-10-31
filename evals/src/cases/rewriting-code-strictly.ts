@@ -9,8 +9,11 @@ import {
   assertFileExists,
   assertFileMatches,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -59,19 +62,31 @@ function seedStrict({ repoPath }: SeedContext): void {
 function checkClarification(observation: Observation): string {
   checkPositiveRouting(observation, SKILL);
   assertNoMutation(observation);
-  assert.match(observation.finalText, /\bNEEDS_CLARIFICATION\b/);
-  assert.match(observation.finalText, /\?/);
+  assertNoPublicStatusLine(
+    observation.finalText,
+    "Status",
+    "NEEDS_CLARIFICATION",
+    "STRICT_REWRITE",
+  );
+  assert.doesNotMatch(
+    normalizeReplyText(observation.finalText),
+    /^NEEDS_CLARIFICATION\b/m,
+  );
   assert.ok(
     !observation.toolCalls.some(
       (call) => call.name === "WebFetch" || call.name === "WebSearch",
     ),
     "unauthorized external reference fetch",
   );
-  return "NEEDS_CLARIFICATION; no mutation or external fetch";
+  return "clarification requested; no mutation or external fetch";
 }
 
 function checkBehaviorGate(observation: Observation): string {
   checkClarification(observation);
+  assert.ok(
+    replyAsksFor(observation.finalText, /behavior|reject|preserv|inputs?/i),
+    "missing behavior decision",
+  );
   const files = observation.repoFiles;
   assert.ok(files !== undefined, "missing file snapshots");
   for (const [path, content] of Object.entries(STRICT_FILES)) {
@@ -167,7 +182,14 @@ export const cases = [
       "Missing target asks a focused intake question without inspecting or modifying arbitrary code",
     prompt: () =>
       `Use ${SKILL}. I want strict typing and validation but have not supplied any target file or pasted code.`,
-    check: checkClarification,
+    check: (observation) => {
+      checkClarification(observation);
+      assert.ok(
+        replyAsksFor(observation.finalText, /target|file|path|code/i),
+        "missing target request",
+      );
+      return "target requested; no mutation or external fetch";
+    },
     judge: async (observation) =>
       judgeLive({
         artifact: observation.finalText,

@@ -14,8 +14,8 @@ const REFLOG = "seeded reflog\n";
 function correctObservation(evalCase: EvalCase): Observation {
   return createObservation({
     finalText: evalCase.id.endsWith("/behavior-expansion-gate")
-      ? "NEEDS_CLARIFICATION\nsrc/name.ts returns 7 for numeric names and guest for empty names. Shall I preserve that behavior or approve rejecting those inputs?"
-      : "NEEDS_CLARIFICATION\nWhich file or pasted code should I rewrite?",
+      ? "Nothing was changed. src/name.ts returns 7 for numeric names and guest for empty names. Shall I preserve that behavior or approve rejecting those inputs?"
+      : "Nothing was changed. Please provide the target file or pasted code to rewrite.",
     toolCalls: [{ name: "Skill", input: { skill: evalCase.skill } }],
     repoFiles: {
       ...STRICT_FILES,
@@ -62,13 +62,17 @@ describe("rewriting-code-strictly checks", () => {
   );
 
   test.each(behavioralCases)(
-    "$id rejects missing question/status, edits and unauthorized fetches",
+    "$id rejects missing clarification, public statuses, edits and unauthorized fetches",
     (evalCase) => {
       const observation = correctObservation(evalCase);
       for (const wrong of [
         { finalText: "PASS: completed" },
         { finalText: "NEEDS_CLARIFICATION" },
-        { finalText: "Which file?" },
+        { finalText: "Which deadline?" },
+        { finalText: `NEEDS_CLARIFICATION\n${observation.finalText}` },
+        {
+          finalText: `**Status:** NEEDS_CLARIFICATION\n${observation.finalText}`,
+        },
         {
           toolCalls: [
             ...observation.toolCalls,
@@ -110,7 +114,7 @@ describe("rewriting-code-strictly checks", () => {
     expect(() =>
       gateCase.check({
         ...observation,
-        finalText: "NEEDS_CLARIFICATION\nApprove?",
+        finalText: "Approve?",
       }),
     ).toThrow();
     for (const repoFiles of [
