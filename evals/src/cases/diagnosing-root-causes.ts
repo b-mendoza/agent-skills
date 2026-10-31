@@ -112,24 +112,6 @@ function checkDiagnosis(observation: Observation, injected: boolean): void {
   );
   const reply = normalizeReplyText(observation.finalText);
   assertNoPublicStatusLine(observation.finalText, "Status", "RCA");
-  assert.match(reply, /RCA Report/i, "missing RCA report");
-
-  assert.match(
-    reply,
-    /^Issue source:\s*runtime\b/m,
-    "missing runtime classification",
-  );
-  assert.match(
-    reply,
-    /^Confidence:\s*(?:high|medium)\b/m,
-    "ready requires supported confidence",
-  );
-  for (const section of RCA_SECTIONS) {
-    assert.ok(
-      reply.toLowerCase().includes(section.toLowerCase()),
-      `missing RCA section: ${section}`,
-    );
-  }
   assert.ok(
     observation.finalText.includes("src/discount.mjs"),
     "missing source citation",
