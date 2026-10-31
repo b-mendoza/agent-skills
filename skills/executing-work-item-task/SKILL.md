@@ -143,4 +143,4 @@ Also pass only the artifact paths and structured prior reports declared in [`./r
 
 Input: `TICKET_KEY=acme-app-42`, `TASK_NUMBER=3`
 
-Detect `github`, load `../references/github-playbook.md` for each subagent, validate `docs/acme-app-42*`, dispatch kickoff, execution, documentation, requirements, clean-code, architecture, security, and finalization in order, then return only Task 3's `FINAL_TASK_REPORT`. Do not select Task 4.
+Detect `github`, load `../references/github-playbook.md` for each subagent, validate `docs/acme-app-42*`, dispatch kickoff, execution, documentation, requirements, clean-code, architecture, security, and finalization in order, then render only Task 3's result, prose without a Status section by default or the unchanged `FINAL_TASK_REPORT` with `RESULT_FORMAT=handoff`. Do not select Task 4.
