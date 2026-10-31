@@ -13,13 +13,10 @@ import { fileURLToPath } from "node:url";
 
 import { afterAll, beforeAll, expect, test } from "vitest";
 
-import {
-  BEHAVIORAL_TIER,
-  cases,
-  ROUTING_TIER,
-  SKILL,
-} from "#/cases/analyzing-recent-project-state.ts";
+import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
+import { BEHAVIORAL_TIER, ROUTING_TIER } from "#/cases/case-contract.ts";
 import { VALIDATOR_CALL } from "#/cases/case-test-support.ts";
+import { cases } from "#/cases/registry.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 import config from "../../promptfooconfig.ts";
@@ -45,10 +42,11 @@ beforeAll(() => {
       const scenario = process.env.OFFLINE_SCENARIO;
       if (scenario === "provider-error") return { error: "offline provider error" };
       const observation = ${JSON.stringify(createObservation({ subtype: "error_max_budget_usd", isError: true }))};
-      if (context.vars.caseId === "trigger-positive") {
-        observation.toolCalls = [{ name: "Skill", input: { skill: ${JSON.stringify(SKILL)} } }];
+      if (context.vars.caseId.endsWith("/trigger-positive")) {
+        const [skill] = context.vars.caseId.split("/");
+        observation.toolCalls = [{ name: "Skill", input: { skill } }];
       }
-      if (context.vars.caseId === "path-error") {
+      if (context.vars.caseId === "analyzing-recent-project-state/path-error") {
         observation.finalText = "RECENT_STATE: PATH_ERROR\\nReason: missing\\nNext step: fix it";
         observation.toolCalls = [${JSON.stringify(VALIDATOR_CALL)}];
         if (scenario === "mutation") observation.toolCalls.push({ name: "Write", input: {} });
@@ -155,7 +153,7 @@ test.each([
         "--filter-metadata",
         `tier=${String(BEHAVIORAL_TIER)}`,
         "--filter-pattern",
-        "^path-error$",
+        "^analyzing-recent-project-state/path-error$",
         "--repeat",
         "1",
       ],
@@ -168,7 +166,10 @@ test.each([
       expect.arrayContaining([
         expect.objectContaining({
           success: pass,
-          namedScores: { "case/path-error": 1, "mutation-scope": score },
+          namedScores: {
+            "case/analyzing-recent-project-state/path-error": 1,
+            "mutation-scope": score,
+          },
         }),
       ]),
     );
@@ -180,7 +181,12 @@ test(
   "native CLI exports a provider error as a failed run",
   () => {
     const { child, exported } = evaluateOffline(
-      ["--filter-pattern", "^trigger-positive$", "--repeat", "1"],
+      [
+        "--filter-pattern",
+        "^analyzing-recent-project-state/trigger-positive$",
+        "--repeat",
+        "1",
+      ],
       "provider-error",
     );
     expect(child.status).toBe(EXIT.FAIL);
@@ -193,6 +199,26 @@ test(
         }),
       ]),
     );
+  },
+  TIMEOUT_MS,
+);
+
+test(
+  "native CLI filters by skill metadata",
+  () => {
+    const { child, exported } = evaluateOffline(
+      [
+        "--filter-metadata",
+        `skill=${SKILL}`,
+        "--filter-pattern",
+        `^${SKILL}/trigger-positive$`,
+        "--repeat",
+        "1",
+      ],
+      "pass",
+    );
+    expect(child.status).toBe(EXIT.PASS);
+    expect(exported).toHaveProperty("results.results.length", ONE_RUN);
   },
   TIMEOUT_MS,
 );

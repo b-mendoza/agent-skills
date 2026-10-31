@@ -25,7 +25,7 @@ import {
 const openFixtures: Fixture[] = [];
 
 function createFixture(kind: FixtureKind): Fixture {
-  const fixture = makeFixture(kind, SKILL);
+  const fixture = makeFixture(kind, [SKILL]);
   openFixtures.push(fixture);
   return fixture;
 }
@@ -191,7 +191,7 @@ test("failed provisioning of a nonexistent skill removes its temp root", () => {
   const temporaryDirectory = mkdtempSync(join(tmpdir(), "fixture-failure-"));
   try {
     vi.stubEnv("TMPDIR", temporaryDirectory);
-    expect(() => makeFixture("clean", "nonexistent-skill")).toThrow(/ENOENT/);
+    expect(() => makeFixture("clean", ["nonexistent-skill"])).toThrow(/ENOENT/);
     expect(readdirSync(temporaryDirectory)).toStrictEqual([]);
   } finally {
     vi.unstubAllEnvs();
@@ -226,4 +226,56 @@ test("cleanup removes only the whole owned temp root and is idempotent", () => {
   } finally {
     rmSync(outsideRoot, { recursive: true, force: true });
   }
+});
+
+test("installs every requested skill and seeds after the base repository exists", () => {
+  const extraSkill = "review-pull-request";
+  const fixture = makeFixture(
+    "clean",
+    [SKILL, extraSkill],
+    ({ repoPath, binPath }) => {
+      expect(readGitStatus(repoPath)).toBe("");
+      expect(
+        existsSync(join(repoPath, ".claude", "skills", extraSkill, "SKILL.md")),
+      ).toBe(true);
+      writeFileSync(join(repoPath, "seed.txt"), "planted");
+      execFileSync("git", ["add", "seed.txt"], { cwd: repoPath });
+      execFileSync("git", ["commit", "-qm", "seed commit"], { cwd: repoPath });
+      writeFileSync(join(binPath, "gh"), "#!/bin/sh\nprintf 'fake gh'\n", {
+        mode: 0o755,
+      });
+    },
+  );
+  openFixtures.push(fixture);
+  expect(dirname(fixture.binPath)).toBe(dirname(fixture.cwd));
+  expect(readGitStatus(fixture.cwd)).toBe("");
+  expect(
+    execFileSync("git", ["log", "-1", "--format=%s"], {
+      cwd: fixture.cwd,
+      encoding: "utf8",
+    }).trim(),
+  ).toBe("seed commit");
+  expect(
+    execFileSync("sh", ["-c", "gh"], {
+      cwd: fixture.cwd,
+      env: {
+        ...process.env,
+        PATH: `${fixture.binPath}:${process.env["PATH"] ?? ""}`,
+      },
+      encoding: "utf8",
+    }),
+  ).toBe("fake gh");
+});
+
+test("a failed seed removes the fixture root and bin directory", () => {
+  let fixtureRoot = "";
+  expect(() =>
+    makeFixture("clean", [SKILL], ({ repoPath, binPath }) => {
+      fixtureRoot = dirname(repoPath);
+      writeFileSync(join(binPath, "fake"), "test");
+      throw new Error("seed failed");
+    }),
+  ).toThrow("seed failed");
+  expect(fixtureRoot).not.toBe("");
+  expect(existsSync(fixtureRoot)).toBe(false);
 });

@@ -2,21 +2,25 @@
 import { describe, expect, test } from "vitest";
 
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
-import {
-  assertRunHappened,
-  assertValidatorInvoked,
-  BUDGET_STOP_SUBTYPE,
-  checkMutationScope,
-} from "#/cases/analyzing-recent-project-state-checks.ts";
+import { assertValidatorInvoked } from "#/cases/analyzing-recent-project-state-checks.ts";
 import {
   FULL_REPORT_SNAPSHOT,
   QUIET_STATE_SNAPSHOT,
   VALIDATOR_CALL,
 } from "#/cases/case-test-support.ts";
+import {
+  assertRunHappened,
+  BUDGET_STOP_SUBTYPE,
+  checkMutationScope,
+} from "#/cases/shared-checks.ts";
 import { HOSTILE_FIXTURE_FACTS } from "#/fixtures/fixtures.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
-import { getCase } from "#/promptfoo/observation.ts";
+import { getCase as getRegisteredCase } from "#/promptfoo/observation.ts";
+
+function getCase(id: string) {
+  return getRegisteredCase(`${SKILL}/${id}`);
+}
 
 const AUTH_FAILURE = createObservation({
   isError: true,

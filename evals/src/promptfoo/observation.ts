@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 
-import type { EvalCase } from "#/cases/analyzing-recent-project-state.ts";
-import { cases } from "#/cases/analyzing-recent-project-state.ts";
+import type { EvalCase } from "#/cases/case-contract.ts";
+import { cases } from "#/cases/registry.ts";
 import { observationSchema } from "#/observation/agent-query.ts";
 
 const FIRST_REPEAT = 0;
