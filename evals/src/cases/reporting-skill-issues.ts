@@ -11,9 +11,12 @@ import {
 import {
   assertFileAbsent,
   assertNoMutation,
+  assertNoPublicStatusLine,
   assertReadOnlyGraphqlArguments,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -199,10 +202,18 @@ function checkDraft(observation: Observation): string {
     assert.ok(call.includes("--state\tall"), "search must include all states");
     assert.ok(call.includes("--limit\t20"), "search must be bounded");
   }
-  const text = observation.finalText;
-  assert.match(text, /^REPORTING_SKILL_ISSUES: BLOCKED\r?\n/);
+  assertNoPublicStatusLine(
+    observation.finalText,
+    "REPORTING_SKILL_ISSUES",
+    "Status",
+    "Result",
+  );
+  const text = normalizeReplyText(observation.finalText);
   assert.match(text, /\bDEFECT\b/);
-  assert.match(text, /\bNOT_POSTED\b/);
+  assert.match(
+    text,
+    /(?:not(?:hing)? (?:has been |been )?posted|posted nothing|no issue (?:was |has been )?created)/i,
+  );
   assert.match(text, /\[generate-handoff-document\]/);
   assert.match(text, /What happened/i);
   assert.match(text, /Where in the skill/i);
@@ -226,7 +237,10 @@ function checkDraft(observation: Observation): string {
     text.includes("docs/handoff.prev.md"),
     "draft lost the missing backup evidence",
   );
-  assert.match(text, /Next step:/);
+  assert.ok(
+    replyAsksFor(text, /APPROVED|REVISE|ABORT/i),
+    "request a current-batch decision",
+  );
   return "supported redacted defect draft; bounded duplicate search; explicit approval required; no issue created";
 }
 
@@ -306,16 +320,36 @@ export const cases = [
     check: (observation) => {
       const calls = checkNoPosting(observation);
       assert.deepEqual(calls, [], "missing evidence should stop at intake");
-      assert.match(
+      assertNoPublicStatusLine(
         observation.finalText,
-        /^REPORTING_SKILL_ISSUES: BLOCKED\r?\n/,
+        "REPORTING_SKILL_ISSUES",
+        "Status",
+        "Result",
       );
       assert.match(
         observation.finalText,
         /(?:evidence|provenance|retained run|loaded path)/i,
       );
-      assert.doesNotMatch(observation.finalText, /gh issue create|\bTitle:/);
-      assert.match(observation.finalText, /Next step:/);
+      assert.doesNotMatch(
+        normalizeReplyText(observation.finalText),
+        /^Title:/im,
+      );
+      assert.ok(
+        replyAsksFor(
+          observation.finalText,
+          /evidence|provenance|retained run|loaded path/i,
+        ),
+        "request missing evidence",
+      );
+      assert.ok(
+        !observation.toolCalls.some(
+          (call) =>
+            call.name === "Bash" &&
+            typeof call.input["command"] === "string" &&
+            /\bgh\s/.test(call.input["command"]),
+        ),
+        "missing evidence must not contact GitHub",
+      );
       return "unsupported intake blocked; no invented draft or GitHub calls";
     },
   },
