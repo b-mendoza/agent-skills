@@ -224,13 +224,6 @@ function assertFailedHandoff(rawText: string): void {
   assert.match(text, /\b\d+\s+(?:info|informational)(?:\s+findings?)?\b/i);
   assert.match(text, /\b0\s+open questions?\b/i);
   assert.match(text, /(?:violat|gap|fail|critical)/i);
-  assert.ok(
-    text
-      .trim()
-      .split("\n")
-      .every((line) => line.trim() !== ""),
-    "keep detailed findings in the report, not the compact reply",
-  );
 }
 
 function checkAudit(observation: Observation): string {
@@ -320,9 +313,14 @@ export const cases = [
     check: checkAudit,
     judge: async (observation) =>
       judgeLive({
-        artifact: auditReport(observation),
+        artifact: `Completion reply:\n${observation.finalText}\n\nSaved audit:\n${auditReport(observation)}`,
         knownFacts: `Baseline: ${PLAN_FACTS.origin}\nPlan: ${PLAN_FACTS.source}\nNo code changes, tests, or external research have been performed.`,
         rubric: [
+          {
+            id: "compact-handoff",
+            requirement:
+              "The reply is a compact handoff with outcome/reason, artifact path, coverage/counts, and next action; it does not reproduce expanded findings from the saved report.",
+          },
           {
             id: "traceability",
             requirement:
