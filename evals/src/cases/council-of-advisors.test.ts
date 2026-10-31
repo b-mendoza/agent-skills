@@ -1,11 +1,34 @@
 import assert from "node:assert/strict";
 
-import { describe, expect, it } from "vitest";
+import type { query } from "@anthropic-ai/claude-agent-sdk";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { cases, COUNCIL_FACTS } from "#/cases/council-of-advisors.ts";
 import type { Observation } from "#/observation/agent-query.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import {
+  createObservation,
+  scripted,
+} from "#/observation/observation-test-support.ts";
+
+const sdk = vi.hoisted(() => ({
+  query:
+    vi.fn<(request: Parameters<typeof query>[0]) => AsyncIterable<unknown>>(),
+}));
+vi.mock(
+  import("@anthropic-ai/claude-agent-sdk"),
+  async (original): Promise<Record<string, unknown>> => ({
+    ...(await original()),
+    query: sdk.query,
+  }),
+);
+beforeEach(() => {
+  sdk.query
+    .mockReset()
+    .mockImplementation(() =>
+      scripted({ type: "result", result: '{"violations":[]}' }),
+    );
+});
 
 function getCase(suffix: string): EvalCase {
   const found = cases.find((evalCase) => evalCase.id.endsWith(`/${suffix}`));
@@ -90,6 +113,27 @@ describe("council confirmation gate", () => {
     expect(() =>
       checkWithOverrides("confirm-framing", { finalText }),
     ).toThrow();
+  });
+
+  it("gives the framing judge fixture state and inspection evidence", async () => {
+    const evalCase = getCase("confirm-framing");
+    assert.ok(evalCase.judge !== undefined);
+    const inspection = {
+      name: "Bash",
+      input: { command: "ls council-handoff-paid-support-pilot*.md" },
+    };
+    await evalCase.judge({
+      ...gateObservation(framedPacket),
+      toolCalls: [skillCall, inspection],
+    });
+    const [request] = sdk.query.mock.lastCall ?? [];
+    assert.ok(request !== undefined);
+    expect(request.prompt).toContain(JSON.stringify(inspection));
+    expect(request.prompt).toContain(
+      JSON.stringify({ [COUNCIL_FACTS.handoffPath]: null }),
+    );
+    expect(request.prompt).toContain("semantic paraphrases");
+    expect(request.prompt).toContain("stakes classification");
   });
 
   it("rejects seat dispatch before confirmation", () => {
