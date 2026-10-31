@@ -8,8 +8,11 @@ import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileExists,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -24,7 +27,6 @@ export const PROMPT_FACTS = {
 
 const SKILL = "prompt-structurer";
 const SKIPPED_PASSES = ["2", "3", "4", "5"] as const;
-const SINGLE_QUESTION = 1;
 const behavioralDefaults = {
   tier: BEHAVIORAL_TIER,
   fixture: "clean",
@@ -144,17 +146,25 @@ function assertBalancedXml(xml: string): void {
   assert.deepEqual(stack, [root], "unclosed XML element");
 }
 
+function extractPromptXml(text: string): string {
+  const fenced = /^```xml[^\S\r\n]*\r?\n(?<xml>[^]*?)\r?\n```/i.exec(text);
+  if (fenced !== null) {
+    assert.ok(fenced.groups !== undefined);
+    return fenced.groups["xml"] ?? "";
+  }
+  const [beforeNotes = ""] = text.split(
+    /^(?:#{1,6}\s+|\*\*)Assembly Notes(?:\*\*)?\s*$/im,
+  );
+  return beforeNotes.trim();
+}
+
 function assertXmlFirst(text: string): void {
   assert.match(
     text,
     /^(?:```xml\s*\n)?<[a-z_][\w.-]*(?:\s[^<>]*)?>/i,
     "XML must precede prose notes",
   );
-  const [beforeNotes = ""] = text.split(/^#{1,6}\s+Assembly Notes\s*$/im);
-  const xml = beforeNotes
-    .trim()
-    .replace(/^```xml\s*\n/i, "")
-    .replace(/\n```\s*$/, "");
+  const xml = extractPromptXml(text);
   assertBalancedXml(xml);
   const task = /<task\b[^>]*>(?<content>[^]*?)<\/task>/i.exec(xml);
   assert.ok(task !== null, "missing closed task element");
@@ -164,13 +174,12 @@ function assertXmlFirst(text: string): void {
 
 function checkStructuredPrompt(observation: Observation): string {
   assertSourceIntact(observation);
-  const text = observation.finalText.trim();
-  assertXmlFirst(text);
-  assert.match(
-    text,
-    /^#{1,6}\s+Assembly Notes\s*$/im,
-    "missing assembly notes",
-  );
+  const rawText = observation.finalText.trim();
+  assertNoPublicStatusLine(rawText, "RESULT", "Result", "Status");
+  const text = normalizeReplyText(rawText);
+  assert.doesNotMatch(text, /^(?:PASS|BLOCKED|FAIL|ERROR|REPAIR_NEEDED)\s*$/im);
+  assertXmlFirst(rawText);
+  assert.match(text, /^Assembly Notes\s*$/im, "missing assembly notes");
   assert.match(
     text,
     /\blight\b/i,
@@ -178,9 +187,15 @@ function checkStructuredPrompt(observation: Observation): string {
   );
   assert.match(text, /OMITTED_PASS_REASON/, "missing skipped-pass disclosure");
   for (const pass of SKIPPED_PASSES) {
-    assert.match(
-      text,
-      new RegExp(`OMITTED_PASS_REASON[^]*?\\b${pass}\\b`),
+    assert.ok(
+      text
+        .split("\n")
+        .some(
+          (line) =>
+            /OMITTED_PASS_REASON|\bPass(?:es)?\b/i.test(line) &&
+            /:\s*\S/.test(line) &&
+            new RegExp(`\\b${pass}\\b`).test(line),
+        ),
       `missing reason for skipped pass ${pass}`,
     );
   }
@@ -192,50 +207,31 @@ function checkStructuredPrompt(observation: Observation): string {
   ]) {
     assert.match(text, disclosure, "missing assembly disclosure");
   }
-  assert.match(
-    text,
-    /^(?:Status:\s*)?(?:\*\*)?PASS(?:\*\*)?\s*$/m,
-    "missing PASS terminal",
-  );
-  assert.doesNotMatch(text, /^[\t ]*RESULT:/m, "internal pass status leaked");
-  assert.doesNotMatch(
-    text,
-    /^(?:Status:\s*)?(?:BLOCKED|FAIL|ERROR|REPAIR_NEEDED)\s*$/m,
-    "conflicting terminal status",
-  );
+
   return "XML first, light-route disclosures, and unchanged source";
 }
 
 function checkMissingBaseline(observation: Observation): string {
   assertSourceIntact(observation);
   const text = observation.finalText;
-  assert.match(text, /\bBLOCKED\b/, "missing blocked revision status");
-  const [question = ""] = text.split("?");
-  assert.equal(
-    text.match(/\?/g)?.length,
-    SINGLE_QUESTION,
-    "expected one baseline question",
+  assertNoPublicStatusLine(text, "RESULT", "Result", "Status");
+  assert.doesNotMatch(
+    normalizeReplyText(text),
+    /^(?:PASS|BLOCKED|FAIL|ERROR|REPAIR_NEEDED)\s*$/im,
   );
-  assert.match(
-    question,
-    /\b(?:existing|original|baseline)\b/i,
-    "question does not request the baseline",
-  );
-  assert.match(
-    question,
-    /\b(?:XML|structured)\b/i,
-    "question does not request structured XML",
+  assert.ok(
+    replyAsksFor(
+      text,
+      /(?:existing|original|baseline).*?(?:XML|structured)|(?:XML|structured).*?(?:existing|original|baseline)/i,
+    ),
+    "request the existing XML baseline",
   );
   assert.doesNotMatch(
     text,
     /<task\b/i,
     "prose was substituted for the missing XML baseline",
   );
-  assert.doesNotMatch(
-    text,
-    /^(?:Status:\s*)?(?:PASS|FAIL|ERROR|REPAIR_NEEDED)\s*$/m,
-    "conflicting terminal status",
-  );
+
   return "revision blocked pending the existing XML prompt";
 }
 
