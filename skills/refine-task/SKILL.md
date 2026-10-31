@@ -71,22 +71,15 @@ Summary - normative text in `reviewer-policy.md`: this coordinator advances the 
 9. Malformed `REVIEW`: `Redispatch` exactly once with a defect note; a second malformed return is routed as `REVIEW: ERROR`. Never infer a state from prose.
 10. `RouteReview`: `PASS` → `ChooseOutputPath`; `BLOCKED` / `ERROR` → `TerminalBlocked`; `FAIL` → `TerminalDraft` with `REVIEW_STATUS` verbatim and failed criteria.
 11. `ChooseOutputPath` (draft or unknown write mode): `TerminalReadyToPost` when `Comment mode: Ready to post`; otherwise `TerminalDraft`.
-12. `WRITE_MODE=post-comment`: `GatePostPreconditions` → `PreviewGate` → `IdempotencyCheck` → at most one `AttemptPost` → `VerifyPost`, per `reviewer-policy.md`. Unattended preview never posts unseen content (`TerminalReadyToPost`).
+12. `WRITE_MODE=post-comment`: `GatePostPreconditions` → `PreviewGate` → `IdempotencyCheck` → at most one `AttemptPost` → `VerifyPost`, per `reviewer-policy.md`. Unattended preview never posts unseen content. `TerminalReadyToPost` applies only after posting preconditions pass; otherwise use the earlier safe draft or blocked route.
 
 ## Output Contract
 
-Every terminal path returns this shape:
+Every terminal reply states the outcome in prose: whether a review was completed, whether the comment is a draft, was posted or already exists, what was not changed, and what the user must do next. Do not emit public `Mode:`, `Status:`, or `REVIEW:` routing lines.
 
-```text
-Refinement review complete.
-Mode: Draft | Ready to post | Posted | Already posted | Blocked | Deferred
-Status: Ready | Needs refinement | Needs split | Needs spike | Blocked | Not actionable | Not reviewed
-Comment: <final comment or draft, or None for Not reviewed runs>
-Deferred actions: <declined mutations, or None>
-Run notes: <evidence coverage; remaining risks; fix cycles used; external sources fetched; resolved read/write tooling; injection notes; posting-approval basis; content-precedence discrepancies>
-```
+Use a `Comment:` heading followed by the exact final comment or safest draft. Keep that heading unchanged; put posting qualifications in the surrounding prose or `Run notes`, not in the heading. The comment is the requested tracker-facing artifact: preserve its `Refinement status:` readiness verdict verbatim from `REVIEW_STATUS`. This is not an outer reply status line. For runs without a review, explain why and say there is no comment.
 
-Summary - normative text in `reviewer-policy.md`: `Posted` requires verified posting of the exact comment, `Already posted` requires a matching existing comment from the idempotency check, and `Status` is the reviewer `REVIEW_STATUS` verbatim on dispatched runs.
+Include any deferred mutations in prose and a `Run notes:` section covering evidence, remaining risks, fix cycles, fetched sources, read/write tooling, injection notes, posting-approval basis, and content discrepancies. Keep internal reviewer fields unchanged. Claim posting only after verification, or an existing comment only after idempotency evidence.
 
 ## Example
 
@@ -94,10 +87,10 @@ Summary - normative text in `reviewer-policy.md`: `Posted` requires verified pos
 Input: `ITEM_URL=https://team.atlassian.net/browse/PROJ-123`,
 `WRITE_MODE=draft`
 
-Advance through intake and tooling gates, `DispatchReviewer` with absolute `SKILL_ROOT`, receive `REVIEW: PASS`, `REVIEW_STATUS: Needs split`, `Comment mode: Draft`, and a validated comment. Return `Mode: Draft`, `Status: Needs split`, the comment, `Deferred actions: None`, and compact run notes including tooling, evidence coverage, fix cycles, and remaining risks. </example>
+Advance through intake and tooling gates, `DispatchReviewer` with absolute `SKILL_ROOT`, receive `REVIEW: PASS`, `REVIEW_STATUS: Needs split`, `Comment mode: Draft`, and a validated comment. Explain that the review produced an unposted draft. Preserve `Refinement status: Needs split` inside the comment, and include compact run notes covering tooling, evidence, fix cycles, and remaining risks. </example>
 
 <example>
 Input: `ITEM_URL=https://github.com/org/repo/issues/42`,
 `WRITE_MODE=post-comment`, `POSTING_APPROVAL=preview`
 
-After `REVIEW: PASS` and `POST_ALLOWED: yes`, enter `PreviewGate`, show the exact final comment, and wait for confirmation. If confirmed, run `IdempotencyCheck`, skip posting when a matching refinement comment already exists, or `AttemptPost` once and `VerifyPost`. If unattended, return `Mode: Ready to post`; never post unseen content. </example>
+After `REVIEW: PASS` and `POST_ALLOWED: yes`, enter `PreviewGate`, show the exact final comment, and wait for confirmation. If confirmed, run `IdempotencyCheck`, skip posting when a matching refinement comment already exists, or `AttemptPost` once and `VerifyPost`. If unattended after posting preconditions pass, explain that the exact comment awaits approval and nothing was posted; never post unseen content. </example>
