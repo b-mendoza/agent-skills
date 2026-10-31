@@ -3,6 +3,7 @@
 // and the eval checks. These run the real script through the same wrapper the
 // checks use, offline and token-free.
 
+import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,9 +14,7 @@ import { runOutputValidator } from "#/cases/analyzing-recent-project-state-check
 import { QUIET_STATE_SNAPSHOT } from "#/cases/case-test-support.ts";
 
 const PROJECT_PATH = fileURLToPath(new URL("../../", import.meta.url));
-
-const GOOD_ENVELOPE =
-  "RECENT_STATE: NOT_GIT\nReason: not a worktree.\nNext step: Re-run with PROJECT_PATH set to a Git worktree.";
+const USAGE_EXIT_STATUS = 2;
 
 const GOOD_DRAFT = `SNAPSHOT_WRITE: PASS
 
@@ -31,12 +30,29 @@ const GOOD_NON_PASS_EVIDENCE =
 
 describe("validate-output.sh", () => {
   test.each([
-    { mode: "envelope", payload: GOOD_ENVELOPE },
+    { mode: "report", payload: QUIET_STATE_SNAPSHOT },
     { mode: "draft", payload: GOOD_DRAFT },
     { mode: "verdict", payload: GOOD_VERDICT },
     { mode: "evidence", payload: GOOD_NON_PASS_EVIDENCE },
   ] as const)("$mode accepts a conformant payload", ({ mode, payload }) => {
     expect(runOutputValidator(mode, payload, PROJECT_PATH)).toBe("");
+  });
+
+  test("rejects the retired envelope mode with usage exit code 2", () => {
+    const validatorPath = fileURLToPath(
+      new URL(
+        "../../../skills/analyzing-recent-project-state/scripts/validate-output.sh",
+        import.meta.url,
+      ),
+    );
+    const result = spawnSync("sh", [validatorPath, "envelope"], {
+      input: "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it",
+      encoding: "utf8",
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(USAGE_EXIT_STATUS);
+    expect(result.stderr).toMatch(/usage: validate-output\.sh/);
+    expect(result.stdout).toBe("");
   });
 
   test("throws an operational error when draft validation lacks a project path", () => {
@@ -61,39 +77,6 @@ describe("validate-output.sh", () => {
   );
 
   test.each([
-    {
-      label: "an envelope with an empty Reason value",
-      mode: "envelope",
-      payload:
-        "RECENT_STATE: PATH_ERROR\nReason:\nNext step: supply a real path",
-      finding: /line 2 must be Reason:/,
-    },
-    {
-      label: "an envelope with the wrong first-line label",
-      mode: "envelope",
-      payload:
-        "STATE: PATH_ERROR\nReason: missing\nNext step: supply a real path",
-      finding: /line 1 must be RECENT_STATE:/,
-    },
-    {
-      label: "an envelope with swapped Reason and Next step lines",
-      mode: "envelope",
-      payload:
-        "RECENT_STATE: PATH_ERROR\nNext step: supply a real path\nReason: missing",
-      finding: /line 2 must be Reason:/,
-    },
-    {
-      label: "an envelope with a missing Next step prefix",
-      mode: "envelope",
-      payload: "RECENT_STATE: PATH_ERROR\nReason: missing\nSupply a real path",
-      finding: /line 3 must be Next step:/,
-    },
-    {
-      label: "an envelope with a fourth line",
-      mode: "envelope",
-      payload: `${GOOD_ENVELOPE}\nHope that helps!`,
-      finding: /expected exactly 3 envelope lines/,
-    },
     {
       label: "a draft with an unresolved path locator",
       mode: "draft",

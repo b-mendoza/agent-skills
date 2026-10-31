@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { assertRunHappened } from "#/cases/shared-checks.ts";
+import {
+  assertNoMutation,
+  assertNoPublicStatusLine,
+  assertRunHappened,
+  normalizeReplyText,
+  replyAsksFor,
+} from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 
 // The skill's own deterministic validator is the normative shape definition;
@@ -14,10 +20,9 @@ const OUTPUT_VALIDATOR_PATH = fileURLToPath(
   ),
 );
 
-export type ValidatorMode = "evidence" | "draft" | "verdict" | "envelope";
+export type ValidatorMode = "evidence" | "draft" | "verdict" | "report";
 
 const SUCCESS_EXIT_STATUS = 0;
-const ENVELOPE_LINES = 3;
 const HEREDOC_BODY =
   /(?<opening><<-?[ \t]*(?<quote>["']?)(?<delimiter>[^\s"'<>]+)\k<quote>(?:[ \t][^\n]*)?\n)(?:[^\n]*\n)*?\t*\k<delimiter>(?:\n|$)/g;
 const COMMAND_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;&|\n"'])+/g;
@@ -70,7 +75,7 @@ export function assertValidatorInvoked(observation: Observation): void {
         return (
           /^(?<quote>["']?)(?:[^"']*\/)?scripts\/validate-output\.sh\k<quote>$/.test(
             String(script),
-          ) && /^(?:evidence|draft|verdict|report|envelope)$/.test(String(mode))
+          ) && /^(?:evidence|draft|verdict|report)$/.test(String(mode))
         );
       }),
   );
@@ -80,33 +85,33 @@ export function assertValidatorInvoked(observation: Observation): void {
   );
 }
 
-/** The escalation statuses these cases can assert on. */
-export type EnvelopeStatus = "PATH_ERROR" | "NOT_GIT";
-
-/**
- * The three-line escalation envelope shared by the PATH_ERROR/NOT_GIT routes.
- * Shape is graded by the skill's own validator; this adds only the expected
- * status token and the validator-invocation observable.
- */
-export function assertEnvelope(
+/** Intake stops explain the observed problem and request a usable path. */
+export function assertIntakeStop(
   observation: Observation,
-  status: EnvelopeStatus,
+  cause: "PATH_ERROR" | "NOT_GIT",
 ): string {
   assertRunHappened(observation);
+  assertNoMutation(observation);
   assertValidatorInvoked(observation);
-  const findings = runOutputValidator("envelope", observation.finalText);
-  assert.equal(
-    findings,
-    "",
-    `envelope shape invalid:\n${findings}\n---\n${observation.finalText}`,
+  assertNoPublicStatusLine(observation.finalText, "RECENT_STATE");
+  const reply = normalizeReplyText(observation.finalText);
+  assert.match(
+    reply,
+    cause === "PATH_ERROR"
+      ? /(?:does not exist|doesn't exist|nonexistent|not found|missing|cannot (?:read|access|list)|unreadable)/i
+      : /(?:not (?:a |inside a )?(?:Git (?:worktree|work tree|repo(?:sitory)?)|worktree)|no Git repo(?:sitory)?)/i,
+    "stop omitted the path failure cause",
   );
-  const [firstLine = ""] = observation.finalText.trim().split("\n");
-  assert.equal(
-    firstLine.trim(),
-    `RECENT_STATE: ${status}`,
-    `expected a ${status} envelope, got: ${firstLine.trim()}`,
+  assert.ok(
+    replyAsksFor(
+      reply,
+      /PROJECT_PATH|(?:readable|Git|worktree|repo(?:sitory)?) (?:path|directory)|Git worktree/i,
+    ) ||
+      /(?:re-?run|retry)[^\n]*(?:PROJECT_PATH|path|worktree|repo)/i.test(reply),
+    "stop omitted a usable-path recovery action",
   );
-  return `${status}, ${ENVELOPE_LINES}-line envelope`;
+  assert.doesNotMatch(reply, /^Project State Snapshot/m);
+  return `${cause}; cause and recovery explained; no mutation`;
 }
 
 // --- Report-shape conformance --------------------------------------------
@@ -114,8 +119,7 @@ export function assertEnvelope(
 // The skill's contract makes section names canonical identifiers while order
 // and numbering are presentation, so these matchers accept any heading level
 // and any (or no) numbering but demand the canonical name verbatim. Exact-text
-// assertions are reserved for machine-parsed boundaries: the envelope, the
-// status lines, and the snapshot title.
+// assertions are reserved for machine-parsed boundaries: the snapshot title and internal payloads.
 
 export const FULL_REPORT_SECTIONS = [
   "Executive Summary",
@@ -192,7 +196,7 @@ export function assertDisclosureLineOnce(
   finalText: string,
   linePrefix: string,
 ): void {
-  const matchingLineCount = finalText
+  const matchingLineCount = normalizeReplyText(finalText)
     .split("\n")
     .filter((line) => line.startsWith(linePrefix)).length;
   assert.equal(
@@ -208,12 +212,12 @@ export function assertDisclosureLineOnce(
  */
 export function assertNoInternalLeak(finalText: string): void {
   assert.doesNotMatch(
-    finalText,
+    normalizeReplyText(finalText),
     /^(?:GIT_EVIDENCE|SNAPSHOT_WRITE|SNAPSHOT_VERIFY):/m,
     "internal status wrapper leaked into the final response",
   );
   assert.doesNotMatch(
-    finalText,
+    normalizeReplyText(finalText),
     /^Inspected:\s*$/m,
     "the Inspected: log leaked into the final response",
   );
