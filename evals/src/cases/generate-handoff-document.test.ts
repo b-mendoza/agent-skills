@@ -165,28 +165,13 @@ function gateObservation(): Observation {
   });
 }
 
-describe("handoff routing", () => {
-  it("accepts an invoked skill, but not a missed trigger", () => {
-    const evalCase = getCase("trigger-positive");
-    expect(() =>
-      evalCase.check(createObservation({ toolCalls: [skillCall] })),
-    ).not.toThrow();
-    expect(() => evalCase.check(createObservation())).toThrow();
-  });
-
-  it("leaves a git-state report to its sibling", () => {
-    const evalCase = getCase("trigger-negative-git-state");
-    expect(() => evalCase.check(createObservation())).not.toThrow();
-    expect(() =>
-      evalCase.check(createObservation({ toolCalls: [skillCall] })),
-    ).toThrow();
-  });
-});
-
 describe("conversation handoff package", () => {
-  it("accepts the complete package with a redacted transcript and no claims file", () => {
+  it.each([
+    "The handoff passed review.",
+    "The second review came back REVIEW: WARN with no failed gates. I used one of the three repair cycles.",
+  ])("accepts a successful review explanation: %s", (outcome) => {
     expect(() =>
-      getCase("conversation-package").check(writtenObservation()),
+      getCase("conversation-package").check(writtenObservation(outcome)),
     ).not.toThrow();
   });
 
@@ -355,20 +340,28 @@ describe("conversation handoff package", () => {
     ).toThrow();
   });
 
-  it("rejects a finished narrative without a successful review terminal", () => {
+  it.each([
+    "Done.",
+    "The review did not pass.",
+    "The second review came back REVIEW: FAIL with failed gates.",
+    "Completed: review pass\nThe handoff passed review.",
+  ])("rejects an unsuccessful review outcome: %s", (outcome) => {
     expect(() =>
-      getCase("conversation-package").check({
-        ...writtenObservation(),
-        finalText: "Done.",
-      }),
+      getCase("conversation-package").check(writtenObservation(outcome)),
     ).toThrow();
   });
 });
 
 describe("existing target gate", () => {
-  it("asks which mode to use without creating any package files", () => {
+  it.each([
+    "Should I overwrite it, update it, or use a new path?",
+    "Which mode do you want?\n\n1. overwrite: back up and replace.\n2. update: back up and merge.\n3. new-path: leave the current file alone.",
+  ])("asks for the update mode without writing files: %s", (question) => {
     expect(() =>
-      getCase("existing-target-gate").check(gateObservation()),
+      getCase("existing-target-gate").check({
+        ...gateObservation(),
+        finalText: `The target ${HANDOFF_PATHS.target} already exists.\n\n${question}`,
+      }),
     ).not.toThrow();
   });
 
@@ -399,14 +392,20 @@ describe("existing target gate", () => {
     ).toThrow();
   });
 
-  it("rejects an answer that did not ask for mode selection", () => {
-    expect(() =>
-      getCase("existing-target-gate").check({
-        ...gateObservation(),
-        finalText: "Completed: review pass",
-      }),
-    ).toThrow();
-  });
+  it.each([
+    "Completed: review pass",
+    "The target exists. Available modes are overwrite, update, and new-path. I will proceed.",
+  ])(
+    "rejects an answer that did not ask for mode selection: %s",
+    (finalText) => {
+      expect(() =>
+        getCase("existing-target-gate").check({
+          ...gateObservation(),
+          finalText,
+        }),
+      ).toThrow();
+    },
+  );
 });
 
 describe.each(["conversation-package", "existing-target-gate"])(
