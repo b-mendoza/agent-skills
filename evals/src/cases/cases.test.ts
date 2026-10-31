@@ -30,12 +30,13 @@ const AUTH_FAILURE = createObservation({
 const behavioralCases = [
   {
     caseId: "path-error",
-    finalText: "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it",
+    finalText:
+      "The requested path does not exist on disk, so I cannot inspect this repo.",
   },
   {
     caseId: "gate-envelope",
     finalText:
-      "RECENT_STATE: NOT_GIT\nReason: not a worktree\nNext step: use a repo",
+      "This directory is not a Git worktree, so I have to stop before collecting evidence.",
   },
   { caseId: "quiet-state", finalText: QUIET_STATE_SNAPSHOT },
   { caseId: "snapshot-dirty", finalText: FULL_REPORT_SNAPSHOT },
