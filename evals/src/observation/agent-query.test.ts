@@ -74,7 +74,6 @@ test("the query owns its policy and inherits ambient credentials", async () => {
   const abortController: unknown = expect.any(AbortController);
   const [request] = sdk.query.mock.lastCall ?? [];
   expect(request).toMatchObject({
-    prompt: options.prompt,
     options: {
       cwd,
       model: "haiku",

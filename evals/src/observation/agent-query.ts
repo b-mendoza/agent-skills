@@ -1,5 +1,7 @@
+import { once } from "node:events";
 import { promisify } from "node:util";
 
+import type { SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { Schema } from "effect";
 
@@ -100,6 +102,10 @@ const WEB_TOOLS = new Set(["WebSearch", "WebFetch"]);
 const WEB_RESULT_CHARS = 8_000;
 const WEB_RESULTS_TOTAL_CHARS = 32_000;
 const ZERO_CHARS = 0;
+const NO_TASKS = 0;
+const decodeBackgroundTasks = Schema.decodeUnknownSync(
+  Schema.Struct({ tasks: Schema.Array(Schema.Unknown) }),
+);
 const decodeResult = Schema.decodeUnknownSync(
   Schema.Struct({
     subtype: Schema.String,
@@ -208,14 +214,26 @@ function failureText(failure: unknown): string {
   return failure instanceof Error ? failure.message : toText(failure);
 }
 
+function backgroundTasksLive(message: unknown, previous: boolean): boolean {
+  if (!isRecord(message)) return previous;
+  if (message["type"] !== "system") return previous;
+  if (message["subtype"] !== "background_tasks_changed") return previous;
+  // The SDK's level signal replaces membership; task edge ordering is unspecified.
+  return decodeBackgroundTasks(message).tasks.length > NO_TASKS;
+}
+
 async function readResult(
   iterator: AsyncIterator<unknown>,
   toolCalls: ToolCall[],
+  tasksLive: boolean,
 ): Promise<ResultVerdict | null> {
   const message = await iterator.next();
   if (message.done === true) return null;
+  const live = backgroundTasksLive(message.value, tasksLive);
   const result = normalizeStreamMessage(message.value, toolCalls);
-  return result ?? readResult(iterator, toolCalls);
+  return result !== null && !live
+    ? result
+    : readResult(iterator, toolCalls, live);
 }
 
 async function closeIterator(
@@ -266,9 +284,20 @@ export async function observeClaude(
   let result: ResultVerdict | null = null;
   let failure: unknown = undefined;
   let iterator: AsyncIterator<unknown> | undefined = undefined;
+  const inputController = new AbortController();
+  const inputClosed = once(inputController.signal, "abort");
+  async function* input(): AsyncGenerator<SDKUserMessage> {
+    yield {
+      type: "user",
+      message: { role: "user", content: runOptions.prompt },
+      parent_tool_use_id: null,
+    };
+    // Closing stdin after the first prompt can kill background agents at a result.
+    await inputClosed;
+  }
   try {
     iterator = query({
-      prompt: runOptions.prompt,
+      prompt: input(),
       options: {
         cwd: runOptions.cwd,
         model: runOptions.model,
@@ -282,10 +311,14 @@ export async function observeClaude(
         tools: { type: "preset", preset: "claude_code" },
       },
     })[Symbol.asyncIterator]();
-    result = await Promise.race([readResult(iterator, toolCalls), settleBy]);
+    result = await Promise.race([
+      readResult(iterator, toolCalls, false),
+      settleBy,
+    ]);
   } catch (error) {
     failure = error;
   } finally {
+    inputController.abort();
     try {
       await closeIterator(iterator, settleBy).catch((error: unknown) => {
         if (result !== null) return;
