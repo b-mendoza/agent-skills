@@ -2,11 +2,13 @@
 
 Load this reference whenever producing or validating a review report. This is the single canonical schema. Other files may link here but must not define alternate review-report formats.
 
-## Verdict Line
+## Internal reviewer verdict line
 
 ```text
 REVIEW: PASS | FAIL | BLOCKED | ERROR
 ```
+
+This line belongs only to the reviewer-to-orchestrator handoff. When delivering the review to the user, replace it with a sentence explaining whether the package passes review, has blocking findings, cannot be reviewed, or encountered an error. Keep Findings, Checks, and Summary below intact. A prose introduction is allowed; no public status line is emitted.
 
 ## Findings
 
