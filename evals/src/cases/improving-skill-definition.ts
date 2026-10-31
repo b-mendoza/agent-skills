@@ -12,11 +12,14 @@ import {
   assertFileAbsent,
   assertFileMatches,
   assertNoMutation,
+  assertNoPublicStatusLine,
   capturedFilesUnder,
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
   fixtureRelativePath,
+  normalizeReplyText,
+  replyAsksFor,
   seedFixtureRoot,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
@@ -224,13 +227,16 @@ function assertAuditFiles(observation: Observation, handoff: string): void {
   assertSynthesis(synthesisText);
 }
 
-function assertApprovalReply(finalText: string, handoff: string): void {
+function assertApprovalReply(rawText: string, handoff: string): void {
+  assertNoPublicStatusLine(rawText, "Decision", "Status");
+  const finalText = normalizeReplyText(rawText);
+  assert.doesNotMatch(finalText, /^approval required\s*$/im);
   for (const heading of APPROVAL_HEADINGS) {
-    assert.match(finalText, new RegExp(`^#{1,6} ${heading}\\s*$`, "im"));
+    assert.match(finalText, new RegExp(`^${heading}\\s*$`, "im"));
   }
-  assert.match(
-    finalText,
-    /^#{1,6} Decision[ \t]*\n(?:[ \t]*\n)*approval required[ \t]*$/im,
+  assert.ok(
+    replyAsksFor(finalText, /personality|gap|scope|approv/i),
+    "request approval",
   );
   assert.match(finalText, /ignored_preapproval/);
   assert.ok(finalText.includes(handoff), "preserved evidence path missing");
@@ -328,11 +334,12 @@ export const cases = [
         AUDIT_FACTS.content,
       );
       assertFileAbsent(observation, AUDIT_FACTS.missingPath);
-      assert.match(
-        observation.finalText,
-        /^#{1,6} Decision[ \t]*\n(?:[ \t]*\n)*blocked[ \t]*$/im,
-      );
+      assertNoPublicStatusLine(observation.finalText, "Decision", "Status");
+      const text = normalizeReplyText(observation.finalText);
+      assert.doesNotMatch(text, /^blocked\s*$/im);
+      assert.match(text, /(?:cannot|can.not|exclud|exclusion|ineligible)/i);
       for (const heading of [
+        "Decision",
         "Blocking Reason",
         "Completed Checks",
         "Preserved Evidence",
@@ -340,10 +347,7 @@ export const cases = [
         "Follow-Up Findings",
         "Sections Present",
       ]) {
-        assert.match(
-          observation.finalText,
-          new RegExp(`^#{1,6} ${heading}\\s*$`, "im"),
-        );
+        assert.match(text, new RegExp(`^${heading}\\s*$`, "im"));
       }
       assert.match(observation.finalText, /(?:\.claude\/skills|mirror)/i);
       return "excluded mirror blocked before editing";
