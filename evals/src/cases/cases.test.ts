@@ -273,6 +273,7 @@ describe("validator invocation", () => {
     "cat <<'EOF'\nsh /missing/scripts/validate-output.sh draft\nEOF",
     "sh /skill/scripts/validate-output.sh draft-spoof",
     "sh /skill/scripts/validate-output.sh",
+    "sh scripts/validate-output.sh envelope",
   ])("rejects a spoofed validator invocation in %s", (command) => {
     expect(() => {
       assertValidatorInvoked(
@@ -289,7 +290,6 @@ describe("validator invocation", () => {
     "printf payload | bash '$SKILL_DIR/scripts/validate-output.sh' evidence",
     "cd x\nsh scripts/validate-output.sh verdict",
     "sh scripts/validate-output.sh report",
-    "sh scripts/validate-output.sh envelope",
   ])("accepts a validator invocation in %s", (command) => {
     expect(() => {
       assertValidatorInvoked(
