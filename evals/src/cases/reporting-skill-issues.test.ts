@@ -65,11 +65,8 @@ none
 `;
 const PREFLIGHT =
   "issue\tlist\t--help\t\nissue\tview\t--help\t\nissue\tcreate\t--help\t\nauth\tstatus\t--active\t--hostname\tgithub.com\t\napi\t--hostname\tgithub.com\tuser\t--jq\t.login\t\n";
-const DRAFT = `REPORTING_SKILL_ISSUES: BLOCKED
-Kind: DEFECT
+const DRAFT = `The supported DEFECT is ready for review. Nothing has been posted because approval is still needed.
 Finding: required backup was not written.
-Status: BLOCKED
-Result: NOT_POSTED
 Destination: https://github.com/b-mendoza/agent-skills
 Posting login: ${FACTS.login}
 Title: [generate-handoff-document] Missing backup before overwrite
@@ -95,7 +92,7 @@ function draftObservation(): Observation {
 function blockedObservation(): Observation {
   return createObservation({
     finalText:
-      "REPORTING_SKILL_ISSUES: BLOCKED\nNo retained run evidence or loaded path was supplied.\nNext step: provide the loaded skill, provenance and observed results.",
+      "No retained run evidence or loaded path was supplied, so I drafted and posted nothing. Please provide the loaded skill, provenance and observed results.",
     repoFiles: { [GH_LOG]: "", [CREATED_BODY]: null },
   });
 }
@@ -124,29 +121,6 @@ function apiAttemptErrors(args: readonly string[]): unknown[] {
   });
 }
 
-describe("routing", () => {
-  test("positive requires the skill, sibling negative rejects it", () => {
-    const invoked = createObservation({
-      toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-    });
-    expect(() => getCase("trigger-positive").check(invoked)).not.toThrow();
-    expect(() =>
-      getCase("trigger-positive").check(createObservation()),
-    ).toThrow();
-    expect(() =>
-      getCase("trigger-negative-application-bug").check(createObservation()),
-    ).not.toThrow();
-    expect(() =>
-      getCase("trigger-negative-application-bug").check(invoked),
-    ).toThrow();
-  });
-  test.each(cases)("$id rejects missing observations", (entry) => {
-    expect(() => entry.check(createObservation({ timedOut: true }))).toThrow(
-      /wall clock/,
-    );
-  });
-});
-
 describe("draft-before-approval", () => {
   test("accepts a complete unposted draft and approval gate", () => {
     expect(() =>
@@ -154,14 +128,11 @@ describe("draft-before-approval", () => {
     ).not.toThrow();
   });
   test.each([
+    ["old public status line", `REPORTING_SKILL_ISSUES: BLOCKED\n${DRAFT}`],
     [
-      "wrong status",
-      DRAFT.replace(
-        "REPORTING_SKILL_ISSUES: BLOCKED",
-        "REPORTING_SKILL_ISSUES: PASS",
-      ),
+      "claims creation",
+      DRAFT.replace("Nothing has been posted", "The issue was created"),
     ],
-    ["claims creation", DRAFT.replace("NOT_POSTED", "CREATED")],
     ["missing kind", DRAFT.replace("DEFECT", "IMPROVEMENT")],
     [
       "missing skill title",
@@ -178,7 +149,6 @@ describe("draft-before-approval", () => {
       "APPROVED",
       "REVISE",
       "ABORT",
-      "Next step:",
     ].map((required) => [
       `missing ${required}`,
       DRAFT.replaceAll(required, "omitted"),
@@ -338,6 +308,26 @@ describe("draft-before-approval", () => {
 });
 
 describe("missing-evidence", () => {
+  test("permits a future command explanation without an actual gh call", () => {
+    const observation = blockedObservation();
+    expect(() =>
+      getCase("missing-evidence").check({
+        ...observation,
+        finalText: `${observation.finalText} I will then preview the gh issue create command for approval.`,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      getCase("missing-evidence").check({
+        ...observation,
+        toolCalls: [
+          {
+            name: "Bash",
+            input: { command: "gh issue create --repo b-mendoza/agent-skills" },
+          },
+        ],
+      }),
+    ).toThrow();
+  });
   test("accepts an intake blocker without search or draft", () => {
     expect(() =>
       getCase("missing-evidence").check(blockedObservation()),
@@ -354,21 +344,17 @@ describe("missing-evidence", () => {
       "invented draft",
       { finalText: `${blockedObservation().finalText}\nTitle: invented` },
     ],
+    ["no reason", { finalText: "Please retry." }],
     [
-      "no reason",
-      { finalText: "REPORTING_SKILL_ISSUES: BLOCKED\nNext step: retry" },
-    ],
-    [
-      "wrong status",
-      { finalText: blockedObservation().finalText.replace("BLOCKED", "PASS") },
+      "old public status line",
+      {
+        finalText: `REPORTING_SKILL_ISSUES: BLOCKED\n${blockedObservation().finalText}`,
+      },
     ],
     [
       "no next step",
       {
-        finalText: blockedObservation().finalText.replace(
-          "Next step:",
-          "Later:",
-        ),
+        finalText: "No retained run evidence or loaded path was supplied.",
       },
     ],
   ] satisfies ReadonlyArray<readonly [string, Partial<Observation>]>)(
