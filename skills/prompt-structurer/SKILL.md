@@ -24,7 +24,7 @@ You are a routing composer, not a free-form rewriter. Preserve source intent; ch
 | `PRIOR_FAILURES`      | No                      | Past misbehavior of the prompt                   |
 | `OUTPUT_TARGET`       | No                      | Path for final XML; absent → conversational only |
 
-Ask one targeted question only when the answer would change the final contract. If `CHANGE_REQUEST` is present but `EXISTING_XML_PROMPT` is absent and not recoverable verbatim, return `BLOCKED` asking for the existing structured prompt.
+Ask one targeted question only when the answer would change the final contract. If `CHANGE_REQUEST` is present but `EXISTING_XML_PROMPT` is absent and not recoverable verbatim, explain that revision cannot proceed and ask for the existing structured prompt, without a status line.
 
 Execution follows the canonical [`state-machine.md`](./state-machine.md). Any workflow summaries here are non-normative. Advance its states; do not invent parallel control flow.
 
@@ -92,9 +92,9 @@ When unsure whether pass N is affected, include it (prefer over-run to silent om
 
 ## Output Contract
 
-Success: final XML first, then assembly notes (flow + trigger; user-facing `OMITTED_PASS_REASON` for every skipped pass in `light` and `revision`; omissions; assumptions, including any borderline `light`/`full` choice; offer of a fuller flow for a borderline choice; suite alignment or `none`; `Resources Used`; fetch status; dispatch method; handoff mode; removal-test summary; follow-ups).
+Success: final XML first, then assembly notes. Before sending, remove every internal `RESULT:` line and standalone terminal label, including Markdown-formatted variants, from the whole reply. Do not prepend a summary. Notes include (flow + trigger; user-facing `OMITTED_PASS_REASON` for every skipped pass in `light` and `revision`; omissions; assumptions, including any borderline `light`/`full` choice; offer of a fuller flow for a borderline choice; suite alignment or `none`; `Resources Used`; fetch status; dispatch method; handoff mode; removal-test summary; follow-ups).
 
-Non-success: status taxonomy payload for `BLOCKED`, `FAIL`, `ERROR`, or `REPAIR_NEEDED`.
+Non-success: explain the outcome in prose and include the status taxonomy payload, without printing a status line or routing envelope. Keep all subagent `RESULT:` handoffs unchanged.
 
 ## Run-Level Success Criteria
 
@@ -104,11 +104,11 @@ Non-success: status taxonomy payload for `BLOCKED`, `FAIL`, `ERROR`, or `REPAIR_
 - Status/gate/retry/escalation in source expressed as routeable contract language.
 - Notes satisfy the Output Contract.
 - Load log shows no load before its decision point.
-- Exactly one terminal status: `PASS`, `BLOCKED`, `FAIL`, `ERROR`, `REPAIR_NEEDED`.
+- Select exactly one internal terminal outcome, then express it without a public status line.
 
 ## Examples
 
-**Full (happy path):** Structure an unattended Jira-audit prompt that records findings and must not change code → select `full` → passes 1–6 gated on `RESULT:` → `PASS` with XML first.
+**Full (happy path):** Structure an unattended Jira-audit prompt that records findings and must not change code → select `full` → passes 1–6 gated on `RESULT:` → internal `PASS`, delivered as XML first without the status label.
 
 **Light:** Structure a short wording-only helper with no phases, no autonomy, no mutations, empty `PRIOR_FAILURES` → select `light` → pass 1 then 6; notes list `OMITTED_PASS_REASON` for passes 2–5.
 
