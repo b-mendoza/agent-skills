@@ -20,14 +20,7 @@ Defaults: `OUTPUT_PATH` sibling `.audit.md`; `SNAPSHOT_PATH` sibling `.audit-inp
 
 ## Output Contract
 
-```text
-AUDIT: PASS | FAIL | BLOCKED | ERROR
-Output: <OUTPUT_PATH or "not written">
-Sections covered: <N or "unknown">
-Findings: critical=<N>, warning=<N>, info=<N>
-Open questions: <N>
-Reason: <one line>
-```
+Reply with one compact prose paragraph: outcome and reason, report path or not written, sections covered, critical/warning/info finding counts, open-question count, and the next action if needed. No `AUDIT:`, `Status:`, or line-by-line routing envelope. Keep structured subagent handoffs and report-file fields unchanged.
 
 ## State Machine Overview
 
@@ -92,7 +85,7 @@ Advance the state machine. Do not invent alternate routes.
 | Scope                | `YAGNI: PASS`                          |
 | Assumptions          | `ASSUMPTIONS: PASS`                    |
 | Report assembly      | `REPORT: PASS`                         |
-| Final (orchestrator) | `AUDIT: PASS / FAIL / BLOCKED / ERROR` |
+| Final (internal)     | `AUDIT: PASS / FAIL / BLOCKED / ERROR` |
 
 ## Validation
 
@@ -111,13 +104,6 @@ Flow: classify baseline vs technical evidence; snapshot; extract requirements; o
 
 Result:
 
-```text
-AUDIT: FAIL
-Output: docs/cache-plan.audit.md
-Sections covered: 9
-Findings: critical=1, warning=3, info=7
-Open questions: 0
-Reason: Standalone audit report written from sanitized snapshot with one critical finding; source plan left unchanged.
-```
+The audit found a critical gap. I wrote docs/cache-plan.audit.md from the sanitized snapshot, covering all 9 sections with 1 critical finding, 3 warnings, 7 informational findings, and 0 open questions. The source plan is unchanged.
 
 </example>
