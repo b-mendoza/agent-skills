@@ -207,8 +207,7 @@ resume_from: "queue-loop"
 ## Zero-Output Report
 
 ```text
-state: ready
-result: no-artifacts-required
+No files were generated because the requested scope needs no changes.
 
 ## Classification
 - Classification:
@@ -230,7 +229,7 @@ result: no-artifacts-required
 ## Final Delivery
 
 ````text
-state: ready | blocked | error
+<plain-language outcome, what remains unchanged, and required next action; no status line>
 
 ## Analysis
 - Purpose:
