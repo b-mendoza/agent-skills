@@ -326,6 +326,12 @@ describe("local GitHub fixture", () => {
       expect(
         execFileSync("gh", ["label", "list", "--json", "name"], options).trim(),
       ).toBe("[]");
+      expect(
+        execFileSync("git", ["remote", "get-url", "origin"], options).trim(),
+      ).toBe(`git@github.com:${GITHUB_FACTS.repository}.git`);
+      expect(execFileSync("git", ["remote", "-v"], options)).toContain(
+        `git@github.com:${GITHUB_FACTS.repository}.git`,
+      );
       const remote = execFileSync(
         "git",
         ["ls-remote", "origin", "main", GITHUB_FACTS.branch],
