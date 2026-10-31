@@ -49,7 +49,7 @@ function artifactContent(
 
 function completedObservation(): Observation {
   return createObservation({
-    finalText: `Task ${TASK_NUMBER}: ${TITLE}\n${OUTPUT_PATHS.join("\n")}\nApproach: validate parser bounds.\nTests: boundaries and default.\nRefactoring: No refactoring needed.\nReferences fetched: none\nCompletion: PASS`,
+    finalText: `Task ${TASK_NUMBER}: ${TITLE}\n${OUTPUT_PATHS.join("\n")}\nApproach: validate parser bounds.\nTests: boundaries and default.\nRefactoring: No refactoring needed.\nReferences fetched: none\nPlanning completed.`,
     repoFiles: {
       ...INPUT_FILES,
       ...Object.fromEntries(
@@ -71,7 +71,7 @@ function completedObservation(): Observation {
 function failedObservation(): Observation {
   return createObservation({
     finalText:
-      "PREP: FAIL\nTask: 2 - Reject invalid timeout values\nBrief: Not written\nDependencies: Unsatisfied: Task 1 not started\nQuestions: Resolved\nReferences fetched: none\nNotes: Complete Task 1 first.",
+      "I stopped planning Task 2 because Task 1 is an unfinished dependency. No artifacts were written. Complete Task 1 first.",
     repoFiles: {
       [INPUT_PATH]: BLOCKED_PLAN,
       [OTHER_TASK_PATH]: null,
@@ -114,6 +114,36 @@ describe("routing and valid observations", () => {
 });
 
 describe("selected-task-artifacts", () => {
+  test("accepts bold labels and directory-factored filenames", () => {
+    const observation = completedObservation();
+    const filenames = OUTPUT_PATHS.map(
+      (path) => `- \`${path.slice("docs/".length)}\``,
+    ).join("\n");
+    const finalText = observation.finalText
+      .replace(
+        OUTPUT_PATHS.join("\n"),
+        `Artifacts, all in docs/ and left unstaged:\n${filenames}`,
+      )
+      .replace("References fetched:", "**References fetched:**");
+    expect(() =>
+      getCase("selected-task-artifacts").check({ ...observation, finalText }),
+    ).not.toThrow();
+    expect(() =>
+      getCase("selected-task-artifacts").check({
+        ...observation,
+        finalText: finalText.replace("all in docs/", "all in elsewhere/"),
+      }),
+    ).toThrow();
+  });
+  test("rejects the old public completion status line", () => {
+    const observation = completedObservation();
+    expect(() =>
+      getCase("selected-task-artifacts").check({
+        ...observation,
+        finalText: `${observation.finalText}\nCompletion: PASS`,
+      }),
+    ).toThrow(/public status line/);
+  });
   test.each(ARTIFACTS)(
     "rejects missing, wrong-identity and malformed $title",
     (artifact) => {
@@ -160,7 +190,7 @@ describe("selected-task-artifacts", () => {
     ).toThrow();
   });
   test.each([
-    ["incomplete handoff", { finalText: "Completion: PASS" }],
+    ["incomplete handoff", { finalText: "Planning completed." }],
     [
       "missing reference disclosure",
       {
@@ -174,7 +204,7 @@ describe("selected-task-artifacts", () => {
       "missing completion",
       {
         finalText: completedObservation().finalText.replace(
-          "Completion: PASS",
+          "Planning completed.",
           "",
         ),
       },
@@ -205,12 +235,27 @@ describe("selected-task-artifacts", () => {
 });
 
 describe("unfinished-dependency", () => {
+  test("rejects the old public prep status line", () => {
+    const observation = failedObservation();
+    expect(() =>
+      getCase("unfinished-dependency").check({
+        ...observation,
+        finalText: `PREP: FAIL\n${observation.finalText}`,
+      }),
+    ).toThrow(/public status line/);
+  });
   test.each([
     [
       "claims success",
-      { finalText: failedObservation().finalText.replace("FAIL", "PASS") },
+      { finalText: "Task 2 planning completed successfully." },
     ],
-    ["omits prerequisite", { finalText: "PREP: FAIL\nUnknown problem" }],
+    [
+      "omits prerequisite",
+      {
+        finalText:
+          "Planning stopped because an unknown dependency is unfinished.",
+      },
+    ],
     [
       "created brief",
       {
@@ -282,3 +327,38 @@ test.each(["selected-task-artifacts", "unfinished-dependency"])(
     }
   },
 );
+
+test("accepts the recorded planned completion without its retired status line", () => {
+  const finalText = `Task 2 ("Reject invalid timeout values") of acme-timer-42 is planned. All four stages returned PASS and I checked each artifact's headings. I did not implement anything, and the files are left unstaged and uncommitted.
+
+**Artifacts**
+- \`docs/acme-timer-42-task-2-brief.md\`
+- \`docs/acme-timer-42-task-2-execution-plan.md\`
+- \`docs/acme-timer-42-task-2-test-spec.md\`
+- \`docs/acme-timer-42-task-2-refactoring-plan.md\`
+
+**Recommended approach:** Keep the existing default when no timeout is given, and keep the current numeric conversion. Then require a whole number of seconds from 1 to 300, and extend the existing Node tests.
+
+**Test coverage:** The spec has seven behavior groups, using \`node:test\` with \`node:assert/strict\`. The highest-priority tests cover:
+- the default
+- both endpoints of the range
+- values inside the range
+- zero and negative values
+- fractions
+- values above the maximum
+- non-numeric and non-finite values
+- the exact error messages
+
+Lower-priority tests cover the full valid range and numeric strings. Every definition-of-done item is mapped to a test.
+
+**Refactoring verdict:** No refactoring needed.
+
+**References fetched:** none. Nothing was fetched from GitHub or the web.
+`;
+  expect(() =>
+    getCase("selected-task-artifacts").check({
+      ...completedObservation(),
+      finalText,
+    }),
+  ).not.toThrow();
+});
