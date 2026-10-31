@@ -112,7 +112,9 @@ No tracking files were supplied; independent claim validation was skipped.
 **Fulfills:** Give concrete next steps.
 ${HANDOFF_FACTS.openQuestion}`;
 
-function writtenObservation(): Observation {
+function writtenObservation(
+  outcome = "The handoff passed review.",
+): Observation {
   const writtenPaths = [
     HANDOFF_PATHS.target,
     HANDOFF_PATHS.transcript,
@@ -120,7 +122,7 @@ function writtenObservation(): Observation {
     HANDOFF_PATHS.insights,
   ];
   return createObservation({
-    finalText: `Completed: review pass\n${writtenPaths.join("\n")}\nEXTERNAL: SKIPPED\nCONTEXT: PASS\nINSIGHTS: PASS\nCLAIMS: SKIPPED\nHANDOFF: PASS\nREVIEW: PASS\nOpen questions: 1\nWarnings: 0\nRepair cycles: 0`,
+    finalText: `${outcome} Written artifacts:\n${writtenPaths.join("\n")}\nExternal sources were skipped. Context, insights, and assembly passed; claims validation was skipped because no tracking files were supplied. There is 1 open question, 0 warnings, and 0 repair cycles.`,
     toolCalls: [skillCall],
     gitStatusAfter: {
       kind: "worktree",
