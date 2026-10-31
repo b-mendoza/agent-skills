@@ -9,9 +9,12 @@ import {
   assertFileAbsent,
   assertFileExists,
   assertNoMutation,
+  assertNoPublicStatusLine,
   assertRunHappened,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -85,6 +88,24 @@ export const REPORT_SECTIONS = [
   "Document references consulted",
   "Risks, assumptions, blockers, open questions, and security notes",
 ] as const;
+
+const REPORT_SECTION_ALIASES: Readonly<Record<string, RegExp>> = {
+  "Reference assessment or limitation":
+    /reference (?:assessment(?: or limitation)?|limitation)/i,
+  "Risks, assumptions, blockers, open questions, and security notes":
+    /risks, assumptions, blockers, open questions, (?:and )?security notes/i,
+};
+
+const REPORT_SECTION_PATTERNS = REPORT_SECTIONS.map((section) => {
+  const title = REPORT_SECTION_ALIASES[section]?.source ?? section;
+  return new RegExp(`^#{1,6}[\\t ]+(?:\\d+\\.[\\t ]+)?${title}`, "im");
+});
+
+function fencedResumePacket(finalText: string): string | undefined {
+  return /^```[^\r\n]*\r?\n(?<packet>[\s\S]*?)^```/m.exec(finalText)?.groups?.[
+    "packet"
+  ];
+}
 
 function reportWrite(call: ToolCall, repoPaths: readonly string[]): boolean {
   if (!["Write", "Edit"].includes(call.name)) return false;
@@ -251,27 +272,27 @@ export const cases = [
       const report = observation.repoFiles?.[ARTIFACT_PATH];
       assert.ok(typeof report === "string");
       let previousSection = -1;
-      for (const section of REPORT_SECTIONS) {
-        const position = report.toLowerCase().indexOf(section.toLowerCase());
+      for (const [index, sectionPattern] of REPORT_SECTION_PATTERNS.entries()) {
+        const position = report.search(sectionPattern);
         assert.ok(
           position > previousSection,
-          `missing or out-of-order report section: ${section}`,
+          `missing or out-of-order report section: ${REPORT_SECTIONS[index]}`,
         );
         previousSection = position;
       }
-      const statuses = [
-        ...observation.finalText.matchAll(/^Status:\s*(?<status>\S+)\s*$/gm),
-      ];
-      assert.deepEqual(
-        statuses.map((match) => match.groups?.["status"]),
-        ["READY"],
-        "missing single READY terminal",
+      assertNoPublicStatusLine(
+        observation.finalText,
+        "Status",
+        "PLAN_REVIEW",
+        "CONTRACT_NOTE",
+        "REFERENCE_ASSESSMENT",
+        "EVIDENCE_PRECEDENCE_DECISION",
       );
       assert.ok(
         observation.finalText.includes(ARTIFACT_PATH),
         "handoff omits artifact path",
       );
-      const combined = `${observation.finalText}\n${report}`;
+      const combined = `${normalizeReplyText(observation.finalText)}\n${report}`;
       assert.match(
         combined,
         /REFERENCE_ASSESSMENT:\s*SKIPPED\b/,
@@ -339,19 +360,14 @@ export const cases = [
           `source changed: ${path}`,
         );
       }
-      const statuses = [
-        ...observation.finalText.matchAll(/^Status:\s*(?<status>\S+)\s*$/gm),
-      ];
-      assert.deepEqual(
-        statuses.map((match) => match.groups?.["status"]),
-        ["NEEDS_INPUT"],
-        "missing required input must stop with NEEDS_INPUT",
+      assertNoPublicStatusLine(observation.finalText, "Status");
+      const reply = normalizeReplyText(observation.finalText);
+      assert.ok(
+        replyAsksFor(reply, /scope|goals?|pain points?/i),
+        "no request for missing scope or goals",
       );
-      assert.match(
-        observation.finalText,
-        /RESUME_PACKET/,
-        "missing resumable stop packet",
-      );
+      const packet = fencedResumePacket(observation.finalText);
+      assert.ok(typeof packet === "string", "missing fenced resume packet");
       for (const field of [
         "phase_reached:",
         "pending_question:",
@@ -366,13 +382,10 @@ export const cases = [
         "clone_path:",
         "dispatch_mode:",
       ]) {
-        assert.ok(
-          observation.finalText.includes(field),
-          `resume packet omits ${field}`,
-        );
+        assert.ok(packet.includes(field), `resume packet omits ${field}`);
       }
       assert.match(
-        observation.finalText,
+        reply,
         /\b(?:scope|goals?|pain points?)\b/i,
         "no question about missing inputs",
       );
