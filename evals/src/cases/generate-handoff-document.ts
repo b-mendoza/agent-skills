@@ -11,8 +11,11 @@ import {
   assertFileAbsent,
   assertFileExists,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { isMutatingGitCommand } from "#/observation/git-command-evidence.ts";
@@ -249,12 +252,26 @@ function checkWriteScope(observation: Observation): void {
 
 function checkPackage(observation: Observation): string {
   checkPositiveRouting(observation, SKILL);
-  assert.match(
+  assertNoPublicStatusLine(
     observation.finalText,
-    /^Completed: review pass(?: with warnings)?$/m,
+    "Completed",
+    "Blocked",
+    "Status",
+    "EXTERNAL",
+    "CONTEXT",
+    "INSIGHTS",
+    "CLAIMS",
+    "HANDOFF",
+    "REVIEW",
   );
-  assert.match(observation.finalText, /CLAIMS: SKIPPED/);
-  assert.match(observation.finalText, /EXTERNAL: (?:SKIPPED|USED|UNAVAILABLE)/);
+  const text = normalizeReplyText(observation.finalText);
+  assert.match(text, /(?:passed review|review passed)/i);
+  assert.match(text, /claims?[^\n]*(?:skip|not (?:run|validated))/i);
+  assert.match(
+    text,
+    /external[^\n]*(?:skip|used|unavailable|not (?:used|fetched))/i,
+  );
+  assert.ok(text.includes(HANDOFF_PATHS.target), "handoff path missing");
   checkWriteScope(observation);
   const document = readCaptured(observation, HANDOFF_PATHS.target);
   checkDocumentShape(document);
@@ -390,7 +407,13 @@ export const cases = [
       assert.match(observation.finalText, /overwrite/i);
       assert.match(observation.finalText, /update/i);
       assert.match(observation.finalText, /new[ -]path|different path/i);
-      assert.match(observation.finalText, /\?/);
+      assert.ok(replyAsksFor(observation.finalText, /overwrite|update|path/i));
+      assertNoPublicStatusLine(
+        observation.finalText,
+        "Completed",
+        "Blocked",
+        "Status",
+      );
       return "update mode requested; existing handoff unchanged; no sibling artifacts";
     },
   },

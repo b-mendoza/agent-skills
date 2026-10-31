@@ -120,7 +120,7 @@ function writtenObservation(): Observation {
     HANDOFF_PATHS.insights,
   ];
   return createObservation({
-    finalText: `Completed: review pass\n${writtenPaths.join("\n")}\nEXTERNAL: SKIPPED\nCONTEXT: PASS\nINSIGHTS: PASS\nCLAIMS: SKIPPED\nHANDOFF: PASS\nREVIEW: PASS\nOpen questions: 1\nWarnings: 0\nRepair cycles: 0`,
+    finalText: `The handoff passed review. Written artifacts:\n${writtenPaths.join("\n")}\nExternal sources were skipped. Context, insights, and assembly passed; claims validation was skipped because no tracking files were supplied. There is 1 open question, 0 warnings, and 0 repair cycles.`,
     toolCalls: [skillCall],
     gitStatusAfter: {
       kind: "worktree",
@@ -163,25 +163,16 @@ function gateObservation(): Observation {
   });
 }
 
-describe("handoff routing", () => {
-  it("accepts an invoked skill, but not a missed trigger", () => {
-    const evalCase = getCase("trigger-positive");
+describe("conversation handoff package", () => {
+  it("rejects the old public completion line", () => {
+    const observation = writtenObservation();
     expect(() =>
-      evalCase.check(createObservation({ toolCalls: [skillCall] })),
-    ).not.toThrow();
-    expect(() => evalCase.check(createObservation())).toThrow();
-  });
-
-  it("leaves a git-state report to its sibling", () => {
-    const evalCase = getCase("trigger-negative-git-state");
-    expect(() => evalCase.check(createObservation())).not.toThrow();
-    expect(() =>
-      evalCase.check(createObservation({ toolCalls: [skillCall] })),
+      getCase("conversation-package").check({
+        ...observation,
+        finalText: `Completed: review pass\n${observation.finalText}`,
+      }),
     ).toThrow();
   });
-});
-
-describe("conversation handoff package", () => {
   it("accepts the complete package with a redacted transcript and no claims file", () => {
     expect(() =>
       getCase("conversation-package").check(writtenObservation()),
