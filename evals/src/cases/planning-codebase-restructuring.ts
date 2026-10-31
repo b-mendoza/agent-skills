@@ -86,6 +86,23 @@ export const REPORT_SECTIONS = [
   "Risks, assumptions, blockers, open questions, and security notes",
 ] as const;
 
+const REPORT_SECTION_ALIASES: Readonly<Record<string, RegExp>> = {
+  "Reference assessment or limitation":
+    /reference (?:assessment(?: or limitation)?|limitation)/i,
+  "Risks, assumptions, blockers, open questions, and security notes":
+    /risks, assumptions, blockers, open questions, (?:and )?security notes/i,
+};
+
+const REPORT_SECTION_PATTERNS = REPORT_SECTIONS.map(
+  (section) => REPORT_SECTION_ALIASES[section] ?? new RegExp(section, "i"),
+);
+
+function fencedResumePacket(finalText: string): string | undefined {
+  return /^```[^\r\n]*\r?\n(?<packet>[\s\S]*?)^```/m.exec(finalText)?.groups?.[
+    "packet"
+  ];
+}
+
 function reportWrite(call: ToolCall, repoPaths: readonly string[]): boolean {
   if (!["Write", "Edit"].includes(call.name)) return false;
   const path = call.input["file_path"];
@@ -251,27 +268,27 @@ export const cases = [
       const report = observation.repoFiles?.[ARTIFACT_PATH];
       assert.ok(typeof report === "string");
       let previousSection = -1;
-      for (const section of REPORT_SECTIONS) {
-        const position = report.toLowerCase().indexOf(section.toLowerCase());
+      for (const [index, sectionPattern] of REPORT_SECTION_PATTERNS.entries()) {
+        const position = report.search(sectionPattern);
         assert.ok(
           position > previousSection,
-          `missing or out-of-order report section: ${section}`,
+          `missing or out-of-order report section: ${REPORT_SECTIONS[index]}`,
         );
         previousSection = position;
       }
-      const statuses = [
-        ...observation.finalText.matchAll(/^Status:\s*(?<status>\S+)\s*$/gm),
-      ];
-      assert.deepEqual(
-        statuses.map((match) => match.groups?.["status"]),
-        ["READY"],
-        "missing single READY terminal",
+      assertNoPublicStatusLine(
+        observation.finalText,
+        "Status",
+        "PLAN_REVIEW",
+        "CONTRACT_NOTE",
+        "REFERENCE_ASSESSMENT",
+        "EVIDENCE_PRECEDENCE_DECISION",
       );
       assert.ok(
         observation.finalText.includes(ARTIFACT_PATH),
         "handoff omits artifact path",
       );
-      const combined = `${observation.finalText}\n${report}`;
+      const combined = `${normalizeReplyText(observation.finalText)}\n${report}`;
       assert.match(
         combined,
         /REFERENCE_ASSESSMENT:\s*SKIPPED\b/,
