@@ -12,9 +12,11 @@ import {
 import {
   assertFileAbsent,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
+  normalizeReplyText,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -102,7 +104,6 @@ const MINIMUM_TASK_COUNT = 2;
 const SLUG_LIMIT = 40;
 const SLUG_START = 0;
 const FIRST_TASK_NUMBER = 1;
-const HANDOFF_LINES = 10;
 
 function taskSlug(title: string): string {
   const slug = title
@@ -201,63 +202,40 @@ function checkValidation(content: string): number {
   return rows.filter((row) => row.groups?.["result"] === "WARN").length;
 }
 
-function checkHandoff(
-  observation: Observation,
-  outcome: "PASS" | "FAIL",
-): void {
-  const lines = observation.finalText.trim().split("\n");
-  assert.equal(
-    lines.length,
-    HANDOFF_LINES,
-    "handoff must be exactly ten lines",
-  );
-  const [status, identity, ...values] = lines;
-  assert.equal(status, `PLANNING: ${outcome}`);
-  assert.equal(identity, `ISSUE_SLUG: ${KEY}`);
-  const fields = [
-    "File",
-    "Tasks",
-    "Branches",
-    "Cross-cutting questions",
-    "Validation warnings",
-    "Failure category",
-    "Reason",
-    "Artifacts preserved",
-  ];
-  for (const field of fields) {
-    assert.ok(
-      values.shift()?.startsWith(`${field}: `) === true,
-      `missing handoff field: ${field}`,
-    );
-  }
-}
-
 function checkCompletedPlan(observation: Observation): string {
   assertPlanningWrites(observation, OUTPUT_PATHS, { [SOURCE_PATH]: SNAPSHOT });
-  checkHandoff(observation, "PASS");
-  assert.match(observation.finalText, /^Failure category: NONE$/m);
-  assert.match(observation.finalText, new RegExp(`^File: ${FINAL_PATH}$`, "m"));
+  assertNoPublicStatusLine(
+    observation.finalText,
+    "PLANNING",
+    "Status",
+    "Failure category",
+  );
+  const reply = normalizeReplyText(observation.finalText);
+  assert.match(reply, /\b(?:completed?|validated|ready)\b/i);
+  assert.ok(reply.includes(FINAL_PATH), "reply omitted final tasks file");
   for (const path of OUTPUT_PATHS) {
-    assert.ok(
-      observation.finalText.includes(path),
-      "handoff omitted preserved artifact",
-    );
+    assert.ok(reply.includes(path), "handoff omitted preserved artifact");
   }
   const content = capturedText(observation, FINAL_PATH);
   assertOrderedHeadings(content, FINAL_HEADINGS);
   assertOrderedHeadings(content, FRAMING_HEADINGS);
   assert.doesNotMatch(content, /^## Decisions Log$/m);
   const taskCount = checkTaskSections(content);
-  assert.match(observation.finalText, new RegExp(`^Tasks: ${taskCount}$`, "m"));
-  assert.match(
-    observation.finalText,
-    new RegExp(`^Branches: ${taskCount}$`, "m"),
-  );
   const warningCount = checkValidation(content);
-  assert.match(
-    observation.finalText,
-    new RegExp(`^Validation warnings: ${warningCount}$`, "m"),
-  );
+  for (const [label, count] of [
+    ["tasks", taskCount],
+    ["branches", taskCount],
+    ["validation warnings", warningCount],
+  ] as const) {
+    assert.match(
+      reply,
+      new RegExp(
+        `(?:\\b${count}\\s+(?:unique )?${label}\\b|${label}:\\s*${count}\\b)`,
+        "i",
+      ),
+      `reply omitted ${label} count`,
+    );
+  }
   const stageOne = capturedText(observation, DETAILED_PATH);
   assertOrderedHeadings(stageOne, [
     "## Issue Summary",
@@ -308,7 +286,8 @@ export const cases = [
     fixture: "clean",
     mutationPolicy: "allowed",
     budgetUsd: 2.0,
-    wallClockMs: 600_000,
+    // Recorded attempt reached Stage 3 at 602s after eight dispatches; two gates remained.
+    wallClockMs: 1_200_000,
     intent:
       "Persist all three Phase 2 artifacts without touching the source or git state",
     seed: (context) => {
@@ -361,10 +340,28 @@ export const cases = [
       `Use ${SKILL} with TICKET_KEY=${KEY}. Plan the work item from its snapshot.`,
     check: (observation) => {
       assertNoMutation(observation);
-      checkHandoff(observation, "FAIL");
-      assert.match(observation.finalText, /^Failure category: PREFLIGHT$/m);
-      assert.match(observation.finalText, /Acceptance Criteria/);
-      assert.match(observation.finalText, /^File: not written$/m);
+      assertNoPublicStatusLine(
+        observation.finalText,
+        "PLANNING",
+        "Status",
+        "Failure category",
+      );
+      const reply = normalizeReplyText(observation.finalText);
+      assert.match(reply, /preflight/i);
+      assert.match(reply, /Acceptance Criteria/);
+      assert.match(
+        reply,
+        /(?:no (?:plan )?artifacts? (?:were )?written|(?:plan|file) (?:was )?not written)/i,
+      );
+      assert.ok(
+        observation.toolCalls.some(
+          (call) =>
+            /(?:Agent|Task|delegate_task)$/.test(call.name) &&
+            JSON.stringify(call.input).includes("stage-validator") &&
+            JSON.stringify(call.input).includes("preflight"),
+        ),
+        "preflight must dispatch the independent stage-validator",
+      );
       assert.equal(capturedText(observation, SOURCE_PATH), INVALID_SNAPSHOT);
       for (const path of OUTPUT_PATHS) assertFileAbsent(observation, path);
       return "preflight failure; canonical missing heading identified; no plans written";

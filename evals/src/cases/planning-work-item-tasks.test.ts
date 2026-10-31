@@ -91,16 +91,8 @@ const FINAL_PLAN = `${STAGE_TWO}## Validation Report
 ### Check Results
 ${Array.from({ length: VALIDATION_COUNT }, (_, index) => `| ${index + FIRST_CHECK_NUMBER} | Check | PASS | Evidence |`).join("\n")}
 `;
-const HANDOFF = `PLANNING: PASS
-ISSUE_SLUG: ${KEY}
-File: ${FINAL_PATH}
-Tasks: ${TASK_COUNT}
-Branches: ${TASK_COUNT}
-Cross-cutting questions: 0
-Validation warnings: 0
-Failure category: NONE
-Reason: All gates passed
-Artifacts preserved: ${OUTPUT_PATHS.join(", ")}`;
+const HANDOFF = `Completed planning for ${KEY}: ${TASK_COUNT} tasks, ${TASK_COUNT} unique branches, 0 cross-cutting questions, and 0 validation warnings. The final task plan is ${FINAL_PATH}.
+Preserved artifacts: ${OUTPUT_PATHS.join(", ")}. No implementation or tracker changes were made.`;
 const STAGE_ONE =
   "# Detailed Plan\n## Issue Summary\nScope.\n## Problem Framing\nNeed.\n## Tasks\n### Task A: Validate timeout\nDetails.\n## Notes\nNone.\n";
 
@@ -132,16 +124,13 @@ function changeFinal(text: string): Observation {
 
 function failedObservation(): Observation {
   return createObservation({
-    finalText: `PLANNING: FAIL
-ISSUE_SLUG: ${KEY}
-File: not written
-Tasks: 0
-Branches: 0
-Cross-cutting questions: 0
-Validation warnings: 0
-Failure category: PREFLIGHT
-Reason: Missing ## Acceptance Criteria heading
-Artifacts preserved: none`,
+    finalText: `Preflight stopped because the required Acceptance Criteria heading is missing. No plan artifacts were written. Restore that heading in ${SOURCE_PATH} and rerun planning.`,
+    toolCalls: [
+      {
+        name: "Agent",
+        input: { prompt: "Run stage-validator with STAGE=preflight" },
+      },
+    ],
     repoFiles: {
       [SOURCE_PATH]: INVALID_SNAPSHOT,
       ...Object.fromEntries(OUTPUT_PATHS.map((path) => [path, null])),
@@ -231,18 +220,12 @@ describe("staged-plan", () => {
     expect(() => getCase("staged-plan").check(changeFinal(content))).toThrow();
   });
   test.each([
-    [
-      "wrong handoff",
-      { finalText: HANDOFF.replace("PLANNING: PASS", "PLANNING: FAIL") },
-    ],
-    ["extra handoff line", { finalText: `${HANDOFF}\nExtra` }],
-    [
-      "wrong task count",
-      { finalText: HANDOFF.replace("Tasks: 2", "Tasks: 8") },
-    ],
+    ["wrong handoff", { finalText: "Planning stopped without a final plan." }],
+    ["old public status", { finalText: `PLANNING: PASS\n${HANDOFF}` }],
+    ["wrong task count", { finalText: HANDOFF.replace("2 tasks", "8 tasks") }],
     [
       "wrong branch count",
-      { finalText: HANDOFF.replace("Branches: 2", "Branches: 8") },
+      { finalText: HANDOFF.replace("2 unique branches", "8 unique branches") },
     ],
     [
       "unexpected write",
@@ -329,6 +312,33 @@ describe("staged-plan", () => {
 });
 
 describe("invalid-snapshot", () => {
+  test("accepts extra recovery prose rather than an exact line count", () => {
+    const observation = failedObservation();
+    expect(() =>
+      getCase("invalid-snapshot").check({
+        ...observation,
+        finalText: `${observation.finalText}\nThe source snapshot was left unchanged.`,
+      }),
+    ).not.toThrow();
+  });
+  test.each([
+    [
+      "old public status",
+      { finalText: `PLANNING: FAIL\n${failedObservation().finalText}` },
+    ],
+    ["inline substitute for independent gate", { toolCalls: [] }],
+  ] satisfies ReadonlyArray<readonly [string, Partial<Observation>]>)(
+    "rejects %s",
+    (_label, overrides) => {
+      expect(() =>
+        getCase("invalid-snapshot").check({
+          ...failedObservation(),
+          ...overrides,
+        }),
+      ).toThrow();
+    },
+  );
+
   test("accepts a preflight failure without artifacts", () => {
     expect(() =>
       getCase("invalid-snapshot").check(failedObservation()),
@@ -339,8 +349,8 @@ describe("invalid-snapshot", () => {
       "wrong gate",
       {
         finalText: failedObservation().finalText.replace(
-          "PREFLIGHT",
-          "STAGE_1",
+          "Preflight",
+          "Stage 1",
         ),
       },
     ],
