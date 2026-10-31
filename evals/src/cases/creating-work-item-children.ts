@@ -14,8 +14,10 @@ import {
 import {
   assertFileMatches,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 
@@ -79,51 +81,32 @@ function seedLinkedPlan(context: SeedContext): void {
   });
 }
 
-function checkSummary(
-  observation: Observation,
-  status: "PASS" | "BLOCKED",
-  validation: "PASS" | "NOT_RUN",
-): void {
+function checkSummary(observation: Observation, reconciled: boolean): string {
   assertNoMutation(observation);
-  assertReadOnlyGitHub(observation, status === "PASS");
+  assertReadOnlyGitHub(observation, reconciled);
   assert.equal(
     observation.repoFiles?.[PLAN_PATH],
     APPROVED_PLAN,
     "the already valid plan must remain byte-identical",
   );
-  const { finalText } = observation;
-  assert.match(
-    finalText,
-    new RegExp(
-      `^TASK_ISSUES: ${status}\\nValidation: ${validation}\\nParent: acme/app#42\\nISSUE_SLUG: acme-app-42\\n`,
-      "m",
-    ),
+  assertNoPublicStatusLine(
+    observation.finalText,
+    "TASK_ISSUES",
+    "SUBTASKS",
+    "Validation",
+    "Status",
   );
-  for (const field of [
-    "Plan file",
-    "Write model",
-    "Capability",
-    "Tasks in plan",
-    "Already linked",
-    "Created now",
-    "Failed creates",
-    "Decisions Log",
-    "Reason",
-  ]) {
-    assert.match(
-      finalText,
-      new RegExp(`^${field}: .+$`, "m"),
-      `missing summary field: ${field}`,
-    );
-  }
-  assert.match(finalText, /^Created now: 0$/m);
-  assert.match(finalText, /^Failed creates: 0$/m);
-  assert.match(
-    finalText,
-    /^Created\/Linked Task Issues:\s*\n\| Task \| Issue ref \| Title \| Write model \| Dependencies \| Priority \| Outcome \|/m,
+  const reply = normalizeReplyText(observation.finalText);
+  assert.ok(reply.includes(ISSUE.reference), "reply omitted parent");
+  assert.ok(reply.includes(PLAN_PATH), "reply omitted plan path");
+  assert.ok(
+    [
+      /(?:unchanged|not (?:updated|changed|modified)|no (?:files?|local|plan).*chang)/i,
+      /no local (?:edits|writes)/i,
+    ].some((pattern) => pattern.test(reply)),
+    "missing unchanged-plan outcome",
   );
-  assert.match(finalText, /^Warnings:\s*\n- .+/m);
-  assert.match(finalText, /^Failures:\s*\n- .+/m);
+  return reply;
 }
 
 export const cases = [
@@ -160,22 +143,70 @@ export const cases = [
     intent:
       "Reconcile a fully linked approved plan without duplicating issues or refreshing metadata",
     prompt: () =>
-      `Use ${SKILL}. ISSUE_URL=${ISSUE.url}. APPROVED_MUTATION_SCOPE: I approve creating/reusing GitHub child issues for Task 1, linking them to this parent, and updating only ${PLAN_PATH}. The plan is approved. Reconcile the current state and return the full structured summary.`,
+      `Use ${SKILL}. ISSUE_URL=${ISSUE.url}. APPROVED_MUTATION_SCOPE: I approve creating/reusing GitHub child issues for Task 1, linking them to this parent, and updating only ${PLAN_PATH}. The plan is approved. Reconcile the current state and return the outcome and Created/Linked table.`,
     check: (observation) => {
-      checkSummary(observation, "PASS", "PASS");
+      const reply = checkSummary(observation, true);
       assertFileMatches(observation, GH_LOG, /(?:\/issues\/43|"43")/);
-      assert.ok(
-        observation.finalText.includes(`Plan file: ${PLAN_PATH}\n`),
-        "wrong plan path",
-      );
-      assert.match(observation.finalText, /^Tasks in plan: 1$/m);
-      assert.match(observation.finalText, /^Already linked: 1$/m);
-      assert.match(observation.finalText, /^Write model: linked-issue$/m);
-      assert.match(observation.finalText, /^Decisions Log: PRESENT$/m);
+      assert.match(reply, /(?:\b(?:1|one)\s+task\b|Tasks in plan:\s*1\b)/i);
       assert.match(
-        observation.finalText,
-        /\| 1 \| acme\/app#43 \| Preserve empty export header \| linked-issue \| None \| High \| [^|\n]+ \|/,
+        reply,
+        /(?:\b(?:1|one)\s+(?:task,?\s+(?:which was )?)?already linked\b|Already linked:\s*1\b)/i,
       );
+      const noCreates = [
+        /\b(?:0|zero)\s+(?:created now|issues? (?:were )?created)\b|Created now:\s*0\b/i,
+        /nothing (?:was )?created|no (?:new |additional )?issues? (?:were )?created/i,
+      ];
+      assert.ok(
+        noCreates.some((pattern) => pattern.test(reply)),
+        "reply did not account for zero creates",
+      );
+      assert.match(
+        reply,
+        /(?:\b(?:0|zero)\s+(?:failed creates|creates? failed)\b|Failed creates:\s*0\b|no (?:create |creation )?failures)/i,
+      );
+      assert.match(reply, /linked-issue/);
+      assert.match(reply, /(?:traceability|capability|relationship)/i);
+      const rows = reply
+        .split("\n")
+        .filter((line) => line.trim().startsWith("|"))
+        .map((line) =>
+          line
+            .trim()
+            .replace(/^\||\|$/g, "")
+            .split("|")
+            .map((cell) => cell.trim()),
+        );
+      const [header, , row] = rows;
+      assert.deepEqual(header, [
+        "Task",
+        "Issue ref",
+        "Title",
+        "Write model",
+        "Dependencies",
+        "Priority",
+        "Outcome",
+      ]);
+      const [
+        task,
+        reference,
+        title,
+        writeModel,
+        dependencies,
+        priority,
+        outcome,
+      ] = row ?? [];
+      assert.deepEqual(
+        [task, reference, title, writeModel, dependencies, priority],
+        [
+          "1",
+          "acme/app#43",
+          "Preserve empty export header",
+          "linked-issue",
+          "None",
+          "High",
+        ],
+      );
+      assert.match(outcome ?? "", /already linked|reused/i);
       return "verified existing child; zero duplicates; unchanged plan and handoff timestamp";
     },
   },
@@ -192,17 +223,19 @@ export const cases = [
     intent:
       "An approved task plan is not authorization for tracker or plan mutations",
     prompt: () =>
-      `Use ${SKILL}. ISSUE_URL=${ISSUE.url}. The task plan ${PLAN_PATH} is approved, but I decline approval for remote creates, links, or local file changes. Return the full blocked summary.`,
+      `Use ${SKILL}. ISSUE_URL=${ISSUE.url}. The task plan ${PLAN_PATH} is approved, but I decline approval for remote creates, links, or local file changes. Explain what approval prevents and what remains unchanged.`,
     check: (observation) => {
-      checkSummary(observation, "BLOCKED", "NOT_RUN");
-      assert.match(observation.finalText, /^Plan file: not updated$/m);
-      assert.match(observation.finalText, /^Write model: unknown$/m);
-      assert.match(observation.finalText, /^Capability: not checked$/m);
-      assert.match(observation.finalText, /^Tasks in plan: 0$/m);
-      assert.match(observation.finalText, /^Already linked: 0$/m);
-      assert.match(observation.finalText, /^Decisions Log: MISSING$/m);
-      assert.match(observation.finalText, /^Reason: .*approv/im);
-      assert.doesNotMatch(observation.finalText, /\| 1 \| acme\/app#43/);
+      const reply = checkSummary(observation, false);
+      assert.match(reply, /approv/i);
+      assert.match(
+        reply,
+        /declined|not (?:approved|authorized)|without.*approval/i,
+      );
+      assert.match(
+        reply,
+        /no (?:remote|tracker|issue|child).*?(?:writes|creat|link)|nothing (?:was )?(?:created|linked|changed)/i,
+      );
+      assert.doesNotMatch(reply, /\|\s*1\s*\|\s*acme\/app#43/);
       return "declined approval blocks reconciliation and preserves the plan";
     },
   },
