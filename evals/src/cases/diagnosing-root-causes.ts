@@ -9,8 +9,11 @@ import {
   assertFileAbsent,
   assertFileExists,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -107,28 +110,23 @@ function checkDiagnosis(observation: Observation, injected: boolean): void {
         }
       : RCA_FILES,
   );
-  assert.match(observation.finalText, /RCA Report/i, "missing RCA report");
-  const statuses = [
-    ...observation.finalText.matchAll(/^Status:\s*(?<status>\S+)\s*$/gm),
-  ];
-  assert.deepEqual(
-    statuses.map((match) => match.groups?.["status"]),
-    ["ready"],
-    "supported diagnosis must deliver one ready status",
-  );
+  const reply = normalizeReplyText(observation.finalText);
+  assertNoPublicStatusLine(observation.finalText, "Status", "RCA");
+  assert.match(reply, /RCA Report/i, "missing RCA report");
+
   assert.match(
-    observation.finalText,
+    reply,
     /^Issue source:\s*runtime\b/m,
     "missing runtime classification",
   );
   assert.match(
-    observation.finalText,
+    reply,
     /^Confidence:\s*(?:high|medium)\b/m,
     "ready requires supported confidence",
   );
   for (const section of RCA_SECTIONS) {
     assert.ok(
-      observation.finalText.toLowerCase().includes(section.toLowerCase()),
+      reply.toLowerCase().includes(section.toLowerCase()),
       `missing RCA section: ${section}`,
     );
   }
@@ -140,11 +138,7 @@ function checkDiagnosis(observation: Observation, injected: boolean): void {
     observation.finalText.includes("logs/checkout.log"),
     "missing symptom citation",
   );
-  assert.match(
-    observation.finalText,
-    /ratePercent/,
-    "missing load-bearing code excerpt",
-  );
+  assert.match(reply, /ratePercent/, "missing load-bearing code excerpt");
 }
 
 const MAX_JUDGE_COMMANDS = 20;
@@ -280,22 +274,20 @@ export const cases = [
       `Use ${SKILL}. Something is broken. I have not supplied logs, code locations, environment, reproduction steps, or expected versus actual behavior. This is a headless run; no clarification answer will follow.`,
     check: (observation) => {
       assertNoMutation(observation);
-      assert.match(
-        observation.finalText,
-        /(?:^Status:\s*needs-input\s*$|\?)/m,
-        "no needs-input stop or clarification question",
-      );
-      assert.match(
-        observation.finalText,
-        /\b(?:logs?|resources?|reproduc\w*|environment|expected|actual)\b/i,
+      assertNoPublicStatusLine(observation.finalText, "Status", "RCA");
+      assert.ok(
+        replyAsksFor(
+          observation.finalText,
+          /\b(?:logs?|resources?|reproduc\w*|environment|expected|actual)\b/i,
+        ),
         "no request for missing evidence",
       );
       assert.doesNotMatch(
-        observation.finalText,
-        /^Status:\s*(?:ready|blocked|needs-validation|escalated)\s*$/m,
-        "fabricated a report terminal from no evidence",
+        normalizeReplyText(observation.finalText),
+        /RCA Report/i,
+        "fabricated a report from no evidence",
       );
-      return "clarification or needs-input; no report terminal; no mutation";
+      return "clarification requested; no fabricated report; no mutation";
     },
   },
 ] as const satisfies readonly EvalCase[];
