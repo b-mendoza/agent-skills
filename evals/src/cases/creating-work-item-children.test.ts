@@ -16,45 +16,13 @@ import { createObservation } from "#/observation/observation-test-support.ts";
 
 const TABLE_HEADER =
   "Created/Linked Task Issues:\n| Task | Issue ref | Title | Write model | Dependencies | Priority | Outcome |\n| ---- | --------- | ----- | ----------- | ------------ | -------- | ------- |";
-const SUCCESS_TEXT = `TASK_ISSUES: PASS
-Validation: PASS
-Parent: acme/app#42
-ISSUE_SLUG: acme-app-42
-Plan file: ${PLAN_PATH}
-Write model: linked-issue
-Capability: Verified body traceability
-Tasks in plan: 1
-Already linked: 1
-Created now: 0
-Failed creates: 0
-Decisions Log: PRESENT
-Reason: None
+const SUCCESS_TEXT = `Reconciled acme/app#42 against ${PLAN_PATH}, which is unchanged.
+The plan contains 1 task: 1 already linked, 0 created now, and 0 failed creates. The linked-issue model has verified body traceability. Implementation has not begun.
 ${TABLE_HEADER}
 | 1 | acme/app#43 | Preserve empty export header | linked-issue | None | High | Already linked |
-Warnings:
-- None
-Failures:
-- None
+No warnings or failures.
 `;
-const BLOCKED_TEXT = `TASK_ISSUES: BLOCKED
-Validation: NOT_RUN
-Parent: acme/app#42
-ISSUE_SLUG: acme-app-42
-Plan file: not updated
-Write model: unknown
-Capability: not checked
-Tasks in plan: 0
-Already linked: 0
-Created now: 0
-Failed creates: 0
-Decisions Log: MISSING
-Reason: Mutation approval was declined.
-${TABLE_HEADER}
-Warnings:
-- None
-Failures:
-- Approval declined
-`;
+const BLOCKED_TEXT = `Mutation approval was declined for acme/app#42. The plan ${PLAN_PATH} is unchanged. No remote writes, creates, or links occurred. Implementation has not begun. Approve the proposed tracker and plan changes before reconciliation can proceed.`;
 const READ_LOG = `${JSON.stringify(["issue", "view", ISSUE.url])}\n${JSON.stringify(["issue", "view", "43", "--repo", "acme/app"])}\n`;
 const SUCCESS = createObservation({
   finalText: SUCCESS_TEXT,
@@ -99,29 +67,25 @@ for (const [suffix, observation] of [
   test(`${suffix} accepts the complete contract`, () => {
     expect(() => getCase(suffix).check(observation)).not.toThrow();
   });
-  test.each([
-    "TASK_ISSUES",
-    "Validation",
-    "Parent",
-    "ISSUE_SLUG",
-    "Plan file",
-    "Write model",
-    "Capability",
-    "Tasks in plan",
-    "Already linked",
-    "Created now",
-    "Failed creates",
-    "Decisions Log",
-    "Reason",
-    "Created/Linked Task Issues",
-    "Warnings",
-    "Failures",
-  ])(`${suffix} requires %s`, (field) => {
+  test.each(["TASK_ISSUES: PASS", "SUBTASKS: BLOCKED", "Validation: NOT_RUN"])(
+    `${suffix} rejects old public status %s`,
+    (status) => {
+      expect(() =>
+        getCase(suffix).check(
+          createObservation({
+            ...observation,
+            finalText: `${status}\n${observation.finalText}`,
+          }),
+        ),
+      ).toThrow(/public status line/);
+    },
+  );
+  test.each([ISSUE.reference, PLAN_PATH])(`${suffix} preserves %s`, (value) => {
     expect(() =>
       getCase(suffix).check(
         createObservation({
           ...observation,
-          finalText: observation.finalText.replace(`${field}:`, "Omitted:"),
+          finalText: observation.finalText.replace(value, "omitted"),
         }),
       ),
     ).toThrow();
@@ -141,7 +105,7 @@ for (const [suffix, observation] of [
       ).toThrow();
     },
   );
-  test(`${suffix} rejects file edits and malformed counts`, () => {
+  test(`${suffix} rejects file edits`, () => {
     expect(() =>
       getCase(suffix).check(
         createObservation({
@@ -150,39 +114,51 @@ for (const [suffix, observation] of [
         }),
       ),
     ).toThrow();
-    expect(() =>
-      getCase(suffix).check(
-        createObservation({
-          ...observation,
-          finalText: observation.finalText.replace(
-            "Created now: 0",
-            "Created now: 1",
-          ),
-        }),
-      ),
-    ).toThrow();
-    expect(() =>
-      getCase(suffix).check(
-        createObservation({
-          ...observation,
-          finalText: observation.finalText.replace(
-            "Failed creates: 0",
-            "Failed creates: 1",
-          ),
-        }),
-      ),
-    ).toThrow();
   });
 }
 
 test.each([
-  SUCCESS_TEXT.replace("Already linked: 1", "Already linked: 0"),
-  SUCCESS_TEXT.replace("Tasks in plan: 1", "Tasks in plan: 2"),
-  SUCCESS_TEXT.replace(
-    "Write model: linked-issue",
-    "Write model: native-sub-issue",
-  ),
-  SUCCESS_TEXT.replace("Decisions Log: PRESENT", "Decisions Log: MISSING"),
+  ["0 created now", "1 created now"],
+  ["0 failed creates", "1 failed creates"],
+])("reconciliation rejects false mutation counts %s", (before, after) => {
+  expect(() =>
+    getCase("reuse-linked-plan").check(
+      createObservation({
+        ...SUCCESS,
+        finalText: SUCCESS_TEXT.replace(before, after),
+      }),
+    ),
+  ).toThrow();
+});
+
+test("reconciliation accepts padded tables and bold prose", () => {
+  const finalText = SUCCESS_TEXT.replaceAll(" |", "     |").replace(
+    "Reconciled",
+    "**Reconciled**",
+  );
+  expect(() =>
+    getCase("reuse-linked-plan").check(
+      createObservation({ ...SUCCESS, finalText }),
+    ),
+  ).not.toThrow();
+});
+
+test("reconciliation accepts the recorded prose rollup without its routing envelope", () => {
+  const finalText = SUCCESS_TEXT.replace(
+    "1 task: 1 already linked, 0 created now, and 0 failed creates.",
+    "1 task, which was already linked. 0 issues were created and 0 creates failed.",
+  );
+  expect(() =>
+    getCase("reuse-linked-plan").check(
+      createObservation({ ...SUCCESS, finalText }),
+    ),
+  ).not.toThrow();
+});
+
+test.each([
+  SUCCESS_TEXT.replace("1 already linked", "0 already linked"),
+  SUCCESS_TEXT.replace("1 task:", "2 tasks:"),
+  SUCCESS_TEXT.replaceAll("linked-issue", "native-sub-issue"),
   SUCCESS_TEXT.replace("| 1 | acme/app#43", "| 1 | acme/app#99"),
 ])("reconciliation rejects incorrect linkage/counts %#", (finalText) => {
   expect(() =>
@@ -207,17 +183,11 @@ test("reconciliation must observe the existing child", () => {
 });
 
 test.each([
-  BLOCKED_TEXT.replace(
-    "Reason: Mutation approval was declined.",
-    "Reason: Unknown",
-  ),
-  BLOCKED_TEXT.replace("Already linked: 0", "Already linked: 1"),
-  BLOCKED_TEXT.replace("Tasks in plan: 0", "Tasks in plan: 1"),
-  BLOCKED_TEXT.replace("Plan file: not updated", `Plan file: ${PLAN_PATH}`),
-  BLOCKED_TEXT.replace("Capability: not checked", "Capability: supported"),
-  BLOCKED_TEXT.replace("Write model: unknown", "Write model: linked-issue"),
-  BLOCKED_TEXT.replace("Decisions Log: MISSING", "Decisions Log: PRESENT"),
-])("blocked summary requires exact blocked placeholders %#", (finalText) => {
+  BLOCKED_TEXT.replace("Mutation approval was declined", "Unknown problem"),
+  BLOCKED_TEXT.replace("unchanged", "updated"),
+  BLOCKED_TEXT.replace("No remote writes, creates, or links occurred.", ""),
+  `${BLOCKED_TEXT}\n| 1 | acme/app#43 |`,
+])("blocked summary must explain the approval boundary %#", (finalText) => {
   expect(() =>
     getCase("approval-declined").check(
       createObservation({ ...BLOCKED, finalText }),
