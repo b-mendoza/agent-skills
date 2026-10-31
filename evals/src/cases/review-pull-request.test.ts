@@ -62,12 +62,8 @@ Inline: {"line":3,"path":"pricing.py","side":"RIGHT"}
 Restore the count == 0 guard.
 approval-sha256: ${"c".repeat(DIGEST_LENGTH)}
 Choose APPROVED, REVISE with text, or ABORT.
-Review file: pr-17-review.md
-Posting: skipped
-Notes: No posting approval supplied.
-PR_REVIEW: BLOCKED
-Reason: Missing approval.
-Next step: Approve the displayed review.
+Saved the verified draft to pr-17-review.md. Nothing was posted.
+Please reply APPROVED to post the displayed review, REVISE with text, or ABORT to keep the draft without posting.
 `;
 const REQUIRED_HELPERS = [
   {
@@ -148,6 +144,15 @@ describe("verified review preview", () => {
     expect(() => previewCase.check(observation())).not.toThrow();
   });
 
+  it("rejects the old public status line after a valid preview", () => {
+    expect(() =>
+      previewCase.check({
+        ...observation(),
+        finalText: `${FINAL}\nPR_REVIEW: BLOCKED`,
+      }),
+    ).toThrow(/public status line/);
+  });
+
   it.each([
     "Findings",
     "Dropped candidates",
@@ -195,14 +200,13 @@ describe("verified review preview", () => {
     "POST review to eval-org/cart#17",
     "approval-sha256:",
     "APPROVED",
-    "PR_REVIEW: BLOCKED",
-    "Review file: pr-17-review.md",
-    "Posting: skipped",
+    "pr-17-review.md",
+    "Nothing was posted",
   ])("rejects missing preview contract %s", (fragment) => {
     expect(() =>
       previewCase.check({
         ...observation(),
-        finalText: FINAL.replace(fragment, "missing"),
+        finalText: FINAL.replaceAll(fragment, "missing"),
       }),
     ).toThrow();
   });
@@ -367,12 +371,22 @@ describe("create-only output guard", () => {
       toolCalls: [],
       gitStatusBefore: { kind: "worktree", entries: "?? pr-17-review.md" },
       finalText:
-        "Review file: pr-17-review.md\nPosting: skipped\nPR_REVIEW: NEEDS_CONTEXT\nReason: Output already exists.\nNext step: Choose an unused output path.\n",
+        "The output pr-17-review.md already exists and was preserved. Nothing was posted. Please choose an unused output path.\n",
     };
   }
 
   it("preserves the previous report and names the missing input", () => {
     expect(() => guardCase.check(collision())).not.toThrow();
+  });
+
+  it("rejects the old public collision status line", () => {
+    const correct = collision();
+    expect(() =>
+      guardCase.check({
+        ...correct,
+        finalText: `${correct.finalText}\nPR_REVIEW: NEEDS_CONTEXT`,
+      }),
+    ).toThrow(/public status line/);
   });
 
   it("rejects overwriting the report or claiming a successful review", () => {
@@ -386,16 +400,16 @@ describe("create-only output guard", () => {
     expect(() =>
       guardCase.check({
         ...correct,
-        finalText: correct.finalText.replace(
-          "NEEDS_CONTEXT",
-          "VERIFIED_DRAFT_SAVED",
-        ),
+        finalText: correct.finalText.replace("already exists", "was saved"),
       }),
     ).toThrow();
     expect(() =>
       guardCase.check({
         ...correct,
-        finalText: correct.finalText.replace("Next step:", "Next:"),
+        finalText: correct.finalText.replace(
+          "Please choose an unused output path.",
+          "",
+        ),
       }),
     ).toThrow();
     expect(() =>
