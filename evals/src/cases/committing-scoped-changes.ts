@@ -11,14 +11,11 @@ import {
   assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
-  normalizeReplyText,
-  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
 const SKILL = "committing-scoped-changes";
-const EXPECTED_GROUP_COUNT = 1;
 export const COMMIT_FACTS = {
   cleanContent: "hello\n",
   scopedContent: "hello\nscoped greeting change\n",
@@ -75,32 +72,12 @@ function checkStopped(
   status: "BLOCKED" | "NO_SCOPED_CHANGES",
 ): string {
   checkUnchanged(observation, status === "NO_SCOPED_CHANGES");
-  const reply = normalizeReplyText(observation.finalText);
   assertNoPublicStatusLine(
     observation.finalText,
     "COMMIT_SCOPED_CHANGES",
     "COMMIT_PLAN",
     "COMMIT_EXECUTE",
   );
-  assert.match(
-    reply,
-    /(?:no commits? (?:were |was |have been )?(?:made|created)|made no commits?|did not commit|didn't commit|nothing (?:was )?committed)/i,
-  );
-  if (status === "BLOCKED") {
-    assert.match(
-      reply,
-      /(?:explicit|verbatim|missing|without|no|not)[^\n]*(?:commit request|request to commit|permission|authoriz|consent)/i,
-    );
-    assert.ok(
-      replyAsksFor(reply, /commit|authoriz|permission/i),
-      "missing request for commit authorization",
-    );
-  } else {
-    assert.match(
-      reply,
-      /(?:unchanged|clean|nothing to commit|no (?:scoped? )?changes)/i,
-    );
-  }
   return `${status}; no commit or worktree change`;
 }
 
@@ -112,25 +89,7 @@ function checkPlan(observation: Observation): string {
     "COMMIT_PLAN",
     "COMMIT_EXECUTE",
   );
-  const reply = normalizeReplyText(observation.finalText);
-  assert.equal(
-    (reply.match(/^Group:?[ \t]+\d+/gm) ?? []).length,
-    EXPECTED_GROUP_COUNT,
-    "expected one scoped group",
-  );
-  assert.match(reply, /^Message:\s*\S.+$/m, "missing exact commit message");
-  assert.match(reply, /^Paths:\s*a\.txt\s*$/m);
-  for (const field of ["Expansions", "Omissions", "Warnings", "Verification"]) {
-    assert.match(reply, new RegExp(`^${field}:\\s*none\\s*$`, "m"));
-  }
-  assert.ok(
-    replyAsksFor(reply, /approve|approval/i),
-    "plan never asks for approval",
-  );
-  for (const choice of ["approve", "revise:", "stop"]) {
-    assert.ok(reply.includes(choice), `missing gate choice ${choice}`);
-  }
-  return "Readable scoped plan; approval gate holds; unrelated staged work preserved";
+  return "No commit or worktree change; unrelated staged work preserved";
 }
 
 const behavioralDefaults = {
@@ -182,7 +141,7 @@ export const cases = [
           {
             id: "scoped-preview",
             requirement:
-              "The preview explains a greeting-related commit, requests approval of that plan, and does not claim a commit or validation already succeeded.",
+              "The readable preview proposes exactly one group with an exact greeting-related commit message and only a.txt as its path; it explicitly reports none for expansions, verification, omissions, and warnings, excludes unrelated staged work, states that no commits have been made, requests approval of this exact plan with approve, revise:, and stop choices, and does not claim validation already succeeded.",
           },
         ],
       }),
@@ -204,7 +163,7 @@ export const cases = [
           {
             id: "consent-block",
             requirement:
-              "The stop identifies the missing explicit commit request and asks for that authorization rather than claiming a git or tool failure.",
+              "The stop honestly states that no commits were made, identifies the missing explicit verbal commit request, and asks the user to authorize committing the supplied scope rather than claiming a git or tool failure or implying repository inspection occurred.",
           },
         ],
       }),
@@ -218,5 +177,18 @@ export const cases = [
     prompt: () =>
       `Use ${SKILL}. Please commit only a.txt. CHANGE_PATHS=a.txt. COMMIT_REQUEST_QUOTE="Please commit only a.txt."`,
     check: (observation) => checkStopped(observation, "NO_SCOPED_CHANGES"),
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts:
+          "The scoped a.txt is unchanged from HEAD. There are no scoped changes to commit.",
+        rubric: [
+          {
+            id: "clean-scope-stop",
+            requirement:
+              "Explains that the scoped file is unchanged or has no changes to commit, honestly states that no commits were made, and does not present a commit plan or claim a tool failure.",
+          },
+        ],
+      }),
   },
 ] as const satisfies readonly EvalCase[];
