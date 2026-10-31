@@ -224,9 +224,15 @@ describe("validate-implementation-plan artifacts", () => {
       "unresolved decision question",
       finalText.replace("0 open questions", "1 open question"),
     ],
-    ["expanded handoff", `${finalText}\n\n- Additional finding commentary`],
   ])("rejects %s", (_label, invalidText) => {
     expect(() => checkAudit({ finalText: invalidText })).toThrow();
+  });
+
+  test.each([
+    finalText.replace("I wrote", "\n\nI wrote"),
+    `${finalText}\n\n- Critical: exporting all users' tasks exposes other users' data. Restore ownership and active-task filters.\n- Critical: Kafka and a worker service violate the no-new-services constraint. Generate CSV locally instead.`,
+  ])("leaves handoff compactness to the judge %#", (text) => {
+    expect(() => checkAudit({ finalText: text })).not.toThrow();
   });
 
   test("rejects unexpected tracked or untracked changes and git mutations", () => {
