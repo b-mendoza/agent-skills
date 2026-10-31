@@ -186,15 +186,23 @@ test("reconciliation must observe the existing child", () => {
   ).toThrow();
 });
 
-test.each([
-  BLOCKED_TEXT.replace("Mutation approval was declined", "Unknown problem"),
-  BLOCKED_TEXT.replace("No remote writes, creates, or links occurred.", ""),
-  `${BLOCKED_TEXT}\n| 1 | acme/app#43 |`,
-])("blocked summary must explain the approval boundary %#", (finalText) => {
+test("declined approval accepts the canonical parent URL and concise unchanged-state prose", () => {
+  const finalText = `ISSUE_URL=${ISSUE.url}\nPlan: ${PLAN_PATH}\nApproval was declined, so I did not dispatch reconciliation. I made no changes of any kind.`;
   expect(() =>
-    getCase("approval-declined").check(
-      createObservation({ ...BLOCKED, finalText }),
-    ),
+    getCase("approval-declined").check({ ...BLOCKED, finalText }),
+  ).not.toThrow();
+  expect(getCase("approval-declined")).toHaveProperty(
+    "judge",
+    expect.any(Function),
+  );
+});
+
+test("declined approval still rejects a fabricated linked-child table", () => {
+  expect(() =>
+    getCase("approval-declined").check({
+      ...BLOCKED,
+      finalText: `${BLOCKED_TEXT}\n| 1 | acme/app#43 |`,
+    }),
   ).toThrow();
 });
 
