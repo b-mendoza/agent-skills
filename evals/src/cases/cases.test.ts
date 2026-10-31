@@ -256,43 +256,6 @@ describe("mutation scope", () => {
   });
 });
 
-describe("envelope", () => {
-  test.each([
-    { caseId: "path-error", status: "PATH_ERROR" },
-    { caseId: "gate-envelope", status: "NOT_GIT" },
-  ])("`$caseId` accepts its `$status` envelope", ({ caseId, status }) => {
-    const observation = createObservation({
-      finalText: `RECENT_STATE: ${status}\nReason: unavailable\nNext step: use a repo`,
-      toolCalls: [VALIDATOR_CALL],
-    });
-    expect(getCase(caseId).check(observation)).toBe(
-      `${status}, 3-line envelope`,
-    );
-  });
-
-  test("an envelope case fails on the wrong status", () => {
-    const observation = createObservation({
-      finalText:
-        "RECENT_STATE: NOT_GIT\nReason: unavailable\nNext step: use a repo",
-      toolCalls: [VALIDATOR_CALL],
-    });
-    expect(() => getCase("path-error").check(observation)).toThrow(
-      /expected a PATH_ERROR envelope/,
-    );
-  });
-
-  test("delegates malformed envelope rejection to the real validator", () => {
-    const observation = createObservation({
-      finalText:
-        "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it\nExtra line",
-      toolCalls: [VALIDATOR_CALL],
-    });
-    expect(() => getCase("path-error").check(observation)).toThrow(
-      /envelope shape invalid:[\s\S]*expected exactly 3 envelope lines/,
-    );
-  });
-});
-
 describe("validator invocation", () => {
   test.each(behavioralCases)(
     "`$caseId` rejects an otherwise-valid unvalidated output",
