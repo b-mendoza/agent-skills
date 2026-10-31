@@ -82,7 +82,7 @@ The six auditors are an independent, read-only fan-out: each reads the target an
 
 ## Status-routing note
 
-Discovery is an optional evidence phase, so its `: BLOCKED`/`: ERROR` statuses degrade the run (or block it when `REFERENCE_NEED` or a mandate requires evidence) instead of terminating as runtime errors. Audit statuses instead follow the Audit guards above.
+External lookup is optional unless `REFERENCE_NEED` or a mandate requires it; dispatch `related-skills-discoverer` and require `HANDOFF_DIR/related-skills-discoverer-report.yaml` on every run. Skipped or unavailable optional lookup still returns `RELATED_SKILLS: PASS` with `reduced_confidence: true` in that report. Discovery's `: BLOCKED`/`: ERROR` statuses degrade the run (or block it when `REFERENCE_NEED` or a mandate requires evidence) instead of terminating as runtime errors. Audit statuses instead follow the Audit guards above.
 
 ## Reachability and dead-state checks
 
