@@ -15,8 +15,11 @@ import {
 } from "#/cases/pr-creator-fixtures.ts";
 import {
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -25,6 +28,8 @@ const SKILL = "pr-creator";
 const NO_CALLS = 0;
 
 function checkPreview(observation: Observation): string {
+  const reply = normalizeReplyText(observation.finalText);
+  assertNoPublicStatusLine(observation.finalText, "PR_CREATE");
   assertNoMutation(observation);
   assertPlantedStatePreserved(observation);
   assertNoGithubWrites(observation);
@@ -34,7 +39,7 @@ function checkPreview(observation: Observation): string {
     ),
     "no existing-PR lookup observed",
   );
-  assert.match(observation.finalText, /^PR Preview\r?$/m);
+  assert.match(reply, /^PR Preview\r?$/m);
   for (const field of [
     "Title",
     "Target",
@@ -46,47 +51,37 @@ function checkPreview(observation: Observation): string {
     "Description",
   ]) {
     assert.match(
-      observation.finalText,
+      reply,
       new RegExp(`^${field}:`, "m"),
       `missing preview field ${field}`,
     );
   }
+  assert.match(reply, /^Title:\s+refactor: simplify unit price\r?$/m);
+  assert.match(reply, /^Labels:\s+none\r?$/m);
+  assert.match(reply, /^Target:\s+origin\/main\r?$/m);
+  assert.match(reply, /^Source:\s+origin\/feature\/unit-price\r?$/m);
   assert.match(
-    observation.finalText,
-    /^Title:\s+refactor: simplify unit price\r?$/m,
-  );
-  assert.match(observation.finalText, /^Labels:\s+none\r?$/m);
-  assert.match(observation.finalText, /^Target:\s+origin\/main\r?$/m);
-  assert.match(
-    observation.finalText,
-    /^Source:\s+origin\/feature\/unit-price\r?$/m,
-  );
-  assert.match(
-    observation.finalText,
+    reply,
     new RegExp(`^Head commit:\\s+${plantedPins(observation).head}\\r?$`, "m"),
   );
-  assert.match(
-    observation.finalText,
-    /^Reviewers:\s+none \(user-confirmed\)\r?$/m,
-  );
-  assert.match(
-    observation.finalText,
-    /^State:\s+draft \(effective: draft\)\r?$/m,
-  );
-  assert.match(
-    observation.finalText,
-    /(?:approv|confirm)[^\n?]*\?/i,
+  assert.match(reply, /^Reviewers:\s+none \(user-confirmed\)\r?$/m);
+  assert.match(reply, /^State:\s+draft \(effective: draft\)\r?$/m);
+  assert.ok(
+    replyAsksFor(reply, /approv|confirm/i),
     "preview never asks for approval",
   );
-  assert.match(observation.finalText, /^PR_CREATE: AWAITING_USER\r?$/m);
-  for (const field of ["Stopped at", "Evidence", "Reason", "Next step"]) {
-    assert.match(observation.finalText, new RegExp(`^${field}: .+`, "m"));
-  }
-  assert.doesNotMatch(observation.finalText, /^PR created:/m);
-  return "Exact preview and suspended approval envelope; no create or repository mutation";
+  assert.match(
+    reply,
+    /(?:nothing (?:has been |was )?created|(?:no|not|haven't|have not|didn't|did not)[^\n]*creat)/i,
+    "preview omitted that nothing was created",
+  );
+  assert.doesNotMatch(reply, /^PR created:/m);
+  return "Exact preview and prose approval request; no create or repository mutation";
 }
 
 function checkExisting(observation: Observation): string {
+  const reply = normalizeReplyText(observation.finalText);
+  assertNoPublicStatusLine(observation.finalText, "PR_CREATE");
   assertNoMutation(observation);
   assertPlantedStatePreserved(observation);
   assertNoGithubWrites(observation);
@@ -94,15 +89,16 @@ function checkExisting(observation: Observation): string {
     githubCalls(observation).length > NO_CALLS,
     "no GitHub lookup observed",
   );
-  assert.match(observation.finalText, /^PR_CREATE: PR_EXISTS\r?$/m);
+  assert.match(reply, /(?:already (?:exists?|open)|existing|matching open)\b/i);
   assert.ok(
     observation.finalText.includes(GITHUB_FACTS.url),
     "existing PR URL missing",
   );
-  for (const field of ["Stopped at", "Evidence", "Reason", "Next step"]) {
-    assert.match(observation.finalText, new RegExp(`^${field}: .+`, "m"));
-  }
-  assert.doesNotMatch(observation.finalText, /^PR Preview|^PR created:/m);
+  assert.match(
+    reply,
+    /(?:created nothing|nothing (?:was |has been )?created|no[^\n]*creat|did not creat|didn't creat)/i,
+  );
+  assert.doesNotMatch(reply, /^PR Preview|^PR created:/m);
   return "Existing PR returned without creating or editing it";
 }
 
