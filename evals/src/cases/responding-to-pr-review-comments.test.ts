@@ -48,8 +48,7 @@ None.
 const FINAL = `Reply preview for review-comment-reply:701
 I'll restore the count == 0 branch so empty carts return zero.
 Do you approve posting this exact reply?
-Report: pr-17-review.md
-Posting: not-posted
+Saved the report to pr-17-review.md. Nothing was posted.
 `;
 
 function observation(report = REPORT): Observation {
@@ -101,6 +100,27 @@ describe("response routing", () => {
 describe("response preview and local report", () => {
   it("accepts one grounded assessment with posting held for approval", () => {
     expect(() => previewCase.check(observation())).not.toThrow();
+  });
+
+  it("accepts an imperative approval request without question punctuation", () => {
+    expect(() =>
+      previewCase.check({
+        ...observation(),
+        finalText: FINAL.replace(
+          "Do you approve posting this exact reply?",
+          "Reply approve to post this exact reply.",
+        ),
+      }),
+    ).not.toThrow();
+  });
+
+  it("rejects a public status line even with a valid preview", () => {
+    expect(() =>
+      previewCase.check({
+        ...observation(),
+        finalText: `${FINAL}\nPR_COMMENT_RESPONSE: PASS`,
+      }),
+    ).toThrow(/public status line/);
   });
 
   it.each([
@@ -195,6 +215,7 @@ describe("response preview and local report", () => {
       "I will do something else.",
     ),
     `${FINAL}\nPosting: posted`,
+    `${FINAL}\n**Posting:** posted`,
   ])("rejects missing approval or false posting status", (finalText) => {
     expect(() => previewCase.check({ ...observation(), finalText })).toThrow();
   });
@@ -256,7 +277,7 @@ describe("no-comments terminal", () => {
       toolCalls: [],
       gitStatusAfter: { kind: "worktree", entries: "" },
       finalText:
-        "PR_COMMENT_RESPONSE: NO_COMMENTS\nReport: none\nPosting: not-posted\nReason: No review or discussion comments found.\nNext step: Wait for review feedback.\n",
+        "No review comments found. No report was written and nothing was posted. Re-run when feedback arrives.\n",
       repoFiles: { ...correct.repoFiles, [GITHUB_FACTS.report]: null },
     };
   }
@@ -330,11 +351,11 @@ describe("no-comments terminal", () => {
   });
 
   it.each([
-    "PR_COMMENT_RESPONSE: NO_COMMENTS",
-    "Posting: not-posted",
-    "Reason:",
-    "Next step:",
-  ])("rejects missing terminal field %s", (fragment) => {
+    "No review comments found",
+    "No report was written",
+    "nothing was posted",
+    "Re-run when feedback arrives",
+  ])("rejects missing outcome detail %s", (fragment) => {
     const correct = noComments();
     expect(() =>
       guardCase.check({
@@ -342,6 +363,16 @@ describe("no-comments terminal", () => {
         finalText: correct.finalText.replace(fragment, "missing"),
       }),
     ).toThrow();
+  });
+
+  it("rejects the old public status line", () => {
+    const correct = noComments();
+    expect(() =>
+      guardCase.check({
+        ...correct,
+        finalText: `PR_COMMENT_RESPONSE: NO_COMMENTS\n${correct.finalText}`,
+      }),
+    ).toThrow(/public status line/);
   });
 
   it("rejects an invented report, no collection evidence, or attempted posting", () => {

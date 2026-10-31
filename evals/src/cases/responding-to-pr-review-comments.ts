@@ -17,9 +17,12 @@ import {
 import {
   assertFileAbsent,
   assertNoMutation,
+  assertNoPublicStatusLine,
   assertReadOnlyGraphqlArguments,
   checkNegativeRouting,
   checkPositiveRouting,
+  normalizeReplyText,
+  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -40,6 +43,7 @@ function assertReplyPreviewMatches(report: string, finalText: string): void {
 }
 
 function checkReplyPreview(observation: Observation): string {
+  assertNoPublicStatusLine(observation.finalText, "PR_COMMENT_RESPONSE");
   assertOnlyReportWritten(observation, false);
   const report = capturedText(observation, GITHUB_FACTS.report);
   assert.match(report, /^# PR 17 Review Comment Assessment\r?$/m);
@@ -96,12 +100,14 @@ function checkReplyPreview(observation: Observation): string {
     observation.finalText,
     /review-comment-reply:701|discussion_r701/,
   );
-  assert.match(
-    observation.finalText,
-    /(?:approv|confirm)[^\n?]*\?/i,
-    "no exact-reply approval question",
+  assert.ok(
+    replyAsksFor(observation.finalText, /approv|confirm/i),
+    "no exact-reply approval request",
   );
-  assert.doesNotMatch(observation.finalText, /^Posting: posted\r?$/m);
+  assert.doesNotMatch(
+    normalizeReplyText(observation.finalText),
+    /^Posting: posted\r?$/m,
+  );
   assert.ok(
     githubCalls(observation).length > NO_CALLS,
     "no GitHub evidence collected",
@@ -154,11 +160,22 @@ function checkNoComments(observation: Observation): string {
     githubCalls(observation).some(isCommentInventoryRead),
     "no PR comment inventory collection observed",
   );
-  assert.match(observation.finalText, /^PR_COMMENT_RESPONSE: NO_COMMENTS\r?$/m);
-  assert.match(observation.finalText, /^Posting: (?:none|not-posted)\r?$/m);
-  assert.match(observation.finalText, /^Reason: .+/m);
-  assert.match(observation.finalText, /^Next step: .+/m);
-  return "Empty PR produces NO_COMMENTS with no report or reply mutation";
+  assertNoPublicStatusLine(observation.finalText, "PR_COMMENT_RESPONSE");
+  const reply = normalizeReplyText(observation.finalText);
+  assert.match(
+    reply,
+    /(?:no (?:review(?:er)? |discussion |in-scope )?comments|(?:comments|inventory)[^\n]*(?:empty|zero|0)|nothing to assess)/i,
+  );
+  assert.match(
+    reply,
+    /(?:no report[^\n]*(?:written|created)|did not (?:write|create)|didn't (?:write|create)|no[^\n]*report (?:was )?(?:written|created))/i,
+  );
+  assert.match(
+    reply,
+    /(?:nothing (?:was )?posted|posted nothing|did not post|didn't post|not posted)/i,
+  );
+  assert.match(reply, /(?:re-?run|wait|feedback|check[^\n]*(?:URL|PR))/i);
+  return "Empty PR explained; no report or reply mutation";
 }
 
 export const cases = [
