@@ -9,10 +9,13 @@ import {
   assertFileAbsent,
   assertFileMatches,
   assertNoMutation,
+  assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
   fixtureRelativePath,
+  normalizeReplyText,
+  replyAsksFor,
   seedFixtureRoot,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
@@ -81,10 +84,15 @@ function checkReview(observation: Observation, content: string): string {
   return "canonical FAIL review; missing reference reported; no repair";
 }
 
-function assertReviewShape(finalText: string): void {
-  assert.match(finalText.trim(), /^REVIEW: FAIL(?:\r?\n|$)/);
+function assertReviewShape(rawText: string): void {
+  assertNoPublicStatusLine(rawText, "REVIEW", "state", "Status");
+  const finalText = normalizeReplyText(rawText);
+  assert.match(
+    finalText,
+    /(?:blocking findings|fails? review|review (?:failed|found)|cannot pass)/i,
+  );
   for (const heading of ["Findings", "Checks", "Summary"]) {
-    assert.match(finalText, new RegExp(`^## ${heading}\\s*$`, "m"));
+    assert.match(finalText, new RegExp(`^${heading}\\s*$`, "m"));
   }
   assert.match(
     finalText,
@@ -93,14 +101,11 @@ function assertReviewShape(finalText: string): void {
   for (const check of REVIEW_CHECKS) {
     assert.match(
       finalText,
-      new RegExp(
-        `^- ${check}:\\s*(?:pass|fail|blocked|not applicable)\\b`,
-        "im",
-      ),
+      new RegExp(`^${check}:\\s*(?:pass|fail|blocked|not applicable)\\b`, "im"),
     );
   }
   for (const field of REVIEW_SUMMARY_FIELDS) {
-    assert.match(finalText, new RegExp(`^- ${field}:\\s*\\S`, "m"));
+    assert.match(finalText, new RegExp(`^${field}:\\s*\\S`, "m"));
   }
   assert.match(finalText, /severity\.md/);
   assert.match(finalText, /\|\s*blocker\s*\|/i);
@@ -137,9 +142,16 @@ function assertOnlyStagedReferenceWrites(observation: Observation): void {
 }
 
 function assertStagedDelivery(observation: Observation): void {
-  assert.match(observation.finalText.trim(), /^state: blocked(?:\r?\n|$)/);
+  assertNoPublicStatusLine(observation.finalText, "state", "REVIEW", "Status");
+  const text = normalizeReplyText(observation.finalText);
+  assert.ok(replyAsksFor(text, /approv/i), "ask for approval after delivery");
+  assert.match(
+    text,
+    /review[^\n]*(?:passed|complete|found|blocked)/i,
+    "review outcome missing",
+  );
   for (const heading of DELIVERY_HEADINGS) {
-    assert.match(observation.finalText, new RegExp(`^## ${heading}\\s*$`, "m"));
+    assert.match(text, new RegExp(`^${heading}\\s*$`, "m"));
   }
   assert.ok(
     observation.finalText.includes(STAGED_REFERENCE),
@@ -150,6 +162,13 @@ function assertStagedDelivery(observation: Observation): void {
     "real destination missing from delivery",
   );
   assertFileMatches(observation, STAGED_REFERENCE, /^# .+/m);
+  assert.ok(observation.repoFiles !== undefined);
+  const stagedContent = observation.repoFiles[STAGED_REFERENCE];
+  assert.ok(
+    typeof stagedContent === "string" &&
+      observation.finalText.includes(stagedContent.trim()),
+    "delivery must show complete staged file content",
+  );
   for (const severity of ["major", "minor", "patch"]) {
     assertFileMatches(
       observation,
