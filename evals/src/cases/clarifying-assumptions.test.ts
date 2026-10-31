@@ -43,13 +43,8 @@ Questions now: 1 | Deferred: 0 | Irrelevant: 0
 | 1 | PF1 | Problem framing | HIGH | A | No | All |
 Ready to start? I'll walk through these one at a time.
 `;
-const blocked = `- Critique artifact: -
-- Files updated: -
-- RE_PLAN_NEEDED: false
-- BLOCKERS_PRESENT: true
-- Blocking verdict: INPUT: BLOCKED
-- Reason: TASK_NUMBER is required for MODE=critique.
-- Decisions file: -
+const blocked = `Critique mode needs a task number before I can continue.
+Please provide TASK_NUMBER for acme-app-42. No files were changed.
 `;
 
 function getCase(name: string) {
@@ -167,6 +162,7 @@ describe("clarifying-assumptions", () => {
       null,
       critique.replace("CRITIQUE: PASS", "CRITIQUE: FAIL"),
       critique.replace("Mode: upfront", "Mode: critique"),
+      critique.replace("Artifact: docs/", "Artifact: /tmp/repo/docs/"),
       critique.replace("Problem Framing Critique", "Notes"),
       critique.replace("| HIGH |", "| LOW |"),
     ]) {
@@ -235,17 +231,13 @@ describe("clarifying-assumptions", () => {
     },
   );
 
-  test("blocked summary rejects wrong flags, order, reason, and premature artifacts", () => {
+  test("missing task number requires a request and rejects public routing flags", () => {
     const observation = validObservation("critique-missing-task-number");
     for (const finalText of [
-      blocked.replace("RE_PLAN_NEEDED: false", "RE_PLAN_NEEDED: true"),
-      blocked.replace("BLOCKERS_PRESENT: true", "BLOCKERS_PRESENT: false"),
-      blocked.replace("INPUT: BLOCKED", "CRITIQUE: FAIL"),
-      blocked.replace("TASK_NUMBER", "input"),
-      blocked.replace(
-        "- Critique artifact: -\n- Files updated: -",
-        "- Files updated: -\n- Critique artifact: -",
-      ),
+      "No files were changed.",
+      "Please provide the work item URL. No files were changed.",
+      `${blocked}\n- RE_PLAN_NEEDED: false\n- BLOCKERS_PRESENT: true`,
+      `${blocked}\n- Blocking verdict: INPUT: BLOCKED`,
     ]) {
       expect(() =>
         getCase("critique-missing-task-number").check({
@@ -261,6 +253,16 @@ describe("clarifying-assumptions", () => {
           ...observation.repoFiles,
           [CLARIFICATION_FACTS.critiquePath]: critique,
         },
+      }),
+    ).toThrow();
+  });
+
+  test("preview rejects public routing flags but retains the approval artifact", () => {
+    const observation = validObservation("upfront-preview-gate");
+    expect(() =>
+      getCase("upfront-preview-gate").check({
+        ...observation,
+        finalText: `${preview}\nBLOCKERS_PRESENT: true`,
       }),
     ).toThrow();
   });
