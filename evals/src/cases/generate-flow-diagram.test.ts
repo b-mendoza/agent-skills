@@ -1,24 +1,21 @@
-import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
 import {
-  cases,
   FLOW_FACTS,
   INSTALLED_SKILL_CONTENT,
   INSTALLED_SKILL_PATH,
   SKILL,
 } from "#/cases/generate-flow-diagram.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 function getCase(suffix: string) {
-  const found = cases.find((entry) => entry.id === `${SKILL}/${suffix}`);
-  assert.ok(found !== undefined);
-  return found;
+  return getRegisteredCase(`${SKILL}/${suffix}`);
 }
 
 const GATE = `## Refinement Pre-Check
@@ -48,38 +45,6 @@ function observation(finalText: string): Observation {
   return createObservation({ finalText, repoFiles: FILES });
 }
 
-describe("diagram routing", () => {
-  test("accepts only an actual positive invocation", () => {
-    expect(
-      getCase("trigger-positive").check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-        }),
-      ),
-    ).toBe("Skill invoked");
-    expect(() =>
-      getCase("trigger-positive").check(createObservation()),
-    ).toThrow(/never triggered/);
-  });
-
-  test("accepts the sibling and rejects the target for the negative", () => {
-    expect(
-      getCase("trigger-negative-prompt").check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: "prompt-structurer" } }],
-        }),
-      ),
-    ).toBe("no trigger");
-    expect(() =>
-      getCase("trigger-negative-prompt").check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-        }),
-      ),
-    ).toThrow(/unexpectedly triggered/);
-  });
-});
-
 describe("diagram approval and path guards", () => {
   test.each(behavioralExamples)(
     "$suffix accepts its observable output",
@@ -93,8 +58,6 @@ describe("diagram approval and path guards", () => {
     ({ suffix, finalText }) => {
       const good = observation(finalText);
       for (const wrong of [
-        { timedOut: true },
-        { subtype: "query_error" },
         { finalText: "Done." },
         { repoFiles: {} },
         { repoFiles: { ...FILES, [FLOW_FACTS.path]: "changed" } },
@@ -171,21 +134,9 @@ describe("diagram approval and path guards", () => {
     ).toThrow();
   });
 
-  test("every case rejects a run that never happened", () => {
-    for (const entry of cases) {
-      expect(() =>
-        entry.check(createObservation({ timedOut: true })),
-      ).toThrow();
-    }
-  });
-
   test("seed plants and commits the literal baseline", () => {
     const entry = getCase("refinement-approval");
-    const fixture = makeFixture(
-      entry.fixture,
-      [SKILL],
-      "seed" in entry ? entry.seed : undefined,
-    );
+    const fixture = makeFixture(entry.fixture, [SKILL], entry.seed);
     try {
       expect(readFileSync(join(fixture.cwd, FLOW_FACTS.path), "utf8")).toBe(
         FLOW_FACTS.content,

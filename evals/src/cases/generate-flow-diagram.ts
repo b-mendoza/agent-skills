@@ -1,16 +1,15 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileMatches,
   assertNoMutation,
   checkNegativeRouting,
   checkPositiveRouting,
 } from "#/cases/shared-checks.ts";
+import { commitRepoFiles } from "#/fixtures/fixtures.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
 export const SKILL = "generate-flow-diagram";
@@ -25,19 +24,16 @@ export const FLOW_FACTS = {
 } as const;
 
 function seedWorkflow({ repoPath }: SeedContext): void {
-  writeFileSync(join(repoPath, FLOW_FACTS.path), FLOW_FACTS.content);
-  execFileSync("git", ["add", FLOW_FACTS.path], { cwd: repoPath });
-  execFileSync("git", ["commit", "-qm", "seed release workflow"], {
-    cwd: repoPath,
-  });
+  commitRepoFiles(
+    repoPath,
+    { [FLOW_FACTS.path]: FLOW_FACTS.content },
+    "seed release workflow",
+  );
 }
 
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
+const suiteDefaults = {
+  ...behavioralDefaults,
   mutationPolicy: "read-only",
-  fixture: "clean",
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
   seed: seedWorkflow,
   snapshotPaths: [FLOW_FACTS.path],
 } as const;
@@ -65,7 +61,7 @@ export const cases = [
   },
   {
     id: "generate-flow-diagram/refinement-approval",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     skill: SKILL,
     intent:
       "Refinement inventories safety gaps and stops for approval without rewriting the baseline",
@@ -116,7 +112,7 @@ export const cases = [
   },
   {
     id: "generate-flow-diagram/mirror-path-blocked",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     skill: SKILL,
     snapshotPaths: [FLOW_FACTS.path, INSTALLED_SKILL_PATH],
     intent:
