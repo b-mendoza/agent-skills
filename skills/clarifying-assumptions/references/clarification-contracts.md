@@ -1,6 +1,6 @@
 # Clarification Contracts
 
-> Read this file when validating inputs, deriving subagent handoffs, or checking which orchestration artifacts this skill may update.
+> Read this file when validating inputs or checking which orchestration artifacts this skill may update. Exact subagent inputs and paths live only in the active mode playbook's dispatch tables: [`./upfront-mode.md`](./upfront-mode.md) or [`./critique-mode.md`](./critique-mode.md).
 >
 > **Reminder:** This file is the operational contract. Conceptual background lives behind URLs in `./external-sources.md`.
 
@@ -29,42 +29,6 @@ Additional upstream artifacts:
 
 If a required artifact is missing, let the relevant subagent return its parseable `BLOCKED`, `FAIL`, or `WARN` verdict instead of reading raw files inline.
 
-## Derived Subagent Inputs
-
-Derive these handoff values from the top-level inputs.
-
-| Dispatch target             | Derived inputs                                                                                                                                                             |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `critique-analyzer`         | `MAIN_PLAN_FILE`, `ARTIFACTS`, `CRITIQUE_REPORT_FILE`, `PRIOR_DECISIONS_FILE`, `PRIOR_DECISIONS_KIND`, and in `MODE=critique` `TASK_NUMBER`                                |
-| `question-manifest-builder` | `PLAN_FILE`, `CRITIQUE_REPORT_FILE`, and in `MODE=critique` `TASK_NUMBER` plus `CURRENT_TASK_ARTIFACTS`                                                                    |
-| `decision-recorder`         | `ITERATION`, `DECISIONS`, optional `DEFERRED_QUESTIONS`, optional `IMPLEMENTATION_UPDATES`, and in `MODE=critique` `TASK_NUMBER`, `TASK_TITLE`, plus `RESOLVED_IRRELEVANT` |
-
-### Upfront Mode Paths
-
-Use these exact paths for `MODE=upfront`:
-
-| Value                  | Path or value                                                         |
-| ---------------------- | --------------------------------------------------------------------- |
-| `MAIN_PLAN_FILE`       | `docs/<KEY>-tasks.md`                                                 |
-| `ARTIFACTS`            | `docs/<KEY>-stage-1-detailed.md`, `docs/<KEY>-stage-2-prioritized.md` |
-| `CRITIQUE_REPORT_FILE` | `docs/<KEY>-upfront-critique.md`                                      |
-| `PRIOR_DECISIONS_FILE` | `docs/<KEY>-tasks.md`                                                 |
-| `PRIOR_DECISIONS_KIND` | `main-log`                                                            |
-
-### Critique Mode Paths
-
-Use these exact paths for `MODE=critique`:
-
-| Value                                    | Path or value                                                                                                                                          |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `MAIN_PLAN_FILE`                         | `docs/<KEY>-tasks.md`                                                                                                                                  |
-| `ARTIFACTS` and `CURRENT_TASK_ARTIFACTS` | `docs/<KEY>-task-<N>-brief.md`, `docs/<KEY>-task-<N>-execution-plan.md`, `docs/<KEY>-task-<N>-test-spec.md`, `docs/<KEY>-task-<N>-refactoring-plan.md` |
-| `CRITIQUE_REPORT_FILE`                   | `docs/<KEY>-task-<N>-critique.md`                                                                                                                      |
-| `PRIOR_DECISIONS_FILE`                   | `docs/<KEY>-task-<N>-decisions.md`                                                                                                                     |
-| `PRIOR_DECISIONS_KIND`                   | `per-task`                                                                                                                                             |
-
-If the critique-mode decisions file does not exist yet, `critique-analyzer` treats it as an empty prior-decisions source.
-
 ## Output Artifacts
 
 This skill updates orchestration artifacts only. It does not produce implementation code.
@@ -83,41 +47,6 @@ This skill updates orchestration artifacts only. It does not produce implementat
 
 These are orchestration artifacts. Preserve them for resumability and keep them out of version control unless a parent workflow explicitly defines a different artifact lifecycle.
 
-## Final Summary Contract
+## Final Summary
 
-For `RESULT_FORMAT=user` or no option, return prose with the artifact paths, changes or lack of changes, decisions, blockers, re-planning needs, and next action. Do not print routing flags or a blocking-verdict envelope. The fields below are returned only to a calling skill with `RESULT_FORMAT=handoff`; internal flag transitions remain the same in both modes.
-
-Every successful handoff ends with these fields in this order:
-
-```text
-- Critique artifact: <path>
-- Files updated: <path list or ->
-- RE_PLAN_NEEDED: <true|false>
-- BLOCKERS_PRESENT: <true|false>
-```
-
-For `MODE=upfront`, append:
-
-```text
-- Accepted decisions summary: <concise summary or ->
-```
-
-For `MODE=critique`, append:
-
-```text
-- Decisions file: docs/<KEY>-task-<N>-decisions.md | -
-```
-
-In `handoff` mode, if top-level inputs are invalid or a subagent blocks or fails, emit the same first four fields with `Files updated: -`, then the blocking pair, then the mode-specific retained field when a value is available:
-
-```text
-- Critique artifact: <path or ->
-- Files updated: -
-- RE_PLAN_NEEDED: <true|false>
-- BLOCKERS_PRESENT: true
-- Blocking verdict: <verdict>
-- Reason: <reason>
-- <Accepted decisions summary | Decisions file>: <value>
-```
-
-The mode-specific field is always last. Use `Critique artifact: -` when the run stops before a critique artifact is created. `SKILL.md` holds the Flag Transitions table that determines both flag values.
+The `SKILL.md` [Output Contract](../SKILL.md#output-contract) is the only source for the user-mode summary, the `RESULT_FORMAT=handoff` field order, the blocked summary order, and the flag transitions.
