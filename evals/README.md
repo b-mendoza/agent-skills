@@ -118,6 +118,8 @@ Two rules, both from the mandatory practice:
 
 When adding an assertion, verify it fails on wrong input before trusting it green — a check that never fails is not a check.
 
+A real model reply that a check wrongly rejected becomes a recorded-reply regression in the suite's test file. Shorten it before pasting: write the test's observation fields to a JSON file and run `pnpm minimize:reply --case <id> --observation <file> --contrast-ref <ref>`, where `<ref>` is the parent of the commit whose check rejected the reply (`git log -S '<phrase>'`). The script reduces only `finalText`, keeping the current check passing and the old check failing with the same message, prints the shortened reply on stdout, and exits 1 when the old check also passes. A reply that fails today needs no `--contrast-ref`; it is reduced while it keeps the same failure. For a passing reply the script preserves only the current check's returned outcome and the old check's failure, not which normalizer steps or regex alternatives the reply exercised. When a reply guards those branches, run a mutation check on them before keeping the shortened text, or keep the original.
+
 ## Coverage
 
 All 28 skills have registered suites. Counts describe available cases, not live-run pass rates.
