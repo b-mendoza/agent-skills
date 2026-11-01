@@ -4,6 +4,7 @@ import type {
   ProviderResponse,
 } from "promptfoo";
 
+import { getCase } from "#/cases/registry.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
@@ -11,7 +12,6 @@ import { toText } from "#/observation/mutation-evidence.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 import { evalModel } from "../../promptfooconfig.ts";
-import { getCase } from "./observation.ts";
 
 const FIRST_REPEAT = 0;
 

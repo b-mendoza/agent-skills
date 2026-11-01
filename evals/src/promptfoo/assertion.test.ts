@@ -9,12 +9,12 @@ import {
   FULL_REPORT_SNAPSHOT,
   VALIDATOR_CALL,
 } from "#/cases/case-test-support.ts";
+import { getCase } from "#/cases/registry.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 import { evalModel } from "../../promptfooconfig.ts";
 import { grade, MAX_OBSERVED_CHARS, mutationScope } from "./assertion.ts";
-import { getCase } from "./observation.ts";
 import EvalProvider from "./provider.ts";
 
 vi.mock(import("#/observation/agent-query.ts"), async (importOriginal) => ({
@@ -278,6 +278,57 @@ describe("eval assertion", () => {
       );
     },
   );
+
+  test.each([
+    {
+      label: "a clean run",
+      observation: createObservation(),
+      pass: true,
+      score: 1,
+      reason: "1 behavioral run(s) left no trace",
+    },
+    {
+      label: "a committed write",
+      observation: createObservation({
+        toolCalls: [
+          { name: "Bash", input: { command: "git commit -m changed" } },
+        ],
+      }),
+      pass: false,
+      score: 0,
+      reason: "read-only contract violated:",
+    },
+    {
+      // A run that never happened left no trace, but proves nothing.
+      label: "an authentication failure",
+      observation: createObservation({
+        isError: true,
+        finalText: "Failed to authenticate: OAuth session expired",
+      }),
+      pass: false,
+      score: 0,
+      reason:
+        "the SDK reported a failed run before it did anything (subtype: success): Failed to authenticate: OAuth session expired",
+    },
+    {
+      // An unreadable sample is not a clean one; it must not read as no trace.
+      label: "uncollected git evidence",
+      observation: createObservation({
+        gitStatusBefore: { kind: "unreadable", reason: "ENOENT" },
+        gitStatusAfter: { kind: "unreadable", reason: "ENOENT" },
+      }),
+      pass: false,
+      score: 0,
+      reason: "read-only contract violated:",
+    },
+  ])("mutationScope grades $label", ({ observation, pass, score, reason }) => {
+    expect(
+      mutationScope("", {
+        vars: context.vars,
+        metadata: { observation, repeatIndex: 0 },
+      }),
+    ).toStrictEqual({ pass, score, reason });
+  });
 
   test.each(malformedMetadata)(
     "mutationScope rejects $name with a decoding error",

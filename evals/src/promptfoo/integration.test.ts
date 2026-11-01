@@ -15,9 +15,8 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import { BEHAVIORAL_TIER, ROUTING_TIER } from "#/cases/case-contract.ts";
-import { cases } from "#/cases/registry.ts";
+import { cases, getCase } from "#/cases/registry.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
-import { getCase } from "#/promptfoo/observation.ts";
 
 import config from "../../promptfooconfig.ts";
 
