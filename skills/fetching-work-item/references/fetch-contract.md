@@ -63,36 +63,6 @@ Warnings: <None | semicolon-separated warnings>
 Reason: <None | fatal reason>
 ```
 
-<example>
-FETCH: PASS
-Validation: PASS
-Failure category: NONE
-File written: docs/PROJ-1234.md
-Ticket: PROJ-1234: Implement dark mode toggle
-Status: In Progress | Type: Story
-Comments: 4/4
-Subtasks: 3/3
-Linked issues: 1/1
-Attachments: 2
-Warnings: None
-Reason: None
-</example>
-
-<example>
-FETCH: FAIL
-Validation: NOT_RUN
-Failure category: NOT_FOUND
-File written: None
-Issue: acme/app#892: Unknown
-State: Unknown
-Comments: N/A
-Child issues: N/A
-Linked issues: N/A
-Attachments: N/A
-Warnings: None
-Reason: GitHub issue acme/app#892 was not found (404)
-</example>
-
 ## Artifact Contract
 
 Primary artifact: `docs/<KEY>.md`. It is the Phase 1 workflow-state snapshot consumed by later orchestration phases. The active playbook's `Snapshot Sections` section defines the required top-level heading order (stable when empty), and its named snapshot-template file defines the full fenced shape, conditional rules, and placeholders.
@@ -108,18 +78,3 @@ Shared rules across platforms:
 In default `user` mode, for `PASS` or `PARTIAL`, report the file path, work-item identity, status/state, comment count, related-item counts, attachment count, warnings, and that the platform was not modified. For `FAIL`, `ERROR`, or `Validation: FAIL`, explain the failure and recovery action in prose, say whether a snapshot was written, and do not inspect raw payloads or print the internal category/status fields.
 
 With `RESULT_FORMAT=handoff`, return the locked 12-line summary unchanged on every outcome, including failures. It is the Phase 1 decision input before artifact validation.
-
-<example>
-Work item fetched to `docs/PROJ-1234.md`. `PROJ-1234: Implement dark mode
-toggle` is `In Progress` (`Story`). Retrieved 4/4 comments, 3/3 subtasks,
-1/1 linked issues, and 2 attachments. Retrieval only; the platform was not
-modified.
-</example>
-
-<example>
-Work item fetched to `docs/acme-app-7001.md` with retrieval warnings.
-`acme/app#7001: Audit webhook retries` is `OPEN`. Retrieved 2/2 comments,
-0/UNKNOWN child issues, 1/1 linked issues, and 0 attachments. Warning: Child
-issue discovery unavailable: sub_issues endpoint unsupported on this host.
-Retrieval only; the platform was not modified.
-</example>
