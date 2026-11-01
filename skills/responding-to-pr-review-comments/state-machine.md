@@ -1,51 +1,10 @@
 # State Machine — responding-to-pr-review-comments
 
-Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals. Normative status block shapes live in [`references/status-contracts.md`](./references/status-contracts.md).
+Finite-state execution model for this skill. This table is the only normative list of states, transitions, guards, and terminals. Normative status block shapes live in [`references/status-contracts.md`](./references/status-contracts.md).
 
 Six specialists stay separate: each owns a distinct status prefix (`COLLECT`, `ASSESS`, `DRAFT`, `VERIFY`, `WRITE`, `POST`). That split is earned.
 
-## States
-
-| State                       | Kind     | Role                                                 |
-| --------------------------- | -------- | ---------------------------------------------------- |
-| `NormalizeInputs`           | active   | Defaults, untrusted-content rule, counter init       |
-| `GatePrUrl`                 | active   | Require unambiguous `PR_URL`                         |
-| `GateOutputPath`            | active   | Enforce `OUTPUT_FILE` safety checklist               |
-| `GateCollision`             | active   | Existing report: overwrite, suffix, or stop          |
-| `GateIdentity`              | active   | Resolve login or continue `degraded-unknown`         |
-| `GateScope`                 | active   | Validate URL-list `COMMENT_SCOPE` when used          |
-| `GatePostingMode`           | active   | Accept `draft-only` / `post-after-confirmation` only |
-| `Collect`                   | active   | Dispatch `review-comment-collector`                  |
-| `CollectRepair`             | active   | One redispatch with `REPAIR_REQUEST`                 |
-| `ApplyTaxonomy`             | active   | Targets, dispositions, degraded-identity rules       |
-| `Assess`                    | active   | Dispatch `review-comment-assessor`                   |
-| `AssessContext`             | active   | One narrow lookup for `NEEDS_CONTEXT`                |
-| `GateAssessDecision`        | active   | Product/target/source question                       |
-| `Draft`                     | active   | Dispatch `reply-drafter`                             |
-| `GateWording`               | active   | Wording question that affects approval               |
-| `Verify`                    | active   | Dispatch `response-verifier`                         |
-| `VerifyRepair`              | active   | Named `verify.context` / `verify.fix` repair         |
-| `GateWritePath`             | active   | Reconfirm path safety before write                   |
-| `WriteReport`               | active   | Dispatch `response-report-writer`                    |
-| `ReadBack`                  | active   | Writer + orchestrator read-back                      |
-| `BuildPreview`              | active   | Exact preview for supported eligible targets         |
-| `GateContractRepair`        | active   | Drop unsupported poster targets under cap            |
-| `ShowPreview`               | active   | Exact text preview for approval                      |
-| `GatePreviewApproval`       | active   | Approve, decline, or wording change                  |
-| `RecordApproval`            | active   | Store `APPROVAL_RECORD` (timestamp + exact text)     |
-| `Post`                      | active   | Dispatch `thread-reply-poster`                       |
-| `SyncReport`                | active   | Redispatch writer to sync ledger + outcome metadata          |
-| `TerminalPassNotPosted`     | terminal | `PASS` + `Posting: not-posted`                       |
-| `TerminalPassPosted`        | terminal | `PASS` + `Posting: posted`                           |
-| `TerminalAuth`              | terminal | `AUTH`                                               |
-| `TerminalNotFound`          | terminal | `NOT_FOUND`                                          |
-| `TerminalNoComments`        | terminal | `NO_COMMENTS`                                        |
-| `TerminalNeedsUserDecision` | terminal | `NEEDS_USER_DECISION`                                |
-| `TerminalResponseError`     | terminal | `RESPONSE_ERROR`                                     |
-| `TerminalVerifyFail`        | terminal | `VERIFY_FAIL`                                        |
-| `TerminalWriteError`        | terminal | `WRITE_ERROR`                                        |
-| `TerminalPostError`         | terminal | `POST_ERROR` (includes `Posting: partial`)           |
-| `TerminalCancelled`         | terminal | `CANCELLED`                                          |
+`NormalizeInputs` applies defaults and the untrusted-content rule and initializes every counter in Cycle ledgers. `SyncReport` redispatches `response-report-writer` to sync the posting ledger and outcome metadata.
 
 ## Transitions
 
@@ -151,13 +110,3 @@ Six specialists stay separate: each owns a distinct status prefix (`COLLECT`, `A
 | `AUTH` / `NOT_FOUND` / `NO_COMMENTS`             | as applicable         | Collection-time terminals                                          |
 | `NEEDS_USER_DECISION`                            | —                     | Named question counter exhausted or collision stop                 |
 | `RESPONSE_ERROR` / `VERIFY_FAIL` / `WRITE_ERROR` | —                     | Unrepaired phase failures                                          |
-
-## Reachability and dead-state checks
-
-| Property                                            | Result                                                                                          |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Every active state reachable from `NormalizeInputs` | yes                                                                                             |
-| Every terminal reachable                            | yes                                                                                             |
-| Dead states (no outgoing, non-terminal)             | none                                                                                            |
-| Gate thrash bounded                                 | yes — counters above                                                                            |
-| Post invariants                                     | `Post` only after exact preview, matching `APPROVAL_RECORD`, and freshness checks inside poster |
