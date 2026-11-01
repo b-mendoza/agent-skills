@@ -1,8 +1,9 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { SeedContext } from "#/cases/case-contract.ts";
+import { GH_LOG, HEAD_LOG, writeRepoFiles } from "#/fixtures/fixtures.ts";
 
 export const EXECUTION_FACTS = {
   key: "acme-app-42",
@@ -12,8 +13,8 @@ export const EXECUTION_FACTS = {
   branch: "task/acme-app-42-1-greeting",
   sourcePath: "a.txt",
   sourceContent: "hello\n",
-  logPath: ".git/fake-gh.log",
-  headPath: ".git/logs/HEAD",
+  logPath: GH_LOG,
+  headPath: HEAD_LOG,
 } as const;
 
 const taskPrefix = `docs/${EXECUTION_FACTS.key}-task-1`;
@@ -175,12 +176,23 @@ if (args.length === 1 && args[0] === '--version') {
   );
 }
 
-export function seedExecutionArtifacts(seedContext: SeedContext): void {
+/** The execution artifacts minus `omittedPaths`, for fixtures planting a partial workflow. */
+export function artifactsWithout(
+  ...omittedPaths: readonly string[]
+): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(EXECUTION_ARTIFACTS).filter(
+      ([path]) => !omittedPaths.includes(path),
+    ),
+  );
+}
+
+export function seedExecutionArtifacts(
+  seedContext: SeedContext,
+  artifacts: Readonly<Record<string, string>> = EXECUTION_ARTIFACTS,
+): void {
   const { repoPath } = seedContext;
-  mkdirSync(join(repoPath, "docs"), { recursive: true });
-  for (const [path, content] of Object.entries(EXECUTION_ARTIFACTS)) {
-    writeFileSync(join(repoPath, path), content);
-  }
+  writeRepoFiles(repoPath, artifacts);
   // Expose individual untracked artifacts instead of the collapsed docs/ entry.
   execFileSync("git", ["config", "status.showUntrackedFiles", "all"], {
     cwd: repoPath,

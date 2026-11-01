@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
-import { unlinkSync } from "node:fs";
-import { join } from "node:path";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
+  artifactsWithout,
   DECISIONS_PATH,
   EXECUTION_ARTIFACTS,
   EXECUTION_FACTS,
@@ -15,6 +14,7 @@ import {
   assertFileMatches,
   assertNoMutation,
   assertNoPublicStatusLine,
+  assertOnlyInitialCommit,
   checkNegativeRouting,
   checkPositiveRouting,
   normalizeReplyText,
@@ -66,11 +66,7 @@ function checkUnchangedFiles(
     files[EXECUTION_FACTS.sourcePath],
     EXECUTION_FACTS.sourceContent,
   );
-  assertFileMatches(
-    observation,
-    EXECUTION_FACTS.headPath,
-    /^[^\n]+commit \(initial\): initial commit\n$/,
-  );
+  assertOnlyInitialCommit(observation);
   assertFileMatches(
     observation,
     EXECUTION_FACTS.logPath,
@@ -146,13 +142,10 @@ function checkReadinessStop(
   return "readiness stop; one task report; no kickoff, artifact, or tracker mutation";
 }
 
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
+const suiteDefaults = {
+  ...behavioralDefaults,
   skill: SKILL,
-  fixture: "clean",
   mutationPolicy: "read-only",
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
   snapshotPaths,
 } as const;
 
@@ -178,7 +171,7 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
-    ...behavioralDefaults,
+    ...suiteDefaults,
     id: `${SKILL}/approval-before-kickoff`,
     seed: seedExecutionArtifacts,
     intent:
@@ -201,11 +194,10 @@ export const cases = [
       }),
   },
   {
-    ...behavioralDefaults,
+    ...suiteDefaults,
     id: `${SKILL}/missing-decisions`,
     seed: (seedContext) => {
-      seedExecutionArtifacts(seedContext);
-      unlinkSync(join(seedContext.repoPath, DECISIONS_PATH));
+      seedExecutionArtifacts(seedContext, artifactsWithout(DECISIONS_PATH));
     },
     intent:
       "A missing required Phase 6 decisions artifact blocks before any execution mutation",
