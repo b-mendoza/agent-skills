@@ -90,7 +90,7 @@ Consume a `PASS` summary only after all checks pass:
 
 After each validation, record one line: `CONTRACT_NOTE: <phase> | pass|fail | <checks summary>`. Pass all notes to `plan-reviewer`.
 
-**Contract repair (PASS summary that fails contract):** re-dispatch that subagent once with `REPAIR_FINDINGS`. Second failure: required phase → `Status: BLOCKED`; optional reference → record limitation and continue local-only at `ArchitectureMap`.
+**Contract repair (PASS summary that fails contract):** re-dispatch that subagent once with `REPAIR_FINDINGS`. Second failure: required phase → internal `BLOCKED` decision and a prose explanation; optional reference → record limitation and continue local-only at `ArchitectureMap`.
 
 **Accessibility (reference only):** inaccessible, unparseable, unverifiable, or unfetchable references are always `BLOCKED` from `ReferenceAssess`, never `PASS`, and never consume contract-repair budget (they do not enter `ReferenceRepair`).
 
@@ -112,7 +112,9 @@ Advance states in [`state-machine.md`](./state-machine.md). Compact steps:
 
 ## Output Contract
 
-`Status: READY` requires preflight complete; required phases passed with `CONTRACT_NOTE`s; reference skipped, quarantined, or degraded per `REFERENCE_REQUIRED`; evidence precedence recorded; candidate from validated summaries only; `PLAN_REVIEW: PASS`; report written to `ARTIFACT_PATH`.
+The internal `READY` decision requires preflight complete; required phases passed with `CONTRACT_NOTE`s; reference skipped, quarantined, or degraded per `REFERENCE_REQUIRED`; evidence precedence recorded; candidate from validated summaries only; `PLAN_REVIEW: PASS`; report written to `ARTIFACT_PATH`.
+
+Explain the outcome to the user in prose with the report path, what was and was not changed, and any next decision. Do not emit a public status line or phase-routing envelope. Keep `CONTRACT_NOTE`, `PLAN_REVIEW`, and reference/precedence records in the persisted report or resume packet, not as a chat envelope. Internal phase summaries and the resume packet retain their structured fields.
 
 Persisted final report sections (in order):
 
