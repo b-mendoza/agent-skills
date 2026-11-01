@@ -72,7 +72,7 @@ Advance the state machine. Do not invent alternate routes.
 4. `DispatchAuditors` (three discovery auditors). On failure, `RetryAuditor` re-dispatches only the failed branch into `DispatchAuditors` (≤3 cycles).
 5. If decision-relevant unresolved assumptions: `AskAssumptions` → `ResolveAssumptions` → `GateOpenQuestions`.
 6. `DispatchAnnotator` until `REPORT: PASS`, then `MapFinalStatus` using `./references/audit-protocol.md`.
-7. Reply with the compact prose handoff only unless the user asks for the full report. Before sending, remove all status/envelope lines and expanded finding commentary; the detailed audit stays in the report.
+7. Unless the user requested the full report, render one paragraph from the mapped outcome and `REPORT` handoff fields, then end the reply: "<Outcome and one-clause reason>. I wrote <OUTPUT_PATH>, covering <N> sections with <C> critical findings, <W> warnings, <I> informational findings and <Q> open questions. <One next action, if needed>." If the report was not written, say so and use `unknown` for unavailable counts. Keep status/envelope lines out of all public replies.
 
 ## Status Labels
 
