@@ -70,7 +70,7 @@ Then return assembly notes:
 - [flow and trigger]
 
 ### Passes Skipped
-- [pass and user-facing reason, or `none`]
+- [pass number and `OMITTED_PASS_REASON: <reason>`, or `none`]
 
 ### Sections Omitted
 - [section and reason, or `none`]
