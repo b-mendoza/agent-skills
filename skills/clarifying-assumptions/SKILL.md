@@ -35,8 +35,7 @@ Load only the file needed for the current stage. Paths are relative to the file 
 | Plan-wide execution                                | `./references/upfront-mode.md`                                           |
 | Task-level execution                               | `./references/critique-mode.md`                                          |
 | Stage 4 turns and final summary                    | `./references/conversation-protocol.md`                                  |
-| Artifact paths, preconditions, or output contracts | `./references/clarification-contracts.md`                                |
-| Dispatch and failure examples                      | `./references/examples.md`                                               |
+| Input preconditions or output artifacts            | `./references/clarification-contracts.md`                                |
 | Public rationale or current-source policy          | `./references/external-sources.md`, then fetch the smallest relevant URL |
 
 Read subagent definitions only when dispatching that specific subagent.
@@ -60,12 +59,12 @@ Before Stage 1, validate that `MODE` is `upfront` or `critique` and that `TASK_N
 | Stage | Action            | Routing                                                                                                       |
 | ----- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
 | 1     | Load guidance     | Read `./references/design-thinking-mindset.md` and the active mode playbook                                   |
-| 2     | Analyze artifacts | Dispatch `critique-analyzer` using the active playbook's inputs and the derived path contract                 |
+| 2     | Analyze artifacts | Dispatch `critique-analyzer` with the active playbook's Stage 2 inputs                                        |
 | 3     | Build manifest    | Dispatch `question-manifest-builder` with the critique artifact path, plan context, and active mode artifacts |
 | 4     | Clarify inline    | Read `./references/conversation-protocol.md`, then ask one manifest item at a time                            |
 | 5     | Record decisions  | Dispatch `decision-recorder` once; present the stable final summary                                           |
 
-Load `./references/clarification-contracts.md` only when a path, precondition, or output-contract question must be checked. A zero-item manifest is valid; skip the question loop and still run Stage 5.
+Load `./references/clarification-contracts.md` only when an input-precondition or output-artifact question must be checked. A zero-item manifest is valid; skip the question loop and still run Stage 5.
 
 ## Inline State
 
@@ -123,7 +122,7 @@ Only `RESULT_FORMAT=handoff` returns this stable minimum summary to the calling 
 - BLOCKERS_PRESENT: <true|false>
 ```
 
-For `MODE=upfront`, include `Accepted decisions summary:` after the four required fields. For `MODE=critique`, include `Decisions file:` after the four required fields.
+After the four required fields, add only the active mode's line: `- Accepted decisions summary: <concise summary or ->` for `MODE=upfront`, or `- Decisions file: docs/<KEY>-task-<N>-decisions.md | -` for `MODE=critique`.
 
 ### Flag Transitions
 
@@ -155,7 +154,7 @@ In `handoff` mode, if clarification stops early because top-level inputs are inv
 - <Accepted decisions summary | Decisions file>: <value>
 ```
 
-The mode-specific field is always last, and the blocking label is `Reason:`. Every contract copy in this package uses this order.
+The mode-specific field is always last, and the blocking label is `Reason:`. Use `Critique artifact: -` when the run stops before a critique artifact is created.
 
 ## Example
 
@@ -166,5 +165,3 @@ Input: `TICKET_KEY=JNS-6065`, `MODE=upfront`, `ITERATION=1`
 3. Dispatch `question-manifest-builder`; receive `Questions now: 3`.
 4. Read `./references/conversation-protocol.md`, ask the three items, then dispatch `decision-recorder`.
 5. Present the stable final summary, including the upfront accepted decisions summary.
-
-For deeper traces, read `./references/examples.md`.

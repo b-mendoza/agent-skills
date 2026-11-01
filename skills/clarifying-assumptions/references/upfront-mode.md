@@ -4,7 +4,7 @@
 >
 > **Reminder:** The conversation layer does not read or edit the plan directly. Subagents read artifacts, assemble the manifest, and write file updates.
 
-Use `SKILL.md`'s escalation table for verdict routing. Load `./clarification-contracts.md` only when validating paths, sections, or derived handoffs. Fetch rationale from `./external-sources.md` only when the developer asks why this mode uses problem-before-solution questioning.
+Use `SKILL.md`'s escalation table for verdict routing. Load `./clarification-contracts.md` only when validating input preconditions, plan sections, or output artifacts. Fetch rationale from `./external-sources.md` only when the developer asks why this mode uses problem-before-solution questioning.
 
 ## Stage 2 - Analyze Artifacts
 

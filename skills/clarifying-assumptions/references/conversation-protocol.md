@@ -101,37 +101,7 @@ The recorder owns file writes and validation. The conversation layer owns only t
 
 ## Final Summary
 
-In `RESULT_FORMAT=user` (the default), summarize the outcome in prose: critique artifact, files changed or unchanged, accepted decisions or decisions-file path, unresolved blockers, required re-planning, and next action. Do not print routing flags or blocking-verdict lines. Keep every readiness preview, approval request, and one-question stop unchanged.
-
-Only in `RESULT_FORMAT=handoff`, start the result for the calling skill with these four fields in this order:
-
-```text
-- Critique artifact: <path>
-- Files updated: <path list or ->
-- RE_PLAN_NEEDED: <true|false>
-- BLOCKERS_PRESENT: <true|false>
-```
-
-Then add the parent-retained mode field:
-
-```text
-- Accepted decisions summary: <concise summary or ->
-- Decisions file: docs/<KEY>-task-<N>-decisions.md | -
-```
-
-In `handoff` mode, use only the line for the active mode. If the run stops early because inputs are invalid or a subagent returns `BLOCKED`, `FAIL`, or `ERROR`, keep the first four fields in order with `Files updated: -`, then the blocking pair, then the mode field when a value is available:
-
-```text
-- Critique artifact: <path or ->
-- Files updated: -
-- RE_PLAN_NEEDED: <true|false>
-- BLOCKERS_PRESENT: true
-- Blocking verdict: <verdict>
-- Reason: <reason>
-- <Accepted decisions summary | Decisions file>: <value>
-```
-
-The mode field is always last, after the blocking pair. `SKILL.md` holds the Flag Transitions table that determines both flag values.
+Render the final result per the `SKILL.md` [Output Contract](../SKILL.md#output-contract): prose by default, the exact field list only for `RESULT_FORMAT=handoff`. Keep every readiness preview, approval request, and one-question stop unchanged.
 
 For upfront mode, add useful counts such as:
 
