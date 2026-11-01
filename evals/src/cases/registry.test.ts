@@ -181,10 +181,22 @@ describe("routing matrix", () => {
   );
 });
 
-function invalidRuns() {
+function invalidRuns(skill: string) {
   return [
     {
       observation: createObservation({ timedOut: true }),
+      diagnostic: "run exceeded its wall clock",
+    },
+    {
+      // A timeout after real work: the skill call, tool call and cost must not excuse it.
+      observation: createObservation({
+        timedOut: true,
+        toolCalls: [
+          { name: "Skill", input: { skill } },
+          { name: "Read", input: { file_path: "/repo/a.txt" } },
+        ],
+        costUsd: LATE_ERROR_COST_USD,
+      }),
       diagnostic: "run exceeded its wall clock",
     },
     {
@@ -206,9 +218,9 @@ function invalidRuns() {
 }
 
 test.each(cases)(
-  "$id rejects timeouts, missing-result, empty-verdict and zero-work runs",
+  "$id rejects timeouts (even after real work), missing-result, empty-verdict and zero-work runs",
   (evalCase) => {
-    for (const { observation, diagnostic } of invalidRuns()) {
+    for (const { observation, diagnostic } of invalidRuns(evalCase.skill)) {
       expect(() => evalCase.check(observation)).toThrow(diagnostic);
     }
   },
