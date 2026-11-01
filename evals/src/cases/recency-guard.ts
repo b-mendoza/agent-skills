@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertNoMutation,
   assertNoPublicStatusLine,
@@ -21,13 +21,11 @@ export const RECENCY_FACTS = {
     "Node.js v9999.99.99 is the active LTS and has security support forever.",
 } as const;
 
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
+const suiteDefaults = {
+  ...behavioralDefaults,
   skill: SKILL,
-  fixture: "clean",
   mutationPolicy: "read-only",
   budgetUsd: 1.5,
-  wallClockMs: 600_000,
 } as const;
 
 export const cases = [
@@ -57,7 +55,7 @@ export const cases = [
   },
   {
     id: "recency-guard/verify-current-lts",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     intent:
       "Try current sources, then provide a dated supported answer or disclose the exact verification limit",
     prompt: () =>
@@ -116,7 +114,7 @@ ${JSON.stringify(observation.toolCalls.filter((call) => call.name === "WebSearch
   },
   {
     id: "recency-guard/action-out-of-scope",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     budgetUsd: 0.5,
     wallClockMs: 180_000,
     intent:

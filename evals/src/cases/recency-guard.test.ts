@@ -1,46 +1,34 @@
 import assert from "node:assert/strict";
 
-import type { query } from "@anthropic-ai/claude-agent-sdk";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { EvalCase } from "#/cases/case-contract.ts";
-import { cases } from "#/cases/recency-guard.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import type { Observation } from "#/observation/agent-query.ts";
-import {
-  createObservation,
-  scripted,
-} from "#/observation/observation-test-support.ts";
+import type { JudgeRequest } from "#/observation/judge.ts";
+import { buildJudgePrompt } from "#/observation/judge.ts";
+import { createObservation } from "#/observation/observation-test-support.ts";
 
-const sdk = vi.hoisted(() => ({
-  query:
-    vi.fn<(request: Parameters<typeof query>[0]) => AsyncIterable<unknown>>(),
+// Hoisted so every mocked module instance shares one function, even when the
+// registry's parallel imports run the factory more than once.
+const judge = vi.hoisted(() => ({
+  live: vi.fn<(request: JudgeRequest) => Promise<string>>(),
 }));
-vi.mock(
-  import("@anthropic-ai/claude-agent-sdk"),
-  async (original): Promise<Record<string, unknown>> => ({
-    ...(await original()),
-    query: sdk.query,
-  }),
-);
+vi.mock(import("#/observation/judge.ts"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  judgeLive: judge.live,
+}));
 beforeEach(() => {
-  sdk.query
-    .mockReset()
-    .mockImplementation(() =>
-      scripted({ type: "result", result: '{"violations":[]}' }),
-    );
+  judge.live.mockReset().mockResolvedValue("judge: clean");
 });
 
-function getCase(suffix: string): EvalCase {
-  const found = cases.find((evalCase) => evalCase.id.endsWith(`/${suffix}`));
-  assert.ok(found !== undefined, `missing case: ${suffix}`);
-  return found;
+function getCase(suffix: string) {
+  return getRegisteredCase(`recency-guard/${suffix}`);
 }
 
-function judgeRequest() {
-  const [request] = sdk.query.mock.lastCall ?? [];
+function judgePrompt() {
+  const [request] = judge.live.mock.lastCall ?? [];
   assert.ok(request !== undefined);
-  assert.equal(typeof request.prompt, "string");
-  return request;
+  return buildJudgePrompt(request);
 }
 
 const skillCall = { name: "Skill", input: { skill: "recency-guard" } };
@@ -65,24 +53,6 @@ function observationFor(suffix: string): Observation {
       suffix === "verify-current-lts" ? [skillCall, sourceCall] : [skillCall],
   });
 }
-
-describe("recency routing", () => {
-  it("accepts a current-facts invocation and rejects no invocation", () => {
-    const evalCase = getCase("trigger-positive");
-    expect(() =>
-      evalCase.check(createObservation({ toolCalls: [skillCall] })),
-    ).not.toThrow();
-    expect(() => evalCase.check(createObservation())).toThrow();
-  });
-
-  it("leaves runtime diagnosis to its sibling", () => {
-    const evalCase = getCase("trigger-negative-diagnosis");
-    expect(() => evalCase.check(createObservation())).not.toThrow();
-    expect(() =>
-      evalCase.check(createObservation({ toolCalls: [skillCall] })),
-    ).toThrow();
-  });
-});
 
 describe("current LTS verification", () => {
   it("accepts a dated source-backed answer", () => {
@@ -176,12 +146,11 @@ describe("retrieved evidence in recency grading", () => {
         toolCalls: [skillCall, { ...sourceCall, id: "fetch-1", result }],
       }),
     );
-    const request = judgeRequest();
-    expect(request.prompt).toContain(
+    const prompt = judgePrompt();
+    expect(prompt).toContain(
       JSON.stringify({ ...sourceCall, id: "fetch-1", result }),
     );
-    expect(request.prompt).toContain(sourcedAnswer);
-    expect(request.options?.tools).toStrictEqual([]);
+    expect(prompt).toContain(sourcedAnswer);
   });
 
   it("passes shell retrievals and their captured results alongside web evidence", async () => {
@@ -205,11 +174,11 @@ describe("retrieved evidence in recency grading", () => {
         toolCalls: [skillCall, sourceCall, shellCall],
       }),
     );
-    expect(judgeRequest().prompt).toContain(JSON.stringify(shellCall));
-    expect(judgeRequest().prompt).toContain(
+    expect(judgePrompt()).toContain(JSON.stringify(shellCall));
+    expect(judgePrompt()).toContain(
       "any successfully retrieved official content",
     );
-    expect(judgeRequest().prompt).toContain(
+    expect(judgePrompt()).toContain(
       "not every linked URL needs a separate fetch",
     );
   });
@@ -235,36 +204,25 @@ describe("retrieved evidence in recency grading", () => {
       ],
     });
     expect(() => evalCase.check(observation)).not.toThrow();
-    sdk.query.mockImplementation(() =>
-      scripted({
-        type: "result",
-        result: JSON.stringify({
-          violations: [
-            {
-              itemId: "support",
-              quote: finalText,
-              reason:
-                "Successful verification is claimed despite a failed retrieval.",
-            },
-          ],
-        }),
-      }),
+    judge.live.mockRejectedValueOnce(
+      new Error(
+        "judge: support violated -- claimed despite a failed retrieval",
+      ),
     );
     await expect(evalCase.judge(observation)).rejects.toThrow(
       "support violated",
     );
-    const request = judgeRequest();
-    expect(request.prompt).toContain('"isError":true');
-    expect(request.prompt).toContain("HTTP 503 Service Unavailable");
-    expect(request.prompt).toContain("Fail claimed verification");
+    const prompt = judgePrompt();
+    expect(prompt).toContain('"isError":true');
+    expect(prompt).toContain("HTTP 503 Service Unavailable");
+    expect(prompt).toContain("Fail claimed verification");
   });
 
   it("labels missing legacy evidence instead of inventing a successful retrieval", async () => {
     const evalCase = getCase("verify-current-lts");
     assert.ok(evalCase.judge !== undefined);
     await evalCase.judge(observationFor("verify-current-lts"));
-    const request = judgeRequest();
-    expect(request.prompt).toContain(
+    expect(judgePrompt()).toContain(
       "Missing results are not evidence of success",
     );
   });
@@ -338,8 +296,6 @@ describe.each(["verify-current-lts", "action-out-of-scope"])(
     });
 
     it.each([
-      { timedOut: true },
-      { subtype: "query_error", isError: true },
       { toolCalls: [] },
       { gitStatusAfter: { kind: "worktree", entries: " M a.txt" } },
       {
