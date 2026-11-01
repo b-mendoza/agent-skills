@@ -1,25 +1,26 @@
-import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
+import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import {
   APPROVAL_HEADINGS,
   AUDIT_FACTS,
   AUDIT_REPORTS,
   BASELINE_FILE,
-  cases,
   HANDOFF_PREFIX,
   SKILL,
   SYNTHESIS_FILE,
   SYNTHESIS_KEYS,
 } from "#/cases/improving-skill-definition.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
+import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 function getCase(suffix: string) {
-  const found = cases.find((entry) => entry.id === `${SKILL}/${suffix}`);
-  assert.ok(found !== undefined);
-  return found;
+  return getRegisteredCase(`${SKILL}/${suffix}`);
 }
 
 const TEST_RUN_ID = "20270319T184321Z-f90abc";
@@ -426,46 +427,24 @@ describe("excluded targets", () => {
   });
 });
 
-test("every case rejects timed-out runs", () => {
-  for (const entry of cases) {
-    expect(() => entry.check(goodAudit({ timedOut: true }))).toThrow();
-  }
+testArtifactWriteMatrix({
+  label: "audit",
+  artifact: SYNTHESIS_PATH,
+  check: (observation) => getCase("audit-approval").check(observation),
+  valid: () => goodAudit(),
 });
 
-test.each(["/outside", "../outside", "/repo-other"])(
-  "audit rejects foreign-root same-suffix write from %s",
-  (root) => {
-    const good = goodAudit();
+test("seed creates a first-party package with its reference absent", () => {
+  const entry = getCase("audit-approval");
+  const fixture = makeFixture(entry.fixture, [SKILL], entry.seed);
+  try {
+    expect(
+      readFileSync(join(fixture.cwd, AUDIT_FACTS.sourcePath), "utf8"),
+    ).toBe(AUDIT_FACTS.content);
     expect(() =>
-      getCase("audit-approval").check({
-        ...good,
-        repoFiles: {
-          ...good.repoFiles,
-          ".git/eval-fixture-root": "/repo\n/canonical/repo",
-        },
-        toolCalls: [
-          ...good.toolCalls,
-          { name: "Edit", input: { file_path: `${root}/${SYNTHESIS_PATH}` } },
-        ],
-      }),
+      readFileSync(join(fixture.cwd, AUDIT_FACTS.missingPath)),
     ).toThrow();
-  },
-);
-
-test.each(["", "/repo/", "/canonical/repo/"])(
-  "accepts artifact writes relative to or within fixture root %s",
-  (prefix) => {
-    const good = goodAudit();
-    expect(() =>
-      getCase("audit-approval").check({
-        ...good,
-        toolCalls: [
-          ...good.toolCalls.filter(
-            (call) => !["Write", "Edit"].includes(call.name),
-          ),
-          { name: "Write", input: { file_path: `${prefix}${SYNTHESIS_PATH}` } },
-        ],
-      }),
-    ).not.toThrow();
-  },
-);
+  } finally {
+    fixture.cleanup();
+  }
+});
