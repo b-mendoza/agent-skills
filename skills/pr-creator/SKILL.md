@@ -26,7 +26,7 @@ Default `PR_STATE` to `draft`. Ask for invalid `PR_STATE`. Ask for `TARGET_BRANC
 
 ## State Machine Overview
 
-Execution is a finite-state machine. Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./state-machine.md).
+Execution is a finite-state machine. [`state-machine.md`](./state-machine.md) is the only normative source of states, transitions, guards, and terminals; this overview is non-normative.
 
 | State                                            | Result                                              |
 | ------------------------------------------------ | --------------------------------------------------- |
@@ -63,9 +63,8 @@ Fork-aware, idempotent, approval-bound. Trusted compare range after preflight: `
 
 | Need                                                                    | Load                                                    |
 | ----------------------------------------------------------------------- | ------------------------------------------------------- |
-| Phase routing, gates, status taxonomy                                   | This file                                               |
-| States, transitions, guards, terminals                                  | `./state-machine.md`                                    |
-| Mermaid state diagram                                                   | `./flow-diagram.md`                                     |
+| Phase overview, registry, core rules                                    | This file                                               |
+| States, transitions, guards, status routing, terminals                  | `./state-machine.md`                                    |
 | Stop outcome, preview, body template, approval record, cycle ledger | `./references/execution-contracts.md`                   |
 | Non-GitHub / state capability                                           | `./references/platform-adaptation.md`                   |
 | CLI/API syntax or writing guidance                                      | `./references/external-resources.md`, then fetch ≤1 URL |
@@ -85,19 +84,6 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 7. `ShowPreview` / `GatePreview`: load `./references/execution-contracts.md`, show exact preview (head SHA, effective state). Edits invalidate approval and return to the earliest affected state. Decline without edits → `TerminalCancelled`.
 8. `FreezeApproval` then `SubmitPr`. `HEAD_MOVED` → explain and return to `AnalyzeDiff` (preview-edit cycle). On `PASS`, `VerifySubmit` compares every echoed field and both body digests before `TerminalSuccess`.
 9. Independent three-cycle ledgers: push, scope, type/scope, reviewer, label, preview-edit. Exhaustion → `FinalDecision` then recovery or `TerminalEscalated`.
-
-## Status Routing
-
-| Source            | Continue | User gate or retry                 | Stop outcome                                                              |
-| ----------------- | -------- | ---------------------------------- | ----------------------------------------------------------------------------- |
-| `REPO_STATE`      | `PASS`   | topology; target branch            | `BLOCKED`/`ERROR` → `BLOCKED`                                                 |
-| `PREFLIGHT`       | `PASS`   | `PUSH_REQUIRED`; `PUSH_REJECTED`   | `PR_EXISTS`, `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `BLOCKED` |
-| `DIFF_ANALYSIS`   | `PASS`   | `LARGE_PR_CONFIRMATION_REQUIRED`   | `EMPTY_DIFF`; declined scope → `CANCELLED`; `ERROR` → `BLOCKED`               |
-| `PR_DRAFT`        | `PASS`   | `NEEDS_CHOICE`                     | unresolved/`ERROR` → `BLOCKED`                                                |
-| `REVIEW_METADATA` | `PASS`   | `NEEDS_REVIEWER`; `INVALID_LABELS` | `AUTH`; `ERROR` → `BLOCKED`                                                   |
-| `PR_SUBMIT`       | `PASS`   | `HEAD_MOVED` → `AnalyzeDiff`       | `CREATE_UNCERTAIN`, `CREATE_ERROR`, `AUTH`, `BLOCKED`                         |
-
-Internal outcome codes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATE_UNCERTAIN`, `ESCALATED`. `AWAITING_USER` is non-terminal; do not use `BLOCKED` for a pending question.
 
 ## Core Rules
 

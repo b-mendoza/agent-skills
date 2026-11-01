@@ -1,49 +1,8 @@
 # State Machine — pr-creator
 
-Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
+Finite-state execution model for this skill. This table is the only normative list of states, transitions, guards, and terminals. `ResolveMode` sets `EXECUTION_MODE` to `dispatch` or `inline`.
 
 Six specialists stay separate: each owns a distinct status prefix and failure mode (topology, preflight/push, scope, draft, metadata, submit). That split is earned complexity, not decoration.
-
-## States
-
-| State                     | Kind               | Role                                                   |
-| ------------------------- | ------------------ | ------------------------------------------------------ |
-| `ResolveMode`             | active             | Set `EXECUTION_MODE` to `dispatch` or `inline`         |
-| `NormalizeInputs`         | active             | Defaults and normalized user inputs                    |
-| `InspectRepo`             | active             | Dispatch `repo-state-inspector`                        |
-| `GateTopology`            | active             | Resolve ambiguous head/base remotes                    |
-| `GateTargetBranch`        | active             | Ask `TARGET_BRANCH`; offer candidate, never auto-apply |
-| `AdaptPlatform`           | active             | Load platform adaptation when needed                   |
-| `GatePlatformTooling`     | active             | Ask platform or approved tooling                       |
-| `GateStateFallback`       | active             | Draft unsupported → ready or stop                      |
-| `RunPreflight`            | active             | Dispatch `preflight-validator`                         |
-| `GatePush`                | active             | Approve plain push; never force-push                   |
-| `GatePushRejected`        | active             | Stop or confirm manual resolution                      |
-| `AnalyzeDiff`             | active             | Dispatch `diff-analyzer`                               |
-| `GateScope`               | active             | Large/mixed PR confirmation                            |
-| `DraftPr`                 | active             | Dispatch `pr-drafter`                                  |
-| `GateTypeScope`           | active             | Type/scope title choice                                |
-| `SuggestMetadata`         | active             | Dispatch `review-metadata-suggester`                   |
-| `GateReviewer`            | active             | Named reviewers or confirmed `none`                    |
-| `GateLabels`              | active             | Existing labels or remove                              |
-| `ShowPreview`             | active             | Exact preview with head SHA and effective state        |
-| `GatePreview`             | active             | Approve, decline, or request edits                     |
-| `FreezeApproval`          | active             | Freeze fields; build preview `APPROVAL_RECORD`         |
-| `SubmitPr`                | active             | Dispatch `pr-submitter`                                |
-| `VerifySubmit`            | active             | Orchestrator field + body-digest compare               |
-| `FinalDecision`           | active             | Third-cycle recovery or stop                           |
-| `TerminalSuccess`         | terminal           | Verified PR/MR URL                                     |
-| `TerminalAwaitingUser`    | terminal (suspend) | Focused question pending (`AWAITING_USER`)             |
-| `TerminalPrExists`        | terminal           | `PR_EXISTS`                                            |
-| `TerminalAuth`            | terminal           | `AUTH`                                                 |
-| `TerminalBaseMissing`     | terminal           | `BASE_BRANCH_MISSING`                                  |
-| `TerminalHeadUnpushed`    | terminal           | `HEAD_BRANCH_UNPUSHED`                                 |
-| `TerminalEmptyDiff`       | terminal           | `EMPTY_DIFF`                                           |
-| `TerminalBlocked`         | terminal           | `BLOCKED`                                              |
-| `TerminalCancelled`       | terminal           | `CANCELLED`                                            |
-| `TerminalCreateError`     | terminal           | `CREATE_ERROR`                                         |
-| `TerminalCreateUncertain` | terminal           | `CREATE_UNCERTAIN`                                     |
-| `TerminalEscalated`       | terminal           | `ESCALATED`                                            |
 
 ## Transitions
 
@@ -151,14 +110,4 @@ Independent counters (max 3 non-`PASS` redispatches per gate, then `FinalDecisio
 
 ## Terminal decisions
 
-Success: verified PR/MR URL. Internal failure/suspension outcomes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATE_UNCERTAIN`, `ESCALATED`.
-
-## Reachability and dead-state checks
-
-| Property                                        | Result                                                                                             |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Every active state reachable from `ResolveMode` | yes                                                                                                |
-| Every terminal reachable                        | yes                                                                                                |
-| Dead states (no outgoing, non-terminal)         | none                                                                                               |
-| Gate thrash bounded                             | yes — three-cycle ledgers then `FinalDecision`                                                     |
-| Submit invariants                               | `SubmitPr` only after safe path, all specialist `PASS`, freeze, matching preview `APPROVAL_RECORD` |
+Success: verified PR/MR URL. Internal failure/suspension outcomes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATE_UNCERTAIN`, `ESCALATED`. `AWAITING_USER` suspends rather than stops; never use `BLOCKED` for a pending question.
