@@ -5,11 +5,10 @@ import type { CallApiContextParams } from "promptfoo";
 import { afterEach, expect, test, vi } from "vitest";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
+import * as caseLookup from "#/cases/registry.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
-import { grade } from "#/promptfoo/assertion.ts";
-import * as caseLookup from "#/promptfoo/observation.ts";
-import { decodeMetadata } from "#/promptfoo/observation.ts";
+import { decodeMetadata, grade } from "#/promptfoo/assertion.ts";
 import EvalProvider from "#/promptfoo/provider.ts";
 
 vi.mock(import("#/observation/agent-query.ts"), async (original) => ({

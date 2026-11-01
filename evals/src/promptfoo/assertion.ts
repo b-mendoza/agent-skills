@@ -1,15 +1,24 @@
 import { Schema } from "effect";
 import type { GradingResult } from "promptfoo";
 
-import { checkMutationScope } from "#/cases/shared-checks.ts";
-
-import { getCase, metadataSchema } from "./observation.ts";
+import { getCase } from "#/cases/registry.ts";
+import { assertNoMutation } from "#/cases/shared-checks.ts";
+import { observationSchema } from "#/observation/agent-query.ts";
 
 const PASS_SCORE = 1;
 const FAIL_SCORE = 0;
 export const MAX_OBSERVED_CHARS = 160;
 const FIRST_CHARACTER_INDEX = 0;
 const UNKNOWN_ERROR_MESSAGE = "An unknown error occurred";
+const FIRST_REPEAT = 0;
+const metadataSchema = Schema.Struct({
+  observation: observationSchema,
+  repeatIndex: Schema.Number.check(
+    Schema.isInt(),
+    Schema.isGreaterThanOrEqualTo(FIRST_REPEAT),
+  ),
+});
+export const decodeMetadata = Schema.decodeUnknownSync(metadataSchema);
 const decodeContext = Schema.decodeUnknownSync(
   Schema.Struct({
     vars: Schema.Struct({ caseId: Schema.String }),
@@ -21,9 +30,7 @@ function describeNonErrorCheckFailure(cause: unknown): string {
   try {
     return String(cause);
   } catch (stringConversionError) {
-    return new Error(UNKNOWN_ERROR_MESSAGE, {
-      cause: stringConversionError,
-    }).message;
+    return UNKNOWN_ERROR_MESSAGE;
   }
 }
 
@@ -40,7 +47,7 @@ function normalizeCheckFailure(cause: unknown): GradingResult {
   };
 }
 
-export function evaluate(check: () => string): GradingResult {
+function evaluate(check: () => string): GradingResult {
   try {
     return { pass: true, score: PASS_SCORE, reason: check() };
   } catch (cause) {
@@ -72,10 +79,14 @@ export async function grade(
   }
 }
 
+/** Native per-attempt grading for read-only behavioral cases. */
 export function mutationScope(
   _output: unknown,
   context: unknown,
 ): GradingResult {
   const { observation } = decodeContext(context).metadata;
-  return evaluate(() => checkMutationScope(observation));
+  return evaluate(() => {
+    assertNoMutation(observation);
+    return "1 behavioral run(s) left no trace";
+  });
 }
