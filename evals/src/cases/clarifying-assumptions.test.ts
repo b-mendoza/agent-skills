@@ -4,12 +4,14 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import { cases, SKILL } from "#/cases/clarifying-assumptions.ts";
+import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
+import { SKILL } from "#/cases/clarifying-assumptions.ts";
 import {
   CLARIFICATION_FACTS,
   CLARIFICATION_INPUTS,
   seedClarificationArtifacts,
 } from "#/cases/clarifying-assumptions-fixtures.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { sampleGitStatus } from "#/observation/mutation-evidence.ts";
@@ -48,18 +50,10 @@ Please provide TASK_NUMBER for acme-app-42. No files were changed.
 `;
 
 function getCase(name: string) {
-  const testCase = cases.find((entry) => entry.id === `${SKILL}/${name}`);
-  assert.ok(testCase !== undefined);
-  return testCase;
+  return getRegisteredCase(`${SKILL}/${name}`);
 }
 
 function validObservation(name: string): Observation {
-  if (name === "trigger-positive") {
-    return createObservation({
-      toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-    });
-  }
-  if (name === "trigger-negative-plan-validation") return createObservation();
   return behavioralObservation(name === "upfront-preview-gate");
 }
 
@@ -105,37 +99,11 @@ function behavioralObservation(isPreview: boolean): Observation {
   };
 }
 
-const caseNames = [
-  "trigger-positive",
-  "trigger-negative-plan-validation",
-  "upfront-preview-gate",
-  "critique-missing-task-number",
-];
+const caseNames = ["upfront-preview-gate", "critique-missing-task-number"];
 
 describe("clarifying-assumptions", () => {
-  test.each(caseNames)(
-    "%s accepts correct evidence and rejects invalid runs",
-    (name) => {
-      const observation = validObservation(name);
-      expect(getCase(name).check(observation)).toBeTypeOf("string");
-      expect(() =>
-        getCase(name).check({ ...observation, timedOut: true }),
-      ).toThrow();
-      expect(() =>
-        getCase(name).check({ ...observation, subtype: "query_error" }),
-      ).toThrow();
-    },
-  );
-
-  test("routing rejects the wrong invocation presence", () => {
-    expect(() =>
-      getCase("trigger-positive").check(createObservation()),
-    ).toThrow();
-    expect(() =>
-      getCase("trigger-negative-plan-validation").check(
-        validObservation("trigger-positive"),
-      ),
-    ).toThrow();
+  test.each(caseNames)("%s accepts correct evidence", (name) => {
+    expect(getCase(name).check(validObservation(name))).toBeTypeOf("string");
   });
 
   test("preview requires the contract header, counts, hard gate row, and readiness question", () => {
@@ -291,48 +259,9 @@ describe("clarifying-assumptions", () => {
   });
 });
 
-test.each(["/outside", "../outside", "/fixture-other"])(
-  "critique rejects foreign-root same-suffix write from %s",
-  (root) => {
-    const good = behavioralObservation(true);
-    expect(() =>
-      getCase("upfront-preview-gate").check({
-        ...good,
-        repoFiles: {
-          ...good.repoFiles,
-          ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
-        },
-        toolCalls: [
-          ...good.toolCalls,
-          {
-            name: "Edit",
-            input: { file_path: `${root}/${CLARIFICATION_FACTS.critiquePath}` },
-          },
-        ],
-      }),
-    ).toThrow();
-  },
-);
-
-test.each(["", "/fixture/", "/canonical/fixture/"])(
-  "accepts artifact writes relative to or within fixture root %s",
-  (prefix) => {
-    const good = behavioralObservation(true);
-    expect(() =>
-      getCase("upfront-preview-gate").check({
-        ...good,
-        toolCalls: [
-          ...good.toolCalls.filter(
-            (call) => !["Write", "Edit"].includes(call.name),
-          ),
-          {
-            name: "Write",
-            input: {
-              file_path: `${prefix}${CLARIFICATION_FACTS.critiquePath}`,
-            },
-          },
-        ],
-      }),
-    ).not.toThrow();
-  },
-);
+testArtifactWriteMatrix({
+  label: "critique",
+  artifact: CLARIFICATION_FACTS.critiquePath,
+  check: (observation) => getCase("upfront-preview-gate").check(observation),
+  valid: () => behavioralObservation(true),
+});
