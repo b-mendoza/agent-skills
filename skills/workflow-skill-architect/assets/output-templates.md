@@ -145,22 +145,6 @@ Script documentation template:
 - Consumer invocation:
 ```
 
-## Per-Item Response
-
-```text
-ARCHITECTURE: PASS | NEEDS_INPUT | BLOCKED | ERROR
-
-## Staged Files
-| Path | Purpose | Summary |
-| ---- | ------- | ------- |
-
-## Contract Summary
-- Inputs:
-- Outputs:
-- Statuses:
-- Mutation boundary:
-```
-
 ## Collection Manifest
 
 ```yaml
