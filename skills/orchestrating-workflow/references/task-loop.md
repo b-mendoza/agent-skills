@@ -1,6 +1,6 @@
 # Task Loop - Phases 5-7
 
-> Read this file when entering the per-task execution loop. For exact artifact checks, load `./data-contracts.md` and dispatch `artifact-validator`; do not inspect artifacts inline in the orchestrator. For background on context engineering or subagent isolation, fetch one URL from `./external-sources.md`. Load `./downstream-skills.md` only when you need phase-to-skill dispatch contract details.
+> Read this file when entering the per-task execution loop. For exact artifact checks, load `./data-contracts.md` and dispatch `artifact-validator`; do not inspect artifacts inline in the orchestrator. For background on context engineering or subagent isolation, fetch one URL from `./external-sources.md`.
 
 Each task passes through Phase 5 (plan), Phase 6 (critique), and Phase 7 (kickoff + execute). If `progress-tracker` reports a mid-task resume point, skip task selection and re-enter at the reported phase for that task.
 
