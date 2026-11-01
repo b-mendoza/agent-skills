@@ -35,4 +35,11 @@ const suites = await Promise.all([
 export const cases: readonly EvalCase[] = suites.flatMap<EvalCase>(
   (suite) => suite.cases,
 );
-export type CaseId = (typeof suites)[number]["cases"][number]["id"];
+
+export function getCase(caseId: unknown): EvalCase {
+  const evalCase = cases.find((candidate) => candidate.id === caseId);
+  if (evalCase === undefined) {
+    throw new Error(`Unknown caseId: ${String(caseId)}`);
+  }
+  return evalCase;
+}
