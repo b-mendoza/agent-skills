@@ -85,19 +85,6 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 8. `FreezeApproval` then `SubmitPr`. `HEAD_MOVED` → explain and return to `AnalyzeDiff` (preview-edit cycle). On `PASS`, `VerifySubmit` compares every echoed field and both body digests before `TerminalSuccess`.
 9. Independent three-cycle ledgers: push, scope, type/scope, reviewer, label, preview-edit. Exhaustion → `FinalDecision` then recovery or `TerminalEscalated`.
 
-## Status Routing
-
-| Source            | Continue | User gate or retry                 | Stop outcome                                                              |
-| ----------------- | -------- | ---------------------------------- | ----------------------------------------------------------------------------- |
-| `REPO_STATE`      | `PASS`   | topology; target branch            | `BLOCKED`/`ERROR` → `BLOCKED`                                                 |
-| `PREFLIGHT`       | `PASS`   | `PUSH_REQUIRED`; `PUSH_REJECTED`   | `PR_EXISTS`, `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `BLOCKED` |
-| `DIFF_ANALYSIS`   | `PASS`   | `LARGE_PR_CONFIRMATION_REQUIRED`   | `EMPTY_DIFF`; declined scope → `CANCELLED`; `ERROR` → `BLOCKED`               |
-| `PR_DRAFT`        | `PASS`   | `NEEDS_CHOICE`                     | unresolved/`ERROR` → `BLOCKED`                                                |
-| `REVIEW_METADATA` | `PASS`   | `NEEDS_REVIEWER`; `INVALID_LABELS` | `AUTH`; `ERROR` → `BLOCKED`                                                   |
-| `PR_SUBMIT`       | `PASS`   | `HEAD_MOVED` → `AnalyzeDiff`       | `CREATE_UNCERTAIN`, `CREATE_ERROR`, `AUTH`, `BLOCKED`                         |
-
-Internal outcome codes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATE_UNCERTAIN`, `ESCALATED`. `AWAITING_USER` is non-terminal; do not use `BLOCKED` for a pending question.
-
 ## Core Rules
 
 - Never force-push (`--force`, `--force-with-lease`, `+refspec`) or auto-resolve diverged branches.
