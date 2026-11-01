@@ -24,23 +24,7 @@ If `OUTPUT_MODE` is missing or unsupported, set it to `review`. If either requir
 
 ## State Machine Overview
 
-Execution is a finite-state machine. Load at run start:
-
-- Mermaid: [`flow-diagram.md`](./flow-diagram.md)
-- Transition table: [`state-machine.md`](./state-machine.md)
-
-Pipeline order: `source-intake-analyst` → `role-fit-mapper` → `cv-tailoring-editor` → `cv-reviewer` → assemble. Review `FAIL` redispatches **only** the editor (max three fix cycles), then re-enters claim resolution before review.
-
-### Status vocabulary by phase (intentional asymmetry)
-
-| Phase handoff     | Allowed statuses                      |
-| ----------------- | ------------------------------------- |
-| `SOURCE_INTAKE`   | `PASS`, `PARTIAL`, `BLOCKED`, `ERROR` |
-| `ROLE_FIT`        | `PASS`, `PARTIAL`, `ERROR`            |
-| `TAILORING_DRAFT` | `PASS`, `PARTIAL`, `ERROR`            |
-| `CV_REVIEW`       | `PASS`, `FAIL`, `ERROR`               |
-
-Only intake uses `BLOCKED`. Only review uses `FAIL`. Do not invent missing statuses. `ERROR` means the phase cannot run on its inputs/tools — not that sources are merely thin (use `PARTIAL`, limitations, or `FAIL` fixes).
+Execution is a finite-state machine. Load [`state-machine.md`](./state-machine.md) at run start; it is the sole source of states, phase status vocabularies, routes, the fix-cycle cap, and terminals. Non-normative pipeline order: `source-intake-analyst` → `role-fit-mapper` → `cv-tailoring-editor` → claim resolution → `cv-reviewer` → assemble.
 
 ## Subagent Registry
 
@@ -57,7 +41,7 @@ Use this registry as a lookup table. Read one subagent definition only when you 
 
 | Need                                                            | Load or fetch                                             | Owner                                                                                                                                          |
 | --------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| States, guards, terminals                                       | `./flow-diagram.md`, `./state-machine.md`                 | Orchestrator, at run start                                                                                                                     |
+| States, statuses, guards, terminals                             | `./state-machine.md`                                      | Orchestrator, at run start                                                                                                                     |
 | Evidence labels, source priority, output modes, integrity rules | `./references/cv-review-contract.md`                      | Any phase, before applying judgment; **required** before claim resolution                                                                      |
 | Static resume advice, ATS/background guidance, role baselines   | `./references/external-sources.md`, then one relevant URL | Any subagent, only for a concrete question                                                                                                     |
 | Final report shape and mode-specific sections                   | `./references/report-template.md`                         | `cv-tailoring-editor`, at assembly (kept under `references/`, not `assets/`, so the Progressive Loading Map stays the single assembly pointer) |
@@ -73,15 +57,7 @@ Private candidate material stays local to the conversation and available files. 
 
 Advance the state machine in [`state-machine.md`](./state-machine.md). Source size does not waive any phase or the reviewer gate. Use subagents when dispatch is available; otherwise read and execute every subagent's instructions inline in order and disclose the reduced review independence. Assemble only after `CV_REVIEW: PASS`.
 
-Compact orchestrator checklist:
-
-1. `NormalizeMode` → `GateRequiredInputs` (ask/stop if sources missing).
-2. `DispatchIntake` → route `SOURCE_INTAKE`. On `PASS`/`PARTIAL`, open ledgers; enforce mode evidence threshold before continuing.
-3. `DispatchRoleFit` → route `ROLE_FIT`; record fit map and limitations.
-4. `DispatchEditor` → route `TAILORING_DRAFT`; record labeled draft.
-5. `ClaimResolve` (load `./references/cv-review-contract.md`): support, weaken, exclude, or question unsupported sensitive claims. Stop if no safe selected-mode deliverable remains.
-6. `DispatchReviewer` → route `CV_REVIEW`. On `FAIL`, if `fix_cycles < 3`, redispatch **only** `cv-tailoring-editor` with prior draft + `REVIEW_FIXES`, then return to `ClaimResolve` before review again. After three failures, stop with unresolved integrity risk. On `ERROR`, stop with recovery hint.
-7. `Assemble`: full output if limitations ledger empty; otherwise partial with labeled limitations. Never include internal status headers in a user reply, including blocked/error outcomes. Explain a stop in prose, naming the missing source, unresolved risk, or failed phase and the smallest recovery action. If a privacy breach is detected, stop as integrity risk.
+Actions the transitions assume: on intake `PASS`/`PARTIAL`, open `EVIDENCE_LEDGER` and `LIMITATIONS_LEDGER`, then update them with the fit map, limitations, and labeled draft from later phases. At `ClaimResolve`, load `./references/cv-review-contract.md` and support, weaken, exclude, or question each unsupported sensitive claim. Never include internal status headers in a user reply, including blocked/error outcomes; explain a stop in prose, naming the missing source, unresolved risk, or failed phase and the smallest recovery action.
 
 ## Output Contract
 
@@ -90,14 +66,6 @@ The final answer follows normalized `OUTPUT_MODE`: `review`, `rewrite`, `checkli
 Every recommended rewrite carries one evidence label from `./references/cv-review-contract.md`.
 
 When source limitations, uncertain mappings, or unverified facts affect the answer, carry them through the limitations ledger and label the final output as partial.
-
-## Example
-
-User: "Here is a backend engineer job posting and my CV. What should I change to look like the best fit?"
-
-Round trip:
-
-Load the state machine, then dispatch intake, mapping, editing, claim resolution, and review in order. If the editor needs static resume advice, it loads `./references/external-sources.md` and fetches one relevant URL. Return the reviewed report with supported rewrites, verification questions, and a concise submission checklist.
 
 ## Scope
 

@@ -24,19 +24,6 @@ Carry a compact evidence ledger across the workflow:
 
 Carry a limitations ledger whenever a source is partial, inaccessible, ambiguous, stale, or too thin for the selected mode. A non-empty limitations ledger means the final output is partial and must label the limitation.
 
-## Status Vocabulary By Phase
-
-Status sets are intentionally asymmetric. Orchestrators must not invent statuses absent from a phase:
-
-| Phase handoff     | Allowed statuses                      |
-| ----------------- | ------------------------------------- |
-| `SOURCE_INTAKE`   | `PASS`, `PARTIAL`, `BLOCKED`, `ERROR` |
-| `ROLE_FIT`        | `PASS`, `PARTIAL`, `ERROR`            |
-| `TAILORING_DRAFT` | `PASS`, `PARTIAL`, `ERROR`            |
-| `CV_REVIEW`       | `PASS`, `FAIL`, `ERROR`               |
-
-Only intake uses `BLOCKED`. Only review uses `FAIL` (triggers the editor fix loop). `ERROR` means the phase cannot run on its inputs or tools. Thin-but- reviewable sources use `PARTIAL` plus the limitations ledger, not `ERROR`.
-
 ## Minimum Evidence To Proceed
 
 All modes require a readable role source from `JOB_POSTING` and a readable candidate source from `CV`. `APPLICANT_CONTEXT` can clarify or supplement the CV, but it does not replace a missing required CV. If either required source is absent or unreadable, route to the relevant blocked terminal instead of producing a partial review. Ask the user for the missing source in prose, without an internal status header.

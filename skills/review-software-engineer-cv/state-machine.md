@@ -1,38 +1,8 @@
 # State Machine — review-software-engineer-cv
 
-Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
+Finite-state execution model for this skill and the sole source of truth for states, transitions, guards, and terminals.
 
-## States
-
-| State                                 | Kind     | Role                                                                                                                |
-| ------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
-| `NormalizeMode`                       | active   | Set `OUTPUT_MODE` to `review`, `rewrite`, `checklist`, or `questions-only`; default missing/unsupported to `review` |
-| `GateRequiredInputs`                  | active   | Require readable `JOB_POSTING` and `CV`                                                                             |
-| `AskRequiredSource`                   | active   | Ask for the smallest missing required source                                                                        |
-| `DispatchIntake`                      | active   | Dispatch `source-intake-analyst`                                                                                    |
-| `RouteIntake`                         | active   | Route on `SOURCE_INTAKE: PASS \| PARTIAL \| BLOCKED \| ERROR`                                                       |
-| `GateEvidenceThreshold`               | active   | For `PARTIAL`, enforce mode minimum evidence from `cv-review-contract.md`                                           |
-| `AskEvidence`                         | active   | Ask for the smallest missing source detail; do not silently switch modes                                            |
-| `DispatchRoleFit`                     | active   | Dispatch `role-fit-mapper` with intake + ledgers                                                                    |
-| `RouteRoleFit`                        | active   | Route on `ROLE_FIT: PASS \| PARTIAL \| ERROR`                                                                       |
-| `DispatchEditor`                      | active   | Dispatch `cv-tailoring-editor` for the selected mode                                                                |
-| `RouteEditor`                         | active   | Route on `TAILORING_DRAFT: PASS \| PARTIAL \| ERROR`                                                                |
-| `ClaimResolve`                        | active   | Load `cv-review-contract.md`; resolve unsupported sensitive claims                                                  |
-| `GateSafeDeliverable`                 | active   | Continue only if a safe selected-mode deliverable remains                                                           |
-| `DispatchReviewer`                    | active   | Dispatch `cv-reviewer`                                                                                              |
-| `RouteReview`                         | active   | Route on `CV_REVIEW: PASS \| FAIL \| ERROR`                                                                         |
-| `GateFixBudget`                       | active   | Allow editor redispatch only while `fix_cycles < 3`                                                                 |
-| `DispatchEditorFix`                   | active   | Redispatch **only** `cv-tailoring-editor` with prior draft + `REVIEW_FIXES`                                         |
-| `RouteEditorFix`                      | active   | Route fix-cycle `TAILORING_DRAFT` status                                                                            |
-| `Assemble`                            | active   | Build selected-mode user output; strip internal status headers                                     |
-| `EmitFull`                            | active   | Return full selected-mode output                                                                                    |
-| `EmitPartial`                         | active   | Return partial selected-mode output with labeled limitations                                                        |
-| `TerminalBlockedMissingSource`        | terminal | Missing/unreadable required source                                                                                  |
-| `TerminalBlockedInsufficientEvidence` | terminal | Intake `BLOCKED` or mode threshold unmet                                                                            |
-| `TerminalBlockedIntegrityRisk`        | terminal | Unsafe claims, exhausted fix budget, or privacy breach                                                              |
-| `TerminalPhaseError`                  | terminal | Phase `ERROR` with smallest recovery action                                                                         |
-| `TerminalCompleteFull`                | terminal | Full selected-mode output delivered                                                                                 |
-| `TerminalCompletePartial`             | terminal | Partial selected-mode output delivered                                                                              |
+Actions not implied by state names: `NormalizeMode` defaults a missing or unsupported `OUTPUT_MODE` to `review`; `AskRequiredSource` and `AskEvidence` ask for the smallest missing source or detail and never silently switch modes; `DispatchRoleFit` passes intake plus ledgers; `ClaimResolve` requires `references/cv-review-contract.md` loaded; `DispatchEditorFix` redispatches **only** `cv-tailoring-editor` with the prior draft plus `REVIEW_FIXES`; `Assemble` builds the selected-mode user output and strips internal status headers.
 
 ## Status vocabulary by phase (intentional asymmetry)
 
@@ -107,13 +77,3 @@ From any state that performed external I/O (`DispatchIntake`, `DispatchEditor`, 
 | `TerminalPhaseError`                  | Unexpected phase failure + recovery hint                  |
 
 Terminal names and phase statuses above are internal routing values. On blocked/error outcomes, tell the user what prevented the review and what input or recovery action is needed in prose; never print a machine-readable status line.
-
-## Reachability and dead-state checks
-
-| Property                                          | Result                                                         |
-| ------------------------------------------------- | -------------------------------------------------------------- |
-| Every active state reachable from `NormalizeMode` | yes                                                            |
-| Every terminal reachable                          | yes                                                            |
-| Dead states (no outgoing, non-terminal)           | none                                                           |
-| Fix loop bounded                                  | yes — `fix_cycles` max 3 before `TerminalBlockedIntegrityRisk` |
-| FAIL path re-enters `ClaimResolve`                | yes — via `RouteEditorFix`                                     |
