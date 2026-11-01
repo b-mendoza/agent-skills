@@ -98,40 +98,13 @@ Parent-orchestrator approval must name the approved paths in the current run's h
 
 ## Execution
 
-1. `ResumeGate`: if `RESUME_PACKET` present, `Restore` then `ResumeRoute` to the first pending queue item (`ArchitectureLoop`) or pending review (`Review`).
-2. `Intake` → `Classify` → `Trust` (always, including create-without-existing) → `ResolveSources`. Essential missing runtime fact → `needs_input`; unsafe source → `blocked`.
-3. Review: `BuildReviewPacket` → `Review` → deliver report → `ready` (no repair).
-4. Generation: `PlanQueue`. Empty queue → zero-output `ready`. Else `ArchitectureLoop` (`step-architect` per item) → `Synthesize` → `Review`. Reference-only and single-file work must also run `definition-reviewer`, or its full contract inline when delegation is unavailable; size never waives Review.
-5. On `ARCHITECTURE: NEEDS_INPUT`, batch ≤3 questions + `RESUME_PACKET`. On `BLOCKED`/`ERROR`, surface that terminal.
-6. Generation `REVIEW: FAIL` with `REPAIR_CYCLE < 3` → `Repair` (staged scope only) → full `Review` again. At cap → `blocked` with latest report.
-7. `Delivery` → `MutationGate` using Mutation Approval above. Before stopping for approval, include every delivery heading, complete staged file content, and the completed review outcome, even for reference-only work. Ask for approval in prose and end the turn without applying real-package writes.
+Advance [`state-machine.md`](./state-machine.md). Two action rules apply on every generation run:
+
+- Reference-only and single-file work must also run `definition-reviewer`, or its full contract inline when delegation is unavailable; size never waives Review.
+- Before stopping for approval, include every delivery heading, complete staged file content, and the completed review outcome, even for reference-only work. Ask for approval in prose and end the turn without applying real-package writes.
 
 ## Output Contracts
 
 Public replies state the outcome and next action in prose, with no `REVIEW:`, `state:`, or other machine-readable status line. Keep internal reviewer envelopes unchanged. Review mode retains all report content from [`./references/review-schema.md`](./references/review-schema.md).
 
 Zero-output and generation delivery: templates in [`./assets/output-templates.md`](./assets/output-templates.md).
-
-## Status Routing
-
-| Status                      | Route                                                  |
-| --------------------------- | ------------------------------------------------------ |
-| `ARCHITECTURE: PASS`        | Append paths/summaries to manifest                     |
-| `ARCHITECTURE: NEEDS_INPUT` | `needs_input` + `RESUME_PACKET`                        |
-| `ARCHITECTURE: BLOCKED`     | `blocked`                                              |
-| `ARCHITECTURE: ERROR`       | `error`                                                |
-| `REVIEW: PASS`              | Review → `ready`; generation → Delivery                |
-| `REVIEW: FAIL`              | Review → `ready`; generation → Repair or cap `blocked` |
-| `REVIEW: BLOCKED`           | `blocked`                                              |
-| `REVIEW: ERROR`             | `error`                                                |
-
-Completion states: `ready`, `needs_input`, `blocked`, `error`. Every `needs_input` includes a `RESUME_PACKET`.
-
-## Example
-
-Input: `Turn our support triage process into a portable skill. No network.`
-
-1. Classify `create`, generation, `OUTPUT_SCOPE=entire skill`; apply Trust; record local-only assumption.
-2. Queue `SKILL.md`, earned subagents, references; stage via `step-architect`.
-3. `definition-reviewer` gates; staged repair ≤3 if needed.
-4. Return copy-ready staged files; mutate a real package only after Mutation Approval.
