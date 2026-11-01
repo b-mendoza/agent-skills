@@ -28,39 +28,13 @@ Run these gates in order:
 | Stage 3        | `task-validator`, then `stage-validator`         | `TASK_VALIDATION: PASS`; Stage 3 gate passes                                      | Retry only the Stage 3 producer on validator `FAIL`; stop on producer non-PASS or validator `ERROR` |
 | `postpipeline` | `stage-validator`                                | Final section order, required fields, child mode, and deterministic branches pass | Redispatch Stage 3 on validator `FAIL`; stop on validator `ERROR`                                   |
 
-## Common Dispatch Paths
-
-Choose one active playbook and pass the path below to every subagent:
-
-```text
-PLAYBOOK_PATH=../references/github-playbook.md
-```
-
-or
-
-```text
-PLAYBOOK_PATH=../references/jira-playbook.md
-```
-
-Pass `DEPENDENCY_GUIDE_PATH=../references/dependency-and-branch-guide.md` to every validator, including Stage 3 and postpipeline; do not guess a shortened dependency-guide filename.
-
-Bundled package paths under `references/` or `subagents/` are relative to the file that consumes them. Workflow artifact paths under `docs/` are relative to the repository root. Every payload also includes the exact `MUTATION_LIMITS` block from `SKILL.md`.
-
-```text
-OUTPUT_CONTRACT_PATH=../references/output-contract.md
-VALIDATION_CHECKS_PATH=../references/validation-checks.md
-TASK_PLANNING_GUIDE_PATH=../references/task-planning-guide.md
-TASK_PLANNER_TEMPLATE_PATH=../references/task-planner-template.md
-DEPENDENCY_GUIDE_PATH=../references/dependency-and-branch-guide.md
-DEPENDENCY_TEMPLATE_PATH=../references/dependency-prioritizer-template.md
-EXTERNAL_SOURCES_PATH=../references/external-sources.md
-```
-
 ## Dispatch Payloads
+
+Every payload also includes the exact `MUTATION_LIMITS` block from `SKILL.md`. `<platform>` is the active playbook: `github` or `jira`.
 
 ### Preflight
 
-When a subagent tool is available, dispatch `stage-validator` even when the coordinator notices an obvious missing heading. Await its independent verdict before stopping; the coordinator's own glance never replaces this gate. If no subagent tool exists, run `stage-validator`'s full instructions inline and report degraded isolation. Use this payload:
+When a subagent tool is available, dispatch `stage-validator` even when the coordinator notices an obvious missing heading. Await its independent verdict before stopping; the coordinator's own glance never replaces this gate. If no subagent tool exists, run `stage-validator`'s full instructions inline and report degraded isolation. Use this payload, the validation payload:
 
 ```text
 TICKET_KEY=<KEY>
@@ -72,6 +46,8 @@ DEPENDENCY_GUIDE_PATH=../references/dependency-and-branch-guide.md
 STAGE=preflight
 FILE_PATH=docs/<KEY>.md
 ```
+
+Every later `stage-validator` dispatch, including Stage 3 and postpipeline, reuses the validation payload with only `STAGE` and `FILE_PATH` replaced; keep the full `dependency-and-branch-guide.md` filename.
 
 ### Stage 1 - Plan
 
@@ -90,7 +66,7 @@ DECISIONS=<DECISIONS> only during a Stage 1 re-plan
 VALIDATION_ISSUES=<issues list> only during a Stage 1 repair
 ```
 
-Then dispatch `stage-validator` with the common validation paths, `STAGE=1`, and `FILE_PATH=docs/<KEY>-stage-1-detailed.md`.
+Then dispatch `stage-validator` with the validation payload, `STAGE=1`, and `FILE_PATH=docs/<KEY>-stage-1-detailed.md`.
 
 ### Stage 2 - Prioritize and Name Branches
 
@@ -109,7 +85,7 @@ DECISIONS=<DECISIONS> only during a Stage 2 re-plan
 VALIDATION_ISSUES=<issues list> only during a Stage 2 repair
 ```
 
-Then dispatch `stage-validator` with the common validation paths, `STAGE=2`, and `FILE_PATH=docs/<KEY>-stage-2-prioritized.md`.
+Then dispatch `stage-validator` with the validation payload, `STAGE=2`, and `FILE_PATH=docs/<KEY>-stage-2-prioritized.md`.
 
 ### Stage 3 - Validate Final Plan
 
@@ -129,11 +105,11 @@ DECISIONS=<DECISIONS> only during a Stage 3 re-plan
 VALIDATION_ISSUES=<issues list> only during Stage 3 or postpipeline repair
 ```
 
-Then dispatch `stage-validator` with the common validation paths, `STAGE=3`, and `FILE_PATH=docs/<KEY>-tasks.md`.
+Then dispatch `stage-validator` with the validation payload, `STAGE=3`, and `FILE_PATH=docs/<KEY>-tasks.md`.
 
 ### Postpipeline
 
-Dispatch `stage-validator` with the common validation paths, `STAGE=postpipeline`, and `FILE_PATH=docs/<KEY>-tasks.md`.
+Dispatch `stage-validator` with the validation payload, `STAGE=postpipeline`, and `FILE_PATH=docs/<KEY>-tasks.md`.
 
 ## Structured Status Routing
 
@@ -150,6 +126,8 @@ Dispatch `stage-validator` with the common validation paths, `STAGE=postpipeline
 ## Targeted Retry Loop
 
 The loop applies only to `STAGE_VALIDATION: FAIL` for Stage 1, Stage 2, Stage 3, or `postpipeline`.
+
+Each validator gate owns its own failure counter, initialized to 0.
 
 1. Store only the validator's issue list.
 2. Increment the failure counter for that exact gate.

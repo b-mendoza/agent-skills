@@ -29,22 +29,8 @@ After the earliest affected stage, rerun every downstream stage and finish with 
 
 Preserve branch names for unchanged tasks when names may already have been shared downstream. Regenerate only when task number, title, explicit prefix, or current-item mode changes. In current-item mode, keep every task on the same single branch and do not introduce child-of-child branches.
 
-## Retry Budgets
+## Retry Budgets and Errors
 
 Critique-driven re-plan iteration limits belong to the parent orchestrator. This skill receives `RE_PLAN=true` plus `DECISIONS`; it does not receive or enforce the parent's iteration counter.
 
-Local validator repair budget:
-
-| Loop                      | Limit                    | Counts                                             |
-| ------------------------- | ------------------------ | -------------------------------------------------- |
-| Targeted validator repair | 3 failed cycles per gate | Repeated `STAGE_VALIDATION: FAIL` at the same gate |
-
-At the cap, stop and explain the failed gate and preserved artifact paths in prose.
-
-## Error Handling
-
-- Producer `FAIL`, `BLOCKED`, or `ERROR`: stop at that producer's stage.
-- Validator `FAIL`: repair only the producing stage using `VALIDATION_ISSUES`.
-- Validator `ERROR`: stop at that gate; do not reinterpret it as a content fail.
-- Malformed or unknown status: stop as a current-stage error.
-- Preserve intermediate artifacts on every outcome.
+Local validator repair budgets and status routing are the same as a normal run: follow [`./execution-guide.md`](./execution-guide.md#structured-status-routing). Preserve intermediate artifacts on every outcome.

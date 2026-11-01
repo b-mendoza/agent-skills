@@ -92,7 +92,6 @@ Read one subagent file only when dispatching it. Skill-local `subagents/` files 
 | Stage 2 assembly                                                                                         | `./references/dependency-prioritizer-template.md` inside `dependency-prioritizer` |
 | Independent stage checks and exact 20-check report                                                       | `./references/validation-checks.md` inside validators                             |
 | Optional current sources                                                                                 | `./references/external-sources.md`, then only a playbook-routed URL               |
-| Visual overview                                                                                          | `./flow-diagram.md` (illustrative only)                                           |
 
 ## Critical Outputs and Gates
 
@@ -121,21 +120,13 @@ MUTATION_LIMITS=<the exact block above>
 
 Bundled package paths under `references/` or `subagents/` are relative to the file that consumes them. Workflow artifact paths under `docs/` are relative to the repository root. Pass the playbook and every reference path explicitly; subagents do not infer platform transport or inherit undeclared paths from conversation state.
 
-Route only on structured statuses:
-
-- Producers: `PASS | FAIL | BLOCKED | ERROR` under their documented prefix.
-- Stage validator: `STAGE_VALIDATION: PASS | FAIL | ERROR`.
-- A producer non-PASS or validator `ERROR` is terminal for that stage.
-- Validator `FAIL` at Stage 1, 2, 3, or postpipeline enters the targeted repair loop; preflight `FAIL` is terminal.
-- Malformed or unknown status is a terminal current-stage error.
+Route only on structured statuses, using the status routing and targeted retry loop in [`./references/execution-guide.md`](./references/execution-guide.md).
 
 ## Normal and Re-Plan Routes
 
 Normal route: preflight, Stage 1 + gate, Stage 2 + gate, Stage 3 + gate, postpipeline, handoff.
 
 For `RE_PLAN=true`, require `DECISIONS`, read [`./references/re-plan-cycle.md`](./references/re-plan-cycle.md), start at the earliest affected stage, rerun downstream producers, and finish with postpipeline validation. Revalidate preflight when the snapshot changed or its prior validation is not trustworthy.
-
-Each validator gate owns a counter initialized to 0. Increment after each `STAGE_VALIDATION: FAIL`; when the counter reaches 3, stop without another repair. Otherwise redispatch only the producer of the failing artifact with the validator's issue list. Postpipeline repair redispatches Stage 3 and reruns both Stage 3 and postpipeline gates. Parent-orchestrator critique iteration limits remain outside this skill.
 
 ## Return Format
 
