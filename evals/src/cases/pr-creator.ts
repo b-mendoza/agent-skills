@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertNoGithubWrites,
   assertPlantedStatePreserved,
@@ -124,13 +124,10 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
+    ...behavioralDefaults,
     id: "pr-creator/preview-awaits-approval",
     skill: SKILL,
-    tier: BEHAVIORAL_TIER,
     mutationPolicy: "read-only",
-    fixture: "clean",
-    budgetUsd: 2.0,
-    wallClockMs: 600_000,
     seed: (context) => {
       seedGithubFixture(context);
     },
@@ -159,13 +156,10 @@ export const cases = [
       }),
   },
   {
+    ...behavioralDefaults,
     id: "pr-creator/existing-pr-stops-create",
     skill: SKILL,
-    tier: BEHAVIORAL_TIER,
     mutationPolicy: "read-only",
-    fixture: "clean",
-    budgetUsd: 2.0,
-    wallClockMs: 600_000,
     seed: (context) => {
       seedGithubFixture(context, { existing: true });
     },

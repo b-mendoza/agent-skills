@@ -4,9 +4,11 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import { cases } from "#/cases/pr-creator.ts";
 import {
   assertNoGithubWrites,
+  assertOnlyReportWritten,
   githubCalls,
 } from "#/cases/pr-creator-checks.ts";
 import {
@@ -17,7 +19,7 @@ import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
-const [positiveRouting, negativeRouting, previewCase, guardCase] = cases;
+const [, , previewCase, guardCase] = cases;
 const SHA_LENGTH = 40;
 const FAKE_REFUSAL = 79;
 const EXPECTED_LOOKUPS = 2;
@@ -68,33 +70,6 @@ function withLog(log: string): Observation {
 
 const EXISTING = `A matching open PR already exists: ${GITHUB_FACTS.url}.
 I created nothing and changed nothing. Continue at that URL.`;
-
-const skillCall = { name: "Skill", input: { skill: "pr-creator" } };
-
-describe("pr-creator routing", () => {
-  it("accepts invocation only on the positive route", () => {
-    expect(() =>
-      positiveRouting.check(createObservation({ toolCalls: [skillCall] })),
-    ).not.toThrow();
-    expect(() => positiveRouting.check(createObservation())).toThrow();
-    expect(() => negativeRouting.check(createObservation())).not.toThrow();
-    expect(() =>
-      negativeRouting.check(createObservation({ toolCalls: [skillCall] })),
-    ).toThrow();
-  });
-
-  it.each([positiveRouting, negativeRouting])(
-    "rejects a run that never happened: $id",
-    (testCase) => {
-      expect(() =>
-        testCase.check(createObservation({ timedOut: true })),
-      ).toThrow();
-      expect(() =>
-        testCase.check(createObservation({ subtype: "query_error" })),
-      ).toThrow();
-    },
-  );
-});
 
 describe("pr-creator preview gate", () => {
   it("accepts the exact preview with no approval or mutation", () => {
@@ -414,4 +389,35 @@ describe("local GitHub fixture", () => {
       fixture.cleanup();
     }
   });
+});
+
+const runFile = ".handoffs/review-pull-request/run-1/context.txt";
+const reportOnly = createObservation({
+  gitStatusAfter: { kind: "worktree", entries: `?? ${GITHUB_FACTS.report}` },
+  repoFiles: {
+    [GITHUB_FACTS.source]: GITHUB_FACTS.headSource,
+    [GITHUB_FACTS.sourceBaseline]: GITHUB_FACTS.headSource,
+    ".git/logs/HEAD": "baseline",
+    [GITHUB_FACTS.baselineLog]: "baseline",
+    [GITHUB_FACTS.log]: "",
+    ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
+  },
+});
+
+testArtifactWriteMatrix({
+  label: "PR report",
+  artifact: GITHUB_FACTS.report,
+  extraArtifacts: [runFile],
+  extraRejected: [
+    `/fixture/.claude/${GITHUB_FACTS.report}`,
+    `/outside/${runFile}`,
+    `/fixture/.claude/${runFile}`,
+  ],
+  check: (candidate) => {
+    assertOnlyReportWritten(candidate, true);
+  },
+  valid: () => ({
+    ...reportOnly,
+    toolCalls: [{ name: "Write", input: { file_path: GITHUB_FACTS.report } }],
+  }),
 });
