@@ -67,35 +67,17 @@ State names say which subagent each `Dispatch*` state runs. Non-obvious actions:
 | `RetryReport`          | `DispatchAnnotator`    | recovered and `retry_count < 3`                                           |
 | `RetryReport`          | `TerminalBlocked`      | report blocked after retry budget                                         |
 | `RetryReport`          | `TerminalError`        | report internal failure after retry budget                                |
-| `MapFinalStatus`       | `TerminalPass`         | no criticals; no unresolved hard gate; no decision-relevant open question |
-| `MapFinalStatus`       | `TerminalFail`         | report written and ≥1 critical finding remains                            |
+| `MapFinalStatus`       | `TerminalPass`         | report written; all nine sections present; no criticals; no unresolved hard gate; no decision-relevant open question |
+| `MapFinalStatus`       | `TerminalFail`         | report written and ≥1 critical traceability gap, critical avoidable-complexity finding, or disproven risky assumption remains |
 | `MapFinalStatus`       | `TerminalBlocked`      | hard gate or decision-relevant question unresolved                        |
-| `MapFinalStatus`       | `TerminalError`        | unrecovered internal failure remains                                      |
+| `MapFinalStatus`       | `TerminalError`        | unrecovered internal, parsing, malformed-output, or report-write failure remains |
 | `TerminalPass`         | `[*]`                  | emit compact handoff                                                      |
 | `TerminalFail`         | `[*]`                  | emit compact handoff                                                      |
 | `TerminalBlocked`      | `[*]`                  | emit compact handoff                                                      |
 | `TerminalError`        | `[*]`                  | emit compact handoff                                                      |
 
-## Operational definitions (guards)
-
-Defined in [`references/audit-protocol.md`](./references/audit-protocol.md):
-
-| Term                      | Meaning                                                                                |
-| ------------------------- | -------------------------------------------------------------------------------------- |
-| `ORIGIN_CONTEXT` adequate | States a user-request outcome without requiring inference from the plan                |
-| core audit remains viable | Snapshot + numbered requirements + all three discovery auditor payloads exist          |
-| decision-relevant         | Resolving it could change final `AUDIT:*` or a finding’s `critical`/`warning` severity |
+Guard terms (`ORIGIN_CONTEXT` adequate, core audit remains viable, decision-relevant) are defined in `references/audit-protocol.md` Operational Definitions.
 
 ## Terminal decisions
 
-Select exactly one internal outcome from `AUDIT: PASS`, `AUDIT: FAIL`, `AUDIT: BLOCKED`, `AUDIT: ERROR`. Deliver its meaning as the compact prose handoff, without a public status line.
-
-## Reachability and dead-state checks
-
-| Property                                          | Result                                                                                             |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Every active state reachable from `LoadContracts` | yes                                                                                                |
-| Every terminal reachable                          | yes (`TerminalPass`/`Fail` via `MapFinalStatus`; `Blocked`/`Error` via intake, retries, and gates) |
-| Dead states (no outgoing, non-terminal)           | none                                                                                               |
-| Retry loops bounded                               | yes — max 3 per named branch                                                                       |
-| Auditor recovery re-enters dispatch               | yes — `RetryAuditor` → `DispatchAuditors` (failed branch only)                                     |
+Sole source of truth for internal final outcomes. Select exactly one of `AUDIT: PASS`, `AUDIT: FAIL`, `AUDIT: BLOCKED`, `AUDIT: ERROR`: `TerminalPass`/`TerminalFail` only via `MapFinalStatus` after `REPORT: PASS`; `TerminalBlocked` also covers missing or declined input, failed artifact authorization, an unestablished `ORIGIN_CONTEXT`, and required external project proof; `TerminalError` covers failures left after the retry budget. These labels route the workflow; deliver the outcome's meaning as the compact prose handoff, without a public status line.
