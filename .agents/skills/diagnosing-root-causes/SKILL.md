@@ -78,4 +78,4 @@ Inline fallback (degraded mode): if the runtime has no task or subagent tool, ex
 
 ## Validation
 
-Before considering an edit to this package complete, confirm `SKILL.md` is under 500 lines, every path in the registry and loading map exists, every frontmatter `name` matches its directory or file basename, the status taxonomy uses identical spellings across `SKILL.md`, `output-contract.md`, and `review-checklist.md`, `state-machine.md` defines reachable states with terminals and no dead states, and the Execution section above matches `state-machine.md`.
+Before considering an edit to this package complete, confirm `SKILL.md` is under 500 lines, every path in the registry and loading map exists, every frontmatter `name` matches its directory or file basename, the status taxonomy uses identical spellings across `SKILL.md`, `output-contract.md`, and `review-checklist.md`, and every state named in the Execution section above exists in `state-machine.md`.
