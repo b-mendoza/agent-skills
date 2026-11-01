@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   CLARIFICATION_FACTS,
   CLARIFICATION_INPUTS,
@@ -9,46 +9,37 @@ import {
 } from "#/cases/clarifying-assumptions-fixtures.ts";
 import {
   assertFileAbsent,
-  assertFileExists,
   assertFileMatches,
+  assertFilesUnchanged,
   assertNoMutation,
   assertNoPublicStatusLine,
+  assertOnlyInitialCommit,
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
   fixtureRelativePath,
   normalizeReplyText,
   replyAsksFor,
+  withoutAllowedChanges,
 } from "#/cases/shared-checks.ts";
+import { HEAD_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
 export const SKILL = "clarifying-assumptions";
-const headPath = ".git/logs/HEAD";
 const snapshotPaths = [
   FIXTURE_ROOT_PATH,
   ...Object.keys(CLARIFICATION_INPUTS),
   CLARIFICATION_FACTS.critiquePath,
   CLARIFICATION_FACTS.decisionsPath,
   "a.txt",
-  headPath,
+  HEAD_LOG,
 ];
 
 function checkInputsUnchanged(observation: Observation): void {
-  for (const [path, content] of Object.entries(CLARIFICATION_INPUTS)) {
-    assertFileExists(observation, path);
-    assert.equal(
-      observation.repoFiles?.[path],
-      content,
-      `changed input: ${path}`,
-    );
-  }
+  assertFilesUnchanged(observation, CLARIFICATION_INPUTS, "changed input");
   assert.equal(observation.repoFiles?.["a.txt"], "hello\n");
-  assertFileMatches(
-    observation,
-    headPath,
-    /^[^\n]+commit \(initial\): initial commit\n$/,
-  );
+  assertOnlyInitialCommit(observation);
   assertFileAbsent(observation, CLARIFICATION_FACTS.decisionsPath);
 }
 
@@ -78,21 +69,16 @@ function checkOnlyCritiqueChanged(observation: Observation): void {
     expectedEntries,
     "unexpected changed paths",
   );
-  assertNoMutation({
-    ...observation,
-    gitStatusAfter: before,
-    toolCalls: observation.toolCalls.filter(
-      (call) => !isCritiqueWrite(call, observation),
+  assertNoMutation(
+    withoutAllowedChanges(observation, (call) =>
+      isCritiqueWrite(call, observation),
     ),
-  });
+  );
 }
 
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
+const suiteDefaults = {
+  ...behavioralDefaults,
   skill: SKILL,
-  fixture: "clean",
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
   seed: seedClarificationArtifacts,
   snapshotPaths,
 } as const;
@@ -119,7 +105,7 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
-    ...behavioralDefaults,
+    ...suiteDefaults,
     id: `${SKILL}/upfront-preview-gate`,
     mutationPolicy: "allowed",
     intent:
@@ -199,7 +185,7 @@ export const cases = [
       }),
   },
   {
-    ...behavioralDefaults,
+    ...suiteDefaults,
     id: `${SKILL}/critique-missing-task-number`,
     mutationPolicy: "read-only",
     intent:
