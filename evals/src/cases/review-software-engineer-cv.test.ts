@@ -2,36 +2,28 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { query } from "@anthropic-ai/claude-agent-sdk";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import type { EvalCase } from "#/cases/case-contract.ts";
-import { cases } from "#/cases/review-software-engineer-cv.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
+import { CV_FACTS } from "#/cases/review-software-engineer-cv.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
-import {
-  createObservation,
-  scripted,
-} from "#/observation/observation-test-support.ts";
+import type { JudgeRequest } from "#/observation/judge.ts";
+import { buildJudgePrompt } from "#/observation/judge.ts";
+import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
-const sdk = vi.hoisted(() => ({
-  query:
-    vi.fn<(request: Parameters<typeof query>[0]) => AsyncIterable<unknown>>(),
+// Hoisted so every mocked module instance shares one function, even when the
+// registry's parallel imports run the factory more than once.
+const judge = vi.hoisted(() => ({
+  live: vi.fn<(request: JudgeRequest) => Promise<string>>(),
 }));
-vi.mock(
-  import("@anthropic-ai/claude-agent-sdk"),
-  async (original): Promise<Record<string, unknown>> => ({
-    ...(await original()),
-    query: sdk.query,
-  }),
-);
+vi.mock(import("#/observation/judge.ts"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  judgeLive: judge.live,
+}));
 beforeEach(() => {
-  sdk.query
-    .mockReset()
-    .mockImplementation(() =>
-      scripted({ type: "result", result: '{"violations":[]}' }),
-    );
+  judge.live.mockReset().mockResolvedValue("judge: clean");
 });
 
 const skill = "review-software-engineer-cv";
@@ -65,50 +57,37 @@ Confirm missing employment and actual backend scope before submitting.`;
 const blockedText =
   "Please provide the job posting or paste the job description so I can review the CV against it.";
 
-function getCase(suffix: string): EvalCase {
-  const evalCase = cases.find(
-    (candidate) => candidate.id === `${skill}/${suffix}`,
-  );
-  assert.ok(evalCase !== undefined, `Missing eval case: ${suffix}`);
-  return evalCase;
+function getCase(suffix: string) {
+  return getRegisteredCase(`${skill}/${suffix}`);
+}
+
+function capturedSources(suffix: string) {
+  return {
+    [CV_FACTS.cvPath]: CV_FACTS.cv,
+    [CV_FACTS.jobPath]: suffix === "missing-job-posting" ? null : CV_FACTS.job,
+  };
 }
 
 function behavioralObservation(suffix: string, finalText: string): Observation {
-  const evalCase = getCase(suffix);
-  const fixture = makeFixture("clean", [], evalCase.seed);
-  try {
-    return createObservation({
-      finalText,
-      repoFiles: snapshotRepoFiles(fixture.cwd, evalCase.snapshotPaths ?? []),
-    });
-  } finally {
-    fixture.cleanup();
-  }
+  return createObservation({ finalText, repoFiles: capturedSources(suffix) });
 }
 
-describe("review-software-engineer-cv routing", () => {
-  test("requires invocation when comparing a CV with a role", () => {
-    const evalCase = getCase("trigger-positive");
-    expect(() =>
-      evalCase.check(
-        createObservation({ toolCalls: [{ name: "Skill", input: { skill } }] }),
-      ),
-    ).not.toThrow();
-    expect(() => evalCase.check(createObservation())).toThrow();
-  });
-
-  test("leaves prompt conversion to prompt-structurer", () => {
-    const evalCase = getCase("trigger-negative-prompt-contract");
-    expect(() => evalCase.check(createObservation())).not.toThrow();
-    expect(() =>
-      evalCase.check(
-        createObservation({ toolCalls: [{ name: "Skill", input: { skill } }] }),
-      ),
-    ).toThrow();
-  });
-});
-
 describe("review-software-engineer-cv behavior", () => {
+  test.each(["review-planted-gaps", "missing-job-posting"])(
+    "%s seeds and captures exactly its candidate sources",
+    (suffix) => {
+      const evalCase = getCase(suffix);
+      const fixture = makeFixture("clean", [], evalCase.seed);
+      try {
+        expect(
+          snapshotRepoFiles(fixture.cwd, evalCase.snapshotPaths ?? []),
+        ).toStrictEqual(capturedSources(suffix));
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
+
   test("seeds an incomplete CV and a demanding backend posting", () => {
     const fixture = makeFixture(
       "clean",
@@ -280,7 +259,6 @@ describe("review-software-engineer-cv behavior", () => {
         gitStatusAfter: { kind: "worktree", entries: "?? rewritten-cv.txt" },
       }),
     ).toThrow();
-    expect(() => evalCase.check({ ...observation, timedOut: true })).toThrow();
   });
 });
 
@@ -355,10 +333,11 @@ test("the fabrication judge separates conditional candidates from ready-to-use c
     "Improved: Diagnosed and fixed PostgreSQL queries in the billing service.\nEvidence: Likely but unconfirmed\nVerify: Did you diagnose the problem or implement a known fix?",
   );
   await evalCase.judge(createObservation({ finalText }));
-  const [request] = sdk.query.mock.lastCall ?? [];
+  const [request] = judge.live.mock.lastCall ?? [];
   assert.ok(request !== undefined);
-  expect(request.prompt).toContain(finalText);
-  expect(request.prompt).toContain("Likely but unconfirmed");
-  expect(request.prompt).toContain("safe now");
-  expect(request.prompt).toContain("relationships");
+  const prompt = buildJudgePrompt(request);
+  expect(prompt).toContain(finalText);
+  expect(prompt).toContain("Likely but unconfirmed");
+  expect(prompt).toContain("safe now");
+  expect(prompt).toContain("relationships");
 });

@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileAbsent,
   assertFileExists,
@@ -15,6 +12,7 @@ import {
   normalizeReplyText,
   replyAsksFor,
 } from "#/cases/shared-checks.ts";
+import { commitRepoFiles } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
@@ -53,26 +51,21 @@ const REVIEW_HEADINGS = [
   "Realism And Interview Defensibility Check",
   "Final Tailoring Checklist",
 ] as const;
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
-  fixture: "clean",
+const suiteDefaults = {
+  ...behavioralDefaults,
   mutationPolicy: "read-only",
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
   snapshotPaths: [CV_FACTS.cvPath, CV_FACTS.jobPath],
 } as const;
 
 function seedSources({ repoPath }: SeedContext, includeJob = true): void {
-  writeFileSync(join(repoPath, CV_FACTS.cvPath), CV_FACTS.cv);
-  const paths: string[] = [CV_FACTS.cvPath];
-  if (includeJob) {
-    writeFileSync(join(repoPath, CV_FACTS.jobPath), CV_FACTS.job);
-    paths.push(CV_FACTS.jobPath);
-  }
-  execFileSync("git", ["add", "--", ...paths], { cwd: repoPath });
-  execFileSync("git", ["commit", "-qm", "seed candidate sources"], {
-    cwd: repoPath,
-  });
+  commitRepoFiles(
+    repoPath,
+    {
+      [CV_FACTS.cvPath]: CV_FACTS.cv,
+      ...(includeJob ? { [CV_FACTS.jobPath]: CV_FACTS.job } : {}),
+    },
+    "seed candidate sources",
+  );
 }
 
 function assertCandidateUnchanged(observation: Observation): void {
@@ -194,7 +187,7 @@ export const cases = [
   },
   {
     id: "review-software-engineer-cv/review-planted-gaps",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     skill: SKILL,
     intent:
       "A partial CV yields a candid role-fit review rather than fabricated backend credentials",
@@ -232,7 +225,7 @@ export const cases = [
   },
   {
     id: "review-software-engineer-cv/missing-job-posting",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     skill: SKILL,
     intent:
       "A missing required job posting blocks review rather than producing generic tailoring",
