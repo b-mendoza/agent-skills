@@ -1,6 +1,6 @@
 # State Machine — generate-handoff-document
 
-Finite-state execution model for this skill. Mermaid rendering lives in [`flow-diagram.md`](./flow-diagram.md). Feature requirement tags are indexed in [`references/feature-registry.md`](./references/feature-registry.md).
+Finite-state execution model for this skill. Feature requirement tags are indexed in [`references/feature-registry.md`](./references/feature-registry.md).
 
 ## Run-scoped variables
 
@@ -108,23 +108,4 @@ Producer states (`ExtractContext`, `DocumentInsights`, `ValidateClaims`, `Assemb
 | `BlockedArtifact`        | `[*]`                    | Emit `The handoff cannot proceed because an artifact failed its contract.`                                                                |
 | `BlockedRepairExhausted` | `[*]`                    | Emit `The handoff still fails review after the repair limit.`                                                                     |
 
-## Terminal states
-
-| Terminal state           | Outcome in prose                                               | Kind    |
-| ------------------------ | ---------------------------------------------------------- | ------- |
-| `CompletedReviewPass`    | `The handoff passed review.`                                   | Success |
-| `CompletedReviewWarn`    | `The handoff passed review with warnings.`                     | Success |
-| `CompletedDeclinedEmpty` | `No handoff was written because the empty-session handoff was declined.`              | Success |
-| `BlockedUnclearTarget`   | `A clear target path is needed before writing the handoff.`                             | Stop    |
-| `BlockedNoSource`        | `A usable source transcript is needed before writing the handoff.`                     | Stop    |
-| `BlockedUnsafePath`      | `The handoff was not written because the path is unsafe or inaccessible.` | Stop    |
-| `BlockedExternal`        | `The handoff cannot proceed because a required external dependency is unavailable.`        | Stop    |
-| `BlockedStage`           | `The handoff cannot proceed because a stage failed or was unexpectedly skipped.`     | Stop    |
-| `BlockedArtifact`        | `The handoff cannot proceed because an artifact failed its contract.`                     | Stop    |
-| `BlockedRepairExhausted` | `The handoff still fails review after the repair limit.`                          | Stop    |
-
-Readiness rule: the run is complete only at one of the three success terminals; every other exit uses the corresponding blocked outcome in prose above.
-
-## Reachability
-
-Every active and wait state is reachable from `Intake` under documented guards. Every terminal is reachable. There are no dead states: repair re-enters the producer chain; wait states either resume or block/decline.
+Readiness rule: the run is complete only at one of the three success terminals; every other exit emits the blocked outcome on its terminal transition above.
