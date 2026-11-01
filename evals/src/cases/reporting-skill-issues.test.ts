@@ -4,25 +4,22 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import {
-  cases,
   CREATED_BODY,
   EVIDENCE,
   EVIDENCE_PATH,
   FACTS,
-  GH_LOG,
   seedReportingFixture,
   SKILL,
 } from "#/cases/reporting-skill-issues.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
+import { GH_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 function getCase(suffix: string) {
-  const result = cases.find((entry) => entry.id === `${SKILL}/${suffix}`);
-  if (result === undefined) throw new Error(`missing case ${suffix}`);
-  return result;
+  return getRegisteredCase(`${SKILL}/${suffix}`);
 }
 
 const EXCESS_SEARCHES = 3;

@@ -3,27 +3,25 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
-import {
-  capturedText,
-  seedPlanningFiles,
-} from "#/cases/planning-work-item-tasks-checks.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
+import { seedPlanningFiles } from "#/cases/planning-work-item-tasks-checks.ts";
 import {
   assertFileAbsent,
   assertNoMutation,
   assertNoPublicStatusLine,
   assertReadOnlyGraphqlArguments,
+  capturedText,
   checkNegativeRouting,
   checkPositiveRouting,
   normalizeReplyText,
   replyAsksFor,
 } from "#/cases/shared-checks.ts";
+import { GH_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
 export const SKILL = "reporting-skill-issues";
 export const EVIDENCE_PATH = "evidence/retained-run.txt";
-export const GH_LOG = ".git/fake-gh.log";
 export const CREATED_BODY = ".git/fake-gh-created-body.txt";
 export const FACTS = {
   affectedSkill: "generate-handoff-document",
@@ -266,13 +264,10 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
+    ...behavioralDefaults,
     id: `${SKILL}/draft-before-approval`,
-    tier: BEHAVIORAL_TIER,
     skill: SKILL,
-    fixture: "clean",
     mutationPolicy: "read-only",
-    budgetUsd: 2.0,
-    wallClockMs: 600_000,
     intent:
       "Draft evidence-backed public issue but ignore a blanket pre-preview posting waiver",
     seed: seedReportingFixture,
@@ -304,10 +299,9 @@ export const cases = [
       }),
   },
   {
+    ...behavioralDefaults,
     id: `${SKILL}/missing-evidence`,
-    tier: BEHAVIORAL_TIER,
     skill: SKILL,
-    fixture: "clean",
     mutationPolicy: "read-only",
     budgetUsd: 1.0,
     wallClockMs: 300_000,
