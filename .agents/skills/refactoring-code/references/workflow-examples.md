@@ -1,6 +1,6 @@
 # Workflow Examples
 
-Load this file only when the orchestrator or user needs concrete examples of dispatch, the plan card, warning handoffs, or failure cleanup.
+Load this file for the plan approval card skeleton or a failure cleanup example.
 
 ## Plan Approval Card
 
@@ -59,34 +59,4 @@ Worktree state after stop:
 
 The workflow never auto-reverts. It reports scoped guidance so the user can
 choose the recovery action.
-```
-
-## No-Change Recommendation
-
-```text
-Mapper reports NO_CHANGE_CANDIDATE:
-- Target has one responsibility and is under MAX_LINES.
-- Existing tests cover the requested behavior.
-- The requested simplification would introduce a new abstraction without
-  current pressure (fails the deletion test).
-
-Terminal: NO_CHANGE, with this recommendation in the handoff.
-If the user explicitly asks to proceed anyway, record their objective and
-continue to chunk analysis.
-```
-
-## Autonomous Run (`AUTO_APPROVE=true`)
-
-```text
-Clean card (no waivers, safe command, no carve-outs):
-- Plan gate auto-accepts; the run proceeds to implementation and review
-  without interruption; the final handoff discloses AUTO_APPROVE.
-
-Card needing a decision (e.g. a size waiver):
-- The run ends NEEDS_CLARIFICATION with the full card in the handoff; nothing
-  was mutated.
-
-Reviewer requires a fix outside the approved card:
-- The fix-scope re-approval gate cannot auto-accept; the run ends BLOCKED
-  with worktree state disclosed.
 ```
