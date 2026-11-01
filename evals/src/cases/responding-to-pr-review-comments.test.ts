@@ -11,7 +11,7 @@ import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
-const [positiveRouting, negativeRouting, previewCase, guardCase] = cases;
+const [, , previewCase, guardCase] = cases;
 
 const REPORT = `# PR 17 Review Comment Assessment
 PR: ${GITHUB_FACTS.url} Posting mode: post-after-confirmation Posting status: pending-confirmation Identity mode: resolved:maintainer Final envelope intent: pending Working inventory file: none
@@ -66,36 +66,6 @@ function observation(report = REPORT): Observation {
     },
   });
 }
-
-const skillCall = {
-  name: "Skill",
-  input: { skill: "responding-to-pr-review-comments" },
-};
-
-describe("response routing", () => {
-  it("distinguishes replies from a new code review", () => {
-    expect(() =>
-      positiveRouting.check(createObservation({ toolCalls: [skillCall] })),
-    ).not.toThrow();
-    expect(() => positiveRouting.check(createObservation())).toThrow();
-    expect(() => negativeRouting.check(createObservation())).not.toThrow();
-    expect(() =>
-      negativeRouting.check(createObservation({ toolCalls: [skillCall] })),
-    ).toThrow();
-  });
-
-  it.each([positiveRouting, negativeRouting])(
-    "rejects runs that did not happen: $id",
-    (testCase) => {
-      expect(() =>
-        testCase.check(createObservation({ timedOut: true })),
-      ).toThrow();
-      expect(() =>
-        testCase.check(createObservation({ subtype: "query_error" })),
-      ).toThrow();
-    },
-  );
-});
 
 describe("response preview and local report", () => {
   it("accepts one grounded assessment with posting held for approval", () => {

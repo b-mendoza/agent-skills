@@ -1,12 +1,11 @@
 import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertNoGithubWrites,
   assertOnlyReportWritten,
   assertPlantedStatePreserved,
-  capturedText,
   githubCalls,
 } from "#/cases/pr-creator-checks.ts";
 import {
@@ -19,6 +18,7 @@ import {
   assertNoMutation,
   assertNoPublicStatusLine,
   assertReadOnlyGraphqlArguments,
+  capturedText,
   checkNegativeRouting,
   checkPositiveRouting,
   normalizeReplyText,
@@ -208,13 +208,10 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
+    ...behavioralDefaults,
     id: "responding-to-pr-review-comments/reply-preview-no-approval",
     skill: SKILL,
-    tier: BEHAVIORAL_TIER,
     mutationPolicy: "allowed",
-    fixture: "clean",
-    budgetUsd: 2.0,
-    wallClockMs: 600_000,
     seed: (context) => {
       seedGithubFixture(context, { existing: true, comments: true });
     },
@@ -248,13 +245,10 @@ export const cases = [
       }),
   },
   {
+    ...behavioralDefaults,
     id: "responding-to-pr-review-comments/no-comments",
     skill: SKILL,
-    tier: BEHAVIORAL_TIER,
     mutationPolicy: "read-only",
-    fixture: "clean",
-    budgetUsd: 2.0,
-    wallClockMs: 600_000,
     seed: (context) => {
       seedGithubFixture(context, { existing: true });
     },
