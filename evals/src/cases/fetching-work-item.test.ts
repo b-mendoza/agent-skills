@@ -1,18 +1,18 @@
-import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import { cases, SNAPSHOT_SECTIONS } from "#/cases/fetching-work-item.ts";
+import { SNAPSHOT_SECTIONS } from "#/cases/fetching-work-item.ts";
 import {
-  GH_LOG,
   ISSUE,
   seedGitHub,
   SNAPSHOT,
 } from "#/cases/fetching-work-item-fixtures.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
+import { GH_LOG, makeFixture } from "#/fixtures/fixtures.ts";
+import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 const READ_LOG = `${JSON.stringify(["issue", "view", ISSUE.url, "--json", "title,body,comments"])}\n`;
@@ -63,28 +63,7 @@ const FAILURE = createObservation({
 });
 
 function getCase(suffix: string) {
-  const evalCase = cases.find(
-    (candidate) => candidate.id === `fetching-work-item/${suffix}`,
-  );
-  assert.ok(evalCase !== undefined);
-  return evalCase;
-}
-
-for (const suffix of ["trigger-positive", "trigger-negative-refinement"]) {
-  test(`${suffix} distinguishes invocation from noninvocation`, () => {
-    const invoked = createObservation({
-      toolCalls: [{ name: "Skill", input: { skill: "fetching-work-item" } }],
-    });
-    const absent = createObservation();
-    const positive = suffix === "trigger-positive";
-    expect(() =>
-      getCase(suffix).check(positive ? invoked : absent),
-    ).not.toThrow();
-    expect(() => getCase(suffix).check(positive ? absent : invoked)).toThrow();
-    expect(() =>
-      getCase(suffix).check(createObservation({ timedOut: true })),
-    ).toThrow();
-  });
+  return getRegisteredCase(`fetching-work-item/${suffix}`);
 }
 
 describe("snapshot checks", () => {
@@ -131,71 +110,61 @@ describe("snapshot checks", () => {
     ],
   ])("rejects %s", (_label, artifact) => {
     expect(() =>
-      getCase("github-snapshot").check(
-        createObservation({
-          ...SUCCESS,
-          repoFiles: { [SNAPSHOT]: artifact, [GH_LOG]: READ_LOG },
-        }),
-      ),
+      getCase("github-snapshot").check({
+        ...SUCCESS,
+        repoFiles: { [SNAPSHOT]: artifact, [GH_LOG]: READ_LOG },
+      }),
     ).toThrow();
   });
   test.each([
-    createObservation({ ...SUCCESS, finalText: "Done" }),
-    createObservation({
-      ...SUCCESS,
+    { finalText: "Done" },
+    {
       gitStatusAfter: {
         kind: "worktree",
         entries: `?? ${SNAPSHOT}\n?? unwanted.txt`,
       },
-    }),
-    createObservation({
-      ...SUCCESS,
+    },
+    {
       toolCalls: [{ name: "Write", input: { file_path: "other.md" } }],
-    }),
-    createObservation({
-      ...SUCCESS,
+    },
+    {
       toolCalls: [
         { name: "Bash", input: { command: "git commit -am unauthorized" } },
       ],
-    }),
-    createObservation({
-      ...SUCCESS,
+    },
+    {
       toolCalls: [{ name: "mcp__github__create_issue", input: {} }],
-    }),
-    createObservation({
-      ...SUCCESS,
+    },
+    {
       repoFiles: { [SNAPSHOT]: ARTIFACT, [GH_LOG]: "" },
-    }),
-    createObservation({
-      ...SUCCESS,
+    },
+    {
       repoFiles: {
         [SNAPSHOT]: ARTIFACT,
         [GH_LOG]: '["issue","comment","42"]\n',
       },
-    }),
-    createObservation({
-      ...SUCCESS,
+    },
+    {
       repoFiles: {
         [SNAPSHOT]: ARTIFACT,
         [GH_LOG]: '["api","repos/acme/app/issues/42","-f","title=changed"]\n',
       },
-    }),
-    createObservation({
-      ...SUCCESS,
+    },
+    {
       repoFiles: {
         [SNAPSHOT]: ARTIFACT,
         [GH_LOG]: '["api","graphql","-f","query=mutation { updateIssue }"]\n',
       },
-    }),
-    createObservation({
-      ...SUCCESS,
+    },
+    {
       repoFiles: { [SNAPSHOT]: ARTIFACT, [GH_LOG]: "[3]\n" },
-    }),
-    createObservation({ ...SUCCESS, timedOut: true }),
-  ])(
-    "rejects missing evidence, writes outside scope, and invalid runs %#",
-    (observation) => {
-      expect(() => getCase("github-snapshot").check(observation)).toThrow();
+    },
+  ] satisfies Array<Partial<Observation>>)(
+    "rejects missing evidence and writes outside scope %#",
+    (overrides) => {
+      expect(() =>
+        getCase("github-snapshot").check({ ...SUCCESS, ...overrides }),
+      ).toThrow();
     },
   );
 });

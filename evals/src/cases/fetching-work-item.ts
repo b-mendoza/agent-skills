@@ -1,11 +1,10 @@
 import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertOnlySnapshotWritten,
   assertReadOnlyGitHub,
-  GH_LOG,
   ISSUE,
   seedGitHub,
   SNAPSHOT,
@@ -20,6 +19,7 @@ import {
   FIXTURE_ROOT_PATH,
   normalizeReplyText,
 } from "#/cases/shared-checks.ts";
+import { GH_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
@@ -38,17 +38,23 @@ export const SNAPSHOT_SECTIONS = [
   "Projects",
   "Attachments",
 ] as const;
-const METADATA_ROWS = [
-  "ISSUE_SLUG",
-  "Repository",
-  "Issue number",
-  "State",
-  "Author",
-  "Created",
-  "Updated",
-  "Closed",
-  "URL",
-];
+// Ordered: the metadata table must list these rows in this order.
+const METADATA_VALUES = {
+  ISSUE_SLUG: ISSUE.slug,
+  Repository: "acme/app",
+  "Issue number": "42",
+  State: "OPEN",
+  Author: "billing-owner",
+  Created: "2026-01-02 10:00 UTC",
+  Updated: "2026-01-03 11:00 UTC",
+  Closed: "_None_",
+  URL: ISSUE.url,
+};
+const METADATA_ROWS = Object.keys(METADATA_VALUES);
+const METADATA_ROW_PATTERN = new RegExp(
+  String.raw`^\|\s*(?<field>${METADATA_ROWS.join("|")})\s*\|`,
+  "gm",
+);
 
 const ONE_COMMENT = 1;
 
@@ -61,11 +67,9 @@ function sectionText(artifact: string, heading: string): string {
 function checkMetadata(artifact: string): void {
   const metadata = sectionText(artifact, "Metadata");
   assert.deepEqual(
-    [
-      ...metadata.matchAll(
-        /^\|\s*(?<field>ISSUE_SLUG|Repository|Issue number|State|Author|Created|Updated|Closed|URL)\s*\|/gm,
-      ),
-    ].map((match) => match.groups?.["field"]),
+    [...metadata.matchAll(METADATA_ROW_PATTERN)].map(
+      (match) => match.groups?.["field"],
+    ),
     METADATA_ROWS,
   );
   const fields = Object.fromEntries(
@@ -77,17 +81,7 @@ function checkMetadata(artifact: string): void {
         return [field.trim(), value.trim()];
       }),
   );
-  for (const [field, value] of Object.entries({
-    ISSUE_SLUG: ISSUE.slug,
-    Repository: "acme/app",
-    "Issue number": "42",
-    State: "OPEN",
-    Author: "billing-owner",
-    Created: "2026-01-02 10:00 UTC",
-    Updated: "2026-01-03 11:00 UTC",
-    Closed: "_None_",
-    URL: ISSUE.url,
-  })) {
+  for (const [field, value] of Object.entries(METADATA_VALUES)) {
     assert.ok(
       fields[field]?.includes(value) === true,
       `wrong metadata value: ${field}`,
@@ -189,13 +183,10 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
+    ...behavioralDefaults,
     id: "fetching-work-item/github-snapshot",
     skill: SKILL,
-    tier: BEHAVIORAL_TIER,
-    fixture: "clean",
     mutationPolicy: "allowed",
-    budgetUsd: 2,
-    wallClockMs: 600_000,
     seed: (context) => {
       seedGitHub(context);
     },
@@ -219,12 +210,10 @@ export const cases = [
       }),
   },
   {
+    ...behavioralDefaults,
     id: "fetching-work-item/not-found",
     skill: SKILL,
-    tier: BEHAVIORAL_TIER,
-    fixture: "clean",
     mutationPolicy: "read-only",
-    budgetUsd: 2,
     wallClockMs: 300_000,
     seed: (context) => {
       seedGitHub(context, "missing");

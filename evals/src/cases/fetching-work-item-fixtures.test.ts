@@ -3,14 +3,14 @@ import { join } from "node:path";
 
 import { expect, test } from "vitest";
 
+import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import {
   assertOnlySnapshotWritten,
   assertReadOnlyGitHub,
-  GH_LOG,
   seedGitHub,
   SNAPSHOT,
 } from "#/cases/fetching-work-item-fixtures.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
+import { GH_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 const observation = createObservation({
@@ -18,33 +18,17 @@ const observation = createObservation({
   repoFiles: { ".git/eval-fixture-root": "/fixture\n/canonical/fixture" },
 });
 
-test.each([
-  `/outside/${SNAPSHOT}`,
-  `../outside/${SNAPSHOT}`,
-  `/fixture-other/${SNAPSHOT}`,
-])("fetching rejects foreign-root same-suffix write %s", (path) => {
-  expect(() => {
-    assertOnlySnapshotWritten({
-      ...observation,
-      toolCalls: [
-        { name: "Write", input: { file_path: SNAPSHOT } },
-        { name: "Edit", input: { file_path: path } },
-      ],
-    });
-  }).toThrow();
-});
-
-test.each([SNAPSHOT, `/fixture/${SNAPSHOT}`, `/canonical/fixture/${SNAPSHOT}`])(
-  "fetching accepts fixture artifact %s",
-  (path) => {
-    expect(() => {
-      assertOnlySnapshotWritten({
-        ...observation,
-        toolCalls: [{ name: "Write", input: { file_path: path } }],
-      });
-    }).not.toThrow();
+testArtifactWriteMatrix({
+  label: "fetching",
+  artifact: SNAPSHOT,
+  check: (candidate) => {
+    assertOnlySnapshotWritten(candidate);
   },
-);
+  valid: () => ({
+    ...observation,
+    toolCalls: [{ name: "Write", input: { file_path: SNAPSHOT } }],
+  }),
+});
 
 test.each([
   ["api", "graphql", "--input", "-"],
