@@ -1,47 +1,22 @@
 # State Machine — validate-implementation-plan
 
-Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals. Normative status and report wording lives in [`references/audit-protocol.md`](./references/audit-protocol.md).
+Finite-state execution model for this skill and the sole source of truth for states, transitions, guards, retry budgets, and terminals. Status meanings, trust rules, and report wording live in [`references/audit-protocol.md`](./references/audit-protocol.md).
 
-## States
+## Actions
 
-| State                  | Kind     | Role                                                                    |
-| ---------------------- | -------- | ----------------------------------------------------------------------- |
-| `LoadContracts`        | active   | Load trust-boundary and audit-protocol                                  |
-| `NormalizeInputs`      | active   | Confirm `PLAN_PATH`; derive `SNAPSHOT_PATH` / `OUTPUT_PATH`             |
-| `AuthorizeArtifacts`   | active   | Apply artifact create/overwrite policy                                  |
-| `AskArtifact`          | active   | Ask overwrite approval or alternate path                                |
-| `EstablishOrigin`      | active   | Confirm `ORIGIN_CONTEXT` adequacy                                       |
-| `AskOrigin`            | active   | One baseline question; summarize approved answer                        |
-| `ClassifyContext`      | active   | Classify `SOURCE_CONTEXT_PATHS`; reject project-specific external proof |
-| `DispatchSnapshot`     | active   | Dispatch `plan-snapshotter`                                             |
-| `RetrySnapshot`        | active   | Branch-local retry (≤3)                                                 |
-| `DispatchRequirements` | active   | Dispatch `requirements-extractor`                                       |
-| `RetryRequirements`    | active   | Branch-local retry (≤3)                                                 |
-| `GateEvidence`         | active   | Decide whether local technical evidence paths exist                     |
-| `DispatchEvidence`     | active   | Dispatch `technical-researcher`                                         |
-| `RetryEvidence`        | active   | Optional evidence retry (≤3)                                            |
-| `RecordEvidenceGap`    | active   | Record evidence gap when optional branch unrecovered                    |
-| `DispatchAuditors`     | active   | Dispatch requirements/yagni/assumptions discovery (parallel)            |
-| `RetryAuditor`         | active   | Re-dispatch **only** the failed auditor branch (≤3)                     |
-| `GateUnresolved`       | active   | Check for decision-relevant unresolved assumptions                      |
-| `AskAssumptions`       | active   | Ask proposed concise questions (orchestrator-owned)                     |
-| `ResolveAssumptions`   | active   | Re-dispatch `assumptions-auditor` resolution mode                       |
-| `RetryResolve`         | active   | Resolution-branch retry (≤3)                                            |
-| `GateOpenQuestions`    | active   | Block if decision-relevant open questions remain                        |
-| `DispatchAnnotator`    | active   | Dispatch `plan-annotator`                                               |
-| `RetryReport`          | active   | Report-branch retry (≤3)                                                |
-| `MapFinalStatus`       | active   | Map structured results to final `AUDIT:*`                               |
-| `TerminalPass`         | terminal | `AUDIT: PASS` internally; compact prose reply                                         |
-| `TerminalFail`         | terminal | `AUDIT: FAIL` internally; compact prose reply                                         |
-| `TerminalBlocked`      | terminal | `AUDIT: BLOCKED` internally; compact prose reply                                      |
-| `TerminalError`        | terminal | `AUDIT: ERROR` internally; compact prose reply                                        |
+State names say which subagent each `Dispatch*` state runs. Non-obvious actions:
+
+- `NormalizeInputs` confirms `PLAN_PATH` and derives `SNAPSHOT_PATH` / `OUTPUT_PATH`; `AskArtifact` asks for overwrite approval or an alternate path.
+- `AskOrigin` asks one baseline question and summarizes the approved answer; `ClassifyContext` classifies `SOURCE_CONTEXT_PATHS` and rejects project-specific external proof.
+- `DispatchAuditors` dispatches `requirements-auditor`, `yagni-auditor`, and `assumptions-auditor` discovery in parallel; `RetryAuditor` re-dispatches **only** the failed auditor branch.
+- `AskAssumptions` is orchestrator-owned: ask the auditor's proposed concise questions. `ResolveAssumptions` re-dispatches `assumptions-auditor` in resolution mode.
 
 ## Transitions
 
 | From                   | To                     | Guard / event                                                             |
 | ---------------------- | ---------------------- | ------------------------------------------------------------------------- |
 | `[*]`                  | `LoadContracts`        | run start                                                                 |
-| `LoadContracts`        | `NormalizeInputs`      | trust-boundary and audit-protocol loaded                                  |
+| `LoadContracts`        | `NormalizeInputs`      | audit-protocol (including trust boundary) loaded                          |
 | `NormalizeInputs`      | `TerminalBlocked`      | `PLAN_PATH` missing or unreadable                                         |
 | `NormalizeInputs`      | `AuthorizeArtifacts`   | `PLAN_PATH` ok; raw read limited to `plan-snapshotter`                    |
 | `AuthorizeArtifacts`   | `AskArtifact`          | snapshot or report path exists without overwrite approval                 |
