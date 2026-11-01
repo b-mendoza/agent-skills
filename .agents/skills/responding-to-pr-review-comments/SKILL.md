@@ -31,7 +31,7 @@ Allowed `POSTING_MODE` values are only `draft-only` and `post-after-confirmation
 
 ## State Machine Overview
 
-Execution is a finite-state machine. Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./state-machine.md). Status shapes: [`references/status-contracts.md`](./references/status-contracts.md).
+Execution is a finite-state machine. [`state-machine.md`](./state-machine.md) is the only normative transition source; this overview is non-normative. Status shapes: [`references/status-contracts.md`](./references/status-contracts.md).
 
 | Phase            | Owner                      | Gate                                                                               |
 | ---------------- | -------------------------- | ---------------------------------------------------------------------------------- |
@@ -62,11 +62,10 @@ Prefer the runtime subagent mechanism; otherwise run the selected file inline wi
 | Need                       | Load                                                                             |
 | -------------------------- | -------------------------------------------------------------------------------- |
 | Routing, state, boundaries | This `SKILL.md`                                                                  |
-| States / transitions       | [`state-machine.md`](./state-machine.md), [`flow-diagram.md`](./flow-diagram.md) |
+| States / transitions       | [`state-machine.md`](./state-machine.md)                                         |
 | Status schemas / terminals | [`references/status-contracts.md`](./references/status-contracts.md)             |
 | Report shape               | [`assets/report-template.md`](./assets/report-template.md)                       |
 | GitHub/API / source policy | [`references/external-sources.md`](./references/external-sources.md)             |
-| Edge-case examples         | [`references/status-examples.md`](./references/status-examples.md)               |
 | Optional `gh` helpers      | `./scripts/collect-review-threads.sh`, `./scripts/post-review-reply.sh`          |
 | Phase execution            | Selected subagent only (loads status-contracts at dispatch)                      |
 
