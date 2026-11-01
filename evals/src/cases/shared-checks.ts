@@ -3,6 +3,7 @@ import { realpathSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, normalize, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
+import { BASELINE_REFLOG, HEAD_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import {
@@ -129,11 +130,30 @@ export function assertReadOnlyGraphqlArguments(
   return true;
 }
 
+/** Decodes the fake `gh` JSONL log: one JSON array of string arguments per line. */
+export function parseGitHubLog(log: string): string[][] {
+  return log
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const parsed: unknown = JSON.parse(line);
+      assert.ok(
+        Array.isArray(parsed) &&
+          parsed.every((argument: unknown) => typeof argument === "string"),
+        "invalid fake gh log",
+      );
+      return parsed;
+    });
+}
+
 export const FIXTURE_ROOT_PATH = ".git/eval-fixture-root";
 
-export function seedFixtureRoot(repoPath: string): void {
+export function seedFixtureRoot(
+  repoPath: string,
+  rootPath: string = FIXTURE_ROOT_PATH,
+): void {
   writeFileSync(
-    join(repoPath, FIXTURE_ROOT_PATH),
+    join(repoPath, rootPath),
     `${repoPath}\n${realpathSync(repoPath)}`,
   );
 }
@@ -155,6 +175,40 @@ export function fixtureRelativePath(
       (relativePath) =>
         !isAbsolute(relativePath) && !relativePath.split("/").includes(".."),
     );
+}
+
+const NODE_VALUE_OPTIONS = new Set([
+  "--require",
+  "-r",
+  "--import",
+  "--loader",
+  "--experimental-loader",
+  "--test-reporter",
+  "--test-reporter-destination",
+  "--conditions",
+  "-C",
+  "--env-file",
+  "--test-name-pattern",
+  "--test-concurrency",
+]);
+
+function consumeNodeOption(argument: string, args: string[]): boolean {
+  if (!/^--?\w/.test(argument)) return false;
+  if (NODE_VALUE_OPTIONS.has(argument)) args.shift();
+  return true;
+}
+
+/** Scans node options before the script or first non-option, skipping option values, for `--test`. */
+export function hasNodeTestOption(args: string[]): boolean {
+  for (
+    let argument = args.shift();
+    argument !== undefined;
+    argument = args.shift()
+  ) {
+    if (argument === "--test") return true;
+    if (!consumeNodeOption(argument, args)) return false;
+  }
+  return false;
 }
 
 const NO_TOOL_CALLS = 0;
@@ -211,11 +265,6 @@ export function assertRunHappened(observation: Observation): void {
   );
 }
 
-/** Routing runs must be valid even when the budget stops them. */
-export function assertRoutingRunEndedEarly(observation: Observation): void {
-  assertRunHappened(observation);
-}
-
 /** Names the tools a run actually called, for failure messages. */
 export function formatToolNames(toolCalls: readonly ToolCall[]): string {
   const names = toolCalls.map((toolCall) => toolCall.name).join(", ");
@@ -226,7 +275,7 @@ export function checkPositiveRouting(
   observation: Observation,
   skill: string,
 ): string {
-  assertRoutingRunEndedEarly(observation);
+  assertRunHappened(observation);
   assert.ok(
     skillInvocations(observation, skill).length > NO_SKILL_INVOCATIONS,
     `skill never triggered; tools called: ${formatToolNames(observation.toolCalls)}`,
@@ -239,7 +288,7 @@ export function checkNegativeRouting(
   skill: string,
   failureMessage = `skill ${skill} unexpectedly triggered`,
 ): string {
-  assertRoutingRunEndedEarly(observation);
+  assertRunHappened(observation);
   assert.equal(
     skillInvocations(observation, skill).length,
     NO_SKILL_INVOCATIONS,
@@ -259,10 +308,16 @@ export function assertNoMutation(observation: Observation): void {
   );
 }
 
-/** Native per-attempt grading for read-only behavioral cases. */
-export function checkMutationScope(observation: Observation): string {
-  assertNoMutation(observation);
-  return "1 behavioral run(s) left no trace";
+/** Hides the status delta and the allowed calls so mutation checks see only residual changes. */
+export function withoutAllowedChanges(
+  observation: Observation,
+  isAllowedCall: (call: ToolCall) => boolean,
+): Observation {
+  return {
+    ...observation,
+    gitStatusAfter: observation.gitStatusBefore,
+    toolCalls: observation.toolCalls.filter((call) => !isAllowedCall(call)),
+  };
 }
 
 /** Lexical command matches only; this does not prove successful execution. */
@@ -287,6 +342,13 @@ function capturedFile(observation: Observation, path: string): string | null {
   );
   const content = files[path];
   assert.ok(content !== undefined, `file was not captured: ${path}`);
+  return content;
+}
+
+/** Requires a captured regular file, including an empty file, and returns its text. */
+export function capturedText(observation: Observation, path: string): string {
+  const content = capturedFile(observation, path);
+  assert.ok(content !== null, `file is absent: ${path}`);
   return content;
 }
 
@@ -326,9 +388,44 @@ export function assertFileExists(observation: Observation, path: string): void {
   );
 }
 
+/** Requires each planted file to be captured with its seeded content. */
+export function assertFilesUnchanged(
+  observation: Observation,
+  expectedFiles: Readonly<Record<string, string>>,
+  label: string,
+): void {
+  for (const [path, content] of Object.entries(expectedFiles)) {
+    assertFileExists(observation, path);
+    assert.equal(observation.repoFiles?.[path], content, `${label}: ${path}`);
+  }
+}
+
 /** Requires a captured missing path, not an unrequested path. */
 export function assertFileAbsent(observation: Observation, path: string): void {
   assert.equal(capturedFile(observation, path), null, `file exists: ${path}`);
+}
+
+/** Requires a nonempty seeded HEAD reflog that the run left byte-identical. */
+export function assertHeadUnchanged(
+  observation: Observation,
+  message: string,
+): void {
+  assertFileMatches(observation, HEAD_LOG, /\S/);
+  assertFileMatches(observation, BASELINE_REFLOG, /\S/);
+  assert.equal(
+    capturedText(observation, HEAD_LOG),
+    capturedText(observation, BASELINE_REFLOG),
+    message,
+  );
+}
+
+/** Requires HEAD's reflog to hold only the fixture's initial commit. */
+export function assertOnlyInitialCommit(observation: Observation): void {
+  assertFileMatches(
+    observation,
+    HEAD_LOG,
+    /^[^\n]+commit \(initial\): initial commit\n$/,
+  );
 }
 
 export function assertFileMatches(
@@ -336,7 +433,9 @@ export function assertFileMatches(
   path: string,
   pattern: RegExp,
 ): void {
-  const content = capturedFile(observation, path);
-  assert.ok(content !== null, `file is absent: ${path}`);
-  assert.match(content, pattern, `file content did not match: ${path}`);
+  assert.match(
+    capturedText(observation, path),
+    pattern,
+    `file content did not match: ${path}`,
+  );
 }
