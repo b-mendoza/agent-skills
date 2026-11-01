@@ -3,7 +3,7 @@ import { promisify } from "node:util";
 
 import type { SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import { Schema } from "effect";
+import { Predicate, Schema } from "effect";
 
 import {
   gitStatusSchema,
@@ -45,7 +45,7 @@ export type Observation = {
   -readonly [Key in keyof typeof observationSchema.Type]: (typeof observationSchema.Type)[Key];
 };
 /** The fields a result message settles, before run-level facts are attached. */
-export type ResultVerdict = Pick<
+type ResultVerdict = Pick<
   Observation,
   "subtype" | "isError" | "finalText" | "costUsd"
 >;
@@ -120,10 +120,6 @@ const decodeFailure = Schema.decodeUnknownSync(
   Schema.Struct({ errors: Schema.Array(Schema.String) }),
 );
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function assistantToolCalls(message: unknown): ToolCall[] {
   const calls: ToolCall[] = [];
   for (const block of decodeAssistant(message).message.content) {
@@ -131,7 +127,7 @@ function assistantToolCalls(message: unknown): ToolCall[] {
     const tool = decodeTool(block);
     calls.push({
       ...tool,
-      input: isRecord(tool.input) ? { ...tool.input } : {},
+      input: Predicate.isObject(tool.input) ? { ...tool.input } : {},
     });
   }
   return calls;
@@ -194,7 +190,7 @@ function normalizeStreamMessage(
   message: unknown,
   observedToolCalls: ToolCall[],
 ): ResultVerdict | null {
-  if (!isRecord(message)) return null;
+  if (!Predicate.isObject(message)) return null;
   switch (message["type"]) {
     case "assistant":
       observedToolCalls.push(...assistantToolCalls(message));
@@ -215,7 +211,7 @@ function failureText(failure: unknown): string {
 }
 
 function backgroundTasksLive(message: unknown, previous: boolean): boolean {
-  if (!isRecord(message)) return previous;
+  if (!Predicate.isObject(message)) return previous;
   if (message["type"] !== "system") return previous;
   if (message["subtype"] !== "background_tasks_changed") return previous;
   // The SDK's level signal replaces membership; task edge ordering is unspecified.
