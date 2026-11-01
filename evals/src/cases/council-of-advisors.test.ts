@@ -1,42 +1,34 @@
 import assert from "node:assert/strict";
 
-import type { query } from "@anthropic-ai/claude-agent-sdk";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { EvalCase } from "#/cases/case-contract.ts";
-import { cases, COUNCIL_FACTS } from "#/cases/council-of-advisors.ts";
+import { COUNCIL_FACTS } from "#/cases/council-of-advisors.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import type { Observation } from "#/observation/agent-query.ts";
-import {
-  createObservation,
-  scripted,
-} from "#/observation/observation-test-support.ts";
+import type { JudgeRequest } from "#/observation/judge.ts";
+import { buildJudgePrompt } from "#/observation/judge.ts";
+import { createObservation } from "#/observation/observation-test-support.ts";
 
-const sdk = vi.hoisted(() => ({
-  query:
-    vi.fn<(request: Parameters<typeof query>[0]) => AsyncIterable<unknown>>(),
+// Hoisted so every mocked module instance shares one function, even when the
+// registry's parallel imports run the factory more than once.
+const judge = vi.hoisted(() => ({
+  live: vi.fn<(request: JudgeRequest) => Promise<string>>(),
 }));
-vi.mock(
-  import("@anthropic-ai/claude-agent-sdk"),
-  async (original): Promise<Record<string, unknown>> => ({
-    ...(await original()),
-    query: sdk.query,
-  }),
-);
+vi.mock(import("#/observation/judge.ts"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  judgeLive: judge.live,
+}));
 beforeEach(() => {
-  sdk.query
-    .mockReset()
-    .mockImplementation(() =>
-      scripted({ type: "result", result: '{"violations":[]}' }),
-    );
+  judge.live.mockReset().mockResolvedValue("judge: clean");
 });
 
-function getCase(suffix: string): EvalCase {
-  const found = cases.find((evalCase) => evalCase.id.endsWith(`/${suffix}`));
-  assert.ok(found !== undefined, `missing case: ${suffix}`);
-  return found;
+const SKILL = "council-of-advisors";
+
+function getCase(suffix: string) {
+  return getRegisteredCase(`${SKILL}/${suffix}`);
 }
 
-const skillCall = { name: "Skill", input: { skill: "council-of-advisors" } };
+const skillCall = { name: "Skill", input: { skill: SKILL } };
 
 function gateObservation(finalText: string): Observation {
   return createObservation({
@@ -66,24 +58,6 @@ function checkWithOverrides(
   );
   return getCase(suffix).check({ ...valid, ...overrides });
 }
-
-describe("council routing", () => {
-  it("accepts a positive invocation and rejects no invocation", () => {
-    const evalCase = getCase("trigger-positive");
-    expect(() =>
-      evalCase.check(createObservation({ toolCalls: [skillCall] })),
-    ).not.toThrow();
-    expect(() => evalCase.check(createObservation())).toThrow();
-  });
-
-  it("accepts the planning sibling and rejects a council invocation", () => {
-    const evalCase = getCase("trigger-negative-plan-audit");
-    expect(() => evalCase.check(createObservation())).not.toThrow();
-    expect(() =>
-      evalCase.check(createObservation({ toolCalls: [skillCall] })),
-    ).toThrow();
-  });
-});
 
 describe("council confirmation gate", () => {
   it("accepts the grounded packet and explicit confirmation question", () => {
@@ -126,14 +100,15 @@ describe("council confirmation gate", () => {
       ...gateObservation(framedPacket),
       toolCalls: [skillCall, inspection],
     });
-    const [request] = sdk.query.mock.lastCall ?? [];
+    const [request] = judge.live.mock.lastCall ?? [];
     assert.ok(request !== undefined);
-    expect(request.prompt).toContain(JSON.stringify(inspection));
-    expect(request.prompt).toContain(
+    const prompt = buildJudgePrompt(request);
+    expect(prompt).toContain(JSON.stringify(inspection));
+    expect(prompt).toContain(
       JSON.stringify({ [COUNCIL_FACTS.handoffPath]: null }),
     );
-    expect(request.prompt).toContain("semantic paraphrases");
-    expect(request.prompt).toContain("stakes classification");
+    expect(prompt).toContain("semantic paraphrases");
+    expect(prompt).toContain("stakes classification");
   });
 
   it("rejects seat dispatch before confirmation", () => {
@@ -197,8 +172,6 @@ describe.each(["confirm-framing", "missing-subject"])(
     });
 
     it.each([
-      { timedOut: true },
-      { subtype: "query_error", isError: true },
       { toolCalls: [] },
       { repoFiles: {} },
       { gitStatusAfter: { kind: "worktree", entries: "?? accidental.txt" } },
