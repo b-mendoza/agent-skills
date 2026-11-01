@@ -113,6 +113,21 @@ describe("minimizeReply", () => {
     },
   );
 
+  test("throws if the final reply no longer yields the target outcome", () => {
+    let firstAttempt = true;
+    const check = () => {
+      const message = firstAttempt ? "original failure" : "changed failure";
+      firstAttempt = false;
+      throw new Error(message);
+    };
+    expect(() =>
+      minimizeReply({
+        check,
+        observation: createObservation({ finalText: "One sentence." }),
+      }),
+    ).toThrow(/minimized reply does not preserve the target outcomes/);
+  });
+
   test("keeps the branch a passing reply took, not just the pass", () => {
     const branchingCheck = (observation: Observation) =>
       observation.finalText.includes("Which option?") ? "asked" : "explained";

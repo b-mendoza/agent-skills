@@ -82,6 +82,9 @@ export function minimizeReply(request: MinimizeRequest): MinimizeResult {
     .map((text, line) => ({ line, text }));
   const sentences = ddmin(lines, keeps).flatMap(splitSentences);
   const minimized = ddmin(sentences, keeps);
+  if (!keeps(minimized)) {
+    throw new Error("minimized reply does not preserve the target outcomes");
+  }
   const finalText = render(minimized);
   return {
     finalText,
