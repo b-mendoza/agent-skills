@@ -21,7 +21,7 @@ Phases 1-6 use this cycle:
 
 1. Announce the phase banner.
 2. Validate preconditions by dispatching `artifact-validator` when the phase has a precondition.
-3. Invoke the downstream skill by name through the host runtime. The active playbook's Phase Skill Map names the skill for the current phase. Load `./downstream-skills.md` first only when the phase-to-skill contract is needed.
+3. Invoke the downstream skill by name through the host runtime. The active playbook's Phase Skill Map names the skill for the current phase.
 4. Validate postconditions by dispatching `artifact-validator`.
 5. Update progress by dispatching `progress-tracker`.
 6. Run the gate check: advance automatically, ask the user, or enter a targeted re-plan / retry loop.

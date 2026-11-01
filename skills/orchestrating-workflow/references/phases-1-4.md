@@ -1,6 +1,6 @@
 # Phases 1-4 - Linear Pipeline
 
-> Read this file when entering Phase 1, 2, 3, or 4. For exact artifact checks, load `./data-contracts.md` and dispatch `artifact-validator`; do not inspect artifacts inline in the orchestrator. For platform-specific field, endpoint, capability, or setup questions, fetch one URL from the active playbook's External-Source Routing section via `./external-sources.md`. Load `./downstream-skills.md` only when you need the phase-to-skill dependency map or dispatch contract details.
+> Read this file when entering Phase 1, 2, 3, or 4. For exact artifact checks, load `./data-contracts.md` and dispatch `artifact-validator`; do not inspect artifacts inline in the orchestrator. For platform-specific field, endpoint, capability, or setup questions, fetch one URL from the active playbook's External-Source Routing section via `./external-sources.md`.
 
 The active playbook's Phase Skill Map names the runtime skill for each phase. After Phase 4 completes and the user selects a task, read `./task-loop.md`.
 

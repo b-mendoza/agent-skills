@@ -57,7 +57,6 @@ This is the primary navigation surface. Load only the file that answers the curr
 | Phases 5-7 per-task loop                                                                                                    | [`./references/task-loop.md`](./references/task-loop.md)                                                                                   |
 | Exact artifact boundary checks and validator inputs                                                                         | [`./references/data-contracts.md`](./references/data-contracts.md)                                                                         |
 | Error recovery, blockers, retry budgets                                                                                     | [`./references/error-handling.md`](./references/error-handling.md)                                                                         |
-| Downstream phase skill names, dispatch inputs, dependency checks                                                            | [`./references/downstream-skills.md`](./references/downstream-skills.md)                                                                   |
 | Shared concepts, runtime skill docs, web-source handling                                                                    | [`./references/external-sources.md`](./references/external-sources.md), then fetch one URL at a time from the per-playbook routing section |
 | Utility work                                                                                                                | The single subagent file from [Subagent Registry](#subagent-registry)                                                                      |
 
@@ -79,7 +78,7 @@ Use this registry as a lookup table. Read one subagent definition only when you 
 
 ## Downstream Skill Dependencies
 
-Each numbered phase is owned by a named runtime skill listed in the active playbook's Phase Skill Map. Load [`./references/downstream-skills.md`](./references/downstream-skills.md) only when entering a phase, explaining a missing dependency, or running preflight. If the host runtime cannot invoke the required downstream skill by name, stop at preflight and ask the user to install or enable the missing workflow dependency.
+Each numbered phase is owned by a named runtime skill listed in the active playbook's Phase Skill Map, which also names its dispatch inputs and what to retain. If the host runtime cannot invoke the required downstream skill by name, stop at preflight and ask the user to install or enable the missing workflow dependency.
 
 ## Output Contract
 
@@ -108,7 +107,7 @@ Category A1 artifacts are preserved for resumability and are not committed by th
 3. Dispatch `progress-tracker` with that value under the parameter name `TICKET_KEY` and `ACTION=read`.
 4. Decide the resume point from the compact progress summary.
 5. Dispatch `preflight-checker` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, and `PHASES=<remaining phase range>`. The active playbook's `Preflight Transport Check` and `Phase Skill Map` rows define what the manifest expects.
-6. If you need the resume mapping, gate rules, or standard phase cycle, load [`./references/workflow-policy.md`](./references/workflow-policy.md). If you need the phase-to-skill map, load [`./references/downstream-skills.md`](./references/downstream-skills.md).
+6. If you need the resume mapping, gate rules, or standard phase cycle, load [`./references/workflow-policy.md`](./references/workflow-policy.md).
 7. Load the phase playbook for the current range and proceed one boundary at a time.
 
 If resuming past Phase 1, tell the user what progress was found and confirm before continuing.

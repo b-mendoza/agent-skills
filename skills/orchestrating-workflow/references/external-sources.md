@@ -6,7 +6,7 @@ This file holds the shared loading rules, common concept references, and the wra
 
 ## Loading Rules
 
-- Use bundled references (`./workflow-policy.md`, `./phases-1-4.md`, `./task-loop.md`, `./data-contracts.md`, `./error-handling.md`, `./downstream-skills.md`, and the active playbook) for anything workflow-specific.
+- Use bundled references (`./workflow-policy.md`, `./phases-1-4.md`, `./task-loop.md`, `./data-contracts.md`, `./error-handling.md`, and the active playbook) for anything workflow-specific.
 - Fetch an external URL only when (a) the bundled contract does not answer the question, and (b) the answer would otherwise force a long inline instruction.
 - Fetch one URL at a time. Summarize, then move on.
 - If a web source conflicts with a bundled contract, follow the bundled contract and surface the discrepancy only when it affects the user's decision.
