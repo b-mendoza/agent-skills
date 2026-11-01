@@ -26,7 +26,7 @@ A subagent reads PLAYBOOK_PATH first. It reads EXTERNAL_SOURCES_PATH only when t
 | 3     | `test-strategist`     | `TICKET_KEY`, `TASK_NUMBER`, `BRIEF_FILE`, `PLAN_FILE`                   | `DECISIONS_FILE`            | `TEST_SPEC`, spec path, framework           |
 | 4     | `refactoring-advisor` | `TICKET_KEY`, `TASK_NUMBER`, `BRIEF_FILE`, `PLAN_FILE`, `TEST_SPEC_FILE` | `DECISIONS_FILE`            | `REFACTORING`, plan path, verdict           |
 
-Before dispatch, validate every required input artifact exists and carries the same `<KEY>` and `TASK_NUMBER`. After a `PASS`, validate the expected output path, owner, identity, and template headings before continuing.
+Before dispatch, validate every required input artifact exists and carries the same `<KEY>` and `TASK_NUMBER`; if one is missing or mismatched, stop as `BLOCKED` and name it. After a `PASS`, validate the expected output path, owner, identity, and template headings before continuing.
 
 ## Stage Outcomes
 
