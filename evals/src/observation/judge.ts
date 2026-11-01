@@ -10,14 +10,7 @@ export interface RubricItem {
   readonly requirement: string;
 }
 
-/** A violation whose quote was verified to appear verbatim in the artifact. */
-export interface CitedViolation {
-  readonly itemId: string;
-  readonly quote: string;
-  readonly reason: string;
-}
-
-export interface JudgeOutcome {
+interface JudgeOutcome {
   readonly citedViolations: readonly CitedViolation[];
   /** Complaints whose quote did not appear verbatim; recorded, never failing. */
   readonly uncitedComplaints: readonly string[];
@@ -30,11 +23,6 @@ export interface JudgeRequest {
   readonly knownFacts: string;
   readonly rubric: readonly RubricItem[];
 }
-
-/** Sends a prompt to a model and resolves with its final text. */
-export type JudgeQuery = (prompt: string, model: string) => Promise<string>;
-
-export type Judge = (request: JudgeRequest) => Promise<JudgeOutcome>;
 
 // Grading is cheap classification over a bounded artifact; the small model is
 // deliberate and independent of EVAL_MODEL so the judge never grades with the
@@ -51,6 +39,8 @@ const violationCandidateSchema = Schema.Struct({
   quote: Schema.String,
   reason: Schema.String,
 });
+/** A violation whose quote was verified to appear verbatim in the artifact. */
+type CitedViolation = typeof violationCandidateSchema.Type;
 const judgeReplySchema = Schema.Struct({
   violations: Schema.Array(violationCandidateSchema),
 });
@@ -168,22 +158,11 @@ export function parseJudgeResponse(
   return { citedViolations, uncitedComplaints };
 }
 
-export function createJudge(options: {
-  judgeQuery: JudgeQuery;
-  model?: string;
-}): Judge {
-  const model = options.model ?? JUDGE_MODEL;
-  return async (request) => {
-    const responseText = await options.judgeQuery(
-      buildJudgePrompt(request),
-      model,
-    );
-    return parseJudgeResponse(responseText, request);
-  };
-}
-
 /** The judge has its own no-tools query and propagates iterator cleanup errors. */
-export const liveJudgeQuery: JudgeQuery = async (prompt, model) => {
+export async function liveJudgeQuery(
+  prompt: string,
+  model: string,
+): Promise<string> {
   const stream = query({
     prompt,
     options: { model, maxTurns: 1, tools: [], cwd: tmpdir() },
@@ -197,7 +176,7 @@ export const liveJudgeQuery: JudgeQuery = async (prompt, model) => {
     ).result;
   }
   throw new Error("judge query produced no result message");
-};
+}
 
 const QUOTE_PREVIEW_START = 0;
 const QUOTE_PREVIEW_CHARS = 60;
@@ -205,7 +184,10 @@ const NO_UNCITED_COMPLAINTS = 0;
 
 /** Fails only on verified citations; uncited complaints remain nonfailing notes. */
 export async function judgeLive(request: JudgeRequest): Promise<string> {
-  const outcome = await createJudge({ judgeQuery: liveJudgeQuery })(request);
+  const outcome = parseJudgeResponse(
+    await liveJudgeQuery(buildJudgePrompt(request), JUDGE_MODEL),
+    request,
+  );
   const [firstViolation] = outcome.citedViolations;
   if (firstViolation !== undefined) {
     const quotePreview = firstViolation.quote.slice(

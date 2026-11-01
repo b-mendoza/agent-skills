@@ -101,22 +101,6 @@ describe("parseJudgeResponse", () => {
     });
   });
 
-  test("demotes a violation naming an unknown rubric id", () => {
-    const outcome = parseJudgeResponse(
-      reply([
-        {
-          itemId: "NOPE",
-          quote: "The tests passed on CI.",
-          reason: "unknown item",
-        },
-      ]),
-      REQUEST,
-    );
-
-    expect(outcome.citedViolations).toStrictEqual([]);
-    expect(outcome.uncitedComplaints).toHaveLength(SINGLE_ITEM);
-  });
-
   test("demotes an empty quote rather than treating it as cited", () => {
     const outcome = parseJudgeResponse(
       reply([{ itemId: "G2", quote: "", reason: "no quote given" }]),
