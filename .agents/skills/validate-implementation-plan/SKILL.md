@@ -22,18 +22,6 @@ Defaults: `OUTPUT_PATH` sibling `.audit.md`; `SNAPSHOT_PATH` sibling `.audit-inp
 
 Reply with one compact prose paragraph: outcome and reason, report path or not written, sections covered, critical/warning/info finding counts, open-question count, and the next action if needed. No `AUDIT:`, `Status:`, or line-by-line routing envelope. Keep structured subagent handoffs and report-file fields unchanged.
 
-## State Machine Overview
-
-Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./state-machine.md). Status, retry, report sections, and final `AUDIT:*` mapping: [`references/audit-protocol.md`](./references/audit-protocol.md).
-
-| Region                  | Result                                                                                        |
-| ----------------------- | --------------------------------------------------------------------------------------------- |
-| Intake                  | Contracts loaded, paths normalized, artifacts authorized, origin adequate, context classified |
-| Snapshot / Requirements | Sanitized snapshot; numbered requirements                                                     |
-| Evidence                | Optional local claim review or recorded evidence gap                                          |
-| Audit / Resolution      | Traceability, YAGNI, assumptions; optional user Q&A                                           |
-| Report                  | `REPORT: PASS` then orchestrator maps final `AUDIT:*`                                         |
-
 ## Subagent Registry
 
 | Subagent                 | Path                                    | Purpose                                  |
@@ -52,10 +40,8 @@ Read a subagent only when dispatching it. Keep statuses, paths, counts, requirem
 
 | Need                               | Load                                                    |
 | ---------------------------------- | ------------------------------------------------------- |
-| State diagram                      | `./flow-diagram.md`                                     |
 | State-transition table             | `./state-machine.md`                                    |
-| Trust boundary                     | `./references/trust-boundary.md`                        |
-| Status, retry, report, definitions | `./references/audit-protocol.md`                        |
+| Trust, status, retry, report       | `./references/audit-protocol.md`                        |
 | Method background URLs             | `./references/external-sources.md`                      |
 | Report layout example              | `./references/report-example.md` (annotator, on demand) |
 | Specialist details                 | Matching `./subagents/` file at dispatch                |
@@ -64,28 +50,11 @@ External URLs are optional method background only. Project-specific website proo
 
 ## Execution
 
-Advance the state machine. Do not invent alternate routes.
+Advance [`state-machine.md`](./state-machine.md); it owns every route, guard, retry budget, and final `AUDIT:*` mapping. Do not invent alternate routes. Non-normative overview: intake (contracts, paths, artifact authorization, origin, context roles) → snapshot → requirements → optional local evidence → three discovery auditors → optional assumption Q&A → report → final status.
 
-1. `LoadContracts`: load `./flow-diagram.md`, `./state-machine.md`, `./references/trust-boundary.md`, and `./references/audit-protocol.md`.
-2. `NormalizeInputs` → `AuthorizeArtifacts` (ask before overwrite) → `EstablishOrigin` (one baseline question if inadequate) → `ClassifyContext`. Intake inspects path metadata only, never plan contents, excerpts, or previews. Do not use Read, cat, head, sed, or search to read `PLAN_PATH`; only `plan-snapshotter` may open it, after artifact authorization.
-3. `DispatchSnapshot` → `DispatchRequirements` → optional `DispatchEvidence` (or `RecordEvidenceGap` when core audit remains viable).
-4. `DispatchAuditors` (three discovery auditors). On failure, `RetryAuditor` re-dispatches only the failed branch into `DispatchAuditors` (≤3 cycles).
-5. If decision-relevant unresolved assumptions: `AskAssumptions` → `ResolveAssumptions` → `GateOpenQuestions`.
-6. `DispatchAnnotator` until `REPORT: PASS`, then `MapFinalStatus` using `./references/audit-protocol.md`.
-7. Unless the user requested the full report, render one paragraph from the mapped outcome and `REPORT` handoff fields, then end the reply: "<Outcome and one-clause reason>. I wrote <OUTPUT_PATH>, covering <N> sections with <C> critical findings, <W> warnings, <I> informational findings and <Q> open questions. <One next action, if needed>." If the report was not written, say so and use `unknown` for unavailable counts. Keep status/envelope lines out of all public replies.
-
-## Status Labels
-
-| Stage                | Success label                          |
-| -------------------- | -------------------------------------- |
-| Snapshot             | `SNAPSHOT: PASS`                       |
-| Requirements         | `REQUIREMENTS: PASS`                   |
-| Technical evidence   | `EVIDENCE: PASS`                       |
-| Traceability         | `TRACEABILITY: PASS`                   |
-| Scope                | `YAGNI: PASS`                          |
-| Assumptions          | `ASSUMPTIONS: PASS`                    |
-| Report assembly      | `REPORT: PASS`                         |
-| Final (internal)     | `AUDIT: PASS / FAIL / BLOCKED / ERROR` |
+1. `LoadContracts`: load `./state-machine.md` and `./references/audit-protocol.md`.
+2. Intake inspects path metadata only, never plan contents, excerpts, or previews. Do not use Read, cat, head, sed, or search to read `PLAN_PATH`; only `plan-snapshotter` may open it, after artifact authorization.
+3. Unless the user requested the full report, render one paragraph from the mapped outcome and `REPORT` handoff fields, then end the reply: "<Outcome and one-clause reason>. I wrote <OUTPUT_PATH>, covering <N> sections with <C> critical findings, <W> warnings, <I> informational findings and <Q> open questions. <One next action, if needed>." If the report was not written, say so and use `unknown` for unavailable counts. Keep status/envelope lines out of all public replies.
 
 ## Validation
 
@@ -93,17 +62,3 @@ Advance the state machine. Do not invent alternate routes.
 - Registry and progressive-disclosure paths exist; frontmatter `name` matches directory and each subagent basename.
 - Report uses the nine required sections from `./references/audit-protocol.md`.
 - Source plan unchanged; only snapshot and report artifacts written.
-
-## Example
-
-<example>
-Input: `PLAN_PATH=docs/cache-plan.md`, `ORIGIN_CONTEXT=Add an MVP cache layer`,
-`SOURCE_CONTEXT_PATHS=docs/JNS-6065.md,docs/cache-library-notes.md`
-
-Flow: classify baseline vs technical evidence; snapshot; extract requirements; optional evidence; three auditors; one assumption question; annotator `REPORT: PASS`; map final status.
-
-Result:
-
-The audit found a critical gap. I wrote docs/cache-plan.audit.md from the sanitized snapshot, covering all 9 sections with 1 critical finding, 3 warnings, 7 informational findings, and 0 open questions. The source plan is unchanged.
-
-</example>
