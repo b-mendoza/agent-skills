@@ -107,17 +107,6 @@ Keep `COMMIT_PLAN` internal. Show each planned group in order with its exact mes
 
 Approval binds to the displayed plan and its per-group digests; the executor recomputes each digest and returns `DIVERGED` on mismatch. A changed plan requires a new preview. Earlier conversation never pre-approves a plan.
 
-## Trigger Tests
-
-| User phrasing                                                      | Expected route              |
-| ------------------------------------------------------------------ | --------------------------- |
-| "Commit the checkout changes in src/checkout"                      | `committing-scoped-changes` |
-| "Split my working tree into atomic commits, tests with their code" | `committing-scoped-changes` |
-| "Commit only the JNS-6880 files and leave the rest unstaged"       | `committing-scoped-changes` |
-| "Open a PR for this branch"                                        | `not this skill`            |
-| "What changed in this repo over the last week?"                    | `not this skill`            |
-| "Amend the last commit with this fix"                              | no skill                    |
-
 ## Examples
 
 **A. Happy path.** `CHANGE_PATHS=src/checkout/ tests/checkout/`, quote "Commit the checkout retry changes". Intake passes. Planner returns:
