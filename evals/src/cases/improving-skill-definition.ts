@@ -1,13 +1,10 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 
 import { Predicate } from "effect";
 import { parse as parseYaml } from "yaml";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileAbsent,
   assertFileMatches,
@@ -21,7 +18,9 @@ import {
   normalizeReplyText,
   replyAsksFor,
   seedFixtureRoot,
+  withoutAllowedChanges,
 } from "#/cases/shared-checks.ts";
+import { commitRepoFiles } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
@@ -87,12 +86,11 @@ const SYNTHESIS_VERSION = 1;
 
 function seedPackage({ repoPath }: SeedContext): void {
   seedFixtureRoot(repoPath);
-  mkdirSync(join(repoPath, AUDIT_FACTS.packagePath), { recursive: true });
-  writeFileSync(join(repoPath, AUDIT_FACTS.sourcePath), AUDIT_FACTS.content);
-  execFileSync("git", ["add", AUDIT_FACTS.sourcePath], { cwd: repoPath });
-  execFileSync("git", ["commit", "-qm", "seed incomplete release skill"], {
-    cwd: repoPath,
-  });
+  commitRepoFiles(
+    repoPath,
+    { [AUDIT_FACTS.sourcePath]: AUDIT_FACTS.content },
+    "seed incomplete release skill",
+  );
 }
 
 function auditHandoffDirectory(observation: Observation): string {
@@ -117,17 +115,6 @@ function auditHandoffDirectory(observation: Observation): string {
   return `${HANDOFF_PREFIX}${run}`;
 }
 
-function isExpectedHandoffPath(
-  path: string,
-  handoff: string,
-  observation: Observation,
-): boolean {
-  const relativePath = fixtureRelativePath(observation, path);
-  return EXPECTED_RUN_FILES.some(
-    (file) => relativePath === `${handoff}/${file}`,
-  );
-}
-
 function isHandoffWrite(
   call: ToolCall,
   handoff: string,
@@ -135,9 +122,10 @@ function isHandoffWrite(
 ): boolean {
   if (!["Write", "Edit"].includes(call.name)) return false;
   const path = call.input["file_path"];
-  return (
-    typeof path === "string" &&
-    isExpectedHandoffPath(path, handoff, observation)
+  if (typeof path !== "string") return false;
+  const relativePath = fixtureRelativePath(observation, path);
+  return EXPECTED_RUN_FILES.some(
+    (file) => relativePath === `${handoff}/${file}`,
   );
 }
 
@@ -154,13 +142,11 @@ function assertOnlyHandoffWrites(
     .filter((entry) => entry !== "?? .handoffs/")
     .join("\n");
   assert.equal(remainingEntries, "", "unexpected repository mutation");
-  assertNoMutation({
-    ...observation,
-    gitStatusAfter: gitStatusBefore,
-    toolCalls: observation.toolCalls.filter(
-      (call) => !isHandoffWrite(call, handoff, observation),
+  assertNoMutation(
+    withoutAllowedChanges(observation, (call) =>
+      isHandoffWrite(call, handoff, observation),
     ),
-  });
+  );
 }
 
 function parseSynthesis(text: string): Record<string, unknown> {
@@ -243,11 +229,8 @@ function assertApprovalReply(rawText: string, handoff: string): void {
   assert.match(finalText, /inspected-only/);
 }
 
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
-  fixture: "clean",
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
+const suiteDefaults = {
+  ...behavioralDefaults,
   seed: seedPackage,
   snapshotPaths: [
     FIXTURE_ROOT_PATH,
@@ -280,12 +263,12 @@ export const cases = [
   },
   {
     id: "improving-skill-definition/audit-approval",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     // Seven reports plus synthesis and baseline are required before the first approval stop.
     budgetUsd: 3.0,
     mutationPolicy: "allowed",
     skill: SKILL,
-    snapshotPaths: [...behavioralDefaults.snapshotPaths, HANDOFF_PREFIX],
+    snapshotPaths: [...suiteDefaults.snapshotPaths, HANDOFF_PREFIX],
     intent:
       "The audit preserves evidence and requests approval; intake preapproval cannot repair the missing reference",
     prompt: () =>
@@ -320,7 +303,7 @@ export const cases = [
   },
   {
     id: "improving-skill-definition/excluded-target",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     mutationPolicy: "read-only",
     skill: SKILL,
     intent:
