@@ -36,53 +36,9 @@ pnpm fix     # eslint --fix, oxlint --fix, oxfmt --write
 pnpm test    # vitest: unit tests for the pure functions, free and offline
 ```
 
-`pnpm test` is not the eval suite. It covers the parts that can be checked without spending tokens, so a break shows up in seconds instead of after a paid run:
+`pnpm test` is not the eval suite. It covers the parts that can be checked without spending tokens, so a break shows up in seconds instead of after a paid run.
 
-Test paths below are relative to `src/`.
-
-| Test file                                        | Pins                                                                         |
-| ------------------------------------------------ | ---------------------------------------------------------------------------- |
-| `../promptfooconfig.test.ts`                     | Skill metadata filters and conditional mutation assertions                   |
-| `cases/cases.test.ts`                            | Snapshot routing, envelopes, report shape, injection defense                 |
-| `cases/clarifying-assumptions.test.ts`           | Preview approval, missing task number, fixture inputs                        |
-| `cases/committing-scoped-changes.test.ts`        | Scoped preview, verbal consent, unchanged git state                          |
-| `cases/council-of-advisors.test.ts`              | Routing, confirmation gate, missing subject                                  |
-| `cases/creating-work-item-children.test.ts`      | Child reconciliation, approval gate, plan fixtures                           |
-| `cases/diagnosing-root-causes.test.ts`           | Evidence-backed RCA, injected logs, missing input                            |
-| `cases/executing-work-item-task.test.ts`         | Kickoff approval, missing handoff decisions, fixtures                        |
-| `cases/fetching-work-item.test.ts`               | Snapshot artifacts, 404 envelope, fake tracker                               |
-| `cases/generate-flow-diagram.test.ts`            | Routing, diagram approval, output path guards                                |
-| `cases/generate-handoff-document.test.ts`        | Handoff package, existing-target gate, seeds                                 |
-| `cases/improving-skill-definition.test.ts`       | Audit evidence, approval, excluded targets                                   |
-| `cases/improving-test-suites.test.ts`            | Approval before edits, dirty-target guard, invalid runs                      |
-| `cases/orchestrating-workflow.test.ts`           | Resume gate, ambiguous identifier, fixture isolation                         |
-| `cases/planning-codebase-restructuring.test.ts`  | Persisted report, mutation boundary, missing inputs                          |
-| `cases/planning-task-execution.test.ts`          | Selected-task artifacts, dependency blocker, seeds                           |
-| `cases/planning-work-item-tasks.test.ts`         | Staged plan, invalid snapshot, boundary and seed checks                      |
-| `cases/pr-creator.test.ts`                       | Preview approval, existing-PR guard, fake GitHub                             |
-| `cases/prompt-structurer.test.ts`                | Routing, XML contract, blocked request                                       |
-| `cases/recency-guard.test.ts`                    | Current LTS verification, action-only scope guard                            |
-| `cases/refactoring-code.test.ts`                 | Plan approval, dirty scope, protected files and git state                    |
-| `cases/refine-task.test.ts`                      | Draft comment, preview approval, injection defense                           |
-| `cases/registry.test.ts`                         | Unique IDs, skill directories, per-skill tier coverage, mutation policies    |
-| `cases/reporting-skill-issues.test.ts`           | Draft approval, missing evidence, fake GitHub                                |
-| `cases/responding-to-pr-review-comments.test.ts` | Response preview, local report, no-comments exit                             |
-| `cases/review-pull-request.test.ts`              | Review preview, create-only output, collector fixture                        |
-| `cases/review-software-engineer-cv.test.ts`      | CV review artifacts, evidence boundaries, field labels                       |
-| `cases/rewriting-code-strictly.test.ts`          | Scope-expansion gate, unsafe command guard, unchanged targets                |
-| `cases/shared-checks.test.ts`                    | Routing, mutation, tool-call, file and directory snapshot assertions         |
-| `cases/validate-implementation-plan.test.ts`     | Audit artifacts, mutation boundaries, routing                                |
-| `cases/validate-output-script.test.ts`           | The snapshot skill's deterministic validator                                 |
-| `cases/workflow-skill-architect.test.ts`         | Review findings, injection defense, staged-extension approval                |
-| `fixtures/fixtures.test.ts`                      | Git state, multi-skill installation, seeds, fake CLI, cleanup                |
-| `observation/agent-query-env.test.ts`            | PATH prefix with inherited credentials and environment                       |
-| `observation/agent-query.test.ts`                | SDK policy, stream validation, deadlines, cleanup, git sampling              |
-| `observation/judge.test.ts`                      | Citation validation, judge policy, verdicts, failures                        |
-| `observation/mutation-evidence.test.ts`          | Git sampling, mutation detection, skill invocations                          |
-| `observation/repo-files.test.ts`                 | File and directory snapshots, bounds, unsafe path rejection                  |
-| `promptfoo/assertion.test.ts`                    | Provider lifecycle, grading, judge ordering, mutation assertion              |
-| `promptfoo/integration.test.ts`                  | Offline CLI filters across skills, repeats, metrics, exits, exports, history |
-| `promptfoo/provider.test.ts`                     | Per-case skills, seed/PATH wiring, file grading after cleanup                |
+Each suite sits beside the code it exercises as `src/**/<module>.test.ts` (plus `promptfooconfig.test.ts` at the root); `src/cases/registry.test.ts` runs the routing and run-validity matrix over every registered case, so per-skill suites test only skill-specific behavior.
 
 Run it before any paid run.
 
@@ -97,9 +53,10 @@ The toolchain and its config are shared with `metadata-scrubber/frontend`, minus
 | `src/observation/agent-query.ts` | SDK query, message schemas and types, tool observation and git sampling             |
 | `src/fixtures/fixtures.ts`       | Throwaway git repos with the requested skills installed under `.claude/skills/`     |
 | `src/cases/<skill>.ts`           | A skill's cases and behavioral checks                                               |
-| `src/cases/case-contract.ts`     | Shared case types, seed context, and routing defaults                               |
-| `src/cases/registry.ts`          | Explicit suite imports and the combined case list                                   |
+| `src/cases/case-contract.ts`     | Shared case types, seed context, and routing and behavioral defaults                |
+| `src/cases/registry.ts`          | Explicit suite imports, the combined case list, and `getCase` lookup by ID          |
 | `src/cases/shared-checks.ts`     | Reusable observable assertions                                                      |
+| `scripts/minimize-reply.ts`      | Shortens a recorded reply while its check outcomes stay the same                    |
 | `src/observation/repo-files.ts`  | Requested post-run file snapshots before cleanup                                    |
 | `src/**/*.test.ts`               | Offline Vitest suites beside the code they exercise                                 |
 | `outputs/`                       | Ignored per-run JSON/HTML artifacts and shared promptfoo history                    |
@@ -142,7 +99,7 @@ Two related properties the check _does_ now hold, both of which used to fail sil
 
 Create `src/cases/<skill>.ts` exporting `cases`, a `readonly EvalCase[]` from `case-contract.ts`, and a neighboring `<skill>.test.ts`. Add one `import("#/cases/<skill>.ts"),` line in alphabetical order in `registry.ts`. IDs must be globally unique and start with `<skill>/`. For every directory under `skills/` containing `SKILL.md`, the registry test requires `<skill>/trigger-positive` at tier 1, another tier-1 case, and a tier-2 case.
 
-A case declares `skill`, `tier`, `fixture`, `intent`, `prompt`, `budgetUsd`, `wallClockMs`, and `check`. Routing cases can spread `routingDefaults`; use `checkPositiveRouting(observation, skill)` or `checkNegativeRouting(observation, skill)` from `shared-checks.ts`. Keep any skill-specific completed-output rejection in the suite. A behavioral case must declare `mutationPolicy: "read-only"` or `"allowed"`. The latter skips `mutation-scope`, so its `check` must verify the expected writes. `judge` remains optional and runs only after `check` passes.
+A case declares `skill`, `tier`, `fixture`, `intent`, `prompt`, `budgetUsd`, `wallClockMs`, and `check`. Routing cases can spread `routingDefaults` and behavioral cases `behavioralDefaults`; use `checkPositiveRouting(observation, skill)` or `checkNegativeRouting(observation, skill)` from `shared-checks.ts`. Keep any skill-specific completed-output rejection in the suite. A behavioral case must declare `mutationPolicy: "read-only"` or `"allowed"`. The latter skips `mutation-scope`, so its `check` must verify the expected writes. `judge` remains optional and runs only after `check` passes.
 
 Optional setup and file checks:
 
