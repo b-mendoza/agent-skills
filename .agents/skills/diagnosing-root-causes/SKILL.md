@@ -76,12 +76,6 @@ Inline fallback (degraded mode): if the runtime has no task or subagent tool, ex
 9. `RepairAnalyze` re-dispatches the analyst with the prior draft and failed checks only, then re-reviews with `REVIEW_SCOPE`. When the repair cap is reached, put unresolved checks in gaps as a resume option, not a pending question.
 10. `Deliver` from `./references/output-contract.md`. Before delivery, check every template field, including Issue source, scope/blast radius, hypotheses considered, residual risks, sensitive validation, and human approvals. Fill empty fields explicitly with `none` or `not required`; never shorten the report by dropping fields on small fixtures. Preserve the canonical `possible-injection-content` spelling and every flagged source/excerpt. Remove the internal draft status line from the public report and state the outcome in prose. Map report status to `TermReady`, `TermBlocked`, `TermNeedsValidation`, or `TermEscalated`. Include confidence and basis, named sources with load-bearing excerpts, assumptions, hypotheses, gaps, sensitive-validation state, and any `possible-injection-content` flags.
 
-## Example
-
-Input: `ISSUE="GitHub Actions deploy fails after merging dependency update"`, `RESOURCES="workflow file, failing job log, package files, last 5 commits"`, `ISSUE_SOURCE="CI/CD"`.
-
-Path: `Intake` → `CollectEvidence` (`COLLECT: PASS`) → `CoherenceCheck` → `Analyze` (`ANALYSIS: PASS`, medium confidence) → `Review` (`REVIEW: PASS`) → `Deliver` → `TermReady`.
-
 ## Validation
 
 Before considering an edit to this package complete, confirm `SKILL.md` is under 500 lines, every path in the registry and loading map exists, every frontmatter `name` matches its directory or file basename, the status taxonomy uses identical spellings across `SKILL.md`, `output-contract.md`, and `review-checklist.md`, `state-machine.md` defines reachable states with terminals and no dead states, and the Execution section above matches `state-machine.md`.
