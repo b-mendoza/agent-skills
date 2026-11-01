@@ -74,12 +74,12 @@ External URLs are optional method background only. Project-specific website proo
 Advance the state machine. Do not invent alternate routes.
 
 1. `LoadContracts`: load `./flow-diagram.md`, `./state-machine.md`, `./references/trust-boundary.md`, and `./references/audit-protocol.md`.
-2. `NormalizeInputs` → `AuthorizeArtifacts` (ask before overwrite) → `EstablishOrigin` (one baseline question if inadequate) → `ClassifyContext`.
+2. `NormalizeInputs` → `AuthorizeArtifacts` (ask before overwrite) → `EstablishOrigin` (one baseline question if inadequate) → `ClassifyContext`. Intake inspects path metadata only, never plan contents, excerpts, or previews. Do not use Read, cat, head, sed, or search to read `PLAN_PATH`; only `plan-snapshotter` may open it, after artifact authorization.
 3. `DispatchSnapshot` → `DispatchRequirements` → optional `DispatchEvidence` (or `RecordEvidenceGap` when core audit remains viable).
 4. `DispatchAuditors` (three discovery auditors). On failure, `RetryAuditor` re-dispatches only the failed branch into `DispatchAuditors` (≤3 cycles).
 5. If decision-relevant unresolved assumptions: `AskAssumptions` → `ResolveAssumptions` → `GateOpenQuestions`.
 6. `DispatchAnnotator` until `REPORT: PASS`, then `MapFinalStatus` using `./references/audit-protocol.md`.
-7. Reply with the compact handoff only unless the user asks for the full report.
+7. Reply with the compact prose handoff only unless the user asks for the full report. Before sending, remove all status/envelope lines and expanded finding commentary; the detailed audit stays in the report.
 
 ## Status Labels
 
