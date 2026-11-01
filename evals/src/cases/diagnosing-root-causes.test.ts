@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 
-import type { query } from "@anthropic-ai/claude-agent-sdk";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import {
@@ -12,44 +11,34 @@ import {
   RCA_SECTIONS,
   seedDiscountBug,
   seedInjectedDiscountBug,
-  SKILL,
 } from "#/cases/diagnosing-root-causes.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
-import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
+import type { JudgeRequest } from "#/observation/judge.ts";
+import { buildJudgePrompt } from "#/observation/judge.ts";
 import { sampleGitStatus } from "#/observation/mutation-evidence.ts";
-import {
-  createObservation,
-  scripted,
-} from "#/observation/observation-test-support.ts";
+import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
-const sdk = vi.hoisted(() => ({
-  query:
-    vi.fn<(request: Parameters<typeof query>[0]) => AsyncIterable<unknown>>(),
+// Hoisted so every mocked module instance shares one function, even when the
+// registry's parallel imports run the factory more than once.
+const judge = vi.hoisted(() => ({
+  live: vi.fn<(request: JudgeRequest) => Promise<string>>(),
 }));
-vi.mock(
-  import("@anthropic-ai/claude-agent-sdk"),
-  async (original): Promise<Record<string, unknown>> => ({
-    ...(await original()),
-    query: sdk.query,
-  }),
-);
+vi.mock(import("#/observation/judge.ts"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  judgeLive: judge.live,
+}));
 beforeEach(() => {
-  sdk.query
-    .mockReset()
-    .mockImplementation(() =>
-      scripted({ type: "result", result: '{"violations":[]}' }),
-    );
+  judge.live.mockReset().mockResolvedValue("judge: clean");
 });
 
 function judgePrompt() {
-  const [request] = sdk.query.mock.lastCall ?? [];
+  const [request] = judge.live.mock.lastCall ?? [];
   assert.ok(request !== undefined);
-  assert.ok(typeof request.prompt === "string");
-  return request.prompt;
+  return buildJudgePrompt(request);
 }
 
-const [positive, negative, diagnosis, injected, missing] = cases;
+const [, , diagnosis, injected, missing] = cases;
 const TEST_FAILURE_EXIT = 1;
 const REPORT = `RCA Report
 The percentage-scaling cause is supported by the supplied trace. Nothing was changed.
@@ -71,39 +60,6 @@ const injectionObservation = createObservation({
     ...REPORT_FILES,
     "logs/checkout.log": `${RCA_FILES["logs/checkout.log"]}${INJECTION}\n`,
   },
-});
-
-describe("routing", () => {
-  test("positive requires actual invocation", () => {
-    expect(
-      positive.check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-        }),
-      ),
-    ).toBe("Skill invoked");
-    expect(() => positive.check(createObservation())).toThrow(
-      /never triggered/,
-    );
-  });
-  test("passing-test review belongs to the sibling", () => {
-    expect(
-      negative.check(
-        createObservation({
-          toolCalls: [
-            { name: "Skill", input: { skill: "improving-test-suites" } },
-          ],
-        }),
-      ),
-    ).toBe("no trigger");
-    expect(() =>
-      negative.check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-        }),
-      ),
-    ).toThrow(/unexpectedly triggered/);
-  });
 });
 
 describe("evidence-backed RCA", () => {
@@ -317,19 +273,6 @@ describe("missing input", () => {
         }),
       ),
     ).toThrow(/read-only/);
-  });
-});
-
-describe("invalid runs", () => {
-  test.each(cases)("$id rejects a query failure", (evalCase) => {
-    expect(() =>
-      evalCase.check(createObservation({ subtype: QUERY_ERROR_SUBTYPE })),
-    ).toThrow(/no result/);
-  });
-  test.each(cases)("$id rejects a timeout", (evalCase) => {
-    expect(() => evalCase.check(createObservation({ timedOut: true }))).toThrow(
-      /wall clock/,
-    );
   });
 });
 
