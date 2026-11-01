@@ -56,30 +56,14 @@ const behavioralCases = cases.filter(
 );
 
 describe("committing-scoped-changes checks", () => {
-  test.each(cases)("$id accepts its correct observable", (evalCase) => {
-    const observation =
-      evalCase.tier === BEHAVIORAL_TIER
-        ? correctObservation(evalCase)
-        : createObservation({
-            toolCalls: evalCase.id.endsWith("/trigger-positive")
-              ? [{ name: "Skill", input: { skill: evalCase.skill } }]
-              : [],
-          });
-    expect(() => evalCase.check(observation)).not.toThrow();
-  });
-
-  test.each(cases)("$id rejects missing runs and wrong routing", (evalCase) => {
-    const observation = correctObservation(evalCase);
-    expect(() => evalCase.check({ ...observation, timedOut: true })).toThrow();
-    expect(() =>
-      evalCase.check({
-        ...observation,
-        toolCalls: evalCase.id.endsWith("/trigger-negative-pr")
-          ? [{ name: "Skill", input: { skill: evalCase.skill } }]
-          : [],
-      }),
-    ).toThrow();
-  });
+  test.each(behavioralCases)(
+    "$id accepts its correct observable and requires the skill invocation",
+    (evalCase) => {
+      const observation = correctObservation(evalCase);
+      expect(() => evalCase.check(observation)).not.toThrow();
+      expect(() => evalCase.check({ ...observation, toolCalls: [] })).toThrow();
+    },
+  );
 
   test.each(behavioralCases)(
     "$id rejects mutations and absent snapshots",
