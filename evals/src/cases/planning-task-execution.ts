@@ -1,23 +1,23 @@
 import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertOrderedHeadings,
   assertPlanningWrites,
-  capturedText,
-  HEAD_LOG,
   seedPlanningFiles,
 } from "#/cases/planning-work-item-tasks-checks.ts";
 import {
   assertFileAbsent,
   assertNoMutation,
   assertNoPublicStatusLine,
+  capturedText,
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
   normalizeReplyText,
 } from "#/cases/shared-checks.ts";
+import { HEAD_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
@@ -192,13 +192,10 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
+    ...behavioralDefaults,
     id: `${SKILL}/selected-task-artifacts`,
-    tier: BEHAVIORAL_TIER,
     skill: SKILL,
-    fixture: "clean",
     mutationPolicy: "allowed",
-    budgetUsd: 2.0,
-    wallClockMs: 600_000,
     intent:
       "Write only the four selected-task planning artifacts, with behavior-focused tests",
     seed: (context) => {
@@ -240,10 +237,9 @@ export const cases = [
       }),
   },
   {
+    ...behavioralDefaults,
     id: `${SKILL}/unfinished-dependency`,
-    tier: BEHAVIORAL_TIER,
     skill: SKILL,
-    fixture: "clean",
     mutationPolicy: "read-only",
     budgetUsd: 1.0,
     wallClockMs: 300_000,

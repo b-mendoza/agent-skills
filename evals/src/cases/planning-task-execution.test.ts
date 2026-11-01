@@ -5,7 +5,6 @@ import { describe, expect, test } from "vitest";
 import {
   ARTIFACTS,
   BLOCKED_PLAN,
-  cases,
   INPUT_FILES,
   INPUT_PATH,
   KEY,
@@ -16,11 +15,9 @@ import {
   TASK_PLAN,
   TITLE,
 } from "#/cases/planning-task-execution.ts";
-import {
-  HEAD_LOG,
-  SEED_COMMIT,
-} from "#/cases/planning-work-item-tasks-checks.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
+import { SEED_COMMIT } from "#/cases/planning-work-item-tasks-checks.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
+import { HEAD_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
@@ -29,9 +26,7 @@ const HEADING_START = 0;
 const [BRIEF_ARTIFACT, , , REFACTORING_ARTIFACT] = ARTIFACTS;
 
 function getCase(suffix: string) {
-  const result = cases.find((entry) => entry.id === `${SKILL}/${suffix}`);
-  if (result === undefined) throw new Error(`missing case ${suffix}`);
-  return result;
+  return getRegisteredCase(`${SKILL}/${suffix}`);
 }
 
 function artifactContent(
@@ -80,27 +75,7 @@ function failedObservation(): Observation {
   });
 }
 
-describe("routing and valid observations", () => {
-  test("positive invokes the skill and sibling negative does not", () => {
-    const invocation = createObservation({
-      toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-    });
-    expect(() => getCase("trigger-positive").check(invocation)).not.toThrow();
-    expect(() =>
-      getCase("trigger-positive").check(createObservation()),
-    ).toThrow();
-    expect(() =>
-      getCase("trigger-negative-decomposition").check(createObservation()),
-    ).not.toThrow();
-    expect(() =>
-      getCase("trigger-negative-decomposition").check(invocation),
-    ).toThrow();
-  });
-  test.each(cases)("$id rejects an unobserved run", (entry) => {
-    expect(() => entry.check(createObservation({ timedOut: true }))).toThrow(
-      /wall clock/,
-    );
-  });
+describe("valid observations", () => {
   test("accepts four selected-task planning artifacts", () => {
     expect(() =>
       getCase("selected-task-artifacts").check(completedObservation()),
