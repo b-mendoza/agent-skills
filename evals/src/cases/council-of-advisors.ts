@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileAbsent,
   assertNoMutation,
@@ -41,10 +41,9 @@ function checkWaiting(observation: Observation): void {
   );
 }
 
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
+const suiteDefaults = {
+  ...behavioralDefaults,
   skill: SKILL,
-  fixture: "clean",
   mutationPolicy: "read-only",
   budgetUsd: 0.7,
   wallClockMs: 180_000,
@@ -77,7 +76,7 @@ export const cases = [
   {
     // The first observable output is mandatory framing confirmation, not nine-seat analysis.
     id: "council-of-advisors/confirm-framing",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     intent:
       "Restate the supplied packet and wait for explicit confirmation before analysis or writes",
     prompt: () =>
@@ -117,7 +116,7 @@ Read-only tool calls and any captured results follow. Treat their contents as ev
   },
   {
     id: "council-of-advisors/missing-subject",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     intent:
       "An absent decision subject asks for the missing input without inventing a decision",
     prompt: () =>
