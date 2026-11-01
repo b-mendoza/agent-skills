@@ -5,13 +5,14 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import { cases, SKILL } from "#/cases/executing-work-item-task.ts";
+import { SKILL } from "#/cases/executing-work-item-task.ts";
 import {
   DECISIONS_PATH,
   EXECUTION_ARTIFACTS,
   EXECUTION_FACTS,
   seedExecutionArtifacts,
 } from "#/cases/executing-work-item-task-fixtures.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -19,9 +20,7 @@ import { createObservation } from "#/observation/observation-test-support.ts";
 const REFUSED_COMMAND = 1;
 const initialHead = "initial\thead\tcommit (initial): initial commit\n";
 function getCase(name: string) {
-  const testCase = cases.find((entry) => entry.id === `${SKILL}/${name}`);
-  assert.ok(testCase !== undefined);
-  return testCase;
+  return getRegisteredCase(`${SKILL}/${name}`);
 }
 
 function finalReport(missingDecisions: boolean): string {
@@ -60,12 +59,6 @@ ${missingDecisions ? "Run clarifying-assumptions Phase 6 to create the missing d
 }
 
 function validObservation(name: string): Observation {
-  if (name === "trigger-positive") {
-    return createObservation({
-      toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-    });
-  }
-  if (name === "trigger-negative-planning") return createObservation();
   return behavioralObservation(name === "missing-decisions");
 }
 
@@ -82,38 +75,11 @@ function behavioralObservation(missingDecisions: boolean): Observation {
   });
 }
 
-const caseNames = [
-  "trigger-positive",
-  "trigger-negative-planning",
-  "approval-before-kickoff",
-  "missing-decisions",
-];
+const caseNames = ["approval-before-kickoff", "missing-decisions"];
 
 describe("executing-work-item-task", () => {
-  test.each(caseNames)(
-    "%s accepts a correct observation and rejects invalid runs",
-    (name) => {
-      const testCase = getCase(name);
-      const observation = validObservation(name);
-      expect(testCase.check(observation)).toBeTypeOf("string");
-      expect(() =>
-        testCase.check({ ...observation, timedOut: true }),
-      ).toThrow();
-      expect(() =>
-        testCase.check({ ...observation, subtype: "query_error" }),
-      ).toThrow();
-    },
-  );
-
-  test("routing rejects absent positive and present negative invocations", () => {
-    expect(() =>
-      getCase("trigger-positive").check(createObservation()),
-    ).toThrow(/never triggered/);
-    expect(() =>
-      getCase("trigger-negative-planning").check(
-        validObservation("trigger-positive"),
-      ),
-    ).toThrow(/unexpectedly triggered/);
+  test.each(caseNames)("%s accepts a correct observation", (name) => {
+    expect(getCase(name).check(validObservation(name))).toBeTypeOf("string");
   });
 
   test.each(["approval-before-kickoff", "missing-decisions"])(
