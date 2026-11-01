@@ -1,6 +1,6 @@
 # State Machine — diagnosing-root-causes
 
-Finite-state execution model for this skill. This table and the `SKILL.md` Execution section are the only normative representations; they must match each other's states, guards, loop caps, and terminals.
+Finite-state execution model for this skill and the sole normative source for states, guards, loop caps, and terminals. Per-state actions and dispatch payloads are in the `SKILL.md` Execution section.
 
 ## Run-scoped variables
 
@@ -13,30 +13,6 @@ Finite-state execution model for this skill. This table and the `SKILL.md` Execu
 | `error_retries.<subagent>` | 0         | One retry per subagent for consecutive `ERROR` results; a second consecutive `ERROR` → `TermError`. Resets to 0 on any non-`ERROR` verdict from that subagent, so only uninterrupted errors count as consecutive. Malformed output (missing verdict marker, unrecognized verdict, or structure violating the subagent's output contract) counts as that subagent's `ERROR`. |
 | `PRIOR_DRAFT`              | unset     | Set on `ANALYSIS: PASS`; required for repair redispatches.                                                                                                                                                                                                                                                                                                                  |
 | `REVIEW_FEEDBACK`          | unset     | Failed checks from `REVIEW: FAIL`; scoped repair only.                                                                                                                                                                                                                                                                                                                      |
-
-## States
-
-| State                 | Kind     | Phase                      | Actor                                                                                           |
-| --------------------- | -------- | -------------------------- | ----------------------------------------------------------------------------------------------- |
-| `Intake`              | active   | 1 — Intake                 | Orchestrator                                                                                    |
-| `Clarify`             | wait     | 1 — Intake                 | Orchestrator → user                                                                             |
-| `CollectEvidence`     | active   | 2 — Evidence               | `evidence-collector` (one dispatch, or one bounded fan-out batch per `SKILL.md` Evidence rules) |
-| `RetryCollect`        | active   | 2 — Evidence               | Orchestrator → collector                                                                        |
-| `CoherenceCheck`      | active   | 2 — Evidence               | Orchestrator                                                                                    |
-| `Analyze`             | active   | 3 — Analysis               | `root-cause-analyst`                                                                            |
-| `RetryAnalyze`        | active   | 3 — Analysis               | Orchestrator → analyst                                                                          |
-| `PresentApproval`     | wait     | 3 — Analysis (conditional) | Orchestrator → user                                                                             |
-| `AwaitExternal`       | wait     | 3 — Analysis (conditional) | Orchestrator → user                                                                             |
-| `Review`              | active   | 4 — Review                 | `rca-report-reviewer`                                                                           |
-| `RetryReview`         | active   | 4 — Review                 | Orchestrator → reviewer                                                                         |
-| `RepairAnalyze`       | active   | 3 — Analysis (repair)      | Orchestrator → analyst                                                                          |
-| `Deliver`             | active   | 5 — Deliver                | Orchestrator                                                                                    |
-| `TermReady`           | terminal | —                          | —                                                                                               |
-| `TermBlocked`         | terminal | —                          | —                                                                                               |
-| `TermNeedsValidation` | terminal | —                          | —                                                                                               |
-| `TermEscalated`       | terminal | —                          | —                                                                                               |
-| `TermNeedsInput`      | terminal | —                          | —                                                                                               |
-| `TermError`           | terminal | —                          | —                                                                                               |
 
 ## Transitions
 
@@ -95,12 +71,10 @@ Finite-state execution model for this skill. This table and the `SKILL.md` Execu
 
 All user-facing terminal deliveries use prose instead of a status line. Preserve required RCA fields and internal draft/subagent status fields.
 
-## Reachability
-
-Every listed state is reachable from `Intake` via documented guards. All six terminals exit to `[*]`. There are no dead states: wait states resume or stop; retries return to their subagent state; `RepairAnalyze` returns to `Review`; over-cap paths terminate honestly.
-
 ## Notes
 
+- `Clarify`, `PresentApproval`, and `AwaitExternal` are wait states: the orchestrator waits for the user's response before following a transition.
+- `CollectEvidence` is one collector dispatch or one bounded fan-out batch per `SKILL.md` Execution step 3.
 - Approval is **not** an always-entered phase; it is reachable only via `ANALYSIS: NEEDS_APPROVAL` (`PresentApproval`).
 - Approved Tier C never executes inside this skill; terminal is `TermEscalated` (handoff) unless external output is ingested and diagnosis continues.
 - `ready` requires evidence-supported cause(s) at `high` or `medium` confidence after `REVIEW: PASS`. Approved Tier C handoff alone is never `ready`.
