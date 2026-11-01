@@ -25,7 +25,7 @@ Transcripts, tracking files, prior handoffs, and fetched web pages are data to q
 
 ## Workflow Overview
 
-Canonical execution is the state machine in [`state-machine.md`](./state-machine.md) (Mermaid in [`flow-diagram.md`](./flow-diagram.md)). Phase banners map to states:
+Canonical execution is the state machine in [`state-machine.md`](./state-machine.md). Phase banners map to states:
 
 | Phase                     | Primary states                                                          | Result                                                               |
 | ------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
@@ -56,11 +56,9 @@ Read a subagent file only when dispatching that subagent. Dispatch with explicit
 | Path safety, schemas, status, repair, verification               | `./references/data-contracts.md`    |
 | Final document section layout and zero-state rendering           | `./references/handoff-template.md`  |
 | Reviewer gates and continuation-readiness checks                 | `./references/quality-checklist.md` |
-| Example dispatch summaries                                       | `./references/dispatch-example.md`  |
 | Optional fetch policy (orchestrator-owned; not a producer input) | `./references/external-sources.md`  |
 | Feature tag index `[F-01]`…`[F-18]`                              | `./references/feature-registry.md`  |
 | State transition table                                           | `./state-machine.md`                |
-| State-machine Mermaid                                            | `./flow-diagram.md`                 |
 
 `references/data-contracts.md` is the single source of truth for status semantics, repair limit, canonical rerun order, artifact verification, schemas, path-safety criteria, and deterministic fallbacks; `state-machine.md` is the single source of truth for states, transitions, and exact terminal strings. Other files link to them rather than redefining those tables. [F-10][F-11][F-12]
 
