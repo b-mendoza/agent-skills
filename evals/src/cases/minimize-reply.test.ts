@@ -71,13 +71,47 @@ describe("minimizeReply", () => {
       observation: createObservation({ finalText: REPLY }),
     });
     expect(result).toStrictEqual({
-      finalText: "The pinned 7 is not a string.\nWhich option?",
+      finalText: "The pinned 7 is not a string. \nWhich option? ",
       outcome: "pass:ok",
       contrastOutcome: "fail:old check rejects the type explanation",
       linesBefore: 5,
       linesAfter: 2,
     });
   });
+
+  test.each(["  ", "\t"])(
+    "preserves verbatim sentence separators in a passing reply with %j",
+    (separator) => {
+      const reply = `I will restore the guard.${separator}I will add coverage.`;
+      const check = (observation: Observation) => {
+        if (!observation.finalText.includes(reply)) {
+          throw new Error("approval preview differs from the report reply");
+        }
+        return "ok";
+      };
+      const observation = createObservation({
+        finalText: `Unneeded introduction.\n${reply}\nUnneeded conclusion.`,
+      });
+      const result = minimizeReply({
+        check,
+        contrastCheck: requireText(
+          /Already fixed/,
+          "old check rejects the reply",
+        ),
+        observation,
+      });
+      expect(result).toStrictEqual({
+        finalText: reply,
+        outcome: "pass:ok",
+        contrastOutcome: "fail:old check rejects the reply",
+        linesBefore: 3,
+        linesAfter: 1,
+      });
+      expect(
+        outcomeOf(check, { ...observation, finalText: result.finalText }),
+      ).toBe(result.outcome);
+    },
+  );
 
   test("keeps the branch a passing reply took, not just the pass", () => {
     const branchingCheck = (observation: Observation) =>
@@ -90,7 +124,7 @@ describe("minimizeReply", () => {
     expect(result.outcome).toBe("pass:asked");
     // Dropping the question still passes, as "explained"; that is rejected.
     expect(result.finalText).toBe(
-      "The pinned 7 is not a string.\nWhich option?",
+      "The pinned 7 is not a string. \nWhich option? ",
     );
   });
 
@@ -108,7 +142,7 @@ describe("minimizeReply", () => {
         contrastCheck,
         observation: createObservation({ finalText: REPLY, toolCalls }),
       }).finalText,
-    ).toBe("The pinned 7 is not a string.\nWhich option?");
+    ).toBe("The pinned 7 is not a string. \nWhich option? ");
   });
 
   test.each([

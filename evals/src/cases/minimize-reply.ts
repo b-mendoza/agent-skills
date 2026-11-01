@@ -43,7 +43,7 @@ const ECHOING_OPERATORS: ReadonlySet<unknown> = new Set([
 const INITIAL_GRANULARITY = 2;
 /** A kept complement holds one chunk fewer than the partition it came from. */
 const DROPPED_CHUNKS = 1;
-const SENTENCE_BREAK = /(?<=[.?!])\s+/;
+const SENTENCE_BREAK = /(?<=[.?!])\s+/g;
 const PASS_PREFIX = "pass:";
 
 export function outcomeOf(check: Check, observation: Observation): Outcome {
@@ -81,7 +81,8 @@ export function minimizeReply(request: MinimizeRequest): MinimizeResult {
     .split("\n")
     .map((text, line) => ({ line, text }));
   const sentences = ddmin(lines, keeps).flatMap(splitSentences);
-  const finalText = render(ddmin(sentences, keeps));
+  const minimized = ddmin(sentences, keeps);
+  const finalText = render(minimized);
   return {
     finalText,
     ...targets,
@@ -129,9 +130,17 @@ function keepsOutcomes(
 }
 
 function splitSentences(unit: Unit): Unit[] {
-  return unit.text
-    .split(SENTENCE_BREAK)
-    .map((text) => ({ line: unit.line, text }));
+  const sentences: Unit[] = [];
+  let start = 0;
+  for (const match of unit.text.matchAll(SENTENCE_BREAK)) {
+    const [separator] = match;
+    const end = match.index + separator.length;
+    // Keep separators on the preceding sentence so deletions cannot add leading whitespace.
+    sentences.push({ line: unit.line, text: unit.text.slice(start, end) });
+    start = end;
+  }
+  sentences.push({ line: unit.line, text: unit.text.slice(start) });
+  return sentences;
 }
 
 function render(units: readonly Unit[]): string {
@@ -139,7 +148,7 @@ function render(units: readonly Unit[]): string {
   for (const unit of units) {
     lines.set(unit.line, [...(lines.get(unit.line) ?? []), unit.text]);
   }
-  return [...lines.values()].map((texts) => texts.join(" ")).join("\n");
+  return [...lines.values()].map((texts) => texts.join("")).join("\n");
 }
 
 /** Zeller's ddmin: returns a 1-minimal subsequence of `units` that still `keeps`. */
