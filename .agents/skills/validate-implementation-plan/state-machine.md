@@ -49,7 +49,7 @@ State names say which subagent each `Dispatch*` state runs. Non-obvious actions:
 | `RecordEvidenceGap`    | `TerminalBlocked`      | core audit not viable                                                     |
 | `DispatchAuditors`     | `RetryAuditor`         | any of TRACEABILITY / YAGNI / ASSUMPTIONS missing PASS or valid payload   |
 | `DispatchAuditors`     | `GateUnresolved`       | all three discovery PASS with valid payloads                              |
-| `RetryAuditor`         | `DispatchAuditors`     | re-dispatch only failed branch; recovered under budget                    |
+| `RetryAuditor`         | `DispatchAuditors`     | re-dispatch only failed branch; recovered and that branch's `retry_count < 3` |
 | `RetryAuditor`         | `TerminalBlocked`      | hard blocker after retry budget                                           |
 | `RetryAuditor`         | `TerminalError`        | internal failure after retry budget                                       |
 | `GateUnresolved`       | `AskAssumptions`       | decision-relevant unresolved assumptions present                          |
