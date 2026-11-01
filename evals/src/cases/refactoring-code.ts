@@ -1,23 +1,31 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { basename, join } from "node:path";
+import { basename } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
-  assertFileExists,
   assertFileMatches,
+  assertFilesUnchanged,
+  assertHeadUnchanged,
   assertNoMutation,
   assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
   fixtureRelativePath,
+  hasNodeTestOption,
   normalizeReplyText,
   replyAsksFor,
   seedFixtureRoot,
+  withoutAllowedChanges,
 } from "#/cases/shared-checks.ts";
+import {
+  BASELINE_REFLOG,
+  commitRepoFiles,
+  copyHeadReflog,
+  HEAD_LOG,
+} from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 import { mutationEvidence } from "#/observation/mutation-evidence.ts";
@@ -58,27 +66,19 @@ const snapshotPaths = [
   FIXTURE_ROOT_PATH,
   ...Object.keys(REFACTOR_FILES),
   REFACTOR_PLAN_PATH,
-  ".git/logs/HEAD",
-  ".git/eval-baseline-reflog",
+  HEAD_LOG,
+  BASELINE_REFLOG,
 ];
 
 function seedRefactor({ repoPath }: SeedContext): void {
   seedFixtureRoot(repoPath);
-  mkdirSync(join(repoPath, "src"));
-  for (const [path, content] of Object.entries(REFACTOR_FILES)) {
-    writeFileSync(join(repoPath, path), content);
-  }
-  execFileSync("git", ["add", "--", "src", "quote.test.js", "package.json"], {
-    cwd: repoPath,
-  });
-  execFileSync("git", ["commit", "-qm", "test: seed quote behavior"], {
-    cwd: repoPath,
-  });
+  commitRepoFiles(repoPath, REFACTOR_FILES, "test: seed quote behavior", [
+    "src",
+    "quote.test.js",
+    "package.json",
+  ]);
   execFileSync("git", ["add", "--", "unrelated.txt"], { cwd: repoPath });
-  writeFileSync(
-    join(repoPath, ".git/eval-baseline-reflog"),
-    readFileSync(join(repoPath, ".git/logs/HEAD")),
-  );
+  copyHeadReflog(repoPath);
 }
 
 function isReportWrite(
@@ -93,39 +93,6 @@ function isReportWrite(
       ".handoffs/refactoring-code/",
     ) === true
   );
-}
-
-const NODE_VALUE_OPTIONS = new Set([
-  "--require",
-  "-r",
-  "--import",
-  "--loader",
-  "--experimental-loader",
-  "--test-reporter",
-  "--test-reporter-destination",
-  "--conditions",
-  "-C",
-  "--env-file",
-  "--test-name-pattern",
-  "--test-concurrency",
-]);
-
-function consumeNodeOption(argument: string, args: string[]): boolean {
-  if (!/^--?\w/.test(argument)) return false;
-  if (NODE_VALUE_OPTIONS.has(argument)) args.shift();
-  return true;
-}
-
-function hasNodeTestOption(args: string[]): boolean {
-  for (
-    let argument = args.shift();
-    argument !== undefined;
-    argument = args.shift()
-  ) {
-    if (argument === "--test") return true;
-    if (!consumeNodeOption(argument, args)) return false;
-  }
-  return false;
 }
 
 function invokesNodeTests(call: Observation["toolCalls"][number]): boolean {
@@ -153,17 +120,8 @@ function checkPlan(observation: Observation): string {
   checkPositiveRouting(observation, SKILL);
   const files = observation.repoFiles;
   assert.ok(files !== undefined, "missing file snapshots");
-  for (const [path, content] of Object.entries(REFACTOR_FILES)) {
-    assertFileExists(observation, path);
-    assert.equal(files[path], content, `changed protected file: ${path}`);
-  }
-  assertFileMatches(observation, ".git/logs/HEAD", /\S/);
-  assertFileMatches(observation, ".git/eval-baseline-reflog", /\S/);
-  assert.equal(
-    files[".git/logs/HEAD"],
-    files[".git/eval-baseline-reflog"],
-    "unexpected commit or HEAD movement",
-  );
+  assertFilesUnchanged(observation, REFACTOR_FILES, "changed protected file");
+  assertHeadUnchanged(observation, "unexpected commit or HEAD movement");
   const before = observation.gitStatusBefore;
   const after = observation.gitStatusAfter;
   assert.equal(before.kind, "worktree");
@@ -182,13 +140,11 @@ function checkPlan(observation: Observation): string {
     "unexpected worktree or index changes outside reports",
   );
   assert.deepEqual(
-    mutationEvidence({
-      ...observation,
-      gitStatusAfter: before,
-      toolCalls: observation.toolCalls.filter(
-        (call) => !isReportWrite(call, observation),
+    mutationEvidence(
+      withoutAllowedChanges(observation, (call) =>
+        isReportWrite(call, observation),
       ),
-    }),
+    ),
     [],
     "observed mutation outside the report boundary",
   );
@@ -210,12 +166,9 @@ function checkPlan(observation: Observation): string {
   return "plan saved; approval requested; only handoff artifacts may change";
 }
 
-const behavioralDefaults = {
+const suiteDefaults = {
+  ...behavioralDefaults,
   skill: SKILL,
-  tier: BEHAVIORAL_TIER,
-  fixture: "clean",
-  budgetUsd: 2,
-  wallClockMs: 600_000,
 } as const;
 
 export const cases = [
@@ -242,7 +195,7 @@ export const cases = [
   },
   {
     id: "refactoring-code/plan-approval",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     // Read-only analysis still writes required handoffs; source edits are not allowed.
     mutationPolicy: "allowed",
     seed: seedRefactor,
@@ -273,7 +226,7 @@ export const cases = [
   },
   {
     id: "refactoring-code/missing-target",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     mutationPolicy: "read-only",
     intent:
       "An unspecified target asks one focused question without modifying the repository",

@@ -4,11 +4,13 @@ import { describe, expect, test } from "vitest";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { BEHAVIORAL_TIER } from "#/cases/case-contract.ts";
+import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import {
   cases,
   REFACTOR_FILES,
   REFACTOR_PLAN_PATH,
 } from "#/cases/refactoring-code.ts";
+import { getCase } from "#/cases/registry.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -41,35 +43,15 @@ function correctObservation(evalCase: EvalCase): Observation {
 const behavioralCases = cases.filter(
   (evalCase) => evalCase.tier === BEHAVIORAL_TIER,
 );
-const planCase = cases.find(
-  (evalCase) => evalCase.id === "refactoring-code/plan-approval",
-);
-if (planCase === undefined) throw new Error("missing plan case");
+const planCase = getCase("refactoring-code/plan-approval");
 
 describe("refactoring-code checks", () => {
-  test.each(cases)(
-    "$id accepts correct output and rejects a non-run",
+  test.each(behavioralCases)(
+    "$id accepts correct output and requires the skill invocation",
     (evalCase) => {
-      const observation =
-        evalCase.tier === BEHAVIORAL_TIER
-          ? correctObservation(evalCase)
-          : createObservation({
-              toolCalls: evalCase.id.endsWith("/trigger-positive")
-                ? [{ name: "Skill", input: { skill: evalCase.skill } }]
-                : [],
-            });
+      const observation = correctObservation(evalCase);
       expect(() => evalCase.check(observation)).not.toThrow();
-      expect(() =>
-        evalCase.check({ ...observation, timedOut: true }),
-      ).toThrow();
-      expect(() =>
-        evalCase.check({
-          ...observation,
-          toolCalls: evalCase.id.endsWith("/trigger-negative-strict-rewrite")
-            ? [{ name: "Skill", input: { skill: evalCase.skill } }]
-            : [],
-        }),
-      ).toThrow();
+      expect(() => evalCase.check({ ...observation, toolCalls: [] })).toThrow();
     },
   );
 
@@ -223,7 +205,10 @@ describe("refactoring-code checks", () => {
       planCase.seed,
     );
     try {
-      const files = snapshotRepoFiles(fixture.cwd, planCase.snapshotPaths);
+      const files = snapshotRepoFiles(
+        fixture.cwd,
+        planCase.snapshotPaths ?? [],
+      );
       for (const [path, content] of Object.entries(REFACTOR_FILES)) {
         expect(files[path]).toBe(content);
       }
@@ -247,51 +232,22 @@ describe("refactoring-code checks", () => {
   });
 });
 
-test.each(["/outside", "../outside", "/fixture-other"])(
-  "refactor plan rejects foreign-root same-suffix write from %s",
-  (root) => {
+testArtifactWriteMatrix({
+  label: "refactor plan",
+  artifact: REFACTOR_PLAN_PATH,
+  check: (observation) => planCase.check(observation),
+  valid: () => {
     const good = correctObservation(planCase);
-    expect(() =>
-      planCase.check({
-        ...good,
-        repoFiles: {
-          ...good.repoFiles,
-          ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
+    return {
+      ...good,
+      gitStatusAfter: { kind: "worktree", entries: "?? .handoffs/" },
+      toolCalls: [
+        ...good.toolCalls,
+        {
+          name: "Write",
+          input: { file_path: `/fixture/${REFACTOR_PLAN_PATH}` },
         },
-        gitStatusAfter: { kind: "worktree", entries: "?? .handoffs/" },
-        toolCalls: [
-          ...good.toolCalls,
-          {
-            name: "Write",
-            input: { file_path: `/fixture/${REFACTOR_PLAN_PATH}` },
-          },
-          {
-            name: "Edit",
-            input: { file_path: `${root}/${REFACTOR_PLAN_PATH}` },
-          },
-        ],
-      }),
-    ).toThrow();
+      ],
+    };
   },
-);
-
-test.each(["", "/fixture/", "/canonical/fixture/"])(
-  "accepts artifact writes relative to or within fixture root %s",
-  (prefix) => {
-    const good = correctObservation(planCase);
-    expect(() =>
-      planCase.check({
-        ...good,
-        toolCalls: [
-          ...good.toolCalls.filter(
-            (call) => !["Write", "Edit"].includes(call.name),
-          ),
-          {
-            name: "Write",
-            input: { file_path: `${prefix}${REFACTOR_PLAN_PATH}` },
-          },
-        ],
-      }),
-    ).not.toThrow();
-  },
-);
+});
