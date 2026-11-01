@@ -1,6 +1,6 @@
 # State Machine — recency-guard
 
-Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
+Finite-state execution model for this skill and the authoritative list of states, transitions, guards, and terminals.
 
 Canonical dispatch-budget numbers live only in [`references/repair-and-integration.md`](./references/repair-and-integration.md).
 
