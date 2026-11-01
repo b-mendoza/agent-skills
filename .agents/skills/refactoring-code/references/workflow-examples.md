@@ -48,28 +48,6 @@ Non-goals:
 Decision: approve, adjust, or decline.
 ```
 
-## Dispatch Round Trip
-
-```text
-1. Orchestrator dispatches behavior-mapper with TARGET_PATH, USER_GOAL,
-   TEST_COMMAND, SCOPE_LIMITS, and MAX_LINES.
-2. Mapper returns BEHAVIOR_MAP: PASS with baseline, candidates, sizes, risks,
-   and proposed chunks: duplication-reuse, complexity-idiom.
-3. Orchestrator dispatches two chunk-analysts concurrently, each with CHUNK,
-   BEHAVIOR_MAP, and its own REPORT_PATH under .handoffs/refactoring-code/.
-   (Serial fallback: dispatch them one after another with identical contracts.)
-4. Both return CHUNK_ANALYSIS: PASS with findings counts; the orchestrator
-   reads the report files, merges findings, and synthesizes one plan card.
-5. Plan approval gate: user approves the card.
-6. Orchestrator dispatches refactor-implementer with the approved card.
-7. Implementer returns IMPLEMENTATION: PASS_WITH_WARNINGS because zero tests
-   ran (command matched no tests).
-8. Reviewer verifies both verdicts and the warning; returns
-   REFACTOR_REVIEW: PASS with the warning noted.
-9. Orchestrator explains that the refactor completed but validation did not run, and deletes the
-   .handoffs/refactoring-code/ artifacts.
-```
-
 ## PASS_WITH_WARNINGS Handoff Skeleton
 
 ```text
