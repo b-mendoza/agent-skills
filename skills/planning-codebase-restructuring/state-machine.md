@@ -1,39 +1,6 @@
 # State Machine — planning-codebase-restructuring
 
-Finite-state execution model for this skill. Mermaid source of truth: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
-
-`SKILL.md` must use the same state names, guards, and terminal decisions.
-
-## States
-
-| State                | Kind     | Role                                                               |
-| -------------------- | -------- | ------------------------------------------------------------------ |
-| `ResumeCheck`        | active   | Detect optional `RESUME_PACKET`                                    |
-| `ResumeValidate`     | active   | Re-validate retained summaries; restore counters and notes         |
-| `Preflight`          | active   | Normalize inputs; init counters; resolve paths; disclose clone     |
-| `ReferenceGate`      | active   | Decide skip vs assess for `REFERENCE_URL`                          |
-| `ReferenceAssess`    | active   | Dispatch `reference-assessor`                                      |
-| `ReferenceContract`  | active   | Validate reference `PASS` summary contract                         |
-| `ReferenceRepair`    | active   | One contract re-dispatch for a `PASS` summary that failed contract |
-| `QuarantineHold`     | active   | Hold validated reference in orchestrator context only              |
-| `ArchitectureMap`    | active   | Dispatch `architecture-cartographer` (no reference material)       |
-| `MapContract`        | active   | Validate architecture-map summary contract                         |
-| `MapRepair`          | active   | One contract re-dispatch for map summary                           |
-| `DomainAnalysis`     | active   | Dispatch `domain-analyst` (no reference material)                  |
-| `DomainContract`     | active   | Validate domain-analysis summary contract                          |
-| `DomainRepair`       | active   | One contract re-dispatch for domain summary                        |
-| `EvidencePrecedence` | active   | Authorize, limit, or mark not-applicable for reference patterns    |
-| `RestructuringPlan`  | active   | Dispatch `restructuring-strategist`                                |
-| `PlanContract`       | active   | Validate restructuring-plan summary contract                       |
-| `PlanRepair`         | active   | One contract re-dispatch for plan summary                          |
-| `CandidateReport`    | active   | Synthesize candidate report from validated summaries only          |
-| `PlanReview`         | active   | Dispatch `plan-reviewer`                                           |
-| `ReviewRepair`       | active   | Targeted repair after `PLAN_REVIEW: FAIL` within budget            |
-| `Finalize`           | active   | Write reviewed report to `ARTIFACT_PATH`                           |
-| `TerminalReady`      | terminal | Decision: `READY`                                                  |
-| `TerminalNeedsInput` | terminal | Decision: `NEEDS_INPUT` (+ `RESUME_PACKET`)                        |
-| `TerminalBlocked`    | terminal | Decision: `BLOCKED`                                                |
-| `TerminalError`      | terminal | Decision: `ERROR`                                                  |
+Finite-state execution model for this skill and the sole normative source for states, transitions, guards, counters, and terminals. Per-state actions are in [`SKILL.md`](./SKILL.md) Execution.
 
 ## Counters and named guards
 
@@ -53,7 +20,7 @@ Finite-state execution model for this skill. Mermaid source of truth: [`flow-dia
 | `[*]`                | `ResumeCheck`             | run start                                                                                                     |
 | `ResumeCheck`        | `ResumeValidate`          | `RESUME_PACKET` supplied                                                                                      |
 | `ResumeCheck`        | `Preflight`               | no packet                                                                                                     |
-| `ResumeValidate`     | _(restored active state)_ | packet valid; jump to `phase_reached` (Mermaid cannot enumerate dynamic targets; this table is authoritative) |
+| `ResumeValidate`     | _(restored active state)_ | packet valid; jump to `phase_reached` |
 | `ResumeValidate`     | `Preflight`               | packet malformed or retained summary fails contract                                                           |
 | `Preflight`          | `TerminalNeedsInput`      | required inputs missing and not safely inferable                                                              |
 | `Preflight`          | `ReferenceGate`           | preflight summary stated; inputs ready                                                                        |
@@ -115,14 +82,3 @@ Finite-state execution model for this skill. Mermaid source of truth: [`flow-dia
 ## Terminal decisions
 
 Select exactly one internal decision: `READY`, `NEEDS_INPUT`, `BLOCKED`, `ERROR`. User-facing summaries and stopping explanations use prose, not a status line or routing envelope. Preserve the required fenced resume packet on `NEEDS_INPUT`.
-
-## Reachability and dead-state checks
-
-| Property                                             | Result                                          |
-| ---------------------------------------------------- | ----------------------------------------------- |
-| Every active state reachable from `ResumeCheck`      | yes                                             |
-| Every terminal reachable                             | yes                                             |
-| Dead states (no outgoing, non-terminal)              | none                                            |
-| Review repair loop bounded                           | yes — `review_repair_count > 2` after increment |
-| Per-phase contract repair bounded                    | yes — one re-dispatch per phase                 |
-| Reference accessibility never uses `ReferenceRepair` | yes                                             |
