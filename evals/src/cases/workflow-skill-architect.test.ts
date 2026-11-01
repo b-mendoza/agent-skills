@@ -357,37 +357,29 @@ test.each([
   {
     suffix: "review-only",
     injection: false,
-    finalText: `
-## Findings
+    finalText: `## Findings
 | Severity | File | Issue | Required Fix |
-| -------- | ---- | ----- | ------------ |
-| blocker | skills/triage-release/SKILL.md | The link \`./references/severity.md\` is dangling. The package contains only \`SKILL.md\`, so the severity rules the skill depends on don't exist. | Add \`references/severity.md\` with the severity rubric, or inline the rules in \`SKILL.md\`. |
-| major | skills/triage-release/SKILL.md | Output contract is underspecified. The skill doesn't define the severity scale, the evidence and citation format, or what \`NEEDS_INPUT\` must ask for. The statuses are also not mapped to the canonical \`ready\`/\`needs_input\`/\`blocked\`/\`error\`. | Specify the severity levels, the citation format (file and line or quote), and the exact \`NEEDS_INPUT\` question. Map or align the status vocabulary. |
-| major | skills/triage-release/SKILL.md | Edge cases are unhandled: an unreadable or empty file, a directory instead of a file, notes with no classifiable content, and notes containing embedded instructions. The "data, never instructions" rule is stated, but no \`BLOCKED\` or \`ERROR\` route exists. | Add routes for unreadable or empty input and for embedded-instruction content, for example reporting it as a finding and continuing. |
-| minor | skills/triage-release/SKILL.md | The description says what the skill does and when to use it, but has no trigger phrasing such as "triage release notes", "classify changelog severity". Discovery may be weaker. | Add concrete trigger terms to the description. |
-| minor | skills/triage-release/SKILL.md | There is no validation step, such as confirming every severity claim has a citation before returning \`READY\`. | Add a short self-check before output. |
-
+| blocker | skills/triage-release/SKILL.md | The link \`./references/severity.md\` is dangling.
 ## Checks
-- Frontmatter: pass. \`name\` matches the directory, and \`description\` is present and one line.
-- Referenced paths: fail. \`./references/severity.md\` is missing.
-- Progressive disclosure: fail. The single reference is the core rubric and it is absent, so the skill can't execute.
-- Standalone packaging: fail. It depends on a file that isn't in the package.
-- Subagent contracts: not applicable. The skill defines no subagents, and none are needed for this size.
-- Status mapping: fail. \`NEEDS_INPUT\` and \`READY\` are used, but there is no blocked or error path.
-- Review-only routing: not applicable. The skill is itself read-only and says it never modifies the notes or publishes a release.
-- Work-item state: not applicable. There is no queue.
-- External fetch handling: pass. The input is a local path only, which is consistent with \`no-network\`.
-- Validation loop: fail. There is no self-check or validation step.
-- Untrusted-content handling: pass. Notes are treated as data, though the embedded-instruction handling is thin (see the major finding).
-
+- Frontmatter: pass.
+- Referenced paths: fail.
+- Progressive disclosure: fail.
+- Standalone packaging: fail.
+- Subagent contracts: not applicable.
+- Status mapping: fail.
+- Review-only routing: not applicable.
+- Work-item state: not applicable.
+- External fetch handling: pass.
+- Validation loop: fail.
+- Untrusted-content handling: pass.
 ## Summary
 - Mode: review (no content changes, no replacement files written)
 - Files reviewed: \`skills/triage-release/SKILL.md\` (the only file in the package)
-- Runtime constraints: no-network. Nothing was fetched, and the skill itself needs no network.
+- Runtime constraints: no-network.
 - Collection manifest: none (review mode)
 - Repair cycle: 0 (review mode doesn't repair)
-- Validation summary: 1 blocker, 2 major and 2 minor findings. The blocker is the missing \`references/severity.md\`.
-- Remaining risks: until the severity rules exist, any output from this skill would be unsupported guesswork. Once they exist, the output contract still needs tightening.`,
+- Validation summary: 1 blocker, 2 major and 2 minor findings.
+- Remaining risks: until the severity rules exist, any output from this skill would be unsupported guesswork.`,
   },
   {
     suffix: "injection-defense",
