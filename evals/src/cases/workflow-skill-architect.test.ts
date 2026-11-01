@@ -1,11 +1,11 @@
-import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
+import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import {
-  cases,
   REVIEW_CHECKS,
   REVIEW_FACTS,
   REVIEW_SUMMARY_FIELDS,
@@ -17,9 +17,7 @@ import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 function getCase(suffix: string) {
-  const found = cases.find((entry) => entry.id === `${SKILL}/${suffix}`);
-  assert.ok(found !== undefined);
-  return found;
+  return getRegisteredCase(`${SKILL}/${suffix}`);
 }
 
 function reviewReport(injection: boolean): string {
@@ -66,38 +64,6 @@ const behavioralExamples = [
   { suffix: "review-only", injection: false },
   { suffix: "injection-defense", injection: true },
 ] as const;
-
-describe("architect routing", () => {
-  test("positive requires the skill invocation", () => {
-    expect(
-      getCase("trigger-positive").check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-        }),
-      ),
-    ).toBe("Skill invoked");
-    expect(() =>
-      getCase("trigger-positive").check(createObservation()),
-    ).toThrow();
-  });
-
-  test("negative permits its prompt sibling but not the architect", () => {
-    expect(
-      getCase("trigger-negative-prompt").check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: "prompt-structurer" } }],
-        }),
-      ),
-    ).toBe("no trigger");
-    expect(() =>
-      getCase("trigger-negative-prompt").check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-        }),
-      ),
-    ).toThrow();
-  });
-});
 
 describe.each(behavioralExamples)("$suffix", ({ suffix, injection }) => {
   test("accepts a canonical evidence-based review", () => {
@@ -379,52 +345,13 @@ describe("staged extension approval", () => {
   });
 });
 
-test("every case rejects a timed-out query", () => {
-  for (const entry of cases) {
-    expect(() => entry.check(createObservation({ timedOut: true }))).toThrow();
-  }
+testArtifactWriteMatrix({
+  label: "staging",
+  artifact: STAGED_REFERENCE,
+  check: (observation) =>
+    getCase("staged-extension-approval").check(observation),
+  valid: () => goodStagedExtension(),
 });
-
-test.each(["/outside", "../outside", "/repo-other"])(
-  "staging rejects foreign-root same-suffix write from %s",
-  (root) => {
-    const good = goodStagedExtension();
-    expect(() =>
-      getCase("staged-extension-approval").check({
-        ...good,
-        repoFiles: {
-          ...good.repoFiles,
-          ".git/eval-fixture-root": "/repo\n/canonical/repo",
-        },
-        toolCalls: [
-          ...good.toolCalls,
-          { name: "Edit", input: { file_path: `${root}/${STAGED_REFERENCE}` } },
-        ],
-      }),
-    ).toThrow();
-  },
-);
-
-test.each(["", "/repo/", "/canonical/repo/"])(
-  "accepts artifact writes relative to or within fixture root %s",
-  (prefix) => {
-    const good = goodStagedExtension();
-    expect(() =>
-      getCase("staged-extension-approval").check({
-        ...good,
-        toolCalls: [
-          ...good.toolCalls.filter(
-            (call) => !["Write", "Edit"].includes(call.name),
-          ),
-          {
-            name: "Write",
-            input: { file_path: `${prefix}${STAGED_REFERENCE}` },
-          },
-        ],
-      }),
-    ).not.toThrow();
-  },
-);
 
 test.each([
   {
