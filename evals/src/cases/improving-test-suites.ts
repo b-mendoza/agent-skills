@@ -1,12 +1,11 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
-  assertFileExists,
+  assertFilesUnchanged,
   assertNoMutation,
   assertNoPublicStatusLine,
   checkNegativeRouting,
@@ -14,6 +13,7 @@ import {
   normalizeReplyText,
   replyAsksFor,
 } from "#/cases/shared-checks.ts";
+import { commitRepoFiles } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
@@ -39,16 +39,7 @@ test("rejects negative amounts", () => assert.throws(() => checkoutTotal(-1, 5),
 export const DIRTY_TEST_CONTENT = `${TEST_FILES[TEST_PATH]}\n// Uncommitted user work: retain a free-shipping boundary test.\ntest("free shipping", () => assert.equal(checkoutTotal(25, 0), 25));\n`;
 
 export function seedTestSuite({ repoPath }: SeedContext): void {
-  for (const [path, content] of Object.entries(TEST_FILES)) {
-    mkdirSync(dirname(join(repoPath, path)), { recursive: true });
-    writeFileSync(join(repoPath, path), content);
-  }
-  execFileSync("git", ["add", "--", ...Object.keys(TEST_FILES)], {
-    cwd: repoPath,
-  });
-  execFileSync("git", ["commit", "-qm", "seed checkout test suite"], {
-    cwd: repoPath,
-  });
+  commitRepoFiles(repoPath, TEST_FILES, "seed checkout test suite");
 }
 
 export function seedDirtyTestSuite(context: SeedContext): void {
@@ -61,24 +52,14 @@ function checkUnchangedSuite(
   expectedFiles: Readonly<Record<string, string>>,
 ): void {
   assertNoMutation(observation);
-  for (const [path, content] of Object.entries(expectedFiles)) {
-    assertFileExists(observation, path);
-    assert.equal(
-      observation.repoFiles?.[path],
-      content,
-      `fixture changed: ${path}`,
-    );
-  }
+  assertFilesUnchanged(observation, expectedFiles, "fixture changed");
 }
 
-const behavioralDefaults = {
+const suiteDefaults = {
+  ...behavioralDefaults,
   skill: SKILL,
-  tier: BEHAVIORAL_TIER,
-  fixture: "clean",
   mutationPolicy: "read-only",
   snapshotPaths: Object.keys(TEST_FILES),
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
 } as const;
 
 export const cases = [
@@ -105,7 +86,7 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
-    ...behavioralDefaults,
+    ...suiteDefaults,
     id: `${SKILL}/approval-plan`,
     seed: seedTestSuite,
     intent:
@@ -175,7 +156,7 @@ export const cases = [
       }),
   },
   {
-    ...behavioralDefaults,
+    ...suiteDefaults,
     id: `${SKILL}/dirty-target-blocked`,
     seed: seedDirtyTestSuite,
     intent: "AUTO_APPROVE cannot bypass unresolved uncommitted target edits",
