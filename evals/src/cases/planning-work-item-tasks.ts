@@ -1,23 +1,23 @@
 import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertOrderedHeadings,
   assertPlanningWrites,
-  capturedText,
-  HEAD_LOG,
   seedPlanningFiles,
 } from "#/cases/planning-work-item-tasks-checks.ts";
 import {
   assertFileAbsent,
   assertNoMutation,
   assertNoPublicStatusLine,
+  capturedText,
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
   normalizeReplyText,
 } from "#/cases/shared-checks.ts";
+import { HEAD_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
@@ -119,7 +119,7 @@ function checkTaskBody(
   body: string,
   title: string,
   number: string,
-  content: string,
+  summary: string,
 ): void {
   for (const field of TASK_FIELDS) {
     assert.ok(body.includes(`**${field}:**`), `missing task field: ${field}`);
@@ -133,7 +133,6 @@ function checkTaskBody(
     `feature/${KEY}-task-${number}-${taskSlug(cleanTitle)}`,
     "branch is not deterministically derived",
   );
-  const [summary = ""] = content.split("## Problem Framing");
   assert.ok(
     summary.includes(`\`${branch}\``),
     "execution table lacks task branch",
@@ -150,6 +149,7 @@ function checkTaskSections(content: string): number {
     tasks.length >= MINIMUM_TASK_COUNT,
     "parent issue needs at least two tasks",
   );
+  const [summary = ""] = content.split("## Problem Framing");
   for (const [index, task] of tasks.entries()) {
     assert.ok(task.groups !== undefined);
     const { number, title, body } = task.groups;
@@ -161,7 +161,7 @@ function checkTaskSections(content: string): number {
       index + FIRST_TASK_NUMBER,
       "task numbering must be sequential",
     );
-    checkTaskBody(body, title, number, content);
+    checkTaskBody(body, title, number, summary);
   }
   return tasks.length;
 }
@@ -259,12 +259,10 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
+    ...behavioralDefaults,
     id: `${SKILL}/staged-plan`,
-    tier: BEHAVIORAL_TIER,
     skill: SKILL,
-    fixture: "clean",
     mutationPolicy: "allowed",
-    budgetUsd: 2.0,
     // Recorded attempt reached Stage 3 at 602s after eight dispatches; two gates remained.
     wallClockMs: 1_200_000,
     intent:
@@ -307,10 +305,9 @@ export const cases = [
       }),
   },
   {
+    ...behavioralDefaults,
     id: `${SKILL}/invalid-snapshot`,
-    tier: BEHAVIORAL_TIER,
     skill: SKILL,
-    fixture: "clean",
     mutationPolicy: "read-only",
     budgetUsd: 1.0,
     wallClockMs: 300_000,

@@ -4,8 +4,8 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
+import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import {
-  cases,
   DETAILED_PATH,
   FINAL_PATH,
   INVALID_SNAPSHOT,
@@ -17,18 +17,17 @@ import {
   SOURCE_PATH,
 } from "#/cases/planning-work-item-tasks.ts";
 import {
-  HEAD_LOG,
+  assertPlanningWrites,
   SEED_COMMIT,
 } from "#/cases/planning-work-item-tasks-checks.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
+import { HEAD_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 function getCase(suffix: string) {
-  const result = cases.find((entry) => entry.id === `${SKILL}/${suffix}`);
-  if (result === undefined) throw new Error(`missing case ${suffix}`);
-  return result;
+  return getRegisteredCase(`${SKILL}/${suffix}`);
 }
 
 function task(number: number, title: string): string {
@@ -137,29 +136,6 @@ function failedObservation(): Observation {
     },
   });
 }
-
-describe("routing", () => {
-  test("positive requires a Skill call, negative rejects it", () => {
-    const invoked = createObservation({
-      toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-    });
-    expect(() => getCase("trigger-positive").check(invoked)).not.toThrow();
-    expect(() =>
-      getCase("trigger-positive").check(createObservation()),
-    ).toThrow();
-    expect(() =>
-      getCase("trigger-negative-selected-task").check(createObservation()),
-    ).not.toThrow();
-    expect(() =>
-      getCase("trigger-negative-selected-task").check(invoked),
-    ).toThrow();
-  });
-  test.each(cases)("$id rejects a run that never happened", (entry) => {
-    expect(() => entry.check(createObservation({ timedOut: true }))).toThrow(
-      /wall clock/,
-    );
-  });
-});
 
 describe("staged-plan", () => {
   test("accepts the complete staged artifacts and handoff", () => {
@@ -438,3 +414,25 @@ test.each(["staged-plan", "invalid-snapshot"])(
     }
   },
 );
+
+const plannedArtifact = "docs/acme-app-42.md";
+const plannedOnly = createObservation({
+  gitStatusAfter: { kind: "worktree", entries: `?? ${plannedArtifact}` },
+  repoFiles: {
+    [plannedArtifact]: "plan",
+    [HEAD_LOG]: "commit: seed planning inputs\n",
+    ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
+  },
+});
+
+testArtifactWriteMatrix({
+  label: "planning",
+  artifact: plannedArtifact,
+  check: (candidate) => {
+    assertPlanningWrites(candidate, [plannedArtifact], {});
+  },
+  valid: () => ({
+    ...plannedOnly,
+    toolCalls: [{ name: "Write", input: { file_path: plannedArtifact } }],
+  }),
+});

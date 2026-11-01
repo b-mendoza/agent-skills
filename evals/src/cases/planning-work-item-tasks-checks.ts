@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
 
 import {
   assertFileExists,
@@ -9,30 +7,24 @@ import {
   assertRunHappened,
   fixtureRelativePath,
   seedFixtureRoot,
+  withoutAllowedChanges,
 } from "#/cases/shared-checks.ts";
 import type { SeedContext } from "#/fixtures/fixtures.ts";
+import { commitRepoFiles, HEAD_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { mutationEvidence } from "#/observation/mutation-evidence.ts";
 
 export const SEED_COMMIT = "seed planning inputs";
-export const HEAD_LOG = ".git/logs/HEAD";
 
 export function seedPlanningFiles(
   { repoPath }: SeedContext,
   files: Readonly<Record<string, string>>,
 ): void {
   seedFixtureRoot(repoPath);
-  for (const [path, content] of Object.entries(files)) {
-    mkdirSync(dirname(join(repoPath, path)), { recursive: true });
-    writeFileSync(join(repoPath, path), content);
-  }
-  for (const args of [
-    ["config", "status.showUntrackedFiles", "all"],
-    ["add", "--", ...Object.keys(files)],
-    ["commit", "-qm", SEED_COMMIT],
-  ]) {
-    execFileSync("git", args, { cwd: repoPath });
-  }
+  execFileSync("git", ["config", "status.showUntrackedFiles", "all"], {
+    cwd: repoPath,
+  });
+  commitRepoFiles(repoPath, files, SEED_COMMIT);
 }
 
 /** Seeds request full untracked paths so a new docs/ directory cannot hide extras. */
@@ -66,21 +58,18 @@ export function assertPlanningWrites(
   }
   assertFileMatches(observation, HEAD_LOG, /commit: seed planning inputs\n?$/);
   // Check tools separately from the expected status delta; ignored-file writes still count.
-  const otherCalls = observation.toolCalls.filter((call) => {
-    if (call.name !== "Write" && call.name !== "Edit") return true;
-    const path = call.input["file_path"];
-    return !paths.some(
-      (allowed) =>
-        typeof path === "string" &&
-        fixtureRelativePath(observation, path) === allowed,
-    );
-  });
   assert.deepEqual(
-    mutationEvidence({
-      ...observation,
-      toolCalls: otherCalls,
-      gitStatusAfter: observation.gitStatusBefore,
-    }),
+    mutationEvidence(
+      withoutAllowedChanges(observation, (call) => {
+        if (call.name !== "Write" && call.name !== "Edit") return false;
+        const path = call.input["file_path"];
+        return paths.some(
+          (allowed) =>
+            typeof path === "string" &&
+            fixtureRelativePath(observation, path) === allowed,
+        );
+      }),
+    ),
     [],
   );
   assert.ok(
@@ -107,11 +96,4 @@ export function assertOrderedHeadings(
     );
     previous = position;
   }
-}
-
-export function capturedText(observation: Observation, path: string): string {
-  assertFileExists(observation, path);
-  const content = observation.repoFiles?.[path];
-  assert.ok(typeof content === "string");
-  return content;
 }
