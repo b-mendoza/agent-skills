@@ -1,17 +1,23 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileMatches,
+  assertHeadUnchanged,
   assertNoMutation,
   assertNoPublicStatusLine,
   checkNegativeRouting,
   checkPositiveRouting,
 } from "#/cases/shared-checks.ts";
+import {
+  BASELINE_REFLOG,
+  copyHeadReflog,
+  HEAD_LOG,
+} from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
@@ -24,15 +30,12 @@ export const COMMIT_FACTS = {
 const snapshotPaths = [
   "a.txt",
   "unrelated.txt",
-  ".git/logs/HEAD",
-  ".git/eval-baseline-reflog",
+  HEAD_LOG,
+  BASELINE_REFLOG,
 ] as const;
 
 function seedBaseline({ repoPath }: SeedContext): void {
-  writeFileSync(
-    join(repoPath, ".git/eval-baseline-reflog"),
-    readFileSync(join(repoPath, ".git/logs/HEAD")),
-  );
+  copyHeadReflog(repoPath);
 }
 
 function seedDirty(seedContext: SeedContext): void {
@@ -53,17 +56,17 @@ function checkUnchanged(observation: Observation, clean = false): void {
     "a.txt",
     clean ? /^hello\n$/ : /^hello\nscoped greeting change\n$/,
   );
-  assertFileMatches(observation, ".git/eval-baseline-reflog", /\S/);
-  assertFileMatches(observation, ".git/logs/HEAD", /\S/);
-  assert.equal(
-    files[".git/logs/HEAD"],
-    files[".git/eval-baseline-reflog"],
-    "HEAD changed before plan approval",
-  );
+  assertHeadUnchanged(observation, "HEAD changed before plan approval");
   assert.equal(
     files["unrelated.txt"],
     clean ? null : COMMIT_FACTS.unrelatedContent,
     "unrelated work changed",
+  );
+  assertNoPublicStatusLine(
+    observation.finalText,
+    "COMMIT_SCOPED_CHANGES",
+    "COMMIT_PLAN",
+    "COMMIT_EXECUTE",
   );
 }
 
@@ -72,33 +75,18 @@ function checkStopped(
   status: "BLOCKED" | "NO_SCOPED_CHANGES",
 ): string {
   checkUnchanged(observation, status === "NO_SCOPED_CHANGES");
-  assertNoPublicStatusLine(
-    observation.finalText,
-    "COMMIT_SCOPED_CHANGES",
-    "COMMIT_PLAN",
-    "COMMIT_EXECUTE",
-  );
   return `${status}; no commit or worktree change`;
 }
 
 function checkPlan(observation: Observation): string {
   checkUnchanged(observation);
-  assertNoPublicStatusLine(
-    observation.finalText,
-    "COMMIT_SCOPED_CHANGES",
-    "COMMIT_PLAN",
-    "COMMIT_EXECUTE",
-  );
   return "No commit or worktree change; unrelated staged work preserved";
 }
 
-const behavioralDefaults = {
+const suiteDefaults = {
+  ...behavioralDefaults,
   skill: SKILL,
-  tier: BEHAVIORAL_TIER,
-  fixture: "clean",
   mutationPolicy: "read-only",
-  budgetUsd: 2,
-  wallClockMs: 600_000,
   snapshotPaths,
 } as const;
 
@@ -126,7 +114,7 @@ export const cases = [
   {
     // A commit request is not approval of the not-yet-displayed plan (SKILL.md G_PLAN_APPROVAL).
     id: "committing-scoped-changes/plan-approval",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     seed: seedDirty,
     intent:
       "Explicit commit consent reaches the exact-plan gate without committing",
@@ -148,7 +136,7 @@ export const cases = [
   },
   {
     id: "committing-scoped-changes/no-verbal-consent",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     seed: seedDirty,
     intent: "Skill invocation and paths alone do not authorize a commit",
     prompt: () =>
@@ -170,7 +158,7 @@ export const cases = [
   },
   {
     id: "committing-scoped-changes/no-scoped-changes",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     seed: seedBaseline,
     intent:
       "An unchanged scope returns NO_SCOPED_CHANGES without planning or committing",
