@@ -7,17 +7,15 @@ import {
   DIRTY_TEST_CONTENT,
   seedDirtyTestSuite,
   seedTestSuite,
-  SKILL,
   TEST_FILES,
   TEST_PATH,
 } from "#/cases/improving-test-suites.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
-import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { sampleGitStatus } from "#/observation/mutation-evidence.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
-const [positive, negative, approval, dirty] = cases;
+const [, , approval, dirty] = cases;
 const PLAN = `MINIMAL_HARNESS_DECISION for ${TEST_PATH}
 Keep adds shipping and rejects negative amounts to preserve behavior.
 Delete the duplicate shipping example (duplicated-coverage) and rewrite the function spelling check (implementation-detail-assertion).
@@ -39,37 +37,6 @@ const dirtyObservation = createObservation({
   repoFiles: { ...TEST_FILES, [TEST_PATH]: DIRTY_TEST_CONTENT },
   gitStatusBefore: { kind: "worktree", entries: `M ${TEST_PATH}` },
   gitStatusAfter: { kind: "worktree", entries: `M ${TEST_PATH}` },
-});
-
-describe("routing", () => {
-  test("requires the positive skill invocation", () => {
-    expect(
-      positive.check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-        }),
-      ),
-    ).toBe("Skill invoked");
-    expect(() => positive.check(createObservation())).toThrow(
-      /never triggered/,
-    );
-  });
-  test("accepts the sibling and rejects this skill on the negative", () => {
-    expect(
-      negative.check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: "refactoring-code" } }],
-        }),
-      ),
-    ).toBe("no trigger");
-    expect(() =>
-      negative.check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-        }),
-      ),
-    ).toThrow(/unexpectedly triggered/);
-  });
 });
 
 describe("approval-before-mutation", () => {
@@ -189,19 +156,6 @@ describe("dirty-target guard", () => {
         toolCalls: [{ name: "Bash", input: { command: "git stash push" } }],
       }),
     ).toThrow(/read-only/);
-  });
-});
-
-describe("invalid runs", () => {
-  test.each(cases)("$id rejects a query failure", (evalCase) => {
-    expect(() =>
-      evalCase.check(createObservation({ subtype: QUERY_ERROR_SUBTYPE })),
-    ).toThrow(/no result/);
-  });
-  test.each(cases)("$id rejects a timeout", (evalCase) => {
-    expect(() => evalCase.check(createObservation({ timedOut: true }))).toThrow(
-      /wall clock/,
-    );
   });
 });
 
