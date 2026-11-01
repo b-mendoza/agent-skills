@@ -1,6 +1,6 @@
 # State Machine — refine-task
 
-Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals. Normative gate wording lives in [`references/reviewer-policy.md`](./references/reviewer-policy.md).
+Finite-state execution model for this skill. This table is the authoritative list of states, transitions, guards, and terminals. Normative gate wording lives in [`references/reviewer-policy.md`](./references/reviewer-policy.md).
 
 ## States
 
@@ -95,13 +95,3 @@ Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./
 ## Terminal decisions (internal modes)
 
 Exactly one of: `Blocked` (+ `Not reviewed` when pre-dispatch), `Deferred`, `Draft`, `Ready to post`, `Posted`, `Already posted`.
-
-## Reachability and dead-state checks
-
-| Property                                   | Result                          |
-| ------------------------------------------ | ------------------------------- |
-| Every active state reachable from `Intake` | yes                             |
-| Every terminal reachable                   | yes                             |
-| Dead states (no outgoing, non-terminal)    | none                            |
-| Reviewer re-dispatch bounded               | yes — at most one `Redispatch`  |
-| Post attempts bounded                      | yes — exactly one `AttemptPost` |
