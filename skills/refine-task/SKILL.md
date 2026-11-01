@@ -23,7 +23,7 @@ At least one source pointer is required: `ITEM_URL` or non-empty `ITEM_CONTEXT`.
 
 ## State Machine Overview
 
-Execution is a finite-state machine. Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./state-machine.md). Normative gate wording: [`./references/reviewer-policy.md`](./references/reviewer-policy.md).
+Execution is a finite-state machine. [`state-machine.md`](./state-machine.md) is the only source for states, transitions, guards, and terminals. Normative gate wording: [`./references/reviewer-policy.md`](./references/reviewer-policy.md).
 
 | State group                                        | Result                                                                |
 | -------------------------------------------------- | --------------------------------------------------------------------- |
@@ -47,7 +47,6 @@ Read the subagent file only when dispatching it.
 | -------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Coordinator routing and subagent dispatch                      | This `SKILL.md`                                                                |
 | State-transition table                                         | `./state-machine.md`                                                           |
-| State diagram                                                  | `./flow-diagram.md`                                                            |
 | Definitions, boundaries, state semantics, gates, posting rules | `./references/reviewer-policy.md`                                              |
 | Readiness checks and item-type focus                           | `./references/refinement-checks.md` inside `refinement-reviewer`               |
 | Tracker-facing comment sections and empty-section handling     | `./references/comment-template.md` inside `refinement-reviewer`                |
