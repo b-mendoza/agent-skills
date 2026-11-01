@@ -5,12 +5,6 @@ export type { SeedContext } from "#/fixtures/fixtures.ts";
 
 export const ROUTING_TIER = 1;
 export const BEHAVIORAL_TIER = 2;
-export type CaseTier = typeof ROUTING_TIER | typeof BEHAVIORAL_TIER;
-
-export interface CaseContext {
-  readonly missingPath: string;
-  readonly notGitPath: string;
-}
 
 interface CaseDefinition {
   readonly id: string;
@@ -22,7 +16,10 @@ interface CaseDefinition {
   /** Repo-relative text files to capture after the run and before cleanup. */
   readonly snapshotPaths?: readonly string[];
   readonly intent: string;
-  readonly prompt: (caseContext: CaseContext) => string;
+  readonly prompt: (caseContext: {
+    readonly missingPath: string;
+    readonly notGitPath: string;
+  }) => string;
   readonly budgetUsd: number;
   readonly wallClockMs: number;
   /** Throws to fail; returns a short observed-outcome string for the report. */
@@ -46,4 +43,11 @@ export const routingDefaults = {
   fixture: "dirty",
   budgetUsd: 0.05,
   wallClockMs: 180_000,
+} as const;
+
+export const behavioralDefaults = {
+  tier: BEHAVIORAL_TIER,
+  fixture: "clean",
+  budgetUsd: 2.0,
+  wallClockMs: 600_000,
 } as const;
