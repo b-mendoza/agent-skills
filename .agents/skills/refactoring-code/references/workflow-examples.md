@@ -48,28 +48,6 @@ Non-goals:
 Decision: approve, adjust, or decline.
 ```
 
-## PASS_WITH_WARNINGS Handoff Skeleton
-
-```text
-The refactor is complete, but validation did not run: the command exited 0
-but matched zero tests.
-
-1. Current behavior summary: <summary>
-2. Diagnosis: <chunk findings that drove the plan>
-3. Code changes made: <files, summaries, dispositions>
-4. Reuse and deletion summary: net lines, duplication removed vs introduced,
-   reuse-ladder rungs used
-5. Validation note: command, exit code, coverage evidence, baseline
-   checkpoint result, pre-existing failures if any
-6. Review outcome: behavior verdict, simplification verdict, fix cycles used
-   (n of 2), Minor notes passed through
-7. File-size compliance: per-file lines, waivers, mechanical-edit exemptions
-8. Worktree end-state: changed/created files left uncommitted; no commits
-   made; suggested commit boundary versus pre-existing dirty files
-9. Disclosures: dispatch method, AUTO_APPROVE if used, retries, unanalyzed
-   dimensions if any
-```
-
 ## Failure Cleanup Block
 
 ```text
