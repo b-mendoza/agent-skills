@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileExists,
   assertNoMutation,
@@ -14,6 +11,7 @@ import {
   normalizeReplyText,
   replyAsksFor,
 } from "#/cases/shared-checks.ts";
+import { commitRepoFiles } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
@@ -27,21 +25,18 @@ export const PROMPT_FACTS = {
 
 const SKILL = "prompt-structurer";
 const SKIPPED_PASSES = ["2", "3", "4", "5"] as const;
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
-  fixture: "clean",
+const suiteDefaults = {
+  ...behavioralDefaults,
   mutationPolicy: "read-only",
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
   snapshotPaths: [PROMPT_FACTS.path],
 } as const;
 
 function seedPrompt({ repoPath }: SeedContext): void {
-  writeFileSync(join(repoPath, PROMPT_FACTS.path), PROMPT_FACTS.source);
-  execFileSync("git", ["add", "--", PROMPT_FACTS.path], { cwd: repoPath });
-  execFileSync("git", ["commit", "-qm", "seed source prompt"], {
-    cwd: repoPath,
-  });
+  commitRepoFiles(
+    repoPath,
+    { [PROMPT_FACTS.path]: PROMPT_FACTS.source },
+    "seed source prompt",
+  );
 }
 
 function assertSourceIntact(observation: Observation): void {
@@ -259,7 +254,7 @@ export const cases = [
   },
   {
     id: "prompt-structurer/structure-prose",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     skill: SKILL,
     intent:
       "A short prose source becomes conversational XML without execution or file writes",
@@ -292,7 +287,7 @@ export const cases = [
   },
   {
     id: "prompt-structurer/revision-missing-baseline",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     skill: SKILL,
     intent:
       "A revision cannot use prose as a substitute for missing existing XML",

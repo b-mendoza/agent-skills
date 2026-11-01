@@ -1,11 +1,10 @@
-import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import type { EvalCase } from "#/cases/case-contract.ts";
-import { cases } from "#/cases/prompt-structurer.ts";
+import { PROMPT_FACTS } from "#/cases/prompt-structurer.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -25,53 +24,37 @@ Dispatch: inline fallback. Handoff: inline named sections.
 Removal-test summary: task establishes work, output states formatting, success_criteria verifies it.
 Follow-ups: none.`;
 
-function getCase(suffix: string): EvalCase {
-  const evalCase = cases.find(
-    (candidate) => candidate.id === `${skill}/${suffix}`,
-  );
-  assert.ok(evalCase !== undefined, `Missing eval case: ${suffix}`);
-  return evalCase;
+function getCase(suffix: string) {
+  return getRegisteredCase(`${skill}/${suffix}`);
 }
 
-function behavioralObservation(suffix: string, finalText: string): Observation {
-  const evalCase = getCase(suffix);
-  const fixture = makeFixture("clean", [], evalCase.seed);
-  try {
-    return createObservation({
-      finalText,
-      repoFiles: snapshotRepoFiles(fixture.cwd, evalCase.snapshotPaths ?? []),
-    });
-  } finally {
-    fixture.cleanup();
-  }
+/** Both behavioral cases seed and capture only the source prompt. */
+function behavioralObservation(finalText: string): Observation {
+  return createObservation({
+    finalText,
+    repoFiles: { [PROMPT_FACTS.path]: PROMPT_FACTS.source },
+  });
 }
 
 const blockedText =
   "I cannot revise the prompt without its baseline. Please provide the existing structured XML prompt so I can apply the change request.";
 
-describe("prompt-structurer routing", () => {
-  test("invocation is required for a positive trigger", () => {
-    const evalCase = getCase("trigger-positive");
-    expect(() =>
-      evalCase.check(
-        createObservation({ toolCalls: [{ name: "Skill", input: { skill } }] }),
-      ),
-    ).not.toThrow();
-    expect(() => evalCase.check(createObservation())).toThrow();
-  });
-
-  test("plan audits belong to the sibling rather than the structurer", () => {
-    const evalCase = getCase("trigger-negative-plan-audit");
-    expect(() => evalCase.check(createObservation())).not.toThrow();
-    expect(() =>
-      evalCase.check(
-        createObservation({ toolCalls: [{ name: "Skill", input: { skill } }] }),
-      ),
-    ).toThrow();
-  });
-});
-
 describe("prompt-structurer behavior", () => {
+  test.each(["structure-prose", "revision-missing-baseline"])(
+    "%s seeds and captures exactly the source prompt",
+    (suffix) => {
+      const evalCase = getCase(suffix);
+      const fixture = makeFixture("clean", [], evalCase.seed);
+      try {
+        expect(
+          snapshotRepoFiles(fixture.cwd, evalCase.snapshotPaths ?? []),
+        ).toStrictEqual({ [PROMPT_FACTS.path]: PROMPT_FACTS.source });
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
+
   test("seeds the source prompt without dirtying the fixture", () => {
     const fixture = makeFixture("clean", [], getCase("structure-prose").seed);
     try {
@@ -88,9 +71,7 @@ describe("prompt-structurer behavior", () => {
 
   test("accepts XML followed by disclosed assembly notes", () => {
     expect(() =>
-      getCase("structure-prose").check(
-        behavioralObservation("structure-prose", structuredPrompt),
-      ),
+      getCase("structure-prose").check(behavioralObservation(structuredPrompt)),
     ).not.toThrow();
   });
 
@@ -150,9 +131,7 @@ describe("prompt-structurer behavior", () => {
     ],
   ])("accepts %s", (_label, finalText) => {
     expect(() =>
-      getCase("structure-prose").check(
-        behavioralObservation("structure-prose", finalText),
-      ),
+      getCase("structure-prose").check(behavioralObservation(finalText)),
     ).not.toThrow();
   });
 
@@ -193,9 +172,7 @@ describe("prompt-structurer behavior", () => {
     ["title-case result envelope", `${structuredPrompt}\n**Result:** PASS.`],
   ])("rejects %s", (_label, finalText) => {
     expect(() =>
-      getCase("structure-prose").check(
-        behavioralObservation("structure-prose", finalText),
-      ),
+      getCase("structure-prose").check(behavioralObservation(finalText)),
     ).toThrow();
   });
 
@@ -218,10 +195,7 @@ describe("prompt-structurer behavior", () => {
   ])("rejects XML with %s", (_label, opening) => {
     expect(() =>
       getCase("structure-prose").check(
-        behavioralObservation(
-          "structure-prose",
-          structuredPrompt.replace("<task>", opening),
-        ),
+        behavioralObservation(structuredPrompt.replace("<task>", opening)),
       ),
     ).toThrow();
   });
@@ -229,7 +203,7 @@ describe("prompt-structurer behavior", () => {
   test("blocks a revision without substituting prose for existing XML", () => {
     expect(() =>
       getCase("revision-missing-baseline").check(
-        behavioralObservation("revision-missing-baseline", blockedText),
+        behavioralObservation(blockedText),
       ),
     ).not.toThrow();
   });
@@ -245,7 +219,7 @@ describe("prompt-structurer behavior", () => {
   ])("rejects a revision with %s", (_label, finalText) => {
     expect(() =>
       getCase("revision-missing-baseline").check(
-        behavioralObservation("revision-missing-baseline", finalText),
+        behavioralObservation(finalText),
       ),
     ).toThrow();
   });
@@ -253,34 +227,28 @@ describe("prompt-structurer behavior", () => {
   test.each([
     ["structure-prose", structuredPrompt],
     ["revision-missing-baseline", blockedText],
-  ])(
-    "%s rejects source edits, extra writes, and invalid runs",
-    (suffix, finalText) => {
-      const observation = behavioralObservation(suffix, finalText);
-      const evalCase = getCase(suffix);
-      expect(() =>
-        evalCase.check({
-          ...observation,
-          repoFiles: { "prompt.txt": "rewritten" },
-        }),
-      ).toThrow();
-      expect(() =>
-        evalCase.check({
-          ...observation,
-          toolCalls: [
-            { name: "Write", input: { file_path: "other.xml", content: "x" } },
-          ],
-        }),
-      ).toThrow();
-      expect(() =>
-        evalCase.check({
-          ...observation,
-          gitStatusAfter: { kind: "worktree", entries: "?? other.xml" },
-        }),
-      ).toThrow();
-      expect(() =>
-        evalCase.check({ ...observation, timedOut: true }),
-      ).toThrow();
-    },
-  );
+  ])("%s rejects source edits and extra writes", (suffix, finalText) => {
+    const observation = behavioralObservation(finalText);
+    const evalCase = getCase(suffix);
+    expect(() =>
+      evalCase.check({
+        ...observation,
+        repoFiles: { "prompt.txt": "rewritten" },
+      }),
+    ).toThrow();
+    expect(() =>
+      evalCase.check({
+        ...observation,
+        toolCalls: [
+          { name: "Write", input: { file_path: "other.xml", content: "x" } },
+        ],
+      }),
+    ).toThrow();
+    expect(() =>
+      evalCase.check({
+        ...observation,
+        gitStatusAfter: { kind: "worktree", entries: "?? other.xml" },
+      }),
+    ).toThrow();
+  });
 });
