@@ -12,11 +12,12 @@ import {
   cpSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export interface SeedContext {
@@ -38,13 +39,7 @@ export interface Fixture {
   readonly cleanup: () => void;
 }
 
-// `missing-path` builds the same repo as `clean`; cases use `missingPath`.
-export type FixtureKind =
-  | "clean"
-  | "dirty"
-  | "hostile"
-  | "not-git"
-  | "missing-path";
+export type FixtureKind = "clean" | "dirty" | "hostile" | "not-git";
 
 // Planted facts: what each behavioral fixture is known to contain, exported so
 // case assertions and the fixture builder share one source of truth. A check
@@ -84,6 +79,45 @@ const MISSING_PATH_NAME = "definitely-does-not-exist";
 
 function runGit(repositoryPath: string, ...arguments_: string[]): void {
   execFileSync("git", arguments_, { cwd: repositoryPath, stdio: "ignore" });
+}
+
+export const HEAD_LOG = ".git/logs/HEAD";
+export const BASELINE_REFLOG = ".git/eval-baseline-reflog";
+/** Invocation log written by every fake `gh` executable. */
+export const GH_LOG = ".git/fake-gh.log";
+
+/** Copies the seeded HEAD reflog so a check can prove the run did not move HEAD. */
+export function copyHeadReflog(
+  repoPath: string,
+  baselinePath: string = BASELINE_REFLOG,
+): void {
+  writeFileSync(
+    join(repoPath, baselinePath),
+    readFileSync(join(repoPath, HEAD_LOG)),
+  );
+}
+
+/** Writes repo-relative text files, creating their parent directories. */
+export function writeRepoFiles(
+  repoPath: string,
+  files: Readonly<Record<string, string>>,
+): void {
+  for (const [path, content] of Object.entries(files)) {
+    mkdirSync(dirname(join(repoPath, path)), { recursive: true });
+    writeFileSync(join(repoPath, path), content);
+  }
+}
+
+/** Writes files, stages only `stagedPaths` (all written files by default), and commits. */
+export function commitRepoFiles(
+  repoPath: string,
+  files: Readonly<Record<string, string>>,
+  subject: string,
+  stagedPaths: readonly string[] = Object.keys(files),
+): void {
+  writeRepoFiles(repoPath, files);
+  execFileSync("git", ["add", "--", ...stagedPaths], { cwd: repoPath });
+  execFileSync("git", ["commit", "-qm", subject], { cwd: repoPath });
 }
 
 function initializeGitFixtureRepository(

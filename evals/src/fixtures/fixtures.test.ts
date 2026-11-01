@@ -148,8 +148,8 @@ test("not-git: provisions a discoverable skill without a worktree or sampling ro
   expect(result.stderr).toContain("not a git repository");
 });
 
-test("missing-path: provisions a discoverable skill with missing and real non-worktree paths", () => {
-  const fixture = createFixture("missing-path");
+test("clean: provisions a discoverable skill with missing and real non-worktree paths", () => {
+  const fixture = createFixture("clean");
   expect(
     existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
   ).toBe(true);
