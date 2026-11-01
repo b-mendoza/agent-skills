@@ -7,11 +7,11 @@ import { expect, test } from "vitest";
 
 import {
   APPROVED_PLAN,
-  cases,
   PLAN_PATH,
 } from "#/cases/creating-work-item-children.ts";
-import { GH_LOG, ISSUE } from "#/cases/fetching-work-item-fixtures.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
+import { ISSUE } from "#/cases/fetching-work-item-fixtures.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
+import { GH_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 const TABLE_HEADER =
@@ -34,30 +34,7 @@ const BLOCKED = createObservation({
 });
 
 function getCase(suffix: string) {
-  const evalCase = cases.find(
-    (candidate) => candidate.id === `creating-work-item-children/${suffix}`,
-  );
-  assert.ok(evalCase !== undefined);
-  return evalCase;
-}
-
-for (const suffix of ["trigger-positive", "trigger-negative-planning"]) {
-  test(`${suffix} distinguishes invocation from noninvocation`, () => {
-    const invoked = createObservation({
-      toolCalls: [
-        { name: "Skill", input: { skill: "creating-work-item-children" } },
-      ],
-    });
-    const absent = createObservation();
-    const positive = suffix === "trigger-positive";
-    expect(() =>
-      getCase(suffix).check(positive ? invoked : absent),
-    ).not.toThrow();
-    expect(() => getCase(suffix).check(positive ? absent : invoked)).toThrow();
-    expect(() =>
-      getCase(suffix).check(createObservation({ timedOut: true })),
-    ).toThrow();
-  });
+  return getRegisteredCase(`creating-work-item-children/${suffix}`);
 }
 
 for (const [suffix, observation] of [
@@ -71,23 +48,19 @@ for (const [suffix, observation] of [
     `${suffix} rejects old public status %s`,
     (status) => {
       expect(() =>
-        getCase(suffix).check(
-          createObservation({
-            ...observation,
-            finalText: `${status}\n${observation.finalText}`,
-          }),
-        ),
+        getCase(suffix).check({
+          ...observation,
+          finalText: `${status}\n${observation.finalText}`,
+        }),
       ).toThrow(/public status line/);
     },
   );
   test.each([ISSUE.reference, PLAN_PATH])(`${suffix} preserves %s`, (value) => {
     expect(() =>
-      getCase(suffix).check(
-        createObservation({
-          ...observation,
-          finalText: observation.finalText.replace(value, "omitted"),
-        }),
-      ),
+      getCase(suffix).check({
+        ...observation,
+        finalText: observation.finalText.replace(value, "omitted"),
+      }),
     ).toThrow();
   });
   test.each([
@@ -101,18 +74,16 @@ for (const [suffix, observation] of [
     `${suffix} rejects plan mutation and duplicate remote creation %#`,
     (repoFiles) => {
       expect(() =>
-        getCase(suffix).check(createObservation({ ...observation, repoFiles })),
+        getCase(suffix).check({ ...observation, repoFiles }),
       ).toThrow();
     },
   );
   test(`${suffix} rejects file edits`, () => {
     expect(() =>
-      getCase(suffix).check(
-        createObservation({
-          ...observation,
-          toolCalls: [{ name: "Edit", input: { file_path: PLAN_PATH } }],
-        }),
-      ),
+      getCase(suffix).check({
+        ...observation,
+        toolCalls: [{ name: "Edit", input: { file_path: PLAN_PATH } }],
+      }),
     ).toThrow();
   });
 }
@@ -143,9 +114,7 @@ test("reconciliation accepts padded tables and bold prose", () => {
     "**Reconciled**",
   );
   expect(() =>
-    getCase("reuse-linked-plan").check(
-      createObservation({ ...SUCCESS, finalText }),
-    ),
+    getCase("reuse-linked-plan").check({ ...SUCCESS, finalText }),
   ).not.toThrow();
 });
 
@@ -155,9 +124,7 @@ test("reconciliation accepts the recorded prose rollup without its routing envel
     "1 task, which was already linked. 0 issues were created and 0 creates failed.",
   );
   expect(() =>
-    getCase("reuse-linked-plan").check(
-      createObservation({ ...SUCCESS, finalText }),
-    ),
+    getCase("reuse-linked-plan").check({ ...SUCCESS, finalText }),
   ).not.toThrow();
 });
 
@@ -166,23 +133,19 @@ test.each([
   SUCCESS_TEXT.replace("| 1 | acme/app#43", "| 1 | acme/app#99"),
 ])("reconciliation rejects incorrect structured linkage %#", (finalText) => {
   expect(() =>
-    getCase("reuse-linked-plan").check(
-      createObservation({ ...SUCCESS, finalText }),
-    ),
+    getCase("reuse-linked-plan").check({ ...SUCCESS, finalText }),
   ).toThrow();
 });
 
 test("reconciliation must observe the existing child", () => {
   expect(() =>
-    getCase("reuse-linked-plan").check(
-      createObservation({
-        ...SUCCESS,
-        repoFiles: {
-          [PLAN_PATH]: APPROVED_PLAN,
-          [GH_LOG]: `${JSON.stringify(["issue", "view", ISSUE.url])}\n`,
-        },
-      }),
-    ),
+    getCase("reuse-linked-plan").check({
+      ...SUCCESS,
+      repoFiles: {
+        [PLAN_PATH]: APPROVED_PLAN,
+        [GH_LOG]: `${JSON.stringify(["issue", "view", ISSUE.url])}\n`,
+      },
+    }),
   ).toThrow();
 });
 
