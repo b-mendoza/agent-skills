@@ -7,12 +7,9 @@ import type { UnifiedConfig } from "promptfoo";
 import { BEHAVIORAL_TIER } from "#/cases/case-contract.ts";
 import { cases } from "#/cases/registry.ts";
 
-const configuredModel = process.env["EVAL_MODEL"];
+const configuredModel = process.env["EVAL_MODEL"] ?? "";
 // Capture once: later environment changes must not change an ongoing run.
-export const evalModel =
-  configuredModel === undefined || configuredModel === ""
-    ? "sonnet"
-    : configuredModel;
+export const evalModel = configuredModel === "" ? "sonnet" : configuredModel;
 
 const MAX_CONCURRENCY = 5;
 const runDirectory = join(
