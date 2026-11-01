@@ -137,6 +137,12 @@ describe("validate-output.sh", () => {
       finding: /missing field: Repo state/,
     },
     {
+      label: "a non-PASS evidence payload missing its Reason",
+      mode: "evidence",
+      payload: "GIT_EVIDENCE: ERROR",
+      finding: /line 2 must be Reason: with non-empty content/,
+    },
+    {
       label: "a non-PASS evidence payload with an extra line",
       mode: "evidence",
       payload: `${GOOD_NON_PASS_EVIDENCE}\nNext step: nope`,
