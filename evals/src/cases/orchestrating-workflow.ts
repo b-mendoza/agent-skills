@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   CRITIQUE_PATH,
   DECISIONS_PATH,
@@ -15,9 +15,10 @@ import {
 } from "#/cases/orchestrating-workflow-fixtures.ts";
 import {
   assertFileAbsent,
-  assertFileExists,
   assertFileMatches,
+  assertFilesUnchanged,
   assertNoMutation,
+  assertOnlyInitialCommit,
   checkNegativeRouting,
   checkPositiveRouting,
 } from "#/cases/shared-checks.ts";
@@ -43,24 +44,17 @@ function checkGateHeld(observation: Observation): void {
   }
   assertFileAbsent(observation, CRITIQUE_PATH);
   assertFileAbsent(observation, DECISIONS_PATH);
-  assertFileMatches(
-    observation,
-    EXECUTION_FACTS.headPath,
-    /^[^\n]+commit \(initial\): initial commit\n$/,
-  );
+  assertOnlyInitialCommit(observation);
   assert.equal(
     observation.repoFiles?.[EXECUTION_FACTS.sourcePath],
     EXECUTION_FACTS.sourceContent,
   );
 }
 
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
+const suiteDefaults = {
+  ...behavioralDefaults,
   skill: SKILL,
-  fixture: "clean",
   mutationPolicy: "read-only",
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
 } as const;
 const gateSnapshots = [
   CRITIQUE_PATH,
@@ -94,7 +88,7 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
-    ...behavioralDefaults,
+    ...suiteDefaults,
     id: `${SKILL}/resume-at-task-critique`,
     extraSkills: remainingSkills,
     seed: seedResumeArtifacts,
@@ -105,14 +99,11 @@ export const cases = [
       `Use ${SKILL}. Resume ${RESUME_FACTS.key}. ISSUE_URL=${EXECUTION_FACTS.issueUrl}.`,
     check: (observation) => {
       checkGateHeld(observation);
-      for (const [path, content] of Object.entries(RESUME_ARTIFACTS)) {
-        assertFileExists(observation, path);
-        assert.equal(
-          observation.repoFiles?.[path],
-          content,
-          `changed resume artifact: ${path}`,
-        );
-      }
+      assertFilesUnchanged(
+        observation,
+        RESUME_ARTIFACTS,
+        "changed resume artifact",
+      );
       assertFileMatches(
         observation,
         EXECUTION_FACTS.logPath,
@@ -138,7 +129,7 @@ export const cases = [
       }),
   },
   {
-    ...behavioralDefaults,
+    ...suiteDefaults,
     id: `${SKILL}/ambiguous-identifier`,
     extraSkills: remainingSkills,
     seed: seedFakeGithub,
