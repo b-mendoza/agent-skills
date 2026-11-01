@@ -7,7 +7,7 @@ description: "Diagnoses runtime bugs, crashes, regressions, failing CI/CD pipeli
 
 Use this skill to diagnose a reported problem from supplied resources and deliver an evidence-backed RCA report. The orchestrator classifies the issue, manages clarification and conditional approval gates, routes work to specialist subagents, and keeps conclusions traceable. Raw artifacts stay in subagent contexts; the orchestrator retains only bounded summaries, verdicts, approvals, and drafts.
 
-Execution is a finite state machine. Canonical tables: [`state-machine.md`](./state-machine.md).
+Execution is a finite state machine. [`state-machine.md`](./state-machine.md) is the sole normative source for states, guards, loop caps, and terminals.
 
 ## Inputs
 
@@ -22,6 +22,8 @@ Execution is a finite state machine. Canonical tables: [`state-machine.md`](./st
 
 ## Pipeline Overview
 
+Non-normative phase outline; routing lives in `./state-machine.md`.
+
 | Phase       | Mode                           | Result                                                                                                      |
 | ----------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
 | 1. Intake   | Inline                         | Classify source; state safety and trust rules; clarify if required (`Clarify` wait)                         |
@@ -29,8 +31,6 @@ Execution is a finite state machine. Canonical tables: [`state-machine.md`](./st
 | 3. Analysis | Dispatch `root-cause-analyst`  | Draft RCA, or bounded evidence/input request, or **conditional** `PresentApproval` on `NEEDS_APPROVAL` only |
 | 4. Review   | Dispatch `rca-report-reviewer` | Verify grounding, safety, confidence, clarity, and status                                                   |
 | 5. Deliver  | Inline                         | One report terminal or one early-stop terminal                                                              |
-
-Approval is not an always-entered phase. It is reachable only from `Analyze` via `ANALYSIS: NEEDS_APPROVAL`.
 
 ## Subagent Registry
 
