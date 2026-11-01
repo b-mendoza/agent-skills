@@ -29,7 +29,7 @@ For all user-facing handoffs, explain the outcome in prose without a status line
 
 ## State Machine Overview
 
-Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./state-machine.md).
+Non-normative overview. Follow the canonical [`state-machine.md`](./state-machine.md) for states, transitions, guards, and terminals.
 
 | Group              | Result                                                         |
 | ------------------ | -------------------------------------------------------------- |
@@ -40,17 +40,7 @@ Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./s
 | Implement / review | Mutate, review; ≤2 repairs re-enter implement                  |
 | Terminals          | `PASS`, `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, `ERROR` |
 
-## Pipeline Overview
-
-| Phase     | States                                     | Execution                    | Output                    |
-| --------- | ------------------------------------------ | ---------------------------- | ------------------------- |
-| Intake    | `Intake`…`DeriveLimits`                    | Inline; personality          | Packet + limits           |
-| Baseline  | `DispatchBaseline`/`RouteBaseline`         | `strict-baseline-mapper`     | `STRICT_BASELINE`         |
-| Strategy  | `DispatchStrategy`/`RouteStrategy`         | Strategist + one playbook    | `STRICT_STRATEGY`         |
-| Gates     | `CheckGates`/`GateExpansion`/`AskApproval` | Inline                       | Proceed, block, or resume |
-| Implement | `DispatchImplement`/`RouteImplement`       | `strict-rewrite-implementer` | `STRICT_IMPLEMENTATION`   |
-| Review    | `DispatchReview`…`GateFixCycles`           | Reviewer; repair → implement | `STRICT_REVIEW`           |
-| Handoff   | `Handoff`→`TerminalPass`                   | Inline                       | Final response            |
+Missing validation command → continue with implementer warning evidence; the reviewer still runs. Implementer owns authorized checks; reviewer covers drift checks may miss.
 
 ## Subagent Registry
 
@@ -73,7 +63,7 @@ Load only what the current decision needs. Paths here are relative to this `SKIL
 | Python / TS/JS / Go defaults | matching `./references/*-playbook.md`                           |
 | External URL map             | `./references/external-sources.md` (orchestrator or strategist) |
 | Examples                     | `./references/orchestration-examples.md`                        |
-| State machine                | `./flow-diagram.md`, `./state-machine.md`                       |
+| State machine                | `./state-machine.md`                                            |
 | Subagent contract            | `./subagents/<name>.md` at dispatch                             |
 
 One playbook after language is known. Playbooks do not chain-load `external-sources.md`; the map and strategist own that hop. Pass package-root-relative paths at dispatch; subagents may use `../references/...`.
@@ -97,22 +87,6 @@ Derive in `DeriveLimits`. Unless `SCOPE_LIMITS` expands them: write only in `TAR
 ## Core Decision Rule
 
 Static types for stable internals; runtime validation at trust boundaries; convert boundary data to typed internals before deeper use; keep escape hatches local and justified. Project settings outrank playbook defaults when stricter.
-
-## Execution Steps
-
-Advance [`state-machine.md`](./state-machine.md):
-
-1. **Intake → `DeriveLimits`.** Load personality; derive limits. Ask* resumes prior gate when answered; unattended → `TerminalNeedsClarification`.
-2. **`DispatchBaseline`.** Route `PASS | NO_CHANGE_CANDIDATE | NEEDS_CLARIFICATION | ERROR`. `PASS` and `NO_CHANGE_CANDIDATE` both continue to strategy.
-3. **`DispatchStrategy`.** Route `PASS | NO_CHANGE | NEEDS_CLARIFICATION | ERROR`. `NO_CHANGE` → `TerminalNoChange` without edits.
-4. **`CheckGates` → `GateExpansion` → optional `AskApproval`.** On expansion need, ask once. **Approve → `DispatchImplement`.** Decline → `TerminalBlocked`. No reply → `TerminalNeedsClarification`. Missing validation command → continue with implementer warning evidence.
-5. **`DispatchImplement`.** Route `PASS | PASS_WITH_WARNINGS | BLOCKED | ERROR`; check scope and validation gates; then review or terminal.
-6. **`DispatchReview`.** `PASS` → handoff. `FAIL` with fixes and `repair_counter` under 2 → re-enter **`DispatchImplement`**. Else `TerminalBlocked`.
-7. **`Handoff` → `TerminalPass`** with Output Contract and final gate evidence.
-
-## Validation Loop Summary
-
-`map → plan → gate/approve → change/check → review → targeted fix → re-check`. Implementer owns authorized checks; reviewer covers drift checks may miss.
 
 ## Example
 

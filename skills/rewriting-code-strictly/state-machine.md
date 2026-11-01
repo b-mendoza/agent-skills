@@ -1,6 +1,6 @@
 # State Machine — rewriting-code-strictly
 
-Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./flow-diagram.md). This table is the authoritative list of states, transitions, guards, and terminals.
+Finite-state execution model for this skill. This table is the authoritative list of states, transitions, guards, and terminals.
 
 ## States
 
@@ -99,15 +99,3 @@ Finite-state execution model for this skill. Mermaid SoT: [`flow-diagram.md`](./
 ## Terminal decisions
 
 Select exactly one internal decision: `PASS`, `NO_CHANGE`, `NEEDS_CLARIFICATION`, `BLOCKED`, `ERROR`. Render the user-facing handoff in prose without a status line or standalone decision token; preserve the required handoff content and internal subagent markers.
-
-## Reachability and dead-state checks
-
-| Property                                     | Result                                                    |
-| -------------------------------------------- | --------------------------------------------------------- |
-| Every active state reachable from `Intake`   | yes                                                       |
-| Every terminal reachable                     | yes                                                       |
-| Dead states (no outgoing, non-terminal)      | none                                                      |
-| Approval resume path                         | yes — `AskApproval` → `DispatchImplement` on approve      |
-| Clarification resume path                    | yes — Ask* → prior gate/dispatch when answered            |
-| Repair loop bounded                          | yes — max 2 via `repair_counter` before `TerminalBlocked` |
-| `NO_CHANGE_CANDIDATE` does not terminal-stop | yes — continues to `DispatchStrategy`                     |
