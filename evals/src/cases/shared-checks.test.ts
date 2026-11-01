@@ -26,10 +26,9 @@ import {
   assertFileMatches,
   assertNoMutation,
   assertNoPublicStatusLine,
-  assertRoutingRunEndedEarly,
   assertRunHappened,
+  BUDGET_STOP_SUBTYPE,
   capturedFilesUnder,
-  checkMutationScope,
   checkNegativeRouting,
   checkPositiveRouting,
   findBashCalls,
@@ -41,6 +40,7 @@ import {
 } from "#/cases/shared-checks.ts";
 import { cases as architectCases } from "#/cases/workflow-skill-architect.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
+import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
@@ -176,15 +176,67 @@ const invoked = createObservation({
   toolCalls: [{ name: "Skill", input: { skill } }],
 });
 
-test("run and routing validity reject a run that never happened", () => {
-  for (const check of [assertRunHappened, assertRoutingRunEndedEarly]) {
+describe("run validity", () => {
+  test.each([
+    {
+      label: "a query without a result",
+      observation: createObservation({ subtype: QUERY_ERROR_SUBTYPE }),
+      expectedError: /the query produced no result/,
+    },
+    {
+      label: "a timed-out run",
+      observation: createObservation({ timedOut: true }),
+      expectedError: /run exceeded its wall clock/,
+    },
+    {
+      label: "an empty result subtype",
+      observation: createObservation({ subtype: "" }),
+      expectedError: /run carries no result verdict/,
+    },
+    {
+      label: "a zero-work authentication failure",
+      observation: createObservation({
+        isError: true,
+        finalText: "Failed to authenticate: OAuth session expired",
+      }),
+      expectedError: /reported a failed run before it did anything/,
+    },
+  ])("rejects $label", ({ observation, expectedError }) => {
     expect(() => {
-      check(createObservation());
+      assertRunHappened(observation);
+    }).toThrow(expectedError);
+  });
+
+  test.each([
+    { label: "a clean run", observation: createObservation() },
+    {
+      label: "a budget stop that booked nothing",
+      observation: createObservation({
+        subtype: BUDGET_STOP_SUBTYPE,
+        isError: true,
+      }),
+    },
+    {
+      label: "a late error after a tool call",
+      observation: createObservation({
+        isError: true,
+        subtype: "error_during_execution",
+        toolCalls: [{ name: "Read", input: {} }],
+      }),
+    },
+    {
+      label: "a late error after spending",
+      observation: createObservation({
+        isError: true,
+        subtype: "error_during_execution",
+        costUsd: 0.01,
+      }),
+    },
+  ])("leaves $label to the case to judge", ({ observation }) => {
+    expect(() => {
+      assertRunHappened(observation);
     }).not.toThrow();
-    expect(() => {
-      check(createObservation({ timedOut: true }));
-    }).toThrow(/wall clock/);
-  }
+  });
 });
 
 test("routing checks use the requested skill, not a fixed target", () => {
@@ -336,21 +388,6 @@ describe("captured directory files", () => {
       ),
     ).toThrow(/wall clock/);
   });
-});
-
-test("native mutation grading accepts a clean run and rejects writes", () => {
-  expect(checkMutationScope(createObservation())).toBe(
-    "1 behavioral run(s) left no trace",
-  );
-  expect(() =>
-    checkMutationScope(
-      createObservation({
-        toolCalls: [
-          { name: "Bash", input: { command: "git commit -m changed" } },
-        ],
-      }),
-    ),
-  ).toThrow(/read-only contract violated/);
 });
 
 describe("fixture-relative artifact paths", () => {
