@@ -83,7 +83,7 @@ Validation is a contract: commands only from `TEST_COMMAND`, mapper candidates, 
 | Reuse ladder, deletion test, clarity rules, outcome metrics | `./references/simplification-heuristics.md` |
 | Command safety and validation evidence                      | `./references/validation-safety.md`         |
 | File-size waivers, exemptions, and split guidance           | `./references/file-size-policy.md`          |
-| Dispatch examples, plan card, and handoff samples           | `./references/workflow-examples.md`         |
+| Plan card skeleton and failure cleanup example              | `./references/workflow-examples.md`         |
 
 ## Example
 
