@@ -1,20 +1,21 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { realpathSync, writeFileSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileAbsent,
   assertFileExists,
   assertNoMutation,
   assertNoPublicStatusLine,
   assertRunHappened,
+  capturedText,
   checkNegativeRouting,
   checkPositiveRouting,
   normalizeReplyText,
+  seedFixtureRoot,
 } from "#/cases/shared-checks.ts";
+import { commitRepoFiles, HEAD_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { isMutatingGitCommand } from "#/observation/git-command-evidence.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -43,7 +44,6 @@ Check that the CSV includes every row from the JSON file.
 } as const;
 
 const SKILL = "validate-implementation-plan";
-const HEAD_LOG = ".git/logs/HEAD";
 // The observation has no cwd; record it to reject same-named writes elsewhere.
 const FIXTURE_ROOT_PATH = ".git/eval-plan-root";
 const REPORT_HEADINGS = [
@@ -57,11 +57,8 @@ const REPORT_HEADINGS = [
   "Open Questions",
   "Sensitive Content Handling",
 ] as const;
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
-  fixture: "clean",
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
+const suiteDefaults = {
+  ...behavioralDefaults,
   snapshotPaths: [
     PLAN_FACTS.path,
     PLAN_FACTS.snapshotPath,
@@ -72,23 +69,17 @@ const behavioralDefaults = {
 } as const;
 
 function seedPlan({ repoPath }: SeedContext, existingReport = false): void {
-  writeFileSync(
-    join(repoPath, FIXTURE_ROOT_PATH),
-    `${repoPath}\n${realpathSync(repoPath)}`,
+  seedFixtureRoot(repoPath, FIXTURE_ROOT_PATH);
+  commitRepoFiles(
+    repoPath,
+    {
+      [PLAN_FACTS.path]: PLAN_FACTS.source,
+      ...(existingReport
+        ? { [PLAN_FACTS.reportPath]: PLAN_FACTS.existingReport }
+        : {}),
+    },
+    PLAN_FACTS.seedCommit,
   );
-  writeFileSync(join(repoPath, PLAN_FACTS.path), PLAN_FACTS.source);
-  const paths: string[] = [PLAN_FACTS.path];
-  if (existingReport) {
-    writeFileSync(
-      join(repoPath, PLAN_FACTS.reportPath),
-      PLAN_FACTS.existingReport,
-    );
-    paths.push(PLAN_FACTS.reportPath);
-  }
-  execFileSync("git", ["add", "--", ...paths], { cwd: repoPath });
-  execFileSync("git", ["commit", "-qm", PLAN_FACTS.seedCommit], {
-    cwd: repoPath,
-  });
 }
 
 function assertProtectedInputs(observation: Observation): void {
@@ -185,13 +176,6 @@ function assertOnlyArtifactWrites(observation: Observation): void {
   }
 }
 
-function auditReport(observation: Observation): string {
-  assertFileExists(observation, PLAN_FACTS.reportPath);
-  const content = observation.repoFiles?.[PLAN_FACTS.reportPath];
-  assert.ok(typeof content === "string");
-  return content;
-}
-
 function assertReportSections(report: string): void {
   const expected = REPORT_HEADINGS.map((heading) => `## ${heading}`);
   const actual = report
@@ -254,7 +238,7 @@ function checkAudit(observation: Observation): string {
   ] as const) {
     assert.match(snapshot, pattern, `sanitized snapshot lost ${detail}`);
   }
-  assertReportSections(auditReport(observation));
+  assertReportSections(capturedText(observation, PLAN_FACTS.reportPath));
   assertFailedHandoff(observation.finalText);
   return "standalone nine-section failed audit; only snapshot and report created";
 }
@@ -302,7 +286,7 @@ export const cases = [
   },
   {
     id: "validate-implementation-plan/audit-planted-defects",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     mutationPolicy: "allowed",
     skill: SKILL,
     intent:
@@ -313,7 +297,7 @@ export const cases = [
     check: checkAudit,
     judge: async (observation) =>
       judgeLive({
-        artifact: `Completion reply:\n${observation.finalText}\n\nSaved audit:\n${auditReport(observation)}`,
+        artifact: `Completion reply:\n${observation.finalText}\n\nSaved audit:\n${capturedText(observation, PLAN_FACTS.reportPath)}`,
         knownFacts: `Baseline: ${PLAN_FACTS.origin}\nPlan: ${PLAN_FACTS.source}\nNo code changes, tests, or external research have been performed.`,
         rubric: [
           {
@@ -341,7 +325,7 @@ export const cases = [
   },
   {
     id: "validate-implementation-plan/existing-report-gate",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     mutationPolicy: "read-only",
     skill: SKILL,
     intent:

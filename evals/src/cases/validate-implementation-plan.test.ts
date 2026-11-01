@@ -5,8 +5,7 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import type { EvalCase } from "#/cases/case-contract.ts";
-import { cases } from "#/cases/validate-implementation-plan.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -65,12 +64,8 @@ const finalText =
 const blockedText =
   "implementation-plan.audit.md already exists. May I overwrite it, or should I use another path?";
 
-function getCase(suffix: string): EvalCase {
-  const evalCase = cases.find(
-    (candidate) => candidate.id === `${skill}/${suffix}`,
-  );
-  assert.ok(evalCase !== undefined, `Missing eval case: ${suffix}`);
-  return evalCase;
+function getCase(suffix: string) {
+  return getRegisteredCase(`${skill}/${suffix}`);
 }
 
 function behavioralObservation(suffix: string): Observation {
@@ -105,28 +100,6 @@ function checkAudit(overrides: Partial<Observation> = {}): string {
     repoFiles: { ...observation.repoFiles, ...overrides.repoFiles },
   });
 }
-
-describe("validate-implementation-plan routing", () => {
-  test("requires an invocation for audit requests", () => {
-    const evalCase = getCase("trigger-positive");
-    expect(() =>
-      evalCase.check(
-        createObservation({ toolCalls: [{ name: "Skill", input: { skill } }] }),
-      ),
-    ).not.toThrow();
-    expect(() => evalCase.check(createObservation())).toThrow();
-  });
-
-  test("does not claim a request to draft a new execution plan", () => {
-    const evalCase = getCase("trigger-negative-create-plan");
-    expect(() => evalCase.check(createObservation())).not.toThrow();
-    expect(() =>
-      evalCase.check(
-        createObservation({ toolCalls: [{ name: "Skill", input: { skill } }] }),
-      ),
-    ).toThrow();
-  });
-});
 
 describe("validate-implementation-plan artifacts", () => {
   test("plants the flawed plan in a clean committed fixture", () => {
@@ -335,18 +308,6 @@ describe("validate-implementation-plan artifacts", () => {
       }),
     ).toThrow();
   });
-
-  test.each(["audit-planted-defects", "existing-report-gate"])(
-    "%s rejects timed-out runs",
-    (suffix) => {
-      expect(() =>
-        getCase(suffix).check({
-          ...behavioralObservation(suffix),
-          timedOut: true,
-        }),
-      ).toThrow();
-    },
-  );
 });
 
 describe("audit mutation boundaries", () => {
