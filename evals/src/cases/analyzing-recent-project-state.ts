@@ -22,10 +22,9 @@ import {
   SHORT_FORM_SECTIONS,
 } from "#/cases/analyzing-recent-project-state-checks.ts";
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertNoPublicStatusLine,
-  assertRoutingRunEndedEarly,
   assertRunHappened,
   checkNegativeRouting as checkSharedNegativeRouting,
   checkPositiveRouting,
@@ -91,14 +90,8 @@ function checkSnapshotShape(
   assertDisclosureLineOnce(observation.finalText, "Execution mode:");
 }
 
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
-} as const;
-
 function assertSnapshotRoutingRunEndedEarly(observation: Observation): void {
-  assertRoutingRunEndedEarly(observation);
+  assertRunHappened(observation);
   assert.doesNotMatch(
     observation.finalText,
     /^# Project State Snapshot/m,
@@ -194,7 +187,6 @@ export const cases = [
     ...behavioralDefaults,
     mutationPolicy: "read-only",
     skill: SKILL,
-    fixture: "missing-path",
     intent:
       "A nonexistent PROJECT_PATH explains the unreadable path and recovery",
     wallClockMs: 300_000,
@@ -220,7 +212,6 @@ export const cases = [
     ...behavioralDefaults,
     mutationPolicy: "read-only",
     skill: SKILL,
-    fixture: "missing-path",
     intent:
       "A real directory that is not a worktree explains the non-Git directory and recovery",
     wallClockMs: 300_000,
@@ -248,7 +239,6 @@ export const cases = [
     ...behavioralDefaults,
     mutationPolicy: "read-only",
     skill: SKILL,
-    fixture: "clean",
     intent: "An empty evidence window returns the short form, not an error",
     prompt: () =>
       "What changed recently in this repo and is it ready to hand off?",
