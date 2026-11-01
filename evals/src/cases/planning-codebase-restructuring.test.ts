@@ -7,19 +7,17 @@ import { describe, expect, test } from "vitest";
 import {
   ARTIFACT_PATH,
   cases,
-  FIXTURE_ROOT_PATH,
   REPORT_SECTIONS,
   seedLayeredProject,
-  SKILL,
   STRUCTURE_FILES,
 } from "#/cases/planning-codebase-restructuring.ts";
+import { FIXTURE_ROOT_PATH } from "#/cases/shared-checks.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
-import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { sampleGitStatus } from "#/observation/mutation-evidence.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
-const [positive, negative, plan, missing] = cases;
+const [, , plan, missing] = cases;
 const REPORT = `${REPORT_SECTIONS.map(
   (section) => `## ${section}\nLocal evidence or no issue found.\n`,
 ).join("\n")}
@@ -60,37 +58,6 @@ const readyObservation = createObservation({
 const inputObservation = createObservation({
   finalText: INPUT_REQUEST,
   repoFiles: { ...STRUCTURE_FILES, [ARTIFACT_PATH]: null },
-});
-
-describe("routing", () => {
-  test("requires a real positive invocation", () => {
-    expect(
-      positive.check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-        }),
-      ),
-    ).toBe("Skill invoked");
-    expect(() => positive.check(createObservation())).toThrow(
-      /never triggered/,
-    );
-  });
-  test("keeps approved implementation with refactoring-code", () => {
-    expect(
-      negative.check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: "refactoring-code" } }],
-        }),
-      ),
-    ).toBe("no trigger");
-    expect(() =>
-      negative.check(
-        createObservation({
-          toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-        }),
-      ),
-    ).toThrow(/unexpectedly triggered/);
-  });
 });
 
 describe("persisted decision report", () => {
@@ -376,19 +343,6 @@ describe("missing required inputs", () => {
         toolCalls: [{ name: "Write", input: { file_path: ARTIFACT_PATH } }],
       }),
     ).toThrow(/read-only/);
-  });
-});
-
-describe("invalid runs", () => {
-  test.each(cases)("$id rejects a query failure", (evalCase) => {
-    expect(() =>
-      evalCase.check(createObservation({ subtype: QUERY_ERROR_SUBTYPE })),
-    ).toThrow(/no result/);
-  });
-  test.each(cases)("$id rejects a timeout", (evalCase) => {
-    expect(() => evalCase.check(createObservation({ timedOut: true }))).toThrow(
-      /wall clock/,
-    );
   });
 });
 

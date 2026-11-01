@@ -1,28 +1,31 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileAbsent,
   assertFileExists,
+  assertFilesUnchanged,
   assertNoMutation,
   assertNoPublicStatusLine,
   assertRunHappened,
   checkNegativeRouting,
   checkPositiveRouting,
+  FIXTURE_ROOT_PATH,
+  hasNodeTestOption,
   normalizeReplyText,
   replyAsksFor,
+  seedFixtureRoot,
+  withoutAllowedChanges,
 } from "#/cases/shared-checks.ts";
+import { commitRepoFiles } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 import { mutationEvidence } from "#/observation/mutation-evidence.ts";
 
 export const SKILL = "planning-codebase-restructuring";
 export const ARTIFACT_PATH = "restructuring-plan.md";
-export const FIXTURE_ROOT_PATH = ".git/eval-fixture-root";
 export const STRUCTURE_FILES = {
   "package.json": `${JSON.stringify({ name: "orders-monolith", private: true, type: "module", scripts: { test: "node --test tests/order.test.mjs" } })}\n`,
   "src/controllers/order.mjs": `import { placeOrder } from "../services/order.mjs";
@@ -56,21 +59,11 @@ test("checkout persists a total and schedules shipment", () => {
 
 export function seedLayeredProject({ repoPath }: SeedContext): void {
   // Bind absolute write-tool paths to this fixture, not any same-named file.
-  writeFileSync(
-    join(repoPath, FIXTURE_ROOT_PATH),
-    `${repoPath}\n${realpathSync(repoPath)}`,
-  );
-  for (const [path, content] of Object.entries(STRUCTURE_FILES)) {
-    mkdirSync(dirname(join(repoPath, path)), { recursive: true });
-    writeFileSync(join(repoPath, path), content);
-  }
-  execFileSync("git", ["add", "--", ...Object.keys(STRUCTURE_FILES)], {
-    cwd: repoPath,
-  });
-  execFileSync(
-    "git",
-    ["commit", "-qm", "seed layered order and shipping project"],
-    { cwd: repoPath },
+  seedFixtureRoot(repoPath);
+  commitRepoFiles(
+    repoPath,
+    STRUCTURE_FILES,
+    "seed layered order and shipping project",
   );
 }
 
@@ -123,39 +116,6 @@ const EXECUTION_PATTERNS = [
   /^(?:npm|pnpm|yarn)\s+run\s+(?:test|build|lint)\b/,
   /^npx\s+(?:vitest|jest|prettier|eslint)\b/,
 ];
-const NODE_VALUE_OPTIONS = new Set([
-  "--require",
-  "-r",
-  "--import",
-  "--loader",
-  "--experimental-loader",
-  "--test-reporter",
-  "--test-reporter-destination",
-  "--conditions",
-  "-C",
-  "--env-file",
-  "--test-name-pattern",
-  "--test-concurrency",
-]);
-
-function consumeNodeOption(argument: string, args: string[]): boolean {
-  if (!/^--?\w/.test(argument)) return false;
-  if (NODE_VALUE_OPTIONS.has(argument)) args.shift();
-  return true;
-}
-
-function hasNodeTestOption(args: string[]): boolean {
-  for (
-    let argument = args.shift();
-    argument !== undefined;
-    argument = args.shift()
-  ) {
-    if (argument === "--test") return true;
-    if (!consumeNodeOption(argument, args)) return false;
-  }
-  return false;
-}
-
 function executableBasename(executable = ""): string {
   return basename(executable.replace(/^["']|["']$/g, ""));
 }
@@ -190,25 +150,14 @@ function checkPlanningOnly(observation: Observation): void {
     { kind: "worktree", entries: `?? ${ARTIFACT_PATH}` },
     "only the requested report may change git status",
   );
-  for (const [path, content] of Object.entries(STRUCTURE_FILES)) {
-    assertFileExists(observation, path);
-    assert.equal(
-      observation.repoFiles?.[path],
-      content,
-      `codebase was changed: ${path}`,
-    );
-  }
+  assertFilesUnchanged(observation, STRUCTURE_FILES, "codebase was changed");
   assertFileExists(observation, FIXTURE_ROOT_PATH);
   const roots = observation.repoFiles?.[FIXTURE_ROOT_PATH];
   assert.ok(typeof roots === "string", "missing fixture root binding");
   const repoPaths = roots.split("\n");
-  const unexpected = mutationEvidence({
-    ...observation,
-    gitStatusAfter: observation.gitStatusBefore,
-    toolCalls: observation.toolCalls.filter(
-      (call) => !reportWrite(call, repoPaths),
-    ),
-  });
+  const unexpected = mutationEvidence(
+    withoutAllowedChanges(observation, (call) => reportWrite(call, repoPaths)),
+  );
   assert.deepEqual(
     unexpected,
     [],
@@ -222,18 +171,15 @@ function checkPlanningOnly(observation: Observation): void {
   );
 }
 
-const behavioralDefaults = {
+const suiteDefaults = {
+  ...behavioralDefaults,
   skill: SKILL,
-  tier: BEHAVIORAL_TIER,
-  fixture: "clean",
   seed: seedLayeredProject,
   snapshotPaths: [
     ...Object.keys(STRUCTURE_FILES),
     ARTIFACT_PATH,
     FIXTURE_ROOT_PATH,
   ],
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
 } as const;
 
 export const cases = [
@@ -259,7 +205,7 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
-    ...behavioralDefaults,
+    ...suiteDefaults,
     id: `${SKILL}/persist-local-plan`,
     mutationPolicy: "allowed",
     intent:
@@ -342,7 +288,7 @@ export const cases = [
       }),
   },
   {
-    ...behavioralDefaults,
+    ...suiteDefaults,
     id: `${SKILL}/missing-goal`,
     mutationPolicy: "read-only",
     intent:
@@ -352,14 +298,7 @@ export const cases = [
     check: (observation) => {
       assertNoMutation(observation);
       assertFileAbsent(observation, ARTIFACT_PATH);
-      for (const [path, content] of Object.entries(STRUCTURE_FILES)) {
-        assertFileExists(observation, path);
-        assert.equal(
-          observation.repoFiles?.[path],
-          content,
-          `source changed: ${path}`,
-        );
-      }
+      assertFilesUnchanged(observation, STRUCTURE_FILES, "source changed");
       assertNoPublicStatusLine(observation.finalText, "Status");
       const reply = normalizeReplyText(observation.finalText);
       assert.ok(
