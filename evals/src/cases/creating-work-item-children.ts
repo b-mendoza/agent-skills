@@ -1,13 +1,9 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertReadOnlyGitHub,
-  GH_LOG,
   ISSUE,
   seedGitHub,
 } from "#/cases/fetching-work-item-fixtures.ts";
@@ -19,6 +15,7 @@ import {
   checkPositiveRouting,
   normalizeReplyText,
 } from "#/cases/shared-checks.ts";
+import { commitRepoFiles, GH_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
@@ -75,11 +72,11 @@ The user approved this exact one-task plan; retain the CSV-only scope.
 
 function seedLinkedPlan(context: SeedContext): void {
   seedGitHub(context, "linked");
-  writeFileSync(join(context.repoPath, PLAN_PATH), APPROVED_PLAN);
-  execFileSync("git", ["add", PLAN_PATH], { cwd: context.repoPath });
-  execFileSync("git", ["commit", "-qm", "seed approved linked task plan"], {
-    cwd: context.repoPath,
-  });
+  commitRepoFiles(
+    context.repoPath,
+    { [PLAN_PATH]: APPROVED_PLAN },
+    "seed approved linked task plan",
+  );
 }
 
 function checkSummary(observation: Observation, reconciled: boolean): string {
@@ -128,13 +125,10 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
+    ...behavioralDefaults,
     id: "creating-work-item-children/reuse-linked-plan",
     skill: SKILL,
-    tier: BEHAVIORAL_TIER,
-    fixture: "clean",
     mutationPolicy: "read-only",
-    budgetUsd: 2,
-    wallClockMs: 600_000,
     seed: seedLinkedPlan,
     snapshotPaths: [PLAN_PATH, GH_LOG],
     intent:
@@ -194,12 +188,10 @@ export const cases = [
       }),
   },
   {
+    ...behavioralDefaults,
     id: "creating-work-item-children/approval-declined",
     skill: SKILL,
-    tier: BEHAVIORAL_TIER,
-    fixture: "clean",
     mutationPolicy: "read-only",
-    budgetUsd: 2,
     wallClockMs: 300_000,
     seed: seedLinkedPlan,
     snapshotPaths: [PLAN_PATH, GH_LOG],
