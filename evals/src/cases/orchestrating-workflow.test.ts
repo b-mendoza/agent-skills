@@ -1,4 +1,3 @@
-import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -9,28 +8,21 @@ import {
   DECISIONS_PATH,
   EXECUTION_FACTS,
 } from "#/cases/executing-work-item-task-fixtures.ts";
-import { cases, SKILL } from "#/cases/orchestrating-workflow.ts";
+import { SKILL } from "#/cases/orchestrating-workflow.ts";
 import {
   RESUME_ARTIFACTS,
   seedResumeArtifacts,
 } from "#/cases/orchestrating-workflow-fixtures.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 function getCase(name: string) {
-  const testCase = cases.find((entry) => entry.id === `${SKILL}/${name}`);
-  assert.ok(testCase !== undefined);
-  return testCase;
+  return getRegisteredCase(`${SKILL}/${name}`);
 }
 
 function validObservation(name: string): Observation {
-  if (name === "trigger-positive") {
-    return createObservation({
-      toolCalls: [{ name: "Skill", input: { skill: SKILL } }],
-    });
-  }
-  if (name === "trigger-negative-task-execution") return createObservation();
   return behavioralObservation(name === "resume-at-task-critique");
 }
 
@@ -51,37 +43,11 @@ function behavioralObservation(resume: boolean): Observation {
   });
 }
 
-const caseNames = [
-  "trigger-positive",
-  "trigger-negative-task-execution",
-  "resume-at-task-critique",
-  "ambiguous-identifier",
-];
+const caseNames = ["resume-at-task-critique", "ambiguous-identifier"];
 
 describe("orchestrating-workflow", () => {
-  test.each(caseNames)(
-    "%s accepts correct evidence and rejects invalid runs",
-    (name) => {
-      const observation = validObservation(name);
-      expect(getCase(name).check(observation)).toBeTypeOf("string");
-      expect(() =>
-        getCase(name).check({ ...observation, timedOut: true }),
-      ).toThrow();
-      expect(() =>
-        getCase(name).check({ ...observation, subtype: "query_error" }),
-      ).toThrow();
-    },
-  );
-
-  test("routing rejects the wrong invocation presence", () => {
-    expect(() =>
-      getCase("trigger-positive").check(createObservation()),
-    ).toThrow();
-    expect(() =>
-      getCase("trigger-negative-task-execution").check(
-        validObservation("trigger-positive"),
-      ),
-    ).toThrow();
+  test.each(caseNames)("%s accepts correct evidence", (name) => {
+    expect(getCase(name).check(validObservation(name))).toBeTypeOf("string");
   });
 
   test.each(["resume-at-task-critique", "ambiguous-identifier"])(

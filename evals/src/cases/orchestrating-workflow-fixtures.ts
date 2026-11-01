@@ -1,11 +1,8 @@
-import { unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-
 import type { SeedContext } from "#/cases/case-contract.ts";
 import {
+  artifactsWithout,
   CRITIQUE_PATH,
   DECISIONS_PATH,
-  EXECUTION_ARTIFACTS,
   EXECUTION_FACTS,
   seedExecutionArtifacts,
 } from "#/cases/executing-work-item-task-fixtures.ts";
@@ -19,11 +16,7 @@ export const RESUME_FACTS = {
 } as const;
 
 export const RESUME_ARTIFACTS: Readonly<Record<string, string>> = {
-  ...Object.fromEntries(
-    Object.entries(EXECUTION_ARTIFACTS).filter(
-      ([path]) => path !== CRITIQUE_PATH && path !== DECISIONS_PATH,
-    ),
-  ),
+  ...artifactsWithout(CRITIQUE_PATH, DECISIONS_PATH),
   [RESUME_FACTS.progressPath]: `# ${RESUME_FACTS.key} — Workflow Progress
 | Phase | Skill | Status | Completed at | Notes |
 | --- | --- | --- | --- | --- |
@@ -52,10 +45,5 @@ _None_
 };
 
 export function seedResumeArtifacts(seedContext: SeedContext): void {
-  seedExecutionArtifacts(seedContext);
-  unlinkSync(join(seedContext.repoPath, CRITIQUE_PATH));
-  unlinkSync(join(seedContext.repoPath, DECISIONS_PATH));
-  for (const [path, content] of Object.entries(RESUME_ARTIFACTS)) {
-    writeFileSync(join(seedContext.repoPath, path), content);
-  }
+  seedExecutionArtifacts(seedContext, RESUME_ARTIFACTS);
 }
