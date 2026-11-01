@@ -1,28 +1,28 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { Schema } from "effect";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertFileAbsent,
-  assertFileExists,
   assertNoMutation,
   assertNoPublicStatusLine,
+  capturedText,
   checkNegativeRouting,
   checkPositiveRouting,
+  FIXTURE_ROOT_PATH,
   normalizeReplyText,
   replyAsksFor,
+  seedFixtureRoot,
 } from "#/cases/shared-checks.ts";
+import { commitRepoFiles } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { isMutatingGitCommand } from "#/observation/git-command-evidence.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
 const SKILL = "generate-handoff-document";
-export const FIXTURE_ROOT_PATH = ".git/eval-fixture-root";
 
 export const HANDOFF_PATHS = {
   target: "docs/cache-handoff.md",
@@ -125,36 +125,18 @@ const decodeInsights = Schema.decodeUnknownSync(
 );
 
 function seedDirectory({ repoPath }: SeedContext): void {
-  writeFileSync(
-    join(repoPath, FIXTURE_ROOT_PATH),
-    `${repoPath}\n${realpathSync(repoPath)}`,
-  );
+  seedFixtureRoot(repoPath);
   // Track one sentinel so git status expands new docs files rather than collapsing to "?? docs/".
-  mkdirSync(join(repoPath, "docs"));
-  writeFileSync(join(repoPath, "docs/.gitkeep"), "");
-  execFileSync("git", ["add", "docs/.gitkeep"], { cwd: repoPath });
-  execFileSync("git", ["commit", "-qm", "plant handoff directory"], {
-    cwd: repoPath,
-  });
+  commitRepoFiles(repoPath, { "docs/.gitkeep": "" }, "plant handoff directory");
 }
 
 function seedExistingTarget(context: SeedContext): void {
   seedDirectory(context);
-  writeFileSync(
-    join(context.repoPath, HANDOFF_PATHS.target),
-    HANDOFF_FACTS.existingDocument,
+  commitRepoFiles(
+    context.repoPath,
+    { [HANDOFF_PATHS.target]: HANDOFF_FACTS.existingDocument },
+    "plant existing handoff",
   );
-  execFileSync("git", ["add", HANDOFF_PATHS.target], { cwd: context.repoPath });
-  execFileSync("git", ["commit", "-qm", "plant existing handoff"], {
-    cwd: context.repoPath,
-  });
-}
-
-function readCaptured(observation: Observation, path: string): string {
-  assertFileExists(observation, path);
-  const content = observation.repoFiles?.[path];
-  assert.ok(typeof content === "string", `missing text snapshot: ${path}`);
-  return content;
 }
 
 function checkDocumentShape(document: string): void {
@@ -231,7 +213,7 @@ function checkWriteScope(observation: Observation): void {
       .sort((first, second) => first.localeCompare(second)),
     "unexpected writes or missing artifacts",
   );
-  const repoPaths = readCaptured(observation, FIXTURE_ROOT_PATH).split("\n");
+  const repoPaths = capturedText(observation, FIXTURE_ROOT_PATH).split("\n");
   for (const call of observation.toolCalls) {
     assertPermittedToolWrite(call, repoPaths);
     if (call.name !== "Bash") continue;
@@ -242,7 +224,7 @@ function checkWriteScope(observation: Observation): void {
     );
   }
   assert.equal(
-    readCaptured(observation, "a.txt"),
+    capturedText(observation, "a.txt"),
     "hello\n",
     "product file was changed",
   );
@@ -276,19 +258,19 @@ function checkPackage(observation: Observation): string {
   );
   assert.ok(text.includes(HANDOFF_PATHS.target), "handoff path missing");
   checkWriteScope(observation);
-  const document = readCaptured(observation, HANDOFF_PATHS.target);
+  const document = capturedText(observation, HANDOFF_PATHS.target);
   checkDocumentShape(document);
   const contextJson: unknown = JSON.parse(
-    readCaptured(observation, HANDOFF_PATHS.context),
+    capturedText(observation, HANDOFF_PATHS.context),
   );
   const insightsJson: unknown = JSON.parse(
-    readCaptured(observation, HANDOFF_PATHS.insights),
+    capturedText(observation, HANDOFF_PATHS.insights),
   );
   decodeContext(contextJson);
   decodeInsights(insightsJson);
   for (const path of writtenPaths) {
     assert.ok(
-      !readCaptured(observation, path).includes(HANDOFF_FACTS.secret),
+      !capturedText(observation, path).includes(HANDOFF_FACTS.secret),
       `unredacted secret in ${path}`,
     );
   }
@@ -298,7 +280,7 @@ function checkPackage(observation: Observation): string {
       "unredacted secret in parsed JSON artifact",
     );
   }
-  const transcript = readCaptured(
+  const transcript = capturedText(
     observation,
     HANDOFF_PATHS.transcript,
   ).replace(/\s+/g, " ");
@@ -317,12 +299,9 @@ function checkPackage(observation: Observation): string {
   return "reviewed five-section package; structured artifacts; faithful redacted transcript; only expected files written";
 }
 
-const behavioralDefaults = {
-  tier: BEHAVIORAL_TIER,
+const suiteDefaults = {
+  ...behavioralDefaults,
   skill: SKILL,
-  fixture: "clean",
-  budgetUsd: 2.0,
-  wallClockMs: 600_000,
   snapshotPaths,
 } as const;
 
@@ -351,7 +330,7 @@ export const cases = [
   },
   {
     id: "generate-handoff-document/conversation-package",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     mutationPolicy: "allowed",
     seed: seedDirectory,
     snapshotPaths: [...snapshotPaths, FIXTURE_ROOT_PATH],
@@ -362,7 +341,7 @@ export const cases = [
     check: checkPackage,
     judge: async (observation) =>
       judgeLive({
-        artifact: `${readCaptured(observation, HANDOFF_PATHS.target)}\n${readCaptured(observation, HANDOFF_PATHS.context)}\n${readCaptured(observation, HANDOFF_PATHS.insights)}`,
+        artifact: `${capturedText(observation, HANDOFF_PATHS.target)}\n${capturedText(observation, HANDOFF_PATHS.context)}\n${capturedText(observation, HANDOFF_PATHS.insights)}`,
         knownFacts: [
           HANDOFF_FACTS.mandate,
           HANDOFF_FACTS.failedApproach,
@@ -386,7 +365,7 @@ export const cases = [
   },
   {
     id: "generate-handoff-document/existing-target-gate",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     mutationPolicy: "read-only",
     budgetUsd: 0.7,
     wallClockMs: 180_000,
@@ -399,7 +378,7 @@ export const cases = [
       checkPositiveRouting(observation, SKILL);
       assertNoMutation(observation);
       assert.equal(
-        readCaptured(observation, HANDOFF_PATHS.target),
+        capturedText(observation, HANDOFF_PATHS.target),
         HANDOFF_FACTS.existingDocument,
       );
       for (const path of snapshotPaths.filter(

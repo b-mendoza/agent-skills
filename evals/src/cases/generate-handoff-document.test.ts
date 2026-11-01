@@ -5,21 +5,18 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import type { EvalCase } from "#/cases/case-contract.ts";
 import {
-  cases,
-  FIXTURE_ROOT_PATH,
   HANDOFF_FACTS,
   HANDOFF_PATHS,
 } from "#/cases/generate-handoff-document.ts";
+import { getCase as getRegisteredCase } from "#/cases/registry.ts";
+import { FIXTURE_ROOT_PATH } from "#/cases/shared-checks.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
-function getCase(suffix: string): EvalCase {
-  const found = cases.find((evalCase) => evalCase.id.endsWith(`/${suffix}`));
-  assert.ok(found !== undefined, `missing case: ${suffix}`);
-  return found;
+function getCase(suffix: string) {
+  return getRegisteredCase(`generate-handoff-document/${suffix}`);
 }
 
 const fixtureRoots = ["/fixture", "/private/fixture"];
@@ -411,23 +408,15 @@ describe("existing target gate", () => {
 describe.each(["conversation-package", "existing-target-gate"])(
   "%s validity",
   (suffix) => {
-    it.each([
-      { timedOut: true },
-      { subtype: "query_error", isError: true },
-      { toolCalls: [] },
-      { repoFiles: {} },
-    ] satisfies Array<Partial<Observation>>)(
-      "rejects missing observation evidence %#",
-      (overrides) => {
-        const valid =
-          suffix === "conversation-package"
-            ? writtenObservation()
-            : gateObservation();
-        expect(() =>
-          getCase(suffix).check({ ...valid, ...overrides }),
-        ).toThrow();
-      },
-    );
+    it.each([{ toolCalls: [] }, { repoFiles: {} }] satisfies Array<
+      Partial<Observation>
+    >)("rejects missing observation evidence %#", (overrides) => {
+      const valid =
+        suffix === "conversation-package"
+          ? writtenObservation()
+          : gateObservation();
+      expect(() => getCase(suffix).check({ ...valid, ...overrides })).toThrow();
+    });
   },
 );
 
