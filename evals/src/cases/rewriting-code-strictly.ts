@@ -1,13 +1,11 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
-  assertFileExists,
-  assertFileMatches,
+  assertFilesUnchanged,
+  assertHeadUnchanged,
   assertNoMutation,
   assertNoPublicStatusLine,
   checkNegativeRouting,
@@ -15,6 +13,12 @@ import {
   normalizeReplyText,
   replyAsksFor,
 } from "#/cases/shared-checks.ts";
+import {
+  BASELINE_REFLOG,
+  commitRepoFiles,
+  copyHeadReflog,
+  HEAD_LOG,
+} from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
@@ -42,21 +46,13 @@ test('legacy boundary values are caller-visible', () => {
 } as const;
 
 function seedStrict({ repoPath }: SeedContext): void {
-  mkdirSync(join(repoPath, "src"));
-  for (const [path, content] of Object.entries(STRICT_FILES)) {
-    writeFileSync(join(repoPath, path), content);
-  }
-  execFileSync("git", ["add", "--", "src", "name.test.ts", "package.json"], {
-    cwd: repoPath,
-  });
-  execFileSync("git", ["commit", "-qm", "test: pin legacy name boundary"], {
-    cwd: repoPath,
-  });
+  commitRepoFiles(repoPath, STRICT_FILES, "test: pin legacy name boundary", [
+    "src",
+    "name.test.ts",
+    "package.json",
+  ]);
   execFileSync("git", ["add", "--", "unrelated.txt"], { cwd: repoPath });
-  writeFileSync(
-    join(repoPath, ".git/eval-baseline-reflog"),
-    readFileSync(join(repoPath, ".git/logs/HEAD")),
-  );
+  copyHeadReflog(repoPath);
 }
 
 function checkClarification(observation: Observation): string {
@@ -97,21 +93,12 @@ function checkBehaviorGate(observation: Observation): string {
   );
   const files = observation.repoFiles;
   assert.ok(files !== undefined, "missing file snapshots");
-  for (const [path, content] of Object.entries(STRICT_FILES)) {
-    assertFileExists(observation, path);
-    assert.equal(
-      files[path],
-      content,
-      `changed file before expansion approval: ${path}`,
-    );
-  }
-  assertFileMatches(observation, ".git/logs/HEAD", /\S/);
-  assertFileMatches(observation, ".git/eval-baseline-reflog", /\S/);
-  assert.equal(
-    files[".git/logs/HEAD"],
-    files[".git/eval-baseline-reflog"],
-    "HEAD changed before expansion approval",
+  assertFilesUnchanged(
+    observation,
+    STRICT_FILES,
+    "changed file before expansion approval",
   );
+  assertHeadUnchanged(observation, "HEAD changed before expansion approval");
   assert.ok(
     /\b(?:src\/name\.ts|name\.test\.ts|nameFromJson)\b/.test(
       observation.finalText,
@@ -121,13 +108,10 @@ function checkBehaviorGate(observation: Observation): string {
   return "behavior expansion requires clarification; files and HEAD preserved";
 }
 
-const behavioralDefaults = {
+const suiteDefaults = {
+  ...behavioralDefaults,
   skill: SKILL,
-  tier: BEHAVIORAL_TIER,
-  fixture: "clean",
   mutationPolicy: "read-only",
-  budgetUsd: 2,
-  wallClockMs: 600_000,
 } as const;
 
 export const cases = [
@@ -154,13 +138,9 @@ export const cases = [
   {
     // This skill gates expansions, not all rewrites; rejecting legacy inputs is a behavior expansion.
     id: "rewriting-code-strictly/behavior-expansion-gate",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     seed: seedStrict,
-    snapshotPaths: [
-      ...Object.keys(STRICT_FILES),
-      ".git/logs/HEAD",
-      ".git/eval-baseline-reflog",
-    ],
+    snapshotPaths: [...Object.keys(STRICT_FILES), HEAD_LOG, BASELINE_REFLOG],
     intent:
       "A strict validation goal conflicting with legacy outputs stops for an explicit behavior decision",
     prompt: () =>
@@ -187,7 +167,7 @@ export const cases = [
   },
   {
     id: "rewriting-code-strictly/missing-target",
-    ...behavioralDefaults,
+    ...suiteDefaults,
     intent:
       "Missing target asks a focused intake question without inspecting or modifying arbitrary code",
     prompt: () =>

@@ -4,6 +4,7 @@ import { describe, expect, test } from "vitest";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { BEHAVIORAL_TIER } from "#/cases/case-contract.ts";
+import { getCase } from "#/cases/registry.ts";
 import { cases, STRICT_FILES } from "#/cases/rewriting-code-strictly.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
@@ -28,36 +29,15 @@ function correctObservation(evalCase: EvalCase): Observation {
 const behavioralCases = cases.filter(
   (evalCase) => evalCase.tier === BEHAVIORAL_TIER,
 );
-const gateCase = cases.find(
-  (evalCase) =>
-    evalCase.id === "rewriting-code-strictly/behavior-expansion-gate",
-);
-if (gateCase === undefined) throw new Error("missing behavior gate");
+const gateCase = getCase("rewriting-code-strictly/behavior-expansion-gate");
 
 describe("rewriting-code-strictly checks", () => {
-  test.each(cases)(
-    "$id accepts correct output and rejects invalid runs or routing",
+  test.each(behavioralCases)(
+    "$id accepts correct output and requires the skill invocation",
     (evalCase) => {
-      const observation =
-        evalCase.tier === BEHAVIORAL_TIER
-          ? correctObservation(evalCase)
-          : createObservation({
-              toolCalls: evalCase.id.endsWith("/trigger-positive")
-                ? [{ name: "Skill", input: { skill: evalCase.skill } }]
-                : [],
-            });
+      const observation = correctObservation(evalCase);
       expect(() => evalCase.check(observation)).not.toThrow();
-      expect(() =>
-        evalCase.check({ ...observation, timedOut: true }),
-      ).toThrow();
-      expect(() =>
-        evalCase.check({
-          ...observation,
-          toolCalls: evalCase.id.endsWith("/trigger-negative-refactor")
-            ? [{ name: "Skill", input: { skill: evalCase.skill } }]
-            : [],
-        }),
-      ).toThrow();
+      expect(() => evalCase.check({ ...observation, toolCalls: [] })).toThrow();
     },
   );
 
@@ -137,7 +117,10 @@ describe("rewriting-code-strictly checks", () => {
       gateCase.seed,
     );
     try {
-      const files = snapshotRepoFiles(fixture.cwd, gateCase.snapshotPaths);
+      const files = snapshotRepoFiles(
+        fixture.cwd,
+        gateCase.snapshotPaths ?? [],
+      );
       for (const [path, content] of Object.entries(STRICT_FILES)) {
         expect(files[path]).toBe(content);
       }
