@@ -101,14 +101,14 @@ Parent-orchestrator approval must name the approved paths in the current run's h
 1. `ResumeGate`: if `RESUME_PACKET` present, `Restore` then `ResumeRoute` to the first pending queue item (`ArchitectureLoop`) or pending review (`Review`).
 2. `Intake` → `Classify` → `Trust` (always, including create-without-existing) → `ResolveSources`. Essential missing runtime fact → `needs_input`; unsafe source → `blocked`.
 3. Review: `BuildReviewPacket` → `Review` → deliver report → `ready` (no repair).
-4. Generation: `PlanQueue`. Empty queue → zero-output `ready`. Else `ArchitectureLoop` (`step-architect` per item) → `Synthesize` → `Review`.
+4. Generation: `PlanQueue`. Empty queue → zero-output `ready`. Else `ArchitectureLoop` (`step-architect` per item) → `Synthesize` → `Review`. Reference-only and single-file work must also run `definition-reviewer`, or its full contract inline when delegation is unavailable; size never waives Review.
 5. On `ARCHITECTURE: NEEDS_INPUT`, batch ≤3 questions + `RESUME_PACKET`. On `BLOCKED`/`ERROR`, surface that terminal.
 6. Generation `REVIEW: FAIL` with `REPAIR_CYCLE < 3` → `Repair` (staged scope only) → full `Review` again. At cap → `blocked` with latest report.
-7. `Delivery` → `MutationGate` using Mutation Approval above.
+7. `Delivery` → `MutationGate` using Mutation Approval above. Before stopping for approval, include every delivery heading, complete staged file content, and the completed review outcome, even for reference-only work. Ask for approval in prose and end the turn without applying real-package writes.
 
 ## Output Contracts
 
-Review mode: exact report in [`./references/review-schema.md`](./references/review-schema.md).
+Public replies state the outcome and next action in prose, with no `REVIEW:`, `state:`, or other machine-readable status line. Keep internal reviewer envelopes unchanged. Review mode retains all report content from [`./references/review-schema.md`](./references/review-schema.md).
 
 Zero-output and generation delivery: templates in [`./assets/output-templates.md`](./assets/output-templates.md).
 
