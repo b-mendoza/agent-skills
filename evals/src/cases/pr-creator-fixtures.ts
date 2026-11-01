@@ -1,14 +1,10 @@
 import { execFileSync } from "node:child_process";
-import {
-  appendFileSync,
-  mkdirSync,
-  readFileSync,
-  writeFileSync,
-} from "node:fs";
+import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { SeedContext } from "#/cases/case-contract.ts";
 import { FIXTURE_ROOT_PATH, seedFixtureRoot } from "#/cases/shared-checks.ts";
+import { copyHeadReflog, GH_LOG, HEAD_LOG } from "#/fixtures/fixtures.ts";
 
 export const GITHUB_FACTS = {
   repository: "eval-org/cart",
@@ -16,7 +12,7 @@ export const GITHUB_FACTS = {
   branch: "feature/unit-price",
   title: "refactor: simplify unit price",
   report: "pr-17-review.md",
-  log: ".git/fake-gh.log",
+  log: GH_LOG,
   baselineLog: ".git/eval-head-log",
   source: "pricing.py",
   sourceBaseline: ".git/eval-pricing.py",
@@ -33,7 +29,7 @@ export const GITHUB_FACTS = {
 export const GITHUB_SNAPSHOTS = [
   FIXTURE_ROOT_PATH,
   GITHUB_FACTS.log,
-  ".git/logs/HEAD",
+  HEAD_LOG,
   GITHUB_FACTS.baselineLog,
   GITHUB_FACTS.source,
   GITHUB_FACTS.sourceBaseline,
@@ -49,7 +45,7 @@ import sys
 root = Path(__EVAL_REPO_PATH__)
 state = json.loads((root / ".git/fake-gh-state.json").read_text())
 args = sys.argv[1:]
-with (root / ".git/fake-gh.log").open("a") as stream:
+with (root / "${GH_LOG}").open("a") as stream:
     stream.write(json.dumps(args) + "\n")
 
 def option(name):
@@ -207,10 +203,7 @@ export function seedGithubFixture(
   );
   git(repoPath, "branch", "--set-upstream-to", `origin/${GITHUB_FACTS.branch}`);
   appendFileSync(join(repoPath, ".git/info/exclude"), "\n.handoffs/\n");
-  writeFileSync(
-    join(repoPath, GITHUB_FACTS.baselineLog),
-    readFileSync(join(repoPath, ".git/logs/HEAD")),
-  );
+  copyHeadReflog(repoPath, GITHUB_FACTS.baselineLog);
   writeFileSync(
     join(repoPath, GITHUB_FACTS.sourceBaseline),
     GITHUB_FACTS.headSource,

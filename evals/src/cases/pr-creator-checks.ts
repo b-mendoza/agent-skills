@@ -2,36 +2,19 @@ import assert from "node:assert/strict";
 
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import {
-  assertFileExists,
   assertNoMutation,
   assertReadOnlyGraphqlArguments,
   assertRunHappened,
+  capturedText,
   fixtureRelativePath,
+  parseGitHubLog,
+  withoutAllowedChanges,
 } from "#/cases/shared-checks.ts";
+import { HEAD_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 
-export function capturedText(observation: Observation, path: string): string {
-  assertFileExists(observation, path);
-  const content = observation.repoFiles?.[path];
-  assert.equal(typeof content, "string");
-  assert.ok(content !== undefined && content !== null);
-  return content;
-}
-
 export function githubCalls(observation: Observation): readonly string[][] {
-  const log = capturedText(observation, GITHUB_FACTS.log);
-  return log
-    .split("\n")
-    .filter(Boolean)
-    .map((line) => {
-      const args: unknown = JSON.parse(line);
-      assert.ok(
-        Array.isArray(args) &&
-          args.every((arg: unknown) => typeof arg === "string"),
-        "invalid fake-gh invocation log",
-      );
-      return args;
-    });
+  return parseGitHubLog(capturedText(observation, GITHUB_FACTS.log));
 }
 
 function assertReadOnlyApiArguments(args: readonly string[]): void {
@@ -102,7 +85,7 @@ export function assertPlantedStatePreserved(observation: Observation): void {
     "source baseline changed",
   );
   assert.equal(
-    capturedText(observation, ".git/logs/HEAD"),
+    capturedText(observation, HEAD_LOG),
     capturedText(observation, GITHUB_FACTS.baselineLog),
     "HEAD changed during the run",
   );
@@ -140,19 +123,16 @@ export function assertOnlyReportWritten(
     { kind: "worktree", entries: `?? ${GITHUB_FACTS.report}` },
     "unexpected workspace change or missing report",
   );
-  const remainingCalls = observation.toolCalls.filter((call) => {
-    if (!["Write", "Edit", "NotebookEdit"].includes(call.name)) return true;
-    const path = call.input["file_path"];
-    assert.equal(typeof path, "string", "unexpected file mutation tool");
-    assert.ok(typeof path === "string");
-    assertAllowedWritePath(path, observation, allowReviewRunFiles);
-    return false;
-  });
-  assertNoMutation({
-    ...observation,
-    gitStatusBefore: observation.gitStatusAfter,
-    toolCalls: remainingCalls,
-  });
+  assertNoMutation(
+    withoutAllowedChanges(observation, (call) => {
+      if (!["Write", "Edit", "NotebookEdit"].includes(call.name)) return false;
+      const path = call.input["file_path"];
+      assert.equal(typeof path, "string", "unexpected file mutation tool");
+      assert.ok(typeof path === "string");
+      assertAllowedWritePath(path, observation, allowReviewRunFiles);
+      return true;
+    }),
+  );
   assertPlantedStatePreserved(observation);
   assertNoGithubWrites(observation);
 }
