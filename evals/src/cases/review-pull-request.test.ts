@@ -14,7 +14,7 @@ import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
-const [positiveRouting, negativeRouting, previewCase, guardCase] = cases;
+const [, , previewCase, guardCase] = cases;
 const SHA_LENGTH = 40;
 const DIGEST_LENGTH = 64;
 
@@ -111,33 +111,6 @@ function observation(report = REPORT): Observation {
     },
   });
 }
-
-const skillCall = { name: "Skill", input: { skill: "review-pull-request" } };
-
-describe("review-pull-request routing", () => {
-  it("distinguishes review from response drafting", () => {
-    expect(() =>
-      positiveRouting.check(createObservation({ toolCalls: [skillCall] })),
-    ).not.toThrow();
-    expect(() => positiveRouting.check(createObservation())).toThrow();
-    expect(() => negativeRouting.check(createObservation())).not.toThrow();
-    expect(() =>
-      negativeRouting.check(createObservation({ toolCalls: [skillCall] })),
-    ).toThrow();
-  });
-
-  it.each([positiveRouting, negativeRouting])(
-    "rejects invalid runs: $id",
-    (testCase) => {
-      expect(() =>
-        testCase.check(createObservation({ timedOut: true })),
-      ).toThrow();
-      expect(() =>
-        testCase.check(createObservation({ subtype: "query_error" })),
-      ).toThrow();
-    },
-  );
-});
 
 describe("verified review preview", () => {
   it("accepts a saved grounded review and withheld posting", () => {

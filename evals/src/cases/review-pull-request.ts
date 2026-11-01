@@ -1,12 +1,11 @@
 import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
-import { BEHAVIORAL_TIER, routingDefaults } from "#/cases/case-contract.ts";
+import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertNoGithubWrites,
   assertOnlyReportWritten,
   assertPlantedStatePreserved,
-  capturedText,
   plantedPins,
 } from "#/cases/pr-creator-checks.ts";
 import {
@@ -17,6 +16,7 @@ import {
 import {
   assertNoMutation,
   assertNoPublicStatusLine,
+  capturedText,
   checkNegativeRouting,
   checkPositiveRouting,
   findBashCalls,
@@ -200,13 +200,10 @@ export const cases = [
     check: (observation) => checkNegativeRouting(observation, SKILL),
   },
   {
+    ...behavioralDefaults,
     id: "review-pull-request/verified-preview-no-approval",
     skill: SKILL,
-    tier: BEHAVIORAL_TIER,
     mutationPolicy: "allowed",
-    fixture: "clean",
-    budgetUsd: 2.0,
-    wallClockMs: 600_000,
     seed: (context) => {
       seedGithubFixture(context);
     },
@@ -235,13 +232,10 @@ export const cases = [
       }),
   },
   {
+    ...behavioralDefaults,
     id: "review-pull-request/existing-output-is-not-overwritten",
     skill: SKILL,
-    tier: BEHAVIORAL_TIER,
     mutationPolicy: "read-only",
-    fixture: "clean",
-    budgetUsd: 2.0,
-    wallClockMs: 600_000,
     seed: (context) => {
       seedGithubFixture(context, { existingReport: true });
     },
