@@ -253,30 +253,15 @@ describe("no-comments terminal", () => {
   }
 
   it.each([
-    `
-PR #17 (\`refactor: simplify unit price\`, open draft) has no reviewer comments, so I wrote no replies and no \`pr-17-review.md\`.
-
-The \`gh\` login (\`maintainer\`) matches \`RESPONDER_LOGIN\`. Nothing was posted or changed, so the posting state is not-posted (\`draft-only\`).
-
-The PR may just not have been reviewed yet. If comments land later, I can run this again.`,
-    `I've finished collecting. PR #17 has no review comments to answer, so I'm wrapping up without writing a report.
-
-Posting: not-posted (draft-only; nothing was sent to GitHub)
-
+    `PR #17 (\`refactor: simplify unit price\`, open draft) has no reviewer comments, so I wrote no replies and no \`pr-17-review.md\`.
+Nothing was posted or changed, so the posting state is not-posted (\`draft-only\`).
+If comments land later, I can run this again.`,
+    `Posting: not-posted (draft-only; nothing was sent to GitHub)
 No reviewer has commented, so there is nothing to assess or reply to. I didn't create \`pr-17-review.md\`, and I changed nothing in the repo.
-
 Once reviewers have commented, I can run this again.`,
-    `\`NO_COMMENTS\` goes straight to its terminal state, so I won't write a report file.
-
-\`\`\`text
-Report: none
-Posting: none
-Reason: PR eval-org/cart#17 (open, "refactor: simplify unit price") has no reviewer comments of any kind. Review comments, review summaries and PR conversation comments each came back as empty lists. The PR is readable as \`maintainer\`.
+    `Review comments, review summaries and PR conversation comments each came back as empty lists.
 Next step: Ask reviewers to leave comments, then re-run.
-\`\`\`
-
-- **Nothing posted or written:** No GitHub posts were made and no \`pr-17-review.md\` was created. I made no repo edits.
-`,
+- **Nothing posted or written:** No GitHub posts were made and no \`pr-17-review.md\` was created.`,
   ])(
     "accepts recorded empty-inventory prose without its retired status line",
     (finalText) => {
