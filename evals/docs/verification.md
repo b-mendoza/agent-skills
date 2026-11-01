@@ -12,6 +12,7 @@ Run all commands below from `evals/`.
 | Any change, before completion     | `pnpm lint`, tsc, eslint, oxlint, oxfmt `--check` in parallel                                                                                        |
 | Auto-fixable lint/format findings | `pnpm fix`                                                                                                                                           |
 | Promptfoo integration             | `pnpm test src/promptfoo/integration.test.ts`, real CLI with an offline provider for filters, repeats, metrics, native exits, JSON/HTML, and history |
+| Shortening a recorded reply       | `pnpm minimize:reply --case <id> --observation <json> [--contrast-ref <ref>]`, offline; runs `check` only, never the judge                           |
 | Assertion grading                 | `pnpm test src/promptfoo/assertion.test.ts`, check failures, judge diagnostics, and per-attempt mutation evidence                                    |
 
 ## Paid checks
