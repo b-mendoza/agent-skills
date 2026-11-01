@@ -26,7 +26,7 @@ Default `PR_STATE` to `draft`. Ask for invalid `PR_STATE`. Ask for `TARGET_BRANC
 
 ## State Machine Overview
 
-Execution is a finite-state machine. Mermaid: [`flow-diagram.md`](./flow-diagram.md). Table: [`state-machine.md`](./state-machine.md).
+Execution is a finite-state machine. [`state-machine.md`](./state-machine.md) is the only normative source of states, transitions, guards, and terminals; this overview is non-normative.
 
 | State                                            | Result                                              |
 | ------------------------------------------------ | --------------------------------------------------- |
@@ -63,9 +63,8 @@ Fork-aware, idempotent, approval-bound. Trusted compare range after preflight: `
 
 | Need                                                                    | Load                                                    |
 | ----------------------------------------------------------------------- | ------------------------------------------------------- |
-| Phase routing, gates, status taxonomy                                   | This file                                               |
-| States, transitions, guards, terminals                                  | `./state-machine.md`                                    |
-| Mermaid state diagram                                                   | `./flow-diagram.md`                                     |
+| Phase overview, registry, core rules                                    | This file                                               |
+| States, transitions, guards, status routing, terminals                  | `./state-machine.md`                                    |
 | Stop outcome, preview, body template, approval record, cycle ledger | `./references/execution-contracts.md`                   |
 | Non-GitHub / state capability                                           | `./references/platform-adaptation.md`                   |
 | CLI/API syntax or writing guidance                                      | `./references/external-resources.md`, then fetch ≤1 URL |
