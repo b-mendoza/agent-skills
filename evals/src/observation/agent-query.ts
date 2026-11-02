@@ -24,7 +24,9 @@ const toolCallSchema = Schema.Struct({
   ),
 });
 export type ToolCall = {
-  -readonly [Key in keyof typeof toolCallSchema.Type]: (typeof toolCallSchema.Type)[Key];
+  -readonly [
+    Key in keyof typeof toolCallSchema.Type
+  ]: (typeof toolCallSchema.Type)[Key];
 };
 export const observationSchema = Schema.Struct({
   subtype: Schema.String,
@@ -42,7 +44,9 @@ export const observationSchema = Schema.Struct({
   ),
 });
 export type Observation = {
-  -readonly [Key in keyof typeof observationSchema.Type]: (typeof observationSchema.Type)[Key];
+  -readonly [
+    Key in keyof typeof observationSchema.Type
+  ]: (typeof observationSchema.Type)[Key];
 };
 /** The fields a result message settles, before run-level facts are attached. */
 type ResultVerdict = Pick<
