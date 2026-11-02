@@ -3,7 +3,6 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import {
   APPROVAL_HEADINGS,
   AUDIT_FACTS,
@@ -427,11 +426,31 @@ describe("excluded targets", () => {
   });
 });
 
-testArtifactWriteMatrix({
-  label: "audit",
-  artifact: SYNTHESIS_PATH,
-  check: (observation) => getCase("audit-approval").check(observation),
-  valid: () => goodAudit(),
+test("audit accepts a canonical-root synthesis write", () => {
+  expect(() =>
+    getCase("audit-approval").check(
+      goodAudit({
+        toolCalls: [
+          {
+            name: "Write",
+            input: { file_path: `/canonical/repo/${SYNTHESIS_PATH}` },
+          },
+        ],
+      }),
+    ),
+  ).not.toThrow();
+});
+
+test("audit rejects a foreign-root same-suffix synthesis write", () => {
+  expect(() =>
+    getCase("audit-approval").check(
+      goodAudit({
+        toolCalls: [
+          { name: "Edit", input: { file_path: `/outside/${SYNTHESIS_PATH}` } },
+        ],
+      }),
+    ),
+  ).toThrow();
 });
 
 test("seed creates a first-party package with its reference absent", () => {
