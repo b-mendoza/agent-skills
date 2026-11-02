@@ -51,7 +51,7 @@ test.each([ISSUE.reference, PLAN_PATH])(
         ...SUCCESS,
         finalText: SUCCESS_TEXT.replace(value, "omitted"),
       }),
-    ).toThrow();
+    ).toThrow(/reply omitted/);
   },
 );
 test.each([
@@ -79,7 +79,7 @@ test("reconciliation rejects file edits", () => {
       ...SUCCESS,
       toolCalls: [{ name: "Edit", input: { file_path: PLAN_PATH } }],
     }),
-  ).toThrow();
+  ).toThrow(/read-only/);
 });
 test("reconciliation accepts padded tables and bold prose", () => {
   const finalText = SUCCESS_TEXT.replaceAll(" |", "     |").replace(
