@@ -70,7 +70,9 @@ describe("committing-scoped-changes checks", () => {
   test("plan-approval requires invocation and rejects old public status lines", () => {
     assert.ok(dirty !== undefined);
     const observation = correctObservation(dirty);
-    expect(() => dirty.check({ ...observation, toolCalls: [] })).toThrow();
+    expect(() => dirty.check({ ...observation, toolCalls: [] })).toThrow(
+      /skill never triggered/,
+    );
     expect(() =>
       dirty.check({
         ...observation,
