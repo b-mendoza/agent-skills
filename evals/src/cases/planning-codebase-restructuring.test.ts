@@ -88,13 +88,20 @@ describe("persisted decision report", () => {
     },
   );
   test("rejects sections in the wrong order", () => {
-    const reversed = [...REPORT_SECTIONS].reverse().join("\n");
+    const reversed = REPORT.replace(
+      "## Preflight summary",
+      "## Swapped section",
+    )
+      .replace("## Current architecture map", "## Preflight summary")
+      .replace("## Swapped section", "## Current architecture map");
     expect(() =>
       plan.check({
         ...readyObservation,
         repoFiles: { ...readyObservation.repoFiles, [ARTIFACT_PATH]: reversed },
       }),
-    ).toThrow(/out-of-order/);
+    ).toThrow(
+      /missing or out-of-order report section: Current architecture map/,
+    );
   });
   test.each([
     ["old status", `${READY}\nStatus: READY`],
