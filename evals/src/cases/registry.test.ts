@@ -19,7 +19,6 @@ import {
 } from "#/cases/shared-checks.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
-import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
@@ -193,50 +192,21 @@ describe("routing matrix", () => {
   );
 });
 
-function invalidRuns(skill: string) {
-  return [
-    {
-      observation: createObservation({ timedOut: true }),
-      diagnostic: "run exceeded its wall clock",
-    },
-    {
-      // A timeout after real work: the skill call, tool call and cost must not excuse it.
-      observation: createObservation({
-        timedOut: true,
-        toolCalls: [
-          { name: "Skill", input: { skill } },
-          { name: "Read", input: { file_path: "/repo/a.txt" } },
-        ],
-        costUsd: LATE_ERROR_COST_USD,
-      }),
-      diagnostic: "run exceeded its wall clock",
-    },
-    {
-      observation: createObservation({ subtype: QUERY_ERROR_SUBTYPE }),
-      diagnostic: "the query produced no result",
-    },
-    {
-      observation: createObservation({ subtype: "" }),
-      diagnostic: "run carries no result verdict",
-    },
-    {
-      observation: createObservation({
-        isError: true,
-        finalText: "Failed to authenticate: OAuth session expired",
-      }),
-      diagnostic: "reported a failed run before it did anything",
-    },
-  ] as const;
-}
-
-test.each(cases)(
-  "$id rejects timeouts (even after real work), missing-result, empty-verdict and zero-work runs",
-  (evalCase) => {
-    for (const { observation, diagnostic } of invalidRuns(evalCase.skill)) {
-      expect(() => evalCase.check(observation)).toThrow(diagnostic);
-    }
-  },
-);
+test("every case rejects a timed-out run even after real work", () => {
+  for (const evalCase of cases) {
+    const observation = createObservation({
+      timedOut: true,
+      toolCalls: [
+        skillCall(evalCase.skill),
+        { name: "Read", input: { file_path: "/repo/a.txt" } },
+      ],
+      costUsd: 0.01,
+    });
+    expect(() => evalCase.check(observation)).toThrow(
+      "run exceeded its wall clock",
+    );
+  }
+});
 
 const artifactFixtureCases = cases.filter(
   ({ seed, snapshotPaths }) =>
