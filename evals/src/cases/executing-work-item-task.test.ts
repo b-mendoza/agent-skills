@@ -103,7 +103,7 @@ describe("executing-work-item-task", () => {
         ...observation,
         repoFiles: { ...observation.repoFiles, [DECISIONS_PATH]: "invented" },
       }),
-    ).toThrow();
+    ).toThrow(/changed input/);
     for (const finalText of [
       observation.finalText.replaceAll(DECISIONS_PATH, "a file"),
       observation.finalText.replace(
@@ -197,7 +197,7 @@ describe("executing-work-item-task", () => {
           [`docs/${EXECUTION_FACTS.key}-tasks.md`]: "changed",
         },
       }),
-    ).toThrow();
+    ).toThrow(/changed input/);
   });
 
   test("seed exposes untracked handoffs and a logged, read-only fake gh", () => {
