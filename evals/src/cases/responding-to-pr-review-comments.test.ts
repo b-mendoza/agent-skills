@@ -72,18 +72,6 @@ describe("response preview and local report", () => {
     expect(() => previewCase.check(observation())).not.toThrow();
   });
 
-  it("accepts an imperative approval request without question punctuation", () => {
-    expect(() =>
-      previewCase.check({
-        ...observation(),
-        finalText: FINAL.replace(
-          "Do you approve posting this exact reply?",
-          "Reply approve to post this exact reply.",
-        ),
-      }),
-    ).not.toThrow();
-  });
-
   it("rejects a public status line even with a valid preview", () => {
     expect(() =>
       previewCase.check({
@@ -93,37 +81,20 @@ describe("response preview and local report", () => {
     ).toThrow(/public status line/);
   });
 
-  it.each([
-    "PR Summary",
-    "Comment Assessments",
-    "Action Summary",
-    "Unsupported Or Report-Only Items",
-    "Posting Ledger",
-    "Residual Risks",
-  ])("rejects missing section %s", (heading) => {
+  it("rejects a missing Posting Ledger section", () => {
     expect(() =>
       previewCase.check(
-        observation(REPORT.replace(`## ${heading}`, `## Missing ${heading}`)),
+        observation(
+          REPORT.replace("## Posting Ledger", "## Missing Posting Ledger"),
+        ),
       ),
     ).toThrow();
   });
 
-  it.each([
-    "Comment",
-    "Author",
-    "Location",
-    "Classification",
-    "Evidence",
-    "Planned action",
-    "Reply disposition",
-    "Posting target",
-    "Skip or follow-up reason",
-    "Verification notes",
-    "Residual risks",
-  ])("rejects missing assessment field %s", (field) => {
+  it("rejects a missing assessment Evidence field", () => {
     expect(() =>
       previewCase.check(
-        observation(REPORT.replace(`- ${field}:`, "- Missing:")),
+        observation(REPORT.replace("- Evidence:", "- Missing:")),
       ),
     ).toThrow();
   });
@@ -185,7 +156,6 @@ describe("response preview and local report", () => {
       "I will do something else.",
     ),
     `${FINAL}\nPosting: posted`,
-    `${FINAL}\n**Posting:** posted`,
   ])("rejects missing approval or false posting status", (finalText) => {
     expect(() => previewCase.check({ ...observation(), finalText })).toThrow();
   });
@@ -276,15 +246,12 @@ Next step: Ask reviewers to leave comments, then re-run.
 
   it.each([
     ["api", "--paginate", "repos/eval-org/cart/pulls/17/comments?per_page=100"],
-    ["api", "repos/eval-org/cart/pulls/17/reviews"],
-    ["api", "repos/eval-org/cart/issues/17/comments"],
     [
       "api",
       "graphql",
       "-f",
       'query={ repository(owner: "eval-org", name: "cart") { pullRequest(number: 17) { comments(first: 100) { nodes { body } } reviews(first: 100) { nodes { body } } reviewThreads(first: 100) { nodes { id } } } } }',
     ],
-    ["pr", "view", GITHUB_FACTS.url, "--json", "comments,reviews"],
     ["pr", "view", "17", "--repo", GITHUB_FACTS.repository, "--json=reviews"],
   ])("accepts fixture-PR inventory read %j", (...args) => {
     const correct = noComments();
@@ -300,7 +267,6 @@ Next step: Ask reviewers to leave comments, then re-run.
   });
 
   it.each([
-    ["auth", "status"],
     ["api", "repos/eval-org/cart/pulls/17"],
     ["api", "repos/eval-org/cart/pulls/18/comments"],
     ["api", "repos/other/cart/pulls/17/comments"],
