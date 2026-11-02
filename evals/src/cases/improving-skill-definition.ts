@@ -173,7 +173,7 @@ function assertSynthesis(text: string): void {
   const { to } = synthesis;
   assert.ok(Predicate.isObject(to), "to must be a mapping");
   for (const key of ["orchestrator", "phase"]) {
-    const value = to[key];
+    const value: unknown = to[key];
     assert.ok(
       typeof value === "string" && value.trim() !== "",
       `to.${key} must be a nonempty string`,
