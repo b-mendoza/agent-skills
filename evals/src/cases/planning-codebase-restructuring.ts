@@ -219,7 +219,7 @@ export const cases = [
       assert.ok(typeof report === "string");
       let previousSection = -1;
       for (const [index, sectionPattern] of REPORT_SECTION_PATTERNS.entries()) {
-        const position = report.search(sectionPattern);
+        const position: number = report.search(sectionPattern);
         assert.ok(
           position > previousSection,
           `missing or out-of-order report section: ${REPORT_SECTIONS[index]}`,
