@@ -6,6 +6,7 @@ import { describe, expect, test } from "vitest";
 
 import { SNAPSHOT_SECTIONS } from "#/cases/fetching-work-item.ts";
 import {
+  assertReadOnlyGitHub,
   ISSUE,
   seedGitHub,
   SNAPSHOT,
@@ -212,6 +213,119 @@ test("fetching rejects a foreign-root lookalike", () => {
 
 const SUCCESS_EXIT = 0;
 const FAILURE_EXIT = 1;
+const apiMethodCases = [
+  { options: ["--raw-field=title=changed"], readOnly: false },
+  { options: ["-XPOST"], readOnly: false },
+  { options: ["-f", "--method=GET"], readOnly: false },
+  { options: ["--method", "GET", "-f", "per_page=100"], readOnly: true },
+  { options: ["--method=GET", "-f", "--method=PATCH"], readOnly: true },
+];
+test.each(apiMethodCases.filter(({ readOnly }) => !readOnly))(
+  "fetching rejects REST writes with $options",
+  ({ options }) => {
+    expect(() => {
+      assertReadOnlyGitHub(
+        createObservation({
+          repoFiles: {
+            [GH_LOG]: `${JSON.stringify(["api", "repos/acme/app/issues/42", ...options])}\n`,
+          },
+        }),
+      );
+    }).toThrow(/remote write/);
+  },
+);
+test.each(apiMethodCases.filter(({ readOnly }) => readOnly))(
+  "fetching accepts REST reads with $options",
+  ({ options }) => {
+    expect(() => {
+      assertReadOnlyGitHub(
+        createObservation({
+          repoFiles: {
+            [GH_LOG]: `${JSON.stringify(["api", "repos/acme/app/issues/42", ...options])}\n`,
+          },
+        }),
+      );
+    }).not.toThrow();
+  },
+);
+test.each(apiMethodCases)(
+  "fake gh classifies REST options $options as read-only=$readOnly",
+  ({ options, readOnly }) => {
+    const fixture = makeFixture("clean", [], seedGitHub);
+    try {
+      const result = spawnSync(
+        join(fixture.binPath, "gh"),
+        ["api", "repos/acme/app/issues/42", ...options],
+        { encoding: "utf8" },
+      );
+      expect(result.status).toBe(readOnly ? SUCCESS_EXIT : FAILURE_EXIT);
+      expect(result.stdout).toMatch(readOnly ? /"number":42/ : /^$/);
+      expect(result.stderr).toBe(
+        readOnly ? "" : "Remote writes are not permitted\n",
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  },
+);
+test("fetching rejects opaque GraphQL bodies", () => {
+  expect(() => {
+    assertReadOnlyGitHub(
+      createObservation({
+        repoFiles: {
+          [GH_LOG]: '["api","graphql","--input","-"]\n',
+        },
+      }),
+    );
+  }).toThrow(/GraphQL body unavailable/);
+});
+test("fetching accepts an inline GraphQL read", () => {
+  expect(() => {
+    assertReadOnlyGitHub(
+      createObservation({
+        repoFiles: {
+          [GH_LOG]:
+            '["api","graphql","-X","POST","-f","query=query { viewer { login } }"]\n',
+        },
+      }),
+    );
+  }).not.toThrow();
+});
+test("fetching does not mistake an option value for a GraphQL endpoint", () => {
+  expect(() => {
+    assertReadOnlyGitHub(
+      createObservation({
+        repoFiles: {
+          [GH_LOG]:
+            '["api","user","--jq","graphql","-f","title=unauthorized"]\n',
+        },
+      }),
+    );
+  }).toThrow(/remote write/);
+});
+test.each(["mcp__github__create_pull_request", "mcp__github__updateIssue"])(
+  "fetching rejects remote write tool %s",
+  (name) => {
+    expect(() => {
+      assertReadOnlyGitHub(
+        createObservation({
+          repoFiles: { [GH_LOG]: READ_LOG },
+          toolCalls: [{ name, input: {} }],
+        }),
+      );
+    }).toThrow(/remote mutation tool/);
+  },
+);
+test("fetching accepts a remote read tool", () => {
+  expect(() => {
+    assertReadOnlyGitHub(
+      createObservation({
+        repoFiles: { [GH_LOG]: READ_LOG },
+        toolCalls: [{ name: "mcp__github__get_issue", input: {} }],
+      }),
+    );
+  }).not.toThrow();
+});
 
 test("fake gh serves reads and logs refused writes", () => {
   const fixture = makeFixture("clean", [], seedGitHub);
@@ -287,6 +401,49 @@ test("the missing-issue seed returns 404 without fabricating a payload", () => {
     expect(response.status).toBe(FAILURE_EXIT);
     expect(response.stderr).toContain("404");
     expect(response.stdout).toBe("");
+  } finally {
+    fixture.cleanup();
+  }
+});
+test("fake gh serves API reads without TypeScript or require(esm) support", () => {
+  const fixture = makeFixture("clean", [], seedGitHub);
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [
+        "--no-experimental-strip-types",
+        "--no-experimental-require-module",
+        join(fixture.binPath, "gh"),
+        "api",
+        "repos/acme/app/issues/42",
+      ],
+      { encoding: "utf8" },
+    );
+    expect(result.status).toBe(SUCCESS_EXIT);
+    expect(result.stdout).toContain('"number":42');
+    expect(result.stderr).toBe("");
+  } finally {
+    fixture.cleanup();
+  }
+});
+test("missing issue remains missing through GraphQL", () => {
+  const fixture = makeFixture("clean", [], (context) => {
+    seedGitHub(context, "missing");
+  });
+  try {
+    const result = spawnSync(
+      join(fixture.binPath, "gh"),
+      [
+        "api",
+        "graphql",
+        "-f",
+        'query=query { repository(owner: "acme", name: "app") { issue(number: 42) { title } } }',
+      ],
+      { encoding: "utf8" },
+    );
+    expect(result.status).toBe(FAILURE_EXIT);
+    expect(result.stderr).toMatch(/Not Found|Could not resolve/);
+    expect(result.stdout).toBe("");
   } finally {
     fixture.cleanup();
   }
