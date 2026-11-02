@@ -4,7 +4,6 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import {
   DETAILED_PATH,
   FINAL_PATH,
@@ -16,10 +15,7 @@ import {
   SNAPSHOT,
   SOURCE_PATH,
 } from "#/cases/planning-work-item-tasks.ts";
-import {
-  assertPlanningWrites,
-  SEED_COMMIT,
-} from "#/cases/planning-work-item-tasks-checks.ts";
+import { SEED_COMMIT } from "#/cases/planning-work-item-tasks-checks.ts";
 import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { HEAD_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
@@ -415,24 +411,29 @@ test.each(["staged-plan", "invalid-snapshot"])(
   },
 );
 
-const plannedArtifact = "docs/acme-app-42.md";
-const plannedOnly = createObservation({
-  gitStatusAfter: { kind: "worktree", entries: `?? ${plannedArtifact}` },
-  repoFiles: {
-    [plannedArtifact]: "plan",
-    [HEAD_LOG]: "commit: seed planning inputs\n",
-    ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
-  },
+test("planning accepts canonical-root artifact writes", () => {
+  const candidate = completedObservation();
+  expect(() =>
+    getCase("staged-plan").check({
+      ...candidate,
+      toolCalls: [
+        {
+          name: "Write",
+          input: { file_path: `/canonical/fixture/${DETAILED_PATH}` },
+        },
+      ],
+    }),
+  ).not.toThrow();
 });
 
-testArtifactWriteMatrix({
-  label: "planning",
-  artifact: plannedArtifact,
-  check: (candidate) => {
-    assertPlanningWrites(candidate, [plannedArtifact], {});
-  },
-  valid: () => ({
-    ...plannedOnly,
-    toolCalls: [{ name: "Write", input: { file_path: plannedArtifact } }],
-  }),
+test("planning rejects a foreign-root same-suffix artifact write", () => {
+  const candidate = completedObservation();
+  expect(() =>
+    getCase("staged-plan").check({
+      ...candidate,
+      toolCalls: [
+        { name: "Edit", input: { file_path: `/outside/${DETAILED_PATH}` } },
+      ],
+    }),
+  ).toThrow();
 });
