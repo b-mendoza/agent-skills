@@ -182,7 +182,7 @@ describe("clarifying-assumptions", () => {
             [CLARIFICATION_FACTS.planPath]: "changed",
           },
         }),
-      ).toThrow();
+      ).toThrow(/changed input/);
     },
   );
 
