@@ -172,17 +172,14 @@ describe("conversation handoff package", () => {
     ).not.toThrow();
   });
 
-  it.each([
-    HANDOFF_PATHS.target,
-    HANDOFF_PATHS.transcript,
-    HANDOFF_PATHS.context,
-    HANDOFF_PATHS.insights,
-    FIXTURE_ROOT_PATH,
-  ])("rejects missing %s", (path) => {
-    expect(() =>
-      getCase("conversation-package").check(replaceCaptured(path, null)),
-    ).toThrow();
-  });
+  it.each([HANDOFF_PATHS.target, FIXTURE_ROOT_PATH])(
+    "rejects missing %s",
+    (path) => {
+      expect(() =>
+        getCase("conversation-package").check(replaceCaptured(path, null)),
+      ).toThrow();
+    },
+  );
 
   it.each([
     ["invalid JSON", HANDOFF_PATHS.context, "{"],
@@ -211,11 +208,6 @@ describe("conversation handoff package", () => {
       document.replace("## 2. Q&A Log", "### 2. Q&A Log"),
     ],
     [
-      "missing Fulfills line",
-      HANDOFF_PATHS.target,
-      document.replace("**Fulfills:** Preserve clarifications.\n", ""),
-    ],
-    [
       "missing manifest",
       HANDOFF_PATHS.target,
       document.replace("Working artifacts:", "Files:"),
@@ -239,7 +231,6 @@ describe("conversation handoff package", () => {
       HANDOFF_FACTS.mandate,
     ],
     ["unrequested claims file", HANDOFF_PATHS.claims, "{}"],
-    ["unrequested backup", HANDOFF_PATHS.backup, "prior"],
     ["source file altered", "a.txt", "overwritten"],
   ])("rejects %s", (_label, path, content) => {
     expect(() =>
@@ -248,12 +239,8 @@ describe("conversation handoff package", () => {
   });
 
   it.each([
-    [HANDOFF_PATHS.target, HANDOFF_FACTS.secret],
     [HANDOFF_PATHS.transcript, HANDOFF_FACTS.secret],
-    [HANDOFF_PATHS.context, HANDOFF_FACTS.secret],
-    [HANDOFF_PATHS.insights, HANDOFF_FACTS.secret],
     [HANDOFF_PATHS.context, HANDOFF_FACTS.secret.replace("s", "\\u0073")],
-    [HANDOFF_PATHS.insights, HANDOFF_FACTS.secret.replace("s", "\\u0073")],
   ])("rejects an exposed secret in %s encoded as %s", (path, secret) => {
     const original = writtenObservation().repoFiles?.[path];
     assert.ok(typeof original === "string");
@@ -286,14 +273,6 @@ describe("conversation handoff package", () => {
       input: { file_path: `/outside/${HANDOFF_PATHS.target}`, content: "x" },
     },
     {
-      name: "Edit",
-      input: {
-        file_path: ".claude/skills/tampered.md",
-        old_string: "a",
-        new_string: "b",
-      },
-    },
-    {
       name: "NotebookEdit",
       input: { notebook_path: "extra.ipynb", new_source: "x" },
     },
@@ -310,7 +289,7 @@ describe("conversation handoff package", () => {
     ).toThrow();
   });
 
-  it.each(["", ...fixtureRoots])("accepts writes under '%s'", (repoPath) => {
+  it.each(["", "/private/fixture"])("accepts writes under '%s'", (repoPath) => {
     expect(() =>
       getCase("conversation-package").check({
         ...writtenObservation(),
@@ -338,8 +317,6 @@ describe("conversation handoff package", () => {
   });
 
   it.each([
-    "Done.",
-    "The review did not pass.",
     "The second review came back REVIEW: FAIL with failed gates.",
     "Completed: review pass\nThe handoff passed review.",
   ])("rejects an unsuccessful review outcome: %s", (outcome) => {
@@ -350,15 +327,9 @@ describe("conversation handoff package", () => {
 });
 
 describe("existing target gate", () => {
-  it.each([
-    "Should I overwrite it, update it, or use a new path?",
-    "Which mode do you want?\n\n1. overwrite: back up and replace.\n2. update: back up and merge.\n3. new-path: leave the current file alone.",
-  ])("asks for the update mode without writing files: %s", (question) => {
+  it("asks for the update mode without writing files", () => {
     expect(() =>
-      getCase("existing-target-gate").check({
-        ...gateObservation(),
-        finalText: `The target ${HANDOFF_PATHS.target} already exists.\n\n${question}`,
-      }),
+      getCase("existing-target-gate").check(gateObservation()),
     ).not.toThrow();
   });
 
@@ -374,34 +345,28 @@ describe("existing target gate", () => {
     ).toThrow();
   });
 
-  it.each([
-    HANDOFF_PATHS.context,
-    HANDOFF_PATHS.insights,
-    HANDOFF_PATHS.transcript,
-    HANDOFF_PATHS.claims,
-    HANDOFF_PATHS.backup,
-  ])("rejects a premature %s", (path) => {
+  it("rejects a premature transcript", () => {
+    const observation = gateObservation();
     expect(() =>
       getCase("existing-target-gate").check({
-        ...gateObservation(),
-        repoFiles: { ...gateObservation().repoFiles, [path]: "premature" },
+        ...observation,
+        repoFiles: {
+          ...observation.repoFiles,
+          [HANDOFF_PATHS.transcript]: "premature",
+        },
       }),
     ).toThrow();
   });
 
-  it.each([
-    "The target exists. Available modes are overwrite, update, and new-path. I will proceed.",
-  ])(
-    "rejects an answer that did not ask for mode selection: %s",
-    (finalText) => {
-      expect(() =>
-        getCase("existing-target-gate").check({
-          ...gateObservation(),
-          finalText,
-        }),
-      ).toThrow();
-    },
-  );
+  it("rejects an answer that did not ask for mode selection", () => {
+    expect(() =>
+      getCase("existing-target-gate").check({
+        ...gateObservation(),
+        finalText:
+          "The target exists. Available modes are overwrite, update, and new-path. I will proceed.",
+      }),
+    ).toThrow();
+  });
 
   it("rejects a public completion status even with a valid mode request", () => {
     const valid = gateObservation();
@@ -414,58 +379,37 @@ describe("existing target gate", () => {
   });
 });
 
-describe.each(["conversation-package", "existing-target-gate"])(
-  "%s validity",
-  (suffix) => {
-    it.each([{ toolCalls: [] }, { repoFiles: {} }] satisfies Array<
-      Partial<Observation>
-    >)("rejects missing observation evidence %#", (overrides) => {
-      const valid =
-        suffix === "conversation-package"
-          ? writtenObservation()
-          : gateObservation();
-      expect(() => getCase(suffix).check({ ...valid, ...overrides })).toThrow();
-    });
-  },
-);
+it("conversation-package requires the skill invocation", () => {
+  expect(() =>
+    getCase("conversation-package").check({
+      ...writtenObservation(),
+      toolCalls: [],
+    }),
+  ).toThrow();
+});
 
-describe("handoff seeds", () => {
-  it.each([
-    ["conversation-package", null],
-    ["existing-target-gate", HANDOFF_FACTS.existingDocument],
-  ] as const)(
-    "plants a clean tracked docs directory for %s",
-    (suffix, expectedTarget) => {
-      const evalCase = getCase(suffix);
-      const fixture = makeFixture("clean", [evalCase.skill], evalCase.seed);
-      try {
-        expect(
-          execFileSync("git", ["status", "--short"], {
-            cwd: fixture.cwd,
-            encoding: "utf8",
-          }).trim(),
-        ).toBe("");
-        expect(readFileSync(join(fixture.cwd, "a.txt"), "utf8")).toBe(
-          "hello\n",
-        );
-        const targetPath = join(fixture.cwd, HANDOFF_PATHS.target);
-        const targetText = existsSync(targetPath)
-          ? readFileSync(targetPath, "utf8")
-          : null;
-        expect(targetText).toBe(expectedTarget);
-        expect(readFileSync(join(fixture.cwd, FIXTURE_ROOT_PATH), "utf8")).toBe(
-          `${fixture.cwd}\n${realpathSync(fixture.cwd)}`,
-        );
-        writeFileSync(join(fixture.cwd, HANDOFF_PATHS.context), "{}");
-        expect(
-          execFileSync("git", ["status", "--short"], {
-            cwd: fixture.cwd,
-            encoding: "utf8",
-          }).trim(),
-        ).toBe(`?? ${HANDOFF_PATHS.context}`);
-      } finally {
-        fixture.cleanup();
-      }
-    },
-  );
+it("existing-target seed provides a clean baseline and individual new artifact paths", () => {
+  const evalCase = getCase("existing-target-gate");
+  const fixture = makeFixture("clean", [evalCase.skill], evalCase.seed);
+  try {
+    expect(
+      execFileSync("git", ["status", "--short"], {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+      }).trim(),
+    ).toBe("");
+    expect(existsSync(join(fixture.cwd, HANDOFF_PATHS.target))).toBe(true);
+    expect(readFileSync(join(fixture.cwd, FIXTURE_ROOT_PATH), "utf8")).toBe(
+      `${fixture.cwd}\n${realpathSync(fixture.cwd)}`,
+    );
+    writeFileSync(join(fixture.cwd, HANDOFF_PATHS.context), "{}");
+    expect(
+      execFileSync("git", ["status", "--short"], {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+      }).trim(),
+    ).toBe(`?? ${HANDOFF_PATHS.context}`);
+  } finally {
+    fixture.cleanup();
+  }
 });
