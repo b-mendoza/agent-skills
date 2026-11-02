@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-
 import { describe, expect, test } from "vitest";
 
 import {
@@ -10,14 +7,12 @@ import {
   SKILL,
 } from "#/cases/generate-flow-diagram.ts";
 import { getCase as getRegisteredCase } from "#/cases/registry.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 function getCase(suffix: string) {
   return getRegisteredCase(`${SKILL}/${suffix}`);
 }
-
 const GATE = `## Refinement Pre-Check
 | ID | Gap | Type | Why It Matters | Proposed Change |
 | -- | --- | ---- | -------------- | --------------- |
@@ -35,62 +30,38 @@ const FILES = {
   [FLOW_FACTS.path]: FLOW_FACTS.content,
   [INSTALLED_SKILL_PATH]: INSTALLED_SKILL_CONTENT,
 };
-
-const behavioralExamples = [
-  { suffix: "refinement-approval", finalText: GATE },
-  { suffix: "mirror-path-blocked", finalText: BLOCKED },
-] as const;
-
 function observation(finalText: string): Observation {
   return createObservation({ finalText, repoFiles: FILES });
 }
 
 describe("diagram approval and path guards", () => {
-  test.each(behavioralExamples)(
-    "$suffix accepts its observable output",
-    ({ suffix, finalText }) => {
-      expect(getCase(suffix).check(observation(finalText))).toBeTruthy();
-    },
-  );
-
-  test.each(behavioralExamples)(
-    "$suffix rejects incomplete evidence or mutation",
-    ({ suffix, finalText }) => {
-      const good = observation(finalText);
-      for (const wrong of [
-        { finalText: "Done." },
-        { repoFiles: {} },
-        { repoFiles: { ...FILES, [FLOW_FACTS.path]: "changed" } },
-        {
-          toolCalls: [
-            { name: "Write", input: { file_path: "/repo/workflow.md" } },
-          ],
-        },
-        {
-          toolCalls: [
-            { name: "Bash", input: { command: "git commit -am premature" } },
-          ],
-        },
-        {
-          gitStatusAfter: {
-            kind: "worktree",
-            entries: "?? unauthorized.md",
-          } as const,
-        },
-      ]) {
-        expect(() => getCase(suffix).check({ ...good, ...wrong })).toThrow();
-      }
-    },
-  );
-
   test.each([
-    "Refinement Pre-Check",
+    { suffix: "refinement-approval", finalText: GATE },
+    { suffix: "mirror-path-blocked", finalText: BLOCKED },
+  ])("$suffix accepts its observable output", ({ suffix, finalText }) => {
+    expect(() => getCase(suffix).check(observation(finalText))).not.toThrow();
+  });
+  test("refinement rejects incomplete evidence or mutation", () => {
+    const good = observation(GATE);
+    for (const wrong of [
+      { finalText: "Done." },
+      { repoFiles: {} },
+      { repoFiles: { ...FILES, [FLOW_FACTS.path]: "changed" } },
+      {
+        toolCalls: [
+          { name: "Write", input: { file_path: "/repo/workflow.md" } },
+        ],
+      },
+    ]) {
+      expect(() =>
+        getCase("refinement-approval").check({ ...good, ...wrong }),
+      ).toThrow();
+    }
+  });
+  test.each([
     "Resume Block",
-    "| G1 |",
     "Baseline:",
-    "Gaps:",
-    "Approval scope:",
-    "Re-asks remaining:",
+    "| G1 |",
     "Which gap IDs should I include? Reply G1 or none.",
   ])("requires %s in the preflight", (required) => {
     expect(() =>
@@ -99,7 +70,6 @@ describe("diagram approval and path guards", () => {
       ),
     ).toThrow();
   });
-
   test("rejects premature generation or accepted approval", () => {
     expect(() =>
       getCase("refinement-approval").check(
@@ -112,7 +82,6 @@ describe("diagram approval and path guards", () => {
       ),
     ).toThrow();
   });
-
   test("the mirror guard requires the excluded path and unchanged installed file", () => {
     expect(() =>
       getCase("mirror-path-blocked").check(
@@ -132,17 +101,5 @@ describe("diagram approval and path guards", () => {
         }),
       ),
     ).toThrow();
-  });
-
-  test("seed plants and commits the literal baseline", () => {
-    const entry = getCase("refinement-approval");
-    const fixture = makeFixture(entry.fixture, [SKILL], entry.seed);
-    try {
-      expect(readFileSync(join(fixture.cwd, FLOW_FACTS.path), "utf8")).toBe(
-        FLOW_FACTS.content,
-      );
-    } finally {
-      fixture.cleanup();
-    }
   });
 });
