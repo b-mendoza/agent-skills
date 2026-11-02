@@ -15,7 +15,7 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import { BEHAVIORAL_TIER, ROUTING_TIER } from "#/cases/case-contract.ts";
-import { cases, getCase } from "#/cases/registry.ts";
+import { getCase } from "#/cases/registry.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 import config from "../../promptfooconfig.ts";
@@ -29,6 +29,11 @@ const MAX_CONCURRENCY = 5;
 const ONE_RUN = 1;
 const EXIT = { PASS: 0, FAIL: 100 };
 const BEHAVIORAL_CASE_ID = "diagnosing-root-causes/missing-resources";
+const offlineCases = [
+  getCase(`${SKILL}/trigger-positive`),
+  getCase(`${SKILL}/trigger-negative-review`),
+  getCase(BEHAVIORAL_CASE_ID),
+];
 let root = "";
 
 beforeAll(() => {
@@ -65,7 +70,8 @@ beforeAll(() => {
       providers: [${JSON.stringify(`file://${join(root, "provider.mjs")}`)}],
       outputPath: config.outputPath.map(path => path.replace(${JSON.stringify(join(EVAL_ROOT, "outputs"))}, ${JSON.stringify(root)})),
       defaultTest: { assert: config.defaultTest.assert.map(absoluteAssert) },
-      tests: config.tests.map(test => ({ ...test, assert: test.assert.map(absoluteAssert) }))
+      tests: config.tests.filter(test => ${JSON.stringify(offlineCases.map(({ id }) => id))}.includes(test.vars.caseId))
+        .map(test => ({ ...test, assert: test.assert.map(absoluteAssert) }))
     };`,
   );
 });
@@ -75,10 +81,7 @@ afterAll(() => {
 
 function runOffline(args: string[], scenario: string) {
   // A fake provider does not prevent assertions from invoking a paid judge.
-  for (const evalCase of [
-    ...cases.filter((entry) => entry.tier === ROUTING_TIER),
-    getCase(BEHAVIORAL_CASE_ID),
-  ]) {
+  for (const evalCase of offlineCases) {
     expect(evalCase, `Offline case ${evalCase.id}`).not.toHaveProperty("judge");
   }
   return spawnSync(
@@ -127,7 +130,9 @@ test(
       "pass",
     );
     expect(child.status).toBe(EXIT.PASS);
-    const selected = cases.filter((evalCase) => evalCase.tier === ROUTING_TIER);
+    const selected = offlineCases.filter(
+      (evalCase) => evalCase.tier === ROUTING_TIER,
+    );
     expect(exported).toHaveProperty(
       "results.results.length",
       selected.length * config.evaluateOptions.repeat,
@@ -212,18 +217,25 @@ test(
   "native CLI filters by skill metadata",
   () => {
     const { child, exported } = evaluateOffline(
-      [
-        "--filter-metadata",
-        `skill=${SKILL}`,
-        "--filter-pattern",
-        `^${SKILL}/trigger-positive$`,
-        "--repeat",
-        "1",
-      ],
+      ["--filter-metadata", `skill=${SKILL}`, "--repeat", "1"],
       "pass",
     );
     expect(child.status).toBe(EXIT.PASS);
-    expect(exported).toHaveProperty("results.results.length", ONE_RUN);
+    const selected = offlineCases.filter(
+      (evalCase) => evalCase.skill === SKILL,
+    );
+    expect(exported).toHaveProperty("results.results.length", selected.length);
+    for (const { id } of selected) {
+      expect(exported).toHaveProperty(
+        "results.results",
+        expect.arrayContaining([
+          expect.objectContaining({
+            success: true,
+            namedScores: { [`case/${id}`]: 1 },
+          }),
+        ]),
+      );
+    }
   },
   TIMEOUT_MS,
 );
