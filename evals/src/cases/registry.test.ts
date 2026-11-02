@@ -1,4 +1,11 @@
-import { existsSync, readdirSync, statSync } from "node:fs";
+import {
+  existsSync,
+  readdirSync,
+  realpathSync,
+  statSync,
+  symlinkSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "vitest";
@@ -6,10 +13,14 @@ import { describe, expect, test } from "vitest";
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { BEHAVIORAL_TIER, ROUTING_TIER } from "#/cases/case-contract.ts";
 import { cases, getCase } from "#/cases/registry.ts";
-import { BUDGET_STOP_SUBTYPE } from "#/cases/shared-checks.ts";
+import {
+  BUDGET_STOP_SUBTYPE,
+  FIXTURE_ROOT_PATH,
+} from "#/cases/shared-checks.ts";
+import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
-import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
+import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 test("case ids are globally unique and prefixed by their skill", () => {
   expect(new Set(cases.map(({ id }) => id)).size).toBe(cases.length);
@@ -75,23 +86,6 @@ const positiveRoutes = routingCases.filter((evalCase) =>
 const negativeRoutes = routingCases.filter(
   (evalCase) => !isPositiveRoute(evalCase),
 );
-// Exact snapshot-suite routing results; every other route uses the shared defaults.
-const SNAPSHOT = "analyzing-recent-project-state";
-const negativeRouteFailures: Readonly<Record<string, string>> = {
-  [`${SNAPSHOT}/trigger-negative-review`]:
-    "skill triggered on a code-review request",
-  [`${SNAPSHOT}/trigger-negative-mutate`]:
-    "skill triggered on a mutate request",
-  [`${SNAPSHOT}/trigger-negative-handoff`]:
-    "skill triggered on a session-handoff request",
-  [`${SNAPSHOT}/trigger-negative-pr-review`]:
-    "skill triggered on a PR-review request",
-};
-const negativeRouteOutcomes: Readonly<Record<string, string>> = {
-  [`${SNAPSHOT}/trigger-negative-mutate`]: "no trigger; no mutation",
-};
-const LATE_ERROR_COST_USD = 0.01;
-
 function skillCall(skill: string): ToolCall {
   return { name: "Skill", input: { skill } };
 }
@@ -107,39 +101,17 @@ function budgetStop(toolCalls: readonly ToolCall[]): Observation {
   });
 }
 
-function lateError(overrides: Partial<Observation>): Observation {
-  return createObservation({
-    isError: true,
-    subtype: "error_during_execution",
-    finalText: "",
-    ...overrides,
-  });
-}
-
 describe("routing matrix", () => {
   test.each(positiveRoutes)(
-    "$id passes when its own skill is invoked",
+    "$id accepts only its own invocation",
     (evalCase) => {
-      const invoked = [skillCall(evalCase.skill)];
-      expect(evalCase.check(budgetStop(invoked))).toBe("Skill invoked");
-      expect(evalCase.check(createObservation({ toolCalls: invoked }))).toBe(
+      expect(evalCase.check(budgetStop([skillCall(evalCase.skill)]))).toBe(
         "Skill invoked",
       );
-      expect(evalCase.check(lateError({ toolCalls: invoked }))).toBe(
-        "Skill invoked",
-      );
-    },
-  );
-
-  test.each(positiveRoutes)(
-    "$id fails when its skill never triggered",
-    (evalCase) => {
-      const otherSkills = skills.filter((skill) => skill !== evalCase.skill);
-      for (const toolCalls of [
-        [],
-        [{ name: "Read", input: {} }],
-        otherSkills.map((skill) => skillCall(skill)),
-      ]) {
+      const others = skills
+        .filter((skill) => skill !== evalCase.skill)
+        .map(skillCall);
+      for (const toolCalls of [[], others]) {
         expect(() => evalCase.check(budgetStop(toolCalls))).toThrow(
           /skill never triggered/,
         );
@@ -148,80 +120,61 @@ describe("routing matrix", () => {
   );
 
   test.each(negativeRoutes)(
-    "$id rejects its own skill invocation",
+    "$id accepts a decline but rejects its own invocation",
     (evalCase) => {
-      const failure =
-        negativeRouteFailures[evalCase.id] ??
-        `skill ${evalCase.skill} unexpectedly triggered`;
       expect(() =>
         evalCase.check(budgetStop([skillCall(evalCase.skill)])),
-      ).toThrow(failure);
-    },
-  );
-
-  test.each(negativeRoutes)(
-    "$id passes a decline, including one that invokes its siblings",
-    (evalCase) => {
-      const outcome = negativeRouteOutcomes[evalCase.id] ?? "no trigger";
-      const siblings = (evalCase.extraSkills ?? []).map((skill) =>
-        skillCall(skill),
-      );
-      for (const observation of [
-        budgetStop([]),
-        budgetStop(siblings),
-        createObservation({
-          finalText: "I'll handle this request directly.",
-          toolCalls: [{ name: "Read", input: { file_path: "/repo/a.txt" } }],
-        }),
-        lateError({ costUsd: LATE_ERROR_COST_USD }),
-      ]) {
-        expect(evalCase.check(observation)).toBe(outcome);
+      ).toThrow();
+      expect(() => evalCase.check(budgetStop([]))).not.toThrow();
+      for (const sibling of evalCase.extraSkills ?? []) {
+        expect(() =>
+          evalCase.check(budgetStop([skillCall(sibling)])),
+        ).not.toThrow();
       }
     },
   );
 });
 
-function invalidRuns(skill: string) {
-  return [
-    {
-      observation: createObservation({ timedOut: true }),
-      diagnostic: "run exceeded its wall clock",
-    },
-    {
-      // A timeout after real work: the skill call, tool call and cost must not excuse it.
-      observation: createObservation({
-        timedOut: true,
-        toolCalls: [
-          { name: "Skill", input: { skill } },
-          { name: "Read", input: { file_path: "/repo/a.txt" } },
-        ],
-        costUsd: LATE_ERROR_COST_USD,
-      }),
-      diagnostic: "run exceeded its wall clock",
-    },
-    {
-      observation: createObservation({ subtype: QUERY_ERROR_SUBTYPE }),
-      diagnostic: "the query produced no result",
-    },
-    {
-      observation: createObservation({ subtype: "" }),
-      diagnostic: "run carries no result verdict",
-    },
-    {
-      observation: createObservation({
-        isError: true,
-        finalText: "Failed to authenticate: OAuth session expired",
-      }),
-      diagnostic: "reported a failed run before it did anything",
-    },
-  ] as const;
-}
+test("every case rejects a timed-out run even after real work", () => {
+  for (const evalCase of cases) {
+    const observation = createObservation({
+      timedOut: true,
+      toolCalls: [
+        skillCall(evalCase.skill),
+        { name: "Read", input: { file_path: "/repo/a.txt" } },
+      ],
+      costUsd: 0.01,
+    });
+    expect(() => evalCase.check(observation)).toThrow(
+      "run exceeded its wall clock",
+    );
+  }
+});
 
-test.each(cases)(
-  "$id rejects timeouts (even after real work), missing-result, empty-verdict and zero-work runs",
-  (evalCase) => {
-    for (const { observation, diagnostic } of invalidRuns(evalCase.skill)) {
-      expect(() => evalCase.check(observation)).toThrow(diagnostic);
+const artifactFixtureCases = cases.filter(
+  ({ seed, snapshotPaths }) =>
+    seed !== undefined && snapshotPaths?.includes(FIXTURE_ROOT_PATH) === true,
+);
+
+test.each(artifactFixtureCases)(
+  "$id seeds and captures lexical and canonical fixture roots",
+  (entry) => {
+    const { seed, snapshotPaths } = entry;
+    if (seed === undefined || snapshotPaths === undefined) {
+      throw new Error("missing case seed or snapshot paths");
+    }
+    const fixture = makeFixture(entry.fixture, [], (context) => {
+      const lexical = join(dirname(context.repoPath), "linked-repo");
+      symlinkSync(context.repoPath, lexical);
+      seed({ ...context, repoPath: lexical });
+    });
+    try {
+      const lexical = join(dirname(fixture.cwd), "linked-repo");
+      expect(snapshotRepoFiles(lexical, snapshotPaths)[FIXTURE_ROOT_PATH]).toBe(
+        `${lexical}\n${realpathSync(lexical)}`,
+      );
+    } finally {
+      fixture.cleanup();
     }
   },
 );

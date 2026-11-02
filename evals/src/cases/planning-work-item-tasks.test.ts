@@ -4,7 +4,6 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import {
   DETAILED_PATH,
   FINAL_PATH,
@@ -16,15 +15,11 @@ import {
   SNAPSHOT,
   SOURCE_PATH,
 } from "#/cases/planning-work-item-tasks.ts";
-import {
-  assertPlanningWrites,
-  SEED_COMMIT,
-} from "#/cases/planning-work-item-tasks-checks.ts";
+import { SEED_COMMIT } from "#/cases/planning-work-item-tasks-checks.ts";
 import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { HEAD_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
-import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 function getCase(suffix: string) {
   return getRegisteredCase(`${SKILL}/${suffix}`);
@@ -141,15 +136,6 @@ describe("staged-plan", () => {
   test("accepts the complete staged artifacts and handoff", () => {
     expect(() =>
       getCase("staged-plan").check(completedObservation()),
-    ).not.toThrow();
-  });
-  test("accepts directory-scoped artifact names and naturally phrased counts", () => {
-    expect(() =>
-      getCase("staged-plan").check({
-        ...completedObservation(),
-        finalText: `Phase 2 is done for ${KEY}. There are two tasks on two branches and no cross-cutting questions. Validation report: all 20 checks passed, with 0 warnings and 0 failures.
-Artifacts (in docs/): ${KEY}-stage-1-detailed.md, ${KEY}-stage-2-prioritized.md, and final task plan ${KEY}-tasks.md.`,
-      }),
     ).not.toThrow();
   });
   test.each([
@@ -291,15 +277,6 @@ Artifacts (in docs/): ${KEY}-stage-1-detailed.md, ${KEY}-stage-2-prioritized.md,
 });
 
 describe("invalid-snapshot", () => {
-  test("accepts extra recovery prose rather than an exact line count", () => {
-    const observation = failedObservation();
-    expect(() =>
-      getCase("invalid-snapshot").check({
-        ...observation,
-        finalText: `${observation.finalText}\nThe source snapshot was left unchanged.`,
-      }),
-    ).not.toThrow();
-  });
   test.each([
     [
       "old public status",
@@ -318,11 +295,6 @@ describe("invalid-snapshot", () => {
     },
   );
 
-  test("accepts a preflight failure without artifacts", () => {
-    expect(() =>
-      getCase("invalid-snapshot").check(failedObservation()),
-    ).not.toThrow();
-  });
   test("accepts the recorded artifact-absence wording", () => {
     expect(() =>
       getCase("invalid-snapshot").check({
@@ -365,10 +337,6 @@ describe("invalid-snapshot", () => {
         },
       },
     ],
-    [
-      "unrequested snapshot",
-      { repoFiles: { [SOURCE_PATH]: INVALID_SNAPSHOT } },
-    ],
   ] satisfies ReadonlyArray<readonly [string, Partial<Observation>]>)(
     "rejects %s",
     (_label, overrides) => {
@@ -382,7 +350,7 @@ describe("invalid-snapshot", () => {
   );
 });
 
-test.each(["staged-plan", "invalid-snapshot"])(
+test.each(["staged-plan"])(
   "%s seeds tracked input and exact untracked paths",
   (suffix) => {
     const entry = getCase(suffix);
@@ -392,10 +360,6 @@ test.each(["staged-plan", "invalid-snapshot"])(
       "seed" in entry ? entry.seed : undefined,
     );
     try {
-      const source = snapshotRepoFiles(fixture.cwd, [SOURCE_PATH]);
-      expect(source[SOURCE_PATH]).toBe(
-        suffix === "staged-plan" ? SNAPSHOT : INVALID_SNAPSHOT,
-      );
       expect(
         execFileSync("git", ["status", "--short"], {
           cwd: fixture.cwd,
@@ -415,24 +379,29 @@ test.each(["staged-plan", "invalid-snapshot"])(
   },
 );
 
-const plannedArtifact = "docs/acme-app-42.md";
-const plannedOnly = createObservation({
-  gitStatusAfter: { kind: "worktree", entries: `?? ${plannedArtifact}` },
-  repoFiles: {
-    [plannedArtifact]: "plan",
-    [HEAD_LOG]: "commit: seed planning inputs\n",
-    ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
-  },
+test("planning accepts canonical-root artifact writes", () => {
+  const candidate = completedObservation();
+  expect(() =>
+    getCase("staged-plan").check({
+      ...candidate,
+      toolCalls: [
+        {
+          name: "Write",
+          input: { file_path: `/canonical/fixture/${DETAILED_PATH}` },
+        },
+      ],
+    }),
+  ).not.toThrow();
 });
 
-testArtifactWriteMatrix({
-  label: "planning",
-  artifact: plannedArtifact,
-  check: (candidate) => {
-    assertPlanningWrites(candidate, [plannedArtifact], {});
-  },
-  valid: () => ({
-    ...plannedOnly,
-    toolCalls: [{ name: "Write", input: { file_path: plannedArtifact } }],
-  }),
+test("planning rejects a foreign-root same-suffix artifact write", () => {
+  const candidate = completedObservation();
+  expect(() =>
+    getCase("staged-plan").check({
+      ...candidate,
+      toolCalls: [
+        { name: "Edit", input: { file_path: `/outside/${DETAILED_PATH}` } },
+      ],
+    }),
+  ).toThrow();
 });

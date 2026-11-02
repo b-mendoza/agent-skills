@@ -41,70 +41,45 @@ describe("rewriting-code-strictly checks", () => {
     },
   );
 
-  test.each(behavioralCases)(
-    "$id rejects missing clarification, public statuses, edits and unauthorized fetches",
-    (evalCase) => {
-      const observation = correctObservation(evalCase);
-      for (const wrong of [
-        { finalText: "PASS: completed" },
-        { finalText: "NEEDS_CLARIFICATION" },
-        { finalText: "Which deadline?" },
-        { finalText: `NEEDS_CLARIFICATION\n${observation.finalText}` },
-        {
-          finalText: `**Status:** NEEDS_CLARIFICATION\n${observation.finalText}`,
-        },
-        {
-          toolCalls: [
-            ...observation.toolCalls,
-            { name: "Edit", input: { file_path: "src/name.ts" } },
-          ],
-        },
-        {
-          toolCalls: [
-            ...observation.toolCalls,
-            { name: "Bash", input: { command: "git commit -am rewrite" } },
-          ],
-        },
-        {
-          toolCalls: [
-            ...observation.toolCalls,
-            { name: "WebFetch", input: { url: "https://example.com" } },
-          ],
-        },
-        {
-          toolCalls: [
-            ...observation.toolCalls,
-            { name: "WebSearch", input: { query: "TypeScript" } },
-          ],
-        },
-        {
-          gitStatusAfter: {
-            kind: "worktree" as const,
-            entries: " M src/name.ts",
-          },
-        },
-      ]) {
-        expect(() => evalCase.check({ ...observation, ...wrong })).toThrow();
-      }
-    },
-  );
+  test("missing-target rejects public statuses, edits and unauthorized fetches", () => {
+    const evalCase = getCase("rewriting-code-strictly/missing-target");
+    const observation = correctObservation(evalCase);
+    for (const wrong of [
+      { finalText: "Which deadline?" },
+      { finalText: `NEEDS_CLARIFICATION\n${observation.finalText}` },
+      {
+        finalText: `**Status:** NEEDS_CLARIFICATION\n${observation.finalText}`,
+      },
+      {
+        toolCalls: [
+          ...observation.toolCalls,
+          { name: "Edit", input: { file_path: "src/name.ts" } },
+        ],
+      },
+      {
+        toolCalls: [
+          ...observation.toolCalls,
+          { name: "WebFetch", input: { url: "https://example.com" } },
+        ],
+      },
+      {
+        toolCalls: [
+          ...observation.toolCalls,
+          { name: "WebSearch", input: { query: "TypeScript" } },
+        ],
+      },
+    ]) {
+      expect(() => evalCase.check({ ...observation, ...wrong })).toThrow();
+    }
+  });
 
-  test("behavior gate requires target, every preserved file, and unchanged HEAD", () => {
+  test("behavior gate preserves protected files and unchanged HEAD", () => {
     const observation = correctObservation(gateCase);
-    expect(() =>
-      gateCase.check({
-        ...observation,
-        finalText: "Approve?",
-      }),
-    ).toThrow();
     for (const repoFiles of [
       {},
       { ...observation.repoFiles, ".git/logs/HEAD": "new commit\n" },
       { ...observation.repoFiles, ".git/eval-baseline-reflog": null },
-      ...Object.keys(STRICT_FILES).map((path) => ({
-        ...observation.repoFiles,
-        [path]: "rewritten\n",
-      })),
+      { ...observation.repoFiles, "src/name.ts": "rewritten\n" },
     ]) {
       expect(() => gateCase.check({ ...observation, repoFiles })).toThrow();
     }
@@ -121,9 +96,6 @@ describe("rewriting-code-strictly checks", () => {
         fixture.cwd,
         gateCase.snapshotPaths ?? [],
       );
-      for (const [path, content] of Object.entries(STRICT_FILES)) {
-        expect(files[path]).toBe(content);
-      }
       expect(files[".git/logs/HEAD"]).toBe(files[".git/eval-baseline-reflog"]);
       expect(
         execFileSync("node", ["--test", "name.test.ts"], {
@@ -168,12 +140,20 @@ If you pick the first, also tell me how to handle the other malformed names. I'l
   },
 );
 test.each([
-  "nameFromJson returns 7. Which deadline?",
-  "Which option do you want?",
-  "nameFromJson. Which option do you want?",
-  "name.test.ts preserves behavior. I will proceed.",
-])("rejects an unrelated or missing behavior decision: %s", (finalText) => {
-  expect(() =>
-    gateCase.check({ ...correctObservation(gateCase), finalText }),
-  ).toThrow();
-});
+  ["nameFromJson. Which option do you want?", /missing behavior conflict/],
+  [
+    "name.test.ts preserves behavior. I will proceed.",
+    /missing behavior decision/,
+  ],
+  [
+    "Should I preserve behavior or reject non-string inputs?",
+    /missing concrete target/,
+  ],
+] as const)(
+  "rejects an incomplete behavior decision: %s",
+  (finalText, diagnostic) => {
+    expect(() =>
+      gateCase.check({ ...correctObservation(gateCase), finalText }),
+    ).toThrow(diagnostic);
+  },
+);

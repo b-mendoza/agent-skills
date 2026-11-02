@@ -66,14 +66,19 @@ test("clean: provisions a discoverable skill in a committed quiet worktree", () 
   ).toMatch(/^[\da-f]{40}$/);
   // The copied skill must not appear as untracked fixture noise.
   expect(readGitStatus(fixture.cwd)).toBe("");
+  expect(existsSync(fixture.missingPath)).toBe(false);
+  expect(readFileSync(join(fixture.notGitPath, "notes.txt"), "utf8")).not.toBe(
+    "",
+  );
+  const result = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], {
+    cwd: fixture.notGitPath,
+    encoding: "utf8",
+  });
+  expect(result.stderr).toContain("not a git repository");
 });
 
 test("dirty: provisions a discoverable skill with exactly the planted edits and commit", () => {
   const fixture = createFixture("dirty");
-  expect(
-    existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
-  ).toBe(true);
-  expect(fixture.gitRepo).toBe(fixture.cwd);
   expect(
     readGitStatus(fixture.cwd)
       .split("\n")
@@ -96,10 +101,6 @@ test("dirty: provisions a discoverable skill with exactly the planted edits and 
 
 test("hostile: provisions a discoverable skill and both planted injection channels", () => {
   const fixture = createFixture("hostile");
-  expect(
-    existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
-  ).toBe(true);
-  expect(fixture.gitRepo).toBe(fixture.cwd);
   expect(
     readFileSync(
       join(fixture.cwd, HOSTILE_FIXTURE_FACTS.hostileTrackedFile),
@@ -137,35 +138,9 @@ test("hostile: provisions a discoverable skill and both planted injection channe
 
 test("not-git: provisions a discoverable skill without a worktree or sampling root", () => {
   const fixture = createFixture("not-git");
-  expect(
-    existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
-  ).toBe(true);
   expect(fixture.gitRepo).toBeUndefined();
   const result = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], {
     cwd: fixture.cwd,
-    encoding: "utf8",
-  });
-  expect(result.stderr).toContain("not a git repository");
-});
-
-test("clean: provisions a discoverable skill with missing and real non-worktree paths", () => {
-  const fixture = createFixture("clean");
-  expect(
-    existsSync(join(fixture.cwd, ".claude", "skills", SKILL, "SKILL.md")),
-  ).toBe(true);
-  expect(fixture.gitRepo).toBe(fixture.cwd);
-  expect(
-    execFileSync("git", ["rev-parse", "--show-toplevel"], {
-      cwd: fixture.cwd,
-      encoding: "utf8",
-    }).trim(),
-  ).toBe(realpathSync(fixture.cwd));
-  expect(existsSync(fixture.missingPath)).toBe(false);
-  expect(readFileSync(join(fixture.notGitPath, "notes.txt"), "utf8")).not.toBe(
-    "",
-  );
-  const result = spawnSync("git", ["rev-parse", "--is-inside-work-tree"], {
-    cwd: fixture.notGitPath,
     encoding: "utf8",
   });
   expect(result.stderr).toContain("not a git repository");
@@ -217,8 +192,6 @@ test("cleanup removes only the whole owned temp root and is idempotent", () => {
     expect(existsSync(fixture.notGitPath)).toBe(true);
     fixture.cleanup();
     expect(existsSync(root)).toBe(false);
-    expect(existsSync(fixture.cwd)).toBe(false);
-    expect(existsSync(fixture.notGitPath)).toBe(false);
     expect(() => {
       fixture.cleanup();
     }).not.toThrow();

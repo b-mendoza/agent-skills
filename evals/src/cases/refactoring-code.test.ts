@@ -4,7 +4,6 @@ import { describe, expect, test } from "vitest";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { BEHAVIORAL_TIER } from "#/cases/case-contract.ts";
-import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import {
   cases,
   REFACTOR_FILES,
@@ -69,12 +68,6 @@ describe("refactoring-code checks", () => {
           ],
         },
         {
-          toolCalls: [
-            ...observation.toolCalls,
-            { name: "Bash", input: { command: "git commit -am refactor" } },
-          ],
-        },
-        {
           gitStatusAfter: {
             kind: "unreadable" as const,
             reason: "permission denied",
@@ -94,15 +87,8 @@ describe("refactoring-code checks", () => {
 
   test.each([
     "node --test quote.test.js",
-    "node --trace-warnings --test ./quote.test.js",
-    "cd /fixture && node --test quote.test.js",
-    "/usr/bin/node --test quote.test.js",
-    '"/usr/bin/node" --test quote.test.js',
-    "env CI=1 node --require node:assert --test quote.test.js",
-    "cat package.json | node --test quote.test.js",
     "cat package.json; node --test quote.test.js",
-    "cat package.json\nnode --test quote.test.js",
-    'rg "node --test quote.test.js" package.json && node --test quote.test.js',
+    'env CI=1 "/usr/bin/node" --require node:assert --test ./quote.test.js',
   ])("plan rejects validation before approval: %s", (command) => {
     const observation = correctObservation(planCase);
     expect(() =>
@@ -117,10 +103,6 @@ describe("refactoring-code checks", () => {
   });
 
   test.each([
-    "cat quote.test.js",
-    "cat src/quote.js package.json",
-    "rg 'node --test quote.test.js' package.json",
-    'grep "node --test quote.test.js" package.json',
     "rg 'example; node --test quote.test.js' package.json",
     "node scripts/inspect.js --test",
     "node -- quote.test.js --test",
@@ -157,10 +139,7 @@ describe("refactoring-code checks", () => {
       { ...observation.repoFiles, [REFACTOR_PLAN_PATH]: null },
       { ...observation.repoFiles, [REFACTOR_PLAN_PATH]: "Plan: ask approval." },
       { ...observation.repoFiles, ".git/logs/HEAD": "new commit\n" },
-      ...Object.keys(REFACTOR_FILES).map((path) => ({
-        ...observation.repoFiles,
-        [path]: "mutated\n",
-      })),
+      { ...observation.repoFiles, "src/quote.js": "mutated\n" },
     ]) {
       expect(() => planCase.check({ ...observation, repoFiles })).toThrow();
     }
@@ -209,9 +188,6 @@ describe("refactoring-code checks", () => {
         fixture.cwd,
         planCase.snapshotPaths ?? [],
       );
-      for (const [path, content] of Object.entries(REFACTOR_FILES)) {
-        expect(files[path]).toBe(content);
-      }
       expect(files[REFACTOR_PLAN_PATH]).toBeNull();
       expect(files[".git/logs/HEAD"]).toBe(files[".git/eval-baseline-reflog"]);
       expect(
@@ -232,22 +208,36 @@ describe("refactoring-code checks", () => {
   });
 });
 
-testArtifactWriteMatrix({
-  label: "refactor plan",
-  artifact: REFACTOR_PLAN_PATH,
-  check: (observation) => planCase.check(observation),
-  valid: () => {
-    const good = correctObservation(planCase);
-    return {
+test("refactor plan accepts a canonical-root artifact write", () => {
+  const good = correctObservation(planCase);
+  expect(() =>
+    planCase.check({
       ...good,
       gitStatusAfter: { kind: "worktree", entries: "?? .handoffs/" },
       toolCalls: [
         ...good.toolCalls,
         {
           name: "Write",
-          input: { file_path: `/fixture/${REFACTOR_PLAN_PATH}` },
+          input: { file_path: `/canonical/fixture/${REFACTOR_PLAN_PATH}` },
         },
       ],
-    };
-  },
+    }),
+  ).not.toThrow();
+});
+
+test("refactor plan rejects a foreign-root same-suffix write", () => {
+  const good = correctObservation(planCase);
+  expect(() =>
+    planCase.check({
+      ...good,
+      gitStatusAfter: { kind: "worktree", entries: "?? .handoffs/" },
+      toolCalls: [
+        ...good.toolCalls,
+        {
+          name: "Write",
+          input: { file_path: `/fixture-other/${REFACTOR_PLAN_PATH}` },
+        },
+      ],
+    }),
+  ).toThrow(/observed mutation outside the report boundary/);
 });

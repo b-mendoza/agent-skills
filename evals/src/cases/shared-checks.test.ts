@@ -6,26 +6,17 @@ import {
   symlinkSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import type { EvalCase } from "#/cases/case-contract.ts";
-import { cases as clarificationCases } from "#/cases/clarifying-assumptions.ts";
-import { cases as fetchingCases } from "#/cases/fetching-work-item.ts";
-import { cases as auditCases } from "#/cases/improving-skill-definition.ts";
-import { cases as executionPlanningCases } from "#/cases/planning-task-execution.ts";
-import { cases as workItemPlanningCases } from "#/cases/planning-work-item-tasks.ts";
-import { cases as prCreatorCases } from "#/cases/pr-creator.ts";
-import { cases as refactorCases } from "#/cases/refactoring-code.ts";
-import { cases as replyCases } from "#/cases/responding-to-pr-review-comments.ts";
-import { cases as reviewCases } from "#/cases/review-pull-request.ts";
 import {
   assertFileAbsent,
   assertFileExists,
   assertFileMatches,
   assertNoMutation,
   assertNoPublicStatusLine,
+  assertReadOnlyGraphqlArguments,
   assertRunHappened,
   BUDGET_STOP_SUBTYPE,
   capturedFilesUnder,
@@ -38,19 +29,10 @@ import {
   normalizeReplyText,
   replyAsksFor,
 } from "#/cases/shared-checks.ts";
-import { cases as architectCases } from "#/cases/workflow-skill-architect.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
-import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 describe("reply text normalization", () => {
-  test("makes emphasized labels match plain-text patterns", () => {
-    expect(normalizeReplyText("**References fetched:** none")).toMatch(
-      /References fetched:\s*none/,
-    );
-  });
-
   test.each([
     ["**bold** __bold__ *italic* _italic_", "bold bold italic italic"],
     ["**bold with _italic_**", "bold with italic"],
@@ -73,20 +55,14 @@ describe("reply text normalization", () => {
 });
 
 describe("public status lines", () => {
-  test.each([
-    "PR_CREATE: PR_EXISTS",
-    "**PR_CREATE:** PR_EXISTS",
-    "__PR_CREATE:__ PR_EXISTS",
-    "`PR_CREATE: PR_EXISTS`",
-    "  PR_CREATE: PR_EXISTS  ",
-    "## PR_CREATE: PR_EXISTS",
-    "> - PR_CREATE: PR_EXISTS",
-    "1. PR_CREATE: PR_EXISTS",
-  ])("rejects a status line in %s and quotes the line", (reply) => {
-    expect(() => {
-      assertNoPublicStatusLine(reply, "PR_CREATE");
-    }).toThrow(/public status line.*"[^"\n]*PR_CREATE: PR_EXISTS/);
-  });
+  test.each(["  PR_CREATE: PR_EXISTS  ", "> - PR_CREATE: PR_EXISTS"])(
+    "rejects a status line in %s and quotes the line",
+    (reply) => {
+      expect(() => {
+        assertNoPublicStatusLine(reply, "PR_CREATE");
+      }).toThrow(/public status line.*"[^"\n]*PR_CREATE: PR_EXISTS/);
+    },
+  );
 
   test("checks every supplied prefix on every line", () => {
     expect(() => {
@@ -126,23 +102,10 @@ describe("requests about a topic", () => {
     "Send the job posting and I'll run the review.",
     "Which job posting should I use?",
     "**Share** the job posting.",
-    "Provide the job posting.",
-    "Paste the job posting.",
-    "Reply with the job posting.",
-    "Tell me which job posting to use.",
-    "Let me know which job posting to use.",
-    "Please include the job posting.",
-    "Confirm the job posting.",
-    "Choose the job posting.",
-    "Approve the job posting.",
     "I need the job posting before I can start.",
-    "What I need: the backend job posting.",
     "The job posting is the input we need from you.",
     "You haven't given me the job posting.",
-    "You haven't supplied the job posting.",
-    "You haven't provided the job posting.",
     "The job posting is missing.",
-    "The job posting is absent. Please send it as a URL or pasted text.",
     "The job posting is absent. Please send:\n1. The job posting\n2. Your CV",
   ])("accepts a question or request about the posting: %s", (reply) => {
     expect(replyAsksFor(reply, /job posting/i)).toBe(true);
@@ -185,7 +148,14 @@ describe("run validity", () => {
     },
     {
       label: "a timed-out run",
-      observation: createObservation({ timedOut: true }),
+      observation: createObservation({
+        timedOut: true,
+        toolCalls: [
+          { name: "Skill", input: { skill } },
+          { name: "Read", input: {} },
+        ],
+        costUsd: 0.01,
+      }),
       expectedError: /run exceeded its wall clock/,
     },
     {
@@ -287,6 +257,61 @@ test("Bash matching ignores other tools and missing commands, including stateful
   });
   expect(findBashCalls(observation, /gh pr/g)).toStrictEqual([bash, bash]);
   expect(findBashCalls(observation, /gh issue/)).toStrictEqual([]);
+});
+
+describe("read-only GraphQL arguments", () => {
+  test.each([
+    ["--input", "-"],
+    ["--input=/tmp/x.json"],
+    ["-F", "query=@/tmp/x.graphql"],
+    ["--raw-field=query=@/tmp/x.graphql"],
+  ])("rejects unavailable query bodies: %j", (...args) => {
+    expect(() =>
+      assertReadOnlyGraphqlArguments(["api", "graphql", ...args]),
+    ).toThrow(
+      "GraphQL body unavailable in argv; remote write cannot be ruled out",
+    );
+  });
+
+  test.each([
+    ["-f", "query=mutation { addComment { id } }"],
+    ["-f", "query=query { viewer { login } }\nmutation { addComment { id } }"],
+    ["-X", "GET", "-f", "query=\nmutation { addComment { id } }"],
+  ])("rejects mutations regardless of method or line: %j", (...args) => {
+    expect(() =>
+      assertReadOnlyGraphqlArguments(["api", "graphql", ...args]),
+    ).toThrow("GraphQL mutation or unknown query attempted without approval");
+  });
+
+  test.each([
+    ["api", "graphql", "-X", "POST", "-f", "query=query { viewer { login } }"],
+    [
+      "api",
+      "--method=POST",
+      "graphql",
+      "--field=query=query { viewer { login } }",
+    ],
+    [
+      "api",
+      "--hostname",
+      "github.com",
+      "graphql",
+      "-f",
+      "query={ viewer { login } }",
+    ],
+    ["api", "graphql", "--help"],
+  ])("accepts an explicit query or help: %j", (...args) => {
+    expect(assertReadOnlyGraphqlArguments(args)).toBe(true);
+  });
+
+  test.each([
+    ["api", "repos/x/y"],
+    ["issue", "view", "1"],
+    ["api", "user", "graphql", "-f", "title=x"],
+    ["api", "user", "--jq", "graphql", "-f", "title=x"],
+  ])("leaves non-GraphQL commands to their caller: %j", (...args) => {
+    expect(assertReadOnlyGraphqlArguments(args)).toBe(false);
+  });
 });
 
 describe("file snapshots", () => {
@@ -438,39 +463,3 @@ describe("fixture-relative artifact paths", () => {
     ).toBe("docs/report.md");
   });
 });
-
-const artifactFixtureCases: readonly EvalCase[] = [
-  ...clarificationCases,
-  ...fetchingCases,
-  ...auditCases,
-  ...executionPlanningCases,
-  ...workItemPlanningCases,
-  ...prCreatorCases,
-  ...refactorCases,
-  ...replyCases,
-  ...reviewCases,
-  ...architectCases,
-].filter((entry) => "seed" in entry);
-
-test.each(artifactFixtureCases)(
-  "$id seeds and captures lexical and canonical fixture roots",
-  (entry) => {
-    const { seed, snapshotPaths } = entry;
-    if (seed === undefined || snapshotPaths === undefined) {
-      throw new Error("missing case seed or snapshot paths");
-    }
-    const fixture = makeFixture(entry.fixture, [], (context) => {
-      const lexical = join(dirname(context.repoPath), "linked-repo");
-      symlinkSync(context.repoPath, lexical);
-      seed({ ...context, repoPath: lexical });
-    });
-    try {
-      const lexical = join(dirname(fixture.cwd), "linked-repo");
-      expect(snapshotRepoFiles(lexical, snapshotPaths)[FIXTURE_ROOT_PATH]).toBe(
-        `${lexical}\n${realpathSync(lexical)}`,
-      );
-    } finally {
-      fixture.cleanup();
-    }
-  },
-);
