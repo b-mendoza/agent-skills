@@ -355,7 +355,7 @@ describe("existing target gate", () => {
           [HANDOFF_PATHS.transcript]: "premature",
         },
       }),
-    ).toThrow();
+    ).toThrow(/file exists/);
   });
 
   it("rejects an answer that did not ask for mode selection", () => {
@@ -365,7 +365,7 @@ describe("existing target gate", () => {
         finalText:
           "The target exists. Available modes are overwrite, update, and new-path. I will proceed.",
       }),
-    ).toThrow();
+    ).toThrow(/replyAsksFor/);
   });
 
   it("rejects a public completion status even with a valid mode request", () => {
@@ -385,7 +385,7 @@ it("conversation-package requires the skill invocation", () => {
       ...writtenObservation(),
       toolCalls: [],
     }),
-  ).toThrow();
+  ).toThrow(/skill never triggered/);
 });
 
 it("existing-target seed provides a clean baseline and individual new artifact paths", () => {
