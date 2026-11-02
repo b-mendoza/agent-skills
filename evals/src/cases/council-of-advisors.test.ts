@@ -98,14 +98,14 @@ describe("council confirmation gate", () => {
           { name: "Agent", input: { subagent_type: "reversibility-seat" } },
         ],
       }),
-    ).toThrow();
+    ).toThrow(/seat was dispatched before/);
   });
   it("rejects a prematurely written handoff", () => {
     expect(() =>
       checkWithOverrides({
         repoFiles: { [COUNCIL_FACTS.handoffPath]: "status: ready" },
       }),
-    ).toThrow();
+    ).toThrow(/file exists/);
   });
 });
 
@@ -122,7 +122,7 @@ describe("council missing subject", () => {
       getCase("missing-subject").check(
         gateObservation("Please confirm this packet."),
       ),
-    ).toThrow();
+    ).toThrow(/missing request for the decision subject/);
   });
 });
 
@@ -132,7 +132,7 @@ describe("common waiting guards", () => {
       checkWithOverrides({
         finalText: `**status:** needs_input\n${framedPacket}`,
       }),
-    ).toThrow();
+    ).toThrow(/public status line/);
   });
   it.each([
     { overrides: { toolCalls: [] }, error: /skill never triggered/ },
