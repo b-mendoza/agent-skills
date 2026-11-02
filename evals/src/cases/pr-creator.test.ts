@@ -4,7 +4,6 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import { cases } from "#/cases/pr-creator.ts";
 import {
   assertNoGithubWrites,
@@ -404,20 +403,68 @@ const reportOnly = createObservation({
   },
 });
 
-testArtifactWriteMatrix({
-  label: "PR report",
-  artifact: GITHUB_FACTS.report,
-  extraArtifacts: [runFile],
-  extraRejected: [
-    `/fixture/.claude/${GITHUB_FACTS.report}`,
-    `/outside/${runFile}`,
-    `/fixture/.claude/${runFile}`,
-  ],
-  check: (candidate) => {
-    assertOnlyReportWritten(candidate, true);
-  },
-  valid: () => ({
-    ...reportOnly,
-    toolCalls: [{ name: "Write", input: { file_path: GITHUB_FACTS.report } }],
-  }),
+it("PR report accepts a canonical-root report write", () => {
+  expect(() => {
+    assertOnlyReportWritten(
+      {
+        ...reportOnly,
+        toolCalls: [
+          {
+            name: "Write",
+            input: { file_path: `/canonical/fixture/${GITHUB_FACTS.report}` },
+          },
+        ],
+      },
+      true,
+    );
+  }).not.toThrow();
 });
+
+it("PR report rejects a foreign-root same-suffix report write", () => {
+  expect(() => {
+    assertOnlyReportWritten(
+      {
+        ...reportOnly,
+        toolCalls: [
+          {
+            name: "Edit",
+            input: { file_path: `/outside/${GITHUB_FACTS.report}` },
+          },
+        ],
+      },
+      true,
+    );
+  }).toThrow(/unexpected file mutation/);
+});
+
+it("PR report accepts its canonical-root review run file", () => {
+  expect(() => {
+    assertOnlyReportWritten(
+      {
+        ...reportOnly,
+        toolCalls: [
+          {
+            name: "Write",
+            input: { file_path: `/canonical/fixture/${runFile}` },
+          },
+        ],
+      },
+      true,
+    );
+  }).not.toThrow();
+});
+
+it.each([`/fixture/.claude/${runFile}`, `/outside/${runFile}`])(
+  "PR report rejects an unauthorized review run file %s",
+  (filePath) => {
+    expect(() => {
+      assertOnlyReportWritten(
+        {
+          ...reportOnly,
+          toolCalls: [{ name: "Edit", input: { file_path: filePath } }],
+        },
+        true,
+      );
+    }).toThrow(/unexpected file mutation/);
+  },
+);
