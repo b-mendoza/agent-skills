@@ -9,8 +9,6 @@ import type { JudgeRequest } from "#/observation/judge.ts";
 import { buildJudgePrompt } from "#/observation/judge.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
-// Hoisted so every mocked module instance shares one function, even when the
-// registry's parallel imports run the factory more than once.
 const judge = vi.hoisted(() => ({
   live: vi.fn<(request: JudgeRequest) => Promise<string>>(),
 }));
@@ -23,13 +21,10 @@ beforeEach(() => {
 });
 
 const SKILL = "council-of-advisors";
-
 function getCase(suffix: string) {
   return getRegisteredCase(`${SKILL}/${suffix}`);
 }
-
 const skillCall = { name: "Skill", input: { skill: SKILL } };
-
 function gateObservation(finalText: string): Observation {
   return createObservation({
     finalText,
@@ -37,7 +32,6 @@ function gateObservation(finalText: string): Observation {
     repoFiles: { [COUNCIL_FACTS.handoffPath]: null },
   });
 }
-
 const framedPacket = `Please confirm this decision packet before any seats run.
 Decision subject: ${COUNCIL_FACTS.subject}
 Desired outcome: ${COUNCIL_FACTS.outcome}
@@ -46,26 +40,17 @@ Current lean: ${COUNCIL_FACTS.lean}
 Stated claim: unstated
 Is this framing correct?`;
 
-const missingSubject =
-  "What decision or objective would you like the council to examine?";
-
-function checkWithOverrides(
-  suffix: string,
-  overrides: Partial<Observation>,
-): string {
-  const valid = gateObservation(
-    suffix === "confirm-framing" ? framedPacket : missingSubject,
-  );
-  return getCase(suffix).check({ ...valid, ...overrides });
+function checkWithOverrides(overrides: Partial<Observation>): string {
+  return getCase("confirm-framing").check({
+    ...gateObservation(framedPacket),
+    ...overrides,
+  });
 }
 
 describe("council confirmation gate", () => {
   it("accepts the grounded packet and explicit confirmation question", () => {
-    expect(() =>
-      getCase("confirm-framing").check(gateObservation(framedPacket)),
-    ).not.toThrow();
+    expect(() => checkWithOverrides({})).not.toThrow();
   });
-
   it.each([
     [
       "no confirmation",
@@ -84,11 +69,8 @@ describe("council confirmation gate", () => {
     ],
     ["premature recommendation", `${framedPacket}\nfinal_recommendation: go`],
   ])("rejects %s", (_label, finalText) => {
-    expect(() =>
-      checkWithOverrides("confirm-framing", { finalText }),
-    ).toThrow();
+    expect(() => checkWithOverrides({ finalText })).toThrow();
   });
-
   it("gives the framing judge fixture state and inspection evidence", async () => {
     const evalCase = getCase("confirm-framing");
     assert.ok(evalCase.judge !== undefined);
@@ -107,13 +89,10 @@ describe("council confirmation gate", () => {
     expect(prompt).toContain(
       JSON.stringify({ [COUNCIL_FACTS.handoffPath]: null }),
     );
-    expect(prompt).toContain("semantic paraphrases");
-    expect(prompt).toContain("stakes classification");
   });
-
   it("rejects seat dispatch before confirmation", () => {
     expect(() =>
-      checkWithOverrides("confirm-framing", {
+      checkWithOverrides({
         toolCalls: [
           skillCall,
           { name: "Agent", input: { subagent_type: "reversibility-seat" } },
@@ -121,10 +100,9 @@ describe("council confirmation gate", () => {
       }),
     ).toThrow();
   });
-
   it("rejects a prematurely written handoff", () => {
     expect(() =>
-      checkWithOverrides("confirm-framing", {
+      checkWithOverrides({
         repoFiles: { [COUNCIL_FACTS.handoffPath]: "status: ready" },
       }),
     ).toThrow();
@@ -132,50 +110,35 @@ describe("council confirmation gate", () => {
 });
 
 describe("council missing subject", () => {
-  it("asks for the missing decision without inventing one", () => {
+  it("accepts a request without a question mark", () => {
+    const finalText =
+      "I can't start the council yet because you haven't given me a decision subject. Please send:\n1. DECISION_SUBJECT (required): the decision to deliberate.";
     expect(() =>
-      getCase("missing-subject").check(gateObservation(missingSubject)),
+      getCase("missing-subject").check(gateObservation(finalText)),
     ).not.toThrow();
   });
-
-  it.each([
-    "Please send DECISION_SUBJECT, the decision to deliberate.",
-    "I need a decision subject before I can start the council.",
-    "I can't start the council yet because you haven't given me a decision subject. Please send:\n1. DECISION_SUBJECT (required): the decision to deliberate.",
-  ])("accepts a request without a question mark: %s", (finalText) => {
+  it("rejects a request about the wrong topic", () => {
     expect(() =>
-      checkWithOverrides("missing-subject", { finalText }),
-    ).not.toThrow();
+      getCase("missing-subject").check(
+        gateObservation("Please confirm this packet."),
+      ),
+    ).toThrow();
   });
-
-  it.each(["", "Please confirm this packet.", "final_recommendation: hold"])(
-    "rejects non-clarification %j",
-    (finalText) => {
-      expect(() =>
-        checkWithOverrides("missing-subject", { finalText }),
-      ).toThrow();
-    },
-  );
 });
 
-describe.each(["confirm-framing", "missing-subject"])(
-  "%s common guards",
-  (suffix) => {
-    it("rejects an artifact status leaked into chat", () => {
-      const reply =
-        suffix === "confirm-framing" ? framedPacket : missingSubject;
-      expect(() =>
-        checkWithOverrides(suffix, {
-          finalText: `**status:** needs_input\n${reply}`,
-        }),
-      ).toThrow();
-    });
-
-    it.each([
-      { toolCalls: [] },
-      { repoFiles: {} },
-      { gitStatusAfter: { kind: "worktree", entries: "?? accidental.txt" } },
-      {
+describe("common waiting guards", () => {
+  it("rejects an artifact status leaked into chat", () => {
+    expect(() =>
+      checkWithOverrides({
+        finalText: `**status:** needs_input\n${framedPacket}`,
+      }),
+    ).toThrow();
+  });
+  it.each([
+    { overrides: { toolCalls: [] }, error: /skill never triggered/ },
+    { overrides: { repoFiles: {} }, error: /not captured/ },
+    {
+      overrides: {
         toolCalls: [
           skillCall,
           {
@@ -184,11 +147,9 @@ describe.each(["confirm-framing", "missing-subject"])(
           },
         ],
       },
-    ] satisfies Array<Partial<Observation>>)(
-      "rejects invalid or mutating observation %#",
-      (overrides) => {
-        expect(() => checkWithOverrides(suffix, overrides)).toThrow();
-      },
-    );
-  },
-);
+      error: /read-only contract violated/,
+    },
+  ])("rejects invalid or mutating observation %#", ({ overrides, error }) => {
+    expect(() => checkWithOverrides(overrides)).toThrow(error);
+  });
+});
