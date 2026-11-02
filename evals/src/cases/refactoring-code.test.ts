@@ -4,7 +4,6 @@ import { describe, expect, test } from "vitest";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { BEHAVIORAL_TIER } from "#/cases/case-contract.ts";
-import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import {
   cases,
   REFACTOR_FILES,
@@ -232,22 +231,36 @@ describe("refactoring-code checks", () => {
   });
 });
 
-testArtifactWriteMatrix({
-  label: "refactor plan",
-  artifact: REFACTOR_PLAN_PATH,
-  check: (observation) => planCase.check(observation),
-  valid: () => {
-    const good = correctObservation(planCase);
-    return {
+test("refactor plan accepts a canonical-root artifact write", () => {
+  const good = correctObservation(planCase);
+  expect(() =>
+    planCase.check({
       ...good,
       gitStatusAfter: { kind: "worktree", entries: "?? .handoffs/" },
       toolCalls: [
         ...good.toolCalls,
         {
           name: "Write",
-          input: { file_path: `/fixture/${REFACTOR_PLAN_PATH}` },
+          input: { file_path: `/canonical/fixture/${REFACTOR_PLAN_PATH}` },
         },
       ],
-    };
-  },
+    }),
+  ).not.toThrow();
+});
+
+test("refactor plan rejects a foreign-root same-suffix write", () => {
+  const good = correctObservation(planCase);
+  expect(() =>
+    planCase.check({
+      ...good,
+      gitStatusAfter: { kind: "worktree", entries: "?? .handoffs/" },
+      toolCalls: [
+        ...good.toolCalls,
+        {
+          name: "Write",
+          input: { file_path: `/fixture-other/${REFACTOR_PLAN_PATH}` },
+        },
+      ],
+    }),
+  ).toThrow(/observed mutation outside the report boundary/);
 });
