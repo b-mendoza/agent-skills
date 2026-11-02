@@ -165,13 +165,13 @@ test("404 requires the missing-issue outcome and absence of an artifact", () => 
       ...FAILURE,
       repoFiles: { [SNAPSHOT]: ARTIFACT, [GH_LOG]: READ_LOG },
     }),
-  ).toThrow();
+  ).toThrow(/file exists/);
   expect(() =>
     evalCase.check({
       ...FAILURE,
       toolCalls: [{ name: "Edit", input: { file_path: "a.txt" } }],
     }),
-  ).toThrow();
+  ).toThrow(/read-only/);
 });
 test("snapshot success rejects a leaked public fetch status", () => {
   expect(() =>
@@ -179,7 +179,7 @@ test("snapshot success rejects a leaked public fetch status", () => {
       ...SUCCESS,
       finalText: `${SUCCESS.finalText}\n**FETCH:** PASS`,
     }),
-  ).toThrow();
+  ).toThrow(/public status line/);
 });
 
 const SUCCESS_EXIT = 0;
