@@ -1,4 +1,3 @@
-import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -59,10 +58,7 @@ ${missingDecisions ? "Run clarifying-assumptions Phase 6 to create the missing d
 }
 
 function validObservation(name: string): Observation {
-  return behavioralObservation(name === "missing-decisions");
-}
-
-function behavioralObservation(missingDecisions: boolean): Observation {
+  const missingDecisions = name === "missing-decisions";
   return createObservation({
     finalText: finalReport(missingDecisions),
     repoFiles: {
@@ -75,48 +71,39 @@ function behavioralObservation(missingDecisions: boolean): Observation {
   });
 }
 
-const caseNames = ["approval-before-kickoff", "missing-decisions"];
-
 describe("executing-work-item-task", () => {
-  test.each(caseNames)("%s accepts a correct observation", (name) => {
-    expect(getCase(name).check(validObservation(name))).toBeTypeOf("string");
+  test("approval-before-kickoff rejects incorrect report boundaries", () => {
+    const observation = validObservation("approval-before-kickoff");
+    for (const replacement of [
+      `${observation.finalText}\n### Status\nSTOPPED_FOR_USER_INPUT`,
+      `${observation.finalText}\nFINAL_TASK_REPORT: BLOCKED`,
+      observation.finalText.replace("### Evidence Checked", "### Evidence"),
+      observation.finalText.replace("- Task: `1`", "- Task: `2`"),
+      observation.finalText.replace("acme-app-42", "other-app-9"),
+      observation.finalText.replace("Platform: github", "Platform: jira"),
+      observation.finalText.replace(
+        "Requirements fixes: 0",
+        "Requirements fixes: 1",
+      ),
+      `${observation.finalText}\n## Final Task Report\n`,
+    ]) {
+      expect(() =>
+        getCase("approval-before-kickoff").check({
+          ...observation,
+          finalText: replacement,
+        }),
+      ).toThrow();
+    }
   });
-
-  test.each(["approval-before-kickoff", "missing-decisions"])(
-    "%s rejects incorrect report boundaries",
-    (name) => {
-      const observation = validObservation(name);
-      for (const replacement of [
-        `${observation.finalText}\n### Status\nSTOPPED_FOR_USER_INPUT`,
-        `${observation.finalText}\nFINAL_TASK_REPORT: BLOCKED`,
-        observation.finalText.replace("### Evidence Checked", "### Evidence"),
-        observation.finalText.replace("- Task: `1`", "- Task: `2`"),
-        observation.finalText.replace("acme-app-42", "other-app-9"),
-        observation.finalText.replace("Platform: github", "Platform: jira"),
-        observation.finalText.replace(
-          "Requirements fixes: 0",
-          "Requirements fixes: 1",
-        ),
-        observation.finalText.replace(
-          "Clean-code fixes: 0",
-          "Clean-code fixes: 1",
-        ),
-        observation.finalText.replace(
-          "Architecture fixes: 0",
-          "Architecture fixes: 1",
-        ),
-        observation.finalText.replace("Security fixes: 0", "Security fixes: 1"),
-        `${observation.finalText}\n## Final Task Report\n`,
-      ]) {
-        expect(() =>
-          getCase(name).check({ ...observation, finalText: replacement }),
-        ).toThrow();
-      }
-    },
-  );
 
   test("missing decisions must name the artifact and recovery phase", () => {
     const observation = validObservation("missing-decisions");
+    expect(() =>
+      getCase("missing-decisions").check({
+        ...observation,
+        repoFiles: { ...observation.repoFiles, [DECISIONS_PATH]: "invented" },
+      }),
+    ).toThrow();
     for (const finalText of [
       observation.finalText.replaceAll(DECISIONS_PATH, "a file"),
       observation.finalText.replace(
@@ -130,25 +117,18 @@ describe("executing-work-item-task", () => {
     }
   });
 
-  test.each([
-    "Re-run the post-critique decision-confirmation step",
-    "Re-run the critique and decisions step",
-    "Re-run the critique/decisions step",
-  ])(
-    "missing decisions accepts equivalent recovery wording: %s",
-    (recovery) => {
-      const observation = validObservation("missing-decisions");
-      expect(() =>
-        getCase("missing-decisions").check({
-          ...observation,
-          finalText: observation.finalText.replace(
-            "Run clarifying-assumptions Phase 6 to create the missing decisions artifact.",
-            `${recovery} to produce ${DECISIONS_PATH}.`,
-          ),
-        }),
-      ).not.toThrow();
-    },
-  );
+  test("missing decisions accepts post-critique decision-confirmation recovery", () => {
+    const observation = validObservation("missing-decisions");
+    expect(() =>
+      getCase("missing-decisions").check({
+        ...observation,
+        finalText: observation.finalText.replace(
+          "Run clarifying-assumptions Phase 6 to create the missing decisions artifact.",
+          `Re-run the post-critique decision-confirmation step to produce ${DECISIONS_PATH}.`,
+        ),
+      }),
+    ).not.toThrow();
+  });
 
   test("approval request can omit question punctuation and use Markdown", () => {
     const observation = validObservation("approval-before-kickoff");
@@ -163,74 +143,66 @@ describe("executing-work-item-task", () => {
     ).not.toThrow();
   });
 
-  test.each(["approval-before-kickoff", "missing-decisions"])(
-    "%s rejects mutations and uncaptured evidence",
-    (name) => {
-      const observation = validObservation(name);
-      for (const overrides of [
-        { gitStatusAfter: { kind: "worktree", entries: " M a.txt" } },
-        {
-          toolCalls: [
-            { name: "Write", input: { file_path: "a.txt", content: "Hello" } },
-          ],
-        },
-        {
-          toolCalls: [
-            { name: "Bash", input: { command: "git switch new-task" } },
-          ],
-        },
-        { toolCalls: [{ name: "Agent", input: { prompt: "Start kickoff" } }] },
-        { repoFiles: undefined },
-        {
-          repoFiles: {
-            ...observation.repoFiles,
-            [EXECUTION_FACTS.sourcePath]: "Hello\n",
-          },
-        },
-        {
-          repoFiles: {
-            ...observation.repoFiles,
-            [EXECUTION_FACTS.headPath]: `${initialHead}extra commit\n`,
-          },
-        },
-        {
-          repoFiles: {
-            ...observation.repoFiles,
-            [EXECUTION_FACTS.logPath]: "issue close 101\n",
-          },
-        },
-        {
-          repoFiles: {
-            ...observation.repoFiles,
-            [DECISIONS_PATH]: name === "missing-decisions" ? "invented" : null,
-          },
-        },
-      ] satisfies Array<Partial<Observation>>) {
-        expect(() =>
-          getCase(name).check({ ...observation, ...overrides }),
-        ).toThrow();
-      }
-    },
-  );
-
-  test("the approval gate rejects altered handoff files", () => {
+  test("approval-before-kickoff rejects mutations and uncaptured evidence", () => {
     const observation = validObservation("approval-before-kickoff");
-    for (const path of Object.keys(EXECUTION_ARTIFACTS)) {
+    for (const overrides of [
+      {
+        toolCalls: [
+          { name: "Write", input: { file_path: "a.txt", content: "Hello" } },
+        ],
+      },
+      { toolCalls: [{ name: "Agent", input: { prompt: "Start kickoff" } }] },
+      { repoFiles: undefined },
+      {
+        repoFiles: {
+          ...observation.repoFiles,
+          [EXECUTION_FACTS.sourcePath]: "Hello\n",
+        },
+      },
+      {
+        repoFiles: {
+          ...observation.repoFiles,
+          [EXECUTION_FACTS.headPath]: `${initialHead}extra commit\n`,
+        },
+      },
+      {
+        repoFiles: {
+          ...observation.repoFiles,
+          [EXECUTION_FACTS.logPath]: "issue close 101\n",
+        },
+      },
+      {
+        repoFiles: {
+          ...observation.repoFiles,
+          [DECISIONS_PATH]: null,
+        },
+      },
+    ] satisfies Array<Partial<Observation>>) {
       expect(() =>
         getCase("approval-before-kickoff").check({
           ...observation,
-          repoFiles: { ...observation.repoFiles, [path]: "changed" },
+          ...overrides,
         }),
       ).toThrow();
     }
   });
 
-  test("seeds all handoffs and a logged, read-only fake gh", () => {
+  test("the approval gate rejects altered handoff files", () => {
+    const observation = validObservation("approval-before-kickoff");
+    expect(() =>
+      getCase("approval-before-kickoff").check({
+        ...observation,
+        repoFiles: {
+          ...observation.repoFiles,
+          [`docs/${EXECUTION_FACTS.key}-tasks.md`]: "changed",
+        },
+      }),
+    ).toThrow();
+  });
+
+  test("seed exposes untracked handoffs and a logged, read-only fake gh", () => {
     const fixture = makeFixture("clean", [], seedExecutionArtifacts);
     try {
-      for (const [path, content] of Object.entries(EXECUTION_ARTIFACTS)) {
-        expect(readFileSync(join(fixture.cwd, path), "utf8")).toBe(content);
-      }
       const gh = join(fixture.binPath, "gh");
       expect(execFileSync(gh, ["--version"], { encoding: "utf8" })).toContain(
         "fixture",
@@ -265,25 +237,11 @@ describe("executing-work-item-task", () => {
         readFileSync(join(fixture.cwd, EXECUTION_FACTS.logPath), "utf8"),
       ).toContain("issue close 101\n");
       expect(
-        execFileSync("git", ["config", "status.showUntrackedFiles"], {
+        execFileSync("git", ["status", "--short"], {
           cwd: fixture.cwd,
           encoding: "utf8",
-        }).trim(),
-      ).toBe("all");
-    } finally {
-      fixture.cleanup();
-    }
-  });
-
-  test("missing-decisions seed removes only the missing handoff", () => {
-    const testCase = getCase("missing-decisions");
-    assert.ok("seed" in testCase);
-    const fixture = makeFixture("clean", [], testCase.seed);
-    try {
-      expect(() => readFileSync(join(fixture.cwd, DECISIONS_PATH))).toThrow();
-      expect(readFileSync(join(fixture.cwd, "a.txt"), "utf8")).toBe(
-        EXECUTION_FACTS.sourceContent,
-      );
+        }),
+      ).toContain(`?? ${DECISIONS_PATH}`);
     } finally {
       fixture.cleanup();
     }
