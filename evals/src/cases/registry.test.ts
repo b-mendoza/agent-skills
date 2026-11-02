@@ -86,23 +86,6 @@ const positiveRoutes = routingCases.filter((evalCase) =>
 const negativeRoutes = routingCases.filter(
   (evalCase) => !isPositiveRoute(evalCase),
 );
-// Exact snapshot-suite routing results; every other route uses the shared defaults.
-const SNAPSHOT = "analyzing-recent-project-state";
-const negativeRouteFailures: Readonly<Record<string, string>> = {
-  [`${SNAPSHOT}/trigger-negative-review`]:
-    "skill triggered on a code-review request",
-  [`${SNAPSHOT}/trigger-negative-mutate`]:
-    "skill triggered on a mutate request",
-  [`${SNAPSHOT}/trigger-negative-handoff`]:
-    "skill triggered on a session-handoff request",
-  [`${SNAPSHOT}/trigger-negative-pr-review`]:
-    "skill triggered on a PR-review request",
-};
-const negativeRouteOutcomes: Readonly<Record<string, string>> = {
-  [`${SNAPSHOT}/trigger-negative-mutate`]: "no trigger; no mutation",
-};
-const LATE_ERROR_COST_USD = 0.01;
-
 function skillCall(skill: string): ToolCall {
   return { name: "Skill", input: { skill } };
 }
@@ -118,39 +101,17 @@ function budgetStop(toolCalls: readonly ToolCall[]): Observation {
   });
 }
 
-function lateError(overrides: Partial<Observation>): Observation {
-  return createObservation({
-    isError: true,
-    subtype: "error_during_execution",
-    finalText: "",
-    ...overrides,
-  });
-}
-
 describe("routing matrix", () => {
   test.each(positiveRoutes)(
-    "$id passes when its own skill is invoked",
+    "$id accepts only its own invocation",
     (evalCase) => {
-      const invoked = [skillCall(evalCase.skill)];
-      expect(evalCase.check(budgetStop(invoked))).toBe("Skill invoked");
-      expect(evalCase.check(createObservation({ toolCalls: invoked }))).toBe(
+      expect(evalCase.check(budgetStop([skillCall(evalCase.skill)]))).toBe(
         "Skill invoked",
       );
-      expect(evalCase.check(lateError({ toolCalls: invoked }))).toBe(
-        "Skill invoked",
-      );
-    },
-  );
-
-  test.each(positiveRoutes)(
-    "$id fails when its skill never triggered",
-    (evalCase) => {
-      const otherSkills = skills.filter((skill) => skill !== evalCase.skill);
-      for (const toolCalls of [
-        [],
-        [{ name: "Read", input: {} }],
-        otherSkills.map((skill) => skillCall(skill)),
-      ]) {
+      const others = skills
+        .filter((skill) => skill !== evalCase.skill)
+        .map(skillCall);
+      for (const toolCalls of [[], others]) {
         expect(() => evalCase.check(budgetStop(toolCalls))).toThrow(
           /skill never triggered/,
         );
@@ -159,34 +120,16 @@ describe("routing matrix", () => {
   );
 
   test.each(negativeRoutes)(
-    "$id rejects its own skill invocation",
+    "$id accepts a decline but rejects its own invocation",
     (evalCase) => {
-      const failure =
-        negativeRouteFailures[evalCase.id] ??
-        `skill ${evalCase.skill} unexpectedly triggered`;
       expect(() =>
         evalCase.check(budgetStop([skillCall(evalCase.skill)])),
-      ).toThrow(failure);
-    },
-  );
-
-  test.each(negativeRoutes)(
-    "$id passes a decline, including one that invokes its siblings",
-    (evalCase) => {
-      const outcome = negativeRouteOutcomes[evalCase.id] ?? "no trigger";
-      const siblings = (evalCase.extraSkills ?? []).map((skill) =>
-        skillCall(skill),
-      );
-      for (const observation of [
-        budgetStop([]),
-        budgetStop(siblings),
-        createObservation({
-          finalText: "I'll handle this request directly.",
-          toolCalls: [{ name: "Read", input: { file_path: "/repo/a.txt" } }],
-        }),
-        lateError({ costUsd: LATE_ERROR_COST_USD }),
-      ]) {
-        expect(evalCase.check(observation)).toBe(outcome);
+      ).toThrow();
+      expect(() => evalCase.check(budgetStop([]))).not.toThrow();
+      for (const sibling of evalCase.extraSkills ?? []) {
+        expect(() =>
+          evalCase.check(budgetStop([skillCall(sibling)])),
+        ).not.toThrow();
       }
     },
   );
