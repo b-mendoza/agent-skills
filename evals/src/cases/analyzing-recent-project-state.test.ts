@@ -66,7 +66,7 @@ test("path-error keeps factual intake guards and delegates explanation to the ju
         { name: "Write", input: { file_path: "oops.txt" } },
       ],
     }),
-  ).toThrow();
+  ).toThrow(/read-only/);
 });
 
 test("quiet-state rejects the old public status line", () => {
