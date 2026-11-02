@@ -16,6 +16,7 @@ import {
   assertFileMatches,
   assertNoMutation,
   assertNoPublicStatusLine,
+  assertReadOnlyGraphqlArguments,
   assertRunHappened,
   BUDGET_STOP_SUBTYPE,
   capturedFilesUnder,
@@ -256,6 +257,61 @@ test("Bash matching ignores other tools and missing commands, including stateful
   });
   expect(findBashCalls(observation, /gh pr/g)).toStrictEqual([bash, bash]);
   expect(findBashCalls(observation, /gh issue/)).toStrictEqual([]);
+});
+
+describe("read-only GraphQL arguments", () => {
+  test.each([
+    ["--input", "-"],
+    ["--input=/tmp/x.json"],
+    ["-F", "query=@/tmp/x.graphql"],
+    ["--raw-field=query=@/tmp/x.graphql"],
+  ])("rejects unavailable query bodies: %j", (...args) => {
+    expect(() =>
+      assertReadOnlyGraphqlArguments(["api", "graphql", ...args]),
+    ).toThrow(
+      "GraphQL body unavailable in argv; remote write cannot be ruled out",
+    );
+  });
+
+  test.each([
+    ["-f", "query=mutation { addComment { id } }"],
+    ["-f", "query=query { viewer { login } }\nmutation { addComment { id } }"],
+    ["-X", "GET", "-f", "query=\nmutation { addComment { id } }"],
+  ])("rejects mutations regardless of method or line: %j", (...args) => {
+    expect(() =>
+      assertReadOnlyGraphqlArguments(["api", "graphql", ...args]),
+    ).toThrow("GraphQL mutation or unknown query attempted without approval");
+  });
+
+  test.each([
+    ["api", "graphql", "-X", "POST", "-f", "query=query { viewer { login } }"],
+    [
+      "api",
+      "--method=POST",
+      "graphql",
+      "--field=query=query { viewer { login } }",
+    ],
+    [
+      "api",
+      "--hostname",
+      "github.com",
+      "graphql",
+      "-f",
+      "query={ viewer { login } }",
+    ],
+    ["api", "graphql", "--help"],
+  ])("accepts an explicit query or help: %j", (...args) => {
+    expect(assertReadOnlyGraphqlArguments(args)).toBe(true);
+  });
+
+  test.each([
+    ["api", "repos/x/y"],
+    ["issue", "view", "1"],
+    ["api", "user", "graphql", "-f", "title=x"],
+    ["api", "user", "--jq", "graphql", "-f", "title=x"],
+  ])("leaves non-GraphQL commands to their caller: %j", (...args) => {
+    expect(assertReadOnlyGraphqlArguments(args)).toBe(false);
+  });
 });
 
 describe("file snapshots", () => {
