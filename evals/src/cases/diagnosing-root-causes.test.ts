@@ -230,7 +230,7 @@ describe("missing input", () => {
       missing.check(
         createObservation({ finalText: "I cannot diagnose this." }),
       ),
-    ).toThrow();
+    ).toThrow(/no request for missing evidence/);
   });
 });
 
