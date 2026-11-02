@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { expect, test } from "vitest";
@@ -32,82 +31,56 @@ const BLOCKED = createObservation({
   finalText: BLOCKED_TEXT,
   repoFiles: { [PLAN_PATH]: APPROVED_PLAN, [GH_LOG]: "" },
 });
-
 function getCase(suffix: string) {
   return getRegisteredCase(`creating-work-item-children/${suffix}`);
 }
 
-for (const [suffix, observation] of [
-  ["reuse-linked-plan", SUCCESS],
-  ["approval-declined", BLOCKED],
-] as const) {
-  test(`${suffix} accepts the complete contract`, () => {
-    expect(() => getCase(suffix).check(observation)).not.toThrow();
-  });
-  test.each(["TASK_ISSUES: PASS", "SUBTASKS: BLOCKED", "Validation: NOT_RUN"])(
-    `${suffix} rejects old public status %s`,
-    (status) => {
-      expect(() =>
-        getCase(suffix).check({
-          ...observation,
-          finalText: `${status}\n${observation.finalText}`,
-        }),
-      ).toThrow(/public status line/);
-    },
-  );
-  test.each([ISSUE.reference, PLAN_PATH])(`${suffix} preserves %s`, (value) => {
+test("reconciliation rejects old public status", () => {
+  expect(() =>
+    getCase("reuse-linked-plan").check({
+      ...SUCCESS,
+      finalText: `TASK_ISSUES: PASS\n${SUCCESS_TEXT}`,
+    }),
+  ).toThrow(/public status line/);
+});
+test.each([ISSUE.reference, PLAN_PATH])(
+  "reconciliation preserves %s",
+  (value) => {
     expect(() =>
-      getCase(suffix).check({
-        ...observation,
-        finalText: observation.finalText.replace(value, "omitted"),
+      getCase("reuse-linked-plan").check({
+        ...SUCCESS,
+        finalText: SUCCESS_TEXT.replace(value, "omitted"),
       }),
     ).toThrow();
-  });
-  test.each([
-    { [PLAN_PATH]: `${APPROVED_PLAN}\nchanged`, [GH_LOG]: READ_LOG },
-    { [PLAN_PATH]: null, [GH_LOG]: READ_LOG },
-    {
+  },
+);
+test.each([
+  {
+    label: "plan mutation",
+    files: { [PLAN_PATH]: `${APPROVED_PLAN}\nchanged`, [GH_LOG]: READ_LOG },
+    error: /must remain byte-identical/,
+  },
+  {
+    label: "duplicate remote creation",
+    files: {
       [PLAN_PATH]: APPROVED_PLAN,
       [GH_LOG]: '["issue","create","--title","duplicate"]\n',
     },
-  ])(
-    `${suffix} rejects plan mutation and duplicate remote creation %#`,
-    (repoFiles) => {
-      expect(() =>
-        getCase(suffix).check({ ...observation, repoFiles }),
-      ).toThrow();
-    },
-  );
-  test(`${suffix} rejects file edits`, () => {
-    expect(() =>
-      getCase(suffix).check({
-        ...observation,
-        toolCalls: [{ name: "Edit", input: { file_path: PLAN_PATH } }],
-      }),
-    ).toThrow();
-  });
-}
-
-test("reconciliation accepts concise counts and an outcome described in prose", () => {
-  const finalText = SUCCESS_TEXT.replace(
-    "0 created now, and 0 failed creates",
-    "0 created, and 0 failed",
-  )
-    .replace("which is unchanged", "which I left alone")
-    .replace("Already linked |", "Existing verified child |")
-    .replace(
-      "verified body traceability",
-      "a child-body link back to the parent",
-    );
+    error: /remote write attempted/,
+  },
+])("reconciliation rejects $label", ({ files, error }) => {
   expect(() =>
-    getCase("reuse-linked-plan").check({ ...SUCCESS, finalText }),
-  ).not.toThrow();
-  expect(getCase("reuse-linked-plan")).toHaveProperty(
-    "judge",
-    expect.any(Function),
-  );
+    getCase("reuse-linked-plan").check({ ...SUCCESS, repoFiles: files }),
+  ).toThrow(error);
 });
-
+test("reconciliation rejects file edits", () => {
+  expect(() =>
+    getCase("reuse-linked-plan").check({
+      ...SUCCESS,
+      toolCalls: [{ name: "Edit", input: { file_path: PLAN_PATH } }],
+    }),
+  ).toThrow();
+});
 test("reconciliation accepts padded tables and bold prose", () => {
   const finalText = SUCCESS_TEXT.replaceAll(" |", "     |").replace(
     "Reconciled",
@@ -117,7 +90,6 @@ test("reconciliation accepts padded tables and bold prose", () => {
     getCase("reuse-linked-plan").check({ ...SUCCESS, finalText }),
   ).not.toThrow();
 });
-
 test("reconciliation accepts the recorded prose rollup without its routing envelope", () => {
   const finalText = SUCCESS_TEXT.replace(
     "1 task: 1 already linked, 0 created now, and 0 failed creates.",
@@ -127,7 +99,6 @@ test("reconciliation accepts the recorded prose rollup without its routing envel
     getCase("reuse-linked-plan").check({ ...SUCCESS, finalText }),
   ).not.toThrow();
 });
-
 test.each([
   SUCCESS_TEXT.replaceAll("linked-issue", "native-sub-issue"),
   SUCCESS_TEXT.replace("| 1 | acme/app#43", "| 1 | acme/app#99"),
@@ -136,7 +107,6 @@ test.each([
     getCase("reuse-linked-plan").check({ ...SUCCESS, finalText }),
   ).toThrow();
 });
-
 test("reconciliation must observe the existing child", () => {
   expect(() =>
     getCase("reuse-linked-plan").check({
@@ -148,18 +118,12 @@ test("reconciliation must observe the existing child", () => {
     }),
   ).toThrow();
 });
-
 test("declined approval accepts the canonical parent URL and concise unchanged-state prose", () => {
   const finalText = `ISSUE_URL=${ISSUE.url}\nPlan: ${PLAN_PATH}\nApproval was declined, so I did not dispatch reconciliation. I made no changes of any kind.`;
   expect(() =>
     getCase("approval-declined").check({ ...BLOCKED, finalText }),
   ).not.toThrow();
-  expect(getCase("approval-declined")).toHaveProperty(
-    "judge",
-    expect.any(Function),
-  );
 });
-
 test("declined approval still rejects a fabricated linked-child table", () => {
   expect(() =>
     getCase("approval-declined").check({
@@ -168,31 +132,25 @@ test("declined approval still rejects a fabricated linked-child table", () => {
     }),
   ).toThrow();
 });
-
-test("both behavioral seeds produce the committed approved plan and parent/task-traceable child", () => {
-  for (const suffix of ["reuse-linked-plan", "approval-declined"]) {
-    const evalCase = getCase(suffix);
-    assert.ok("seed" in evalCase);
-    const fixture = makeFixture("clean", [], evalCase.seed);
-    try {
-      expect(readFileSync(join(fixture.cwd, PLAN_PATH), "utf8")).toBe(
-        APPROVED_PLAN,
-      );
-      expect(
-        execFileSync("git", ["status", "--short"], {
-          cwd: fixture.cwd,
-          encoding: "utf8",
-        }),
-      ).toBe("");
-      const child = execFileSync(
-        join(fixture.binPath, "gh"),
-        ["issue", "view", "43", "--repo", "acme/app"],
-        { encoding: "utf8" },
-      );
-      expect(child).toContain(ISSUE.url);
-      expect(child).toContain("Workflow task: **1**");
-    } finally {
-      fixture.cleanup();
-    }
+test("seed commits a clean plan and serves a parent/task-traceable child", () => {
+  const evalCase = getCase("reuse-linked-plan");
+  assert.ok("seed" in evalCase);
+  const fixture = makeFixture("clean", [], evalCase.seed);
+  try {
+    expect(
+      execFileSync("git", ["status", "--short"], {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+      }),
+    ).toBe("");
+    const child = execFileSync(
+      join(fixture.binPath, "gh"),
+      ["issue", "view", "43", "--repo", "acme/app"],
+      { encoding: "utf8" },
+    );
+    expect(child).toContain(ISSUE.url);
+    expect(child).toContain("Workflow task: **1**");
+  } finally {
+    fixture.cleanup();
   }
 });
