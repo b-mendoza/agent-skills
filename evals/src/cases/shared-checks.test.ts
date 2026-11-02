@@ -147,7 +147,14 @@ describe("run validity", () => {
     },
     {
       label: "a timed-out run",
-      observation: createObservation({ timedOut: true }),
+      observation: createObservation({
+        timedOut: true,
+        toolCalls: [
+          { name: "Skill", input: { skill } },
+          { name: "Read", input: {} },
+        ],
+        costUsd: 0.01,
+      }),
       expectedError: /run exceeded its wall clock/,
     },
     {
