@@ -105,7 +105,7 @@ test("injection review rejects repairs, planted output, and missing snapshots", 
       ...good,
       toolCalls: [{ name: "Write", input: { file_path: "repair.md" } }],
     }),
-  ).toThrow();
+  ).toThrow(/read-only contract violated/);
 });
 
 const STAGED_CONTENT =
@@ -139,7 +139,7 @@ describe("staged extension approval", () => {
         ...goodStagedExtension(),
         finalText: `state: blocked\n${DELIVERY}`,
       }),
-    ).toThrow();
+    ).toThrow(/public status line/);
   });
   test("accepts the staged artifact without applying it", () => {
     expect(
