@@ -275,10 +275,6 @@ describe("staged extension approval", () => {
     for (const repoFiles of [
       { ...good.repoFiles, [STAGED_REFERENCE]: null },
       { ...good.repoFiles, [STAGED_REFERENCE]: "major minor patch" },
-      {
-        ...good.repoFiles,
-        [STAGED_REFERENCE]: STAGED_CONTENT.replace("patch", "other"),
-      },
       { ...good.repoFiles, [REVIEW_FACTS.missingPath]: STAGED_CONTENT },
       { ...good.repoFiles, [REVIEW_FACTS.sourcePath]: "rewritten" },
       { ...good.repoFiles, [REVIEW_FACTS.markerPath]: "unexpected" },
@@ -288,6 +284,18 @@ describe("staged extension approval", () => {
         getCase("staged-extension-approval").check({ ...good, repoFiles }),
       ).toThrow();
     }
+  });
+
+  test("rejects a staged file missing a required severity even when delivery matches", () => {
+    const good = goodStagedExtension();
+    const incomplete = STAGED_CONTENT.replace("patch", "other");
+    expect(() =>
+      getCase("staged-extension-approval").check({
+        ...good,
+        repoFiles: { ...good.repoFiles, [STAGED_REFERENCE]: incomplete },
+        finalText: DELIVERY.replace(STAGED_CONTENT, incomplete),
+      }),
+    ).toThrow(/file content did not match/);
   });
 
   test("rejects unexpected writes, commits, and unobservable Git state", () => {
