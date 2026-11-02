@@ -3,7 +3,6 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import {
   REVIEW_CHECKS,
@@ -353,12 +352,34 @@ describe("staged extension approval", () => {
   });
 });
 
-testArtifactWriteMatrix({
-  label: "staging",
-  artifact: STAGED_REFERENCE,
-  check: (observation) =>
-    getCase("staged-extension-approval").check(observation),
-  valid: () => goodStagedExtension(),
+test("staging accepts a canonical-root artifact write", () => {
+  const good = goodStagedExtension();
+  expect(() =>
+    getCase("staged-extension-approval").check({
+      ...good,
+      toolCalls: [
+        {
+          name: "Write",
+          input: { file_path: `/canonical/repo/${STAGED_REFERENCE}` },
+        },
+      ],
+    }),
+  ).not.toThrow();
+});
+
+test("staging rejects a foreign-root same-suffix write", () => {
+  const good = goodStagedExtension();
+  expect(() =>
+    getCase("staged-extension-approval").check({
+      ...good,
+      toolCalls: [
+        {
+          name: "Write",
+          input: { file_path: `/repo-other/${STAGED_REFERENCE}` },
+        },
+      ],
+    }),
+  ).toThrow(/read-only contract violated/);
 });
 
 test.each([
