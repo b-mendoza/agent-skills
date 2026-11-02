@@ -20,7 +20,7 @@ pnpm eval -j 3                                     # override default: up to 3 c
 pnpm eval:view                                    # browse and compare saved runs
 ```
 
-Node 24 strips TypeScript types natively, so the suite runs from source with no build step. Keep the syntax erasable — `erasableSyntaxOnly` is on, so no enums, parameter properties, decorators, or namespaces.
+Node 26 strips TypeScript types natively, so the suite runs from source with no build step. Keep the syntax erasable — `erasableSyntaxOnly` is on, so no enums, parameter properties, decorators, or namespaces.
 
 `pnpm eval` invokes promptfoo directly and uses its native terminal output. Each selected case runs `--repeat` times, default 5. The default concurrency cap is 5 attempts across the whole queue, including repeats; `-j` overrides it. Each process has its own cap, so two concurrent default runs can have 10 attempts in flight. Extra arguments go to promptfoo. Set `EVAL_MODEL` to override the model, default `sonnet`.
 
