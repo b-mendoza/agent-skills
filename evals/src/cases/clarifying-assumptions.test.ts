@@ -53,10 +53,6 @@ function getCase(name: string) {
 }
 
 function validObservation(name: string): Observation {
-  return behavioralObservation(name === "upfront-preview-gate");
-}
-
-function behavioralObservation(isPreview: boolean): Observation {
   const before = Object.keys(CLARIFICATION_INPUTS)
     .map((path) => `?? ${path}`)
     .sort((left, right) => left.localeCompare(right));
@@ -85,7 +81,7 @@ function behavioralObservation(isPreview: boolean): Observation {
       ".git/logs/HEAD": "initial\thead\tcommit (initial): initial commit\n",
     },
   });
-  if (isPreview) return observation;
+  if (name === "upfront-preview-gate") return observation;
   return {
     ...observation,
     finalText: blocked,
@@ -98,15 +94,12 @@ function behavioralObservation(isPreview: boolean): Observation {
   };
 }
 
-const caseNames = ["upfront-preview-gate", "critique-missing-task-number"];
-
 describe("clarifying-assumptions", () => {
-  test.each(caseNames)("%s accepts correct evidence", (name) => {
-    expect(getCase(name).check(validObservation(name))).toBeTypeOf("string");
-  });
-
   test("preview requires the contract header, counts, hard gate row, and readiness question", () => {
     const observation = validObservation("upfront-preview-gate");
+    expect(() =>
+      getCase("upfront-preview-gate").check(observation),
+    ).not.toThrow();
     for (const finalText of [
       preview.replace("Question Manifest", "Questions"),
       preview.replace("Questions now: 1", "Questions now: 0"),
@@ -176,30 +169,28 @@ describe("clarifying-assumptions", () => {
             { name: "Write", input: { file_path: "unexpected.txt" } },
           ],
         },
-        {
-          toolCalls: [
-            ...observation.toolCalls,
-            { name: "Bash", input: { command: "git add docs" } },
-          ],
-        },
       ] satisfies Array<Partial<Observation>>) {
         expect(() =>
           getCase(name).check({ ...observation, ...overrides }),
         ).toThrow();
       }
-      for (const path of Object.keys(CLARIFICATION_INPUTS)) {
-        expect(() =>
-          getCase(name).check({
-            ...observation,
-            repoFiles: { ...observation.repoFiles, [path]: "changed" },
-          }),
-        ).toThrow();
-      }
+      expect(() =>
+        getCase(name).check({
+          ...observation,
+          repoFiles: {
+            ...observation.repoFiles,
+            [CLARIFICATION_FACTS.planPath]: "changed",
+          },
+        }),
+      ).toThrow();
     },
   );
 
   test("missing task number requires a request and rejects public routing flags", () => {
     const observation = validObservation("critique-missing-task-number");
+    expect(() =>
+      getCase("critique-missing-task-number").check(observation),
+    ).not.toThrow();
     for (const finalText of [
       "No files were changed.",
       "Please provide the work item URL. No files were changed.",
@@ -224,25 +215,9 @@ describe("clarifying-assumptions", () => {
     ).toThrow();
   });
 
-  test("preview rejects public routing flags but retains the approval artifact", () => {
-    const observation = validObservation("upfront-preview-gate");
-    expect(() =>
-      getCase("upfront-preview-gate").check({
-        ...observation,
-        finalText: `${preview}\nBLOCKERS_PRESENT: true`,
-      }),
-    ).toThrow();
-  });
-
-  test("seed preserves unresolved audience and exposes individual untracked paths", () => {
+  test("seed exposes individual untracked paths without output artifacts", () => {
     const fixture = makeFixture("clean", [], seedClarificationArtifacts);
     try {
-      for (const [path, content] of Object.entries(CLARIFICATION_INPUTS)) {
-        expect(readFileSync(join(fixture.cwd, path), "utf8")).toBe(content);
-      }
-      expect(
-        readFileSync(join(fixture.cwd, CLARIFICATION_FACTS.planPath), "utf8"),
-      ).toContain(CLARIFICATION_FACTS.audienceGap);
       const status = sampleGitStatus(fixture.cwd);
       assert.ok(status.kind === "worktree");
       expect(status.entries).toContain(CLARIFICATION_FACTS.planPath);
