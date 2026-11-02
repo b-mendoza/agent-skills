@@ -11,6 +11,7 @@ import {
   SNAPSHOT,
 } from "#/cases/fetching-work-item-fixtures.ts";
 import { getCase as getRegisteredCase } from "#/cases/registry.ts";
+import { FIXTURE_ROOT_PATH } from "#/cases/shared-checks.ts";
 import { GH_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -48,7 +49,11 @@ ${SNAPSHOT_SECTIONS.slice(SNAPSHOT_SECTIONS.indexOf("Retrieval Warnings"))
 `;
 const SUCCESS = createObservation({
   finalText: `Work item fetched to ${SNAPSHOT}.`,
-  repoFiles: { [SNAPSHOT]: ARTIFACT, [GH_LOG]: READ_LOG },
+  repoFiles: {
+    [SNAPSHOT]: ARTIFACT,
+    [GH_LOG]: READ_LOG,
+    [FIXTURE_ROOT_PATH]: "/fixture\n/canonical/fixture",
+  },
   gitStatusAfter: { kind: "worktree", entries: `?? ${SNAPSHOT}` },
   toolCalls: [
     { name: "Write", input: { file_path: SNAPSHOT, content: ARTIFACT } },
@@ -180,6 +185,29 @@ test("snapshot success rejects a leaked public fetch status", () => {
       finalText: `${SUCCESS.finalText}\n**FETCH:** PASS`,
     }),
   ).toThrow(/public status line/);
+});
+test("fetching accepts a canonical-root snapshot write", () => {
+  expect(() =>
+    getCase("github-snapshot").check({
+      ...SUCCESS,
+      toolCalls: [
+        {
+          name: "Write",
+          input: { file_path: `/canonical/fixture/${SNAPSHOT}` },
+        },
+      ],
+    }),
+  ).not.toThrow();
+});
+test("fetching rejects a foreign-root lookalike", () => {
+  expect(() =>
+    getCase("github-snapshot").check({
+      ...SUCCESS,
+      toolCalls: [
+        { name: "Write", input: { file_path: `/outside/${SNAPSHOT}` } },
+      ],
+    }),
+  ).toThrow(/unexpected file write/);
 });
 
 const SUCCESS_EXIT = 0;
