@@ -38,7 +38,7 @@
     "eslint-plugin-simple-import-sort": "14.0.0",
     "eslint-plugin-sonarjs": "4.2.0",
     "globals": "17.14.0",
-    "npm-run-all2": "9.0.3",
+    "npm-run-all2": "9.0.4",
     "oxfmt": "0.62.0",
     "oxlint": "1.77.0",
     "oxlint-tsgolint": "7.0.2001",
