@@ -1,4 +1,11 @@
-import { existsSync, readdirSync, statSync } from "node:fs";
+import {
+  existsSync,
+  readdirSync,
+  realpathSync,
+  statSync,
+  symlinkSync,
+} from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "vitest";
@@ -6,10 +13,15 @@ import { describe, expect, test } from "vitest";
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { BEHAVIORAL_TIER, ROUTING_TIER } from "#/cases/case-contract.ts";
 import { cases, getCase } from "#/cases/registry.ts";
-import { BUDGET_STOP_SUBTYPE } from "#/cases/shared-checks.ts";
+import {
+  BUDGET_STOP_SUBTYPE,
+  FIXTURE_ROOT_PATH,
+} from "#/cases/shared-checks.ts";
+import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
+import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 test("case ids are globally unique and prefixed by their skill", () => {
   expect(new Set(cases.map(({ id }) => id)).size).toBe(cases.length);
@@ -222,6 +234,34 @@ test.each(cases)(
   (evalCase) => {
     for (const { observation, diagnostic } of invalidRuns(evalCase.skill)) {
       expect(() => evalCase.check(observation)).toThrow(diagnostic);
+    }
+  },
+);
+
+const artifactFixtureCases = cases.filter(
+  ({ seed, snapshotPaths }) =>
+    seed !== undefined && snapshotPaths?.includes(FIXTURE_ROOT_PATH) === true,
+);
+
+test.each(artifactFixtureCases)(
+  "$id seeds and captures lexical and canonical fixture roots",
+  (entry) => {
+    const { seed, snapshotPaths } = entry;
+    if (seed === undefined || snapshotPaths === undefined) {
+      throw new Error("missing case seed or snapshot paths");
+    }
+    const fixture = makeFixture(entry.fixture, [], (context) => {
+      const lexical = join(dirname(context.repoPath), "linked-repo");
+      symlinkSync(context.repoPath, lexical);
+      seed({ ...context, repoPath: lexical });
+    });
+    try {
+      const lexical = join(dirname(fixture.cwd), "linked-repo");
+      expect(snapshotRepoFiles(lexical, snapshotPaths)[FIXTURE_ROOT_PATH]).toBe(
+        `${lexical}\n${realpathSync(lexical)}`,
+      );
+    } finally {
+      fixture.cleanup();
     }
   },
 );
