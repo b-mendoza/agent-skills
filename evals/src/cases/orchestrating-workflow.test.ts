@@ -46,7 +46,7 @@ describe("orchestrating-workflow", () => {
         ...validObservation(name),
         toolCalls: [{ name: "Edit", input: { file_path: "a.txt" } }],
       }),
-    ).toThrow();
+    ).toThrow(/read-only/);
   });
 
   test("resume rejects downstream dispatch and premature artifacts", () => {
