@@ -65,7 +65,7 @@ test("preview also enforces the shared single-comment contract", () => {
       ...SUCCESS,
       finalText: `${OUTPUT}\n${COMMENT}`,
     }),
-  ).toThrow();
+  ).toThrow(/expected exactly one comment/);
 });
 
 test.each([
