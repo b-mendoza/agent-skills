@@ -88,7 +88,7 @@ describe("response preview and local report", () => {
           REPORT.replace("## Posting Ledger", "## Missing Posting Ledger"),
         ),
       ),
-    ).toThrow();
+    ).toThrow(/missing report section Posting Ledger/);
   });
 
   it("rejects a missing assessment Evidence field", () => {
@@ -96,7 +96,7 @@ describe("response preview and local report", () => {
       previewCase.check(
         observation(REPORT.replace("- Evidence:", "- Missing:")),
       ),
-    ).toThrow();
+    ).toThrow(/missing assessment field Evidence/);
   });
 
   it.each([
