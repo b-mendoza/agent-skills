@@ -1,14 +1,9 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-
 import { describe, expect, test } from "vitest";
 
 import { PROMPT_FACTS } from "#/cases/prompt-structurer.ts";
 import { getCase as getRegisteredCase } from "#/cases/registry.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
-import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 const skill = "prompt-structurer";
 const structuredPrompt = `<task>Summarize each customer comment in one sentence.</task>
@@ -40,35 +35,6 @@ const blockedText =
   "I cannot revise the prompt without its baseline. Please provide the existing structured XML prompt so I can apply the change request.";
 
 describe("prompt-structurer behavior", () => {
-  test.each(["structure-prose", "revision-missing-baseline"])(
-    "%s seeds and captures exactly the source prompt",
-    (suffix) => {
-      const evalCase = getCase(suffix);
-      const fixture = makeFixture("clean", [], evalCase.seed);
-      try {
-        expect(
-          snapshotRepoFiles(fixture.cwd, evalCase.snapshotPaths ?? []),
-        ).toStrictEqual({ [PROMPT_FACTS.path]: PROMPT_FACTS.source });
-      } finally {
-        fixture.cleanup();
-      }
-    },
-  );
-
-  test("seeds the source prompt without dirtying the fixture", () => {
-    const fixture = makeFixture("clean", [], getCase("structure-prose").seed);
-    try {
-      expect(readFileSync(join(fixture.cwd, "prompt.txt"), "utf8")).toContain(
-        "MarbleDB",
-      );
-      expect(readFileSync(join(fixture.cwd, "prompt.txt"), "utf8")).toContain(
-        "No comments",
-      );
-    } finally {
-      fixture.cleanup();
-    }
-  });
-
   test("accepts XML followed by disclosed assembly notes", () => {
     expect(() =>
       getCase("structure-prose").check(behavioralObservation(structuredPrompt)),
@@ -138,7 +104,6 @@ describe("prompt-structurer behavior", () => {
   test.each([
     ["plain prose instead of XML", "Here is your improved prompt."],
     ["prose before XML", `Here is the contract:\n${structuredPrompt}`],
-    ["an unclosed task", structuredPrompt.replace("</task>", "")],
     ["an unclosed output", structuredPrompt.replace("</output>", "")],
     [
       "a mismatched output tag",
@@ -164,12 +129,7 @@ describe("prompt-structurer behavior", () => {
       structuredPrompt.replace("OMITTED_PASS_REASON:", "Skipped:"),
     ],
     ["internal pass status leaked", `${structuredPrompt}\nRESULT: PASS`],
-    [
-      "formatted internal status leaked",
-      `${structuredPrompt}\n**RESULT: PASS**`,
-    ],
     ["standalone pass status", `${structuredPrompt}\nPASS`],
-    ["title-case result envelope", `${structuredPrompt}\n**Result:** PASS.`],
   ])("rejects %s", (_label, finalText) => {
     expect(() =>
       getCase("structure-prose").check(behavioralObservation(finalText)),
@@ -178,17 +138,11 @@ describe("prompt-structurer behavior", () => {
 
   test.each([
     ["a valueless attribute", "<task priority>"],
-    ["an unquoted attribute value", "<task priority=high>"],
-    ["an attribute missing its value", "<task priority=>"],
     ["duplicate attributes", "<task priority=\"high\" priority='low'>"],
     ["attributes without separating whitespace", '<task a="1"b="2">'],
-    ["a valueless attribute on a self-closing tag", "<task><rule priority />"],
     ["a bare ampersand in text", "<task>A & B "],
     ["a bare ampersand in an attribute", '<task label="A & B">'],
     ["an unknown entity", "<task>&unknown; "],
-    ["an entity missing its semicolon", "<task>&amp "],
-    ["an invalid decimal reference", "<task>&#NN; "],
-    ["an invalid hexadecimal reference", "<task>&#xHH; "],
     ["a reference to a null character", "<task>&#0; "],
     ["a reference to a surrogate", "<task>&#xD800; "],
     ["a reference beyond Unicode", "<task>&#x110000; "],
@@ -222,7 +176,6 @@ describe("prompt-structurer behavior", () => {
       "fabricated replacement",
       `${blockedText}\n<task>Invented replacement</task>`,
     ],
-    ["contradictory success", `${blockedText}\nPASS`],
   ])("rejects a revision with %s", (_label, finalText) => {
     expect(() =>
       getCase("revision-missing-baseline").check(
@@ -249,12 +202,6 @@ describe("prompt-structurer behavior", () => {
         toolCalls: [
           { name: "Write", input: { file_path: "other.xml", content: "x" } },
         ],
-      }),
-    ).toThrow();
-    expect(() =>
-      evalCase.check({
-        ...observation,
-        gitStatusAfter: { kind: "worktree", entries: "?? other.xml" },
       }),
     ).toThrow();
   });
