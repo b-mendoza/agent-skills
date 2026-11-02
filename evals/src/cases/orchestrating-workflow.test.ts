@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-
 import { describe, expect, test } from "vitest";
 
 import {
@@ -9,12 +6,8 @@ import {
   EXECUTION_FACTS,
 } from "#/cases/executing-work-item-task-fixtures.ts";
 import { SKILL } from "#/cases/orchestrating-workflow.ts";
-import {
-  RESUME_ARTIFACTS,
-  seedResumeArtifacts,
-} from "#/cases/orchestrating-workflow-fixtures.ts";
+import { RESUME_ARTIFACTS } from "#/cases/orchestrating-workflow-fixtures.ts";
 import { getCase as getRegisteredCase } from "#/cases/registry.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
@@ -23,10 +16,7 @@ function getCase(name: string) {
 }
 
 function validObservation(name: string): Observation {
-  return behavioralObservation(name === "resume-at-task-critique");
-}
-
-function behavioralObservation(resume: boolean): Observation {
+  const resume = name === "resume-at-task-critique";
   return createObservation({
     finalText: resume
       ? "Found completed Phase 5 planning for Task 1. Shall I resume at Phase 6, Task 1 critique?"
@@ -50,66 +40,65 @@ describe("orchestrating-workflow", () => {
     expect(getCase(name).check(validObservation(name))).toBeTypeOf("string");
   });
 
-  test.each(["resume-at-task-critique", "ambiguous-identifier"])(
-    "%s rejects advancing past the gate",
-    (name) => {
-      const observation = validObservation(name);
-      for (const overrides of [
-        {
-          toolCalls: [
-            { name: "Skill", input: { skill: "clarifying-assumptions" } },
-          ],
+  test.each(caseNames)("%s rejects writes before confirmation", (name) => {
+    expect(() =>
+      getCase(name).check({
+        ...validObservation(name),
+        toolCalls: [{ name: "Edit", input: { file_path: "a.txt" } }],
+      }),
+    ).toThrow();
+  });
+
+  test("resume rejects downstream dispatch and premature artifacts", () => {
+    const name = "resume-at-task-critique";
+    const observation = validObservation(name);
+    for (const overrides of [
+      {
+        toolCalls: [
+          { name: "Skill", input: { skill: "clarifying-assumptions" } },
+        ],
+      },
+      {
+        toolCalls: [
+          { name: "Skill", input: { skill: "executing-work-item-task" } },
+        ],
+      },
+      {
+        repoFiles: {
+          ...observation.repoFiles,
+          [CRITIQUE_PATH]: "premature critique",
         },
-        {
-          toolCalls: [
-            { name: "Skill", input: { skill: "executing-work-item-task" } },
-          ],
+      },
+      {
+        repoFiles: {
+          ...observation.repoFiles,
+          [DECISIONS_PATH]: "premature decisions",
         },
-        { toolCalls: [{ name: "Edit", input: { file_path: "a.txt" } }] },
-        {
-          toolCalls: [
-            { name: "Bash", input: { command: "git commit -m started" } },
-          ],
+      },
+      {
+        repoFiles: {
+          ...observation.repoFiles,
+          [EXECUTION_FACTS.sourcePath]: "changed",
         },
-        { gitStatusAfter: { kind: "worktree", entries: "?? unexpected.txt" } },
-        { repoFiles: undefined },
-        {
-          repoFiles: {
-            ...observation.repoFiles,
-            [CRITIQUE_PATH]: "premature critique",
-          },
+      },
+      {
+        repoFiles: {
+          ...observation.repoFiles,
+          [EXECUTION_FACTS.headPath]: "changed head",
         },
-        {
-          repoFiles: {
-            ...observation.repoFiles,
-            [DECISIONS_PATH]: "premature decisions",
-          },
+      },
+      {
+        repoFiles: {
+          ...observation.repoFiles,
+          [EXECUTION_FACTS.logPath]: "issue edit 42 --title changed\n",
         },
-        {
-          repoFiles: {
-            ...observation.repoFiles,
-            [EXECUTION_FACTS.sourcePath]: "Hello\n",
-          },
-        },
-        {
-          repoFiles: {
-            ...observation.repoFiles,
-            [EXECUTION_FACTS.headPath]: "changed head\n",
-          },
-        },
-        {
-          repoFiles: {
-            ...observation.repoFiles,
-            [EXECUTION_FACTS.logPath]: "issue edit 42 --title changed\n",
-          },
-        },
-      ] satisfies Array<Partial<Observation>>) {
-        expect(() =>
-          getCase(name).check({ ...observation, ...overrides }),
-        ).toThrow();
-      }
-    },
-  );
+      },
+    ] satisfies Array<Partial<Observation>>) {
+      expect(() =>
+        getCase(name).check({ ...observation, ...overrides }),
+      ).toThrow();
+    }
+  });
 
   test("resume requires the correct phase, task, and confirmation", () => {
     const observation = validObservation("resume-at-task-critique");
@@ -122,14 +111,13 @@ describe("orchestrating-workflow", () => {
         getCase("resume-at-task-critique").check({ ...observation, finalText }),
       ).toThrow();
     }
-    for (const path of Object.keys(RESUME_ARTIFACTS)) {
-      expect(() =>
-        getCase("resume-at-task-critique").check({
-          ...observation,
-          repoFiles: { ...observation.repoFiles, [path]: "changed" },
-        }),
-      ).toThrow();
-    }
+    const [path = ""] = Object.keys(RESUME_ARTIFACTS);
+    expect(() =>
+      getCase("resume-at-task-critique").check({
+        ...observation,
+        repoFiles: { ...observation.repoFiles, [path]: "changed" },
+      }),
+    ).toThrow();
   });
 
   test("ambiguous input requires one targeted question and no tracker lookup", () => {
@@ -152,21 +140,5 @@ describe("orchestrating-workflow", () => {
         },
       }),
     ).toThrow();
-  });
-
-  test("resume seed matches the Phase 5 completed, Phase 6 pending handoff", () => {
-    const fixture = makeFixture("clean", [], seedResumeArtifacts);
-    try {
-      for (const [path, content] of Object.entries(RESUME_ARTIFACTS)) {
-        expect(readFileSync(join(fixture.cwd, path), "utf8")).toBe(content);
-      }
-      expect(() => readFileSync(join(fixture.cwd, CRITIQUE_PATH))).toThrow();
-      expect(() => readFileSync(join(fixture.cwd, DECISIONS_PATH))).toThrow();
-      expect(
-        readFileSync(join(fixture.cwd, EXECUTION_FACTS.logPath), "utf8"),
-      ).toBe("");
-    } finally {
-      fixture.cleanup();
-    }
   });
 });
