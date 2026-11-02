@@ -4,7 +4,6 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import { SKILL } from "#/cases/clarifying-assumptions.ts";
 import {
   CLARIFICATION_FACTS,
@@ -259,9 +258,34 @@ describe("clarifying-assumptions", () => {
   });
 });
 
-testArtifactWriteMatrix({
-  label: "critique",
-  artifact: CLARIFICATION_FACTS.critiquePath,
-  check: (observation) => getCase("upfront-preview-gate").check(observation),
-  valid: () => behavioralObservation(true),
+test("critique accepts a canonical-root artifact", () => {
+  const observation = validObservation("upfront-preview-gate");
+  expect(() =>
+    getCase("upfront-preview-gate").check({
+      ...observation,
+      toolCalls: [
+        {
+          name: "Write",
+          input: {
+            file_path: `/canonical/fixture/${CLARIFICATION_FACTS.critiquePath}`,
+          },
+        },
+      ],
+    }),
+  ).not.toThrow();
+});
+
+test("critique rejects a foreign-root lookalike", () => {
+  const observation = validObservation("upfront-preview-gate");
+  expect(() =>
+    getCase("upfront-preview-gate").check({
+      ...observation,
+      toolCalls: [
+        {
+          name: "Write",
+          input: { file_path: `/outside/${CLARIFICATION_FACTS.critiquePath}` },
+        },
+      ],
+    }),
+  ).toThrow(/read-only contract violated/);
 });
