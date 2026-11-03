@@ -191,7 +191,7 @@ describe("clarifying-assumptions", () => {
             ...observation,
             repoFiles: { ...observation.repoFiles, [path]: "changed" },
           }),
-        ).toThrow();
+        ).toThrow(/changed input/);
       }
     },
   );
