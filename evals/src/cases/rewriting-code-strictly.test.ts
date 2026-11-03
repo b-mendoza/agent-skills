@@ -170,6 +170,7 @@ If you pick the first, also tell me how to handle the other malformed names. I'l
 test.each([
   "nameFromJson. Which option do you want?",
   "name.test.ts preserves behavior. I will proceed.",
+  "Should I preserve behavior or reject non-string inputs?",
 ])("rejects an unrelated or missing behavior decision: %s", (finalText) => {
   expect(() =>
     gateCase.check({ ...correctObservation(gateCase), finalText }),
