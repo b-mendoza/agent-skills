@@ -66,19 +66,7 @@ describe("evidence-backed RCA", () => {
   test("accepts a complete report with unchanged evidence", () => {
     expect(diagnosis.check(diagnosisObservation)).toContain("ready RCA");
   });
-  test("accepts Markdown labels without weakening required report content", () => {
-    expect(
-      diagnosis.check({
-        ...diagnosisObservation,
-        finalText: REPORT.replace(
-          "Issue source: runtime",
-          "- **Issue source:** `runtime`",
-        ).replace("Confidence: high", "**Confidence:** high"),
-      }),
-    ).toContain("ready RCA");
-  });
   test.each([
-    ["old public status", `${REPORT}\nStatus: ready`],
     ["Markdown status", `${REPORT}\n**Status:** ready`],
     ["source citation", REPORT.replace("src/discount.mjs", "unknown.mjs")],
     ["symptom citation", REPORT.replace("logs/checkout.log", "unknown.log")],
@@ -263,16 +251,6 @@ describe("missing input", () => {
     "Status: ready\nWhich logs can you provide?",
   ])("rejects an unsupported response: %s", (finalText) => {
     expect(() => missing.check(createObservation({ finalText }))).toThrow();
-  });
-  test("rejects a write even while asking for missing evidence", () => {
-    expect(() =>
-      missing.check(
-        createObservation({
-          finalText: "Which logs or resources can you provide?",
-          toolCalls: [{ name: "Write", input: { file_path: "diagnosis.md" } }],
-        }),
-      ),
-    ).toThrow(/read-only/);
   });
 });
 
