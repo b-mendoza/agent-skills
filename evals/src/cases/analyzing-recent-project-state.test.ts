@@ -107,7 +107,7 @@ describe("snapshot replies", () => {
             { name: "Write", input: { file_path: "oops.txt" } },
           ],
         }),
-      ).toThrow();
+      ).toThrow(/read-only/);
       expect(evalCase).toHaveProperty("judge", expect.any(Function));
     },
   );
