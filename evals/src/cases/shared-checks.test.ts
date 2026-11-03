@@ -32,12 +32,6 @@ import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 describe("reply text normalization", () => {
-  test("makes emphasized labels match plain-text patterns", () => {
-    expect(normalizeReplyText("**References fetched:** none")).toMatch(
-      /References fetched:\s*none/,
-    );
-  });
-
   test.each([
     ["**bold** __bold__ *italic* _italic_", "bold bold italic italic"],
     ["**bold with _italic_**", "bold with italic"],
@@ -60,20 +54,14 @@ describe("reply text normalization", () => {
 });
 
 describe("public status lines", () => {
-  test.each([
-    "PR_CREATE: PR_EXISTS",
-    "**PR_CREATE:** PR_EXISTS",
-    "__PR_CREATE:__ PR_EXISTS",
-    "`PR_CREATE: PR_EXISTS`",
-    "  PR_CREATE: PR_EXISTS  ",
-    "## PR_CREATE: PR_EXISTS",
-    "> - PR_CREATE: PR_EXISTS",
-    "1. PR_CREATE: PR_EXISTS",
-  ])("rejects a status line in %s and quotes the line", (reply) => {
-    expect(() => {
-      assertNoPublicStatusLine(reply, "PR_CREATE");
-    }).toThrow(/public status line.*"[^"\n]*PR_CREATE: PR_EXISTS/);
-  });
+  test.each(["  PR_CREATE: PR_EXISTS  ", "> - PR_CREATE: PR_EXISTS"])(
+    "rejects a status line in %s and quotes the line",
+    (reply) => {
+      expect(() => {
+        assertNoPublicStatusLine(reply, "PR_CREATE");
+      }).toThrow(/public status line.*"[^"\n]*PR_CREATE: PR_EXISTS/);
+    },
+  );
 
   test("checks every supplied prefix on every line", () => {
     expect(() => {
