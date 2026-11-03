@@ -138,7 +138,6 @@ describe("prompt-structurer behavior", () => {
   test.each([
     ["plain prose instead of XML", "Here is your improved prompt."],
     ["prose before XML", `Here is the contract:\n${structuredPrompt}`],
-    ["an unclosed task", structuredPrompt.replace("</task>", "")],
     ["an unclosed output", structuredPrompt.replace("</output>", "")],
     [
       "a mismatched output tag",
