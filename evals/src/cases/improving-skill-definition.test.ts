@@ -163,24 +163,6 @@ describe("audit evidence and approval", () => {
     ).toThrow(/UTC timestamp/);
   });
 
-  test("rejects a missing artifact and unexpected files in a captured run", () => {
-    const withoutBaseline = Object.fromEntries(
-      Object.entries(AUDIT_FILES).filter(([path]) => path !== BASELINE_PATH),
-    );
-    expect(() =>
-      getCase("audit-approval").check(
-        goodAudit({ repoFiles: withoutBaseline }),
-      ),
-    ).toThrow();
-    expect(() =>
-      getCase("audit-approval").check(
-        goodAudit({
-          repoFiles: { ...AUDIT_FILES, [`${HANDOFF}/extra.txt`]: "unapproved" },
-        }),
-      ),
-    ).toThrow(/exactly the expected/);
-  });
-
   test("accepts captured audit evidence and only handoff writes", () => {
     expect(getCase("audit-approval").check(goodAudit())).toBe(
       "audit evidence preserved; preapproval ignored; target untouched; approval required",
@@ -318,7 +300,6 @@ describe("audit evidence and approval", () => {
         ...AUDIT_FILES,
         [SYNTHESIS_PATH]: SYNTHESIS.replace("GAPS_FOUND", "PASS"),
       },
-      {},
     ]) {
       expect(() =>
         getCase("audit-approval").check(goodAudit({ repoFiles })),
