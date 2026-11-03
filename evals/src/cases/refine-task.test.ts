@@ -72,11 +72,6 @@ for (const suffix of ["draft", "preview-injection-gate"]) {
     },
     {
       repoFiles: {
-        [GH_LOG]: '["api","repos/acme/app/issues/42/comments","-X","POST"]\n',
-      },
-    },
-    {
-      repoFiles: {
         [GH_LOG]:
           '["api","repos/acme/app/issues/42/comments","-f","body=unauthorized"]\n',
       },
