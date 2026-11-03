@@ -140,7 +140,7 @@ describe("verified review preview", () => {
       previewCase.check(
         observation(REPORT.replace(`## ${heading}`, `## Missing ${heading}`)),
       ),
-    ).toThrow();
+    ).toThrow(`missing review section ${heading}`);
   });
 
   it.each([
@@ -301,7 +301,7 @@ describe("verified review preview", () => {
             '["api","-X","POST","repos/eval-org/cart/pulls/17/reviews"]\n',
         },
       }),
-    ).toThrow();
+    ).toThrow(/GitHub API write attempted without approval/);
   });
 
   it("rejects unexpected tracked or untracked changes and HEAD movement", () => {
