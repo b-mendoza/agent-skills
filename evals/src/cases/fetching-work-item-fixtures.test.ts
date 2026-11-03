@@ -39,7 +39,7 @@ test("fetching rejects a foreign-root lookalike", () => {
         { name: "Write", input: { file_path: `/outside/${SNAPSHOT}` } },
       ],
     });
-  }).toThrow();
+  }).toThrow(/unexpected file write/);
 });
 
 test.each([
