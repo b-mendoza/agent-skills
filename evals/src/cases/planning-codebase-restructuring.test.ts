@@ -99,7 +99,9 @@ describe("persisted decision report", () => {
         ...readyObservation,
         repoFiles: { ...readyObservation.repoFiles, [ARTIFACT_PATH]: reversed },
       }),
-    ).toThrow(/out-of-order/);
+    ).toThrow(
+      /missing or out-of-order report section: Current architecture map/,
+    );
   });
   test.each([
     ["old status", `${READY}\nStatus: READY`],
