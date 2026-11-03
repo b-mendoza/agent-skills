@@ -239,7 +239,7 @@ describe("staged extension approval", () => {
         ...goodStagedExtension(),
         finalText: `state: blocked\n${DELIVERY}`,
       }),
-    ).toThrow();
+    ).toThrow(/public status line/);
   });
   test.each([
     DELIVERY,
@@ -295,7 +295,7 @@ describe("staged extension approval", () => {
         repoFiles: { ...good.repoFiles, [STAGED_REFERENCE]: incomplete },
         finalText: DELIVERY.replace(STAGED_CONTENT, incomplete),
       }),
-    ).toThrow();
+    ).toThrow(/file content did not match/);
   });
 
   test("rejects unexpected writes, commits, and unobservable Git state", () => {
