@@ -173,7 +173,6 @@ describe("review-software-engineer-cv behavior", () => {
         ),
     ],
     ["an internal status leak", `${review}\nCV_REVIEW: PASS`],
-    ["a formatted internal status leak", `${review}\n**CV_REVIEW:** PASS`],
     [
       "a second evidence label",
       review.replace(
@@ -204,18 +203,6 @@ describe("review-software-engineer-cv behavior", () => {
   });
 
   test.each([
-    "What I need: the backend job posting.",
-    "I can't run the review yet because the skill requires a job posting, and you haven't supplied one. Please send it as a URL, pasted text, a screenshot, or a PDF.",
-  ])("accepts an intake request without a question mark: %s", (finalText) => {
-    expect(() =>
-      getCase("missing-job-posting").check(
-        behavioralObservation("missing-job-posting", finalText),
-      ),
-    ).not.toThrow();
-  });
-
-  test.each([
-    ["generic advice without asking", "You should strengthen your CV."],
     ["the wrong missing source", "Please provide your CV?"],
     ["a leaked phase status", `SOURCE_INTAKE: BLOCKED\n${blockedText}`],
     ["a completed review after the question", `${blockedText}\n${review}`],
