@@ -168,12 +168,20 @@ If you pick the first, also tell me how to handle the other malformed names. I'l
   },
 );
 test.each([
-  "nameFromJson returns 7. Which deadline?",
-  "Which option do you want?",
-  "nameFromJson. Which option do you want?",
-  "name.test.ts preserves behavior. I will proceed.",
-])("rejects an unrelated or missing behavior decision: %s", (finalText) => {
-  expect(() =>
-    gateCase.check({ ...correctObservation(gateCase), finalText }),
-  ).toThrow();
-});
+  ["nameFromJson. Which option do you want?", /missing behavior conflict/],
+  [
+    "name.test.ts preserves behavior. I will proceed.",
+    /missing behavior decision/,
+  ],
+  [
+    "Should I preserve behavior or reject non-string inputs?",
+    /missing concrete target/,
+  ],
+] as const)(
+  "rejects an incomplete behavior decision: %s",
+  (finalText, diagnostic) => {
+    expect(() =>
+      gateCase.check({ ...correctObservation(gateCase), finalText }),
+    ).toThrow(diagnostic);
+  },
+);

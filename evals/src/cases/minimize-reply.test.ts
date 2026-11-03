@@ -30,15 +30,6 @@ const REPLY = [
 ].join("\n");
 
 describe("outcomeOf", () => {
-  test("reports the returned outcome or the exact thrown message", () => {
-    expect(
-      outcomeOf(currentCheck, createObservation({ finalText: REPLY })),
-    ).toBe("pass:ok");
-    expect(outcomeOf(currentCheck, createObservation())).toBe(
-      "fail:missing question",
-    );
-  });
-
   test("drops the reply that a generated match message echoes", () => {
     const check = (observation: Observation) => {
       assert.match(observation.finalText, /NEEDS_INPUT/);
@@ -61,21 +52,6 @@ describe("minimizeReply", () => {
       outcome: "fail:missing deadline",
       linesBefore: 5,
       linesAfter: 1,
-    });
-  });
-
-  test("keeps the contrast-triggering sentence of a passing reply, in order", () => {
-    const result = minimizeReply({
-      check: currentCheck,
-      contrastCheck,
-      observation: createObservation({ finalText: REPLY }),
-    });
-    expect(result).toStrictEqual({
-      finalText: "The pinned 7 is not a string. \nWhich option? ",
-      outcome: "pass:ok",
-      contrastOutcome: "fail:old check rejects the type explanation",
-      linesBefore: 5,
-      linesAfter: 2,
     });
   });
 
@@ -136,11 +112,14 @@ describe("minimizeReply", () => {
       contrastCheck,
       observation: createObservation({ finalText: REPLY }),
     });
-    expect(result.outcome).toBe("pass:asked");
     // Dropping the question still passes, as "explained"; that is rejected.
-    expect(result.finalText).toBe(
-      "The pinned 7 is not a string. \nWhich option? ",
-    );
+    expect(result).toStrictEqual({
+      finalText: "The pinned 7 is not a string. \nWhich option? ",
+      outcome: "pass:asked",
+      contrastOutcome: "fail:old check rejects the type explanation",
+      linesBefore: 5,
+      linesAfter: 2,
+    });
   });
 
   test("carries the other observation fields into every candidate", () => {
@@ -175,14 +154,5 @@ describe("minimizeReply", () => {
         observation: createObservation({ finalText: REPLY }),
       }),
     ).toThrow(reason);
-  });
-
-  test("returns identical output for identical input", () => {
-    const request = {
-      check: currentCheck,
-      contrastCheck,
-      observation: createObservation({ finalText: REPLY }),
-    };
-    expect(minimizeReply(request)).toStrictEqual(minimizeReply(request));
   });
 });

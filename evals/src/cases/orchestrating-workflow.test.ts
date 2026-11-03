@@ -72,7 +72,6 @@ describe("orchestrating-workflow", () => {
           ],
         },
         { gitStatusAfter: { kind: "worktree", entries: "?? unexpected.txt" } },
-        { repoFiles: undefined },
         {
           repoFiles: {
             ...observation.repoFiles,

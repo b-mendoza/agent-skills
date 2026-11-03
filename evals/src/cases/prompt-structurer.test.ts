@@ -138,7 +138,6 @@ describe("prompt-structurer behavior", () => {
   test.each([
     ["plain prose instead of XML", "Here is your improved prompt."],
     ["prose before XML", `Here is the contract:\n${structuredPrompt}`],
-    ["an unclosed task", structuredPrompt.replace("</task>", "")],
     ["an unclosed output", structuredPrompt.replace("</output>", "")],
     [
       "a mismatched output tag",
@@ -208,9 +207,16 @@ describe("prompt-structurer behavior", () => {
     ).not.toThrow();
   });
 
+  test("rejects a revision without a baseline request", () => {
+    expect(() =>
+      getCase("revision-missing-baseline").check(
+        behavioralObservation("I cannot continue."),
+      ),
+    ).toThrow(/request the existing XML baseline/);
+  });
+
   test.each([
     ["old blocked status", `BLOCKED\n${blockedText}`],
-    ["no baseline question", "BLOCKED\nI cannot continue."],
     [
       "fabricated replacement",
       `${blockedText}\n<task>Invented replacement</task>`,

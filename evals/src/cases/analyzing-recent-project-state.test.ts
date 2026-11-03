@@ -60,8 +60,6 @@ describe("routing", () => {
       subtype: BUDGET_STOP_SUBTYPE,
       isError: true,
       finalText: "# Project State Snapshot\n\n## 1. Executive Summary",
-      toolCalls: [],
-      costUsd: 0,
     });
 
     expect(() => getCase("trigger-negative-review").check(fullReport)).toThrow(
@@ -109,7 +107,7 @@ describe("snapshot replies", () => {
             { name: "Write", input: { file_path: "oops.txt" } },
           ],
         }),
-      ).toThrow();
+      ).toThrow(/read-only/);
       expect(evalCase).toHaveProperty("judge", expect.any(Function));
     },
   );
@@ -138,8 +136,6 @@ describe("validator invocation", () => {
   );
 
   test.each([
-    "echo validate-output.sh",
-    'echo "sh /skill/scripts/validate-output.sh draft"',
     "printf '%s\\n' 'ignored; sh /missing/scripts/validate-output.sh draft '",
     "cat <<'EOF'\nsh /missing/scripts/validate-output.sh draft\nEOF",
     "sh /skill/scripts/validate-output.sh draft-spoof",

@@ -61,21 +61,33 @@ for (const [suffix, observation] of [
         ...observation,
         finalText: observation.finalText.replace(value, "omitted"),
       }),
-    ).toThrow();
+    ).toThrow(/reply omitted/);
   });
   test.each([
-    { [PLAN_PATH]: `${APPROVED_PLAN}\nchanged`, [GH_LOG]: READ_LOG },
-    { [PLAN_PATH]: null, [GH_LOG]: READ_LOG },
     {
-      [PLAN_PATH]: APPROVED_PLAN,
-      [GH_LOG]: '["issue","create","--title","duplicate"]\n',
+      repoFiles: {
+        [PLAN_PATH]: `${APPROVED_PLAN}\nchanged`,
+        [GH_LOG]: READ_LOG,
+      },
+      error: /must remain byte-identical/,
+    },
+    {
+      repoFiles: { [PLAN_PATH]: null, [GH_LOG]: READ_LOG },
+      error: /must remain byte-identical/,
+    },
+    {
+      repoFiles: {
+        [PLAN_PATH]: APPROVED_PLAN,
+        [GH_LOG]: '["issue","create","--title","duplicate"]\n',
+      },
+      error: /remote write attempted/,
     },
   ])(
     `${suffix} rejects plan mutation and duplicate remote creation %#`,
-    (repoFiles) => {
+    ({ repoFiles, error }) => {
       expect(() =>
         getCase(suffix).check({ ...observation, repoFiles }),
-      ).toThrow();
+      ).toThrow(error);
     },
   );
   test(`${suffix} rejects file edits`, () => {
@@ -84,7 +96,7 @@ for (const [suffix, observation] of [
         ...observation,
         toolCalls: [{ name: "Edit", input: { file_path: PLAN_PATH } }],
       }),
-    ).toThrow();
+    ).toThrow(/read-only/);
   });
 }
 

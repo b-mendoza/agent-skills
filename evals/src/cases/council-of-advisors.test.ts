@@ -119,7 +119,7 @@ describe("council confirmation gate", () => {
           { name: "Agent", input: { subagent_type: "reversibility-seat" } },
         ],
       }),
-    ).toThrow();
+    ).toThrow(/seat was dispatched before/);
   });
 
   it("rejects a prematurely written handoff", () => {
@@ -127,7 +127,7 @@ describe("council confirmation gate", () => {
       checkWithOverrides("confirm-framing", {
         repoFiles: { [COUNCIL_FACTS.handoffPath]: "status: ready" },
       }),
-    ).toThrow();
+    ).toThrow(/file exists/);
   });
 });
 
@@ -138,24 +138,21 @@ describe("council missing subject", () => {
     ).not.toThrow();
   });
 
-  it.each([
-    "Please send DECISION_SUBJECT, the decision to deliberate.",
-    "I need a decision subject before I can start the council.",
-    "I can't start the council yet because you haven't given me a decision subject. Please send:\n1. DECISION_SUBJECT (required): the decision to deliberate.",
-  ])("accepts a request without a question mark: %s", (finalText) => {
+  it("accepts a request without a question mark", () => {
+    const finalText =
+      "I can't start the council yet because you haven't given me a decision subject. Please send:\n1. DECISION_SUBJECT (required): the decision to deliberate.";
     expect(() =>
       checkWithOverrides("missing-subject", { finalText }),
     ).not.toThrow();
   });
 
-  it.each(["", "Please confirm this packet.", "final_recommendation: hold"])(
-    "rejects non-clarification %j",
-    (finalText) => {
-      expect(() =>
-        checkWithOverrides("missing-subject", { finalText }),
-      ).toThrow();
-    },
-  );
+  it("rejects a request about the wrong topic", () => {
+    expect(() =>
+      checkWithOverrides("missing-subject", {
+        finalText: "Please confirm this packet.",
+      }),
+    ).toThrow(/missing request for the decision subject/);
+  });
 });
 
 describe.each(["confirm-framing", "missing-subject"])(
@@ -168,26 +165,34 @@ describe.each(["confirm-framing", "missing-subject"])(
         checkWithOverrides(suffix, {
           finalText: `**status:** needs_input\n${reply}`,
         }),
-      ).toThrow();
+      ).toThrow(/public status line/);
     });
 
     it.each([
-      { toolCalls: [] },
-      { repoFiles: {} },
-      { gitStatusAfter: { kind: "worktree", entries: "?? accidental.txt" } },
+      { overrides: { toolCalls: [] }, error: /skill never triggered/ },
+      { overrides: { repoFiles: {} }, error: /not captured/ },
       {
-        toolCalls: [
-          skillCall,
-          {
-            name: "Write",
-            input: { file_path: "accidental.txt", content: "x" },
-          },
-        ],
+        overrides: {
+          gitStatusAfter: { kind: "worktree", entries: "?? accidental.txt" },
+        },
+        error: /read-only contract violated/,
       },
-    ] satisfies Array<Partial<Observation>>)(
+      {
+        overrides: {
+          toolCalls: [
+            skillCall,
+            {
+              name: "Write",
+              input: { file_path: "accidental.txt", content: "x" },
+            },
+          ],
+        },
+        error: /read-only contract violated/,
+      },
+    ] satisfies Array<{ overrides: Partial<Observation>; error: RegExp }>)(
       "rejects invalid or mutating observation %#",
-      (overrides) => {
-        expect(() => checkWithOverrides(suffix, overrides)).toThrow();
+      ({ overrides, error }) => {
+        expect(() => checkWithOverrides(suffix, overrides)).toThrow(error);
       },
     );
   },

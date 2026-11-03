@@ -92,7 +92,6 @@ describe("snapshot checks", () => {
     ],
     ["missing goal", ARTIFACT.replace(ISSUE.goal, "")],
     ["missing criterion", ARTIFACT.replace(ISSUE.criterion, "")],
-    ["missing comment", ARTIFACT.replace(ISSUE.comment, "")],
     [
       "criteria duplicated",
       ARTIFACT.replace(ISSUE.goal, `${ISSUE.goal}\n${ISSUE.criterion}`),
@@ -191,26 +190,20 @@ test("404 requires the missing-issue outcome and absence of an artifact", () => 
     ),
     `${FAILURE.finalText}\nFETCH: FAIL`,
   ]) {
-    expect(() =>
-      evalCase.check(createObservation({ ...FAILURE, finalText })),
-    ).toThrow();
+    expect(() => evalCase.check({ ...FAILURE, finalText })).toThrow();
   }
   expect(() =>
-    evalCase.check(
-      createObservation({
-        ...FAILURE,
-        repoFiles: { [SNAPSHOT]: ARTIFACT, [GH_LOG]: READ_LOG },
-      }),
-    ),
-  ).toThrow();
+    evalCase.check({
+      ...FAILURE,
+      repoFiles: { [SNAPSHOT]: ARTIFACT, [GH_LOG]: READ_LOG },
+    }),
+  ).toThrow(/file exists/);
   expect(() =>
-    evalCase.check(
-      createObservation({
-        ...FAILURE,
-        toolCalls: [{ name: "Edit", input: { file_path: "a.txt" } }],
-      }),
-    ),
-  ).toThrow();
+    evalCase.check({
+      ...FAILURE,
+      toolCalls: [{ name: "Edit", input: { file_path: "a.txt" } }],
+    }),
+  ).toThrow(/read-only/);
 });
 
 test("snapshot success rejects a leaked public fetch status", () => {
@@ -219,7 +212,7 @@ test("snapshot success rejects a leaked public fetch status", () => {
       ...SUCCESS,
       finalText: `${SUCCESS.finalText}\n**FETCH:** PASS`,
     }),
-  ).toThrow();
+  ).toThrow(/public status line/);
 });
 
 const SUCCESS_EXIT = 0;

@@ -221,7 +221,7 @@ describe("executing-work-item-task", () => {
           ...observation,
           repoFiles: { ...observation.repoFiles, [path]: "changed" },
         }),
-      ).toThrow();
+      ).toThrow(/changed input/);
     }
   });
 

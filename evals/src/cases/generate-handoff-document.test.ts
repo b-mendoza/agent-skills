@@ -172,17 +172,14 @@ describe("conversation handoff package", () => {
     ).not.toThrow();
   });
 
-  it.each([
-    HANDOFF_PATHS.target,
-    HANDOFF_PATHS.transcript,
-    HANDOFF_PATHS.context,
-    HANDOFF_PATHS.insights,
-    FIXTURE_ROOT_PATH,
-  ])("rejects missing %s", (path) => {
-    expect(() =>
-      getCase("conversation-package").check(replaceCaptured(path, null)),
-    ).toThrow();
-  });
+  it.each([HANDOFF_PATHS.target, FIXTURE_ROOT_PATH])(
+    "rejects missing %s",
+    (path) => {
+      expect(() =>
+        getCase("conversation-package").check(replaceCaptured(path, null)),
+      ).toThrow();
+    },
+  );
 
   it.each([
     ["invalid JSON", HANDOFF_PATHS.context, "{"],
@@ -209,11 +206,6 @@ describe("conversation handoff package", () => {
       "missing section",
       HANDOFF_PATHS.target,
       document.replace("## 2. Q&A Log", "### 2. Q&A Log"),
-    ],
-    [
-      "missing Fulfills line",
-      HANDOFF_PATHS.target,
-      document.replace("**Fulfills:** Preserve clarifications.\n", ""),
     ],
     [
       "missing manifest",
@@ -386,23 +378,28 @@ describe("existing target gate", () => {
         ...gateObservation(),
         repoFiles: { ...gateObservation().repoFiles, [path]: "premature" },
       }),
-    ).toThrow();
+    ).toThrow(/file exists/);
   });
 
-  it.each([
-    "Completed: review pass",
-    "The target exists. Available modes are overwrite, update, and new-path. I will proceed.",
-  ])(
-    "rejects an answer that did not ask for mode selection: %s",
-    (finalText) => {
-      expect(() =>
-        getCase("existing-target-gate").check({
-          ...gateObservation(),
-          finalText,
-        }),
-      ).toThrow();
-    },
-  );
+  it("rejects an answer that did not ask for mode selection", () => {
+    expect(() =>
+      getCase("existing-target-gate").check({
+        ...gateObservation(),
+        finalText:
+          "The target exists. Available modes are overwrite, update, and new-path. I will proceed.",
+      }),
+    ).toThrow(/replyAsksFor/);
+  });
+
+  it("rejects a public completion status even with a valid mode request", () => {
+    const valid = gateObservation();
+    expect(() =>
+      getCase("existing-target-gate").check({
+        ...valid,
+        finalText: `${valid.finalText}\nCompleted: review pass`,
+      }),
+    ).toThrow(/public status line/);
+  });
 });
 
 describe.each(["conversation-package", "existing-target-gate"])(

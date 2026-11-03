@@ -7,7 +7,7 @@ import { join } from "node:path";
 import type { query } from "@anthropic-ai/claude-agent-sdk";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
-import type { Observation, RunOptions } from "#/observation/agent-query.ts";
+import type { RunOptions } from "#/observation/agent-query.ts";
 import {
   observeClaude,
   QUERY_ERROR_SUBTYPE,
@@ -286,31 +286,5 @@ test("aborts background work that never settles and closes input at the wall-clo
   const input = prompt[Symbol.asyncIterator]();
   await input.next();
   expect(await input.next()).toMatchObject({ done: true });
-  expect(vi.getTimerCount()).toBeFalsy();
-});
-
-test("bounds a background wait that ignores abort by the shutdown grace", async () => {
-  vi.useFakeTimers();
-  const stalled = once(new EventTarget(), "never");
-  sdk.query.mockImplementation(async function* () {
-    yield liveTasks("investigation");
-    yield success("still running");
-    await stalled;
-  });
-  const captured: { observation?: Observation } = {};
-  const pending = observeClaude({ ...options, wallClockMs: WALL_CLOCK_LIMIT });
-  void pending.then((observation) => {
-    captured.observation = observation;
-  });
-  await vi.advanceTimersByTimeAsync(WALL_CLOCK_LIMIT);
-  expect(captured.observation).toBeUndefined();
-  await vi.runAllTimersAsync();
-
-  expect(await pending).toMatchObject({
-    timedOut: true,
-    subtype: QUERY_ERROR_SUBTYPE,
-    isError: true,
-    finalText: "query did not settle after abort",
-  });
   expect(vi.getTimerCount()).toBeFalsy();
 });

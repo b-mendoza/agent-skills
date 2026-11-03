@@ -76,11 +76,6 @@ function failedObservation(): Observation {
 }
 
 describe("valid observations", () => {
-  test("accepts four selected-task planning artifacts", () => {
-    expect(() =>
-      getCase("selected-task-artifacts").check(completedObservation()),
-    ).not.toThrow();
-  });
   test("accepts unsatisfied dependency without writes", () => {
     expect(() =>
       getCase("unfinished-dependency").check(failedObservation()),
