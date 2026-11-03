@@ -215,15 +215,29 @@ test(
       [
         "--filter-metadata",
         `skill=${SKILL}`,
-        "--filter-pattern",
-        `^${SKILL}/trigger-positive$`,
+        "--filter-metadata",
+        `tier=${String(ROUTING_TIER)}`,
         "--repeat",
         "1",
       ],
       "pass",
     );
     expect(child.status).toBe(EXIT.PASS);
-    expect(exported).toHaveProperty("results.results.length", ONE_RUN);
+    const selected = cases.filter(
+      (evalCase) => evalCase.skill === SKILL && evalCase.tier === ROUTING_TIER,
+    );
+    expect(exported).toHaveProperty("results.results.length", selected.length);
+    for (const { id } of selected) {
+      expect(exported).toHaveProperty(
+        "results.results",
+        expect.arrayContaining([
+          expect.objectContaining({
+            success: true,
+            namedScores: { [`case/${id}`]: 1 },
+          }),
+        ]),
+      );
+    }
   },
   TIMEOUT_MS,
 );
