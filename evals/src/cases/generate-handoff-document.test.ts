@@ -390,7 +390,6 @@ describe("existing target gate", () => {
   });
 
   it.each([
-    "Completed: review pass",
     "The target exists. Available modes are overwrite, update, and new-path. I will proceed.",
   ])(
     "rejects an answer that did not ask for mode selection: %s",
@@ -403,6 +402,16 @@ describe("existing target gate", () => {
       ).toThrow();
     },
   );
+
+  it("rejects a public completion status even with a valid mode request", () => {
+    const valid = gateObservation();
+    expect(() =>
+      getCase("existing-target-gate").check({
+        ...valid,
+        finalText: `${valid.finalText}\nCompleted: review pass`,
+      }),
+    ).toThrow();
+  });
 });
 
 describe.each(["conversation-package", "existing-target-gate"])(
