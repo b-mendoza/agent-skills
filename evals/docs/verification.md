@@ -13,7 +13,7 @@ Run all commands below from `evals/`.
 | Auto-fixable lint/format findings | `pnpm fix`                                                                                                                                           |
 | Promptfoo integration             | `pnpm test src/promptfoo/integration.test.ts`, real CLI with an offline provider for filters, repeats, metrics, native exits, JSON/HTML, and history |
 | Shortening a recorded reply       | `pnpm minimize:reply --case <id> --observation <json> [--contrast-ref <ref>]`, offline; runs `check` only, never the judge                           |
-| Assertion grading                 | `pnpm test src/promptfoo/assertion.test.ts`, check failures, judge diagnostics, and per-attempt mutation evidence                                    |
+| Provider and assertion grading    | `pnpm test src/promptfoo/assertion.test.ts`, provider fixture lifecycle, check failures, judge diagnostics, and mutation evidence                    |
 
 ## Paid checks
 
