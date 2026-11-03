@@ -378,7 +378,7 @@ describe("existing target gate", () => {
         ...gateObservation(),
         repoFiles: { ...gateObservation().repoFiles, [path]: "premature" },
       }),
-    ).toThrow();
+    ).toThrow(/file exists/);
   });
 
   it("rejects an answer that did not ask for mode selection", () => {
@@ -388,7 +388,7 @@ describe("existing target gate", () => {
         finalText:
           "The target exists. Available modes are overwrite, update, and new-path. I will proceed.",
       }),
-    ).toThrow();
+    ).toThrow(/replyAsksFor/);
   });
 
   it("rejects a public completion status even with a valid mode request", () => {
@@ -398,7 +398,7 @@ describe("existing target gate", () => {
         ...valid,
         finalText: `${valid.finalText}\nCompleted: review pass`,
       }),
-    ).toThrow();
+    ).toThrow(/public status line/);
   });
 });
 
