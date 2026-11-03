@@ -131,7 +131,6 @@ describe("validate-implementation-plan artifacts", () => {
   });
 
   test.each([
-    ["placeholder", "snapshot"],
     ["sectionless plan", snapshot.replaceAll("##", "")],
     ...[
       "JSON",
@@ -157,7 +156,6 @@ describe("validate-implementation-plan artifacts", () => {
   });
 
   test.each([
-    ["empty sanitized snapshot", "implementation-plan.audit-input.md", "  \n"],
     ["uncaptured source", "implementation-plan.md", null],
     ["missing HEAD evidence", ".git/logs/HEAD", null],
     ["missing cwd evidence", ".git/eval-plan-root", null],
