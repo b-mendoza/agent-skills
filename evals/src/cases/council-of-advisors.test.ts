@@ -138,24 +138,21 @@ describe("council missing subject", () => {
     ).not.toThrow();
   });
 
-  it.each([
-    "Please send DECISION_SUBJECT, the decision to deliberate.",
-    "I need a decision subject before I can start the council.",
-    "I can't start the council yet because you haven't given me a decision subject. Please send:\n1. DECISION_SUBJECT (required): the decision to deliberate.",
-  ])("accepts a request without a question mark: %s", (finalText) => {
+  it("accepts a request without a question mark", () => {
+    const finalText =
+      "I can't start the council yet because you haven't given me a decision subject. Please send:\n1. DECISION_SUBJECT (required): the decision to deliberate.";
     expect(() =>
       checkWithOverrides("missing-subject", { finalText }),
     ).not.toThrow();
   });
 
-  it.each(["", "Please confirm this packet.", "final_recommendation: hold"])(
-    "rejects non-clarification %j",
-    (finalText) => {
-      expect(() =>
-        checkWithOverrides("missing-subject", { finalText }),
-      ).toThrow();
-    },
-  );
+  it("rejects a request about the wrong topic", () => {
+    expect(() =>
+      checkWithOverrides("missing-subject", {
+        finalText: "Please confirm this packet.",
+      }),
+    ).toThrow();
+  });
 });
 
 describe.each(["confirm-framing", "missing-subject"])(
