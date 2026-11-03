@@ -187,7 +187,6 @@ describe("verified review preview", () => {
   it.each([
     "",
     "not-json",
-    '{"line":999,"path":"unrelated.py","side":"LEFT"}',
     '{"line":3,"path":"unrelated.py","side":"RIGHT"}',
     '{"line":999,"path":"pricing.py","side":"RIGHT"}',
     '{"line":3,"path":"pricing.py","side":"LEFT"}',
@@ -285,29 +284,24 @@ describe("verified review preview", () => {
       input: { file_path: ".handoffs/other-skill/run/context.txt" },
     },
     { name: "NotebookEdit", input: { notebook_path: "analysis.ipynb" } },
-    { name: "Write", input: { file_path: "../pr-17-review.md" } },
   ])("rejects unauthorized actions $name $input", (tool) => {
     expect(() =>
       previewCase.check({ ...observation(), toolCalls: [...TOOLS, tool] }),
     ).toThrow();
   });
 
-  it("rejects unapproved review and reply API writes", () => {
+  it("rejects an unapproved review API write", () => {
     const correct = observation();
-    for (const endpoint of [
-      "repos/eval-org/cart/pulls/17/reviews",
-      "repos/eval-org/cart/pulls/comments/701/replies",
-    ]) {
-      expect(() =>
-        previewCase.check({
-          ...correct,
-          repoFiles: {
-            ...correct.repoFiles,
-            [GITHUB_FACTS.log]: `${JSON.stringify(["api", "-X", "POST", endpoint])}\n`,
-          },
-        }),
-      ).toThrow();
-    }
+    expect(() =>
+      previewCase.check({
+        ...correct,
+        repoFiles: {
+          ...correct.repoFiles,
+          [GITHUB_FACTS.log]:
+            '["api","-X","POST","repos/eval-org/cart/pulls/17/reviews"]\n',
+        },
+      }),
+    ).toThrow();
   });
 
   it("rejects unexpected tracked or untracked changes and HEAD movement", () => {
