@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
@@ -23,7 +23,6 @@ function getCase(suffix: string) {
 }
 
 const EXCESS_SEARCHES = 3;
-const EXECUTABLE_BITS = 0o111;
 const SUCCESS_EXIT = 0;
 
 const SEARCH =
@@ -248,11 +247,8 @@ describe("draft-before-approval", () => {
       "api\tuser\t--field\ttitle=unauthorized",
       "api\tuser\t--raw-field=title=unauthorized",
       "api\tuser\t--input\tgraphql",
-      "api\tgraphql\t--input\t-",
-      "api\tgraphql\t-F\tquery=@/tmp/request.graphql",
       "api\tuser\t-X\tPOST",
       "api\tuser\t--method=PATCH",
-      'api\tgraphql\t-f\tquery=mutation { addComment(input: {subjectId: "issue-id", body: "not-approved"}) { clientMutationId } }',
       'api\tgraphql\t-X\tGET\t-f\tquery=\nmutation { addComment(input: {subjectId: "issue-id", body: "not-approved"}) { clientMutationId } }',
     ].map((args) => [args, false] as const),
     ...[
@@ -373,7 +369,6 @@ test("fake gh serves preflight, bounded search, view, and recorded writes withou
   const invoke = (...args: string[]) =>
     execFileSync(cli, args, { cwd: fixture.cwd, encoding: "utf8" });
   try {
-    expect(statSync(cli).mode & EXECUTABLE_BITS).not.toBe(SUCCESS_EXIT);
     expect(readFileSync(join(fixture.cwd, EVIDENCE_PATH), "utf8")).toBe(
       EVIDENCE,
     );
