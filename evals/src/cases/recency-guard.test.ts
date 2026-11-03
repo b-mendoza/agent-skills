@@ -289,7 +289,7 @@ describe.each(["verify-current-lts", "action-out-of-scope"])(
           ...observation,
           finalText: `**RECENCY_CHECK:** PASS\n${observation.finalText}`,
         }),
-      ).toThrow();
+      ).toThrow(/public status line/);
     });
 
     it.each([
