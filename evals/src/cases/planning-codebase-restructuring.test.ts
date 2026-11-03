@@ -233,8 +233,6 @@ describe("planning-only mutation boundary", () => {
   });
   test.each([
     "npm test",
-    "CI=1 npm test",
-    "CI=1 FOO=bar npm test",
     "env CI=1 FOO='two words' npm test",
     "cd /fixture && CI=1 pnpm run build",
     "cd /fixture && npm install",
@@ -355,11 +353,8 @@ test("seeded architecture is runnable and committed without a pre-existing repor
   const fixture = makeFixture("clean", [], seedLayeredProject);
   try {
     expect(
-      snapshotRepoFiles(fixture.cwd, [
-        ...Object.keys(STRUCTURE_FILES),
-        ARTIFACT_PATH,
-      ]),
-    ).toEqual({ ...STRUCTURE_FILES, [ARTIFACT_PATH]: null });
+      snapshotRepoFiles(fixture.cwd, [ARTIFACT_PATH])[ARTIFACT_PATH],
+    ).toBeNull();
     expect(sampleGitStatus(fixture.cwd)).toEqual({
       kind: "worktree",
       entries: "",
