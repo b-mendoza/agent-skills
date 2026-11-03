@@ -3,7 +3,6 @@ import { join } from "node:path";
 
 import { expect, test } from "vitest";
 
-import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import {
   assertOnlySnapshotWritten,
   assertReadOnlyGitHub,
@@ -18,16 +17,29 @@ const observation = createObservation({
   repoFiles: { ".git/eval-fixture-root": "/fixture\n/canonical/fixture" },
 });
 
-testArtifactWriteMatrix({
-  label: "fetching",
-  artifact: SNAPSHOT,
-  check: (candidate) => {
-    assertOnlySnapshotWritten(candidate);
-  },
-  valid: () => ({
-    ...observation,
-    toolCalls: [{ name: "Write", input: { file_path: SNAPSHOT } }],
-  }),
+test("fetching accepts a canonical-root snapshot write", () => {
+  expect(() => {
+    assertOnlySnapshotWritten({
+      ...observation,
+      toolCalls: [
+        {
+          name: "Write",
+          input: { file_path: `/canonical/fixture/${SNAPSHOT}` },
+        },
+      ],
+    });
+  }).not.toThrow();
+});
+
+test("fetching rejects a foreign-root lookalike", () => {
+  expect(() => {
+    assertOnlySnapshotWritten({
+      ...observation,
+      toolCalls: [
+        { name: "Write", input: { file_path: `/outside/${SNAPSHOT}` } },
+      ],
+    });
+  }).toThrow();
 });
 
 test.each([
