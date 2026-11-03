@@ -102,10 +102,6 @@ function behavioralObservation(isPreview: boolean): Observation {
 const caseNames = ["upfront-preview-gate", "critique-missing-task-number"];
 
 describe("clarifying-assumptions", () => {
-  test.each(caseNames)("%s accepts correct evidence", (name) => {
-    expect(getCase(name).check(validObservation(name))).toBeTypeOf("string");
-  });
-
   test("preview requires the contract header, counts, hard gate row, and readiness question", () => {
     const observation = validObservation("upfront-preview-gate");
     for (const finalText of [
@@ -146,10 +142,11 @@ describe("clarifying-assumptions", () => {
     }
   });
 
-  test.each(["upfront-preview-gate", "critique-missing-task-number"])(
-    "%s rejects unexpected writes and missing evidence",
+  test.each(caseNames)(
+    "%s accepts correct evidence but rejects unexpected writes and missing evidence",
     (name) => {
       const observation = validObservation(name);
+      expect(() => getCase(name).check(observation)).not.toThrow();
       for (const overrides of [
         { repoFiles: undefined },
         {
