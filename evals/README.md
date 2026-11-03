@@ -38,7 +38,7 @@ pnpm test    # vitest: unit tests for the pure functions, free and offline
 
 `pnpm test` is not the eval suite. It covers the parts that can be checked without spending tokens, so a break shows up in seconds instead of after a paid run.
 
-Each suite sits beside the code it exercises as `src/**/<module>.test.ts` (plus `promptfooconfig.test.ts` at the root); `src/cases/registry.test.ts` runs the routing and run-validity matrix over every registered case, so per-skill suites test only skill-specific behavior.
+Each suite sits beside the code it exercises as `src/**/<module>.test.ts` (plus `promptfooconfig.test.ts` at the root); `src/cases/registry.test.ts` runs the routing and run-validity matrix over every registered case, plus the fixture-root check over every seeded artifact-writing case, so per-skill suites test only skill-specific behavior.
 
 Run it before any paid run.
 
