@@ -208,9 +208,16 @@ describe("prompt-structurer behavior", () => {
     ).not.toThrow();
   });
 
+  test("rejects a revision without a baseline request", () => {
+    expect(() =>
+      getCase("revision-missing-baseline").check(
+        behavioralObservation("I cannot continue."),
+      ),
+    ).toThrow(/request the existing XML baseline/);
+  });
+
   test.each([
     ["old blocked status", `BLOCKED\n${blockedText}`],
-    ["no baseline question", "BLOCKED\nI cannot continue."],
     [
       "fabricated replacement",
       `${blockedText}\n<task>Invented replacement</task>`,
