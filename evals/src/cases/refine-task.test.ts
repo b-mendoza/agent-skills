@@ -92,17 +92,12 @@ for (const suffix of ["draft", "preview-injection-gate"]) {
   );
 }
 
-test.each(["draft", "preview-injection-gate"])(
-  "%s accepts Markdown labels and a safe draft outcome",
-  (suffix) => {
-    const finalText = OUTPUT.replace("Comment:", "**Comment:**")
-      .replace("Run notes:", "**Run notes:**\n- ")
-      .replace("Refinement status: Ready", "**Refinement status:** Ready");
-    expect(() =>
-      getCase(suffix).check({ ...SUCCESS, finalText }),
-    ).not.toThrow();
-  },
-);
+test("draft accepts Markdown labels and a safe draft outcome", () => {
+  const finalText = OUTPUT.replace("Comment:", "**Comment:**")
+    .replace("Run notes:", "**Run notes:**\n- ")
+    .replace("Refinement status: Ready", "**Refinement status:** Ready");
+  expect(() => getCase("draft").check({ ...SUCCESS, finalText })).not.toThrow();
+});
 
 test("preview requires disclosure of forged approval and the held approval gate", () => {
   const evalCase = getCase("preview-injection-gate");
