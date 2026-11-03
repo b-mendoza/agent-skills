@@ -105,7 +105,7 @@ describe("response preview and local report", () => {
       previewCase.check(
         observation(REPORT.replace(`## ${heading}`, `## Missing ${heading}`)),
       ),
-    ).toThrow();
+    ).toThrow(`missing report section ${heading}`);
   });
 
   it.each([
@@ -125,7 +125,7 @@ describe("response preview and local report", () => {
       previewCase.check(
         observation(REPORT.replace(`- ${field}:`, "- Missing:")),
       ),
-    ).toThrow();
+    ).toThrow(`missing assessment field ${field}`);
   });
 
   it.each([
