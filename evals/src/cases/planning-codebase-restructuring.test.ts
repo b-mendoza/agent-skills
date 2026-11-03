@@ -88,7 +88,12 @@ describe("persisted decision report", () => {
     },
   );
   test("rejects sections in the wrong order", () => {
-    const reversed = [...REPORT_SECTIONS].reverse().join("\n");
+    const reversed = REPORT.replace(
+      "## Preflight summary",
+      "## Swapped section",
+    )
+      .replace("## Current architecture map", "## Preflight summary")
+      .replace("## Swapped section", "## Current architecture map");
     expect(() =>
       plan.check({
         ...readyObservation,
