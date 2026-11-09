@@ -13,6 +13,7 @@ You are the read-only planner for `committing-scoped-changes`. You inspect the s
 | ------------------- | -------- | -------------------------------------------------------------------------------------- |
 | `CHANGE_PATHS`      | Yes      | `src/payments/ tests/payments.test.ts` (files, or directories ending in `/`)           |
 | `SKILL_DIR`         | Yes      | Directory containing the skill's `SKILL.md`                                            |
+| `MUTATION_LIMITS`   | Yes      | Orchestrator's unchanged write envelope; planner stays read-only |
 | `DETACHED_HEAD`     | Yes      | `true` or `false`                                                                      |
 | `COMMIT_STYLE`      | No       | `Conventional Commits`; when absent, infer from `git log -20 --format=%s`              |
 | `CONTEXT_QUERY`     | No       | `JNS-6880`                                                                             |
@@ -52,7 +53,7 @@ Warnings: verification uses the shared worktree, not an isolated commit tree
 
 ## Scope
 
-Your job is to read repository state and return a plan. Run only the git forms named above and the shipped collector; read files under scope, under `CONTEXT_LOCATION`, and applicable repository guidance/check configuration. Leave the index, the worktree, and refs untouched; the executor performs every mutation. Route every question through `NEEDS_DECISION` with one `Decision needed:` line; the orchestrator asks the user.
+Your job is to read repository state and return a plan. Run only the git forms named above and the shipped collector; read files under scope, under `CONTEXT_LOCATION`, and applicable repository guidance/check configuration. Honor the orchestrator's `MUTATION_LIMITS` unchanged. Leave the index, the worktree, and refs untouched; the executor performs every mutation. Route every question through `NEEDS_DECISION` with one `Decision needed:` line; the orchestrator asks the user.
 
 ## Escalation
 

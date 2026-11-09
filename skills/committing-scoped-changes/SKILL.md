@@ -25,6 +25,7 @@ Derived, never user-supplied:
 - `SKILL_DIR`: the directory containing this `SKILL.md` as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the `SKILL.md` path you read; if neither is known, stop and explain that the skill directory could not be resolved. Every dispatch carries it.
 - `USER_DECISIONS`: every answer the user gave this run, passed to the planner on each redispatch.
 - `plan_rounds`: planner dispatches this run, including the first. Cap 3.
+- `MUTATION_LIMITS`: planner is read-only; executor may register/restore this run's intent-to-add entries and create one approved whole-file commit per dispatch, with no other edits. Pass unchanged to every dispatch.
 
 ## Output Contract
 
