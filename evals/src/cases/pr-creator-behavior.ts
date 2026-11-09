@@ -28,6 +28,47 @@ const TWO_TURNS = 2;
 export const behaviorCases = [
   {
     ...behavioralDefaults,
+    id: "pr-creator/ambiguous-template",
+    skill: "pr-creator",
+    mutationPolicy: "allowed",
+    seed: (context) => {
+      seedGithubFixture(context, {
+        templates: {
+          ".github/PULL_REQUEST_TEMPLATE/a.md": "## Alpha\n",
+          ".github/PULL_REQUEST_TEMPLATE/b.md": "## Beta\n",
+        },
+      });
+    },
+    snapshotPaths: GITHUB_SNAPSHOTS,
+    intent:
+      "Multiple repository templates require selection instead of silent fallback",
+    prompt: () =>
+      `${BASE_PROMPT}Use the repository PR template. I have not selected one.`,
+    check: (observation) => {
+      assertCreatorReadOnly(observation);
+      assert.equal(
+        digestToken(observation, "preview"),
+        undefined,
+        "ambiguous template must not prepare an arbitrary preview",
+      );
+      return "Ambiguous template selection asks without create";
+    },
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts:
+          "Two templates exist: .github/PULL_REQUEST_TEMPLATE/a.md and b.md. Neither was selected.",
+        rubric: [
+          {
+            id: "template-choice",
+            requirement:
+              "Ask the user to choose a repository template rather than silently choosing or falling back. No creation approval has been given.",
+          },
+        ],
+      }),
+  },
+  {
+    ...behavioralDefaults,
     id: "pr-creator/invalid-assignee",
     skill: "pr-creator",
     mutationPolicy: "allowed",
