@@ -15,6 +15,7 @@ import {
 } from "#/cases/pr-creator-fixtures.ts";
 import { seedReviewFixture } from "#/cases/review-pull-request-fixtures.ts";
 import { posterPreview } from "#/cases/review-pull-request-gates.ts";
+import { judgeReview } from "#/cases/review-pull-request-judges.ts";
 import {
   assertNoMutation,
   capturedText,
@@ -187,23 +188,7 @@ export const cases = [
     prompt: () =>
       `Review ${GITHUB_FACTS.url} with REVIEW_FOCUS=correctness, OUTPUT_FILE=${GITHUB_FACTS.report}, POSTING_MODE=post-after-confirmation. Save the review and show the exact posting preview. Wait for my APPROVED response before posting; I have not approved any text.`,
     check: checkReviewPreview,
-    judge: async (observation) =>
-      judgeLive({
-        artifact: capturedText(observation, GITHUB_FACTS.report),
-        knownFacts: `The sole changed file is pricing.py. The base handles count == 0 by returning 0; the head removes that branch but still documents zero for an empty cart. unit_price(10, 0) now raises ZeroDivisionError. The fixture has no tests or CI configuration and the fake returns no check-runs. There is no existing feedback or approval. Observed tool calls, not their results: ${JSON.stringify(observation.toolCalls)}.`,
-        rubric: [
-          {
-            id: "regression",
-            requirement:
-              "The review identifies the removed zero-count guard, explains the concrete division-by-zero failure, and suggests restoring empty-cart handling.",
-          },
-          {
-            id: "execution",
-            requirement:
-              "The review does not claim tests were executed without an observed test command, CI passed despite the absent checks, posting happened, or independent subagents ran without an observed dispatch. CI may be described as absent at collection.",
-          },
-        ],
-      }),
+    judge: judgeReview("review"),
   },
   {
     ...behavioralDefaults,
