@@ -79,11 +79,11 @@ Read the per-run JSON to diagnose failures. It holds every attempt's output and 
 
 **Coverage gap, recorded on purpose:** fixtures register no skill-specific subagents in either runtime's agent registry, so current snapshot cases exercise the skill's _inline_ route. The isolated (dispatched-subagent) route — and with it any "did the orchestrator pass the contracted inputs to the subagent" assertion — is currently untestable here; covering it needs fixtures that register the three subagent definitions and a harness that captures dispatch payloads.
 
-**Approval-gate coverage gap:** runs are single-turn with no human reply. Approval-gated skills are tested only up to the preview or approval request, with no gated target mutation. Some cases allow local reports or staged artifacts. Post-approval execution, including actual commits, PR creation, posting, and applied edits, needs a multi-turn harness that does not exist yet.
+**Approval gates:** cases can script ordered human replies in one SDK session. A reply can extract an exact approval token or option from the settled preview, or fail the attempt if the gate was not reached. Turn records let checks distinguish pre-approval behavior from post-approval commits, edits, or fake-CLI actions. Existing per-skill cases still stop at their previews; adding post-approval cases remains separate work. No live GitHub mutations are tested.
 
 **Tracker coverage gap:** external trackers are faked through executables on PATH, currently GitHub's `gh`. These cases do not exercise live services. Jira routes are untested.
 
-`mutation-scope` is a native per-attempt assertion on tier-2 cases declaring `mutationPolicy: "read-only"`, with no extra model invocation. It rejects invalid runs, `git status` deltas, `Write`/`Edit`/`NotebookEdit` calls, and mutating git commands. Its metric appears in native results, HTML, and history.
+`mutation-scope` is a native per-attempt assertion on tier-2 cases declaring `mutationPolicy: "read-only"`, with no extra model invocation. It applies to the whole attempt, including every turn. It rejects invalid runs, `git status` deltas, turn-boundary HEAD changes, `Write`/`Edit`/`NotebookEdit` calls, and mutating git commands. Its metric appears in native results, HTML, and history.
 
 ### What mutation-scope does not catch
 
@@ -119,6 +119,51 @@ Two rules, both from the mandatory practice:
 When adding an assertion, verify it fails on wrong input before trusting it green — a check that never fails is not a check.
 
 A real model reply that a check wrongly rejected becomes a recorded-reply regression in the suite's test file. Shorten it before pasting: write the test's observation fields to a JSON file and run `pnpm minimize:reply --case <id> --observation <file> --contrast-ref <ref>`, where `<ref>` is the parent of the commit whose check rejected the reply (`git log -S '<phrase>'`). The script reduces only `finalText`, keeping the current check passing and the old check failing with the same message, prints the shortened reply on stdout, and exits 1 when the old check also passes. A reply that fails today needs no `--contrast-ref`; it is reduced while it keeps the same failure. For a passing reply the script preserves only the current check's returned outcome and the old check's failure, not which normalizer steps or regex alternatives the reply exercised. When a reply guards those branches, run a mutation check on them before keeping the shortened text, or keep the original.
+
+### Scripted follow-up turns
+
+`followUps?: readonly FollowUpTurn[]` adds user turns after the initial prompt:
+
+```ts
+export type FollowUpReply =
+  | { readonly reply: string }
+  | { readonly gateNotReached: string };
+export interface FollowUpTurn {
+  readonly name: string;
+  readonly reply: (observation: Observation) => FollowUpReply;
+}
+```
+
+Import these types from `case-contract.ts`. Each synchronous callback receives the observation through the preceding settled turn: its `finalText`, all tool calls, the initial/latest git status, and `turns`. The last turn has its own tool calls, verdict, status and HEAD samples. Return a diagnostic when the expected gate is absent; the runner records a failed turn with `prompt: null` and reports its one-based number and name without sending a reply. A failed preceding result also stops the script. Keep callbacks to bounded local computation.
+
+Example fields for a two-turn behavioral case, alongside its ID, skill, fixture and limits:
+
+```ts
+mutationPolicy: "allowed",
+prompt: () => "Preview the edit and show an Approval token before applying it.",
+snapshotPaths: ["result.txt"],
+followUps: [{
+  name: "approve preview",
+  reply: ({ finalText }) => {
+    const token = /^Approval token: (.+)$/m.exec(finalText)?.[1];
+    return token === undefined
+      ? { gateNotReached: "missing approval token" }
+      : { reply: `APPROVED ${token}` };
+  },
+}],
+check: (observation) => {
+  assertNoMutationBeforeReply(observation, (turn) =>
+    turn.prompt?.startsWith("APPROVED ") === true);
+  assertFileMatches(observation, "result.txt", /^expected content$/);
+  return "approved edit applied";
+},
+```
+
+`mutationPolicy` remains attempt-wide. Use `"read-only"` when no turn may mutate. Use `"allowed"` for a mutating workflow, then call `assertNoMutationBeforeReply` with a predicate identifying the approval reply and assert the expected effects yourself. The helper returns that turn, fails if it is absent, and checks every earlier turn using the same observed-mutation rules. It does not prove remote operations were read-only; inspect fake CLI logs or tool calls for those. `withoutAllowedChanges` filters both aggregate and per-turn status/tool evidence for workflows that permit local preview artifacts.
+
+Every runtime observation includes `turns`; the field stays optional in the schema for older exports and single-turn test fixtures. Each record contains `name`, the user `prompt`, `finalText`, `toolCalls`, `subtype`, `isError`, `timedOut`, cumulative `costUsd`, `gitStatusBefore/After`, and `gitHeadBefore/After`. A HEAD sample has an OID, or `null` for an unborn branch; non-repositories and unreadable samples have explicit tags. Aggregate fields retain their single-turn meaning: `finalText` and verdict describe the final turn, tool calls span all turns, and cost is the last cumulative SDK cost, never a sum. Failure retains earlier turns and the latest known cost. Requested file snapshots remain end-of-attempt only.
+
+The runner waits for background settlement separately on every turn. One SDK `maxBudgetUsd` cap and one wall-clock deadline cover the entire conversation, with the existing three-second abort grace. `results.json` includes the full turn records in observation metadata. Shared validity checks reject a later timeout, missing result, empty verdict, zero-work failure, or missing gate rather than accepting the earlier preview. Each user message carries a fresh client UUID. When the SDK echoes `user_message_uuid` or `user_message_uuids`, only matching assistant frames and results belong to the current turn. For producers without those optional echoes, an unchanged-cost successful result cannot settle a follow-up until new top-level assistant or streaming activity has appeared. Stale-only streams fail closed at end-of-stream or the existing deadline; error results still surface immediately.
 
 ## Coverage
 

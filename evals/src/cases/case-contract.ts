@@ -1,7 +1,12 @@
 import type { FixtureKind, SeedContext } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
+import type { FollowUpTurn } from "#/observation/observation-contract.ts";
 
 export type { SeedContext } from "#/fixtures/fixtures.ts";
+export type {
+  FollowUpReply,
+  FollowUpTurn,
+} from "#/observation/observation-contract.ts";
 
 export const ROUTING_TIER = 1;
 export const BEHAVIORAL_TIER = 2;
@@ -20,6 +25,8 @@ interface CaseDefinition {
     readonly missingPath: string;
     readonly notGitPath: string;
   }) => string;
+  /** Ordered user replies, computed only after each preceding turn settles. */
+  readonly followUps?: readonly FollowUpTurn[];
   readonly budgetUsd: number;
   readonly wallClockMs: number;
   /** Throws to fail; returns a short observed-outcome string for the report. */
@@ -33,7 +40,7 @@ export type EvalCase = CaseDefinition &
     | { readonly tier: typeof ROUTING_TIER; readonly mutationPolicy?: never }
     | {
         readonly tier: typeof BEHAVIORAL_TIER;
-        /** Allowed mutations must be checked by the case, not the read-only assertion. */
+        /** Applies to every turn; allowed mutations must be checked by the case. */
         readonly mutationPolicy: "read-only" | "allowed";
       }
   );

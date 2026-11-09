@@ -7,7 +7,10 @@ import { afterEach, expect, test, vi } from "vitest";
 import type { EvalCase } from "#/cases/case-contract.ts";
 import * as caseLookup from "#/cases/registry.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import {
+  createObservation,
+  createTurn,
+} from "#/observation/observation-test-support.ts";
 import { decodeMetadata, grade } from "#/promptfoo/assertion.ts";
 import EvalProvider from "#/promptfoo/provider.ts";
 
@@ -31,6 +34,7 @@ test("provider installs the case's skills, seeds its repo, prefixes PATH, and ca
     mutationPolicy: "allowed",
     fixture: "clean",
     intent: "Offline provider contract",
+    followUps: [{ name: "approval", reply: () => ({ reply: "APPROVED" }) }],
     seed: (context) => {
       ({ repoPath, binPath } = context);
       writeFileSync(join(repoPath, "seed.txt"), "planted");
@@ -44,6 +48,10 @@ test("provider installs the case's skills, seeds its repo, prefixes PATH, and ca
     wallClockMs: 1000,
     check: (observation) => {
       expect(existsSync(repoPath)).toBe(false);
+      expect(observation.turns).toEqual([
+        createTurn(),
+        createTurn({ name: "approval", prompt: "APPROVED" }),
+      ]);
       expect(observation.repoFiles).toEqual({
         "report.md": "result",
         "deleted.txt": null,
@@ -54,6 +62,7 @@ test("provider installs the case's skills, seeds its repo, prefixes PATH, and ca
   vi.spyOn(caseLookup, "getCase").mockReturnValue(evalCase);
   vi.mocked(observeClaude).mockImplementation(async (options) => {
     expect(options.pathPrefix).toBe(binPath);
+    expect(options.followUps).toBe(evalCase.followUps);
     expect(readFileSync(join(options.cwd, "seed.txt"), "utf8")).toBe("planted");
     for (const skill of [evalCase.skill, ...(evalCase.extraSkills ?? [])]) {
       expect(
@@ -61,7 +70,14 @@ test("provider installs the case's skills, seeds its repo, prefixes PATH, and ca
       ).toBe(true);
     }
     writeFileSync(join(options.cwd, "report.md"), "result");
-    return Promise.resolve(createObservation());
+    return Promise.resolve(
+      createObservation({
+        turns: [
+          createTurn(),
+          createTurn({ name: "approval", prompt: "APPROVED" }),
+        ],
+      }),
+    );
   });
   const context: CallApiContextParams = {
     vars: { caseId: evalCase.id },

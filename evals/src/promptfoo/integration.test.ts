@@ -16,7 +16,10 @@ import { afterAll, beforeAll, expect, test } from "vitest";
 import { SKILL } from "#/cases/analyzing-recent-project-state.ts";
 import { BEHAVIORAL_TIER, ROUTING_TIER } from "#/cases/case-contract.ts";
 import { cases, getCase } from "#/cases/registry.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import {
+  createObservation,
+  createTurn,
+} from "#/observation/observation-test-support.ts";
 
 import config from "../../promptfooconfig.ts";
 
@@ -27,6 +30,7 @@ const CLI = fileURLToPath(
 const TIMEOUT_MS = 30_000;
 const MAX_CONCURRENCY = 5;
 const ONE_RUN = 1;
+const TWO_TURNS = 2;
 const EXIT = { PASS: 0, FAIL: 100 };
 const BEHAVIORAL_CASE_ID = "diagnosing-root-causes/missing-resources";
 let root = "";
@@ -49,6 +53,7 @@ beforeAll(() => {
         observation.finalText = "Please provide logs and reproduction steps.";
         if (scenario === "mutation") observation.toolCalls.push({ name: "Write", input: {} });
       }
+      if (scenario === "turns") observation.turns = ${JSON.stringify([createTurn({ finalText: "Preview needs approval" }), createTurn({ name: "approval", prompt: "APPROVED", finalText: "Please provide logs and reproduction steps." })])};
       return { output: observation.finalText, metadata: {
         observation, repeatIndex: context.repeatIndex
       } };
@@ -224,6 +229,34 @@ test(
     );
     expect(child.status).toBe(EXIT.PASS);
     expect(exported).toHaveProperty("results.results.length", ONE_RUN);
+  },
+  TIMEOUT_MS,
+);
+
+test(
+  "native JSON exports retain both turns and their git evidence",
+  () => {
+    const { child, exported } = evaluateOffline(
+      ["--filter-pattern", `^${BEHAVIORAL_CASE_ID}$`, "--repeat", "1"],
+      "turns",
+    );
+    expect(child.status).toBe(EXIT.PASS);
+    expect(exported).toHaveProperty(
+      "results.results.0.response.metadata.observation.turns.length",
+      TWO_TURNS,
+    );
+    expect(exported).toHaveProperty(
+      "results.results.0.response.metadata.observation.turns.0.finalText",
+      "Preview needs approval",
+    );
+    expect(exported).toHaveProperty(
+      "results.results.0.response.metadata.observation.turns.0.gitHeadAfter",
+      { kind: "head", oid: "baseline" },
+    );
+    expect(exported).toHaveProperty(
+      "results.results.0.response.metadata.observation.turns.1.prompt",
+      "APPROVED",
+    );
   },
   TIMEOUT_MS,
 );

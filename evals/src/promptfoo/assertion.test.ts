@@ -11,7 +11,10 @@ import {
 } from "#/cases/case-test-support.ts";
 import { getCase } from "#/cases/registry.ts";
 import { observeClaude } from "#/observation/agent-query.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import {
+  createObservation,
+  createTurn,
+} from "#/observation/observation-test-support.ts";
 
 import { evalModel } from "../../promptfooconfig.ts";
 import { grade, MAX_OBSERVED_CHARS, mutationScope } from "./assertion.ts";
@@ -253,6 +256,21 @@ describe("eval assertion", () => {
   );
 
   const malformedMetadata = [
+    ...[
+      { gitHeadAfter: { kind: "invalid" } },
+      { toolCalls: [{ name: 42, input: {} }] },
+      { prompt: 42 },
+      { isError: "false" },
+    ].map((invalidTurn) => ({
+      name: "invalid turn field",
+      metadata: {
+        observation: {
+          ...createObservation(),
+          turns: [{ ...createTurn(), ...invalidTurn }],
+        },
+        repeatIndex: 0,
+      },
+    })),
     { name: "missing metadata", metadata: undefined },
     {
       name: "incomplete observation",

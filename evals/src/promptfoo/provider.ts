@@ -4,6 +4,7 @@ import type {
   ProviderResponse,
 } from "promptfoo";
 
+import type { EvalCase } from "#/cases/case-contract.ts";
 import { getCase } from "#/cases/registry.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
@@ -32,6 +33,7 @@ async function runCase(
         missingPath: fixture.missingPath,
         notGitPath: fixture.notGitPath,
       }),
+      followUps: followUpsFor(evalCase),
       budgetUsd: evalCase.budgetUsd,
       model: evalModel,
       wallClockMs: evalCase.wallClockMs,
@@ -92,4 +94,8 @@ export default class EvalProvider implements ApiProvider {
       return errorResponse(error);
     }
   };
+}
+
+function followUpsFor(evalCase: EvalCase) {
+  return evalCase.followUps ?? [];
 }

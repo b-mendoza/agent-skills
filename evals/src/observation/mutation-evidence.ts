@@ -2,7 +2,11 @@ import { execFileSync } from "node:child_process";
 
 import { Predicate, Schema } from "effect";
 
-import type { Observation, ToolCall } from "#/observation/agent-query.ts";
+import type {
+  Observation,
+  ToolCall,
+  TurnObservation,
+} from "#/observation/agent-query.ts";
 import { isMutatingGitCommand } from "#/observation/git-command-evidence.ts";
 
 export const gitStatusSchema = Schema.Union([
@@ -11,6 +15,41 @@ export const gitStatusSchema = Schema.Union([
   Schema.Struct({ kind: Schema.Literal("unreadable"), reason: Schema.String }),
 ]);
 export type GitStatus = typeof gitStatusSchema.Type;
+
+const UNBORN_HEAD_EXIT = 1;
+const FIRST_TURN_NUMBER = 1;
+
+export const gitHeadSchema = Schema.Union([
+  Schema.Struct({
+    kind: Schema.Literal("head"),
+    oid: Schema.NullOr(Schema.String),
+  }),
+  Schema.Struct({ kind: Schema.Literal("no-worktree") }),
+  Schema.Struct({ kind: Schema.Literal("unreadable"), reason: Schema.String }),
+]);
+
+/** A null OID is an unborn branch, not a missing sample. */
+export function sampleGitHead(repo: string): typeof gitHeadSchema.Type {
+  try {
+    return {
+      kind: "head",
+      oid: execFileSync("git", ["rev-parse", "--verify", "--quiet", "HEAD"], {
+        cwd: repo,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+      }).trim(),
+    };
+  } catch (error) {
+    const status = sampleGitStatus(repo);
+    if (status.kind !== "worktree") return status;
+    if (isUnbornHead(error)) return { kind: "head", oid: null };
+    return { kind: "unreadable", reason: toText(error) };
+  }
+}
+
+function isUnbornHead(error: unknown): boolean {
+  return Predicate.isObject(error) && error["status"] === UNBORN_HEAD_EXIT;
+}
 
 const GIT_NOT_A_REPOSITORY = 128;
 
@@ -140,7 +179,7 @@ function collectBashEvidence(command: unknown, evidence: string[]): void {
 }
 
 function collectStatusEvidence(
-  observation: Observation,
+  observation: Pick<Observation, "gitStatusBefore" | "gitStatusAfter">,
   evidence: string[],
 ): void {
   const { gitStatusBefore: before, gitStatusAfter: after } = observation;
@@ -152,8 +191,44 @@ function collectStatusEvidence(
   }
 }
 
+function collectHeadEvidence(turn: TurnObservation, evidence: string[]): void {
+  for (const head of [turn.gitHeadBefore, turn.gitHeadAfter]) {
+    if (head.kind === "unreadable") {
+      evidence.push(`git HEAD could not be sampled: ${head.reason}`);
+    }
+  }
+  if (
+    JSON.stringify(turn.gitHeadBefore) !== JSON.stringify(turn.gitHeadAfter)
+  ) {
+    evidence.push("git HEAD changed");
+  }
+}
+
+function turnEvidence(turn: TurnObservation): string[] {
+  const evidence = statusAndToolEvidence(turn);
+  collectHeadEvidence(turn, evidence);
+  return evidence;
+}
+
 /** Ordered evidence, including unreadable samples rather than false clean results. */
 export function mutationEvidence(observation: Observation): string[] {
+  return [
+    ...statusAndToolEvidence(observation),
+    ...(observation.turns ?? []).flatMap((turn, index) =>
+      turnEvidence(turn).map(
+        (evidence) =>
+          `turn ${String(index + FIRST_TURN_NUMBER)} (${turn.name}): ${evidence}`,
+      ),
+    ),
+  ];
+}
+
+function statusAndToolEvidence(
+  observation: Pick<
+    Observation,
+    "gitStatusBefore" | "gitStatusAfter" | "toolCalls"
+  >,
+): string[] {
   const evidence: string[] = [];
   const samples = {
     before: observation.gitStatusBefore,

@@ -9,7 +9,10 @@ import { cases, getCase } from "#/cases/registry.ts";
 import { BUDGET_STOP_SUBTYPE } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import {
+  createObservation,
+  createTurn,
+} from "#/observation/observation-test-support.ts";
 
 test("case ids are globally unique and prefixed by their skill", () => {
   expect(new Set(cases.map(({ id }) => id)).size).toBe(cases.length);
@@ -203,6 +206,29 @@ function invalidRuns(skill: string) {
       observation: createObservation({ subtype: QUERY_ERROR_SUBTYPE }),
       diagnostic: "the query produced no result",
     },
+    ...[
+      {
+        timedOut: true,
+        diagnostic: "turn 2 (approval): run exceeded its wall clock",
+      },
+      {
+        subtype: QUERY_ERROR_SUBTYPE,
+        diagnostic: "turn 2 (approval): the query produced no result",
+      },
+      {
+        subtype: "gate_not_reached",
+        finalText: "gate not reached at turn 2 (approval): no preview",
+        diagnostic: "gate not reached at turn 2 (approval)",
+      },
+    ].map(({ diagnostic, ...overrides }) => ({
+      observation: createObservation({
+        turns: [
+          createTurn({ costUsd: LATE_ERROR_COST_USD }),
+          createTurn({ name: "approval", prompt: "APPROVED", ...overrides }),
+        ],
+      }),
+      diagnostic,
+    })),
     {
       observation: createObservation({ subtype: "" }),
       diagnostic: "run carries no result verdict",

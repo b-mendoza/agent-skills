@@ -4,8 +4,13 @@ import { isAbsolute, join, normalize, relative, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 import { BASELINE_REFLOG, HEAD_LOG } from "#/fixtures/fixtures.ts";
-import type { Observation, ToolCall } from "#/observation/agent-query.ts";
+import type {
+  Observation,
+  ToolCall,
+  TurnObservation,
+} from "#/observation/agent-query.ts";
 import { QUERY_ERROR_SUBTYPE } from "#/observation/agent-query.ts";
+import { GATE_NOT_REACHED_SUBTYPE } from "#/observation/conversation.ts";
 import {
   mutationEvidence,
   skillInvocations,
@@ -212,6 +217,8 @@ export function hasNodeTestOption(args: string[]): boolean {
 }
 
 const NO_TOOL_CALLS = 0;
+const FIRST_TURN_NUMBER = 1;
+const FIRST_TURN_INDEX = 0;
 const NO_SKILL_INVOCATIONS = 0;
 const NO_COST_USD = 0;
 
@@ -224,6 +231,10 @@ function firstLine(text: string): string {
   return line === "" ? "(no output)" : line;
 }
 
+function checkErrorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 /**
  * Fails when the agent never actually ran.
  *
@@ -234,7 +245,32 @@ function firstLine(text: string): string {
  * first.
  */
 export function assertRunHappened(observation: Observation): void {
+  let previousCost = 0;
+  for (const [index, turn] of (observation.turns ?? []).entries()) {
+    try {
+      assertResultHappened({
+        ...turn,
+        durationMs: 0,
+        costUsd: turn.costUsd - previousCost,
+      });
+    } catch (error) {
+      throw new Error(
+        `turn ${String(index + FIRST_TURN_NUMBER)} (${turn.name}): ${checkErrorText(error)}`,
+        { cause: error },
+      );
+    }
+    previousCost = turn.costUsd;
+  }
+  assertResultHappened(observation);
+}
+
+function assertResultHappened(observation: Observation): void {
   assert.ok(!observation.timedOut, "run exceeded its wall clock");
+  assert.notEqual(
+    observation.subtype,
+    GATE_NOT_REACHED_SUBTYPE,
+    observation.finalText,
+  );
   assert.notEqual(
     observation.subtype,
     QUERY_ERROR_SUBTYPE,
@@ -317,6 +353,15 @@ export function withoutAllowedChanges(
     ...observation,
     gitStatusAfter: observation.gitStatusBefore,
     toolCalls: observation.toolCalls.filter((call) => !isAllowedCall(call)),
+    ...(observation.turns === undefined
+      ? {}
+      : {
+          turns: observation.turns.map((turn) => ({
+            ...turn,
+            gitStatusAfter: turn.gitStatusBefore,
+            toolCalls: turn.toolCalls.filter((call) => !isAllowedCall(call)),
+          })),
+        }),
   };
 }
 
@@ -438,4 +483,26 @@ export function assertFileMatches(
     pattern,
     `file content did not match: ${path}`,
   );
+}
+
+/** Returns the turn sent an approval reply, checking every earlier turn for observed mutation. */
+export function assertNoMutationBeforeReply(
+  observation: Observation,
+  isApproval: (turn: TurnObservation) => boolean,
+): TurnObservation {
+  assertRunHappened(observation);
+  const turns = observation.turns ?? [];
+  const approvalIndex = turns.findIndex(isApproval);
+  const approval = turns[approvalIndex];
+  assert.ok(
+    approval !== undefined,
+    "approval reply not found in recorded turns",
+  );
+  assertNoMutation({
+    ...observation,
+    toolCalls: [],
+    gitStatusAfter: observation.gitStatusBefore,
+    turns: turns.slice(FIRST_TURN_INDEX, approvalIndex),
+  });
+  return approval;
 }
