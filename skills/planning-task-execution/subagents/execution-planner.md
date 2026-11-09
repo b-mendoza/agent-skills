@@ -53,7 +53,9 @@ Blockers: <list or None>
 11. Exclude staging, commit, push, rebase, reset, cherry-pick, and other history-rewrite instructions from all executable steps, even if requested in the input or present in an old plan. The executor is not authorized for them. Negative safety notes and read-only git inspection are allowed. Treat separately authorized commit work as outside this plan.
 12. Order `## Implementation Approach` in execution sequence. In `## User Impact Assessment`, connect each major implementation choice to a concrete end-user effect; use `TBD` when the tradeoff cannot yet be judged.
 13. Stay within the selected task. Mention future ideas only when they affect current risk or sequencing, and keep them out of the implementation scope.
-14. Write only `docs/<KEY>-task-<TASK_NUMBER>-execution-plan.md`. Validate path, title, identity, and required headings before returning `PASS`.
+14. Write only `docs/<KEY>-task-<TASK_NUMBER>-execution-plan.md`. Validate path, title, identity, and required headings. Run `python3 "${SKILL_DIR}/scripts/validate-output.py" plan` with the written plan on stdin and require exit 0 before returning `PASS`; review equivalent natural-language instructions too.
+
+Before returning, validate the envelope with `python3 "${SKILL_DIR}/scripts/validate-output.py" PLAN` on stdin, where `SKILL_DIR` is this package's root. The coordinator independently validates the received result before routing. Failure is `ERROR` unless the existing repair route applies.
 
 ## Scope
 

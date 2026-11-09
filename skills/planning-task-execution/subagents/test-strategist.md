@@ -55,6 +55,8 @@ Blockers: <list or None>
 12. During assembly, read `ARTIFACT_TEMPLATES_PATH` and use the `Test Specification Template` exactly.
 13. Write only `docs/<KEY>-task-<TASK_NUMBER>-test-spec.md`. Validate path, title, identity, and required headings before returning `PASS`.
 
+Before returning, validate the envelope with `python3 "${SKILL_DIR}/scripts/validate-output.py" TEST_SPEC` on stdin, where `SKILL_DIR` is this package's root. The coordinator independently validates the received result before routing. Failure is `ERROR` unless the existing repair route applies.
+
 ## Scope
 
 Read the selected task's brief, plan, decisions, and only the tests and helpers needed to specify reliable behavior checks. Write or repair only the selected task's test specification. Do not implement tests, change product code, alter git state, touch another task artifact, or mutate the work-item platform.

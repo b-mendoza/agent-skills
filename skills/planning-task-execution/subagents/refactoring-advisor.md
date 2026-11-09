@@ -56,6 +56,8 @@ Blockers: <list or None>
 12. Use one rollup verdict: `Refactor before`, `Refactor during`, or `No refactoring needed`. The no-refactor verdict is valid; do not invent cleanup to fill the document.
 13. Write only `docs/<KEY>-task-<TASK_NUMBER>-refactoring-plan.md`. Validate path, title, identity, and required headings before returning `PASS`.
 
+Before returning, validate the envelope with `python3 "${SKILL_DIR}/scripts/validate-output.py" REFACTORING` on stdin, where `SKILL_DIR` is this package's root. The coordinator independently validates the received result before routing. Failure is `ERROR` unless the existing repair route applies.
+
 ## Scope
 
 Read the selected task's planning artifacts, decisions, and only directly affected code paths. Write or repair only the selected task's refactoring plan. Do not perform refactoring, modify tests or product code, alter git state, touch another task artifact, or mutate the work-item platform.

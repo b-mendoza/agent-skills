@@ -5,6 +5,7 @@ import { describe, expect, test } from "vitest";
 import {
   ARTIFACTS,
   BLOCKED_PLAN,
+  cases,
   INPUT_FILES,
   INPUT_PATH,
   KEY,
@@ -16,7 +17,6 @@ import {
   TITLE,
 } from "#/cases/planning-task-execution.ts";
 import { SEED_COMMIT } from "#/cases/planning-work-item-tasks-checks.ts";
-import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { HEAD_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -26,7 +26,9 @@ const HEADING_START = 0;
 const [BRIEF_ARTIFACT, , , REFACTORING_ARTIFACT] = ARTIFACTS;
 
 function getCase(suffix: string) {
-  return getRegisteredCase(`${SKILL}/${suffix}`);
+  const selected = cases.find((entry) => entry.id === `${SKILL}/${suffix}`);
+  if (selected === undefined) throw new Error(`Case not found: ${suffix}`);
+  return selected;
 }
 
 function artifactContent(
@@ -336,4 +338,37 @@ Lower-priority tests cover the full valid range and numeric strings. Every defin
       finalText,
     }),
   ).not.toThrow();
+});
+
+describe("executable plan actions", () => {
+  test.each([
+    "4. Stage the changed files and commit the implementation.",
+    "4. Run `git add . && git commit -m fix && git push`.",
+    "4. Rebase the completed task before handoff.",
+  ])("rejects a future action despite unchanged HEAD: %s", (directive) => {
+    const observation = completedObservation();
+    const [, plan] = ARTIFACTS;
+    expect(() =>
+      getCase("selected-task-artifacts").check({
+        ...observation,
+        repoFiles: {
+          ...observation.repoFiles,
+          [plan.path]: `${observation.repoFiles?.[plan.path] ?? ""}\n${directive}\n`,
+        },
+      }),
+    ).toThrow(/execution boundary/);
+  });
+});
+
+test("rejects a commit directive smuggled through the execution brief", () => {
+  const observation = completedObservation();
+  expect(() =>
+    getCase("selected-task-artifacts").check({
+      ...observation,
+      repoFiles: {
+        ...observation.repoFiles,
+        [BRIEF_ARTIFACT.path]: `${observation.repoFiles?.[BRIEF_ARTIFACT.path] ?? ""}\n4. Stage and commit the implementation.\n`,
+      },
+    }),
+  ).toThrow(/execution boundary/);
 });
