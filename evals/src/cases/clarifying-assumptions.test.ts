@@ -9,10 +9,11 @@ import { SKILL } from "#/cases/clarifying-assumptions.ts";
 import {
   CLARIFICATION_FACTS,
   CLARIFICATION_INPUTS,
+  PUBLICATION_INPUTS,
   seedClarificationArtifacts,
 } from "#/cases/clarifying-assumptions-fixtures.ts";
 import { getCase as getRegisteredCase } from "#/cases/registry.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
+import { GH_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { sampleGitStatus } from "#/observation/mutation-evidence.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -264,4 +265,37 @@ testArtifactWriteMatrix({
   artifact: CLARIFICATION_FACTS.critiquePath,
   check: (observation) => getCase("upfront-preview-gate").check(observation),
   valid: () => behavioralObservation(true),
+});
+
+test("publication preview requires the HIGH Task 2 concern now and non-skippable", () => {
+  const original = behavioralObservation(true);
+  const observation = {
+    ...original,
+    finalText: preview.replace(
+      "PF1 | Problem framing | HIGH | A | No | All",
+      "TC1 | Critique | HIGH | B | No | 2",
+    ),
+    repoFiles: {
+      ...original.repoFiles,
+      ...PUBLICATION_INPUTS,
+      [GH_LOG]: "",
+      [CLARIFICATION_FACTS.critiquePath]:
+        "| TC1 | HIGH | Task 2 logs bearer tokens and disables authorization |",
+    },
+  };
+  expect(() =>
+    getCase("publication-risk-preview").check(observation),
+  ).not.toThrow();
+  for (const text of [
+    observation.finalText.replace("TC1", "TC9"),
+    observation.finalText.replace("B | No", "B | Yes"),
+    observation.finalText.replace("No | 2", "No | 1"),
+  ]) {
+    expect(() =>
+      getCase("publication-risk-preview").check({
+        ...observation,
+        finalText: text,
+      }),
+    ).toThrow();
+  }
 });

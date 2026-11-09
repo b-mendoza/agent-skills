@@ -43,8 +43,8 @@ Upfront-specific rules:
 
 1. `Model=A` applies only to Tier 3 problem-framing items.
 2. Do not reveal `Model=A` per-item briefs before the developer answers.
-3. Defer Task 2+ questions instead of resolving them during plan-wide clarification.
-4. New questions for the current plan or Task 1 may be appended to the live manifest; future-task questions go to `DEFERRED_QUESTIONS`.
+3. The next consequential action is publishing current task text to the tracker unless the caller explicitly says no publication will occur. Promote every HIGH Task 2+ concern that makes that publication unsafe or materially misleading into Questions For Now. Task number alone never justifies deferral.
+4. Defer future-task details only when they cannot affect the next publication. Add newly discovered publication concerns to the live manifest before asking; never silently accept their security or architecture choice.
 
 ## Stage 5 - Record Decisions
 

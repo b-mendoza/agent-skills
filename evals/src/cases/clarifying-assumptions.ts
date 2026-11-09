@@ -5,8 +5,11 @@ import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   CLARIFICATION_FACTS,
   CLARIFICATION_INPUTS,
+  PUBLICATION_INPUTS,
   seedClarificationArtifacts,
+  seedPublicationArtifacts,
 } from "#/cases/clarifying-assumptions-fixtures.ts";
+import { assertReadOnlyGitHub } from "#/cases/fetching-work-item-fixtures.ts";
 import {
   assertFileAbsent,
   assertFileMatches,
@@ -22,7 +25,7 @@ import {
   replyAsksFor,
   withoutAllowedChanges,
 } from "#/cases/shared-checks.ts";
-import { HEAD_LOG } from "#/fixtures/fixtures.ts";
+import { GH_LOG, HEAD_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
@@ -34,6 +37,7 @@ const snapshotPaths = [
   CLARIFICATION_FACTS.decisionsPath,
   "a.txt",
   HEAD_LOG,
+  GH_LOG,
 ];
 
 function checkInputsUnchanged(observation: Observation): void {
@@ -75,6 +79,8 @@ function checkOnlyCritiqueChanged(observation: Observation): void {
     ),
   );
 }
+
+const NO_ITEMS = 0;
 
 const suiteDefaults = {
   ...behavioralDefaults,
@@ -183,6 +189,52 @@ export const cases = [
           },
         ],
       }),
+  },
+  {
+    ...suiteDefaults,
+    id: `${SKILL}/publication-risk-preview`,
+    seed: seedPublicationArtifacts,
+    mutationPolicy: "allowed",
+    budgetUsd: 2.0,
+    intent:
+      "Task 2 HIGH security concerns must be asked before the task text is published",
+    prompt: () =>
+      `Use ${SKILL}. TICKET_KEY=${CLARIFICATION_FACTS.key} MODE=upfront. Next action is publishing every task's current text as child issues. Stop at the readiness preview.`,
+    check: (observation) => {
+      assertReadOnlyGitHub(observation, false);
+      assertFilesUnchanged(observation, PUBLICATION_INPUTS, "changed input");
+      checkOnlyCritiqueChanged(observation);
+      const critique =
+        observation.repoFiles?.[CLARIFICATION_FACTS.critiquePath] ?? "";
+      const securityRows = critique
+        .split("\n")
+        .filter(
+          (line) =>
+            line.includes("HIGH") &&
+            /token|canReadAccount|authoriz|secret/i.test(line),
+        );
+      const ids = securityRows.flatMap((line) =>
+        [...line.matchAll(/\b(?:TC|UI|PF)\d+\b/g)].map(
+          (match) => match.at(NO_ITEMS) ?? "",
+        ),
+      );
+      assert.ok(
+        ids.length > NO_ITEMS,
+        "security concern absent from HIGH critique rows",
+      );
+      const preview = normalizeReplyText(observation.finalText);
+      const [now = ""] = preview.split(/Deferred Questions|## Deferred/);
+      assert.ok(
+        ids.some((id) =>
+          new RegExp(
+            `\\|\\s*${id}\\s*\\|[^\\n]*HIGH[^\\n]*\\|\\s*B\\s*\\|\\s*No\\s*\\|[^\\n]*2`,
+          ).test(now),
+        ),
+        "HIGH Task 2 publication concern was deferred or skippable",
+      );
+      assert.ok(replyAsksFor(preview, /ready|start/i));
+      return "Task 2 security question promoted before publication; no plan or remote changes";
+    },
   },
   {
     ...suiteDefaults,

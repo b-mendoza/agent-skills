@@ -23,7 +23,9 @@ In `MODE=upfront`, consider these candidate sources, then apply the user-surfaci
 - Validation `FAIL` items from the task plan
 - Task 1 questions from the task plan
 
-Collect these as deferred only when they meet the user-surfacing gate and belong to a later task:
+Before deferral, inspect HIGH concerns for every task against the next consequential action. Upfront normally precedes tracker publication of all task text. A HIGH security, architecture, or correctness concern in text about to be published goes in Questions For Now regardless of task number. Its brief identifies the unsafe text and imminent publication; use Model B and Skippable=No. An unresolved publication concern blocks handoff for publication.
+
+Collect these as deferred only when they meet the user-surfacing gate, belong to a later task, and cannot affect the next publication:
 
 - Task 2+ questions
 - Task 2+ assumptions that should not be resolved yet
@@ -92,6 +94,7 @@ A row is a **hard gate** when all three hold: `MODE=upfront`, the category is `P
 | Row                            | `Model` | `Skippable` |
 | ------------------------------ | ------- | ----------- |
 | Hard gate                      | `A`     | `No`        |
+| Imminent-publication concern | `B` | `No` |
 | Any other surfaced upfront row | `B`     | `Yes`       |
 | Any critique-mode row          | `B`     | `Yes`       |
 
