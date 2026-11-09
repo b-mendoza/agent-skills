@@ -159,3 +159,15 @@ _None_
 
 _None_
 ```
+
+## Pull requests in Linked Issues
+
+Use the existing linked-entry shape for PRs, with relation `cross-reference/pull-request` and these additional lines before Description:
+
+```markdown
+- **Kind:** Pull request
+- **Merge outcome:** MERGED | UNMERGED | Unknown
+- **Head ref:** <branch name | Unknown>
+```
+
+State remains OPEN or CLOSED. Unknown detail values require a matching retrieval warning and PARTIAL. Known issues and PRs remain visible even when later discovery pages are inaccessible. No new top-level heading or summary field is added.

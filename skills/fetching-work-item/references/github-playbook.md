@@ -62,3 +62,11 @@ Use the `GitHub` group in `./external-sources.md` (`gh-issue-view`, `gh-api`, `g
 ```yaml
 ISSUE_URL: https://github.com/acme/app/issues/42
 ```
+
+## Cross-referencing pull requests
+
+`## Linked Issues` also contains pull-request cross-references; keep this heading and the locked `Linked issues:` summary line unchanged for consumers. Include every issue or PR returned by the parent timeline's cross-reference discovery, including open, merged, and closed-unmerged PRs. Fetch every page to exhaustion. Do not search the entire repository for textual mentions, and do not treat PRs as child issues.
+
+Use relation `cross-reference/issue` or `cross-reference/pull-request`. Deduplicate by host + owner/repo + number across timeline pages, preserving relation kinds in sorted order. Order entries by relation then canonical identity. Each PR entry includes `**Kind:** Pull request`, URL, title, `**State:** OPEN | CLOSED`, `**Merge outcome:** MERGED | UNMERGED`, and `**Head ref:** <branch | Unknown>`, plus its retrieved description and comments. Fetch PR details through the read-only pulls endpoint or equivalent GraphQL fields; a closed PR is not necessarily merged. Never infer merge outcome from state alone.
+
+The linked count includes unique issues and PRs. Known but inaccessible details get a Not retrieved placeholder and warning. If pagination, timeline access, merge outcome, head ref, or comment discovery is incomplete, retain known entries, state the exact limit under `## Retrieval Warnings`, and return `FETCH: PARTIAL`. An incomplete discovery uses `<retrieved>/UNKNOWN`, not `0/0`. The warning and user summary must name the PR/discovery gap, not silently claim complete linked-issue retrieval.

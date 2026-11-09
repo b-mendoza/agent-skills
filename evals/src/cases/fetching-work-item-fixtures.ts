@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { SeedContext } from "#/cases/case-contract.ts";
@@ -226,4 +226,130 @@ export function assertOnlySnapshotWritten(observation: Observation): void {
   observation.toolCalls.forEach((call) => {
     assertScopedTool(call, observation);
   });
+}
+
+export const DONE_WHEN = "The operator sees the exact empty-export header.";
+export const LOWER_PRIORITY_DONE_WHEN =
+  "This lower-priority block stays in the description.";
+
+/** Adds paginated PR discovery without changing any existing fixture mode. */
+export function seedGitHubReferences(
+  context: SeedContext,
+  partial = false,
+  higherPriority = false,
+): void {
+  seedGitHub(context);
+  const path = join(context.binPath, "gh");
+  const originalBody = `${ISSUE.goal}\n\n## Acceptance Criteria\n- ${ISSUE.criterion}\n\n## Scope\n${ISSUE.scope}`;
+  const body = higherPriority
+    ? `${originalBody}\n\n## Done when\n${LOWER_PRIORITY_DONE_WHEN}`
+    : `${ISSUE.goal}\n\n## Done when\n${DONE_WHEN}\n\n## Scope\n${ISSUE.scope}`;
+  const linkedIssue = {
+    number: 48,
+    title: "Related export bug",
+    html_url: "https://github.com/acme/app/issues/48",
+    url: "https://api.github.com/repos/acme/app/issues/48",
+    state: "open",
+    body: "Related context.",
+    comments: [],
+    author: { login: "reviewer" },
+  };
+  const pullRequests = [
+    {
+      number: 51,
+      title: "Abandoned export approach",
+      state: "closed",
+      merged: false,
+      merged_at: null,
+      head: { ref: "fix/abandoned-export" },
+    },
+    {
+      number: 52,
+      title: "Current export fix",
+      state: "open",
+      merged: false,
+      merged_at: null,
+      head: { ref: "fix/current-export" },
+    },
+  ].map((pull) => ({
+    ...pull,
+    html_url: `https://github.com/acme/app/pull/${pull.number}`,
+    url: `https://api.github.com/repos/acme/app/pulls/${pull.number}`,
+    body: "CSV fix proposal.",
+    comments: [],
+    user: { login: "reviewer" },
+    pull_request: {
+      url: `https://api.github.com/repos/acme/app/pulls/${pull.number}`,
+    },
+  }));
+  const additions = `
+const related = ${JSON.stringify(linkedIssue)};
+const pulls = ${JSON.stringify(pullRequests)};
+const pages = [[related, pulls[0]], [pulls[1], pulls[0]]].map(items => items.map(issue => ({ event: 'cross-referenced', source: { type: 'issue', issue } })));
+const partial = ${JSON.stringify(partial)};
+function emitTimelinePage(items, index) {
+  if (args.includes('--include')) {
+    console.log('HTTP/2 200');
+    console.log('content-type: application/json');
+    if (index + 1 < pages.length) console.log('link: <https://api.github.com/repos/acme/app/issues/42/timeline?per_page=100&page=' + (index + 2) + '>; rel="next"');
+    console.log('');
+  }
+  emit(items);
+}
+function timeline() {
+  if (args.includes('--paginate')) {
+    if (partial) { emitTimelinePage(pages[0], 0); fail('timeline page 2 unavailable: HTTP 403'); }
+    if (args.includes('--slurp')) emitTimelinePage(pages, pages.length - 1);
+    else pages.forEach(emitTimelinePage);
+  } else {
+    const page = Number(new URLSearchParams(endpoint.split('?')[1] || '').get('page') || '1');
+    if (partial && page === 2) fail('timeline page 2 unavailable: HTTP 403');
+    emitTimelinePage(pages[page - 1] || [], page - 1);
+  }
+}
+`;
+  let source = readFileSync(path, "utf8").replace(
+    JSON.stringify(originalBody),
+    JSON.stringify(body),
+  );
+  source = source.replace(
+    "if (args[0] === '--version')",
+    `${additions}\nif (args[0] === '--version')`,
+  );
+  source = source.replace(
+    "else if (path === 'repos/acme/app/issues/42/timeline') emit([]);",
+    "else if (path === 'repos/acme/app/issues/42/timeline') timeline();",
+  );
+  source = source.replace(
+    "timelineItems: { nodes: [], totalCount: 0 }",
+    `timelineItems: {
+      nodes: (partial ? pages[0] : pages.flat()).map(event => ({
+        __typename: 'CrossReferencedEvent',
+        source: { ...event.source.issue,
+          __typename: event.source.issue.pull_request ? 'PullRequest' : 'Issue',
+          url: event.source.issue.html_url,
+          state: event.source.issue.state.toUpperCase(),
+          merged: event.source.issue.merged ?? false,
+          mergedAt: event.source.issue.merged_at ?? null,
+          headRefName: event.source.issue.head?.ref ?? null,
+          repository: { nameWithOwner: 'acme/app' }
+        }
+      })),
+      totalCount: 4,
+      pageInfo: { hasNextPage: partial, endCursor: partial ? 'page-1' : null }
+    }`,
+  );
+  source = source.replace(
+    "if (endpoint === 'graphql') {",
+    "if (endpoint === 'graphql') { if (partial && args.join(' ').includes('page-1')) fail('timeline page 2 unavailable: HTTP 403');",
+  );
+  source = source.replace(
+    "else fail('Unsupported fixture endpoint: ' + endpoint);",
+    `else if (path === 'repos/acme/app/issues/48') emit(related);
+else if (pulls.some(pull => path === 'repos/acme/app/pulls/' + pull.number || path === 'repos/acme/app/issues/' + pull.number)) emit(pulls.find(pull => path.endsWith('/' + pull.number)));
+else if ([48, 51, 52].some(number => path === 'repos/acme/app/issues/' + number + '/comments')) emit([]);
+else if ([51, 52].some(number => path === 'repos/acme/app/pulls/' + number + '/comments')) emit([]);
+else fail('Unsupported fixture endpoint: ' + endpoint);`,
+  );
+  writeFileSync(path, source);
 }
