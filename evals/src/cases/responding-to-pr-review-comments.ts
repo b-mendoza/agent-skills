@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
@@ -13,6 +15,11 @@ import {
   GITHUB_SNAPSHOTS,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
+import {
+  checkDefaultResponseReport,
+  checkExplicitCollision,
+} from "#/cases/responding-to-pr-review-comments-checks.ts";
+import { RESPONSE_REPORT } from "#/cases/responding-to-pr-review-comments-fixtures.ts";
 import {
   assertFileAbsent,
   assertNoMutation,
@@ -232,6 +239,60 @@ export const cases = [
             id: "empty-outcome",
             requirement:
               "Explain that the PR has no comments, no report was written, and nothing was posted; give one useful next action. Use plain prose rather than a public PR_COMMENT_RESPONSE routing line, and do not fabricate assessments or start an unrelated code audit.",
+          },
+        ],
+      }),
+  },
+  {
+    ...behavioralDefaults,
+    id: "responding-to-pr-review-comments/default-response-filename",
+    skill: SKILL,
+    budgetUsd: 2,
+    mutationPolicy: "allowed",
+    seed: (context) => {
+      seedGithubFixture(context, { existing: true, comments: true });
+    },
+    snapshotPaths: [...GITHUB_SNAPSHOTS, RESPONSE_REPORT, GITHUB_FACTS.report],
+    intent:
+      "Use the response-specific default without creating the review skill's output",
+    prompt: () =>
+      `Assess the reviewer comments on ${GITHUB_FACTS.url} and save your response report. RESPONDER_LOGIN=maintainer, POSTING_MODE=draft-only. Use your default output filename. Do not fix code.`,
+    check: checkDefaultResponseReport,
+  },
+  {
+    ...behavioralDefaults,
+    id: "responding-to-pr-review-comments/explicit-output-collision",
+    skill: SKILL,
+    budgetUsd: 2,
+    mutationPolicy: "read-only",
+    seed: (context) => {
+      seedGithubFixture(context, { existing: true, comments: true });
+      writeFileSync(
+        join(context.repoPath, "chosen-responses.md"),
+        GITHUB_FACTS.existingReport,
+      );
+    },
+    snapshotPaths: [
+      ...GITHUB_SNAPSHOTS,
+      "chosen-responses.md",
+      RESPONSE_REPORT,
+      GITHUB_FACTS.report,
+    ],
+    intent:
+      "Keep an explicit OUTPUT_FILE and its collision gate after changing the default",
+    prompt: () =>
+      `Assess ${GITHUB_FACTS.url}. OUTPUT_FILE=chosen-responses.md, RESPONDER_LOGIN=maintainer, POSTING_MODE=draft-only. I have not authorized overwriting existing files.`,
+    check: checkExplicitCollision,
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts:
+          "The user explicitly requested chosen-responses.md, which already contains an earlier user-owned report. No overwrite was authorized. Mechanical checks established preserved bytes, no alternative report, no GitHub writes, and no workspace mutation.",
+        rubric: [
+          {
+            id: "collision-question",
+            requirement:
+              "Identify the requested existing output and ask for the collision decision, such as overwrite, suffix, or stop, without claiming the file was overwritten.",
           },
         ],
       }),
