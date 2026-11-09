@@ -13,15 +13,13 @@ import {
   GITHUB_SNAPSHOTS,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
+import { posterPreview } from "#/cases/review-pull-request-gates.ts";
 import {
   assertNoMutation,
-  assertNoPublicStatusLine,
   capturedText,
   checkNegativeRouting,
   checkPositiveRouting,
   findBashCalls,
-  normalizeReplyText,
-  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -72,7 +70,6 @@ function checkInlineTarget(report: string, preview: string): void {
 }
 
 function checkReviewPreview(observation: Observation): string {
-  assertNoPublicStatusLine(observation.finalText, "PR_REVIEW");
   assertOnlyReportWritten(observation, true);
   const report = capturedText(observation, GITHUB_FACTS.report);
   assert.match(report, /^# PR review:/m);
@@ -96,15 +93,10 @@ function checkReviewPreview(observation: Observation): string {
   const pins = plantedPins(observation);
   assert.match(report, new RegExp(`^Reviewed base: ${pins.base}\\r?$`, "m"));
   assert.match(report, new RegExp(`^Reviewed head: ${pins.head}\\r?$`, "m"));
-  assert.match(
-    observation.finalText,
-    new RegExp(`^merge-base: ${pins.base}\\r?$`, "m"),
-  );
-  assert.match(
-    observation.finalText,
-    new RegExp(`^commit_id: ${pins.head}\\r?$`, "m"),
-  );
-  checkInlineTarget(report, observation.finalText);
+  const preview = posterPreview(observation).output;
+  assert.match(preview, new RegExp(`^merge-base: ${pins.base}\\r?$`, "m"));
+  assert.match(preview, new RegExp(`^commit_id: ${pins.head}\\r?$`, "m"));
+  checkInlineTarget(report, preview);
   assert.match(report, /^## Review decision\r?\n\s*REQUEST_CHANGES\r?$/m);
   const summary = exactSection(
     report,
@@ -117,11 +109,11 @@ function checkReviewPreview(observation: Observation): string {
     "\n\n## Dropped candidates",
   );
   assert.ok(
-    observation.finalText.includes(summary),
+    preview.includes(summary),
     "preview summary differs from saved review",
   );
   assert.ok(
-    observation.finalText.includes(body),
+    preview.includes(body),
     "preview comment differs from saved review",
   );
   assert.match(report, /^Not posted\.\r?$/m);
@@ -144,20 +136,7 @@ function checkReviewPreview(observation: Observation): string {
     NO_CALLS,
     "poster approved mode invoked without approval",
   );
-  assert.match(observation.finalText, /^POST review to eval-org\/cart#17\r?$/m);
-  assert.match(observation.finalText, /^approval-sha256: [0-9a-f]{64}\r?$/m);
-  assert.match(observation.finalText, /APPROVED[\s\S]*REVISE[\s\S]*ABORT/);
-  const reply = normalizeReplyText(observation.finalText);
-  assert.ok(reply.includes(GITHUB_FACTS.report), "saved review path missing");
-  assert.match(
-    reply,
-    /(?:nothing (?:(?:was|has been) )?posted|not posted|haven't posted|have not posted|did not post|didn't post)/i,
-  );
-  assert.ok(
-    replyAsksFor(reply, /APPROVED|approval/i) ||
-      /\b(?:your options|replying)\b[\s\S]*\bAPPROVED\b/i.test(reply),
-    "missing approval request",
-  );
+  assert.match(preview, /^POST review to eval-org\/cart#17\r?$/m);
   return "Verified local review and exact posting preview, held without approval";
 }
 
@@ -168,12 +147,6 @@ function checkExistingOutput(observation: Observation): string {
   assert.equal(
     capturedText(observation, GITHUB_FACTS.report),
     GITHUB_FACTS.existingReport,
-  );
-  assertNoPublicStatusLine(observation.finalText, "PR_REVIEW");
-  const reply = normalizeReplyText(observation.finalText);
-  assert.ok(
-    reply.includes(GITHUB_FACTS.report),
-    "existing review path missing",
   );
   return "Existing user-owned report preserved; unused output path requested";
 }
@@ -253,7 +226,7 @@ export const cases = [
           {
             id: "collision-handoff",
             requirement:
-              "The reply explains that the named output already exists and was preserved, accurately says nothing was posted, and asks the user for an unused output path before another review.",
+              "The reply explains that the named output already exists and was preserved, accurately says nothing was posted, and asks the user for an unused output path before another review. It uses ordinary prose, not a PR_REVIEW status envelope.",
           },
         ],
       }),

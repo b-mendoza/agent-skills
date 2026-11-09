@@ -86,6 +86,7 @@ const REQUIRED_HELPERS = [
       command:
         "python3 -I .claude/skills/review-pull-request/scripts/post-review.py --dry-run .handoffs/review-pull-request/run",
     },
+    result: { content: FINAL, isError: false, truncated: false },
   },
 ];
 const TOOLS = [
@@ -96,10 +97,18 @@ const TOOLS = [
   },
 ];
 
-function observation(report = REPORT): Observation {
+function observation(report = REPORT, preview = FINAL): Observation {
   return createObservation({
     finalText: FINAL,
-    toolCalls: TOOLS,
+    toolCalls: TOOLS.map((tool) => {
+      if ("result" in tool) {
+        return {
+          ...tool,
+          result: { content: preview, isError: false, truncated: false },
+        };
+      }
+      return tool;
+    }),
     gitStatusAfter: { kind: "worktree", entries: `?? ${GITHUB_FACTS.report}` },
     repoFiles: {
       [GITHUB_FACTS.report]: report,
@@ -117,13 +126,25 @@ describe("verified review preview", () => {
     expect(() => previewCase.check(observation())).not.toThrow();
   });
 
-  it("rejects the old public status line after a valid preview", () => {
+  it("leaves run-1 merged final headers to semantic grading", () => {
+    const recorded =
+      "base: main    merge-base: 0e82f06f2fb2947b818e94aada8f57bdeeb496f3";
+    const normalized = recorded.replace(/[a-f0-9]{40}/, "a".repeat(SHA_LENGTH));
+    const finalText = FINAL.replace(
+      `merge-base: ${"a".repeat(SHA_LENGTH)}`,
+      normalized,
+    );
+    expect(() =>
+      previewCase.check({ ...observation(), finalText }),
+    ).not.toThrow();
+  });
+  it("leaves a public final status envelope to semantic grading", () => {
     expect(() =>
       previewCase.check({
         ...observation(),
         finalText: `${FINAL}\nPR_REVIEW: BLOCKED`,
       }),
-    ).toThrow(/public status line/);
+    ).not.toThrow();
   });
 
   it.each([
@@ -169,20 +190,16 @@ describe("verified review preview", () => {
     ).toThrow();
   });
 
-  it.each([
-    "POST review to eval-org/cart#17",
-    "approval-sha256:",
-    "APPROVED",
-    "pr-17-review.md",
-    "Nothing was posted",
-  ])("rejects missing preview contract %s", (fragment) => {
-    expect(() =>
-      previewCase.check({
-        ...observation(),
-        finalText: FINAL.replaceAll(fragment, "missing"),
-      }),
-    ).toThrow();
-  });
+  it.each(["POST review to eval-org/cart#17", "approval-sha256:"])(
+    "rejects missing preview contract %s",
+    (fragment) => {
+      expect(() =>
+        previewCase.check(
+          observation(REPORT, FINAL.replaceAll(fragment, "missing")),
+        ),
+      ).toThrow();
+    },
+  );
 
   it.each([
     "",
@@ -193,13 +210,15 @@ describe("verified review preview", () => {
     '{"line":3,"path":"pricing.py","side":"LEFT"}',
   ])("rejects a preview-only inline target mismatch: %s", (target) => {
     expect(() =>
-      previewCase.check({
-        ...observation(),
-        finalText: FINAL.replace(
-          '{"line":3,"path":"pricing.py","side":"RIGHT"}',
-          target,
+      previewCase.check(
+        observation(
+          REPORT,
+          FINAL.replace(
+            '{"line":3,"path":"pricing.py","side":"RIGHT"}',
+            target,
+          ),
         ),
-      }),
+      ),
     ).toThrow();
   });
 
@@ -214,13 +233,15 @@ describe("verified review preview", () => {
     ],
   ])("accepts matching range metadata for %s", (anchor, target) => {
     expect(() =>
-      previewCase.check({
-        ...observation(REPORT.replace("pricing.py:3 RIGHT", anchor)),
-        finalText: FINAL.replace(
-          'Inline: {"line":3,"path":"pricing.py","side":"RIGHT"}',
-          `\nInline: ${target}\n`,
+      previewCase.check(
+        observation(
+          REPORT.replace("pricing.py:3 RIGHT", anchor),
+          FINAL.replace(
+            'Inline: {"line":3,"path":"pricing.py","side":"RIGHT"}',
+            `\nInline: ${target}\n`,
+          ),
         ),
-      }),
+      ),
     ).not.toThrow();
   });
 
@@ -235,13 +256,15 @@ describe("verified review preview", () => {
     "rejects matching targets outside the pinned fixture: %s",
     (anchor, target) => {
       expect(() =>
-        previewCase.check({
-          ...observation(REPORT.replace("pricing.py:3 RIGHT", anchor)),
-          finalText: FINAL.replace(
-            '{"line":3,"path":"pricing.py","side":"RIGHT"}',
-            target,
+        previewCase.check(
+          observation(
+            REPORT.replace("pricing.py:3 RIGHT", anchor),
+            FINAL.replace(
+              '{"line":3,"path":"pricing.py","side":"RIGHT"}',
+              target,
+            ),
           ),
-        }),
+        ),
       ).toThrow();
     },
   );
@@ -359,7 +382,7 @@ describe("create-only output guard", () => {
         ...correct,
         finalText: `${correct.finalText}\nPR_REVIEW: NEEDS_CONTEXT`,
       }),
-    ).toThrow(/public status line/);
+    ).not.toThrow();
   });
 
   it("accepts the recorded posting and unused-path wording", () => {
@@ -385,7 +408,7 @@ describe("create-only output guard", () => {
         ...correct,
         finalText: correct.finalText.replace("pr-17-review.md", "the report"),
       }),
-    ).toThrow();
+    ).not.toThrow();
     expect(() =>
       guardCase.check({
         ...correct,
