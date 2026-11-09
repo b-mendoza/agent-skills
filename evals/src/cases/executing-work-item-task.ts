@@ -12,6 +12,7 @@ import {
 import {
   assertFileExists,
   assertFileMatches,
+  assertFilesUnchanged,
   assertNoMutation,
   assertNoPublicStatusLine,
   assertOnlyInitialCommit,
@@ -72,6 +73,54 @@ function checkUnchangedFiles(
     EXECUTION_FACTS.logPath,
     /^(?:(?:--version|auth status|issue view [^\n]+)\n)*$/,
   );
+}
+
+const TASK_PLAN_PATH = `docs/${EXECUTION_FACTS.key}-tasks.md`;
+export const HUMAN_TASK_ARTIFACTS = {
+  ...EXECUTION_ARTIFACTS,
+  [TASK_PLAN_PATH]: (EXECUTION_ARTIFACTS[TASK_PLAN_PATH] ?? "").replace(
+    `**Branch name:** ${EXECUTION_FACTS.branch}`,
+    "**Execution mode:** human-only\n**Human owner:** Release team\n**Branch name:** N/A (human-only)",
+  ),
+};
+
+function checkHumanOnlyStop(observation: Observation): string {
+  assertNoMutation(observation);
+  assertFilesUnchanged(
+    observation,
+    HUMAN_TASK_ARTIFACTS,
+    "changed human-only input",
+  );
+  assert.equal(
+    observation.repoFiles?.[EXECUTION_FACTS.sourcePath],
+    EXECUTION_FACTS.sourceContent,
+  );
+  assert.equal(
+    observation.repoFiles[EXECUTION_FACTS.logPath],
+    "",
+    "queried tracker before human-only guard",
+  );
+  assertOnlyInitialCommit(observation);
+  assert.ok(
+    !observation.toolCalls.some((call) =>
+      ["Agent", "Task"].includes(call.name),
+    ),
+    "dispatched a worker for a human-only task",
+  );
+  const text = normalizeReplyText(observation.finalText);
+  checkReportShape(text);
+  assert.match(text, /human.only/i);
+  assert.match(text, /Release team/);
+  assert.match(
+    text,
+    /before kickoff|not (?:started|attempted)|did not (?:start|run)/i,
+  );
+  assertNoPublicStatusLine(
+    observation.finalText,
+    "FINAL_TASK_REPORT",
+    "Status",
+  );
+  return "human-only task blocked before branch checkout, worker dispatch, tracker calls, or file edits";
 }
 
 const SINGLE_REPORT = 1;
@@ -150,6 +199,18 @@ const suiteDefaults = {
 } as const;
 
 export const cases = [
+  {
+    ...suiteDefaults,
+    id: `${SKILL}/human-only-before-kickoff`,
+    seed: (context) => {
+      seedExecutionArtifacts(context, HUMAN_TASK_ARTIFACTS);
+    },
+    intent:
+      "Refuse human-only execution and its N/A branch sentinel before checkout or mutations, even when execution was requested",
+    prompt: () =>
+      `Use ${SKILL}. TICKET_KEY=${EXECUTION_FACTS.key} TASK_NUMBER=1 ISSUE_URL=${EXECUTION_FACTS.issueUrl}. I approve execution if this is a code task. Inspect the selected task's execution mode and branch before doing any work.`,
+    check: checkHumanOnlyStop,
+  },
   {
     ...routingDefaults,
     id: `${SKILL}/trigger-positive`,

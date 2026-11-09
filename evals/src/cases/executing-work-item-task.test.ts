@@ -5,14 +5,17 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import { SKILL } from "#/cases/executing-work-item-task.ts";
+import {
+  cases,
+  HUMAN_TASK_ARTIFACTS,
+  SKILL,
+} from "#/cases/executing-work-item-task.ts";
 import {
   DECISIONS_PATH,
   EXECUTION_ARTIFACTS,
   EXECUTION_FACTS,
   seedExecutionArtifacts,
 } from "#/cases/executing-work-item-task-fixtures.ts";
-import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -20,7 +23,9 @@ import { createObservation } from "#/observation/observation-test-support.ts";
 const REFUSED_COMMAND = 1;
 const initialHead = "initial\thead\tcommit (initial): initial commit\n";
 function getCase(name: string) {
-  return getRegisteredCase(`${SKILL}/${name}`);
+  const selected = cases.find((entry) => entry.id === `${SKILL}/${name}`);
+  if (selected === undefined) throw new Error(`Case not found: ${name}`);
+  return selected;
 }
 
 function finalReport(missingDecisions: boolean): string {
@@ -286,6 +291,70 @@ describe("executing-work-item-task", () => {
       );
     } finally {
       fixture.cleanup();
+    }
+  });
+});
+
+describe("human-only readiness stop", () => {
+  function humanObservation(): Observation {
+    return createObservation({
+      finalText: finalReport(false)
+        .replace(
+          "Explicit execution approval is pending.",
+          "This is a human-only task owned by Release team.",
+        )
+        .replace(
+          "Please confirm approval for real execution.",
+          "Hand off to Release team; code execution is not applicable.",
+        ),
+      repoFiles: {
+        ...HUMAN_TASK_ARTIFACTS,
+        [EXECUTION_FACTS.sourcePath]: EXECUTION_FACTS.sourceContent,
+        [EXECUTION_FACTS.logPath]: "",
+        [EXECUTION_FACTS.headPath]: initialHead,
+      },
+    });
+  }
+  test("accepts the human handoff without branch work", () => {
+    expect(() =>
+      getCase("human-only-before-kickoff").check(humanObservation()),
+    ).not.toThrow();
+  });
+  test.each([
+    {
+      toolCalls: [
+        { name: "Bash", input: { command: "git switch -c human-task" } },
+      ],
+    },
+    {
+      toolCalls: [
+        { name: "Agent", input: { prompt: "Execute the human task" } },
+      ],
+    },
+    { finalText: finalReport(false) },
+  ])("rejects bypassing the human-only guard: %j", (changes) => {
+    expect(() =>
+      getCase("human-only-before-kickoff").check({
+        ...humanObservation(),
+        ...changes,
+      }),
+    ).toThrow();
+  });
+  test("rejects source edits or dropping the human-only marker", () => {
+    const observation = humanObservation();
+    for (const files of [
+      { [EXECUTION_FACTS.sourcePath]: "Hello\n" },
+      {
+        [`docs/${EXECUTION_FACTS.key}-tasks.md`]:
+          EXECUTION_ARTIFACTS[`docs/${EXECUTION_FACTS.key}-tasks.md`] ?? "",
+      },
+    ]) {
+      expect(() =>
+        getCase("human-only-before-kickoff").check({
+          ...observation,
+          repoFiles: { ...observation.repoFiles, ...files },
+        }),
+      ).toThrow();
     }
   });
 });

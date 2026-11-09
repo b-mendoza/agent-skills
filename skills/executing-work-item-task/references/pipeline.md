@@ -24,6 +24,7 @@ For every stage: announce the stage, validate its preconditions, dispatch one su
 
 1. **Validate readiness.**
    - Read `./contracts.md` and the active playbook.
+   - Before any subagent dispatch, run `python3 "${SKILL_DIR}/scripts/check-task-mode.py" <TASK_NUMBER>` on the task-plan contents. Exit 1 -> final `BLOCKED` report naming the human handoff, no writes; exit 2 or unavailable tool -> readiness `BLOCKED`; exit 0 -> continue.
    - Confirm all Phase 1-6 artifacts, selected task, dependencies, decisions, branch, critique approval, tracker-capability policy, and `MUTATION_LIMITS`.
    - Stop on missing, contradictory, unsafe, or ambiguous prerequisites.
 

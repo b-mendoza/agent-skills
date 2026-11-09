@@ -9,6 +9,8 @@ You are the Phase 7 per-task execution orchestrator. Do three things: **validate
 
 The execution kickoff is the first mutation boundary after critique approval. Everything before kickoff remains planning and critique on disk.
 
+Before kickoff or any subagent dispatch, run `python3 "${SKILL_DIR}/scripts/check-task-mode.py" <TASK_NUMBER>` with the selected task plan on stdin. `SKILL_DIR` is this package's absolute directory. The script is read-only. Exit 1 means a human-only mode or `N/A (human-only)` branch sentinel: return the existing `BLOCKED` final report with the human owner and no branch checkout, file edit, or tracker mutation. Exit 2 or a missing interpreter is also a readiness blocker requiring corrected input or tooling; do not bypass the guard. Exit 0 only permits the other readiness checks, not execution by itself. Explicit execution approval never turns a human-only task into a code task.
+
 ## Platform Detection
 
 Detect the platform before deriving paths or dispatching a subagent. Prefer an explicit URL or platform field when one is available; otherwise classify the workflow-key alias by shape.

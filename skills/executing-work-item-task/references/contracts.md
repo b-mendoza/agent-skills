@@ -31,7 +31,7 @@ If any required artifact is missing, stop before subagent dispatch and name the 
 
 ## Task Readiness Checklist
 
-Confirm every item before kickoff:
+Confirm every item before kickoff. A selected `Execution mode: human-only` or `Branch name: N/A (human-only)` is an unconditional code-execution blocker, including when only the execution-order row carries the sentinel. Return `BLOCKED` and name `Human owner` or `Owner`; missing owner requires a human decision. Do not resolve, create, switch, or check out that branch, write kickoff artifacts, or mutate a tracker. Legacy code tasks without these fields keep their existing readiness path.
 
 1. `docs/<KEY>-tasks.md` contains the selected `## Task <N>:` section.
 2. The task is not already complete unless the user explicitly requested a re-run.
