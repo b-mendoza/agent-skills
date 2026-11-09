@@ -50,7 +50,7 @@ Payload line 1 is exactly `<TOKEN>: <STATUS>`; the remainder is one JSON object.
 | `review-author` | [review-author.md](./subagents/review-author.md) | Confirm or drop candidates, deduplicate and author exact review text |
 | `review-verifier` | [review-verifier.md](./subagents/review-verifier.md) | Independently verify the final package against evidence |
 
-Load only the dispatched prompt. Roles load [external review resources](./references/external-review-resources.md) for current factual claims or needed guidance. Fetch only listed sources or current official dependency documentation; keep fetched pages out of the orchestrator.
+Load only the dispatched prompt. Roles load [external review resources](./references/external-review-resources.md) for current factual claims or needed guidance. Fetch only listed sources, linked project records through authenticated read connectors, or current official dependency documentation; keep fetched pages out of the orchestrator.
 
 ## Scripts
 
