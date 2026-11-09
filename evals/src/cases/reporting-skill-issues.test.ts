@@ -17,6 +17,17 @@ function getCase(suffix: string) {
 }
 
 const EXCESS_SEARCHES = 3;
+const semanticDraftLabels = new Set([
+  "old public status line",
+  "claims creation",
+  "missing kind",
+  "missing Unverified",
+  "missing APPROVED",
+  "missing REVISE",
+  "missing ABORT",
+  "no account",
+  "missing backup evidence",
+]);
 
 const SEARCH =
   "issue\tlist\t--repo\tb-mendoza/agent-skills\t--state\tall\t--limit\t20\t--search\tgenerate-handoff-document backup\t--json\tnumber,title,url,state,stateReason\t\n";
@@ -116,7 +127,7 @@ describe("draft-before-approval", () => {
       getCase("draft-before-approval").check(draftObservation()),
     ).not.toThrow();
   });
-  test.each([
+  const draftVariants = [
     ["old public status line", `REPORTING_SKILL_ISSUES: BLOCKED\n${DRAFT}`],
     [
       "claims creation",
@@ -148,13 +159,26 @@ describe("draft-before-approval", () => {
       "missing backup evidence",
       DRAFT.replaceAll("docs/handoff.prev.md", "missing-file"),
     ],
-  ])("rejects %s", (_label, finalText) => {
+  ];
+  test.each(
+    draftVariants.filter(([label]) => !semanticDraftLabels.has(label ?? "")),
+  )("rejects %s", (_label, finalText) => {
     expect(() =>
       getCase("draft-before-approval").check({
         ...draftObservation(),
         finalText,
       }),
     ).toThrow();
+  });
+  test.each(
+    draftVariants.filter(([label]) => semanticDraftLabels.has(label ?? "")),
+  )("leaves %s to the semantic judge", (_label, finalText) => {
+    expect(() =>
+      getCase("draft-before-approval").check({
+        ...draftObservation(),
+        finalText,
+      }),
+    ).not.toThrow();
   });
   test.each([
     ["no search", ""],
