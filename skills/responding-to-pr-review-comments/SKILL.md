@@ -17,13 +17,13 @@ Local writes: report file plus declared inventory only. Never edit code, tests, 
 | Input             | Required | Example                                    |
 | ----------------- | -------- | ------------------------------------------ |
 | `PR_URL`          | Yes      | `https://github.com/org/repo/pull/123`     |
-| `OUTPUT_FILE`     | No       | `pr-123-review.md`                         |
+| `OUTPUT_FILE`     | No       | `pr-123-responses.md`                         |
 | `POSTING_MODE`    | No       | `draft-only` or `post-after-confirmation`  |
 | `LANGUAGE_STYLE`  | No       | `natural English for a non-native speaker` |
 | `COMMENT_SCOPE`   | No       | `all`, `unresolved`, or comment URLs       |
 | `RESPONDER_LOGIN` | No       | `octocat`                                  |
 
-Defaults: `OUTPUT_FILE=pr-<number>-review.md`, `POSTING_MODE=draft-only`, `COMMENT_SCOPE=all`, natural direct English. Derive owner/repo/number from `PR_URL`.
+Defaults: `OUTPUT_FILE=pr-<number>-responses.md`, `POSTING_MODE=draft-only`, `COMMENT_SCOPE=all`, natural direct English. Derive owner/repo/number from `PR_URL`.
 
 `OUTPUT_FILE` must be a relative `.md` path inside the working directory, with no `..`, and not under `.git/`. Existing file not from this run → one collision question (overwrite / suffix / stop). Unknown responder → one question, else `Identity mode: degraded-unknown` (existing replies unknown; affected threads `unsupported-or-needs-user-choice`).
 
@@ -110,4 +110,4 @@ Readiness: report exists, read-backs passed, no unreported mutation, every comme
 
 ## Example
 
-`PR_URL=…/pull/123`, `POSTING_MODE=draft-only` → intake → collect → assess → draft → verify → write `pr-123-review.md` → explain that the report was saved and nothing was posted.
+`PR_URL=…/pull/123`, `POSTING_MODE=draft-only` → intake → collect → assess → draft → verify → write `pr-123-responses.md` → explain that the report was saved and nothing was posted.
