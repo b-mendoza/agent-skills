@@ -16,6 +16,7 @@ import {
 import { seedReviewFixture } from "#/cases/review-pull-request-fixtures.ts";
 import { posterPreview } from "#/cases/review-pull-request-gates.ts";
 import { judgeReview } from "#/cases/review-pull-request-judges.ts";
+import { extensionCases } from "#/cases/review-pull-request-scenarios.ts";
 import {
   assertNoMutation,
   capturedText,
@@ -217,4 +218,5 @@ export const cases = [
         ],
       }),
   },
+  ...extensionCases,
 ] as const satisfies readonly EvalCase[];
