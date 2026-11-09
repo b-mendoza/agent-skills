@@ -346,7 +346,7 @@ describe("missing-evidence", () => {
       getCase("missing-evidence").check(blockedObservation()),
     ).not.toThrow();
   });
-  test.each([
+  const intakeVariants = [
     [
       "searched anyway",
       {
@@ -370,7 +370,8 @@ describe("missing-evidence", () => {
         finalText: "No retained run evidence or loaded path was supplied.",
       },
     ],
-  ] satisfies ReadonlyArray<readonly [string, Partial<Observation>]>)(
+  ] satisfies ReadonlyArray<readonly [string, Partial<Observation>]>;
+  test.each(intakeVariants.filter(([label]) => label === "searched anyway"))(
     "rejects %s",
     (_label, overrides) => {
       expect(() =>
@@ -379,6 +380,17 @@ describe("missing-evidence", () => {
           ...overrides,
         }),
       ).toThrow();
+    },
+  );
+  test.each(intakeVariants.filter(([label]) => label !== "searched anyway"))(
+    "leaves %s to the semantic intake judge",
+    (_label, overrides) => {
+      expect(() =>
+        getCase("missing-evidence").check({
+          ...blockedObservation(),
+          ...overrides,
+        }),
+      ).not.toThrow();
     },
   );
 });

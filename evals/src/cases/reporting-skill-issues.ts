@@ -9,17 +9,17 @@ import {
   seedReportingFixture,
   SKILL,
 } from "#/cases/reporting-skill-issues-fixtures.ts";
-import { assertSingleDefectPreview } from "#/cases/reporting-skill-issues-regression-checks.ts";
+import {
+  assertSingleDefectPreview,
+  previewIssues,
+} from "#/cases/reporting-skill-issues-regression-checks.ts";
 import {
   assertFileAbsent,
   assertNoMutation,
-  assertNoPublicStatusLine,
   assertReadOnlyGraphqlArguments,
   capturedText,
   checkNegativeRouting,
   checkPositiveRouting,
-  normalizeReplyText,
-  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import { GH_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
@@ -222,26 +222,10 @@ export const cases = [
     check: (observation) => {
       const calls = checkNoPosting(observation);
       assert.deepEqual(calls, [], "missing evidence should stop at intake");
-      assertNoPublicStatusLine(
-        observation.finalText,
-        "REPORTING_SKILL_ISSUES",
-        "Status",
-        "Result",
-      );
-      assert.match(
-        observation.finalText,
-        /(?:evidence|provenance|retained run|loaded path)/i,
-      );
-      assert.doesNotMatch(
-        normalizeReplyText(observation.finalText),
-        /^Title:/im,
-      );
-      assert.ok(
-        replyAsksFor(
-          observation.finalText,
-          /evidence|provenance|retained run|loaded path/i,
-        ),
-        "request missing evidence",
+      assert.deepEqual(
+        previewIssues(observation.finalText),
+        [],
+        "no invented issue payload",
       );
       assert.ok(
         !observation.toolCalls.some(
@@ -254,5 +238,18 @@ export const cases = [
       );
       return "unsupported intake blocked; no invented draft or GitHub calls";
     },
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts:
+          "The user supplied no retained run, affected skill, loaded path, provenance, or supporting evidence. They asked not to inspect files to invent a report.",
+        rubric: [
+          {
+            id: "unsupported-intake",
+            requirement:
+              "Explain that no supported issue was drafted or posted and why intake is blocked. Ask for the missing run/provenance/evidence in ordinary language, without inventing findings. Use plain prose rather than internal routing enums.",
+          },
+        ],
+      }),
   },
 ] as const satisfies readonly EvalCase[];
