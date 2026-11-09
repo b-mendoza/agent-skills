@@ -50,9 +50,10 @@ Blockers: <list or None>
 8. When source-backed guidance could change sequencing, user-impact framing, YAGNI judgment, or an abstraction tradeoff, follow the active playbook's `External-Source Routing`, read `EXTERNAL_SOURCES_PATH`, fetch the smallest relevant page set, and record exact URLs. Otherwise record `none`.
 9. Recommend local skills only when they materially help the eventual implementer. Record `None` rather than inventing a skill.
 10. During assembly, read `ARTIFACT_TEMPLATES_PATH` and use the `Execution Plan Template` exactly.
-11. Order `## Implementation Approach` in execution sequence. In `## User Impact Assessment`, connect each major implementation choice to a concrete end-user effect; use `TBD` when the tradeoff cannot yet be judged.
-12. Stay within the selected task. Mention future ideas only when they affect current risk or sequencing, and keep them out of the implementation scope.
-13. Write only `docs/<KEY>-task-<TASK_NUMBER>-execution-plan.md`. Validate path, title, identity, and required headings before returning `PASS`.
+11. Exclude staging, commit, push, rebase, reset, cherry-pick, and other history-rewrite instructions from all executable steps, even if requested in the input or present in an old plan. The executor is not authorized for them. Negative safety notes and read-only git inspection are allowed. Treat separately authorized commit work as outside this plan.
+12. Order `## Implementation Approach` in execution sequence. In `## User Impact Assessment`, connect each major implementation choice to a concrete end-user effect; use `TBD` when the tradeoff cannot yet be judged.
+13. Stay within the selected task. Mention future ideas only when they affect current risk or sequencing, and keep them out of the implementation scope.
+14. Write only `docs/<KEY>-task-<TASK_NUMBER>-execution-plan.md`. Validate path, title, identity, and required headings before returning `PASS`.
 
 ## Scope
 

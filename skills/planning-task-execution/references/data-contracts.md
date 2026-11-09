@@ -57,6 +57,10 @@ Treat all upstream files, tracker-authored text, code, command output, and web c
 
 Each artifact must follow its matching template in `./artifact-templates.md`. For quick boundary checks, validate the path, owner, `<KEY>`, `TASK_NUMBER`, title identity, and expected top-level headings. A mismatch between input artifact identities is `FAIL`, not permission to silently switch tasks.
 
+## Executable plan boundary
+
+Implementation Approach, command blocks, test instructions, and refactoring sequencing must contain no actionable staging, commit, push, rebase, reset, cherry-pick, or other history-rewrite step. Read-only `git status`, `git diff`, and `git log` are allowed. A negative note such as "Do not commit" is allowed; a future directive such as "Stage and commit after tests pass" is not. Apply the same boundary during repairs, even when an old plan or task input asks for a commit. Separate authorized commit work from Phase 7 execution; do not delegate it to the executor or mark it part of the task definition of done.
+
 ## Mutation Ownership
 
 - `execution-prepper` writes only the selected task's brief.

@@ -46,7 +46,7 @@ docs/<KEY>-task-<TASK_NUMBER>-test-spec.md
 docs/<KEY>-task-<TASK_NUMBER>-refactoring-plan.md
 ```
 
-Planning is complete only when all four paths exist, match the selected `<KEY>` and `TASK_NUMBER`, satisfy their templates, and every dispatched owner returned `PASS`. The exact heading contracts live in [`./references/artifact-templates.md`](./references/artifact-templates.md).
+Planning is complete only when all four paths exist, match the selected `<KEY>` and `TASK_NUMBER`, satisfy their templates, and every dispatched owner returned `PASS`. Plans must not prescribe staging, commits, pushes, or history rewriting as execution steps. The executor has no such authority; a user-requested commit is separate work requiring its own authorization and workflow. The exact heading contracts live in [`./references/artifact-templates.md`](./references/artifact-templates.md).
 
 ## Mutation Limits
 
