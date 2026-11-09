@@ -13,6 +13,7 @@ import {
   RESUME_FACTS,
   seedResumeArtifacts,
 } from "#/cases/orchestrating-workflow-fixtures.ts";
+import { progressCases } from "#/cases/orchestrating-workflow-progress-cases.ts";
 import {
   assertFileAbsent,
   assertFileMatches,
@@ -65,6 +66,7 @@ const gateSnapshots = [
 ];
 
 export const cases = [
+  ...progressCases,
   {
     ...routingDefaults,
     id: `${SKILL}/trigger-positive`,

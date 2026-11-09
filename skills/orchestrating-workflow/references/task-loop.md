@@ -12,7 +12,8 @@ Before entering the loop for a task:
 
 1. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY` and `ACTION=read`.
 2. Present remaining tasks with dependency, priority, and status metadata from the compact progress summary.
-3. Let the user choose the task. Never auto-select.
+3. Let the user choose a task, explicitly exclude one, or stop. Never auto-select. For an explicit exclusion or handoff, dispatch `progress-tracker` with `ACTION=skip_task`, `TASK_NUMBER`, and the user's nonempty `REASON`, then return to selection. This applies before initialization or Phase 5 readiness. Preserve the task and child identity. This action only records local accounting; it never closes a remote child or satisfies its dependents.
+
 4. Optionally gather independent pre-task context in parallel:
 
 | Need                              | Dispatch to             |
@@ -77,9 +78,9 @@ Phase 6 is critique-only: no implementation, kickoff, platform state mutation, o
    - `STOPPED_FOR_USER_INPUT`: pause Phase 7, surface the exact decision needed, and do not mark the task complete.
    - `ESCALATED`: load `./error-handling.md` and present the accumulated verifier or reviewer findings to the user.
 6. Retain the report's completion/blocker verdict, quality-gate summary, implementation artifact summary, retry counts, and next required action.
-7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `ACTION=update_task`, `TASK_NUMBER=<N>`, `PHASE=7`, `STATUS=<complete | active | failed | skipped>`, and a one-line summary based on the downstream outcome.
+7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `ACTION=update_task`, `TASK_NUMBER=<N>`, `PHASE=7`, `STATUS=<complete | active | failed>`, and a one-line summary based on the downstream outcome.
 
-Use `STATUS=complete` only for `FINAL_TASK_REPORT` status `COMPLETE`. Use `STATUS=active` for `STOPPED_FOR_USER_INPUT` so the task remains resumable. Use `STATUS=failed` for `BLOCKED`, `ESCALATED`, or downstream `ERROR` unless the user explicitly chooses to skip or accept an incomplete task.
+Use `STATUS=complete` only for `FINAL_TASK_REPORT` status `COMPLETE`. Use `STATUS=active` for `STOPPED_FOR_USER_INPUT` so the task remains resumable. Use `STATUS=failed` for `BLOCKED`, `ESCALATED`, or downstream `ERROR` unless the user explicitly chooses exclusion or handoff; use `ACTION=skip_task` with that decision as `REASON`, not a fake completed phase.
 
 There is no orchestrator-level Phase 7 postcondition validator.
 
@@ -93,7 +94,7 @@ After Phase 7 completes for a task:
 
 ## Final Summary
 
-When all tasks are complete or the user stops, dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `ACTION=read`, and present a compact workflow summary:
+When all tasks are complete or explicitly skipped, or the user stops, dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `ACTION=read`, and present a compact workflow summary:
 
 ```text
 ## Workflow Summary - <KEY>
@@ -104,8 +105,8 @@ When all tasks are complete or the user stops, dispatch `progress-tracker` with 
 | 2 | Complete | Tasks planned |
 | 3 | Complete | Questions resolved and plan critiqued |
 | 4 | Complete | Tasks linked to platform child items |
-| 5-7 | Complete | Tasks planned, critiqued, kicked off, and executed |
+| 5-7 | <complete / accounted for / paused> | <N> completed, <N> skipped, <N> remaining |
 
 Per-task detail: `docs/<KEY>-task-<N>-progress.md`
-Artifacts: `docs/<KEY>*`
+Artifacts: <explicit workflow paths>
 ```

@@ -1,145 +1,60 @@
-# Progress Tracker — File Templates and Action Procedures
+# Progress file contract
 
-> This file contains the progress file templates and detailed action procedures. Read this when executing any action that creates or modifies progress files.
->
-> Reminder: these are Category A orchestration artifacts. Update them on disk, preserve them across sessions, and summarize their state back to the orchestrator instead of returning raw file contents.
+> Current-state reference. Update this file when `../scripts/progress.py` changes the written schema. The script owns updates and state projection; these examples describe its output, not a second writer.
 
-Loaded by: `../subagents/progress-tracker.md`
+Progress remains persistent workflow state under `docs/`. The first `update` lazily creates the main file with four phase rows; explicit `initialize` is optional and never resets existing work.
 
-Template placeholders:
+## Main progress
 
-- `<KEY>` resolves to the workflow key value as defined by the active playbook's `Inputs and Identifier` section.
-- `<PHASE_N_SKILL>` resolves to the skill name in the active playbook's `Phase Skill Map` row for phase N. Read the active playbook's `Phase Skill Map` at template-fill time and substitute the names literally (no platform string is hard-coded in this file).
-
----
-
-## Main Progress File Template
-
-Location: `docs/<KEY>-progress.md`
-
-Used by the `initialize` action:
+Path: `docs/<KEY>-progress.md`
 
 ```markdown
 # <KEY> — Workflow Progress
 
-| Phase | Skill                  | Status     | Completed at | Notes |
-| ----- | ---------------------- | ---------- | ------------ | ----- |
-| 1     | <PHASE_1_SKILL>        | ⬜ Pending | —            | —     |
-| 2     | <PHASE_2_SKILL>        | ⬜ Pending | —            | —     |
-| 3     | clarifying-assumptions | ⬜ Pending | —            | —     |
-| 4     | <PHASE_4_SKILL>        | ⬜ Pending | —            | —     |
+| Phase | Skill | Status | Completed at | Notes |
+| --- | --- | --- | --- | --- |
+| 1 | <Phase 1 skill> | Pending | — | — |
+| 2 | <Phase 2 skill> | Pending | — | — |
+| 3 | clarifying-assumptions | Pending | — | — |
+| 4 | <Phase 4 skill> | Pending | — | — |
 
 ## Task Execution (Phases 5–7)
 
-_No tasks yet — populated after Phase 4 completes._
+_No tasks yet_
 
 ## Execution Log
 ```
 
----
-
-## Task Execution Table Template
-
-When Phase 4 completes (the `update` action receives `PHASE=4` with `STATUS=complete`), replace the placeholder in the `## Task Execution` section with this table, populated from the `TASKS` input.
-
-Each `TASKS` entry should include:
-
-- task number
-- title
-- dependencies, using `None` when there are no prerequisites
-- priority, using `Unknown` when the plan does not provide one
-- optional platform-specific linkage fields when known, as defined in the active playbook's `Phase 4 Child-Item Table and Write Model` section
-
-Use that metadata to build this table:
+The actual status values carry the established display markers. Phase 4 completion inserts one row per `TASKS` entry:
 
 ```markdown
-## Task Execution (Phases 5–7)
-
-| Task | Title              | Dependencies | Priority | Current Phase | Status     | Detail                          |
-| ---- | ------------------ | ------------ | -------- | ------------- | ---------- | ------------------------------- |
-| 1    | <title from TASKS> | <deps>       | <prio>   | —             | ⬜ Pending | `docs/<KEY>-task-1-progress.md` |
-| 2    | <title from TASKS> | <deps>       | <prio>   | —             | ⬜ Pending | `docs/<KEY>-task-2-progress.md` |
-| ...  | ...                | ...          | ...      | ...           | ...        | ...                             |
+| Task | Title | Dependencies | Priority | Child item | Current Phase | Status | Detail | Outcome |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Implement validation | None | High | acme/app#101 | — | Pending | `docs/<KEY>-task-1-progress.md` | — |
+| 2 | Manual verification | 1 | Low | OPS-202 | — | Pending | `docs/<KEY>-task-2-progress.md` | — |
 ```
 
----
+`Child item` preserves a concrete platform identifier, `task-list`, or `Not Created`. `Unknown (legacy)` means the old file lacked linkage evidence; it is not a missing-child verdict. Update rows by `Task` and named columns. Preserve extra columns. Never shift metadata because an older table omitted a column. The Detail path is a prospective locator, not proof that the per-task file exists.
 
-## Per-Task Progress File Template
+## Per-task progress
 
-Location: `docs/<KEY>-task-<N>-progress.md`
+Path: `docs/<KEY>-task-<N>-progress.md`. `initialize_task` creates it only after user selection and Phase 5 readiness. It contains phase rows 5, 6, 7, followed by `## Re-plan History` and `## Activity Log`.
 
-Used by the `initialize_task` action:
+Phase labels are `5/7 Plan`, `6/7 Critique`, and `7/7 Execute`. Current Phase points to the next unfinished phase after a successful update. Only successful Phase 7 yields a completed task:
 
-```markdown
-# <KEY> — Task <N>: <TASK_TITLE> — Progress
+| Update | Phase row | Task row | Next resume |
+| --- | --- | --- | --- |
+| Phase 5 complete | Complete | Active | Phase 6, same task |
+| Phase 6 complete | Complete | Active | Phase 7, same task |
+| Phase 7 complete | Complete | Complete | Task selection or terminal |
+| Any phase active | Active | Active | Same phase |
+| Any phase failed | Failed | Failed | Same phase |
+| `skip_task` | Existing phase rows unchanged | Skipped, explicit reason in Outcome/log | Excluded from resume |
 
-| Phase | Skill                  | Status     | Completed at | Notes |
-| ----- | ---------------------- | ---------- | ------------ | ----- |
-| 5     | <PHASE_5_SKILL>        | ⬜ Pending | —            | —     |
-| 6     | clarifying-assumptions | ⬜ Pending | —            | —     |
-| 7     | <PHASE_7_SKILL>        | ⬜ Pending | —            | —     |
+`skip_task` works before initialization as well as after an attempted phase. It requires a user-recorded reason and does not create an unstarted task's per-task file. It never fabricates Phase 5, 6, or 7 completion and never closes a remote work item. A skipped prerequisite remains unsatisfied unless the user explicitly resolves the dependent task's readiness through the normal planning/clarification contract.
 
-## Re-plan History
+## Summary accounting
 
-_None_
+Report completed, skipped, and remaining counts separately. Filter skipped tasks out of resume and task-selection candidates, not out of the historical table. An all-skipped or mixed complete/skipped workflow is accounted for, not fully implemented. Preserve the distinction in the final summary. Read legacy task completion from the per-task phase rows, since older main tables incorrectly displayed Complete after planning or critique.
 
-## Activity Log
-```
-
----
-
-## Status Values
-
-| Status    | Display     | Meaning                    |
-| --------- | ----------- | -------------------------- |
-| complete  | ✅ Complete | Phase/task finished        |
-| active    | 🔄 Active   | Currently in progress      |
-| failed    | ❌ Failed   | Errored — needs resolution |
-| skipped   | ⏭️ Skipped  | Bypassed by user decision  |
-| (default) | ⬜ Pending  | Not yet started            |
-
----
-
-## Detailed Action Procedures
-
-### `update` procedure
-
-1. Read the current main progress file. If it does not exist yet, first create `docs/<KEY>-progress.md` from the main progress file template, filling phase skill names from the active playbook's `Phase Skill Map`.
-2. Update the row for the given phase (1–4) with the new status and a UTC timestamp.
-3. If `PHASE=4` and `STATUS=complete`, populate the Task Execution table using the `TASKS` input, preserving each task's dependency, priority, and optional platform-specific linkage metadata (see template above).
-4. Append a one-line entry to `## Execution Log`:
-   ```
-   <UTC timestamp> — Phase <N>: <STATUS> — <SUMMARY>
-   ```
-5. Write the updated file.
-
-### `initialize_task` procedure
-
-Call this only after task selection is confirmed and the Phase 5 precondition has passed.
-
-1. Create the per-task progress file only if it does not already exist, using the template at docs/<KEY>-task-<N>-progress.md with <PHASE_5_SKILL> and <PHASE_7_SKILL> filled from the active playbook's Phase Skill Map.
-2. Update the corresponding task row in the main progress file's Task Execution table:
-   - Current Phase → `5/7 Plan`
-   - Status → `🔄 Active`
-3. Append a one-line entry to the main file's `## Execution Log`:
-   ```
-   <UTC timestamp> — Task <N> started: <TASK_TITLE>
-   ```
-
-### `update_task` procedure
-
-1. Read the per-task progress file.
-2. Update the row for the given phase (5–7) with the new status and a UTC timestamp.
-3. Append a one-line entry to the per-task file's `## Activity Log`:
-   ```
-   <UTC timestamp> — Phase <PHASE>: <STATUS> — <SUMMARY>
-   ```
-4. Write the updated per-task file.
-5. Update the corresponding task row in the main progress file:
-   - Current Phase → `<PHASE>/7 <phase name>`
-   - Status → the new status display value
-   - If `PHASE=7` and `STATUS=complete`, set Status to `✅ Complete`
-6. Append a one-line entry to the main file's `## Execution Log`:
-   ```
-   <UTC timestamp> — Task <N> Phase <PHASE>: <STATUS> — <SUMMARY>
-   ```
+The table also preserves `Execution mode`, `Human owner`, and `Branch name`. Legacy tasks default to code only when no human-only marker or sentinel is present; the caller must extract those markers from the task plan before selection. Human-only tasks cannot initialize per-task code execution.

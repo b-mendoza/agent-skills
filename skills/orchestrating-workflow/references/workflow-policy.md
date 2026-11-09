@@ -67,7 +67,9 @@ After dispatching `progress-tracker` with the workflow key and `ACTION=read`, ch
 | Phases 1-4 complete, no tasks started        | Phase 5 (task selection) | `5-7`              |
 | Task N at Phase 5 complete, Phase 6 not done | Phase 6, Task N          | `6-7`              |
 | Task N at Phase 6 complete, Phase 7 not done | Phase 7, Task N          | `7`                |
-| Task N complete, other tasks remaining       | Phase 5 (task selection) | `5-7`              |
+| Task N complete or skipped, other tasks remaining       | Phase 5 (task selection) | `5-7`              |
+
+Exclude skipped tasks from the resume candidates. If every task is complete or skipped, go to Summary with separate counts.
 
 Confirm with the user before resuming past Phase 1, then load the matching playbook (`./phases-1-4.md` for Phases 1-4, `./task-loop.md` for Phases 5-7).
 

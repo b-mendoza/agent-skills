@@ -8,18 +8,19 @@ import {
   DECISIONS_PATH,
   EXECUTION_FACTS,
 } from "#/cases/executing-work-item-task-fixtures.ts";
-import { SKILL } from "#/cases/orchestrating-workflow.ts";
+import { cases, SKILL } from "#/cases/orchestrating-workflow.ts";
 import {
   RESUME_ARTIFACTS,
   seedResumeArtifacts,
 } from "#/cases/orchestrating-workflow-fixtures.ts";
-import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 function getCase(name: string) {
-  return getRegisteredCase(`${SKILL}/${name}`);
+  const selected = cases.find((entry) => entry.id === `${SKILL}/${name}`);
+  if (selected === undefined) throw new Error(`Case not found: ${name}`);
+  return selected;
 }
 
 function validObservation(name: string): Observation {

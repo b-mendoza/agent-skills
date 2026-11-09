@@ -74,7 +74,7 @@ Use this registry as a lookup table. Read one subagent definition only when you 
 | ----------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
 | `preflight-checker`     | [`./subagents/preflight-checker.md`](./subagents/preflight-checker.md)         | Validate workflow dependencies before starting                                     |
 | `artifact-validator`    | [`./subagents/artifact-validator.md`](./subagents/artifact-validator.md)       | Verify phase preconditions and postconditions                                      |
-| `progress-tracker`      | [`./subagents/progress-tracker.md`](./subagents/progress-tracker.md)           | Read, create, and update progress artifacts                                        |
+| `progress-tracker`      | [`./subagents/progress-tracker.md`](./subagents/progress-tracker.md)           | Read, initialize, update, and skip progress artifacts                                        |
 | `status-checker`        | [`./subagents/status-checker.md`](./subagents/status-checker.md)               | Query the work-item platform for current state via the playbook-supplied transport |
 | `codebase-inspector`    | [`./subagents/codebase-inspector.md`](./subagents/codebase-inspector.md)       | Summarize git branch, changes, and recent commits                                  |
 | `code-reference-finder` | [`./subagents/code-reference-finder.md`](./subagents/code-reference-finder.md) | Locate symbols, files, and implementation touchpoints                              |
@@ -122,7 +122,7 @@ For any subagent dispatch:
 
 1. Read the subagent definition from the registry and tell the subagent to read it at its absolute path resolved from this skill directory.
 2. Pass `TICKET_KEY`, `MUTATION_LIMITS`, and only explicitly needed inputs. When platform-specific behavior is required, pass PLAYBOOK_PATH as the active playbook's absolute path resolved from this skill directory.
-3. Collect its structured summary.
+3. Collect its structured summary. For progress, dispatch the shipped `scripts/progress.py` through `progress-tracker` and require exit 0; never route on an unvalidated claimed success.
 4. Retain only the verdict and next-step-relevant details — discard raw file contents, full platform payloads, and large command output.
 
 Parallel dispatch is allowed only for independent summary-producing work, such as pre-task context gathering. Dependent operations remain sequential.
