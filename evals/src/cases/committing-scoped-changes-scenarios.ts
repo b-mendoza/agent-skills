@@ -44,4 +44,14 @@ export const scenarios = [
     },
     check: (observation) => checkApprovedCommits(observation, "none"),
   },
+  {
+    ...defaults,
+    id: "committing-scoped-changes/coupled-approved-commits",
+    intent:
+      "Whole-file groups preserve shared derived metadata and exchanged content; mixed-file messages and verification evidence are truthful",
+    seed: (context) => {
+      seedCommitScenario(context);
+    },
+    check: (observation) => checkApprovedCommits(observation),
+  },
 ] as const satisfies readonly EvalCase[];
