@@ -74,6 +74,22 @@ const decodeToolResult = Schema.decodeUnknownSync(
 const WEB_TOOLS = new Set(["WebSearch", "WebFetch"]);
 const WEB_RESULT_CHARS = 8_000;
 const WEB_RESULTS_TOTAL_CHARS = 32_000;
+const EXECUTION_RESULT_CHARS = 16_000;
+const EXECUTION_RESULTS_TOTAL_CHARS = 128_000;
+const EXECUTION_RESULT_TAIL_CHARS = 2_000;
+// Reserved tails do not consume the shared pool; weak membership follows call lifetime.
+const RESERVED_RESULT_CALLS = new WeakSet<ToolCall>();
+const CAPTURED_TOOLS = new Set([...WEB_TOOLS, "Bash", "Agent", "Task"]);
+const WEB_LIMITS = {
+  perResult: WEB_RESULT_CHARS,
+  total: WEB_RESULTS_TOTAL_CHARS,
+};
+const EXECUTION_LIMITS = {
+  perResult: EXECUTION_RESULT_CHARS,
+  total: EXECUTION_RESULTS_TOTAL_CHARS,
+};
+const TRUNCATION_MARKER = "\n[truncated]\n";
+const TRUNCATION_SIDES = 2;
 const ZERO_CHARS = 0;
 const NO_TASKS = 0;
 const decodeBackgroundTasks = Schema.decodeUnknownSync(
@@ -106,27 +122,90 @@ function assistantToolCalls(message: unknown): ToolCall[] {
   return calls;
 }
 
-function recordWebResult(block: unknown, toolCalls: ToolCall[]): void {
+function resultLimits(toolName: string) {
+  return WEB_TOOLS.has(toolName) ? WEB_LIMITS : EXECUTION_LIMITS;
+}
+
+function executionBlockText(block: unknown): string {
+  if (
+    Predicate.isObject(block) &&
+    block["type"] === "text" &&
+    typeof block["text"] === "string"
+  ) {
+    return block["text"];
+  }
+  return toText(block);
+}
+
+function resultText(content: unknown, toolName: string): string {
+  if (WEB_TOOLS.has(toolName)) return toText(content);
+  return Array.isArray(content)
+    ? content.map(executionBlockText).join("\n")
+    : toText(content);
+}
+
+/** The marker counts against both caps. An exhausted allowance retains error/truncation metadata. */
+function boundedResult(content: string, limit: number): string {
+  if (content.length <= limit) return content;
+  if (limit < TRUNCATION_MARKER.length) return "";
+  const retainedChars = limit - TRUNCATION_MARKER.length;
+  const headChars = Math.floor(retainedChars / TRUNCATION_SIDES);
+  const tailChars = retainedChars - headChars;
+  return (
+    content.slice(ZERO_CHARS, headChars) +
+    TRUNCATION_MARKER +
+    content.slice(content.length - tailChars)
+  );
+}
+
+function reserveRequired(
+  limits: ReturnType<typeof resultLimits>,
+  limit: number,
+): boolean {
+  return limits === EXECUTION_LIMITS && limit < TRUNCATION_MARKER.length;
+}
+
+function captureResult(content: string, limit: number, reserved: boolean) {
+  if (reserved) {
+    return {
+      content: TRUNCATION_MARKER + content.slice(-EXECUTION_RESULT_TAIL_CHARS),
+      truncated: true,
+    };
+  }
+  return {
+    content: boundedResult(content, limit),
+    truncated: content.length > limit,
+  };
+}
+
+function recordToolResult(block: unknown, toolCalls: ToolCall[]): void {
   const result = decodeToolResult(block);
   const call = toolCalls.find(
     (candidate) =>
-      candidate.id === result.tool_use_id && WEB_TOOLS.has(candidate.name),
+      candidate.id === result.tool_use_id && CAPTURED_TOOLS.has(candidate.name),
   );
   if (call === undefined) return;
-  const content = toText(result.content);
-  const capturedChars = toolCalls.reduce(
-    (total, candidate) =>
-      total + (candidate.result?.content.length ?? ZERO_CHARS),
-    ZERO_CHARS,
-  );
-  const limit = Math.min(
-    WEB_RESULT_CHARS,
-    WEB_RESULTS_TOTAL_CHARS - capturedChars,
-  );
+  const limits = resultLimits(call.name);
+  const content = resultText(result.content, call.name);
+  const capturedChars = toolCalls
+    .filter(
+      (candidate) =>
+        candidate !== call &&
+        resultLimits(candidate.name) === limits &&
+        !RESERVED_RESULT_CALLS.has(candidate),
+    )
+    .reduce(
+      (total, candidate) =>
+        total + (candidate.result?.content.length ?? ZERO_CHARS),
+      ZERO_CHARS,
+    );
+  const limit = Math.min(limits.perResult, limits.total - capturedChars);
+  const reserved = reserveRequired(limits, limit);
+  if (reserved) RESERVED_RESULT_CALLS.add(call);
+  else RESERVED_RESULT_CALLS.delete(call);
   call.result = {
-    content: content.slice(ZERO_CHARS, limit),
+    ...captureResult(content, limit, reserved),
     isError: result.is_error ?? false,
-    truncated: content.length > limit,
   };
 }
 
@@ -135,7 +214,7 @@ function userToolResults(message: unknown, toolCalls: ToolCall[]): void {
   if (typeof content === "string") return;
   for (const block of content) {
     if (decodeBlock(block).type === "tool_result") {
-      recordWebResult(block, toolCalls);
+      recordToolResult(block, toolCalls);
     }
   }
 }
