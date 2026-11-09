@@ -27,7 +27,7 @@ Derive `MUTATION_LIMITS` once and pass the identical value to every role:
 - Only `post-review.py --approved` may perform GitHub writes, limited to the exact approved review and existing-thread replies. Never retry a mutation after failure or uncertainty.
 - No source edits, PR fixes, Git mutations, environment changes, installed-copy edits, sibling-run reads or cleanup. Additional mutations require explicit user authority naming them; repair never widens scope.
 
-Capture Git porcelain and content identities for already-dirty authorized paths before the first write. At every terminal compare the baseline, preserve unrelated work, remove only recorded run files except receipts retained by state-machine row 1, and keep the deliverable. Report out-of-envelope changes without trying to undo them.
+Capture Git porcelain and content identities for already-dirty authorized paths before the first write. At every actual terminal compare the baseline, preserve unrelated work, remove only recorded run files except receipts retained by state-machine row 1, and keep the deliverable. Waiting for the next user message at `HUMAN_GATE_FINAL_PREVIEW_APPROVAL` is not terminal: retain every run file and do no cleanup. Report out-of-envelope changes without trying to undo them.
 
 Portable target: Claude Code and OpenCode. Helpers require POSIX `sh` and a POSIX-capable `python3`. `SKILL_DIR` is the absolute directory containing this loaded `SKILL.md`: use the host-reported base directory, `${CLAUDE_SKILL_DIR}` where substituted, or the actual path read. Unknown root is `TOOLS_MISSING`. Co-located prompts are not registered agents; read the selected file and dispatch with ordinary host tools. Without dispatch, execute roles inline in order and report degraded isolation. This cannot bypass denied permissions.
 
@@ -69,7 +69,7 @@ Non-normative phase list: intake, collect, review dimensions and join, author, v
 
 Follow the canonical [state-machine.md](./state-machine.md) for every transition, priority, retry cap and terminal.
 
-At `HUMAN_GATE_FINAL_PREVIEW_APPROVAL`, show the unmodified output of:
+At `HUMAN_GATE_FINAL_PREVIEW_APPROVAL`, show the exact summary and comment bodies, targets, event and pins from the dry-run below. Preserve postable text byte-for-byte; explanatory headers may be arranged legibly. Derive the internal approval hash only from the successful dry-run result, never by parsing your final prose. No particular hash label or question wording is required in the reply. Run:
 
 ```sh
 python3 -I "${SKILL_DIR}/scripts/post-review.py" --dry-run "$RUN_DIR"
@@ -85,13 +85,13 @@ Both poster modes refuse collected state other than `open`, history other than `
 
 ## Terminal output
 
-Every terminal audits baseline and run-file cleanup without deleting unrelated paths. Compute counts from accepted author findings and placements, never model-authored totals. Notes state observed checks, omissions, degraded isolation, artifact warnings and actual effects/URLs. Do not claim rollback or test execution without evidence.
+Every actual terminal audits baseline and run-file cleanup without deleting unrelated paths. An assistant turn ending at the approval checkpoint is a waiting state, not a terminal; retain context, chunks, author, verifier and other recorded run files for the next user turn. Compute counts from accepted author findings and placements, never model-authored totals. Notes state observed checks, omissions, degraded isolation, artifact warnings and actual effects/URLs. Do not claim rollback or test execution without evidence.
 
 Internal success outcomes: `VERIFIED_DRAFT_SAVED | VERIFIED_DRAFT_SAVED_POSTING_CANCELLED | VERIFIED_REVIEW_POSTED`. Internal stop outcomes: `NEEDS_CONTEXT | TOOLS_MISSING | REVIEW_ERROR | VERIFY_FAIL | WRITE_ERROR | POST_ERROR | BLOCKED`.
 
 Reply in plain prose with the review path or that no file was written, the actual posting outcome, observed checks and limitations, and any artifact warnings or effects/URLs. On success, include finding, inline-comment and follow-up counts plus the review decision. On a stop, explain the cause and one safe next action. Never print `PR_REVIEW` status lines or a routing envelope. Status fields inside the saved review remain unchanged.
 
-At a missing-approval stop, keep the exact dry-run preview and approval hash visible, ask for `APPROVED`, `REVISE` or `ABORT`, say the draft is saved and nothing was posted, and end the turn. At an output collision, say the existing file was preserved, nothing was posted, and ask for an unused output path.
+While awaiting approval, keep the exact review contents and action metadata visible, retain the captured dry-run hash internally, and offer the choices `APPROVED`, `REVISE` or `ABORT`, say the draft is saved and nothing was posted, and end only the turn. Do not enter `BLOCKED` or clean run files before a user reply. An unrecognized next reply, rather than the absence of a reply, follows the state machine's `BLOCKED` route. At an output collision, say the existing file was preserved, nothing was posted, and ask for an unused output path.
 
 ## Example
 
