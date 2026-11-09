@@ -9,6 +9,9 @@ import { SKILL } from "#/cases/clarifying-assumptions.ts";
 import {
   CLARIFICATION_FACTS,
   CLARIFICATION_INPUTS,
+  COPY_EDIT_INPUTS,
+  COPY_EDIT_NEW,
+  COPY_EDIT_OLD,
   PUBLICATION_INPUTS,
   seedClarificationArtifacts,
 } from "#/cases/clarifying-assumptions-fixtures.ts";
@@ -16,8 +19,13 @@ import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { GH_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { sampleGitStatus } from "#/observation/mutation-evidence.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import {
+  createObservation,
+  createTurn,
+} from "#/observation/observation-test-support.ts";
 
+const REVISION_TURN_COUNT = 4;
+const APPROVAL_TURN_INDEX = 3;
 const critique = `CRITIQUE: PASS
 Ticket: acme-app-42 | Mode: upfront | Task: -
 Artifact: docs/acme-app-42-upfront-critique.md
@@ -299,3 +307,163 @@ test("publication preview requires the HIGH Task 2 concern now and non-skippable
     ).toThrow();
   }
 });
+
+function revisionObservation(): Observation {
+  const original = behavioralObservation(true);
+  return {
+    ...original,
+    finalText: "- RE_PLAN_NEEDED: false\n- BLOCKERS_PRESENT: false",
+    turns: Array.from({ length: REVISION_TURN_COUNT }, () => createTurn()).map(
+      (turn, index) => ({
+        ...turn,
+        name: index === APPROVAL_TURN_INDEX ? "confirm and revise" : "initial",
+      }),
+    ),
+    toolCalls: [
+      {
+        name: "Bash",
+        input: {
+          command:
+            "python3 -I scripts/validate-local-revision.py /fixture acme-app-42 upfront -",
+        },
+        result: {
+          content: "LOCAL_REVISION: PASS files=3",
+          isError: false,
+          truncated: false,
+        },
+      },
+    ],
+    repoFiles: {
+      ...original.repoFiles,
+      [GH_LOG]: "",
+      ...Object.fromEntries(
+        Object.entries(COPY_EDIT_INPUTS).map(([path, text]) => [
+          path,
+          text.replace(COPY_EDIT_OLD, COPY_EDIT_NEW),
+        ]),
+      ),
+    },
+  };
+}
+
+test("localized copy-edit check rejects stale artifacts and unvalidated flag clearing", () => {
+  const observation = revisionObservation();
+  expect(() => getCase("localized-copy-edit").check(observation)).not.toThrow();
+  for (const path of Object.keys(COPY_EDIT_INPUTS).filter((path) =>
+    path.endsWith(".md"),
+  )) {
+    expect(() =>
+      getCase("localized-copy-edit").check({
+        ...observation,
+        repoFiles: {
+          ...observation.repoFiles,
+          [path]: COPY_EDIT_INPUTS[path] ?? "",
+        },
+      }),
+    ).toThrow();
+  }
+  expect(() =>
+    getCase("localized-copy-edit").check({ ...observation, toolCalls: [] }),
+  ).toThrow();
+  expect(() =>
+    getCase("localized-copy-edit").check({
+      ...observation,
+      finalText: "- RE_PLAN_NEEDED: true\n- BLOCKERS_PRESENT: false",
+    }),
+  ).toThrow();
+  expect(() =>
+    getCase("localized-copy-edit").check({ ...observation, turns: [] }),
+  ).toThrow();
+});
+
+test("localized validation accepts a truncated result retaining the actual PASS tail", () => {
+  const observation = revisionObservation();
+  const [validation] = observation.toolCalls;
+  assert.ok(validation !== undefined);
+  const recorded = {
+    ...validation,
+    result: {
+      content: "earlier output\n[truncated]\nLOCAL_REVISION: PASS files=3\n",
+      isError: false,
+      truncated: true,
+    },
+  };
+  expect(() =>
+    getCase("localized-copy-edit").check({
+      ...observation,
+      toolCalls: [recorded],
+    }),
+  ).not.toThrow();
+});
+
+test.each([
+  { content: "LOCAL_REVISION: PASS files=3", isError: true, truncated: false },
+  {
+    content: "earlier output\n[truncated]\nLOCAL_REVISION: FAIL",
+    isError: false,
+    truncated: true,
+  },
+])(
+  "localized validation still rejects failed or missing PASS evidence %#",
+  (result) => {
+    const observation = revisionObservation();
+    const [validation] = observation.toolCalls;
+    assert.ok(validation !== undefined);
+    expect(() =>
+      getCase("localized-copy-edit").check({
+        ...observation,
+        toolCalls: [{ ...validation, result }],
+      }),
+    ).toThrow(/no successful local revision validation/);
+  },
+);
+
+test("structural revision cannot suppress required re-planning", () => {
+  const base = revisionObservation();
+  const observation = {
+    ...base,
+    finalText: "- RE_PLAN_NEEDED: true\n- BLOCKERS_PRESENT: false",
+    repoFiles: {
+      ...base.repoFiles,
+      [CLARIFICATION_FACTS.planPath]:
+        "Decision: tenant administrators may export all accounts.",
+    },
+  };
+  expect(() =>
+    getCase("structural-revision-replans").check(observation),
+  ).not.toThrow();
+  expect(() =>
+    getCase("structural-revision-replans").check(revisionObservation()),
+  ).toThrow();
+});
+
+test.each(["Planning complete.", ""])(
+  "revision scripts refuse to answer a gate that was not reached %#",
+  (finalText) => {
+    const candidate = getCase("localized-copy-edit");
+    assert.ok("followUps" in candidate);
+    for (const followUp of candidate.followUps) {
+      expect(followUp.reply(createObservation({ finalText }))).toHaveProperty(
+        "gateNotReached",
+      );
+    }
+  },
+);
+
+// Recorded Write targets from eval-run-3 localized-copy-edit repeats 2 and 3.
+test.each([
+  join("/private", "tmp", "acme-app-42-local-revision-evidence.json"),
+  join("/", "tmp", "acme-app-42-evidence", "evidence.json"),
+])(
+  "localized revision still rejects the recorded forbidden evidence file %s",
+  (filePath) => {
+    const observation = revisionObservation();
+    const toolCalls = [
+      ...observation.toolCalls,
+      { name: "Write", input: { file_path: filePath, content: "{}" } },
+    ];
+    expect(() =>
+      getCase("localized-copy-edit").check({ ...observation, toolCalls }),
+    ).toThrow(/read-only contract violated/);
+  },
+);

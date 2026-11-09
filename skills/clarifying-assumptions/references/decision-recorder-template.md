@@ -183,3 +183,7 @@ RECORDING: ERROR
 Ticket: <KEY> | Mode: <upfront|critique> | Task: <N|->
 Reason: <filesystem or write failure>
 ```
+
+## Conditional local-revision evidence
+
+For the local-copy-edit route only, append `### Local revision evidence` with the JSON defined in `local-revision-contract.md` after the usual summary. This is internal validation input, not a user-facing field. Return the full artifact inventory and exact approved replacements; never emit certification from a changed decisions log alone. The public four-field handoff is unchanged.

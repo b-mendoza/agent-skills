@@ -70,6 +70,16 @@ export function seedClarificationArtifacts({ repoPath }: SeedContext): void {
   });
 }
 
+export const COPY_EDIT_OLD = "recieve the audit download";
+export const COPY_EDIT_NEW = "receive the audit download";
+export const COPY_EDIT_INPUTS = Object.fromEntries(
+  Object.entries(CLARIFICATION_INPUTS).map(([path, text]) => [
+    path,
+    path.endsWith(".md")
+      ? `${text}\nUser-facing wording: Users ${COPY_EDIT_OLD}.\n`
+      : text,
+  ]),
+);
 export const PUBLICATION_INPUTS = {
   ...CLARIFICATION_INPUTS,
   [CLARIFICATION_FACTS.planPath]: `# Task Plan
@@ -98,6 +108,14 @@ None.
 `,
 };
 
+export function seedCopyEditArtifacts(context: SeedContext): void {
+  const { repoPath } = context;
+  seedGitHub(context);
+  writeRepoFiles(repoPath, COPY_EDIT_INPUTS);
+  execFileSync("git", ["config", "status.showUntrackedFiles", "all"], {
+    cwd: repoPath,
+  });
+}
 export function seedPublicationArtifacts(context: SeedContext): void {
   const { repoPath } = context;
   seedGitHub(context);

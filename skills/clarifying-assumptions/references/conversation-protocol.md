@@ -126,3 +126,11 @@ For critique mode, add useful counts such as:
 ```
 
 If `RE_PLAN_NEEDED=true`, tell the parent workflow to re-run the relevant planning phase before execution. If `BLOCKERS_PRESENT=true`, tell it to stop before execution and escalate unresolved items.
+
+## Validated local copy edits
+
+A `revised` answer sets `RE_PLAN_NEEDED=true` provisionally. Keep it true for changes to scope, behavior, requirements, acceptance criteria, task count/order, dependencies, files to implement, technology, or security policy, and for any blocked decision. A changed decisions log alone is never evidence that plans are consistent.
+
+The recorder may certify a wording-only revision when the user explicitly approved exact old/new prose, the meaning and executable contract are unchanged, and every affected artifact has been checked and updated by its owning writer. For this bounded route, the recorder owns only those exact prose replacements in the main plan and the mode's entire artifact set; it never regenerates planning content. Missing artifacts, unmatched targets, uncertain semantics, or validation failure keep re-plan true. Preserve all structural revisions in the decision list even if another revision qualifies as local.
+
+After `RECORDING: PASS`, the coordinator must run `scripts/validate-local-revision.py` from the loaded skill directory against the recorder's before-text evidence and current files. Only exit 0, no blockers, and certification covering every revised decision allow false. `WARN`, missing evidence, or script failure keeps true. Use `../references/local-revision-contract.md` from subagent definitions for the exact evidence contract. The final handoff fields are unchanged.

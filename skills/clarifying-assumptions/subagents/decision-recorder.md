@@ -111,3 +111,7 @@ Blocked and errored paths must use `../references/decision-recorder-template.md`
 | `TASK_NUMBER` or `TASK_TITLE` missing in critique mode | `BLOCKED` | Report and stop                       |
 | Question or assumption text not found                  | `WARN`    | Continue and list the unmatched items |
 | Filesystem write error                                 | `ERROR`   | Report and stop                       |
+
+## Local copy-edit exception
+
+Read `../references/local-revision-contract.md` only for an explicitly approved wording-only revision. You own exact approved prose replacements, not replanning. Capture the complete mode artifact set after recording the decisions and before those replacements, using `Path(path).read_bytes().decode("utf-8")` and JSON serialization as specified in the local-revision contract. Keep newline bytes intact; do not use universal-newline reads or reconstruct evidence from tool output. Update every occurrence, validate current bytes with `../scripts/validate-local-revision.py`, and return the evidence with the existing summary. Every revised decision must qualify before reporting local certification. Structural revisions, missing files, unmatched text, or failed checks retain re-plan required and use the normal recording outcome. Do not mark the Decisions Log Re-plan column No before validation passes.

@@ -5,8 +5,12 @@ import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   CLARIFICATION_FACTS,
   CLARIFICATION_INPUTS,
+  COPY_EDIT_INPUTS,
+  COPY_EDIT_NEW,
+  COPY_EDIT_OLD,
   PUBLICATION_INPUTS,
   seedClarificationArtifacts,
+  seedCopyEditArtifacts,
   seedPublicationArtifacts,
 } from "#/cases/clarifying-assumptions-fixtures.ts";
 import { assertReadOnlyGitHub } from "#/cases/fetching-work-item-fixtures.ts";
@@ -15,6 +19,7 @@ import {
   assertFileMatches,
   assertFilesUnchanged,
   assertNoMutation,
+  assertNoMutationBeforeReply,
   assertNoPublicStatusLine,
   assertOnlyInitialCommit,
   checkNegativeRouting,
@@ -80,7 +85,90 @@ function checkOnlyCritiqueChanged(observation: Observation): void {
   );
 }
 
+const REVISION_TURNS = 4;
 const NO_ITEMS = 0;
+
+function checkCopyEdit(
+  path: string,
+  original: string,
+  observation: Observation,
+): void {
+  const content = observation.repoFiles?.[path] ?? "";
+  if (!path.endsWith(".md")) {
+    assert.equal(content, original);
+    return;
+  }
+  assert.ok(content.includes(COPY_EDIT_NEW), `copy edit missing: ${path}`);
+  assert.ok(!content.includes(COPY_EDIT_OLD), `stale wording: ${path}`);
+}
+function hasRevisionResult(result: ToolCall["result"]): boolean {
+  if (result === undefined) return false;
+  return (
+    !result.isError && /^LOCAL_REVISION: PASS files=3$/m.test(result.content)
+  );
+}
+function isSuccessfulRevisionValidation(call: ToolCall): boolean {
+  return (
+    call.name === "Bash" &&
+    JSON.stringify(call.input).includes("validate-local-revision.py") &&
+    hasRevisionResult(call.result)
+  );
+}
+const REVISION_PATHS = new Set([
+  CLARIFICATION_FACTS.critiquePath,
+  ...Object.keys(COPY_EDIT_INPUTS).filter((path) => path.endsWith(".md")),
+]);
+function isRevisionWrite(call: ToolCall, observation: Observation): boolean {
+  if (!["Write", "Edit"].includes(call.name)) return false;
+  const path = call.input["file_path"];
+  if (typeof path !== "string") return false;
+  return REVISION_PATHS.has(fixtureRelativePath(observation, path) ?? "");
+}
+function checkRevisionBoundary(
+  observation: Observation,
+  expected: string,
+): void {
+  assertOnlyInitialCommit(observation);
+  assert.ok(
+    (observation.turns ?? []).length >= REVISION_TURNS,
+    "revision gate was not answered",
+  );
+  assertNoMutationBeforeReply(
+    withoutAllowedChanges(observation, (call) =>
+      isCritiqueWrite(call, observation),
+    ),
+    (turn) => turn.name === "confirm and revise",
+  );
+  assertNoMutation(
+    withoutAllowedChanges(observation, (call) =>
+      isRevisionWrite(call, observation),
+    ),
+  );
+  assert.match(
+    observation.finalText,
+    new RegExp(`RE_PLAN_NEEDED: ${expected}\\b`),
+  );
+  assert.match(observation.finalText, /BLOCKERS_PRESENT: false/);
+}
+function checkStructuralRevision(observation: Observation): string {
+  checkRevisionBoundary(observation, "true");
+  assert.match(
+    observation.repoFiles?.[CLARIFICATION_FACTS.planPath] ?? "",
+    /tenant administrators/,
+  );
+  return "scope revision retains re-plan flag";
+}
+function checkLocalRevision(observation: Observation): string {
+  checkRevisionBoundary(observation, "false");
+  for (const [path, original] of Object.entries(COPY_EDIT_INPUTS)) {
+    checkCopyEdit(path, original, observation);
+  }
+  assert.ok(
+    observation.toolCalls.some(isSuccessfulRevisionValidation),
+    "no successful local revision validation observed",
+  );
+  return "all planning artifact wording updated and validated without full re-plan";
+}
 
 const suiteDefaults = {
   ...behavioralDefaults,
@@ -236,6 +324,49 @@ export const cases = [
       return "Task 2 security question promoted before publication; no plan or remote changes";
     },
   },
+  ...[false, true].map((structural): EvalCase => ({
+    ...suiteDefaults,
+    id: `${SKILL}/${structural ? "structural-revision-replans" : "localized-copy-edit"}`,
+    seed: seedCopyEditArtifacts,
+    mutationPolicy: "allowed",
+    budgetUsd: 2.5,
+    wallClockMs: 1_200_000,
+    intent:
+      "A post-gate wording correction needs all artifact bytes validated; a scope change still requires re-planning",
+    prompt: () =>
+      `Use ${SKILL}. TICKET_KEY=${CLARIFICATION_FACTS.key} MODE=upfront RESULT_FORMAT=handoff. Show the readiness preview before asking one question at a time.`,
+    followUps: [
+      {
+        name: "ready",
+        reply: ({ finalText }) =>
+          /Ready to start/i.test(finalText)
+            ? { reply: "Ready. Start." }
+            : { gateNotReached: "readiness preview missing" },
+      },
+      {
+        name: "answer audience",
+        reply: ({ finalText }) =>
+          /Question|audience|owner/i.test(finalText)
+            ? {
+                reply:
+                  "The end user is the authenticated account owner exporting only their own records, exactly as canReadAccount already enforces. The CSV addresses the monthly audit need.",
+              }
+            : { gateNotReached: "audience question missing" },
+      },
+      {
+        name: "confirm and revise",
+        reply: ({ finalText }) =>
+          /Question|decision|confirm|owner/i.test(finalText)
+            ? {
+                reply: structural
+                  ? "Revise the scope: tenant administrators must export all tenant accounts, including other owners. This changes authorization and requires re-planning. Record this as the final decision and finish."
+                  : `Keep the existing owner-only approach; confirm, not a scope revision. Separately revise wording only: replace exactly '${COPY_EDIT_OLD}' with '${COPY_EDIT_NEW}' wherever it occurs in all three planning artifacts. I approve those exact local prose edits only. No behavior, scope, dependency, or technology changes. Record and validate the copy edit before finishing.`,
+              }
+            : { gateNotReached: "final decision gate missing" },
+      },
+    ],
+    check: structural ? checkStructuralRevision : checkLocalRevision,
+  })),
   {
     ...suiteDefaults,
     id: `${SKILL}/critique-missing-task-number`,

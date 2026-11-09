@@ -126,7 +126,7 @@ After the four required fields, add only the active mode's line: `- Accepted dec
 
 ### Flag Transitions
 
-Both flags start `false` at run entry. Apply every transition that fires during the run; a flag already set to `true` stays `true`.
+Both flags start `false` at run entry. `BLOCKERS_PRESENT` stays true once set. Revisions require re-planning by default. The only exception is the validated local-copy-edit route below; structural or blocked decisions can never be cleared by that route.
 
 | Event                                                 | `RE_PLAN_NEEDED` | `BLOCKERS_PRESENT` |
 | ----------------------------------------------------- | ---------------- | ------------------ |
@@ -136,6 +136,7 @@ Both flags start `false` at run entry. Apply every transition that fires during 
 | Developer response `revised`                          | `true`           | unchanged          |
 | Developer response `blocked`                          | `true`           | `true`             |
 | `decision-recorder` failure after Stage 4             | unchanged        | `true`             |
+| All revisions certified as local copy edits, no structural revision or blocker, validator exit 0 | `false` | unchanged |
 | Normal completion                                     | unchanged        | unchanged          |
 
 A blocked run that never reached the developer therefore reports `RE_PLAN_NEEDED: false` with `BLOCKERS_PRESENT: true`. That pair is correct: nothing in the plan has been revised.
@@ -165,3 +166,14 @@ Input: `TICKET_KEY=JNS-6065`, `MODE=upfront`, `ITERATION=1`
 3. Dispatch `question-manifest-builder`; receive `Questions now: 3`.
 4. Read `./references/conversation-protocol.md`, ask the three items, then dispatch `decision-recorder`.
 5. Present the stable final summary, including the upfront accepted decisions summary.
+
+## Local revision validation
+
+The bounded wording-only exception is defined in `references/conversation-protocol.md` and `references/local-revision-contract.md`. Resolve the loaded skill directory before dispatch, pass it and `MUTATION_LIMITS` to each subagent, and run `python3 -I <skill-dir>/scripts/validate-local-revision.py ROOT KEY MODE TASK` with the recorder evidence on stdin before clearing a provisional re-plan flag. Exit 1 leaves re-planning required. No new public status field is introduced.
+
+`MUTATION_LIMITS`: analyzer writes only its mode's critique file; manifest builder is read-only; recorder writes only the main tasks file and, in critique mode, the per-task decisions file. For an explicitly approved local copy edit, the recorder may additionally apply only those exact prose replacements to the mode's artifact set. No source, tracker, git, or unrelated-file writes. Pass these limits on every dispatch. Preserve written artifacts unstaged.
+
+
+## Runtime path resolution
+
+`SKILL_DIR` is the directory the host reports when loading this skill, or the directory containing the `SKILL.md` actually read. Pass that resolved directory to dispatched writers and validators. Bundled Python checks run on both Claude Code and OpenCode through the shell capability. If the directory cannot be resolved or Python 3 is unavailable, stop at the current gate with the existing blocked/error outcome; never skip a required check or assume a repository-specific installation path.
