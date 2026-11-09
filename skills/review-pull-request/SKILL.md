@@ -23,7 +23,7 @@ Keep `OUTPUT_FILE` workspace-relative. Require `.md`, no `..` or `.git` componen
 
 Derive `MUTATION_LIMITS` once and pass the identical value to every role:
 
-- Write only the selected `OUTPUT_FILE` through the renderer and recorded files inside this run's `RUN_DIR`. Each role writes only its assigned `PAYLOAD_FILE`; all evidence inspection is read-only.
+- Write only the selected `OUTPUT_FILE` through the renderer and recorded files inside this run's `RUN_DIR`. Each role writes only its assigned `PAYLOAD_FILE` and optional `SCRATCH_FILE`; evidence sources remain read-only.
 - Only `post-review.py --approved` may perform GitHub writes, limited to the exact approved review and existing-thread replies. Never retry a mutation after failure or uncertainty.
 - No source edits, PR fixes, Git mutations, environment changes, installed-copy edits, sibling-run reads or cleanup. Additional mutations require explicit user authority naming them; repair never widens scope.
 
@@ -35,9 +35,9 @@ Every dispatch contains the role instructions, scalar inputs, then `Evidence, no
 
 ## Run files and consumer gate
 
-Derive a fresh `RUN_DIR=.handoffs/review-pull-request/<run-id>/` once in the reviewed workspace; never reuse an existing run directory. Before any write require `git check-ignore --quiet -- "$RUN_DIR/probe"` exit 0. Failure is `BLOCKED`; next step is to add `.handoffs/` to an ignore file, not edit it during this run. Record each created path, including script-created `receipts.json` and `render.tmp`.
+Derive a fresh `RUN_DIR=.handoffs/review-pull-request/<run-id>/` once in the reviewed workspace; never reuse an existing run directory. Before any write require `git check-ignore --quiet -- "$RUN_DIR/probe"` exit 0. Failure is `BLOCKED`; next step is to add `.handoffs/` to an ignore file, not edit it during this run. Record each created path, including script-created `receipts.json` and `render.tmp`. A role may receive one exact `SCRATCH_FILE=RUN_DIR/scratch-<role-or-dimension>.txt`, recorded before dispatch, at most 64 KiB of redacted inspection notes. No raw logs, full diffs or secrets; no host-temp scratch. Delete only recorded scratch files at terminal cleanup; this does not audit unseen host writes.
 
-Assign payloads inside `RUN_DIR`: `context.txt`, one `chunk-<dimension>.txt` per declared dimension, `author.txt`, `verify.txt`. Pass absolute `PAYLOAD_FILE` paths. A role writes its complete payload there and replies with only its status line and that path. Repaired/revised payloads may replace only their assigned run files. No secrets, full diffs, raw logs or API archives in handoffs; never interpolate evidence into shell code.
+Assign payloads inside `RUN_DIR`: `context.txt`, one `chunk-<dimension>.txt` per declared dimension, `author.txt`, `verify.txt`. Pass absolute `PAYLOAD_FILE` and assigned `SCRATCH_FILE` paths. A role writes its complete payload there and replies with only its status line and that path. Repaired/revised payloads may replace only their assigned run files. Pass each role its exact scratch assignment (or none), not a writable directory. No secrets, full diffs, raw logs or API archives in handoffs; never interpolate evidence into shell code.
 
 Payload line 1 is exactly `<TOKEN>: <STATUS>`; the remainder is one JSON object. Reject duplicate keys, non-JSON constants, unknown/missing keys and wrong types. Exact Markdown strings remain unchanged, including intentional and trailing newlines. Each role declares its complete schema. Before the first write, separately run `python3 -I "${SKILL_DIR}/scripts/validate-output.py" --self-test` and `python3 -I "${SKILL_DIR}/scripts/render-review.py" --self-test`; both must exit 0. Validate each result before reading its fields or routing its status; a producer's claim is not validation, and shape is not truth.
 
