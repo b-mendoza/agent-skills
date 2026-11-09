@@ -96,7 +96,7 @@ def render(run):
              "Dimensions reviewed: " + ", ".join(d["name"] for d in context["dimensions"]),
              f"Reviewed base: {context['base_sha']}", f"Reviewed head: {context['head_sha']}", "## Findings"]
     for finding in author["findings"]:
-        parts += [f"### [{finding['severity']}] {finding['title']}",
+        parts += [f"### {finding['title']}",
                   f"ID: {finding['id']}\nConfidence: {finding['confidence']}\n"
                   f"Placement: {finding['placement']}"]
         anchor = finding["anchor"]

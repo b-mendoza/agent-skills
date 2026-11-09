@@ -33,6 +33,23 @@ def repo_path(value):
             and not re.match(r"^[A-Za-z]:[/\\\\]", value) and "\x00" not in value
             and all(part not in ("", ".", "..") for part in value.split("/")))
 
+
+def prose_errors(value):
+    if not text(value):
+        return []  # The required-string check owns this diagnostic.
+    prose = re.sub(r"(?ms)^\s*(`{3,}|~{3,})[^\n]*\n.*?^\s*\1\s*$", "", value)
+    prose = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", prose)
+    errors = []
+    if len(prose.split()) >= 130:
+        errors.append("expected fewer than 130 prose words (fenced code excluded)")
+    if re.search(r"(?im)^\s*(?:#{1,6}\s*)?(?:\[(?:P[0-3]|blocking|important|nit|suggestion)\]|(?:blocking|important|nit|suggestion|severity)\s*:)", prose):
+        errors.append("public severity labels are not allowed")
+    if re.search(r"(?i)\b(?:footgun|under the hood|at the end of the day|nice catch|great job)\b", prose):
+        errors.append("replace idiom or praise filler with literal language")
+    if re.search(r"(?ms)^\s*```suggestion\s*\n\s*none\s*\n\s*```", value):
+        errors.append("unsafe placeholder suggestion")
+    return errors
+
 def url(value):
     try:
         parsed = urlsplit(value) if text(value) else None
@@ -216,6 +233,13 @@ def validate(mode, raw):
             enum(value, "status", ("still-valid", "fixed", "out-of-scope", "unverifiable"), path)
         enum(data, "decision", ("COMMENT", "REQUEST_CHANGES", "APPROVE"))
         findings(data, authored=True)
+        texts = [("summary", data.get("summary"))]
+        finding_values = data.get("findings") if isinstance(data.get("findings"), list) else []
+        texts += [(f"findings[{i}].{key}", f.get(key)) for i, f in enumerate(finding_values)
+                  if isinstance(f, dict) for key in ("title", "body") if key in f]
+        for path, value in texts:
+            for error in prose_errors(value):
+                check(False, path, error)
         if isinstance(data.get("findings"), list):
             check(data.get("decision") != "REQUEST_CHANGES" or bool(data["findings"]), "findings",
                   "REQUEST_CHANGES requires at least one finding")
