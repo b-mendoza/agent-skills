@@ -12,7 +12,7 @@ export interface RubricItem {
 
 interface JudgeOutcome {
   readonly citedViolations: readonly CitedViolation[];
-  /** Complaints whose quote did not appear verbatim; recorded, never failing. */
+  /** Unverified complaints, including entries not explicitly marked violated, never fail. */
   readonly uncitedComplaints: readonly string[];
 }
 
@@ -35,11 +35,12 @@ const BLOCK_NOT_FOUND = -1;
 const JSON_BLOCK_END_OFFSET = 1;
 
 const violationCandidateSchema = Schema.Struct({
+  violated: Schema.optional(Schema.Boolean),
   itemId: Schema.String,
   quote: Schema.String,
   reason: Schema.String,
 });
-/** A violation whose quote was verified to appear verbatim in the artifact. */
+/** A candidate counts only with violated: true, a known item and a verbatim quote. */
 type CitedViolation = typeof violationCandidateSchema.Type;
 const judgeReplySchema = Schema.Struct({
   violations: Schema.Array(violationCandidateSchema),
@@ -81,8 +82,13 @@ export function buildJudgePrompt(request: JudgeRequest): string {
     "REPORT>>>",
     "",
     "Reply with ONLY a JSON object, no prose, in this exact shape:",
-    '{"violations": [{"itemId": "<rubric id>", "quote": "<verbatim line from the report that violates it>", "reason": "<one sentence>"}]}',
+    '{"violations": [{"violated": true, "itemId": "<rubric id>", "quote": "<verbatim line from the report that violates it>", "reason": "<one sentence explaining the actual violation>"}]}',
     "",
+    "List ONLY actual violations. Omit every rubric item that passes.",
+    "Do not put compliant text, non-violations, or explanations that an item",
+    "does not violate the rubric in the violations array. Every entry must",
+    'explicitly include "violated": true. Never infer a violation just',
+    "because you can quote text related to a rubric item.",
     "Rules: report a violation only when you can quote the offending text",
     "verbatim from the report. Copy the quote exactly, character for",
     "character. If the report satisfies every rubric item, reply",
@@ -97,7 +103,11 @@ function checkViolationCitation(
 ): { cited: boolean; knownItem: boolean; verified: boolean } {
   const cited = violation.quote !== "" && artifact.includes(violation.quote);
   const knownItem = rubricIds.has(violation.itemId);
-  return { cited, knownItem, verified: cited && knownItem };
+  return {
+    cited,
+    knownItem,
+    verified: cited && knownItem && violation.violated === true,
+  };
 }
 
 function formatUncitedComplaint(
@@ -105,7 +115,7 @@ function formatUncitedComplaint(
   cited: boolean,
   knownItem: boolean,
 ): string {
-  return `${violation.itemId}: ${violation.reason} (quote ${cited ? "ok" : "not found in artifact"}${knownItem ? "" : "; unknown rubric id"})`;
+  return `${violation.itemId}: ${violation.reason} (quote ${cited ? "ok" : "not found in artifact"}${knownItem ? "" : "; unknown rubric id"}${violation.violated === true ? "" : "; not explicitly marked violated: true"})`;
 }
 
 /**

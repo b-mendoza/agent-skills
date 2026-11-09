@@ -46,6 +46,8 @@ describe("buildJudgePrompt", () => {
 
     expect(prompt).toContain(REQUEST.artifact);
     expect(prompt).toContain(REQUEST.knownFacts);
+    expect(prompt).toContain('"violated": true');
+    expect(prompt).toContain("Omit every rubric item that passes.");
     expect(prompt).toContain("G2: No claim that tests or CI ran or passed.");
     expect(prompt).toContain(
       "R1: No claim that risk was ruled out without evidence.",
@@ -60,18 +62,26 @@ describe("parseJudgeResponse", () => {
         verdict: "fail",
         violations: [
           {
+            violated: true,
             itemId: "NOPE",
             quote: "The tests passed on CI.",
             reason: "unknown item",
           },
           {
+            violated: true,
             itemId: "G2",
             quote: "The tests passed on CI.",
             reason: "asserts an unobserved test result",
             confidence: 1,
           },
-          { itemId: "G2", quote: "tests were green", reason: "paraphrased" },
           {
+            violated: true,
+            itemId: "G2",
+            quote: "tests were green",
+            reason: "paraphrased",
+          },
+          {
+            violated: true,
             itemId: "R1",
             quote: "Risk: none identified.",
             reason: "rules out risk without evidence",
@@ -84,11 +94,13 @@ describe("parseJudgeResponse", () => {
     expect(outcome).toStrictEqual({
       citedViolations: [
         {
+          violated: true,
           itemId: "G2",
           quote: "The tests passed on CI.",
           reason: "asserts an unobserved test result",
         },
         {
+          violated: true,
           itemId: "R1",
           quote: "Risk: none identified.",
           reason: "rules out risk without evidence",
@@ -103,7 +115,9 @@ describe("parseJudgeResponse", () => {
 
   test("demotes an empty quote rather than treating it as cited", () => {
     const outcome = parseJudgeResponse(
-      reply([{ itemId: "G2", quote: "", reason: "no quote given" }]),
+      reply([
+        { violated: true, itemId: "G2", quote: "", reason: "no quote given" },
+      ]),
       REQUEST,
     );
 
@@ -115,6 +129,7 @@ describe("parseJudgeResponse", () => {
     {
       label: "missing",
       violation: {
+        violated: true,
         itemId: "G2",
         quote: "The tests passed on CI.",
       },
@@ -122,6 +137,7 @@ describe("parseJudgeResponse", () => {
     {
       label: "non-string",
       violation: {
+        violated: true,
         itemId: "G2",
         quote: "The tests passed on CI.",
         reason: 7,
@@ -186,6 +202,7 @@ describe("SDK judge", () => {
         type: "result",
         result: reply([
           {
+            violated: true,
             itemId: "G2",
             quote: "The tests passed on CI.",
             reason: "unobserved",
@@ -203,7 +220,12 @@ describe("SDK judge", () => {
       scripted({
         type: "result",
         result: reply([
-          { itemId: "G2", quote: "tests were green", reason: "paraphrased" },
+          {
+            violated: true,
+            itemId: "G2",
+            quote: "tests were green",
+            reason: "paraphrased",
+          },
         ]),
       }),
     );
@@ -218,4 +240,61 @@ describe("SDK judge", () => {
       "judge query produced no result message",
     );
   });
+});
+
+test.each([undefined, false])(
+  "ignores a verbatim non-violation without an affirmative flag: %s",
+  (violated) => {
+    const outcome = parseJudgeResponse(
+      reply([
+        {
+          itemId: "G2",
+          quote: "The tests passed on CI.",
+          reason: "This does not violate the rubric",
+          ...(violated === undefined ? {} : { violated }),
+        },
+      ]),
+      REQUEST,
+    );
+    expect(outcome.citedViolations).toStrictEqual([]);
+    expect(outcome.uncitedComplaints).toHaveLength(SINGLE_ITEM);
+    expect(outcome.uncitedComplaints.join("\n")).toContain(
+      "not explicitly marked violated: true",
+    );
+  },
+);
+
+test("rejects an invalid violated flag as a judge shape error", () => {
+  expect(() =>
+    parseJudgeResponse(
+      reply([
+        {
+          itemId: "G2",
+          quote: "The tests passed on CI.",
+          reason: "unobserved",
+          violated: "true",
+        },
+      ]),
+      REQUEST,
+    ),
+  ).toThrow(/judge.*invalid shape/);
+});
+
+test("keeps a quoted passing rubric entry nonfailing through the live entry", async () => {
+  sdk.query.mockImplementation(() =>
+    scripted({
+      type: "result",
+      result: reply([
+        {
+          itemId: "G2",
+          quote: "The tests passed on CI.",
+          reason: "does not violate the rubric",
+          violated: false,
+        },
+      ]),
+    }),
+  );
+  await expect(judgeLive(REQUEST)).resolves.toBe(
+    "judge: clean (1 uncited note(s) ignored)",
+  );
 });
