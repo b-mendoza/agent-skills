@@ -152,4 +152,4 @@ Orchestrator to user: "Phase 2 (Plan Tasks) is missing `## Validation Report`, s
 ## Artifact Categories
 
 - **Category A** (orchestration artifacts, `docs/<KEY>*.md`): updated on disk only, preserved across sessions, never committed.
-- **Category B** (implementation output): source code, tests, config changes — committed normally by the downstream execution skill.
+- **Category B** (implementation output): source code, tests, config changes. Downstream execution leaves them uncommitted. Staging, committing, pushing, or rewriting history requires a separately authorized workflow and is never implied by Category B.
