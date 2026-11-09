@@ -41,7 +41,12 @@ function correctObservation(evalCase: EvalCase): Observation {
 }
 
 const behavioralCases = cases.filter(
-  (evalCase) => evalCase.tier === BEHAVIORAL_TIER,
+  (evalCase) =>
+    evalCase.tier === BEHAVIORAL_TIER &&
+    [
+      "refactoring-code/plan-approval",
+      "refactoring-code/missing-target",
+    ].includes(evalCase.id),
 );
 const planCase = getCase("refactoring-code/plan-approval");
 

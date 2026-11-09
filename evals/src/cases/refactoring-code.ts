@@ -5,6 +5,7 @@ import { basename, join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
 import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
+import { regressionCases } from "#/cases/refactoring-code-regressions.ts";
 import {
   assertFileMatches,
   assertFilesUnchanged,
@@ -281,4 +282,5 @@ export const cases = [
         ],
       }),
   },
+  ...regressionCases,
 ] as const satisfies readonly EvalCase[];
