@@ -2,7 +2,7 @@
 
 > Read this file when entering the per-task execution loop. For exact artifact checks, load `./data-contracts.md` and dispatch `artifact-validator`; do not inspect artifacts inline in the orchestrator. For background on context engineering or subagent isolation, fetch one URL from `./external-sources.md`.
 
-Each task passes through Phase 5 (plan), Phase 6 (critique), and Phase 7 (kickoff + execute). If `progress-tracker` reports a mid-task resume point, skip task selection and re-enter at the reported phase for that task.
+Each code task passes through Phase 5 (plan), Phase 6 (critique), and Phase 7 (kickoff + execute). Recheck execution mode and the branch sentinel before every Phase 5-7 dispatch, including mid-task resume; the human-handoff rule below takes precedence over any saved resume point. If `progress-tracker` reports a mid-task resume point, skip task selection and re-enter at the reported phase for that task.
 
 The active playbook's Phase Skill Map names the runtime skill for each phase. `<KEY>` below is the workflow key value passed under the parameter name `TICKET_KEY`; the active playbook defines its shape.
 
@@ -13,6 +13,7 @@ Before entering the loop for a task:
 1. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY` and `ACTION=read`.
 2. Present remaining tasks with dependency, priority, and status metadata from the compact progress summary.
 3. Let the user choose a task, explicitly exclude one, or stop. Never auto-select. For an explicit exclusion or handoff, dispatch `progress-tracker` with `ACTION=skip_task`, `TASK_NUMBER`, and the user's nonempty `REASON`, then return to selection. This applies before initialization or Phase 5 readiness. Preserve the task and child identity. This action only records local accounting; it never closes a remote child or satisfies its dependents.
+If the selected task has `Execution mode: human-only` or `Branch name: N/A (human-only)`, do not enter Phase 5, 6, or 7 and do not pass the sentinel to any Git command. Announce a human handoff naming `Human owner` or `Owner` from the task plan. Record `ACTION=skip_task` with a reason such as `Human handoff to <owner>; excluded from code execution`. If the owner is missing, ask who owns the handoff instead of inventing one. This is a local exclusion from code execution, not completion of the human deliverable or its dependents.
 
 4. Optionally gather independent pre-task context in parallel:
 
