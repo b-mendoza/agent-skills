@@ -27,7 +27,7 @@ Own the only canonical review package. Check candidates independently and write 
 
 1. Account for every candidate. Independently re-read cited diff and surrounding evidence at the pinned SHAs, including counterevidence. Confirm a real supported defect and explain why in its evidence/failure scenario, or put the candidate ID and reason in `dropped`. Reviewer agreement is not evidence. Missing material evidence is `NEEDS_CONTEXT`, not a guessed verdict.
 2. Merge cross-dimension duplicates into one finding with the first ID in declared dimension order and strongest supported evidence. Record each other candidate in `dropped` with reason `Merged into <id>`; keep no extra lineage or prior-severity fields. Choose the final evidence-based severity and confidence. Carry all distinct residual risks and honest coverage limits.
-3. Match surviving issues against thread history by substance, path and proximity. Known duplicates become `reply`, never a second inline comment or a drop solely for duplication. Copy the root REST ID from the paired context thread, never a GraphQL ID or an ID parsed from a URL. At most one reply per root; combine related follow-ups into one self-contained body. Resolution state is never changed.
+3. Assess every collected unresolved thread, even when no chunk rediscovered it. Re-read the claim and relevant pinned code; record exactly one `thread_assessments` entry per unresolved root as `still-valid`, `fixed`, `out-of-scope` or `unverifiable`, with specific code/claim evidence. A still-valid, changed-code-caused defect belongs in findings as a reply; an inherited or unrelated issue stays out of new findings. Unverifiable material claims require NEEDS_CONTEXT; ordinary out-of-scope limits are disclosed. Match surviving issues against thread history by substance, path and proximity. Known duplicates become `reply`, never a second inline comment or a drop solely for duplication. Copy the root REST ID from the paired context thread, never a GraphQL ID or an ID parsed from a URL. At most one reply per root; combine related follow-ups into one self-contained body. Resolution state is never changed.
 4. Use `inline` only for a genuinely new finding with sufficient complete history and a verified changed-line anchor. Use `reply` only with an established existing target. Missing history or unresolved dedup becomes `unknown`, which disables posting even when a draft is useful. A genuinely unanchorable observation with established disposition uses `summary`; retain its full record and include it in the exact summary. Never invent line metadata or treat ordinary discussion/review-summary IDs as reply roots.
 5. Load [external review resources](../references/external-review-resources.md) for Google comment guidance, GitHub events, inline/reply fields, Markdown line breaks or suggestions when needed. Fetch supporting current official documentation for each external-fact claim and include its URL in the exact comment or summary text. An unfetched URL is not verification; a necessary unavailable capability is `TOOLS_MISSING`.
 6. Write the exact summary and one exact body for every inline/reply finding. Bodies must stand alone with code and explain the issue, failure and actionable fix. No internal finding IDs, generated-file references or "as above". Follow-ups acknowledge existing discussion and explain why the issue remains at the reviewed version. Keep prose direct and collegial, without blame, praise filler or idioms.
@@ -55,7 +55,8 @@ AUTHOR: PASS
     "placement": "inline", "body": "Exact self-contained comment Markdown.\n"
   }],
   "dropped": [{"candidate": "tests-1", "reason": "Specific drop or merge reason"}],
-  "residual_risks": [], "references": []
+  "residual_risks": [], "references": [],
+  "thread_assessments": [{"root_comment_id": 123, "status": "still-valid", "evidence": "Pinned src/example.py:4 still violates the stated guard requirement"}]
 }
 ```
 
@@ -67,6 +68,8 @@ Every finding has exactly the common keys shown through `sources`, plus `placeme
 | `reply` | `root_comment_id`: positive integer copied from context, unique among replies; `body`: nonempty exact Markdown |
 | `summary` | No additional keys; include the observation in the exact summary |
 | `unknown` | No additional keys; disclose dedup uncertainty in the summary, posting disabled |
+
+`thread_assessments` contains exactly the collected unresolved roots, unique positive `root_comment_id`, `status: still-valid|fixed|out-of-scope|unverifiable`, and nonempty evidence; no additional keys. Use `[]` when none. All path fields follow the repository-relative path rule in the collector contract.
 
 `decision` is `COMMENT|REQUEST_CHANGES|APPROVE`. Empty findings still require the complete summary, dropped list, risks and references; `REQUEST_CHANGES` cannot have empty findings. No success field may be omitted or supplemented with extra keys.
 

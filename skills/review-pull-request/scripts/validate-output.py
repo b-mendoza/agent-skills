@@ -208,7 +208,12 @@ def validate(mode, raw):
             enum(value, "kind", ("unavailable", "truncated", "binary", "omitted"), path)
         findings(data)
     elif mode == "author":
-        record(data, "", "summary", "decision findings dropped residual_risks references")
+        record(data, "", "summary", "decision findings dropped residual_risks references thread_assessments")
+        assessments = array(data, "thread_assessments")
+        unique(assessments, "thread_assessments", "root_comment_id")
+        for value, path in records(assessments, "thread_assessments", "evidence", "root_comment_id status"):
+            fields(value, "root_comment_id", path, positive, "expected integer >= 1")
+            enum(value, "status", ("still-valid", "fixed", "out-of-scope", "unverifiable"), path)
         enum(data, "decision", ("COMMENT", "REQUEST_CHANGES", "APPROVE"))
         findings(data, authored=True)
         if isinstance(data.get("findings"), list):
@@ -240,7 +245,7 @@ def self_test():
         "chunk": dict(dimension="tests", inspected=[dict(path="test.py", ranges="1-9")], gaps=[], findings=[],
                       residual_risks=[], references=[]),
         "author": dict(decision="REQUEST_CHANGES", summary="Fix guard.\n\nTests pass.", dropped=[],
-                       residual_risks=[], references=[], findings=[
+                       residual_risks=[], references=[], thread_assessments=[], findings=[
             dict(finding, id="a1", placement="inline", body="Fix:\n\n```suggestion\npass\n```\n",
             anchor=dict(path="app.py", line=4, start_line=2, side="RIGHT")),
             dict(finding, id="a2", placement="reply", root_comment_id=123, body="Still applies"),
