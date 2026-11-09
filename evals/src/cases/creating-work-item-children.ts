@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
 import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
@@ -70,8 +72,23 @@ High
 The user approved this exact one-task plan; retain the CSV-only scope.
 `;
 
-function seedLinkedPlan(context: SeedContext): void {
+function seedLinkedPlan(context: SeedContext, stale = false): void {
   seedGitHub(context, "linked");
+  const path = join(context.binPath, "gh");
+  const body = `## Parent\nTracks parent issue: ${ISSUE.url} (${ISSUE.reference})\n\n## Task index\nWorkflow task: **1**\n\n${APPROVED_PLAN.slice(APPROVED_PLAN.indexOf("### Objective"), APPROVED_PLAN.indexOf("### Priority"))}`;
+  const childBody = stale
+    ? body.replace(
+        "Keep the header when exporting an empty result.",
+        "Remove the header when exporting an empty result.",
+      )
+    : body;
+  writeFileSync(
+    path,
+    readFileSync(path, "utf8").replace(
+      "\nconst mode =",
+      `\nchild.body = ${JSON.stringify(childBody)};\nconst mode =`,
+    ),
+  );
   commitRepoFiles(
     context.repoPath,
     { [PLAN_PATH]: APPROVED_PLAN },
@@ -186,6 +203,35 @@ export const cases = [
           },
         ],
       }),
+  },
+  {
+    ...behavioralDefaults,
+    id: "creating-work-item-children/stale-index-collision",
+    skill: SKILL,
+    mutationPolicy: "read-only",
+    budgetUsd: 2.0,
+    seed: (context) => {
+      seedLinkedPlan(context, true);
+    },
+    snapshotPaths: [PLAN_PATH, GH_LOG],
+    intent:
+      "A same-parent same-index child with stale implementation is not silently reused or rewritten",
+    prompt: () =>
+      `Use ${SKILL}. ISSUE_URL=${ISSUE.url}. The plan was re-planned and task numbers may have changed. APPROVED_MUTATION_SCOPE: create/reuse children and update ${PLAN_PATH}, but no child rewrites. Reconcile only after verifying identity.`,
+    check: (observation) => {
+      const reply = checkSummary(observation, true);
+      assertFileMatches(observation, GH_LOG, /(?:\/issues\/43|"43")/);
+      assert.match(
+        reply,
+        /(?:stale|conflict|identity|mismatch|different|cannot verify|unproven)/i,
+      );
+      assert.match(reply, /(?:block|stop|reconcil|cannot|could not)/i);
+      assert.doesNotMatch(
+        reply,
+        /\|\s*1\s*\|\s*acme\/app#43[^\n]*\b(?:reused|already linked)\b/i,
+      );
+      return "stale identity blocked after remote read; no writes or local relinking";
+    },
   },
   {
     ...behavioralDefaults,

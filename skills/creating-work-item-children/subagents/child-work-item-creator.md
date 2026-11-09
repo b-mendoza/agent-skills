@@ -79,3 +79,7 @@ If baseline evidence shows this run changed another local path, return the playb
 | Playbook `ERROR`   | Unexpected tool, filesystem, schema, or environment failure interrupted the run                                                        |
 
 Use only categories declared by the active playbook. Fail loudly when a missing capability defeats safe reconciliation; never invent a cross-platform fallback.
+
+## Identity validation
+
+Before any mutation, run `../scripts/validate-identity.py` from this loaded package for each existing or recovered candidate, following `../references/child-creation-playbook.md`. Use only independently read remote fields. Exit 1 is `BLOCKED` with `Validation: NOT_RUN`, never a reason to create a replacement or edit a stale child. A successful script comparison, not a matching task index or copied hash, authorizes reuse.

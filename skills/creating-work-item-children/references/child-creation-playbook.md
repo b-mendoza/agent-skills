@@ -40,7 +40,7 @@ For every concrete existing reference:
 
 1. Fetch the referenced child through the active playbook's transport.
 2. Verify the relationship to the parent using the playbook's relationship model.
-3. Reuse verified matches and count them as already linked.
+3. Run the content-identity gate below for every candidate before any mutation. Reuse only complete matching content and count it as already linked.
 4. If the child is missing, belongs to another parent, has the wrong relationship type, or conflicts with another task row, return the playbook's `BLOCKED` status with `Validation: NOT_RUN`. Do not silently replace it or create a duplicate.
 
 If every task already has verified accepted linkage, skip remote creation and continue directly to local validation/repair.
@@ -97,3 +97,13 @@ Emit exactly the active playbook's structured summary with no additional prose.
 ## Resume Safety
 
 A rerun begins at observation, not at creation. Remote state and the current plan are authoritative evidence. Never rely on a prior attempt's remembered counts or assume an interrupted create failed; search and verify before deciding the child is still missing.
+
+## Content-identity gate before mutation
+
+Preflight every existing reference and resume candidate before any create, remote edit, link, or local update. Parent plus numeric task index is not a stable identity: Phase 2 may renumber tasks. For both platforms, independently extract the current plan task and observed remote child into `title`, `objective`, `requirements`, `dependencies`, `questions`, `implementation`, `done`, and `artifacts`. Remove only the `Task N:` title prefix and normalize CRLF plus outer whitespace. Keep substantive wording, dependencies, and acceptance criteria unchanged. Use literal `None` only for an explicitly empty field, not a missing one.
+
+Run `python3 -I <skill-dir>/scripts/validate-identity.py` with JSON stdin `{ "parent": "<canonical parent URL/key>", "task": {<fields>}, "child": {"parent": "<observed parent URL/key>", "task": {<independently observed fields>}} }`. Exit 0 emits `IDENTITY: PASS sha256=<digest>`; exit 1 blocks the run as `BLOCKED`, `Validation: NOT_RUN`, with no mutations. Preserve the existing local links and name the unproven or conflicting child in the reason. Never manufacture absent remote fields from the local plan.
+
+A complete legacy child can pass by exact content comparison; a legacy child with only parent/index traceability cannot. A changed scope, partial remote read, or ambiguous candidate requires user reconciliation outside this skill. Do not create a duplicate to work around the block. Approved remote rewrites and stable-ID migration need a separate explicit workflow.
+
+For new child payloads, include all identity fields and an informational `<!-- phase4-task-identity sha256="<digest>" -->` computed from that same payload. On reuse recompute from observed content; the stored digest alone is not proof. This leaves the existing plan table, inline references, and public output contract unchanged.

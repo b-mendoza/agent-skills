@@ -109,3 +109,12 @@ Input: `ISSUE_URL=https://github.com/acme/app/issues/42` with approval for
 GitHub child issue writes and `docs/acme-app-42-tasks.md`.
 
 Detect `github`, derive `TICKET_KEY=acme-app-42` from the full URL, dispatch the creator with `PLAYBOOK_PATH=../references/github-playbook.md`, and route the returned `TASK_ISSUES` plus `Validation` lines. Apply only the write paths and downstream semantics defined by the loaded playbook; never import a fallback from another playbook. </example>
+
+## Reuse identity
+
+Before mutation, the creator validates every existing child through `scripts/validate-identity.py`, using independently observed plan and remote fields. Pass the resolved loaded skill directory to the creator. The content-identity gate in `references/child-creation-playbook.md` is mandatory on GitHub and Jira; matching parent/task index alone is unsafe after re-planning. Missing or stale identity blocks the entire mutation phase and preserves existing links.
+
+
+## Runtime path resolution
+
+`SKILL_DIR` is the directory the host reports when loading this skill, or the directory containing the `SKILL.md` actually read. Pass that resolved directory to dispatched writers and validators. Bundled Python checks run on both Claude Code and OpenCode through the shell capability. If the directory cannot be resolved or Python 3 is unavailable, stop at the current gate with the existing blocked/error outcome; never skip a required check or assume a repository-specific installation path.

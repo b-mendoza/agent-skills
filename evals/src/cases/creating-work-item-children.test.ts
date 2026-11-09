@@ -196,3 +196,30 @@ test("both behavioral seeds produce the committed approved plan and parent/task-
     }
   }
 });
+
+test("stale task identity blocks reuse despite matching parent and task index", () => {
+  const blocked = {
+    ...SUCCESS,
+    finalText: `Stopped for acme/app#42. ${PLAN_PATH} is unchanged. Child acme/app#43 has stale implementation content; identity conflicts with this re-plan. Reconcile with the user before retrying.`,
+  };
+  expect(() => getCase("stale-index-collision").check(blocked)).not.toThrow();
+  expect(() => getCase("stale-index-collision").check(SUCCESS)).toThrow();
+  expect(() =>
+    getCase("stale-index-collision").check({
+      ...blocked,
+      repoFiles: {
+        [PLAN_PATH]: APPROVED_PLAN,
+        [GH_LOG]: '["issue","view","42","--repo","acme/app"]\n',
+      },
+    }),
+  ).toThrow();
+  expect(() =>
+    getCase("stale-index-collision").check({
+      ...blocked,
+      repoFiles: {
+        [PLAN_PATH]: APPROVED_PLAN,
+        [GH_LOG]: `${READ_LOG}["issue","edit","43"]\n`,
+      },
+    }),
+  ).toThrow();
+});

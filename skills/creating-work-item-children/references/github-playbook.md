@@ -59,9 +59,9 @@ Verify the parent via `gh issue view` using the full URL and capture number, sta
 For each existing concrete `owner/repo#N`:
 
 1. Fetch number, state, title, body, URL, and native parent relationship when exposed.
-2. Reuse it only when the native relationship or its body traceability points to this exact `ISSUE_URL` / canonical parent reference and its workflow task index matches the plan row.
+2. Verify this exact parent, then apply the full content-identity gate in `child-creation-playbook.md`. The workflow task index is only a lookup hint; matching parent/index or title is never proof of identity after a re-plan.
 3. Block if it clearly belongs to another parent, task, or unrelated epic.
-4. On resume, search narrowly for a previously created issue carrying this parent URL and task index before creating a replacement.
+4. On resume, search narrowly using parent and prior index, then verify full content identity before reuse. Ambiguous, stale, or incomplete matches block before any replacement create or local relink; do not silently rewrite an old child.
 
 Existing `task-list` values are reusable only when the current approved scope accepts degraded task-list traceability. Otherwise return `BLOCKED` for a user choice rather than silently upgrading or replacing them.
 
