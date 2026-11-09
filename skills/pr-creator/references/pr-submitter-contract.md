@@ -3,7 +3,7 @@
 Return exactly one status block. Echo platform-returned values for orchestrator verification; do not rely on inputs as verification evidence.
 
 ```text
-PR_SUBMIT: <PASS | HEAD_MOVED | CREATE_UNCERTAIN | BLOCKED | CREATE_ERROR | AUTH | ERROR>
+PR_SUBMIT: <PASS | CREATED_WITH_DRIFT | HEAD_MOVED | CREATE_UNCERTAIN | BLOCKED | CREATE_ERROR | AUTH | ERROR>
 Approval record: <valid | missing | digest-mismatch>
 Frozen head SHA: <sha>
 Remote head SHA before create: <sha | unavailable>
@@ -18,6 +18,7 @@ Title returned: <platform-returned title | unavailable>
 State returned: <platform-returned state | unavailable>
 Reviewers returned: <platform-returned reviewers | none | unavailable>
 Labels returned: <platform-returned labels | none | unavailable>
+Assignees returned: <platform-returned assignees | none | unavailable>
 Body first line returned: <line | unavailable>
 Body line count returned: <number | unavailable>
 Approved body digest: <digest>
@@ -29,4 +30,4 @@ Reason: <one line>
 Decision needed: <none | rerun diff after head moved | user checks commands | next action>
 ```
 
-Use `HEAD_MOVED` before create when the remote head SHA no longer matches the frozen preview. Use `CREATE_UNCERTAIN` only after querying for the PR/MR and one bounded retry still cannot determine the outcome.
+Use `HEAD_MOVED` before create when either remote pin no longer matches the frozen preview. `CREATED_WITH_DRIFT` preserves the confirmed URL and reports every mismatch/unreadable field; it never permits retry or edit. Use `CREATE_UNCERTAIN` only after querying for the PR/MR and one bounded retry still cannot determine the outcome.

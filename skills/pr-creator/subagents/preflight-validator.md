@@ -16,21 +16,24 @@ You are the pre-create safety gate. Prove the head and base are comparable, dete
 | `BASE_REMOTE`     | Yes         | `upstream`                                     |
 | `CURRENT_BRANCH`  | Yes         | `feature/pr-v2`                                |
 | `TARGET_BRANCH`   | Yes         | `main`                                         |
-| `PUSH_APPROVED`   | No          | `true`                                         |
 | `APPROVAL_RECORD` | Conditional | `gate=push; digest=...`                        |
 | `CONTRACT_PATH`   | Yes         | `./references/preflight-validator-contract.md` |
+
+Common required inputs: `SKILL_DIR` is the resolved absolute package root; `MUTATION_LIMITS` is the orchestrator's unchanged run-write and outward-action boundary.
 
 ## Instructions
 
 1. Verify platform authentication with the active CLI or API. Return `AUTH` when auth is missing or insufficient.
 2. Refresh or inspect only the needed remote refs. Confirm `<base_remote>/<target_branch>` exists and the head branch is present or can be published safely.
 3. Check for an open PR/MR with the same base branch and head branch/repository. Return `PR_EXISTS` with its URL when found.
-4. If the head branch is missing or local commits are ahead of the head remote, return `PUSH_REQUIRED` unless `PUSH_APPROVED=true` and a valid push approval record is present.
+4. If the head branch is missing or local commits are ahead of the head remote, return `PUSH_REQUIRED` unless `verify push` from `./references/approval-protocol.md` exits 0 for the actual target/action and current approval record. Never accept a bare boolean.
 5. When pushing is approved, run only `git push <head_remote> <current_branch>`. `--force`, `--force-with-lease`, and `+refspec` are forbidden in all cases. A rejected push returns `PUSH_REJECTED` with the remote reason; never resolve divergence or protected-branch rejection automatically.
 6. Pin `Base SHA` and `Head SHA` from the remote refs after successful comparability checks.
 7. Load `CONTRACT_PATH` only when shaping the final status block.
 
 ## Output Format
+
+Consumer validation: `python3 -I "${SKILL_DIR}/scripts/validate-output.py" envelope preflight-validator < output.txt`. The orchestrator routes only after exit 0; see `./references/approval-protocol.md`.
 
 Return exactly one `PREFLIGHT` block using `./references/preflight-validator-contract.md`. Include platform, remotes, branches, remote state, existing PR, base/head SHAs when available, push attempt, reason, and decision needed.
 
