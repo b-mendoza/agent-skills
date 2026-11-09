@@ -23,6 +23,7 @@ Every question names the missing input in prose and ends the turn. When every ap
 
    | Executor result                                           | Route                                                    |
    | --------------------------------------------------------- | -------------------------------------------------------- |
+   | Host denies executor dispatch before an envelope exists | `BLOCKED`: name the group and host denial, list already-created commits; never retry inline, escalate permissions, or dispatch later groups |
    | `COMMIT_EXECUTE: PASS`                                    | Record the commit and verification evidence; next group, or Final when none remain |
    | `COMMIT_EXECUTE: DIVERGED`                                | `BLOCKED` naming the group                               |
    | `COMMIT_EXECUTE: HOOK_MUTATION`                           | `BLOCKED` naming the group and SHA                       |
