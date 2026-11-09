@@ -100,9 +100,14 @@ def plan_for(run):
 
 def preview(context, plan, sha):
     review = plan["review"]
-    parts = [f"POST review to {plan['repo']}#{plan['number']}", "base: " + plan["base"],
+    basis = plan["posting_basis"]
+    parts = [f"POST review to {plan['repo']}#{plan['number']}",
+             "base: " + plan["base"],
              "merge-base: " + plan["base_sha"], "commit_id: " + review["commit_id"],
              "event: " + review["event"], "Summary body:", review["body"]]
+    if review["event"] == "APPROVE" and basis["approval_urls"]:
+        parts += ["This account already approved this head: " + ", ".join(basis["approval_urls"]),
+                  "APPROVED explicitly confirms submitting another approval; otherwise choose ABORT."]
     for comment in review["comments"]:
         location = {key: value for key, value in comment.items() if key != "body"}
         parts += ["Inline: " + canonical(location), comment["body"]]

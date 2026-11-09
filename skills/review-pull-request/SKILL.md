@@ -75,7 +75,7 @@ At `HUMAN_GATE_FINAL_PREVIEW_APPROVAL`, show the exact summary and comment bodie
 python3 -I "${SKILL_DIR}/scripts/post-review.py" --dry-run "$RUN_DIR"
 ```
 
-It includes the event, exact summary, every inline body/location, every reply body/root URL, and final `approval-sha256: <hex>`. Also show this run/PR, pinned base/head, PR state, verification observations, collection-time CI and material risks. Explain ABORT keeps the draft and posts nothing. Ask for `APPROVED`, `REVISE` with text, or `ABORT`; approval binds only to that hash in this run, never earlier consent or a paraphrase. Any changed text, target or basis invalidates it. APPROVED executes:
+It includes the event, exact summary, every inline body/location, every reply body/root URL, and final `approval-sha256: <hex>`. A same-account approval at this head is shown with its URL; ask whether another approval is intended, with APPROVED explicitly confirming that redundant action. Also show this run/PR, pinned base/head, PR state, verification observations, collection-time CI and material risks. Explain ABORT keeps the draft and posts nothing. Ask for `APPROVED`, `REVISE` with text, or `ABORT`; approval binds only to that hash in this run, never earlier consent or a paraphrase. Any changed text, target or basis invalidates it. APPROVED executes:
 
 ```sh
 python3 -I "${SKILL_DIR}/scripts/post-review.py" --approved <approval-sha256> "$RUN_DIR"
