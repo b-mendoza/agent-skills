@@ -113,3 +113,7 @@ Detect `jira`, load `./references/jira-playbook.md`, derive `PROJ-1234`, dispatc
 Input: `ISSUE_URL=https://github.com/acme/app/issues/42`
 
 Detect `github`, load `./references/github-playbook.md`, derive `ISSUE_SLUG=acme-app-42`, dispatch `work-item-retriever`, receive `FETCH: PARTIAL` and `Validation: PASS`, then report `docs/acme-app-42.md` and the warning. Continue only with the warning visible to downstream phases. </example>
+
+## Mutation limits
+
+Pass `MUTATION_LIMITS` to the retriever on every dispatch: read tracker data only; write only `docs/<KEY>.md`; preserve source and version-control state; make no remote edits, comments, creates, or transitions. Snapshot assembly is a local write, not permission to mutate the tracker.

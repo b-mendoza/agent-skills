@@ -53,3 +53,5 @@ Read platform data through read-only platform tools, preserve useful tracker con
 | `FETCH: FAIL`                                   | Deterministic blocker: malformed input, missing parent work item, auth/permission failure, missing read capability, or rate-limit exhaustion |
 | `FETCH: PARTIAL`                                | Main artifact is valid but comments, related items, or discovery are incomplete                                                              |
 | `FETCH: ERROR` (`Failure category: UNEXPECTED`) | Crashes, schema/tool mismatches, environment failures, or validation failure after the repair loop                                           |
+
+Honor the coordinator's `MUTATION_LIMITS` on every stage. The only allowed write is the derived snapshot path; all tracker calls are read-only, including pull-request detail and pagination queries.
