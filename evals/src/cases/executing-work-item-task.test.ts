@@ -358,3 +358,25 @@ describe("human-only readiness stop", () => {
     }
   });
 });
+
+describe("recorded report-contract violations", () => {
+  test.each([
+    [
+      "approval-before-kickoff",
+      false,
+      "Task 1 isn't ready to execute yet. Execution hasn't been approved, so I stopped before kickoff. I made no branch change, file edit or tracker write.",
+    ],
+    [
+      "missing-decisions",
+      true,
+      "Task 1 for `acme-app-42` is blocked, so I did not run it. The required decisions file `docs/acme-app-42-task-1-decisions.md` doesn't exist, and the skill requires it before any subagent is dispatched. Nothing was changed: no branch checkout, no file edits, no tracker updates, and no specialists dispatched.",
+    ],
+  ] as const)(
+    "keeps rejecting %s without the mandatory final report",
+    (name, missing, finalText) => {
+      expect(() =>
+        getCase(name).check({ ...behavioralObservation(missing), finalText }),
+      ).toThrow(/expected one final task report/);
+    },
+  );
+});

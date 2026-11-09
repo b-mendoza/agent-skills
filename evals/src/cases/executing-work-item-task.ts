@@ -124,18 +124,61 @@ function checkHumanOnlyStop(observation: Observation): string {
 }
 
 const SINGLE_REPORT = 1;
+const NO_RETRIES = 0;
+const LAST_WORD = -1;
+const LINE_START = 0;
+
+function sectionMarker(line: string, heading: string): boolean {
+  return new RegExp(`^${heading}(?:\\s*:.*)?$`, "i").test(line);
+}
+
+function counterValues(lines: readonly string[], pattern: RegExp): number[] {
+  return lines.flatMap((line) => {
+    const value = pattern.exec(line.trim())?.groups?.["count"];
+    return value === undefined ? [] : [Number(value)];
+  });
+}
+
+function reportLine(line: string): string {
+  const trimmed = line.trim();
+  const closing = trimmed.split(/\s+/).at(LAST_WORD) ?? "";
+  return /^#+$/.test(closing)
+    ? trimmed.slice(LINE_START, -closing.length).trimEnd()
+    : trimmed;
+}
 
 function checkReportShape(text: string): void {
+  const lines = text.split(/\r?\n/).map(reportLine);
   assert.equal(
-    text.match(/^Final Task Report\s*$/gm)?.length,
+    lines.filter((line) => sectionMarker(line, "Final Task Report")).length,
     SINGLE_REPORT,
     "expected one final task report",
   );
   for (const heading of FINAL_HEADINGS) {
-    assert.match(text, new RegExp(`^${heading}\\s*$`, "m"));
+    assert.ok(
+      lines.some((line) => sectionMarker(line, heading)),
+      `missing required report section: ${heading}`,
+    );
   }
+  const compact = lines
+    .filter((line) => sectionMarker(line, "Retry Counts"))
+    .flatMap((line) => line.replace(/^Retry Counts\s*:/i, "").split(","));
   for (const label of RETRY_LABELS) {
-    assert.match(text, new RegExp(`^${label}: 0\\s*$`, "m"));
+    const short = label.replace(/ fixes$/, "");
+    const values = [
+      ...counterValues(
+        lines,
+        new RegExp(`^${label}\\s*:\\s*(?<count>\\d+)\\s*\\.?$`, "i"),
+      ),
+      ...counterValues(
+        compact,
+        new RegExp(`^${short}(?:\\s*:\\s*|\\s+)(?<count>\\d+)\\s*\\.?$`, "i"),
+      ),
+    ];
+    assert.notDeepEqual(values, [], `missing retry counter: ${label}`);
+    for (const value of values) {
+      assert.equal(value, NO_RETRIES, `wrong retry counter: ${label}`);
+    }
   }
 }
 
