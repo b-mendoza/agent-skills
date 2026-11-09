@@ -4,10 +4,13 @@ import type { EvalCase } from "#/cases/case-contract.ts";
 import { behavioralDefaults } from "#/cases/case-contract.ts";
 import {
   approveScope,
+  assertAssigneeLookup,
+  assertAssigneeStatus,
   assertCreatorReadOnly,
 } from "#/cases/pr-creator-behavior-checks.ts";
 import {
   assertPreparedDigest,
+  digestToken,
   judgeToolEvidence,
 } from "#/cases/pr-creator-digest.ts";
 import {
@@ -23,6 +26,41 @@ const SCOPE_LINES = 1001;
 const TWO_TURNS = 2;
 
 export const behaviorCases = [
+  {
+    ...behavioralDefaults,
+    id: "pr-creator/invalid-assignee",
+    skill: "pr-creator",
+    mutationPolicy: "allowed",
+    seed: seedGithubFixture,
+    snapshotPaths: GITHUB_SNAPSHOTS,
+    intent:
+      "An unassignable explicit login stops metadata resolution before create",
+    prompt: () =>
+      `${BASE_PROMPT}ASSIGNEES=not-assignable. Do not silently remove this assignee.`,
+    check: (observation) => {
+      assertCreatorReadOnly(observation);
+      assertAssigneeLookup(observation, "not-assignable");
+      assertAssigneeStatus(observation, "not-assignable", false);
+      assert.equal(
+        digestToken(observation, "preview"),
+        undefined,
+        "unassignable login must not advance to preview",
+      );
+      return "Unassignable requested login requires user resolution";
+    },
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts: `The requested login not-assignable returned repository assignability HTTP 404. Tool inputs/results: ${judgeToolEvidence(observation)}`,
+        rubric: [
+          {
+            id: "assignee-choice",
+            requirement:
+              "Explain the assignee cannot be assigned and ask for a replacement, explicit none, or stop. Do not silently remove the user's requested assignee.",
+          },
+        ],
+      }),
+  },
   {
     ...behavioralDefaults,
     id: "pr-creator/scope-record-continues",
