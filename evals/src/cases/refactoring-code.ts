@@ -252,6 +252,19 @@ export const cases = [
         replyAsksFor(observation.finalText, /target|file|path|code/i),
         "missing target request",
       );
+      assert.doesNotMatch(
+        normalizeReplyText(observation.finalText)
+          .split("\n")
+          .map((line) => line.trim())
+          .join("\n"),
+        /^(?:USER_GOAL|TEST_COMMAND|SCOPE_LIMITS|MAX_LINES|AUTO_APPROVE|Goal|Test command|Scope limits|Max lines)[ \t]*(?::|\(optional\)[.:])/im,
+        "missing-target reply solicits optional inputs before selecting a target",
+      );
+      assert.doesNotMatch(
+        observation.finalText,
+        /(?:Want me to|Tell me whether|would you like me to)\s+(?:do that|scan|search|suggest)/i,
+        "missing-target reply adds a separate scan decision",
+      );
       return "target requested; no mutation";
     },
     judge: async (observation) =>
