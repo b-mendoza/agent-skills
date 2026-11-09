@@ -102,6 +102,8 @@ def preview(context, plan, sha):
     review = plan["review"]
     basis = plan["posting_basis"]
     parts = [f"POST review to {plan['repo']}#{plan['number']}",
+             f"Submit a new review as {basis['viewer']} (not an author-response workflow).",
+             f"Inline comments: {len(review['comments'])}; thread replies: {len(plan['replies'])}",
              "base: " + plan["base"],
              "merge-base: " + plan["base_sha"], "commit_id: " + review["commit_id"],
              "event: " + review["event"], "Summary body:", review["body"]]

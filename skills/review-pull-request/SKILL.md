@@ -69,13 +69,13 @@ Non-normative phase list: intake, collect, review dimensions and join, author, v
 
 Follow the canonical [state-machine.md](./state-machine.md) for every transition, priority, retry cap and terminal.
 
-At `HUMAN_GATE_FINAL_PREVIEW_APPROVAL`, show the exact summary and comment bodies, targets, event and pins from the dry-run below. Preserve postable text byte-for-byte; explanatory headers may be arranged legibly. Derive the internal approval hash only from the successful dry-run result, never by parsing your final prose. No particular hash label or question wording is required in the reply. Run:
+At `HUMAN_GATE_FINAL_PREVIEW_APPROVAL`, show the exact summary and comment bodies, targets, action/account, counts, event and pins from the dry-run below. Preserve postable text byte-for-byte; explanatory headers may be arranged legibly. Derive the internal approval hash only from the successful dry-run result, never by parsing your final prose. No particular hash label or question wording is required in the reply. Run:
 
 ```sh
 python3 -I "${SKILL_DIR}/scripts/post-review.py" --dry-run "$RUN_DIR"
 ```
 
-It includes the event, exact summary, every inline body/location, every reply body/root URL, and final `approval-sha256: <hex>`. A same-account approval at this head is shown with its URL; ask whether another approval is intended, with APPROVED explicitly confirming that redundant action. Also show this run/PR, pinned base/head, PR state, verification observations, collection-time CI and material risks. Explain ABORT keeps the draft and posts nothing. Ask for `APPROVED`, `REVISE` with text, or `ABORT`; approval binds only to that hash in this run, never earlier consent or a paraphrase. Any changed text, target or basis invalidates it. APPROVED executes:
+It explicitly submits a new review as the recorded authenticated account, not an author response workflow, and gives separate inline/reply counts. Clarify mixed intent at intake before drafting; author-only replies belong in a separate reply workflow, not a new review. It includes the event, exact summary, every inline body/location, every reply body/root URL, and final `approval-sha256: <hex>`. A same-account approval at this head is shown with its URL; ask whether another approval is intended, with APPROVED explicitly confirming that redundant action. Also show this run/PR, pinned base/head, PR state, verification observations, collection-time CI and material risks. Explain ABORT keeps the draft and posts nothing. Ask for `APPROVED`, `REVISE` with text, or `ABORT`; approval binds only to that hash in this run, never earlier consent or a paraphrase. Any changed text, target or basis invalidates it. APPROVED executes:
 
 ```sh
 python3 -I "${SKILL_DIR}/scripts/post-review.py" --approved <approval-sha256> "$RUN_DIR"
