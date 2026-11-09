@@ -21,6 +21,7 @@ These waiver categories require user approval before implementation. The orchest
 - Static data that is clearer and safer as one artifact.
 - A single declaration that cannot be split without damaging readability or the public surface.
 - A framework-required single file where splitting would violate project conventions or runtime discovery.
+- `pre-existing-net-reduction`: an existing ordinary source file already over `MAX_LINES` may remain over the limit only with explicit approval of that named file's reduction. Record its measured baseline count and projected smaller count on the card. The final count must be strictly lower than baseline; new files and growth are ineligible. This is not a blanket limit increase and `AUTO_APPROVE` cannot grant it. The implementer reports actual before/after counts; the reviewer independently recounts and rejects equal size, growth, changed baseline, or use on a newly created file.
 
 Any other oversized material edit requires splitting, a smaller plan, or a `BLOCKED`/`NEEDS_CLARIFICATION` stop.
 
