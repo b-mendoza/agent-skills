@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
+import { behaviorCases } from "#/cases/pr-creator-behavior.ts";
 import { creatorObservation } from "#/cases/pr-creator-behavior-checks.ts";
 import {
   assertNoGithubWrites,
@@ -141,4 +142,5 @@ export const cases = [
         ],
       }),
   },
+  ...behaviorCases,
 ] as const satisfies readonly EvalCase[];
