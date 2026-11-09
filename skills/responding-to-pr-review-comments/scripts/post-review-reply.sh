@@ -2,13 +2,17 @@
 # Post one reply body to a pull-request review comment. Caller must already
 # hold an APPROVAL_RECORD matching this exact body.
 set -euo pipefail
-if [ "$#" -ne 3 ]; then
-  printf '%s\n' "usage: $0 <owner>/<repo> <comment-id> <body-file>" >&2
+usage() {
+  printf '%s\n' "usage: $0 <owner>/<repo> <pr-number> <comment-id> <body-file>" >&2
   exit 64
-fi
+}
+[ "$#" -eq 4 ] || usage
 repo_path="$1"
-comment_id="$2"
-body_file="$3"
+pr_number="$2"
+comment_id="$3"
+body_file="$4"
+[[ "$pr_number" =~ ^[1-9][0-9]*$ ]] || usage
+[[ "$comment_id" =~ ^[1-9][0-9]*$ ]] || usage
 if [ ! -f "$body_file" ]; then
   printf '%s\n' "body file not found: $body_file" >&2
   exit 66
@@ -18,5 +22,5 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 2
 fi
 # shellcheck disable=SC2016
-gh api --method POST "repos/${repo_path}/pulls/comments/${comment_id}/replies" \
+gh api --method POST "repos/${repo_path}/pulls/${pr_number}/comments/${comment_id}/replies" \
   -f body="$(cat "$body_file")"
