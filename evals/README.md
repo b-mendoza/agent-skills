@@ -174,36 +174,36 @@ The runner waits for background settlement separately on every turn. One SDK `ma
 
 All 28 skills have registered suites. Counts describe available cases, not live-run pass rates.
 
-| Skill                              | Routing, tier 1 | Behavioral, tier 2 |
-| ---------------------------------- | --------------: | -----------------: |
-| `analyzing-recent-project-state`   |               5 |                  5 |
-| `clarifying-assumptions`           |               2 |                  2 |
-| `committing-scoped-changes`        |               2 |                  3 |
-| `council-of-advisors`              |               2 |                  2 |
-| `creating-work-item-children`      |               2 |                  2 |
-| `diagnosing-root-causes`           |               2 |                  3 |
-| `executing-work-item-task`         |               2 |                  2 |
-| `fetching-work-item`               |               2 |                  2 |
-| `generate-flow-diagram`            |               2 |                  2 |
-| `generate-handoff-document`        |               2 |                  2 |
-| `improving-skill-definition`       |               2 |                  2 |
-| `improving-test-suites`            |               2 |                  2 |
-| `orchestrating-workflow`           |               2 |                  2 |
-| `planning-codebase-restructuring`  |               2 |                  2 |
-| `planning-task-execution`          |               2 |                  2 |
-| `planning-work-item-tasks`         |               2 |                  2 |
-| `pr-creator`                       |               2 |                  2 |
-| `prompt-structurer`                |               2 |                  2 |
-| `recency-guard`                    |               2 |                  2 |
-| `refactoring-code`                 |               2 |                  2 |
-| `refine-task`                      |               2 |                  2 |
-| `reporting-skill-issues`           |               2 |                  2 |
-| `responding-to-pr-review-comments` |               2 |                  2 |
-| `review-pull-request`              |               2 |                  2 |
-| `review-software-engineer-cv`      |               2 |                  2 |
-| `rewriting-code-strictly`          |               2 |                  2 |
-| `validate-implementation-plan`     |               2 |                  2 |
-| `workflow-skill-architect`         |               2 |                  3 |
-| **Total**                          |          **59** |             **62** |
+| Skill                              | Routing, tier 1 | Behavioral, tier 2 | Of which multi-turn |
+| ---------------------------------- | --------------: | -----------------: | ------------------: |
+| `analyzing-recent-project-state`   |               5 |                  5 |                   0 |
+| `clarifying-assumptions`           |               2 |                  5 |                   2 |
+| `committing-scoped-changes`        |               2 |                  9 |                   5 |
+| `council-of-advisors`              |               2 |                  2 |                   0 |
+| `creating-work-item-children`      |               2 |                  3 |                   0 |
+| `diagnosing-root-causes`           |               2 |                  3 |                   0 |
+| `executing-work-item-task`         |               2 |                  3 |                   0 |
+| `fetching-work-item`               |               2 |                  4 |                   0 |
+| `generate-flow-diagram`            |               2 |                  2 |                   0 |
+| `generate-handoff-document`        |               2 |                  2 |                   0 |
+| `improving-skill-definition`       |               2 |                  2 |                   0 |
+| `improving-test-suites`            |               2 |                  2 |                   0 |
+| `orchestrating-workflow`           |               2 |                  3 |                   0 |
+| `planning-codebase-restructuring`  |               2 |                  2 |                   0 |
+| `planning-task-execution`          |               2 |                  2 |                   0 |
+| `planning-work-item-tasks`         |               2 |                  3 |                   0 |
+| `pr-creator`                       |               2 |                  9 |                   3 |
+| `prompt-structurer`                |               2 |                  2 |                   0 |
+| `recency-guard`                    |               2 |                  2 |                   0 |
+| `refactoring-code`                 |               2 |                  6 |                   2 |
+| `refine-task`                      |               2 |                  2 |                   0 |
+| `reporting-skill-issues`           |               2 |                  4 |                   2 |
+| `responding-to-pr-review-comments` |               2 |                  5 |                   1 |
+| `review-pull-request`              |               2 |                 11 |                   4 |
+| `review-software-engineer-cv`      |               2 |                  2 |                   0 |
+| `rewriting-code-strictly`          |               2 |                  2 |                   0 |
+| `validate-implementation-plan`     |               2 |                  2 |                   0 |
+| `workflow-skill-architect`         |               2 |                  3 |                   0 |
+| **Total**                          |          **59** |            **102** |              **19** |
 
-One attempt per case sums to $2.95 in tier-1 `budgetUsd` and $116.10 in tier-2 `budgetUsd`, or $119.05 combined. These are configured SDK budget caps, not observed costs; judge calls are additional. The default five repeats multiply these totals by five.
+One attempt per case sums to $3.00 in tier-1 `budgetUsd` and $214.60 in tier-2 `budgetUsd`, or $217.60 combined. These are configured SDK budget caps, not observed costs; judge calls are additional. The default five repeats multiply these totals by five. Multi-turn cases use `followUps`, and one cap covers all of a case's turns.
