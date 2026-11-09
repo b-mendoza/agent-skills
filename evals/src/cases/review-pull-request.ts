@@ -13,6 +13,7 @@ import {
   GITHUB_SNAPSHOTS,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
+import { seedReviewFixture } from "#/cases/review-pull-request-fixtures.ts";
 import { posterPreview } from "#/cases/review-pull-request-gates.ts";
 import {
   assertNoMutation,
@@ -178,7 +179,7 @@ export const cases = [
     skill: SKILL,
     mutationPolicy: "allowed",
     seed: (context) => {
-      seedGithubFixture(context);
+      seedReviewFixture(context);
     },
     snapshotPaths: [...GITHUB_SNAPSHOTS, GITHUB_FACTS.report],
     intent:
