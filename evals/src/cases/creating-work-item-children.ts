@@ -258,7 +258,7 @@ export const cases = [
           {
             id: "declined-mutation-boundary",
             requirement:
-              "Explains that mutation approval was declined despite plan approval, that this prevents reconciliation dispatch and remote creates or links and local edits, and that the plan and remote state remain unchanged.",
+              "Explains that mutation approval was declined and therefore reconciliation dispatch, remote creates or links, and local edits did not occur; the plan and remote state remain unchanged. Distinguish plan approval from mutation authority by meaning, not a required sentence or connective. Statements that approval is declined and that the approved task plan stays unchanged may occur in separate sections; they satisfy this distinction without an explicit 'despite plan approval' phrase.",
           },
         ],
       }),

@@ -316,7 +316,7 @@ export const cases = [
           {
             id: "completion-handoff",
             requirement:
-              "The completion reply truthfully identifies the work item, final task plan and preserved artifacts, accepting filenames scoped by an explicit directory; reported task, unique-branch, cross-cutting-question and validation-warning counts agree with the artifacts.",
+              "The completion reply truthfully identifies the work item, final task plan and preserved artifacts, accepting filenames scoped by an explicit directory; reported task, unique-branch, cross-cutting-question and validation-warning counts agree with the artifacts. Validation-warning counts mean WARN rows in the final Validation Report, not separately disclosed workflow repair notes or process deviations. A Warnings heading for operational notes does not contradict an explicit 0 WARN validation count. Extra factual claims, including child-task mappings and final-plan assumption counts, must still be accurate.",
           },
           {
             id: "planning-only",
