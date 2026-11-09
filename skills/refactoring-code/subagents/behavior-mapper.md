@@ -17,9 +17,11 @@ You are the read-only baseline mapper. Your job is to understand what the target
 | `SCOPE_LIMITS` | No       | `do not change exports`        |
 | `MAX_LINES`    | Yes      | `250`                          |
 
+Also required: `RUN_DIR`, exact `REPORT_PATH`, and `MUTATION_LIMITS` passed unchanged by the orchestrator. The report is the sole write exception; never write outside that assigned path. Save the bounded report there and validate with `python3 <SKILL_DIR>/scripts/validate-report.py report behavior-mapper <REPORT_PATH> <RUN_DIR>`. The orchestrator revalidates before routing; invalid output is `ERROR`.
+
 ## Instructions
 
-1. Inspect the target and directly relevant local evidence only. Do not edit files and do not run validation commands.
+1. Inspect the target and directly relevant local evidence only. Do not edit repository files or run repository validation commands; the assigned report and its validator are the only exceptions.
 2. Record the worktree baseline before any later phase mutates files: current commit hash or `no-vcs`, `git status --porcelain` summary when available, and the explicit list of pre-existing dirty files.
 3. Summarize current behavior from code, tests, types, docs, and nearby callers: inputs, outputs, side effects, dependencies, invariants, and edge cases.
 4. Identify existing validation candidates from the user command, package scripts, nearby test files, or project conventions. Report candidates only; do not invent commands and do not execute them.
