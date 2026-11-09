@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# Usage: python3 -I post-review.py --dry-run RUN_DIR | --approved <sha256> RUN_DIR | --self-test | -h
+# Usage: python3 -I post-review.py --dry-run RUN_DIR | --approved <sha256> RUN_DIR
+#        python3 -I post-review.py --snapshot OWNER/REPO NUMBER HEAD_SHA | --self-test | -h
 # Paths: workspace-relative RUN_DIR; run from the workspace root, no .. or symlinks.
 # Environment: PATH locates gh; GH_TOKEN/GITHUB_TOKEN or gh saved login (github.com).
 # Exit: 0 posted/preview/help/test; 1 possible effect (POST_ERROR, never retry);
@@ -24,17 +25,55 @@ from urllib.parse import quote, urlsplit
 shared = runpy.run_path(str(Path(__file__).with_name("render-review.py")))
 load, fixture = shared["load"], shared["fixture"]
 USAGE = ("Usage: python3 -I post-review.py --dry-run RUN_DIR | --approved <sha256> RUN_DIR"
-         " | --self-test | -h\n"
+         " | --snapshot OWNER/REPO NUMBER HEAD_SHA | --self-test | -h\n"
          "Paths: workspace-relative, from the workspace root; no .. or symlinks.\n"
          "Environment: PATH; GH_TOKEN/GITHUB_TOKEN or gh saved login (github.com).")
 
 def canonical(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
 
+def collect_threads(repo, number):
+    owner, name = repo.split("/")
+    result = subprocess.run(["sh", str(Path(__file__).with_name("collect-pr-review-comments.sh")),
+                             owner, name, str(number)], text=True, encoding="utf-8",
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode:
+        raise ValueError("fresh thread read failed or truncated; approval invalid: " + result.stderr.strip())
+    return [json.loads(line) for line in result.stdout.splitlines() if line.strip()]
+
+
+def history_snapshot(repo, number, head, runner=None):
+    # Runner is supplied by execute; the collector buffers every page and refuses truncation.
+    runner = runner or gh
+    api = ["api", "--hostname", "github.com"]
+    viewer = runner([*api, "user"])
+    if not isinstance(viewer.get("login"), str) or not viewer["login"]:
+        raise ValueError("current account unavailable")
+    threads = collect_threads(repo, number)
+    histories = []
+    for endpoint in (f"repos/{repo}/pulls/{number}/reviews", f"repos/{repo}/issues/{number}/comments"):
+        pages = runner([*api, "--paginate", "--slurp", endpoint])
+        if not isinstance(pages, list) or any(not isinstance(page, list) for page in pages):
+            raise ValueError("fresh feedback pagination invalid")
+        histories.append([item for page in pages for item in page])
+    approvals = [review["html_url"] for review in histories[0]
+                 if review.get("state") == "APPROVED" and review.get("commit_id") == head
+                 and review.get("user", {}).get("login") == viewer["login"]]
+    basis = dict(viewer=viewer["login"], approval_urls=approvals,
+                 history_sha256=hashlib.sha256(canonical([threads, *histories]).encode()).hexdigest())
+    return dict(posting_basis=basis, evidence=dict(threads=threads, reviews=histories[0],
+                                                 discussion=histories[1]))
+
+
+def history_basis(repo, number, head, runner=None):
+    return history_snapshot(repo, number, head, runner)["posting_basis"]
+
+
 def plan_for(run):
     context, author = load(run, "context.txt", "context"), load(run, "author.txt", "author")
-    if context["state"] != "open" or context["history"] != "complete":
-        raise ValueError("posting requires an open PR and complete history")
+    if (context["state"] != "open" or context["history"] != "complete"
+            or context.get("posting_basis") is None):
+        raise ValueError("posting requires an open PR, complete history and recorded posting basis")
     threads = {t["root_comment_id"]: t for t in context["threads"]}
     comments, replies = [], []
     for finding in author["findings"]:
@@ -53,7 +92,7 @@ def plan_for(run):
             replies.append(dict(root_comment_id=root, body=finding["body"]))
     owner, repo, _, number = context["pr"].removeprefix("https://github.com/").split("/")
     plan = dict(repo=owner + "/" + repo, number=int(number),
-                base=context["base"], base_sha=context["base_sha"],
+                base=context["base"], base_sha=context["base_sha"], posting_basis=context["posting_basis"],
                 review=dict(commit_id=context["head_sha"], event=author["decision"],
                             body=author["summary"], comments=comments), replies=replies)
     sha = hashlib.sha256(canonical(plan).encode()).hexdigest()
@@ -101,6 +140,15 @@ def execute(args, runner=gh, available=lambda: shutil.which("gh")):
     if args == ["--self-test"]:
         self_test()
         return 0
+    if (len(args) == 4 and args[0] == "--snapshot"
+            and re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", args[1])
+            and re.fullmatch(r"[1-9][0-9]*", args[2]) and re.fullmatch(r"[0-9a-f]{40}", args[3])):
+        try:
+            print(canonical(history_snapshot(args[1], int(args[2]), args[3], runner)))
+            return 0
+        except (ValueError, OSError, KeyError, TypeError, AttributeError) as error:
+            print(str(error), file=sys.stderr)
+            return 3
     dry = len(args) == 2 and args[0] == "--dry-run"
     approved = len(args) == 3 and args[0] == "--approved" and re.fullmatch(r"[0-9a-f]{64}", args[1])
     if not (dry or approved):
@@ -130,6 +178,8 @@ def execute(args, runner=gh, available=lambda: shutil.which("gh")):
                              f"{quote(context['base'], safe='')}...{context['head_sha']}"])
         if comparison.get("merge_base_commit", {}).get("sha") != context["base_sha"]:
             raise ValueError("live merge-base changed; approval invalid")
+        if history_basis(plan["repo"], plan["number"], context["head_sha"], runner) != plan["posting_basis"]:
+            raise ValueError("live account/history changed; approval invalid; re-assess and preview anew")
         receipts = dict(review=None, replies=[], failed=[], complete=False)
         save_receipts(path, receipts, create=True)
         current = dict(review="review")
@@ -171,7 +221,9 @@ def execute(args, runner=gh, available=lambda: shutil.which("gh")):
 def self_test():
     tests = 0
     def invoke(args, runner=None, present=True):
-        with contextlib.redirect_stdout(io.StringIO()) as output, contextlib.redirect_stderr(io.StringIO()) as error:
+        with (contextlib.redirect_stdout(io.StringIO()) as output,
+              contextlib.redirect_stderr(io.StringIO()) as error,
+              patch.dict(globals(), {"collect_threads": lambda *args: []})):
             code = execute(
                 args, runner or (lambda *a: (_ for _ in ()).throw(AssertionError("unexpected gh"))),
                 lambda: present)
@@ -261,6 +313,10 @@ def self_test():
                 put("author", author)
                 calls = []
                 def stub(args, data=None):
+                    if args[-1] == "user":
+                        return dict(login="reviewer")
+                    if "--slurp" in args:
+                        return [[]]
                     calls.append((args, data))
                     if len(calls) == 1:
                         return dict(state="open", head=dict(sha=context["head_sha"]),

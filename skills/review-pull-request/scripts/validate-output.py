@@ -146,7 +146,7 @@ def validate(mode, raw):
     if mode == "context":
         record(data, "", "title author base head ci behavior_summary",
                "pr state base_sha head_sha shortstat changed_files linked_context test_signals risk_areas "
-               "dimensions history threads feedback references limitations")
+               "dimensions history threads feedback references limitations posting_basis")
         fields(data, "shortstat linked_context test_signals", predicate=lambda v: isinstance(v, str),
                message="expected string")
         fields(data, "base_sha head_sha", predicate=lambda v: isinstance(v, str)
@@ -156,6 +156,11 @@ def validate(mode, raw):
             message="expected canonical GitHub PR URL")
         enum(data, "state", ("open", "closed", "merged"))
         enum(data, "history", ("complete", "partial", "unknown"))
+        if data.get("posting_basis") is not None:
+            basis = record(data["posting_basis"], "posting_basis", "viewer history_sha256", "approval_urls")
+            fields(basis, "history_sha256", "posting_basis", lambda v: isinstance(v, str)
+                   and re.fullmatch(r"[0-9a-f]{64}", v), "expected SHA-256 (64 hex)")
+            array(basis, "approval_urls", "posting_basis", url, "expected HTTPS URL with host")
         changed = array(data, "changed_files", predicate=text)
         unique(changed, "changed_files")
         dimensions = array(data, "dimensions")
@@ -218,7 +223,7 @@ def self_test():
             base_sha="a" * 40, head_sha="b" * 40, shortstat="", ci="Seen: pass", changed_files=["a"],
             linked_context="", test_signals="", behavior_summary="Guard", risk_areas=[], limitations=[],
             history="complete", dimensions=[dict(name="a", files=["a"], rationale="G")], base="M", head="H",
-            threads=[dict(thread_id="T1", is_resolved=False, path="a.py", line=None, root_comment_id=123,
+            posting_basis=None, threads=[dict(thread_id="T1", is_resolved=False, path="a.py", line=None, root_comment_id=123,
             root_url="https://a.co/r123", summary="Gap")], feedback=[], references=[]),
         "chunk": dict(dimension="tests", inspected=[dict(path="test.py", ranges="1-9")], gaps=[], findings=[],
                       residual_risks=[], references=[]),
