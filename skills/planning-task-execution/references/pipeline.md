@@ -1,6 +1,6 @@
 # Task-Execution Planning Pipeline
 
-> Read this file when running the standard selected-task flow or a critique-triggered re-plan. This file owns stage order, status routing, targeted invalidation, and retry budgets.
+> Read this file when running the standard selected-task flow or a critique-triggered re-plan. This is the canonical state machine for stage order, status routing, targeted invalidation, and retry budgets. Guards use first-match order: malformed/error, blockers, readiness, then success. Other package descriptions are subordinate.
 
 `<KEY>` is derived by the active playbook and passed under the shared alias `TICKET_KEY`. Dispatch one subagent at a time, keep only summaries, and never change `TASK_NUMBER` during the run.
 
@@ -75,7 +75,7 @@ Whenever a subagent is re-run:
 - Overwrite only the owner's selected-task file.
 - Rerun downstream owners whose artifacts depend on the changed output.
 
-Maximum re-plan loops: 3. If unresolved high-severity concerns remain after the third loop, return `FAIL` with those concerns and stop.
+Use `replan_loops=0`, incrementing on each requested re-plan. Maximum re-plan loops: 3. If unresolved high-severity concerns remain after the third loop, return `FAIL` with those concerns and stop.
 
 ## Artifact-Validation Repair Loop
 
@@ -86,4 +86,6 @@ When a stage returns `PASS` but its artifact fails a boundary check:
 3. Preserve unrelated valid content and every other artifact.
 4. Re-check only the failed condition and identity boundary before resuming.
 
-Maximum repair attempts: 3 per stage. At the cap, return `ERROR` with the failed condition. A repair loop never widens mutation scope or changes tasks.
+Use `artifact_repairs=0` per stage, incrementing on each repair dispatch. Maximum repair attempts: 3 per stage. At the cap, return `ERROR` with the failed condition. A repair loop never widens mutation scope or changes tasks.
+
+For a malformed summary, allow `summary_repairs=1` redispatch to the same producer with findings. A second malformed result is `ERROR`. Contradictory readiness is always `ERROR` and does not enter artifact repair.

@@ -63,7 +63,7 @@ The four outputs are internal workflow-state artifacts. Keep them on disk; do no
 
 ## Workflow Overview
 
-Normalize inputs inline, then run `execution-prepper` → `execution-planner` → `test-strategist` → `refactoring-advisor` sequentially, because each artifact consumes the prior outputs, and report the result. Read [`./references/pipeline.md`](./references/pipeline.md) before the first dispatch; it owns stage inputs, status routing, re-plan invalidation, and retry budgets.
+This overview is non-normative; `./references/pipeline.md` is the canonical state machine. Normalize inputs inline, then run `execution-prepper` → `execution-planner` → `test-strategist` → `refactoring-advisor` sequentially, because each artifact consumes the prior outputs, and report the result. Read [`./references/pipeline.md`](./references/pipeline.md) before the first dispatch; it owns stage inputs, status routing, re-plan invalidation, and retry budgets.
 
 ## Subagent Registry
 
