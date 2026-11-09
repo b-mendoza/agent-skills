@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { basename } from "node:path";
+import { appendFileSync } from "node:fs";
+import { basename, join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
 import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
@@ -61,7 +62,8 @@ test('quote preserves discount and rounding boundaries', () => {
     '{"type":"module","scripts":{"test":"node --test quote.test.js"}}\n',
   "unrelated.txt": "unrelated staged draft\n",
 } as const;
-export const REFACTOR_PLAN_PATH = ".handoffs/refactoring-code/plan.md";
+export const REFACTOR_PLAN_PATH =
+  ".handoffs/refactoring-code/requested-plan/plan.md";
 const snapshotPaths = [
   FIXTURE_ROOT_PATH,
   ...Object.keys(REFACTOR_FILES),
@@ -72,6 +74,7 @@ const snapshotPaths = [
 
 function seedRefactor({ repoPath }: SeedContext): void {
   seedFixtureRoot(repoPath);
+  appendFileSync(join(repoPath, ".git/info/exclude"), "\n.handoffs/\n");
   commitRepoFiles(repoPath, REFACTOR_FILES, "test: seed quote behavior", [
     "src",
     "quote.test.js",
