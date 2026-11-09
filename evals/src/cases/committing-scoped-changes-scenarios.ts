@@ -4,6 +4,7 @@ import {
   approveCommitPlan,
   checkApprovedCommits,
   checkDeniedDispatch,
+  checkFailedExecution,
 } from "#/cases/committing-scoped-changes-checks.ts";
 import {
   COMMIT_SCOPE,
@@ -53,5 +54,15 @@ export const scenarios = [
       seedCommitScenario(context);
     },
     check: (observation) => checkApprovedCommits(observation),
+  },
+  {
+    ...defaults,
+    id: "committing-scoped-changes/verification-stops-series",
+    intent:
+      "A real nonzero configured verification command blocks all commits without editing source",
+    seed: (context) => {
+      seedCommitScenario(context, "verify-fail");
+    },
+    check: (observation) => checkFailedExecution(observation, "verify"),
   },
 ] as const satisfies readonly EvalCase[];
