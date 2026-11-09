@@ -372,3 +372,99 @@ test("rejects a commit directive smuggled through the execution brief", () => {
     }),
   ).toThrow(/execution boundary/);
 });
+
+describe("recorded baseline inspection", () => {
+  const recordedReply =
+    'Planning for Task 2 of `acme-timer-42`, "Reject invalid timeout values", is complete. All four stages returned `PASS` and every artifact passed validation. I didn\'t implement anything, and nothing is staged or committed.\n\n**Artifacts** (untracked, in `docs/`):\n- `acme-timer-42-task-2-brief.md`\n- `acme-timer-42-task-2-execution-plan.md`\n- `acme-timer-42-task-2-test-spec.md`\n- `acme-timer-42-task-2-refactoring-plan.md`\n\n**Refactoring verdict:** No refactoring needed.\n\n**References fetched:** none.';
+  const CAPTURED_BASELINE_TAIL = 512;
+  const recordedSentence =
+    "Its sole current test covers the explicit `undefined` default; the baseline run passed (1 test).";
+  function baselineClaim(): Observation {
+    const observation = completedObservation();
+    const [, plan] = ARTIFACTS;
+    return {
+      ...observation,
+      repoFiles: {
+        ...observation.repoFiles,
+        [plan.path]: `${observation.repoFiles?.[plan.path] ?? ""}\n${recordedSentence}\n`,
+      },
+    };
+  }
+  test("accepts the recorded claim with a successful captured baseline tail", () => {
+    const entry = getCase("selected-task-artifacts");
+    const fixture = makeFixture(
+      "clean",
+      [SKILL],
+      "seed" in entry ? entry.seed : undefined,
+    );
+    try {
+      const output = execFileSync("node", ["--test", "test/timeout.test.js"], {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+      });
+      expect(() =>
+        getCase("selected-task-artifacts").check({
+          ...baselineClaim(),
+          finalText: recordedReply,
+          toolCalls: [
+            {
+              name: "Bash",
+              input: { command: "node --test test/timeout.test.js" },
+              result: {
+                content: `Earlier output omitted\n${output.slice(-CAPTURED_BASELINE_TAIL)}`,
+                isError: false,
+                truncated: true,
+              },
+            },
+          ],
+        }),
+      ).not.toThrow();
+    } finally {
+      fixture.cleanup();
+    }
+  });
+  test.each([
+    { toolCalls: [] },
+    {
+      toolCalls: [
+        {
+          name: "Bash",
+          input: { command: "node --test test/timeout.test.js" },
+        },
+      ],
+    },
+    {
+      toolCalls: [
+        {
+          name: "Bash",
+          input: { command: "node --test test/timeout.test.js" },
+          result: {
+            content: "# pass 0\n# fail 1\n",
+            isError: true,
+            truncated: false,
+          },
+        },
+      ],
+    },
+    {
+      toolCalls: [
+        {
+          name: "Bash",
+          input: { command: "echo node --test test/timeout.test.js" },
+          result: {
+            content: "# pass 1\n# fail 0\n",
+            isError: false,
+            truncated: false,
+          },
+        },
+      ],
+    },
+  ])("rejects unsupported baseline success evidence", ({ toolCalls }) => {
+    expect(() =>
+      getCase("selected-task-artifacts").check({
+        ...baselineClaim(),
+        toolCalls,
+      }),
+    ).toThrow(/baseline.*evidence/i);
+  });
+});
