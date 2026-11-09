@@ -68,6 +68,41 @@ def refuse():
     print("fake gh: unsupported command: " + repr(args), file=sys.stderr)
     sys.exit(79)
 
+def options(name):
+    values = []
+    for index, arg in enumerate(args):
+        if arg == name and index + 1 < len(args):
+            values.extend(args[index + 1].split(","))
+        elif arg.startswith(name + "="):
+            values.extend(arg.split("=", 1)[1].split(","))
+    return values
+
+if args[:2] == ["pr", "create"] and state.get("allow_create"):
+    if state["existing"]:
+        refuse()
+    title, body_file = option("--title"), option("--body-file")
+    if not title or not body_file or option("--base") != "main" or option("--head") not in ("feature/unit-price", "eval-org:feature/unit-price") or (option("--repo") or option("-R")) != "eval-org/cart":
+        refuse()
+    body = sys.stdin.buffer.read().decode("utf-8") if body_file == "-" else Path(body_file).read_bytes().decode("utf-8")
+    assignees, labels, reviewers = options("--assignee"), options("--label"), options("--reviewer")
+    if any(login != "maintainer" for login in assignees):
+        refuse()
+    captured = {"args": args, "body": body, "title": title, "assignees": assignees, "labels": labels, "reviewers": reviewers}
+    (root / ".git/eval-created.json").write_text(json.dumps(captured))
+    pr = state["pr"]
+    pr.update(title=title, body=body, isDraft="--draft" in args, draft="--draft" in args,
+              assignees=[{"login": login} for login in assignees], labels=[{"name": label} for label in labels],
+              reviewRequests=[{"login": login} for login in reviewers])
+    if state.get("readback_drift"):
+        pr["body"] += "\nAutomation footer\n"
+        pr["labels"].append({"name": "automation"})
+    pr.update(state.get("readback", {}))
+    state["graphql"]["data"]["repository"]["pullRequest"].update(pr)
+    state["existing"] = True
+    (root / ".git/fake-gh-state.json").write_text(json.dumps(state))
+    print(pr["url"])
+    sys.exit(0)
+
 method = option("--method") or option("-X")
 if method and method.upper() not in ("GET", "HEAD"):
     refuse()
@@ -86,6 +121,8 @@ if args[:2] == ["label", "list"]:
 if args[:2] == ["pr", "list"]:
     emit([state["pr"]] if state["existing"] else [])
 if args[:2] == ["pr", "view"]:
+    if state.get("allow_create") and state["existing"]:
+        (root / ".git/eval-readback.json").write_text(json.dumps(state["pr"]))
     emit(state["pr"])
 if args[:2] == ["pr", "diff"]:
     if "--name-only" in args:
@@ -103,6 +140,8 @@ if args and args[0] == "api":
     if endpoint == "graphql":
         if any("mutation" in arg for arg in args):
             refuse()
+        if state.get("allow_create") and state["existing"]:
+            (root / ".git/eval-readback.json").write_text(json.dumps(state["pr"]))
         emit(state["graphql"])
     if endpoint == "user":
         emit({"login": "maintainer"})
@@ -112,9 +151,22 @@ if args and args[0] == "api":
         refuse()
     if suffix == "":
         emit(state["repo"])
+    if suffix == "/assignees":
+        emit([{"login": "maintainer"}])
+    if suffix.startswith("/assignees/"):
+        if suffix == "/assignees/maintainer":
+            if "-i" in args or "--include" in args:
+                print("HTTP/2.0 204 No Content\n")
+            sys.exit(0)
+        if "-i" in args or "--include" in args:
+            print("HTTP/2.0 404 Not Found\n")
+        print("HTTP 404: not assignable", file=sys.stderr)
+        sys.exit(1)
     if suffix == "/pulls":
         emit([{**state["pr"], "state": "open"}] if state["existing"] else [])
     if suffix == "/pulls/17":
+        if state.get("allow_create") and state["existing"]:
+            (root / ".git/eval-readback.json").write_text(json.dumps(state["pr"]))
         if option("-H") and "diff" in option("-H"):
             print(state["diff"], end="")
             sys.exit(0)
@@ -153,23 +205,61 @@ function git(repoPath: string, ...arguments_: string[]): string {
   }).trim();
 }
 
+interface GithubFixtureOptions {
+  existing?: boolean;
+  comments?: boolean;
+  existingReport?: boolean;
+  allowCreate?: boolean;
+  readbackDrift?: boolean;
+  readback?: Readonly<Record<string, unknown>>;
+  baseSource?: string;
+  headSource?: string;
+  templates?: Readonly<Record<string, string>>;
+}
+
+function fixtureSources(options: GithubFixtureOptions) {
+  return {
+    baseSource: options.baseSource ?? GITHUB_FACTS.baseSource,
+    headSource: options.headSource ?? GITHUB_FACTS.headSource,
+  };
+}
+
+function seedTemplates(repoPath: string, options: GithubFixtureOptions): void {
+  for (const [path, text] of Object.entries(options.templates ?? {})) {
+    const destination = join(repoPath, path);
+    mkdirSync(join(destination, ".."), { recursive: true });
+    writeFileSync(destination, text);
+    git(repoPath, "add", path);
+  }
+}
+
+function seedExistingReport(
+  repoPath: string,
+  options: GithubFixtureOptions,
+): void {
+  if (options.existingReport === true) {
+    writeFileSync(
+      join(repoPath, GITHUB_FACTS.report),
+      GITHUB_FACTS.existingReport,
+    );
+  }
+}
+
 export function seedGithubFixture(
   context: SeedContext,
-  options: {
-    existing?: boolean;
-    comments?: boolean;
-    existingReport?: boolean;
-  } = {},
+  options: GithubFixtureOptions = {},
 ): void {
   const { repoPath, binPath } = context;
   seedFixtureRoot(repoPath);
+  const { baseSource, headSource } = fixtureSources(options);
+  seedTemplates(repoPath, options);
   git(repoPath, "branch", "-M", "main");
-  writeFileSync(join(repoPath, GITHUB_FACTS.source), GITHUB_FACTS.baseSource);
+  writeFileSync(join(repoPath, GITHUB_FACTS.source), baseSource);
   git(repoPath, "add", GITHUB_FACTS.source);
   git(repoPath, "commit", "-qm", "feat: define empty-cart unit price");
   const base = git(repoPath, "rev-parse", "HEAD");
   git(repoPath, "switch", "-qc", GITHUB_FACTS.branch);
-  writeFileSync(join(repoPath, GITHUB_FACTS.source), GITHUB_FACTS.headSource);
+  writeFileSync(join(repoPath, GITHUB_FACTS.source), headSource);
   git(repoPath, "add", GITHUB_FACTS.source);
   git(repoPath, "commit", "-qm", GITHUB_FACTS.title);
   const head = git(repoPath, "rev-parse", "HEAD");
@@ -204,17 +294,9 @@ export function seedGithubFixture(
   git(repoPath, "branch", "--set-upstream-to", `origin/${GITHUB_FACTS.branch}`);
   appendFileSync(join(repoPath, ".git/info/exclude"), "\n.handoffs/\n");
   copyHeadReflog(repoPath, GITHUB_FACTS.baselineLog);
-  writeFileSync(
-    join(repoPath, GITHUB_FACTS.sourceBaseline),
-    GITHUB_FACTS.headSource,
-  );
+  writeFileSync(join(repoPath, GITHUB_FACTS.sourceBaseline), headSource);
   writeFileSync(join(repoPath, GITHUB_FACTS.log), "");
-  if (options.existingReport === true) {
-    writeFileSync(
-      join(repoPath, GITHUB_FACTS.report),
-      GITHUB_FACTS.existingReport,
-    );
-  }
+  seedExistingReport(repoPath, options);
   const comment = {
     id: GITHUB_FACTS.rootId,
     node_id: "PRRC_701",
@@ -248,13 +330,21 @@ export function seedGithubFixture(
     parent: null,
     viewerPermission: "ADMIN",
   };
+  const [addedLines, deletedLines] = git(
+    repoPath,
+    "diff",
+    "--numstat",
+    `${base}...${head}`,
+  ).split("\t");
+  const additions = Number(addedLines);
+  const deletions = Number(deletedLines);
   const files = [
     {
       path: GITHUB_FACTS.source,
       filename: GITHUB_FACTS.source,
       status: "modified",
-      additions: 0,
-      deletions: 2,
+      additions,
+      deletions,
       patch: diff,
     },
   ];
@@ -284,8 +374,8 @@ export function seedGithubFixture(
     comments: [],
     files,
     statusCheckRollup: [],
-    additions: 0,
-    deletions: 2,
+    additions,
+    deletions,
     changedFiles: 1,
   };
   const nodes = comments.map((entry) => ({
@@ -328,8 +418,11 @@ export function seedGithubFixture(
       base,
       head,
       existing: options.existing === true,
-      base_source: GITHUB_FACTS.baseSource,
-      head_source: GITHUB_FACTS.headSource,
+      base_source: baseSource,
+      head_source: headSource,
+      allow_create: options.allowCreate === true,
+      readback_drift: options.readbackDrift === true,
+      readback: options.readback ?? {},
     }),
   );
   mkdirSync(binPath, { recursive: true });
