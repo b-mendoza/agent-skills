@@ -37,6 +37,8 @@ This contract defines the complete Phase 1 handoff. The coordinator and any top-
 
 Failure categories: `NONE`, `BAD_INPUT`, `NOT_FOUND`, `AUTH`, `TOOLS_MISSING`, `RATE_LIMIT`, `UNEXPECTED`.
 
+These category names and the labelled summary below are internal handoff data, not a user-facing failure template. For NOT_FOUND in user mode, the coordinator follows the concrete [NOT_FOUND prose route](../SKILL.md#not_found-user-mode-route) in `SKILL.md`; it does not forward `Failure category`, status, validation, file-written, or reason lines. The retriever still returns the locked summary to the coordinator unchanged.
+
 ## Count Rules
 
 - `0/0` — verified empty section.

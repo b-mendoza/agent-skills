@@ -72,8 +72,19 @@ Branch on the structured summary, not prose:
 | `FETCH: PASS` with `Validation: PASS`    | Report success and continue                                                                       |
 | `FETCH: PARTIAL` with `Validation: PASS` | Report success with visible warnings; continue only if downstream phases tolerate partial context |
 | `Validation: FAIL`                       | Stop and report the contract failure                                                              |
-| `FETCH: FAIL`                            | Stop and report `Failure category` plus `Reason`                                                  |
+| `FETCH: FAIL` with `Failure category: NOT_FOUND` | Stop; in user mode follow the NOT_FOUND prose route below; only handoff mode returns the envelope |
+| Other `FETCH: FAIL`                      | Stop; explain the failure and recovery in user-mode prose, or return the locked handoff summary |
 | `FETCH: ERROR`                           | Stop and report the unexpected failure                                                            |
+
+### NOT_FOUND user-mode route
+
+For `RESULT_FORMAT=user` or no option, turn the retriever's NOT_FOUND result into plain prose. Name the requested work item, explain that it was not found or is inaccessible to the current account, say that no snapshot was written and the tracker was unchanged, and ask the user to check the URL and account access before retrying. A 404 alone does not establish whether the item is missing or private.
+
+Omit all handoff fields from this user reply, including `Failure category:`, status lines such as `FETCH:` or `Status:`, `Validation:`, `File written:`, and `Reason:`. This also excludes their bold or bulleted forms. Do not copy the retriever's labelled failure list into the user reply. These fields remain unchanged only for `RESULT_FORMAT=handoff`.
+
+Correct user reply example:
+
+> I couldn't retrieve acme/app#42 because GitHub returned 404. The issue may be missing or inaccessible to the current account. No snapshot was written, and GitHub was not changed. Check the issue URL and the account's access, then retry.
 
 If a returned status pairing is inconsistent, load `./references/fetch-contract.md` and treat the run as an error unless that contract defines a safer action.
 
