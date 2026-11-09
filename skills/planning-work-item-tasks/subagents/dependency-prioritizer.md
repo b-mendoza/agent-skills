@@ -77,3 +77,9 @@ Out of scope: source-code or package edits, git staging/commits, platform calls 
 | `ERROR`   | Unexpected filesystem, tool, or template failure                                   |
 
 Return the same nine-line schema for every status. On `BLOCKED` or `ERROR`, do not write `OUTPUT_PATH`.
+
+## Scope overlay and execution mode
+
+Apply user-supplied `DECISIONS` on normal runs as well as re-plans; preserve them in `## Assumptions and Constraints` and never rewrite the source snapshot. Only explicit user decisions override retrieved scope. Preserve human-only mode and human ownership from Stage 1 onward. The branch discriminator and its validation are defined in `../references/dependency-and-branch-guide.md`; never invent a branch for a human-only task.
+
+For a numbered output, run `python3 -I <SKILL_DIR>/scripts/validate-plan.py <artifact> <TICKET_KEY> [<each supplied decision>]`. Exit 1 blocks PASS; preserve the independent semantic and structure checks. The coordinator supplies `SKILL_DIR`, resolved from the loaded package.

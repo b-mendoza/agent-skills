@@ -67,3 +67,9 @@ Out of scope: platform calls, task planning, file edits, source/package mutation
 | `ERROR` | Unexpected filesystem, tool, or contract-loading failure prevents checks |
 
 Malformed or unknown `STAGE` is `ERROR`. Keep the same six-line schema for every status.
+
+## Scope overlay and execution mode
+
+Apply user-supplied `DECISIONS` on normal runs as well as re-plans; preserve them in `## Assumptions and Constraints` and never rewrite the source snapshot. Only explicit user decisions override retrieved scope. Preserve human-only mode and human ownership from Stage 1 onward. The branch discriminator and its validation are defined in `../references/dependency-and-branch-guide.md`; never invent a branch for a human-only task.
+
+At `STAGE=1`, `2`, `3`, or `postpipeline`, run `python3 -I <SKILL_DIR>/scripts/validate-plan.py <artifact> <TICKET_KEY> [<each supplied decision>]`. Exit 1 blocks PASS; preserve the independent semantic and structure checks. The coordinator supplies `SKILL_DIR`, resolved from the loaded package. The exact Stage 1 artifact path selects lettered-task mode: no code branch is required or generated before final numbering. Other stages use numbered-task validation. Preflight checks snapshot structure and does not run this script.

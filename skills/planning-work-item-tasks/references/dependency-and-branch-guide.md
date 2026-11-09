@@ -107,3 +107,9 @@ Before writing Stage 2, verify:
 - Generating branch names before final numbering is stable.
 - Choosing a subjective short slug instead of applying the algorithm.
 - Creating separate branches in current-child-item mode.
+
+## Human-only tasks
+
+A task requiring a human approval, manual observation, or external action and no repository change uses `**Execution mode:** human-only`, `**Owner:** Human`, and `**Branch name:** N/A (human-only)`. Keep the branch field and execution-table column for existing readers; this value is a discriminator, never a Git ref. Explain the human deliverable and verification evidence in the objective and definition of done. Mixed code/manual work must be split; code tasks keep the existing branch algorithm.
+
+Apply this exception to every branch rule above, including current-child-item mode: only code tasks share a branch. Stage 1 declares the mode and owner; Stage 2 preserves them. Validators reject a generated branch for a human-only task, or N/A for a code task. Count only real code branches in the completion summary. The handoff must identify human-only tasks and state that the caller must route them to the human, not branch checkout or the code executor. A caller without that guard must stop at human handoff rather than treating N/A as a branch.

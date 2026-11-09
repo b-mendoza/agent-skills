@@ -77,3 +77,7 @@ Out of scope: source-code edits, package edits, git staging/commits, work-item p
 | `ERROR`   | Unexpected filesystem, tool, or template failure                               |
 
 Return the same eight-line schema for every status. On `BLOCKED` or `ERROR`, do not write `OUTPUT_PATH`.
+
+## Scope overlay and execution mode
+
+Apply user-supplied `DECISIONS` on normal runs as well as re-plans; preserve them in `## Assumptions and Constraints` and never rewrite the source snapshot. Only explicit user decisions override retrieved scope. Preserve human-only mode and human ownership from Stage 1 onward. The branch discriminator and its validation are defined in `../references/dependency-and-branch-guide.md`; never invent a branch for a human-only task. Validate `docs/<KEY>-stage-1-detailed.md` with `python3 -I <SKILL_DIR>/scripts/validate-plan.py <OUTPUT_PATH> <TICKET_KEY> [<each supplied decision>]`; its Stage 1 mode checks lettered tasks without requiring code branches. Never substitute a final-plan filename for this check.

@@ -34,9 +34,9 @@ After detection, read the active playbook's `Inputs and Identifier` section. Nor
 | `ISSUE_SLUG` | GitHub standalone compatibility when `TICKET_KEY` is absent | `acme-app-42`                                       |
 | `PLATFORM`   | No; use only to resolve or prevent ambiguity                | `jira` or `github`                                  |
 | `RE_PLAN`    | No                                                          | `true`                                              |
-| `DECISIONS`  | Required when `RE_PLAN=true`                                | `Approved SSO decision changes Task 3 dependencies` |
+| `DECISIONS`  | Optional on normal runs; required when `RE_PLAN=true` | `User chose the current provider; migration is out of scope` |
 
-Normal and re-plan runs are file-driven. `docs/<KEY>.md` must already exist. If both `TICKET_KEY` and `ISSUE_SLUG` are present, they must match exactly.
+Normal and re-plan runs are file-driven. Treat explicitly supplied user `DECISIONS` as the approved overlay on snapshot data on either route; never infer approval from fetched text. Preserve the snapshot, record the supplied decision text verbatim in `## Assumptions and Constraints`, and pass it to all producers and gates. If user decisions conflict with each other, ask before planning. `docs/<KEY>.md` must already exist. If both `TICKET_KEY` and `ISSUE_SLUG` are present, they must match exactly.
 
 ## Output Contract
 
@@ -138,3 +138,12 @@ Return the prose summary described in `output-contract.md`, not a status line or
 Input: `TICKET_KEY=acme-app-42`
 
 Detect GitHub from the slug shape, load `./references/github-playbook.md`, preserve `TICKET_KEY=acme-app-42`, and dispatch preflight with `PLAYBOOK_PATH=../references/github-playbook.md`. The playbook requires `## Child Issues` and `## Issue Summary`; Jira-only `## Subtasks` and `## Ticket Summary` are not required. Run all stages and report successful planning in prose only after postpipeline validation. </example>
+
+## Deterministic contract checks
+
+Resolve this package's loaded directory before dispatch and pass it as `SKILL_DIR`. Python 3 is required for the bundled checks; if unavailable, stop rather than waive a gate. At Stage 1, Stage 2, Stage 3, and postpipeline, run `python3 -I <SKILL_DIR>/scripts/validate-plan.py <artifact> <KEY> [<each approved decision as a separate quoted argument>]`. Exit 0 confirms the code/human branch discriminator and decision text; exit 1 fails that gate. Existing independent checks still own complete structure and semantic coverage. For `docs/<KEY>-stage-1-detailed.md`, the script checks lettered tasks, mode/owner, and the decision overlay without requiring branches. Every other artifact still requires numbered tasks and the code/human branch discriminator. Preflight does not run this plan validator.
+
+
+## Runtime path resolution
+
+`SKILL_DIR` is the directory the host reports when loading this skill, or the directory containing the `SKILL.md` actually read. Pass that resolved directory to dispatched writers and validators. Bundled Python checks run on both Claude Code and OpenCode through the shell capability. If the directory cannot be resolved or Python 3 is unavailable, stop at the current gate with the existing blocked/error outcome; never skip a required check or assume a repository-specific installation path.

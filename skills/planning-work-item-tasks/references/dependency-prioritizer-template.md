@@ -57,7 +57,7 @@ If a task is independent, state that explicitly.
 **Phase 3 (sequential - finalization):** Tasks 6, 7 depend on Phase 2 completion.
 ```
 
-In the playbook's current-item mode, repeat the same branch in every row and insert the playbook's exact skip-creation sentence below the table.
+Human-only rows carry `N/A (human-only)` and preserve `Execution mode: human-only` plus `Owner: Human`; only code rows receive Git refs. In the playbook's current-item mode, repeat the same code branch in every code row and insert the playbook's exact skip-creation sentence below the table.
 
 ## Dependency Graph
 

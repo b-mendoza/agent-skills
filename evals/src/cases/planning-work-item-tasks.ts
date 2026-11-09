@@ -69,6 +69,16 @@ export const INVALID_SNAPSHOT = SNAPSHOT.replace(
   "## Unstructured Requirements\n",
 );
 
+export const USER_DECISION =
+  "Keep the existing local timeout provider. RemoteClock migration is out of scope.";
+export const HUMAN_SNAPSHOT = SNAPSHOT.replace(
+  FACTS.requirement,
+  `${FACTS.requirement} Proposed solution: migrate to RemoteClock.`,
+).replace(
+  FACTS.acceptance,
+  `${FACTS.acceptance} A human operations owner must also approve the rollout checklist without a repository change.`,
+);
+
 const FINAL_HEADINGS = [
   "## Issue Summary",
   "## Execution Order Summary",
@@ -123,6 +133,15 @@ function checkTaskBody(
 ): void {
   for (const field of TASK_FIELDS) {
     assert.ok(body.includes(`**${field}:**`), `missing task field: ${field}`);
+  }
+  if (/\*\*Execution mode:\*\*\s*human-only/.test(body)) {
+    assert.match(body, /\*\*Owner:\*\*\s*Human/);
+    assert.match(body, /\*\*Branch name:\*\*\s*`?N\/A \(human-only\)`?/);
+    assert.ok(
+      summary.includes("N/A (human-only)"),
+      "summary lacks human-only marker",
+    );
+    return;
   }
   const match = /\*\*Branch name:\*\*\s*`(?<branch>[^`]+)`/.exec(body);
   assert.ok(match?.groups !== undefined);
@@ -201,8 +220,11 @@ function checkValidation(content: string): void {
   );
 }
 
-function checkCompletedPlan(observation: Observation): string {
-  assertPlanningWrites(observation, OUTPUT_PATHS, { [SOURCE_PATH]: SNAPSHOT });
+function checkCompletedPlan(
+  observation: Observation,
+  snapshot: string = SNAPSHOT,
+): string {
+  assertPlanningWrites(observation, OUTPUT_PATHS, { [SOURCE_PATH]: snapshot });
   assertNoPublicStatusLine(
     observation.finalText,
     "PLANNING",
@@ -300,6 +322,56 @@ export const cases = [
             id: "planning-only",
             requirement:
               "The artifacts describe future work and do not claim code was implemented, tests ran, or issues or branches were created.",
+          },
+        ],
+      }),
+  },
+  {
+    ...behavioralDefaults,
+    id: `${SKILL}/human-task-user-decisions`,
+    skill: SKILL,
+    mutationPolicy: "allowed",
+    budgetUsd: 2.5,
+    wallClockMs: 1_200_000,
+    seed: (context) => {
+      seedPlanningFiles(context, { [SOURCE_PATH]: HUMAN_SNAPSHOT });
+    },
+    snapshotPaths: [FIXTURE_ROOT_PATH, ...OUTPUT_PATHS, SOURCE_PATH, HEAD_LOG],
+    intent:
+      "Normal-run decisions override a proposed migration and manual approval is not assigned a Git branch",
+    prompt: () =>
+      `Use ${SKILL} with TICKET_KEY=${KEY}, RE_PLAN=false, DECISIONS=${USER_DECISION} Complete Phase 2 including the human-only operations approval task.`,
+    check: (observation) => {
+      checkCompletedPlan(observation, HUMAN_SNAPSHOT);
+      for (const path of OUTPUT_PATHS) {
+        const content = capturedText(observation, path);
+        const [, remainder = ""] = content.split(
+          "## Assumptions and Constraints",
+        );
+        const [assumptions = ""] = remainder.split("\n## ");
+        assert.ok(
+          assumptions.includes(USER_DECISION),
+          `lost user decision in ${path}`,
+        );
+        assert.match(content, /\*\*Execution mode:\*\*\s*human-only/);
+        assert.match(content, /\*\*Owner:\*\*\s*Human/);
+      }
+      return "user decision preserved in every stage; human task has explicit mode, owner, and branch sentinel";
+    },
+    judge: async (observation) =>
+      judgeLive({
+        artifact: `<written_plan>\n${capturedText(observation, FINAL_PATH)}\n</written_plan>\n\n<completion_reply>\n${observation.finalText}\n</completion_reply>`,
+        knownFacts: `Mechanical checks verified the written plan's human-only execution mode, Human owner, and N/A (human-only) branch sentinel. Code tasks have real deterministic branches. ${USER_DECISION} The human operations approval has not been performed by the planner.`,
+        rubric: [
+          {
+            id: "human-handoff",
+            requirement:
+              "Evaluate completion_reply: it identifies the human-only operations approval and conveys human ownership rather than code execution. Human ownership with no code branch can convey this boundary; no particular routing verb or sentence is required. It must not claim the human approval was completed or direct a code executor to perform it. Judge the meaning of the prose, not an exact phrase.",
+          },
+          {
+            id: "approved-scope",
+            requirement:
+              "Evaluate written_plan: the actionable tasks use the existing local timeout provider and do not implement the excluded RemoteClock migration. Recording the approved decision is insufficient if executable task content contradicts it. Mentioning the snapshot's migration proposal as explicitly excluded is allowed and is not a migration task.",
           },
         ],
       }),

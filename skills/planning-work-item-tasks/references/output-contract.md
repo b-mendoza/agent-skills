@@ -82,3 +82,9 @@ Use the active playbook's detection cue and exact platform wording. In this mode
 Reply in plain prose, without a `PLANNING:` status line or a key/value routing envelope. Identify the work item and the final tasks file, or say that it was not written. Include the task count, unique branch count, cross-cutting question count, validation warning count, and every preserved artifact path. A short artifact list is fine.
 
 Report successful planning only after every required producer verdict and independent gate passes. If planning stopped, name the failed gate, explain why, give the recovery action, and list any preserved partial artifacts. When no artifacts were written, say so. Do not claim that implementation or tracker changes occurred.
+
+## Approved user decisions and human handoff
+
+On normal and re-plan runs, preserve user-supplied `DECISIONS` in `## Assumptions and Constraints` in all three artifacts. Identify them as user decisions, not retrieved requirements. Validate coverage against the approved scope overlay without changing the Phase 1 snapshot or silently dropping conflicting source context.
+
+Human-only task representation follows `dependency-and-branch-guide.md` and overrides the universal-branch wording above. Keep `**Branch name:** N/A (human-only)` with `**Execution mode:** human-only` and `**Owner:** Human`. Exclude this sentinel from unique branch counts. Identify each human-only task in the handoff and require human routing before any execution-phase checkout.

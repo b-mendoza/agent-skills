@@ -34,3 +34,5 @@ Preserve branch names for unchanged tasks when names may already have been share
 Critique-driven re-plan iteration limits belong to the parent orchestrator. This skill receives `RE_PLAN=true` plus `DECISIONS`; it does not receive or enforce the parent's iteration counter.
 
 Local validator repair budgets and status routing are the same as a normal run: follow [`./execution-guide.md`](./execution-guide.md#structured-status-routing). Preserve intermediate artifacts on every outcome.
+
+The human-only branch exception applies to re-plans too.

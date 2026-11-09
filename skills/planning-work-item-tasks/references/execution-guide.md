@@ -30,7 +30,7 @@ Run these gates in order:
 
 ## Dispatch Payloads
 
-Every payload also includes the exact `MUTATION_LIMITS` block from `SKILL.md`. `<platform>` is the active playbook: `github` or `jira`.
+Every payload also includes the exact `MUTATION_LIMITS` block from `SKILL.md` and `DECISIONS` whenever the user supplied it, including normal runs and repairs. All stages preserve the approved overlay in `## Assumptions and Constraints`; gates compare against that overlay as well as the unchanged snapshot. `<platform>` is the active playbook: `github` or `jira`.
 
 ### Preflight
 
@@ -62,7 +62,7 @@ OUTPUT_CONTRACT_PATH=../references/output-contract.md
 EXTERNAL_SOURCES_PATH=../references/external-sources.md
 INPUT_PATH=docs/<KEY>.md
 OUTPUT_PATH=docs/<KEY>-stage-1-detailed.md
-DECISIONS=<DECISIONS> only during a Stage 1 re-plan
+DECISIONS=<user-supplied DECISIONS, if any; normal or re-plan>
 VALIDATION_ISSUES=<issues list> only during a Stage 1 repair
 ```
 
@@ -81,7 +81,7 @@ OUTPUT_CONTRACT_PATH=../references/output-contract.md
 EXTERNAL_SOURCES_PATH=../references/external-sources.md
 INPUT_PATH=docs/<KEY>-stage-1-detailed.md
 OUTPUT_PATH=docs/<KEY>-stage-2-prioritized.md
-DECISIONS=<DECISIONS> only during a Stage 2 re-plan
+DECISIONS=<user-supplied DECISIONS, if any; normal or re-plan>
 VALIDATION_ISSUES=<issues list> only during a Stage 2 repair
 ```
 
@@ -101,7 +101,7 @@ DEPENDENCY_GUIDE_PATH=../references/dependency-and-branch-guide.md
 SNAPSHOT_PATH=docs/<KEY>.md
 PLAN_PATH=docs/<KEY>-stage-2-prioritized.md
 OUTPUT_PATH=docs/<KEY>-tasks.md
-DECISIONS=<DECISIONS> only during a Stage 3 re-plan
+DECISIONS=<user-supplied DECISIONS, if any; normal or re-plan>
 VALIDATION_ISSUES=<issues list> only during Stage 3 or postpipeline repair
 ```
 

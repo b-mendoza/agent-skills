@@ -52,6 +52,8 @@ Read this file only when assembling Stage 1. Keep every heading even when conten
 
 **Objective:** <One to two sentences on what this task accomplishes.>
 
+<For human-only work add **Execution mode:** human-only and **Owner:** Human. Stage 2 keeps these and writes **Branch name:** N/A (human-only).>
+
 **Relevant requirements and context:** <Only the requirements, constraints, and background needed for this task.>
 
 - Traces to: <Specific description, acceptance criteria, comment, <CHILD_ITEM_NOUN>, or linked issue source.>

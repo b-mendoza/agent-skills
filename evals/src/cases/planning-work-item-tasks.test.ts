@@ -15,11 +15,17 @@ import {
   SKILL,
   SNAPSHOT,
   SOURCE_PATH,
+  USER_DECISION,
 } from "#/cases/planning-work-item-tasks.ts";
+import { assertPlanningWrites } from "#/cases/planning-work-item-tasks-checks.ts";
 import {
-  assertPlanningWrites,
-  SEED_COMMIT,
-} from "#/cases/planning-work-item-tasks-checks.ts";
+  completedObservation,
+  FINAL_PLAN,
+  HANDOFF,
+  humanObservation,
+  SECOND_TASK_NUMBER,
+  task,
+} from "#/cases/planning-work-item-tasks-fixtures.ts";
 import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import { HEAD_LOG, makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
@@ -28,89 +34,6 @@ import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 function getCase(suffix: string) {
   return getRegisteredCase(`${SKILL}/${suffix}`);
-}
-
-function task(number: number, title: string): string {
-  const branch = `feature/${KEY}-task-${number}-${title.toLowerCase().replaceAll(" ", "-")}`;
-  return `## Task ${number}: ${title}
-**Priority:** High
-**Branch name:** \`${branch}\`
-**Objective:** ${title}.
-**Relevant requirements and context:** Source acceptance criteria.
-**Questions to answer before starting:** None.
-**Implementation notes:** Plan only.
-**Definition of done:** Boundary tests cover the source requirements.
-**Likely files / artifacts affected:** src/timeout.js
-**Dependencies / prerequisites:** None.
-`;
-}
-
-const FIRST_TASK_NUMBER = 1;
-const SECOND_TASK_NUMBER = 2;
-const FIRST_CHECK_NUMBER = 1;
-const TASK_COUNT = 2;
-const VALIDATION_COUNT = 20;
-const STAGE_TWO = `# Plan
-## Issue Summary
-Validate timeout.
-## Execution Order Summary
-| Task | Branch |
-| 1 | \`feature/${KEY}-task-1-validate-timeout\` |
-| 2 | \`feature/${KEY}-task-2-add-tests\` |
-## Problem Framing
-### End User
-CLI users.
-### Underlying Need
-Reject invalid inputs.
-### Proposed Solution
-Validate timeout.
-### Solution-Problem Fit
-Direct correction.
-### Alternative Approaches Not Explored
-None.
-### Evidence Basis
-The captured acceptance criteria.
-## Assumptions and Constraints
-No implementation.
-## Cross-Cutting Open Questions
-None.
-## Tasks
-${task(FIRST_TASK_NUMBER, "Validate timeout")}${task(SECOND_TASK_NUMBER, "Add tests")}
-## Notes
-None.
-## Dependency Graph
-Independent.
-`;
-const FINAL_PLAN = `${STAGE_TWO}## Validation Report
-### Summary
-| Result | Count |
-| PASS | ${VALIDATION_COUNT} |
-| WARN | 0 |
-| FAIL | 0 |
-### Check Results
-${Array.from({ length: VALIDATION_COUNT }, (_, index) => `| ${index + FIRST_CHECK_NUMBER} | Check | PASS | Evidence |`).join("\n")}
-`;
-const HANDOFF = `Completed planning for ${KEY}: ${TASK_COUNT} tasks, ${TASK_COUNT} unique branches, 0 cross-cutting questions, and 0 validation warnings. The final task plan is ${FINAL_PATH}.
-Preserved artifacts: ${OUTPUT_PATHS.join(", ")}. No implementation or tracker changes were made.`;
-const STAGE_ONE =
-  "# Detailed Plan\n## Issue Summary\nScope.\n## Problem Framing\nNeed.\n## Tasks\n### Task A: Validate timeout\nDetails.\n## Notes\nNone.\n";
-
-function completedObservation(): Observation {
-  return createObservation({
-    finalText: HANDOFF,
-    gitStatusAfter: {
-      kind: "worktree",
-      entries: OUTPUT_PATHS.map((path) => `?? ${path}`).join("\n"),
-    },
-    repoFiles: {
-      ".git/eval-fixture-root": "/fixture\n/canonical/fixture",
-      [SOURCE_PATH]: SNAPSHOT,
-      [HEAD_LOG]: `commit: ${SEED_COMMIT}\n`,
-      [DETAILED_PATH]: STAGE_ONE,
-      [PRIORITIZED_PATH]: STAGE_TWO,
-      [FINAL_PATH]: FINAL_PLAN,
-    },
-  });
 }
 
 function changeFinal(text: string): Observation {
@@ -435,4 +358,42 @@ testArtifactWriteMatrix({
     ...plannedOnly,
     toolCalls: [{ name: "Write", input: { file_path: plannedArtifact } }],
   }),
+});
+
+test("normal-run overlay and human task check accepts scoped human handoff", () => {
+  expect(() =>
+    getCase("human-task-user-decisions").check(humanObservation()),
+  ).not.toThrow();
+});
+test.each(OUTPUT_PATHS)(
+  "normal-run check rejects lost decision in %s",
+  (path) => {
+    const observation = humanObservation();
+    const content = observation.repoFiles?.[path] ?? "";
+    expect(() =>
+      getCase("human-task-user-decisions").check({
+        ...observation,
+        repoFiles: {
+          ...observation.repoFiles,
+          [path]: content.replace(USER_DECISION, ""),
+        },
+      }),
+    ).toThrow();
+  },
+);
+test("human task check rejects fabricated branch", () => {
+  const observation = humanObservation();
+  const content = observation.repoFiles?.[FINAL_PATH] ?? "";
+  expect(() =>
+    getCase("human-task-user-decisions").check({
+      ...observation,
+      repoFiles: {
+        ...observation.repoFiles,
+        [FINAL_PATH]: content.replace(
+          "**Branch name:** N/A (human-only)",
+          "**Branch name:** feature/fake-human",
+        ),
+      },
+    }),
+  ).toThrow();
 });

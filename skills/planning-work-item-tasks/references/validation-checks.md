@@ -27,6 +27,7 @@ Validate `docs/<KEY>-stage-1-detailed.md`.
 - Contains `## Notes`.
 - Contains at least 2 `### Task ...` sections unless assumptions or notes record the playbook's current-item mode and justify the single-task exception.
 - Every task has `**Objective:**`.
+- A human-only task has `**Execution mode:** human-only` and `**Owner:** Human`; its definition of done requires human evidence, not a fabricated implementation.
 - Every task has `**Relevant requirements and context:**`.
 - Every task has `**Questions to answer before starting:**`.
 - Every task has `**Implementation notes:**`.
@@ -51,7 +52,7 @@ Validate `docs/<KEY>-stage-2-prioritized.md`.
 - Numbered tasks use `## Task <N>: <Title>` with no gaps.
 - Every numbered task has `**Priority:**`.
 - Every numbered task has `**Branch name:**`.
-- Every branch is a legal Git ref and exactly reconstructs from the active playbook, final task number/title, explicit-or-default prefix, and the slug algorithm in `DEPENDENCY_GUIDE_PATH`.
+- Every code-task branch is a legal Git ref and exactly reconstructs from the active playbook, final task number/title, explicit-or-default prefix, and the slug algorithm in `DEPENDENCY_GUIDE_PATH`.
 - Every numbered task preserves all Stage 1 fields and its `Traces to` reference.
 - Every numbered task has `**Dependencies / prerequisites:**`.
 - Contains `## Dependency Graph`.
@@ -86,7 +87,7 @@ Validate the complete downstream contract of `docs/<KEY>-tasks.md`.
 - At least 2 numbered tasks exist unless the current-item single-task exception is recorded and justified.
 - Every numbered task has `**Priority:**`, `**Branch name:**`, `**Objective:**`, `**Relevant requirements and context:**`, `**Questions to answer before starting:**`, `**Implementation notes:**`, `**Definition of done:**`, `**Likely files / artifacts affected:**`, and `**Dependencies / prerequisites:**`.
 - Task numbering is sequential with no gaps.
-- Every branch is legal and exactly deterministic from the contract.
+- Every code-task branch is legal and exactly deterministic from the contract. Human-only tasks must carry `Execution mode: human-only`, `Owner: Human`, and `Branch name: N/A (human-only)`; reject a fabricated branch or an N/A code branch.
 - Every hard dependency target exists and precedes its dependent task.
 - Current-item mode uses one identical branch plus the exact playbook wording.
 - The validation report has 20 rows, its counts sum to 20, and zero FAIL rows.
@@ -116,7 +117,7 @@ Run all 20 checks against the original snapshot and Stage 2 plan. Check 3 reads 
 | 17  | No vague definition-of-done items such as `works`, `is complete`, or `functions properly`                                        | WARN     |
 | 18  | Task count is appropriate for scope                                                                                              | WARN     |
 | 19  | No empty or `TBD` implementation notes remain                                                                                    | WARN     |
-| 20  | Branch names are legal, exactly deterministic, and obey the active playbook's single-branch mode                                 | FAIL     |
+| 20  | Code branches are legal and deterministic; human-only tasks use the explicit N/A discriminator and human owner | FAIL |
 
 ## Result Handling
 
