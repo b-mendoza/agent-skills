@@ -49,7 +49,7 @@ CHUNK: PASS
 }
 ```
 
-Gap kind is `unavailable|truncated|binary|omitted`. An anchor is null or exactly `{"path":str,"line":positive_integer,"side":"RIGHT"|"LEFT"}`, with optional positive `start_line < line` on the same side. No other keys. For no findings use `"findings": []`.
+All evidence paths use the repository-relative invariant in the [collector output contract](./pr-context-collector.md#output), not absolute checkout paths. Gap kind is `unavailable|truncated|binary|omitted`. An anchor is null or exactly `{"path":str,"line":positive_integer,"side":"RIGHT"|"LEFT"}`, with optional positive `start_line < line` on the same side. No other keys. For no findings use `"findings": []`.
 
 For every other status, write the corresponding status line and only `{"reason":"Specific cause","next_step":"One safe action"}`. Both strings are nonempty; no success fields.
 
