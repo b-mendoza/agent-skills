@@ -4,6 +4,42 @@
 
 This file holds the operating policy that applies across phases. The phase-specific playbooks remain in `./phases-1-4.md` and `./task-loop.md`, and the artifact validation contracts in `./data-contracts.md`. Per-platform contracts (identifier shape, transport, downstream skill names, snapshot sections, write model, status-check syntax, external URLs) live in `./jira-playbook.md` or `./github-playbook.md`.
 
+## Canonical state machine
+
+This is the single normative source for workflow transitions. The phase playbooks describe actions and artifact formats, not competing routes. Guards use first-match order: malformed/error, blockers, explicit user stop/exclusion, required approval, then success. Local progress projection is implemented by `scripts/progress.py`.
+
+| State | Event or guard | Next state or terminal |
+| --- | --- | --- |
+| Intake | Missing/ambiguous identity | Wait for the exact identifier selection |
+| Intake | Valid identity or no prior progress | Read progress, then Preflight |
+| Any wait | User declines or stops | Paused, with unchanged progress |
+| Preflight | Missing capability, FAIL or ERROR | Blocked; name dependency, do not dispatch it |
+| Preflight | PASS, resumed past Phase 1 | Wait for resume confirmation, then the reported phase |
+| Preflight | PASS, fresh run | Phase 1 |
+| Phases 1-6 | Missing/malformed result, ERROR, or failed progress update | Error; preserve run and stop |
+| Phases 1-6 | FAIL/BLOCKED or failed artifact validation | Blocked; apply only the bounded repair rule below when appropriate |
+| Phase 1 | Validated success | Update phase then Phase 2 |
+| Phase 2 | Validated success | Update phase then Phase 3 |
+| Phase 3 | BLOCKERS_PRESENT=true | Blocked |
+| Phase 3 | RE_PLAN_NEEDED=true below cap | Phase 2 with accepted decisions; then Phase 3 |
+| Phase 3 | Validated success, no re-plan or blockers | Wait for exact platform-write approval; then Phase 4 |
+| Phase 4 | Validated success | Update phase/task table then Task selection |
+| Task selection | User explicitly excludes/hands off a known nonterminal task with reason | skip_task; stay at Task selection, or Summary if no remaining tasks |
+| Task selection | Selected task is human-only or has the N/A (human-only) branch sentinel | Named human handoff and local skip_task, or wait for missing owner; never Phases 5-7 |
+| Task selection | User chooses an eligible nonterminal code task | Phase 5 readiness; initialize only after readiness passes |
+| Phase 5 | Validated success | Mark only Phase 5 complete; task stays active; Phase 6 |
+| Phase 6 | BLOCKERS_PRESENT=true | Blocked |
+| Phase 6 | RE_PLAN_NEEDED=true below cap | Phase 5 with decisions; then Phase 6 |
+| Phase 6 | Validated success, no blockers/re-plan | Mark only Phase 6 complete; task stays active; wait for execution approval |
+| Execution approval | Explicit confirmation of the critiqued plan | Phase 7, retaining all child approval gates |
+| Phase 7 | COMPLETE | Mark task complete; Task selection or Summary |
+| Phase 7 | STOPPED_FOR_USER_INPUT | Keep task active at Phase 7; Paused |
+| Phase 7 | BLOCKED, ESCALATED, ERROR, malformed/missing result | Keep task incomplete; Blocked/Error with Phase 7 resume point |
+| Any loop | Counter cap reached | Blocked; report unresolved findings |
+| Summary | No remaining tasks | Report completed/skipped counts separately; stop |
+
+`repair_attempts` starts at 0 per failing phase/gate, increments per targeted retry, and is capped at 3. `critique_iteration` starts at 1 per work item/task and permits at most 3 Phase 3/6 passes. No background task may advance a gate independently. A skipped prerequisite remains unsatisfied; pause dependent execution until the normal readiness contract is resolved. Summary never equates local exclusion with implementation or remote closure.
+
 ## Context Boundaries
 
 The orchestrator holds only:

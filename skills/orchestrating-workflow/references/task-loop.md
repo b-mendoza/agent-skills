@@ -6,6 +6,8 @@ Each code task passes through Phase 5 (plan), Phase 6 (critique), and Phase 7 (k
 
 The active playbook's Phase Skill Map names the runtime skill for each phase. `<KEY>` below is the workflow key value passed under the parameter name `TICKET_KEY`; the active playbook defines its shape.
 
+These action procedures are subordinate to the canonical state machine in `./workflow-policy.md`.
+
 ## Task Selection
 
 Before entering the loop for a task:

@@ -46,7 +46,7 @@ Phase 6: Clarify + critique  -> docs/<KEY>-task-<N>-critique.md + decisions.md
 Phase 7: Kick off + execute  -> downstream execution summary + progress update
 ```
 
-Phases 5-7 repeat per task until all tasks complete or the user stops.
+This overview is non-normative. [`./references/workflow-policy.md`](./references/workflow-policy.md) is the canonical workflow state machine. Phases 5-7 repeat until all tasks are complete or explicitly skipped, or the user stops. Skipped is not implemented or remotely closed.
 
 ## Progressive Loading Map
 
