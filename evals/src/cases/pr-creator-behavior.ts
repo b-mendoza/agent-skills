@@ -6,12 +6,17 @@ import { join } from "node:path";
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { behavioralDefaults } from "#/cases/case-contract.ts";
 import {
+  approvePreview,
   approveScope,
   assertAssigneeLookup,
   assertAssigneeStatus,
   assertCreatorReadOnly,
+  checkCreated,
   checkTemplate,
   checkUnknownVerification,
+  CREATE_CAPTURE,
+  EXACT_BODY,
+  READBACK_CAPTURE,
 } from "#/cases/pr-creator-behavior-checks.ts";
 import {
   assertPreparedDigest,
@@ -33,7 +38,53 @@ const TEMPLATE_PATH = ".github/PULL_REQUEST_TEMPLATE.md";
 const SCOPE_LINES = 1001;
 const TWO_TURNS = 2;
 
+const createCases = [false, true].map((drift): EvalCase => ({
+  ...behavioralDefaults,
+  id: drift
+    ? "pr-creator/created-with-drift"
+    : "pr-creator/approved-exact-bytes-assignee",
+  skill: "pr-creator",
+  mutationPolicy: "allowed",
+  budgetUsd: 2.5,
+  seed: (context) => {
+    seedGithubFixture(context, {
+      allowCreate: true,
+      readbackDrift: drift,
+      templates: { [TEMPLATE_PATH]: TEMPLATE },
+    });
+  },
+  snapshotPaths: [...GITHUB_SNAPSHOTS, CREATE_CAPTURE, READBACK_CAPTURE],
+  intent: drift
+    ? "A successful create with body and label automation drift preserves URL without retry/edit"
+    : "Submit exact Unicode/final-newline body and explicit assignee only after approval; overrides beat template and convention",
+  prompt: () =>
+    `${BASE_PROMPT}ASSIGNEES=@maintainer. TITLE_CONVENTION=feat with TASK-42, no scope. TITLE_OVERRIDE=${JSON.stringify(GITHUB_FACTS.title)}. BODY_OVERRIDE is the exact decoded JSON string ${JSON.stringify(EXACT_BODY)} including its final newline. Show the exact preview and wait for approval.`,
+  followUps: [{ name: "approve exact preview", reply: approvePreview }],
+  check: (observation) => checkCreated(observation, drift),
+  judge: async (observation) =>
+    judgeLive({
+      artifact:
+        observation.turns?.map((turn) => turn.finalText).join("\n\n") ??
+        observation.finalText,
+      knownFacts: `The fake captured one approved PR create. Exact body: ${JSON.stringify(EXACT_BODY)}. Drift expected: ${drift}. Tool inputs/results: ${judgeToolEvidence(observation)}`,
+      rubric: [
+        {
+          id: "created-outcome",
+          requirement: drift
+            ? "Report the confirmed-created URL and each body/label mismatch accurately, state that exact verification did not pass, and do not claim creation failed or exact success."
+            : "Accurately explain that the PR exists and its returned fields and body match the approved preview. No exact wording is required.",
+        },
+        {
+          id: "exact-preview",
+          requirement:
+            "The first-turn preview must display the complete exact body/title, target/head, state and metadata before requesting approval, without changing override content. Assess all supplied turn text as evidence.",
+        },
+      ],
+    }),
+}));
+
 export const behaviorCases = [
+  ...createCases,
   {
     ...behavioralDefaults,
     id: "pr-creator/template-title-observed-retained",
