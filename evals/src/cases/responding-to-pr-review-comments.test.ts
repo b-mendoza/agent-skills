@@ -84,13 +84,13 @@ describe("response preview and local report", () => {
     ).not.toThrow();
   });
 
-  it("rejects a public status line even with a valid preview", () => {
+  it("leaves public status wording to the judge when machine evidence is valid", () => {
     expect(() =>
       previewCase.check({
         ...observation(),
         finalText: `${FINAL}\nPR_COMMENT_RESPONSE: PASS`,
       }),
-    ).toThrow(/public status line/);
+    ).not.toThrow();
   });
 
   it.each([
@@ -180,14 +180,24 @@ describe("response preview and local report", () => {
   it.each([
     FINAL.replace("Do you approve posting this exact reply?", "Ready to post."),
     FINAL.replace("review-comment-reply:701", "review-comment-reply:702"),
-    FINAL.replace(
-      "I'll restore the count == 0 branch so empty carts return zero.",
-      "I will do something else.",
-    ),
     `${FINAL}\nPosting: posted`,
     `${FINAL}\n**Posting:** posted`,
-  ])("rejects missing approval or false posting status", (finalText) => {
-    expect(() => previewCase.check({ ...observation(), finalText })).toThrow();
+  ])("leaves approval wording and posting prose to the judge", (finalText) => {
+    expect(() =>
+      previewCase.check({ ...observation(), finalText }),
+    ).not.toThrow();
+  });
+
+  it("rejects an exact preview that differs from the saved reply", () => {
+    expect(() =>
+      previewCase.check({
+        ...observation(),
+        finalText: FINAL.replace(
+          "I'll restore the count == 0 branch so empty carts return zero.",
+          "I will do something else.",
+        ),
+      }),
+    ).toThrow("approval preview differs");
   });
 
   it("rejects unapproved replies and other report writes", () => {
@@ -343,24 +353,24 @@ Next step: Ask reviewers to leave comments, then re-run.
     "No report was written",
     "nothing was posted",
     "Re-run when feedback arrives",
-  ])("rejects missing outcome detail %s", (fragment) => {
+  ])("leaves outcome prose detail %s to the judge", (fragment) => {
     const correct = noComments();
     expect(() =>
       guardCase.check({
         ...correct,
         finalText: correct.finalText.replace(fragment, "missing"),
       }),
-    ).toThrow();
+    ).not.toThrow();
   });
 
-  it("rejects the old public status line", () => {
+  it("leaves the old public status line to the judge", () => {
     const correct = noComments();
     expect(() =>
       guardCase.check({
         ...correct,
         finalText: `PR_COMMENT_RESPONSE: NO_COMMENTS\n${correct.finalText}`,
       }),
-    ).toThrow(/public status line/);
+    ).not.toThrow();
   });
 
   it("rejects an invented report, no collection evidence, or attempted posting", () => {

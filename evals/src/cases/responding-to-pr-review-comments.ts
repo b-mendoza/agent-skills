@@ -16,13 +16,10 @@ import {
 import {
   assertFileAbsent,
   assertNoMutation,
-  assertNoPublicStatusLine,
   assertReadOnlyGraphqlArguments,
   capturedText,
   checkNegativeRouting,
   checkPositiveRouting,
-  normalizeReplyText,
-  replyAsksFor,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -43,7 +40,6 @@ function assertReplyPreviewMatches(report: string, finalText: string): void {
 }
 
 function checkReplyPreview(observation: Observation): string {
-  assertNoPublicStatusLine(observation.finalText, "PR_COMMENT_RESPONSE");
   assertOnlyReportWritten(observation, false);
   const report = capturedText(observation, GITHUB_FACTS.report);
   assert.match(report, /^# PR 17 Review Comment Assessment\r?$/m);
@@ -92,25 +88,13 @@ function checkReplyPreview(observation: Observation): string {
       `missing assessment field ${field}`,
     );
   }
-  assert.match(report, /^- Classification: valid\r?$/m);
+  assert.match(
+    report,
+    /^- Classification: valid(?: \((?:high confidence|confidence: high)\))?\r?$/m,
+  );
   assert.match(report, /^- Reply disposition: reply-ready\r?$/m);
   assert.match(report, /^- Posting target: review-comment-reply:701\r?$/m);
   assertReplyPreviewMatches(report, observation.finalText);
-  assert.match(
-    observation.finalText,
-    /review-comment-reply:701|discussion_r701/,
-  );
-  assert.ok(
-    replyAsksFor(
-      observation.finalText,
-      /approv|confirm|post (?:this|the) (?:exact )?reply/i,
-    ),
-    "no exact-reply approval request",
-  );
-  assert.doesNotMatch(
-    normalizeReplyText(observation.finalText),
-    /^Posting: posted\r?$/m,
-  );
   assert.ok(
     githubCalls(observation).length > NO_CALLS,
     "no GitHub evidence collected",
@@ -163,26 +147,6 @@ function checkNoComments(observation: Observation): string {
     githubCalls(observation).some(isCommentInventoryRead),
     "no PR comment inventory collection observed",
   );
-  assertNoPublicStatusLine(observation.finalText, "PR_COMMENT_RESPONSE");
-  const reply = normalizeReplyText(observation.finalText);
-  assert.match(
-    reply,
-    /(?:no (?:review(?:er)? |discussion |in-scope )?comments|(?:comments|inventory)[^\n]*(?:empty|zero|0)|nothing to assess)/i,
-  );
-  assert.ok(
-    /no[^\n]*(?:report|pr-17-review\.md)[^\n]*(?:written|created)|(?:did not|didn't) (?:write|create)/i.test(
-      reply,
-    ) || /wrote no[^\n]*(?:report|pr-17-review\.md)/i.test(reply),
-    "reply must explain that no report was written",
-  );
-  assert.match(
-    reply,
-    /(?:nothing (?:was )?(?:posted|sent to GitHub)|posted nothing|did not post|didn't post|not posted|no GitHub posts were made)/i,
-  );
-  assert.match(
-    reply,
-    /(?:re-?run|run (?:this|it) again|wait|feedback|check[^\n]*(?:URL|PR))/i,
-  );
   return "Empty PR explained; no report or reply mutation";
 }
 
@@ -223,7 +187,7 @@ export const cases = [
     check: checkReplyPreview,
     judge: async (observation) =>
       judgeLive({
-        artifact: capturedText(observation, GITHUB_FACTS.report),
+        artifact: `${capturedText(observation, GITHUB_FACTS.report)}\n\nUser-facing preview:\n${observation.finalText}`,
         knownFacts: `There is exactly one unresolved root review comment, REST ID 701, by reviewer. It says: ${GITHUB_FACTS.comment} The code really removed the count == 0 guard and now raises ZeroDivisionError for unit_price(10, 0). The responder maintainer has never replied. No fixes or posting happened. The fixture has no test suite or CI configuration and the fake returns no checks. Observed tool calls, not their results: ${JSON.stringify(observation.toolCalls)}.`,
         rubric: [
           {
@@ -239,7 +203,7 @@ export const cases = [
           {
             id: "approval",
             requirement:
-              "The report keeps the reply pending approval rather than claiming it was posted.",
+              "The report and user-facing preview keep the reply pending approval without claiming it was posted; the preview asks for approval, identifies the target intelligibly, and uses plain prose without a public PR_COMMENT_RESPONSE routing line.",
           },
         ],
       }),
@@ -258,5 +222,18 @@ export const cases = [
     prompt: () =>
       `Assess and draft replies to all reviewer comments on ${GITHUB_FACTS.url}. RESPONDER_LOGIN=maintainer, OUTPUT_FILE=${GITHUB_FACTS.report}, POSTING_MODE=draft-only.`,
     check: checkNoComments,
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts:
+          "PR 17 has no review comments, review summaries, or issue comments. The mechanical check established inventory reads, no report file, no GitHub writes, and unchanged workspace. This is an empty-PR terminal, not a fresh code-review request.",
+        rubric: [
+          {
+            id: "empty-outcome",
+            requirement:
+              "Explain that the PR has no comments, no report was written, and nothing was posted; give one useful next action. Use plain prose rather than a public PR_COMMENT_RESPONSE routing line, and do not fabricate assessments or start an unrelated code audit.",
+          },
+        ],
+      }),
   },
 ] as const satisfies readonly EvalCase[];
