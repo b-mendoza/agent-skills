@@ -65,4 +65,14 @@ export const scenarios = [
     },
     check: (observation) => checkFailedExecution(observation, "verify"),
   },
+  {
+    ...defaults,
+    id: "committing-scoped-changes/commit-error-no-retry",
+    intent:
+      "A failed first commit invocation is never retried and later groups do not run",
+    seed: (context) => {
+      seedCommitScenario(context, "commit-fail");
+    },
+    check: (observation) => checkFailedExecution(observation, "commit"),
+  },
 ] as const satisfies readonly EvalCase[];
