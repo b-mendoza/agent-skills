@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
 import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
+import { scenarios } from "#/cases/committing-scoped-changes-scenarios.ts";
 import {
   assertFileMatches,
   assertHeadUnchanged,
@@ -91,6 +92,7 @@ const suiteDefaults = {
 } as const;
 
 export const cases = [
+  ...scenarios,
   {
     id: "committing-scoped-changes/trigger-positive",
     ...routingDefaults,

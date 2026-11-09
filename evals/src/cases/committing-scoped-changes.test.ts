@@ -51,8 +51,14 @@ function correctObservation(evalCase: EvalCase): Observation {
   });
 }
 
-const behavioralCases = cases.filter(
-  (evalCase) => evalCase.tier === BEHAVIORAL_TIER,
+const behavioralCases: readonly EvalCase[] = cases.filter(
+  (evalCase) =>
+    evalCase.tier === BEHAVIORAL_TIER &&
+    [
+      "committing-scoped-changes/plan-approval",
+      "committing-scoped-changes/no-verbal-consent",
+      "committing-scoped-changes/no-scoped-changes",
+    ].includes(evalCase.id),
 );
 
 describe("committing-scoped-changes checks", () => {
@@ -145,7 +151,11 @@ describe("committing-scoped-changes checks", () => {
         evalCase.seed,
       );
       try {
-        const files = snapshotRepoFiles(fixture.cwd, evalCase.snapshotPaths);
+        expect(evalCase.snapshotPaths).toBeDefined();
+        const files = snapshotRepoFiles(
+          fixture.cwd,
+          evalCase.snapshotPaths ?? [],
+        );
         expect(files[".git/logs/HEAD"]).toBe(
           files[".git/eval-baseline-reflog"],
         );
