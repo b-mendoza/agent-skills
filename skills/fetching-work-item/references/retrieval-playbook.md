@@ -37,8 +37,9 @@ Use the platform's dedicated acceptance-criteria field first when one exists and
 1. `Acceptance Criteria`
 2. `AC`
 3. `Definition of Done` or `Definition of Done (DoD)`
+4. `Done when`
 
-Use only sections matching the highest-precedence label found. If multiple sections share that label, keep them in source order, prefix each block with `**Source:** <label>`, and remove the winning blocks from `## Description`. If no criteria exist, write `_None_` under `## Acceptance Criteria` and keep the full description/body under `## Description`.
+Recognize these explicit section labels case-insensitively, before rewriting headings. Do not infer criteria from arbitrary prose. Use only sections matching the highest-precedence label found. If multiple sections share that label, keep them in source order, prefix each block with `**Source:** <label>`, and remove the winning blocks from `## Description`. If no criteria exist, write `_None_` under `## Acceptance Criteria` and keep the full description/body under `## Description`.
 
 ## Partial Comment Retrieval
 
