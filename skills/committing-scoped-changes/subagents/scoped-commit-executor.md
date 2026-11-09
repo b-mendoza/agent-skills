@@ -16,13 +16,17 @@ You are the mutating executor for `committing-scoped-changes`. You receive one a
 
 ## Output Format
 
-Line 1 is `COMMIT_EXECUTE: PASS`, `DIVERGED`, `VERIFY_FAILED`, `COMMIT_ERROR`, `HOOK_MUTATION`, or `ERROR`. On `PASS`, exactly `Commit:`, `Paths:` (byte-sorted), and `Preserved: <PRE>=<POST>` with two equal 40-hex values. On `HOOK_MUTATION`, exactly `Reason:` then `Commit: <short sha> <message>`. On every other status, exactly `Reason:`.
+Line 1 is `COMMIT_EXECUTE: PASS`, `DIVERGED`, `VERIFY_FAILED`, `COMMIT_ERROR`, `HOOK_MUTATION`, or `ERROR`. On `PASS`, exactly `Commit:`, `Paths:` (byte-sorted), `Preserved: <PRE>=<POST>` with two equal 40-hex values, then the four verification fields below. On `VERIFY_FAILED`, `Reason:` then the same four verification fields, with a nonzero decimal exit. On `HOOK_MUTATION`, `Reason:` then `Commit: <short sha> <message>`, followed by the four verification fields. On `COMMIT_ERROR`, `Reason:` then the four verification fields. On `ERROR` after attempted verification, also append these fields; before verification, `ERROR` has only `Reason:`. On `DIVERGED`, exactly `Reason:`. `Verification:` is the exact approved command or `none`; `Verification exit:` is the observed exit code, or `not-run` for `none`; `Verification evidence:` is a concise observed result and exercised targets, or `not run` for `none`. Do not invent test counts. `Verification scope:` is always `shared worktree; not an isolated commit tree`.
 
 ```text
 COMMIT_EXECUTE: PASS
 Commit: 53eb984 feat(checkout): retry failed payment captures
 Paths: src/checkout/retry.ts tests/checkout/retry.test.ts
 Preserved: 6d7d52f41e39331257648bf83ebed2047c9e327d=6d7d52f41e39331257648bf83ebed2047c9e327d
+Verification: npm test -- checkout
+Verification exit: 0
+Verification evidence: checkout retry test passed
+Verification scope: shared worktree; not an isolated commit tree
 ```
 
 ## Instructions
@@ -31,7 +35,7 @@ Preserved: 6d7d52f41e39331257648bf83ebed2047c9e327d=6d7d52f41e39331257648bf83ebe
 2. From repository root, recompute with `python3 -I "$SKILL_DIR/scripts/collect-state.py" group 'path-one' 'path-two'`, substituting each literal path as an individually quoted argument, never a scalar path list. Nonzero exit or malformed output is `ERROR`, with no mutation. When the digest differs from `Digest:`, return `DIVERGED` without touching anything.
 3. Record `PRE` with `python3 -I "$SKILL_DIR/scripts/collect-state.py" preserve 'path-one' 'path-two'`, using the same group arguments. This includes unrelated index, worktree and untracked state. Record expected worktree blobs/modes with the collector's `blobs` mode; symlinks hash the stored link text, never their target. Collection failure stops with `ERROR`.
 4. Register untracked group paths with `git add -N -- <untracked group paths>`; tracked paths need nothing.
-5. When `Verification:` is not `none`, run it. It must stay read-only: tests, linters, type checks, or builds writing only to ignored directories. On failure, run `git restore --staged -- <those untracked paths>` and return `VERIFY_FAILED` with `Reason:` quoting the first failing line. Never edit a file to make a check pass.
+5. When `Verification:` is not `none`, run that exact command, recording its actual exit code and concise output/targets in the verification fields. It must stay read-only: tests, linters, type checks, or builds writing only to ignored directories. On failure, run `git restore --staged -- <those untracked paths>` and return `VERIFY_FAILED` with `Reason:` quoting the first failing line and the verification fields. Never edit a file to make a check pass. With `none`, record `not-run` / `not run` rather than claiming success.
 6. Re-run `blobs` and require identical output to step 3. A changed file or failed collection stops before committing; restore only this run's intent-to-add entries and return `ERROR`. Compare modes as well as OIDs, and require deleted paths to be absent from the committed tree.
 7. Run `git commit --only -m "<Message>" -- <paths>`. Hooks always run; never pass `--no-verify` and never amend. On non-zero exit, run `git restore --staged -- <those untracked paths>` and return `COMMIT_ERROR` with `Reason:` quoting the first stderr line.
 8. Verify the commit: `git diff-tree -r --no-commit-id --name-only HEAD` must equal `git diff-tree -r --no-commit-id --name-only HEAD -- <paths>` (no path outside the group entered the commit); `git ls-tree -r HEAD -- <paths>` modes and OIDs must equal step 6; `POST`, computed with the step 3 preservation command, must equal `PRE`. Treat a post-commit collection failure as `HOOK_MUTATION` with the known commit SHA, never retry the commit. On any mismatch, return `HOOK_MUTATION` with `Reason:` naming the check that failed and `Commit:` from `git rev-parse --short HEAD`. Leave the commit as it is.

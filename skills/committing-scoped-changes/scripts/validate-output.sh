@@ -74,11 +74,24 @@ function checkPlan(    st, i, g, v, paths, ex, k, t, j) {
   v = field(N - 1, "Omissions"); if (v != "none") sortedTokens(N - 1, v, "Omissions")
   field(N, "Warnings")
 }
+function verification(n, failed,    command, code, evidence, scope) {
+  command = field(n, "Verification")
+  code = field(n + 1, "Verification exit")
+  evidence = field(n + 2, "Verification evidence")
+  scope = field(n + 3, "Verification scope")
+  if (scope != "shared worktree; not an isolated commit tree") fail(n + 3, "Verification scope: must disclose shared worktree")
+  if (command == "none") {
+    if (failed || code != "not-run" || evidence != "not run") fail(n, "none requires not-run exit and not run evidence on PASS")
+  } else if (failed) {
+    if (code !~ /^[1-9][0-9]*$/) fail(n + 1, "failed verification needs nonzero exit")
+  } else if (code != "0") fail(n + 1, "PASS verification needs exit 0")
+}
 function checkExecute(    st, v, a, b, eq) {
   if (L[1] !~ /^COMMIT_EXECUTE: (PASS|DIVERGED|VERIFY_FAILED|COMMIT_ERROR|HOOK_MUTATION|ERROR)$/) { fail(1, "line 1 must be COMMIT_EXECUTE: <PASS|DIVERGED|VERIFY_FAILED|COMMIT_ERROR|HOOK_MUTATION|ERROR>"); return }
   st = substr(L[1], 17)
   if (st == "PASS") {
-    expectCount(4)
+    expectCount(8)
+    if (N >= 8) verification(5, 0)
     if (N >= 2) commitLine(2)
     if (N >= 3) { v = field(3, "Paths"); sortedTokens(3, v, "Paths") }
     if (N >= 4) {
@@ -89,7 +102,9 @@ function checkExecute(    st, v, a, b, eq) {
     }
     return
   }
-  if (st == "HOOK_MUTATION") { expectCount(3); if (N >= 2) field(2, "Reason"); if (N >= 3) commitLine(3); return }
+  if (st == "VERIFY_FAILED") { expectCount(6); if (N >= 2) field(2, "Reason"); if (N >= 6) verification(3, 1); return }
+  if (st == "HOOK_MUTATION") { expectCount(7); if (N >= 2) field(2, "Reason"); if (N >= 3) commitLine(3); if (N >= 7) verification(4, 0); return }
+  if (st == "COMMIT_ERROR" || (st == "ERROR" && N == 6)) { expectCount(6); if (N >= 2) field(2, "Reason"); if (N >= 6) verification(3, 0); return }
   expectCount(2); if (N >= 2) field(2, "Reason")
 }
 { raw[NR] = $0 }

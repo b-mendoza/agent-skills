@@ -23,7 +23,7 @@ Every question names the missing input in prose and ends the turn. When every ap
 
    | Executor result                                           | Route                                                    |
    | --------------------------------------------------------- | -------------------------------------------------------- |
-   | `COMMIT_EXECUTE: PASS`                                    | Record the commit; next group, or Final when none remain |
+   | `COMMIT_EXECUTE: PASS`                                    | Record the commit and verification evidence; next group, or Final when none remain |
    | `COMMIT_EXECUTE: DIVERGED`                                | `BLOCKED` naming the group                               |
    | `COMMIT_EXECUTE: HOOK_MUTATION`                           | `BLOCKED` naming the group and SHA                       |
    | `COMMIT_EXECUTE: VERIFY_FAILED`                           | `VERIFY_FAILED`                                          |
@@ -43,7 +43,7 @@ Predicate: exit 0. On non-zero, redispatch once with the printed findings; a sec
 
 ## G_PLAN_APPROVAL
 
-Keep `COMMIT_PLAN` internal. Show each planned group in order with its exact message, paths, expansions, verification command, omissions, and warnings in readable Markdown. Retain the original envelope and digests internally for execution; do not print status or digest routing fields. Warnings must name detached HEAD when set and every group path in `MM` state, because `git commit --only` commits the worktree version and discards the staged version of that path. Ask one question: `approve`, `revise: <what to change>`, or `stop`. State that no commits have been made and end the turn.
+Keep `COMMIT_PLAN` internal. Show each planned group in order with its exact message, paths, expansions, verification command, omissions, and warnings in readable Markdown. Retain the original envelope and digests internally for execution; do not print status or digest routing fields. Warnings must name detached HEAD when set and every group path in `MM` state, because `git commit --only` commits the worktree version and discards the staged version of that path. Disclose that verification checks the shared worktree, not isolated commit trees. Ask one question: `approve`, `revise: <what to change>`, or `stop`. State that no commits have been made and end the turn.
 
 | Answer           | Route                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------- |

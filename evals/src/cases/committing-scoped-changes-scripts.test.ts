@@ -213,6 +213,7 @@ describe("shipped scoped state collector", () => {
 });
 
 const plan = `COMMIT_PLAN: PASS\nGroup: 1\nMessage: fix: change a\nPaths: a\nExpansions: none\nVerification: none\nDigest: ${"a".repeat(DIGEST_LENGTH)}\nOmissions: none\nWarnings: none\n`;
+const receipt = `COMMIT_EXECUTE: PASS\nCommit: abcdef0 fix: change a\nPaths: a\nPreserved: ${"b".repeat(DIGEST_LENGTH)}=${"b".repeat(DIGEST_LENGTH)}\nVerification: python3 check.py\nVerification exit: 0\nVerification evidence: 3 assertions passed\nVerification scope: shared worktree; not an isolated commit tree\n`;
 function validate(mode: string, input: string) {
   return spawnSync("sh", [validator, mode], { input, encoding: "utf8" });
 }
@@ -227,6 +228,59 @@ describe("shipped envelope validator", () => {
           "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
         ),
       ).status,
+    ).toBe(INVALID_EXIT);
+  });
+  test("requires successful receipts to disclose verification evidence and scope", () => {
+    expect(validate("execute", receipt).status).toBe(SUCCESS_EXIT);
+    expect(
+      validate("execute", receipt.split("Verification:")[START_INDEX] ?? "")
+        .status,
+    ).toBe(INVALID_EXIT);
+    expect(
+      validate(
+        "execute",
+        receipt.replace("Verification exit: 0", "Verification exit: 1"),
+      ).status,
+    ).toBe(INVALID_EXIT);
+    expect(
+      validate(
+        "execute",
+        receipt.replace(
+          "shared worktree; not an isolated commit tree",
+          "isolated commit tree",
+        ),
+      ).status,
+    ).toBe(INVALID_EXIT);
+  });
+  test("post-verification commit and hook failures retain the observed check evidence", () => {
+    const evidence = `Verification: python3 check.py\nVerification exit: 0\nVerification evidence: 3 assertions passed\nVerification scope: shared worktree; not an isolated commit tree\n`;
+    for (const header of [
+      "COMMIT_EXECUTE: COMMIT_ERROR\nReason: rejected\n",
+      "COMMIT_EXECUTE: HOOK_MUTATION\nReason: changed tree\nCommit: abcdef0 fix: change a\n",
+    ]) {
+      expect(validate("execute", header + evidence).status).toBe(SUCCESS_EXIT);
+      expect(validate("execute", header).status).toBe(INVALID_EXIT);
+    }
+    expect(
+      validate(
+        "execute",
+        `COMMIT_EXECUTE: ERROR\nReason: collection failed after verification\n${evidence}`,
+      ).status,
+    ).toBe(SUCCESS_EXIT);
+  });
+  test("none and failed checks have explicit, consistent receipts", () => {
+    const none = receipt
+      .replace("python3 check.py", "none")
+      .replace("Verification exit: 0", "Verification exit: not-run")
+      .replace("3 assertions passed", "not run");
+    expect(validate("execute", none).status).toBe(SUCCESS_EXIT);
+    expect(validate("execute", none.replace("not-run", "0")).status).toBe(
+      INVALID_EXIT,
+    );
+    const failed = `COMMIT_EXECUTE: VERIFY_FAILED\nReason: checker failed\nVerification: python3 check.py\nVerification exit: 1\nVerification evidence: assertion failed\nVerification scope: shared worktree; not an isolated commit tree\n`;
+    expect(validate("execute", failed).status).toBe(SUCCESS_EXIT);
+    expect(
+      validate("execute", failed.replace("exit: 1", "exit: 0")).status,
     ).toBe(INVALID_EXIT);
   });
 });

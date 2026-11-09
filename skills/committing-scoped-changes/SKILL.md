@@ -28,7 +28,7 @@ Derived, never user-supplied:
 
 ## Output Contract
 
-Answer in plain prose, without `COMMIT_SCOPED_CHANGES` status lines or internal handoff envelopes. State what happened, which commits were created with short SHAs, messages and paths, or that none were made; what remains uncommitted in scope from a final `git status --porcelain -- <CHANGE_PATHS plus approved expansions>` when inspected; whether unrelated work was preserved and the observed digest result when available; and one next action. Do not imply checks ran when intake stopped before inspection. For missing input, ask the focused question; at the plan gate show the readable preview defined in [the state machine](./state-machine.md). Never include raw diffs, full logs, or copied context text.
+Answer in plain prose, without `COMMIT_SCOPED_CHANGES` status lines or internal handoff envelopes. State what happened, which commits were created with short SHAs, messages and paths, or that none were made; what remains uncommitted in scope from a final `git status --porcelain -- <CHANGE_PATHS plus approved expansions>` when inspected; whether unrelated work was preserved and the observed digest result when available; and one next action. For each attempted verification, report the exact command, observed exit code, exercised targets and concise result, or explicitly say no verification ran. Disclose that checks use the shared worktree, including other groups and unrelated changes, not an isolated commit tree. A passing worktree check does not prove each commit tree passed. Do not imply checks ran when intake stopped before inspection. For missing input, ask the focused question; at the plan gate show the readable preview defined in [the state machine](./state-machine.md). Never include raw diffs, full logs, or copied context text.
 
 
 ## Subagent Registry
@@ -72,7 +72,7 @@ Expansions: none
 Verification: npm test -- checkout
 Digest: d072685ed9795be7428293cba4f4c86240e353a3
 Omissions: none
-Warnings: none
+Warnings: verification uses the shared worktree, not an isolated commit tree
 ```
 
 Gate: user replies `approve`. Executor returns:
@@ -82,10 +82,14 @@ COMMIT_EXECUTE: PASS
 Commit: 53eb984 fix(checkout): retry failed payment authorizations
 Paths: src/checkout/retry.ts tests/checkout/retry.test.ts
 Preserved: 6d7d52f41e39331257648bf83ebed2047c9e327d=6d7d52f41e39331257648bf83ebed2047c9e327d
+Verification: npm test -- checkout
+Verification exit: 0
+Verification evidence: checkout retry test passed
+Verification scope: shared worktree; not an isolated commit tree
 ```
 
-Final: Created `53eb984` with the approved message and paths. Nothing remains uncommitted in scope, and the unrelated-work digest matched. Push when ready; this skill never pushes.
+Final: Created `53eb984` with the approved message and paths. Nothing remains uncommitted in scope, and the unrelated-work digest matched. `npm test -- checkout` exited 0 and reported the checkout retry test passed on the shared worktree, not an isolated commit tree. Review the local commits; this skill never pushes.
 
 **B. Gate wait.** Plan lists two groups and `Warnings: src/checkout/config.ts is MM; the worktree version will be committed`. Output: the readable plan with exact messages, paths, and warnings, then "Reply `approve` to commit these 2 groups in order, `revise: <what to change>`, or `stop`.". State that no commits have been made and end the turn.
 
-**C. Hook mutation.** Executor returns `COMMIT_EXECUTE: HOOK_MUTATION`, `Reason: pre-commit rewrote src/checkout/retry.ts; tree OID differs from the pre-commit blob`, `Commit: 9a1c2d3 fix(checkout): retry failed payment authorizations`. Final: Stopped because the hook modified commit `9a1c2d3`. `tests/checkout/retry.test.ts` remains uncommitted, and the unrelated-work digest matched. Review `9a1c2d3`; if the hook's changes are wanted, create a follow-up commit, never amend.
+**C. Hook mutation.** Executor returns `COMMIT_EXECUTE: HOOK_MUTATION`, `Reason: pre-commit rewrote src/checkout/retry.ts; tree OID differs from the pre-commit blob`, `Commit: 9a1c2d3 fix(checkout): retry failed payment authorizations`, and the four verification fields showing the command, observed exit and result, and shared-worktree scope. Final: Stopped because the hook modified commit `9a1c2d3`. `tests/checkout/retry.test.ts` remains uncommitted, and the unrelated-work digest matched. Review `9a1c2d3`; if the hook's changes are wanted, create a follow-up commit, never amend.
