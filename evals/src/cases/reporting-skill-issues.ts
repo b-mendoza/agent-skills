@@ -13,6 +13,7 @@ import {
   assertSingleDefectPreview,
   previewIssues,
 } from "#/cases/reporting-skill-issues-regression-checks.ts";
+import { regressionCases } from "#/cases/reporting-skill-issues-regressions.ts";
 import {
   assertFileAbsent,
   assertNoMutation,
@@ -151,6 +152,7 @@ function checkDraft(observation: Observation): string {
 }
 
 export const cases = [
+  ...regressionCases,
   {
     id: `${SKILL}/trigger-positive`,
     ...routingDefaults,
