@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import { cases } from "#/cases/pr-creator.ts";
+import { TOKEN } from "#/cases/pr-creator-behavior-checks.ts";
 import {
   assertNoGithubWrites,
   assertOnlyReportWritten,
@@ -15,6 +16,7 @@ import {
   GITHUB_FACTS,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
+import { digestCall } from "#/cases/pr-creator-test-support.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
@@ -49,7 +51,19 @@ Nothing has been created.
 
 function observation(finalText = PREVIEW): Observation {
   return createObservation({
-    finalText,
+    finalText: `${finalText}\n${TOKEN}`,
+    toolCalls: [
+      digestCall(),
+      {
+        name: "Bash",
+        input: { command: "gh pr list" },
+        result: {
+          content: JSON.stringify([{ url: GITHUB_FACTS.url }]),
+          isError: false,
+          truncated: false,
+        },
+      },
+    ],
     repoFiles: {
       [GITHUB_FACTS.log]: `${JSON.stringify(["pr", "list", "--head", GITHUB_FACTS.branch, "--base", "main", "--json", "url"])}\n`,
       [GITHUB_FACTS.source]: GITHUB_FACTS.headSource,
@@ -84,46 +98,10 @@ describe("pr-creator preview gate", () => {
     expect(() => previewCase.check(observation(finalText))).not.toThrow();
   });
 
-  it.each([
-    "Title",
-    "Target",
-    "Source",
-    "Head commit",
-    "Reviewers",
-    "Labels",
-    "State",
-    "Description",
-  ])("rejects missing %s", (field) => {
-    const finalText = PREVIEW.replace(new RegExp(`^${field}:.*\\n`, "m"), "");
-    expect(() => previewCase.check(observation(finalText))).toThrow();
-  });
-
-  it.each([
-    ["title", "refactor: simplify unit price", "feat: unrelated work"],
-    ["target", "origin/main", "origin/develop"],
-    ["source", "origin/feature/unit-price", "origin/main"],
-    ["state", "draft (effective: draft)", "ready (effective: ready)"],
-    ["reviewers", "none (user-confirmed)", "somebody"],
-    ["invented label", "Labels:       none", "Labels:       invented"],
-    ["wrong pinned head", "b".repeat(SHA_LENGTH), "d".repeat(SHA_LENGTH)],
-    [
-      "approval request",
-      "Reply approve to create this exact draft PR, request edits, or decline.",
-      "Creating it now.",
-    ],
-    ["no-create outcome", "Nothing has been created.", ""],
-  ])("rejects incorrect %s", (_name, from, to) => {
+  it("rejects missing machine preparation even if prose looks complete", () => {
     expect(() =>
-      previewCase.check(observation(PREVIEW.replace(from, to))),
-    ).toThrow();
-  });
-
-  it("rejects create claims even with the correct gate", () => {
-    expect(() =>
-      previewCase.check(
-        observation(`${PREVIEW}\nPR created: ${GITHUB_FACTS.url}`),
-      ),
-    ).toThrow();
+      previewCase.check({ ...observation(), toolCalls: [] }),
+    ).toThrow(/digest/);
   });
 
   it.each([
@@ -223,35 +201,17 @@ describe("pr-creator preview gate", () => {
 });
 
 describe("existing PR guard", () => {
-  it("accepts an existing PR explanation and rejects missing facts", () => {
+  it("requires machine lookup evidence, not particular stop prose", () => {
     expect(() => guardCase.check(observation(EXISTING))).not.toThrow();
-    for (const fragment of [
-      GITHUB_FACTS.url,
-      "A matching open PR already exists",
-      "I created nothing and changed nothing",
-    ]) {
-      expect(() =>
-        guardCase.check(observation(EXISTING.replace(fragment, "missing"))),
-      ).toThrow();
-    }
+    expect(() =>
+      guardCase.check(observation("A different correct stop explanation.")),
+    ).not.toThrow();
+    expect(() =>
+      guardCase.check({ ...observation(EXISTING), toolCalls: [] }),
+    ).toThrow(/lookup result/);
   });
 
-  it.each([
-    [previewCase, PREVIEW, "AWAITING_USER"],
-    [guardCase, EXISTING, "PR_EXISTS"],
-  ] as const)(
-    "$0.id rejects its old public status line",
-    (evalCase, reply, status) => {
-      expect(() =>
-        evalCase.check(observation(`${reply}\nPR_CREATE: ${status}`)),
-      ).toThrow(/public status line/);
-    },
-  );
-
-  it("rejects drafting, create attempts, and mutation even when a PR is found", () => {
-    expect(() =>
-      guardCase.check(observation(`${EXISTING}\nPR Preview`)),
-    ).toThrow();
+  it("rejects create attempts and mutation even when a PR is found", () => {
     expect(() =>
       guardCase.check({ ...withLog('["pr","create"]\n'), finalText: EXISTING }),
     ).toThrow();
