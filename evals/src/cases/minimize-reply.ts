@@ -41,6 +41,7 @@ const ECHOING_OPERATORS: ReadonlySet<unknown> = new Set([
   "doesNotMatch",
 ]);
 const INITIAL_GRANULARITY = 2;
+const SINGLE_TURN = 1;
 /** A kept complement holds one chunk fewer than the partition it came from. */
 const DROPPED_CHUNKS = 1;
 const SENTENCE_BREAK = /(?<=[.?!])\s+/g;
@@ -75,6 +76,7 @@ function echoesReply(error: Error): error is AssertionError {
  * Throws when a passing reply has no failing contrast to preserve.
  */
 export function minimizeReply(request: MinimizeRequest): MinimizeResult {
+  assertSingleTurn(request.observation);
   const targets = targetOutcomes(request);
   const keeps = keepsOutcomes(request, targets);
   const lines = request.observation.finalText
@@ -123,7 +125,14 @@ function keepsOutcomes(
 ): Keeps {
   const { contrastCheck, observation } = request;
   return (units) => {
-    const candidate = { ...observation, finalText: render(units) };
+    const finalText = render(units);
+    const candidate = {
+      ...observation,
+      finalText,
+      ...(observation.turns === undefined
+        ? {}
+        : { turns: observation.turns.map((turn) => ({ ...turn, finalText })) }),
+    };
     return (
       outcomeOf(request.check, candidate) === targets.outcome &&
       (contrastCheck === undefined ||
@@ -192,4 +201,12 @@ function partition(units: readonly Unit[], count: number): Unit[][] {
   return Array.from({ length: Math.ceil(units.length / size) }, (_, index) =>
     units.slice(index * size, index * size + size),
   );
+}
+
+function assertSingleTurn(observation: Observation): void {
+  if ((observation.turns?.length ?? SINGLE_TURN) > SINGLE_TURN) {
+    throw new Error(
+      "refused: multi-turn observations are not supported by minimize-reply; preserve the complete conversation as a regression fixture",
+    );
+  }
 }

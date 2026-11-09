@@ -4,7 +4,10 @@ import { describe, expect, test } from "vitest";
 
 import { minimizeReply, outcomeOf } from "#/cases/minimize-reply.ts";
 import type { Observation } from "#/observation/agent-query.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import {
+  createObservation,
+  createTurn,
+} from "#/observation/observation-test-support.ts";
 
 function requireText(pattern: RegExp, message: string) {
   return (observation: Observation) => {
@@ -185,4 +188,36 @@ describe("minimizeReply", () => {
     };
     expect(minimizeReply(request)).toStrictEqual(minimizeReply(request));
   });
+});
+
+test("refuses multi-turn observations rather than changing only the aggregate reply", () => {
+  expect(() =>
+    minimizeReply({
+      check: currentCheck,
+      observation: createObservation({
+        turns: [
+          createTurn(),
+          createTurn({ name: "approval", prompt: "APPROVED" }),
+        ],
+      }),
+    }),
+  ).toThrow(/multi-turn observations are not supported/);
+});
+
+test("minimizes aggregate and recorded single-turn text together", () => {
+  const observation = createObservation({
+    finalText: REPLY,
+    turns: [createTurn({ finalText: REPLY })],
+  });
+  const result = minimizeReply({
+    observation,
+    check: (candidate) => {
+      const [turn] = candidate.turns ?? [];
+      assert.equal(turn?.finalText, candidate.finalText);
+      return currentCheck(candidate);
+    },
+    contrastCheck,
+  });
+  expect(result.finalText).toContain("Which option?");
+  expect(result.finalText.length).toBeLessThan(REPLY.length);
 });

@@ -165,6 +165,8 @@ Every runtime observation includes `turns`; the field stays optional in the sche
 
 The runner waits for background settlement separately on every turn. One SDK `maxBudgetUsd` cap and one wall-clock deadline cover the entire conversation, with the existing three-second abort grace. `results.json` includes the full turn records in observation metadata. Shared validity checks reject a later timeout, missing result, empty verdict, zero-work failure, or missing gate rather than accepting the earlier preview. Each user message carries a fresh client UUID. When the SDK echoes `user_message_uuid` or `user_message_uuids`, only matching assistant frames and results belong to the current turn. For producers without those optional echoes, an unchanged-cost successful result cannot settle a follow-up until new top-level assistant or streaming activity has appeared. Stale-only streams fail closed at end-of-stream or the existing deadline; error results still surface immediately.
 
+`pnpm minimize:reply` rejects observations with more than one turn and exits 1 with a clear message. Keep the complete conversation as a regression fixture instead. For a single recorded turn it updates the turn's text together with aggregate `finalText` while minimizing.
+
 ## Coverage
 
 All 28 skills have registered suites. Counts describe available cases, not live-run pass rates.
