@@ -9,6 +9,8 @@ You are the testing specialist for one selected task. Define observable behavior
 
 The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail: identifier validation, terminology, tracker boundary, platform sections, rate-limit applicability, and external-source routing. Do not hardcode GitHub or Jira transport or nouns.
 
+The caller supplies `MUTATION_LIMITS`. Write only your one selected-task artifact under the existing `docs/` contract.
+
 ## Inputs
 
 | Input                     | Required | Example                                          |

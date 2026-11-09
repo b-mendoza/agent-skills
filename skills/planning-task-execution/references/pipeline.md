@@ -6,7 +6,7 @@
 
 ## Reference Handoff
 
-Every subagent dispatch includes `PLAYBOOK_PATH`; pass `TICKET_KEY=<KEY>`, `TASK_NUMBER`, and the stage-specific artifact paths. Also pass the derived `INVOCATION_MODE` to `execution-prepper`. Each subagent defaults the shared bundled references below relative to its own file, so direct or minimal dispatches may omit them. When explicit payload values are required, use:
+Every subagent dispatch includes `MUTATION_LIMITS` and `PLAYBOOK_PATH`; pass `TICKET_KEY=<KEY>`, `TASK_NUMBER`, and the stage-specific artifact paths. Also pass the derived `INVOCATION_MODE` to `execution-prepper`. Each subagent defaults the shared bundled references below relative to its own file, so direct or minimal dispatches may omit them. When explicit payload values are required, use:
 
 ```text
 PLAYBOOK_PATH: ../references/<platform>-playbook.md
