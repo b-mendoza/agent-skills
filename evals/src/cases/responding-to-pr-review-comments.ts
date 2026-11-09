@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
@@ -16,10 +16,19 @@ import {
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
 import {
+  approveResponsePreview,
+  checkApprovedResponse,
   checkDefaultResponseReport,
   checkExplicitCollision,
 } from "#/cases/responding-to-pr-review-comments-checks.ts";
-import { RESPONSE_REPORT } from "#/cases/responding-to-pr-review-comments-fixtures.ts";
+import {
+  APPROVED_BODY,
+  APPROVED_BODY_FILE,
+  POST_LOG,
+  READBACK_LOG,
+  RESPONSE_REPORT,
+  seedResponsePosting,
+} from "#/cases/responding-to-pr-review-comments-fixtures.ts";
 import {
   assertFileAbsent,
   assertNoMutation,
@@ -293,6 +302,44 @@ export const cases = [
             id: "collision-question",
             requirement:
               "Identify the requested existing output and ask for the collision decision, such as overwrite, suffix, or stop, without claiming the file was overwritten.",
+          },
+        ],
+      }),
+  },
+  {
+    ...behavioralDefaults,
+    id: "responding-to-pr-review-comments/post-approved-reply",
+    skill: SKILL,
+    budgetUsd: 3,
+    mutationPolicy: "allowed",
+    seed: seedResponsePosting,
+    snapshotPaths: [
+      ...GITHUB_SNAPSHOTS,
+      GITHUB_FACTS.report,
+      POST_LOG,
+      READBACK_LOG,
+    ],
+    intent:
+      "Wait for the exact preview's approval, then post and read back an unchanged reply",
+    prompt: ({ missingPath }) =>
+      `Assess the reviewer comment on ${GITHUB_FACTS.url}. RESPONDER_LOGIN=maintainer, OUTPUT_FILE=${GITHUB_FACTS.report}, POSTING_MODE=post-after-confirmation. Do not fix code. For this valid feedback use this exact reply, represented as a JSON string: ${JSON.stringify(APPROVED_BODY)}. It includes two trailing LF bytes. The same approved bytes are already in ${APPROVED_BODY_FILE}; do not change them. Show the exact proposed reply and target and wait for approval before posting.\nFixture root: ${JSON.stringify(join(dirname(missingPath), "repo"))}`,
+    followUps: [
+      {
+        name: "approve exact reply",
+        reply: (observation) => approveResponsePreview(observation),
+      },
+    ],
+    check: checkApprovedResponse,
+    judge: async (observation) =>
+      judgeLive({
+        artifact: observation.finalText,
+        knownFacts:
+          "The mechanical check verified exactly one approved reply POST, byte-exact GET read-back, unchanged code, and synchronized report with reply ID 901 and URL https://github.com/eval-org/cart/pull/17#discussion_r901.",
+        rubric: [
+          {
+            id: "posted-outcome",
+            requirement:
+              "Explain the actual posting outcome and provide the returned reply URL without claiming the promised code fix was implemented.",
           },
         ],
       }),
