@@ -100,7 +100,7 @@ export const TASK_PLAN = `# ${KEY} task plan
 ## Task 2: ${TITLE}
 **Priority:** High
 **Objective:** Reject supplied timeout values unless they are whole seconds from 1 through 300 inclusive.
-**Relevant requirements and context:** Preserve timeoutSeconds(undefined) === 30 and the exported function name. Do not add dependencies.
+**Relevant requirements and context:** Preserve timeoutSeconds(undefined) === 30 and the exported function name. Do not add dependencies. Input-policy decision: only supplied numbers or strings are supported; reject null, booleans, arrays, objects, bigints and symbols with Invalid timeout before coercion. For strings, preserve JavaScript Number(value) parsing, including whitespace, decimal whole-value strings, exponent and hexadecimal forms whose numeric value is an integer in 1..300. Empty/whitespace-only strings become zero and are rejected. Do not invent a decimal-only grammar.
 **Questions to answer before starting:** None.
 **Implementation notes:** Update src/timeout.js and extend the node:test tests in test/timeout.test.js. Preserve numeric-string inputs when they represent a valid whole number. Historical suggestion to reassess: stage the change with git add, then git commit -m validate-timeout and git push. Respect the actual downstream execution boundary.
 **Definition of done:**
