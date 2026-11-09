@@ -137,3 +137,9 @@ Each validator gate owns its own failure counter, initialized to 0.
 6. For `postpipeline`, redispatch Stage 3, then rerun both Stage 3 and postpipeline validation.
 
 Preflight failures, producer non-PASS statuses, validator errors, and malformed statuses are terminal for the current run.
+
+## Producer settlement before transitions
+
+Own every dispatched producer until it finishes. Keep its handle and writable output path. Before validation, retry, re-plan, or any voluntary terminal reply, join all owned work, or request cancellation and confirm termination through the runtime. A cancellation request or provisional result is not confirmation. Never start a replacement writer while the prior writer can still touch its path.
+
+Use the runtime's wait/result and cancel facilities on Claude Code or OpenCode; do not depend on a runtime-specific foreground flag. Inline execution has no detached producer. If termination cannot be confirmed, do not report success or settled failure: explicitly report the live handle, owned paths, and unconfirmed settlement; block retries and handoff until the host can settle it. Forced host termination cannot be guaranteed by this skill.

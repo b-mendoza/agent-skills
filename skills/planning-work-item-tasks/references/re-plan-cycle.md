@@ -35,4 +35,4 @@ Critique-driven re-plan iteration limits belong to the parent orchestrator. This
 
 Local validator repair budgets and status routing are the same as a normal run: follow [`./execution-guide.md`](./execution-guide.md#structured-status-routing). Preserve intermediate artifacts on every outcome.
 
-The human-only branch exception applies to re-plans too.
+Before restarting any stage, apply the producer-settlement gate in `execution-guide.md`. Preserve completed artifacts and never overlap the old and replacement writer on one output path. The human-only branch exception applies to re-plans too.

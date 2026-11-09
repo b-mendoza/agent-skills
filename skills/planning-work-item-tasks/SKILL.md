@@ -143,6 +143,8 @@ Detect GitHub from the slug shape, load `./references/github-playbook.md`, prese
 
 Resolve this package's loaded directory before dispatch and pass it as `SKILL_DIR`. Python 3 is required for the bundled checks; if unavailable, stop rather than waive a gate. At Stage 1, Stage 2, Stage 3, and postpipeline, run `python3 -I <SKILL_DIR>/scripts/validate-plan.py <artifact> <KEY> [<each approved decision as a separate quoted argument>]`. Exit 0 confirms the code/human branch discriminator and decision text; exit 1 fails that gate. Existing independent checks still own complete structure and semantic coverage. For `docs/<KEY>-stage-1-detailed.md`, the script checks lettered tasks, mode/owner, and the decision overlay without requiring branches. Every other artifact still requires numbered tasks and the code/human branch discriminator. Preflight does not run this plan validator.
 
+For owned shell producers, run `python3 -I <SKILL_DIR>/scripts/validate-settlement.py <PID>...` before a terminal return or replacement dispatch. Exit 0 confirms the recorded PIDs are gone. Exit 1 requires waiting or canceling and confirming; it is not permission to return a settled result. Runtime-agent handles require the runtime's equivalent terminal confirmation, not this PID check.
+
 
 ## Runtime path resolution
 
