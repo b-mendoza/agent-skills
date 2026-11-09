@@ -7,6 +7,7 @@ import {
   assertAssigneeLookup,
   assertAssigneeStatus,
   assertCreatorReadOnly,
+  checkUnknownVerification,
 } from "#/cases/pr-creator-behavior-checks.ts";
 import {
   assertPreparedDigest,
@@ -26,6 +27,33 @@ const SCOPE_LINES = 1001;
 const TWO_TURNS = 2;
 
 export const behaviorCases = [
+  {
+    ...behavioralDefaults,
+    id: "pr-creator/unknown-verification-no-assignee",
+    skill: "pr-creator",
+    mutationPolicy: "allowed",
+    seed: seedGithubFixture,
+    snapshotPaths: GITHUB_SNAPSHOTS,
+    intent:
+      "No observed results means unknown, no template uses fallback, no assignee input means none",
+    prompt: () =>
+      `${BASE_PROMPT}No retained verification results are supplied. Show the exact preview and wait for approval.`,
+    check: checkUnknownVerification,
+    judge: async (observation) =>
+      judgeLive({
+        artifact:
+          observation.turns?.map((turn) => turn.finalText).join("\n\n") ??
+          observation.finalText,
+        knownFacts: `No verification evidence or assignee was supplied. No repository PR template exists. The diff removes an empty-cart guard. Tool inputs/results: ${judgeToolEvidence(observation)}`,
+        rubric: [
+          {
+            id: "unknown-evidence-preview",
+            requirement:
+              "Show a complete creation preview with no assignee, use the fallback Summary/Key Changes/Impact structure, and describe test execution as unknown rather than passed or definitely not run. Request the current helper-token approval before creation.",
+          },
+        ],
+      }),
+  },
   {
     ...behavioralDefaults,
     id: "pr-creator/ambiguous-template",
