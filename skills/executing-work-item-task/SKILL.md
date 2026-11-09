@@ -54,6 +54,8 @@ Any tracker action not already explicit in the approved artifacts or policy requ
 
 ## Workflow Overview
 
+Non-normative summary; `./references/pipeline.md` owns transitions and retry routing.
+
 | Stage             | Goal                                                                                                      | Primary result                |
 | ----------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------- |
 | 0. Readiness      | Confirm Phase 1-6 handoff, tracker capability policy, branch, and selected-task scope                     | Ready task or blocker         |

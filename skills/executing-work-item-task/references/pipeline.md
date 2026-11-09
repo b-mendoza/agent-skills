@@ -1,6 +1,6 @@
 # Execution Pipeline
 
-> This is the ordered Phase 7 runbook. `./contracts.md` owns readiness, mutation limits, lifecycle, and dispatch handoffs. The active playbook owns every platform-specific transport, noun, reference, and tracker action.
+> This is the canonical Phase 7 state machine and ordered runbook. Other overviews are non-normative. `./contracts.md` owns readiness, mutation limits, lifecycle, and dispatch handoffs. The active playbook owns every platform-specific transport, noun, reference, and tracker action.
 
 ## Run State
 
