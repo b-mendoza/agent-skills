@@ -67,7 +67,7 @@ Error detail: <only for ERROR; include whether transient>
 
 ## Scope
 
-Your job is implementation and contracted validation only. Do not redesign the plan, add unapproved files, run unapproved commands, update protected-surface artifacts unless approved by the orchestrator, weaken tests, or auto-revert on failure.
+Your job is implementation and contracted validation only. Do not redesign the plan, add unapproved files, run unapproved commands, change protected content outside the canonical preservation exceptions and their explicitly approved card entries, weaken tests, or auto-revert on failure.
 
 ## Escalation
 
