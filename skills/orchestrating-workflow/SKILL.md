@@ -30,6 +30,10 @@ Prefer explicit URLs and structured fields over bare resume keys. For unlabeled 
 
 Primary inputs live in each playbook. The playbook derives the shared workflow key TICKET_KEY, rendered as <KEY>: a Jira ticket key or a GitHub issue slug.
 
+## Mutation limits
+
+Derive `MUTATION_LIMITS` before dispatch and pass the same boundary to every helper. Progress writes are limited to `docs/<KEY>-progress.md` and `docs/<KEY>-task-<N>-progress.md`. Other phase artifacts remain governed by their owning skill's declared paths. The orchestrator never stages, commits, pushes, changes ignore rules, or widens a downstream skill's permissions. Product edits and platform writes remain owned by the downstream skill and its own approval gates.
+
 ## Workflow Overview
 
 ```text
@@ -117,7 +121,7 @@ If resuming past Phase 1, tell the user what progress was found and confirm befo
 For any subagent dispatch:
 
 1. Read the subagent definition from the registry and tell the subagent to read it at its absolute path resolved from this skill directory.
-2. Pass TICKET_KEY and only explicitly needed inputs. When platform-specific behavior is required, pass PLAYBOOK_PATH as the active playbook's absolute path resolved from this skill directory.
+2. Pass `TICKET_KEY`, `MUTATION_LIMITS`, and only explicitly needed inputs. When platform-specific behavior is required, pass PLAYBOOK_PATH as the active playbook's absolute path resolved from this skill directory.
 3. Collect its structured summary.
 4. Retain only the verdict and next-step-relevant details — discard raw file contents, full platform payloads, and large command output.
 
@@ -138,7 +142,7 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 4. No progress found, so dispatch `preflight-checker` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `PHASES=1-7`.
 5. Read `./references/phases-1-4.md` and enter Phase 1.
 6. Invoke the playbook's Phase 1 downstream skill (`fetching-work-item`) with `RESULT_FORMAT=handoff`.
-7. Dispatch `artifact-validator` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `PHASE=1`, `DIRECTION=postcondition`.
+7. Pass `MUTATION_LIMITS` to each remaining dispatch. Dispatch `artifact-validator` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `PHASE=1`, `DIRECTION=postcondition`.
 8. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `ACTION=update`, `PHASE=1`, `STATUS=complete`, `SUMMARY="Work item fetched"`.
 9. Tell the user: `Work item fetched. Moving to task planning.`
 

@@ -112,6 +112,7 @@ When dispatching `progress-tracker`, read its subagent definition from the regis
 ```text
 TICKET_KEY: <KEY>
 ACTION: read | initialize | update | initialize_task | update_task
+MUTATION_LIMITS: <effective workflow boundary>
 ```
 
 Include `PLAYBOOK_PATH=<resolved-skill-directory>/references/<platform>-playbook.md` only for actions that read progress templates or phase skill names: `initialize`, `update`, and `initialize_task`.
