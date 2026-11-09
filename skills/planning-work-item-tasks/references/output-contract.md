@@ -79,7 +79,7 @@ Use the active playbook's detection cue and exact platform wording. In this mode
 
 ## Completion summary
 
-Reply in plain prose, without a `PLANNING:` status line or a key/value routing envelope. Identify the work item and the final tasks file, or say that it was not written. Include the task count, unique branch count, cross-cutting question count, validation warning count, and every preserved artifact path. A short artifact list is fine.
+Reply in plain prose, without a `PLANNING:` status line or a key/value routing envelope. Identify the work item and the final tasks file, or say that it was not written. Include the task count, unique branch count, cross-cutting question count, validation warning count, and every preserved artifact path. Validation warnings mean WARN rows in the final Validation Report; separately label workflow repair notes and process deviations. Derive final-plan counts and task mappings from the final artifact, not stale Stage 1 metadata. A short artifact list is fine.
 
 Report successful planning only after every required producer verdict and independent gate passes. If planning stopped, name the failed gate, explain why, give the recovery action, and list any preserved partial artifacts. When no artifacts were written, say so. Do not claim that implementation or tracker changes occurred.
 
