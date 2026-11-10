@@ -133,8 +133,32 @@ export const RECORDS = TITLES.map((title, index) => [
 export function jsonLines(rows: readonly unknown[]): string {
   return `${rows.map((row) => JSON.stringify(row)).join("\n")}\n`;
 }
+export const READ_PREFLIGHT = [
+  ["issue", "list", "--help"],
+  ["issue", "view", "--help"],
+  ["auth", "status", "--active", "--hostname", "github.com"],
+  ["api", "--hostname", "github.com", "user", "--jq", ".login"],
+];
+export const CREATE_PREFLIGHT = ["issue", "create", "--help"];
+export function preflightToolCalls(create: boolean) {
+  return [
+    {
+      name: "Bash",
+      input: {
+        command: [
+          "command -v gh",
+          ...READ_PREFLIGHT.map((args) => `gh ${args.join(" ")}`),
+          ...(create ? [`gh ${CREATE_PREFLIGHT.join(" ")}`] : []),
+        ].join("\n"),
+      },
+    },
+  ];
+}
 export function approvedObservation(): Observation {
-  const initial = createTurn({ finalText: PREVIEW });
+  const initial = createTurn({
+    finalText: PREVIEW,
+    toolCalls: preflightToolCalls(true),
+  });
   const approved = createTurn({
     name: "approve the complete two-issue batch",
     prompt: "APPROVED",
@@ -150,7 +174,13 @@ export function approvedObservation(): Observation {
     turns: [initial, approved],
     repoFiles: {
       [EVIDENCE_PATH]: BATCH_EVIDENCE,
-      [ARGS_LOG]: jsonLines([SEARCH, SEARCH, ...CREATE_ARGS]),
+      [ARGS_LOG]: jsonLines([
+        ...READ_PREFLIGHT,
+        CREATE_PREFLIGHT,
+        SEARCH,
+        SEARCH,
+        ...CREATE_ARGS,
+      ]),
       [CREATED_ISSUES]: jsonLines(RECORDS),
     },
   });
@@ -159,7 +189,7 @@ export function existingObservation(): Observation {
   return createObservation({
     finalText: EXISTING,
     turns: [
-      createTurn({ finalText: EXISTING }),
+      createTurn({ finalText: EXISTING, toolCalls: preflightToolCalls(false) }),
       createTurn({
         name: "override",
         prompt:
@@ -169,17 +199,17 @@ export function existingObservation(): Observation {
     ],
     repoFiles: {
       [EVIDENCE_PATH]: EVIDENCE,
-      [ARGS_LOG]: jsonLines([SEARCH, VIEW]),
+      [ARGS_LOG]: jsonLines([...READ_PREFLIGHT, SEARCH, VIEW]),
       [CREATED_ISSUES]: "",
     },
   });
 }
 export function changePreview(finalText: string): Observation {
   const observation = approvedObservation();
-  const [, approved] = observation.turns ?? [];
-  assert.ok(approved !== undefined);
+  const [initial, approved] = observation.turns ?? [];
+  assert.ok(initial !== undefined && approved !== undefined);
   return {
     ...observation,
-    turns: [createTurn({ finalText }), approved],
+    turns: [{ ...initial, finalText }, approved],
   };
 }

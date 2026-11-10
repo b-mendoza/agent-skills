@@ -10,6 +10,7 @@ import {
   SKILL,
 } from "#/cases/reporting-skill-issues-fixtures.ts";
 import {
+  assertReportingPreflight,
   assertSingleDefectPreview,
   previewIssues,
 } from "#/cases/reporting-skill-issues-regression-checks.ts";
@@ -110,27 +111,9 @@ function checkNoPosting(observation: Observation): string[] {
   return calls;
 }
 
-function assertReportingPreflight(calls: readonly string[]): void {
-  for (const prefix of [
-    "issue\tlist\t--help",
-    "issue\tview\t--help",
-    "issue\tcreate\t--help",
-    "auth\tstatus\t",
-  ]) {
-    assert.ok(
-      calls.some((call) => call.startsWith(prefix)),
-      `missing CLI preflight: ${prefix}`,
-    );
-  }
-  assert.ok(
-    calls.some((call) => call.startsWith("api\t") && call.includes("\tuser\t")),
-    "posting identity was not read",
-  );
-}
-
 function checkDraft(observation: Observation): string {
   const calls = checkNoPosting(observation);
-  assertReportingPreflight(calls);
+  assertReportingPreflight(calls, { createRequired: true });
   assert.equal(capturedText(observation, EVIDENCE_PATH), EVIDENCE);
   const searches = calls.filter(
     (line) => line.startsWith("issue\tlist\t") && !line.includes("--help"),
