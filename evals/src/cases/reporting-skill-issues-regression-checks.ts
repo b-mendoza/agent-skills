@@ -31,6 +31,100 @@ const MAX_CANDIDATE_READS = 3;
 const NEXT_ARGUMENT = 1;
 const CANDIDATE_ARGUMENT = 2;
 const APPROVAL_TURN = 1;
+const FIRST_INDEX = 0;
+const NOT_FOUND = -1;
+
+function assertReadPreflight(calls: readonly string[]): void {
+  const firstSearch = calls.findIndex(
+    (call) => call.startsWith("issue\tlist\t") && !call.includes("--help"),
+  );
+  const beforeSearch =
+    firstSearch === NOT_FOUND ? calls : calls.slice(FIRST_INDEX, firstSearch);
+  for (const prefix of [
+    "issue\tlist\t--help",
+    "issue\tview\t--help",
+    "auth\tstatus\t",
+  ]) {
+    assert.ok(
+      beforeSearch.some((call) => call.startsWith(prefix)),
+      `missing CLI preflight before search: ${prefix}`,
+    );
+  }
+  assert.ok(
+    beforeSearch.some(
+      (call) => call.startsWith("api\t") && call.includes("\tuser\t"),
+    ),
+    "posting identity was not read before search",
+  );
+}
+
+function assertTurnPreflight(
+  toolCalls: readonly ToolCall[],
+  createRequired: boolean,
+): void {
+  const commands = toolCalls
+    .filter((call) => call.name === "Bash")
+    .map((call) => call.input["command"])
+    .filter((command): command is string => typeof command === "string")
+    .join("\n")
+    .replaceAll(/\\\r?\n/g, " ");
+  const discovery = commands.search(/\bcommand\s+-v\s+gh\b/);
+  const firstShellSearch = commands
+    .replace(/\bgh\s+issue\s+list\s+--help\b/g, (help) =>
+      " ".repeat(help.length),
+    )
+    .search(/\bgh\s+issue\s+list\b/);
+  assert.notEqual(
+    discovery,
+    NOT_FOUND,
+    "missing command -v gh in the initial turn",
+  );
+  assert.ok(
+    firstShellSearch === NOT_FOUND || discovery < firstShellSearch,
+    "discover gh before the first search",
+  );
+  for (const pattern of [
+    /\bgh\s+issue\s+list\s+--help\b/,
+    /\bgh\s+issue\s+view\s+--help\b/,
+    /\bgh\s+auth\s+status\b/,
+    /\bgh\s+api\b[^\n;&]*\buser\b/,
+  ]) {
+    assert.match(
+      commands,
+      pattern,
+      "read preflight must occur in the initial turn",
+    );
+  }
+  if (createRequired) {
+    assert.match(
+      commands,
+      /\bgh\s+issue\s+create\s+--help\b/,
+      "create preflight must occur before the preview, in the initial turn",
+    );
+  }
+}
+
+export function assertReportingPreflight(
+  calls: readonly string[],
+  {
+    createRequired,
+    initialToolCalls,
+  }: {
+    readonly createRequired: boolean;
+    readonly initialToolCalls?: readonly ToolCall[];
+  },
+): void {
+  assertReadPreflight(calls);
+  if (createRequired) {
+    assert.ok(
+      calls.some((call) => call.startsWith("issue\tcreate\t--help")),
+      "missing CLI preflight: issue create --help",
+    );
+  }
+  if (initialToolCalls !== undefined) {
+    assertTurnPreflight(initialToolCalls, createRequired);
+  }
+}
 
 function assertSections(body: string, sections: readonly string[]): void {
   const normalized = normalizeReplyText(body);
@@ -211,6 +305,10 @@ export function checkApprovedBatch(observation: Observation): string {
   assert.equal(capturedText(observation, EVIDENCE_PATH), BATCH_EVIDENCE);
   const calls = parseGitHubLog(capturedText(observation, ARGS_LOG));
   assertOnlyReadOrCreate(calls, true);
+  assertReportingPreflight(
+    calls.map((args) => `${args.join("\t")}\t`),
+    { createRequired: true, initialToolCalls: initial.toolCalls },
+  );
   assertSearches(calls, BATCH_SIZE, MAX_BATCH_SEARCHES);
   const creates = calls.filter((args) => isIssueCall(args, "create"));
   assert.equal(
@@ -296,6 +394,12 @@ export function checkExistingIssue(observation: Observation): string {
   assertCandidateRead(calls);
   const turns = observation.turns ?? [];
   assert.equal(turns.length, CONVERSATION_TURNS);
+  const [initial] = turns;
+  assert.ok(initial !== undefined);
+  assertReportingPreflight(
+    calls.map((args) => `${args.join("\t")}\t`),
+    { createRequired: false, initialToolCalls: initial.toolCalls },
+  );
   for (const turn of turns) {
     assertExistingReply(turn.finalText);
     assertNoRemoteWrites(turn.toolCalls);

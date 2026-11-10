@@ -20,6 +20,7 @@ import {
   BODIES,
   changePreview,
   CREATE_ARGS,
+  CREATE_PREFLIGHT,
   createCommand,
   DEFECT_BODY,
   EXISTING,
@@ -28,6 +29,7 @@ import {
   IMPROVEMENT_BODY,
   jsonLines,
   PREVIEW,
+  READ_PREFLIGHT,
   RECORDS,
   SEARCH,
   SECOND_INDEX,
@@ -301,7 +303,14 @@ describe("one approval for the complete defect and improvement batch", () => {
       expect(() =>
         batchCase.check({
           ...observation,
-          repoFiles: { ...observation.repoFiles, [ARGS_LOG]: jsonLines(calls) },
+          repoFiles: {
+            ...observation.repoFiles,
+            [ARGS_LOG]: jsonLines([
+              ...READ_PREFLIGHT,
+              CREATE_PREFLIGHT,
+              ...calls,
+            ]),
+          },
         }),
       ).toThrow();
     }
@@ -374,7 +383,10 @@ describe("covering issue remains existing despite an override", () => {
     expect(() =>
       existingCase.check({
         ...observation,
-        repoFiles: { ...observation.repoFiles, [ARGS_LOG]: jsonLines(calls) },
+        repoFiles: {
+          ...observation.repoFiles,
+          [ARGS_LOG]: jsonLines([...READ_PREFLIGHT, ...calls]),
+        },
       }),
     ).toThrow();
   });
@@ -384,13 +396,12 @@ describe("covering issue remains existing despite an override", () => {
     ["relabels clear coverage", `${EXISTING}\nThis is a possible duplicate.`],
   ])("leaves %s to the semantic judge", (_label, finalText) => {
     const observation = existingObservation();
+    const [initial, ...later] = observation.turns ?? [];
+    assert.ok(initial !== undefined);
     expect(() =>
       existingCase.check({
         ...observation,
-        turns: [
-          createTurn({ finalText }),
-          ...(observation.turns?.slice(SECOND_INDEX) ?? []),
-        ],
+        turns: [{ ...initial, finalText }, ...later],
       }),
     ).not.toThrow();
     expect(

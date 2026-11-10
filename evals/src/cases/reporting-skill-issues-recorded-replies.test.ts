@@ -106,12 +106,17 @@ describe("recorded already-covered replies", () => {
     "accepts retained links and command explanations in repeat $repeat without creating anything",
     ({ initial, final }) => {
       const baseline = existingObservation();
+      const [preflightTurn] = baseline.turns ?? [];
+      assert.ok(preflightTurn !== undefined);
       expect(() =>
         existingCase.check({
           ...baseline,
           finalText: final,
           turns: [
-            createTurn({ finalText: initial }),
+            createTurn({
+              finalText: initial,
+              toolCalls: preflightTurn.toolCalls,
+            }),
             createTurn({
               name: "override",
               prompt:
