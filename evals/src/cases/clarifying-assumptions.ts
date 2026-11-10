@@ -150,13 +150,47 @@ function checkRevisionBoundary(
   );
   assert.match(observation.finalText, /BLOCKERS_PRESENT: false/);
 }
+function hasDecisionRecord(plan: string): boolean {
+  const [, afterHeading = ""] = plan.split(/^## Decisions Log[ \t]*\r?$/m);
+  const [log = ""] = afterHeading.split(/^#{1,2}[ \t]/m);
+  // Check record structure here; the judge checks the freely worded decision.
+  const hasLogEntry =
+    /^\|.*\|\s*(?:confirmed|revised|skipped|resolved|override|blocked)\s*\|.*\|[ \t]*\r?$/m.test(
+      log,
+    );
+  const hasAnnotation =
+    /\[DECISION [^\]\r\n]+ — (?:confirmed|revised|skipped|resolved|override|blocked): [^\]\r\n]+\]/.test(
+      plan,
+    );
+  return hasLogEntry || hasAnnotation;
+}
+
 function checkStructuralRevision(observation: Observation): string {
   checkRevisionBoundary(observation, "true");
-  assert.match(
-    observation.repoFiles?.[CLARIFICATION_FACTS.planPath] ?? "",
-    /tenant administrators/,
+  assert.ok(
+    hasDecisionRecord(
+      observation.repoFiles?.[CLARIFICATION_FACTS.planPath] ?? "",
+    ),
+    "no persisted decision in the Decisions Log or a decision annotation",
   );
-  return "scope revision retains re-plan flag";
+  return "scope revision recorded and retains re-plan flag";
+}
+
+async function judgeStructuralRevision(
+  observation: Observation,
+): Promise<string> {
+  return judgeLive({
+    artifact: `<main_plan>\n${observation.repoFiles?.[CLARIFICATION_FACTS.planPath] ?? ""}\n</main_plan>`,
+    knownFacts:
+      "The seed plan leaves the export audience unresolved, already mentions tenant administrators in an open question, and says 'No accepted decisions yet.' The user first described owner-only export, then explicitly revised the final decision: tenant administrators must export all tenant accounts, including other owners. This changes authorization and requires re-planning. The user asked to record that final decision and finish.",
+    rubric: [
+      {
+        id: "persisted-structural-decision",
+        requirement:
+          "Evaluate persisted decision records in main_plan only. At least one Decisions Log entry or [DECISION ...] annotation must unambiguously record the user's final revised choice: tenant administrators may export every account in their tenant, including accounts owned by other users. It must be recorded as decided, not merely asked, proposed, blocked, or deferred, and supersede any earlier owner-only choice. A matching phrase only in an unresolved question, copied seed text, or the terminal reply does not satisfy this. Accept equivalent wording, any stable item ID, and either contracted record form; do not require rewriting every stale question or performing the re-plan in this case.",
+      },
+    ],
+  });
 }
 function checkLocalRevision(observation: Observation): string {
   checkRevisionBoundary(observation, "false");
@@ -371,6 +405,7 @@ export const cases = [
       },
     ],
     check: structural ? checkStructuralRevision : checkLocalRevision,
+    ...(structural ? { judge: judgeStructuralRevision } : {}),
   })),
   {
     ...suiteDefaults,

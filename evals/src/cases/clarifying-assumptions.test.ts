@@ -425,8 +425,10 @@ test("structural revision cannot suppress required re-planning", () => {
     finalText: "- RE_PLAN_NEEDED: true\n- BLOCKERS_PRESENT: false",
     repoFiles: {
       ...base.repoFiles,
-      [CLARIFICATION_FACTS.planPath]:
-        "Decision: tenant administrators may export all accounts.",
+      [CLARIFICATION_FACTS.planPath]: `## Decisions Log
+| Iteration | Scope | Item ID | Category | Outcome | Summary | Re-plan | Artifact |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Plan-wide | PF1 | problem-framing | revised | Tenant administrators may export all tenant accounts. | Yes | - |`,
     },
   };
   expect(() =>
