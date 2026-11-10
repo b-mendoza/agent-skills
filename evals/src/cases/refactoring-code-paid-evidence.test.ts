@@ -1,4 +1,4 @@
-import { expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 
 import {
   REFACTOR_FILES,
@@ -7,6 +7,7 @@ import {
 import { assertOwnedReports } from "#/cases/refactoring-code-regression-checks.ts";
 import { HANDOFFS } from "#/cases/refactoring-code-regression-fixtures.ts";
 import { getCase } from "#/cases/registry.ts";
+import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 const skill = { name: "Skill", input: { skill: "refactoring-code" } };
@@ -128,3 +129,107 @@ test("analyst repeat 1 variable-bound ignore proof requires captured success, al
     }).toThrow();
   }
 });
+
+describe.each(["command", "result"] as const)(
+  "ignore proof run-path boundaries in the %s",
+  (source) => {
+    const run = "2326BCA4-3C37-448B-BAB6-50E68D7A4E97";
+    const runPath = `${HANDOFFS}${run}`;
+    const write = {
+      name: "Write",
+      input: { file_path: `${runPath}/report.txt` },
+    };
+    function observationFor(
+      text: string,
+      command = source === "command" ? text : "git check-ignore -q $RD/probe",
+    ): Observation {
+      return createObservation({
+        repoFiles: { [HANDOFFS]: "", [`${runPath}/report.txt`]: "report" },
+        toolCalls: [
+          {
+            name: "Bash",
+            input: { command },
+            result: {
+              content: source === "result" ? text : "ignored",
+              isError: false,
+              truncated: false,
+            },
+          },
+          write,
+        ],
+      });
+    }
+
+    test.each([
+      {
+        label: "the recorded variable assignment",
+        text: `RD=${runPath}; mkdir -p $RD && git check-ignore --quiet --no-index -- $RD/probe && echo ignored`,
+      },
+      { label: "the end of the text", text: `git check-ignore -q ${runPath}` },
+      {
+        label: "double quotes",
+        text: `git check-ignore -q "${runPath}"`,
+      },
+      {
+        label: "single quotes",
+        text: `git check-ignore -q '${runPath}'`,
+      },
+      {
+        label: "a descendant path",
+        text: `git check-ignore -q -- ${runPath}/probe`,
+      },
+    ])("accepts $label", ({ text }) => {
+      expect(() => {
+        assertOwnedReports(observationFor(text));
+      }).not.toThrow();
+    });
+
+    test.each([
+      {
+        label: "another run",
+        text: `git check-ignore -q -- ${HANDOFFS}another-run/probe`,
+      },
+      {
+        label: "a hyphenated longer ID",
+        text: `git check-ignore -q -- ${runPath}-old/probe`,
+      },
+      {
+        label: "a longer ID ending in a digit",
+        text: `git check-ignore -q -- ${runPath}2/probe`,
+      },
+    ])("rejects $label", ({ text }) => {
+      expect(() => {
+        assertOwnedReports(observationFor(text));
+      }).toThrow("missing successful ignore proof before report write");
+    });
+
+    test("rejects a visible run path without git check-ignore", () => {
+      const text = `printf '%s' '${runPath}'`;
+      expect(() => {
+        assertOwnedReports(observationFor(text, text));
+      }).toThrow("missing successful ignore proof before report write");
+    });
+
+    test("rejects proof after the first report write", () => {
+      const observation = observationFor(`git check-ignore -q ${runPath}`);
+      expect(() => {
+        assertOwnedReports({
+          ...observation,
+          toolCalls: [write, ...observation.toolCalls],
+        });
+      }).toThrow("missing successful ignore proof before report write");
+    });
+
+    test("rejects an errored proof result", () => {
+      const observation = observationFor(`git check-ignore -q ${runPath}`);
+      const toolCalls = observation.toolCalls.map((call) =>
+        call.result === undefined
+          ? call
+          : { ...call, result: { ...call.result, isError: true } },
+      );
+      expect(() => {
+        assertOwnedReports({ ...observation, toolCalls });
+      }).toThrow();
+    });
+  },
+);
