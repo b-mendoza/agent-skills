@@ -29,6 +29,14 @@ const script = fileURLToPath(
   ),
 );
 
+function runProgress(cwd: string, fields: Readonly<Record<string, unknown>>) {
+  return spawnSync("python3", [script], {
+    cwd,
+    input: JSON.stringify({ ticket_key: "acme-app-42", ...fields }),
+    encoding: "utf8",
+  });
+}
+
 describe("artifact recovery guards", () => {
   test.each(["fresh", "artifact-recovered"])(
     "rejects uninitialized updates without task artifacts in %s progress",
@@ -290,6 +298,63 @@ describe("artifact recovery guards", () => {
 });
 
 describe("human-only progress guard", () => {
+  test.each([
+    { cell: "1", blocked: true },
+    { cell: "Task 1", blocked: true },
+    { cell: "**1**", blocked: true },
+    { cell: "**Task 1**", blocked: true },
+    { cell: "`1`", blocked: true },
+    { cell: "`Task 1`", blocked: true },
+    { cell: "C -> 1", blocked: true },
+    { cell: "**C -> 1**", blocked: true },
+    { cell: "C -> **1**", blocked: true },
+    { cell: "**C** -> `Task 1`", blocked: true },
+    { cell: "`C` → **Task 1**", blocked: true },
+    { cell: "**C → 1**", blocked: true },
+    { cell: "`C → 1`", blocked: true },
+    { cell: " ` C -> 1 ` ", blocked: true },
+    { cell: "C → Task 1", blocked: true },
+    { cell: "A -> C → 1", blocked: true },
+    { cell: "3 -> 1", blocked: true },
+    { cell: "1 -> 3", blocked: false },
+    { cell: "Task 1 extra", blocked: false },
+    { cell: "C -> 1 extra", blocked: false },
+    { cell: "C -> 0", blocked: false },
+    { cell: "C -> 1", blocked: true, before: "| 2 | Task 1 | stale-code |\n" },
+    { cell: "C -> 1", blocked: true, after: "| 2 | Task 1 | stale-code |\n" },
+  ])(
+    "recognizes summary identity $cell before artifact-only initialization: %j",
+    ({ cell, blocked, before, after }) => {
+      const fixture = makeFixture("clean", []);
+      const run = (fields: Readonly<Record<string, unknown>>) =>
+        runProgress(fixture.cwd, fields);
+      try {
+        writeRepoFiles(fixture.cwd, {
+          "docs/acme-app-42.md": "# Snapshot\n",
+          "docs/acme-app-42-upfront-critique.md": "# Critique\n",
+          "docs/acme-app-42-tasks.md": `## Execution Order Summary\n\n| Order | Task | Branch |\n| --- | --- | --- |\n${before ?? ""}| 1 | ${cell} | N/A (human-only) |\n${after ?? ""}\n## Task 1: Human approval\n**Branch name:** stale-code\n## Decisions Log\n## GitHub Task Issues\n`,
+        });
+        expect(run({ action: "read" }).status).toBe(SUCCESS);
+        const result = run({
+          action: "initialize_task",
+          task_number: 1,
+          phase_skills: ["one", "two", "three", "four", "five", "six", "seven"],
+        });
+        expect(result.status).toBe(blocked ? BLOCKED : SUCCESS);
+        expect(
+          result.stdout.includes("human-only task requires a human handoff"),
+        ).toBe(blocked);
+        expect(
+          existsSync(join(fixture.cwd, "docs/acme-app-42-task-1-progress.md")),
+        ).toBe(!blocked);
+        expect(
+          existsSync(join(fixture.cwd, "docs/acme-app-42-progress.md")),
+        ).toBe(!blocked);
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
   test.each([
     {
       execution_mode: "human-only",

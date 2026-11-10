@@ -116,7 +116,8 @@ def task_markers(key, root):
     if not path.exists():
         return {}
     require(not path.is_symlink(), "task plan must not be a symlink")
-    plan = path.read_text().replace("**", "").replace("`", "")
+    raw_plan = path.read_text()
+    plan = raw_plan.replace("**", "").replace("`", "")
     result = {}
     for match in re.finditer(r"(?m)^## Task ([1-9][0-9]*):[^\n]*$", plan):
         tail = plan[match.end():]
@@ -133,16 +134,23 @@ def task_markers(key, root):
         if fields.get("branch name"):
             markers["Branch name"] = fields["branch name"]
         result[match[1]] = markers
-    summary = re.search(r"(?ms)^## Execution Order Summary[ \t]*\n(.*?)(?=^## |\Z)", plan)
+    summary = re.search(r"(?ms)^## Execution Order Summary[ \t]*\n(.*?)(?=^## |\Z)", raw_plan)
     if summary:
         _, rows = table(summary[1], "Task") if "| Task |" in summary[1] else ([], [])
         # Tables commonly begin with Order rather than Task.
         if not rows and "| Order |" in summary[1]:
             _, rows = table(summary[1], "Order")
         for row in rows:
-            branch = row.get("Branch name", row.get("Branch", ""))
-            if branch.casefold() == "n/a (human-only)":
-                result.setdefault(row.get("Task", "").removeprefix("Task "), {})["Branch name"] = branch
+            branch = row.get("Branch name", row.get("Branch", "")).replace("**", "").replace("`", "").strip()
+            identity = row.get("Task", "").replace("**", "").replace("`", "").strip()
+            parts = re.split(r"->|→", identity)
+            if len(parts) > 1 and not "".join(parts[:-1]).strip():
+                continue
+            identity = parts[-1].strip()
+            match = re.fullmatch(r"(?:Task\s+)?([1-9][0-9]*)", identity)
+            if match and branch.casefold() == "n/a (human-only)":
+                # Only the final mapped identity names the task; any sentinel wins.
+                result.setdefault(match[1], {})["Branch name"] = branch
     return result
 
 
