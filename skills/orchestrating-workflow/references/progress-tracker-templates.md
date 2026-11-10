@@ -38,7 +38,7 @@ The actual status values carry the established display markers. Phase 4 completi
 
 ## Per-task progress
 
-Path: `docs/<KEY>-task-<N>-progress.md`. `initialize_task` creates it only after user selection and Phase 5 readiness. It contains phase rows 5, 6, 7, followed by `## Re-plan History` and `## Activity Log`.
+Path: `docs/<KEY>-task-<N>-progress.md`. `initialize_task` creates it only after user selection and Phase 5 readiness. It contains phase rows 5, 6, 7, followed by `## Re-plan History` and `## Activity Log`. On either task initialization or update, all four Phase 5 artifacts, `brief`, `execution-plan`, `test-spec`, and `refactoring-plan`, allow a missing task file to resume at Phase 6. The additional Phase 6 `critique` and `decisions` pair advances that inference to Phase 7. This depends on the task's artifacts on disk, not a note or the main file's origin. Without all four planning artifacts, `update_task` requires an initialized task file. Only planning phases can be inferred complete; Phase 7 remains pending until explicitly updated. Reconstructed files retain a note that phase validation is still required. `initialize` writes only the main file, and `skip_task` does not create a task file.
 
 Phase labels are `5/7 Plan`, `6/7 Critique`, and `7/7 Execute`. Current Phase points to the next unfinished phase after a successful update. Only successful Phase 7 yields a completed task:
 
