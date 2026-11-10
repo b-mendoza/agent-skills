@@ -28,6 +28,7 @@ import {
   FIRST_INDEX,
   IMPROVEMENT_BODY,
   jsonLines,
+  PDF_SEARCH,
   PREVIEW,
   READ_PREFLIGHT,
   RECORDS,
@@ -295,9 +296,9 @@ describe("one approval for the complete defect and improvement batch", () => {
   test("rejects an unlogged create or unrelated remote write", () => {
     const observation = approvedObservation();
     for (const calls of [
-      [SEARCH, SEARCH, ...CREATE_ARGS.slice(FIRST_INDEX, SECOND_INDEX)],
-      [SEARCH, SEARCH, ...CREATE_ARGS, ["issue", "comment", "17"]],
-      [...CREATE_ARGS, SEARCH, SEARCH],
+      [SEARCH, PDF_SEARCH, ...CREATE_ARGS.slice(FIRST_INDEX, SECOND_INDEX)],
+      [SEARCH, PDF_SEARCH, ...CREATE_ARGS, ["issue", "comment", "17"]],
+      [...CREATE_ARGS, SEARCH, PDF_SEARCH],
       [SEARCH, ...CREATE_ARGS],
     ]) {
       expect(() =>

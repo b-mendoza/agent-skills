@@ -10,6 +10,7 @@ import {
   CREATE_PREFLIGHT,
   existingObservation,
   jsonLines,
+  PDF_SEARCH,
   READ_PREFLIGHT,
   SEARCH,
   TITLES,
@@ -45,7 +46,7 @@ describe("approved command arguments", () => {
       ...READ_PREFLIGHT,
       CREATE_PREFLIGHT,
       SEARCH,
-      SEARCH,
+      PDF_SEARCH,
       ...CREATE_ARGS.map((args) => [...args, "--label", "bug"]),
     ];
     expect(() =>
@@ -57,7 +58,7 @@ describe("approved command arguments", () => {
       ...READ_PREFLIGHT,
       CREATE_PREFLIGHT,
       SEARCH,
-      SEARCH,
+      PDF_SEARCH,
       ...TITLES.map((title) => [
         "issue",
         "create",
@@ -65,6 +66,88 @@ describe("approved command arguments", () => {
         `--title=${title}`,
         "--repo=b-mendoza/agent-skills",
       ]),
+    ];
+    expect(() =>
+      batchCase.check(withCalls(approvedObservation(), calls)),
+    ).not.toThrow();
+  });
+});
+
+describe("per-finding duplicate search", () => {
+  test.each([
+    ["backup-only queries", [SEARCH, SEARCH]],
+    ["four backup-only queries", [SEARCH, SEARCH, SEARCH, SEARCH]],
+    [
+      "three queries for the backup finding",
+      [SEARCH, SEARCH, SEARCH, PDF_SEARCH],
+    ],
+    [
+      "three queries for the PDF finding",
+      [SEARCH, PDF_SEARCH, PDF_SEARCH, PDF_SEARCH],
+    ],
+    [
+      "broad queries without PDF coverage",
+      [SEARCH, SEARCH.map((arg) => arg.replace(" backup", " output format"))],
+    ],
+    [
+      "combined terms without separate per-finding coverage",
+      [SEARCH.map((arg) => arg.replace(" backup", " backup PDF")), PDF_SEARCH],
+    ],
+    [
+      "a combined query exceeding the backup limit",
+      [
+        SEARCH,
+        SEARCH,
+        SEARCH.map((arg) => arg.replace(" backup", " backup PDF")),
+        PDF_SEARCH,
+      ],
+    ],
+  ])("rejects %s", (_label, searches) => {
+    const calls = [
+      ...READ_PREFLIGHT,
+      CREATE_PREFLIGHT,
+      ...searches,
+      ...CREATE_ARGS,
+    ];
+    expect(() =>
+      batchCase.check(withCalls(approvedObservation(), calls)),
+    ).toThrow();
+  });
+  test.each([
+    ["a broader query", " output format"],
+    ["a query naming both findings", " backup PDF"],
+  ])("accepts %s after separate coverage for each finding", (_label, terms) => {
+    const calls = [
+      ...READ_PREFLIGHT,
+      CREATE_PREFLIGHT,
+      SEARCH,
+      PDF_SEARCH,
+      SEARCH.map((arg) => arg.replace(" backup", terms)),
+      ...CREATE_ARGS,
+    ];
+    expect(() =>
+      batchCase.check(withCalls(approvedObservation(), calls)),
+    ).not.toThrow();
+  });
+  test("accepts relevant query variants and two queries per finding", () => {
+    const overwrite = SEARCH.map((arg) =>
+      arg === "generate-handoff-document backup"
+        ? "generate-handoff-document overwrite"
+        : arg,
+    );
+    const portable = PDF_SEARCH.map((arg) =>
+      arg === "generate-handoff-document PDF export"
+        ? "generate-handoff-document portable document format"
+        : arg,
+    );
+    const calls = [
+      ...READ_PREFLIGHT,
+      CREATE_PREFLIGHT,
+      overwrite,
+      SEARCH,
+      portable,
+      PDF_SEARCH,
+      ...CREATE_ARGS,
     ];
     expect(() =>
       batchCase.check(withCalls(approvedObservation(), calls)),
@@ -90,7 +173,13 @@ describe.each([
   test("rejects read preflight after the first search", () => {
     const calls =
       evalCase === batchCase
-        ? [SEARCH, ...READ_PREFLIGHT, CREATE_PREFLIGHT, SEARCH, ...CREATE_ARGS]
+        ? [
+            SEARCH,
+            ...READ_PREFLIGHT,
+            CREATE_PREFLIGHT,
+            PDF_SEARCH,
+            ...CREATE_ARGS,
+          ]
         : [SEARCH, ...READ_PREFLIGHT, VIEW];
     expect(() => evalCase.check(withCalls(observe(), calls))).toThrow(
       /preflight/,
@@ -116,7 +205,7 @@ describe.each([
 });
 
 test("rejects missing create preflight", () => {
-  const calls = [...READ_PREFLIGHT, SEARCH, SEARCH, ...CREATE_ARGS];
+  const calls = [...READ_PREFLIGHT, SEARCH, PDF_SEARCH, ...CREATE_ARGS];
   expect(() =>
     batchCase.check(withCalls(approvedObservation(), calls)),
   ).toThrow(/create --help/);
