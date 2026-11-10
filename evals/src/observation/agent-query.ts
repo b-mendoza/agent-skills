@@ -11,7 +11,7 @@ import type {
   ResultVerdict,
   ToolCall,
 } from "#/observation/observation-contract.ts";
-import { createTurnCorrelation } from "#/observation/turn-correlation.ts";
+import { createTurnCorrelationSession } from "#/observation/turn-correlation.ts";
 
 export type {
   Observation,
@@ -273,15 +273,18 @@ function backgroundTasksLive(message: unknown, previous: boolean): boolean {
 interface ResultReadState {
   readonly tasksLive: boolean;
   readonly recordResult: (result: ResultVerdict | null) => void;
-  readonly correlation: ReturnType<typeof createTurnCorrelation>;
+  readonly correlation: ReturnType<
+    ReturnType<typeof createTurnCorrelationSession>
+  >;
 }
 
 function canSettle(
   result: ResultVerdict | null,
   live: boolean,
   state: ResultReadState,
+  message: unknown,
 ): boolean {
-  return result !== null && !live && state.correlation.settles(result);
+  return result !== null && state.correlation.settles(result, message, live);
 }
 
 async function readResult(
@@ -297,7 +300,7 @@ async function readResult(
   const live = backgroundTasksLive(message.value, state.tasksLive);
   const result = normalizeStreamMessage(message.value, toolCalls);
   state.recordResult(result);
-  return canSettle(result, live, state)
+  return canSettle(result, live, state, message.value)
     ? result
     : readResult(iterator, toolCalls, { ...state, tasksLive: live });
 }
@@ -353,6 +356,7 @@ export async function observeClaude(
   let failure: unknown = undefined;
   let iterator: AsyncIterator<unknown> | undefined = undefined;
   const input = createInput(runOptions.prompt);
+  const correlateTurn = createTurnCorrelationSession();
   const currentVerdict = () =>
     result ?? failedResult ?? conversation.failure(failureText(failure));
   const observeSoFar = (): Observation => ({
@@ -374,7 +378,7 @@ export async function observeClaude(
       readResult(stream, toolCalls, {
         tasksLive: false,
         recordResult: conversation.recordResult,
-        correlation: createTurnCorrelation(turn.uuid, turn.previousCost),
+        correlation: correlateTurn(turn.uuid, turn.previousCost),
       }),
       settleBy,
     ]);
