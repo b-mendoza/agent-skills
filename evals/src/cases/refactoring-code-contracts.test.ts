@@ -295,6 +295,60 @@ describe("every routed role validates required fields and status consistency", (
     }
   });
 
+  test.each([
+    ["safe", "1", "fail", /PASS.*Result/],
+    ["safe", "0", "fail", /PASS.*Result/],
+    ["safe", "1", "pass", /PASS.*Exit code/],
+    ["safe", "1", "pre-existing failure", /PASS.*Result/],
+    ["safe", "0", "pre-existing failure", /PASS.*Result/],
+    ["warning path", "0", "pass", /PASS.*warning path/],
+  ] as const)(
+    "implementer PASS rejects safety %s, exit %s and result %s",
+    (safety, exitCode, validationResult, diagnostic) => {
+      const report = ROLE_REPORTS[IMPLEMENTER_REPORT_INDEX];
+      const payload = report.text
+        .replace("Safety class: safe", `Safety class: ${safety}`)
+        .replace("Exit code: 0", `Exit code: ${exitCode}`)
+        .replace("Result: pass", `Result: ${validationResult}`);
+      const result = checkReport(payload, report.role);
+      expect(result.status).toBe(FAILURE);
+      expect(result.stderr).toMatch(diagnostic);
+    },
+  );
+
+  test.each(["safe", "state-mutating", "destructive"])(
+    "implementer PASS accepts passing validation classed %s",
+    (safety) => {
+      const report = ROLE_REPORTS[IMPLEMENTER_REPORT_INDEX];
+      const result = checkReport(
+        report.text.replace("Safety class: safe", `Safety class: ${safety}`),
+        report.role,
+      );
+      expect(result.status).toBe(SUCCESS);
+      expect(result.stdout.trim()).toBe("PASS");
+    },
+  );
+
+  test("implementer PASS_WITH_WARNINGS accepts a known failure on a warning path", () => {
+    const report = ROLE_REPORTS[IMPLEMENTER_REPORT_INDEX];
+    const payload = report.text
+      .replace("IMPLEMENTATION: PASS", "IMPLEMENTATION: PASS_WITH_WARNINGS")
+      .replace(
+        "Baseline checkpoint: pass",
+        "Baseline checkpoint: fail (pre-existing)",
+      )
+      .replace("Safety class: safe", "Safety class: warning path")
+      .replace("Exit code: 0", "Exit code: 1")
+      .replace("Result: pass", "Result: pre-existing failure")
+      .replace(
+        "Warnings:\n- none",
+        "Warnings:\n- Pre-existing validation failure",
+      );
+    const result = checkReport(payload, report.role);
+    expect(result.status).toBe(SUCCESS);
+    expect(result.stdout.trim()).toBe("PASS_WITH_WARNINGS");
+  });
+
   test("implementer rejects missing and duplicate nested validation fields", () => {
     const report = ROLE_REPORTS[IMPLEMENTER_REPORT_INDEX];
     for (const bad of [
