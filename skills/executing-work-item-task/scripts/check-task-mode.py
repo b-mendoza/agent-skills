@@ -4,7 +4,9 @@
 Usage: python3 check-task-mode.py TASK_NUMBER < task-plan.md
        python3 check-task-mode.py --help
 Exit 0: selected task is not marked human-only; continue other readiness checks.
-Exit 1: BLOCKED, human handoff required. Exit 2: malformed input or usage; stop.
+Exit 1: BLOCKED, human handoff required.
+Exit 2: malformed input or usage, including an unreadable summary Task cell
+        whose Branch cell is N/A (human-only); ERROR quotes that cell. Stop.
 Summary Task cells name positive N as N, Task N, or either form after the
 last -> or → with a nonempty source, including chains such as A -> B -> 1.
 Whitespace, paired **bold** and `backticks` around the cell or either mapping
@@ -71,6 +73,9 @@ def check(plan, number):
                 task_cell = row.get("Task", "")
                 task_number = summary_task_number(task_cell)
                 branch = row.get("Branch name", row.get("Branch", "")).replace("**", "").strip(" \t\r\n`")
+                is_sentinel = branch.casefold() == "n/a (human-only)"
+                if task_number is None and is_sentinel:
+                    raise ValueError("unreadable summary Task cell " + repr(task_cell) + " with human-only branch sentinel")
                 if task_number == number:
                     branches.append(branch)
     human = any(mode.strip().casefold() == "human-only" for mode in modes)
