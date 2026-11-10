@@ -271,6 +271,26 @@ test("does not let an untagged success settle after the session has echoed ident
   });
 });
 
+test.each([false])(
+  "never grades a notification result with is_error %s and retains its cost on failure",
+  async (isError) => {
+    sdk.query.mockImplementation(() =>
+      scripted({ ...notification("background only"), is_error: isError }),
+    );
+    expect(await observeClaude({ ...options(), followUps: [] })).toMatchObject({
+      subtype: "query_error",
+      costUsd: FINAL_COST,
+      finalText: "query ended without a result message",
+      turns: [
+        {
+          subtype: "query_error",
+          finalText: "query ended without a result message",
+        },
+      ],
+    });
+  },
+);
+
 test("surfaces an untagged session budget error after a notification without losing cumulative spend", async () => {
   sdk.query.mockImplementation(async function* ({ prompt }) {
     const input = inputStream(prompt);
@@ -292,6 +312,48 @@ test("surfaces an untagged session budget error after a notification without los
     costUsd: FINAL_COST,
     turns: [{ finalText: "preview" }, { subtype: "error_max_budget_usd" }],
   });
+});
+
+test("retains notification tool actions in the reading turn but grades only its user reply", async () => {
+  sdk.query.mockImplementation(() =>
+    scripted(
+      success("preview"),
+      {
+        type: "assistant",
+        message: {
+          content: [
+            {
+              type: "tool_use",
+              id: "background",
+              name: "Bash",
+              input: { command: "check background" },
+            },
+          ],
+        },
+      },
+      {
+        type: "user",
+        message: {
+          content: [
+            { type: "tool_result", tool_use_id: "background", content: "done" },
+          ],
+        },
+      },
+      notification("background text"),
+      assistant("user reply"),
+      success("user reply", FINAL_COST),
+    ),
+  );
+  const observation = await observeClaude(options());
+  expect(observation).toMatchObject({
+    finalText: "user reply",
+    costUsd: FINAL_COST,
+    toolCalls: [{ id: "background", result: { content: "done" } }],
+  });
+  expect(observation.turns).toMatchObject([
+    { toolCalls: [] },
+    { finalText: "user reply", toolCalls: [{ id: "background" }] },
+  ]);
 });
 
 test("accepts a same-cost follow-up result after new top-level streaming activity", async () => {

@@ -9,6 +9,7 @@ const decodeReplyIdentity = Schema.decodeUnknownSync(
     user_message_uuid: Schema.optional(Schema.String),
     user_message_uuids: Schema.optional(Schema.Array(Schema.String)),
     parent_tool_use_id: Schema.optional(Schema.NullOr(Schema.String)),
+    origin: Schema.optional(Schema.Struct({ kind: Schema.String })),
   }),
 );
 
@@ -16,6 +17,16 @@ function replyIdentity(message: unknown) {
   if (!Predicate.isObject(message)) return undefined;
   if (!REPLY_TYPES.has(message["type"])) return undefined;
   return decodeFrameIdentity(message);
+}
+
+function notificationResult(
+  message: Record<string, unknown>,
+  identity: ReturnType<typeof decodeReplyIdentity>,
+): boolean {
+  return (
+    message["type"] === "result" &&
+    identity.origin?.kind === "task-notification"
+  );
 }
 
 function decodeFrameIdentity(message: Record<string, unknown>) {
@@ -26,6 +37,7 @@ function decodeFrameIdentity(message: Record<string, unknown>) {
       : [identity.user_message_uuid];
   return {
     ids: [...single, ...(identity.user_message_uuids ?? [])],
+    notification: notificationResult(message, identity),
     activity:
       ["assistant", "stream_event"].includes(String(message["type"])) &&
       identity.parent_tool_use_id == null,
@@ -79,11 +91,14 @@ function createTurnCorrelation(
   let activitySeen = false;
   let echoesSeen = false;
   let ownResultSeen = false;
-  const fallbackResult = (verdict: ResultVerdict) =>
-    !echoesSeen && fallbackSettles(verdict, previousCost, activitySeen);
+  const fallbackResult = (identity: ReplyIdentity, verdict: ResultVerdict) =>
+    !echoesSeen &&
+    !identity.notification &&
+    fallbackSettles(verdict, previousCost, activitySeen);
   // A live task delays settlement; retain the user result across notification replies.
   const observeResult = (identity: ReplyIdentity, verdict: ResultVerdict) => {
-    const ownResult = identity.ids.includes(uuid) || fallbackResult(verdict);
+    const ownResult =
+      identity.ids.includes(uuid) || fallbackResult(identity, verdict);
     ownResultSeen ||= ownResult;
     return ownResultSeen || verdict.isError;
   };
