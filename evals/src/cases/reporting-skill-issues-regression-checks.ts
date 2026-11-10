@@ -194,6 +194,21 @@ export function assertBatchPreview(text: string): PreviewIssue[] {
   return issues;
 }
 
+function endsIdentityRequest(suffix: string): boolean {
+  // Inspect redirections without removing them from the command being checked.
+  // Extra API arguments after a redirection must still prevent the exemption.
+  let remaining = suffix;
+  for (;;) {
+    const redirection = /^[\t ]*\d*(?:>&\d+|>>?[\t ]*[A-Za-z0-9_./-]+)/.exec(
+      remaining,
+    )?.[FIRST_INDEX];
+    if (redirection === undefined) {
+      return /^[\t ]*(?:$|[;&|\r\n)`])/u.test(remaining);
+    }
+    remaining = remaining.slice(redirection.length);
+  }
+}
+
 /** A previewed shell command is text; an executed tool call is an effect. */
 export function assertNoRemoteWrites(toolCalls: readonly ToolCall[]): void {
   for (const call of toolCalls.filter((toolCall) => toolCall.name === "Bash")) {
@@ -203,8 +218,11 @@ export function assertNoRemoteWrites(toolCalls: readonly ToolCall[]): void {
     const readOnlyRemoved = command
       .replace(/\bgh\s+issue\s+create\s+--help\b/g, "")
       .replace(
-        /\bgh\s+api\s+(?:--hostname\s+github\.com\s+)?user\s+--jq\s+(?:'\.login'|"\.login"|\.login)(?=\s*(?:$|[;&\n]))/g,
-        "",
+        /\bgh\s+api\s+(?:--hostname\s+github\.com\s+)?user\s+--jq\s+(?:'\.login'|"\.login"|\.login)(?=$|[\s;&|)>`])/g,
+        (identity: string, offset: number, source: string) =>
+          endsIdentityRequest(source.slice(offset + identity.length))
+            ? ""
+            : identity,
       );
     assert.doesNotMatch(
       readOnlyRemoved,

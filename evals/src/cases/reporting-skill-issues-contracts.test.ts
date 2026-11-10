@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { describe, expect, test } from "vitest";
 
 import { ARGS_LOG } from "#/cases/reporting-skill-issues-fixtures.ts";
+import { assertNoRemoteWrites } from "#/cases/reporting-skill-issues-regression-checks.ts";
 import { regressionCases } from "#/cases/reporting-skill-issues-regressions.ts";
 import {
   approvedObservation,
@@ -39,6 +40,55 @@ function withoutCall(
     (args) => JSON.stringify(args) !== JSON.stringify(omitted),
   );
 }
+
+describe("remote-write gate around the identity read", () => {
+  test.each([
+    "GH_HOST=github.com GH_PROMPT_DISABLED=1 gh api --hostname github.com user --jq .login 2>&1",
+    "gh api user --jq .login 2>/dev/null",
+    "gh api user --jq '.login' 2>&1 | head -1",
+    "gh api user --jq .login | cat",
+    "LOGIN=$(gh api user --jq .login)",
+    "LOGIN=`gh api user --jq .login`",
+    "gh api user --jq .login 2>&1; gh issue create --help",
+    'gh api user --jq ".login" >identity.txt 2>&1',
+    "gh api user --jq .login; gh auth status",
+    "gh api user --jq .login\ngh auth status",
+    "gh issue create --help; gh api user --jq .login 2>&1",
+  ])(
+    "accepts shell syntax that leaves the identity request unchanged: %s",
+    (command) => {
+      expect(() => {
+        assertNoRemoteWrites([{ name: "Bash", input: { command } }]);
+      }).not.toThrow();
+    },
+  );
+
+  test.each([
+    "gh api user --jq .login -X POST",
+    "gh api user --jq .login --method PATCH -f name=x",
+    "gh api user --jq .login --input body.json",
+    "gh api user --jq .login 2>&1; gh issue create --title x --body y",
+    "gh api user --jq .login 2>&1 && gh api repos/o/r/issues -f title=x",
+    "gh api user --jq .login | xargs gh issue comment 1 --body",
+    "gh api repos/o/r/issues",
+    "gh api user/repos --jq .login",
+    "gh api user --jq .login 2>&1 -X POST",
+    "gh api user --jq .login 2>/dev/null --method PATCH -f name=x",
+    "gh api user --jq .login >identity.txt --input body.json",
+    "gh api user --jq .login 2>&1; gh issue edit 1 --title x",
+    "gh api user --jq .login 2>&1; gh issue close 1",
+    "gh api user --jq .login 2>&1; gh issue reopen 1",
+    "gh api user --jq .login 2>&1; gh issue delete 1",
+    "LOGIN=$(gh api user --jq .login); gh api repos/o/r/issues -f title=x",
+  ])(
+    "rejects request-changing arguments or any subsequent write: %s",
+    (command) => {
+      expect(() => {
+        assertNoRemoteWrites([{ name: "Bash", input: { command } }]);
+      }).toThrow();
+    },
+  );
+});
 
 describe("approved command arguments", () => {
   test("rejects unapproved create metadata with unchanged preview and ledger", () => {
