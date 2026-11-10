@@ -110,6 +110,26 @@ function previewFiles(observation: Observation): Record<string, string> {
   );
 }
 
+function assertResponsePreview(text: string): void {
+  assert.ok(
+    text.includes(APPROVED_BODY) ||
+      text.includes(JSON.stringify(APPROVED_BODY)),
+    "approved body missing from exact preview",
+  );
+  // Reject only an unambiguous body-only preview, allowing its presentation labels.
+  // Whether other prose identifies the target and requests approval is semantic.
+  const context = text
+    .replaceAll(JSON.stringify(APPROVED_BODY), "")
+    .replaceAll(APPROVED_BODY, "")
+    .replace(/^[\t ]*(?:```|~~~)[^\r\n]*$/gm, "")
+    .replace(/\b(?:exact|proposed|reply|body|text|as|a|json|string)\b/gi, "");
+  assert.match(
+    context,
+    /[\p{L}\p{N}]/u,
+    "body-only preview: show the posting target and ask for approval before posting",
+  );
+}
+
 /** Snapshot the fake's log at the actual turn boundary, before releasing approval. */
 export function approveResponsePreview(
   observation: Observation,
@@ -140,11 +160,7 @@ export function approveResponsePreview(
       report.split(/\r?\n/).includes(`> ${APPROVED_BODY.trimEnd()}`),
       "saved reply differs from approved body",
     );
-    assert.ok(
-      observation.finalText.includes(APPROVED_BODY) ||
-        observation.finalText.includes(JSON.stringify(APPROVED_BODY)),
-      "approved body missing from exact preview",
-    );
+    assertResponsePreview(observation.finalText);
     return { reply: "APPROVED" };
   } catch (error) {
     return {
@@ -155,6 +171,9 @@ export function approveResponsePreview(
 
 export function checkApprovedResponse(observation: Observation): string {
   assertRunHappened(observation);
+  const initialTurn = observation.turns?.[FIRST_ITEM];
+  assert.ok(initialTurn !== undefined, "missing initial preview turn");
+  assertResponsePreview(initialTurn.finalText);
   assert.deepEqual(observation.gitStatusBefore, {
     kind: "worktree",
     entries: "",
