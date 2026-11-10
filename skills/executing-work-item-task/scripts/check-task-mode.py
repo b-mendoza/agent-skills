@@ -4,7 +4,7 @@
 Usage: python3 check-task-mode.py TASK_NUMBER < task-plan.md
        python3 check-task-mode.py --help
 Exit 0: selected task is not marked human-only; continue other readiness checks.
-Exit 1: BLOCKED, human handoff required.
+Exit 1: BLOCKED, human handoff required, including conflicting summary rows.
 Exit 2: malformed input or usage, including an unreadable summary Task cell
         whose Branch cell is N/A (human-only); ERROR quotes that cell. Stop.
 Summary Task cells name positive N as N, Task N, or either form after the
@@ -57,6 +57,7 @@ def check(plan, number):
     # A selected execution-order row is a fallback branch source too. Check it
     # independently so a stale code branch in the task cannot hide its sentinel.
     summary = re.search(r"(?ms)^## Execution Order Summary\s*\n(.*?)(?=^## |\Z)", plan)
+    summary_sentinels = set()
     if summary:
         lines = summary[1].splitlines()
         headers = None
@@ -78,6 +79,10 @@ def check(plan, number):
                     raise ValueError("unreadable summary Task cell " + repr(task_cell) + " with human-only branch sentinel")
                 if task_number == number:
                     branches.append(branch)
+                    summary_sentinels.add(is_sentinel)
+    if len(summary_sentinels) > 1:
+        print("BLOCKED: summary rows conflict about human-only task; hand off to " + (owners[0].strip() if owners else "the human owner (not specified)"))
+        return 1
     human = any(mode.strip().casefold() == "human-only" for mode in modes)
     sentinel = any(branch.strip().casefold() == "n/a (human-only)" for branch in branches)
     if human or sentinel:

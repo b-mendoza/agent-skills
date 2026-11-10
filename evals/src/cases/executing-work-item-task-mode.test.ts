@@ -129,6 +129,32 @@ describe("human-only execution guard", () => {
       expect(result.stdout).toMatch(/^BLOCKED: human-only/);
     },
   );
+  test.each([
+    ["N/A (human-only)", "feature/validation"],
+    ["feature/validation", "N/A (human-only)"],
+  ])(
+    "blocks conflicting duplicate summary rows: %s then %s",
+    (firstBranch, secondBranch) => {
+      const result = check(
+        `## Execution Order Summary\n| Task | Branch name |\n| --- | --- |\n| C -> 1 | ${firstBranch} |\n| Task 1 | ${secondBranch} |\n## Task 1: Approval\n**Branch name:** feature/stale-code\n**Human owner:** Release team\n`,
+      );
+      expect(result.status).toBe(BLOCKED);
+      expect(result.stdout).toMatch(/BLOCKED.*rows conflict/i);
+      expect(result.stdout).toContain("Release team");
+    },
+  );
+  test.each(["feature/validation", "N/A (human-only)"])(
+    "accepts agreeing duplicate summary rows with branch %s",
+    (branch) => {
+      const result = check(
+        `## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| C -> 1 | ${branch} |\n| 1 | ${branch} |\n## Task 1: Approval\n`,
+      );
+      expect(result.status).toBe(
+        branch === "N/A (human-only)" ? BLOCKED : SUCCESS,
+      );
+      expect(result.stdout).not.toMatch(/conflict/i);
+    },
+  );
   test("does not let a different human-only task block a code task", () => {
     const result = check(
       "## Task 1: Implement validation\n**Branch name:** feature/validation\n## Task 2: Approval\n**Execution mode:** human-only\n**Branch name:** N/A (human-only)\n",
