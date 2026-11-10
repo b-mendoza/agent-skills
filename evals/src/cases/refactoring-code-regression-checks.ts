@@ -74,9 +74,11 @@ function checkedRunVisible(
   command: string,
   run: string,
 ): boolean {
-  const runPath = `${HANDOFFS}${run}/`;
+  const runPath = `${HANDOFFS}${run}`.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const visibleRun = new RegExp(`${runPath}(?=$|[/\\s"'\`;&|()<>])`);
   return (
-    command.includes(runPath) || call.result?.content.includes(runPath) === true
+    visibleRun.test(command) ||
+    (call.result !== undefined && visibleRun.test(call.result.content))
   );
 }
 
