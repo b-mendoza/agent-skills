@@ -81,6 +81,44 @@ describe("human-only execution guard", () => {
       expect(result.status).toBe(SUCCESS);
     },
   );
+  test.each([
+    "Task 1: Rotate the key",
+    "1. Rotate the key",
+    "T1",
+    "#1",
+    "Task 1 extra",
+    "C => 1",
+    "C -> 1 extra",
+    " -> 1",
+    "Ta`sk 1",
+    "",
+  ])("rejects an unreadable sentinel Task cell %s", (taskCell) => {
+    const result = check(
+      `## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| ${taskCell} | N/A (human-only) |\n## Task 1: Implement validation\n**Branch name:** feature/validation\n`,
+    );
+    expect(result.status).toBe(INVALID);
+    expect(result.stdout).toMatch(/^ERROR:/);
+    expect(result.stdout).toContain(`'${taskCell.trim()}'`);
+    expect(result.stdout).not.toContain("AUTOMATED:");
+  });
+  test.each([
+    "Task 1: Rotate the key",
+    "1. Rotate the key",
+    "T1",
+    "#1",
+    "Task 1 extra",
+    "C => 1",
+    "C -> 1 extra",
+    " -> 1",
+    "Ta`sk 1",
+    "",
+  ])("ignores an unreadable non-sentinel Task cell %s", (taskCell) => {
+    const result = check(
+      `## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| ${taskCell} | feature/other |\n## Task 1: Implement validation\n**Branch name:** feature/validation\n`,
+    );
+    expect(result.status).toBe(SUCCESS);
+    expect(result.stdout).toMatch(/^AUTOMATED:/);
+  });
   test.each(["**N/A (human-only)**", "`N/A (human-only)`", "n/a (Human-Only)"])(
     "blocks a formatted or mixed-case summary sentinel %s",
     (branch) => {
