@@ -18,6 +18,10 @@ vi.mock(
 );
 const FIRST_COST = 0.25;
 const FINAL_COST = 0.5;
+const C2_FIRST_COST = 0.0383411;
+const C2_NOTIFICATION_COST = 0.0709186;
+const C2_FOUR_COST = 0.0742307;
+const C2_FINAL_COST = 0.0823216;
 const success = (result: string, cost = FIRST_COST) => ({
   type: "result",
   subtype: "success",
@@ -146,6 +150,149 @@ async function nextUserMessage(
   if (message.done === true) throw new Error("input closed early");
   return message.value;
 }
+
+const notification = (result: string, cost = FINAL_COST) => ({
+  ...success(result, cost),
+  origin: { kind: "task-notification", runId: "background-run" },
+});
+const assistant = (text: string) => ({
+  type: "assistant",
+  message: { content: [{ type: "text", text }] },
+});
+
+test("replays C2 without sending turn three before the FOUR result", async () => {
+  let fourDelivered = false;
+  let callbackAfterFour = false;
+  // C2/raw.jsonl lines 14-35, retaining reply order, echoes and cumulative costs.
+  sdk.query.mockImplementation(async function* ({ prompt }) {
+    const input = inputStream(prompt);
+    const first = await nextUserMessage(input);
+    yield* scripted(assistant("BACKGROUND STARTED"), {
+      ...success("BACKGROUND STARTED", C2_FIRST_COST),
+      user_message_uuid: first.uuid,
+      user_message_uuids: [first.uuid],
+    });
+    const second = await nextUserMessage(input);
+    yield* scripted(
+      assistant("The background command finished with exit code 0"),
+      notification(
+        "The background command finished with exit code 0",
+        C2_NOTIFICATION_COST,
+      ),
+      {
+        ...assistant("FOUR"),
+        user_message_uuid: second.uuid,
+        user_message_uuids: [second.uuid],
+      },
+    );
+    fourDelivered = true;
+    yield {
+      ...success("FOUR", C2_FOUR_COST),
+      user_message_uuid: second.uuid,
+      user_message_uuids: [second.uuid],
+    };
+    const third = await nextUserMessage(input);
+    yield* scripted(
+      {
+        type: "assistant",
+        user_message_uuid: third.uuid,
+        message: {
+          content: [
+            {
+              type: "tool_use",
+              id: "check",
+              name: "Bash",
+              input: { command: "test -e bg.txt" },
+            },
+          ],
+        },
+      },
+      {
+        type: "user",
+        message: {
+          content: [
+            {
+              type: "tool_result",
+              tool_use_id: "check",
+              content: "exists done",
+            },
+          ],
+        },
+      },
+      assistant("bg.txt exists and contains done"),
+      {
+        ...success("bg.txt exists and contains done", C2_FINAL_COST),
+        user_message_uuid: third.uuid,
+      },
+    );
+  });
+  const observation = await observeClaude({
+    ...options(),
+    followUps: [
+      { name: "arithmetic", reply: () => ({ reply: "Reply exactly FOUR" }) },
+      {
+        name: "check background",
+        reply: (previous) => {
+          callbackAfterFour = fourDelivered && previous.finalText === "FOUR";
+          return { reply: "Check bg.txt" };
+        },
+      },
+    ],
+  });
+  expect(observation.turns).toMatchObject([
+    { finalText: "BACKGROUND STARTED" },
+    { finalText: "FOUR", costUsd: 0.0742307 },
+    {
+      finalText: "bg.txt exists and contains done",
+      toolCalls: [{ name: "Bash", result: { content: "exists done" } }],
+    },
+  ]);
+  expect(callbackAfterFour).toBe(true);
+  expect(observation.costUsd).toBeCloseTo(C2_FINAL_COST);
+});
+
+test("does not let an untagged success settle after the session has echoed identities", async () => {
+  sdk.query.mockImplementation(async function* ({ prompt }) {
+    const input = inputStream(prompt);
+    const first = await nextUserMessage(input);
+    yield { ...success("preview"), user_message_uuid: first.uuid };
+    const second = await nextUserMessage(input);
+    yield* scripted(
+      assistant("unattributed activity"),
+      success("unattributed result", FINAL_COST),
+      {
+        ...success("current reply", FINAL_COST),
+        user_message_uuid: second.uuid,
+      },
+    );
+  });
+  expect(await observeClaude(options())).toMatchObject({
+    finalText: "current reply",
+  });
+});
+
+test("surfaces an untagged session budget error after a notification without losing cumulative spend", async () => {
+  sdk.query.mockImplementation(async function* ({ prompt }) {
+    const input = inputStream(prompt);
+    const first = await nextUserMessage(input);
+    yield { ...success("preview"), user_message_uuid: first.uuid };
+    await nextUserMessage(input);
+    yield* scripted(notification("background text"), {
+      type: "result",
+      subtype: "error_max_budget_usd",
+      is_error: true,
+      errors: ["budget exceeded"],
+      total_cost_usd: FINAL_COST,
+    });
+  });
+  expect(await observeClaude(options())).toMatchObject({
+    subtype: "error_max_budget_usd",
+    isError: true,
+    finalText: "budget exceeded",
+    costUsd: FINAL_COST,
+    turns: [{ finalText: "preview" }, { subtype: "error_max_budget_usd" }],
+  });
+});
 
 test("accepts a same-cost follow-up result after new top-level streaming activity", async () => {
   sdk.query.mockImplementation(() =>

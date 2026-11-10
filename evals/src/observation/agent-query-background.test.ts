@@ -289,6 +289,50 @@ test("aborts background work that never settles and closes input at the wall-clo
   expect(vi.getTimerCount()).toBeFalsy();
 });
 
+test("settles a non-echoing turn on the notification after its provisional user result", async () => {
+  sdk.query.mockImplementation(() =>
+    scripted(
+      liveTasks("worker"),
+      success("provisional user reply"),
+      liveTasks(),
+      {
+        ...success("background final", FINAL_COST),
+        origin: { kind: "task-notification" },
+      },
+    ),
+  );
+  expect(await observeClaude(options)).toMatchObject({
+    subtype: "success",
+    finalText: "background final",
+    costUsd: FINAL_COST,
+    turns: [{ subtype: "success", finalText: "background final" }],
+  });
+});
+
+test("closes at the final user result without draining later notification replies", async () => {
+  let closed = false;
+  let notificationDelivered = false;
+  sdk.query.mockImplementation(async function* () {
+    try {
+      yield* scripted(success("user final"));
+      notificationDelivered = true;
+      yield {
+        ...success("later background reply", FINAL_COST),
+        origin: { kind: "task-notification" },
+      };
+    } finally {
+      closed = true;
+    }
+  });
+  expect(await observeClaude(options)).toMatchObject({
+    finalText: "user final",
+    costUsd: COST,
+    turns: [{ finalText: "user final" }],
+  });
+  expect(closed).toBe(true);
+  expect(notificationDelivered).toBe(false);
+});
+
 test("bounds a background wait that ignores abort by the shutdown grace", async () => {
   vi.useFakeTimers();
   const stalled = once(new EventTarget(), "never");
