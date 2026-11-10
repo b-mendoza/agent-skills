@@ -14,6 +14,8 @@ import {
   PROGRESS_KEY as key,
   PROGRESS_ROOT as root,
   PROGRESS_SKILLS as phases,
+  TASK_ARTIFACT_RESUME_ACTIONS,
+  TASK_PLANNING_FILES,
 } from "#/cases/orchestrating-workflow-progress-cases.ts";
 import { writeRepoFiles } from "#/fixtures/fixtures.ts";
 
@@ -302,6 +304,61 @@ describe("shipped progress helper", () => {
         ).toBe(action.action === "initialize_task");
         expect(fixture.main().includes("User excluded task")).toBe(
           action.action === "skip_task",
+        );
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
+
+  test.each(TASK_ARTIFACT_RESUME_ACTIONS)(
+    "retains inferred task planning for $action with critique=$critique",
+    ({ critique, resume, continuation, ...action }) => {
+      const fixture = setup();
+      try {
+        writeRepoFiles(fixture.cwd, {
+          ...ARTIFACT_PLANNING_FILES,
+          ...TASK_PLANNING_FILES,
+          ...(critique
+            ? {
+                "docs/acme-app-42-task-1-critique.md": "# Critique\n",
+                "docs/acme-app-42-task-1-decisions.md": "# Decisions\n",
+              }
+            : {}),
+        });
+        const before = fixture.run({ action: "read" });
+        expect(before.stdout).toContain(
+          `Resume from: Phase ${critique ? EXECUTE : CRITIQUE}, Task 1`,
+        );
+        expect(
+          existsSync(join(fixture.cwd, root, `${key}-task-1-progress.md`)),
+        ).toBe(false);
+        const result = fixture.run({
+          ...action,
+          task_number: 1,
+          summary: "Validated continuation",
+          phase_skills: phases,
+        });
+        expect(result.status).toBe(SUCCESS);
+        expect(fixture.main()).toMatch(
+          /\| 4 \| creating-work-item-children \|.*Complete/,
+        );
+        expect(fixture.main()).toMatch(/\| 1 \| Code \|[^\n]+Active/);
+        expect(fixture.run({ action: "read" }).stdout).toContain(
+          `Resume from: ${resume}`,
+        );
+        for (const next of continuation) {
+          expect(fixture.run({ ...next, phase_skills: phases }).status).toBe(
+            SUCCESS,
+          );
+        }
+        expect(fixture.task()).toMatch(
+          /\| 5 \| planning-task-execution \|.*Complete/,
+        );
+        expect(fixture.task()).not.toMatch(/\| 7 \|[^\n]+Complete/);
+        expect(fixture.task()).toContain("phase validation still required");
+        expect(fixture.run({ action: "read" }).stdout).toContain(
+          `Resume from: ${resume}`,
         );
       } finally {
         fixture.cleanup();

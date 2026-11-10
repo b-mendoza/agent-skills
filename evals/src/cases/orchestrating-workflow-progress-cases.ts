@@ -40,12 +40,20 @@ export const PROGRESS_PATH = `${PROGRESS_ROOT}/acme-app-42-progress.md`;
 export const TASK_PROGRESS_PATH = `${PROGRESS_ROOT}/acme-app-42-task-1-progress.md`;
 export const SKIP_REASON = "User excluded Task 2; Operations owns verification";
 const CHILDREN = 4;
+const CRITIQUE = 6;
+const EXECUTE = 7;
 
 export const ARTIFACT_PLANNING_FILES = {
   "docs/acme-app-42.md": "# Snapshot\n",
   "docs/acme-app-42-tasks.md":
     "## Task 1: Code\n## Decisions Log\n## GitHub Task Issues\n",
   "docs/acme-app-42-upfront-critique.md": "# Critique\n",
+};
+export const TASK_PLANNING_FILES = {
+  "docs/acme-app-42-task-1-brief.md": "# Brief\n",
+  "docs/acme-app-42-task-1-execution-plan.md": "# Plan\n",
+  "docs/acme-app-42-task-1-test-spec.md": "# Tests\n",
+  "docs/acme-app-42-task-1-refactoring-plan.md": "# Refactoring\n",
 };
 export const ARTIFACT_RESUME_ACTIONS = [
   { action: "initialize_task", task_number: 1, resume: "Phase 5, Task 1" },
@@ -65,6 +73,65 @@ export const ARTIFACT_RESUME_ACTIONS = [
     resume: "Phase 5 (task selection)",
   },
 ];
+export const TASK_ARTIFACT_RESUME_ACTIONS = [
+  {
+    critique: false,
+    action: "initialize_task",
+    resume: "Phase 6, Task 1",
+    continuation: [],
+  },
+  {
+    critique: false,
+    action: "initialize",
+    resume: "Phase 6, Task 1",
+    continuation: [
+      {
+        action: "update_task",
+        task_number: 1,
+        phase: CRITIQUE,
+        status: "active",
+        summary: "Resumed",
+      },
+    ],
+  },
+  {
+    critique: false,
+    action: "update_task",
+    phase: CRITIQUE,
+    status: "complete",
+    resume: "Phase 7, Task 1",
+    continuation: [],
+  },
+  {
+    critique: true,
+    action: "update_task",
+    phase: EXECUTE,
+    status: "active",
+    resume: "Phase 7, Task 1",
+    continuation: [],
+  },
+  {
+    critique: true,
+    action: "initialize_task",
+    resume: "Phase 7, Task 1",
+    continuation: [],
+  },
+  {
+    critique: true,
+    action: "initialize",
+    resume: "Phase 7, Task 1",
+    continuation: [
+      {
+        action: "update_task",
+        task_number: 1,
+        phase: EXECUTE,
+        status: "active",
+        summary: "Resumed",
+      },
+    ],
+  },
+];
+
 const seedFiles = {
   "fixture-facts.txt": "Local progress fixture; no remote work.\n",
 };

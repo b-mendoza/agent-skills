@@ -10,8 +10,9 @@ update_task, skip_task. Keys and paths are data, never shell commands.
 Exit: 0 success; 1 invalid request/state or filesystem failure (PROGRESS: ERROR);
 2 CLI usage error. Side effects: writes only the two named progress files under
 the existing docs/ contract. read never writes. A first Phase 1 update creates
-fresh progress; other first mutations preserve inferred planning state.
-No network or git writes.
+fresh progress; other first mutations preserve inferred planning state. Missing
+task records can resume only with all four task planning artifacts; inference
+notes are audit text, not recovery permission. No network or git writes.
 Smoke: echo '{"ticket_key":"DEMO-1","action":"read"}' | python3 progress.py
 """
 
@@ -157,6 +158,25 @@ def enrich_task(row, markers):
         row[name] = text(value, name)
 
 
+def inferred_task_phase(key, root, task_number):
+    prefix = f"{key}-task-{task_number}"
+    if not all((root / f"{prefix}-{suffix}.md").exists()
+               for suffix in ["brief", "execution-plan", "test-spec", "refactoring-plan"]):
+        return 5
+    return 7 if all((root / f"{prefix}-{suffix}.md").exists()
+                    for suffix in ["critique", "decisions"]) else 6
+
+
+def infer_task_progress(key, root, row, skills):
+    content = task_template(key, row, skills)
+    columns, phases = table(content, "Phase")
+    resume = inferred_task_phase(key, root, row["Task"])
+    for phase in phases:
+        if int(phase["Phase"]) < resume:
+            phase.update({"Status": DISPLAY["complete"], "Notes": INFERRED_NOTE})
+    return replace_table(content, "Phase", columns, phases) + INFERRED_NOTE + "\n"
+
+
 def infer_progress(key, root, skills=None):
     snapshot = root / f"{key}.md"
     plan_path = root / f"{key}-tasks.md"
@@ -185,6 +205,10 @@ def infer_progress(key, root, skills=None):
                       "Current Phase": "—", "Status": DISPLAY["pending"],
                       "Detail": f"`{root}/{key}-task-{match[1]}-progress.md`", "Outcome": "—",
                       "Execution mode": "code", "Human owner": "Not specified", "Branch name": "Unknown"})
+    for row in tasks:
+        resume = inferred_task_phase(key, root, row["Task"])
+        if resume > 5:
+            row.update({"Current Phase": LABELS[resume], "Status": DISPLAY["active"]})
     if tasks:
         content = replace_table(content, "Task", TASK_COLUMNS, tasks)
     return content + INFERRED_NOTE + "\n"
@@ -221,10 +245,9 @@ def summarize(key, content, root):
         elif state == "complete":
             require(False, f"Task {row['Task']} completion lacks Phase 7 evidence")
         elif state != "skipped":
-            prefix = f"{key}-task-{row['Task']}"
-            if all((root / f"{prefix}-{suffix}.md").exists() for suffix in ["brief", "execution-plan", "test-spec", "refactoring-plan"]):
+            phase = inferred_task_phase(key, root, row["Task"])
+            if phase > 5:
                 state = "active"
-                phase = 7 if all((root / f"{prefix}-{suffix}.md").exists() for suffix in ["critique", "decisions"]) else 6
         if state == "complete":
             complete += 1
         elif state == "skipped":
@@ -367,10 +390,14 @@ def run(request):
                 task_content += f"{timestamp} — {log}\n"
         elif action == "initialize_task":
             require(task_content is None, "task already initialized; resume instead")
-            task_content = task_template(key, row, request.get("phase_skills"))
-            row.update({"Current Phase": LABELS[5], "Status": DISPLAY["active"]})
+            resume = inferred_task_phase(key, root, n)
+            task_content = (infer_task_progress(key, root, row, request.get("phase_skills", ["inferred"] * 7))
+                            if resume > 5 else task_template(key, row, request.get("phase_skills")))
+            row.update({"Current Phase": LABELS[resume], "Status": DISPLAY["active"]})
             log = f"Task {n} started: {row['Title']}"
         else:
+            if task_content is None and inferred_task_phase(key, root, n) > 5:
+                task_content = infer_task_progress(key, root, row, request.get("phase_skills", ["inferred"] * 7))
             require(task_content is not None, "task has not been initialized")
             phase = number(request.get("phase"), "phase")
             require(phase in LABELS, "update_task accepts only phases 5-7")
@@ -378,6 +405,11 @@ def run(request):
             require(state in {"active", "complete", "failed"}, "task phase status must be active, complete, or failed; use skip_task for exclusions")
             summary = text(request.get("summary"), "summary")
             phase_columns, task_phases = table(task_content, "Phase")
+            if request.get("phase_skills") is not None:
+                supplied_phases = phase_rows(request["phase_skills"], 5, 7)
+                for item, supplied in zip(task_phases, supplied_phases):
+                    if item["Skill"] == "inferred":
+                        item["Skill"] = supplied["Skill"]
             require(all(status(item["Status"]) == "complete" for item in task_phases if int(item["Phase"]) < phase), "earlier task phases are not complete")
             find(task_phases, "Phase", phase).update({"Status": DISPLAY[state], "Completed at": timestamp, "Notes": summary})
             for later in task_phases:

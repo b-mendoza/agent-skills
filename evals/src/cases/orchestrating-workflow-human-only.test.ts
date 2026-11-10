@@ -11,6 +11,7 @@ import {
   PROGRESS_KEY as key,
   PROGRESS_ROOT as root,
   PROGRESS_SKILLS as phases,
+  TASK_PLANNING_FILES,
 } from "#/cases/orchestrating-workflow-progress-cases.ts";
 import { makeFixture, writeRepoFiles } from "#/fixtures/fixtures.ts";
 
@@ -18,6 +19,8 @@ const SUCCESS = 0;
 const PLAN = 5;
 const BLOCKED = 1;
 const CHILDREN = 4;
+const CRITIQUE = 6;
+const EXECUTE = 7;
 
 const script = fileURLToPath(
   new URL(
@@ -154,6 +157,132 @@ describe("artifact recovery guards", () => {
         }).status,
       ).toBe(BLOCKED);
       expect(fixture.main()).toBe(before);
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  test("reconstructs a missing task record from artifacts without an inference note", () => {
+    const fixture = setup();
+    try {
+      fixture.populated();
+      writeRepoFiles(fixture.cwd, TASK_PLANNING_FILES);
+      const result = fixture.run({
+        action: "update_task",
+        task_number: 1,
+        phase: CRITIQUE,
+        status: "complete",
+        summary: "Critique validated",
+        phase_skills: phases,
+      });
+      expect(result.status).toBe(SUCCESS);
+      expect(result.stdout).toContain("Resume from: Phase 7, Task 1");
+      expect(fixture.task()).toMatch(
+        /\| 5 \| planning-task-execution \|.*Complete/,
+      );
+      expect(fixture.task()).toMatch(/\| 7 \|[^\n]+Pending/);
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  test.each(Object.keys(TASK_PLANNING_FILES))(
+    "requires initialization when task planning artifact %s is missing",
+    (missing) => {
+      const fixture = setup();
+      try {
+        fixture.populated();
+        writeRepoFiles(
+          fixture.cwd,
+          Object.fromEntries(
+            Object.entries(TASK_PLANNING_FILES).filter(
+              ([path]) => path !== missing,
+            ),
+          ),
+        );
+        const before = fixture.main();
+        const result = fixture.run({
+          action: "update_task",
+          task_number: 1,
+          phase: CRITIQUE,
+          status: "complete",
+          summary: "Critique validated",
+          phase_skills: phases,
+        });
+        expect(result.status).toBe(BLOCKED);
+        expect(result.stdout).toContain("task has not been initialized");
+        expect(fixture.main()).toBe(before);
+        expect(
+          existsSync(join(fixture.cwd, root, `${key}-task-1-progress.md`)),
+        ).toBe(false);
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
+
+  test("continues artifact-only execution and preserves a terminal exclusion", () => {
+    const fixture = setup();
+    try {
+      const artifacts = {
+        ...ARTIFACT_PLANNING_FILES,
+        ...TASK_PLANNING_FILES,
+        "docs/acme-app-42-tasks.md":
+          "## Task 1: Code\n## Task 2: Documentation\n## Decisions Log\n## GitHub Task Issues\n",
+        "docs/acme-app-42-task-1-critique.md": "# Critique\n",
+        "docs/acme-app-42-task-1-decisions.md": "# Decisions\n",
+      };
+      writeRepoFiles(fixture.cwd, artifacts);
+      const read = fixture.run({ action: "read" });
+      expect(read.status).toBe(SUCCESS);
+      expect(read.stdout).toContain("Resume from: Phase 7, Task 1");
+      expect(existsSync(join(fixture.cwd, root, `${key}-progress.md`))).toBe(
+        false,
+      );
+      expect(
+        existsSync(join(fixture.cwd, root, `${key}-task-1-progress.md`)),
+      ).toBe(false);
+      expect(
+        fixture.run({
+          action: "update_task",
+          task_number: 1,
+          phase: EXECUTE,
+          status: "complete",
+          summary: "Execution validated",
+        }).status,
+      ).toBe(SUCCESS);
+      expect(
+        fixture.run({
+          action: "skip_task",
+          task_number: 2,
+          reason: "User excluded documentation",
+        }).status,
+      ).toBe(SUCCESS);
+      const before = fixture.main();
+      const restarted = fixture.run({
+        action: "initialize_task",
+        task_number: 2,
+        phase_skills: phases,
+      });
+      expect(restarted.status).toBe(BLOCKED);
+      expect(restarted.stdout).toContain(
+        "terminal task cannot be restarted implicitly",
+      );
+      expect(fixture.main()).toBe(before);
+      expect(
+        existsSync(join(fixture.cwd, root, `${key}-task-2-progress.md`)),
+      ).toBe(false);
+      expect(
+        fixture.run({ action: "initialize", phase_skills: phases }).status,
+      ).toBe(SUCCESS);
+      const final = fixture.run({ action: "read" });
+      expect(final.stdout).toContain(
+        "Phases: 1 complete | 2 complete | 3 complete | 4 complete",
+      );
+      expect(final.stdout).toContain("1/2 complete | 1 skipped | 0 remaining");
+      for (const [path, content] of Object.entries(artifacts)) {
+        expect(readFileSync(join(fixture.cwd, path), "utf8")).toBe(content);
+      }
     } finally {
       fixture.cleanup();
     }
