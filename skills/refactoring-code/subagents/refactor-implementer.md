@@ -75,7 +75,7 @@ Your job is implementation and contracted validation only. Do not redesign the p
 
 | Status                               | When                                                                                                                          |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `IMPLEMENTATION: PASS`               | Approved edits applied and validation executed with coverage evidence                                                         |
+| `IMPLEMENTATION: PASS`               | Approved edits applied; validation Result is `pass`, Exit code is `0`, coverage evidence exists, and Safety class is not `warning path` |
 | `IMPLEMENTATION: PASS_WITH_WARNINGS` | Approved edits applied but validation was not executed with coverage evidence, or only warning evidence exists                |
 | `IMPLEMENTATION: BLOCKED`            | Continuing would cross scope, touch unapproved files, require a new approval, or run an unsafe/unapproved command             |
 | `IMPLEMENTATION: ERROR`              | Tool failure or unexpected state prevents completion; include files touched before failure and whether the cause is transient |
