@@ -3,7 +3,10 @@
 
 Usage: python3 validate-output.py <plan|PREP|PLAN|TEST_SPEC|REFACTORING> < payload
        python3 validate-output.py --help
-plan checks executable plan text for forbidden git-history/publication work.
+plan lexically checks executable clauses for Git staging/history/publication work.
+Objects are distinguished by their head/context; rebase/cherry-pick and bare
+publication/file actions stay conservative. Prohibitions are clause-local.
+Equivalent instructions outside the recognized wording need semantic review.
 Uppercase modes validate the exact one-line-field handoff before routing.
 Exit: 0 valid, 1 contract findings (repair), 2 usage error (ERROR).
 Side effects: none; stdlib only, no filesystem writes, git, or network.
@@ -21,37 +24,106 @@ FIELDS = {
     "REFACTORING": ["Refactoring plan", "Verdict", "References fetched", "Summary", "Blockers"],
 }
 FORBIDDEN = {"add", "stage", "commit", "push", "rebase", "reset", "cherry-pick", "revert", "merge", "am", "filter-branch", "filter-repo"}
+# Object heads, not words anywhere in a sentence, distinguish Git operands
+# from "search index", "commit event", or a destination such as "remote cache".
+DETERMINERS = r"(?:(?:the|a|an|this|that|these|those|our|your|my)\s+)*"
+HEAD_END = r"(?=$|[.,;:!?]|\s+(?:to|onto|from|with|using|after|before|once|when|if|so|for|as)\b)"
+GIT_TARGET = re.compile(
+    r"^(?:(?:to|onto)\s+)?" + DETERMINERS
+    + r"(?:git\s+)?(?:branch(?:es)?|(?:commit\s+)?history|commits?|index|worktree|working[ -]tree|repository|repo|remotes?|origin|upstream)"
+    + HEAD_END,
+    re.I,
+)
+# HEAD is case-sensitive; IDs require mixed hex and at least seven characters.
+# This keeps ordinary words ("facade") and numeric product values out.
+GIT_REFERENCE = re.compile(
+    r"^(?:HEAD(?:[~^]\d*)?\b|(?=[a-f0-9]{7,40}\b)(?=[a-f0-9]*[a-f])(?=[a-f0-9]*\d)[a-f0-9]+\b)"
+)
+CHANGE_TARGET = re.compile(
+    r"^(?:(?:the|a|all|this|that|these|those|our|your|my|only|exactly|changed|modified|staged|selected|named|tracked|untracked|source|\d+)\s+)*"
+    r"(?:changes?|fix(?:es)?|files?|paths?|patch(?:es)?|implementation|code|work|everything|all|[^\s]+/[^\s]+|[^\s]+\.[a-z0-9]+)\b",
+    re.I,
+)
+# Message-bearing commits and counted/adjectival commit creation cover #123.
+COMMIT_MESSAGE = re.compile(r"^(?:(?:with|using)\b.*\bmessage\b|-m(?:\s|=|$))", re.I)
+CREATED_COMMIT = re.compile(r"^(?:[\w-]+\s+){0,3}commit" + HEAD_END, re.I)
+# Boundaries end the scope of a prohibition or an earlier action's object.
+CLAUSE_SEPARATOR = re.compile(r";\s*|,?\s+\b(?:and|then|but)\b\s*", re.I)
+PROHIBITION = re.compile(r"^(?:do not|don't|never|must not|no)\b", re.I)
+
+
+def is_git_action(action, target, product_antecedent):
+    target = target.strip()
+    if action in {"rebase", "cherry-pick"}:
+        return True
+    if action in {"create", "make"}:
+        return bool(CREATED_COMMIT.match(target))
+    if GIT_TARGET.match(target) or GIT_REFERENCE.match(target):
+        return True
+    # A reset with no product object, just "to <ref>", stays conservative,
+    # including short refs such as "reset to abc123".
+    if action == "reset" and re.match(r"(?i)^to\s+\S+", target):
+        return True
+    if action not in {"stage", "commit", "push"}:
+        return False
+    if action == "commit" and COMMIT_MESSAGE.match(target):
+        return True
+    # Bare/conditional publication and conventional file/change operands remain
+    # Git work. No domain keyword allowlist is needed for other product objects.
+    if not target.strip(".,;:!") or re.match(r"(?i)^(?:after|once|when|if)\b", target):
+        return True
+    if re.match(r"(?i)^(?:it|them)\b", target):
+        # A later pronoun can refer to earlier product work, e.g. "open the
+        # transaction, write both rows, then commit it". Bare "commit it" cannot.
+        return not product_antecedent
+    return bool(CHANGE_TARGET.match(target))
+
+
+def command_findings(clause, line_number):
+    findings = []
+    # Keep explicit Git-command checks independent of natural-language objects.
+    for match in re.finditer(r"\bgit\s+([^`\n]+)", clause):
+        try:
+            tokens = shlex.split(match.group(1))
+        except ValueError:
+            findings.append(f"line {line_number}: unparseable git command outside the execution boundary")
+            continue
+        index = 0
+        while index < len(tokens) and tokens[index].startswith("-"):
+            option = tokens[index]
+            index += 1
+            if option in {"-C", "-c", "--git-dir", "--work-tree", "--config-env"}:
+                index += 1
+        if index < len(tokens) and tokens[index].rstrip(";,.:") in FORBIDDEN:
+            findings.append(f"line {line_number}: git {tokens[index]} is outside the execution boundary")
+    return findings
 
 
 def action_findings(payload):
     findings = []
     for n, original in enumerate(payload.splitlines(), 1):
         line = re.sub(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)?", "", original).replace("**", "")
-        for line in re.split(r"(?<=[.!?])\s+(?!or\b)", line, flags=re.I):
-            # Only a leading explicit prohibition is exempt. A safety aside later in
-            # a line cannot hide an earlier action, nor can '; then commit' hide here.
-            if re.match(r"(?i)(?:do not|don't|never|must not|no)\b", line) and not re.search(r"(?i)(?:;|\bthen\b|\bbut\b)", line):
-                continue
-            imperative = re.search(r"(?i)\b(?:stage|commit|push|rebase|cherry-pick|reset|rewrite)\b", line)
-            directive = re.match(r"(?i)(?:then\s+)?(?:stage|commit|push|rebase|cherry-pick|reset|rewrite)\b", line)
-            if directive or (imperative and re.search(r"(?i)\b(?:stage.+commit|create (?:a |the )?commit|make (?:a |the )?commit)\b", line)):
-                findings.append(f"line {n}: action outside the execution boundary")
-                continue
-            for match in re.finditer(r"\bgit\s+([^`\n]+)", line):
-                try:
-                    tokens = shlex.split(match.group(1))
-                except ValueError:
-                    findings.append(f"line {n}: unparseable git command outside the execution boundary")
+        for sentence in re.split(r"(?<=[.!?])\s+(?!or\b)", line, flags=re.I):
+            product_antecedent = False
+            for clause in CLAUSE_SEPARATOR.split(sentence):
+                clause = clause.strip()
+                # Conditions and ordering adverbs must not hide a directive.
+                clause = re.sub(r"(?i)^(?:once|after|when|if)\b[^,]*,\s*", "", clause)
+                clause = re.sub(r"(?i)^(?:(?:then|finally|next|afterwards)\b[,\s]*)+", "", clause)
+                if not clause or PROHIBITION.match(clause):
                     continue
-                index = 0
-                while index < len(tokens) and tokens[index].startswith("-"):
-                    option = tokens[index]
-                    index += 1
-                    if option in {"-C", "-c", "--git-dir", "--work-tree", "--config-env"}:
-                        index += 1
-                if index < len(tokens) and tokens[index].rstrip(";,.:") in FORBIDDEN:
-                    findings.append(f"line {n}: git {tokens[index]} is outside the execution boundary")
-    return findings
+                directive = re.match(r"(?i)^(stage|commit|push|rebase|cherry-pick|reset|rewrite|create|make)\b(.*)", clause)
+                if directive and is_git_action(directive[1].lower(), directive[2], product_antecedent):
+                    findings.append(f"line {n}: action outside the execution boundary")
+                    continue
+                commands = command_findings(clause, n)
+                findings.extend(commands)
+                # A positive, non-Git clause with an object supplies a possible
+                # product antecedent; prohibitions never supply one.
+                if not commands and re.match(r"(?i)^[a-z-]+\s+\S", clause):
+                    product_antecedent = True
+    # Two clauses on one line can raise the same finding; report it once.
+    return list(dict.fromkeys(findings))
 
 
 def summary_findings(mode, payload):

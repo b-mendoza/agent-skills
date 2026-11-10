@@ -20,6 +20,66 @@ function validate(mode: string, payload: string) {
 }
 
 describe("execution-plan action boundary", () => {
+  test.each([
+    "4. Commit the database transaction after both inserts succeed.",
+    "2. Push the validated event onto the retry queue.",
+    "3. Reset the timeout input to its default.",
+    "5. Stage the fixture rows in the temp table before the import runs.",
+    "6. Rewrite the retry loop as a bounded for loop.",
+    "Reset the state.",
+    "Stage the fixture rows and commit the database transaction.",
+    "Commit the database transaction after inserting the changed files into the table.",
+    "Do not commit.",
+  ])("accepts product work or a prohibition: %s", (action) => {
+    const result = validate("plan", `## Implementation Approach\n${action}\n`);
+    expect(result.status).toBe(SUCCESS);
+    expect(result.stdout.trim()).toBe("VALID");
+  });
+  test.each([
+    "Stage and commit the change.",
+    "Commit the changes with a conventional message.",
+    "Push the branch to origin.",
+    'Run `git commit -m "feat: x"`.',
+    "Rebase onto main.",
+    "Reset the branch to origin/main.",
+    "Commit the change.",
+    "Push the fix.",
+    "Stage the files.",
+    "Rewrite the commit history.",
+    "Then commit the implementation.",
+    "Finally, stage the named paths and commit the changes.",
+    "Create a commit after tests pass.",
+    "Make the commit after tests pass.",
+    "Commit it.",
+    "Commit this change.",
+    "Stage src/timeout.js.",
+    "Stage timeout.js.",
+    "Push everything.",
+    "Commit once tests pass.",
+    "Reset to abc123.",
+  ])("rejects Git work with conventional operands: %s", (action) => {
+    const result = validate("plan", `## Implementation Approach\n${action}\n`);
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
+  });
+  test.each([
+    "add",
+    "stage",
+    "commit",
+    "push",
+    "rebase",
+    "reset",
+    "cherry-pick",
+    "revert",
+    "merge",
+    "am",
+    "filter-branch",
+    "filter-repo",
+  ])("rejects explicit git %s commands", (command) => {
+    const result = validate("plan", `Run git ${command}.\n`);
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
+  });
   test("accepts implementation, tests, read-only git and negative safety notes", () => {
     const result = validate(
       "plan",
@@ -40,6 +100,92 @@ describe("execution-plan action boundary", () => {
     "Do not modify unrelated files; then git commit -am fix",
   ])("rejects executable plan action: %s", (action) => {
     const result = validate("plan", `## Implementation Approach\n${action}\n`);
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
+  });
+});
+
+describe("Git directives versus product objects and safety clauses", () => {
+  test.each([
+    "Reset the search index after the reindex job finishes.",
+    "Push the request to the upstream service with a retry.",
+    "Rewrite the facade to delegate to the new client.",
+    "Reset the decade selector to its default.",
+    "Reset the counter to 100000 before each run.",
+    "Push the node to the head of the linked list.",
+    "Reset the scroll origin when the route changes.",
+    "Rewrite the user repository to use the new client.",
+    "Reset the browser history stack in the test setup.",
+    "Push the config to the remote cache.",
+    "Push the commit event to the message bus.",
+    "Commit the database transaction after both inserts succeed.",
+    "Push the validated event onto the retry queue.",
+    "Reset the timeout input to its default.",
+    "Stage the fixture rows in the temp table before the import runs.",
+    "Rewrite the retry loop as a bounded for loop.",
+    "Do not stage, commit or push.",
+    "Never commit; leave the changes uncommitted.",
+    "Do not stage or commit files, and do not push.",
+    "Do not run git add or git commit.",
+    "Never rewrite history.",
+    "Do not commit.",
+    "Validate the event and push it onto the queue.",
+    "Open the transaction, write both rows, then commit it.",
+    "Add a test that the handler commits the transaction.",
+    "Commit the transaction if both inserts succeed.",
+    "Verify that nothing is staged and no commit was created.",
+    "Add a commit hook test fixture.",
+    "Create a commit hook.",
+    "Rewrite the branch in the switch statement as a lookup table.",
+    "Reset the head of the linked list.",
+    "Rewrite the abcdefa label.",
+    "Reset the 1234567 counter.",
+    "Stage the fixture rows and commit the transaction.",
+    "Stage the fixture rows but commit the transaction.",
+  ])("accepts the product step or prohibition: %s", (payload) => {
+    const result = validate("plan", `${payload}\n`);
+    expect(result.status).toBe(SUCCESS);
+    expect(result.stdout.trim()).toBe("VALID");
+  });
+  test.each([
+    "9. Commit with a conventional message.",
+    "9. Commit using the message from the task brief.",
+    "Once tests pass, create a signed commit for the task.",
+    "Make one signed commit.",
+    "Create a single commit with the message feat: x.",
+    "Finally, commit the work.",
+    "Run the tests, then commit the changes.",
+    "Run the tests and commit the changes.",
+    "Do not stage unrelated files, and run git add src/a.ts.",
+    "Push to origin.",
+    "Commit abc1234 follow-up fixes.",
+    "Reset the branch to origin/main.",
+    "Reset HEAD to the previous commit.",
+    "Rewrite history so the commits are atomic.",
+    "Reset the index.",
+    "Stage src/a.ts.",
+    "Commit once tests pass.",
+    "Push.",
+    "Commit.",
+    "Stage and commit the change.",
+    "Commit the changes with a conventional message.",
+    "Push the branch to origin.",
+    'Run `git commit -m "feat: x"`.',
+    "Rebase onto main.",
+    "Rebase the date range onto UTC.",
+    "Push after the lock is released so the queue stays ordered.",
+    "Stage the files in a temp directory before the import.",
+    'Commit -m "feat: x".',
+    "Reset the git index.",
+    "Reset abc1234.",
+    "Next, make one signed commit.",
+    "Afterwards, push the branch.",
+    "Do not commit; then push.",
+    "Do not commit but run git add src/a.ts.",
+    "Stage the fixture rows; commit the changes.",
+    "Stage the fixture rows, and commit the changes.",
+  ])("rejects the Git directive: %s", (payload) => {
+    const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(BLOCKED);
     expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
   });
