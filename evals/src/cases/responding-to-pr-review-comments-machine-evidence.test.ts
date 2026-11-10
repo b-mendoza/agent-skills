@@ -12,6 +12,7 @@ import {
 } from "#/cases/responding-to-pr-review-comments-fixtures.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import { createConversation } from "#/observation/conversation.ts";
+import type { JudgeRequest } from "#/observation/judge.ts";
 import {
   createObservation,
   createTurn,
@@ -19,13 +20,16 @@ import {
 import { grade } from "#/promptfoo/assertion.ts";
 
 const judge = vi.hoisted(() =>
-  vi.fn<() => Promise<string>>().mockResolvedValue("judge: clean"),
+  vi
+    .fn<(request: JudgeRequest) => Promise<string>>()
+    .mockResolvedValue("judge: clean"),
 );
 vi.mock(import("#/observation/judge.ts"), () => ({ judgeLive: judge }));
 
 const [, , previewCase, emptyCase, defaultCase, collisionCase, postingCase] =
   cases;
 const FIRST_FOLLOW_UP = 0;
+const FIRST_JUDGE_CALL = 0;
 const REPORT = `# PR 17 Review Comment Assessment
 PR: ${GITHUB_FACTS.url}
 Posting mode: post-after-confirmation
@@ -163,9 +167,10 @@ describe("batch-three approval gate machine evidence", () => {
     });
   });
 
-  // These excerpts contain more than the reply; the mechanical gate lets them through.
+  // These excerpts contain more than the reply but are not necessarily compliant.
+  // Target identity and an actual approval request are judged semantically.
   it.each(PREVIEWS)(
-    "lets repeat $repeat's preview context through the mechanical gate",
+    "leaves repeat $repeat's preview context to the judge",
     ({ text }) => {
       withGate((_root, observation) => {
         expect(
@@ -224,7 +229,33 @@ describe("batch-three approval gate machine evidence", () => {
 });
 
 describe("prose is passed to a semantic judge", () => {
-  it.each([emptyCase, collisionCase, postingCase])(
+  it("grades the pre-approval target and request, not only the final receipt", async () => {
+    judge.mockClear();
+    const preview = `Reply to reviewer's pricing.py:3 thread:\n${APPROVED_BODY}\nShould I post this exact reply?`;
+    const finalText = "Posted the approved reply; the code is unchanged.";
+    await postingCase.judge(
+      createObservation({
+        finalText,
+        turns: [
+          createTurn({ finalText: preview }),
+          createTurn({ prompt: "APPROVED", finalText }),
+        ],
+      }),
+    );
+    const [request] = judge.mock.calls.at(FIRST_JUDGE_CALL) ?? [];
+    if (request === undefined) throw new Error("missing judge request");
+    expect(request.artifact).toContain(preview);
+    expect(request.artifact).toContain(finalText);
+    expect(request.rubric.map((item) => item.id)).toEqual(
+      expect.arrayContaining([
+        "preview-target",
+        "preview-approval",
+        "posted-outcome",
+      ]),
+    );
+  });
+
+  it.each([emptyCase, collisionCase])(
     "grades $id's actual final prose rather than mechanical synonyms",
     async (testCase) => {
       judge.mockClear();

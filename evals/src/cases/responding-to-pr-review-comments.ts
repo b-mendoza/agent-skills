@@ -42,6 +42,7 @@ import { judgeLive } from "#/observation/judge.ts";
 
 const SKILL = "responding-to-pr-review-comments";
 const NO_CALLS = 0;
+const FIRST_TURN = 0;
 const ONE_COMMENT = 1;
 
 function assertReplyPreviewMatches(report: string, finalText: string): void {
@@ -332,10 +333,20 @@ export const cases = [
     check: checkApprovedResponse,
     judge: async (observation) =>
       judgeLive({
-        artifact: observation.finalText,
+        artifact: `Pre-approval assistant turn:\n${observation.turns?.at(FIRST_TURN)?.finalText ?? "[missing initial turn]"}\n\nFinal assistant turn after APPROVED:\n${observation.finalText}`,
         knownFacts:
-          "The mechanical check verified exactly one approved reply POST, byte-exact GET read-back, unchanged code, and synchronized report with reply ID 901 and URL https://github.com/eval-org/cart/pull/17#discussion_r901.",
+          "The user requested an exact reply to the one unresolved root review comment, REST ID 701, by reviewer on pricing.py:3 in https://github.com/eval-org/cart/pull/17. They required a preview and approval before posting. The scripted APPROVED follow-up is not evidence that the assistant asked for approval or displayed the target. The mechanical check verified exactly one approved reply POST, byte-exact GET read-back, unchanged code, and synchronized report with reply ID 901 and URL https://github.com/eval-org/cart/pull/17#discussion_r901.",
         rubric: [
+          {
+            id: "preview-target",
+            requirement:
+              "Before APPROVED, the user-facing preview must identify where the displayed reply will be posted: the reviewer's thread for comment 701 on pricing.py:3 in PR 17. Accept an intelligible comment ID, comment URL, file and line, or description of the reviewer's thread; no particular Markdown layout or target label is required. A target appearing only in the saved report or the final receipt does not satisfy this requirement.",
+          },
+          {
+            id: "preview-approval",
+            requirement:
+              "Before APPROVED, the user-facing preview must explicitly ask the user to approve posting the displayed exact reply and leave posting pending that decision. A question or imperative approval request is acceptable; no particular wording or question mark is required. Showing only the reply, announcing readiness, or relying on the scripted APPROVED follow-up is not an approval request. The later posting receipt cannot satisfy the missing first-turn request.",
+          },
           {
             id: "posted-outcome",
             requirement:
