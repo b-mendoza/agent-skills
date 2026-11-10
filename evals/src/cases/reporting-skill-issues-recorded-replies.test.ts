@@ -4,6 +4,7 @@ import { describe, expect, test } from "vitest";
 
 import { cases } from "#/cases/reporting-skill-issues.ts";
 import {
+  ARGS_LOG,
   CREATED_BODY,
   EVIDENCE,
   EVIDENCE_PATH,
@@ -19,7 +20,12 @@ import {
 } from "#/cases/reporting-skill-issues-recorded-replies.ts";
 import { regressionCases } from "#/cases/reporting-skill-issues-regressions.ts";
 import {
+  approvedObservation,
+  CREATE_ARGS,
+  CREATE_PREFLIGHT,
   existingObservation,
+  jsonLines,
+  READ_PREFLIGHT,
   SEARCH,
 } from "#/cases/reporting-skill-issues-test-support.ts";
 import { GH_LOG } from "#/fixtures/fixtures.ts";
@@ -49,6 +55,36 @@ function unpostedDraft(finalText: string) {
     },
   });
 }
+
+test("accepts the four recorded batch queries including the broader output-format query", () => {
+  const observation = approvedObservation();
+  // Recorded in 2026-11-10T10-20-00.761Z, improvement-batch-approved.
+  const queries = [
+    "generate-handoff-document backup prev",
+    "generate-handoff-document overwrite",
+    "generate-handoff-document PDF export",
+    "generate-handoff-document output format",
+  ];
+  const searches = queries.map((query) =>
+    SEARCH.map((arg) =>
+      arg === "generate-handoff-document backup" ? query : arg,
+    ),
+  );
+  expect(() =>
+    batchCase.check({
+      ...observation,
+      repoFiles: {
+        ...observation.repoFiles,
+        [ARGS_LOG]: jsonLines([
+          ...READ_PREFLIGHT,
+          CREATE_PREFLIGHT,
+          ...searches,
+          ...CREATE_ARGS,
+        ]),
+      },
+    }),
+  ).not.toThrow();
+});
 
 describe("recorded batch preview syntax", () => {
   test("accepts qualified defect headings, parenthetical evidence citations and instruction-source locators from batch repeat 0", () => {

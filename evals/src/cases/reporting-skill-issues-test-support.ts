@@ -106,6 +106,11 @@ export const SEARCH = [
   "--json",
   "number,title,url,state,stateReason",
 ];
+export const PDF_SEARCH = SEARCH.map((arg) =>
+  arg === "generate-handoff-document backup"
+    ? "generate-handoff-document PDF export"
+    : arg,
+);
 export const VIEW = [
   "issue",
   "view",
@@ -178,7 +183,7 @@ export function approvedObservation(): Observation {
         ...READ_PREFLIGHT,
         CREATE_PREFLIGHT,
         SEARCH,
-        SEARCH,
+        PDF_SEARCH,
         ...CREATE_ARGS,
       ]),
       [CREATED_ISSUES]: jsonLines(RECORDS),

@@ -298,6 +298,35 @@ function assertSearches(
   }
 }
 
+function batchSearchFindings(args: readonly string[]): readonly number[] {
+  const findings = [
+    /\b(?:back[- ]?ups?|overwrit(?:e|es|ing|ten))\b/i,
+    /\b(?:pdf|portable document format)\b/i,
+  ];
+  const query = args[args.indexOf("--search") + NEXT_ARGUMENT];
+  assert.ok(query !== undefined);
+  return findings.flatMap((pattern, index) =>
+    pattern.test(query) ? [index] : [],
+  );
+}
+
+function assertBatchSearchCoverage(calls: readonly string[][]): void {
+  const findings = calls
+    .filter((args) => isIssueCall(args, "list"))
+    .map(batchSearchFindings);
+  for (let index = FIRST_INDEX; index < BATCH_SIZE; index += NEXT_ARGUMENT) {
+    // Broad queries consume the aggregate budget without proving coverage.
+    // Combined terms count toward both caps but cannot replace a focused search:
+    // GitHub's conjunctive keywords may exclude duplicates of either item alone.
+    const attributable = findings.filter((matches) => matches.includes(index));
+    assert.ok(
+      attributable.some((matches) => matches.length === NEXT_ARGUMENT) &&
+        attributable.length <= MAX_ITEM_SEARCHES,
+      "missing or unbounded duplicate search for an inventory finding",
+    );
+  }
+}
+
 export function checkApprovedBatch(observation: Observation): string {
   assertNoMutation(observation);
   assertNoMutationBeforeReply(
@@ -322,6 +351,7 @@ export function checkApprovedBatch(observation: Observation): string {
     { createRequired: true, initialToolCalls: initial.toolCalls },
   );
   assertSearches(calls, BATCH_SIZE, MAX_BATCH_SEARCHES);
+  assertBatchSearchCoverage(calls);
   const creates = calls.filter((args) => isIssueCall(args, "create"));
   assert.equal(
     creates.length,
