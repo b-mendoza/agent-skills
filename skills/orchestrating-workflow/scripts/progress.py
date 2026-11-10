@@ -9,7 +9,9 @@ reason for skip_task. Action names are read, initialize, update, initialize_task
 update_task, skip_task. Keys and paths are data, never shell commands.
 Exit: 0 success; 1 invalid request/state or filesystem failure (PROGRESS: ERROR);
 2 CLI usage error. Side effects: writes only the two named progress files under
-the existing docs/ contract. read never writes. No network or git writes.
+the existing docs/ contract. read never writes. A first Phase 1 update creates
+fresh progress; other first mutations preserve inferred planning state.
+No network or git writes.
 Smoke: echo '{"ticket_key":"DEMO-1","action":"read"}' | python3 progress.py
 """
 
@@ -25,6 +27,7 @@ LABELS = {5: "5/7 Plan", 6: "6/7 Critique", 7: "7/7 Execute"}
 ACTIONS = {"read", "initialize", "update", "initialize_task", "update_task", "skip_task"}
 TASK_COLUMNS = ["Task", "Title", "Dependencies", "Priority", "Child item", "Current Phase", "Status", "Detail", "Outcome", "Execution mode", "Human owner", "Branch name"]
 PHASE_COLUMNS = ["Phase", "Skill", "Status", "Completed at", "Notes"]
+INFERRED_NOTE = "Inferred from existing artifacts; phase validation still required."
 
 
 def require(condition, message):
@@ -154,13 +157,13 @@ def enrich_task(row, markers):
         row[name] = text(value, name)
 
 
-def infer_progress(key, root):
+def infer_progress(key, root, skills=None):
     snapshot = root / f"{key}.md"
     plan_path = root / f"{key}-tasks.md"
     if not snapshot.exists() and not plan_path.exists():
         return None
     plan = plan_path.read_text() if plan_path.exists() else ""
-    content = main_template(key, ["inferred"] * 7)
+    content = main_template(key, skills if skills is not None else ["inferred"] * 7)
     _, phases = table(content, "Phase")
     done = [snapshot.exists(), plan_path.exists(),
             (root / f"{key}-upfront-critique.md").exists() and "## Decisions Log" in plan,
@@ -184,7 +187,7 @@ def infer_progress(key, root):
                       "Execution mode": "code", "Human owner": "Not specified", "Branch name": "Unknown"})
     if tasks:
         content = replace_table(content, "Task", TASK_COLUMNS, tasks)
-    return content + "Inferred from existing artifacts; phase validation still required.\n"
+    return content + INFERRED_NOTE + "\n"
 
 
 def summarize(key, content, root):
@@ -265,10 +268,19 @@ def run(request):
         import io
         with contextlib.redirect_stdout(io.StringIO()):
             summarize(key, content, root)
+    # Phase 1's own snapshot does not turn a fresh workflow into a recovery.
+    if content is None and not (action == "update" and request.get("phase") == 1):
+        content = infer_progress(key, root, request.get("phase_skills"))
     if content is None:
         require(action in {"initialize", "update"}, "main progress file is missing")
         content = main_template(key, request.get("phase_skills"))
     _, phases = table(content, "Phase")
+    if request.get("phase_skills") is not None:
+        supplied_phases = phase_rows(request["phase_skills"], 1, 4)
+        for row, supplied in zip(phases, supplied_phases):
+            if row["Skill"] == "inferred":
+                row["Skill"] = supplied["Skill"]
+        content = replace_table(content, "Phase", PHASE_COLUMNS, phases)
     columns, tasks = table(content, "Task")
     markers = task_markers(key, root)
     if tasks:
@@ -303,12 +315,20 @@ def run(request):
         require(state in {"active", "complete", "failed", "skipped"}, "invalid update status")
         summary = text(request.get("summary"), "summary")
         row = find(phases, "Phase", phase)
+        if phase == 4 and state == "complete":
+            # A first write may reconcile an inferred table. Once persisted as
+            # complete, Phase 4 cannot replace task identities or metadata.
+            require(not tasks or not path.exists() or status(row["Status"]) != "complete",
+                    "Phase 4 task table already exists; reconcile explicitly, never reset progress")
         row.update({"Status": DISPLAY[state], "Completed at": timestamp, "Notes": summary})
         content = replace_table(content, "Phase", PHASE_COLUMNS, phases)
         if phase == 4 and state == "complete":
             supplied = request.get("tasks")
             require(isinstance(supplied, list) and supplied, "Phase 4 completion needs tasks")
-            require(not tasks, "Phase 4 task table already exists; reconcile explicitly, never reset progress")
+            inferred_tasks = {row["Task"]: row for row in tasks}
+            if inferred_tasks:
+                require({str(task.get("number")) for task in supplied} == set(inferred_tasks),
+                        "Phase 4 tasks differ from inferred tasks; reconcile explicitly")
             tasks = []
             for task in supplied:
                 n = number(task.get("number"), "task number")
@@ -322,6 +342,10 @@ def run(request):
                               "Human owner": text(task.get("human_owner", "Not specified"), "human owner"),
                               "Branch name": text(task.get("branch_name", "Unknown"), "branch name")})
             for task_row in tasks:
+                inferred = inferred_tasks.get(task_row["Task"], {})
+                for field in ["Current Phase", "Status", "Detail", "Outcome"]:
+                    if field in inferred:
+                        task_row[field] = inferred[field]
                 enrich_task(task_row, markers)
             require(len({row['Task'] for row in tasks}) == len(tasks), "duplicate task identity")
             content = replace_table(content, "Task", TASK_COLUMNS, tasks)

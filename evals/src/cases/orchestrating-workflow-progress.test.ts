@@ -1,7 +1,5 @@
-import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "vitest";
 
@@ -9,79 +7,26 @@ import {
   RESUME_ARTIFACTS,
   RESUME_FACTS,
 } from "#/cases/orchestrating-workflow-fixtures.ts";
-import { makeFixture, writeRepoFiles } from "#/fixtures/fixtures.ts";
+import {
+  ARTIFACT_PLANNING_FILES,
+  ARTIFACT_RESUME_ACTIONS,
+  makeProgressFixture as setup,
+  PROGRESS_KEY as key,
+  PROGRESS_ROOT as root,
+  PROGRESS_SKILLS as phases,
+} from "#/cases/orchestrating-workflow-progress-cases.ts";
+import { writeRepoFiles } from "#/fixtures/fixtures.ts";
 
 const SUCCESS = 0;
 const BLOCKED = 1;
+const FIRST_INDEX = 0;
 
-const script = fileURLToPath(
-  new URL(
-    "../../../skills/orchestrating-workflow/scripts/progress.py",
-    import.meta.url,
-  ),
-);
 const FETCH = 1;
 const PLAN_TASKS = 2;
-const CLARIFY = 3;
 const CHILDREN = 4;
 const PLAN = 5;
 const CRITIQUE = 6;
 const EXECUTE = 7;
-
-const key = "acme-app-42";
-const root = "docs";
-const phases = [
-  "fetching-work-item",
-  "planning-work-item-tasks",
-  "clarifying-assumptions",
-  "creating-work-item-children",
-  "planning-task-execution",
-  "clarifying-assumptions",
-  "executing-work-item-task",
-];
-
-function setup() {
-  const fixture = makeFixture("clean", []);
-  const run = (fields: Readonly<Record<string, unknown>>) =>
-    spawnSync("python3", [script], {
-      cwd: fixture.cwd,
-      input: JSON.stringify({ ticket_key: key, ...fields }),
-      encoding: "utf8",
-    });
-  const main = () =>
-    readFileSync(join(fixture.cwd, root, `${key}-progress.md`), "utf8");
-  const task = () =>
-    readFileSync(join(fixture.cwd, root, `${key}-task-1-progress.md`), "utf8");
-  const populated = () => {
-    for (const phase of [FETCH, PLAN_TASKS, CLARIFY, CHILDREN]) {
-      const result = run({
-        action: "update",
-        phase,
-        status: "complete",
-        summary: `phase ${phase}`,
-        phase_skills: phases,
-        tasks: [
-          {
-            number: 1,
-            title: "Code",
-            dependencies: "None",
-            priority: "High",
-            child_item: "acme/app#101",
-          },
-          {
-            number: 2,
-            title: "Manual verification",
-            dependencies: "1",
-            priority: "Low",
-            child_item: "OPS-202",
-          },
-        ],
-      });
-      expect(result.status).toBe(SUCCESS);
-    }
-  };
-  return { ...fixture, run, main, task, populated };
-}
 
 describe("shipped progress helper", () => {
   test("lazily initializes once and preserves phase rows and child identities", () => {
@@ -303,6 +248,116 @@ describe("shipped progress helper", () => {
       fixture.cleanup();
     }
   });
+  test("preserves snapshot progress after the next phase completion", () => {
+    const fixture = setup();
+    try {
+      writeRepoFiles(fixture.cwd, { "docs/acme-app-42.md": "# Snapshot\n" });
+      expect(fixture.run({ action: "read" }).stdout).toContain(
+        "Resume from: Phase 2",
+      );
+      const updated = fixture.run({
+        action: "update",
+        phase: PLAN_TASKS,
+        status: "complete",
+        summary: "Tasks validated",
+        phase_skills: phases,
+      });
+      expect(updated.status).toBe(SUCCESS);
+      expect(fixture.main()).toMatch(/\| 1 \| fetching-work-item \|.*Complete/);
+      expect(fixture.run({ action: "read" }).stdout).toContain(
+        "Resume from: Phase 3",
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  test.each(ARTIFACT_RESUME_ACTIONS)(
+    "continues artifact-only planning with $action",
+    ({ resume, ...action }) => {
+      const fixture = setup();
+      try {
+        writeRepoFiles(fixture.cwd, ARTIFACT_PLANNING_FILES);
+        expect(fixture.run({ action: "read" }).stdout).toContain(
+          "Resume from: Phase 5 (task selection)",
+        );
+        expect(existsSync(join(fixture.cwd, root, `${key}-progress.md`))).toBe(
+          false,
+        );
+        const result = fixture.run({ ...action, phase_skills: phases });
+        expect(result.status).toBe(SUCCESS);
+        for (const [index, skill] of phases
+          .slice(FIRST_INDEX, CHILDREN)
+          .entries()) {
+          expect(fixture.main()).toMatch(
+            new RegExp(`\\| ${index + FETCH} \\| ${skill} \\|.*Complete`),
+          );
+        }
+        expect(fixture.main()).toContain("phase validation still required");
+        expect(fixture.run({ action: "read" }).stdout).toContain(
+          `Resume from: ${resume}`,
+        );
+        expect(
+          existsSync(join(fixture.cwd, root, `${key}-task-1-progress.md`)),
+        ).toBe(action.action === "initialize_task");
+        expect(fixture.main().includes("User excluded task")).toBe(
+          action.action === "skip_task",
+        );
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
+
+  test("creates baseline fresh progress after Phase 1 writes its snapshot", () => {
+    const fixture = setup();
+    try {
+      writeRepoFiles(fixture.cwd, { "docs/acme-app-42.md": "# Snapshot\n" });
+      const result = fixture.run({
+        action: "update",
+        phase: FETCH,
+        status: "complete",
+        summary: "fetched",
+        phase_skills: phases,
+      });
+      expect(result.status).toBe(SUCCESS);
+      expect(
+        fixture.main().replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC/g, "<ts>"),
+      ).toBe(
+        "# acme-app-42 — Workflow Progress\n\n" +
+          "| Phase | Skill | Status | Completed at | Notes |\n" +
+          "| --- | --- | --- | --- | --- |\n" +
+          "| 1 | fetching-work-item | ✅ Complete | <ts> | fetched |\n" +
+          "| 2 | planning-work-item-tasks | ⬜ Pending | — | — |\n" +
+          "| 3 | clarifying-assumptions | ⬜ Pending | — | — |\n" +
+          "| 4 | creating-work-item-children | ⬜ Pending | — | — |\n\n" +
+          "## Task Execution (Phases 5–7)\n\n_No tasks yet_\n\n" +
+          "## Execution Log\n<ts> — Phase 1: complete — fetched\n",
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  test("rejects task actions after a fresh read without artifacts", () => {
+    const fixture = setup();
+    try {
+      expect(fixture.run({ action: "read" }).stdout).toContain("Fresh start");
+      const result = fixture.run({
+        action: "initialize_task",
+        task_number: 1,
+        phase_skills: phases,
+      });
+      expect(result.status).toBe(BLOCKED);
+      expect(result.stdout).toContain("main progress file is missing");
+      expect(existsSync(join(fixture.cwd, root, `${key}-progress.md`))).toBe(
+        false,
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
   test("refuses path traversal without writes", () => {
     const fixture = setup();
     try {

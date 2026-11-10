@@ -2,7 +2,7 @@
 
 > Current-state reference. Update this file when `../scripts/progress.py` changes the written schema. The script owns updates and state projection; these examples describe its output, not a second writer.
 
-Progress remains persistent workflow state under `docs/`. The first `update` lazily creates the main file with four phase rows; explicit `initialize` is optional and never resets existing work.
+Progress remains persistent workflow state under `docs/`. The first `update` lazily creates the main file with four phase rows; explicit `initialize` is optional and never resets existing work. A first Phase 1 update creates fresh progress, even when Phase 1 has just written its snapshot, and adds no inference note. Without a main file, `read` infers planning progress without writing. Other successful first mutations, including `initialize`, persist that inferred state. Supplied `phase_skills` replace `inferred` skill placeholders. Inference notes are audit text, not permission to bypass initialization or replace a completed task table. A task action still requires main progress or planning artifacts; it cannot start from an empty workspace.
 
 ## Main progress
 
@@ -25,7 +25,7 @@ _No tasks yet_
 ## Execution Log
 ```
 
-The actual status values carry the established display markers. Phase 4 completion inserts one row per `TASKS` entry:
+The actual status values carry the established display markers. Phase 4 completion inserts one row per `TASKS` entry. It may reconcile an inferred table on the main file's first write or while its persisted Phase 4 row is not complete. Task identities must match, and task state and outcomes survive reconciliation. Once a completed Phase 4 table is persisted, another completion cannot replace it.
 
 ```markdown
 | Task | Title | Dependencies | Priority | Child item | Current Phase | Status | Detail | Outcome |
