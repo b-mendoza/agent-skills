@@ -5,11 +5,19 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "vitest";
 
+import {
+  ARTIFACT_PLANNING_FILES,
+  makeProgressFixture as setup,
+  PROGRESS_KEY as key,
+  PROGRESS_ROOT as root,
+  PROGRESS_SKILLS as phases,
+} from "#/cases/orchestrating-workflow-progress-cases.ts";
 import { makeFixture, writeRepoFiles } from "#/fixtures/fixtures.ts";
 
 const SUCCESS = 0;
 const PLAN = 5;
 const BLOCKED = 1;
+const CHILDREN = 4;
 
 const script = fileURLToPath(
   new URL(
@@ -17,6 +25,140 @@ const script = fileURLToPath(
     import.meta.url,
   ),
 );
+
+describe("artifact recovery guards", () => {
+  test.each(["fresh", "artifact-recovered"])(
+    "rejects uninitialized updates without task artifacts in %s progress",
+    (origin) => {
+      const fixture = setup();
+      try {
+        writeRepoFiles(
+          fixture.cwd,
+          origin === "fresh"
+            ? { "docs/acme-app-42.md": "# Snapshot\n" }
+            : ARTIFACT_PLANNING_FILES,
+        );
+        let initialized: number | null = SUCCESS;
+        if (origin === "fresh") {
+          fixture.populated();
+        } else {
+          initialized = fixture.run({
+            action: "initialize",
+            phase_skills: phases,
+          }).status;
+        }
+        expect(initialized).toBe(SUCCESS);
+        const before = fixture.main();
+        const result = fixture.run({
+          action: "update_task",
+          task_number: 1,
+          phase: PLAN,
+          status: "complete",
+          summary: "not initialized",
+          phase_skills: phases,
+        });
+        expect(result.status).toBe(BLOCKED);
+        expect(result.stdout).toContain("task has not been initialized");
+        expect(fixture.main()).toBe(before);
+        expect(
+          existsSync(join(fixture.cwd, root, `${key}-task-1-progress.md`)),
+        ).toBe(false);
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
+
+  test.each(["fresh", "artifact-recovered"])(
+    "rejects replacing a completed Phase 4 table in %s progress",
+    (origin) => {
+      const fixture = setup();
+      try {
+        writeRepoFiles(
+          fixture.cwd,
+          origin === "fresh"
+            ? { "docs/acme-app-42.md": "# Snapshot\n" }
+            : ARTIFACT_PLANNING_FILES,
+        );
+        let initialized: number | null = SUCCESS;
+        if (origin === "fresh") {
+          fixture.populated();
+        } else {
+          initialized = fixture.run({
+            action: "initialize",
+            phase_skills: phases,
+          }).status;
+        }
+        expect(initialized).toBe(SUCCESS);
+        const before = fixture.main();
+        const result = fixture.run({
+          action: "update",
+          phase: CHILDREN,
+          status: "complete",
+          summary: "must not replace",
+          tasks:
+            origin === "fresh"
+              ? [
+                  { number: 1, title: "Retitled" },
+                  { number: 2, title: "Retitled too" },
+                ]
+              : [{ number: 1, title: "Retitled" }],
+        });
+        expect(result.status).toBe(BLOCKED);
+        expect(result.stdout).toContain(
+          "Phase 4 task table already exists; reconcile explicitly, never reset progress",
+        );
+        expect(fixture.main()).toBe(before);
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
+
+  test("reconciles an inferred table only before Phase 4 completes and preserves task state", () => {
+    const fixture = setup();
+    try {
+      writeRepoFiles(fixture.cwd, {
+        ...ARTIFACT_PLANNING_FILES,
+        "docs/acme-app-42-tasks.md": "## Task 1: Code\n## Decisions Log\n",
+      });
+      expect(
+        fixture.run({ action: "initialize", phase_skills: phases }).status,
+      ).toBe(SUCCESS);
+      expect(
+        fixture.run({
+          action: "skip_task",
+          task_number: 1,
+          reason: "User excluded task",
+        }).status,
+      ).toBe(SUCCESS);
+      const result = fixture.run({
+        action: "update",
+        phase: CHILDREN,
+        status: "complete",
+        summary: "Children validated",
+        tasks: [{ number: 1, title: "Code", child_item: "acme/app#101" }],
+      });
+      expect(result.status).toBe(SUCCESS);
+      expect(fixture.main()).toMatch(/\| 1 \| Code \|[^\n]+Skipped/);
+      expect(fixture.main()).toContain("User excluded task");
+      expect(fixture.main()).toContain("acme/app#101");
+      const before = fixture.main();
+      expect(
+        fixture.run({
+          action: "update",
+          phase: CHILDREN,
+          status: "complete",
+          summary: "Again",
+          tasks: [{ number: 1, title: "Retitled" }],
+        }).status,
+      ).toBe(BLOCKED);
+      expect(fixture.main()).toBe(before);
+    } finally {
+      fixture.cleanup();
+    }
+  });
+});
 
 describe("human-only progress guard", () => {
   test.each([

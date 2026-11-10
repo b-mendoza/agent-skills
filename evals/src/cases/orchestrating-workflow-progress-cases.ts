@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { behavioralDefaults } from "#/cases/case-contract.ts";
@@ -18,17 +21,55 @@ import {
   commitRepoFiles,
   copyHeadReflog,
   HEAD_LOG,
+  makeFixture,
 } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 
+export const PROGRESS_KEY = "acme-app-42";
+export const PROGRESS_SKILLS = [
+  "fetching-work-item",
+  "planning-work-item-tasks",
+  "clarifying-assumptions",
+  "creating-work-item-children",
+  "planning-task-execution",
+  "clarifying-assumptions",
+  "executing-work-item-task",
+];
 export const PROGRESS_ROOT = "docs";
 export const PROGRESS_PATH = `${PROGRESS_ROOT}/acme-app-42-progress.md`;
 export const TASK_PROGRESS_PATH = `${PROGRESS_ROOT}/acme-app-42-task-1-progress.md`;
 export const SKIP_REASON = "User excluded Task 2; Operations owns verification";
+const CHILDREN = 4;
+
+export const ARTIFACT_PLANNING_FILES = {
+  "docs/acme-app-42.md": "# Snapshot\n",
+  "docs/acme-app-42-tasks.md":
+    "## Task 1: Code\n## Decisions Log\n## GitHub Task Issues\n",
+  "docs/acme-app-42-upfront-critique.md": "# Critique\n",
+};
+export const ARTIFACT_RESUME_ACTIONS = [
+  { action: "initialize_task", task_number: 1, resume: "Phase 5, Task 1" },
+  {
+    action: "skip_task",
+    task_number: 1,
+    reason: "User excluded task",
+    resume: "None (all tasks accounted for)",
+  },
+  { action: "initialize", resume: "Phase 5 (task selection)" },
+  {
+    action: "update",
+    phase: CHILDREN,
+    status: "complete",
+    summary: "Children validated",
+    tasks: [{ number: 1, title: "Code", child_item: "acme/app#101" }],
+    resume: "Phase 5 (task selection)",
+  },
+];
 const seedFiles = {
   "fixture-facts.txt": "Local progress fixture; no remote work.\n",
 };
 
+const SUCCESS = 0;
 const FIRST_CELL = 1;
 const TRAILING_CELL = -1;
 const TABLE_HEADING_LINES = 2;
@@ -37,7 +78,54 @@ const TASK_COUNT = 2;
 const FETCH = 1;
 const PLAN = 2;
 const CLARIFY = 3;
-const CHILDREN = 4;
+
+export function makeProgressFixture() {
+  const fixture = makeFixture("clean", []);
+  const script = fileURLToPath(
+    new URL(
+      "../../../skills/orchestrating-workflow/scripts/progress.py",
+      import.meta.url,
+    ),
+  );
+  const run = (fields: Readonly<Record<string, unknown>>) =>
+    spawnSync("python3", [script], {
+      cwd: fixture.cwd,
+      input: JSON.stringify({ ticket_key: PROGRESS_KEY, ...fields }),
+      encoding: "utf8",
+    });
+  const main = () => readFileSync(join(fixture.cwd, PROGRESS_PATH), "utf8");
+  const task = () =>
+    readFileSync(join(fixture.cwd, TASK_PROGRESS_PATH), "utf8");
+  const populated = () => {
+    for (const phase of [FETCH, PLAN, CLARIFY, CHILDREN]) {
+      const result = run({
+        action: "update",
+        phase,
+        status: "complete",
+        summary: `phase ${phase}`,
+        phase_skills: PROGRESS_SKILLS,
+        tasks: [
+          {
+            number: 1,
+            title: "Code",
+            dependencies: "None",
+            priority: "High",
+            child_item: "acme/app#101",
+          },
+          {
+            number: 2,
+            title: "Manual verification",
+            dependencies: "1",
+            priority: "Low",
+            child_item: "OPS-202",
+          },
+        ],
+      });
+      assert.equal(result.status, SUCCESS, result.stdout);
+    }
+  };
+  return { ...fixture, run, main, task, populated };
+}
 
 export function taskRows(
   content: string,

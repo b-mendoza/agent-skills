@@ -107,7 +107,7 @@ After dispatching `progress-tracker` with the workflow key and `ACTION=read`, ch
 
 Exclude skipped tasks from the resume candidates. If every task is complete or skipped, go to Summary with separate counts.
 
-Confirm with the user before resuming past Phase 1, then load the matching playbook (`./phases-1-4.md` for Phases 1-4, `./task-loop.md` for Phases 5-7).
+Confirm with the user before resuming past Phase 1, then load the matching playbook (`./phases-1-4.md` for Phases 1-4, `./task-loop.md` for Phases 5-7). An artifact-only `read` is read-only. Continue through the normal validators and progress action; the helper persists inferred planning state on that mutation without a separate initialization step. A first Phase 1 update instead creates fresh progress, even after its snapshot is written. Phase 4 may reconcile an inferred table on the main file's first write or before its persisted Phase 4 row completes, preserving task identities, state, and outcomes. It cannot replace a persisted completed table.
 
 ## Clarification Flags
 
