@@ -23,6 +23,7 @@ const validator = resolve(
 const repos: string[] = [];
 const SUCCESS_EXIT = 0;
 const INVALID_EXIT = 1;
+const COLLECTOR_ERROR_EXIT = 2;
 const START_INDEX = 0;
 const DIGEST_LENGTH = 40;
 const EXECUTABLE_MODE = 0o755;
@@ -38,6 +39,22 @@ function repo(): string {
   git(path, "add", ".");
   git(path, "commit", "-qm", "initial");
   return path;
+}
+function submoduleRepo(): string {
+  const source = repo();
+  const cwd = repo();
+  git(
+    cwd,
+    "-c",
+    "protocol.file.allow=always",
+    "submodule",
+    "add",
+    "--quiet",
+    source,
+    "vendor/sub",
+  );
+  git(cwd, "commit", "-qm", "add submodule");
+  return cwd;
 }
 function git(cwd: string, ...args: string[]): string {
   return execFileSync("git", args, { cwd, encoding: "utf8" });
@@ -165,6 +182,88 @@ describe("shipped scoped state collector", () => {
     git(cwd, "commit", "--only", "-qm", "a", "--", "a");
     expect(digest(cwd, "preserve", "a")).toBe(before);
     expect(readFileSync(join(cwd, "b"), "utf8")).toBe("unrelated staged");
+  });
+  test("preserves an uninitialized gitlink across an unrelated commit", () => {
+    const cwd = submoduleRepo();
+    git(cwd, "submodule", "deinit", "--force", "vendor/sub");
+    writeFileSync(join(cwd, "a"), "new a\n");
+    const before = digest(cwd, "preserve", "a");
+    git(cwd, "commit", "--only", "-qm", "a", "--", "a");
+    expect(digest(cwd, "preserve", "a")).toBe(before);
+  });
+  test("predicts the index OID for an uninitialized gitlink", () => {
+    const cwd = submoduleRepo();
+    const oid = git(cwd, "rev-parse", ":vendor/sub").trim();
+    git(cwd, "submodule", "deinit", "--force", "vendor/sub");
+    const result = collect(cwd, "blobs", "vendor/sub");
+    expect(result.status).toBe(SUCCESS_EXIT);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toBe(`160000 ${oid} vendor/sub\n`);
+  });
+  test("detects an initialized submodule HEAD moving away from its index OID", () => {
+    const cwd = submoduleRepo();
+    const submodule = join(cwd, "vendor/sub");
+    const indexedOid = git(cwd, "rev-parse", ":vendor/sub").trim();
+    const before = digest(cwd, "preserve", "a");
+    git(
+      submodule,
+      "-c",
+      "user.name=Fixture",
+      "-c",
+      "user.email=fixture@example.invalid",
+      "-c",
+      "commit.gpgsign=false",
+      "commit",
+      "--allow-empty",
+      "-qm",
+      "move submodule HEAD",
+    );
+    const head = git(submodule, "rev-parse", "HEAD").trim();
+    expect(head).not.toBe(indexedOid);
+    expect(digest(cwd, "preserve", "a")).not.toBe(before);
+    const result = collect(cwd, "blobs", "vendor/sub");
+    expect(result.status).toBe(SUCCESS_EXIT);
+    expect(result.stdout).toBe(`160000 ${head} vendor/sub\n`);
+  });
+  test("reports a missing gitlink directory as deleted", () => {
+    const cwd = submoduleRepo();
+    const before = digest(cwd, "preserve", "a");
+    rmSync(join(cwd, "vendor/sub"), { recursive: true });
+    const result = collect(cwd, "blobs", "vendor/sub");
+    expect(result.status).toBe(SUCCESS_EXIT);
+    expect(result.stdout).toBe("000000 - vendor/sub\n");
+    expect(digest(cwd, "preserve", "a")).not.toBe(before);
+  });
+  test("fails without partial output for an initialized gitlink with an unborn HEAD", () => {
+    const cwd = submoduleRepo();
+    git(join(cwd, "vendor/sub"), "symbolic-ref", "HEAD", "refs/heads/unborn");
+    const result = collect(cwd, "blobs", "a", "vendor/sub");
+    expect(result.status).toBe(COLLECTOR_ERROR_EXIT);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("HEAD");
+  });
+  test("hashes a gitlink replaced by a symlink without following its target", () => {
+    const cwd = submoduleRepo();
+    rmSync(join(cwd, "vendor/sub"), { recursive: true });
+    symlinkSync("../..", join(cwd, "vendor/sub"));
+    const oid = execFileSync("git", ["hash-object", "--stdin"], {
+      cwd,
+      input: "../..",
+      encoding: "utf8",
+    }).trim();
+    const result = collect(cwd, "blobs", "vendor/sub");
+    expect(result.status).toBe(SUCCESS_EXIT);
+    expect(result.stdout).toBe(`120000 ${oid} vendor/sub\n`);
+  });
+  test("refuses a gitlink reached through a symlink ancestor", () => {
+    const cwd = submoduleRepo();
+    const outside = repo();
+    rmSync(join(cwd, "vendor"), { recursive: true });
+    symlinkSync(outside, join(cwd, "vendor"));
+    const result = collect(cwd, "blobs", "vendor/sub");
+    expect(result.status).toBe(COLLECTOR_ERROR_EXIT);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("symlink ancestor");
   });
   test.each(
     [

@@ -7,6 +7,8 @@ Outputs one SHA-1 Git blob digest (group/preserve), or mode/OID/path lines
 (blobs, with 000000 - for a deletion). Exit 0 on success, 2 on any failure;
 failures print only a diagnostic to stderr, never a partial result to stdout.
 Requires Python 3 and Git, a SHA-1 repository with HEAD, and no concurrent writers.
+Gitlinks use their own HEAD, or the index OID when uninitialized; missing paths
+are deletions. An initialized gitlink without a resolvable HEAD is an error.
 """
 
 import hashlib
@@ -59,9 +61,16 @@ def worktree(path, trust_filemode):
     if stat.S_ISDIR(info.st_mode):
         # Only a gitlink is a file-like group member. Ordinary folders are
         # expanded to exact paths by the planner, never recursively followed.
-        entry = git("ls-files", "--stage", "-z", "--", path)
-        if not entry.startswith(b"160000 "):
-            raise ValueError("not a gitlink or regular file: " + path)
+        entries = git("ls-files", "--stage", "-z", "--", path).split(b"\0")[:-1]
+        if len(entries) != 1:
+            raise ValueError("expected one gitlink index entry: " + path)
+        entry = entries[0].split(b"\t", 1)[0].split()
+        if len(entry) != 3 or entry[0] != b"160000" or entry[2] != b"0":
+            raise ValueError("not a stage-0 gitlink or regular file: " + path)
+        # A nonempty prefix means Git discovered an ancestor repository, not
+        # one owned by this directory. Its HEAD would track the parent commit.
+        if git("-C", path, "rev-parse", "--show-prefix").strip():
+            return b"160000", entry[1]
         return b"160000", git("-C", path, "rev-parse", "HEAD").strip()
     raise ValueError("unsupported file type: " + path)
 
