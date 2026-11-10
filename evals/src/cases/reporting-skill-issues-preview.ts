@@ -5,6 +5,7 @@ import { normalizeReplyText } from "#/cases/shared-checks.ts";
 export interface PreviewIssue {
   readonly title: string;
   readonly body: string;
+  readonly args: readonly string[];
 }
 interface DisplayLabel {
   readonly kind: string;
@@ -15,22 +16,84 @@ interface DisplayLabel {
 const FIRST_INDEX = 0;
 const NEXT_CHARACTER = 1;
 const LAST_LINE = -1;
+const COMMAND_WORDS = 2;
+
+// Deliberately only literal POSIX words: no expansion, substitution or operators.
+function literalWords(command: string): string[] {
+  const words: string[] = [];
+  const pattern = /(?:[^\s'"\\$`;&|<>()]+|'[^']*'|\\[\\' ])+/g;
+  let end = FIRST_INDEX;
+  for (const match of command.matchAll(pattern)) {
+    assert.equal(
+      command.slice(end, match.index).trim(),
+      "",
+      "unsupported shell syntax in preview",
+    );
+    words.push(
+      match[FIRST_INDEX].replace(
+        /'(?<quoted>[^']*)'|\\(?<escaped>[\\' ])/g,
+        (_match, quoted: string | undefined, escaped: string | undefined) =>
+          quoted ?? escaped ?? "",
+      ),
+    );
+    end = match.index + match[FIRST_INDEX].length;
+  }
+  assert.equal(
+    command.slice(end).trim(),
+    "",
+    "unsupported shell syntax in preview",
+  );
+  return words;
+}
+
+function takeCreateOption(args: string[]) {
+  const argument = args.shift();
+  assert.ok(argument !== undefined);
+  const separator = argument.indexOf("=");
+  if (separator === LAST_LINE) return { key: argument, value: args.shift() };
+  return {
+    key: argument.slice(FIRST_INDEX, separator),
+    value: argument.slice(separator + NEXT_CHARACTER),
+  };
+}
+
+/** Equivalence is limited to option order and --key=value versus --key value. */
+export function createOptions(args: readonly string[]): Record<string, string> {
+  assert.deepEqual(args.slice(FIRST_INDEX, COMMAND_WORDS), ["issue", "create"]);
+  const options: Record<string, string> = {};
+  const remaining = args.slice(COMMAND_WORDS);
+  while (remaining.length > FIRST_INDEX) {
+    const { key, value } = takeCreateOption(remaining);
+    assert.ok(
+      ["--repo", "--title", "--body-file"].includes(key),
+      `unapproved create option: ${key}`,
+    );
+    assert.ok(!(key in options), `duplicate create option: ${key}`);
+    assert.ok(value !== undefined, `missing create value: ${key}`);
+    assert.notEqual(value, "", `empty create value: ${key}`);
+    options[key] = value;
+  }
+  assert.equal(options["--repo"], "b-mendoza/agent-skills");
+  assert.equal(options["--body-file"], "-");
+  assert.ok(options["--title"] !== undefined);
+  return options;
+}
 
 function parsePreviewPayload(groups: Record<string, string>): PreviewIssue {
   const { command: rawCommand, body } = groups;
   assert.ok(rawCommand !== undefined && body !== undefined);
   const command = rawCommand.replaceAll(/\\\r?\n/g, " ");
-  assert.match(command, /--repo\s+b-mendoza\/agent-skills\b/);
-  assert.match(command, /--body-file\s+-\s*$/);
-  const titleMatch = /--title\s+'(?<title>(?:[^']|'\\'')*)'/.exec(command);
-  assert.ok(titleMatch !== null);
-  assert.ok(titleMatch.groups !== undefined);
-  const { title } = titleMatch.groups;
-  assert.ok(
-    title !== undefined && title !== "",
+  assert.match(
+    command,
+    /--title(?:\s+|=)'(?:[^']|'\\'')*'/,
     "preview needs its literal single-quoted title",
   );
-  return { title: title.replaceAll("'\\''", "'"), body };
+  const [executable, ...args] = literalWords(command);
+  assert.equal(executable, "gh");
+  const options = createOptions(args);
+  const title = options["--title"];
+  assert.ok(title !== undefined);
+  return { title, body, args };
 }
 
 function fenceMarker(line: string): string | undefined {

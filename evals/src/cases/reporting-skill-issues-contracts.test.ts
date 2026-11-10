@@ -12,6 +12,7 @@ import {
   jsonLines,
   READ_PREFLIGHT,
   SEARCH,
+  TITLES,
   VIEW,
 } from "#/cases/reporting-skill-issues-test-support.ts";
 import { capturedText, parseGitHubLog } from "#/cases/shared-checks.ts";
@@ -37,6 +38,39 @@ function withoutCall(
     (args) => JSON.stringify(args) !== JSON.stringify(omitted),
   );
 }
+
+describe("approved command arguments", () => {
+  test("rejects unapproved create metadata with unchanged preview and ledger", () => {
+    const calls = [
+      ...READ_PREFLIGHT,
+      CREATE_PREFLIGHT,
+      SEARCH,
+      SEARCH,
+      ...CREATE_ARGS.map((args) => [...args, "--label", "bug"]),
+    ];
+    expect(() =>
+      batchCase.check(withCalls(approvedObservation(), calls)),
+    ).toThrow();
+  });
+  test("accepts equivalent create option order and equals serialization", () => {
+    const calls = [
+      ...READ_PREFLIGHT,
+      CREATE_PREFLIGHT,
+      SEARCH,
+      SEARCH,
+      ...TITLES.map((title) => [
+        "issue",
+        "create",
+        "--body-file=-",
+        `--title=${title}`,
+        "--repo=b-mendoza/agent-skills",
+      ]),
+    ];
+    expect(() =>
+      batchCase.check(withCalls(approvedObservation(), calls)),
+    ).not.toThrow();
+  });
+});
 
 describe.each([
   { label: "batch", evalCase: batchCase, observe: approvedObservation },

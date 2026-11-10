@@ -10,7 +10,10 @@ import {
   FACTS,
 } from "#/cases/reporting-skill-issues-fixtures.ts";
 import type { PreviewIssue } from "#/cases/reporting-skill-issues-preview.ts";
-import { previewIssues } from "#/cases/reporting-skill-issues-preview.ts";
+import {
+  createOptions,
+  previewIssues,
+} from "#/cases/reporting-skill-issues-preview.ts";
 import {
   assertNoMutation,
   assertNoMutationBeforeReply,
@@ -215,6 +218,20 @@ function isIssueCall(args: readonly string[], action: string): boolean {
   return family === "issue" && verb === action && !args.includes("--help");
 }
 
+function assertIssueArguments(
+  args: readonly string[],
+  action: string | undefined,
+): void {
+  if (action === "create") {
+    createOptions(args);
+    return;
+  }
+  assert.equal(
+    args[args.indexOf("--repo") + NEXT_ARGUMENT],
+    "b-mendoza/agent-skills",
+  );
+}
+
 function assertCallAllowed(
   args: readonly string[],
   allowed: readonly string[],
@@ -225,12 +242,7 @@ function assertCallAllowed(
     allowed.includes(`${family} ${action}`),
     "unexpected remote command",
   );
-  if (family === "issue") {
-    assert.equal(
-      args[args.indexOf("--repo") + NEXT_ARGUMENT],
-      "b-mendoza/agent-skills",
-    );
-  }
+  if (family === "issue") assertIssueArguments(args, action);
   if (family === "api") {
     assert.ok(
       args.every((arg) =>
@@ -328,9 +340,11 @@ export function checkApprovedBatch(observation: Observation): string {
     "two confirmed fake creations required",
   );
   records.forEach(([title, body, url], index) => {
+    const draft = drafts[index];
+    assert.ok(draft !== undefined);
     assert.deepEqual(
       { title, body },
-      drafts[index],
+      { title: draft.title, body: draft.body },
       "created payload differs from the preview",
     );
     assert.ok(url !== undefined, "missing created receipt");
@@ -341,7 +355,11 @@ export function checkApprovedBatch(observation: Observation): string {
     );
     const create = creates[index];
     assert.ok(create !== undefined);
-    assert.equal(create[create.indexOf("--title") + NEXT_ARGUMENT], title);
+    assert.deepEqual(
+      createOptions(create),
+      createOptions(draft.args),
+      "executed create differs from approved arguments",
+    );
   });
   return "one complete defect/improvement preview; waiver ignored; one approval creates the exact two payloads";
 }
