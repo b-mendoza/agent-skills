@@ -5,12 +5,40 @@ Usage: python3 check-task-mode.py TASK_NUMBER < task-plan.md
        python3 check-task-mode.py --help
 Exit 0: selected task is not marked human-only; continue other readiness checks.
 Exit 1: BLOCKED, human handoff required. Exit 2: malformed input or usage; stop.
+Summary Task cells name positive N as N, Task N, or either form after the
+last -> or → with a nonempty source, including chains such as A -> B -> 1.
+Whitespace, paired **bold** and `backticks` around the cell or either mapping
+side are ignored. Titles, T1, #1 and internal formatting are not accepted.
+Unreadable Task cells without the branch sentinel are ignored.
 Side effects: none. Reads stdin only; no filesystem, git, network, or dependencies.
 Smoke: printf '## Task 1: Code\n' | python3 check-task-mode.py 1
 """
 
 import re
 import sys
+
+
+def strip_task_formatting(cell):
+    cell = cell.strip()
+    while True:
+        for marker in ("**", "`"):
+            if (len(cell) >= 2 * len(marker) and cell.startswith(marker)
+                    and cell.endswith(marker) and marker not in cell[len(marker):-len(marker)]):
+                cell = cell[len(marker):-len(marker)].strip()
+                break
+        else:
+            return cell
+
+
+def summary_task_number(cell):
+    cell = strip_task_formatting(cell)
+    mapping = re.fullmatch(r"(.*)(?:->|→)(.*)", cell)
+    if mapping:
+        if not strip_task_formatting(mapping[1]):
+            return None
+        cell = strip_task_formatting(mapping[2])
+    match = re.fullmatch(r"(?:Task )?([1-9][0-9]*)", cell)
+    return match[1] if match else None
 
 
 def check(plan, number):
@@ -28,19 +56,23 @@ def check(plan, number):
     # independently so a stale code branch in the task cannot hide its sentinel.
     summary = re.search(r"(?ms)^## Execution Order Summary\s*\n(.*?)(?=^## |\Z)", plan)
     if summary:
-        lines = summary[1].replace("**", "").replace("`", "").splitlines()
+        lines = summary[1].splitlines()
         headers = None
         for line in lines:
             if not line.strip().startswith("|"):
                 continue
             cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-            if "Task" in cells and any(cell in {"Branch", "Branch name"} for cell in cells):
-                headers = cells
+            header_cells = [cell.replace("**", "").strip("`") for cell in cells]
+            if "Task" in header_cells and any(cell in {"Branch", "Branch name"} for cell in header_cells):
+                headers = header_cells
                 continue
             if headers and len(cells) == len(headers):
                 row = dict(zip(headers, cells))
-                if row.get("Task") in {number, "Task " + number}:
-                    branches.append(row.get("Branch name", row.get("Branch", "")))
+                task_cell = row.get("Task", "")
+                task_number = summary_task_number(task_cell)
+                branch = row.get("Branch name", row.get("Branch", "")).replace("**", "").strip(" \t\r\n`")
+                if task_number == number:
+                    branches.append(branch)
     human = any(mode.strip().casefold() == "human-only" for mode in modes)
     sentinel = any(branch.strip().casefold() == "n/a (human-only)" for branch in branches)
     if human or sentinel:
