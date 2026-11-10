@@ -158,7 +158,9 @@ function postedObservation(): Observation {
     gitStatusAfter: { kind: "worktree", entries: `?? ${GITHUB_FACTS.report}` },
     finalText: `Posted ${REPLY_URL}`,
     turns: [
-      createTurn(),
+      createTurn({
+        finalText: `Reply to review comment 701:\n${APPROVED_BODY}\nReply APPROVED to post this exact reply.`,
+      }),
       createTurn({ name: "approve exact reply", prompt: "APPROVED" }),
     ],
     repoFiles: {
@@ -171,6 +173,19 @@ function postedObservation(): Observation {
 }
 
 describe("approved reply observables", () => {
+  it("rejects a body-only first turn despite a perfect post, read-back and ledger", () => {
+    const observation = postedObservation();
+    expect(() =>
+      postingCase.check({
+        ...observation,
+        turns: [
+          createTurn({ finalText: JSON.stringify(APPROVED_BODY) }),
+          createTurn({ prompt: "APPROVED", finalText: observation.finalText }),
+        ],
+      }),
+    ).toThrow("body-only preview");
+  });
+
   it("accepts one exact post with read-back and ledger", () => {
     expect(() => postingCase.check(postedObservation())).not.toThrow();
   });

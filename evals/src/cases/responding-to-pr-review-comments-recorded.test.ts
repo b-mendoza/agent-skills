@@ -1,3 +1,6 @@
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
@@ -9,6 +12,7 @@ import {
   REPLY_ENDPOINT,
   REPLY_URL,
 } from "#/cases/responding-to-pr-review-comments-fixtures.ts";
+import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import {
   createObservation,
@@ -16,6 +20,7 @@ import {
 } from "#/observation/observation-test-support.ts";
 
 const [, , previewCase, emptyCase, , , postingCase] = cases;
+const FIRST_FOLLOW_UP = 0;
 // Recorded eval-run-1 replies, shortened offline against HEAD's rejecting check.
 const PREVIEWS = [
   {
@@ -124,7 +129,12 @@ describe("recorded read-back violations stay rejected", () => {
             kind: "worktree",
             entries: `?? ${GITHUB_FACTS.report}`,
           },
-          turns: [createTurn(), createTurn({ prompt: "APPROVED" })],
+          turns: [
+            createTurn({
+              finalText: `Reply to comment 701:\n${APPROVED_BODY}\nReply APPROVED to post.`,
+            }),
+            createTurn({ prompt: "APPROVED" }),
+          ],
           repoFiles: {
             ...observation.repoFiles,
             [GITHUB_FACTS.report]: `Posting status: posted\n${REPLY_URL}`,
@@ -141,6 +151,34 @@ describe("recorded read-back violations stay rejected", () => {
 });
 
 describe("recorded response eval false negatives", () => {
+  it.each(PREVIEWS)(
+    "accepts repeat $repeat's target and approval framing around the byte-pinned reply",
+    (record) => {
+      const fixture = makeFixture("clean", [], postingCase.seed);
+      try {
+        // Keep the real prose; only the body changes to the posting fixture's exact bytes.
+        writeFileSync(
+          join(fixture.cwd, GITHUB_FACTS.report),
+          `- Posting target: review-comment-reply:701\n> ${APPROVED_BODY.trimEnd()}\n`,
+        );
+        expect(
+          postingCase.followUps[FIRST_FOLLOW_UP].reply(
+            createObservation({
+              finalText: `${record.before}\n${APPROVED_BODY}\n${record.after}`,
+              gitStatusAfter: {
+                kind: "worktree",
+                entries: `?? ${GITHUB_FACTS.report}`,
+              },
+              turns: [createTurn({ prompt: postingCase.prompt(fixture) })],
+            }),
+          ),
+        ).toEqual({ reply: "APPROVED" });
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
+
   it.each(PREVIEWS)(
     "accepts repeat $repeat's valid classification and exact reply",
     (record) => {
