@@ -10,6 +10,37 @@ const FIRST = 0;
 const NEXT = 1;
 const OPTION_AND_VALUE = 2;
 const GIT_VALUE_OPTIONS = new Set(["-C", "-c", "--git-dir", "--work-tree"]);
+const NON_PATCH_DIFF_OPTIONS = new Set([
+  "--quiet",
+  "--check",
+  "--name-only",
+  "--name-status",
+]);
+const METADATA_DIFF_OPTIONS = new Set([
+  "--stat",
+  "--numstat",
+  "--shortstat",
+  "--dirstat",
+  "--dirstat-by-file",
+  "--cumulative",
+  "--summary",
+  "--compact-summary",
+  "--raw",
+]);
+const PATCH_DIFF_OPTIONS = new Set([
+  "--patch",
+  "-p",
+  "-u",
+  "-U",
+  "--unified",
+  "--patch-with-stat",
+  "--patch-with-raw",
+]);
+const PATCH_FORMAT_OPTIONS = new Set([
+  ...PATCH_DIFF_OPTIONS,
+  "--no-patch",
+  "-s",
+]);
 interface ReadTarget {
   readonly sha: string;
   readonly path: string;
@@ -39,10 +70,26 @@ function comparesPins(args: readonly string[], target: ReadTarget): boolean {
   );
 }
 
+function diffCarriesContent(args: readonly string[]): boolean {
+  const options = args.map(
+    (arg) => arg.replace(/^-U\d+$/, "-U").split("=")[FIRST] ?? "",
+  );
+  const patchFormat = options.findLast((option) =>
+    PATCH_FORMAT_OPTIONS.has(option),
+  );
+  return (
+    !options.some((option) => NON_PATCH_DIFF_OPTIONS.has(option)) &&
+    (patchFormat === undefined
+      ? !options.some((option) => METADATA_DIFF_OPTIONS.has(option))
+      : PATCH_DIFF_OPTIONS.has(patchFormat))
+  );
+}
+
 function diffReads(args: readonly string[], target: ReadTarget): boolean {
   const separator = args.indexOf("--");
   return (
     separator >= FIRST &&
+    diffCarriesContent(args.slice(FIRST, separator)) &&
     args.slice(separator + NEXT).includes(target.path) &&
     comparesPins(args.slice(FIRST, separator), target)
   );

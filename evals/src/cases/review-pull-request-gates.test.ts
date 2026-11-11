@@ -239,6 +239,80 @@ describe("pinned read evidence", () => {
     },
   );
   it.each([
+    ["--stat", " pricing.py | 2 --\n 1 file changed, 2 deletions(-)\n"],
+    ["--stat=80", " pricing.py | 2 --\n"],
+    ["--name-only", "pricing.py\n"],
+    ["--patch --name-only", "pricing.py\n"],
+    ["--name-only --patch", "pricing.py\n"],
+    ["--name-status", "M\tpricing.py\n"],
+    ["--patch --name-status", "M\tpricing.py\n"],
+    ["--name-only -U3", "pricing.py\n"],
+    ["-U3 --name-only", "pricing.py\n"],
+    ["--name-status --unified=3", "M\tpricing.py\n"],
+    ["--unified=3 --name-status", "M\tpricing.py\n"],
+    ["--numstat", "0\t2\tpricing.py\n"],
+    ["--shortstat", " 1 file changed, 2 deletions(-)\n"],
+    ["--dirstat", ""],
+    ["--summary", ""],
+    ["--raw", ":100644 100644 aaaaaaa bbbbbbb M\tpricing.py\n"],
+    ["--quiet", ""],
+    ["--check", ""],
+    ["--no-patch", ""],
+    ["-s", ""],
+  ])("rejects a captured metadata-only or silent diff: %s", (mode, content) => {
+    const observation = pinnedReadObservation(
+      `git diff ${mode} ${BASE} ${HEAD} -- pricing.py`,
+      { content, isError: false, truncated: false },
+    );
+    expect(() => {
+      assertPinnedCitations(observation, REPORT);
+    }).toThrow(/pinned reads/);
+  });
+  it.each([
+    "--stat",
+    "--name-only",
+    "--quiet",
+    "--patch --no-patch",
+    "-p -s",
+    "-U3 --no-patch",
+    "-U 3 --no-patch",
+    "--unified -s",
+    "--unified=3 --no-patch",
+  ])("rejects a result-less metadata-only or silent diff: %s", (mode) => {
+    const observation = pinnedReadObservation(
+      `git diff ${mode} ${BASE} ${HEAD} -- pricing.py`,
+      undefined,
+    );
+    expect(() => {
+      assertPinnedCitations(observation, REPORT);
+    }).toThrow(/pinned reads/);
+  });
+  it.each([
+    "",
+    "--patch",
+    "--patch --stat",
+    "--stat --patch",
+    "--no-patch --patch",
+    "-s -p",
+    "--stat -U3",
+    "--stat -U 3",
+    "--stat --unified",
+    "--stat --unified=3",
+    "--no-patch -U3",
+    "--no-patch -U 3",
+    "-s --unified",
+    "--no-patch --unified=3",
+    "-U3 --stat",
+  ])("accepts a successful captured patch: %s", (mode) => {
+    const observation = pinnedReadObservation(
+      `git diff ${mode} ${BASE} ${HEAD} -- pricing.py`,
+      PATCH_RESULT,
+    );
+    expect(() => {
+      assertPinnedCitations(observation, REPORT);
+    }).not.toThrow();
+  });
+  it.each([
     ["base", HEAD, HEAD],
     ["head", BASE, BASE],
   ])("rejects a captured patch at the wrong %s pin", (_side, base, head) => {
