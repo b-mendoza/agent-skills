@@ -140,6 +140,10 @@ describe("minimal card facts plus observed gate stops", () => {
         withCalls(good, [
           { name: "Bash", input: { command: "node scripts/check.mjs" } },
         ]),
+        withCalls(good, [{ name: "Bash", input: { command: "npm test" } }]),
+        withCalls(good, [
+          { name: "Bash", input: { command: "env CI=1 npm test" } },
+        ]),
       ]) {
         expect(gate(name).reply(bad)).toHaveProperty("gateNotReached");
       }

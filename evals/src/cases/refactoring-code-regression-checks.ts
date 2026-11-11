@@ -3,6 +3,7 @@ import { stripVTControlCharacters } from "node:util";
 
 import {
   assertGateStop,
+  runsRepoValidation,
   successfulIgnoreCheck,
 } from "#/cases/refactoring-code-gate-evidence.ts";
 import {
@@ -61,11 +62,35 @@ function writePath(
     : undefined;
 }
 
+function hasValidationExecution(command: string): boolean {
+  const unquoted = command.replace(/"(?:\\.|[^"\\])*"|'[^']*'/g, " ");
+  if (
+    runsRepoValidation(command) ||
+    /(?:node\s+scripts\/check\.mjs|node\s+--test|npm\s+test)/.test(unquoted)
+  ) {
+    return true;
+  }
+  // Keep quoted arguments intact so searches cannot masquerade as shells.
+  const words = command.match(/"(?:\\.|[^"\\])*"|'[^']*'|[^\s"';&|()]+/g) ?? [];
+  return words.some((word, index) => {
+    if (!["sh", "bash", "zsh"].includes(word)) return false;
+    const [, flag = "", payload = ""] = words.slice(index);
+    return [
+      /^-[a-z]+$/.test(flag),
+      flag.includes("c"),
+      /^["']/.test(payload),
+      hasValidationExecution(payload.slice(ONE, -ONE)),
+    ].every(Boolean);
+  });
+}
+
 function assertNoValidation(observation: Observation): void {
   assert.deepEqual(
-    findBashCalls(
-      observation,
-      /(?:node\s+scripts\/check\.mjs|node\s+--test|npm\s+test)/,
+    observation.toolCalls.filter(
+      (call) =>
+        call.name === "Bash" &&
+        typeof call.input["command"] === "string" &&
+        hasValidationExecution(call.input["command"]),
     ),
     [],
     "validation ran without approval",
