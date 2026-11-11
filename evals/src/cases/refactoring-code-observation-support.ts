@@ -1,4 +1,5 @@
 import {
+  ANALYSIS_FILES,
   BOUNDARY_FILES,
   HANDOFFS,
 } from "#/cases/refactoring-code-regression-fixtures.ts";
@@ -16,6 +17,47 @@ export const reviewerValidation = {
   },
   result: { content: "PASS\n", isError: false, truncated: false },
 };
+
+export function analysisObservation(
+  reportOverrides: Record<string, unknown> = {},
+): Observation {
+  const report = {
+    version: 1,
+    from: "chunk-analyst",
+    chunk: "reuse",
+    status: "PASS",
+    total_findings: 21,
+    omitted_count: 20,
+    omitted_high_priority: 0,
+    omitted_categories: ["normal duplicates 0-19"],
+    findings: [
+      {
+        location: "src/analyze.js:21",
+        problem: "criticalTail",
+        transformation: "reuse roundMoney",
+        reuse_rung: "reuse-repo",
+        reuse_evidence: "src/money.js",
+        net_lines: -1,
+        priority: "high",
+        confidence: "high",
+      },
+    ],
+    ...reportOverrides,
+  };
+  return createObservation({
+    toolCalls: [
+      { name: "Skill", input: { skill: "refactoring-code" } },
+      { name: "Bash", input: { command: "git show HEAD^:history.txt" } },
+    ],
+    repoFiles: {
+      ...ANALYSIS_FILES,
+      ".git/logs/HEAD": "baseline",
+      ".git/eval-baseline-reflog": "baseline",
+      [HANDOFFS]: "",
+      [`${HANDOFFS}run-one/analysis.json`]: JSON.stringify(report),
+    },
+  });
+}
 
 const WRAPPERS = Array.from(
   { length: 24 },
