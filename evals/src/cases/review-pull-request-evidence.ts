@@ -28,6 +28,7 @@ const METADATA_DIFF_OPTIONS = new Set([
   "--raw",
 ]);
 const PATCH_DIFF_OPTIONS = new Set([
+  "--binary",
   "--patch",
   "-p",
   "-u",
