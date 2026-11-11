@@ -1,4 +1,9 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { stripVTControlCharacters } from "node:util";
 
 import {
@@ -30,6 +35,13 @@ import type {
   TurnObservation,
 } from "#/observation/agent-query.ts";
 
+const REPORT_VALIDATOR = fileURLToPath(
+  new URL(
+    "../../../skills/refactoring-code/scripts/validate-report.py",
+    import.meta.url,
+  ),
+);
+const VALID_REPORT = 0;
 const SKILL = "refactoring-code";
 const FIRST = 0;
 const ONE = 1;
@@ -388,6 +400,26 @@ function assertFindingCounts(
   );
 }
 
+function assertAnalystSchema(payload: string): void {
+  const run = mkdtempSync(join(tmpdir(), "refactoring-code-analyst-"));
+  try {
+    const report = join(run, "analysis.json");
+    writeFileSync(report, payload);
+    const validation = spawnSync(
+      "python3",
+      ["-I", REPORT_VALIDATOR, "report", "chunk-analyst", report, run],
+      { encoding: "utf8" },
+    );
+    assert.equal(
+      validation.status,
+      VALID_REPORT,
+      `invalid analyst report: ${validation.stdout}${validation.stderr}`,
+    );
+  } finally {
+    rmSync(run, { recursive: true, force: true });
+  }
+}
+
 export function checkAnalysis(observation: Observation): string {
   checkPositiveRouting(observation, SKILL);
   assertRepositoryUnchanged(observation, ANALYSIS_FILES);
@@ -407,6 +439,7 @@ export function checkAnalysis(observation: Observation): string {
     Buffer.byteLength(report[ONE]) <= MAX_REPORT_BYTES,
     "unbounded planning input",
   );
+  assertAnalystSchema(report[ONE]);
   const parsed = record(JSON.parse(report[ONE]));
   const { findings } = parsed;
   assert.ok(Array.isArray(findings));
