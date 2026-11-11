@@ -104,7 +104,7 @@ function assertIgnoreProof(
 ): void {
   const proof = observation.toolCalls
     .slice(FIRST, index)
-    .find((call) => successfulIgnoreCheck(call, run));
+    .find((call) => successfulIgnoreCheck(observation, call, run));
   assert.ok(
     proof?.result !== undefined,
     "missing successful ignore proof before report write",

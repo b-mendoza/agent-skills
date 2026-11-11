@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { basename } from "node:path";
 
 import { HANDOFFS } from "#/cases/refactoring-code-regression-fixtures.ts";
-import { hasNodeTestOption } from "#/cases/shared-checks.ts";
+import {
+  fixtureRelativePath,
+  hasNodeTestOption,
+} from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { mutationEvidence } from "#/observation/mutation-evidence.ts";
 
@@ -20,12 +23,16 @@ function literalWords(text: string): string[] {
   );
 }
 
-function insideRun(path: string, run: string): boolean {
-  const normalized = path.replace(/^(?:\.\/)+/, "");
+function insideRun(
+  observation: Observation,
+  path: string,
+  run: string,
+): boolean {
+  if (path.includes("$")) return false;
+  const normalized = fixtureRelativePath(observation, path);
   const runPath = `${HANDOFFS}${run}`;
   return (
-    !normalized.split("/").includes("..") &&
-    !normalized.includes("$") &&
+    normalized !== undefined &&
     (normalized === runPath || normalized.startsWith(`${runPath}/`))
   );
 }
@@ -48,18 +55,18 @@ function variableValues(
 }
 
 function checkedOperand(
+  observation: Observation,
   operand: string,
-  prefix: string,
-  result: string,
+  context: { prefix: string; result: string },
   run: string,
 ): boolean {
-  if (!operand.includes("$")) return insideRun(operand, run);
+  if (!operand.includes("$")) return insideRun(observation, operand, run);
   const variable = /^\$(?:\w+|\{\w+\})/.exec(operand);
   if (variable === null) return false;
   const name = variable[FIRST].slice(ONE).replace(/[{}]/g, "");
   const suffix = operand.slice(variable[FIRST].length);
-  return variableValues(name, prefix, result).some((path) =>
-    insideRun(path + suffix, run),
+  return variableValues(name, context.prefix, context.result).some((path) =>
+    insideRun(observation, path + suffix, run),
   );
 }
 
@@ -102,6 +109,7 @@ function statusPreservingTail(parts: string[]): boolean {
 }
 
 function hasIgnoreProof(
+  observation: Observation,
   command: string,
   result: ToolCall["result"],
   run: string,
@@ -148,14 +156,23 @@ function hasIgnoreProof(
     // A prior OR can skip the check; later lists or ORs can mask its failure.
     if (prefix.some((token) => ["||", "|", "&"].includes(token))) return false;
     if (!statusPreservingTail(parts.slice(index + ONE))) return false;
-    return checkedOperand(operand, prefix.join(""), result.content, run);
+    return checkedOperand(
+      observation,
+      operand,
+      { prefix: prefix.join(""), result: result.content },
+      run,
+    );
   });
 }
 
-export function successfulIgnoreCheck(call: ToolCall, run: string): boolean {
+export function successfulIgnoreCheck(
+  observation: Observation,
+  call: ToolCall,
+  run: string,
+): boolean {
   const { command } = call.input;
   if (call.name !== "Bash" || typeof command !== "string") return false;
-  return hasIgnoreProof(command, call.result, run);
+  return hasIgnoreProof(observation, command, call.result, run);
 }
 
 export function allowedGatePath(path: string, allowEditedA: boolean): boolean {
