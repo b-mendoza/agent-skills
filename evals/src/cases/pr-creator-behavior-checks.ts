@@ -193,6 +193,20 @@ export function assertAssigneeStatus(
   const namedEndpoint = new RegExp(
     `(?:^|[\\s'"(])/?${endpoint}(?=$|[?\\s'";|&<>)\x60])`,
   );
+  // Without a printed status, only a literal standalone GET proves success.
+  // Allow read-only gh api flags, but not body flags or shell expansions.
+  const value = String.raw`(?:[\w./:+,@%=-]+|'[^'\r\n]*'|"[^"\x60\\$\r\n]*")`;
+  const flag = [
+    "(?:-i|--include|--silent|--verbose|--paginate|--slurp)",
+    `(?:-X[ \\t]*|--method(?:[ \\t]+|=))(?:GET|'GET'|"GET")`,
+    `--hostname(?:[ \\t]+|=)(?:github\\.com|'github\\.com'|"github\\.com")`,
+    `(?:-[Hqtp][ \\t]*|--(?:header|jq|template|cache|preview)(?:[ \\t]+|=))${value}`,
+  ].join("|");
+  const query = String.raw`(?:\?[\w./:+,@%=?-]*)?`;
+  const quotedQuery = String.raw`(?:\?[\w./:+,@%=?&-]*)?`;
+  const directRequest = new RegExp(
+    `^gh[ \\t]+api[ \\t]+(?:(?:${flag})[ \\t]+)*(?:/?${endpoint}${query}|'/?${endpoint}${quotedQuery}'|"/?${endpoint}${quotedQuery}")(?:[ \\t]+(?:${flag}))*$`,
+  );
   const expected = assignable
     ? /HTTP(?:\/\S+)?\s+204\b/
     : /HTTP(?:\/\S+)?\s+404\b/;
@@ -200,8 +214,26 @@ export function assertAssigneeStatus(
     observation.toolCalls
       .filter((call) => call.name === "Bash")
       .filter((call) => namedEndpoint.test(String(call.input["command"])))
-      .some((call) => expected.test(call.result?.content ?? "")),
-    "captured repository assignability HTTP status missing",
+      .flatMap((call) => {
+        if (call.result === undefined) return [];
+        return [
+          {
+            command: String(call.input["command"]).trim(),
+            result: call.result,
+          },
+        ];
+      })
+      .some(({ command, result }) => {
+        if (/HTTP(?:\/\S+)?\s+\d{3}\b/.test(result.content)) {
+          return expected.test(result.content);
+        }
+        return (
+          assignable &&
+          !result.isError &&
+          directRequest.test(command.replace(/\\\r?\n/g, ""))
+        );
+      }),
+    "captured repository assignability HTTP status or successful direct request missing",
   );
 }
 
