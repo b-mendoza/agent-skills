@@ -217,6 +217,17 @@ describe("per-finding duplicate search", () => {
       [SEARCH, PDF_SEARCH, PDF_SEARCH, PDF_SEARCH],
     ],
     [
+      "three queries for the PDF finding including plural wording",
+      [
+        SEARCH,
+        PDF_SEARCH,
+        PDF_SEARCH.map((arg) => arg.replace("PDF export", "PDFs reviewers")),
+        PDF_SEARCH.map((arg) =>
+          arg.replace("PDF export", "portable document format"),
+        ),
+      ],
+    ],
+    [
       "broad queries without PDF coverage",
       [SEARCH, SEARCH.map((arg) => arg.replace(" backup", " output format"))],
     ],
@@ -260,6 +271,21 @@ describe("per-finding duplicate search", () => {
       batchCase.check(withCalls(approvedObservation(), calls)),
     ).not.toThrow();
   });
+  test.each(["PDF export", "PDFs reviewers", "portable document format"])(
+    "accepts one backup query and one PDF query using %s",
+    (terms) => {
+      const calls = [
+        ...READ_PREFLIGHT,
+        CREATE_PREFLIGHT,
+        SEARCH,
+        PDF_SEARCH.map((arg) => arg.replace("PDF export", terms)),
+        ...CREATE_ARGS,
+      ];
+      expect(() =>
+        batchCase.check(withCalls(approvedObservation(), calls)),
+      ).not.toThrow();
+    },
+  );
   test("accepts relevant query variants and two queries per finding", () => {
     const overwrite = SEARCH.map((arg) =>
       arg === "generate-handoff-document backup"
