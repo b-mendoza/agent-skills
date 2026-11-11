@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate bounded refactor reports or choose a failure route; never mutate files."""
+"""Validate bounded refactor reports with nonempty evidence or route failures; read-only."""
 
 import json
 import pathlib
@@ -83,6 +83,11 @@ REQUIRED_FIELDS = {
         "Findings", "Required fixes", "Minor notes for handoff", "Risk notes",
     ),
 }
+PARENT_FIELDS = {
+    "behavior-mapper": {"Worktree baseline", "Validation candidates"},
+    "refactor-implementer": {"Validation evidence"},
+    "refactor-reviewer": {"Baseline scope check", "Simplification outcome"},
+}
 CONDITIONAL_FIELDS = {"ERROR": "Error detail", "BLOCKED": "Blocked reason", "NEEDS_CLARIFICATION": "Question if blocked"}
 
 
@@ -113,7 +118,9 @@ def text_status(role, text):
         # A section heading may contain only its subordinate named fields.
         start = re.search(r"^(?:- )?" + re.escape(name) + r":[ \t]*(.*)$", text, re.MULTILINE)
         remainder = text[start.end():].lstrip() if start else ""
-        require(bool(fields[name]) or remainder.startswith("- "), "empty field: " + name)
+        require(bool(fields[name]) or (
+            name in PARENT_FIELDS[role] and remainder.startswith("- ")
+        ), "empty field: " + name)
     for name in CONDITIONAL_FIELDS.values():
         if name in fields:
             require(bool(fields[name]), "empty field: " + name)

@@ -316,6 +316,70 @@ describe("every routed role validates required fields and status consistency", (
     },
   );
 
+  test.each([
+    ["Command"],
+    ["Coverage evidence"],
+    ["Command", "Coverage evidence"],
+  ])("implementer PASS rejects blank scalar evidence: %j", (...labels) => {
+    const report = ROLE_REPORTS[IMPLEMENTER_REPORT_INDEX];
+    const payload = labels.reduce<string>(
+      (text, label) =>
+        text.replace(new RegExp(`^- ${label}:.*$`, "m"), `- ${label}:   `),
+      report.text,
+    );
+    const result = checkReport(payload, report.role);
+    expect(result.status).toBe(FAILURE);
+    expect(result.stderr).toMatch(/empty field: (?:Command|Coverage evidence)/);
+  });
+
+  test.each([
+    ["indented sub-bullets", "  - tests/a.test.ts\n  - tests/b.test.ts"],
+    ["an indented line", "  12 tests in tests/a.test.ts"],
+  ])("implementer PASS accepts coverage evidence on %s", (_, evidence) => {
+    const report = ROLE_REPORTS[IMPLEMENTER_REPORT_INDEX];
+    const result = checkReport(
+      report.text.replace(
+        "- Coverage evidence: 1 test",
+        `- Coverage evidence:\n${evidence}`,
+      ),
+      report.role,
+    );
+    expect(result.status).toBe(SUCCESS);
+    expect(result.stdout.trim()).toBe("PASS");
+  });
+
+  test.each(["Command", "Coverage evidence"])(
+    "implementer PASS rejects not-run evidence in %s",
+    (label) => {
+      const report = ROLE_REPORTS[IMPLEMENTER_REPORT_INDEX];
+      const result = checkReport(
+        report.text.replace(
+          new RegExp(`^- ${label}:.*$`, "m"),
+          `- ${label}: not run`,
+        ),
+        report.role,
+      );
+      expect(result.status).toBe(FAILURE);
+      expect(result.stderr).toMatch(/PASS needs command and coverage/);
+    },
+  );
+
+  test("implementer warning path accepts explicit not-run evidence", () => {
+    const report = ROLE_REPORTS[IMPLEMENTER_REPORT_INDEX];
+    const payload = report.text
+      .replace("IMPLEMENTATION: PASS", "IMPLEMENTATION: PASS_WITH_WARNINGS")
+      .replace(
+        "Baseline checkpoint: pass",
+        "Baseline checkpoint: skipped (warning path)",
+      )
+      .replace("Command: node --test", "Command: not run")
+      .replace("Safety class: safe", "Safety class: warning path")
+      .replace("Exit code: 0", "Exit code: not run")
+      .replace("Coverage evidence: 1 test", "Coverage evidence: not run")
+      .replace("Result: pass", "Result: not run");
+    expect(checkReport(payload, report.role).status).toBe(SUCCESS);
+  });
+
   test.each(["safe", "state-mutating", "destructive"])(
     "implementer PASS accepts passing validation classed %s",
     (safety) => {
