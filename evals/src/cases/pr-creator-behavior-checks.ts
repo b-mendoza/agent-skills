@@ -185,14 +185,22 @@ export function assertAssigneeStatus(
   login: string,
   assignable: boolean,
 ): void {
-  const evidence = observation.toolCalls.filter((call) =>
-    String(call.input["command"]).includes(`/assignees/${login}`),
+  const endpoint =
+    `repos/${GITHUB_FACTS.repository}/assignees/${login}`.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      String.raw`\$&`,
+    );
+  const namedEndpoint = new RegExp(
+    `(?:^|[\\s'"(])/?${endpoint}(?=$|[?\\s'";|&<>)\x60])`,
   );
   const expected = assignable
     ? /HTTP(?:\/\S+)?\s+204\b/
     : /HTTP(?:\/\S+)?\s+404\b/;
   assert.ok(
-    evidence.some((call) => expected.test(call.result?.content ?? "")),
+    observation.toolCalls
+      .filter((call) => call.name === "Bash")
+      .filter((call) => namedEndpoint.test(String(call.input["command"])))
+      .some((call) => expected.test(call.result?.content ?? "")),
     "captured repository assignability HTTP status missing",
   );
 }
