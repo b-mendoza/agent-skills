@@ -258,6 +258,7 @@ describe("pinned read evidence", () => {
     ["--quiet", ""],
     ["--check", ""],
     ["--no-patch", ""],
+    ["--binary --no-patch", ""],
     ["-s", ""],
   ])("rejects a captured metadata-only or silent diff: %s", (mode, content) => {
     const observation = pinnedReadObservation(
@@ -273,6 +274,7 @@ describe("pinned read evidence", () => {
     "--name-only",
     "--quiet",
     "--patch --no-patch",
+    "--binary --no-patch",
     "-p -s",
     "-U3 --no-patch",
     "-U 3 --no-patch",
@@ -292,6 +294,8 @@ describe("pinned read evidence", () => {
     "--patch",
     "--patch --stat",
     "--stat --patch",
+    "--stat --binary",
+    "--no-patch --binary",
     "--no-patch --patch",
     "-s -p",
     "--stat -U3",
