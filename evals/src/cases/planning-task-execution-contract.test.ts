@@ -88,6 +88,64 @@ describe("execution-plan action boundary", () => {
     expect(result.status).toBe(SUCCESS);
   });
   test.each([
+    'Use a 5" margin and commit the changes, then print "done".',
+    'Set the width to 12" and push the branch to origin; the height stays 8".',
+    "Run the `build and commit the changes` step.",
+    "Set `a and commit the changes; set `b.",
+    "Run `npm run build and commit the changes`.",
+    "Run `make test; then push the branch to origin`.",
+    'Add the note "run tests and commit the changes when done" to the README.',
+    "Mark it 'done and commit the changes' in the log.",
+    'Print "building; then commit the changes" and exit.',
+    'Use the title "Stage and commit changes" for the section.',
+    'Tell the user to "commit and push when ready".',
+  ])("does not mask directives outside Git command operands: %s", (payload) => {
+    const result = validate("plan", `${payload}\n`);
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toContain("action outside the execution boundary");
+  });
+  test.each([
+    'Add the note "git status" and commit the changes, then print "done".',
+    "Run `build and commit the changes; git status`.",
+    'Inspect `git status`; print "done and commit the changes".',
+  ])("keeps directives outside a Git operand scope visible: %s", (payload) => {
+    const result = validate("plan", `${payload}\n`);
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toContain("action outside the execution boundary");
+  });
+  test.each([
+    'Inspect `git log --grep="timeout and retry" --oneline`.',
+    'Inspect `git diff -- "before and after.txt"`.',
+    'Inspect git log --grep="timeout and retry" --oneline.',
+    "Inspect git diff -- 'before and after.txt'.",
+    'Inspect `git log --grep="timeout; then retry but stop" --oneline`.',
+    "Inspect `git diff -- before and commit then push but reset`.",
+    'Inspect `git log --grep="timeout retry" --oneline`.',
+    'Inspect `git log --grep="git commit and git push" --oneline`.',
+    'Inspect `git log --grep="say \\"retry and stop\\" then wait" --oneline`.',
+    "Don't run `git commit -m fix`; inspect `git status`.",
+  ])("accepts read-only Git operands without splitting them: %s", (payload) => {
+    const result = validate("plan", `${payload}\n`);
+    expect(result.stdout.trim()).toBe("VALID");
+    expect(result.status).toBe(SUCCESS);
+  });
+  test.each([
+    ['Run `git commit -m "fix this and that"`.', "commit"],
+    ["Run `git commit -m 'fix this; then that but stop'`.", "commit"],
+    ["Run `git status` and `git push origin main`.", "push"],
+    ["Run `git status; git push origin main`.", "push"],
+    ["Run `git status and git push origin main`.", "push"],
+    ["Run `git status AND RUN git push origin main`.", "push"],
+    ["Don't run `git status`; run `git push origin main`.", "push"],
+  ])("identifies the forbidden Git command intact: %s", (payload, command) => {
+    const result = validate("plan", `${payload}\n`);
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toContain(
+      `git ${command} is outside the execution boundary`,
+    );
+    expect(result.stdout).not.toContain("unparseable");
+  });
+  test.each([
     "4. Stage the changed source and commit the implementation.",
     "4. Commit the changes once tests pass.",
     "4. Run `git add src/timeout.js && git commit -m fix`.",
