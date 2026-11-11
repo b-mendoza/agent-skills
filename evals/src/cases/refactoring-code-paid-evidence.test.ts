@@ -130,6 +130,99 @@ test("analyst repeat 1 variable-bound ignore proof requires captured success, al
   }
 });
 
+describe("ignore-check exit-status evidence", () => {
+  const runPath = `${HANDOFFS}run-a`;
+  function observationFor(command: string, content = "ignored"): Observation {
+    return createObservation({
+      repoFiles: { [HANDOFFS]: "", [`${runPath}/report.txt`]: "report" },
+      toolCalls: [
+        {
+          name: "Bash",
+          input: { command },
+          result: { content, isError: false, truncated: false },
+        },
+        { name: "Write", input: { file_path: `${runPath}/report.txt` } },
+      ],
+    });
+  }
+
+  test.each([
+    `git check-ignore -q -- ${runPath}/probe`,
+    `git check-ignore -q -- ./${runPath}/probe`,
+    `git check-ignore -q -- ././${runPath}/probe`,
+    `git check-ignore -q -- "./\\\n${runPath}/probe"`,
+    `git check-ignore -q -- ${runPath}/probe &&\n  printf done`,
+    `git check-ignore -q -- ${runPath}/probe && \t\n  printf done`,
+    `git check-ignore -q -- ${runPath}/probe && \\\n  printf done`,
+    `git check-ignore -q -- ${runPath}/probe 2>"/dev/null" && echo ignored`,
+    `git check-ignore -q -- ${runPath}/probe 2>'/dev/null' && echo ignored`,
+    `git check-ignore -q -- ${runPath}/probe >>/dev/null && echo ignored`,
+    `git check-ignore -q -- ${runPath}/probe >>"/dev/null" && echo ignored`,
+    `git check-ignore -q -- ${runPath}/probe >>'/dev/null' && echo ignored`,
+    `printf ready >>"/dev/null" && git check-ignore -q -- ${runPath}/probe`,
+    `git check-ignore -q -- ${runPath}/probe && echo ignored >>'/dev/null'`,
+    `git check-ignore -q -- ${runPath}/probe && printf done`,
+    `git check-ignore -q -- ${runPath}/probe && echo ignored`,
+    `git check-ignore -q -- ${runPath}/probe 2>/dev/null && echo ignored`,
+    `git check-ignore -q -- ${runPath}/probe >/dev/null 2>&1 && echo ignored`,
+    `git check-ignore -v -- ${runPath}/probe 2>&1`,
+    `printf ready >/dev/null 2>&1 && git check-ignore -q -- ${runPath}/probe`,
+    `git check-ignore -q -- ${runPath}/probe && echo ignored >/dev/null 2>&1`,
+    `printf ready; git check-ignore -q -- ${runPath}/probe && printf done`,
+    `git check-ignore -q -- ${runPath}/probe;`,
+    `git check-ignore -q -- '${runPath}/probe;literal' && printf 'done; still safe'`,
+  ])("credits a successful status-preserving check: %s", (command) => {
+    expect(() => {
+      assertOwnedReports(observationFor(command));
+    }).not.toThrow();
+  });
+
+  test.each([
+    `git check-ignore --bad-option ${runPath}/probe; printf done`,
+    `git check-ignore -q -- './\\\n${runPath}/probe'`,
+    `git check-ignore --bad-option ${runPath}/probe\nprintf done`,
+    `git check-ignore -q -- ${runPath}/probe &`,
+    `git check-ignore -q -- ${runPath}/probe 2>"proof.log" && echo ignored`,
+    `git check-ignore -q -- ${runPath}/probe >>'/dev/null.log' && echo ignored`,
+    `git check-ignore -q -- ${runPath}/probe <"/dev/null" && echo ignored`,
+    `git check-ignore -q -- ${runPath}/probe &&\n  printf done; printf masked`,
+    `echo 'git check-ignore -q -- ${runPath}/probe 2>"/dev/null" && ignored'`,
+    `git check-ignore -q -- ${runPath}/probe; echo "exit=$?"`,
+    `git check-ignore -q -- ${runPath}/probe >proof.log`,
+    `git check-ignore -q -- ${runPath}/probe </dev/null`,
+    `printf ready >proof.log && git check-ignore -q -- ${runPath}/probe`,
+    `printf ready </dev/null && git check-ignore -q -- ${runPath}/probe`,
+    `git check-ignore -q -- ${runPath}/probe && echo ignored >proof.log`,
+    `git check-ignore -q -- ${runPath}/probe && echo ignored </dev/null`,
+    `git check-ignore -q -- ${runPath}/probe 2>&1 & printf done`,
+    `git check-ignore -q -- ${runPath}/probe 2>&1 | cat`,
+    `git check-ignore -q -- ${runPath}2>/dev/null`,
+    `git check-ignore -q -- "${runPath}"2>/dev/null`,
+    `git check-ignore -q -- '${runPath}'2>/dev/null`,
+    `printf 'git check-ignore -q -- ${runPath}/probe 2>&1'`,
+    `git check-ignore -q -- ${runPath}/probe\nprintf done`,
+    `git check-ignore -q -- ${runPath}/probe && printf done; printf masked`,
+    `git check-ignore -q -- ${runPath}/probe || printf done`,
+    `git check-ignore -q -- ${runPath}/probe | cat`,
+    `git check-ignore -q -- ${runPath}/probe & printf done`,
+    `! git check-ignore -q -- ${runPath}/probe`,
+    `true || git check-ignore -q -- ${runPath}/probe`,
+    `true || git check-ignore -q -- ${runPath}/probe && printf done`,
+    `printf 'RD=${runPath}'; git check-ignore -q -- "$RD/probe"`,
+    `RD=${runPath} printf done; git check-ignore -q -- "$RD/probe"`,
+    `printf 'git check-ignore -q -- ${runPath}/probe'`,
+    `printf '${runPath}'; git check-ignore -q -- ${runPath}-old/probe`,
+    `git check-ignore -q -- ${runPath}-old/probe && printf '${runPath}'`,
+    `git check-ignore -q -- ${runPath}/../other/probe`,
+    `git check-ignore -q -- ${runPath}/probe ${HANDOFFS}other/probe`,
+    `RD=${runPath}-old; git check-ignore -q -- "$RD/probe" && printf '${runPath}'`,
+  ])("rejects masked or unrelated check evidence: %s", (command) => {
+    expect(() => {
+      assertOwnedReports(observationFor(command));
+    }).toThrow("missing successful ignore proof before report write");
+  });
+});
+
 describe.each(["command", "result"] as const)(
   "ignore proof run-path boundaries in the %s",
   (source) => {
@@ -178,6 +271,10 @@ describe.each(["command", "result"] as const)(
         label: "a descendant path",
         text: `git check-ignore -q -- ${runPath}/probe`,
       },
+      {
+        label: "a quote-concatenated descendant",
+        text: `git check-ignore -q -- '${HANDOFFS}'"${run}"/probe`,
+      },
     ])("accepts $label", ({ text }) => {
       expect(() => {
         assertOwnedReports(observationFor(text));
@@ -196,6 +293,14 @@ describe.each(["command", "result"] as const)(
       {
         label: "a longer ID ending in a digit",
         text: `git check-ignore -q -- ${runPath}2/probe`,
+      },
+      {
+        label: "a double-quoted prefix concatenated with another run suffix",
+        text: `git check-ignore -q -- "${runPath}"-old/probe`,
+      },
+      {
+        label: "a single-quoted prefix concatenated with another run suffix",
+        text: `git check-ignore -q -- '${runPath}'-old/probe`,
       },
     ])("rejects $label", ({ text }) => {
       expect(() => {
