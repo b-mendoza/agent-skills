@@ -5,6 +5,7 @@ import {
   approvalReply,
   assertPinnedCitations,
 } from "#/cases/review-pull-request-checks.ts";
+import type { ToolCall } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 const SHA_LENGTH = 40;
@@ -175,7 +176,102 @@ describe("review approval evidence", () => {
 
 const REPORT = `Reviewed base: ${BASE}\nReviewed head: ${HEAD}\nAnchor: pricing.py:3 RIGHT\n\nCode: [pricing](https://github.com/eval-org/cart/blob/${HEAD}/pricing.py#L3)\n\nExact body:\n\n[Guard](https://github.com/eval-org/cart/blob/${HEAD}/pricing.py#L3) divides by zero.\n\n## End`;
 
+const PATCH_RESULT = {
+  content: `diff --git a/pricing.py b/pricing.py
+--- a/pricing.py
++++ b/pricing.py
+@@ -1,5 +1,3 @@
+ def unit_price(total, count):
+     """Return zero for an empty cart."""
+-    if count == 0:
+-        return 0
+     return total / count
+`,
+  isError: false,
+  truncated: false,
+};
+
+function pinnedReadObservation(command: string, result: ToolCall["result"]) {
+  return createObservation({
+    toolCalls: [{ name: "Bash", input: { command }, result }],
+  });
+}
+
 describe("pinned read evidence", () => {
+  it.each([
+    { label: "successful", content: "On branch main\n", isError: false },
+    { label: "empty", content: "", isError: false },
+    { label: "failed", content: "fatal: not a git repository", isError: true },
+  ])(
+    "rejects a result-less pinned diff when another Bash result is $label",
+    (result) => {
+      const observation = pinnedReadObservation(
+        `git diff ${BASE} ${HEAD} -- pricing.py`,
+        undefined,
+      );
+      observation.toolCalls.push({
+        name: "Bash",
+        input: { command: "git status" },
+        result: { ...result, truncated: false },
+      });
+      expect(() => {
+        assertPinnedCitations(observation, REPORT);
+      }).toThrow(/pinned reads/);
+    },
+  );
+  it.each([
+    { label: "no Bash results", result: undefined },
+    { label: "a captured patch", result: PATCH_RESULT },
+  ])(
+    "accepts a pinned diff with $label and an uncaptured status call",
+    ({ result }) => {
+      const observation = pinnedReadObservation(
+        `git diff ${BASE} ${HEAD} -- pricing.py`,
+        result,
+      );
+      observation.toolCalls.push({
+        name: "Bash",
+        input: { command: "git status" },
+      });
+      expect(() => {
+        assertPinnedCitations(observation, REPORT);
+      }).not.toThrow();
+    },
+  );
+  it.each([
+    ["base", HEAD, HEAD],
+    ["head", BASE, BASE],
+  ])("rejects a captured patch at the wrong %s pin", (_side, base, head) => {
+    const observation = pinnedReadObservation(
+      `git diff ${base} ${head} -- pricing.py`,
+      PATCH_RESULT,
+    );
+    expect(() => {
+      assertPinnedCitations(observation, REPORT);
+    }).toThrow(/pinned reads/);
+  });
+  it.each([
+    { label: "empty", content: "", isError: false },
+    { label: "whitespace-only", content: "\n ", isError: false },
+    { label: "failed", content: "fatal: bad object", isError: true },
+  ])("rejects a captured $label diff result", ({ content, isError }) => {
+    const observation = pinnedReadObservation(
+      `git diff ${BASE} ${HEAD} -- pricing.py`,
+      { content, isError, truncated: false },
+    );
+    expect(() => {
+      assertPinnedCitations(observation, REPORT);
+    }).toThrow(/pinned reads/);
+  });
+  it("preserves result-less pinned diffs for the historical run-1 replay", () => {
+    const observation = pinnedReadObservation(
+      `git diff ${BASE} ${HEAD} -- pricing.py`,
+      undefined,
+    );
+    expect(() => {
+      assertPinnedCitations(observation, REPORT);
+    }).not.toThrow();
+  });
   it("rejects SHAs echoed after git status", () => {
     expect(() => {
       assertPinnedCitations(
