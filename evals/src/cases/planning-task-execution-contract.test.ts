@@ -143,6 +143,39 @@ describe("Git directives versus product objects and safety clauses", () => {
     expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
   });
   test.each([
+    "Do not stage and commit changes.",
+    "Do not run git add and git commit.",
+    "Never commit and push.",
+    "Do not stage and commit changes and push.",
+    "Do not run `git add src/a.ts` and `git commit -m fix`.",
+    "Do not run git add . and git commit --amend and git push origin main.",
+    "Never stage and never commit.",
+  ])("accepts a shared prohibition: %s", (payload) => {
+    const result = validate("plan", `${payload}\n`);
+    expect(result.status).toBe(SUCCESS);
+    expect(result.stdout.trim()).toBe("VALID");
+  });
+  test.each([
+    "Do not stage and run git add src/a.ts.",
+    "Never commit and then push.",
+    "Never commit and finally push.",
+    "Do not commit but push.",
+    "Do not commit; push.",
+    "Do not commit, and push.",
+    "Do not commit changes and push.",
+    "Do not run git add . and push.",
+    "Do not stage and validate the changes and push.",
+    "Never commit. Push origin main.",
+    "Never commit.\nPush origin main.",
+  ])(
+    "rejects an independent or ambiguous positive directive: %s",
+    (payload) => {
+      const result = validate("plan", `${payload}\n`);
+      expect(result.status).toBe(BLOCKED);
+      expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
+    },
+  );
+  test.each([
     "Commit the database transaction.",
     "Reset the retry counter to zero after a successful request.",
     "Push the validated item onto the in-memory queue.",
@@ -226,7 +259,6 @@ describe("Git directives versus product objects and safety clauses", () => {
     "Do not commit but run git add src/a.ts.",
     "Stage the fixture rows; commit the changes.",
     "Stage the fixture rows, and commit the changes.",
-    "Do not run git add . and push.",
   ])("rejects the Git directive: %s", (payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(BLOCKED);

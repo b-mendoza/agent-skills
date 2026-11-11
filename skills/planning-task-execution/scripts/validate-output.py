@@ -7,7 +7,9 @@ plan lexically checks executable clauses for Git staging/history/publication wor
 Objects are distinguished by their head/context, including named branches with
 origin/upstream or Git-reference destinations, bare origin/upstream refspecs for
 push, and option-leading mutations. Rebase/cherry-pick and bare publication/file
-actions stay conservative. Prohibitions are clause-local.
+actions stay conservative. Shared prohibitions cover plain 'and'
+lists headed by a bare action or a Git command; comma-and, ordering cues and fresh
+'run' directives end their scope. Other continuations stay conservative.
 Equivalent instructions outside the recognized wording need semantic review.
 Uppercase modes validate the exact one-line-field handoff before routing.
 Exit: 0 valid, 1 contract findings (repair), 2 usage error (ERROR).
@@ -49,9 +51,10 @@ CHANGE_TARGET = re.compile(
 # Message-bearing commits and counted/adjectival commit creation cover #123.
 COMMIT_MESSAGE = re.compile(r"^(?:(?:with|using)\b.*\bmessage\b|-m(?:\s|=|$))", re.I)
 CREATED_COMMIT = re.compile(r"^(?:[\w-]+\s+){0,3}commit" + HEAD_END, re.I)
-# Boundaries end the scope of a prohibition or an earlier action's object.
-CLAUSE_SEPARATOR = re.compile(r";\s*|,?\s+\b(?:and|then|but)\b\s*", re.I)
+# Preserve separators so only plain 'and' can carry a shared prohibition.
+CLAUSE_SEPARATOR = re.compile(r"(;\s*|,?\s+\b(?:and|then|but)\b\s*)", re.I)
 PROHIBITION = re.compile(r"^(?:do not|don't|never|must not|no)\b", re.I)
+DIRECTIVE = re.compile(r"^(stage|commit|push|rebase|cherry-pick|reset|rewrite|create|make)\b(.*)", re.I)
 
 
 def is_git_action(action, target, product_antecedent):
@@ -122,14 +125,34 @@ def action_findings(payload):
         # A standalone '.' can be a Git path operand, not a sentence ending.
         for sentence in re.split(r"(?<=\S[.!?])\s+(?!or\b)", line, flags=re.I):
             product_antecedent = False
-            for clause in CLAUSE_SEPARATOR.split(sentence):
-                clause = clause.strip()
+            shared_prohibition = None
+            clauses = CLAUSE_SEPARATOR.split(sentence)
+            for index in range(0, len(clauses), 2):
+                clause = clauses[index].strip()
+                separator = clauses[index - 1].strip().lower() if index else ""
+                if separator == "and" and (
+                    (shared_prohibition == "action" and DIRECTIVE.match(clause))
+                    or (shared_prohibition == "command" and re.match(r"`?git\s+", clause, re.I))
+                ):
+                    continue
+                shared_prohibition = None
                 # Conditions and ordering adverbs must not hide a directive.
                 clause = re.sub(r"(?i)^(?:once|after|when|if)\b[^,]*,\s*", "", clause)
                 clause = re.sub(r"(?i)^(?:(?:then|finally|next|afterwards)\b[,\s]*)+", "", clause)
-                if not clause or PROHIBITION.match(clause):
+                if not clause:
                     continue
-                directive = re.match(r"(?i)^(stage|commit|push|rebase|cherry-pick|reset|rewrite|create|make)\b(.*)", clause)
+                prohibition = PROHIBITION.match(clause)
+                if prohibition:
+                    prohibited = clause[prohibition.end():].strip()
+                    directive = DIRECTIVE.match(prohibited)
+                    # An object completes a clause; carrying its negation into
+                    # another action would hide an ambiguous positive directive.
+                    if directive and not directive[2].strip(".,;:!? "):
+                        shared_prohibition = "action"
+                    elif re.match(r"(?:run\s+)?`?git\s+", prohibited, re.I):
+                        shared_prohibition = "command"
+                    continue
+                directive = DIRECTIVE.match(clause)
                 if directive and is_git_action(directive[1].lower(), directive[2], product_antecedent):
                     findings.append(f"line {n}: action outside the execution boundary")
                     continue
