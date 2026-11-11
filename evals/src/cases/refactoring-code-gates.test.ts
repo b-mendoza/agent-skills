@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import type { FollowUpTurn } from "#/cases/case-contract.ts";
+import { assertGateStop } from "#/cases/refactoring-code-gate-evidence.ts";
 import {
   boundaryFollowUps,
   lifecycleFollowUps,
@@ -201,6 +202,22 @@ describe("minimal card facts plus observed gate stops", () => {
         observed(initial, false, [{ name: "Bash", input: { command } }]),
       ),
     ).toHaveProperty("reply");
+  });
+
+  test("gate permits macOS sed in-place edits of its own plan", () => {
+    expect(() => {
+      assertGateStop(
+        observed(initial, false, [
+          {
+            name: "Bash",
+            input: {
+              command:
+                "sed -i '' 's/a/b/' .handoffs/refactoring-code/run-one/plan.md",
+            },
+          },
+        ]),
+      );
+    }).not.toThrow();
   });
 
   test("gate allows only run-local report writes before approval", () => {

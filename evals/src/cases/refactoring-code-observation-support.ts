@@ -73,7 +73,6 @@ export function boundaryObservation(): Observation {
     },
     toolCalls: [
       { name: "Skill", input: { skill: "refactoring-code" } },
-      reviewerValidation,
       {
         name: "Bash",
         input: { command: "node --test boundary.test.js" },
@@ -83,6 +82,7 @@ export function boundaryObservation(): Observation {
           truncated: false,
         },
       },
+      reviewerValidation,
     ],
     repoFiles: {
       ...BOUNDARY_FILES,
