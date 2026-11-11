@@ -53,6 +53,9 @@ COMMIT_MESSAGE = re.compile(r"^(?:(?:with|using)\b.*\bmessage\b|-m(?:\s|=|$))", 
 CREATED_COMMIT = re.compile(r"^(?:[\w-]+\s+){0,3}commit" + HEAD_END, re.I)
 # Preserve separators so only plain 'and' can carry a shared prohibition.
 CLAUSE_SEPARATOR = re.compile(r"(;\s*|,?\s+\b(?:and|then|but)\b\s*)", re.I)
+QUOTED_OPERAND = re.compile(r"\"(?:\\.|[^\"\\])*\"|'[^']*'")
+# Code spans bound command operands; prose outside them is a separate scope.
+COMMAND_SCOPE = re.compile(r"`[^`]*`|[^`]+")
 PROHIBITION = re.compile(r"^(?:do not|don't|never|must not|no)\b", re.I)
 DIRECTIVE = re.compile(r"^(stage|commit|push|rebase|cherry-pick|reset|rewrite|create|make)\b(.*)", re.I)
 
@@ -98,12 +101,49 @@ def is_git_action(action, target, product_antecedent):
     return bool(CHANGE_TARGET.match(target))
 
 
+def split_clauses(sentence):
+    # Protect only operands following a Git head, never unrelated prose.
+    visible = sentence
+    for scope in COMMAND_SCOPE.finditer(sentence):
+        command = re.search(r"\bgit\s+", scope[0])
+        if not command:
+            continue
+        start = scope.start() + command.end()
+        operands = sentence[start:scope.end()]
+        if scope[0].startswith("`"):
+            protected = "x" * len(operands)
+        else:
+            # Match quotes in the whole scope so a closing quote from earlier
+            # prose cannot be mistaken for the start of a command operand.
+            protected = QUOTED_OPERAND.sub(
+                lambda quote: "x" * len(quote[0]) if quote.start() >= command.end() else quote[0],
+                scope[0],
+            )[command.end():]
+        visible = visible[:start] + protected + visible[scope.end():]
+    clauses = []
+    start = 0
+    for separator in CLAUSE_SEPARATOR.finditer(visible):
+        clauses.extend([sentence[start:separator.start()], sentence[separator.start():separator.end()]])
+        start = separator.end()
+    clauses.append(sentence[start:])
+    return clauses
+
+
 def command_findings(clause, line_number):
     findings = []
     # Keep explicit Git-command checks independent of natural-language objects.
+    command_arguments = []
     for match in re.finditer(r"\bgit\s+([^`\n]+)", clause):
+        arguments = match[1]
+        command_arguments.append(arguments)
+        # A code span may contain several commands. Quoted operands must not
+        # introduce another command, even when they contain words like "git push".
+        visible = QUOTED_OPERAND.sub(lambda quote: "x" * len(quote[0]), arguments)
+        for command in re.finditer(r"(?:[;&|]|\b(?i:and|then|but)\b)\s*(?i:run\s+)?git\s+", visible):
+            command_arguments.append(arguments[command.end():])
+    for arguments in command_arguments:
         try:
-            tokens = shlex.split(match.group(1))
+            tokens = shlex.split(arguments)
         except ValueError:
             findings.append(f"line {line_number}: unparseable git command outside the execution boundary")
             continue
@@ -126,7 +166,7 @@ def action_findings(payload):
         for sentence in re.split(r"(?<=\S[.!?])\s+(?!or\b)", line, flags=re.I):
             product_antecedent = False
             shared_prohibition = None
-            clauses = CLAUSE_SEPARATOR.split(sentence)
+            clauses = split_clauses(sentence)
             for index in range(0, len(clauses), 2):
                 clause = clauses[index].strip()
                 separator = clauses[index - 1].strip().lower() if index else ""
