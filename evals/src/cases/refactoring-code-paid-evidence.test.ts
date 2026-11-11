@@ -7,6 +7,7 @@ import {
 import { assertOwnedReports } from "#/cases/refactoring-code-regression-checks.ts";
 import { HANDOFFS } from "#/cases/refactoring-code-regression-fixtures.ts";
 import { getCase } from "#/cases/registry.ts";
+import { FIXTURE_ROOT_PATH } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
@@ -222,6 +223,45 @@ describe("ignore-check exit-status evidence", () => {
     }).toThrow("missing successful ignore proof before report write");
   });
 });
+
+function absoluteIgnoreObservation(root: string): Observation {
+  const path = `${HANDOFFS}run-one/report.txt`;
+  return createObservation({
+    repoFiles: {
+      [FIXTURE_ROOT_PATH]: "/fixture/repo\n/canonical/fixture/repo",
+      [HANDOFFS]: "",
+      [path]: "report",
+    },
+    toolCalls: [
+      {
+        name: "Bash",
+        input: {
+          command: `git check-ignore --quiet --no-index -- ${root}/${HANDOFFS}run-one/probe`,
+        },
+        result: { content: "", isError: false, truncated: false },
+      },
+      { name: "Write", input: { file_path: `/fixture/repo/${path}` } },
+    ],
+  });
+}
+
+test.each(["/fixture/repo", "/canonical/fixture/repo"])(
+  "accepts absolute ignore proof inside recorded root %s",
+  (root) => {
+    expect(() => {
+      assertOwnedReports(absoluteIgnoreObservation(root));
+    }).not.toThrow();
+  },
+);
+
+test.each(["/outside/repo", "/fixture/repo/../repo", "/fixture/repo/$UNKNOWN"])(
+  "rejects absolute ignore proof outside literal fixture bounds: %s",
+  (root) => {
+    expect(() => {
+      assertOwnedReports(absoluteIgnoreObservation(root));
+    }).toThrow("missing successful ignore proof before report write");
+  },
+);
 
 describe.each(["command", "result"] as const)(
   "ignore proof run-path boundaries in the %s",
