@@ -93,6 +93,20 @@ function validObservation() {
       {
         name: "Bash",
         input: { command: `git diff ${BASE} ${HEAD} -- pricing.py` },
+        result: {
+          content: `diff --git a/pricing.py b/pricing.py
+--- a/pricing.py
++++ b/pricing.py
+@@ -1,5 +1,3 @@
+ def unit_price(total, count):
+     """Return zero for an empty cart."""
+-    if count == 0:
+-        return 0
+     return total / count
+`,
+          isError: false,
+          truncated: false,
+        },
       },
     ],
     repoFiles: {

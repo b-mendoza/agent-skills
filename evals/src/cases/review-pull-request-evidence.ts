@@ -108,8 +108,20 @@ export function assertPinnedReads(
   base: string,
   head: string,
 ): void {
-  const commands = observation.toolCalls
-    .filter((call) => call.name === "Bash" && call.result?.isError !== true)
+  const bashCalls = observation.toolCalls.filter(
+    (call) => call.name === "Bash",
+  );
+  const hasCapturedResults = bashCalls.some(
+    (call) => call.result !== undefined,
+  );
+  // Run-1 compatibility applies only when no Bash call has a captured result.
+  // Once capture is observed, each pinned read needs a successful, nonempty result.
+  const commands = bashCalls
+    .filter((call) =>
+      call.result === undefined
+        ? !hasCapturedResults
+        : !call.result.isError && call.result.content.trim() !== "",
+    )
     .flatMap((call) => pinnedShellCommands(String(call.input["command"])));
   const citations = report.matchAll(
     /https:\/\/github\.com\/eval-org\/cart\/blob\/[a-f0-9]{40}\/[^\s)#]+#L\d+/g,
