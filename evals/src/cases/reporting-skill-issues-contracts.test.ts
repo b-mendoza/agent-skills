@@ -286,6 +286,22 @@ describe("per-finding duplicate search", () => {
       ).not.toThrow();
     },
   );
+  test("accepts overwrote as the only focused query for the first finding", () => {
+    const calls = [
+      ...READ_PREFLIGHT,
+      CREATE_PREFLIGHT,
+      SEARCH.map((arg) =>
+        arg === "generate-handoff-document backup"
+          ? "generate-handoff-document overwrote"
+          : arg,
+      ),
+      PDF_SEARCH,
+      ...CREATE_ARGS,
+    ];
+    expect(() =>
+      batchCase.check(withCalls(approvedObservation(), calls)),
+    ).not.toThrow();
+  });
   test("accepts relevant query variants and two queries per finding", () => {
     const overwrite = SEARCH.map((arg) =>
       arg === "generate-handoff-document backup"
