@@ -4,12 +4,12 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { stripVTControlCharacters } from "node:util";
 
 import {
   assertGateStop,
   runsRepoValidation,
   successfulIgnoreCheck,
+  writePath,
 } from "#/cases/refactoring-code-gate-evidence.ts";
 import {
   ANALYSIS_FILES,
@@ -21,17 +21,19 @@ import {
   SIMPLE_SOURCE,
 } from "#/cases/refactoring-code-regression-fixtures.ts";
 import {
+  assertBoundaryValidation,
+  assertReviewerEvidence,
+} from "#/cases/refactoring-code-validation-evidence.ts";
+import {
   assertFilesUnchanged,
   assertHeadUnchanged,
   capturedFilesUnder,
   capturedText,
   checkPositiveRouting,
   findBashCalls,
-  fixtureRelativePath,
 } from "#/cases/shared-checks.ts";
 import type {
   Observation,
-  ToolCall,
   TurnObservation,
 } from "#/observation/agent-query.ts";
 
@@ -53,25 +55,11 @@ const MAX_REPORT_BYTES = 12_288;
 const MAX_FINDINGS = 12;
 const EXPECTED_FINDINGS = 21;
 const SIZE_LIMIT = 40;
-const BOUNDARY_TESTS = 5;
-const NO_FAILURES = 0;
-const LAST_SUMMARY = -1;
 
 function sourceWrites(observation: Observation, path: string): boolean {
   return observation.toolCalls.some(
     (call) => writePath(call, observation) === path,
   );
-}
-
-function writePath(
-  call: ToolCall,
-  observation: Observation,
-): string | undefined {
-  if (!["Write", "Edit"].includes(call.name)) return undefined;
-  const target = call.input["file_path"];
-  return typeof target === "string"
-    ? fixtureRelativePath(observation, target)
-    : undefined;
 }
 
 function hasValidationExecution(command: string): boolean {
@@ -275,48 +263,6 @@ function assertBoundaryPreview(observation: Observation): void {
   });
 }
 
-function lastNumericEvidence(
-  output: string,
-  pattern: RegExp,
-): number | undefined {
-  const last = [...output.matchAll(pattern)].at(LAST_SUMMARY);
-  return last === undefined ? undefined : Number(last.groups?.["count"]);
-}
-
-function summaryCount(output: string, field: string): number | undefined {
-  return lastNumericEvidence(
-    output,
-    new RegExp(`^[#ℹ]\\s+${field} (?<count>\\d+)\\b`, "gm"),
-  );
-}
-
-function successfulBoundaryCheck(call: ToolCall): boolean {
-  if (call.result === undefined || call.result.isError) return false;
-  const output = stripVTControlCharacters(call.result.content);
-  const exit = lastNumericEvidence(output, /^exit=(?<count>-?\d+)\s*$/gm);
-  return [
-    summaryCount(output, "tests") === BOUNDARY_TESTS,
-    summaryCount(output, "pass") === BOUNDARY_TESTS,
-    summaryCount(output, "fail") === NO_FAILURES,
-    exit === undefined || exit === NO_FAILURES,
-  ].every(Boolean);
-}
-
-function successfulReviewerValidation(call: ToolCall): boolean {
-  if (call.result === undefined || call.result.isError) return false;
-  return /^PASS\s*$/m.test(call.result.content);
-}
-
-function assertReviewerEvidence(observation: Observation): void {
-  assert.ok(
-    findBashCalls(
-      observation,
-      /validate-report\.py["']?\s+report\s+["']?refactor-reviewer\b/,
-    ).some(successfulReviewerValidation),
-    "missing successful reviewer validation evidence",
-  );
-}
-
 export function checkBoundaryReduction(observation: Observation): string {
   checkPositiveRouting(observation, SKILL);
   assertBoundaryPreview(observation);
@@ -347,12 +293,7 @@ export function checkBoundaryReduction(observation: Observation): string {
     physicalLines(capturedText(observation, "src/core.js")) <= SIZE_LIMIT,
     "new split file cannot inherit the size waiver",
   );
-  assert.ok(
-    findBashCalls(observation, /node\s+--test\s+boundary\.test\.js/).some(
-      successfulBoundaryCheck,
-    ),
-    "missing successful boundary and behavior test evidence",
-  );
+  assertBoundaryValidation(observation);
   const config: unknown = JSON.parse(
     capturedText(observation, "boundary.json"),
   );

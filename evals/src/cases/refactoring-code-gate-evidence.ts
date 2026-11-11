@@ -13,7 +13,7 @@ const LAST_TURN = -1;
 const FIRST = 0;
 const ONE = 1;
 
-function literalWords(text: string): string[] {
+export function literalWords(text: string): string[] {
   const words = text.match(/(?:[^\s"';&|()<>]+|"[^"]*"|'[^']*')+/g) ?? [];
   return words.map((word) =>
     word.replace(
@@ -91,7 +91,7 @@ function isShellOperator(part: string): boolean {
   return /^[;&|\n]+$/.test(part);
 }
 
-function commandParts(command: string): string[] {
+export function commandParts(command: string): string[] {
   const tokens = command.match(/"[^"]*"|'[^']*'|[;&|\n]+|[^"';&|\n]+/g) ?? [];
   return tokens.reduce<string[]>((parts, token) => {
     const last = parts.at(-ONE);
@@ -175,13 +175,24 @@ export function successfulIgnoreCheck(
   return hasIgnoreProof(observation, command, call.result, run);
 }
 
+export function writePath(
+  call: ToolCall,
+  observation: Observation,
+): string | undefined {
+  if (!["Write", "Edit", "NotebookEdit"].includes(call.name)) return undefined;
+  const target = call.input["file_path"] ?? call.input["notebook_path"];
+  return typeof target === "string"
+    ? fixtureRelativePath(observation, target)
+    : undefined;
+}
+
 export function allowedGatePath(path: string, allowEditedA: boolean): boolean {
   if (path.split("/").includes("..")) return false;
   if (/(?:^|\/)\.handoffs\/refactoring-code\/[^/]+\/.+/.test(path)) return true;
   return allowEditedA && /(?:^|\/)src\/a\.js$/.test(path);
 }
 
-function shellWriteTargets(command: string): string[] {
+export function shellWriteTargets(command: string): string[] {
   const patterns = [
     /\b(?:writeFileSync|writeFile)\(\s*["'](?<target>[^"']+)["']/g,
     /\bPath\(\s*["'](?<target>[^"']+)["']\)\.(?:write_text|write_bytes)\(/g,
