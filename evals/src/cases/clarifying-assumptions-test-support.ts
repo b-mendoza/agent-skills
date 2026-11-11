@@ -8,6 +8,7 @@ import {
   COPY_EDIT_NEW,
   COPY_EDIT_OLD,
 } from "#/cases/clarifying-assumptions-fixtures.ts";
+import { GH_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import {
   createObservation,
@@ -35,6 +36,7 @@ export function structuralObservation(plan: string): Observation {
     ),
     repoFiles: {
       ...COPY_EDIT_INPUTS,
+      [GH_LOG]: "",
       [CLARIFICATION_FACTS.planPath]: plan,
       ".git/logs/HEAD": "initial\thead\tcommit (initial): initial commit\n",
     },
