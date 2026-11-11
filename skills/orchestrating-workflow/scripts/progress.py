@@ -113,6 +113,34 @@ def task_template(key, row, skills):
             f"{render(PHASE_COLUMNS, phase_rows(skills, 5, 7))}\n\n## Re-plan History\n\n_None_\n\n## Activity Log\n")
 
 
+def summary_rows(content):
+    lines = [line.strip() for line in content.splitlines()]
+    headers = [(i, [cell.replace("**", "").replace("`", "").strip()
+                    for cell in line.strip("|").split("|")])
+               for i, line in enumerate(lines) if line.startswith("|")]
+    # Preserve Task-first precedence and Order identity checks for legacy tables.
+    for first in ("Task", "Order"):
+        starts = [(i, columns) for i, columns in headers
+                  if columns[0] == first or (first == "Task" and columns[0] != "Order"
+                     and "Task" in columns and any(name in columns for name in ("Branch", "Branch name")))]
+        require(len(starts) <= 1, f"duplicate {first} table")
+        if not starts:
+            continue
+        start, columns = starts[0]
+        require(len(set(columns)) == len(columns), "duplicate table columns")
+        rows = []
+        for line in lines[start + 2:]:
+            if not line.startswith("|"):
+                break
+            values = [cell.strip() for cell in line.strip("|").split("|")]
+            require(len(values) == len(columns), f"malformed {first} row")
+            rows.append(dict(zip(columns, values)))
+        require(len({row[first] for row in rows}) == len(rows), f"duplicate {first} identity")
+        if rows:
+            return rows
+    return []
+
+
 def task_markers(key, root):
     path = root / f"{key}-tasks.md"
     if not path.exists():
@@ -138,11 +166,7 @@ def task_markers(key, root):
         result[match[1]] = markers
     summary = re.search(r"(?ms)^## Execution Order Summary[ \t]*\n(.*?)(?=^## |\Z)", raw_plan)
     if summary:
-        _, rows = table(summary[1], "Task")
-        # Tables commonly begin with Order rather than Task.
-        if not rows:
-            _, rows = table(summary[1], "Order")
-        for row in rows:
+        for row in summary_rows(summary[1]):
             branch = row.get("Branch name", row.get("Branch", "")).replace("**", "").replace("`", "").strip()
             identity = row.get("Task", "").replace("**", "").replace("`", "").strip()
             parts = re.split(r"->|→", identity)

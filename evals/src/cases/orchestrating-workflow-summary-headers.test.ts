@@ -17,6 +17,31 @@ const BLOCKED = 1;
 describe("human-only summary headers", () => {
   test.each([
     { header: "| Task | Branch |", row: "| 1 | N/A (human-only) |" },
+    { header: "|Task|Branch|", row: "|1|N/A (human-only)|" },
+    {
+      header: "  | Task | Branch |",
+      separator: "  | --- | --- |",
+      row: "  | 1 | N/A (human-only) |",
+    },
+    {
+      header: "| Title | Task | Branch |",
+      row: "| Human approval | 1 | N/A (human-only) |",
+    },
+    { header: "| Branch | Task |", row: "| N/A (human-only) | 1 |" },
+    {
+      header: "|**Task**|`Branch name`|",
+      row: "|**C** -> `Task 1`|N/A (human-only)|",
+    },
+    {
+      header: "  |`Branch`|Title|**Task**|",
+      separator: "  |---|---|---|",
+      row: "  |N/A (human-only)|Human approval|`C` → **Task 1**|",
+    },
+    {
+      header: "  |**Order**|`Task`|**Branch**|",
+      separator: "  |---|---|---|",
+      row: "  |1|**C** -> `Task 1`|N/A (human-only)|",
+    },
     {
       header: "| Order | Task | Branch |",
       row: "| 1 | 1 | N/A (human-only) |",
@@ -51,10 +76,10 @@ describe("human-only summary headers", () => {
     },
   ])(
     "preserves human-only summary metadata with header $header",
-    ({ header, row }) => {
+    ({ header, row, separator = header.replace(/[^|]+/g, " --- ") }) => {
       const fixture = setup();
       try {
-        const plan = `## Execution Order Summary\n\n${header}\n${header.replace(/[^|]+/g, " --- ")}\n${row}\n\n## Task 1: Human approval\n**Branch name:** stale-code\n`;
+        const plan = `## Execution Order Summary\n\n${header}\n${separator}\n${row}\n\n## Task 1: Human approval\n**Branch name:** stale-code\n`;
         writeRepoFiles(fixture.cwd, { "docs/acme-app-42-tasks.md": plan });
         const read = fixture.run({ action: "read" });
         expect(read.status).toBe(SUCCESS);
