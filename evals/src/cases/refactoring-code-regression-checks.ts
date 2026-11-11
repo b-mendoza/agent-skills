@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { stripVTControlCharacters } from "node:util";
 
-import { assertGateStop } from "#/cases/refactoring-code-gate-evidence.ts";
+import {
+  assertGateStop,
+  successfulIgnoreCheck,
+} from "#/cases/refactoring-code-gate-evidence.ts";
 import {
   ANALYSIS_FILES,
   BOUNDARY_FILES,
@@ -66,28 +69,6 @@ function assertNoValidation(observation: Observation): void {
     ),
     [],
     "validation ran without approval",
-  );
-}
-
-function checkedRunVisible(
-  call: ToolCall,
-  command: string,
-  run: string,
-): boolean {
-  const runPath = `${HANDOFFS}${run}`.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const visibleRun = new RegExp(`${runPath}(?=$|[/\\s"'\`;&|()<>])`);
-  return (
-    visibleRun.test(command) ||
-    (call.result !== undefined && visibleRun.test(call.result.content))
-  );
-}
-
-function successfulIgnoreCheck(call: ToolCall, run: string): boolean {
-  const { command } = call.input;
-  if (call.name !== "Bash" || typeof command !== "string") return false;
-  return (
-    command.includes("git check-ignore") &&
-    checkedRunVisible(call, command, run)
   );
 }
 
