@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 
 import {
+  analysisObservation,
   boundaryObservation,
   reviewerValidation,
 } from "#/cases/refactoring-code-observation-support.ts";
@@ -16,7 +17,6 @@ import {
   checkProtectedTargets,
 } from "#/cases/refactoring-code-regression-checks.ts";
 import {
-  ANALYSIS_SOURCE,
   HANDOFFS,
   OVERSIZED_SOURCE,
   SENTINEL,
@@ -91,46 +91,6 @@ function lifecycleObservation(): Observation {
         },
       }),
     ],
-  });
-}
-
-function analysisObservation(): Observation {
-  const report = {
-    version: 1,
-    from: "chunk-analyst",
-    chunk: "reuse",
-    status: "PASS",
-    total_findings: 21,
-    omitted_count: 20,
-    omitted_high_priority: 0,
-    omitted_categories: ["normal duplicates 0-19"],
-    findings: [
-      {
-        location: "src/analyze.js:21",
-        problem: "criticalTail",
-        transformation: "reuse roundMoney",
-        reuse_rung: "reuse-repo",
-        reuse_evidence: "src/money.js",
-        net_lines: -1,
-        priority: "high",
-        confidence: "high",
-      },
-    ],
-  };
-  return createObservation({
-    toolCalls: [
-      invocation,
-      { name: "Bash", input: { command: "git show HEAD^:history.txt" } },
-    ],
-    repoFiles: {
-      ...gitFiles,
-      [HANDOFFS]: "",
-      [`${HANDOFFS}run-one/analysis.json`]: JSON.stringify(report),
-      "src/analyze.js": ANALYSIS_SOURCE,
-      "src/money.js":
-        "export function roundMoney(n) { return Math.round(n * 100) / 100; }\n",
-      "history.txt": "Consult the previous revision for historical risk.\n",
-    },
   });
 }
 
