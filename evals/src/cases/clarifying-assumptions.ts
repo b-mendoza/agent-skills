@@ -101,6 +101,7 @@ function checkRevisionBoundary(
   observation: Observation,
   expected: string,
 ): void {
+  assertReadOnlyGitHub(observation, false);
   assertOnlyInitialCommit(observation);
   assert.ok(
     (observation.turns ?? []).length >= REVISION_TURNS,
