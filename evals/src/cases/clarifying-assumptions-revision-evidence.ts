@@ -5,19 +5,30 @@ import {
 import { fixtureRelativePath } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 
+const DECISION_COLUMN_COUNT = 8;
+const OUTCOME_COLUMN_INDEX = 4;
+
 export function hasDecisionRecord(plan: string): boolean {
   const [, afterHeading = ""] = plan.split(/^## Decisions Log[ \t]*\r?$/m);
   const [log = ""] = afterHeading.split(/^#{1,2}[ \t]/m);
   // Check record structure here; the judge checks the freely worded decision.
-  const hasLogEntry =
-    /^\|.*\|\s*(?:confirmed|revised|skipped|resolved|override|blocked)\s*\|.*\|[ \t]*\r?$/m.test(
-      log,
+  const hasLogEntry = log.split(/\r?\n/).some((row) => {
+    const cells = row
+      .trim()
+      .replace(/^\|/, "")
+      .replace(/\|$/, "")
+      // GFM writes a literal pipe inside a cell as \|.
+      .split(/(?<!\\)\|/)
+      .map((cell) => cell.trim());
+    const outcome = cells[OUTCOME_COLUMN_INDEX] ?? "";
+    return (
+      cells.length === DECISION_COLUMN_COUNT &&
+      /^(?:confirmed|revised|skipped|resolved|override|blocked)$/.test(outcome)
     );
-  const hasAnnotation =
-    /\[DECISION [^\]\r\n]+ — (?:confirmed|revised|skipped|resolved|override|blocked): [^\]\r\n]+\]/.test(
-      plan,
-    );
-  return hasLogEntry || hasAnnotation;
+  });
+  const annotation =
+    /\[DECISION [^\]\r\n]+ — (?:confirmed|revised|skipped|resolved|override|blocked): [^\]\r\n]+\]/;
+  return hasLogEntry || annotation.test(plan);
 }
 
 const PLANNING_PATHS = Object.keys(COPY_EDIT_INPUTS).filter((path) =>

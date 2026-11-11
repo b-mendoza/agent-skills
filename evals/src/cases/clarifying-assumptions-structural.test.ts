@@ -41,6 +41,26 @@ it("structural revision rejects an open audience question with unrelated new tex
 
 it.each([
   { name: "Decisions Log row", plan: structuralPlan },
+  ...["confirmed", "revised", "skipped", "resolved", "override", "blocked"].map(
+    (outcome) => ({
+      name: `${outcome} outcome cell`,
+      plan: structuralPlan.replace("| revised |", `| ${outcome} |`),
+    }),
+  ),
+  {
+    name: "log row with ordinary cell whitespace",
+    plan: structuralPlan.replace(
+      /^\| 1 \|.*$/m,
+      "  |\t1 | Plan-wide\t| PF1 | problem-framing |\trevised\t| Tenant administrators may export all tenant accounts, including other owners. | Yes | -\t|  ",
+    ),
+  },
+  {
+    name: "log row with a GFM-escaped pipe",
+    plan: structuralPlan.replace(
+      /^\| 1 \|.*$/m,
+      "  |\t1 | Plan-wide\t| PF1 | problem-framing |\trevised\t| Tenant admins \\| owners may export all tenant accounts, including other owners. | Yes | -\t|  ",
+    ),
+  },
   {
     name: "inline decision annotation",
     plan: structuralSeed.replace(
@@ -59,6 +79,48 @@ it.each([
   expect(() =>
     getCase("structural-revision-replans").check(structuralObservation(plan)),
   ).not.toThrow();
+});
+
+it.each([
+  { name: "neither outer pipe", leading: "", trailing: "" },
+  { name: "only a leading pipe", leading: "|", trailing: "" },
+  { name: "only a trailing pipe", leading: "", trailing: "|" },
+  { name: "both outer pipes", leading: "|", trailing: "|" },
+])(
+  "structural revision accepts a log row with $name",
+  ({ leading, trailing }) => {
+    const plan = structuralPlan.replace(
+      /^\| 1 \|.*$/m,
+      (row) => `${leading}${row.replace(/^\||\|$/g, "")}${trailing}`,
+    );
+    expect(() =>
+      getCase("structural-revision-replans").check(structuralObservation(plan)),
+    ).not.toThrow();
+  },
+);
+
+it.each([
+  {
+    name: "missing outcome",
+    row: "| 1 | Plan-wide | PF1 | problem-framing | | Tenant administrators may export all tenant accounts. | Yes | - |",
+  },
+  {
+    name: "unresolved outcome",
+    row: "| 1 | Plan-wide | PF1 | problem-framing | unresolved | Should tenant administrators export all tenant accounts? | Yes | - |",
+  },
+  {
+    name: "outcome word in another cell",
+    row: "| 1 | Plan-wide | PF1 | problem-framing | unresolved | revised | Yes | - |",
+  },
+  {
+    name: "missing column",
+    row: "| 1 | Plan-wide | PF1 | problem-framing | revised | Tenant administrators may export all tenant accounts. | Yes |",
+  },
+])("structural revision rejects a log row with $name", ({ row }) => {
+  const plan = structuralPlan.replace(/^\| 1 \|.*$/m, row);
+  expect(() =>
+    getCase("structural-revision-replans").check(structuralObservation(plan)),
+  ).toThrow(/persisted decision/);
 });
 
 it("structural revision does not mistake a later section for the Decisions Log", () => {
