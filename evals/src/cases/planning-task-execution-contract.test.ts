@@ -107,6 +107,46 @@ describe("execution-plan action boundary", () => {
 
 describe("Git directives versus product objects and safety clauses", () => {
   test.each([
+    "Reset the branch counter.",
+    "Rewrite the branch selector.",
+    "Commit the branch prediction.",
+    "Reset the branch coverage threshold.",
+    "Push the origin story to the CMS.",
+    "Push the upstream response to the cache.",
+    "Commit the upstream offsets.",
+    "Reset the upstream connection.",
+    "Reset the branch counter to zero.",
+  ])(
+    "accepts product objects headed by branch or remote names: %s",
+    (payload) => {
+      const result = validate("plan", `${payload}\n`);
+      expect(result.status).toBe(SUCCESS);
+      expect(result.stdout.trim()).toBe("VALID");
+    },
+  );
+  test.each([
+    "Push origin main.",
+    "Push origin HEAD.",
+    "Push the branch main to origin.",
+    "Stage --all.",
+    "Commit --amend.",
+    "Reset --hard HEAD~1.",
+    "Push upstream feature/task.",
+    "Push origin main:release.",
+    "Push the branch feature/task to origin.",
+    "Stage -A.",
+    "Reset the branch main to HEAD~1.",
+    "Push upstream events to the queue.",
+  ])("rejects Git operands or leading flags: %s", (payload) => {
+    const result = validate("plan", `${payload}\n`);
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
+  });
+  test.each([
+    "Commit the database transaction.",
+    "Reset the retry counter to zero after a successful request.",
+    "Push the validated item onto the in-memory queue.",
+    "Rewrite the parser to remove duplication.",
     "Reset the search index after the reindex job finishes.",
     "Push the request to the upstream service with a retry.",
     "Rewrite the facade to delegate to the new client.",
@@ -158,6 +198,8 @@ describe("Git directives versus product objects and safety clauses", () => {
     "Run the tests and commit the changes.",
     "Do not stage unrelated files, and run git add src/a.ts.",
     "Push to origin.",
+    "Reset the branch to HEAD~1.",
+    "Run git push origin main.",
     "Commit abc1234 follow-up fixes.",
     "Reset the branch to origin/main.",
     "Reset HEAD to the previous commit.",
