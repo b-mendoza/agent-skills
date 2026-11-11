@@ -319,7 +319,7 @@ function assertSearches(
 function batchSearchFindings(args: readonly string[]): readonly number[] {
   const findings = [
     /\b(?:back[- ]?ups?|overwrit(?:e|es|ing|ten))\b/i,
-    /\b(?:pdf|portable document format)\b/i,
+    /\b(?:pdfs?|portable document format)\b/i,
   ];
   const query = args[args.indexOf("--search") + NEXT_ARGUMENT];
   assert.ok(query !== undefined);
