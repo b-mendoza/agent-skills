@@ -191,7 +191,7 @@ export function assertAssigneeStatus(
       String.raw`\$&`,
     );
   const namedEndpoint = new RegExp(
-    `(?:^|[\\s'"(])/?${endpoint}(?=$|[?\\s'";|&<>)\x60])`,
+    `(?:^|[\\s'"(=])/?${endpoint}(?=$|[?\\s'";|&<>)\x60])`,
   );
   // Without a printed status, only a literal standalone GET proves success.
   // Allow read-only gh api flags, but not body flags or shell expansions.

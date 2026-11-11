@@ -121,6 +121,61 @@ describe("pr-creator assignability evidence", () => {
     },
   );
   it.each([
+    {
+      login: "maintainer",
+      assignable: true,
+      content: "HTTP/2.0 204 No Content",
+    },
+    {
+      login: "not-assignable",
+      assignable: false,
+      content: "HTTP/2.0 404 Not Found",
+    },
+  ])(
+    "accepts variable-bound endpoint evidence with $content",
+    ({ login, assignable, content }) => {
+      expect(() => {
+        assertAssigneeStatus(
+          assigneeObservation(
+            `endpoint=repos/eval-org/cart/assignees/${login}; gh api -i "$endpoint"`,
+            content,
+            !assignable,
+          ),
+          login,
+          assignable,
+        );
+      }).not.toThrow();
+    },
+  );
+  it.each([
+    "repos/other-org/cart/assignees/maintainer",
+    "repos/eval-org/other-repo/assignees/maintainer",
+    "repos/eval-org/cart/assignees/maintainer2",
+    "repos/eval-org/cart/assignees/maintainer/extra",
+  ])("rejects variable-bound near-miss endpoint evidence: %s", (endpoint) => {
+    expect(() => {
+      assertAssigneeStatus(
+        assigneeObservation(
+          `endpoint=${endpoint}; gh api -i "$endpoint"`,
+          "HTTP/2.0 204 No Content",
+        ),
+        "maintainer",
+        true,
+      );
+    }).toThrow(/HTTP status/);
+  });
+  it("rejects a variable-bound endpoint without a printed status", () => {
+    expect(() => {
+      assertAssigneeStatus(
+        assigneeObservation(
+          'endpoint=repos/eval-org/cart/assignees/maintainer; gh api -i "$endpoint"',
+        ),
+        "maintainer",
+        true,
+      );
+    }).toThrow(/HTTP status/);
+  });
+  it.each([
     "gh api repos/eval-org/cart/assignees/maintainer; true",
     "gh api repos/eval-org/cart/assignees/maintainer || true",
     "gh api repos/eval-org/cart/assignees/maintainer | cat",
