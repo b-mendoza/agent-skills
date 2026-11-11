@@ -79,31 +79,33 @@ function revisionCommands(call: ToolCall): string[][] {
   );
 }
 
-function isRevisionValidation(call: ToolCall): boolean {
-  return revisionCommands(call).some(([program = "", ...commandArguments]) => {
-    const script = /(?:^|\/)python(?:[23](?:\.\d+)?)?$/.test(program)
-      ? (commandArguments.find((argument) => !/^-[IBEsSu]+$/.test(argument)) ??
-        "")
-      : program;
-    return /(?:^|\/)validate-local-revision\.py$/.test(script);
-  });
+function isRevisionValidation([
+  program = "",
+  ...commandArguments
+]: string[]): boolean {
+  const script = /(?:^|\/)python(?:[23](?:\.\d+)?)?$/.test(program)
+    ? (commandArguments.find((argument) => !/^-[IBEsSu]+$/.test(argument)) ??
+      "")
+    : program;
+  return /(?:^|\/)validate-local-revision\.py$/.test(script);
 }
 
 const PREVIOUS_ARGUMENT = 1;
 
-function isBashWrite(call: ToolCall, observation: Observation): boolean {
-  return revisionCommands(call).some(([program = "", ...commandArguments]) => {
-    const editsInPlace =
-      /(?:^|\/)(?:sed|perl)$/.test(program) &&
-      commandArguments.some((argument) => /^-[^-]*i/.test(argument));
-    const writesFiles = editsInPlace || /(?:^|\/)tee$/.test(program);
-    return commandArguments.some(
-      (path, index) =>
-        (writesFiles ||
-          /^>>?$/.test(String(commandArguments[index - PREVIOUS_ARGUMENT]))) &&
-        PLANNING_PATHS.includes(fixtureRelativePath(observation, path) ?? ""),
-    );
-  });
+function isBashWrite(
+  [program = "", ...commandArguments]: string[],
+  observation: Observation,
+): boolean {
+  const editsInPlace =
+    /(?:^|\/)(?:sed|perl)$/.test(program) &&
+    commandArguments.some((argument) => /^-[^-]*i/.test(argument));
+  const writesFiles = editsInPlace || /(?:^|\/)tee$/.test(program);
+  return commandArguments.some(
+    (path, index) =>
+      (writesFiles ||
+        /^>>?$/.test(String(commandArguments[index - PREVIOUS_ARGUMENT]))) &&
+      PLANNING_PATHS.includes(fixtureRelativePath(observation, path) ?? ""),
+  );
 }
 
 function isPlanningArtifactWrite(
@@ -111,7 +113,23 @@ function isPlanningArtifactWrite(
   observation: Observation,
 ): boolean {
   if (isCritiqueWrite(call, observation)) return false;
-  return isRevisionWrite(call, observation) || isBashWrite(call, observation);
+  return isRevisionWrite(call, observation);
+}
+
+function validationAfterBashCall(
+  call: ToolCall,
+  observation: Observation,
+  previousValidation: boolean,
+): boolean {
+  let validated = previousValidation;
+  for (const command of revisionCommands(call)) {
+    if (isBashWrite(command, observation)) {
+      validated = false;
+    } else if (isRevisionValidation(command)) {
+      validated = hasRevisionResult(call.result);
+    }
+  }
+  return validated;
 }
 
 export function hasCurrentRevisionValidation(
@@ -121,9 +139,8 @@ export function hasCurrentRevisionValidation(
   for (const call of observation.toolCalls) {
     if (isPlanningArtifactWrite(call, observation)) {
       validated = false;
-    } else if (isRevisionValidation(call)) {
-      validated = hasRevisionResult(call.result);
     }
+    validated = validationAfterBashCall(call, observation, validated);
   }
   return validated;
 }

@@ -3,6 +3,8 @@ import { expect, it } from "vitest";
 import {
   CLARIFICATION_FACTS,
   COPY_EDIT_INPUTS,
+  COPY_EDIT_NEW,
+  COPY_EDIT_OLD,
 } from "#/cases/clarifying-assumptions-fixtures.ts";
 import {
   getCase,
@@ -136,6 +138,33 @@ it("localized revision rejects a Bash call that validates then writes an artifac
     }),
   ).toThrow(/no successful local revision validation/);
 });
+
+it.each([
+  { name: "writes then validates", initialValidation: false },
+  { name: "validates, writes, then revalidates", initialValidation: true },
+])(
+  "localized revision accepts a Bash call that $name",
+  ({ initialValidation }) => {
+    const beforeEvidence = JSON.stringify({
+      files: Object.fromEntries(
+        planningPaths.map((path) => [path, COPY_EDIT_INPUTS[path]]),
+      ),
+      replacements: [{ old: COPY_EDIT_OLD, new: COPY_EDIT_NEW }],
+    });
+    const validation = `printf '%s' '${beforeEvidence}' | ${String(pass.input["command"])}`;
+    const write = `sed -i 's/${COPY_EDIT_OLD}/${COPY_EDIT_NEW}/g' ${planningPaths.join(" ")}`;
+    const command = [
+      ...(initialValidation ? [validation] : []),
+      write,
+      validation,
+    ].join(" && ");
+    expect(() =>
+      getCase("localized-copy-edit").check(
+        localObservation([{ ...bash(command), result: pass.result }]),
+      ),
+    ).not.toThrow();
+  },
+);
 
 it("localized revision accepts Bash writes followed by revalidation", () => {
   expect(() =>
