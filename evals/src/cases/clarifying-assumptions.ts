@@ -13,6 +13,11 @@ import {
   seedCopyEditArtifacts,
   seedPublicationArtifacts,
 } from "#/cases/clarifying-assumptions-fixtures.ts";
+import {
+  hasDecisionRecord,
+  isCritiqueWrite,
+  isRevisionWrite,
+} from "#/cases/clarifying-assumptions-revision-evidence.ts";
 import { assertReadOnlyGitHub } from "#/cases/fetching-work-item-fixtures.ts";
 import {
   assertFileAbsent,
@@ -25,7 +30,6 @@ import {
   checkNegativeRouting,
   checkPositiveRouting,
   FIXTURE_ROOT_PATH,
-  fixtureRelativePath,
   normalizeReplyText,
   replyAsksFor,
   withoutAllowedChanges,
@@ -50,15 +54,6 @@ function checkInputsUnchanged(observation: Observation): void {
   assert.equal(observation.repoFiles?.["a.txt"], "hello\n");
   assertOnlyInitialCommit(observation);
   assertFileAbsent(observation, CLARIFICATION_FACTS.decisionsPath);
-}
-
-function isCritiqueWrite(call: ToolCall, observation: Observation): boolean {
-  if (!["Write", "Edit"].includes(call.name)) return false;
-  const path = call.input["file_path"];
-  return (
-    typeof path === "string" &&
-    fixtureRelativePath(observation, path) === CLARIFICATION_FACTS.critiquePath
-  );
 }
 
 function checkOnlyCritiqueChanged(observation: Observation): void {
@@ -114,16 +109,6 @@ function isSuccessfulRevisionValidation(call: ToolCall): boolean {
     hasRevisionResult(call.result)
   );
 }
-const REVISION_PATHS = new Set([
-  CLARIFICATION_FACTS.critiquePath,
-  ...Object.keys(COPY_EDIT_INPUTS).filter((path) => path.endsWith(".md")),
-]);
-function isRevisionWrite(call: ToolCall, observation: Observation): boolean {
-  if (!["Write", "Edit"].includes(call.name)) return false;
-  const path = call.input["file_path"];
-  if (typeof path !== "string") return false;
-  return REVISION_PATHS.has(fixtureRelativePath(observation, path) ?? "");
-}
 function checkRevisionBoundary(
   observation: Observation,
   expected: string,
@@ -149,20 +134,6 @@ function checkRevisionBoundary(
     new RegExp(`RE_PLAN_NEEDED: ${expected}\\b`),
   );
   assert.match(observation.finalText, /BLOCKERS_PRESENT: false/);
-}
-function hasDecisionRecord(plan: string): boolean {
-  const [, afterHeading = ""] = plan.split(/^## Decisions Log[ \t]*\r?$/m);
-  const [log = ""] = afterHeading.split(/^#{1,2}[ \t]/m);
-  // Check record structure here; the judge checks the freely worded decision.
-  const hasLogEntry =
-    /^\|.*\|\s*(?:confirmed|revised|skipped|resolved|override|blocked)\s*\|.*\|[ \t]*\r?$/m.test(
-      log,
-    );
-  const hasAnnotation =
-    /\[DECISION [^\]\r\n]+ — (?:confirmed|revised|skipped|resolved|override|blocked): [^\]\r\n]+\]/.test(
-      plan,
-    );
-  return hasLogEntry || hasAnnotation;
 }
 
 function checkStructuralRevision(observation: Observation): string {
