@@ -55,12 +55,14 @@ def status(value):
 
 def table(content, first):
     lines = content.splitlines()
-    starts = [i for i, line in enumerate(lines) if line.startswith(f"| {first} |")]
+    starts = [i for i, line in enumerate(lines)
+              if line.replace("**", "").replace("`", "").startswith(f"| {first} |")]
     require(len(starts) <= 1, f"duplicate {first} table")
     if not starts:
         return [], []
     start = starts[0]
-    columns = [cell.strip() for cell in lines[start].strip("|").split("|")]
+    columns = [cell.replace("**", "").replace("`", "").strip()
+               for cell in lines[start].strip("|").split("|")]
     require(len(set(columns)) == len(columns), "duplicate table columns")
     rows = []
     for line in lines[start + 2:]:
@@ -136,9 +138,9 @@ def task_markers(key, root):
         result[match[1]] = markers
     summary = re.search(r"(?ms)^## Execution Order Summary[ \t]*\n(.*?)(?=^## |\Z)", raw_plan)
     if summary:
-        _, rows = table(summary[1], "Task") if "| Task |" in summary[1] else ([], [])
+        _, rows = table(summary[1], "Task")
         # Tables commonly begin with Order rather than Task.
-        if not rows and "| Order |" in summary[1]:
+        if not rows:
             _, rows = table(summary[1], "Order")
         for row in rows:
             branch = row.get("Branch name", row.get("Branch", "")).replace("**", "").replace("`", "").strip()
