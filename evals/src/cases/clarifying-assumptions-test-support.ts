@@ -5,8 +5,10 @@ import { cases } from "#/cases/clarifying-assumptions.ts";
 import {
   CLARIFICATION_FACTS,
   COPY_EDIT_INPUTS,
+  COPY_EDIT_NEW,
+  COPY_EDIT_OLD,
 } from "#/cases/clarifying-assumptions-fixtures.ts";
-import type { Observation } from "#/observation/agent-query.ts";
+import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import {
   createObservation,
   createTurn,
@@ -48,3 +50,34 @@ export const structuralPlan = structuralSeed.replace(
   "No accepted decisions yet.",
   structuralDecisionLog,
 );
+
+export const pass: ToolCall = {
+  name: "Bash",
+  input: {
+    command:
+      "python3 -I scripts/validate-local-revision.py /fixture acme-app-42 upfront -",
+  },
+  result: {
+    content: "LOCAL_REVISION: PASS files=3",
+    isError: false,
+    truncated: false,
+  },
+};
+
+export function localObservation(toolCalls: ToolCall[] = [pass]): Observation {
+  const observation = structuralObservation(structuralSeed);
+  return {
+    ...observation,
+    finalText: "- RE_PLAN_NEEDED: false\n- BLOCKERS_PRESENT: false",
+    toolCalls,
+    repoFiles: {
+      ...observation.repoFiles,
+      ...Object.fromEntries(
+        Object.entries(COPY_EDIT_INPUTS).map(([path, text]) => [
+          path,
+          text.replace(COPY_EDIT_OLD, COPY_EDIT_NEW),
+        ]),
+      ),
+    },
+  };
+}

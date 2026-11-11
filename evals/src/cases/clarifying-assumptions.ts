@@ -14,6 +14,7 @@ import {
   seedPublicationArtifacts,
 } from "#/cases/clarifying-assumptions-fixtures.ts";
 import {
+  hasCurrentRevisionValidation,
   hasDecisionRecord,
   isCritiqueWrite,
   isRevisionWrite,
@@ -35,7 +36,7 @@ import {
   withoutAllowedChanges,
 } from "#/cases/shared-checks.ts";
 import { GH_LOG, HEAD_LOG } from "#/fixtures/fixtures.ts";
-import type { Observation, ToolCall } from "#/observation/agent-query.ts";
+import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
 
 export const SKILL = "clarifying-assumptions";
@@ -95,19 +96,6 @@ function checkCopyEdit(
   }
   assert.ok(content.includes(COPY_EDIT_NEW), `copy edit missing: ${path}`);
   assert.ok(!content.includes(COPY_EDIT_OLD), `stale wording: ${path}`);
-}
-function hasRevisionResult(result: ToolCall["result"]): boolean {
-  if (result === undefined) return false;
-  return (
-    !result.isError && /^LOCAL_REVISION: PASS files=3$/m.test(result.content)
-  );
-}
-function isSuccessfulRevisionValidation(call: ToolCall): boolean {
-  return (
-    call.name === "Bash" &&
-    JSON.stringify(call.input).includes("validate-local-revision.py") &&
-    hasRevisionResult(call.result)
-  );
 }
 function checkRevisionBoundary(
   observation: Observation,
@@ -169,8 +157,8 @@ function checkLocalRevision(observation: Observation): string {
     checkCopyEdit(path, original, observation);
   }
   assert.ok(
-    observation.toolCalls.some(isSuccessfulRevisionValidation),
-    "no successful local revision validation observed",
+    hasCurrentRevisionValidation(observation),
+    "no successful local revision validation observed after the final artifact write",
   );
   return "all planning artifact wording updated and validated without full re-plan";
 }
