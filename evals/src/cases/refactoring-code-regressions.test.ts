@@ -134,6 +134,51 @@ function analysisObservation(): Observation {
   });
 }
 
+describe.each([
+  [checkProtectedTargets, protectedObservation],
+  [checkLifecycle, lifecycleObservation],
+  [checkAnalysis, analysisObservation],
+])("%s final validation guard", (check, observation) => {
+  function checkBash(command: string): string {
+    const good = observation();
+    return check({
+      ...good,
+      toolCalls: [...good.toolCalls, { name: "Bash", input: { command } }],
+    });
+  }
+  test.each([
+    "rg 'node --test' package.json",
+    "rg 'node scripts/check.mjs' scripts",
+    'grep -n "npm test" package.json',
+    "rg 'node --test; npm test' package.json",
+    `sh -c "rg 'node --test' package.json"`,
+    `rg 'sh -c "npm test"' package.json`,
+  ])("allows read-only command discovery: %s", (command) => {
+    expect(() => checkBash(command)).not.toThrow();
+  });
+
+  test.each([
+    "node --test",
+    "node scripts/check.mjs",
+    "npm test",
+    "command node --test",
+    "(node --test)",
+    "if true; then node --test; fi",
+    "cd . && (npm test)",
+    "sh -c 'node --test'",
+    'bash -lc "npm test"',
+    "timeout 120 node --test",
+    "time npm test",
+    "true && env MODE=test node --test",
+    "zsh -c 'command node --test'",
+    "rg 'node --test' package.json; node --test",
+    "printf ready && env MODE=test node scripts/check.mjs",
+    'MODE=test /usr/bin/node "--test"',
+  ])("rejects executed validation: %s", (command) => {
+    expect(() => checkBash(command)).toThrow("validation ran without approval");
+  });
+});
+
 describe("refactoring regression checkers fail on wrong observations", () => {
   test("protected targets reject carve-outs and edits (#51)", () => {
     const good = protectedObservation();

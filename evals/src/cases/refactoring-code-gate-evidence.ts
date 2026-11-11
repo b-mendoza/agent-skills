@@ -205,13 +205,18 @@ function validationSegment(segment: string): boolean {
     word.replace(/^(?<quote>['"])(?<value>.*)\k<quote>$/, "$<value>"),
   );
   const [executable = "", ...args] = words;
-  return [
+  const nodeValidation = [
     basename(executable) === "node",
     hasNodeTestOption([...args]) || args.includes("scripts/check.mjs"),
   ].every(Boolean);
+  const npmValidation = [
+    basename(executable) === "npm",
+    args[FIRST] === "test",
+  ].every(Boolean);
+  return [nodeValidation, npmValidation].some(Boolean);
 }
 
-function runsRepoValidation(command: string): boolean {
+export function runsRepoValidation(command: string): boolean {
   // Literal shell segments only, matching the existing plan checker boundary.
   const segments = command.match(/(?:[^"';&|\n]|"[^"]*"|'[^']*')+/g) ?? [];
   return segments.some(validationSegment);
