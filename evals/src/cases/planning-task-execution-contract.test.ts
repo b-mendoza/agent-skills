@@ -226,6 +226,7 @@ describe("Git directives versus product objects and safety clauses", () => {
     "Do not commit but run git add src/a.ts.",
     "Stage the fixture rows; commit the changes.",
     "Stage the fixture rows, and commit the changes.",
+    "Do not run git add . and push.",
   ])("rejects the Git directive: %s", (payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(BLOCKED);

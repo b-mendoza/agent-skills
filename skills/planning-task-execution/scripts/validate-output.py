@@ -119,7 +119,8 @@ def action_findings(payload):
     findings = []
     for n, original in enumerate(payload.splitlines(), 1):
         line = re.sub(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)?", "", original).replace("**", "")
-        for sentence in re.split(r"(?<=[.!?])\s+(?!or\b)", line, flags=re.I):
+        # A standalone '.' can be a Git path operand, not a sentence ending.
+        for sentence in re.split(r"(?<=\S[.!?])\s+(?!or\b)", line, flags=re.I):
             product_antecedent = False
             for clause in CLAUSE_SEPARATOR.split(sentence):
                 clause = clause.strip()
