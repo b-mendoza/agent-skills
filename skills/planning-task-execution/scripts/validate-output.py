@@ -4,8 +4,10 @@
 Usage: python3 validate-output.py <plan|PREP|PLAN|TEST_SPEC|REFACTORING> < payload
        python3 validate-output.py --help
 plan lexically checks executable clauses for Git staging/history/publication work.
-Objects are distinguished by their head/context; rebase/cherry-pick and bare
-publication/file actions stay conservative. Prohibitions are clause-local.
+Objects are distinguished by their head/context, including named branches with
+origin/upstream or Git-reference destinations, bare origin/upstream refspecs for
+push, and option-leading mutations. Rebase/cherry-pick and bare publication/file
+actions stay conservative. Prohibitions are clause-local.
 Equivalent instructions outside the recognized wording need semantic review.
 Uppercase modes validate the exact one-line-field handoff before routing.
 Exit: 0 valid, 1 contract findings (repair), 2 usage error (ERROR).
@@ -59,6 +61,20 @@ def is_git_action(action, target, product_antecedent):
     if action in {"create", "make"}:
         return bool(CREATED_COMMIT.match(target))
     if GIT_TARGET.match(target) or GIT_REFERENCE.match(target):
+        return True
+    # Only push takes a bare remote/refspec pair; a determiner makes it a
+    # product object, as in "push the origin story to the CMS".
+    if action == "push" and re.match(r"(?i)^(?:origin|upstream)\s+\S+" + HEAD_END, target):
+        return True
+    # A branch name alone is ambiguous with "branch counter". Require a
+    # destination that names a conventional remote or a Git reference.
+    branch = re.match(r"(?i)^" + DETERMINERS + r"(?:git\s+)?branch\s+\S+\s+(?:to|onto)\s+(.+)", target)
+    if branch and (
+        GIT_REFERENCE.match(branch[1])
+        or re.match(r"(?i)^(?:origin|upstream)(?:/\S+)?" + HEAD_END, branch[1])
+    ):
+        return True
+    if action in {"stage", "commit", "push", "reset"} and re.match(r"^--?[a-zA-Z0-9]", target):
         return True
     # A reset with no product object, just "to <ref>", stays conservative,
     # including short refs such as "reset to abc123".
