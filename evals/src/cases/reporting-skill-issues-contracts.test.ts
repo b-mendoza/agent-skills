@@ -1,25 +1,41 @@
 import assert from "node:assert/strict";
+import { execFileSync, spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import { ARGS_LOG } from "#/cases/reporting-skill-issues-fixtures.ts";
+import {
+  ARGS_LOG,
+  BATCH_EVIDENCE,
+  CREATED_ISSUES,
+  seedReportingFixture,
+  SKILL,
+} from "#/cases/reporting-skill-issues-fixtures.ts";
 import { assertNoRemoteWrites } from "#/cases/reporting-skill-issues-regression-checks.ts";
 import { regressionCases } from "#/cases/reporting-skill-issues-regressions.ts";
 import {
   approvedObservation,
+  BODIES,
   CREATE_ARGS,
   CREATE_PREFLIGHT,
+  createCommand,
   existingObservation,
   jsonLines,
   PDF_SEARCH,
   READ_PREFLIGHT,
+  RECORDS,
   SEARCH,
   TITLES,
+  URLS,
   VIEW,
 } from "#/cases/reporting-skill-issues-test-support.ts";
 import { capturedText, parseGitHubLog } from "#/cases/shared-checks.ts";
+import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
+import { createObservation } from "#/observation/observation-test-support.ts";
 
+const SUCCESS_EXIT = 0;
 const [batchCase, existingCase] = regressionCases;
 
 function withCalls(
@@ -103,23 +119,88 @@ describe("approved command arguments", () => {
       batchCase.check(withCalls(approvedObservation(), calls)),
     ).toThrow();
   });
-  test("accepts equivalent create option order and equals serialization", () => {
-    const calls = [
-      ...READ_PREFLIGHT,
-      CREATE_PREFLIGHT,
-      SEARCH,
-      PDF_SEARCH,
-      ...TITLES.map((title) => [
-        "issue",
-        "create",
-        "--body-file=-",
-        `--title=${title}`,
-        "--repo=b-mendoza/agent-skills",
-      ]),
-    ];
-    expect(() =>
-      batchCase.check(withCalls(approvedObservation(), calls)),
-    ).not.toThrow();
+  test("accepts equivalent create option order and equals serialization through seeded gh", () => {
+    const observation = approvedObservation();
+    const [initial, approved] = observation.turns ?? [];
+    assert.ok(initial !== undefined && approved !== undefined);
+    const commands = BODIES.map((body, index) =>
+      createCommand(TITLES[index] ?? "", body).replace(
+        `--repo b-mendoza/agent-skills --title '${TITLES[index]}' --body-file -`,
+        `--body-file=- --title='${TITLES[index]}' --repo=b-mendoza/agent-skills`,
+      ),
+    );
+    const preview = BODIES.reduce(
+      (text, body, index) =>
+        text.replace(
+          createCommand(TITLES[index] ?? "", body),
+          commands[index] ?? "",
+        ),
+      initial.finalText,
+    );
+    const [approveBatch] = batchCase.followUps;
+    expect(
+      approveBatch.reply(createObservation({ finalText: preview })),
+    ).toEqual({ reply: "APPROVED" });
+    const fixture = makeFixture("clean", [SKILL], (context) => {
+      seedReportingFixture(context, { evidence: BATCH_EVIDENCE });
+    });
+    try {
+      const preflightAndSearches = [
+        ...READ_PREFLIGHT,
+        CREATE_PREFLIGHT,
+        SEARCH,
+        PDF_SEARCH,
+      ];
+      for (const args of preflightAndSearches) {
+        execFileSync(join(fixture.binPath, "gh"), args, { cwd: fixture.cwd });
+      }
+      commands.forEach((command, index) => {
+        const result = spawnSync("/bin/sh", ["-c", command], {
+          cwd: fixture.cwd,
+          env: { ...process.env, PATH: fixture.binPath },
+          encoding: "utf8",
+        });
+        expect(result.stderr).toBe("");
+        expect(result.status).toBe(SUCCESS_EXIT);
+        expect(result.stdout.trim()).toBe(URLS[index]);
+      });
+      const argsLog = readFileSync(join(fixture.cwd, ARGS_LOG), "utf8");
+      const ledger = readFileSync(join(fixture.cwd, CREATED_ISSUES), "utf8");
+      expect(parseGitHubLog(argsLog)).toEqual([
+        ...preflightAndSearches,
+        ...TITLES.map((title) => [
+          "issue",
+          "create",
+          "--body-file=-",
+          `--title=${title}`,
+          "--repo=b-mendoza/agent-skills",
+        ]),
+      ]);
+      expect(ledger).toBe(jsonLines(RECORDS));
+      const toolCalls = commands.map((command) => ({
+        name: "Bash",
+        input: { command },
+      }));
+      expect(() =>
+        batchCase.check({
+          ...observation,
+          turns: [
+            { ...initial, finalText: preview },
+            {
+              ...approved,
+              toolCalls,
+            },
+          ],
+          repoFiles: {
+            ...observation.repoFiles,
+            [ARGS_LOG]: argsLog,
+            [CREATED_ISSUES]: ledger,
+          },
+        }),
+      ).not.toThrow();
+    } finally {
+      fixture.cleanup();
+    }
   });
 });
 

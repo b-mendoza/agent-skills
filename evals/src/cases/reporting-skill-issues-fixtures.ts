@@ -89,6 +89,13 @@ const args = process.argv.slice(2);
 fs.appendFileSync(config.log, args.join('\\t') + '\\t\\n');
 fs.appendFileSync(config.argsLog, JSON.stringify(args) + '\\n');
 const [family, action] = args;
+if (family === 'issue' && action === 'create') {
+  for (let index = 2; index < args.length; index += 1) {
+    const match = /^(--(?:repo|title|body-file))=(.*)$/s.exec(args[index]);
+    if (match) args.splice(index, 1, match[1], match[2]);
+    if (['--repo', '--title', '--body-file'].includes(args[index])) index += 1;
+  }
+}
 const value = flag => args[args.indexOf(flag) + 1];
 const fail = () => { process.stderr.write('unsupported fake gh command\\n'); process.exit(64); };
 const print = value => process.stdout.write(value + '\\n');

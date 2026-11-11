@@ -6,6 +6,7 @@ import { expect, test } from "vitest";
 
 import {
   CREATED_BODY,
+  CREATED_ISSUES,
   EVIDENCE,
   EVIDENCE_PATH,
   FACTS,
@@ -17,6 +18,7 @@ import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 const EXECUTABLE_BITS = 0o111;
 const SUCCESS_EXIT = 0;
+const UNSUPPORTED_EXIT = 64;
 const SEARCH =
   "issue\tlist\t--repo\tb-mendoza/agent-skills\t--state\tall\t--limit\t20\t--search\tgenerate-handoff-document backup\t--json\tnumber,title,url,state,stateReason\t\n";
 test("fake gh serves preflight, bounded search, view, and recorded writes without network", () => {
@@ -95,3 +97,42 @@ test("fake gh serves preflight, bounded search, view, and recorded writes withou
     fixture.cleanup();
   }
 });
+
+test.each(
+  [
+    ["--repo", "other/repo", "--title", "Wrong repository", "--body-file", "-"],
+    ["--repo=other/repo", "--title=Wrong repository", "--body-file=-"],
+    [
+      "--repo",
+      "b-mendoza/agent-skills",
+      "--title",
+      "Unsupported body source",
+      "--body-file",
+      "body.md",
+    ],
+    [
+      "--repo=b-mendoza/agent-skills",
+      "--title=Unsupported body source",
+      "--body-file=body.md",
+    ],
+    ["--repo", "b-mendoza/agent-skills", "--body-file", "-"],
+    ["--repo=b-mendoza/agent-skills", "--body-file=-"],
+  ].map((args) => [args]),
+)(
+  "fake gh refuses unsupported create arguments without a receipt: %j",
+  (args) => {
+    const fixture = makeFixture("clean", [SKILL], seedReportingFixture);
+    try {
+      const result = spawnSync(
+        join(fixture.binPath, "gh"),
+        ["issue", "create", ...args],
+        { cwd: fixture.cwd, encoding: "utf8", input: "must not be posted\n" },
+      );
+      expect(result.status).toBe(UNSUPPORTED_EXIT);
+      expect(result.stderr).toContain("unsupported fake gh command");
+      expect(readFileSync(join(fixture.cwd, CREATED_ISSUES), "utf8")).toBe("");
+    } finally {
+      fixture.cleanup();
+    }
+  },
+);
