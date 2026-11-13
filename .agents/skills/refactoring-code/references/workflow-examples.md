@@ -7,7 +7,7 @@ Load this file for the plan approval card skeleton or a failure cleanup example.
 All user decisions — steps, waivers, non-`safe` commands, conflicts, unanalyzed dimensions — are batched into this single card.
 
 ```text
-Plan approval required before mutation.
+Plan card v1: approval required before mutation.
 
 Diagnosis (from chunk analysis):
 - D1 [duplication-reuse]: roundMoney in calculate.ts duplicates
@@ -45,7 +45,11 @@ Validation contract:
 Non-goals:
 - Preserve all protected surfaces per `references/protected-surfaces.md`.
 
-Decision: approve, adjust, or decline.
+Decision ids: D-code = steps and file map; D-validation = the safe command above.
+Decision: approve this card, adjust, or decline. If other choices are listed
+(size waivers, non-safe commands, boundary entries, deferred dimensions), answer
+those ids too. “Approve code only” leaves them unanswered; no edits or undecided
+commands run until resolved. See state-machine.md for partial-answer and amendment routes.
 ```
 
 ## Failure Cleanup Block
