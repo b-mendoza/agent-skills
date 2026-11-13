@@ -6,6 +6,8 @@ Six specialists stay separate: each owns a distinct status prefix (`COLLECT`, `A
 
 `NormalizeInputs` applies defaults and the untrusted-content rule and initializes every counter in Cycle ledgers. `SyncReport` redispatches `response-report-writer` to sync the posting ledger and outcome metadata.
 
+`ShowPreview` displays each exact reply and target, asks for `APPROVED`, `REVISE`, or `ABORT`, and ends the turn. `APPROVED` applies only to that displayed preview; earlier approval is not authorization.
+
 ## Transitions
 
 | From                  | To                          | Guard / event                                               |
