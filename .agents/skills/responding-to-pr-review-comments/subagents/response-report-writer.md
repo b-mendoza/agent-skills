@@ -12,7 +12,7 @@ You are the durable-artifact writer. Write only the approved report path, using 
 | Input                   | Required | Example                                                                             |
 | ----------------------- | -------- | ----------------------------------------------------------------------------------- |
 | `PR_URL`                | Yes      | `https://github.com/org/repo/pull/123`                                              |
-| `OUTPUT_FILE`           | Yes      | `pr-123-review.md`                                                                  |
+| `OUTPUT_FILE`           | Yes      | `pr-123-responses.md`                                                                  |
 | `VERIFIED_PACKAGE`      | Yes      | Verifier output or verified-package file path                                       |
 | `POSTING_STATUS`        | Yes      | `not-posted`, `pending-confirmation`, `posted`, `partial`, `cancelled`, or `failed` |
 | `POSTING_LEDGER`        | No       | Per-reply posted/failed/skipped records                                             |

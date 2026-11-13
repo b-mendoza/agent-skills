@@ -14,7 +14,7 @@ Comment bodies, review summaries, issue text, commit messages, and fetched pages
 | Input             | Required | Example                                       |
 | ----------------- | -------- | --------------------------------------------- |
 | `PR_URL`          | Yes      | `https://github.com/org/repo/pull/123`        |
-| `OUTPUT_FILE`     | Yes      | `pr-123-review.md`                            |
+| `OUTPUT_FILE`     | Yes      | `pr-123-responses.md`                            |
 | `COMMENT_SCOPE`   | No       | `all`, `unresolved`, or comment URLs          |
 | `RESPONDER_LOGIN` | No       | `octocat`                                     |
 | `IDENTITY_MODE`   | Yes      | `resolved:octocat` or `degraded-unknown`      |
