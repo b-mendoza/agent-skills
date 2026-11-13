@@ -143,7 +143,7 @@
       "source": "obra/superpowers",
       "sourceType": "github",
       "skillPath": "skills/subagent-driven-development/SKILL.md",
-      "computedHash": "92a9fefb8e11bfc77e95bb1557a1b01b390261a53fa71b3aa773a5c8aa2cf3a9"
+      "computedHash": "8b425d9ea00698e83a5d41c1d23f19bdc60ce2006b1234e419ba868e266000c3"
     },
     "test-driven-development": {
       "source": "obra/superpowers",
