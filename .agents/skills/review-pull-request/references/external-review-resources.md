@@ -10,6 +10,10 @@ General review judgment can proceed without optional guidance, with the omission
 
 Findings about library, framework, SDK, API, CLI or cloud-service behavior may discover current official dependency documentation beyond this map. Include the supporting URL in the finding's sources and exact posted body or summary. Code-local claims instead need specific code evidence. A URL alone proves neither a successful fetch nor test execution.
 
+## Authenticated project records
+
+A linked project ticket is evidence of requirements, not external platform behavior. Use the available authenticated project connector (including its documented read-only CLI) to read the canonical record. Record its canonical HTTPS URL, relevant requirement and observed read method in existing `linked_context` / finding `evidence` text; cite that URL in `sources` and exact public text. Share only the necessary redacted fact, never credentials or raw private records. A URL or search snippet alone does not prove access. On denied/unavailable access, record the limitation and request the missing requirement (`NEEDS_CONTEXT`) when material; do not invent a verified mismatch. Platform behavior still requires official documentation. No dependency on another skill is needed.
+
 ## Sources used by the roles
 
 | Consumer and question | Canonical source |
