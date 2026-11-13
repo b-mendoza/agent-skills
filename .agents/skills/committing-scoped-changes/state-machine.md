@@ -8,7 +8,7 @@ Emit `Phase N/4 - Name` only on a real transition. Route on the tables; evaluate
 Every question names the missing input in prose and ends the turn. When every approved group has committed with `Preserved` equal, report the created commits and preservation evidence in prose.
 
 1. `Phase 1/4 - Intake` (inline). Require the verbatim request, else `BLOCKED`. Check path grammar; each path must exist in the worktree or in `HEAD`; missing or ambiguous (file and directory collide, glob-like) → ask one question. Resolve `SKILL_DIR`; run `sh "$SKILL_DIR/scripts/validate-output.sh" plan` on the plan envelope in Example A and require exit 0, else `TOOLS_MISSING`. `git rev-parse --is-inside-work-tree` must print `true`, else `BLOCKED`. Resolve repository root with `git rev-parse --show-toplevel` and run collection there. Missing Python 3, collector, or a non-SHA-1 repository → `TOOLS_MISSING`; collector read failures → `ERROR` with no digest accepted. Any of `MERGE_HEAD`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `rebase-merge/`, `rebase-apply/`, `BISECT_LOG` under `git rev-parse --git-dir` → `BLOCKED`. `git symbolic-ref -q HEAD` non-zero → `DETACHED_HEAD=true` (warning, not a block). If an applicable higher-priority instruction requires another branch, `BLOCKED` before planning; ask the user to select it outside this workflow, never create or switch it under commit approval. `git status --porcelain -- <CHANGE_PATHS>` empty → `NO_SCOPED_CHANGES`.
-2. `Phase 2/4 - Plan`. Dispatch the planner with `CHANGE_PATHS`, `COMMIT_STYLE`, `CONTEXT_QUERY`, `CONTEXT_LOCATION`, `VERIFICATION_HINT`, `DETACHED_HEAD`, `SKILL_DIR`, and `USER_DECISIONS` in the evidence block. `plan_rounds += 1`. Validate through `G_PLAN_ENVELOPE`.
+2. `Phase 2/4 - Plan`. Dispatch the planner with `CHANGE_PATHS`, `COMMIT_STYLE`, `CONTEXT_QUERY`, `CONTEXT_LOCATION`, `VERIFICATION_HINT`, `DETACHED_HEAD`, `SKILL_DIR`, `MUTATION_LIMITS`, and `USER_DECISIONS` in the evidence block. `plan_rounds += 1`. Validate through `G_PLAN_ENVELOPE`.
 
    | Planner result                                       | Route                                                                   |
    | ---------------------------------------------------- | ----------------------------------------------------------------------- |
@@ -19,7 +19,7 @@ Every question names the missing input in prose and ends the turn. When every ap
    | `COMMIT_PLAN: ERROR`                                 | `ERROR`                                                                 |
 
 3. `Phase 3/4 - Gate` `G_PLAN_APPROVAL` (inline, see below).
-4. `Phase 4/4 - Execute`. For each group in order, dispatch the executor with `SKILL_DIR` and the group block verbatim as `APPROVED_GROUP` in the evidence block. Validate through `G_EXECUTE_ENVELOPE`.
+4. `Phase 4/4 - Execute`. For each group in order, dispatch the executor with `SKILL_DIR`, `MUTATION_LIMITS`, and the group block verbatim as `APPROVED_GROUP` in the evidence block. Validate through `G_EXECUTE_ENVELOPE`.
 
    | Executor result                                           | Route                                                    |
    | --------------------------------------------------------- | -------------------------------------------------------- |
