@@ -88,6 +88,9 @@ def render(run):
         if dimension["name"] != chunk["dimension"]:
             raise ValueError(f"chunk-{dimension['name']}.txt: dimension mismatch")
     threads = {t["root_comment_id"]: t for t in context["threads"]}
+    unresolved = {root for root, thread in threads.items() if not thread["is_resolved"]}
+    if {a["root_comment_id"] for a in author["thread_assessments"]} != unresolved:
+        raise ValueError("thread_assessments must cover exactly the collected unresolved roots")
     state = context["state"] + (" (historical assessment)" if context["state"] != "open" else "")
     parts = [f"# PR review: {context['title']}", f"PR: {context['pr']}", f"PR state: {state}",
              "Dimensions reviewed: " + ", ".join(d["name"] for d in context["dimensions"]),
@@ -116,6 +119,11 @@ def render(run):
     parts += ["## Dropped candidates"] + [f"{d['candidate']}: {d['reason']}" for d in author["dropped"]]
     if not author["dropped"]:
         parts.append("None.")
+    parts += ["## Unresolved thread assessment"]
+    parts += [f"{threads[a['root_comment_id']]['root_url']}: {a['status']} — {a['evidence']}"
+              for a in author["thread_assessments"]]
+    if not author["thread_assessments"]:
+        parts.append("No unresolved threads in collected history.")
     parts += ["## Review decision", author["decision"], "## Review summary", author["summary"], "## Coverage"]
     for chunk in chunks:
         parts.append("### " + chunk["dimension"])
@@ -157,7 +165,8 @@ def fixture(run):
                    anchor=dict(path="file.py", line=2, side="RIGHT", start_line=1), evidence="Evidence  \n",
                    failure_scenario="Failure", minimal_fix="Fix", sources=[], placement="inline", body=body)
     author = dict(decision="REQUEST_CHANGES", summary=body, findings=[finding], dropped=[],
-                  residual_risks=[], references=[])
+                  residual_risks=[], references=[], thread_assessments=[
+                      dict(root_comment_id=7, status="still-valid", evidence="file.py:1-2 at pinned head")])
     chunk = dict(dimension="correctness", inspected=[dict(path="file.py", ranges="1-2")], gaps=[],
                  findings=[], residual_risks=[], references=[])
     for mode, name, value in [("context", "context.txt", context), ("chunk", "chunk-correctness.txt", chunk),
