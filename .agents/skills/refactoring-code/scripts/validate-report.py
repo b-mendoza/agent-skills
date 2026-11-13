@@ -129,7 +129,9 @@ def text_status(role, text):
         require(fields["Result"] in ("pass", "fail", "not run", "pre-existing failure"), "invalid validation result")
         require(bool(re.fullmatch(r"-?\d+|not run", fields["Exit code"])), "invalid exit code")
         if status == "PASS":
-            require(fields["Result"] != "not run" and fields["Exit code"] != "not run", "PASS needs executed validation")
+            require(fields["Result"] == "pass", "PASS contradicts validation Result: " + fields["Result"])
+            require(fields["Exit code"] == "0", "PASS contradicts validation Exit code: " + fields["Exit code"])
+            require(fields["Safety class"] != "warning path", "PASS contradicts validation Safety class: warning path")
             require(fields["Command"] != "not run" and fields["Coverage evidence"] != "not run", "PASS needs command and coverage")
     if role == "behavior-mapper" and status == "PASS":
         chunks = re.findall(r"^- .+", fields["Proposed chunks"], re.MULTILINE)
